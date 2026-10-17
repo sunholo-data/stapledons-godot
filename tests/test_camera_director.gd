@@ -39,6 +39,8 @@ func _run() -> void:
 	test_schema()
 	var demo: Node = await new_demo({"size": Vector2i(1280, 720)})
 	await test_sweep(demo)
+	test_sky_sweep(demo)
+	test_spawn_occlusion(demo)
 	test_levels_and_input(demo)
 	test_framing(demo)
 	test_sectors_and_walk(demo)
@@ -46,6 +48,7 @@ func _run() -> void:
 	demo.queue_free()
 	await process_frame
 	await test_free_camera()
+	await test_cues()
 	print("camera-director: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -570,4 +573,218 @@ func test_free_camera() -> void:
 	var flag: Node = await new_demo({"free_camera": true})
 	check("AC9 --free-camera (setup_options free_camera) starts a command-line launch in the free camera", flag.free_camera_on())
 	flag.queue_free()
+	await process_frame
+
+
+# ------------------------------------------------------------------ C2 sky views (AC1, AC4)
+
+## The forward pole (ship +z = glTF +y, travel) and a 20 deg cone around it: in frame and clear of
+## geometry from the eye (the starbow is what the view is for).
+func pole_clear(demo: Node, pose: Transform3D) -> bool:
+	var sp := CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)
+	if is_nan(sp.x) or not Rect2(Vector2(0, 40), PX - Vector2(0, 40)).has_point(sp):
+		return false
+	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
+	for a in [0.0, 90.0, 180.0, 270.0]:
+		for tilt in [0.0, 20.0]:
+			var d := Vector3.UP.rotated(Vector3(cos(deg_to_rad(a)), 0, sin(deg_to_rad(a))), deg_to_rad(tilt))
+			var q := PhysicsRayQueryParameters3D.create(pose.origin, pose.origin + d * 40.0)
+			q.hit_back_faces = true
+			if not space.intersect_ray(q).is_empty() and tilt == 0.0:
+				return false
+	return true
+
+
+func test_sky_sweep(demo: Node) -> void:
+	var dir: CameraDirector = demo.director
+	var bridge := samples(demo.walk_bridge, 82.0)
+	var fwd: Dictionary = dir.views["sky_forward"]
+	# Sky forward picks, once as it starts, the first candidate yaw whose eye sees the whole figure
+	# (lift guards included) and the forward pole clear; with none, the captain walks to the
+	# anchor (15 m out at the same angle), where one must exist.
+	var walked := 0
+	var none := []
+	var worst := 0.0
+	for p: Vector3 in bridge:
+		var off: Variant = dir.choose_offset(fwd, p)
+		var at := p
+		if off == null:
+			walked += 1
+			at = dir.anchor_of(fwd, p)
+			off = dir.choose_offset(fwd, at)
+		if off == null:
+			none.append(p)
+			continue
+		var pose := dir._sky(fwd, at, dir.sector_for(at, -1), off)
+		worst = maxf(worst, pose.origin.length())
+		var sp := CameraDirector.screen_point(pose, dir.head_of(fwd, at), PX)
+		if is_nan(sp.x) or not Rect2(Vector2.ZERO, PX).has_point(sp) or not pole_clear(demo, pose):
+			none.append(p)
+	check("C2 sky_forward: from every bridge sample (%d of them walk to the anchor first) the whole figure and the forward pole are clear and in frame (%d fail%s)" % [walked, none.size(), (", first %s" % none[0]) if not none.is_empty() else ""], none.is_empty())
+	check("C2 sky_forward: every eye inside the envelope (worst %.2f m)" % worst, worst <= 95.0)
+	# The anchored views: from their anchors (side: one rail point; aft: the rail at every 5 deg).
+	var side: Dictionary = dir.views["sky_side"]
+	var a: Vector3 = dir.anchor_of(side, Vector3(8, 82, -4.8))
+	var pose := dir.resolve(side, a, dir.sector_for(a, -1))
+	var head := dir.head_of(side, a)
+	var sp := CameraDirector.screen_point(pose, head, PX)
+	var body := CameraDirector.screen_point(pose, pose.origin + Vector3(cos(deg_to_rad(15.0)), sin(deg_to_rad(15.0)), 0) * 1000.0, PX)
+	check("C2 sky_side: the anchor %s is walkable, the captain clear and in frame (%s), the stop's body direction (+x, 15 deg up) in frame (%s)" % [a, sp, body], demo.walk_bridge.is_walkable(a) and clear_line(demo, pose.origin, head) and Rect2(Vector2.ZERO, PX).has_point(sp) and Rect2(Vector2.ZERO, PX).has_point(body) and pose.origin.length() <= 95.0)
+	var aft: Dictionary = dir.views["sky_aft"]
+	var aft_bad := []
+	for deg in range(0, 360, 5):
+		var f := Vector3(cos(deg_to_rad(deg)), 0, sin(deg_to_rad(deg))) * 10.0 + Vector3(0, 82, 0)
+		var an: Vector3 = dir.anchor_of(aft, f)
+		var ps := dir.resolve(aft, an, dir.sector_for(an, -1))
+		var hd := dir.head_of(aft, an)
+		var spp := CameraDirector.screen_point(ps, hd, PX)
+		if ps.origin.length() > 95.0 or not clear_line(demo, ps.origin, hd) or is_nan(spp.x) or not Rect2(Vector2.ZERO, PX).has_point(spp):
+			aft_bad.append(deg)
+	check("C2 sky_aft: from the rail anchor at every 5 deg, inside the envelope with the captain clear and in frame (%d bad %s)" % [aft_bad.size(), aft_bad.slice(0, 6)], aft_bad.is_empty())
+
+
+# ------------------------------------------------------------------ spawn occlusion (lead review)
+
+## The lift's boxes have no collision; test them as AABBs.
+func lift_boxes(demo: Node) -> Array:
+	var out := []
+	var stack: Array = [demo.lift]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D and n.is_visible_in_tree() and n.mesh != null:
+			out.append((n as MeshInstance3D).global_transform * n.mesh.get_aabb())
+		stack.append_array(n.get_children())
+	return out
+
+
+func figure_clear(demo: Node, eye: Vector3, foot: Vector3) -> Array:
+	var blocked := []
+	for h in [0.15, 0.5, 0.9, 1.3, 1.6]:
+		var p: Vector3 = foot + Vector3.UP * h
+		if not clear_line(demo, eye, p):
+			blocked.append("%.2f m (ship)" % h)
+			continue
+		for b: AABB in lift_boxes(demo):
+			if b.intersects_segment(eye, p.lerp(eye, 0.02)):
+				blocked.append("%.2f m (lift)" % h)
+				break
+	return blocked
+
+
+func test_spawn_occlusion(demo: Node) -> void:
+	var dir: CameraDirector = demo.director
+	demo.set_preset("reset")
+	var foot := Vector3(8, 82, -4.8)
+	for lv in [1, 2, 3]:
+		var v: Dictionary = dir.level_view(lv, "bridge")
+		var bad := []
+		for k: int in cells(dir, foot):
+			bad.append_array(figure_clear(demo, dir.resolve(v, foot, k).origin, foot))
+		check("spawn: the whole figure (0.15 to 1.6 m) is clear at Z%d from every cell the spawn can be in, the lift's guards included %s" % [lv, bad], bad.is_empty())
+	var fwd: Dictionary = dir.views["sky_forward"]
+	var off: Variant = dir.choose_offset(fwd, foot)
+	check("spawn: Sky forward needs no walk and sees the whole figure (offset %s) %s" % [off, figure_clear(demo, dir._sky(fwd, foot, 7, off).origin, foot) if off != null else []], off != null and figure_clear(demo, dir._sky(fwd, foot, 7, off).origin, foot).is_empty())
+
+
+# ------------------------------------------------------------------ C2 cues (AC6)
+
+func test_cues() -> void:
+	var demo: Node = await new_demo({"live_start": true})
+	var dir: CameraDirector = demo.director
+	var c: ShipConsoles = demo.consoles
+	check("AC6 at rest the default is the level view", dir.situation.is_empty() and dir.level == 2 and not demo.under_way())
+	# Keys: 7 / 8 / 9.
+	demo._unhandled_input(key(KEY_7))
+	check("C2 7 opens Sky forward (third person; the captain shown)", dir.situation == "sky_forward" and demo.avatar.visible and not dir.overridden)
+	step(demo, 2.0)
+	var pose: Transform3D = demo.camera.global_transform
+	check("C2 Sky forward frames the forward pole", Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
+	demo._unhandled_input(key(KEY_2))
+	check("AC6 a level key ends a sky view (back to Z2)", dir.situation.is_empty() and dir.level == 2)
+	demo._unhandled_input(key(KEY_8))
+	check("C2 8 walks the captain to the side anchor first", dir._pending == "sky_side" and c.walk_target.begins_with("point:"))
+	for i in 600:
+		demo._process(1.0 / 60.0)
+		if dir.situation == "sky_side":
+			break
+	check("C2 on arrival the Sky side view starts (%s)" % demo.avatar_pos, dir.situation == "sky_side")
+	demo.walk_motion(Vector2(0, 1), 1.0 / 60.0)
+	demo.walk_motion(Vector2.ZERO, 1.0 / 60.0)
+	check("AC6 a move key ends a sky view", dir.situation.is_empty())
+	demo._unhandled_input(key(KEY_9))
+	for i in 600:
+		demo._process(1.0 / 60.0)
+		if dir.situation == "sky_aft":
+			break
+	check("C2 9: Sky astern from the rail", dir.situation == "sky_aft")
+	demo._unhandled_input(key(KEY_R))
+	check("AC6 R ends it: the default view at rest is Z2", dir.situation.is_empty() and dir.level == 2)
+	step(demo, 1.0)
+	# Refusals: a panel open, at a console, in the lift.
+	demo.toggle_controls()
+	check("AC6 no cue with a panel open (Tab)", not dir.sky("sky_forward", true) and dir.situation.is_empty())
+	demo.escape()
+	c.go_to("navigation")
+	c.use("navigation", "open")
+	check("AC6 no cue at a console", not dir.sky("sky_forward", true) and dir.situation.is_empty())
+	# Commit at the helm: leaving the console, the departure cues Sky forward (under way).
+	check("the helm commits", c.use("navigation", "commit") and demo.journey_tick())
+	check("AC6 departure (commit): Sky forward is cued once the helm is left", demo.live_journey and dir.situation == "sky_forward" and demo.under_way())
+	step(demo, 2.0)
+	pose = demo.camera.global_transform
+	check("C2 under way the player view frames the forward pole", Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
+	demo._unhandled_input(key(KEY_1))
+	check("AC6 a level key takes over during cruise", dir.situation.is_empty() and dir.level == 1)
+	demo._unhandled_input(key(KEY_R))
+	check("C2 under way, R returns to Sky forward (the default view under way)", dir.situation == "sky_forward")
+	demo._unhandled_input(key(KEY_2))
+	var braked := false
+	for i in 4000:
+		if not demo.journey_tick():
+			break
+		demo._process(0.05)
+		if str(demo.sky_world.ship.phase) == "braking":
+			braked = true
+			break
+	demo._process(0.05)
+	check("AC6 braking cues Sky forward (phase %s)" % demo.sky_world.ship.phase, braked and dir.situation == "sky_forward")
+	# Reduced motion: a cue is a prompt, the camera does not travel.
+	demo._unhandled_input(key(KEY_2))
+	demo.set_camera_motion("reduced")
+	check("AC6 reduced motion: a cue is a HUD prompt instead (%s)" % dir.cue_prompt, not dir.sky("sky_forward", true) and dir.situation.is_empty() and dir.cue_prompt == "Sky ahead · 7")
+	demo._process(0.05)
+	check("AC6 the prompt shows in the HUD (%s)" % demo.ship_hud.prompt.text, demo.ship_hud.prompt.text.begins_with("Sky ahead · 7"))
+	demo.set_camera_motion("full")
+	# The lift.
+	demo.queue_free()
+	await process_frame
+	demo = await new_demo({"live_start": true})
+	dir = demo.director
+	check("lift boards", demo.lift.board())
+	check("AC6 no cue in the lift", not dir.sky("sky_forward", true) and dir.situation.is_empty())
+	demo.queue_free()
+	await process_frame
+	# Sgr A*: Sky forward, the hole overhead.
+	demo = await new_demo({"live_start": true})
+	dir = demo.director
+	check("Sgr A* starts", demo.start_black_hole())
+	check("AC6 Sgr A* cues Sky forward", dir.situation == "sky_forward" and demo.under_way())
+	demo.leave_black_hole()
+	demo.queue_free()
+	await process_frame
+	# The guided voyage: the stop turn cues Sky side (after the turn), departure cues Sky forward.
+	demo = await new_demo({"live_start": true})
+	dir = demo.director
+	check("the guided voyage starts", demo.start_solar_departure())
+	for i in 1200:
+		demo._process(1.0 / 60.0)
+		if demo.solar_tour.attitude_hold:
+			demo.journey_tick()
+		if dir.situation == "sky_side":
+			break
+	check("AC6 a guided stop cues Sky side once the stop turn completes (walked to the rail)", dir.situation == "sky_side")
+	check("the next stop prepares", demo.solar_tour.prepare_next())
+	demo._process(1.0 / 60.0)
+	check("AC6 the departure turn cues Sky forward", dir.situation == "sky_forward" and demo.under_way())
+	demo.queue_free()
 	await process_frame

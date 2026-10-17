@@ -590,6 +590,10 @@ func test_final_leg_look() -> void:
 	demo._process(0.016)
 	check("final leg review: the waiting line names Enter and no mouse look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and not demo.wait_hint.text.contains("look"))
 	check("final leg review: the player's pointer is visible for the review (never captured)", demo.pointer_required() and not demo.wants_capture())
+	check("C2 interlude hold: the camera holds Sky forward behind the review (%s, hold %s)" % [demo.director.situation, demo.director.hold], demo.director.hold and demo.director.situation == "sky_forward")
+	var k2 := InputEventKey.new();k2.physical_keycode = KEY_2;k2.pressed = true
+	demo._unhandled_input(k2)
+	check("C2 interlude hold: a level key does not move it while the review is open", demo.director.situation == "sky_forward")
 	r.go(r.page_ids().size() - 1)
 	r.key(KEY_ENTER) # Brake
 	for i in 8000:

@@ -188,6 +188,8 @@ func prompt_text() -> String:
 	if focused != "":
 		return "%s · E or Esc steps back" % stations[focused].name
 	if not walk_target.is_empty():
+		if walk_target.begins_with("point:"):
+			return "Walking to the %s · WASD takes over" % walk_target.trim_prefix("point:")
 		return "Walking to the %s · WASD takes over" % stations[walk_target].name if stations.has(walk_target) else "Walking to the lift · WASD takes over"
 	if demo.lift != null and demo.lift.travelling():
 		return "Lift in motion"
@@ -428,6 +430,19 @@ func walk_to(id: String) -> bool:
 		walk_target = ""
 		demo.refuse("No walkable path to the %s from here." % stations[id].name)
 		return false
+	demo.camera_mode = "player"
+	return true
+
+
+## R2-CAMERA C2: walk to a point on the bridge (a sky view's anchor), same path and speed; WASD
+## takes over. The walk target reads "point:<label>".
+func walk_to_point(target: Vector3, label: String) -> bool:
+	if not focused.is_empty() or demo.lift.travelling() or demo.active_level != 0:
+		return false
+	walking = demo.walk.path(demo.avatar_pos, target)
+	if walking.is_empty():
+		return false
+	walk_target = "point:" + label
 	demo.camera_mode = "player"
 	return true
 

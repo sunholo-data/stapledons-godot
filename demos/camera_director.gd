@@ -76,6 +76,16 @@ var _foot_v := Vector3.ZERO
 var _cooldown := 0.0
 var _pan := 0.0
 var _pinch := 1.0
+## C2 situation views (sky forward / side / aft): the active one ("" = the level view), a view
+## waiting for the captain's walk to its anchor, the interlude hold, and the HUD prompt a cue
+## becomes under reduced motion (or off the bridge).
+var situation := ""
+var cue_prompt := ""
+var hold := false
+var _pending := ""
+var _prompt_t := 0.0
+var _sky_offset := {} # view id -> the yaw offset (deg, from outward) chosen when the view started
+const PROMPT_S := 10.0
 
 
 static func load_views(path := VIEWS_PATH) -> Dictionary:
@@ -121,13 +131,17 @@ static func validate(d: Dictionary) -> PackedStringArray:
 		if not str(v.get("anchor", "")) in ANCHORS:
 			out.append("%s: anchor must be one of %s" % [id, ANCHORS])
 		var rule := str(v.get("yaw_rule", ""))
-		if not (rule == "sector" or rule.begins_with("fixed:") or rule.begins_with("toward:")):
-			out.append("%s: yaw_rule must be sector, fixed:<deg> or toward:<target>" % id)
+		if not (rule == "sector" or rule == "outward" or rule == "tangent" or rule.begins_with("fixed:") or rule.begins_with("toward:")):
+			out.append("%s: yaw_rule must be sector, outward, fixed:<deg> or toward:<target>" % id)
+		if v.get("kind") == "situation":
+			for k in ["pitch_deg", "back_m", "rise_m", "height_m"]:
+				if not v.has(k):
+					out.append("%s: a sky view needs %s" % [id, k])
 		if float(v.get("ease_s", -1.0)) < 0.0:
 			out.append("%s: ease_s must be >= 0" % id)
 		if v.has("fov_deg") and not is_equal_approx(float(v.fov_deg), FOV_DEG):
 			out.append("%s: a view may not change the FOV" % id)
-		if rule == "sector" and v.get("anchor") == "captain" and not (v.get("turn_deg") is Array and v.turn_deg.size() == 2):
+		if rule == "sector" and v.get("anchor") == "captain" and v.get("kind") == "level" and not (v.get("turn_deg") is Array and v.turn_deg.size() == 2):
 			out.append("%s: a sector boom needs turn_deg [stations ring, rail ring]" % id)
 		if v.get("kind") == "level":
 			for k in ["pitch_deg", "distance_m", "height_m", "frame_deg"]:
@@ -211,6 +225,18 @@ func sector_yaw(k: int, v: Dictionary = {}) -> float:
 	return deg_to_rad(sector_centre_deg(k) + _ring_val(v, "turn_deg", k, 0.0))
 
 
+## A view's yaw: the cell's (sector), a fixed world yaw (fixed:<deg>) or outward from the spire.
+func yaw_for(v: Dictionary, foot: Vector3, k: int) -> float:
+	var rule := str(v.get("yaw_rule", "sector"))
+	if rule.begins_with("fixed:"):
+		return deg_to_rad(float(rule.trim_prefix("fixed:")))
+	if rule == "outward":
+		return atan2(foot.z, foot.x)
+	if rule == "tangent": # along the ring: the eye is never nearer the spire than the captain
+		return atan2(foot.z, foot.x) + PI * 0.5
+	return sector_yaw(k, v)
+
+
 func sector_centre_deg(k: int) -> float:
 	var n := int(data.get("sectors", {}).get("count", 8))
 	return (k % n + 0.5) * 360.0 / n
@@ -222,6 +248,9 @@ func ring_of(k: int) -> int:
 
 ## A per-ring view value ([stations ring, rail ring]) or a scalar for both.
 func _ring_val(v: Dictionary, key: String, k: int, fallback: float) -> float:
+	var cells: Variant = v.get("cells")
+	if cells is Dictionary and cells.has(str(k)) and (cells[str(k)] as Dictionary).has(key):
+		return float(cells[str(k)][key])
 	var x: Variant = v.get(key, fallback)
 	if x is Array:
 		return float(x[clampi(ring_of(k), 0, x.size() - 1)])
@@ -232,6 +261,8 @@ func _ring_val(v: Dictionary, key: String, k: int, fallback: float) -> float:
 func resolve(v: Dictionary, foot: Vector3, k: int) -> Transform3D:
 	match str(v.get("anchor", "")):
 		"captain":
+			if v.get("kind") == "situation":
+				return _sky(v, foot, k)
 			return _boom(v, foot, sector_yaw(k, v))
 		"point":
 			return _place(v, foot, k)
@@ -257,6 +288,86 @@ func _boom(v: Dictionary, foot: Vector3, yaw: float) -> Transform3D:
 	var right := dir.cross(Vector3.UP).normalized()
 	var look := dir.rotated(right, deg_to_rad(float(v.get("frame_deg", 0.0))))
 	return Transform3D(Basis.looking_at(look, Vector3.UP), eye)
+
+
+## C2 sky views: the eye back_m behind the captain (along the view's yaw) and rise_m above the
+## deck, looking at a fixed pitch; the captain is a silhouette against the sky in the lower part
+## of the frame. The sky is at infinity, so any eye on the bridge sees the same directions.
+func _sky(v: Dictionary, foot: Vector3, k: int, offset: Variant = null) -> Transform3D:
+	var yaw := yaw_for(v, foot, k)
+	if offset == null:
+		offset = _sky_offset.get(str(v.id))
+	if offset != null:
+		yaw = atan2(foot.z, foot.x) + deg_to_rad(float(offset))
+	var f := Vector3(cos(yaw), 0.0, sin(yaw))
+	var head := head_of(v, foot)
+	var eye := _envelope(foot - f * float(v.back_m) + Vector3.UP * float(v.rise_m), head, str(v.id))
+	return Transform3D(basis_of(yaw, deg_to_rad(float(v.pitch_deg))), eye)
+
+
+## A view with yaw_candidates (Sky forward) picks, once, as it starts, the first yaw (relative to
+## outward) whose eye sees the captain's whole figure and the forward pole clear; null when none
+## does (the captain then walks to the view's anchor). Chosen once, never re-chosen per frame.
+func choose_offset(v: Dictionary, foot: Vector3) -> Variant:
+	for off: float in v.get("yaw_candidates_deg", []):
+		var pose := _sky(v, foot, sector_for(foot, -1), off)
+		if pose.origin.length() <= float(data.get("envelope_m", 95.0)) and view_clear(pose, foot, true):
+			return off
+	return null
+
+
+## The captain's figure (0.15 to 1.6 m) seen from a pose, through the ship's collision and the
+## lift's boxes; with `pole`, the forward pole straight overhead is clear too.
+func view_clear(pose: Transform3D, foot: Vector3, pole := false) -> bool:
+	if demo == null:
+		return true
+	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
+	var boxes := lift_boxes()
+	var targets: Array = [foot + Vector3.UP * 0.15, foot + Vector3.UP * 0.9, foot + Vector3.UP * 1.6]
+	for p: Vector3 in targets:
+		var q := PhysicsRayQueryParameters3D.create(pose.origin, p + (pose.origin - p).normalized() * 0.25)
+		q.hit_back_faces = true
+		if not space.intersect_ray(q).is_empty():
+			return false
+		for b: AABB in boxes:
+			if b.intersects_segment(pose.origin, p.lerp(pose.origin, 0.02)):
+				return false
+	if pole:
+		var q2 := PhysicsRayQueryParameters3D.create(pose.origin, pose.origin + Vector3.UP * 40.0)
+		q2.hit_back_faces = true
+		if not space.intersect_ray(q2).is_empty():
+			return false
+		var sp := screen_point(pose, pose.origin + Vector3.UP * 1000.0, Vector2(1280, 720))
+		if is_nan(sp.x) or not Rect2(Vector2(0, 40), Vector2(1280, 680)).has_point(sp):
+			return false
+	return true
+
+
+## The lift's visible boxes (they have no collision), as global AABBs.
+func lift_boxes() -> Array:
+	var out := []
+	if demo == null or demo.lift == null:
+		return out
+	var stack: Array = [demo.lift]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D and n.is_visible_in_tree() and n.mesh != null:
+			out.append((n as MeshInstance3D).global_transform * n.mesh.get_aabb())
+		stack.append_array(n.get_children())
+	return out
+
+
+## The standing point a situation view needs (walk_to: a rail point at a fixed angle, or at the
+## captain's own angle), or null when the view works from anywhere on the bridge.
+func anchor_of(v: Dictionary, foot: Vector3) -> Variant:
+	var w: Variant = v.get("walk_to")
+	if not w is Dictionary or demo == null:
+		return null
+	if w.has("beyond_m") and Vector2(foot.x, foot.z).length() <= float(w.beyond_m):
+		return null
+	var ang: float = atan2(foot.z, foot.x) if str(w.get("angle_deg", "captain")) == "captain" else deg_to_rad(float(w.angle_deg))
+	var r := float(w.radius_m)
+	return demo.walk_bridge.closest_walkable(Vector3(r * cos(ang), 82.0, r * sin(ang)), 4.0)
 
 
 func _place(v: Dictionary, foot: Vector3, k: int) -> Transform3D:
@@ -347,7 +458,8 @@ func set_level(lv: int) -> bool:
 		return false
 	var was_overridden := overridden
 	release()
-	if lv == level and not was_overridden:
+	var ended := end_situation()
+	if lv == level and not was_overridden and not ended:
 		return false
 	level = lv
 	_cooldown = COOLDOWN_S
@@ -357,15 +469,29 @@ func set_level(lv: int) -> bool:
 
 ## One step in (toward Z1) or out (toward Z3); Z1 is the floor and Z3 the ceiling, no wrap.
 func step_level(dir: int) -> bool:
-	return set_level(clampi(level + dir, 1, LEVELS)) if clampi(level + dir, 1, LEVELS) != level or overridden else false
+	if hold:
+		return false
+	var lv := clampi(level + dir, 1, LEVELS)
+	if lv == level and not overridden and situation.is_empty() and _pending.is_empty():
+		return false
+	return set_level(lv)
 
 
 ## R: the default view and level (D1).
 func default_view() -> bool:
 	if demo != null and (demo.benchmark.running or (demo.lift != null and demo.lift.travelling())):
 		return false
-	var changed := level != default_level or overridden
+	if hold:
+		return false
+	# Under way, the default view keeps the forward sky (the starbow) in frame (C2).
+	if demo != null and demo.has_method("under_way") and demo.under_way() and demo.active_level == 0:
+		release()
+		level = default_level
+		return sky("sky_forward")
+	var changed := level != default_level or overridden or not situation.is_empty()
 	release()
+	situation = ""
+	_pending = ""
 	level = default_level
 	if changed:
 		_start_blend(float(level_view(level, area).get("ease_s", 0.45)))
@@ -424,6 +550,69 @@ func pinch(factor: float) -> bool:
 	return true
 
 
+## C2: a sky view. A player key (7 / 8 / 9) or a cue (departure, a guided stop, braking, Sgr A*).
+## A cue starts only with no panel open, not at a console and not in the lift; under reduced
+## motion it is a HUD prompt instead. A view with an anchor walks the captain there first (the
+## consoles' walk path, 3.5 m/s) and starts on arrival. `force`: the interlude hold.
+func sky(id: String, cued := false, force := false) -> bool:
+	var v: Dictionary = views.get(id, {})
+	if v.is_empty() or demo == null or (cued and overridden):
+		return false
+	if demo.active_level != 0:
+		if not cued:
+			_prompt("Sky views are on the bridge")
+		return false
+	if demo.benchmark.running or (demo.lift != null and demo.lift.travelling()):
+		return false
+	if not force and not demo.consoles.focused.is_empty():
+		return false
+	if cued and not force and demo.panel_open():
+		return false
+	if cued and not force and motion == "reduced":
+		_prompt(str(v.get("prompt", "Sky · 7")))
+		return false
+	release()
+	var anchor: Variant = anchor_of(v, demo.avatar_pos)
+	if v.has("yaw_candidates_deg"):
+		var off: Variant = choose_offset(v, demo.avatar_pos)
+		if off != null:
+			anchor = null
+			_sky_offset[id] = off
+	if anchor is Vector3 and Vector2(demo.avatar_pos.x - anchor.x, demo.avatar_pos.z - anchor.z).length() > 0.75:
+		if demo.consoles.walk_to_point(anchor, str(v.get("name", "rail"))):
+			_pending = id
+			cue_prompt = ""
+			return true
+		return false
+	_enter(id, cued)
+	return true
+
+
+func _enter(id: String, cued: bool) -> void:
+	_finish_restore() # a cue while stepping back from a console takes the camera from there
+	situation = id
+	_pending = ""
+	cue_prompt = ""
+	var v: Dictionary = views[id]
+	_start_blend(float(v.get("cue_ease_s", 1.5) if cued else v.get("ease_s", 1.2)))
+
+
+## Any level key, move key or R ends a sky view (back to the remembered level); not while the
+## interlude holds it.
+func end_situation() -> bool:
+	if hold or (situation.is_empty() and _pending.is_empty()):
+		return false
+	situation = ""
+	_pending = ""
+	_start_blend(float(level_view(level, area).get("ease_s", 0.45)))
+	return true
+
+
+func _prompt(text: String) -> void:
+	cue_prompt = text
+	_prompt_t = PROMPT_S
+
+
 ## Console focus (D4): a framed screen; the level is remembered.
 func focus_console(to: Transform3D) -> void:
 	release()
@@ -473,7 +662,7 @@ func walk_yaw() -> float:
 	if overridden and demo != null:
 		var f: Vector3 = -demo.camera.global_transform.basis.z
 		return atan2(f.z, f.x)
-	var v := level_view(level, area)
+	var v: Dictionary = level_view(level, area) if situation.is_empty() else views.get(situation, {})
 	if v.get("anchor") == "captain" or v.get("anchor") == "point":
 		var f2: Vector3 = -resolve(v, _foot, maxi(sector, 0)).basis.z
 		return atan2(f2.z, f2.x)
@@ -504,8 +693,20 @@ func advance(dt: float) -> void:
 	dt = maxf(dt, 0.0)
 	_cooldown = maxf(0.0, _cooldown - dt)
 	fade = maxf(0.0, fade - dt / FADE_S)
+	_prompt_t = maxf(0.0, _prompt_t - dt)
+	if _prompt_t <= 0.0:
+		cue_prompt = ""
 	if demo == null or overridden:
 		return
+	if not _pending.is_empty() and demo.consoles.walk_target.is_empty():
+		var anchor: Variant = anchor_of(views[_pending], demo.avatar_pos)
+		if anchor is Vector3 and Vector2(demo.avatar_pos.x - anchor.x, demo.avatar_pos.z - anchor.z).length() <= 0.75:
+			if views[_pending].has("yaw_candidates_deg"):
+				var off: Variant = choose_offset(views[_pending], demo.avatar_pos)
+				_sky_offset[_pending] = off if off != null else 90.0
+			_enter(_pending, true)
+		else:
+			_pending = ""
 	var foot: Vector3 = demo.avatar_pos
 	_follow(foot, dt)
 	area = "lower" if demo.active_level == 1 else "bridge"
@@ -519,7 +720,9 @@ func advance(dt: float) -> void:
 			view_id = "lift"
 			_start_blend(float(views.get("lift", {}).get("ease_s", 0.6)))
 	else:
-		var v := level_view(level, area)
+		if area != "bridge" and not hold:
+			situation = ""
+		var v: Dictionary = level_view(level, area) if situation.is_empty() else views[situation]
 		if view_id == "lift":
 			_start_blend(float(views.get("lift", {}).get("ease_s", 0.6)))
 		view_id = str(v.get("id", ""))

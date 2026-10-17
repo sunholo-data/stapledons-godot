@@ -354,6 +354,7 @@ func toggle_sky_only() -> void:
 func walk_motion(move: Vector2,delta: float) -> void:
 	if move==Vector2.ZERO:
 		_walk_hold_yaw=NAN;return
+	if not director.situation.is_empty() or not director._pending.is_empty():director.end_situation() # C2: a move key ends a sky view
 	if is_nan(_walk_hold_yaw) or director.overridden:_walk_hold_yaw=director.walk_yaw()
 	var forward:=Vector3(cos(_walk_hold_yaw),0.,sin(_walk_hold_yaw))
 	var right:=Vector3(-sin(_walk_hold_yaw),0.,cos(_walk_hold_yaw))
@@ -497,9 +498,15 @@ func _camera_action(event: InputEvent) -> bool:
 				if free_camera_on():set_preset(["bridge","overlook","overview"][n-1])
 				else:director.set_level(n)
 			"camera_default":set_preset("reset")
-			"camera_sky_forward":look_direction("forward")
-			"camera_sky_side":look_direction("side")
-			"camera_sky_aft":look_direction("aft")
+			"camera_sky_forward":
+				if free_camera_on():look_direction("forward")
+				else:director.sky("sky_forward")
+			"camera_sky_side":
+				if free_camera_on():look_direction("side")
+				else:director.sky("sky_side")
+			"camera_sky_aft":
+				if free_camera_on():look_direction("aft")
+				else:director.sky("sky_aft")
 		return true
 	return false
 ## D7: the developer free camera's look and dolly (today's behaviour, command-line launches only).
@@ -549,6 +556,10 @@ func set_camera_motion(mode: String) -> void:
 	camera_motion=mode if mode in GameSettings.CAMERA_MOTIONS else "full"
 	director.set_motion(camera_motion)
 	motion_button.text="Camera motion: "+("reduced (cuts)" if camera_motion=="reduced" else "full")
+## R2-CAMERA C2: the ship is under way (committed, turning to depart, or at Sgr A*); the default
+## view (R) is then Sky forward, so the forward sky is in frame.
+func under_way() -> bool:
+	return live_journey or black_hole!=null or (solar_tour!=null and solar_tour.pending_index>=0)
 ## Developer review controls (B, G, 5, 6, the audit buttons): command-line launches only (AC11).
 func dev_controls() -> bool:
 	return not menu_return
@@ -802,7 +813,7 @@ func start_solar_departure() -> bool:
 	solar_tour.pin_destinations(sky.starfield)
 	journey_map.guided_read_only=true
 	sky_state="live";note("Guided voyage: Earth to Aldebaran. P pauses, N skips a dwell, K skips a stage.")
-	_apply_journey_world();look_direction("forward");close_navigation()
+	_apply_journey_world();close_navigation() # the tour's own turns cue the sky views (R2-CAMERA C2)
 	return true
 ## The normal navigation session and its window, gone (a guided tour or the Sgr A* demo replaces them).
 func _drop_navigation() -> void:
@@ -850,6 +861,7 @@ func journey_tick() -> bool:
 		leg_from=last_stop
 		if consoles!=null and consoles.focused=="navigation":consoles.leave() # watch the departure
 		else:close_navigation()
+		director.sky("sky_forward",true) # C2 cue: under way, the forward sky (the starbow) is in frame
 	if was_committed and not live_journey and solar_tour==null:last_stop=stop_name()
 	return true
 ## The free-navigation stop's display name: the catalogue name of the plan's target.
@@ -868,6 +880,10 @@ func stop_name() -> String:
 func _show_interlude() -> void:
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
 	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
+	# C2 interlude hold: Sky forward behind the review, still while it is open.
+	if crossing_review.visible and not director.hold:
+		director.sky("sky_forward",true,true);director.hold=director.situation=="sky_forward" or director._pending=="sky_forward"
+	elif not crossing_review.visible and director.hold:director.hold=false
 	if crossing_review.visible:
 		if consoles!=null and consoles.crew_page!=null:crossing_review.ai_text=consoles.crew_page.ai_text
 		var view:=hud_view()
@@ -910,9 +926,13 @@ func _begin_tour_turn(target:PackedFloat64Array,tilt:float,mode:String)->void:
 	tour_attitude.turn_to(target,3.)
 	_attitude_mode=mode
 	solar_tour.attitude_hold=true
-	_tour_view_from=Vector2(camera.tilt,camera.yaw)
-	_tour_view_to=Vector2(tilt,0.)
-	_tour_view_elapsed=0.;_tour_view_active=true
+	# R2-CAMERA C2: the player camera is cued, never turned. Tools and the developer free camera
+	# (the director overridden) keep the old first-person turn.
+	if director.overridden:
+		_tour_view_from=Vector2(camera.tilt,camera.yaw)
+		_tour_view_to=Vector2(tilt,0.)
+		_tour_view_elapsed=0.;_tour_view_active=true
+	elif mode=="departure":director.sky("sky_forward",true)
 func _update_tour_attitude(delta:float)->void:
 	if solar_tour==null or benchmark.running:return
 	if solar_tour.paused:return
@@ -941,6 +961,7 @@ func _update_tour_attitude(delta:float)->void:
 	if not tour_attitude.turning() and not _attitude_mode.is_empty():
 		var finished:=_attitude_mode;_attitude_mode=""
 		solar_tour.attitude_hold=false
+		if finished=="stop" and not director.overridden:director.sky("sky_side",true) # C2 cue: the body beyond the rail
 		if finished=="departure":
 			if solar_tour.commit_prepared():_apply_journey_world()
 			else:refuse("Tour departure failed: "+solar_tour.failed)
@@ -1008,7 +1029,10 @@ func _update_hud(delta: float, details: String) -> void:
 	_update_cards(view)
 	if crossing_review != null and crossing_review.visible: crossing_review.refresh(view) # the numbers this frame's HUD shows
 	_place_interlude()
-	ship_hud.set_prompt(consoles.prompt_text())
+	var prompt:String=consoles.prompt_text()
+	if director!=null and not director.cue_prompt.is_empty(): # C2: a cue under reduced motion is a prompt (10 s)
+		prompt=director.cue_prompt+(" · "+prompt if not prompt.is_empty() else "")
+	ship_hud.set_prompt(prompt)
 	ship_hud.advance(delta)
 	ship_hud.update(view)
 ## A new sim session (navigation, the guided voyage, Sgr A*): its cards start clean, and
@@ -1060,6 +1084,7 @@ func _update_cards(view: Dictionary) -> void:
 	var review_waits: bool = solar_tour != null and solar_tour.interlude != null
 	if phase != _hud_phase and not review_waits:
 		if phase == "braking":
+			director.sky("sky_forward", true) # C2 cue
 			ship_hud.show_card("notice", "Braking", 8.0)
 			_notice_text(JourneyHud.BRAKE_NOTICE)
 		elif phase == "approaching":
@@ -1370,7 +1395,7 @@ func start_black_hole() -> bool:
 	black_hole=v;_bh_accum=0.
 	_ensure_codex()
 	sky_state="black_hole"
-	_apply_bh_world();look_direction("forward")
+	_apply_bh_world();director.sky("sky_forward",true) # C2 cue: the hole overhead
 	_reset_hud_session()
 	note("Sgr A*, 10⁶ r_s out (1.34 ly). The next stop is an approach to 10 r_s at β 0.1.")
 	return true
@@ -1429,6 +1454,9 @@ func toggle_codex() -> void:
 	if codex.panel.visible:codex.close()
 	else:codex.open()
 
+## An open panel or card that owns the pointer (pointer_required() without console focus itself).
+func panel_open() -> bool:
+	return benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
 ## Pointer belongs to an open interactive surface (clicks reach consoles and panels through it).
 func pointer_required() -> bool:
 	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))

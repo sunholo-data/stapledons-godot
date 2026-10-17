@@ -51,6 +51,30 @@ func _run() -> void:
 	var pinch:=InputEventMagnifyGesture.new();pinch.factor=1.2;demo._unhandled_input(pinch)
 	check("a pinch steps one level",dir.level==1)
 	advance(demo,.35)
+	# A MacBook two-finger swipe: ~40 pan events over 0.65 s, a burst then an inertial tail
+	# (deltas 0.6 falling to 0.02), events every 1/60 s. One deliberate swipe is one level.
+	advance(demo,.4)
+	var start:int=dir.level
+	for i in 40:
+		pan.delta=Vector2(0.,-0.6*exp(-i/8.)-0.02);demo._unhandled_input(pan);advance(demo,1./60.)
+	check("MacBook swipe out (burst + inertial tail, %d events): exactly one level (%d -> %d)" % [40,start,dir.level],dir.level==start+1)
+	advance(demo,.4)
+	start=dir.level
+	for i in 40:
+		pan.delta=Vector2(0.,0.6*exp(-i/8.)+0.02);demo._unhandled_input(pan);advance(demo,1./60.)
+	check("MacBook swipe in: exactly one level (%d -> %d)" % [start,dir.level],dir.level==start-1)
+	advance(demo,.4)
+	# A trackpad pinch: magnify events of x1.02 each over 0.5 s (x1.81 in all): one level.
+	start=dir.level
+	for i in 30:
+		pinch.factor=0.98;demo._unhandled_input(pinch);advance(demo,1./60.)
+	check("MacBook pinch close (30 x0.98 magnify events): exactly one level out (%d -> %d)" % [start,dir.level],dir.level==start+1)
+	advance(demo,.4)
+	start=dir.level
+	for i in 30:
+		pinch.factor=1.02;demo._unhandled_input(pinch);advance(demo,1./60.)
+	check("MacBook pinch open (30 x1.02): exactly one level in (%d -> %d)" % [start,dir.level],dir.level==start-1)
+	advance(demo,.4)
 	demo.set_preset("reset");advance(demo,.1)
 	check("lift can board",demo.lift.board())
 	pan.delta=Vector2(0,-1.);demo._unhandled_input(pan);demo._unhandled_input(wheel)
