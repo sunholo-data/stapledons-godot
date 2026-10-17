@@ -112,7 +112,6 @@ func capture_size(sz: Vector2i) -> void:
 		push_error("real route did not cross a medium during cruise")
 		failed = true
 	await shot("medium_boundary", sz)
-	var before := CruiseInterlude.facts_from(demo.journey_sim.world, demo.stop_name())
 	# The real sim advances through the rest of the cruise, as the interlude host does.
 	var left: float = demo.journey_sim.world.consequence.phase_remaining_yr
 	if not demo.journey_sim.send([], left * (1.0 - Transit.END_SLACK)):
@@ -121,13 +120,13 @@ func capture_size(sz: Vector2i) -> void:
 	demo.journey_map.refresh()
 	demo._apply_journey_world()
 	demo._process(0.05)
-	var card := CardInterlude.new()
-	card.begin(before)
-	card.observe(demo.journey_sim.world, demo.stop_name())
-	card.advance(0.0, 0.0)
-	card.advance(0.0, 4.0)
-	demo.interlude_card.show_interlude(card)
-	demo.interlude_card.visible = true
+	# R2-INTERLUDE I3: the crossing review's medium page over the real cruise (the sim's digest).
+	var rv: Dictionary = demo.hud_view()
+	rv["review"] = {"leg": demo.stop_name(), "target": demo.stop_name()}
+	demo.crossing_review.visible = true
+	demo.crossing_review.show_review(rv, true)
+	demo.crossing_review.go(demo.crossing_review.page_ids().find("medium"))
+	demo._place_interlude()
 	await shot("interlude_media", sz)
 	demo.queue_free()
 	await process_frame

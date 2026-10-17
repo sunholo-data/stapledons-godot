@@ -10,7 +10,7 @@ SCRATCH := .godot/tmp
 # sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
 GEODESIC_LENS_DIGEST := 8.612720147193743
 GEODESIC_SCHW_DIGEST := 92833.6848137945
-AILANG_RELEASE ?= v0.54.11
+AILANG_RELEASE ?= v0.54.14
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
@@ -49,10 +49,10 @@ crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew
 	@cat $(SCRATCH)/crew-parity/vm.txt
 	@cmp -s $(SCRATCH)/crew-parity/vm.txt $(SCRATCH)/crew-parity/interp.txt || { echo "crew-parity: FAIL: VM and interpreter differ"; exit 1; }
 	@! grep -v ' ok lines ' $(SCRATCH)/crew-parity/vm.txt
-	@for n in consent orders shipevent argument; do \
+	@for n in consent orders shipevent argument crossing_hold; do \
 	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > $(SCRATCH)/crew-parity/$$n.ndjson; \
 	  cmp -s $(SCRATCH)/crew-parity/$$n.ndjson tests/crew/$$n.ndjson || { echo "crew-parity: FAIL: $$n recording changed (review, then make crew-parity-record)"; exit 1; }; done
-	@echo "crew-parity: ok (4 recordings, VM == interpreter)"
+	@echo "crew-parity: ok (5 recordings, VM == interpreter; crossing_hold: the digest per chunk, repeat run identical)"
 crew-bridge-test:  ## AC6 (Godot side): the real sim at protocol 2.9 over SimBridge: crew section, crew intents, refusals, no crew below 2.9
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_bridge.gd > $(SCRATCH)/crew-bridge.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-bridge)' $(SCRATCH)/crew-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-bridge.log && grep -q '^crew-bridge: 0 failures$$' $(SCRATCH)/crew-bridge.log
@@ -73,6 +73,16 @@ crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resu
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
 test: crew-hold-test
+crossing-review-test: import ## R2-INTERLUDE I3 (AC9, AC10): the crossing review's pages, Hold page, paging, portraits and bindings on recorded 2.10 frames
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_crossing_review.gd > $(SCRATCH)/crossing-review.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crossing-review)' $(SCRATCH)/crossing-review.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review.log && grep -q '^crossing-review: [0-9]* passed, 0 failures$$' $(SCRATCH)/crossing-review.log
+test: crossing-review-test
+crossing-review-fixtures: import ## R2-INTERLUDE I3: re-record tests/fixtures/crossing_review/*.ndjson from the real sim (guided voyage, 2.10); review the diff
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tools/crossing_review_fixture.gd > $(SCRATCH)/crossing-review-fixture.log 2>&1; rc=$$?; grep -E '^(FAIL|fixture|crossing-review-fixture)' $(SCRATCH)/crossing-review-fixture.log; test $$rc = 0 && grep -q '^crossing-review-fixture: 0 failures$$' $(SCRATCH)/crossing-review-fixture.log
+crossing-review-capture: ## R2-INTERLUDE I3 (AC11): the crossing review's pages -> renders/crossing_review/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/crossing_review_capture.gd > $(SCRATCH)/crossing-review-capture.log 2>&1; rc=$$?; grep -E '^(frame|FAIL|crossing-review-capture)' $(SCRATCH)/crossing-review-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review-capture.log && grep -q '^crossing-review-capture: OK' $(SCRATCH)/crossing-review-capture.log
 ## AC11 budgets. crewSkip (critical_only, as played): 2 s. crewSkipUnheld (no rules, concerns
 ## answered, the crew busy for ten years): a regression ceiling, not the goal (D-82). ailang#1827
 ## (the VM's O(n^2) list tail) is fixed in v0.54.10+; with crew_core 0.5.0 on v0.54.11 the busy
@@ -80,6 +90,7 @@ test: crew-hold-test
 ## hoped for is not reached. Mark (2026-10-16): 11 s is acceptable; the ceiling is 30 s (was 150 s).
 CREW_PERF_BUDGET_crewSkip := 2.0
 CREW_PERF_BUDGET_crewSkipUnheld := 30.0
+CREW_PERF_CHUNK_S := 1.0
 crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless (warm cache); critical_only under 2 s, the busy no-hold worst case under its measured ceiling
 	@for e in crewSkip crewSkipUnheld; do \
 	  case $$e in crewSkip) b=$(CREW_PERF_BUDGET_crewSkip);; *) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; esac; \
@@ -87,9 +98,18 @@ crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the
 	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$(env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
 	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
 	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < $$b ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget $$b s)"; exit 1; }; done
+	@# R2-INTERLUDE I1, AC6: the decade crossed chunk by chunk as the host steps it (sim/tools/crew_perf.ail).
+	@# Each chunk is timed from its line's arrival; every chunk under CREW_PERF_CHUNK_S (the bridge's
+	@# step_timeout is 2 s), critical_only (the game's default) in all under its crewSkip budget, the
+	@# busy decade under the crewSkipUnheld ceiling.
+	@for w in busy critical_only; do \
+	  case $$w in busy) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; *) b=$(CREW_PERF_BUDGET_crewSkip);; esac; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --caps IO --package-dir sim --entry crewSkipChunked --args-json "\"$$w\"" sim/tools/crew_perf.ail | \
+	  perl -MTime::HiRes=time -ne 'BEGIN { $$max = 0; $$worst = "none"; $$n = 0 } chomp; my $$t = time; if (/^start$$/) { $$s = $$t; $$p = $$t; next } if (/^chunk /) { my $$d = $$t - $$p; $$n++; ($$max, $$worst) = ($$d, $$_) if $$d > $$max; print "crew-perf crewSkipChunked '"$$w"': SLOW $$_ took ", sprintf("%.3f", $$d), " s\n" if $$d >= $(CREW_PERF_CHUNK_S); $$p = $$t; next } $$end = $$_; END { my $$tot = defined $$s ? $$p - $$s : -1; printf "crew-perf crewSkipChunked '"$$w"': %s in %.2f s; %d chunks, slowest %.3f s (%s)\n", $$end // "no end", $$tot, $$n, $$max, $$worst; exit(($$end // "") =~ /^days 3652 holds \d+ chunks \d+$$/ && $$tot >= 0 && $$tot < '"$$b"' && $$max < $(CREW_PERF_CHUNK_S) ? 0 : 1) }' \
+	  || { echo "crew-perf: FAIL (crewSkipChunked $$w: a chunk at or over $(CREW_PERF_CHUNK_S) s, or the total over $$b s)"; exit 1; }; done
 test: crew-perf
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
-	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
+	@for n in consent orders shipevent argument crossing_hold; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
 test: crew-parity
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
@@ -202,6 +222,7 @@ areas-stage:       ## M4.2: stage assets/areas/<area>/ into areas_bundle/<area>/
 	@echo "areas-stage: staged $$(ls areas_bundle | tr '\n' ' ')($$(du -sh areas_bundle | cut -f1))"
 
 sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics; M3.6: + the black-hole HUD sentinels and the Sgr A* demo aboard the ship (bh-hud-test)
+	@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
 	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
@@ -336,6 +357,14 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
 	in=$$($(AILANG) run --quiet --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
 	echo "strict crew: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict crew: FAIL (VM != interpreter, or a script refused)"; exit 1; }
+	@# namesVm: the crew-names table (sim/data/crew_names.ail) and five generated names on the strict VM; VM == interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry namesVm --args-json 7 sim/crew_names.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry namesVm --args-json 7 sim/crew_names.ail); \
+	echo "strict namesVm: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -q 'names regions 14 given 224 family 224 crew ' || { echo "strict namesVm: FAIL (VM != interpreter: $$in)"; exit 1; }
+	@# digestScripted (R2-INTERLUDE I2, AC2): the scripted crossing (two holds, resumed) and its cruise digest on the strict VM; VM == interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
+	echo "strict digestScripted: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -qE '^"?crossing chunks [0-9]+ holds 2 turn 391 digest [0-9a-f]{64}"?$$' || { echo "strict digestScripted: FAIL (VM != interpreter: $$in)"; exit 1; }
 
 rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
 	AILANG=$(AILANG) python3 tools/rng_ref.py --check
@@ -352,7 +381,7 @@ geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 g
 journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM == interpreter == golden (replay case alpha_cen)
 	AILANG="$(AILANG)" python3 tools/replay.py --case alpha_cen
 
-wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ailang test` interpreter cannot see NaN-guard mutants)
+wd-vm:             ## WD package NaN contract on the strict VM
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
@@ -1084,7 +1113,7 @@ playthrough-adversarial: ## M4.5aR3 AC3: re-plan, cancel and commit during trans
 playthrough-negative: import ## M4.5aR3: driver failures must exit nonzero for the declared reason
 	@mkdir -p $(SCRATCH)/playthrough
 	@GODOT='$(GODOT)' AILANG_BIN="$$(command -v $(AILANG))" sh tests/test_playthrough.sh
-ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative
+ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude
 ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation station) in a real GPU window: open, click-select, hold-commit -> renders/ship_ui/window_check_*.png
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/ship_ui_window_check.gd > $(SCRATCH)/ship-ui-window-check.log 2>&1; rc=$$?; grep -E '^(host|click|held|ship-ui-window-check)' $(SCRATCH)/ship-ui-window-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-window-check.log && grep -q '^ship-ui-window-check: OK$$' $(SCRATCH)/ship-ui-window-check.log
@@ -1166,8 +1195,8 @@ SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past 
 ## the reset, the pocket universe, the selection) and infers what it can from evidence. What it sees
 ## (its cast, its prompt golden, the canon it cites) names none of them.
 SANDBOX_RE := \b(loops?|looping|reset(s|ting)?|pocket universes?|universes?|multiverse|luck(y|ier)?|selection|selected|chosen|happened before|d[eé]j[aà] vu|variations? of|iterations?|anthropic|crossing(s)? before)\b
-SANDBOX_SEEN := $(wildcard data/ai/cast/*.json) $(wildcard tests/ai/prompts/*.golden.txt)
-VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd
+SANDBOX_SEEN := $(wildcard data/ai/cast/*.json) $(wildcard tests/ai/prompts/*.golden.txt) ui/archive_narration.gd
+VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd ui/crossing_review.gd ui/archive_narration.gd sim/cruise_digest.ail
 ## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
 SPOILER_UI := demos/ship_consoles.gd
 in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the Archive's AI prompt (its golden) and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)

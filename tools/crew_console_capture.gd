@@ -53,7 +53,7 @@ func _run() -> void:
 	await _shot("crew_page_ai.png")
 	var held: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/crew/console_state.json"))
 	held["auto"] = "critical_only"
-	held["holds"] = [{"id": "h12-breakdown-medic", "rule": "breakdown", "actor": "medic", "name": "Ligaya Reyes", "task": "", "tick": 12, "detail": "stress 85"}]
+	held["holds"] = [{"id": "h12-breakdown-medic", "rule": "breakdown", "actor": "medic", "name": "Ligaya Reyes", "task": "", "tick": 12, "detail": "stress 85", "line": "is close to breaking down."}]
 	page.show_crew(held)
 	await _shot("crew_page_hold.png")
 	print("crew-console-capture: 4 frames in renders/crew_console")

@@ -42,7 +42,19 @@ func _initialize() -> void:
 	var faces := ["medic", "engineer", "analyst", "pilot", "counselor"].filter(func(id): var t = page.find_child("Portrait_" + id, true, false); return t is TextureRect and t.texture != null)
 	check("every crew row has a portrait", faces.size() == 5)
 	check("the medic asked for relief: her sad face", page.emotion_of("medic") == "sad" and page.portrait_path("medic", "sad").ends_with("medic_sad.png") and page.find_child("Portrait_medic", true, false).texture == page.portrait("medic", "sad"))
-	check("the medic has all eight emotions; a decline shows anger, a concern fear", ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"].all(func(e): return page.portrait_path("medic", e).ends_with("medic_%s.png" % e)) and CrewPage.LABEL_EMOTION["decline"] == "angry" and CrewPage.LABEL_EMOTION["concern"] == "fearful")
+	check("the medic has all eight emotions", ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"].all(func(e): return page.portrait_path("medic", e).ends_with("medic_%s.png" % e)))
+	# R2-INTERLUDE I2: the face's emotion is the sim's (crew.members[].emotion, sim/protocol_crew.ail
+	# emotionOf); mutating it changes the face, and none (below 2.10) is neutral.
+	var mutated: Dictionary = section.duplicate(true)
+	mutated.members[0].emotion = "angry"
+	var p2 := CrewPage.new()
+	root.add_child(p2)
+	p2.show_crew(mutated)
+	check("the sim's emotion picks the face (mutated to angry)", p2.emotion_of("medic") == "angry" and p2.find_child("Portrait_medic", true, false).texture == p2.portrait("medic", "angry"))
+	mutated.members[0].erase("emotion")
+	p2.show_crew(mutated)
+	check("no emotion from the sim: neutral", p2.emotion_of("medic") == "neutral")
+	p2.queue_free()
 	check("an angry face falls back to neutral for a role without it", page.portrait_path("engineer", "angry").ends_with("engineer_neutral.png"))
 	check("a role without the emotion falls back to its neutral face", page.portrait_path("analyst", "sad").ends_with("analyst_neutral.png"))
 	var call := page.get_node_or_null("Call")

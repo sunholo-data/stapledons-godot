@@ -7,7 +7,7 @@ extends SceneTree
 const SolarDeparture := preload("res://demos/solar_departure.gd")
 const OUT := "res://renders/real_time_tour"
 var sky: InteriorSky
-var card_view: InterludeCard
+var card_view: CrossingReview
 var tour
 var records := []
 var frame := 0
@@ -25,13 +25,14 @@ func run() -> void:
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; rect.stretch_mode = TextureRect.STRETCH_SCALE
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(rect)
 	var layer := CanvasLayer.new(); layer.layer = 12; root.add_child(layer)
-	card_view = InterludeCard.new(); card_view.visible = false; layer.add_child(card_view)
+	card_view = CrossingReview.new(); card_view.visible = false; card_view.custom_minimum_size = Vector2(600, 440); card_view.position = Vector2(24, 24); layer.add_child(card_view)
 	sky.exposure.fixed = true; sky.exposure.fixed_ev = sky.exposure.ev_dark() - 2.; sky.set_temporal_exposure(false)
-	var sim := SimBridge.new(); sim.want_minor = SimBridge.ISM_MINOR
+	var sim := SimBridge.new(); sim.want_minor = SimBridge.INTERLUDE_MINOR
 	if not sim.start() or not sim.new_game(424242, "solar_departure", false, SolarDeparture.guided_params()):
 		print("real-time-tour-capture: start FAIL ", sim.last_error); quit(1); return
 	var catalogue: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).get("stars", [])
 	tour = SolarDeparture.new()
+	tour.reviewed = true # R2-INTERLUDE I3: the crossing waits at braking for its review (finished after its shot)
 	if not tour.attach(sim, catalogue): print("real-time-tour-capture: attach FAIL"); quit(1); return
 	tour.pin_destinations(sky.starfield)
 	for leg in tour.itinerary.size():
@@ -62,9 +63,10 @@ func fly_leg(leg: int, sim: SimBridge) -> void:
 					taken[m] = true
 					await shot("%d_%s_boost_b%s_forward" % [leg, slug, str(m)], sim, "forward", false)
 					if long_leg and m >= 0.99: await shot("%d_%s_boost_b%s_side" % [leg, slug, str(m)], sim, "side", false)
-		if tour.interlude != null and not card_taken and (tour.interlude as CardInterlude).shown() >= 4.0:
+		if tour.interlude != null and not card_taken and (tour.interlude as CardInterlude).crossed():
 			card_taken = true
 			await shot("%d_%s_card" % [leg, slug], sim, "forward", true)
+			(tour.interlude as CardInterlude).finish()
 		if phase == "cruising" and not taken.has("cruise"):
 			taken["cruise"] = true
 			await shot("%d_%s_cruise_peak_forward" % [leg, slug], sim, "forward", false)
@@ -92,7 +94,7 @@ func shot(name: String, sim: SimBridge, look: String, with_card: bool, auto_view
 	for i in 6:
 		sky.camera.look(atan2(-n.x, -n.z), asin(clampf(n.y, -1., 1.)), 0.)
 		frame += 1; sky.finish_exposure_frame(1. / 60., frame)
-		if card != null: card_view.show_interlude(card)
+		if card != null: card_view.show_review(review_view(sim), card.crossed())
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var img := root.get_texture().get_image()
@@ -128,3 +130,9 @@ func target_dir(world: Dictionary) -> Vector3:
 	var tp: Dictionary = world.journey.plan.get("target", {}).get("pos", p)
 	var g := SkyFrame.to_world64(PackedFloat64Array([tp.x - p.x, tp.y - p.y, tp.z - p.z]))
 	return Vector3(g[0], g[1], g[2]).normalized()
+
+## The review's view: the sim's world plus the leg's name (as the demo's hud_view adds it).
+func review_view(sim: SimBridge) -> Dictionary:
+	var v: Dictionary = sim.world.duplicate(false)
+	v["review"] = {"leg": tour.leg_name(), "target": tour.leg_name()}
+	return v

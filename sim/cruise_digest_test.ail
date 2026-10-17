@@ -1,0 +1,245 @@
+module stapledons/sim/cruise_digest_test
+
+-- R2-INTERLUDE I2 (design interlude-card.md D1, AC1): the cruise digest. The unit cases below are
+-- hand-computed (synthetic Act logs, lines and holds); the scripted crossing at the end runs the
+-- real world (sim/core.ail tick) chunk by chunk under critical_only, with a hold and its resume.
+import std/string (contains, length as slen, substring, toLower)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (map, filter, length, any, foldl)
+import pkg/sunholo/crew_core/auto (Act)
+import ./crew (CrewState, CrewLine, CrewHold, initCrew)
+import ./cruise_digest (Digest, CrewDigest, Counts, Member, Moment, Ind, Snap, MediumRef, CrewTick, homeTier, tierLine, tierYears,
+  momentsMax, salience, momentKind, insertMoment, rankMovement, movedBy, foldEvents, noCounts, beginDigest, foldDigest, shipDays, workDone,
+  Narration, countsBand, tierWord, narrationFor, narrationOf, narrationKey, narrationMax)
+import ./protocol_crew (holdLine)
+import ./core (World, Committed, newWorld, defaultParams, tick, withCrew)
+import ./crew_script (Crossed, scriptedCrossing)
+import ./protocol_interlude (cruiseStop)
+import ./protocol_crew (emotionOf, strainedAt)
+
+-- ---------------------------------------------------------------- emotion (ported from crew_page.gd)
+-- crew_page.gd LABEL_EMOTION {decline: angry, concern: fearful}; STRAINED_LABELS [request_relief]
+-- or stress at STRAINED (70): sad; WARM_LABELS [accept]: happy; else neutral. The label wins over
+-- the strained rule; the strained rule wins over warmth.
+test "emotionOf: the crew page's table and strained rule" {
+  emotionOf("decline", 0) == "angry" && emotionOf("decline", 90) == "angry"
+  && emotionOf("concern", 0) == "fearful" && emotionOf("concern", 90) == "fearful"
+  && emotionOf("request_relief", 0) == "sad" && emotionOf("request_relief", 69) == "sad"
+  && emotionOf("accept", 69) == "happy" && emotionOf("accept", 70) == "sad"
+  && emotionOf("continue", 69) == "neutral" && emotionOf("continue", 70) == "sad" && emotionOf("", 0) == "neutral"
+  && emotionOf("captain_ask_advice", 10) == "neutral" && strainedAt() == 70
+}
+-- The strained line is the pack's overextended threshold for every worker (crew_page.gd STRAINED).
+test "strainedAt is the synced pack's overextended threshold" {
+  match initCrew("consent") {
+    Err(_) => false,
+    Ok(c) => { let rs = filter(\r. contains(r.id, "overextended_"), c.session.scenario.rules); length(rs) == 5 && allOf(\r. r.threshold == strainedAt(), rs) }
+  }
+}
+
+-- ---------------------------------------------------------------- home-time tiers (ruling 7)
+test "home tiers 0-6 at every edge (1/10/30/80/130/1000 Earth years)" {
+  homeTier(0.0) == 0 && homeTier(0.999999) == 0 && homeTier(1.0) == 1 && homeTier(9.999999) == 1 && homeTier(10.0) == 2
+  && homeTier(29.999999) == 2 && homeTier(30.0) == 3 && homeTier(79.999999) == 3 && homeTier(80.0) == 4
+  && homeTier(129.999999) == 4 && homeTier(130.0) == 5 && homeTier(999.999999) == 5 && homeTier(1000.0) == 6 && homeTier(5000.0) == 6
+  && tierYears(0.5) == 0 && tierYears(1.0) == 1 && tierYears(66.9) == 66
+}
+pure func noDigit(s: string) -> bool = !any(\d. contains(s, d), ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
+test "tier lines: ruling 7's words, %s for the whole years, no digits; one year is singular" {
+  tierLine(0, 0) == "Less than a year at home. They are still watching for word from you."
+  && tierLine(1, 1) == "A year at home. The news you left with is history."
+  && tierLine(1, 4) == "%s years at home. The news you left with is history."
+  && tierLine(2, 12) == "%s years. The children you knew have grown up; your name is a story they half remember."
+  && tierLine(3, 40) == "%s years. Your parents' generation is gone; the friends you left are old."
+  && tierLine(4, 90) == "%s years. Everyone you knew is gone."
+  && tierLine(5, 200) == "%s years. No one alive on Earth was born when you left. The countries you knew may not exist."
+  && tierLine(6, 2000) == "%s years. Longer than recorded history before you left. Whatever answers your signal will not be the Earth you left."
+  && allOf(\t. noDigit(tierLine(t, 2)) && noDigit(tierLine(t, 1)), [0, 1, 2, 3, 4, 5, 6])
+}
+test "hold lines have no digits" { allOf(\r. noDigit(holdLine(r)) && holdLine(r) != "", ["breakdown", "trust_floor", "refusal_under_orders", "major", "argument", "uncovered", "stuck", "other"]) }
+
+-- ---------------------------------------------------------------- moments: salience and the bounded fold
+pure func mo(day: int, actor: string, kind: string) -> Moment = { day: day, actor: actor, name: actor, label: kind, kind: kind, emotion: "neutral", aiReq: "", text: "" }
+test "salience: hold > refusal > relief > concern > accept > any other reply" {
+  salience("hold") > salience("refusal") && salience("refusal") > salience("relief") && salience("relief") > salience("concern")
+  && salience("concern") > salience("accept") && salience("accept") > salience("reply")
+  && momentKind("decline") == "refusal" && momentKind("request_relief") == "relief" && momentKind("concern") == "concern"
+  && momentKind("accept") == "accept" && momentKind("continue") == "reply" && momentsMax() == 7
+}
+-- Ten moments in day order; the fold keeps seven, ranked by salience, then day, then actor.
+pure func tenMoments() -> [Moment] = [mo(1, "pilot", "accept"), mo(2, "medic", "reply"), mo(3, "medic", "concern"), mo(3, "analyst", "concern"),
+  mo(4, "engineer", "refusal"), mo(5, "pilot", "relief"), mo(6, "medic", "hold"), mo(7, "counselor", "accept"), mo(8, "pilot", "refusal"), mo(9, "analyst", "reply")]
+test "the moment fold keeps the top seven: hold, refusals by day, relief, concerns by actor, the first accept" {
+  map(\m. (m.day, m.actor), foldl(\acc m. insertMoment(m, acc), [], tenMoments()))
+    == [(6, "medic"), (4, "engineer"), (8, "pilot"), (5, "pilot"), (3, "analyst"), (3, "medic"), (1, "pilot")]
+}
+test "the moment fold does not depend on arrival order" {
+  foldl(\acc m. insertMoment(m, acc), [], tenMoments()) == foldl(\acc m. insertMoment(m, acc), [], reverseL(tenMoments(), []))
+}
+pure func reverseL(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: r => reverseL(r, x :: acc) }
+
+-- ---------------------------------------------------------------- movement: ranked by |delta|
+pure func ind(s: int, f: int, m: int, t: int) -> Ind = { stress: s, fatigue: f, morale: m, trust: t }
+pure func mem(id: string, b: Ind, e: Ind) -> Member = { id: id, name: id, begin: b, end: e, label0: "", label: "" }
+test "movement: total |delta| over stress, fatigue, morale, trust; ties by member id" {
+  let ms = [mem("pilot", ind(10, 10, 50, 50), ind(20, 10, 50, 50)), mem("medic", ind(30, 20, 50, 50), ind(70, 0, 40, 45)),
+            mem("analyst", ind(10, 10, 50, 50), ind(0, 10, 50, 50)), mem("engineer", ind(10, 10, 50, 50), ind(10, 10, 50, 50))];
+  movedBy(mem("medic", ind(30, 20, 50, 50), ind(70, 0, 40, 45))) == 75
+  && map(\m. m.id, rankMovement(ms)) == ["medic", "analyst", "pilot", "engineer"]
+}
+
+-- ---------------------------------------------------------------- counts and moments from one tick
+pure func act(kind: string, actor: string, label: string, tick: int, stress: int) -> Act =
+  { kind: kind, actor: actor, label: label, detail: "", request: None, tick: tick, fatigue: 0, stress: stress, morale: 50 }
+-- An auto-run decision day (day 31) and the captain's console at a hold: an offer the medic
+-- declines, the pilot accepts and starts, the analyst asks to step back and is granted it, the
+-- engineer raises a concern that the auto-captain answers, a refusal under orders becomes a hold,
+-- and the captain answers the counselor's ask (a decline) and denies a relief at the console.
+pure func oneTick() -> CrewTick = {
+  turnBefore: 30,
+  answered: [{ request: "r9", actor: "counselor", task: "t9", label: "decline", aiReq: "4" }],
+  log: [act("offer", "medic", "work_medic", 30, 20), act("reply", "medic", "decline", 30, 20), act("offer", "pilot", "work_pilot", 30, 10),
+        act("reply", "pilot", "accept", 30, 10), act("start", "pilot", "", 30, 10), act("reply", "analyst", "request_relief", 30, 72),
+        act("relief_asked", "analyst", "", 30, 72), act("relief_decision", "analyst", "granted", 30, 72), act("reply", "engineer", "concern", 30, 40),
+        act("captain_reply", "engineer", "ask_advice", 30, 40), act("reply", "engineer", "continue", 30, 40)],
+  holds: [{ id: "h31-refusal_under_orders-medic", rule: "refusal_under_orders", actor: "medic", task: "t31", tick: 31, detail: "decline" }],
+  captain: ["{\"command\":\"resolve_relief\",\"id\":\"relief-c2\",\"release\":false}", "{\"command\":\"offer\",\"worker\":\"pilot\",\"recipe\":\"work_pilot\",\"id\":\"x\"}"]
+}
+pure func emptyCd() -> CrewDigest = { turn0: 0, turn: 0, work0: 0, work: 0, counts: noCounts(), members: [], moments: [], waiting: [] }
+test "one tick's counts: refusals, concerns (auto-answered), reliefs asked/granted/denied, holds" {
+  let cd = foldEvents(emptyCd(), [], oneTick());
+  cd.counts == { refusals: 2, concerns: 1, concernsAuto: 1, reliefsAsked: 1, reliefsGranted: 1, reliefsDenied: 1, holds: 1 }
+}
+test "one tick's moments: the hold first, then the two refusals, the relief, the concern, the accept, one reply" {
+  let cd = foldEvents(emptyCd(), [], oneTick());
+  map(\m. (m.kind, m.actor, m.day), cd.moments) == [("hold", "medic", 31), ("refusal", "counselor", 30), ("refusal", "medic", 30),
+    ("relief", "analyst", 30), ("concern", "engineer", 30), ("accept", "pilot", 30), ("reply", "engineer", 30)]
+  && length(cd.moments) <= momentsMax()
+  && map(\m. m.emotion, cd.moments) == ["sad", "angry", "angry", "sad", "fearful", "happy", "neutral"]
+  && map(\m. m.aiReq, cd.moments) == ["", "4", "", "", "", "", ""]
+  && map(\m. m.text, cd.moments) == ["refused an order.", "Not this one, Captain. I can't take it on.", "Not this one, Captain. I can't take it on.",
+    "I need to step back from this for a while.", "Before I start, there's something about this that worries me.", "I'll take it on, Captain.", "I can keep going for now."]
+  && allOf(\m. noDigit(m.text), cd.moments)
+}
+test "days in the crossing count from the commit's crew turn" {
+  let cd = foldEvents({ emptyCd() | turn0: 30 }, [], oneTick());
+  map(\m. m.day, cd.moments) == [1, 0, 0, 0, 0, 0, 0]
+}
+
+-- ---------------------------------------------------------------- the time section
+pure func snap(tau: float, t: float, since: float) -> Snap =
+  { tau: tau, t: t, year: 2100.0 + t, sinceDeparture: since, newsEpoch: t - 4.0, newsAge: 4.0, news: None, lism: true,
+    medium: { name: "LIC", nH: 0.2 }, crossed: [], grains: 0.0, largestUm: 0.0, largestJ: 0.0 }
+test "time: with no crew aboard, ship days are whole days of proper time since the commit; the digest keeps the begin clock" {
+  let d0 = beginDigest(snap(1.0, 3.0, 2.0), None);
+  let d1 = foldDigest(d0, snap(1.0 + 92.5 / 365.25, 69.0, 68.0), None, { turnBefore: 0, answered: [], log: [], holds: [], captain: [] });
+  shipDays(d1) == 92 && d1.tau0 == 1.0 && d1.t0 == 3.0 && d1.year0 == 2103.0 && d1.now.t == 69.0 && homeTier(d1.now.sinceDeparture) == 3
+  && d1.crew == None && shipDays(d0) == 0
+}
+test "medium: the media crossed, in order, each once in a row" {
+  let lic = { name: "LIC", nH: 0.2 };
+  let g = { name: "G", nH: 0.1 };
+  let hot = { name: "hot", nH: 0.005 };
+  let none = { turnBefore: 0, answered: [], log: [], holds: [], captain: [] };
+  let d0 = beginDigest(snap(0.0, 0.0, 0.0), None);
+  let d1 = foldDigest(d0, { snap(0.1, 0.1, 0.1) | crossed: [lic, g], medium: g }, None, none);
+  let d2 = foldDigest(d1, { snap(0.2, 0.2, 0.2) | crossed: [], medium: g }, None, none);
+  let d3 = foldDigest(d2, { snap(0.3, 0.3, 0.3) | crossed: [g, hot], medium: hot, grains: 5.0e9 }, None, none);
+  map(\m. m.name, d3.media) == ["LIC", "G", "hot"] && d3.now.grains == 5.0e9
+}
+
+-- ---------------------------------------------------------------- the scripted crossing (the real world)
+pure func digestOf(w: World) -> Option[Digest] = w.cruiseDigest
+-- Seed 3: the medic's uncovered concern on the first decision (a hold on day 0, resumed), then a
+-- year of critical_only with the analyst's breakdown on day 331 (a second hold, resumed); the host
+-- crosses to the first check-in past day 365 (day 391). The counts are pinned from this run (the
+-- unit cases above check each count's source by hand); the hold count matches the crew_hold events.
+-- No relief: crew_core 0.5.0's auto-captain checks in with working crew only on even turns
+-- (auto.ail checkIn, `turn % 2 != 0`), and on the game's monthly schedule every decision turn is odd
+-- (1, 31, 61 ...: crew_auto starts each call on a multiple of 30), so no relief is asked on a long
+-- skip. Flagged for crew_core (E4); the relief counts are checked by hand above.
+test "the scripted crossing: a digest from the commit, folded through two holds and their resumes" {
+  let x = scriptedCrossing(3);
+  match (digestOf(x.world), x.world.journey) {
+    (Some(d), Committed(_)) => match d.crew {
+      Some(cd) => cd.turn0 == 0 && cd.turn == 391 && x.holds == ["h0-uncovered-medic", "h331-breakdown-analyst"]
+        && cd.counts == { refusals: 15, concerns: 14, concernsAuto: 22, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 2 }
+        && cd.work0 == 0 && cd.work == 32
+        && map(\m. (m.kind, m.actor, m.day), cd.moments) == [("hold", "medic", 0), ("hold", "analyst", 331), ("refusal", "engineer", 60), ("refusal", "medic", 90),
+             ("refusal", "pilot", 90), ("refusal", "engineer", 120), ("refusal", "pilot", 150)]
+        && map(\m. m.emotion, cd.moments) == ["sad", "sad", "angry", "angry", "angry", "angry", "angry"]
+        && map(\m. m.id, rankMovement(cd.members)) == ["counselor", "medic", "pilot", "analyst", "engineer"]
+        && map(\m. movedBy(m), rankMovement(cd.members)) == [154, 92, 81, 72, 36]
+        && length(cd.members) == 5 && shipDays(d) == 391 && homeTier(d.now.sinceDeparture) == 1 && tierYears(d.now.sinceDeparture) == 7
+        && map(\m. m.name, d.media) == ["LIC", "hot"] && d.now.grains > 0.0,
+      None => false
+    },
+    _ => false
+  }
+}
+-- I3 polish (A2): "You lived N days" and "Your crew lived N days" are one number. With a crew aboard
+-- ship days are the crew's day clock (turns since the commit), which carries the crew's day
+-- remainder from before the commit; the proper time alone, floored from the commit, gave 390 here.
+test "the scripted crossing: ship days are the crew's days since the commit (one definition)" {
+  let x = scriptedCrossing(3);
+  match digestOf(x.world) {
+    Some(d) => match d.crew { Some(cd) => shipDays(d) == cd.turn - cd.turn0 && shipDays(d) == 391, None => false },
+    None => false
+  }
+}
+test "the scripted crossing is deterministic (AC4): same seed, equal digests" {
+  digestOf((scriptedCrossing(3)).world) == digestOf((scriptedCrossing(3)).world)
+}
+test "no digest before the first commit" {
+  match withCrew(newWorld(2, false, defaultParams()), "orders") {
+    Err(_) => false,
+    Ok(w0) => w0.cruiseDigest == None && (tick(w0, { dtau: 0.01, intents: [] })).world.cruiseDigest == None
+  }
+}
+pure func allOf(p: a -> bool, xs: [a]) -> bool = !any(\x. !p(x), xs)
+
+-- ---------------------------------------------------------------- I4: the Archive's authored framing
+-- design D3 / Rulings §6: authored in-world sentences on the crossing and aboard pages, keyed by the
+-- home tier and the crew's counts band, always (the live telling, when there is one, is recorded AI).
+pure func cs(r: int, c: int, a: int, h: int) -> Option[CrewDigest] =
+  Some({ emptyCd() | counts: { noCounts() | refusals: r, concerns: c, reliefsAsked: a, holds: h } })
+test "counts bands: empty without a crew; quiet; restless (refusals or concerns); strained (relief asked); held (a hold) wins" {
+  countsBand(None) == "empty" && countsBand(cs(0, 0, 0, 0)) == "quiet" && countsBand(cs(1, 0, 0, 0)) == "restless"
+  && countsBand(cs(0, 2, 0, 0)) == "restless" && countsBand(cs(3, 1, 1, 0)) == "strained" && countsBand(cs(0, 0, 0, 1)) == "held"
+  && countsBand(cs(4, 4, 4, 1)) == "held"
+  && countsBand(Some({ emptyCd() | counts: { noCounts() | concernsAuto: 5, reliefsGranted: 1 } })) == "quiet"
+}
+pure func bands() -> [string] = ["empty", "quiet", "restless", "strained", "held"]
+pure func tiers() -> [int] = [0, 1, 2, 3, 4, 5, 6]
+pure func everyNarration() -> [Narration] = foldl(\acc t. acc ++ map(\b. narrationFor(t, b), bands()), [], tiers())
+-- make in-world-voice-check's VOICE_RE and SPOILER_RE words (D-67, D-68), lowercased.
+pure func outOfWorld() -> [string] = ["game", "player", "simulat", "approximat", "invented", "fiction", "placeholder", "sandbox", "renderer", "shader",
+  "previous run", "re-run", "rerun", "new game", "begin again", "beginning again", "start over", "starting over", "multiverse", "loop", "reset"]
+pure func inWorld(t: string) -> bool = !any(\w. contains(toLower(t), w), outOfWorld())
+pure func okLine(t: string) -> bool = t != "" && noDigit(t) && slen(t) <= narrationMax() && inWorld(t)
+pure func distinct(xs: [string]) -> bool = match xs { [] => true, x :: r => !any(\y. y == x, r) && distinct(r) }
+test "narration keys: tier word and band, no digits, one per tier and band" {
+  narrationFor(3, "held").key == "generation.held" && narrationFor(0, "empty").key == "launch.empty" && narrationFor(6, "quiet").key == "ages.quiet"
+  && map(tierWord, tiers()) == ["launch", "years", "decades", "generation", "lifetimes", "centuries", "ages"]
+  && allOf(\n. noDigit(n.key), everyNarration()) && distinct(map(\n. n.key, everyNarration())) && length(everyNarration()) == 35
+}
+test "narration lines: authored, in-world (D-67, D-68), no digits (D-21), at most 280 characters" {
+  narrationMax() == 280 && allOf(\n. okLine(n.crossing) && okLine(n.aboard), everyNarration())
+  && distinct(map(\t. (narrationFor(t, "quiet")).crossing, tiers())) && distinct(map(\b. (narrationFor(2, b)).aboard, bands()))
+  && allOf(\t. (narrationFor(t, "held")).crossing == (narrationFor(t, "empty")).crossing, tiers())
+}
+pure func scriptedNarration(d: Option[Digest]) -> bool = match d {
+  Some(x) => narrationKey(x) == "years.held" && narrationOf(x) == narrationFor(1, "held"),
+  None => false
+}
+test "the scripted crossing's narration: seven years at home (tier one), two holds" { scriptedNarration(digestOf((scriptedCrossing(3)).world)) }
+-- Eval R2-INTERLUDE (2): each line must be true for every crossing its key covers. The tier is Earth
+-- time since departure (all legs), so a crossing line may not pin that time on this crossing ("while
+-- we crossed") or state this crossing's ship time ("in weeks": Aldebaran is months); a band line may
+-- not claim more than its band holds ("restless" can be concerns alone; "held" can be one hold).
+pure func claims(t: string, ws: [string]) -> bool = any(\w. contains(toLower(t), w), ws)
+test "narration lines claim only what their key guarantees" {
+  allOf(\t. !claims((narrationFor(t, "quiet")).crossing, ["while we crossed", "in weeks", "we crossed in", "centuries turned", "than my oldest records"]), tiers())
+  && !claims((narrationFor(2, "restless")).aboard, ["refused"]) && !claims((narrationFor(2, "held")).aboard, ["more than once", "twice"])
+}

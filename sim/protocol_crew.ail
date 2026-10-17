@@ -19,7 +19,7 @@ import std/math (intToFloat)
 import std/list (map, filter, take, reverse, length, foldl, contains)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/json (Json, JNull, decode, getString, encode, jo, ja, kv, js, jnum)
+import std/json (Json, JNull, JObject, decode, getString, encode, jo, ja, kv, js, jnum)
 import pkg/sunholo/crew_core/session (Session, Request, moot)
 import pkg/sunholo/crew_core/conversations (Issue, Suggestion, suggestions)
 import pkg/sunholo/social_dynamics/model (State, Actor, Value, Task, TaskStatus, Offered, Working, Completed, Stopped, Relief, Evidence, Resource)
@@ -63,6 +63,7 @@ export pure func decodeCrewIntent(kind: string, line: string) -> Result[CrewCmd,
 --   resources [{id, available, reserved, consumed}]
 --   used     [{id, units, amount, physical}]      consumed stock in physical units (C3 crew.used readout)
 --   auto     the auto-run preset ("off" when none); holds [{id, rule, actor, name, task, tick, detail}] (C8)
+--   (2.10: each member and line also carries `emotion`, emotionOf below)
 --   lines    [{request, actor, name, label, text, ai_req}]  C5: the latest answers. `text` is the
 --            authored template line for the decided reaction; Godot shows it until the ai_request
 --            `ai_req` is accepted, then the AI words ("" ai_req: the template stands).
@@ -97,6 +98,11 @@ pure func trustOf(st: State, id: string) -> Json = match filter(\r. r.from == id
 }
 pure func memberObj(st: State, names: [CrewName], a: Actor) -> Json =
   jo([kv("id", js(a.id)), kv("name", js(match nameOf(names, a.id) { Some(n) => n, None => a.id })), kv("indicators", valuesObj(a.indicators)), kv("trust", trustOf(st, a.id)), kv("work", workOf(st, a.id)), kv("done", doneOf(st, a.id)), kv("regard_low", regardOf(st, a.id))])
+-- 2.10: the face each member shows (their latest line's label and their stress).
+pure func memberObjE(c: CrewState, a: Actor) -> Json = match memberObj(c.session.state, c.names, a) {
+  JObject(kvs) => JObject(kvs ++ [kv("emotion", js(emotionOf(latestLabel(c.lines, a.id, ""), stressIn(a))))]),
+  j => j
+}
 pure func requestObj(q: Request) -> Json =
   jo([kv("id", js(q.id)), kv("actor", js(q.actor)), kv("task", js(q.task)), kv("legal", ja(map(js, q.legal)))])
 pure func reliefObj(r: Relief) -> Json = jo([kv("id", js(r.id)), kv("task", js(r.task)), kv("author", js(r.author))])
@@ -120,15 +126,47 @@ export pure func templateLine(label: string) -> string =
   else if label == "continue" then "I can keep going for now."
   else if label == "defer" then "Let me think about it before I answer."
   else "I hear you, Captain."
+-- R2-INTERLUDE I2: a face's emotion (D-7's eight), moved here from ui/crew_page.gd (LABEL_EMOTION,
+-- STRAINED_LABELS, WARM_LABELS, STRAINED): a decline shows anger, a concern fear; asking to step
+-- back, or stress at the strained line (the pack's overextended threshold), sadness; accepting,
+-- happiness; anything else is neutral. Godot keeps only the portrait fallback list.
+export pure func strainedAt() -> int = 70
+export pure func emotionOf(label: string, stress: int) -> string =
+  if label == "decline" then "angry" else if label == "concern" then "fearful"
+  else if label == "request_relief" || stress >= strainedAt() then "sad"
+  else if label == "accept" then "happy" else "neutral"
+pure func stressIn(a: Actor) -> int = match filter(\v. v.id == "stress", a.indicators) { v :: _ => v.value, [] => 0 }
+pure func latestLabel(ls: [CrewLine], id: string, acc: string) -> string = match ls { [] => acc, l :: r => latestLabel(r, id, if l.actor == id then l.label else acc) }
+pure func actorStress(st: State, id: string) -> int = match filter(\a. a.id == id, st.actors) { a :: _ => stressIn(a), [] => 0 }
 -- The crew_hold event's `hold` (2.9, C8): the hold as stored (names live in the crew section).
 export pure func crewHoldJson(h: CrewHold) -> string =
   encode(jo([kv("id", js(h.id)), kv("rule", js(h.rule)), kv("actor", js(h.actor)), kv("task", js(h.task)), kv("tick", jnum(intToFloat(h.tick))), kv("detail", js(h.detail))]))
 export pure func holdObj(c: CrewState, h: CrewHold) -> Json =
   jo([kv("id", js(h.id)), kv("rule", js(h.rule)), kv("actor", js(h.actor)), kv("name", js(match nameOf(c.names, h.actor) { Some(n) => n, None => h.actor })),
     kv("task", js(h.task)), kv("tick", jnum(intToFloat(h.tick))), kv("detail", js(h.detail))])
+-- A hold in words, after the crew member's name (D-21: no digits). One source (R2-INTERLUDE I3):
+-- the crew view's holds carry it at 2.10 (`line`), and the cruise digest's hold moments use it, so
+-- the Crew page and the crossing review's Hold page read the same words.
+export pure func holdLine(rule: string) -> string =
+  if rule == "breakdown" then "is close to breaking down."
+  else if rule == "trust_floor" then "has lost trust in you."
+  else if rule == "refusal_under_orders" then "refused an order."
+  else if rule == "major" then "is shaken by news the whole ship heard."
+  else if rule == "argument" then "is arguing with the crew over what the ship lost."
+  else if rule == "uncovered" then "has raised something only you can answer."
+  else if rule == "stuck" then "is stuck: the same thing keeps failing, and auto-run can't get past it."
+  else "needs the captain."
+pure func holdObjE(c: CrewState, h: CrewHold) -> Json = match holdObj(c, h) {
+  JObject(kvs) => JObject(kvs ++ [kv("line", js(holdLine(h.rule)))]),
+  j => j
+}
 pure func lineObj(c: CrewState, l: CrewLine) -> Json =
   jo([kv("request", js(l.request)), kv("actor", js(l.actor)), kv("name", js(match nameOf(c.names, l.actor) { Some(n) => n, None => l.actor })),
     kv("label", js(l.label)), kv("text", js(templateLine(l.label))), kv("ai_req", js(l.aiReq))])
+pure func lineObjE(c: CrewState, l: CrewLine) -> Json = match lineObj(c, l) {
+  JObject(kvs) => JObject(kvs ++ [kv("emotion", js(emotionOf(l.label, actorStress(c.session.state, l.actor))))]),
+  j => j
+}
 
 -- crew_core 0.4.1: open concerns the captain can still answer (not moot: the offer still stands
 -- and its agreement hasn't lapsed), with crew_core's suggested reply for each approach. The page
@@ -139,19 +177,22 @@ pure func concernObj(i: Issue) -> Json =
     kv("options", ja(map(\o. jo([kv("approach", js(o.approach)), kv("text", js(o.text))]), suggestions(i, 1))))])
 pure func concernsOf(s: Session) -> [Issue] = filter(\i. i.status == "open" && !moot(s, i), s.chat.issues)
 
-export pure func crewView(c: CrewState) -> string {
+export pure func crewView(c: CrewState) -> string = crewViewWith(c, false)
+-- emotions (protocol 2.10, R2-INTERLUDE I2): members and lines carry `emotion`, the face Godot shows;
+-- holds carry `line`, their words (I3).
+export pure func crewViewWith(c: CrewState, emotions: bool) -> string {
   let s = c.session;
   let st = s.state;
   encode(jo([
     kv("turn", jnum(intToFloat(crewTurn(c)))), kv("captaincy", js(s.command)),
-    kv("members", ja(map(\a. memberObj(st, c.names, a), filter(\a. a.id != "captain", st.actors)))),
+    kv("members", ja(map(\a. if emotions then memberObjE(c, a) else memberObj(st, c.names, a), filter(\a. a.id != "captain", st.actors)))),
     kv("requests", ja(map(requestObj, s.pending))),
     kv("reliefs", ja(map(reliefObj, filter(\r. !r.resolved, st.reliefs)))),
     kv("heard", ja(map(evidenceObj, lastN(filter(\e. e.author != "host", st.evidence), heardMax())))),
     kv("resources", ja(map(resourceObj, st.resources))),
-    kv("lines", ja(map(\l. lineObj(c, l), c.lines))),
+    kv("lines", ja(map(\l. if emotions then lineObjE(c, l) else lineObj(c, l), c.lines))),
     kv("auto", js(match c.auto { Some(a) => a.preset, None => "off" })),
-    kv("holds", ja(map(\h. holdObj(c, h), c.holds))),
+    kv("holds", ja(map(\h. if emotions then holdObjE(c, h) else holdObj(c, h), c.holds))),
     kv("used", ja(map(\u. jo([kv("id", js(u.id)), kv("units", jnum(intToFloat(u.units))), kv("amount", jnum(intToFloat(u.amount))), kv("physical", js(u.physical))]),
       usedOf(map(\r. { id: r.id, value: r.consumed }, filter(\r. r.consumed > 0, st.resources)))))),
     kv("tick", jnum(intToFloat(st.tick))), kv("revision", jnum(intToFloat(st.revision))),

@@ -116,3 +116,16 @@ test "AI.5 image parser: the 1x1 stub PNG and the placeholder; else bad_output" 
 test "AI.5 TTS body from gemini_live; complete speech only" { checkReplyTts() }
 test "AI.9 an unparsable but billed reply reports its tokens; error bodies are not billed" { checkReplyBilled() }
 test "R1-ARCHIVE-VOICE screen: frame breaks are out_of_world; in-world words and theories of its own pass" { checkReplyInWorld() }
+
+-- R2-INTERLUDE I4: the Archive's telling of a crossing passes the same screen as every reply (the
+-- Archive's palette and its 600-character cap): a digit, a frame break or a bracket is bad_output,
+-- so a retry and then the sim's fallback (the authored line stands).
+pure func tellingCons() -> Constraints = consOf(["neutral", "curious", "sad", "loving", "fearful"], 600)
+pure func checkTelling() -> bool =
+  screen("{curious} The crossing was long, Captain. {sad} Home has moved on without us, and I have kept what I could.", tellingCons()) == None &&
+  screen("{sad} Seventy days aboard, and 4 years at home.", tellingCons()) == Some("numeral") &&
+  screen("{neutral} The player crossed well.", tellingCons()) == Some("out_of_world") &&
+  screen("{neutral} [the crossing]", tellingCons()) == Some("bracket") &&
+  screen("{angry} We crossed.", tellingCons()) == Some("markup") &&
+  screen("{neutral} The crossing is behind us.", consOf(["neutral"], 10)) == Some("length")
+test "R2-INTERLUDE I4: the Archive's telling of the crossing is screened (digits, frame breaks, palette, length)" { checkTelling() }

@@ -21,7 +21,7 @@ module stapledons/sim/tools/companions
 -- primary row moves, so alpha Cen A (the replay goldens' target) and every star without a brighter
 -- neighbour keep their bytes.
 -- Angles are chords of unit vectors (sqrt only, no asin): at 60 arcsec the chord equals the angle
--- to 1e-8, and sqrt is exact on every platform (ailang#1465 concerns exp/log).
+-- to 1e-8, and sqrt is exact on every platform.
 import ./catalogue (Row)
 import ./extract (number, distanceLy)
 import ./bright (Astro, Phot, directionFrom, directionAt, findAll, indexBy)

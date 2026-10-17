@@ -1,0 +1,92 @@
+module stapledons/sim/protocol_interlude
+
+-- Protocol 2.10 (R2-INTERLUDE, design interlude-card.md D1): the crossing. Pure codecs; the session
+-- (sim/protocol.ail) sends `cruise` only at minor >= 10 and only while a journey is committed:
+--   cruise: { next_stop_years: float >= 0, stop_kind: "braking" | "check_in" | "chunk" }
+-- next_stop_years is sim/cruise_digest.ail's nextStop: the host steps exactly that much (never more
+-- than the cruise left before braking) and then reads the next one.
+-- I2: `cruise.digest`, the crossing review's digest (sim/cruise_digest.ail; World.cruiseDigest), on
+-- every committed tick and on the arrival tick (then `cruise` is {digest} alone; it stays frozen until
+-- the next commit). Every number is a field; Godot formats and never computes:
+--   time    ship_days (days lived since the commit, cruise_digest.shipDays; == crew.counts.days), earth_years (this crossing),
+--           earth_year_total (since departure), years_at_home (its whole years, tier_line's %s),
+--           news_age_years, tier (0-6), tier_line (no digits), tau0/tau and year0/year (the clocks
+--           at the commit and now)
+--   home    tier, news_epoch, news {template_id, star_id, tier} | null (the last arrival's)
+--   medium  model (lism-1 | uniform), media [{name, n_h_cm3}] crossed in order, grains_swept
+--           (>= 1 um, this leg), largest_um, largest_j
+--   crew    null without a crew, else counts {days, work_done, refusals, concerns,
+--           concerns_auto_answered, reliefs_asked, reliefs_granted, reliefs_denied, holds};
+--           movement [{id, name, <ind>0, <ind>1, d_<ind> for stress fatigue morale trust, moved,
+--           emotion0, emotion1}] ranked by moved; moments [{day, actor, name, label, kind, emotion,
+--           text, ai_req}] ranked (at most momentsMax); waiting [{kind, id, actor, name, task}]
+--   narration  (I4) the Archive's authored framing: key (tier word "." counts band, no digits),
+--           crossing (the crossing page's line), aboard (the aboard page's line)
+import std/json (Json, JNull, encode, decode, jo, ja, kv, js, jnum, jint, getNumber, getString)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (map)
+import ./core (World, Committed)
+import ./cruise_digest (Stop, nextStop, Digest, CrewDigest, Member, Moment, Waiting, MediumRef, Ind, homeTier, tierYears, tierLine, shipDays, rankMovement, movedBy, narrationOf)
+import ./protocol_crew (emotionOf)
+
+export pure func stopKinds() -> [string] = ["braking", "check_in", "chunk"]
+
+-- Ship years from the commitment's proper time to the cruise -> braking boundary.
+export pure func cruiseStop(w: World) -> Option[Stop] = match w.journey {
+  Committed(c) => Some(nextStop(w.crew, c.plan.trip.tauBurn + c.plan.trip.tauCoast - c.el)),
+  _ => None
+}
+
+export pure func encodeCruise(s: Stop) -> string = encode(jo([kv("next_stop_years", jnum(s.years)), kv("stop_kind", js(s.kind))]))
+
+pure func isKind(k: string) -> bool = k == "braking" || k == "check_in" || k == "chunk"
+export pure func decodeCruise(text: string) -> Result[Stop, string] = match decode(text) {
+  Err(_) => Err("bad_cruise"),
+  Ok(j) => match (getNumber(j, "next_stop_years"), getString(j, "stop_kind")) {
+    (Some(y), Some(k)) => if y >= 0.0 && isKind(k) then Ok({ years: y, kind: k }) else Err("bad_cruise"),
+    _ => Err("bad_cruise")
+  }
+}
+
+-- ---------------------------------------------------------------- I2: the digest
+pure func stopFields(s: Stop) -> [{key: string, value: Json}] = [kv("next_stop_years", jnum(s.years)), kv("stop_kind", js(s.kind))]
+-- The cruise section: the stop while committed, the digest when there is one to send.
+export pure func encodeCruiseSection(stop: Option[Stop], d: Option[Digest]) -> string =
+  encode(jo((match stop { Some(s) => stopFields(s), None => [] }) ++ (match d { Some(x) => [kv("digest", digestJson(x))], None => [] })))
+export pure func encodeDigest(d: Digest) -> string = encode(digestJson(d))
+
+pure func timeJson(d: Digest) -> Json = {
+  let y = d.now.sinceDeparture;
+  let tier = homeTier(y);
+  jo([kv("ship_days", jint(shipDays(d))), kv("earth_years", jnum(d.now.t - d.t0)), kv("earth_year_total", jnum(y)), kv("years_at_home", jint(tierYears(y))),
+    kv("news_age_years", jnum(d.now.newsAge)), kv("tier", jint(tier)), kv("tier_line", js(tierLine(tier, tierYears(y)))),
+    kv("tau0", jnum(d.tau0)), kv("tau", jnum(d.now.tau)), kv("year0", jnum(d.year0)), kv("year", jnum(d.now.year))])
+}
+pure func homeJson(d: Digest) -> Json =
+  jo([kv("tier", jint(homeTier(d.now.sinceDeparture))), kv("news_epoch", jnum(d.now.newsEpoch)),
+    kv("news", match d.now.news { Some(n) => jo([kv("template_id", jint(n.templateId)), kv("star_id", js(n.starId)), kv("tier", jint(n.tier))]), None => JNull })])
+pure func mediumRow(m: MediumRef) -> Json = jo([kv("name", js(m.name)), kv("n_h_cm3", jnum(m.nH))])
+pure func mediumJson(d: Digest) -> Json =
+  jo([kv("model", js(if d.now.lism then "lism-1" else "uniform")), kv("media", ja(map(mediumRow, d.media))),
+    kv("grains_swept", jnum(d.now.grains)), kv("largest_um", jnum(d.now.largestUm)), kv("largest_j", jnum(d.now.largestJ))])
+pure func indFields(k: string, a: int, b: int) -> [{key: string, value: Json}] = [kv("${k}0", jint(a)), kv("${k}1", jint(b)), kv("d_${k}", jint(b - a))]
+pure func memberJson(m: Member) -> Json =
+  jo([kv("id", js(m.id)), kv("name", js(m.name))] ++ indFields("stress", m.begin.stress, m.end.stress) ++ indFields("fatigue", m.begin.fatigue, m.end.fatigue)
+    ++ indFields("morale", m.begin.morale, m.end.morale) ++ indFields("trust", m.begin.trust, m.end.trust)
+    ++ [kv("moved", jint(movedBy(m))), kv("emotion0", js(emotionOf(m.label0, m.begin.stress))), kv("emotion1", js(emotionOf(m.label, m.end.stress)))])
+pure func momentJson(m: Moment) -> Json =
+  jo([kv("day", jint(m.day)), kv("actor", js(m.actor)), kv("name", js(m.name)), kv("label", js(m.label)), kv("kind", js(m.kind)),
+    kv("emotion", js(m.emotion)), kv("text", js(m.text)), kv("ai_req", js(m.aiReq))])
+pure func waitingJson(w: Waiting) -> Json = jo([kv("kind", js(w.kind)), kv("id", js(w.id)), kv("actor", js(w.actor)), kv("name", js(w.name)), kv("task", js(w.task))])
+pure func crewJson(d: Digest, cd: CrewDigest) -> Json = {
+  let c = cd.counts;
+  jo([kv("counts", jo([kv("days", jint(shipDays(d))), kv("work_done", jint(cd.work - cd.work0)), kv("refusals", jint(c.refusals)), kv("concerns", jint(c.concerns)),
+      kv("concerns_auto_answered", jint(c.concernsAuto)), kv("reliefs_asked", jint(c.reliefsAsked)), kv("reliefs_granted", jint(c.reliefsGranted)),
+      kv("reliefs_denied", jint(c.reliefsDenied)), kv("holds", jint(c.holds))])),
+    kv("movement", ja(map(memberJson, rankMovement(cd.members)))), kv("moments", ja(map(momentJson, cd.moments))), kv("waiting", ja(map(waitingJson, cd.waiting)))])
+}
+pure func narrationJson(d: Digest) -> Json = { let n = narrationOf(d); jo([kv("key", js(n.key)), kv("crossing", js(n.crossing)), kv("aboard", js(n.aboard))]) }
+export pure func digestJson(d: Digest) -> Json =
+  jo([kv("time", timeJson(d)), kv("home", homeJson(d)), kv("medium", mediumJson(d)), kv("crew", match d.crew { Some(cd) => crewJson(d, cd), None => JNull }),
+    kv("narration", narrationJson(d))])

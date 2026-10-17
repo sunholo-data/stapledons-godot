@@ -1013,7 +1013,7 @@ static func crew_summary_text(c: Dictionary) -> String:
 	if not holds.is_empty():
 		var h: Dictionary = holds[0]
 		var who := str(h.get("name", h.get("actor", "The crew")))
-		line = "Needs you at the Crew console: %s %s\n%s" % [who, CrewPage.HOLD_WORDS.get(str(h.get("rule", "")), "needs the captain."), line]
+		line = "Needs you at the Crew console: %s\n%s" % [CrewPage.hold_text(who, h), line] # the sim's hold words (2.10 holds[].line)
 	return line
 
 

@@ -56,4 +56,6 @@ static func facts_from(world: Dictionary, leg_name: String) -> Dictionary:
 		"ism_grains": float(dust.get("leg_grains", 0.0)),
 		"ism_largest_um": float(dust.get("largest_um", 0.0)),
 		"ism_largest_j": float(dust.get("largest_j", 0.0)),
+		# 2.10 (R2-INTERLUDE I1): the sim's next stop on the committed leg ({} below 2.10).
+		"cruise": (world.get("cruise", {}) as Dictionary).duplicate(true) if world.get("cruise") is Dictionary else {},
 	}

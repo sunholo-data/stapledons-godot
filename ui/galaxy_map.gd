@@ -873,6 +873,10 @@ func _notification(what: int) -> void:
 static func field_value(world: Dictionary, field: String) -> Variant:
 	var v: Variant = world
 	for k in field.split("."):
+		# R2-INTERLUDE I3: a whole-number segment indexes a sim array (cruise.digest.crew.moments.2.day).
+		if typeof(v) == TYPE_ARRAY and k.is_valid_int() and int(k) >= 0 and int(k) < (v as Array).size():
+			v = v[int(k)]
+			continue
 		if typeof(v) != TYPE_DICTIONARY or not v.has(k):
 			return null
 		v = v[k]
