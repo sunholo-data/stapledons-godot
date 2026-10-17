@@ -266,10 +266,9 @@ pure func checkDiagKinematics() -> bool {
 pure func checkChangeSets() -> bool {
   let s = feed(newSession(), [hello(), diagGame()]);
   let idle = stateOf(serve(s.session, tickLine(1, "0", "")).reply);
-  -- ailang#1467: a `let tick` would be shadowed by the imported core.tick, hence `later`.
-  let later = stateOf(serve(s.session, tickLine(1, "0.5", "")).reply);
+  let tick = stateOf(serve(s.session, tickLine(1, "0.5", "")).reply);
   idle.tick == 1 && none(idle.clock) && none(idle.ship) && none(idle.journey) && none(idle.ledger) && none(idle.rng) && none(idle.params) && !idle.full &&
-  !none(later.clock) && none(later.ship) && none(later.journey) && none(later.ledger)
+  !none(tick.clock) && none(tick.ship) && none(tick.journey) && none(tick.ledger)
 }
 -- Every scenario-parameter bound (inRange): accepted exactly at the bound,
 -- refused just past it. Executor-chosen ranges, pending Mark's ratification.

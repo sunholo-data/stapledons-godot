@@ -192,10 +192,11 @@ pure func cross(x: Crossed, endDay: int, untilHold: bool, after: string, left: i
     }
   }
 pure func lism() -> Params = { defaultParams() | ismModel: 1.0 }
--- The crew comes aboard without core.withCrew's generated names (members are named by role id):
--- the names table (sim/data/crew_names.ail nameRegions) is evaluator-only on the strict VM, whose
--- register allocator takes at most 256 in one literal (ailang#1736), and this runs under
--- --strict-bytecode. Nothing else differs (withCrew's pack lint is proven by the crew tests).
+-- The crew comes aboard without core.withCrew's generated names (members are named by role id).
+-- That was a strict-VM limit (the names table exceeded the register allocator); since v0.54.14 the
+-- table runs under --strict-bytecode (make strict: namesVm), and the switch to withCrew and names
+-- belongs to the crew console sprint (D-80, which re-records crossing_hold). Nothing else differs
+-- (withCrew's pack lint is proven by the crew tests).
 export pure func scriptedCrossing(seed: int) -> Crossed = match initCrewWith("consent", false) {
   Err(e) => { world: newWorld(seed, false, lism()), holds: [], digests: [concat(["error ", e])] },
   Ok((cr, _)) => {

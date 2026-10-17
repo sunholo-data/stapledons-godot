@@ -22,7 +22,7 @@
 -- v0.52.0); the pure parts are strict-checked by ism_build_test.ail.
 module stapledons/sim/tools/ism_build
 
-import std/string (split, trim, startsWith, stringToFloat, concat, join, floatToStr, contains, intToStr, stringToInt, length as slen)
+import std/string (split, trim, startsWith, stringToFloat, concat, join, floatToStr, contains, stringToInt, length as slen)
 import std/list (sortBy, length, nth_or, map, filter, foldl, reverse)
 import std/math (pow, sqrt, cos, acos, intToFloat)
 import std/fs (readFileResult, writeFileResult)
@@ -238,15 +238,6 @@ export pure func lutSize() -> int = 601
 export pure func lutRow(i: int, acc: [float]) -> [float] =
   if i < 0 then acc else lutRow(i - 1, luminousEfficacy(pow(10.0, 1.0 + 0.01 * intToFloat(i))) :: acc)
 
-pure func lutChunkCount() -> int = (lutSize() + 99) / 100
-pure func range0(n: int) -> [int] = rangeAcc(n - 1, [])
-pure func rangeAcc(i: int, acc: [int]) -> [int] = if i < 0 then acc else rangeAcc(i - 1, i :: acc)
-pure func takeS(xs: [string], n: int, acc: [string]) -> [string] = if n <= 0 then reverse(acc) else match xs { [] => reverse(acc), x :: r => takeS(r, n - 1, x :: acc) }
-pure func dropS(xs: [string], n: int) -> [string] = if n <= 0 then xs else match xs { [] => [], _ :: r => dropS(r, n - 1) }
-pure func lutChunks(xs: [string], k: int, acc: [string]) -> string = match xs {
-  [] => join("\n", reverse(acc)),
-  _ => lutChunks(dropS(xs, 100), k + 1, concat(["export pure func efficacyLut", intToStr(k), "() -> [float] = [", join(", ", takeS(xs, 100, [])), "]"]) :: acc)
-}
 
 -- ---------- output ----------
 
@@ -277,24 +268,9 @@ export pure func addOutlines(m: Model, vertices: string, triangles: string) -> M
   let ts = parseOutlineTriangles(triangles);
   {m | shells: map(\s. let outline = outlineFor(s.name, vs, ts) in {s | outline: outline, planes: planesFor(outline)}, m.shells)}
 }
--- Keep literal list calls below the v0.52.0 256-slot register block limit (#1737).
-pure func scalarChunks(xs: [string], acc: [string]) -> [string] = match xs {
-  [] => reverse(acc),
-  _ => scalarChunks(dropS(xs, 90), concat(["[", join(", ", takeS(xs, 90, [])), "]"]) :: acc)
-}
-pure func scalarFns(chunks: [string], name: string, k: int, acc: [string]) -> string = match chunks {
-  [] => join("\n", reverse(acc)),
-  c :: rest => scalarFns(rest, name, k + 1, concat(["pure func ", name, intToStr(k), "() -> [float] = ", c]) :: acc)
-}
-pure func scalarCalls(chunks: [string], name: string, k: int, acc: [string]) -> [string] = match chunks {
-  [] => reverse(acc),
-  _ :: rest => scalarCalls(rest, name, k + 1, concat([name, intToStr(k), "()"]) :: acc)
-}
 pure func cloudFunctions(s: Shell) -> string {
   let scalars = foldl(\acc vs. acc ++ foldl(\ys v. ys ++ [fl(v.x), fl(v.y), fl(v.z)], [], vs), [], s.planes);
-  let chunks = scalarChunks(scalars, []);
-  let name = concat(["cloudScalars", s.name]);
-  concat([scalarFns(chunks, name, 0, []), "\n", "pure func cloudPlanes", s.name, "() -> [[V3]] = planeVectors(", join(" ++ ", scalarCalls(chunks, name, 0, [])), ")\n", "pure func cloud", s.name, "() -> Cloud = ", cloudLine(s), "\n", "pure func cloudMeta", s.name, "() -> Cloud = ", cloudMetaLine(s)])
+  concat(["pure func cloudPlanes", s.name, "() -> [[V3]] = planeVectors([", join(", ", scalars), "])\n", "pure func cloud", s.name, "() -> Cloud = ", cloudLine(s), "\n", "pure func cloudMeta", s.name, "() -> Cloud = ", cloudMetaLine(s)])
 }
 
 -- A positive vertex cap contains every normalised positive combination of its
@@ -316,19 +292,6 @@ pure func listsJson(xs: [[Vec3]]) -> string =
 
 pure func memberLine(m: MemberRow) -> string =
   concat(["  { cloud: ", q(m.cloud), ", star: ", q(m.star), ", pos: ", v3(scale(memberDir(m), ly(m.d))), " }"])
-
-pure func takeMembers(xs: [MemberRow], n: int) -> [MemberRow] =
-  if n <= 0 then [] else match xs { [] => [], x :: rest => x :: takeMembers(rest, n - 1) }
-pure func dropMembers(xs: [MemberRow], n: int) -> [MemberRow] =
-  if n <= 0 then xs else match xs { [] => [], _ :: rest => dropMembers(rest, n - 1) }
-pure func memberFunctions(xs: [MemberRow], k: int, acc: [string]) -> string = match xs {
-  [] => join("\n", reverse(acc)),
-  _ => memberFunctions(dropMembers(xs, 10), k + 1, concat(["pure func members", intToStr(k), "() -> [Member] = [\n", join(",\n", map(memberLine, takeMembers(xs, 10))), "\n]"]) :: acc)
-}
-pure func memberCalls(xs: [MemberRow], k: int, acc: [string]) -> string = match xs {
-  [] => join(" ++ ", reverse(acc)),
-  _ => memberCalls(dropMembers(xs, 10), k + 1, concat(["members", intToStr(k), "()"]) :: acc)
-}
 
 pure func cloudLine(s: Shell) -> string =
   concat(["  { name: ", q(s.name), ", axis: ", v3(s.axis), ", cosHalf: ", fl(capCos(s)), ", rIn: ", fl(ly(s.rIn)), ", rOut: ", fl(ly(s.rOut)),
@@ -394,17 +357,14 @@ export pure func renderAil(m: Model) -> string = join("\n", [
   "-- blackbody.luminousEfficacy (lm/W) at log10 T = efficacyLog10TMin() + efficacyStep() i (generated from the package).",
   "export pure func efficacyLog10TMin() -> float = 1.0",
   "export pure func efficacyStep() -> float = 0.01",
-  "-- In chunks of 100: the strict VM's register allocator takes at most 256 elements in one list literal (v0.52.0, ailang#1736).",
-  lutChunks(map(fl, lutRow(lutSize() - 1, [])), 0, []),
-  concat(["export pure func efficacyLut() -> [float] = ", join(" ++ ", map(\k. concat(["efficacyLut", intToStr(k), "()"]), range0(lutChunkCount())))]),
+  concat(["export pure func efficacyLut() -> [float] = [", join(", ", map(fl, lutRow(lutSize() - 1, []))), "]"]),
   "",
   "-- The LIC: a star-shaped surface about its centre (Linsky et al. 2019 Table 3), r = sum a_lm Y_lm,",
   "-- coefficients refit to their Table 2 (ism-structure.md section 3), order (0,0) (1,-1) (1,0) (1,1) (2,-2) (2,-1) (2,0) (2,1) (2,2).",
   concat(["export pure func licCentre() -> V3 = ", v3(scale(licCentrePc(), lyPerPc()))]),
   concat(["export pure func licCoeffs() -> [float] = [", join(", ", map(\c. fl(ly(c)), m.coeffs)), "]"]),
   "",
-  concat(["export pure func members() -> [Member] = ", memberCalls(m.members, 0, [])]),
-  memberFunctions(m.members, 0, []),
+  concat(["export pure func members() -> [Member] = [\n", join(",\n", map(memberLine, m.members)), "\n]"]),
   "",
   "-- In precedence order (first match wins; the LIC and then the hot gas come after).",
   "export pure func clouds() -> [Cloud] = [",
