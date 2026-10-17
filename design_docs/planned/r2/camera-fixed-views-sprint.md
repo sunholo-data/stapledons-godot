@@ -133,6 +133,6 @@ See the design doc §Risks. The plan-specific one: `ship_geometry_demo.gd` is 1,
 
 ## Progress (PR 1: C1 + C3, 2026-10-17)
 
-- Executed on `feat/camera-fixed-views`. `make camera-test` 95 checks; `make ship-demo-input-test ship-console-test ship-ui-test no-twitch-test title-screen-test` green; `make golden` adds G-CAM-2 (4) and G-CAM-3 (1), 378 ok lines.
+- Executed on `feat/camera-fixed-views`. `make camera-test` 95 checks; `make ship-demo-input-test ship-console-test ship-ui-test no-twitch-test title-screen-test` green; `make golden` adds G-CAM-2 (4) and G-CAM-3 (1), 379 ok lines.
 - Deviations: a second sector ring (the stations ring inside 12 m looks inward, turn 135 deg; the rail ring looks outward, turn 30 deg), because the design's single outward rule puts the Z2 eye inside the spire needle for any captain within ~10 m of the axis; Z1 pitch -25 deg (from -20) to clear the navigation consoles; actions registered at runtime instead of `project.godot`; long sector/ring swings ease longer than 0.8 s to keep the eye's acceleration under 1 cm/frame^2 (AC5); lower-deck views are interim (ceilings 9/47/75 blocked samples) until C2's Commons cameras; keys 7/8/9 and the tour's turns still use the old first-person looks until C2.
 - Pause point 1: Mark's render review of `renders/camera_views/` and a menu launch.

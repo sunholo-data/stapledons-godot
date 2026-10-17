@@ -96,7 +96,7 @@
         "named actions registered at runtime (CameraDirector.ACTIONS) rather than project.godot [input]; wheel/trackpad/pinch one level + 0.3 s cooldown; RB/LB, R3, D-pad, A/B, left stick",
         "console focus/step back through the director (remembered level and sector); captain_yaw separate from the camera; held walk direction",
         "zero-roll yaw/pitch blends capped at 90 deg/s; sector/ring switches also capped at 36 m/s^2 eye acceleration (AC5 jump <= 1 cm/frame^2) so they can take longer than 0.8 s",
-        "goldens: G-CAM-2 glow from Z1/Z2 eyes x {0.99c, cap} (4), G-CAM-3 tonemap at Z2 (1): Makefile pins 378",
+        "goldens: G-CAM-2 glow from Z1/Z2 eyes x {0.99c, cap} (4), G-CAM-3 tonemap at Z2 (1): Makefile pins 379 (main had 374 against a stale 373 pin)",
         "Z3 accent ring marker on the captain (D1)"
       ],
       "completed": "2026-10-17"
