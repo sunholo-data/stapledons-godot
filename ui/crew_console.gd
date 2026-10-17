@@ -57,6 +57,8 @@ func _init() -> void:
 ## Show a crew section (empty: no crew aboard). A member who newly needs the captain opens their
 ## call when nothing is open or armed; otherwise their row pulses (OQ4).
 func show_crew(section: Dictionary) -> void:
+	if section == crew and get_child_count() > 0:
+		return # the same crew view (a heartbeat tick): nothing to rebuild
 	var before := _states.duplicate()
 	crew = section
 	_states = {}
