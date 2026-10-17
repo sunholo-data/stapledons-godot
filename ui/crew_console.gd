@@ -39,6 +39,8 @@ var pulse: Dictionary = {}   ## member id -> true: something came in while a cal
 var notices: Dictionary = {} ## member id -> why their last action was refused, in words
 var said: Dictionary = {}    ## member id -> the captain's last words to them ("You: ...")
 var ai_text: Dictionary = {} ## ai_req -> accepted AI words
+var help: Dictionary = {}    ## V7b: rule key -> true while its full text is open ("?"); "legend" for the board's legend
+var focus_action := ""       ## V6: the focused control's action (the console keeps its own focus ring)
 static var _serial := 0      ## ids count across every console in the process (a reused id is refused)
 var _states: Dictionary = {}
 var _title := ""
@@ -132,12 +134,15 @@ func open_call(id: String) -> void:
 func _open(id: String, by: String) -> void:
 	if call_id != id:
 		armed = ""
+		focus_action = CrewConsoleModel.first_focus(CrewConsoleModel.member(crew, id), crew, _client())
 	call_id = id
 	opened_by = by
 	pulse.erase(id)
 
 
 func end_call() -> void:
+	if call_id != "":
+		focus_action = "call:" + call_id
 	call_id = ""
 	armed = ""
 	_build()
@@ -158,6 +163,12 @@ func press(action: String) -> Array:
 			how[action.get_slice(":", 1)] = action.get_slice(":", 2)
 			if armed.begins_with("offer:" + action.get_slice(":", 1)):
 				armed = ""
+			_build()
+			return []
+		"help": # V7b: a rule's full words, or the board's legend (no intent)
+			var k := action.get_slice(":", 1)
+			if help.has(k): help.erase(k)
+			else: help[k] = true
 			_build()
 			return []
 		"quick":
@@ -211,6 +222,10 @@ func actor_of(action: String) -> String:
 			for h in crew.get("holds", []):
 				if str(h.get("id", "")) == parts[1]:
 					return str(h.get("actor", ""))
+		"standdown":
+			for m in crew.get("members", []):
+				if m is Dictionary and str(m.get("stand_down", "")) == parts[1]:
+					return str(m["id"])
 	return ""
 
 
@@ -234,6 +249,8 @@ func intents_for(action: String) -> Array:
 			return [SimBridge.crew_intent("crew_resume", {"command": "resume", "hold": parts[1]})]
 		"reply":
 			return reply_intents(parts[1], parts[2])
+		"standdown": # V8 (crew_core 0.6): let them rest, or ask them to carry on
+			return [SimBridge.crew_intent("crew_stand_down", {"command": "resolve_stand_down", "id": parts[1], "release": parts[2] == "true"})]
 	return []
 
 
@@ -260,8 +277,9 @@ func reply_intents(issue: String, approach: String) -> Array:
 		if text == "":
 			return []
 		_serial += 1
+		# V4 (2.11): they reconsider at once, and the work starts if they now agree (OQ3).
 		return [SimBridge.crew_intent("crew_reply", {"command": "captain_reply", "id": "s%d-%s-%d" % [int(crew.get("tick", 0)), str(q.get("task", "")), _serial],
-			"issue": issue, "text": text, "approach": approach, "tick": int(crew.get("tick", 0)), "revision": int(crew.get("revision", 0))})]
+			"issue": issue, "text": text, "approach": approach, "tick": int(crew.get("tick", 0)), "revision": int(crew.get("revision", 0))}, {"start": "on_accept"})]
 	return []
 
 
@@ -276,6 +294,7 @@ func captain_words(action: String) -> String:
 		"start": return "Then let's begin."
 		"order": return "I'm making it an order. Start now."
 		"relief": return "You can step back." if parts[2] == "true" else "I need you to keep going."
+		"standdown": return "Rest now; we'll manage." if parts[2] == "true" else "I need you to keep going a while longer."
 		"resume": return "Carry on; auto-run can take it from here."
 		"reply":
 			for q in crew.get("concerns", []):
@@ -359,6 +378,7 @@ func _build() -> void:
 		_board()
 	else:
 		_call()
+	_apply_focus()
 
 
 func title() -> String:
@@ -450,7 +470,148 @@ func _button(node_name: String, text: String, action: String, big := false, prim
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if action != "":
 		b.pressed.connect(func() -> void: press(action))
+		b.set_meta("action", action)
 	return b
+
+
+# ------------------------------------------------------------------ V7b: icons over words
+
+func _icon(kind: String, color: Color, px: float, tip := "") -> CrewChip.ChipIcon:
+	var ic := CrewChip.ChipIcon.new()
+	ic.kind = kind
+	ic.color = color
+	ic.custom_minimum_size = Vector2(px, px)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if tip != "":
+		ic.tooltip_text = tip
+		ic.mouse_filter = Control.MOUSE_FILTER_PASS
+	return ic
+
+
+## A rule in one short line; its full words are the tooltip, and "?" opens them below (V7b).
+func _rule(key: String, field: String, color := CrewPalette.DIM) -> Control:
+	var box := VBoxContainer.new()
+	box.name = "Rule_" + key
+	box.add_theme_constant_override("separation", 2)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	var full_key := key + "_cost" if CrewConsoleModel.COPY.has(key + "_cost") else key
+	var short_key := key + "_short" if CrewConsoleModel.COPY.has(key + "_short") else key
+	var short := _bind(field, "crew_copy:" + short_key, 12, color)
+	short.tooltip_text = str(CrewConsoleModel.COPY.get(full_key, ""))
+	short.mouse_filter = Control.MOUSE_FILTER_PASS
+	short.size_flags_horizontal = 0
+	short.autowrap_mode = TextServer.AUTOWRAP_OFF
+	short.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(short)
+	if full_key != short_key:
+		var q := _button("Help_" + key, "", "help:" + key)
+		q.flat = true
+		q.custom_minimum_size = Vector2(18, 18)
+		q.tooltip_text = short.tooltip_text
+		q.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var qi := _icon("help", CrewPalette.TEXT if help.has(key) else CrewPalette.DIM, 13)
+		qi.position = Vector2(2, 2)
+		q.add_child(qi)
+		row.add_child(q)
+	box.add_child(row)
+	if help.has(key) and full_key != short_key:
+		box.add_child(_bind(field, "crew_copy:" + full_key, 12, CrewPalette.DIM))
+	return box
+
+
+## The work's terms as icons (V7b): day pips, each resource it needs with a pip per unit (amber when
+## used up), each effect on them with its arrow. The sentence is the row's tooltip.
+func _terms_row(id: String) -> Control:
+	var info := CrewPage.work_info("work_" + id)
+	var row := HFlowContainer.new()
+	row.name = "Terms"
+	row.add_theme_constant_override("h_separation", 4)
+	row.add_theme_constant_override("v_separation", 2)
+	row.tooltip_text = CrewPage.work_terms(info)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	var days := int(info.get("duration", 0))
+	var d := HBoxContainer.new()
+	d.name = "Days"
+	d.add_theme_constant_override("separation", 2)
+	d.tooltip_text = "Takes %s day%s" % [CrewPage.words(days), "" if days == 1 else "s"]
+	d.mouse_filter = Control.MOUSE_FILTER_PASS
+	d.add_child(_icon("clock", CrewPalette.DIM, 14, d.tooltip_text))
+	for i in days:
+		d.add_child(_icon("pip", CrewPalette.TEXT, 10, d.tooltip_text))
+	row.add_child(d)
+	for c in info.get("costs", []):
+		var res := str(c.get("resource", ""))
+		var n := maxi(int(c.get("reserve", 0)), int(c.get("consume", 0)))
+		var used := int(c.get("consume", 0)) > 0
+		var g := HBoxContainer.new()
+		g.name = "Cost_" + res
+		g.add_theme_constant_override("separation", 2)
+		var tip := "Needs %s %s%s" % [CrewPage.words(n), CrewPage.resource_name(res).to_lower(), " (used up)" if used else ""]
+		g.tooltip_text = tip
+		g.mouse_filter = Control.MOUSE_FILTER_PASS
+		g.add_child(_spacer(8))
+		g.add_child(_icon(res, CrewPalette.color_of("asked"), 15, tip))
+		for i in n:
+			g.add_child(_icon("pip", CrewPalette.color_of("concern") if used else CrewPalette.color_of("asked"), 9, tip))
+		row.add_child(g)
+	for k in info.get("effects", {}):
+		var v := float(info["effects"][k])
+		if v == 0.0 or not CrewPage.EFFECT_WORDS.has(k):
+			continue
+		var e := HBoxContainer.new()
+		e.name = "Effect_" + k
+		e.add_theme_constant_override("separation", 1)
+		var tip := str(CrewPage.EFFECT_WORDS[k][0 if v > 0.0 else 1])
+		e.tooltip_text = tip
+		e.mouse_filter = Control.MOUSE_FILTER_PASS
+		e.add_child(_spacer(8))
+		e.add_child(_icon(k, CrewPalette.DIM, 15, tip))
+		e.add_child(_icon("up" if v > 0.0 else "down", CrewPalette.TEXT, 9, tip))
+		row.add_child(e)
+	return row
+
+
+func _spacer(px: float) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(px, 0)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## A crew member as a face and a chip (their state's colour and icon, their first name): the
+## mini-roster and "waiting on whom" (V7b). Pressing it switches the call.
+func _face_chip(oid: String) -> Control:
+	var m := CrewConsoleModel.member(crew, oid)
+	var st := CrewConsoleModel.state(m, _client())
+	var p := PanelContainer.new()
+	p.name = "Switch_" + oid
+	var sb := _panel(CrewPalette.ROW, CrewPalette.color_of(st), 2, 15, 3.0)
+	sb.content_margin_right = 9
+	if pulse.has(oid):
+		sb.border_color = CrewPalette.TEXT
+		sb.set_border_width_all(3)
+		p.set_meta("pulse", true)
+	p.add_theme_stylebox_override("panel", sb)
+	p.tooltip_text = CrewPalette.word_of(st)
+	p.mouse_filter = Control.MOUSE_FILTER_STOP
+	p.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	p.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT: press("call:" + oid))
+	p.set_meta("action", "call:" + oid)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 5)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(row)
+	row.add_child(_face("Face_" + oid, oid, str(m.get("emotion", "neutral")), 26))
+	row.add_child(_icon(CrewPalette.icon_of(st), CrewPalette.color_of(st), 12))
+	var nm := _bind(_member_field(oid, "name"), "crew_first", 12, CrewPalette.TEXT)
+	nm.autowrap_mode = TextServer.AUTOWRAP_OFF
+	nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	nm.size_flags_horizontal = 0
+	row.add_child(nm)
+	return p
 
 
 # ------------------------------------------------------------------ the board
@@ -466,7 +627,27 @@ func _board() -> void:
 	for h in crew.get("holds", []):
 		if str(h.get("actor", "")) == "":
 			add_child(_compose(["Needs you: ", ["crew.holds.%d.name" % crew.get("holds", []).find(h), "%s"], " ", ["crew.holds.%d.line" % crew.get("holds", []).find(h), "%s"]], 13, CrewPalette.color_of("held")))
-	add_child(_legend())
+	var lg := HFlowContainer.new()
+	lg.name = "LegendRow"
+	lg.add_theme_constant_override("h_separation", 6)
+	lg.add_theme_constant_override("v_separation", 4)
+	var t := _button("LegendToggle", "", "help:legend")
+	t.flat = true
+	t.custom_minimum_size = Vector2(18, 18)
+	t.tooltip_text = "Legend [?]"
+	var ti := _icon("help", CrewPalette.TEXT if help.has("legend") else CrewPalette.DIM, 13)
+	ti.position = Vector2(2, 2)
+	t.add_child(ti)
+	lg.add_child(t)
+	if help.has("legend"):
+		var full := _legend()
+		for chip in full.get_children():
+			full.remove_child(chip)
+			lg.add_child(chip)
+		full.free()
+	else:
+		lg.add_child(_inline(_copy("legend", 12, CrewPalette.DIM)))
+	add_child(lg)
 
 
 ## The header strip: the ship default and auto-run (both global, both confirmed), and the ship's
@@ -541,6 +722,7 @@ func _row(m: Dictionary) -> Control:
 	p.mouse_filter = Control.MOUSE_FILTER_STOP
 	p.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT: press("call:" + id))
+	p.set_meta("action", "call:" + id)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -685,7 +867,12 @@ func _bars(m: Dictionary) -> Control:
 			continue
 		var f: String = "trust" if k == "trust" else "indicators." + k
 		var hot: bool = k != "trust" and float(v) >= CrewPage.STRAINED
-		grid.add_child(_inline(_bind(_member_field(id, f), "crew_copy:" + (k + "_strained" if hot else k), 12, CrewPalette.color_of("concern") if hot else CrewPalette.DIM)))
+		var cap := HBoxContainer.new()
+		cap.add_theme_constant_override("separation", 4)
+		cap.add_child(_icon(k, CrewPalette.color_of("concern") if hot else CrewPalette.DIM, 13, k))
+		if hot:
+			cap.add_child(_inline(_bind(_member_field(id, f), "crew_copy:strained", 12, CrewPalette.color_of("concern"))))
+		grid.add_child(cap)
 		var bar := ProgressBar.new()
 		bar.name = "Bar_" + k
 		bar.min_value = 0.0
@@ -761,17 +948,20 @@ func _decisions(m: Dictionary) -> Control:
 		bar.add_theme_stylebox_override("fill", fill)
 		box.add_child(bar)
 		var i := CrewConsoleModel.index_of(crew, id)
-		box.add_child(_compose(["On ", ["crew", "crew_day:%d" % i], ". ", [_member_field(id, "work_state"), "crew_copy:crew_days"]], 13, CrewPalette.DIM))
+		box.add_child(_compose(["On ", ["crew", "crew_day:%d" % i], "."], 13, CrewPalette.DIM))
 		_whose(box, id)
 	else:
-		box.add_child(_bind(_member_field(id, "id"), "crew_job_terms" if s in ["free", "done", "stopped", "sending"] else "crew_job_brief", 12, CrewPalette.DIM))
+		if s in ["free", "done", "stopped"]:
+			box.add_child(_bind(_member_field(id, "id"), "crew_job_purpose", 12, CrewPalette.DIM))
+		box.add_child(_terms_row(id))
 		_decide(box, m, s)
 	if notices.has(id):
 		box.add_child(_bind("client.crew.notice." + id, "%s", 13, CrewPalette.color_of("concern")))
 	var fill := Control.new()
 	fill.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(fill)
-	box.add_child(_mini(id))
+	if not s in ["working", "resting"]: # monitoring shows the others as "waiting on whom" instead
+		box.add_child(_mini(id))
 	return p
 
 
@@ -807,16 +997,14 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 				hr.add_child(b)
 			hr.add_child(_inline(_compose(["   ship default: ", ["crew.captaincy", "crew_how"]], 12, CrewPalette.DIM)))
 			box.add_child(hr)
-			box.add_child(_bind("client.crew.how." + id, "crew_copy:" + ("order_cost" if cur == "orders" else "ask_cost"), 12, CrewPalette.DIM))
-			if cur != "orders":
-				box.add_child(_bind("client.crew.how." + id, "crew_copy:on_accept", 12, CrewPalette.DIM))
+			box.add_child(_rule("order" if cur == "orders" else "ask", "client.crew.how." + id))
 			for a in acts:
 				var b := _button("Offer_" + id, str(a.text), str(a.action), true, true)
 				if armed == str(a.action):
 					b.text = "Confirm: %s %s to %s" % ["order" if cur == "orders" else "ask", CrewPage.display_name(crew, id).split(" ")[0], CrewConsoleModel.work_verb("work_" + id)]
 				box.add_child(b)
 			if armed.begins_with("offer:" + id):
-				box.add_child(_copy("armed", 12, CrewPalette.DIM, wsf))
+				box.add_child(_rule("armed", wsf))
 		"sending":
 			box.add_child(_reason(s, id, "sending"))
 			for a in acts:
@@ -824,8 +1012,12 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 				b.disabled = true
 				b.tooltip_text = str(a.why)
 				box.add_child(b)
-			box.add_child(_copy("sending_note", 12, CrewPalette.DIM, "client.crew.sending." + id))
+			pass
+		"held" when str(m.get("stand_down", "")) != "":
+			_stand_down(box, acts, wsf)
 		"concern", "declined", "deferred", "held":
+			if s == "deferred":
+				box.add_child(_rule("lapse", wsf))
 			if s != "held" or not CrewConsoleModel.concern_of(crew, id).is_empty():
 				box.add_child(_heading("answers", id))
 			var grid := GridContainer.new()
@@ -837,14 +1029,22 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 			for a in acts:
 				var act := str(a.action)
 				if act.begins_with("reply:"):
-					var b := _button("Reply_" + act.get_slice(":", 2), str(a.text), act, true, bool(a.primary))
+					var ap := act.get_slice(":", 2)
+					var b := _button("Reply_" + ap, str(a.text), act, true, bool(a.primary))
 					b.custom_minimum_size = Vector2(0, 28)
+					for st_name in ["normal", "hover", "pressed", "disabled"]:
+						var sbx: StyleBoxFlat = (b.get_theme_stylebox(st_name) as StyleBoxFlat).duplicate()
+						sbx.content_margin_left = 30
+						b.add_theme_stylebox_override(st_name, sbx)
+					var bi := _icon(ap, CrewPalette.color_of("concern") if ap == "assert_authority" else CrewPalette.TEXT, 15)
+					bi.position = Vector2(9, 7)
+					b.add_child(bi)
 					grid.add_child(b)
 					insist = insist or a.has("cost")
 			if grid.get_child_count() > 0:
 				box.add_child(grid)
 			if insist:
-				box.add_child(_copy("insist_cost", 12, CrewPalette.DIM, wsf))
+				box.add_child(_rule("insist", wsf))
 			if s != "held":
 				for a in acts:
 					if str(a.action).begins_with("start:"):
@@ -871,10 +1071,12 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 						ob.custom_minimum_size = Vector2(0, 28)
 						ob.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 						row.add_child(ob)
-						row.add_child(_copy("make_order_cost", 12, CrewPalette.DIM, wsf))
+						row.add_child(_rule("make_order", wsf))
 						box.add_child(row)
 		"asked", "offered":
 			box.add_child(_reason(s, id, s))
+			if s == "offered":
+				box.add_child(_rule("lapse", wsf))
 			for a in acts:
 				var b := _button("Start_" + id, str(a.text), "", true)
 				b.disabled = true
@@ -888,6 +1090,25 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 			box.add_child(_reason(s, id, "relief_asked"))
 			for a in acts:
 				box.add_child(_button(("Grant_" if str(a.action).ends_with("true") else "Deny_") + str(a.action).get_slice(":", 1), str(a.text), str(a.action), true, true))
+			box.add_child(_rule("relief", wsf))
+		"stand_down_asked":
+			box.add_child(_reason(s, id, "stand_down_asked"))
+			_stand_down(box, acts, wsf)
+
+
+## V8 (crew_core 0.6): a stand-down's two answers, confirmed, with the rule in one line.
+func _stand_down(box: VBoxContainer, acts: Array, wsf: String) -> void:
+	var row := HBoxContainer.new()
+	row.name = "StandDown"
+	row.add_theme_constant_override("separation", 8)
+	for a in acts:
+		var act := str(a.action)
+		if act.begins_with("standdown:"):
+			var b := _button(("Rest_" if act.ends_with("true") else "CarryOn_") + act.get_slice(":", 1), str(a.text), act, true, true)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(b)
+	box.add_child(row)
+	box.add_child(_rule("stand_down", wsf))
 
 
 ## A reason line: the state's icon and its words, bound to the state they explain.
@@ -907,23 +1128,22 @@ func _reason(s: String, id: String, icon_state: String) -> Control:
 	return row
 
 
-## Monitoring: whose move it is across the others, one chip and their name each.
+## Monitoring: whose move it is across the others, as faces with their state (V7b).
 func _whose(box: VBoxContainer, id: String) -> void:
 	var others: Array = CrewConsoleModel.board_order(crew, _client()).filter(func(o): return str(o.get("id", "")) != id)
 	if others.is_empty():
 		return
 	box.add_child(_heading("whose", id))
+	var row := HFlowContainer.new()
+	row.name = "Whose"
+	row.add_theme_constant_override("h_separation", 6)
+	row.add_theme_constant_override("v_separation", 4)
 	for o in others:
-		var oid := str(o["id"])
-		var r := HBoxContainer.new()
-		r.name = "Whose_" + oid
-		r.add_theme_constant_override("separation", 8)
-		r.add_child(chip_for(oid, 12, false))
-		r.add_child(_compose([[_member_field(oid, "name"), "%s"], " · ", [_member_field(oid, "id"), "crew_job"]], 13, CrewPalette.TEXT))
-		box.add_child(r)
+		row.add_child(_face_chip(str(o["id"])))
+	box.add_child(row)
 
 
-## The mini-roster: one chip per other member; pressing one switches the call.
+## The mini-roster: the others as faces with their state; pressing one switches the call.
 func _mini(id: String) -> Control:
 	var row := HFlowContainer.new()
 	row.name = "MiniRoster"
@@ -931,21 +1151,8 @@ func _mini(id: String) -> Control:
 	row.add_theme_constant_override("v_separation", 4)
 	for m in crew.get("members", []):
 		var oid := str(m.get("id", ""))
-		if oid == id:
-			continue
-		var c := mini_chip(oid)
-		c.name = "Switch_" + oid
-		c.mouse_filter = Control.MOUSE_FILTER_STOP
-		c.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		if pulse.has(oid):
-			c.set_meta("pulse", true)
-			var sb: StyleBoxFlat = (c.get_theme_stylebox("panel") as StyleBoxFlat).duplicate()
-			sb.set_border_width_all(2)
-			sb.border_color = CrewPalette.TEXT
-			c.add_theme_stylebox_override("panel", sb)
-		c.gui_input.connect(func(e: InputEvent) -> void:
-			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT: press("call:" + oid))
-		row.add_child(c)
+		if oid != id:
+			row.add_child(_face_chip(oid))
 	return row
 
 
@@ -970,3 +1177,133 @@ class Dots extends Control:
 				draw_circle(c, 4.0, col)
 			else:
 				draw_arc(c, 3.5, 0.0, TAU, 16, col, 1.2, true)
+
+
+# ------------------------------------------------------------------ V6: keyboard and controller
+## The console's own focus ring (the engine's focus stays with the ship's controls): the focused
+## control's action, drawn with a 2 px outline in TEXT (never a state colour). No single key or
+## button decides: Enter / A presses the focused control, which arms a decision; the same press
+## again sends it. Esc / B disarms, then ends the call, then (unhandled) steps back.
+##   up / down, left / right, D-pad, left stick   move the focus
+##   [ ] , LB / RB                                previous / next crew member (switch the call)
+##   Enter, Space, A                              press the focused control
+##   1 2 3 4                                      arm (then send) that answer to a concern
+##   O, Y                                         Ask / Order on the offer in the call
+##   ?, Select / View                             the board's legend
+const KEYS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_BRACKETLEFT: "prev", KEY_BRACKETRIGHT: "next",
+	KEY_ENTER: "enter", KEY_KP_ENTER: "enter", KEY_SPACE: "enter", KEY_1: "1", KEY_2: "2", KEY_3: "3", KEY_4: "4", KEY_O: "how",
+	KEY_ESCAPE: "back", KEY_QUESTION: "legend", KEY_SLASH: "legend"}
+const PAD := {JOY_BUTTON_DPAD_UP: "up", JOY_BUTTON_DPAD_DOWN: "down", JOY_BUTTON_DPAD_LEFT: "left", JOY_BUTTON_DPAD_RIGHT: "right",
+	JOY_BUTTON_LEFT_SHOULDER: "prev", JOY_BUTTON_RIGHT_SHOULDER: "next", JOY_BUTTON_A: "enter", JOY_BUTTON_B: "back", JOY_BUTTON_Y: "how", JOY_BUTTON_BACK: "legend"}
+var _stick := 0 ## the left stick's last direction (-1, 0, 1): one move per push
+
+
+## One input event while the console is the focused station. True when it was the console's.
+func key(event: InputEvent) -> bool:
+	var k := ""
+	if event is InputEventKey and event.pressed and not event.echo:
+		k = str(KEYS.get(event.physical_keycode if event.physical_keycode != 0 else event.keycode, ""))
+	elif event is InputEventJoypadButton and event.pressed:
+		k = str(PAD.get(event.button_index, ""))
+	elif event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y:
+		var d := 1 if event.axis_value > 0.6 else (-1 if event.axis_value < -0.6 else 0)
+		if d != _stick and d != 0:
+			k = "down" if d > 0 else "up"
+		_stick = d
+	if k == "" or crew.is_empty():
+		return false
+	match k:
+		"up", "left": _move(-1)
+		"down", "right": _move(1)
+		"prev", "next": _switch(-1 if k == "prev" else 1)
+		"enter":
+			if focus_action == "":
+				_move(1)
+			else:
+				press(focus_action)
+		"1", "2", "3", "4":
+			var answers := focusables().filter(func(c): return str(c.get_meta("action")).begins_with("reply:"))
+			var n := int(k) - 1
+			if call_id == "" or n >= answers.size():
+				return false
+			focus_action = str(answers[n].get_meta("action"))
+			press(focus_action)
+		"how":
+			if call_id == "":
+				return false
+			press("how:%s:%s" % [call_id, "consent" if CrewConsoleModel.how_of(crew, call_id, _client()) == "orders" else "orders"])
+		"legend":
+			press("help:legend")
+		"back":
+			if armed != "":
+				armed = ""
+				_build()
+			elif call_id != "":
+				end_call()
+			else:
+				return false
+	return true
+
+
+## The focusable controls, in reading order (a disabled one is skipped).
+## On the board the rows come first; in a call the decisions, then End call, then the others.
+func focusables() -> Array:
+	var fs := find_children("*", "Control", true, false).filter(func(c): return c.has_meta("action") and not (c is Button and (c as Button).disabled) and _shown(c))
+	var rank := func(c: Control) -> int:
+		var a := str(c.get_meta("action"))
+		if call_id == "": return 0 if a.begins_with("call:") else 1
+		return 2 if a.begins_with("call:") else (1 if a == "end_call" or a.begins_with("help:") else 0)
+	var keyed := []
+	for i in fs.size():
+		keyed.append([rank.call(fs[i]), i, fs[i]])
+	keyed.sort_custom(func(x, y): return x[0] < y[0] or (x[0] == y[0] and x[1] < y[1]))
+	return keyed.map(func(k): return k[2])
+
+
+## Visible within the console (the console's own visibility is the station's business).
+func _shown(c: Node) -> bool:
+	var n := c
+	while n != null and n != self:
+		if n is CanvasItem and not (n as CanvasItem).visible:
+			return false
+		n = n.get_parent()
+	return n == self
+
+
+func _move(step: int) -> void:
+	var fs := focusables()
+	if fs.is_empty():
+		return
+	var i := fs.map(func(c): return str(c.get_meta("action"))).find(focus_action)
+	i = clampi(i + step, 0, fs.size() - 1) if i >= 0 else (0 if step > 0 else fs.size() - 1)
+	focus_action = str(fs[i].get_meta("action"))
+	_build()
+
+
+func _switch(step: int) -> void:
+	var ids: Array = crew.get("members", []).map(func(m): return str(m.get("id", "")))
+	if ids.is_empty():
+		return
+	var i := ids.find(call_id)
+	press("call:" + str(ids[posmod(i + step, ids.size()) if i >= 0 else 0]))
+
+
+## Draw the focus ring on the focused control.
+func _apply_focus() -> void:
+	for c in focusables():
+		if str(c.get_meta("action")) != focus_action:
+			continue
+		c.set_meta("focused", true)
+		var sb_name := "normal" if c is Button else "panel"
+		var sb: StyleBox = (c as Control).get_theme_stylebox(sb_name)
+		if sb is StyleBoxFlat:
+			var f: StyleBoxFlat = (sb as StyleBoxFlat).duplicate()
+			f.border_color = CrewPalette.TEXT
+			f.set_border_width_all(2)
+			if c is Button:
+				c.add_theme_stylebox_override("normal", f)
+				c.add_theme_stylebox_override("hover", f)
+			else:
+				f.border_width_left = maxi(f.border_width_left, 2)
+				c.add_theme_stylebox_override("panel", f)
+		return

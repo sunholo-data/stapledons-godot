@@ -152,27 +152,27 @@ test "medium: the media crossed, in order, each once in a row" {
 -- ---------------------------------------------------------------- the scripted crossing (the real world)
 pure func digestOf(w: World) -> Option[Digest] = w.cruiseDigest
 -- Seed 3 under crew_core 0.6 (R2-CREW-CONSOLE-V2 V8, re-pinned): the medic asks to stand down at
--- the first decision (hands_on hands it over: a hold on day 0, resumed, so the duty lapses), then a
--- year of critical_only (stand-downs decided by the standing order: three granted) with the medic's
--- breakdown on day 301 (a second hold, resumed); the host
+-- the first decision (hands_on hands it over: a hold on day 0, resumed unanswered, so the duty
+-- lapses; the day's remaining crew time waits for the answer), then a year of critical_only with
+-- stand-downs decided by the standing order (seven granted) and no further hold; the host
 -- crosses to the first check-in past day 365 (day 391). The counts are pinned from this run (the
 -- unit cases above check each count's source by hand); the hold count matches the crew_hold events.
 -- No relief: crew_core 0.5.0's auto-captain checks in with working crew only on even turns
 -- (auto.ail checkIn, `turn % 2 != 0`), and on the game's monthly schedule every decision turn is odd
 -- (1, 31, 61 ...: crew_auto starts each call on a multiple of 30), so no relief is asked on a long
 -- skip. Flagged for crew_core (E4); the relief counts are checked by hand above.
-test "the scripted crossing: a digest from the commit, folded through two holds and their resumes" {
+test "the scripted crossing: a digest from the commit, folded through its hold and resume" {
   let x = scriptedCrossing(3);
   match (digestOf(x.world), x.world.journey) {
     (Some(d), Committed(_)) => match d.crew {
-      Some(cd) => cd.turn0 == 0 && cd.turn == 391 && x.holds == ["h0-stand_down-medic", "h301-breakdown-medic"]
-        && cd.counts == { refusals: 15, concerns: 16, concernsAuto: 26, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 2, standDownsAsked: 4, standDownsGranted: 3, standDownsDenied: 0 }
-        && cd.work0 == 0 && cd.work == 29
-        && map(\m. (m.kind, m.actor, m.day), cd.moments) == [("hold", "medic", 0), ("hold", "medic", 301), ("refusal", "engineer", 30), ("refusal", "medic", 30),
-             ("refusal", "medic", 60), ("refusal", "engineer", 120), ("refusal", "pilot", 150)]
-        && map(\m. m.emotion, cd.moments) == ["sad", "sad", "angry", "angry", "angry", "angry", "angry"]
-        && map(\m. m.id, rankMovement(cd.members)) == ["counselor", "analyst", "medic", "pilot", "engineer"]
-        && map(\m. movedBy(m), rankMovement(cd.members)) == [144, 90, 85, 84, 37]
+      Some(cd) => cd.turn0 == 0 && cd.turn == 391 && x.holds == ["h0-stand_down-medic"]
+        && cd.counts == { refusals: 14, concerns: 13, concernsAuto: 25, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 1, standDownsAsked: 8, standDownsGranted: 7, standDownsDenied: 0 }
+        && cd.work0 == 0 && cd.work == 35
+        && map(\m. (m.kind, m.actor, m.day), cd.moments) == [("hold", "medic", 0), ("refusal", "engineer", 0), ("refusal", "medic", 0), ("refusal", "medic", 30),
+             ("refusal", "medic", 60), ("refusal", "pilot", 60), ("refusal", "engineer", 120)]
+        && map(\m. m.emotion, cd.moments) == ["sad", "angry", "angry", "angry", "angry", "angry", "angry"]
+        && map(\m. m.id, rankMovement(cd.members)) == ["counselor", "analyst", "pilot", "medic", "engineer"]
+        && map(\m. movedBy(m), rankMovement(cd.members)) == [155, 110, 103, 95, 34]
         && length(cd.members) == 5 && shipDays(d) == 391 && homeTier(d.now.sinceDeparture) == 1 && tierYears(d.now.sinceDeparture) == 7
         && map(\m. m.name, d.media) == ["LIC", "hot"] && d.now.grains > 0.0,
       None => false

@@ -365,7 +365,7 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consoleScripted --args-json 2 sim/crew_script.ail); \
 	in=$$($(AILANG) run --quiet --package-dir sim --entry consoleScripted --args-json 2 sim/crew_script.ail); \
 	echo "strict console: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict console: FAIL (VM != interpreter, or the session refused)"; exit 1; }
-	@# digestScripted (R2-INTERLUDE I2, AC2): the scripted crossing (two holds, resumed) and its cruise digest on the strict VM; VM == interpreter
+	@# digestScripted (R2-INTERLUDE I2, AC2): the scripted crossing (its holds resumed; under crew_core 0.6 the first is a stand-down) and its cruise digest on the strict VM; VM == interpreter
 	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
 	in=$$($(AILANG) run --quiet --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
 	echo "strict digestScripted: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -qE '^"?crossing chunks [0-9]+ holds 2 turn 391 digest [0-9a-f]{64}"?$$' || { echo "strict digestScripted: FAIL (VM != interpreter: $$in)"; exit 1; }

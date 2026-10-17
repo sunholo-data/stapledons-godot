@@ -281,6 +281,14 @@ Every Label on the Crew console is a `DisplayBinding` or a `ComposedBinding`, wi
 - **Fixed copy** (headings, reasons and cost lines) is a `ComposedBinding` whose field is the state it explains (for example `crew.members.N.work_state` with the format `crew_reason`). The text is then a function of a field, and the audit sees it.
 - The route `make display-audit-crew` walks the board, a call in each state and a hold. The negative control `crew_unbound` (an unbound Label on the call window) must fail it.
 
+### V7b. The visual pass (Mark's V3 review, 2026-10-17)
+
+Mark on the V3 captures: "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement". The pass keeps every decision and every word available but shows less at once:
+- **Terms as icons.** A work's duration is day pips; each resource it needs is the resource's icon with a pip per unit (amber when used up); each effect on the person is its indicator's icon with an up or down arrow. The sentence is the row's tooltip.
+- **Rules in one line.** The Ask, Order, Insist and Make-it-an-order costs, the armed note, the lapse note and the relief and stand-down rules are one short line each; the full rule is the tooltip and opens under a "?".
+- **Faces over names.** The answers carry icons; "waiting on whom" and the mini-roster are faces with their state's colour and icon; the bars carry icons; the board's legend waits behind "?".
+- D-21 and V7 hold: counts are pips or words, never digits, and every Label stays a binding.
+
 ### V8. Folding crew_core 0.6 (stand-down)
 
 When 0.6 is pinned, the two stand-down rows activate:

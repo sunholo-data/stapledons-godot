@@ -34,6 +34,7 @@ const APPROACH_WORDS := {
 	"clear_scope": "Make the job clearer", "ask_advice": "Ask their advice", "stage_plan": "Plan it in stages",
 	"explain_priority": "Explain why it matters", "assert_authority": "Insist: it's an order",
 }
+const COST_KEYS := {"stand_down": "stand_down_cost", "relief": "relief_cost"}
 ## The words Insist sends (crew_core captain_reply text; no digits, under 280 characters).
 const INSIST_TEXT := "I've heard you. This needs doing, and I'm asking you to do it."
 ## What each choice costs, as the rule in words (crew_core codec.traitDelta, conversations.reaction);
@@ -153,6 +154,11 @@ static func actions(m: Dictionary, crew: Dictionary, client: Dictionary) -> Arra
 	if not hold.is_empty():
 		out.append({"action": "resume:" + str(hold.get("id", "")), "text": "Resume auto-run", "enabled": true, "why": "", "primary": true})
 	var q := concern_of(crew, id)
+	var sd := str(m.get("stand_down", ""))
+	if sd != "" and (s == "stand_down_asked" or s == "held"):
+		out.append({"action": "standdown:%s:true" % sd, "text": "Let them rest", "enabled": true, "why": "", "primary": true, "cost": COST_KEYS["stand_down"]})
+		out.append({"action": "standdown:%s:false" % sd, "text": "Ask them to carry on", "enabled": true, "why": "", "primary": true})
+		return out
 	if s in ["concern", "declined", "deferred"] or (s == "held" and not q.is_empty()):
 		var issue := str(q.get("issue", ""))
 		for o in q.get("options", []):
@@ -206,6 +212,14 @@ const COPY := {
 	"answers_note": "No answer is always right. It depends on who they are and how stretched they are.",
 	"make_order_cost": "Starts now, over their answer. Trust in you falls sharply, most of all for someone who doesn't easily go along.",
 	"lapse": "If you leave it, the offer lapses.", "on_accept": "Starts as soon as they agree.",
+	# V7b: one short line each; the full rule is the tooltip, and "?" opens it.
+	"ask_short": "They decide; it starts if they agree.", "order_short": "It starts now, whatever they say.",
+	"insist_short": "An order in words: stress rises, trust may fall.", "make_order_short": "Starts now; trust falls sharply.",
+	"armed_short": "Press again to send.", "lapse_short": "Left alone, the offer lapses.",
+	"relief_short": "Granting lets them step back; denying costs trust.",
+	"relief_cost": "Granting it: they step back from this work. Denying it: trust in you falls, more the longer they have waited.",
+	"stand_down_short": "Rest now, or keep going; refusing costs trust.",
+	"stand_down_cost": "Granting it: their work pauses while they rest, and trust rises. Refusing it: trust falls, more for an anxious person; they may ask again later.",
 	"armed": "Pressed once, so it's armed. Press again to send; another choice cancels it.",
 	"sending_note": "Every action for them waits until their answer arrives. You can still talk to the others.",
 	"default_note": "New offers start as this. Auto-run uses it too.",
@@ -229,6 +243,7 @@ static func format(fmt: String, raw: Variant) -> String:
 		"crew_job": return CrewPage.work_name("work_" + str(raw))
 		"crew_job_terms": return CrewPage.work_terms(CrewPage.work_info("work_" + str(raw)))
 		"crew_job_brief": return CrewPage.work_brief(CrewPage.work_info("work_" + str(raw)))
+		"crew_job_purpose": return str(CrewPage.work_info("work_" + str(raw)).get("purpose", ""))
 		"crew_resource_short": return CrewPage.resource_short(str(raw))
 		"crew_job_verb": return work_verb("work_" + str(raw))
 		"crew_copy":

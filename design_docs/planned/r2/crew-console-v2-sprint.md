@@ -65,7 +65,7 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
   - The bridge exposes queued crew intents per actor (`SimBridge.queued_crew()`), building on the fix PR's queue.
 - **Gate:** `make crew-console-test`.
 
-### V3: the board, the call window and the bindings (~600 LOC, 2 days) ✅ built 2026-10-16; waiting on Mark's render review (pause point 3)
+### V3: the board, the call window and the bindings (~600 LOC, 2 days) ✅ done; Mark reviewed the renders 2026-10-17 (attended): "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement" (his feedback became V7b)
 - **Done:** `ui/crew_console.gd` (board and call in one file; no separate `crew_call.gd`), `ui/crew_page.gd` reduced to static helpers, ShipConsoles hosts it full width (`crew_panel_rect`), recorded 2.11 fixtures (`tests/crew/console_v2/`, `make crew-console-fixtures`), NT3 rewritten and NT5 added, `display-audit-crew` with the `crew_unbound` control, the capture at both resolutions. Layout deviation: the call window is 430 wide and the decision panel 470 (936 logical leaves 920 inside the panel); the four answers sit in a two-by-two grid so a concern fits 540 logical. The decision block (V4/V5 UI: Ask or Order inline, disabled Start with its reason, Insist, Make it an order) is built here because the mockup's frames need it; V4's remaining items (reconsideration answered at once, keyboard) wait. The display audit's crew route samples no hold (a hold needs crew days the at-rest playthrough cannot pass); holds are covered by `crew-console-test` and `crew-hold-test`.
 - **Red first:**
   - `tests/test_crew_console.gd` rewritten for v2 on recorded fixtures (`tests/crew/console_v2/*.json`, recorded from the real sim by `tools/crew_console_fixture.gd`): the board rows, sort order and quick actions; the call window opening on select, on an incoming concern with nothing open, and pulsing instead when a call or confirm is open; End call; the mini-roster switching calls; the portrait at the sim's `emotion` (a mutation changes the texture); no label under 12 logical.
@@ -79,7 +79,8 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
 - **Captures:** `tools/crew_console_capture.gd` is rewritten. It writes six frames at 1280 × 720 and 2560 × 1440 (board, offer with How, concern, working, hold, sending), asserts no clipped node and a portrait ≥ 240 logical, and flags a portrait above 2.6× its source.
 - **Gate:** `make crew-console-test no-twitch-test ship-console-test display-audit-crew display-audit-controls`, plus `make crew-console-capture` opened by eye.
 
-### V4–V5: the concern flow and Ask/Order in context (~250 LOC, 1 day)
+### V4–V5: the concern flow and Ask/Order in context (~250 LOC, 1 day) ✅ done 2026-10-17
+- **Done:** at 2.11 `crew_reply` carries `start` (`on_accept` | `answer`): they reconsider at once and, on agreement, the work starts (the console always sends `on_accept`, OQ3). Lapse notes on offered and deferred cards (OQ8); relief and stand-down rule lines; Make it an order; the How selector and ship-default strip (built in V3) now under AC11 tests. A pending reconsideration under ordered work is moot in `workState`.
 - **Red first** (`tests/test_crew_console.gd`, real sim):
   - AC7: concern, declined and deferred disable Start, with the reason; four answers, Insist last with its cost line; first focus on answer 1.
   - AC8: one pending action per member.
@@ -93,13 +94,29 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
 - **If OQ1 = (b):** `crew_offer {start: now}` is unused, and Order shows only as "Make it an order" (−40 LOC). **If OQ3 = no:** offers send no `start`; AC12 becomes three presses.
 - **Gate:** `make crew-console-test no-twitch-test crew-hold-test`.
 
-### V6: keyboard and controller (~150 LOC, 0.5 day)
+### V6: keyboard and controller (~150 LOC, 0.5 day) ✅ done 2026-10-17
+- **Done:** `CrewConsole.key(event)`: arrows, D-pad and the left stick move the console's own focus ring (2 px in TEXT; the engine's focus stays with the ship); Enter/Space/A press the focused control (a decision arms, the same press sends); 1–4 arm then send an answer; [ ] and LB/RB switch the call; O/Y toggle Ask/Order; ? and Select open the legend; Esc/B disarm, then end the call, then fall through to step back. Routed from the demo before its own keys. Deviation: the buttons stay `FOCUS_NONE`; the console keeps its own focus ring so nothing else on the ship loses focus.
 - **Red first:** `tests/test_crew_console.gd` drives the design V6 table with `InputEventKey` and `InputEventJoypadButton`: every action reachable; a decision only on the second press; Esc and B disarm, end the call, then step back, one level per press.
   - `tests/test_no_twitch.gd`: NT1 and NT3 with the crew console focused and the pad connected; no decision from any single key or button.
 - **UI:** focus inside the console only (`FOCUS_ALL` on its controls while the crew panel is focused, `FOCUS_NONE` elsewhere); a focus outline in `TEXT`; `[`, `]`, LB and RB switch the call; the number keys 1–4 arm answers.
 - **Gate:** `make crew-console-test no-twitch-test ship-console-test`.
 
-### V8: the crew_core 0.6 rows (~50 LOC, 0.5 day; after the 0.6 pin)
+### V7b: the visual pass (Mark's V3 review, 2026-10-17: "a bit text heavy … more visual UI") ✅ done 2026-10-17
+- **AC-V7b-1** The work card shows its terms as icons: day pips for the duration, each resource it needs as an icon with a pip per unit (amber when used up), each effect on them as an icon with an arrow; the sentence is the row's tooltip; no "Takes … days" sentence is visible in a call (`make crew-console-test`).
+- **AC-V7b-2** Rule lines (Ask, Order, Insist, Make it an order, the armed note, the lapse note, relief and stand-down) are one short line each, with the full rule as the tooltip and behind a "?" that opens it (no intent); not shown by default (`make crew-console-test`).
+- **AC-V7b-3** The five reply approaches each draw their own icon (`make crew-console-test`).
+- **AC-V7b-4** "Waiting on whom" and the mini-roster are faces with their state's colour and icon and a first name (`make crew-console-test`).
+- **AC-V7b-5** The stress, fatigue and trust bars carry icons (tooltips name them); "strained" stays a word (`make crew-console-test`).
+- **AC-V7b-6** Visible words per state at 1280×720 fall at least 30% in total from the V3 capture (`make crew-console-capture` prints words per frame).
+- **AC-V7b-7** D-21 and V7 hold: no digits; every Label a binding; tooltips are authored copy or formats of sim fields (`make crew-console-test`, `make display-audit-crew`).
+- **AC-V7b-8** Readable at 1280×720: no label under 12 logical, nothing outside the panel (`make crew-console-capture`).
+- **Measured** (visible words, 1280×720, V3 → V7b): board 101 → 87, offer 113 → 69, sending 107 → 55, concern 143 → 101, working 95 → 38, hold 120 → 89; total 679 → 439 (−35%). The legend now waits behind "?" on the board.
+
+### D-80: names fit faces ✅ done 2026-10-17
+- Each face records its presentation and naming regions (`sim/data/crew_faces.ail`, mirrored in `data/crew/portraits/SOURCES`, checked by `make crew-faces-check`); `nameCrewFit` draws within them with the same crew-stream draws. Gated at 2.11 so older streams keep their names. Moved: the 2.11 console fixtures' names (`tests/crew/console_v2/*.json`); nothing at 2.10 or below.
+
+### V8: the crew_core 0.6 rows (~50 LOC, 0.5 day; after the 0.6 pin) ✅ done 2026-10-17
+- **Done:** crew_core 0.6.0 pinned here (main had 0.5.0); pack re-synced at ailang-packages ee58b27; the migration steps 1–8 (template lines, emotion, hold words, digest counts at 2.11, stand-down moments). Host change found against the real sim: a stand-down escalation's duty lapses at the next crew day, so the tick's remaining crew days and any while the stand-down hold is open wait in `dayRem` (`crew_auto.autoStep`) until it is answered. Fixtures `standdown.json`/`resting.json` recorded from the guided crossing (seed 42, orders, hands_on). Re-recorded: `tests/crew/crossing_hold.ndjson` (one hold now, a stand-down; two runs identical, VM == interpreter) and the scripted-crossing pins. AILANG v0.54.14 (#262) has not merged, so `scriptedCrossing` still uses `initCrewWith` (no generated names).
 - **Red first:** a recorded 0.6 stand-down fixture: `stand_down_asked` (a hands_on hold) and `resting` (granted) appear, and the answers emit `resolve_stand_down`, confirmed. The test skips with a printed reason below 0.6.
 - **Sim:** the two `workState` rows read the 0.6 fields; `templateLine` gains `stand_down` and `carry_on` (migration step 3, if the migration hasn't already added them).
 - **Gate:** `make sim crew-console-test crew-parity`.

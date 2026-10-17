@@ -23,3 +23,12 @@
 ### Changed
 
 - Captures: `make crew-console-capture` writes six frames at 1280x720 and 2560x1440.
+- **Crew console (V4–V8, the visual pass, 2026-10-17).** A reply to a concern is reconsidered at once
+  and the work starts when they agree. Keyboard and pad: a focus ring, Enter/A to arm and send,
+  1–4 for answers, [ ] or LB/RB to switch calls, Esc/B one level back. Less text: terms as day pips
+  and resource icons, rule lines in one line behind "?", faces for who is waiting, icon bars.
+- **crew_core 0.6.0 (stand-downs).** A crew member can ask to stand down at a duty check-in; under
+  hands-on auto-run the console asks you (Let them rest / Ask them to carry on), and crew time waits
+  for your answer. The crossing digest counts stand-downs (protocol 2.11).
+- **Names fit faces (ledger D-80).** Generated crew names now match each portrait's presentation and
+  naming tradition (from protocol 2.11).

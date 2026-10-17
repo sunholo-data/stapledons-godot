@@ -4,7 +4,7 @@
   "members": [
     {
       "id": "medic",
-      "name": "Ligaya Reyes",
+      "name": "Farah Khan",
       "indicators": {
         "fatigue": 30.0,
         "stress": 70.0,
@@ -27,7 +27,7 @@
     },
     {
       "id": "engineer",
-      "name": "Andrei Shevchenko",
+      "name": "Elena Horvat",
       "indicators": {
         "fatigue": 35.0,
         "stress": 55.0,
@@ -44,7 +44,7 @@
     },
     {
       "id": "analyst",
-      "name": "Santiago Navarro",
+      "name": "Mariam Toumi",
       "indicators": {
         "fatigue": 25.0,
         "stress": 45.0,
@@ -61,7 +61,7 @@
     },
     {
       "id": "pilot",
-      "name": "Anh Rahman",
+      "name": "Hassan Hamdan",
       "indicators": {
         "fatigue": 20.0,
         "stress": 40.0,
@@ -78,7 +78,7 @@
     },
     {
       "id": "counselor",
-      "name": "Adaeze Appiah",
+      "name": "Selam Wanjala",
       "indicators": {
         "fatigue": 25.0,
         "stress": 50.0,
@@ -149,7 +149,7 @@
       "id": "h0-refusal_under_orders-medic",
       "rule": "refusal_under_orders",
       "actor": "medic",
-      "name": "Ligaya Reyes",
+      "name": "Farah Khan",
       "task": "t1-medic",
       "tick": 0.0,
       "detail": "decline",

@@ -398,6 +398,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var aim:Vector2=get_viewport().get_visible_rect().size*.5 if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED else event.position
 		if consoles.click(aim):get_viewport().set_input_as_handled();return
 		if ship_hud.has_card("arrival"):dismiss_arrival()
+	# R2-CREW-CONSOLE-V2 V6: at the Crew console its keys and the pad are the console's first
+	# (focus, answers 1-4, Ask/Order, Esc disarms then ends a call); what it leaves falls through.
+	if consoles.focused=="crew" and consoles.crew_console!=null and consoles.crew_console.key(event):
+		get_viewport().set_input_as_handled();return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
 		# R2-INTERLUDE I3: while the crossing review is read, the arrows and Enter turn its pages.

@@ -8,6 +8,10 @@ extends SceneTree
 ##   concern     the pilot's concern: four answers (Insist last), Start disabled with its reason
 ##   working     the analyst at work, day k of n, and whose move it is across the others
 ##   hold        auto-run held for the medic: the hold's words and Resume in the call
+##   declined    the medic's decline: open to talk, the answers, Make it an order
+##   standdown   crew_core 0.6: a stand-down handed to the captain (Let them rest / Ask them to carry on)
+##   resting     the medic resting after it was granted
+##   board_working  the board while work runs, the legend open and the keyboard focus on a row
 ## Each frame asserts no label under 12 logical, a call portrait of at least 240 logical, nothing
 ## outside the console panel, and reports the portrait's upscale over its 256 px source.
 ## Run:  make crew-console-capture  (needs a GPU window; open every frame)
@@ -110,6 +114,30 @@ func _frames(res: Vector2i) -> void:
 	c.show_crew(fixture("hold"))
 	await _shot("hold", tag, s)
 
+	s = _stage(); c = s[0]
+	c.show_crew(fixture("mixed"))
+	c.press("call:medic")
+	await _shot("declined", tag, s)
+
+	s = _stage(); c = s[0]
+	c.show_crew(fixture("board"))
+	c.show_crew(fixture("standdown")) # crew_core 0.6: auto-run hands the stand-down to the captain
+	await _shot("standdown", tag, s)
+
+	s = _stage(); c = s[0]
+	c.show_crew(fixture("resting"))
+	c.press("call:medic")
+	await _shot("resting", tag, s)
+
+	s = _stage(); c = s[0]
+	c.show_crew(fixture("working")) # the board while work runs, with the legend open (?)
+	c.press("help:legend")
+	var down := InputEventKey.new()
+	down.pressed = true
+	down.physical_keycode = KEY_DOWN
+	c.key(down) # V6: the focus ring on the first row
+	await _shot("board_working", tag, s)
+
 
 func _shot(name: String, tag: String, s: Array) -> void:
 	for i in 4:
@@ -131,6 +159,10 @@ func _shot(name: String, tag: String, s: Array) -> void:
 		var ctl := n as Control
 		if ctl.is_visible_in_tree() and ctl.size.x > 0.0 and not pr_panel.encloses(ctl.get_global_rect()):
 			clipped.append(str(ctl.name))
+	var words := 0
+	for n in c.find_children("*", "", true, false):
+		if (n is Label or n is Button) and (n as Control).is_visible_in_tree():
+			words += (n.text as String).split(" ", false).size()
 	var img := root.get_texture().get_image()
 	var file := "%s_%s.png" % [name, tag]
 	img.save_png(ProjectSettings.globalize_path(OUT.path_join(file)))
@@ -140,6 +172,6 @@ func _shot(name: String, tag: String, s: Array) -> void:
 	var ok := small.is_empty() and clipped.is_empty() and (portrait == null or pr.size.x >= 240.0)
 	if not ok:
 		failures += 1
-	print("frame %s %dx%d %s%s%s%s" % [file, img.get_width(), img.get_height(), "ok" if ok else "FAIL",
+	print("frame %s %dx%d %s words %d%s%s%s" % [file, img.get_width(), img.get_height(), "ok" if ok else "FAIL", words,
 		(" portrait %.0f logical, %.2fx its source%s" % [pr.size.x, up, " (soft: above 2.6x, OQ7)" if up > 2.6 else ""]) if portrait != null else "",
 		(" small labels %s" % [small]) if not small.is_empty() else "", (" outside the panel %s" % [clipped.slice(0, 6)]) if not clipped.is_empty() else ""])

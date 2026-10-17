@@ -169,10 +169,10 @@
         "make display-audit-crew display-audit-controls: every Crew console Label is a binding; crew_unbound fails the audit (AC14)",
         "make crew-console-capture: twelve frames written, no clipped node, no label under 12 logical, portrait >= 240 logical; opened by Mark (AC15, attended)"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-16",
-      "completed": null,
-      "notes": "Built: ui/crew_console.gd (board + two-panel call, decision block incl. inline Ask/Order, disabled Start with reason, Insist, Make it an order), crew_page.gd static helpers, ShipConsoles full-width crew_panel_rect, 2.11 fixtures + make crew-console-fixtures, NT3 rewritten + NT5, display-audit-crew (+ crew_unbound control), capture 6 frames x 2 resolutions (0 failures). crew-console-test 0 failures, crew-hold-test 0, no-twitch 41/0, ship-console-test 124/0, display-audit-crew failures=0. passes left null: waits on Mark's render review (pause point 3)."
+      "completed": "2026-10-17",
+      "notes": "Mark reviewed the V3 renders 2026-10-17: 'yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement' (-> V7b)."
     },
     {
       "id": "V45_CONCERN_ASK_ORDER",
@@ -187,10 +187,10 @@
         "make crew-console-test: free -> working in two presses on an accepting member (AC12)",
         "make crew-console-test + make crew-hold-test: on a paused guided voyage an offer shows 'Sent, waiting for the ship', cannot be sent twice, and resolves on the zero-dtau tick (AC9)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "crew_reply start on_accept|answer at 2.11 (reconsidered at once; starts on agreement); lapse, relief and stand-down rule lines; AC7/AC8/AC11/AC12 in crew-console-test, AC9 in crew-hold-test."
     },
     {
       "id": "V6_KEYS_PAD",
@@ -203,10 +203,43 @@
         "make crew-console-test: keyboard and controller reach every action; a decision only on the second press (AC13)",
         "make no-twitch-test: NT1 and NT3 hold with the Crew console focused and a pad connected (AC13)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "CrewConsole.key: console focus ring, Enter/A arm then send, 1-4 answers, [ ] / LB RB, O/Y, ?/Select, Esc/B one level; NT1/NT3 for every key and pad button in five fixtures x four calls."
+    },
+    {
+      "id": "V7B_VISUAL_PASS",
+      "description": "Mark's V3 review: less text, more visual UI. Terms as icon rows (day pips, resource icons with count pips, effect icons with arrows), rule lines as one short line with '?' and tooltips, answer icons, faces for waiting-on-whom and the mini-roster, icon bars, the legend behind '?'.",
+      "estimated_loc": 300,
+      "dependencies": [
+        "V3_BOARD_CALL_BINDINGS"
+      ],
+      "acceptance_criteria": [
+        "AC-V7b-1..5 in make crew-console-test",
+        "AC-V7b-6: visible words at 1280x720 down >= 30% from V3 (679 -> 439, -35%)",
+        "AC-V7b-7: D-21 and every Label a binding (crew-console-test, display-audit-crew)",
+        "AC-V7b-8: crew-console-capture 0 failures"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "Words per state 1280x720 V3 -> V7b: board 101->87, offer 113->69, sending 107->55, concern 143->101, working 95->38, hold 120->89."
+    },
+    {
+      "id": "D80_NAMES_FIT_FACES",
+      "description": "Ledger D-80: generated names fit the portraits (presentation and naming regions per face).",
+      "estimated_loc": 120,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "crew_names_test: names fit faces over 22 seeds, distinct, deterministic, same crew draws",
+        "make crew-faces-check: SOURCES face rows == sim/data/crew_faces.ail",
+        "streams below 2.11 keep their names (replay, parity-v2, protocol tests)"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "Gated at 2.11; moved only the 2.11 console fixtures' names."
     },
     {
       "id": "V8_CREW_CORE_06_ROWS",
@@ -219,10 +252,10 @@
         "make crew-console-test: stand_down_asked and resting appear for a recorded stand-down; answers emit resolve_stand_down (AC16)",
         "make sim crew-parity green with 0.6 pinned"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "crew_core 0.6.0 pinned, pack synced ee58b27, migration steps 1-8; stand_down_asked/resting rows; crew_stand_down intent at 2.11; stand-down holds keep crew days waiting until answered; standdown/resting fixtures from the real guided crossing; crossing_hold re-recorded once (VM == interpreter, repeat identical)."
     },
     {
       "id": "E_EVALUATE_LAND",
@@ -255,5 +288,13 @@
     "OQ9": "a refusal reads 'Needs you: declined, open to talk'"
   },
   "protocol_minor": "2.11",
-  "pause_reason": "V3 captures await Mark render review (renders/crew_console/*, 1280x720 and 2560x1440); V4 onward not started"
+  "pause_reason": "V7b visual pass awaits Mark before the evaluation (coordinator, 2026-10-17)",
+  "reviews": [
+    {
+      "date": "2026-10-17",
+      "by": "Mark (attended)",
+      "of": "V3 captures",
+      "words": "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement"
+    }
+  ]
 }

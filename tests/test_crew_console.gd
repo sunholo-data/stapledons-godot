@@ -55,6 +55,8 @@ func _initialize() -> void:
 	board()
 	calls()
 	locks()
+	keys()
+	stand_down()
 	real_sim()
 	print("crew-console: %d failures" % failures)
 	quit(1 if failures else 0)
@@ -82,7 +84,9 @@ func board() -> void:
 	check("the board: five rows, title for the board", c.find_children("Member_*", "", true, false).size() == 5 and c.title() == CrewConsole.TITLE_BOARD)
 	check("every free member's row offers Offer, and their chip says Can offer", ["medic", "engineer", "analyst", "pilot", "counselor"].all(func(id): return btn(c, "Quick_" + id) != null and btn(c, "Quick_" + id).text == "Offer ▸" and (c.find_child("Chip_" + id, true, false) as CrewChip).state == "free"))
 	check("the header strip: ship default Ask (consent), auto-run, the free resources as gauges", btn(c, "Policy").text.begins_with("Ask (consent)") and btn(c, "Auto_critical_only") != null and c.find_children("Gauge_*", "", true, false).size() == 4)
-	check("the legend shows every token", c.find_children("Legend_*", "", true, false).size() == CrewPalette.TOKENS.size())
+	check("V7b the legend waits behind ? (no intent); opened, it shows every token", c.find_children("Legend_*", "", true, false).is_empty() and c.press("help:legend").is_empty()
+		and c.find_children("Legend_*", "", true, false).size() == CrewPalette.TOKENS.size())
+	c.press("help:legend")
 	check("V7: every Label on the board is a binding that re-derives its text %s" % [bound(c).slice(0, 2)], bound(c).is_empty())
 	check("D-21: no digits on the board", texts(c).all(func(t): return not RegEx.create_from_string("[0-9]").search(t)))
 	check("no label under 12 logical", c.find_children("*", "Label", true, false).all(func(l): return (l as Label).get_theme_font_size("font_size") >= 12))
@@ -118,11 +122,27 @@ func calls() -> void:
 	var start := btn(c, "Start_pilot")
 	check("AC7 a concern: Start is disabled and the reason is a visible line", start != null and start.disabled and texts(c).has("Waiting: answer their concern first."))
 	var answers: Array = c.find_child("Answers", true, false).get_children()
-	check("AC7 four answers, Insist last, with its cost line", answers.size() == 4 and str(answers[3].name) == "Reply_assert_authority" and texts(c).has(CrewConsoleModel.COPY["insist_cost"]))
+	check("AC7 four answers, Insist last, with its cost in one line (the full rule on ?)", answers.size() == 4 and str(answers[3].name) == "Reply_assert_authority"
+		and texts(c).has(CrewConsoleModel.COPY["insist_short"]) and not texts(c).has(CrewConsoleModel.COPY["insist_cost"]))
+	c.press("help:insist")
+	check("V7b ? opens the full rule, no intent; again closes it", texts(c).has(CrewConsoleModel.COPY["insist_cost"]) and c.press("help:insist").is_empty() and not texts(c).has(CrewConsoleModel.COPY["insist_cost"]))
+	var kinds := {}
+	for b in answers:
+		for x in b.get_children():
+			if x is CrewChip.ChipIcon: kinds[x.kind] = true
+	check("V7b each answer has its own icon %s" % [kinds.keys()], kinds.size() == 4)
+	var terms := c.find_child("Terms", true, false)
+	var info := CrewPage.work_info("work_pilot")
+	check("V7b the terms are icons: a day pip per day, each resource with its pips, each effect with its arrow; the sentence is the tooltip",
+		terms != null and terms.find_child("Days", true, false).get_children().filter(func(x): return x is CrewChip.ChipIcon and x.kind == "pip").size() == int(info.duration)
+		and terms.find_children("Cost_*", "", true, false).size() == info.costs.size() and terms.tooltip_text == CrewPage.work_terms(info) and not texts(c).any(func(t): return t.begins_with("Takes ")))
+	var bars := c.find_child("Bars", true, false)
+	check("V7b the bars carry icons, not word captions", bars != null and ["stress", "fatigue", "trust"].all(func(k): return bars.find_children("*", "", true, false).any(func(x): return x is CrewChip.ChipIcon and x.kind == k))
+		and not texts(bars).has("stress"))
 	var ff := CrewConsoleModel.first_focus(member_of(mixed, "pilot"), mixed, {})
 	check("AC7 the first focus is the first answer", ff.begins_with("reply:") and not ff.ends_with("assert_authority"))
 	check("the concern's words are theirs, in the call", texts(c).has("“%s”" % str(mixed.concerns.filter(func(q): return q.actor == "pilot")[0].prompt)))
-	check("Make it an order is offered, with its cost", btn(c, "Order_pilot") != null and texts(c).has(CrewConsoleModel.COPY["make_order_cost"]))
+	check("Make it an order is offered, with its cost in one line", btn(c, "Order_pilot") != null and texts(c).has(CrewConsoleModel.COPY["make_order_short"]))
 	check("the mini-roster shows the four others", c.find_children("Switch_*", "", true, false).size() == 4)
 	check("V7 in the concern call %s" % [bound(c).slice(0, 2)], bound(c).is_empty())
 	c.press("call:medic")
@@ -150,7 +170,9 @@ func calls() -> void:
 	root.add_child(w)
 	w.show_crew(fixture("working"))
 	w.press("call:analyst")
-	check("working: the day in words and the others' states", texts(w).any(func(t): return t.begins_with("On day ") and t.contains(" of ")) and w.find_children("Whose_*", "", true, false).size() == 4)
+	check("working: the day in words and the others as faces with their state (V7b)", texts(w).any(func(t): return t.begins_with("On day ") and t.contains(" of "))
+		and w.find_child("Whose", true, false) != null and w.find_child("Whose", true, false).get_children().size() == 4
+		and w.find_child("Whose", true, false).get_children().all(func(x): return x.find_child("Face_*", true, false) is TextureRect))
 	check("working: the chip carries the start terms (agreed)", texts(w.find_child("Chip_analyst", true, false)).has("Working · agreed"))
 	check("V7 in the working call %s" % [bound(w).slice(0, 2)], bound(w).is_empty())
 	# Hold: the hold's words and Resume in the call.
@@ -200,6 +222,124 @@ func locks() -> void:
 	c.queue_free()
 
 
+## V6 (AC13): the keyboard and the pad reach every action; no single key or button decides.
+func kev(k: int) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.pressed = true
+	e.physical_keycode = k
+	return e
+
+func pev(b: int) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.pressed = true
+	e.button_index = b
+	return e
+
+func keys() -> void:
+	var c := CrewConsole.new()
+	root.add_child(c)
+	c.show_crew(fixture("board"))
+	var got := []
+	c.intents.connect(func(l): got.append(l))
+	check("V6 down focuses the first row", c.key(kev(KEY_DOWN)) and c.focus_action == "call:medic" and (c.find_child("Member_medic", true, false) as Control).has_meta("focused"))
+	c.key(kev(KEY_DOWN))
+	check("V6 Enter opens the focused member's call (no intent)", c.key(kev(KEY_ENTER)) and c.call_id == "engineer" and got.is_empty())
+	check("V6 the call's first focus is its first action", c.focus_action == "offer:engineer")
+	check("V6 O toggles Ask and Order (no intent)", c.key(kev(KEY_O)) and c.how["engineer"] == "orders" and got.is_empty())
+	c.key(kev(KEY_O))
+	c.key(kev(KEY_ENTER))
+	check("V6 Enter arms the offer; nothing is sent", c.armed == "offer:engineer" and got.is_empty())
+	check("V6 Esc disarms first", c.key(kev(KEY_ESCAPE)) and c.armed == "" and c.call_id == "engineer")
+	c.key(kev(KEY_ENTER))
+	c.key(kev(KEY_ENTER))
+	check("V6 Enter twice sends the offer (the confirm)", got.size() == 1 and got[0][0].k == "crew_offer")
+	c.key(kev(KEY_BRACKETRIGHT))
+	check("V6 ] switches the call to the next member", c.call_id == "analyst")
+	check("V6 Esc ends the call, then is left for the ship (step back)", c.key(kev(KEY_ESCAPE)) and c.call_id == "" and not c.key(kev(KEY_ESCAPE)))
+	var m := CrewConsole.new()
+	root.add_child(m)
+	m.show_crew(fixture("mixed"))
+	m.end_call()
+	m.press("call:pilot")
+	var sent := []
+	m.intents.connect(func(l): sent.append(l))
+	m.key(kev(KEY_2))
+	check("V6 2 arms the second answer; nothing is sent", m.armed.begins_with("reply:") and sent.is_empty())
+	m.key(kev(KEY_2))
+	check("V6 2 again sends that answer", sent.size() == 1 and sent[0][0].k == "crew_reply" and line_of(sent[0][0]).approach == str(CrewConsoleModel.concern_of(m.crew, "pilot").options[1].approach))
+	# The pad: the same paths.
+	var p := CrewConsole.new()
+	root.add_child(p)
+	p.show_crew(fixture("board"))
+	var ps := []
+	p.intents.connect(func(l): ps.append(l))
+	p.key(pev(JOY_BUTTON_DPAD_DOWN))
+	p.key(pev(JOY_BUTTON_A))
+	check("V6 pad: D-pad and A open a call; RB switches; B ends it", p.call_id == "medic" and p.key(pev(JOY_BUTTON_RIGHT_SHOULDER)) and p.call_id == "engineer" and p.key(pev(JOY_BUTTON_B)) and p.call_id == "")
+	var stick := InputEventJoypadMotion.new()
+	stick.axis = JOY_AXIS_LEFT_Y
+	stick.axis_value = 0.9
+	var before := p.focus_action
+	p.key(stick)
+	check("V6 pad: the left stick moves the focus once per push", p.focus_action != before and not p.key(stick))
+	# NT1/NT3 for the console: every key and button, pressed once, in every state, decides nothing.
+	var bad := []
+	for fx in ["board", "mixed", "working", "hold", "standdown"]:
+		for who in ["", "medic", "pilot", "analyst"]:
+			var q := CrewConsole.new()
+			root.add_child(q)
+			q.show_crew(fixture(fx))
+			q.end_call()
+			if who != "": q.press("call:" + who)
+			var out := []
+			q.intents.connect(func(l): out.append(l))
+			for k in CrewConsole.KEYS:
+				q.armed = ""
+				q.key(kev(k))
+			for b in CrewConsole.PAD:
+				q.armed = ""
+				q.key(pev(b))
+			if not out.is_empty(): bad.append([fx, who, out[0][0].k])
+			q.queue_free()
+	check("V6 NT1/NT3: no single key or pad button sends a decision, in any state %s" % [bad.slice(0, 2)], bad.is_empty())
+	for n in [c, m, p]: n.queue_free()
+
+
+## V8 (AC16, crew_core 0.6): a stand-down recorded from the real sim (the guided crossing under
+## hands_on): the held call offers Let them rest and Ask them to carry on, confirmed, as
+## crew_stand_down; unheld, the state is stand_down_asked; once granted, resting.
+func stand_down() -> void:
+	var sd := fixture("standdown")
+	var c := CrewConsole.new()
+	root.add_child(c)
+	c.show_crew(fixture("board"))
+	c.show_crew(sd)
+	var who := str(sd.holds[0].actor)
+	var sid := str(CrewConsoleModel.member(sd, who).stand_down)
+	check("V8 the stand-down hold opens the call with its words and both answers", c.call_id == who and texts(c).has("Auto-run held: %s %s" % [sd.holds[0].name, sd.holds[0].line])
+		and btn(c, "Rest_" + sid) != null and btn(c, "CarryOn_" + sid) != null and texts(c).has(CrewConsoleModel.COPY["stand_down_short"]))
+	check("V8 Let them rest needs a second press", c.press("standdown:%s:true" % sid).is_empty())
+	var r := c.press("standdown:%s:true" % sid)
+	check("V8 the confirmed answer is crew_stand_down resolve_stand_down, release true", r.size() == 1 and r[0].k == "crew_stand_down" and line_of(r[0]) == {"command": "resolve_stand_down", "id": sid, "release": true})
+	var unheld: Dictionary = sd.duplicate(true)
+	unheld.holds = []
+	for m in unheld.members:
+		if m.id == who: m.work_state = "stand_down_asked"
+	var u := CrewConsole.new()
+	root.add_child(u)
+	u.show_crew(unheld)
+	u.press("call:" + who)
+	check("V8 unheld, the state is stand_down_asked: Needs you, with both answers", (u.find_child("Chip_" + who, true, false) as CrewChip).state == "stand_down_asked"
+		and texts(u).has(CrewPalette.word_of("stand_down_asked")) and btn(u, "Rest_" + sid) != null)
+	var rest := fixture("resting")
+	var v := CrewConsole.new()
+	root.add_child(v)
+	v.show_crew(rest)
+	check("V8 granted, they rest (the sim's resting state, its chip)", str(CrewConsoleModel.member(rest, who).work_state) == "resting" and (v.find_child("Chip_" + who, true, false) as CrewChip).state == "resting")
+	check("V7 on the stand-down calls", bound(c).is_empty() and bound(u).is_empty() and bound(v).is_empty())
+	for n in [c, u, v]: n.queue_free()
+
+
 func real_sim() -> void:
 	# AC12: free -> working in two presses on an accepting member, against the real sim.
 	var sim := SimBridge.new()
@@ -243,9 +383,11 @@ func real_sim() -> void:
 		c.press(act)
 		var reply := c.press(act)
 		ok = sim.send([], 0.0)
-		check("OQ5 Insist is a captain_reply the real sim accepts (%s)" % [sim.last_refused], ok and reply.size() == 1 and line_of(reply[0]).approach == "assert_authority" and sim.last_refused.is_empty())
+		check("OQ5 Insist is a captain_reply the real sim accepts, carrying start on_accept (V4) (%s)" % [sim.last_refused], ok and reply.size() == 1 and line_of(reply[0]).approach == "assert_authority" and reply[0].get("start") == "on_accept" and sim.last_refused.is_empty())
 		c.on_refused(sim.queued_refused(), sim.last_queued)
 		c.show_crew(sim.crew)
+		var st_after := str(member_of(sim.crew, who).get("work_state", ""))
+		check("V4 after the reply they reconsider at once: no longer asked (%s)" % st_after, st_after != "asked" and not sim.crew.requests.any(func(q): return q.actor == who))
 		var w = member_of(sim.crew, who).get("work")
 		if w is Dictionary and str(w.get("status", "")) == "offered":
 			c.press("order:" + str(w.task))
