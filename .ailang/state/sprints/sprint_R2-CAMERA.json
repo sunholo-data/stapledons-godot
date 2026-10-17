@@ -138,9 +138,17 @@
         "AC10"
       ],
       "gate": "make camera-test tour-attitude-test tour-pacing-test no-twitch-test ship-demo-lift-test solar-departure-test",
-      "status": "not_started",
-      "passes": null,
-      "notes": []
+      "status": "done_pending_review",
+      "passes": true,
+      "notes": [
+        "Sky forward: low eye beside the captain (back 2.2 m, rise 0.3 m, pitch +58 deg); the first clear yaw from yaw_candidates_deg is chosen once as the view starts (whole figure incl. lift boxes and the pole overhead clear) - every bridge sample has one, so no forward-watch anchor walk is needed (deviation: the design's anchor kept as fallback walk_to)",
+        "Sky side walks to a rail anchor (r 18.5 m, 8 deg) facing +x (where Attitude.side_basis puts the stop's body, 15 deg up); Sky astern walks to the rail at the captain's angle and looks down outward (-60 deg)",
+        "cues: commit (after leaving the helm), the tour's departure turn, braking, Sgr A* -> Sky forward; the completed stop turn -> Sky side; refused with a panel open, at a console, in the lift; reduced motion -> HUD prompt; level/move/R end it; under way R -> Sky forward; crossing review holds Sky forward (director.hold)",
+        "sky views stand the captain upright (FIXED_Y billboard) facing away; the full billboard leaned into a giant card when seen from below",
+        "_begin_tour_turn no longer writes tilt/yaw for the player camera (only for tools in override)",
+        "Commons views authored per cell (cells map); residue under arcade lintels held to ceilings Z1 2, Z2 2, Z3 39; lift view checked over the whole ride"
+      ],
+      "completed": "2026-10-17"
     },
     {
       "id": "C4_PHYSICS_GOLDENS_RENDERS",
@@ -156,9 +164,14 @@
         "AC13"
       ],
       "gate": "make test; make golden (389); make camera-views-capture opened by eye",
-      "status": "not_started",
-      "passes": null,
-      "notes": []
+      "status": "done_pending_review",
+      "passes": true,
+      "notes": [
+        "test_physics.gd test_camera_views_invariance: RS-1/RS-2 at every views.json eye vs the captain eye, same pixel <= 0.05 px, sky ray 1e-9 rad",
+        "G-CAM-1 6 (Sky forward pole from the spawn and the helm x 3 phases; deviation: the second pose is the helm, not a Sgr A* world, since the golden has no GR session), G-CAM-2 8, G-CAM-3 2 (Z2 at rest, Sky forward at 0.99c); make golden 390 ok, 0 failures; no non-G-CAM line moved vs main",
+        "make camera-views-capture: 10 views x 4 states x 2 sizes + contact sheets + cruise_default at 0.9/0.99/0.999c (86 frames)"
+      ],
+      "completed": "2026-10-17"
     },
     {
       "id": "C5_MIGRATION",
@@ -177,7 +190,9 @@
       "gate": "make -k test exit 0 locally; CI green",
       "status": "not_started",
       "passes": null,
-      "notes": []
+      "notes": [
+        "held: test migrations needed for make test were done with C1-C4; the 19-tool smoke runs, demos/README controls (done), Tab help (done) remain; tool smoke runs not executed"
+      ]
     },
     {
       "id": "E_EVALUATE_LAND",

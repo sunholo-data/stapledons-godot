@@ -69,7 +69,7 @@ C1 and C3 ship together as the first PR. That PR is the ruling: no free zoom and
 - **Gate:** `make ship-ui-test free-nav-recovery-test title-screen-test camera-test`.
 - **PR 1 = C1 + C3.** An attended render review of the default views follows before merge (visible feature; mission-loop routing keeps it attended).
 
-### C2: situation views and cues (~350 LOC, 1 day)
+### C2: situation views and cues (~350 LOC, 1 day) — ✅ done 2026-10-17 (PR #270)
 
 - **Red first.**
   - `test_camera_director.gd` cue cases (AC6). Each cue fires on its trigger and never with a panel, at a console or in the lift; it ends on any input; with reduced motion it is a prompt.
@@ -85,7 +85,7 @@ C1 and C3 ship together as the first PR. That PR is the ruling: no free zoom and
   - Lift and lower-deck Z3 views.
 - **Gate:** `make camera-test tour-attitude-test tour-pacing-test no-twitch-test ship-demo-lift-test solar-departure-test`.
 
-### C4: physics invariance, goldens, renders (~250 LOC, 1 day)
+### C4: physics invariance, goldens, renders (~250 LOC, 1 day) — ✅ done 2026-10-17 (PR #270)
 
 - **Red first.**
   - `tests/test_physics.gd`: RS-1 and RS-2 through every `views.json` eye equal the captain eye to 1e-9 rad and 0.05 px (AC11).
@@ -136,3 +136,11 @@ See the design doc §Risks. The plan-specific one: `ship_geometry_demo.gd` is 1,
 - Executed on `feat/camera-fixed-views`. `make camera-test` 95 checks; `make ship-demo-input-test ship-console-test ship-ui-test no-twitch-test title-screen-test` green; `make golden` adds G-CAM-2 (4) and G-CAM-3 (1), 379 ok lines.
 - Deviations: a second sector ring (the stations ring inside 12 m looks inward, turn 135 deg; the rail ring looks outward, turn 30 deg), because the design's single outward rule puts the Z2 eye inside the spire needle for any captain within ~10 m of the axis; Z1 pitch -25 deg (from -20) to clear the navigation consoles; actions registered at runtime instead of `project.godot`; long sector/ring swings ease longer than 0.8 s to keep the eye's acceleration under 1 cm/frame^2 (AC5); lower-deck views are interim (ceilings 9/47/75 blocked samples) until C2's Commons cameras; keys 7/8/9 and the tour's turns still use the old first-person looks until C2.
 - Pause point 1: Mark's render review of `renders/camera_views/` and a menu launch.
+
+## Progress (C2 + C4 added to PR #270, 2026-10-17, after the lead's frame review)
+
+- Blocker fixed: at 0.99c every level view showed a black sky. Under way the default view is now Sky forward (cued at commit / departure / braking / Sgr A*, R under way), framing the starbow; `cruise_default_b9/b99/b999` captures of a real committed voyage show it.
+- Spawn occlusion fixed by per-cell angles at the lift landing; whole-figure sweep including the lift's boxes.
+- Commons authored per cell (ceilings Z1 2, Z2 2, Z3 39 blocked samples of 1,881).
+- C4: invariance in `test_physics.gd`; G-CAM-1 6, G-CAM-2 8, G-CAM-3 2; `make golden` 390 (fixes main's stale 373 pin; main ran 374).
+- C5 held: the 19-tool smoke runs are not done in this PR.
