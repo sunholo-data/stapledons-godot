@@ -1568,3 +1568,56 @@ DECISIONS FOR MARK: none new. D-83 (merge #252; recommended A), D-77 and D-78 ar
 - **Next:** D-84 (S1 sign-off; then merge #265 once its CI is green, re-capturing first if #264 has landed); row 7m after #264 lands (profiling only before); D-83; rows 7i(k), 7k and 7l; D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: D-84 is new (S1 sign-off for #265; recommended A). D-83 (merge #252; recommended A), D-77 and D-78 are unchanged; their defaults hold.
+
+## 37 — 2026-10-17 — iteration 37, M4.6pR3 live-transit frame cost BUILT (PR #268, stacked on #265): the hidden map's ISM layer redrew every tick; AC1 waits on a quiet GPU; independent eval Sonnet 88/100 PASS [PRODUCT]
+
+- **Pick:** row 7m, M4.6pR3 (AC12, clause 4, blocks P-land). It was the only routable critical-path row. Rows 7i(k), 7k and 7l are net 0 and would stop on D-83's guardrail. The attended PRs #264 and #267 hold the rest of the ship scene (`ui/galaxy_map.gd`, `demos/*`, `bridge/*`, `sim/core.ail`), so the pick was framed as profile first and build only if the fix's file set was free. It was.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 moved: AC12's cause is found and fixed, and the quiet-rig number is pending. Left on clause 4: AC1 on a quiet GPU, then S1 (D-84), P-land, AC4 (D-77/D-78) and the 7i rows.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (17 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). The `stapledons_godot` inbox holds 6 unread upstream FYIs (AILANG v0.54.12, v0.54.13 and v0.54.14: the getEnvOr regressions #1864/#1865 are fixed, which unblocks attended #262). None is a directive; they are left for the attended bump. No rotation is due (#203 was created 2026-10-12 10:39 CEST, after Monday 07:00).
+- **Gate 1:** the main checkout was 2 behind and was fast-forwarded (only untracked `.uid` files). origin/main `53f5fe8` (gate1 base `53f5fe832b36fc181dcbd2b1047c30c9ac7c51fd` at 2026-10-17T04:12:44Z). Main CI `success` on `53f5fe8`, checks=1. The newest record (iteration 36) is on open PR #266, so this record is stacked on it. Skill: all 14 files match ailang origin/dev through the resolved symlink.
+- **Ledger:** D-77, D-78, D-83 and D-84 are OPEN and unanswered; no new decision. #265 PR CI 38969245339 now reads `pass`, which satisfies the first half of D-84's merge predicate; the merge itself waits on Mark's S1 sign-off.
+- **Reality check (controller):** no `m4-6pr3` doc, branch or PR existed. `gh pr view {262,264,265,267} --json files` shows 0 hits for `ism_layer` (of 30 / 84 / 11 / 100 paths). No iteration-37 orphan clone existed.
+- **Design:** Opus (Agent tool), `m4-6pr3-live-transit-frame-cost.md`, 254 lines, pillar net **+1** (The Ship Is Home), 21 verification rows, no open questions. The spike ran on the rig's GPU, comparing main + bench against attended #264's tree.
+  - **Cause:** `GalaxyMap.tick()` → `refresh()` → `_overlay.queue_redraw()`. The overlay inside the hidden navigation `Window` is still `is_visible_in_tree()` under its CanvasLayer, so Godot runs `_draw`, and `IsmLayer.draw` projects 905 faces: 23.5–24.8 ms per tick [probe], against 1.9–2.0 ms without the ISM layer.
+  - **Why the cost showed up in "the frame after the tick":** the deferred redraw flushes after `_process`, before `frame_pre_draw`. The bench resumes on `process_frame`, so it books the flush into the next interval.
+  - **ABBA pairs, quiet GPU:** control p99 34.59/34.95 ms (1533/1501 frames) MISS; ISM draw off 16.08/15.75 (3271/3227) ok. On #264's tree: 34.90/35.70 MISS and 16.18 ok. #264 neither changes AC12 nor the cause.
+  - **Re-measured and not the cause:** high-β sky rendering, the sim wait, render CPU, the HUD, the `stepped` fan-out, object churn.
+  - **Instrument note:** `Performance.TIME_PROCESS` is unusable from a `--script` SceneTree (p50 144 ms against a wall time of 8.8).
+  - **Quorum:** PROCEED at 1 of 3 present. gemini-4-argon passed, noting that the rest of the overlay (~2 ms) still draws while hidden; that is accepted, because `ui/galaxy_map.gd` is held. gpt6-1-sol was absent (OpenAI API 429, "no credits remaining"); one solo `design-review` re-run also returned 429. oc-glm-5-3 and oc-kimi-k3 were absent, unreachable. $0.0251.
+- **Plan:** codex gpt-6.1-sol, driven by an Agent-tool planner role, rc 0 in 424 s. It wrote a 534-line sprint plan and the feature `M4.6pR3_LIVE_TRANSIT_FRAME_COST` (+16 lines, adds only), with 18 groups of command fixes (rc through make, fresh-log assertions, AC8 base pinned to `175e006`, AC6's `before` manifest taken by capture at base). It also found that `ai-live-guard` is not a `ci.yml` step; it lives in `mk/ai.mk:414`, and the charter's iteration-29 note is wrong about that.
+- **Execution:** codex gpt-6.1-sol, driven by an Agent-tool executor role, rc 0 in 76 s. Test-first: AC4 was 17/2 red with the test alone, then 19/0. `ui/ism_layer.gd` +8 (the design's block byte for byte), `tests/test_ism_layer.gd` +42, and a changelog fragment. No hand edits to the repo. Every gate ran outside the sandbox:
+  - AC5: 15 media (the role opened `map_density.png`).
+  - AC6: `capture-m4` worlds sha `76f6fb89…0426` byte-equal to base.
+  - `lint-precision`, `python-guard`, `ai-live-guard` and `deps`: rc 0.
+  - Drills DR2, DR3 and DR5 as the plan expects. DR1 and DR4 refused to measure on a busy GPU.
+  - Bench, contended (Ollama `qwen3.8:27b-mxfp8` at 85–99 %): base 1036/1033 frames, p99 53.2/62.8 ms; fix 3094/3079 frames, p99 16.81/19.89.
+  - `make golden`: 0 failures but rc 2, because it counts 374 `^ok` against a hard-coded 373. Planet textures are now present in this clone (`assets/planets/`, fetched 2026-10-16 23:36), which turns the textured G-M5-4 `skip` into an `ok`. Same at base → row 7n(c).
+  - The controller ran `make -k test` on `9b5762e` with `AILANG=runtime/bin/ailang`: rc 0 (about 75 min, 0 `***` lines, 0 SCRIPT ERROR, `ism-layer: 19 passed, 0 failures`).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter37`). r1 **88 PASS**, 0 blocking (tests 17, lint 9, ACs 27, code 13, docs 13, fidelity 9), in `eval_R1-M4-JOURNEY_M4.6pR3_round_1.json`.
+  - It verified the call chain and that `ui/galaxy_map.gd:1424` is the only production caller.
+  - It re-derived the worlds sha and the golden-374 cause.
+  - Its contended bench gave 3106 frames, p99 16.445, rc 0. AC1 is formally UNMEASURED.
+  - Its own mutations: guard removed and guard inverted were killed; dropping the connection was killed only by the `is_connected` assertion; connect-every-call and host-null survive (equivalent in production) → row 7n(b).
+- **Gate 3b:** #268 (base `mission/stapledon-iter36-m46rr3`) does not merge this iteration: it is stacked on #265, which parks on D-84. PR CI 39011034698 was in flight at record (about 2 h, past the 30-min cap); `mergeable` MERGEABLE/UNSTABLE. Resume predicate: `gh pr checks 268 --repo sunholo-data/stapledons-godot` reads `pass`, and AC1 is measured green on a quiet GPU (row 7m).
+- **AC1 park (capacity, PARKED-ON-LANE, not a decision):** the role that could not finish is the executor's AC1 bench. The lane is the rig's GPU: `ioreg … "Device Utilization %"` read 85–98 % from 07:53 to 09:21 CEST, with `ollama ps` showing `qwen3.8:27b-mxfp8 100% GPU` (not this loop's). It returns when 3 consecutive samples read < 15 %.
+- **Routing evidence:** gate1 base `53f5fe8`@04:12:44Z; gate4 base=53f5fe832b36fc181dcbd2b1047c30c9ac7c51fd@2026-10-17T07:21:11Z (main unchanged since Gate 1). Routing note: empty (as configured). Operator's standing request: every role through the Agent tool, so the codex-pinned roles ran as Agent-tool roles driving `codex exec -m gpt-6.1-sol` (OPENAI_API_KEY stripped; probe rc 0 from inside the clone). The spawn-pin hook accepted all four spawns.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin` (rotation file read `claude:claude-opus-5-5` as last used; the resolver's verbatim answer was followed). Agent `opus`, 197,620 tok.
+  - Planner: resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`; derive-planner-lane agrees. Agent `opus` 48,597 tok plus codex 113,845 tok.
+  - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`. Agent `opus` 112,145 tok plus codex 58,021 tok.
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`. Agent `sonnet` 64,402 tok. Distinct from the Opus designer and the codex planner and executor (judge-independence: cross-vendor).
+  - Metered: $0.0251 (the gemini quorum seat; the gpt6-1-sol re-run billed nothing, 429).
+- **Ruled out:**
+  - Waiting for #264 to land before building: the measured fix touches no held file, and the same fix turns #264's tree green.
+  - The wider fix in `ui/galaxy_map.gd` (skip the whole overlay while hidden): it collides with #264 and gains nothing measurable (p99 16.15/15.50 against 16.08/15.75).
+  - Killing or pausing the resident Ollama model to get a quiet GPU: it is not this loop's process.
+  - Changing the Makefile's golden count of 373 here: it is held by #262/#264 and outside the milestone → row 7n(c).
+  - Rows 7i(k), 7k, 7l: net 0 (D-83's default).
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. The canonical STATUS and log heading shapes (`## STATUS <date> — ITERATION <n>:` and `## <n> — <date> — …`) differ from this charter's legacy `## STATUS <date>: iteration <n>,` stamps. This iteration wrote the canonical shape; older stamps are left for `ailang mission normalize`.
+  2. GPU contention from a resident local model has now blocked a quiet-rig bench. It is a rig-level capacity class with no owner in the charter. Recorded as instance 1.
+  3. The OpenAI API reviewer seat failed on billing (429, no credits), while `codex exec` on the ChatGPT subscription worked. The quorum's OpenAI seat and the codex roles draw on different buckets.
+  4. A stray `python3 -` in a controller shell edit hung on stdin until it was stopped (no file damage; the edit was re-run without it). Controller slip, recorded.
+- **Next:** AC1 on a quiet GPU (row 7m predicate); D-84 (S1 sign-off; then #265 merges and #268 retargets to main); D-83; rows 7n, 7l, 7k, 7i(k); D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: none new. D-84 (S1 sign-off for #265; recommended A), D-83 (merge #252; recommended A), D-77 and D-78 are unchanged; their defaults hold.
