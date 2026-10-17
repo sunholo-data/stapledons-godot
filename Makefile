@@ -355,6 +355,10 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
 	in=$$($(AILANG) run --quiet --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
 	echo "strict crew: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict crew: FAIL (VM != interpreter, or a script refused)"; exit 1; }
+	@# namesVm: the crew-names table (sim/data/crew_names.ail) and five generated names on the strict VM; VM == interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry namesVm --args-json 7 sim/crew_names.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry namesVm --args-json 7 sim/crew_names.ail); \
+	echo "strict namesVm: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -q 'names regions 14 given 224 family 224 crew ' || { echo "strict namesVm: FAIL (VM != interpreter: $$in)"; exit 1; }
 	@# digestScripted (R2-INTERLUDE I2, AC2): the scripted crossing (two holds, resumed) and its cruise digest on the strict VM; VM == interpreter
 	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
 	in=$$($(AILANG) run --quiet --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \

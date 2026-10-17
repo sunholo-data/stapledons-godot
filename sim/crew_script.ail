@@ -18,7 +18,7 @@ import ./crew (CrewState, CrewStepped, CrewHold, initCrewWith, crewStep, crewCom
 import ./crew_events (noMoments, shipEvents)
 import ./crew_auto (setPreset, autoStep)
 import ./cruise_digest (nextStop, stopYears)
-import ./core (World, Params, Intent, ICrew, IPlan, ICommit, Event, newWorld, defaultParams, tick, withCrew)
+import ./core (World, Params, Intent, ICrew, IPlan, ICommit, Event, newWorld, defaultParams, tick)
 import ./protocol_interlude (cruiseStop, encodeDigest)
 import ./rng (Rng, SCrew, zeroRng, counter)
 import std/math (intToFloat)
@@ -154,10 +154,15 @@ pure func cross(x: Crossed, endDay: int, untilHold: bool, after: string, left: i
     }
   }
 pure func lism() -> Params = { defaultParams() | ismModel: 1.0 }
--- The crew comes aboard as in a new game (core.withCrew: the pack lint and the generated names).
-export pure func scriptedCrossing(seed: int) -> Crossed = match withCrew(newWorld(seed, false, lism()), "consent") {
+-- The crew comes aboard without core.withCrew's generated names (members are named by role id).
+-- That was a strict-VM limit (the names table exceeded the register allocator); since v0.54.14 the
+-- table runs under --strict-bytecode (make strict: namesVm), and the switch to withCrew and names
+-- belongs to the crew console sprint (D-80, which re-records crossing_hold). Nothing else differs
+-- (withCrew's pack lint is proven by the crew tests).
+export pure func scriptedCrossing(seed: int) -> Crossed = match initCrewWith("consent", false) {
   Err(e) => { world: newWorld(seed, false, lism()), holds: [], digests: [concat(["error ", e])] },
-  Ok(w0) => {
+  Ok((cr, _)) => {
+    let w0 = { newWorld(seed, false, lism()) | crew: Some(cr) };
     let p = tick(w0, { dtau: 0.0, intents: [farLeg()] });
     let c = tick(p.world, { dtau: 0.0, intents: [ICommit(1), ordersI("hands_on")] });
     let a = cross({ world: c.world, holds: [], digests: [digestText(c.world)] }, 365, true, "critical_only", 400);

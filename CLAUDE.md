@@ -173,9 +173,9 @@ The brain is local and untracked.
     import is rejected in a pattern (TC_MATCH_001); `sim/tripphase.ail` maps phases to an index.
   - Fixed and removed from the tree on v0.54.13/v0.54.14 (byte-identical outputs unless noted):
     every strict-VM list-literal split (ailang#1736, #1865: the ISM efficacy LUT, cloud planes and
-    members are single literals; `applyOverride` is one chain; the crew-names table runs strict, so
-    the scripted crossing brings the crew aboard with `withCrew` and names, and the reviewed
-    `tests/crew/crossing_hold.ndjson` was re-recorded); the #1576 doubling in `ai/voice.ail` and the
+    members are single literals; `applyOverride` is one chain; the crew-names table runs strict,
+    `make strict` namesVm; the scripted crossing still uses role ids until the crew console sprint
+    (D-80) switches it to names and re-records `crossing_hold`); the #1576 doubling in `ai/voice.ail` and the
     tail-recursive lens-table builders; the #1737 named test checks; the v0.52.0 workarounds (#1460,
     #1461, #1465, #1467, #1473, #1478, #1486, #1503, #1505, #1516, #1517, #1419 notes). The arm64
     and x86_64 replay goldens are identical but still kept per architecture.
