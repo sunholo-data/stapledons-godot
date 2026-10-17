@@ -276,13 +276,15 @@ func _s3(built: bool) -> int:
 
 
 func _s2(built: bool) -> int:
-	return await _tonemap(built, func() -> void: _pose(30.0, 0.47), "G-M4-S2 one tonemap (ship)")
+	return await _tonemap(built, func() -> void: _pose(30.0, 0.47), "G-M4-S2 one tonemap (ship)", func() -> Dictionary: return _phase_world("cruising", Relativity.rapidity_of_beta(0.99)), 500)
 
 
 ## R2-CAMERA G-CAM-3: the one-tonemap check through the player's Z2 Deck pose (third person, the
-## eye 9-12 m from the captain), the pose a player sees by default.
+## eye 9-12 m from the captain), the pose a player sees by default. At rest: the Z2 view looks across
+## the deck, where the 0.99c sky is redshifted to black, so the cruise world would leave no lit sky
+## pixel to compare (the tonemap path is the same in every state).
 func _cam3(built: bool) -> int:
-	return await _tonemap(built, func() -> void: _director_pose("z2"), "G-CAM-3 one tonemap (Z2 Deck)")
+	return await _tonemap(built, func() -> void: _director_pose("z2"), "G-CAM-3 one tonemap (Z2 Deck, rest)", func() -> Dictionary: return states.rest, 300)
 
 
 ## The director's pose for a view at the bridge spawn (the render boundary; tools own the camera).
@@ -293,7 +295,7 @@ func _director_pose(id: String) -> void:
 	demo._sync_observer()
 
 
-func _tonemap(built: bool, pose: Callable, label: String) -> int:
+func _tonemap(built: bool, pose: Callable, label: String, world: Callable, min_sky: int) -> int:
 	var n := 0
 	var lit := 0
 	var ship := 0
@@ -308,7 +310,7 @@ func _tonemap(built: bool, pose: Callable, label: String) -> int:
 			var model := Image.create(256, 128, false, Image.FORMAT_RGBA8)
 			model.fill(Color8(SkyModel.encode_t(6000.0), 0, 0, 255))
 			sky.has_background = sky.background.attach(sky.env, size.y, sky.view_fov, photo, model)
-		if sky.has_background and _world(_phase_world("cruising", Relativity.rapidity_of_beta(0.99))):
+		if sky.has_background and _world(world.call()):
 			pose.call()
 			await _settle()
 			var frame := _read(main.get_viewport())
@@ -335,7 +337,7 @@ func _tonemap(built: bool, pose: Callable, label: String) -> int:
 						n += 1
 						if s.get_luminance() > 2.0 / 255.0:
 							lit += 1
-	var ok := n >= 500 and lit >= 50 and ship >= 20 and is_finite(worst) and worst <= 1.0 / 255.0 + 1e-6
+	var ok := n >= min_sky and lit >= 50 and ship >= 20 and is_finite(worst) and worst <= 1.0 / 255.0 + 1e-6
 	return _report(ok, label + ": %d sky-only pixels (%d lit, %d ship), worst |final - sky SubViewport| %.4f (limit 1/255 = 0.0039)" % [n, lit, ship, worst])
 
 
@@ -401,7 +403,7 @@ func _s4(built: bool) -> int:
 
 ## R2-CAMERA G-CAM-2: the wall glow seen from the player's Z1 Close and Z2 Deck eyes (84-93 m from
 ## the centre, nearer the wall than the captain's eye). From each eye the camera looks along the
-## direction of travel (the pole); the wall point it sees and its cos come from ForwardGlow.wall_cos
+## direction of travel (the pole); the wall point it sees and its polar cos come from ForwardGlow.wall_cos
 ## on the CPU (checked against the closed-form ray-sphere hit), and the rendered unit-gain glow must
 ## equal ForwardGlow.profile(sim pole, cos) within 1 %, at 0.99c and at the cap (1 - beta 2e-9).
 func _cam2(built: bool) -> int:
@@ -434,7 +436,7 @@ func _cam2(built: bool) -> int:
 					dx /= dn; dy /= dn; dz /= dn
 					var b := px * dx + py * dy + pz * dz
 					var t := -b + sqrt(b * b - (px * px + py * py + pz * pz - radius * radius))
-					closed = ((px + t * dx) * dx + (py + t * dy) * dy + (pz + t * dz) * dz) / radius
+					closed = (pz + t * dz) / radius # the wall point's polar cos (ship +z is travel)
 					eye_r = sqrt(px * px + py * py + pz * pz)
 					await _settle()
 					var img := _read(demo.sky)
