@@ -930,7 +930,10 @@ func _decisions(m: Dictionary) -> Control:
 	var end := _button("EndCall", "End call [Esc]", "end_call")
 	top.add_child(end)
 	box.add_child(top)
-	box.add_child(_bind(_member_field(id, "id"), "crew_job", 16, CrewPalette.TEXT))
+	if s == "resting": # crew_core 0.6: a granted stand-down is their rest, not their work
+		box.add_child(_copy("rest_title", 16, CrewPalette.TEXT, _member_field(id, "work.recipe")))
+	else:
+		box.add_child(_bind(_member_field(id, "id"), "crew_job", 16, CrewPalette.TEXT))
 	if s in ["working", "resting"]:
 		var bar := ProgressBar.new()
 		bar.name = "Progress"

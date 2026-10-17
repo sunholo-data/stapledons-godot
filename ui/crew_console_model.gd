@@ -226,6 +226,7 @@ const COPY := {
 	"pick": "Pick someone to open a call.",
 	"empty": "No crew aboard yet.",
 	"crew_days": "Crew days pass as the ship travels.",
+	"rest_title": "Standing down to rest",
 }
 const TERMS_WORDS := {"agreed_start": "agreed", "complied_start": "ordered", "strained_start": "ordered while strained", "refused_order": "ordered over their answer"}
 const EMOTION_WORDS := {"neutral": "calm", "happy": "pleased", "sad": "sad", "angry": "angry", "fearful": "worried", "curious": "curious", "loving": "warm", "grieving": "grieving"}
