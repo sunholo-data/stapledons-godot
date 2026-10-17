@@ -89,9 +89,17 @@
         "AC10"
       ],
       "gate": "make camera-test ship-demo-input-test ship-console-test ship-ui-test no-twitch-test; make golden (378)",
-      "status": "not_started",
-      "passes": null,
-      "notes": []
+      "status": "done_pending_review",
+      "passes": true,
+      "notes": [
+        "demos/camera_director.gd + data/camera/views.json; Z1 4.5 m/-25 deg (design -20: -25 clears the navigation consoles), Z2 12 m/-35 deg (64 px at 720p), Z3 bridge place camera (ring-specific eye), lift view; 8 sectors x 2 rings (split 12 m, 1 m hysteresis; turn [135, 30] deg) because the design's single outward rule hits the spire needle for inner positions (512 blocked samples at turn 0); bridge clear-line sweep 0 blocked at every 0.5 m walk sample for Z1/Z2/Z3; lower deck interim views held to ceilings 9/47/75 until C2's Commons cameras",
+        "named actions registered at runtime (CameraDirector.ACTIONS) rather than project.godot [input]; wheel/trackpad/pinch one level + 0.3 s cooldown; RB/LB, R3, D-pad, A/B, left stick",
+        "console focus/step back through the director (remembered level and sector); captain_yaw separate from the camera; held walk direction",
+        "zero-roll yaw/pitch blends capped at 90 deg/s; sector/ring switches also capped at 36 m/s^2 eye acceleration (AC5 jump <= 1 cm/frame^2) so they can take longer than 0.8 s",
+        "goldens: G-CAM-2 glow from Z1/Z2 eyes x {0.99c, cap} (4), G-CAM-3 tonemap at Z2 (1): Makefile pins 378",
+        "Z3 accent ring marker on the captain (D1)"
+      ],
+      "completed": "2026-10-17"
     },
     {
       "id": "C3_DEV_FREE_CAMERA_POINTER_MOTION",
@@ -107,9 +115,15 @@
         "AC9"
       ],
       "gate": "make ship-ui-test free-nav-recovery-test title-screen-test camera-test",
-      "status": "not_started",
-      "passes": null,
-      "notes": []
+      "status": "done_pending_review",
+      "passes": true,
+      "notes": [
+        "F8 / --free-camera (setup_options free_camera) only when dev_controls(); old look, dolly, presets 1-4; HUD FREE CAMERA · developer",
+        "wants_capture() only in the free camera; players never captured; waiting line names no mouse look for players",
+        "GameSettings.camera_motion full|reduced: title Settings, Tab toggle (saved from menu launches), reaches the ship via main.gd",
+        "AC9 tests in test_camera_director.gd and test_ship_demo_input.gd; pointer tests rewritten in test_ship_ui.gd (navigation-usability is the galaxy map, not the pointer)"
+      ],
+      "completed": "2026-10-17"
     },
     {
       "id": "C2_SITUATION_VIEWS_CUES",
@@ -194,5 +208,13 @@
     "OQ7": "keep a developer free camera",
     "OQ8": "perspective camera",
     "OQ9": "ledger row recorded by the attended session (Mark's zoom ruling); the executor does not edit the ledger"
+  },
+  "pr1": {
+    "branch": "feat/camera-fixed-views",
+    "milestones": [
+      "C1",
+      "C3"
+    ],
+    "render_review": "renders/camera_views/*.png (18 frames) awaiting Mark"
   }
 }

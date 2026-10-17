@@ -33,7 +33,7 @@ C1 and C3 ship together as the first PR. That PR is the ruling: no free zoom and
 
 ## Milestones
 
-### C1: the director, three levels, input actions (~550 LOC, 1.5 days)
+### C1: the director, three levels, input actions (~550 LOC, 1.5 days) — ✅ done 2026-10-17, PR 1 (render review pending)
 
 - **Red first.**
   - `tests/test_camera_director.gd` (new, `make camera-test`). It covers:
@@ -54,7 +54,7 @@ C1 and C3 ship together as the first PR. That PR is the ruling: no free zoom and
   - `ui/ship_controls.gd`: rows for the actions (NT5).
 - **Gate:** `make camera-test ship-demo-input-test ship-console-test ship-ui-test no-twitch-test`, plus G-CAM-2's Z1/Z2 cases and G-CAM-3's Z2 case in `make golden` (count 373 → 378 at this PR: 4 glow cases + 1 tonemap case). Open the Z1/Z2 renders at rest and at 0.99c.
 
-### C3: developer free camera, pointer, reduced motion (~200 LOC, 0.5 day; ships with C1)
+### C3: developer free camera, pointer, reduced motion (~200 LOC, 0.5 day; ships with C1) — ✅ done 2026-10-17, PR 1 (render review pending)
 
 - **Red first.**
   - `test_camera_director.gd` reduced-motion cases (AC7).
@@ -130,3 +130,9 @@ Velocity is 350 LOC/day, the figure R2-INTERLUDE planned with. That sprint ran a
 ## Risks
 
 See the design doc §Risks. The plan-specific one: `ship_geometry_demo.gd` is 1,249 lines and other branches edit it (crew console v2, the Alpha Centauri pointer fix). C1 moves the camera code *out* of it into `camera_director.gd`, which reduces later conflicts. Rebase before each PR.
+
+## Progress (PR 1: C1 + C3, 2026-10-17)
+
+- Executed on `feat/camera-fixed-views`. `make camera-test` 95 checks; `make ship-demo-input-test ship-console-test ship-ui-test no-twitch-test title-screen-test` green; `make golden` adds G-CAM-2 (4) and G-CAM-3 (1), 378 ok lines.
+- Deviations: a second sector ring (the stations ring inside 12 m looks inward, turn 135 deg; the rail ring looks outward, turn 30 deg), because the design's single outward rule puts the Z2 eye inside the spire needle for any captain within ~10 m of the axis; Z1 pitch -25 deg (from -20) to clear the navigation consoles; actions registered at runtime instead of `project.godot`; long sector/ring swings ease longer than 0.8 s to keep the eye's acceleration under 1 cm/frame^2 (AC5); lower-deck views are interim (ceilings 9/47/75 blocked samples) until C2's Commons cameras; keys 7/8/9 and the tour's turns still use the old first-person looks until C2.
+- Pause point 1: Mark's render review of `renders/camera_views/` and a menu launch.
