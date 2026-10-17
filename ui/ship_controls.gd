@@ -11,16 +11,19 @@ extends RefCounted
 ## (a captain decision; at a bridge console only, never a key).
 
 ## Keys matched in ship_geometry_demo.gd _unhandled_input ("via": "match"), polled each
-## frame ("poll", WASD) or read by another node ("identify": the I card's own handler).
+## frame ("poll", WASD), read by another node ("identify": the I card's own handler), or bound
+## to a named InputMap action (R2-CAMERA D5, "via": "action"; CameraDirector.ACTIONS registers
+## them and _camera_action handles each name).
 const KEYS := [
-	{"key": "KEY_1", "via": "match", "kind": "camera", "group": "Camera", "help": "1 bridge view"},
-	{"key": "KEY_2", "via": "match", "kind": "camera", "group": "Camera", "help": "2 overlook"},
-	{"key": "KEY_3", "via": "match", "kind": "camera", "group": "Camera", "help": "3 whole ship"},
-	{"key": "KEY_4", "via": "match", "kind": "camera", "group": "Camera", "help": "4 reference rim"},
-	{"key": "KEY_R", "via": "match", "kind": "camera", "group": "Camera", "help": "R reset to the captain's eye"},
-	{"key": "KEY_7", "via": "match", "kind": "camera", "group": "Camera", "help": "7 look forward (up)"},
-	{"key": "KEY_8", "via": "match", "kind": "camera", "group": "Camera", "help": "8 look to the side"},
-	{"key": "KEY_9", "via": "match", "kind": "camera", "group": "Camera", "help": "9 look aft (down)"},
+	{"key": "KEY_1", "via": "action", "action": "camera_level_1", "kind": "camera", "group": "Camera", "help": "1 2 3 zoom level: Close, Deck, Whole level"},
+	{"key": "KEY_2", "via": "action", "action": "camera_level_2", "kind": "camera", "group": "Camera", "help": ""},
+	{"key": "KEY_3", "via": "action", "action": "camera_level_3", "kind": "camera", "group": "Camera", "help": ""},
+	{"key": "KEY_EQUAL", "via": "action", "action": "camera_level_in", "kind": "camera", "group": "Camera", "help": "= / - one level in or out"},
+	{"key": "KEY_MINUS", "via": "action", "action": "camera_level_out", "kind": "camera", "group": "Camera", "help": ""},
+	{"key": "KEY_R", "via": "action", "action": "camera_default", "kind": "camera", "group": "Camera", "help": "R default view (Deck) at the bridge spawn"},
+	{"key": "KEY_7", "via": "action", "action": "camera_sky_forward", "kind": "camera", "group": "Camera", "help": "7 look forward (up)"},
+	{"key": "KEY_8", "via": "action", "action": "camera_sky_side", "kind": "camera", "group": "Camera", "help": "8 look to the side"},
+	{"key": "KEY_9", "via": "action", "action": "camera_sky_aft", "kind": "camera", "group": "Camera", "help": "9 look aft (down)"},
 	{"key": "KEY_V", "via": "match", "kind": "display", "group": "Display", "help": "V Auto / Realistic view"},
 	{"key": "KEY_J", "via": "match", "kind": "display", "group": "Display", "help": "J sky brightness"},
 	{"key": "KEY_H", "via": "match", "kind": "display", "group": "Display", "help": "H sky only"},
@@ -40,13 +43,15 @@ const KEYS := [
 	{"key": "KEY_5", "via": "match", "kind": "dev", "group": "Developer", "help": "5 rest sky snapshot"},
 	{"key": "KEY_6", "via": "match", "kind": "dev", "group": "Developer", "help": "6 mid-journey sky snapshot"},
 	{"key": "KEY_G", "via": "match", "kind": "dev", "group": "Developer", "help": "G orbit guides"},
+	{"key": "KEY_F8", "via": "action", "action": "camera_free_toggle", "kind": "dev", "group": "Developer", "help": "F8 free camera (mouse look, scroll dolly, presets 1-4)"},
+	{"key": "KEY_4", "via": "match", "kind": "dev", "group": "Developer", "help": ""},
 	{"key": "KEY_B", "via": "match", "kind": "display", "group": "Display", "help": "B frame check: measures 10 s of play, uploads a public summary"},
 ]
 
 ## Pointer and gesture controls (instant).
 const POINTER := [
-	{"input": "mouse look", "kind": "camera", "group": "Camera", "help": "Mouse to look · Tab for pointer and buttons"},
-	{"input": "scroll / pinch", "kind": "camera", "group": "Camera", "help": "scroll or pinch to zoom"},
+	{"input": "scroll / pinch", "kind": "camera", "group": "Camera", "help": "a wheel notch, a scroll or a pinch: one level"},
+	{"input": "controller", "kind": "camera", "group": "Camera", "help": "controller: left stick walks, RB / LB level, A use, B back"},
 	{"input": "click a console", "kind": "move", "group": "Move", "help": "click a console to walk there (E or click uses it in reach)"},
 	{"input": "cmd/ctrl +/-/0", "kind": "display", "group": "Display", "help": "UI size"},
 ]
@@ -67,6 +72,15 @@ const CONSOLE := [
 ]
 
 const GROUP_ORDER := ["Move", "Camera", "Display", "Pacing", "Developer"]
+
+
+## The key rows bound to named actions (R2-CAMERA D5): {key: action}.
+static func action_keys() -> Dictionary:
+	var out := {}
+	for r: Dictionary in KEYS:
+		if r.via == "action":
+			out[r.key] = r.action
+	return out
 
 
 ## The key rows the demo's _unhandled_input must match (NT5).

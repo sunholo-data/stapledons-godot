@@ -47,6 +47,7 @@ var settings_panel := PanelContainer.new()
 var credits_panel := PanelContainer.new()
 var view_option := OptionButton.new()
 var confirm_option := OptionButton.new() # R1-SHIP-UI §C4: hold or press twice
+var motion_option := OptionButton.new() # R2-CAMERA D6: full or reduced camera motion
 var text_only_box := CheckBox.new()
 var settings_status := Label.new()
 var credits_body := Label.new()
@@ -308,6 +309,15 @@ func _build_settings() -> void:
 	confirm_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	crow.add_child(confirm_option)
 	box.add_child(crow)
+	var mrow := HBoxContainer.new()
+	mrow.add_child(_label("Camera motion", 15, Color(0.86, 0.9, 0.98)))
+	motion_option.add_item("Full (eased)", 0)
+	motion_option.add_item("Reduced (cuts, no camera travel)", 1)
+	motion_option.select(1 if settings.camera_motion == "reduced" else 0)
+	motion_option.item_selected.connect(func(i: int) -> void: set_camera_motion("reduced" if i == 1 else "full"))
+	motion_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mrow.add_child(motion_option)
+	box.add_child(mrow)
 	text_only_box.text = "Text-only AI (no voices or new portraits)"
 	text_only_box.button_pressed = settings.text_only
 	text_only_box.toggled.connect(set_text_only)
@@ -329,6 +339,12 @@ func set_auto_view(on: bool) -> void:
 
 func set_confirm_mode(mode: String) -> void:
 	settings.confirm_mode = mode if mode in GameSettings.CONFIRM_MODES else "hold"
+	_save()
+
+
+## R2-CAMERA D6: the camera's motion (full or reduced), read by the ship at launch.
+func set_camera_motion(mode: String) -> void:
+	settings.camera_motion = mode if mode in GameSettings.CAMERA_MOTIONS else "full"
 	_save()
 
 

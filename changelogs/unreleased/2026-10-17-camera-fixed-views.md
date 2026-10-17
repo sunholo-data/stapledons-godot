@@ -1,0 +1,14 @@
+### Changed: the player camera is third person with three fixed zoom levels (R2-CAMERA PR 1: C1 + C3)
+
+Mark's dev.31 ruling: no free zoom for players; fixed zoom levels; third person. Design: `design_docs/planned/r2/camera-fixed-views.md` (approved 2026-10-16).
+
+- **One camera director** (`demos/camera_director.gd`, views as data in `data/camera/views.json`). It owns every pose of the player camera; `ShipCamera` stays the render boundary, so the sky is still rendered through the same pose as the geometry.
+- **Three zoom levels:** Z1 Close (4.5 m, -20 deg), Z2 Deck (12 m, -35 deg; the default, the captain about 64 px tall at 720p, the art brief's reading scale) and Z3 Whole level (a place camera on the bridge's edge that tracks the captain by rotation). Keys 1 / 2 / 3 and = / -; one wheel notch, one trackpad scroll unit or one pinch step is one level, followed by a 0.3 s cooldown, so a MacBook swipe no longer drifts the camera. RB / LB on a controller. The FOV stays at 78 deg.
+- **Authored angles:** the boom yaw comes from 8 sectors around the spire (10 deg hysteresis) and 2 rings (the stations ring inside 12 m, the rail ring outside, 1 m hysteresis). Every eye stays inside the 95 m envelope, and a sweep of every walkable point checks the line to the captain's head (`make camera-test`).
+- **No mouse look for players.** The pointer is never captured; clicks aim where the pointer is. WASD is screen-relative, and a held key keeps its world direction when the view changes. The left stick walks; A uses and B steps back.
+- **Console focus** eases to the framed screen through the director, and stepping back returns to the remembered level and sector, not a stored eye.
+- **Reduced camera motion** (title Settings and Tab, `[display] camera_motion`): cuts with a 0.15 s fade instead of eases, and a rigid follow. In full motion the camera turns at most 90 deg/s, never rolls and never overshoots.
+- **Developer free camera:** F8 or `--free-camera` (command-line launches only) restores the old mouse look, scroll dolly and presets 1-4, labelled FREE CAMERA. Tools, captures and goldens keep `set_preset`, `look_direction` and `reference_view`, which take the camera through the director's override.
+- The waiting line under the crossing review and the arrival card no longer mentions mouse look.
+- Not yet (C2): the authored Sky forward, side and aft views and the situation cues. Keys 7 / 8 / 9 and the guided tour's turns still use the old first-person looks until then.
+- **Physics:** no formula changes. New goldens: G-CAM-2 (the wall glow from the Z1 and Z2 eyes at 0.99c and at the cap, against `ForwardGlow` and a closed-form wall hit) and G-CAM-3 (one tonemap through the Z2 pose); `make golden` now pins 378 ok lines. `make camera-views-capture` renders each level at rest and at 0.99c, at 1280x720 and 2560x1440.

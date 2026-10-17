@@ -378,7 +378,7 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6
+golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6; R2-CAMERA: G-CAM-2 glow from the Z1/Z2 eyes 4, G-CAM-3 tonemap at Z2 1
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
@@ -394,7 +394,9 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    G-M4-S2 one tonemap (ship)' $(SCRATCH)/golden.log)" = 1 && \
 	  test "$$(grep -c '^ok    G-M4-S3 forward pole (ship)' $(SCRATCH)/golden.log)" = 3 && \
 	  test "$$(grep -c '^ok    G-M4-S4 glow' $(SCRATCH)/golden.log)" = 6 && \
-	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 373 && \
+	  test "$$(grep -c '^ok    G-CAM-2 glow' $(SCRATCH)/golden.log)" = 4 && \
+	  test "$$(grep -c '^ok    G-CAM-3 one tonemap' $(SCRATCH)/golden.log)" = 1 && \
+	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 378 && \
 	  grep -q '^m4 ship golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -cE '^ok    GR[123] shadow' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR4 orbit mask' $(SCRATCH)/golden.log)" = 3 && \
 	  test "$$(grep -c '^ok    GR5 two images' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR6 Einstein ring' $(SCRATCH)/golden.log)" = 3 && \
@@ -403,7 +405,7 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-ISM-5 surface wall observer' $(SCRATCH)/golden.log)" = 3 && grep -q '^ok    G-ISM-5 integrated radiance' $(SCRATCH)/golden.log && grep -q '^ok    G-ISM-5 surface dim overlaps' $(SCRATCH)/golden.log && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3 + M4.6gR3 G-M4-S2, G-M4-S3 3, G-M4-S4 6)"; exit 1; }
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3 + M4.6gR3 G-M4-S2, G-M4-S3 3, G-M4-S4 6 + R2-CAMERA G-CAM-2 4, G-CAM-3 1; 378 ok lines)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
@@ -943,7 +945,7 @@ ship-demo-ci: ship-demo-consolidation-test
 .PHONY: current-ship-export-smoke
 current-ship-export-smoke:
 	@mkdir -p $(SCRATCH)/current-ship-export-home
-	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 -- --ship-demo > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest captain-eye single-navigation$$' $(SCRATCH)/current-ship-export.log
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 -- --ship-demo > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest deck-view single-navigation$$' $(SCRATCH)/current-ship-export.log
 publish-dev: current-ship-export-smoke
 
 # Title screen (design_docs/implemented/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
@@ -1169,6 +1171,17 @@ codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Ma
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/codex-test.log && grep -q '^codex: [0-9]* passed, 0 failures$$' $(SCRATCH)/codex-test.log || { echo "codex-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/codex-test.log)"; exit 1; }
+
+# R2-CAMERA (design_docs/planned/r2/camera-fixed-views.md): the camera director, three fixed zoom levels,
+# the envelope and clear-line sweep, gesture steps, sectors, motion, the developer free camera.
+.PHONY: camera-test
+ship-demo-ci: camera-test
+camera-test: import ## R2-CAMERA AC1-5, 7, 9: views.json schema, |eye| <= 95 m and a clear line from every walk sample, one level per notch/unit/pinch, Z2 60-80 px, hysteresis, no jumps, reduced motion, F8 dev-only
+	@$(GODOT_SIM) --headless --path . --script tests/test_camera_director.gd > $(SCRATCH)/camera-test.log 2>&1; rc=$$?; grep -E '^(FAIL|figure|transitions|camera-director)' $(SCRATCH)/camera-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-test.log && grep -q '^camera-director: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-test.log
+
+.PHONY: camera-views-capture
+camera-views-capture: import ## R2-CAMERA: Z1/Z2/Z3 on the bridge at rest and 0.99c, 1280x720 and 2560x1440 (+ rail and stations rings) -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m or no captain in frame
+	@mkdir -p $(SCRATCH); $(GODOT) --path . --script tools/camera_views_capture.gd > $(SCRATCH)/camera-views-capture.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|camera-views-capture)' $(SCRATCH)/camera-views-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-views-capture.log && grep -q '^camera-views-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-views-capture.log
 
 # D-63 attended navigation recovery: genuine body clearance, stable controls and scoped parity.
 .PHONY: free-nav-recovery-test

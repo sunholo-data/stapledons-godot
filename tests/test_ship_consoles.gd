@@ -88,7 +88,7 @@ func test_stations() -> void:
 	c.go_to("navigation")
 	demo._process(0.016)
 	check("AC8 in reach and facing: the prompt names the station (%s)" % demo.ship_hud.prompt.text, demo.ship_hud.prompt.text == "Navigation station · E use")
-	demo.camera.yaw += PI
+	demo.captain_yaw += PI # R2-CAMERA: the captain's facing is separate from the camera
 	demo._process(0.016)
 	check("AC8 in reach, facing away: no station prompt (%s)" % demo.ship_hud.prompt.text, not demo.ship_hud.prompt.text.contains("Navigation station"))
 	demo.avatar_pos = Vector3(8, 82, 4.0)
@@ -102,16 +102,37 @@ func test_stations() -> void:
 	demo._process(0.016)
 	check("E priority: at the landing E names the lift", demo.ship_hud.prompt.text.begins_with("Lift · E") and c.e_target().kind == "lift")
 	c.go_to("archive")
-	check("E at the Archive terminal opens it (camera dolly, panel)", c.press_e() and c.focused == "archive" and c.panel.visible and demo.camera_mode == "console")
-	var start: Transform3D = c._dolly.from
+	step(demo, 1.0)
+	demo.director.set_level(1) # remembered across the focus (D4)
+	step(demo, 3.0)
+	var start: Transform3D = demo.camera.global_transform
+	check("E at the Archive terminal opens it (the director eases to the screen, panel)", c.press_e() and c.focused == "archive" and c.panel.visible and demo.camera_mode == "console" and demo.director.view_id == "console")
 	step(demo, 0.3)
-	check("the dolly is under way at 0.3 s", c.dolly_active())
-	step(demo, 0.35)
-	check("the dolly lands on the focus pose in 0.6 s", not c.dolly_active() and demo.camera.global_transform.origin.distance_to(c.focus_pose(c.focus_mesh).origin) < 1e-3 and start.origin.distance_to(demo.camera.global_transform.origin) > 0.1)
+	check("the ease is under way at 0.3 s", c.dolly_active())
+	step(demo, 3.0) # 0.6 s, longer for a large turn (<= 90 deg/s, AC7)
+	check("the ease lands on the focus pose", not c.dolly_active() and demo.camera.global_transform.origin.distance_to(c.focus_pose(c.focus_mesh).origin) < 1e-3 and start.origin.distance_to(demo.camera.global_transform.origin) > 0.1)
 	check("walking is suspended in console focus", demo.camera_mode == "console")
-	check("Esc steps back: the dolly returns to the captain's eye", c.escape() and c.focused == "" and not c.panel.visible)
-	step(demo, 0.7)
-	check("back at the captain's eye", demo.camera_mode == "player" and demo.camera.position.distance_to(demo.avatar_pos + Vector3.UP * 1.7) < 1e-3)
+	# R2-CAMERA AC8: at a console the wheel, a scroll and a pinch belong to the panel.
+	var at: Transform3D = demo.camera.global_transform
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	var pan := InputEventPanGesture.new()
+	pan.delta = Vector2(0, 2)
+	var pinch := InputEventMagnifyGesture.new()
+	pinch.factor = 1.5
+	for e: InputEvent in [wheel, pan, pinch]:
+		demo._unhandled_input(e)
+	var k3 := InputEventKey.new()
+	k3.physical_keycode = KEY_3
+	k3.pressed = true
+	demo._unhandled_input(k3)
+	step(demo, 0.2)
+	check("AC8 wheel, scroll, pinch and level keys at a console never move the camera", demo.camera.global_transform.is_equal_approx(at) and demo.director.level == 1)
+	check("Esc steps back", c.escape() and c.focused == "" and not c.panel.visible)
+	step(demo, 3.0)
+	check("AC8 back at the remembered level (Z1) and sector view", demo.camera_mode == "player" and demo.director.view_id == "z1" and demo.director.level == 1 and not c.dolly_active())
+	demo.director.set_level(2)
 	check("use() refuses a decision away from its console", not c.use("voyage", "begin") and demo.solar_tour == null and demo.ship_hud.has_card("refusal"))
 	check("use() refuses to open a console out of reach", not c.use("navigation", "open") and c.focused == "")
 	c.go_to("reserved_2")

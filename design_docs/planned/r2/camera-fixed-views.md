@@ -1,6 +1,6 @@
 # R2-CAMERA: fixed zoom levels and authored third-person views
 
-**Status:** Proposed 2026-10-16. Awaiting Mark's approval with the sprint plan ([camera-fixed-views-sprint.md](camera-fixed-views-sprint.md)). Planning only; nothing is built.
+**Status:** Approved 2026-10-16 by Mark, attended ("yes continue", asked to approve the camera plan with all nine recommendations), with the sprint plan ([camera-fixed-views-sprint.md](camera-fixed-views-sprint.md)). OQ1-OQ9 are answered as recommended (see the table). PR 1 (C1 + C3) in progress on `feat/camera-fixed-views`.
 **Release:** R2. **Milestone:** a player-facing camera for the 3D ship (D-52 A), replacing free look and free zoom.
 **Priority:** P1 for R2. Every session runs through this camera, and Mark's dev.31 playtest asked for it.
 
@@ -302,6 +302,8 @@ Every row is a command. `make camera-test` joins `ship-demo-ci`, so it is in `ma
 | The Alpha Centauri pointer bug masks a click failure | §D7: its regression test runs on the player path too |
 
 ## Open questions for Mark (with recommendations)
+
+**Answered 2026-10-16 (attended, Mark: "yes continue"): every recommendation below is accepted as written.** OQ1 three levels; OQ2 no player camera rotation in R2 (the slice decides the angle); OQ3 first person gone everywhere, console focus stays a framed screen; OQ4 automatic situation cues, any input takes over, reduced motion uses prompts; OQ5 no exterior view in this sprint; OQ6 the default is Z2 Deck; OQ7 keep a developer free camera; OQ8 perspective; OQ9 the zoom ruling is recorded in the ledger by the attended session (this branch does not edit the ledger).
 
 | # | Question | Recommendation |
 |---|---|---|

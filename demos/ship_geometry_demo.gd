@@ -57,7 +57,19 @@ var confirm_mode := "hold"
 var consoles: ShipConsoles
 ## Tests: Esc's last resort (main menu or quit) can be switched off.
 var escape_exits := true
+## R2-CAMERA D7: mouse look is the developer free camera's only (F8 / --free-camera, command-line
+## launches); players never have it, and the pointer is never captured for them.
 var mouse_look_enabled := true
+## R2-CAMERA D0: the one owner of the player camera's pose (demos/camera_director.gd).
+var director: CameraDirector
+## The developer free camera (F8 / --free-camera): today's look, dolly and presets, dev launches only.
+var free_camera := false
+## R2-CAMERA: the captain's facing, separate from the camera (consoles' reach-and-facing reads it).
+var captain_yaw := .47
+## D2: while a move key is held across a view change, the walk keeps its world direction.
+var _walk_hold_yaw := NAN
+var camera_motion := "full"
+var fade_rect := ColorRect.new()
 var _mouse := Vector2(-1, -1)
 var _aim_t := 0.0
 var _dwell_pose := Transform3D()
@@ -81,6 +93,7 @@ var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
+var motion_button := Button.new()
 var crossing_review: CrossingReview ## R2-INTERLUDE I3: the crossing review (replaces the D-41 interlude card)
 var archive_narration := ArchiveNarration.new() ## R2-INTERLUDE I4: the Archive's telling of the crossing (live AI only)
 var archive_voice: AudioStreamPlayer ## I4: the telling's voice, played once per crossing
@@ -134,6 +147,8 @@ func setup(opts := {}) -> bool:
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
 	geometry_view.add_child(camera);camera.current=true
+	CameraDirector.ensure_actions();director=CameraDirector.new(self)
+	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
 	lighting=Lighting.install(geometry);star_light.install(lighting)
 	set_lighting(opts.get("lighting","moody"))
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
@@ -147,9 +162,14 @@ func setup(opts := {}) -> bool:
 	sky.setup({"position_m":[8,4.8,83.7],"forward":[1,0,0],"up":[0,0,1]},78.,px,opts)
 	add_child(sky)
 	_draw_layer(sky.get_texture(),-40);_draw_layer(geometry_view.get_texture(),-20)
+	var fade_canvas:=CanvasLayer.new();fade_canvas.layer=-10;add_child(fade_canvas) # R2-CAMERA D6: reduced-motion cut fade
+	fade_rect.color=Color(0,0,0,0);fade_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	fade_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);fade_canvas.add_child(fade_rect)
 	lift=Lift.new();geometry.add_child(lift);lift.setup(self)
 	_guides();_hud();get_viewport().size_changed.connect(_resize)
-	set_preset("bridge")
+	_reset_captain()
+	if dev_controls() and (opts.get("free_camera",false) or OS.get_cmdline_user_args().has("--free-camera")):set_free_camera(true)
+	else:director.advance(0.)
 	var review_path:=asset("sky_review.json")
 	if FileAccess.file_exists(review_path):sky_states=JSON.parse_string(FileAccess.get_file_as_string(review_path)).get("states",{})
 	if not set_sky_state(opts.get("sky_state","cruise")):
@@ -162,6 +182,7 @@ func setup(opts := {}) -> bool:
 	confirm_mode=opts.get("confirm_mode","hold") if opts.get("confirm_mode","hold") in GameSettings.CONFIRM_MODES else "hold"
 	confirm_button.text="Confirm decisions: "+("press twice" if confirm_mode=="twice" else "hold")
 	consoles.set_confirm_mode(confirm_mode)
+	set_camera_motion(camera_motion)
 	if menu_return:
 		consoles.set_glow(true);ship_hud.show_hint(ShipConsoles.HINT)
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
@@ -216,9 +237,11 @@ func _hud() -> void:
 	var dwell_button:=CheckButton.new();dwell_button.text="Name what I look at (dwell label)";dwell_button.button_pressed=true
 	dwell_button.toggled.connect(func(on:bool)->void:dwell_on=on;ship_hud.set_dwell("",Vector2.ZERO));display.add_child(dwell_button)
 	confirm_button.text="Confirm decisions: hold";confirm_button.pressed.connect(toggle_confirm_mode);display.add_child(confirm_button)
+	motion_button.text="Camera motion: full";motion_button.pressed.connect(toggle_camera_motion);display.add_child(motion_button)
 	var row:=HBoxContainer.new();display.add_child(row)
-	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Rim [4]","rim"],["Reset [R]","reset"]]:
-		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_preset.bind(pair[1]));row.add_child(button)
+	for pair in [["Close [1]",1],["Deck [2]",2],["Whole level [3]",3]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(func()->void:director.set_level(pair[1]));row.add_child(button)
+	var reset_button:=Button.new();reset_button.text="Default view [R]";reset_button.pressed.connect(set_preset.bind("reset"));row.add_child(reset_button)
 	var look_row:=HBoxContainer.new();display.add_child(look_row)
 	for pair in [["Look forward [7]","forward"],["Look side [8]","side"],["Look aft [9]","aft"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));look_row.add_child(button)
@@ -232,6 +255,7 @@ func _hud() -> void:
 	for pair in [["Rest sky [5]","rest"],["Mid-journey 0.99c sky [6]","cruise"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_sky_state.bind(pair[1]));sky_row.add_child(button)
 	var guides_button:=Button.new();guides_button.text="Orbit guides [G]";guides_button.pressed.connect(func()->void:guides.visible=not guides.visible);dev.add_child(guides_button)
+	var free_button:=Button.new();free_button.text="Free camera: look, dolly, presets 1-4 [F8]";free_button.pressed.connect(func()->void:set_free_camera(not free_camera_on()));dev.add_child(free_button)
 	_consoles_setup()
 func toggle_controls() -> void:
 	if not benchmark.running:
@@ -266,11 +290,16 @@ func brightness_label() -> String:
 	if not sky.system_view.body_fader:return "REALISTIC view · "+manual
 	var faded:=sky.system_view.fader_stops(sky.exposure.k())
 	return "AUTO view · "+manual+(" · bodies dimmed up to %.0f stops (composite) · star colours enhanced"%faded if faded>=0.5 else " · no body needs dimming")
+## Tools, captures and the developer free camera: the old presets, through CameraDirector.override.
+## "reset" (R) puts the captain at the spawn and the player camera on its default view.
 func set_preset(name: String) -> void:
 	if name=="reset":
-		if lift!=null:lift.reset()
-		active_level=0;walk=walk_bridge;avatar_pos=Vector3(8,82,-4.8);name="bridge"
-	if lift!=null and lift.travelling() and name!="reset":return
+		_reset_captain()
+		if not free_camera_on():
+			camera.reference=false;guides.visible=false;director.default_view();director.advance(0.);_sync_observer();return
+		name="bridge"
+	if lift!=null and lift.travelling():return
+	director.override()
 	camera.reference=false
 	guides.visible=name=="overview"
 	match name:
@@ -286,6 +315,7 @@ func set_preset(name: String) -> void:
 			camera.follow(Vector3(19.0513,82,9.52565),-30,.463648,0.)
 	_sync_observer()
 func reference_view(radius: float, tilt: float) -> void:
+	director.override()
 	camera_mode="diagnostic reference — not a standing location";camera.reference=true
 	camera.follow(Vector3(radius*2/sqrt(5.),82,radius/sqrt(5.)),-tilt,.463648,0.)
 	_sync_observer()
@@ -307,16 +337,23 @@ func look_direction(direction: String) -> void:
 	_tour_view_active=false
 	if benchmark.running:return
 	var tilt:float={"forward":89.5,"side":0.,"aft":-89.5}.get(direction,0.)
+	director.override() # R2-CAMERA: first person until C2's authored sky views replace this
 	camera_mode="player";camera.reference=false
 	camera.follow(avatar_pos,tilt,0.,0.);_sync_observer()
 func toggle_sky_only() -> void:
 	if benchmark.running:return
 	sky_only=not sky_only;geometry_view.render_target_update_mode=SubViewport.UPDATE_DISABLED if sky_only else SubViewport.UPDATE_ALWAYS
 	_rects[1].visible=not sky_only
+## WASD is screen-relative (W up the screen). D2: the walk direction is held in world space while
+## any move key stays down, so a view change mid-stride never reverses the captain.
 func walk_motion(move: Vector2,delta: float) -> void:
-	var forward: Vector3=-camera.basis.z;forward.y=0;forward=forward.normalized()
-	var right: Vector3=camera.basis.x;right.y=0;right=right.normalized()
+	if move==Vector2.ZERO:
+		_walk_hold_yaw=NAN;return
+	if is_nan(_walk_hold_yaw) or director.overridden:_walk_hold_yaw=director.walk_yaw()
+	var forward:=Vector3(cos(_walk_hold_yaw),0.,sin(_walk_hold_yaw))
+	var right:=Vector3(-sin(_walk_hold_yaw),0.,cos(_walk_hold_yaw))
 	var displacement:Vector3=(right*move.x+forward*move.y).normalized()*WALK_SPEED_MPS*maxf(delta,0.)
+	if displacement.length()>1e-9:captain_yaw=atan2(displacement.z,displacement.x)
 	# Endpoint-only stepping can tunnel across the lift opening after a stall.
 	var steps:int=maxi(1,ceili(displacement.length()/maxf(.05,walk.radius*.5)))
 	for step in steps:avatar_pos=walk.step(avatar_pos,displacement/steps)
@@ -351,6 +388,8 @@ func _process(delta: float) -> void:
 			bh_tick()
 	if auto and not pointer_required() and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()) and not get_viewport().gui_get_focus_owner() is LineEdit:
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
+		var stick:=Vector2(Input.get_joy_axis(0,JOY_AXIS_LEFT_X),-Input.get_joy_axis(0,JOY_AXIS_LEFT_Y)) # D5: left stick, screen-relative
+		if stick.length()>.25:move+=stick
 		if move!=Vector2.ZERO:consoles.cancel_walk() # WASD takes over an auto-walk
 		walk_motion(move,delta)
 	consoles.advance(delta)
@@ -359,13 +398,20 @@ func _process(delta: float) -> void:
 	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
-	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
-	avatar.visible=camera.pullback>.5 or camera.external
+	if director.overridden:
+		if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
+		avatar.visible=camera.pullback>.5 or camera.external
+	else:
+		director.advance(delta)
+		avatar.visible=camera_mode!="console" # third person: the captain is in every player view
+	fade_rect.color.a=.85*director.fade
 	avatar_shadow.global_position=avatar.global_position
 	_sync_observer()
 	sky.finish_exposure_frame(delta)
 	star_light.update(lighting,sky,delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
+	if free_camera_on():view_name="FREE CAMERA · developer"
+	elif not director.overridden and camera_mode=="player":view_name="%s view (Z%d) · sector %d" % [level_name(),director.level,director.sector]
 	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
 	_update_hud(delta,details)
 	_update_wait_hint()
@@ -375,10 +421,84 @@ func _unhandled_input(event: InputEvent) -> void:
 	if UiScale.handle(get_window(),event):
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
-	if camera_mode=="console" and (event is InputEventPanGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
-	# Free look when nothing needs the pointer; while something does (the crossing review, Tab, a
-	# card held open), right-drag or Alt+move still looks (trackpads: Option + move, or a two-finger
-	# press-and-drag). dev.31: the arrival and medium cards no longer take the pointer.
+	# D4: at a console the wheel, scroll and pinch belong to the panel; the camera never moves.
+	if camera_mode=="console" and (event is InputEventPanGesture or event is InputEventMagnifyGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
+	if free_camera_on():_free_camera_input(event)
+	else:
+		# R2-CAMERA D1/D5: fixed zoom levels. One wheel notch, one accumulated trackpad unit or one
+		# pinch step is one level (then a 0.3 s cooldown); mouse motion never moves the camera.
+		if event is InputEventPanGesture:director.pan(event.delta)
+		if event is InputEventMagnifyGesture:director.pinch(event.factor)
+		if event is InputEventMouseButton and event.pressed:
+			if event.button_index==MOUSE_BUTTON_WHEEL_UP:director.wheel(1)
+			if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:director.wheel(-1)
+	if event is InputEventMouseMotion:_mouse=event.position
+	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT and not event.alt_pressed:
+		# D5: clicks aim at the pointer; only the developer free camera captures it (screen centre).
+		var aim:Vector2=get_viewport().get_visible_rect().size*.5 if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED else event.position
+		if consoles.click(aim):get_viewport().set_input_as_handled();return
+		if ship_hud.has_card("arrival"):dismiss_arrival()
+	if event is InputEventJoypadButton and event.pressed:
+		if event.button_index==JOY_BUTTON_A:use_nearest()
+		elif event.button_index==JOY_BUTTON_B:escape()
+	if _camera_action(event):return
+	if event is InputEventKey and event.pressed and not event.echo:
+		# R2-INTERLUDE I3: while the crossing review is read, the arrows and Enter turn its pages.
+		if crossing_review!=null and crossing_review.visible and crossing_review.key(event.physical_keycode):return
+		match event.physical_keycode:
+			KEY_4:
+				if free_camera_on():set_preset("rim")
+			KEY_5:
+				if dev_controls():set_sky_state("rest")
+			KEY_6:
+				if dev_controls():set_sky_state("cruise")
+			KEY_H:toggle_sky_only()
+			KEY_V:toggle_auto_view()
+			KEY_ENTER:dismiss_arrival()
+			KEY_K:
+				if black_hole!=null:bh_finish_approach()
+				else:skip_stage()
+			KEY_P:toggle_tour_pause()
+			KEY_N:skip_dwell()
+			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
+			KEY_TAB:toggle_controls()
+			KEY_G:
+				if dev_controls():guides.visible=not guides.visible
+			KEY_B:frame_check.start(self) # a measurement of what the player is doing, in any launch (Mark, 2026-10-14)
+			KEY_M:open_chart()
+			KEY_E:use_nearest()
+			KEY_ESCAPE:escape()
+## R2-CAMERA D5: the named camera actions (CameraDirector.ACTIONS: keys and joypad buttons).
+## At a console they are ignored (D4); F8 exists only on command-line launches (D7).
+func _camera_action(event: InputEvent) -> bool:
+	if not (event is InputEventKey or event is InputEventJoypadButton) or not event.is_pressed() or event.is_echo():return false
+	for action:String in CameraDirector.ACTIONS:
+		if not event.is_action_pressed(action):continue
+		if action=="camera_free_toggle":
+			if dev_controls():set_free_camera(not free_camera_on())
+			return dev_controls()
+		if camera_mode=="console":return true
+		match action:
+			"camera_level_in":
+				if free_camera_on():_zoom(-2.)
+				else:director.step_level(-1)
+			"camera_level_out":
+				if free_camera_on():_zoom(2.)
+				else:director.step_level(1)
+			"camera_level_1","camera_level_2","camera_level_3":
+				var n:=int(action.right(1))
+				if free_camera_on():set_preset(["bridge","overlook","overview"][n-1])
+				else:director.set_level(n)
+			"camera_default":set_preset("reset")
+			"camera_sky_forward":look_direction("forward")
+			"camera_sky_side":look_direction("side")
+			"camera_sky_aft":look_direction("aft")
+		return true
+	return false
+## D7: the developer free camera's look and dolly (today's behaviour, command-line launches only).
+## Free look when nothing needs the pointer; while something does (the crossing review, Tab, a card
+## held open), right-drag or Alt+move still looks.
+func _free_camera_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and camera_mode!="console" and ((not pointer_required() and mouse_look_enabled) or event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		_tour_view_active=false
 		if camera_mode=="external review":
@@ -393,44 +513,35 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:_zoom(2.*event.factor)
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:_zoom(-2.*event.factor)
-	if event is InputEventMouseMotion:_mouse=event.position
-	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT and not event.alt_pressed:
-		var aim:Vector2=get_viewport().get_visible_rect().size*.5 if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED else event.position
-		if consoles.click(aim):get_viewport().set_input_as_handled();return
-		if ship_hud.has_card("arrival"):dismiss_arrival()
-	if event is InputEventKey and event.pressed and not event.echo:
-		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
-		# R2-INTERLUDE I3: while the crossing review is read, the arrows and Enter turn its pages.
-		if crossing_review!=null and crossing_review.visible and crossing_review.key(event.physical_keycode):return
-		match event.physical_keycode:
-			KEY_1:set_preset("bridge")
-			KEY_2:set_preset("overlook")
-			KEY_3:set_preset("overview")
-			KEY_4:set_preset("rim")
-			KEY_5:
-				if dev_controls():set_sky_state("rest")
-			KEY_6:
-				if dev_controls():set_sky_state("cruise")
-			KEY_7:look_direction("forward")
-			KEY_8:look_direction("side")
-			KEY_9:look_direction("aft")
-			KEY_H:toggle_sky_only()
-			KEY_V:toggle_auto_view()
-			KEY_ENTER:dismiss_arrival()
-			KEY_K:
-				if black_hole!=null:bh_finish_approach()
-				else:skip_stage()
-			KEY_P:toggle_tour_pause()
-			KEY_N:skip_dwell()
-			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
-			KEY_TAB:toggle_controls()
-			KEY_R:set_preset("reset")
-			KEY_G:
-				if dev_controls():guides.visible=not guides.visible
-			KEY_B:frame_check.start(self) # a measurement of what the player is doing, in any launch (Mark, 2026-10-14)
-			KEY_M:open_chart()
-			KEY_E:use_nearest()
-			KEY_ESCAPE:escape()
+func free_camera_on() -> bool:
+	return free_camera and director.overridden
+## F8 / --free-camera (developer launches only): on, the camera takes today's free look at the
+## captain's eye; off, the player camera returns to its level view.
+func set_free_camera(on: bool) -> void:
+	if on and not dev_controls():return
+	free_camera=on
+	if on:
+		director.override();camera_mode="player";camera.reference=false
+		camera.follow(avatar_pos,-18.,captain_yaw,0.);_sync_observer()
+	else:
+		director.release();director.advance(0.);_sync_observer()
+	_sync_pointer()
+## The captain at the bridge spawn, facing the old default yaw.
+func _reset_captain() -> void:
+	if lift!=null:lift.reset()
+	active_level=0;walk=walk_bridge;avatar_pos=Vector3(8,82,-4.8);captain_yaw=.47;_walk_hold_yaw=NAN
+	if consoles!=null:consoles.cancel_walk()
+func level_name() -> String:
+	return str(director.level_view(director.level,director.area).get("name","Deck"))
+## Tab and the title Settings (D6): full or reduced camera motion; saved from a menu launch.
+func toggle_camera_motion() -> void:
+	set_camera_motion("reduced" if camera_motion=="full" else "full")
+	if menu_return:
+		var gs:=GameSettings.new();gs.dir=settings_dir;gs.load_settings();gs.camera_motion=camera_motion;gs.save_settings()
+func set_camera_motion(mode: String) -> void:
+	camera_motion=mode if mode in GameSettings.CAMERA_MOTIONS else "full"
+	director.set_motion(camera_motion)
+	motion_button.text="Camera motion: "+("reduced (cuts)" if camera_motion=="reduced" else "full")
 ## Developer review controls (B, G, 5, 6, the audit buttons): command-line launches only (AC11).
 func dev_controls() -> bool:
 	return not menu_return
@@ -878,7 +989,9 @@ func where_text() -> String:
 ## The view tag: one word (details in Tab), plus the camera when it is not the captain's eye.
 func view_tag_text() -> String:
 	var t := "AUTO" if sky.system_view.body_fader else "REALISTIC"
-	if camera_mode == "player" and camera.pullback > 0.01: t += " · third-person camera"
+	if free_camera_on(): t += " · FREE CAMERA"
+	elif camera_mode == "player" and not director.overridden: t += " · " + level_name()
+	elif camera_mode == "player" and camera.pullback > 0.01: t += " · third-person camera"
 	if active_level == 1: t += " · lower deck"
 	return t
 func _update_hud(delta: float, details: String) -> void:
@@ -1002,18 +1115,20 @@ func _update_cards(view: Dictionary) -> void:
 		ship_hud.show_card("unlock", "New in the Archive", 10.0)
 		if ship_hud.card_body("unlock").get_child_count() == 0: ship_hud.card_text("unlock", "unlock", "")
 		ship_hud.set_card_value("unlock", "%s, at the Archive terminal" % ", ".join(titles))
-## dev.31 (Mark): when the game waits on the player, one centred line says what to press and how to
-## look around (the review takes the pointer, so look is a right-drag there).
+## dev.31 (Mark): when the game waits on the player, one centred line says what to press. R2-CAMERA:
+## players have no look, so the line names only the key (the developer free camera adds its look).
 func _update_wait_hint() -> void:
 	var text := ""
 	if crossing_review != null and crossing_review.visible:
 		var card: CardInterlude = solar_tour.interlude as CardInterlude if solar_tour != null else null
 		if crossing_review.current() == "hold":
-			text = "Answer the crew or resume the crossing to go on · right-drag to look around"
+			text = "Answer the crew or resume the crossing to go on"
 		elif card != null and card.crossed():
-			text = ("Press Enter to brake" if crossing_review.last_page() else "Press Enter to read on") + " · right-drag to look around"
+			text = ("Press Enter to brake" if crossing_review.last_page() else "Press Enter to read on")
+		# R2-CAMERA: players have no mouse look; only the developer free camera names it.
+		if text != "" and free_camera_on(): text += " · right-drag to look around"
 	elif ship_hud != null and ship_hud.has_card("arrival"):
-		text = "Press Enter to continue · move the mouse to look around"
+		text = "Press Enter to continue" + (" · move the mouse to look around" if free_camera_on() else "")
 	wait_hint.text = text
 	wait_hint.visible = text != ""
 	if wait_hint.visible and ship_hud != null:
@@ -1307,12 +1422,13 @@ func toggle_codex() -> void:
 	if codex.panel.visible:codex.close()
 	else:codex.open()
 
-## Pointer belongs to an open interactive surface; otherwise mouse motion looks around.
+## Pointer belongs to an open interactive surface (clicks reach consoles and panels through it).
 func pointer_required() -> bool:
 	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
-## Free look owns the mouse (captured) unless something needs the pointer.
+## R2-CAMERA D7: only the developer free camera captures the mouse, and only when no panel needs
+## it; a player's pointer is always visible.
 func wants_capture() -> bool:
-	return mouse_look_enabled and not pointer_required()
+	return free_camera_on() and mouse_look_enabled and not pointer_required()
 func _sync_pointer() -> void:
 	# Returning to the title detaches this scene during the same Esc event.
 	var window:Window=get_window() if is_inside_tree() else null

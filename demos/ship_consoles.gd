@@ -3,7 +3,8 @@ extends Node
 ## R1-SHIP-UI (D-56, D-57) §B-§C: the bridge consoles decide. Every captain decision (plot,
 ## set speed, commit, cancel, approach, leave, the guided voyage, the Archive) is made at a
 ## console of ship.glb: walk there (WASD, click-to-walk, or Tab "Walk to"), E or click to
-## use it, the camera dollies to a framed panel (D-57 Q4), Esc or E steps back.
+## use it, the camera eases to a framed panel (D-57 Q4; R2-CAMERA D4: through the CameraDirector, which
+## remembers the zoom level), Esc or E steps back to that level.
 ##
 ## use(station, action, arg) is the single entry for the player's panels, the tests and the
 ## M4.5 bot. A decision action needs that station focused; focus needs the captain in reach
@@ -18,7 +19,7 @@ const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
 
 const REACH_M := 2.5
 const FACING_DEG := 60.0
-const DOLLY_S := 0.6
+const DOLLY_S := 0.6 # the director's "console" view ease (data/camera/views.json)
 const WALK_SPEED_MPS := 3.5
 const PATH_CEILING_M := 40.0
 const HOLD_S := 1.5
@@ -53,8 +54,6 @@ var used_once := false
 var confirm_mode := "hold"
 var walking := PackedVector3Array()
 var walk_target := ""
-var _dolly := {} # {from_pos, from_basis, to_pos, to_basis, t, back}
-var _eye := {} # the captain's camera before focus: tilt, yaw, pullback
 var _confirm := {} # {id, action, held_s, holding, armed, button, label}
 var _aimed := ""
 var _glow: Array = [] # [MeshInstance3D, StandardMaterial3D]
@@ -150,8 +149,9 @@ func in_reach(p: Vector3, forward: Vector3) -> Dictionary:
 	return best
 
 
+## The captain's facing (R2-CAMERA: separate from the camera's yaw, which the director owns).
 func captain_forward() -> Vector3:
-	var yaw: float = demo.camera.yaw
+	var yaw: float = demo.captain_yaw
 	return Vector3(cos(yaw), 0.0, sin(yaw))
 
 
@@ -386,16 +386,13 @@ func focus(id: String, mesh_name := "") -> void:
 		used_once = true
 		set_glow(false)
 		demo.ship_hud.hint.visible = false
-	_eye = {"tilt": demo.camera.tilt, "yaw": demo.camera.yaw, "pullback": demo.camera.pullback}
-	var to := focus_pose(mesh_name)
-	_dolly = {"from": demo.camera.global_transform, "to": to, "t": 0.0, "back": false}
+	demo.director.focus_console(focus_pose(mesh_name))
 	demo.camera_mode = "console"
-	demo.camera.pullback = 0.0
 	_cancel_confirm()
 	_open_panel(id)
 
 
-## Step back: the camera dollies back to the captain's eye; the panel closes.
+## Step back: the camera eases back to the remembered level and sector view; the panel closes.
 func leave() -> void:
 	if focused.is_empty():
 		return
@@ -403,15 +400,11 @@ func leave() -> void:
 	focused = ""
 	_cancel_confirm()
 	_close_panel(id)
-	var from: Transform3D = demo.camera.global_transform
-	demo.camera.follow(demo.avatar_pos, _eye.get("tilt", -18.0), _eye.get("yaw", demo.camera.yaw), _eye.get("pullback", 0.0))
-	var to: Transform3D = demo.camera.global_transform
-	demo.camera.global_transform = from
-	_dolly = {"from": from, "to": to, "t": 0.0, "back": true}
+	demo.director.restore()
 
 
 func dolly_active() -> bool:
-	return not _dolly.is_empty()
+	return demo.director.blending()
 
 
 # ------------------------------------------------------------------ walking
@@ -459,7 +452,7 @@ func _advance_walk(dt: float) -> void:
 		else:
 			var p: Vector3 = demo.avatar_pos + flat / d * budget
 			demo.avatar_pos = Vector3(p.x, demo.walk.height_at(p.x, p.z) if not is_nan(demo.walk.height_at(p.x, p.z)) else demo.avatar_pos.y, p.z)
-			demo.camera.yaw = atan2(flat.z, flat.x)
+			demo.captain_yaw = atan2(flat.z, flat.x)
 			budget = 0.0
 	if walking.is_empty():
 		var id := walk_target
@@ -474,7 +467,8 @@ func face(id: String) -> void:
 	if m.is_empty():
 		return
 	var c: Vector3 = m.box.get_center()
-	demo.camera.yaw = atan2(c.z - demo.avatar_pos.z, c.x - demo.avatar_pos.x)
+	demo.captain_yaw = atan2(c.z - demo.avatar_pos.z, c.x - demo.avatar_pos.x)
+	demo.camera.yaw = demo.captain_yaw # the developer free camera / tools' eye faces it too
 	demo.camera.tilt = -18.0
 	demo.camera_mode = "player"
 
@@ -484,7 +478,8 @@ func go_to(id: String) -> void:
 	cancel_walk()
 	demo.avatar_pos = stations[id].use
 	face(id)
-	demo.camera.follow(demo.avatar_pos, demo.camera.tilt, demo.camera.yaw, 0.0)
+	if demo.director.overridden:
+		demo.camera.follow(demo.avatar_pos, demo.camera.tilt, demo.camera.yaw, 0.0)
 
 
 ## The console a canvas point is on (camera ray against the console collision), or "".
@@ -607,16 +602,6 @@ func advance(dt: float) -> void:
 	now_s += dt
 	if archive_ask.check_timeout():
 		_show_answer()
-	if not _dolly.is_empty():
-		_dolly.t = minf(1.0, _dolly.t + dt / DOLLY_S)
-		var s: float = _dolly.t * _dolly.t * (3.0 - 2.0 * _dolly.t)
-		var a: Transform3D = _dolly.from
-		var b: Transform3D = _dolly.to
-		demo.camera.global_transform = Transform3D(a.basis.slerp(b.basis, s), a.origin.lerp(b.origin, s))
-		if _dolly.t >= 1.0:
-			if _dolly.back:
-				demo.camera_mode = "player"
-			_dolly = {}
 	_advance_walk(dt)
 	if _confirm.get("holding", false):
 		_confirm.held_s += dt
