@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-CONSTELLATIONS",
-  "status": "in_progress",
+  "status": "in_review",
   "approved": true,
   "approved_by": "Mark, attended 2026-10-17: yep continue",
   "created": "2026-10-17",
@@ -38,8 +38,9 @@
     {
       "id": "P0",
       "when": "before execution",
-      "blocking": true,
-      "what": "Mark approves the proposed sprint; no implementation is authorized by this progress file"
+      "blocking": false,
+      "what": "Mark approved the sprint, attended 2026-10-17: yep continue",
+      "satisfied": true
     }
   ],
   "features": [
@@ -95,7 +96,31 @@
       "passes": null,
       "started": "2026-10-17 18:34:04 UTC",
       "completed": null,
-      "notes": null
+      "notes": "All local implementation and verification complete: full make test, 33 GPU cases, 32 inspected captures, benchmark, export and native smoke pass. Independent evaluation recorded separately. passes remains null until CI-before-merge and landing are complete; do not rerun unchanged local suite merely to resume."
     }
-  ]
+  ],
+  "local_verification": {
+    "completed": "2026-10-17 19:06:00 UTC",
+    "make_test_exit": 0,
+    "focused_assertions": 35,
+    "existing_inspection_assertions": 59,
+    "gpu_cases": 33,
+    "gpu_worst_px": 0.28981539607048,
+    "mutation_failures": 32,
+    "reference_images": 32,
+    "cpu_held_p95_ms": 0.144,
+    "cpu_released_p95_ms": 0.004,
+    "export_smoke": "pass"
+  },
+  "pending": [
+    "CI must pass before merge; no branch publication requested",
+    "After merge: move docs to implemented/r1, update design-repo roadmap and mark sprint complete"
+  ],
+  "local_implementation_complete": true,
+  "evaluation": {
+    "path": ".ailang/state/evaluations/eval_R1-CONSTELLATIONS_round_1.json",
+    "result": "pass",
+    "score": 96,
+    "scope": "local implementation; CI and landing pending"
+  }
 }

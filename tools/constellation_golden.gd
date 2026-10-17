@@ -128,13 +128,19 @@ func golden() -> void:
 		demo.geometry_view.size=resolution;demo._sync_observer()
 		guide.refresh(field,demo.sky.camera,Vector2(resolution));guide.show()
 		var img := await grab(demo.sky)
-		var worst := 0.
+		var worst := 0.;var cpu_worst := 0.
 		for id in ["a","b"]:
 			var pixel: Vector2=guide.endpoints[id]
-			worst=maxf(worst,centroid(img,pixel).distance_to(pixel))
-		check(worst<=.75,"resized GPU endpoints align")
-		print("%s    G-CONST resize %dx%d GPU %.4f" % ["ok" if worst<=.75 else "FAIL",resolution.x,resolution.y,worst])
-		rows.append({resolution=[resolution.x,resolution.y],gpu_error_px=worst})
+			var n := field.direction_to(field.ids.find(id))
+			var ctx := Guide.StarProjection.context(field)
+			var ray := Relativity.aberrate(Vector3(n[0],n[1],n[2]),ctx.bh,.999)
+			var reference: Vector2=demo.sky.camera.unproject_position(ray*100.)
+			worst=maxf(worst,centroid(img,reference).distance_to(pixel))
+			cpu_worst=maxf(cpu_worst,reference.distance_to(pixel))
+		var ok := worst<=.75 and cpu_worst<=.75
+		check(ok,"resized GPU and independent CPU endpoints align")
+		print("%s    G-CONST resize %dx%d GPU %.4f CPU %.4f" % ["ok" if ok else "FAIL",resolution.x,resolution.y,worst,cpu_worst])
+		rows.append({resolution=[resolution.x,resolution.y],gpu_error_px=worst,cpu_error_px=cpu_worst})
 		case_count+=1
 	# Exercise the actual geometry canvas ordering with an opaque and transparent pixel.
 	var line: Dictionary=guide.segments[0] if not guide.segments.is_empty() else {a=Vector2.ZERO,b=Vector2.ZERO}

@@ -1,7 +1,7 @@
 # Sprint R1-CONSTELLATIONS: constellation guides while holding I
 
 **Design:** [constellation-inspection.md](constellation-inspection.md).
-**Status:** Approved by Mark, attended 2026-10-17 (“yep continue”); implementation in progress.
+**Status:** Local implementation and verification complete; independent review recorded separately. CI and landing pending. Approved by Mark, attended 2026-10-17 (“yep continue”).
 **Created:** 2026-10-17, attended request from Mark.
 **Estimate:** ~720 LOC; two engineering days including visual review, with allowance for alias work and GPU access. Medium risk.
 **Progress:** `.ailang/state/sprints/sprint_R1-CONSTELLATIONS.json`.
@@ -57,6 +57,7 @@ Alias audit can consume the estimate; identity uncertainty must be resolved from
 ## Execution evidence
 
 - C1/C2 complete: 23 audited identities, 35 focused assertions, 59 existing inspection assertions, and the 95-literal export-filter audit pass.
-- C3 in progress: full `make golden` passes, including 33 constellation cases. A 1.5-pixel endpoint mutation in an isolated temporary copy fails the alignment cases. Warm-field rebase invalidation is checked without recreating identities.
+- C3 local verification complete: full `make golden` passes, including 33 constellation cases. A 1.5-pixel endpoint mutation in an isolated temporary copy fails 32 alignment cases. Warm-field rebase invalidation is checked without recreating identities, supplementing the large-coordinate GPU cases.
 - Native macOS windows clamp tall capture sizes; review tools now use an exact-size SubViewport. New 1280×720 and 2560×1440 cases cover all four figures, travel/SR, opaque bodies, partial high-speed coverage, actual GR suppression/status and a standing-eye ship view.
-- Headless full suite, final benchmark, packaged smoke and independent evaluation remain in progress. No merge or publication is claimed.
+- Full pinned-runtime `make test` exits 0 (2026-10-17, 19:05 UTC). Final capture has 32 inspected images. Warm CPU p95 is 0.144 ms held / 0.004 ms released, with zero identity rescans. The packaged native I/card/release/map smoke passes. See [report](constellation-inspection-report.md) and `.ailang/state/evaluations/eval_R1-CONSTELLATIONS_round_1.json`.
+- CI-before-merge and landing remain pending; C3's overall `passes` stays null for those external gates. No branch publication, merge or dev release is claimed.
