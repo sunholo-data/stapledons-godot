@@ -22,7 +22,10 @@ func run(m: Node) -> int:
 	if references_ok:
 		built = await _build(false)
 	var failures := await _s3(built)
-	failures += await _s4(built)
+	failures += await _s4(built) # before any player pose: S4 aims from the captain's eye the S3 cases leave
+	failures += await _cam1(built)
+	if built:
+		demo.sky.set_debug_unit(true) # G-CAM-2 reads the unit-gain target, as S4
 	failures += await _cam2(built)
 	await _free_demo()
 	built = false
@@ -30,6 +33,7 @@ func run(m: Node) -> int:
 		built = await _build(true)
 	failures += await _s2(built)
 	failures += await _cam3(built)
+	failures += await _tonemap(built, func() -> void: _sky_pose("spawn"), "G-CAM-3 one tonemap (Sky forward, 0.99c)", func() -> Dictionary: return _phase_world("cruising", Relativity.rapidity_of_beta(0.99)), 300)
 	await _free_demo()
 	print("m4 ship golden: %d failures" % failures)
 	return failures
@@ -229,6 +233,31 @@ func _report(ok: bool, message: String) -> int:
 
 
 func _s3(built: bool) -> int:
+	return await _pole(built, func() -> void: _pose(89.99, 0.0), "G-M4-S3 forward pole (ship)", "captain eye")
+
+
+## R2-CAMERA G-CAM-1: the forward pole through the player's Sky forward view (the eye low beside
+## the captain, pitch +58 deg, the pole off the frame centre), from two standing points: the
+## bridge spawn and the helm (the navigation station's use point), x 3 phases.
+func _cam1(built: bool) -> int:
+	var failures := 0
+	if built:
+		demo.sky.set_debug_unit(false) # S4 leaves the unit-gain glow target on
+	for spot: String in ["spawn", "helm"]:
+		failures += await _pole(built, func() -> void: _sky_pose(spot), "G-CAM-1 forward pole (Sky forward, %s)" % spot, "Sky forward eye")
+	return failures
+
+
+func _sky_pose(spot: String) -> void:
+	var dir: CameraDirector = demo.director
+	var foot: Vector3 = Vector3(8, 82, -4.8) if spot == "spawn" else demo.consoles.stations["navigation"].use
+	var v: Dictionary = dir.views["sky_forward"]
+	var off: Variant = dir.choose_offset(v, foot)
+	demo.camera.global_transform = dir._sky(v, foot, dir.sector_for(foot, -1), off if off != null else 90.0)
+	demo._sync_observer()
+
+
+func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int:
 	var failures := 0
 	for phase: String in ["boosting", "cruising", "braking"]:
 		var phi := Relativity.rapidity_of_beta(0.99 if phase == "cruising" else 0.5)
@@ -238,7 +267,7 @@ func _s3(built: bool) -> int:
 		var error := INF
 		var ok := false
 		if built and _world(_phase_world(phase, phi)):
-			_pose(89.99, 0.0)
+			pose.call()
 			demo.sky.starfield.set_custom_stars([])
 			# Independent of the rendered sky camera (D1 perturbs that camera).
 			want = demo.camera.unproject_position(demo.camera.global_position + Vector3.UP * 1000.0)
@@ -271,7 +300,7 @@ func _s3(built: bool) -> int:
 				ok = is_finite(centroid[2]) and centroid[2] > 0.0 and is_finite(error) and error <= 0.75
 			elif not clear:
 				push_warning("m4 ship golden: %s forward pole covered (geometry or clean peak)" % phase)
-		failures += _report(ok, "G-M4-S3 forward pole (ship) %s beta %.2f: captain eye pole (%.2f, %.2f) rendered (%.2f, %.2f) error %.3f px (limit 0.75)" % [phase, b, want.x, want.y, got.x, got.y, error])
+		failures += _report(ok, "%s %s beta %.2f: %s pole (%.2f, %.2f) rendered (%.2f, %.2f) error %.3f px (limit 0.75)" % [label, phase, b, eye_label, want.x, want.y, got.x, got.y, error])
 	return failures
 
 
@@ -408,7 +437,7 @@ func _s4(built: bool) -> int:
 ## equal ForwardGlow.profile(sim pole, cos) within 1 %, at 0.99c and at the cap (1 - beta 2e-9).
 func _cam2(built: bool) -> int:
 	var failures := 0
-	for id: String in ["z1", "z2"]:
+	for id: String in ["z1", "z2", "z3_bridge", "sky_forward"]:
 		for label: String in ["0.99c", "cap 1-beta 2e-9"]:
 			var at_cap := label != "0.99c"
 			var pole := NAN
@@ -422,6 +451,9 @@ func _cam2(built: bool) -> int:
 					var dir: CameraDirector = demo.director
 					var foot := Vector3(8, 82, -4.8)
 					var eye: Vector3 = dir.resolve(dir.views[id], foot, dir.sector_for(foot, -1)).origin
+					if id == "sky_forward":
+						_sky_pose("spawn")
+						eye = demo.camera.global_position
 					demo.camera.global_transform = Transform3D(Basis.looking_at(Vector3(0.001, 1.0, 0.0), Vector3.FORWARD), eye)
 					demo._sync_observer()
 					var cam := _cam()

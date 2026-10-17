@@ -17,8 +17,9 @@ extends SceneTree
 const FIGURE_M := 1.754 # the captain sprite's opaque height (1263 px at 720 px/m, avatar y0)
 const SAMPLE_M := 0.5
 const PX := Vector2(1280, 720)
-## Lower deck (C2 pending): blocked cell-sample lines measured 2026-10-17 for Z1, Z2, Z3.
-const LOWER_CEILING := {1: 9, 2: 47, 3: 75}
+## Lower deck (the Commons): blocked cell-sample lines after the per-cell authoring (2026-10-17),
+## Z1, Z2, Z3. The residue is points under the arcades' lintels that no candidate camera sees.
+const LOWER_CEILING := {1: 2, 2: 2, 3: 39}
 var failures := 0
 var passes := 0
 
@@ -177,9 +178,9 @@ func test_sweep(demo: Node) -> void:
 			if area == "bridge":
 				check("AC1 %s: a clear line to the captain's head from every sample (%d blocked%s)" % [id, r.blocked.size(), (", first %s" % [r.blocked[0]]) if not r.blocked.is_empty() else ""], r.blocked.is_empty())
 			else:
-				# The Commons' arcades and walls defeat a sector boom; C2 brings its authored Commons
-				# cameras to 0. Until then the interim lower-deck views hold these measured ceilings.
-				check("AC1 %s: clear-line ceiling until C2's Commons cameras (%d blocked of %d samples <= %d)" % [id, r.blocked.size(), pts.size(), LOWER_CEILING[lv]], r.blocked.size() <= LOWER_CEILING[lv])
+				# The Commons' arcades: authored per cell; the residue (points under a lintel that no
+				# candidate camera sees) is held to its measured ceiling.
+				check("AC1 %s: Commons clear-line ceiling (%d blocked of %d samples <= %d)" % [id, r.blocked.size(), pts.size(), LOWER_CEILING[lv]], r.blocked.size() <= LOWER_CEILING[lv])
 			check("AC4 %s: the captain's head in frame from every sample (%d out)" % [id, r.out.size()], r.out.is_empty())
 	# Lift: the platform's whole ride, both directions.
 	var lift: Dictionary = dir.views["lift"]
@@ -696,9 +697,10 @@ func test_cues() -> void:
 	# Keys: 7 / 8 / 9.
 	demo._unhandled_input(key(KEY_7))
 	check("C2 7 opens Sky forward (third person; the captain shown)", dir.situation == "sky_forward" and demo.avatar.visible and not dir.overridden)
-	step(demo, 2.0)
+	step(demo, 4.0) # the ease is capped at 90 deg/s: a half-turn up takes ~3 s
+	check("C2 Sky forward stands the captain upright (no leaning billboard)", demo.avatar.billboard == BaseMaterial3D.BILLBOARD_FIXED_Y)
 	var pose: Transform3D = demo.camera.global_transform
-	check("C2 Sky forward frames the forward pole", Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
+	check("C2 Sky forward frames the forward pole (%s, view %s, pitch %.1f)" % [CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX), dir.view_id, rad_to_deg(CameraDirector.yaw_pitch(pose).y)], Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
 	demo._unhandled_input(key(KEY_2))
 	check("AC6 a level key ends a sky view (back to Z2)", dir.situation.is_empty() and dir.level == 2)
 	demo._unhandled_input(key(KEY_8))
@@ -730,7 +732,7 @@ func test_cues() -> void:
 	# Commit at the helm: leaving the console, the departure cues Sky forward (under way).
 	check("the helm commits", c.use("navigation", "commit") and demo.journey_tick())
 	check("AC6 departure (commit): Sky forward is cued once the helm is left", demo.live_journey and dir.situation == "sky_forward" and demo.under_way())
-	step(demo, 2.0)
+	step(demo, 4.0)
 	pose = demo.camera.global_transform
 	check("C2 under way the player view frames the forward pole", Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
 	demo._unhandled_input(key(KEY_1))

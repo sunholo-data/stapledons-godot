@@ -263,7 +263,7 @@ func resolve(v: Dictionary, foot: Vector3, k: int) -> Transform3D:
 		"captain":
 			if v.get("kind") == "situation":
 				return _sky(v, foot, k)
-			return _boom(v, foot, sector_yaw(k, v))
+			return _boom(v, foot, sector_yaw(k, v), k)
 		"point":
 			return _place(v, foot, k)
 		"station":
@@ -280,11 +280,11 @@ func head_of(v: Dictionary, foot: Vector3) -> Vector3:
 	return foot + Vector3.UP * float(v.get("height_m", 1.6))
 
 
-func _boom(v: Dictionary, foot: Vector3, yaw: float) -> Transform3D:
-	var p := deg_to_rad(float(v.pitch_deg))
+func _boom(v: Dictionary, foot: Vector3, yaw: float, k := -1) -> Transform3D:
+	var p := deg_to_rad(_ring_val(v, "pitch_deg", k, float(v.get("pitch_deg", -35.0))))
 	var dir := Vector3(cos(yaw) * cos(p), sin(p), sin(yaw) * cos(p))
 	var head := head_of(v, foot)
-	var eye := _envelope(head - dir * float(v.distance_m), head, str(v.id))
+	var eye := _envelope(head - dir * _ring_val(v, "distance_m", k, float(v.get("distance_m", 12.0))), head, str(v.id))
 	var right := dir.cross(Vector3.UP).normalized()
 	var look := dir.rotated(right, deg_to_rad(float(v.get("frame_deg", 0.0))))
 	return Transform3D(Basis.looking_at(look, Vector3.UP), eye)

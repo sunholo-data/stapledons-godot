@@ -1498,6 +1498,7 @@ func _initialize() -> void:
 	await process_frame
 	test_rolled_camera_cpu_spec_values(vp)
 	test_view_velocity_angle(vp)
+	test_camera_views_invariance(vp)
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -1623,3 +1624,51 @@ func _init() -> void:
 	check("beta after 1 ship-year at 1 g = tanh(a)", tanh(a), 0.774827262642545, 1e-12)
 	check("Earth years after 1 ship-year = sinh(a)/a", sinh(a) / a, 1.187312401712, 1e-11)
 
+
+
+## R2-CAMERA AC11 (D8): every point in the bubble shares the ship's four-velocity, so a
+## third-person eye is the same SR observer as the captain's eye. Through the ShipCamera, at every
+## views.json eye (the bridge spawn) and at the captain's eye with the same orientation: the
+## spec's RS-1 (90 deg at 0.9c -> 25.842 deg) and RS-2 (90 deg at 0.5c -> 60 deg) land on the same
+## pixel to 0.05 px, and the sky ray of a pixel is the same direction to 1e-9 rad (float64).
+func test_camera_views_invariance(vp: SubViewport) -> void:
+	print("R2-CAMERA translation invariance (AC11): RS-1 / RS-2 through every views.json eye")
+	var cam: Camera3D = load("res://demos/ship_demo_camera.gd").new()
+	vp.add_child(cam)
+	var dir := CameraDirector.new(null)
+	var foot := Vector3(8, 82, -4.8)
+	var size := Vector2(vp.size)
+	var n := 0
+	for v: Dictionary in dir.data.views:
+		if v.kind == "console":
+			continue
+		n += 1
+		var pose := dir.resolve(v, foot, dir.sector_for(foot, -1))
+		var captain := Transform3D(pose.basis, foot + Vector3.UP * 1.7)
+		var fwd := -pose.basis.z
+		var right := pose.basis.x
+		for row in [[0.9, 25.842, "RS-1"], [0.5, 60.0, "RS-2"]]:
+			# The heading tilted from the view centre by the expected apparent angle, the source 90 deg
+			# from it in that plane: its apparent direction is the view centre.
+			var h := fwd.rotated(right, deg_to_rad(row[1])).normalized()
+			var src := (fwd - h * fwd.dot(h)).normalized()
+			var app := Relativity.aberrate(src, h, row[0])
+			check("%s %s: 90 deg source at %.1fc appears at %.3f deg" % [v.id, row[2], row[0], row[1]], angle_deg(app, h), row[1], 2e-3)
+			cam.global_transform = pose
+			var p1 := cam.unproject_position(pose.origin + app * 1.0e7)
+			cam.global_transform = captain
+			var p2 := cam.unproject_position(captain.origin + app * 1.0e7)
+			check("%s %s: same pixel as from the captain's eye (|eye shift| %.1f m) (px)" % [v.id, row[2], pose.origin.distance_to(captain.origin)], p1.distance_to(p2), 0.0, 0.05)
+			check("%s %s: at the view centre (px)" % [v.id, row[2]], p1.distance_to(size * 0.5), 0.0, 0.05)
+		var d1 := AreaBundle.unproject(_ship_cam(pose, size), 300.5, 200.5)
+		var d2 := AreaBundle.unproject(_ship_cam(captain, size), 300.5, 200.5)
+		var dx := d1[0] - d2[0]
+		var dy := d1[1] - d2[1]
+		var dz := d1[2] - d2[2]
+		check("%s: the sky ray of a pixel is the captain's (float64, rad)" % v.id, 2.0 * asin(sqrt(dx * dx + dy * dy + dz * dz) * 0.5), 0.0, 1e-9)
+	check("views tested (every views.json view but console)", n, dir.data.views.size() - 1, 0.0)
+	cam.queue_free()
+
+
+static func _ship_cam(pose: Transform3D, size: Vector2) -> Dictionary:
+	return {"position_m": [pose.origin.x, -pose.origin.z, pose.origin.y], "forward": [-pose.basis.z.x, pose.basis.z.z, -pose.basis.z.y], "up": [pose.basis.y.x, -pose.basis.y.z, pose.basis.y.y], "fov_vertical_deg": 78.0, "resolution": [size.x, size.y]}

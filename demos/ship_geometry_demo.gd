@@ -410,7 +410,12 @@ func _process(delta: float) -> void:
 	else:
 		director.advance(delta)
 		avatar.visible=camera_mode!="console" # third person: the captain is in every player view
-	captain_ring.visible=not director.overridden and director.level==3 and camera_mode=="player"
+		# C2: looking up from below, the full billboard (drawn for the -14 deg play view) would lean
+		# back into a giant card; the sky views stand the captain upright (a silhouette on the sky).
+		var upright:bool=str(director.views.get(director.view_id,{}).get("billboard",""))=="upright"
+		avatar.billboard=BaseMaterial3D.BILLBOARD_FIXED_Y if upright else BaseMaterial3D.BILLBOARD_ENABLED
+		if upright and avatar.facing!="back":avatar.set_motion(Vector2(0,-1)) # D3: in a sky view the captain looks where the player looks
+	captain_ring.visible=not director.overridden and director.view_id.begins_with("z3") and camera_mode=="player"
 	captain_ring.global_position=avatar.global_position+Vector3.UP*.03
 	fade_rect.color.a=.85*director.fade
 	avatar_shadow.global_position=avatar.global_position
