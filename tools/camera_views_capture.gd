@@ -5,6 +5,10 @@ extends SceneTree
 ##   states: rest and 0.99c cruise (sky_review.json), a guided stop (the guided voyage's first
 ##           stop, the stop turn done) and Sgr A* (the demo's first hover)
 ##   sizes:  1280x720 and 2560x1440 (the root viewport is rendered at exactly that size)
+##   Sgr A*: the DEFAULT player view (the hole view, cued at each stop) at every stop of the visit,
+##           10^6, 10, 5 and 3 r_s hovers, the 3 r_s orbit and the last hover (sgr_a_stop<n>_*.png):
+##           fails unless the hole's centre is in frame and, once the shadow is wider than a pixel,
+##           dark there (the shadow)
 ##   cruise: the DEFAULT player view of a real committed voyage (the departure cue) at
 ##           beta >= 0.9, 0.99 and 0.999 (cruise_default_b*.png): the starbow must be in frame
 ## The capture fails if a player view's eye leaves the 95 m envelope, the captain's head is off
@@ -47,6 +51,7 @@ func _run() -> void:
 			await _free()
 		(sheet[px.y] as Image).save_png(out + "/contact_sheet_%dp.png" % px.y)
 		await _cruise_default()
+		await _sgr_a_stops()
 	var f := FileAccess.open(out + "/manifest.json", FileAccess.WRITE)
 	f.store_string(JSON.stringify({"about": "R2-CAMERA player views (third person, FOV 78, eye inside the 95 m envelope); sky rendered through the same pose", "views": VIEWS, "states": STATES, "shots": shots}, "  "))
 	f.close()
@@ -219,4 +224,45 @@ func _cruise_default() -> void:
 	if not marks.is_empty():
 		print("FAIL the voyage did not reach %s (best beta %.6f)" % [marks, best])
 		failures += 1
+	await _free()
+
+
+## The Sgr A* visit as a player flies it: each stop by the navigation's own call, the camera left to
+## its cue (the hole view), captured on arrival.
+func _sgr_a_stops() -> void:
+	if not await _new_demo({"live_start": true, "sky_state": "rest"}) or not demo.start_black_hole():
+		print("FAIL Sgr A* did not start")
+		failures += 1
+		await _free()
+		return
+	var BlackHoleVisit := load("res://demos/black_hole_visit.gd")
+	for stop in BlackHoleVisit.STOPS.size() + 1:
+		if stop > 0:
+			if not demo.bh_next_stop():
+				print("FAIL Sgr A* stop %d refused" % stop)
+				failures += 1
+				break
+			if demo.black_hole.approaching():
+				demo.bh_finish_approach()
+			else:
+				demo._arrived()
+		for i in 300:
+			demo._process(1.0 / 60.0) # the cue's ease (full motion, the player's default)
+		demo.sky.update_exposure()
+		var g: Dictionary = demo.black_hole.gr()
+		var r := float(g.r)
+		var name := "sgr_a_stop%d_%s_r%s_%dp" % [stop, str(g.get("mode", "")), ("%.0f" % r) if r < 100.0 else "1e6", px.y]
+		var image := await _grab(name)
+		var pose: Transform3D = demo.camera.global_transform
+		var h: Vector3 = demo.hole_direction()
+		var c := CameraDirector.screen_point(pose, pose.origin + h * 1000.0, Vector2(px))
+		var shadow_deg := rad_to_deg(Schwarzschild.shadow_angle(r))
+		var shadow_px := tan(deg_to_rad(shadow_deg)) / tan(deg_to_rad(39.0)) * px.y * 0.5
+		var in_frame := not is_nan(c.x) and Rect2(Vector2.ZERO, Vector2(px)).has_point(c)
+		var lum := image.get_pixelv(Vector2i(c)).get_luminance() if in_frame else 1.0
+		var ok: bool = demo.director.situation == "sky_hole" and in_frame and (shadow_px < 2.0 or lum < 0.03)
+		if not ok:
+			failures += 1
+		shots.append({"name": name, "ok": ok, "view": demo.director.view_id, "state": "Sgr A* stop %d" % stop, "mode": g.get("mode", ""), "r_rs": r, "shadow_radius_deg": shadow_deg, "shadow_radius_px": shadow_px, "hole_px": [c.x, c.y], "luminance_at_centre": lum})
+		print("%s %s view %s hole %s shadow %.3f deg (%.0f px) centre luminance %.4f" % ["ok  " if ok else "FAIL", name, demo.director.view_id, c, shadow_deg, shadow_px, lum])
 	await _free()

@@ -505,7 +505,7 @@ func _camera_action(event: InputEvent) -> bool:
 			"camera_default":set_preset("reset")
 			"camera_sky_forward":
 				if free_camera_on():look_direction("forward")
-				else:director.sky("sky_forward")
+				else:director.sky(under_way_view() if black_hole!=null else "sky_forward")
 			"camera_sky_side":
 				if free_camera_on():look_direction("side")
 				else:director.sky("sky_side")
@@ -565,6 +565,19 @@ func set_camera_motion(mode: String) -> void:
 ## view (R) is then Sky forward, so the forward sky is in frame.
 func under_way() -> bool:
 	return live_journey or black_hole!=null or (solar_tour!=null and solar_tour.pending_index>=0)
+## The sky view under way: at Sgr A* the hole (sky_hole, aimed from the GR state), else the forward sky.
+func under_way_view() -> String:
+	return "sky_hole" if black_hole!=null else "sky_forward"
+## The black hole's direction in the ship's glTF axes (zero without a Sgr A* session): the sim's
+## gr.hole_dir taken into the ship frame by the attitude the sky is oriented with.
+func hole_direction() -> Vector3:
+	if black_hole==null:return Vector3.ZERO
+	var g:Dictionary=black_hole.gr()
+	if not g.get("hole_dir") is Dictionary:return Vector3.ZERO
+	var h:=PackedFloat64Array([float(g.hole_dir.x),float(g.hole_dir.y),float(g.hole_dir.z)])
+	var b:PackedFloat64Array=camera.attitude_basis if not camera.attitude_basis.is_empty() else ShipFrame.ship_basis(camera.heading)
+	var s:=[b[0]*h[0]+b[1]*h[1]+b[2]*h[2],b[3]*h[0]+b[4]*h[1]+b[5]*h[2],b[6]*h[0]+b[7]*h[1]+b[8]*h[2]]
+	return Vector3(s[0],s[2],-s[1]).normalized() # ShipCamera.ship_vector inverted
 ## Developer review controls (B, G, 5, 6, the audit buttons): command-line launches only (AC11).
 func dev_controls() -> bool:
 	return not menu_return
@@ -1400,7 +1413,7 @@ func start_black_hole() -> bool:
 	black_hole=v;_bh_accum=0.
 	_ensure_codex()
 	sky_state="black_hole"
-	_apply_bh_world();director.sky("sky_forward",true) # C2 cue: the hole overhead
+	_apply_bh_world();director.sky("sky_hole",true) # C2 cue: the hole (shadow, ring) framed
 	_reset_hud_session()
 	note("Sgr A*, 10⁶ r_s out (1.34 ly). The next stop is an approach to 10 r_s at β 0.1.")
 	return true
@@ -1439,6 +1452,7 @@ func bh_finish_approach() -> bool:
 	_apply_bh_world()
 	return true
 func _arrived() -> void:
+	director.sky("sky_hole",true) # each Sgr A* stop: the hole framed again (a cue; any key takes over)
 	note("Arrived: hovering at r = %s r_s. Next: %s." % [BlackHoleVisit.r_text(float(black_hole.gr().r)),black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop reached"])
 ## Back to Sol at rest: the sgr_a session ends and the sky is flat again (GR off).
 func leave_black_hole() -> void:

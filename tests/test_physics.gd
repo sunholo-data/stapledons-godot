@@ -1667,6 +1667,35 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 		var dz := d1[2] - d2[2]
 		check("%s: the sky ray of a pixel is the captain's (float64, rad)" % v.id, 2.0 * asin(sqrt(dx * dx + dy * dy + dz * dz) * 0.5), 0.0, 1e-9)
 	check("views tested (every views.json view but console)", n, dir.data.views.size() - 1, 0.0)
+	# Sgr A*: the hole view aims at the hole's direction (from the GR state; here set directly).
+	# The hole's centre seen from the view's eye lands on the captain eye's pixel and ray, and sits
+	# the view's aim offset above the frame centre.
+	var hv: Dictionary = dir.views["sky_hole"]
+	for tilt: float in [0.0, 30.0, -55.0]:
+		dir.hole_override = Vector3.UP.rotated(Vector3.RIGHT, deg_to_rad(tilt)).normalized()
+		var pose := dir.resolve(hv, foot, dir.sector_for(foot, -1))
+		var captain := Transform3D(pose.basis, foot + Vector3.UP * 1.7)
+		var hole := dir.hole_override
+		cam.global_transform = pose
+		var p1 := cam.unproject_position(pose.origin + hole * 1.0e7)
+		cam.global_transform = captain
+		var p2 := cam.unproject_position(captain.origin + hole * 1.0e7)
+		check("sky_hole, hole %+.0f deg off the travel axis: its centre on the captain eye's pixel (px)" % tilt, p1.distance_to(p2), 0.0, 0.05)
+		check("sky_hole, hole %+.0f deg: its centre %.1f deg above the frame centre (the view's aim offset)" % [tilt, float(hv.aim_offset_deg)], rad_to_deg((-pose.basis.z).angle_to(hole)), float(hv.aim_offset_deg), 1e-3)
+		# float64 (the sky's CPU projection): the hole's pixel from both eyes, and that pixel's ray
+		var hn := sqrt(float(hole.x) * hole.x + float(hole.y) * hole.y + float(hole.z) * hole.z) # float64 unit (Vector3 is float32)
+		var hs := [hole.x / hn, -hole.z / hn, hole.y / hn]
+		var e1: Array = _ship_cam(pose, size).position_m
+		var e2: Array = _ship_cam(captain, size).position_m
+		var q1 := AreaBundle.project(_ship_cam(pose, size), [e1[0] + hs[0] * 1e12, e1[1] + hs[1] * 1e12, e1[2] + hs[2] * 1e12])
+		var q2 := AreaBundle.project(_ship_cam(captain, size), [e2[0] + hs[0] * 1e12, e2[1] + hs[1] * 1e12, e2[2] + hs[2] * 1e12])
+		check("sky_hole, hole %+.0f deg: float64 pixel of the hole from both eyes (px)" % tilt, sqrt(pow(q1[0] - q2[0], 2.0) + pow(q1[1] - q2[1], 2.0)), 0.0, 1e-6)
+		var r1 := AreaBundle.unproject(_ship_cam(pose, size), q1[0], q1[1])
+		var r2 := AreaBundle.unproject(_ship_cam(captain, size), q1[0], q1[1])
+		var c1: float = r1[0] * hs[0] + r1[1] * hs[1] + r1[2] * hs[2]
+		var c2: float = r2[0] * hs[0] + r2[1] * hs[1] + r2[2] * hs[2]
+		check("sky_hole, hole %+.0f deg: that pixel's sky ray is the hole's direction from both eyes (float64, rad)" % tilt, maxf(acos(clampf(c1, -1.0, 1.0)), acos(clampf(c2, -1.0, 1.0))), 0.0, 1e-7)
+	dir.hole_override = Vector3.ZERO
 	cam.queue_free()
 
 

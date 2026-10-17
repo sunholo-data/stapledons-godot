@@ -84,6 +84,8 @@ var cue_prompt := ""
 var hold := false
 var _pending := ""
 var _prompt_t := 0.0
+## The hole's direction (glTF axes) when there is no demo to ask (tests); see aim_dir().
+var hole_override := Vector3.ZERO
 var _sky_offset := {} # view id -> the yaw offset (deg, from outward) chosen when the view started
 const PROMPT_S := 10.0
 
@@ -302,7 +304,29 @@ func _sky(v: Dictionary, foot: Vector3, k: int, offset: Variant = null) -> Trans
 	var f := Vector3(cos(yaw), 0.0, sin(yaw))
 	var head := head_of(v, foot)
 	var eye := _envelope(foot - f * float(v.back_m) + Vector3.UP * float(v.rise_m), head, str(v.id))
+	if str(v.get("aim", "")) == "hole":
+		# Sgr A*: the camera looks at the hole (its direction from the sim's GR state), with the
+		# hole aim_offset_deg above the frame centre toward the view's yaw, the captain below.
+		var h := aim_dir(v)
+		var axis := h.cross(f)
+		var look := h if axis.length() < 1e-6 else h.rotated(axis.normalized(), deg_to_rad(float(v.get("aim_offset_deg", 18.0))))
+		look = look.normalized()
+		var yp := yaw_pitch(Transform3D(Basis.looking_at(look, _up_for(look)), eye))
+		return Transform3D(basis_of(yp.x, yp.y), eye)
 	return Transform3D(basis_of(yaw, deg_to_rad(float(v.pitch_deg))), eye)
+
+
+## What a sky view is for: the forward pole (+y, the travel axis), or for aim "hole" the black
+## hole's direction (the demo's hole_direction(), from the sim's GR section).
+func aim_dir(v: Dictionary) -> Vector3:
+	if str(v.get("aim", "")) == "hole":
+		if demo != null and demo.has_method("hole_direction"):
+			var d: Vector3 = demo.hole_direction()
+			if d.length() > 0.5:
+				return d.normalized()
+		if hole_override.length() > 0.5:
+			return hole_override.normalized()
+	return Vector3.UP
 
 
 ## A view with yaw_candidates (Sky forward) picks, once, as it starts, the first yaw (relative to
@@ -311,14 +335,14 @@ func _sky(v: Dictionary, foot: Vector3, k: int, offset: Variant = null) -> Trans
 func choose_offset(v: Dictionary, foot: Vector3) -> Variant:
 	for off: float in v.get("yaw_candidates_deg", []):
 		var pose := _sky(v, foot, sector_for(foot, -1), off)
-		if pose.origin.length() <= float(data.get("envelope_m", 95.0)) and view_clear(pose, foot, true):
+		if pose.origin.length() <= float(data.get("envelope_m", 95.0)) and view_clear(pose, foot, true, aim_dir(v)):
 			return off
 	return null
 
 
 ## The captain's figure (0.15 to 1.6 m) seen from a pose, through the ship's collision and the
 ## lift's boxes; with `pole`, the forward pole straight overhead is clear too.
-func view_clear(pose: Transform3D, foot: Vector3, pole := false) -> bool:
+func view_clear(pose: Transform3D, foot: Vector3, pole := false, aim := Vector3.UP) -> bool:
 	if demo == null:
 		return true
 	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
@@ -333,11 +357,11 @@ func view_clear(pose: Transform3D, foot: Vector3, pole := false) -> bool:
 			if b.intersects_segment(pose.origin, p.lerp(pose.origin, 0.02)):
 				return false
 	if pole:
-		var q2 := PhysicsRayQueryParameters3D.create(pose.origin, pose.origin + Vector3.UP * 40.0)
+		var q2 := PhysicsRayQueryParameters3D.create(pose.origin, pose.origin + aim * 40.0)
 		q2.hit_back_faces = true
 		if not space.intersect_ray(q2).is_empty():
 			return false
-		var sp := screen_point(pose, pose.origin + Vector3.UP * 1000.0, Vector2(1280, 720))
+		var sp := screen_point(pose, pose.origin + aim * 1000.0, Vector2(1280, 720))
 		if is_nan(sp.x) or not Rect2(Vector2(0, 40), Vector2(1280, 680)).has_point(sp):
 			return false
 	return true
@@ -487,7 +511,7 @@ func default_view() -> bool:
 	if demo != null and demo.has_method("under_way") and demo.under_way() and demo.active_level == 0:
 		release()
 		level = default_level
-		return sky("sky_forward")
+		return sky(demo.under_way_view() if demo.has_method("under_way_view") else "sky_forward")
 	var changed := level != default_level or overridden or not situation.is_empty()
 	release()
 	situation = ""

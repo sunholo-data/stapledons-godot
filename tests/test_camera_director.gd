@@ -1,4 +1,5 @@
 extends SceneTree
+const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
 ## R2-CAMERA (design_docs/planned/r2/camera-fixed-views.md) C1 + C3: make camera-test.
 ##   AC1  views.json validates; every view's eye is inside the 95 m envelope with a clear line to the
 ##        captain's head at every walkable sample (0.5 m) of walk_bridge / walk_lower, in the sector
@@ -623,6 +624,21 @@ func test_sky_sweep(demo: Node) -> void:
 			none.append(p)
 	check("C2 sky_forward: from every bridge sample (%d of them walk to the anchor first) the whole figure and the forward pole are clear and in frame (%d fail%s)" % [walked, none.size(), (", first %s" % none[0]) if not none.is_empty() else ""], none.is_empty())
 	check("C2 sky_forward: every eye inside the envelope (worst %.2f m)" % worst, worst <= 95.0)
+	# The hole view, for the hole straight overhead (the ship holds its nose on it) and 30 deg off.
+	var hole: Dictionary = dir.views["sky_hole"]
+	for tilt in [0.0, 30.0]:
+		dir.hole_override = Vector3.UP.rotated(Vector3.RIGHT, deg_to_rad(tilt))
+		var fails := []
+		for p: Vector3 in bridge:
+			var o: Variant = dir.choose_offset(hole, p)
+			var at := p
+			if o == null:
+				at = dir.anchor_of(hole, p)
+				o = dir.choose_offset(hole, at)
+			if o == null:
+				fails.append(p)
+		check("C2 sky_hole (hole %d deg off the travel axis): from every bridge sample the figure and the hole are clear and in frame (%d fail%s)" % [tilt, fails.size(), (", first %s" % fails[0]) if not fails.is_empty() else ""], fails.is_empty())
+	dir.hole_override = Vector3.ZERO
 	# The anchored views: from their anchors (side: one rail point; aft: the rail at every 5 deg).
 	var side: Dictionary = dir.views["sky_side"]
 	var a: Vector3 = dir.anchor_of(side, Vector3(8, 82, -4.8))
@@ -766,11 +782,36 @@ func test_cues() -> void:
 	check("AC6 no cue in the lift", not dir.sky("sky_forward", true) and dir.situation.is_empty())
 	demo.queue_free()
 	await process_frame
-	# Sgr A*: Sky forward, the hole overhead.
+	# Sgr A*: the hole view, aimed from the sim's GR state, at every stop of the visit.
 	demo = await new_demo({"live_start": true})
 	dir = demo.director
 	check("Sgr A* starts", demo.start_black_hole())
-	check("AC6 Sgr A* cues Sky forward", dir.situation == "sky_forward" and demo.under_way())
+	check("AC6 Sgr A* cues the hole view (sky_hole), not the forward sky", dir.situation == "sky_hole" and demo.under_way())
+	var hd: Vector3 = demo.hole_direction()
+	check("Sgr A*: the hole's direction comes from the GR state (unit, %s)" % hd, absf(hd.length() - 1.0) < 1e-4)
+	for stop in BlackHoleVisit.STOPS.size() + 1:
+		if stop > 0:
+			demo._unhandled_input(key(KEY_2)) # the player looks elsewhere; the next stop frames the hole again
+			check("Sgr A* stop %d: departs" % stop, demo.bh_next_stop())
+			if demo.black_hole.approaching():
+				demo.bh_finish_approach()
+			else:
+				demo._arrived()
+		step(demo, 4.0)
+		var g: Dictionary = demo.black_hole.gr()
+		var cam: Transform3D = demo.camera.global_transform
+		var h: Vector3 = demo.hole_direction()
+		var centre := CameraDirector.screen_point(cam, cam.origin + h * 1000.0, PX)
+		var shadow := rad_to_deg(Schwarzschild.shadow_angle(float(g.r)))
+		var off := rad_to_deg((-cam.basis.z).angle_to(h))
+		check("Sgr A* %s r %s: the hole view is up, the hole's centre in frame at %s (%.1f deg above centre; shadow radius %.3f deg), the captain in frame" % [g.get("mode", ""), BlackHoleVisit.r_text(float(g.r)), centre, off, shadow], dir.situation == "sky_hole" and not is_nan(centre.x) and Rect2(Vector2.ZERO, PX).has_point(centre) and absf(off - 18.0) < 0.5 and Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(cam, demo.avatar_pos + Vector3.UP * 1.6, PX)))
+	demo.set_camera_motion("reduced")
+	demo._unhandled_input(key(KEY_2))
+	demo._arrived()
+	check("Sgr A* reduced motion: the stop's cue is a prompt (%s)" % dir.cue_prompt, dir.situation.is_empty() and dir.cue_prompt == "The hole · 7")
+	demo.set_camera_motion("full")
+	demo._unhandled_input(key(KEY_R))
+	check("Sgr A*: R (under way) returns to the hole view", dir.situation == "sky_hole")
 	demo.leave_black_hole()
 	demo.queue_free()
 	await process_frame
