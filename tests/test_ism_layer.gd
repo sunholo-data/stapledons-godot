@@ -88,5 +88,47 @@ func _init() -> void:
 	for cl: Dictionary in clouds:
 		every = every and drawn.has(cl.name)
 	check("AC16: every medium in ism.json is drawn (%d)" % drawn.size(), every and drawn.size() == 15)
+	# A CanvasLayer keeps its overlay visible-in-tree even when its host window is hidden.
+	root.gui_embed_subwindows = true
+	var window := Window.new()
+	window.size = Vector2i(1280, 800)
+	window.own_world_3d = true
+	window.hide()
+	root.add_child(window)
+	var window_cam := Camera3D.new()
+	window.add_child(window_cam)
+	window_cam.look_at_from_position(Vector3(0, 0, 40), Vector3.ZERO)
+	var canvas := CanvasLayer.new()
+	window.add_child(canvas)
+	var overlay := Control.new()
+	overlay.size = Vector2(1280, 800)
+	canvas.add_child(overlay)
+	var identity_to_world := func(v: Vector3) -> Vector3: return v
+	overlay.draw.connect(func() -> void: layer.draw(overlay, window_cam, identity_to_world, pieces))
+	overlay.queue_redraw()
+	await process_frame
+	await process_frame
+	check("M4.6pR3 hidden-window: no media drawn, overlay still visible-in-tree, redraw-on-show connected",
+		layer.last_drawn.size() == 0 and overlay.is_visible_in_tree() and not window.visible
+		and window.visibility_changed.is_connected(overlay.queue_redraw))
+	window.show()
+	await process_frame
+	await process_frame
+	check("M4.6pR3 shown window redraws all 15 media without an explicit queue_redraw",
+		layer.last_drawn.size() == 15 and layer.last_drawn.has("LIC"))
+	window.hide()
+	overlay.queue_redraw()
+	await process_frame
+	await process_frame
+	var hidden_again := layer.last_drawn.size() == 0
+	var redraw_connections := 0
+	for connection: Dictionary in window.visibility_changed.get_connections():
+		if connection.callable == overlay.queue_redraw:
+			redraw_connections += 1
+	window.show()
+	await process_frame
+	await process_frame
+	check("M4.6pR3 hide/show cycle: one redraw connection, hidden draws 0 again",
+		hidden_again and redraw_connections == 1 and layer.last_drawn.size() == 15 and layer.last_drawn.has("LIC"))
 	print("ism-layer: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures > 0 else 0)
