@@ -1,6 +1,6 @@
 # R2-CREW-CONSOLE-V2: the Crew console as an internal videocom
 
-**Status:** **Approved 2026-10-16** by Mark, attended ("yes continue", asked to approve console v2 with all nine recommendations): the plan as written, OQ1 to OQ9 answered as recommended (see Open questions). In execution on `feat/crew-console-v2` (sprint [crew-console-v2-sprint.md](crew-console-v2-sprint.md)).
+**Status:** **Implemented 2026-10-17** (PR #267; independent evaluation 86/100 PASS, then its fixes). Approved 2026-10-16 by Mark, attended ("yes continue", all nine recommendations; OQ answers below). Mark's reviews: the V3 renders, 2026-10-17: "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement" (became V7b); the visual pass, 2026-10-17: "crew console is looking great". Report: [crew-console-v2-report.md](crew-console-v2-report.md); sprint: [crew-console-v2-sprint.md](crew-console-v2-sprint.md).
 **Release:** R2. It follows [crew-work.md](crew-work.md) W1 (the Crew console, built) and R2-INTERLUDE (`feat/interlude-card`, unmerged: protocol 2.10, the sim's `emotion` and `holds[].line`). It replaces the layout of `ui/crew_page.gd`; the crew loop itself is unchanged.
 **Priority:** P1 for R2. From Mark's playtest of dev.31 (2026-10-16): "the UX in general needs work to make it easier to set off and setup work and monitor responses".
 

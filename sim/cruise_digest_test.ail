@@ -151,7 +151,8 @@ test "medium: the media crossed, in order, each once in a row" {
 
 -- ---------------------------------------------------------------- the scripted crossing (the real world)
 pure func digestOf(w: World) -> Option[Digest] = w.cruiseDigest
--- Seed 3 under crew_core 0.6 (R2-CREW-CONSOLE-V2 V8, re-pinned): the medic asks to stand down at
+-- Seed 3 under crew_core 0.6 with the game's named crew (R2-CREW-CONSOLE-V2 V8, D-80; re-pinned on
+-- v0.54.14, whose strict VM runs the names table): the medic asks to stand down at
 -- the first decision (hands_on hands it over: a hold on day 0, resumed unanswered, so the duty
 -- lapses; the day's remaining crew time waits for the answer), then a year of critical_only with
 -- stand-downs decided by the standing order (seven granted) and no further hold; the host
@@ -166,13 +167,14 @@ test "the scripted crossing: a digest from the commit, folded through its hold a
   match (digestOf(x.world), x.world.journey) {
     (Some(d), Committed(_)) => match d.crew {
       Some(cd) => cd.turn0 == 0 && cd.turn == 391 && x.holds == ["h0-stand_down-medic"]
-        && cd.counts == { refusals: 14, concerns: 13, concernsAuto: 25, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 1, standDownsAsked: 8, standDownsGranted: 7, standDownsDenied: 0 }
-        && cd.work0 == 0 && cd.work == 35
-        && map(\m. (m.kind, m.actor, m.day), cd.moments) == [("hold", "medic", 0), ("refusal", "engineer", 0), ("refusal", "medic", 0), ("refusal", "medic", 30),
-             ("refusal", "medic", 60), ("refusal", "pilot", 60), ("refusal", "engineer", 120)]
+        && cd.counts == { refusals: 12, concerns: 20, concernsAuto: 34, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 1, standDownsAsked: 8, standDownsGranted: 7, standDownsDenied: 0 }
+        && cd.work0 == 0 && cd.work == 28
+        && map(\m. (m.kind, m.actor, m.day), cd.moments) == [("hold", "medic", 0), ("refusal", "medic", 0), ("refusal", "engineer", 30), ("refusal", "medic", 30),
+             ("refusal", "analyst", 60), ("refusal", "medic", 60), ("refusal", "pilot", 180)]
         && map(\m. m.emotion, cd.moments) == ["sad", "angry", "angry", "angry", "angry", "angry", "angry"]
         && map(\m. m.id, rankMovement(cd.members)) == ["counselor", "analyst", "pilot", "medic", "engineer"]
-        && map(\m. movedBy(m), rankMovement(cd.members)) == [155, 110, 103, 95, 34]
+        && map(\m. movedBy(m), rankMovement(cd.members)) == [167, 90, 67, 54, 39]
+        && map(\m. m.name, rankMovement(cd.members)) == ["Abena Asante", "Nadia Iyer", "Rodrigo Alves", "Ananya Gupta", "Sigrid Eriksson"]
         && length(cd.members) == 5 && shipDays(d) == 391 && homeTier(d.now.sinceDeparture) == 1 && tierYears(d.now.sinceDeparture) == 7
         && map(\m. m.name, d.media) == ["LIC", "hot"] && d.now.grains > 0.0,
       None => false

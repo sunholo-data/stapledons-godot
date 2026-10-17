@@ -1,12 +1,12 @@
 {
   "sprint_id": "R2-CREW-CONSOLE-V2",
-  "status": "paused_for_review",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark (attended, 2026-10-16: \"yes continue\", all nine recommendations)",
   "created": "2026-10-16",
   "started": "2026-10-16",
-  "design_doc": "design_docs/planned/r2/crew-console-v2.md",
-  "sprint_plan": "design_docs/planned/r2/crew-console-v2-sprint.md",
+  "design_doc": "design_docs/implemented/r2/crew-console-v2.md",
+  "sprint_plan": "design_docs/implemented/r2/crew-console-v2-sprint.md",
   "branch": "feat/crew-console-v2",
   "implements": [
     "crew-console-v2 V1",
@@ -116,7 +116,22 @@
     "OQ8 request crew_core withdraw_offer; meanwhile show 'If you leave it, the offer lapses.' [recommended]",
     "OQ9 a decline is 'Needs you: declined, open to talk' with the answers [recommended]"
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "score": 86,
+      "verdict": "PASS",
+      "file": ".ailang/state/evaluations/R2-CREW-CONSOLE-V2-eval.md",
+      "commit": "14803bf",
+      "fixed": [
+        "D1 stand-down call focused Resume: answers first, Resume disabled until answered, press blocked",
+        "D2 state->token/icon pins; actions() enabled flags tested; the UI reads a.enabled",
+        "D3 CREW_INTENTS lists crew_stand_down",
+        "D4 landing done",
+        "icon meanings reachable by keyboard and pad (? icon key)"
+      ]
+    }
+  ],
   "coordination": {
     "executor": "attended session or the loop after approval",
     "evaluator": "different model from the executor",
@@ -269,10 +284,10 @@
         "make test green locally and in CI (AC17)",
         "evaluation >= 70 by a different model from the executor"
       ],
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-17",
+      "notes": "Evaluated 86/100 PASS; D1-D4 and the icon key fixed; landed."
     }
   ],
   "approved_on": "2026-10-16",
@@ -288,13 +303,20 @@
     "OQ9": "a refusal reads 'Needs you: declined, open to talk'"
   },
   "protocol_minor": "2.11",
-  "pause_reason": "V7b visual pass awaits Mark before the evaluation (coordinator, 2026-10-17)",
   "reviews": [
     {
       "date": "2026-10-17",
       "by": "Mark (attended)",
       "of": "V3 captures",
       "words": "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement"
+    },
+    {
+      "date": "2026-10-17",
+      "by": "Mark (attended)",
+      "of": "V7b visual pass",
+      "words": "crew console is looking great"
     }
-  ]
+  ],
+  "completed": "2026-10-17",
+  "report": "design_docs/implemented/r2/crew-console-v2-report.md"
 }

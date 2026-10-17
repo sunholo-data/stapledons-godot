@@ -54,6 +54,7 @@ func _initialize() -> void:
 	palette()
 	board()
 	calls()
+	enabled_flags()
 	locks()
 	keys()
 	stand_down()
@@ -73,6 +74,13 @@ func palette() -> void:
 		and absf(CrewPalette.delta_e2000_lab(Vector3(50, 2.5, 0), Vector3(73, 25, -18)) - 27.1492) < 0.0001)
 	check("OQ9: a decline reads 'Needs you: declined, open to talk'", CrewPalette.word_of("declined") == "Needs you: declined, open to talk")
 	check("colour is never alone: every token has an icon, and the legend names them all", CrewPalette.LEGEND.size() == CrewPalette.TOKENS.size())
+	# Eval D2: each state's token and icon pinned (the board's meaning must not drift silently).
+	var pinned := {"free": ["st-free", "plus"], "sending": ["st-sending", "arrow"], "asked": ["st-asked", "clock"], "offered": ["st-asked", "clock"],
+		"concern": ["st-needs", "alert"], "declined": ["st-needs", "alert"], "deferred": ["st-needs", "alert"], "relief_asked": ["st-needs", "alert"],
+		"stand_down_asked": ["st-needs", "alert"], "agreed": ["st-agreed", "check"], "working": ["st-working", "play"], "resting": ["st-resting", "moon"],
+		"stopped": ["st-refused", "cross"], "done": ["st-done", "double_check"], "held": ["st-held", "pause"]}
+	var drift := pinned.keys().filter(func(k): return CrewPalette.token_of(k) != pinned[k][0] or CrewPalette.icon_of(k) != pinned[k][1])
+	check("D2 every state's token and icon is pinned (declined and concern are needs-you, alert) %s" % [drift], drift.is_empty() and pinned.size() == CrewPalette.STATES.size())
 
 
 func board() -> void:
@@ -136,6 +144,14 @@ func calls() -> void:
 	check("V7b the terms are icons: a day pip per day, each resource with its pips, each effect with its arrow; the sentence is the tooltip",
 		terms != null and terms.find_child("Days", true, false).get_children().filter(func(x): return x is CrewChip.ChipIcon and x.kind == "pip").size() == int(info.duration)
 		and terms.find_children("Cost_*", "", true, false).size() == info.costs.size() and terms.tooltip_text == CrewPage.work_terms(info) and not texts(c).any(func(t): return t.begins_with("Takes ")))
+	# Item 4: the icons' meanings, reachable by keyboard and pad (a "?" in the focus order).
+	check("icons ? is in the focus order (keyboard and pad reach it)", c.focusables().any(func(x): return str(x.get_meta("action")) == "help:icons"))
+	c.press("help:icons")
+	var key := c.find_child("IconKey", true, false)
+	check("icons ? opens a key: days, each resource, each effect, and the bars in words", key != null and texts(key).has("days") and texts(key).has("stress") and texts(key).has("trust")
+		and texts(key).has(CrewPage.resource_short("compute")))
+	c.press("help:icons")
+	check("closed again, the key is gone (the words stay few)", c.find_child("IconKey", true, false) == null)
 	var bars := c.find_child("Bars", true, false)
 	check("V7b the bars carry icons, not word captions", bars != null and ["stress", "fatigue", "trust"].all(func(k): return bars.find_children("*", "", true, false).any(func(x): return x is CrewChip.ChipIcon and x.kind == k))
 		and not texts(bars).has("stress"))
@@ -186,6 +202,39 @@ func calls() -> void:
 	check("V7 in the hold call %s" % [bound(h).slice(0, 2)], bound(h).is_empty())
 	check("the call never closes on a timer (no Timer nodes, no _process)", h.find_children("*", "Timer", true, false).is_empty() and not h.is_processing())
 	for n in [c, c2, c3, w, h]: n.queue_free()
+
+
+## Eval D2: the model's enabled flags per state, and the UI reads them (no hard-coded disabled).
+func enabled_flags() -> void:
+	var mixed := fixture("mixed")
+	var pilot := member_of(mixed, "pilot")
+	var acts := CrewConsoleModel.actions(pilot, mixed, {})
+	var by := func(prefix: String) -> Array: return acts.filter(func(a): return str(a.action).begins_with(prefix))
+	check("D2 concern: four answers enabled, Start disabled with its reason, Make it an order enabled",
+		by.call("reply:").size() == 4 and by.call("reply:").all(func(a): return a.enabled) and by.call("start:").size() == 1 and not by.call("start:")[0].enabled
+		and by.call("start:")[0].why == CrewConsoleModel.REASONS["concern"] and by.call("order:")[0].enabled)
+	var board := fixture("board")
+	var free_acts := CrewConsoleModel.actions(member_of(board, "pilot"), board, {})
+	check("D2 free: the offer is enabled", free_acts.size() == 1 and free_acts[0].enabled and str(free_acts[0].action) == "offer:pilot")
+	var sending := CrewConsoleModel.actions(member_of(board, "pilot"), board, {"sending": {"pilot": true}})
+	check("D2 sending: every action disabled, each with why", sending.all(func(a): return not a.enabled and a.why != ""))
+	var agreed: Dictionary = board.duplicate(true)
+	for m in agreed.members:
+		if m.id == "pilot":
+			m.work_state = "agreed"
+			m.work = {"task": "t9", "recipe": "work_pilot", "status": "offered", "started": 0, "due": 2}
+	var ag := CrewConsoleModel.actions(member_of(agreed, "pilot"), agreed, {})
+	check("D2 agreed: Start enabled", ag.size() == 1 and ag[0].enabled and str(ag[0].action) == "start:t9")
+	# The UI follows a.enabled: flip the model's flag and the button follows.
+	var c := CrewConsole.new()
+	root.add_child(c)
+	c.show_crew(agreed)
+	c.press("call:pilot")
+	check("D2 the console's Start follows the model (enabled when agreed)", btn(c, "Start_pilot") != null and not btn(c, "Start_pilot").disabled)
+	c.show_crew(mixed)
+	c.press("call:pilot")
+	check("D2 and disabled when the model says so (a concern)", btn(c, "Start_pilot").disabled and btn(c, "Start_pilot").tooltip_text == CrewConsoleModel.REASONS["concern"])
+	c.queue_free()
 
 
 func locks() -> void:
@@ -318,8 +367,28 @@ func stand_down() -> void:
 	var sid := str(CrewConsoleModel.member(sd, who).stand_down)
 	check("V8 the stand-down hold opens the call with its words and both answers", c.call_id == who and texts(c).has("Auto-run held: %s %s" % [sd.holds[0].name, sd.holds[0].line])
 		and btn(c, "Rest_" + sid) != null and btn(c, "CarryOn_" + sid) != null and texts(c).has(CrewConsoleModel.COPY["stand_down_short"]))
+	# Eval D1: Resume first would let the stand-down lapse, which crew_core counts as refusing the rest.
+	check("D1 the stand-down answers come first; the focus is on Let them rest", c.focus_action == "standdown:%s:true" % sid
+		and CrewConsoleModel.first_focus(CrewConsoleModel.member(sd, who), sd, {}) == "standdown:%s:true" % sid)
+	var resume := btn(c, "Resume_" + str(sd.holds[0].id))
+	check("D1 Resume is unavailable until the stand-down is answered, and says why", resume != null and resume.disabled and resume.tooltip_text == CrewConsoleModel.RESUME_AFTER_STAND_DOWN
+		and texts(c).has(CrewConsoleModel.RESUME_AFTER_STAND_DOWN_SHORT))
+	var sneak := []
+	c.intents.connect(func(l): sneak.append(l))
+	c.press("resume:" + str(sd.holds[0].id))
+	c.press("resume:" + str(sd.holds[0].id))
+	var down := InputEventKey.new()
+	down.pressed = true
+	down.physical_keycode = KEY_ENTER
+	for i in 12:
+		c.key(kev(KEY_DOWN))
+		if c.focus_action.begins_with("resume:"): c.key(down); c.key(down)
+	check("D1 no resume can be sent before the answer, by press or by keys", sneak.all(func(l): return l[0].k != "crew_resume"))
+	c.armed = ""
+	c.focus_action = "standdown:%s:true" % sid
 	check("V8 Let them rest needs a second press", c.press("standdown:%s:true" % sid).is_empty())
 	var r := c.press("standdown:%s:true" % sid)
+	check("D3 the bridge lists crew_stand_down among the crew intents", SimBridge.CREW_INTENTS.has("crew_stand_down"))
 	check("V8 the confirmed answer is crew_stand_down resolve_stand_down, release true", r.size() == 1 and r[0].k == "crew_stand_down" and line_of(r[0]) == {"command": "resolve_stand_down", "id": sid, "release": true})
 	var unheld: Dictionary = sd.duplicate(true)
 	unheld.holds = []

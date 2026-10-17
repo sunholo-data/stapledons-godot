@@ -120,7 +120,7 @@ Readouts show at the Crew console and, where they act, at the station they affec
 
 - Auto-run (critical-only) offers recurring work by default under standing orders, so a long skip keeps the ship running.
 - Hands-on leaves work to the captain.
-- The 0.4.1 concern buttons live on the hold card.
+- The 0.4.1 concern buttons live on the hold card. *(Superseded by R2-CREW-CONSOLE-V2, 2026-10-17: concerns are answered in the Crew console's call window; a hold opens that call.)*
 
 ## Acceptance criteria
 
@@ -165,6 +165,7 @@ Readouts show at the Crew console and, where they act, at the station they affec
 
   Proposed as starting values for the lab's claims to tune. Agree?
 - **OQ4, readouts on screen:** show the five readouts as words ("Course: well plotted") or as bars like stress and fatigue?
+  *(Note, R2-CREW-CONSOLE-V2, 2026-10-17: the console's header strip has room for them, and Mark's visual-pass feedback favours icons with a short word over sentences; the V7b icon set has readiness and observations already. Still open for Mark.)*
 
 ## Deliverables
 

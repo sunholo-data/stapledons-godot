@@ -182,6 +182,8 @@ func press(action: String) -> Array:
 	var who := actor_of(action)
 	if who != "" and sending.has(who):
 		return []
+	if not _enabled(action):
+		return []
 	if armed != action:
 		armed = action
 		_build()
@@ -488,6 +490,18 @@ func _icon(kind: String, color: Color, px: float, tip := "") -> CrewChip.ChipIco
 	return ic
 
 
+## A press while a control is disabled sends nothing (the model's `enabled`, eval D2).
+func _enabled(action: String) -> bool:
+	var who := actor_of(action)
+	var m := CrewConsoleModel.member(crew, who if who != "" else call_id)
+	if m.is_empty():
+		return true
+	for a in CrewConsoleModel.actions(m, crew, _client()):
+		if str(a.action) == action:
+			return bool(a.enabled)
+	return true
+
+
 ## A rule in one short line; its full words are the tooltip, and "?" opens them below (V7b).
 func _rule(key: String, field: String, color := CrewPalette.DIM) -> Control:
 	var box := VBoxContainer.new()
@@ -570,6 +584,46 @@ func _terms_row(id: String) -> Control:
 		e.add_child(_icon(k, CrewPalette.DIM, 15, tip))
 		e.add_child(_icon("up" if v > 0.0 else "down", CrewPalette.TEXT, 9, tip))
 		row.add_child(e)
+	var q := _button("Help_icons", "", "help:icons")
+	q.flat = true
+	q.custom_minimum_size = Vector2(18, 18)
+	q.tooltip_text = "What the icons mean [?]"
+	var qi := _icon("help", CrewPalette.TEXT if help.has("icons") else CrewPalette.DIM, 13)
+	qi.position = Vector2(2, 2)
+	q.add_child(qi)
+	row.add_child(_spacer(6))
+	row.add_child(q)
+	return row
+
+
+## Item 4 (after the evaluation): what the work and bar icons mean, in words, under "?" (the
+## keyboard and the pad reach it in the focus order, as the board's legend).
+func _icon_key(id: String) -> Control:
+	var info := CrewPage.work_info("work_" + id)
+	var row := HFlowContainer.new()
+	row.name = "IconKey"
+	row.add_theme_constant_override("h_separation", 10)
+	row.add_theme_constant_override("v_separation", 2)
+	var f := _member_field(id, "id")
+	var pair := func(kind: String, color: Color, label: Label) -> void:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 3)
+		h.add_child(_icon(kind, color, 13))
+		h.add_child(_inline(label))
+		row.add_child(h)
+	pair.call("clock", CrewPalette.DIM, _bind(f, "crew_copy:key_days", 12, CrewPalette.DIM))
+	var rs: Array = crew.get("resources", [])
+	for c in info.get("costs", []):
+		var res := str(c.get("resource", ""))
+		for k in rs.size():
+			if str(rs[k].get("id", "")) == res:
+				pair.call(res, CrewPalette.color_of("asked"), _bind("crew.resources.%d.id" % k, "crew_resource_short", 12, CrewPalette.DIM))
+	for k in info.get("effects", {}):
+		var v := float(info["effects"][k])
+		if v != 0.0 and CrewPage.EFFECT_WORDS.has(k):
+			pair.call(k, CrewPalette.DIM, _bind(f, "crew_effect:%s:%s" % [k, "up" if v > 0.0 else "down"], 12, CrewPalette.DIM))
+	for k in ["stress", "fatigue", "trust"]: # the call window's bars
+		pair.call(k, CrewPalette.TEXT, _bind(f, "crew_copy:key_" + k, 12, CrewPalette.DIM))
 	return row
 
 
@@ -918,10 +972,17 @@ func _decisions(m: Dictionary) -> Control:
 		var hl := _compose(["Auto-run held: ", ["crew.holds.%d.name" % hi, "%s"], " ", ["crew.holds.%d.line" % hi, "%s"]], 14, CrewPalette.TEXT)
 		hl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		hrow.add_child(hl)
+		var ra: Dictionary = {}
+		for a in CrewConsoleModel.actions(m, crew, _client()):
+			if str(a.action).begins_with("resume:"): ra = a
 		var rb := _button("Resume_" + str(hold.get("id", "")), "Resume auto-run", "resume:" + str(hold.get("id", "")), false, true)
 		rb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rb.disabled = not bool(ra.get("enabled", true))
+		rb.tooltip_text = str(ra.get("why", ""))
 		hrow.add_child(rb)
 		box.add_child(hp)
+		if rb.disabled:
+			box.add_child(_bind(_member_field(id, "work_state"), "crew_copy:resume_wait", 12, CrewPalette.DIM))
 	var top := HBoxContainer.new()
 	top.add_child(chip_for(id, 13, false))
 	var gap := Control.new()
@@ -957,6 +1018,8 @@ func _decisions(m: Dictionary) -> Control:
 		if s in ["free", "done", "stopped"]:
 			box.add_child(_bind(_member_field(id, "id"), "crew_job_purpose", 12, CrewPalette.DIM))
 		box.add_child(_terms_row(id))
+		if help.has("icons"):
+			box.add_child(_icon_key(id))
 		_decide(box, m, s)
 	if notices.has(id):
 		box.add_child(_bind("client.crew.notice." + id, "%s", 13, CrewPalette.color_of("concern")))
@@ -1012,7 +1075,7 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 			box.add_child(_reason(s, id, "sending"))
 			for a in acts:
 				var b := _button(("Offer_" if str(a.action).begins_with("offer") else "Start_") + id, str(a.text), "", true)
-				b.disabled = true
+				b.disabled = not bool(a.enabled)
 				b.tooltip_text = str(a.why)
 				box.add_child(b)
 			pass
@@ -1034,6 +1097,7 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 				if act.begins_with("reply:"):
 					var ap := act.get_slice(":", 2)
 					var b := _button("Reply_" + ap, str(a.text), act, true, bool(a.primary))
+					b.disabled = not bool(a.enabled)
 					b.custom_minimum_size = Vector2(0, 28)
 					for st_name in ["normal", "hover", "pressed", "disabled"]:
 						var sbx: StyleBoxFlat = (b.get_theme_stylebox(st_name) as StyleBoxFlat).duplicate()
@@ -1054,8 +1118,8 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 						var row := HBoxContainer.new()
 						row.name = "StartRow"
 						row.add_theme_constant_override("separation", 10)
-						var b := _button("Start_" + id, str(a.text), "", false)
-						b.disabled = true
+						var b := _button("Start_" + id, str(a.text), str(a.action) if a.enabled else "", false)
+						b.disabled = not bool(a.enabled)
 						b.tooltip_text = str(a.why)
 						b.custom_minimum_size = Vector2(130, 28)
 						b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1081,14 +1145,17 @@ func _decide(box: VBoxContainer, m: Dictionary, s: String) -> void:
 			if s == "offered":
 				box.add_child(_rule("lapse", wsf))
 			for a in acts:
-				var b := _button("Start_" + id, str(a.text), "", true)
-				b.disabled = true
+				var b := _button("Start_" + id, str(a.text), str(a.action) if a.enabled else "", true)
+				b.disabled = not bool(a.enabled)
 				b.tooltip_text = str(a.why)
 				box.add_child(b)
 		"agreed":
 			box.add_child(_reason(s, id, "agreed"))
 			for a in acts:
-				box.add_child(_button("Start_" + id, str(a.text), str(a.action), true, true))
+				var b := _button("Start_" + id, str(a.text), str(a.action), true, true)
+				b.disabled = not bool(a.enabled)
+				b.tooltip_text = str(a.why)
+				box.add_child(b)
 		"relief_asked":
 			box.add_child(_reason(s, id, "relief_asked"))
 			for a in acts:
@@ -1108,6 +1175,7 @@ func _stand_down(box: VBoxContainer, acts: Array, wsf: String) -> void:
 		var act := str(a.action)
 		if act.begins_with("standdown:"):
 			var b := _button(("Rest_" if act.ends_with("true") else "CarryOn_") + act.get_slice(":", 1), str(a.text), act, true, true)
+			b.disabled = not bool(a.enabled)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(b)
 	box.add_child(row)

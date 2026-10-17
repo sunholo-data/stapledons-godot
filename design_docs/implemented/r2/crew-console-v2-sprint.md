@@ -1,8 +1,8 @@
 # Sprint R2-CREW-CONSOLE-V2: the Crew console as an internal videocom
 
-**Design doc:** [crew-console-v2.md](crew-console-v2.md) (approved 2026-10-16; OQ1–OQ9 answered as recommended)
+**Design doc:** [crew-console-v2.md](crew-console-v2.md) (implemented 2026-10-17)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CREW-CONSOLE-V2.json`
-**Status:** **Approved 2026-10-16** (Mark, attended: "yes continue"; all nine recommendations). In execution: V1–V3 on `feat/crew-console-v2`, then a stop for Mark's render review of the V3 captures (pause point 3). V4 onward wait for that review.
+**Status:** **Completed 2026-10-17.** Approved 2026-10-16 (Mark, attended: "yes continue"; all nine recommendations). V1–V8, V7b and D-80 built on `feat/crew-console-v2` (PR #267). Mark on the V3 renders: "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement"; on the visual pass: "crew console is looking great". Independent evaluation: 86/100 PASS (`.ailang/state/evaluations/R2-CREW-CONSOLE-V2-eval.md`); its D1–D4 fixed (see the report).
 **Scope:** V1 (the sim names the state; protocol minor), V2 (palette and model), V3 (board and call window; bindings), V4–V5 (concern flow; inline Ask/Order), V6 (keyboard and controller), V8 (the crew_core 0.6 rows), and E (evaluate and land).
 **Base:** `main` after `feat/interlude-card` (R2-INTERLUDE, protocol 2.10) and `fix/crew-offer-while-paused` merge. Sprint branch `feat/crew-console-v2`; each milestone is one PR.
 **AILANG:** v0.54.11 as pinned at execution (`runtime/VERSION`). AILANG prompt version loaded: v0.16.7.
@@ -121,7 +121,8 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
 - **Sim:** the two `workState` rows read the 0.6 fields; `templateLine` gains `stand_down` and `carry_on` (migration step 3, if the migration hasn't already added them).
 - **Gate:** `make sim crew-console-test crew-parity`.
 
-### E: evaluate and land (0.5 day)
+### E: evaluate and land (0.5 day) ✅ 2026-10-17
+- **Done:** evaluated 86/100 PASS by a different agent; D1 (stand-down focus and silent Resume), D2 (state pins, enabled flags read by the UI), D3 (bridge const), D4 (landing) and the icon key fixed; docs moved to implemented/r2; report and changelog fragment written.
 - **Full run:** `make test` locally (attended), then CI (AC17).
 - **Evaluation:** the `sprint-evaluator` runs on a **different model** from the executor and scores 100, with 70 to pass. Output goes to `.ailang/state/evaluations/eval_R2-CREW-CONSOLE-V2_round_<n>.json`.
 - **Landing:**

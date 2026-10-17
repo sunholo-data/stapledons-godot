@@ -22,7 +22,7 @@
 
 ### Changed
 
-- Captures: `make crew-console-capture` writes six frames at 1280x720 and 2560x1440.
+- Captures: `make crew-console-capture` writes ten states at 1280x720 and 2560x1440.
 - **Crew console (V4–V8, the visual pass, 2026-10-17).** A reply to a concern is reconsidered at once
   and the work starts when they agree. Keyboard and pad: a focus ring, Enter/A to arm and send,
   1–4 for answers, [ ] or LB/RB to switch calls, Esc/B one level back. Less text: terms as day pips
@@ -32,3 +32,12 @@
   for your answer. The crossing digest counts stand-downs (protocol 2.11).
 - **Names fit faces (ledger D-80).** Generated crew names now match each portrait's presentation and
   naming tradition (from protocol 2.11).
+
+### Fixed (after the evaluation)
+
+- A stand-down call no longer offers Resume first: the two answers lead and Resume waits until
+  the stand-down is answered (resuming first let it lapse, which crew_core counts as refusing
+  their rest). The console's buttons follow the model's enabled flags.
+- The work and bar icons have a "?" key the keyboard and pad reach.
+- The scripted crossing (make strict, crew-parity) now brings the named crew aboard (AILANG
+  v0.54.14 runs the names table on the strict VM).

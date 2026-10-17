@@ -34,6 +34,8 @@ const APPROACH_WORDS := {
 	"clear_scope": "Make the job clearer", "ask_advice": "Ask their advice", "stage_plan": "Plan it in stages",
 	"explain_priority": "Explain why it matters", "assert_authority": "Insist: it's an order",
 }
+const RESUME_AFTER_STAND_DOWN := "Answer the stand-down first: resuming now would let it lapse, and a lapsed stand-down counts as refusing their rest."
+const RESUME_AFTER_STAND_DOWN_SHORT := "Answer them first; then auto-run can resume."
 const COST_KEYS := {"stand_down": "stand_down_cost", "relief": "relief_cost"}
 ## The words Insist sends (crew_core captain_reply text; no digits, under 280 characters).
 const INSIST_TEXT := "I've heard you. This needs doing, and I'm asking you to do it."
@@ -151,14 +153,19 @@ static func actions(m: Dictionary, crew: Dictionary, client: Dictionary) -> Arra
 		out.append({"action": "offer:" + id, "text": CrewPage.OFFER_PENDING, "enabled": false, "why": reason("sending"), "primary": true})
 		out.append({"action": "start:", "text": "Start the work", "enabled": false, "why": reason("sending"), "primary": false})
 		return out
-	if not hold.is_empty():
-		out.append({"action": "resume:" + str(hold.get("id", "")), "text": "Resume auto-run", "enabled": true, "why": "", "primary": true})
 	var q := concern_of(crew, id)
 	var sd := str(m.get("stand_down", ""))
+	# Eval D1: a stand-down is answered first. Resuming auto-run before the answer would let the
+	# duty check-in lapse, which crew_core counts as refusing their rest; so Resume waits, with why,
+	# and "Ask them to carry on" is the explicit, confirmed way to refuse.
 	if sd != "" and (s == "stand_down_asked" or s == "held"):
 		out.append({"action": "standdown:%s:true" % sd, "text": "Let them rest", "enabled": true, "why": "", "primary": true, "cost": COST_KEYS["stand_down"]})
 		out.append({"action": "standdown:%s:false" % sd, "text": "Ask them to carry on", "enabled": true, "why": "", "primary": true})
+		if not hold.is_empty():
+			out.append({"action": "resume:" + str(hold.get("id", "")), "text": "Resume auto-run", "enabled": false, "why": RESUME_AFTER_STAND_DOWN, "primary": false})
 		return out
+	if not hold.is_empty():
+		out.append({"action": "resume:" + str(hold.get("id", "")), "text": "Resume auto-run", "enabled": true, "why": "", "primary": true})
 	if s in ["concern", "declined", "deferred"] or (s == "held" and not q.is_empty()):
 		var issue := str(q.get("issue", ""))
 		for o in q.get("options", []):
@@ -227,6 +234,7 @@ const COPY := {
 	"empty": "No crew aboard yet.",
 	"crew_days": "Crew days pass as the ship travels.",
 	"rest_title": "Standing down to rest",
+	"resume_wait": "Answer them first; then auto-run can resume.", "key_days": "days", "key_stress": "stress", "key_fatigue": "fatigue", "key_trust": "trust",
 }
 const TERMS_WORDS := {"agreed_start": "agreed", "complied_start": "ordered", "strained_start": "ordered while strained", "refused_order": "ordered over their answer"}
 const EMOTION_WORDS := {"neutral": "calm", "happy": "pleased", "sad": "sad", "angry": "angry", "fearful": "worried", "curious": "curious", "loving": "warm", "grieving": "grieving"}
@@ -259,6 +267,7 @@ static func format(fmt: String, raw: Variant) -> String:
 		"crew_how": return how_word(str(raw))
 		"crew_words": return CrewPage.words(int(raw))
 		"crew_first": return str(raw).get_slice(" ", 0)
+		"crew_effect": return str(CrewPage.EFFECT_WORDS.get(key, ["", ""])[0 if fmt.get_slice(":", 2) == "up" else 1])
 		"crew_day": return day_words(raw, int(key))
 	return str(raw)
 
