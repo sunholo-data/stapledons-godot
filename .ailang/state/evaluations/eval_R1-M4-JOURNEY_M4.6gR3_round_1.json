@@ -1,0 +1,31 @@
+{
+ "sprint": "R1-M4-JOURNEY", "milestone": "M4.6gR3_SHIP_GOLDENS", "commit": "658072a", "base": "789132c", "round": 1,
+ "evaluator": "claude-sonnet-5-5 (independent; executor was codex gpt-6.1-sol)",
+ "score": 88, "pass": true,
+ "breakdown": {"correctness": "36/40", "test_strength": "22/25", "scope_safety": "18/20", "docs": "12/15"},
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Mutant E1 (S2 reads the main viewport as both operands) survives: make golden stays green, ok=373. S2 'sky' operand is only independent while _read(sky) differs from the viewport; only the D3 modulate drill proves the real comparison bites. Add a sanity assertion that the two Images are distinct objects/non-identical sources, or a negative control.",
+  "S3 cruise (beta 0.99) is weakly sensitive to star direction error: a 0.005 rad tangent offset of the reference star failed boost and brake (0.868 px) but cruise stayed within 0.75 px (aberration compresses angles near the pole). A first offset (0.003 along x only) was a null mutation (survived, apparently along the heading axis). Cruise detects camera/pole errors (D1) but not star-direction errors.",
+  "S4 0.99c absolute check is 0.34 % off the sim pole (9.596e-6 vs 9.629e-6), inside 1 % but the largest residual; the limit is the AC10 one, so fine, just note.",
+  "Fresh clone needs 'godot --headless --import' before make golden (no global class cache); not a defect of this diff, but make golden on a clean checkout hangs on parse errors in main.gd rather than failing. Worth a Makefile timeout/guard later.",
+  "Docs: golden-run exit-time ObjectDB/RID leak warnings from the instantiated ship scene remain; no result affected.",
+  "Sprint JSON passes/completed still null (controller sets after make test); docs left in planned/ as planned."
+ ],
+ "make_golden": {"rc": 0, "ok_lines": 373, "S2": 1, "S3": 3, "S4": 6, "ship_summary": "m4 ship golden: 0 failures", "total": "golden: 0 failures", "S3_error_px": 0.030, "S2_worst": 0.0, "S4_cap_profile": "within 0.07 %", "S4_0.99c": "0.34 %", "S4_rest": "exactly 0"},
+ "honesty_review": "References are independent: S3 expected pole is the captain Camera3D unproject (cross-checked with float64 AreaBundle.project, <=1e-3 px), not the sky camera; S4 expected values come from parsed sim probe rows (stop sun, stop guided-cap-2e-9) with pole/cap tied to frozen sky_review.json within 1e-9 and rapidity mirrors; gamma and 1-beta come from Relativity.*_of_rapidity (no 1.0 - beta); probe parse fail-closed (missing, duplicate, nonpositive, non-finite, size != 16 -> {}), NaN reports FAIL, sample floors n>=500, lit>=50, ship>=20, covered/bright pre-star windows rejected, centroid weight > 0 required, format 14 required. No duplicated physics formula beyond ForwardGlow.profile/wall_cos mirrors already in tree.",
+ "drills": [
+  {"id":"E1","cmd":"S2 sub := _read(main.get_viewport()) on temp copy; make golden","result":"SURVIVED rc=0 ok=373"},
+  {"id":"E2","cmd":"S4 profile reference cos forced to 1.0","result":"KILLED rc=2 fails=2 ok=371 (45, 80 deg)"},
+  {"id":"E3","cmd":"S4 absolute pole references swapped","result":"KILLED rc=2 fails=2 ok=371"},
+  {"id":"E4","cmd":"rest case uses cap world","result":"KILLED rc=2 fails=1 ok=372"},
+  {"id":"E5","cmd":"S3 star pos offset (0.003,0,0)","result":"SURVIVED (null mutation, axis along heading)"},
+  {"id":"E5b","cmd":"S3 star pos offset (0.003,0.003,0.003)","result":"KILLED rc=2 fails=2 (boost, brake 0.868 px); cruise passed"},
+  {"id":"E6","cmd":"S3 exposure 0.0","result":"KILLED rc=2 fails=3 ok=370 (no vacuous pass, centroid -1)"},
+  {"id":"E7","cmd":"drop m4-physics-probe prerequisite and delete probe file","result":"KILLED rc=2 fails=10 ok=363 (all ship cases FAIL, warning missing probe)"},
+  {"id":"E8","cmd":"S2 ship-pixel exclusion disabled (alpha>5)","result":"KILLED rc=2 fails=1 ok=372 (worst 0.698)"}
+ ],
+ "executor_drills_not_rerun": "D1, D2a, D2b, D3, unapplied-exit-3 not rerun (own drills used instead); executor numbers consistent with mine for the ok=373 baseline.",
+ "scope": "Changed: tools/m4_ship_golden.gd(+.uid), main.gd (+1 line), Makefile golden recipe only, changelog fragment, sprint JSON, design/sprint docs, mission-quorum state file. Nothing in demos/, interior/, ui/, sim/, physics/, sky/, bridge/, tools/interior_golden.gd, .github/. No Python.",
+ "not_run": "full make test (controller), executor D1/D2a/D2b/D3 and exit-3 drills."
+}
