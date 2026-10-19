@@ -6,7 +6,7 @@
   "design_doc": "design_docs/planned/r2/camera-forward.md",
   "sprint_plan": "design_docs/planned/r2/camera-forward-sprint.md",
   "branch": "feat/camera-forward",
-  "origin": "Mark, dev.34 playtest 2026-10-19 (ledger D-91): fixed perspective that slides, never turns; a hot key between forward and planet-facing views; console zoom; levels as 2.5D layers; dress only what each view sees, parallax for scale",
+  "origin": "Mark, attended 2026-10-19: D-91 (fixed views that slide, never turn) and D-92 (travel along the deck, into the screen; amends D-14)",
   "amends": [
     "R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md, D-83)"
   ],
@@ -23,154 +23,189 @@
     }
   ],
   "velocity": {
-    "target_loc_per_day": 330,
-    "estimated_total_loc": 1320,
-    "estimated_days": 4.0
+    "target_loc_per_day": 270,
+    "estimated_total_loc": 1600,
+    "estimated_days": 6.0
   },
   "critical_path": [
-    "F1A_SCHEMA_RIG_DECK",
-    "F1B_FORWARD_OCCLUDER_YAW",
-    "F2_TARGET_KEYS_CUES",
-    "F3_GOLDENS_CAPTURES_MIGRATION",
+    "F1A_BASIS_CHANGE",
+    "F1B_BOW_VIEW_RIG_OCCLUDERS",
+    "F2_ASTERN_SWITCH_CONSOLE_STOPS",
+    "F3_CAPTURES_MIGRATION",
     "E_EVALUATE_LAND"
   ],
   "pause_points": [
-    "after F1b: dev tag after green make test; Mark plays Forward and Deck (attended)",
-    "any golden outside G-CAM-1..3 moves: stop, list the diff for Mark",
-    "bridge yaw sweep finds no yaw with 0 blocks after fades: stop and ask (never a turning camera)",
+    "after F1a: any golden outside G-M4-S2..S4 / G-CAM-1..3 moves -> stop, list the diff with before/after renders; Mark accepts the re-baseline or the site is fixed",
+    "after F1b: dev tag after green make test; Mark plays the Bow view (attended)",
+    "occluder rule cannot reach 16/16 on AC-V3 -> stop and ask (never a turning camera)",
     "before merge: after-captures opened by eye; make test and make golden green on the rig"
   ],
   "questions_for_mark": [
-    "OQ1 bridge views Forward / Target / Deck / Console: rec yes (Deck walks at rest; Forward is the journey under way)",
-    "OQ2 'planet facing (same as navigation around ship?)' = the guided stop view (body beside the rail): rec yes, Target generalises it and the Sgr A* hole view; the Navigation chart is unchanged",
-    "OQ3 side and aft: rec fold side into Target/Deck, drop aft for players, keep both for tools and goldens",
-    "OQ4 zoom levels Z1/Z2/Z3: rec remove for players (one framing per view; Console is the only zoom); keep as developer presets",
-    "OQ5 occluders between camera and captain: rec fade (dither 25%), never turn",
-    "OQ6 Commons this sprint: rec legacy as-is; own fixed-view pass after the deck re-plan",
-    "OQ7 inset second-direction window: rec later, after Mark plays F1"
+    "OQ1 default Bow view: rec candidate A (pitch -8, 9 m back, 5.5 m up): 0.9c starbow in frame, captain 73 px, deck 59%",
+    "OQ2 planet facing = guided stop turn puts the body 30 deg off the bow in the Bow frame, no separate view: rec yes (Target key for free nav later)",
+    "OQ3 side/astern under D-92: rec Astern yes (9), Side no player view",
+    "OQ4 zoom Z1-Z3: rec remove for players, developer presets; revisit after F1b",
+    "OQ5 spire in the way: rec fade (hide fallback) when crossing captain line or pole ray or containing the eye",
+    "OQ6 Commons: legacy keeps its turning sector views and Z1-Z3 keys (live on legacy levels only); rec legacy for now, own Bow pass after the deck re-plan; alternative a minimal Commons Bow view in F2 (+0.5 day)",
+    "OQ7 inset astern window: rec later",
+    "OQ8 painted-plate interior (--interior, D-6 reference) keeps the pre-D-92 orientation this sprint: rec keep labelled legacy; re-render or retire with the deck-layout re-plan"
   ],
   "features": [
     {
-      "id": "F1A_SCHEMA_RIG_DECK",
-      "description": "views.json v2 level-keyed (Commons legacy) + validate with 6 negative controls; slide rig eye = foot - flat(yaw)*back_m + up*rise_m (basis never re-aimed), dead zone, critically damped follow, slide box, envelope slide, eye >= deck+0.3; Deck view (pitch -30, back 10.4, rise 7.6); walk_yaw = fixed view yaw; 9 Deck / R default; zoom actions developer-only (OQ4); lift arrival -> level default; camera-forward-test (headless, ship-demo-ci) and camera-walk-capture recipes; determinism check",
-      "estimated_loc": 420,
+      "id": "F1A_BASIS_CHANGE",
+      "description": "D-92 basis change: named maps ShipFrame.gltf_from_structure/structure_from_gltf and ShipCamera.ship_vector/gltf_from_ship composed with R(s)=(-s.x,s.z,s.y); 11 kinematic + 7 structure sites rewired (design D1.1/D1.2); aim_dir -> bow; side_basis tilt 15->60 deg; HUD copy and look_direction; G-M4-S2..S4 and G-CAM-1..3 re-posed with the same counts (393); test_physics _sky_cam map; golden baseline tool; lore re-import after design #30; prototype flag removed; painted-plate path keeps the pre-D-92 basis, labelled (no number changes); BRAKE_NOTICE; tour-turn camera args; every test broken by these moves in the same commit",
+      "estimated_loc": 650,
+      "days": 2.5,
+      "files": [
+        "interior/ship_frame.gd",
+        "demos/ship_demo_camera.gd",
+        "demos/ship_geometry_demo.gd",
+        "demos/ship_attitude.gd",
+        "demos/ship_star_light.gd",
+        "demos/camera_director.gd",
+        "demos/ship_commons.gd",
+        "demos/ship_demo_benchmark.gd",
+        "tests/test_camera_forward.gd",
+        "tests/test_physics.gd",
+        "tests/test_ship_demo.gd",
+        "tests/test_ship_commons.gd",
+        "tests/test_ship_commons_assets.gd",
+        "tests/test_ship_demo_consolidation.gd",
+        "tools/m4_ship_golden.gd",
+        "tools/constellation_golden.gd",
+        "tools/ship_star_identification_capture.gd",
+        "tools/validate_ship_commons.gd",
+        "tools/ship_commons_capture.gd",
+        "tools/golden_baseline.sh",
+        "tests/fixtures/golden_baseline_ok.txt",
+        "data/lore/archive/one-g.md",
+        "data/lore/archive/starbow.md",
+        "data/lore/manifest.json",
+        "Makefile",
+        "interior/area_bundle.gd",
+        "ui/journey_hud.gd",
+        "tests/test_tour_attitude.gd",
+        "tests/test_ship_attitude.gd",
+        "tests/test_no_twitch.gd",
+        "tests/test_transit.gd",
+        "tests/test_ship_star_light.gd",
+        "tests/test_ship_demo_journey.gd",
+        "tests/test_ship_demo_live.gd",
+        "tests/test_free_nav_stop.gd",
+        "tests/test_ship_ui.gd",
+        "tests/fixtures/physics_total.txt",
+        "interior/interior_sky.gd",
+        "data/camera/views.json",
+        "tests/test_camera_director.gd",
+        "tests/fixtures/basis_gate/inline.gd.txt"
+      ],
+      "acceptance_criteria": [
+        "AC-B1",
+        "AC-B2",
+        "AC-B3",
+        "AC-B4",
+        "AC-B5",
+        "AC-R2",
+        "AC-B6 if design #30 merged"
+      ],
+      "test_first": [
+        "R proper-rotation test and composite-map tests fail on main",
+        "AC-B1 grep gate fails on main (18 inline sites)",
+        "golden baseline captured from main before any re-pose"
+      ],
+      "passes": null,
+      "completed": null,
+      "notes": []
+    },
+    {
+      "id": "F1B_BOW_VIEW_RIG_OCCLUDERS",
+      "description": "views.json v2 (level-keyed, travel_axis bow, bridge bow + console, Commons legacy) + validate with 7 negative controls; slide rig eye = foot - flat(yaw)*back + up*rise, basis never re-aimed, dead zone, follow, envelope slide, eye >= deck+0.3; Bow view (candidate A: pitch -8, back 9, rise 5.5, yaw 270); camera_occluder group (Spire* incl spire_needle_col, lift boxes) faded while crossing the captain line or the pole ray or containing the eye (fallback hide); captain faces the bow; keys 7/R; zoom developer-only; level default on lift arrival; camera-forward-test and camera-walk-capture recipes; pause: dev tag; CameraDirector.pole_dir() (new) and test_camera_director pole literals moved onto it; legacy sky-view checks replaced; F1 green point: make camera-test + full make test before the dev tag",
+      "estimated_loc": 450,
       "days": 1.25,
       "files": [
         "data/camera/views.json",
         "demos/camera_director.gd",
         "demos/ship_geometry_demo.gd",
-        "tests/test_camera_director.gd",
         "tests/test_camera_forward.gd",
+        "tests/test_camera_director.gd",
         "tools/camera_walk_capture.gd",
         "Makefile"
       ],
       "acceptance_criteria": [
-        "AC1 deck: grep -cE ^ok    yaw constant (forward|deck|target_stop|target_sgr_a) spread=0.[0-9]+ deg over 16$ .godot/tmp/camera-forward-test.log (deck row)",
-        "AC3 deck",
-        "AC5",
-        "AC8",
-        "AC9",
-        "AC12"
+        "AC-V1 (bow)",
+        "AC-V2",
+        "AC-V3",
+        "AC-V4",
+        "AC-V7",
+        "AC-V9",
+        "AC-V10",
+        "AC-V11",
+        "AC-V12"
       ],
       "test_first": [
-        "test_camera_forward.gd deck yaw/W-up/envelope/eye-above-deck/level-default/determinism fail on main",
-        "schema v2 + 6 negative controls fail on main"
+        "Bow walk checks (yaw, in frame, clear after fades, captain px, deck fraction) fail on main",
+        "schema v2 + 7 negative controls",
+        "determinism and fade-isolation checks"
       ],
       "passes": null,
       "completed": null,
       "notes": []
     },
     {
-      "id": "F1B_FORWARD_OCCLUDER_YAW",
-      "description": "Forward view (pitch 56, back 2.4, rise 0.3; 7 key); camera_occluder group = Spire* meshes + lift boxes, alpha eases to 0.25 over 0.2 s of advance(dt) while crossing the camera-captain segment (fallback: hide); sweep counts non-group hits only; bridge yaw sweep in 15 deg steps (analytic, 2 h budget) for fewest fades and pole clear of the spire; pause point: dev tag for Mark",
-      "estimated_loc": 280,
-      "days": 0.75,
+      "id": "F2_ASTERN_SWITCH_CONSOLE_STOPS",
+      "description": "Astern (yaw 90, key 9); switch ease <=90 deg/s, reduced cut, mapping at ease end; console restore to view id; cues return to Bow; stop body (new side_basis tilt) and Sgr A* hole in the Bow frame 16/16 via target_override fixtures",
+      "estimated_loc": 200,
+      "days": 0.5,
       "files": [
         "demos/camera_director.gd",
         "demos/ship_geometry_demo.gd",
         "data/camera/views.json",
         "tests/test_camera_forward.gd",
-        "tests/test_camera_director.gd"
-      ],
-      "acceptance_criteria": [
-        "AC1 forward",
-        "AC2 forward",
-        "AC3 forward",
-        "AC4"
-      ],
-      "test_first": [
-        "pole in frame forward 16/16 and yaw constant forward fail on main",
-        "AC4 deck clear after fades 0 blocked; occluder group = spire, lift"
-      ],
-      "passes": null,
-      "completed": null,
-      "notes": []
-    },
-    {
-      "id": "F2_TARGET_KEYS_CUES",
-      "description": "Target view (aim order hole > stop body > destination; pitch clamp [-10, 60] with hand-over to Forward; aim at 1/3 from the top; re-aim only when the aim leaves the middle 60%); key 8; cue remap (departure/cruise/braking -> Forward, stop turn end and Sgr A* -> Target); switch ease <= 90 deg/s, reduced cut, mapping changes at ease end; console restore() to the previous view id",
-      "estimated_loc": 320,
-      "files": [
-        "demos/camera_director.gd",
-        "demos/ship_geometry_demo.gd",
-        "data/camera/views.json",
-        "tests/test_camera_forward.gd",
-        "tests/test_camera_director.gd",
-        "tools/camera_walk_capture.gd",
         "ui/ship_controls.gd"
       ],
       "acceptance_criteria": [
-        "AC1 target_stop/target_sgr_a",
-        "AC2 target",
-        "AC3 target + after switch",
-        "AC6 (a) ease/cut/mapping (b) re-aim on aim exit, no re-aim on walk",
-        "AC7"
+        "AC-V1 (astern)",
+        "AC-V5",
+        "AC-V6",
+        "AC-V8"
       ],
       "test_first": [
-        "target in frame 16/16 at the first guided stop and at Sgr A*",
-        "no re-aim from walking",
-        "ease/cut/mapping checks",
-        "console round trip exact basis"
+        "astern yaw/W-up/switch/console/stop-body/hole checks fail on main"
       ],
       "passes": null,
       "completed": null,
-      "notes": [],
-      "days": 0.75
+      "notes": []
     },
     {
-      "id": "F3_GOLDENS_CAPTURES_MIGRATION",
-      "description": "G-CAM re-posed one for one: G-CAM-1 Forward spawn+helm + Target hole (9), G-CAM-2 Deck spawn+rail, Forward, Target x {0.99c, cap} (8), G-CAM-3 Deck+Forward (2), 393 ok lines; camera_views_capture new view list x rest/0.99c/stop/Sgr A* at 720p+1440p with pole/target/head gates, frames opened, after-sheets published; ~11 tests rewritten/retargeted (design D10 list); tool smokes for renamed ids; dead bridge sector paths removed (legacy fenced); changelog; demos/README controls",
+      "id": "F3_CAPTURES_MIGRATION",
+      "description": "camera_views_capture new view list x rest/0.9c/0.99c/stop/Sgr A* at 720p+1440p with pole/body/hole/head gates and a forced-fade frame; camera-walk-capture; frames opened, after-sheets published; ~11 tests migrated (design D10); tool smokes for renamed ids; dead bridge sector paths removed; changelog; demos/README controls; independent evaluation and fixes",
       "estimated_loc": 300,
+      "days": 1.75,
       "files": [
-        "tools/m4_ship_golden.gd",
         "tools/camera_views_capture.gd",
-        "Makefile",
+        "tests/",
         "demos/README.md",
-        "changelogs/unreleased/2026-10-2x-camera-forward.md"
+        "changelogs/unreleased/"
       ],
       "acceptance_criteria": [
-        "AC10",
-        "AC11",
-        "AC13"
+        "AC-B6 if not met in F1a",
+        "AC-R1",
+        "AC-T1"
       ],
-      "test_first": [
-        "golden count gate unchanged at 393 with G-CAM 9/8/2"
-      ],
+      "test_first": [],
       "passes": null,
       "completed": null,
-      "notes": [],
-      "days": 1.25
+      "notes": []
     },
     {
       "id": "E_EVALUATE_LAND",
-      "description": "independent sprint-evaluator (a model other than the executor), should-fix items, landing (implemented/r2, README index, design repo roadmap), then the D-90 deck re-plan as a separate attended step",
+      "description": "landing: implemented/r2, README index, design repo roadmap; then the D-90 deck re-plan facing the bow (attended)",
       "estimated_loc": 0,
       "files": [
-        ".ailang/state/evaluations/",
         "design_docs/implemented/r2/"
       ],
       "acceptance_criteria": [
-        "AC14 (at landing)"
+        "AC-T2 (at landing)"
       ],
       "test_first": [],
       "passes": null,
@@ -192,26 +227,57 @@
       "score": 86,
       "blocking": 0,
       "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_2.json"
+    },
+    {
+      "round": 3,
+      "kind": "plan (D-92)",
+      "score": 71,
+      "blocking": 3,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_3.json"
+    },
+    {
+      "round": 4,
+      "kind": "plan (D-92)",
+      "score": 76,
+      "blocking": 2,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_4.json"
+    },
+    {
+      "round": 5,
+      "kind": "plan (D-92)",
+      "score": 79,
+      "blocking": 1,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_5.json",
+      "note": "blocking item folded in after this round"
     }
   ],
-  "approval_gate": "OQ1-OQ4 answered by Mark at approval (F2 depends on OQ1-OQ3; F1a key map on OQ4)",
+  "approval_gate": "OQ1-OQ4 answered by Mark; stapledons-design PR #30 merged before F1a lore step (else F3)",
   "acceptance_criteria_source": "design_docs/planned/r2/camera-forward.md ## Acceptance criteria (AC1-AC14, each with its exact command and log line; AC14 checked at landing)",
   "acceptance_commands": {
-    "AC1": "`make camera-forward-test $A && test $(grep -cE '^ok    yaw constant (forward|deck|target_stop|target_sgr_a) spread=0\\.[0-9]+ deg over 16$' $S/camera-forward-test.log) -eq 4`",
-    "AC2": "`grep -qE '^ok    pole in frame forward 16/16$' $S/camera-forward-test.log && grep -qE '^ok    target in frame target_stop 16/16$' $S/camera-forward-test.log && grep -qE '^ok    target in frame target_sgr_a 16/16$' $S/camera-forward-test.log`",
-    "AC2b": "`grep -qE '^ok    pole ray clear forward 16/16$' $S/camera-forward-test.log`",
-    "AC3": "`test $(grep -cE '^ok    (W up-screen|D right) (deck|forward|target)$' $S/camera-forward-test.log) -eq 6 && test $(grep -cE '^ok    W up-screen after switch (deck>forward|forward>target)$' $S/camera-forward-test.log) -eq 2`",
-    "AC4": "`make camera-test $A && grep -qE '^ok    AC4 deck clear after fades: 0 blocked of [0-9]+ samples$' $S/camera-test.log && grep -qE '^ok    occluder group = spire, lift$' $S/camera-test.log`",
-    "AC5": "`grep -qE '^ok    envelope keeps the angle$' $S/camera-forward-test.log && grep -qE '^ok    eye above deck at 48 samples$' $S/camera-forward-test.log`",
-    "AC6": "`test $(grep -cE '^ok    (switch ease max [0-9.]+ deg/s|reduced cut|mapping at ease end|re-aim on aim exit|no re-aim on walk)$' $S/camera-forward-test.log) -eq 5`",
-    "AC7": "`test $(grep -cE '^ok    console returns to (deck|forward) exact$' $S/camera-test.log) -eq 2`",
-    "AC8": "`grep -qE '^ok    schema v2$' $S/camera-test.log && test $(grep -cE '^ok    negative control ' $S/camera-test.log) -ge 6`",
-    "AC9": "`test $(grep -cE '^ok    level default (bridge|commons)$' $S/camera-forward-test.log) -eq 2`",
-    "AC10": "`make golden $A`",
-    "AC11": "`make camera-views-capture $A && make camera-walk-capture $A`",
-    "AC12": "`grep -qE '^ok    deterministic poses 600 steps$' $S/camera-forward-test.log`",
-    "AC13": "`make python-guard && make test $A`",
-    "AC14": "`test -f design_docs/implemented/r2/camera-forward.md && ls changelogs/unreleased/*camera-forward*`"
+    "AC-B1": "test $(git ls-files '*.gd' | xargs grep -nE '\\[2\\], *-[a-z_.]*\\[1\\]|\\.x, *-[a-z_.]*\\.z, *[a-z_.]*\\.y|-[a-z_.]*\\.x, *[a-z_.]*\\.y, *-[a-z_.]*\\.z' | grep -vE '^(interior/ship_frame|demos/ship_demo_camera)\\.gd:' | wc -l) -eq 0 && test $(grep -cE '\\[2\\], *-[a-z_.]*\\[1\\]|\\.x, *-[a-z_.]*\\.z, *[a-z_.]*\\.y|-[a-z_.]*\\.x, *[a-z_.]*\\.y, *-[a-z_.]*\\.z' tests/fixtures/basis_gate/inline.gd.txt) -ge 3",
+    "AC-B2": "grep -qE '^ok    basis R proper bow->\\+Z mast->\\+Y$' $S/camera-forward-test.log",
+    "AC-B3": "make physics $A > $S/physics.txt && grep -q \"^$(cat tests/fixtures/physics_total.txt) passed, 0 failed\" $S/physics.txt",
+    "AC-B4": "make golden $A && tools/golden_baseline.sh check $S/golden.log tests/fixtures/golden_baseline_ok.txt && tools/golden_baseline.sh selftest",
+    "AC-B5": "test -z \"$(git diff --name-only origin/main -- sim/)\" && make parity replay strict $A",
+    "AC-B6": "make lore-import CHECK=1 D=../stapledons-design AILANG=ailang && make lore-check lore-test $A",
+    "AC-V1": "test $(grep -cE '^ok    yaw constant (bow|astern) spread=0\\.[0-9]+ deg over 16$' $S/camera-forward-test.log) -eq 2",
+    "AC-V2": "test $(grep -cE '^ok    in frame bow (pole|starbow_0\\.9c|starbow_0\\.99c) 16/16$' $S/camera-forward-test.log) -eq 3",
+    "AC-V3": "test $(grep -cE '^ok    clear after fades bow (pole_ray|captain|eye_free) 16/16$' $S/camera-forward-test.log) -eq 3",
+    "AC-V4": "grep -qE '^ok    captain px bow (6[0-9]|7[0-9]|80)\\.\\.(6[0-9]|7[0-9]|80)$' $S/camera-forward-test.log && grep -qE '^ok    deck fraction bow 0\\.[5-7][0-9]$' $S/camera-forward-test.log",
+    "AC-V5": "test $(grep -cE '^ok    (W up-screen|D right) (bow|astern)$' $S/camera-forward-test.log) -eq 4 && test $(grep -cE '^ok    W up-screen after switch (bow>astern|astern>bow)$' $S/camera-forward-test.log) -eq 2",
+    "AC-V6": "test $(grep -cE '^ok    in frame bow (stop_body|sgr_a_hole) 16/16$' $S/camera-forward-test.log) -eq 2",
+    "AC-V7": "grep -qE '^ok    envelope keeps the angle$' $S/camera-forward-test.log && grep -qE '^ok    eye above deck at 32 samples$' $S/camera-forward-test.log",
+    "AC-V8": "test $(grep -cE '^ok    (switch ease max [0-9.]+ deg/s|reduced cut|mapping at ease end|console returns to (bow|astern) exact)$' $S/camera-forward-test.log) -eq 5",
+    "AC-V9": "grep -qE '^ok schema v2$' $S/camera-test.log && test $(grep -cE '^ok negative control v2 ' $S/camera-test.log) -eq 7",
+    "AC-V10": "test $(grep -cE '^ok    level default (bridge|commons)$' $S/camera-forward-test.log) -eq 2",
+    "AC-V11": "grep -qE '^ok    deterministic poses 600 steps$' $S/camera-forward-test.log",
+    "AC-V12": "grep -qE '^ok    fade leaves sky and sim untouched$' $S/camera-forward-test.log",
+    "AC-R1": "make camera-views-capture $A && make camera-walk-capture $A",
+    "AC-R2": "make display-audit $A",
+    "AC-T1": "make python-guard && make test $A",
+    "AC-T2": "test -f design_docs/implemented/r2/camera-forward.md && ls changelogs/unreleased/*camera-forward*"
   },
-  "acceptance_commands_note": "verbatim commands (markdown escaping removed); this copy is the one to run"
+  "acceptance_commands_note": "verbatim commands (markdown escaping removed); this copy is the one to run",
+  "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/30",
+  "green_points": "F1 (= F1a + F1b) is one green point: commits inside it may be red (camera-test legacy pole/hole checks between the basis change and the Bow view); F1 ends with make camera-test + full make test, then the dev tag; F2 and F3 end green"
 }

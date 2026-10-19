@@ -1,0 +1,45 @@
+{
+  "sprint_id": "R2-CAMERA-FORWARD",
+  "kind": "plan review (D-92 revision)",
+  "round": 5,
+  "reviewer": "claude CLI --model sonnet (independent of the planner)",
+  "date": "2026-10-19",
+  "folded": "the one blocking finding (F1a not provably green) folded in: F1a+F1b are one green point F1; Sgr A* hover attitude turn; should-fix items folded (pole_dir new, _ship_cam note, R also in test_physics, stale counts)",
+  "score": 79,
+  "pass": false,
+  "blocking": [
+    {
+      "finding": "F1a is still not provably green. The plan re-poses the legacy `sky_forward` and `sky_hole` views to candidate A (fixed:270, -8°, 9 m back, 5.5 m up) in F1a. The occluder fade that makes candidate A pass exists only in F1b. The existing camera-test asserts clear pole rays with raycasts against the spire, so it should fail after F1a.",
+      "evidence": "The plan's own measurement (camera-forward.md:226-229) says candidate A has the pole ray clear at only 14/16 walk samples without fades. The spire needle blocks 2 of 16, and the eye is inside the spire at 1 of 16. tests/test_camera_director.gd:628 asserts that 'from every bridge sample … the whole figure and the forward pole are clear and in frame' for `sky_forward`. Line 643 does the same for `sky_hole`. Both go through `CameraDirector.view_clear(pose, foot, pole=true, aim)` (demos/camera_director.gd:345-365), which does physics raycasts against all collision and the lift boxes, with no fade or group exclusion. The old view avoided obstruction through `yaw_candidates_deg` and `walk_to` (views.json:15). A `fixed:270` yaw drops that selection. The group, the fade (§D2) and the rule that `view_clear` ignores faded members are all scheduled for F1b (camera-forward-sprint.md F1b Green). Yet F1a claims 'Check: make camera-test, then a full make test, so F1a ends green' (sprint.md F1a Check) and 'Every commit keeps make test green' (sprint.md Base).",
+      "fix": "Pick one and say so. (a) Move the occluder group and the `view_clear` exclusion into F1a, with an AC. (b) Re-pose the legacy views in F1a so that they keep `yaw_candidates` and `walk_to` and only change the pole. Candidate A then arrives with F1b's rig. (c) Merge F1a and F1b into one commit and green point. If any intermediate commit is red, say which, and drop the 'every commit green' claim. Also give the `sky_hole` re-pose in full. `aim_offset_deg: 18` and the test at :810 (`absf(off-18.0)<0.5`) need a pitch that puts the hole 18° above centre. That is not the same as a fixed -8°, because the hole sits near the horizon."
+    }
+  ],
+  "should_fix": [
+    {
+      "finding": "Round-4 blocking #1 (the painted-plate bundle frame) is now resolved. The plan keeps the bundle in the legacy frame, adds a BUNDLE_BASIS tag, and says interior_golden, m4-smoke and test_physics:1066-1090 stay byte-identical. The code agrees. `ShipFrame.sky_camera` (ship_frame.gd:66) and `InteriorSky.orient_basis` (interior_sky.gd:158-167) only multiply the cam by the ship basis, and the legacy tests call `sky_camera` with cam_bridge.json. Two gaps remain. (1) The 'two paths never mix' claim (§D1.6) is false in one place: `_ship_cam` (test_physics.gd:1705) builds a bundle-format dict in the new kinematic map and passes it to `AreaBundle.unproject`. (2) There is no test that the legacy plate path is unchanged beyond 'must pass unchanged'.",
+      "evidence": "tests/test_physics.gd:1695-1705, interior/interior_sky.gd:162-167, camera-forward.md:191.",
+      "fix": "Note that `_ship_cam` uses AreaBundle's pure projection maths only, so it is frame-agnostic. Reword the 'never mix' claim to 'the bundle JSONs and cam_* data never mix'. Optionally make `CAMERA_FRAME` a comment-only change and assert that `test_area_bundle` is unmodified (a git-diff AC)."
+    },
+    {
+      "finding": "Round-4 blocking #2 (test_camera_director sequencing) is addressed on paper. The F1a list now includes test_camera_director, `pole_dir()` and `camera-test`. However, `CameraDirector.pole_dir()` does not exist (grep finds nothing), and §D10 only says 'aim_dir → the bow'. The doc's own test table (§D10) still says 'v2 plus a legacy block' for test_camera_director with no F1a/F1b split. The F1a re-pose of line 595 (a tilt loop around `Vector3.UP`) and line 633 (`hole_override = UP.rotated`) is not specified.",
+      "evidence": "demos/camera_director.gd:321-329 (`aim_dir` returns Vector3.UP); tests/test_camera_director.gd:589, 595, 633, 704-810; camera-forward.md:362 and :419.",
+      "fix": "Define `pole_dir()` in §D10 and say what the tilt loops become. Use rotations about the bow axis, or the angle off Vector3.FORWARD."
+    },
+    {
+      "finding": "AC-B1's positive control is weak. It counts matching lines (`-ge 3`), not one line per form. The test_physics `forward`/`up` inline forms (`[-pose.basis.z.x, pose.basis.z.z, -pose.basis.z.y]`, :1705) and the m4_ship_golden `atan2` forms (:395-407) still escape the regex. Only the first four of the 19 current matches are even in listed files.",
+      "evidence": "Running the old regex on main gives 19 hits in 15 files, none of them the `basis.z` forms. AC-B1's command (camera-forward.md:390).",
+      "fix": "Make the control test each pattern separately, with one line per pattern and `-eq` rather than `-ge`. Add a pattern for the `basis.z.x, …` forms, or list those lines for hand migration with a separate AC."
+    },
+    {
+      "finding": "The stop-turn claim is unverified at the engine level. 'Body 30° off the bow' relies on `side_basis` with tilt 60°, but the AC-V6 fixture uses the director's pose with `target_override`, and the F1b dev build is the only check on how it reads. The Sgr A* claim 'the ship already holds its nose on the hole' is cited from a golden-harness comment (m4_ship_golden.gd:248). `black_hole_visit.gd` has no attitude code, and `_update_tour_attitude` returns when `solar_tour==null`. The live Sgr A* nose aim depends on the sim heading, which is not shown.",
+      "evidence": "demos/ship_geometry_demo.gd:962-980; demos/black_hole_visit.gd (no attitude/heading); demos/ship_attitude.gd:41.",
+      "fix": "State where the live heading is set to the hole (the sim's heading toward the hole, aberrated). Add an AC-R1 frame that checks the lensed hole is in frame. AC-R1 is a human gate only; add a machine-checked frame position."
+    },
+    {
+      "finding": "Stale or cosmetic items. Doc status says 'rounds 3 and 4'. After this review it needs round 5. The sprint md still says 'interior_golden (pure ship frame)' under Goldens/Unaffected. The sprint md also lists 18 inline sites where the doc counts 19 on main. `tools/golden_baseline.sh` and `tests/fixtures/physics_total.txt` do not yet exist, which is fine for a plan but the physics-total check (AC-B3) has no stated path for new D-92 checks. The plan adds the R test in camera-forward-test rather than test_physics, and gate 2 wants spec check values in tests/test_physics.gd.",
+      "evidence": "camera-forward.md:5; sprint.md 'Goldens'; AC-B3 (:392).",
+      "fix": "Update the counts and names. Add the R check values to test_physics.gd, or state that the totals change and re-record physics_total.txt after the additions."
+    }
+  ],
+  "notes": "The claims checked out: sim/*.ail encodes no interior or structure axis (grep finds only galactic and kinematic fields such as hole_dir and the glow_pole fields), and sunholo/relativity 0.12.0 uses +z-along-velocity only, so 'sim untouched' holds. `ship_vector` currently returns [x,-z,y] by default, with the measurement-only `travel_axis` flag (ship_demo_camera.gd:21-24). The new map [-x,y,-z] is its own inverse, so the `hole_direction` inverse at ship_geometry_demo.gd:584 is simple. The `side_basis` 15° to 60° change gives the stated 30° off the bow, and the horizontal offset of 256 px is geometrically right. The Makefile:973 `test: ship-demo-ci` link holds and `camera-test` hangs off it. `BRAKE_NOTICE` is at journey_hud.gd:8 with the tests the plan names. D-92 is covered well, including Mark's quoted direction. The one real defect is a repeat of round 4's sequencing issue. The re-posed legacy sky views reach the pole through the spire before F1b adds the occluder fade, so F1a's 'ends green' claim fails the existing line-628 check. Fix that and the plan passes comfortably."
+}

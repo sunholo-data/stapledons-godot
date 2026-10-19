@@ -16,7 +16,11 @@ func follow(foot: Vector3, tilt_deg: float, yaw_rad: float, distance: float) -> 
 	position=foot+Vector3.UP*1.7-forward*pullback
 	basis=Basis.looking_at(forward,Vector3.UP)
 	external=position.length()>=100.
+## R2-CAMERA-FORWARD prototype (D-92): "up" = ship +Z (travel) along glTF +Y, today; "bow" = travel along
+## glTF -Z in the deck plane, ship +Y = glTF +Y (the mast), ship +X = glTF -X (a proper rotation). Measurement only.
+static var travel_axis := "up"
 static func ship_vector(v: Vector3) -> Array:
+	if travel_axis == "bow":return [-v.x,v.y,-v.z]
 	return [v.x,-v.z,v.y]
 static func to_sky_direction(v: Vector3, h: PackedFloat64Array) -> Vector3:
 	var gal := ShipFrame.to_galactic(ShipFrame.ship_basis(h),PackedFloat64Array(ship_vector(v)))
@@ -31,8 +35,9 @@ func sync_sky(sky: InteriorSky, px: Vector2i) -> void:
 		var photo: Texture2D=sky.background.material.get_shader_parameter("photo")
 		if photo!=null:
 			sky.background.material.set_shader_parameter("pano_px_per_screen_px",photo.get_height()/180.0*fov/maxi(px.y,1))
-	sky.glow_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
-	sky.dust_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
+	var cs:Array=ship_vector(position)
+	sky.glow_mat.set_shader_parameter("cam_ship",Vector3(cs[0],cs[1],cs[2]))
+	sky.dust_mat.set_shader_parameter("cam_ship",Vector3(cs[0],cs[1],cs[2]))
 	if attitude_basis.is_empty():sky.orient(heading)
 	else:sky.orient_basis(attitude_basis)
 	if projection_changed:sky.update_exposure()

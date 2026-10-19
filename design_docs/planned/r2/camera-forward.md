@@ -1,377 +1,469 @@
-# R2-CAMERA-FORWARD: fixed views per level that slide with the captain and never turn
+# R2-CAMERA-FORWARD: travel along the deck, and a fixed bow view that slides with the captain
 
-**Status:** Planned. Awaiting Mark's approval of this doc and its sprint plan ([camera-forward-sprint.md](camera-forward-sprint.md)). Independent plan review (Sonnet): round 1 71 with 4 blocking, round 2 86 with 0 blocking; all findings folded in (`.ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_{1,2}.json`).
-**Release:** R2. **Milestone:** the player camera for the 3D ship, corrected after the dev.33/dev.34 playtest (ledger D-91). Amends R2-CAMERA ([implemented/r2/camera-fixed-views.md](../../implemented/r2/camera-fixed-views.md), D-83).
-**Priority:** P1 for R2. Every session runs through this camera. The paused deck-layout sprint (D-90, branch `feat/deck-layout` at 7863c831) is re-planned on top of it.
+**Status:** Planned; revised for D-92 (2026-10-19).
+- Awaiting Mark's approval of this doc and its sprint plan ([camera-forward-sprint.md](camera-forward-sprint.md)).
+- **Independent plan reviews (Sonnet):** the D-91 draft scored 71, then 86. The D-92 revision was reviewed in rounds 3–5: 71, 76, 79, then the round-5 blocker was folded in (`.ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_{3,4,5}.json`).
+
+**Release:** R2. **Milestone:** the player camera for the 3D ship, and the ship basis it needs (ledger D-91, D-92). It amends R2-CAMERA ([implemented/r2/camera-fixed-views.md](../../implemented/r2/camera-fixed-views.md), D-83).
+
+**Priority:** P1 for R2. Every session runs through this camera. The paused deck-layout sprint (D-90, `feat/deck-layout` 7863c831) is re-planned on top of it.
 
 **Mark's direction** (attended, 2026-10-19, verbatim):
 > we misunderstood what a fixed camera meant. as I walk around we can still see the whole ship, and I get a confusing new perspective where my buttons now dont travel to the right direction. I also now miss the good views of the onward forward facing jounrey and as I walk around lose the view of the planet/sun etc we are visiting. the fixed camera is meant to make it simpler by having fixed perspective and the player walks around in that.
 
-He then chose **"Slide, never turn"** (D-91), and added:
-> I dont know if its possible to have the side view and forward view ivisble in same frame, so perhaps its a hot key to look between them?
-
+He then chose "Slide, never turn" (D-91), and added:
 > we can have a few fixed views possible, but yeah at least one forward looking, one planet facing (same as navigation around ship?) and maybe when we sue consoles it zooms in - we take advantage of the 3d blender model but for visuals, not a 3d game - does that make sense? we did consider isometric at one point but this was early designs, but its really just to give the sense of scale
 
 > we are just on the bridge for now, but as we go down through the levels we will have similar fixed caemra views as we explore them - more like a 2d/2.5d platform game? able to explore the layers
 
 > this way we dont have to dress full on 3d environemtns and can get a sense of style and taste for each level that is in keeeping with the concept art, relying on paralax etc. to help give sense of scale
 
+The first draft of this doc measured that a forward pole straight overhead cannot share a frame with the deck. Mark then changed the ship (D-92):
+> shall we chaneg it so the direction of travel is the bubble moving sideways? just for asethetic reasons? may make it all simpler?
+
+and chose **"Into the screen"**.
+
 **What this doc takes from that:**
-- **The 3D ship is a presentation stage, not a free 3D game.** It is a diorama that gives scale. The Blender model is used for visuals.
-- **Each level has a small set of authored, fixed views.** A view's angle never changes while the captain walks. The camera slides to keep the captain in frame.
-- **On the bridge:** a Forward view (the journey ahead), a Target view (the body being visited), a Deck view (walking among the stations), and a Console zoom.
-- **Moving between levels** (the lift today, stairs later) cuts or eases to that level's views. The ship reads as stacked layers, explored like a 2.5D platformer.
-- **Only what a view sees gets dressed.** Depth comes from parallax layers. The sky layer stays the live SR/GR render.
+- **The direction of travel lies in the deck plane, toward the bow** (D-92). The decks stay level under the generator's comfort 1 g (D-11, HB-6). The spire is the generator mast, and the levels stack vertically along it.
+- **The 3D ship is a stage, not a free 3D game.** It is a diorama that gives scale. Each level has a few authored, fixed views, and the camera slides with the captain without ever turning.
+- **The bridge's default view looks over the captain toward the bow.** The starbow, the destination and the forward glow sit near the horizon above the deck, so the journey and the deck share one frame.
+  - At a stop, the ship turns so the body is in that frame too (Mark's "planet facing").
+  - Using a console zooms in.
+- **Moving between levels** cuts to that level's views, so the levels read as stacked layers (2.5D).
+- **Only what a view sees gets dressed.** Depth comes from parallax. The sky layer is always the live SR/GR render.
 
 **Implements** (design repo):
-- [vision/design-decisions.md, 2026-09-28 "Interior: Isometric Three-Layer View From Inside the Bubble" (D-6)](https://github.com/sunholo-data/stapledons-design/blob/main/vision/design-decisions.md).
-  - Superseded in its projection: no orthographic iso camera, because one perspective camera must render the sky (R2-CAMERA OQ8).
-  - Kept in its purpose: the captain walks among the crew at room scale, with parallax layers behind (play area 1:1, ship structure slower, the sky fixed at infinity).
-  - D-6's "the bridge's dome is the bubble's forward pole; the starbow gathers overhead there" is why the Forward view looks up.
-- [art/ship-interior-blender-brief.md §2](https://github.com/sunholo-data/stapledons-design/blob/main/art/ship-interior-blender-brief.md): up is forward, and the sky is at infinity, "fixed when the camera pans".
-- [features/future/sr-view-directions.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/sr-view-directions.md): forward, side and aft show different physics. That decides which directions earn a view (§D5).
-- [features/phase2-core-views/multi-level-ship-visualization.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/multi-level-ship-visualization.md) and [ship-exploration.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/ship-exploration.md): the ship's levels, the spire through them, and the vertical position the player must be able to read. The level-keyed views (§D7) are their camera half.
-- [features/scene-based-interior-navigation.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/scene-based-interior-navigation.md) (2025-12-20, "fixed-camera scenes per deck … with parallax"). The idea returns here, now with a walking avatar and a live sky.
-- [physics/relativity-spec.md §2](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) (a moving observer: aberration and Doppler depend on direction only) and the GR section (the hole view).
-- Ledger: D-6, D-14 (up is the direction of travel), D-52 A (the 3D ship is the game), D-83 (R2-CAMERA), D-90 (deck layout, paused), D-91 (this ruling).
+- **D-92 and its doc amendments:** [stapledons-design#30](https://github.com/sunholo-data/stapledons-design/pull/30) amends:
+  - `art/ship-interior-blender-brief.md` §2–3, `art/ship-exterior-blender-brief.md` §2 and `art/README.md`;
+  - `vision/design-decisions.md`: a new D-92 entry, with D-14 and D-6 marked superseded in part;
+  - the lore entries `archive/one-g.md` and `archive/starbow.md`.
+- **[vision/design-decisions.md](https://github.com/sunholo-data/stapledons-design/blob/main/vision/design-decisions.md) D-6** ("Isometric Three-Layer View"):
+  - kept for its purpose: room scale, the captain among the crew, parallax layers;
+  - superseded in its projection, and in "the bridge's dome is the forward pole".
+- **[features/future/sr-view-directions.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/sr-view-directions.md):** forward, side and aft show different physics (§D5).
+- **[features/phase2-core-views/multi-level-ship-visualization.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/multi-level-ship-visualization.md)** and **[ship-exploration.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/ship-exploration.md):** levels as layers (§D7).
+- **[physics/relativity-spec.md §2](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md)** (aberration and Doppler depend on the angle from the velocity only) and **[physics/higgs-bubble.md](https://github.com/sunholo-data/stapledons-design/blob/main/physics/higgs-bubble.md)** (HB-6, the generator's 1 g; the forward glow).
+- **Ledger:** D-6, D-11, D-14 (amended by D-92), D-52 A, D-83, D-90, D-91, D-92.
 
-**Depends on:** nothing upstream. There is no new physics formula, so `sunholo/relativity` is untouched (gate 3 holds trivially). The sky is rendered through the camera pose exactly as today (`ShipCamera` stays the render boundary).
+**Depends on:**
+- **No new physics formula.** `sunholo/relativity` 0.12.0 works in a frame with +z along the velocity (for example, `_smoke.ail:290`, `pole = {0, 0, 1}`). It never refers to the ship's structure, so **the package-first rule does not apply.**
+- **The sim and the protocol are untouched** (§D1). There is no protocol minor version, the digest is unchanged, and the replay goldens are unchanged.
+- **Design repo PR #30** must merge before F1a lands its lore re-import (§D1.5).
 
-**Estimated LOC:** about 1,320 in all: about 700 of product code (the sector machinery goes for the bridge but stays fenced for the Commons) and about 620 of tests, tools and caller migration. The sprint plan schedules 4 days.
+**Estimated LOC:** about 1,600 in all.
+- About 750 of product code: the basis change at about 25 call sites, the slide rig and the views.
+- About 700 of tests, tools, re-baselined goldens and caller migration.
+- The sprint plan schedules 6 days.
 
 ## Game vision alignment
 
-Scored with the `game-vision-designer` skill (feature-validation mode, against `vision/core-pillars.md`, D-6 and D-91), 2026-10-19. **ALIGNED.**
+Scored with the `game-vision-designer` skill in feature-validation mode, against `vision/core-pillars.md`, D-6, D-91 and D-92, on 2026-10-19. **ALIGNED.**
 
 | Pillar | Score | Rationale |
 |---|---|---|
-| Choices Are Final | 0 | The camera takes no decision. The R2-CAMERA no-twitch tests (NT1–NT5) stay |
+| Choices Are Final | 0 | The camera takes no decision. The no-twitch tests (NT1–NT5) stay |
 | The Game Doesn't Judge | 0 | Neutral |
-| Time Has Emotional Weight | +2 | The journey stays in frame under way, with the starbow overhead and the destination ahead. The captain's ageing figure is on screen in every walking view |
-| The Ship Is Home | +2 | A stable stage: the deck no longer spins under the player, so its layout can be learned like a home. The levels become layers to explore (the 2.5D model) |
-| Grounded Strangeness | +2 | Every sky the player sees is the physics render through the same pose. The Forward view frames the pole wherever the captain walks; the Target view keeps the real body in frame; the Deck view shows the side sky going dark at speed |
-| We Are Not Built For This | +1 | Scale comes from parallax and framing: a small figure under a vast sky, with the ship's structure between |
+| Time Has Emotional Weight | +2 | The journey ahead stays on screen while you walk: the starbow, the destination and the forward glow over the bow rail. The captain's ageing figure is in every walking view |
+| The Ship Is Home | +2 | A stable stage: the deck no longer spins under the player. Levels become layers to explore, and every level's bow edge sees the forward sky |
+| Grounded Strangeness | +2 | Every sky is the physics render through the same pose. The sky crowds ahead and goes dark astern, and the Astern view (§D5) shows that directly |
+| We Are Not Built For This | +1 | Scale comes from parallax and framing: a small figure on a deck under a vast forward sky |
 | **Net** | **+7** | **Go.** No pillar is negative |
 
 ## Problem
 
-What happens on `origin/main` (5118cc2), measured by `tools/camera_walk_capture.gd` (added by this PR) over a scripted walk around the spire. There are 8 angles × 2 radii (10 m and 17 m) on the bridge, sampled at rest (default Z2) and under way (a committed voyage at β = 0.90, default Sky forward):
+**1. The camera turns as the captain walks (D-91).**
 
-| Pass | Samples | Camera yaw spread | Forward pole in frame | Captain's head in frame |
+I measured this with `tools/camera_walk_capture.gd` (this PR) on `origin/main` 5118cc2: a walk of 8 angles × radii 10 m and 17 m on the bridge.
+
+| Pass | Samples | Yaw spread | Forward pole in frame | Captain's head in frame |
 |---|---|---|---|---|
-| rest, Z2 (sector booms) | 16 | **180°** (yaw = sector centre + ring turn) | 0 | 16 |
-| under way, Sky forward (`yaw_rule: tangent`) | 16 | **180°** (yaw = the captain's ring angle + offset) | 16 (y = 82 px at 720p) | 16 |
+| At rest, Z2 (sector booms) | 16 | **180°** | 0 | 16 |
+| Under way, Sky forward (`yaw_rule: tangent`) | 16 | **180°** | 16 (y = 82 px) | 16 |
 
-Evidence (opened by eye: the contact sheet, `rest_r10_0` and `under_way_r10_3`):
-- https://storage.googleapis.com/stapledons-voyage-assets/refs/camera_forward/before/contact_sheet.png
-- The 32 frames and `walk.json` are in the same folder.
+- **Evidence:** https://storage.googleapis.com/stapledons-voyage-assets/refs/camera_forward/before/contact_sheet.png. I opened the sheet, `rest_r10_0` and `under_way_r10_3` individually.
+- **Why it turns:** Z2's yaw is `sector_centre + turn_deg[ring]`, and Sky forward's is `atan2(foot) + offset`.
+- **Why the keys flip:** WASD is screen-relative (`walk_yaw()`), so it turns with the screen.
 
-What the numbers mean:
-1. **The ship turns under the player.**
-   - Z2's yaw is `sector_centre + turn_deg[ring]` (`CameraDirector.sector_yaw`). Over a walk around the spire it takes every value, which is what Mark saw as "a confusing new perspective".
-   - Sky forward's yaw is `atan2(foot) + offset` (`CameraDirector._sky`), so it also turns with every step around the ring.
-2. **The keys change direction on screen.**
-   - `walk_yaw()` is screen-relative, as R2-CAMERA's D2 intended, but the screen itself turns.
-   - After a sector switch the same key moves the captain a different way across the deck. A held key is "held direction" for one swing, then it changes.
-3. **The journey leaves the frame.**
-   - At rest and at Z1/Z2/Z3 the pole is never in frame (pitch −20° to −35°). The planet or sun beside the ship is in frame only from some sectors.
-   - Under way, the Sky forward view keeps the pole but turns with the walk, so the Milky Way and the bodies wheel around it.
-4. **One framing cannot hold both the deck and the starbow.** This is physics and geometry, not a bug; see §D2's table. The pole is straight up (D-14, D-6: the bridge dome is the forward pole). At FOV 78° (vertical), the pole is in frame only at pitch ≥ 51°, and then no deck surface is visible. That is why Mark's "hot key to look between them" is the right model.
+**2. Under D-14, one frame cannot hold both the deck and the journey.**
+- **The pole was straight up.** At the fixed 78° vertical FOV it is in frame only at a pitch of 51° or more, and then 0% of the frame is below the horizon.
+- **The starbow sits close to the pole.** Rest-frame 90° stars appear 25.8°, 8.1° and 2.6° from the pole at 0.9c, 0.99c and 0.999c (relativity-spec §2), so the starbow too is only in frame with the pole.
+- This measurement led to D-92.
 
 ## Goals and non-goals
 
 **Goals**
-- G1. **Fixed views:** a view's yaw and pitch never change while the captain walks. The camera slides (translation only) to keep the captain framed.
-- G2. **The bridge's views:** Forward (default under way), Target (default at a stop, the body being visited, or the hole at Sgr A*), Deck (default at rest, walking among the stations), and Console (a zoom onto a screen that returns to the previous view).
-- G3. **Constant, screen-relative controls:** W is up-screen, S down, A left and D right in every view. The mapping changes only when the player (or a cue) switches view, and then it eases once.
-- G4. **Level-keyed view data:** each level has its own small set of views in `data/camera/views.json` (schema v2). Moving between levels selects that level's default view. The bridge is fully authored in this sprint; the Commons keeps its current views until its own pass.
-- G5. **The physics is unchanged:** the sky is rendered through the same pose. The goldens' camera cases (G-CAM-1..3) are re-pinned to the new eyes with the same case counts.
+- **G1. The ship basis change (D-92).** The physics frame keeps +Z along the travel. Its mapping onto the ship's structure changes from "travel = up" to "travel = the bow", in one named place. There is no new formula and no sim change.
+- **G2. A fixed Bow view.** Its yaw and pitch stay fixed while walking, and it slides with the captain.
+  - The starbow, the destination and the forward glow are in frame.
+  - The deck fills the lower part.
+  - The captain is about 70 px tall.
+- **G3. Constant controls.** W walks toward the bow (up-screen) in the default view. The mapping changes only on a deliberate view switch, once, at the end of the ease.
+- **G4. A few authored views:**
+  - Bow (the default);
+  - Astern (OQ3);
+  - Console: a zoom onto the screen that returns to the previous view;
+  - stops and Sgr A* are framed by the Bow view through the ship's attitude (§D4).
+- **G5. Level-keyed view data** (`views.json` v2). The bridge is authored in this sprint; the Commons keeps its views until its own pass.
+- **G6. Physics gate 2 holds.** Goldens and forward-pole tests re-baseline one for one, and the reference renders are opened.
 
 **Non-goals**
-- Dressing or rearranging the deck: that is the re-planned deck layout (§D9).
-- An inset window showing a second direction: later and optional (Mark: "perhaps its a hot key"). Not in this sprint.
-- New levels below the Commons, stairs, or an exterior shot.
-- Orthographic projection (one perspective camera renders the sky; R2-CAMERA OQ8 stands).
+- Dressing or re-arranging the deck. That is the deck-layout re-plan (§D9), and its stations will face the bow.
+- An inset second-direction window, new levels, stairs, an exterior shot, or an orthographic projection.
+- Any sim or protocol change.
 
 ## Design
 
-### D0. The model: a stage, levels as layers
+### D0. The model: a stage, levels as layers, travel into the screen
 
-- **The ship is a set of stacked layers along the travel axis:** bridge (top, under the forward dome), Commons, and future levels below.
-- **Each layer has a few authored views.** A view is a fixed direction (yaw, pitch) and a framing (distance behind and above the captain, dead zone). The camera's only motion while walking is a slide parallel to itself.
-- **Switching views is deliberate:** a key, a console, or a situation cue (departure, a stop, braking, Sgr A*). Switches ease once (full motion) or cut (reduced motion), as R2-CAMERA's D6.
-- This is the "2.5D platformer" reading. Inside a level you walk a stage seen from a fixed side. Going down a level is a cut to the next stage.
+- **Levels stack vertically along the generator mast.** The travel axis is horizontal, toward each level's bow edge.
+- **Each level has a few authored views,** each with a fixed direction and framing. While the captain walks, the camera's only motion is a slide parallel to itself.
+- **Switching views is deliberate:** a key, a console or a cue. A switch eases once, or cuts under reduced motion (R2-CAMERA D6).
+- **Inside a level you walk a stage,** seen from behind and above, facing the bow. Going down a level cuts to that level's stage. This is the 2.5D reading.
 
-### D1. Slide-follow (all walking views)
+### D1. The basis change (D-92): one named mapping, no new formula
 
-- **Rig:** `eye = foot − flat(yaw) × back_m + up × rise_m`, where `flat(yaw)` is the horizontal unit vector of the view's yaw. This is today's sky-view rig (`CameraDirector._sky`), now with a yaw that never changes. The basis is `basis_of(yaw, pitch)` and is never re-aimed at the captain.
-- **The eye never goes below the deck:** `rise_m ≥ 0.3` is a schema rule, and a test (AC5) checks `eye_y ≥ deck_y + 0.3` at every walk sample. The captain's head is then above the eye in Forward (28° above the horizontal at 2.4 m back), which puts the head inside the frame (pitch 56° − 39° = 17° bottom edge).
-- **Dead zone:** the camera starts sliding only when the captain's projected head leaves a central box. The box is 24% of the width by 20% of the height at 720p, and it is data.
-- **Follow:** critically damped (time constant 0.25 s, the existing `FOLLOW_S`). This holds R2-CAMERA's eye-acceleration cap of 36 m/s² (AC5).
-- **Bounds:**
-  - The eye stays inside the 95 m envelope. A clamp now slides the eye along the deck plane instead of along a boom, so the angle is untouched.
-  - Each view may carry an `xz` slide box. At its edge the camera stops and the captain walks toward the frame edge.
-- **Occlusion:** the spire, the lift and tall props can sit between the camera and the captain at some deck positions, because the yaw no longer turns away from them.
-  - **Fix:** the occluder fades. New machinery, budgeted as its own sub-milestone (F1b). The nodes are named, not inferred: the spire mesh(es) under the geometry's `Spire*` nodes and the lift's visible boxes (`lift_boxes()`), added to a Godot group `camera_occluder` at scene build. While their AABB crosses the camera-to-captain segment (the same test `view_clear` already uses for the lift), their material's alpha eases to 0.25 over 0.2 s (`advance(dt)` time, no wall clock), restored the same way.
-  - **Fallback** if a dither material is not cheap on those meshes: hide the occluder's `MeshInstance3D` while it crosses (a cut). Either way the test counts "after fades" as: hits against nodes outside `camera_occluder` only.
-  - **Not allowed:** turning the camera.
-  - The bridge's clear-line sweep (`tests/test_camera_director.gd` `sweep`) becomes "0 blocked samples after fading". Untagged geometry must never block.
-  - **Physics:** fading touches ship meshes only. The sky layer is never dimmed or masked by it. A test asserts that a fade changes no sky uniform and no sim input. `camera-views-capture` adds one frame with a forced fade, opened by eye, to check the sort order against the sky.
+**Two frames are in use today, and they share one mapping:**
+- **Structure:** Blender and `cam_*.json`. ShipFrame's comment says "+Z = direction of travel (up)". The Commons walk targets, the benchmark eyes, the courtyard data and the Commons validation are authored in it. glTF = `(s.x, s.z, −s.y)`.
+- **Kinematic:** the sky, the glow, the dust and the observer, with +Z along the velocity (`ShipFrame.ship_basis(heading)`, `sunholo/relativity`, the sim). `ShipCamera.ship_vector(gltf) = [x, −z, y]`, and its inverses are written inline.
 
-### D2. Forward (the journey)
+**D-92 splits them with a fixed proper rotation R.** Travel becomes the structure's bow (Blender +Y), and the mast stays up:
+- `kinematic = R · structure`, where `R(s) = (−s.x, s.z, s.y)`. So K+Z = S+Y (the bow), K+Y = S+Z (the mast), and K+X = −S+X.
+- R has det +1. A test asserts that R is orthonormal with det 1, maps the bow to +Z and the mast to +Y, and that the two composite maps agree with these literals.
+- Hence **`ship_vector(gltf) = [−x, y, −z]`**: glTF −Z (Godot's forward) is the bow.
 
-**Measured trade-off.** FOV 78° is vertical, so the half-angle is 39°. At 1280×720:
+**Measured:** this PR's prototype (`ShipCamera.travel_axis = "bow"`, measurement only) puts a camera looking at glTF −Z at a pitch of −8° at 8.0° from the velocity (`view_velocity_angle`). The rendered sky shows the starbow ahead, over the bow rail (§Evidence).
 
-| Pitch | Pole in frame | Pole y (px) | Frame below the eye's horizon | Rest-frame 90° stars in frame at 0.9c / 0.99c / 0.999c |
-|---|---|---|---|---|
-| 10° | no | −2161 | 39% | no / no / no |
-| 30° | no | −410 | 14% | yes / no / no |
-| 45° | no | −85 | 0% | yes / yes / no |
-| 51° | yes | 0 | 0% | yes / yes / yes |
-| 56° (proposed) | yes | 60 | 0% | yes / yes / yes |
-| 58° (today's Sky forward) | yes | 82 (measured: 82.2) | 0% | yes / yes / yes |
+**D1.1 Kinematic sites move to the new map.** Each goes through one named function (`ShipCamera.ship_vector` / `gltf_from_ship`), with no inline literals:
+- **ShipCamera:** `ship_vector`, `to_sky_direction` and `sync_sky`. That covers `cam`, and the glow and dust `cam_ship`, which today are written inline as `(x, −z, y)`.
+- **Demo code:** `ship_geometry_demo.hole_direction` (the inverse, line 584) and `ship_star_light.gd:89`.
+- **`CameraDirector.aim_dir`:** the pole changes from `Vector3.UP` to the bow, `Vector3.FORWARD`.
+- **Tests and tools:**
+  - `tests/test_physics.gd:1705` (`_ship_cam`);
+  - `tests/test_ship_demo.gd:31` (the observer eye);
+  - `tools/constellation_golden.gd:59, 239`;
+  - `tools/m4_ship_golden.gd:484–490` (the glow eye and directions);
+  - `tools/m4_ship_golden.gd:395–407` (`_unit_sample`, G-M4-S4: a hand-written ship-to-glTF yaw/pitch, `atan2(dz, …)`, `atan2(−dy, dx)`, which the grep gate cannot see) and G-CAM-2's aim directions built about glTF +Y as the pole. Both are rewritten through `gltf_from_ship`, and AC-B4's re-posed families cover them;
+  - `tools/ship_star_identification_capture.gd:149`;
+  - the capture metadata `eye_m` (`m4_ship_capture`, `ship_demo_journey_capture`, `ship_demo_live_capture`), through `ship_vector`.
 
-Rest-frame 90° stars appear at 25.8°, 8.1° and 2.6° from the pole at 0.9c, 0.99c and 0.999c (relativity-spec §2 aberration). At the guided voyage's speeds, the starbow is only in frame with the pole.
+**D1.2 Structure sites keep the old map, now named `ShipFrame.gltf_from_structure`:**
+- `ship_commons.gd:37` and `ship_demo_benchmark.gd:48–49`;
+- `tests/test_ship_commons.gd:27`, `tests/test_ship_commons_assets.gd:31` and `tests/test_ship_demo_consolidation.gd:25` (a measured cam JSON eye against the camera position);
+- `tools/validate_ship_commons.gd:56` and `tools/ship_commons_capture.gd:44`.
+
+A grep gate (AC-B1) fails on any inline `[2], −x[1]` or `x, −z, y` pattern outside these two functions.
+
+**D1.3 Shaders need no edit.**
+- The glow and dust overlays take their ship axes from `InteriorSky.orient_basis` (world), so they follow automatically.
+- Their uniform defaults (`ship_y = (0, 1, 0)`) are overwritten at runtime.
+- `tools/glow_planet_golden.gd` already sets a bow-style frame (`ship_z = (0, 0, −1)`) in its own harness.
+- `interior_golden.gd` works in a pure ship frame and is unchanged.
+
+**D1.4 The sim and the protocol are untouched.**
+- Evidence: no `sim/*.ail` file encodes an interior or structure axis. `gr.hole_dir` and `dir_local` are galactic (`sim/protocol.ail:443–449`), and the protocol minor lives in `sim/protocol.ail`, so an untouched `sim/` means an unchanged minor.
+- Every sim quantity is in galactic or kinematic coordinates: the heading, velocity, glow pole emittance, ISM and dust impacts, and `gr.hole_dir`. The host maps each one into the interior.
+- AC-B5 checks that `git diff origin/main -- sim/` is empty, that `make parity replay strict` is green, and that the protocol minor version is unchanged.
+
+**D1.5 Attitude, HUD copy and lore.**
+- **The stop turn** (`Attitude.side_basis`).
+  - Today it tilts the travel axis 15° toward the body, which puts the body 75° off the travel, along kinematic +X. Under D-92 that is horizontal and 90° off the bow, so it falls outside the Bow frame.
+  - **The change:** a tilt of 60°. The body then sits 30° off the bow, in the deck plane. That is in frame: x = 640 ± 256 px at 720p (the half-horizontal FOV is 55.2°), at the horizon.
+  - This is attitude only. Stationary turns precede commitment, and nothing in the sim changes.
+  - It makes the Bow view the "planet facing" view at stops (§D4).
+- **The tour-turn camera arguments:** `_begin_tour_turn(…, 89.5, "departure")` and `(…, 15., "stop")` (ship_geometry_demo.gd:969, 977) pose only the developer free camera's first-person turn (`_tour_view_to`). They become tilt 0° toward the bow (yaw 270°, ShipCamera's convention) for a departure, and the body's bearing at tilt 0° for a stop. Tests: `test_tour_attitude.gd`, `test_ship_attitude.gd` (the side_basis tilt), `test_free_nav_stop.gd`.
+- **Player-facing copy that says up is the travel:** `ui/journey_hud.gd:8` `BRAKE_NOTICE` ("Braking. Up is still the way we are travelling.") becomes "Braking. The bow is still the way we are travelling.". It is asserted in `tests/test_no_twitch.gd:342, 361` and `tests/test_transit.gd:85`, which move in the same commit. The frame comments in `interior/ship_frame.gd:4–8` and `interior/area_bundle.gd:49` are updated too.
+- **HUD copy:** "Travel is UP; floors correctly block the aft sky" and "SKY ONLY DIAGNOSTIC — … travel is UP, aft is DOWN" are reworded. The `look_direction` tilt table (forward 89.5°) is re-posed. `make display-audit` re-runs, and the PR lists any changed caption pin.
+- **Lore:** `data/lore/archive/one-g.md` ("'up' is toward the direction of travel") and `starbow.md` ("the stars have gathered overhead") are vendored from the design repo.
+  - They are re-imported (`make lore-import D=../stapledons-design`) after design PR #30 merges.
+  - The gate is `make lore-import CHECK=1`.
+
+**D1.6 The painted-plate interior (`main.gd --interior`, the M4.2 area bundles) stays in the pre-D-92 basis, as a labelled legacy reference.**
+- **What it does today:**
+  - `interior/area_bundle.gd` reads Blender's `cam_*.json`, whose frame string `CAMERA_FRAME` (line 49) reads "ship: +Z = direction of travel (up)".
+  - `InteriorSky.orient_basis` (interior_sky.gd:162–167) and `ShipFrame.sky_camera` (ship_frame.gd:66) multiply that camera by the ship basis directly. `sky_camera` is called from `tests/test_physics.gd:1066–1090` and `interior/interior_smoke.gd:91`.
+- **Who sees it:** nobody in play. It is the D-6 painted reference, reached only through developer launches (`--interior`, `--interior-capture`, `--m4-smoke`, `make interior-test`). Players reach the 3D ship from the title screen (`main.gd:_start_current_ship`).
+- **Why it can't take R yet:** its bridge plate camera looks up at the old dome pole (`forward` ≈ (−0.27, 0.14, 0.95)). Applying R would turn that plate perpendicular to the direction of travel. G-M4-3 ("a star dead ahead lands on the projection of ship +Z") would then fall off-frame, so the plate would need re-rendering in Blender. That is art work outside this sprint.
+- **Decision:** the bundle path explicitly keeps the old identity mapping.
+  - `CAMERA_FRAME` and the bundle JSONs are unchanged, so `test_area_bundle` is unchanged.
+  - A comment in `area_bundle.gd` and `interior_sky.gd`, plus a `const BUNDLE_BASIS := "legacy-up (pre-D-92)"`, records that a bundle camera is in the legacy frame.
+  - The `--interior` HUD gains one line: "painted reference (pre-D-92 orientation)".
+  - `interior_golden` (G-M4-1..6), m4-smoke, `make interior-test` and `test_physics.gd:1066–1090` stay **byte-identical**. AC-B4's baseline includes them, and they are not among the re-posed families.
+- **The two paths never mix.** `InteriorSky.cam` is written either by `ShipCamera.sync_sky` (kinematic, D-92) or by the bundle `Interior` (legacy), never both in one session. (`tests/test_physics.gd:1705` `_ship_cam` builds a bundle-format dictionary only to call `AreaBundle.unproject`, which is frame-agnostic projection maths, so it stays on the kinematic map.)
+- **Follow-up (not this sprint):** re-render or retire the painted plates under D-92 (OQ8).
+
+### D2. The slide rig and occluders (all walking views)
+
+- **The rig:** `eye = foot − flat(yaw) × back_m + up × rise_m`. The basis is `basis_of(yaw, pitch)` and is never re-aimed.
+- **Dead zone:** 24% × 20% of the frame, as data.
+- **Follow:** critically damped (`FOLLOW_S`, 0.25 s), within R2-CAMERA's 36 m/s² cap.
+- **Bounds:** the eye stays within 95 m (the clamp slides; it never rotates) and at least 0.3 m above its deck.
+- **Occluders (measured, §D3):**
+  - **Members:** the `camera_occluder` group holds the named spire meshes (`Spire*`, including `spire_needle_col`) and the lift's visible boxes.
+  - **A member fades** (alpha 0.25 over 0.2 s of `advance(dt)`; fallback: hidden) while it does any of these:
+    - (a) crosses the eye-to-captain segment;
+    - (b) crosses the eye-to-pole ray, so it never hides the journey;
+    - (c) contains the eye.
+  - **"Clear after fades"** means no hit on a node outside the group.
+- **Physics:** a fade changes no sky uniform and no sim input (asserted). `camera-views-capture` adds a forced-fade frame, which I open by eye to check the sort order against the sky.
+
+### D3. Bow, the default view (merges D-91's Forward and Deck)
+
+**Measured candidates.**
+- **How:** `tools/camera_walk_capture.gd --bow` with the D-92 prototype basis, 16 bridge walk samples each, at rest and at 0.99c cruise, at 1280×720.
+- **The pole, the destination and the forward glow** are tested along the travel direction (glTF −Z).
+- **The starbow's upper edge** is the rest-frame 90° ring: 25.8° above the pole at 0.9c, 8.1° at 0.99c.
+- **"In frame"** means inside a 40 px margin.
+
+| Candidate (pitch, back, rise) | Pole and destination in frame | Pole ray clear (no fades) | Starbow 0.9c / 0.99c in frame | Captain | Horizon y | Frame below the horizon (deck) |
+|---|---|---|---|---|---|---|
+| **A** (−8°, 9.0 m, 5.5 m) | 16/16 | 14/16 | 16/16 / 16/16 | 73 px | 298 | 59% |
+| B (−12°, 9.0 m, 6.5 m) | 16/16 | 14/16 | 0/16 / 16/16 | 70 px | 266 | 63% |
+| C (−16°, 10.0 m, 8.5 m) | 16/16 | 14/16 | 0/16 / 16/16 | 59 px | 233 | 68% |
+
+The numbers are the same at rest and at 0.99c, because the framing is geometric.
+
+**Two problems turned up in the walk, the same for every candidate:**
+- **The spire needle blocks the pole** (`spire_needle_col`) at 2/16 samples, where the captain stands sternward of the spire: foot (0, 82, 10) and (0, 82, 17).
+- **The eye is inside the spire** at 1/16, where the captain stands 10 m bow-ward of it. The eye is 1 m from the axis and the frame is solid dark (opened: `bow_*_r10_6`).
+
+Both are cleared by the occluder rule (§D2 b, c). F1b's AC-V3 must measure 16/16 after fades.
+
+**Recommendation: A.** It is the only candidate with the 0.9c starbow in frame. The captain is 73 px (the R2-CAMERA band is 60–80), and the deck fills 59% of the frame. I opened `bow_cruise_A_r17_6`: the starbow sits over the bow rail with the captain on the deck below.
 
 **The view:**
-- Yaw is fixed per level: `yaw_deg` in the data. The bridge's Forward yaw is chosen in F1 by the sweep: the yaw with the fewest occluder fades over the bridge walk.
-- Pitch 56° keeps the pole about 60 px below the top edge at 720p.
-- The eye is 2.4 m behind the captain's feet (horizontally) and 0.3 m above the deck, as today's Sky forward (2.2 m, 0.3 m). The captain is a silhouette in the lower part of the frame: today's measured head is y = 590 px at 720p.
-- It slides with the captain and never turns.
-- **Walking in it:** the captain stays near the bottom centre. W walks up-screen, which is away from the camera along the yaw.
-- The deck surface is not visible (the table above). Walking in Forward is for watching, and Deck is the walking view. The HUD's console prompts still work by proximity.
-- **Default under way:** departure, cruise and braking cue it. At Sgr A* the cue is the hole view (§D3), as today.
+- a fixed yaw toward the bow (glTF −Z), pitch −8°;
+- the eye 9 m sternward of the captain's feet and 5.5 m above the deck;
+- it slides and never turns.
 
-### D3. Target (the body being visited)
+**The forward glow** lies on the bubble wall in the pole's direction, so "pole ray clear" covers it too. At 0.99c it is faint (HB glow), as it is today.
 
-**What Mark likely means by "same as navigation around ship?"** Today, at each guided stop, the ship makes a stationary attitude turn so the body sits beside the rail (`_begin_tour_turn(Attitude.side_basis(rel_km), …)`). The camera is then cued to "Sky to the side" (`director.sky("sky_side", true)`). That stop view, "navigating around" the planet, is the closest existing thing, so Target generalises it. The Navigation station's chart (`ui/galaxy_map.gd`), which orbits a camera around the ship and system, is a different, map-only view, and nothing here changes it. Open question OQ2 checks this reading.
+**It is the default everywhere on the bridge,** at rest and under way.
 
-**The view:**
-- **What it aims at, in order:**
-  - the hole at Sgr A* (`hole_direction()`, as `sky_hole` today);
-  - otherwise the current stop's body, its `rel_km` taken into the ship frame by the attitude basis (the same transform as `hole_direction`);
-  - otherwise the destination (the forward pole).
-- **Yaw:** the aim's horizontal bearing, fixed while the captain walks.
-- **Pitch:** the aim's elevation, clamped to [−10°, 60°] and offset so the aim sits in the upper third of the frame.
-- **Framing:** the eye is 4.0 m behind the captain's feet along the aim's bearing and 0.6 m above the deck. The captain is in the lower third with the body beyond the rail.
-- **Re-aim rule:** the target only moves when the ship turns or the body drifts. Re-aim with one ease when the aim leaves the middle 60% of the frame, and never because the captain walked. At a stop, 1 ship second per second, a planet drifts far less than that within a dwell.
-- **Default at a stop:** it replaces today's Sky-to-the-side cue at a stop, and replaces `sky_hole` at Sgr A* (same aim and offset, now a Target view).
-- **Measured (AC1, AC2):** with the ship stationary (a guided stop's dwell, or a Sgr A* hover, held), the 16-sample walk causes no re-aim. So Target's yaw spread is checked like the others, and the target is in frame at every sample. Re-aim is tested separately (AC6b), by moving the aim, not the captain.
+### D4. Stops and Sgr A*: the Bow view does "planet facing"
 
-### D4. Deck (walking among the stations)
+- **At a guided stop,** the ship turns (§D1.5) so the body sits 30° off the bow, at the horizon. The Bow view frames it, so Mark's "planet facing" needs no separate view and no camera turn. F2 measures it: AC-V6 requires the body in frame at 16/16 walk samples at the first guided stop.
+- **At Sgr A*:** the golden harness assumes the nose is on the hole (`m4_ship_golden.gd:248`), but the live visit has no attitude code (`black_hole_visit.gd`), and the heading comes from the sim. So: **while hovering** (at rest relative to the hole), the same render-only attitude turn as at a stop brings the hole 30° off the bow. **On moving legs** (approach, orbit) the nose stays on the heading (D-14’s rule for moving legs), and F2 measures whether the hole is in frame. If it is not, the Target key (OQ2) is the follow-up. AC-V6 covers the hover. 
+- **"Same as navigation around ship?"** I read this as the guided stop.
+  - Today the stop turns the ship side-on and cues "Sky to the side" (`_begin_tour_turn(Attitude.side_basis(…))`, `director.sky("sky_side")`). Under D-92 the same turn, tilted further, puts the body in the default view.
+  - The Navigation station's chart (`ui/galaxy_map.gd`) is unchanged.
+  - See OQ2.
+- **There is no Target view this sprint.** `sky_side` and `sky_hole` stay as tool and golden poses only. If a body can still leave the frame (in free navigation), a Target key is a follow-up (OQ2).
 
-- Yaw is fixed per level; F1 chooses the bridge yaw by the sweep, as for Forward.
-- Pitch is −30°. The eye is 10.4 m behind the feet and 7.6 m above the deck, that is, a 12 m boom at −30° from a 1.6 m head. (Today’s Z2 boom is −35° with its look tilted up by `frame_deg` 15.1°, so it looks down about 20°; the measured walk pitch is −19.9°. F1a sets Deck’s pitch by the same 60–80 px figure band and records it.) The captain is then 60 to 80 px at 720p (R2-CAMERA AC4’s band).
-- It slides with dead zone and bounds (§D1), and never turns.
-- This is the D-6 "room scale" view. Stations, crew and the rail are readable, and the side sky shows above the rail.
-- **Default at rest,** and after a console when the previous view was Deck.
-
-### D5. Switching views: keys, cues, and side and aft
+### D5. Keys, cues, astern and side
 
 | Key (pad) | Today | Proposed |
 |---|---|---|
-| 7 (D-pad up) | Sky ahead (forward) | **Forward** |
-| 8 (D-pad right) | Sky to the side | **Target** (the body; Forward when there is none) |
-| 9 (D-pad down) | Sky astern | **Deck** |
-| R (R3) | default view and level | default view for the situation (under way: Forward; at a stop: Target; else Deck) |
-| +/− (RB/LB), wheel, pinch | Z1/Z2/Z3 | see OQ4 (recommendation: removed for players; Console is the only zoom) |
-| E at a console | console focus | Console, unchanged; Esc or walking away returns to the view before it |
+| 7 (D-pad up) | Sky ahead | **Bow** (the default) |
+| 9 (D-pad down) | Sky astern | **Astern:** the same rig, yaw + 180°, looking aft over the stern rail |
+| 8 (D-pad right) | Sky to the side | Reserved (OQ3); the developer pose `sky_side` |
+| R (R3) | the default view | Bow |
+| +/− (RB/LB), wheel, pinch | Z1/Z2/Z3 | Developer presets only (OQ4) |
+| E at a console | console focus | Console, unchanged; Esc or walking away returns to the previous view |
 
-- **A switch eases once:**
-  - The basis moves at ≤ 90°/s with a 1.2 s floor; under reduced motion it is a 0.15 s fade cut.
-  - Then the view is fixed again.
-  - The WASD mapping switches to the new view's screen axes at the end of the ease. During the ease the keys keep the old mapping, so a held key never turns mid-step.
-- **Cues** keep R2-CAMERA's rules (C2). A cue starts only with no panel open, not at a console and not in the lift, and it is a prompt under reduced motion. Departure, cruise and braking cue Forward; a stop or Sgr A* cues Target.
-- **Side and aft as views:**
-  - **Side:** recommendation, fold into Target and Deck. The side sky's physics (at speed it goes dark and red, sr-view-directions) is visible above the rail in Deck and beyond the body in Target.
-  - **Aft:** recommendation, drop it for players. Straight aft looks through the deck ("floors correctly block the aft sky", the HUD's own line), so it is mostly hull. At speed the aft sky is the darkest, most redshifted part, which a dedicated view would only show as black.
-  - Keep `sky_aft` for tools and goldens. See OQ3.
+- **Astern (OQ3):**
+  - Under D-14, straight aft looked through the floor. Under D-92 it is horizontal, over the stern rail.
+  - At speed it shows the aft sky dark and redshifted (relativity-spec §2). sr-view-directions treats that as the physics a forward view cannot show.
+  - **Recommendation:** keep it.
+  - In Astern, W walks up-screen, which is toward the stern. The mapping changes once, at the end of the ease.
+- **Side (OQ3):** **recommendation:** no player view this sprint. The sideways darkening at speed shows at the left and right edges of the Bow frame (the half-horizontal FOV is 55°), and the stops' bodies are already in the Bow frame.
+- **Cues:** departure, cruise, braking, a stop and Sgr A* all keep, or return to, Bow. A cue never turns the camera; the ship's attitude turn rotates only the sky.
+- **Switches:**
+  - Ease at ≤ 90°/s with a 1.2 s floor; under reduced motion, a 0.15 s fade cut.
+  - A held key keeps the old mapping until the ease ends.
 
-### D6. Console focus, tour turns and the captain sprite
+### D6. Console, tour turns, the captain sprite
 
-- **Console:**
-  - `ShipConsoles.focus_pose` is unchanged. It frames the screen and may turn to face it.
-  - `restore()` returns to the view (not the level or sector) that was active before. The camera's yaw is back exactly where it was, so the controls are too.
-- **Tour turns:** the player camera is already cued, never turned (R2-CAMERA C2). Under this model:
-  - a departure turn cues Forward;
-  - a stop turn cues Target once the turn ends;
-  - the ship's attitude turn itself rotates only the sky (the attitude basis), never the camera.
-  - The developer free camera keeps the old first-person turn (`director.overridden`).
-- **Captain sprite:**
-  - The yaw is fixed, so the sprite's facing is just the screen direction of motion (front, back, ne, se and their mirrors). It no longer depends on a swinging camera.
-  - Forward and Target show the captain from behind (`back`, upright billboard), as the sky views do today.
-  - The sprites were drawn for a −14° iso pitch. At Deck's −30° they read as today's Z2 does (R2-CAMERA AC4, 64 px at 720p).
+- **Console:** `ShipConsoles.focus_pose` is unchanged. `restore()` returns to the previous view id with its exact basis.
+- **Tour turns:** the attitude turn (`tour_attitude`) rotates only the sky. The player camera is never turned (R2-CAMERA C2). The developer free camera keeps the old first-person turn.
+- **The captain sprite:**
+  - **Facing:** the yaw is fixed, so facing is just the screen direction of motion. Walking toward the bow shows the `back` sprite. At rest the captain faces the bow (`back`), so the captain looks where the player looks.
+  - **Seen in the D-92 prototype frames:** the sprite faced the camera (`front`) because the prototype didn't set the facing. F1b sets it.
+  - **Pitch:** the sprites were drawn for a −14° iso pitch, and the Bow view is −8°. AC-V4 checks the 60–80 px band, and the sprite's read is reviewed by eye.
 
 ### D7. Data: `views.json` schema v2, level-keyed
 
 ```json
 {
   "schema": "stapledons.camera.views/2",
-  "fov_deg": 78.0, "envelope_m": 95.0,
+  "fov_deg": 78.0, "envelope_m": 95.0, "travel_axis": "bow",
   "levels": {
-    "bridge":  {"deck_y_m": 82.0, "default": {"rest": "deck", "under_way": "forward", "stop": "target"},
+    "bridge":  {"deck_y_m": 82.0, "default": "bow",
                 "views": [
-                  {"id": "forward", "kind": "forward", "yaw_deg": Y, "pitch_deg": 56.0, "back_m": 2.4, "rise_m": 0.3, "dead_zone": [0.24, 0.20], "slide_box_m": [...], "ease_s": 1.2},
-                  {"id": "target",  "kind": "target",  "pitch_clamp_deg": [-10.0, 60.0], "aim_frac": 0.33, "back_m": 4.0, "rise_m": 0.6, "reaim_frac": 0.6, "ease_s": 1.2},
-                  {"id": "deck",    "kind": "deck",    "yaw_deg": Y, "pitch_deg": -30.0, "back_m": 10.4, "rise_m": 7.6, "dead_zone": [0.24, 0.20], "ease_s": 0.6},
+                  {"id": "bow",     "kind": "walk", "yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "dead_zone": [0.24, 0.20], "ease_s": 1.2},
+                  {"id": "astern",  "kind": "walk", "yaw_deg": 90.0,  "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "dead_zone": [0.24, 0.20], "ease_s": 1.2},
                   {"id": "console", "kind": "console", "ease_s": 0.6}]},
-    "commons": {"deck_y_m": 57.0, "legacy": true, "views": [ ...today's z1_lower / z2_lower / z3_commons, unchanged ... ]}
+    "commons": {"deck_y_m": 57.0, "legacy": true, "views": [ "...today's z1_lower / z2_lower / z3_commons, unchanged..." ]}
   }
 }
 ```
 
-- `validate()` checks:
-  - every level has a `default` for each situation that names one of its own views;
-  - non-legacy walking views carry a fixed `yaw_deg` (except `target` and `console`);
-  - every walking view has `rise_m ≥ 0.3` (the eye stays above its deck);
-  - no view changes FOV;
-  - the envelope.
-- Negative controls cover each rule.
-- **The Commons is `legacy: true`.** It keeps today's sector views, data and code path until its own pass (§D9). The sector code is fenced to legacy levels, and bridge views can no longer use it.
-- **Level changes:** arriving at a level (the lift's arrival) selects that level's default view: a cut in reduced motion, the view's ease otherwise.
+- **`yaw_deg`** uses ShipCamera's convention, forward = (cos, ·, sin), so 270° looks along −Z, the bow.
+- **`validate()` checks that:**
+  - each level's `default` names one of its own views;
+  - every non-legacy `walk` view has a fixed `yaw_deg` and `rise_m ≥ 0.3`;
+  - nothing changes the FOV;
+  - the envelope is ≤ 95 m;
+  - `travel_axis` is `"bow"`, matching ShipCamera.
 
-### D8. Physics: the observer, the sky and the goldens
+  Each rule has a negative control.
+- **Level changes:** the lift's arrival selects the level's default view.
+- **The Commons:** `legacy: true` keeps today's sector code path, fenced off from the bridge.
+- **Later levels** each get a Bow view at their own height, looking out over their own bow edge.
 
-- **The sky is rendered through the same pose** (`_sync_observer()` after every director write), unchanged. The observer's position inside the bubble only matters through the glow and wall terms, which the goldens already check from player eyes.
-- **Goldens:** `make golden` keeps 393 ok lines. The R2-CAMERA cases move to the new eyes:
-  - The counts and case shapes stay as they are; only the poses change. `_pole()` checks three phases per pose, as today.
-  - **G-CAM-1** (forward pole, 9) = Forward at `spawn` (3) + Forward at `helm` (3) + Target aimed at the hole with `hole_override = UP` (3), replacing Sky forward spawn/helm and the hole view. The pole is within 0.75 px of the CPU reference.
-  - **G-CAM-2** (glow, 8) = 4 eyes × {0.99c, cap}: Deck at `spawn`, Deck at the rail (the eye nearest the wall, replacing Z3), Forward at `spawn`, Target (hole aim) at `spawn`. These replace z1, z2, z3_bridge and sky_forward.
-  - **G-CAM-3** (one tonemap, 2): Deck and Forward at `spawn`, 0.99c (replacing Z2 and Sky forward).
-  - The Makefile pins (`G-CAM-1` 9, `G-CAM-2` 8, `G-CAM-3` 2, 393 ok lines) are unchanged. The labels change to name the new views. The recipe’s grep prefixes (`G-CAM-1 forward pole`, `G-CAM-2 glow`, `G-CAM-3 one tonemap`) stay; only the parenthesised suffix changes. The recipe’s `##` help and failure text are updated in the same commit.
-  - No other golden may move. If one does: stop and list the diff for Mark.
-- **Captures:** `make camera-views-capture` renders Forward, Target and Deck (plus Commons legacy and the lift) at rest, 0.99c cruise, a guided stop and Sgr A*, at 720p and 1440p. It fails if the pole is out of Forward, the target is out of Target, or the head is out of any walking view. Every frame put in front of Mark is opened by eye (gate 2).
+### D8. Physics gate: goldens, tests and renders re-baselined one for one
 
-### D9. What this means for art and the deck-layout re-plan
+- **The sky is still rendered through the same pose** (`_sync_observer()` after every director write). The basis change moves where the pole is in the interior. It never changes what the sky looks like at a given angle from the velocity.
+- **Goldens:** `make golden` keeps 393 ok lines and unchanged counts. The re-posed families:
+  - **G-M4-S3** (forward pole, 3): `_pose(89.99, 0)` looked up; it now looks at the bow (`_pose(−0.01, 270°)`).
+  - **G-M4-S2** (one tonemap) and **G-M4-S4** (glow, 6): the same poses through the new basis.
+  - **G-CAM-1** (forward pole, 9): Bow at `spawn` (3), Bow at `helm` (3), and Bow at Sgr A* with the hole on the pole (3).
+  - **G-CAM-2** (glow, 8): 4 eyes × {0.99c, cap}. The eyes are Bow at `spawn`, Bow at the rail (nearest the wall), Astern at `spawn`, and Bow at the helm.
+  - **G-CAM-3** (one tonemap, 2): Bow and Astern.
+- **Golden labels:** the recipe's grep prefixes stay. The parenthesised suffixes, and the `##` help and failure text, change in the same commit.
+- **Nothing else may move.** Every other case (interior_golden's pure-frame cases, GR1–GR12, M1.x, constellations) must print the same `ok` line with the same numbers.
+  - AC-B4 diffs the number-stripped `ok` lines against a baseline captured from main.
+  - Any unexpected move: stop and list it for Mark.
+- **tests/test_physics.gd:** the forward-pole cases built through `_sky_cam` (line 1706) use the new map. Their check values (from relativity-spec) and their counts are unchanged.
+- **Reference renders:** `make capture`, `camera-views-capture` and `camera-walk-capture` at rest, 0.9c, 0.99c, a guided stop and Sgr A*. Every frame put in front of Mark is opened (gate 2). The after-sheets are published to `gs://stapledons-voyage-assets/refs/camera_forward/after/`.
+
+### D9. Art and the deck-layout re-plan
 
 - **Dress only what a view sees.**
-  - Each level's views are fixed, so only the surfaces facing its cameras need finished art.
-  - Backs, undersides and off-camera sides can stay rough or be absent.
-  - Blender authors **per-view set pieces** (and can bake painted layers for them) instead of full 360° environments.
-- **A style per level**, matched to that level's concept art: the bridge under the dome, the Commons streets, later levels their own.
-- **Depth from parallax.** As the camera slides, the layers move at different rates:
-  - foreground props: fast;
-  - the deck (play area): 1:1;
-  - the far structure (spire, far rail, bubble wall, levels below): slower;
-  - the sky at infinity: fixed.
+  - The bridge's Bow view sees the deck's stern-facing surfaces and the bow rail against the sky, so those get finished art.
+  - Backs and undersides can stay rough.
+  - Blender authors per-view set pieces and may bake painted layers.
+- **Each level gets its own style,** matched to its concept art.
+- **Depth comes from parallax:** foreground props move fast, the deck 1:1, the far rail, the wall and the mast slower, and the sky is fixed.
+- **The sky layer is always the live SR/GR render:** never painted, baked or composited. Painted layers stop at the bubble wall.
+- **The deck layout (D-90) is re-planned to face the bow.**
+  - **Stations face the forward window:** the helm and navigation at the bow rail, and the others in an arc that keeps the pole ray clear in the Bow view.
+  - **The spire** becomes a foreground occluder to compose around, rather than a centrepiece.
+  - **Carries over** from `feat/deck-layout` (7863c831):
+    - `tools/deck_assets_check.gd` and `art/deck-layout-v1/budgets.json`;
+    - `tools/deck_layout.gd` with `layout_current.json` (moving props and rebuilding the walk);
+    - the sky-mask and sky-fraction maths.
+  - **Re-targeted:** the metric code samples the Bow and Astern views over every walk sample. The key numbers become: the pole ray clear, the captain 60–80 px and unblocked, and the stations in frame.
+  - **Obsolete:** the per-sector framing in `thresholds.json`, and both candidate layouts (they face the old views).
 
-  This is D-6's layered depth, now produced by one perspective camera rather than composited plates.
-- **The physics rule stays:** the sky layer is always the live SR/GR render through the camera's pose. It is never painted, baked or composited from an image. Painted layers stop at the bubble wall.
-- **The deck layout (D-90) is re-planned on this basis after this camera lands.** It is paused at DL1 on `feat/deck-layout` (7863c831). From its DL0 work:
-  - **Carries over unchanged:** `tools/deck_assets_check.gd` + `art/deck-layout-v1/budgets.json` (pins, budgets, named nodes, opaque materials, emission only on screens, clean reimport, negative controls); `tools/deck_layout.gd` with `layout_current.json` (moving props and rebuilding the walk); the rendered sky-mask control and the analytic sky-fraction maths.
-  - **Carries over, re-targeted:** the metric code (clear line, captain size, foreground share, stations in frame, sky fraction). It now samples the bridge's three fixed walking views over every walk sample, instead of 16 sector cells × Z1/Z2/Z3. The key numbers become: the forward sky clear of the spire needle in Forward; the captain in frame and unblocked (after fades) at every walk sample in Deck; and the target in frame in Target.
-  - **Obsolete:** its `thresholds.json` per-view framing (sector cells, Z3 spread, spawn at Z2, boom intrusion), and the two candidate layouts' scores (taken against sector views).
-
-### D10. What is removed or changed, and what changes in tests
-
-**Removed for the bridge:**
-- the 8 sectors × 2 rings (16 cells), 10° and 1 m hysteresis, per-ring `turn_deg`, and per-cell overrides;
-- the yaw rules `sector`, `tangent` and `outward`;
-- Sky forward's `yaw_candidates_deg` and `choose_offset`;
-- the sky views' `walk_to` anchors, since the captain no longer walks to the rail before a view starts.
-
-All of these remain only behind `legacy: true` for the Commons.
+### D10. What changes, and where
 
 | File | Change |
 |---|---|
+| `demos/ship_demo_camera.gd` | `ship_vector` (new R) and its named inverse `gltf_from_ship`; `sync_sky`'s `cam_ship` goes through it; the prototype flag is removed |
+| `interior/ship_frame.gd` | `gltf_from_structure` / `structure_from_gltf` named; R documented; the frame comment updated (D-92) |
+| `demos/ship_geometry_demo.gd` | `hole_direction` via the named inverse; keys 7, 9 and R; HUD copy; `look_direction` re-posed; the level default on the lift |
+| `demos/ship_attitude.gd` | `side_basis` tilt 15° → 60° (the body 30° off the bow) |
+| `interior/area_bundle.gd`, `interior/interior_sky.gd` (comment), the `--interior` HUD line | legacy tag on the bundle frame (§D1.6); no change of numbers |
+| `ui/journey_hud.gd` | `BRAKE_NOTICE` reworded (§D1.5) |
+| `demos/ship_star_light.gd`, the structure sites (§D1.2) | the named maps |
+| `demos/camera_director.gd` | the v2 rig; Bow and Astern; the occluder group and fade; the legacy fence; `aim_dir` → the bow |
 | `data/camera/views.json` | schema v2 (§D7) |
-| `demos/camera_director.gd` | fixed-view slide rig, Target aim and re-aim, view switching, level defaults, occluder fade, legacy fence. `walk_yaw()` returns the view's fixed yaw (no resolve per frame) |
-| `demos/ship_geometry_demo.gd` | 7/8/9 to Forward/Target/Deck, cues remapped (§D5), `under_way_view()` returns forward/target |
-| `tests/test_camera_director.gd` | rewritten checks: schema v2 and negative controls, yaw constant, W up-screen in each view, the switch ease, the console round trip, level defaults, the sweep after fades. Sector and ring tests move to a legacy block for the Commons |
-| `tests/test_camera_forward.gd` (new) | AC1–AC4 headless (below) |
-| `tools/camera_walk_capture.gd` (new, this PR) | the walk measurement (before and after) |
-| `tools/camera_views_capture.gd`, `tools/m4_ship_golden.gd` | new view list and eyes (§D8) |
-| `Makefile` | `camera-forward-test` (headless, on `ship-demo-ci`, so in `make test`), `camera-walk-capture` (GPU evidence); golden pins unchanged at 393 |
-| `ui/ship_controls.gd`, HUD hints | 7 Forward · 8 Target · 9 Deck · R default; zoom keys listed only in developer launches (OQ4) |
+| `data/lore/archive/{one-g,starbow}.md`, `data/lore/manifest.json` | re-imported from the design repo after #30 |
+| Tests | `test_camera_forward.gd` (new); `test_camera_director.gd` (v2 plus a legacy block); `test_physics.gd` (the `_sky_cam` map); `test_ship_demo.gd` (the observer); `test_ship_demo_input.gd` (the keys); `test_no_twitch.gd`, `test_ship_consoles.gd`, `test_ship_movement.gd`, `test_ship_ui.gd`, `test_ship_demo_journey.gd`, `test_ship_demo_live.gd`, `test_free_nav_stop.gd`, `test_ship_demo_consolidation.gd` and `m4_playthrough_ship.gd` (the forward pole) |
+| Tools | `camera_walk_capture.gd` (Bow and Astern passes; the prototype flag removed); `camera_views_capture.gd`; `m4_ship_golden.gd`; `constellation_golden.gd`; `ship_star_identification_capture.gd`; capture metadata via `ship_vector` |
+| `Makefile` | `camera-forward-test` (headless, on `ship-demo-ci`); `camera-walk-capture` (GPU evidence); the golden labels |
 
-**Caller migration (F3)** (from `git grep` of `set_preset`, `look_direction`, `set_level`, `step_level`, `camera_level_*`, the `sky_*` ids and `director.sky(`, excluding the director itself):
-- **Tests that assert player views, rewritten or retargeted:** `test_camera_director.gd` (sectors and the sky sweep move to a Commons-legacy block), `test_ship_demo_input.gd` (zoom keys become developer-only; 7/8/9 assert the new views), `test_no_twitch.gd`, `test_ship_consoles.gd` (console round trip), `test_ship_movement.gd` (screen-relative walk), `test_ship_ui.gd`, `test_ship_demo_journey.gd` and `test_ship_demo_live.gd` (cues), `test_free_nav_stop.gd`, `test_ship_demo_consolidation.gd`, `test_physics.gd` (only where it names a sky view id).
-- **Tools that pose the camera through `override()` and keep working unchanged:** the captures and benches (`bh_ship_*`, `crossing_review_capture`, `free_nav_review`, `ism_hud_capture`, `recent_feature_movies`, `ship_*_capture`, `ship_*_bench`, `solar_departure_bench`, `stops_capture`). Any that name `sky_forward`, `sky_side` or `z2` get the new id, which F3 checks by running each one's smoke where a make target exists.
-- **Retargeted:** `tools/camera_views_capture.gd`, `tools/m4_ship_golden.gd` (§D8).
-- **Kept for tools and goldens only:** `sky_side` and `sky_aft` (OQ3), and the legacy Commons views.
+The other tools that pose the camera through `override()` keep working. Any that names `sky_forward`, `sky_side` or `z2` gets the new id, and its make-target smoke checks it.
 
 ## Acceptance criteria
 
 **Conventions:**
-- `$A` = `AILANG=$PWD/runtime/bin/ailang` (the pinned runtime, also first on PATH). `$S` = `.godot/tmp`.
-- Every new test prints one line per check, `ok    <name>` or `FAIL  <name>: <why>`, and a final `<suite>: <n> passed, 0 failures`, as the repo's tests do.
-- A recipe saves the full log to `$S/<suite>.log` and fails unless that final line says 0 failures. An AC's command greps that saved log, so a line the recipe doesn't echo still counts.
-- In the table below, `\|` is markdown escaping for `|`. The real commands use a bare `|` (ERE alternation). The sprint JSON carries them verbatim and is the copy to run.
-- **Headless fixtures:** `test_camera_forward.gd` runs with no sim for the aim. It injects a fixed stop-body direction and attitude basis through a `target_override` (as `hole_override` does for the hole). The real guided stop and the lensed Sgr A* are covered by `camera-views-capture` (AC11).
+- `$A` = `AILANG=$PWD/runtime/bin/ailang`: the pinned runtime, also first on PATH. `$S` = `.godot/tmp`.
+- Tests print `ok    <name>` or `FAIL  <name>: <why>`, and end with `<suite>: <n> passed, 0 failures`.
+- Recipes save `$S/<suite>.log`, and the ACs grep the saved logs.
+- `camera-test` (the existing `tests/test_camera_director.gd`) prints `ok <name>` with one space. The new `camera-forward-test` prints `ok    <name>` with four spaces, as `make golden` does.
+- In the table below, `\|` is markdown escaping for `|`. The sprint JSON carries the commands verbatim and is the copy to run.
 
-**New recipes** (in F1, in the `Makefile` beside `camera-test`):
-- `camera-forward-test: import`
-  - Runs `$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1`.
-  - Gate: `test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' … && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' …`.
-  - Added to `ship-demo-ci:`, which is on `make test`'s line (Makefile:973). It is **headless**.
-  - The yaw, pole and target assertions are projection maths on the director's pose (`CameraDirector.screen_point`). They run here, not in a GPU capture.
-- `camera-walk-capture: import` (GPU window) renders the same walk for review, with gate `^camera-walk-capture: [0-9]* frames, 0 failures$`. This is visual evidence only, not a gate on behaviour.
+**Headless fixtures:**
+- `test_camera_forward.gd` injects the stop body's direction and the attitude through `target_override`, the way `hole_override` does for the hole.
+- The real guided stop and the lensed Sgr A* are covered by `camera-views-capture` (AC-R1).
+
+**Recipes (F1a):**
+- `camera-forward-test: import` runs `tests/test_camera_forward.gd` headless.
+  - It logs to `$(SCRATCH)/camera-forward-test.log`.
+  - Gate: `^camera-forward: [0-9]* passed, 0 failures$`.
+  - It hangs off `ship-demo-ci`, which `make test` runs (Makefile:973).
+- `camera-walk-capture: import` (GPU). Gate: `^camera-walk-capture: [0-9]* frames, 0 failures$`.
 
 | # | Criterion | Command (exit 0 = met) |
 |---|---|---|
-| AC1 | The yaw is constant over a scripted walk around the whole bridge in every walking view. Over 16 walk samples (8 angles × radii 10 m and 17 m, `closest_walkable`), each after 1.5 s of `advance`, the yaw spread is ≤ 0.1° for Forward, Deck and Target (ship stationary, no re-aim). Today it is 180° | `make camera-forward-test $A && test $(grep -cE '^ok    yaw constant (forward\|deck\|target_stop\|target_sgr_a) spread=0\.[0-9]+ deg over 16$' $S/camera-forward-test.log) -eq 4` |
-| AC2 | The forward pole is in frame (inside 1280×720 with a 40 px margin) at all 16 Forward samples. The stop's body is in frame at all 16 Target samples at the first guided stop, and the hole at all 16 at Sgr A* (flat-space aim, `hole_override`) | `grep -qE '^ok    pole in frame forward 16/16$' $S/camera-forward-test.log && grep -qE '^ok    target in frame target_stop 16/16$' $S/camera-forward-test.log && grep -qE '^ok    target in frame target_sgr_a 16/16$' $S/camera-forward-test.log` |
-| AC2b | In Forward, the ray from the eye toward the pole and the line to the captain’s head are clear (after fades) at all 16 samples, so the spire never hides the journey | `grep -qE '^ok    pole ray clear forward 16/16$' $S/camera-forward-test.log` |
-| AC3 | W moves the captain up-screen and D moves it right, in Deck, Forward and Target and after each of two switches. Each key is held 0.5 s of `advance`: screen Δy < −20 px with \|Δx\| < 0.3\|Δy\| for W, and the mirror for D | `test $(grep -cE '^ok    (W up-screen\|D right) (deck\|forward\|target)$' $S/camera-forward-test.log) -eq 6 && test $(grep -cE '^ok    W up-screen after switch (deck>forward\|forward>target)$' $S/camera-forward-test.log) -eq 2` |
-| AC4 | In Deck, the captain's head is in frame and the line to it is clear, after occluder fades, at every 0.5 m bridge walk sample (the existing `sweep` grid). The `camera_occluder` group holds only the named nodes (§D1) | `make camera-test $A && grep -qE '^ok    AC4 deck clear after fades: 0 blocked of [0-9]+ samples$' $S/camera-test.log && grep -qE '^ok    occluder group = spire, lift$' $S/camera-test.log` |
-| AC5 | Every eye stays within 95 m and at least 0.3 m above its deck; an envelope clamp never changes yaw or pitch | `grep -qE '^ok    envelope keeps the angle$' $S/camera-forward-test.log && grep -qE '^ok    eye above deck at 48 samples$' $S/camera-forward-test.log` |
-| AC6 | (a) A view switch eases at ≤ 90°/s (full motion) or cuts in a 0.15 s fade (reduced), then the basis is constant. The WASD mapping changes only at the end of the ease. (b) Target re-aims only when the aim leaves the middle 60% (aim moved, captain still), never on a walk | `test $(grep -cE '^ok    (switch ease max [0-9.]+ deg/s\|reduced cut\|mapping at ease end\|re-aim on aim exit\|no re-aim on walk)$' $S/camera-forward-test.log) -eq 5` |
-| AC7 | A console round trip returns to the previous view's exact basis and id, for Deck and Forward | `test $(grep -cE '^ok    console returns to (deck\|forward) exact$' $S/camera-test.log) -eq 2` |
-| AC8 | `views.json` v2 validates. Six negative controls fail as they must: no default; a default naming another level's view; a non-legacy walking view without `yaw_deg`; an FOV change; `envelope_m > 95`; `rise_m < 0.3` | `grep -qE '^ok    schema v2$' $S/camera-test.log && test $(grep -cE '^ok    negative control ' $S/camera-test.log) -ge 6` |
-| AC9 | The lift's arrival selects the level's default view: the bridge's by situation, and the Commons' legacy Z2 | `test $(grep -cE '^ok    level default (bridge\|commons)$' $S/camera-forward-test.log) -eq 2` |
-| AC10 | Goldens: 393 ok lines; G-CAM-1 9, G-CAM-2 8, G-CAM-3 2 with the new labels; no non-camera case changed (the recipe's own count gate) | `make golden $A` |
-| AC11 | Captures: Forward, Target, Deck, legacy Commons and the lift × rest, 0.99c, stop and Sgr A*, at 720p and 1440p, with 0 failures. Frames opened by eye are listed in the report | `make camera-views-capture $A && make camera-walk-capture $A` |
-| AC12 | Determinism: the same scripted inputs (walk, switches, a console round trip, 600 steps at fixed `dt`) run twice give bit-identical pose sequences. Fades and eases read `advance(dt)` only | `grep -qE '^ok    deterministic poses 600 steps$' $S/camera-forward-test.log` |
-| AC13 | The full suite is green, with no new Python | `make python-guard && make test $A` |
-| AC14 | Landed (checked at landing, not before merge): doc and sprint in `implemented/r2/`, changelog fragment | `test -f design_docs/implemented/r2/camera-forward.md && ls changelogs/unreleased/*camera-forward*` |
+| AC-B1 | One named map per frame: no inline structure or kinematic conversion literal outside `ShipFrame.gltf_from_structure`/`structure_from_gltf` and `ShipCamera.ship_vector`/`gltf_from_ship`. The pattern also matches the new map's form (`-x, y, -z`). A positive control, `tests/fixtures/basis_gate/inline.gd.txt`, holds one literal of each form and must be caught | `test $(git ls-files '*.gd' \| xargs grep -nE '\[2\], *-[a-z_.]*\[1\]\|\.x, *-[a-z_.]*\.z, *[a-z_.]*\.y\|-[a-z_.]*\.x, *[a-z_.]*\.y, *-[a-z_.]*\.z' \| grep -vE '^(interior/ship_frame\|demos/ship_demo_camera)\.gd:' \| wc -l) -eq 0 && test $(grep -cE '\[2\], *-[a-z_.]*\[1\]\|\.x, *-[a-z_.]*\.z, *[a-z_.]*\.y\|-[a-z_.]*\.x, *[a-z_.]*\.y, *-[a-z_.]*\.z' tests/fixtures/basis_gate/inline.gd.txt) -ge 3` |
+| AC-B2 | R is a proper rotation: orthonormal, det +1, the structure's bow (+Y) to kinematic +Z and the mast (+Z) to +Y; the composite maps agree. The same check values are also asserted in `tests/test_physics.gd` (gate 2) | `grep -qE '^ok    basis R proper bow->\+Z mast->\+Y$' $S/camera-forward-test.log` |
+| AC-B3 | `tests/test_physics.gd` passes with the new map, with the same total as main (recorded at F1a start in `tests/fixtures/physics_total.txt`) | `make physics $A > $S/physics.txt && grep -q "^$(cat tests/fixtures/physics_total.txt) passed, 0 failed" $S/physics.txt` |
+| AC-B4 | `make golden` gives 393 ok lines, with G-M4-S2..S4 and G-CAM-1..3 re-posed; every other `ok` line matches main's baseline with numbers stripped. `golden_baseline.sh` excludes exactly the label prefixes `G-M4-S2`, `G-M4-S3`, `G-M4-S4`, `G-CAM-1`, `G-CAM-2`, `G-CAM-3`. interior_golden's G-M4-1..6 (the legacy plate path, §D1.6) are not excluded and must stay identical. Negative control: `golden_baseline.sh selftest` changes one number in a non-excluded line and must fail | `make golden $A && tools/golden_baseline.sh check $S/golden.log tests/fixtures/golden_baseline_ok.txt && tools/golden_baseline.sh selftest` |
+| AC-B5 | The sim is untouched (the protocol minor lives in `sim/protocol.ail`, so it is unchanged too); parity, replay and strict are green | `test -z "$(git diff --name-only origin/main -- sim/)" && make parity replay strict $A` |
+| AC-B6 | The vendored lore matches the design repo after #30, and the lore pins still hold (checked in F3 if #30 merges after F1a) | `make lore-import CHECK=1 D=../stapledons-design AILANG=ailang && make lore-check lore-test $A` |
+| AC-V1 | Bow and Astern hold a constant yaw over the 16-sample bridge walk, spread ≤ 0.1° (today: 180°) | `test $(grep -cE '^ok    yaw constant (bow\|astern) spread=0\.[0-9]+ deg over 16$' $S/camera-forward-test.log) -eq 2` |
+| AC-V2 | In Bow, the pole (the destination when under way) and the 0.9c and 0.99c starbow edges are in frame (40 px margin) at 16/16 samples | `test $(grep -cE '^ok    in frame bow (pole\|starbow_0\.9c\|starbow_0\.99c) 16/16$' $S/camera-forward-test.log) -eq 3` |
+| AC-V3 | In Bow, the pole ray (the journey and the forward glow) and the line to the captain's head are clear after fades, and the eye is never inside geometry, at 16/16 | `test $(grep -cE '^ok    clear after fades bow (pole_ray\|captain\|eye_free) 16/16$' $S/camera-forward-test.log) -eq 3` |
+| AC-V4 | The captain is 60–80 px tall at 720p at every Bow sample, and at least 50% of the frame is below the horizon | `grep -qE '^ok    captain px bow (6[0-9]\|7[0-9]\|80)\.\.(6[0-9]\|7[0-9]\|80)$' $S/camera-forward-test.log && grep -qE '^ok    deck fraction bow 0\.[5-7][0-9]$' $S/camera-forward-test.log` |
+| AC-V5 | W moves the captain up-screen and D moves it right, in Bow and in Astern and after each switch: each key held 0.5 s gives Δy < −20 px with \|Δx\| < 0.3\|Δy\| | `test $(grep -cE '^ok    (W up-screen\|D right) (bow\|astern)$' $S/camera-forward-test.log) -eq 4 && test $(grep -cE '^ok    W up-screen after switch (bow>astern\|astern>bow)$' $S/camera-forward-test.log) -eq 2` |
+| AC-V6 | With the new stop turn, the first guided stop's body is in the Bow frame at 16/16, and the Sgr A* hole at 16/16 (flat-space aim). The fixture is not trivial: it runs the real `side_basis` and `ship_vector` with the guided stop's body direction (taken from `tests/fixtures/crossing_review` or the stop capture), and the camera pose comes from the director. AC-R1 gates the real stop and the lensed hole in a capture | `test $(grep -cE '^ok    in frame bow (stop_body\|sgr_a_hole) 16/16$' $S/camera-forward-test.log) -eq 2` |
+| AC-V7 | The eye stays within 95 m and at least 0.3 m above its deck; a clamp keeps the angle | `grep -qE '^ok    envelope keeps the angle$' $S/camera-forward-test.log && grep -qE '^ok    eye above deck at 32 samples$' $S/camera-forward-test.log` |
+| AC-V8 | A switch eases at ≤ 90°/s (full motion) or cuts (reduced); the key mapping changes at the end of the ease; a console round trip restores the exact basis and id | `test $(grep -cE '^ok    (switch ease max [0-9.]+ deg/s\|reduced cut\|mapping at ease end\|console returns to (bow\|astern) exact)$' $S/camera-forward-test.log) -eq 5` |
+| AC-V9 | `views.json` v2 validates; the negative controls fail as they must: no default, a foreign default, no `yaw_deg`, an FOV change, envelope > 95, `rise_m` < 0.3, a `travel_axis` mismatch | `grep -qE '^ok schema v2$' $S/camera-test.log && test $(grep -cE '^ok negative control v2 ' $S/camera-test.log) -eq 7` |
+| AC-V10 | The lift's arrival selects the level default: Bow on the bridge, legacy Z2 in the Commons | `test $(grep -cE '^ok    level default (bridge\|commons)$' $S/camera-forward-test.log) -eq 2` |
+| AC-V11 | Determinism: the same scripted inputs (walk, switches, console, 600 steps at fixed `dt`) run twice give bit-identical poses; fades and eases read `advance(dt)` only | `grep -qE '^ok    deterministic poses 600 steps$' $S/camera-forward-test.log` |
+| AC-V12 | A fade changes no sky uniform and no sim input | `grep -qE '^ok    fade leaves sky and sim untouched$' $S/camera-forward-test.log` |
+| AC-R1 | Captures with 0 failures: Bow, Astern, the legacy Commons and the lift, × rest, 0.9c, 0.99c, a guided stop and Sgr A*, at 720p and 1440p, gated on the pole, body or hole, and head; plus a forced-fade frame. **Human gate (not machine-checked):** the report lists every frame opened by eye, and the PR is not merged without it | `make camera-views-capture $A && make camera-walk-capture $A` |
+| AC-R2 | The display audit is green with the new HUD copy; any changed caption pin is listed in the PR | `make display-audit $A` |
+| AC-T1 | The full suite is green; no new Python | `make python-guard && make test $A` |
+| AC-T2 | Landed (checked at landing): doc and sprint in `implemented/r2/`, plus a changelog fragment | `test -f design_docs/implemented/r2/camera-forward.md && ls changelogs/unreleased/*camera-forward*` |
 
 ## Sub-milestones and estimates
 
-Approval gate: the sprint starts after Mark answers OQ1–OQ4. F2 is built on the OQ1/OQ2/OQ3 answers, and F1's key map on OQ4.
+**Approval gate:** Mark answers OQ1–OQ4, and design PR #30 merges before F1a's lore step.
 
 | # | What | LOC | Days |
 |---|---|---|---|
-| F1a | Schema v2 + validate (legacy fence, 6 negative controls); slide rig (dead zone, follow, slide box, envelope slide, eye ≥ deck); Deck on the bridge; constant `walk_yaw`; 9 / R keys; zoom actions developer-only (OQ4); lift-arrival level default; `camera-forward-test` and `camera-walk-capture` recipes. AC1 (deck), AC3 (deck), AC5, AC8, AC9, AC12 | ~420 | 1.25 |
-| F1b | Forward view (pitch 56°, 2.4 m / 0.3 m); the occluder group and fade (or the hide fallback); the bridge yaw sweep (15° steps; the fewest fades, the pole clear of the spire). AC1 (forward), AC2 (forward), AC3 (forward), AC4. **Pause point:** a dev build for Mark to play | ~280 | 0.75 |
-| F2 | Target (aim order, pitch clamp and hand-over, re-aim); 8 key; cue remap (departure/cruise/braking/stop/Sgr A*); console `restore()` to the view id; the HUD key hints. AC1 (target), AC2 (target), AC3 (target, after switch), AC6, AC7 | ~320 | 0.75 |
-| F3 | Goldens re-posed (§D8); captures; migration of the callers listed in §D10; dead bridge sector paths removed; report; independent evaluation and fixes; landing. AC10–AC14 | ~300 | 1.25 |
+| F1a | **The basis change.** Named maps (§D1.1–D1.2), R and its test, the grep gate, the legacy tag on the painted-plate path (§D1.6), HUD copy and `BRAKE_NOTICE`, `look_direction` and the tour-turn arguments, and the stop-turn tilt. Every test those changes break moves in the same commit: `test_physics`, `test_camera_director`, `test_ship_demo`, `test_tour_attitude`, `test_ship_attitude`, `test_no_twitch`, `test_transit`, `test_ship_star_light`, `test_ship_demo_journey`, `test_ship_demo_live`, `test_free_nav_stop` and `test_ship_ui`; the painted-plate tests (`test_area_bundle`, `test_interior`, `test_bridge_floor`, m4-smoke) must pass unchanged. Goldens re-baselined with the baseline tool, and the reference renders opened. Covers AC-B1–B5 and AC-R2, plus `make camera-test` and a full `make test` | ~650 | 2.5 |
+| F1b | **The Bow view.** F1a and F1b form **one green point (F1)**: commits inside F1 may be red (after the basis change and before the Bow view replaces the legacy sky views, `camera-test`’s pole and hole checks fail by design). F1 ends green with `make camera-test` and a full `make test`, and only then is the dev build tagged. F1b adds `CameraDirector.pole_dir()` (new: the bow, `Vector3.FORWARD`) and moves `test_camera_director.gd`’s pole literals (lines 589, 595, 633, 704–810) onto it, while the legacy `sky_forward`, `sky_hole` and `sky_side` checks are replaced by the Bow ones. Schema v2 and validate, the slide rig, the Bow view (candidate A), the occluder group and fade, the captain's facing, keys 7 and R, the level default, and the `camera-forward-test` and `camera-walk-capture` recipes. Covers AC-V1–V4 (Bow), AC-V7 and AC-V9–V12. **Pause point:** a dev build for Mark to play | ~450 | 1.25 |
+| F2 | **Astern and the rest.** Astern and the 9 key, switch eases, the console restore, cues to Bow, and the stop body and Sgr A* in frame. Covers AC-V1 (Astern), AC-V5, AC-V6 and AC-V8 | ~200 | 0.5 |
+| F3 | **Finish and land.** The lore re-import if #30 merged late (AC-B6), captures, the remaining caller migration (the director and capture tools, §D10), the legacy-fence cleanup, the report, an independent evaluation and its fixes, and landing. Covers AC-B6, AC-R1, AC-T1 and AC-T2 | ~300 | 1.75 |
 
-Total: about 1,320 LOC over 4.0 days, about 330 LOC/day, against R2-CAMERA's measured ~310/day.
+That is about 1,600 LOC over 6.0 days, roughly 270 LOC a day, against R2-CAMERA's measured ~310 a day. F1a is surgery on the basis across about 30 files plus re-baselining the goldens on the Studio's GPU, so it is slower per line.
 
 ## Risks and mitigations
 
 | Risk | Mitigation |
 |---|---|
-| A fixed yaw puts the spire between camera and captain at some positions | Occluder fade (§D1), AC4 sweep; F1 picks the bridge yaw that minimises fades |
-| Forward shows no deck, so walking there feels blind | Deck is the walking view (default at rest); Forward is cued only under way; R and 9 always return to Deck |
-| The Target body is near the pole (the ship pointed at it), so the pitch clamp loses it | Above 60° elevation, Target hands over to Forward, which frames the pole (AC2 includes the guided stop, where the body is beside the rail by design) |
-| Goldens move beyond the G-CAM cases | Stop and list the diff for Mark (pause point) |
-| The Commons' legacy path rots | Fenced and tested as legacy; its own pass replaces it (follow-up) |
-| Sprites read worse at Deck's −30° than the −14° they were drawn for | Same as today's Z2 (accepted); revisit in the deck-layout re-plan |
+| A golden family outside the planned re-pose moves | AC-B4's baseline diff; stop and list it for Mark |
+| Golden re-baselining needs the Studio's GPU window, and every round trip costs time | F1a carries 2.5 days with that in mind. Goldens run once per batch of re-poses, not per site; `make physics` and the headless tests catch most errors before a GPU run |
+| A conversion site is filed in the wrong frame (structure vs kinematic) | AC-B1's grep gate forces every site through a named map. The structure tests (Commons walk targets, the consolidation eye) and the kinematic tests (the observer, constellations, star identification) each check their own side |
+| The spire hides the journey or swallows the eye | The occluder rule (§D2 b, c); AC-V3 requires 16/16 |
+| The 60° stop-turn tilt reads oddly (the body ahead but low) | AC-V6 and the stop capture check it. The tilt is one constant, and Mark sees it in the F1b dev build |
+| The design repo's lore PR isn't merged when F1a lands | AC-B6 waits: F1a can land without the lore step, and F3 completes it |
+| The sprites were drawn for a −14° iso pitch | The 60–80 px band plus review by eye; the deck-layout re-plan revisits them |
+| Lower levels under D-92 (each bow edge sees the forward sky) | Out of scope: the Commons stays legacy until its own pass |
 
 ## Open questions for Mark (with recommendations)
 
-OQ1–OQ4 are an approval-time gate: the sprint starts with them answered (sprint plan, "Approval gate"). OQ5–OQ7 may be answered later.
+OQ1–OQ4 must be answered before the sprint starts; OQ5–OQ7 can wait.
 
 | # | Question | Recommendation |
 |---|---|---|
-| OQ1 | The bridge's views: Forward, Target, Deck and Console. Is a Deck (walking) view wanted beside Forward, given one frame cannot hold both the deck and the starbow (§D2)? | **Yes**: Deck is the walking view at rest; Forward is the journey view under way |
-| OQ2 | "One planet facing (same as navigation around ship?)": is that the guided stop's view, where the ship turns its side to the planet beside the rail? | **Yes**, Target generalises it (and the Sgr A* hole view). The Navigation station's chart stays as it is |
-| OQ3 | Side and aft views | **Fold side** into Target and Deck; **drop aft** for players (it looks through the deck; at speed the aft sky is the darkest); keep both for tools and goldens |
-| OQ4 | Zoom levels Z1/Z2/Z3 | **Remove for players**: each view has one authored framing, and Console is the only zoom. Keep the levels as developer presets |
-| OQ5 | Spire and lift between the camera and the captain | **Fade the occluder** (dither to 25%); never turn the camera |
-| OQ6 | The Commons in this sprint | **Leave as is** (legacy), with its own fixed-view pass after the deck layout re-plan |
-| OQ7 | An inset window for a second direction (side or forward) | **Later**, after Mark plays F1 |
+| OQ1 | The default Bow view: candidate A (pitch −8°, 9 m back, 5.5 m up) keeps the 0.9c starbow in frame, with the captain at 73 px and the deck filling 59% of the frame. B and C lose the 0.9c starbow | **A** |
+| OQ2 | "Planet facing (same as navigation around ship?)": the guided stop turns the ship so the body sits 30° off the bow, inside the Bow frame, with no separate view. Is that what you meant? | **Yes.** A Target key for free navigation is a follow-up, if bodies can still leave the frame |
+| OQ3 | Side and Astern views under D-92 | **Astern: yes** (key 9: the dark, redshifted aft sky over the stern rail). **Side: no** player view (its darkening shows at the edges of the Bow frame) |
+| OQ4 | Zoom levels Z1–Z3 | **Remove for players.** Each view has one framing, and Console is the only zoom. Keep them as developer presets, and revisit after the F1b dev build |
+| OQ5 | The spire in the way | **Fade it** (or hide it as a fallback) while it crosses the line to the captain or the pole ray, or contains the eye. Never turn the camera |
+| OQ6 | The Commons in this sprint. Legacy keeps its turning sector views (the thing you objected to) and its Z1–Z3 keys, which stay live on legacy levels only, so it is unchanged | **Legacy for now** and its own Bow pass after the deck re-plan. The alternative is a minimal Commons Bow view in F2 (about +0.5 day, if its clear-line sweep passes) |
+| OQ7 | An inset window showing Astern while in Bow | **Later,** after the F1b dev build |
+| OQ8 | The painted-plate interior (`--interior`, the D-6 reference) keeps the pre-D-92 orientation (§D1.6). Re-render its plates for D-92, or retire it? | **Keep it labelled as legacy this sprint;** decide with the deck-layout re-plan, whose Blender work could re-render it |
 
 ## Evidence
 
-- **Before:** https://storage.googleapis.com/stapledons-voyage-assets/refs/camera_forward/before/contact_sheet.png (rows: rest at 10 m and 17 m, then under way at 10 m and 17 m; 8 angles each). Frames `rest_r<r>_<i>.png` and `under_way_r<r>_<i>.png`, and `walk.json` with per-sample yaw, pitch, pole and head pixels. Opened by eye: the contact sheet, `rest_r10_0`, `under_way_r10_3`.
-- **Tool:** `tools/camera_walk_capture.gd`. In F1 it gains the forward/target/deck passes and the `make camera-walk-capture` target used by AC1/AC2.
+- **Before (D-91):** https://storage.googleapis.com/stapledons-voyage-assets/refs/camera_forward/before/contact_sheet.png, with the `rest_*` and `under_way_*` frames and `walk.json`.
+- **D-92 candidates:** https://storage.googleapis.com/stapledons-voyage-assets/refs/camera_forward/bow_candidates/contact_sheet_bow.png.
+  - The sheet has 12 rows: rest A, B, C, then 0.99c cruise A, B, C, each at radii 10 m and 17 m, with 8 angles per row.
+  - The 96 frames and `walk_bow.json` are in the same folder.
+  - Opened by eye: the sheet, `bow_cruise_A_r17_2`, `bow_cruise_A_r17_6`, and a debug frame from directly behind the spire.
+- **Tool:** `tools/camera_walk_capture.gd` (`--bow`). The `ShipCamera.travel_axis` flag is a prototype for measurement only; F1a removes it.
 
 ## Deliverables
 
-- This doc and [camera-forward-sprint.md](camera-forward-sprint.md); `.ailang/state/sprints/sprint_R2-CAMERA-FORWARD.json`.
-- F1–F3 code, tests, tools and data per §D10.
-- A dev build after F1 for Mark to play.
-- After-captures and a report; the independent evaluation; landing (doc to `implemented/r2/`, roadmap, changelog).
-- Then the deck-layout re-plan (D-90) on this camera.
+- This doc, [camera-forward-sprint.md](camera-forward-sprint.md) and `.ailang/state/sprints/sprint_R2-CAMERA-FORWARD.json`.
+- Design repo PR [#30](https://github.com/sunholo-data/stapledons-design/pull/30): the D-92 amendments and the lore.
+- The F1a–F3 code, tests, tools, data, goldens and renders listed in §D10, with a dev build after F1b.
+- After-captures and a report, the independent evaluation, and landing (`implemented/r2/`, the roadmap, the changelog).
+- Then the deck-layout re-plan (D-90), facing the bow.
