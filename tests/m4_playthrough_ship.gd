@@ -236,6 +236,7 @@ func until(s: Dictionary) -> void:
 	step(0.65)
 	# A view choice, never a decision key; aim the captain's eye at the forward pole.
 	# Stay off the exact zenith, where Basis.looking_at's up vector is collinear.
+	demo.director.override() # R2-CAMERA: a measurement pose; tools take the camera through the director
 	demo.camera.follow(demo.avatar_pos, 89.99, 0.0, 0.0)
 	for i in 2400: # 120 fake seconds, bounded even when the sim cannot arrive
 		var w: Dictionary = demo.journey_sim.world

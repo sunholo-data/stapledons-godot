@@ -21,7 +21,8 @@ const KEYS := [KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H, KEY_I, KE
 	KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
 	KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9,
 	KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12,
-	KEY_ENTER, KEY_SPACE, KEY_TAB, KEY_ESCAPE, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
+	KEY_ENTER, KEY_SPACE, KEY_TAB, KEY_ESCAPE, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT,
+	KEY_EQUAL, KEY_MINUS, KEY_KP_ADD, KEY_KP_SUBTRACT] # R2-CAMERA: the level keys
 const DECISIONS := ["plan", "commit", "cancel", "body_plan"]
 
 
@@ -116,6 +117,25 @@ func events() -> Array:
 	var pan := InputEventPanGesture.new()
 	pan.delta = Vector2(0, 1)
 	out.append(pan)
+	# R2-CAMERA: the camera's gestures and controller inputs decide nothing either (NT1).
+	for d in [Vector2(0, -1), Vector2(0, 0.4), Vector2(3, 0)]:
+		var p := InputEventPanGesture.new()
+		p.delta = d
+		out.append(p)
+	for f in [1.2, 0.8]:
+		var g := InputEventMagnifyGesture.new()
+		g.factor = f
+		out.append(g)
+	for b in [JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_LEFT_SHOULDER, JOY_BUTTON_RIGHT_STICK, JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN]:
+		for pressed in [true, false]:
+			var j := InputEventJoypadButton.new()
+			j.button_index = b
+			j.pressed = pressed
+			out.append(j)
+	var stick := InputEventJoypadMotion.new()
+	stick.axis = JOY_AXIS_RIGHT_X
+	stick.axis_value = 1.0
+	out.append(stick)
 	return out
 
 
