@@ -581,9 +581,10 @@
       ],
       "design_doc": "design_docs/planned/r1/m4-7ij-context-controls.md",
       "sprint_plan": "design_docs/planned/r1/m4-7ij-context-controls-sprint.md",
-      "passes": null,
-      "completed": null,
-      "notes": "Iteration 34 planner: one-day addendum planned; awaiting executor. S=.godot/tmp; W=$S/display-audit/playthrough; A=AILANG=$PWD/runtime/bin/ailang. Create S and put the pinned runtime on PATH before the exact acceptance commands. All four Perl dry-runs changed exactly one line; no implementation or make target was run. AC9 is supplemented by the stricter Do-not-touch scope in the sprint addendum. Iteration 39: merged with origin/main 7d5d2f6 (#264 review_unbound, #267 crew_unbound); AC1 count 18 -> 20 = 18 + 2 main controls (amendment, D-88 A)."
+      "passes": true,
+      "completed": "2026-10-19",
+      "notes": "Iteration 34 planner: one-day addendum planned; awaiting executor. S=.godot/tmp; W=$S/display-audit/playthrough; A=AILANG=$PWD/runtime/bin/ailang. Create S and put the pinned runtime on PATH before the exact acceptance commands. All four Perl dry-runs changed exactly one line; no implementation or make target was run. AC9 is supplemented by the stricter Do-not-touch scope in the sprint addendum. Iteration 39: merged with origin/main 7d5d2f6 (#264 review_unbound, #267 crew_unbound); AC1 count 18 -> 20 = 18 + 2 main controls (amendment, D-88 A). Iteration 39 LANDED: PR #252 merge 64e5660 (D-88 A); rig/full success on head 663bae4 (run 2, 78 min; run 1 red on moon-lifecycle under rig load, rc 0 alone on this tree and on main); fast tier success on 663bae4 (39276798780) and on merge 64e5660 (39298225341); round-2 eval Sonnet 94 PASS.",
+      "evaluation": ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ij_round_2.json"
     },
     {
       "id": "M4.6gR3_SHIP_GOLDENS",
