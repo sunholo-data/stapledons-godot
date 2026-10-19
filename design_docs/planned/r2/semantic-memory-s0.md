@@ -113,7 +113,7 @@ The feature doc's S0 ranking exists only as a spike in session notes. The sim ha
 
 | Milestone | LOC | Depends on | Files |
 |---|---|---|---|
-| **S0.1** data and ranking | ~220 | — | new `sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; `sim/ailang.toml` (exports); `Makefile` (`similar-test` with the strict-parity half and the core guard, in `test`) |
+| **S0.1** data and ranking | ~220 | — | new `sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; `sim/ailang.toml` (exports); `Makefile` (`similar-test` with the strict-parity half, in `test`; the core guard is AC6, evaluator-run, not in `test`) |
 | **S0.2** emission | ~140 | S0.1 | `sim/protocol.ail` (2.12, section), `sim/protocol_test.ail`; new `tests/fixtures/protocol_212_similar.{input,expected}.ndjson`, `tools/similar_oracle.py`; `tools/python-allowlist.txt`; `Makefile` (`similar-test` session half, `similar-record`). **Not** `sim/core.ail` |
 | **S0.3** bridge parse | ~80 | S0.2 | `bridge/sim_bridge.gd`, `tests/test_sim_bridge.gd` |
 | **Landing** | docs | S0.3 | `CHANGELOG.md`; this doc → `design_docs/implemented/r2/` with a report; `design_docs/README.md` index; design repo `features/next/semantic-memory.md` (S0 status, Jupiter row) and `roadmap/r2-voyage-life.md` (through a design-repo PR) |
@@ -123,7 +123,7 @@ Each milestone is headless and checkable by the commands above; none needs a GPU
 ## Risks and mitigations
 
 - **`starIlluminanceAt` read as a lux function.** Its first argument is named `e1AU`; passing L in L_sun is correct by linearity but could confuse a reader. Mitigation: a comment and a test that S(Earth) = 1 / a² and S(TRAPPIST-1 e) = 0.000553 / 0.02925² (0.64637). If Mark prefers a named `insolationEarth` in `sunholo/celestial`, that is a later, Mark-gated package release; nothing here depends on it.
-- **TRAPPIST-1 e's a is ±0.0025 AU** (8.5 %, the archive's listing), so its S is uncertain by about 17 %. At a ± 1σ its distance from Earth runs 0.1965 to 0.33488, the far end only 0.0003 short of Venus (0.33514) `[measured: python3 -c, the feature formula at a = 0.02675 and 0.03175]`. So the ranking's second place is fragile to that one row. The fixture asserts the cited value; living data that changes it re-records with a new citation, and the report says the Earth order is within 1σ of flipping.
+- **TRAPPIST-1 e's a is ±0.0025 AU** (8.5 %, the archive's listing), so its S is uncertain by about 17 %. At a ± 1σ its distance from Earth runs 0.1965 to 0.33488, the far end only 0.0003 short of Venus (0.33514) `[measured: python3 -c, the feature formula at a = 0.02675 and 0.03175]`. So the Earth ranking's first-versus-second order (TRAPPIST-1 e vs Venus) is fragile to that one row. The fixture asserts the cited value; living data that changes it re-records with a new citation, and the report says the Earth order is within 1σ of flipping.
 - **Earth-radius units differ** (Sol 6378.1366 km, the archive 6378.1 km; 6 ppm). Every radius goes through km and Earth's own row, so the units agree.
 - **Version drift: resolved before approval.** The first spike ran on the PATH `ailang` v0.54.15-dirty. Re-run on the pinned v0.54.14 (`runtime/bin/ailang`): strict VM = interpreter, and the output is byte-identical to the v0.54.15-dirty run (same sha256), so AC1's constants come from the pinned run unchanged. A future split between engines or versions is an upstream report (`ailang messages`), not a workaround; AC1 would then fall back to exact-order assertions plus the oracle's 1e-12 check.
 
@@ -167,7 +167,7 @@ None. (The decisions a reader might expect here are made above with reasons: a t
 
 ## Deliverables
 
-`sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; protocol 2.12 with the `similar` section; the 2.12 fixture and its record target; `tools/similar_oracle.py`; `make similar-test` in `make test` and the `make strict` line; the bridge parse and its headless test; on landing, the report, the changelog entry and the design-repo status.
+`sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; protocol 2.12 with the `similar` section; the 2.12 fixture and its record target; `tools/similar_oracle.py`; `make similar-test` in `make test` (`make strict` keeps its entry set); the bridge parse and its headless test; on landing, the report, the changelog entry and the design-repo status.
 
 ## Quorum log
 
