@@ -1,6 +1,6 @@
 class_name CameraDirector
 extends RefCounted
-## R2-CAMERA (design_docs/planned/r2/camera-fixed-views.md) D0-D6: the one owner of every pose
+## R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md) D0-D6: the one owner of every pose
 ## the player camera takes in the 3D ship. Views are data (data/camera/views.json, validated by
 ## validate()). ShipCamera stays the render boundary: the director only writes its transform and
 ## the demo calls _sync_observer(), so the sky is rendered through the same pose as the geometry.

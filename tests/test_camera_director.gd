@@ -1,6 +1,6 @@
 extends SceneTree
 const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
-## R2-CAMERA (design_docs/planned/r2/camera-fixed-views.md) C1 + C3: make camera-test.
+## R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md) C1 + C3: make camera-test.
 ##   AC1  views.json validates; every view's eye is inside the 95 m envelope with a clear line to the
 ##        captain's head at every walkable sample (0.5 m) of walk_bridge / walk_lower, in the sector
 ##        and both hysteresis neighbours; FOV 78 for every view; a mutant 26 m / -50 deg view fails
@@ -52,6 +52,7 @@ func _run() -> void:
 	await test_free_camera()
 	await test_cues()
 	await test_default_mapping()
+	await test_console_round_trip()
 	print("camera-director: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -878,5 +879,41 @@ func test_default_mapping() -> void:
 	demo._unhandled_input(key(KEY_R))
 	check("default mapping: at Sgr A* R returns to the hole view", dir.situation == "sky_hole")
 	demo.leave_black_hole()
+	demo.queue_free()
+	await process_frame
+
+
+## The Crew console v2 (#267) and every station: focusing and stepping back return the camera to
+## the same zoom level, or the same sky view, and never leave the developer free camera on.
+func test_console_round_trip() -> void:
+	var demo: Node = await new_demo({"live_start": true})
+	var dir: CameraDirector = demo.director
+	var c: ShipConsoles = demo.consoles
+	for station in ["crew", "navigation", "archive"]:
+		for lv in [1, 3]:
+			c.go_to(station)
+			dir.set_level(lv)
+			step(demo, 3.0)
+			check("%s: opens from Z%d" % [station, lv], c.use(station, "open") and demo.camera_mode == "console")
+			step(demo, 3.0)
+			c.leave()
+			step(demo, 5.0) # a half-turn back at <= 90 deg/s takes up to ~3.5 s
+			check("%s: stepping back returns to Z%d (view %s, level %d, situation %s, mode %s, blend %s)" % [station, lv, dir.view_id, dir.level, dir.situation, demo.camera_mode, dir.blending()], dir.level == lv and dir.situation.is_empty() and demo.camera_mode == "player" and not demo.free_camera_on())
+	c.go_to("crew")
+	demo._unhandled_input(key(KEY_7))
+	step(demo, 4.0)
+	check("crew: opens from Sky forward", dir.situation == "sky_forward" and c.use("crew", "open"))
+	step(demo, 3.0)
+	c.leave()
+	step(demo, 4.0)
+	check("crew: stepping back returns to Sky forward", dir.situation == "sky_forward" and dir.view_id == "sky_forward" and demo.camera_mode == "player")
+	demo.set_free_camera(true)
+	check("the developer free camera is on (command-line launch)", demo.free_camera_on())
+	c.go_to("crew")
+	check("crew: opens from the free camera", c.use("crew", "open"))
+	step(demo, 3.0)
+	c.leave()
+	step(demo, 3.0)
+	check("crew: stepping back leaves the free camera off (the director owns the camera)", not demo.free_camera_on() and not dir.overridden and demo.camera_mode == "player" and not demo.wants_capture())
 	demo.queue_free()
 	await process_frame

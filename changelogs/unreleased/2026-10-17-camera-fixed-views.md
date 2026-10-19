@@ -1,6 +1,6 @@
 ### Changed: the player camera is third person with three fixed zoom levels and authored sky views (R2-CAMERA: C1, C2, C3, C4)
 
-Mark's dev.31 ruling: no free zoom for players; fixed zoom levels; third person. Design: `design_docs/planned/r2/camera-fixed-views.md` (approved 2026-10-16).
+Mark's dev.31 ruling: no free zoom for players; fixed zoom levels; third person. Design: `design_docs/implemented/r2/camera-fixed-views.md` (approved 2026-10-16).
 
 - **One camera director** (`demos/camera_director.gd`, views as data in `data/camera/views.json`). It owns every pose of the player camera; `ShipCamera` stays the render boundary, so the sky is still rendered through the same pose as the geometry.
 - **Three zoom levels:** Z1 Close (4.5 m, -25 deg), Z2 Deck (12 m, -35 deg; the default, the captain about 64 px tall at 720p, the art brief's reading scale) and Z3 Whole level (a place camera on the bridge's edge that tracks the captain by rotation). Keys 1 / 2 / 3 and = / -; one wheel notch, one trackpad scroll gesture (its inertial tail included) or one pinch is one level, so a MacBook swipe no longer drifts the camera. Zoom in is closer: wheel up, scroll up and pinch open come closer. RB / LB on a controller. The FOV stays at 78 deg.

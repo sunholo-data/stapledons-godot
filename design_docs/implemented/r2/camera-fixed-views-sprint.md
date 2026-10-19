@@ -2,7 +2,7 @@
 
 **Design doc:** [camera-fixed-views.md](camera-fixed-views.md) (proposed 2026-10-16, from Mark's dev.31 playtest direction)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CAMERA.json`
-**Status:** **Approved 2026-10-16** (Mark, attended: "yes continue"; OQ1-OQ9 answered as recommended). PR 1 (C1 + C3) executing on `feat/camera-fixed-views`.
+**Status:** **Done** 2026-10-19: C1-C4 merged in PR #270 (evaluation 79/100 PASS, round-1 fixes applied); C5 held. Approved 2026-10-16 (Mark, attended).
 **Scope:** C1 (director, levels, input), C2 (authored situation views and cues), C3 (developer free camera, pointer, the reduced-motion setting), C4 (physics invariance, goldens, renders), C5 (test migration, tool smoke runs). Then E (evaluate, land).
 **Base:** `origin/main`. Sprint branch `feat/r2-camera`. C1+C3 make one PR (the player-visible switch), and C2, C4 and C5 follow as PRs to main. Every PR keeps `make test` green.
 **AILANG:** no sim change. The pin is whatever main has (v0.54.8; v0.54.11 if `feat/crew-core-0.5.0` lands first). Only `make test`'s sim targets run.

@@ -1,6 +1,6 @@
 # R2-CAMERA: fixed zoom levels and authored third-person views
 
-**Status:** Approved 2026-10-16 by Mark, attended ("yes continue", asked to approve the camera plan with all nine recommendations), with the sprint plan ([camera-fixed-views-sprint.md](camera-fixed-views-sprint.md)). OQ1-OQ9 are answered as recommended (see the table). PR 1 (C1 + C3) in progress on `feat/camera-fixed-views`.
+**Status:** **Implemented** 2026-10-19 (PR #270; evaluation 79/100 PASS, fixes in D9). Approved 2026-10-16 by Mark, attended ("yes continue", all nine recommendations; OQ1-OQ9 answered as recommended); amended 2026-10-17 ("Sky forward under way", D9). Ledger D-83. C5 (the 19-tool smoke runs) held.
 **Release:** R2. **Milestone:** a player-facing camera for the 3D ship (D-52 A), replacing free look and free zoom.
 **Priority:** P1 for R2. Every session runs through this camera, and Mark's dev.31 playtest asked for it.
 

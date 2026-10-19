@@ -1,6 +1,6 @@
 {
   "schema": "stapledons.camera.views/1",
-  "about": "R2-CAMERA (design_docs/planned/r2/camera-fixed-views.md): every pose the player camera takes. Validated by CameraDirector.validate (make camera-test). Angles in degrees, lengths in metres, glTF axes (y up). Per-ring values are [stations ring, rail ring]. Bridge values come from the clear-line sweep over every walk sample (0 blocked); the lower-deck (Commons) views are authored per cell (the Commons streets occupy cells 6-8 and 14-15) by the same sweep. A view's \"cells\" map overrides any per-ring value for one cell.",
+  "about": "R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md): every pose the player camera takes. Validated by CameraDirector.validate (make camera-test). Angles in degrees, lengths in metres, glTF axes (y up). Per-ring values are [stations ring, rail ring]. Bridge values come from the clear-line sweep over every walk sample (0 blocked); the lower-deck (Commons) views are authored per cell (the Commons streets occupy cells 6-8 and 14-15) by the same sweep. A view's \"cells\" map overrides any per-ring value for one cell.",
   "fov_deg": 78.0,
   "envelope_m": 95.0,
   "default_level": 2,

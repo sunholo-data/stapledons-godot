@@ -1202,7 +1202,7 @@ codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Ma
 	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/codex-test.log && grep -q '^codex: [0-9]* passed, 0 failures$$' $(SCRATCH)/codex-test.log || { echo "codex-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/codex-test.log)"; exit 1; }
 
-# R2-CAMERA (design_docs/planned/r2/camera-fixed-views.md): the camera director, three fixed zoom levels,
+# R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md): the camera director, three fixed zoom levels,
 # the envelope and clear-line sweep, gesture steps, sectors, motion, the developer free camera.
 .PHONY: camera-test
 ship-demo-ci: camera-test

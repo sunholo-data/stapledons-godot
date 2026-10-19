@@ -1,12 +1,12 @@
 {
   "sprint_id": "R2-CAMERA",
-  "status": "in_progress",
+  "status": "done",
   "approved": true,
   "approved_by": "Mark, attended 2026-10-16 (\"yes continue\"), all nine recommendations",
   "created": "2026-10-16",
   "started": "2026-10-17",
-  "design_doc": "design_docs/planned/r2/camera-fixed-views.md",
-  "sprint_plan": "design_docs/planned/r2/camera-fixed-views-sprint.md",
+  "design_doc": "design_docs/implemented/r2/camera-fixed-views.md",
+  "sprint_plan": "design_docs/implemented/r2/camera-fixed-views-sprint.md",
   "branch": "feat/camera-fixed-views",
   "origin": "Mark, dev.31 playtest 2026-10-16: \"I think we need to turn off zoom in and out for players, and switch to fixed zoom levels instead. we may want to also start having more fixed camera angles and not be 1st person but 3rd person only\"",
   "implements": [
@@ -215,9 +215,12 @@
         "all"
       ],
       "gate": "eval >= 70/100",
-      "status": "in_progress",
-      "passes": null,
-      "notes": []
+      "status": "done",
+      "passes": true,
+      "notes": [
+        "evaluated 79/100 PASS at b6493fa (different model); round-1 fixes in 4b594ad; docs moved to implemented/r2; ledger D-83"
+      ],
+      "completed": "2026-10-19"
     }
   ],
   "approved_on": "2026-10-16",
@@ -278,9 +281,9 @@
     },
     {
       "id": "E_EVALUATE_LAND",
-      "status": "in_progress",
+      "status": "done",
       "passes": null,
-      "completed": null,
+      "completed": "2026-10-19",
       "pr": "#270"
     }
   ],
@@ -291,5 +294,7 @@
       "decision": "Sky forward under way",
       "detail": "rest: Z2 Deck; under way: Sky forward; guided stop: Sky side; Sgr A*: the hole view; any zoom key returns to Z1/Z2/Z3"
     }
-  ]
+  ],
+  "completed": "2026-10-19",
+  "ledger": "D-83"
 }
