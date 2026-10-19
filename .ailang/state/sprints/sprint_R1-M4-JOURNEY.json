@@ -581,9 +581,10 @@
       ],
       "design_doc": "design_docs/planned/r1/m4-7ij-context-controls.md",
       "sprint_plan": "design_docs/planned/r1/m4-7ij-context-controls-sprint.md",
-      "passes": null,
-      "completed": null,
-      "notes": "Iteration 34 planner: one-day addendum planned; awaiting executor. S=.godot/tmp; W=$S/display-audit/playthrough; A=AILANG=$PWD/runtime/bin/ailang. Create S and put the pinned runtime on PATH before the exact acceptance commands. All four Perl dry-runs changed exactly one line; no implementation or make target was run. AC9 is supplemented by the stricter Do-not-touch scope in the sprint addendum. Iteration 39: merged with origin/main 7d5d2f6 (#264 review_unbound, #267 crew_unbound); AC1 count 18 -> 20 = 18 + 2 main controls (amendment, D-88 A)."
+      "passes": true,
+      "completed": "2026-10-19",
+      "notes": "Iteration 34 planner: one-day addendum planned; awaiting executor. S=.godot/tmp; W=$S/display-audit/playthrough; A=AILANG=$PWD/runtime/bin/ailang. Create S and put the pinned runtime on PATH before the exact acceptance commands. All four Perl dry-runs changed exactly one line; no implementation or make target was run. AC9 is supplemented by the stricter Do-not-touch scope in the sprint addendum. Iteration 39: merged with origin/main 7d5d2f6 (#264 review_unbound, #267 crew_unbound); AC1 count 18 -> 20 = 18 + 2 main controls (amendment, D-88 A). Iteration 39 LANDED: PR #252 merge 64e5660 (D-88 A); rig/full success on head 663bae4 (run 2, 78 min; run 1 red on moon-lifecycle under rig load, rc 0 alone on this tree and on main); fast tier success on 663bae4 (39276798780) and on merge 64e5660 (39298225341); round-2 eval Sonnet 94 PASS.",
+      "evaluation": ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ij_round_2.json"
     },
     {
       "id": "M4.6gR3_SHIP_GOLDENS",
@@ -628,10 +629,11 @@
       ],
       "design_doc": "design_docs/planned/r1/m4-6gr3-ship-goldens.md",
       "sprint_plan": "design_docs/planned/r1/m4-6gr3-ship-goldens-sprint.md",
-      "passes": null,
+      "passes": true,
       "started": "2026-10-16",
       "completed": null,
-      "notes": "Iteration 35 planner at HEAD 8cf3a70: planned, awaiting executor. 363 supplied baseline + 3 S3 + 1 S2 + 6 S4 = 373. All four Perl patterns match current source via stdout-only dry-runs; all 22 CI make targets and AC12 targets exist. Eight command/harness defect groups corrected in addendum (root, cleanup, mutation application, source integrity, return status/errexit, fresh logs, asserting counts, merge-base/local scope). No make/GPU/test run or implementation change by planner; no design edit. The existing parent feature and all other sprint fields stay unchanged. Iteration 35 executor (codex gpt-6.1-sol, verified outside the sandbox on the GPU window): RED in a temp copy without the driver: make golden rc=2, ok=363, legacy golden: 0 failures (new asserts reject). GREEN: make golden rc=0, ok=373, S3 3 (0.030 px each), S2 1 (909 sky-only, 89 lit, 51 ship, worst 0.0000), S4 6 (cap profile within 0.07 %, 0.99c pole 0.34 %, cap pole 0.03 %, rest 0), m4 ship golden: 0 failures. AC1-AC4 and AC11 pass; drills: AC5 rc=0 ok=373; AC6 D1 rc=2 fails=3 ok=370; AC7 D2a rc=2 fails=5 ok=361; AC8 D2b rc=2 fails=5 ok=368; AC9 D3 rc=2 fails=1 ok=372; AC10 rc=3 under set -e and set +e; tree restored after each. Full make test (AC12) left to the controller; passes stays null until it is green."
+      "notes": "Iteration 35 planner at HEAD 8cf3a70: planned, awaiting executor. 363 supplied baseline + 3 S3 + 1 S2 + 6 S4 = 373. All four Perl patterns match current source via stdout-only dry-runs; all 22 CI make targets and AC12 targets exist. Eight command/harness defect groups corrected in addendum (root, cleanup, mutation application, source integrity, return status/errexit, fresh logs, asserting counts, merge-base/local scope). No make/GPU/test run or implementation change by planner; no design edit. The existing parent feature and all other sprint fields stay unchanged. Iteration 35 executor (codex gpt-6.1-sol, verified outside the sandbox on the GPU window): RED in a temp copy without the driver: make golden rc=2, ok=363, legacy golden: 0 failures (new asserts reject). GREEN: make golden rc=0, ok=373, S3 3 (0.030 px each), S2 1 (909 sky-only, 89 lit, 51 ship, worst 0.0000), S4 6 (cap profile within 0.07 %, 0.99c pole 0.34 %, cap pole 0.03 %, rest 0), m4 ship golden: 0 failures. AC1-AC4 and AC11 pass; drills: AC5 rc=0 ok=373; AC6 D1 rc=2 fails=3 ok=370; AC7 D2a rc=2 fails=5 ok=361; AC8 D2b rc=2 fails=5 ok=368; AC9 D3 rc=2 fails=1 ok=372; AC10 rc=3 under set -e and set +e; tree restored after each. Full make test (AC12) left to the controller; passes stays null until it is green. Iteration 35 controller: merged PR #257 as 375e390 (PR CI 38891769000 success on 658072a, identical tree). Local make -k test rc 0 on 658072a (4137 s, 0 *** lines, 0 SCRIPT ERROR). make golden rc 0, 373 ok (S2 1, S3 3, S4 6; 'm4 ship golden: 0 failures'). Independent eval Sonnet 88 PASS, 0 blocking (eval_R1-M4-JOURNEY_M4.6gR3_round_1.json); follow-ups charter row 7k. passes stays null until merge CI 38906220440 reads success.",
+      "evaluation": ".ailang/state/evaluations/eval_R1-M4-JOURNEY_M4.6gR3_round_1.json"
     },
     {
       "id": "M4.6pR3_LIVE_TRANSIT_FRAME_COST",
