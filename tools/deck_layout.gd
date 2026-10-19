@@ -67,6 +67,8 @@ const GROUPS := {
 ## rail, lift shaft) is the clear-line rule's business.
 const PROP_PREFIXES := ["console_", "captain_chair", "archive_terminal", "rim_frond_", "v2_desk_props_", "v2_nav_detail_", "v2_chair_detail_", "v2_archive_detail_", "v2_bench_detail_", "Guardrail 82"]
 ## The active stations (ShipConsoles.STATIONS), by their meshes.
+## Fixed props whose walk holes a vacated group's margin must never open (with every unmoved group).
+const STATIC_HOLES := ["archive_shrine_ribs", "spire_needle", "v2_spire_vents_00", "ramp_down", "Guardrail 82", "Guardrail 82_001", "Guardrail 82_002"]
 const ACTIVE_STATIONS := {
 	"navigation": ["console_navigation_0", "console_navigation_1", "console_navigation_2"],
 	"voyage": ["console_decision_0"],
@@ -80,6 +82,7 @@ var layout := {}
 var orig_walk: WalkArea
 var _groups := {} # id -> {"nodes": [Node3D], "orig": [Transform3D], "box": Rect2 (plan, glTF xz, old footprint + margin), "old": Transform3D, "new": Transform3D, "removed": bool}
 var _moved: Array = []
+var _static: Array = [] # Rect2 (plan, glTF xz): fixed props' footprints + margin
 var _extra: Array = [] # fixture boxes (tests only)
 
 
@@ -124,6 +127,8 @@ static func validate(d: Dictionary, allow_test_boxes := false) -> PackedStringAr
 			errs.append("%s.position_m is not [x, y]" % id)
 		if not (p.get("yaw_deg") is float or p.get("yaw_deg") is int):
 			errs.append("%s.yaw_deg is not a number" % id)
+		if p.has("walk_clear_m") and not (p.walk_clear_m is float or p.walk_clear_m is int):
+			errs.append("%s.walk_clear_m is not a number" % id)
 	var sp: Variant = b.get("spawn_captain")
 	if sp != null and not (sp is Dictionary and sp.get("position_m") is Array and sp.position_m.size() == 2):
 		errs.append("bridge.spawn_captain.position_m is not [x, y]")
@@ -171,13 +176,30 @@ func apply(candidate: Dictionary, base: Dictionary, allow_test_boxes := false) -
 			var delta: Transform3D = g.new * g.old.affine_inverse()
 			for i in g.nodes.size():
 				(g.nodes[i] as Node3D).global_transform = delta * (g.orig[i] as Transform3D)
+			g.clear = float(cp.get("walk_clear_m", 0.0))
+			if g.clear > 0.0:
+				g.keep_out = _plan_rect(g.nodes).grow(g.clear)
 		_moved.append(g)
 	for box: Dictionary in candidate.get("test_boxes", []):
 		_add_box(box)
 	if not _moved.is_empty():
+		_static = static_boxes()
 		demo.walk_bridge = build_walk()
 		demo.walk = demo.walk_bridge
 	return errs
+
+
+## The plan rectangle (glTF xz) of some nodes' meshes as they stand.
+static func _plan_rect(nodes: Array) -> Rect2:
+	var r := Rect2()
+	var first := true
+	for n: Node3D in nodes:
+		if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+			var a: AABB = n.global_transform * (n as MeshInstance3D).mesh.get_aabb()
+			var q := Rect2(a.position.x, a.position.z, a.size.x, a.size.z)
+			r = q if first else r.merge(q)
+			first = false
+	return r
 
 
 func _group(id: String) -> Dictionary:
@@ -198,7 +220,7 @@ func _group(id: String) -> Dictionary:
 			box = r if box.size == Vector2.ZERO else box.merge(r)
 	if nodes.is_empty():
 		return {}
-	var g := {"id": id, "nodes": nodes, "orig": orig, "box": box.grow(HOLE_MARGIN_M), "old": Transform3D(), "new": Transform3D(), "removed": false}
+	var g := {"id": id, "nodes": nodes, "orig": orig, "box": box.grow(HOLE_MARGIN_M), "old": Transform3D(), "new": Transform3D(), "removed": false, "clear": 0.0, "keep_out": Rect2()}
 	_groups[id] = g
 	return g
 
@@ -237,7 +259,10 @@ func _add_box(spec: Dictionary) -> void:
 ## a cell is covered when the shipped walk covers its centre or a point 0.4 cell from it toward
 ## any corner (so the shipped walk's sub-cell cracks close and its holes shrink by under a cell);
 ## it is walkable when covered, or in a moved group's old hole (inside the deck's disc); and never
-## when its point carried back to a moved group's old pose falls in that group's old hole.
+## when its point carried back to a moved group's old pose falls in that group's old hole. A
+## vacated cell never opens inside a fixed prop's footprint (static_boxes()); a removed group
+## (a flat floor detail) opens nothing. A group's walk_clear_m keeps the walk that far from its
+## moved meshes' plan rectangle (the chair's high back must not hide a captain standing behind it).
 func covered(c: Vector3) -> bool:
 	var o := WALK_CELL_M * 0.4
 	for d: Vector2 in [Vector2.ZERO, Vector2(o, o), Vector2(-o, o), Vector2(o, -o), Vector2(-o, -o)]:
@@ -250,41 +275,144 @@ func walkable_cell(c: Vector3) -> bool:
 	for g: Dictionary in _moved:
 		if g.removed:
 			continue
+		if float(g.clear) > 0.0 and (g.keep_out as Rect2).has_point(Vector2(c.x, c.z)):
+			return false
 		var q: Vector3 = g.old * (g.new.affine_inverse() * c)
 		if (g.box as Rect2).has_point(Vector2(q.x, q.z)) and not covered(q):
 			return false
 	if covered(c):
 		return true
-	if Vector2(c.x, c.z).length() > WALK_RIM_M:
+	var xz := Vector2(c.x, c.z)
+	if xz.length() > WALK_RIM_M:
 		return false
+	for r: Rect2 in _static:
+		if r.has_point(xz):
+			return false
 	for g: Dictionary in _moved:
-		if (g.box as Rect2).has_point(Vector2(c.x, c.z)):
+		if not g.removed and (g.box as Rect2).has_point(xz):
 			return true
 	return false
 
 
+## The footprints (plan, + margin) of everything that keeps its walk hole: the fixed props and
+## every group the layout does not move. Removed groups (flat floor details) open nothing.
+func static_boxes() -> Array:
+	var moved := {}
+	for g: Dictionary in _moved:
+		moved[g.id] = true
+	var names: Array = STATIC_HOLES.duplicate()
+	for id: String in GROUPS:
+		if not moved.has(id) and not id.begins_with("v2_conduit_"): # floor conduits are flat: no walk hole
+			names.append_array(GROUPS[id])
+	var out := []
+	for name: String in names:
+		var n := demo.geometry.find_child(name, true, false) as MeshInstance3D
+		if n == null or n.mesh == null:
+			continue
+		var a: AABB = n.global_transform * n.mesh.get_aabb()
+		out.append(Rect2(a.position.x, a.position.z, a.size.x, a.size.z).grow(HOLE_MARGIN_M))
+	return out
+
+
+## The rebuilt bridge walk: the shipped triangles, clipped out of every affected rectangle (a
+## moved group's old and new footprints + margin, snapped to the 0.125 m grid), plus the
+## rectangles' cells by walkable_cell(). Outside the moved groups the walk is the shipped one.
 func build_walk() -> WalkArea:
 	var w := WalkArea.new()
 	w.radius = orig_walk.radius
+	var rects := affected_rects()
 	var tris := PackedVector3Array()
+	for t in orig_walk.triangle_count():
+		var polys := [[orig_walk._tris[3 * t], orig_walk._tris[3 * t + 1], orig_walk._tris[3 * t + 2]]]
+		for r: Rect2 in rects:
+			var next := []
+			for poly: Array in polys:
+				next.append_array(clip_out(poly, r))
+			polys = next
+		for poly: Array in polys:
+			for i in range(1, poly.size() - 1):
+				tris.append_array([poly[0], poly[i], poly[i + 1]])
+	var done := {}
 	var h := WALK_CELL_M * 0.5
-	var n := int(24.0 / WALK_CELL_M)
-	for i in range(-n, n):
-		for j in range(-n, n):
-			var c := Vector3((i + 0.5) * WALK_CELL_M, DECK_Y, (j + 0.5) * WALK_CELL_M)
-			if not walkable_cell(c):
-				continue
-			var y := orig_walk.height_at(c.x, c.z)
-			if is_nan(y):
-				y = DECK_Y if Vector2(c.x, c.z).length() <= WALK_RIM_M else _near_height(c)
-			var a := Vector3(c.x - h, y, c.z - h)
-			var b := Vector3(c.x + h, y, c.z - h)
-			var d := Vector3(c.x + h, y, c.z + h)
-			var e := Vector3(c.x - h, y, c.z + h)
-			tris.append_array([a, b, d, a, d, e])
+	for r: Rect2 in rects:
+		var i0 := roundi(r.position.x / WALK_CELL_M)
+		var j0 := roundi(r.position.y / WALK_CELL_M)
+		for i in range(i0, roundi(r.end.x / WALK_CELL_M)):
+			for j in range(j0, roundi(r.end.y / WALK_CELL_M)):
+				var key := Vector2i(i, j)
+				if done.has(key):
+					continue
+				done[key] = true
+				var c := Vector3((i + 0.5) * WALK_CELL_M, DECK_Y, (j + 0.5) * WALK_CELL_M)
+				if not walkable_cell(c):
+					continue
+				var y := orig_walk.height_at(c.x, c.z)
+				if is_nan(y):
+					y = DECK_Y if Vector2(c.x, c.z).length() <= WALK_RIM_M else _near_height(c)
+				var p0 := Vector3(c.x - h, y, c.z - h)
+				var p1 := Vector3(c.x + h, y, c.z - h)
+				var p2 := Vector3(c.x + h, y, c.z + h)
+				var p3 := Vector3(c.x - h, y, c.z + h)
+				tris.append_array([p0, p1, p2, p0, p2, p3])
 	w._tris = tris
 	w._index()
 	return w
+
+
+## Plan rectangles (glTF xz) the layout changes: each moved group's old footprint + margin and the
+## same footprint at its new pose (its bounding rectangle), snapped outward to the cell grid.
+func affected_rects() -> Array:
+	var out := []
+	for g: Dictionary in _moved:
+		if g.removed:
+			continue
+		var box: Rect2 = g.box
+		out.append(_snap(box))
+		var m: Transform3D = g.new * g.old.affine_inverse()
+		var r := Rect2()
+		for k in 4:
+			var corner := Vector2(box.position.x + box.size.x * float(k % 2), box.position.y + box.size.y * float(k / 2))
+			var q := m * Vector3(corner.x, DECK_Y, corner.y)
+			r = Rect2(Vector2(q.x, q.z), Vector2.ZERO) if k == 0 else r.expand(Vector2(q.x, q.z))
+		out.append(_snap(r))
+		if float(g.clear) > 0.0:
+			out.append(_snap(g.keep_out))
+	return out
+
+
+static func _snap(r: Rect2) -> Rect2:
+	var lo := Vector2(floorf(r.position.x / WALK_CELL_M), floorf(r.position.y / WALK_CELL_M)) * WALK_CELL_M
+	var hi := Vector2(ceilf(r.end.x / WALK_CELL_M), ceilf(r.end.y / WALK_CELL_M)) * WALK_CELL_M
+	return Rect2(lo, hi - lo)
+
+
+## A plan polygon (glTF points) minus a rectangle: up to four pieces (x below, x above, then the
+## middle band's z below and z above), as the lift shaft was cut from the walk.
+static func clip_out(poly: Array, r: Rect2) -> Array:
+	var out := []
+	for piece: Array in [_half(poly, 0, r.position.x, false), _half(poly, 0, r.end.x, true)]:
+		if piece.size() >= 3:
+			out.append(piece)
+	var mid := _half(_half(poly, 0, r.position.x, true), 0, r.end.x, false)
+	for piece: Array in [_half(mid, 2, r.position.y, false), _half(mid, 2, r.end.y, true)]:
+		if piece.size() >= 3:
+			out.append(piece)
+	return out
+
+
+## The part of a polygon on one side of the plane axis = value (axis 0 x, 2 z).
+static func _half(poly: Array, axis: int, value: float, greater: bool) -> Array:
+	var out := []
+	for i in poly.size():
+		var a: Vector3 = poly[i]
+		var b: Vector3 = poly[(i + 1) % poly.size()]
+		var ain := a[axis] >= value if greater else a[axis] <= value
+		var bin := b[axis] >= value if greater else b[axis] <= value
+		if ain:
+			out.append(a)
+		if ain != bin:
+			out.append(a + (b - a) * ((value - a[axis]) / (b[axis] - a[axis])))
+	return out
 
 
 func _near_height(c: Vector3) -> float:

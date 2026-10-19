@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "in_progress",
+  "status": "paused",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-90, 0eb722e)",
   "approved_on": "2026-10-19",
@@ -95,7 +95,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Built (f12722cc + this commit): tools/deck_layout.gd, deck_layout_eval.gd, deck_assets_check.gd, deck_layout_capture.gd, tests/test_deck_layout_eval.gd (26 passed), thresholds.json, budgets.json (VRAM baseline 112.6 MB). Not done: the GPU before capture with the new tool and make golden. passes left null pending the camera re-plan."
     },
     {
       "id": "DL1_BRIDGE_BLOCKOUT",
@@ -114,7 +114,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Started, then paused: candidate search in-engine only. No generator, no export, no spawn-to-manifest change."
     },
     {
       "id": "DL2_COMMONS_BLOCKOUT",
@@ -237,5 +237,6 @@
       "resolution": "N1-N5 folded in 2026-10-19"
     }
   ],
-  "questions_resolved": "D-90 (Mark, attended 2026-10-19, \"great please proceed - approved\"): every recommendation in the design doc (OQ1 agent bpy generators, Mark may tweak; OQ2 the sprites illustrated finish; OQ3 chair is spawn and focal point; OQ4 keep the needle, move props, fixed bearing as fallback; OQ5 bridge and Commons; OQ6 bake the spire light; OQ7 two candidates; OQ8 bpy generators outside the game Python policy)"
+  "questions_resolved": "D-90 (Mark, attended 2026-10-19, \"great please proceed - approved\"): every recommendation in the design doc (OQ1 agent bpy generators, Mark may tweak; OQ2 the sprites illustrated finish; OQ3 chair is spawn and focal point; OQ4 keep the needle, move props, fixed bearing as fallback; OQ5 bridge and Commons; OQ6 bake the spire light; OQ7 two candidates; OQ8 bpy generators outside the game Python policy)",
+  "paused_note": "2026-10-19: paused by the attended session. Mark says the camera model the plan rests on is wrong: one fixed perspective always facing forward (the journey ahead), the captain walking inside that frame with screen-relative controls, not views that change as the captain walks. DL0 tools committed; DL1 had only in-engine candidate search (art/deck-layout-v1/layout_a.json, layout_b.json, unreviewed); no Blender export, no capture, no game asset changed."
 }

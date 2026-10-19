@@ -1,0 +1,95 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "dl1-a",
+  "about": "UNREVIEWED search result (paused 2026-10-19, before any Blender export or capture). West working half: chair 9 m from the spire facing outward (walk_clear_m 0.5 so its back never hides the captain), spawn beside it; navigation arc 12.5 m in front; Voyage and Crew at +-50 deg (11.5 m); reserved consoles at +-80 deg (13 m); floor conduits removed for the blockout. In-engine scores: 0 blocked at Z1-Z3, spawn sky fraction 0.945/0.944, spawn lift share 0/1.5 %, 11 of 16 Z2 cells frame a station; boom-proximity rate about 1 point above the shipped deck.",
+  "frame": "ship metres, Blender +Z up; glTF (x, z, -y)",
+  "bridge": {
+    "spawn_captain": {
+      "position_m": [
+        -9.0,
+        -1.9
+      ],
+      "yaw": 0.0
+    },
+    "props": {
+      "captain_chair": {
+        "position_m": [
+          -9.0,
+          0.0
+        ],
+        "yaw_deg": 430.0,
+        "walk_clear_m": 0.5
+      },
+      "console_navigation_0": {
+        "position_m": [
+          -11.329,
+          5.283
+        ],
+        "yaw_deg": -45.0
+      },
+      "console_navigation_1": {
+        "position_m": [
+          -12.5,
+          -0.0
+        ],
+        "yaw_deg": -45.0
+      },
+      "console_navigation_2": {
+        "position_m": [
+          -11.329,
+          -5.283
+        ],
+        "yaw_deg": -45.0
+      },
+      "console_decision_0": {
+        "position_m": [
+          -7.392,
+          8.81
+        ],
+        "yaw_deg": -35.96
+      },
+      "console_decision_1": {
+        "position_m": [
+          -7.392,
+          -8.81
+        ],
+        "yaw_deg": 81.76
+      },
+      "console_decision_2": {
+        "position_m": [
+          -2.257,
+          12.803
+        ],
+        "yaw_deg": 267.2
+      },
+      "console_decision_3": {
+        "position_m": [
+          -2.257,
+          -12.803
+        ],
+        "yaw_deg": 401.63
+      },
+      "v2_conduit_00": {
+        "remove": true
+      },
+      "v2_conduit_01": {
+        "remove": true
+      },
+      "v2_conduit_02": {
+        "remove": true
+      },
+      "v2_conduit_03": {
+        "remove": true
+      },
+      "v2_conduit_04": {
+        "remove": true
+      },
+      "v2_conduit_05": {
+        "remove": true
+      },
+      "v2_conduit_06": {
+        "remove": true
+      }
+    }
+  }
+}
