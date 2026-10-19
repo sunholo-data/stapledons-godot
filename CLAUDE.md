@@ -14,7 +14,7 @@ design repo.
 ## Commands
 
 ```sh
-make test      # headless: physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (CI runs this)
+make test      # headless: physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (the rig runs this: tools/rig_check.sh)
 make golden    # GPU shader vs CPU reference, sub-pixel (needs a GPU window; works from the Studio shell)
 make capture   # sim-driven voyage → renders/*.png (inspect them; that is the visual check)
 make run       # interactive
@@ -35,6 +35,12 @@ infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
 builds the macOS zip straight away; tag it only after a green local `make test`
 (use the pinned runtime: `PATH=$PWD/runtime/bin:$PATH make test`). Any other `v*` tag
 is a release: `release.yml` runs the full CI suite first and builds only if it passes.
+
+**Merges (Mark, 2026-10-19).** `make test` is still the definition of done, but it runs on the
+Studio: `tools/rig_check.sh <PR> [--golden]` runs it (plus `make golden` for visual changes) on the
+PR head in a fresh clone and posts the `rig/full` commit status. GitHub CI runs only the fast
+clean-Linux tier, `make ci-fast` (lock, policy lints, strict VM, parity, replay golden, crew parity).
+A PR merges on a green `rig/full` plus a green fast tier; main is not branch-protected.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
 
@@ -89,7 +95,7 @@ Only the **unattended** loop is barred from resolving rows itself. This is
 
 ## Definition of done (gates, in this order)
 
-1. **`make test` is green locally and in CI.**
+1. **`make test` is green on the rig (`rig/full`), and the GitHub fast tier is green.**
 2. **Physics.** Every visual that shows SR or GR has the following, *before*
    it merges:
    - check values from `stapledons-design/physics/relativity-spec.md` asserted

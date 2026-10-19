@@ -29,6 +29,12 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
+# Rig-first merges (Mark, 2026-10-19): PRs merge on a green rig/full status (tools/rig_check.sh runs
+# the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast
+# tier: the checks a clean Linux box adds (fresh deps and lock, the x86_64 replay golden, strict VM,
+# VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
+ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+
 test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
 # R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is a registry pin
