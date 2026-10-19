@@ -1,0 +1,38 @@
+{
+ "sprint": "R1-M4-JOURNEY", "milestone": "M4.5bR3_7ij_CONTEXT_CONTROLS", "commit": "98e2215d", "round": 2,
+ "evaluator": "claude-sonnet-5-5 (independent); rubric: sprint-evaluator 100 points, 70 to pass",
+ "score": 94, "pass": true,
+ "breakdown": {"correctness": "39/40", "tests": "19/20", "scope": "20/20", "docs": "16/20"},
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Round-1 residuals E1, E8, E9 are unchanged (out of this row's scope).",
+  "Dropping a spec from the mk loop (drill E5, review_unbound removed) leaves display-audit-controls rc=0 with 19 rows; the 20-row count is enforced only by the sprint AC1 grep, not by the make target.",
+  "Sprint JSON AC1 text still has the iteration-34 command/count history only in notes; the amendment 18 -> 20 is recorded in notes and is correct.",
+  "Stray untracked .uid files and 'Blender path is invalid' stderr are benign."
+ ],
+ "merge_review": {
+  "tests/display_audit.gd": "diff 7d5d2f64..98e2215 is exactly one line (166: context-source -> context-presence for the distance rule). Main's #264/#267 additions (crew-unbound at :265 and the rest of the +45 lines) are intact.",
+  "mk/m45.mk": "spec list has 20 entries = main's 17 pre-merge-conflict-side controls incl. review_unbound and crew_unbound + the 3 new (context_absent, context_presence_parts, context_crew); context_presence reason is context-presence; wrong-reason guard present. diff vs main is only the 2 intended edits. display-audit-crew and display-audit-interlude still depend on display-audit-controls.",
+  "fixtures": "context_absent, context_presence_parts, context_crew, review_unbound, crew_unbound all present.",
+  "sprint JSON": "conflict resolved by keeping both features; 7ij entry followed by M4.6gR3 intact; only the AC1 count and notes differ from the branch side.",
+  "AC1 amendment": "justified: 18 rows (round 1) + review_unbound + crew_unbound from main = 20, derived from grep -c ': rejected$' = 20 on the merged tree."
+ },
+ "checks": [
+  {"cmd":"make display-audit-controls","result":"rc 0, 20 rejected rows, 0 SCRIPT ERROR"},
+  {"cmd":"make display-audit-crew","result":"rc 0, 20 rejected rows (via controls), 0 SCRIPT ERROR"},
+  {"cmd":"make display-audit-interlude","result":"rc 0, 20 rejected rows (via controls), 0 SCRIPT ERROR"},
+  {"cmd":"make python-guard","result":"rc 0"}
+ ],
+ "mutants": [
+  {"id":"M5","change":"context-drift absent-path check(false->true)","result":"KILLED","by":"context_absent"},
+  {"id":"M6","change":"drop parts_read half of distance presence","result":"KILLED","by":"context_presence_parts"},
+  {"id":"M10","change":"drop client.crew.working from CONTEXT_SOURCED","result":"KILLED","by":"context_crew (wrong reason)"},
+  {"id":"M8","change":"recorded == frame -> true","result":"KILLED","by":"context_drift"},
+  {"id":"R1","change":"neutralise crew-unbound rule (main #267)","result":"KILLED","by":"crew_unbound"},
+  {"id":"R2","change":"revert presence reason to context-source","result":"KILLED","by":"context_presence (wrong reason)"},
+  {"id":"E4","change":"drop wrong-reason guard in mk plus M10","result":"KILLED (rc 2, message no longer names fixture)","by":"set -e"},
+  {"id":"E5","change":"remove review_unbound spec from mk list","result":"SURVIVES (rc 0, 19 rows)","by":"none; only sprint AC1 count would catch"}
+ ],
+ "restoration": "tests/display_audit.gd and mk/m45.mk restored from copies; sha256 identical before and after",
+ "not_run": "make test, scene-session-audits, playthrough (CI run 39275438623 covers them)"
+}
