@@ -1,0 +1,240 @@
+{
+  "sprint_id": "R2-DECK-LAYOUT",
+  "status": "awaiting_approval",
+  "approved": false,
+  "approved_by": null,
+  "approved_on": null,
+  "created": "2026-10-19",
+  "started": null,
+  "completed": null,
+  "design_doc": "design_docs/planned/r2/deck-layout.md",
+  "sprint_plan": "design_docs/planned/r2/deck-layout-sprint.md",
+  "branch": "design/deck-layout",
+  "implements": [
+    "deck-layout DL0",
+    "DL1",
+    "DL2",
+    "DL3",
+    "DL4",
+    "DL5",
+    "DL6"
+  ],
+  "github_issues": [],
+  "external_dependencies": [
+    {
+      "what": "Blender 5.2.1 LTS workspace and generator scripts",
+      "where": "~/dev/blender (sunholo-data/blender)",
+      "owner": "this sprint",
+      "blocks": [
+        "DL1_BRIDGE_BLOCKOUT",
+        "DL2_COMMONS_BLOCKOUT",
+        "DL3_STYLE_FRAME",
+        "DL4_BRIDGE_HERO",
+        "DL5_COMMONS_HERO"
+      ],
+      "status": "available, headless verified 2026-10-19"
+    },
+    {
+      "what": "GPU window and a quiet rig for captures and the bench",
+      "where": "Studio",
+      "owner": "executor",
+      "blocks": [
+        "DL0_EVALUATOR",
+        "DL3_STYLE_FRAME",
+        "DL4_BRIDGE_HERO",
+        "DL6_INTEGRATION"
+      ],
+      "status": "shared with the mission loop; wait for idle"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "DL0-DL6",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot tools and Blender assets; no AILANG code and no physics maths"
+    }
+  ],
+  "pause_points": [
+    {
+      "after": "plan approval",
+      "what": "OQ1-OQ8 answered (one ledger row); OQ1 before DL1, OQ2 and OQ6 before DL3"
+    },
+    {
+      "after": "DL2_COMMONS_BLOCKOUT",
+      "what": "Mark picks one of two bridge layouts (and sees the Commons fix); and, if offered, the Sky forward fixed-bearing fallback"
+    },
+    {
+      "after": "DL3_STYLE_FRAME",
+      "what": "Mark approves the style frame before the remaining hero assets"
+    }
+  ],
+  "questions_for_mark": [
+    "OQ1 who models",
+    "OQ2 style reference",
+    "OQ3 chair as spawn and focal point",
+    "OQ4 needle vs anchor",
+    "OQ5 scope",
+    "OQ6 bake spire light into lightmaps",
+    "OQ7 candidates at DL1",
+    "OQ8 bpy generators as authoring tools outside the game Python policy"
+  ],
+  "features": [
+    {
+      "id": "DL0_EVALUATOR",
+      "description": "tools/deck_layout_eval.gd (shared clear-line sweep with the camera test; captain px, station legibility, sky fraction and pole clearance by ray casts on the visual meshes, boom intrusion, frame dominance; --layout applies a candidate in-engine; --compare); tools/deck_layout_capture.gd (before/after contact sheets); mk/deck-layout.mk; tests/test_deck_layout_eval.gd with positive and negative controls; before numbers and sheets published. Also tools/deck_assets_check.gd + art/deck-layout-v1/budgets.json (pins, reimport, node names, budgets incl. VRAM, emissive scan; in make test). Sky fraction casts on visual meshes over every landing pose (Sky forward: 72 walk_to bearings at 15 m).",
+      "estimated_loc": 560,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make deck-layout-eval-test: today's GLB reproduces bridge 0 and Commons 2/2/39 blocked samples; fixtures fail with boom-intrusion, sky-fraction and frame-dominance (AC1)",
+        "make camera-test still green",
+        "make deck-layout-capture TAG=before writes renders/deck_layout/before/*.png and contact sheets at 1280x720 and 2560x1440, rest and 0.99c; every frame opened; sheets published to gs://stapledons-voyage-assets/refs/deck_layout/before/ (AC11)",
+        "sky-fraction metric within 2% of a rendered sky mask for one pose",
+        "make deck-assets-check passes on today's pins; fails on a wrong-sha fixture and an emissive-prop fixture (AC6)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "DL1_BRIDGE_BLOCKOUT",
+      "description": "art/deck-layout-v1/layout.json with the design's proposal and up to three alternatives scored in-engine; ~/dev/blender/scripts/stapledon_deck_layout_v1.py moves named props from the grounded v2 master, regenerates WALK_bridge_deck holes, exports ship.glb and walk_bridge.glb; spawn at the chair; two best candidates captured for Mark. Generator spike first (0.5 d); search capped at proposal + 3 alternatives (0.5 d). Spawn moves from code (_reset_captain, ShipConsoles.BRIDGE_SPAWN) to manifest spawn_captain; camera-test spawn assertions updated red first; fixed-observer physics tests keep (8,82,-4.8).",
+      "estimated_loc": 150,
+      "dependencies": [
+        "DL0_EVALUATOR"
+      ],
+      "acceptance_criteria": [
+        "make deck-layout-eval prints 'deck-layout: bridge ok' on the exported GLB (AC2)",
+        "make camera-test ship-ui-test crew-console-test crew-hold-test pass (AC4)",
+        "make ship-demo-assets-test validate-ship-demo ship-demo-lift-test pass (AC5)",
+        "make deck-layout-capture TAG=dl1-a and TAG=dl1-b published with per-view numbers; Mark's pick recorded as a ledger row",
+        "make golden and make camera-views-capture green before the pause (AC8, AC9)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "DL2_COMMONS_BLOCKOUT",
+      "description": "Commons lintels raised or opened and the Z3 pillar moved or slimmed via the same generator; walk.glb and collision.glb regenerated; LOWER_CEILING set to 0 first (red).",
+      "estimated_loc": 120,
+      "dependencies": [
+        "DL0_EVALUATOR"
+      ],
+      "acceptance_criteria": [
+        "make camera-test with LOWER_CEILING := {1: 0, 2: 0, 3: 0} (AC3)",
+        "make deck-layout-eval prints 'deck-layout: commons ok' (AC3)",
+        "make ship-commons-test ship-commons-assets-test ship-commons-arcade-test pass",
+        "Commons Z2 captain >= 55 px at every walk sample via per-cell distance_m, clear line re-swept",
+        "make golden camera-views-capture before the joint pause"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "DL3_STYLE_FRAME",
+      "description": "Captain's chair and navigation arc dressed to the sprites' finish (painted pigments, captain-sheet palette), spire key light baked into a lightmap UV set, live starlight and glow unchanged; Sky forward and Z2 captured at rest and 0.99c; pause for Mark.",
+      "estimated_loc": 80,
+      "dependencies": [
+        "DL1_BRIDGE_BLOCKOUT"
+      ],
+      "acceptance_criteria": [
+        "make deck-assets-check within the design's budgets for the two dressed props (AC6)",
+        "make golden: its count assertion and 0 failures (AC8)",
+        "style-frame captures opened and published to gs://stapledons-voyage-assets/refs/deck_layout/style_frame/; Mark's approval recorded",
+        "precondition: Mark has answered OQ2 and OQ6 (OQ1 before DL1)",
+        "make bench SCENE=bridge p99 < 16.7 ms quiet with the dressed props (AC10 pre-check)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "DL4_BRIDGE_HERO",
+      "description": "Remaining bridge hero assets (Voyage and Crew consoles, Archive terminal and ribs, rail and fronds, lift head housing, spire base, reserved consoles); art/deck-layout-v1/asset-pins.json; runtime GLBs in git < 10 MB; .blend masters in the bucket by sha256 via make ship-masters; p99 fallbacks in order.",
+      "estimated_loc": 90,
+      "dependencies": [
+        "DL3_STYLE_FRAME"
+      ],
+      "acceptance_criteria": [
+        "make deck-assets-check: pins, clean reimport, node names, <= 220,000 triangles, <= 18 materials, <= 16 images, < 10 MB per runtime GLB, VRAM <= +32 MB, no emissive outside screens and the spire (AC6)",
+        "make ship-masters && make deck-assets-check MASTERS=1 (AC7)",
+        "make deck-layout-eval camera-test ship-ui-test pass (AC2, AC4)",
+        "make bench SCENE=bridge p99 < 16.7 ms at 2560x1440 on a quiet rig, host load logged (AC10)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "DL5_COMMONS_HERO",
+      "description": "Commons arcade and pillars at the bridge's finish; coarse LOD regenerated; pins updated.",
+      "estimated_loc": 50,
+      "dependencies": [
+        "DL2_COMMONS_BLOCKOUT",
+        "DL3_STYLE_FRAME"
+      ],
+      "acceptance_criteria": [
+        "make deck-assets-check deck-layout-eval ship-commons-test ship-commons-assets-test pass (AC3, AC6)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "DL6_INTEGRATION",
+      "description": "Full suite, goldens, sky-view captures, bench, after captures, packaged smoke, report, changelog fragment, independent evaluation (sonnet), landing.",
+      "estimated_loc": 0,
+      "dependencies": [
+        "DL4_BRIDGE_HERO",
+        "DL5_COMMONS_HERO"
+      ],
+      "acceptance_criteria": [
+        "make test and make python-guard green (AC12)",
+        "make golden: count unchanged, 0 failures (AC8)",
+        "make camera-views-capture: 0 failures (AC9)",
+        "make bench SCENE=bridge p99 < 16.7 ms quiet (AC10)",
+        "make deck-layout-capture TAG=after; before/after sheets published; report written (AC11)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 110,
+    "estimated_total_loc": 1050,
+    "estimated_days": 11,
+    "note": "Art iteration and captures dominate; about 1,200 lines of bpy in ~/dev/blender are not counted. Recent attended R2 game velocity is about 300 LOC/day."
+  },
+  "reviews": [
+    {
+      "round": 1,
+      "reviewer": "Claude Sonnet (independent, claude -p --model sonnet, plan review)",
+      "score": 74,
+      "pass": true,
+      "blocking": [
+        "B1 forward-watch anchor undefined",
+        "B2 spawn is hard-coded, not a GLB property",
+        "B3 deck-assets-check used before it exists"
+      ],
+      "resolution": "all three blocking and S1-S8 folded into the doc and plan on 2026-10-19 before the PR"
+    },
+    {
+      "round": 2,
+      "reviewer": "Claude Sonnet (independent, plan review)",
+      "score": 86,
+      "pass": true,
+      "blocking": [],
+      "resolution": "N1-N5 folded in 2026-10-19"
+    }
+  ]
+}
