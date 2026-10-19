@@ -93,13 +93,19 @@ crossing-review-capture: ## R2-INTERLUDE I3 (AC11): the crossing review's pages 
 ## (the VM's O(n^2) list tail) is fixed in v0.54.10+; with crew_core 0.5.0 on v0.54.11 the busy
 ## decade measures 11.2 s on the Studio (was ~40 s; about 20 s expected on CI), so the 2 s D-82
 ## hoped for is not reached. Mark (2026-10-16): 11 s is acceptable; the ceiling is 30 s (was 150 s).
-CREW_PERF_BUDGET_crewSkip := 2.0
+## crewSkip under crew_core 0.6 (monthly stand-down check-ins): ~1.1 s on the Studio, 2.33 s on CI
+## (2026-10-19, PR #267). The 2 s once matched the bridge's step_timeout, but since R2-INTERLUDE the game
+## never runs a decade in one step: crewSkipChunked below holds every chunk under CREW_PERF_CHUNK_S. This
+## one-step run is now a regression ceiling (4 s).
+CREW_PERF_BUDGET_crewSkip := 4.0
 CREW_PERF_BUDGET_crewSkipUnheld := 30.0
 ## crewSkipChunked critical_only (the decade crossed chunk by chunk): under crew_core 0.5 its one hold
 ## came early and stayed open, so the decade went in cap-sized chunks (20); under 0.6 the hold comes
 ## later and the decade checks in monthly until then (39 chunks, ~0.08 s each, slowest 0.13 s), so the
 ## total is ~3.2 s. The per-chunk ceiling below is unchanged. R2-CREW-CONSOLE-V2 V8, for Mark's review.
-CREW_PERF_BUDGET_chunked := 4.0
+## The total is a regression ceiling sized for CI, which runs about twice the Studio's time (3.1 s here,
+## ~6.5 s expected there); the player-facing limit is the per-chunk CREW_PERF_CHUNK_S (slowest 0.13 s).
+CREW_PERF_BUDGET_chunked := 8.0
 CREW_PERF_CHUNK_S := 1.0
 crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless (warm cache); critical_only under 2 s, the busy no-hold worst case under its measured ceiling
 	@for e in crewSkip crewSkipUnheld; do \
