@@ -2,6 +2,133 @@
 
 ## Unreleased
 
+## v0.4.0-dev.33-fixed-camera (2026-10-19)
+
+### crew-console-v2 (2026-10-17)
+
+#### Added
+
+- **Protocol 2.11 (R2-CREW-CONSOLE-V2 V1): the sim names whose move it is.** Each crew member
+  carries `work_state` (held, relief_asked, concern, declined, deferred, asked, agreed, offered,
+  resting, working, done, stopped, free) and working work its start `terms`. `crew_start` may
+  carry `"as": "orders"` (one start under the other captaincy, all or nothing, journalled as three
+  crew_core lines) and `crew_offer` `"start": "on_accept" | "now"`. Below 2.11 these are
+  `bad_intent` and every stream is byte-identical. The game asks for 2.11.
+- **The Crew console as an internal videocom (V2, V3).** A roster board (whose move first, one
+  chip of colour, icon and word per member, one quick action, the ship default and auto-run in a
+  header strip, the free resources as gauges, a legend) and a two-panel call: a 240-logical
+  portrait at the sim's emotion with their words, and beside it the work and the next legal
+  actions. Ask or Order is chosen inline on each offer; Start is disabled with its reason while a
+  concern, a decline or a deferral is open; Insist is the fourth answer; "Make it an order" orders
+  over an answer. Every crew decision (the offer included) arms on the first press. Once an
+  intent about someone is on its way, all their actions wait ("Sent, waiting for the ship").
+  A concern or a hold opens its call when nothing else is open or armed; otherwise the row pulses.
+- The palette (Okabe-Ito based) is checked for contrast and for colour-blind separation
+  (Machado 2009 deutan, protan and tritan; CIEDE2000) in `make crew-console-test`.
+- `make display-audit-crew` (in `ship-demo-ci`): the Crew console's playthrough, every Label a
+  display binding, with the `crew_unbound` negative control.
+
+#### Changed
+
+- Captures: `make crew-console-capture` writes ten states at 1280x720 and 2560x1440.
+- **Crew console (V4–V8, the visual pass, 2026-10-17).** A reply to a concern is reconsidered at once
+  and the work starts when they agree. Keyboard and pad: a focus ring, Enter/A to arm and send,
+  1–4 for answers, [ ] or LB/RB to switch calls, Esc/B one level back. Less text: terms as day pips
+  and resource icons, rule lines in one line behind "?", faces for who is waiting, icon bars.
+- **crew_core 0.6.0 (stand-downs).** A crew member can ask to stand down at a duty check-in; under
+  hands-on auto-run the console asks you (Let them rest / Ask them to carry on), and crew time waits
+  for your answer. The crossing digest counts stand-downs (protocol 2.11).
+- **Names fit faces (ledger D-80).** Generated crew names now match each portrait's presentation and
+  naming tradition (from protocol 2.11).
+
+#### Fixed (after the evaluation)
+
+- A stand-down call no longer offers Resume first: the two answers lead and Resume waits until
+  the stand-down is answered (resuming first let it lapse, which crew_core counts as refusing
+  their rest). The console's buttons follow the model's enabled flags.
+- The work and bar icons have a "?" key the keyboard and pad reach.
+- The scripted crossing (make strict, crew-parity) now brings the named crew aboard (AILANG
+  v0.54.14 runs the names table on the strict VM).
+
+### constellation-guides (2026-10-17)
+
+#### Added
+
+- Hold I to see faint Earth constellation guides for Orion, Cassiopeia, Crux and
+  the Big Dipper. Their endpoints follow the rendered stars as velocity and
+  observer position change. Missing or invisible stars leave partial figures;
+  guides are unavailable during gravitational lensing. Existing star/body
+  inspection and cards remain available.
+
+### camera-fixed-views (2026-10-17)
+
+#### Changed: the player camera is third person with three fixed zoom levels and authored sky views (R2-CAMERA: C1, C2, C3, C4)
+
+Mark's dev.31 ruling: no free zoom for players; fixed zoom levels; third person. Design: `design_docs/implemented/r2/camera-fixed-views.md` (approved 2026-10-16).
+
+- **One camera director** (`demos/camera_director.gd`, views as data in `data/camera/views.json`). It owns every pose of the player camera; `ShipCamera` stays the render boundary, so the sky is still rendered through the same pose as the geometry.
+- **Three zoom levels:** Z1 Close (4.5 m, -25 deg), Z2 Deck (12 m, -35 deg; the default, the captain about 64 px tall at 720p, the art brief's reading scale) and Z3 Whole level (a place camera on the bridge's edge that tracks the captain by rotation). Keys 1 / 2 / 3 and = / -; one wheel notch, one trackpad scroll gesture (its inertial tail included) or one pinch is one level, so a MacBook swipe no longer drifts the camera. Zoom in is closer: wheel up, scroll up and pinch open come closer. RB / LB on a controller. The FOV stays at 78 deg.
+- **Authored angles:** the boom yaw comes from 8 sectors around the spire (10 deg hysteresis) and 2 rings (the stations ring inside 12 m, the rail ring outside, 1 m hysteresis). Every eye stays inside the 95 m envelope, and a sweep of every walkable point checks the line to the captain's head (`make camera-test`).
+- **No mouse look for players.** The pointer is never captured; clicks aim where the pointer is. WASD is screen-relative, and a held key keeps its world direction when the view changes. The left stick walks; A uses and B steps back.
+- **Console focus** eases to the framed screen through the director, and stepping back returns to the remembered level and sector, not a stored eye.
+- **Reduced camera motion** (title Settings and Tab, `[display] camera_motion`): cuts with a 0.15 s fade instead of eases, and a rigid follow. In full motion the camera turns at most 90 deg/s, never rolls and never overshoots.
+- **Developer free camera:** F8 or `--free-camera` (command-line launches only) restores the old mouse look, scroll dolly and presets 1-4, labelled FREE CAMERA. Tools, captures and goldens keep `set_preset`, `look_direction` and `reference_view`, which take the camera through the director's override.
+- The waiting line under the crossing review and the arrival card no longer mentions mouse look.
+- **Sky views (7 / 8 / 9, D-pad):** Sky forward (a low eye beside the captain, pitch +58 deg, the forward pole and the starbow in frame, the captain an upright figure from behind at the bottom), Sky to the side (walks to the rail facing where a guided stop puts the body) and Sky astern (walks to the rail and looks down over it). Any level key, move key or R ends one.
+- **Under way the forward sky is the default.** Committing a course, the guided voyage's departure turn, braking and Sgr A* cue Sky forward; a guided stop cues Sky side once its turn completes; under way R returns to Sky forward. No cue starts with a panel open, at a console or in the lift; with reduced motion a cue is a HUD prompt ("Sky ahead · 7"). The crossing review holds Sky forward behind it. Without this, a 0.99c cruise showed the deck against a black sky.
+- **Sgr A*: the hole view.** At Sgr A* the cue (on arrival and at every stop) and R select a view aimed at the hole's direction from the sim's GR state, the hole 18 deg above the frame centre and the captain below, so the shadow, the photon ring and the lensed sky are framed at the 10, 5 and 3 r_s hovers and the 3 r_s orbit (as the M3.6 visit's own look toward the hole did, now third person). Key 7 at Sgr A* opens it; reduced motion keeps the prompt ("The hole · 7").
+- **The spawn:** the lift's guards no longer hide the captain (per-cell angles at the lift landing, checked with a whole-figure sweep).
+- **The lower deck (Commons):** views authored per cell; points under the arcades' lintels that no camera sees are held to a measured ceiling (Z1 2, Z2 2, Z3 39 of 1,881 samples).
+- **Physics:** no formula changes. `tests/test_physics.gd`: RS-1 and RS-2 through every view's eye land on the captain eye's pixel to 0.05 px, and a pixel's sky ray matches to 1e-9 rad. New goldens: G-CAM-1 (the forward pole through Sky forward, 3 phases, 2 standing points: 6), G-CAM-2 (the wall glow from the Z1, Z2, Z3 and Sky forward eyes at 0.99c and the cap, against `ForwardGlow` and a closed-form wall hit: 8) and G-CAM-3 (one tonemap through Z2 and Sky forward: 2). `make golden` pins 393 ok lines (G-CAM-1 also through the Sgr A* hole view's pose; G-CAM-2 aims where the eye changes the glow by 13-34 %, at 0.99c too; G-CAM-1 also checks the pole against the 78 deg constant); this also fixes main's stale pin (main ran 374 ok lines against 373). `make camera-views-capture` renders every view at rest, 0.99c, a guided stop and Sgr A* at 1280x720 and 2560x1440 with contact sheets, and the default cruise view of a real voyage at 0.9, 0.99 and 0.999c.
+
+### ailang-0.54.14 (2026-10-17)
+
+#### AILANG v0.54.14
+
+- **Upgrade:** CI, the bundled runtime and the CLAUDE.md pin move to AILANG v0.54.14 (via v0.54.13). The lockfiles are unchanged (crew_core 0.5.0).
+- **Workarounds removed (outputs byte-identical):**
+  - ailang#1736 / #1865: every strict-VM list-literal split is gone. `applyOverride` is one if-chain. In `sim/data/ism.ail` the efficacy LUT, each cloud's planes and the members are single literals. `data/ism/ism.json` and the `ism-determinism` stream are unchanged.
+  - ailang#1576: the stub voice builds a segment as a plain list of periods again, and the lens-table builders use plain recursion. The voice stub bytes, `aiWireVm`, `lens-lut-check` and full lens rows match.
+  - ailang#1737: the `protocol_ism_test` checks are inline test bodies again.
+  - v0.52.0 fixes: restored the `\tick` binders (#1467), a variable arm (#1473), nested cons patterns (#1505, #1517) and constructor-at-cons-head patterns (#1503). Dropped the stale #1460, #1461, #1465, #1516 and #1419 notes. The replay interpreter no longer passes `--max-recursion-depth` (#1486).
+- **Crew names on the strict VM:** the crew-names table now runs under `--strict-bytecode`. `make strict` checks it with `namesVm`: the table and five generated names, VM == interpreter. The scripted crossing still uses role ids. The crew console sprint (D-80) switches it to names and owns the `crossing_hold` re-recording.
+- **Kept on purpose:** `ailang check --package` stays beside `ailang test --package`. The test runner now catches type errors in untested modules (ailang#1845), but only `check` enforces STRICT_FALLBACK_001.
+
+## v0.4.0-dev.32-crossing-review (2026-10-17)
+
+### crossing-review (2026-10-17)
+
+#### Added
+
+- **The crossing review (R2-INTERLUDE, protocol 2.10).**
+  - The cruise is crossed in chunks the sim publishes (`cruise {next_stop_years, stop_kind}`).
+  - A crew hold stops the crossing on its check-in day.
+  - The crossing ends in a review the player reads at their own pace: the crossing, home (a picture per home tier), aboard, moments with faces, who changed, the medium, and who is waiting.
+  - Every number comes from the pure sim's cruise digest. Streams below 2.10 are unchanged.
+- **The Archive narrates.**
+  - Authored, in-world framing lines appear on the crossing and aboard pages.
+  - With live AI and a key, the Archive tells the crossing once in its own words. The telling is recorded as sim input and voiced once.
+
+#### Changed
+
+- The 6-second interlude card is gone; no timer dismisses the review.
+- After arriving, the view can be turned without first dismissing the card. While the review is open, right-drag or Alt/Option+move looks around, and one centred line says what to press.
+- The HUD's Braking notice waits until the player brakes.
+
+#### Fixed
+
+- News from home no longer says "Only 0.00 years have passed there since you left". `{elapsed_years}` is when the message left home, and a message sent right after departure says "within days of your departure".
+
+### crew-offer-while-paused (2026-10-16)
+
+#### Crew offers get an answer while the guided tour is paused (dev.31 playtest)
+
+- **Bug:** with the guided voyage paused (P), turning, or waiting on a stop choice, an offer made on the Crew console got no answer, and "Offer this work" stayed live, so every press queued another offer. The Crew page's intents ride the sim's next tick (`SimBridge.queue`), and `SolarDeparture.step` sent no tick in those states.
+- **Fix, guided tour:** in those states the tour now sends a zero-dtau tick whenever intents are queued, so the crew answer and ship time does not move. With nothing queued it sends nothing, as before, so idle ticks and replays are unchanged. A refused crew intent is now the Crew page's to word; it no longer fails the tour. The other hosts already tick while paused (`GalaxyMap.tick` sends dtau 0), and the Sgr A* visit has no crew.
+- **Fix, Crew page:** after an offer is sent, the member's card says "Offer sent. Waiting for their answer." and the Offer button is disabled (not hidden), with that reason, until the sim's crew shows the work or the tick that carried it answers. Refusals are attributed to the member their intent was about (`SimBridge.queued_refused`), and only the tick that carried the page's intents settles them, not a pipelined heartbeat. `altered_duplicate` and the host's "request capacity/id/clock" refusal now have plain words.
+- **Task ids:** they carry the crew's turn and revision and a serial shared by every page, so a page rebuilt in the same turn never reuses one.
+- **Tests:** `crew-hold-test` drives the paused, turning and stop-choice cases against the real sim. `crew-console-test` covers id uniqueness across rebuilt pages, the sim's duplicate refusals and their words, and the pending state.
+
 ## v0.4.0-dev.31-crew-core-0.5 (2026-10-16)
 
 ### m4-6gr3-ship-goldens (2026-10-16)
