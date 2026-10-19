@@ -46,8 +46,12 @@ const INTERLUDE_MINOR := 10
 ## sim names whose move it is: held, relief_asked, concern, declined, deferred, asked, agreed, offered,
 ## resting, working, done, stopped, free) and working work its start `terms`; crew_start may carry
 ## "as" (consent | orders) and crew_offer "start" (on_accept | now), envelope fields beside the line
-## (crew_intent's `envelope`). The game's sessions ask for it (want_minor = CONSOLE_MINOR).
+## (crew_intent's `envelope`).
 const CONSOLE_MINOR := 11
+## Protocol 2.12 (R2-HOME-TIERS, ledger D-86): the crossing review's home time in sixteen tiers
+## (cruise.digest.time.tier 0-15, tier_count 16) and the voyage's picture variant (time.variant).
+## The game's sessions ask for it (want_minor = HOME_TIERS_MINOR).
+const HOME_TIERS_MINOR := 12
 const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]

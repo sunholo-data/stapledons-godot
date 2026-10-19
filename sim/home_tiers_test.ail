@@ -147,3 +147,5 @@ test "sixteen false is the seven-tier ladder exactly; sixteen true is home_tiers
 }
 -- ui/crossing_review.gd PICTURE_OF_SEVEN is compared with this (tests/test_crossing_review.gd).
 export pure func pictureTable(n: int) -> string = join(",", map(\t. show(pictureOfSeven(t)), range(0, 7 + n)))
+-- make home-art-check: the variant counts, one tier per line ("<tier> <count>").
+export pure func countsTable(n: int) -> string = join("\n", map(\t. join(" ", [show(t), show(variantCount(t))]), range(0, 16 + n)))

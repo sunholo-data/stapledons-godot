@@ -175,16 +175,22 @@ func _run() -> void:
 	check("the home page's tier line is the sim's, with its years bound (%s)" % [d.time.tier_line], (func() -> bool:
 		r.go(r.page_ids().find("home"))
 		return texts(r).has(str(d.time.tier_line) % int(d.time.years_at_home))).call())
-	# The home picture (ruling 2): the tier's 3:2 image covers the whole panel on the Home page only,
-	# with the words in a column over its calm left side; every tier's picture exists.
+	# The home pictures (ruling 2; R2-HOME-TIERS, D-86): sixteen tiers, each a pool of variants
+	# tier<n>_v<k>.webp, every one 3:2 at 1536x1024, with variant 0 of every tier present.
 	var sizes_ok := true
-	for tier in 7:
-		var tex := CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, tier))
-		sizes_ok = sizes_ok and tex != null and tex.get_size() == Vector2(1536, 1024)
-	check("all seven home pictures land, 1536x1024 (3:2), as WebP with no PNG master in the tree (D-18)", sizes_ok and not FileAccess.file_exists("res://data/interlude/home/tier0.png"))
+	var pool := 0
+	for f: String in DirAccess.get_files_at(CrossingReview.HOME_DIR):
+		if f.ends_with(".webp"):
+			pool += 1
+			var tx := CrossingReview.home_texture(CrossingReview.HOME_DIR.path_join(f))
+			sizes_ok = sizes_ok and tx != null and tx.get_size() == Vector2(1536, 1024) and f.begins_with("tier") and f.contains("_v")
+	for tier in CrossingReview.TIER_COUNT:
+		sizes_ok = sizes_ok and CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, tier, 0)) != null
+	check("every tier's pool lands (%d pictures), 1536x1024 (3:2), as WebP with no PNG master in the tree (D-18)" % pool, sizes_ok and pool >= CrossingReview.TIER_COUNT
+		and not DirAccess.get_files_at(CrossingReview.HOME_DIR).has("tier0_v0.png") and not FileAccess.file_exists("res://data/interlude/home/tier0.png"))
 	var art: TextureRect = r.find_child("HomeImage", true, false)
-	check("the Home page shows its tier's picture as a cover over the whole panel", not r.home_art_missing() and r.home_art_shown() and art != null and art.is_visible_in_tree()
-		and art.texture == CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, int(d.time.tier)))
+	check("the Home page shows its tier's picture (the voyage's variant) as a cover over the whole panel", not r.home_art_missing() and r.home_art_shown() and art != null and art.is_visible_in_tree()
+		and art.texture == CrossingReview.home_texture_for(CrossingReview.HOME_DIR, CrossingReview.picture_index(d.time), CrossingReview.picture_variant(d.time))
 		and art.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED and art.offset_left == -CrossingReview.PAD and art.offset_right == CrossingReview.PAD)
 	var col: Control = r.find_child("Page_home", true, false).find_child("HomeText", true, false)
 	check("the home words sit in a column over the picture's left side, with a scrim", col != null and is_equal_approx(col.size_flags_stretch_ratio, CrossingReview.HOME_TEXT)
@@ -203,6 +209,7 @@ func _run() -> void:
 		and mcol.get_parent().get_child_count() == 1)
 	audit_pages(rm, "missing home picture")
 	rm.queue_free()
+	test_home_tiers(r, v)
 
 	# The Hold page: first while a hold is open; Resume needs a confirming press (crew_resume).
 	var held: Dictionary = acen[0]
@@ -374,3 +381,62 @@ func test_narration(r: CrossingReview, v: Dictionary) -> void:
 	check("I4 the next crossing is asked again", nr.maybe_open(v2, live, true) and live.queued() == 1 and nr.crossing_text(v2) == str(n.crossing))
 	live.take_intents()
 	r.narration = null
+
+
+## R2-HOME-TIERS (design home-tiers.md H2; AC8, AC10-AC12): the sixteen tiers and their variants.
+func test_home_tiers(r: CrossingReview, v: Dictionary) -> void:
+	var d: Dictionary = v.cruise.digest
+	check("the recorded frames are 2.12: tier_count 16 and a variant beside the tier", int(d.time.get("tier_count", 0)) == CrossingReview.TIER_COUNT and d.time.has("variant"))
+	# The choice of file.
+	check("picture_index: the sim's tier at 16 tiers; an old 7-tier frame maps to its picture's place; clamped",
+		CrossingReview.picture_index({"tier": 8.0, "tier_count": 16.0}) == 8 and CrossingReview.picture_index({"tier": 15.0, "tier_count": 16.0}) == 15
+		and CrossingReview.picture_index({"tier": 5.0}) == 10 and CrossingReview.picture_index({"tier": 6.0}) == 13 and CrossingReview.picture_index({"tier": 1.0}) == 2
+		and CrossingReview.picture_index({"tier": 40.0, "tier_count": 16.0}) == 15 and CrossingReview.picture_index({"tier": 9.0}) == 13 and CrossingReview.picture_index({}) == 0)
+	check("picture_variant: the sim's variant at 16 tiers, 0 below 2.12", CrossingReview.picture_variant({"tier": 3.0, "tier_count": 16.0, "variant": 1.0}) == 1
+		and CrossingReview.picture_variant({"tier": 3.0, "variant": 1.0}) == 0 and CrossingReview.picture_variant({"tier": 3.0, "tier_count": 16.0}) == 0)
+	check("home_path names the variant's file", CrossingReview.home_path("res://x", 8, 1) == "res://x/tier8_v1.webp" and CrossingReview.home_path("res://x", 0) == "res://x/tier0_v0.webp")
+	# The sim's 7 -> 16 map is the host's (sim/home_tiers.ail pictureOfSeven, the real AILANG).
+	var out: Array = []
+	var code := OS.execute(SimBridge.find_ailang(), PackedStringArray(["run", "--quiet", "--package-dir", ProjectSettings.globalize_path("res://sim"),
+		"--entry", "pictureTable", "--args-json", "0", ProjectSettings.globalize_path("res://sim/home_tiers_test.ail")]), out, true)
+	var sim_map := str(out[0] if out.size() > 0 else "").strip_edges()
+	check("PICTURE_OF_SEVEN is the sim's pictureOfSeven (%s)" % sim_map, code == 0 and sim_map == ",".join(CrossingReview.PICTURE_OF_SEVEN.map(func(x): return str(x))))
+	# An old 2.10 frame (kept as recorded) shows v0 of its picture's place in the sixteen.
+	var legacy := rows("legacy_2_10_trappist").filter(func(x): return x.at == "crossed")
+	var lt: Dictionary = legacy.back().world.cruise.digest.time
+	r.show_review(view_of(legacy.back()), true)
+	r.go(r.page_ids().find("home"))
+	var art: TextureRect = r.find_child("HomeImage", true, false)
+	check("a 2.10 frame (tier %d of seven) shows tier%d_v0.webp" % [int(lt.tier), CrossingReview.PICTURE_OF_SEVEN[int(lt.tier)]], not lt.has("tier_count")
+		and art.texture == CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, CrossingReview.PICTURE_OF_SEVEN[int(lt.tier)], 0)) and not r.home_art_missing())
+	# A missing variant falls back to v0; a missing tier to the words alone.
+	var tmp := "user://home_tiers_fallback"
+	DirAccess.make_dir_recursive_absolute(tmp)
+	for f: String in DirAccess.get_files_at(tmp): DirAccess.remove_absolute(tmp.path_join(f))
+	DirAccess.copy_absolute(ProjectSettings.globalize_path(CrossingReview.home_path(CrossingReview.HOME_DIR, 8, 0)), ProjectSettings.globalize_path(tmp.path_join("tier8_v0.webp")))
+	var rf := CrossingReview.new()
+	rf.home_dir = tmp
+	root.add_child(rf)
+	var vf := v.duplicate(true)
+	vf.cruise.digest.time.tier = 8.0
+	vf.cruise.digest.time.variant = 1.0
+	rf.show_review(vf, true)
+	rf.go(rf.page_ids().find("home"))
+	var fart: TextureRect = rf.find_child("HomeImage", true, false)
+	check("a missing variant (tier8_v1) falls back to the tier's v0", not rf.home_art_missing() and rf.home_art_shown() and fart.texture == CrossingReview.home_texture(tmp.path_join("tier8_v0.webp")))
+	vf.cruise.digest.time.tier = 9.0
+	rf.show_review(vf, true)
+	rf.go(rf.page_ids().find("home"))
+	check("a missing tier (no tier9_v*) gives the words alone", rf.home_art_missing() and not rf.home_art_shown() and texts(rf).has(str(vf.cruise.digest.time.tier_line) % int(vf.cruise.digest.time.years_at_home)))
+	rf.queue_free()
+	# The guided voyage's end. Mark's playtest (2026-10-19) reported about 150 Earth years and the drowned town
+	# (old tier 5, 130-1000 years). Recorded here (seed 42, an orders crew under critical_only) it is about
+	# 120 Earth years: tier 7 of sixteen (90-130, the plain memorial), never the drowned town (tier 10).
+	var tour := rows("tour").filter(func(x): return x.at == "crossed")
+	var last: Dictionary = tour.back().world.cruise.digest.time if not tour.is_empty() else {}
+	check("the tour's last crossing (%s Earth years) is tier 7 of sixteen, not the drowned town" % [last.get("earth_year_total")], tour.size() == 3 and int(last.get("tier", -1)) == 7
+		and float(last.earth_year_total) >= 90.0 and float(last.earth_year_total) < 130.0 and CrossingReview.picture_index(last) != 10)
+	r.show_review(view_of(tour.back()), true)
+	r.go(r.page_ids().find("home"))
+	check("the tour's end shows tier7_v%d" % int(last.get("variant", 0)), r.find_child("HomeImage", true, false).texture == CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, 7, int(last.get("variant", 0)))))
+	audit_pages(r, "tour end")
