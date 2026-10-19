@@ -19,12 +19,13 @@ func _run() -> void:
 	check("can board bridge",lift.board())
 	check("boarding blocks reentry",not lift.board())
 	var wheel:=InputEventMouseButton.new();wheel.button_index=MOUSE_BUTTON_WHEEL_UP;wheel.pressed=true
-	demo._unhandled_input(wheel)
-	check("boarding wheel cannot escape shaft",demo.camera.pullback==0.)
+	var level:int=demo.director.level
+	demo._unhandled_input(wheel);demo._process(.016)
+	check("boarding wheel cannot change the level; the lift view stays in the shaft",demo.director.level==level and demo.director.view_id=="lift" and demo.camera.position.length()<95.)
 	lift.advance(.81)
 	check("attached while descending",demo.avatar.get_parent()==lift.platform)
-	demo._unhandled_input(wheel)
-	check("descending wheel cannot escape shaft",demo.camera.pullback==0.)
+	demo.director._cooldown=0.;demo._unhandled_input(wheel);demo._process(.016)
+	check("descending wheel cannot change the level",demo.director.level==level and demo.director.view_id=="lift")
 	check("bridge gate closes after departure",lift.gates[0].visible)
 	var shape:=CapsuleShape3D.new();shape.radius=.35;shape.height=1.8
 	var clear:=true

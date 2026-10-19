@@ -26,8 +26,9 @@ import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, 
   Target, PlanReq, StarInfo, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
-  IGrApproach, IGrHover, IGrOrbit, IGrRing, ICrew, withHole, archiveEvent, withCrew)
-import ./protocol_crew (decodeCrewIntent, crewIntentNames, crewView, crewHoldJson)
+  IGrApproach, IGrHover, IGrOrbit, IGrRing, ICrew, withHole, archiveEvent, withCrewNamed)
+import ./protocol_crew (decodeCrewEnvelope, hasEnvelope, crewIntentNames, crewViewAt, crewHoldJson)
+import ./protocol_interlude (cruiseStop, encodeCruiseSectionAt)
 import ./gr (GrView, grView, sgrAWith, sgrAMassMsun)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
@@ -71,7 +72,10 @@ export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= crewMinor() then {helloMsg() | minor: crewMinor(), relativity: relativityPin()}
+  if want >= homeTiersMinor() then {helloMsg() | minor: homeTiersMinor(), relativity: relativityPin()}
+  else if want >= consoleMinor() then {helloMsg() | minor: consoleMinor(), relativity: relativityPin()}
+  else if want >= interludeMinor() then {helloMsg() | minor: interludeMinor(), relativity: relativityPin()}
+  else if want >= crewMinor() then {helloMsg() | minor: crewMinor(), relativity: relativityPin()}
   else if want >= ismMinor() then {helloMsg() | minor: ismMinor(), relativity: relativityPin()}
   else if want >= stopsMinor() then {helloMsg() | minor: stopsMinor(), relativity: relativityPinStops()}
   else if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPinGr()}
@@ -113,7 +117,26 @@ export pure func ismMinor() -> int = 8
 -- (sim/protocol_crew.ail crewView) is sent in full states and whenever it changes, only while a
 -- crew is aboard. Without "crew" a 2.9 stream equals 2.8's but for the hello's minor.
 export pure func crewMinor() -> int = 9
-pure func sessionMinor(want: int) -> int = if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.10 (R2-INTERLUDE I1, design interlude-card.md D1): the chunked crossing. While a
+-- journey is committed, each state carries `cruise` {next_stop_years, stop_kind}
+-- (sim/protocol_interlude.ail): the host steps exactly next_stop_years, so a hold on a decision day
+-- ends its chunk. Without it a 2.10 stream equals 2.9's but for the hello's minor.
+export pure func interludeMinor() -> int = 10
+-- Protocol 2.11 (R2-CREW-CONSOLE-V2 V1, design crew-console-v2.md §V1): the Crew console. Each
+-- crew member carries `work_state` (sim/protocol_crew.ail workState: whose move it is, named by the
+-- sim) and working work its start `terms`; crew_start may carry "as" (consent | orders: one start
+-- under the other captaincy, all or nothing) and crew_offer "start" (on_accept | now). Below 11
+-- those fields are bad_intent; without them a 2.11 stream equals 2.10's but for the hello's minor
+-- and the crew section's added fields.
+export pure func consoleMinor() -> int = 11
+-- Protocol 2.12 (R2-HOME-TIERS, design home-tiers.md H1; ledger D-86): the crossing review's home time
+-- in sixteen tiers. cruise.digest.time.tier and home.tier run 0-15 (sim/home_tiers.ail), tier_line and
+-- the narration (key, crossing) come from the sixteen-tier text, and time gains tier_count (16) and
+-- variant (the voyage's picture for that tier, a pure function of the seed: home_tiers.homeVariant).
+-- Without a committed journey a 2.12 stream equals 2.11's but for the hello's minor; below 12 the
+-- digest keeps the seven tiers, byte for byte.
+export pure func homeTiersMinor() -> int = 12
+pure func sessionMinor(want: int) -> int = if want >= homeTiersMinor() then homeTiersMinor() else if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -123,7 +146,7 @@ pure func small(frac: string, z: int) -> string =
   if startsWith(frac, "0") then small(substring(frac, 1, length(frac)), z + 1)
   else if z < 6 then concat(["0.", zeros(z), frac])
   else concat([mantissa(frac), "e-", intToStr(z + 1)])
--- std/json writes |x| >= 1e21 as `1e+21` since v0.52.0 (ailang#1460); the wire keeps `1e21`.
+-- std/json writes |x| >= 1e21 as `1e+21`; the wire keeps `1e21`.
 pure func mag(s: string) -> string =
   if contains(s, "e+") then join("e", split(s, "e+"))
   else if startsWith(s, "0.") then small(substring(s, 2, length(s)), 0)
@@ -181,7 +204,7 @@ pure func encodeIntent(i: Intent) -> string =
     IGrHover => obj([f("k", q("gr_hover"))]),
     IGrOrbit => obj([f("k", q("gr_orbit"))]),
     IGrRing => obj([f("k", q("gr_ring"))]),
-    ICrew(c) => obj([f("k", q(c.kind)), f("line", q(c.line))])
+    ICrew(c) => obj([f("k", q(c.kind)), f("line", q(c.line))] ++ (if c.asMode == "" then [] else [f("as", q(c.asMode))]) ++ (if c.startMode == "" then [] else [f("start", q(c.startMode))]))
   }
 -- 2.4 body plan: approach {mode: "stop", standoff_km?} or {mode: "flyby", b_km, clock_deg, run_out_km?}.
 pure func approachObj(b: BodyReq) -> string =
@@ -499,13 +522,16 @@ pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
       bind(optStr(j, "line_req", "bad_intent"), \lr. bind(optIf(j, "emotions", \x. strsAt(x, "emotions", "bad_intent")), \ems. bind(ctxOf(j, "bad_intent"), \cx.
       Ok(IAiOpen({kind: kd, purpose: pu, entityId: eid, emotion: em, ageStage: ag, lineReq: lr, emotions: ems, context: cx}))))))))))
     else if k == "gr_approach" then bind(req(numF(j, "to_r"), "bad_gr"), \r. bind(req(numF(j, "beta_local"), "bad_gr"), \b. Ok(IGrApproach({toR: r, betaLocal: b}))))
-    else if member(k, crewIntentNames()) then bind(str(j, "line"), \l. bind(decodeCrewIntent(k, l), \c. Ok(ICrew(c))))
+    else if member(k, crewIntentNames()) then bind(str(j, "line"), \l. bind(optStr(j, "as", "bad_intent"), \a. bind(optStr(j, "start", "bad_intent"), \st.
+      bind(decodeCrewEnvelope(k, l, envField(a), envField(st)), \c. Ok(ICrew(c))))))
     else if k == "gr_hover" then Ok(IGrHover)
     else if k == "gr_orbit" then Ok(IGrOrbit)
     else if k == "gr_ring" then Ok(IGrRing)
     else if k == "warp" then bind(req(numF(j, "level"), "bad_intent"), \l. check(isWarpLevel(l), IWarp(l), "bad_intent"))
     else if k == "ai_cancel" then bind(str(j, "req"), \r. bind(str(j, "reason"), \why. check(isCancelReason(why), IAiCancel({req: r, reason: why}), "bad_intent")))
     else Err("bad_intent")
+-- 2.11 crew envelope fields: absent is "", and an explicit "" is not a value (bad_intent).
+pure func envField(o: Option[string]) -> string = match o { Some(x) => if x == "" then "?" else x, None => "" }
 pure func optStr(j: Json, k: string, c: string) -> Result[Option[string], string] =
   if has(j, k) then bind(req(getString(j, k), c), \x. Ok(Some(x))) else Ok(None)
 pure func strOf(x: Json, c: string) -> Result[string, string] = match x { JString(v) => Ok(v), _ => Err(c) }
@@ -555,10 +581,7 @@ pure func applyOverride(p: Params, o: Override) -> Params =
   else if o.name == "glow_eps" then {p | glowEps: o.value} else if o.name == "glow_f_in" then {p | glowFIn: o.value}
   else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value}
   else if o.name == "standoff_au" then {p | standoffAu: o.value}
-  else applyOverride2(p, o)
--- Split in two (v0.52.0 strict VM: one if-chain this long exceeds the register allocator's 256; ailang#1736).
-pure func applyOverride2(p: Params, o: Override) -> Params =
-  if o.name == "stop_rule" then {p | stopRule: o.value}
+  else if o.name == "stop_rule" then {p | stopRule: o.value}
   else if o.name == "ism_model" then {p | ismModel: o.value}
   else if o.name == "ai_max_open" then {p | aiMaxOpen: floatToInt(o.value)} else if o.name == "ai_ttl_ticks" then {p | aiTtlTicks: floatToInt(o.value)}
   else {p | capOneMinusBeta: o.value}
@@ -575,11 +598,10 @@ pure func inputOf(t: string, j: Json) -> Result[Input, string] =
       bind(optStr(j, "ai_core", "bad_game"), \core. bind(check(match core { Some(h) => isSha256Hex(h), None => true }, core, "bad_game"), \_c.
       bind(optStr(j, "crew", "bad_game"), \cr. bind(check(match cr { Some(c) => c == "consent" || c == "orders", None => true }, cr, "bad_game"), \_cr.
       Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps, aiCore: core, crew: cr})))))))))))
-    -- ailang#1467: `\tick.` would be captured by the imported core.tick, hence `\tk.`
-    else if t == "input" then bind(req(natF(j, "tick"), "bad_tick"), \tk.
+    else if t == "input" then bind(req(natF(j, "tick"), "bad_tick"), \tick.
       bind(req(numF(j, "dtau"), "bad_step"), \dtau. bind(check(dtau >= 0.0 && dtau <= 1.0, dtau, "bad_step"), \_d.
       bind(req(getArray(j, "intents"), "bad_intent"), \xs. bind(all(decodeIntent, xs), \is.
-      Ok(GInput({tick: tk, dtau: dtau, intents: is})))))))
+      Ok(GInput({tick: tick, dtau: dtau, intents: is})))))))
     else if t == "quit" then Ok(GQuit)
     else Err("bad_cmd")
 
@@ -678,7 +700,6 @@ pure func decodeOpenView(j: Json) -> Result[OpenView, string] =
 pure func decodeAiView(j: Json) -> Result[AiView, string] =
   bind(nat(j, "last_req"), \lr. bind(bind(req(getArray(j, "open"), bad()), \xs. all(decodeOpenView, xs)), \op. bind(sOf(j, "core"), \co.
   Ok({lastReq: lr, open: op, core: co}))))
--- ailang#1467: lambda parameter `\tk.`, not `\tick.` (shadowed by core.tick).
 -- 2.3: the inverse of encodeSystem (bad_state on any missing or mistyped field).
 pure func decodeBody(j: Json) -> Result[BodyView, string] =
   bind(sOf(j, "id"), \id. bind(sOf(j, "name"), \nm. bind(sOf(j, "kind"), \kd. bind(sOf(j, "host"), \ho. bind(sOf(j, "status"), \st.
@@ -708,12 +729,12 @@ export pure func decodeGr(text: string) -> Result[GrView, string] = match decode
 
 export pure func decodeState(line: string) -> Result[StateMsg, string] =
   bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
-  bind(req(natF(j, "tick"), bad()), \tk. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
+  bind(req(natF(j, "tick"), bad()), \tick. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
   bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "journey", decodeJourney), \jy. bind(optF(ch, "ledger", decodeLedger), \lg. bind(optF(ch, "rng", decodeRng), \rg. bind(optF(ch, "params", decodeFullParams), \p. bind(optF(ch, "ai", decodeAiView), \av.
   bind(bind(req(getArray(j, "events"), bad()), \es. all(decodeEvent, es)), \evs.
   bind(bind(req(getArray(j, "refused"), bad()), \rs. all(\r. bind(req(natF(r, "i"), bad()), \i. bind(req(getString(r, "reason"), bad()), \why. Ok({i: i, reason: why}))), rs)), \refs.
   bind(req(getBool(j, "full"), bad()), \full.
-  Ok({tick: tk, status: st, clock: c, ship: s, journey: jy, ledger: lg, rng: rg, params: p, ai: av, events: evs, refused: refs, full: full}))))))))))))))))
+  Ok({tick: tick, status: st, clock: c, ship: s, journey: jy, ledger: lg, rng: rg, params: p, ai: av, events: evs, refused: refs, full: full}))))))))))))))))
 export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
   bind(envelopeOf(line, "hello"), \j. bind(check(getString(j, "type") == Some("hello"), j, bad()), \_j. bind(req(get(j, "proto"), bad()), \pr.
   bind(req(natF(pr, "major"), bad()), \ma. bind(req(natF(pr, "minor"), bad()), \mi.
@@ -766,13 +787,35 @@ pure func hasBodyPlan(xs: [Intent]) -> bool = match xs { [] => false, x :: r => 
 pure func isGrIntent(x: Intent) -> bool = match x { IGrApproach(_) => true, IGrHover => true, IGrOrbit => true, IGrRing => true, _ => false }
 pure func hasGrIntent(xs: [Intent]) -> bool = match xs { [] => false, x :: r => isGrIntent(x) || hasGrIntent(r) }
 pure func hasCrewIntent(xs: [Intent]) -> bool = match xs { [] => false, x :: r => (match x { ICrew(_) => true, _ => false }) || hasCrewIntent(r) }
+pure func hasCrewEnvelope(xs: [Intent]) -> bool = match xs { [] => false, x :: r => (match x { ICrew(c) => hasEnvelope(c), _ => false }) || hasCrewEnvelope(r) }
 pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
 -- 2.9 crew section: in full states, and on a tick whenever it changed (crew aboard only).
-pure func crewFull(s: Session, w: World) -> [string] = match w.crew { Some(c) => if s.minor >= crewMinor() then [f("crew", crewView(c))] else [], None => [] }
+-- 2.10: members and lines carry `emotion` (sim/protocol_crew.ail emotionOf).
+-- 2.11: members carry work_state, working work its start terms (sim/protocol_crew.ail workState).
+pure func crewView(s: Session, c: CrewState) -> string = crewViewAt(c, s.minor >= interludeMinor(), s.minor >= consoleMinor())
+pure func crewFull(s: Session, w: World) -> [string] = match w.crew { Some(c) => if s.minor >= crewMinor() then [f("crew", crewView(s, c))] else [], None => [] }
 pure func withCrewSection(s: Session, before: World, after: World, x: Extras) -> Extras =
   if s.minor < crewMinor() then x else match after.crew {
     None => x,
-    Some(c) => { let a = crewView(c); if (match before.crew { Some(b) => crewView(b) == a, None => false }) then x else {x | tail: x.tail ++ [f("crew", a)]} }
+    Some(c) => { let a = crewView(s, c); if (match before.crew { Some(b) => crewView(s, b) == a, None => false }) then x else {x | tail: x.tail ++ [f("crew", a)]} }
+  }
+-- 2.10 cruise section: on every tick that ends on a committed journey (it moves with the clock),
+-- with the digest (I2); on the arrival tick the digest alone (frozen from then to the next commit).
+pure func withCruise(s: Session, before: World, after: World, x: Extras) -> Extras =
+  if s.minor < interludeMinor() then x else {
+    let stop = cruiseStop(after);
+    let dig = match (stop, after.cruiseDigest) { (Some(_), d) => d, (None, Some(d)) => if before.cruiseDigest == after.cruiseDigest then None else Some(d), (None, None) => None };
+    match (stop, dig) { (None, None) => x, _ => {x | tail: x.tail ++ [f("cruise", encodeCruiseSectionAt(stop, dig, s.minor >= consoleMinor(), homeOf(s, after)))]} }
+  }
+-- 2.12: the sixteen home tiers and the voyage's picture variant (from the world's seed).
+pure func homeOf(s: Session, w: World) -> Option[int] = if s.minor >= homeTiersMinor() then Some(w.seed) else None
+-- 2.10 in a full state: the cruise section as a tick would carry it (the stop while committed, the
+-- digest whenever there is one). Today the only full state is new_game's, which is never committed
+-- and has no digest, so it adds nothing there; a resync or reconnect path must use this.
+export pure func cruiseFull(s: Session, w: World) -> [string] =
+  if s.minor < interludeMinor() then [] else match (cruiseStop(w), w.cruiseDigest) {
+    (None, None) => [],
+    (st, d) => [f("cruise", encodeCruiseSectionAt(st, d, s.minor >= consoleMinor(), homeOf(s, w)))]
   }
 -- 2.6 scenario params of a black hole: bh_mass_msun (default Sgr A*'s 4.297e6) and bh_r (the
 -- starting radius in r_s, default 1e6). They are not Params: only sgr_a takes them (bad_params
@@ -815,11 +858,11 @@ export pure func serve(s: Session, line: string) -> Served =
               -- below minor 2 the consequence tracking is off: the stream is exactly M2's
               let wa = if s.minor >= 2 then withArchive(w1, rows) else {w1 | cq: {w1.cq | on: false}};
               -- 2.9: the synced crew aboard (the pack is proven valid by make crew-sync-check and the crew tests)
-              let w = match g.crew { None => wa, Some(cap) => match withCrew(wa, cap) { Ok(x) => x, Err(_) => wa } };
+              let w = match g.crew { None => wa, Some(cap) => match withCrewNamed(wa, cap, s.minor >= consoleMinor()) { Ok(x) => x, Err(_) => wa } };
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
                 events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ cruiseFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
               }
               }
             }
@@ -830,14 +873,15 @@ export pure func serve(s: Session, line: string) -> Served =
         None => malformed(s, "no_game"),
         Some(w) => if i.tick != w.tick + 1 then malformed(s, "bad_tick") else if s.minor < navMinor() && hasBodyPlan(i.intents) then malformed(s, "bad_intent")
           else if s.minor < grMinor() && hasGrIntent(i.intents) then malformed(s, "bad_intent")
-          else if s.minor < crewMinor() && hasCrewIntent(i.intents) then malformed(s, "bad_intent") else {
+          else if s.minor < crewMinor() && hasCrewIntent(i.intents) then malformed(s, "bad_intent")
+          else if s.minor < consoleMinor() && hasCrewEnvelope(i.intents) then malformed(s, "bad_intent") else {
           let t = tick(w, {dtau: i.dtau, intents: i.intents});
           let next = t.world;
           let state = { tick: next.tick, status: "ok", clock: changed(encodeClock, clockOf(w.params, w.ship), clockOf(next.params, next.ship)),
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next)))))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withCruise(s, w, next, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next))))))) else encodeState(state) }
         }
       }
     }

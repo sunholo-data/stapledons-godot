@@ -4,14 +4,23 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_call: # release.yml: a plain v* release tag runs this whole suite before it builds
+  workflow_call: # release.yml: a plain v* release tag runs the whole suite (inputs.full) before it builds
+    inputs:
+      full:
+        description: run all of make test instead of the fast tier
+        type: boolean
+        default: true
 
+# Rig-first merges (Mark, 2026-10-19): pushes and PRs run the fast clean-Linux tier (make ci-fast).
+# The whole of make test (plus make golden for visual changes) runs on the Studio through
+# tools/rig_check.sh, which posts the rig/full commit status. A release tag still runs all of
+# make test here (inputs.full is true only under workflow_call; elsewhere it is empty).
 jobs:
   headless:
-    name: headless tests (physics, sim, parity, strict VM)
+    name: ${{ inputs.full && 'headless tests (full make test)' || 'fast tier (lock, strict VM, parity, replay)' }}
     runs-on: ubuntu-latest
     env:
-      AILANG_VERSION: v0.54.11
+      AILANG_VERSION: v0.54.14
       GODOT_VERSION: 4.7.2-stable
       # M2.5 replay: the 10k-tick interpreter run takes ~75 s on this 2-core
       # runner (> 60 s, design risk row), so PRs replay the 2k-tick session and
@@ -30,6 +39,7 @@ jobs:
           ailang --version
 
       - name: Install Godot
+        if: ${{ inputs.full }}
         run: |
           curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
           unzip -q /tmp/godot.zip -d /tmp/godot
@@ -46,5 +56,10 @@ jobs:
 
       # The navigation/input/ISM, offline-presentation and transit-replay pre-steps were removed
       # (Mark, 2026-10-16): every target in them is a prerequisite of make test, which ran them twice.
+      - name: make ci-fast
+        if: ${{ !inputs.full }}
+        run: make ci-fast
+
       - name: make test
+        if: ${{ inputs.full }}
         run: make test

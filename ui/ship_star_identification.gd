@@ -4,6 +4,7 @@ const StarProjection = preload("res://sky/star_projection.gd")
 const Occlusion = preload("res://ui/star_occlusion.gd")
 const BodyInfo = preload("res://ui/body_info.gd")
 const StarLight = preload("res://demos/ship_star_light.gd")
+const Constellations = preload("res://ui/constellation_overlay.gd")
 const BODY_PREFIX := "body:"
 signal open_map(id: String)
 var info := Info.new()
@@ -23,11 +24,14 @@ var _field_count := -1
 var _identity_revision := -1
 var _sample_cache := {}
 var _cache_signature: Array = []
+var constellations: Control
 func setup(host: Node) -> void:
 	demo = host
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info.load_files()
+	var guide_canvas := CanvasLayer.new();guide_canvas.layer=-30;demo.add_child(guide_canvas)
+	constellations=Constellations.new();guide_canvas.add_child(constellations);constellations.setup(demo,self)
 	occlusion.build(demo.geometry)
 	add_child(card)
 	var margin := MarginContainer.new();card.add_child(margin);margin.add_child(content)
@@ -38,6 +42,7 @@ func setup(host: Node) -> void:
 func set_held(value: bool) -> void:
 	held = value and not suppressed
 	if not held:candidates.clear(); hovered.clear()
+	if constellations!=null:constellations.update_view()
 	queue_redraw()
 ## The catalogue record a sky row stands for. Tiers store Gaia sources as the bare
 ## source number while the catalogue (and navigation) key them "Gaia DR3 n", and a
@@ -135,6 +140,7 @@ func _process(_delta: float) -> void:
 		update_candidates()
 		hovered = at_point(get_local_mouse_position())
 		queue_redraw()
+	if constellations!=null:constellations.update_view()
 ## R1-SHIP-UI dwell label: the same pick as I + click, read only, at one point (no card,
 ## no hold left behind).
 func probe(point: Vector2) -> Array:
@@ -232,6 +238,9 @@ func click_at(point: Vector2) -> bool:
 		_show_card()
 	return true # I-click never propagates to walking, even on empty sky
 func handle_input(event: InputEvent) -> bool:
+	# A text field gaining focus during a hold must still let the release clear it.
+	if event is InputEventKey and event.physical_keycode==KEY_I and not event.pressed:
+		set_held(false);return true
 	# R1-ARCHIVE-VOICE: typing a question at the Archive terminal is text, not the I key.
 	if event is InputEventKey and is_inside_tree() and (get_viewport().gui_get_focus_owner() is LineEdit or get_viewport().gui_get_focus_owner() is TextEdit):return false
 	if event is InputEventKey and event.physical_keycode == KEY_I:
@@ -250,6 +259,8 @@ func _input(event: InputEvent) -> void:
 	if handle_input(event):get_viewport().set_input_as_handled()
 func _draw() -> void:
 	if not held or suppressed:return
+	if constellations!=null:
+		draw_string(ThemeDB.fallback_font,Vector2(16,size.y-72),constellations.status,HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(.58,.80,.85,.7))
 	var cells := {}
 	for candidate in candidates:
 		if candidate.has("body"):

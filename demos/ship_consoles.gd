@@ -3,7 +3,8 @@ extends Node
 ## R1-SHIP-UI (D-56, D-57) §B-§C: the bridge consoles decide. Every captain decision (plot,
 ## set speed, commit, cancel, approach, leave, the guided voyage, the Archive) is made at a
 ## console of ship.glb: walk there (WASD, click-to-walk, or Tab "Walk to"), E or click to
-## use it, the camera dollies to a framed panel (D-57 Q4), Esc or E steps back.
+## use it, the camera eases to a framed panel (D-57 Q4; R2-CAMERA D4: through the CameraDirector, which
+## remembers the zoom level), Esc or E steps back to that level.
 ##
 ## use(station, action, arg) is the single entry for the player's panels, the tests and the
 ## M4.5 bot. A decision action needs that station focused; focus needs the captain in reach
@@ -18,7 +19,7 @@ const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
 
 const REACH_M := 2.5
 const FACING_DEG := 60.0
-const DOLLY_S := 0.6
+const DOLLY_S := 0.6 # the director's "console" view ease (data/camera/views.json)
 const WALK_SPEED_MPS := 3.5
 const PATH_CEILING_M := 40.0
 const HOLD_S := 1.5
@@ -53,8 +54,6 @@ var used_once := false
 var confirm_mode := "hold"
 var walking := PackedVector3Array()
 var walk_target := ""
-var _dolly := {} # {from_pos, from_basis, to_pos, to_basis, t, back}
-var _eye := {} # the captain's camera before focus: tilt, yaw, pullback
 var _confirm := {} # {id, action, held_s, holding, armed, button, label}
 var _aimed := ""
 var _glow: Array = [] # [MeshInstance3D, StandardMaterial3D]
@@ -74,9 +73,10 @@ var answer_text: Label
 var panel := PanelContainer.new()
 var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
-## R2-CREW C6: the Crew page on the Voyage console (only while a crew is aboard, protocol 2.9).
-var crew_page: CrewPage
-var crew_scroll: ScrollContainer ## a fixed-height view, so the panel stays on screen as the crew grow
+## R2-CREW C6, R2-CREW-CONSOLE-V2 V3: the Crew console (only while a crew is aboard, protocol 2.11):
+## the roster board and the two-panel call (ui/crew_console.gd). It persists across refreshes, so a
+## pending confirm and an open call survive them.
+var crew_console: CrewConsole
 var crew_summary: Label ## the Voyage console's one-line crew summary (crew-work W1)
 var _crew_sim: SimBridge
 var step_back := Button.new()
@@ -150,8 +150,9 @@ func in_reach(p: Vector3, forward: Vector3) -> Dictionary:
 	return best
 
 
+## The captain's facing (R2-CAMERA: separate from the camera's yaw, which the director owns).
 func captain_forward() -> Vector3:
-	var yaw: float = demo.camera.yaw
+	var yaw: float = demo.captain_yaw
 	return Vector3(cos(yaw), 0.0, sin(yaw))
 
 
@@ -188,6 +189,8 @@ func prompt_text() -> String:
 	if focused != "":
 		return "%s · E or Esc steps back" % stations[focused].name
 	if not walk_target.is_empty():
+		if walk_target.begins_with("point:"):
+			return "Walking to the %s · WASD takes over" % walk_target.trim_prefix("point:")
 		return "Walking to the %s · WASD takes over" % stations[walk_target].name if stations.has(walk_target) else "Walking to the lift · WASD takes over"
 	if demo.lift != null and demo.lift.travelling():
 		return "Lift in motion"
@@ -386,32 +389,28 @@ func focus(id: String, mesh_name := "") -> void:
 		used_once = true
 		set_glow(false)
 		demo.ship_hud.hint.visible = false
-	_eye = {"tilt": demo.camera.tilt, "yaw": demo.camera.yaw, "pullback": demo.camera.pullback}
-	var to := focus_pose(mesh_name)
-	_dolly = {"from": demo.camera.global_transform, "to": to, "t": 0.0, "back": false}
+	demo.director.focus_console(focus_pose(mesh_name))
 	demo.camera_mode = "console"
-	demo.camera.pullback = 0.0
 	_cancel_confirm()
 	_open_panel(id)
 
 
-## Step back: the camera dollies back to the captain's eye; the panel closes.
+## Step back: the camera eases back to the remembered level and sector view; the panel closes.
 func leave() -> void:
 	if focused.is_empty():
 		return
 	var id := focused
 	focused = ""
 	_cancel_confirm()
+	if id == "crew" and crew_console != null: # stepping back ends a call and disarms (V3)
+		crew_console.armed = ""
+		crew_console.call_id = ""
 	_close_panel(id)
-	var from: Transform3D = demo.camera.global_transform
-	demo.camera.follow(demo.avatar_pos, _eye.get("tilt", -18.0), _eye.get("yaw", demo.camera.yaw), _eye.get("pullback", 0.0))
-	var to: Transform3D = demo.camera.global_transform
-	demo.camera.global_transform = from
-	_dolly = {"from": from, "to": to, "t": 0.0, "back": true}
+	demo.director.restore()
 
 
 func dolly_active() -> bool:
-	return not _dolly.is_empty()
+	return demo.director.blending()
 
 
 # ------------------------------------------------------------------ walking
@@ -439,6 +438,19 @@ func walk_to(id: String) -> bool:
 	return true
 
 
+## R2-CAMERA C2: walk to a point on the bridge (a sky view's anchor), same path and speed; WASD
+## takes over. The walk target reads "point:<label>".
+func walk_to_point(target: Vector3, label: String) -> bool:
+	if not focused.is_empty() or demo.lift.travelling() or demo.active_level != 0:
+		return false
+	walking = demo.walk.path(demo.avatar_pos, target)
+	if walking.is_empty():
+		return false
+	walk_target = "point:" + label
+	demo.camera_mode = "player"
+	return true
+
+
 func cancel_walk() -> void:
 	walking = PackedVector3Array()
 	walk_target = ""
@@ -459,7 +471,7 @@ func _advance_walk(dt: float) -> void:
 		else:
 			var p: Vector3 = demo.avatar_pos + flat / d * budget
 			demo.avatar_pos = Vector3(p.x, demo.walk.height_at(p.x, p.z) if not is_nan(demo.walk.height_at(p.x, p.z)) else demo.avatar_pos.y, p.z)
-			demo.camera.yaw = atan2(flat.z, flat.x)
+			demo.captain_yaw = atan2(flat.z, flat.x)
 			budget = 0.0
 	if walking.is_empty():
 		var id := walk_target
@@ -474,7 +486,8 @@ func face(id: String) -> void:
 	if m.is_empty():
 		return
 	var c: Vector3 = m.box.get_center()
-	demo.camera.yaw = atan2(c.z - demo.avatar_pos.z, c.x - demo.avatar_pos.x)
+	demo.captain_yaw = atan2(c.z - demo.avatar_pos.z, c.x - demo.avatar_pos.x)
+	demo.camera.yaw = demo.captain_yaw # the developer free camera / tools' eye faces it too
 	demo.camera.tilt = -18.0
 	demo.camera_mode = "player"
 
@@ -484,7 +497,8 @@ func go_to(id: String) -> void:
 	cancel_walk()
 	demo.avatar_pos = stations[id].use
 	face(id)
-	demo.camera.follow(demo.avatar_pos, demo.camera.tilt, demo.camera.yaw, 0.0)
+	if demo.director.overridden:
+		demo.camera.follow(demo.avatar_pos, demo.camera.tilt, demo.camera.yaw, 0.0)
 
 
 ## The console a canvas point is on (camera ray against the console collision), or "".
@@ -607,16 +621,6 @@ func advance(dt: float) -> void:
 	now_s += dt
 	if archive_ask.check_timeout():
 		_show_answer()
-	if not _dolly.is_empty():
-		_dolly.t = minf(1.0, _dolly.t + dt / DOLLY_S)
-		var s: float = _dolly.t * _dolly.t * (3.0 - 2.0 * _dolly.t)
-		var a: Transform3D = _dolly.from
-		var b: Transform3D = _dolly.to
-		demo.camera.global_transform = Transform3D(a.basis.slerp(b.basis, s), a.origin.lerp(b.origin, s))
-		if _dolly.t >= 1.0:
-			if _dolly.back:
-				demo.camera_mode = "player"
-			_dolly = {}
 	_advance_walk(dt)
 	if _confirm.get("holding", false):
 		_confirm.held_s += dt
@@ -809,9 +813,19 @@ func _build_panel() -> void:
 ## The navigation station's map takes the full width (the cards wait under it).
 func panel_rect() -> Rect2:
 	var hud: ShipHud = demo.ship_hud
+	if focused == "crew":
+		return crew_panel_rect(hud.size, hud.strip_bottom())
 	var top := hud.strip_bottom() + 8.0
 	var right := hud.size.x - ShipHud.MARGIN if focused == "navigation" else hud.column.position.x - ShipHud.MARGIN
 	return Rect2(Vector2(ShipHud.MARGIN, top), Vector2(maxf(240.0, right - ShipHud.MARGIN), maxf(160.0, hud.size.y - top - 64.0)))
+
+
+## R2-CREW-CONSOLE-V2 V3: the Crew console takes the whole width under the HUD strip, as the helm
+## does, and the height down to the prompt line (the board and the two-panel call both need it).
+const CREW_BOTTOM := 24.0
+static func crew_panel_rect(view: Vector2, strip_bottom: float) -> Rect2:
+	var top := strip_bottom + 8.0
+	return Rect2(Vector2(ShipHud.MARGIN, top), Vector2(maxf(240.0, view.x - 2.0 * ShipHud.MARGIN), maxf(160.0, view.y - top - CREW_BOTTOM)))
 
 
 func _open_panel(id: String) -> void:
@@ -831,8 +845,8 @@ func _layout_panel() -> void:
 		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.42, 420.0), 0.0)
 		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
 	elif focused == "crew":
-		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.6, 680.0), 0.0)
-		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
+		panel.custom_minimum_size = r.size
+		panel.size = r.size
 	else:
 		panel.custom_minimum_size = r.size
 		panel.size = r.size
@@ -949,7 +963,7 @@ func _refresh_panel() -> void:
 		return
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != crew_page and c != crew_scroll: # the Crew page persists, so a pending confirm survives a refresh
+		if c != crew_console: # the Crew console persists, so a pending confirm and an open call survive a refresh
 			c.queue_free()
 	_cancel_confirm()
 	match focused:
@@ -1013,12 +1027,12 @@ static func crew_summary_text(c: Dictionary) -> String:
 	if not holds.is_empty():
 		var h: Dictionary = holds[0]
 		var who := str(h.get("name", h.get("actor", "The crew")))
-		line = "Needs you at the Crew console: %s %s\n%s" % [who, CrewPage.HOLD_WORDS.get(str(h.get("rule", "")), "needs the captain."), line]
+		line = "Needs you at the Crew console: %s\n%s" % [CrewPage.hold_text(who, h), line] # the sim's hold words (2.10 holds[].line)
 	return line
 
 
 func _crew_panel() -> void:
-	panel_title.text = "Crew console · the crew and their work"
+	panel_title.text = CrewConsole.TITLE_BOARD
 	var sim = demo.get("journey_sim") if demo != null else null
 	if not (sim is SimBridge) or (sim as SimBridge).crew.is_empty():
 		panel_body.add_child(_label("No crew aboard yet: they join when a voyage begins.", 14))
@@ -1026,41 +1040,39 @@ func _crew_panel() -> void:
 	_crew_section()
 
 
-## The crew aboard the journey sim, if any: names, bars, lines and the captain's choices. The
-## page's intents ride the sim's next tick (SimBridge.queue); each tick refreshes it.
+## The crew aboard the journey sim, if any: the board and the call. The console's intents ride the
+## sim's next tick (SimBridge.queue); each tick refreshes it, and the tick that carried them answers
+## them (the `sending` lock lifts, a refusal says why).
 func _crew_section() -> void:
 	var sim = demo.get("journey_sim") if demo != null else null
 	if not (sim is SimBridge) or (sim as SimBridge).crew.is_empty():
 		return
-	if crew_page == null:
-		crew_page = CrewPage.new()
-		crew_page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		crew_scroll = ScrollContainer.new()
-		crew_scroll.name = "CrewScroll"
-		crew_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		crew_scroll.custom_minimum_size = Vector2(0, 200)
-		crew_scroll.add_child(crew_page)
+	if crew_console == null:
+		crew_console = CrewConsole.new()
+		crew_console.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		crew_console.title_changed.connect(func(t: String) -> void:
+			if focused == "crew": panel_title.text = t)
 	if _crew_sim != sim:
 		if _crew_sim != null and _crew_sim.stepped.is_connected(_on_crew_step):
 			_crew_sim.stepped.disconnect(_on_crew_step)
-		for c in crew_page.intents.get_connections():
-			crew_page.intents.disconnect(c["callable"])
+		for c in crew_console.intents.get_connections():
+			crew_console.intents.disconnect(c["callable"])
 		_crew_sim = sim
 		_crew_sim.stepped.connect(_on_crew_step)
-		crew_page.intents.connect(_crew_sim.queue)
-	crew_scroll.custom_minimum_size = Vector2(0, maxf(200.0, panel_rect().size.y - 90.0))
-	crew_page.show_crew(_crew_sim.crew)
-	panel_body.add_child(crew_scroll)
+		crew_console.intents.connect(_crew_sim.queue)
+	crew_console.show_crew(_crew_sim.crew)
+	panel_title.text = crew_console.title()
+	panel_body.add_child(crew_console)
 
 
 func _on_crew_step(events: Array) -> void:
-	if crew_page == null or _crew_sim == null:
+	if crew_console == null or _crew_sim == null:
 		return
-	crew_page.on_events(events)
-	if not _crew_sim.last_queued.is_empty(): # only a tick that carried the page's intents answers them
-		crew_page.on_refused(_crew_sim.queued_refused())
-	if focused == "crew" and crew_scroll.get_parent() == panel_body:
-		crew_page.show_crew(_crew_sim.crew)
+	crew_console.on_events(events)
+	if not _crew_sim.last_queued.is_empty(): # only a tick that carried the console's intents answers them
+		crew_console.on_refused(_crew_sim.queued_refused(), _crew_sim.last_queued)
+	if focused == "crew" and crew_console.get_parent() == panel_body:
+		crew_console.show_crew(_crew_sim.crew)
 	if focused == "voyage" and is_instance_valid(crew_summary):
 		crew_summary.text = crew_summary_text(_crew_sim.crew)
 

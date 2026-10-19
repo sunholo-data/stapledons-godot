@@ -1,0 +1,170 @@
+module stapledons/sim/protocol_interlude_test
+
+-- R2-INTERLUDE I1, protocol 2.10 (design interlude-card.md D1): a committed journey's state carries
+-- `cruise {next_stop_years, stop_kind}` (sim/protocol_interlude.ail). Below 2.10 nothing changes:
+-- the same session at 2.9 is the 2.10 stream without the cruise member and with the 2.9 hello.
+import std/string (join, contains, replace, find, substring, length as slen)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (map, length, any, foldl)
+import ./protocol (Session, newSession, serve, helloFor, decodeHello, crewMinor, interludeMinor, consoleMinor, homeTiersMinor, relativityPin, cruiseFull)
+import std/crypto (sha256Hex)
+import ./home_tiers (homeTier16, homeVariant, tierLine16, tierWord16)
+import ./protocol_interlude (encodeCruise, decodeCruise, encodeDigest, encodeCruiseSection)
+import std/json (decode, encode)
+import ./cruise_digest (Stop, Digest, beginDigest, foldDigest)
+import ./crew_script (scriptedCrossing)
+
+pure func helloW(m: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", show(m), "}}"])
+pure func game() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":2,\"scenario\":\"free_nav\",\"diag\":false,\"crew\":\"orders\"}"
+pure func input(t: int, dtau: string, intents: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", show(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func farPlan() -> string = "{\"k\":\"plan\",\"target\":{\"index\":2,\"id\":\"far\",\"pos\":{\"x\":0,\"y\":0,\"z\":-70}},\"cruise_phi\":2.6466524123622457}"
+pure func orders() -> string = "{\"k\":\"crew_orders\",\"line\":\"{\\\"command\\\":\\\"orders\\\",\\\"preset\\\":\\\"critical_only\\\"}\"}"
+-- hello, new game, a tick at rest, plan, commit, a cruise tick, auto-run on, a tick to the check-in.
+pure func lines(minor: int) -> [string] =
+  [helloW(minor), game(), input(1, "0.001", ""), input(2, "0", farPlan()), input(3, "0", "{\"k\":\"commit\",\"plan_id\":1}"),
+   input(4, "0.01", ""), input(5, "0", orders()), input(6, "0.05", "")]
+pure func run(s: Session, ls: [string]) -> [string] = match ls { [] => [], l :: rest => { let r = serve(s, l); r.reply :: run(r.session, rest) } }
+pure func nth(xs: [string], n: int) -> string = match xs { [] => "", x :: r => if n <= 0 then x else nth(r, n - 1) }
+-- The cruise member as the 2.10 stream writes it (`,"cruise":{...}` inside changes), cut out, and
+-- the 2.10 crew view's `emotion` members (I2) with it.
+pure func cut(line: string) -> string = noEmotion(match cruiseText(line) { Some(c) => replace(line, join("", [",\"cruise\":", c]), ""), None => line })
+pure func noEmotion(line: string) -> string =
+  foldl(\acc e. replace(acc, join("", [",\"emotion\":\"", e, "\""]), ""), line, ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"])
+pure func cruiseText(line: string) -> Option[string] = if !contains(line, "\"cruise\":") then None else Some(afterCruise(line))
+pure func afterCruise(line: string) -> string = takeObj(dropTo(line, "\"cruise\":"))
+pure func dropTo(s: string, m: string) -> string = match splitOnce(s, m) { Some(rest) => rest, None => "" }
+pure func splitOnce(s: string, m: string) -> Option[string] = { let i = find(s, m); if i < 0 then None else Some(substring(s, i + slen(m), slen(s))) }
+-- The object at the start of s, to its matching brace (the digest nests; its words have no braces).
+pure func takeObj(s: string) -> string = substring(s, 0, closeAt(s, 0, 0))
+pure func closeAt(s: string, i: int, depth: int) -> int =
+  if i >= slen(s) then slen(s) else {
+    let ch = substring(s, i, i + 1);
+    let d = if ch == "{" then depth + 1 else if ch == "}" then depth - 1 else depth;
+    if d == 0 && ch == "}" then i + 1 else closeAt(s, i + 1, d)
+  }
+
+test "2.10 hello: minor 10 with the current relativity pin; 9 stays 9" {
+  helloFor(interludeMinor()).minor == 10 && interludeMinor() == crewMinor() + 1 && helloFor(interludeMinor()).relativity == relativityPin()
+  && helloFor(crewMinor()).minor == crewMinor() && helloFor(99).minor >= interludeMinor() && helloFor(interludeMinor() + 1).minor != interludeMinor()
+  && (match decodeHello(serve(newSession(), helloW(interludeMinor())).reply) { Ok(h) => h.minor == 10, Err(_) => false })
+}
+pure func checkCruiseOnWire() -> bool {
+  let r = run(newSession(), lines(interludeMinor()));
+  !contains(nth(r, 1), "\"cruise\":") && !contains(nth(r, 2), "\"cruise\":") && !contains(nth(r, 3), "\"cruise\":")
+  && contains(nth(r, 4), "\"cruise\":{\"next_stop_years\":") && contains(nth(r, 4), "\"stop_kind\":\"chunk\"")
+  && contains(nth(r, 5), "\"stop_kind\":\"chunk\"") && contains(nth(r, 6), "\"stop_kind\":\"check_in\"")
+  && contains(nth(r, 7), "\"status\":\"ok\"")
+}
+test "2.10: a committed journey's state carries cruise (next_stop_years, stop_kind); an uncommitted one does not" { checkCruiseOnWire() }
+pure func rest(xs: [string]) -> [string] = match xs { [] => [], _ :: r => r }
+pure func checkBelow10() -> bool {
+  let r10 = run(newSession(), lines(interludeMinor()));
+  let r9 = run(newSession(), lines(crewMinor()));
+  length(r9) == length(r10) && map(cut, rest(r10)) == rest(r9) && !any(\l. contains(l, "\"cruise\":"), r9)
+  && length(map(cut, rest(r10))) == 7 && any(\l. contains(l, "\"cruise\":"), r10)
+  && replace(nth(r10, 0), "\"minor\":10", "\"minor\":9") == nth(r9, 0)
+}
+test "below 2.10 every reply is the 2.10 reply without the cruise member (but the hello)" { checkBelow10() }
+test "cruise codec round trip" {
+  decodeCruise(encodeCruise({ years: 0.08213552361396304, kind: "check_in" })) == Ok({ years: 0.08213552361396304, kind: "check_in" })
+  && decodeCruise(encodeCruise({ years: 0.0, kind: "braking" })) == Ok({ years: 0.0, kind: "braking" })
+  && decodeCruise(encodeCruise({ years: 1.0e-17, kind: "chunk" })) == Ok({ years: 1.0e-17, kind: "chunk" })
+  && (match decodeCruise("{\"next_stop_years\":1,\"stop_kind\":\"lunch\"}") { Err(_) => true, Ok(_) => false })
+  && (match decodeCruise("{\"next_stop_years\":-1,\"stop_kind\":\"chunk\"}") { Err(_) => true, Ok(_) => false })
+}
+
+-- ---------------------------------------------------------------- I2: cruise.digest
+pure func checkDigestOnWire() -> bool {
+  let r = run(newSession(), lines(interludeMinor()));
+  !contains(nth(r, 3), "\"digest\":") && contains(nth(r, 4), "\"digest\":{\"time\":{\"ship_days\":0,")
+  && contains(nth(r, 4), "\"tier_line\":\"Less than a year at home.")
+  && contains(nth(r, 5), "\"medium\":{\"model\":\"lism-1\",\"media\":[{\"name\":")
+  && contains(nth(r, 7), "\"crew\":{\"counts\":{\"days\":") && contains(nth(r, 7), "\"movement\":[{\"id\":")
+}
+test "2.10: every committed tick's cruise carries the digest (time, home, medium, crew)" { checkDigestOnWire() }
+-- No auto-run: a 3 ly leg flown to arrival in one tick of a ship year, then a tick at rest.
+pure func nearPlan() -> string = "{\"k\":\"plan\",\"target\":{\"index\":2,\"id\":\"near\",\"pos\":{\"x\":0,\"y\":0,\"z\":-3}},\"cruise_phi\":2.6466524123622457}"
+pure func arrival() -> [string] =
+  [helloW(interludeMinor()), game(), input(1, "0", nearPlan()), input(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"), input(3, "1", ""), input(4, "0.01", "")]
+pure func checkArrival() -> bool {
+  let r = run(newSession(), arrival());
+  contains(nth(r, 4), "\"arrived\"") && contains(nth(r, 4), "\"cruise\":{\"digest\":{") && !contains(nth(r, 4), "next_stop_years")
+  && !contains(nth(r, 5), "\"cruise\":")
+}
+test "2.10: the arrival tick sends the frozen digest alone; later ticks send no cruise" { checkArrival() }
+test "2.9 has no emotion in the crew view; 2.10 does (members and lines)" {
+  let r9 = run(newSession(), lines(crewMinor()));
+  let r10 = run(newSession(), lines(interludeMinor()));
+  !any(\l. contains(l, "\"emotion\":"), r9) && contains(nth(r10, 1), "\"regard_low\":[],\"emotion\":\"")
+}
+-- The digest codec: the encoded digest is JSON std/json reads back and writes out byte for byte
+-- (floats round-trip), for the scripted crossing's digest and a crewless one.
+pure func roundTrips(d: Digest) -> bool = match decode(encodeDigest(d)) { Ok(j) => encode(j) == encodeDigest(d), Err(_) => false }
+test "digest codec round trip (scripted crossing; crewless; the arrival-only section)" {
+  match (scriptedCrossing(3)).world.cruiseDigest {
+    Some(d) => roundTrips(d) && roundTrips({ d | crew: None })
+      && (match decode(encodeCruiseSection(None, Some(d))) { Ok(j) => encode(j) == encodeCruiseSection(None, Some(d)), Err(_) => false })
+      && encodeCruiseSection(Some({ years: 0.5, kind: "chunk" }), None) == encodeCruise({ years: 0.5, kind: "chunk" }),
+    None => false
+  }
+}
+
+-- I3 polish (A2): the review's "You lived N days" (time.ship_days) and "Your crew lived N days"
+-- (crew.counts.days) are the same number on the wire.
+pure func daysAgree(d: Option[Digest]) -> bool = match d {
+  Some(x) => contains(encodeDigest(x), "\"ship_days\":391,") && contains(encodeDigest(x), "\"counts\":{\"days\":391,"),
+  None => false
+}
+test "the digest's ship_days and crew.counts.days agree on the scripted crossing" { daysAgree((scriptedCrossing(3)).world.cruiseDigest) }
+
+-- I4: the digest carries the Archive's authored framing (key, crossing line, aboard line).
+pure func narrated(d: Option[Digest]) -> bool = match d {
+  Some(x) => contains(encodeDigest(x), "\"narration\":{\"key\":\"years.held\",\"crossing\":\"")
+    && contains(encodeDigest(x), "\",\"aboard\":\""),
+  None => false
+}
+test "the digest carries the Archive's authored narration (I4)" { narrated((scriptedCrossing(3)).world.cruiseDigest) }
+
+-- Eval R2-INTERLUDE (5): a full state (new_game's today; a resync later) carries the cruise section
+-- like a tick: during a committed leg the stop and the digest; below 2.10 nothing.
+pure func joined(xs: [string]) -> string = join("", xs)
+pure func fullCruise() -> bool {
+  let w = (scriptedCrossing(3)).world;
+  let full10 = joined(cruiseFull({ hello: true, minor: interludeMinor(), game: None }, w));
+  contains(full10, "\"cruise\":{\"next_stop_years\":") && contains(full10, "\"digest\":{\"time\":")
+  && cruiseFull({ hello: true, minor: crewMinor(), game: None }, w) == []
+}
+test "a full state during a committed leg at 2.10 carries cruise and digest; below 2.10 none" { fullCruise() }
+
+-- ---------------------------------------------------------------- R2-HOME-TIERS: 2.12 (design home-tiers.md AC5)
+-- The 2.10 and 2.11 streams of these sessions before 2.12 existed (sha256 of the replies, one per
+-- line): the sixteen tiers must not touch them.
+export pure func streamAt(minor: int) -> string = join("\n", run(newSession(), lines(minor)) ++ run(newSession(), arrival2(minor)))
+pure func arrival2(m: int) -> [string] =
+  [helloW(m), game(), input(1, "0", nearPlan()), input(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"), input(3, "1", ""), input(4, "0.01", "")]
+test "below 2.12 the 2.10 and 2.11 streams are byte for byte what they were before the sixteen tiers" {
+  sha256Hex(streamAt(interludeMinor())) == "8059dbbef7787517640c89dac516c4b71fb7fbbae1f0d1aadfa19ff32687e590"
+  && sha256Hex(streamAt(consoleMinor())) == "3f17e5d3796636ca732b97d55e4ef77aed8ccc904c167490178c923d183f9f5b"
+  && !contains(streamAt(consoleMinor()), "\"tier_count\":") && !contains(streamAt(consoleMinor()), "\"variant\":")
+}
+test "2.12 hello: minor 12 with the current relativity pin; 11 stays 11" {
+  homeTiersMinor() == 12 && homeTiersMinor() == consoleMinor() + 1 && helloFor(homeTiersMinor()).minor == 12
+  && helloFor(consoleMinor()).minor == consoleMinor() && helloFor(99).minor == homeTiersMinor() && helloFor(homeTiersMinor()).relativity == relativityPin()
+  && (match decodeHello(serve(newSession(), helloW(homeTiersMinor())).reply) { Ok(h) => h.minor == 12, Err(_) => false })
+}
+-- The session's seed is 2 (game()). The arrival leg (a ship year at speed) lands in tier one or two;
+-- the 2.12 digest names the sixteen-tier tier, its count, the voyage's variant and the 16-tier words.
+pure func tierAt(line: string) -> int = match splitOnce(dropTo(line, "\"digest\":{\"time\":"), "\"tier\":") { Some(r) => digitsOf(r, 0), None => 0 - 1 }
+pure func digitsOf(s: string, acc: int) -> int =
+  if slen(s) == 0 then acc else { let c = substring(s, 0, 1); let d = find("0123456789", c); if d < 0 then acc else digitsOf(substring(s, 1, slen(s)), acc * 10 + d) }
+pure func check212() -> bool {
+  let r = run(newSession(), arrival2(homeTiersMinor()));
+  let a = nth(r, 4);
+  let t = tierAt(a);
+  contains(a, "\"cruise\":{\"digest\":{") && t >= 0 && t < 16
+  && contains(a, join("", ["\"tier\":", show(t), ",\"tier_count\":16,\"variant\":", show(homeVariant(2, t)), ",\"tier_line\":"]))
+  && contains(a, join("", ["\"key\":\"", tierWord16(t), "."]))
+  && contains(streamAt(homeTiersMinor()), "\"tier_count\":16")
+}
+test "2.12: the digest carries the sixteen-tier tier, tier_count, the voyage's variant and the sixteen-tier narration key" { check212() }

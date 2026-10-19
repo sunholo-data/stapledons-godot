@@ -256,6 +256,14 @@ func draw(overlay: Control, camera: Camera3D, to_world: Callable, route: Array =
 	_label_rects.clear()
 	if not visible or model.is_empty():
 		return 0
+	# M4.6pR3: a map in a hidden window (the bridge keeps the navigation window hidden in
+	# transit) draws nothing. Each tick's refresh() queues this, and its 905 projected faces
+	# cost ~24 ms of main-thread time a tick. Showing the window redraws it.
+	var host := overlay.get_window()
+	if host != null and not host.visible:
+		if not host.visibility_changed.is_connected(overlay.queue_redraw):
+			host.visibility_changed.connect(overlay.queue_redraw)
+		return 0
 	var font := ThemeDB.fallback_font
 	var n := 0
 	if show_surfaces:

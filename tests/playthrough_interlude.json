@@ -1,0 +1,12 @@
+{
+  "about": "R2-INTERLUDE I3 (AC8): the guided voyage's Alpha Centauri leg with an orders crew under critical_only; the crossing stops for holds (answered on the review's Hold page), then every page of the crossing review is read and Brake ends it. make display-audit-interlude audits every sampled frame.",
+  "crew": "orders",
+  "commits_min": 1,
+  "poles": false,
+  "steps": [
+    {"start": "guided", "leg": 4},
+    {"until": "review"},
+    {"review": "all"},
+    {"review": "last"}
+  ]
+}
