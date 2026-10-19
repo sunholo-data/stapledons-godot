@@ -82,11 +82,11 @@ static func apparent_direction(sv: SystemView, rel_km: Dictionary, radius_km: fl
 
 
 ## Sky frame -> ship frame (attitude basis, galactic columns) -> interior axes. The inverse
-## of ship_demo_camera.gd: ship_vector(v) = [v.x, -v.z, v.y], then to_galactic, to_world.
+## of ship_demo_camera.gd's ship_vector, then to_galactic, to_world (D-92: gltf_from_ship).
 static func interior_of(basis: PackedFloat64Array, world_dir: Vector3) -> Vector3:
 	var g := SkyFrame.to_galactic64([world_dir.x, world_dir.y, world_dir.z])
 	var s := ShipFrame.to_ship(basis, g)
-	return Vector3(s[0], s[2], -s[1]).normalized()
+	return ShipCamera.gltf_from_ship(s).normalized()
 
 
 ## Every finite star the sky renderer has, with its seen illuminance at the ship.

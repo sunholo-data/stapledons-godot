@@ -2,8 +2,8 @@ extends SceneTree
 ## M4.6rR3: one real console-driven voyage, captain eye, two views per state.
 const SIZE := Vector2i(1600, 900)
 const OUT := "res://renders/m4"
-const DECK := [30.0, 0.47] # tilt deg, yaw rad
-const FORWARD := [89.99, 0.0] # tilt deg, yaw rad: the travel pole
+const DECK := [20.0, -2.58] # tilt deg, yaw rad: 60 deg off the bow, above the deck
+const FORWARD := [-0.01, -PI * 0.5] # tilt deg, yaw rad: the travel pole (D-92: the bow, glTF -z)
 const STATES := [
 	{"id": "boost_b05", "phase": "boosting", "beta_min": 0.5},
 	{"id": "boost_b09", "phase": "boosting", "beta_min": 0.9},

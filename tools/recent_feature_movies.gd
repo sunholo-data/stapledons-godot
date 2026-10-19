@@ -311,7 +311,7 @@ func _ism() -> bool:
 			print("movie-medium: frame %d %s at %s ly" % [i, medium, sim.world.ship.flown])
 		if i >= 18 * FPS:
 			if not demo.sky_only: demo.toggle_sky_only()
-			demo.camera.follow(demo.avatar_pos, 89.5 - 65.0 * smoothstep(0.0, 1.0, (i - 18.0 * FPS) / (6.0 * FPS)), 0.0, 0.0)
+			demo.camera.follow(demo.avatar_pos, 0.0, -PI * 0.5 + deg_to_rad(65.0) * smoothstep(0.0, 1.0, (i - 18.0 * FPS) / (6.0 * FPS)), 0.0) # D-92: from the bow, 65 deg round
 		caption.text = "Aldebaran route · 0.999c · %s · n_H %s cm⁻³ · glitter %s/s\nCompressed cuts follow actual cloud intervals; each displayed dust tick is 1/30 ship second · real AILANG draws" % [IsmLayer.label_of(medium), GalaxyMap.sci(float(ism.n_h_cm3)), GalaxyMap.sci(float(ism.glitter.rate))]
 		if not await _frame(i): return false
 	print("movie-media-seen: ", media_seen)

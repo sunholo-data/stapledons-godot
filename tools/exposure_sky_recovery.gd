@@ -31,8 +31,8 @@ func run()->void:
    demo._apply_journey_world()
    if demo.journey_sim.world.ship.phase!="cruising":failed=true
   for view:String in ["forward","side","back"]:
-   var tilt:=89.5 if view=="forward" else (-89.5 if view=="back" else 0.)
-   demo.camera.follow(demo.avatar_pos,tilt,0.,0.);demo._sync_observer()
+   var yaw:=-PI*.5 if view=="forward" else (PI*.5 if view=="back" else 0.) # D-92: travel toward the bow
+   demo.camera.follow(demo.avatar_pos,0.,yaw,0.);demo._sync_observer()
    demo.sky.set_temporal_exposure(false)
    for i in 120:
     if i%3==0:demo.sky.apply(demo.sky_world);demo._sync_observer()

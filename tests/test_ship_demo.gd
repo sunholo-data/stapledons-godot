@@ -28,7 +28,7 @@ func _run() -> void:
 				camera.sync_sky(sky,px)
 				check("sky sampling follows observer pixels",absf(float(sky.background.material.get_shader_parameter("pano_px_per_screen_px"))-32./180.*camera.fov/px.y)<.000001)
 				check("observer FOV/aspect",sky.camera.fov==camera.fov and sky.size==px)
-				check("observer eye metres",Vector3(sky.cam.position_m[0],sky.cam.position_m[2],-sky.cam.position_m[1]).distance_to(camera.position)<.0001)
+				check("observer eye metres",ShipCamera.gltf_from_ship(sky.cam.position_m).distance_to(camera.position)<.0001)
 				for p in [Vector2.ZERO,Vector2(px),Vector2(px)*.5,Vector2(px.x,0),Vector2(0,px.y)]:
 					var finite_ray: Vector3 = camera.project_ray_normal(p)
 					var expected: Vector3 = camera.to_sky_direction(finite_ray,sky.heading_gal)

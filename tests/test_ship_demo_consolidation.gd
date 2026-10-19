@@ -22,7 +22,7 @@ func _run() -> void:
 	# R2-CAMERA: the default is Z2 Deck, third person (the sprite shown), inside the bubble wall.
 	check(demo.director.level==2 and not demo.director.overridden and demo.avatar.visible and demo.camera.position.length()<=95.,"default camera is Z2 Deck, third person, inside the 95 m envelope")
 	var eye: Array=demo.sky.cam.position_m
-	check(Vector3(eye[0],eye[2],-eye[1]).distance_to(demo.camera.position)<.0001,"ship geometry and sky share measured physical observer")
+	check(ShipCamera.gltf_from_ship(eye).distance_to(demo.camera.position)<.0001,"ship geometry and sky share measured physical observer")
 	var before:float=demo.sky_world.clock.tau
 	var ticked:bool=demo.journey_tick()
 	check(ticked and demo.sky_world.clock.tau>before,"live rest clock advances while aboard (tick %s, error '%s', tau %s -> %s, in flight %s)" % [ticked,demo.journey_sim.last_error,before,demo.sky_world.clock.tau,demo.journey_sim.in_flight()])

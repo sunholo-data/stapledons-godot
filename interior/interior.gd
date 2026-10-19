@@ -195,6 +195,7 @@ func apply_state(world: Dictionary) -> void:
 	var glow := "glow %s W/m^2, %.0f K at the pole%s" % [String.num_scientific(sky.glow_pole), sky.glow_t_pole, " (PREVIEW x%s)" % String.num_scientific(glow_eps_scale) if glow_eps_scale != 1.0 else ""] if sky.glow_pole >= 0.0 else "glow: no ship.ism.glow_pole_w_m2 from the sim"
 	status_label.text = "%s%s   beta %.4f c   gamma %.3f\nship %.4f yr   Earth %.4f yr   %s\n%s" % [
 		caption + "\n" if caption != "" else "", str(s.get("phase", "")), s["beta"], s["gamma"], c.get("tau", 0.0), c.get("t", 0.0), glow, sky.exposure.hud_line()]
+	status_label.text += "\n" + AreaBundle.BUNDLE_BASIS_HUD # D-92 §D1.6: this path keeps the old orientation
 	if archive.visible:
 		_fill_archive()
 	if codex != null:

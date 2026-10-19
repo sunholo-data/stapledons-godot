@@ -4,6 +4,8 @@ extends SceneTree
 ## level; 0.25 + 0.25 + 0.5 trackpad units are one level, then a 0.3 s cooldown; a pinch steps;
 ## horizontal scroll is ignored; lift travel and the benchmark block. The developer free camera
 ## (F8, command-line launches only) keeps today's look and dolly, and its asserts run there.
+## R2-CAMERA-FORWARD OQ4 (D-93): on the bridge a player has no zoom levels (the Bow view, one framing);
+## the zoom gestures below run in the Commons, which keeps its R2-CAMERA levels (a legacy level).
 var failures:=0
 var passes:=0
 func check(label: String, ok: bool) -> void:
@@ -25,7 +27,7 @@ func _run() -> void:
 	var demo:Node=await new_demo({"from_menu":true,"settings_dir":"user://test_ship_demo_input"})
 	var dir:CameraDirector=demo.director
 	advance(demo,.5)
-	check("menu launch: Z2 Deck by default, mouse look off, pointer not captured",dir.level==2 and not demo.wants_capture() and Input.mouse_mode!=Input.MOUSE_MODE_CAPTURED)
+	check("menu launch: Bow by default on the bridge, mouse look off, pointer not captured",dir.level==2 and dir.view_id=="bow" and not demo.wants_capture() and Input.mouse_mode!=Input.MOUSE_MODE_CAPTURED)
 	var pose:Transform3D=demo.camera.global_transform
 	var motion:=InputEventMouseMotion.new();motion.relative=Vector2(20,10)
 	demo._unhandled_input(motion)
@@ -33,6 +35,18 @@ func _run() -> void:
 	motion.alt_pressed=false;motion.button_mask=MOUSE_BUTTON_MASK_RIGHT;demo._unhandled_input(motion)
 	advance(demo,.1)
 	check("plain, Option and right-drag motion never turn the view",demo.camera.global_transform.is_equal_approx(pose))
+	var gw:=InputEventMouseButton.new();gw.button_index=MOUSE_BUTTON_WHEEL_UP;gw.pressed=true;gw.factor=1.
+	var gp:=InputEventPanGesture.new();gp.delta=Vector2(0,-1.5)
+	var gm:=InputEventMagnifyGesture.new();gm.factor=1.3
+	demo._unhandled_input(gw);advance(demo,.4);demo._unhandled_input(gp);advance(demo,.6);demo._unhandled_input(gm);advance(demo,.4)
+	for k:int in [KEY_1,KEY_3,KEY_EQUAL,KEY_MINUS]:
+		var e:=InputEventKey.new();e.physical_keycode=k;e.pressed=true;demo._unhandled_input(e)
+	advance(demo,.1)
+	check("OQ4 menu launch, bridge: the wheel, scroll, pinch and 1/3/=/- never zoom (Bow, one framing)",dir.walk_active() and not dir.zoom_preset and dir.view_id=="bow" and demo.camera.global_transform.is_equal_approx(pose))
+	# The Commons (legacy) keeps the zoom levels: the gesture rules below run there.
+	demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=demo.walk_lower.closest_walkable(Vector3(26,57,-10),6.)
+	advance(demo,.5)
+	check("the Commons: Z2 Deck (its legacy level view)",dir.level==2 and dir.view_id=="z2_lower")
 	# One convention (zoom in = closer): the wheel rolled up, a scroll up (pan delta.y < 0, the
 	# direction Godot reports as wheel up) and a pinch open all come closer.
 	var wheel:=InputEventMouseButton.new();wheel.button_index=MOUSE_BUTTON_WHEEL_UP;wheel.pressed=true;wheel.factor=1.

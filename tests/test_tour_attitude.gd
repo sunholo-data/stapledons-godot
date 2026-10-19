@@ -23,21 +23,24 @@ func _run()->void:
 	demo._update_tour_attitude(1.)
 	check(demo.tour_attitude.current==basis,'pause also pauses attitude')
 	demo.solar_tour.paused=false
+	demo.director.walk('astern') # the player looks aft: the completed turn's cue must bring Bow back
 	for frame in 180:
 		demo._update_tour_attitude(1./60.)
 		if demo.solar_tour.attitude_hold:demo.journey_tick()
 	check(demo.journey_sim.world.clock==clock and demo.journey_sim.world.ship.pos==position,'stationary turn preserves position and both clocks')
 	check(not demo.solar_tour.attitude_hold,'the bounded turn completes')
-	# R2-CAMERA C2: the turn no longer tilts the camera; the completed stop turn cues Sky side.
-	check(demo.director.situation=='sky_side' or demo.director._pending=='sky_side','the completed stop turn cues Sky side (the body beyond the rail)')
+	# R2-CAMERA-FORWARD: the turn never turns the camera; the completed stop turn cues Bow (the
+	# body turned 30 deg off the bow, inside the frame).
+	check(demo.director.deck_view=='bow' and demo.director.walk_active(),'the completed stop turn cues Bow (the body turned into its frame)')
 	demo.camera.follow(demo.avatar_pos,demo.camera.tilt,demo.camera.yaw,0.);demo._sync_observer()
 	check(demo.sky.basis==demo.camera.attitude_basis,'sky receives same ship attitude as geometry observer')
 	demo._process(0.)
 	check(demo.avatar.visible and demo.avatar_shadow.is_visible_in_tree() and demo.avatar_shadow.global_position==demo.avatar.global_position,'the captain is shown (third person) and casts a grounded shadow')
+	demo.director.walk('astern')
 	check(demo.solar_tour.prepare_next(),'next stop prepares heading without moving')
 	demo._update_tour_attitude(0.)
 	check(demo.solar_tour.attitude_hold and not demo.live_journey,'departure turns before committing')
-	check(demo.director.situation=='sky_forward','the departure turn cues Sky forward (attitude_hold timing unchanged)')
+	check(demo.director.deck_view=='bow','the departure turn cues Bow (attitude_hold timing unchanged)')
 	for frame in 179:
 		demo._process(1./60.);demo.journey_tick()
 	check(demo.journey_sim.world.clock==clock and demo.journey_sim.world.ship.pos==position,'prepared turn cannot advance or teleport ship')

@@ -10,7 +10,8 @@ func _initialize()->void:
 	var body:=PackedFloat64Array([1.,0.,0.])
 	var side:PackedFloat64Array=attitude.side_basis(body)
 	var local:=ShipFrame.to_ship(side,body)
-	check(absf(local[2]-sin(deg_to_rad(15.)))<1e-10 and absf(local[1])<1e-10 and local[0]>0.,'body fifteen degrees above ship horizon')
+	# D-92: the travel axis tilts 60 deg toward the body, which sits 30 deg off the bow in the deck plane (ship +X).
+	check(absf(local[2]-sin(deg_to_rad(attitude.STOP_TILT_DEG)))<1e-10 and absf(local[1])<1e-10 and local[0]>0. and is_equal_approx(rad_to_deg(acos(local[2])),30.),'body thirty degrees off the bow, in the deck plane (stop tilt 60 deg)')
 	attitude.turn_to(side,3.)
 	check(attitude.current==first,'starting turn does not jump')
 	var max_step:=0.

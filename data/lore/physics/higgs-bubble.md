@@ -556,6 +556,13 @@ energy ledger, tied to the canon "Finite Mass Budget" (design-decisions
 energy-ledger readout**: E_boost and E_brake (HB-35, HB-36) and E_drag
 (HB-51 to HB-56).
 
+**Decided 2026-10-13 (D-69):** the energy for the drive's light comes from the
+generator, which converts interior mass to drive light at 100%. This is an
+explicit extension of property 2 and the drive's only source. The household
+runs on ordinary fusion. The budget and its proposed check values are in
+[bubble-resources.md](../features/next/bubble-resources.md); they join this
+section once accepted.
+
 Superseded canon: "Slow Mass Absorption" (no mass enters) and the femtogram
 seeds of "Proto-Tech via Information Only" (information still crosses, as
 light).

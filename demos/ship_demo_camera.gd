@@ -1,3 +1,4 @@
+class_name ShipCamera
 extends Camera3D
 ## One observer in glTF metres. Infinite sky uses the same attitude and projection;
 ## camera translation only affects finite geometry and bubble wall intersections.
@@ -16,12 +17,17 @@ func follow(foot: Vector3, tilt_deg: float, yaw_rad: float, distance: float) -> 
 	position=foot+Vector3.UP*1.7-forward*pullback
 	basis=Basis.looking_at(forward,Vector3.UP)
 	external=position.length()>=100.
-## R2-CAMERA-FORWARD prototype (D-92): "up" = ship +Z (travel) along glTF +Y, today; "bow" = travel along
-## glTF -Z in the deck plane, ship +Y = glTF +Y (the mast), ship +X = glTF -X (a proper rotation). Measurement only.
-static var travel_axis := "up"
+## D-92 (R2-CAMERA-FORWARD §D1): the ONE map between glTF and the kinematic frame (+Z along the
+## velocity, the frame of sunholo/relativity, the sky, the glow and the dust). Travel runs along the
+## deck toward the bow (glTF -Z), the mast is kinematic +Y (glTF +Y), kinematic +X is glTF -X:
+## ship_vector = R . ShipFrame.structure_from_gltf (R in interior/ship_frame.gd). Every kinematic
+## conversion goes through these two functions (make camera-forward-test: the AC-B1 gate).
+const TRAVEL_AXIS := "bow"
+const BOW := Vector3(0.0, 0.0, -1.0) # the direction of travel, glTF (Vector3.FORWARD)
 static func ship_vector(v: Vector3) -> Array:
-	if travel_axis == "bow":return [-v.x,v.y,-v.z]
-	return [v.x,-v.z,v.y]
+	return [-v.x,v.y,-v.z]
+static func gltf_from_ship(s: Array) -> Vector3:
+	return Vector3(-float(s[0]),float(s[1]),-float(s[2]))
 static func to_sky_direction(v: Vector3, h: PackedFloat64Array) -> Vector3:
 	var gal := ShipFrame.to_galactic(ShipFrame.ship_basis(h),PackedFloat64Array(ship_vector(v)))
 	return SkyFrame.to_world(Vector3(gal[0],gal[1],gal[2]))

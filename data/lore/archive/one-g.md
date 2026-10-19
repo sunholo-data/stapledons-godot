@@ -8,9 +8,9 @@ Your feet press on the deck with exactly the weight they had on Earth. That
 weight is a choice the generator makes, not a consequence of the drive.
 
 Inside the bubble the pocket is its own frame, so its motion through space is
-not felt. The generator holds a steady 1 g pointing aft. "Down" is toward the
-engines; "up" is toward the direction of travel, toward the bridge and the
-dome. Earth gravity was chosen for comfort: bones, blood and gardens all
+not felt. The generator holds a steady 1 g toward the lower levels. "Down" is toward
+the lower decks; "up" is toward the bridge at the top of the mast. The
+direction of travel is neither: it runs along the decks, out over the bow. Earth gravity was chosen for comfort: bones, blood and gardens all
 expect it.
 
 The old dream of a starship was different. A rocket accelerating at 1 g would

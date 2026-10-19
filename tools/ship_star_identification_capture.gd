@@ -146,7 +146,7 @@ func _run() -> void:
 		field.set_custom_stars([{id="CNS5:1676",pos=real_pos,t=real_t,flux=real_flux,flags=real_flags}])
 		var gal:=SkyFrame.to_galactic64(real_pos)
 		var ship:=ShipFrame.to_ship(ShipFrame.ship_basis(demo.camera.heading),gal)
-		var direction:=Vector3(ship[0],ship[2],-ship[1]).normalized()
+		var direction:=ShipCamera.gltf_from_ship(ship).normalized()
 		demo.camera.basis=Basis.looking_at(direction,Vector3.UP);demo._sync_observer();overlay.update_candidates()
 		check(overlay.candidates.size()==1,"exact real row eligible")
 		if overlay.candidates.size()==1:

@@ -5,6 +5,15 @@ extends RefCounted
 ## validate()). ShipCamera stays the render boundary: the director only writes its transform and
 ## the demo calls _sync_observer(), so the sky is rendered through the same pose as the geometry.
 ##
+## R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): on a level with walk
+## views (the bridge) the player camera is a fixed stage view. Bow (the default) looks over the
+## captain toward the bow, where the journey is (travel runs along the deck, D-92); Astern looks the
+## other way. A walk view's yaw and pitch never change while the captain walks: the eye slides
+## parallel to itself (dead zone, critical damping, the 95 m envelope as a slide), so W is always
+## up-screen. The spire and the lift fade (never turn the camera) while they cross the line to the
+## captain or the journey, or hold the eye. Below, the R2-CAMERA machinery: the Commons' views
+## (a legacy level until its own pass), the bridge's developer zoom presets (OQ4) and tool poses.
+##
 ##   levels    Z1 Close, Z2 Deck (default), Z3 Whole level: stepped, never continuous (the ruling)
 ##   sectors   8 x 45 deg around the spire axis (10 deg hysteresis) x 2 rings (the stations ring
 ##             inside ring_split_m, the rail ring outside; 1 m hysteresis): 16 cells, each with
@@ -36,6 +45,12 @@ const FOLLOW_S := 0.25
 const KINDS := ["level", "place", "situation", "console"]
 const ANCHORS := ["captain", "point", "station"]
 const MOTIONS := ["full", "reduced"]
+## R2-CAMERA-FORWARD §D2: the stage's occluders (the spire's meshes, the lift's boxes).
+const OCCLUDER_GROUP := "camera_occluder"
+const OCC_ALPHA := 0.25
+const OCC_FADE_S := 0.2
+const DECK_CLEAR_M := 0.3
+const FRAME_ASPECT := 16.0 / 9.0
 ## Named input actions (D5). Registered at runtime (ensure_actions), so a rebinding screen and a
 ## controller are mappings onto these names. physical keys, joypad buttons.
 const ACTIONS := {
@@ -87,6 +102,17 @@ var _prompt_t := 0.0
 ## The hole's direction (glTF axes) when there is no demo to ask (tests); see aim_dir().
 var hole_override := Vector3.ZERO
 var _sky_offset := {} # view id -> the yaw offset (deg, from outward) chosen when the view started
+## R2-CAMERA-FORWARD: the walk view on a walk level ("bow" / "astern"), the view WASD maps by (it
+## changes at the end of a switch's ease, never mid-stride), the developer zoom preset flag (the
+## bridge's Z1-Z3, OQ4), the slide anchor (the deck point the rig frames) and the occluders' fades.
+var deck_view := "bow"
+var mapping_view := "bow"
+var zoom_preset := false
+var levels := {}
+var _anchor := Vector3.ZERO
+var _occ := {} # MeshInstance3D -> its current transparency (0 = opaque)
+var occ_fading: Array = [] # the members fading this frame (rules a, b, c)
+var _was_lifting := false
 const PROMPT_S := 10.0
 
 
@@ -101,6 +127,12 @@ func _init(owner_demo: Node = null, path := VIEWS_PATH) -> void:
 	errors = validate(data)
 	for v: Dictionary in data.get("views", []):
 		views[str(v.get("id", ""))] = v
+	levels = data.get("levels", {}) if data.get("levels") is Dictionary else {}
+	for lv: String in levels:
+		for v: Dictionary in levels[lv].get("views", []):
+			views[str(v.get("id", ""))] = v
+	deck_view = str(levels.get("bridge", {}).get("default", "bow"))
+	mapping_view = deck_view
 	default_level = int(data.get("default_level", 2))
 	level = default_level
 	view_id = level_view(level, "bridge").get("id", "z2")
@@ -111,6 +143,7 @@ static func validate(d: Dictionary) -> PackedStringArray:
 	var out := PackedStringArray()
 	if d.is_empty():
 		return PackedStringArray(["views.json missing or not an object"])
+	out.append_array(validate_levels(d))
 	if not is_equal_approx(float(d.get("fov_deg", 0.0)), FOV_DEG):
 		out.append("fov_deg must be %.0f (zoom is a dolly, never a lens)" % FOV_DEG)
 	if float(d.get("envelope_m", 0.0)) <= 0.0 or float(d.get("envelope_m", 0.0)) > 95.0:
@@ -165,6 +198,58 @@ static func validate(d: Dictionary) -> PackedStringArray:
 		for a in ["bridge", "lower"]:
 			if not levels.has("%d:any" % lv) and not levels.has("%d:%s" % [lv, a]):
 				out.append("level %d has no view for area %s" % [lv, a])
+	return out
+
+
+## views.json v2 (R2-CAMERA-FORWARD §D7): the travel axis, and each level's authored views. Every
+## rule has a negative control in make camera-test.
+static func validate_levels(d: Dictionary) -> PackedStringArray:
+	var out := PackedStringArray()
+	if str(d.get("schema", "")) != "stapledons.camera.views/2":
+		out.append("schema must be stapledons.camera.views/2")
+	if str(d.get("travel_axis", "")) != ShipCamera.TRAVEL_AXIS:
+		out.append("travel_axis must be '%s' (ShipCamera.TRAVEL_AXIS, D-92)" % ShipCamera.TRAVEL_AXIS)
+	var lv: Variant = d.get("levels")
+	if not lv is Dictionary or (lv as Dictionary).is_empty():
+		out.append("levels must name each deck level's views")
+		return out
+	var flat := {}
+	for v: Variant in d.get("views", []):
+		if v is Dictionary:
+			flat[str(v.get("id", ""))] = true
+	for name: String in lv:
+		var l: Variant = lv[name]
+		if not l is Dictionary:
+			out.append("level %s is not an object" % name)
+			continue
+		var own := {}
+		for v: Variant in l.get("views", []):
+			if not v is Dictionary:
+				out.append("%s: a view is not an object" % name)
+				continue
+			var id := str(v.get("id", ""))
+			own[id] = true
+			if v.has("fov_deg") and not is_equal_approx(float(v.fov_deg), FOV_DEG):
+				out.append("%s/%s: a view may not change the FOV" % [name, id])
+			if str(v.get("kind", "")) == "walk" and not l.get("legacy", false):
+				if not v.has("yaw_deg"):
+					out.append("%s/%s: a walk view needs a fixed yaw_deg" % [name, id])
+				for k in ["pitch_deg", "back_m", "rise_m"]:
+					if not v.has(k):
+						out.append("%s/%s: a walk view needs %s" % [name, id, k])
+				if float(v.get("rise_m", 0.0)) < DECK_CLEAR_M:
+					out.append("%s/%s: rise_m must be >= %.1f (the eye stays above its deck)" % [name, id, DECK_CLEAR_M])
+				var dz: Variant = v.get("dead_zone")
+				if not dz is Array or (dz as Array).size() != 2:
+					out.append("%s/%s: a walk view needs dead_zone [x, y] (fractions of the frame)" % [name, id])
+		var def := str(l.get("default", ""))
+		if def.is_empty():
+			out.append("level %s has no default view" % name)
+		elif l.get("legacy", false):
+			if not flat.has(def):
+				out.append("level %s: default %s is not a view" % [name, def])
+		elif not own.has(def):
+			out.append("level %s: default %s is not one of its own views" % [name, def])
 	return out
 
 
@@ -316,7 +401,80 @@ func _sky(v: Dictionary, foot: Vector3, k: int, offset: Variant = null) -> Trans
 	return Transform3D(basis_of(yaw, deg_to_rad(float(v.pitch_deg))), eye)
 
 
-## What a sky view is for: the forward pole (+y, the travel axis), or for aim "hole" the black
+## R2-CAMERA-FORWARD §D2/§D3: a walk view's pose for the slide anchor `at` (a deck point): the
+## eye back_m behind it along the view's fixed yaw and rise_m above the deck, looking at the fixed
+## pitch. Past the envelope the eye SLIDES toward the mast axis (same height, same angle).
+func walk_pose(v: Dictionary, at: Vector3) -> Transform3D:
+	var yaw := deg_to_rad(float(v.get("yaw_deg", 270.0)))
+	var f := Vector3(cos(yaw), 0.0, sin(yaw))
+	var eye := at - f * float(v.get("back_m", 9.0)) + Vector3.UP * maxf(float(v.get("rise_m", 5.5)), DECK_CLEAR_M)
+	eye = _envelope_slide(eye, str(v.get("id", "")))
+	return Transform3D(basis_of(yaw, deg_to_rad(float(v.get("pitch_deg", -8.0)))), eye)
+
+
+func _envelope_slide(eye: Vector3, id: String) -> Vector3:
+	var limit := float(data.get("envelope_m", 95.0))
+	if eye.length() <= limit:
+		return eye
+	var flat := Vector2(eye.x, eye.z)
+	var r := sqrt(maxf(0.0, limit * limit - eye.y * eye.y))
+	if not id in clamp_log:
+		clamp_log.append(id)
+		push_warning("camera: view %s left the %.0f m envelope (|eye| %.1f m); slid inward" % [id, limit, eye.length()])
+	if flat.length() < 1e-9:
+		return eye
+	flat = flat.normalized() * r
+	return Vector3(flat.x, eye.y, flat.y)
+
+
+## The dead zone's half extents on the deck (metres: across the view, along it) for a walk view:
+## dead_zone [x, y] are fractions of the frame, measured at the captain's distance.
+func dead_zone_m(v: Dictionary) -> Vector2:
+	var dz: Array = v.get("dead_zone", [0.24, 0.20])
+	var back := float(v.get("back_m", 9.0))
+	var rise := float(v.get("rise_m", 5.5))
+	var d := sqrt(back * back + rise * rise)
+	var tv := tan(deg_to_rad(FOV_DEG) * 0.5)
+	var depression := maxf(atan2(rise, back), deg_to_rad(5.0))
+	return Vector2(float(dz[0]) * d * tv * FRAME_ASPECT, float(dz[1]) * d * tv / sin(depression))
+
+
+## The slide: the anchor follows the (critically damped) foot only past the dead zone.
+func _slide(v: Dictionary) -> Vector3:
+	var yaw := deg_to_rad(float(v.get("yaw_deg", 270.0)))
+	var f := Vector3(cos(yaw), 0.0, sin(yaw))
+	var right := Vector3(-sin(yaw), 0.0, cos(yaw))
+	var half := dead_zone_m(v)
+	var delta := _foot - _anchor
+	var dr := delta.dot(right)
+	var df := delta.dot(f)
+	if absf(dr) > half.x:
+		_anchor += right * (dr - signf(dr) * half.x)
+	if absf(df) > half.y:
+		_anchor += f * (df - signf(df) * half.y)
+	_anchor.y = _foot.y
+	return _anchor
+
+
+## Is the player camera a walk view now (a walk level, no zoom preset, no console, no lift)?
+func walk_active() -> bool:
+	if demo == null or overridden or zoom_preset:
+		return false
+	var lv: Dictionary = levels.get(level_name(), {})
+	return not lv.is_empty() and not lv.get("legacy", false) and views.has(deck_view)
+
+
+## The deck level's name in views.json (the demo's active_level: 0 bridge, 1 the Commons).
+func level_name() -> String:
+	return "commons" if area == "lower" else "bridge"
+
+
+## The direction of travel in glTF axes: the forward pole (D-92: the bow).
+static func pole_dir() -> Vector3:
+	return ShipCamera.BOW
+
+
+## What a sky view is for: the forward pole (the bow, D-92), or for aim "hole" the black
 ## hole's direction (the demo's hole_direction(), from the sim's GR section).
 func aim_dir(v: Dictionary) -> Vector3:
 	if str(v.get("aim", "")) == "hole":
@@ -326,7 +484,7 @@ func aim_dir(v: Dictionary) -> Vector3:
 				return d.normalized()
 		if hole_override.length() > 0.5:
 			return hole_override.normalized()
-	return Vector3.UP
+	return pole_dir()
 
 
 ## A view with yaw_candidates (Sky forward) picks, once, as it starts, the first yaw (relative to
@@ -341,8 +499,8 @@ func choose_offset(v: Dictionary, foot: Vector3) -> Variant:
 
 
 ## The captain's figure (0.15 to 1.6 m) seen from a pose, through the ship's collision and the
-## lift's boxes; with `pole`, the forward pole straight overhead is clear too.
-func view_clear(pose: Transform3D, foot: Vector3, pole := false, aim := Vector3.UP) -> bool:
+## lift's boxes; with `pole`, the forward pole (the bow) is clear too.
+func view_clear(pose: Transform3D, foot: Vector3, pole := false, aim := ShipCamera.BOW) -> bool:
 	if demo == null:
 		return true
 	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
@@ -477,14 +635,30 @@ func locked() -> bool:
 	return demo.pointer_required()
 
 
+## OQ4 (D-93): on a walk level the zoom levels are developer presets (command-line launches); a
+## player has one framing per view there. The Commons (legacy) keeps its Z1-Z3 for players.
+func _zoom_allowed() -> bool:
+	if not walk_level():
+		return true
+	return demo == null or not demo.has_method("dev_controls") or demo.dev_controls()
+
+
+## Is the captain's level one with walk views (the bridge), not a legacy level?
+func walk_level() -> bool:
+	var lv: Dictionary = levels.get(level_name(), {})
+	return not lv.is_empty() and not lv.get("legacy", false)
+
+
 func set_level(lv: int) -> bool:
-	if lv < 1 or lv > LEVELS or locked():
+	if lv < 1 or lv > LEVELS or locked() or not _zoom_allowed() or (hold and walk_level()):
 		return false
 	var was_overridden := overridden
 	release()
 	var ended := end_situation()
-	if lv == level and not was_overridden and not ended:
+	var entering := walk_level() and not zoom_preset
+	if lv == level and not was_overridden and not ended and not entering:
 		return false
+	zoom_preset = walk_level()
 	level = lv
 	_cooldown = COOLDOWN_S
 	_start_blend(float(level_view(level, area).get("ease_s", 0.45)))
@@ -496,7 +670,7 @@ func step_level(dir: int) -> bool:
 	if hold:
 		return false
 	var lv := clampi(level + dir, 1, LEVELS)
-	if lv == level and not overridden and situation.is_empty() and _pending.is_empty():
+	if lv == level and not overridden and situation.is_empty() and _pending.is_empty() and (zoom_preset or not walk_level()):
 		return false
 	return set_level(lv)
 
@@ -507,11 +681,11 @@ func default_view() -> bool:
 		return false
 	if hold:
 		return false
-	# Under way, the default view keeps the forward sky (the starbow) in frame (C2).
-	if demo != null and demo.has_method("under_way") and demo.under_way() and demo.active_level == 0:
-		release()
+	# R2-CAMERA-FORWARD: on a walk level the default is its default view (the bridge: Bow, at rest
+	# and under way; the journey is ahead over the bow rail).
+	if walk_level():
 		level = default_level
-		return sky(demo.under_way_view() if demo.has_method("under_way_view") else "sky_forward")
+		return walk(str(levels[level_name()].get("default", "bow")))
 	var changed := level != default_level or overridden or not situation.is_empty()
 	release()
 	situation = ""
@@ -585,6 +759,11 @@ func pinch(factor: float) -> bool:
 ## motion it is a HUD prompt instead. A view with an anchor walks the captain there first (the
 ## consoles' walk path, 3.5 m/s) and starts on arrival. `force`: the interlude hold.
 func sky(id: String, cued := false, force := false) -> bool:
+	# R2-CAMERA-FORWARD §D5: on a walk level the sky views are the walk views. A cue (departure,
+	# cruise, braking, a stop, Sgr A*) keeps or returns to Bow and never turns the camera; Sky astern
+	# is Astern. The old sky_* poses stay as tool and golden poses (_sky).
+	if demo != null and walk_level() and demo.active_level == 0:
+		return walk("astern" if id == "sky_aft" and views.has("astern") else str(levels[level_name()].get("default", "bow")), cued, force)
 	var v: Dictionary = views.get(id, {})
 	if v.is_empty() or demo == null or (cued and overridden):
 		return false
@@ -615,6 +794,38 @@ func sky(id: String, cued := false, force := false) -> bool:
 			return true
 		return false
 	_enter(id, cued)
+	return true
+
+
+## R2-CAMERA-FORWARD: a walk view (Bow, Astern) on the captain's level. A key (7, 9, R) or a cue;
+## a switch eases once (or cuts under reduced motion) and the key mapping follows at the ease's
+## end. `force`: the interlude hold. Not at a console, in the lift or during the benchmark.
+func walk(id: String, cued := false, force := false) -> bool:
+	if demo == null or not walk_level() or not views.has(id) or str(views[id].get("kind", "")) != "walk":
+		return false
+	if (hold and not force) or (cued and overridden):
+		return false
+	if demo.benchmark.running or (demo.lift != null and demo.lift.travelling()):
+		return false
+	if not force and not demo.consoles.focused.is_empty():
+		return false
+	if cued and not force and demo.panel_open():
+		return false
+	var changed := id != deck_view or zoom_preset or overridden or not situation.is_empty() or not _pending.is_empty()
+	if cued and not force and changed and motion == "reduced":
+		_prompt(str(views[id].get("prompt", "Bow · 7"))) # reduced motion: a cue is a HUD prompt
+		return false
+	release()
+	_finish_restore() # a key or cue while stepping back from a console takes the camera from there
+	situation = ""
+	_pending = ""
+	cue_prompt = ""
+	zoom_preset = false
+	deck_view = id
+	if changed:
+		_start_blend(float(views[id].get("cue_ease_s" if cued else "ease_s", 1.2)))
+	if _blend.is_empty():
+		mapping_view = deck_view
 	return true
 
 
@@ -656,7 +867,7 @@ func focus_console(to: Transform3D) -> void:
 func restore() -> void:
 	if view_id != "console":
 		return
-	view_id = level_view(level, area).get("id", "z2")
+	view_id = deck_view if walk_active() else level_view(level, area).get("id", "z2")
 	_restoring = true
 	_start_blend(float(views.get("console", {}).get("ease_s", 0.6)))
 
@@ -692,6 +903,10 @@ func walk_yaw() -> float:
 	if overridden and demo != null:
 		var f: Vector3 = -demo.camera.global_transform.basis.z
 		return atan2(f.z, f.x)
+	if walk_active():
+		# R2-CAMERA-FORWARD G3: a walk view's fixed yaw, so W is always up-screen; the mapping
+		# changes once, at the end of a switch's ease.
+		return deg_to_rad(float(views.get(mapping_view, views[deck_view]).get("yaw_deg", 270.0)))
 	var v: Dictionary = level_view(level, area) if situation.is_empty() else views.get(situation, {})
 	if v.get("anchor") == "captain" or v.get("anchor") == "point":
 		var f2: Vector3 = -resolve(v, _foot, maxi(sector, 0)).basis.z
@@ -744,6 +959,9 @@ func advance(dt: float) -> void:
 	area = "lower" if demo.active_level == 1 else "bridge"
 	var target: Transform3D
 	var lifting: bool = demo.lift != null and demo.lift.travelling()
+	if _was_lifting and not lifting:
+		_arrive()
+	_was_lifting = lifting
 	if view_id == "console":
 		target = console_pose
 	elif lifting:
@@ -751,6 +969,18 @@ func advance(dt: float) -> void:
 		if view_id != "lift":
 			view_id = "lift"
 			_start_blend(float(views.get("lift", {}).get("ease_s", 0.6)))
+	elif walk_active():
+		# R2-CAMERA-FORWARD: the stage view. Fixed yaw and pitch; the eye slides with the anchor.
+		situation = ""
+		_pending = ""
+		var wv: Dictionary = views[deck_view]
+		if view_id == "lift":
+			_start_blend(float(views.get("lift", {}).get("ease_s", 0.6)))
+		if not has_pose or not views.has(view_id) or str(views[view_id].get("kind", "")) != "walk":
+			_anchor = _foot # entering the stage (spawn, a teleport, the lift, a preset): frame the captain
+		view_id = deck_view
+		sector = -1
+		target = walk_pose(wv, _slide(wv))
 	else:
 		if area != "bridge" and not hold:
 			situation = ""
@@ -777,7 +1007,141 @@ func advance(dt: float) -> void:
 		_step_origin = Vector3.ZERO
 		_step_yp = Vector2.ZERO
 	has_pose = true
+	if _blend.is_empty():
+		mapping_view = deck_view
+	_update_occluders(walk_active() and view_id != "console" and not lifting, foot, dt)
 	_write()
+
+
+# ------------------------------------------------------------------ occluders (§D2)
+
+## The stage's occluder members: the spire's meshes and the lift's visible boxes (the demo puts them
+## in OCCLUDER_GROUP at setup).
+func occluder_members() -> Array:
+	if demo == null or not demo.is_inside_tree():
+		return []
+	return demo.get_tree().get_nodes_in_group(OCCLUDER_GROUP).filter(func(n: Node) -> bool: return n is GeometryInstance3D)
+
+
+func _member_aabb(m: Node) -> AABB:
+	var mi := m as MeshInstance3D
+	if mi == null or mi.mesh == null:
+		return AABB()
+	return mi.global_transform * mi.mesh.get_aabb()
+
+
+func _member_of(collider: Object) -> Node:
+	var n := collider as Node
+	while n != null:
+		if n.is_in_group(OCCLUDER_GROUP):
+			return n
+		if n is MeshInstance3D:
+			return null
+		n = n.get_parent()
+	return null
+
+
+## The members a segment passes through (physics for the meshes with collision, boxes for the
+## lift's), and whether anything else blocks it.
+func _segment_members(a: Vector3, b: Vector3, members: Array) -> Dictionary:
+	var hit_members := []
+	var other := false
+	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
+	var exclude: Array[RID] = []
+	for i in 16:
+		var q := PhysicsRayQueryParameters3D.create(a, b)
+		q.hit_back_faces = true
+		q.exclude = exclude
+		var hit := space.intersect_ray(q)
+		if hit.is_empty():
+			break
+		var m := _member_of(hit.collider)
+		if m == null:
+			other = true
+			break
+		if not m in hit_members:
+			hit_members.append(m)
+		exclude.append(hit.rid)
+	for m: Node in members:
+		if m in hit_members or _has_collision(m):
+			continue
+		if _member_aabb(m).intersects_segment(a, b):
+			hit_members.append(m)
+	return {"members": hit_members, "other": other}
+
+
+func _has_collision(m: Node) -> bool:
+	for c in m.get_children():
+		if c is StaticBody3D:
+			return true
+	return false
+
+
+## The rules (a) the line to the captain's figure, (b) the journey (the pole ray), (c) the eye
+## inside: the members that must fade for this pose.
+func occluders_for(pose: Transform3D, foot: Vector3) -> Array:
+	var out := []
+	var members := occluder_members()
+	if members.is_empty():
+		return out
+	var eye := pose.origin
+	for m: Node in members:
+		if _member_aabb(m).has_point(eye) and not m in out:
+			out.append(m)
+	for p: Vector3 in [foot + Vector3.UP * 0.15, foot + Vector3.UP * 0.9, foot + Vector3.UP * 1.6]:
+		for m: Node in _segment_members(eye, p + (eye - p).normalized() * 0.25, members).members:
+			if not m in out:
+				out.append(m)
+	for m: Node in _segment_members(eye, eye + pole_dir() * 120.0, members).members:
+		if not m in out:
+			out.append(m)
+	return out
+
+
+## AC-V3: after the fades, the pole ray and the line to the captain's head hit nothing but
+## members, and the eye is not inside non-member geometry (no back face within 2 m along the six
+## axes). (A console in front of the captain's feet is ordinary staging; the head stays seen.)
+func clear_after_fades(pose: Transform3D, foot: Vector3) -> Dictionary:
+	var members := occluder_members()
+	var eye := pose.origin
+	var head := foot + Vector3.UP * 1.6
+	var captain: bool = not _segment_members(eye, head + (eye - head).normalized() * 0.25, members).other
+	var pole_ray: bool = not _segment_members(eye, eye + pole_dir() * 120.0, members).other
+	var eye_free := true
+	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
+	for d: Vector3 in [Vector3.UP, Vector3.DOWN, Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
+		var q := PhysicsRayQueryParameters3D.create(eye, eye + d * 2.0)
+		q.hit_back_faces = true
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty() and _member_of(hit.collider) == null and (hit.normal as Vector3).dot(d) > 0.0:
+			eye_free = false
+	return {"pole_ray": pole_ray, "captain": captain, "eye_free": eye_free}
+
+
+## Fade the members the rules name to OCC_ALPHA over OCC_FADE_S of advance(dt); the rest return to
+## opaque. A fade changes geometry transparency only: no sky uniform, no sim input.
+func _update_occluders(active: bool, foot: Vector3, dt: float) -> void:
+	var fading: Array = occluders_for(pose, foot) if active else []
+	occ_fading = fading
+	var full := 1.0 - OCC_ALPHA
+	var step := full * dt / OCC_FADE_S
+	for m: Node in occluder_members():
+		var cur := float(_occ.get(m, 0.0))
+		var want := full if m in fading else 0.0
+		cur = move_toward(cur, want, step) if motion == "full" else want
+		_occ[m] = cur
+		(m as GeometryInstance3D).transparency = cur
+
+
+## AC-V10: the lift's arrival selects the level's default view (the bridge: Bow; a legacy level:
+## its default zoom level).
+func _arrive() -> void:
+	if walk_level():
+		deck_view = str(levels[level_name()].get("default", "bow"))
+		mapping_view = deck_view
+		zoom_preset = false
+	else:
+		level = default_level
 
 
 func _follow(foot: Vector3, dt: float) -> void:
@@ -786,6 +1150,7 @@ func _follow(foot: Vector3, dt: float) -> void:
 		has_pose = false
 		sector = -1
 		_blend = {}
+		_finish_restore()
 	if motion == "reduced" or not has_pose or demo.lift.travelling():
 		_foot = foot
 		_foot_v = Vector3.ZERO

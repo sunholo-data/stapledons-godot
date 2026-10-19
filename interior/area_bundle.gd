@@ -47,6 +47,12 @@ extends RefCounted
 ## bundle is a data drop (AC14).
 
 const CAMERA_FRAME := "ship: +Z = direction of travel (up), origin = bubble centre, metres"
+## D-92 (camera-forward.md §D1.6): a bundle camera is in the LEGACY frame. The painted plates were
+## drawn looking up at the old dome pole, so this path keeps the pre-D-92 identity mapping (the cam
+## JSON read straight as the kinematic frame) until they are re-rendered or retired (OQ8). The
+## 3D ship maps through ShipFrame.r_from_structure; the two paths never share a session.
+const BUNDLE_BASIS := "legacy-up (pre-D-92)"
+const BUNDLE_BASIS_HUD := "painted reference (pre-D-92 orientation)"
 const HUD_TAG := "placeholder art"
 const UNIT_TOL := 1e-4 # cam forward/up are float32 out of Blender: unit and orthogonal to this
 const SOURCE_DIR := "res://assets/areas"
