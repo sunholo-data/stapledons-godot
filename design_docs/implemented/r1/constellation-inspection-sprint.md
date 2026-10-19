@@ -1,7 +1,7 @@
 # Sprint R1-CONSTELLATIONS: constellation guides while holding I
 
 **Design:** [constellation-inspection.md](constellation-inspection.md).
-**Status:** Local implementation and verification complete; independent review recorded separately. CI and landing pending. Approved by Mark, attended 2026-10-17 (“yep continue”).
+**Status:** Completed and landed in [PR #271](https://github.com/sunholo-data/stapledons-godot/pull/271) on 2026-10-19. Full local validation and independent review pass; Mark explicitly accepted the existing crew-performance CI timing failure before merge. Execution approved before implementation (“yep continue”).
 **Created:** 2026-10-17, attended request from Mark.
 **Estimate:** ~720 LOC; two engineering days including visual review, with allowance for alias work and GPU access. Medium risk.
 **Progress:** `.ailang/state/sprints/sprint_R1-CONSTELLATIONS.json`.
@@ -10,7 +10,7 @@
 
 Add faint, named stick figures for Orion, Cassiopeia, Crux and the Big Dipper to the existing hold-I inspection mode. Endpoints follow the current rendered sky under velocity and position changes. Missing/invisible stars yield partial figures; GR guides are suppressed.
 
-Existing input, projection, rebase, body visibility and catalogue machinery is available (design V1–V6). The feature itself is unimplemented. Alias resolution is the main data risk: do not infer full coverage from literal HIP IDs (V7). Read the current camera work in #261/#270 before editing camera integration.
+Existing input, projection, rebase, body visibility and catalogue machinery is available (design V1–V6). At planning time the feature itself was unimplemented; the completed result is recorded in the [implementation report](constellation-inspection-report.md). Alias resolution is the main data risk: do not infer full coverage from literal HIP IDs (V7). Read the current camera work in #261/#270 before editing camera integration.
 
 Recent scale evidence: `658072a` (2026-10-16) added a 379-line GPU driver plus wiring; `fc2d552` (2026-10-15) added ~90 audit lines plus fixtures/integration. These are examples of delivered scope, not measured individual-agent hours. Budget ~360 LOC/day including tests, with the second day reserved partly for GPU/render/export evidence. Do not present this estimate as a measured velocity.
 
@@ -47,7 +47,7 @@ Each milestone is a bounded executor step. C3's golden, capture and bench runs m
 - Normal stack resolves all four figures; graceful omissions apply only to actual missing/invisible sources.
 - GPU endpoint error ≤0.75 px; no mirrored rear-camera guides, stale view transforms, line leakage through hull or opaque discs, or duplicate replacement endpoints.
 - Warm overlay CPU p95 ≤2 ms over ≥300 held-I frames at 1920×1080 on the Studio; no full catalogue scan per held frame; released-I overlay idle.
-- Full local/CI checks, export evidence and independent evaluation pass; all new reference images opened.
+- Full local checks, export evidence and independent evaluation pass; all new reference images opened. CI's existing crew-performance timing failure is accepted by Mark's explicit merge exception, recorded below.
 - No additional discretionary product-approval gate is added. A physics change or inability to resolve the starter figures requires revising this plan rather than silently changing scope.
 
 ## Risks and dependencies
@@ -60,4 +60,5 @@ Alias audit can consume the estimate; identity uncertainty must be resolved from
 - C3 local verification complete: full `make golden` passes, including 33 constellation cases. A 1.5-pixel endpoint mutation in an isolated temporary copy fails 32 alignment cases. Warm-field rebase invalidation is checked without recreating identities, supplementing the large-coordinate GPU cases.
 - Native macOS windows clamp tall capture sizes; review tools now use an exact-size SubViewport. New 1280×720 and 2560×1440 cases cover all four figures, travel/SR, opaque bodies, partial high-speed coverage, actual GR suppression/status and a standing-eye ship view.
 - Full pinned-runtime `make test` exits 0 (2026-10-17, 19:05 UTC). Final capture has 32 inspected images. Warm CPU p95 is 0.144 ms held / 0.004 ms released, with zero identity rescans. The packaged native I/card/release/map smoke passes. See [report](constellation-inspection-report.md) and `.ailang/state/evaluations/eval_R1-CONSTELLATIONS_round_1.json`.
-- CI-before-merge and landing remain pending; C3's overall `passes` stays null for those external gates. No branch publication, merge or dev release is claimed.
+- Current-main integration `a0ccd120` passed full local `make test constellation-golden`, macOS export and packaged smoke on AILANG v0.54.14. Independent integration review found no concern and reran 35 focused assertions successfully.
+- [PR #271](https://github.com/sunholo-data/stapledons-godot/pull/271) merged as `633a4259` on 2026-10-19. [CI](https://github.com/sunholo-data/stapledons-godot/actions/runs/39062583511) failed twice only on the unchanged crew-performance wall-time gate (2.30/2.26 s, limit 2.0 s). Main passed the identical source/runtime at 1.80 s; local passed at 1.18 s. Mark explicitly granted the merge exception (“ok merge it”) in response to the CI exception question. Limits remain unchanged and CI is not claimed green. All three documents moved to implemented; the roadmap landed in [design PR #27](https://github.com/sunholo-data/stapledons-design/pull/27).

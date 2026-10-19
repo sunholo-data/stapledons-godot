@@ -3,9 +3,9 @@
   "evaluation_round": 1,
   "timestamp": "2026-10-17T19:05:50Z",
   "reviewer": "independent agent /root/constellation_review; not the executor",
-  "design_doc": "design_docs/planned/r1/constellation-inspection.md",
-  "sprint_plan": "design_docs/planned/r1/constellation-inspection-sprint.md",
-  "implementation_report": "design_docs/planned/r1/constellation-inspection-report.md",
+  "design_doc": "design_docs/implemented/r1/constellation-inspection.md",
+  "sprint_plan": "design_docs/implemented/r1/constellation-inspection-sprint.md",
+  "implementation_report": "design_docs/implemented/r1/constellation-inspection-report.md",
   "source": "Production implementation 3acc0c77163e7d6ae53fee996655aaf2cd22cd91, plus reviewed final GPU-reference and Makefile harness changes",
   "gate_source": "local",
   "evaluation_scope": "Local implementation review; not a merge or publication approval",
@@ -77,5 +77,13 @@
     {"id": "landing", "verified": false, "required_before": "sprint closure", "details": "After CI/landing, move companion design/sprint/report documents together to implemented/r1, update design-repo roadmap/index, and finalize sprint completion metadata. No merge, tag, upload or publication was reviewed or performed by this evaluator."}
   ],
   "feedback": [],
+  "executor_landing_record": {
+    "recorded_by": "executor, after the independent review; original review findings and CI status above are retained",
+    "ci_result": "failed: unchanged crew-perf timing gate, 2.30/2.26 s versus 2.0 s",
+    "exception": "Mark explicitly approved merging despite that CI failure on 2026-10-19: ok merge it",
+    "merge_commit": "633a425943d12e47883297e4f0ad3cbb5d72021d",
+    "roadmap_pr": "https://github.com/sunholo-data/stapledons-design/pull/27",
+    "landing": "Documentation moved to implemented/r1 and sprint closed with the explicit exception; remaining_gates above describes review-time status, not a new evaluator approval"
+  },
   "notes": "PASS for local implementation review, 96/100, with no blocking correctness finding. Minor deductions reflect combined rather than single dynamic GPU-boundary coverage, the unverified CI portion of the acceptance contract, and intentionally unfinished landing artifacts. Generator and judge were different agents. Existing shutdown RID/resource warnings in Godot harness output were not treated as assertion failures; no gameplay lifecycle leak was identified. This evaluator modified no production code."
 }
