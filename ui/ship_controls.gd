@@ -28,7 +28,7 @@ const KEYS := [
 	{"key": "KEY_ESCAPE", "via": "match", "kind": "display", "group": "Display", "help": "Esc close the top panel or card, else the main menu"},
 	{"key": "KEY_ENTER", "via": "match", "kind": "display", "group": "Display", "help": "Enter continue an interlude or dismiss the arrival card"},
 	{"key": "KEY_M", "via": "match", "kind": "display", "group": "Display", "help": "M star chart (read only; plot and commit at the navigation station)"},
-	{"key": "KEY_I", "via": "identify", "kind": "display", "group": "Display", "help": "hold I and click a star or body: what it is"},
+	{"key": "KEY_I", "via": "identify", "kind": "display", "group": "Display", "help": "hold I: constellation guides; click a star or body: what it is"},
 	{"key": "KEY_P", "via": "match", "kind": "pacing", "group": "Pacing", "help": "P pause or resume time (course unchanged)"},
 	{"key": "KEY_N", "via": "match", "kind": "pacing", "group": "Pacing", "help": "N skip a guided-voyage stop's dwell"},
 	{"key": "KEY_K", "via": "match", "kind": "pacing", "group": "Pacing", "help": "K skip to the next stage (at Sgr A*: finish the approach)"},

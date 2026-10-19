@@ -1,0 +1,81 @@
+{
+  "sprint_id": "R1-CONSTELLATIONS",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-17T19:05:50Z",
+  "reviewer": "independent agent /root/constellation_review; not the executor",
+  "design_doc": "design_docs/planned/r1/constellation-inspection.md",
+  "sprint_plan": "design_docs/planned/r1/constellation-inspection-sprint.md",
+  "implementation_report": "design_docs/planned/r1/constellation-inspection-report.md",
+  "source": "Production implementation 3acc0c77163e7d6ae53fee996655aaf2cd22cd91, plus reviewed final GPU-reference and Makefile harness changes",
+  "gate_source": "local",
+  "evaluation_scope": "Local implementation review; not a merge or publication approval",
+  "total_score": 96,
+  "pass_threshold": 70,
+  "result": "pass",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 28,
+    "code_quality": 14,
+    "documentation": 14,
+    "design_fidelity": 10
+  },
+  "hard_fails": [],
+  "automated_checks": {
+    "tests_pass": true,
+    "tests_output": "Executor's pinned-runtime full make test completed exit 0 at 19:05 UTC; evaluator inspected the saved output, including physics 775/775, identification 59/59, export audit 95 literals, and final loading-jump 82/82. Independently reran final constellation tests: 35 passed, 0 failures.",
+    "tests_log": "/tmp/constellations-baseline-test.log",
+    "independent_tests_log": "/tmp/constellation-review-final.stdout",
+    "lint_clean": true,
+    "lint_output": "Project lint-precision passed within full make test; git diff --check clean. Generic AILANG compiler-repo lint scripts were not substituted for this project's gates.",
+    "file_sizes_ok": true,
+    "file_sizes_scope": "New constellation production and test/tool modules are below 800 lines; existing large project files were not treated as new violations.",
+    "golden_pass": true,
+    "golden_output": "Full make golden exited 0. Final strengthened constellation harness: 33 cases, 0 failures; worst resized GPU endpoint error 0.2898 px, below 0.75 px.",
+    "golden_logs": ["/tmp/constellations-full-golden.log", "/tmp/constellations-final-golden.log"],
+    "mutation_check": "Isolated 1.5 px endpoint mutation rejected by 30 base and both resize cases: 33 cases, 32 failures. Hull-mask case correctly remains valid.",
+    "mutation_log": "/tmp/constellations-mutant.log",
+    "capture_pass": true,
+    "capture_output": "32 exact-size images at 1280x720 and 2560x1440; final capture manifest records 0 failures.",
+    "benchmark_pass": true,
+    "benchmark_output": "Apple M4 Max, 1920x1080, 300 warm samples each: held CPU p95 0.144 ms with 8 segments; released 0.004 ms; zero warm identity rescans.",
+    "export_pass": true,
+    "export_output": "macOS export completed exit 0 with bundled AILANG v0.54.11. Packaged identification smoke reports constellation-export-smoke OK and successful exact card, release, and map handoff.",
+    "export_log": ".godot/tmp/ship-identification-export.log",
+    "ci_verified": false
+  },
+  "acceptance_criteria": [
+    {"feature_id": "AC1", "criterion": "Four figures and all authored source identities resolve; malformed/missing/ambiguous inputs fail safely", "met": true, "evidence": "23 unique normal-stack sources; manifest/resolver positive and negative assertions pass. Independently checked the six CNS5/HIP mappings against pinned raw rows and reviewed remaining alias evidence."},
+    {"feature_id": "AC2", "criterion": "Held-I lifecycle, focus, typing, probe, suppression, and existing inspection semantics remain intact without simulation input", "met": true, "evidence": "35 focused assertions, 59 existing identification assertions, packaged hold/click/release/map smoke, and direct input/overlay code review."},
+    {"feature_id": "AC3", "criterion": "GPU endpoints align within 0.75 px across speeds, views, translations, rebasing, and viewport sizes", "met": true, "evidence": "33 golden cases cover beta 0/.5/.9/.99/.999, rolled/off-axis views, origin/far GPU/far CPU, two resolutions and actual compositor masking; mutation rejected. Warm boundary invalidation is independently tested headlessly rather than in a single moving-boundary GPU case."},
+    {"feature_id": "AC4", "criterion": "Existing RS reference physics and near-c finiteness remain correct", "met": true, "evidence": "Full-run physics 775 passed, 0 failed, with existing RS angle/culling checks; focused near-c uploaded-parameter samples finite. The evaluator's initial sandbox-only physics run could not write user:// fixtures; the authoritative full run has working fixture permissions and passes."},
+    {"feature_id": "AC5", "criterion": "Camera clipping, viewport changes, hull/body occlusion and replacement handling remain safe", "met": true, "evidence": "Focused behind-camera, clipping, resize, hidden-body and replacement assertions; 33-case GPU compositor/resize checks; reviewed body-mask and real-hull images."},
+    {"feature_id": "AC6", "criterion": "GR, missing catalogues and invisible endpoints suppress affected guides without substitute stars", "met": true, "evidence": "Focused negative assertions and final real-GR captures at both resolutions; unavailable message visually verified after harness redraw fix."},
+    {"feature_id": "AC7", "criterion": "Both-resolution captures show recognizable patterns and changes with velocity and observer position", "met": true, "evidence": "32-image manifest; executor recorded opening all images, evaluator independently opened representative rest/moving/travelled figures, both-resolution GR, high-resolution body/highspeed/hull views. Initial native-window capture mismatch was identified, fixed with exact-size SubViewports, and rechecked."},
+    {"feature_id": "AC8", "criterion": "Released overlay is idle, warm held mode avoids full catalogue scans, CPU p95 at most 2 ms", "met": true, "evidence": "bench-manifest.json: released 0.004 ms, held 0.144 ms, 300 samples each, 0 rescans, 8 visible held segments."},
+    {"feature_id": "AC9", "criterion": "Data/module export and existing local suite remain green", "met": true, "evidence": "Pinned-runtime full make test exit 0, export audit 95 literals/0 failures, macOS build exit 0, packaged constellation and identification smoke pass. CI-before-merge remains unverified and is explicitly a separate remaining gate."}
+  ],
+  "documentation_check": {
+    "changelog_updated": true,
+    "examples_created": true,
+    "examples_evidence": "The approved showcase is the actual ship capture harness and its 32 reference renders, not an unrelated runnable AILANG scene.",
+    "design_doc_status": "Approved implementation with local evidence; planned-to-implemented move and roadmap landing intentionally pending CI/merge.",
+    "sprint_artifacts": "C1 and C2 have passing status, timestamps and notes. C3/overall completion and actual velocity accounting are retained pending CI/landing; minor artifact deduction applied."
+  },
+  "design_fidelity": {
+    "score": 10,
+    "notes": "Matches approved four-figure, hold-I, read-only scope. Reuses existing package-backed optics, precision/rebase path and apparent-disc geometry. Conservative body boxes and omission of replacement endpoints match the explicit safe-suppression design. Figure labels share the hull-masked guide layer; inspector names/rings/cards remain above, now clarified in documentation. No new physical formula, protocol field or simulation state."
+  },
+  "resolved_review_findings": [
+    "High-resolution capture alignment: macOS native window height clamp caused stretched sky versus forced guide pixels; fixed in harness with exact-size SubViewport and verified with independent-reference GPU resize cases.",
+    "GR capture status was stale because the harness disabled inspector processing; explicit inspector redraw added and both final images verified.",
+    "Added warm identity-preserving rebase invalidation and near-c finiteness tests.",
+    "Added both-resolution body/highspeed/GR/real-hull reference scenes and strengthened resized golden references to reject endpoint mutation."
+  ],
+  "remaining_gates": [
+    {"id": "ci_before_merge", "verified": false, "required_before": "merge", "details": "No CI result was available for this local branch. CLAUDE.md requires green CI before merge; this local pass must not be reported as CI approval."},
+    {"id": "landing", "verified": false, "required_before": "sprint closure", "details": "After CI/landing, move companion design/sprint/report documents together to implemented/r1, update design-repo roadmap/index, and finalize sprint completion metadata. No merge, tag, upload or publication was reviewed or performed by this evaluator."}
+  ],
+  "feedback": [],
+  "notes": "PASS for local implementation review, 96/100, with no blocking correctness finding. Minor deductions reflect combined rather than single dynamic GPU-boundary coverage, the unverified CI portion of the acceptance contract, and intentionally unfinished landing artifacts. Generator and judge were different agents. Existing shutdown RID/resource warnings in Godot harness output were not treated as assertion failures; no gameplay lifecycle leak was identified. This evaluator modified no production code."
+}

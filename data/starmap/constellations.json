@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "about": "Original compact Earth stick figures, an annotation only. Endpoints use the existing sky catalogue; no independent positions. Big Dipper is an asterism, not the whole of Ursa Major.",
+  "identity_evidence": "HIP identities checked against pinned data/raw/cns5.dat HIP column 48-53 and Gaia column 28-46. HIP 3179 and 6686 match GCNS at J2016.0 within 0.012 and 0.015 arcsec respectively, using the bright.ail rule (1 arcsec, |G-V|<2). HIP aliases and figure membership cross-checked against https://github.com/Stellarium/stellarium-skycultures/blob/master/western/index.json; no artwork imported.",
+  "figures": [
+    {"id": "orion", "name": "Orion", "endpoints": [
+      {"id":"HIP 27989","catalogue_id":"HIP 27989","name":"Betelgeuse"},
+      {"id":"HIP 25336","catalogue_id":"HIP 25336","name":"Bellatrix"},
+      {"id":"HIP 25930","catalogue_id":"HIP 25930","name":"Mintaka"},
+      {"id":"HIP 26311","catalogue_id":"HIP 26311","name":"Alnilam"},
+      {"id":"HIP 26727","catalogue_id":"HIP 26727","name":"Alnitak"},
+      {"id":"HIP 27366","catalogue_id":"HIP 27366","name":"Saiph"},
+      {"id":"HIP 24436","catalogue_id":"HIP 24436","name":"Rigel"}
+    ],"segments":[["HIP 27989","HIP 25336"],["HIP 25336","HIP 25930"],["HIP 25930","HIP 26311"],["HIP 26311","HIP 26727"],["HIP 26727","HIP 27989"],["HIP 26727","HIP 27366"],["HIP 27366","HIP 24436"],["HIP 24436","HIP 25930"]]},
+    {"id":"cassiopeia","name":"Cassiopeia","endpoints":[
+      {"id":"HIP 746","catalogue_id":"CNS5:43","name":"Caph","evidence":"cns5.dat line 262"},
+      {"id":"HIP 3179","catalogue_id":"418551920284673408","name":"Schedar","evidence":"HIP2 to J2016.0 GCNS match, 0.011761 arcsec, G 1.9425, V 2.24"},
+      {"id":"HIP 4427","catalogue_id":"HIP 4427","name":"Gamma Cassiopeiae"},
+      {"id":"HIP 6686","catalogue_id":"510204838759030144","name":"Ruchbah","evidence":"HIP2 to J2016.0 GCNS match, 0.014583 arcsec, G 2.6805, V 2.68"},
+      {"id":"HIP 8886","catalogue_id":"HIP 8886","name":"Segin"}
+    ],"segments":[["HIP 746","HIP 3179"],["HIP 3179","HIP 4427"],["HIP 4427","HIP 6686"],["HIP 6686","HIP 8886"]]},
+    {"id":"crux","name":"Crux","endpoints":[
+      {"id":"HIP 60718","catalogue_id":"HIP 60718","name":"Acrux"},
+      {"id":"HIP 61084","catalogue_id":"HIP 61084","name":"Gacrux"},
+      {"id":"HIP 62434","catalogue_id":"HIP 62434","name":"Mimosa"},
+      {"id":"HIP 59747","catalogue_id":"HIP 59747","name":"Delta Crucis"}
+    ],"segments":[["HIP 60718","HIP 61084"],["HIP 62434","HIP 59747"]]},
+    {"id":"big-dipper","name":"Big Dipper · Ursa Major","endpoints":[
+      {"id":"HIP 54061","catalogue_id":"HIP 54061","name":"Dubhe"},
+      {"id":"HIP 53910","catalogue_id":"856096765753549056","name":"Merak","evidence":"cns5.dat line 923"},
+      {"id":"HIP 58001","catalogue_id":"CNS5:2918","name":"Phecda","evidence":"cns5.dat line 922"},
+      {"id":"HIP 59774","catalogue_id":"1575287046603605888","name":"Megrez","evidence":"cns5.dat line 722"},
+      {"id":"HIP 62956","catalogue_id":"CNS5:3183","name":"Alioth","evidence":"cns5.dat line 714"},
+      {"id":"HIP 65378","catalogue_id":"1563590579347125632","name":"Mizar","evidence":"cns5.dat line 704"},
+      {"id":"HIP 67301","catalogue_id":"HIP 67301","name":"Alkaid"}
+    ],"segments":[["HIP 54061","HIP 53910"],["HIP 53910","HIP 58001"],["HIP 58001","HIP 59774"],["HIP 59774","HIP 54061"],["HIP 59774","HIP 62956"],["HIP 62956","HIP 65378"],["HIP 65378","HIP 67301"]]}
+  ]
+}

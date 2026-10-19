@@ -537,6 +537,10 @@ func _identification_smoke() -> void:
 	for frame in 3:await get_tree().process_frame
 	var ok: bool = ready_ok and star_identification.held and not star_identification.candidates.is_empty()
 	print("ship-identification-smoke-stage candidates: ",ok," count=",star_identification.candidates.size())
+	var guides: Control=star_identification.constellations
+	guides.resolve(sky.starfield)
+	ok=ok and guides.figures.size()==4 and guides.missing_count==0 and guides.visible
+	print("constellation-export-smoke: ","OK" if ok else "FAIL")
 	if ok:
 		var candidate: Dictionary = star_identification.candidates[0]
 		for option in star_identification.candidates:

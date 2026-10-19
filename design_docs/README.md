@@ -42,6 +42,7 @@ design_docs/
 
 | Doc | Status |
 |---|---|
+| [r1/constellation-inspection.md](planned/r1/constellation-inspection.md) | Implemented locally on `feat/constellation-guides`, 2026-10-17: hold-I guides for four Earth figures; local full suite, GPU, capture, benchmark and packaged smoke pass. CI/landing pending; [report](planned/r1/constellation-inspection-report.md). |
 | [r1/m1-relativistic-sky.md](planned/r1/m1-relativistic-sky.md) | Partly landed (PRs #16 to #89, #145/#147); remaining: M1.5b (AC9 renders, m1-report, landing) |
 | [r1/m1.2b-wd-photometry.md](implemented/r1/m1.2b-wd-photometry.md) | Implemented 2026-10-01: `sunholo/relativity` 0.3.0 published (WD-1/2, iteration 5); game pin, `checkWDPackage` and strict-VM `make wd-vm` (WD-3, PR #12, iteration 6) |
 | [r1/m2-journey-core.md](implemented/r1/m2-journey-core.md) | Implemented 2026-10-02: sprint `R1-M2-JOURNEY` ([plan](implemented/r1/m2-journey-core-sprint.md)), 10 milestones, PRs #22–#35 and #37, evaluations 89–96/100; `sunholo/relativity` 0.4.0, protocol v2, planner + commit rule, autopilot, SplitMix64, replay harness with 10k-tick parity, galaxy map with commit dialog; bar clause 2 met. Report: [r1/m2-report.md](implemented/r1/m2-report.md) |
