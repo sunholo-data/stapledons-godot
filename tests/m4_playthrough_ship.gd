@@ -83,7 +83,7 @@ func sample() -> void:
 		cards.append({"node": str(card.panel.get_path()), "visible": card.panel.is_visible_in_tree(),
 			"expanded": card.body.is_visible_in_tree(), "leaving": card.leaving})
 	samples.store_line(SimBridge.encode({"frame": frame, "view": view, "bindings": bindings,
-		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row()}))
+		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row(), "crew": crew_row()}))
 	# D-68 applies to every action list and all currently visible text, including windows.
 	for actions: Array in ShipConsoles.ACTIONS.values():
 		for a: String in actions:
@@ -253,6 +253,29 @@ func review_row() -> Dictionary:
 	var r: CrossingReview = demo.crossing_review
 	if r == null or not r.is_visible_in_tree(): return {}
 	return {"page": r.current(), "pages": r.page_ids()}
+
+
+## R2-CREW-CONSOLE-V2 V7 (AC14): the Crew console in the sample row: who is on the call, their state.
+func crew_row() -> Dictionary:
+	var cc: CrewConsole = demo.consoles.crew_console
+	if cc == null or not cc.is_visible_in_tree(): return {}
+	var m := CrewConsoleModel.member(cc.crew, cc.call_id)
+	return {"call": cc.call_id, "state": CrewConsoleModel.state(m, {"sending": cc.sending}) if not m.is_empty() else ""}
+
+
+## {"crew": [actions], "tick": bool}: press each action on the open Crew console (as the captain's
+## clicks would), sampling after each; with "tick", one journey tick then carries what was queued.
+func crew(s: Dictionary) -> void:
+	var cc: CrewConsole = demo.consoles.crew_console
+	if not check(cc != null and demo.consoles.focused == "crew", "the Crew console is open"): return
+	for a: String in s.crew:
+		cc.press(a)
+		step(0.1)
+	if s.get("tick", false):
+		if not check(demo.journey_tick(), "crew tick completes"): return
+		check(demo.journey_sim.last_refused.is_empty(), "the crew's intents are accepted (%s)" % [demo.journey_sim.last_refused])
+		step(0.2)
+	event({"type": "crew", "actions": s.crew, "states": cc.crew.get("members", []).map(func(m): return "%s=%s" % [m.get("id"), m.get("work_state")])})
 
 
 ## {"start": "guided", "leg": n}: Begin the guided voyage at the Voyage console (walked to, opened,
@@ -432,6 +455,7 @@ func _run() -> void:
 		elif s.has("until"): until(s)
 		elif s.has("start"): start(s)
 		elif s.has("review"): review(s)
+		elif s.has("crew"): crew(s)
 		else: check(false, "unknown script step")
 		if failures: break
 	demo.journey_sim.stop() # close H1's tee, including the quit line, before checking it

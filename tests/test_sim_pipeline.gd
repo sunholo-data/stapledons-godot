@@ -22,7 +22,7 @@ func drive(pipelined: bool) -> Dictionary:
 		if i == 20:
 			ok = ok and sim.send([SimBridge.crew_intent("crew_orders", {"command": "orders", "preset": "critical_only"})], 0.0)
 		elif i == 40:
-			var page := CrewPage.new()
+			var page := CrewConsole.new()
 			page.show_crew(sim.crew)
 			ok = ok and sim.send(page.offer_intents("pilot"), 0.0)
 			page.free()

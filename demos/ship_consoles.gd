@@ -74,9 +74,10 @@ var answer_text: Label
 var panel := PanelContainer.new()
 var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
-## R2-CREW C6: the Crew page on the Voyage console (only while a crew is aboard, protocol 2.9).
-var crew_page: CrewPage
-var crew_scroll: ScrollContainer ## a fixed-height view, so the panel stays on screen as the crew grow
+## R2-CREW C6, R2-CREW-CONSOLE-V2 V3: the Crew console (only while a crew is aboard, protocol 2.11):
+## the roster board and the two-panel call (ui/crew_console.gd). It persists across refreshes, so a
+## pending confirm and an open call survive them.
+var crew_console: CrewConsole
 var crew_summary: Label ## the Voyage console's one-line crew summary (crew-work W1)
 var _crew_sim: SimBridge
 var step_back := Button.new()
@@ -402,6 +403,9 @@ func leave() -> void:
 	var id := focused
 	focused = ""
 	_cancel_confirm()
+	if id == "crew" and crew_console != null: # stepping back ends a call and disarms (V3)
+		crew_console.armed = ""
+		crew_console.call_id = ""
 	_close_panel(id)
 	var from: Transform3D = demo.camera.global_transform
 	demo.camera.follow(demo.avatar_pos, _eye.get("tilt", -18.0), _eye.get("yaw", demo.camera.yaw), _eye.get("pullback", 0.0))
@@ -809,9 +813,19 @@ func _build_panel() -> void:
 ## The navigation station's map takes the full width (the cards wait under it).
 func panel_rect() -> Rect2:
 	var hud: ShipHud = demo.ship_hud
+	if focused == "crew":
+		return crew_panel_rect(hud.size, hud.strip_bottom())
 	var top := hud.strip_bottom() + 8.0
 	var right := hud.size.x - ShipHud.MARGIN if focused == "navigation" else hud.column.position.x - ShipHud.MARGIN
 	return Rect2(Vector2(ShipHud.MARGIN, top), Vector2(maxf(240.0, right - ShipHud.MARGIN), maxf(160.0, hud.size.y - top - 64.0)))
+
+
+## R2-CREW-CONSOLE-V2 V3: the Crew console takes the whole width under the HUD strip, as the helm
+## does, and the height down to the prompt line (the board and the two-panel call both need it).
+const CREW_BOTTOM := 24.0
+static func crew_panel_rect(view: Vector2, strip_bottom: float) -> Rect2:
+	var top := strip_bottom + 8.0
+	return Rect2(Vector2(ShipHud.MARGIN, top), Vector2(maxf(240.0, view.x - 2.0 * ShipHud.MARGIN), maxf(160.0, view.y - top - CREW_BOTTOM)))
 
 
 func _open_panel(id: String) -> void:
@@ -831,8 +845,8 @@ func _layout_panel() -> void:
 		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.42, 420.0), 0.0)
 		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
 	elif focused == "crew":
-		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.6, 680.0), 0.0)
-		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
+		panel.custom_minimum_size = r.size
+		panel.size = r.size
 	else:
 		panel.custom_minimum_size = r.size
 		panel.size = r.size
@@ -949,7 +963,7 @@ func _refresh_panel() -> void:
 		return
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != crew_page and c != crew_scroll: # the Crew page persists, so a pending confirm survives a refresh
+		if c != crew_console: # the Crew console persists, so a pending confirm and an open call survive a refresh
 			c.queue_free()
 	_cancel_confirm()
 	match focused:
@@ -1018,7 +1032,7 @@ static func crew_summary_text(c: Dictionary) -> String:
 
 
 func _crew_panel() -> void:
-	panel_title.text = "Crew console · the crew and their work"
+	panel_title.text = CrewConsole.TITLE_BOARD
 	var sim = demo.get("journey_sim") if demo != null else null
 	if not (sim is SimBridge) or (sim as SimBridge).crew.is_empty():
 		panel_body.add_child(_label("No crew aboard yet: they join when a voyage begins.", 14))
@@ -1026,41 +1040,39 @@ func _crew_panel() -> void:
 	_crew_section()
 
 
-## The crew aboard the journey sim, if any: names, bars, lines and the captain's choices. The
-## page's intents ride the sim's next tick (SimBridge.queue); each tick refreshes it.
+## The crew aboard the journey sim, if any: the board and the call. The console's intents ride the
+## sim's next tick (SimBridge.queue); each tick refreshes it, and the tick that carried them answers
+## them (the `sending` lock lifts, a refusal says why).
 func _crew_section() -> void:
 	var sim = demo.get("journey_sim") if demo != null else null
 	if not (sim is SimBridge) or (sim as SimBridge).crew.is_empty():
 		return
-	if crew_page == null:
-		crew_page = CrewPage.new()
-		crew_page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		crew_scroll = ScrollContainer.new()
-		crew_scroll.name = "CrewScroll"
-		crew_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		crew_scroll.custom_minimum_size = Vector2(0, 200)
-		crew_scroll.add_child(crew_page)
+	if crew_console == null:
+		crew_console = CrewConsole.new()
+		crew_console.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		crew_console.title_changed.connect(func(t: String) -> void:
+			if focused == "crew": panel_title.text = t)
 	if _crew_sim != sim:
 		if _crew_sim != null and _crew_sim.stepped.is_connected(_on_crew_step):
 			_crew_sim.stepped.disconnect(_on_crew_step)
-		for c in crew_page.intents.get_connections():
-			crew_page.intents.disconnect(c["callable"])
+		for c in crew_console.intents.get_connections():
+			crew_console.intents.disconnect(c["callable"])
 		_crew_sim = sim
 		_crew_sim.stepped.connect(_on_crew_step)
-		crew_page.intents.connect(_crew_sim.queue)
-	crew_scroll.custom_minimum_size = Vector2(0, maxf(200.0, panel_rect().size.y - 90.0))
-	crew_page.show_crew(_crew_sim.crew)
-	panel_body.add_child(crew_scroll)
+		crew_console.intents.connect(_crew_sim.queue)
+	crew_console.show_crew(_crew_sim.crew)
+	panel_title.text = crew_console.title()
+	panel_body.add_child(crew_console)
 
 
 func _on_crew_step(events: Array) -> void:
-	if crew_page == null or _crew_sim == null:
+	if crew_console == null or _crew_sim == null:
 		return
-	crew_page.on_events(events)
-	if not _crew_sim.last_queued.is_empty(): # only a tick that carried the page's intents answers them
-		crew_page.on_refused(_crew_sim.queued_refused())
-	if focused == "crew" and crew_scroll.get_parent() == panel_body:
-		crew_page.show_crew(_crew_sim.crew)
+	crew_console.on_events(events)
+	if not _crew_sim.last_queued.is_empty(): # only a tick that carried the console's intents answers them
+		crew_console.on_refused(_crew_sim.queued_refused(), _crew_sim.last_queued)
+	if focused == "crew" and crew_console.get_parent() == panel_body:
+		crew_console.show_crew(_crew_sim.crew)
 	if focused == "voyage" and is_instance_valid(crew_summary):
 		crew_summary.text = crew_summary_text(_crew_sim.crew)
 

@@ -3,19 +3,25 @@ module stapledons/sim/protocol_crew_test
 -- R2-CREW C2 tests (design crew-integration.md §CI-1 protocol, AC6; written red first in C0).
 -- Each crew intent carries one crew_core input line; the sim validates it through the host and a
 -- refusal names the crew_core error. state.crew is emitted only when the crew are aboard.
-import ./protocol_crew (decodeCrewIntent, crewIntentNames, refusalReason)
+import ./protocol_crew (decodeCrewIntent, crewIntentNames, refusalReason, workState, workStates)
+import ./crew (CrewState, CrewLine, CrewHold, initCrew)
+import std/list (map)
+import pkg/sunholo/crew_core/session (Session as CoreSession, Request, TaskAgreement)
+import pkg/sunholo/crew_core/codec (DeniedStandDown)
+import pkg/sunholo/crew_core/conversations (Issue)
+import pkg/sunholo/social_dynamics/model (State, Task, TaskStatus, Offered, Working, Completed, Stopped, Commitment, Relief)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (concat, join, intToStr, contains)
 import std/json (encode, js)
-import ./protocol (Session, Served, newSession, serve)
+import ./protocol (Session, Served, newSession, serve, consoleMinor)
 
 pure func names() -> bool =
-  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
+  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
 
 pure func decodes(t: string, line: string) -> bool = match decodeCrewIntent(t, line) { Ok(_) => true, Err(_) => false }
 
-test "the nine crew intents (crew_ask in C2; crew_policy in C3; crew_orders and crew_resume in C8)" { names() }
+test "the ten crew intents (crew_ask in C2; crew_policy in C3; crew_orders and crew_resume in C8; crew_stand_down in 2.11)" { names() }
 test "a crew intent carries one crew_core line" {
   decodes("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}") &&
   !decodes("crew_offer", "not json") && !decodes("crew_mutiny", "{\"command\":\"offer\"}")
@@ -80,3 +86,134 @@ pure func casePolicy() -> bool {
     && contains(at(r, 3), "\"reason\":\"crew:")
 }
 test "crew_policy switches consent to orders; a bad captaincy is refused (C3, D-70 OQ5)" { casePolicy() }
+
+-- ---------------------------------------------------------------- R2-CREW-CONSOLE-V2 V1 (2.11)
+-- Design crew-console-v2.md §V1 (AC1, AC2, AC3, AC4; written red first). The sim names each
+-- member's work state; Godot only colours and words it (D-20). One table row per value and the
+-- precedence ties, on a crew built from the real pack with the fields each row reads.
+pure func base() -> Option[CrewState] = match initCrew("consent") { Ok(c) => Some(c), Err(_) => None }
+pure func tk(id: string, who: string, st: TaskStatus, recipe: string, due: int) -> Task =
+  { id: id, recipe: recipe, participants: [who], causes: [], supervisor: "captain", status: st, started: 0, due: due }
+pure func bindOf(task: string, who: string) -> TaskAgreement = { task: task, agreement: "agreement-${task}", captain: "captain", worker: who, recipe: "work_${who}" }
+pure func pact(task: string, who: string, agreed: bool) -> Commitment =
+  { id: "agreement-${task}", parties: ["captain", who], accepted: if agreed then ["captain", who] else ["captain"], terms: "", due: 9, causes: [], active: true }
+pure func issueOf(task: string, who: string, req: string) -> Issue =
+  { id: "issue-${req}", task: task, worker: who, kind: "k", prompt: "p", status: "open", request: req, turn: 0, replyCount: 0 }
+pure func lineOf(req: string, who: string, task: string, label: string) -> CrewLine = { request: req, actor: who, task: task, label: label, aiReq: "" }
+pure func pendingOf(id: string, who: string, task: string) -> Request =
+  { id: id, actor: who, task: task, tick: 0, revision: 0, expires: 9, configBody: "", policyId: "", threshold: 0.5, legal: ["accept"], context: "", body: "" }
+-- The pilot's offered task t1 with its binding and agreement (accepted or not).
+pure func withTasks(c: CrewState, ts: [Task]) -> CrewState = { c | session: { c.session | state: { c.session.state | tasks: ts } } }
+pure func withPending(c: CrewState, qs: [Request]) -> CrewState = { c | session: { c.session | pending: qs } }
+pure func withBindings(c: CrewState, bs: [TaskAgreement]) -> CrewState = { c | session: { c.session | bindings: bs } }
+pure func withReliefs(c: CrewState, rs: [Relief]) -> CrewState = { c | session: { c.session | state: { c.session.state | reliefs: rs } } }
+pure func withHolds(c: CrewState, hs: [CrewHold]) -> CrewState = { c | holds: hs }
+-- The pilot's offered task t1 with its binding and agreement (accepted or not).
+pure func offeredPilot(c: CrewState, agreed: bool) -> CrewState {
+  let a = withTasks(withBindings(c, [bindOf("t1", "pilot")]), [tk("t1", "pilot", Offered, "work_pilot", 3)]);
+  { a | session: { a.session | state: { a.session.state | commitments: [pact("t1", "pilot", agreed)] } } }
+}
+pure func withIssue(c: CrewState, label: string) -> CrewState {
+  let a = { c | lines: [lineOf("r1", "pilot", "t1", label)] };
+  { a | session: { a.session | chat: { a.session.chat | issues: [issueOf("t1", "pilot", "r1")] } } }
+}
+pure func working(c: CrewState, recipe: string) -> CrewState = withTasks(c, [tk("t1", "pilot", Working, recipe, 3)])
+pure func ws(c: CrewState) -> string = workState(c, "pilot")
+pure func table(c: CrewState) -> [(string, string)] = {
+  let off = offeredPilot(c, false);
+  let concerned = withIssue(off, "concern");
+  [("free", ws(c)),
+   ("offered", ws(off)),
+   ("agreed", ws(offeredPilot(c, true))),
+   ("asked", ws(withPending(off, [pendingOf("r1", "pilot", "t1")]))),
+   ("concern", ws(concerned)),
+   ("declined", ws(withIssue(off, "decline"))),
+   ("deferred", ws(withIssue(off, "defer"))),
+   ("relief_asked", ws(withReliefs(working(c, "work_pilot"), [{ id: "rl1", task: "t1", author: "pilot", resolved: false }]))),
+   ("working", ws(working(c, "work_pilot"))),
+   ("resting", ws(working(c, "rest_pilot"))),
+   ("done", ws(withTasks(c, [tk("t1", "pilot", Completed, "work_pilot", 3)]))),
+   ("stopped", ws(withTasks(c, [tk("t0", "pilot", Completed, "work_pilot", 2), tk("t1", "pilot", Stopped, "work_pilot", 3)]))),
+   ("held", ws(withHolds(concerned, [{ id: "h1", rule: "uncovered", actor: "pilot", task: "t1", tick: 0, detail: "" }]))),
+   -- ties: a concern outranks a pending reconsideration; a moot issue (no binding) is ignored;
+   -- a resolved relief is not asked; a reconsideration left pending on work ordered under way is
+   -- moot (found on the real sim: Insist, then Make it an order); another member's state is not the pilot's
+   ("concern", ws(withPending(concerned, [pendingOf("r2", "pilot", "t1")]))),
+   ("offered", ws(withBindings(concerned, []))),
+   ("working", ws(withReliefs(working(c, "work_pilot"), [{ id: "rl1", task: "t1", author: "pilot", resolved: true }]))),
+   ("working", ws(withPending(working(c, "work_pilot"), [pendingOf("r2", "pilot", "t1")]))),
+   ("free", workState(concerned, "medic")),
+   -- crew_core 0.6 (V8): a duty check-in where they asked to stand down; the granted rest; a duty
+   -- offer that lapsed is no one's work; a decided stand-down is no longer asked
+   ("stand_down_asked", ws(standDown(c, false))),
+   ("free", ws(standDownLapsed(c))),
+   ("asked", ws(withPending(dutyOffer(c), [pendingOf("d1", "pilot", "sd-d1")]))),
+   ("resting", ws(withTasks(c, [tk("sd-d1", "pilot", Working, "rest_pilot", 3)]))),
+   ("free", ws(standDown(c, true)))]
+}
+-- A duty check-in d1 for the pilot: the rest offer sd-d1 under duty-d1 (due tomorrow).
+pure func dutyOffer(c: CrewState) -> CrewState {
+  let a = withTasks(withBindings(c, [{ task: "sd-d1", agreement: "duty-d1", captain: "captain", worker: "pilot", recipe: "rest_pilot" }]), [tk("sd-d1", "pilot", Offered, "rest_pilot", 1)]);
+  { a | session: { a.session | state: { a.session.state | commitments: [{ id: "duty-d1", parties: ["captain", "pilot"], accepted: ["captain", "pilot"], terms: "", due: 1, causes: [], active: true }] } } }
+}
+pure func standDown(c: CrewState, decided: bool) -> CrewState {
+  let a = dutyOffer(c);
+  let b = { a | session: { a.session | state: { a.session.state | evidence: a.session.state.evidence ++ [{ id: "standdown-d1", author: "pilot", kind: "concern", text: "stand_down", causes: ["duty-d1"] }] } } };
+  if decided then { b | session: { b.session | reports: [{ id: "report-standdown-d1", task: "sd-d1", agreement: "duty-d1", worker: "pilot", code: DeniedStandDown }] } } else b
+}
+pure func standDownLapsed(c: CrewState) -> CrewState {
+  let a = standDown(c, false);
+  { a | session: { a.session | state: { a.session.state | tick: 2 } } }
+}
+pure func rowOk(r: (string, string)) -> bool = match r { (want, got) => want == got }
+test "workState: one row per value, from its sim condition, with the precedence ties (AC1)" {
+  match base() { Some(c) => all(rowOk, table(c)) && all(\v. elemOf(workStates(), v), map(\r. match r { (w, _) => w }, table(c))), None => false }
+}
+test "every work state is a known value, plus the two 0.6 rows inactive below crew_core 0.6" {
+  workStates() == ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
+}
+
+-- Over the protocol: work_state and work.terms only at >= consoleMinor; "as" and "start" are
+-- envelope fields there and bad_intent below; below it every reply is byte-identical.
+pure func offerPilot(start: string) -> string = concat(["{\"k\":\"crew_offer\",\"line\":", encode(js("{\"command\":\"offer\",\"worker\":\"pilot\",\"recipe\":\"work_pilot\",\"id\":\"t1\"}")), start, "}"])
+pure func askPilot() -> string = intent("crew_ask", "{\"command\":\"ask\",\"actor\":\"pilot\",\"task\":\"t1\",\"id\":\"r1\"}")
+pure func startAs(env: string) -> string = concat(["{\"k\":\"crew_start\",\"line\":", encode(js("{\"command\":\"start_task\",\"task\":\"t1\"}")), env, "}"])
+pure func caseConsole() -> bool {
+  let r11 = feedAll(newSession(), [hello(consoleMinor()), game(",\"crew\":\"consent\""), input(1, [offerPilot("")]), input(2, [startAs(",\"as\":\"orders\"")])], []);
+  contains(at(r11, 0), "\"minor\":11") && contains(at(r11, 1), "\"work_state\":\"free\"") && contains(at(r11, 2), "\"work_state\":\"offered\"")
+    && contains(at(r11, 3), "\"refused\":[]") && contains(at(r11, 3), "\"work_state\":\"working\"") && contains(at(r11, 3), "\"terms\":\"refused_order\"")
+    && contains(at(r11, 3), "\"captaincy\":\"consent\"")
+}
+pure func caseBelow() -> bool {
+  let a = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [offerPilot(",\"start\":\"now\"")])], []);
+  let b = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [offerPilot("")]), input(2, [startAs(",\"as\":\"orders\"")])], []);
+  let c10 = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [offerPilot(""), askPilot()])], []);
+  let c99 = feedAll(newSession(), [hello(99), game(",\"crew\":\"consent\""), input(1, [offerPilot(""), askPilot()])], []);
+  contains(at(a, 2), "bad_intent") && contains(at(b, 3), "bad_intent") && !contains(at(c10, 1), "work_state") && !contains(at(c10, 2), "work_state")
+    && contains(at(c99, 0), "\"minor\":11")
+}
+pure func caseEnvelope() -> bool {
+  let r = feedAll(newSession(), [hello(consoleMinor()), game(",\"crew\":\"consent\""),
+    input(1, [concat(["{\"k\":\"crew_ask\",\"line\":", encode(js("{\"command\":\"ask\",\"actor\":\"pilot\",\"task\":\"t1\",\"id\":\"r1\"}")), ",\"as\":\"orders\"}"])]),
+    input(1, [offerPilot(",\"start\":\"soon\"")]), input(1, [startAs(",\"as\":\"mutiny\"")]), input(1, [offerPilot(",\"start\":\"now\""), askPilot()])], []);
+  contains(at(r, 2), "bad_intent") && contains(at(r, 3), "bad_intent") && contains(at(r, 4), "bad_intent")
+    && contains(at(r, 5), "\"refused\":[]") && contains(at(r, 5), "\"work_state\":\"working\"")
+}
+test "2.11: work_state and terms in the crew view; a start as orders under consent (AC1, AC3)" { caseConsole() }
+test "below 2.11: as and start are bad_intent, no work_state; 2.11 is the newest minor (AC2)" { caseBelow() }
+test "as only on crew_start and start only on crew_offer, with known values; start now over the protocol (AC4)" { caseEnvelope() }
+
+pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
+pure func elemOf(xs: [string], x: string) -> bool = match xs { [] => false, y :: r => y == x || elemOf(r, x) }
+
+-- V8: crew_stand_down carries resolve_stand_down, at 2.11 only; V4: crew_reply may carry start
+-- (on_accept or answer: they reconsider at once), at 2.11 only.
+pure func standDownIntent() -> string = intent("crew_stand_down", "{\"command\":\"resolve_stand_down\",\"id\":\"d1\",\"release\":true}")
+pure func replyStart(v: string) -> string = concat(["{\"k\":\"crew_reply\",\"line\":", encode(js("{\"command\":\"captain_reply\",\"id\":\"s1\",\"issue\":\"i\",\"text\":\"t\",\"approach\":\"ask_advice\",\"tick\":0,\"revision\":0}")), ",\"start\":\"", v, "\"}"])
+test "2.11: crew_stand_down and crew_reply start are bad_intent below; a stand-down nobody asked is crew_core's refusal" {
+  let lo = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [standDownIntent()])], []);
+  let lo2 = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [replyStart("on_accept")])], []);
+  let hi = feedAll(newSession(), [hello(consoleMinor()), game(",\"crew\":\"consent\""), input(1, [standDownIntent()]), input(2, [replyStart("soon")]), input(2, [replyStart("answer")])], []);
+  contains(at(lo, 2), "bad_intent") && contains(at(lo2, 2), "bad_intent") && contains(at(hi, 2), "\"reason\":\"crew:") && contains(at(hi, 3), "bad_intent")
+    && contains(at(hi, 4), "\"reason\":\"crew:")
+}

@@ -1,0 +1,13 @@
+{
+  "about": "R2-CREW-CONSOLE-V2 V7 (AC14): a consent crew at rest; the Crew console's board, four of them offered from their calls (the analyst stays free: the ship has two compute slots) (Ask, confirmed: sampled while sending), one tick answers them, then every member's call is opened in the state the sim names. make display-audit-crew audits every sampled frame (every Label on the console a binding).",
+  "crew": "consent",
+  "commits_min": 0,
+  "poles": false,
+  "steps": [
+    {"walk": "crew"},
+    {"use": "crew", "action": "open"},
+    {"crew": []},
+    {"crew": ["call:medic", "offer:medic", "offer:medic", "call:engineer", "offer:engineer", "offer:engineer", "call:pilot", "offer:pilot", "offer:pilot", "call:counselor", "offer:counselor", "offer:counselor"], "tick": true},
+    {"crew": ["end_call", "call:medic", "call:engineer", "call:analyst", "call:pilot", "call:counselor", "end_call"]}
+  ]
+}

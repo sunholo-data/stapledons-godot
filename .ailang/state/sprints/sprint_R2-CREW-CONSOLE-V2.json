@@ -1,0 +1,322 @@
+{
+  "sprint_id": "R2-CREW-CONSOLE-V2",
+  "status": "completed",
+  "approved": true,
+  "approved_by": "Mark (attended, 2026-10-16: \"yes continue\", all nine recommendations)",
+  "created": "2026-10-16",
+  "started": "2026-10-16",
+  "design_doc": "design_docs/implemented/r2/crew-console-v2.md",
+  "sprint_plan": "design_docs/implemented/r2/crew-console-v2-sprint.md",
+  "branch": "feat/crew-console-v2",
+  "implements": [
+    "crew-console-v2 V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V8"
+  ],
+  "github_issues": [],
+  "external_dependencies": [
+    {
+      "what": "feat/interlude-card (R2-INTERLUDE, protocol 2.10: members[].emotion, holds[].line, ComposedBinding) merged to main",
+      "where": "stapledons-godot",
+      "owner": "attended session",
+      "blocks": [
+        "V1_SIM_WORK_STATE"
+      ],
+      "status": "unmerged; merged into feat/crew-console-v2 (stacked)"
+    },
+    {
+      "what": "fix/crew-offer-while-paused: zero-dtau ticks while paused, disabled 'Offer sent. Waiting for their answer.' state, collision-proof task ids, refusal words",
+      "where": "stapledons-godot",
+      "owner": "separate fix PR (coordinator)",
+      "blocks": [
+        "V2_PALETTE_MODEL"
+      ],
+      "status": "PR #263, unmerged; merged into feat/crew-console-v2 (stacked)"
+    },
+    {
+      "what": "crew_core 0.6.0 pinned (stand-down: stand_down_asked, resolve_stand_down, rest)",
+      "where": "sunholo-data/ailang-packages + game migration (crew-core-0.6-game-migration.md)",
+      "owner": "integration agent",
+      "blocks": [
+        "V8_CREW_CORE_06_ROWS"
+      ],
+      "status": "published 2026-10-16; game migration pending"
+    },
+    {
+      "what": "crew_core per-scenario concern catalogue keyed by recipe (OQ6) and withdraw_offer (OQ8)",
+      "where": "sunholo-data/ailang-packages",
+      "owner": "crew-lab agent",
+      "blocks": [],
+      "note": "upstream asks; not blocking; v2 shows crew_core's prompts and a lapse note meanwhile"
+    },
+    {
+      "what": "D-7 portrait sets at 1024 px and the four missing emotion sets (OQ7)",
+      "where": "attended art task",
+      "blocks": [],
+      "note": "256 px sources upscale 2.5x at 1440p; capture flags it"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "V1",
+      "package": "sunholo/crew_core (pinned: session.startTask, setCommand, moot, conversations.Issue, codec outcome codes)",
+      "action": "depend",
+      "reason": "per-offer orders compose existing commands host-side; no new crew rules"
+    },
+    {
+      "milestone": "V4",
+      "package": "sunholo/crew_core (concern catalogue by recipe, withdraw_offer)",
+      "action": "contribute",
+      "reason": "upstream requests to the crew lab (OQ6, OQ8); not blocking"
+    },
+    {
+      "milestone": "V2-V6",
+      "package": "-",
+      "action": "none",
+      "reason": "Godot UI"
+    },
+    {
+      "milestone": "V8",
+      "package": "sunholo/crew_core@0.6.0 (stand-down)",
+      "action": "depend",
+      "reason": "the two stand-down work states"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 350,
+    "estimated_total_loc": 1750,
+    "estimated_days": 7
+  },
+  "critical_path": [
+    "V1_SIM_WORK_STATE",
+    "V2_PALETTE_MODEL",
+    "V3_BOARD_CALL_BINDINGS",
+    "V45_CONCERN_ASK_ORDER",
+    "V6_KEYS_PAD",
+    "E_EVALUATE_LAND"
+  ],
+  "pause_points": [
+    "after V1: work_state plus today's page disabling a forbidden Start can merge alone (fixes Mark's main confusion early)",
+    "any replay golden below consoleMinor moving: stop, Mark reviews the listed diff",
+    "V3: Mark opens renders/crew_console/* at 1280x720 and 2560x1440 before merge (visible feature, attended)",
+    "V8 waits on the crew_core 0.6 pin; not on the critical path"
+  ],
+  "questions_for_mark": [
+    "OQ1 Order on an offer: (a) start now whatever they say [recommended] or (b) only unlock 'Make it an order' after a decline/concern",
+    "OQ2 keep global 'Ship default: Ask/Order' (initial per-offer value; auto-run uses it) and the auto-run preset, both in the board header [recommended]",
+    "OQ3 Ask offers start automatically on agreement (two presses free -> working) [recommended]",
+    "OQ4 call window auto-opens on an incoming concern/hold only when no call or confirm is open; otherwise the chip pulses [recommended]",
+    "OQ5 show 'Insist: it's an order' as a fourth answer with cost words [recommended]",
+    "OQ6 ask the crew lab for a game concern catalogue keyed by recipe (prompts are first-contact text today) [recommended]",
+    "OQ7 regenerate D-7 portraits at 1024 px (256 px upscales 2.5x at 1440p) [recommended]",
+    "OQ8 request crew_core withdraw_offer; meanwhile show 'If you leave it, the offer lapses.' [recommended]",
+    "OQ9 a decline is 'Needs you: declined, open to talk' with the answers [recommended]"
+  ],
+  "evaluations": [
+    {
+      "round": 1,
+      "score": 86,
+      "verdict": "PASS",
+      "file": ".ailang/state/evaluations/R2-CREW-CONSOLE-V2-eval.md",
+      "commit": "14803bf",
+      "fixed": [
+        "D1 stand-down call focused Resume: answers first, Resume disabled until answered, press blocked",
+        "D2 state->token/icon pins; actions() enabled flags tested; the UI reads a.enabled",
+        "D3 CREW_INTENTS lists crew_stand_down",
+        "D4 landing done",
+        "icon meanings reachable by keyboard and pad (? icon key)"
+      ]
+    }
+  ],
+  "coordination": {
+    "executor": "attended session or the loop after approval",
+    "evaluator": "different model from the executor",
+    "upstream_owner": "crew-lab agent (OQ6, OQ8)"
+  },
+  "features": [
+    {
+      "id": "V1_SIM_WORK_STATE",
+      "description": "Tests first (protocol_crew_test workState table; crew_test crewCommandAs and crew_offer start cases; real-sim cases in test_crew_console). Pure workState(c,id) and workTerms in sim/protocol_crew.ail; crewCommandAs (policy orders, start_task, policy back, all-or-nothing) and the crew_offer start expansion (on_accept | now) in sim/crew.ail; envelope fields 'as' and 'start' decoded beside 'line'. Protocol consoleMinor (next free minor): members[].work_state and work.terms at >= minor only; bridge CONSOLE_MINOR. strict entry consoleScripted; crew-parity case console_v2. Early fix: today's _work_card disables Start unless work_state == agreed, with the reason.",
+      "estimated_loc": 420,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make sim: workState gives every value from its sim condition, one table row each plus precedence ties (AC1)",
+        "make sim + make crew-console-test: crew_start {as: orders} under consent starts unagreed work with terms refused_order, captaincy stays consent; a refused start leaves the crew byte-identical; 'as' below consoleMinor is bad_intent (AC3)",
+        "make sim + make crew-console-test: crew_offer {start: on_accept} starts on accept only; {start: now} starts under orders whatever the answer (AC4)",
+        "make crew-parity strict parity: VM == interpreter and two runs byte-identical for console_v2; consoleScripted under --strict-bytecode (AC5)",
+        "make parity-v2 replay: every stream below consoleMinor byte-identical, no golden re-recorded (AC2)"
+      ],
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16",
+      "notes": "Protocol 2.11: workState (table test, one row per value plus ties; a moot pending reconsideration under ordered work found on the real sim and added), workTerms, crewCommandAs (all or nothing), crew_offer start on_accept|now paired with its ask, envelope gating below 2.11. strict consoleScripted, crew-parity console_v2. Gates: sim tests, strict, crew-parity (6), parity, parity-v2, replay (11 identical). The early fix to the old page folded into V3."
+    },
+    {
+      "id": "V2_PALETTE_MODEL",
+      "description": "Tests first (tests/test_crew_palette.gd inside crew-console-test; model cases on recorded crew views). ui/crew_palette.gd (tokens, icons, words, edge styles; Okabe-Ito based) and ui/crew_console_model.gd (pure statics: chip, actions, reason, first_focus, locked); reads the sim's work_state, client overlay only 'sending'; SimBridge.queued_crew() per actor on top of the fix PR's queue.",
+      "estimated_loc": 280,
+      "dependencies": [
+        "V1_SIM_WORK_STATE"
+      ],
+      "acceptance_criteria": [
+        "make crew-console-test: every work_state plus sending maps one-to-one to token, icon and word; tokens >= 3:1 on the panel, chip text >= 4.5:1; adjacent states DeltaE2000 >= 12 under simulated deutan/protan/tritan or differ in icon and edge (AC6)",
+        "make crew-console-test: a queued intent locks every action on that member until the next crew view or a refusal; other members stay actionable (AC8, model half)"
+      ],
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16",
+      "notes": "ui/crew_palette.gd (contrast and CVD checks; CIEDE2000 verified on Sharma pairs; three hexes tuned, free and refused drawn as outlines), ui/crew_console_model.gd, ui/crew_chip.gd (drawn icons). Palette checks inside crew-console-test. The sending lock uses the console's emitted intents and SimBridge.last_queued (no queued_crew accessor needed)."
+    },
+    {
+      "id": "V3_BOARD_CALL_BINDINGS",
+      "description": "Tests first (test_crew_console rewritten for v2 on recorded fixtures tests/crew/console_v2/*.json; NT5 in test_no_twitch; display_audit crew route + crew_unbound control). ui/crew_console.gd (board, two-panel layout, mini-roster) and ui/crew_call.gd (call window: 240-logical portrait at the sim's emotion, transcript, bars); crew_page.gd shrinks to its static helpers; ship_consoles hosts CrewConsole full width. Every Label a DisplayBinding/ComposedBinding (formats crew_state, crew_reason, crew_day; client.crew.* in CONTEXT_SOURCED). crew_console_capture rewritten: six frames at 1280x720 and 2560x1440.",
+      "estimated_loc": 600,
+      "dependencies": [
+        "V2_PALETTE_MODEL"
+      ],
+      "acceptance_criteria": [
+        "make crew-console-test: call window opens on select and on an incoming concern/hold when nothing is open or armed; otherwise the chip pulses and the call is unchanged; End call closes it (AC10)",
+        "make no-twitch-test: NT5, 600 s of fake time on the board, a call and a hold: nothing closes, no intent (AC10)",
+        "make display-audit-crew display-audit-controls: every Crew console Label is a binding; crew_unbound fails the audit (AC14)",
+        "make crew-console-capture: twelve frames written, no clipped node, no label under 12 logical, portrait >= 240 logical; opened by Mark (AC15, attended)"
+      ],
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-17",
+      "notes": "Mark reviewed the V3 renders 2026-10-17: 'yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement' (-> V7b)."
+    },
+    {
+      "id": "V45_CONCERN_ASK_ORDER",
+      "description": "Tests first (real sim in test_crew_console). Decision block per work_state (design V4 table); Start disabled with the reason on concern/declined/deferred; four answers (Insist last, authored assert_authority text, cost line); How selector Ask/Order per offer starting at the ship default and as 'Make it an order' on declined/concern cards; ship-default and auto-run strip in the board header (confirmed). OQ1=(b) drops start:now; OQ3=no drops start:on_accept.",
+      "estimated_loc": 250,
+      "dependencies": [
+        "V3_BOARD_CALL_BINDINGS"
+      ],
+      "acceptance_criteria": [
+        "make crew-console-test: concern/declined/deferred disable Start with 'Waiting: answer their concern first.' (or its state's reason); first focus is answer 1; four answers with Insist last and its cost line (AC7)",
+        "make crew-console-test: How starts at the ship default, a change emits no intent, the offer honours it; ship default and auto-run need a confirmed press (AC11)",
+        "make crew-console-test: free -> working in two presses on an accepting member (AC12)",
+        "make crew-console-test + make crew-hold-test: on a paused guided voyage an offer shows 'Sent, waiting for the ship', cannot be sent twice, and resolves on the zero-dtau tick (AC9)"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "crew_reply start on_accept|answer at 2.11 (reconsidered at once; starts on agreement); lapse, relief and stand-down rule lines; AC7/AC8/AC11/AC12 in crew-console-test, AC9 in crew-hold-test."
+    },
+    {
+      "id": "V6_KEYS_PAD",
+      "description": "Tests first (InputEventKey and InputEventJoypadButton drive the design V6 table; NT1/NT3 with the console focused and a pad). Focus inside the console only; focus outline in TEXT; [ ] and LB/RB switch the call; 1-4 arm answers; O/Y toggles How; Esc/B one level per press.",
+      "estimated_loc": 150,
+      "dependencies": [
+        "V3_BOARD_CALL_BINDINGS"
+      ],
+      "acceptance_criteria": [
+        "make crew-console-test: keyboard and controller reach every action; a decision only on the second press (AC13)",
+        "make no-twitch-test: NT1 and NT3 hold with the Crew console focused and a pad connected (AC13)"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "CrewConsole.key: console focus ring, Enter/A arm then send, 1-4 answers, [ ] / LB RB, O/Y, ?/Select, Esc/B one level; NT1/NT3 for every key and pad button in five fixtures x four calls."
+    },
+    {
+      "id": "V7B_VISUAL_PASS",
+      "description": "Mark's V3 review: less text, more visual UI. Terms as icon rows (day pips, resource icons with count pips, effect icons with arrows), rule lines as one short line with '?' and tooltips, answer icons, faces for waiting-on-whom and the mini-roster, icon bars, the legend behind '?'.",
+      "estimated_loc": 300,
+      "dependencies": [
+        "V3_BOARD_CALL_BINDINGS"
+      ],
+      "acceptance_criteria": [
+        "AC-V7b-1..5 in make crew-console-test",
+        "AC-V7b-6: visible words at 1280x720 down >= 30% from V3 (679 -> 439, -35%)",
+        "AC-V7b-7: D-21 and every Label a binding (crew-console-test, display-audit-crew)",
+        "AC-V7b-8: crew-console-capture 0 failures"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "Words per state 1280x720 V3 -> V7b: board 101->87, offer 113->69, sending 107->55, concern 143->101, working 95->38, hold 120->89."
+    },
+    {
+      "id": "D80_NAMES_FIT_FACES",
+      "description": "Ledger D-80: generated names fit the portraits (presentation and naming regions per face).",
+      "estimated_loc": 120,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "crew_names_test: names fit faces over 22 seeds, distinct, deterministic, same crew draws",
+        "make crew-faces-check: SOURCES face rows == sim/data/crew_faces.ail",
+        "streams below 2.11 keep their names (replay, parity-v2, protocol tests)"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "Gated at 2.11; moved only the 2.11 console fixtures' names."
+    },
+    {
+      "id": "V8_CREW_CORE_06_ROWS",
+      "description": "After the crew_core 0.6 pin: workState rows stand_down_asked and resting read the 0.6 fields; answers emit resolve_stand_down (confirmed); templateLine stand_down/carry_on if the migration hasn't added them. Recorded 0.6 fixture; skipped with a printed reason below 0.6.",
+      "estimated_loc": 50,
+      "dependencies": [
+        "V2_PALETTE_MODEL"
+      ],
+      "acceptance_criteria": [
+        "make crew-console-test: stand_down_asked and resting appear for a recorded stand-down; answers emit resolve_stand_down (AC16)",
+        "make sim crew-parity green with 0.6 pinned"
+      ],
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "crew_core 0.6.0 pinned, pack synced ee58b27, migration steps 1-8; stand_down_asked/resting rows; crew_stand_down intent at 2.11; stand-down holds keep crew days waiting until answered; standdown/resting fixtures from the real guided crossing; crossing_hold re-recorded once (VM == interpreter, repeat identical)."
+    },
+    {
+      "id": "E_EVALUATE_LAND",
+      "description": "Full make test locally (attended) then CI; sprint-evaluator on a different model (100 points, 70 to pass) -> .ailang/state/evaluations/eval_R2-CREW-CONSOLE-V2_round_<n>.json; move doc and plan to implemented/r2, crew-console-v2-report.md, changelog fragment naming the protocol minor, crew-work.md W5 note, design-repo roadmap row.",
+      "estimated_loc": 0,
+      "dependencies": [
+        "V45_CONCERN_ASK_ORDER",
+        "V6_KEYS_PAD"
+      ],
+      "acceptance_criteria": [
+        "make test green locally and in CI (AC17)",
+        "evaluation >= 70 by a different model from the executor"
+      ],
+      "passes": true,
+      "started": null,
+      "completed": "2026-10-17",
+      "notes": "Evaluated 86/100 PASS; D1-D4 and the icon key fixed; landed."
+    }
+  ],
+  "approved_on": "2026-10-16",
+  "answers": {
+    "OQ1": "Order on an offer starts the work now, whatever they answer (crew_offer start: now)",
+    "OQ2": "ship default and auto-run stay global, in the board header strip",
+    "OQ3": "an Ask offer starts automatically on agreement (start: on_accept)",
+    "OQ4": "the call opens on an incoming concern only when nothing is open or armed; otherwise the row pulses",
+    "OQ5": "Insist is the fourth answer",
+    "OQ6": "concern text for the game's jobs: upstream request to the crew lab; noted, not done",
+    "OQ7": "1024 px portraits: separate attended art task; noted, not done",
+    "OQ8": "offer withdrawal: upstream request; show the lapse note meanwhile",
+    "OQ9": "a refusal reads 'Needs you: declined, open to talk'"
+  },
+  "protocol_minor": "2.11",
+  "reviews": [
+    {
+      "date": "2026-10-17",
+      "by": "Mark (attended)",
+      "of": "V3 captures",
+      "words": "yeah they look good - I think the UI is still a bit text heavy so we can have more visual UI but its a big improvement"
+    },
+    {
+      "date": "2026-10-17",
+      "by": "Mark (attended)",
+      "of": "V7b visual pass",
+      "words": "crew console is looking great"
+    }
+  ],
+  "completed": "2026-10-17",
+  "report": "design_docs/implemented/r2/crew-console-v2-report.md"
+}

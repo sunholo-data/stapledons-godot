@@ -1,0 +1,288 @@
+{
+  "turn": 0.0,
+  "captaincy": "consent",
+  "members": [
+    {
+      "id": "medic",
+      "name": "Farah Khan",
+      "indicators": {
+        "fatigue": 30.0,
+        "stress": 70.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": {
+        "task": "tc0-0-1-medic",
+        "recipe": "work_medic",
+        "status": "offered",
+        "started": 0.0,
+        "due": 0.0
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "angry",
+      "work_state": "declined"
+    },
+    {
+      "id": "engineer",
+      "name": "Elena Horvat",
+      "indicators": {
+        "fatigue": 35.0,
+        "stress": 55.0,
+        "morale": 55.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 57.0,
+      "work": {
+        "task": "tc0-0-2-engineer",
+        "recipe": "work_engineer",
+        "status": "working",
+        "started": 0.0,
+        "due": 3.0,
+        "terms": "agreed_start"
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "happy",
+      "work_state": "working"
+    },
+    {
+      "id": "analyst",
+      "name": "Mariam Toumi",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 45.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 57.0,
+      "work": {
+        "task": "tc0-0-3-analyst",
+        "recipe": "work_analyst",
+        "status": "working",
+        "started": 0.0,
+        "due": 3.0,
+        "terms": "agreed_start"
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "happy",
+      "work_state": "working"
+    },
+    {
+      "id": "pilot",
+      "name": "Hassan Hamdan",
+      "indicators": {
+        "fatigue": 20.0,
+        "stress": 40.0,
+        "morale": 70.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": {
+        "task": "tc0-0-4-pilot",
+        "recipe": "work_pilot",
+        "status": "offered",
+        "started": 0.0,
+        "due": 0.0
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "fearful",
+      "work_state": "concern"
+    },
+    {
+      "id": "counselor",
+      "name": "Selam Wanjala",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 50.0,
+        "morale": 65.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 57.0,
+      "work": {
+        "task": "tc0-0-5-counselor",
+        "recipe": "work_counselor",
+        "status": "working",
+        "started": 0.0,
+        "due": 2.0,
+        "terms": "agreed_start"
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "happy",
+      "work_state": "working"
+    }
+  ],
+  "requests": [],
+  "reliefs": [],
+  "heard": [
+    {
+      "id": "tc0-0-4-pilot",
+      "author": "captain",
+      "kind": "task_offer",
+      "text": "work_pilot"
+    },
+    {
+      "id": "agreement-tc0-0-4-pilot",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Project agreement tc0-0-4-pilot"
+    },
+    {
+      "id": "concern-rc0-0-4-pilot",
+      "author": "pilot",
+      "kind": "concern",
+      "text": "concern"
+    },
+    {
+      "id": "tc0-0-5-counselor",
+      "author": "captain",
+      "kind": "task_offer",
+      "text": "work_counselor"
+    },
+    {
+      "id": "agreement-tc0-0-5-counselor",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Project agreement tc0-0-5-counselor"
+    },
+    {
+      "id": "report-tc0-0-5-counselor",
+      "author": "captain",
+      "kind": "concern",
+      "text": "agreed_start"
+    }
+  ],
+  "resources": [
+    {
+      "id": "mass",
+      "available": 2.0,
+      "reserved": 1.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "power",
+      "available": 2.0,
+      "reserved": 1.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "compute",
+      "available": 0.0,
+      "reserved": 2.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "signal",
+      "available": 2.0,
+      "reserved": 1.0,
+      "consumed": 0.0
+    }
+  ],
+  "lines": [
+    {
+      "request": "rc0-0-1-medic",
+      "actor": "medic",
+      "name": "Farah Khan",
+      "label": "decline",
+      "text": "Not this one, Captain. I can't take it on.",
+      "ai_req": "1",
+      "emotion": "angry"
+    },
+    {
+      "request": "rc0-0-2-engineer",
+      "actor": "engineer",
+      "name": "Elena Horvat",
+      "label": "accept",
+      "text": "I'll take it on, Captain.",
+      "ai_req": "2",
+      "emotion": "happy"
+    },
+    {
+      "request": "rc0-0-3-analyst",
+      "actor": "analyst",
+      "name": "Mariam Toumi",
+      "label": "accept",
+      "text": "I'll take it on, Captain.",
+      "ai_req": "3",
+      "emotion": "happy"
+    },
+    {
+      "request": "rc0-0-4-pilot",
+      "actor": "pilot",
+      "name": "Hassan Hamdan",
+      "label": "concern",
+      "text": "Before I start, there's something about this that worries me.",
+      "ai_req": "4",
+      "emotion": "fearful"
+    },
+    {
+      "request": "rc0-0-5-counselor",
+      "actor": "counselor",
+      "name": "Selam Wanjala",
+      "label": "accept",
+      "text": "I'll take it on, Captain.",
+      "ai_req": "5",
+      "emotion": "happy"
+    }
+  ],
+  "auto": "off",
+  "holds": [],
+  "used": [],
+  "tick": 0.0,
+  "revision": 31.0,
+  "concerns": [
+    {
+      "issue": "issue-rc0-0-1-medic",
+      "actor": "medic",
+      "task": "tc0-0-1-medic",
+      "kind": "patient_scope",
+      "prompt": "Who are we preparing to treat? Our crew is known; the needs of anyone we meet are unknown. I need us to talk through that uncertainty before I agree.",
+      "replies": 0.0,
+      "options": [
+        {
+          "approach": "clear_scope",
+          "text": "Let's centre preparation on our own crew, and discuss the unknown needs separately before making further commitments."
+        },
+        {
+          "approach": "ask_advice",
+          "text": "Give me your judgement: what would make this preparation worthwhile, and what remains uncertain?"
+        },
+        {
+          "approach": "stage_plan",
+          "text": "Let's discuss preparation in stages while science investigates. This is a discussion, not a reduced supply allocation or a promise of treatment."
+        }
+      ]
+    },
+    {
+      "issue": "issue-rc0-0-4-pilot",
+      "actor": "pilot",
+      "task": "tc0-0-4-pilot",
+      "kind": "approach_risk",
+      "prompt": "What risk are we preparing for? This is observation planning, not a manoeuvre; we do not yet know what lies ahead.",
+      "replies": 0.0,
+      "options": [
+        {
+          "approach": "clear_scope",
+          "text": "For now we are planning observations only. We have not committed to a manoeuvre or an encounter."
+        },
+        {
+          "approach": "ask_advice",
+          "text": "Give me your judgement: what would make this preparation worthwhile, and what remains uncertain?"
+        },
+        {
+          "approach": "explain_priority",
+          "text": "I am asking because we need to prepare before first contact. That priority does not remove the uncertainties; let's name them."
+        }
+      ]
+    }
+  ]
+}

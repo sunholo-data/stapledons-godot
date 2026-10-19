@@ -1,0 +1,127 @@
+{
+  "turn": 0.0,
+  "captaincy": "consent",
+  "members": [
+    {
+      "id": "medic",
+      "name": "Farah Khan",
+      "indicators": {
+        "fatigue": 30.0,
+        "stress": 70.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "sad",
+      "work_state": "free"
+    },
+    {
+      "id": "engineer",
+      "name": "Elena Horvat",
+      "indicators": {
+        "fatigue": 35.0,
+        "stress": 55.0,
+        "morale": 55.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "analyst",
+      "name": "Mariam Toumi",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 45.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "pilot",
+      "name": "Hassan Hamdan",
+      "indicators": {
+        "fatigue": 20.0,
+        "stress": 40.0,
+        "morale": 70.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "counselor",
+      "name": "Selam Wanjala",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 50.0,
+        "morale": 65.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    }
+  ],
+  "requests": [],
+  "reliefs": [],
+  "heard": [],
+  "resources": [
+    {
+      "id": "mass",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "power",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "compute",
+      "available": 2.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "signal",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    }
+  ],
+  "lines": [],
+  "auto": "off",
+  "holds": [],
+  "used": [],
+  "tick": 0.0,
+  "revision": 0.0,
+  "concerns": []
+}

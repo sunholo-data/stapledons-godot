@@ -24,7 +24,7 @@ import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteSto
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
 import ./crew (CrewState, CrewCmd, CrewLine, CrewHold, CrewRefusal, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
-import ./crew_names (nameCrew, nameOf)
+import ./crew_names (nameCrew, nameCrewFit, nameOf)
 import ./crew_auto (autoStep, setPreset, resume)
 import ./cruise_digest (Digest, Snap, MediumRef, CrewTick, beginDigest, foldDigest)
 import pkg/sunholo/crew_core/scenario (projectName, purpose as recipePurpose)
@@ -801,10 +801,13 @@ pure func mergeRefused(a: [Refusal], b: [Refusal]) -> [Refusal] = match (a, b) {
 -- R2-CREW C1: bring the synced crew aboard a world (consent or orders, D-70 OQ5). Off by default
 -- until C4, so recorded sessions keep their goldens.
 -- C3: the pack's resources must be the eight bubble resources and fit what the ship can spare.
-export pure func withCrew(w: World, captaincy: string) -> Result[World, string] = match initCrew(captaincy) {
+export pure func withCrew(w: World, captaincy: string) -> Result[World, string] = withCrewNamed(w, captaincy, true)
+-- D-80 (R2-CREW-CONSOLE-V2): `fit` draws names that fit the faces (crew_names.nameCrewFit, protocol
+-- 2.11 and newer); without it, the older draw, so streams below 2.11 keep their bytes. Same crew draws.
+export pure func withCrewNamed(w: World, captaincy: string, fit: bool) -> Result[World, string] = match initCrew(captaincy) {
   Ok(c) => match lintAgainstShip(c.session.scenario, shipUnits(w.ledger.availableKg)) {
     -- D-74: the crew's names are drawn from the crew stream at new game.
-    [] => { let n = nameCrew(w.seed, w.rng, c.session.scenario.workers); Ok({ w | crew: Some(withNames(c, n.names)), rng: n.rng }) },
+    [] => { let n = if fit then nameCrewFit(w.seed, w.rng, c.session.scenario.workers) else nameCrew(w.seed, w.rng, c.session.scenario.workers); Ok({ w | crew: Some(withNames(c, n.names)), rng: n.rng }) },
     p :: _ => Err(concat(["crew pack: ", p]))
   },
   Err(e) => Err(e)
