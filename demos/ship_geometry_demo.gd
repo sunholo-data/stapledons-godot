@@ -443,8 +443,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event is InputEventPanGesture:director.pan(event.delta)
 		if event is InputEventMagnifyGesture:director.pinch(event.factor)
 		if event is InputEventMouseButton and event.pressed:
-			if event.button_index==MOUSE_BUTTON_WHEEL_UP:director.wheel(1)
-			if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:director.wheel(-1)
+			if event.button_index==MOUSE_BUTTON_WHEEL_UP:director.wheel(true)
+			if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:director.wheel(false)
 	if event is InputEventMouseMotion:_mouse=event.position
 	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT and not event.alt_pressed:
 		# D5: clicks aim at the pointer; only the developer free camera captures it (screen centre).

@@ -240,6 +240,30 @@ The setting: `[display] camera_motion = "full" | "reduced"` in `settings.cfg` (`
 
 No formula is added, so no `sunholo/relativity` release is needed. The glow and wall maths are already the package's mirror (`ForwardGlow`), and the new goldens use them unchanged.
 
+### D9. Amendments after execution (2026-10-17 to 2026-10-19)
+
+#### Under-way default (approved by Mark, 2026-10-17, attended)
+
+**Mark's choice, verbatim: "Sky forward under way".** At rest the default is Z2 Deck; under way it is Sky forward, with the captain from behind and the starbow in frame; at a guided stop it is Sky side; at Sgr A* it is the hole view. Any zoom key returns to Z1 / Z2 / Z3.
+
+Why: at 0.99c the sky is black across the deck and astern (spec §2: sideways and aft starlight is redshifted out of the visible), and the starbow is overhead. Z2 looks across the deck, so a cruise in Z2 showed the deck against black and lost the game's centrepiece. The implementation (`CameraDirector.default_view`, the commit / departure / braking cues, `under_way_view()`) is unchanged by this amendment. `tests/test_camera_director.gd` `test_default_mapping` pins the mapping.
+
+#### Sgr A*: the hole view
+
+At Sgr A* the cue (the visit's start and every stop's arrival) and R select `sky_hole`: the forward-sky view aimed at the hole's direction from the sim's GR state, with the hole 18 deg above the frame centre and the captain below. It frames the shadow and the ring at the 10, 5 and 3 r_s hovers and the 3 r_s orbit. The M3.6 visit framed the hole by looking straight at it in first person; the hole view keeps it framed in third person.
+
+#### Authored angles: two rings and per-cell values
+
+The design's single "camera on the spire side, looking outward" rule puts the Z2 eye inside the spire needle for any captain near the axis (512 blocked samples). The sectors therefore have a second ring: the stations ring inside 12 m looks inward across the consoles, and the rail ring looks outward over the captain toward the sky (1 m hysteresis). Where the sweep needs it, a view's `cells` map overrides a value for one cell (the lift landing at the spawn, the Commons streets). Z1 pitches -25 deg (from -20 deg) to clear the navigation consoles.
+
+#### Lower deck (Commons): deferred to the deck-layout pass
+
+The Commons views are authored per cell. The clear line still fails at 2 (Z1), 2 (Z2) and 39 (Z3) of 1,881 walk samples, points under the arcades' lintels that no candidate camera sees. These ceilings stay, held by `make camera-test`. They are **deferred to the deck-layout pass Mark asked for after the camera lands ("arrange the deck furniture and sightlines")**, which owns the fix. The current `z2_lower` and `z3_commons` frames are cluttered (a pillar fills about a third of the Z3 frame, and the captain is about 45 px); that pass should reshape the sightlines and then bring the ceilings to 0.
+
+#### Trackpad and wheel direction
+
+One convention: zoom in = closer = toward Z1. The wheel rolled up, a trackpad scroll up (pan `delta.y < 0`, the direction Godot also reports as wheel up) and a pinch open all come closer. A trackpad gesture is the run of its events with gaps under 0.5 s, so its inertial tail is part of it: one gesture steps at most one level, and its accumulator starts fresh with each gesture.
+
 ## Migration of tests and tools
 
 **Behaviour changes** (rewritten red first):

@@ -1499,6 +1499,7 @@ func _initialize() -> void:
 	test_rolled_camera_cpu_spec_values(vp)
 	test_view_velocity_angle(vp)
 	test_camera_views_invariance(vp)
+	test_camera_views_sky_points(vp)
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -1694,10 +1695,72 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 		var r2 := AreaBundle.unproject(_ship_cam(captain, size), q1[0], q1[1])
 		var c1: float = r1[0] * hs[0] + r1[1] * hs[1] + r1[2] * hs[2]
 		var c2: float = r2[0] * hs[0] + r2[1] * hs[1] + r2[2] * hs[2]
-		check("sky_hole, hole %+.0f deg: that pixel's sky ray is the hole's direction from both eyes (float64, rad)" % tilt, maxf(acos(clampf(c1, -1.0, 1.0)), acos(clampf(c2, -1.0, 1.0))), 0.0, 1e-7)
+		var ch1 := sqrt(pow(r1[0] - hs[0], 2.0) + pow(r1[1] - hs[1], 2.0) + pow(r1[2] - hs[2], 2.0))
+		var ch2 := sqrt(pow(r2[0] - hs[0], 2.0) + pow(r2[1] - hs[1], 2.0) + pow(r2[2] - hs[2], 2.0))
+		check("sky_hole, hole %+.0f deg: that pixel's sky ray is the hole's direction from both eyes (float64, rad)" % tilt, 2.0 * asin(maxf(ch1, ch2) * 0.5), 0.0, 1e-9)
 	dir.hole_override = Vector3.ZERO
 	cam.queue_free()
 
 
 static func _ship_cam(pose: Transform3D, size: Vector2) -> Dictionary:
 	return {"position_m": [pose.origin.x, -pose.origin.z, pose.origin.y], "forward": [-pose.basis.z.x, pose.basis.z.z, -pose.basis.z.y], "up": [pose.basis.y.x, -pose.basis.y.z, pose.basis.y.y], "fov_vertical_deg": 78.0, "resolution": [size.x, size.y]}
+
+
+## R2-CAMERA AC11, not a translation tautology: at every views.json eye and at a captain's eye
+## that is also ROTATED (yaw +9 deg, pitch -6 deg), a 5 x 5 grid of rest-frame sky points around
+## the view, aberrated at 0.99c about an off-axis heading (35 deg from the view centre), is
+## projected by Godot's camera and recovered through its pixel (float32: the rendering path) and
+## by the sky's float64 CPU projection; each eye recovers the same apparent direction.
+func test_camera_views_sky_points(vp: SubViewport) -> void:
+	print("R2-CAMERA sky points through rotated and translated eyes at 0.99c (AC11)")
+	var cam: Camera3D = load("res://demos/ship_demo_camera.gd").new()
+	vp.add_child(cam)
+	var dir := CameraDirector.new(null)
+	var foot := Vector3(8, 82, -4.8)
+	var size := Vector2(vp.size)
+	for v: Dictionary in dir.data.views:
+		if v.kind == "console":
+			continue
+		var pose := dir.resolve(v, foot, dir.sector_for(foot, -1))
+		var rb := pose.basis.rotated(Vector3.UP, deg_to_rad(9.0))
+		rb = rb.rotated(rb.x, deg_to_rad(-6.0))
+		var other := Transform3D(rb.orthonormalized(), foot + Vector3.UP * 1.7)
+		var fwd := -pose.basis.z
+		var h := fwd.rotated(pose.basis.x, deg_to_rad(35.0)).normalized()
+		var worst32 := 0.0
+		var worst64 := 0.0
+		var cross := 0.0
+		var n := 0
+		for i in 5:
+			for j in 5:
+				var src := fwd.rotated(pose.basis.y, deg_to_rad(-40.0 + 20.0 * i)).rotated(pose.basis.x, deg_to_rad(-40.0 + 20.0 * j)).normalized()
+				var app := Relativity.aberrate(src, h, 0.99).normalized()
+				var rays := []
+				for t: Transform3D in [pose, other]:
+					cam.global_transform = t
+					if cam.is_position_behind(t.origin + app * 1.0e7):
+						break
+					var px := cam.unproject_position(t.origin + app * 1.0e7)
+					if not Rect2(Vector2.ZERO, size).has_point(px):
+						break
+					var ray := cam.project_ray_normal(px)
+					worst32 = maxf(worst32, ray.angle_to(app))
+					rays.append(ray)
+					var c := _ship_cam(t, size)
+					var o: Array = c.position_m
+					var an := sqrt(float(app.x) * app.x + float(app.y) * app.y + float(app.z) * app.z)
+					var a64 := [app.x / an, -app.z / an, app.y / an]
+					var q := AreaBundle.project(c, [o[0] + a64[0] * 1e12, o[1] + a64[1] * 1e12, o[2] + a64[2] * 1e12])
+					var r := AreaBundle.unproject(c, q[0], q[1])
+					var ex: float = r[0] - a64[0]
+					var ey: float = r[1] - a64[1]
+					var ez: float = r[2] - a64[2]
+					worst64 = maxf(worst64, 2.0 * asin(sqrt(ex * ex + ey * ey + ez * ez) * 0.5)) # chord form: acos loses 1e-8 near 0
+				if rays.size() == 2:
+					n += 1
+					cross = maxf(cross, (rays[0] as Vector3).angle_to(rays[1]))
+		check("%s: %d aberrated sky points seen from both eyes (>= 6)" % [v.id, n], 1.0 if n >= 6 else 0.0, 1.0, 0.0)
+		check("%s: Godot's pixel ray returns each apparent direction (float32, rad)" % v.id, worst32, 0.0, 5e-5)
+		check("%s: the sky's float64 projection returns each apparent direction (rad)" % v.id, worst64, 0.0, 1e-9)
+		check("%s: the rotated, translated captain eye recovers the same directions (rad)" % v.id, cross, 0.0, 1e-4)
+	cam.queue_free()

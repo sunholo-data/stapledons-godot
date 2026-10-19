@@ -67,7 +67,15 @@
     "OQ8 orthographic iso vs perspective: rec perspective 78 deg (one camera must render the sky); sector yaws reuse the iso 45 deg family",
     "OQ9 ledger: record the ruling (R1) as a RESOLVED row and OQ1-OQ8 as an OPEN row (attended edit; this PR does not touch the ledger)"
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "commit": "b6493fa",
+      "score": 79,
+      "result": "PASS",
+      "file": ".ailang/state/evaluations/R2-CAMERA-eval.md"
+    }
+  ],
   "coordination": {
     "executor": "attended session (fresh clone)",
     "evaluator": "different model from the executor"
@@ -89,7 +97,7 @@
         "AC10"
       ],
       "gate": "make camera-test ship-demo-input-test ship-console-test ship-ui-test no-twitch-test; make golden (378)",
-      "status": "done_pending_review",
+      "status": "done",
       "passes": true,
       "notes": [
         "demos/camera_director.gd + data/camera/views.json; Z1 4.5 m/-25 deg (design -20: -25 clears the navigation consoles), Z2 12 m/-35 deg (64 px at 720p), Z3 bridge place camera (ring-specific eye), lift view; 8 sectors x 2 rings (split 12 m, 1 m hysteresis; turn [135, 30] deg) because the design's single outward rule hits the spire needle for inner positions (512 blocked samples at turn 0); bridge clear-line sweep 0 blocked at every 0.5 m walk sample for Z1/Z2/Z3; lower deck interim views held to ceilings 9/47/75 until C2's Commons cameras",
@@ -115,7 +123,7 @@
         "AC9"
       ],
       "gate": "make ship-ui-test free-nav-recovery-test title-screen-test camera-test",
-      "status": "done_pending_review",
+      "status": "done",
       "passes": true,
       "notes": [
         "F8 / --free-camera (setup_options free_camera) only when dev_controls(); old look, dolly, presets 1-4; HUD FREE CAMERA · developer",
@@ -138,7 +146,7 @@
         "AC10"
       ],
       "gate": "make camera-test tour-attitude-test tour-pacing-test no-twitch-test ship-demo-lift-test solar-departure-test",
-      "status": "done_pending_review",
+      "status": "done",
       "passes": true,
       "notes": [
         "Sky forward: low eye beside the captain (back 2.2 m, rise 0.3 m, pitch +58 deg); the first clear yaw from yaw_candidates_deg is chosen once as the view starts (whole figure incl. lift boxes and the pole overhead clear) - every bridge sample has one, so no forward-watch anchor walk is needed (deviation: the design's anchor kept as fallback walk_to)",
@@ -164,7 +172,7 @@
         "AC13"
       ],
       "gate": "make test; make golden (389); make camera-views-capture opened by eye",
-      "status": "done_pending_review",
+      "status": "done",
       "passes": true,
       "notes": [
         "test_physics.gd test_camera_views_invariance: RS-1/RS-2 at every views.json eye vs the captain eye, same pixel <= 0.05 px, sky ray 1e-9 rad",
@@ -188,7 +196,7 @@
         "AC14"
       ],
       "gate": "make -k test exit 0 locally; CI green",
-      "status": "not_started",
+      "status": "held",
       "passes": null,
       "notes": [
         "held: test migrations needed for make test were done with C1-C4; the 19-tool smoke runs, demos/README controls (done), Tab help (done) remain; tool smoke runs not executed"
@@ -207,7 +215,7 @@
         "all"
       ],
       "gate": "eval >= 70/100",
-      "status": "not_started",
+      "status": "in_progress",
       "passes": null,
       "notes": []
     }
@@ -231,5 +239,57 @@
       "C3"
     ],
     "render_review": "renders/camera_views/*.png (18 frames) awaiting Mark"
-  }
+  },
+  "milestones": [
+    {
+      "id": "C1_DIRECTOR_LEVELS_INPUT",
+      "status": "done",
+      "passes": true,
+      "completed": "2026-10-17",
+      "pr": "#270"
+    },
+    {
+      "id": "C3_DEV_FREE_CAMERA_POINTER_MOTION",
+      "status": "done",
+      "passes": true,
+      "completed": "2026-10-17",
+      "pr": "#270"
+    },
+    {
+      "id": "C2_SITUATION_VIEWS_CUES",
+      "status": "done",
+      "passes": true,
+      "completed": "2026-10-17",
+      "pr": "#270"
+    },
+    {
+      "id": "C4_PHYSICS_GOLDENS_RENDERS",
+      "status": "done",
+      "passes": true,
+      "completed": "2026-10-17",
+      "pr": "#270"
+    },
+    {
+      "id": "C5_MIGRATION",
+      "status": "held",
+      "passes": null,
+      "completed": null,
+      "pr": null
+    },
+    {
+      "id": "E_EVALUATE_LAND",
+      "status": "in_progress",
+      "passes": null,
+      "completed": null,
+      "pr": "#270"
+    }
+  ],
+  "amendments": [
+    {
+      "date": "2026-10-17",
+      "by": "Mark, attended",
+      "decision": "Sky forward under way",
+      "detail": "rest: Z2 Deck; under way: Sky forward; guided stop: Sky side; Sgr A*: the hole view; any zoom key returns to Z1/Z2/Z3"
+    }
+  ]
 }

@@ -51,6 +51,7 @@ func _run() -> void:
 	await process_frame
 	await test_free_camera()
 	await test_cues()
+	await test_default_mapping()
 	print("camera-director: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -234,11 +235,11 @@ func test_levels_and_input(demo: Node) -> void:
 	check("AC3 mouse motion, Option-drag, right-drag and the right stick never move the camera", demo.camera.global_transform.is_equal_approx(pose))
 	# One wheel notch: one level. Repeats inside the cooldown are ignored.
 	var wheel := InputEventMouseButton.new()
-	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
 	wheel.pressed = true
 	demo._unhandled_input(wheel)
-	check("AC2 one wheel notch in: Z2 -> Z1", dir.level == 1)
-	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	check("AC2 one wheel notch up comes closer: Z2 -> Z1", dir.level == 1)
+	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
 	demo._unhandled_input(wheel)
 	check("AC2 a second notch inside 0.3 s is ignored", dir.level == 1)
 	step(demo, 0.35)
@@ -255,15 +256,15 @@ func test_levels_and_input(demo: Node) -> void:
 	pan.delta = Vector2(3.0, 0.0)
 	demo._unhandled_input(pan)
 	check("AC2 horizontal trackpad scroll is ignored", dir.level == 3)
-	for d in [0.25, 0.25]:
+	for d in [-0.25, -0.25]:
 		pan.delta = Vector2(0, d)
 		demo._unhandled_input(pan)
 	check("AC2 half a trackpad unit does not step", dir.level == 3)
-	pan.delta = Vector2(0, 0.5)
+	pan.delta = Vector2(0, -0.5)
 	demo._unhandled_input(pan)
-	check("AC2 one accumulated trackpad unit steps one level: Z3 -> Z2", dir.level == 2)
+	check("AC2 one accumulated unit of scroll up steps one level closer: Z3 -> Z2", dir.level == 2)
 	for i in 10:
-		pan.delta = Vector2(0, 0.4)
+		pan.delta = Vector2(0, -0.4)
 		demo._unhandled_input(pan)
 		step(demo, 0.05)
 	check("AC2 a long swipe inside the cooldown is one step (an inertial tail moves nothing)", dir.level == 2)
@@ -274,7 +275,7 @@ func test_levels_and_input(demo: Node) -> void:
 	check("AC2 a small pinch does not step", dir.level == 2)
 	demo._unhandled_input(pinch)
 	check("AC2 a pinch past x1.15 steps in: Z2 -> Z1", dir.level == 1)
-	step(demo, 0.35)
+	step(demo, 0.6)
 	pinch.factor = 0.86
 	demo._unhandled_input(pinch)
 	check("AC2 a pinch past x0.87 steps out: Z1 -> Z2", dir.level == 2)
@@ -829,5 +830,53 @@ func test_cues() -> void:
 	check("the next stop prepares", demo.solar_tour.prepare_next())
 	demo._process(1.0 / 60.0)
 	check("AC6 the departure turn cues Sky forward", dir.situation == "sky_forward" and demo.under_way())
+	demo.queue_free()
+	await process_frame
+
+
+## Mark's ruling (2026-10-17, attended; design doc §Under-way default): "Sky forward under way".
+## At rest Z2 Deck; under way Sky forward (the captain from behind, the starbow in frame); at a
+## guided stop Sky side; at Sgr A* the hole view; any zoom key returns to Z1 / Z2 / Z3.
+func test_default_mapping() -> void:
+	var demo: Node = await new_demo({"live_start": true})
+	var dir: CameraDirector = demo.director
+	demo._unhandled_input(key(KEY_R))
+	check("default mapping: at rest R gives Z2 Deck", dir.situation.is_empty() and dir.level == 2 and not demo.under_way())
+	var c: ShipConsoles = demo.consoles
+	c.go_to("navigation")
+	c.use("navigation", "open")
+	c.use("navigation", "commit")
+	demo.journey_tick()
+	check("default mapping: under way the view is Sky forward", demo.under_way() and dir.situation == "sky_forward")
+	for lv in [1, 2, 3]:
+		demo._unhandled_input(key(KEY_1 + lv - 1))
+		check("default mapping: under way, zoom key %d returns to Z%d" % [lv, lv], dir.situation.is_empty() and dir.level == lv)
+		demo._unhandled_input(key(KEY_R))
+		check("default mapping: under way R returns to Sky forward (after Z%d)" % lv, dir.situation == "sky_forward")
+	demo.queue_free()
+	await process_frame
+	demo = await new_demo({"live_start": true})
+	dir = demo.director
+	demo.start_solar_departure()
+	for i in 1200:
+		demo._process(1.0 / 60.0)
+		if demo.solar_tour.attitude_hold:
+			demo.journey_tick()
+		if dir.situation == "sky_side":
+			break
+	check("default mapping: at a guided stop the view is Sky side", dir.situation == "sky_side" and not demo.under_way())
+	demo._unhandled_input(key(KEY_2))
+	check("default mapping: at a stop a zoom key returns to Z2", dir.situation.is_empty() and dir.level == 2)
+	demo.queue_free()
+	await process_frame
+	demo = await new_demo({"live_start": true})
+	dir = demo.director
+	demo.start_black_hole()
+	check("default mapping: at Sgr A* the view is the hole view", dir.situation == "sky_hole")
+	demo._unhandled_input(key(KEY_3))
+	check("default mapping: at Sgr A* a zoom key returns to Z3", dir.situation.is_empty() and dir.level == 3)
+	demo._unhandled_input(key(KEY_R))
+	check("default mapping: at Sgr A* R returns to the hole view", dir.situation == "sky_hole")
+	demo.leave_black_hole()
 	demo.queue_free()
 	await process_frame

@@ -26,9 +26,9 @@ func _run() -> void:
 	var before:float=demo.sky_world.clock.tau
 	var ticked:bool=demo.journey_tick()
 	check(ticked and demo.sky_world.clock.tau>before,"live rest clock advances while aboard (tick %s, error '%s', tau %s -> %s, in flight %s)" % [ticked,demo.journey_sim.last_error,before,demo.sky_world.clock.tau,demo.journey_sim.in_flight()])
-	var scroll:=InputEventPanGesture.new();scroll.delta=Vector2(0,-1)
+	var scroll:=InputEventPanGesture.new();scroll.delta=Vector2(0,1)
 	demo._unhandled_input(scroll);demo._process(0.)
-	check(demo.director.level==3 and demo.ship_hud.view_tag.text.contains("Whole level"),"one scroll unit is one level, and the view tag names it")
+	check(demo.director.level==3 and demo.ship_hud.view_tag.text.contains("Whole level"),"one unit of scroll down is one level out, and the view tag names it")
 	demo.set_preset("reset");demo._process(0.);check(demo.director.level==2 and demo.ship_hud.view_tag.text.contains("Deck"),"R restores Z2 Deck")
 	demo.open_navigation();check(demo.journey_map!=null,"one navigation is shared with current ship")
 	demo.close_navigation();demo.queue_free();await process_frame

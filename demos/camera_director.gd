@@ -74,8 +74,8 @@ var _restoring := false
 var _foot := Vector3.ZERO
 var _foot_v := Vector3.ZERO
 var _cooldown := 0.0
-var _pan := 0.0
-var _pinch := 1.0
+var _gestures := {} # "pan" / "pinch" -> {idle s, acc, spent}
+const GESTURE_GAP_S := 0.5
 ## C2 situation views (sky forward / side / aft): the active one ("" = the level view), a view
 ## waiting for the captain's walk to its anchor, the interlude hold, and the HUD prompt a cue
 ## becomes under reduced motion (or off the bridge).
@@ -522,56 +522,62 @@ func default_view() -> bool:
 	return true
 
 
-## A wheel notch: one level, then COOLDOWN_S; repeats inside the cooldown are ignored and
-## extend it (a wheel or an inertial swipe is one step). dir: -1 in (closer), +1 out.
-func wheel(dir: int) -> bool:
+## Direction (one convention, documented in demos/README.md): zoom IN = closer = toward Z1. The
+## wheel rolled up, a trackpad scroll up (pan delta.y < 0, the direction Godot also reports as
+## wheel up) and a pinch open come closer; wheel down, scroll down and pinch close go out.
+
+## A wheel notch: one level, then COOLDOWN_S; repeats inside the cooldown are ignored and extend
+## it (a spun wheel is one step). up: closer.
+func wheel(up: bool) -> bool:
 	if _cooldown > 0.0:
 		_cooldown = COOLDOWN_S
 		return false
-	return step_level(dir)
+	return step_level(-1 if up else 1)
+
+
+## A trackpad gesture (scroll or pinch) is the run of its events with gaps under GESTURE_GAP_S:
+## its inertial tail is part of it. A gesture steps at most one level; its accumulator starts
+## fresh with each gesture, so a part-swipe never adds to one long after.
+func _gesture(kind: String) -> Dictionary:
+	var g: Dictionary = _gestures.get(kind, {"idle": INF, "acc": 0.0, "spent": false})
+	if float(g.idle) >= GESTURE_GAP_S:
+		g = {"idle": 0.0, "acc": 1.0 if kind == "pinch" else 0.0, "spent": false}
+	g.idle = 0.0
+	_gestures[kind] = g
+	return g
 
 
 ## A trackpad scroll: accumulate delta.y; one level per PAN_UNIT. Horizontal scroll is ignored.
-## Scrolling down (delta.y > 0) comes closer, as the old dolly (-delta.y pulled back).
 func pan(delta: Vector2) -> bool:
 	if absf(delta.y) < 1e-9:
 		return false
-	if _cooldown > 0.0:
-		_cooldown = COOLDOWN_S
-		_pan = 0.0
+	var g := _gesture("pan")
+	if g.spent:
 		return false
-	_pan += delta.y
-	if absf(_pan) < PAN_UNIT:
+	g.acc = float(g.acc) + delta.y
+	if absf(float(g.acc)) < PAN_UNIT:
 		return false
-	var dir := -1 if _pan > 0.0 else 1
-	_pan = 0.0
-	if not step_level(dir):
-		_cooldown = COOLDOWN_S
-		return false
-	return true
+	g.spent = true
+	return step_level(1 if float(g.acc) > 0.0 else -1)
 
 
-## A pinch (magnify): one level per x1.15 (in) or x0.87 (out).
+## A pinch (magnify): one level per x1.15 (open: closer) or x0.87 (close: out) within a gesture.
 func pinch(factor: float) -> bool:
 	if factor <= 0.0:
 		return false
-	if _cooldown > 0.0:
-		_cooldown = COOLDOWN_S
-		_pinch = 1.0
+	var g := _gesture("pinch")
+	if g.spent:
 		return false
-	_pinch *= factor
+	g.acc = float(g.acc) * factor
 	var dir := 0
-	if _pinch >= PINCH_IN:
+	if float(g.acc) >= PINCH_IN:
 		dir = -1
-	elif _pinch <= PINCH_OUT:
+	elif float(g.acc) <= PINCH_OUT:
 		dir = 1
 	if dir == 0:
 		return false
-	_pinch = 1.0
-	if not step_level(dir):
-		_cooldown = COOLDOWN_S
-		return false
-	return true
+	g.spent = true
+	return step_level(dir)
 
 
 ## C2: a sky view. A player key (7 / 8 / 9) or a cue (departure, a guided stop, braking, Sgr A*).
@@ -716,6 +722,8 @@ func _finish_restore() -> void:
 func advance(dt: float) -> void:
 	dt = maxf(dt, 0.0)
 	_cooldown = maxf(0.0, _cooldown - dt)
+	for g: Dictionary in _gestures.values():
+		g.idle = float(g.idle) + dt
 	fade = maxf(0.0, fade - dt / FADE_S)
 	_prompt_t = maxf(0.0, _prompt_t - dt)
 	if _prompt_t <= 0.0:

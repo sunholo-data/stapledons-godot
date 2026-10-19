@@ -245,7 +245,22 @@ func _cam1(built: bool) -> int:
 		demo.sky.set_debug_unit(false) # S4 leaves the unit-gain glow target on
 	for spot: String in ["spawn", "helm"]:
 		failures += await _pole(built, func() -> void: _sky_pose(spot), "G-CAM-1 forward pole (Sky forward, %s)" % spot, "Sky forward eye")
+	# The Sgr A* forward pose the design named: the hole view, which at Sgr A* aims at the hole
+	# (the ship holds its nose on it, so the hole is the forward pole). The harness has no sim
+	# (make golden runs without AILANG), so this is the pose through flat space, not the lens.
+	failures += await _pole(built, func() -> void: _hole_pose(), "G-CAM-1 forward pole (Sgr A* hole view, spawn)", "hole view eye")
 	return failures
+
+
+func _hole_pose() -> void:
+	var dir: CameraDirector = demo.director
+	dir.hole_override = Vector3.UP
+	var foot := Vector3(8, 82, -4.8)
+	var v: Dictionary = dir.views["sky_hole"]
+	var off: Variant = dir.choose_offset(v, foot)
+	demo.camera.global_transform = dir._sky(v, foot, dir.sector_for(foot, -1), off if off != null else 90.0)
+	demo.avatar.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y # as the game stands the captain in sky views
+	demo._sync_observer()
 
 
 func _sky_pose(spot: String) -> void:
@@ -254,6 +269,7 @@ func _sky_pose(spot: String) -> void:
 	var v: Dictionary = dir.views["sky_forward"]
 	var off: Variant = dir.choose_offset(v, foot)
 	demo.camera.global_transform = dir._sky(v, foot, dir.sector_for(foot, -1), off if off != null else 90.0)
+	demo.avatar.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y # as the game stands the captain in sky views
 	demo._sync_observer()
 
 
@@ -297,6 +313,10 @@ func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int
 				var centroid := _centroid(_read(main.get_viewport()), want)
 				got = centroid[0]
 				error = got.distance_to(want)
+				# FOV-sensitive: the design's 78 deg constant (CameraDirector.FOV_DEG), not the camera's
+				# own fov, projects the pole on the CPU; the rendered pole must land there too.
+				var want78 := CameraDirector.screen_point(demo.camera.global_transform, demo.camera.global_position + Vector3.UP * 1000.0, Vector2(size))
+				error = maxf(error, got.distance_to(want78))
 				ok = is_finite(centroid[2]) and centroid[2] > 0.0 and is_finite(error) and error <= 0.75
 			elif not clear:
 				push_warning("m4 ship golden: %s forward pole covered (geometry or clean peak)" % phase)
@@ -445,6 +465,7 @@ func _cam2(built: bool) -> int:
 			var c := NAN
 			var closed := NAN
 			var eye_r := NAN
+			var margin := NAN
 			if built:
 				pole = poles["guided-cap-2e-9" if at_cap else "sun"].pole
 				if _world(cap if at_cap else _phase_world("cruising", poles.sun.phi)):
@@ -454,7 +475,26 @@ func _cam2(built: bool) -> int:
 					if id == "sky_forward":
 						_sky_pose("spawn")
 						eye = demo.camera.global_position
-					demo.camera.global_transform = Transform3D(Basis.looking_at(Vector3(0.001, 1.0, 0.0), Vector3.FORWARD), eye)
+					# Aim where the glow tells this eye from the captain's: of rays 20-65 deg off the
+					# pole toward / away from the eye's azimuth, the one whose CPU profile from this eye
+					# and from the captain's eye differ most (>= 5 %, so a shader that used the
+					# captain's eye fails the 1 % limit).
+					var best := [-1.0, Vector3.UP]
+					var az := atan2(eye.z, eye.x)
+					var cap_eye := [foot.x, -foot.z, foot.y + 1.7]
+					for th: float in [20.0, 40.0, 60.0, 80.0, 100.0, 120.0, 140.0, 160.0]:
+						for k in 8:
+							var a := az + k * PI / 4.0
+							var d := Vector3(sin(deg_to_rad(th)) * cos(a), cos(deg_to_rad(th)), sin(deg_to_rad(th)) * sin(a))
+							var ds := PackedFloat64Array([d.x, -d.z, d.y])
+							var w1 := ForwardGlow.profile(pole, ForwardGlow.wall_cos(PackedFloat64Array([eye.x, -eye.z, eye.y]), ds, demo.sky.radius_m))
+							var w0 := ForwardGlow.profile(pole, ForwardGlow.wall_cos(PackedFloat64Array(cap_eye), ds, demo.sky.radius_m))
+							# keep to glow the half-float target resolves (>= 1 % of the pole's)
+							if _positive(w1) and w1 >= 0.01 * pole and absf(w1 - w0) / w1 > float(best[0]):
+								best = [absf(w1 - w0) / w1, d]
+					margin = float(best[0])
+					var aim: Vector3 = best[1]
+					demo.camera.global_transform = Transform3D(Basis.looking_at(aim, Vector3.FORWARD if absf(aim.y) > 0.99 else Vector3.UP), eye)
 					demo._sync_observer()
 					var cam := _cam()
 					var position := PackedFloat64Array(cam.position_m)
@@ -475,6 +515,9 @@ func _cam2(built: bool) -> int:
 					if _image_ok(img) and img.get_format() == 14:
 						got = img.get_pixel(size.x / 2, size.y / 2).r
 			var want := ForwardGlow.profile(pole, c) if is_finite(c) and _positive(pole) else NAN
-			var ok: bool = is_finite(got) and _positive(want) and absf(got - want) <= 0.01 * want and absf(c - closed) <= 1e-6 and eye_r <= 95.0 and c < 0.9999
-			failures += _report(ok, "G-CAM-2 glow (%s eye, |eye| %.2f m) %s: wall cos %.5f (closed form %.5f), unit-gain %s W/m^2, CPU profile %s (limit 1 %%)" % [id, eye_r, label, c, closed, String.num_scientific(got), String.num_scientific(want)])
+			# The limit: 1 %, or 1.5 half-float subnormal steps (2^-24) where the 0.99c glow is below
+			# the half-float normal range; the eye must matter 3x more than that limit.
+			var tol: float = maxf(0.01 * want, 1.5 * pow(2.0, -24.0)) if is_finite(want) else NAN
+			var ok: bool = is_finite(got) and _positive(want) and absf(got - want) <= tol and absf(c - closed) <= 1e-6 and eye_r <= 95.0 and c < 0.9999 and margin >= 0.05 and margin * want >= 3.0 * tol
+			failures += _report(ok, "G-CAM-2 glow (%s eye, |eye| %.2f m) %s: wall cos %.5f (closed form %.5f), unit-gain %s W/m^2, CPU profile %s (limit %.2f %%; this eye vs the captain's eye differ %.1f %% there, >= 5 %% and 3x the limit)" % [id, eye_r, label, c, closed, String.num_scientific(got), String.num_scientific(want), 100.0 * tol / want if _positive(want) else NAN, margin * 100.0])
 	return failures
