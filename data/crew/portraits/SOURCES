@@ -16,3 +16,12 @@ medic_sad.png <- assets/characters/medic/portrait_medic_y0_sad.png sha256 c126b9
 medic_angry.png <- assets/characters/medic/portrait_medic_y0_angry.png sha256 6800f1c3e89f4989a8b506715e3aed264ea539504fe97a6ed65a2f9b27d8daec
 medic_fearful.png <- assets/characters/medic/portrait_medic_y0_fearful.png sha256 fd0daac66190895014093d4e9703cd30b70236fe2d277aa1fcd58838d44c3a54
 medic_curious.png <- assets/characters/medic/portrait_medic_y0_curious.png sha256 254b25bd4e15aad6a211fcfe4f885797f5d8777b2ba92f5f58141ffc3542ec8f
+
+# 2026-10-17 (ledger D-80, names fit faces; R2-CREW-CONSOLE-V2): what each face shows, for the name draw. A visual naming
+# convention, not an ancestry the face establishes (the medic's is from assets/characters/medic/manifest.json:
+# gender_presentation, name_region). sim/data/crew_faces.ail holds the same rows; make crew-faces-check compares them.
+face medic presentation=woman regions=south_asia
+face engineer presentation=woman regions=northern_europe,western_europe,eastern_europe
+face analyst presentation=woman regions=south_asia,north_africa_middle_east
+face pilot presentation=man regions=north_africa_middle_east,latin_america
+face counselor presentation=woman regions=west_africa,east_africa,southern_africa

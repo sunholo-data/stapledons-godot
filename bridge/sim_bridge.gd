@@ -42,8 +42,15 @@ const CREW_MINOR := 9
 ## interlude steps exactly next_stop_years (a monthly crew check-in, the 365-day cap or the braking
 ## boundary), so a crew hold ends its chunk. Asked for by setting `want_minor = INTERLUDE_MINOR`.
 const INTERLUDE_MINOR := 10
+## Protocol 2.11 (R2-CREW-CONSOLE-V2 V1): the Crew console. Each crew member carries `work_state` (the
+## sim names whose move it is: held, relief_asked, concern, declined, deferred, asked, agreed, offered,
+## resting, working, done, stopped, free) and working work its start `terms`; crew_start may carry
+## "as" (consent | orders) and crew_offer "start" (on_accept | now), envelope fields beside the line
+## (crew_intent's `envelope`). The game's sessions ask for it (want_minor = CONSOLE_MINOR).
+const CONSOLE_MINOR := 11
+const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
-const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
+const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -381,7 +388,7 @@ func stop() -> void:
 
 ## JSON text for a request. Floats use Godot's shortest round-trip digits
 ## (`full_precision`), except -0.0, which Godot prints as "0.0" and std/json
-## needs as "-0.0" (ailang#1460). Ints stay integers. Keys keep their order.
+## needs as "-0.0". Ints stay integers. Keys keep their order.
 static func encode(v: Variant) -> String:
 	match typeof(v):
 		TYPE_DICTIONARY:
@@ -675,8 +682,11 @@ func _is_queued(r: Variant) -> bool:
 
 
 ## A crew intent: `kind` one of CREW_INTENTS, `command` the crew_core command as a dictionary.
-static func crew_intent(kind: String, command: Dictionary) -> Dictionary:
-	return {"k": kind, "line": JSON.stringify(command)}
+## `envelope` (2.11): {"as": "orders"} on crew_start, {"start": "on_accept" | "now"} on crew_offer.
+static func crew_intent(kind: String, command: Dictionary, envelope: Dictionary = {}) -> Dictionary:
+	var i := {"k": kind, "line": JSON.stringify(command)}
+	i.merge(envelope)
+	return i
 
 ## The 2.9 crew section, checked: turn, captaincy, and members/requests/reliefs/heard/resources
 ## arrays; each member has an id, an indicators dictionary and a trust number or null. {} if wrong.

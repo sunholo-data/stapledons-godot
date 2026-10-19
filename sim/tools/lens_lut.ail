@@ -10,9 +10,7 @@
 -- Rows: y = ln(r - 1.5) uniform on [ln 0.5, ln(1e6 - 1.5)]; the end rows are pinned to r = 2 and
 -- r = 1e6 exactly (exp(log v) need not return v, and the exact form requires r >= 2).
 -- Design: design_docs/implemented/r1/m3-black-holes.md section M3.2. All maths is the package's; this
--- module only lays it out. Lists are built tail-recursively or through std/array, never by
--- non-tail recursion (ailang#1576: the VM drops a request whose handler builds ~1100+ elements
--- that way).
+-- module only lays it out.
 module stapledons/sim/tools/lens_lut
 
 import std/math (exp, log, intToFloat)
@@ -73,41 +71,35 @@ export pure func fwdG(r: float, i: int, rm: float, r0: float, rp: float) -> floa
   dr + singularSlope(colX(r, i))
 }
 
--- R for columns lo..hi of row r, in order (built from hi down, tail-recursive).
-pure func rList(r: float, i: int, lo: int, acc: [float]) -> [float] =
-  if i < lo then acc else rList(r, i - 1, lo, fwdR(r, i) :: acc)
+-- R for columns i..hi of row r, in order.
+pure func rList(r: float, i: int, hi: int) -> [float] =
+  if i > hi then [] else fwdR(r, i) :: rList(r, i + 1, hi)
 
--- Interleave (R, G) for columns k..0 of a full row held in an array (tail-recursive, built from the end).
-pure func fwdPairs(r: float, ra: Array[float], k: int, acc: [float]) -> [float] =
-  if k < 0 then acc
+-- Interleave (R, G) for columns k..nCols-1 of a full row held in an array.
+pure func fwdPairs(r: float, ra: Array[float], k: int) -> [float] =
+  if k >= nCols() then []
   else {
     let n = nCols();
     let rm = if k > 0 then get(ra, k - 1) else get(ra, k);
     let rp = if k < n - 1 then get(ra, k + 1) else get(ra, k);
-    fwdPairs(r, ra, k - 1, get(ra, k) :: fwdG(r, k, rm, get(ra, k), rp) :: acc)
+    get(ra, k) :: fwdG(r, k, rm, get(ra, k), rp) :: fwdPairs(r, ra, k + 1)
   }
 
 -- One forward row: 2 x nCols floats, R and G interleaved.
 export pure func fwdRow(j: int) -> [float] {
   let r = rowRadius(j);
-  let ra = fromList(rList(r, nCols() - 1, 0, []));
-  fwdPairs(r, ra, nCols() - 1, [])
+  let ra = fromList(rList(r, 0, nCols() - 1));
+  fwdPairs(r, ra, 0)
 }
 
-pure func invPairs(xs: [InvSample], acc: [float]) -> [float] =
+pure func invPairs(xs: [InvSample]) -> [float] =
   match xs {
-    [] => acc,
-    s :: rest => invPairs(rest, s.slope :: s.dpsi :: acc)
-  }
-
-pure func revF(xs: [float], acc: [float]) -> [float] =
-  match xs {
-    [] => acc,
-    x :: rest => revF(rest, x :: acc)
+    [] => [],
+    s :: rest => s.dpsi :: s.slope :: invPairs(rest)
   }
 
 -- One inverse row: 2 x nCols floats, (psi - alpha_sh, dpsi/dF) interleaved.
-export pure func invRow(j: int) -> [float] = revF(invPairs(inverseRow(rowRadius(j), invFwdSamples(), nCols()), []), [])
+export pure func invRow(j: int) -> [float] = invPairs(inverseRow(rowRadius(j), invFwdSamples(), nCols()))
 
 -- Columns lo..hi of forward row j as interleaved (R, G); G at the ends of the slice uses the
 -- true neighbours, so every value equals the full row's bit for bit.
@@ -115,17 +107,17 @@ export pure func fwdSlice(j: int, lo: int, hi: int) -> [float] {
   let r = rowRadius(j);
   let a0 = if lo > 0 then lo - 1 else lo;
   let a1 = if hi < nCols() - 1 then hi + 1 else hi;
-  let ra = fromList(rList(r, a1, a0, []));
-  sliceLoop(r, ra, a0, a1, hi, lo, [])
+  let ra = fromList(rList(r, a0, a1));
+  sliceLoop(r, ra, a0, a1, lo, hi)
 }
 
-pure func sliceLoop(r: float, ra: Array[float], a0: int, a1: int, k: int, lo: int, acc: [float]) -> [float] =
-  if k < lo then acc
+pure func sliceLoop(r: float, ra: Array[float], a0: int, a1: int, k: int, hi: int) -> [float] =
+  if k > hi then []
   else {
     let r0 = get(ra, k - a0);
     let rm = if k > a0 then get(ra, k - 1 - a0) else r0;
     let rp = if k < a1 then get(ra, k + 1 - a0) else r0;
-    sliceLoop(r, ra, a0, a1, k - 1, lo, r0 :: fwdG(r, k, rm, r0, rp) :: acc)
+    r0 :: fwdG(r, k, rm, r0, rp) :: sliceLoop(r, ra, a0, a1, k + 1, hi)
   }
 
 pure func finiteAll(xs: [float]) -> bool =
@@ -136,20 +128,14 @@ pure func finiteAll(xs: [float]) -> bool =
 
 export pure func allFinite(xs: [float]) -> bool = finiteAll(xs)
 
-pure func strsLoop(xs: [float], acc: [string]) -> [string] =
+pure func strs(xs: [float]) -> [string] =
   match xs {
-    [] => acc,
-    x :: rest => strsLoop(rest, floatToStr(x) :: acc)
+    [] => [],
+    x :: rest => floatToStr(x) :: strs(rest)
   }
 
 -- Text of a list of floats, one per line (for the VM = interpreter cmp).
-export pure func floatsText(xs: [float]) -> string = join("\n", revStr(strsLoop(xs, []), []))
-
-pure func revStr(xs: [string], acc: [string]) -> [string] =
-  match xs {
-    [] => acc,
-    x :: rest => revStr(rest, x :: acc)
-  }
+export pure func floatsText(xs: [float]) -> string = join("\n", strs(xs))
 
 -- Strict-VM entries. rowSlice128: row 128, columns 0..n-1, the VM = interpreter parity probe (AC-6).
 export pure func rowSlice128(n: int) -> string = floatsText(fwdSlice(128, 0, n - 1))
@@ -176,12 +162,12 @@ pure func hexDigit(d: int) -> string =
   else if d == 8 then "8" else if d == 9 then "9" else if d == 10 then "a" else if d == 11 then "b"
   else if d == 12 then "c" else if d == 13 then "d" else if d == 14 then "e" else "f"
 
-pure func hexLoop(xs: [int], acc: [string]) -> [string] =
+pure func hexes(xs: [int]) -> [string] =
   match xs {
-    [] => acc,
-    x :: rest => hexLoop(rest, hexDigit(x % 16) :: hexDigit(x / 16) :: acc)
+    [] => [],
+    x :: rest => hexDigit(x / 16) :: hexDigit(x % 16) :: hexes(rest)
   }
 
 -- Lowercase hex of the little-endian float32 bytes of row 128, columns 0..n-1: what the bin holds
 -- there (make lens-lut-check compares it with od of the pinned bin, on the strict VM).
-export pure func rowSlice128Hex(n: int) -> string = concat(revStr(hexLoop(toInts(encodeF32LE(fwdSlice(128, 0, n - 1))), []), []))
+export pure func rowSlice128Hex(n: int) -> string = concat(hexes(toInts(encodeF32LE(fwdSlice(128, 0, n - 1)))))

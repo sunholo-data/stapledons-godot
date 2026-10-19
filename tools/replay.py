@@ -13,15 +13,11 @@ Per case: the log runs on the bytecode VM and on the tree-walking interpreter;
 the two stdouts must be byte-identical, must hold one reply per input line up
 to the first quit, and must equal the committed golden byte for byte (full
 golden `NAME.state.ARCH.ndjson`) or by sha256 (`NAME.state.ARCH.sha256`, for
-the generated session, whose output is ~4 MB, and any output over 256 KB). Goldens are per architecture:
-std/math exp/log differ by 1 ulp between arm64 and x86_64 (ailang#1465), and
-every journey runs through exp-derived floats. A missing golden is a failure.
+the generated session, whose output is ~4 MB, and any output over 256 KB). Goldens are per architecture
+(std/math exp/log once differed by 1 ulp between arm64 and x86_64; since AILANG v0.52.0 the two
+architectures' goldens are identical). A missing golden is a failure.
 
-AILANG comes from $AILANG (default `ailang`); its --version is printed. The
-interpreter runs with --max-recursion-depth: ship.ail's read loop is a tail
-call, which the VM eliminates and the interpreter does not (RT_REC_003 at
-10,000 lines on v0.51.0, reported upstream; tail calls run in constant
-stack on the interpreter since v0.52.0, ailang#1486, so the flag is now belt and braces).
+AILANG comes from $AILANG (default `ailang`); its --version is printed.
 
 --compat: protocol 2.1 changed only the first lines of every 2.0 golden. The
 2.0 goldens are frozen in tests/replays/compat-2.0/ with the sha256 of each
@@ -46,7 +42,6 @@ import sys
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INTERP_DEPTH = "100000"
 DIGEST_OVER = 256 * 1024  # bytes: larger goldens are committed as a sha256 only
 SESSION_RE = re.compile(r"^session(\d+)k$")
 EXTRA = {}  # case name -> check(out_bytes, ctx) -> error string or None
@@ -156,7 +151,7 @@ def all_cases(ctx):
 
 
 def run(ctx, case, vm):
-    args = ctx.ailang + ["run", "--quiet"] + (["--bytecode"] if vm else ["--max-recursion-depth", INTERP_DEPTH]) + \
+    args = ctx.ailang + ["run", "--quiet"] + (["--bytecode"] if vm else []) + \
         ["--package-dir", os.path.join(ctx.root, "sim"), "--caps", "IO", "--entry", "main", os.path.join(ctx.root, "sim", "ship.ail")]
     if ctx.sim_only:
         # This is the sole service-launch site for sim-only replay. Recorded

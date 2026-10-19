@@ -1,0 +1,220 @@
+{
+  "turn": 31.0,
+  "captaincy": "orders",
+  "members": [
+    {
+      "id": "medic",
+      "name": "Meera Menon",
+      "indicators": {
+        "fatigue": 40.0,
+        "stress": 80.0,
+        "morale": 60.0,
+        "readiness": 55.0,
+        "observations": 0.0
+      },
+      "trust": 58.0,
+      "work": {
+        "task": "sd-d31a1-medic",
+        "recipe": "rest_medic",
+        "status": "working",
+        "started": 30.0,
+        "due": 32.0
+      },
+      "done": {
+        "task": "t1-medic",
+        "recipe": "work_medic",
+        "at": 2.0
+      },
+      "regard_low": [],
+      "emotion": "sad",
+      "work_state": "resting"
+    },
+    {
+      "id": "engineer",
+      "name": "Ingrid Makinen",
+      "indicators": {
+        "fatigue": 35.0,
+        "stress": 55.0,
+        "morale": 55.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 57.0,
+      "work": {
+        "task": "t1-engineer",
+        "recipe": "work_engineer",
+        "status": "offered",
+        "started": 0.0,
+        "due": 0.0
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "offered"
+    },
+    {
+      "id": "analyst",
+      "name": "Yasmin Haddad",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 45.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": {
+        "task": "t31a2-analyst",
+        "recipe": "work_analyst",
+        "status": "offered",
+        "started": 0.0,
+        "due": 0.0
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "held"
+    },
+    {
+      "id": "pilot",
+      "name": "Emiliano Rojas",
+      "indicators": {
+        "fatigue": 20.0,
+        "stress": 40.0,
+        "morale": 70.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "counselor",
+      "name": "Lindiwe Mokoena",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 50.0,
+        "morale": 65.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    }
+  ],
+  "requests": [],
+  "reliefs": [],
+  "heard": [
+    {
+      "id": "t31a2-engineer",
+      "author": "captain",
+      "kind": "task_offer",
+      "text": "work_engineer"
+    },
+    {
+      "id": "agreement-t31a2-engineer",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Project agreement t31a2-engineer"
+    },
+    {
+      "id": "report-t31a2-engineer",
+      "author": "captain",
+      "kind": "concern",
+      "text": "complied_start"
+    },
+    {
+      "id": "t31a2-analyst",
+      "author": "captain",
+      "kind": "task_offer",
+      "text": "work_analyst"
+    },
+    {
+      "id": "agreement-t31a2-analyst",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Project agreement t31a2-analyst"
+    },
+    {
+      "id": "concern-q-t31a2-analyst",
+      "author": "analyst",
+      "kind": "concern",
+      "text": "concern"
+    }
+  ],
+  "resources": [
+    {
+      "id": "mass",
+      "available": 2.0,
+      "reserved": 1.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "power",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "compute",
+      "available": 1.0,
+      "reserved": 1.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "signal",
+      "available": 1.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    }
+  ],
+  "lines": [],
+  "auto": "hands_on",
+  "holds": [
+    {
+      "id": "h30-refusal_under_orders-analyst",
+      "rule": "refusal_under_orders",
+      "actor": "analyst",
+      "name": "Yasmin Haddad",
+      "task": "t31a2-analyst",
+      "tick": 30.0,
+      "detail": "concern",
+      "line": "refused an order."
+    }
+  ],
+  "used": [],
+  "tick": 31.0,
+  "revision": 50.0,
+  "concerns": [
+    {
+      "issue": "issue-q-t31a2-analyst",
+      "actor": "analyst",
+      "task": "t31a2-analyst",
+      "kind": "contact_stance",
+      "prompt": "What attitude should guide our first-contact rehearsal? We can choose how to prepare without claiming anyone has answered us.",
+      "replies": 0.0,
+      "options": [
+        {
+          "approach": "clear_scope",
+          "text": "Our crew's reliable equipment is the boundary. Tell me what this signal preparation can and cannot establish."
+        },
+        {
+          "approach": "ask_advice",
+          "text": "Give me your judgement: what would make this preparation worthwhile, and what remains uncertain?"
+        },
+        {
+          "approach": "explain_priority",
+          "text": "I am asking because we need to prepare before first contact. That priority does not remove the uncertainties; let's name them."
+        }
+      ]
+    }
+  ]
+}

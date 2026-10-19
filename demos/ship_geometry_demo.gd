@@ -451,6 +451,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var aim:Vector2=get_viewport().get_visible_rect().size*.5 if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED else event.position
 		if consoles.click(aim):get_viewport().set_input_as_handled();return
 		if ship_hud.has_card("arrival"):dismiss_arrival()
+	# R2-CREW-CONSOLE-V2 V6: at the Crew console its keys and the pad are the console's first
+	# (focus, answers 1-4, Ask/Order, Esc disarms then ends a call); what it leaves falls through.
+	if consoles.focused=="crew" and consoles.crew_console!=null and consoles.crew_console.key(event):
+		get_viewport().set_input_as_handled();return
 	if event is InputEventJoypadButton and event.pressed:
 		if event.button_index==JOY_BUTTON_A:use_nearest()
 		elif event.button_index==JOY_BUTTON_B:escape()
@@ -684,6 +688,10 @@ func _identification_smoke() -> void:
 	for frame in 3:await get_tree().process_frame
 	var ok: bool = ready_ok and star_identification.held and not star_identification.candidates.is_empty()
 	print("ship-identification-smoke-stage candidates: ",ok," count=",star_identification.candidates.size())
+	var guides: Control=star_identification.constellations
+	guides.resolve(sky.starfield)
+	ok=ok and guides.figures.size()==4 and guides.missing_count==0 and guides.visible
+	print("constellation-export-smoke: ","OK" if ok else "FAIL")
 	if ok:
 		var candidate: Dictionary = star_identification.candidates[0]
 		for option in star_identification.candidates:
@@ -761,7 +769,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.INTERLUDE_MINOR # R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.CONSOLE_MINOR # R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -903,7 +911,7 @@ func _show_interlude() -> void:
 		director.sky("sky_forward",true,true);director.hold=director.situation=="sky_forward" or director._pending=="sky_forward"
 	elif not crossing_review.visible and director.hold:director.hold=false
 	if crossing_review.visible:
-		if consoles!=null and consoles.crew_page!=null:crossing_review.ai_text=consoles.crew_page.ai_text
+		if consoles!=null and consoles.crew_console!=null:crossing_review.ai_text=consoles.crew_console.ai_text
 		var view:=hud_view()
 		# I4: once the crossing is over, the Archive is asked for its telling (live AI with a key only).
 		archive_narration.maybe_open(view,ai_session.relay if ai_session!=null else null,card.crossed())

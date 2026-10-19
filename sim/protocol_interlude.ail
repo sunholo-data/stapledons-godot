@@ -52,8 +52,9 @@ export pure func decodeCruise(text: string) -> Result[Stop, string] = match deco
 -- ---------------------------------------------------------------- I2: the digest
 pure func stopFields(s: Stop) -> [{key: string, value: Json}] = [kv("next_stop_years", jnum(s.years)), kv("stop_kind", js(s.kind))]
 -- The cruise section: the stop while committed, the digest when there is one to send.
-export pure func encodeCruiseSection(stop: Option[Stop], d: Option[Digest]) -> string =
-  encode(jo((match stop { Some(s) => stopFields(s), None => [] }) ++ (match d { Some(x) => [kv("digest", digestJson(x))], None => [] })))
+export pure func encodeCruiseSection(stop: Option[Stop], d: Option[Digest]) -> string = encodeCruiseSectionAt(stop, d, false)
+export pure func encodeCruiseSectionAt(stop: Option[Stop], d: Option[Digest], console: bool) -> string =
+  encode(jo((match stop { Some(s) => stopFields(s), None => [] }) ++ (match d { Some(x) => [kv("digest", digestJsonAt(x, console))], None => [] })))
 export pure func encodeDigest(d: Digest) -> string = encode(digestJson(d))
 
 pure func timeJson(d: Digest) -> Json = {
@@ -79,14 +80,17 @@ pure func momentJson(m: Moment) -> Json =
   jo([kv("day", jint(m.day)), kv("actor", js(m.actor)), kv("name", js(m.name)), kv("label", js(m.label)), kv("kind", js(m.kind)),
     kv("emotion", js(m.emotion)), kv("text", js(m.text)), kv("ai_req", js(m.aiReq))])
 pure func waitingJson(w: Waiting) -> Json = jo([kv("kind", js(w.kind)), kv("id", js(w.id)), kv("actor", js(w.actor)), kv("name", js(w.name)), kv("task", js(w.task))])
-pure func crewJson(d: Digest, cd: CrewDigest) -> Json = {
+pure func crewJson(d: Digest, cd: CrewDigest, console: bool) -> Json = {
   let c = cd.counts;
   jo([kv("counts", jo([kv("days", jint(shipDays(d))), kv("work_done", jint(cd.work - cd.work0)), kv("refusals", jint(c.refusals)), kv("concerns", jint(c.concerns)),
       kv("concerns_auto_answered", jint(c.concernsAuto)), kv("reliefs_asked", jint(c.reliefsAsked)), kv("reliefs_granted", jint(c.reliefsGranted)),
-      kv("reliefs_denied", jint(c.reliefsDenied)), kv("holds", jint(c.holds))])),
+      kv("reliefs_denied", jint(c.reliefsDenied)), kv("holds", jint(c.holds))]
+      ++ (if console then [kv("stand_downs_asked", jint(c.standDownsAsked)), kv("stand_downs_granted", jint(c.standDownsGranted)), kv("stand_downs_denied", jint(c.standDownsDenied))] else []))),
     kv("movement", ja(map(memberJson, rankMovement(cd.members)))), kv("moments", ja(map(momentJson, cd.moments))), kv("waiting", ja(map(waitingJson, cd.waiting)))])
 }
 pure func narrationJson(d: Digest) -> Json = { let n = narrationOf(d); jo([kv("key", js(n.key)), kv("crossing", js(n.crossing)), kv("aboard", js(n.aboard))]) }
-export pure func digestJson(d: Digest) -> Json =
-  jo([kv("time", timeJson(d)), kv("home", homeJson(d)), kv("medium", mediumJson(d)), kv("crew", match d.crew { Some(cd) => crewJson(d, cd), None => JNull }),
+export pure func digestJson(d: Digest) -> Json = digestJsonAt(d, false)
+-- 2.11 (R2-CREW-CONSOLE-V2 V8): the counts add stand_downs_asked, _granted, _denied (crew_core 0.6).
+export pure func digestJsonAt(d: Digest, console: bool) -> Json =
+  jo([kv("time", timeJson(d)), kv("home", homeJson(d)), kv("medium", mediumJson(d)), kv("crew", match d.crew { Some(cd) => crewJson(d, cd, console), None => JNull }),
     kv("narration", narrationJson(d))])

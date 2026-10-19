@@ -334,7 +334,7 @@ func test_strip_and_cards() -> void:
 	check("AC3 transit card appears on commit", hud.has_card("transit"))
 	var transit_fields: Array = hud.card_body("transit").find_children("*", "DisplayBinding", true, false).map(func(b): return b.field)
 	check("AC3 transit card: compact JourneyHud rows %s" % [transit_fields], transit_fields.has("ship.phase") and transit_fields.has("consequence.gap_years") and transit_fields.has("client.warp") and transit_fields.filter(func(f): return f in ShipHud.TRANSIT_COMPACT).size() == ShipHud.TRANSIT_COMPACT.size())
-	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.INTERLUDE_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
+	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.CONSOLE_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
 	check("Tab holds every JourneyHud row", hud.transit_rows.find_children("*", "DisplayBinding", true, false).size() == JourneyHud.ROWS.size())
 	var phases := {}
 	await arrive(demo, phases)

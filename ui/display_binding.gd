@@ -57,6 +57,10 @@ static func format_field(view: Dictionary, f: String, format: String) -> String:
 	# R2-INTERLUDE I3 (the crossing review): formatting only, every input a sim field.
 	if format == "words": # a small count in words (CrewPage.words; D-21 crew text has no digits)
 		return "-" if raw == null else CrewPage.words(int(raw))
+	# R2-CREW-CONSOLE-V2 V3: the Crew console's formats (CrewConsoleModel.format): formatting only,
+	# a sim field (or the client's sending/selector state) in words.
+	if format.begins_with("crew_"):
+		return CrewConsoleModel.format(format, raw)
 	if format == "days": # a whole number of days, singular at one ("1 day", "70 days")
 		return "-" if raw == null else ("%d day" if int(raw) == 1 else "%d days") % int(raw)
 	if format == "days_into": # a moment's crew day in the crossing (0 is the day it began)
