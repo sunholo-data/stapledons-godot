@@ -46,7 +46,18 @@ git clone --quiet "https://github.com/$REPO.git" "$dir" || fail "clone failed"
 cd "$dir"
 git fetch --quiet origin "$sha" && git checkout --quiet --detach "$sha" || fail "checkout of $short failed"
 
-[ -x runtime/bin/ailang ] || make runtime > "$log" 2>&1 || fail "make runtime failed"
+# The pin is the Makefile's AILANG_RELEASE (ci.yml's AILANG_VERSION moves with it). A runtime that is
+# absent or off the pin is restaged: a stale v0.54.11 runtime once failed make test on parse errors.
+pin=$(sed -n 's/^AILANG_RELEASE ?= *//p' Makefile)
+[ -n "$pin" ] || fail "no AILANG_RELEASE pin in the Makefile"
+have=$(runtime/bin/ailang --version 2>/dev/null | head -1 || true)
+case "$have" in
+  *"${pin#v}"*) echo "rig-check: runtime $pin" > "$log" ;;
+  *) echo "rig-check: staging runtime $pin (had: ${have:-none})" > "$log"
+     make runtime >> "$log" 2>&1 || fail "make runtime failed" ;;
+esac
+have=$(runtime/bin/ailang --version 2>/dev/null | head -1 || true)
+case "$have" in *"${pin#v}"*) ;; *) fail "runtime is '$have', pin is $pin" ;; esac
 PATH=$PWD/runtime/bin:$PATH; export PATH
 make sky-assets >> "$log" 2>&1 || fail "make sky-assets failed"
 
