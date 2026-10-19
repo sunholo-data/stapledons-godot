@@ -2,7 +2,7 @@
 
 **Design doc:** [home-tiers.md](home-tiers.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_home_tiers.json`
-**Status:** **Approved 2026-10-19** by Mark (attended), with one change: no picks; each tier has a pool of variants, and the voyage seed picks one (D-86). The website shows tiers 0–12 only (canon: the doom). In execution on `design/home-tiers`, the same clone and branch as the plan. It ships as one PR.
+**Status:** **Executed 2026-10-19** (H1-H5 done; evaluation by a different model pending). **Approved 2026-10-19** by Mark (attended), with one change: no picks; each tier has a pool of variants, and the voyage seed picks one (D-86). The website shows tiers 0–12 only (canon: the doom). In execution on `design/home-tiers`, the same clone and branch as the plan. It ships as one PR.
 **Base:** `origin/main` at `ddc1278` (2026-10-19).
 **AILANG:** v0.54.14 (pinned; `make runtime`). AILANG prompt version loaded: v0.16.7.
 **Protocol minor:** 2.12 (`homeTiersMinor()`). Whichever PR merges first takes 12 (OQ3), so re-check before merge.
@@ -19,7 +19,7 @@
 
 ## Milestones
 
-### H1: the ladder, the variants and protocol 2.12 (~380 LOC)
+### H1: the ladder, the variants and protocol 2.12 (~380 LOC) ✅ done 2026-10-19
 - **Red first:**
   - `sim/home_tiers_test.ail`:
     - the edges and the strings;
@@ -36,7 +36,7 @@
   - Protocol: `homeTiersMinor`, the chain, and the `sixteen` and `seed` threading.
 - **Gate:** `make sim strict home-tiers-vm parity parity-v2 replay crew-parity`, then `git diff --exit-code origin/main -- tests/replays tests/crew`.
 
-### H2: the host (~200 LOC)
+### H2: the host (~200 LOC) ✅ done 2026-10-19
 - **Red first:** `tests/test_crossing_review.gd` covers:
   - `picture_index` and `picture_variant`;
   - `PICTURE_OF_SEVEN` against the sim's;
@@ -49,11 +49,11 @@
 - **Tools:**
   - The fixture tool records at 2.12.
   - Keep today's `trappist.ndjson` as `legacy_2_10_trappist.ndjson`.
-  - The capture loops over every variant, plus the tier-8 guided crossing and a deep-tier fixture.
+  - The capture loops over every variant, plus the guided tour's last crossing (tier 7) and a deep-tier fixture.
 - **Re-record:** `make crossing-review-fixtures` (reviewed diff).
 - **Gate:** `make crossing-review-test crew-bridge-test crew-console-test tour-pacing-test display-audit-interlude`.
 
-### H3: the pictures (~60 LOC + binaries)
+### H3: the pictures (~60 LOC + binaries) ✅ done 2026-10-19
 - **Renumber:** `git mv` each shipped file to `tier<new>_v0.webp`.
 - **The 21 new variants**, each:
   - upload the master with `tools/site_media.sh asset`;
@@ -67,8 +67,8 @@
   - there is no PNG in the tree.
 - **Gate:** `make home-art-check crossing-review-test export-filter-audit`. The WebPs total ≤ 20 MB.
 
-### H4: the website (~80 LOC)
-- `tools/concept_thumbs.gd` builds the 800 px thumbnails for the 24 variants of tiers 0–12.
+### H4: the website (~80 LOC) ✅ done 2026-10-19
+- `tools/concept_thumbs.gd` builds the 800 px thumbnails for the 23 variants of tiers 0–12.
 - `concept.js` `HOME` lists tiers 0–12 only, titled by time range. The public tier-6 thumbnail (now tier 13) comes down.
 - **`make home-site-check`** (in `make test`):
   - no tier ≥ 13 in `HOME`;
@@ -76,9 +76,9 @@
   - the entries are exactly the `SOURCES` masters of tiers 0–12.
 - **Gate:** `make home-site-check site`, plus `curl -sfI` on each master URL.
 
-### H5: rig gates and PR
+### H5: rig gates and PR ✅ done 2026-10-19
 - Full `PATH=$PWD/runtime/bin:$PATH make test` on the rig. `make golden` is skipped because nothing in the 3D render changes.
-- `make crossing-review-capture`. Open the tier-8 guided crossing, a deep-tier frame and every variant frame.
+- `make crossing-review-capture`. Open the guided tour's last crossing (tier 7), a deep-tier frame and every variant frame.
 - A changelog fragment and the protocol 2.12 line.
 - A PR, not a draft. Don't merge: a different model evaluates first.
 

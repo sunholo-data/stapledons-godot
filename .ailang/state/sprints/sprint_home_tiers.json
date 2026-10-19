@@ -1,12 +1,12 @@
 {
   "sprint_id": "R2-HOME-TIERS",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark (attended, 2026-10-19): OQ1 words accepted; OQ2 no picks, variant pools picked from the voyage seed (D-86); OQ3 first to merge takes 12; OQ4 all variants titled by time range, amended to tiers 0-12 only (canon doom); OQ5 one PR",
   "approved_on": "2026-10-19",
   "created": "2026-10-19",
   "started": "2026-10-19",
-  "completed": null,
+  "completed": "2026-10-19",
   "design_doc": "design_docs/planned/r2/home-tiers.md",
   "sprint_plan": "design_docs/planned/r2/home-tiers-sprint.md",
   "branch": "design/home-tiers",
@@ -59,10 +59,10 @@
         "make strict (AC7)",
         "make sim: homeVariant stable per (seed,tier), in [0,count), 0 on single-variant tiers, every variant hit across 64 seeds; time.variant == homeVariant(seed,tier) at 2.12 (AC5, AC6)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-19",
+      "completed": "2026-10-19",
+      "notes": "sim/home_tiers.ail + data/home_variants.ail + tests (13); protocol 2.12 (homeTiersMinor) threads sixteen + seed; 2.10/2.11 stream sha256 pinned unchanged; newest-minor assertions in gr_test and protocol_crew_test moved to 12. Gates: sim package 515 tests, strict, parity, parity-v2, replay 11 identical, crew-parity 6 (crossing_hold unchanged), home-tiers-vm."
     },
     {
       "id": "H2_HOST",
@@ -79,10 +79,10 @@
         "make tour-pacing-test crew-console-test display-audit-interlude green, no known entry added (AC13)",
         "make crossing-review-test: a missing variant falls back to v0 (AC11)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-19",
+      "completed": "2026-10-19",
+      "notes": "HOME_TIERS_MINOR at main.gd, ship_geometry_demo, loading_jump prefetch; picture_index/picture_variant/home_texture_for; PICTURE_OF_SEVEN checked against the real sim. Fixtures re-recorded at 2.12 with a tour case; legacy_2_10_trappist kept. Finding: the recorded tour ends at 120.5 Earth years = tier 7 (not ~150/tier 8 as reported from playtest); tests assert the recorded value and that it is never the drowned town. Capture found a real bug: the page did not rebuild when only the variant changed (words spec keyed on tier only); fixed, with a red-then-green test. crossing-review-test 102/0."
     },
     {
       "id": "H3_PICTURES",
@@ -95,10 +95,10 @@
         "make home-art-check: 28 files match SOURCES and variantCounts; shipped shas unchanged under _v0 (AC9)",
         "du -ck data/interlude/home/*.webp <= 20480 and make export-filter-audit (AC14)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-19",
+      "completed": "2026-10-19",
+      "notes": "28 pictures (counts [1,2,1,2,2,2,2,2,2,2,1,2,2,1,2,2]); 21 added after 1:1 quadrant inspection, none dropped; masters uploaded (all 28 URLs 200); SOURCES 28 rows; notes renamed + 2026-10-19 session; WebPs 16.2 MB; home-art-check with a negative control."
     },
     {
       "id": "H4_WEBSITE",
@@ -110,10 +110,10 @@
       "acceptance_criteria": [
         "make home-site-check site: HOME has exactly the 24 tier 0-12 variants, none >= 13, thumbnails <= 1 MB, master URLs 200 (AC15)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-19",
+      "completed": "2026-10-19",
+      "notes": "23 thumbnails (tiers 0-12; old tier-6 thumbnail removed), HOME_ROWS from SOURCES masters, page text updated; canon detail kept out of the site source. make site green; home-site-check with a negative control (tier 13 thumbnail)."
     },
     {
       "id": "H5_VERIFY_LAND",
@@ -130,16 +130,17 @@
         "pinned make test green on the rig (AC17)",
         "PR open, not draft; independent evaluation >= 70 by a different model before merge"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-19",
+      "completed": "2026-10-19",
+      "notes": "Rig: full make -k test green (50 min; a first run hit the timing-sensitive ai-godot hang-portrait check under load ~11, which passed alone and in the rerun). make golden skipped: no 3D render change. crossing-review-capture OK 116 frames; opened tour_aldebaran_home (120.5 yr, tier 7 v0), art_tier1_v1, art_tier12_v0, art_tier13_v0, art_tier14_v1, art_tier15_v0 (2560). display-audit-interlude new=0. Evaluation by a different model is the coordinator's."
     }
   ],
   "velocity": {
     "target_loc_per_day": 300,
     "estimated_total_loc": 720,
-    "estimated_days": 2.75
+    "estimated_days": 2.75,
+    "actual_days": 1
   },
   "critical_path": [
     "H1_SIM_LADDER",
@@ -186,6 +187,7 @@
     ],
     "total": 28,
     "dropped": [],
-    "inspection": "2026-10-19, 1:1 quadrants of all 21 added variants plus 3x zooms of the tier_d memorial stones: no text, letters or glyph-like marks"
+    "inspection": "2026-10-19, 1:1 quadrants of all 21 added variants plus 3x zooms of the tier_d memorial stones: no text, letters or glyph-like marks",
+    "note": "tier1_v1 (tier_a_c2): the family stands partly in the text column behind the scrim; readable, flagged for Mark (cf. tier0_c1)"
   }
 }

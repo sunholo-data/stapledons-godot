@@ -193,6 +193,7 @@ Mark accepted this text as drafted on 2026-10-19 (Rulings, OQ1). The H1 tests pi
   - The words-only fallback (`_home_missing`) is unchanged.
 - `tools/crossing_review_capture.gd`: `art_tier<n>_v<k>` covers every shipped variant, with `tier_count: 16` set on the view.
 - `tools/crossing_review_fixture.gd`: records at `HOME_TIERS_MINOR`.
+- **The tour's end, measured.** The re-recorded `tour` fixture (seed 42, an orders crew under critical_only, Alpha Centauri, TRAPPIST-1, Aldebaran) ends its last crossing at **120.5 Earth years: tier 7** (90–130, the plain memorial). The old 2.10 recording ended at 115 years (old tier 4, the collapsed dish). Mark's playtest reported about 150 years and the drowned town (old tier 5, 130 years and up), so his voyage ran longer than this recording. Under the sixteen tiers, 120–150 years is tier 7 or 8, never the drowned town (tier 10, 500–1,000 years).
 
 ### H3. The pictures
 
@@ -241,14 +242,14 @@ Excluded, with the reasons recorded in `generation_notes.md`:
 
 ### H4. The website
 
-- **Canon (above): tiers 13–15 stay off the site.** The concept-art page shows **every variant of tiers 0–12** (24 pictures). The tier-6 picture already public (old tier 6, now tier 13) **comes down**: its thumbnail and its `HOME` entry are removed. Its master stays in the bucket, because the game's `SOURCES` cites it.
+- **Canon (above): tiers 13–15 stay off the site.** The concept-art page shows **every variant of tiers 0–12** (23 pictures). The tier-6 picture already public (old tier 6, now tier 13) **comes down**: its thumbnail and its `HOME` entry are removed. Its master stays in the bucket, because the game's `SOURCES` cites it.
 - Thumbnails `website/static/img/concept/home-t<nn>-v<k>.jpg` (800 px wide, JPEG quality 0.85, under 1 MB each) are made by the headless Godot script `tools/concept_thumbs.gd`, because image I/O is Godot (CLAUDE.md §Python). The old `home-tier<n>.jpg` files are removed.
 - `website/src/data/concept.js` `HOME`: one entry per variant, titled by time range only, with no captions (spoiler policy). The titles are "Less than a year", "A year or two", "Under ten years", "Under twenty years", "Under thirty-five years", "Under fifty-five years", "Under ninety years", "Under 130 years", "Under 250 years", "Under 500 years", "Under a thousand years", "Under 3,000 years" and "Under 10,000 years". A second variant takes the same title. The comment notes the canon cut-off.
 
 ### H5. Verify and land
 
 - On the rig, per Mark's rule that merges ride on rig evidence: a green full `make test`. `make golden` only if anything visual in the 3D render changed (nothing does here).
-- Crossing-review captures of the Home page at the guided tour's last crossing (about 150 years, tier 8), plus one deep-tier fixture (tier ≥ 13), and every `art_tier<n>_v<k>`. **Open every frame and look at it.**
+- Crossing-review captures of the Home page at the guided tour's last crossing (recorded at 120.5 years: tier 7), plus one deep-tier fixture (tier ≥ 13), and every `art_tier<n>_v<k>`. **Open every frame and look at it.**
 - A changelog fragment, the protocol 2.12 line in CHANGELOG, a PR (not a draft), and an independent evaluation by a different model before merge.
 
 ## Rulings (Mark, attended 2026-10-19)
@@ -278,11 +279,11 @@ Each row is checked by its command. "Pinned" means `PATH=$PWD/runtime/bin:$PATH`
 | AC9 | Pictures. 28 files `tier<n>_v<k>.webp`, each a 1536×1024 WebP, with no PNG in the tree. Each file's sha256 equals its `SOURCES` row. The 7 shipped shas are unchanged under their new names | `make home-art-check` (in `make test`) |
 | AC10 | Picture choice. A 16-tier frame shows `tier<tier>_v<variant>.webp`. A 7-tier frame (the kept 2.10 fixture) shows `tier<PICTURE_OF_SEVEN[tier]>_v0.webp`. `PICTURE_OF_SEVEN` equals the sim's `pictureOfSeven` | `make crossing-review-test` |
 | AC11 | Fallbacks. A missing variant falls back to v0, which is still shown. A missing tier, or an empty `home_dir`, gives the words alone across the page, with the bound tier line and `home_art_missing()` true | `make crossing-review-test` |
-| AC12 | The crossing-review tests pass on fixtures re-recorded at 2.12. The guided voyage's last crossing (about 150 Earth years) is tier 8 | `make crossing-review-fixtures` (reviewed diff), then `make crossing-review-test` |
+| AC12 | The crossing-review tests pass on fixtures re-recorded at 2.12. The guided voyage's last crossing is not the drowned town: recorded (seed 42, orders crew, critical_only) at 120.5 Earth years, tier 7 (see the H2 note) | `make crossing-review-fixtures` (reviewed diff), then `make crossing-review-test` |
 | AC13 | Display audit: no entry is added to the known file | `make display-audit-interlude` |
 | AC14 | Size and export. The WebPs total ≤ 20 MB, and the export audit stays green | `du -ck data/interlude/home/*.webp \| tail -1` (≤ 20480) and `make export-filter-audit` |
-| AC15 | Website. `HOME` lists exactly the tier 0–12 variants (24) and no tier ≥ 13. Each thumbnail exists and is ≤ 1 MB. Each master URL answers 200. The site builds | `make site` and `make home-site-check` (new) |
-| AC16 | Captures. The tier-8 guided crossing, a deep-tier fixture and every `art_tier<n>_v<k>` are written and opened (the report lists them) | `make crossing-review-capture` (GPU window) |
+| AC15 | Website. `HOME` lists exactly the tier 0–12 variants (23) and no tier ≥ 13. Each thumbnail exists and is ≤ 1 MB. Each master URL answers 200. The site builds | `make site` and `make home-site-check` (new) |
+| AC16 | Captures. The guided tour's last crossing (tier 7), a deep-tier fixture and every `art_tier<n>_v<k>` are written and opened (the report lists them) | `make crossing-review-capture` (GPU window) |
 | AC17 | Full suite on the rig | `PATH=$PWD/runtime/bin:$PATH make test` |
 
 ## Sub-milestones and estimates
@@ -319,7 +320,7 @@ All of it ships as one PR.
 - `tools/crossing_review_capture.gd`, `tools/crossing_review_fixture.gd`, `tools/concept_thumbs.gd`, `tests/test_crossing_review.gd`.
 - `tests/fixtures/crossing_review/*.ndjson`, re-recorded at 2.12, plus `legacy_2_10_trappist.ndjson`, which is today's `trappist.ndjson` kept as it is.
 - `data/interlude/home/tier<n>_v<k>.webp` (28), `SOURCES` and `generation_notes.md`; the masters in `gs://stapledons-voyage-assets/site/`.
-- `website/static/img/concept/home-t<nn>-v<k>.jpg` (tiers 0–12, 24 pictures), `website/src/data/concept.js`.
+- `website/static/img/concept/home-t<nn>-v<k>.jpg` (tiers 0–12, 23 pictures), `website/src/data/concept.js`.
 - Make targets `home-tiers-vm`, `home-art-check` and `home-site-check` (in `make test`).
 - The ledger row D-86 in `design_docs/stapledon-mission.md`.
 - `CHANGELOG.md` (protocol 2.12), `changelogs/unreleased/2026-10-<dd>-home-tiers.md`, and the design repo's roadmap row.

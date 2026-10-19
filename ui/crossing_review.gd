@@ -256,7 +256,8 @@ static func page_spec(view: Dictionary, over: bool) -> Array:
 func _words_spec(view: Dictionary) -> Array:
 	var crew: Variant = GalaxyMap.field_value(view, "cruise.digest.crew")
 	var out: Array = [crossed, GalaxyMap.field_value(view, "crew.holds"), GalaxyMap.field_value(view, "consequence.news.template_id"), ai_text.size(),
-		GalaxyMap.field_value(view, "cruise.stop_kind"), GalaxyMap.field_value(view, "cruise.digest.time.tier"), _archive_crossing(view),
+		GalaxyMap.field_value(view, "cruise.stop_kind"), GalaxyMap.field_value(view, "cruise.digest.time.tier"),
+		GalaxyMap.field_value(view, "cruise.digest.time.tier_count"), GalaxyMap.field_value(view, "cruise.digest.time.variant"), _archive_crossing(view),
 		GalaxyMap.field_value(view, "cruise.digest.narration.aboard")]
 	if crew is Dictionary:
 		out.append((crew.get("moments", []) as Array).map(func(m): return [m.get("actor"), m.get("emotion"), m.get("kind"), m.get("text"), m.get("ai_req")]))

@@ -423,6 +423,23 @@ func test_home_tiers(r: CrossingReview, v: Dictionary) -> void:
 	rf.show_review(vf, true)
 	rf.go(rf.page_ids().find("home"))
 	var fart: TextureRect = rf.find_child("HomeImage", true, false)
+	vf.cruise.digest.time.variant = 0.0
+	var tmp2 := "user://home_tiers_variants" # its own dir: the picture cache remembers tmp's missing v1
+	DirAccess.make_dir_recursive_absolute(tmp2)
+	for k in 2: DirAccess.copy_absolute(ProjectSettings.globalize_path(CrossingReview.home_path(CrossingReview.HOME_DIR, 8, k)), ProjectSettings.globalize_path(CrossingReview.home_path(tmp2, 8, k)))
+	var rv := CrossingReview.new()
+	rv.home_dir = tmp2
+	root.add_child(rv)
+	rv.show_review(vf, true)
+	rv.go(rv.page_ids().find("home"))
+	var v0tex: Texture2D = (rv.find_child("HomeImage", true, false) as TextureRect).texture
+	vf.cruise.digest.time.variant = 1.0
+	rv.show_review(vf, true)
+	rv.go(rv.page_ids().find("home"))
+	check("changing only the variant changes the picture (the page is rebuilt)", v0tex == CrossingReview.home_texture(CrossingReview.home_path(tmp2, 8, 0))
+		and (rv.find_child("HomeImage", true, false) as TextureRect).texture == CrossingReview.home_texture(CrossingReview.home_path(tmp2, 8, 1)))
+	rv.queue_free()
+	vf.cruise.digest.time.variant = 1.0
 	check("a missing variant (tier8_v1) falls back to the tier's v0", not rf.home_art_missing() and rf.home_art_shown() and fart.texture == CrossingReview.home_texture(tmp.path_join("tier8_v0.webp")))
 	vf.cruise.digest.time.tier = 9.0
 	rf.show_review(vf, true)
