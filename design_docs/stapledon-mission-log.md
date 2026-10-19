@@ -1621,3 +1621,68 @@ DECISIONS FOR MARK: D-84 is new (S1 sign-off for #265; recommended A). D-83 (mer
 - **Next:** AC1 on a quiet GPU (row 7m predicate); D-84 (S1 sign-off; then #265 merges and #268 retargets to main); D-83; rows 7n, 7l, 7k, 7i(k); D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: none new. D-84 (S1 sign-off for #265; recommended A), D-83 (merge #252; recommended A), D-77 and D-78 are unchanged; their defaults hold.
+
+## 38 — 2026-10-19 — iteration 38, row L9 semantic-memory S0 design doc and sprint plan BUILT (PR #272), PARKED for Mark's approval on D-85; independent Sonnet plan review 83/100 PASS [PRODUCT]
+
+- **Pick:** row L9 (semantic-memory S0, similar worlds), plan only, then stop for Mark's approval as the row and CLAUDE.md require. The critical-path check found no routable clause-4 row:
+  - AC1 of M4.6pR3 (#268) is PARKED-ON-LANE. `ioreg … "Device Utilization %"` read 87/99/100 at 07:38 UTC, and `ollama ps` showed `qwen3.8:27b-mxfp8 100% GPU` (not this loop's process).
+  - S1 waits on D-84. A re-capture on the merged tree would be stale again as soon as attended draft #270 (R2-CAMERA: `demos/ship_consoles.gd`, `main.gd`, `tools/m4_ship_golden.gd`, `tests/m4_playthrough_ship.gd`) lands.
+  - AC4 waits on D-77/D-78; rows 7i, 7k, 7l and 7n are net 0 and stop on D-83.
+  - L9 is next in the attended order.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 did not move this iteration (all of it is blocked; see Pick). L9 moved from queued to plan-built and awaiting approval.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (25 comments).
+  - Weekly sweep, first fire after Monday 07:00: 0 orphans of 1 enumerated (`gh issue list` count 1, #203). The positive control fired and so did a fresh negative control.
+  - The unread inbox is the shared fleet store; none of it is addressed to this mission.
+- **Gate 1:** origin/main `02db3e7` (gate1 base `38525b06…` from the driver's mission-base helper, which reads the ailang driver pin, not this repo). The main checkout is 45 behind and was only read, never pulled.
+  - The newest record is iteration 37 on open PR #269, so this record is stacked on it.
+  - Skill: all 14 files match ailang origin/dev through the resolved symlink.
+  - Main CI: `failure` on `72cce56` and `633a425`. Both fail at `crew-perf crewSkip` 2.32 s against a 2.0 s budget (job log fetched with `--allow-escape-sequences`, 385 KB). Mark granted the #271 merge exception. Attended #267 commit `b611358` raises the budget to 4.0 s; CI 39216618995 on `02db3e7` was in flight. Attended-owned, so not a loop pick.
+  - Attended #262, #264, #267 and #271 have all landed since iteration 37. #270 (draft) and #261/#249 remain open.
+- **Reality check (controller):** no `similar` code in `sim/`, no S0 doc or PR, and no iteration-38 orphan clone. `git merge` of origin/main into `mission/stapledon-iter37-m46pr3` is clean (Makefile auto-merged); this was a probe and was aborted.
+- **Design:** Opus (Agent tool), `design_docs/planned/r2/semantic-memory-s0.md`, 189 lines, pillar net **+7**, no open questions.
+  - Ranking measured on v0.54.15-dirty and on the pinned v0.54.14: byte-identical, strict VM = interpreter, sha `4f1a16d7…`. Earth → TRAPPIST-1 e 0.26386705430076196, Venus 0.335143170943954, TRAPPIST-1 d 0.39915613754501517. Jupiter → Saturn, Uranus, Neptune, which corrects the feature doc's "Saturn, Neptune".
+  - Insolation via `sunholo/celestial` 0.4.0 `starIlluminanceAt`, so no package change is needed.
+  - Protocol 2.12 adds a top-level `similar` section in the new_game reply. `sim/core.ail` is untouched.
+  - Finding: TRAPPIST-1's planets join `finiteSystemOf` only within 0.1 ly (`nearTrappist`).
+  - The controller copied the pinned `runtime/bin/ailang` v0.54.14 into the clone; the gitignored runtime does not come with a clone.
+- **Quorum:**
+  - **r1 BLOCKED**, 3 of 4 present (gpt6-1-sol unreachable). kimi (core.ail mandate), gemini (`planetValue`/`finiteSystemOf`/`euclidean_distance` unverified) and glm (constants measured on a dirty runtime) all rejected. $0.196.
+  - One designer revision. The controller supplied the feature doc's architecture text verbatim and the pinned runtime.
+  - **r2 BLOCKED**: gemini pass; kimi (the claim that strict sessions already run is unmeasured) and glm (`withSystem` and the CI machinery unmeasured) reject. $0.186.
+  - Narrow-refinement carve-out: the controller measured the 2.7 session (strict rc 0; strict = VM = interpreter = expected; 6 lines, sha `24e909a1…`), `withSystem` (`protocol.ail:426`) and the AC targets, then applied the reviewers' fixes, one of them adapted. The spike source had already been deleted, so its reproducibility moves to AC1's `similarVm` sha. No round 3.
+  - Quote this as "r2 BLOCKED 1/2, fixes applied under the carve-out", never as "quorum passed".
+- **Plan:** codex gpt-6.1-sol, driven by an Agent-tool planner role. The probe went rc 1 ("not inside a trusted directory") and then rc 0 with `-C`; the run was rc 0 in ~440 s.
+  - Output: a 288-line plan and the sprint JSON (798 lines, `awaiting_approval`, 4 features), with no hand edits.
+  - Base 37d4a645, run by the role outside the sandbox: `make strict` rc 0 (214 s), `ism-compat` 0 (10 s), `python-guard` 0, sim package tests 0 (800 s), `replay` 0 (116 s), `parity` 0 (4 s).
+  - Codex found 5 doc inconsistencies. The controller fixed 3 in the doc (core guard placement, the "make strict line", which order is fragile); 2 are handled in the plan (the sha format, bare commands).
+- **Execution:** none, on purpose. The plan stops for Mark's approval (D-85). The executor role was not spawned; this is a gate, not a lane failure.
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter38`, since removed), pre-execution plan review. **83 PASS**, 0 blocking (fidelity 22, verifiability 19, measurements 19, executability 16, docs 7), in `eval_R2-SIMILAR-S0_plan_round_1.json`.
+  - Its own spike on the strict VM and the interpreter matched every number. It also ran `python-guard`, `ism-compat`, the core diff, `make -n` of the targets still to be built, and the minor-12 grep.
+  - Findings the controller checked:
+    - (2) a reciprocal-multiplication mutant (~1e-16) cannot be killed at ±1e-9 → a bit-exact component check was added to the plan;
+    - (3) a stale inconsistency note → marked resolved;
+    - (1) "risk bullet cut off" → refuted: plan line 278 is complete.
+- **Gate 3b:** PR #272 is docs-only and is the approval surface. It is not merged this iteration, so it is not LANDED. Resume predicate: D-85 RESOLVED A or B.
+- **Routing evidence:** gate1 base `38525b06ba63f3316e7f67df36982acdada9e668`@2026-10-19T07:36:12Z (driver pin; the mission repo's origin/main was `02db3e7`). Operator's standing request: every role through the Agent tool.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`; the rotation file read `claude:claude-opus-5-5` as last used, and the resolver's verbatim answer was followed. Agent `opus`, 133,538 tok for the first run and 161,384 reported after the revision (one doc, two runs, within the diet's one-doc unit).
+  - Planner: resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`; derive-planner-lane agrees. Agent `opus` 60,808 tok plus codex 143,205 tok (probe 4,248).
+  - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`. Not spawned (approval stop).
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`. Agent `sonnet` 84,169 tok. Distinct from the Opus designer and the codex planner (judge-independence: cross-vendor).
+  - Metered: $0.382 (quorum r1 $0.196 and r2 $0.186).
+- **Ruled out:**
+  - Re-capturing S1 on the merged tree now: #270 (R2-CAMERA, draft with eval) changes the ship scene and cameras, so the set would be stale on landing.
+  - Measuring AC1 on the contended GPU: it is a quiet-rig criterion.
+  - Building net-0 rows 7i(k), 7k, 7l, 7n: they stop on D-83.
+  - Routing the red main CI: it is attended-owned and an exception was granted.
+  - `system.similar` nesting, decided in the doc: membership varies with position.
+  - Literal `core.ail` re-export: not needed, because sessions already run strict; left to D-85 option B.
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. A fresh clone has no `runtime/bin` (gitignored), so the designer's first measurements ran on the PATH `ailang` v0.54.15-dirty, and every reviewer caught it. Recorded as instance 1, for a directive line: copy the pinned runtime into every role clone before spawning.
+  2. The designer deleted its spike before the quorum asked for it to be reproducible. Directive line for next time: keep spikes until the plan is written.
+  3. `timeout` is not installed on this Mac (rc 127), and a probe outside a git directory fails codex's trust check; both cost one retry.
+  4. GPU contention from a resident local model: instance 2 (iteration 37 was instance 1).
+- **Next:** D-85; AC1 on a quiet GPU (row 7m); D-84 after #270 lands; D-83; D-77/D-78; rows 7n, 7l, 7k, 7i(k); then L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: **D-85 (new)**: approve the R2-SIMILAR-S0 plan (PR #272)? A approve as written (recommended) · B approve with `system.similar` and/or a `core.ail` re-export · C hold. D-84 (S1 sign-off for #265; recommended A, re-capture after #270), D-83 (merge #252; recommended A), D-77 and D-78 are unchanged; their defaults hold.
