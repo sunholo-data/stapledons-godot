@@ -53,6 +53,7 @@ func _run() -> void:
 	await test_cues()
 	await test_default_mapping()
 	await test_console_round_trip()
+	await test_constellations_held_i()
 	print("camera-director: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -915,5 +916,32 @@ func test_console_round_trip() -> void:
 	c.leave()
 	step(demo, 3.0)
 	check("crew: stepping back leaves the free camera off (the director owns the camera)", not demo.free_camera_on() and not dir.overridden and demo.camera_mode == "player" and not demo.wants_capture())
+	demo.queue_free()
+	await process_frame
+
+
+## #271 (constellation guides while I is held) under the director: holding I owns the pointer
+## (levels locked, nothing captured), and the guides follow the director's pose in each view.
+func test_constellations_held_i() -> void:
+	var demo: Node = await new_demo({"stars": true})
+	var dir: CameraDirector = demo.director
+	var ident = demo.star_identification
+	var counts := {}
+	for view in ["z2", "sky_forward", "z3"]:
+		if view == "sky_forward":
+			dir.sky("sky_forward")
+		else:
+			dir.set_level(2 if view == "z2" else 3)
+		step(demo, 4.0)
+		ident.set_held(true)
+		ident.constellations.update_view()
+		counts[view] = ident.constellations.segments.size()
+		var lv: int = dir.level
+		demo._unhandled_input(key(KEY_1))
+		check("held I (%s): the pointer belongs to the inspection, levels locked, nothing captured" % view, demo.pointer_required() and dir.level == lv and not demo.wants_capture())
+		ident.set_held(false)
+		ident.constellations.update_view()
+	check("held I: constellation guides drawn through the director's pose %s" % [counts], counts.values().any(func(n: int) -> bool: return n > 0) and not ident.constellations.visible)
+	check("held I: the guides change with the view (they follow the camera) %s" % [counts], counts["z2"] != counts["sky_forward"] or counts["sky_forward"] != counts["z3"])
 	demo.queue_free()
 	await process_frame
