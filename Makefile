@@ -29,6 +29,12 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
+# Rig-first merges (Mark, 2026-10-19): PRs merge on a green rig/full status (tools/rig_check.sh runs
+# the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast
+# tier: the checks a clean Linux box adds (fresh deps and lock, the x86_64 replay golden, strict VM,
+# VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
+ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+
 test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
 # R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is a registry pin
@@ -225,9 +231,23 @@ m4-physics-probe:  ## M4.6 check values: cruise (gammaOf, coastAt, planBurnCoast
 	$(AILANG) run --quiet --bytecode --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail > $(SCRATCH)/m4-physics-probe-vm.txt
 	diff $(SCRATCH)/m4-physics-probe.txt $(SCRATCH)/m4-physics-probe-vm.txt && cat $(SCRATCH)/m4-physics-probe.txt
 
-capture-m4:        ## M4.2 S1 review captures to renders/m4/ (needs a GPU window): the captain walking on the bridge at rest, 0.99c and the cap, the nav console opening the map, pans, glow preview, contact sheet
-	$(GODOT_SIM) --path . -- --interior-capture=renders/m4
-	test -s renders/m4/contact_sheet.png
+capture-m4: sky-assets lens-assets ## M4.6rR3 S1 set aboard the 3D ship (GPU window): captain eye at the helm; docked, boost 0.5/0.9, cruise 0.99 with the glow, brake 0.5, arrived alpha Cen, arrived home; deck + forward views + contact sheet -> renders/m4/ (manifest.json, m4_manifest.sha256, worlds.sha256). The interior set: godot --path . -- --interior-capture=DIR
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/m4_ship_capture.gd > $(SCRATCH)/capture-m4.log 2>&1; rc=$$?; grep '^capture-m4' $(SCRATCH)/capture-m4.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-m4.log && test "$$(grep -c '^capture-m4: OK$$' $(SCRATCH)/capture-m4.log)" = 1 && ! grep -q '^capture-m4: FAIL' $(SCRATCH)/capture-m4.log && \
+	  test "$$(grep -c '^capture-m4: ok frame' $(SCRATCH)/capture-m4.log)" = 14 && \
+	  test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15 && \
+	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/worlds.sha256 | tr -d ' ')" = 14 && \
+	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4: FAILED (log $(SCRATCH)/capture-m4.log)"; exit 1; }
+
+capture-m4-publish: ## maintainers (gcloud): verify and upload the 18-file 3D-ship S1 set to the public refs/m4_ship_s1 bucket path
+	@set -eu; test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15; \
+	  test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15; \
+	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15; \
+	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null); \
+	  n=0; for f in renders/m4/*.png renders/m4/manifest.json renders/m4/m4_manifest.sha256 renders/m4/worlds.sha256; do \
+	    test -s "$$f"; gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
+	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
+.PHONY: capture-m4-publish
 
 glow-eps-sheet:    ## D-29 follow-up: interior + forward sky at 0.99c..cap for each candidate eps through the eye exposure -> renders/glow/eps_compare.{png,jpg} + glow_eps_sheet.json (needs a GPU window)
 	$(GODOT_SIM) --path . -- --glow-eps-sheet=renders/glow
@@ -442,12 +462,22 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
 BENCH_SECONDS ?= 30
 BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
+BRIDGE_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),medium)
 BENCH_SIZE ?=
-bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
+bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default); SCENE=bridge: M4.6rR3 AC12, live 3D-ship transit (30 s, 2560x1440, vsync off, medium tier, Metal), p99 < 16.7 ms or make nonzero (driver invalid=1, MISS=2)
+ifeq ($(SCENE),bridge)
+	@mkdir -p $(SCRATCH); echo "bench-bridge: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --script tools/m4_ship_bench.gd -- --tier=$(BRIDGE_TIER) > $(SCRATCH)/bench-bridge.log 2>&1; rc=$$?; grep '^bench-bridge' $(SCRATCH)/bench-bridge.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-bridge.log && test "$$(grep -c '^bench-bridge: OK$$' $(SCRATCH)/bench-bridge.log)" = 1 && ! grep -q '^bench-bridge: FAIL' $(SCRATCH)/bench-bridge.log && \
+	  grep -q '^bench-bridge: frame ms .*(target p99 < [0-9.]*: ok)$$' $(SCRATCH)/bench-bridge.log || { echo "bench-bridge: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-bridge.log)"; exit 1; }
+else ifneq ($(SCENE),)
+	@echo "bench: unknown SCENE=$(SCENE) (want SCENE=bridge, or none for the starfield bench)"; exit 2
+else
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
 	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
 	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
+endif
 
 capture-bh-sky: lens-assets ## M3.5a/b: the lensed sky through InteriorSky (debug grid, Milky Way + large tier, rings, two images) -> renders/bh_sky/*.png (GPU window; open them)
 	@mkdir -p $(SCRATCH); $(GODOT) --path . --script tools/gr_capture.gd > $(SCRATCH)/capture-bh-sky.log 2>&1; rc=$$?; cat $(SCRATCH)/capture-bh-sky.log; \
