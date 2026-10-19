@@ -1,14 +1,14 @@
 {
   "sprint_id": "R2-HOME-TIERS",
-  "status": "completed",
+  "status": "done",
   "approved": true,
   "approved_by": "Mark (attended, 2026-10-19): OQ1 words accepted; OQ2 no picks, variant pools picked from the voyage seed (D-86); OQ3 first to merge takes 12; OQ4 all variants titled by time range, amended to tiers 0-12 only (canon doom); OQ5 one PR",
   "approved_on": "2026-10-19",
   "created": "2026-10-19",
   "started": "2026-10-19",
   "completed": "2026-10-19",
-  "design_doc": "design_docs/planned/r2/home-tiers.md",
-  "sprint_plan": "design_docs/planned/r2/home-tiers-sprint.md",
+  "design_doc": "design_docs/implemented/r2/home-tiers.md",
+  "sprint_plan": "design_docs/implemented/r2/home-tiers-sprint.md",
   "branch": "design/home-tiers",
   "protocol_minor": "2.12",
   "implements": [
@@ -162,9 +162,17 @@
     "OQ4 all variants, time-range titles, no captions; tiers 0-12 only on the site (canon: rogue black hole ~10-24k years)",
     "OQ5 one PR"
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "file": ".ailang/state/evaluations/eval_home_tiers_round_1.json",
+      "score": 91,
+      "verdict": "PASS",
+      "model": "independent (different model)"
+    }
+  ],
   "reviews": [],
-  "report": null,
+  "report": "design_docs/implemented/r2/home-tiers.md (Implementation and evidence)",
   "coordination": "Attended. Fresh clone stapledons-godot-hometiers, branch design/home-tiers (plan and execution); one PR.",
   "variant_pool": {
     "counts": [

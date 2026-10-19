@@ -1,4 +1,4 @@
-# R2-HOME-TIERS (design_docs/planned/r2/home-tiers.md): the sixteen home-time tiers and their
+# R2-HOME-TIERS (design_docs/implemented/r2/home-tiers.md): the sixteen home-time tiers and their
 # picture variants (ledger D-86).
 .PHONY: home-tiers-vm
 HOME_TIERS_SEEDS ?= 64

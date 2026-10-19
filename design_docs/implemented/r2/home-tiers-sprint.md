@@ -2,7 +2,7 @@
 
 **Design doc:** [home-tiers.md](home-tiers.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_home_tiers.json`
-**Status:** **Executed 2026-10-19** (H1-H5 done; evaluation by a different model pending). **Approved 2026-10-19** by Mark (attended), with one change: no picks; each tier has a pool of variants, and the voyage seed picks one (D-86). The website shows tiers 0–12 only (canon: the doom). In execution on `design/home-tiers`, the same clone and branch as the plan. It ships as one PR.
+**Status:** **Done 2026-10-19** (H1-H5; independent evaluation 91/100 PASS, PR #277). **Approved 2026-10-19** by Mark (attended), with one change: no picks; each tier has a pool of variants, and the voyage seed picks one (D-86). The website shows tiers 0–12 only (canon: the doom). In execution on `design/home-tiers`, the same clone and branch as the plan. It ships as one PR.
 **Base:** `origin/main` at `ddc1278` (2026-10-19).
 **AILANG:** v0.54.14 (pinned; `make runtime`). AILANG prompt version loaded: v0.16.7.
 **Protocol minor:** 2.12 (`homeTiersMinor()`). Whichever PR merges first takes 12 (OQ3), so re-check before merge.

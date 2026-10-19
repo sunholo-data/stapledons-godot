@@ -1,6 +1,6 @@
 ### Changed: the crossing review's Home page has sixteen home-time tiers with variant pictures (R2-HOME-TIERS, protocol 2.12)
 
-Mark, attended 2026-10-19: "lets get more of them so we can split the tiers up more" and "we can have even more actually"; "we can just have random choices from the varients we have. good replayability" (ledger D-86). Design: `design_docs/planned/r2/home-tiers.md`.
+Mark, attended 2026-10-19: "lets get more of them so we can split the tiers up more" and "we can have even more actually"; "we can just have random choices from the varients we have. good replayability" (ledger D-86). Design: `design_docs/implemented/r2/home-tiers.md`.
 
 - **Sixteen tiers** of Earth years since departure (edges 1, 3, 10, 20, 35, 55, 90, 130, 250, 500, 1,000, 3,000, 10,000, 50,000 and 250,000) in `sim/home_tiers.ail`, with Mark's approved Home-page lines, digit-free narration words (launch ... aeons) and the Archive's crossing lines. Every line is true across its whole range. The old "Longer than recorded history" now starts at 10,000 years, where it holds. A century and a half no longer shows the drowned town.
 - **Variant pools.** Each tier has one or two pictures (28 in all). The voyage's seed picks one per tier with a pure, salted hash that draws nothing from the world's RNG, so a tier shows the same picture every time it comes up in that voyage. The counts are data (`sim/data/home_variants.ail`). To add a picture, add a file and its `SOURCES` row and raise the count.
