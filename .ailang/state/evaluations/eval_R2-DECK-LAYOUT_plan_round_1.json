@@ -1,0 +1,64 @@
+{
+  "score": 74,
+  "pass": true,
+  "blocking": [
+    {
+      "id": "B1",
+      "issue": "The 'forward-watch anchor' does not exist. It is used in D0, D1, D4 (the Sky forward sky-fraction threshold), OQ4, the DL0 fixtures ('a prop over the forward-watch anchor fails sky-fraction') and AC9. data/camera/views.json defines sky_forward with anchor 'captain', yaw_rule 'tangent', back_m 2.2, rise_m 0.3, pitch 58 and walk_to {radius 15, angle 'captain'}. No fixed anchor exists, so 'move the forward-watch anchor' (D1 and OQ4) has no object. The D4 row 'sky fraction at the forward-watch anchor ≥ 0.55' and the DL0 sky-fraction fixture can't be checked as written. The sky pose also depends on the captain's position.",
+      "fix": "Define the measurement before DL0. Either introduce a named, data-driven anchor in layout.json and views.json (a sky_forward walk_to point, with the chair as its position), or measure over the set of captain positions the walk_to can land on (radius ~15 m at the sectors). Say in D4 and the DL0 fixture which poses are swept. Also pin the 0.55 floor as 're-measured in DL0'."
+    },
+    {
+      "id": "B2",
+      "issue": "'Spawn → SPAWN_captain at the chair' (D1, DL1, OQ3) is wrong about how the spawn works. The spawn is hard-coded in GDScript: _reset_captain() in demos/ship_geometry_demo.gd:552 sets avatar_pos = Vector3(8, 82, -4.8) and captain_yaw .47. tests/test_camera_director.gd:304 and test_spawn_occlusion (lines 694–706) assert that exact position. No SPAWN_ collection drives it. Moving the spawn is therefore a game-code and test change, but the plan counts it as a Blender export detail. DL1's gate list doesn't name the edits to test_camera_director.gd, ship_geometry_demo.gd or the other tests that reference (8, 82, -4.8).",
+      "fix": "Add an explicit DL1 task: the spawn moves in ship_geometry_demo.gd (or becomes manifest-driven), and the AC2/AC4 spawn assertions and the spawn-occlusion test are updated, red first. Also list the spawn in the LOC estimate. State where the spawn comes from and which tests pin it."
+    },
+    {
+      "id": "B3",
+      "issue": "AC6/AC7's `make deck-assets-check` and `make ship-assets` do not exist, and DL3 gates on `make deck-assets-check` 'stubbed here with the two dressed props'. The stub is unspecified, so the DL3 gate is not checkable as written. Pins also have nothing enforcing them today: no test or Makefile target I could find references grounded-bridge-v2/asset-pins.json or its sha256s. The 'as the grounded v2 pins do' framing is therefore a convention, not a check. Both targets are also only 'created' at DL4 in the milestone prose, although DL3 uses them.",
+      "fix": "Create deck-assets-check (with budgets read from a data file) in DL0 or DL1 and use it from DL1 on. Replace the DL3 'stub' with parameterised budgets. Say in DL4 that the check is new and is added to `make test`. Say which new asset-pins.json covers ship.glb, walk_bridge.glb, the manifest and the Commons files, since the Commons full_assembly.glb is already a pinned 13.5 MB file."
+    }
+  ],
+  "should_fix": [
+    {
+      "id": "S1",
+      "issue": "Bucket hosting of ship.glb conflicts with the existing checkout model. The staging targets ship-demo-stage and ship-commons-stage copy assets/ship_demo/*.glb into the build bundle. Any file the plan moves to the bucket (>10 MB, which includes the existing full_assembly.glb at 13.5 MB) must also be fetched in CI's fast tier, the packaged build and the rig's fresh clone, or those fail on a missing GLB. AC7 tests only the local path.",
+      "fix": "Add a gate that `make ship-assets` runs in the fast tier, in rig_check's fresh clone and in the packaging job. Or keep ship.glb ≤ 10 MB in git and bucket only the .blend masters."
+    },
+    {
+      "id": "S2",
+      "issue": "The sky fraction metric is defined by ray casts on collision meshes with no GPU. Collision.glb and walk meshes may omit the visual-only props (fronds, rails, spire needle), so the metric may not see the geometry that actually blocks the sky. The DL0 positive control only reproduces blocked-sample counts, which does not validate this metric.",
+      "fix": "In DL0 add a positive control that compares the metric against a rendered frame (or the visual mesh) for at least one view. Say which meshes the casts use."
+    },
+    {
+      "id": "S3",
+      "issue": "Physics goldens. The doc says G-M4-S2/S3/S4 and G-CAM-* run on the new geometry and 'if the moved spawn changes a golden's observer position, recompute from an independent reference'. G-CAM-2 (glow from the Z1/Z2/Z3/Sky forward eyes) and G-CAM-1 depend on camera poses, which depend on the spawn and the layout. DL1 does not gate on `make golden`; the first run is at DL3. A layout choice could break goldens after Mark has already picked it.",
+      "fix": "Run `make golden` and `make camera-views-capture` at DL1/DL2, before the pause, and state the expected result in the sheet Mark sees."
+    },
+    {
+      "id": "S4",
+      "issue": "Python policy. The Blender generator (`bpy`, ~1,200 lines in ~/dev/blender) is Python producing a game asset. The plan argues it is outside the game repo, but CLAUDE.md says a Python pipeline step is a defect. The plan doesn't say whether `~/dev/blender` is covered by the repo's python-guard or the allowlist. AC12 checks `make python-guard` only for in-repo files. A reader could also take 'generator scripts' as a pipeline.",
+      "fix": "State the policy position explicitly: Blender authoring is DCC tooling outside this repo's pipeline, with pinned outputs (the grounded v2 precedent) and the script sha in the pins. Ask Mark to confirm in an OQ, since the policy otherwise forbids it. Also record `layout.json` as the one input the game reads."
+    },
+    {
+      "id": "S5",
+      "issue": "Budget and risk gaps. VRAM growth is 'measured in DL0' but nothing in DL0 measures it. Texture memory has no command in deck-assets-check. The bench has only 0.2–1.2 ms headroom, and the plan's only mitigation is 'check budgets', with no fallback if the p99 misses at DL4 after the style frame was approved. The rig is shared and the bench is noisy.",
+      "fix": "Add the VRAM measurement to the DL0 tasks. Add a pre-agreed fallback (drop the lightmap atlas, lower texture sizes, coarse LODs). Run `make bench SCENE=bridge` on the DL3 style-frame props as a pre-check so the DL3 approval isn't undone at DL4."
+    },
+    {
+      "id": "S6",
+      "issue": "D4 'Captain at Z2 60–80 px' is already the camera-test's AC4, and it is asserted only at the spawn. The Commons has no equivalent bound in camera-test (≥55 px, 'today ~45'), and nothing says the Commons Z2 is retuned to reach it. Per-cell views.json retuning is allowed only 'if needed', but 45→55 px needs a distance change that would affect AC1's clear-line sweep.",
+      "fix": "Confirm 'today ~45 px' by measurement in DL0, state the Commons lever (distance_m per cell), and add the px floor to `deck-layout-eval`'s commons ok line."
+    },
+    {
+      "id": "S7",
+      "issue": "Sizing. DL1 (1.5 d) includes writing a new Blender generator, an in-engine layout-apply mode, a candidate search, a spawn change and the capture work. The days total looks optimistic: 1,050 game LOC plus 1,200 lines of bpy is stated at 9.5 days, with art iteration said to dominate. The DL3/DL4 cap rule ('anything past the cap returns to Mark') is a good guard, but DL1's search has no cap.",
+      "fix": "Cap the candidate search at 3 alternatives and 0.5 day. Give the generator its own sub-milestone (or a spike) so the first reimport test happens before the pause."
+    },
+    {
+      "id": "S8",
+      "issue": "Pause points and records. The sprint JSON's pause_points list only two, but DL1 and DL2 pause together for the layout pick, and OQ1–OQ7 aren't required to be answered before DL0 starts. OQ1 (who models), OQ2 (style) and OQ6 (baking) change the work in DL3–DL5. The JSON status says 'awaiting approval' but the OQs have no ledger rows.",
+      "fix": "Add the OQs as OPEN rows in the charter's decision ledger before approval, per CLAUDE.md. Require Mark's answers to OQ1, OQ2 and OQ6 before DL3."
+    }
+  ],
+  "notes": "The plan is strong on process: red-first controls, a measured evaluator, two Mark pauses, and a physics guard that keeps the sky and glow live and uses only the ship-fixed spire for baked light. I checked the facts against the code. The 393 golden count matches the Makefile assertion (it includes the G-CAM cases). LOWER_CEILING {1:2, 2:2, 3:39} matches tests/test_camera_director.gd:23. STATIONS matches ship_consoles.gd (four active stations, reserved 2 and 3 inactive). bench SCENE=bridge, ship-demo-assets-test, validate-ship-demo, ship-demo-lift-test, ship-commons-*-test, camera-test, camera-views-capture and python-guard all exist. The pins match the grounded v2 README: ship.glb 9,124,916 bytes, 14 materials, 10 images, 153 instances and 200,399 triangles. Targets the plan creates (deck-layout-eval, -eval-test, -capture, deck-assets-check, ship-assets in mk/deck-layout.mk) are named with the milestone that creates them, apart from the DL3 stub (B3). I did not verify the 2026-10-03 entries in vision/design-decisions.md or the ship-interior-blender-brief section numbers. I read only the art folder listing in the design repo. The three blocking items are specification faults (an undefined anchor, a hard-coded spawn mislabelled as a GLB property, and a gate target used before it exists). They can be fixed in the doc without redesign, so the plan passes, subject to those edits before approval."
+}
