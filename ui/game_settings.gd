@@ -22,6 +22,11 @@ var text_only := false
 ## then press again). [controls] confirm_mode in settings.cfg; anything else reads "hold".
 const CONFIRM_MODES := ["hold", "twice"]
 var confirm_mode := "hold"
+## R2-CAMERA D6 (motion sensitivity): "full" eases the camera between views; "reduced" cuts with a
+## short fade, follows rigidly and turns situation cues into prompts. [display] camera_motion;
+## anything else reads "full". Presentation only: no sim input.
+const CAMERA_MOTIONS := ["full", "reduced"]
+var camera_motion := "full"
 
 
 func cfg_path() -> String:
@@ -38,12 +43,15 @@ func _ai() -> AiSettings:
 func load_settings() -> void:
 	auto_view = DEFAULT_AUTO_VIEW
 	confirm_mode = "hold"
+	camera_motion = "full"
 	var cf := ConfigFile.new()
 	if cf.load(cfg_path()) == OK:
 		var v: Variant = cf.get_value("display", "auto_view", DEFAULT_AUTO_VIEW)
 		auto_view = v if v is bool else DEFAULT_AUTO_VIEW
 		var c: Variant = cf.get_value("controls", "confirm_mode", "hold")
 		confirm_mode = c if c is String and c in CONFIRM_MODES else "hold"
+		var m: Variant = cf.get_value("display", "camera_motion", "full")
+		camera_motion = m if m is String and m in CAMERA_MOTIONS else "full"
 	text_only = _ai().text_only
 
 
@@ -51,6 +59,7 @@ func save_settings() -> bool:
 	var cf := ConfigFile.new()
 	cf.load(cfg_path()) # keep any other section a later feature adds; a missing file is fine
 	cf.set_value("display", "auto_view", auto_view)
+	cf.set_value("display", "camera_motion", camera_motion if camera_motion in CAMERA_MOTIONS else "full")
 	cf.set_value("controls", "confirm_mode", confirm_mode if confirm_mode in CONFIRM_MODES else "hold")
 	var ok := cf.save(cfg_path()) == OK
 	var ai := _ai()
@@ -64,3 +73,7 @@ func view_label() -> String:
 
 func confirm_label() -> String:
 	return "Press twice" if confirm_mode == "twice" else "Hold (1.5 s)"
+
+
+func motion_label() -> String:
+	return "Reduced (cuts, no camera travel)" if camera_motion == "reduced" else "Full (eased)"

@@ -1,0 +1,52 @@
+module stapledons/sim/crew_names_test
+
+-- R2-CREW-CONSOLE-V2 (ledger D-80, "names fit faces"; written red first): every portrait records
+-- the presentation and the naming regions its face fits (sim/data/crew_faces.ail, mirrored in
+-- data/crew/portraits/SOURCES). nameCrewFit draws, for each crew member, a region the face fits, a
+-- given name of that presentation and a family name in that tradition's form, with the same three
+-- crew-stream draws per member as nameCrew (so the crew stream, and every answer after it, is as
+-- before). Deterministic; no two crew share a name.
+import ./crew_names (nameCrew, nameCrewFit, nameOf)
+import ./rng (Rng, SCrew, zeroRng, counter)
+import std/list (map, filter, length, any, contains)
+import std/option (Option, Some, None)
+import std/string (split)
+import stapledons/sim/data/crew_names (Gendered, genderedNames)
+import stapledons/sim/data/crew_faces (Face, crewFaces, faceOf)
+
+pure func ids() -> [string] = ["medic", "engineer", "analyst", "pilot", "counselor"]
+pure func regionOf(r: string) -> Option[Gendered] = match filter(\g. g.region == r, genderedNames()) { g :: _ => Some(g), [] => None }
+pure func givenOf(full: string) -> string = match split(full, " ") { g :: _ => g, [] => "" }
+pure func familyOf(full: string) -> string = match split(full, " ") { _ :: rest => joinSp(rest), [] => "" }
+pure func joinSp(xs: [string]) -> string = match xs { [] => "", [x] => x, x :: r => "${x} ${joinSp(r)}" }
+-- The name fits the face: some region the face fits has the given name for its presentation and
+-- the family name in that presentation's form.
+pure func fits(id: string, full: string) -> bool = match faceOf(id) {
+  None => false,
+  Some(f) => any(\r. match regionOf(r) {
+    Some(g) => (if f.presentation == "woman" then contains(g.women, givenOf(full)) else contains(g.men, givenOf(full)))
+      && (if f.presentation == "woman" then contains(g.familyWomen, familyOf(full)) else contains(g.familyMen, familyOf(full))),
+    None => false
+  }, f.regions)
+}
+pure func seedOk(seed: int) -> bool {
+  let a = nameCrewFit(seed, zeroRng(), ids());
+  let b = nameCrewFit(seed, zeroRng(), ids());
+  let old = nameCrew(seed, zeroRng(), ids());
+  let ns = map(\n. n.name, a.names);
+  a.names == b.names && map(\n. n.id, a.names) == ids() && all(\n. fits(n.id, n.name), a.names)
+    && length(filter(\n. length(filter(\m. m == n, ns)) == 1, ns)) == 5 && counter(a.rng, SCrew) == counter(old.rng, SCrew)
+}
+pure func seeds() -> [int] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 42, 424242]
+pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
+
+test "every crew role has a face record: a presentation and at least one naming region it fits" {
+  all(\id. match faceOf(id) { Some(f) => (f.presentation == "woman" || f.presentation == "man") && length(f.regions) >= 1 && all(\r. (match regionOf(r) { Some(_) => true, None => false }), f.regions), None => false }, ids())
+}
+test "D-80: drawn names fit the faces, are distinct and deterministic, and take the same crew draws as before" { all(seedOk, seeds()) }
+test "the medic (a woman, South Asian naming per her manifest) gets a South Asian woman's name" {
+  all(\s. match nameOf((nameCrewFit(s, zeroRng(), ids())).names, "medic") { Some(n) => (match regionOf("south_asia") { Some(g) => contains(g.women, givenOf(n)), None => false }), None => false }, seeds())
+}
+test "every region's gendered lists are non-empty and drawn from real names (no placeholders)" {
+  all(\g. length(g.women) >= 6 && length(g.men) >= 6 && length(g.familyWomen) >= 8 && length(g.familyMen) >= 8, genderedNames())
+}

@@ -38,6 +38,31 @@ func world(src: String, reason: Variant = null, req: Variant = null, tier := 0, 
 
 func test_templates() -> void:
 	ok("the real copy lints clean (%s)" % str(NewsCopy.lint(templates, copy)), NewsCopy.lint(templates, copy).is_empty())
+	# R2-INTERLUDE: {elapsed_years} is Earth time at the news epoch (when the message left home), not
+	# the time passed at home by now. At TRAPPIST-1 the news caught at arrival left home days after the
+	# ship did (elapsed 0.00) and is 40.62 years old, so "Only 0.00 years have passed there since you
+	# left" was false. The lint refuses a sentence that states elapsed time as passed until now.
+	for t in ["Only {elapsed_years} years have passed there since you left.", "At home, {elapsed_years} years have gone by since you left.",
+			"{elapsed_years} years have passed on Earth.", "In the {elapsed_years} years since you left, home has grown older."]:
+		ok("the lint refuses elapsed time stated as now: %s" % t, NewsCopy.elapsed_as_now(t))
+	for t in ["They wrote this {elapsed_years} years after you left.", "Earth sends word after {elapsed_years} years.",
+			"{elapsed_years} years of Earth time lie between your departure and the day this message was sent."]:
+		ok("the lint accepts elapsed time anchored to the sending: %s" % t, not NewsCopy.elapsed_as_now(t))
+	var stops := [[0.0, 40.62], [0.04, 4.35], [0.9, 0.2]]
+	var false_now := []
+	for tier in templates.tiers:
+		for t: String in tier.templates:
+			if NewsCopy.elapsed_as_now(t): false_now.append(t.left(60))
+	# Eval R2-INTERLUDE (1): a message written so soon after departure that its {elapsed_years}
+	# renders "0.00" says "within days of your departure", never "0.00 years after".
+	var zero_bad := []
+	var t0: Array = templates.tiers[0].templates
+	for j in t0.size():
+		var at0 := NewsCopy.paragraph(templates, j, {"elapsed_years": 0.0, "news_epoch": 0.0, "news_age_years": 40.62})
+		var at4 := NewsCopy.paragraph(templates, j, {"elapsed_years": 0.04, "news_epoch": 0.04, "news_age_years": 4.35})
+		if at0.contains("0.00") or not at0.contains("within days") or not at4.contains("0.04 years after"): zero_bad.append([j, at0])
+	ok("tier 0: an elapsed time that rounds to zero reads 'within days', otherwise the number (%s)" % [zero_bad], zero_bad.is_empty())
+	ok("no template states the news epoch as the time passed at home by now (%s, stops %s)" % [false_now, stops], false_now.is_empty())
 	var fx := NewsCopy.load_json(FIX + "paragraphs.json")
 	var all_ok := true
 	for t in fx["tiers"]:

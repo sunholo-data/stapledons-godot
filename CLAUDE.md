@@ -14,13 +14,13 @@ design repo.
 ## Commands
 
 ```sh
-make test      # headless: physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (CI runs this)
+make test      # headless: physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (the rig runs this: tools/rig_check.sh)
 make golden    # GPU shader vs CPU reference, sub-pixel (needs a GPU window; works from the Studio shell)
 make capture   # sim-driven voyage → renders/*.png (inspect them; that is the visual check)
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.54.11** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.54.14** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -35,6 +35,12 @@ infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
 builds the macOS zip straight away; tag it only after a green local `make test`
 (use the pinned runtime: `PATH=$PWD/runtime/bin:$PATH make test`). Any other `v*` tag
 is a release: `release.yml` runs the full CI suite first and builds only if it passes.
+
+**Merges (Mark, 2026-10-19).** `make test` is still the definition of done, but it runs on the
+Studio: `tools/rig_check.sh <PR> [--golden]` runs it (plus `make golden` for visual changes) on the
+PR head in a fresh clone and posts the `rig/full` commit status. GitHub CI runs only the fast
+clean-Linux tier, `make ci-fast` (lock, policy lints, strict VM, parity, replay golden, crew parity).
+A PR merges on a green `rig/full` plus a green fast tier; main is not branch-protected.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
 
@@ -89,7 +95,7 @@ Only the **unattended** loop is barred from resolving rows itself. This is
 
 ## Definition of done (gates, in this order)
 
-1. **`make test` is green locally and in CI.**
+1. **`make test` is green on the rig (`rig/full`), and the GitHub fast tier is green.**
 2. **Physics.** Every visual that shows SR or GR has the following, *before*
    it merges:
    - check values from `stapledons-design/physics/relativity-spec.md` asserted
@@ -159,38 +165,31 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.11 (re-check again at each bump; still-needed ones reported as ailang#1783):**
-  - Fixed in v0.54.8: a cold compile of an embedded `sunholo/crew_core` peaked at ~20 GB RSS (#1812, still open upstream; now ~0.5 GB). CI needs no memory limit or warm-up step for it.
-  - Fixed in v0.54.10 (#1827): the VM's O(n^2) cons-pattern list walk. With crew_core 0.5.0 on v0.54.11 the busy no-hold crew skip measures 11.2 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16) accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
-  - Fixed in v0.54.11 (ailang PR #1836, verified 2026-10-16): all ten `std/map`
-    operations run on the strict VM (VM = interpreter); `ailang lock` keeps
-    `generated_at` when resolution is unchanged. End of input: the sim, the AI
-    service and the fake service read with `std/io.readLineOpt` (None ends the
-    session, a blank line is skipped), replacing the 16-blank-reads guard.
-  - Still needed: run `ailang lock` after `ailang install`; on a clean machine
-    `ailang lock` also fills the package cache (`make deps`).
-  - Open (v0.54.11): `ailang test --package` does not type-check modules no test
-    imports, so CI keeps `ailang check --package sim` (#1845).
-  - Open (v0.52.0, workaround in-tree, cite the issue at the site): the bytecode
-    VM silently drops a service request whose handler builds a list of ~1100+
-    elements by non-tail recursion (no result, no error, exit 0; the interpreter
-    answers) (#1576; `ai/voice.ail` builds stub tones by doubling).
-  - Breaking in v0.52.0: an explicitly imported name may not also be defined at
-    module level (MOD015). Alias the import (`import M (x as mX)`) or rename.
-  - Fixed in v0.52.0; the in-tree workarounds still cite the issue and are
-    removable in a follow-up: std/json -0.0 sign and long integers (#1460);
-    test-runner private-name mixups (#1461, #1516); exp/log 1 ulp arm64 vs
-    x86_64 (#1465); lone `| Idle` export (#1466); imports shadowing lambda/let
-    binders (#1467); strict-VM patterns: var arms, nested cons, constructor at a
-    cons head, nested constructor binds, `_ :: []` (#1473, #1505, #1503, #1517);
-    aliased/unknown pattern constructors (#1478, now TC_MATCH_001); NaN ordering
-    (#1419, now IEEE on both engines; NaN guards like `x == x` are still needed,
-    since every comparison with NaN is false); recursive std/list maximumFloat
-    (#1518); std/array and std/list.range on the strict VM; interpreter tail
-    calls (#1486); `writeFileBytesResult` exists.
-  - Fixed in v0.51.0: whole-number float literals in `test` blocks (#1456),
-    `string.repeat` and bitwise Int ops under `--strict-bytecode` (#1462, #1450).
-  - Fixed upstream, kept harmlessly in the Makefile: `--quiet` and `--package-dir`.
+- **Workarounds, re-checked on v0.54.14 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+  - Open (ailang#1827 fixed in v0.54.10, performance): with crew_core 0.5.0 the busy no-hold crew skip
+    measures about 11 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
+    accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
+  - Kept on purpose: `ailang check --package` beside `ailang test --package`. Since v0.54.13 the
+    test runner type-checks every module and exits 1 on a compile error, but only `check` enforces
+    STRICT_FALLBACK_001 (an unannotated empty `Ok`).
+  - Process, not a bug: run `ailang lock` after `ailang install`; on a clean machine `ailang lock`
+    also fills the package cache (`make deps`).
+  - Language rule since v0.52.0: an explicitly imported name may not also be defined at module
+    level (MOD015). Alias the import (`import M (x as mX)`) or rename. An aliased constructor
+    import is rejected in a pattern (TC_MATCH_001); `sim/tripphase.ail` maps phases to an index.
+  - Fixed and removed from the tree on v0.54.13/v0.54.14 (byte-identical outputs unless noted):
+    every strict-VM list-literal split (ailang#1736, #1865: the ISM efficacy LUT, cloud planes and
+    members are single literals; `applyOverride` is one chain; the crew-names table runs strict,
+    `make strict` namesVm; the scripted crossing still uses role ids until the crew console sprint
+    (D-80) switches it to names and re-records `crossing_hold`); the #1576 doubling in `ai/voice.ail` and the
+    tail-recursive lens-table builders; the #1737 named test checks; the v0.52.0 workarounds (#1460,
+    #1461, #1465, #1467, #1473, #1478, #1486, #1503, #1505, #1516, #1517, #1419 notes). The arm64
+    and x86_64 replay goldens are identical but still kept per architecture.
+  - Fixed upstream, nothing in-tree: `std/env.getEnvOr` of an unset variable on the bytecode VM
+    (broken in v0.54.13, fixed in v0.54.14, #1864); std/map on the strict VM and `readLineOpt`
+    (v0.54.11); the ~20 GB cold compile of crew_core (v0.54.8, #1812). `spawnProcessResult`
+    (#1784), sharedindex scan order (#1795) and `std/package.assetPath` (#1772) are unused here;
+    every `--entry` names an exported function (#1797); no `CACHE_WRITE_FAILED` (#1601).
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the
   interpreter disagree, that's an upstream bug: shrink it to a minimal repro
   and report it.

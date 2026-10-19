@@ -8,6 +8,8 @@ extends SceneTree
 ##       button at the Voyage console queues no confirmed crew decision (start, relief, the
 ##       captaincy switch, an auto-run preset, Resume): each arms its confirm first. Only Offer work
 ##       acts on one press, and an offer is the crew's to accept or decline.
+##   NT4 (R2-INTERLUDE AC7) the crossing review: every page, the Hold page included, stays shown
+##       through 600 s of fake time with the sim ticking; nothing turns or dismisses it but input.
 ##   NT2 (AC5) an open commit dialog, an open console panel and an unanswered confirm survive
 ##       600 s of fake time unchanged (the sim keeps its host tick).
 ## Deterministic (AC13): fixed seed, fake clock, no wall-clock reads; the log has no timings,
@@ -19,7 +21,8 @@ const KEYS := [KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H, KEY_I, KE
 	KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
 	KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9,
 	KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12,
-	KEY_ENTER, KEY_SPACE, KEY_TAB, KEY_ESCAPE, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
+	KEY_ENTER, KEY_SPACE, KEY_TAB, KEY_ESCAPE, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT,
+	KEY_EQUAL, KEY_MINUS, KEY_KP_ADD, KEY_KP_SUBTRACT] # R2-CAMERA: the level keys
 const DECISIONS := ["plan", "commit", "cancel", "body_plan"]
 
 
@@ -42,13 +45,15 @@ func _run() -> void:
 	await sweep_state("Sgr A*")
 	await sweep_crew()
 	await test_no_deadlines()
+	await test_review_no_deadlines()
 	print("no-twitch: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
 
-func new_demo() -> Node:
+func new_demo(extra := {}) -> Node:
 	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options = {"stars": false, "background": false, "live_start": true, "sky_state": "rest", "from_menu": true, "settings_dir": "user://test_no_twitch"}
+	demo.setup_options.merge(extra, true)
 	DirAccess.make_dir_recursive_absolute("user://test_no_twitch")
 	root.add_child(demo)
 	await process_frame
@@ -112,6 +117,25 @@ func events() -> Array:
 	var pan := InputEventPanGesture.new()
 	pan.delta = Vector2(0, 1)
 	out.append(pan)
+	# R2-CAMERA: the camera's gestures and controller inputs decide nothing either (NT1).
+	for d in [Vector2(0, -1), Vector2(0, 0.4), Vector2(3, 0)]:
+		var p := InputEventPanGesture.new()
+		p.delta = d
+		out.append(p)
+	for f in [1.2, 0.8]:
+		var g := InputEventMagnifyGesture.new()
+		g.factor = f
+		out.append(g)
+	for b in [JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_LEFT_SHOULDER, JOY_BUTTON_RIGHT_STICK, JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN]:
+		for pressed in [true, false]:
+			var j := InputEventJoypadButton.new()
+			j.button_index = b
+			j.pressed = pressed
+			out.append(j)
+	var stick := InputEventJoypadMotion.new()
+	stick.axis = JOY_AXIS_RIGHT_X
+	stick.axis_value = 1.0
+	out.append(stick)
 	return out
 
 
@@ -189,7 +213,7 @@ func sweep_state(state: String) -> void:
 
 
 ## A tour plan intent's target is the next leg of the itinerary (by catalogue id or body).
-const CREW_CONFIRMED := ["crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume", "crew_reply"] # crew_reply: answering a concern (crew_core 0.4.1)
+const CREW_CONFIRMED := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume", "crew_reply"] # R2-CREW-CONSOLE-V2: every crew decision, the offer included, is confirmed
 func sweep_crew() -> void:
 	var demo: Node = await new_demo()
 	var sim := session(demo)
@@ -207,25 +231,40 @@ func sweep_crew() -> void:
 	check("NT3 the Voyage console says the hold needs you at the Crew console", c.crew_summary != null and c.crew_summary.text.begins_with("Needs you at the Crew console:"))
 	c.go_to("crew") # crew-work W1: the Crew page lives on its own console
 	c.use("crew", "open")
-	var page: CrewPage = c.crew_page
-	check("NT3 the Crew page shows the hold card", page != null and page.find_children("Hold_*", "", true, false).size() == 1)
-	var buttons: Array = page.find_children("*", "Button", true, false) if page != null else []
+	var page: CrewConsole = c.crew_console
+	var held_id := str(sim.crew.holds[0].get("actor", "")) if not (sim.crew.get("holds", []) as Array).is_empty() else ""
+	check("NT3 the Crew console shows the held row", page != null and held_id != "" and page.find_child("Member_" + held_id, true, false) != null and (page.find_child("Quick_" + held_id, true, false) as Button).text == "Resume ▸")
 	var bad: Array = []
-	var offers := 0
-	for b in buttons:
-		var nm := str(b.name)
-		sim.queued.clear()
+	var pressed := 0
+	var ids: Array = [""] + sim.crew.members.map(func(m): return str(m.id))
+	for who in ids: # the board, then each member's call
+		if page == null: break
+		if who != "": page.press("call:" + who)
+		for b in page.find_children("*", "Button", true, false):
+			if not is_instance_valid(b) or (b as Button).disabled or str(b.name) == "EndCall": continue
+			sim.queued.clear()
+			page.armed = ""
+			(b as Button).pressed.emit()
+			pressed += 1
+			for i: Dictionary in sim.queued:
+				if CREW_CONFIRMED.has(i.get("k", "")):
+					bad.append([str(b.name), i["k"]])
+			if page.call_id != who and who != "": page.press("call:" + who)
 		page.armed = ""
-		b.pressed.emit()
-		for i: Dictionary in sim.queued:
-			if CREW_CONFIRMED.has(i.get("k", "")):
-				bad.append([nm, i["k"]])
-			elif i.get("k", "") == "crew_offer":
-				offers += 1
 	sim.queued.clear()
-	check("NT3 %d Crew page buttons pressed once each" % buttons.size(), buttons.size() >= 8)
-	check("NT3 no confirmed crew decision on one press %s" % [bad.slice(0, 3)], bad.is_empty())
-	check("NT3 Offer work acts on one press (the crew may decline)", offers >= 1)
+	check("NT3 %d Crew console buttons pressed once each, on the board and in every call" % pressed, pressed >= 20)
+	check("NT3 no crew decision on one press, the offer included %s" % [bad.slice(0, 3)], bad.is_empty())
+	# NT5 (R2-CREW-CONSOLE-V2 AC10): the board, a call and a hold left for 600 s of fake time with the
+	# sim ticking: nothing closes and nothing is decided.
+	page.end_call()
+	page.press("call:" + held_id)
+	sim.record_sent = true
+	sim.sent_log.clear()
+	demo.journey_auto_tick = true
+	step(demo, 600.0, 1.0)
+	demo.journey_auto_tick = false
+	check("NT5 600 s later the Crew console and the held call are still open", c.focused == "crew" and page.call_id == held_id and page.find_child("HoldBanner", true, false) != null)
+	check("NT5 nothing was decided on the timer", sim.sent_log.all(func(e: Dictionary) -> bool: return e.source == "tick" and not e.intents.any(func(i): return str(i.get("k", "")).begins_with("crew_"))))
 	c.leave()
 	demo.queue_free()
 	await process_frame
@@ -269,5 +308,56 @@ func test_no_deadlines() -> void:
 	b = c.panel_body.find_child("Confirm_begin", true, false)
 	step(demo, 600.0, 5.0)
 	check("NT2 an open panel with an unpressed hold survives 600 s; nothing starts", c.focused == "voyage" and demo.solar_tour == null)
+	demo.queue_free()
+	await process_frame
+
+
+## NT4 (R2-INTERLUDE I3, AC7): the crossing review is the player's to read. On the guided voyage's
+## Alpha Centauri leg (an orders crew under critical_only, as the live game queues it), the Hold
+## page and then every page of the finished crossing stay shown through 600 s of fake time with the
+## sim ticking: no page turns, nothing is dismissed, ship time does not move on.
+const ReviewDrive := preload("res://tests/review_drive.gd")
+func test_review_no_deadlines() -> void:
+	var demo: Node = await new_demo({"crew": "orders"})
+	check("NT4 setup: the guided voyage begins at the Voyage console", ReviewDrive.begin(demo, 4))
+	var r: CrossingReview = demo.crossing_review
+	var state := ReviewDrive.reach(demo, true)
+	demo.journey_auto_tick = true # the sim keeps its normal host tick (D-12)
+	check("NT4 setup: the crossing stopped for a hold (%s)" % state, state == "held")
+	if state == "held":
+		var tau0: float = demo.journey_sim.world.clock.tau
+		step(demo, 600.0, 5.0)
+		check("NT4 the Hold page survives 600 s; ship time waits (%s)" % r.current(), r.visible and r.current() == "hold" and demo.solar_tour.crew_held() and demo.journey_sim.world.clock.tau == tau0)
+		demo.journey_auto_tick = false
+		state = ReviewDrive.reach(demo, false)
+		demo.journey_auto_tick = true
+	check("NT4 setup: the crossing reached its review (%s)" % state, state == "crossed" and r.visible)
+	if state != "crossed":
+		demo.queue_free(); await process_frame; return
+	var tau := float(demo.journey_sim.world.clock.tau)
+	var card: CardInterlude = demo.solar_tour.interlude
+	demo._process(0.05)
+	# I3 polish (A3): the sim's phase reads braking at the boundary, but the player has not braked.
+	check("NT4 no Braking notice while the review waits at the braking boundary (phase %s)" % demo.journey_sim.world.ship.phase,
+		str(demo.journey_sim.world.ship.phase) == "braking" and not demo.ship_hud.has_card("notice") and not demo.ship_hud.all_text().contains(JourneyHud.BRAKE_NOTICE))
+	var kept := []
+	var ids: Array = r.page_ids() # taken once: a dismissed review rebuilds (or empties) its pages
+	for i in ids.size():
+		if not r.visible or demo.solar_tour.interlude != card:
+			kept.append("%s: the review was gone before it" % ids[i])
+			break
+		r.go(i)
+		step(demo, 600.0, 5.0)
+		if not (r.visible and r.page == i and demo.solar_tour.interlude == card and not card.done()):
+			kept.append(ids[i])
+	check("NT4 every page of the review survives 600 s of fake time (%d pages) %s" % [ids.size(), kept], kept.is_empty() and ids.size() >= 3)
+	check("NT4 ship time waits at the braking boundary while the review is read", float(demo.journey_sim.world.clock.tau) == tau)
+	r.go(r.page_ids().size() - 1)
+	r.key(KEY_ENTER)
+	demo.journey_tick()
+	demo._process(0.05)
+	check("NT4 the last page's Brake ends the review and the leg brakes", demo.solar_tour.interlude == null and not r.visible)
+	demo._process(0.05)
+	check("NT4 the Braking notice shows once the player has braked", demo.ship_hud.has_card("notice") and demo.ship_hud.all_text().contains(JourneyHud.BRAKE_NOTICE))
 	demo.queue_free()
 	await process_frame

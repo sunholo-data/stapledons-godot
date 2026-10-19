@@ -65,7 +65,7 @@ func test_settings() -> void:
 	var s := GameSettings.new()
 	s.dir = d
 	s.load_settings()
-	check(s.auto_view and not s.text_only, "defaults: Auto view (D-55), text-only off")
+	check(s.auto_view and not s.text_only and s.camera_motion == "full", "defaults: Auto view (D-55), text-only off, full camera motion (R2-CAMERA D6)")
 	var ai := AiSettings.new() # an AI tick and ceiling saved elsewhere must survive
 	ai.dir = d
 	ai.opt_in = true
@@ -73,11 +73,18 @@ func test_settings() -> void:
 	ai.save_settings()
 	s.auto_view = true
 	s.text_only = true
+	s.camera_motion = "reduced"
 	check(s.save_settings(), "settings save")
 	var t := GameSettings.new()
 	t.dir = d
 	t.load_settings()
-	check(t.auto_view and t.text_only, "settings round-trip (view Auto, text-only on)")
+	check(t.auto_view and t.text_only and t.camera_motion == "reduced", "settings round-trip (view Auto, text-only on, reduced camera motion)")
+	var cf := ConfigFile.new()
+	cf.load(d.path_join(GameSettings.FILE))
+	cf.set_value("display", "camera_motion", "wobbly")
+	cf.save(d.path_join(GameSettings.FILE))
+	t.load_settings()
+	check(t.camera_motion == "full", "an unknown camera_motion reads full")
 	var ai2 := AiSettings.new()
 	ai2.dir = d
 	ai2.load_settings()
@@ -150,16 +157,18 @@ func test_menu_alone() -> void:
 	t.view_option.select(1)
 	t.view_option.item_selected.emit(1)
 	t.text_only_box.button_pressed = true
+	t.motion_option.select(1)
+	t.motion_option.item_selected.emit(1)
 	var s := GameSettings.new()
 	s.dir = d
 	s.load_settings()
-	check(s.auto_view and s.text_only and t.settings_status.text.begins_with("Saved"), "settings panel saves on change")
+	check(s.auto_view and s.text_only and s.camera_motion == "reduced" and t.settings_status.text.begins_with("Saved"), "settings panel saves on change (camera motion included)")
 	t.queue_free()
 	await frames()
 	var t2 := TitleScreen.new({"sky": false, "settings_dir": d})
 	root.add_child(t2)
 	await frames()
-	check(t2.view_option.selected == 1 and t2.text_only_box.button_pressed, "a new title screen shows the saved settings")
+	check(t2.view_option.selected == 1 and t2.text_only_box.button_pressed and t2.motion_option.selected == 1, "a new title screen shows the saved settings")
 	t2.queue_free()
 	await frames()
 
@@ -176,6 +185,7 @@ func test_routes() -> void:
 	var s := GameSettings.new()
 	s.dir = d
 	s.auto_view = true
+	s.camera_motion = "reduced"
 	s.save_settings()
 	var main: Node = load("res://main.tscn").instantiate()
 	root.add_child(main)
@@ -191,10 +201,14 @@ func test_routes() -> void:
 	if demo != null and demo.has_method("return_to_menu"):
 		demo.auto = false
 		demo.journey_auto_tick = false
-		check(demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0. and demo.camera.pullback == 0., "it is today's default: live rest, captain eye")
+		check(demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0. and demo.director.level == 2 and not demo.director.overridden, "it is today's default: live rest, the Z2 Deck view (R2-CAMERA)")
 		check(demo.journey_sim != null and demo.journey_sim.last_seed == int(demo.setup_options["seed"]), "D-68 the fresh seed reaches the sim's new_game")
 		check(demo.menu_return and demo.menu_button.visible, "launched from the menu: a Main menu button in the HUD")
 		check(demo.sky.system_view.body_fader, "the saved view (Auto) reaches the ship")
+		check(demo.director.motion == "reduced", "the saved camera motion (reduced) reaches the ship's camera")
+		demo.toggle_camera_motion()
+		var saved := GameSettings.new(); saved.dir = demo.settings_dir; saved.load_settings()
+		check(demo.director.motion == "full" and saved.camera_motion == "full", "the Tab camera-motion toggle aboard saves in the title's settings dir")
 		# V aboard is remembered (D-55): toggled to Realistic and saved where the title keeps
 		# settings (the test's own dir, never the real user://), then back to Auto.
 		demo.toggle_auto_view()

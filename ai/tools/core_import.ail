@@ -17,9 +17,6 @@ module stapledons/ai/tools/core_import
 -- blender@<commit>:<path> or "service" (a line accepted from the library).
 -- SHA256SUMS lists each blob at its layer path, then index.ndjson, so it pins
 -- the index bytes as well and `shasum -a 256 -c` reads it.
--- Private helpers carry a `core` prefix: the test runner mixes up same-named
--- private functions across modules (ailang#1461); unprefixed, verify failed
--- only under `ailang test`.
 import std/fs (readFileBytes, readFileResult, writeFile, writeFileBytes, mkdirAll, fileExists)
 import std/bytes (fromBase64)
 import std/bytes as B

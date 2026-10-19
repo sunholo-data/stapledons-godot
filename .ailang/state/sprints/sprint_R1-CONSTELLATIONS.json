@@ -1,0 +1,166 @@
+{
+  "sprint_id": "R1-CONSTELLATIONS",
+  "status": "completed",
+  "approved": true,
+  "approved_by": "Mark, attended 2026-10-17: yep continue",
+  "created": "2026-10-17",
+  "design_doc": "design_docs/implemented/r1/constellation-inspection.md",
+  "sprint_plan": "design_docs/implemented/r1/constellation-inspection-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [
+    {
+      "milestone": "C1",
+      "package": "sunholo/relativity@0.12.0",
+      "action": "depend",
+      "reason": "Existing optics and projection mirrors verify identities and apparent endpoints; registry search/info/docs inspected 2026-10-17"
+    },
+    {
+      "milestone": "C2",
+      "package": "sunholo/relativity@0.12.0",
+      "action": "depend",
+      "reason": "Existing uploaded observer state, StarProjection and apparent-disc geometry; no new physical maths"
+    },
+    {
+      "milestone": "C3",
+      "package": "sunholo/relativity@0.12.0",
+      "action": "depend",
+      "reason": "Existing spec/reference mirrors anchor GPU endpoint verification"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 360,
+    "estimated_total_loc": 720,
+    "estimated_days": 2,
+    "actual_added_lines": 1132,
+    "actual_removed_lines": 1,
+    "measurement_scope": "Feature diff 50242fa4...a0ccd120, including data, tests, tools and documentation; excludes final landing records. Active engineering hours were not measured, so no actual LOC/day rate is inferred."
+  },
+  "pause_points": [
+    {
+      "id": "P0",
+      "when": "before execution",
+      "blocking": false,
+      "what": "Mark approved the sprint, attended 2026-10-17: yep continue",
+      "satisfied": true
+    }
+  ],
+  "features": [
+    {
+      "id": "C1",
+      "description": "Four-figure manifest, audited exact source identities, resolver and focused tests first",
+      "estimated_loc": 220,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC1: all endpoints resolve uniquely on the normal loaded stack",
+        "Malformed, duplicate and missing endpoints fail safely",
+        "AC2-AC6 integration cases written before implementation"
+      ],
+      "passes": true,
+      "started": "2026-10-17 18:21:48 UTC",
+      "completed": "2026-10-17 18:26:55 UTC",
+      "notes": "All 23 normal-stack identities resolve; malformed/missing/duplicate handling and integrated input checks pass (31 assertions total)."
+    },
+    {
+      "id": "C2",
+      "description": "Held-I overlay, labels, clipping, hull/body masking and existing inspection integration",
+      "estimated_loc": 260,
+      "dependencies": [
+        "C1"
+      ],
+      "acceptance_criteria": [
+        "AC2: hold/release/focus/typing/probe/modal behaviour and no simulation input",
+        "AC4: RS-1/RS-2 and finite high-speed projections",
+        "AC5-AC6: clipping, camera transforms, occlusion, replacements, missing sources and GR suppression",
+        "make constellation-test ship-star-identification-test passes"
+      ],
+      "passes": true,
+      "started": "2026-10-17 18:26:55 UTC",
+      "completed": "2026-10-17 18:34:04 UTC",
+      "notes": "Integrated guides, compositing, masks and held-I lifecycle; 35 focused assertions, 59 existing identification assertions pass. Independent review confirmed production path."
+    },
+    {
+      "id": "C3",
+      "description": "GPU endpoint golden, reviewed captures, performance, export and final validation evidence",
+      "estimated_loc": 240,
+      "dependencies": [
+        "C2"
+      ],
+      "acceptance_criteria": [
+        "AC3: GPU star centroid versus line endpoint error <=0.75 px; endpoint mutation rejected",
+        "AC7: both-resolution reference images generated and opened",
+        "AC8: warm CPU p95 <=2 ms across >=300 frames; released overlay idle",
+        "AC9: full pinned-runtime make test, make golden, export audit and exported smoke green",
+        "Independent evaluator passes acceptance criteria before landing"
+      ],
+      "passes": true,
+      "started": "2026-10-17 18:34:04 UTC",
+      "completed": "2026-10-19 06:03:31 UTC",
+      "notes": "Full local integration suite, 33 GPU cases, reviewed captures, benchmark, macOS export and packaged smoke pass; independent review 96/100 plus current-main follow-up passes. CI's unchanged crew-perf timing failure remains recorded. Mark explicitly accepted that exception on 2026-10-19, then PR #271 merged; documentation and roadmap landed."
+    }
+  ],
+  "local_verification": {
+    "completed": "2026-10-17 19:06:00 UTC",
+    "make_test_exit": 0,
+    "focused_assertions": 35,
+    "existing_inspection_assertions": 59,
+    "gpu_cases": 33,
+    "gpu_worst_px": 0.28981539607048,
+    "mutation_failures": 32,
+    "reference_images": 32,
+    "cpu_held_p95_ms": 0.144,
+    "cpu_released_p95_ms": 0.004,
+    "export_smoke": "pass",
+    "integration": {
+      "source": "a0ccd120ac875f267a6f8a3e59c34365385b34f0",
+      "ailang_version": "v0.54.14",
+      "make_test_exit": 0,
+      "gpu_cases": 33,
+      "gpu_failures": 0,
+      "export_exit": 0,
+      "export_smoke": "pass",
+      "independent_followup": "No new integration correctness concerns; 35 focused assertions passed with v0.54.14"
+    }
+  },
+  "pending": [],
+  "local_implementation_complete": true,
+  "evaluation": {
+    "path": ".ailang/state/evaluations/eval_R1-CONSTELLATIONS_round_1.json",
+    "result": "pass",
+    "score": 96,
+    "scope": "Independent local implementation review; subsequent CI timing exception granted by Mark, not by the evaluator."
+  },
+  "merge_requested_by": "Mark, attended: yeah merge it so I can pull from github",
+  "pull_request": "https://github.com/sunholo-data/stapledons-godot/pull/271",
+  "ci": {
+    "url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/39062583511",
+    "head": "a0ccd120ac875f267a6f8a3e59c34365385b34f0",
+    "result": "failure",
+    "attempts": [
+      {
+        "attempt": 1,
+        "check": "crew-perf crewSkip",
+        "seconds": 2.3,
+        "budget_seconds": 2
+      },
+      {
+        "attempt": 2,
+        "check": "crew-perf crewSkip",
+        "seconds": 2.26,
+        "budget_seconds": 2
+      }
+    ],
+    "comparison": "Identical crew benchmark source and v0.54.14 runtime at base 50242fa4 passed main CI in 1.80 s; integrated local run passed in 1.18 s.",
+    "exception_requested": true,
+    "exception_granted": true,
+    "exception_granted_by": "Mark, attended 2026-10-19: ok merge it, directly answering the explicit CI timing exception question.",
+    "exception_scope": "Permit this feature's merge despite the existing crew-perf timing CI failure; keep limits and failed CI result unchanged."
+  },
+  "completed": "2026-10-19 06:03:31 UTC",
+  "landing": {
+    "merge_commit": "633a425943d12e47883297e4f0ad3cbb5d72021d",
+    "merged_at": "2026-10-19T06:00:30Z",
+    "roadmap_pr": "https://github.com/sunholo-data/stapledons-design/pull/27",
+    "roadmap_merge": "cd3a93481d3d9a42dbd531a02529426678d93882",
+    "documentation": "design, sprint and report moved together to design_docs/implemented/r1"
+  }
+}

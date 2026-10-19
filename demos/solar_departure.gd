@@ -32,6 +32,9 @@ var pacing := preload("res://ui/journey_pacing.gd").new()
 var interlude: CruiseInterlude = null
 var interlude_factory: Callable = func() -> CruiseInterlude: return CardInterlude.new()
 var interludes_done := 0
+## R2-INTERLUDE I3: a reader is watching (the live demo's crossing review). The crossing then
+## waits at the braking boundary until the player brakes; with no reader it ends there.
+var reviewed := false
 var last_boundary_error := -1.0
 
 ## D65 guided highlights use existing D54 finite-star stops. The catalogue
@@ -76,8 +79,15 @@ var skips := 0
 func skip_stage() -> bool:
 	if sim==null or not failed.is_empty() or paused or attitude_hold or pending_index>=0:return false
 	if interlude!=null:
-		if interlude is CardInterlude:(interlude as CardInterlude).finish()
-		return step()
+		# R2-INTERLUDE I1: the crossing runs chunk by chunk to the braking boundary; a crew hold stops it.
+		# I3: with a reader the review stays until the player brakes (no key dismisses it).
+		var card:CardInterlude=interlude as CardInterlude
+		if card!=null and not card.awaits_reader:card.finish()
+		for i in 100000:
+			if interlude==null or crew_held() or not failed.is_empty():break
+			if card!=null and card.awaits_reader and card.crossed():break
+			if not step():return false
+		return true
 	if sim.world.journey.state!="committed":return false
 	if sim.world.ship.phase=="cruising" and pacing.interlude_due(sim.world):return step()
 	# The consequence section is reported for the state before its tick, so refresh it
@@ -112,7 +122,8 @@ func _send(intents: Array, dtau: float, pipelined_ok:=false) -> bool:
 	sim.intent_source="tour" if not intents.is_empty() else "tick" # R1-SHIP-UI NT1: the itinerary's own legs
 	if not sim.send(intents,dtau,pipelined_ok):failed=sim.last_error;return false
 	if sim.in_flight():return true # its refusals and world arrive at the next drain
-	if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
+	# A refused Crew page intent (queued on the bridge) is the page's to word, not a tour failure.
+	if not sim.caller_refused().is_empty():failed=str(sim.caller_refused());return false
 	world_updated.emit(sim.world)
 	return true
 
@@ -160,9 +171,12 @@ func step() -> bool:
 	if not sim.drain():failed=sim.last_error;return false # a pipelined heartbeat lands before any decision
 	if _arrival_pending:
 		_arrival_pending=false
-		if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
+		if not sim.caller_refused().is_empty():failed=str(sim.caller_refused());return false
 		_check_arrival()
-	if paused or attitude_hold or pending_index>=0:return true
+	# Playtest (dev.31): paused (P), turning, or waiting on a stop choice, ship time waits, but the
+	# Crew page's queued intents (SimBridge.queue) still go out on a zero-dtau tick, so the crew
+	# answer. Nothing queued: nothing is sent, so idle ticks and replays are unchanged.
+	if paused or attitude_hold or pending_index>=0:return _send([],0.) if not sim.queued.is_empty() else true
 	# R2-CREW C8: a crew hold (an escalation under auto-run) stops the voyage like an arrival. Zero
 	# ticks keep the bridge live, so the Crew page's queued choices (crew_resume) still reach the sim.
 	if crew_held():return _send([],0.)
@@ -170,6 +184,7 @@ func step() -> bool:
 		if interlude!=null:return _step_interlude()
 		if pacing.interlude_due(sim.world):
 			interlude=interlude_factory.call()
+			if interlude is CardInterlude:(interlude as CardInterlude).awaits_reader=reviewed
 			interlude.begin(CruiseInterlude.facts_from(sim.world,leg_name()))
 			return true
 		if not _send([],pacing.step(sim.world,false,0.,TICK_HZ),true):return false
@@ -190,7 +205,12 @@ func _check_arrival() -> void:
 
 ## One host frame of the active interlude: step the sim by exactly what it
 ## consumes (never past the braking boundary), then check the boundary at the end.
+## R2-INTERLUDE I1: what it consumes is one chunk, to the sim's next stop (protocol 2.10); a crew
+## hold raised there is seen by crew_held() in step() before the next chunk.
 func _step_interlude() -> bool:
+	# The world may have moved since the last chunk (a held zero tick carried a crew_resume, so the
+	# next stop is a check-in again, not the cap the open hold gave): read the stop from it now.
+	interlude.observe(sim.world,leg_name())
 	var left:float=pacing.cruise_remaining(sim.world)
 	var dt:float=clampf(interlude.advance(left,1./TICK_HZ),0.,left)
 	if dt>0.:

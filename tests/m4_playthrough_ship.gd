@@ -1,6 +1,7 @@
 extends SceneTree
 ## M4.5aR3: real scene/sim, console decisions only, time supplied by step().
 const Main := preload("res://main.gd")
+const ReviewDrive := preload("res://tests/review_drive.gd")
 # The driver's script argument is not a game launch flag: exercise the plain route.
 class PlainLaunch extends Main:
 	func _user_args() -> Dictionary:
@@ -18,6 +19,7 @@ var ai_relay: AiRelay
 var frame := 0
 var phase := ""
 var poles := {}
+var commits_min := 2
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/playthrough")
 
 
@@ -81,7 +83,7 @@ func sample() -> void:
 		cards.append({"node": str(card.panel.get_path()), "visible": card.panel.is_visible_in_tree(),
 			"expanded": card.body.is_visible_in_tree(), "leaving": card.leaving})
 	samples.store_line(SimBridge.encode({"frame": frame, "view": view, "bindings": bindings,
-		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode}))
+		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row(), "crew": crew_row()}))
 	# D-68 applies to every action list and all currently visible text, including windows.
 	for actions: Array in ShipConsoles.ACTIONS.values():
 		for a: String in actions:
@@ -234,6 +236,7 @@ func until(s: Dictionary) -> void:
 	step(0.65)
 	# A view choice, never a decision key; aim the captain's eye at the forward pole.
 	# Stay off the exact zenith, where Basis.looking_at's up vector is collinear.
+	demo.director.override() # R2-CAMERA: a measurement pose; tools take the camera through the director
 	demo.camera.follow(demo.avatar_pos, 89.99, 0.0, 0.0)
 	for i in 2400: # 120 fake seconds, bounded even when the sim cannot arrive
 		var w: Dictionary = demo.journey_sim.world
@@ -244,6 +247,143 @@ func until(s: Dictionary) -> void:
 		if failures: return
 		if phase in ["boosting", "cruising", "braking"]: pole()
 	check(false, "no arrival or phase: " + s.until)
+
+
+## R2-INTERLUDE I3 (AC8): the crossing review in the sample row: shown, which page, which pages.
+func review_row() -> Dictionary:
+	var r: CrossingReview = demo.crossing_review
+	if r == null or not r.is_visible_in_tree(): return {}
+	return {"page": r.current(), "pages": r.page_ids()}
+
+
+## R2-CREW-CONSOLE-V2 V7 (AC14): the Crew console in the sample row: who is on the call, their state.
+func crew_row() -> Dictionary:
+	var cc: CrewConsole = demo.consoles.crew_console
+	if cc == null or not cc.is_visible_in_tree(): return {}
+	var m := CrewConsoleModel.member(cc.crew, cc.call_id)
+	return {"call": cc.call_id, "state": CrewConsoleModel.state(m, {"sending": cc.sending}) if not m.is_empty() else ""}
+
+
+## {"crew": [actions], "tick": bool}: press each action on the open Crew console (as the captain's
+## clicks would), sampling after each; with "tick", one journey tick then carries what was queued.
+func crew(s: Dictionary) -> void:
+	var cc: CrewConsole = demo.consoles.crew_console
+	if not check(cc != null and demo.consoles.focused == "crew", "the Crew console is open"): return
+	for a: String in s.crew:
+		cc.press(a)
+		step(0.1)
+	if s.get("tick", false):
+		if not check(demo.journey_tick(), "crew tick completes"): return
+		check(demo.journey_sim.last_refused.is_empty(), "the crew's intents are accepted (%s)" % [demo.journey_sim.last_refused])
+		step(0.2)
+	event({"type": "crew", "actions": s.crew, "states": cc.crew.get("members", []).map(func(m): return "%s=%s" % [m.get("id"), m.get("work_state")])})
+
+
+## {"start": "guided", "leg": n}: Begin the guided voyage at the Voyage console (walked to, opened,
+## Begin pressed), flying itinerary leg n next. The guided voyage is its own sim session, so the
+## evidence (states, samples) restarts with it; the session tee records it from its new_game.
+func start(s: Dictionary) -> void:
+	walk("voyage")
+	if failures: return
+	if not check(demo.consoles.use("voyage", "open") and demo.consoles.use("voyage", "begin"), "the Voyage console begins the guided voyage"): return
+	event({"type": "start", "what": s.start, "leg": int(s.get("leg", -1))})
+	if not check(demo.solar_tour != null, "guided voyage started"): return
+	if s.has("leg"): demo.solar_tour.leg_index = int(s.leg) - 1
+	samples.close(); states.close()
+	samples = FileAccess.open(scratch.path_join("display_samples.ndjson"), FileAccess.WRITE)
+	states = FileAccess.open(scratch.path_join("states.ndjson"), FileAccess.WRITE)
+	demo.journey_sim.record_sent = true
+	states.store_line(SimBridge.encode({"type": "state", "tick": demo.journey_sim.world.tick,
+		"status": "ok", "full": true, "changes": demo.journey_sim.world}))
+	demo.journey_sim.stepped.connect(func(_events: Array) -> void: states.store_line(SimBridge.encode(demo.journey_sim.state)))
+	demo.consoles.leave()
+	step(0.65)
+
+
+## {"until": "review"}: fly the leg (Skip dwell, Skip stage through the boost, the cruise's real-time
+## hold, then the crossing chunk by chunk) until the crossing review is over. A hold mid-crossing
+## is answered on the review's Hold page with its confirmed Resume (two presses), sampled first.
+func until_review() -> void:
+	var r: CrossingReview = demo.crossing_review
+	for i in 6000:
+		var tour = demo.solar_tour
+		if tour.crew_held() and tour.interlude != null and r.visible and r.current() == "hold":
+			step(0.5)
+			event({"type": "hold", "hold": str(demo.journey_sim.crew.holds[0].id)})
+			r.press_resume()
+			step(0.1)
+			r.press_resume()
+			step(0.05, true) # the held zero tick carries the queued crew_resume
+			continue
+		var st: String = ReviewDrive.frame(demo, true)
+		if demo.journey_map != null: demo.journey_map._process(0.0) # as step() does: the engine would run it
+		sample()
+		if not check(refusal().is_empty(), "unscripted refusal: " + refusal()): return
+		if st == "crossed":
+			event({"type": "review", "pages": r.page_ids()})
+			if ai_mode != "none": await narrate()
+			return
+		if not check(st != "failed", "the crossing reaches its review (%s)" % tour.failed): return
+	check(false, "no crossing review")
+
+
+## R2-INTERLUDE I4 (AI modes): the Archive's telling of the crossing through the local stub service,
+## recorded in the session as sim input. stub: the telling is accepted (page 1 shows it) and voiced
+## once (the stub voice); digits: the stub answers with digits, the sim refuses it (ai_numeral) and
+## the authored line stands. The playthrough's own relay plays the live AI (no key, no provider).
+func narrate() -> void:
+	var n: ArchiveNarration = demo.archive_narration
+	if demo.journey_sim.ai_relay != ai_relay: ai_relay.attach(demo.journey_sim) # the guided voyage's session
+	if not check(n.maybe_open(demo.hud_view(), ai_relay, true) and ai_relay.queued() == 1, "I4 the Archive is asked for its telling once the crossing is over"): return
+	if ai_mode == "digits":
+		var ctx: Dictionary = ai_relay._queue[0]["context"]
+		ctx.erase("canon") # at most 8 context fields: the stub's digits case takes the canon's place
+		ctx["stub_case"] = "digits"
+	for leg in ["text", "voice"]:
+		check(demo.journey_sim.send([], 0.0), "I4 the %s request enters the session" % leg)
+		for i in 12000:
+			ai_bridge.poll()
+			if ai_relay.queued() > 0: break
+			await process_frame
+		if not check(ai_relay.queued() == 1, "I4 the local stub answered the %s request" % leg): return
+		check(demo.journey_sim.send([], 0.0), "I4 the %s record enters the session" % leg)
+		if ai_mode == "digits" or leg == "voice": break
+		if not check(n.state == "told" and ai_relay.queued() == 1, "I4 the telling is accepted and its voice asked (%s, %s)" % [n.state, n.telling]): return
+	demo._show_interlude()
+	var r: CrossingReview = demo.crossing_review
+	var page := r.page
+	r.go(r.page_ids().find("crossing"))
+	var said: Label = r.find_child("Page_crossing", true, false).find_child("Narration", true, false)
+	if ai_mode == "digits":
+		check(n.state == "authored" and said != null and said.text.contains(str(GalaxyMap.field_value(demo.hud_view(), "cruise.digest.narration.crossing"))), "I4 digits: the telling is refused; the authored line stands")
+	else:
+		check(said != null and said.text.contains(n.telling) and n.telling.begins_with("Stub archive entry") and not n.voice.is_empty() and n.voiced == 1, "I4 stub: page 1 shows the telling; it is voiced once")
+	event({"type": "narration", "mode": ai_mode, "state": n.state, "telling": n.telling, "voiced": n.voiced, "voice": str(n.voice.get("sha256", ""))})
+	if failures == 0: print("narration: %s state=%s voiced=%d" % [ai_mode, n.state, n.voiced])
+	sample()
+	r.go(page)
+
+
+## {"review": "all"}: read every page, turning with → (the player's key); "last": Brake on the last.
+func review(s: Dictionary) -> void:
+	var r: CrossingReview = demo.crossing_review
+	if not check(r.visible, "the crossing review is shown"): return
+	match str(s.review):
+		"next", "all":
+			for i in (r.page_ids().size() if s.review == "all" else 1):
+				step(0.5)
+				if r.last_page(): break
+				var k := InputEventKey.new(); k.physical_keycode = KEY_RIGHT; k.keycode = KEY_RIGHT; k.pressed = true
+				demo._unhandled_input(k)
+			step(0.5)
+		"last":
+			check(r.last_page(), "the review is on its last page")
+			var b: Button = r.find_child("Brake", true, false)
+			if not check(b != null and b.is_visible_in_tree(), "the last page offers Brake"): return
+			b.pressed.emit()
+			step(0.5, true)
+			check(demo.solar_tour.interlude == null and not r.visible, "Brake ends the review; the leg brakes")
+		_: check(false, "unknown review step")
 
 
 func session_check() -> void:
@@ -260,7 +400,7 @@ func session_check() -> void:
 			check(row.has("tick") and row.has("dtau") and row.intents is Array, "session input schema")
 			for intent: Dictionary in row.intents:
 				if intent.k == "commit": commits += 1
-	check(not lines.is_empty() and games == 1 and commits >= 2, "session has new_game and two commits")
+	check(not lines.is_empty() and games == 1 and commits >= commits_min, "session has new_game and %d commits" % commits_min)
 	print("session lines=%d new_game=%d commit=%d" % [lines.size(), games, commits])
 
 
@@ -283,6 +423,8 @@ func _run() -> void:
 	root.size = Vector2i(1280, 720)
 	Main.demo_overrides = {"stars": false, "background": false, "ai": false, "seed": 424242,
 		"size": Vector2i(1280, 720), "confirm_mode": "hold", "record": scratch.path_join("session.ndjson")}
+	if script.has("crew"): Main.demo_overrides["crew"] = str(script.crew) # R2-INTERLUDE: an orders crew raises holds
+	commits_min = int(script.get("commits_min", 2))
 	var main := PlainLaunch.new()
 	root.add_child(main)
 	current_scene = main
@@ -310,13 +452,17 @@ func _run() -> void:
 	for s: Dictionary in script.steps:
 		if s.has("walk"): walk(s.walk)
 		elif s.has("use"): await use(s)
+		elif s.has("until") and s.until == "review": await until_review()
 		elif s.has("until"): until(s)
+		elif s.has("start"): start(s)
+		elif s.has("review"): review(s)
+		elif s.has("crew"): crew(s)
 		else: check(false, "unknown script step")
 		if failures: break
 	demo.journey_sim.stop() # close H1's tee, including the quit line, before checking it
 	if failures == 0:
 		session_check()
-		for p in ["boosting", "cruising", "braking"]:
+		for p in ([] if script.get("poles", true) == false else ["boosting", "cruising", "braking"]):
 			check(poles.has(p), "pole sampled in " + p)
 			print("pole %s max_px=%.9f" % [p, float(poles.get(p, INF))])
 	events.close(); samples.close(); states.close()

@@ -1,0 +1,77 @@
+{
+ "sprint_id": "R2-SIMILAR-S0",
+ "round": 1,
+ "evaluator_model": "sonnet",
+ "artifacts": [
+  "design_docs/planned/r2/semantic-memory-s0.md",
+  "design_docs/planned/r2/semantic-memory-s0-sprint.md",
+  ".ailang/state/sprints/sprint_R2-SIMILAR-S0.json",
+  "charter row L9"
+ ],
+ "scores": {
+  "fidelity": 22,
+  "verifiability": 19,
+  "correctness_physics": 19,
+  "executability_gates": 16,
+  "documentation": 7
+ },
+ "total": 83,
+ "verdict": "PASS",
+ "blocking": [],
+ "non_blocking": [
+  "AC1's sha256 4f1a16d7... is a hash of a spike printer whose text format is not specified anywhere (spike deleted). An executor cannot reproduce it except by guessing the format; the doc and plan both provide an escape (document a format, re-derive) but the plan's own risk bullet is truncated mid-sentence ('Compute shasum ..., '). Fix: specify the 15-line format in the plan, or say 'record the hash at first green and pin it'.",
+  "Mutation table: 'reciprocal multiplication instead of /3.0' differs ~1e-16, so it is NOT killed by the Earth-e +-1e-9 assertion or the exact-order asserts; it is killed only by the sha256/byte-exact digest (see previous item) or an exact-equality assertion on a vector component. Add an exact (==) component check, e.g. ln(mass)/3.0 bit-equality.",
+  "Sprint plan 'design inconsistencies' bullet claims the design's sub-milestone table puts a core guard in `test` and that Deliverables mentions a 'make strict line'. The design as committed says neither (core guard is evaluator-run; make strict keeps its entry set). Stale/misattributed note; harmless but confusing.",
+  "Deviation from L9: 'emitted by sim/core.ail' and 'system.similar' become protocol.ail + top-level `similar` section, core.ail untouched. Justified (system membership is position-dependent: TRAPPIST-1 planets only within 0.1 ly; protocol sessions already run strict, I verified ism-compat and the controller's strict claim is plausible) and flagged for Mark's approval in both docs. Acceptable, but Mark is being asked to accept a reading of the charter, so surface it prominently.",
+  "Gate 3: reusing celestial reflect.starIlluminanceAt(L_sun, a) (a point-source E=e1AU/r^2, requires rAU>0) for insolation is defensible (no new formula) but is a naming stretch (illuminance function fed luminosity in solar units); documented as a risk with a test. Earth's S is 0.99999964 (EM-barycentre a=1.00000018), not exactly 1; harmless.",
+  "Feature doc's Jupiter row (Saturn, Neptune) is wrong; measured is Saturn, Uranus, Neptune. Both artifacts correctly flag and schedule the correction at landing.",
+  "AC6 (core untouched) is evaluator-run, not in make test: sensible, but then nothing in CI enforces it; relies on the evaluator. Accepted by design.",
+  "Per-milestone gate lists are very long (about 60 targets) and mostly duplicate `make test`; they cover every ci.yml run step (make deps, lore-import CHECK=1, make test) but cost hours per milestone. Consider running the targeted set per milestone and the full suite once at landing.",
+  "Execution-time re-checks still needed: minor 12 was free on origin/main at evaluation (no Minor()=12..19 in sim/), but open PRs were not re-checked by me."
+ ],
+ "measurements": [
+  {
+   "command": "throwaway spike sim/zz_spike.ail (log r, log(m)/3, log(S)/2; S=starIlluminanceAt(L,a); radii via km/6378.1366, Sol mass via gm/gm_earth, TRAPPIST via planetRadiusKm and mass_earth, L=0.000553) from actual sim/data rows, pinned runtime, interpreter and --bytecode --strict-bytecode, cmp",
+   "result": "strict VM == interpreter byte-identical for Earth and Jupiter queries. Earth: TRAPPIST-1 e 0.26386705430076196, Venus 0.335143170943954, TRAPPIST-1 d 0.39915613754501517 (exactly the doc). Jupiter: Saturn 0.7474063181999366, Uranus 1.9541812432684686, Neptune 2.269140246394372 (exact). Uranus<->Neptune mutual nearest at 0.4536947634544971. Spike deleted."
+  },
+  {
+   "command": "runtime/bin/ailang --version",
+   "result": "v0.54.14"
+  },
+  {
+   "command": "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
+   "result": "rc 0"
+  },
+  {
+   "command": "make python-guard AILANG=runtime/bin/ailang",
+   "result": "ok (18 allowlisted, 0 awaiting AILANG port)"
+  },
+  {
+   "command": "make ism-compat AILANG=runtime/bin/ailang",
+   "result": "passes: frozen 2.7 plan, commit and flight = VM = interpreter (13 s)"
+  },
+  {
+   "command": "make -n similar-test similar-record",
+   "result": "No rule to make target similar-test (correctly absent at base)"
+  },
+  {
+   "command": "git grep -E 'Minor\\(\\) *= *1[2-9]' origin/main -- sim/",
+   "result": "no match: minor 12 free"
+  },
+  {
+   "command": "ci.yml run steps vs plan gate list",
+   "result": "make deps, make lore-import CHECK=1, make test all present in each milestone list"
+  },
+  {
+   "command": "sprint JSON",
+   "result": "status awaiting_approval, approved false; plan ends with 'STOP: awaiting Mark's approval before execution'"
+  },
+  {
+   "command": "hand check",
+   "result": "Earth-e sqrt(0.00695+0.01506+0.04760)=0.2638 agrees"
+  }
+ ],
+ "mutations_or_drills": [
+  "Reviewed plan mutation tables by reasoning (no execution): killable - mass divisor 3->2, radius-as-a, 6378.1 vs 6378.1366 (~2e-6 shift > 1e-9 tol), tie order reversed, guard removed (given a synthetic zero-input row), similar on tick, minor leak into 2.11. Not killable by stated assertions alone - reciprocal-multiplication (~1e-16), unless sha256 digest or bit-exact check is used."
+ ]
+}

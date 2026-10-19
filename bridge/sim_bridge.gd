@@ -37,7 +37,24 @@ const ISM_MINOR := 8
 ## refusal reason starts "crew:". The `crew` section (parse_crew(), kept in `crew`) arrives in the
 ## full state and whenever it changes. Asked for by setting `want_minor = CREW_MINOR`.
 const CREW_MINOR := 9
-const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
+## Protocol 2.10 (R2-INTERLUDE I1): the chunked crossing. While a journey is committed each state
+## carries `cruise` {next_stop_years, stop_kind, digest} (parse_cruise(), kept in world.cruise): a cruise
+## interlude steps exactly next_stop_years (a monthly crew check-in, the 365-day cap or the braking
+## boundary), so a crew hold ends its chunk. Asked for by setting `want_minor = INTERLUDE_MINOR`.
+const INTERLUDE_MINOR := 10
+## Protocol 2.11 (R2-CREW-CONSOLE-V2 V1): the Crew console. Each crew member carries `work_state` (the
+## sim names whose move it is: held, relief_asked, concern, declined, deferred, asked, agreed, offered,
+## resting, working, done, stopped, free) and working work its start `terms`; crew_start may carry
+## "as" (consent | orders) and crew_offer "start" (on_accept | now), envelope fields beside the line
+## (crew_intent's `envelope`).
+const CONSOLE_MINOR := 11
+## Protocol 2.12 (R2-HOME-TIERS, ledger D-86): the crossing review's home time in sixteen tiers
+## (cruise.digest.time.tier 0-15, tier_count 16) and the voyage's picture variant (time.variant).
+## The game's sessions ask for it (want_minor = HOME_TIERS_MINOR).
+const HOME_TIERS_MINOR := 12
+const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
+const STOP_KINDS := ["braking", "check_in", "chunk"]
+const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -66,6 +83,10 @@ signal stepped(events: Array)
 var relay_intents: Array = []
 ## R2-CREW C6: intents queued by a console (the Crew page), sent with the next tick and then cleared.
 var queued: Array = []
+## The queued intents the last tick carried, and where they start in it: a console tells its own
+## refusals apart (queued_refused) and knows its intents were answered.
+var last_queued: Array = []
+var queued_from := 0
 var relay_from := 0
 var last_events: Array = []
 var last_error := ""
@@ -315,6 +336,8 @@ func _send(intents: Array, dtau: float, pipelined_ok: bool) -> bool:
 		return false
 	var tick := int(world["tick"]) + 1
 	relay_intents = []
+	queued_from = intents.size()
+	last_queued = queued
 	if not queued.is_empty():
 		intents = intents + queued
 		queued = []
@@ -345,7 +368,8 @@ func _finish(tick: int) -> bool:
 	if state.get("tick") != tick:
 		return _fail("bad_response")
 	var changes: Dictionary = state["changes"]
-	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes) or not _take_crew(changes):
+	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes) or not _take_crew(changes) \
+			or (changes.has("cruise") and parse_cruise(changes["cruise"]).is_empty()):
 		return _fail("bad_response")
 	for section in changes:
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
@@ -368,7 +392,7 @@ func stop() -> void:
 
 ## JSON text for a request. Floats use Godot's shortest round-trip digits
 ## (`full_precision`), except -0.0, which Godot prints as "0.0" and std/json
-## needs as "-0.0" (ailang#1460). Ints stay integers. Keys keep their order.
+## needs as "-0.0". Ints stay integers. Keys keep their order.
 static func encode(v: Variant) -> String:
 	match typeof(v):
 		TYPE_DICTIONARY:
@@ -644,9 +668,29 @@ func queue(list: Array) -> void:
 	queued.append_array(list)
 
 
+## The last tick's refusals of queued intents, each with the refused `intent` attached.
+func queued_refused() -> Array:
+	return last_refused.filter(_is_queued).map(func(r): var c: Dictionary = r.duplicate(); c["intent"] = last_queued[int(r["i"]) - queued_from]; return c)
+
+
+## The last tick's refusals of the caller's own (and the relay's) intents: not the queued ones.
+func caller_refused() -> Array:
+	return last_refused.filter(func(r): return not _is_queued(r))
+
+
+func _is_queued(r: Variant) -> bool:
+	if not (r is Dictionary) or not (typeof(r.get("i")) in [TYPE_INT, TYPE_FLOAT]):
+		return false
+	var i := int(r["i"]) - queued_from
+	return i >= 0 and i < last_queued.size()
+
+
 ## A crew intent: `kind` one of CREW_INTENTS, `command` the crew_core command as a dictionary.
-static func crew_intent(kind: String, command: Dictionary) -> Dictionary:
-	return {"k": kind, "line": JSON.stringify(command)}
+## `envelope` (2.11): {"as": "orders"} on crew_start, {"start": "on_accept" | "now"} on crew_offer.
+static func crew_intent(kind: String, command: Dictionary, envelope: Dictionary = {}) -> Dictionary:
+	var i := {"k": kind, "line": JSON.stringify(command)}
+	i.merge(envelope)
+	return i
 
 ## The 2.9 crew section, checked: turn, captaincy, and members/requests/reliefs/heard/resources
 ## arrays; each member has an id, an indicators dictionary and a trust number or null. {} if wrong.
@@ -663,6 +707,24 @@ static func parse_crew(v) -> Dictionary:
 				or not (m.get("trust") == null or typeof(m.get("trust")) == TYPE_FLOAT or typeof(m.get("trust")) == TYPE_INT):
 			return {}
 	return v.duplicate(true)
+
+## The 2.10 cruise section, checked: next_stop_years a number >= 0 with stop_kind one of STOP_KINDS
+## (while committed), and/or `digest` (R2-INTERLUDE I2: the crossing review's digest, an object with
+## time, home, medium and crew; on the arrival tick it comes alone). {} if wrong.
+static func parse_cruise(v) -> Dictionary:
+	if typeof(v) != TYPE_DICTIONARY:
+		return {}
+	var out := {}
+	if v.has("next_stop_years") or v.has("stop_kind"):
+		if not (typeof(v.get("next_stop_years")) in [TYPE_FLOAT, TYPE_INT]) or not (v.get("stop_kind") in STOP_KINDS) or float(v["next_stop_years"]) < 0.0:
+			return {}
+		out = {"next_stop_years": float(v["next_stop_years"]), "stop_kind": str(v["stop_kind"])}
+	if v.has("digest"):
+		var d = v["digest"]
+		if typeof(d) != TYPE_DICTIONARY or not ["time", "home", "medium", "crew"].all(func(k): return d.has(k)) or typeof(d["time"]) != TYPE_DICTIONARY:
+			return {}
+		out["digest"] = d.duplicate(true)
+	return out
 
 func _take_crew(changes: Dictionary) -> bool:
 	if not changes.has("crew"):
