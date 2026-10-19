@@ -4,7 +4,7 @@
 
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CAMERA-FORWARD.json`
 
-**Status:** **Awaiting approval** (Mark, attended). Nothing executes until he approves.
+**Status:** **Approved** (Mark, attended 2026-10-19, ledger D-93, every recommendation). In progress: F1.
 
 **Approval gate:**
 - Mark answers OQ1–OQ4: the Bow framing, planet facing at stops, astern and side, and zoom.

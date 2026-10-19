@@ -1,7 +1,6 @@
 # R2-CAMERA-FORWARD: travel along the deck, and a fixed bow view that slides with the captain
 
-**Status:** Planned; revised for D-92 (2026-10-19).
-- Awaiting Mark's approval of this doc and its sprint plan ([camera-forward-sprint.md](camera-forward-sprint.md)).
+**Status:** Approved 2026-10-19 by Mark, attended ("yep looks great approved"), with every recommendation: ledger D-93. In progress (F1). Sprint plan: [camera-forward-sprint.md](camera-forward-sprint.md).
 - **Independent plan reviews (Sonnet):** the D-91 draft scored 71, then 86. The D-92 revision was reviewed in rounds 3–5: 71, 76, 79, then the round-5 blocker was folded in (`.ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_{3,4,5}.json`).
 
 **Release:** R2. **Milestone:** the player camera for the 3D ship, and the ship basis it needs (ledger D-91, D-92). It amends R2-CAMERA ([implemented/r2/camera-fixed-views.md](../../implemented/r2/camera-fixed-views.md), D-83).
@@ -438,7 +437,7 @@ That is about 1,600 LOC over 6.0 days, roughly 270 LOC a day, against R2-CAMERA'
 
 ## Open questions for Mark (with recommendations)
 
-OQ1–OQ4 must be answered before the sprint starts; OQ5–OQ7 can wait.
+**All resolved as recommended (Mark, attended 2026-10-19, ledger D-93: "yep looks great approved").**
 
 | # | Question | Recommendation |
 |---|---|---|

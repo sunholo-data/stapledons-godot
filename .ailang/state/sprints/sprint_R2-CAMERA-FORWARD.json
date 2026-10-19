@@ -1,7 +1,12 @@
 {
   "sprint_id": "R2-CAMERA-FORWARD",
-  "status": "awaiting_approval",
-  "approved": false,
+  "status": "in_progress",
+  "approved": {
+    "by": "Mark (attended)",
+    "date": "2026-10-19",
+    "ledger": "D-93",
+    "note": "\"yep looks great approved\": every recommendation, OQ1-OQ8"
+  },
   "created": "2026-10-19",
   "design_doc": "design_docs/planned/r2/camera-forward.md",
   "sprint_plan": "design_docs/planned/r2/camera-forward-sprint.md",
@@ -41,14 +46,14 @@
     "before merge: after-captures opened by eye; make test and make golden green on the rig"
   ],
   "questions_for_mark": [
-    "OQ1 default Bow view: rec candidate A (pitch -8, 9 m back, 5.5 m up): 0.9c starbow in frame, captain 73 px, deck 59%",
-    "OQ2 planet facing = guided stop turn puts the body 30 deg off the bow in the Bow frame, no separate view: rec yes (Target key for free nav later)",
-    "OQ3 side/astern under D-92: rec Astern yes (9), Side no player view",
-    "OQ4 zoom Z1-Z3: rec remove for players, developer presets; revisit after F1b",
-    "OQ5 spire in the way: rec fade (hide fallback) when crossing captain line or pole ray or containing the eye",
-    "OQ6 Commons: legacy keeps its turning sector views and Z1-Z3 keys (live on legacy levels only); rec legacy for now, own Bow pass after the deck re-plan; alternative a minimal Commons Bow view in F2 (+0.5 day)",
-    "OQ7 inset astern window: rec later",
-    "OQ8 painted-plate interior (--interior, D-6 reference) keeps the pre-D-92 orientation this sprint: rec keep labelled legacy; re-render or retire with the deck-layout re-plan"
+    "RESOLVED (D-93, as recommended): OQ1 default Bow view: rec candidate A (pitch -8, 9 m back, 5.5 m up): 0.9c starbow in frame, captain 73 px, deck 59%",
+    "RESOLVED (D-93, as recommended): OQ2 planet facing = guided stop turn puts the body 30 deg off the bow in the Bow frame, no separate view: rec yes (Target key for free nav later)",
+    "RESOLVED (D-93, as recommended): OQ3 side/astern under D-92: rec Astern yes (9), Side no player view",
+    "RESOLVED (D-93, as recommended): OQ4 zoom Z1-Z3: rec remove for players, developer presets; revisit after F1b",
+    "RESOLVED (D-93, as recommended): OQ5 spire in the way: rec fade (hide fallback) when crossing captain line or pole ray or containing the eye",
+    "RESOLVED (D-93, as recommended): OQ6 Commons: legacy keeps its turning sector views and Z1-Z3 keys (live on legacy levels only); rec legacy for now, own Bow pass after the deck re-plan; alternative a minimal Commons Bow view in F2 (+0.5 day)",
+    "RESOLVED (D-93, as recommended): OQ7 inset astern window: rec later",
+    "RESOLVED (D-93, as recommended): OQ8 painted-plate interior (--interior, D-6 reference) keeps the pre-D-92 orientation this sprint: rec keep labelled legacy; re-render or retire with the deck-layout re-plan"
   ],
   "features": [
     {
