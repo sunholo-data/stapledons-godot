@@ -76,7 +76,7 @@ jobs:
   changelog:
     name: Changelog, release notes, download pointer
     needs: macos
-    if: github.ref_type == 'tag'
+    if: ${{ github.ref_type == 'tag' && !cancelled() && needs.macos.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
