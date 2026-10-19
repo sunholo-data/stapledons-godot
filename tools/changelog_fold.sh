@@ -33,7 +33,7 @@ rebuild() {
   local n=0
   # 1. Entries already in CHANGELOG.md, in file order (newest first), with the commit of each
   #    heading line. Everything before the first "### " (the title and "## " lines) is the header.
-  local first; first=$(grep -n '^### ' "$CL" | head -1 | cut -d: -f1)
+  local first; first=$(grep -n -m1 '^### ' "$CL" | cut -d: -f1)
   sed -n "1,$((first - 1))p" "$CL" | grep -v '^## ' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > "$work/header"
   local heads; heads=$(grep -n '^### ' "$CL" | cut -d: -f1)
   local total; total=$(wc -l < "$CL")

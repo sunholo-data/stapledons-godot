@@ -553,6 +553,39 @@
       "notes": "Iteration 33 planner: addendum planned; awaiting executor."
     },
     {
+      "id": "M4.5bR3_7ij_CONTEXT_CONTROLS",
+      "description": "Charter queue row 7i(j), one-day test-first addendum under approved R1-M4-JOURNEY (D-66); follows row 7i(g) #250 and its independent evaluation mutants M5, M6 and M10. Add three isolated rejection controls (context_absent, context_presence_parts, context_crew), give the distance presence rule its distinct context-presence reason, and name fixtures on wrong-reason failures in mk/m45.mk. Order: fixtures and spec rows RED, reason rename GREEN, M5/M6/M10 plus positive-control M8 drills, scene audit, full suite and scope review. Only tests/display_audit.gd, mk/m45.mk, the three new fixtures, docs and sprint JSON may change. Planner dry-ran all four exact Perl expressions on independent temporary fixed copies: exactly one changed line each; see the sprint addendum Verification and Planner findings for restoration and scope-command caveats.",
+      "depends_on": [
+        "M4.5bR3_7ig_CONTEXT_CROSSCHECK"
+      ],
+      "estimated_loc": 12,
+      "files": [
+        "tests/display_audit.gd",
+        "mk/m45.mk",
+        "tests/fixtures/display_audit/context_absent.ndjson",
+        "tests/fixtures/display_audit/context_presence_parts.ndjson",
+        "tests/fixtures/display_audit/context_crew.ndjson",
+        "design_docs/planned/r1/m4-7ij-context-controls-sprint.md",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json"
+      ],
+      "acceptance_criteria": [
+        "AC1: The controls pass on the fixed tree, with all 20 rejection rows. Command: `make display-audit-controls $A > $S/i34.log 2>&1 && test $(grep -c ': rejected$' $S/i34.log) -eq 20`",
+        "AC2: M5 is killed and names `context_absent`. Command: `M5` below, then `grep -q 'display control context_absent/empty_known.json missed' $S/i34-M5.log`; M5 command: cp tests/display_audit.gd $S/da_fixed.gd && perl -i -pe 's/elif not p\\.begins_with\\(\"client\\.\"\\): check\\(false,/elif not p.begins_with(\"client.\"): check(true,/' tests/display_audit.gd && ! cmp -s tests/display_audit.gd $S/da_fixed.gd \\\n  && { make display-audit-controls AILANG=$PWD/runtime/bin/ailang > $S/i34-M5.log 2>&1; rc=$?; cp $S/da_fixed.gd tests/display_audit.gd; test $rc -ne 0; }",
+        "AC3: M6 is killed and names `context_presence_parts`. Command: `M6` below, then `grep -q 'display control context_presence_parts/empty_known.json missed' $S/i34-M6.log`; M6 command: cp tests/display_audit.gd $S/da_fixed.gd && perl -i -pe 's/ and parts_read\\(b, \"client\\.map\\.distance_ly\"\\) == expected//' tests/display_audit.gd && ! cmp -s tests/display_audit.gd $S/da_fixed.gd \\\n  && { make display-audit-controls AILANG=$PWD/runtime/bin/ailang > $S/i34-M6.log 2>&1; rc=$?; cp $S/da_fixed.gd tests/display_audit.gd; test $rc -ne 0; }",
+        "AC4: M10 is killed and names `context_crew`. Command: `M10` below, then `grep -q 'display control context_crew/empty_known.json wrong reason (want context-source)' $S/i34-M10.log`; M10 command: cp tests/display_audit.gd $S/da_fixed.gd && perl -i -pe 's/\"client\\.crew\\.working\", //' tests/display_audit.gd && ! cmp -s tests/display_audit.gd $S/da_fixed.gd \\\n  && { make display-audit-controls AILANG=$PWD/runtime/bin/ailang > $S/i34-M10.log 2>&1; rc=$?; cp $S/da_fixed.gd tests/display_audit.gd; test $rc -ne 0; }",
+        "AC5: The presence and source fixtures print distinct reasons. Command: `grep -q '^FAIL context-source ' $W/display-context_source-empty_known.json.log && grep -q '^FAIL context-presence ' $W/display-context_presence-empty_known.json.log && ! grep -q '^FAIL context-source ' $W/display-context_presence-empty_known.json.log`",
+        "AC6: The positive control M8 is still killed, by `context_drift`. Command: `M8` below, then `grep -q 'display control context_drift/empty_known.json missed' $S/i34-M8.log`; M8 command: cp tests/display_audit.gd $S/da_fixed.gd && perl -i -pe 's/check\\(recorded == frame,/check(true,/' tests/display_audit.gd && ! cmp -s tests/display_audit.gd $S/da_fixed.gd \\\n  && { make display-audit-controls AILANG=$PWD/runtime/bin/ailang > $S/i34-M8.log 2>&1; rc=$?; cp $S/da_fixed.gd tests/display_audit.gd; test $rc -ne 0; }",
+        "AC7: The real scene run is unchanged. Command: `make scene-session-audits $A && grep -q '^display-audit: .* failures=0$' $W/display-audit.log && ! grep -E '^FAIL context-' $W/display-audit.log`",
+        "AC8: The suite is green; no new Python. Command: `make python-guard && make test`",
+        "AC9: The scope holds: only the audit, the spec, the 3 fixtures and the landing docs change. Command: `git diff --name-only origin/main | grep -vE '^(tests/display_audit\\.gd|mk/m45\\.mk|tests/fixtures/display_audit/context_(absent|presence_parts|crew)\\.ndjson|design_docs/|changelogs/|\\.ailang/state/)' | wc -l` prints `0`"
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7ij-context-controls.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7ij-context-controls-sprint.md",
+      "passes": null,
+      "completed": null,
+      "notes": "Iteration 34 planner: one-day addendum planned; awaiting executor. S=.godot/tmp; W=$S/display-audit/playthrough; A=AILANG=$PWD/runtime/bin/ailang. Create S and put the pinned runtime on PATH before the exact acceptance commands. All four Perl dry-runs changed exactly one line; no implementation or make target was run. AC9 is supplemented by the stricter Do-not-touch scope in the sprint addendum. Iteration 39: merged with origin/main 7d5d2f6 (#264 review_unbound, #267 crew_unbound); AC1 count 18 -> 20 = 18 + 2 main controls (amendment, D-88 A)."
+    },
+    {
       "id": "M4.6gR3_SHIP_GOLDENS",
       "description": "Iteration 35 addendum under R1-M4-JOURNEY, Revision round 3 / R3-4 (D-66): add default 3D-ship GPU goldens G-M4-S2 (one tonemap), G-M4-S3 (captain-eye forward pole, boost/cruise/brake), G-M4-S4 (3 cap profiles, 2 sim absolute poles, rest), ten new cases in the existing --golden run; fail-closed Makefile counts, independent sim/CPU references, temp-copy mutation drills. No production visual, package or sim changes; captures/bench/S1 remain M4.6rR3. Corrected commands and wrapper are in the linked addendum.",
       "depends_on": [

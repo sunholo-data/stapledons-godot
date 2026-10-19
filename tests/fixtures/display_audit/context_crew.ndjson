@@ -1,0 +1,1 @@
+{"view":{"crew":{"members":[{"work":{"status":"working"}},{"work":{"status":"resting"}}],"holds":[]}},"bindings":[{"field":"client.crew.working","fmt":"%d","parts":["Crew console\n",["client.crew.working","%d"]," working"],"text":"Crew console\n2 working","context":{"client":{"crew":{"working":2,"status":"","empty":""}}}}],"labels":[]}

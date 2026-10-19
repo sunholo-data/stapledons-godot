@@ -1,0 +1,42 @@
+{
+ "sprint": "R1-M4-JOURNEY", "milestone": "M4.5bR3_7ij_CONTEXT_CONTROLS", "commit": "562b5d6", "base": "e40d418", "round": 1,
+ "evaluator": "claude-sonnet-5-5 (independent; design Opus, plan and code codex gpt-6.1-sol)",
+ "score": 93, "pass": true,
+ "breakdown": {"correctness": "38/40", "tests": "18/20", "scope": "20/20", "docs": "17/20"},
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Drill E1 survives: deleting 'carried == expected and' from the presence rule (the other half of the rule) is not killed. context_presence omits distance_ly from both context and parts, so the parts_read half alone rejects it; context_presence_parts carries it in context but not parts. A fixture with distance_ly in parts but absent from context would kill it. The design only claimed M6 (the parts half); this is the symmetric residual gap.",
+  "Drill E8 survives: 'expected := true' (Sol must-be-absent branch) is not killed; no fixture has a Sol/non-catalogue target. Residual from 7ig, outside this row's stated scope.",
+  "Drill E9 survives: dropping client.crew.status from CONTEXT_SOURCED is not killed (no fixture records client.crew.status non-empty). 7ig finding named working/status; this row fixes only working.",
+  "Unrelated stderr noise in every make log ('ERROR: Blender path is invalid') is benign; grep for 'SCRIPT ERROR:' is what the loop checks.",
+  "Changelog claim 'Crew working counts match the frame' is accurate for working only; status is still uncontrolled (see E9). Wording is slightly broad.",
+  "context_presence_parts hardcodes the stars.json literal 4.32103979249451; verified it passes the source rule today (log has exactly one FAIL, context-presence). Isolation depends on data/starmap staying pinned."
+ ],
+ "checks": [
+  {"ac":"AC1","result":"PASS","note":"make display-audit-controls rc 0; grep -c ': rejected$' = 18"},
+  {"ac":"AC2","result":"PASS","note":"M5 killed: 'display control context_absent/empty_known.json missed'"},
+  {"ac":"AC3","result":"PASS","note":"M6 killed: 'display control context_presence_parts/empty_known.json missed'"},
+  {"ac":"AC4","result":"PASS","note":"M10 killed: 'display control context_crew/empty_known.json wrong reason (want context-source)'"},
+  {"ac":"AC5","result":"PASS","note":"source log has FAIL context-source; presence log FAIL context-presence and no context-source"},
+  {"ac":"AC6","result":"PASS","note":"M8 killed: 'display control context_drift/empty_known.json missed'"},
+  {"ac":"AC7-8","result":"NOT RUN","note":"load rule; controller runs make test. git grep context-source shows no code consumer other than mk/m45.mk and the source rule at display_audit.gd:153"},
+  {"ac":"AC9","result":"PASS","note":"diff files: audit, m45.mk, 3 fixtures, changelog fragment, design/plan docs, sprint JSON, mission-quorum json under .ailang/state; nothing else"},
+  {"item":"isolation","result":"PASS","note":"each new fixture log has exactly one FAIL: absent -> context-drift clock.year; presence_parts -> context-presence client.map.target_id client.map.distance_ly (checks=9, source rule passes); crew -> context-source client.crew.working only"}
+ ],
+ "drills": [
+  {"id":"M5","cmd":"perl -i -pe 's/elif not p\\.begins_with\\(\"client\\.\"\\): check\\(false,/...check(true,/' tests/display_audit.gd; make display-audit-controls","result":"KILLED rc=2","log":"display control context_absent/empty_known.json missed"},
+  {"id":"M6","cmd":"perl s/ and parts_read\\(b, \"client\\.map\\.distance_ly\"\\) == expected//","result":"KILLED rc=2","log":"display control context_presence_parts/empty_known.json missed"},
+  {"id":"M10","cmd":"perl s/\"client\\.crew\\.working\", //","result":"KILLED rc=2","log":"display control context_crew/empty_known.json wrong reason (want context-source)"},
+  {"id":"M8","cmd":"perl s/check\\(recorded == frame,/check(true,/","result":"KILLED rc=2","log":"display control context_drift/empty_known.json missed"},
+  {"id":"E1","cmd":"perl s/check\\(carried == expected and /check(/","result":"SURVIVES rc=0","log":"none"},
+  {"id":"E2 working_crew counts all members","cmd":"perl s/== \"working\": n \\+= 1/!= \"\": n += 1/","result":"KILLED rc=2","log":"display control context_crew/empty_known.json missed"},
+  {"id":"E3 context-unknown non-fatal","cmd":"perl s/check\\(p in CONTEXT_ONLY,/check(true,/","result":"KILLED rc=2","log":"display control context_unknown/empty_known.json missed"},
+  {"id":"E4 drop wrong-reason || {echo; exit 1} in mk, plus M10","cmd":"perl on mk/m45.mk and audit","result":"KILLED rc=2 (still fatal under set -e, but message no longer names the fixture)","log":"last line: display control context_presence_parts/empty_known.json: rejected, no 'wrong reason'"},
+  {"id":"E5 presence reason reverted to context-source","cmd":"perl s/context-presence %s/context-source %s/","result":"KILLED rc=2","log":"display control context_presence/empty_known.json wrong reason (want context-presence)"},
+  {"id":"E8 expected := true","cmd":"perl s/var expected := catalogue_star\\(view\\) != null/var expected := true/","result":"SURVIVES rc=0","log":"none"},
+  {"id":"E9 drop client.crew.status from CONTEXT_SOURCED","cmd":"perl s/\"client\\.crew\\.status\", //","result":"SURVIVES rc=0","log":"none"},
+  {"id":"E10 drop hold_s from CONTEXT_SOURCED","cmd":"perl s/\"client\\.map\\.hold_s\", //","result":"KILLED rc=2","log":"display control context_hold/empty_known.json wrong reason (want context-source)"}
+ ],
+ "restoration": "every mutant restored from a saved copy; cmp and git diff --quiet clean afterwards",
+ "not_run": "make test, make scene-session-audits (AC7), make playthrough: load rule."
+}
