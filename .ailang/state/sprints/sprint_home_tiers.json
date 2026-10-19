@@ -1,0 +1,108 @@
+{
+  "sprint_id": "R2-HOME-TIERS",
+  "status": "planned",
+  "approved": false,
+  "approved_by": null,
+  "approved_on": null,
+  "created": "2026-10-19",
+  "started": null,
+  "completed": null,
+  "design_doc": "design_docs/planned/r2/home-tiers.md",
+  "sprint_plan": "design_docs/planned/r2/home-tiers-sprint.md",
+  "branch": "feat/home-tiers",
+  "protocol_minor": "2.12",
+  "implements": ["home-tiers H1", "H2", "H3", "H4", "H5"],
+  "github_issues": [],
+  "external_dependencies": [
+    {"what": "Mark's picks for the nine new home pictures (N a..N i -> tiers 1, 3, 5, 7, 9, 11, 12, 14, 15)", "where": "attended art task (Codex imagegen, generating now)", "owner": "Mark", "blocks": ["H3_PICTURES"], "status": "generating 2026-10-19"},
+    {"what": "Protocol minor 12 also planned by R2-SIMILAR-S0 (PR #272, parked on D-85)", "where": "stapledons-godot", "owner": "whichever merges first", "blocks": ["H1_SIM_LADDER"], "status": "free on origin/main 2026-10-19; re-check with git grep -E 'Minor\\(\\) *= *1[2-9]' origin/main -- sim/"}
+  ],
+  "registry_reuse": [
+    {"milestone": "H1", "package": "none", "action": "none", "reason": "game-specific threshold table and authored text; no maths for sunholo/relativity"},
+    {"milestone": "H2-H5", "package": "none", "action": "none", "reason": "Godot UI, assets and website"}
+  ],
+  "features": [
+    {
+      "id": "H1_SIM_LADDER",
+      "description": "Tests first. New pure sim/home_tiers.ail (tierCount, homeTier16 with edges 1,3,10,20,35,55,90,130,250,500,1000,3000,10000,50000,250000; tierLine16; tierWord16; crossingLine16; pictureOfSeven [0,2,4,6,8,10,13]) and sim/home_tiers_test.ail; cruise_digest homeTierAt/tierLineAt/narrationForAt/narrationOfAt with the 7-tier functions untouched; protocol homeTiersMinor()=12 in helloFor and sessionMinor; withCruise/cruiseFull pass sixteen into encodeCruiseSectionAt/digestJsonAt; time.tier_count 16 at >=12 only; encodeDigest (crossing_hold) stays 2.10; make home-tiers-vm (strict VM == interpreter on homeTiersTable) in make test.",
+      "estimated_loc": 330,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make sim: homeTier16 at every edge e is k and at e-d is k-1 (d 1e-6 below 1000 years, 1e-3 above); 0, negative, 1e9 (AC1)",
+        "make sim: the 16 lines, words and crossing lines equal the approved text; no digits; one %s per line except tier 0 and tier 1 singular; 16 distinct words, 16 distinct crossing lines, 80 distinct keys; in-world, <= 280 chars, no banned claims (AC2, AC3)",
+        "make home-tiers-vm: homeTiersTable byte-identical on strict VM and interpreter (AC4)",
+        "make sim: want 12 answered 12; at 2.12 tier/tier_count/tier_line/narration are 16-tier; at 2.10 and 2.11 the digest is byte-identical to today's, no tier_count (AC5)",
+        "make replay parity parity-v2 crew-parity and git diff --exit-code origin/main -- tests/replays tests/crew (AC6)",
+        "make strict (AC7)"
+      ],
+      "passes": null, "started": null, "completed": null, "notes": null
+    },
+    {
+      "id": "H2_HOST",
+      "description": "Tests first in tests/test_crossing_review.gd. SimBridge.HOME_TIERS_MINOR=12; main.gd:286, demos/ship_geometry_demo.gd:772 and ui/loading_jump.gd:254 ask it; CrossingReview.TIER_COUNT, PICTURE_OF_SEVEN, picture_index(time) (tier when tier_count==16, else PICTURE_OF_SEVEN[tier], clamped); _home uses it. tools/crossing_review_fixture.gd records at 2.12 through the guided voyage's last crossing; tools/crossing_review_capture.gd loops TIER_COUNT. Today's trappist.ndjson kept as legacy_2_10_trappist.ndjson; make crossing-review-fixtures re-records the rest (reviewed diff).",
+      "estimated_loc": 170,
+      "dependencies": ["H1_SIM_LADDER"],
+      "acceptance_criteria": [
+        "make crew-bridge-test crossing-review-test: a real-sim hello at HOME_TIERS_MINOR answers 12 (AC8)",
+        "make crossing-review-test: 16-tier frames show tier<tier>.webp; the legacy 2.10 fixture shows tier<PICTURE_OF_SEVEN[tier]>.webp; PICTURE_OF_SEVEN equals the sim's pictureOfSeven (AC10)",
+        "make crossing-review-test: empty home_dir and one-file-missing both fall back to words only, tier line bound, home_art_missing() true (AC11)",
+        "make crossing-review-fixtures then make crossing-review-test: the guided voyage's last crossing (~150 Earth years) is tier 8 and shows tier8.webp (AC12)",
+        "make tour-pacing-test crew-console-test display-audit-interlude green, no known entry added (AC13)"
+      ],
+      "passes": null, "started": null, "completed": null, "notes": null
+    },
+    {
+      "id": "H3_PICTURES",
+      "description": "After Mark's picks. git mv top-down 6->13, 5->10, 4->8, 3->6, 2->4, 1->2. Each pick: check master 1536x1024 and 1:1 no text; gcloud storage cp to gs://stapledons-voyage-assets/site/<sha256>.png; cwebp -q 88 -m 6 -sharp_yuv -metadata none (libwebp 1.6.0); 1:1 compare. SOURCES 16 rows + header; generation_notes.md renamed sections (was tierK) + 9 new sections. New make home-art-check in make test.",
+      "estimated_loc": 40,
+      "dependencies": ["H2_HOST"],
+      "acceptance_criteria": [
+        "make home-art-check crossing-review-test: 16 tier<n>.webp 1536x1024, sha256 equal to SOURCES rows, the 7 E shas unchanged under their new names, no PNG in the tree (AC9)",
+        "du -ck data/interlude/home/*.webp | tail -1 <= 10240 and make export-filter-audit (AC14)"
+      ],
+      "passes": null, "started": null, "completed": null, "notes": null
+    },
+    {
+      "id": "H4_WEBSITE",
+      "description": "tools/concept_thumbs.gd (headless Godot, 800 px Lanczos, save_jpg 0.85): renumber 7 thumbnails, add 9. website/src/data/concept.js HOME_FULL 16 shas, HOME 16 time-range titles (no scene words; spoiler policy). Subject to OQ4.",
+      "estimated_loc": 70,
+      "dependencies": ["H3_PICTURES"],
+      "acceptance_criteria": [
+        "make site builds with no broken link; HOME.length === 16; each thumbnail <= 1 MB; each master URL answers 200 (curl -sfI) (AC15)"
+      ],
+      "passes": null, "started": null, "completed": null, "notes": null
+    },
+    {
+      "id": "H5_VERIFY_LAND",
+      "description": "make crossing-review-capture (GPU): open every art_tier0..15 frame and the guided crossings; make display-audit-interlude; PATH=$PWD/runtime/bin:$PATH make test; changelog fragment + CHANGELOG protocol 2.12 line; independent sprint-evaluator (different agent/model); land: doc to implemented/r2, report, README index row, design-repo roadmap row.",
+      "estimated_loc": 30,
+      "dependencies": ["H1_SIM_LADDER", "H2_HOST", "H3_PICTURES", "H4_WEBSITE"],
+      "acceptance_criteria": [
+        "make crossing-review-capture writes art_tier0..15 and the guided crossings; the report lists each frame as opened (AC16)",
+        "PATH=$PWD/runtime/bin:$PATH make test green locally and in CI (AC17)",
+        "evaluation >= 70/100 by a different agent, in .ailang/state/evaluations/"
+      ],
+      "passes": null, "started": null, "completed": null, "notes": null
+    }
+  ],
+  "velocity": {"target_loc_per_day": 300, "estimated_total_loc": 640, "estimated_days": 2.75},
+  "critical_path": ["approval (OQ1, OQ3)", "H1_SIM_LADDER", "H2_HOST", "picks (OQ2)", "H3_PICTURES", "H4_WEBSITE", "H5_VERIFY_LAND"],
+  "pause_points": [
+    "Before H1: Mark approves the plan, the text (OQ1) and the minor (OQ3)",
+    "Any golden below 2.12 moving: stop for Mark's review",
+    "Before H3: Mark's picks (OQ2)",
+    "H5: Mark opens the art_tier0..15 and guided-crossing renders before merge"
+  ],
+  "questions_for_mark": [
+    "OQ1: approve or edit the 16 tier lines, tier words and Archive crossing lines (flagged rows change meaning: 5, 6, 7, 9, 10, 11, 13)",
+    "OQ2: one pick each for N a..N i",
+    "OQ3: minor 12 vs R2-SIMILAR-S0 (PR #272); recommend first to merge takes 12",
+    "OQ4: all 16 pictures on the concept-art page under time-range titles? (recommend yes)",
+    "OQ5: one PR after the picks (recommended) or land H1-H2 first with words only on the nine new tiers"
+  ],
+  "answers": [],
+  "evaluations": [],
+  "reviews": [],
+  "report": null,
+  "coordination": "Attended. Planned in a fresh clone (stapledons-godot-hometiers) on branch design/home-tiers; execution on feat/home-tiers after approval."
+}
