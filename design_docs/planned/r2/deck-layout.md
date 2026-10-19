@@ -226,7 +226,24 @@ Mark’s approval of the plan answers OQ1–OQ8 (the attended session records th
 
 ## Evidence: the before state
 
-See §Evidence below (captures and evaluator numbers from DL0's first run are added when the sprint executes; the before contact sheet captured for this doc is linked here).
+Captured 2026-10-19 from a fresh clone at `origin/main` c62353a with `make camera-views-capture` (98 frames, 0 failures; 1280×720 and 2560×1440; rows rest, 0.99c cruise, guided stop, Sgr A*; columns Z1, Z2, Z3 bridge, Sky forward, Sky side, Sky aft, Z1/Z2/Z3 Commons, lift). Both contact sheets and the frames below were opened.
+
+- Contact sheets: [720p](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/contact_sheet_720p.png), [1440p](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/contact_sheet_1440p.png); every 720p frame and `manifest.json` are under `https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/`.
+
+| Frame | What it shows |
+|---|---|
+| [Z2 at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/z2_rest_720p.png) (the default) | The lift box fills the lower third in front of the captain (~60 px); the stations are small, clustered behind and beside the spire; the east half of the disc is empty deck |
+| [Z1 at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/z1_rest_720p.png) | The captain beside the lift box, which takes a third of the frame; the spire base fills the left |
+| [Z3 bridge at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/z3_bridge_rest_720p.png) | The whole disc: the lift box is the biggest object after the spire; the chair is a speck beside the spire; the four stations are each under ~20 px |
+| [Sky forward at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/sky_forward_rest_720p.png) | The spire needle cuts in as a wedge at the upper left; the lift's guardrail intrudes at the lower right |
+| [Sky forward, cruise default β 0.99](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/cruise_default_b99_720p.png) | The starbow at the top centre, as designed; but a pod fills the left quarter and the spire needle the right quarter |
+| [Sky side at a stop](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/sky_side_stop_720p.png) | Good: the captain at the rail with the Sun beyond; a frond beside it as framing |
+| [Sgr A* at 3 r_s](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/sgr_a_stop3_hover_r3_720p.png) | The shadow and the ring well framed; the spire needle wedge crosses the ring at the left |
+| [Z3 Commons at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/z3_commons_rest_720p.png) | A pillar fills about 40 % of the frame; the captain is ~45 px; the arcade is a small band in the distance |
+| [Z2 Commons at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/z2_lower_rest_720p.png) | Flat untextured blockout geometry; a pillar at the centre behind the captain; the underside of the bridge above |
+| [Z1 Commons at rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/deck_layout/before/z1_lower_rest_720p.png) | The captain in a corridor of flat blue walls; the pillar dominates |
+
+What this confirms for the design: the lift box and the station cluster drive the bridge level views (§D1); the spire needle wedge is in every Sky forward and Sky hole frame (D-84), and the pod at the left of the cruise default is a second intrusion for the evaluator's pole clearance and sky fraction; the Commons is still a blockout, with the pillar the dominant object (§D4 frame dominance).
 
 ## Deliverables
 
