@@ -133,12 +133,16 @@ static func scenario_arg(args:PackedStringArray)->String:
 	for a in args:
 		if a.begins_with("--scenario="):return a.trim_prefix("--scenario=")
 	return ""
+## R2-DECK-LAYOUT: setup option "asset_dir" loads a candidate deck (review captures only); any
+## file it lacks comes from the shipped assets.
+var asset_dir := ""
 func asset(file: String) -> String:
+	if asset_dir!="" and FileAccess.file_exists(asset_dir.path_join(file)):return asset_dir.path_join(file)
 	var source := "res://assets/ship_demo/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
-	menu_return=opts.get("from_menu",false)
+	menu_return=opts.get("from_menu",false);asset_dir=str(opts.get("asset_dir",""))
 	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
 	var px: Vector2i=opts.get("size",get_window().size)

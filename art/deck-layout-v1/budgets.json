@@ -1,0 +1,110 @@
+{
+  "schema": "stapledons.deck.budgets/1",
+  "about": "R2-DECK-LAYOUT \u00a7D6 and AC6: make deck-assets-check. Pins of every runtime deck file (bytes, sha256), per-GLB budgets (the bridge's from \u00a7D6: 220,000 triangles, 18 materials, 16 images, < 10 MB so it stays in git), the stations and structure the game finds by name, opaque materials, no emission outside the console screens (no painted space, \u00a7D7), a clean reimport; and with a GPU window the bridge's texture memory against the DL0 baseline + 32 MB. Masters (DL4) are pinned under masters and checked with --masters after make ship-masters.",
+  "pins": {
+    "assets/ship_demo/ship.glb": {
+      "bytes": 9124916,
+      "sha256": "9da74077d72d8132970063dbf7c27eb14bdb52286fecbd02f4ae0149fc0344fa"
+    },
+    "assets/ship_demo/walk_bridge.glb": {
+      "bytes": 325488,
+      "sha256": "9775c88d9f4d7ba7cb041ceedc61b22d6fca631092a73d051b0efdbad58f319b"
+    },
+    "assets/ship_demo/walk_lower.glb": {
+      "bytes": 1208,
+      "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213"
+    },
+    "assets/ship_demo/manifest.json": {
+      "bytes": 2789,
+      "sha256": "77678a4a57de9c4aa40e74a1fe0066f724ae7e06ff5d147e2fa7d594cd8caf12"
+    },
+    "assets/ship_commons/walk.glb": {
+      "bytes": 373208,
+      "sha256": "716c830ae4eb472ce578cfd3fcbd4b21e4535f0e739b23108633c2d666bdf8e0"
+    },
+    "assets/ship_commons/collision.glb": {
+      "bytes": 521032,
+      "sha256": "89cef6221c650ebb9c4b8d9886b64875a96df9424bbc26b80e955551520c5f23"
+    },
+    "assets/ship_commons/commons_painted.glb": {
+      "bytes": 4156036,
+      "sha256": "b02eb87fa9c51aa951fa01c1f8a7778e0ae74c18020b6495a231d2413b401cf8"
+    },
+    "assets/ship_commons/commons_coarse.glb": {
+      "bytes": 3221012,
+      "sha256": "603a909ddafb470de03e085d8436a64d49059854453f9f1014b2b9f419b2fb55"
+    },
+    "assets/ship_commons/manifest.json": {
+      "bytes": 17166,
+      "sha256": "b5b810b1b7e4e85606fb45f579086616c1b7e66e1eb37b163c9494e25e466364"
+    }
+  },
+  "glb": {
+    "assets/ship_demo/ship.glb": {
+      "max_bytes": 10000000,
+      "max_triangles": 220000,
+      "max_materials": 18,
+      "max_images": 16,
+      "nodes": [
+        "captain_chair",
+        "archive_terminal",
+        "archive_shrine_ribs",
+        "console_navigation_0",
+        "console_navigation_1",
+        "console_navigation_2",
+        "console_decision_0",
+        "console_decision_1",
+        "console_decision_2",
+        "console_decision_3",
+        "spire_needle",
+        "Spire below bridge",
+        "bridge_floor_top82",
+        "Guardrail 82",
+        "Guardrail 82_001",
+        "Guardrail 82_002",
+        "Lift guide",
+        "Lift guide_001"
+      ]
+    },
+    "assets/ship_demo/walk_bridge.glb": {
+      "max_bytes": 10000000,
+      "nodes": [
+        "WALK_bridge"
+      ]
+    },
+    "assets/ship_demo/walk_lower.glb": {
+      "max_bytes": 10000000,
+      "nodes": [
+        "WALK_lower"
+      ]
+    },
+    "assets/ship_commons/walk.glb": {
+      "max_bytes": 10000000,
+      "nodes": [
+        "WALK_commons"
+      ]
+    },
+    "assets/ship_commons/collision.glb": {
+      "max_bytes": 10000000
+    },
+    "assets/ship_commons/commons_painted.glb": {
+      "max_bytes": 10000000,
+      "max_triangles": 30000,
+      "max_materials": 2,
+      "max_images": 2
+    },
+    "assets/ship_commons/commons_coarse.glb": {
+      "max_bytes": 10000000,
+      "max_triangles": 15000
+    }
+  },
+  "emissive_allow": [
+    "Bridge UV gouache p_glow"
+  ],
+  "vram": {
+    "baseline_mb": 112.6,
+    "max_increase_mb": 32,
+    "measured": "DL0, 2026-10-19, Mac Studio M4 Max (Metal), the shipped grounded-bridge-v2 deck with the Commons, 1280x720 GPU window, RenderingServer texture memory after six frames"
+  },
+  "masters": {}
+}

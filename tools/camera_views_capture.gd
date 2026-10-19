@@ -18,6 +18,7 @@ var out := "res://renders/camera_views"
 var shots := []
 var failures := 0
 var px := Vector2i(1280, 720)
+var asset_dir := ""
 var sheet := {} # size -> Image
 const VIEWS := ["z1", "z2", "z3_bridge", "sky_forward", "sky_side", "sky_aft", "z1_lower", "z2_lower", "z3_commons", "lift"]
 const STATES := ["rest", "cruise", "stop", "sgr_a"]
@@ -31,9 +32,16 @@ func _initialize() -> void:
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	var sizes: Array = [Vector2i(1280, 720), Vector2i(2560, 1440)]
-	for a in OS.get_cmdline_user_args():
+	var args := OS.get_cmdline_user_args()
+	for a in args:
 		if a == "--quick":
 			sizes = [Vector2i(1280, 720)]
+	# R2-DECK-LAYOUT: --out <dir> (make deck-layout-capture TAG=...), --assets <dir> (a candidate deck)
+	if args.find("--out") >= 0 and args.find("--out") + 1 < args.size():
+		out = args[args.find("--out") + 1]
+	if args.find("--assets") >= 0 and args.find("--assets") + 1 < args.size():
+		asset_dir = args[args.find("--assets") + 1]
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	for size: Vector2i in sizes:
 		px = size
 		root.size = px
@@ -61,7 +69,7 @@ func _run() -> void:
 
 func _new_demo(opts: Dictionary) -> bool:
 	demo = load("res://demos/ship_geometry_demo.tscn").instantiate()
-	var o := {"size": px}
+	var o := {"size": px, "asset_dir": asset_dir}
 	o.merge(opts, true)
 	demo.setup_options = o
 	root.add_child(demo)
@@ -118,13 +126,14 @@ func _select(id: String) -> Vector3:
 	dir.situation = ""
 	dir._pending = ""
 	dir.hold = false
-	var foot := Vector3(8, 82, -4.8)
+	var foot: Vector3 = DeckLayout.manifest_spawn(demo.manifest)[0] # the bridge spawn (R2-DECK-LAYOUT: the manifest's)
 	var v: Dictionary = dir.views[id]
 	if id.ends_with("_lower") or id == "z3_commons":
 		demo.active_level = 1
 		demo.walk = demo.walk_lower
 		foot = Vector3(8, 57, -4.8)
 	if id == "lift":
+		foot = Vector3(8, 82, -4.8) # beside the lift on the bridge (the R1 spawn)
 		demo.avatar_pos = foot
 		demo._process(0.25)
 		demo.lift.board()

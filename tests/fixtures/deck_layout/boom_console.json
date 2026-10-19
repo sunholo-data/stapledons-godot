@@ -1,0 +1,6 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "fixture-boom-console",
+  "about": "Negative control (R2-DECK-LAYOUT DL0): the navigation console moved onto the Z2 boom at the spawn (ship 8.47, 5.94 is the boom 1.5 m short of the captain's head). The evaluator must name it a boom intrusion.",
+  "bridge": {"props": {"console_navigation_1": {"position_m": [8.47, 5.94], "yaw_deg": 0.0}}}
+}

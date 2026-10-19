@@ -1,0 +1,23 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "fixture-sky-prop",
+  "about": "Negative control (R2-DECK-LAYOUT DL0): a 6 m tall, 8 m wide prop 7 m along the view of the Sky forward eye at the rail landing pose for bearing 0 deg, 15 m (eye glTF 15, 82.3, -2.2). The sky fraction there must fall below the floor.",
+  "bridge": {
+    "props": {}
+  },
+  "test_boxes": [
+    {
+      "name": "fixture_prop_6m",
+      "center_gltf_m": [
+        15.0,
+        88.24,
+        1.51
+      ],
+      "size_m": [
+        8.0,
+        6.0,
+        8.0
+      ]
+    }
+  ]
+}

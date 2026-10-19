@@ -1,0 +1,7 @@
+{
+  "schema": "stapledons.deck.budgets/1",
+  "about": "Negative control (R2-DECK-LAYOUT DL0): a prop whose material emits (painted space). deck-assets-check must fail.",
+  "pins": {},
+  "glb": {"tests/fixtures/deck_layout/emissive.gltf": {}},
+  "emissive_allow": ["Bridge UV gouache p_glow"]
+}

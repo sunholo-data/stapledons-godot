@@ -1,0 +1,25 @@
+{
+  "schema": "stapledons.deck.thresholds/1",
+  "about": "R2-DECK-LAYOUT §D4, set in DL0 from the evaluator's measurement of the shipped grounded-bridge-v2 deck (renders/deck_layout/eval_before.json, design doc §Evidence). make deck-layout-eval fails on any miss. Where the shipped deck already met the design's bar, the bar stands; where the design asked for a number that had to be measured first, the measured value is a ratchet (boom intrusions, station spread, the spawn's sky fraction) or a target the layout must reach (the spawn's lift share, the Commons ceilings at 0).",
+  "bridge": {
+    "blocked_ceiling": {"1": 0, "2": 0, "3": 0},
+    "boom_intrusions_max": {"1": 389, "2": 336, "3": 420},
+    "z2_captain_px_min": 60,
+    "z2_captain_px_max": 80,
+    "foreground_share_max": {"2": 0.15, "3": 0.15},
+    "spawn_lift_share_max": {"2": 0.02},
+    "station_cells_min": {"2": 10},
+    "z3_station_px_min": 24,
+    "sky_fraction_worst_min": 0.45,
+    "sky_fraction_median_min": 0.55,
+    "pole_clearance_deg_min": 15,
+    "spawn_pole_clearance_deg_min": 15,
+    "spawn_sky_fraction_min": 0.93
+  },
+  "lower": {
+    "blocked_ceiling": {"1": 0, "2": 0, "3": 0},
+    "boom_intrusions_max": {"1": 0, "2": 0, "3": 0},
+    "z2_captain_px_min": 55,
+    "foreground_share_max": {"2": 0.15, "3": 0.15}
+  }
+}
