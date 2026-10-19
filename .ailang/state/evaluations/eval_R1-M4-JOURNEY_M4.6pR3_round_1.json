@@ -1,0 +1,38 @@
+{
+ "sprint_id": "R1-M4-JOURNEY", "feature": "M4.6pR3_LIVE_TRANSIT_FRAME_COST", "round": 1, "commit": "9b5762e",
+ "evaluator": "claude sonnet 5.5 (independent of designer opus / executor codex gpt-6.1-sol)",
+ "score": {"tests_pass": 17, "lint_clean": 9, "acceptance_criteria": 27, "code_quality": 13, "documentation": 13, "design_fidelity": 9, "total": 88},
+ "verdict": "PASS", "gate_source": "local; full make test NOT run by evaluator (controller runs it)",
+ "disposition": "PASS. AC1 formally UNMEASURED (contended rig: GPU 85-94 %, load 4.3-4.6 > threshold on GPU); one contended bench nonetheless returned OK.",
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "AC1 UNMEASURED-contended. ioreg showed Device Utilization 94 % then 85 % (threshold 15). Contended bench anyway: 3106 frames (floor 2500 ok), boosting 2001 / cruising 1105, p50 9.283 p95 13.823 p99 16.445 max 89.34, 26 of 3106 over 16.7 ms, 'target p99 < 16.7: ok', rc 0. Margin to the limit is only 0.26 ms; not a quiet-rig confirmation.",
+  "The redraw-on-show connection is not behaviourally tested. Mutation M3 (drop visibility_changed.connect) is killed only by the two is_connected / connection-count assertions; the 'shown window redraws all 15 media' case still PASSES without the connection, because showing a Window already redraws its canvas items in Godot. So the 'belt and braces' connection is redundant in the test environment and its claimed behaviour is untestable here.",
+  "Mutation M4 (connect on every call, drop the is_connected guard) SURVIVES: Godot logs a duplicate-connect error but the connection count stays 1 and the test checks only the count. Mutation M5 (drop the host != null check) SURVIVES: no test draws an overlay that is not in the tree (get_window() null) so a crash path there is unguarded by tests, though production code always draws in-tree.",
+  "Call chain verified: GalaxyMap.tick() -> refresh() (galaxy_map.gd:1108 queue_redraw) -> _draw_overlay -> ism_layer.draw (galaxy_map.gd:1424); the only non-test, non-tool caller of IsmLayer.draw is galaxy_map.gd:1424. Staleness: last_drawn and _label_rects are cleared before the guard, so a hidden map leaves no stale state. A show triggers redraw via set_mode()->refresh() on open_navigation/open_chart and via visibility_changed for other callers. A SubViewport/capture/test overlay under a visible root Window is unaffected (get_window() returns the root). A tool that draws an overlay whose Window is hidden for another reason would now get 0 media; the only such readers (tools/ism_map_surface_capture.gd) open the map first (verified: 15 media).",
+  "Environmental fact verified: make golden here gives 374 '^ok' with 0 failures (rc 2 only from the Makefile's hard-coded 373 count check, at base as well). Cause confirmed: tools/m5_golden.gd:31 prints 'skip G-M5-4 textured Jupiter' when textures are missing; assets/planets/* (birth 2026-10-16 23:37) exist, so a second 'ok G-M5-4 Jupiter (normalised texture...)' line appears (2 G-M5-4 ok lines, log /tmp/stap37/eval/golden.log). AC6's literal '373' cannot pass on this rig; the milestone is not the cause.",
+  "Sprint artefacts: design doc stays in planned/ pending the controller's decision; sprint JSON not audited beyond scope listing."],
+ "criteria_checked": {
+  "AC1": "UNMEASURED (contended). See finding 1; contended run OK p99 16.445, 3106 frames.",
+  "AC2": "3106 frames >= 2500 (contended run). PASS.",
+  "AC3": "no 'bench-bridge: FAIL' lines; 'boosting 2001, cruising 1105'. PASS.",
+  "AC4": "make map-ism-test rc 0, 'ism-layer: 19 passed, 0 failures'. PASS.",
+  "AC5": "tools/ism_map_surface_capture.gd -> 'map-surface-capture: 0 failures, 15 media'. PASS.",
+  "AC6": "make capture-m4 rc 0, 14 renders, worlds.sha256 sha256 = 76f6fb89b40a5a4106343dc5d633e37d7961a9a25a43f656536217d6ea390426 (equals the base manifest sha, re-derived). make golden: 0 failures, 374 ok vs hard-coded 373 (texture cause verified). PASS with the environmental caveat.",
+  "AC7": "not run by evaluator (controller). make lint-precision ok.",
+  "AC8": "git diff --name-only 175e006 9b5762e = ui/ism_layer.gd, tests/test_ism_layer.gd, one changelog fragment, plus the design, plan and sprint JSON (planning files). No ui/galaxy_map.gd, demos/*, bridge/*, sim/*, Makefile. PASS."},
+ "drills": [
+  {"id": "M1", "mutation": "guard replaced by 'if false:' (remove guard)", "result": "KILLED (2 failures: hidden-window case, hide/show cycle; 17 passed)"},
+  {"id": "M2", "mutation": "inverted guard 'host.visible'", "result": "KILLED (4 failures incl. AC16 draws 0)"},
+  {"id": "M3", "mutation": "drop visibility_changed.connect (pass)", "result": "KILLED only by is_connected / count assertions (2 failures); behavioural show-redraw case survives"},
+  {"id": "M4", "mutation": "connect on every call (remove is_connected check)", "result": "SURVIVED (19 passed)"},
+  {"id": "M5", "mutation": "drop host != null", "result": "SURVIVED (19 passed)"}],
+ "commands_run": [
+  {"cmd": "make map-ism-test AILANG=runtime/bin/ailang", "rc": 0, "note": "19 passed"},
+  {"cmd": "mutations M1-M5 via /tmp/stap37/eval/mut.sh, file restored each time (git checkout after one interrupted M6, tree clean)", "rc": "2,2,2,0,0"},
+  {"cmd": "ism_map_surface_capture.gd", "rc": 0, "note": "15 media"},
+  {"cmd": "make capture-m4", "rc": 0, "note": "worlds.sha256 76f6fb89...0426"},
+  {"cmd": "make golden", "rc": 2, "note": "374 ok, 0 failures, only the 373 count check trips"},
+  {"cmd": "make lint-precision", "rc": 0},
+  {"cmd": "make bench SCENE=bridge (contended GPU 85 %)", "rc": 0, "note": "3106 frames, p99 16.445 ok"}]
+}
