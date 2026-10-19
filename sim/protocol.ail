@@ -72,7 +72,8 @@ export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= consoleMinor() then {helloMsg() | minor: consoleMinor(), relativity: relativityPin()}
+  if want >= homeTiersMinor() then {helloMsg() | minor: homeTiersMinor(), relativity: relativityPin()}
+  else if want >= consoleMinor() then {helloMsg() | minor: consoleMinor(), relativity: relativityPin()}
   else if want >= interludeMinor() then {helloMsg() | minor: interludeMinor(), relativity: relativityPin()}
   else if want >= crewMinor() then {helloMsg() | minor: crewMinor(), relativity: relativityPin()}
   else if want >= ismMinor() then {helloMsg() | minor: ismMinor(), relativity: relativityPin()}
@@ -128,7 +129,14 @@ export pure func interludeMinor() -> int = 10
 -- those fields are bad_intent; without them a 2.11 stream equals 2.10's but for the hello's minor
 -- and the crew section's added fields.
 export pure func consoleMinor() -> int = 11
-pure func sessionMinor(want: int) -> int = if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.12 (R2-HOME-TIERS, design home-tiers.md H1; ledger D-86): the crossing review's home time
+-- in sixteen tiers. cruise.digest.time.tier and home.tier run 0-15 (sim/home_tiers.ail), tier_line and
+-- the narration (key, crossing) come from the sixteen-tier text, and time gains tier_count (16) and
+-- variant (the voyage's picture for that tier, a pure function of the seed: home_tiers.homeVariant).
+-- Without a committed journey a 2.12 stream equals 2.11's but for the hello's minor; below 12 the
+-- digest keeps the seven tiers, byte for byte.
+export pure func homeTiersMinor() -> int = 12
+pure func sessionMinor(want: int) -> int = if want >= homeTiersMinor() then homeTiersMinor() else if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -797,15 +805,17 @@ pure func withCruise(s: Session, before: World, after: World, x: Extras) -> Extr
   if s.minor < interludeMinor() then x else {
     let stop = cruiseStop(after);
     let dig = match (stop, after.cruiseDigest) { (Some(_), d) => d, (None, Some(d)) => if before.cruiseDigest == after.cruiseDigest then None else Some(d), (None, None) => None };
-    match (stop, dig) { (None, None) => x, _ => {x | tail: x.tail ++ [f("cruise", encodeCruiseSectionAt(stop, dig, s.minor >= consoleMinor()))]} }
+    match (stop, dig) { (None, None) => x, _ => {x | tail: x.tail ++ [f("cruise", encodeCruiseSectionAt(stop, dig, s.minor >= consoleMinor(), homeOf(s, after)))]} }
   }
+-- 2.12: the sixteen home tiers and the voyage's picture variant (from the world's seed).
+pure func homeOf(s: Session, w: World) -> Option[int] = if s.minor >= homeTiersMinor() then Some(w.seed) else None
 -- 2.10 in a full state: the cruise section as a tick would carry it (the stop while committed, the
 -- digest whenever there is one). Today the only full state is new_game's, which is never committed
 -- and has no digest, so it adds nothing there; a resync or reconnect path must use this.
 export pure func cruiseFull(s: Session, w: World) -> [string] =
   if s.minor < interludeMinor() then [] else match (cruiseStop(w), w.cruiseDigest) {
     (None, None) => [],
-    (st, d) => [f("cruise", encodeCruiseSectionAt(st, d, s.minor >= consoleMinor()))]
+    (st, d) => [f("cruise", encodeCruiseSectionAt(st, d, s.minor >= consoleMinor(), homeOf(s, w)))]
   }
 -- 2.6 scenario params of a black hole: bh_mass_msun (default Sgr A*'s 4.297e6) and bh_r (the
 -- starting radius in r_s, default 1e6). They are not Params: only sgr_a takes them (bad_params
