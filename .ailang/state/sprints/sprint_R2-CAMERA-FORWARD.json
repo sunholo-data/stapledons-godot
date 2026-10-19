@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CAMERA-FORWARD",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": {
     "by": "Mark (attended)",
     "date": "2026-10-19",
@@ -118,9 +118,16 @@
         "AC-B1 grep gate fails on main (18 inline sites)",
         "golden baseline captured from main before any re-pose"
       ],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "fb5607bd: named maps (ShipCamera.ship_vector/gltf_from_ship, ShipFrame.gltf_from_structure/r_from_structure); make basis-gate 0 inline + control 3",
+        "make physics 915 passed = main (AC-B3); make golden 393 ok, golden_baseline check: 364 non-re-posed ok lines byte-identical to main (AC-B4)",
+        "sim/ untouched; make test green incl. parity, replay, strict (AC-B5)",
+        "lore re-imported from stapledons-design 30f6674 (AC-B6): one-g, starbow, higgs-bubble",
+        "display-audit green, no caption pin changed (AC-R2)",
+        "painted-plate path kept pre-D-92 and labelled (AreaBundle.BUNDLE_BASIS)"
+      ]
     },
     {
       "id": "F1B_BOW_VIEW_RIG_OCCLUDERS",
@@ -152,9 +159,15 @@
         "schema v2 + 7 negative controls",
         "determinism and fade-isolation checks"
       ],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "camera-forward: 22 passed (AC-B2, V1 bow+astern, V2, V3, V4 73 px at 1.6 m head height / 80.6 px at the sprite 1.754 m, deck 0.59, V5 bow+astern, V7, V10, V11, V12)",
+        "camera-test 182 passed: schema v2 + 7 v2 negative controls (AC-V9); Bow sweep over all 4,803 bridge samples clear after fades",
+        "occluder group widened beyond the plan: archive_shrine_ribs, archive_terminal and rim_frond_* (the dense sweep found 86 pole-ray and 63 head-line blocks; 0 after)",
+        "review frames gs://stapledons-voyage-assets/refs/camera_forward/f1/ (opened); camera-walk-capture 48 frames 0 failures",
+        "full make test green on fb5607bd (rig)"
+      ]
     },
     {
       "id": "F2_ASTERN_SWITCH_CONSOLE_STOPS",

@@ -51,7 +51,7 @@ func _run() -> void:
 			failures += 1
 		else:
 			demo.ship_hud.visible = false
-			await _shot("bow_stop", "bow", Vector3(8, 82, -4.8))
+			await _shot("bow_stop", "bow", demo.walk_bridge.closest_walkable(Vector3(-12, 82, 6), 4.0)) # clear deck ahead (the spawn faces the lift)
 			await _shot("bow_stop_walk", "bow", null)
 		await _free()
 	var f := FileAccess.open(out + "/review.json", FileAccess.WRITE)
@@ -96,13 +96,14 @@ func _shot(name: String, view: String, foot: Variant) -> void:
 			demo._process(1.0 / 60.0)
 	else:
 		var before: Transform3D = demo.camera.global_transform
+		var start: Vector3 = demo.avatar_pos
 		for k in 52:
 			demo.walk_motion(Vector2(0, 1), 1.0 / 60.0)
 			demo._process(1.0 / 60.0)
 		demo.walk_motion(Vector2.ZERO, 1.0 / 60.0)
 		for k in 60:
 			demo._process(1.0 / 60.0)
-		print("%s: yaw before %.4f after %.4f deg" % [name, rad_to_deg(CameraDirector.yaw_pitch(before).x), rad_to_deg(CameraDirector.yaw_pitch(demo.camera.global_transform).x)])
+		print("%s: walked %.2f m; yaw before %.4f after %.4f deg; eye moved %s" % [name, start.distance_to(demo.avatar_pos), rad_to_deg(CameraDirector.yaw_pitch(before).x), rad_to_deg(CameraDirector.yaw_pitch(demo.camera.global_transform).x), demo.camera.global_transform.origin - before.origin])
 	for k in 5:
 		await process_frame
 	await RenderingServer.frame_post_draw
