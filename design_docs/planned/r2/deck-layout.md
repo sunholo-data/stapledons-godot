@@ -1,6 +1,6 @@
 # R2-DECK-LAYOUT: deck furniture and sightlines for the fixed views, then Blender hero art
 
-**Status:** Planned, awaiting Mark's approval (design doc and sprint plan only; nothing executed).
+**Status:** Approved (Mark, attended 2026-10-19, ledger D-90, with every recommendation); executing DL0-DL2, then the layout pause.
 **Release:** R2. **Milestone:** the bridge and the Commons, rearranged for R2-CAMERA's authored views and then dressed with Blender hero assets.
 **Priority:** P1 for R2. Every session is seen through these views, and Mark asked for the pass twice (2026-10-17, 2026-10-19).
 
@@ -223,6 +223,8 @@ Props reuse one kit mesh per type (instancing), the Commons gets a coarse LOD (t
 | OQ8 | Confirm the Blender `bpy` generators as authoring tools outside the game’s Python policy (they live in `~/dev/blender`; the game reads only GLBs and pins)? | **Yes**, the grounded v2 precedent |
 
 Mark’s approval of the plan answers OQ1–OQ8 (the attended session records them as one ledger row). OQ1 must be answered before DL1 (the generator runs there); OQ2 and OQ6 before DL3.
+
+**Resolved (D-90, Mark 2026-10-19, "great please proceed - approved"):** every recommendation above. OQ1 agent-generated `bpy`, Mark may tweak; OQ2 the sprites' illustrated finish; OQ3 yes; OQ4 keep the needle and move props, fixed bearing as fallback; OQ5 bridge and Commons; OQ6 yes; OQ7 two; OQ8 yes.
 
 ## Evidence: the before state
 

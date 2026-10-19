@@ -2,7 +2,7 @@
 
 **Design doc:** [deck-layout.md](deck-layout.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-DECK-LAYOUT.json`
-**Status:** **Awaiting Mark's approval.** Nothing is executed until he approves; the plan has two further hard stops for him (DL1/DL2 layout pick, DL3 style frame).
+**Status:** **Approved** (Mark, attended 2026-10-19, ledger D-90, every recommendation). Executing DL0-DL2; the next stop is the DL1/DL2 layout pick.
 **Base:** `origin/main` at `c62353a` (2026-10-19).
 **AILANG:** v0.54.14 (pinned). No `.ail` code in this sprint (syntax gate: skip, no AILANG module is written). Registry reuse: none (Godot tools, Blender assets; no maths for `sunholo/relativity`).
 **Estimate:** about 1,050 game LOC plus about 1,200 lines of `bpy` generator in `~/dev/blender`, **11 working days** of execution, excluding Mark's review time at the two pauses. Recent velocity on attended R2 sprints is about 300 game LOC a day (R2-CAMERA 1,700 LOC in about 5.5 days; R2-HOME-TIERS 720 LOC in one day), but art iteration and captures dominate here, so the plan budgets by milestone, not by LOC.

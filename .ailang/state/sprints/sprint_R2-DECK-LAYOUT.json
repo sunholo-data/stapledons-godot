@@ -1,15 +1,15 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
-  "approved_on": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended, ledger D-90, 0eb722e)",
+  "approved_on": "2026-10-19",
   "created": "2026-10-19",
-  "started": null,
+  "started": "2026-10-19T17:26:14Z",
   "completed": null,
   "design_doc": "design_docs/planned/r2/deck-layout.md",
   "sprint_plan": "design_docs/planned/r2/deck-layout-sprint.md",
-  "branch": "design/deck-layout",
+  "branch": "feat/deck-layout",
   "implements": [
     "deck-layout DL0",
     "DL1",
@@ -236,5 +236,6 @@
       "blocking": [],
       "resolution": "N1-N5 folded in 2026-10-19"
     }
-  ]
+  ],
+  "questions_resolved": "D-90 (Mark, attended 2026-10-19, \"great please proceed - approved\"): every recommendation in the design doc (OQ1 agent bpy generators, Mark may tweak; OQ2 the sprites illustrated finish; OQ3 chair is spawn and focal point; OQ4 keep the needle, move props, fixed bearing as fallback; OQ5 bridge and Commons; OQ6 bake the spire light; OQ7 two candidates; OQ8 bpy generators outside the game Python policy)"
 }
