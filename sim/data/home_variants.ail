@@ -1,0 +1,8 @@
+module stapledons/sim/data/home_variants
+
+-- R2-HOME-TIERS (design home-tiers.md H1, ledger D-86): how many pictures each home-time tier has.
+-- One row per tier (0-15). The files are data/interlude/home/tier<n>_v<k>.webp, k < count, and
+-- their provenance rows are data/interlude/home/SOURCES; `make home-art-check` fails when this
+-- table and the files disagree. To add a variant: raise the tier's count here and add the file
+-- and its SOURCES row. Nothing else changes (sim/home_tiers.ail homeVariant reads this table).
+export pure func variantCounts() -> [int] = [1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 2, 2]

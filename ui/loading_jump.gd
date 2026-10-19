@@ -251,7 +251,7 @@ func _work_xyz(i: int, chunks: Array) -> void:
 
 ## Worker: the simulation every title route starts (protocol 2.8), spawned and greeted.
 func _work_sim(holder: Dictionary) -> void:
-	holder["value"] = SimBridge.warm(SimBridge.CONSOLE_MINOR) # the ship and map's session minor (R2-CREW C4: crew aboard, 2.9; R2-INTERLUDE: the chunked crossing, 2.10)
+	holder["value"] = SimBridge.warm(SimBridge.HOME_TIERS_MINOR) # the ship and map's session minor (R2-HOME-TIERS: 2.12) (R2-CREW C4: crew aboard, 2.9; R2-INTERLUDE: the chunked crossing, 2.10)
 
 
 ## Main thread: the CMB lookup (CmbGlow.lut) before the sky moves.

@@ -1,0 +1,151 @@
+module stapledons/sim/home_tiers_test
+
+-- R2-HOME-TIERS (design home-tiers.md H1, AC1-AC4, AC6): the sixteen-tier home ladder, its words,
+-- its Archive lines and the per-voyage picture variant (D-86). Strings are Mark's approved text
+-- (2026-10-19), pinned verbatim.
+import std/string (contains, length as slen, toLower, join)
+import std/list (map, filter, length, any, foldl)
+import ./home_tiers (tierCount, homeTier16, tierLine16, tierWord16, crossingLine16, pictureOfSeven, homeVariant, variantCount, homeKey)
+import ./data/home_variants (variantCounts)
+import ./cruise_digest (homeTier, tierLine, narrationFor, homeTierAt, tierLineAt, narrationForAt)
+
+pure func allOf(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && allOf(p, r) }
+pure func noDigit(s: string) -> bool = !any(\d. contains(s, d), ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
+pure func distinct(xs: [string]) -> bool = match xs { [] => true, x :: r => !any(\y. y == x, r) && distinct(r) }
+pure func distinctI(xs: [int]) -> bool = match xs { [] => true, x :: r => !any(\y. y == x, r) && distinctI(r) }
+pure func range(a: int, b: int) -> [int] = if a >= b then [] else a :: range(a + 1, b)
+pure func tiers() -> [int] = range(0, 16)
+pure func edges() -> [float] = [1.0, 3.0, 10.0, 20.0, 35.0, 55.0, 90.0, 130.0, 250.0, 500.0, 1000.0, 3000.0, 10000.0, 50000.0, 250000.0]
+pure func below(e: float) -> float = if e < 1000.0 then e - 0.000001 else e - 0.001
+pure func edgeOk(es: [float], k: int) -> bool = match es {
+  [] => true,
+  e :: r => homeTier16(e) == k && homeTier16(below(e)) == k - 1 && edgeOk(r, k + 1)
+}
+pure func countPct(s: string) -> int = if slen(s) < 2 then 0 else (if contains(s, "%s") then 1 else 0)
+
+-- ---------------------------------------------------------------- AC1: the edges
+test "homeTier16: every edge is the first year of its tier; just below is the tier before" {
+  tierCount() == 16 && edgeOk(edges(), 1)
+  && homeTier16(0.0) == 0 && homeTier16(-5.0) == 0 && homeTier16(0.5) == 0 && homeTier16(1000000000.0) == 15
+  && homeTier16(150.0) == 8 && homeTier16(7.0) == 2
+}
+
+-- ---------------------------------------------------------------- AC2: the approved words
+pure func lines() -> [string] = [
+  "Less than a year at home. They are still watching for word from you.",
+  "%s years at home. The people who saw you off still look up some evenings.",
+  "%s years at home. The news you left with is history.",
+  "%s years. The children who waved you off are growing up; they know your leaving mostly from what they were told.",
+  "%s years. The children you knew have grown up; your name is a story they half remember.",
+  "%s years. Your parents' generation is passing; the friends you left are growing old.",
+  "%s years. Your parents' generation is gone. The friends you left are very old now, or gone.",
+  "%s years. Everyone you knew is gone, or nearly. Strangers live in the houses you knew.",
+  "%s years. Everyone you knew is gone. No one alive on Earth was born when you left.",
+  "%s years. The countries you knew may not exist. Your way of speaking would sound old to anyone at home.",
+  "%s years. Longer than most nations last. If anyone still speaks your language, they would struggle to understand you.",
+  "%s years. Languages, faiths and borders have had time to rise and be forgotten. Anyone who reads your signal will need old records to do it.",
+  "%s years. Time enough for whole civilisations to rise and fall. You cannot know who still keeps a record of your leaving.",
+  "%s years. Longer than recorded history before you left. Whatever answers your signal will not be the Earth you left.",
+  "%s years. Long enough for ice to advance and retreat across continents. Whoever lives at home now has had time to become someone you would not recognise.",
+  "%s years. Time on the scale of geology: seas and coasts have moved. There may be no one left who could read your signal as yours."]
+pure func words() -> [string] = ["launch", "seasons", "years", "decade", "decades", "generation", "lifetime", "lifetimes",
+  "century", "centuries", "millennium", "millennia", "ages", "epochs", "eras", "aeons"]
+pure func crossings() -> [string] = [
+  "We crossed quickly, Captain. Home has barely turned since we left; the people there are still looking up.",
+  "Home has turned through a few seasons since we left, Captain. The people who saw us off still look up, though less often now.",
+  "Our clock runs slow out here. At home the seasons have kept turning without us, and the news we carry has become history.",
+  "The children who watched us leave are growing up, Captain. To them our leaving is a story; to me it is a record, kept as it was.",
+  "Since we left, the children at home have grown up. My records of them stop where we left; theirs of us grow thinner.",
+  "Half a lifetime has passed at home since we left. The parents who saw us off are passing now; the friends we left are growing old.",
+  "A lifetime has passed at home since we left, and far less for us. The voices I hold from that world are mostly the voices of the dead.",
+  "Almost no one who watched us leave is still alive, Captain. Strangers keep the places we knew, if anyone keeps them.",
+  "Everyone who watched us leave is gone, Captain. My records of them are not. I keep them carefully.",
+  "More than two centuries have passed at home since we left. The nations in my entries may be names in someone else's histories now.",
+  "Many centuries have passed at home since we left. If anyone there still speaks as we do, they learned it from old books.",
+  "More than a thousand years have passed at home since we left. What answers our signal, I cannot predict from anything I hold.",
+  "Thousands of years have passed at home since we left, Captain. Whole histories have been written there that I will never read.",
+  "More time has passed at home than all the history in my keeping. I cannot say who, or what, keeps the Earth now.",
+  "Tens of thousands of years have passed at home, Captain. The climate there has had time to turn over; I hold no map of the world it made.",
+  "Time at home is now measured as geologists measure it. Whatever we return to, Captain, I can only describe it from the rocks up."]
+
+test "the sixteen tier lines are the approved text; one year is singular at tier one" {
+  map(\t. tierLine16(t, 5), tiers()) == lines()
+  && tierLine16(1, 1) == "A year at home. The people who saw you off still look up some evenings."
+  && tierLine16(1, 2) == "%s years at home. The people who saw you off still look up some evenings."
+  && tierLine16(-1, 0) == tierLine16(0, 0) && tierLine16(99, 9) == tierLine16(15, 9)
+}
+test "tier lines: no digits; one %s each, but tier zero and the singular" {
+  allOf(\t. noDigit(tierLine16(t, 1)) && noDigit(tierLine16(t, 2)), tiers())
+  && countPct(tierLine16(0, 0)) == 0 && countPct(tierLine16(1, 1)) == 0
+  && allOf(\t. countPct(tierLine16(t, 2)) == 1, range(1, 16))
+}
+test "the sixteen tier words: approved, distinct, digit-free" {
+  map(tierWord16, tiers()) == words() && distinct(words()) && allOf(noDigit, words())
+}
+-- make in-world-voice-check's words (D-67, D-68), as cruise_digest_test uses them.
+pure func outOfWorld() -> [string] = ["game", "player", "simulat", "approximat", "invented", "fiction", "placeholder", "sandbox", "renderer", "shader",
+  "previous run", "re-run", "rerun", "new game", "begin again", "beginning again", "start over", "starting over", "multiverse", "loop", "reset"]
+pure func inWorld(t: string) -> bool = !any(\w. contains(toLower(t), w), outOfWorld())
+pure func claims(t: string, ws: [string]) -> bool = any(\w. contains(toLower(t), w), ws)
+test "the sixteen Archive crossing lines: approved, distinct, in-world, no digits, at most 280, no claims past their key" {
+  map(crossingLine16, tiers()) == crossings() && distinct(crossings())
+  && allOf(\c. noDigit(c) && slen(c) <= 280 && slen(c) > 0 && inWorld(c), crossings())
+  && allOf(\l. inWorld(l), lines())
+  && allOf(\c. !claims(c, ["while we crossed", "in weeks", "we crossed in", "centuries turned", "than my oldest records"]), crossings())
+}
+
+-- ---------------------------------------------------------------- AC3: one line across each range
+pure func lo(t: int) -> float = if t == 0 then 0.0 else match filter(\p. p.k == t, zipEdges(edges(), 1)) { p :: _ => p.e, [] => 0.0 }
+pure func hi(t: int) -> float = match filter(\p. p.k == t + 1, zipEdges(edges(), 1)) { p :: _ => below(p.e), [] => 1000000000.0 }
+pure func zipEdges(es: [float], k: int) -> [{k: int, e: float}] = match es { [] => [], e :: r => { k: k, e: e } :: zipEdges(r, k + 1) }
+test "each tier's line holds at its lower edge, midpoint and top" {
+  allOf(\t. homeTier16(lo(t)) == t && homeTier16(hi(t)) == t && homeTier16((lo(t) + hi(t)) / 2.0) == t, tiers())
+}
+
+-- ---------------------------------------------------------------- the 7 -> 16 picture map
+test "pictureOfSeven: each old tier's picture is v0 of its new tier, in range" {
+  map(pictureOfSeven, range(0, 7)) == [0, 2, 4, 6, 8, 10, 13] && pictureOfSeven(-1) == 0 && pictureOfSeven(9) == 13
+}
+
+-- ---------------------------------------------------------------- AC6: variants (D-86)
+pure func seeds() -> [int] = range(0, 64)
+test "variant counts are data: sixteen rows, every tier at least one" {
+  length(variantCounts()) == 16 && allOf(\n. n >= 1, variantCounts())
+  && map(variantCount, tiers()) == variantCounts() && variantCount(-1) == 1 && variantCount(16) == 1
+}
+test "homeVariant: stable, in range, zero on single-variant tiers" {
+  allOf(\s. allOf(\t. homeVariant(s, t) == homeVariant(s, t) && homeVariant(s, t) >= 0 && homeVariant(s, t) < variantCount(t), tiers()), seeds())
+  && allOf(\s. homeVariant(s, 0) == 0 && homeVariant(s, 2) == 0 && homeVariant(s, 10) == 0 && homeVariant(s, 13) == 0, seeds())
+  && homeVariant(7, -1) == 0 && homeVariant(7, 16) == 0
+}
+pure func hits(t: int, k: int) -> bool = any(\s. homeVariant(s, t) == k, seeds())
+test "homeVariant: across sixty-four seeds every variant of every tier is shown" {
+  allOf(\t. allOf(\k. hits(t, k), range(0, variantCount(t))), tiers())
+}
+test "homeVariant: its own key, apart from the seed and the other streams" {
+  homeKey(1) != homeKey(2) && homeKey(1) != 1 && distinctI(map(homeKey, range(0, 8)))
+}
+
+-- ---------------------------------------------------------------- AC4: the VM/interpreter table
+-- make home-tiers-vm runs this on the strict VM and the interpreter and compares the bytes.
+pure func row(t: int) -> string =
+  join("|", [show(t), show(homeTier16(lo(t))), show(homeTier16(hi(t))), show(homeTier16((lo(t) + hi(t)) / 2.0)), tierWord16(t), tierLine16(t, 2), crossingLine16(t)])
+pure func vrow(s: int) -> string = join(",", map(\t. show(homeVariant(s, t)), tiers()))
+export pure func homeTiersTable(n: int) -> string = join("\n", map(row, tiers()) ++ map(vrow, range(0, n)))
+
+-- ---------------------------------------------------------------- the switch (cruise_digest)
+pure func sampleYears() -> [float] = [0.0, 0.5, 1.0, 2.9, 7.0, 12.0, 29.9, 30.0, 66.9, 80.0, 129.9, 150.0, 999.0, 1000.0, 5000.0, 300000.0]
+pure func bands() -> [string] = ["empty", "quiet", "restless", "strained", "held"]
+test "sixteen false is the seven-tier ladder exactly; sixteen true is home_tiers" {
+  allOf(\y. homeTierAt(false, y) == homeTier(y) && homeTierAt(true, y) == homeTier16(y), sampleYears())
+  && allOf(\t. tierLineAt(false, t, 4) == tierLine(t, 4) && tierLineAt(true, t, 4) == tierLine16(t, 4), tiers())
+  && allOf(\t. allOf(\b. narrationForAt(false, t, b) == narrationFor(t, b), bands()), range(0, 7))
+  && (narrationForAt(true, 2, "held")).key == "years.held" && (narrationForAt(true, 15, "quiet")).key == "aeons.quiet"
+  && (narrationForAt(true, 8, "quiet")).crossing == crossingLine16(8) && (narrationForAt(true, 8, "quiet")).aboard == (narrationFor(1, "quiet")).aboard
+  && distinct(foldl(\acc t. acc ++ map(\b. (narrationForAt(true, t, b)).key, bands()), [], tiers()))
+  && length(foldl(\acc t. acc ++ map(\b. (narrationForAt(true, t, b)).key, bands()), [], tiers())) == 80
+}
+-- ui/crossing_review.gd PICTURE_OF_SEVEN is compared with this (tests/test_crossing_review.gd).
+export pure func pictureTable(n: int) -> string = join(",", map(\t. show(pictureOfSeven(t)), range(0, 7 + n)))
+-- make home-art-check: the variant counts, one tier per line ("<tier> <count>").
+export pure func countsTable(n: int) -> string = join("\n", map(\t. join(" ", [show(t), show(variantCount(t))]), range(0, 16 + n)))

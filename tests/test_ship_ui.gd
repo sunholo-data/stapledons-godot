@@ -334,7 +334,7 @@ func test_strip_and_cards() -> void:
 	check("AC3 transit card appears on commit", hud.has_card("transit"))
 	var transit_fields: Array = hud.card_body("transit").find_children("*", "DisplayBinding", true, false).map(func(b): return b.field)
 	check("AC3 transit card: compact JourneyHud rows %s" % [transit_fields], transit_fields.has("ship.phase") and transit_fields.has("consequence.gap_years") and transit_fields.has("client.warp") and transit_fields.filter(func(f): return f in ShipHud.TRANSIT_COMPACT).size() == ShipHud.TRANSIT_COMPACT.size())
-	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.CONSOLE_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
+	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.HOME_TIERS_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
 	check("Tab holds every JourneyHud row", hud.transit_rows.find_children("*", "DisplayBinding", true, false).size() == JourneyHud.ROWS.size())
 	var phases := {}
 	await arrive(demo, phases)
@@ -589,6 +589,13 @@ func test_final_leg_look() -> void:
 		demo.queue_free();await process_frame;return
 	demo._process(0.016)
 	check("final leg review: the waiting line names Enter and no mouse look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and not demo.wait_hint.text.contains("look"))
+	# Coordinator review of #277: the console prompt ("Voyage console · E use") was drawn over the waiting
+	# line at the bottom centre while the review was open. While the review is open the prompt is hidden,
+	# and no two visible bottom hints intersect.
+	var pr: Label = demo.ship_hud.prompt
+	var prompt_shown := pr.is_visible_in_tree() and pr.text != ""
+	check("final leg review: no console prompt while the review is open (%s)" % pr.text, not prompt_shown)
+	check("final leg review: the prompt and the waiting line never overlap", not prompt_shown or not pr.get_global_rect().intersects(demo.wait_hint.get_global_rect()))
 	check("final leg review: the player's pointer is visible for the review (never captured)", demo.pointer_required() and not demo.wants_capture())
 	check("C2 interlude hold: the camera holds Sky forward behind the review (%s, hold %s)" % [demo.director.situation, demo.director.hold], demo.director.hold and demo.director.situation == "sky_forward")
 	var k2 := InputEventKey.new();k2.physical_keycode = KEY_2;k2.pressed = true
@@ -602,6 +609,11 @@ func test_final_leg_look() -> void:
 	check("final leg: arrived, the arrival card up", demo.ship_hud.has_card("arrival"))
 	check("final leg arrival: the Dismiss button is not folded away %s" % [demo.ship_hud.expanded()], demo.ship_hud.expanded().has("arrival"))
 	demo.dismiss_arrival()
+	# #277 evaluation: the console prompt returns once the review has closed (the captain is still in reach).
+	demo._process(0.016)
+	var back_prompt: String = demo.consoles.prompt_text()
+	check("final leg: the review closed, the console prompt returns (%s)" % demo.ship_hud.prompt.text, not demo.crossing_review.visible and back_prompt != ""
+		and demo.ship_hud.prompt.text != "" and demo.ship_hud.prompt.text.contains(back_prompt))
 	check("final leg: the voyage ends with the pointer free and nothing captured (clicks reach the consoles)", not demo.pointer_required() and not demo.wants_capture() and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE)
 	demo.queue_free()
 	await process_frame

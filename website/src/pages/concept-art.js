@@ -184,8 +184,8 @@ export default function ConceptArt() {
             A crossing at near light speed takes the crew a few years; on Earth, decades or centuries pass.
             While the ship crosses, the player reads a review of the voyage, and its Home page shows the
             same headland as it is now, chosen by how long Earth has had: the departure still fresh, then
-            ordinary life moving on, then a town no one aboard would recognise. Seven pictures, one for each
-            span of time at home.
+            ordinary life moving on, then a town no one aboard would recognise. Each span of time at home
+            has its own picture, and some have more than one: a voyage shows one of them.
           </p>
           <div className={styles.homes}>
             {HOME.map((it) => (

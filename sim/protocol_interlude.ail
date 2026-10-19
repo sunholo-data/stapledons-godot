@@ -10,7 +10,8 @@ module stapledons/sim/protocol_interlude
 -- the next commit). Every number is a field; Godot formats and never computes:
 --   time    ship_days (days lived since the commit, cruise_digest.shipDays; == crew.counts.days), earth_years (this crossing),
 --           earth_year_total (since departure), years_at_home (its whole years, tier_line's %s),
---           news_age_years, tier (0-6), tier_line (no digits), tau0/tau and year0/year (the clocks
+--           news_age_years, tier (0-6; 0-15 from 2.12, sim/home_tiers.ail), tier_count and variant (2.12
+--           only: 16, and the voyage's picture variant, home_tiers.homeVariant), tier_line (no digits), tau0/tau and year0/year (the clocks
 --           at the commit and now)
 --   home    tier, news_epoch, news {template_id, star_id, tier} | null (the last arrival's)
 --   medium  model (lism-1 | uniform), media [{name, n_h_cm3}] crossed in order, grains_swept
@@ -27,7 +28,8 @@ import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (map)
 import ./core (World, Committed)
-import ./cruise_digest (Stop, nextStop, Digest, CrewDigest, Member, Moment, Waiting, MediumRef, Ind, homeTier, tierYears, tierLine, shipDays, rankMovement, movedBy, narrationOf)
+import ./cruise_digest (Stop, nextStop, Digest, CrewDigest, Member, Moment, Waiting, MediumRef, Ind, homeTierAt, tierYears, tierLineAt, shipDays, rankMovement, movedBy, narrationOfAt)
+import ./home_tiers (tierCount, homeVariant)
 import ./protocol_crew (emotionOf)
 
 export pure func stopKinds() -> [string] = ["braking", "check_in", "chunk"]
@@ -52,20 +54,28 @@ export pure func decodeCruise(text: string) -> Result[Stop, string] = match deco
 -- ---------------------------------------------------------------- I2: the digest
 pure func stopFields(s: Stop) -> [{key: string, value: Json}] = [kv("next_stop_years", jnum(s.years)), kv("stop_kind", js(s.kind))]
 -- The cruise section: the stop while committed, the digest when there is one to send.
-export pure func encodeCruiseSection(stop: Option[Stop], d: Option[Digest]) -> string = encodeCruiseSectionAt(stop, d, false)
-export pure func encodeCruiseSectionAt(stop: Option[Stop], d: Option[Digest], console: bool) -> string =
-  encode(jo((match stop { Some(s) => stopFields(s), None => [] }) ++ (match d { Some(x) => [kv("digest", digestJsonAt(x, console))], None => [] })))
+export pure func encodeCruiseSection(stop: Option[Stop], d: Option[Digest]) -> string = encodeCruiseSectionAt(stop, d, false, None)
+-- home: None below 2.12 (the seven tiers); Some(seed) from 2.12 (the sixteen tiers and the voyage's picture variant).
+export pure func encodeCruiseSectionAt(stop: Option[Stop], d: Option[Digest], console: bool, home: Option[int]) -> string =
+  encode(jo((match stop { Some(s) => stopFields(s), None => [] }) ++ (match d { Some(x) => [kv("digest", digestJsonAt(x, console, home))], None => [] })))
 export pure func encodeDigest(d: Digest) -> string = encode(digestJson(d))
 
-pure func timeJson(d: Digest) -> Json = {
+pure func isSome(o: Option[int]) -> bool = match o { Some(_) => true, None => false }
+-- 2.12 (R2-HOME-TIERS): tier_count 16 and the voyage's picture variant (home_tiers.homeVariant) beside tier.
+pure func ladderFields(home: Option[int], tier: int) -> [{key: string, value: Json}] = match home {
+  Some(seed) => [kv("tier_count", jint(tierCount())), kv("variant", jint(homeVariant(seed, tier)))],
+  None => []
+}
+pure func timeJson(d: Digest, home: Option[int]) -> Json = {
   let y = d.now.sinceDeparture;
-  let tier = homeTier(y);
+  let sixteen = isSome(home);
+  let tier = homeTierAt(sixteen, y);
   jo([kv("ship_days", jint(shipDays(d))), kv("earth_years", jnum(d.now.t - d.t0)), kv("earth_year_total", jnum(y)), kv("years_at_home", jint(tierYears(y))),
-    kv("news_age_years", jnum(d.now.newsAge)), kv("tier", jint(tier)), kv("tier_line", js(tierLine(tier, tierYears(y)))),
+    kv("news_age_years", jnum(d.now.newsAge)), kv("tier", jint(tier))] ++ ladderFields(home, tier) ++ [kv("tier_line", js(tierLineAt(sixteen, tier, tierYears(y)))),
     kv("tau0", jnum(d.tau0)), kv("tau", jnum(d.now.tau)), kv("year0", jnum(d.year0)), kv("year", jnum(d.now.year))])
 }
-pure func homeJson(d: Digest) -> Json =
-  jo([kv("tier", jint(homeTier(d.now.sinceDeparture))), kv("news_epoch", jnum(d.now.newsEpoch)),
+pure func homeJson(d: Digest, sixteen: bool) -> Json =
+  jo([kv("tier", jint(homeTierAt(sixteen, d.now.sinceDeparture))), kv("news_epoch", jnum(d.now.newsEpoch)),
     kv("news", match d.now.news { Some(n) => jo([kv("template_id", jint(n.templateId)), kv("star_id", js(n.starId)), kv("tier", jint(n.tier))]), None => JNull })])
 pure func mediumRow(m: MediumRef) -> Json = jo([kv("name", js(m.name)), kv("n_h_cm3", jnum(m.nH))])
 pure func mediumJson(d: Digest) -> Json =
@@ -88,9 +98,10 @@ pure func crewJson(d: Digest, cd: CrewDigest, console: bool) -> Json = {
       ++ (if console then [kv("stand_downs_asked", jint(c.standDownsAsked)), kv("stand_downs_granted", jint(c.standDownsGranted)), kv("stand_downs_denied", jint(c.standDownsDenied))] else []))),
     kv("movement", ja(map(memberJson, rankMovement(cd.members)))), kv("moments", ja(map(momentJson, cd.moments))), kv("waiting", ja(map(waitingJson, cd.waiting)))])
 }
-pure func narrationJson(d: Digest) -> Json = { let n = narrationOf(d); jo([kv("key", js(n.key)), kv("crossing", js(n.crossing)), kv("aboard", js(n.aboard))]) }
-export pure func digestJson(d: Digest) -> Json = digestJsonAt(d, false)
+pure func narrationJson(d: Digest, sixteen: bool) -> Json = { let n = narrationOfAt(sixteen, d); jo([kv("key", js(n.key)), kv("crossing", js(n.crossing)), kv("aboard", js(n.aboard))]) }
+export pure func digestJson(d: Digest) -> Json = digestJsonAt(d, false, None)
 -- 2.11 (R2-CREW-CONSOLE-V2 V8): the counts add stand_downs_asked, _granted, _denied (crew_core 0.6).
-export pure func digestJsonAt(d: Digest, console: bool) -> Json =
-  jo([kv("time", timeJson(d)), kv("home", homeJson(d)), kv("medium", mediumJson(d)), kv("crew", match d.crew { Some(cd) => crewJson(d, cd, console), None => JNull }),
-    kv("narration", narrationJson(d))])
+-- 2.12 (R2-HOME-TIERS): home Some(seed) sends the sixteen tiers, tier_count and variant.
+export pure func digestJsonAt(d: Digest, console: bool, home: Option[int]) -> Json =
+  jo([kv("time", timeJson(d, home)), kv("home", homeJson(d, isSome(home))), kv("medium", mediumJson(d)), kv("crew", match d.crew { Some(cd) => crewJson(d, cd, console), None => JNull }),
+    kv("narration", narrationJson(d, isSome(home)))])

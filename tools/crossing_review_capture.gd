@@ -6,8 +6,11 @@ extends SceneTree
 ##   nocrew_<page>        the same leg with no crew aboard (no crew pages)
 ##   trappist_<page>      TRAPPIST-1 (the crossing, home and aboard pages), then on to
 ##   aldebaran_<page>     Aldebaran (Earth years add up across legs: a later home tier)
+##   tour_<leg>_home      R2-HOME-TIERS: the whole guided voyage (Alpha Centauri, TRAPPIST-1, Aldebaran);
+##                        its last crossing is the tour's end at home (recorded ~120 Earth years, tier 7)
+##   art_tier<n>_v<k>     every tier's every picture variant (sixteen tiers, D-86), tiers 13-15 the deep ones
 ## make crossing-review-capture -> renders/crossing_review/<frame>_<w>x<h>.png. A person opens
-## every frame. The home picture per tier (Rulings §2, data/interlude/home/tier<n>.webp) covers the
+## every frame. The home picture per tier and variant (Rulings §2, data/interlude/home/tier<n>_v<k>.webp) covers the
 ## panel on the Home page. Layout checks per frame: the panel inside the window, every label inside
 ## the panel (nothing cut off at the sides), the page buttons below the page; on Home, the picture
 ## is there, the panel is 3:2 and the words stay in its left half.
@@ -36,6 +39,7 @@ func _run() -> void:
 		await scenario(sz, "acen", "orders", 4, 1, [])
 		await scenario(sz, "nocrew", "", 4, 1, [])
 		await scenario(sz, "trappist", "orders", 5, 2, ["crossing", "home", "aboard"])
+		await scenario(sz, "tour", "orders", 4, 3, ["home"])
 	print("crossing-review-capture: %s (%d frames)" % ["FAIL" if failed else "OK", written])
 	quit(1 if failed else 0)
 
@@ -84,26 +88,34 @@ func shot(name: String, sz: Vector2i) -> void:
 			fail("%s: the panel %s is not 3:2 (the picture would be cropped)" % [name, panel.size])
 
 
-## Every tier's home picture under the longest home words (the Aldebaran leg's, with the last news
-## from home): art_tier<n>. A layout check for the art, not a real crossing: the words are that
-## leg's, the picture the tier's. The demo is not stepped (it would show the leg's own tier again).
+## Every tier's every home picture (R2-HOME-TIERS: sixteen tiers, each variant) under the longest home
+## words (the Aldebaran leg's, with the last news from home): art_tier<n>_v<k>. A layout check for
+## the art, not a real crossing: the words are that leg's, the picture the tier's. The demo is not stepped (it would show the leg's own tier again).
 func art_shots(sz: Vector2i) -> void:
 	var r: CrossingReview = demo.crossing_review
 	var view: Dictionary = demo.hud_view()
-	for tier in 7:
-		var v := view.duplicate(true)
-		v.cruise.digest.time.tier = tier
-		r.show_review(v, true)
-		r.go(r.page_ids().find("home"))
-		for i in 3: await process_frame
-		await RenderingServer.frame_post_draw
-		var panel := r.get_global_rect()
-		if r.home_art_missing() or not r.home_art_shown(): fail("art_tier%d: no picture" % tier)
-		var img := root.get_texture().get_image()
-		img.save_png("%s/art_tier%d_%dx%d.png" % [OUT, tier, sz.x, sz.y])
-		written += 1
-		var scroll: ScrollContainer = r.find_children("*", "ScrollContainer", true, false)[0]
-		print("frame art_tier%d %dx%d page=home scrolls=%s panel=%s" % [tier, img.get_width(), img.get_height(), scroll.get_child(0).get_combined_minimum_size().y > scroll.size.y + 0.5, panel.size])
+	for tier in CrossingReview.TIER_COUNT:
+		for k in 8:
+			if not FileAccess.file_exists(CrossingReview.home_path(CrossingReview.HOME_DIR, tier, k)): break
+			await art_shot(sz, r, view, tier, k)
+
+
+func art_shot(sz: Vector2i, r: CrossingReview, view: Dictionary, tier: int, k: int) -> void:
+	var v := view.duplicate(true)
+	v.cruise.digest.time.tier = tier
+	v.cruise.digest.time.tier_count = CrossingReview.TIER_COUNT
+	v.cruise.digest.time.variant = k
+	r.show_review(v, true)
+	r.go(r.page_ids().find("home"))
+	for i in 3: await process_frame
+	await RenderingServer.frame_post_draw
+	var panel := r.get_global_rect()
+	if r.home_art_missing() or not r.home_art_shown() or (r.find_child("HomeImage", true, false) as TextureRect).texture != CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, tier, k)): fail("art_tier%d_v%d: not its picture" % [tier, k])
+	var img := root.get_texture().get_image()
+	img.save_png("%s/art_tier%d_v%d_%dx%d.png" % [OUT, tier, k, sz.x, sz.y])
+	written += 1
+	var scroll: ScrollContainer = r.find_children("*", "ScrollContainer", true, false)[0]
+	print("frame art_tier%d_v%d %dx%d page=home scrolls=%s panel=%s" % [tier, k, img.get_width(), img.get_height(), scroll.get_child(0).get_combined_minimum_size().y > scroll.size.y + 0.5, panel.size])
 
 
 ## Fly `legs` legs from itinerary index `first`, shooting the Hold page (first leg) and the pages.
@@ -123,7 +135,7 @@ func scenario(sz: Vector2i, slug: String, crew: String, first: int, legs: int, o
 	var r: CrossingReview = demo.crossing_review
 	var names := ["", "", "", "", "acen", "trappist", "aldebaran"]
 	for leg in legs:
-		var tag: String = slug if leg == 0 and slug == "nocrew" else str(names[first + leg])
+		var tag: String = slug if leg == 0 and slug == "nocrew" else ("tour_" if slug == "tour" else "") + str(names[first + leg])
 		var held_shot := false
 		var state := ""
 		for tries in 20:
@@ -145,6 +157,10 @@ func scenario(sz: Vector2i, slug: String, crew: String, first: int, legs: int, o
 			if not only.is_empty() and not only.has(kind): continue
 			r.go(i)
 			await shot("%s_%s" % [tag, id], sz)
+		if slug == "tour" and leg == legs - 1:
+			var tt: Dictionary = GalaxyMap.field_value(demo.hud_view(), "cruise.digest.time")
+			print("tour end: %s Earth years, tier %s of %s, variant %s" % [tt.get("earth_year_total"), tt.get("tier"), tt.get("tier_count"), tt.get("variant")])
+			if int(tt.get("tier_count", 0)) != CrossingReview.TIER_COUNT or int(tt.get("tier", -1)) >= 10: fail("tour end: home tier %s of %s (the drowned town is tier 10)" % [tt.get("tier"), tt.get("tier_count")])
 		if tag == "aldebaran":
 			await art_shots(sz)
 		r.go(r.page_ids().size() - 1)

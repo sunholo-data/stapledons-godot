@@ -26,6 +26,7 @@ import ./crew (CrewState, CrewLine, CrewHold, daysIn, daysPerYear)
 import ./crew_names (nameOf)
 import ./protocol_crew (templateLine, emotionOf, holdLine)
 import ./crew_auto (nextDecision, cadenceLongSkip)
+import ./home_tiers (homeTier16, tierLine16, tierWord16, crossingLine16)
 
 export type Stop = { years: float, kind: string } deriving (Eq)
 
@@ -343,3 +344,12 @@ export pure func narrationFor(tier: int, band: string) -> Narration =
   { key: concat([tierWord(tier), ".", band]), crossing: crossingLine(tier), aboard: aboardLine(band) }
 export pure func narrationOf(d: Digest) -> Narration = narrationFor(homeTier(d.now.sinceDeparture), countsBand(d.crew))
 export pure func narrationKey(d: Digest) -> string = (narrationOf(d)).key
+
+-- ================================================================ R2-HOME-TIERS: the ladder switch
+-- design home-tiers.md H1: protocol 2.12 sends the sixteen tiers of sim/home_tiers.ail; 2.10 and 2.11
+-- keep the seven above, byte for byte (sixteen false is exactly homeTier, tierLine, narrationFor).
+export pure func homeTierAt(sixteen: bool, years: float) -> int = if sixteen then homeTier16(years) else homeTier(years)
+export pure func tierLineAt(sixteen: bool, tier: int, whole: int) -> string = if sixteen then tierLine16(tier, whole) else tierLine(tier, whole)
+export pure func narrationForAt(sixteen: bool, tier: int, band: string) -> Narration =
+  if sixteen then { key: concat([tierWord16(tier), ".", band]), crossing: crossingLine16(tier), aboard: aboardLine(band) } else narrationFor(tier, band)
+export pure func narrationOfAt(sixteen: bool, d: Digest) -> Narration = narrationForAt(sixteen, homeTierAt(sixteen, d.now.sinceDeparture), countsBand(d.crew))

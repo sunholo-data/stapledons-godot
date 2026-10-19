@@ -19,8 +19,13 @@ signal open_crew
 signal intents(list: Array)
 
 const D := "cruise.digest."
-const HOME_DIR := "res://data/interlude/home" ## tier<n>.webp per time.tier (Rulings §2): 1536x1024 (3:2) lossy WebP, the left third calm for the text
+const HOME_DIR := "res://data/interlude/home" ## tier<n>_v<k>.webp per time.tier and time.variant (Rulings §2; R2-HOME-TIERS, D-86): 1536x1024 (3:2) lossy WebP, the left third calm for the text
 const HOME_EXT := "webp" ## D-18: the PNG masters stay in the public bucket (data/interlude/home/SOURCES)
+## R2-HOME-TIERS (protocol 2.12): sixteen tiers; time.tier_count says so. Below 2.12 the sim sends the seven
+## old tiers, whose pictures are variant 0 of these (sim/home_tiers.ail pictureOfSeven, mirrored here; a
+## test compares the two).
+const TIER_COUNT := 16
+const PICTURE_OF_SEVEN := [0, 2, 4, 6, 8, 10, 13]
 const TITLES := {"hold": "Needs you", "crossing": "The crossing", "home": "Home", "aboard": "Aboard",
 	"moment": "A moment from the crossing", "changed": "Who changed", "medium": "The medium", "waiting": "Waiting for you"}
 ## What auto-run did, by the sim's moment kind.
@@ -45,7 +50,7 @@ const LOW := Color(0.95, 0.6, 0.4)
 
 var ai_text: Dictionary = {} ## ai_req -> accepted AI words (the Crew page's)
 var narration: ArchiveNarration = null ## I4: the Archive's telling, when live AI told one (else the sim's authored lines)
-var home_dir := HOME_DIR ## where tier<n>.webp are read (a test points it at a missing dir: the fallback)
+var home_dir := HOME_DIR ## where tier<n>_v<k>.webp are read (a test points it at a missing dir: the fallback)
 var page := 0
 var crossed := false
 var armed := false
@@ -148,9 +153,33 @@ func _bleed(c: Control) -> void:
 	c.offset_bottom = PAD
 
 
-## A tier's home picture file.
-static func home_path(dir: String, tier: int) -> String:
-	return dir.path_join("tier%d.%s" % [tier, HOME_EXT])
+## A tier's home picture file (variant k of the tier's pool, D-86).
+static func home_path(dir: String, tier: int, variant := 0) -> String:
+	return dir.path_join("tier%d_v%d.%s" % [tier, variant, HOME_EXT])
+
+
+## The picture's tier in the sixteen-tier ladder: the sim's tier from 2.12 (tier_count 16), the old
+## tier's place (PICTURE_OF_SEVEN) below it. Clamped; no tier is 0.
+static func picture_index(time: Dictionary) -> int:
+	var t := int(float(time.get("tier", 0.0)) if time.get("tier") != null else 0.0)
+	if int(float(time.get("tier_count", 0.0)) if time.get("tier_count") != null else 0.0) == TIER_COUNT:
+		return clampi(t, 0, TIER_COUNT - 1)
+	return PICTURE_OF_SEVEN[clampi(t, 0, PICTURE_OF_SEVEN.size() - 1)]
+
+
+## The voyage's variant of that picture: the sim's from 2.12, else 0.
+static func picture_variant(time: Dictionary) -> int:
+	if int(float(time.get("tier_count", 0.0)) if time.get("tier_count") != null else 0.0) != TIER_COUNT or time.get("variant") == null:
+		return 0
+	return maxi(int(float(time.variant)), 0)
+
+
+## The picture to show: the variant, else the tier's variant 0, else null (words only).
+static func home_texture_for(dir: String, tier: int, variant: int) -> Texture2D:
+	var tex := home_texture(home_path(dir, tier, variant))
+	if tex == null and variant != 0:
+		tex = home_texture(home_path(dir, tier, 0))
+	return tex
 
 
 ## The tier's home picture, or null when the file is missing (the page falls back to words only).
@@ -227,7 +256,8 @@ static func page_spec(view: Dictionary, over: bool) -> Array:
 func _words_spec(view: Dictionary) -> Array:
 	var crew: Variant = GalaxyMap.field_value(view, "cruise.digest.crew")
 	var out: Array = [crossed, GalaxyMap.field_value(view, "crew.holds"), GalaxyMap.field_value(view, "consequence.news.template_id"), ai_text.size(),
-		GalaxyMap.field_value(view, "cruise.stop_kind"), GalaxyMap.field_value(view, "cruise.digest.time.tier"), _archive_crossing(view),
+		GalaxyMap.field_value(view, "cruise.stop_kind"), GalaxyMap.field_value(view, "cruise.digest.time.tier"),
+		GalaxyMap.field_value(view, "cruise.digest.time.tier_count"), GalaxyMap.field_value(view, "cruise.digest.time.variant"), _archive_crossing(view),
 		GalaxyMap.field_value(view, "cruise.digest.narration.aboard")]
 	if crew is Dictionary:
 		out.append((crew.get("moments", []) as Array).map(func(m): return [m.get("actor"), m.get("emotion"), m.get("kind"), m.get("text"), m.get("ai_req")]))
@@ -429,10 +459,11 @@ func _archive_says(box: Container, words: String) -> void:
 
 func _home(view: Dictionary) -> Control:
 	var row := _row()
-	var tier := int(float(GalaxyMap.field_value(view, D + "time.tier") if GalaxyMap.field_value(view, D + "time.tier") != null else 0.0))
+	var time: Variant = GalaxyMap.field_value(view, D + "time")
+	var td: Dictionary = time if time is Dictionary else {}
 	# The tier's picture fills the panel behind the page (_backdrop); the words sit in a column over
 	# its calm left side. A missing picture leaves the words alone across the page.
-	_home_art.texture = home_texture(home_path(home_dir, tier))
+	_home_art.texture = home_texture_for(home_dir, picture_index(td), picture_variant(td))
 	_home_missing = _home_art.texture == null
 	var box := _column()
 	box.name = "HomeText"
