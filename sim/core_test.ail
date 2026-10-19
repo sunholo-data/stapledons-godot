@@ -356,7 +356,6 @@ pure func checkCommittedRefusesAll() -> bool {
   -- D-20 (2026-10-02): every journey intent is refused `committed`; the AI
   -- intents are accepted and leave the flight exactly as the autopilot alone
   -- does. Index 7 is a record for a request never opened: ai_unknown_req (AI.3).
-  -- (head and rest matched separately: `a :: b :: _` is evaluator-only on the strict VM, ailang#1505)
   let c = plCommittedWorld();
   let aiOpen = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []});
   let aiIntents = [aiOpen, IAiCancel({req: "1", reason: "offline"})];
@@ -367,7 +366,7 @@ pure func checkCommittedRefusesAll() -> bool {
   let opened = tick(c, {dtau: 0.25, intents: [aiOpen]});
   plCommitted(c.journey) && plAllRefused(c, journeyIntents) &&
   refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:ai_unknown_req", "8:committed", "9:committed"]) &&
-  (match all.events { a :: rest => a.kind == "ai_request" && (match rest { b :: _ => b.kind == "ai_fallback", _ => false }), _ => false }) && all.world.ai.lastReq == 1 && all.world.rng.ai == 1 &&
+  (match all.events { a :: b :: _ => a.kind == "ai_request" && b.kind == "ai_fallback", _ => false }) && all.world.ai.lastReq == 1 && all.world.rng.ai == 1 &&
   refusalsAre(opened.refused, []) && opened.world.ai.lastReq == 1 && plSameCommit(c, opened.world) && plSameFlight(opened.world, alone) &&
   plSameCommit(c, all.world) && plSameFlight(all.world, alone) && all.world.ship.phase == Cruising && all.world.tick == c.tick + 1 &&
   all.world.rng.news == 0 && all.world.rng.journey == 0

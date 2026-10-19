@@ -1,0 +1,92 @@
+module stapledons/sim/home_tiers
+
+-- R2-HOME-TIERS (design home-tiers.md H1; Mark, attended 2026-10-19): the sixteen home-time tiers
+-- of the crossing review's Home page, on the wire from protocol 2.12 (sim/protocol_interlude.ail).
+-- Below 2.12 the seven tiers of sim/cruise_digest.ail stay, byte for byte.
+-- Pure: no I/O, no state; runs on the strict VM.
+--
+-- Text rules: D-21 (no digits; whole years only as %s, bound to time.years_at_home), D-67 (in-world),
+-- D-68 (claims inferable from elapsed time or conditional), and each line true for every year of
+-- its range (eval R2-INTERLUDE (2)). Canon note: the ladder from ten thousand years on is the
+-- "no threat modelled yet" baseline; a follow-up design makes those tiers depend on Earth's fate.
+import ./rng (mix64, splitmix64, top53)
+import ./data/home_variants (variantCounts)
+
+export pure func tierCount() -> int = 16
+
+-- Edges (Earth years since departure, lower edge inclusive): 1, 3, 10, 20, 35, 55, 90, 130, 250,
+-- 500, 1000, 3000, 10000, 50000, 250000.
+export pure func homeTier16(years: float) -> int
+  ensures { result >= 0 && result < 16 }
+= if years < 1.0 then 0 else if years < 3.0 then 1 else if years < 10.0 then 2 else if years < 20.0 then 3
+  else if years < 35.0 then 4 else if years < 55.0 then 5 else if years < 90.0 then 6 else if years < 130.0 then 7
+  else if years < 250.0 then 8 else if years < 500.0 then 9 else if years < 1000.0 then 10 else if years < 3000.0 then 11
+  else if years < 10000.0 then 12 else if years < 50000.0 then 13 else if years < 250000.0 then 14 else 15
+
+-- %s is the whole Earth years since departure (cruise_digest.tierYears), a bound field Godot formats.
+export pure func tierLine16(tier: int, whole: int) -> string =
+  if tier <= 0 then "Less than a year at home. They are still watching for word from you."
+  else if tier == 1 then (if whole == 1 then "A year at home. The people who saw you off still look up some evenings." else "%s years at home. The people who saw you off still look up some evenings.")
+  else if tier == 2 then "%s years at home. The news you left with is history."
+  else if tier == 3 then "%s years. The children who waved you off are growing up; they know your leaving mostly from what they were told."
+  else if tier == 4 then "%s years. The children you knew have grown up; your name is a story they half remember."
+  else if tier == 5 then "%s years. Your parents' generation is passing; the friends you left are growing old."
+  else if tier == 6 then "%s years. Your parents' generation is gone. The friends you left are very old now, or gone."
+  else if tier == 7 then "%s years. Everyone you knew is gone, or nearly. Strangers live in the houses you knew."
+  else if tier == 8 then "%s years. Everyone you knew is gone. No one alive on Earth was born when you left."
+  else if tier == 9 then "%s years. The countries you knew may not exist. Your way of speaking would sound old to anyone at home."
+  else if tier == 10 then "%s years. Longer than most nations last. If anyone still speaks your language, they would struggle to understand you."
+  else if tier == 11 then "%s years. Languages, faiths and borders have had time to rise and be forgotten. Anyone who reads your signal will need old records to do it."
+  else if tier == 12 then "%s years. Time enough for whole civilisations to rise and fall. You cannot know who still keeps a record of your leaving."
+  else if tier == 13 then "%s years. Longer than recorded history before you left. Whatever answers your signal will not be the Earth you left."
+  else if tier == 14 then "%s years. Long enough for ice to advance and retreat across continents. Whoever lives at home now has had time to become someone you would not recognise."
+  else "%s years. Time on the scale of geology: seas and coasts have moved. There may be no one left who could read your signal as yours."
+
+-- Span-of-time words for the narration key (tierWord16 "." band): never a scene word (D-68).
+export pure func tierWord16(tier: int) -> string =
+  if tier <= 0 then "launch" else if tier == 1 then "seasons" else if tier == 2 then "years" else if tier == 3 then "decade"
+  else if tier == 4 then "decades" else if tier == 5 then "generation" else if tier == 6 then "lifetime" else if tier == 7 then "lifetimes"
+  else if tier == 8 then "century" else if tier == 9 then "centuries" else if tier == 10 then "millennium" else if tier == 11 then "millennia"
+  else if tier == 12 then "ages" else if tier == 13 then "epochs" else if tier == 14 then "eras" else "aeons"
+
+-- The Archive's authored framing on the crossing page (design D3, Rulings §6), the same for every band.
+export pure func crossingLine16(tier: int) -> string =
+  if tier <= 0 then "We crossed quickly, Captain. Home has barely turned since we left; the people there are still looking up."
+  else if tier == 1 then "Home has turned through a few seasons since we left, Captain. The people who saw us off still look up, though less often now."
+  else if tier == 2 then "Our clock runs slow out here. At home the seasons have kept turning without us, and the news we carry has become history."
+  else if tier == 3 then "The children who watched us leave are growing up, Captain. To them our leaving is a story; to me it is a record, kept as it was."
+  else if tier == 4 then "Since we left, the children at home have grown up. My records of them stop where we left; theirs of us grow thinner."
+  else if tier == 5 then "Half a lifetime has passed at home since we left. The parents who saw us off are passing now; the friends we left are growing old."
+  else if tier == 6 then "A lifetime has passed at home since we left, and far less for us. The voices I hold from that world are mostly the voices of the dead."
+  else if tier == 7 then "Almost no one who watched us leave is still alive, Captain. Strangers keep the places we knew, if anyone keeps them."
+  else if tier == 8 then "Everyone who watched us leave is gone, Captain. My records of them are not. I keep them carefully."
+  else if tier == 9 then "More than two centuries have passed at home since we left. The nations in my entries may be names in someone else's histories now."
+  else if tier == 10 then "Many centuries have passed at home since we left. If anyone there still speaks as we do, they learned it from old books."
+  else if tier == 11 then "More than a thousand years have passed at home since we left. What answers our signal, I cannot predict from anything I hold."
+  else if tier == 12 then "Thousands of years have passed at home since we left, Captain. Whole histories have been written there that I will never read."
+  else if tier == 13 then "More time has passed at home than all the history in my keeping. I cannot say who, or what, keeps the Earth now."
+  else if tier == 14 then "Tens of thousands of years have passed at home, Captain. The climate there has had time to turn over; I hold no map of the world it made."
+  else "Time at home is now measured as geologists measure it. Whatever we return to, Captain, I can only describe it from the rocks up."
+
+-- The 7-tier picture's place in the 16-tier ladder (its variant 0): the host shows this for a
+-- stream below 2.12 (ui/crossing_review.gd PICTURE_OF_SEVEN mirrors it; a test compares them).
+export pure func pictureOfSeven(tier: int) -> int
+  ensures { result >= 0 && result < 16 }
+= if tier <= 0 then 0 else if tier == 1 then 2 else if tier == 2 then 4 else if tier == 3 then 6
+  else if tier == 4 then 8 else if tier == 5 then 10 else 13
+
+-- ---------------------------------------------------------------- variants (D-86)
+pure func nthOr(xs: [int], i: int, d: int) -> int = match xs { [] => d, x :: r => if i == 0 then x else nthOr(r, i - 1, d) }
+-- The tier's variant count (sim/data/home_variants.ail); 1 outside the ladder.
+export pure func variantCount(tier: int) -> int
+  ensures { result >= 1 }
+= if tier < 0 || tier >= tierCount() then 1 else { let n = nthOr(variantCounts(), tier, 1); if n < 1 then 1 else n }
+-- Its own salted key, the dust key's pattern (ism.ail dustKey): it draws nothing from the world's
+-- Rng, so no other stream moves.
+export pure func homeSalt() -> int = 1215261011
+export pure func homeKey(seed: int) -> int = mix64(mix64(seed) ^ homeSalt())
+-- The voyage's picture for a tier: a pure, stable function of (seed, tier), so the tier shows the
+-- same picture every time it comes up in one voyage.
+export pure func homeVariant(seed: int, tier: int) -> int
+  ensures { result >= 0 }
+= { let n = variantCount(tier); if n <= 1 then 0 else top53(splitmix64(homeKey(seed), tier)) % n }

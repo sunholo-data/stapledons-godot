@@ -19,16 +19,17 @@ func _run() -> void:
 	await process_frame # _process turns pipelining off once auto-tick is off (a slow first frame may have pipelined a heartbeat)
 	check(demo.ready_ok and demo.journey_map!=null and not demo.navigation_window.visible,"current ship starts its own hidden normal navigation")
 	check(demo.sky_state=="live" and demo.sky.beta==0. and demo.sky_world==demo.journey_sim.world,"default sky is actual live rest, not frozen cruise")
-	check(demo.camera.pullback==0. and demo.camera.position.distance_to(demo.avatar_pos+Vector3.UP*1.7)<.0001,"default camera is physical captain eye")
+	# R2-CAMERA: the default is Z2 Deck, third person (the sprite shown), inside the bubble wall.
+	check(demo.director.level==2 and not demo.director.overridden and demo.avatar.visible and demo.camera.position.length()<=95.,"default camera is Z2 Deck, third person, inside the 95 m envelope")
 	var eye: Array=demo.sky.cam.position_m
 	check(Vector3(eye[0],eye[2],-eye[1]).distance_to(demo.camera.position)<.0001,"ship geometry and sky share measured physical observer")
 	var before:float=demo.sky_world.clock.tau
 	var ticked:bool=demo.journey_tick()
 	check(ticked and demo.sky_world.clock.tau>before,"live rest clock advances while aboard (tick %s, error '%s', tau %s -> %s, in flight %s)" % [ticked,demo.journey_sim.last_error,before,demo.sky_world.clock.tau,demo.journey_sim.in_flight()])
-	var scroll:=InputEventPanGesture.new();scroll.delta=Vector2(0,-1)
+	var scroll:=InputEventPanGesture.new();scroll.delta=Vector2(0,1)
 	demo._unhandled_input(scroll);demo._process(0.)
-	check(demo.camera.pullback>0. and demo.ship_hud.view_tag.text.contains("third-person camera"),"optional third person is explicitly labelled")
-	demo.set_preset("reset");check(demo.camera.pullback==0.,"reset returns to captain eye")
+	check(demo.director.level==3 and demo.ship_hud.view_tag.text.contains("Whole level"),"one unit of scroll down is one level out, and the view tag names it")
+	demo.set_preset("reset");demo._process(0.);check(demo.director.level==2 and demo.ship_hud.view_tag.text.contains("Deck"),"R restores Z2 Deck")
 	demo.open_navigation();check(demo.journey_map!=null,"one navigation is shared with current ship")
 	demo.close_navigation();demo.queue_free();await process_frame
 	print("ship-demo-consolidation: %d passed, %d failures" % [passed,failed]);quit(1 if failed else 0)

@@ -29,8 +29,15 @@ var generated_segment := RegEx.create_from_string("^@([^/@]+)@[0-9]+$")
 const CONTEXT_ONLY := ["client.map.target_name"]
 # Context-only client paths whose producer value is looked up from the frame or the catalogue.
 const CONTEXT_SOURCED := ["client.map.target_id", "client.map.distance_ly", "client.map.count", "client.map.radius_pc", "client.map.rate", "client.map.hold_s", "client.archive.unlocked_count", "client.crew.working", "client.crew.status", "client.map.empty", "client.archive.empty", "client.crew.empty"]
+# R2-CREW-CONSOLE-V2 V7: the Crew console's own call state (who is on the call, what is on its
+# way, the inline Ask or Order, refusal words, the captain's words, accepted AI words) is client
+# state with no frame source: context-only, under these prefixes.
+const CONTEXT_ONLY_PREFIX := ["client.crew.call", "client.crew.sending.", "client.crew.how.", "client.crew.notice.", "client.crew.said.", "client.crew.ai_text."]
+var crew_seen := {}
 var stars_header: Dictionary = {}
 var stars: Array = []
+var review_seen := {}
+var review_listed := {}
 
 
 func normalized(text_value: String) -> String:
@@ -151,7 +158,7 @@ func check_context(node: String, b: Dictionary, view: Dictionary) -> void:
 		if frame != null: check(recorded == frame, "context-drift %s %s" % [node, p])
 		elif not p.begins_with("client."): check(false, "context-drift %s %s" % [node, p])
 		elif p in CONTEXT_SOURCED: check(recorded == expected_source(p, view), "context-source %s %s" % [node, p])
-		else: check(p in CONTEXT_ONLY, "context-unknown %s %s" % [node, p])
+		else: check(p in CONTEXT_ONLY or CONTEXT_ONLY_PREFIX.any(func(x: String) -> bool: return p.begins_with(x)), "context-unknown %s %s" % [node, p])
 	if parts_read(b, "client.map.target_id"):
 		# A catalogue target carries its distance, and only it does; Sol carries none.
 		var expected := catalogue_star(view) != null
@@ -254,6 +261,8 @@ func audit(row: Dictionary) -> void:
 		fields[binding.field] = true
 	for l: Dictionary in row.get("labels", []):
 		var label := Label.new(); label.text = l.get("text", ""); label.set_meta("node", l.get("node", "")); root_node.add_child(label)
+		# R2-CREW-CONSOLE-V2 V7: every Label on the Crew console is a binding, digits or not.
+		check(not str(l.get("node", "")).contains("/CrewConsole/"), "crew-unbound %s %s" % [l.get("node", ""), JSON.stringify(l.get("text", ""))])
 	for bad in DisplayBinding.audit(root_node):
 		if bad is DisplayBinding:
 			check(false, "binding contract " + str(bad.get_meta("node")))
@@ -268,6 +277,16 @@ func audit(row: Dictionary) -> void:
 			for card: Dictionary in row.get("cards", []):
 				if str(card.get("node", "")).ends_with("/Card_transit"): transit_node = card.node
 			finding("transit-ISM", transit_node, "missing ship.ism.glow_w_m2", row)
+	# R2-INTERLUDE I3: which crossing-review pages this run showed (the interlude route checks all).
+	var rv: Dictionary = row.get("review", {}) if row.get("review") is Dictionary else {}
+	if not rv.is_empty():
+		review_seen[str(rv.get("page", ""))] = true
+		for p: Variant in rv.get("pages", []):
+			if str(p) != "hold": review_listed[str(p)] = true
+	var cr: Dictionary = row.get("crew", {}) if row.get("crew") is Dictionary else {}
+	if not cr.is_empty():
+		crew_seen["board" if str(cr.get("call", "")) == "" else "call:" + str(cr.get("state", ""))] = true
+		crew_seen["bindings"] = int(crew_seen.get("bindings", 0)) + row.get("bindings", []).filter(func(b: Dictionary) -> bool: return str(b.get("node", "")).contains("/CrewConsole/")).size()
 	var lore: Dictionary = row.get("lore", {})
 	if not lore.is_empty():
 		var binding := LoreBinding.new(); binding.entry_id = lore.get("id", "")
@@ -307,7 +326,31 @@ func _run() -> void:
 		var row: Variant = JSON.parse_string(line)
 		if row is Dictionary: audit(row)
 		else: check(false, "invalid sample")
-	if args.size() < 2 or args[1] != "control":
+	var route := args[1] if args.size() > 1 else "scene"
+	if route == "interlude":
+		# R2-INTERLUDE I3 (AC8): the guided crossing's playthrough (tests/playthrough_interlude.json).
+		# Every sampled frame is audited as above against the same known file (a new finding fails);
+		# this route has no map, news or codex screens, so their known entries are not expected here.
+		check(state_file != null, "missing state stream")
+		check(count >= 50, "fewer than 50 samples")
+		check(phases.has("cruising"), "missing phase cruising")
+		for p: String in review_listed: check(review_seen.has(p), "review page never sampled: " + p)
+		check(review_listed.size() >= 3 and review_seen.has("hold"), "review pages and the Hold page sampled %s" % [review_seen.keys()])
+		print("display-audit interlude: review pages sampled %d of %d %s" % [review_seen.size(), review_listed.size() + 1, review_seen.keys()])
+		known_hits.clear()
+		for i in known_entries.size(): known_hits[i] = 0
+	elif route == "crew":
+		# R2-CREW-CONSOLE-V2 V7 (AC14): the Crew console's playthrough (tests/playthrough_crew.json):
+		# the board, a call in each state the crew reached, every frame audited as above.
+		check(state_file != null, "missing state stream")
+		check(crew_seen.has("board"), "crew board never sampled")
+		var calls: Array = crew_seen.keys().filter(func(k: String) -> bool: return k.begins_with("call:"))
+		check(calls.size() >= 3, "crew calls sampled in fewer than three states %s" % [calls])
+		check(int(crew_seen.get("bindings", 0)) > 0, "no Crew console bindings sampled")
+		print("display-audit crew: %s, %d console bindings" % [crew_seen.keys().filter(func(k): return k != "bindings"), int(crew_seen.get("bindings", 0))])
+		known_hits.clear()
+		for i in known_entries.size(): known_hits[i] = 0
+	elif route != "control":
 		check(state_file != null, "missing state stream")
 		check(count >= 500, "fewer than 500 samples")
 		for p in ["at_rest", "boosting", "cruising", "braking"]: check(phases.has(p), "missing phase " + p)

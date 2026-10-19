@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.54.8** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.54.14** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -30,6 +30,11 @@ them. `make sky-publish` (maintainers, gcloud) uploads new pins. Dev builds:
 `make publish-dev` uploads to the private `gs://stapledons-voyage-dev-builds`, and
 Mark installs with `tools/install_review_build.sh --dev`. Releases use GitHub. All
 infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
+
+**Tags (Mark, 2026-10-15).** A dev tag (`v*-dev.*`, e.g. `v0.4.0-dev.30-crew-replies`)
+builds the macOS zip straight away; tag it only after a green local `make test`
+(use the pinned runtime: `PATH=$PWD/runtime/bin:$PATH make test`). Any other `v*` tag
+is a release: `release.yml` runs the full CI suite first and builds only if it passes.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
 
@@ -154,34 +159,31 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.8 (re-check again at each bump; still-needed ones reported as ailang#1783):**
-  - Fixed in v0.54.8: a cold compile of an embedded `sunholo/crew_core` peaked at ~20 GB RSS (#1812, still open upstream; now ~0.5 GB). CI needs no memory limit or warm-up step for it.
-  - Open (v0.54.8, VM performance): a cons-pattern list walk copies the tail every step (`_list_tail`), so walking a list is O(n^2) (#1827). It makes the busy no-hold crew skip ~40 s on the Studio and 71 s on CI. Mark's ruling D-82: no package workaround; `crew-perf`'s `crewSkipUnheld` holds a 150 s ceiling until the fix, then 2 s.
-  - Still needed: run `ailang lock` after `ailang install`; on a clean machine
-    `ailang lock` also fills the package cache (`make deps`). The lockfile's
-    `generated_at` line churns on every run, so ignore it when diffing.
-    `std/map.fromList` is still evaluator-only on the strict VM.
-    `std/io.readLine` still returns "" for both a blank line and end of input.
-  - Open (v0.52.0, workaround in-tree, cite the issue at the site): the bytecode
-    VM silently drops a service request whose handler builds a list of ~1100+
-    elements by non-tail recursion (no result, no error, exit 0; the interpreter
-    answers) (#1576; `ai/voice.ail` builds stub tones by doubling).
-  - Breaking in v0.52.0: an explicitly imported name may not also be defined at
-    module level (MOD015). Alias the import (`import M (x as mX)`) or rename.
-  - Fixed in v0.52.0; the in-tree workarounds still cite the issue and are
-    removable in a follow-up: std/json -0.0 sign and long integers (#1460);
-    test-runner private-name mixups (#1461, #1516); exp/log 1 ulp arm64 vs
-    x86_64 (#1465); lone `| Idle` export (#1466); imports shadowing lambda/let
-    binders (#1467); strict-VM patterns: var arms, nested cons, constructor at a
-    cons head, nested constructor binds, `_ :: []` (#1473, #1505, #1503, #1517);
-    aliased/unknown pattern constructors (#1478, now TC_MATCH_001); NaN ordering
-    (#1419, now IEEE on both engines; NaN guards like `x == x` are still needed,
-    since every comparison with NaN is false); recursive std/list maximumFloat
-    (#1518); std/array and std/list.range on the strict VM; interpreter tail
-    calls (#1486); `writeFileBytesResult` exists.
-  - Fixed in v0.51.0: whole-number float literals in `test` blocks (#1456),
-    `string.repeat` and bitwise Int ops under `--strict-bytecode` (#1462, #1450).
-  - Fixed upstream, kept harmlessly in the Makefile: `--quiet` and `--package-dir`.
+- **Workarounds, re-checked on v0.54.14 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+  - Open (ailang#1827 fixed in v0.54.10, performance): with crew_core 0.5.0 the busy no-hold crew skip
+    measures about 11 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
+    accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
+  - Kept on purpose: `ailang check --package` beside `ailang test --package`. Since v0.54.13 the
+    test runner type-checks every module and exits 1 on a compile error, but only `check` enforces
+    STRICT_FALLBACK_001 (an unannotated empty `Ok`).
+  - Process, not a bug: run `ailang lock` after `ailang install`; on a clean machine `ailang lock`
+    also fills the package cache (`make deps`).
+  - Language rule since v0.52.0: an explicitly imported name may not also be defined at module
+    level (MOD015). Alias the import (`import M (x as mX)`) or rename. An aliased constructor
+    import is rejected in a pattern (TC_MATCH_001); `sim/tripphase.ail` maps phases to an index.
+  - Fixed and removed from the tree on v0.54.13/v0.54.14 (byte-identical outputs unless noted):
+    every strict-VM list-literal split (ailang#1736, #1865: the ISM efficacy LUT, cloud planes and
+    members are single literals; `applyOverride` is one chain; the crew-names table runs strict,
+    `make strict` namesVm; the scripted crossing still uses role ids until the crew console sprint
+    (D-80) switches it to names and re-records `crossing_hold`); the #1576 doubling in `ai/voice.ail` and the
+    tail-recursive lens-table builders; the #1737 named test checks; the v0.52.0 workarounds (#1460,
+    #1461, #1465, #1467, #1473, #1478, #1486, #1503, #1505, #1516, #1517, #1419 notes). The arm64
+    and x86_64 replay goldens are identical but still kept per architecture.
+  - Fixed upstream, nothing in-tree: `std/env.getEnvOr` of an unset variable on the bytecode VM
+    (broken in v0.54.13, fixed in v0.54.14, #1864); std/map on the strict VM and `readLineOpt`
+    (v0.54.11); the ~20 GB cold compile of crew_core (v0.54.8, #1812). `spawnProcessResult`
+    (#1784), sharedindex scan order (#1795) and `std/package.assetPath` (#1772) are unused here;
+    every `--entry` names an exported function (#1797); no `CACHE_WRITE_FAILED` (#1601).
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the
   interpreter disagree, that's an upstream bug: shrink it to a minimal repro
   and report it.

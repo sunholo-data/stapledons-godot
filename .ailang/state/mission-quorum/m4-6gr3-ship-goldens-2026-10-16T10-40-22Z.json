@@ -1,0 +1,75 @@
+{
+  "doc": "design_docs/planned/r1/m4-6gr3-ship-goldens.md",
+  "iso_ts": "2026-10-16T10:40:22Z",
+  "reviewers": [
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-4-argon",
+      "cost_usd": 0.019424,
+      "tokens_in": 8647,
+      "tokens_out": 213,
+      "present": true,
+      "result": {
+        "verdict": "pass",
+        "strongest_objection": "The spike ran in a standalone SceneTree script outside `main.gd`, leaving the behavior of `main.gd`'s own root CanvasLayers/overlays unverified in the final frame until implementation time.",
+        "catch": "Verify during implementation that `main.gd` does not leave any root-level UI or fade overlay visible after `:898` when `m4_ship_golden.gd` attaches `ship_geometry_demo.tscn` as a child, since the driver only hides CanvasLayers belonging to `demo`.",
+        "proposed_fix": "In Design §2, specify that if `main` has any visible root CanvasItem/CanvasLayer children active at `:898`, the driver must either hide them for the duration of `run(main)` or assert their visibility is false before Build A/B."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: You reached your Pro weekly limit. Max is $100/month for $300 of usage, with no 5-hour or weekly caps: https://ollama.com/settings/billing (ref: 7f714968-2579-432f-81d8-287aa0ea6f00)",
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: You reached your Pro weekly limit. Max is $100/month for $300 of usage, with no 5-hour or weekly caps: https://ollama.com/settings/billing (ref: d9d8d8e3-f71e-4eb4-9336-b38cd898473d)",
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Scope matches the approved round-3 M4.6gR3 row; ACs are command-checkable with dry-run drills; no visual or sim change; pillar net +1"
+  },
+  "synthesis": {
+    "verdict": "proceed",
+    "blocking_objections": null,
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-kimi-k3",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.019424,
+    "total_tokens_in": 8647,
+    "total_tokens_out": 213
+  }
+}

@@ -17,7 +17,6 @@ pure func inputs(tier: string, body: string, rawSha: string) -> {tier: string, c
   {tier: tier, csv: body, rawSha: rawSha, ailang: "v0.51.0", pkg: pkg()}
 pure func ok(tier: string, body: string, rawSha: string) -> bool = match plan(inputs(tier,body,rawSha)) { Ok(_) => true, Err(_) => false }
 pure func field(j: Json, k: string) -> string = match get(j,k) { Some(v) => match asString(v) { Some(s) => s, None => "<not a string>" }, None => "<missing>" }
--- jnum, not number: catalogue.ail has a private number (ailang#1461)
 pure func jnum(j: Json, k: string) -> float = match get(j,k) { Some(v) => match asNumber(v) { Some(n) => n, None => -1.0 }, None => -1.0 }
 pure func object(j: Json, k: string) -> Json = match get(j,k) { Some(v) => v, None => j }
 pure func strings(j: Json, k: string) -> [string] = match get(j,k) {

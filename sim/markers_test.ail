@@ -8,9 +8,6 @@ module stapledons/sim/markers_test
 -- parseLine(printLine(s)) == s over canonical segment lists (non-ASCII and
 -- 16-segment lines included). `markersVm` runs everything on the strict VM
 -- (`make strict-ai`, AC7 part).
---
--- Helper names carry an `mk` prefix: the test runner mixes up same-named
--- private functions across modules (ailang#1461).
 import ./markers (Segment, parseLine, printLine, displayText, emotions8, isEmotion, maxSegments, fallbackChain, pickPortrait)
 import std/result (Result, Ok, Err)
 import std/string (join, concat, length, intToStr)

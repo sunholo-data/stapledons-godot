@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import Clip from '@site/src/components/Clip';
-import {BRIDGE_V1, BRIDGE_V2, CAPTAIN, CREW, MEDIC, SHIP_LAYERS} from '@site/src/data/concept';
+import {BRIDGE_V1, BRIDGE_V2, CAPTAIN, CREW, HOME, MEDIC, SHIP_LAYERS} from '@site/src/data/concept';
 import styles from './concept-art.module.css';
 
 function Pill({kind, children}) {
@@ -33,7 +33,7 @@ function Wide({it, base}) {
 export default function ConceptArt() {
   const base = useBaseUrl('/img/concept/');
   return (
-    <Layout title="Concept art" description="Concept and work-in-progress art for Stapledon's Voyage: the captain, the crew, and the bridge of the bubble ship.">
+    <Layout title="Concept art" description="Concept and work-in-progress art for Stapledon's Voyage: the captain, the crew, the bridge of the bubble ship, and home as the crew leaves it behind.">
       <header className={styles.header}>
         <div className={styles.container}>
           <p className={styles.kicker}>Concept and work-in-progress art</p>
@@ -173,6 +173,28 @@ export default function ConceptArt() {
           {BRIDGE_V2.map((it) => (
             <Wide key={it.file} it={it} base={base} />
           ))}
+        </section>
+
+        <section id="home" className={styles.block}>
+          <div className={styles.blockHead}>
+            <h2>Home, while you were away</h2>
+            <Pill kind="progress">Concept set: going into the game</Pill>
+          </div>
+          <p className={styles.note}>
+            A crossing at near light speed takes the crew a few years; on Earth, decades or centuries pass.
+            While the ship crosses, the player reads a review of the voyage, and its Home page shows the
+            same headland as it is now, chosen by how long Earth has had: the departure still fresh, then
+            ordinary life moving on, then a town no one aboard would recognise. Each span of time at home
+            has its own picture, and some have more than one: a voyage shows one of them.
+          </p>
+          <div className={styles.homes}>
+            {HOME.map((it) => (
+              <figure key={it.file} className={styles.stage}>
+                <Img it={it} base={base} />
+                <figcaption>{it.title}</figcaption>
+              </figure>
+            ))}
+          </div>
         </section>
 
         <section className={clsx(styles.block, styles.credit)}>

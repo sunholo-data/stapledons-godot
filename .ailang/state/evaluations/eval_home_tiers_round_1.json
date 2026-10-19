@@ -1,0 +1,8 @@
+{"sprint_id":"home_tiers","pr":277,"head":"b0cd2a86e9ed13faf71c111c97feac96bf76c956","round":1,"evaluator":"claude-sonnet-5-5","score":91,"result":"pass",
+"breakdown":{"tests":20,"lint":9,"acceptance":28,"code_quality":13,"documentation":11,"design_fidelity":10},
+"results":{"home-tiers-vm":"16 tiers, 64 seeds, strict VM==interp","home-art-check":"28 pictures","home-site-check":"23 pictures tiers 0-12","crossing-review-test":"102 passed 0 failed","display-audit-interlude":"mismatches=0 new=0 failures=0","strict":"rc 0","parity":"identical","crew-parity":"6 recordings ok","replay":"11 cases identical","sim tests":"515 passed 0 failed","ship-ui-test":"243 passed 0 failures (241 passed, 2 failures with fix reverted)","crossing-review-capture":"OK 116 frames, tour end 120.5 yr tier 7 of 16"},
+"findings":[
+{"sev":"nit","where":"CHANGELOG.md","msg":"design deliverables list CHANGELOG.md (protocol 2.12); only changelogs/unreleased entry added"},
+{"sev":"nit","where":"tools/crossing_review_capture.gd art_shot","msg":"art_tier<n> frames show the Aldebaran leg's tier-7 words over every tier's picture (layout check by design, but reads oddly)"},
+{"sev":"should-fix","where":"tests/test_ship_ui.gd:592-598","msg":"no test that the console prompt returns after the review closes (code path makes it trivial, but unasserted)"},
+{"sev":"nit","where":"not run","msg":"make site, export-filter-audit, make lint, bucket URL check (HOME_SITE_URLS=1), full make test not run by evaluator"}]}

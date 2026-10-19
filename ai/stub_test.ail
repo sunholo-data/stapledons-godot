@@ -52,8 +52,6 @@ pure func said(acts: [Act]) -> Option[Out] = match acts { [] => None, a :: r => 
 pure func blobOf(acts: [Act]) -> Option[Blob] = match acts { [] => None, a :: r => match a { WriteBlob(b) => Some(b), _ => blobOf(r) } }
 pure func okOf(s: Step) -> Option[OkView] =
   match said(s.acts) { Some(o) => (match o { OOk(k) => Some({ body: k.body, sha: k.sha256, route: k.meta.route, model: k.meta.model, provider: k.meta.provider, usd: k.meta.usd }), _ => None }), None => None }
--- Not `isErr`: under `ailang test` a private helper named like a stdlib
--- export (std/result.isErr) is replaced by it (ailang#1516).
 pure func errIs(s: Step, code: string, route: string) -> bool =
   match s.acts { [a] => (match a { Say(o) => (match o { OErr(e) => e.code == code && e.route == route && e.provider == "stub", _ => false }), _ => false }), _ => false }
 

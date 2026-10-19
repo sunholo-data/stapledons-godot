@@ -4,7 +4,8 @@ module stapledons/sim/ship
 -- code: read a line, hand it to the pure session server, print its reply.
 -- Nothing is printed before the first line arrives, so a session's first
 -- output is the answer to its first input (the hello).
-import std/io (readLine, println, flush)
+import std/io (readLineOpt, println, flush)
+import std/option (Some, None)
 import std/result (Ok, Err)
 import ./protocol (Session, GQuit, newSession, serve, decodeInput)
 
@@ -12,13 +13,17 @@ pure func isQuit(line: string) -> bool =
   match decodeInput(line) { Ok(m) => (match m { GQuit => true, _ => false }), Err(_) => false }
 
 func loop(s: Session) -> () ! {IO} {
-  let line = readLine(());
-  if line == "" || isQuit(line) then ()
-  else {
-    let r = serve(s, line);
-    println(r.reply);
-    flush(());
-    loop(r.session)
+  match readLineOpt(()) {
+    None => (),
+    Some(line) =>
+      if line == "" then loop(s)
+      else if isQuit(line) then ()
+      else {
+        let r = serve(s, line);
+        println(r.reply);
+        flush(());
+        loop(r.session)
+      }
   }
 }
 

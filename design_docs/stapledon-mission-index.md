@@ -1,6 +1,6 @@
 # Stapledon mission index
 
-Regenerated from full mission log headings; one line per entry. No log archive yet. Three orphan rows retain their credited historical evidence.
+Regenerated from full mission log headings; one line per entry. No log archive yet. Four orphan rows retain their credited historical evidence.
 
 | Iter | Date | Class | Headline |
 |---|---|---|---|
@@ -37,5 +37,7 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 27 | 2026-10-13 | PRODUCT | iteration 27, L2 M4.6 follow-ups MERGED, CI-PENDING (PR #216, merge `8a67df3`): one `lint-precision` (found and fixed 2 live hand computations), `holds` clause kept and its mutant killed, D-52 wording; independent eval Sonnet 89/100 PASS [PRODUCT] |
 | 28 | 2026-10-13 | PRODUCT | iteration 28, M4.5aR3 scene playthrough bot MERGED, CI-PENDING (PR #225, merge `09c909d`): `make playthrough` from the title screen's New game to the Voyage log on the 3D ship, adversarial console script, driver failure controls, CPU forward pole; independent eval Sonnet 88/100 PASS; L2 (PR #216) LANDED [PRODUCT] |
 | 29 | 2026-10-14 | PRODUCT | iteration 29, M4.5bR3 scene audits MERGED (PR #232, merge `404c098`): walk-charged time proxy, codex unlocks and AI modes on the 3D-ship session; `display-audit` ratchet with AC4 OPEN on pre-existing unbound labels (row 7i, D-77); independent eval Sonnet 74 → 73/100 PASS [PRODUCT] |
-| 30 | 2026-10-14 | PRODUCT | iteration 30, row 7i(a) helm numerals bound, LANDED (PR #235, merge `66d2a61`): 27 of 31 unbound numeric labels bound text-identically (GalaxyMap panel, dialog, clock, speed, titles, coverage; Archive count); `known_findings.json` 32 → 5; AC4 open only on D-77 and D-78; independent eval Sonnet 88/100 PASS [PRODUCT] |
+| 30 | 2026-10-14 | PRODUCT | iteration 30, row 7i(a) helm numerals bound, MERGED (PR #235, merge `66d2a61`): 27 of 31 unbound numeric labels bound with text-identical output; AC4 open only on D-77 and D-78; independent eval Sonnet 88/100 PASS [PRODUCT] |
 | 31 | 2026-10-15 | HARNESS | iteration 31, main CI recovery PARKED-ON-LANE; all four native roles delivered diagnosis, independent evaluator PARK DIAGNOSIS; no product change or landing [HARNESS] |
+| 32 | 2026-10-15 | HARNESS | iteration 32, CI recovery PARKED-ON-LANE; portrait export-audit failure independently diagnosed and reproduced; four native role deliverables, independent evaluator supports diagnosis only; no product change or landing [HARNESS] |
+| 33 | 2026-10-15 | PRODUCT | iteration 33, row 7i(g) display-audit context cross-check MERGED (PR #250, merge `e40d418`); the new rule found and fixed a stale map tick under the pipelined heartbeat; independent eval Sonnet 84/100 PASS [PRODUCT] |

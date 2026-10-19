@@ -4,12 +4,13 @@ module stapledons/sim/crew_names
 -- international name list (sim/data/crew_names.ail). Seeded and deterministic: each crew member
 -- takes three crew-stream draws (region, given name, family name); a full name already taken is
 -- redrawn, so no two crew share a name. Role ids stay the internal entity_id (D-70 OQ2).
-import std/list (map, length, any)
+import std/list (map, length, any, foldl)
 import std/option (Option, Some, None)
-import std/string (concat)
-import ./rng (Rng, SCrew, draw, top53)
+import std/string (concat, join, intToStr)
+import ./rng (Rng, SCrew, draw, top53, zeroRng)
 import ./crew (CrewName)
-import stapledons/sim/data/crew_names (NameRegion, nameRegions)
+import stapledons/sim/data/crew_names (NameRegion, nameRegions, Gendered, genderedNames)
+import stapledons/sim/data/crew_faces (Face, faceOf)
 
 pure func at(xs: [a], i: int, d: a) -> a = match xs { [] => d, x :: r => if i <= 0 then x else at(r, i - 1, d) }
 pure func pick(n: int, v: int) -> int = if n <= 0 then 0 else top53(v) % n
@@ -34,7 +35,46 @@ pure func go(seed: int, rng: Rng, ids: [string], acc: [CrewName]) -> Named = mat
   id :: rest => { let n = nameOne(seed, rng, map(\x. x.name, acc), 8); go(seed, n.rng, rest, acc ++ [{ id: id, name: n.name }]) }
 }
 
+-- R2-CREW-CONSOLE-V2 (ledger D-80, names fit faces): the same three crew-stream draws per member
+-- (region, given name, family name), but the region is one the member's face fits
+-- (sim/data/crew_faces.ail), the given name is of the face's presentation and the family name takes
+-- that presentation's form. A role without a face record draws as nameOne. Used from protocol 2.11.
+pure func nameFit(seed: int, rng: Rng, id: string, taken: [string], tries: int) -> {name: string, rng: Rng} = match faceOf(id) {
+  None => nameOne(seed, rng, taken, tries),
+  Some(f) => {
+    let a = draw(seed, rng, SCrew);
+    let r = at(f.regions, pick(length(f.regions), a.value), "");
+    let g = gendered(r);
+    let woman = f.presentation == "woman";
+    let givens = if woman then g.women else g.men;
+    let families = if woman then g.familyWomen else g.familyMen;
+    let b = draw(seed, a.rng, SCrew);
+    let c = draw(seed, b.rng, SCrew);
+    let full = concat([at(givens, pick(length(givens), b.value), "Crew"), " ", at(families, pick(length(families), c.value), "Member")]);
+    if any(\t. t == full, taken) && tries > 0 then nameFit(seed, c.rng, id, taken, tries - 1) else { name: full, rng: c.rng }
+  }
+}
+pure func gendered(r: string) -> Gendered = gfind(genderedNames(), r)
+pure func gfind(gs: [Gendered], r: string) -> Gendered = match gs {
+  [] => { region: r, women: ["Crew"], men: ["Crew"], familyWomen: ["Member"], familyMen: ["Member"] },
+  g :: rest => if g.region == r then g else gfind(rest, r)
+}
+export pure func nameCrewFit(seed: int, rng: Rng, ids: [string]) -> Named = goFit(seed, rng, ids, [])
+pure func goFit(seed: int, rng: Rng, ids: [string], acc: [CrewName]) -> Named = match ids {
+  [] => { names: acc, rng: rng },
+  id :: rest => { let n = nameFit(seed, rng, id, map(\x. x.name, acc), 8); goFit(seed, n.rng, rest, acc ++ [{ id: id, name: n.name }]) }
+}
+
 export pure func nameOf(names: [CrewName], id: string) -> Option[string] = match names {
   [] => None,
   n :: r => if n.id == id then Some(n.name) else nameOf(r, id)
+}
+
+-- `make strict` probe (ailang#1736 fixed in v0.54.14): the whole names table and five generated
+-- names for `seed` on the strict VM; one line, VM == interpreter.
+export pure func namesVm(seed: int) -> string {
+  let rs = nameRegions();
+  let n = nameCrew(seed, zeroRng(), ["analyst", "counselor", "engineer", "medic", "pilot"]);
+  concat(["names regions ", intToStr(length(rs)), " given ", intToStr(foldl(\s r. s + length(r.given), 0, rs)),
+    " family ", intToStr(foldl(\s r. s + length(r.family), 0, rs)), " crew ", join(", ", map(\x. x.name, n.names))])
 }

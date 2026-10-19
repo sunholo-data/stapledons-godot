@@ -2,14 +2,20 @@ module stapledons/sim/crew_hold_test
 
 -- R2-CREW C8 tests (design crew-integration.md §CI-5, AC14; D-76): auto-run under standing orders
 -- with critical moments as crew holds.
-import ./crew_auto (rulesFor, ordersFor, nextDecision, autoStep, presets, cadenceLongSkip)
-import ./crew (CrewState, initCrew, plainDays, daysPerYear, initCrewWith, crewCommand, perDays)
-import ./crew_script (Script, Step, SCmd, SDays, scripts)
-import ./core (World, Intent, ICrew, Event, newWorld, defaultParams, tick, withCrew)
-import ./rng (zeroRng)
+import ./crew_auto (rulesFor, ordersFor, nextDecision, autoStep, presets, cadenceLongSkip, setPreset)
+import ./cruise_digest (Stop, nextStop, stopYears, stopBracket, chunkDays)
+import ./protocol_interlude (cruiseStop)
+import pkg/sunholo/crew_core/auto (advanceAuto)
+import ./crew (CrewState, initCrew, plainDays, daysPerYear, initCrewWith, crewCommand, consoleCmds, perDays, daysIn)
+import ./crew_script (Script, Step, SCmd, SDays, STick, SReply, scripts, replyLine)
+import ./core (World, Intent, ICrew, IPlan, ICommit, Event, newWorld, defaultParams, tick, withCrew)
+import ./rng (zeroRng, draw, top53, SCrew)
+import std/math (intToFloat)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (map, filter, length, any)
+import std/string (contains)
+import ./protocol_crew (crewViewWith, holdLine)
 
 pure func day() -> float = 1.0 / 365.25 + 0.0000001
 
@@ -21,8 +27,9 @@ pure func checkPresets() -> bool =
   (match rulesFor("critical_only") { Ok(rs) => map(\r. r.kind, rs) == ["refusal_under_orders", "breakdown", "trust_floor", "major", "argument"], Err(_) => false }) &&
   (match rulesFor("hands_on") { Ok(rs) => length(filter(\r. r.kind == "breakdown" && r.threshold == 70, rs)) == 1 && length(filter(\r. r.kind == "trust_floor" && r.threshold == 40, rs)) == 1 && length(filter(\r. r.kind == "uncovered", rs)) == 1 && length(filter(\r. r.kind == "cohort" && r.threshold == 25, rs)) == 1, Err(_) => false }) &&
   (match rulesFor("mutiny") { Ok(_) => false, Err(_) => true }) && presets() == ["off", "critical_only", "hands_on"] &&
-  (ordersFor("consent", true)).start == "agreed" && (ordersFor("consent", true)).cadence == 1 &&
-  (ordersFor("orders", false)).start == "always" && (ordersFor("orders", false)).cadence == cadenceLongSkip()
+  (ordersFor("consent", true, "critical_only")).start == "agreed" && (ordersFor("consent", true, "critical_only")).cadence == 1 &&
+  (ordersFor("orders", false, "hands_on")).start == "always" && (ordersFor("orders", false, "hands_on")).cadence == cadenceLongSkip() &&
+  (ordersFor("consent", true, "critical_only")).concerns == "ask_advice" && (ordersFor("consent", true, "hands_on")).concerns == "escalate"
 
 -- A monthly step that reaches no decision day is exactly plain days (nobody is asked).
 pure func checkMonthlyWait() -> bool = match initCrew("orders") {
@@ -40,8 +47,8 @@ pure func checkMonthlyWait() -> bool = match initCrew("orders") {
   }
 }
 
-pure func orders(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None })
-pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None })
+pure func orders(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None, asMode: "", startMode: "" })
+pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None, asMode: "", startMode: "" })
 pure func holdEvents(es: [Event]) -> [string] = map(\e. match e.crewHold { Some(h) => h.id, None => "" }, filter(\e. e.kind == "crew_hold", es))
 pure func holdsOf(w: World) -> [string] = match w.crew { Some(c) => map(\h. h.id, c.holds), None => ["no crew"] }
 pure func turnOf(w: World) -> int = match w.crew { Some(c) => c.turn, None => 0 - 1 }
@@ -103,17 +110,162 @@ pure func replay(s: Script, fast: bool) -> Option[CrewState] = match initCrewWit
 pure func go(c: CrewState, steps: [Step], fast: bool) -> CrewState = match steps {
   [] => c,
   st :: rest => {
-    let r = match st { SCmd(line, ask) => (crewCommand(c, 2, zeroRng(), line, ask)).crew, SDays(n) => (if fast then plainDays(c, zeroRng(), n) else perDays(c, zeroRng(), n)).crew };
+    let r = match st { SCmd(line, ask) => (crewCommand(c, 2, zeroRng(), line, ask)).crew, SDays(n) => (if fast then plainDays(c, zeroRng(), n) else perDays(c, zeroRng(), n)).crew,
+      STick(cmds) => (consoleCmds(c, 2, zeroRng(), cmds)).crew, SReply(w) => (crewCommand(c, 2, zeroRng(), replyLine(c, w), None)).crew };
     go(r, rest, fast)
   }
 }
 -- With archiving on (keep 30), crew_core archives after every advance, so a batched advance folds
 -- the same items later. crew_core 0.4.0 keeps archive.events sorted, so the whole session, archive
 -- included, is equal.
+-- archive.completed (per-recipe counts) is folded in the order tasks are archived: when several
+-- tasks finish inside one batched span (console_v2 starts four at once) a batched advance archives
+-- them in a different order. The counts are the same, so it is compared as a set; everything else
+-- exactly. (Upstream ask: crew_core could keep `completed` sorted as it does `events`.)
 pure func sameCrew(a: CrewState, b: CrewState) -> bool =
-  a.session.state == b.session.state && a.turn == b.turn && a.session.archive == b.session.archive
+  a.session.state == b.session.state && a.turn == b.turn && { a.session.archive | completed: [] } == { b.session.archive | completed: [] }
+  && length(a.session.archive.completed) == length(b.session.archive.completed)
+  && all(\x. any(\y. y == x, b.session.archive.completed), a.session.archive.completed)
+pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
 pure func checkBatchExact() -> bool = !any(\s. match (replay(s, true), replay(s, false)) {
   (Some(a), Some(b)) => !sameCrew(a, b),
   _ => true
 }, scripts())
 test "plain days batched between flow points equal one advance a day: live state and archive (AC11)" { checkBatchExact() }
+
+-- crew_core 0.4.1 gate (the crew-lab agreement, 2026-10-14): the game's crew runs watch-v3
+-- (chat.version 1), and a year of critical-only auto-run under the game's own orders logs no error
+-- act, at daily and monthly check-ins, under both captains (a stuck crew would log one a day).
+pure func yearErrors(cap: string, nearStar: bool) -> int = match initCrewWith(cap, false) {
+  Err(_) => 0 - 1,
+  Ok((c, _)) => match rulesFor("critical_only") {
+    Err(_) => 0 - 1,
+    Ok(rules) => match advanceAuto(c.session, { seed: 7, agreed: [], raised: [], calls: 0 }, c.policy, ordersFor(cap, nearStar, "critical_only"), rules, 365) {
+      Err(_) => 0 - 1,
+      Ok(r) => length(filter(\a. a.kind == "error", r.log))
+    }
+  }
+}
+pure func watchV3() -> bool = match initCrewWith("consent", false) { Ok((c, _)) => c.session.chat.version == 1, Err(_) => false }
+test "watch-v3: the game's crew runs conversation version 1" { watchV3() }
+test "a year of critical-only auto-run: no error acts (daily, consent)" { yearErrors("consent", true) == 0 }
+test "a year of critical-only auto-run: no error acts (monthly, consent)" { yearErrors("consent", false) == 0 }
+test "a year of critical-only auto-run: no error acts (daily, orders)" { yearErrors("orders", true) == 0 }
+test "a year of critical-only auto-run: no error acts (monthly, orders)" { yearErrors("orders", false) == 0 }
+
+-- R2-INTERLUDE I1 (design interlude-card.md D1, AC5; Rulings §3, §5): the chunked cruise. The sim
+-- publishes the next stop (sim/cruise_digest.ail nextStop); the host steps exactly that, so a hold
+-- raised on a decision day is the last thing in its chunk and the crossing stops there.
+pure func dayRem0(i: int) -> float = intToFloat(top53((draw(i, zeroRng(), SCrew)).value)) / 9007199254740992.0 / daysPerYear()
+-- Exactness: stopYears(rem, k) is the smallest float whose whole days from rem are exactly k. Its
+-- bracket (lo, hi) has lo one day short and hi on the day, and they are adjacent floats (their
+-- midpoint rounds to one of them), so no smaller float lands on the day.
+pure func exactAt(rem: float, k: int) -> bool = match stopBracket(rem, k) {
+  (lo, hi) => {
+    let y = stopYears(rem, k);
+    let mid = lo + (hi - lo) / 2.0;
+    y == hi && (daysIn(rem, y)).days == k && (y == 0.0 || (daysIn(rem, lo)).days < k) && (mid == lo || mid == hi)
+  }
+}
+pure func exactSeeds(i: int) -> bool = if i >= 200 then true else exactAt(dayRem0(i), 1 + (i * 37) % chunkDays()) && exactSeeds(i + 1)
+test "next stop: years land exactly on the stop day over 200 seeded dayRem values in [0, 1 day)" { exactSeeds(0) }
+test "next stop: exact at the edges (dayRem 0, just under a day; 1 day, 30 days, the 365-day cap)" {
+  exactAt(0.0, 1) && exactAt(0.0, 30) && exactAt(0.0, 365) && exactAt(1.0 / daysPerYear() * 0.9999999999, 1) && exactAt(1.0 / daysPerYear() * 0.9999999999, 365) && stopYears(0.3 / daysPerYear(), 0) == 0.0
+}
+
+pure func ordersOn(preset: string) -> Option[CrewState] = match initCrew("orders") {
+  Err(_) => None,
+  Ok(c) => Some((setPreset(c, 3, zeroRng(), preset)).crew)
+}
+test "next stop: auto-run off is the 365-day cap (Rulings §5)" {
+  match initCrew("orders") {
+    Err(_) => false,
+    Ok(c) => { let s = nextStop(Some(c), 100.0); s.kind == "chunk" && s.years == stopYears(c.dayRem, chunkDays()) && (daysIn(c.dayRem, s.years)).days == 365 && chunkDays() == 365 }
+  }
+}
+test "next stop: auto-run on, no hold: the next monthly decision day (check_in, D-76)" {
+  match ordersOn("critical_only") {
+    None => false,
+    Some(c) => { let s = nextStop(Some(c), 100.0); s.kind == "check_in" && (daysIn(c.dayRem, s.years)).days == nextDecision(c.turn, cadenceLongSkip()) - c.turn }
+  }
+}
+test "next stop: an open hold waits: the cap, not the check-in" {
+  match ordersOn("critical_only") {
+    None => false,
+    Some(c) => { let s = nextStop(Some({ c | holds: [{ id: "h", rule: "breakdown", actor: "medic", task: "", tick: 0, detail: "" }] }), 100.0); s.kind == "chunk" && (daysIn(c.dayRem, s.years)).days == 365 }
+  }
+}
+test "next stop: the braking boundary when it comes first (and on a tie); no crew is the cap" {
+  match ordersOn("critical_only") {
+    None => false,
+    Some(c) => {
+      let b = nextStop(Some(c), 0.001);
+      let tie = nextStop(Some(c), stopYears(c.dayRem, 1));
+      let none = nextStop(None, 5.0);
+      b.kind == "braking" && b.years == 0.001 && tie.kind == "braking" && none.kind == "chunk" && none.years == stopYears(0.0, chunkDays()) && (nextStop(None, 0.0 - 1.0)).years == 0.0
+    }
+  }
+}
+-- autoStep returns crew_core's Act log (I2's digest reads it): empty on plain days, the auto-captain's acts on a decision day.
+test "autoStep returns the auto-captain's Act log" {
+  match ordersOn("critical_only") {
+    None => false,
+    Some(c) => {
+      let r = autoStep(c, 3, zeroRng(), stopYears(c.dayRem, 1), false);
+      let p = autoStep({ c | auto: None }, 3, zeroRng(), stopYears(c.dayRem, 1), false);
+      length(r.log) > 0 && any(\a. a.kind == "offer", r.log) && p.log == []
+    }
+  }
+}
+
+-- AC5 on a 10-year committed leg (about 70 ly at 0.99c): 60 days with auto-run off, then
+-- critical_only under orders. The next stop is decision day 61; the medic's refusal there ends the
+-- chunk on day 61 (zero crew days after the hold's decision day); while the hold is open the next
+-- stop is the cap; resume continues to day 91. One unchunked year from the same world runs on.
+pure func farLeg() -> Intent = IPlan({ target: { index: 2, id: "far", pos: { x: 0.0, y: 0.0, z: 0.0 - 70.0 } }, cruisePhi: 2.6466524123622457, flipG: None, star: None })
+pure func stopOf(w: World) -> Stop = match cruiseStop(w) { Some(s) => s, None => { years: 0.0 - 1.0, kind: "none" } }
+pure func remOf(w: World) -> float = match w.crew { Some(c) => c.dayRem, None => 0.0 - 1.0 }
+pure func checkChunkHold() -> bool = match withCrew(newWorld(2, false, defaultParams()), "orders") {
+  Err(_) => false,
+  Ok(w0) => {
+    let p = tick(w0, { dtau: 0.0, intents: [farLeg()] });
+    let c = tick(p.world, { dtau: 0.0, intents: [ICommit(1)] });
+    let s0 = stopOf(c.world);
+    let t60 = tick(c.world, { dtau: stopYears(remOf(c.world), 60), intents: [] });
+    let on = tick(t60.world, { dtau: 0.0, intents: [orders("critical_only")] });
+    let s1 = stopOf(on.world);
+    let h = tick(on.world, { dtau: s1.years, intents: [] });
+    let s2 = stopOf(h.world);
+    let unchunked = tick(on.world, { dtau: 1.0, intents: [] });
+    match holdsOf(h.world) {
+      [id] => {
+        let r = tick(h.world, { dtau: 0.0, intents: [resumeI(id)] });
+        let s3 = stopOf(r.world);
+        let next = tick(r.world, { dtau: s3.years, intents: [] });
+        s0.kind == "chunk" && turnOf(t60.world) == 60 && cruiseStop(w0) == None &&
+        s1.kind == "check_in" && turnOf(h.world) == 61 && holdEvents(h.events) == [id] &&
+        s2.kind == "chunk" && s3.kind == "check_in" && turnOf(next.world) == 91 &&
+        turnOf(unchunked.world) > 61 + 300 && length(holdEvents(unchunked.events)) == 1
+      },
+      _ => false
+    }
+  }
+}
+test "a hold on a decision day ends its chunk: the crossing stops on day 61, resume continues (AC5)" { checkChunkHold() }
+
+-- R2-INTERLUDE I3: one source for a hold's words. At 2.10 the crew view's holds carry `line`
+-- (protocol_crew.holdLine, the words after the member's name; no digits); below 2.10 they do not.
+pure func viewHasLine(c: CrewState) -> bool =
+  !any(\h. !contains(crewViewWith(c, true), "\"line\":\"${holdLine(h.rule)}\""), c.holds) && !contains(crewViewWith(c, false), "\"line\":")
+pure func checkHoldLine() -> bool = match withCrew(newWorld(2, false, defaultParams()), "consent") {
+  Err(_) => false,
+  Ok(w0) => {
+    let on = tick(w0, { dtau: 0.0, intents: [orders("hands_on")] });
+    let t1 = tick(on.world, { dtau: 3.0 * day(), intents: [] });
+    match t1.world.crew { Some(c) => length(c.holds) == 1 && viewHasLine(c), None => false }
+  }
+}
+test "2.10 crew view: each hold carries its words (holdLine); 2.9 does not" { checkHoldLine() }
+test "hold lines: one per rule, no digits, a fallback" {
+  holdLine("breakdown") == "is close to breaking down." && holdLine("stuck") != holdLine("other") && holdLine("other") == "needs the captain."
+}

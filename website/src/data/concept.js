@@ -97,3 +97,55 @@ export const BRIDGE_V2 = [
       'A Godot capture of the illustrated treatment with the live sky and the captain sprite on deck, next to the captain sheet it has to match.',
   },
 ];
+
+// The crossing review's Home page (game design home-tiers, ledger D-86): the same headland as Earth's
+// time runs on, in sixteen home-time tiers, each a pool of variants (a voyage shows one per tier).
+// Codex gpt-6.1-sol, 16 and 19 October 2026; prompts and every candidate are in the game repo's
+// data/interlude/home/generation_notes.md. Spoiler policy (website/news/README.md): tiers 0-12 only,
+// titled by time range, no captions; the later tiers are story (design_docs home-tiers.md, H4).
+// Rows: [tier, variant, master sha256 (public bucket site/<sha>.png; the game's SOURCES row)].
+const HOME_TITLES = [
+  'Less than a year',
+  'A year or two',
+  'Under ten years',
+  'Under twenty years',
+  'Under thirty-five years',
+  'Under fifty-five years',
+  'Under ninety years',
+  'Under 130 years',
+  'Under 250 years',
+  'Under 500 years',
+  'Under a thousand years',
+  'Under 3,000 years',
+  'Under 10,000 years',
+];
+const HOME_ROWS = [
+  [0, 0, '8513eb0ea5063524e0c0008b8781834a5953fabbb88848869334782d67911e1c'],
+  [1, 0, 'e84b4c60618535859df1ed51059d31661cd94220be6dfd1fc11b8dac16ccf04c'],
+  [1, 1, 'e21318eea283186e7d676e047b358a725d308d79e23f7d6912d20ec91fa61cf7'],
+  [2, 0, '96e30bed8c7d2921809462c8c89eff59c00282ab3bd653ed9da5b6e1c8a6057b'],
+  [3, 0, '025203d7aefe6f23f1e21bf341fcd22498082b00b43781584d33e831d9887a13'],
+  [3, 1, 'ada1a11de6a3897ec27e71fcc5027fcd6faed079e0c6497cb36239ad0a69fc0e'],
+  [4, 0, '0229d2d94f01c08dc96e96e957f3b6b6942003885a5aaa40c39b4e1a1f0b12c9'],
+  [4, 1, 'befdf3afea8ba8e87cd8022e2e08e5b7f0a5f16cfe516975521cb858846e15e4'],
+  [5, 0, '752c3d7f713858e8d5df136f6986ffcd175b1c0733c5fddaac03ee04f07a99da'],
+  [5, 1, 'd2ffc831e5d5b15fc419aa1e67bea96fd11e7a8be438d8cf867a69b9bb568e8a'],
+  [6, 0, '9f44e1145f389c5d3439b4dc67b75f8ae52f812433c1126a117e591e2b9e0ff8'],
+  [6, 1, 'ef141b439650632df69c1f2c14f576796dd92b7519aab350a433a6b7b82b9b50'],
+  [7, 0, 'a6cc3f8df55cdf397b4440ce6ba28328c15e2243b0c4617b9c303cdadd788f98'],
+  [7, 1, '4bad13905b51de1fe3f58b68fc460432d0002fed6826d6aa0ee395a56fb5f557'],
+  [8, 0, 'bfd69e924ea322aec5cc4fa2744ee19c9d2f57886acb8ae7bf2ea68f72e29e70'],
+  [8, 1, 'acd42fd8df31169f18574a60974757cfa884ec21b67e2bd97d4a8b1894dded7d'],
+  [9, 0, '58bce70d3280c407c642766016130d41ad1b5c7c46238d399188138e59a0164a'],
+  [9, 1, '257cf9290a022a4bcfc2c5a21bc7c65df8818054c36e4a6a898096af63da00fc'],
+  [10, 0, 'b55a3c62fde9c1dfe1719357093d50b1b7041b4e3570ccc26c070341e9229453'],
+  [11, 0, 'e82a9dd41cc90fb0dc7d79092ad70b69f60390234c6b34988a5bce8878199fd8'],
+  [11, 1, 'ff5fbc304faa10f18b47f993c8ff5d56c5e127b1dfa6d46fea93d40d10423e98'],
+  [12, 0, '458bcb676e8c4c1ce8ba80adf0c13ad5fc9e038681f7e1d348318533f43ae6e3'],
+  [12, 1, 'a175bc08ebdb89a1cd93849a1103802582de34514046e0e31c935c9b53615886'],
+];
+export const HOME = HOME_ROWS.map(([tier, variant, sha]) => ({
+  file: `home-t${String(tier).padStart(2, '0')}-v${variant}.jpg`,
+  full: `${B}/site/${sha}.png`,
+  title: HOME_TITLES[tier],
+}));

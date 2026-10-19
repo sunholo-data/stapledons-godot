@@ -151,7 +151,7 @@ export pure func checkDirectHighlights() -> bool {
     _ => false
   }) && directChain(w, 0)
 }
-test "D65 has seven finite highlight arrivals, exact high speeds, continuous clocks and unchanged D54 stops" { checkDirectHighlights() }
+-- D65 has seven finite highlight arrivals, exact high speeds, continuous clocks and unchanged D54 stops: checkDirectHighlights (run on both engines by directHighlightsVm, make guided-highlights-strict)
 export pure func directHighlightsVm(n: int) -> string = if checkDirectHighlights() then "guided-highlights: OK" else "guided-highlights: FAIL"
 -- D-39/D-40/D-41 cruise speeds, as exact 1 - beta (never 1 - beta computed near c).
 pure func phiOf(n: int) -> float = match legs((guided()).params) { xs => phiAt(xs, n) }

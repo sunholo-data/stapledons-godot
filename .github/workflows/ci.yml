@@ -4,13 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call: # release.yml: a plain v* release tag runs this whole suite before it builds
 
 jobs:
   headless:
     name: headless tests (physics, sim, parity, strict VM)
     runs-on: ubuntu-latest
     env:
-      AILANG_VERSION: v0.54.8
+      AILANG_VERSION: v0.54.14
       GODOT_VERSION: 4.7.2-stable
       # M2.5 replay: the 10k-tick interpreter run takes ~75 s on this 2-core
       # runner (> 60 s, design risk row), so PRs replay the 2k-tick session and
@@ -35,23 +36,15 @@ jobs:
           sudo install /tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           godot --headless --version
 
-      - name: Check transit replay before full suite
-        run: |
-          make deps
-          AILANG=ailang python3 tools/replay.py --case m4_transit_harness
-
       - name: Check vendored lore against the design repo (M4.7 AC17, both halves)
         # stapledons-design is public (ledger D-24), so the cross-repo half needs no credential:
         # the design repo at the manifest's sha (read as git objects) must equal data/lore.
         run: |
+          make deps
           git clone --quiet https://github.com/sunholo-data/stapledons-design /tmp/stapledons-design
           make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang
 
-      - name: Check navigation, input and ISM controls before full suite
-        run: make import starmap-assets ui free-nav-recovery-test ship-ui-test ship-demo-input-test ai-live-guard map-ism-test no-twitch-test free-nav-stop-test loading-jump-test
-
-      - name: Check offline presentation and bootstrap before full suite
-        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test manual-exposure-test tour-attitude-test tour-pacing-test alpha-centauri-test
-
+      # The navigation/input/ISM, offline-presentation and transit-replay pre-steps were removed
+      # (Mark, 2026-10-16): every target in them is a prerequisite of make test, which ran them twice.
       - name: make test
         run: make test

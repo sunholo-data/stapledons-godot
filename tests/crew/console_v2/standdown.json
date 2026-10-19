@@ -1,0 +1,186 @@
+{
+  "turn": 30.0,
+  "captaincy": "orders",
+  "members": [
+    {
+      "id": "medic",
+      "name": "Meera Menon",
+      "indicators": {
+        "fatigue": 40.0,
+        "stress": 80.0,
+        "morale": 60.0,
+        "readiness": 55.0,
+        "observations": 0.0
+      },
+      "trust": 54.0,
+      "work": null,
+      "done": {
+        "task": "t1-medic",
+        "recipe": "work_medic",
+        "at": 2.0
+      },
+      "regard_low": [],
+      "emotion": "sad",
+      "work_state": "held",
+      "stand_down": "d31a1-medic"
+    },
+    {
+      "id": "engineer",
+      "name": "Ingrid Makinen",
+      "indicators": {
+        "fatigue": 35.0,
+        "stress": 55.0,
+        "morale": 55.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": {
+        "task": "t1-engineer",
+        "recipe": "work_engineer",
+        "status": "offered",
+        "started": 0.0,
+        "due": 0.0
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "offered"
+    },
+    {
+      "id": "analyst",
+      "name": "Yasmin Haddad",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 45.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "pilot",
+      "name": "Emiliano Rojas",
+      "indicators": {
+        "fatigue": 20.0,
+        "stress": 40.0,
+        "morale": 70.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "counselor",
+      "name": "Lindiwe Mokoena",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 50.0,
+        "morale": 65.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    }
+  ],
+  "requests": [],
+  "reliefs": [],
+  "heard": [
+    {
+      "id": "agreement-t1-engineer",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Project agreement t1-engineer"
+    },
+    {
+      "id": "concern-q-t1-engineer",
+      "author": "engineer",
+      "kind": "concern",
+      "text": "decline"
+    },
+    {
+      "id": "ev-earth_recedes",
+      "author": "captain",
+      "kind": "concern",
+      "text": "{\"schema\":\"crew_ship_event/1\",\"event\":\"earth_recedes\",\"at\":3,\"text\":\"Departure: as the ship pulls away, Earth's link narrows to one antenna window.\",\"transfers\":[{\"resource\":\"signal\",\"requested\":-2,\"applied\":-2}]}"
+    },
+    {
+      "id": "sd-d31a1-medic",
+      "author": "captain",
+      "kind": "task_offer",
+      "text": "rest_medic"
+    },
+    {
+      "id": "duty-d31a1-medic",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Duty check-in d31a1-medic"
+    },
+    {
+      "id": "standdown-d31a1-medic",
+      "author": "medic",
+      "kind": "concern",
+      "text": "stand_down"
+    }
+  ],
+  "resources": [
+    {
+      "id": "mass",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "power",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "compute",
+      "available": 2.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "signal",
+      "available": 1.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    }
+  ],
+  "lines": [],
+  "auto": "hands_on",
+  "holds": [
+    {
+      "id": "h30-stand_down-medic",
+      "rule": "stand_down",
+      "actor": "medic",
+      "name": "Meera Menon",
+      "task": "sd-d31a1-medic",
+      "tick": 30.0,
+      "detail": "d31a1-medic",
+      "line": "needs to stand down for a while."
+    }
+  ],
+  "used": [],
+  "tick": 30.0,
+  "revision": 34.0,
+  "concerns": []
+}

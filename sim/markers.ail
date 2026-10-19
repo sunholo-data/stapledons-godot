@@ -66,18 +66,17 @@ pure func invisibleOnly(t: string) -> bool = foldChars(\ok c. ok && (contains(in
 
 -- ------------------------------------------------------------ segments
 -- Tokens alternate text and marker (the lexer never emits two texts in a
--- row). Segments accumulate reversed. The head token is matched on its own:
--- a constructor pattern at the head of a cons pattern (`TText(t) :: r`)
--- fails on the strict VM (_record_get on an ADT; ailang#1503).
+-- row). Segments accumulate reversed.
 pure func afterMark(e: string, rest: [Tok], acc: [Segment]) -> Result[[Segment], string] =
   if !isEmotion(e) then Err("unknown_emotion")
-  else match rest { x :: r => (match x { TText(t) => segText(e, t, r, acc), TMark(_) => Err("empty_segment") }), [] => Err("empty_segment") }
+  else match rest { TText(t) :: r => segText(e, t, r, acc), _ => Err("empty_segment") }
 pure func segText(e: string, t: string, rest: [Tok], acc: [Segment]) -> Result[[Segment], string] {
   let tt = trim(t);
   if tt == "" || invisibleOnly(tt) then Err("empty_segment")
   else match rest {
     [] => Ok(revOnto({emotion: e, text: tt} :: acc, [])),
-    x :: r => match x { TMark(m) => afterMark(m, r, {emotion: e, text: tt} :: acc), TText(_) => Err("unbalanced_brace") }
+    TMark(m) :: r => afterMark(m, r, {emotion: e, text: tt} :: acc),
+    _ => Err("unbalanced_brace")
   }
 }
 pure func segments(toks: [Tok]) -> Result[[Segment], string] =

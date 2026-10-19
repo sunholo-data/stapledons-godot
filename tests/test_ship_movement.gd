@@ -10,6 +10,7 @@ func _run()->void:
 	var demo:Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options={"stars":false,"background":false};root.add_child(demo);await process_frame
 	demo.auto=false
+	demo.set_preset("bridge") # R2-CAMERA: WASD is screen-relative; measure along the old eye's yaw (0.47 rad), the route this test was cut for
 	if not demo.has_method("walk_motion"):
 		check("faster measured traversal is available",false)
 	else:
