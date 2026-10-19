@@ -609,6 +609,11 @@ func test_final_leg_look() -> void:
 	check("final leg: arrived, the arrival card up", demo.ship_hud.has_card("arrival"))
 	check("final leg arrival: the Dismiss button is not folded away %s" % [demo.ship_hud.expanded()], demo.ship_hud.expanded().has("arrival"))
 	demo.dismiss_arrival()
+	# #277 evaluation: the console prompt returns once the review has closed (the captain is still in reach).
+	demo._process(0.016)
+	var back_prompt: String = demo.consoles.prompt_text()
+	check("final leg: the review closed, the console prompt returns (%s)" % demo.ship_hud.prompt.text, not demo.crossing_review.visible and back_prompt != ""
+		and demo.ship_hud.prompt.text != "" and demo.ship_hud.prompt.text.contains(back_prompt))
 	check("final leg: the voyage ends with the pointer free and nothing captured (clicks reach the consoles)", not demo.pointer_required() and not demo.wants_capture() and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE)
 	demo.queue_free()
 	await process_frame
