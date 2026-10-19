@@ -1,0 +1,217 @@
+{
+  "sprint_id": "R2-CAMERA-FORWARD",
+  "status": "awaiting_approval",
+  "approved": false,
+  "created": "2026-10-19",
+  "design_doc": "design_docs/planned/r2/camera-forward.md",
+  "sprint_plan": "design_docs/planned/r2/camera-forward-sprint.md",
+  "branch": "feat/camera-forward",
+  "origin": "Mark, dev.34 playtest 2026-10-19 (ledger D-91): fixed perspective that slides, never turns; a hot key between forward and planet-facing views; console zoom; levels as 2.5D layers; dress only what each view sees, parallax for scale",
+  "amends": [
+    "R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md, D-83)"
+  ],
+  "unblocks": [
+    "R2-DECK-LAYOUT re-plan (D-90, paused at feat/deck-layout 7863c831)"
+  ],
+  "external_dependencies": [],
+  "registry_reuse": [
+    {
+      "milestone": "F1-F3",
+      "package": "sunholo/relativity",
+      "action": "none",
+      "reason": "no new formula; the sky is rendered through the same pose; goldens re-pinned to new eyes with unchanged case counts"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 330,
+    "estimated_total_loc": 1320,
+    "estimated_days": 4.0
+  },
+  "critical_path": [
+    "F1A_SCHEMA_RIG_DECK",
+    "F1B_FORWARD_OCCLUDER_YAW",
+    "F2_TARGET_KEYS_CUES",
+    "F3_GOLDENS_CAPTURES_MIGRATION",
+    "E_EVALUATE_LAND"
+  ],
+  "pause_points": [
+    "after F1b: dev tag after green make test; Mark plays Forward and Deck (attended)",
+    "any golden outside G-CAM-1..3 moves: stop, list the diff for Mark",
+    "bridge yaw sweep finds no yaw with 0 blocks after fades: stop and ask (never a turning camera)",
+    "before merge: after-captures opened by eye; make test and make golden green on the rig"
+  ],
+  "questions_for_mark": [
+    "OQ1 bridge views Forward / Target / Deck / Console: rec yes (Deck walks at rest; Forward is the journey under way)",
+    "OQ2 'planet facing (same as navigation around ship?)' = the guided stop view (body beside the rail): rec yes, Target generalises it and the Sgr A* hole view; the Navigation chart is unchanged",
+    "OQ3 side and aft: rec fold side into Target/Deck, drop aft for players, keep both for tools and goldens",
+    "OQ4 zoom levels Z1/Z2/Z3: rec remove for players (one framing per view; Console is the only zoom); keep as developer presets",
+    "OQ5 occluders between camera and captain: rec fade (dither 25%), never turn",
+    "OQ6 Commons this sprint: rec legacy as-is; own fixed-view pass after the deck re-plan",
+    "OQ7 inset second-direction window: rec later, after Mark plays F1"
+  ],
+  "features": [
+    {
+      "id": "F1A_SCHEMA_RIG_DECK",
+      "description": "views.json v2 level-keyed (Commons legacy) + validate with 6 negative controls; slide rig eye = foot - flat(yaw)*back_m + up*rise_m (basis never re-aimed), dead zone, critically damped follow, slide box, envelope slide, eye >= deck+0.3; Deck view (pitch -30, back 10.4, rise 7.6); walk_yaw = fixed view yaw; 9 Deck / R default; zoom actions developer-only (OQ4); lift arrival -> level default; camera-forward-test (headless, ship-demo-ci) and camera-walk-capture recipes; determinism check",
+      "estimated_loc": 420,
+      "days": 1.25,
+      "files": [
+        "data/camera/views.json",
+        "demos/camera_director.gd",
+        "demos/ship_geometry_demo.gd",
+        "tests/test_camera_director.gd",
+        "tests/test_camera_forward.gd",
+        "tools/camera_walk_capture.gd",
+        "Makefile"
+      ],
+      "acceptance_criteria": [
+        "AC1 deck: grep -cE ^ok    yaw constant (forward|deck|target_stop|target_sgr_a) spread=0.[0-9]+ deg over 16$ .godot/tmp/camera-forward-test.log (deck row)",
+        "AC3 deck",
+        "AC5",
+        "AC8",
+        "AC9",
+        "AC12"
+      ],
+      "test_first": [
+        "test_camera_forward.gd deck yaw/W-up/envelope/eye-above-deck/level-default/determinism fail on main",
+        "schema v2 + 6 negative controls fail on main"
+      ],
+      "passes": null,
+      "completed": null,
+      "notes": []
+    },
+    {
+      "id": "F1B_FORWARD_OCCLUDER_YAW",
+      "description": "Forward view (pitch 56, back 2.4, rise 0.3; 7 key); camera_occluder group = Spire* meshes + lift boxes, alpha eases to 0.25 over 0.2 s of advance(dt) while crossing the camera-captain segment (fallback: hide); sweep counts non-group hits only; bridge yaw sweep in 15 deg steps (analytic, 2 h budget) for fewest fades and pole clear of the spire; pause point: dev tag for Mark",
+      "estimated_loc": 280,
+      "days": 0.75,
+      "files": [
+        "demos/camera_director.gd",
+        "demos/ship_geometry_demo.gd",
+        "data/camera/views.json",
+        "tests/test_camera_forward.gd",
+        "tests/test_camera_director.gd"
+      ],
+      "acceptance_criteria": [
+        "AC1 forward",
+        "AC2 forward",
+        "AC3 forward",
+        "AC4"
+      ],
+      "test_first": [
+        "pole in frame forward 16/16 and yaw constant forward fail on main",
+        "AC4 deck clear after fades 0 blocked; occluder group = spire, lift"
+      ],
+      "passes": null,
+      "completed": null,
+      "notes": []
+    },
+    {
+      "id": "F2_TARGET_KEYS_CUES",
+      "description": "Target view (aim order hole > stop body > destination; pitch clamp [-10, 60] with hand-over to Forward; aim at 1/3 from the top; re-aim only when the aim leaves the middle 60%); key 8; cue remap (departure/cruise/braking -> Forward, stop turn end and Sgr A* -> Target); switch ease <= 90 deg/s, reduced cut, mapping changes at ease end; console restore() to the previous view id",
+      "estimated_loc": 320,
+      "files": [
+        "demos/camera_director.gd",
+        "demos/ship_geometry_demo.gd",
+        "data/camera/views.json",
+        "tests/test_camera_forward.gd",
+        "tests/test_camera_director.gd",
+        "tools/camera_walk_capture.gd",
+        "ui/ship_controls.gd"
+      ],
+      "acceptance_criteria": [
+        "AC1 target_stop/target_sgr_a",
+        "AC2 target",
+        "AC3 target + after switch",
+        "AC6 (a) ease/cut/mapping (b) re-aim on aim exit, no re-aim on walk",
+        "AC7"
+      ],
+      "test_first": [
+        "target in frame 16/16 at the first guided stop and at Sgr A*",
+        "no re-aim from walking",
+        "ease/cut/mapping checks",
+        "console round trip exact basis"
+      ],
+      "passes": null,
+      "completed": null,
+      "notes": [],
+      "days": 0.75
+    },
+    {
+      "id": "F3_GOLDENS_CAPTURES_MIGRATION",
+      "description": "G-CAM re-posed one for one: G-CAM-1 Forward spawn+helm + Target hole (9), G-CAM-2 Deck spawn+rail, Forward, Target x {0.99c, cap} (8), G-CAM-3 Deck+Forward (2), 393 ok lines; camera_views_capture new view list x rest/0.99c/stop/Sgr A* at 720p+1440p with pole/target/head gates, frames opened, after-sheets published; ~11 tests rewritten/retargeted (design D10 list); tool smokes for renamed ids; dead bridge sector paths removed (legacy fenced); changelog; demos/README controls",
+      "estimated_loc": 300,
+      "files": [
+        "tools/m4_ship_golden.gd",
+        "tools/camera_views_capture.gd",
+        "Makefile",
+        "demos/README.md",
+        "changelogs/unreleased/2026-10-2x-camera-forward.md"
+      ],
+      "acceptance_criteria": [
+        "AC10",
+        "AC11",
+        "AC13"
+      ],
+      "test_first": [
+        "golden count gate unchanged at 393 with G-CAM 9/8/2"
+      ],
+      "passes": null,
+      "completed": null,
+      "notes": [],
+      "days": 1.25
+    },
+    {
+      "id": "E_EVALUATE_LAND",
+      "description": "independent sprint-evaluator (a model other than the executor), should-fix items, landing (implemented/r2, README index, design repo roadmap), then the D-90 deck re-plan as a separate attended step",
+      "estimated_loc": 0,
+      "files": [
+        ".ailang/state/evaluations/",
+        "design_docs/implemented/r2/"
+      ],
+      "acceptance_criteria": [
+        "AC14 (at landing)"
+      ],
+      "test_first": [],
+      "passes": null,
+      "completed": null,
+      "notes": []
+    }
+  ],
+  "evaluations": [
+    {
+      "round": 1,
+      "kind": "plan",
+      "score": 71,
+      "blocking": 4,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_1.json"
+    },
+    {
+      "round": 2,
+      "kind": "plan",
+      "score": 86,
+      "blocking": 0,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_2.json"
+    }
+  ],
+  "approval_gate": "OQ1-OQ4 answered by Mark at approval (F2 depends on OQ1-OQ3; F1a key map on OQ4)",
+  "acceptance_criteria_source": "design_docs/planned/r2/camera-forward.md ## Acceptance criteria (AC1-AC14, each with its exact command and log line; AC14 checked at landing)",
+  "acceptance_commands": {
+    "AC1": "`make camera-forward-test $A && test $(grep -cE '^ok    yaw constant (forward|deck|target_stop|target_sgr_a) spread=0\\.[0-9]+ deg over 16$' $S/camera-forward-test.log) -eq 4`",
+    "AC2": "`grep -qE '^ok    pole in frame forward 16/16$' $S/camera-forward-test.log && grep -qE '^ok    target in frame target_stop 16/16$' $S/camera-forward-test.log && grep -qE '^ok    target in frame target_sgr_a 16/16$' $S/camera-forward-test.log`",
+    "AC2b": "`grep -qE '^ok    pole ray clear forward 16/16$' $S/camera-forward-test.log`",
+    "AC3": "`test $(grep -cE '^ok    (W up-screen|D right) (deck|forward|target)$' $S/camera-forward-test.log) -eq 6 && test $(grep -cE '^ok    W up-screen after switch (deck>forward|forward>target)$' $S/camera-forward-test.log) -eq 2`",
+    "AC4": "`make camera-test $A && grep -qE '^ok    AC4 deck clear after fades: 0 blocked of [0-9]+ samples$' $S/camera-test.log && grep -qE '^ok    occluder group = spire, lift$' $S/camera-test.log`",
+    "AC5": "`grep -qE '^ok    envelope keeps the angle$' $S/camera-forward-test.log && grep -qE '^ok    eye above deck at 48 samples$' $S/camera-forward-test.log`",
+    "AC6": "`test $(grep -cE '^ok    (switch ease max [0-9.]+ deg/s|reduced cut|mapping at ease end|re-aim on aim exit|no re-aim on walk)$' $S/camera-forward-test.log) -eq 5`",
+    "AC7": "`test $(grep -cE '^ok    console returns to (deck|forward) exact$' $S/camera-test.log) -eq 2`",
+    "AC8": "`grep -qE '^ok    schema v2$' $S/camera-test.log && test $(grep -cE '^ok    negative control ' $S/camera-test.log) -ge 6`",
+    "AC9": "`test $(grep -cE '^ok    level default (bridge|commons)$' $S/camera-forward-test.log) -eq 2`",
+    "AC10": "`make golden $A`",
+    "AC11": "`make camera-views-capture $A && make camera-walk-capture $A`",
+    "AC12": "`grep -qE '^ok    deterministic poses 600 steps$' $S/camera-forward-test.log`",
+    "AC13": "`make python-guard && make test $A`",
+    "AC14": "`test -f design_docs/implemented/r2/camera-forward.md && ls changelogs/unreleased/*camera-forward*`"
+  },
+  "acceptance_commands_note": "verbatim commands (markdown escaping removed); this copy is the one to run"
+}
