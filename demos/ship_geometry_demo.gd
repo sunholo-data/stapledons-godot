@@ -1055,7 +1055,9 @@ func _update_hud(delta: float, details: String) -> void:
 	_update_cards(view)
 	if crossing_review != null and crossing_review.visible: crossing_review.refresh(view) # the numbers this frame's HUD shows
 	_place_interlude()
-	var prompt:String=consoles.prompt_text()
+	# While the crossing review is open the waiting line owns the bottom centre: no console prompt under it
+	# (#277 review: "Voyage console · E use" was drawn over "Press Enter to read on").
+	var prompt:String="" if crossing_review!=null and crossing_review.visible else consoles.prompt_text()
 	if director!=null and not director.cue_prompt.is_empty(): # C2: a cue under reduced motion is a prompt (10 s)
 		prompt=director.cue_prompt+(" · "+prompt if not prompt.is_empty() else "")
 	ship_hud.set_prompt(prompt)

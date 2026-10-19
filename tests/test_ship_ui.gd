@@ -589,6 +589,13 @@ func test_final_leg_look() -> void:
 		demo.queue_free();await process_frame;return
 	demo._process(0.016)
 	check("final leg review: the waiting line names Enter and no mouse look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and not demo.wait_hint.text.contains("look"))
+	# Coordinator review of #277: the console prompt ("Voyage console · E use") was drawn over the waiting
+	# line at the bottom centre while the review was open. While the review is open the prompt is hidden,
+	# and no two visible bottom hints intersect.
+	var pr: Label = demo.ship_hud.prompt
+	var prompt_shown := pr.is_visible_in_tree() and pr.text != ""
+	check("final leg review: no console prompt while the review is open (%s)" % pr.text, not prompt_shown)
+	check("final leg review: the prompt and the waiting line never overlap", not prompt_shown or not pr.get_global_rect().intersects(demo.wait_hint.get_global_rect()))
 	check("final leg review: the player's pointer is visible for the review (never captured)", demo.pointer_required() and not demo.wants_capture())
 	check("C2 interlude hold: the camera holds Sky forward behind the review (%s, hold %s)" % [demo.director.situation, demo.director.hold], demo.director.hold and demo.director.situation == "sky_forward")
 	var k2 := InputEventKey.new();k2.physical_keycode = KEY_2;k2.pressed = true
