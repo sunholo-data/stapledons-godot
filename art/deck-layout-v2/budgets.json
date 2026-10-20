@@ -4,11 +4,11 @@
   "pins": {
     "assets/ship_demo/ship.glb": {
       "bytes": 9125496,
-      "sha256": "53988e8f664b4f4c76e1b15d10ebaa08375d0f927b0bab2d1de3089621604f0b"
+      "sha256": "5816ff194df2161ea15e8c90ba5a061a40bd48ec7638d087f41c3c524ec8aacc"
     },
     "assets/ship_demo/walk_bridge.glb": {
-      "bytes": 382340,
-      "sha256": "5e242b913276340501c1844af03ac02dccc2037cf43d87e16f24a4decf978e34"
+      "bytes": 379960,
+      "sha256": "1033df4bc81d20cdbf08fb86ed31472284865c1d068997b0150a76433252b54b"
     },
     "assets/ship_demo/walk_lower.glb": {
       "bytes": 1208,

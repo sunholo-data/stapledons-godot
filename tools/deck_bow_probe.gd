@@ -240,6 +240,9 @@ func _plan(tag: String) -> void:
 ## The console focus by ShipConsoles.focus_pose's rule (the eye 1.25 m out on the operator's side
 ## and 0.55 m above the console top, looking at it), from the moved mesh and its use point.
 func _console(tag: String, id: String) -> void:
+	if DeckBowMetrics.new(demo, dl).shipped():
+		await _game_console(tag, id)
+		return
 	var mesh: String = ShipConsoles.STATIONS[id].walk
 	var n := demo.geometry.find_child(mesh, true, false) as MeshInstance3D
 	var u: Variant = _use_point(mesh)
@@ -287,3 +290,29 @@ func _shot(tag: String, name: String, view: String, foot: Variant) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("%s/%s_%s.png" % [out, tag, name])
 	print("shot %s_%s foot %s fading %s" % [tag, name, demo.avatar_pos, demo.director.occ_fading.map(func(n: Node) -> String: return _family(n))])
+
+
+## The shipped deck: the game's own console zoom (walk there, E, the director's ease to the screen),
+## the panel hidden so the frame shows the console, its idle screen and the sky beyond.
+func _game_console(tag: String, id: String) -> void:
+	var c: ShipConsoles = demo.consoles
+	c.go_to(id)
+	for k in 30:
+		demo._process(1.0 / 60.0)
+	var opened := c.use(id, "open")
+	for k in 300:
+		demo._process(1.0 / 60.0)
+	c.panel.visible = false
+	var map: Variant = demo.get("journey_map")
+	if map is CanvasItem or map is Window:
+		map.visible = false # the helm's chart opens over the zoom; hide it to show the console
+	for k in 5:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png("%s/%s_console_%s.png" % [out, tag, id])
+	var cam: Transform3D = demo.camera.global_transform
+	var pole := CameraDirector.screen_point(cam, cam.origin + CameraDirector.pole_dir() * 1000.0, Vector2(px))
+	print("shot %s_console_%s opened %s mode %s eye %s pole_px %s pole_in_frame %s" % [tag, id, opened, demo.camera_mode, cam.origin, pole, (not is_nan(pole.x)) and Rect2(Vector2.ZERO, Vector2(px)).has_point(pole)])
+	c.escape()
+	for k in 300:
+		demo._process(1.0 / 60.0)

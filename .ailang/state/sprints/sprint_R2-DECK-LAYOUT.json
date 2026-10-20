@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-95)",
   "approved_on": "2026-10-20",
@@ -27,6 +27,10 @@
     {
       "date": "2026-10-20",
       "event": "re-plan approved (ledger D-95, 7916c390): 'yep these are great', then 'A'; OQ1-OQ8 as recommended. Execution starts on feat/deck-layout-bow (design/deck-layout-bow with origin/main merged)"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "DL0 built (c61f8599); DL1 blockout built and exported (layout A as built), gates green; paused for Mark to play the DL1 dev build"
     }
   ],
   "implements": [
@@ -138,10 +142,10 @@
         "make deck-layout-capture TAG=dl1: frames opened and published with per-file URLs (AC11); dev build published (no v* tag)",
         "make ship-commons-test ship-commons-assets-test ship-commons-arcade-test green (ship.glb carries the Commons)"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-20",
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-20",
+      "notes": "Built: ~/dev/blender/scripts/stapledon_deck_layout_v2.py (moves the named groups by new*old^-1, puts in the game-baked walk, writes SPAWN_captain and INTERACT_<station>_use, checks the 163 unmoved objects are byte-identical, exports ship.glb and walk_bridge.glb; identity layout reproduces grounded v2 byte for byte; two runs identical); tools/deck_walk_bake.gd (the walk baked in-engine so the shipped walk is the measured one; row-run merge, no conduit cuts, no dilation beside fixed props); tools/deck_blockout.sh (the chain); manifest spawn_captain + stations.<id>.use_m read by bridge_spawn()/_reset_captain and ShipConsoles.authored_use (fallback tested on the pinned baseline). As built: Voyage/Crew desks 0.6 m bow-ward of the plan (screen not buried, lift off the Crew Bow line); chair walk_clear_m 0.5 (Z1/Z3 head clear). Gates: deck-layout-eval 'bridge ok' on the export (4,771 samples; Bow fades 513; pole/head blocked 0; Astern head 2; both-sides 8; spawn 3.5 m to the helm; near 2.4%/7.0%, no lift; 4/4 face the bow and clear; 3/3 zooms; 80.6 px); deck-layout-eval-test 10/0; camera-test 187/0; camera-forward-test 22/0; ship-console, ship-ui, crew-console, crew-hold, ship-demo-assets, validate-ship-demo, ship-demo-lift, ship-commons x3, deck-assets-check green; make golden 393 ok, 0 failures, golden_baseline: 364 lines outside the re-posed families match main (G-CAM-1/3 'spawn' now the manifest's spawn; G-M4-S3 keeps the fixed (8,82,-4.8) observer). Tests that assumed the spawn at the lift's landing now stand there explicitly. Review frames: renders/deck_layout/dl1 + renders/camera_walk, published to gs://stapledons-voyage-assets/refs/deck_layout_bow/dl1/."
     },
     {
       "id": "DL2_STYLE_FRAME",

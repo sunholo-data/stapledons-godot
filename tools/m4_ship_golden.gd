@@ -234,7 +234,9 @@ func _report(ok: bool, message: String) -> int:
 
 ## D-92: the captain's eye looking level along the direction of travel, the bow (glTF -z).
 func _s3(built: bool) -> int:
-	return await _pole(built, func() -> void: _pose(-0.01, -PI * 0.5), "G-M4-S3 forward pole (ship)", "captain eye")
+	# A fixed observer (R2-DECK-LAYOUT: the pre-DL1 spawn; the new spawn stands behind the helm, whose
+	# pods fill a 1.6 m eye's level view of the bow).
+	return await _pole(built, func() -> void: demo.avatar_pos = Vector3(8, 82, -4.8); _pose(-0.01, -PI * 0.5), "G-M4-S3 forward pole (ship)", "captain eye")
 
 
 ## R2-CAMERA-FORWARD G-CAM-1: the forward pole through the player's Bow view (the eye 9 m behind
@@ -252,7 +254,7 @@ func _cam1(built: bool) -> int:
 	return failures
 
 
-## A standing point on the bridge: the spawn, the helm (the navigation station's use point), a
+## A standing point on the bridge: the spawn (the manifest's), the helm (the navigation station's use point), a
 ## port spot clear of the spire and the bow rail (nearest the wall).
 func _spot(spot: String) -> Vector3:
 	match spot:
@@ -263,7 +265,7 @@ func _spot(spot: String) -> Vector3:
 		"rail":
 			var r: Variant = demo.walk_bridge.closest_walkable(Vector3(0, 82, -19), 4.0)
 			return r if r is Vector3 else Vector3(0, 82, -15)
-	return Vector3(8, 82, -4.8)
+	return demo.bridge_spawn() # R2-DECK-LAYOUT: the manifest's spawn (behind the helm)
 
 
 ## The director's walk view (Bow, Astern) settled on the captain at a spot (the render boundary;

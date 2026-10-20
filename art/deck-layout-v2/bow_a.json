@@ -1,7 +1,7 @@
 {
   "schema": "stapledons.deck.layout/1",
   "name": "bow_a",
-  "about": "R2-DECK-LAYOUT re-plan (D-94) candidate A, the bow stage: the navigation arc at the bow rail on the centreline (r 17.5, bearings -16/0/+16) with its operator facing the bow (use point r 15); the captain's chair behind it; the Voyage and Crew consoles flanking (bearings -34 and +32), operators stern of their desks facing the bow; the spawn behind the helm on the centreline; the Archive at the mast unchanged; the rim frond under the starbow's centre (+10 deg) moved to +25 deg to pair with -25; conduits re-aimed at the moved stations. Blockout for search and review only: the Blender export is the source of truth. DL1: the chair keeps the walk 0.5 m from its plan rectangle (walk_clear_m), so its high back never hides a captain standing right behind it (camera-test AC1 at the Z1/Z3 developer presets).",
+  "about": "R2-DECK-LAYOUT re-plan (D-94) candidate A, the bow stage: the navigation arc at the bow rail on the centreline (r 17.5, bearings -16/0/+16) with its operator facing the bow (use point r 15); the captain's chair behind it; the Voyage and Crew consoles flanking (bearings -34 and +32), operators stern of their desks facing the bow; the spawn behind the helm on the centreline; the Archive at the mast unchanged; the rim frond under the starbow's centre (+10 deg) moved to +25 deg to pair with -25; conduits re-aimed at the moved stations. Blockout for search and review only: the Blender export is the source of truth. DL1: the chair keeps the walk 0.5 m from its plan rectangle (walk_clear_m), so its high back never hides a captain standing right behind it (camera-test AC1 at the Z1/Z3 developer presets). DL1: the Voyage and Crew desks sit 0.6 m further bow-ward than the plan, so their operators (at the plan's use points) stand 2.0 m stern of the desk centre, as grounded v2 placed them: ShipConsoles' idle screen then sits in front of the desk, not inside it (at 1.4 m the plan buried it), and the Crew operator keeps the lift off the Bow line.",
   "frame": "ship metres, Blender +Z up; glTF (x, z, -y); the bow is ship +y (glTF -z)",
   "bridge": {
     "spawn_captain": {
@@ -48,7 +48,7 @@
       "console_decision_0": {
         "position_m": [
           -7.829,
-          11.607
+          12.207
         ],
         "yaw_deg": -90.0,
         "use_m": [
@@ -59,7 +59,7 @@
       "console_decision_1": {
         "position_m": [
           8.479,
-          13.569
+          14.169
         ],
         "yaw_deg": -90.0,
         "use_m": [
