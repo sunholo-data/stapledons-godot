@@ -466,14 +466,18 @@ BENCH_SECONDS ?= 30
 BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
 BRIDGE_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),medium)
 BENCH_SIZE ?=
-bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default); SCENE=bridge: M4.6rR3 AC12, live 3D-ship transit (30 s, 2560x1440, vsync off, medium tier, Metal), p99 < 16.7 ms or make nonzero (driver invalid=1, MISS=2)
+bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default); SCENE=bridge; SCENE=level LEVEL=<id> [STAGE=] (R2-LEVELS): M4.6rR3 AC12, live 3D-ship transit (30 s, 2560x1440, vsync off, medium tier, Metal), p99 < 16.7 ms or make nonzero (driver invalid=1, MISS=2)
 ifeq ($(SCENE),bridge)
 	@mkdir -p $(SCRATCH); echo "bench-bridge: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --script tools/m4_ship_bench.gd -- --tier=$(BRIDGE_TIER) > $(SCRATCH)/bench-bridge.log 2>&1; rc=$$?; grep '^bench-bridge' $(SCRATCH)/bench-bridge.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-bridge.log && test "$$(grep -c '^bench-bridge: OK$$' $(SCRATCH)/bench-bridge.log)" = 1 && ! grep -q '^bench-bridge: FAIL' $(SCRATCH)/bench-bridge.log && \
 	  grep -q '^bench-bridge: frame ms .*(target p99 < [0-9.]*: ok)$$' $(SCRATCH)/bench-bridge.log || { echo "bench-bridge: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-bridge.log)"; exit 1; }
+else ifeq ($(SCENE),level)
+	@mkdir -p $(SCRATCH); echo "bench-level: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --script tools/level_bench.gd -- --level $(LEVEL) $(if $(STAGE),--stage $(STAGE)) > $(SCRATCH)/bench-level.log 2>&1; rc=$$?; grep '^bench-level' $(SCRATCH)/bench-level.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-level.log && grep -q '^bench-level: OK$$' $(SCRATCH)/bench-level.log || { echo "bench-level: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-level.log)"; exit 1; }
 else ifneq ($(SCENE),)
-	@echo "bench: unknown SCENE=$(SCENE) (want SCENE=bridge, or none for the starfield bench)"; exit 2
+	@echo "bench: unknown SCENE=$(SCENE) (want SCENE=bridge, SCENE=level LEVEL=<id>, or none for the starfield bench)"; exit 2
 else
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \

@@ -22,3 +22,16 @@ level-eval-test: import ## AC5: the mock Commons greybox's numbers (positive con
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_level_eval.gd > $(SCRATCH)/level-eval-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-eval-test)' $(SCRATCH)/level-eval-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-eval-test.log && grep -q '^level-eval-test: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-eval-test.log
 test: level-eval-test
+.PHONY: levels-regress levels-regress-pin
+levels-regress: import ## AC10 (S6/S7): every landed level against art/levels/<id>/baseline.json; negative controls: a box seeded on the bridge and a changed document must each fail
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tools/levels_regress.gd > $(SCRATCH)/levels-regress.log 2>&1; rc=$$?; grep -E '^(levels-regress|FAIL)' $(SCRATCH)/levels-regress.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/levels-regress.log && grep -q '^levels-regress: ok' $(SCRATCH)/levels-regress.log
+	@for neg in "--seed-box bridge" "--fake-sha bridge"; do $(GODOT_SIM) --headless --path . --script tools/levels_regress.gd -- $$neg > $(SCRATCH)/levels-regress-neg.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^levels-regress: FAIL$$' $(SCRATCH)/levels-regress-neg.log && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/levels-regress-neg.log || { echo "levels-regress: FAIL negative control '$$neg' passed"; exit 1; }; done; echo "levels-regress: negative controls (a seeded box, a changed document) fail as they must"
+test: levels-regress
+levels-regress-pin: import ## re-pin LEVEL's baseline from today's numbers (deliberate; add the printed sha256 to the level doc's change log)
+	@$(GODOT_SIM) --headless --path . --script tools/levels_regress.gd -- --pin $(LEVEL) 2>&1 | grep -E '^(levels-regress|FAIL)'
+TAG ?= capture
+.PHONY: level-capture
+level-capture: import ## AC14 (GPU window): LEVEL's stages and surfaces through each view at rest and 0.99c -> renders/levels/$(LEVEL)/$(TAG)/ (+ contact sheet, metrics.json, frames.sha256); fails on a missing or blank frame. Open every frame
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/level_capture.gd -- --level $(LEVEL) $(if $(LAYOUT),--layout $(LAYOUT)) --tag $(TAG) > $(SCRATCH)/level-capture-$(LEVEL).log 2>&1; rc=$$?; grep -E '^(level-capture|shot)' $(SCRATCH)/level-capture-$(LEVEL).log | tail -3; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-capture-$(LEVEL).log
