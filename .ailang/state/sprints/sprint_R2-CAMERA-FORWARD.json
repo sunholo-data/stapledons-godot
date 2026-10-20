@@ -190,10 +190,15 @@
       "test_first": [
         "astern yaw/W-up/switch/console/stop-body/hole checks fail on main"
       ],
-      "passes": null,
-      "completed": null,
+      "passes": true,
+      "completed": "2026-10-20",
       "notes": [
-        "2026-10-20: started after D-94 (F1 accepted); branch feat/camera-forward-f2"
+        "2026-10-20: started after D-94 (F1 accepted); branch feat/camera-forward-f2",
+        "camera-forward: 33 passed (adds AC-V5 after-switch x2, AC-V6 stop_body + sgr_a_hole 16/16, AC-V8 ease max 90.0 deg/s, reduced cut, mapping at ease end, console returns to bow/astern exact)",
+        "AC-V6 targets recorded from the live sim by tools/camera_forward_targets.gd (make camera-forward-targets, deterministic: two runs byte-identical) -> tests/fixtures/camera_forward/targets.json; the test rebuilds the stop attitude with the real Attitude.side_basis and fails if it drifts from the recorded one; the body sits 30.0000 deg off the bow",
+        "Sgr A*: measured, the hole sits exactly on the bow (cos 1.000000) at all 6 stops of the visit, hovers and the 3 r_s orbit, so the hover turn the design allowed for (§D1.5) is not needed and was not added; it is in the Bow frame at 16/16 through the pole",
+        "negative control: a corrupted fixture (attitude +1e-6, hole reversed) fails both AC-V6 lines",
+        "Astern (key 9), cues to Bow and the console restore were already built in F1b; F2 adds their measurements"
       ]
     },
     {

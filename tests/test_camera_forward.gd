@@ -7,8 +7,13 @@ extends SceneTree
 ##   AC-V2  in Bow the pole and the 0.9c / 0.99c starbow edges are in frame (40 px margin)
 ##   AC-V3  after the fades the pole ray and the line to the captain are clear; the eye is free
 ##   AC-V4  the captain 60-80 px at 720p; at least half the frame below the horizon
-##   AC-V5  W up-screen and D right in Bow and Astern
+##   AC-V5  W up-screen and D right in Bow and Astern, and W up-screen after each switch
+##   AC-V6  the first guided stop's body and the Sgr A* hole (every stop of the visit) in the Bow frame
+##          at 16/16: the real side_basis and the real ship_vector map, on targets the live sim
+##          recorded (tests/fixtures/camera_forward/targets.json, make camera-forward-targets)
 ##   AC-V7  the envelope slides the eye (the angle is kept); the eye stays above its deck
+##   AC-V8  a switch eases at <= 90 deg/s (full motion) or cuts (reduced); the key mapping changes at
+##          the end of the ease; a console round trip restores the exact pose and view id
 ##   AC-V10 the lift's arrival selects the level default (bridge Bow, the Commons legacy Z2)
 ##   AC-V11 the same scripted inputs give bit-identical poses
 ##   AC-V12 a fade changes no sky uniform and no sim input
@@ -22,6 +27,8 @@ const DT := 1.0 / 60.0
 ## relativity-spec §2: a rest-frame 90 deg star appears at acos(beta) from the pole.
 const STARBOW := {"0.9c": 25.842, "0.99c": 8.1}
 const MARGIN := 40.0
+const Attitude := preload("res://demos/ship_attitude.gd")
+const TARGETS := "res://tests/fixtures/camera_forward/targets.json"
 var failures := 0
 var passes := 0
 
@@ -46,6 +53,9 @@ func _run() -> void:
 	test_envelope(demo)
 	test_fade_untouched(demo)
 	test_keys(demo)
+	test_targets(demo)
+	test_switch(demo)
+	test_console(demo)
 	test_level_default(demo)
 	demo.queue_free()
 	await process_frame
@@ -248,6 +258,147 @@ func test_keys(demo: Node) -> void:
 			var ok := (d.y < -20.0 and absf(d.x) < 0.3 * absf(d.y)) if key == "W" else (d.x > 20.0 and absf(d.y) < 0.3 * absf(d.x))
 			check("%s %s %s" % [key, "up-screen" if key == "W" else "right", id], ok, "screen motion %s from %s (%s -> %s, eye %s)" % [d, a, start, demo.avatar_pos, pose.origin])
 	dir.walk("bow")
+
+
+# ------------------------------------------------------------------ AC-V6
+
+## A galactic direction seen through an attitude (rows: kinematic x, y, z), in glTF axes: the same
+## path the sky and hole_direction() take (ShipFrame.to_ship, then the one kinematic map).
+func _gltf_dir(att: PackedFloat64Array, gal: Array) -> Vector3:
+	var s := ShipFrame.to_ship(att, PackedFloat64Array(ShipFrame._unit(gal)))
+	return ShipCamera.gltf_from_ship([s[0], s[1], s[2]]).normalized()
+
+
+func _count_in_frame(demo: Node, pts: Array, dirs: Array) -> int:
+	var n := 0
+	for foot: Vector3 in pts:
+		var pose := settle(demo, foot)
+		var all_in := true
+		for d: Vector3 in dirs:
+			all_in = all_in and in_frame(CameraDirector.screen_point(pose, pose.origin + d * 1000.0, PX))
+		n += int(all_in)
+	return n
+
+
+func test_targets(demo: Node) -> void:
+	var dir: CameraDirector = demo.director
+	var rec: Variant = JSON.parse_string(FileAccess.get_file_as_string(TARGETS))
+	if not rec is Dictionary or (rec.get("stop", {}) as Dictionary).is_empty() or (rec.get("sgr_a", []) as Array).is_empty():
+		check("in frame bow stop_body 0/16", false, "no targets in %s (make camera-forward-targets)" % TARGETS)
+		check("in frame bow sgr_a_hole 0/16", false, "no targets")
+		return
+	dir.walk("bow")
+	ease_out(demo)
+	var pts := samples(demo)
+	# The stop: the real stop turn rebuilt from the recorded body; it must match the attitude the
+	# live demo held (a stale fixture fails here), and the body then sits 30 deg off the bow.
+	var stop: Dictionary = rec.stop
+	var att := Attitude.side_basis(PackedFloat64Array(stop.rel_km))
+	var drift := 0.0
+	for i in 9:
+		drift = maxf(drift, absf(att[i] - float(stop.attitude[i])))
+	var body := _gltf_dir(att, stop.rel_km)
+	var off_bow := rad_to_deg(body.angle_to(ShipCamera.BOW))
+	var n_body := _count_in_frame(demo, pts, [body])
+	check("in frame bow stop_body %d/16" % n_body, n_body == 16 and pts.size() == 16 and drift < 1e-9 and absf(off_bow - (90.0 - Attitude.STOP_TILT_DEG)) < 1e-6,
+		"%s: %d of %d in frame, %.4f deg off the bow, attitude drift %s from the recorded stop" % [stop.body, n_body, pts.size(), off_bow, str(drift)])
+	# Sgr A*: the hole at every stop of the visit, through the attitude the live demo used.
+	var holes := []
+	var worst := 0.0
+	for s: Dictionary in rec.sgr_a:
+		var h := _gltf_dir(PackedFloat64Array(s.attitude), s.hole_dir)
+		holes.append(h)
+		worst = maxf(worst, rad_to_deg(h.angle_to(ShipCamera.BOW)))
+	var n_hole := _count_in_frame(demo, pts, holes)
+	check("in frame bow sgr_a_hole %d/16" % n_hole, n_hole == 16 and pts.size() == 16,
+		"%d of %d in frame over %d Sgr A* stops (worst %.3f deg off the bow)" % [n_hole, pts.size(), holes.size(), worst])
+
+
+# ------------------------------------------------------------------ AC-V8, AC-V5 (after a switch)
+
+## W held for 0.5 s from `start` moves the captain up-screen under the current pose.
+func _w_up(demo: Node, start: Vector3) -> String:
+	demo.walk_motion(Vector2.ZERO, DT)
+	var pose := settle(demo, start)
+	var a := CameraDirector.screen_point(pose, demo.avatar_pos, PX)
+	for k in 30:
+		demo.walk_motion(Vector2(0, 1), DT)
+	var d := CameraDirector.screen_point(pose, demo.avatar_pos, PX) - a
+	return "" if d.y < -20.0 and absf(d.x) < 0.3 * absf(d.y) else "screen motion %s" % d
+
+
+func test_switch(demo: Node) -> void:
+	var dir: CameraDirector = demo.director
+	var start: Variant = demo.walk_bridge.closest_walkable(Vector3(8.0, 82.0, 8.0), 4.0)
+	dir.set_motion("full")
+	var max_rate := 0.0
+	var mapping_ok := true
+	var mapping_why := []
+	var frames := 0
+	for pair: Array in [["bow", "astern"], ["astern", "bow"]]:
+		dir.walk(pair[0])
+		ease_out(demo)
+		settle(demo, start)
+		var before := CameraDirector.yaw_pitch(demo.camera.global_transform)
+		check("switch starts from %s" % pair[0], dir.walk(pair[1]) and dir.blending(), "walk(%s) refused or did not ease" % pair[1])
+		var guard := 0
+		while guard < 600:
+			var easing := dir.blending()
+			# while the ease runs the mapping is the old view's; it changes on the frame the ease ends
+			if easing and (dir.mapping_view != pair[0] or absf(wrapf(dir.walk_yaw() - deg_to_rad(float(dir.views[pair[0]].yaw_deg)), -PI, PI)) > 1e-9):
+				mapping_ok = false
+				mapping_why.append("%s>%s frame %d: mapping %s mid-ease" % [pair[0], pair[1], guard, dir.mapping_view])
+			demo._process(DT)
+			var now := CameraDirector.yaw_pitch(demo.camera.global_transform)
+			max_rate = maxf(max_rate, rad_to_deg(Vector2(wrapf(now.x - before.x, -PI, PI), now.y - before.y).length()) / DT)
+			before = now
+			guard += 1
+			frames += 1
+			if not easing:
+				break
+		if dir.blending() or dir.mapping_view != pair[1] or absf(wrapf(dir.walk_yaw() - deg_to_rad(float(dir.views[pair[1]].yaw_deg)), -PI, PI)) > 1e-9:
+			mapping_ok = false
+			mapping_why.append("%s>%s: mapping %s after the ease" % [pair[0], pair[1], dir.mapping_view])
+		var why := _w_up(demo, start)
+		check("W up-screen after switch %s>%s" % [pair[0], pair[1]], why.is_empty(), why)
+	check("switch ease max %.1f deg/s" % max_rate, max_rate <= 90.0 + 1e-3 and max_rate > 1.0 and frames > 2, "%.3f deg/s over %d frames" % [max_rate, frames])
+	check("mapping at ease end", mapping_ok, "; ".join(mapping_why))
+	# Reduced motion: the same switch is a cut, and the mapping follows at once.
+	dir.set_motion("reduced")
+	dir.walk("astern")
+	ease_out(demo)
+	settle(demo, start)
+	var switched: bool = dir.walk("bow")
+	var cut := switched and not dir.blending() and dir.mapping_view == "bow"
+	demo._process(DT)
+	var yp := CameraDirector.yaw_pitch(demo.camera.global_transform)
+	cut = cut and absf(wrapf(yp.x - deg_to_rad(270.0), -PI, PI)) < 1e-6
+	check("reduced cut", cut, "switched %s blending %s mapping %s yaw %.3f deg" % [switched, dir.blending(), dir.mapping_view, rad_to_deg(yp.x)])
+	dir.set_motion("full")
+	dir.walk("bow")
+	ease_out(demo)
+
+
+func test_console(demo: Node) -> void:
+	var dir: CameraDirector = demo.director
+	var c: ShipConsoles = demo.consoles
+	var foot: Vector3 = c.stations["navigation"].use
+	for id: String in ["bow", "astern"]:
+		dir.walk(id)
+		ease_out(demo)
+		var pose0 := settle(demo, foot)
+		c.focus("navigation")
+		ease_out(demo)
+		var focused: bool = dir.view_id == "console" and demo.camera_mode == "console"
+		c.leave()
+		ease_out(demo)
+		for k in 30:
+			demo._process(DT)
+		var pose1: Transform3D = demo.camera.global_transform
+		var exact: bool = focused and dir.view_id == id and dir.deck_view == id and dir.mapping_view == id and demo.camera_mode == "player" and pose1.basis == pose0.basis and pose1.origin.distance_to(pose0.origin) < 1e-4
+		check("console returns to %s exact" % id, exact, "focused %s view %s deck %s mapping %s mode %s basis same %s origin moved %.6f m" % [focused, dir.view_id, dir.deck_view, dir.mapping_view, demo.camera_mode, pose1.basis == pose0.basis, pose1.origin.distance_to(pose0.origin)])
+	dir.walk("bow")
+	ease_out(demo)
 
 
 # ------------------------------------------------------------------ AC-V10
