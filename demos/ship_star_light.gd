@@ -17,7 +17,9 @@ extends RefCounted
 ##              show that range, so decades become equal steps.
 ## The ship-fixed "InternalBroadKey" dims as the star light's share rises, down to a 25%
 ## readability floor (KEY_FLOOR_SHARE), and hands its shadows to the star; the moody
-## ambient, fill and practicals stay the base and interstellar space is unchanged.
+## ambient, fill and practicals stay the base and interstellar space is unchanged. The spire light
+## (SpireLight, R2-DECK-LAYOUT §D5a, D-96) shares the key's dimming: the bridge's own light when no
+## star is close.
 ## Every change is eased (TAU_S) and the dominant star switches with hysteresis.
 
 const LUX_FLOOR := 1.0 # lx, deep twilight: no star light at or below
@@ -176,6 +178,15 @@ func apply_rig(rig: Dictionary) -> void:
 	key.visible = key.light_energy >= VISIBLE_EPS
 	key.shadow_enabled = shadows and not star_owns
 	key.shadow_opacity = clampf(1.0 - level / SHADOW_HANDOVER, 0.0, 1.0)
+	# R2-DECK-LAYOUT §D5a (D-96): the spire, the bridge's own light, shares the key's dimming.
+	if rig.has("spire"):
+		var share := maxf(KEY_FLOOR_SHARE, 1.0 - level)
+		var spire: OmniLight3D = rig.spire
+		spire.light_energy = float(rig.get("spire_base", 0.0)) * share
+		spire.visible = spire.light_energy >= VISIBLE_EPS
+		var lamp: MeshInstance3D = rig.get("spire_lamp")
+		if lamp != null:
+			(lamp.material_override as StandardMaterial3D).emission_energy_multiplier = float(rig.get("spire_lamp_base", 0.0)) * share
 
 
 func manifest() -> Dictionary:

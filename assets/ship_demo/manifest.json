@@ -16,7 +16,8 @@
   "assets": {
     "visual": "ship.glb",
     "walk_bridge": "walk_bridge.glb",
-    "walk_lower": "walk_lower.glb"
+    "walk_lower": "walk_lower.glb",
+    "props": "bridge_props.glb"
   },
   "lift_route": {
     "clear": true,

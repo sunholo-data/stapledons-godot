@@ -11,6 +11,7 @@ extends SceneTree
 ##                     (spawn-open), a wall at eye height on the Bow pole line (pole-ray), a use point
 ##                     in the mast's shadow (station-body)
 ##   layout files      fixture boxes outside a test are refused
+##   DL2 props         the dressed heroes load from bridge_props.glb, once, inked, opaque, unlit
 ## Fixtures: tests/fixtures/deck_layout/a_*.json.
 
 const BASELINE := "res://build/ship-baseline"
@@ -42,9 +43,51 @@ func _run() -> void:
 	await test_negative("a_spawn_box", "spawn-open")
 	await test_negative("a_pole_box", "pole-ray")
 	await test_negative("a_station_shadow", "station-body")
+	await test_props()
 	check("a layout with fixture boxes is refused outside a test", not DeckLayout.validate(DeckLayout.load_layout(FIX + "a_pole_box.json")).is_empty())
 	print("deck-layout-eval-test: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
+
+
+## DL2 (§D5, §D5a): the dressed heroes ship in bridge_props.glb (manifest assets.props), once each
+## (their blockout copies left ship.glb), painted, opaque, never emissive (no light baked or painted:
+## the spire and the star light them live), each surface carrying the ink outline as its next pass.
+func test_props() -> void:
+	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
+	demo.setup_options = {"size": Vector2i(1280, 720), "sky_state": "rest"}
+	root.add_child(demo)
+	await process_frame
+	var props: Node = demo.get("props_visual")
+	check("DL2: the demo loads bridge_props.glb beside ship.glb (%s)" % demo.manifest.assets.get("props", "none"), props != null and props.get_parent() == demo.geometry)
+	if props == null:
+		demo.queue_free()
+		return
+	var heroes := ["console_navigation_0", "console_navigation_1", "console_navigation_2", "captain_chair"]
+	var ship_copies := heroes.filter(func(n: String) -> bool: return demo.geometry.get_child(0).find_child(n, true, false) != null)
+	var in_props := heroes.filter(func(n: String) -> bool: return props.find_child(n, true, false) != null)
+	check("DL2: the heroes are in bridge_props.glb (%d of 4) and no longer in ship.glb (%s)" % [in_props.size(), ship_copies], in_props.size() == 4 and ship_copies.is_empty())
+	var surfaces := 0
+	var inked := 0
+	var lit := 0
+	var opaque := true
+	var stack: Array = [props]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D and n.mesh != null:
+			for i in n.mesh.get_surface_count():
+				var m := n.get_surface_override_material(i) as BaseMaterial3D
+				surfaces += 1
+				if m != null and m.next_pass is ShaderMaterial:
+					inked += 1
+				if m != null and m.emission_enabled:
+					lit += 1
+				if m != null and m.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+					opaque = false
+		stack.append_array(n.get_children())
+	check("DL2: every hero surface (%d) is inked (%d), opaque, and none emits (%d)" % [surfaces, inked, lit], surfaces > 0 and inked == surfaces and lit == 0 and opaque)
+	check("DL2: the stations still find their meshes (ShipConsoles: navigation %d meshes, chair present)" % demo.consoles.stations.navigation.meshes.size(), demo.consoles.stations.navigation.meshes.size() == 3)
+	demo.queue_free()
+	await process_frame
 
 
 func ids(f: PackedStringArray) -> Array:

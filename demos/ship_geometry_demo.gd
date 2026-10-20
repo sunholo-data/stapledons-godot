@@ -158,6 +158,7 @@ func setup(opts := {}) -> bool:
 	geometry_view.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
+	_install_props()
 	geometry_view.add_child(camera);camera.current=true
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
 	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
@@ -668,6 +669,28 @@ func _mark_occluders(visual: Node) -> void:
 	while not stack.is_empty():
 		var n:Node=stack.pop_back()
 		if n is MeshInstance3D:n.add_to_group(CameraDirector.OCCLUDER_GROUP)
+		stack.append_array(n.get_children())
+## R2-DECK-LAYOUT §D5 (DL2): the dressed hero props (the navigation arc, the chair) ship in their own
+## GLB beside ship.glb (manifest assets.props), painted (WebP), with the engine's ink outline
+## (interior/outline.gdshader) as each surface's next pass. Light is never baked into them: the
+## spire and the star light them live (§D5a).
+const PROP_OUTLINE_M := 0.018
+var props_visual: Node3D
+func _install_props() -> void:
+	var file: String=manifest.get("assets",{}).get("props","")
+	if file=="":return
+	props_visual=AreaBundle.load_glb(asset(file))
+	if props_visual==null:push_error("ship demo missing "+file);return
+	props_visual.name="BridgeProps";geometry.add_child(props_visual);_collision(props_visual)
+	var ink:=ShaderMaterial.new();ink.shader=load("res://interior/outline.gdshader");ink.set_shader_parameter("width",PROP_OUTLINE_M)
+	var stack:Array=[props_visual]
+	while not stack.is_empty():
+		var n:Node=stack.pop_back()
+		if n is MeshInstance3D and n.mesh!=null:
+			for i in n.mesh.get_surface_count():
+				var m:Material=n.mesh.surface_get_material(i)
+				if m!=null:
+					var own:=m.duplicate() as Material;own.next_pass=ink;n.set_surface_override_material(i,own)
 		stack.append_array(n.get_children())
 func _collision(n: Node) -> void:
 	if n is MeshInstance3D and n.mesh!=null:n.create_trimesh_collision()

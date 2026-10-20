@@ -1,6 +1,6 @@
 # R2-DECK-LAYOUT: a bridge laid out for the Bow view, then Blender hero assets
 
-**Status:** Approved by Mark on 2026-10-20 (ledger D-95: "yep these are great", then "A"), with every recommendation; executing on `feat/deck-layout-bow`. The first plan (D-90, PR #279) was approved, then paused at DL1 when the camera changed (D-91 to D-93). Mark accepted the F1 Bow view on 2026-10-20 (D-94) and asked for the ship-building work on top of it.
+**Status:** Approved by Mark on 2026-10-20 (ledger D-95), every recommendation. DL0 and DL1 landed (#287); Mark accepted the DL1 blockout as built (D-96, "very nice") and added the spire-light direction (§D5a). DL2 on `feat/deck-layout-dl2`. The first plan (D-90, PR #279) was approved, then paused at DL1 when the camera changed (D-91 to D-93). Mark accepted the F1 Bow view on 2026-10-20 (D-94) and asked for the ship-building work on top of it.
 **Release:** R2. **Milestone:** the bridge arranged to face the bow, then dressed with Blender hero assets, seen through the fixed Bow and Astern views.
 **Priority:** P1 for R2. Every session starts on this deck.
 
@@ -174,6 +174,20 @@ Once Mark approves the blockout (DL1), the props the views see are rebuilt in Bl
 | `make bench SCENE=bridge` p99, quiet rig, 2560×1440 | 15.5–16.3 ms | < 16.7 ms |
 
 The bench runs at DL2 on the style-frame props, before Mark approves the finish. Fallbacks if p99 misses, in order: halve the lightmap atlas, drop prop textures to 1K, merge the rail and frond meshes.
+
+### D5a. D-96 amendment: the spire is the bridge's own light
+
+Mark, on accepting the DL1 blockout (D-96, 2026-10-20): "we should also keep in mind that light sources will play in for atmosphere, with the spire providing its own light when nothing close by is available".
+
+Today the bridge has two keys: the real star (R1-SHIP-STAR-LIGHT, `demos/ship_star_light.gd`: the star's apparent direction, blackbody colour and log-compressed brightness, eclipses included) and, when no star is close, an abstract ship-fixed directional key ("InternalBroadKey", dimmed to a 25 % floor, `KEY_FLOOR_SHARE`, as the star takes over). DL2 makes the fallback a visible thing on the deck:
+
+- **The spire light.** An `OmniLight3D` ("SpireLight") on the mast axis above the deck, warm, ship-fixed, with a visible lamp band on the mast whose glow follows it. It obeys the same share as the broad key: full in deep space, dimmed toward `KEY_FLOOR_SHARE` as the star's level rises, so near a star the star is the key and in interstellar space the spire is. Its range ends above the Commons' deck, so the lower level is unchanged. No shadows in DL2; the bench (§D5) decides whether its shadow cube fits later.
+- **Baked and live agree by construction.** OQ6 baked the spire's light into the props, back when the spire was assumed to be a constant light. Now the spire fades whenever a star takes over, and a baked light cannot fade. So DL2 bakes only what holds under any light (ambient occlusion and contact shading in the painted albedo). The spire's own light stays live, on dressed and undressed geometry alike. This replaces OQ6's "spire light baked"; Mark confirms it at the DL2 pause.
+- **What stays.** The broad key stays game-wide in DL2: it lights the lower levels and the Commons, and every lighting test and golden keeps its numbers.
+- **Follow-up (recommended, not built here).** Retire the abstract broad key on the bridge, so the spire and the star are its only keys. This needs a rebalance of energies and shadows (the spire's omni shadow against the 16.7 ms budget) and new lighting goldens. Recommendation: do it as a small separate sprint after DL3, once every hero prop is dressed and can be judged under it.
+- **Tests:** `make ship-star-light-test` keeps its checks and adds the spire's: it follows the key's share, never drops below the floor, is full in interstellar cruise, and its lamp glow tracks it. The lighting captures (`make ship-star-light-capture`) are re-run and opened.
+
+**Future: authored sky framings (not built; input for a later design doc).** The fixed views and the stop turn give exact control of where a body sits in the frame. That makes authored moments possible: an eclipse seen over the bow rail, a planet crossing its star, the starbow forming as the ship accelerates, an arrival where the destination rises over the helm, and the spire's light handing over to a new star's. Each would be a stop-turn target or a timed view, checked by the same pole and body metrics as §D4. A later design doc should pick the moments and their triggers.
 
 ### D6. Python policy
 
