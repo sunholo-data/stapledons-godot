@@ -21,6 +21,7 @@ all: test
 include mk/constellations.mk
 include mk/home-tiers.mk
 include mk/deck-layout.mk
+include mk/sound.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import

@@ -206,7 +206,7 @@ func setup(opts := {}) -> bool:
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
 	crossing_review = CrossingReview.new();crossing_review.visible = false;interlude_canvas.add_child(crossing_review)
 	crossing_review.narration = archive_narration
-	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";add_child(archive_voice)
+	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";archive_voice.bus = &"Voice";add_child(archive_voice) # R2-SOUND: voices duck the ship (§D2)
 	wait_hint.name = "WaitHint";wait_hint.visible = false;wait_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	wait_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE;wait_hint.add_theme_font_size_override("font_size", 15)
 	wait_hint.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78));wait_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
