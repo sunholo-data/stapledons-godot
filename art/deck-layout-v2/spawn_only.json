@@ -1,0 +1,16 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "spawn_only",
+  "about": "R2-DECK-LAYOUT re-plan (D-94) control: today's bridge with only the spawn moved 5 m to port of the lift (the first W press no longer walks into the lift box).",
+  "frame": "ship metres, Blender +Z up; glTF (x, z, -y); the bow is ship +y (glTF -z)",
+  "bridge": {
+    "spawn_captain": {
+      "position_m": [
+        3.0,
+        4.0
+      ],
+      "yaw": 0.47
+    },
+    "props": {}
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "stapledons.deck.budgets/1",
+  "about": "Negative control (R2-DECK-LAYOUT DL0): the walk GLB pinned with a wrong sha256. deck-assets-check must fail.",
+  "pins": {"assets/ship_demo/walk_lower.glb": {"bytes": 1208, "sha256": "0000000000000000000000000000000000000000000000000000000000000000"}},
+  "glb": {},
+  "emissive_allow": []
+}

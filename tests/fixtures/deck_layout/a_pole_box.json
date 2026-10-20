@@ -1,0 +1,128 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "a_pole_box",
+  "about": "Negative control (R2-DECK-LAYOUT AC1): layout A with a wall at the Bow eye height (deck + 5.5 m) across the bow, on every sample's pole line. Must fail pole-ray.",
+  "frame": "ship metres, Blender +Z up; glTF (x, z, -y); the bow is ship +y (glTF -z)",
+  "bridge": {
+    "spawn_captain": {
+      "position_m": [
+        0.0,
+        13.0
+      ],
+      "yaw": 0.47
+    },
+    "props": {
+      "console_navigation_0": {
+        "position_m": [
+          4.824,
+          16.822
+        ],
+        "yaw_deg": -126.0
+      },
+      "console_navigation_1": {
+        "position_m": [
+          0.0,
+          17.5
+        ],
+        "yaw_deg": -135.0,
+        "use_m": [
+          0.0,
+          15.0
+        ]
+      },
+      "console_navigation_2": {
+        "position_m": [
+          -4.824,
+          16.822
+        ],
+        "yaw_deg": -144.0
+      },
+      "captain_chair": {
+        "position_m": [
+          -2.599,
+          12.227
+        ],
+        "yaw_deg": 0.0
+      },
+      "console_decision_0": {
+        "position_m": [
+          -7.829,
+          11.607
+        ],
+        "yaw_deg": -90.0,
+        "use_m": [
+          -7.829,
+          10.207
+        ]
+      },
+      "console_decision_1": {
+        "position_m": [
+          8.479,
+          13.569
+        ],
+        "yaw_deg": -90.0,
+        "use_m": [
+          8.479,
+          12.169
+        ]
+      },
+      "v2_conduit_04": {
+        "position_m": [
+          0.0,
+          0.0
+        ],
+        "yaw_deg": -126.0
+      },
+      "v2_conduit_05": {
+        "position_m": [
+          0.0,
+          0.0
+        ],
+        "yaw_deg": -135.0
+      },
+      "v2_conduit_06": {
+        "position_m": [
+          0.0,
+          0.0
+        ],
+        "yaw_deg": -144.0
+      },
+      "v2_conduit_00": {
+        "position_m": [
+          0.0,
+          0.0
+        ],
+        "yaw_deg": -39.9
+      },
+      "v2_conduit_01": {
+        "position_m": [
+          0.0,
+          0.0
+        ],
+        "yaw_deg": -90.1
+      },
+      "rim_frond_2": {
+        "position_m": [
+          0.0,
+          0.0
+        ],
+        "yaw_deg": -15.0
+      }
+    }
+  },
+  "test_boxes": [
+    {
+      "name": "fixture_pole_wall",
+      "center_gltf_m": [
+        0.0,
+        87.6,
+        -19.5
+      ],
+      "size_m": [
+        44.0,
+        1.0,
+        0.4
+      ]
+    }
+  ]
+}

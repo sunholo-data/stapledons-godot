@@ -52,7 +52,7 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	for name in views:
 		demo.set_preset("reset")
 		if name=="mid_lift":
-			demo.lift.board();demo.lift.advance(.81);demo.lift.advance(5.5)
+			demo.avatar_pos=Vector3(8,82,-4.8);demo.lift.board();demo.lift.advance(.81);demo.lift.advance(5.5) # from the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 		elif name=="commons_courtyard":
 			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=courtyard_eye-Vector3.UP*1.7
 			demo.camera_mode="benchmark reference";demo.camera.position=courtyard_eye

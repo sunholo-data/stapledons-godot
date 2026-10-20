@@ -17,8 +17,11 @@ func _initialize()->void:
 	if found!=null:
 		for p in [Vector3(6.2,82,-6.2),Vector3(8,82,-8),Vector3(9.8,82,-9.8)]:
 			check('render-only top leaves real shaft open '+str(p),_hit(found,Transform3D.IDENTITY,p,false).is_empty())
-	for pair in [['walk_bridge.glb','9775c88d9f4d7ba7cb041ceedc61b22d6fca631092a73d051b0efdbad58f319b'],['walk_lower.glb','dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213']]:
-		check('existing walk remains byte-identical '+pair[0],FileAccess.get_sha256('res://assets/ship_demo/'+pair[0])==pair[1])
+	# The floor restore left both walks untouched; R2-DECK-LAYOUT DL1 rebuilt the bridge walk on purpose,
+	# so it is pinned by art/deck-layout-v2/asset-pins.json (the lower walk is still grounded v2's).
+	var pins:Dictionary=JSON.parse_string(FileAccess.get_file_as_string('res://art/deck-layout-v2/asset-pins.json')).pins
+	for pair in [['walk_bridge.glb',str(pins['assets/ship_demo/walk_bridge.glb'].sha256)],['walk_lower.glb','dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213']]:
+		check('walk matches its pin '+pair[0],FileAccess.get_sha256('res://assets/ship_demo/'+pair[0])==pair[1])
 	actual.free();original.free();print('bridge-floor: %d passed, %d failures' % [passed,failures]);quit(1 if failures else 0)
 func _find(n:Node,key:String)->Node:
 	if n.name==key:return n

@@ -1,0 +1,6 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "shipped",
+  "about": "R2-DECK-LAYOUT: the bridge exactly as assets/ship_demo/ ships it (no prop moved in-engine; the spawn and use points from the manifest and the game's ShipConsoles). make deck-layout-capture measures and captures this.",
+  "bridge": {"props": {}}
+}

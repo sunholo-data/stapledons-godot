@@ -147,6 +147,7 @@ func capture_size(sz: Vector2i) -> void:
 		demo.leave_black_hole()
 	# The lower deck: decisions need the lift.
 	demo.set_preset("reset")
+	demo.avatar_pos = Vector3(8, 82, -4.8) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	demo.lift.board()
 	demo.lift.advance(0.81); demo.lift.advance(11.01); demo.lift.advance(0.81)
 	demo.look_direction("side")

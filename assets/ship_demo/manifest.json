@@ -119,9 +119,9 @@
   },
   "walk": {
     "bridge_spawn_gltf_m": [
-      8,
+      0.0,
       82,
-      -4.8
+      -13.0
     ],
     "lower_spawn_gltf_m": [
       8,
@@ -144,5 +144,38 @@
     "Demo bridge cut distinct from production",
     "Shaft surveyed at nine rays with 0.2m edge clearance; gameplay capsule additionally constrained",
     "Existing bridge needle accepted exception to lower 95m envelope"
-  ]
+  ],
+  "spawn_captain": {
+    "position_m": [
+      0.0,
+      13.0
+    ],
+    "yaw": 0.47
+  },
+  "stations": {
+    "navigation": {
+      "use_m": [
+        0.0,
+        15.0
+      ]
+    },
+    "voyage": {
+      "use_m": [
+        -7.829,
+        10.207
+      ]
+    },
+    "crew": {
+      "use_m": [
+        8.479,
+        12.169
+      ]
+    }
+  },
+  "deck_layout": {
+    "layout": "art/deck-layout-v2/bow_a.json",
+    "generator": "~/dev/blender/scripts/stapledon_deck_layout_v2.py",
+    "walk": "tools/deck_walk_bake.gd (DeckLayout.build_walk on the pinned grounded v2 walk)",
+    "points": "SPAWN_captain and INTERACT_<station>_use empties in the master (collection deck_layout_v2), ship metres"
+  }
 }

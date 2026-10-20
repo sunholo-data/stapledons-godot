@@ -1,0 +1,41 @@
+{
+  "schema": "stapledons.deck.layout/1",
+  "name": "current",
+  "about": "R2-DECK-LAYOUT (design_docs/planned/r2/deck-layout.md §D2): the bridge as shipped in grounded-bridge-v2 (ship.glb sha256 9da74077...). Each prop group's pivot in ship metres (Blender +Z up; glTF (x, z, -y)) and yaw about +Z. Groups whose mesh origin is the ship origin (benches, conduits, fronds) pivot at [0, 0]: their yaw turns them about the spire axis. Candidates name only the groups they move or remove.",
+  "frame": "ship metres, Blender +Z up; glTF (x, z, -y)",
+  "bridge": {
+    "spawn_captain": {"position_m": [8.0, 4.8], "yaw": 0.47},
+    "props": {
+      "captain_chair": {"position_m": [1.881, -5.168], "yaw_deg": 0.0},
+      "archive_terminal": {"position_m": [-3.031, -2.122], "yaw_deg": 0.0},
+      "console_navigation_0": {"position_m": [-9.397, -3.42], "yaw_deg": 0.0},
+      "console_navigation_1": {"position_m": [-7.071, -7.071], "yaw_deg": 0.0},
+      "console_navigation_2": {"position_m": [-3.42, -9.397], "yaw_deg": 0.0},
+      "console_decision_0": {"position_m": [-8.0, 2.0], "yaw_deg": 0.0},
+      "console_decision_1": {"position_m": [-10.5, 6.5], "yaw_deg": 0.0},
+      "console_decision_2": {"position_m": [-13.2, -3.0], "yaw_deg": 0.0},
+      "console_decision_3": {"position_m": [-12.0, -9.5], "yaw_deg": 0.0},
+      "v2_bench_detail_00": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_bench_detail_01": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_bench_detail_02": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_bench_detail_03": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_00": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_01": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_02": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_03": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_04": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_05": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "v2_conduit_06": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_0": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_1": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_2": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_3": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_4": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_5": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_6": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_7": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_8": {"position_m": [0.0, 0.0], "yaw_deg": 0.0},
+      "rim_frond_9": {"position_m": [0.0, 0.0], "yaw_deg": 0.0}
+    }
+  }
+}

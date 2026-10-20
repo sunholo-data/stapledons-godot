@@ -54,6 +54,7 @@ func _run() -> void:
 	check(hud.begins_with("At Barnard's Star 0.02") and hud.contains(" AU · from Earth 5.9"), "HUD at the stop: " + hud)
 	demo._process(0.0)
 	check(demo.ship_hud.distance.text.contains("At Barnard's Star") and demo.ship_hud.where.text.contains("Barnard's Star"), "the status strip carries the stop line (R1-SHIP-UI)")
+	demo.avatar_pos = Vector3(8, 82, -4.8) # a fixed eye: R2-DECK-LAYOUT's spawn stands behind the helm, whose pods fill a level look ahead
 	demo.look_direction("forward"); await process_frame
 	var ident = demo.star_identification
 	ident.set_held(true); ident.update_candidates()
@@ -72,6 +73,7 @@ func _run() -> void:
 	var a_body := body_of(demo, "acen-a")
 	var a_deg := rad_to_deg(2.0 * Planets.angular_radius(a_body.radius_km, Planets.length64(Planets.world_of(a_body.rel_km))))
 	check(absf(a_deg - 11.05) < 0.1, "alpha Cen A fills %.2f deg (D-54: 11.05)" % a_deg)
+	demo.avatar_pos = Vector3(8, 82, -4.8) # a fixed eye: R2-DECK-LAYOUT's spawn stands behind the helm, whose pods fill a level look ahead
 	demo.look_direction("forward"); await process_frame
 	ident.set_held(true); ident.update_candidates()
 	var a_c: Array = ident.candidates.filter(func(c): return c.id == "body:acen-a")
