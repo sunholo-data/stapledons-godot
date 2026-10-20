@@ -13,3 +13,12 @@ level-test: import ## AC2/AC3: stapledons.level/1 schema cases, LevelGreybox (bo
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_levels.gd > $(SCRATCH)/level-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-test)' $(SCRATCH)/level-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-test.log && grep -q '^level-test: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-test.log
 test: level-test
+LEVEL ?= bridge
+.PHONY: level-eval level-eval-test
+level-eval: import ## AC8 (S2): a level against its thresholds (prints "level-eval: <id> ok"); LEVEL=<id>, LAYOUT=<json> scores a candidate (search only)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tools/level_eval.gd -- --level $(LEVEL) $(if $(LAYOUT),--layout $(LAYOUT)) --json $(SCRATCH)/level-eval-$(LEVEL).json > $(SCRATCH)/level-eval-$(LEVEL).log 2>&1; rc=$$?; grep -E '^(level-eval|FAIL)' $(SCRATCH)/level-eval-$(LEVEL).log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-eval-$(LEVEL).log && grep -qE '^level-eval: [a-z_]+ ok$$' $(SCRATCH)/level-eval-$(LEVEL).log
+level-eval-test: import ## AC5: the mock Commons greybox's numbers (positive control), a roofed tier passes with its band edge on the slab model, the bridge measured as exported, and seeded unreached / pole-ray / band-top / find-sight defects each fail by name
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_level_eval.gd > $(SCRATCH)/level-eval-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-eval-test)' $(SCRATCH)/level-eval-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-eval-test.log && grep -q '^level-eval-test: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-eval-test.log
+test: level-eval-test
