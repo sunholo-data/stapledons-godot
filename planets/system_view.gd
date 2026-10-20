@@ -436,6 +436,14 @@ func _star_surface(m: ShaderMaterial, b: Dictionary, ang: float, centre_w: Vecto
 	m.set_shader_parameter("surf_norm", surface_norm(b["id"], u.params, u.view_star, surface_norm_wait).n)
 
 
+## A worker task still running when the view leaves the tree (a scene change, a test's quit) is waited
+## for, so the engine never tears down under a running normaliser.
+func _exit_tree() -> void:
+	for t: Dictionary in _surf_task.values():
+		WorkerThreadPool.wait_for_task_completion(t.task)
+	_surf_task.clear()
+
+
 ## The normaliser for the current key, computing it on a worker thread when the key changes; the
 ## last value meanwhile. The key quantises what moves N: the epochs, the weight (1/64), the gate
 ## (px per radius to 1/8 of a doubling) and the view (2 degrees).
