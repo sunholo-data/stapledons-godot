@@ -9,6 +9,14 @@
   captain toward the bow and slides with the captain without ever turning: W is always up the
   screen. 7 Bow (default), 9 Astern, R back to Bow; 8 reserved. The spire and the lift fade while
   they hide the captain or the journey. Every cue (departure, braking, a stop, Sgr A*) returns to
-  Bow; a guided stop now turns the ship so the body sits 30° off the bow, inside the frame. Zoom
-  levels are developer presets on the bridge; the Commons keeps its views for now.
+  Bow; a guided stop now turns the ship so the body sits 30° off the bow, inside the frame, and at
+  Sgr A* the hole sits on the bow at every stop. Zoom levels are developer presets on the bridge;
+  the Commons keeps its views for now. The old sky views (Sky ahead, to the side, astern) are gone
+  as player views; they remain only as tool and golden poses.
 - Braking notice: "Braking. The bow is still the way we are travelling."
+- Developer tooling: `make camera-views-capture` renders Bow, Astern, the Commons and the lift at
+  rest, 0.99c, a guided stop and Sgr A* (plus a forced-fade frame and a real voyage at 0.9/0.99/
+  0.999c), gated on the pole, the stop body or the hole being in frame. `make camera-forward-targets`
+  records the live stop and Sgr A* targets the camera test checks. A fresh clone now gets
+  `data/raw/.gdignore` from `make sky-assets`, and `make publish-dev` fails with the fix
+  (`make ai-core-assets`) instead of publishing a build without the core layer.
