@@ -1,0 +1,189 @@
+module stapledons/sim/similar_test
+
+-- R2-SIMILAR-S0 S0.1: every row of the sprint's test table, before implementation.
+import std/list (map, filter, length, any)
+import std/string (concat)
+import std/math (log, abs_Float)
+import std/option (Option, Some, None)
+import std/result (Ok, Err)
+import std/embedding (euclidean_distance)
+import ./data/similar (features, similarModel, neighbours, corpusRule)
+import ./similar (World, RawWorld, Ranked, Neighbour, rawCorpus, prepare, corpus, excluded,
+  vector, distances, rank, similarWorlds)
+import ./data/sol (planets)
+import ./trappist1 (trappistPlanetIds, planetValue)
+import ./core (World as SimWorld, Target, Planned, ICommit, newWorld, defaultParams, tick)
+import ./protocol (finiteSystemOf)
+import ./solar_departure (initialize, intentForLeg)
+
+pure func allOf(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && allOf(p, r) }
+pure func unique(xs: [string]) -> bool = match xs { [] => true, x :: r => !any(\y. x == y, r) && unique(r) }
+-- Independent of the production guard: rejects both infinities and NaN.
+pure func finite(x: float) -> bool = x == x && abs_Float(x) <= 1.7976931348623157e308
+pure func near(a: float, b: float) -> bool = abs_Float(a - b) < 1.0e-9
+pure func named(id: string, xs: [Ranked]) -> [Neighbour] = match xs {
+  [] => [], x :: r => if x.world.id == id then x.nearest else named(id, r)
+}
+pure func names(id: string) -> [string] = map(\n. n.name, named(id, similarWorlds()))
+pure func firstName(id: string) -> string = match names(id) { n :: _ => n, [] => "" }
+pure func world(id: string) -> World = match filter(\w. w.id == id, corpus()) {
+  w :: _ => w, [] => {id: "missing", name: "missing", radiusEarth: 0.0, massEarth: 0.0, sEarth: 0.0}
+}
+
+test "fixture rankings: Earth, e, Jupiter and mutual Uranus/Neptune" {
+  names("earth") == ["TRAPPIST-1 e", "Venus", "TRAPPIST-1 d"]
+  && names("trappist-1e") == ["Earth", "TRAPPIST-1 f", "TRAPPIST-1 d"]
+  && names("jupiter") == ["Saturn", "Uranus", "Neptune"]
+  && firstName("uranus") == "Neptune" && firstName("neptune") == "Uranus"
+}
+-- ailang#1914: `::` does not parse in a named-test body; restore `x :: xs` once fixed
+test "fixture distance: Earth-e pinned spike within 1e-9" {
+  match named("earth", similarWorlds()) { [n, _, _] => near(n.distance, 0.26386705430076196), _ => false }
+}
+-- ailang#1914: `::` does not parse in a named-test body; restore `x :: xs` once fixed
+test "fixture components: Earth radius bit-exact" {
+  match vector(world("earth")) { [r, _, _] => r == 0.0, _ => false }
+}
+-- ailang#1914: `::` does not parse in a named-test body; restore `x :: xs` once fixed
+test "fixture components: Earth mass bit-exact" {
+  match vector(world("earth")) { [_, m, _] => m == 0.0, _ => false }
+}
+test "fixture components: Earth insolation bit-exact" {
+  match vector(world("earth")) {
+    [_, _, s] => s == log(1.0 / (1.00000018 * 1.00000018)) / 2.0, _ => false
+  }
+}
+-- Earth's ln mass is zero. A nonzero component also pins direct division,
+-- so reciprocal multiplication cannot hide behind that zero or a tolerance.
+-- ailang#1914: `::` does not parse in a named-test body; restore `x :: xs` once fixed
+test "fixture components: e mass uses direct division bit-exact" {
+  match vector(world("trappist-1e")) { [_, m, _] => m == log(0.692) / 3.0, _ => false }
+}
+
+pure func synthetic(id: string, name: string) -> World =
+  {id: id, name: name, radiusEarth: 1.0, massEarth: 1.0, sEarth: 1.0}
+pure func tieNames(xs: [World]) -> [string] = map(\n. n.name, named("q", rank(xs)))
+test "ties by name: A before B in both input orders, self excluded by id" {
+  let q = synthetic("q", "Q"); let a = synthetic("a", "A"); let b = synthetic("b", "B");
+  tieNames([q, a, b]) == ["A", "B"] && tieNames([b, q, a]) == ["A", "B"]
+  && length(named("q", rank([q, {q | name: "alias"}, a]))) == 1
+  && length(rank([q])) == 1 && length(named("q", rank([q]))) == 0
+}
+
+test "weights finite: positive unique cited features, model and k pinned" {
+  let fs = features();
+  map(\f. f.key, fs) == ["ln_radius", "ln_mass", "ln_insolation"]
+  && map(\f. f.divisor, fs) == [1.0, 3.0, 2.0]
+  && unique(map(\f. f.key, fs)) && allOf(\f. finite(f.divisor) && f.divisor > 0.0 && f.cite != "", fs)
+  && similarModel() == "s0-v1" && neighbours() == 3 && corpusRule() != ""
+}
+
+test "range finite: all 45 components and all 210 directed non-self distances" {
+  let ws = corpus();
+  length(ws) == 15 && allOf(\w. length(vector(w)) == 3 && allOf(finite, vector(w)), ws)
+  && allOf(\q. {
+    let ds = distances(q, ws);
+    length(ds) == 14 && unique(map(\d. d.id, ds))
+    && allOf(\d. d.id != q.id && finite(d.distance), ds)
+    && allOf(\w. q.id == w.id || finite(euclidean_distance(vector(q), vector(w))), ws)
+  }, ws)
+  && allOf(\r. length(r.nearest) == 3 && allOf(\n. n.id != r.world.id, r.nearest), similarWorlds())
+}
+
+pure func goodRaw() -> RawWorld = {id: "good", name: "Good", radiusKm: Some(6378.1366),
+  mass: Some(1.0), massUnit: 1.0, luminositySun: Some(1.0), aAu: Some(1.0)}
+pure func invalidValues() -> [Option[float]] =
+  [Some(0.0), Some(-1.0), None, Some(1.0 / 0.0), Some(-1.0 / 0.0), Some(0.0 / 0.0)]
+pure func badField(field: string, v: Option[float], i: int) -> RawWorld {
+  let w = {goodRaw() | id: concat([field, "-", show(i)])};
+  if field == "radius" then {w | radiusKm: v} else if field == "mass" then {w | mass: v}
+  else if field == "luminosity" then {w | luminositySun: v} else {w | aAu: v}
+}
+pure func rejectsEach(field: string, vs: [Option[float]], i: int) -> bool = match vs {
+  [] => true, v :: rest => {
+    let bad = badField(field, v, i); let result = prepare([goodRaw(), bad]);
+    result.excluded == [bad.id] && map(\w. w.id, result.worlds) == ["good"]
+    && rejectsEach(field, rest, i + 1)
+  }
+}
+test "guard: each raw zero negative missing infinity and NaN excluded with its id" {
+  allOf(\field. rejectsEach(field, invalidValues(), 0), ["radius", "mass", "luminosity", "orbit"])
+  && excluded() == [] && length(rawCorpus()) == 15
+}
+test "guard: missing source lookup is zero and excluded with id" {
+  let w = {goodRaw() | id: "missing-source", mass: Some(planetValue("no-such-planet", "mass_earth"))};
+  let k = {goodRaw() | id: "missing-key", aAu: Some(planetValue("trappist-1e", "no-such-key"))};
+  let r = prepare([w, k]); length(r.worlds) == 0 && r.excluded == ["missing-source", "missing-key"]
+}
+test "guard: normalized underflow overflow and invalid mass units excluded with ids" {
+  let r = goodRaw();
+  let bad = [{r | id: "radius-underflow", radiusKm: Some(1.0e-320)},
+    {r | id: "mass-overflow", mass: Some(1.0e308), massUnit: 1.0e-308},
+    {r | id: "flux-overflow", aAu: Some(1.0e-200)},
+    {r | id: "flux-underflow", aAu: Some(1.0e200)},
+    {r | id: "mass-unit-zero", massUnit: 0.0}, {r | id: "mass-unit-nan", massUnit: 0.0 / 0.0}];
+  let out = prepare(bad);
+  length(out.worlds) == 0 && out.excluded == map(\w. w.id, bad)
+}
+-- ailang#1914: `::` does not parse in a named-test body; restore `x :: xs` once fixed
+test "guard: rank and vector reject invalid normalized inputs before logs" {
+  let q = synthetic("q", "Q");
+  let bad = [{q | id: "zero", radiusEarth: 0.0}, {q | id: "negative", massEarth: -1.0},
+    {q | id: "infinity", sEarth: 1.0 / 0.0}, {q | id: "nan", radiusEarth: 0.0 / 0.0}];
+  allOf(\w. vector(w) == [], bad) && map(\r. r.world.id, rank([q] ++ bad)) == ["q"]
+  && length(named("q", rank([q] ++ bad))) == 0
+}
+
+test "corpus: exactly 15 unique ids/names and only confirmed planet ids" {
+  let ws = corpus();
+  let expected = map(\p. p.id, planets()) ++ trappistPlanetIds();
+  length(ws) == 15 && unique(map(\w. w.id, ws)) && unique(map(\w. w.name, ws))
+  && map(\w. w.id, ws) == expected && excluded() == []
+  && allOf(\w. w.name != "" && w.id != "moon" && w.id != "sun" && w.id != "acen-a-b", ws)
+}
+-- Same actual guided stop as trappist1_test.atStop; that test module is not
+-- a package export. Traverse the route here without expanding the exports.
+pure func targetFor(n: int) -> Target = if n == 6 then
+  {index: 1, id: "Gaia DR3 2635476908753563008", pos: {x: 7.742, y: 20.946483, z: -33.930598}}
+  else {index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: -3.015404, z: -0.051608}}
+pure func leg(w: SimWorld, n: int) -> SimWorld = match intentForLeg(w, n, targetFor(n)) {
+  None => w, Some(intent) => {
+    let planned = (tick(w, {dtau: 0.0, intents: [intent]})).world;
+    match planned.journey {
+      Planned(p) => {
+        let committed = (tick(planned, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+        (tick(committed, {dtau: p.trip.tauTotal, intents: []})).world
+      }, _ => planned
+    }
+  }
+}
+pure func chain(w: SimWorld, n: int) -> SimWorld = if n >= 8 then w else chain(leg(w, n), n + 1)
+pure func atStop() -> SimWorld {
+  let w = newWorld(42, false, defaultParams());
+  let guided = {w | params: {w.params | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.000000002, standoffAu: 1000.0}};
+  chain(match initialize(guided) { Ok(started) => started, Err(_) => guided }, 0)
+}
+test "corpus: Sol ids join finiteSystemOf at Sol, TRAPPIST ids at its stop" {
+  let sol = finiteSystemOf(newWorld(42, false, defaultParams()));
+  let stop = finiteSystemOf(atStop());
+  let solIds = map(\b. b.id, filter(\b. b.kind == "planet" && b.host == "" && b.status == "confirmed", sol.bodies));
+  let trapIds = map(\b. b.id, filter(\b. b.kind == "planet" && b.host == "trappist-1" && b.status == "confirmed", stop.bodies));
+  map(\w. w.id, corpus()) == solIds ++ trapIds && length(solIds) == 8 && length(trapIds) == 7
+}
+test "units and insolation: solar flux units and km normalization through Earth row" {
+  let earth = world("earth"); let e = world("trappist-1e");
+  earth.radiusEarth == 1.0 && earth.massEarth == 1.0
+  && earth.sEarth == 1.0 / (1.00000018 * 1.00000018)
+  && e.sEarth == 0.000553 / (0.02925 * 0.02925)
+  && e.radiusEarth == (0.92 * 6378.1) / 6378.1366 && e.massEarth == 0.692
+}
+
+-- AC1/AC5: reproduce the controller-verified spike byte for byte, including
+-- the trailing semicolon-space on every neighbour and the final empty line.
+pure func showNearest(xs: [Neighbour]) -> string = match xs {
+  [] => "", n :: r => concat([n.name, " ", show(n.distance), "; ", showNearest(r)])
+}
+pure func showRows(xs: [Ranked]) -> string = match xs {
+  [] => "", r :: rest => concat([r.world.name, " -> ", showNearest(r.nearest), "\n", showRows(rest)])
+}
+export pure func similarVm(n: int) -> string = showRows(similarWorlds())
