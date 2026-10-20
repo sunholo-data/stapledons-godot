@@ -1,6 +1,6 @@
 {
   "ailang_version": "v0.54.14",
-  "generated_at": "2026-10-20T18:29:36.297576Z",
+  "generated_at": "2026-10-20T19:12:13.698502Z",
   "generator": "ailang lock v0.54.14",
   "packages": [
     {
@@ -23,7 +23,7 @@
       ],
       "interface_hash": "sha256:c43d276cf17f7f58c0fe23d5bbb9611fce9470060954465caada06a991e8160e",
       "name": "sunholo/celestial",
-      "path": "../scratch/ailang-packages/packages/celestial",
+      "path": "vendor/celestial",
       "source": "path",
       "version": "0.5.0"
     },

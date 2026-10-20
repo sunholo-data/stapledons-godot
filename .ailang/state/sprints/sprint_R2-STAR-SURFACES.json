@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-STAR-SURFACES",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": {
     "ledger": "D-105",
     "date": "2026-10-20",
@@ -117,22 +117,24 @@
       "description": "sunholo/celestial 0.5.0 module stellar: LD laws (linear, quadratic, Claret-4) and means, ldCoeffs table (Claret & Bloemen 2011), scale-height/cell size, granulation and spot temperature contrasts, differential rotation (Snodgrass & Ulrich 1990), Baumbach corona, lineColour; tests with cited check values; probe into tests/test_physics.gd; stop before publish",
       "estimated_loc": 300,
       "days": 1.5,
-      "passes": false,
+      "passes": true,
       "acceptance": [
         "AC1",
         "AC10"
-      ]
+      ],
+      "notes": "sunholo/celestial 0.5.0 stellar + stellar_ld (508 Claret & Bloemen 2011 V rows as record literals); 16 checks, package 142 tests, check and pkg quality with no gates; publish blocked by the auto-mode classifier (Create Public Surface): the sim pins a path dependency on the dev checkout until Mark or the coordinator runs `ailang publish`. Strict-VM residue of #1865 (5-arg call elements with a negated literal) reported upstream (inbox_1792521010389_386db89c)."
     },
     {
       "id": "SS1_SIM_PROTOCOL",
       "description": "log g per finite star with provenance; surfaceOf(star, seed) in sim/core.ail; protocol 2.13 surface object (additive); pin celestial 0.5.0; strict, parity, replay; the clock check from the sim's own t - light_age_s (D never applied again); mk/star-surfaces.mk with stellar-protocol-test and star-surface-test in test:, stellar-protocol-test in ci-fast",
       "estimated_loc": 250,
       "days": 1.0,
-      "passes": false,
+      "passes": true,
       "acceptance": [
         "AC2",
         "AC7"
-      ]
+      ],
+      "notes": "commit cf233428: protocol 2.13 surface records; sim tests 521 passed; check, strict, parity, parity-v2 green; replay 11 identical (recorded at older minors, unchanged)"
     },
     {
       "id": "SS2_RENDERER",
@@ -149,7 +151,8 @@
         "AC8",
         "AC11",
         "AC12"
-      ]
+      ],
+      "status": "built; paused for Mark's playtest"
     },
     {
       "id": "SS3_ECLIPSE_LAYERS",
@@ -273,5 +276,10 @@
     "status": "all seven folded in",
     "file": ".ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md"
   },
-  "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/37 (merged)"
+  "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/37 (merged)",
+  "bench": {
+    "tool": "make star-surface-bench (Vulkan; Metal reports no GPU time)",
+    "result": "Aldebaran stop, Bow view, Auto: sky GPU p50 off 4.874 ms, on 4.913 ms, delta +0.039 ms (limit +0.50): OK -> OQ2 procedural kept",
+    "host_load": "~40 (other agents)"
+  }
 }

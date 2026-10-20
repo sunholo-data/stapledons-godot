@@ -1,0 +1,248 @@
+# Changelog
+
+## 0.5.0
+
+Feature (minor bump, new exports; stapledons ledger D-105, stapledons-godot R2-STAR-SURFACES,
+stapledons-design physics/relativity-spec.md RS-24/RS-25): `stellar` and its data module
+`stellar_ld`, the numbers for a star's visible surface. Pure float64, no dependency on any other
+package (Doppler factors and colour stay in sunholo/relativity; pass D in).
+
+- `stellar_ld.ldRows`: 508 quadratic limb-darkening rows, Johnson V, least squares, [M/H] 0,
+  microturbulence 2 km/s, from Claret & Bloemen 2011 (A&A 529, A75; CDS tableab.dat, sha256
+  e68d1d67...5732): every ATLAS model (3,500-50,000 K) and the PHOENIX models below 3,500 K
+  (2,000-3,400 K, log g 3.5-5.0). The extraction (awk, sort) is recorded in the module header.
+- `ldLinear`, `ldLinearMean` (u = 0.6 reproduces the game's former GDScript-only solar law),
+  `ldQuadratic` (clamped at 0: the coolest PHOENIX fits dip to -0.019 at the limb) and
+  `ldQuadraticMean` (1 - a/3 - b/6); `ldCoeffs(teff, logg)` bilinear in log g, then Teff, PHOENIX
+  below 3,500 K, reporting the Teff and log g it read at after clamping (TRAPPIST-1's log g 5.24
+  is read at 5.0).
+- `loggFromMassRadius`, `solarLogg` (4.43807 from the IAU 2015 nominal GM and R),
+  `scaleHeightRatio`, `cellSizeKm` (the Sun's 1.76 arcsec cell, Roudier & Muller 1986, scaled by
+  the pressure scale height), `granulationLifetimeS` (6 minutes for the Sun; scaled, assumed),
+  `dLnIdLnT`, `granulationSigmaT` (14.4 % at 630 nm, Danilovic et al. 2008, as 3.57 % in
+  temperature).
+- `sunUmbraTeff`, `sunPenumbraTeff`, `mDwarfSpotRatio`, `faculaSigmaT` (cited or labelled
+  assumed in the source).
+- `diffRotation` (Howard, Harvey & Forgach 1990), `solarCycleYears`, `solarCycle25StartJd`,
+  `solarCyclePhase`, `sporerLatitudeDeg`, `activityLevel` (assumed sin^2 shape).
+- `baumbach` (the mean corona, Baumbach 1937), `hAlphaNm`, `lineObservedNm` (lambda0 / D) and
+  `lineVisible` (360-830 nm).
+- Tests: `stellar_test.ail`, 16 checks against the table, Simpson quadrature and hand-computed
+  closed forms (no module output used as an expected value).
+
+## 0.4.1
+
+Fix (patch bump): the photometry contracts' input domains are completed. The
+generated contract checks (`ensures` properties under a seeded run) violated
+three exported functions whose `requires` admitted inputs outside the
+functions' physical domain, so a negative illuminance or I/F could be
+demonstrated although every physical input is fine. No signature, result or
+behaviour changes on the valid domain; the change narrows what callers may
+pass, and every in-package caller (tests, `_smoke.ail`) already stayed inside
+it.
+
+- `reflect.starIlluminanceAt`: now requires `e1AU >= 0.0` (an illuminance is
+  nonnegative) alongside `rAU > 0.0`; the `ensures result >= 0.0` contract
+  failed on e1AU = -628.86, rAU = 638.96 (seed -353163685464755012).
+- `reflect.discIlluminance`: the domain is now the complete physical one —
+  `e1AU >= 0`, `p >= 0` (geometric albedo can exceed 1, e.g. Enceladus 1.38),
+  `radius > 0`, `rAU > 0`, `d > 0`, `alpha` in `[0, pi]` (the phase-function
+  domain of `lambertPhase`/`minnaertPhase`) and `k > 0` — instead of just
+  `rAU > 0 && d > 0`; the contract failed on alpha = -774.05, k = -674.18
+  (seed -1857764562339015082).
+- `rings.ringUnlitIF`: now requires `w0 in [0, 1]` (single-scattering
+  albedo), `phaseP >= 0` (phase-function value, isotropic = 1), `tau >= 0`
+  and `mu0, mu in [0, 1]` with `mu > 0` (|sin| elevations) — the contract
+  failed on w0 = -210.91 (seed 5728653242854644233). Both evaluation branches
+  are products and differences of nonnegative factors on that domain.
+- Tests (3 more): the domains' edges are pinned by hand in
+  `reflect_test.ail` and `rings_test.ail` (e1AU = 0, alpha 0 and pi, a dark
+  star and a dark body; w0 = 0 and 1, phaseP = 0, mu0 = 0 and 1, mu = 1 and
+  the mu0 = mu = 1 corner against the textbook form). The seeded property
+  generator itself cannot reach the narrow domains (it reports "accepted 0 of
+  1000 generated inputs" and skips, as it already did for `elementsAt`,
+  `satelliteElementsAt` and `orbitRadius` since 0.1.0) — the named boundary
+  tests are the domain's coverage, and the generated properties no longer
+  find violations on it.
+
+## 0.4.0
+
+Feature (minor bump, the repo's convention for new exports; stapledons ledger
+D-60, D-61, Mark attended 2026-10-09). Every 0.3.0 signature and result is
+unchanged; the addition is the new module `ism`, the geometry and
+astrophysics of the local interstellar medium (check values IS-n in
+stapledons-design physics/ism-structure.md and HB-113..HB-123 in
+higgs-bubble.md section 6b; oracle tools/ism_dust_ref.py in stapledons-godot,
+stdlib Python).
+
+- `realSphericalHarmonicAt(l, m, u)`, `realSphericalHarmonic(l, m, theta,
+  phi)`: orthonormal real Y_lm, l <= 2, without the Condon-Shortley phase
+  (m > 0 cos, m < 0 sin).
+- `starSurfaceRadius(coeffs, dir)`, `insideStarSurface(centre, coeffs, p)`,
+  `starSurfaceCrossings(centre, coeffs, a, b)` and `starSurfaceChords` (64-step
+  bracket, 60 bisections), `rayExitDistance(centre, coeffs, u, sMax)`. With the
+  coefficients refit to Linsky et al. 2019 Table 2 (their Table 3's printed
+  coefficients do not reproduce Table 2 in any standard convention; see
+  ism-structure.md section 3) the LIC reproduces the 63 edge distances with a
+  median |delta| of 0.378 pc (paper: 0.40). This is in-sample: the refit is
+  made on the same 63 rows.
+- `Interval {t0, t1}`; `coneShellChord`, `insideConeShell`, `ellipsoidChord`,
+  `insideEllipsoid`, `slabChord`, `chordsOf(boundaries, inside, a, b)`: exact
+  parameter intervals of a segment inside each shape.
+- `nHFromExtinction(avPerPc, nhPerEbv, rV)`: 606.34 cm^-3 per mag/pc at
+  Bohlin's 5.8e21 and R_V 3.1.
+- `healpixRingVec(nside, pix)`: HEALPix RING centres; the package test checks 13
+  oracle rows to 1e-14 and a unit-vector sweep at Nside 64. The broad comparison
+  (the oracle against healpy 1.20.1, 8.2e-15 worst over 11,433 pixels up to
+  Nside 256) was run once with the oracle, not in this package's tests; the plan's
+  1e-15 is tighter than float rounding allows at Nside 256.
+- `GrainDist {k, aMin, aBreak, aMax, q, rhoGrain}`, `grainDist`,
+  `grainMassDensity`, `grainTailMassFraction`, `grainMass`, `grainsAbove`,
+  `grainRadiusAt`: MRN (a^-3.5, 5 nm-0.25 um) plus the big-grain tail (a^-q to
+  a_max), normalised to a dust mass density. LIC (2.1e-24 kg/m^3, q 3.1,
+  3,300 kg/m^3, a_max 8.98 um): 94.0 % of the mass in the tail, a flux of
+  >= 1e-13 kg grains at 26 km/s of 5.52e-8 m^-2 s^-1 (Krueger 2015: "on the
+  order of 1e-7"). The flux is fitted, not an independent check: q was chosen
+  as the slope that maximises it.
+- `poissonDraw(mean, u, v)`: inversion below 30, a rounded normal from 30.
+- `_smoke.ail`: `ismProbe` (strict VM = interpreter) and an ISM check in main.
+- Tests: `ism_test.ail` (24).
+
+## 0.3.0
+
+Feature (minor bump, the repo's convention for new exports; stapledons ledger
+D-58, Mark attended 2026-10-09). Every 0.2.0 signature and result is
+unchanged; the addition is in `kepler`.
+
+- `semiMajorAxisFromPeriod(gm, periodDays)`: Kepler's third law inverted,
+  a = (gm (P / 2 pi)^2)^(1/3) in gm's length unit (gm in length^3 / day^2).
+  The synchronous orbit of a body rotating once per sidereal period sits at
+  this radius (its altitude is a minus the body's radius).
+- Test (1 more): round trip with `period` to 1e-14 from 1e-3 to 1e6 days;
+  1 AU for the Gaussian year; Earth's geostationary radius 42,164.17 km
+  (within 0.05 km) from GM_Earth = 398,600.4418 km^3/s^2 and the sidereal day
+  0.99726968 d.
+
+## 0.2.0
+
+Feature (minor bump, the repo's convention for new exports): the
+Earth-Moon barycentre split. Standish's "EMB" row is the
+Earth-Moon barycentre, so 0.1.0 put the Earth (and anything placed relative
+to it) mu |r_geo| = 4,330-4,950 km from its centre. Every 0.1.0 signature
+and result is unchanged; the additions are in `ephemeris`.
+
+- `earthMoonSplit(emb, moonGeo)` -> `EarthMoon {earth, moon}`:
+  Earth = EMB - mu r_geo, Moon = EMB + (1 - mu) r_geo, positions and
+  velocities alike. `earthAt(embEl, embRt, moon, jd)` and
+  `moonAt(embEl, embRt, moon, jd)`: the heliocentric Earth and Moon from
+  Standish's EMB row and the Moon's JPL mean elements (`satelliteAt`).
+  `earthMoonMu()` = 1 / (1 + EMRAT) = 0.0121505843958292 and
+  `earthMoonMassRatio()` = EMRAT = GM_Earth / GM_Moon = 81.3005682214972154
+  (JPL DE440/DE441; Park et al. 2021, AJ 161, 105).
+- Tests (5 more, 98 in all), against JPL Horizons (DE441) vectors on
+  2000-01-01.5, 2023-11-03.0 and 2026-01-01.0 TDB: DE441's Earth-from-EMB
+  is -mu times its geocentric Moon (1e-12); Horizons' EMB split with
+  Horizons' Moon gives Horizons' Earth and Earth + Moon (1e-13 AU,
+  1e-15 AU/day); `earthAt` - EMB is within 200 km of Horizons'
+  Earth-from-EMB (54, 134, 49 km; the Moon's mean elements omit evection and
+  variation); over 400 dates moon - earth = the geocentric Moon and
+  (1 - mu) earth + mu moon = the EMB to 1e-15 AU; `earthAt`'s velocity is
+  its derivative. Five hand mutations of the split (mu = 0.01215,
+  mu = M_moon/M_earth, the Earth's sign, 1 - mu -> 1, an unsplit Earth
+  velocity) are each killed.
+- `tools/orbits_ref.py`: `earth_moon()` re-derives the split in 50-digit
+  Decimal from the Horizons values (query recorded) and the mean-element
+  offset with its own Kepler and plane rotation; `tools/orbits_ref.out`
+  gains those rows (additions only).
+- `_smoke.ail`: `earthMoonProbe(n)` (strict VM = interpreter, bit for bit)
+  and the Earth-from-EMB check against Horizons in `main`'s OK line.
+  Private test helpers named `earthAt` in `_smoke.ail` and
+  `gravity_test.ail` are renamed (`unitEarthAt`, `earthPosAt`) so they do
+  not shadow the new export (ailang#1461).
+
+## 0.1.0
+
+New package: orbits (part 1) and light, gravity and rings (part 2).
+
+Part 1, orbits:
+
+- **kepler**: `solveKepler(M, e)`, Newton with exactly 8 iterations from
+  E0 = M + e sin M (no data-dependent loop exit, so the strict VM and the
+  interpreter take the same path); residual < 1e-14 for |M| <= pi and
+  e <= 0.97 (worst 4.4e-16 over a 98 x 4001 grid in the oracle); e = 0 gives
+  E = M exactly. `stateFromElements(el)` gives position and velocity
+  (perifocal -> reference frame); `driftingState(el, drift)` adds the exact
+  velocity of drifting a, e, i, node and argument of periapsis. `Vec3`,
+  `State`, `Orbit`, `Drift`, `meanMotion`, `period`, `orbitRadius`,
+  `orbitNormal`, `wrapPi` and vector helpers.
+- **ephemeris**: `elementsAt(el, rates, jd)` and `planetAt` from the JPL
+  approximate elements (Standish & Williams 1992, Table 2a with Table 2b's
+  b, c, s, f). The window is T = -50 .. +10 Julian centuries (3000 BC-3000 AD);
+  outside it a, e, I, perihelion and node freeze at the edge, the mean
+  longitude keeps advancing, and `meanOrbit` is true. The velocity is the
+  exact derivative of the position. `satelliteElementsAt` and `satelliteAt`
+  take JPL SSD mean satellite elements with signed apse and node rates on a
+  Laplace plane given by its ICRS pole (the ecliptic pole for the Moon).
+  `julianDate` (Meeus 7.1, proleptic Gregorian), `auKm`, `windowStartJd`,
+  `windowEndJd`.
+- **frames**: `eclipticToEquatorial` (IAU 2006 obliquity 84381.406"),
+  `equatorialToGalactic` (Hipparcos 1997 A_G), `eclipticToGalactic`,
+  `equatorialToEcliptic`, `unitFromAngles`, `lonLat`, and
+  `poleAndSpin(model, jd)` for IAU WGCCRE 2015 models with periodic terms
+  (`PoleModel`, `PoleTerm`, `Spin`), `rotationPeriod`.
+- Tests (42): Kepler residual grid and corners, vis-viva, angular momentum,
+  orientation, derivative checks; Meeus Julian dates; Jupiter's opposition
+  2023-11-03 and Mars's 2020-10-13 (+-2 d); Saturn's ring-plane crossings
+  2009-08-11 and 2025-05-06 (+-10 d); Earth's and Saturn's obliquities; the
+  mean-orbit flag and window edges; the Moon inside 356,375-406,720 km and its
+  8.85 yr perigee period; Io's sidereal period 1.769137786 d (1e-4 d); the
+  north ecliptic pole at galactic (96.38, 29.81); WGCCRE Saturn and Jupiter.
+  `tools/orbits_ref.py` re-derives each with independent code.
+
+Part 2, light, gravity and rings:
+
+- **lighttime**: `retarded(srcFn, obs, t)` (time, position and lag),
+  `retardedTime`, `lightTimeDays`: the light-travel equation solved by a
+  fixed-point iteration on the lag, exactly 4 steps from 0 (error
+  (v/c)^4 of the lag). `cAuPerDay` (299,792.458 km/s over the IAU 2012 au),
+  `secondsPerDay`.
+- **gravity**: `accelerationAt(bodies, x, jdTDB)`, the Newtonian point-mass
+  sum in m/s^2 over `GravBody {gm, radius, posAt}` (AU positions, km^3/s^2,
+  km), refusing within any body's radius (`inside`, the body's index, zero
+  acceleration); `accelerationRelativeTo` (the field in a body's co-moving
+  frame: its pull plus the others' tides); `pointAcceleration`; IAU 2015 B3
+  nominal GM and radii for the Sun, Earth and Jupiter.
+- **reflect**: `starIlluminanceAt`, `lambertPhase`, `lambertRadiance`,
+  `minnaertRadiance`, `minnaertPhase` (separable photometric-coordinate
+  integral, 256-interval Simpson), `phaseFunction`,
+  `rhoFromGeometricAlbedo` / `geometricAlbedoFromRho` (rho = p (2k+1)/2),
+  `bondAlbedo` (4 rho/(k+1)^2), `bondFromGeometricAlbedo`, and
+  `discIlluminance` (e1AU p (R/d)^2 Phi / r^2). The star's 1 AU illuminance
+  is a parameter: no dependency on sunholo/relativity.
+- **rings**: `ringLitIF`, `ringUnlitIF` (finite and continuous through
+  mu = mu0 via a series for (e^x - 1)/x when |x| < 1e-3, the bounded
+  difference of exponentials otherwise, so it stays finite with the Sun
+  grazing the rings; swept over mu0 1e-4..1, mu 0.01..1, tau 0..10), `ringLitRadiance`,
+  `ringUnlitRadiance`, `ringTransmission`, `RingBand` and `bandAt`,
+  `ringPlaneHit` and `ringShadowTransmission` for ring shadows.
+- Tests (51 more, 93 in all): light times to Jupiter (2023-11-03, 1987.3 s)
+  and Saturn (2023-08-27, 4372.8 s) against JPL Horizons; the closed-form
+  uniform-motion lag; the iteration count pinned by its (v/c)^4 error; the
+  design's idealised Jupiter lag 2095.8 s and 27,400 km displacement; g =
+  0.1254 m/s^2 at 50,000 km above Earth and 11.0 m/s^2 at 1.5 R_J; NSSDC
+  surface gravities; `inside`; superposition, inverse square and symmetry;
+  the solar tide in Earth's frame; Lambert Phi(0) = 1, Phi(pi/2) = 1/pi,
+  Phi(pi) = 0 and q = 3/2; Minnaert k = 1 = Lambert to 1e-15; the rho <-> p
+  round trip to 1e-12 and both albedo normalisations by numerical disc and
+  sphere integrals; Jupiter's V -2.77 (r 5.20, delta 4.20, p_V 0.538;
+  Mallama & Hilton -2.70) and within 0.1 mag of Horizons on 2023-11-03;
+  the ring lit face -> Lommel-Seeliger at tau -> inf, both faces -> 0 at
+  tau -> 0, the unlit face's finite mu -> mu0 limit, transmission limits,
+  Saturn's NSSDC/Cassini ring bands and the solstice ring shadow, and precision at the removable singularities. All 32 hand mutations of the part-2 modules are killed.
+  `tools/orbits_ref.py` re-derives each with independent methods.
+- Pre-release fixes from the independent evaluation (round 1, 89/100): the
+  unlit ring face no longer overflows to Inf for tau/mu0 ~ 710-745 (B1);
+  rings' phase-function parameter is `phaseP` and illuminance parameters are
+  `lux` (no clash with `reflect`'s albedo p or `kepler`'s e); `planetAt` and
+  `bondAlbedo` carry explicit warnings; the documented `_smoke.ail`
+  commands include `--relax-modules` and `--caps IO`.
