@@ -12,6 +12,9 @@ D-56	2026-10-08	Ship UI direction: what is HUD, what is a bridge console, and th
 D-68	2026-10-12	The loop is the secret (stapledons-design vision/premise-and-loop.md §4): may th	keyword "secret"
 D-71	2026-10-13	Social strand canon conflicts (stapledons-design#21, roadmap/r2-voyage-life.md §	keyword "mutiny"
 D-73	2026-10-13	Population cohorts (design_docs/planned/r2/crew-population.md; headcount settled	keyword "mutiny"
+D-86	2026-10-19	R2-HOME-TIERS home pictures (design design_docs/implemented/r2/home-tiers.md, OQ	keyword "fate"
+D-87	2026-10-19	Earth's doom clock and fate-dependent Home pictures (follow-up to R2-HOME-TIERS'	keyword "fate"
+D-89	2026-10-19	Earth fate follow-ups (D-87; design repo features/future/earth-fate-home.md OQ1 	keyword "fate"
 DD-2025-11-30-player-ocean-is-emergent	2025-11-30	Player OCEAN Is Emergent	keyword "legacy report"
 DD-2025-11-30-ocean-values-drift-over-time	2025-11-30	OCEAN Values Drift Over Time	deny map
 DD-2025-11-30-ocean-drift-hidden-until-end-screen	2025-11-30	OCEAN Drift Hidden Until End Screen	keyword "Drift Hidden"
@@ -52,3 +55,10 @@ DD-2025-12-08-archive-distributed-terminals-plus-robots	2025-12-08	Archive: Dist
 DD-2026-09-28-generation-ship-casting-direction	2026-09-28	Generation-ship casting direction	deny map
 DD-2026-09-28-runtime-ai-voices-emotion-markers	2026-09-28	Runtime AI: Voices, Emotion Markers and a Growing Asset Library	deny map
 DD-2026-10-01-demo-black-hole-sgr-a-because-of-tides	2026-10-01	Demo Black Hole: Sgr A*, Because of Tides	deny map
+DD-2026-10-06-the-premise-and-loop-are-canon-consolidated	2026-10-06	The Premise and Loop Are Canon (consolidated)	keyword "Year 1,000,000"
+DD-2026-10-06-the-ai-is-an-unreliable-narrator-that-works-it-out-each-iteration	2026-10-06	The AI Is an Unreliable Narrator That Works It Out Each Iteration	keyword "Mystery"
+DD-2026-10-06-anthropic-selection-is-shown-and-the-neighbourhood-breaks-the-cosm	2026-10-06	Anthropic Selection Is Shown, and the Neighbourhood Breaks the Cosmological Principle	deny map
+DD-2026-10-06-saving-earth-is-very-hard-generated-content-carries-over	2026-10-06	Saving Earth Is Very Hard; Generated Content Carries Over	keyword "ending"
+DD-2026-10-06-the-player-brings-the-news-the-spire-resets-when-earth-s-fate-is-s	2026-10-06	The Player Brings the News; the Spire Resets When Earth's Fate Is Sealed	keyword "Resets"
+DD-2026-10-13-the-social-strand-population-births-mutiny-lifespan-the-galaxy-clo	2026-10-13	The Social Strand: Population, Births, Mutiny, Lifespan, the Galaxy Clock	keyword "Mutiny"
+DD-2026-10-19-the-earth-clock-is-a-difficulty-setting-home-pictures-follow-earth	2026-10-19	The Earth Clock Is a Difficulty Setting; Home Pictures Follow Earth's Fate	keyword "Fate"
