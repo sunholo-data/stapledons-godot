@@ -218,9 +218,16 @@
         "AC-T1"
       ],
       "test_first": [],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "camera-views-capture 52 frames 0 failures (bow/astern/commons/lift x rest, 0.99c, first guided stop, Sgr A* at 720p+1440p; forced fade: spire_needle; real voyage 0.9/0.99/0.999c: pole + starbow edge; all 6 Sgr A* stops in Bow, shadow dark); camera-walk-capture 48 frames 0 failures; contact sheets, the fade, stop, Sgr A* and cruise frames opened",
+        "after-sheets: gs://stapledons-voyage-assets/refs/camera_forward/after/",
+        "dead player sky-view paths removed from camera_director.gd (sky() = walk or refuse; choose_offset, view_clear, anchor_of, lift_boxes, _enter, pending walk-to, _sky_offset); camera-test 182 unchanged; the sky_* poses stay for tools and goldens",
+        "fresh-clone fixes: data/raw/.gdignore from sky-assets and ai-core-assets; publish-dev fails naming make ai-core-assets when no core layer is staged (positive and negative control run)",
+        "AC-B6 met in F1a (lore 30f6674); ~11 test and tool migrations were done in F1b",
+        "full make test green on 7677f552 (Studio)"
+      ]
     },
     {
       "id": "E_EVALUATE_LAND",
