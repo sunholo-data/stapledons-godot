@@ -1,0 +1,317 @@
+{
+  "sprint_id": "R2-LEVELS",
+  "status": "awaiting_approval",
+  "approved": false,
+  "approved_by": null,
+  "approved_on": null,
+  "created": "2026-10-20",
+  "replanned": "2026-10-20 (Mark D-100 and the process steer: intricate 2.5D levels; a repeatable pipeline)",
+  "started": null,
+  "completed": null,
+  "design_doc": "design_docs/planned/r2/levels.md",
+  "sprint_plan": "design_docs/planned/r2/levels-sprint.md",
+  "branch": "design/levels",
+  "process_docs": [
+    "design_docs/levels/README.md",
+    "design_docs/levels/TEMPLATE.md",
+    "design_docs/levels/backlog.md",
+    "design_docs/levels/commons.md"
+  ],
+  "implements": [
+    "levels Part A (pipeline)",
+    "Part B (intricate 2.5D language, vertical camera)",
+    "Part C first run: Commons S0-S6"
+  ],
+  "github_issues": [],
+  "related_prs": {
+    "deck_layout_dl3": 292,
+    "bridge_style": 293
+  },
+  "external_dependencies": [
+    {
+      "what": "R2-DECK-LAYOUT DL3 and R2-BRIDGE-STYLE bridge files merged",
+      "where": "#292, #293 (executing)",
+      "owner": "those sprints",
+      "blocks": [
+        "LP1B_CAMERA_VIEWS_LIFT_LIGHT"
+      ],
+      "status": "in flight; LP0 and LP1a use only new files (plus interior/walk.gd and the Makefile) and start on approval; LP1b edits held files (views.json, camera_director.gd, test_camera_director.gd, ship_demo_lift.gd, ship_lighting.gd, ship_star_light.gd) and waits; the bridge's art, lighting rig and HUD are never edited"
+    },
+    {
+      "what": "Blender 5.2.1 LTS workspace",
+      "where": "~/dev/blender",
+      "owner": "this sprint",
+      "blocks": [
+        "LP3_COMMONS_DRESS_STYLE"
+      ],
+      "status": "available"
+    },
+    {
+      "what": "GPU window and a quiet rig for captures, goldens and the bench",
+      "where": "Studio",
+      "owner": "executor",
+      "blocks": [
+        "LP1A_GREYBOX_WALK_EVAL_REGRESS",
+        "LP1B_CAMERA_VIEWS_LIFT_LIGHT",
+        "LP2_COMMONS_GREYBOX",
+        "LP3_COMMONS_DRESS_STYLE",
+        "LP4_LANDING"
+      ],
+      "status": "shared with the mission loop"
+    },
+    {
+      "what": "Captain animation clips (climb_ladder, stairs, ride_idle, sit, crouch)",
+      "where": "sibling D-98 plan",
+      "owner": "captain-animation sprint",
+      "blocks": [],
+      "status": "not needed: ladders and hatches are use-point transfers until clips land"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "LP0-LP4",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot tools, data and Blender assets; no AILANG code and no physics maths"
+    }
+  ],
+  "handoffs": [
+    {
+      "to": "captain animation (D-98)",
+      "what": "route clip ids the levels need: climb_ladder, stairs, ride_idle, sit, crouch"
+    },
+    {
+      "to": "sound (D-98)",
+      "what": "per-stage ambience ids and practical light types in the level manifest"
+    },
+    {
+      "to": "charter (attended, at plan approval)",
+      "what": "queue row L10 (levels via tools/levels_backlog.sh --next), do-not-touch for levels in S0/S3/S5, pointer to design_docs/levels/README.md (levels.md §A6)"
+    }
+  ],
+  "pause_points": [
+    {
+      "after": "plan",
+      "mark_sees": "design doc, process docs, Commons brief, mock frames refs/levels/mock and refs/levels/intricate",
+      "mark_decides": "OQ1-OQ10 and the Commons S0 brief"
+    },
+    {
+      "after": "LP2_COMMONS_GREYBOX",
+      "mark_sees": "dev build of the Commons greybox (5 stages), contact sheet, per-file URLs, 7-line checklist",
+      "mark_decides": "accept the layout or ask for moves"
+    },
+    {
+      "after": "LP3_COMMONS_DRESS_STYLE",
+      "mark_sees": "style frames of the dressed Commons on the R2-BRIDGE-STYLE finish; bench",
+      "mark_decides": "approve the finish or redirect"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "Three pauses per level (brief, greybox playtest, style), batched across levels",
+      "recommendation": "yes"
+    },
+    {
+      "id": "OQ2",
+      "q": "Greybox in-engine for S1-S3, Blender from S4",
+      "recommendation": "yes"
+    },
+    {
+      "id": "OQ3",
+      "q": "Stages within a level rather than the whole floor",
+      "recommendation": "stages; big tiers land stage by stage"
+    },
+    {
+      "id": "OQ4",
+      "q": "Camera under overhangs",
+      "recommendation": "ceiling clamp (lower and closer, never turns); evaluator head <= 2%"
+    },
+    {
+      "id": "OQ5",
+      "q": "Ladders and hatches before climb animation",
+      "recommendation": "use-point transfers now, climbs when clips land"
+    },
+    {
+      "id": "OQ6",
+      "q": "What the loop may do on levels",
+      "recommendation": "S2 evaluation, asset checks, regression and its captures (parked); never briefs, feel or style"
+    },
+    {
+      "id": "OQ7",
+      "q": "First full run",
+      "recommendation": "the Commons (stages and finds in design_docs/levels/commons.md); intricate bridge later, after R2-BRIDGE-STYLE"
+    },
+    {
+      "id": "OQ8",
+      "q": "Order after the Commons",
+      "recommendation": "Garden, Homes, Workshops, Farms, Engineering"
+    },
+    {
+      "id": "OQ9",
+      "q": "Backlog home",
+      "recommendation": "design_docs/levels/backlog.md, parsed by tools/levels_backlog.sh, linked from issue #1"
+    },
+    {
+      "id": "OQ10",
+      "q": "Levels open with the voyage or as built",
+      "recommendation": "as built for now"
+    }
+  ],
+  "features": [
+    {
+      "id": "LP0_PROCESS_SCHEMA_BASELINE",
+      "description": "Process docs checkable (levels_backlog.sh --check and --next); stapledons.level/1 schema test (make level-test); mk/levels.mk with test hooks; the bridge as a level in data (assets/levels/bridge/manifest.json) and its baseline pinned (art/levels/bridge/baseline.json). New files only; starts on approval",
+      "estimated_loc": 300,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "sh tools/levels_backlog.sh --check passes; a bad-status fixture fails; --next never lists a level in S0/S3/S5 (fixture)",
+        "make level-test rejects a turning stage view, an unknown exit, a route missing an end, a captain_px band outside 30-90",
+        "make deck-layout-eval prints deck-layout: bridge ok"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LP1A_GREYBOX_WALK_EVAL_REGRESS",
+      "description": "LevelGreybox; multi-height walk (height_at_near) with routes and transfers; LevelMetrics + make level-eval (greybox and export inputs); level-eval-test; level-capture (frames.sha256, blank-frame check); levels-regress (two negative controls); make bench SCENE=level. New files plus interior/walk.gd and the Makefile; starts on approval",
+      "estimated_loc": 750,
+      "dependencies": [
+        "LP0_PROCESS_SCHEMA_BASELINE"
+      ],
+      "acceptance_criteria": [
+        "make level-test: two-floor fixture keeps the captain on the lower floor; ramp joins; hatch at an overhang edge transfers; bridge walk sweep unchanged",
+        "make level-eval-test: mock greybox positive control (7 surfaces, 4 heights, 0 unreached, floor head 135->49 with clamp, 81 tower pole blocks); export-input fixture; seeded unreached, pole-ray, band-top, find-sight each fail by name",
+        "make levels-regress green; a seeded bridge change and an unlogged layout sha change each fail",
+        "make level-capture exits non-zero on a missing or blank frame",
+        "make bench SCENE=level LEVEL=bridge runs"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LP1B_CAMERA_VIEWS_LIFT_LIGHT",
+      "description": "views.json v3 (global only; CameraDirector reads level manifests; readers camera_director, ship_geometry_demo, test_camera_director, deck_bow_metrics move together); vertical camera (height follow, ceiling clamp, enclosed view); physics check values and goldens G-LVL-1/2 for the new poses; lift N stops at 6 m/s + ride view + skip; per-level spire segment light and practicals. Edits held files: waits for #292 and R2-BRIDGE-STYLE merges",
+      "estimated_loc": 650,
+      "dependencies": [
+        "LP1A_GREYBOX_WALK_EVAL_REGRESS"
+      ],
+      "acceptance_criteria": [
+        "make camera-test: yaw spread 0.0000 deg over a climb; clamp eases in and out using the LevelMetrics rule; enclosed view; reduced motion cuts",
+        "make physics: pole screen position through the clamp and raised poses; band edge vs slab model within 0.5 deg",
+        "make golden: existing count plus G-LVL-1 and G-LVL-2, 0 failures; references opened",
+        "make ship-demo-lift-test level-test: N stops, ride view slides only vertically, skip, reduced motion cuts, arrival selects the default stage",
+        "make ship-star-light-test: spire segment range ends at its ceiling; handover dims it",
+        "make camera-forward-test ship-console-test deck-layout-eval green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LP2_COMMONS_GREYBOX",
+      "description": "Commons S1-S3: layout v1 from the approved brief (landing, court, terrace, gantry, service; routes; finds with cues; set pieces; light) over the existing painted court; iterate to level-eval ok; retire legacy Commons views and player Z1-Z3; dev build and captures; pause for Mark",
+      "estimated_loc": 300,
+      "dependencies": [
+        "LP1B_CAMERA_VIEWS_LIFT_LIGHT"
+      ],
+      "acceptance_criteria": [
+        "art/levels/commons/thresholds.json approved with the brief; layout v1 from design_docs/levels/commons.md",
+        "make level-eval LEVEL=commons prints level-eval: commons ok",
+        "make camera-test camera-forward-test ship-commons-test ship-commons-assets-test ship-commons-arcade-test ship-demo-lift-test green (old-view goldens re-posed via their CPU/sim references)",
+        "make level-capture LEVEL=commons TAG=s3: every frame opened, sheet and per-file URLs posted",
+        "make publish-dev; latest.json checked; Mark plays; ruling recorded; backlog.md updated"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LP3_COMMONS_DRESS_STYLE",
+      "description": "Commons S4-S5: stapledon_level_lib.py + stapledon_level_commons_v1.py (byte-identical exports, pinned master); dressed with the Commons kit plus new modules; style frames on the R2-BRIDGE-STYLE finish; bench; pause for Mark",
+      "estimated_loc": 150,
+      "dependencies": [
+        "LP2_COMMONS_GREYBOX"
+      ],
+      "acceptance_criteria": [
+        "make level-assets-check LEVEL=commons and make level-eval LEVEL=commons pass on the export; make export-filter-audit includes assets/levels/commons",
+        "make level-capture LEVEL=commons TAG=s5: every frame opened, published",
+        "make bench SCENE=level LEVEL=commons p99 < 16.7 ms at 2560x1440, load logged",
+        "Mark approves the style; ruling recorded"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LP4_LANDING",
+      "description": "S6: baseline.json pinned; levels-regress; rig make test; golden; after-captures; dev build; report; changelog fragment; independent Sonnet evaluation; docs to implemented/r2; backlog (Commons landed v1, Garden S0-brief); design-repo PR (ship-structure seven tiers + stages, interior brief lower levels, roadmap); proposed loop rows for Mark",
+      "estimated_loc": 200,
+      "dependencies": [
+        "LP3_COMMONS_DRESS_STYLE"
+      ],
+      "acceptance_criteria": [
+        "make levels-regress green with the Commons baseline",
+        "tools/rig_check.sh posts rig/full success on the PR head",
+        "make golden 393 ok, 0 failures",
+        "eval_R2-LEVELS_round_1.json >= 70 by a different model",
+        "sh tools/levels_backlog.sh --check passes with the new statuses"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 160,
+    "estimated_total_loc": 2350,
+    "estimated_days": 16,
+    "note": "14.5 working days plus buffer; cut list: service gallery, then N-stop lift generalisation, then enclosed view"
+  },
+  "reviews": [
+    {
+      "date": "2026-10-20",
+      "by": "claude -p --model sonnet (read-only, independent)",
+      "score": 74,
+      "verdict": "PASS",
+      "blocking_fixed": [
+        "physics gate for new poses (check values + G-LVL-1/2)",
+        "shared-file claim corrected; sprint split so LP0/LP1a start now and LP1b waits",
+        "bridge baseline pinned in LP0; evaluator reads exports",
+        "loop rule after S3, levels_backlog.sh --next, charter rows in the approval package",
+        "bench SCENE=level and mk/levels.mk scheduled"
+      ],
+      "suggestions_folded": [
+        "16-day estimate with cut list",
+        "hatch at overhang fixture",
+        "lift speed rule",
+        "AC14 checkable part",
+        "find-route default ceiling; thresholds approved with the brief",
+        "export-filter AC",
+        "bpy authoring-tool note",
+        "readers of views.json listed",
+        "LOC aligned"
+      ]
+    }
+  ],
+  "answers": [],
+  "follow_ups": [
+    "Garden (forest) as the second run: S0 brief drafted while the Commons is in S4-S5",
+    "Intricate bridge pass (stern gallery, mast ring, per the sketch) after R2-BRIDGE-STYLE lands",
+    "Charter: the loop's level rows per levels.md §A6, recorded by Mark"
+  ],
+  "history": [
+    {
+      "date": "2026-10-20",
+      "event": "planned (design/levels); mocks at refs/levels/mock and refs/levels/intricate"
+    }
+  ]
+}
