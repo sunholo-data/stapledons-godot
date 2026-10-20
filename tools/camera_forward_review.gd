@@ -28,13 +28,13 @@ func _run() -> void:
 	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	root.content_scale_size = px
 	if await _new_demo({"sky_state": "rest"}):
-		await _shot("bow_rest_spawn", "bow", Vector3(8, 82, -4.8))
+		await _shot("bow_rest_spawn", "bow", demo.bridge_spawn())
 		await _shot("bow_rest_helm", "bow", demo.consoles.stations["navigation"].use)
 		await _shot("bow_fade_spire", "bow", demo.walk_bridge.closest_walkable(Vector3(0, 82, 12), 4.0))
-		await _shot("astern_rest_spawn", "astern", Vector3(8, 82, -4.8))
+		await _shot("astern_rest_spawn", "astern", demo.bridge_spawn())
 		await _free()
 	if await _new_demo({"sky_state": "cruise"}):
-		await _shot("bow_cruise_spawn", "bow", Vector3(8, 82, -4.8))
+		await _shot("bow_cruise_spawn", "bow", demo.bridge_spawn())
 		await _shot("bow_cruise_port", "bow", demo.walk_bridge.closest_walkable(Vector3(-12, 82, 4), 4.0))
 		await _free()
 	if await _new_demo({"live_start": true}):

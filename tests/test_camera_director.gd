@@ -324,13 +324,14 @@ func test_levels_and_input(demo: Node) -> void:
 	demo._unhandled_input(key(KEY_1))
 	check("AC2 1 picks Z1", dir.level == 1)
 	demo._unhandled_input(key(KEY_R))
-	check("AC2 R returns to the default view (Bow) at the spawn", dir.level == 2 and dir.view_id == "bow" and demo.avatar_pos.distance_to(Vector3(8, 82, -4.8)) < 1e-3)
+	check("AC2 R returns to the default view (Bow) at the spawn", dir.level == 2 and dir.view_id == "bow" and demo.avatar_pos.distance_to(demo.bridge_spawn()) < 1e-3)
 	step(demo, 4.0) # a switch from a preset back to Bow eases for up to 3 s
 	# No input moves the camera continuously: a held level is still while the captain stands.
 	var a: Transform3D = demo.camera.global_transform
 	step(demo, 0.5)
 	check("AC2 standing at a level the camera is still", demo.camera.global_transform.is_equal_approx(a))
 	# Locks: lift travel and the benchmark; console focus (D4).
+	demo.avatar_pos = Vector3(8, 82, -4.8) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	check("lift boards", demo.lift.board())
 	demo._unhandled_input(key(KEY_1))
 	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
@@ -396,7 +397,7 @@ func test_sectors_and_walk(demo: Node) -> void:
 	demo.set_preset("reset")
 	dir.set_level(2)
 	step(demo, 1.0)
-	demo.avatar_pos = demo.walk_bridge.closest_walkable(Vector3(16.0 * cos(deg_to_rad(-60.0)), 82.0, 16.0 * sin(deg_to_rad(-60.0))), 3.0)
+	demo.avatar_pos = demo.walk_bridge.closest_walkable(Vector3(16.0 * cos(deg_to_rad(30.0)), 82.0, 16.0 * sin(deg_to_rad(30.0))), 3.0) # R2-DECK-LAYOUT put the Crew console at -60 deg; from 30 deg the walk runs 14 m clear
 	step(demo, 1.5)
 	var start_sector: int = dir.sector
 	# Hold the screen-relative key that walks most nearly along the ring (tangentially), so the
@@ -680,15 +681,19 @@ func figure_clear(demo: Node, eye: Vector3, foot: Vector3) -> Array:
 func test_spawn_occlusion(demo: Node) -> void:
 	var dir: CameraDirector = demo.director
 	demo.set_preset("reset")
-	var foot := Vector3(8, 82, -4.8)
+	# The developer presets Z1-Z3 (D-93) keep their check at the lift's landing, where it was made;
+	# R2-DECK-LAYOUT moved the spawn behind the helm, where the player's views are Bow and Astern.
+	var landing := Vector3(8, 82, -4.8)
 	for lv in [1, 2, 3]:
 		var v: Dictionary = dir.level_view(lv, "bridge")
 		var bad := []
-		for k: int in cells(dir, foot):
-			bad.append_array(figure_clear(demo, dir.resolve(v, foot, k).origin, foot))
-		check("spawn: the whole figure (0.15 to 1.6 m) is clear at Z%d from every cell the spawn can be in, the lift's guards included %s" % [lv, bad], bad.is_empty())
-	var bow_eye := dir.walk_pose(dir.views["bow"], foot).origin
-	check("spawn: the Bow view sees the whole figure, the lift's guards included %s" % [figure_clear(demo, bow_eye, foot)], figure_clear(demo, bow_eye, foot).is_empty())
+		for k: int in cells(dir, landing):
+			bad.append_array(figure_clear(demo, dir.resolve(v, landing, k).origin, landing))
+		check("landing: the whole figure (0.15 to 1.6 m) is clear at Z%d from every cell the landing can be in, the lift's guards included %s" % [lv, bad], bad.is_empty())
+	var foot: Vector3 = demo.bridge_spawn() # R2-DECK-LAYOUT: the manifest's spawn
+	for vid: String in ["bow", "astern"]:
+		var eye := dir.walk_pose(dir.views[vid], foot).origin
+		check("spawn: the %s view sees the whole figure, the lift's guards included %s" % [vid, figure_clear(demo, eye, foot)], figure_clear(demo, eye, foot).is_empty())
 
 
 # ------------------------------------------------------------------ C2 cues (AC6)
@@ -757,6 +762,7 @@ func test_cues() -> void:
 	demo = await new_demo({"live_start": true})
 	dir = demo.director
 	demo._unhandled_input(key(KEY_9))
+	demo.avatar_pos = Vector3(8, 82, -4.8) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	check("lift boards", demo.lift.board())
 	check("AC6 no cue in the lift", not dir.sky("sky_forward", true) and dir.deck_view == "astern")
 	demo.queue_free()
@@ -889,8 +895,8 @@ func test_console_round_trip() -> void:
 	check("crew: opens from the free camera", c.use("crew", "open"))
 	step(demo, 3.0)
 	c.leave()
-	step(demo, 3.0)
-	check("crew: stepping back leaves the free camera off (the director owns the camera)", not demo.free_camera_on() and not dir.overridden and demo.camera_mode == "player" and not demo.wants_capture())
+	step(demo, 5.0) # a half-turn back at <= 90 deg/s takes up to ~3.5 s (the Crew console now faces the bow)
+	check("crew: stepping back leaves the free camera off (the director owns the camera) (free %s overridden %s mode %s capture %s focused %s)" % [demo.free_camera_on(), dir.overridden, demo.camera_mode, demo.wants_capture(), c.focused], not demo.free_camera_on() and not dir.overridden and demo.camera_mode == "player" and not demo.wants_capture())
 	demo.queue_free()
 	await process_frame
 

@@ -32,6 +32,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await test_stations()
+	await test_manifest_points()
 	await test_confirm_and_helm()
 	await test_chart()
 	await test_voyage_archive_sgr()
@@ -76,8 +77,10 @@ func test_stations() -> void:
 		check("AC8 %s: every mesh found in ship.glb (%d)" % [id, st.meshes.size()], st.meshes.size() == ShipConsoles.STATIONS[id].meshes.size())
 		var near := true
 		for m: Dictionary in st.meshes:
-			near = near and demo.walk_bridge.is_walkable(m.use) and Vector2(m.use.x, m.use.z).distance_to(Vector2(m.origin.x, m.origin.z)) <= ShipConsoles.REACH_M
-		check("AC8 %s: use points walkable within 2.5 m" % id, near)
+			# Reach is the game's rule: the plan distance to the console's footprint (in_reach). R2-DECK-LAYOUT
+			# authored operator points stand behind the console, ~2.5 m from its mesh origin.
+			near = near and demo.walk_bridge.is_walkable(m.use) and ShipConsoles.footprint_distance(m.box, m.use) <= ShipConsoles.REACH_M
+		check("AC8 %s: use points walkable within 2.5 m of the console" % id, near)
 		if st.active:
 			var length := c.path_length(id)
 			print("path %s %.1f m" % [id, length])
@@ -99,6 +102,7 @@ func test_stations() -> void:
 	check("AC8 the Voyage console's prompt", demo.ship_hud.prompt.text == "Voyage console · E use")
 	# E priority: the nearest interactable in reach and facing; the lift is one of them.
 	demo.set_preset("reset")
+	demo.avatar_pos = Vector3(8, 82, -4.8) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	demo._process(0.016)
 	check("E priority: at the landing E names the lift", demo.ship_hud.prompt.text.begins_with("Lift · E") and c.e_target().kind == "lift")
 	c.go_to("archive")
@@ -137,6 +141,42 @@ func test_stations() -> void:
 	check("use() refuses to open a console out of reach", not c.use("navigation", "open") and c.focused == "")
 	c.go_to("reserved_2")
 	check("a reserved console refuses: offline", not c.use("reserved_2", "open") and c.focused == "")
+	demo.queue_free()
+	await process_frame
+
+
+## R2-DECK-LAYOUT §D2 (AC4): the manifest drives the spawn and the operators' use points
+## (spawn_captain, stations.<id>.use_m, ship metres); a manifest without them falls back to the R1
+## spawn and to the closest-walkable rule (the pinned grounded-bridge-v2 deck, make ship-baseline).
+func test_manifest_points() -> void:
+	var demo: Node = await new_demo()
+	var c: ShipConsoles = demo.consoles
+	var m: Dictionary = demo.manifest
+	var sc: Variant = m.get("spawn_captain")
+	check("AC4 the manifest names the spawn (spawn_captain)", sc is Dictionary)
+	if sc is Dictionary:
+		var want := Vector3(float(sc.position_m[0]), 82.0, -float(sc.position_m[1]))
+		check("AC4 the captain starts at the manifest's spawn %s (%s), and the spawn is walkable" % [want, demo.avatar_pos], demo.avatar_pos.distance_to(want) < 1e-3 and demo.walk_bridge.is_walkable(want) and demo.bridge_spawn().distance_to(want) < 1e-3)
+	var authored := 0
+	for id: String in m.get("stations", {}):
+		var u: Array = m.stations[id].use_m
+		var want := Vector3(float(u[0]), 82.0, -float(u[1]))
+		var got: Vector3 = c.stations[id].use
+		authored += 1
+		var box: AABB = c._mesh(ShipConsoles.STATIONS[id].walk).box
+		check("AC4 %s stands at its authored use point %s (%s, within 0.3 m), walkable and in reach (%.2f m)" % [id, want, got, ShipConsoles.footprint_distance(box, got)], Vector2(got.x, got.z).distance_to(Vector2(want.x, want.z)) <= 0.3 and demo.walk_bridge.is_walkable(got) and ShipConsoles.footprint_distance(box, got) <= ShipConsoles.REACH_M)
+	check("AC4 the manifest authors navigation, voyage and crew use points (%d)" % authored, authored >= 3 and m.stations.has("navigation") and m.stations.has("voyage") and m.stations.has("crew"))
+	demo.queue_free()
+	await process_frame
+	if not FileAccess.file_exists("res://build/ship-baseline/manifest.json"):
+		check("AC4 fallback: the pinned baseline is fetched (make ship-baseline)", false)
+		return
+	demo = await new_demo({"asset_dir": "res://build/ship-baseline"})
+	c = demo.consoles
+	check("AC4 fallback: no spawn_captain -> the R1 spawn (8, 82, -4.8) (%s)" % demo.avatar_pos, demo.avatar_pos.distance_to(Vector3(8, 82, -4.8)) < 1e-3)
+	var o: Vector3 = c._mesh("console_navigation_1").origin
+	var rule: Vector3 = demo.walk_bridge.closest_walkable(Vector3(o.x, 82.0, o.z), ShipConsoles.REACH_M)
+	check("AC4 fallback: no use_m -> the closest-walkable rule (navigation at %s, %.2f m from the rule's first point)" % [c.stations.navigation.use, c.stations.navigation.use.distance_to(rule)], c.stations.navigation.use.distance_to(rule) <= 0.95)
 	demo.queue_free()
 	await process_frame
 
@@ -507,6 +547,7 @@ func test_walk_to() -> void:
 	check("WASD cancels an auto-walk", c.walk_target.is_empty() and c.walking.is_empty())
 	# The lower deck: decisions need the lift.
 	demo.set_preset("reset")
+	demo.avatar_pos = Vector3(8, 82, -4.8) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	demo.lift.board()
 	demo.lift.advance(0.81); demo.lift.advance(11.01); demo.lift.advance(0.81)
 	demo._process(0.016)

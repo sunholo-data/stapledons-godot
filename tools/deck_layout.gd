@@ -280,9 +280,12 @@ func walkable_cell(c: Vector3) -> bool:
 		var q: Vector3 = g.old * (g.new.affine_inverse() * c)
 		if (g.box as Rect2).has_point(Vector2(q.x, q.z)) and not covered(q):
 			return false
+	var xz := Vector2(c.x, c.z)
+	for r: Rect2 in _static:
+		if r.has_point(xz): # beside a fixed prop the shipped hole stands exactly (no dilation)
+			return not is_nan(orig_walk.height_at(c.x, c.z))
 	if covered(c):
 		return true
-	var xz := Vector2(c.x, c.z)
 	if xz.length() > WALK_RIM_M:
 		return false
 	for r: Rect2 in _static:
@@ -333,7 +336,7 @@ func build_walk() -> WalkArea:
 			for i in range(1, poly.size() - 1):
 				tris.append_array([poly[0], poly[i], poly[i + 1]])
 	var done := {}
-	var h := WALK_CELL_M * 0.5
+	var cells := {} # Vector2i -> the walk height there (walkable cells only)
 	for r: Rect2 in rects:
 		var i0 := roundi(r.position.x / WALK_CELL_M)
 		var j0 := roundi(r.position.y / WALK_CELL_M)
@@ -349,11 +352,29 @@ func build_walk() -> WalkArea:
 				var y := orig_walk.height_at(c.x, c.z)
 				if is_nan(y):
 					y = DECK_Y if Vector2(c.x, c.z).length() <= WALK_RIM_M else _near_height(c)
-				var p0 := Vector3(c.x - h, y, c.z - h)
-				var p1 := Vector3(c.x + h, y, c.z - h)
-				var p2 := Vector3(c.x + h, y, c.z + h)
-				var p3 := Vector3(c.x - h, y, c.z + h)
-				tris.append_array([p0, p1, p2, p0, p2, p3])
+				cells[key] = y
+	# One quad per run of walkable cells along x at one height (the same plan coverage as one quad
+	# per cell, a fraction of the triangles: the baked walk_bridge.glb stays small).
+	var keys := cells.keys()
+	keys.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
+	var k := 0
+	while k < keys.size():
+		var a: Vector2i = keys[k]
+		var y: float = cells[a]
+		var e := k
+		while e + 1 < keys.size() and keys[e + 1] == Vector2i((keys[e] as Vector2i).x + 1, a.y) and cells[keys[e + 1]] == y:
+			e += 1
+		var b: Vector2i = keys[e]
+		var x0 := a.x * WALK_CELL_M
+		var x1 := (b.x + 1) * WALK_CELL_M
+		var z0 := a.y * WALK_CELL_M
+		var z1 := z0 + WALK_CELL_M
+		var p0 := Vector3(x0, y, z0)
+		var p1 := Vector3(x1, y, z0)
+		var p2 := Vector3(x1, y, z1)
+		var p3 := Vector3(x0, y, z1)
+		tris.append_array([p0, p1, p2, p0, p2, p3])
+		k = e + 1
 	w._tris = tris
 	w._index()
 	return w
@@ -364,7 +385,7 @@ func build_walk() -> WalkArea:
 func affected_rects() -> Array:
 	var out := []
 	for g: Dictionary in _moved:
-		if g.removed:
+		if g.removed or str(g.id).begins_with("v2_conduit_"): # floor conduits are flat: no walk hole to move
 			continue
 		var box: Rect2 = g.box
 		out.append(_snap(box))

@@ -23,7 +23,6 @@ const DOLLY_S := 0.6 # the director's "console" view ease (data/camera/views.jso
 const WALK_SPEED_MPS := 3.5
 const PATH_CEILING_M := 40.0
 const HOLD_S := 1.5
-const BRIDGE_SPAWN := Vector3(8, 82, -4.8)
 ## The stations, from ship.glb node names (§B, D-57 Q5). The navigation station is the arc
 ## of three consoles; "walk" names the mesh Walk-to aims for.
 const STATIONS := {
@@ -95,12 +94,18 @@ func setup(owner_demo: Node) -> void:
 			var box: AABB = n.global_transform * n.mesh.get_aabb()
 			var origin: Vector3 = n.global_transform.origin
 			var use: Vector3 = demo.walk_bridge.closest_walkable(Vector3(origin.x, 82.0, origin.z), REACH_M)
-			# Stand a step back from the console's edge (still in reach) so it is in view.
-			var out := Vector3(use.x - origin.x, 0.0, use.z - origin.z)
-			if out.length() > 1e-3:
-				var back: Vector3 = demo.walk_bridge.closest_walkable(use + out.normalized() * 0.9, 0.4)
-				if demo.walk_bridge.is_walkable(back) and footprint_distance(box, back) <= REACH_M - 0.5:
-					use = back
+			var authored: Variant = authored_use(demo.manifest, id) if mesh_name == spec.walk else null
+			if authored is Vector3:
+				# R2-DECK-LAYOUT §D2: the operator point authored in Blender (INTERACT_<id>_use), so
+				# "faces the bow" is a property of the asset.
+				use = demo.walk_bridge.closest_walkable(authored, 1.0)
+			else:
+				# Stand a step back from the console's edge (still in reach) so it is in view.
+				var out := Vector3(use.x - origin.x, 0.0, use.z - origin.z)
+				if out.length() > 1e-3:
+					var back: Vector3 = demo.walk_bridge.closest_walkable(use + out.normalized() * 0.9, 0.4)
+					if demo.walk_bridge.is_walkable(back) and footprint_distance(box, back) <= REACH_M - 0.5:
+						use = back
 			st.meshes.append({"name": mesh_name, "node": n, "origin": origin, "box": box, "use": use})
 			mesh_station[mesh_name] = id
 			if mesh_name == spec.walk:
@@ -110,13 +115,23 @@ func setup(owner_demo: Node) -> void:
 	_build_screens()
 
 
+## A station's authored operator point (glTF), from the manifest's stations.<id>.use_m (ship
+## metres; R2-DECK-LAYOUT §D2), else null (the closest-walkable rule).
+static func authored_use(manifest: Dictionary, id: String) -> Variant:
+	var u: Variant = manifest.get("stations", {}).get(id, {}).get("use_m")
+	if u is Array and (u as Array).size() == 2:
+		return Vector3(float(u[0]), 82.0, -float(u[1]))
+	return null
+
+
 ## Walked path length from the bridge spawn to each station's use point (AC8; printed by
 ## the console test, 40 m ceiling).
 func path_length(id: String) -> float:
-	var p: PackedVector3Array = demo.walk_bridge.path(BRIDGE_SPAWN, stations[id].use)
+	var spawn: Vector3 = demo.bridge_spawn()
+	var p: PackedVector3Array = demo.walk_bridge.path(spawn, stations[id].use)
 	if p.is_empty():
 		return -1.0
-	var length := BRIDGE_SPAWN.distance_to(p[0])
+	var length := spawn.distance_to(p[0])
 	for i in range(1, p.size()):
 		length += p[i - 1].distance_to(p[i])
 	stations[id].path_len = length

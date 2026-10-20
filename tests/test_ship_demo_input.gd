@@ -106,7 +106,7 @@ func _run() -> void:
 		pinch.factor=1.02;demo._unhandled_input(pinch);advance(demo,1./60.)
 	check("MacBook pinch open (30 x1.02): exactly one level in (%d -> %d)" % [start,dir.level],dir.level==start-1)
 	advance(demo,.4)
-	demo.set_preset("reset");advance(demo,.1)
+	demo.set_preset("reset");demo.avatar_pos=Vector3(8,82,-4.8);advance(demo,.1) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	check("lift can board",demo.lift.board())
 	pan.delta=Vector2(0,1.);demo._unhandled_input(pan);demo._unhandled_input(wheel)
 	advance(demo,.1)

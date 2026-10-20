@@ -1,7 +1,7 @@
 {
   "schema": "stapledons.deck.layout/1",
   "name": "bow_a",
-  "about": "R2-DECK-LAYOUT re-plan (D-94) candidate A, the bow stage: the navigation arc at the bow rail on the centreline (r 17.5, bearings -16/0/+16) with its operator facing the bow (use point r 15); the captain's chair behind it; the Voyage and Crew consoles flanking (bearings -34 and +32), operators stern of their desks facing the bow; the spawn behind the helm on the centreline; the Archive at the mast unchanged; the rim frond under the starbow's centre (+10 deg) moved to +25 deg to pair with -25; conduits re-aimed at the moved stations. Blockout for search and review only: the Blender export is the source of truth.",
+  "about": "R2-DECK-LAYOUT re-plan (D-94) candidate A, the bow stage: the navigation arc at the bow rail on the centreline (r 17.5, bearings -16/0/+16) with its operator facing the bow (use point r 15); the captain's chair behind it; the Voyage and Crew consoles flanking (bearings -34 and +32), operators stern of their desks facing the bow; the spawn behind the helm on the centreline; the Archive at the mast unchanged; the rim frond under the starbow's centre (+10 deg) moved to +25 deg to pair with -25; conduits re-aimed at the moved stations. Blockout for search and review only: the Blender export is the source of truth. DL1: the chair keeps the walk 0.5 m from its plan rectangle (walk_clear_m), so its high back never hides a captain standing right behind it (camera-test AC1 at the Z1/Z3 developer presets).",
   "frame": "ship metres, Blender +Z up; glTF (x, z, -y); the bow is ship +y (glTF -z)",
   "bridge": {
     "spawn_captain": {
@@ -42,7 +42,8 @@
           -2.599,
           12.227
         ],
-        "yaw_deg": 0.0
+        "yaw_deg": 0.0,
+        "walk_clear_m": 0.5
       },
       "console_decision_0": {
         "position_m": [

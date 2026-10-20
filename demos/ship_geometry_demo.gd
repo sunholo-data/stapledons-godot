@@ -571,10 +571,17 @@ func set_free_camera(on: bool) -> void:
 	else:
 		director.release();director.advance(0.);_sync_observer()
 	_sync_pointer()
-## The captain at the bridge spawn, facing the old default yaw.
+## R2-DECK-LAYOUT §D2: the bridge spawn (glTF), from the manifest's spawn_captain (ship metres,
+## authored in Blender as SPAWN_captain), else the R1 walk.bridge_spawn_gltf_m.
+func bridge_spawn() -> Vector3:
+	var sc: Variant=manifest.get("spawn_captain")
+	if sc is Dictionary:return Vector3(float(sc.position_m[0]),82.,-float(sc.position_m[1]))
+	var w: Array=manifest.get("walk",{}).get("bridge_spawn_gltf_m",[8,82,-4.8])
+	return Vector3(float(w[0]),float(w[1]),float(w[2]))
+## The captain at the bridge spawn, facing the bow (D-92).
 func _reset_captain() -> void:
 	if lift!=null:lift.reset()
-	active_level=0;walk=walk_bridge;avatar_pos=Vector3(8,82,-4.8);captain_yaw=-PI*.5;_walk_hold_yaw=NAN # D-92: facing the bow
+	active_level=0;walk=walk_bridge;avatar_pos=bridge_spawn();captain_yaw=-PI*.5;_walk_hold_yaw=NAN # D-92: facing the bow
 	if consoles!=null:consoles.cancel_walk()
 func level_name() -> String:
 	return str(director.level_view(director.level,director.area).get("name","Deck"))

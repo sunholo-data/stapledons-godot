@@ -1,0 +1,38 @@
+{
+  "schema": "stapledons.deck.pins/1",
+  "milestone": "DL1 blockout (layout A, ledger D-95)",
+  "authoring_base_commit": "e4da963029beb9acff09c4baaa577426d8be11a6",
+  "authoring_script": "~/dev/blender/scripts/stapledon_deck_layout_v2.py (also packed in the master as a text datablock)",
+  "authoring_script_sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470",
+  "layout": "art/deck-layout-v2/bow_a.json",
+  "layout_sha256": "43bc53a5ca28b46a28a02c05c0563a03b4cd31840e3833615c5afdc21c515dfc",
+  "source_master": "art/ship-demo-v1/grounded-bridge-v2/stapledon_bridge_mesh_grounded_v2.blend",
+  "source_master_sha256": "d1189dd8da752b971c31a19254a39794c8d3a89b67fbe34bd0c392d3e15dd9b5",
+  "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 bd05d05c9f06bbcc36fdebb0ef371fe6edd0d6998d70ff9cc5d566101aa65697, 15460 triangles after Blender import), put into WALK_bridge by the generator",
+  "pins": {
+    "assets/ship_demo/ship.glb": {
+      "bytes": 9125496,
+      "sha256": "53988e8f664b4f4c76e1b15d10ebaa08375d0f927b0bab2d1de3089621604f0b",
+      "materials": 14,
+      "images": 10,
+      "all_materials_opaque": true
+    },
+    "assets/ship_demo/walk_bridge.glb": {
+      "bytes": 382340,
+      "sha256": "5e242b913276340501c1844af03ac02dccc2037cf43d87e16f24a4decf978e34",
+      "materials": 0,
+      "images": 0,
+      "all_materials_opaque": true
+    }
+  },
+  "masters": {
+    "stapledon_bridge_deck_layout_a_v2.blend": {
+      "bytes": 8279429,
+      "sha256": "d976cf945cedc156dfd18447d2e186722fdcbf2e248d1fc0d1448f9cdbe8e6b7",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/d976cf945cedc156dfd18447d2e186722fdcbf2e248d1fc0d1448f9cdbe8e6b7.blend"
+    }
+  },
+  "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
+  "unmoved_objects_identical": 163,
+  "exported_mesh_instances": 153
+}

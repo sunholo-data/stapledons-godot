@@ -436,6 +436,7 @@ func test_strip_and_cards() -> void:
 	check("AC3 gravity card leaves on leaving", not hud.cards.has("gravity"))
 	# Lower deck.
 	demo.set_preset("reset")
+	demo.avatar_pos = Vector3(8, 82, -4.8) # the lift's landing (R2-DECK-LAYOUT: no longer the spawn)
 	demo.lift.board()
 	demo.lift.advance(0.81); demo.lift.advance(11.01); demo.lift.advance(0.81)
 	demo._process(0.016)

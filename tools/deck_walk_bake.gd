@@ -50,6 +50,7 @@ func _run() -> void:
 		for p: Vector3 in [a, b, c]:
 			st.set_normal(Vector3.UP)
 			st.add_vertex(p)
+	st.index()
 	var mi := MeshInstance3D.new()
 	mi.name = "WALK_bridge"
 	mi.mesh = st.commit()
