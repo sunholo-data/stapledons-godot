@@ -707,6 +707,7 @@ func _export_smoke() -> void:
 	ok=ok and lens_ok
 	print("ship-demo-smoke-stage lens tables: ",lens_ok," ",Schwarzschild.load_error)
 	if ok:
+		avatar_pos=Vector3(8,82,-4.8) # the lift's landing (R2-DECK-LAYOUT: the spawn is behind the helm)
 		for direction in 2:
 			ok=ok and lift.board()
 			lift.advance(.81);lift.advance(11.01);lift.advance(.81)
