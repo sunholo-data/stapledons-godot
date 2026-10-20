@@ -12,7 +12,13 @@
 - **Sky:** <open / band from the rim, top <°> at the journey stages (§B4)>
 
 ## Shape language (D-104)
-<Which surfaces and routes curve (arc pieces in the greybox), and the S4 shapes: flowing curves, grown-looking technology, no boxy silhouettes. Plants go only through `layers.foliage[]`.>
+<Which surfaces and routes curve (arc pieces in the greybox), and the S4 shapes: flowing curves, grown-looking technology, no boxy silhouettes.>
+
+## Plants (D-106)
+- **Kinds:** <the plant kinds, about one painted card image each, approved at S0>.
+- **Cards:** placed in `layers.foliage[]` as `{card, at, scale, layer: fore|stage|far, sway}`, painted at S4, pinned in the foliage library (`make foliage-check`).
+- **Structure:** smooth stylised 3D only for trunks, planters and grown-tech fixtures.
+- **Shadows:** proxy shadow casters for big plants.
 
 ## Stages
 
@@ -41,6 +47,7 @@
 
 ## Style checklist (S5)
 - [ ] No boxy silhouettes; structures read as grown, with flowing curves (D-104)
+- [ ] Plants read as painted cards in the level's style; they sway gently and cast shadows where they're big (D-106)
 - [ ] The palette and ink match R2-BRIDGE-STYLE
 
 ## Playtest checklist (S3; 5–8 lines, answered one line each)

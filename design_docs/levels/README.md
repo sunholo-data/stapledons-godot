@@ -16,7 +16,7 @@ The ship has seven tiers on the generator mast, and travel runs toward the bow. 
 | S1 | Greybox | agent or loop | `art/levels/<id>/layout.json` (vN), built in-engine by `LevelGreybox` | `make level-eval LEVEL=<id>` runs |
 | S2 | Evaluate | **loop** | metrics against `art/levels/<id>/thresholds.json`; iterate the layout | `level-eval: <id> ok` |
 | S3 | Playtest | attended | dev build, contact sheet, per-file URLs, the checklist | ⏸ Mark plays; ruling recorded |
-| S4 | Dress | agent (renders park) | Blender export from the same layout: hero, coarse, walk, cards, manifest | `level-assets-check`, `level-eval` on the export |
+| S4 | Dress | agent (renders park) | Blender export from the same layout: hero, coarse, walk, cards, manifest; foliage cards painted (one image per plant kind, D-106) | `level-assets-check`, `foliage-check`, `level-eval` on the export |
 | S5 | Style | attended | style frames on the R2-BRIDGE-STYLE finish; the shape language checked (curves, no boxy silhouettes, D-104) | ⏸ Mark approves |
 | S6 | Land | loop mechanics, Mark merges | `rig/full`, goldens, `art/levels/<id>/baseline.json` pinned | merged; backlog `landed vN` |
 | S7 | Revisit | either | layout vN+1 re-enters at S1 (or S4) | every other level's baseline still green |
@@ -76,7 +76,12 @@ Upload the frames to `gs://stapledons-voyage-assets/refs/levels/<id>/<tag>/`, an
 **Shape language (D-104):**
 - **From S4 dressing on, structures follow the art bible:** flowing curves, grown-looking technology, no boxy silhouettes (platforms, catwalks, rails, stalls, stairs, supports, roofs). Mark checks it at the S5 style pause.
 - **The greybox may stay blocky,** because S1 is about routes. Use `arc` pieces for platforms and catwalks the brief means to curve, because a curved route changes the feel.
-- **Plants:** the stylised-plants spike owns them. A level only places them through `layers.foliage[]` in its manifest.
+- **Plants are painted foliage cards** (D-106; the stylised-plants spike, PR #299, `design_docs/planned/r2/stylised-plants-spike.md`):
+  - **Placement:** every plant goes in the manifest's `layers.foliage[]` as `{card, at, scale, layer: fore|stage|far, sway}`. The schema checks it.
+  - **Painting:** cards are painted per level at S4, about one painted image per plant kind. The level's brief lists the kinds and Mark approves them at S0.
+  - **The library:** cards live in a foliage library with sha256 pins and provenance, and `make foliage-check` validates it. Both are built with the spike's follow-up, not yet in this pipeline.
+  - **What stays 3D:** only structure, as smooth stylised shapes (trunks, planters, grown-tech fixtures), carrying painted leaf cards.
+  - **Shadows:** big plants get simple proxy shadow casters.
 
 **Placement rules:**
 - **Keep landmarks off the pole line.** The evaluator's `pole-ray` catches them.

@@ -4,7 +4,7 @@ extends RefCounted
 ## schema, stapledons.level/1. One document describes a level: its stages (bounded walkable areas
 ## with surfaces at several heights), each stage's fixed views (they slide, never turn: no yaw rule),
 ## routes between surfaces and stages, finds, set pieces, lights, layers (layers.foliage[] is the plants
-## hook, D-103), the lift stop and crew anchors. A layout (art/levels/<id>/layout.json) is the same
+## cards, D-106), the lift stop and crew anchors. A layout (art/levels/<id>/layout.json) is the same
 ## document with greybox `pieces`; the manifest a build writes drops nothing but adds layout_sha256.
 ## Coordinates are the ship (structure) frame: x, y = the bow, z = up; metres.
 ## validate() returns human-readable errors; empty means valid.
@@ -15,6 +15,9 @@ const ROUTE_KINDS := ["stairs", "ramp", "ladder", "hatch", "exit", "gantry", "li
 const WHEN := ["stop", "eclipse", "arrival", "cruise", "rest"]
 const PIECE_ROLES := ["surface", "structure", "route", "find", "fore", "back", "roof"]
 const PIECE_SHAPES := ["box", "arc", "ramp"]
+## D-106: everything that grows is a painted foliage card from the foliage library; layer is the
+## parallax layer it stands in.
+const FOLIAGE_LAYERS := ["fore", "stage", "far"]
 const PX_MIN := 30.0
 const PX_MAX := 90.0
 
@@ -117,8 +120,14 @@ static func validate(m: Variant) -> Array[String]:
 	var layers: Variant = d.get("layers", {})
 	if not layers is Dictionary:
 		e.append("layers must be an object")
-	elif layers.has("foliage") and not layers.foliage is Array:
-		e.append("layers.foliage must be a list (the plants hook; D-103)")
+	elif layers.has("foliage"):
+		if not layers.foliage is Array:
+			e.append("layers.foliage must be a list (painted foliage cards; D-103, D-106)")
+		else:
+			for c: Variant in layers.foliage:
+				if not c is Dictionary or not c.get("card") is String or not _vec(c.get("at"), 3) or not _num(c.get("scale")) or float(c.get("scale", 0)) <= 0.0 \
+						or not str(c.get("layer", "")) in FOLIAGE_LAYERS or not _num(c.get("sway")) or float(c.get("sway", -1)) < 0.0:
+					e.append("layers.foliage: each card needs card (a library id), at [x, y, z], scale > 0, layer in %s and sway >= 0 (D-106): %s" % [FOLIAGE_LAYERS, c])
 	for pc: Variant in d.get("pieces", []):
 		if not pc is Dictionary or not str(pc.get("role", "")) in PIECE_ROLES or not str(pc.get("shape", "")) in PIECE_SHAPES:
 			e.append("piece %s: role in %s, shape in %s" % [pc.get("name", "?") if pc is Dictionary else pc, PIECE_ROLES, PIECE_SHAPES])

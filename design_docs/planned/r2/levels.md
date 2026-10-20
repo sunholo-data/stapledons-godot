@@ -122,7 +122,7 @@ One manifest per level, `assets/levels/<id>/manifest.json`. It is generated from
 | `use_points[]` | consoles, terminals and benches: where the captain stands and what opens |
 | `finds[]` | things to discover: `id`, `stage`, `at`, `cue` (light, sound or motion), `reveal` (which view shows it) |
 | `set_pieces[]` | authored framings: `id`, `at`, `view`, `when` (`stop`, `eclipse`, `arrival`, `cruise`), what it frames |
-| `layers` | `hero`, `coarse` (true-depth far geometry), `cards[]` (painted, true depth), `foreground[]`, and `foliage[]`: plant assets by id and placement. This is a hook only; the stylised-plants spike owns the plants (D-103 follow-up), and levels build none |
+| `layers` | `hero`, `coarse` (true-depth far geometry), `cards[]` (painted, true depth), `foreground[]`, and `foliage[]`: painted foliage cards (D-106), each `{card, at, scale, layer: fore\|stage\|far, sway}`, from a foliage library with sha256 pins and provenance (`make foliage-check`, built after the stylised-plants spike, PR #299). Cards are painted per level at S4, about one image per plant kind approved in the brief; trunks, planters and grown-tech fixtures are smooth stylised 3D; big plants get proxy shadow casters |
 | `lights` | the spire segment (height, range bounded by the ceiling), `practicals[]` |
 | `lift_stop` | the level's z, gate, landing stage |
 | `crew_anchors[]` | named stand points with a facing, for the crew systems |

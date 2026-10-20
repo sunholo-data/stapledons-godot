@@ -68,8 +68,12 @@ func test_schema() -> void:
 	schema.schema = "stapledons.level/0"
 	check("a wrong schema id is rejected", _rejects(schema, "schema"))
 	var fol: Dictionary = base.duplicate(true)
-	fol["layers"] = {"foliage": [{"asset": "plant_x", "at": [1, 2, 3]}]}
-	check("layers.foliage[] (the plants hook, D-103) validates", LevelSchema.validate(fol).is_empty())
+	fol["layers"] = {"foliage": [{"card": "frond_curl_v1", "at": [1, 2, 3], "scale": 1.2, "layer": "stage", "sway": 0.3}]}
+	check("a painted foliage card (card, at, scale, layer, sway; D-106) validates", LevelSchema.validate(fol).is_empty())
+	fol.layers.foliage[0].layer = "sky"
+	check("a foliage card on an unknown layer is rejected", _rejects(fol, "foliage"))
+	fol.layers.foliage = [{"card": "frond_curl_v1", "at": [1, 2, 3], "scale": 0.0, "layer": "fore", "sway": 0.3}]
+	check("a foliage card with no scale is rejected", _rejects(fol, "foliage"))
 	fol.layers.foliage = "plants"
 	check("a foliage hook that is not a list is rejected", _rejects(fol, "foliage"))
 

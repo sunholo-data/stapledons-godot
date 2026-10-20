@@ -253,7 +253,8 @@
         "make level-assets-check LEVEL=commons and make level-eval LEVEL=commons pass on the export; make export-filter-audit includes assets/levels/commons",
         "make level-capture LEVEL=commons TAG=s5: every frame opened, published",
         "make bench SCENE=level LEVEL=commons p99 < 16.7 ms at 2560x1440, load logged",
-        "Mark approves the style; ruling recorded"
+        "Mark approves the style; ruling recorded",
+        "Commons foliage as painted cards (D-106): one approved image per plant kind, placed through layers.foliage[], pinned in the foliage library; make foliage-check passes (once the spike's library lands)"
       ],
       "passes": null,
       "started": null,
@@ -327,6 +328,11 @@
       "date": "2026-10-20",
       "ledger": "D-103 follow-up",
       "answer": "plants: the current Blender organic models are poor; a separate stylised-plants spike owns them. Levels leave a manifest hook (layers.foliage[]) and build no plants"
+    },
+    {
+      "date": "2026-10-20",
+      "ledger": "D-106",
+      "answer": "painted foliage cards for everything that grows (spike PR #299): manifest layers.foliage[] {card, at, scale, layer fore|stage|far, sway} validated by LevelSchema (LP1a); foliage library with sha256 pins and provenance plus make foliage-check come with the spike's follow-up; cards painted per level at S4 (one image per plant kind, approved in the brief); smooth stylised 3D only for structure; proxy shadow casters for big plants"
     }
   ],
   "follow_ups": [
