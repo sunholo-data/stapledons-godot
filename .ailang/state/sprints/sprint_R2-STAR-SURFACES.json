@@ -1,0 +1,188 @@
+{
+  "sprint_id": "R2-STAR-SURFACES",
+  "status": "awaiting_approval",
+  "approved": null,
+  "created": "2026-10-20",
+  "design_doc": "design_docs/planned/r2/star-surfaces.md",
+  "sprint_plan": "design_docs/planned/r2/star-surfaces-sprint.md",
+  "branch": "feat/star-surfaces (execution); this plan on design/star-surfaces",
+  "origin": "Mark, attended 2026-10-20 (ledger D-99): \"another strand is we could have more impressive textures for the stars/sun - we are dimming them anyway, so we can see structure?\"",
+  "external_dependencies": [
+    "sunholo/celestial 0.5.0 (new module stellar; publish on Mark's go)"
+  ],
+  "registry_reuse": [
+    "sunholo/celestial 0.4.0 reflect (probe pattern)",
+    "sunholo/relativity 0.12.0 (unchanged)"
+  ],
+  "velocity": "about 1,600 LOC over 8.5 working days (about 190 LOC/day; recent attended rate about 300)",
+  "critical_path": [
+    "SS-1",
+    "SS0",
+    "SS1",
+    "SS2",
+    "SS3",
+    "SS4"
+  ],
+  "pause_points": [
+    {
+      "after": "plan",
+      "mark_decides": "OQ1-OQ9"
+    },
+    {
+      "after": "SS0",
+      "mark_decides": "go to publish sunholo/celestial 0.5.0"
+    },
+    {
+      "after": "SS2",
+      "mark_decides": "the look at each stop (dev build, Auto view)"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "Honest resolution gate or exaggerate structure everywhere?",
+      "recommendation": "honest gate"
+    },
+    {
+      "id": "OQ2",
+      "q": "Procedural in the shader or a texture baked per star at arrival?",
+      "recommendation": "procedural unless the bench at the SS2 midpoint misses +0.5 ms; then a cube map baked at arrival, decided before the pause"
+    },
+    {
+      "id": "OQ3",
+      "q": "Keep each star's total light fixed, or let spots dim it by the real ~0.1%?",
+      "recommendation": "fixed"
+    },
+    {
+      "id": "OQ4",
+      "q": "Supergranulation (invisible in white light): leave out or show faintly?",
+      "recommendation": "leave out"
+    },
+    {
+      "id": "OQ5",
+      "q": "Eclipse layers now or with the D-96 framing doc?",
+      "recommendation": "now"
+    },
+    {
+      "id": "OQ6",
+      "q": "Red-dwarf flares now or later?",
+      "recommendation": "later, with sound"
+    },
+    {
+      "id": "OQ7",
+      "q": "An Archive entry explaining what the player sees?",
+      "recommendation": "yes, one canon entry, attended"
+    },
+    {
+      "id": "OQ8",
+      "q": "Diamond ring: the starfield's PSF bloom on an occulted photospheric sliver only (D-59 stays for the forward view), or a bare bead?",
+      "recommendation": "allow it for the sliver only"
+    },
+    {
+      "id": "OQ9",
+      "q": "Structure in the Auto view only; Realistic stays a clipped white disc (D-59). Right?",
+      "recommendation": "yes"
+    }
+  ],
+  "features": [
+    {
+      "id": "SS-1_CITATIONS",
+      "description": "verify and pin every cited number (paper, page/table, Teff and log g coverage; a cool-dwarf LD table for TRAPPIST-1 and Barnard, never a clamp); record under citations",
+      "estimated_loc": 0,
+      "days": 0.5,
+      "passes": false,
+      "acceptance": [
+        "AC0"
+      ]
+    },
+    {
+      "id": "SS0_STELLAR_PACKAGE",
+      "description": "sunholo/celestial 0.5.0 module stellar: LD laws (linear, quadratic, Claret-4) and means, ldCoeffs table (Claret & Bloemen 2011), scale-height/cell size, granulation and spot temperature contrasts, differential rotation (Snodgrass & Ulrich 1990), Baumbach corona, lineColour; tests with cited check values; probe into tests/test_physics.gd; stop before publish",
+      "estimated_loc": 300,
+      "days": 1.5,
+      "passes": false,
+      "acceptance": [
+        "AC1",
+        "AC10"
+      ]
+    },
+    {
+      "id": "SS1_SIM_PROTOCOL",
+      "description": "log g per finite star with provenance; surfaceOf(star, seed) in sim/core.ail; protocol 2.13 surface object (additive); pin celestial 0.5.0; strict, parity, replay; the clock check from the sim's own t - light_age_s (D never applied again); mk/star-surfaces.mk with stellar-protocol-test and star-surface-test in test:, stellar-protocol-test in ci-fast",
+      "estimated_loc": 250,
+      "days": 1.0,
+      "passes": false,
+      "acceptance": [
+        "AC2",
+        "AC7"
+      ]
+    },
+    {
+      "id": "SS2_RENDERER",
+      "description": "physics/star_surface.gd CPU mirror; bb LUT bound for every star disc; per-element colour; LD laws for limb_u-0 stars (the Sun keeps linear 0.6, bit-identical); temperature map + resolution gate; cached flux normaliser (64x64 quadrature, <=50 ms, <=1/s); float64-reduced phases; SystemView uniforms and fader peak; ray_colour; goldens G-SS-1..5 and the count pin 393 -> 398; bench at the midpoint reproducing bh_ship_bench's sky GPU reading; captures; delete spike/star_surfaces; dev build pause",
+      "estimated_loc": 650,
+      "days": 3.5,
+      "passes": false,
+      "acceptance": [
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC11",
+        "AC12"
+      ]
+    },
+    {
+      "id": "SS3_ECLIPSE_LAYERS",
+      "description": "corona (Baumbach), H-alpha chromosphere and prominences with lineColour (black outside 360-830 nm), occlusion from SystemView, _displayed_peak = visible peak blended by the uncovered fraction (global k unchanged), a real eclipse sim state, captures",
+      "estimated_loc": 250,
+      "days": 1.5,
+      "passes": false,
+      "acceptance": [
+        "AC9",
+        "AC10",
+        "AC12"
+      ]
+    },
+    {
+      "id": "SS4_LANDING",
+      "description": "Archive entry (attended), inspector labels, report, changelog, design-repo PR merged, rig make test, independent evaluation; merge blocked until sunholo/celestial 0.5.0 is published and locked",
+      "estimated_loc": 150,
+      "days": 0.5,
+      "passes": false,
+      "acceptance": [
+        "AC13"
+      ]
+    }
+  ],
+  "acceptance_criteria_source": "design_docs/planned/r2/star-surfaces.md ## Acceptance criteria (AC1-AC13)",
+  "acceptance_commands": [
+    "SS-1 citations table in this JSON",
+    "ailang test packages/celestial && ailang check --package packages/celestial && ailang pkg quality packages/celestial (scratch clone of sunholo-data/ailang-packages)",
+    "make strict parity replay sim-test stellar-protocol-test",
+    "make star-surface-test",
+    "make golden",
+    "make star-surface-bench",
+    "make bench SCENE=bridge",
+    "make star-surface-capture",
+    "tools/rig_check.sh <PR> --golden"
+  ],
+  "spike": {
+    "path": "spike/star_surfaces/ (throwaway; deleted at SS2)",
+    "frames": "gs://stapledons-voyage-assets/refs/star_surfaces/"
+  },
+  "evaluations": [],
+  "follow_ups": [],
+  "citations": "to be filled at SS-1 (value, source, page/table, Teff/log g range)",
+  "plan_review": {
+    "model": "sonnet (claude -p, read-only)",
+    "round": 1,
+    "score": 66,
+    "blocking": 7,
+    "status": "all seven folded in",
+    "file": ".ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md"
+  },
+  "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/37"
+}
