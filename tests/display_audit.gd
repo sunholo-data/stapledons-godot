@@ -52,6 +52,28 @@ func normalized_node(node: String) -> String:
 	return "/".join(segments)
 
 
+func ruling_valid(entry: Dictionary) -> bool:
+	if not entry.has("accepted_by"): return true
+	if not entry.accepted_by is String: return false
+	var cards := "/root/ShipGeometryDemo/@CanvasLayer/@Control/Cards/"
+	match entry.accepted_by:
+		"D-77":
+			return entry.kind == "transit-ISM" and entry.node == cards + "Card_transit" and entry.text == "missing ship.ism.glow_w_mN" and entry.get("folding_card") == cards + "Card_medium_notice" and entry.get("accompanying_card") == cards + "Card_notice"
+		"D-78":
+			return entry.kind == "unbound" and entry.node == "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label" and entry.text in ["Cruise N - beta", "N - beta", "  its N - beta", "Grains swept (>= N um)"]
+	return false
+
+
+func ac4_verdict() -> String:
+	var accepted_count := 0
+	for finding_entry: Dictionary in known_entries:
+		if finding_entry.has("accepted_by"): accepted_count += 1
+	if known_entries.is_empty(): return "ac4: MET"
+	if accepted_count == known_entries.size():
+		return "ac4: MET (%d accepted by D-77/D-78)" % accepted_count
+	return "ac4: OPEN (%d unaccepted known, %d accepted by D-77/D-78)" % [known_entries.size() - accepted_count, accepted_count]
+
+
 func load_known(path: String) -> void:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
@@ -79,6 +101,8 @@ func load_known(path: String) -> void:
 		if entry.kind == "transit-ISM":
 			entry.folding_card = normalized_node(entry.folding_card)
 			entry.accompanying_card = normalized_node(entry.accompanying_card)
+		if not ruling_valid(entry):
+			check(false, "known-ruling invalid acceptance"); continue
 		var key := JSON.stringify([entry.kind, entry.node, entry.text])
 		check(not keys.has(key), "known-file duplicate entry " + key)
 		keys[key] = true
@@ -374,7 +398,7 @@ func _run() -> void:
 			stale_entries += 1
 			check(false, "stale-known " + JSON.stringify(known_entries[i]))
 	for kind: String in known_kinds: print("display-audit known: %s %d" % [kind, known_kinds[kind]])
-	print("ac4: MET" if known_entries.is_empty() else "ac4: OPEN (%d known unbound, %d known transit-ISM)" % [known_kinds.get("unbound", 0), known_kinds.get("transit-ISM", 0)])
+	print(ac4_verdict())
 	var known_count := int(known_kinds.get("unbound", 0)) + int(known_kinds.get("transit-ISM", 0))
 	print("display-audit: samples=%d checks=%d mismatches=%d missing=%d new=%d known=%d stale=%d failures=%d" % [count, checks, mismatches, missing, new_findings, known_count, stale_entries, failures])
 	quit(1 if failures else 0)
