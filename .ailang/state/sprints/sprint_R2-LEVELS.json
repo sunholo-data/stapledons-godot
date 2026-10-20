@@ -179,10 +179,10 @@
         "make level-test rejects a turning stage view, an unknown exit, a route missing an end, a captain_px band outside 30-90",
         "make deck-layout-eval prints deck-layout: bridge ok"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "levels_backlog.sh --check/--next (levels-backlog-test in make test); LevelSchema (stapledons.level/1, layers.foliage[] hook); mk/levels.mk; assets/levels/bridge/manifest.json; the bridge baseline was pinned in LP1a part 3 once the evaluator existed (art/levels/bridge/baseline.json, manifest sha256 fc61ee5e). Commits 7ab4006a, 60efdf2e."
     },
     {
       "id": "LP1A_GREYBOX_WALK_EVAL_REGRESS",
@@ -198,10 +198,10 @@
         "make level-capture exits non-zero on a missing or blank frame",
         "make bench SCENE=level LEVEL=bridge runs"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "LevelGreybox (box, arc per D-104, ramp; top-only WALK_ surfaces; transfers); WalkArea.height_at_near / is_walkable_near (highest surface within 0.45 m; bridge walk unchanged over 19,084 moves); LevelMetrics + level-eval + level-eval-test 14/0 (positive control 163 -> 59 with the clamp, 81 tower pole first-hits; roofed band 32.55 vs 32.54 deg; bridge exported 4,771 samples; unreached / pole-ray / band-top / find-sight negatives); ceiling clamp changed to pitch -3, 9.5 m back, 2.2 m up (the first rule put the captain at 127 px); levels-regress (+2 negative controls) in make test; level-capture (26 frames on the mock); bench SCENE=level runs (bridge p99 19.8 ms at host load 25: busy rig, not a quiet measurement). Commits 60efdf2e, 2f9cdea6, c614e884."
     },
     {
       "id": "LP1B_CAMERA_VIEWS_LIFT_LIGHT",
@@ -221,7 +221,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "BLOCKED on held files: data/camera/views.json, demos/camera_director.gd, tests/test_camera_director.gd (R2-BRIDGE-STYLE / DL3), demos/ship_demo_lift.gd, demos/ship_lighting.gd, demos/ship_star_light.gd (R2-BRIDGE-STYLE retires the broad key). Starts when those merge; the camera must adopt LevelMetrics.pose (clamp pitch -3, 9.5 m back, 2.2 m up)."
     },
     {
       "id": "LP2_COMMONS_GREYBOX",
@@ -342,6 +342,10 @@
     {
       "date": "2026-10-20",
       "event": "approved (D-103); charter rows added (L10, levels do-not-touch, process pointer); executing LP0 and LP1a on feat/levels; LP1b waits for held files"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "LP0 and LP1a done on feat/levels; LP1b blocked on held files"
     }
   ]
 }

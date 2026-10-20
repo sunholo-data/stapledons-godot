@@ -35,7 +35,7 @@ That is about 160 LOC a day, below the recent attended rate of about 300 (R2-CAM
 - **Walk height is "highest hit"** (`WalkArea.height_at`, `interior/walk.gd:49`), so a captain under a terrace would be put on top of it. Multi-height needs a nearest-surface rule.
 - **The lift is two-stop** (`demos/ship_demo_lift.gd`, 80 lines; gates at 82 and 57; an 11 s ride).
 - **The evaluator pattern is ready to generalise:** `tools/deck_bow_metrics.gd` (289 lines), `tools/deck_layout_eval*.gd`, `mk/deck-layout.mk`, and the thresholds and budgets in data.
-- **In-engine greybox works:** `tools/levels_intricate_mock.gd` (this branch) builds 30 primitives with colliders over the real ship. It measures traversal (7 surfaces, 4 heights, 0 unreached), head and pole rays per surface, the ceiling clamp (22% → 8% of floor samples with the head hidden) and finds in frame, and renders through the live sky. The whole run takes under two minutes.
+- **In-engine greybox works:** `tools/levels_intricate_mock.gd` (this branch) builds 30 primitives with colliders over the real ship. It measures traversal (7 surfaces, 4 heights, 0 unreached), head and pole rays per surface, the ceiling clamp (26% → 9.5% of floor samples with the head hidden, as LP1a measured it; the mock first printed 22% → 8% because of duplicate piece names) and finds in frame, and renders through the live sky. The whole run takes under two minutes.
 - **The Commons exists:** the painted court and arcade, a coarse remainder, a walk mesh and the lift landing. It is lit by the bridge's rig; the spire light stops above its deck.
 
 ## Milestones
@@ -67,7 +67,7 @@ That is about 160 LOC a day, below the recent attended rate of about 300 (R2-CAM
   - thresholds in `art/levels/<id>/thresholds.json`;
   - inputs: a greybox layout or an exported level through `asset_dir`, with a fixture for each.
 - **Red first, `tests/test_level_eval.gd` (`make level-eval-test`):**
-  - the positive control is the mock greybox as a fixture layout, which reproduces its numbers (7 surfaces, 4 heights, 0 unreached, floor head 135 → 49 with the clamp, 81 tower pole blocks);
+  - the positive control is the mock greybox as a fixture layout, which reproduces its numbers (7 surfaces, 4 heights, 0 unreached, floor head behind greybox 163 → 59 with the clamp, 81 tower pole blocks);
   - seeded defects each fail by name: a route removed (`unreached`), a box on the pole line (`pole-ray`), a roof lowered 5 m (`band-top`), a find walled off without a cue (`find-sight`).
 - **`make level-capture LEVEL= TAG=`** (GPU): Bow and Astern per stage and surface, at rest, at 0.99c and at a stop, plus set pieces, a diagnostic overview, the sheet, `metrics.json` and `frames.sha256`. It exits non-zero on a missing or blank frame.
 - **`make levels-regress`:** every `art/levels/*/baseline.json`. Its negative controls must both fail: a seeded change to the bridge, and a landed layout whose sha256 changed without a change-log row.
