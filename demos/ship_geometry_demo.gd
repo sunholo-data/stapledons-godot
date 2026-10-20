@@ -47,7 +47,12 @@ var walk: WalkArea
 var avatar := CaptainAvatar.new()
 var avatar_shadow:Node3D
 var avatar_pos := Vector3(8,82,-4.8)
-var active_level := 0
+## R2-BRIDGE-STYLE S1: the level the captain is on; the lights follow it (the broad key is retired on
+## the bridge, 0, where the spire keys the deck).
+var active_level := 0:
+	set(v):
+		active_level=v
+		if not lighting.is_empty():Lighting.set_level(lighting,v)
 var label := Label.new() # retired (R1-SHIP-UI U1); never shown
 var hud: Control # the status strip (ShipHud.strip)
 var ship_hud: ShipHud
@@ -163,6 +168,8 @@ func setup(opts := {}) -> bool:
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
 	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
 	lighting=Lighting.install(geometry);star_light.install(lighting)
+	Lighting.set_mast(lighting,(manifest.get("style",{}).get("spire_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is GeometryInstance3D))
+	Lighting.set_level(lighting,active_level)
 	set_lighting(opts.get("lighting","moody"))
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
 		var n:=AreaBundle.load_glb(asset(file));_walk_nodes.append(n)

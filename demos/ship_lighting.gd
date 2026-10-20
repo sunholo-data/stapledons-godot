@@ -6,6 +6,8 @@ const SPIRE_LAMP_Y:=89. # m (glTF y): 7 m above the 82 m bridge deck, on the mas
 const SPIRE_LAMP_R:=1.92 # m: the mast's radius at the lamp band (its cone runs 3.3 m at the deck to 0 at 98 m)
 const SPIRE_RANGE_M:=27. # m: lights the whole bridge disc (21.9 m to the rim's foot), ends 4 m above the Commons' 57 m deck
 const SPIRE_COLOUR:=Color(1.,.80,.58)
+const SPIRE_BASE:=8. # R2-BRIDGE-STYLE S1: the bridge's key in deep space now the broad key is retired there (was 5)
+const SPIRE_SHADOW_BLUR:=2.5 # soft radial shadows (R2-BRIDGE-STYLE S1)
 static func install(host:Node3D)->Dictionary:
 	var env:=Environment.new();env.background_mode=Environment.BG_CLEAR_COLOR
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
@@ -27,12 +29,16 @@ static func install(host:Node3D)->Dictionary:
 	var spire:=OmniLight3D.new();spire.name="SpireLight"
 	spire.position=Vector3(0,SPIRE_LAMP_Y,0);spire.omni_range=SPIRE_RANGE_M;spire.omni_attenuation=.4
 	spire.light_color=SPIRE_COLOUR;spire.shadow_enabled=false;host.add_child(spire)
+	# R2-BRIDGE-STYLE S1: on the bridge the spire holds the shadow in deep space (cube map, soft for
+	# the comic look); ship_star_light.apply_rig hands it to the star as the star rises.
+	spire.omni_shadow_mode=OmniLight3D.SHADOW_CUBE;spire.shadow_blur=SPIRE_SHADOW_BLUR
+	spire.shadow_bias=.06;spire.shadow_normal_bias=1.
 	var lamp:=MeshInstance3D.new();lamp.name="SpireLamp"
 	var band:=CylinderMesh.new();band.top_radius=SPIRE_LAMP_R;band.bottom_radius=SPIRE_LAMP_R+.06;band.height=.35;band.radial_segments=48;band.cap_top=false;band.cap_bottom=false
 	lamp.mesh=band;lamp.position=spire.position;lamp.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var glow:=StandardMaterial3D.new();glow.albedo_color=SPIRE_COLOUR;glow.emission_enabled=true;glow.emission=SPIRE_COLOUR
 	lamp.material_override=glow;host.add_child(lamp)
-	var rig:={"environment":env,"key":key,"fill":fill,"practical":practical,"spire":spire,"spire_lamp":lamp,"profile":""}
+	var rig:={"environment":env,"key":key,"fill":fill,"practical":practical,"spire":spire,"spire_lamp":lamp,"profile":"","bridge":true,"mast":[]}
 	apply(rig,"moody")
 	return rig
 static func apply(rig:Dictionary,profile:String)->void:
@@ -46,7 +52,7 @@ static func apply(rig:Dictionary,profile:String)->void:
 	key.light_energy=1.3 if baseline else 1.5
 	key.shadow_enabled=profile=="moody"
 	rig.key_base=key.light_energy;rig.shadows=profile=="moody"
-	rig.spire_base=0. if baseline else 5.;rig.spire_lamp_base=0. if baseline else 2.5
+	rig.spire_base=0. if baseline else SPIRE_BASE;rig.spire_lamp_base=0. if baseline else 2.5
 	rig.spire.light_energy=rig.spire_base;rig.spire.visible=rig.spire_base>0.
 	(rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier=rig.spire_lamp_base
 	fill.light_color=Color.WHITE if baseline else Color(.45,.59,.82)
@@ -55,10 +61,20 @@ static func apply(rig:Dictionary,profile:String)->void:
 	rig.practical.visible=not baseline
 	rig.profile=profile
 	if rig.has("star"):rig.star.apply_rig(rig)
+## R2-BRIDGE-STYLE S1: the active level. On the bridge (0) the broad key is retired and the spire
+## keys the deck; every other level keeps the broad key as before (their own passes follow).
+static func set_level(rig:Dictionary,level:int)->void:
+	rig.bridge=level==0
+	if rig.has("star"):rig.star.apply_rig(rig)
+## The mast's meshes (manifest style.spire_nodes): the spire light sits on its axis, inside it, so
+## the mast must not cast the spire's shadow; it casts the star's as before.
+static func set_mast(rig:Dictionary,nodes:Array)->void:
+	rig.mast=nodes
+	if rig.has("star"):rig.star.apply_rig(rig)
 static func manifest(rig:Dictionary)->Dictionary:
 	var practical:SpotLight3D=rig.practical
 	var position:Vector3=practical.position
 	var rotation:Vector3=rig.key.rotation_degrees
 	var tint:Color=practical.light_color
 	var star:Dictionary=rig.star.manifest() if rig.has("star") else {}
-	return {"profile":rig.profile,"source":"ship-fixed internal lighting (ambient, cool fill, broad key, practical); the simulation star light is star_light","star_light":star,"key_base_energy":rig.get("key_base",rig.key.light_energy),"ambient_energy":rig.environment.ambient_light_energy,"key_energy":rig.key.light_energy,"fill_energy":rig.fill.light_energy,"key_shadows":rig.key.shadow_enabled,"key_rotation_deg":[rotation.x,rotation.y,rotation.z],"shadow_distance_m":rig.key.directional_shadow_max_distance,"shadow_bias":rig.key.shadow_bias,"shadow_normal_bias":rig.key.shadow_normal_bias,"recipe_sha256":FileAccess.get_sha256("res://demos/ship_lighting.gd"),"spire":{"position_m":[rig.spire.position.x,rig.spire.position.y,rig.spire.position.z],"range_m":rig.spire.omni_range,"base_energy":rig.get("spire_base",0.),"energy":rig.spire.light_energy,"colour":[SPIRE_COLOUR.r,SPIRE_COLOUR.g,SPIRE_COLOUR.b],"shadow_enabled":rig.spire.shadow_enabled,"source":"R2-DECK-LAYOUT D-96: the bridge's own light on the mast; shares the broad key's dimming"},"practical":{"position_m":[position.x,position.y,position.z],"colour":[tint.r,tint.g,tint.b],"range_m":practical.spot_range,"angle_deg":practical.spot_angle,"energy":practical.light_energy,"visible":practical.visible,"shadow_enabled":practical.shadow_enabled}}
+	return {"profile":rig.profile,"source":"ship-fixed internal lighting (ambient, cool fill, broad key, practical); the simulation star light is star_light","star_light":star,"key_base_energy":rig.get("key_base",rig.key.light_energy),"ambient_energy":rig.environment.ambient_light_energy,"key_energy":rig.key.light_energy,"fill_energy":rig.fill.light_energy,"key_shadows":rig.key.shadow_enabled,"key_rotation_deg":[rotation.x,rotation.y,rotation.z],"shadow_distance_m":rig.key.directional_shadow_max_distance,"shadow_bias":rig.key.shadow_bias,"shadow_normal_bias":rig.key.shadow_normal_bias,"recipe_sha256":FileAccess.get_sha256("res://demos/ship_lighting.gd"),"spire":{"position_m":[rig.spire.position.x,rig.spire.position.y,rig.spire.position.z],"range_m":rig.spire.omni_range,"base_energy":rig.get("spire_base",0.),"energy":rig.spire.light_energy,"colour":[SPIRE_COLOUR.r,SPIRE_COLOUR.g,SPIRE_COLOUR.b],"shadow_enabled":rig.spire.shadow_enabled,"shadow_opacity":rig.spire.shadow_opacity,"source":"R2-DECK-LAYOUT D-96: the bridge's own light on the mast; shares the broad key's dimming. R2-BRIDGE-STYLE S1: on the bridge it is the key (the broad key retired there) and holds the shadow until the star takes it"},"bridge":rig.get("bridge",false),"broad_key":"retired on the bridge (energy 0; R2-BRIDGE-STYLE S1, D-100); the lower decks keep it","practical":{"position_m":[position.x,position.y,position.z],"colour":[tint.r,tint.g,tint.b],"range_m":practical.spot_range,"angle_deg":practical.spot_angle,"energy":practical.light_energy,"visible":practical.visible,"shadow_enabled":practical.shadow_enabled}}

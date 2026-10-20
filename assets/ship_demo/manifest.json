@@ -178,5 +178,49 @@
     "generator": "~/dev/blender/scripts/stapledon_deck_layout_v2.py",
     "walk": "tools/deck_walk_bake.gd (DeckLayout.build_walk on the pinned grounded v2 walk)",
     "points": "SPAWN_captain and INTERACT_<station>_use empties in the master (collection deck_layout_v2), ship metres"
+  },
+  "style": {
+    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list.",
+    "bridge_nodes": [
+      "bridge_floor_top82",
+      "deck_floor_fill",
+      "deck_body_00",
+      "deck_body_01",
+      "deck_body_02",
+      "deck_body_03",
+      "deck_body_04",
+      "deck_body_05",
+      "deck_body_06",
+      "deck_body_07",
+      "deck_body_08",
+      "deck_body_09",
+      "deck_body_10",
+      "deck_body_11",
+      "deck_body_12",
+      "deck_body_13",
+      "deck_body_14",
+      "deck_body_15",
+      "deck_seam_00",
+      "deck_seam_01",
+      "deck_seam_02",
+      "deck_seam_03",
+      "deck_seam_04",
+      "deck_seam_05",
+      "deck_seam_06",
+      "deck_seam_07",
+      "deck_seam_08",
+      "deck_seam_09",
+      "deck_seam_10",
+      "deck_seam_11",
+      "deck_seam_12",
+      "deck_seam_13",
+      "deck_seam_14",
+      "deck_seam_15",
+      "ramp_down",
+      "spire_needle"
+    ],
+    "spire_nodes": [
+      "spire_needle"
+    ]
   }
 }
