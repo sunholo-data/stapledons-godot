@@ -107,6 +107,10 @@ func test_finale(skip: bool) -> void:
 		if demo.solar_tour.attitude_hold:
 			demo.journey_tick()
 	check("[%s] F1 the stop turn completes and no jump happens during it" % tag, not demo.solar_tour.attitude_hold and demo.black_hole == null)
+	demo._process(1.0 / 60.0) # the HUD cards refresh
+	var row: Node = demo.ship_hud.card_body("tour").get_node_or_null("Buttons") if demo.ship_hud.has_card("tour") else null
+	var skip_btn: Button = row.get_node_or_null("SkipDwell") if row != null else null
+	check("[%s] F4 the tour card's Skip dwell is offered at the final stop" % tag, skip_btn != null and not skip_btn.disabled, "button %s" % ("missing" if skip_btn == null else "disabled"))
 	var line: String = demo.tour_line()
 	check("[%s] F1 the tour line names the final stop" % tag, line.contains("Sgr A*") and line.contains("final stop"), line)
 	var ticks := 0

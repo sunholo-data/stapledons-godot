@@ -1251,7 +1251,7 @@ func _update_cards(view: Dictionary) -> void:
 		var row: Node = ship_hud.card_body("tour").get_node_or_null("Buttons")
 		if row != null:
 			(row.get_node("Pause") as Button).text = "Resume [P]" if solar_tour.paused else "Pause [P]"
-			(row.get_node("SkipDwell") as Button).disabled = live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index >= 0
+			(row.get_node("SkipDwell") as Button).disabled = live_journey or solar_tour.attitude_hold or solar_tour.pending_index >= 0 # at the final stop it goes to Sgr A*
 			(row.get_node("SkipStage") as Button).disabled = not live_journey or solar_tour.paused or solar_tour.attitude_hold
 	else:
 		ship_hud.hide_card("tour")

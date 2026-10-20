@@ -16,4 +16,5 @@
   dwells like every other (12 s of tour time, or Skip dwell [N]), the tour hands over to the Sgr A*
   visit, announced as a demonstration jump with the hole ahead in the Bow view. The HUD reads
   "GUIDED VOYAGE · FINAL STOP · SGR A*". The navigation station's entry still opens it directly.
-  `make guided-finale-test` (19 checks) drives the tour's final leg the honest way.
+  `make guided-finale-test` (21 checks) drives the tour's final leg the honest way. The tour card's Skip dwell stays offered at the final stop.
+- `make bh-ahead-capture` (GPU window): the final stop and every Sgr A* stop after flying the last leg, Bow view with the HUD, with the hole's angle off the sky camera's axis in the manifest.
