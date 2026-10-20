@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-BRIDGE-STYLE",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-100)",
   "approved_on": "2026-10-20",
@@ -26,12 +26,17 @@
     {
       "date": "2026-10-20",
       "event": "D-106 amendment (Mark chose painted foliage cards, spike PR #299): the bridge's rim fronds swap to painted cards in ST5, lit through a rounded normal by the shared toon material (the spike's card shader merged in as a card mode, no second shader), clamped to +-25 deg toward the camera, evenly lit paintings, proxy shadow casters for big plants, the occluder fade kept. Estimate 10 -> 10.5 days, ~1,360 -> ~1,440 game LOC. ST2 unchanged."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "ST0-ST2 built; paused at the ST2 style frame for Mark (look, bands, typeface, panel and the D-104 shapes). PR #300 (supersedes #293); dev build v0.4.0-dev.35-bow-view-22-g4e6b0d33; frames refs/bridge_style/st2/."
     }
   ],
   "related_prs": {
     "deck_layout_dl3": 292,
     "plan": 293,
-    "plants_spike": 299
+    "plants_spike": 299,
+    "build": 300
   },
   "external_dependencies": [
     {
@@ -87,10 +92,10 @@
         "make style-test and make ui-theme-check fail as expected before ST1/ST2/ST4, and their negative controls fail",
         "make style-capture TAG=before writes the frame set"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "style-test, ui-theme-check (report mode; both negative controls fail as they must) and style-capture (HUD on/off, before/after against renders/style/before, captured on the DL3 bridge) landed red first."
     },
     {
       "id": "ST1_SPIRE_KEY",
@@ -105,10 +110,10 @@
         "make golden: 393 ok, 364 baseline lines match main",
         "make bench SCENE=bridge p99 < 16.7 ms on a quiet rig"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "Test-first (parse-red, then 77/0, was 58): the three key checks keep their old form on the lower decks; 19 bridge checks (owner, key 0, share, mast non-caster, continuity, ramp boundaries 0/H-eps/H/2H/1, level switch, ambient floor, no-shadow profile, demo integration). Rebalanced from captures: spire base 8, reach 31 m (still 1 m above the Commons), bridge ambient x1.45. ship-commons-test 39/0, ship-lighting-test OK. bh-hud's Sgr A* key check updated to the spire (an S1 consequence the plan did not list). make golden (once, after ST2): 430 ok; golden_baseline check: every one of main's 364 baseline lines matches; the only differences are 33 G-CONST lines main added after the fixture (constellation goldens, #271), not this branch. Bench SCENE=bridge MISS p99 25.8 ms at host load 25-35 (the docked control itself p99 19.3 ms): not a valid quiet-rig measurement under AC9's load < 12 rule; owed at the end of the sprint."
     },
     {
       "id": "ST2_STYLE_FRAME",
@@ -126,9 +131,9 @@
         "make style-capture TAG=sf opened and published; Mark approves the look"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-20",
       "completed": null,
-      "notes": null
+      "notes": "shaders/stapledon_toon.gdshader + StapledonStyle (bridge_style group, exact ink next_pass, exclusions); style-test 19/0 incl. both negative controls, seeded exclusions and AC12. Theme: StapledonTheme (palette, Josefin Sans + Nunito OFL pinned, seeded ink 9-slice) on the status strip and arrival card; ui-theme-check ok (68 leftovers reported). D-104: stapledon_bridge_props_v3.py grew the desks, dials, chair, cushion and every screen housing (straight-edge share <= 0.081 in-engine; box control 0.586); bridge_props.glb 169,292 tris; ship.glb byte-identical; deck-layout-eval bridge ok, deck-layout-eval-test 22/0, camera-forward-test 33/0, deck-assets-check ok. make style-capture TAG=sf: 18 frames, opened, published refs/bridge_style/st2/. Full make test: everything green except ai-godot's three 'frame never blocked' timing checks at host load 35 (no AI code changed; rerun alone failed the same way at load 35); rig_check on the final head pending. Paused for Mark."
     },
     {
       "id": "ST3_BIG_SURFACES",
