@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-SIMILAR-S0",
-  "status": "approved",
+  "status": "in_progress",
   "approved": true,
   "approval": {
     "required": true,
@@ -364,7 +364,7 @@
     {
       "id": "S0.1",
       "title": "data and ranking",
-      "status": "pending",
+      "status": "done",
       "description": "Red tests first, then pure 15-planet catalogue ranking with data divisors 1/3/2, k=3, s0-v1 and citations; package starIlluminanceAt, km/Earth-GM normalization, invalid-input exclusions, exact name ties and 210 finite directed distances. Add similarVm and new similar-test ranking half to test. Keep core, pins and strict entry set unchanged.",
       "estimated_loc": 220,
       "estimated_documentation_loc": 0,
@@ -495,11 +495,38 @@
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
       "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 42 planner",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
-      "protocol_minor_dependency": false
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "actual_loc": {
+        "production": 105,
+        "tests": 189,
+        "makefile": 17,
+        "toml": 2
+      },
+      "protocol_minor_dependency": false,
+      "evidence": {
+        "commit": "7f608e0f",
+        "evaluation": ".ailang/state/evaluations/eval_R2-SIMILAR-S0_S0.1_round_1.json",
+        "eval_score": 93,
+        "eval_model": "sonnet (Agent tool)",
+        "executor": "codex gpt-6.1-sol",
+        "controller_gates_outside_sandbox": {
+          "check --package sim": 0,
+          "make similar-test (sha 4f1a16d7)": 0,
+          "make strict": 0,
+          "make python-guard": 0,
+          "core merge-base guard": 0
+        },
+        "evaluator_whole_package_test": "rc 0, 531 passed, 0 failed (57m49s on a loaded rig)",
+        "plan_correction": "row check is grep -c . = 15 and wc -l = 16 (the pinned digest file ends in two newlines); the plan said wc -l = 15",
+        "upstream": "ailang#1914: :: does not parse in a named-test body; test bodies use the cons-free form with a restore comment",
+        "followups": [
+          "F1/K6-K7: similar-test greens with --strict-bytecode removed or both engines on the interpreter (controller reproduced K6)",
+          "F2: add similar-test to ci-fast",
+          "F3: distances() guards untested with invalid inputs; raw guards redundant with valid()"
+        ]
+      }
     },
     {
       "id": "S0.2",
