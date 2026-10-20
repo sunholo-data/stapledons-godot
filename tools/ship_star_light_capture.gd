@@ -103,7 +103,7 @@ func _run() -> void:
 				await poses("02a_near_jupiter", ["overlook"])
 			if demo.journey_sim.world.journey.state == "arrived": break
 			await process_frame
-		if demo.journey_sim.world.journey.state != "arrived": print("capture-arrival-failed: ", id); failed = true; break
+		if demo.journey_sim.world.journey.state != "arrived": print("capture-arrival-failed: ", id, " state ", demo.journey_sim.world.journey.state, " phase ", demo.sky_world.ship.phase, " phase ticks ", phase_ticks, " beta ", demo.sky_world.ship.beta); failed = true; break
 		await turn_stationary()
 		if arrivals.has(id): await poses(arrivals[id] + "_arrival")
 		if id == "saturn": await poses("03_saturn_arrival", ["overlook"])

@@ -255,15 +255,16 @@ func _hud() -> void:
 	dwell_button.toggled.connect(func(on:bool)->void:dwell_on=on;ship_hud.set_dwell("",Vector2.ZERO));display.add_child(dwell_button)
 	confirm_button.text="Confirm decisions: hold";confirm_button.pressed.connect(toggle_confirm_mode);display.add_child(confirm_button)
 	motion_button.text="Camera motion: full";motion_button.pressed.connect(toggle_camera_motion);display.add_child(motion_button)
-	var row:=HBoxContainer.new();display.add_child(row)
-	for pair in [["Close [1]",1],["Deck [2]",2],["Whole level [3]",3]]:
-		var button:=Button.new();button.text=pair[0];button.pressed.connect(func()->void:director.set_level(pair[1]));row.add_child(button)
-	var reset_button:=Button.new();reset_button.text="Default view [R]";reset_button.pressed.connect(set_preset.bind("reset"));row.add_child(reset_button)
+	# R2-CAMERA-FORWARD (D-93): the bridge's views are Bow and Astern; a console zooms in.
 	var look_row:=HBoxContainer.new();display.add_child(look_row)
-	for pair in [["Look forward [7]","forward"],["Look side [8]","side"],["Look aft [9]","aft"]]:
-		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));look_row.add_child(button)
+	for pair in [["Bow [7]","bow"],["Astern [9]","astern"]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(func()->void:if director.walk_level():director.walk(pair[1]));look_row.add_child(button)
+	var reset_button:=Button.new();reset_button.text="Back to Bow [R]";reset_button.pressed.connect(set_preset.bind("reset"));look_row.add_child(reset_button)
 	var dev:=ship_hud.dev_box
 	var dev_title:=Label.new();dev_title.text="Developer (command-line launches only)";dev.add_child(dev_title)
+	var row:=HBoxContainer.new();dev.add_child(row) # the developer presets Z1-Z3 (D-93)
+	for pair in [["Close [1]",1],["Deck [2]",2],["Whole level [3]",3]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(func()->void:director.set_level(pair[1]));row.add_child(button)
 	var benchmark_button:=Button.new();benchmark_button.text="Scripted benchmark at 1920×1080 (uploads public summary)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));dev.add_child(benchmark_button)
 	audit_local.text="Show local audit in Finder"
 	audit_local.pressed.connect(func()->void:OS.shell_show_in_file_manager(ProjectSettings.globalize_path(Benchmark.OUTPUT)))
@@ -660,6 +661,7 @@ func centre_hit() -> Dictionary:
 func _mark_occluders(visual: Node) -> void:
 	var names: Array=director.data.get("levels",{}).get("bridge",{}).get("occluders",[])
 	var stack: Array=[visual]
+	if props_visual!=null:stack.append(props_visual) # R2-DECK-LAYOUT DL3: the dressed shrine, terminal and fronds
 	while not stack.is_empty():
 		var n:Node=stack.pop_back()
 		if n is MeshInstance3D and names.any(func(w:String)->bool:return w!="lift" and String(n.name).to_lower().contains(w)):n.add_to_group(CameraDirector.OCCLUDER_GROUP)

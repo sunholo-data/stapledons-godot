@@ -3,8 +3,8 @@
   "about": "R2-DECK-LAYOUT section D5 and AC7 (ledger D-95): make deck-assets-check. Pins of every runtime deck file (bytes, sha256), per-GLB budgets (the bridge: 220,000 triangles, 18 materials, 16 images, < 10 MB so it stays in git; bridge_props.glb joins at DL2 with its own < 10 MB cap), the stations and structure the game finds by name, opaque materials, no emission outside the console screens (no painted space, section D8), a clean reimport; the WebP route (EXT_texture_webp, a one-texture fixture decodes); and with a GPU window the bridge's texture memory against the DL0 baseline + 32 MB. Masters are pinned under masters and checked with --masters after make ship-masters.",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 8615976,
-      "sha256": "0cb14d0248d02b8958475ecd30dfad7d91f429c0bf0c401b116d1346e2fce05e"
+      "bytes": 5617652,
+      "sha256": "f3eaf550fe6ac089a918ddde67d9451ec93e193b18024e013adffec6339ddd6c"
     },
     "assets/ship_demo/walk_bridge.glb": {
       "bytes": 379960,
@@ -39,8 +39,8 @@
       "sha256": "b5b810b1b7e4e85606fb45f579086616c1b7e66e1eb37b163c9494e25e466364"
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 2399532,
-      "sha256": "b5a23aa8ea2b6260582a638643473e466915d9a52fa5429d9bc1fe68d9bc19cf"
+      "bytes": 4451984,
+      "sha256": "f2f936de131fd2982960070b29fe2b57871e693ce7f951ec2fb3d0b54c9bc329"
     }
   },
   "glb": {
@@ -50,20 +50,9 @@
       "max_materials": 18,
       "max_images": 16,
       "nodes": [
-        "archive_terminal",
-        "archive_shrine_ribs",
-        "console_decision_0",
-        "console_decision_1",
-        "console_decision_2",
-        "console_decision_3",
         "spire_needle",
         "Spire below bridge",
-        "bridge_floor_top82",
-        "Guardrail 82",
-        "Guardrail 82_001",
-        "Guardrail 82_002",
-        "Lift guide",
-        "Lift guide_001"
+        "bridge_floor_top82"
       ]
     },
     "assets/ship_demo/walk_bridge.glb": {
@@ -103,18 +92,29 @@
     },
     "assets/ship_demo/bridge_props.glb": {
       "max_bytes": 10000000,
-      "max_triangles": 40000,
-      "max_materials": 8,
-      "max_images": 8,
+      "max_triangles": 180000,
+      "max_materials": 16,
+      "max_images": 16,
       "nodes": [
+        "Guardrail 82",
+        "Guardrail 82_001",
+        "Guardrail 82_002",
+        "Lift guide",
+        "Lift guide_001",
+        "archive_shrine_ribs",
+        "archive_terminal",
         "captain_chair",
+        "console_decision_0",
+        "console_decision_1",
+        "console_decision_2",
+        "console_decision_3",
         "console_navigation_0",
         "console_navigation_1",
         "console_navigation_2",
+        "v2_chair_detail_00",
         "v2_nav_detail_00",
         "v2_nav_detail_01",
-        "v2_nav_detail_02",
-        "v2_chair_detail_00"
+        "v2_nav_detail_02"
       ]
     }
   },
