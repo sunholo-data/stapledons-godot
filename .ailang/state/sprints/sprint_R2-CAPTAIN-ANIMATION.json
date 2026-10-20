@@ -1,0 +1,179 @@
+{
+  "sprint_id": "R2-CAPTAIN-ANIMATION",
+  "status": "awaiting_approval",
+  "approved": false,
+  "approved_by": null,
+  "approved_on": null,
+  "created": "2026-10-20",
+  "design_doc": "design_docs/planned/r2/captain-animation.md",
+  "sprint_plan": "design_docs/planned/r2/captain-animation-sprint.md",
+  "branch": "design/captain-animation",
+  "history": [
+    "2026-10-20: planned after Mark's D-98 ('obviously we need animation on the captain a bit'); spike tools/captain_anim_spike.gd compared A (painted still), B (live rigged GLB), C (pre-rendered rig frames) and D (procedural motion on the still) through the real Bow view at 2560x1440 (figure 161 px); frames at gs://stapledons-voyage-assets/refs/captain_animation/spike/"
+  ],
+  "implements": [
+    "stapledons-design vision/design-decisions.md 2026-09-28 Static Portraits (amended for the captain by D-98)",
+    "stapledons-design art/characters-blender-brief.md Motion (amended for the captain)",
+    "stapledons-design art/handoff-codex-art.md (avatar canvas contract)",
+    "design_docs/implemented/r2/camera-forward.md D2, D3, D6",
+    "design_docs/planned/r2/deck-layout.md (use points, chair, spawn)"
+  ],
+  "github_issues": [],
+  "related_prs": [
+    "#292 (DL3, must merge before CA0)",
+    "#293 (R2-BRIDGE-STYLE, files not touched)"
+  ],
+  "external_dependencies": [
+    "Codex art thread (built-in image generator) for painted frames, after Mark's spend approval (OQ5)",
+    "Blender 5.2.1 LTS in ~/dev/blender for pose guides"
+  ],
+  "registry_reuse": "none (no AILANG, no sunholo/relativity maths)",
+  "handoffs": [
+    "D5 sound hook: foot_down and station/chair transition signals for the D-98 sound-design track"
+  ],
+  "pause_points": [
+    {
+      "after": "plan approval",
+      "what": "OQ1-OQ9 answered (one ledger row); OQ1 and OQ5 decide CA1"
+    },
+    {
+      "after": "CA1 pilot",
+      "what": "10 painted frames (jog key poses, back and profile) pass captain-frames-check and Mark glances before the rest of age 0"
+    },
+    {
+      "after": "CA1_AGE0_MOVING",
+      "what": "Mark reviews the age-0 moving clips (strips and a dev build) before more spend"
+    },
+    {
+      "after": "CA2_STATIONS_CHAIR",
+      "what": "Mark plays the stations and the chair"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "question": "How is the captain animated: (a) painted frames posed by a rig, (b) a live 3D captain painted like the props, (c) procedural motion on today's stills only?",
+      "recommendation": "(a)"
+    },
+    {
+      "id": "OQ2",
+      "question": "Keep 3.5 m/s (a jog everywhere) or walk 1.8 m/s with a hold-Shift jog?",
+      "recommendation": "Keep 3.5 m/s as a light jog with start and stop eases; revisit in level design"
+    },
+    {
+      "id": "OQ3",
+      "question": "5 painted facings plus 3 mirrored, or 4?",
+      "recommendation": "5 + 3 mirrored"
+    },
+    {
+      "id": "OQ4",
+      "question": "Animate all four life stages before landing?",
+      "recommendation": "Yes, age 0 first"
+    },
+    {
+      "id": "OQ5",
+      "question": "Spend: about 620 painted frames (780 with a walk) plus retries, through the Codex art thread",
+      "recommendation": "Approve the 10-frame pilot and, if it passes, age 0 (about 155 frames); decide stages 20-60 at the CA1 review"
+    },
+    {
+      "id": "OQ6",
+      "question": "Look-up on cues (arrivals, starbow forming)?",
+      "recommendation": "Yes, skipped under reduced motion"
+    },
+    {
+      "id": "OQ7",
+      "question": "Animate crew on deck too?",
+      "recommendation": "No; they stay portraits and static avatars"
+    },
+    {
+      "id": "OQ8",
+      "question": "Who checks the look?",
+      "recommendation": "Mark, at the CA1 pilot, the CA1 strips and dev build, and CA2"
+    },
+    {
+      "id": "OQ9",
+      "question": "Make the chair sittable (E at the seat, any move key stands)?",
+      "recommendation": "Yes; about 60 LOC, no camera change"
+    }
+  ],
+  "features": [
+    {
+      "id": "CA0_ANIM_STATE",
+      "description": "CaptainAnim pure state machine (interior/captain_anim.gd) driving the billboard with today's stills: 8-sector facing vs the view yaw with hysteresis (se/ne mirrored for sideways until profiles exist), distance-driven phase, start/stop/station/chair/lift/look-up states, reduced motion, procedural bob and lean, foot_down and transition signals; CaptainAvatar reads manifest v2 clips with trim offsets; demo drops the front/back-only facing and the turn to the back (ship_geometry_demo.gd:436); tools/captain_anim_capture.gd; mk/captain-anim.mk",
+      "estimated_loc": 800,
+      "dependencies": [
+        "#292 merged"
+      ],
+      "acceptance_criteria": [
+        "make captain-anim-test (headless): facing sectors in Bow and Astern, hysteresis, distance-driven phase, transitions incl. stand before leaving the chair and look-up on a cue, reduced motion, determinism (AC1)",
+        "make captain-anim-test: a scripted starboard walk shows the mirrored three-quarter stand-in with the right flip in >= 95% of frames, never the back (AC2, CA0 half)",
+        "make captain-anim-capture (rig): no missing, blank or frozen strip; the sheet opened (AC6)",
+        "make test camera-test camera-forward-test deck-layout-eval; make golden ship-demo-bench on the rig (AC7)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CA1_AGE0_MOVING",
+      "description": "Brief amendment merged and OQ5 approved first. Pose guides (29 deg) and pins in art/captain-anim-v1/; captain-frames-check with identity, anchor and pose fixtures and disk/GPU budgets; the 10-frame pilot (pause); then 95 age-0 moving-clip frames in 5 facings via the Codex art thread; contacts and stride_m measured from the paint; 192x288 trimmed WebP cells; manifest v2 clips; dev build and strips",
+      "estimated_loc": 350,
+      "dependencies": [
+        "CA0_ANIM_STATE",
+        "OQ1",
+        "OQ5",
+        "design-repo brief amendment merged"
+      ],
+      "acceptance_criteria": [
+        "make captain-frames-check (headless) passes on every shipped frame; the fixtures fail (AC4)",
+        "make captain-anim-test: a true profile on the starboard walk (AC2, CA1 half); stance drift <= 2 screen px at 2560x1440 for age-0 gait clips (AC3)",
+        "budgets: <= 3 MB WebP a stage; <= 32 MB GPU for the loaded stage (captain-frames-check; ship-demo-bench read-back) (AC5)",
+        "make golden (re-posed captain cases listed), make ship-demo-bench p99 <= 16.7 ms, make export-filter-audit, make publish-dev export smoke (AC7, AC8)",
+        "pilot and CA1 strips at refs/captain_animation/{pilot,ca1}/ with per-file URLs; Mark reviews (AC9)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CA2_STATIONS_CHAIR",
+      "description": "Age-0 use_low/mid/high, sit, seated, stand in 4 facings (60 frames); the chair interaction (E at the seat point, any move key stands; OQ9); station and chair timings; director cues raise look_up",
+      "estimated_loc": 200,
+      "dependencies": [
+        "CA1_AGE0_MOVING accepted"
+      ],
+      "acceptance_criteria": [
+        "make captain-anim-test: scripted station and chair sequences",
+        "make captain-frames-check on the new frames",
+        "dev build; strips at refs/captain_animation/ca2/; Mark plays (AC9)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CA3_STAGES_LANDING",
+      "description": "Stages 20, 40, 60 as identity-preserving edits of the age-0 frames, each with its measured stride; next-stage preload; independent evaluation; landing",
+      "estimated_loc": 50,
+      "dependencies": [
+        "CA2_STATIONS_CHAIR accepted"
+      ],
+      "acceptance_criteria": [
+        "make captain-frames-check: every stage; <= 3 MB a stage, <= 12 MB total, <= 32 MB GPU loaded (AC5)",
+        "make captain-anim-test: AC3 for every stage",
+        "full make test and rig_check green; independent evaluation >= 70"
+      ],
+      "passes": false
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 150,
+    "estimated_total_loc": 1400,
+    "estimated_days": 10,
+    "note": "About half the recent attended rate: captures and frame review dominate. Art turnaround (Codex art thread) and Mark's three reviews are not counted; spend waits for Mark's go (OQ5)"
+  },
+  "reviews": [
+    {
+      "date": "2026-10-20",
+      "by": "claude -p --model sonnet (read-only)",
+      "score": 68,
+      "verdict": "below pass before fixes; 3 blocking: Astern station/chair facings, GPU-memory budget, untested recommendation (no pilot); all three and every non-blocking item folded into the design doc, sprint plan and this JSON"
+    }
+  ],
+  "answers": [],
+  "follow_ups": []
+}
