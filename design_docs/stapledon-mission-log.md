@@ -435,6 +435,7 @@ Append-only. One entry per iteration, newest at the bottom.
     The Agent tool could not carry this role: it is a pi lane.
   - generator≠judge holds at provider level (Anthropic vs MiniMax). No role
     was skipped and nothing ran on the controller's own verdict.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - (a) M1.6b as the pick: it can't merge without a human-reviewed render.
   - (b) The old sprint's rectangular BP 505–680 / RP 640–1050 bands: they
@@ -549,6 +550,7 @@ Append-only. One entry per iteration, newest at the bottom.
   - The first pi probe hung more than 4 minutes because the controller left
     stdin open (no `< /dev/null`). It was killed, and the re-probe gave
     rc 0 in 1 s. Controller error; the lane is fine.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - (a) The executor's DX claim that a zero-argument or non-exported
     `--entry` "silently prints nothing". A minimal repro on v0.47.2 and
@@ -1159,6 +1161,7 @@ DECISIONS FOR MARK: D-66 (approve M4 revision round 3).
   - Executor `recipe claude:claude-haiku-5-5 declared:provider-pin` via `claude-sub` (59 turns; 227,006 cache-create + 8,857,079 cache-read + 137,012 out; subscription).
   - Evaluator `agent-tool sonnet declared:alias-pin` (85,331 tok, 26 tools, 512 s). judge-independence: cross-model (Sonnet vs a Haiku executor and an Opus designer).
   - Routing note: `$MISSION_ROUTING_NOTE`, codex over the daily ration for planner and executor. Metered $0.43.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Taking M4.5aR3 or M4.6gR3 while PR #208 was open (Do-not-touch).
   - Re-running L1 (orphan, landed).
@@ -1197,6 +1200,7 @@ DECISIONS FOR MARK: none.
   - Executor `recipe claude:claude-haiku-5-5 declared:provider-pin` via `claude-sub` (57 turns; 153,041 cache-create + 4,678,063 cache-read + 49,039 out; subscription).
   - Evaluator `agent-tool sonnet declared:alias-pin` (83,582 tok, 23 tools, 209 s). judge-independence: cross-model (Sonnet vs a Haiku executor, an Opus designer and controller, a kimi planner).
   - Routing note: `$MISSION_ROUTING_NOTE`, codex over the daily ration for planner and executor. Metered $0.51.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Taking M4.5aR3 or M4.6gR3 while PR #213 (D-68) is open (Do-not-touch).
   - Deleting the `holds` clause, as the M4.5s evals suggested (it guards a real case; V12/V19b).
@@ -1234,6 +1238,7 @@ DECISIONS FOR MARK: none.
   - Executor `recipe codex:gpt-6.1-sol declared:provider-pin` via `codex exec`: probe rc 0; run rc 0; 220,171 tok; subscription.
   - Evaluator `agent-tool sonnet declared:alias-pin`: 56,415 tok, 18 tools, 1,157 s. judge-independence: cross-vendor (Sonnet vs a codex executor and an Opus controller).
   - Routing note: as configured. Metered $0.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - M4.6gR3 this iteration (it needs a GPU window for `make golden`).
   - A designer or planner run (the plan is approved).
@@ -1280,6 +1285,7 @@ DECISIONS FOR MARK: none.
   - Executor `recipe codex:gpt-6.1-sol declared:provider-pin` via `codex exec`: probe rc 0; 3 runs, all rc 0, 628,273 tok (380,399 + 125,114 + 122,760); subscription.
   - Evaluator `agent-tool sonnet declared:alias-pin`: r1 89,408 tok, 30 tools, 1,901 s; r2 (SendMessage resume) 93,477 tok, 4 tools, 508 s. judge-independence: cross-vendor (Sonnet vs a codex executor and an Opus controller).
   - Routing note: as configured. Metered $0.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Binding the GalaxyMap labels inside this milestone: they are pre-existing defects surfaced by the new audit, so they become a queue row (7i(a)), not scope growth.
   - Putting the full-length scene replay in `make test` (the interpreter takes 2,107 s).
@@ -1323,6 +1329,7 @@ DECISIONS FOR MARK: D-77 (AC4 and the folded transit card while braking: A amend
   - Executor `recipe codex:gpt-6.1-sol declared:provider-pin` via `codex exec`: probe rc 0; 1 run, rc 0, 136,180 tok; subscription.
   - Evaluator `agent-tool sonnet declared:alias-pin`: r1 63,878 tok, 19 tools, 917 s. judge-independence: cross-vendor (Sonnet vs a codex executor and an Opus controller).
   - Routing note: as configured. Metered $0.
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Rewording the four digit captions inside this row (a visible copy change: D-78).
   - Splitting composite sentences into several labels (a layout change; `ComposedBinding` keeps one label).
@@ -1413,6 +1420,7 @@ DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default,
   - Executor: resolver `recipe claude:claude-haiku-5-5 declared:provider-pin`, run as Agent `haiku`, 143,717 + 184,551 tok.
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, run as Agent `sonnet`, 105,381 tok, distinct from the Haiku executor.
   - Quorum reviewers absent: oc-glm-5-3 and oc-kimi-k3 (ollama 429, weekly limit) and gpt6-1-sol (OpenAI 429, no credits). Metered cost $0.026 (two gemini reviews).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Loosening `context-drift` to make AC5 green.
   - Pinning the drift as a known finding: the default scene run has none, so a pinned entry would read stale there.
@@ -1458,6 +1466,7 @@ DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended and the 
   - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 45,487 tok plus codex 48,930 tok.
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 54,656 tok. It is distinct from the Opus designer and the codex planner and executor.
   - Metered: $0.012 (the gemini quorum seat).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Rescoring the pillar table to avoid the guardrail.
   - Merging behind D-83.
@@ -1506,6 +1515,7 @@ DECISIONS FOR MARK: D-83 (NEW: merge #252? A merge and amend the guardrail so ne
   - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 94,914 tok plus codex 131,727 tok.
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 67,083 tok. It is distinct from the Opus designer and the codex planner and executor.
   - Metered: $0.019 (the gemini quorum seat).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Row 7i(k) or another net-0 hygiene row: it would stop on the D-83 guardrail like #252.
   - Row 6d: attended PR #255 has it.
@@ -1554,6 +1564,7 @@ DECISIONS FOR MARK: none new. D-83 (merge #252; recommended A), D-77 and D-78 ar
   - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 228,000 tok plus codex 149,762 tok.
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 98,509 tok. Distinct from the Opus designer and the codex planner and executor (judge-independence: cross-vendor).
   - Metered: $0.0359 (the gemini quorum seat).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Row 6d: attended #262 holds it (v0.54.13 bump, blocked on a getEnvOr VM regression).
   - Rows 7i(k), 7k: net 0, they would stop on the D-83 guardrail like #252.
@@ -1607,6 +1618,7 @@ DECISIONS FOR MARK: D-84 is new (S1 sign-off for #265; recommended A). D-83 (mer
   - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`. Agent `opus` 112,145 tok plus codex 58,021 tok.
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`. Agent `sonnet` 64,402 tok. Distinct from the Opus designer and the codex planner and executor (judge-independence: cross-vendor).
   - Metered: $0.0251 (the gemini quorum seat; the gpt6-1-sol re-run billed nothing, 429).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Waiting for #264 to land before building: the measured fix touches no held file, and the same fix turns #264's tree green.
   - The wider fix in `ui/galaxy_map.gd` (skip the whole overlay while hidden): it collides with #264 and gains nothing measurable (p99 16.15/15.50 against 16.08/15.75).
@@ -1671,6 +1683,7 @@ DECISIONS FOR MARK: none new. D-84 (S1 sign-off for #265; recommended A), D-83 (
   - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`. Not spawned (approval stop).
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`. Agent `sonnet` 84,169 tok. Distinct from the Opus designer and the codex planner (judge-independence: cross-vendor).
   - Metered: $0.382 (quorum r1 $0.196 and r2 $0.186).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Re-capturing S1 on the merged tree now: #270 (R2-CAMERA, draft with eval) changes the ship scene and cameras, so the set would be stale on landing.
   - Measuring AC1 on the contended GPU: it is a quiet-rig criterion.
@@ -1714,6 +1727,7 @@ DECISIONS FOR MARK: **D-85 (new)**: approve the R2-SIMILAR-S0 plan (PR #272)? A 
   - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`. An Agent `opus` role drove `codex exec -m gpt-6.1-sol` (OPENAI_API_KEY stripped). Wrapper 63,237 tok; codex 53,150 tok.
   - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 47,274 tok. It is distinct from the codex generator (judge-independence: cross-vendor).
   - Metered: $0.00 (no quorum; no new doc).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Routing #265 at pick: `Makefile` was held by attended #278. It later landed attended.
   - Routing S0 now: it needs a minor-13 renumbering first (minor 12 is `HOME_TIERS_MINOR`, measured at `bridge/sim_bridge.gd:54` on `067243f`).
@@ -1757,6 +1771,7 @@ DECISIONS FOR MARK: none. D-77, D-78, D-84, D-85 and D-88 were answered attended
   - The Agent `opus` transport wrappers used 27k, 26k, 27k and 30k tok. The judge is cross-vendor to the generator.
   - Quorum: kimi-k3, glm-5-3, gemini-4-argon both rounds; claude-sonnet-5@claude-p absent (quota) both rounds.
   - Metered: about $0.63 (quorum only).
+- **Harness:** filed ticket `rotate-log:legacy-heading-format` (fleet `inbox_1792463069984_b8ef6c4f`, non-blocking; row 7r). `rotate-log` saw 4 of the 40 entries, so the side effects were reverted and nothing was rotated.
 - **Ruled out:**
   - Matching D-77/D-78 by substring in the free-text `why` (the row's suggestion): a discussion note would grant acceptance, and a typo would revoke it.
   - A third quorum round: both round-2 rejects were measurement asks, answered first-party under the carve-out.
