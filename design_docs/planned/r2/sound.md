@@ -73,7 +73,7 @@ Run in `$TMPDIR/sound-spike`, deleted with the scratchpad:
   - **sidechain ducking:** a Ship bus with an `AudioEffectCompressor` sidechained to Voice dropped from RMS 0.177 to 0.0013 when a voice tone started (42.9 dB with deliberately extreme settings);
   - **the limiter:** a full-scale tone at +6 dB through `AudioEffectHardLimiter` (ceiling −1 dB) peaked at exactly −1.00 dBFS;
   - **3D panning:** an `AudioStreamPlayer3D` 5 m to the left of the current `AudioListener3D` gave RMS 0.447 left and 0.223 right (about 6 dB), **but only once a `Camera3D` was in the tree**; with no camera it was silent. The test scenes therefore carry a camera, as the game does.
-- **Import:** Godot 4.7 imports WAV with QOA compression by default (`compress/mode=2`): the 192,044-byte hum became a 39,247-byte sample (4.9×). This repo ignores `*.import` (`.gitignore`), so the default is what every machine and the export get; loop points are set at load from `assets.json` (§D1), not from committed import files.
+- **Import (as built, S0b):** Godot 4.7 would import WAV with QOA compression (`compress/mode=2`, 4.9× smaller). This repo does not import assets: `assets/*` directories are `.gdignore`'d and read as files, and the export carries them as staged `*.bin` bundles. Sound follows the convention: `assets/audio/.gdignore`, WAVs loaded with `AudioStreamWAV.load_from_buffer`, `make sound-stage` copies them to `audio_bundle/<kind>/<file>.bin` for the `.pck` (a prerequisite of `export-macos`), and `SoundDirector.source_path` falls back to the bundle. The files ship uncompressed (4.8 MB for the S0b set), still inside the 6 MB zip budget; QOA or Opus in the bundle is a later option if S1 and S2 push past it.
 
 ## Design
 
@@ -105,7 +105,7 @@ game state (walk distance, view, level, settings) ──────────
 |---|---|---|
 | Master | device | `HardLimiter` ceiling −1.0 dB |
 | Voice | Master | none (crew lines, the Archive) |
-| Ship | Master | `Compressor` sidechained to Voice (ducks ≥ 6 dB while a voice plays), `Reverb` (per level, §D5) |
+| Ship | Master | `Compressor` sidechained to Voice (−24 dB, 3:1: a voice at about −18 dBFS ducks it 11.3 dB, measured), `Reverb` (per level, §D5; dry until S1) |
 | ↳ Ambience | Ship | room tone, spire hum, interlude bed |
 | ↳ Effects | Ship | machines, lift, phase cues, footsteps |
 | ↳ Instruments | Ship | dust counter, nav tones, home beacon (own slider: OQ5) |
@@ -116,7 +116,7 @@ game state (walk distance, view, level, settings) ──────────
   - **RMS** for a one-shot is taken over its active span (samples above a −60 dBFS gate); for a loop, over exactly one loop length.
   - **Headroom is measured before the limiter.** A capture sits ahead of the limiter on Master, and with every cue playing at once its peak must stay ≤ −1 dBFS: the mix fits without the limiter's help. Separately the test asserts that the limiter is present on Master with its −1 dB ceiling, as the safety net (a check after the limiter alone would pass by construction).
 - **Laptop speakers.** Mark plays on a MacBook Air, whose speakers barely reproduce 55 Hz. Every low sound (the hum, the boost) carries harmonics above 150 Hz, checked by rendering it through a 150 Hz high-pass and requiring at least half its RMS (−6 dB) to survive.
-- **Settings** (`ui/game_settings.gd`, `settings.cfg`): Master (default 80%), Voice, Effects, Ambience, Instruments, UI, Music (100%); Mute when the window is unfocused (on); **Reduced audio** (off): halves the dynamic range of alerts, removes transient attacks, keeps every cue. Sliders map linearly in dB from −40 dB to 0 dB, and 0% is mute.
+- **Settings** (`ui/game_settings.gd`, `settings.cfg` `[audio]`): Master, Voice, Effects, Ambience, Instruments, UI, Music, all 100% by default (as built; 80% was proposed, but the bands are set for the default mix); Mute when the window is unfocused (on); **Reduced audio** (off): a gentle compressor at the head of Master (−24 dB, 3:1) evens out sudden cues and keeps every cue. A percentage p maps to an amplitude of (p/100)² (50% ≈ −12 dB, 10% = −40 dB; as built, a perceptual taper rather than linear dB), and 0% mutes.
 
 ### D3. The canon: what can be heard (the diegetic rule and the teacup rule)
 

@@ -1,0 +1,56 @@
+module stapledons/audio/synth_test
+-- R2-SOUND S0b (make sound-synth-check): named checks on the synthesis core, run on the strict VM
+-- and the interpreter; the two outputs must be byte-identical (VM = interpreter), and the last line
+-- carries the sha256 of a short reference recipe's PCM, so a change in the maths shows.
+import ./synth (Recipe, Layer, Env, clamp16, noise, render, pcm16, frames, loopErrors, parseRecipes, envAt, absF)
+import std/list (map, range, length as size, nth, take, drop, foldl)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/crypto (sha256Bytes)
+import std/math (round, floatToInt)
+import std/string (join, intToStr)
+import std/io (println)
+
+pure func noEnv() -> Env = {delay: 0.0, attack: 0.0, tau: 0.0, stop: 0.0}
+pure func sine(f: float, a: float) -> Layer = {kind: "sine", freq: f, freqTo: f, glide0: 0.0, glide1: 0.0, amp: a, lowpass: 0.0, highpass: 0.0, seed: 1, env: noEnv()}
+pure func hiss(lp: float) -> Layer = {kind: "noise", freq: 0.0, freqTo: 0.0, glide0: 0.0, glide1: 0.0, amp: 0.3, lowpass: lp, highpass: 0.0, seed: 7, env: noEnv()}
+
+-- A 0.25 s loop: 440 Hz (110 cycles), 220 Hz (55 cycles), filtered noise, a 4 Hz swell (1 cycle).
+pure func loopRecipe() -> Recipe = {id: "t_loop", seconds: 0.25, loop: true, peakDb: -6.0, fadeMs: 0.0, swellRate: 4.0, swellDepth: 0.2,
+  layers: [sine(440.0, 0.5), sine(220.0, 0.3), hiss(800.0)]}
+pure func shotRecipe() -> Recipe = {id: "t_shot", seconds: 0.1, loop: false, peakDb: -3.0, fadeMs: 10.0, swellRate: 0.0, swellDepth: 0.0,
+  layers: [{kind: "sine", freq: 300.0, freqTo: 900.0, glide0: 0.0, glide1: 0.08, amp: 0.6, lowpass: 0.0, highpass: 0.0, seed: 1, env: {delay: 0.0, attack: 0.005, tau: 0.04, stop: 0.0}}]}
+
+pure func q(x: float) -> int = clamp16(floatToInt(round(x * 32767.0)))
+pure func at(xs: [int], i: int) -> int = match nth(xs, i) { Some(v) => v, None => 0 }
+pure func maxAbs(xs: [float]) -> float = foldl(\m x. if absF(x) > m then absF(x) else m, 0.0, xs)
+
+pure func checks() -> [string] {
+  let lp = map(q, render(loopRecipe()));
+  let n = size(lp);
+  -- the step across the loop's seam is no larger than the largest step inside it (plus 1 LSB)
+  let steps = map(\i. { let d = at(lp, i + 1) - at(lp, i); if d < 0 then 0 - d else d }, range(0, n - 1));
+  let maxStep = foldl(\m d. if d > m then d else m, 0, steps);
+  let seam = { let d = at(lp, 0) - at(lp, n - 1); if d < 0 then 0 - d else d };
+  let shot = render(shotRecipe());
+  let badLoop = {id: "bad", seconds: 0.25, loop: true, peakDb: -6.0, fadeMs: 0.0, swellRate: 0.0, swellDepth: 0.0, layers: [sine(441.1, 0.5)]};
+  let peakOk = absF(maxAbs(shot) - 0.70794578) < 0.00001;
+  let firstLast = absF(foldl(\a x. x, 0.0, shot)) < 0.001 && absF(match nth(shot, 0) { Some(v) => v, None => 1.0 }) < 0.001;
+  [ if clamp16(40000) == 32767 && clamp16(-40000) == -32768 && clamp16(12) == 12 then "" else "clamp16",
+    if noise(5, 7) == noise(5, 7) && noise(5, 7) != noise(6, 7) && noise(5, 7) != noise(5, 8) then "" else "noise determinism",
+    if n == 12000 && frames(loopRecipe()) == 12000 then "" else "loop frames",
+    if seam <= maxStep + 1 then "" else "loop seam ${intToStr(seam)} > max step ${intToStr(maxStep)} + 1",
+    if peakOk then "" else "one-shot peak is not -3 dBFS",
+    if firstLast then "" else "one-shot does not start and end at silence",
+    if size(loopErrors(badLoop)) == 1 then "" else "a loop sine with a fractional cycle count is not rejected",
+    if envAt({delay: 0.1, attack: 0.0, tau: 0.0, stop: 0.0}, 0.05) == 0.0 then "" else "envelope delay",
+    match parseRecipes("{\"schema\":\"stapledons.audio.recipes/1\",\"recipes\":[]}") { Err(_) => "", Ok(_) => "an empty recipe file is accepted" },
+    match parseRecipes("{\"schema\":\"stapledons.audio.recipes/1\",\"recipes\":[{\"id\":\"x\",\"seconds\":1,\"loop\":true,\"layers\":[{\"kind\":\"sine\",\"freq\":1.5,\"amp\":0.5}]}]}") { Err(_) => "", Ok(_) => "a bad loop recipe is accepted" }
+  ]
+}
+
+export func main() -> () ! {IO} {
+  let failed = foldl(\acc x. if x == "" then acc else acc ++ [x], [], checks());
+  let sha = sha256Bytes(pcm16(render(loopRecipe())));
+  if size(failed) == 0 then println("synth-ok ${sha}") else println("synth-FAIL ${join("; ", failed)}")
+}

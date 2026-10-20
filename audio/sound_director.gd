@@ -159,13 +159,22 @@ func stream(asset_id: String, root := "res://") -> AudioStreamWAV:
 	if _streams.has(asset_id):
 		return _streams[asset_id]
 	var r: Dictionary = assets.get(asset_id, {})
-	var s := AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes(root.path_join(str(r.get("path", "")))))
+	var s := AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes(source_path(str(r.get("path", "")), root)))
 	if s != null and r.get("loop", null) is Dictionary:
 		s.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		s.loop_begin = int(r.loop.begin)
 		s.loop_end = int(r.loop.end)
 	_streams[asset_id] = s
 	return s
+
+
+## assets/audio is .gdignore'd (the repo's convention: assets are read as files, not imported), so
+## the export carries the WAVs staged as audio_bundle/<kind>/<file>.bin (make sound-stage).
+static func source_path(rel: String, root := "res://") -> String:
+	var p := root.path_join(rel)
+	if FileAccess.file_exists(p) or not rel.begins_with("assets/audio/"):
+		return p
+	return "res://audio_bundle/" + rel.trim_prefix("assets/audio/") + ".bin"
 
 
 func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:

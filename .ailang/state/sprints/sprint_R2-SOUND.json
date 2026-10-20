@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-SOUND",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended)",
   "approved_on": "2026-10-20",
@@ -21,6 +21,11 @@
       "date": "2026-10-20",
       "event": "approved",
       "note": "Ledger D-101: every recommendation. Mark: 'approve the sound but we will eventually allow for ai generated sound just not yet I guess'. Manifest reserves source_kind 'generated' behind allow_generated=false. Listening page: Mark wants a web page holding the sounds (artifact; files in build/sound_review/)."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "paused",
+      "note": "S0a and S0b built; sound board for Mark (refs/sound/s0b/, build/sound_review/)."
     }
   ],
   "implements": [
@@ -141,10 +146,10 @@
         "git diff --stat origin/main -- sim/ is empty; make strict parity replay green (AC12)",
         "make sound-assets-check: a 'generated' row is rejected while allow_generated is false (negative control); source_kind and provenance required on every row (D-101)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "Built: audio/sound_mix.gd (bus layout from one table, volume taper (p/100)^2, Reduced audio, Mute when unfocused), audio/sound_data.gd (cue and manifest validators; source_kind + provenance + allow_generated=false, D-101), audio/sound_director.gd (sim events, state edges, UI signals, game states, integer-mm walk; clocks never frames; deterministic variation; cue log), GameSettings [audio], main.gd applies settings, voices on the Voice bus, export filter, mk/sound.mk. make sound-test 31 passed (incl. negative controls), cue log byte-identical in two processes; title-screen-test 102 passed with the audio settings. Tests were written alongside the code, not strictly red first. Deviations: Master default 100% (not 80%); bus volume taper (p/100)^2 instead of linear dB; no default_bus_layout.tres (the layout is built in code from SoundMix.BUSES and checked against it)."
     },
     {
       "id": "S0B_SYNTH",
@@ -159,10 +164,10 @@
         "make sound-check: per-cue bands and peaks <= -3 dBFS; the capture before the Master limiter peaks <= -1 dBFS with every cue at once and the limiter is present; voice ducks Ship >= 6 dB; hum and boost keep >= -6 dB through a 150 Hz high-pass; the +6 dB hot fixture fails (AC6)",
         "make sound-review STAGE=s0 publishes each cue and a 30 s hum-and-room loop to gs://stapledons-voyage-assets/refs/sound/s0/ with per-file URLs"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "Built: tools/audio (AILANG package stapledons/audio): synth.ail (pure, strict VM: sines with exponential glides, filtered periodic noise, envelopes, swell, normalise, int16 with a verified clamp16 contract and inline tests), synth_main.ail (FS shell: WAVs + data/audio/assets_synth.json), synth_test.ail, review_main.ail (Ogg Opus via std/audio + WAV fallback, mixes). data/audio/recipes.json (17 recipes), cues.json (17 cues with bands, name, when, listen_for), assets.json. tools/sound_check.gd (offline levels against bands, 150 Hz high-pass survival, mixer routing, ducking 11.3 dB, all-at-once pre-limiter peak -3.8 dBFS, hot negative control), tools/sound_assets_check.gd, tools/sound_review.gd. make sound-synth-check: check + verify + strict VM = interpreter (synth-ok 28ee28...) + 17 sounds regenerate byte for byte; sound-check 25 passed; sound-assets-check 17 files, 4.8 MB. As built: assets/audio is .gdignore'd per repo convention (no Godot import, no QOA); make sound-stage bundles the WAVs as audio_bundle/*.bin for export. Opus files decode (macOS afconvert) to the WAV levels within 0.02 dB."
     },
     {
       "id": "S1_BRIDGE",

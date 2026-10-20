@@ -17,7 +17,7 @@ extends RefCounted
 ## name -> {send, effects}. Effect specs are plain data so the layout test can read them back.
 const BUSES := [
 	{"name": "Voice", "send": "Master"},
-	{"name": "Ship", "send": "Master", "duck": {"threshold": -30.0, "ratio": 4.0, "attack_us": 5000.0, "release_ms": 300.0}, "reverb": true},
+	{"name": "Ship", "send": "Master", "duck": {"threshold": -24.0, "ratio": 3.0, "attack_us": 5000.0, "release_ms": 300.0}, "reverb": true},
 	{"name": "Ambience", "send": "Ship"},
 	{"name": "Effects", "send": "Ship"},
 	{"name": "Instruments", "send": "Ship"},

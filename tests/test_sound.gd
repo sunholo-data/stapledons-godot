@@ -231,6 +231,16 @@ func _run() -> void:
 	check(vt == v2.log_text() and vt.contains(" v0 ") and vt.contains(" v1 ") and cents_ok, "deterministic variation: 40 fires use both variants, pitch within +/-20 cents, identical in two directors")
 	check(s.cue_log.size() > 0 and s.errors.is_empty(), "the director logs while silent (audible = false)")
 
+	# The shipped tables (S0b): they validate, and a loop loads with its manifest loop points.
+	var shipped := SoundDirector.new()
+	shipped.audible = false
+	var se := shipped.setup()
+	check(se.is_empty() and shipped.cues.size() >= 17, "the shipped cue table and manifest validate (%d cues; %s)" % [shipped.cues.size(), "; ".join(se)])
+	var hum := shipped.stream("spire_hum")
+	check(hum != null and hum.loop_mode == AudioStreamWAV.LOOP_FORWARD and hum.loop_end == 384000 and hum.mix_rate == 48000, "spire_hum loads as a 48 kHz loop of 384,000 frames (8 s)")
+	check(SoundDirector.source_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.wav.bin", "the export falls back to the staged audio_bundle (.bin)")
+	shipped.free()
+
 	# The bus layout (§D2).
 	SoundMix.ensure_layout()
 	var lay := SoundMix.is_layout_ok()
