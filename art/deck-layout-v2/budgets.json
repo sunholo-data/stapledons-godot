@@ -3,8 +3,8 @@
   "about": "R2-DECK-LAYOUT section D5 and AC7 (ledger D-95): make deck-assets-check. Pins of every runtime deck file (bytes, sha256), per-GLB budgets (the bridge: 220,000 triangles, 18 materials, 16 images, < 10 MB so it stays in git; bridge_props.glb joins at DL2 with its own < 10 MB cap), the stations and structure the game finds by name, opaque materials, no emission outside the console screens (no painted space, section D8), a clean reimport; the WebP route (EXT_texture_webp, a one-texture fixture decodes); and with a GPU window the bridge's texture memory against the DL0 baseline + 32 MB. Masters are pinned under masters and checked with --masters after make ship-masters.",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 9125496,
-      "sha256": "5816ff194df2161ea15e8c90ba5a061a40bd48ec7638d087f41c3c524ec8aacc"
+      "bytes": 8615976,
+      "sha256": "0cb14d0248d02b8958475ecd30dfad7d91f429c0bf0c401b116d1346e2fce05e"
     },
     "assets/ship_demo/walk_bridge.glb": {
       "bytes": 379960,
@@ -15,8 +15,8 @@
       "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213"
     },
     "assets/ship_demo/manifest.json": {
-      "bytes": 3491,
-      "sha256": "b8d6454f72344ca9e178b48da8087f2d0c5f726e7b9730408b1718313feddd4b"
+      "bytes": 3524,
+      "sha256": "1fc7f0e54c107356e6a773bcc76907f67c4b6ebd7a6f489072bf859479d03115"
     },
     "assets/ship_commons/walk.glb": {
       "bytes": 373208,
@@ -37,6 +37,10 @@
     "assets/ship_commons/manifest.json": {
       "bytes": 17166,
       "sha256": "b5b810b1b7e4e85606fb45f579086616c1b7e66e1eb37b163c9494e25e466364"
+    },
+    "assets/ship_demo/bridge_props.glb": {
+      "bytes": 2399532,
+      "sha256": "b5a23aa8ea2b6260582a638643473e466915d9a52fa5429d9bc1fe68d9bc19cf"
     }
   },
   "glb": {
@@ -46,12 +50,8 @@
       "max_materials": 18,
       "max_images": 16,
       "nodes": [
-        "captain_chair",
         "archive_terminal",
         "archive_shrine_ribs",
-        "console_navigation_0",
-        "console_navigation_1",
-        "console_navigation_2",
         "console_decision_0",
         "console_decision_1",
         "console_decision_2",
@@ -100,6 +100,22 @@
     "tests/fixtures/deck_layout/webp_texture.gltf": {
       "images": 1,
       "max_bytes": 10000
+    },
+    "assets/ship_demo/bridge_props.glb": {
+      "max_bytes": 10000000,
+      "max_triangles": 40000,
+      "max_materials": 8,
+      "max_images": 8,
+      "nodes": [
+        "captain_chair",
+        "console_navigation_0",
+        "console_navigation_1",
+        "console_navigation_2",
+        "v2_nav_detail_00",
+        "v2_nav_detail_01",
+        "v2_nav_detail_02",
+        "v2_chair_detail_00"
+      ]
     }
   },
   "emissive_allow": [

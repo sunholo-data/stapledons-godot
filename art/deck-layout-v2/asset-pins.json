@@ -1,6 +1,6 @@
 {
   "schema": "stapledons.deck.pins/1",
-  "milestone": "DL1 blockout (layout A, ledger D-95)",
+  "milestone": "DL2 style frame (the navigation arc and the chair dressed; ledger D-95, D-96)",
   "authoring_base_commit": "e4da963029beb9acff09c4baaa577426d8be11a6",
   "authoring_script": "~/dev/blender/scripts/stapledon_deck_layout_v2.py (also packed in the master as a text datablock)",
   "authoring_script_sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470",
@@ -11,10 +11,8 @@
   "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 be6bf75111fa30969adc119eff165fedc2aad97bb26f417de2dbdaa5e5a6e984, 15391 triangles after Blender import), put into WALK_bridge by the generator",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 9125496,
-      "sha256": "5816ff194df2161ea15e8c90ba5a061a40bd48ec7638d087f41c3c524ec8aacc",
-      "materials": 14,
-      "images": 10,
+      "bytes": 8615976,
+      "sha256": "0cb14d0248d02b8958475ecd30dfad7d91f429c0bf0c401b116d1346e2fce05e",
       "all_materials_opaque": true
     },
     "assets/ship_demo/walk_bridge.glb": {
@@ -23,6 +21,11 @@
       "materials": 0,
       "images": 0,
       "all_materials_opaque": true
+    },
+    "assets/ship_demo/bridge_props.glb": {
+      "bytes": 2399532,
+      "sha256": "b5a23aa8ea2b6260582a638643473e466915d9a52fa5429d9bc1fe68d9bc19cf",
+      "all_materials_opaque": true
     }
   },
   "masters": {
@@ -30,9 +33,60 @@
       "bytes": 8276198,
       "sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13",
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13.blend"
+    },
+    "stapledon_bridge_props_v1.blend": {
+      "bytes": 9652445,
+      "sha256": "5adf91355d5c71edec2bfa22fcb78b410a90a361ad498602b16a57ae7d878080",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/5adf91355d5c71edec2bfa22fcb78b410a90a361ad498602b16a57ae7d878080.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
   "unmoved_objects_identical": 163,
-  "exported_mesh_instances": 153
+  "exported_mesh_instances": 153,
+  "dl2": {
+    "authoring_script": "~/dev/blender/scripts/stapledon_bridge_props_v1.py (packed in the master)",
+    "authoring_script_sha256": "08034cc13cc3cef1cb9e71410a77d17f898811e81bddf531803043e88494d55d",
+    "source_master_sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13",
+    "texture_size": 1024,
+    "lighting_baked": "none baked: pigment x ambient occlusion x crease ink x grain; the spire light is live in the game (D-96)",
+    "housings": {
+      "console_navigation_0": {
+        "position_m": [
+          3.063,
+          16.16,
+          83.25
+        ],
+        "facing": [
+          -0.9352,
+          -0.3541
+        ],
+        "glass": true
+      },
+      "console_navigation_1": {
+        "position_m": [
+          -0.0,
+          16.715,
+          83.25
+        ],
+        "facing": [
+          0.0,
+          -1.0
+        ],
+        "glass": false
+      },
+      "console_navigation_2": {
+        "position_m": [
+          -3.063,
+          16.16,
+          83.25
+        ],
+        "facing": [
+          0.9352,
+          -0.3541
+        ],
+        "glass": true
+      }
+    },
+    "determinism": "two runs from the same master and script give byte-identical bridge_props.glb and ship.glb"
+  }
 }

@@ -236,6 +236,28 @@ func _run() -> void:
 		opacity_jump = maxf(opacity_jump, maxf(absf(key_op - op_prev[0]), absf(star_op - op_prev[1])))
 		op_prev = [key_op, star_op]
 	check("exactly one shadow-casting directional light from 0.3 lx to 1e6 lx (moody)", one_owner)
+	# R2-DECK-LAYOUT §D5a (D-96): the spire is the bridge's own light. It shares the broad key's
+	# dimming: full with no star close, never below the floor, monotonic as the star rises; its
+	# lamp's glow tracks it; no shadow in DL2; its reach ends above the Commons' deck (57 m).
+	var spire: OmniLight3D = rig.get("spire")
+	check("the rig has the SpireLight on the mast axis above the bridge deck", spire != null and spire.name == "SpireLight" and is_zero_approx(spire.position.x) and is_zero_approx(spire.position.z) and spire.position.y > 84.0 and spire.position.y < 98.0)
+	if spire != null:
+		check("the spire's reach ends above the Commons' deck (%.1f m to %.1f m)" % [spire.position.y, spire.position.y - spire.omni_range], spire.position.y - spire.omni_range > 57.5 and spire.omni_range > 20.0)
+		var spire_ok := true
+		var spire_prev := INF
+		var lamp_ok := true
+		for i in 81:
+			body(levels, "sun").e_v_lux = pow(10.0, -0.5 + i * 0.08)
+			sky.apply(levels); star.update(rig, sky, 0.0, true)
+			var share: float = key.light_energy / rig.key_base
+			if not is_equal_approx(spire.light_energy, rig.spire_base * share) or spire.light_energy > spire_prev + 1e-6 or spire.light_energy < StarLight.KEY_FLOOR_SHARE * rig.spire_base - 1e-6 or spire.shadow_enabled:
+				spire_ok = false
+			spire_prev = spire.light_energy
+			var lamp_mat: StandardMaterial3D = rig.spire_lamp.material_override
+			if not is_equal_approx(lamp_mat.emission_energy_multiplier, rig.spire_lamp_base * share):
+				lamp_ok = false
+		check("the spire light follows the broad key's share: monotonic, never below the floor, no shadow", spire_ok)
+		check("the spire lamp's glow tracks the spire light", lamp_ok)
 	check("the broad key never drops below its 25% floor and dims monotonically", key_floor_ok and key_monotonic)
 	check("the shadow handover is continuous (max opacity step %.3f per 0.08 decade < 0.2)" % opacity_jump, opacity_jump < 0.2)
 	body(levels, "sun").e_v_lux = lux_earth
@@ -249,6 +271,7 @@ func _run() -> void:
 	sky.apply(dark); star.update(rig, sky, 0.0, true)
 	check("interstellar cruise: no star light (below the floor)", star.light.light_energy == 0.0 and not star.light.visible and not star.light.shadow_enabled)
 	check("interstellar cruise: the moody broad key is fully restored", is_equal_approx(key.light_energy, rig.key_base) and key.shadow_enabled)
+	check("interstellar cruise: the spire is the bridge's key at full (§D5a)", rig.has("spire") and is_equal_approx(rig.spire.light_energy, rig.spire_base) and rig.spire_base > 0.0 and rig.spire.visible)
 	var empty := world.duplicate(true); empty.erase("system")
 	sky.apply(empty); star.update(rig, sky, 0.0, true)
 	check("a world without a system section gives no star light", star.light.light_energy == 0.0 and star.source_id == "")
