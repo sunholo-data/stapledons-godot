@@ -86,6 +86,27 @@ func test_props() -> void:
 		stack.append_array(n.get_children())
 	check("DL2: every hero surface (%d) is inked (%d), opaque, and none emits (%d)" % [surfaces, inked, lit], surfaces > 0 and inked == surfaces and lit == 0 and opaque)
 	check("DL2: the stations still find their meshes (ShipConsoles: navigation %d meshes, chair present)" % demo.consoles.stations.navigation.meshes.size(), demo.consoles.stations.navigation.meshes.size() == 3)
+	# DL3 (§D5, sprint DL3): the rest of the heroes join them, by texture set (one shared painted
+	# atlas per set); the deck surface and the spire stay in ship.glb (the styling pass, D-97).
+	var dl3 := {"desks": ["console_decision_0", "console_decision_1", "console_decision_2", "console_decision_3", "v2_desk_props_00", "v2_desk_props_03"],
+		"rail": ["rim_rail_00", "rim_rail_31", "rim_frond_0", "rim_frond_9", "v2_rail_lamp_00", "v2_rail_lamp_15"],
+		"archive": ["archive_terminal", "v2_archive_detail_00", "archive_shrine_ribs", "v2_spire_vents_00"],
+		"lift": ["Lift guide", "Lift guide_001", "Guardrail 82", "Guardrail 82_002"],
+		"floor": ["v2_bench_detail_00", "v2_bench_detail_03", "watch_bench_0", "watch_bench_3", "v2_conduit_00", "v2_conduit_06"]}
+	for set_id: String in dl3:
+		var names: Array = dl3[set_id]
+		var here := names.filter(func(n: String) -> bool: return props.find_child(n, true, false) != null)
+		var left := names.filter(func(n: String) -> bool: return demo.geometry.get_child(0).find_child(n, true, false) != null)
+		var mats := {}
+		for n: String in here:
+			var mi := props.find_child(n, true, false) as MeshInstance3D
+			if mi != null and mi.mesh != null:
+				mats[mi.mesh.surface_get_material(0).resource_name] = true
+		check("DL3 %s: in bridge_props.glb (%d of %d), gone from ship.glb (%s), one painted set (%s)" % [set_id, here.size(), names.size(), left, mats.keys()], here.size() == names.size() and left.is_empty() and mats.size() == 1)
+	for n: String in ["bridge_floor_top82", "spire_needle"]:
+		check("DL3: %s stays in ship.glb" % n, demo.geometry.get_child(0).find_child(n, true, false) != null)
+	var occ := demo.get_tree().get_nodes_in_group(CameraDirector.OCCLUDER_GROUP).filter(func(x: Node) -> bool: return props.is_ancestor_of(x))
+	check("DL3: the props' foreground layer still fades (views.json occluders: %d prop meshes grouped, shrine, terminal and fronds among them)" % occ.size(), occ.any(func(x: Node) -> bool: return String(x.name).contains("shrine_ribs")) and occ.any(func(x: Node) -> bool: return String(x.name).contains("archive_terminal")) and occ.filter(func(x: Node) -> bool: return String(x.name).contains("rim_frond")).size() == 10)
 	demo.queue_free()
 	await process_frame
 

@@ -170,6 +170,24 @@ func test_control_table() -> void:
 	check("AC7 display controls (V J I Tab H Esc M-chart and the camera keys) are never console", ["KEY_V", "KEY_J", "KEY_I", "KEY_TAB", "KEY_H", "KEY_ESCAPE", "KEY_1", "KEY_R", "KEY_7", "KEY_EQUAL", "KEY_MINUS"].all(func(k: String) -> bool: return ShipControls.row(k).kind != "console"))
 	# F4: near c the digits follow one_minus_beta (never 1 - beta), up to 15 places.
 	check("speed near c: 1 - beta = 1e-12 shows twelve nines (%s)" % Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}), Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}).begins_with("0.999999999999c"))
+	# R2-CAMERA-FORWARD views in the help (D-93): each bridge walk view's prompt key ("Bow · 7",
+	# "Astern · 9", views.json) names that view in its help row; R returns to the level's default;
+	# 8 is reserved; 1-3 and = / - are the developer presets; no row describes the old sky looks.
+	var vd: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/camera/views.json"))
+	var bridge: Dictionary = vd.levels.bridge
+	var named := []
+	for v: Dictionary in bridge.views:
+		var key := "KEY_" + str(v.prompt).get_slice("· ", 1).strip_edges()
+		if not str(ShipControls.row(key).get("help", "")).contains(str(v.name)):
+			named.append("%s -> %s" % [v.name, key])
+	var default_name := ""
+	for v: Dictionary in bridge.views:
+		if v.id == bridge.default:
+			default_name = v.name
+	var help_all := ShipControls.help_text(true)
+	check("help names the bridge views from views.json (missing %s); R returns to %s; 8 reserved; 1-3 developer presets; no old sky looks" % [named, default_name],
+		named.is_empty() and str(ShipControls.row("KEY_R").help).contains(default_name) and str(ShipControls.row("KEY_8").help).contains("reserved")
+		and str(ShipControls.row("KEY_1").help).contains("developer") and not help_all.contains("look forward (up)") and not help_all.contains("look aft (down)") and not help_all.contains("look to the side"))
 	check("Tab help groups the controls", ShipControls.help_text(false).contains("Display:") and not ShipControls.help_text(false).contains("Developer:") and ShipControls.help_text(true).contains("Developer:"))
 	# R2-CAMERA D5: the camera keys are named InputMap actions; NT5 both ways for them too.
 	CameraDirector.ensure_actions()

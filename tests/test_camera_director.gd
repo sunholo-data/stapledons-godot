@@ -642,6 +642,8 @@ func test_bow_sweep(demo: Node) -> void:
 		got[n] = in_lift or want.any(func(w: String) -> bool: return w != "lift" and nm.contains(w))
 	var named := 0
 	var stack: Array = [demo.geometry.get_child(0)] # the ship visual (ship.glb), as the demo marks it
+	if demo.get("props_visual") != null:
+		stack.append(demo.props_visual) # R2-DECK-LAYOUT DL3: the dressed props (bridge_props.glb) too
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
 		if n is MeshInstance3D and want.any(func(w: String) -> bool: return w != "lift" and String(n.name).to_lower().contains(w)) and not n.is_in_group(CameraDirector.OCCLUDER_GROUP):
