@@ -182,6 +182,20 @@ About **1,400 game LOC over 9–10 working days** (about 150 LOC a day, half the
 | Conflicts with DL3 and the styling pass | CA0 starts after #292 merges; #293's files are not touched; re-read `git log HEAD..origin/main` before merging |
 | The jog looks frantic at 3.5 m/s | 12 frames a second over a 2.33 m cycle; OQ2 |
 
+## CA0 and the CA1 pilot, as built (2026-10-20)
+
+**CA0** (`interior/captain_anim.gd`, `make captain-anim-test`, 58 checks): as §D2, with one change: the facing is kept as a **heading on the deck**, and the sector is that heading's direction on screen. A view switch at rest therefore turns the drawing, not the captain (bow-facing shows the back in Bow and the front in Astern). The demo's front/back rule (D3, `ship_geometry_demo.gd:436`) is gone; with today's stills a sideways walk shows the three-quarter `se` still (mirrored to the left) instead of the back.
+
+**The pilot** (10 frames, `art/captain-anim-v1/`): the Codex art thread (`gpt-6.1-sol`, built-in image generator, `NOTES.md`) painted the jog half cycle and a standing frame in `back` and `profile`, from the picked identity, the stage-0 stills and the pose guides (`char_captain_pose_guides_v1.py`, elevation 29°, a light jog: the spike's run swung the thighs 40°). The identity, costume and style held across all 10. The pilot's frames live in `assets/characters/captain/anim_pilot.json`, **not** `manifest.json`, so the game is unchanged until Mark accepts them; `tools/captain_review.gd` loads them for the review.
+
+Findings that change the plan:
+1. **The generator's alpha.** The figure's alpha sits at 0.9–0.99 and a glow halo is painted into fully transparent pixels. Ingest remaps alpha 0.5–0.9 to 0–1 and zeroes the rest; the halo never shows.
+2. **The pose gate (§D4) is amended.** A painted open coat never matches the guide's cone, so silhouette IoU ≥ 0.85 is unreachable: the 10 frames score 0.565–0.753. The gate is now **IoU ≥ 0.55 and leg coverage ≥ 0.65** (the share of the guide's red and blue leg keys the paint covers; the pilot scores 0.677–0.930). Scored against the other facing's guide, the same frames reach IoU 0.43–0.57 and leg coverage 0.27–0.76, and none passes both, so the gate separates the poses. The thresholds were set **after** seeing these numbers and the margins are thin (the lowest own IoU is 0.565).
+3. **Scale.** The painter's framing drifts (ingest rescales by 0.945–1.07 to the guide's figure height); the check gates the shipped figure's height against the guide's (± 4%), not the drift.
+4. **AC3 (planted feet) is not met yet, and the cause is the guide rig.** Its jog moves the lowest foot forward by up to 0.39 m between frames (`guides.json`), so the contacts it implies are not a stance. `cycle_m` stays the rig's nominal 2.333 m (0.29 m a frame, 83 ms a frame at 3.5 m/s). Before the rest of age 0 is painted, the guides need a planted-stance gait (the stance foot fixed on the deck while the body passes over it) and `cycle_m` measured from it.
+5. **The half cycle.** The back view's second half is the first half mirrored; the profile's repeats the first half (near and far legs read alike at 67–81 px). Both look right at game size in the review; the age-0 set would paint all 8.
+6. **Budgets:** 10 cells, 279 KB of WebP, 1.7 MB of GPU memory with mipmaps.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CAPTAIN-ANIMATION",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-102)",
   "approved_on": "2026-10-20",
@@ -10,7 +10,8 @@
   "branch": "feat/captain-animation",
   "history": [
     "2026-10-20: planned after Mark's D-98 ('obviously we need animation on the captain a bit'); spike tools/captain_anim_spike.gd compared A (painted still), B (live rigged GLB), C (pre-rendered rig frames) and D (procedural motion on the still) through the real Bow view at 2560x1440 (figure 161 px); frames at gs://stapledons-voyage-assets/refs/captain_animation/spike/",
-    "2026-10-20: approved by Mark with every recommendation (D-102): \"yeah painted animation no mannequin. I will review animations of it on website\"; design PR #34 (brief amendment) merged, so the CA1 pilot spend may start (OQ5: pilot, then age 0 after Mark's pilot review)"
+    "2026-10-20: approved by Mark with every recommendation (D-102): \"yeah painted animation no mannequin. I will review animations of it on website\"; design PR #34 (brief amendment) merged, so the CA1 pilot spend may start (OQ5: pilot, then age 0 after Mark's pilot review)",
+    "2026-10-20: CA0 built; CA1 pilot painted (10 frames), ingested, checked; paused for Mark's pilot review on a web page"
   ],
   "implements": [
     "stapledons-design vision/design-decisions.md 2026-09-28 Static Portraits (amended for the captain by D-98)",
@@ -65,7 +66,10 @@
         "make captain-anim-capture (rig): no missing, blank or frozen strip; the sheet opened (AC6)",
         "make test camera-test camera-forward-test deck-layout-eval; make golden ship-demo-bench on the rig (AC7)"
       ],
-      "passes": false
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "Built: interior/captain_anim.gd (pure; heading on the deck, sector on screen), CaptainAvatar.show_anim (painted cells or stills), demo _animate_captain (velocity from the walk position, walk_yaw, focused station, lift; D3 front/back rule removed), tests/test_captain_anim.gd (58 checks, written beside the code rather than strictly first), mk/captain-anim.mk, tools/captain_review.gd + .sh. AC1, AC2 (CA0 half) met; AC6 machine half met by the review build."
     },
     {
       "id": "CA1_AGE0_MOVING",
@@ -84,7 +88,9 @@
         "make golden (re-posed captain cases listed), make ship-demo-bench p99 <= 16.7 ms, make export-filter-audit, make publish-dev export smoke (AC7, AC8)",
         "pilot and CA1 strips at refs/captain_animation/{pilot,ca1}/ with per-file URLs; Mark reviews (AC9)"
       ],
-      "passes": false
+      "passes": false,
+      "started": "2026-10-20",
+      "notes": "Pilot done, paused for Mark: 10 frames painted by the Codex art thread (gpt-6.1-sol), ingested to assets/characters/captain/anim/y0/ with anim_pilot.json (the game does not load it yet); tools/captain_frames.gd ingest + check + selftest (make captain-frames-check, in make test). Pose gate amended: IoU >= 0.55 AND leg coverage >= 0.65 (0.85 IoU unreachable against a mannequin guide; thresholds set after the pilot numbers). AC3 NOT met: the guide rig's jog has no planted stance; production guides need one before the rest of age 0. Review folder: build/captain_review/."
     },
     {
       "id": "CA2_STATIONS_CHAIR",

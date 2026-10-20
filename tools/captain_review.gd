@@ -17,6 +17,7 @@ var px := Vector2i(1280, 720)
 const CROP := 240
 const DT := 1.0 / 60.0
 var failures := 0
+var bg: Image
 var review := {"clips": [], "moonwalk": [], "view": "Bow", "resolution": [1280, 720]}
 
 
@@ -53,6 +54,13 @@ func _run() -> void:
 		demo._process(DT)
 	demo.avatar.load_anim("res://assets/characters/captain", "anim_pilot.json") # the CA1 pilot (not in the game yet)
 	var anim: Dictionary = demo.avatar.anim
+	demo.captain_anim_auto = false
+	# The deck without the captain: a frame that differs from it by too few pixels is blank.
+	var tex: Texture2D = demo.avatar.texture
+	demo.avatar.texture = null
+	demo._process(DT)
+	bg = await _crop(foot)
+	demo.avatar.texture = tex
 	# The clips, frame by frame, in place.
 	demo.captain_anim_auto = false
 	var sheet_rows: Array = []
@@ -81,7 +89,7 @@ func _run() -> void:
 			var row := {"clip": clip, "facing": facing, "frames": frames.size(), "kind": c.get("kind", "time"),
 				"ms_per_frame_at_game_speed": snappedf(ms, 0.1), "m_per_frame": snappedf(float(c.get("cycle_m", 0.0)) / frames.size(), 0.0001) if gait else null,
 				"fps": c.get("fps", null), "dir": dir, "files": frames.map(func(e): return {"file": e.file, "flip": e.flip}),
-				"blank_frames": imgs.filter(func(m): return _blank(m)).size(), "frozen": gait and _frozen(imgs)}
+				"blank_frames": imgs.filter(func(m): return _blank(m, bg)).size(), "frozen": gait and _frozen(imgs)}
 			if row.blank_frames > 0 or row.frozen:
 				failures += 1
 				print("FAIL %s %s: %d blank frames, frozen %s" % [clip, facing, row.blank_frames, row.frozen])
@@ -89,6 +97,28 @@ func _run() -> void:
 			sheet_rows.append(imgs)
 			print("clip %s %s: %d frames, %.1f ms a frame" % [clip, facing, frames.size(), ms])
 	_sheet(sheet_rows).save_png(out.path_join("contact_sheet.png"))
+	# The painted frames themselves at 2x their cell (the art, not the game's 81 px), on a neutral grey.
+	var s: float = anim.get("cell_scale", 0.1875)
+	var cw := int(1024 * s)
+	var ch := int(1536 * s)
+	for clip: String in anim.get("clips", {}):
+		for facing: String in anim.clips[clip].stages["0"]:
+			var dir: String = "painted/%s_%s" % [clip, facing]
+			DirAccess.make_dir_recursive_absolute(out.path_join(dir))
+			var i := 0
+			for e: Dictionary in anim.clips[clip].stages["0"][facing]:
+				var cell := Image.load_from_file(ProjectSettings.globalize_path("res://assets/characters/captain".path_join(e.file)))
+				cell.convert(Image.FORMAT_RGBA8)
+				var canvas := Image.create(cw, ch, false, Image.FORMAT_RGBA8)
+				canvas.fill(Color(0.42, 0.44, 0.47))
+				var x: int = int(e.crop[0])
+				if bool(e.flip):
+					cell.flip_x()
+					x = cw - int(e.crop[0]) - int(e.crop[2])
+				canvas.blend_rect(cell, Rect2i(Vector2i.ZERO, cell.get_size()), Vector2i(x, int(e.crop[1])))
+				canvas.resize(cw * 2, ch * 2, Image.INTERPOLATE_LANCZOS)
+				canvas.save_png(out.path_join(dir + "/f%02d.png" % i))
+				i += 1
 	# Side by side at real size: every clip's frame i (time-based clips hold their frame).
 	DirAccess.make_dir_recursive_absolute(out.path_join("side_by_side"))
 	var longest := 0
@@ -102,9 +132,10 @@ func _run() -> void:
 	review["side_by_side"] = {"order": review.clips.map(func(c): return "%s_%s" % [c.clip, c.facing]), "frames": longest}
 	# The moonwalk: a 2 s walk to starboard at 3.5 m/s, before and after.
 	var starboard := Vector3(1, 0, 0) # the Bow view's screen right (-sin(-pi/2), 0, cos(-pi/2))
-	for mode in ["before_today", "after_ca0_stills", "after_ca0_pilot"]:
+	for mode in ["warmup", "before_today", "after_ca0_stills", "after_ca0_pilot"]: # warmup: the camera's slide state matches for all three
 		var dir: String = "moonwalk/" + mode
-		DirAccess.make_dir_recursive_absolute(out.path_join(dir))
+		if mode != "warmup":
+			DirAccess.make_dir_recursive_absolute(out.path_join(dir))
 		demo.avatar_pos = demo.walk_bridge.closest_walkable(Vector3(-16, 82, 6), 4.0)
 		for k in 360:
 			demo._process(DT)
@@ -127,11 +158,13 @@ func _run() -> void:
 			else:
 				var o := a.step({"velocity": starboard * 3.5, "view_yaw": demo.director.walk_yaw()}, DT)
 				demo.avatar.show_anim(o)
-			if k % 5 == 0: # 12 frames a second
+			if k % 5 == 0 and mode != "warmup": # 12 frames a second
 				var img := await _crop(demo.avatar_pos)
 				img.save_png(out.path_join(dir + "/f%02d.png" % n))
 				n += 1
 		demo.avatar.anim = saved
+		if mode == "warmup":
+			continue
 		review.moonwalk.append({"mode": mode, "frames": n, "ms_per_frame": 1000.0 / 12.0, "walked_m": snappedf(start.distance_to(demo.avatar_pos), 0.01), "dir": dir})
 		print("moonwalk %s: %d frames, walked %.2f m" % [mode, n, start.distance_to(demo.avatar_pos)])
 	review["figure_px_720p"] = CameraDirector.figure_px(demo.camera.global_transform, foot, 1.754, float(px.y))
@@ -152,15 +185,16 @@ func _crop(foot: Vector3) -> Image:
 	return img.get_region(r)
 
 
-## A frame with no captain: the crop's centre column has no pixel near the coat's cream.
-static func _blank(img: Image) -> bool:
-	var cream := Color("#F2E3C7")
-	for y in range(40, CROP - 20):
-		for x in range(CROP / 2 - 30, CROP / 2 + 30):
-			var c := img.get_pixel(x, y)
-			if absf(c.r - cream.r) + absf(c.g - cream.g) + absf(c.b - cream.b) < 0.25:
-				return false
-	return true
+## A frame with no captain: fewer than 300 pixels differ from the empty deck (the figure is ~80 x 30 px).
+static func _blank(img: Image, empty: Image) -> bool:
+	var n := 0
+	for y in CROP:
+		for x in CROP:
+			var a := img.get_pixel(x, y)
+			var b := empty.get_pixel(x, y)
+			if absf(a.r - b.r) + absf(a.g - b.g) + absf(a.b - b.b) > 0.15:
+				n += 1
+	return n < 300
 
 
 static func _frozen(imgs: Array[Image]) -> bool:

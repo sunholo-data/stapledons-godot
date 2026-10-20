@@ -10,6 +10,7 @@ captain-frames-check: import ## AC4, AC5: every painted frame against its guide 
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tools/captain_frames.gd -- --json $(SCRATCH)/captain-frames.json > $(SCRATCH)/captain-frames.log 2>&1; rc=$$?; grep -E '^(FAIL|captain-frames)' $(SCRATCH)/captain-frames.log; test $$rc = 0 && grep -q '^captain-frames: ok$$' $(SCRATCH)/captain-frames.log
 	@$(GODOT) --headless --path . --script tools/captain_frames.gd -- --selftest > $(SCRATCH)/captain-frames-selftest.log 2>&1; rc=$$?; grep -E '^(selftest|captain-frames)' $(SCRATCH)/captain-frames-selftest.log; test $$rc = 0 && grep -q '^captain-frames: selftest ok$$' $(SCRATCH)/captain-frames-selftest.log
+test: captain-frames-check
 captain-frames-ingest: import ## authoring: RAW=<dir of painted 1024x1536 frames> GUIDES=<dir of full-size guides> -> assets/characters/captain/anim/y0/*.webp + the manifest's anim section
 	@$(GODOT) --headless --path . --script tools/captain_frames.gd -- --ingest $(RAW) --guides $(GUIDES) --json $(SCRATCH)/captain-frames-ingest.json
 captain-anim-capture: import ## AC6: the captain through the real Bow view at 1280x720: every clip and facing, the side-by-side, the moonwalk before/after, animated WebPs -> OUT (default build/captain_review; GPU window; open them)
