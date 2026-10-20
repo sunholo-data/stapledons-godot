@@ -106,10 +106,11 @@
       "description": "verify and pin every cited number (paper, page/table, Teff and log g coverage; a cool-dwarf LD table for TRAPPIST-1 and Barnard, never a clamp); record under citations",
       "estimated_loc": 0,
       "days": 0.5,
-      "passes": false,
+      "passes": true,
       "acceptance": [
         "AC0"
-      ]
+      ],
+      "notes": "pinned in the citations list; five rows verified from the source, others marked secondary or not opened"
     },
     {
       "id": "SS0_STELLAR_PACKAGE",
@@ -191,7 +192,79 @@
   },
   "evaluations": [],
   "follow_ups": [],
-  "citations": "to be filled at SS-1 (value, source, page/table, Teff/log g range)",
+  "citations": [
+    {
+      "value": "V-band quadratic LD, 508 rows",
+      "source": "Claret & Bloemen 2011, A&A 529, A75; CDS J/A+A/529/A75 tableab.dat sha256 e68d1d67e987954a0cd9f3571cda3c32e229a8fd05e61d51d3c82050af105732",
+      "coverage": "ATLAS 3,500-50,000 K, log g 0-5; PHOENIX 2,000-9,800 K, log g 3.5-5.0 (used below 3,500 K)",
+      "verified": "downloaded and extracted 2026-10-20"
+    },
+    {
+      "value": "Aldebaran Teff 3927 +-40 K, log g 1.11 +-0.15",
+      "source": "Heiter et al. 2015, as tabulated in Jofre et al. 2015, A&A 582, A81, Table 3",
+      "verified": "read from the arXiv full text (1507.00027) 2026-10-20"
+    },
+    {
+      "value": "TRAPPIST-1 M 0.0898 +-0.0023, R 0.1192 +-0.0013",
+      "source": "Agol et al. 2021, PSJ 2, 1 (mass adopted from Mann et al. 2019)",
+      "verified": "read from the arXiv PDF (2010.01074v2) 2026-10-20"
+    },
+    {
+      "value": "solar log g 4.43807",
+      "source": "IAU 2015 nominal GM_sun 1.3271244e20, R_sun 6.957e8 (Prsa et al. 2016)",
+      "verified": "closed form"
+    },
+    {
+      "value": "solar granulation cell 1.76 arcsec (1,276.5 km)",
+      "source": "Roudier & Muller 1986, Sol. Phys. 107, 11",
+      "verified": "secondary (quoted in a granulation review found 2026-10-20); primary not opened"
+    },
+    {
+      "value": "granule 1/e lifetime ~6 min",
+      "source": "Title et al. 1989, ApJ 336, 475 (review value)",
+      "verified": "secondary; primary not opened"
+    },
+    {
+      "value": "rms contrast 14.4 % at 630 nm (3D MHD, before degradation)",
+      "source": "Danilovic et al. 2008, A&A 484, L17",
+      "verified": "abstract (arXiv 0804.4230) 2026-10-20"
+    },
+    {
+      "value": "cell size ~ pressure scale height",
+      "source": "Trampedach et al. 2013, ApJ 769, 18",
+      "verified": "not opened; scaling stated as such"
+    },
+    {
+      "value": "umbra 3,900-4,500 K; penumbra chosen for V 0.75 of quiet Sun",
+      "source": "Solanki 2003, A&ARv 11, 153",
+      "verified": "not opened; values within the commonly quoted ranges; labelled chosen"
+    },
+    {
+      "value": "differential rotation 2.894 - 0.428 sin^2 - 0.370 sin^4 microrad/s",
+      "source": "Howard, Harvey & Forgach 1990, Sol. Phys. 130, 295 (via the SunPy rotation-model table)",
+      "verified": "SunPy docs 2026-10-20"
+    },
+    {
+      "value": "cycle 25 minimum December 2019; Spoerer band 28 -> 8 deg",
+      "source": "NOAA/NASA Solar Cycle 25 Prediction Panel; Hathaway 2015, Living Rev. Sol. Phys. 12, 4",
+      "verified": "general knowledge; not opened"
+    },
+    {
+      "value": "Baumbach 1937 corona 1e-6 (0.0532 r^-2.5 + 1.425 r^-7 + 2.565 r^-17)",
+      "source": "Baumbach 1937, Astron. Nachr. 263, 121",
+      "verified": "coefficients confirmed in a NASA GSFC chapter 2026-10-20"
+    },
+    {
+      "value": "giants later than ~K1 III lack hot coronae",
+      "source": "Linsky & Haisch 1979, ApJ 229, L27",
+      "verified": "general knowledge; not opened"
+    },
+    {
+      "value": "M-dwarf spot ratio 0.86 (assumed)",
+      "source": "inside the range Rackham et al. 2018, ApJ 853, 122 consider",
+      "verified": "labelled assumed"
+    }
+  ],
   "plan_review": {
     "model": "sonnet (claude -p, read-only)",
     "round": 1,
