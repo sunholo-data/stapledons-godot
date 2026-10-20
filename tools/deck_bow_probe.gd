@@ -5,7 +5,8 @@ extends SceneTree
 ## moves the named prop groups in-engine and rebuilds the walk; the Blender export stays the source
 ## of truth (this is search and review evidence only).
 ##
-## Per layout, over every bridge walk sample (0.5 m grid) and both walk views:
+## The measurements are DeckBowMetrics' (tools/deck_bow_metrics.gd, the bow evaluator's). Per layout,
+## over every bridge walk sample (0.5 m grid) and both walk views:
 ##   fade       samples where an occluder must fade (CameraDirector.occluders_for), by family
 ##   blocked    samples not clear after the fades (pole ray / captain's head / eye inside)
 ##   body       samples whose ray toward a stop body (30 deg off the bow, port or starboard, at the
@@ -24,8 +25,6 @@ var dump := false
 var sheet: Array = []
 var report := {}
 const BASE := "res://art/deck-layout-v1/layout_current.json"
-const FAMILIES := ["spire", "lift", "shrine", "archive_terminal", "frond"]
-const BODY_OFF_DEG := 30.0
 
 
 func _initialize() -> void:
@@ -133,142 +132,19 @@ func _free() -> void:
 
 
 func _family(n: Node) -> String:
-	var s := String(n.name).to_lower()
-	var p := n.get_parent()
-	while p != null and p != demo:
-		if p == demo.lift:
-			return "lift"
-		p = p.get_parent()
-	for f: String in FAMILIES:
-		if s.contains(f):
-			return f
-	return s
+	return DeckBowMetrics.family(demo, n)
 
 
-func _view(id: String) -> Dictionary:
-	for v: Dictionary in demo.director.data.levels.bridge.views:
-		if v.id == id:
-			return v
-	return {}
-
-
-## A station's use point: the layout's authored `use_m` (ship metres; DL1 authors these as INTERACT_
-## empties), else the ShipConsoles rule (the mesh as it now stands).
+## A station's use point by its walk mesh (DeckBowMetrics.use_point).
 func _use_point(mesh_name: String) -> Variant:
-	var n := demo.geometry.find_child(mesh_name, true, false) as MeshInstance3D
-	if n == null or not n.visible:
-		return null
-	var spec: Variant = dl.layout.get("bridge", {}).get("props", {}).get(mesh_name, {}).get("use_m")
-	if spec is Array:
-		return demo.walk_bridge.closest_walkable(Vector3(float(spec[0]), 82.0, -float(spec[1])), 1.5)
-	var o: Vector3 = n.global_transform.origin
-	var use: Vector3 = demo.walk_bridge.closest_walkable(Vector3(o.x, 82.0, o.z), ShipConsoles.REACH_M)
-	var d := Vector3(use.x - o.x, 0.0, use.z - o.z)
-	if d.length() > 1e-3:
-		var back: Vector3 = demo.walk_bridge.closest_walkable(use + d.normalized() * 0.9, 0.4)
-		if demo.walk_bridge.is_walkable(back):
-			use = back
-	return use
-
-
-func _hit(a: Vector3, b: Vector3) -> Dictionary:
-	var q := PhysicsRayQueryParameters3D.create(a, b)
-	q.hit_back_faces = true
-	return demo.camera.get_world_3d().direct_space_state.intersect_ray(q)
+	for id: String in ShipConsoles.STATIONS:
+		if ShipConsoles.STATIONS[id].walk == mesh_name:
+			return DeckBowMetrics.new(demo, dl).use_point(id)
+	return null
 
 
 func _metrics() -> Dictionary:
-	var dir: CameraDirector = demo.director
-	var pts := dl.samples("bridge")
-	var m := {"samples": pts.size()}
-	for vid: String in ["bow", "astern"]:
-		var v := _view(vid)
-		var fade := 0
-		var fam := {}
-		var blocked := {"pole_ray": 0, "captain": 0, "eye_free": 0}
-		var body := {"port": 0, "starboard": 0}
-		var body_by := {}
-		var body_both := 0
-		var cap_by := {}
-		var frond_by := {}
-		for p: Vector3 in pts:
-			var pose := dir.walk_pose(v, p)
-			var occ: Array = dir.occluders_for(pose, p)
-			if not occ.is_empty():
-				fade += 1
-				var seen := {}
-				for n: Node in occ:
-					seen[_family(n)] = true
-				for k: String in seen:
-					fam[k] = int(fam.get(k, 0)) + 1
-				for n: Node in occ:
-					if _family(n) == "frond":
-						frond_by[str(n.name)] = int(frond_by.get(str(n.name), 0)) + 1
-			var c: Dictionary = dir.clear_after_fades(pose, p)
-			for k: String in blocked:
-				if vid == "astern" and k == "pole_ray":
-					continue
-				if not c[k]:
-					blocked[k] += 1
-			if not c.captain:
-				var hd := p + Vector3.UP * 1.6
-				var ch := _hit(pose.origin, hd + (pose.origin - hd).normalized() * 0.25)
-				var cn := DeckLayout.collider_name(ch) if not ch.is_empty() else "?"
-				cap_by[cn] = int(cap_by.get(cn, 0)) + 1
-			if vid == "bow":
-				var nb := 0
-				for side: String in body:
-					var s := -1.0 if side == "port" else 1.0
-					var bd := ShipCamera.BOW.rotated(Vector3.UP, -s * deg_to_rad(BODY_OFF_DEG))
-					var bh := _hit(pose.origin, pose.origin + bd * 120.0)
-					if not bh.is_empty():
-						body[side] += 1
-						nb += 1
-						var bn := DeckLayout.collider_name(bh)
-						body_by[bn] = int(body_by.get(bn, 0)) + 1
-				if nb == 2:
-					body_both += 1
-		m[vid] = {"fade": fade, "families": fam, "blocked": blocked}
-		m[vid]["frond_by"] = frond_by
-		m[vid]["captain_by"] = cap_by
-		if vid == "bow":
-			m[vid]["body_blocked"] = body
-			m[vid]["body_by"] = body_by
-			m[vid]["body_both"] = body_both
-	# The spawn: open walk straight ahead, the first thing hit, near-field share in both views.
-	var sp := dl.spawn()
-	var run := 0.0
-	while run < 25.0 and demo.walk_bridge.is_walkable(sp + ShipCamera.BOW * (run + 0.25)):
-		run += 0.25
-	var h := _hit(sp + Vector3.UP * 1.0, sp + Vector3.UP * 1.0 + ShipCamera.BOW * 25.0)
-	m["spawn"] = {"at_gltf": [sp.x, sp.z], "open_ahead_m": run,
-		"first_hit": (DeckLayout.collider_name(h) if not h.is_empty() else "none"),
-		"first_hit_m": ((h.position - (sp + Vector3.UP)).length() if not h.is_empty() else -1.0),
-		"near_bow": _near(dir.walk_pose(_view("bow"), sp), sp), "near_astern": _near(dir.walk_pose(_view("astern"), sp), sp),
-		"body_clear_port_stbd": _body_clear(dir.walk_pose(_view("bow"), sp))}
-	var st := {}
-	for id: String in ShipConsoles.STATIONS:
-		var spec: Dictionary = ShipConsoles.STATIONS[id]
-		if not spec.active:
-			continue
-		var u: Variant = _use_point(spec.walk)
-		if not u is Vector3:
-			continue
-		var pose := dir.walk_pose(_view("bow"), u)
-		var n := demo.geometry.find_child(spec.walk, true, false) as MeshInstance3D
-		var box: AABB = n.global_transform * n.mesh.get_aabb()
-		var sc := CameraDirector.screen_point(pose, box.get_center(), Vector2(px))
-		var c: Dictionary = dir.clear_after_fades(pose, u)
-		var sb := []
-		for sgn: float in [-1.0, 1.0]:
-			var bd := ShipCamera.BOW.rotated(Vector3.UP, -sgn * deg_to_rad(BODY_OFF_DEG))
-			sb.append(_hit(pose.origin, pose.origin + bd * 120.0).is_empty())
-		st[id] = {"body_clear_port_stbd": sb, "use_gltf": [snappedf(u.x, 0.01), snappedf(u.z, 0.01)], "station_px": [snappedf(sc.x, 1), snappedf(sc.y, 1)],
-			"in_frame": (not is_nan(sc.x)) and Rect2(Vector2.ZERO, Vector2(px)).has_point(sc),
-			"faces_bow": box.get_center().z < u.z, "clear": c.captain and c.pole_ray and c.eye_free,
-			"fades": dir.occluders_for(pose, u).map(func(x: Node) -> String: return _family(x))}
-	m["stations"] = st
-	return m
+	return DeckBowMetrics.new(demo, dl).metrics()
 
 
 ## A comparison sheet from frames already in `out`: one row per layout tag, one column per shot
@@ -308,47 +184,6 @@ func _dump() -> void:
 		if n != null:
 			var a: AABB = n.global_transform * n.mesh.get_aabb()
 			print("dump %-22s aabb %s" % [nm, a])
-
-
-## Is a stop body 30 deg off the bow (port, starboard) clear of ship geometry from this pose?
-func _body_clear(pose: Transform3D) -> Array:
-	var out := []
-	for sgn: float in [-1.0, 1.0]:
-		var bd := ShipCamera.BOW.rotated(Vector3.UP, -sgn * deg_to_rad(BODY_OFF_DEG))
-		out.append(_hit(pose.origin, pose.origin + bd * 120.0).is_empty())
-	return out
-
-
-## Share of a 64x36 grid of frame rays that hit geometry nearer than the captain, by family.
-func _near(pose: Transform3D, foot: Vector3) -> Dictionary:
-	var d := pose.origin.distance_to(foot + Vector3.UP * 0.9) - 0.5
-	var fam := {}
-	var total := 0
-	var lift: Array = demo.director.lift_boxes() # the lift's boxes have no colliders
-	for j in 36:
-		for i in 64:
-			var r := DeckLayout.frame_dir(pose, (i + 0.5) / 64.0, (j + 0.5) / 36.0)
-			var in_lift := false
-			for b: AABB in lift:
-				if b.intersects_segment(pose.origin, pose.origin + r * d):
-					in_lift = true
-			if in_lift:
-				total += 1
-				fam["lift"] = int(fam.get("lift", 0)) + 1
-				continue
-			var hit := _hit(pose.origin, pose.origin + r * d)
-			if hit.is_empty():
-				continue
-			var name := DeckLayout.collider_name(hit)
-			if name.to_lower().contains("deck") or name.to_lower().contains("floor"):
-				continue
-			total += 1
-			fam[name] = int(fam.get(name, 0)) + 1
-	var top := {}
-	for k: String in fam:
-		if fam[k] >= 23: # 1 % of the frame
-			top[k] = snappedf(fam[k] / 2304.0, 0.001)
-	return {"share": snappedf(total / 2304.0, 0.001), "by_node": top}
 
 
 func _print(tag: String, m: Dictionary) -> void:

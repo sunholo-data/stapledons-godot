@@ -1,0 +1,14 @@
+{
+  "schema": "stapledons.deck.thresholds/2",
+  "about": "R2-DECK-LAYOUT section D4 (ledger D-95): the bow evaluator's thresholds on the exported bridge (make deck-layout-eval). 'Today' is the grounded-bridge-v2 export (art/deck-layout-v2/baseline.sha256); 'A' is the in-engine measurement of layout A from the plan.",
+  "pole_ray_max": 0,
+  "head_bow_max": 2,
+  "head_astern_max": 8,
+  "fade_max": 530,
+  "body_both_max": 10,
+  "active_stations": 4,
+  "spawn_open_min_m": 3.0,
+  "near_bow_max": 0.05,
+  "near_astern_max": 0.10,
+  "captain_px": [60.0, 82.0]
+}

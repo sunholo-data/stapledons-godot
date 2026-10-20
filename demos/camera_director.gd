@@ -242,6 +242,16 @@ static func validate_levels(d: Dictionary) -> PackedStringArray:
 				var dz: Variant = v.get("dead_zone")
 				if not dz is Array or (dz as Array).size() != 2:
 					out.append("%s/%s: a walk view needs dead_zone [x, y] (fractions of the frame)" % [name, id])
+		# R2-DECK-LAYOUT §D3 (AC6): a level's foreground layer, node-name substrings ("lift" = the lift's boxes).
+		if l.has("occluders"):
+			var oc: Variant = l.occluders
+			if not oc is Array:
+				out.append("%s: occluders must be a list of node-name substrings" % name)
+			else:
+				for w: Variant in oc:
+					if not w is String or (w as String).is_empty():
+						out.append("%s: every occluder must be a non-empty string" % name)
+						break
 		var def := str(l.get("default", ""))
 		if def.is_empty():
 			out.append("level %s has no default view" % name)

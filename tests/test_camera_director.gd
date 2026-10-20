@@ -120,6 +120,9 @@ func test_schema() -> void:
 		"envelope over 95": func(x: Dictionary) -> void: x.envelope_m = 96.0,
 		"rise under 0.3": func(x: Dictionary) -> void: x.levels.bridge.views[0].rise_m = 0.2,
 		"travel_axis mismatch": func(x: Dictionary) -> void: x.travel_axis = "up",
+		"occluders not a list": func(x: Dictionary) -> void: x.levels.bridge.occluders = "spire", # R2-DECK-LAYOUT AC6
+		"occluder not a string": func(x: Dictionary) -> void: x.levels.bridge.occluders = ["spire", 3],
+		"occluder empty": func(x: Dictionary) -> void: x.levels.bridge.occluders = ["spire", ""],
 	}
 	for name: String in controls:
 		var m := d.duplicate(true)
@@ -625,6 +628,25 @@ func test_bow_sweep(demo: Node) -> void:
 			bad.append(p)
 	check("Bow: from every bridge sample (%d) one yaw (%d), the pole and the head in frame, the journey and the head clear after fades (%d fail%s)" % [bridge.size(), yaws.size(), bad.size(), (", first %s" % bad[0]) if not bad.is_empty() else ""], bad.is_empty() and yaws.size() == 1)
 	check("Bow: every eye inside the envelope (worst %.2f m)" % worst, worst <= 95.0)
+	# R2-DECK-LAYOUT AC6: the bridge's foreground layer is data (views.json levels.bridge.occluders).
+	var want: Array = dir.data.levels.bridge.get("occluders", [])
+	var got := {}
+	for n: Node in demo.get_tree().get_nodes_in_group(CameraDirector.OCCLUDER_GROUP):
+		var nm := String(n.name).to_lower()
+		var in_lift := false
+		var q: Node = n
+		while q != null and q != demo:
+			in_lift = in_lift or q == demo.lift
+			q = q.get_parent()
+		got[n] = in_lift or want.any(func(w: String) -> bool: return w != "lift" and nm.contains(w))
+	var named := 0
+	var stack: Array = [demo.geometry.get_child(0)] # the ship visual (ship.glb), as the demo marks it
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D and want.any(func(w: String) -> bool: return w != "lift" and String(n.name).to_lower().contains(w)) and not n.is_in_group(CameraDirector.OCCLUDER_GROUP):
+			named += 1
+		stack.append_array(n.get_children())
+	check("AC6 occluders are data: views.json names %s; every grouped node matches it (%d of %d) and no named mesh is left out (%d)" % [want, got.values().count(true), got.size(), named], not want.is_empty() and want.has("lift") and got.values().count(false) == 0 and named == 0 and not got.is_empty())
 
 
 # ------------------------------------------------------------------ spawn occlusion (lead review)

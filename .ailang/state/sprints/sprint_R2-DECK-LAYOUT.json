@@ -118,10 +118,10 @@
         "make camera-forward-test still green",
         "a one-texture EXT_texture_webp glTF fixture imports in Godot 4.7 and deck-assets-check counts it"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-20",
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-20",
+      "notes": "Built: tools/deck_bow_metrics.gd (DeckBowMetrics: the probe's measurements plus captain-px and zoom-pole, failures() by section D4 ID), tools/deck_layout_eval.gd + deck_layout_eval_lib.gd, art/deck-layout-v2/thresholds.json, tests/test_deck_layout_eval.gd (10 checks), tools/ship_baseline.sh + art/deck-layout-v2/baseline.sha256 (grounded v2 ship.glb, walk_bridge.glb, manifest.json uploaded to gs://stapledons-voyage-assets/ship/<sha256>, fetched by curl into build/ship-baseline), the demo's asset_dir hook, deck_assets_check.gd and budgets carried over (art/deck-layout-v2/budgets.json) with the WebP route proven (tests/fixtures/deck_layout/webp_texture.gltf decodes through EXT_texture_webp), occluders as data (views.json levels.bridge.occluders, validated, read by the demo; 3 negative controls + the group-equals-data check in camera-test). The probe now delegates to DeckBowMetrics. Gates: deck-layout-eval-test 10/0 (positive control reproduces 530 / 0 / 0-4 / 8 / 0 m / 1 of 4 / 0 of 3 / 80.6 px exactly; layout A passes; the four seeded defects fail faces-bow, spawn-open, pole-ray, station-body); deck-assets-check ok + both negative controls; camera-test 186/0; camera-forward-test 22/0. Not carried: the old sector-view metrics, thresholds.json v1, layout_a/b v1, deck_layout_capture.gd (deck-layout-capture now runs the probe). tools/deck_walk_bake.gd is DL1's (committed here with the tools)."
     },
     {
       "id": "DL1_BRIDGE_BLOCKOUT",
@@ -139,7 +139,7 @@
         "make ship-commons-test ship-commons-assets-test ship-commons-arcade-test green (ship.glb carries the Commons)"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-20",
       "completed": null,
       "notes": null
     },

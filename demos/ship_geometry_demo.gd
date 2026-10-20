@@ -139,12 +139,16 @@ static func scenario_arg(args:PackedStringArray)->String:
 	for a in args:
 		if a.begins_with("--scenario="):return a.trim_prefix("--scenario=")
 	return ""
+## R2-DECK-LAYOUT: setup option "asset_dir" loads another deck (the evaluator's pinned baseline,
+## review captures); any file it lacks comes from the shipped assets.
+var asset_dir := ""
 func asset(file: String) -> String:
+	if asset_dir!="" and FileAccess.file_exists(asset_dir.path_join(file)):return asset_dir.path_join(file)
 	var source := "res://assets/ship_demo/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
-	menu_return=opts.get("from_menu",false)
+	menu_return=opts.get("from_menu",false);asset_dir=str(opts.get("asset_dir",""))
 	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
 	var px: Vector2i=opts.get("size",get_window().size)
@@ -643,14 +647,16 @@ func centre_hit() -> Dictionary:
 ## cross the line to the captain or the journey, or hold the eye: the spire's meshes (the mast,
 ## its needle and vents), the tall props the Bow view looks through (the Archive shrine's ribs and terminal at
 ## the mast, the rim fronds at the rail; the dense Bow sweep in make camera-test found them) and the
-## lift's visible boxes.
-const OCCLUDER_NAMES := ["spire","shrine_ribs","archive_terminal","rim_frond"]
+## lift's visible boxes. R2-DECK-LAYOUT §D3: the list is data, views.json levels.bridge.occluders
+## (node-name substrings; "lift" names the lift's boxes).
 func _mark_occluders(visual: Node) -> void:
+	var names: Array=director.data.get("levels",{}).get("bridge",{}).get("occluders",[])
 	var stack: Array=[visual]
 	while not stack.is_empty():
 		var n:Node=stack.pop_back()
-		if n is MeshInstance3D and OCCLUDER_NAMES.any(func(w:String)->bool:return String(n.name).to_lower().contains(w)):n.add_to_group(CameraDirector.OCCLUDER_GROUP)
+		if n is MeshInstance3D and names.any(func(w:String)->bool:return w!="lift" and String(n.name).to_lower().contains(w)):n.add_to_group(CameraDirector.OCCLUDER_GROUP)
 		stack.append_array(n.get_children())
+	if not names.has("lift"):return
 	stack=[lift]
 	while not stack.is_empty():
 		var n:Node=stack.pop_back()
