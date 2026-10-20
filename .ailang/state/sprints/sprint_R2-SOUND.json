@@ -1,0 +1,252 @@
+{
+  "sprint_id": "R2-SOUND",
+  "status": "awaiting_approval",
+  "approved": false,
+  "approved_by": null,
+  "approved_on": null,
+  "created": "2026-10-20",
+  "replanned": null,
+  "started": null,
+  "completed": null,
+  "design_doc": "design_docs/planned/r2/sound.md",
+  "sprint_plan": "design_docs/planned/r2/sound-sprint.md",
+  "branch": "design/sound",
+  "history": [
+    {
+      "date": "2026-10-20",
+      "event": "planned",
+      "note": "Mark (D-98): 'obviously we need animation on the captain a bit and sound effects and the level design'; he chose to start design docs for all three. Spike: AILANG synthesis (2 s in 0.28 s VM, VM = interpreter), Godot WAV load, headless Dummy-driver mixing all confirmed."
+    }
+  ],
+  "implements": [
+    "stapledons-design features/phase1-data-models/ship-structure.md (The Spire: low constant hum)",
+    "stapledons-design lore/archive/one-g.md (the teacup rule), nothing-crosses.md, photon-drive.md, weather-between-the-stars.md",
+    "stapledons-design features/future/bubble-constraint.md Audio, bubble-ship-layout.md Audio",
+    "stapledons-design vision/design-decisions.md 2026-09-28 (D-7, D-8: voices, text-only)"
+  ],
+  "github_issues": [],
+  "related_prs": [],
+  "external_dependencies": [
+    {
+      "what": "The bridge as built by R2-DECK-LAYOUT DL1-DL3 (station use points, lift, mast, spire light)",
+      "where": "main (#287, #290) and PR #292 (DL3)",
+      "owner": "deck-layout sprint",
+      "blocks": [
+        "S1_BRIDGE"
+      ],
+      "status": "DL1/DL2 merged; DL3 open"
+    },
+    {
+      "what": "AILANG std/audio (wavFromPcm, deterministic Ogg Opus encode)",
+      "where": "AILANG v0.54.14 stdlib",
+      "owner": "upstream",
+      "blocks": [
+        "S0B_SYNTH"
+      ],
+      "status": "available, verified by the spike"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "S0a-S3",
+      "package": "none",
+      "action": "none",
+      "reason": "Searched 'audio', 'synth', 'dsp' on 2026-10-20: only sunholo/gemini_live (voice protocol). The synthesis tool is game-specific authoring on std/audio; a generic synth package may be contributed later, out of scope."
+    }
+  ],
+  "handoffs": [],
+  "pause_points": [
+    {
+      "after": "plan approval",
+      "what": "OQ1-OQ9 answered in one ledger row"
+    },
+    {
+      "after": "S0B_SYNTH",
+      "what": "Mark listens to the sound board (refs/sound/s0/), the hum first; approves the palette or redirects"
+    },
+    {
+      "after": "S1_BRIDGE",
+      "what": "Mark walks the bridge with sound in a dev build (refs/sound/s1/)"
+    },
+    {
+      "after": "S2_VOYAGE",
+      "what": "Mark plays a voyage with sound in a dev build (refs/sound/s2/)"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "Diegetic rule: only in-ship sources plus a quiet UI layer; nothing heard from space",
+      "recommendation": "yes"
+    },
+    {
+      "id": "OQ2",
+      "q": "Teacup rule for the drive: no rumble or shake in boost/brake; emitter rises to a clean high tone; the coast is 'the drive is silent'",
+      "recommendation": "yes, and record as canon in the design repo"
+    },
+    {
+      "id": "OQ3",
+      "q": "Sourcing: AILANG synthesis for tonal sounds, CC0 libraries for foley, no generative AI audio or API spend in this sprint",
+      "recommendation": "yes"
+    },
+    {
+      "id": "OQ4",
+      "q": "Music",
+      "recommendation": "defer; wire an empty Music bus; decide with level design"
+    },
+    {
+      "id": "OQ5",
+      "q": "Dust counter: a Geiger-style tick at the helm for every grain the sim draws, own Instruments slider",
+      "recommendation": "yes, on by default, quiet"
+    },
+    {
+      "id": "OQ6",
+      "q": "Home beacon: Earth keeps a beacon aimed at the ship; its carrier plays at the helm with a compressed Doppler pitch",
+      "recommendation": "yes in S2, labelled as a compressed mapping; canon is Mark's call"
+    },
+    {
+      "id": "OQ7",
+      "q": "Listener at the captain's head, turned with the active view",
+      "recommendation": "yes"
+    },
+    {
+      "id": "OQ8",
+      "q": "Bow/Astern switch: silent or a cue",
+      "recommendation": "silent"
+    },
+    {
+      "id": "OQ9",
+      "q": "Pause points: S0 sound board, S1 bridge dev build, S2 voyage dev build",
+      "recommendation": "yes"
+    }
+  ],
+  "features": [
+    {
+      "id": "S0A_FOUNDATION",
+      "description": "default_bus_layout.tres (Master limiter; Voice; Ship with Voice-sidechained compressor and reverb, Ambience/Effects/Instruments under it; UI; empty Music); audio/sound_director.gd (cue table loader/validator, deterministic variant and pitch from (cue id, fire count), cue log ring buffer, 2D/3D players, listener rule); data/audio/cues.json + assets.json (schemas stapledons.audio.cues/1, stapledons.audio.assets/1); per-bus volume settings, Mute when unfocused, Reduced audio in ui/game_settings.gd; the conversation and ArchiveVoice players onto the Voice bus. First, on the rig, record the frame-time baseline (make bench SCENE=bridge) into tests/fixtures/sound/bench_baseline.json. export_presets.cfg include_filter gains assets/audio/* and data/audio/*; mk/sound.mk included from the Makefile (.PHONY, test: prerequisites). Cue clocks: sim tick + event index, impact ship time, input sequence, integer millimetres; never frames or wall time.",
+      "estimated_loc": 550,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make sound-test: schema validation passes; renamed trigger, missing stream and unknown bus fixtures each fail (AC1)",
+        "make sound-test: a scripted stepped sequence fires the mapped cues in order; the same input in two separate Godot processes gives a byte-identical cue log",
+        "make sound-test: the footstep accumulator gives 9 steps for 6,990 mm and 10 for 7,000 mm (AC3); informative cues name an existing visual counterpart and no forbidden word appears (AC5)",
+        "make title-screen-test: per-bus volumes persist in settings.cfg and set bus volumes; 0% mutes; Mute when unfocused; Reduced audio (AC9)",
+        "make sound-assets-check: manifest bytes, sha256, rate and licence match; git budget holds; wrong-sha and CC-BY fixtures fail (AC8)",
+        "make ai-conversation crossing-review-test still green with voices on the Voice bus (AC11)",
+        "git diff --stat origin/main -- sim/ is empty; make strict parity replay green (AC12)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "S0B_SYNTH",
+      "description": "tools/audio/synth.ail (pure, strict VM: oscillators, partials, swell, SplitMix64 noise, envelopes, integer-cycle loops, per-second rendering), synth_main.ail (FS shell), synth_test.ail; data/audio/recipes.json; the first synthesised set (spire_hum, room_bridge, UI clicks, console wake/sleep, arrived, commit_seal, drive boost/silent/brake, stop_turn, dust_tick, archive_ready); tools/sound_check.gd (headless capture loudness); tools/sound_review.gd + std/audio Opus renders and an index page.",
+      "estimated_loc": 450,
+      "dependencies": [
+        "S0A_FOUNDATION"
+      ],
+      "acceptance_criteria": [
+        "make sound-synth-check: synth core passes --strict-bytecode; VM = interpreter on a short recipe; every synthesised file reproduces its sha256 (AC7)",
+        "ailang verify tools/audio/synth.ail proves clamp16's range contract",
+        "make sound-check: per-cue bands and peaks <= -3 dBFS; the capture before the Master limiter peaks <= -1 dBFS with every cue at once and the limiter is present; voice ducks Ship >= 6 dB; hum and boost keep >= -6 dB through a 150 Hz high-pass; the +6 dB hot fixture fails (AC6)",
+        "make sound-review STAGE=s0 publishes each cue and a 30 s hum-and-room loop to gs://stapledons-voyage-assets/refs/sound/s0/ with per-file URLs"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "S1_BRIDGE",
+      "description": "The bridge (design section D4): room tone, spire hum at the mast in 3D, CC0 footsteps (6 variants), console wake/sleep/key, lift start/run/arrive, Archive terminal open/ready, Crew console open; data/audio/rooms.json and the bridge reverb; AudioListener3D at the captain's head turned with the active view; attenuation. Adds started(level)/arrived(level) signals to demos/ship_demo_lift.gd. Foley fetched with curl from Kenney.nl CC0 packs (URL, author, licence, sha256 recorded); a synthesised placeholder if nothing CC0 fits.",
+      "estimated_loc": 380,
+      "dependencies": [
+        "S0B_SYNTH"
+      ],
+      "acceptance_criteria": [
+        "make sound-test: a source left of the captain pans left in Bow and right in Astern (AC10); lift start/run/arrive order; console wake/sleep at each station; rooms.json sets the bridge reverb",
+        "make sound-assets-check: every foley file has its URL, author and CC0-1.0 licence",
+        "make sound-check camera-test camera-forward-test ship-ui-test ship-demo-lift-test green",
+        "make bench SCENE=bridge (GPU window, rig): p99 < 16.7 ms and within 0.5 ms of the S0a baseline (AC14)",
+        "full make test green on the rig via tools/rig_check.sh (AC16)",
+        "make publish-dev dev build and make sound-review STAGE=s1 (60 s bridge walk) published for Mark"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "S2_VOYAGE",
+      "description": "The voyage (design section D6): plan select, commit hold and seal, drive boost/silent/brake, stop turn, arrival, brake notice, hold limit, crew hold, the dust counter (25 ms dead time) from ship.ism.impacts, medium changes, the interlude bed under the Archive's voice, bh_enter, and the home beacon if OQ6 is accepted. Adds the tour's attitude_hold_changed(on) signal for stop_turn. Home beacon pitch is asserted against physics/planets.gd doppler_seen64 (mirror of sunholo/relativity 0.7 optics) at the package probe values; no new formula (gate 2).",
+      "estimated_loc": 420,
+      "dependencies": [
+        "S1_BRIDGE"
+      ],
+      "acceptance_criteria": [
+        "make sound-test: the voyage cue log equals tests/fixtures/sound/cue_log_voyage.txt byte for byte in two separate Godot processes (AC2)",
+        "make sound-test: committed -> commit_seal only on the sim's acceptance; phase to boosting/cruising/braking -> drive cues; arrived, hold_limit, crew_hold, bh_enter; dust ticks honour the dead time (AC4)",
+        "make sound-test: home beacon pitch at beta 0, 0.9, 0.99 (Sol astern and ahead) matches 12*k*log2(D) from the package mirror to 0.01 semitone, if OQ6 (AC15)",
+        "make export-filter-audit ship-demo-export-smoke green, the smoke asserting the exported pack loads the cue table and logs one cue; make export-pack-check on the rig: zip growth <= 6 MB (AC13)",
+        "full make test green on the rig (AC16)",
+        "dev build and make sound-review STAGE=s2 published for Mark"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "S3_LANDING",
+      "description": "Independent evaluation by a different model (sprint-evaluator, >= 70/100) and landing: doc to design_docs/implemented/r2/, README index, changelog fragment, design repo features/next/sound.md status.",
+      "estimated_loc": 0,
+      "dependencies": [
+        "S2_VOYAGE"
+      ],
+      "acceptance_criteria": [
+        ".ailang/state/evaluations/eval_R2-SOUND_round_1.json scores >= 70 with no blocking finding",
+        "design doc moved to design_docs/implemented/r2/sound.md and indexed; changelog fragment present"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 200,
+    "estimated_total_loc": 1800,
+    "estimated_days": 9,
+    "note": "About 200 LOC/day: choosing and tuning about 35 cues by ear and against the loudness check is not counted in LOC. Recent attended R2 velocity is about 300 LOC/day. Day caps: S0a 2, S0b 3, S1 1.5, S2 1.5, S3 0.5 (+0.5 contingency)."
+  },
+  "reviews": [
+    {
+      "date": "2026-10-20",
+      "reviewer": "claude -p --model sonnet (read-only, independent)",
+      "score": 78,
+      "verdict": "PASS",
+      "blocking_fixed": [
+        "export filter: include_filter edit planned and the export smoke asserts a cue (AC13)",
+        "headless spike extended: sidechain ducking 42.9 dB, HardLimiter -1.00 dBFS, 3D panning L 0.447 / R 0.223 once a Camera3D is in the tree",
+        "cue clocks specified: sim tick + event index, impact ship time for dust dead time (max 8 ticks per sim tick), input sequence, integer mm footsteps; never frames or wall time",
+        "footsteps: integer accumulator, 6,990 mm -> 9, 7,000 mm -> 10",
+        "lift started/arrived and tour attitude_hold_changed signals added to S1/S2",
+        "headroom measured before the Master limiter; limiter presence asserted; RMS windows defined"
+      ],
+      "non_blocking_folded": [
+        "bench baseline recorded at S0a start, GPU/rig gate, absolute p99 < 16.7 ms kept",
+        "OQ6 noted as new lore + gate 2, asserted against the planets.gd mirror; may split",
+        "S0b 3 days, total 9 days",
+        "CC0 via Kenney.nl (curl, no login), synthesised fallback",
+        "mk/sound.mk include, .PHONY, test: prerequisites; sound-assets-check negative controls",
+        "QOA is the 4.7 default import (measured 4.9x); *.import is gitignored; loop points set at load",
+        "view_switch row removed (OQ8)",
+        "AC2 runs in two separate processes"
+      ]
+    }
+  ],
+  "answers": [],
+  "follow_ups": []
+}
