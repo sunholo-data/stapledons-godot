@@ -51,6 +51,10 @@ verify() {
 }
 
 fetch() {
+    # data/raw holds raw inputs and staged blobs, never Godot resources: its .gdignore keeps the
+    # editor import (and the export) out of it. Untracked like the rest of data/raw, so a fresh
+    # clone gets it here (R2-CAMERA-FORWARD F3: a fresh clone's import otherwise chokes on it).
+    mkdir -p data/raw && { [ -f data/raw/.gdignore ] || : > data/raw/.gdignore; }
     # A here-document, not a pipe, keeps the loop in this shell so the missing count survives it.
     missing=0
     while read -r sum kind path; do

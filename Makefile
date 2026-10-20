@@ -1263,7 +1263,7 @@ camera-walk-capture: import ## R2-CAMERA-FORWARD AC-R1 evidence: the director's 
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_walk_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-walk-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-walk)' $(SCRATCH)/camera-walk-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-walk-capture.log && grep -q '^camera-walk-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-walk-capture.log
 
 .PHONY: camera-views-capture
-camera-views-capture: import ## R2-CAMERA: Z1/Z2/Z3 on the bridge at rest and 0.99c, 1280x720 and 2560x1440 (+ rail and stations rings) -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m or no captain in frame
+camera-views-capture: import ## R2-CAMERA-FORWARD AC-R1: Bow, Astern, the legacy Commons and the lift at rest, 0.99c, a guided stop and Sgr A* (1280x720 and 2560x1440; CAPTURE_ARGS="-- --quick" for 720p), a forced-fade frame, a real voyage at 0.9/0.99/0.999c and every Sgr A* stop -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m, no captain in frame, or Bow not framing the pole, the stop body or the hole
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_views_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-views-capture.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|camera-views-capture)' $(SCRATCH)/camera-views-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-views-capture.log && grep -q '^camera-views-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-views-capture.log
 
 # D-63 attended navigation recovery: genuine body clearance, stable controls and scoped parity.
