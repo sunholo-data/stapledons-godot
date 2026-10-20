@@ -26,7 +26,8 @@
     "M4.7_ARCHIVE_CODEX",
     "M4.3b_HUD_IN_INTERIOR",
     "M4.5_PLAYTHROUGH_AUDIT",
-    "M4.6_PHYSICS_GATES"
+    "M4.6_PHYSICS_GATES",
+    "M4.5bR3_7p_AC4_VERDICT"
   ],
   "critical_path": [
     "M4.1_CONSEQUENCE_STUB",
@@ -673,6 +674,44 @@
       ],
       "passes": null,
       "notes": "Iteration 36 planner at HEAD 7b4bee06b1f13ba65544d919391a7cbc161b73d1: planned; awaiting executor, independent evaluator and outside-sandbox GPU/network/controller evidence. SCRATCH verified statically as .godot/tmp. Current CI run-step make inventory is deps, lore-import, test; additional gates golden (373 ok), lint-precision/python-guard, capture-m4, bench SCENE=bridge, capture-m4-publish. Design measured live p99 85.32 ms versus 16.7 target: expect raw make=2/driver=2 on valid MISS, never claim AC12 green; structural invalid driver=1 also yields make=2. Capture 189-245 s measured; executor drills/positive control budget 30-35 min, evaluator repeats 15-20 min. DC4 pinned nested i in range(n), j in range(i+1,n) over all 14 recorded paths: seven equal path pairs, exactly seven duplicate lines, eight physical PNGs. Twelve design-command defect groups and corrected commands in addendum. AC6 must run outside ANY sandbox, attended or controller-run; 18 uploads and 18 public hash matches asserted. No make/GPU/network/drill/git-write execution by planner; every sandbox validation is UNINFORMATIVE UNDER SANDBOX, not a pass or fail. S1 and missing outside-sandbox evidence keep passes null; no existing feature or parent status is changed. || Iteration 36 executor (codex gpt-6.1-sol wrote drivers/Makefile/changelog; controller hand edits: cruise beta tolerance 1e-12 since sim emits 0.9900000000000004; walk/dolly waits bounded 30 s wall not 600 frames (flaked); docked 60-frame settle so DC2 kills). Outside-sandbox evidence on the GPU rig: AC1-AC4 rc 0 (14 frames, 15 PNG, 15 distinct hashes, 14 worlds byte-equal across two runs); AC5 15 rows after opening every PNG (report m4-6rr3-ship-renders-bench-report.md; findings: saturated Earth/aCen discs, dust flashes at rest at home, fading card ghosts, spire tip in forward views); AC6 published 18 files to gs://stapledons-voyage-assets/refs/m4_ship_s1/, 18/18 public byte-equal; AC7 rc 0 (valid MISS, raw make 2/driver 2): live transit 367 frames p50 73.0 p95 160.9 p99 219.3 ms at host load 9.2 (two earlier loaded runs rejected as invalid, 264/194 frames < 300); AC8 red as expected (M4.6pR3); AC9 rc 0 (default dry run sha 2bd542c8 unchanged, SCENE=nope rc 2); drills DC0 green, DC1-DC5 killed (14/1/1/7/0), DB1/DB2 killed, DB3 green, no-op 3/3, bad root 2, tree unchanged; AC14 rc 0; golden 373 ok 0 FAIL; lint-precision/python-guard/ai-live-guard, deps, lore-import CHECK=1 (D=../stapledons-design c170604) rc 0. make test left to the controller. S1 pending Mark; passes stays null."
+    },
+    {
+      "id": "M4.5bR3_7p_AC4_VERDICT",
+      "description": "Charter row 7p, one-day test-first AC4 verdict addendum under D-66. Record settled D-77 A / D-78 A with validated accepted_by identities, qualified entry-count MET, legacy/mixed OPEN and four known-ruling controls. Order: fixtures and make assertions RED on the old audit; validator/verdict GREEN; three isolated mutation drills; real scene; parent evidence; rig/full plus GitHub fast tier. Design Quorum disposition and V13-V15 are binding; exact Files-table scope only.",
+      "depends_on": [
+        "M4.5bR3_7ij_CONTEXT_CONTROLS"
+      ],
+      "estimated_loc": 90,
+      "files": [
+        "tests/display_audit.gd",
+        "tests/fixtures/display_audit/known_findings.json",
+        "tests/fixtures/display_audit/known_unaccepted.json",
+        "tests/fixtures/display_audit/known_bad_ruling.json",
+        "tests/fixtures/display_audit/known_wrong_kind.json",
+        "tests/fixtures/display_audit/known_wrong_cards.json",
+        "tests/fixtures/display_audit/known_wrong_caption.json",
+        "mk/m45.mk",
+        "design_docs/planned/r1/m4-first-journey.md",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json"
+      ],
+      "acceptance_criteria": [
+        "AC1: Controls pass with exactly 24 rejection rows. Command: `controls`",
+        "AC2: Empty-known compatibility and both qualified accepted cases match exactly. Command: `controls && grep -qx 'ac4: MET' \"$W/display-valid.log\" && grep -qx 'ac4: MET (5 accepted by D-77/D-78)' \"$W/display-known.log\" && grep -qx 'ac4: MET (5 accepted by D-77/D-78)' \"$W/display-known-renumbered.log\"`",
+        "AC3: Mixed accepted/unaccepted list stays OPEN with zero failures. Command: `controls && grep -qx 'ac4: OPEN (1 unaccepted known, 4 accepted by D-77/D-78)' \"$W/display-known-unaccepted.log\" && grep -q 'new=0 .* stale=0 failures=0$' \"$W/display-known-unaccepted.log\"`",
+        "AC4: All four invalid metadata fixtures fail for the loader reason. Command: `controls && for k in known_bad_ruling known_wrong_kind known_wrong_cards known_wrong_caption; do if grep -q \"^display control known/$k.json: rejected$\" .godot/tmp/7p-controls.log && grep -qx 'FAIL known-ruling invalid acceptance' \"$W/display-known-$k.json.log\"; then :; else exit 1; fi; done`",
+        "AC5: M1 forced-MET mutation is killed by the mixed OPEN control. Command: `drill \"$PWD\" M1`",
+        "AC6: M2 accepting-all mutation is killed by the mixed OPEN control. Command: `drill \"$PWD\" M2`",
+        "AC7: M3 omitted-validation mutation is killed by invalid-ID control. Command: `drill \"$PWD\" M3`",
+        "AC8: Real scene prints qualified MET with five accepted entries and zero failures. Command: `PATH=\"$PWD/runtime/bin:$PATH\" make scene-session-audits AILANG=\"$PWD/runtime/bin/ailang\" && grep -qx 'ac4: MET (5 accepted by D-77/D-78)' .godot/tmp/display-audit/playthrough/display-audit.log && grep -q '^display-audit: .* failures=0$' .godot/tmp/display-audit/playthrough/display-audit.log && ! grep -q 'SCRIPT ERROR:' .godot/tmp/display-audit/playthrough/display-audit.log`",
+        "AC9: Parent and sprint record both amendments and measured AC4 evidence with aggregate flags null. Command: `awk '$2 == \"AC4\" {print}' design_docs/planned/r1/m4-first-journey.md > .godot/tmp/7p-parent-ac4.txt && test \"$(wc -l < .godot/tmp/7p-parent-ac4.txt)\" -eq 1 && grep -q 'D-77' .godot/tmp/7p-parent-ac4.txt && grep -q 'D-78' .godot/tmp/7p-parent-ac4.txt && grep -q 'OPEN' .godot/tmp/7p-parent-ac4.txt && jq -e 'any(.features[]; .id == \"M4.5_PLAYTHROUGH_AUDIT\" and .passes == null and .completed == null and .ac4_verdict == {status:\"MET\",accepted_entries:5,accepted_by:[\"D-77\",\"D-78\"],evidence:\".godot/tmp/display-audit/playthrough/display-audit.log\"} and any(.acceptance_criteria[]; startswith(\"AC4:\") and contains(\"D-77\") and contains(\"D-78\")))' .ailang/state/sprints/sprint_R1-M4-JOURNEY.json`",
+        "AC10: Python policy and the whole Studio rig suite pass; green rig/full plus GitHub fast tier required. Command: `PATH=\"$PWD/runtime/bin:$PATH\" make python-guard && PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=\"$PWD/runtime/bin/ailang\"`",
+        "AC11: No tracked production/physics/runtime changes or new production sources; exact Files scope also reviewed. Command: `git diff --name-only d6ef45e1 -- sim physics shaders ui demos bridge runtime > .godot/tmp/7p-production-paths.txt && test ! -s .godot/tmp/7p-production-paths.txt && git ls-files --others --exclude-standard -- sim physics shaders ui demos bridge runtime ':(exclude)**/*.uid' > .godot/tmp/7p-new-production.txt && test ! -s .godot/tmp/7p-new-production.txt`"
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7p-ac4-verdict.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7p-ac4-verdict-sprint.md",
+      "passes": null,
+      "completed": null,
+      "notes": "Iteration 40 planner: one-day (8 h), seven ordered tasks, 11 ACs; implementation not executed. Setup W=.godot/tmp/display-audit/playthrough, pinned v0.54.14 PATH, and controls()/drill() from the sprint plan. Pristine controls rc 0 with 20 rejection rows; exact AC1-AC7 and AC9 rc 1 expected RED, AC11 rc 0 GREEN. AC8 not run (controller scene rc 0, 177 s, old OPEN); AC10 full suite not run, Python prefix green. M1-M3 Perl dry-runs on independent TEMP snippets each changed exactly one line; GDScript tab sketch check-only rc 0. Drill baseline guards failed before any audit mutation. Python/voice and AI scanner green; full ai-live-guard not run because it invokes scratch git writes. External Godot settings/log-write denials are UNINFORMATIVE UNDER SANDBOX; local-log parser rerun clean. No broken AC commands found; plan supplements AC11 with complete Files-scope review. Full CI lore/fast tier, rig/full, real mutant kills, scene and independent V13-V15 rechecks remain executor work. Parent M4.5_PLAYTHROUGH_AUDIT unchanged by planner; update its AC4/evidence only after AC8 and preserve null aggregate flags. No git write commands used; controller commits."
     }
   ],
   "findings": [
