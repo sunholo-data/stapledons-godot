@@ -71,7 +71,7 @@ drill() (
     D1) perl -i -pe 's{\Q and entry.get("accompanying_card") == cards + "Card_notice"\E}{}' tests/display_audit.gd ;;
     D2) perl -i -pe 's{\Qentry.node == cards + "Card_transit" and \E}{}' tests/display_audit.gd ;;
     D3) perl -i -pe 's{\Q and entry.text == "missing ship.ism.glow_w_mN"\E}{}' tests/display_audit.gd ;;
-    D4) perl -i -pe 's{\Qentry.kind == "unbound" and entry.node == "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label" and \E}{entry.kind == "unbound" and }' tests/display_audit.gd ;;
+    D4) PAT='entry.kind == "unbound" and entry.node == "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label" and ' REP='entry.kind == "unbound" and ' perl -i -pe 's{\Q$ENV{PAT}\E}{$ENV{REP}}' tests/display_audit.gd ;;  # env vars: an inline pattern interpolates @Window etc. as Perl arrays and never matches (executor, iteration 41)
     *) exit 2 ;;
   esac
   cmp -s "$T/audit.gd" tests/display_audit.gd && exit 3
