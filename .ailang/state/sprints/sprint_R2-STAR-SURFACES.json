@@ -1,7 +1,14 @@
 {
   "sprint_id": "R2-STAR-SURFACES",
-  "status": "awaiting_approval",
-  "approved": null,
+  "status": "in_progress",
+  "approved": {
+    "ledger": "D-105",
+    "date": "2026-10-20",
+    "by": "Mark, attended",
+    "quote": "yeah good continue",
+    "with": "every recommendation (OQ1-OQ9)",
+    "publish": "sunholo/celestial 0.5.0 under Mark's standing approval to publish sunholo packages, when SS0 is green (coordinator, 2026-10-20)"
+  },
   "created": "2026-10-20",
   "design_doc": "design_docs/planned/r2/star-surfaces.md",
   "sprint_plan": "design_docs/planned/r2/star-surfaces-sprint.md",
@@ -41,47 +48,56 @@
     {
       "id": "OQ1",
       "q": "Honest resolution gate or exaggerate structure everywhere?",
-      "recommendation": "honest gate"
+      "recommendation": "honest gate",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ2",
       "q": "Procedural in the shader or a texture baked per star at arrival?",
-      "recommendation": "procedural unless the bench at the SS2 midpoint misses +0.5 ms; then a cube map baked at arrival, decided before the pause"
+      "recommendation": "procedural unless the bench at the SS2 midpoint misses +0.5 ms; then a cube map baked at arrival, decided before the pause",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ3",
       "q": "Keep each star's total light fixed, or let spots dim it by the real ~0.1%?",
-      "recommendation": "fixed"
+      "recommendation": "fixed",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ4",
       "q": "Supergranulation (invisible in white light): leave out or show faintly?",
-      "recommendation": "leave out"
+      "recommendation": "leave out",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ5",
       "q": "Eclipse layers now or with the D-96 framing doc?",
-      "recommendation": "now"
+      "recommendation": "now",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ6",
       "q": "Red-dwarf flares now or later?",
-      "recommendation": "later, with sound"
+      "recommendation": "later, with sound",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ7",
       "q": "An Archive entry explaining what the player sees?",
-      "recommendation": "yes, one canon entry, attended"
+      "recommendation": "yes, one canon entry, attended",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ8",
       "q": "Diamond ring: the starfield's PSF bloom on an occulted photospheric sliver only (D-59 stays for the forward view), or a bare bead?",
-      "recommendation": "allow it for the sliver only"
+      "recommendation": "allow it for the sliver only",
+      "answer": "approved as recommended (D-105)"
     },
     {
       "id": "OQ9",
       "q": "Structure in the Auto view only; Realistic stays a clipped white disc (D-59). Right?",
-      "recommendation": "yes"
+      "recommendation": "yes",
+      "answer": "approved as recommended (D-105)"
     }
   ],
   "features": [
@@ -184,5 +200,5 @@
     "status": "all seven folded in",
     "file": ".ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md"
   },
-  "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/37"
+  "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/37 (merged)"
 }

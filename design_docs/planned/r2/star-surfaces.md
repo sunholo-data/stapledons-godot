@@ -1,6 +1,6 @@
 # R2-STAR-SURFACES: resolved stellar surfaces you can see when the disc is dimmed
 
-**Status:** **Proposed** 2026-10-20, awaiting Mark's approval (ledger D-99). Plan review: one independent Sonnet pass scored the first draft 66/100 with seven blocking issues, all folded in (`.ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md`). Nothing is built. The spike in `spike/star_surfaces/` is throwaway: it is outside the export filter and not wired into `make`. Sprint plan: [star-surfaces-sprint.md](star-surfaces-sprint.md).
+**Status:** **Approved** 2026-10-20 by Mark, attended ("yeah good continue"), with every recommendation: ledger D-105. Executing on `feat/star-surfaces`. Asked for in D-99. Plan review: one independent Sonnet pass scored the first draft 66/100 with seven blocking issues, all folded in (`.ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md`). Nothing is built. The spike in `spike/star_surfaces/` is throwaway: it is outside the export filter and not wired into `make`. Sprint plan: [star-surfaces-sprint.md](star-surfaces-sprint.md).
 
 **Release:** R2. **Milestone:** the look of a star at a stop, and the eclipse framings of D-96.
 
@@ -213,6 +213,8 @@ New targets are defined in `mk/star-surfaces.mk` (included from the `Makefile`).
 | Spots read as dirt at 2–3 px | The gate's upper edge (2 px) and Mark's frame review at the SS2 pause |
 
 ## Open questions for Mark (with recommendations)
+
+**All resolved by D-105 (2026-10-20): every recommendation approved.** OQ1 honest gate; OQ2 procedural, cube-map fallback past +0.5 ms; OQ3 total light fixed; OQ4 no supergranulation; OQ5 eclipse layers now; OQ6 flares later with sound; OQ7 one Archive entry, attended; OQ8 PSF bloom on an occulted sliver only; OQ9 structure in Auto only.
 
 | OQ | Question | Recommendation |
 |---|---|---|
