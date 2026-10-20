@@ -2,7 +2,7 @@
 
 **Design doc:** [deck-layout.md](deck-layout.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-DECK-LAYOUT.json`
-**Status:** **Awaiting Mark's approval** of the re-plan. The first plan (D-90) was approved and paused at DL1 when the camera changed (D-91 to D-93); Mark accepted the F1 Bow view on 2026-10-20 (D-94). Nothing in this plan is executed until he approves; it has two further hard stops (DL1 blockout, DL2 style frame).
+**Status:** **Approved** (D-95, 2026-10-20, every recommendation; layout A). Executing. The first plan (D-90) was approved and paused at DL1 when the camera changed (D-91 to D-93); Mark accepted the F1 Bow view on 2026-10-20 (D-94). Nothing in this plan is executed until he approves; it has two further hard stops (DL1 blockout, DL2 style frame).
 **Base:** `feat/camera-forward` 0a787245 with `origin/main` 8982bd78 merged (branch `design/deck-layout-bow`). DL0 rebases onto main once #282 merges.
 **AILANG:** v0.54.14 (pinned). No `.ail` code in this sprint (syntax gate: skip, no AILANG module is written). Registry reuse: none (Godot tools and Blender assets; no maths for `sunholo/relativity`).
 **Estimate:** about 900 game LOC plus about 1,000 lines of `bpy` in `~/dev/blender`, **8 working days** of execution, excluding Mark's review time at the two pauses. That is about 115 game LOC a day, well under the recent attended rate of about 300 (R2-CAMERA: 1,700 LOC in about 5.5 days), because Blender iteration, baking and GPU captures dominate and are not counted in game LOC. DL2 and DL3 are the optimistic part (hand-finished art plus lightmaps); their day caps return any overrun to Mark at the next pause.

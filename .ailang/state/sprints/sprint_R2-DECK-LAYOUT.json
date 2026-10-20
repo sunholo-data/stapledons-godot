@@ -1,16 +1,16 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
-  "approved_on": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended, ledger D-95)",
+  "approved_on": "2026-10-20",
   "created": "2026-10-19",
   "replanned": "2026-10-20",
-  "started": null,
+  "started": "2026-10-20",
   "completed": null,
   "design_doc": "design_docs/planned/r2/deck-layout.md",
   "sprint_plan": "design_docs/planned/r2/deck-layout-sprint.md",
-  "branch": "design/deck-layout-bow",
+  "branch": "feat/deck-layout-bow",
   "history": [
     {
       "date": "2026-10-19",
@@ -23,6 +23,10 @@
     {
       "date": "2026-10-20",
       "event": "Mark accepted the F1 Bow view (D-94): 'we can do more ship building assets now assuming these'. Re-planned for the Bow view: layout A (bow stage), authored use points, occluders as data, the bow evaluator, Blender hero assets dressed per view; the Commons moved out of scope"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "re-plan approved (ledger D-95, 7916c390): 'yep these are great', then 'A'; OQ1-OQ8 as recommended. Execution starts on feat/deck-layout-bow (design/deck-layout-bow with origin/main merged)"
     }
   ],
   "implements": [
@@ -100,16 +104,7 @@
       "what": "Mark approves the style frame (and its bench) before the remaining hero assets"
     }
   ],
-  "questions_for_mark": [
-    "OQ1 layout A, B or changes",
-    "OQ2 spawn behind the helm",
-    "OQ3 fades: F1 list as data, nothing added",
-    "OQ4 captain ~81 px, band 60-82",
-    "OQ5 who models",
-    "OQ6 illustrated finish with baked spire light",
-    "OQ7 navigation arc operator-side screen",
-    "OQ8 bridge only (Commons later)"
-  ],
+  "questions_for_mark": [],
   "features": [
     {
       "id": "DL0_BOW_EVALUATOR",
@@ -124,7 +119,7 @@
         "a one-texture EXT_texture_webp glTF fixture imports in Godot 4.7 and deck-assets-check counts it"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-20",
       "completed": null,
       "notes": null
     },
@@ -255,5 +250,15 @@
       ],
       "resolution": "All folded in 2026-10-20: B1 bridge_props.glb split with WebP textures and a DL2 size gate; B2 the positive control runs on the pinned grounded v2 export fetched by sha256; ID column in section D4; yaw notes in section D1; DL3 gate adds golden and TAG=dl3; executor Opus vs judge Sonnet; velocity note; finish judged by Mark at DL2; public-read curl fetch; counts re-derived, never re-recorded; Commons gates at DL1 and DL3. The station-body spawn figure (5 of 5) was measured by the probe after the review."
     }
-  ]
+  ],
+  "answers": {
+    "OQ1": "A (the bow stage)",
+    "OQ2": "spawn behind the helm",
+    "OQ3": "F1's fade list as data, nothing added",
+    "OQ4": "keep ~81 px, band 60-82",
+    "OQ5": "agent writes bpy generators; Mark may tweak masters",
+    "OQ6": "illustrated finish, spire light baked",
+    "OQ7": "operator-side screen on the navigation arc",
+    "OQ8": "bridge only"
+  }
 }

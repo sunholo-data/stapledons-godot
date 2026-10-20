@@ -1,6 +1,6 @@
 # R2-DECK-LAYOUT: a bridge laid out for the Bow view, then Blender hero assets
 
-**Status:** Re-planned for the Bow view, awaiting Mark's approval (design doc and sprint plan only; nothing built). The first plan (D-90, PR #279) was approved, then paused at DL1 when the camera changed (D-91 to D-93). Mark accepted the F1 Bow view on 2026-10-20 (D-94) and asked for the ship-building work on top of it.
+**Status:** Approved by Mark on 2026-10-20 (ledger D-95: "yep these are great", then "A"), with every recommendation; executing on `feat/deck-layout-bow`. The first plan (D-90, PR #279) was approved, then paused at DL1 when the camera changed (D-91 to D-93). Mark accepted the F1 Bow view on 2026-10-20 (D-94) and asked for the ship-building work on top of it.
 **Release:** R2. **Milestone:** the bridge arranged to face the bow, then dressed with Blender hero assets, seen through the fixed Bow and Astern views.
 **Priority:** P1 for R2. Every session starts on this deck.
 
@@ -244,7 +244,7 @@ The finish itself ("the sprites' illustrated look") is not command-checkable: Ma
 | OQ7 | The navigation arc: add an operator-side screen on its stern face (the zoom frames the screen with the starbow beyond), keeping the sky-facing lens? | **Yes** |
 | OQ8 | Scope: the bridge only, with the Commons getting its own Bow pass later (the lintel fix moves there)? | **Bridge only** |
 
-Mark's approval of the plan answers OQ1–OQ8 (one ledger row). OQ1–OQ3 are needed before DL1; OQ6 and OQ7 before DL2.
+**Resolved (D-95, 2026-10-20): every recommendation.** OQ1 A; OQ2 yes; OQ3 yes (F1's list as data, nothing added); OQ4 keep, band 60–82; OQ5 agent-generated, Mark may tweak masters; OQ6 yes to both; OQ7 yes; OQ8 bridge only.
 
 ## Evidence
 
