@@ -1240,7 +1240,7 @@ ship-demo-ci: camera-test
 camera-test: import ## R2-CAMERA AC1-5, 7, 9: views.json schema, |eye| <= 95 m and a clear line from every walk sample, one level per notch/unit/pinch, Z2 60-80 px, hysteresis, no jumps, reduced motion, F8 dev-only
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_director.gd > $(SCRATCH)/camera-test.log 2>&1; rc=$$?; grep -E '^(FAIL|figure|transitions|camera-director)' $(SCRATCH)/camera-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-test.log && grep -q '^camera-director: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-test.log
 
-# R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): travel toward the bow,
+# R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, D-91, D-92): travel toward the bow,
 # one fixed Bow / Astern stage view that slides with the captain, and the one named map per frame.
 BASIS_GATE_RE := \[2\], *-[a-z_.]*\[1\]|\.x, *-[a-z_.]*\.z, *[a-z_.]*\.y|-[a-z_.]*\.x, *[a-z_.]*\.y, *-[a-z_.]*\.z
 .PHONY: camera-forward-test basis-gate
@@ -1248,10 +1248,13 @@ basis-gate: ## AC-B1: no inline structure or kinematic conversion outside ShipFr
 	@n=$$(git ls-files '*.gd' | xargs grep -nE '$(BASIS_GATE_RE)' | grep -vE '^(interior/ship_frame|demos/ship_demo_camera)\.gd:' | tee /dev/stderr | wc -l | tr -d ' '); \
 	  c=$$(grep -cE '$(BASIS_GATE_RE)' tests/fixtures/basis_gate/inline.gd.txt); \
 	  test "$$n" = 0 && test "$$c" -ge 3 && echo "basis-gate: ok (0 inline conversions; the control's $$c caught)" || { echo "basis-gate: FAIL ($$n inline conversion(s) outside the named maps, control caught $$c of 3)"; exit 1; }
-camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V5, V7, V10..V12: R proper, Bow/Astern constant yaw over the 16-sample walk, pole and starbow in frame, clear after fades, 60-80 px, slide envelope, level defaults, deterministic poses, fades leave the sky alone
+camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V8, V10..V12: R proper, Bow/Astern constant yaw over the 16-sample walk, pole and starbow in frame, clear after fades, 60-80 px, W/D after switches, the stop body and the Sgr A* hole in frame, switch eases <= 90 deg/s or cut, console round trip exact, slide envelope, level defaults, deterministic poses, fades leave the sky alone
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward)' $(SCRATCH)/camera-forward-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-test.log && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-forward-test.log
 ship-demo-ci: camera-forward-test
+.PHONY: camera-forward-targets
+camera-forward-targets: import ## R2-CAMERA-FORWARD AC-V6 fixture: record the live first guided stop and every Sgr A* stop -> tests/fixtures/camera_forward/targets.json (headless; re-run when the itinerary, the stop turn or the visit changes, and commit the diff)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --headless --path . --script tools/camera_forward_targets.gd > $(SCRATCH)/camera-forward-targets.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward-targets)' $(SCRATCH)/camera-forward-targets.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-targets.log && grep -q 'Sgr A\* stops, 0 failures$$' $(SCRATCH)/camera-forward-targets.log
 .PHONY: camera-forward-review
 camera-forward-review: import ## R2-CAMERA-FORWARD F1 review set: Bow at rest (spawn, helm, the spire faded), Astern, Bow at 0.99c, Bow at the first guided stop and after a 3 m walk -> renders/camera_forward/*.png + review.json (GPU window; open every frame)
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_forward_review.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-forward-review.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|bow_stop_walk|camera-forward-review)' $(SCRATCH)/camera-forward-review.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-review.log && grep -q '^camera-forward-review: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-forward-review.log
@@ -1260,7 +1263,7 @@ camera-walk-capture: import ## R2-CAMERA-FORWARD AC-R1 evidence: the director's 
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_walk_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-walk-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-walk)' $(SCRATCH)/camera-walk-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-walk-capture.log && grep -q '^camera-walk-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-walk-capture.log
 
 .PHONY: camera-views-capture
-camera-views-capture: import ## R2-CAMERA: Z1/Z2/Z3 on the bridge at rest and 0.99c, 1280x720 and 2560x1440 (+ rail and stations rings) -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m or no captain in frame
+camera-views-capture: import ## R2-CAMERA-FORWARD AC-R1: Bow, Astern, the legacy Commons and the lift at rest, 0.99c, a guided stop and Sgr A* (1280x720 and 2560x1440; CAPTURE_ARGS="-- --quick" for 720p), a forced-fade frame, a real voyage at 0.9/0.99/0.999c and every Sgr A* stop -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m, no captain in frame, or Bow not framing the pole, the stop body or the hole
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_views_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-views-capture.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|camera-views-capture)' $(SCRATCH)/camera-views-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-views-capture.log && grep -q '^camera-views-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-views-capture.log
 
 # D-63 attended navigation recovery: genuine body clearance, stable controls and scoped parity.

@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CAMERA-FORWARD",
-  "status": "paused_for_review",
+  "status": "completed",
   "approved": {
     "by": "Mark (attended)",
     "date": "2026-10-19",
@@ -8,8 +8,8 @@
     "note": "\"yep looks great approved\": every recommendation, OQ1-OQ8"
   },
   "created": "2026-10-19",
-  "design_doc": "design_docs/planned/r2/camera-forward.md",
-  "sprint_plan": "design_docs/planned/r2/camera-forward-sprint.md",
+  "design_doc": "design_docs/implemented/r2/camera-forward.md",
+  "sprint_plan": "design_docs/implemented/r2/camera-forward-sprint.md",
   "branch": "feat/camera-forward",
   "origin": "Mark, attended 2026-10-19: D-91 (fixed views that slide, never turn) and D-92 (travel along the deck, into the screen; amends D-14)",
   "amends": [
@@ -190,9 +190,16 @@
       "test_first": [
         "astern yaw/W-up/switch/console/stop-body/hole checks fail on main"
       ],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "2026-10-20: started after D-94 (F1 accepted); branch feat/camera-forward-f2",
+        "camera-forward: 33 passed (adds AC-V5 after-switch x2, AC-V6 stop_body + sgr_a_hole 16/16, AC-V8 ease max 90.0 deg/s, reduced cut, mapping at ease end, console returns to bow/astern exact)",
+        "AC-V6 targets recorded from the live sim by tools/camera_forward_targets.gd (make camera-forward-targets, deterministic: two runs byte-identical) -> tests/fixtures/camera_forward/targets.json; the test rebuilds the stop attitude with the real Attitude.side_basis and fails if it drifts from the recorded one; the body sits 30.0000 deg off the bow",
+        "Sgr A*: measured, the hole sits exactly on the bow (cos 1.000000) at all 6 stops of the visit, hovers and the 3 r_s orbit, so the hover turn the design allowed for (§D1.5) is not needed and was not added; it is in the Bow frame at 16/16 through the pole",
+        "negative control: a corrupted fixture (attitude +1e-6, hole reversed) fails both AC-V6 lines",
+        "Astern (key 9), cues to Bow and the console restore were already built in F1b; F2 adds their measurements"
+      ]
     },
     {
       "id": "F3_CAPTURES_MIGRATION",
@@ -211,9 +218,16 @@
         "AC-T1"
       ],
       "test_first": [],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "camera-views-capture 52 frames 0 failures (bow/astern/commons/lift x rest, 0.99c, first guided stop, Sgr A* at 720p+1440p; forced fade: spire_needle; real voyage 0.9/0.99/0.999c: pole + starbow edge; all 6 Sgr A* stops in Bow, shadow dark); camera-walk-capture 48 frames 0 failures; contact sheets, the fade, stop, Sgr A* and cruise frames opened",
+        "after-sheets: gs://stapledons-voyage-assets/refs/camera_forward/after/",
+        "dead player sky-view paths removed from camera_director.gd (sky() = walk or refuse; choose_offset, view_clear, anchor_of, lift_boxes, _enter, pending walk-to, _sky_offset); camera-test 182 unchanged; the sky_* poses stay for tools and goldens",
+        "fresh-clone fixes: data/raw/.gdignore from sky-assets and ai-core-assets; publish-dev fails naming make ai-core-assets when no core layer is staged (positive and negative control run)",
+        "AC-B6 met in F1a (lore 30f6674); ~11 test and tool migrations were done in F1b",
+        "full make test green on 7677f552 (Studio)"
+      ]
     },
     {
       "id": "E_EVALUATE_LAND",
@@ -226,9 +240,13 @@
         "AC-T2 (at landing)"
       ],
       "test_first": [],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "evaluation round 1: 88/100 PASS, 0 blocking (non-blocking: landing AC-T2, now done; Commons interlude has no hold, as on main; captain px at sprite height accepted in D-94)",
+        "landed: design doc and sprint plan in design_docs/implemented/r2/, README index; design repo roadmap PR",
+        "next (attended): the D-90 deck re-plan facing the bow"
+      ]
     }
   ],
   "evaluations": [
@@ -267,10 +285,20 @@
       "blocking": 1,
       "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_5.json",
       "note": "blocking item folded in after this round"
+    },
+    {
+      "round": 1,
+      "kind": "implementation",
+      "score": 88,
+      "blocking": 0,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_round_1.json",
+      "evaluator": "Claude Sonnet (claude -p, independent of the executor)",
+      "commit": "e9de6bde",
+      "mutations": "8 of 8 caught"
     }
   ],
   "approval_gate": "OQ1-OQ4 answered by Mark; stapledons-design PR #30 merged before F1a lore step (else F3)",
-  "acceptance_criteria_source": "design_docs/planned/r2/camera-forward.md ## Acceptance criteria (AC1-AC14, each with its exact command and log line; AC14 checked at landing)",
+  "acceptance_criteria_source": "design_docs/implemented/r2/camera-forward.md ## Acceptance criteria (AC1-AC14, each with its exact command and log line; AC14 checked at landing)",
   "acceptance_commands": {
     "AC-B1": "test $(git ls-files '*.gd' | xargs grep -nE '\\[2\\], *-[a-z_.]*\\[1\\]|\\.x, *-[a-z_.]*\\.z, *[a-z_.]*\\.y|-[a-z_.]*\\.x, *[a-z_.]*\\.y, *-[a-z_.]*\\.z' | grep -vE '^(interior/ship_frame|demos/ship_demo_camera)\\.gd:' | wc -l) -eq 0 && test $(grep -cE '\\[2\\], *-[a-z_.]*\\[1\\]|\\.x, *-[a-z_.]*\\.z, *[a-z_.]*\\.y|-[a-z_.]*\\.x, *[a-z_.]*\\.y, *-[a-z_.]*\\.z' tests/fixtures/basis_gate/inline.gd.txt) -ge 3",
     "AC-B2": "grep -qE '^ok    basis R proper bow->\\+Z mast->\\+Y$' $S/camera-forward-test.log",
@@ -297,5 +325,29 @@
   },
   "acceptance_commands_note": "verbatim commands (markdown escaping removed); this copy is the one to run",
   "design_repo_pr": "https://github.com/sunholo-data/stapledons-design/pull/30",
-  "green_points": "F1 (= F1a + F1b) is one green point: commits inside it may be red (camera-test legacy pole/hole checks between the basis change and the Bow view); F1 ends with make camera-test + full make test, then the dev tag; F2 and F3 end green"
+  "green_points": "F1 (= F1a + F1b) is one green point: commits inside it may be red (camera-test legacy pole/hole checks between the basis change and the Bow view); F1 ends with make camera-test + full make test, then the dev tag; F2 and F3 end green",
+  "f1_review": {
+    "by": "Mark (attended)",
+    "date": "2026-10-20",
+    "ledger": "D-94",
+    "verdict": "accepted as built",
+    "quote": "this looks great. we can do more ship building assets now assuming these",
+    "accepted_as_built": [
+      "occluder group wider than the plan: archive_shrine_ribs, archive_terminal and rim_frond_* fade with the spire and the lift",
+      "captain about 81 px at the sprite's 1.754 m height (73 px at the 1.6 m head height the AC measures), inside 60-80 px at the gate's height"
+    ],
+    "handed_on": [
+      "the spawn faces the lift (the first W walks into it): the R2-DECK-LAYOUT re-plan (D-90), not this sprint",
+      "Astern at the spawn: the lift box fills the near foreground: the deck re-plan"
+    ],
+    "build": "v0.4.0-dev.34-home-tiers-38-g0a787245 (publish-dev), PR #282"
+  },
+  "follow_ups": [
+    {
+      "id": "commons-interlude-hold",
+      "what": "On the legacy Commons the crossing review does not hold the camera on a view (sky() refuses off the bridge, so director.hold stays false), as on main before this sprint; no test pins it",
+      "when": "the Commons views pass (its own Bow/walk views)",
+      "source": "evaluation round 1 non-blocking; coordinator ruling 2026-10-20: leave it for the Commons views pass"
+    }
+  ]
 }

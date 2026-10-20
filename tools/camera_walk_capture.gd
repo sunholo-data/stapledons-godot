@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md): the player camera over a scripted
+## R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md): the player camera over a scripted
 ## walk around the spire, driven by the real CameraDirector (no override): for each walk sample the
 ## captain is put down, the camera settles (follow, slide, fades: 1.5 s of play at 60 Hz), and the
 ## frame is grabbed with where the forward pole (the bow, D-92) and the captain's head land.

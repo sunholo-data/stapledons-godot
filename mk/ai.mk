@@ -360,6 +360,7 @@ ai-core-verify:    ## AC17: core index <-> SHA256SUMS, keys, fixture import, blo
 	else echo "ai-core-verify: no Blender checkout with $(AI_CORE_COMMIT) at $(BLENDER); pinned re-import skipped"; fi
 
 ai-core-assets:    ## AI.8: fetch the pinned core blobs from the public bucket (anonymous HTTPS), sha-checked, into data/raw/ai_core
+	@mkdir -p data/raw && { [ -f data/raw/.gdignore ] || : > data/raw/.gdignore; }
 	@mkdir -p $(AI_C) && $(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) > $(AI_C)/fetch.lst
 	@missing=0; while read -r sum path; do \
 	  dst=$(AI_CORE_BLOBS)/$$path; \
@@ -384,6 +385,13 @@ ai-core-bundle:    ## AI.8: stage the verified core layer into ai_core/ for the 
 	  for f in $$(find ai_core/blobs -type f ! -name '*.import'); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; done && \
 	  echo "ai-core-bundle: staged $$(find ai_core -type f | wc -l | tr -d ' ') files ($$(du -sh ai_core | cut -f1)), ai_core $(AI_CORE)"; \
 	else echo "ai-core-bundle: WARNING no core blobs in $(AI_CORE_BLOBS); this build has no core layer (run make ai-core-assets)"; fi
+
+# A dev build must carry the core layer: ai-core-bundle only warns without the blobs (a local export
+# falls back to text), so publish-dev checks the staged layer after the export and names the fix.
+publish-dev: ai-core-staged
+.PHONY: ai-core-staged
+ai-core-staged: export-macos
+	@test -f ai_core/index.ndjson && shasum -a 256 ai_core/index.ndjson | grep -q '^$(AI_CORE) ' || { echo "publish-dev: FAILED, no core layer staged (a fresh clone has no blobs): run make ai-core-assets, then publish-dev again"; exit 1; }
 
 ai-core-publish:   ## AI.8 maintainers (gcloud auth): upload the pinned core blobs to gs://stapledons-voyage-assets/ai/<sha256>.<ext> (never overwrites)
 	@command -v gcloud > /dev/null || { echo "ai-core-publish: needs gcloud (maintainers only)"; exit 1; }
