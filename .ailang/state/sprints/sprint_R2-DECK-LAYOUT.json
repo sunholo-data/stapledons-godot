@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "paused_for_review",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-95)",
   "approved_on": "2026-10-20",
@@ -10,7 +10,7 @@
   "completed": null,
   "design_doc": "design_docs/planned/r2/deck-layout.md",
   "sprint_plan": "design_docs/planned/r2/deck-layout-sprint.md",
-  "branch": "feat/deck-layout-bow",
+  "branch": "feat/deck-layout-dl2",
   "history": [
     {
       "date": "2026-10-19",
@@ -31,6 +31,10 @@
     {
       "date": "2026-10-20",
       "event": "DL0 built (c61f8599); DL1 blockout built and exported (layout A as built), gates green; paused for Mark to play the DL1 dev build"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "DL1 accepted as built (ledger D-96, 'very nice'; #287 merged). D-96 direction: light sources for atmosphere, the spire as the bridge's own light when no star is close; eclipse/transition framings noted for a later design doc. DL2 amended (design section D5a)"
     }
   ],
   "implements": [
@@ -149,7 +153,7 @@
     },
     {
       "id": "DL2_STYLE_FRAME",
-      "description": "Dress the navigation arc (operator-side screen on its stern face) and the captain's chair to the sprites' finish with the spire's light baked into a lightmap UV set; capture Bow at rest, 0.99c, the first guided stop and the navigation zoom; bench. Dressed props export to bridge_props.glb (WebP textures, lightmap <= 2048^2); their blockout copies leave ship.glb.",
+      "description": "Dress the navigation arc (operator-side screen on its stern face) and the captain's chair to the sprites' finish with the spire's light baked into a lightmap UV set; capture Bow at rest, 0.99c, the first guided stop and the navigation zoom; bench. Dressed props export to bridge_props.glb (WebP textures, lightmap <= 2048^2); their blockout copies leave ship.glb. D-96 amendment (design section D5a): a live SpireLight (OmniLight3D on the mast, visible lamp band) sharing the broad key's dimming, so the spire keys the bridge in deep space and the star near a star; the bake holds only light-independent occlusion/contact shading (the spire's light stays live, so baked and live agree); the broad key stays game-wide (follow-up: retire it on the bridge after DL3).",
       "estimated_loc": 60,
       "dependencies": [
         "DL1_BRIDGE_BLOCKOUT"
@@ -158,10 +162,12 @@
         "make deck-assets-check: the lightmap atlas inside the section D5 budgets, ship.glb and bridge_props.glb each < 10 MB on the style-frame export (AC7)",
         "make deck-layout-eval and make golden green",
         "make bench SCENE=bridge p99 < 16.7 ms at 2560x1440 on a quiet rig, host load logged (AC10)",
-        "make deck-layout-capture TAG=dl2: frames opened and published (AC11)"
+        "make deck-layout-capture TAG=dl2: frames opened and published (AC11)",
+        "make ship-star-light-test: existing checks green plus the SpireLight's (follows the key's share, floor, full in interstellar cruise, lamp glow tracks it); ship-star-light-capture re-run and opened",
+        "frames: deep space spire-lit, near a star star-lit, 0.99c, the navigation close-up, the style frame, published to refs/deck_layout_bow/dl2/"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-20",
       "completed": null,
       "notes": null
     },
@@ -264,5 +270,17 @@
     "OQ6": "illustrated finish, spire light baked",
     "OQ7": "operator-side screen on the navigation arc",
     "OQ8": "bridge only"
-  }
+  },
+  "follow_ups": [
+    {
+      "what": "retire the abstract InternalBroadKey on the bridge so the spire and the star are its only keys (rebalance, spire omni shadow vs budget, lighting goldens)",
+      "when": "after DL3, small separate sprint",
+      "why": "D-96: the spire is the bridge's own light"
+    },
+    {
+      "what": "authored sky framings: eclipses, a body crossing its star, starbow forming, arrivals, light handover; stop-turn targets or timed views checked by the section D4 metrics",
+      "when": "own design doc",
+      "why": "D-96: 'very cool eclipse/transition positions with this control of viewpoint'"
+    }
+  ]
 }
