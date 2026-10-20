@@ -2,7 +2,7 @@
 
 **Design doc:** [levels.md](levels.md). **Process doc:** [design_docs/levels/README.md](../../levels/README.md). **Backlog:** [design_docs/levels/backlog.md](../../levels/backlog.md).
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-LEVELS.json`
-**Status:** **Awaiting Mark's approval** (D-98 asked for level design; D-100 and the 2026-10-20 steer asked for intricate levels and a repeatable process). Nothing is executed until he approves. There are two hard stops: the Commons greybox playtest (S3) and its style frames (S5). The Commons brief (S0) is approved together with this plan.
+**Status:** **Approved** (ledger D-103, 2026-10-20, with every recommendation; the charter rows are on main). Executing LP0 and LP1a on `feat/levels`. LP1b waits for the held files. D-104 (curves) and the plants follow-up (a foliage hook only) are folded in.
 **Base:** `origin/main` 8e49c160, on branch `design/levels`.
 
 **Shared files, and how the sprint is split.** R2-BRIDGE-STYLE (approved as D-100, executing) and DL3 (#292) hold `data/camera/views.json`, `demos/camera_director.gd`, `tests/test_camera_director.gd`, `demos/ship_demo_lift.gd`, `demos/ship_lighting.gd` and `demos/ship_star_light.gd` on the charter's do-not-touch line. This sprint never edits the bridge's art, lighting rig or HUD.

@@ -1,6 +1,6 @@
 # Level: Commons (`commons`), layout v1 (draft brief)
 
-**Tier:** +57 m, radius 75.9 m. Its roof is the bridge's 22 m disc only; the floor beyond that is open to the sky. **Stage of the pipeline:** S0 (brief, awaiting Mark with the R2-LEVELS plan).
+**Tier:** +57 m, radius 75.9 m. Its roof is the bridge's 22 m disc only; the floor beyond that is open to the sky. **Stage of the pipeline:** S1 (greybox). The brief was approved with R2-LEVELS (D-103).
 **Concept refs:** `art/ship-tier-concepts-v1/commons.png`; the approved Commons zoning (open civic plaza, curved arcades, planted walks; `website/docs/ship-layer-reference.mdx`); the existing painted court and arcade (`assets/ship_commons/`). **Ledger:** D-34, D-35, D-100.
 
 ## Purpose
@@ -60,6 +60,8 @@ The §B5 defaults. The greybox v0 fails `pole-ray` (the civic tower stands on th
 | Date | Ledger | Ruling |
 |---|---|---|
 | 2026-10-20 | D-100 | "we need more intricate level design now we have fixed position sorted" |
+| 2026-10-20 | D-103 | The brief was approved with the R2-LEVELS plan ("ok yes good") |
+| 2026-10-20 | D-104 | Curves: the terrace, gantry and balcony read as flowing, grown structures at S4 and S5; the greybox draws the gantry and balcony as arcs |
 
 ## Change log
 | Version | Date | What changed |

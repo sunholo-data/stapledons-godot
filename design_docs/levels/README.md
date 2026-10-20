@@ -17,7 +17,7 @@ The ship has seven tiers on the generator mast, and travel runs toward the bow. 
 | S2 | Evaluate | **loop** | metrics against `art/levels/<id>/thresholds.json`; iterate the layout | `level-eval: <id> ok` |
 | S3 | Playtest | attended | dev build, contact sheet, per-file URLs, the checklist | ⏸ Mark plays; ruling recorded |
 | S4 | Dress | agent (renders park) | Blender export from the same layout: hero, coarse, walk, cards, manifest | `level-assets-check`, `level-eval` on the export |
-| S5 | Style | attended | style frames on the R2-BRIDGE-STYLE finish | ⏸ Mark approves |
+| S5 | Style | attended | style frames on the R2-BRIDGE-STYLE finish; the shape language checked (curves, no boxy silhouettes, D-104) | ⏸ Mark approves |
 | S6 | Land | loop mechanics, Mark merges | `rig/full`, goldens, `art/levels/<id>/baseline.json` pinned | merged; backlog `landed vN` |
 | S7 | Revisit | either | layout vN+1 re-enters at S1 (or S4) | every other level's baseline still green |
 
@@ -72,6 +72,11 @@ Upload the frames to `gs://stapledons-voyage-assets/refs/levels/<id>/<tag>/`, an
 | Reasons to traverse | finds, crew anchors, use points, set pieces worth the climb |
 | Reveals | the starbow over a roof edge once you climb; the spire through a gap |
 | Set pieces | a bow balcony at a stop; an eclipse through the sky band (D-96) |
+
+**Shape language (D-104):**
+- **From S4 dressing on, structures follow the art bible:** flowing curves, grown-looking technology, no boxy silhouettes (platforms, catwalks, rails, stalls, stairs, supports, roofs). Mark checks it at the S5 style pause.
+- **The greybox may stay blocky,** because S1 is about routes. Use `arc` pieces for platforms and catwalks the brief means to curve, because a curved route changes the feel.
+- **Plants:** the stylised-plants spike owns them. A level only places them through `layers.foliage[]` in its manifest.
 
 **Placement rules:**
 - **Keep landmarks off the pole line.** The evaluator's `pole-ray` catches them.

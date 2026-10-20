@@ -1,6 +1,6 @@
 # R2-LEVELS: a repeatable level pipeline for intricate 2.5D levels, first run on the Commons
 
-**Status:** Design and sprint plan, **awaiting Mark's approval**. Nothing is built. The only code on the branch is the two mock tools behind the frames in §Evidence.
+**Status:** **Approved** by Mark on 2026-10-20 (ledger D-103, "ok yes good"), with every recommendation (OQ1–OQ10) and the proposed charter rows, which are on main. D-104 adds the shape-language rule (§B8). Executing LP0 and LP1a on `feat/levels`; LP1b waits for the held files.
 **Release:** R2, then ongoing: every level of the ship goes through this pipeline, one after another.
 **Priority:** P1 for R2. It is one of the three tracks Mark named after playing the bridge (D-98); captain animation and sound have their own plans.
 
@@ -122,7 +122,7 @@ One manifest per level, `assets/levels/<id>/manifest.json`. It is generated from
 | `use_points[]` | consoles, terminals and benches: where the captain stands and what opens |
 | `finds[]` | things to discover: `id`, `stage`, `at`, `cue` (light, sound or motion), `reveal` (which view shows it) |
 | `set_pieces[]` | authored framings: `id`, `at`, `view`, `when` (`stop`, `eclipse`, `arrival`, `cruise`), what it frames |
-| `layers` | `hero`, `coarse` (true-depth far geometry), `cards[]` (painted, true depth), `foreground[]` |
+| `layers` | `hero`, `coarse` (true-depth far geometry), `cards[]` (painted, true depth), `foreground[]`, and `foliage[]`: plant assets by id and placement. This is a hook only; the stylised-plants spike owns the plants (D-103 follow-up), and levels build none |
 | `lights` | the spire segment (height, range bounded by the ceiling), `practicals[]` |
 | `lift_stop` | the level's z, gate, landing stage |
 | `crew_anchors[]` | named stand points with a facing, for the crew systems |
@@ -298,6 +298,13 @@ This is exactly the S2 loop the pipeline runs before Mark plays anything.
 | Frame | — | one hot level; neighbours coarse | p99 < 16.7 ms at 2560×1440 on the Studio |
 
 The camera only slides, so anything at its true depth has correct parallax with no extra code.
+
+## B8. Shape language (D-104)
+
+Mark, 2026-10-20: "everything looks quite boxy with edges, isn't the style more rounded curves?"
+- **From S4 (dressing) on, structures follow the art bible's shape language:** flowing curves, grown-looking technology, no boxy silhouettes. That covers platforms, catwalks, rails, stalls, stairs, supports and roofs.
+- **It is checked at the S5 style pause.**
+- **The greybox may stay blocky,** because S1 is about routes. But curved routes change how a layout feels, so `LevelGreybox` also builds **arc** pieces: an annular sector with inner and outer radius, start and end angle, and top height and thickness, walkable when it's a surface. Platforms and catwalks are drawn as arcs where the brief intends a curve.
 
 ## B7. Light, the spire and the lift (shared by every level)
 

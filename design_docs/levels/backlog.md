@@ -9,7 +9,7 @@
 | Order | Level | Id | Tier (floor / radius) | Stage | Layout | Who | Next pause | Last ruling | Doc |
 |---|---|---|---|---|---|---|---|---|---|
 | 0 | Bridge | `bridge` | +82 m / 22 m | landed | DL v2 | attended | — (intricate pass after R2-BRIDGE-STYLE) | D-97 | [deck-layout.md](../planned/r2/deck-layout.md) |
-| 1 | Commons | `commons` | +57 m / 75.9 m | S0-brief | — | attended | S0: approve the brief with the R2-LEVELS plan | D-100 | [commons.md](commons.md) |
+| 1 | Commons | `commons` | +57 m / 75.9 m | S1-greybox | — | attended | S3: play the greybox (after R2-LEVELS LP2) | D-103 | [commons.md](commons.md) |
 | 2 | Garden (the forest) | `garden` | +7 m / 94.7 m | not-started | — | none | S0 after the Commons' S3 | — | — |
 | 3 | Homes | `homes` | +32 m / 89.4 m | not-started | — | none | — | — | — |
 | 4 | Workshops | `workshops` | −18 m / 93.0 m | not-started | — | none | — | — | — |

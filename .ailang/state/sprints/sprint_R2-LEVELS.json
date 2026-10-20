@@ -1,16 +1,16 @@
 {
   "sprint_id": "R2-LEVELS",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
-  "approved_on": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended, ledger D-103: \"ok yes good\", every recommendation and the charter rows)",
+  "approved_on": "2026-10-20",
   "created": "2026-10-20",
   "replanned": "2026-10-20 (Mark D-100 and the process steer: intricate 2.5D levels; a repeatable pipeline)",
-  "started": null,
+  "started": "2026-10-20",
   "completed": null,
   "design_doc": "design_docs/planned/r2/levels.md",
   "sprint_plan": "design_docs/planned/r2/levels-sprint.md",
-  "branch": "design/levels",
+  "branch": "feat/levels",
   "process_docs": [
     "design_docs/levels/README.md",
     "design_docs/levels/TEMPLATE.md",
@@ -110,52 +110,62 @@
     {
       "id": "OQ1",
       "q": "Three pauses per level (brief, greybox playtest, style), batched across levels",
-      "recommendation": "yes"
+      "recommendation": "yes",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ2",
       "q": "Greybox in-engine for S1-S3, Blender from S4",
-      "recommendation": "yes"
+      "recommendation": "yes",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ3",
       "q": "Stages within a level rather than the whole floor",
-      "recommendation": "stages; big tiers land stage by stage"
+      "recommendation": "stages; big tiers land stage by stage",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ4",
       "q": "Camera under overhangs",
-      "recommendation": "ceiling clamp (lower and closer, never turns); evaluator head <= 2%"
+      "recommendation": "ceiling clamp (lower and closer, never turns); evaluator head <= 2%",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ5",
       "q": "Ladders and hatches before climb animation",
-      "recommendation": "use-point transfers now, climbs when clips land"
+      "recommendation": "use-point transfers now, climbs when clips land",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ6",
       "q": "What the loop may do on levels",
-      "recommendation": "S2 evaluation, asset checks, regression and its captures (parked); never briefs, feel or style"
+      "recommendation": "S2 evaluation, asset checks, regression and its captures (parked); never briefs, feel or style",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ7",
       "q": "First full run",
-      "recommendation": "the Commons (stages and finds in design_docs/levels/commons.md); intricate bridge later, after R2-BRIDGE-STYLE"
+      "recommendation": "the Commons (stages and finds in design_docs/levels/commons.md); intricate bridge later, after R2-BRIDGE-STYLE",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ8",
       "q": "Order after the Commons",
-      "recommendation": "Garden, Homes, Workshops, Farms, Engineering"
+      "recommendation": "Garden, Homes, Workshops, Farms, Engineering",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ9",
       "q": "Backlog home",
-      "recommendation": "design_docs/levels/backlog.md, parsed by tools/levels_backlog.sh, linked from issue #1"
+      "recommendation": "design_docs/levels/backlog.md, parsed by tools/levels_backlog.sh, linked from issue #1",
+      "answer": "approved as recommended (D-103)"
     },
     {
       "id": "OQ10",
       "q": "Levels open with the voyage or as built",
-      "recommendation": "as built for now"
+      "recommendation": "as built for now",
+      "answer": "approved as recommended (D-103)"
     }
   ],
   "features": [
@@ -302,7 +312,23 @@
       ]
     }
   ],
-  "answers": [],
+  "answers": [
+    {
+      "date": "2026-10-20",
+      "ledger": "D-103",
+      "answer": "approved with every recommendation (OQ1-OQ10) and the proposed charter rows; charter rows pushed to main 44833ef6"
+    },
+    {
+      "date": "2026-10-20",
+      "ledger": "D-104",
+      "answer": "curves: from S4 dressing, structures follow flowing curves and grown-looking technology, no boxy silhouettes, checked at S5; the greybox may stay blocky but supports arc outlines for platforms and catwalks"
+    },
+    {
+      "date": "2026-10-20",
+      "ledger": "D-103 follow-up",
+      "answer": "plants: the current Blender organic models are poor; a separate stylised-plants spike owns them. Levels leave a manifest hook (layers.foliage[]) and build no plants"
+    }
+  ],
   "follow_ups": [
     "Garden (forest) as the second run: S0 brief drafted while the Commons is in S4-S5",
     "Intricate bridge pass (stern gallery, mast ring, per the sketch) after R2-BRIDGE-STYLE lands",
@@ -312,6 +338,10 @@
     {
       "date": "2026-10-20",
       "event": "planned (design/levels); mocks at refs/levels/mock and refs/levels/intricate"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "approved (D-103); charter rows added (L10, levels do-not-touch, process pointer); executing LP0 and LP1a on feat/levels; LP1b waits for held files"
     }
   ]
 }

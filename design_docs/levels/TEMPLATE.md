@@ -11,6 +11,9 @@
 - **Spire segment:** <height, range to the ceiling, character>. **Practicals:** <lamps, cultivation lights, ...>
 - **Sky:** <open / band from the rim, top <°> at the journey stages (§B4)>
 
+## Shape language (D-104)
+<Which surfaces and routes curve (arc pieces in the greybox), and the S4 shapes: flowing curves, grown-looking technology, no boxy silhouettes. Plants go only through `layers.foliage[]`.>
+
 ## Stages
 
 | Stage | Bounds (ship m) | Surfaces (heights) | View(s) | Journey? | Ambience |
@@ -35,6 +38,10 @@
 - `make level-assets-check LEVEL=<id>` (S4 onward)
 - `make level-capture LEVEL=<id> TAG=<s3|s5>`: every frame opened, sheet and per-file URLs posted
 - `make levels-regress` green (S6)
+
+## Style checklist (S5)
+- [ ] No boxy silhouettes; structures read as grown, with flowing curves (D-104)
+- [ ] The palette and ink match R2-BRIDGE-STYLE
 
 ## Playtest checklist (S3; 5–8 lines, answered one line each)
 - [ ] <the arrival shows ...>
