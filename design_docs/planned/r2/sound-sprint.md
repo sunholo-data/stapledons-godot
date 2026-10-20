@@ -2,7 +2,7 @@
 
 **Design doc:** [sound.md](sound.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-SOUND.json`
-**Status:** **Awaiting Mark's approval.** Nothing is executed until he answers OQ1–OQ9 (one ledger row). Three further hard stops: the S0 sound board, the S1 bridge dev build, the S2 voyage dev build.
+**Status:** **Approved** (D-101, 2026-10-20, every recommendation; AI-generated sound later, reserved in the manifest). Executing S0a and S0b on `feat/sound`. Three further hard stops: the S0 sound board, the S1 bridge dev build, the S2 voyage dev build.
 **Base:** `origin/main` 8e49c160 (branch `design/sound`).
 **Plan review:** an independent Sonnet review (read-only) scored the first draft 78/100 (pass) with six blocking items; all six are fixed here and in the design doc (export filter, a second spike for ducking, limiter and 3D panning, the cue clocks, the footstep accumulator, the lift and tour signals, headroom before the limiter), and its non-blocking suggestions are folded in (`sprint_R2-SOUND.json` `reviews`).
 **AILANG:** v0.54.14 (pinned). AILANG prompt version loaded: v0.16.7 (`ailang prompt --version-active`). `.ail` code is written in S0b (the synthesis tool); syntax checklist below.

@@ -1,21 +1,26 @@
 {
   "sprint_id": "R2-SOUND",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
-  "approved_on": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended)",
+  "approved_on": "2026-10-20",
   "created": "2026-10-20",
   "replanned": null,
-  "started": null,
+  "started": "2026-10-20",
   "completed": null,
   "design_doc": "design_docs/planned/r2/sound.md",
   "sprint_plan": "design_docs/planned/r2/sound-sprint.md",
-  "branch": "design/sound",
+  "branch": "feat/sound",
   "history": [
     {
       "date": "2026-10-20",
       "event": "planned",
       "note": "Mark (D-98): 'obviously we need animation on the captain a bit and sound effects and the level design'; he chose to start design docs for all three. Spike: AILANG synthesis (2 s in 0.28 s VM, VM = interpreter), Godot WAV load, headless Dummy-driver mixing all confirmed."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "approved",
+      "note": "Ledger D-101: every recommendation. Mark: 'approve the sound but we will eventually allow for ai generated sound just not yet I guess'. Manifest reserves source_kind 'generated' behind allow_generated=false. Listening page: Mark wants a web page holding the sounds (artifact; files in build/sound_review/)."
     }
   ],
   "implements": [
@@ -133,7 +138,8 @@
         "make title-screen-test: per-bus volumes persist in settings.cfg and set bus volumes; 0% mutes; Mute when unfocused; Reduced audio (AC9)",
         "make sound-assets-check: manifest bytes, sha256, rate and licence match; git budget holds; wrong-sha and CC-BY fixtures fail (AC8)",
         "make ai-conversation crossing-review-test still green with voices on the Voice bus (AC11)",
-        "git diff --stat origin/main -- sim/ is empty; make strict parity replay green (AC12)"
+        "git diff --stat origin/main -- sim/ is empty; make strict parity replay green (AC12)",
+        "make sound-assets-check: a 'generated' row is rejected while allow_generated is false (negative control); source_kind and provenance required on every row (D-101)"
       ],
       "passes": null,
       "started": null,
@@ -247,6 +253,43 @@
       ]
     }
   ],
-  "answers": [],
+  "answers": [
+    {
+      "id": "OQ1",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ2",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ3",
+      "answer": "accepted as recommended (D-101) ; AI-generated sound allowed later, reserved in the manifest, off now"
+    },
+    {
+      "id": "OQ4",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ5",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ6",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ7",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ8",
+      "answer": "accepted as recommended (D-101)"
+    },
+    {
+      "id": "OQ9",
+      "answer": "accepted as recommended (D-101)"
+    }
+  ],
   "follow_ups": []
 }

@@ -1,6 +1,6 @@
 # R2-SOUND: the ship's sound, heard from inside
 
-**Status:** Proposed 2026-10-20, awaiting Mark's approval (design and sprint plan only; nothing is built). A throwaway spike de-risked the pipeline (§Evidence).
+**Status:** Approved by Mark on 2026-10-20 (ledger D-101), every recommendation: "approve the sound but we will eventually allow for ai generated sound just not yet I guess". Executing S0a and S0b on `feat/sound`. Proposed 2026-10-20 (D-98). A throwaway spike de-risked the pipeline (§Evidence).
 **Release:** R2. **Milestone:** the first sound in the game: the bridge, the voyage's moments and the interface, mixed and tested headless.
 **Priority:** P1 for R2. Mark, after playing the bow-facing bridge (ledger D-98, 2026-10-20): *"it looks really great. obviously we need animation on the captain a bit and sound effects and the level design but such good potential"*.
 
@@ -186,8 +186,9 @@ game state (walk distance, view, level, settings) ──────────
 |---|---|---|---|
 | **A. AILANG synthesis** | tonal and machine sounds: the hum, the drive, instruments, chimes, UI, the interlude bed | our own (`synth-own`) | `tools/audio/synth.ail` (pure core, strict VM, VM = interpreter) + `synth_main.ail` (FS shell); recipes in `data/audio/recipes.json`; `make sound-synth` writes `assets/audio/synth/*.wav`; `make sound-synth-check` regenerates and compares sha256 |
 | **B. CC0 library** | foley: footsteps on metal, the lift's mechanism, chair and cloth | CC0-1.0 only | first choice **Kenney.nl** CC0 packs (direct download, no login, so an agent can fetch them with `curl` and record the URL and sha256); Freesound's CC0 filter only when Mark fetches a file himself (it needs a login); WAV only, the URL and author recorded per file; **if no CC0 source fits, a synthesised placeholder ships so S1 never stalls**; trims and fades by the AILANG tool (WAV in, WAV out), never by an editor whose steps are not recorded |
-| C. Generative AI SFX | none in this sprint | — | API spend is attended and licences vary; out of scope (OQ3) |
+| C. Generative AI SFX | none in this sprint; **later** (D-101) | `generated` (off) | API spend is attended and licences vary. Mark (D-101): "we will eventually allow for ai generated sound just not yet". The manifest is built so it slots in later without rework (below) |
 
+- **Ready for generated sound later (D-101), off now.** Every `assets.json` row carries `source_kind` (`synth`, `library`, or the reserved `generated`) and a `provenance` object (synth: generator path, generator sha256, recipe id; library: URL, author, retrieved date, sha256 of the download; generated, later: tool, model, prompt sha256, date, licence terms URL). `licence` is `synth-own`, `CC0-1.0`, or the reserved `generated-licensed`. The manifest has `"allow_generated": false`; `make sound-assets-check` rejects any `generated` row while it is false (a negative control proves it), and accepts one with full provenance when a later approved sprint sets it true. The import path is the same for every kind (a WAV in `assets/audio/<kind>/`, loaded by id), so turning it on is a data change plus a ruling, not code.
 - **No Python** (the repo rule): synthesis and WAV trimming are AILANG; loudness checks and review renders are Godot headless; downloads are shell.
 - **Formats:** sources are 48 kHz, 16-bit WAV, mono (stereo only for beds); Godot imports with **QOA** compression (about a fifth of the size); loops carry loop points in the import settings.
 - **Budget:** at most 12 MB of WAV sources in git (checked); at most 6 MB added to the exported zip (checked by `export-pack-check` on the rig). Beds are short loops (8–20 s) so neither budget is close.
@@ -255,6 +256,8 @@ The **what** belongs in stapledons-design: a short `features/next/sound.md` with
 | Sound competes with crew voices | Voice ducking ≥ 6 dB (AC6); voices are the loudest bus by design |
 
 ## Open questions for Mark
+
+**All resolved 2026-10-20 (D-101): every recommendation accepted.** OQ3 is amended: AI-generated sound is allowed later, not in this sprint; the manifest reserves it (§D8).
 
 | # | Question | Recommendation |
 |---|---|---|
