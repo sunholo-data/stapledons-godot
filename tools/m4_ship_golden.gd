@@ -234,9 +234,10 @@ func _report(ok: bool, message: String) -> int:
 
 ## D-92: the captain's eye looking level along the direction of travel, the bow (glTF -z).
 func _s3(built: bool) -> int:
-	# A fixed observer (R2-DECK-LAYOUT: the pre-DL1 spawn; the new spawn stands behind the helm, whose
-	# pods fill a 1.6 m eye's level view of the bow).
-	return await _pole(built, func() -> void: demo.avatar_pos = Vector3(8, 82, -4.8); _pose(-0.01, -PI * 0.5), "G-M4-S3 forward pole (ship)", "captain eye")
+	# A fixed observer with a clear level look at the bow. R2-DECK-LAYOUT: the spawn stands behind the
+	# helm, whose pods fill a 1.6 m eye's view; from the old spawn (8, 82, -4.8) the dressed frond at
+	# +25 deg (DL3) falls inside the 12 px centroid window. From (11, 82, -4.8) the window is clear.
+	return await _pole(built, func() -> void: demo.avatar_pos = Vector3(11, 82, -4.8); _pose(-0.01, -PI * 0.5), "G-M4-S3 forward pole (ship)", "captain eye")
 
 
 ## R2-CAMERA-FORWARD G-CAM-1: the forward pole through the player's Bow view (the eye 9 m behind
