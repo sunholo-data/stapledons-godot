@@ -1,0 +1,90 @@
+extends SceneTree
+## R2-BRIDGE-STYLE AC3 (design_docs/planned/r2/bridge-styling-pass.md §S2): every bridge_style mesh
+## uses the toon material with exactly the ink outline as next_pass (the stated exclusions keep their
+## own); every manifest style.bridge_nodes entry exists; the lower decks are not styled; the named sky
+## layers exist, render in their own viewport and none uses the toon shader. Negative controls: a
+## seeded PBR material on a bridge mesh and a seeded toon material on a sky layer are both caught.
+const STYLE := "res://interior/stapledon_style.gd"
+const PX := Vector2i(640, 360)
+var passed := 0
+var failures := 0
+
+
+func check(name: String, ok: bool) -> void:
+	if ok: passed += 1
+	else: failures += 1
+	print("  %s %s" % ["ok  " if ok else "FAIL", name])
+
+
+func _initialize() -> void:
+	_run.call_deferred()
+
+
+func _run() -> void:
+	var have := FileAccess.file_exists(STYLE)
+	check("the style module exists (%s)" % STYLE, have)
+	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
+	demo.setup_options = {"size": PX, "sky_state": "rest", "planet_textures": false, "planet_preload": false}
+	root.add_child(demo)
+	await process_frame
+	check("the ship demo builds", demo.ready_ok)
+	if not have or not demo.ready_ok:
+		_done()
+		return
+	var Style: GDScript = load(STYLE)
+	var listed: Array = demo.manifest.get("style", {}).get("bridge_nodes", [])
+	check("the manifest lists the ship.glb bridge nodes (style.bridge_nodes, %d)" % listed.size(), listed.size() >= 5)
+	var missing: Array = listed.filter(func(n: String) -> bool: return demo.geometry.find_child(n, true, false) == null)
+	check("every style.bridge_nodes entry exists in the loaded ship (missing %s)" % [missing], missing.is_empty() and not listed.is_empty())
+	var members: Array = demo.get_tree().get_nodes_in_group(Style.GROUP)
+	check("the bridge_style group holds the bridge meshes (%d)" % members.size(), members.size() >= 20)
+	var props: int = members.filter(func(n: Node) -> bool: return demo.props_visual != null and demo.props_visual.is_ancestor_of(n)).size()
+	check("every bridge_props.glb mesh is in the group (%d)" % props, demo.props_visual != null and props == _meshes(demo.props_visual).size())
+	var lower := ["Deck 01 top 57m", "Deck 02 top 32m", "Spire below bridge"]
+	check("the lower decks are not styled (%s)" % [lower], lower.all(func(n: String) -> bool:
+		var x: Node = demo.geometry.find_child(n, true, false)
+		return x != null and not x.is_in_group(Style.GROUP)))
+	var problems: Array = Style.audit(demo.get_tree())
+	check("every styled surface is the toon material with exactly the ink next_pass (%d problems%s)" % [problems.size(), (": " + str(problems.slice(0, 3))) if not problems.is_empty() else ""], problems.is_empty())
+	var excluded: Array = Style.excluded_surfaces(demo.get_tree())
+	check("the exclusions keep their own materials (%d excluded surfaces, none toon)" % excluded.size(), excluded.all(func(s: Dictionary) -> bool: return not Style.is_toon(s.material)))
+	var lamp: MeshInstance3D = demo.lighting.spire_lamp
+	check("the emissive spire lamp keeps its own material", lamp != null and not Style.is_toon(lamp.material_override))
+	# The sky: its named layers exist, live in their own viewport, and none uses the toon shader.
+	var sky: InteriorSky = demo.sky
+	var layers := {"InteriorSky": sky, "SystemView": sky.system_view, "Starfield": sky.starfield, "SkyBackground": sky.background, "ForwardGlow": sky.glow, "DustFlash": sky.dust_mesh}
+	check("the named sky layers exist (%s)" % [layers.keys()], layers.values().all(func(n: Variant) -> bool: return n != null and is_instance_valid(n)))
+	check("the sky renders in its own viewport, apart from the ship's geometry_view", sky.get_viewport() != demo.geometry_view and not demo.geometry_view.is_ancestor_of(sky))
+	var sky_toon: Array = Style.toon_in(sky)
+	check("no sky layer uses the toon shader (%d)" % sky_toon.size(), sky_toon.is_empty())
+	# Negative control 1: a PBR material seeded on a styled bridge mesh is caught.
+	var victim: MeshInstance3D = members[0]
+	var saved: Material = victim.get_surface_override_material(0)
+	victim.set_surface_override_material(0, StandardMaterial3D.new())
+	var caught: Array = Style.audit(demo.get_tree())
+	victim.set_surface_override_material(0, saved)
+	check("negative control: a seeded PBR bridge surface fails the audit (%d)" % caught.size(), caught.size() == 1)
+	# Negative control 2: the toon material seeded on a sky layer is caught.
+	var glow: MeshInstance3D = sky.glow
+	var glow_saved: Material = glow.material_override
+	glow.material_override = Style.toon_material(null)
+	var caught_sky: Array = Style.toon_in(sky)
+	glow.material_override = glow_saved
+	check("negative control: a seeded toon sky layer is caught (%d)" % caught_sky.size(), caught_sky.size() == 1)
+	_done()
+
+
+func _meshes(n: Node) -> Array:
+	var out := []
+	var stack: Array = [n]
+	while not stack.is_empty():
+		var x: Node = stack.pop_back()
+		stack.append_array(x.get_children())
+		if x is MeshInstance3D and (x as MeshInstance3D).mesh != null:
+			out.append(x)
+	return out
+
+
+func _done() -> void:
+	print("style-test: %d passed, %d failures" % [passed, failures])
+	quit(1 if failures else 0)
