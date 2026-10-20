@@ -1253,6 +1253,11 @@ camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V8, V1
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward)' $(SCRATCH)/camera-forward-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-test.log && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-forward-test.log
 ship-demo-ci: camera-forward-test
+.PHONY: guided-finale-test
+guided-finale-test: import ## the guided voyage's last stop is Sgr A* (after the dwell, or N), the hole ahead on the rendered sky; the navigation entry still works
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_guided_finale.gd > $(SCRATCH)/guided-finale-test.log 2>&1; rc=$$?; grep -E '^(FAIL|guided-finale)' $(SCRATCH)/guided-finale-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/guided-finale-test.log && grep -q '^guided-finale: [0-9]* passed, 0 failures$$' $(SCRATCH)/guided-finale-test.log
+ship-demo-ci: guided-finale-test
 .PHONY: camera-forward-targets
 camera-forward-targets: import ## R2-CAMERA-FORWARD AC-V6 fixture: record the live first guided stop and every Sgr A* stop -> tests/fixtures/camera_forward/targets.json (headless; re-run when the itinerary, the stop turn or the visit changes, and commit the diff)
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --headless --path . --script tools/camera_forward_targets.gd > $(SCRATCH)/camera-forward-targets.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward-targets)' $(SCRATCH)/camera-forward-targets.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-targets.log && grep -q 'Sgr A\* stops, 0 failures$$' $(SCRATCH)/camera-forward-targets.log
