@@ -1,0 +1,90 @@
+{
+ "sprint": "R2-CAMERA-FORWARD",
+ "pr": 286,
+ "commit": "e9de6bdec2941080a60e4abcddc1d4203e5d7237",
+ "evaluator": "Claude Sonnet, independent",
+ "score": 88,
+ "pass": true,
+ "rubric": {
+  "acs_and_behaviour": {
+   "score": 27,
+   "max": 30,
+   "notes": "Every AC-V1..V12 and AC-B1, B2 grep in the sprint JSON matches the fresh camera-forward-test log (counts 2/3/3/1+1/4+2/2/2/5/2/1/1/1). Bow yaw spread 0.0000, captain 73 px at 1.6 m head height, deck 0.59. AC-V9 holds: schema v2 once, 7 negative controls. AC-T2 is not met yet (design doc still in planned/, status text says 'In progress (F1)'): that is the landing step. Captain is 80.6-86.8 px at the sprite height, at or past the 60-80 edge (F1 accepted this as built, D-94); my rise_m mutation showed camera-test measures that figure."
+  },
+  "physics_and_goldens": {
+   "score": 22,
+   "max": 25,
+   "notes": "make physics: 915 passed, 0 failed, equal to tests/fixtures/physics_total.txt. sim/ is untouched vs origin/main (0 files). make parity replay strict exits 0. golden_baseline.sh selftest passes, and the recorded baseline of 364 ok lines is excluded only for G-M4-S2..S4 and G-CAM-1..3. I did NOT re-run make golden (the executor claims 393 ok), so AC-B4 is taken from the claim; the golden re-pins to new eyes rest on the executor's run."
+  },
+  "tests_and_gates": {
+   "score": 19,
+   "max": 20,
+   "notes": "camera-forward-test 33 passed/0 failures, camera-test 182 passed, basis-gate ok (0 inline, control caught 3), AC-B1 grep ok. 7 of 7 effective mutations were caught, with specific failure messages. Not re-run by me: make test, make golden, display-audit, lore-import (needs ../stapledons-design)."
+  },
+  "ux_and_accessibility": {
+   "score": 12,
+   "max": 15,
+   "notes": "Reduced motion cuts instead of easing (tested, 'reduced cut'). Switch ease max 90 deg/s, with the mapping flipping only at ease end. The Commons keeps its legacy views and Z1-Z3 and refuses sky cues with the same prompt as main. The interlude hold on the bridge goes through walk('bow', cued, force). I did not view the GPU captures. F1 hand-handed issues (spawn faces the lift, Astern foreground lift box) are deferred to the deck re-plan by Mark."
+  },
+  "process_and_docs": {
+   "score": 8,
+   "max": 10,
+   "notes": "Changelog entry present (changelogs/unreleased/2026-10-19-camera-forward.md). Sprint JSON is detailed, with F1-F3 passes true and notes. Design doc and sprint plan status still read 'In progress (F1)', and E_EVALUATE_LAND is open: the doc move to implemented/r2/ is landing-time work, not done."
+  }
+ },
+ "blocking": [],
+ "non_blocking": [
+  "Design doc and sprint plan headers still say 'In progress (F1)'; update to Implemented and move both to design_docs/implemented/r2/ at landing (AC-T2).",
+  "mapping_now mutation (walk_yaw using deck_view rather than mapping_view) is caught only by camera-forward-test, not camera-test: acceptable, but only one gate guards the ease-end mapping rule.",
+  "Interlude hold on a non-walk level (Commons): sky('sky_forward', true, true) now always refuses, so director.hold stays false there. main also refused off the bridge (active_level != 0), so no regression found, but a Commons interlude runs with no hold and no test pins this.",
+  "Captain is ~81-87 px at the sprite height (1.754 m), above the 60-80 band; the AC measures at 1.6 m (73 px). F1 accepted this as built; the Mark review is recorded in D-94.",
+  "I did not re-run make test, make golden, display-audit, lore-import, or the captures; the executor's claims are unverified by me for those."
+ ],
+ "mutations": [
+  {
+   "mutation": "STOP_TILT_DEG 60 -> 20 (demos/ship_attitude.gd)",
+   "caught_by": "camera-forward-test (in frame bow stop_body 0/16; attitude drift 0.586 from recorded stop)"
+  },
+  {
+   "mutation": "MAX_DEG_PER_S 90 -> 400 (demos/camera_director.gd)",
+   "caught_by": "camera-forward-test (switch ease max 224.9 deg/s) and camera-test (AC7 worst 351.4)"
+  },
+  {
+   "mutation": "bow view yaw 270 -> 250 (views.json)",
+   "caught_by": "camera-forward-test (fade untouched, reduced cut) and camera-test (Bow sweep, 1 fail)"
+  },
+  {
+   "mutation": "bow view pitch -8 -> -40 (views.json)",
+   "caught_by": "camera-forward-test (in frame bow pole 0/16, starbow_0.9c 0/16)"
+  },
+  {
+   "mutation": "walk_yaw uses deck_view not mapping_view (mapping updates at switch start)",
+   "caught_by": "camera-forward-test only (mapping at ease end, 360 frame failures); camera-test passed"
+  },
+  {
+   "mutation": "drop the mapping_view update at switch (line 730)",
+   "caught_by": "camera-forward-test (reduced cut: mapping bow, yaw -90)"
+  },
+  {
+   "mutation": "targets.json sgr_a[0].hole_dir negated",
+   "caught_by": "camera-forward-test (in frame bow sgr_a_hole 0/16, 180 deg off the bow)"
+  },
+  {
+   "mutation": "bow rise_m 5.5 -> 0.5 (views.json)",
+   "caught_by": "camera-forward-test (pole_ray 8/16, captain 13/16 clear) and camera-test (1999 sweep fails, AC4 86.8 px)"
+  }
+ ],
+ "commands_run": [
+  "make runtime; make deps; make sky-assets; make import",
+  "make camera-forward-test (33 passed)",
+  "make camera-test (182 passed)",
+  "make basis-gate (ok)",
+  "make physics (915 passed, 0 failed = physics_total.txt)",
+  "make parity replay strict (exit 0)",
+  "AC-B1/B2/V1-V8/V10-V12 greps on the log",
+  "git diff --name-only origin/main...HEAD -- sim/ (0)",
+  "tools/golden_baseline.sh selftest (ok)",
+  "8 mutations via sed or python, each reverted with git checkout; working tree clean except untracked .uid files"
+ ],
+ "summary": "Pass at 88. Every AC I could run locally is green and matches the sprint JSON: camera-forward 33, camera-test 182, basis-gate, physics 915 = main, parity strict, sim/ untouched. All 8 of my mutations were caught by named failures. The F3 camera director cleanup (sky() = walk or refuse) keeps the legacy Commons behaviour of main, and the interlude hold goes through walk('bow', cued, force) on the bridge. Not verified by me: make test, make golden, display-audit, lore-import, the GPU captures. Landing is still open (design doc move, status text)."
+}

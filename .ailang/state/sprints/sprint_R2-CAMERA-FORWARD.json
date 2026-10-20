@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CAMERA-FORWARD",
-  "status": "in_progress",
+  "status": "completed",
   "approved": {
     "by": "Mark (attended)",
     "date": "2026-10-19",
@@ -8,8 +8,8 @@
     "note": "\"yep looks great approved\": every recommendation, OQ1-OQ8"
   },
   "created": "2026-10-19",
-  "design_doc": "design_docs/planned/r2/camera-forward.md",
-  "sprint_plan": "design_docs/planned/r2/camera-forward-sprint.md",
+  "design_doc": "design_docs/implemented/r2/camera-forward.md",
+  "sprint_plan": "design_docs/implemented/r2/camera-forward-sprint.md",
   "branch": "feat/camera-forward",
   "origin": "Mark, attended 2026-10-19: D-91 (fixed views that slide, never turn) and D-92 (travel along the deck, into the screen; amends D-14)",
   "amends": [
@@ -240,9 +240,13 @@
         "AC-T2 (at landing)"
       ],
       "test_first": [],
-      "passes": null,
-      "completed": null,
-      "notes": []
+      "passes": true,
+      "completed": "2026-10-20",
+      "notes": [
+        "evaluation round 1: 88/100 PASS, 0 blocking (non-blocking: landing AC-T2, now done; Commons interlude has no hold, as on main; captain px at sprite height accepted in D-94)",
+        "landed: design doc and sprint plan in design_docs/implemented/r2/, README index; design repo roadmap PR",
+        "next (attended): the D-90 deck re-plan facing the bow"
+      ]
     }
   ],
   "evaluations": [
@@ -281,10 +285,20 @@
       "blocking": 1,
       "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_5.json",
       "note": "blocking item folded in after this round"
+    },
+    {
+      "round": 1,
+      "kind": "implementation",
+      "score": 88,
+      "blocking": 0,
+      "file": ".ailang/state/evaluations/eval_R2-CAMERA-FORWARD_round_1.json",
+      "evaluator": "Claude Sonnet (claude -p, independent of the executor)",
+      "commit": "e9de6bde",
+      "mutations": "8 of 8 caught"
     }
   ],
   "approval_gate": "OQ1-OQ4 answered by Mark; stapledons-design PR #30 merged before F1a lore step (else F3)",
-  "acceptance_criteria_source": "design_docs/planned/r2/camera-forward.md ## Acceptance criteria (AC1-AC14, each with its exact command and log line; AC14 checked at landing)",
+  "acceptance_criteria_source": "design_docs/implemented/r2/camera-forward.md ## Acceptance criteria (AC1-AC14, each with its exact command and log line; AC14 checked at landing)",
   "acceptance_commands": {
     "AC-B1": "test $(git ls-files '*.gd' | xargs grep -nE '\\[2\\], *-[a-z_.]*\\[1\\]|\\.x, *-[a-z_.]*\\.z, *[a-z_.]*\\.y|-[a-z_.]*\\.x, *[a-z_.]*\\.y, *-[a-z_.]*\\.z' | grep -vE '^(interior/ship_frame|demos/ship_demo_camera)\\.gd:' | wc -l) -eq 0 && test $(grep -cE '\\[2\\], *-[a-z_.]*\\[1\\]|\\.x, *-[a-z_.]*\\.z, *[a-z_.]*\\.y|-[a-z_.]*\\.x, *[a-z_.]*\\.y, *-[a-z_.]*\\.z' tests/fixtures/basis_gate/inline.gd.txt) -ge 3",
     "AC-B2": "grep -qE '^ok    basis R proper bow->\\+Z mast->\\+Y$' $S/camera-forward-test.log",

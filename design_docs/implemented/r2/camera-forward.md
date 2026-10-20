@@ -1,6 +1,6 @@
 # R2-CAMERA-FORWARD: travel along the deck, and a fixed bow view that slides with the captain
 
-**Status:** Approved 2026-10-19 by Mark, attended ("yep looks great approved"), with every recommendation: ledger D-93. In progress (F1). Sprint plan: [camera-forward-sprint.md](camera-forward-sprint.md).
+**Status:** **Implemented** 2026-10-20 (PR #282 F1, PR #286 F2–F3; independent evaluation 88/100 PASS, `.ailang/state/evaluations/eval_R2-CAMERA-FORWARD_round_1.json`). Approved 2026-10-19 by Mark, attended ("yep looks great approved"), with every recommendation: ledger D-93. F1 accepted after his dev-build playtest (D-94: "this looks great. we can do more ship building assets now assuming these"). Sprint plan: [camera-forward-sprint.md](camera-forward-sprint.md).
 - **Independent plan reviews (Sonnet):** the D-91 draft scored 71, then 86. The D-92 revision was reviewed in rounds 3–5: 71, 76, 79, then the round-5 blocker was folded in (`.ailang/state/evaluations/eval_R2-CAMERA-FORWARD_plan_round_{3,4,5}.json`).
 
 **Release:** R2. **Milestone:** the player camera for the 3D ship, and the ship basis it needs (ledger D-91, D-92). It amends R2-CAMERA ([implemented/r2/camera-fixed-views.md](../../implemented/r2/camera-fixed-views.md), D-83).

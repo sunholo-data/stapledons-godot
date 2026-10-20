@@ -5,7 +5,7 @@ extends RefCounted
 ## validate()). ShipCamera stays the render boundary: the director only writes its transform and
 ## the demo calls _sync_observer(), so the sky is rendered through the same pose as the geometry.
 ##
-## R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): on a level with walk
+## R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, D-91, D-92): on a level with walk
 ## views (the bridge) the player camera is a fixed stage view. Bow (the default) looks over the
 ## captain toward the bow, where the journey is (travel runs along the deck, D-92); Astern looks the
 ## other way. A walk view's yaw and pitch never change while the captain walks: the eye slides

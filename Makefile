@@ -1240,7 +1240,7 @@ ship-demo-ci: camera-test
 camera-test: import ## R2-CAMERA AC1-5, 7, 9: views.json schema, |eye| <= 95 m and a clear line from every walk sample, one level per notch/unit/pinch, Z2 60-80 px, hysteresis, no jumps, reduced motion, F8 dev-only
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_director.gd > $(SCRATCH)/camera-test.log 2>&1; rc=$$?; grep -E '^(FAIL|figure|transitions|camera-director)' $(SCRATCH)/camera-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-test.log && grep -q '^camera-director: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-test.log
 
-# R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): travel toward the bow,
+# R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, D-91, D-92): travel toward the bow,
 # one fixed Bow / Astern stage view that slides with the captain, and the one named map per frame.
 BASIS_GATE_RE := \[2\], *-[a-z_.]*\[1\]|\.x, *-[a-z_.]*\.z, *[a-z_.]*\.y|-[a-z_.]*\.x, *[a-z_.]*\.y, *-[a-z_.]*\.z
 .PHONY: camera-forward-test basis-gate

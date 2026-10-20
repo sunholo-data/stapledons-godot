@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): make camera-forward-test.
+## R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, D-91, D-92): make camera-forward-test.
 ##   AC-B1  one named map per frame (the grep gate and its positive control live in the recipe)
 ##   AC-B2  R is a proper rotation: the structure's bow (+Y) -> kinematic +Z, the mast (+Z) -> +Y;
 ##          the composite maps agree with their literals
