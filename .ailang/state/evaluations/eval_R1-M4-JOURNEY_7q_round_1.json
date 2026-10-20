@@ -1,0 +1,51 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "feature": "M4.5bR3_7q_RULING_PIN_CONTROLS",
+  "round": 1,
+  "evaluator": "claude-sonnet-5-5 (independent of codex gpt-6.1-sol executor / GLM-5.3 designer)",
+  "head": "91c43c68",
+  "total_score": 88,
+  "pass": true,
+  "threshold": 70,
+  "scores": {
+    "acceptance_criteria": {"score": 36, "max": 40, "note": "AC1-AC5, AC7 pass; design AC6 command as written in the design doc returns 1 (regex anchors design_docs/ with $), the repaired sprint-JSON AC6 passes."},
+    "test_quality_mutation": {"score": 24, "max": 30, "note": "All four named kills reproduce with exact signatures; fixtures isolate one value each; but D-77 kind pin, D-78 kind pin and the accepted_by-is-String guard still have no control, and deleting a spec row is not detected inside make."},
+    "scope_fidelity": {"score": 18, "max": 20, "note": "Only the 8 allowed paths changed; tests/display_audit.gd and Makefile byte-identical to origin/main; ruling tuples unchanged; scene verdict unchanged (MET 5). Minor: design AC6 broken."},
+    "docs_claims": {"score": 10, "max": 10, "note": "V17 deviation (D1 missed; D2-D4 wrong reason) reproduced exactly; interlude/crew count=1 true."}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    {"id": "N1", "text": "Design AC6 command fails as written (rc 1 on committed design paths) because the alternation has 'design_docs/' followed by '$'. The sprint JSON carries the repaired regex, which passes.", "command": "test -z \"$(git diff --name-only origin/main | grep -v -E '^(design_docs/|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json|mk/m45\\.mk|tests/fixtures/display_audit/known_wrong_(accompanying|transit_node|transit_text|caption_node)\\.json)$')\"; echo $?"},
+    {"id": "N2", "text": "Commit title claims each ruling_valid pin has an isolating control, but deleting the D-77 'kind == transit-ISM' pin (E1), the D-78 'kind == unbound' pin (E2) or the 'accepted_by is String' guard (E5) leaves make display-audit-controls green at rc 0. Candidate follow-up row; kind pins are partly redundant with the matcher's kind equality.", "command": "drills E1/E2/E5 in the table"},
+    {"id": "N3", "text": "The 28-row count is asserted only by AC1 outside make; deleting a new spec row from mk/m45.mk keeps make rc 0 (E7). Same weakness pre-exists for the older rows.", "command": "drill E7"},
+    {"id": "N4", "text": "D-78 text list has four accepted strings; only one (caption text swap) is controlled; shrinking the list is not tested by a fixture.", "command": "inspect tests/display_audit.gd:63"}
+  ],
+  "acceptance_runs": [
+    {"ac": "AC1", "command": "make display-audit-controls AILANG=runtime/bin/ailang > .godot/tmp/7q-controls.log; count ': rejected$'; each new fixture log has 'FAIL known-ruling invalid acceptance'", "rc": 0, "evidence": "28 rejected; four logs count 1; last line 'display control known_unaccepted: OPEN (PASS)'"},
+    {"ac": "AC2", "command": "drill D1..D4 (design function) + git diff --quiet tests/display_audit.gd", "rc": 0, "evidence": "D1-D4 rc 0 each, audit-diff rc 0"},
+    {"ac": "AC3", "command": "make scene-session-audits + grep", "rc": 0, "evidence": "ac4: MET (5 accepted by D-77/D-78); samples=716 new=0 known=828 stale=0 failures=0"},
+    {"ac": "AC4", "command": "make display-audit-interlude + grep -cx", "rc": 0, "evidence": "count 1"},
+    {"ac": "AC5", "command": "make display-audit-crew + grep -cx", "rc": 0, "evidence": "count 1"},
+    {"ac": "AC6", "command": "design version", "rc": 1, "evidence": "regex defect (N1); repaired sprint-JSON version rc 0; display_audit.gd and Makefile identical to origin/main"},
+    {"ac": "AC7", "command": "make python-guard ai-live-guard in-world-voice-check", "rc": 0, "evidence": "green"}
+  ],
+  "drills": [
+    {"id": "D1", "mutation": "delete accompanying_card pin", "result": "KILLED: 'known/known_wrong_accompanying.json missed'"},
+    {"id": "D2", "mutation": "delete D-77 node pin", "result": "KILLED: wrong reason (want known-ruling)"},
+    {"id": "D3", "mutation": "delete D-77 text pin", "result": "KILLED: wrong reason (want known-ruling)"},
+    {"id": "D4", "mutation": "delete D-78 node pin", "result": "KILLED: wrong reason (want known-ruling)"},
+    {"id": "E1", "mutation": "delete D-77 kind==transit-ISM", "result": "SURVIVES (make rc 0)"},
+    {"id": "E2", "mutation": "delete D-78 kind==unbound", "result": "SURVIVES (make rc 0)"},
+    {"id": "E3", "mutation": "delete folding_card pin", "result": "killed (known_wrong_cards wrong reason)"},
+    {"id": "E4", "mutation": "delete D-78 text list clause", "result": "killed (known_wrong_caption wrong reason)"},
+    {"id": "E5", "mutation": "delete accepted_by is String guard", "result": "SURVIVES"},
+    {"id": "E6", "mutation": "ruling_valid always true for entries without check (accepted_by early return forced)", "result": "killed (known_bad_ruling missed)"},
+    {"id": "E7", "mutation": "delete new spec row known_wrong_accompanying from mk/m45.mk", "result": "SURVIVES in make (only AC1 count catches it)"},
+    {"id": "E8", "mutation": "wrong expected reason on new caption_node row", "result": "killed (wrong reason)"},
+    {"id": "E9", "mutation": "edit accompanying fixture to the pinned value (only that field)", "result": "killed (known_wrong_accompanying.json missed)"},
+    {"id": "E9b", "mutation": "naive edit that also rewrote folding_card", "result": "still rejected (two pins now wrong): shows isolation depends on one-field edit, as designed"},
+    {"id": "E10", "mutation": "edit transit_text fixture to the pinned text", "result": "killed (missed)"},
+    {"id": "E11", "mutation": "interlude/crew logs with verdict flipped to OPEN, run through the new grep -Eq", "result": "grep rc 1 for both (new assertion is load-bearing)"}
+  ],
+  "restore": "after every drill the mutated file was restored and git diff --quiet confirmed byte identity; final git status shows only untracked .uid files plus this report"
+}
