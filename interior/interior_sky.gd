@@ -158,7 +158,9 @@ func orient(heading: PackedFloat64Array) -> void:
 	heading_gal = heading
 	orient_basis(ShipFrame.ship_basis(heading))
 
-## Attitude only: leave simulation velocity/heading and clocks untouched.
+## Attitude only: leave simulation velocity/heading and clocks untouched. `cam` is in the kinematic
+## frame: ShipCamera.sync_sky (the 3D ship, D-92) or a painted-plate bundle camera, which is in the
+## legacy pre-D-92 frame (AreaBundle.BUNDLE_BASIS); never both in one session.
 func orient_basis(attitude:PackedFloat64Array)->void:
 	if attitude.size()!=9:return
 	basis=attitude.duplicate()

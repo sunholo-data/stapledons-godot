@@ -41,7 +41,7 @@ func _run() -> void:
 	var f:=FileAccess.open(out+"/manifest.json",FileAccess.WRITE)
 	f.store_string(JSON.stringify({"stage":kit.manifest.stage,"observer":"inside physical eye except explicitly external diagnostic","sky":"frozen simulation-derived cruise; shared observer","GR":"not implemented","shots":shots},"  "))
 	print("ship-commons-capture: OK");quit()
-func _vec(v: Array) -> Vector3:return Vector3(v[0],v[2],-v[1])
+func _vec(v: Array) -> Vector3:return ShipFrame.gltf_from_structure(v)
 func _shot(name: String, diagnostic: bool) -> void:
 	for i in 5:await process_frame
 	demo.sky.update_exposure()

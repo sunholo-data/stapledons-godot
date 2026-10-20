@@ -1,20 +1,20 @@
 {
   "design_repo": "sunholo-data/stapledons-design",
-  "design_sha": "c17060408074da475d0e9622ea19c386db136ea1",
+  "design_sha": "30f6674162564bc7bb17342cf032516c0e3701b7",
   "files": [
     {"path": "archive/README.md", "sha256": "76732c06711a23cef43fcc0dd0efb72efffcb862942817ee79ebcb0d30d527f9"},
     {"path": "archive/bubble.md", "sha256": "b5c3e084d70703560ea80b4ca1bf4f4b5d95bf08aa6a1b3d133d1284881964a5"},
     {"path": "archive/cmb-forward.md", "sha256": "0c4792739ecc2078f7a686861e9895148707739d6af8dea75388c14113e9fd38"},
     {"path": "archive/ism-glow.md", "sha256": "dd3b34358a6e03d0890cf84625cf404c4a104eb41519fe96392d88d24861142e"},
     {"path": "archive/nothing-crosses.md", "sha256": "039c098ab4642672be2d000c1294321e693e65a5d6e79aa2b13aca790c959297"},
-    {"path": "archive/one-g.md", "sha256": "eef59e24147d6092737a0cc90de66ee6170d5490639c708bd5363eba279ec392"},
+    {"path": "archive/one-g.md", "sha256": "4151b4342c96792d16b950620e7160abc3c26bd199a6dbde2d0e73f810437748"},
     {"path": "archive/photon-drive.md", "sha256": "8818497a25fd023d341a03ad1b7c2c0d6957e4ea588f717f0db7b12116f80111"},
     {"path": "archive/shadow-ring.md", "sha256": "96fb5fd1176c8010c9e2c8b202c4b820ba0e312cae79b2cc620eeb4f7ab2dd58"},
-    {"path": "archive/starbow.md", "sha256": "7c7dcedc6a6e1b93f46812c4174f8ce6c08fa0ba5c2bf4f346ebccc5f0a9b4f9"},
+    {"path": "archive/starbow.md", "sha256": "2a32f297dbb3a1dc576db39c5254c14855813924271ec1b473362d06a086788c"},
     {"path": "archive/tides.md", "sha256": "f2fd63517a32e76b4b46bae6cd31257c24a05ca74146baf6d2555bbf8db8fc22"},
     {"path": "archive/two-clocks.md", "sha256": "6411d815a6257c4d19441baf7bd29e018a19c29eb6d1e68b821bd2ee5652a15e"},
     {"path": "archive/weather-between-the-stars.md", "sha256": "0003ef25115a03a9180f8bab2c817b9e588ebb6c05dfa039eb102925209098d2"},
-    {"path": "physics/higgs-bubble.md", "sha256": "03f1366eee350ee208d3458360e8c2178e5a6fb8a9fdd0c4180f8a48dce38aa4"},
+    {"path": "physics/higgs-bubble.md", "sha256": "bc159ee7ea5cb46c553ae0da7e7ef5418ff1988743b4263cd443eaf56c3a8361"},
     {"path": "physics/ism-structure.md", "sha256": "c048834d304a758abd03f9004b8a99f5f5dead37d847d86951db2e86c6a80ca7"},
     {"path": "physics/relativity-spec.md", "sha256": "e306b4e9cbbf17e0cfd47646e1d5fe1267f55a6c5ae7bc4c0ca71a9a2f1a8c50"}
   ]

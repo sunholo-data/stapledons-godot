@@ -1,0 +1,44 @@
+{
+  "sprint_id": "R2-CAMERA-FORWARD",
+  "kind": "plan review",
+  "round": 2,
+  "reviewer": "claude CLI --model sonnet (independent of the planner)",
+  "date": "2026-10-19",
+  "folded": "all six should-fix items folded into the doc and sprint JSON after this round",
+  "score": 86,
+  "pass": true,
+  "blocking": [],
+  "should_fix": [
+    {
+      "finding": "The doc says Deck is 'today's Z2 boom of 12 m at −30°', but today's Z2 pitch is −35°.",
+      "evidence": "data/camera/views.json:10 has z2 pitch_deg −35.0, distance 12.0, height 1.6. camera-forward.md:164 says '−30° … today's Z2 boom of 12 m at −30°'. The eye offsets 10.4 m back and 7.6 m up are −30° geometry. At −35° they would be about 9.8 m back and 8.5 m up.",
+      "fix": "Say Deck is a new −30° framing at the same 12 m head-to-eye distance, or keep −35°. Either way, the 60–80 px captain-size claim (R2-CAMERA AC4) needs a measured check in F1a, not an inherited one."
+    },
+    {
+      "finding": "Several AC commands write `\\|` inside the grep -E patterns. In ERE that matches a literal pipe, not alternation. This looks like markdown table escaping, but the doc doesn't say to strip it.",
+      "evidence": "camera-forward.md:310, 312, 315, 316 and 318, for example `(forward\\|deck\\|target_stop\\|target_sgr_a)`. The sprint JSON copies the unescaped form (`sprint_R2-CAMERA-FORWARD.json` AC1 text).",
+      "fix": "Add a convention line saying `\\|` is table escaping and the real commands use `|`. Better, put the commands in the sprint JSON verbatim and mark that copy as authoritative."
+    },
+    {
+      "finding": "AC2/AC1 target_stop need a stop fixture in a headless test, and nothing says how one is built. `make golden` runs without AILANG, and test_camera_forward.gd is headless.",
+      "evidence": "camera-forward.md:311 ('first guided stop'). D3 aims through `rel_km` and the attitude basis. D8 notes the harness has no sim (m4_ship_golden.gd:249, the 'no sim' comment).",
+      "fix": "Say that test_camera_forward.gd injects a fixed `rel_km` and attitude basis (as `hole_override` does for the hole). Say that the real-guided-stop case is covered by camera-views-capture."
+    },
+    {
+      "finding": "Forward's spire-versus-pole clearance is only a yaw-selection criterion in F1b. No AC asserts it. AC4 covers Deck's captain line only.",
+      "evidence": "camera-forward.md:137 and :332, 'the pole clear of the spire'. AC2 asserts the pole point is in frame, not that it is unoccluded. AC4 covers Deck only.",
+      "fix": "Add a Forward check: the pole ray, and the captain's head line, are clear after fades at all 16 walk samples. Or state that visual review in AC11 is the only gate for this."
+    },
+    {
+      "finding": "The golden labels change, but the Makefile gates grep fixed prefixes, and the help text and failure message embed the old names.",
+      "evidence": "Makefile:447-449 grep '^ok    G-CAM-1 forward pole', '…G-CAM-2 glow' and '…G-CAM-3 one tonemap'. The recipe's `##` text and its failure message (Makefile:431, 459) name 'Sky forward', 'Z1/Z2/Z3'.",
+      "fix": "Add to D8/F3: keep the three grep prefixes and change only the parenthesised suffix. Update the help and failure strings in the same commit."
+    },
+    {
+      "finding": "Occluder fade carries visual and physics risk the plan doesn't test. Transparent materials on the spire against the live sky layer can change sort order, and the ship is lit by the sky.",
+      "evidence": "camera-forward.md:115-119 sets alpha to 0.25 and says 'the sky layer is never dimmed'. No test or capture is named that shows a faded frame.",
+      "fix": "Add one capture frame with a forced fade, opened by eye. Assert in test_camera_forward.gd that the fade state changes no sky uniform or sim input."
+    }
+  ],
+  "notes": "Round-1 items:\n(B1) Golden counts: RESOLVED. D8 and the sprint list exact cases. G-CAM-1 is Forward spawn, Forward helm and Target on the hole, 3 phases each, giving 9. G-CAM-2 is 4 eyes × 2, giving 8. G-CAM-3 is 2. The totals match Makefile:447-450 (9/8/2/393).\n(B2) Log formats and recipes: RESOLVED. The AC conventions name the exact `ok    …` lines and the saved-log greps ($S/<suite>.log). They also give the camera-forward-test recipe and gate, and the camera-walk-capture gate. I confirmed that the existing camera-test recipe saves $(SCRATCH)/camera-test.log (Makefile:1241), so the greps on it work. Remaining nit: the `\\|` escaping above.\n(B3) Headless gating: RESOLVED. The yaw, pole and target assertions now live in tests/test_camera_forward.gd. It is hooked via `ship-demo-ci:`, which is on `make test` at Makefile:973. The GPU capture is evidence only. `CameraDirector.screen_point` exists (camera_director.gd:457).\n(B4) Occluder machinery: RESOLVED. F1 is split into F1a and F1b. Named nodes go in a `camera_occluder` group. A hide fallback is given. 'After fades' is defined as hits on non-group nodes only. A pause point covers a failed sweep.\nShould-fix from round 1:\n- Eye above deck: resolved. `rise_m ≥ 0.3` is a schema rule, and AC5 checks it.\n- Pole px: the round-1 objection was wrong. I recomputed it. Frame top is at 95°, the pole is 34° off axis, and tan34/tan39 × 360 gives y ≈ 60 px. At 58° it gives 82.2, which matches the measured value.\n- AC1 Target spread: resolved. The doc now restricts it to a stationary ship and tests re-aim separately (AC6b).\n- Migration list: resolved. D10 lists the affected tests and tools.\n- Velocity and days: resolved. It is now 4.0 days at about 330 LOC/day, with the F1b pause point as the re-plan gate.\n- OQ gating: resolved. OQ1–OQ4 are an approval-time gate.\n- Determinism: resolved. AC12 adds a bit-identical pose run.\n- Sprint JSON ACs: partly resolved. They are still abbreviated (for example 'AC3 deck'), and AC14 is now marked as checked at landing.\nScores: completeness vs Mark's direction 24/25. Correctness of code claims 21/25 (the Z2 pitch error, and the label and prefix handling). Acceptance criteria 21/25 (the escaping, the headless stop fixture, and the Forward clearance not being asserted). Realism and pause points 20/25 (the fade has no visual test, and the day estimates are still optimistic given the test rewrite). Total 86. Approve, with the should-fix items folded into F1a/F3."
+}

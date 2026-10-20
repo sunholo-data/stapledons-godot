@@ -53,4 +53,4 @@ func _hit(a: Vector3,b: Vector3) -> bool:
 	for i in range(0,faces.size(),3):
 		if Geometry3D.segment_intersects_triangle(a,b,faces[i],faces[i+1],faces[i+2])!=null:return true
 	return false
-func _ship(p: Array) -> Vector3:return Vector3(p[0],p[2],-p[1])
+func _ship(p: Array) -> Vector3:return ShipFrame.gltf_from_structure(p)

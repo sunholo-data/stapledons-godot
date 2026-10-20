@@ -13,6 +13,11 @@ const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
 ##   AC7  reduced motion: every transition a cut (<= 0.15 s fade, no travel); full motion: angular
 ##        speed <= 90 deg/s, no roll, no FOV change, no overshoot, over every transition
 ##   AC9  the developer free camera (F8 / --free-camera) only on command-line launches
+## R2-CAMERA-FORWARD (D-91, D-92, D-93): on the bridge the player camera is the fixed Bow / Astern
+## stage view (tests/test_camera_forward.gd measures it); Z1-Z3 are developer presets there (OQ4,
+## reachable on command-line launches like these tests), the Commons keeps its views (legacy), and
+## the old sky views are tool poses. This file keeps the R2-CAMERA machinery honest and checks the
+## bridge's player defaults, keys, cues and console round trips under the new model.
 ## Time is the director's fake clock (advance(dt) through the demo's _process); no wall-clock reads.
 
 const FIGURE_M := 1.754 # the captain sprite's opaque height (1263 px at 720 px/m, avatar y0)
@@ -41,7 +46,7 @@ func _run() -> void:
 	test_schema()
 	var demo: Node = await new_demo({"size": Vector2i(1280, 720)})
 	await test_sweep(demo)
-	test_sky_sweep(demo)
+	test_bow_sweep(demo)
 	test_spawn_occlusion(demo)
 	test_levels_and_input(demo)
 	test_framing(demo)
@@ -105,6 +110,21 @@ func test_schema() -> void:
 	var none := d.duplicate(true)
 	none.views[0].distance_m = 0.0
 	check("AC1 mutant: a level view at distance 0 (first person) is refused", not CameraDirector.validate(none).is_empty())
+	# R2-CAMERA-FORWARD AC-V9: views.json v2 (level-keyed walk views) and its negative controls.
+	check("schema v2", str(d.schema) == "stapledons.camera.views/2" and CameraDirector.validate_levels(d).is_empty() and str(d.levels.bridge.default) == "bow" and bool(d.levels.commons.legacy))
+	var controls := {
+		"no default": func(x: Dictionary) -> void: x.levels.bridge.erase("default"),
+		"foreign default": func(x: Dictionary) -> void: x.levels.bridge.default = "z2",
+		"no yaw_deg": func(x: Dictionary) -> void: x.levels.bridge.views[0].erase("yaw_deg"),
+		"fov change": func(x: Dictionary) -> void: x.levels.bridge.views[0].fov_deg = 60.0,
+		"envelope over 95": func(x: Dictionary) -> void: x.envelope_m = 96.0,
+		"rise under 0.3": func(x: Dictionary) -> void: x.levels.bridge.views[0].rise_m = 0.2,
+		"travel_axis mismatch": func(x: Dictionary) -> void: x.travel_axis = "up",
+	}
+	for name: String in controls:
+		var m := d.duplicate(true)
+		(controls[name] as Callable).call(m)
+		check("negative control v2 %s" % name, not CameraDirector.validate(m).is_empty())
 
 
 ## The clear line: from the eye to the head, no opaque geometry (the sprite has no collision).
@@ -219,7 +239,7 @@ func test_levels_and_input(demo: Node) -> void:
 	var dir: CameraDirector = demo.director
 	demo.set_preset("reset")
 	step(demo, 1.0)
-	check("AC2 the default is Z2 Deck, third person (the sprite is shown)", dir.level == 2 and not dir.overridden and demo.avatar.visible and dir.view_id == "z2")
+	check("AC2 the default is the Bow view, third person (the sprite is shown)", dir.level == 2 and not dir.overridden and demo.avatar.visible and dir.view_id == "bow" and dir.walk_active())
 	var pose: Transform3D = demo.camera.global_transform
 	var motion := InputEventMouseMotion.new()
 	motion.relative = Vector2(40, 25)
@@ -301,8 +321,8 @@ func test_levels_and_input(demo: Node) -> void:
 	demo._unhandled_input(key(KEY_1))
 	check("AC2 1 picks Z1", dir.level == 1)
 	demo._unhandled_input(key(KEY_R))
-	check("AC2 R returns to the default view (Z2) at the spawn", dir.level == 2 and demo.avatar_pos.distance_to(Vector3(8, 82, -4.8)) < 1e-3)
-	step(demo, 1.0)
+	check("AC2 R returns to the default view (Bow) at the spawn", dir.level == 2 and dir.view_id == "bow" and demo.avatar_pos.distance_to(Vector3(8, 82, -4.8)) < 1e-3)
+	step(demo, 4.0) # a switch from a preset back to Bow eases for up to 3 s
 	# No input moves the camera continuously: a held level is still while the captain stands.
 	var a: Transform3D = demo.camera.global_transform
 	step(demo, 0.5)
@@ -330,7 +350,7 @@ func test_framing(demo: Node) -> void:
 	demo.set_preset("reset")
 	step(demo, 1.0)
 	var px := CameraDirector.figure_px(demo.camera.global_transform, demo.avatar_pos, FIGURE_M, PX.y)
-	check("AC4 Z2 captain figure %.1f px tall at 1280x720 (60-80)" % px, px >= 60.0 and px <= 80.0)
+	check("AC4 Bow captain figure %.1f px tall at 1280x720 (the sprite's %.3f m; 60-81)" % [px, FIGURE_M], px >= 60.0 and px <= 81.0 and dir.view_id == "bow")
 	var heights := []
 	for lv in [1, 2, 3]:
 		dir.set_level(lv)
@@ -491,10 +511,10 @@ func test_motion(demo: Node) -> void:
 	demo.set_preset("reset")
 	step(demo, 1.0)
 	dir.set_level(1)
-	var goal: Transform3D = dir.resolve(dir.views["z1"], demo.avatar_pos, dir.sector)
+	var goal: Transform3D = dir.resolve(dir.views["z1"], demo.avatar_pos, dir.sector_for(demo.avatar_pos, -1))
 	var prev := INF
 	var mono := true
-	for i in 120:
+	for i in 240: # from Bow, a preset may turn up to 180 deg: up to 3 s at <= 90 deg/s
 		demo._process(1.0 / 60.0)
 		var d: float = demo.camera.global_transform.origin.distance_to(goal.origin)
 		mono = mono and d <= prev + 1e-5
@@ -583,84 +603,28 @@ func test_free_camera() -> void:
 
 # ------------------------------------------------------------------ C2 sky views (AC1, AC4)
 
-## The forward pole (ship +z = glTF +y, travel) and a 20 deg cone around it: in frame and clear of
-## geometry from the eye (the starbow is what the view is for).
-func pole_clear(demo: Node, pose: Transform3D) -> bool:
-	var sp := CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)
-	if is_nan(sp.x) or not Rect2(Vector2(0, 40), PX - Vector2(0, 40)).has_point(sp):
-		return false
-	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
-	for a in [0.0, 90.0, 180.0, 270.0]:
-		for tilt in [0.0, 20.0]:
-			var d := Vector3.UP.rotated(Vector3(cos(deg_to_rad(a)), 0, sin(deg_to_rad(a))), deg_to_rad(tilt))
-			var q := PhysicsRayQueryParameters3D.create(pose.origin, pose.origin + d * 40.0)
-			q.hit_back_faces = true
-			if not space.intersect_ray(q).is_empty() and tilt == 0.0:
-				return false
-	return true
-
-
-func test_sky_sweep(demo: Node) -> void:
+## R2-CAMERA-FORWARD: the Bow view (the default on the bridge) from every walkable bridge sample at
+## 0.5 m (the settled slide: the anchor on the foot): the eye inside the envelope and above the deck,
+## one yaw, the forward pole (the bow, glTF -z) and the captain's head in frame, and after the fades
+## the journey and the head clear. (The old sky views are tool poses now.)
+func test_bow_sweep(demo: Node) -> void:
 	var dir: CameraDirector = demo.director
 	var bridge := samples(demo.walk_bridge, 82.0)
-	var fwd: Dictionary = dir.views["sky_forward"]
-	# Sky forward picks, once as it starts, the first candidate yaw whose eye sees the whole figure
-	# (lift guards included) and the forward pole clear; with none, the captain walks to the
-	# anchor (15 m out at the same angle), where one must exist.
-	var walked := 0
-	var none := []
+	var bow: Dictionary = dir.views["bow"]
 	var worst := 0.0
+	var bad := []
+	var yaws := {}
 	for p: Vector3 in bridge:
-		var off: Variant = dir.choose_offset(fwd, p)
-		var at := p
-		if off == null:
-			walked += 1
-			at = dir.anchor_of(fwd, p)
-			off = dir.choose_offset(fwd, at)
-		if off == null:
-			none.append(p)
-			continue
-		var pose := dir._sky(fwd, at, dir.sector_for(at, -1), off)
+		var pose := dir.walk_pose(bow, p)
 		worst = maxf(worst, pose.origin.length())
-		var sp := CameraDirector.screen_point(pose, dir.head_of(fwd, at), PX)
-		if is_nan(sp.x) or not Rect2(Vector2.ZERO, PX).has_point(sp) or not pole_clear(demo, pose):
-			none.append(p)
-	check("C2 sky_forward: from every bridge sample (%d of them walk to the anchor first) the whole figure and the forward pole are clear and in frame (%d fail%s)" % [walked, none.size(), (", first %s" % none[0]) if not none.is_empty() else ""], none.is_empty())
-	check("C2 sky_forward: every eye inside the envelope (worst %.2f m)" % worst, worst <= 95.0)
-	# The hole view, for the hole straight overhead (the ship holds its nose on it) and 30 deg off.
-	var hole: Dictionary = dir.views["sky_hole"]
-	for tilt in [0.0, 30.0]:
-		dir.hole_override = Vector3.UP.rotated(Vector3.RIGHT, deg_to_rad(tilt))
-		var fails := []
-		for p: Vector3 in bridge:
-			var o: Variant = dir.choose_offset(hole, p)
-			var at := p
-			if o == null:
-				at = dir.anchor_of(hole, p)
-				o = dir.choose_offset(hole, at)
-			if o == null:
-				fails.append(p)
-		check("C2 sky_hole (hole %d deg off the travel axis): from every bridge sample the figure and the hole are clear and in frame (%d fail%s)" % [tilt, fails.size(), (", first %s" % fails[0]) if not fails.is_empty() else ""], fails.is_empty())
-	dir.hole_override = Vector3.ZERO
-	# The anchored views: from their anchors (side: one rail point; aft: the rail at every 5 deg).
-	var side: Dictionary = dir.views["sky_side"]
-	var a: Vector3 = dir.anchor_of(side, Vector3(8, 82, -4.8))
-	var pose := dir.resolve(side, a, dir.sector_for(a, -1))
-	var head := dir.head_of(side, a)
-	var sp := CameraDirector.screen_point(pose, head, PX)
-	var body := CameraDirector.screen_point(pose, pose.origin + Vector3(cos(deg_to_rad(15.0)), sin(deg_to_rad(15.0)), 0) * 1000.0, PX)
-	check("C2 sky_side: the anchor %s is walkable, the captain clear and in frame (%s), the stop's body direction (+x, 15 deg up) in frame (%s)" % [a, sp, body], demo.walk_bridge.is_walkable(a) and clear_line(demo, pose.origin, head) and Rect2(Vector2.ZERO, PX).has_point(sp) and Rect2(Vector2.ZERO, PX).has_point(body) and pose.origin.length() <= 95.0)
-	var aft: Dictionary = dir.views["sky_aft"]
-	var aft_bad := []
-	for deg in range(0, 360, 5):
-		var f := Vector3(cos(deg_to_rad(deg)), 0, sin(deg_to_rad(deg))) * 10.0 + Vector3(0, 82, 0)
-		var an: Vector3 = dir.anchor_of(aft, f)
-		var ps := dir.resolve(aft, an, dir.sector_for(an, -1))
-		var hd := dir.head_of(aft, an)
-		var spp := CameraDirector.screen_point(ps, hd, PX)
-		if ps.origin.length() > 95.0 or not clear_line(demo, ps.origin, hd) or is_nan(spp.x) or not Rect2(Vector2.ZERO, PX).has_point(spp):
-			aft_bad.append(deg)
-	check("C2 sky_aft: from the rail anchor at every 5 deg, inside the envelope with the captain clear and in frame (%d bad %s)" % [aft_bad.size(), aft_bad.slice(0, 6)], aft_bad.is_empty())
+		yaws["%.6f" % rad_to_deg(CameraDirector.yaw_pitch(pose).x)] = true
+		var head := CameraDirector.screen_point(pose, p + Vector3.UP * 1.6, PX)
+		var pole := CameraDirector.screen_point(pose, pose.origin + CameraDirector.pole_dir() * 1000.0, PX)
+		var c: Dictionary = dir.clear_after_fades(pose, p)
+		if is_nan(head.x) or not Rect2(Vector2.ZERO, PX).has_point(head) or is_nan(pole.x) or not Rect2(Vector2(0, 40), PX - Vector2(0, 80)).has_point(pole) or not c.pole_ray or not c.captain or pose.origin.y < p.y + 0.3:
+			bad.append(p)
+	check("Bow: from every bridge sample (%d) one yaw (%d), the pole and the head in frame, the journey and the head clear after fades (%d fail%s)" % [bridge.size(), yaws.size(), bad.size(), (", first %s" % bad[0]) if not bad.is_empty() else ""], bad.is_empty() and yaws.size() == 1)
+	check("Bow: every eye inside the envelope (worst %.2f m)" % worst, worst <= 95.0)
 
 
 # ------------------------------------------------------------------ spawn occlusion (lead review)
@@ -701,9 +665,8 @@ func test_spawn_occlusion(demo: Node) -> void:
 		for k: int in cells(dir, foot):
 			bad.append_array(figure_clear(demo, dir.resolve(v, foot, k).origin, foot))
 		check("spawn: the whole figure (0.15 to 1.6 m) is clear at Z%d from every cell the spawn can be in, the lift's guards included %s" % [lv, bad], bad.is_empty())
-	var fwd: Dictionary = dir.views["sky_forward"]
-	var off: Variant = dir.choose_offset(fwd, foot)
-	check("spawn: Sky forward needs no walk and sees the whole figure (offset %s) %s" % [off, figure_clear(demo, dir._sky(fwd, foot, 7, off).origin, foot) if off != null else []], off != null and figure_clear(demo, dir._sky(fwd, foot, 7, off).origin, foot).is_empty())
+	var bow_eye := dir.walk_pose(dir.views["bow"], foot).origin
+	check("spawn: the Bow view sees the whole figure, the lift's guards included %s" % [figure_clear(demo, bow_eye, foot)], figure_clear(demo, bow_eye, foot).is_empty())
 
 
 # ------------------------------------------------------------------ C2 cues (AC6)
@@ -712,53 +675,44 @@ func test_cues() -> void:
 	var demo: Node = await new_demo({"live_start": true})
 	var dir: CameraDirector = demo.director
 	var c: ShipConsoles = demo.consoles
-	check("AC6 at rest the default is the level view", dir.situation.is_empty() and dir.level == 2 and not demo.under_way())
-	# Keys: 7 / 8 / 9.
-	demo._unhandled_input(key(KEY_7))
-	check("C2 7 opens Sky forward (third person; the captain shown)", dir.situation == "sky_forward" and demo.avatar.visible and not dir.overridden)
-	step(demo, 4.0) # the ease is capped at 90 deg/s: a half-turn up takes ~3 s
-	check("C2 Sky forward stands the captain upright (no leaning billboard)", demo.avatar.billboard == BaseMaterial3D.BILLBOARD_FIXED_Y)
-	var pose: Transform3D = demo.camera.global_transform
-	check("C2 Sky forward frames the forward pole (%s, view %s, pitch %.1f)" % [CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX), dir.view_id, rad_to_deg(CameraDirector.yaw_pitch(pose).y)], Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
-	demo._unhandled_input(key(KEY_2))
-	check("AC6 a level key ends a sky view (back to Z2)", dir.situation.is_empty() and dir.level == 2)
-	demo._unhandled_input(key(KEY_8))
-	check("C2 8 walks the captain to the side anchor first", dir._pending == "sky_side" and c.walk_target.begins_with("point:"))
-	for i in 600:
-		demo._process(1.0 / 60.0)
-		if dir.situation == "sky_side":
-			break
-	check("C2 on arrival the Sky side view starts (%s)" % demo.avatar_pos, dir.situation == "sky_side")
-	demo.walk_motion(Vector2(0, 1), 1.0 / 60.0)
-	demo.walk_motion(Vector2.ZERO, 1.0 / 60.0)
-	check("AC6 a move key ends a sky view", dir.situation.is_empty())
+	check("AC6 at rest the default is Bow", dir.view_id == "bow" and dir.deck_view == "bow" and not demo.under_way())
+	# Keys: 9 Astern, 8 reserved (no player side view, OQ3), 7 Bow, R Bow.
 	demo._unhandled_input(key(KEY_9))
-	for i in 600:
-		demo._process(1.0 / 60.0)
-		if dir.situation == "sky_aft":
-			break
-	check("C2 9: Sky astern from the rail", dir.situation == "sky_aft")
+	check("9 switches to Astern (third person; the captain shown)", dir.deck_view == "astern" and demo.avatar.visible and not dir.overridden)
+	step(demo, 4.0) # a half-turn at <= 90 deg/s takes up to 3 s
+	var pose: Transform3D = demo.camera.global_transform
+	check("Astern looks aft (yaw %.1f deg) and stands the captain upright" % rad_to_deg(CameraDirector.yaw_pitch(pose).x), absf(wrapf(rad_to_deg(CameraDirector.yaw_pitch(pose).x) - 90.0, -180.0, 180.0)) < 0.01 and demo.avatar.billboard == BaseMaterial3D.BILLBOARD_FIXED_Y)
+	demo._unhandled_input(key(KEY_8))
+	check("8 is reserved: no view change", dir.deck_view == "astern" and dir._pending.is_empty())
+	demo._unhandled_input(key(KEY_7))
+	check("7 switches to Bow", dir.deck_view == "bow")
+	step(demo, 4.0)
+	pose = demo.camera.global_transform
+	check("Bow frames the forward pole (%s)" % CameraDirector.screen_point(pose, pose.origin + CameraDirector.pole_dir() * 1000.0, PX), Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + CameraDirector.pole_dir() * 1000.0, PX)))
+	demo._unhandled_input(key(KEY_9))
 	demo._unhandled_input(key(KEY_R))
-	check("AC6 R ends it: the default view at rest is Z2", dir.situation.is_empty() and dir.level == 2)
-	step(demo, 1.0)
+	check("AC6 R returns to Bow", dir.deck_view == "bow" and dir.view_id == "bow")
+	step(demo, 4.0)
 	# Refusals: a panel open, at a console, in the lift.
+	demo._unhandled_input(key(KEY_9))
+	step(demo, 4.0)
 	demo.toggle_controls()
-	check("AC6 no cue with a panel open (Tab)", not dir.sky("sky_forward", true) and dir.situation.is_empty())
+	check("AC6 no cue with a panel open (Tab)", not dir.sky("sky_forward", true) and dir.deck_view == "astern")
 	demo.escape()
 	c.go_to("navigation")
 	c.use("navigation", "open")
-	check("AC6 no cue at a console", not dir.sky("sky_forward", true) and dir.situation.is_empty())
-	# Commit at the helm: leaving the console, the departure cues Sky forward (under way).
+	check("AC6 no cue at a console", not dir.sky("sky_forward", true) and dir.deck_view == "astern")
+	# Commit at the helm: leaving the console, the departure cues Bow (the journey ahead).
 	check("the helm commits", c.use("navigation", "commit") and demo.journey_tick())
-	check("AC6 departure (commit): Sky forward is cued once the helm is left", demo.live_journey and dir.situation == "sky_forward" and demo.under_way())
+	check("AC6 departure (commit): Bow is cued once the helm is left", demo.live_journey and dir.deck_view == "bow" and demo.under_way())
 	step(demo, 4.0)
 	pose = demo.camera.global_transform
-	check("C2 under way the player view frames the forward pole", Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + Vector3.UP * 1000.0, PX)))
+	check("under way the player view frames the forward pole", dir.view_id == "bow" and Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(pose, pose.origin + CameraDirector.pole_dir() * 1000.0, PX)))
 	demo._unhandled_input(key(KEY_1))
-	check("AC6 a level key takes over during cruise", dir.situation.is_empty() and dir.level == 1)
+	check("AC6 a zoom key (developer preset) takes over during cruise", dir.zoom_preset and dir.level == 1 and not dir.walk_active())
 	demo._unhandled_input(key(KEY_R))
-	check("C2 under way, R returns to Sky forward (the default view under way)", dir.situation == "sky_forward")
-	demo._unhandled_input(key(KEY_2))
+	check("under way, R returns to Bow", dir.walk_active() and dir.deck_view == "bow")
+	demo._unhandled_input(key(KEY_9))
 	var braked := false
 	for i in 4000:
 		if not demo.journey_tick():
@@ -768,33 +722,35 @@ func test_cues() -> void:
 			braked = true
 			break
 	demo._process(0.05)
-	check("AC6 braking cues Sky forward (phase %s)" % demo.sky_world.ship.phase, braked and dir.situation == "sky_forward")
+	check("AC6 braking cues Bow (phase %s)" % demo.sky_world.ship.phase, braked and dir.deck_view == "bow")
 	# Reduced motion: a cue is a prompt, the camera does not travel.
-	demo._unhandled_input(key(KEY_2))
+	demo._unhandled_input(key(KEY_9))
 	demo.set_camera_motion("reduced")
-	check("AC6 reduced motion: a cue is a HUD prompt instead (%s)" % dir.cue_prompt, not dir.sky("sky_forward", true) and dir.situation.is_empty() and dir.cue_prompt == "Sky ahead · 7")
+	check("AC6 reduced motion: a cue is a HUD prompt instead (%s)" % dir.cue_prompt, not dir.sky("sky_forward", true) and dir.deck_view == "astern" and dir.cue_prompt == "Bow · 7")
 	demo._process(0.05)
-	check("AC6 the prompt shows in the HUD (%s)" % demo.ship_hud.prompt.text, demo.ship_hud.prompt.text.begins_with("Sky ahead · 7"))
+	check("AC6 the prompt shows in the HUD (%s)" % demo.ship_hud.prompt.text, demo.ship_hud.prompt.text.begins_with("Bow · 7"))
 	demo.set_camera_motion("full")
-	# The lift.
 	demo.queue_free()
 	await process_frame
 	demo = await new_demo({"live_start": true})
 	dir = demo.director
+	demo._unhandled_input(key(KEY_9))
 	check("lift boards", demo.lift.board())
-	check("AC6 no cue in the lift", not dir.sky("sky_forward", true) and dir.situation.is_empty())
+	check("AC6 no cue in the lift", not dir.sky("sky_forward", true) and dir.deck_view == "astern")
 	demo.queue_free()
 	await process_frame
-	# Sgr A*: the hole view, aimed from the sim's GR state, at every stop of the visit.
+	# Sgr A*: the visit cues Bow (the ship's attitude at the hover is F2); the hole's direction
+	# comes from the GR state.
 	demo = await new_demo({"live_start": true})
 	dir = demo.director
+	demo._unhandled_input(key(KEY_9))
 	check("Sgr A* starts", demo.start_black_hole())
-	check("AC6 Sgr A* cues the hole view (sky_hole), not the forward sky", dir.situation == "sky_hole" and demo.under_way())
+	check("AC6 Sgr A* cues Bow", dir.deck_view == "bow" and demo.under_way())
 	var hd: Vector3 = demo.hole_direction()
 	check("Sgr A*: the hole's direction comes from the GR state (unit, %s)" % hd, absf(hd.length() - 1.0) < 1e-4)
 	for stop in BlackHoleVisit.STOPS.size() + 1:
 		if stop > 0:
-			demo._unhandled_input(key(KEY_2)) # the player looks elsewhere; the next stop frames the hole again
+			demo._unhandled_input(key(KEY_9)) # the player looks aft; the next stop returns to Bow
 			check("Sgr A* stop %d: departs" % stop, demo.bh_next_stop())
 			if demo.black_hole.approaching():
 				demo.bh_finish_approach()
@@ -805,80 +761,76 @@ func test_cues() -> void:
 		var cam: Transform3D = demo.camera.global_transform
 		var h: Vector3 = demo.hole_direction()
 		var centre := CameraDirector.screen_point(cam, cam.origin + h * 1000.0, PX)
-		var shadow := rad_to_deg(Schwarzschild.shadow_angle(float(g.r)))
-		var off := rad_to_deg((-cam.basis.z).angle_to(h))
-		check("Sgr A* %s r %s: the hole view is up, the hole's centre in frame at %s (%.1f deg above centre; shadow radius %.3f deg), the captain in frame" % [g.get("mode", ""), BlackHoleVisit.r_text(float(g.r)), centre, off, shadow], dir.situation == "sky_hole" and not is_nan(centre.x) and Rect2(Vector2.ZERO, PX).has_point(centre) and absf(off - 18.0) < 0.5 and Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(cam, demo.avatar_pos + Vector3.UP * 1.6, PX)))
+		print("Sgr A* %s r %s: Bow; the hole's centre at %s (%s frame; F2 turns the hover into frame)" % [g.get("mode", ""), BlackHoleVisit.r_text(float(g.r)), centre, "in" if not is_nan(centre.x) and Rect2(Vector2.ZERO, PX).has_point(centre) else "out of"])
+		check("Sgr A* stop %d: Bow, the captain in frame" % stop, dir.view_id == "bow" and Rect2(Vector2.ZERO, PX).has_point(CameraDirector.screen_point(cam, demo.avatar_pos + Vector3.UP * 1.6, PX)))
 	demo.set_camera_motion("reduced")
-	demo._unhandled_input(key(KEY_2))
+	demo._unhandled_input(key(KEY_9))
 	demo._arrived()
-	check("Sgr A* reduced motion: the stop's cue is a prompt (%s)" % dir.cue_prompt, dir.situation.is_empty() and dir.cue_prompt == "The hole · 7")
+	check("Sgr A* reduced motion: the stop's cue is a prompt (%s)" % dir.cue_prompt, dir.deck_view == "astern" and dir.cue_prompt == "Bow · 7")
 	demo.set_camera_motion("full")
 	demo._unhandled_input(key(KEY_R))
-	check("Sgr A*: R (under way) returns to the hole view", dir.situation == "sky_hole")
+	check("Sgr A*: R returns to Bow", dir.deck_view == "bow")
 	demo.leave_black_hole()
 	demo.queue_free()
 	await process_frame
-	# The guided voyage: the stop turn cues Sky side (after the turn), departure cues Sky forward.
+	# The guided voyage: the stop turn and the departure keep Bow (the body is turned into it).
 	demo = await new_demo({"live_start": true})
 	dir = demo.director
 	check("the guided voyage starts", demo.start_solar_departure())
+	demo._unhandled_input(key(KEY_9))
+	var cued := false
 	for i in 1200:
 		demo._process(1.0 / 60.0)
 		if demo.solar_tour.attitude_hold:
 			demo.journey_tick()
-		if dir.situation == "sky_side":
+		elif dir.deck_view == "bow":
+			cued = true
 			break
-	check("AC6 a guided stop cues Sky side once the stop turn completes (walked to the rail)", dir.situation == "sky_side")
+	check("AC6 a guided stop cues Bow once the stop turn completes", cued and not demo.under_way())
 	check("the next stop prepares", demo.solar_tour.prepare_next())
 	demo._process(1.0 / 60.0)
-	check("AC6 the departure turn cues Sky forward", dir.situation == "sky_forward" and demo.under_way())
+	check("AC6 the departure keeps Bow", dir.deck_view == "bow" and demo.under_way())
 	demo.queue_free()
 	await process_frame
 
 
-## Mark's ruling (2026-10-17, attended; design doc §Under-way default): "Sky forward under way".
-## At rest Z2 Deck; under way Sky forward (the captain from behind, the starbow in frame); at a
-## guided stop Sky side; at Sgr A* the hole view; any zoom key returns to Z1 / Z2 / Z3.
+## The default mapping under D-91/D-92: Bow at rest, under way, at a guided stop and at Sgr A*;
+## a zoom key (a developer preset on the bridge) takes over, and R returns to Bow.
 func test_default_mapping() -> void:
 	var demo: Node = await new_demo({"live_start": true})
 	var dir: CameraDirector = demo.director
 	demo._unhandled_input(key(KEY_R))
-	check("default mapping: at rest R gives Z2 Deck", dir.situation.is_empty() and dir.level == 2 and not demo.under_way())
+	check("default mapping: at rest R gives Bow", dir.view_id == "bow" and not demo.under_way())
 	var c: ShipConsoles = demo.consoles
 	c.go_to("navigation")
 	c.use("navigation", "open")
 	c.use("navigation", "commit")
 	demo.journey_tick()
-	check("default mapping: under way the view is Sky forward", demo.under_way() and dir.situation == "sky_forward")
+	check("default mapping: under way the view is Bow", demo.under_way() and dir.deck_view == "bow" and dir.walk_active())
 	for lv in [1, 2, 3]:
 		demo._unhandled_input(key(KEY_1 + lv - 1))
-		check("default mapping: under way, zoom key %d returns to Z%d" % [lv, lv], dir.situation.is_empty() and dir.level == lv)
+		check("default mapping: under way, zoom key %d gives the developer preset Z%d" % [lv, lv], dir.zoom_preset and dir.level == lv)
 		demo._unhandled_input(key(KEY_R))
-		check("default mapping: under way R returns to Sky forward (after Z%d)" % lv, dir.situation == "sky_forward")
+		check("default mapping: under way R returns to Bow (after Z%d)" % lv, dir.walk_active() and dir.deck_view == "bow")
 	demo.queue_free()
 	await process_frame
-	demo = await new_demo({"live_start": true})
-	dir = demo.director
-	demo.start_solar_departure()
-	for i in 1200:
-		demo._process(1.0 / 60.0)
-		if demo.solar_tour.attitude_hold:
-			demo.journey_tick()
-		if dir.situation == "sky_side":
-			break
-	check("default mapping: at a guided stop the view is Sky side", dir.situation == "sky_side" and not demo.under_way())
-	demo._unhandled_input(key(KEY_2))
-	check("default mapping: at a stop a zoom key returns to Z2", dir.situation.is_empty() and dir.level == 2)
-	demo.queue_free()
+	var menu: Node = await new_demo({"live_start": true, "from_menu": true, "settings_dir": "user://test_camera_director"})
+	menu._unhandled_input(key(KEY_1))
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	menu._unhandled_input(wheel)
+	check("OQ4: a menu launch (a player) has no zoom levels on the bridge", not menu.director.zoom_preset and menu.director.walk_active())
+	menu.queue_free()
 	await process_frame
 	demo = await new_demo({"live_start": true})
 	dir = demo.director
 	demo.start_black_hole()
-	check("default mapping: at Sgr A* the view is the hole view", dir.situation == "sky_hole")
+	check("default mapping: at Sgr A* the view is Bow", dir.deck_view == "bow" and dir.walk_active())
 	demo._unhandled_input(key(KEY_3))
-	check("default mapping: at Sgr A* a zoom key returns to Z3", dir.situation.is_empty() and dir.level == 3)
+	check("default mapping: at Sgr A* a zoom key gives the preset Z3", dir.zoom_preset and dir.level == 3)
 	demo._unhandled_input(key(KEY_R))
-	check("default mapping: at Sgr A* R returns to the hole view", dir.situation == "sky_hole")
+	check("default mapping: at Sgr A* R returns to Bow", dir.walk_active())
 	demo.leave_black_hole()
 	demo.queue_free()
 	await process_frame
@@ -901,13 +853,14 @@ func test_console_round_trip() -> void:
 			step(demo, 5.0) # a half-turn back at <= 90 deg/s takes up to ~3.5 s
 			check("%s: stepping back returns to Z%d (view %s, level %d, situation %s, mode %s, blend %s)" % [station, lv, dir.view_id, dir.level, dir.situation, demo.camera_mode, dir.blending()], dir.level == lv and dir.situation.is_empty() and demo.camera_mode == "player" and not demo.free_camera_on())
 	c.go_to("crew")
-	demo._unhandled_input(key(KEY_7))
+	demo._unhandled_input(key(KEY_9))
 	step(demo, 4.0)
-	check("crew: opens from Sky forward", dir.situation == "sky_forward" and c.use("crew", "open"))
+	var astern: Transform3D = demo.camera.global_transform
+	check("crew: opens from Astern", dir.deck_view == "astern" and c.use("crew", "open"))
 	step(demo, 3.0)
 	c.leave()
 	step(demo, 4.0)
-	check("crew: stepping back returns to Sky forward", dir.situation == "sky_forward" and dir.view_id == "sky_forward" and demo.camera_mode == "player")
+	check("crew: stepping back returns to Astern (yaw %.2f deg)" % rad_to_deg(CameraDirector.yaw_pitch(demo.camera.global_transform).x), dir.view_id == "astern" and demo.camera_mode == "player" and absf(wrapf(CameraDirector.yaw_pitch(demo.camera.global_transform).x - CameraDirector.yaw_pitch(astern).x, -PI, PI)) < 1e-4)
 	demo.set_free_camera(true)
 	check("the developer free camera is on (command-line launch)", demo.free_camera_on())
 	c.go_to("crew")
@@ -927,9 +880,9 @@ func test_constellations_held_i() -> void:
 	var dir: CameraDirector = demo.director
 	var ident = demo.star_identification
 	var counts := {}
-	for view in ["z2", "sky_forward", "z3"]:
-		if view == "sky_forward":
-			dir.sky("sky_forward")
+	for view in ["z2", "bow", "z3"]:
+		if view == "bow":
+			dir.walk("bow")
 		else:
 			dir.set_level(2 if view == "z2" else 3)
 		step(demo, 4.0)
@@ -942,6 +895,6 @@ func test_constellations_held_i() -> void:
 		ident.set_held(false)
 		ident.constellations.update_view()
 	check("held I: constellation guides drawn through the director's pose %s" % [counts], counts.values().any(func(n: int) -> bool: return n > 0) and not ident.constellations.visible)
-	check("held I: the guides change with the view (they follow the camera) %s" % [counts], counts["z2"] != counts["sky_forward"] or counts["sky_forward"] != counts["z3"])
+	check("held I: the guides change with the view (they follow the camera) %s" % [counts], counts["z2"] != counts["bow"] or counts["bow"] != counts["z3"])
 	demo.queue_free()
 	await process_frame

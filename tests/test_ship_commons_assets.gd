@@ -28,7 +28,7 @@ func _initialize() -> void:
 	check("coarse retains nonempty major silhouette",coarse_triangles.size()>2000 and coarse_triangles.size()<detailed_triangles.size())
 	if d.get("revision",1)>=3:
 		for p in d.sight_checks.roof_eye_ship_m:
-			var eye:=Vector3(p[0],p[2],-p[1]);check("coarse retains actual opaque terrace",_hit(coarse_triangles,eye,eye+Vector3.UP*20))
+			var eye:=ShipFrame.gltf_from_structure(p);check("coarse retains actual opaque terrace",_hit(coarse_triangles,eye,eye+Vector3.UP*20))
 	else:
 		for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:check("coarse retains opaque roof "+str(p),_hit(coarse_triangles,p,p+Vector3.UP*20))
 		check("coarse retains opaque back wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(26,58.7,-20)))

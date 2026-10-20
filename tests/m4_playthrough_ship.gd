@@ -216,7 +216,7 @@ func pole() -> void:
 	var heading := PackedFloat64Array([h.x, h.y, h.z])
 	var norm := sqrt(heading[0]*heading[0] + heading[1]*heading[1] + heading[2]*heading[2])
 	# Float64 until the Camera3D projection boundary. The scene's sky camera is
-	# oriented by the real ship camera; look straight up (+ship Z = travel).
+	# oriented by the real ship camera; look along the bow (+ship Z = travel, D-92).
 	var cam: Camera3D = demo.sky.camera
 	var direction := SkyFrame.to_world(Vector3(heading[0]/norm, heading[1]/norm, heading[2]/norm))
 	var pixel := cam.unproject_position(cam.global_position + direction * 100.0)
@@ -234,10 +234,10 @@ func until(s: Dictionary) -> void:
 	var c: ShipConsoles = demo.consoles
 	if not c.focused.is_empty(): c.leave()
 	step(0.65)
-	# A view choice, never a decision key; aim the captain's eye at the forward pole.
-	# Stay off the exact zenith, where Basis.looking_at's up vector is collinear.
+	# A view choice, never a decision key; aim the captain's eye at the forward pole (D-92: the
+	# bow, glTF -z, level).
 	demo.director.override() # R2-CAMERA: a measurement pose; tools take the camera through the director
-	demo.camera.follow(demo.avatar_pos, 89.99, 0.0, 0.0)
+	demo.camera.follow(demo.avatar_pos, -0.01, -PI * 0.5, 0.0)
 	for i in 2400: # 120 fake seconds, bounded even when the sim cannot arrive
 		var w: Dictionary = demo.journey_sim.world
 		if str(w.journey.state) == s.until or str(w.ship.phase) == s.until:

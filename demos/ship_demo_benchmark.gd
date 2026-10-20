@@ -45,8 +45,8 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	for view: Dictionary in manifest.get("player_views",[]):
 		if view.name=="courtyard":
 			var eye: Array=view.eye_ship_m;var target: Array=view.target_ship_m
-			courtyard_eye=Vector3(eye[0],eye[2],-eye[1])
-			courtyard_target=Vector3(target[0],target[2],-target[1])
+			courtyard_eye=ShipFrame.gltf_from_structure(eye)
+			courtyard_target=ShipFrame.gltf_from_structure(target)
 	var views:=["bridge","overlook","mid_lift","commons_courtyard","overview"]
 	if demo.solar_tour!=null:views.append("forward_dome")
 	for name in views:
@@ -59,7 +59,7 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			demo.camera.look_at(courtyard_target);demo._sync_observer()
 		elif name=="forward_dome":
 			demo.camera_mode="player";demo.camera.reference=false
-			demo.camera.follow(demo.avatar_pos,89.5,0.,0.);demo._sync_observer()
+			demo.camera.follow(demo.avatar_pos,0.,-PI*.5,0.);demo._sync_observer() # D-92: the bow
 		else:demo.set_preset(name)
 		demo.caption="BENCHMARK %s · warm-up" % name
 		for i in warmup:await demo.get_tree().process_frame

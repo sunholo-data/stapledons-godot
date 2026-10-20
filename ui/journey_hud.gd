@@ -5,7 +5,7 @@ extends PanelContainer
 ## side by side at the same size (D-12: neither is the real one).
 
 const CLOCK_SIZE := 28
-const BRAKE_NOTICE := "Braking. Up is still the way we are travelling."
+const BRAKE_NOTICE := "Braking. The bow is still the way we are travelling."
 ## [caption, field, format]: the clocks first (one row), then the readouts, one per line.
 const CLOCKS := [["Ship", "clock.tau", "%.4f yr"], ["Earth", "clock.t", "%.4f yr"]]
 const ROWS := [

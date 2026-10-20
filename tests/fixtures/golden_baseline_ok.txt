@@ -1,0 +1,364 @@
+ok    120 deg starboard at 0.99c               expected (576.14, 270.00)  rendered (576.20, 270.00)  error 0.063 px  apparent angle 14.000 deg
+ok    150 deg starboard at 0.999c              expected (544.83, 270.00)  rendered (544.79, 270.00)  error 0.038 px  apparent angle 9.543 deg
+ok    60 deg starboard at 0.9c -> 15.09 deg    expected (583.97, 270.00)  rendered (583.99, 270.00)  error 0.013 px  apparent angle 15.090 deg
+ok    90 deg starboard at 0.9c -> 25.84 deg    expected (666.75, 270.00)  rendered (666.77, 270.00)  error 0.011 px  apparent angle 25.842 deg
+ok    CMB golden: PSF disc, pixel at theta' = 6.30 arcmin (sigma 6.2 arcmin, 0.70 px) renders 5316709.554202474 cd/m^2, CPU 5325180.698981167 (ratio 0.9984, limit 1%)
+ok    CMB golden: beta = 0, looking ahead: frame peak 0.0000 at k = 1e+30 (want exactly 0), CPU centre 0
+ok    CMB golden: gamma 40, looking ahead (no ring): frame peak 0.0000 at k = 1000000 (want exactly 0), CPU centre 3.197062059367394e-33
+ok    CMB golden: gamma 50, looking ahead (no ring): frame peak 0.0000 at k = 1000000 (want exactly 0), CPU centre 1.7519451343125114e-25
+ok    CMB golden: gamma 60, looking ahead (no ring): frame peak 0.0000 at k = 1000000 (want exactly 0), CPU centre 3.623993790739064e-20
+ok    CMB golden: sharp disc theta' = 0.016/gamma (0.08 arcmin) renders 197722105.7705793 cd/m^2, CPU 198082346.70658332 (ratio 0.9982, limit 1%)
+ok    CMB golden: sharp disc theta' = 1.017/gamma (4.94 arcmin) renders 231723.06271051866 cd/m^2, CPU 233019.79299173816 (ratio 0.9944, limit 1%)
+ok    CMB golden: sharp disc theta' = 2.023/gamma (9.83 arcmin) renders 0.0015952837247273299 cd/m^2, CPU 0.0016039318086541123 (ratio 0.9946, limit 1%)
+ok    CMB golden: theta' = 45 deg at gamma 707: centre 9x9 peak 0.0000 at k = 1e+30 (want exactly 0), CPU centre 0
+ok    CMB golden: theta' = 90 deg at gamma 707: frame peak 0.0000 at k = 1e+30 (want exactly 0), CPU centre 0
+ok    G-ISM-1 a flash at 45 deg lights its own wall point (true) and not the pole (true)
+ok    G-ISM-1 flash peak/decay t = 0.0 tau: unit-gain pixel 1.0556640625, CPU E(t) 1.0561676206489823 W/m^2 (limit 1 %)
+ok    G-ISM-1 flash peak/decay t = 1.0 tau: unit-gain pixel 0.388427734375, CPU E(t) 0.3885423540677195 W/m^2 (limit 1 %)
+ok    G-ISM-1 flash peak/decay t = 3.0 tau: unit-gain pixel 0.052581787109375, CPU E(t) 0.05258348953717505 W/m^2 (limit 1 %)
+ok    G-ISM-1 outside the spot (3 r_s): pixel 0.0 (want 0)
+ok    G-ISM-2 colour   1000 K: shader (4.0273, 0.1997, 0.0000) vs CPU (4.0301, 0.1998, 0.0000), worst 0.068 % (limit 1 %)
+ok    G-ISM-2 colour   2000 K: shader (2.4766, 0.6592, 0.0190) vs CPU (2.4775, 0.6596, 0.0190), worst 0.037 % (limit 1 %)
+ok    G-ISM-2 colour   3000 K: shader (1.7539, 0.8486, 0.2710) vs CPU (1.7546, 0.8491, 0.2711), worst 0.041 % (limit 1 %)
+ok    G-ISM-2 colour   4393 K: shader (1.3154, 0.9434, 0.6270) vs CPU (1.3164, 0.9435, 0.6273), worst 0.071 % (limit 1 %)
+ok    G-ISM-2 colour   6600 K: shader (1.0332, 0.9844, 1.0498) vs CPU (1.0339, 0.9848, 1.0501), worst 0.070 % (limit 1 %)
+ok    G-ISM-2 colour  10000 K: shader (0.8726, 0.9941, 1.4307) vs CPU (0.8730, 0.9943, 1.4307), worst 0.029 % (limit 1 %)
+ok    G-ISM-2 colour  20000 K: shader (0.7505, 0.9888, 1.8447) vs CPU (0.7509, 0.9888, 1.8454), worst 0.034 % (limit 1 %)
+ok    G-ISM-2 colour  40000 K: shader (0.7041, 0.9819, 2.0469) vs CPU (0.7043, 0.9823, 2.0473), worst 0.019 % (limit 1 %)
+ok    G-ISM-3 glitter count: 29 of 29 CPU glitter sprites lit their wall points (seed 424242, rate 600 /s, 0.05 s)
+ok    G-ISM-4 bright and dim overlap: 1.030273 (want 1.030870, limit1%)
+ok    G-ISM-4 isolated sprite63 and behind-camera culling
+ok    G-ISM-4 overlapping spots add E: 3.00000 (want 3)
+ok    G-ISM-4 projected spot observer (0.0, 0.0, 0.0): 1086 rays, 35 lit, 0 mismatches
+ok    G-ISM-4 projected spot observer (0.0, 0.0, 99.9): 1089 rays, 1089 lit, 0 mismatches
+ok    G-ISM-4 projected spot observer (80.0, 5.0, -10.0): 1089 rays, 14 lit, 0 mismatches
+ok    G-ISM-5 integrated radiance circle 0.000079269 surface 0.000078554 area/R2 0.000078540 (limit1.5%)
+ok    G-ISM-5 surface dim overlaps preserved 1.030273 vs 1.030870
+ok    G-ISM-5 surface wall observer (0.0, 0.0, 0.0): 8550 rays, 175 lit, 0 mismatches
+ok    G-ISM-5 surface wall observer (0.0, 0.0, 0.0): 8557 rays, 181 lit, 0 mismatches
+ok    G-ISM-5 surface wall observer (40.0, 5.0, -10.0): 8545 rays, 198 lit, 0 mismatches
+ok    G-M4-1 composite pan +0 m beta 0.00 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.00 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.00 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.00 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.00 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.00 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.50 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.50 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.50 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.50 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.50 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.50 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.90 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.90 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.90 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.90 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.90 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.90 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.99 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.131 px
+ok    G-M4-1 composite pan +0 m beta 0.99 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.99 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.99 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +0 m beta 0.99 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +0 m beta 0.99 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.00 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.00 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.00 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.00 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.00 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.00 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.50 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.50 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.50 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.50 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.50 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.50 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.90 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.90 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.90 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.90 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.90 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.90 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.99 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.131 px
+ok    G-M4-1 composite pan +5 m beta 0.99 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.99 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.99 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan +5 m beta 0.99 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan +5 m beta 0.99 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.00 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.00 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.00 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.00 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.00 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.00 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.50 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.50 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.50 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.50 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.50 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.50 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.90 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.90 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.90 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.90 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.90 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.90 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.99 expected (211.20, 108.00) rendered (211.07, 108.00) error 0.131 px
+ok    G-M4-1 composite pan -5 m beta 0.99 expected (211.20, 48.60) rendered (211.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.99 expected (403.20, 108.00) rendered (403.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.99 expected (403.20, 48.60) rendered (403.05, 48.54) error 0.159 px
+ok    G-M4-1 composite pan -5 m beta 0.99 expected (595.20, 108.00) rendered (595.07, 108.00) error 0.132 px
+ok    G-M4-1 composite pan -5 m beta 0.99 expected (595.20, 48.60) rendered (595.05, 48.54) error 0.159 px
+ok    G-M4-1 composite position: 72 cases (6 directions x 4 speeds x 3 pans), worst 0.159 px (limit 0.75)
+ok    G-M4-2 one tonemap: 439 sky-only pixels (305 lit), worst |final - SubViewport| 0.0000 (limit 1/255 = 0.0039)
+ok    G-M4-3 forward pole heading (0.716, -0.698, -0.012) boosting beta 0.50: pole (480.00, 24.55) rendered (480.00, 24.64) error 0.085 px
+ok    G-M4-3 forward pole heading (0.716, -0.698, -0.012) braking beta 0.50: pole (480.00, 24.55) rendered (480.00, 24.64) error 0.085 px
+ok    G-M4-3 forward pole heading (0.716, -0.698, -0.012) cruising beta 0.99: pole (480.00, 24.55) rendered (480.00, 24.64) error 0.085 px
+ok    G-M4-3 forward pole heading (1.000, 0.000, 0.000) boosting beta 0.50: pole (480.00, 24.55) rendered (480.00, 24.64) error 0.085 px
+ok    G-M4-3 forward pole heading (1.000, 0.000, 0.000) braking beta 0.50: pole (480.00, 24.55) rendered (480.00, 24.64) error 0.085 px
+ok    G-M4-3 forward pole heading (1.000, 0.000, 0.000) cruising beta 0.99: pole (480.00, 24.55) rendered (480.00, 24.64) error 0.085 px
+ok    G-M4-4 glow (c) bridge camera off-centre, cap: 6 pixels vs ForwardGlow.wall_cos, worst 0.0894 % (limit 1 %)
+ok    G-M4-4 glow (d) photometric 0.999c: pixel G 0.0035648345947265625 = E/pi x 7.648239344380625 lm/W (2482 K) x k (EV -4.40) x colour G 0.7735 -> 0.0035665038512419423 (limit 1 %)
+ok    G-M4-4 glow (d) photometric cap: pixel G 1.2978515625 = E/pi x 43.68067220428877 lm/W (14114 K) x k (EV -0.01) x colour G 0.9926 -> 1.298806853651427 (limit 1 %)
+ok    G-M4-4 glow 0.99c theta  0 deg: unit-gain target 9.626150131225586e-05 W/m^2, CPU profile 9.628776871706524e-05 (limit 1 %; format 14)
+ok    G-M4-4 glow 0.99c theta 45 deg: unit-gain target 6.812810897827148e-05 W/m^2, CPU profile 6.808573420515876e-05 (limit 1 %; format 14)
+ok    G-M4-4 glow 0.99c theta 80 deg: unit-gain target 1.6808509826660156e-05 W/m^2, CPU profile 1.672019556933325e-05 (limit 1 %; format 14)
+ok    G-M4-4 glow cap theta  0 deg: unit-gain target 1.125 W/m^2, CPU profile 1.1250843031053142 (limit 1 %; format 14)
+ok    G-M4-4 glow rest theta  0 deg: unit-gain target 0 W/m^2, CPU profile 0 (limit 1 %; format 14)
+ok    G-M4-5 plate glow: deck pixel (0.6308, 0.6308, 0.6308, 1.0) -> (0.7605, 0.7913, 0.8963, 1.0), CPU base x (1 + glow_rgb x 1.218) = (0.7574, 0.7884, 0.8962), worst 0.41 % (limit 2 %)
+ok    G-M4-5 plate projection pan (+0, +0) m: 8 open deck points, worst 2.19/255 (limit 4/255)
+ok    G-M4-5 plate projection pan (+0, +3) m: 8 open deck points, worst 2.01/255 (limit 4/255)
+ok    G-M4-5 plate projection pan (+0, -3) m: 8 open deck points, worst 1.74/255 (limit 4/255)
+ok    G-M4-5 plate projection pan (+6, +0) m: 8 open deck points, worst 1.10/255 (limit 4/255)
+ok    G-M4-5 plate projection pan (-6, +0) m: 8 open deck points, worst 2.73/255 (limit 4/255)
+ok    G-M4-6 colour    800 K: shader rgb (4.5391, 0.0486, 0.0000) vs CPU (4.5388, 0.0485, 0.0000), worst 0.005 % of max; efficacy shader/CPU 1.0001 (1.1054326904538627e-06 lm/W) (limit 1 %)
+ok    G-M4-6 colour   1000 K: shader rgb (4.0273, 0.1997, 0.0000) vs CPU (4.0301, 0.1998, 0.0000), worst 0.068 % of max; efficacy shader/CPU 0.9993 (0.00015021523575704814 lm/W) (limit 1 %)
+ok    G-M4-6 colour   1358 K: shader rgb (3.2637, 0.4275, 0.0000) vs CPU (3.2647, 0.4275, 0.0000), worst 0.030 % of max; efficacy shader/CPU 0.9998 (0.02330217214380614 lm/W) (limit 1 %)
+ok    G-M4-6 colour   2000 K: shader rgb (2.4766, 0.6592, 0.0190) vs CPU (2.4775, 0.6596, 0.0190), worst 0.037 % of max; efficacy shader/CPU 0.9995 (1.6107401084845405 lm/W) (limit 1 %)
+ok    G-M4-6 colour   2482 K: shader rgb (2.0547, 0.7734, 0.1337) vs CPU (2.0555, 0.7735, 0.1337), worst 0.039 % of max; efficacy shader/CPU 0.9997 (7.650152552714795 lm/W) (limit 1 %)
+ok    G-M4-6 colour   4000 K: shader rgb (1.4053, 0.9263, 0.5322) vs CPU (1.4059, 0.9264, 0.5327), worst 0.046 % of max; efficacy shader/CPU 0.9997 (54.767814988126126 lm/W) (limit 1 %)
+ok    G-M4-6 colour   6600 K: shader rgb (1.0332, 0.9844, 1.0498) vs CPU (1.0339, 0.9848, 1.0501), worst 0.070 % of max; efficacy shader/CPU 0.9995 (95.45515813923306 lm/W) (limit 1 %)
+ok    G-M4-6 colour  10000 K: shader rgb (0.8726, 0.9941, 1.4307) vs CPU (0.8730, 0.9943, 1.4307), worst 0.029 % of max; efficacy shader/CPU 0.9998 (73.4657896755246 lm/W) (limit 1 %)
+ok    G-M4-6 colour  14114 K: shader rgb (0.7969, 0.9922, 1.6699) vs CPU (0.7972, 0.9926, 1.6709), worst 0.057 % of max; efficacy shader/CPU 0.9996 (43.68080192687725 lm/W) (limit 1 %)
+ok    G-M4-6 colour  30000 K: shader rgb (0.7183, 0.9844, 1.9814) vs CPU (0.7187, 0.9846, 1.9815), worst 0.024 % of max; efficacy shader/CPU 0.9997 (8.311793096016315 lm/W) (limit 1 %)
+ok    G-M5-4 Jupiter at opposition (normalised texture, mean of 4 rotations, 200 px across): integrated 0.026516811082670386 lux, discIlluminance 0.02640969227917484 (ratio 1.0041, limit 2%); centroid (480.87, 271.17) expected (480.00, 270.00) error 1.455 px; extent 200.00 x 200.00 px, pinhole 200.00 px
+ok    G-M5-4 Jupiter at opposition (uniform p_V, 200 px across): integrated 0.02646392993300188 lux, discIlluminance 0.02640969227917484 (ratio 1.0021, limit 2%); centroid (480.00, 270.00) expected (480.00, 270.00) error 0.001 px; extent 200.00 x 200.00 px, pinhole 200.00 px
+ok    G-M5-6 point/disc handoff: flux / e_v_lux at 1.9 px (point) 1.0010, 2.1 px (disc) 1.0013, agree within 0.03% (limit 2%)
+ok    GR1 shadow at r = 10.0 r_s (fov 70.0): radius 98.065 px from 30212 black pixels, Synge f tan alpha = 98.066 px (plan 98.066), error 0.001 px (limit 0.5)
+ok    GR10 lens_fwd mirror at r = 10.0: 41188 pixels toward and away, worst |delta_GPU - delta_CPU| / (0.00002 (|delta| + 0.00000001 rad)) = 0.128 (limit 1) at psi - alpha 2.07279372215271, delta GPU 0.04724501445889 CPU 0.04724513541392
+ok    GR10 lens_fwd mirror at r = 2.01: 24100 pixels toward and away, worst |delta_GPU - delta_CPU| / (0.00002 (|delta| + 0.00000001 rad)) = 0.232 (limit 1) at psi - alpha 1.92690753936768, delta GPU 0.02301601693034 CPU 0.02301612364763
+ok    GR10 lens_fwd mirror at r = 2.05: 25280 pixels toward and away, worst |delta_GPU - delta_CPU| / (0.00002 (|delta| + 0.00000001 rad)) = 0.335 (limit 1) at psi - alpha 1.9636538028717, delta GPU 0.01660101488233 CPU 0.01660112625769
+ok    GR10 lens_fwd mirror at r = 300000.0: 41472 pixels toward and away, worst |delta_GPU - delta_CPU| / (0.00002 (|delta| + 0.00000001 rad)) = 0.055 (limit 1) at psi - alpha 3.09979176521301, delta GPU 0.0000000696643 CPU 0.00000006966421
+ok    GR10 lens_fwd mirror at r = 990000.0: 41472 pixels toward and away, worst |delta_GPU - delta_CPU| / (0.00002 (|delta| + 0.00000001 rad)) = 0.084 (limit 1) at psi - alpha 3.12289118766785, delta GPU 0.00000000944591 CPU 0.00000000944587
+ok    GR11 lens_inv mirror at r = 10.0 (lens_inv): 960 values of F in (-pi, pi), worst |psi_GPU - psi_CPU| / (0.00002 (psi + 0.00000001 rad)) = 0.009 (limit 1) at F 2.12384748458862, psi GPU 2.18064570426941 CPU 2.18064608386308
+ok    GR11 lens_inv mirror at r = 2.01 (lens_inv): 960 values of F in (-pi, pi), worst |psi_GPU - psi_CPU| / (0.00002 (psi + 0.00000001 rad)) = 0.005 (limit 1) at F 2.62126612663269, psi GPU 2.77486658096313 CPU 2.77486632583265
+ok    GR11 lens_inv mirror at r = 2000000.0 (weak branch): 960 values of F in (-pi, pi), worst |psi_GPU - psi_CPU| / (0.00002 (psi + 0.00000001 rad)) = 0.005 (limit 1) at F -0.53341639041901, psi GPU 0.00000187470118 CPU 0.00000187470099
+ok    GR11 lens_inv mirror at r = 990000.0 (lens_inv): 960 values of F in (-pi, pi), worst |psi_GPU - psi_CPU| / (0.00002 (psi + 0.00000001 rad)) = 0.020 (limit 1) at F -0.14071726799011, psi GPU 0.00001588143641 CPU 0.00001588144292
+ok    GR12 mutant 1, x-linear column weight (rule 2): GR10 at r = 10.0 reads 90.383 of its limit (must exceed 1)
+ok    GR12 mutant 2, repeated first row, no linear ghost (rule 3): GR10 at r = 2.01 reads 2448.015 of its limit (must exceed 1)
+ok    GR12 mutant 3, repeated last row, no linear ghost (rule 3): GR10 at r = 990000.0 reads 165.700 of its limit (must exceed 1)
+ok    GR2 shadow at r = 5.0 r_s (fov 70.0): radius 202.408 px from 128708 black pixels, Synge f tan alpha = 202.398 px (plan 202.398), error 0.010 px (limit 0.5)
+ok    GR3 shadow at r = 3.0 r_s (fov 110.0): radius 189.050 px from 112280 black pixels, Synge f tan alpha = 189.056 px (plan 189.056), error 0.006 px (limit 0.5)
+ok    GR4 orbit mask r = 5, beta_local 0.35355 (off-axis): 121044 GPU / 121044 CPU shadow pixels, 0 mismatches in the 1-px edge band, 0 outside it (must be 0), centroid offset 0.000 px (limit 0.5)
+ok    GR4 orbit mask r = 5, beta_local 0.35355 (rolled): 117577 GPU / 117577 CPU shadow pixels, 0 mismatches in the 1-px edge band, 0 outside it (must be 0), centroid offset 0.000 px (limit 0.5)
+ok    GR4 orbit mask r = 5, beta_local 0.35355 (yaw/pitch): 112678 GPU / 112678 CPU shadow pixels, 0 mismatches in the 1-px edge band, 0 outside it (must be 0), centroid offset 0.000 px (limit 0.5)
+ok    GR5 two images at r = 10.0, beta 20.0 deg: order 0 psi 39.8377 deg mu 1.1188204630459446: CPU (488.10, 274.05) GPU (488.02, 274.01) error 0.083 px; order 1 psi 23.5431 deg mu 0.27645119083246655: CPU (471.90, 274.05) GPU (471.98, 274.01) error 0.083 px; limit 0.75 px
+ok    GR5 two images at r = 3.0, beta 120.0 deg: order 0 psi 131.8011 deg mu 0.6674811144945262: CPU (488.10, 274.05) GPU (488.02, 274.01) error 0.083 px; order 1 psi 46.8612 deg mu 0.028298746594657958: CPU (471.90, 274.05) GPU (471.98, 274.01) error 0.083 px; limit 0.75 px
+ok    GR5 two images at r = 5.0, beta 60.0 deg: order 0 psi 78.1522 deg mu 0.8210347011182761: CPU (488.10, 274.05) GPU (488.02, 274.01) error 0.083 px; order 1 psi 32.6608 deg mu 0.06205711921362398: CPU (471.90, 274.05) GPU (471.98, 274.01) error 0.083 px; limit 0.75 px
+ok    GR6 Einstein ring at r = 10.0 r_s: flux-weighted radius 221.091 px (annulus +-15 px), f tan psi_E = 221.088 px (plan 221.088), error 0.003 px (limit 0.5); ring-star path taken, brightest of 36 azimuth bins 1.016 x the mean (limit 1.5)
+ok    GR6 Einstein ring at r = 100.0 r_s: flux-weighted radius 57.773 px (annulus +-15 px), f tan psi_E = 57.769 px (plan 57.769), error 0.004 px (limit 0.5); ring-star path taken, brightest of 36 azimuth bins 1.026 x the mean (limit 1.5)
+ok    GR6 Einstein ring at r = 1000.0 r_s: flux-weighted radius 17.572 px (annulus +-15 px), f tan psi_E = 17.539 px (plan 17.539), error 0.032 px (limit 0.5); ring-star path taken, brightest of 36 azimuth bins 1.187 x the mean (limit 1.5)
+ok    GR7 inside the shadow at r = 5 (bright sky x20, stars behind and astern): peak luminance 0.00000 (limit 0.01; sky outside peaks at 87.80)
+ok    GR8 colour at r = 3 (D_g = 1.22474): rgb chromaticity (0.3246, 0.3186, 0.3568) vs rgb(6981 K) (0.3246, 0.3186, 0.3569), worst 0.0001 (limit 0.01; unshifted 5700 K would be 0.0563 off)
+ok    GR9 weak-field hand-off at r = 2000000.0 (weakDeflectionFinite), beta 0.2 deg, fov 1 deg: order 0 psi 0.2153 deg mu 1.0050449010628495: CPU (489.28, 274.64) GPU (489.13, 274.70) error 0.158 px; order 1 psi 0.0153 deg mu 0.005045401042363555: CPU (470.72, 274.64) GPU (470.87, 274.70) error 0.158 px; limit 0.75 px
+ok    GR9 weak-field hand-off at r = 900000.0 (lens tables), beta 0.2 deg, fov 1 deg: order 0 psi 0.2350 deg mu 0.9991541855883794: CPU (489.28, 274.64) GPU (489.13, 274.70) error 0.158 px; order 1 psi 0.0351 deg mu 0.026199593103648982: CPU (470.72, 274.64) GPU (470.87, 274.70) error 0.158 px; limit 0.75 px
+ok    astern at 0.5c stays astern, not drawn   peak luminance 0.0000 (must be ~0)
+ok    at rest, 20 deg starboard                expected (620.35, 270.00)  rendered (620.43, 270.00)  error 0.086 px  apparent angle 20.000 deg
+ok    background colour D 0.3 (T 4972 K -> 1492 K)  xy rendered (0.5620, 0.3920) want (0.5621, 0.3919)  dxy 0.0001
+ok    background colour D 1.0 (T 4972 K -> 4972 K)  xy rendered (0.3462, 0.3528) want (0.3457, 0.3525)  dxy 0.0006
+ok    background colour D 3.0 (T 4972 K -> 14915 K)  xy rendered (0.2644, 0.2679) want (0.2640, 0.2675)  dxy 0.0006
+ok    background marker beta 0.00 view    0 deg pitch   0 roll   0  expected (547.52, 228.41)  rendered (547.51, 228.42)  error 0.016 px
+ok    background marker beta 0.00 view  -40 deg pitch  20 roll  50  expected (548.38, 228.68)  rendered (548.44, 228.59)  error 0.108 px
+ok    background marker beta 0.00 view  -90 deg pitch   0 roll   0  expected (547.52, 228.41)  rendered (547.51, 228.42)  error 0.016 px
+ok    background marker beta 0.00 view  180 deg pitch   0 roll   0  expected (547.52, 228.41)  rendered (547.51, 228.42)  error 0.016 px
+ok    background marker beta 0.50 view    0 deg pitch   0 roll   0  expected (547.94, 228.58)  rendered (548.00, 228.50)  error 0.103 px
+ok    background marker beta 0.50 view  -40 deg pitch  20 roll  50  expected (547.86, 229.07)  rendered (547.81, 228.87)  error 0.210 px
+ok    background marker beta 0.50 view  -90 deg pitch   0 roll   0  expected (547.89, 228.38)  rendered (547.84, 228.46)  error 0.086 px
+ok    background marker beta 0.50 view  180 deg pitch   0 roll   0  expected (547.27, 229.52)  rendered (547.11, 229.50)  error 0.160 px
+ok    background marker beta 0.90 view    0 deg pitch   0 roll   0  expected (548.06, 228.87)  rendered (547.50, 228.50)  error 0.673 px
+ok    background marker beta 0.90 view  -40 deg pitch  20 roll  50  expected (548.15, 229.09)  rendered (548.01, 229.01)  error 0.160 px
+ok    background marker beta 0.90 view  -90 deg pitch   0 roll   0  expected (547.95, 230.00)  rendered (547.93, 230.04)  error 0.048 px
+ok    background marker beta 0.90 view  180 deg pitch   0 roll   0  expected (550.37, 230.89)  rendered (550.36, 230.86)  error 0.034 px
+ok    background marker beta 0.99 view    0 deg pitch   0 roll   0  expected (547.91, 228.81)  rendered (547.94, 228.50)  error 0.307 px
+ok    background marker beta 0.99 view  -40 deg pitch  20 roll  50  expected (547.88, 229.75)  rendered (547.91, 229.79)  error 0.050 px
+ok    background marker beta 0.99 view  -90 deg pitch   0 roll   0  expected (548.15, 224.82)  rendered (547.43, 224.85)  error 0.724 px
+ok    background marker beta 0.99 view  180 deg pitch   0 roll   0  expected (556.04, 227.75)  rendered (556.62, 227.44)  error 0.662 px
+ok    background tint (off-locus texel) D 1.0  xy rendered (0.4605, 0.2711) want (0.4604, 0.2712)  dxy 0.0002
+ok    background tint (off-locus texel) D 3.0  xy rendered (0.2893, 0.1685) want (0.2891, 0.1684)  dxy 0.0002
+ok    behind camera at rest must not render    peak luminance 0.0000 (must be ~0)
+ok    display floor: linear 0.0041 shows 7/255 (want >= 7), 0.85x shows 5/255 (want < 7), AgX + glow
+ok    exposure golden (sky): calibrated dark patch renders 4.30703281934574e-05 cd/m^2, want L(23.5 mag/arcsec^2) = 4.3336144066956186e-05 (ratio 0.9939, limit 1%)
+ok    exposure golden (star): +0 stops at EV -4.401, splat sum 0.6666, want E k / Omega_px = 0.6698 (ratio 0.9953, limit 1%)
+ok    exposure golden (star): +1 stops at EV -5.401, splat sum 1.3400, want E k / Omega_px = 1.3395 (ratio 1.0004, limit 1%)
+ok    exposure golden (star): +2 stops at EV -6.401, splat sum 2.6798, want E k / Omega_px = 2.6790 (ratio 1.0003, limit 1%)
+ok    exposure golden (star): +4 stops at EV -8.401, splat sum 2.6816, want E k / Omega_px = 2.6917 (ratio 0.9962, limit 1%)
+ok    exposure golden (star): +6 stops at EV -10.401, splat sum 2.7076, want E k / Omega_px = 2.7045 (ratio 1.0011, limit 1%)
+ok    faint-star cull: peak 2 x cull_peak (0.0001) renders max channel 0.0/255 (must be 0); 80 x renders 0.0524 (must be > 0)
+ok    hot white dwarf 60 kK at D 44.71 (seen 2682611 K): unit star sum 1.021, luminance / unit star 1.0022 (want 1 +- 0.02)  xy (0.2400, 0.2348) want (0.2402, 0.2341) dxy 0.0007
+ok    limiting magnitude V_lim 6.8 measured in the rendered frame (960x540, EV -4.40 dark-adapted, PSF 6.2 arcmin = 0.70 px, sky 1/255 = linear 0.0007629393914195396; ladder V 5.0-8.5 step 0.1, visible = peak >= 7 levels above sky; levels above sky [33, 31, 29, 27, 25, 23, 21, 20, 18, 17, 15, 14, 13, 12, 11, 9, 8, 8, 7, 6, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1]); Crumey model F = 2: 6.897; AC8 6.6 <= V_lim <= 7.4
+ok    loading jump 100%: 90 deg at 0.99999c -> 0.256 deg expected (481.72, 270.00)  rendered (481.56, 270.00)  error 0.165 px  apparent angle 0.256 deg
+ok    loading jump 50%: 150 deg starboard at 0.9955c expected (620.47, 270.00)  rendered (620.49, 270.00)  error 0.013 px  apparent angle 20.017 deg
+ok    looking astern at 0.99c: 50,000 K star at 178.5 deg is dim red expected (332.56, 270.00)  rendered (332.51, 270.00)  error 0.042 px  apparent angle 159.074 deg
+ok    looking astern at 0.99c: K star 178.5 deg is redshifted to ~330 K, invisible peak luminance 0.0000 (must be ~0)
+ok    off-axis along v, rolled +30          beta 0.00 aim (+12,  +0) deg  D  1.0000  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (+12, +20) deg  D  1.0000  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (+12, -20) deg  D  1.0000  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (+36,  +0) deg  D  1.0000  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (+36, +20) deg  D  1.0000  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (+36, -20) deg  D  1.0000  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (-12,  +0) deg  D  1.0000  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (-12, +20) deg  D  1.0000  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (-12, -20) deg  D  1.0000  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (-36,  +0) deg  D  1.0000  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (-36, +20) deg  D  1.0000  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.00 aim (-36, -20) deg  D  1.0000  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (+12,  +0) deg  D  1.6950  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (+12, +20) deg  D  1.6060  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (+12, -20) deg  D  1.6060  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (+36,  +0) deg  D  1.4543  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (+36, +20) deg  D  1.4152  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (+36, -20) deg  D  1.4152  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (-12,  +0) deg  D  1.6950  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (-12, +20) deg  D  1.6060  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (-12, -20) deg  D  1.6060  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (-36,  +0) deg  D  1.4543  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (-36, +20) deg  D  1.4152  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.50 aim (-36, -20) deg  D  1.4152  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (+12,  +0) deg  D  3.6425  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (+12, +20) deg  D  2.5542  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (+12, -20) deg  D  2.5542  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (+36,  +0) deg  D  1.6032  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (+36, +20) deg  D  1.4456  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (+36, -20) deg  D  1.4456  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (-12,  +0) deg  D  3.6425  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (-12, +20) deg  D  2.5542  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (-12, -20) deg  D  2.5542  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (-36,  +0) deg  D  1.6032  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (-36, +20) deg  D  1.4456  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.90 aim (-36, -20) deg  D  1.4456  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (+12,  +0) deg  D  4.4594  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (+12, +20) deg  D  1.6081  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (+12, -20) deg  D  1.6081  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (+36,  +0) deg  D  0.7086  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.102 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (+36, +20) deg  D  0.6089  expected (760.16, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (+36, -20) deg  D  0.6089  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (-12,  +0) deg  D  4.4594  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (-12, +20) deg  D  1.6081  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (-12, -20) deg  D  1.6081  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (-36,  +0) deg  D  0.7086  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (-36, +20) deg  D  0.6089  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis along v, rolled +30          beta 0.99 aim (-36, -20) deg  D  0.6089  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (+12,  +0) deg  D  1.0000  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (+12, +20) deg  D  1.0000  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (+12, -20) deg  D  1.0000  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (+36,  +0) deg  D  1.0000  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (+36, +20) deg  D  1.0000  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (+36, -20) deg  D  1.0000  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (-12,  +0) deg  D  1.0000  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (-12, +20) deg  D  1.0000  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (-12, -20) deg  D  1.0000  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (-36,  +0) deg  D  1.0000  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (-36, +20) deg  D  1.0000  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.00 aim (-36, -20) deg  D  1.0000  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (+12,  +0) deg  D  0.7245  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (+12, +20) deg  D  0.7727  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (+12, -20) deg  D  0.6943  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (+36,  +0) deg  D  0.8594  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (+36, +20) deg  D  0.9077  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (+36, -20) deg  D  0.8165  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (-12,  +0) deg  D  0.6419  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (-12, +20) deg  D  0.6842  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (-12, -20) deg  D  0.6220  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (-36,  +0) deg  D  0.6003  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (-36, +20) deg  D  0.6315  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.50 aim (-36, -20) deg  D  0.5860  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (+12,  +0) deg  D  0.3225  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (+12, +20) deg  D  0.3581  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (+12, -20) deg  D  0.3016  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (+36,  +0) deg  D  0.4299  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.102 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (+36, +20) deg  D  0.4751  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.061 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (+36, -20) deg  D  0.3929  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (-12,  +0) deg  D  0.2677  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (-12, +20) deg  D  0.2949  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (-12, -20) deg  D  0.2555  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (-36,  +0) deg  D  0.2426  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (-36, +20) deg  D  0.2613  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.90 aim (-36, -20) deg  D  0.2343  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (+12,  +0) deg  D  0.1017  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.023 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (+12, +20) deg  D  0.1138  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (+12, -20) deg  D  0.0947  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (+36,  +0) deg  D  0.1389  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.102 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (+36, +20) deg  D  0.1552  expected (760.16, 129.65)  rendered (760.09, 129.64)  error 0.064 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (+36, -20) deg  D  0.1259  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.059 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (-12,  +0) deg  D  0.0834  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.024 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (-12, +20) deg  D  0.0924  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.090 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (-12, -20) deg  D  0.0794  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (-36,  +0) deg  D  0.0752  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.101 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (-36, +20) deg  D  0.0813  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.060 px
+ok    off-axis off-axis yaw 70 pitch -25    beta 0.99 aim (-36, -20) deg  D  0.0725  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (+12,  +0) deg  D  1.0000  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (+12, +20) deg  D  1.0000  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (+12, -20) deg  D  1.0000  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (+36,  +0) deg  D  1.0000  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (+36, +20) deg  D  1.0000  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (+36, -20) deg  D  1.0000  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (-12,  +0) deg  D  1.0000  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (-12, +20) deg  D  1.0000  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (-12, -20) deg  D  1.0000  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (-36,  +0) deg  D  1.0000  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (-36, +20) deg  D  1.0000  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.00 aim (-36, -20) deg  D  1.0000  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (+12,  +0) deg  D  1.0787  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (+12, +20) deg  D  0.9492  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (+12, -20) deg  D  1.2093  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (+36,  +0) deg  D  0.8984  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (+36, +20) deg  D  0.8263  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (+36, -20) deg  D  0.9810  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (-12,  +0) deg  D  1.2815  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (-12, +20) deg  D  1.0925  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (-12, -20) deg  D  1.4520  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (-36,  +0) deg  D  1.4319  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (-36, +20) deg  D  1.2309  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.50 aim (-36, -20) deg  D  1.6090  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (+12,  +0) deg  D  0.6757  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (+12, +20) deg  D  0.5175  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (+12, -20) deg  D  0.8914  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (+36,  +0) deg  D  0.4661  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (+36, +20) deg  D  0.4012  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (+36, -20) deg  D  0.5525  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (-12,  +0) deg  D  1.0467  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (-12, +20) deg  D  0.6953  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (-12, -20) deg  D  1.5933  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (-36,  +0) deg  D  1.5100  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (-36, +20) deg  D  0.9345  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.90 aim (-36, -20) deg  D  2.5815  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (+12,  +0) deg  D  0.2314  expected (561.96, 270.00)  rendered (561.99, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (+12, +20) deg  D  0.1707  expected (561.96, 129.65)  rendered (561.99, 129.57)  error 0.092 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (+12, -20) deg  D  0.3221  expected (561.96, 410.35)  rendered (561.99, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (+36,  +0) deg  D  0.1519  expected (760.15, 270.00)  rendered (760.05, 270.00)  error 0.101 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (+36, +20) deg  D  0.1288  expected (760.15, 129.65)  rendered (760.09, 129.64)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (+36, -20) deg  D  0.1837  expected (760.15, 410.35)  rendered (760.09, 410.36)  error 0.062 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (-12,  +0) deg  D  0.3939  expected (398.04, 270.00)  rendered (398.01, 270.00)  error 0.026 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (-12, +20) deg  D  0.2393  expected (398.04, 129.65)  rendered (398.01, 129.57)  error 0.092 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (-12, -20) deg  D  0.7020  expected (398.04, 410.35)  rendered (398.01, 410.43)  error 0.091 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (-36,  +0) deg  D  0.6485  expected (199.85, 270.00)  rendered (199.95, 270.00)  error 0.102 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (-36, +20) deg  D  0.3415  expected (199.85, 129.65)  rendered (199.91, 129.64)  error 0.063 px
+ok    off-axis yaw -120 pitch 40 rolled -65 beta 0.99 aim (-36, -20) deg  D  1.6453  expected (199.85, 410.35)  rendered (199.91, 410.36)  error 0.062 px
+ok    stand-off alpha Cen A CPU beta 0.0 (0.4 AU, origin 0.0000 ly from ship)  expected (425.81, 270.04)  rendered (425.94, 270.01)  error 0.128 px  (float32 from Sol, no lo: 8.17 px off)
+ok    stand-off alpha Cen A CPU beta 0.0 (1044.0 AU, origin 0.0000 ly from ship)  expected (425.81, 270.04)  rendered (425.93, 270.01)  error 0.127 px  (float32 from Sol, no lo: 0.00 px off)
+ok    stand-off alpha Cen A CPU beta 0.9 (0.4 AU, origin 0.0000 ly from ship)  expected (425.81, 270.01)  rendered (425.94, 270.00)  error 0.128 px  (float32 from Sol, no lo: 1.90 px off)
+ok    stand-off alpha Cen A CPU beta 0.9 (1044.0 AU, origin 0.0000 ly from ship)  expected (425.81, 270.01)  rendered (425.94, 270.00)  error 0.128 px  (float32 from Sol, no lo: 0.00 px off)
+ok    stand-off alpha Cen A GPU beta 0.0 (0.4 AU, origin 4.3700 ly from ship)  expected (425.81, 270.04)  rendered (425.94, 270.01)  error 0.128 px  (float32 from Sol, no lo: 8.17 px off)
+ok    stand-off alpha Cen A GPU beta 0.0 (1044.0 AU, origin 4.3542 ly from ship)  expected (425.81, 270.04)  rendered (425.93, 270.01)  error 0.127 px  (float32 from Sol, no lo: 0.00 px off)
+ok    stand-off alpha Cen A GPU beta 0.9 (0.4 AU, origin 4.3700 ly from ship)  expected (425.81, 270.01)  rendered (425.94, 270.00)  error 0.128 px  (float32 from Sol, no lo: 1.90 px off)
+ok    stand-off alpha Cen A GPU beta 0.9 (1044.0 AU, origin 4.3542 ly from ship)  expected (425.81, 270.01)  rendered (425.94, 270.00)  error 0.128 px  (float32 from Sol, no lo: 0.00 px off)

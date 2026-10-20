@@ -34,7 +34,7 @@ static func install(demo: Node) -> Dictionary:
 static func update_detail(kit: Dictionary, eye: Vector3) -> void:
 	if kit.is_empty() or kit.get("coarse")==null:return
 	var center: Array=kit.manifest.get("lod_center_ship_m",[26,10,61]) if kit.has("manifest") else [26,10,61]
-	var near:=eye.distance_to(Vector3(center[0],center[2],-center[1]))<=100.
+	var near:=eye.distance_to(ShipFrame.gltf_from_structure(center))<=100.
 	kit.visual.visible=near;kit.coarse.visible=not near
 static func _paint_material(n: Node) -> Material:
 	if n is MeshInstance3D and n.mesh!=null:return n.mesh.surface_get_material(0)

@@ -24,7 +24,7 @@ func _run() -> void:
 	if d.get("revision",1)==2:targets.append_array([Vector3(18.75,57,3),Vector3(26,57,-12.5)])
 	if d.get("revision",1)>=3:
 		targets.clear()
-		for point in d.walk_targets_ship_m:targets.append(Vector3(point[0],point[2],-point[1]))
+		for point in d.walk_targets_ship_m:targets.append(ShipFrame.gltf_from_structure(point))
 	for target in targets:
 		check("authored destination itself safe "+str(target),walk.is_walkable(target))
 		var route:=walk.path(start,target,40000)

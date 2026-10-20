@@ -1,0 +1,5 @@
+# AC-B1 positive control (R2-CAMERA-FORWARD §D1): one literal of each inline conversion form the
+# basis gate must catch. Not GDScript; never loaded.
+var structure_old := Vector3(p[0], p[2], -p[1])
+var kinematic_old := [v.x, -v.z, v.y]
+var kinematic_new := [-v.x, v.y, -v.z]

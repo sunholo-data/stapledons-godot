@@ -1673,7 +1673,7 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 	# the view's aim offset above the frame centre.
 	var hv: Dictionary = dir.views["sky_hole"]
 	for tilt: float in [0.0, 30.0, -55.0]:
-		dir.hole_override = Vector3.UP.rotated(Vector3.RIGHT, deg_to_rad(tilt)).normalized()
+		dir.hole_override = ShipCamera.BOW.rotated(Vector3.RIGHT, deg_to_rad(tilt)).normalized() # D-92: the travel axis is the bow
 		var pose := dir.resolve(hv, foot, dir.sector_for(foot, -1))
 		var captain := Transform3D(pose.basis, foot + Vector3.UP * 1.7)
 		var hole := dir.hole_override
@@ -1685,7 +1685,8 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 		check("sky_hole, hole %+.0f deg: its centre %.1f deg above the frame centre (the view's aim offset)" % [tilt, float(hv.aim_offset_deg)], rad_to_deg((-pose.basis.z).angle_to(hole)), float(hv.aim_offset_deg), 1e-3)
 		# float64 (the sky's CPU projection): the hole's pixel from both eyes, and that pixel's ray
 		var hn := sqrt(float(hole.x) * hole.x + float(hole.y) * hole.y + float(hole.z) * hole.z) # float64 unit (Vector3 is float32)
-		var hs := [hole.x / hn, -hole.z / hn, hole.y / hn]
+		var hk: Array = ShipCamera.ship_vector(hole) # D-92: glTF -> the kinematic frame through the one map
+		var hs := [float(hk[0]) / hn, float(hk[1]) / hn, float(hk[2]) / hn]
 		var e1: Array = _ship_cam(pose, size).position_m
 		var e2: Array = _ship_cam(captain, size).position_m
 		var q1 := AreaBundle.project(_ship_cam(pose, size), [e1[0] + hs[0] * 1e12, e1[1] + hs[1] * 1e12, e1[2] + hs[2] * 1e12])
@@ -1703,7 +1704,7 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 
 
 static func _ship_cam(pose: Transform3D, size: Vector2) -> Dictionary:
-	return {"position_m": [pose.origin.x, -pose.origin.z, pose.origin.y], "forward": [-pose.basis.z.x, pose.basis.z.z, -pose.basis.z.y], "up": [pose.basis.y.x, -pose.basis.y.z, pose.basis.y.y], "fov_vertical_deg": 78.0, "resolution": [size.x, size.y]}
+	return {"position_m": ShipCamera.ship_vector(pose.origin), "forward": ShipCamera.ship_vector(-pose.basis.z), "up": ShipCamera.ship_vector(pose.basis.y), "fov_vertical_deg": 78.0, "resolution": [size.x, size.y]}
 
 
 ## R2-CAMERA AC11, not a translation tautology: at every views.json eye and at a captain's eye
@@ -1749,7 +1750,8 @@ func test_camera_views_sky_points(vp: SubViewport) -> void:
 					var c := _ship_cam(t, size)
 					var o: Array = c.position_m
 					var an := sqrt(float(app.x) * app.x + float(app.y) * app.y + float(app.z) * app.z)
-					var a64 := [app.x / an, -app.z / an, app.y / an]
+					var ak: Array = ShipCamera.ship_vector(app) # D-92: the one glTF -> kinematic map
+					var a64 := [float(ak[0]) / an, float(ak[1]) / an, float(ak[2]) / an]
 					var q := AreaBundle.project(c, [o[0] + a64[0] * 1e12, o[1] + a64[1] * 1e12, o[2] + a64[2] * 1e12])
 					var r := AreaBundle.unproject(c, q[0], q[1])
 					var ex: float = r[0] - a64[0]

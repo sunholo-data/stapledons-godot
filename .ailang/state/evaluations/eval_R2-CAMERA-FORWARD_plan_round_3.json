@@ -1,0 +1,74 @@
+{
+  "sprint_id": "R2-CAMERA-FORWARD",
+  "kind": "plan review (D-92 revision)",
+  "round": 3,
+  "reviewer": "claude CLI --model sonnet (independent of the planner)",
+  "date": "2026-10-19",
+  "score": 71,
+  "pass": false,
+  "blocking": [
+    {
+      "finding": "The plan treats cam_*.json as a structure-frame input that never reaches the sky, but the area-bundle path feeds it straight into the kinematic frame. Once R splits the two frames, that path puts the sky out of step with the Blender-baked plates. The plan has no site, decision or test for it.",
+      "evidence": "interior/ship_frame.gd:66-71 `sky_camera(heading, cam)` runs `to_galactic(ship_basis, cam.forward/up)` on the bundle camera. interior/interior_smoke.gd:91 calls `ShipFrame.sky_camera(h, it.bundle.camera)`. interior/area_bundle.gd:49 pins `CAMERA_FRAME = \"ship: +Z = direction of travel (up)...\"` and validates it at :331. assets/areas/bridge/cam_bridge.json is that data. Design doc §D1 puts cam_*.json in the structure frame and lists only ship_frame.gd's comment as a change. §D8 calls interior_golden 'pure ship frame, unchanged', which is true of the maths but not of the bundle callers (m4-smoke, validate_area, test_area_bundle, the plate path).",
+      "fix": "Decide explicitly. Either apply R inside the bundle→sky path (and say which tests pin it), or declare the bundle frame to be the kinematic frame and update the area_bundle.gd:49 contract string. List area_bundle.gd, interior_smoke.gd, test_area_bundle.gd, validate_area.gd and cam_bridge.json in §D1/§D10. Add an AC or a make target that exercises m4-smoke and area-test on the new basis."
+    },
+    {
+      "finding": "The caller-migration list is incomplete and mis-sequenced, so 'every commit keeps make test green' cannot hold. F1a changes the `side_basis` tilt, `aim_dir`, `ship_vector` and the cues, but the tests that break are either not listed or are scheduled for F3.",
+      "evidence": "tests/test_ship_attitude.gd:13 asserts 'body fifteen degrees above ship horizon' (local[2]=sin 15°), which fails at 60°. tests/test_tour_attitude.gd:32 and :40 assert the stop cue is 'sky_side' and the departure cue is 'sky_forward', but the doc returns cues to Bow. tests/test_ship_star_light.gd:177-179 uses `side_basis`. None of the three is in the design doc §D10 test list. §D10 and F3 put the ~11 test rewrites in F3. The sprint says 'Every commit keeps make test green on the rig' (camera-forward-sprint.md, Base). F1a's checks list no full `make test`, and only F1b ends with one.",
+      "fix": "Add the missing tests to §D10. Move every test broken by F1a's basis, tilt and aim changes into F1a (or F1b for the director and cue tests), and add a full `make test` to F1a's Check. Alternatively, drop the per-commit green claim and say which commits are red and why."
+    },
+    {
+      "finding": "The developer and tool first-person turn poses still encode 'travel = up' and are not covered. `_begin_tour_turn` is called with tilt 89.5 (departure) and 15 (stop), and `look_direction` is listed only as a 'tilt table' re-pose. The `_begin_tour_turn` arguments are never mentioned.",
+      "evidence": "demos/ship_geometry_demo.gd:961 (`_tour_view_to=Vector2(tilt,0.)` when `director.overridden`), :962 (call with 89.5 'departure'), :977 (call with 15. 'stop'), :341-343 (`look_direction` forward 89.5, aft -89.5). Under D-92, 89.5° looks at the mast, not the pole. Every capture tool that overrides the director therefore frames the wrong sky. The doc's D6 says only that 'the developer free camera keeps the old first-person turn'.",
+      "fix": "Re-pose the `_begin_tour_turn` tilt/yaw arguments (to the bow, yaw 270°, tilt about -8° to 0°, and the body's new 30°-off-bow direction) and the `look_direction` table. List both in §D1.5/§D10, and state which tests or captures (test_tour_attitude, the guided and free-nav captures) assert them."
+    }
+  ],
+  "should_fix": [
+    {
+      "finding": "AC-B1's grep gate does not catch every inline kinematic-to-glTF conversion, so the claim that it 'forces every site through a named map' is false. G-M4-S4's `_unit_sample` converts a ship-frame wall point to glTF yaw and pitch by hand (`atan2(-dy,dx)`, `atan2(dz, ...)`), and G-CAM-2 builds its aim directions about glTF +Y as the old pole. Neither matches the grep patterns, and `_unit_sample` is not in the §D1.1 site list.",
+      "evidence": "tools/m4_ship_golden.gd:399-406 (`_unit_sample`: `_pose(rad_to_deg(atan2(dz, sqrt(dx*dx+dy*dy))), atan2(-dy, dx))`). :479-490 (`Vector3(sin·cos, cos, sin·sin)` about +Y, then `ds=[d.x,-d.z,d.y]`). Also tests/test_physics.gd:1706 `forward: [-b.z.x, b.z.z, -b.z.y]` and `up` use negated component forms that the second regex does not match. The doc's G-M4-S4 note says only 'the same poses through the new basis'.",
+      "fix": "List `_unit_sample` and the G-CAM-2 polar parametrisation as rewrite sites, and note that G-CAM-2's 5%/3x 'eye matters' margin must be re-verified for the new eyes. Widen the grep (or add a positive control that fails on the old forms), and describe the `_ship_cam` forward/up forms."
+    },
+    {
+      "finding": "The doc and sprint name `_sky_cam` at tests/test_physics.gd:1706. The function there is `_ship_cam`. The Makefile line cited as 973 is 974.",
+      "evidence": "tests/test_physics.gd:1705 `static func _ship_cam(pose, size)`. grep finds no `_sky_cam` in the file. Makefile:974 `ship-demo-ci:`.",
+      "fix": "Correct the names and line numbers in the doc, the sprint and the sprint JSON."
+    },
+    {
+      "finding": "Two more player-facing 'up is travel' strings are missed. The HUD copy lists only two strings in ship_geometry_demo.gd:428, but ui/journey_hud.gd:8 has `BRAKE_NOTICE = \"Braking. Up is still the way we are travelling.\"`. It is asserted in tests/test_no_twitch.gd:342 and :361 and tests/test_transit.gd:85. interior/area_bundle.gd:49 and interior/ship_frame.gd:4-8 also hold the 'up' frame text.",
+      "evidence": "ui/journey_hud.gd:8 and :77. The design doc §D1.5 'HUD copy' names only the two ship_geometry_demo strings.",
+      "fix": "Add `BRAKE_NOTICE` and the frame-contract strings to §D1.5/§D10. Check them against display-audit and the no-twitch and transit tests, and grep the lore and AI text for other 'up' travel phrasing."
+    },
+    {
+      "finding": "AC-V9 (and the red-first for `camera-test`) expects `^ok    schema v2$` with four spaces and 7 negative controls in camera-test.log. The existing test prints `ok ` with a single space and may already print 'negative control' lines. As written the regex cannot match, and the `-ge 7` count may be satisfied by existing lines.",
+      "evidence": "tests/test_camera_director.gd:35-40 `print(\"%s %s\" % [\"ok\" if ok else \"FAIL\", label])`. The Makefile camera-test recipe (Makefile:1241) echoes only `^(FAIL|figure|transitions|camera-director)`.",
+      "fix": "Either change the director test's print format to four spaces, or make the AC regex single-space. Count only the new v2 negative controls (for example with a distinct label prefix, 'negative control v2 ...'), and check that the ones that exist today do not already reach 7."
+    },
+    {
+      "finding": "Several ACs are weaker than they read. AC-B5 says 'protocol minor unchanged', but the command only checks `git diff -- sim/`. AC-B3 says counts are unchanged, but `make physics` is only asserted to pass. AC-V6's 16/16 'body in frame' uses a fixture body direction and a camera that never turns, so it is geometrically trivial and does not test the real stop. AC-R1's 'frames opened' is not machine-checkable. AC-B4's baseline-diff tool (`golden_baseline.sh check`) does not say how it excludes the re-posed families, and the three ACs that use the golden log (B4 and the S2-S4 and G-CAM prefixes) rely on that.",
+      "evidence": "camera-forward.md AC table rows B3, B4, B5, V6, R1. §D4 and the 'Headless fixtures' note say the real guided stop is covered only by AC-R1.",
+      "fix": "Name the protocol-version file and add a diff check on it. Define the baseline tool's exclusion list (the G-M4-S2..S4 and G-CAM-1..3 prefixes) and add a negative control. Add a guided-stop assertion that uses the real `side_basis` output in the real demo. Keep R1's 'opened' step as an explicit human gate in the sprint rather than an AC."
+    },
+    {
+      "finding": "OQ4 and the legacy fence contradict each other. Zoom is removed for players, but the Commons stays legacy with z1/z2/z3 sector views. Those views are reachable only through the Z1–Z3 level actions, so Commons players lose them, while the plan says the Commons is 'unchanged'. The legacy Commons also keeps the turning sector camera that Mark objected to (OQ6).",
+      "evidence": "camera-forward.md §D5 key table ('+/− … Developer presets only'), §D7 ('legacy: true keeps today's sector code path'), OQ4 and OQ6. data/camera/views.json has z1_lower, z2_lower and z3_commons.",
+      "fix": "State that the zoom actions stay live for `legacy` levels, or give the Commons a stopgap Bow-style view. Add a test for whichever is chosen under AC-V10."
+    },
+    {
+      "finding": "The schedule is optimistic. F1a is 25 files plus golden re-baselining that needs the Studio GPU. F1b packs about 20 new headless checks, the rig, the occluders and schema v2 into 1.25 days. F3 holds the ~11-test migration, captures at two resolutions, an independent evaluation and landing in 1.5 days. Pause point 1 (any golden outside the planned families moves) has no stated action beyond 'stop'.",
+      "evidence": "camera-forward-sprint.md Velocity (290 LOC/day, from a sprint that did 310) and the milestone headings. The risk table lists no GPU-rig turnaround risk.",
+      "fix": "Move the test migration into F1a/F1b (see blocking item 2). Add a risk row for GPU-rig round trips on the golden and capture steps. Add contingency days or split F1a into goldens/physics and callers/HUD."
+    },
+    {
+      "finding": "AC-B6 (`make lore-import CHECK=1 D=../stapledons-design`) is listed under F1a, but the doc says F1a can land before design PR #30 merges. Whether the check passes depends on the state of the local design checkout, not on this PR. The lore and display-audit pins (`data/lore/check_values.json`, `unbound.txt`, the lore-check binding) are not mentioned as things the re-import could shift.",
+      "evidence": "Makefile:1191-1193 (CHECK=1 is fail-closed and offline, and checks the design repo's sha only where D has it). Sprint 'Approval gate'. §D1.5 Lore.",
+      "fix": "Move AC-B6 to F3 or mark it 'after #30'. Add `make lore-check lore-test` to the F1a/F3 check after the re-import."
+    },
+    {
+      "finding": "The 'sim untouched' claim holds for sim/*.ail, but the doc offers the evidence only for the package. The grep of sim/*.ail finds no interior or structure axis. `hole_dir` and `dir_local` are galactic (sim/protocol.ail:443-449), and `sunholo/relativity` 0.12.0 is axis-agnostic except for the test fixture. The actual dependency on the interior axis lives in demos/ship_attitude.gd and the host.",
+      "evidence": "sim/protocol.ail:443-449. The grep over sim/*.ail for interior/structure/deck terms found no axis encoding.",
+      "fix": "Minor: add a sentence to §D1.4 saying the audit covered sim/*.ail and not only the package, and that `side_basis` (host-side, demos/ship_attitude.gd:36) is where the interior axis enters the attitude."
+    }
+  ],
+  "notes": "The plan matches Mark's D-92 direction: travel into the screen, levels stacked, a fixed bow default, stops framed by the Bow view, a console zoom, and Astern. The core geometry claims check out. ship_vector at demos/ship_demo_camera.gd:22-24 and the prototype `travel_axis` flag are as described. The `side_basis` 15° tilt gives 75° off travel, and 60° gives 30° off the bow, about ±256 px at 720p. `hole_direction` is at ship_geometry_demo.gd:584. `m4_ship_golden.gd` :248 and :484-490 are right. InteriorSky.orient_basis does drive the glow and dust ship axes, so the shaders need no edit. The package and `sim/*.ail` carry no interior axis. The 393-line golden count and the family counts (S3 3, S4 6, CAM-1 9, CAM-2 8, CAM-3 2) match the Makefile recipe at Makefile:444-450. The main gaps are the bundle/cam_*.json frame, the incomplete caller and test migration with the wrong green-per-commit sequencing, the developer-pose tilt arguments, and ACs that cannot match or prove what they claim. I set pass:false because three blocking items must be fixed first. The score is about 71 of 100 (completeness 22, correctness 17, ACs 17, realism 15)."
+}

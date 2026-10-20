@@ -56,7 +56,7 @@ func hide_hud() -> void:
 func aim(world_dir: Vector3) -> void:
 	var gal := SkyFrame.to_galactic64([world_dir.x,world_dir.y,world_dir.z])
 	var ship := ShipFrame.to_ship(ShipFrame.ship_basis(demo.camera.heading),gal)
-	var local := Vector3(ship[0],ship[2],-ship[1]).normalized()
+	var local := ShipCamera.gltf_from_ship(ship).normalized()
 	demo.camera.basis=Basis.looking_at(local,Vector3.UP if absf(local.y)<.99 else Vector3.RIGHT)
 	demo._sync_observer()
 

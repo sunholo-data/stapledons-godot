@@ -36,7 +36,7 @@ func _run() -> void:
 		check("%s preserves heading/velocity" % direction,demo.sky.heading_world.distance_to(heading)<1e-7 and demo.sky.beta==beta)
 		check("%s remains captain eye" % direction,demo.camera.position.distance_to(demo.avatar_pos+Vector3.UP*1.7)<1e-4 and not demo.camera.external)
 		var angle:float=demo.sky.camera.view_velocity_angle(heading)
-		var wanted:float={"forward":.5,"side":90.,"aft":179.5}[direction]
+		var wanted:float={"forward":0.,"side":90.,"aft":180.}[direction] # D-92: level looks along the bow, across, astern
 		check("%s view relative to travel" % direction,absf(angle-wanted)<.002)
 		check("%s star GPU velocity" % direction,demo.sky.starfield.material.get_shader_parameter("beta_dir").distance_to(heading)<1e-7 and absf(float(demo.sky.starfield.material.get_shader_parameter("beta_mag"))-beta)<1e-7)
 		for p in [Vector2.ZERO,Vector2(root.size)*.5,Vector2(root.size)]:

@@ -428,7 +428,7 @@ wd-vm:             ## WD package NaN contract on the strict VM
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6; R2-CAMERA: G-CAM-1 Sky forward / hole view pole 9, G-CAM-2 glow from the Z1/Z2/Z3/Sky forward eyes 8, G-CAM-3 tonemap at Z2 and Sky forward 2
+golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6; R2-CAMERA-FORWARD (D-92, travel toward the bow): G-CAM-1 Bow pole at the spawn / helm / Sgr A* 9, G-CAM-2 glow from the Bow spawn / bow rail / helm and Astern eyes 8, G-CAM-3 tonemap Bow 0.99c and Astern rest 2; G-M4-S2/S3/S4 re-posed through the bow basis
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
@@ -1239,6 +1239,25 @@ codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Ma
 ship-demo-ci: camera-test
 camera-test: import ## R2-CAMERA AC1-5, 7, 9: views.json schema, |eye| <= 95 m and a clear line from every walk sample, one level per notch/unit/pinch, Z2 60-80 px, hysteresis, no jumps, reduced motion, F8 dev-only
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_director.gd > $(SCRATCH)/camera-test.log 2>&1; rc=$$?; grep -E '^(FAIL|figure|transitions|camera-director)' $(SCRATCH)/camera-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-test.log && grep -q '^camera-director: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-test.log
+
+# R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): travel toward the bow,
+# one fixed Bow / Astern stage view that slides with the captain, and the one named map per frame.
+BASIS_GATE_RE := \[2\], *-[a-z_.]*\[1\]|\.x, *-[a-z_.]*\.z, *[a-z_.]*\.y|-[a-z_.]*\.x, *[a-z_.]*\.y, *-[a-z_.]*\.z
+.PHONY: camera-forward-test basis-gate
+basis-gate: ## AC-B1: no inline structure or kinematic conversion outside ShipFrame.gltf_from_structure / ShipCamera.ship_vector (positive control: tests/fixtures/basis_gate/inline.gd.txt must be caught)
+	@n=$$(git ls-files '*.gd' | xargs grep -nE '$(BASIS_GATE_RE)' | grep -vE '^(interior/ship_frame|demos/ship_demo_camera)\.gd:' | tee /dev/stderr | wc -l | tr -d ' '); \
+	  c=$$(grep -cE '$(BASIS_GATE_RE)' tests/fixtures/basis_gate/inline.gd.txt); \
+	  test "$$n" = 0 && test "$$c" -ge 3 && echo "basis-gate: ok (0 inline conversions; the control's $$c caught)" || { echo "basis-gate: FAIL ($$n inline conversion(s) outside the named maps, control caught $$c of 3)"; exit 1; }
+camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V5, V7, V10..V12: R proper, Bow/Astern constant yaw over the 16-sample walk, pole and starbow in frame, clear after fades, 60-80 px, slide envelope, level defaults, deterministic poses, fades leave the sky alone
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward)' $(SCRATCH)/camera-forward-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-test.log && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-forward-test.log
+ship-demo-ci: camera-forward-test
+.PHONY: camera-forward-review
+camera-forward-review: import ## R2-CAMERA-FORWARD F1 review set: Bow at rest (spawn, helm, the spire faded), Astern, Bow at 0.99c, Bow at the first guided stop and after a 3 m walk -> renders/camera_forward/*.png + review.json (GPU window; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_forward_review.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-forward-review.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|bow_stop_walk|camera-forward-review)' $(SCRATCH)/camera-forward-review.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-review.log && grep -q '^camera-forward-review: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-forward-review.log
+.PHONY: camera-walk-capture
+camera-walk-capture: import ## R2-CAMERA-FORWARD AC-R1 evidence: the director's Bow (rest, 0.99c cruise) and Astern (rest) over the 16-sample bridge walk -> renders/camera_walk/*.png + contact_sheet.png + walk.json (GPU window; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_walk_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-walk-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-walk)' $(SCRATCH)/camera-walk-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-walk-capture.log && grep -q '^camera-walk-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-walk-capture.log
 
 .PHONY: camera-views-capture
 camera-views-capture: import ## R2-CAMERA: Z1/Z2/Z3 on the bridge at rest and 0.99c, 1280x720 and 2560x1440 (+ rail and stations rings) -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m or no captain in frame

@@ -1,0 +1,74 @@
+{
+  "sprint_id": "R2-CAMERA-FORWARD",
+  "kind": "plan review",
+  "round": 1,
+  "reviewer": "claude CLI --model sonnet (independent of the planner)",
+  "date": "2026-10-19",
+  "score": 71,
+  "pass": true,
+  "blocking": [
+    {
+      "finding": "The G-CAM golden case counts can't be kept at 9/8/2 with the views as described. The design doc's own arithmetic also disagrees with the pinned counts.",
+      "evidence": "camera-forward.md:233 says G-CAM-1 is 'three walk positions × three phases, plus the Target view's aim at Sgr A*', which is 10, not 9. Today's G-CAM-1 is 2 spots × 3 phases + hole = 9 (tools/m4_ship_golden.gd:245-251). camera-forward.md:234 says G-CAM-2 uses 'Forward, Target and Deck' eyes × 2 labels = 6. Today's G-CAM-2 is 4 eyes (z1, z2, z3_bridge, sky_forward) × 2 = 8 (m4_ship_golden.gd:460). The Makefile pins 9/8/2/393 (Makefile:447-450). AC10 and F3 both say 'same case counts'.",
+      "fix": "State the exact case list per G-CAM so each count is explicit. For G-CAM-2 either add a 4th eye (Console zoom, or the legacy Commons view) or change the pins and the 393 total, and say which. For G-CAM-1 fix the '3×3 + hole' wording, or list 2 spots plus the hole. AC10 should then name the new pins."
+    },
+    {
+      "finding": "Several acceptance commands name log lines that no recipe prints, or that don't exist yet. AC4, AC7 and AC8 are not checkable as written.",
+      "evidence": "The `camera-test` recipe only echoes lines matching ^(FAIL|figure|transitions|camera-director) (Makefile:1241), so `ok …` lines never show on stdout. AC4's 'deck blocked=0 / untagged_blocks=0', AC7's 'ok console returns to <view>' and AC8's 'ok negative control <rule>' have no producer. The current sweep prints 'AC1 %s: a clear line … (%d blocked%s)' (tests/test_camera_director.gd:183). `camera-walk-capture` and `camera-forward-test` targets are not in the Makefile, and the capture tool currently prints only `camera-walk <pass>:` for 'rest' and 'under_way' (tools/camera_walk_capture.gd:55). The AC1/AC2 greps assume passes named forward, target_stop, target_sgr_a and deck that don't exist. AC2 also elides the log path ('…').",
+      "fix": "Specify the exact line formats the new tests and tools must emit. Each AC command should grep the saved log ($SCRATCH/camera-test.log, camera-forward-test.log, camera-walk-capture.log) or be a make target that fails on its own. Give the Makefile recipes in the plan: logs, `0 failures` gates, and the F1 'red first' recipe gate. Write out the AC2 commands in full."
+    },
+    {
+      "finding": "Two acceptance criteria are not in the headless `make test` the rig runs, and the plan doesn't say how they become gates. AC1/AC2 depend on a GPU-window capture.",
+      "evidence": "AC1 and AC2 use `camera-walk-capture`, a GPU capture that 'measures; it does not judge' (tools/camera_walk_capture.gd:9). `make test` is headless (CLAUDE.md). The doc says `camera-forward-test` goes 'in make test' (camera-forward.md:278), but the existing pattern is `ship-demo-ci: camera-test` (Makefile:1239). `camera-test` is not on the `test:` line directly. Nothing says whether `camera-walk-capture` joins `make golden` or `make capture`. The yaw-constant and pole/target-in-frame claims are projection maths, so they can be asserted headless with `CameraDirector.screen_point`.",
+      "fix": "Put the yaw-spread, pole-in-frame and target-in-frame assertions in `tests/test_camera_forward.gd` (headless, hooked via `ship-demo-ci:`). Keep the capture as visual evidence only. Say which target runs on the rig with `--golden`."
+    },
+    {
+      "finding": "The occluder fade rests on machinery that doesn't exist, and the plan doesn't say how occluders are identified or how the fade interacts with the sky layer. It is also not budgeted.",
+      "evidence": "There is no `occluder` tag anywhere in demos/*.gd (grep found none). The clear-line sweep treats any hit as blocked (test_camera_director.gd:154-166, 681-691). The doc relies on 'meshes tagged occluder dither to 25%' (camera-forward.md:114). F1 puts this inside ~550 LOC and 1.25 days along with the whole rig, schema v2 and a yaw sweep. Pause point 3 admits the sweep may find no clear yaw.",
+      "fix": "Add an explicit sub-task: which nodes get tagged (spire, lift, tall props, by name), the dither material path, and the fade-time test. Say how the sweep defines 'after fades' (a segment against the AABB set, as the sprint notes) and that Deck's AC4 passes by construction only for tagged nodes. Add a fallback if the fade can't be implemented cheaply. Re-estimate F1, or split it into F1a (rig, schema, Deck) and F1b (Forward, fade)."
+    }
+  ],
+  "should_fix": [
+    {
+      "finding": "The Forward rig geometry may put the eye under the floor.",
+      "evidence": "camera-forward.md:107 gives eye = head − dir·2.4 + up·0.3. At pitch 56° the eye sits about 2 m below the head, roughly at deck level (deck_y 82 m, head about 1.7 m above it). The doc says 'the deck surface is not visible' but doesn't address the camera looking up through floor backfaces, or the rail and floor-mesh culling.",
+      "fix": "Add a measurement in F1 for the eye's height above the deck at Forward. Require the floor to cull or fade, or raise `rise_m`. Add an AC check on eye_y ≥ deck_y."
+    },
+    {
+      "finding": "The 'pole about 60 px from the top' claim for pitch 56° is not shown in the table, and the head-framing claim needs checking.",
+      "evidence": "camera-forward.md:135 says 'about 60 px'. The table (:123-129) has no 56° row. By the doc's own geometry the pole is 5° from the top edge, about 40-45 px. The captain at 2.4 m / 0.3 m is only a few degrees below the axis, not 'at the bottom of the frame' (:137).",
+      "fix": "Compute the exact px for the chosen pitch with the same analytic tool that matched 82.2 px, and add the 56° row. Re-check the head's position in the frame against the dead zone."
+    },
+    {
+      "finding": "The AC1 'yaw spread ≤ 0.1° for Target' conflicts with Target's re-aim and with Sgr A* motion.",
+      "evidence": "Target yaw is the aim's bearing and re-aims when the aim leaves the middle 60% (camera-forward.md:151-154). AC1 requires 0.1° spread across the 16 samples.",
+      "fix": "State that AC1 holds for a stationary ship, the walk without any re-aim event, and that the re-aim test is separate (F2 red-first already has it). Say how the walk pass avoids a re-aim."
+    },
+    {
+      "finding": "Tool and test migration is underspecified and the LOC and days look low.",
+      "evidence": "The sprint says '24 callers keep working through override()' (camera-forward-sprint.md:73). A grep for `set_preset|look_direction|.level` finds about 45 files, with 44 hits in tests/test_camera_director.gd, 23 in tests/test_ship_demo_input.gd and 9 in tools/ship_ui_capture.gd. Most of the 947-line test file is rewritten. `test_ship_demo_input.gd` also tests camera_level / zoom keys (ship_geometry_demo.gd:499-537).",
+      "fix": "List the affected tests and tools, and which of them check Z1/Z2/Z3 or sky_* views. Say how OQ4 (zoom removal for players) maps to `camera_level_*` input actions and the input test. Re-estimate F3, which also carries goldens, captures at two resolutions and the evaluation, in 1.0 day."
+    },
+    {
+      "finding": "The velocity claim is not credible.",
+      "evidence": "camera-forward-sprint.md:97 justifies 365 LOC/day because '40% is deletion and re-pinning', yet the doc states net −150 LOC. The LOC and days are a guess against 310 LOC/day measured on R2-CAMERA.",
+      "fix": "Plan about 4 days, or defend the figure by listing what is deleted. Keep the F1 pause point as the re-plan gate."
+    },
+    {
+      "finding": "Mark's direction is only partly covered, and several of his points depend on open questions that are not gated.",
+      "evidence": "He said 'when we use consoles it zooms in' (Console, covered), 'we can have a few fixed views possible' and 'same as navigation around ship?'. The plan resolves the last as OQ2 but starts F2 without an answer. Hot-key toggling is covered, but F2's Target depends on OQ2 and OQ4 (removing player zoom) being answered first. Only F1 is a pause point.",
+      "fix": "Make OQ1-OQ4 an approval-time gate, or mark the F2 start as conditional on the answers. State what happens to the 7/8/9 keys and the pad bindings in the input map, and to the HUD hint text."
+    },
+    {
+      "finding": "The determinism and reduced-motion requirements are not covered by a test.",
+      "evidence": "CLAUDE.md gate 6. The new damping, ease and fade are time-based. The plan has no replay or determinism check for the camera pose given the same inputs. There is only the AC6 ease test.",
+      "fix": "Add a test that runs the same scripted input twice and compares the poses bit for bit. Say that the fade uses `delta`, not wall time, and that the dither doesn't write anything to the sim."
+    },
+    {
+      "finding": "The sprint JSON's acceptance_criteria are abbreviated and AC13 sits on E, which can't run before merge.",
+      "evidence": "sprint_R2-CAMERA-FORWARD.json:39-75. AC13 is `test -f design_docs/implemented/...`, true only after landing. The AC1/AC8 mapping is partial.",
+      "fix": "Add the command text to the JSON, or reference the doc table by id with the full command. Note that AC13 is verified at landing."
+    }
+  ],
+  "notes": "This is a strong, well-grounded plan. Mark's direction is quoted, the Problem section is measured, and the before-state evidence is published. It has pillar alignment, physics gate handling (no new formula, sky through the same pose, goldens re-pinned) and sensible pause points, including no turning camera on a failed sweep. I confirmed the Makefile pins (9/8/2/393 at Makefile:447-450), the `FOLLOW_S` constant (camera_director.gd:35), the 82 px pole measurement, the existing walk capture tool and `restore()`/`override()`. The deductions are: the golden counts don't add up, ACs name log lines nobody prints and aren't wired into the headless gate, the occluder fade is unbudgeted new machinery, and migration and test-rewrite effort is optimistic. Recommended before approval: fix the golden counts, pin the exact output formats and Makefile recipes, move the projection assertions headless, and re-estimate F1/F3. The ask for Mark to answer OQ1-OQ4 can run alongside."
+}

@@ -33,12 +33,16 @@ func advance(delta:float)->void:
 	for i in 4:v[i]=a[i]*p+b[i]*q;length+=v[i]*v[i]
 	for i in 4:v[i]/=sqrt(length)
 	current=_basis(v)
+## D-92 (camera-forward.md §D1.5): the travel axis tilts STOP_TILT_DEG from the north-tangent toward the
+## body, which then sits 90 - STOP_TILT_DEG = 30 deg off the bow, in the deck plane (kinematic +X):
+## inside the Bow view. Attitude only; nothing in the sim changes.
+const STOP_TILT_DEG := 60.0
 static func side_basis(body:PackedFloat64Array)->PackedFloat64Array:
 	var n:=ShipFrame._unit([body[0],body[1],body[2]])
 	var tangent:=ShipFrame._reject(ShipFrame.NGP,n)
 	if ShipFrame._len(tangent)<ShipFrame.POLE_EPS:tangent=ShipFrame._reject(ShipFrame.POLE_FALLBACK,n)
 	tangent=ShipFrame._unit(tangent)
-	var angle:=deg_to_rad(15.)
+	var angle:=deg_to_rad(STOP_TILT_DEG)
 	var up:=PackedFloat64Array([cos(angle)*tangent[0]+sin(angle)*n[0],cos(angle)*tangent[1]+sin(angle)*n[1],cos(angle)*tangent[2]+sin(angle)*n[2]])
 	var x:=ShipFrame._unit(ShipFrame._reject(n,up))
 	var y:=ShipFrame._cross(up,x)

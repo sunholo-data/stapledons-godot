@@ -597,10 +597,12 @@ func test_final_leg_look() -> void:
 	check("final leg review: no console prompt while the review is open (%s)" % pr.text, not prompt_shown)
 	check("final leg review: the prompt and the waiting line never overlap", not prompt_shown or not pr.get_global_rect().intersects(demo.wait_hint.get_global_rect()))
 	check("final leg review: the player's pointer is visible for the review (never captured)", demo.pointer_required() and not demo.wants_capture())
-	check("C2 interlude hold: the camera holds Sky forward behind the review (%s, hold %s)" % [demo.director.situation, demo.director.hold], demo.director.hold and demo.director.situation == "sky_forward")
+	check("interlude hold: the camera holds Bow behind the review (%s, hold %s)" % [demo.director.view_id, demo.director.hold], demo.director.hold and demo.director.deck_view == "bow" and demo.director.walk_active())
 	var k2 := InputEventKey.new();k2.physical_keycode = KEY_2;k2.pressed = true
 	demo._unhandled_input(k2)
-	check("C2 interlude hold: a level key does not move it while the review is open", demo.director.situation == "sky_forward")
+	var k9 := InputEventKey.new();k9.physical_keycode = KEY_9;k9.pressed = true
+	demo._unhandled_input(k9)
+	check("interlude hold: a zoom or view key does not move it while the review is open", demo.director.deck_view == "bow" and not demo.director.zoom_preset)
 	r.go(r.page_ids().size() - 1)
 	r.key(KEY_ENTER) # Brake
 	for i in 8000:

@@ -24,6 +24,11 @@ var _tour_view_to:=Vector2.ZERO
 var _tour_view_elapsed:=0.
 var _tour_view_active:=false
 const WALK_SPEED_MPS := 3.5
+## D-92 (camera-forward.md §D1.5): the developer free camera's first-person turn at a departure
+## (level, toward the bow) and at a stop (level, toward the body 30 deg off the bow, kinematic +X
+## = glTF -X): Vector2(tilt deg, yaw rad, ShipCamera's convention).
+const TOUR_VIEW_DEPARTURE := Vector2(0.,-PI*.5)
+const TOUR_VIEW_STOP := Vector2(0.,-PI*2./3.)
 var lighting:Dictionary={}
 var star_light:=StarLight.new() # R1-SHIP-STAR-LIGHT: the real star's light on the geometry
 var star_identification: Control
@@ -68,6 +73,7 @@ var free_camera := false
 var captain_yaw := .47
 ## D2: while a move key is held across a view change, the walk keeps its world direction.
 var _walk_hold_yaw := NAN
+var _walking := false # a move key or the stick is held this frame (the facing rule)
 var camera_motion := "full"
 var fade_rect := ColorRect.new()
 ## D1: at Z3 (Whole level) the captain is marked with a small ring in the accent colour.
@@ -171,6 +177,7 @@ func setup(opts := {}) -> bool:
 	fade_rect.color=Color(0,0,0,0);fade_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	fade_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);fade_canvas.add_child(fade_rect)
 	lift=Lift.new();geometry.add_child(lift);lift.setup(self)
+	_mark_occluders(visual)
 	_guides();_hud();get_viewport().size_changed.connect(_resize)
 	_reset_captain()
 	if dev_controls() and (opts.get("free_camera",false) or OS.get_cmdline_user_args().has("--free-camera")):set_free_camera(true)
@@ -341,10 +348,12 @@ func _sync_observer() -> void:
 func look_direction(direction: String) -> void:
 	_tour_view_active=false
 	if benchmark.running:return
-	var tilt:float={"forward":89.5,"side":0.,"aft":-89.5}.get(direction,0.)
-	director.override() # R2-CAMERA: first person until C2's authored sky views replace this
+	# D-92: travel runs along the deck toward the bow (glTF -z): forward, side and aft are level
+	# looks at yaw 270 / 0 / 90 deg (ShipCamera's convention, forward = (cos, ., sin)).
+	var yaw_deg:float={"forward":270.,"side":0.,"aft":90.}.get(direction,270.)
+	director.override() # developer free camera and tools: the captain's eye
 	camera_mode="player";camera.reference=false
-	camera.follow(avatar_pos,tilt,0.,0.);_sync_observer()
+	camera.follow(avatar_pos,0.,deg_to_rad(yaw_deg),0.);_sync_observer()
 func toggle_sky_only() -> void:
 	if benchmark.running:return
 	sky_only=not sky_only;geometry_view.render_target_update_mode=SubViewport.UPDATE_DISABLED if sky_only else SubViewport.UPDATE_ALWAYS
@@ -352,8 +361,12 @@ func toggle_sky_only() -> void:
 ## WASD is screen-relative (W up the screen). D2: the walk direction is held in world space while
 ## any move key stays down, so a view change mid-stride never reverses the captain.
 func walk_motion(move: Vector2,delta: float) -> void:
+	_walking=move!=Vector2.ZERO
 	if move==Vector2.ZERO:
 		_walk_hold_yaw=NAN;return
+	# R2-CAMERA-FORWARD §D6: the yaw is fixed, so the captain's facing is the screen direction of
+	# the motion (walking toward the bow shows the back).
+	if director.walk_active():avatar.set_motion(Vector2(move.x,-move.y))
 	if not director.situation.is_empty() or not director._pending.is_empty():director.end_situation() # C2: a move key ends a sky view
 	if is_nan(_walk_hold_yaw) or director.overridden:_walk_hold_yaw=director.walk_yaw()
 	var forward:=Vector3(cos(_walk_hold_yaw),0.,sin(_walk_hold_yaw))
@@ -379,6 +392,7 @@ func _process(delta: float) -> void:
 	_sync_pointer()
 	sky.set_temporal_exposure(false)
 	_update_tour_attitude(delta)
+	_walking=false
 	# Performance pass: the live game pipelines heartbeat ticks (SimBridge.pipelined); tests and
 	# scripted runs drive ticks themselves and stay synchronous.
 	if journey_sim!=null:journey_sim.pipelined=journey_auto_tick and not benchmark.running
@@ -414,7 +428,7 @@ func _process(delta: float) -> void:
 		# back into a giant card; the sky views stand the captain upright (a silhouette on the sky).
 		var upright:bool=str(director.views.get(director.view_id,{}).get("billboard",""))=="upright"
 		avatar.billboard=BaseMaterial3D.BILLBOARD_FIXED_Y if upright else BaseMaterial3D.BILLBOARD_ENABLED
-		if upright and avatar.facing!="back":avatar.set_motion(Vector2(0,-1)) # D3: in a sky view the captain looks where the player looks
+		if upright and not _walking and avatar.facing!="back":avatar.set_motion(Vector2(0,-1)) # D3: standing, the captain looks where the player looks
 	captain_ring.visible=not director.overridden and director.view_id.begins_with("z3") and camera_mode=="player"
 	captain_ring.global_position=avatar.global_position+Vector3.UP*.03
 	fade_rect.color.a=.85*director.fade
@@ -424,8 +438,9 @@ func _process(delta: float) -> void:
 	star_light.update(lighting,sky,delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
 	if free_camera_on():view_name="FREE CAMERA · developer"
+	elif not director.overridden and camera_mode=="player" and director.walk_active():view_name="%s view · fixed, slides with the captain" % level_name()
 	elif not director.overridden and camera_mode=="player":view_name="%s view (Z%d) · sector %d" % [level_name(),director.level,director.sector]
-	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
+	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is toward the bow, aft is astern\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary turn: the body ahead off the bow; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is toward the bow; the hull correctly blocks the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
 	_update_hud(delta,details)
 	_update_wait_hint()
 	_update_dwell(delta)
@@ -509,12 +524,15 @@ func _camera_action(event: InputEvent) -> bool:
 			"camera_default":set_preset("reset")
 			"camera_sky_forward":
 				if free_camera_on():look_direction("forward")
+				elif director.walk_level():director.walk("bow") # R2-CAMERA-FORWARD: 7 is Bow
 				else:director.sky(under_way_view() if black_hole!=null else "sky_forward")
 			"camera_sky_side":
 				if free_camera_on():look_direction("side")
+				elif director.walk_level():pass # OQ3 (D-93): no player side view; 8 is reserved
 				else:director.sky("sky_side")
 			"camera_sky_aft":
 				if free_camera_on():look_direction("aft")
+				elif director.walk_level():director.walk("astern") # R2-CAMERA-FORWARD: 9 is Astern
 				else:director.sky("sky_aft")
 		return true
 	return false
@@ -552,7 +570,7 @@ func set_free_camera(on: bool) -> void:
 ## The captain at the bridge spawn, facing the old default yaw.
 func _reset_captain() -> void:
 	if lift!=null:lift.reset()
-	active_level=0;walk=walk_bridge;avatar_pos=Vector3(8,82,-4.8);captain_yaw=.47;_walk_hold_yaw=NAN
+	active_level=0;walk=walk_bridge;avatar_pos=Vector3(8,82,-4.8);captain_yaw=-PI*.5;_walk_hold_yaw=NAN # D-92: facing the bow
 	if consoles!=null:consoles.cancel_walk()
 func level_name() -> String:
 	return str(director.level_view(director.level,director.area).get("name","Deck"))
@@ -581,7 +599,7 @@ func hole_direction() -> Vector3:
 	var h:=PackedFloat64Array([float(g.hole_dir.x),float(g.hole_dir.y),float(g.hole_dir.z)])
 	var b:PackedFloat64Array=camera.attitude_basis if not camera.attitude_basis.is_empty() else ShipFrame.ship_basis(camera.heading)
 	var s:=[b[0]*h[0]+b[1]*h[1]+b[2]*h[2],b[3]*h[0]+b[4]*h[1]+b[5]*h[2],b[6]*h[0]+b[7]*h[1]+b[8]*h[2]]
-	return Vector3(s[0],s[2],-s[1]).normalized() # ShipCamera.ship_vector inverted
+	return ShipCamera.gltf_from_ship(s).normalized() # D-92: the kinematic frame -> glTF
 ## Developer review controls (B, G, 5, 6, the audit buttons): command-line launches only (AC11).
 func dev_controls() -> bool:
 	return not menu_return
@@ -621,6 +639,23 @@ func centre_hit() -> Dictionary:
 	var forward: Vector3=-camera.basis.z
 	var query:=PhysicsRayQueryParameters3D.create(camera.position,camera.position+forward*500.)
 	return camera.get_world_3d().direct_space_state.intersect_ray(query)
+## R2-CAMERA-FORWARD §D2: the stage's occluders, which fade (never turn the camera) while they
+## cross the line to the captain or the journey, or hold the eye: the spire's meshes (the mast,
+## its needle and vents), the tall props the Bow view looks through (the Archive shrine's ribs and terminal at
+## the mast, the rim fronds at the rail; the dense Bow sweep in make camera-test found them) and the
+## lift's visible boxes.
+const OCCLUDER_NAMES := ["spire","shrine_ribs","archive_terminal","rim_frond"]
+func _mark_occluders(visual: Node) -> void:
+	var stack: Array=[visual]
+	while not stack.is_empty():
+		var n:Node=stack.pop_back()
+		if n is MeshInstance3D and OCCLUDER_NAMES.any(func(w:String)->bool:return String(n.name).to_lower().contains(w)):n.add_to_group(CameraDirector.OCCLUDER_GROUP)
+		stack.append_array(n.get_children())
+	stack=[lift]
+	while not stack.is_empty():
+		var n:Node=stack.pop_back()
+		if n is MeshInstance3D:n.add_to_group(CameraDirector.OCCLUDER_GROUP)
+		stack.append_array(n.get_children())
 func _collision(n: Node) -> void:
 	if n is MeshInstance3D and n.mesh!=null:n.create_trimesh_collision()
 	for child in n.get_children():
@@ -908,7 +943,9 @@ func _show_interlude() -> void:
 	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
 	# C2 interlude hold: Sky forward behind the review, still while it is open.
 	if crossing_review.visible and not director.hold:
-		director.sky("sky_forward",true,true);director.hold=director.situation=="sky_forward" or director._pending=="sky_forward"
+		if director.walk_level():director.hold=director.walk("bow",true,true) # Bow behind the review (the journey ahead)
+		else:
+			director.sky("sky_forward",true,true);director.hold=director.situation=="sky_forward" or director._pending=="sky_forward"
 	elif not crossing_review.visible and director.hold:director.hold=false
 	if crossing_review.visible:
 		if consoles!=null and consoles.crew_console!=null:crossing_review.ai_text=consoles.crew_console.ai_text
@@ -948,7 +985,8 @@ func _apply_journey_world()->void:
 			tour_attitude.reset(ShipFrame.ship_basis(camera.heading))
 			camera.attitude_basis=tour_attitude.current.duplicate()
 		sky.apply(sky_world);_sync_observer()
-func _begin_tour_turn(target:PackedFloat64Array,tilt:float,mode:String)->void:
+## view: the developer free camera's first-person look at the turn's end (tilt deg, yaw rad).
+func _begin_tour_turn(target:PackedFloat64Array,view:Vector2,mode:String)->void:
 	tour_attitude.turn_to(target,3.)
 	_attitude_mode=mode
 	solar_tour.attitude_hold=true
@@ -956,7 +994,7 @@ func _begin_tour_turn(target:PackedFloat64Array,tilt:float,mode:String)->void:
 	# (the director overridden) keep the old first-person turn.
 	if director.overridden:
 		_tour_view_from=Vector2(camera.tilt,camera.yaw)
-		_tour_view_to=Vector2(tilt,0.)
+		_tour_view_to=view
 		_tour_view_elapsed=0.;_tour_view_active=true
 	elif mode=="departure":director.sky("sky_forward",true)
 func _update_tour_attitude(delta:float)->void:
@@ -966,7 +1004,7 @@ func _update_tour_attitude(delta:float)->void:
 		if _attitude_pending!=solar_tour.pending_index:
 			_attitude_pending=solar_tour.pending_index
 			var h:Dictionary=solar_tour.pending_heading
-			_begin_tour_turn(ShipFrame.ship_basis(PackedFloat64Array([h.x,h.y,h.z])),89.5,"departure")
+			_begin_tour_turn(ShipFrame.ship_basis(PackedFloat64Array([h.x,h.y,h.z])),TOUR_VIEW_DEPARTURE,"departure")
 	elif not live_journey and _attitude_stop!=solar_tour.leg_index:
 		_attitude_stop=solar_tour.leg_index
 		var id:String="earth" if solar_tour.leg_index<0 else solar_tour.itinerary[solar_tour.leg_index].id
@@ -974,7 +1012,7 @@ func _update_tour_attitude(delta:float)->void:
 		for body:Dictionary in sky_world.get("system",{}).get("bodies",[]):
 			if body.id==id or body.id==held_body or str(body.get("catalogue_id",""))==id:
 				var v:Dictionary=body.rel_km
-				_begin_tour_turn(Attitude.side_basis(PackedFloat64Array([v.x,v.y,v.z])),15.,"stop")
+				_begin_tour_turn(Attitude.side_basis(PackedFloat64Array([v.x,v.y,v.z])),TOUR_VIEW_STOP,"stop")
 				break
 	tour_attitude.advance(delta)
 	camera.attitude_basis=tour_attitude.current.duplicate()

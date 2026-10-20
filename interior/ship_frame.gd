@@ -1,11 +1,16 @@
 class_name ShipFrame
 ## M4.0 frame contract (design m4-first-journey.md "M4.0", brief §5.2, D-14), float64 throughout.
 ##
-##   ship frame : +Z = direction of travel, origin = bubble centre, metres (the frame every
-##                cam_<area>.json and the Blender scenes use: "+Z = direction of travel (up)").
-##   up         : the direction of travel for the WHOLE journey. There is no flip at turnover
-##                (D-14): braking is a thrust reversal, not a ship rotation, so the dome's
-##                forward pole always faces the heading. ship_basis therefore takes no phase.
+##   ship frame : the KINEMATIC frame: +Z = direction of travel, origin = bubble centre, metres.
+##   bow        : D-92 (amends D-14): travel runs along the deck toward the bow, not up. The
+##                Blender structure frame (cam_<area>.json, the Commons data: +Z = the mast,
+##                +Y = the bow) maps onto it by the fixed proper rotation R below; glTF maps onto
+##                the structure frame by gltf_from_structure. There is no flip at turnover:
+##                braking is a thrust reversal, not a ship rotation, so the bow always faces the
+##                heading. ship_basis therefore takes no phase.
+##   legacy     : the painted-plate interior (M4.2 area bundles, `--interior`) still reads its
+##                cam_<area>.json straight as the kinematic frame (pre-D-92, "+Z = travel (up)");
+##                see AreaBundle.BUNDLE_BASIS. The two paths never share a session.
 ##   roll       : ship +Y = the north galactic pole projected onto the plane normal to the
 ##                heading; within 1e-6 (the projection's length, i.e. sin of the angle) of
 ##                either galactic pole it falls back to galactic +X projected the same way.
@@ -71,6 +76,22 @@ static func sky_camera(heading: PackedFloat64Array, cam: Dictionary) -> Dictiona
 		"forward": to_galactic(b, PackedFloat64Array(cam["forward"])),
 		"up": to_galactic(b, PackedFloat64Array(cam["up"])),
 	}
+
+
+## D-92: kinematic = R . structure. R(s) = (-s.x, s.z, s.y): the structure's bow (+Y) -> +Z,
+## its mast (+Z) -> +Y, and +X -> -X (det +1). R is its own inverse.
+static func r_from_structure(s: Array) -> Array:
+	return [-float(s[0]), float(s[2]), float(s[1])]
+
+
+## The structure frame (Blender, cam_*.json, the Commons data) <-> glTF metres: the ONE place this
+## mapping is written (the AC-B1 gate). glTF = (s.x, s.z, -s.y).
+static func gltf_from_structure(s: Array) -> Vector3:
+	return Vector3(float(s[0]), float(s[2]), -float(s[1]))
+
+
+static func structure_from_gltf(g: Vector3) -> Array:
+	return [g.x, -g.z, g.y]
 
 
 static func _reject(v: Array, z: Array) -> Array:

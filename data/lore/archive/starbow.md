@@ -4,8 +4,8 @@ title: Why the Sky Crowds Forward
 unlock: cruise_above_0.9c
 checks: [RS-1, RS-2, RS-3, RS-4, RS-22]
 ---
-Look up from the bridge at speed and the stars have gathered overhead. Look
-down past the lower decks and the sky has gone dark. Nothing out there has
+Look out over the bow rail at speed and the stars have gathered ahead. Look
+back over the stern and the sky has gone dark. Nothing out there has
 moved. You have.
 
 Light from every star still arrives, but you are running into it. Its
