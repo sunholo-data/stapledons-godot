@@ -660,6 +660,7 @@ func centre_hit() -> Dictionary:
 func _mark_occluders(visual: Node) -> void:
 	var names: Array=director.data.get("levels",{}).get("bridge",{}).get("occluders",[])
 	var stack: Array=[visual]
+	if props_visual!=null:stack.append(props_visual) # R2-DECK-LAYOUT DL3: the dressed shrine, terminal and fronds
 	while not stack.is_empty():
 		var n:Node=stack.pop_back()
 		if n is MeshInstance3D and names.any(func(w:String)->bool:return w!="lift" and String(n.name).to_lower().contains(w)):n.add_to_group(CameraDirector.OCCLUDER_GROUP)

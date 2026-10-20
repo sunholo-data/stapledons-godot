@@ -1,6 +1,6 @@
 {
   "schema": "stapledons.deck.pins/1",
-  "milestone": "DL2 style frame (the navigation arc and the chair dressed; ledger D-95, D-96)",
+  "milestone": "DL3 hero assets (every bridge hero dressed; the deck surface and spire body left to the styling pass, D-97)",
   "authoring_base_commit": "e4da963029beb9acff09c4baaa577426d8be11a6",
   "authoring_script": "~/dev/blender/scripts/stapledon_deck_layout_v2.py (also packed in the master as a text datablock)",
   "authoring_script_sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470",
@@ -11,8 +11,8 @@
   "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 be6bf75111fa30969adc119eff165fedc2aad97bb26f417de2dbdaa5e5a6e984, 15391 triangles after Blender import), put into WALK_bridge by the generator",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 8615976,
-      "sha256": "0cb14d0248d02b8958475ecd30dfad7d91f429c0bf0c401b116d1346e2fce05e",
+      "bytes": 5617652,
+      "sha256": "f3eaf550fe6ac089a918ddde67d9451ec93e193b18024e013adffec6339ddd6c",
       "all_materials_opaque": true
     },
     "assets/ship_demo/walk_bridge.glb": {
@@ -23,8 +23,8 @@
       "all_materials_opaque": true
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 2399532,
-      "sha256": "b5a23aa8ea2b6260582a638643473e466915d9a52fa5429d9bc1fe68d9bc19cf",
+      "bytes": 4451984,
+      "sha256": "f2f936de131fd2982960070b29fe2b57871e693ce7f951ec2fb3d0b54c9bc329",
       "all_materials_opaque": true
     }
   },
@@ -38,6 +38,11 @@
       "bytes": 9652445,
       "sha256": "5adf91355d5c71edec2bfa22fcb78b410a90a361ad498602b16a57ae7d878080",
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/5adf91355d5c71edec2bfa22fcb78b410a90a361ad498602b16a57ae7d878080.blend"
+    },
+    "stapledon_bridge_props_v2.blend": {
+      "bytes": 10476927,
+      "sha256": "7ed3aff4891c01d4dfca5fe28531779aa7d6d74040ece1d1f4e52a89fe0c5493",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/7ed3aff4891c01d4dfca5fe28531779aa7d6d74040ece1d1f4e52a89fe0c5493.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
@@ -88,5 +93,49 @@
       }
     },
     "determinism": "two runs from the same master and script give byte-identical bridge_props.glb and ship.glb"
+  },
+  "dl3": {
+    "authoring_script": "~/dev/blender/scripts/stapledon_bridge_props_v2.py (packed in the master; v1 is the DL2 subset)",
+    "authoring_script_sha256": "93e7f59bb1ff6b8dd6edf423cd2c17951c1c3fc85fe07f905e604099c38c472f",
+    "source_master_sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13",
+    "sets": [
+      {
+        "set": "desks",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/dl/p3b/desks_set_paint.webp",
+        "size": 1024,
+        "triangles": 21648,
+        "objects": 8
+      },
+      {
+        "set": "rail",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/dl/p3b/rail_set_paint.webp",
+        "size": 2048,
+        "triangles": 83108,
+        "objects": 57
+      },
+      {
+        "set": "archive",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/dl/p3b/archive_set_paint.webp",
+        "size": 1024,
+        "triangles": 7480,
+        "objects": 4
+      },
+      {
+        "set": "lift",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/dl/p3b/lift_set_paint.webp",
+        "size": 1024,
+        "triangles": 60,
+        "objects": 5
+      },
+      {
+        "set": "floor",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/dl/p3b/floor_set_paint.webp",
+        "size": 1024,
+        "triangles": 25016,
+        "objects": 15
+      }
+    ],
+    "instancing": "a mesh shared only inside one set stays shared (rail segments, lamps, fronds); any other shared mesh is copied",
+    "determinism": "two runs give byte-identical bridge_props.glb and ship.glb"
   }
 }
