@@ -64,6 +64,14 @@ const TITLES = {
   'D-25': 'Exposure anchors: Milky Way 20.8, deep space 23.5 mag/arcsec²',
   'D-26': 'A new milestone: planets and flybys (M5)',
   'D-27': 'Forward CMB glare and auto-dimming glazing',
+  'D-90': 'Rearrange the bridge for the fixed camera views',
+  'D-91': 'One fixed forward camera that slides and never turns',
+  'D-92': 'The ship travels along the deck, into the screen',
+  'D-93': 'Approve the forward camera plan',
+  'D-94': 'The Bow view accepted; ship art builds on it',
+  'D-95': 'Approve the bridge re-plan: the helm at the bow',
+  'D-96': 'Bridge blockout accepted; the spire as the ship\'s own light',
+  'D-97': 'Painted bridge style frame accepted in general',
 };
 
 // Groups. Primary view: look (visual), sound (audio), words (text). Secondary: physics, gameplay,
@@ -220,7 +228,7 @@ const SUPPLEMENTARY = [
 ];
 
 // ------------------------------------------------------------- no spoilers
-const SPOILER = /\b(end[- ]?screen|endgame|ending|legacy (report|screen)|year 1,?000,?000|new game\s*\+|new game plus|mutiny|death|dies|died|succession|memory loss|fate|salvation|mytholog|fermi|universe-hopper|narrative|story|plot|twist|secret|orchestrator|earth contact|earth return|wanderer|time-skip|time skip|crew fates?|drift hidden|game end|recursion|across universes|collapse|mystery)\b/i;
+const SPOILER = /\b(end[- ]?screen|endgame|ending|legacy (report|screen)|year 1,?000,?000|new game\s*\+|new game plus|mutiny|death|dies|died|succession|memory loss|fate|salvation|mytholog|fermi|universe-hopper|narrative|story|plot|twist|secret|orchestrator|earth contact|earth return|wanderer|time-skip|time skip|crew fates?|drift hidden|game end|recursion|across universes|collapse|mystery|resets?|winnab\w*|new game\+)\b/i;
 // deny wins over allow
 const DENY = new Set([
   'D-13', // physics, but the ruling names where near-horizon dives lead (endgame mechanics)
@@ -247,8 +255,10 @@ const DENY = new Set([
   'DD-2025-12-06-bubble-society-as-living-sim',
   'DD-2025-12-02-three-distance-regimes', // what is found at what distance
   'DD-2026-09-28-runtime-ai-voices-emotion-markers', // names the spire's mystery and the Archive's core
+  'DD-2026-10-06-anthropic-selection-is-shown-and-the-neighbourhood-breaks-the-cosm', // runs, resets and New Game+ (the loop)
 ]);
 const ALLOW = new Set([
+  'DD-2026-10-11-guided-voyage-seven-real-highlight-legs', // "resets" is the guided tour's state, not the loop
   'DD-2026-09-28-character-and-exterior-review', // "the story prefers" a sphere: art only
   'D-11', // "in-game lore" refers to physics explainers
   'DD-2026-10-01-the-higgs-bubble-model-and-the-journey',

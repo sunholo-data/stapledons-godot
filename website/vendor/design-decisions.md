@@ -422,6 +422,9 @@ Mutiny is not a setback to recover from. It ends your story.
 
 **Context:** The bubble-ship-design document specifies ~100 people in a 100m radius bubble. But we want a multi-generational society.
 
+> **SUPERSEDED IN PART by ledger D-75 (2026-10-13):** the ship starts with
+> about 1,000 people and grows to about 1,500. The mechanisms below stand.
+
 **Decision:** Start with ~100 people. Population can grow or shrink based on circumstances:
 - Growth possible if resources and morale allow
 - Decline risk during crises, despair, or resource pressure
@@ -647,6 +650,10 @@ Emotionally: "sad but happy" - bittersweet remembrance.
 > Profile (ledger D-11)" (below). The 1 g is held by the bubble's generator, not
 > by continuous thrust, and there is no flip. The vertical axis, aft-is-down and
 > up-is-forward orientation stand.
+>
+> **SUPERSEDED IN PART 2026-10-19** by "Travel Runs Along the Deck, Into the
+> Screen (ledger D-92)" (below): up is no longer forward. The vertical mast and
+> the stacked levels stand; the direction of travel now lies in the deck plane.
 
 **Decision:** The ship is oriented vertically along the thrust axis. The spire runs from engines (bottom/aft) to observation deck (top/forward). Continuous 1g thrust provides artificial gravity - 'down' is toward the engines, 'up' is toward the direction of travel. Levels are stacked along this axis, with open sides facing outward toward the bubble boundary. This means when standing on any level, you look UP toward the bridge and DOWN toward engineering.
 
@@ -701,6 +708,7 @@ with the live physics.
 
 **Decision (Mark, attended; ledger D-6):**
 - **The player is inside the bubble.** Up = forward = the direction of travel.
+  *(Amended 2026-10-19, D-92: travel lies in the deck plane, toward the bow.)*
 - **Isometric play areas** are built as **Blender 3D models**, rendered in Godot
   through an orthographic camera **tilted back** (about −14°) at **room scale**
   (about 16 m in view). The player walks around. Shading is toon plus ink.
@@ -713,7 +721,7 @@ with the live physics.
   the panorama moves slowly, the play area moves 1:1, and the foreground
   silhouettes move fast.
 - **The bridge sits at the top of the spire, and its dome is the bubble's forward
-  pole.** The starbow gathers overhead there. Lower decks see the sky past the
+  pole.** The starbow gathers overhead there. *(Amended 2026-10-19, D-92: the starbow gathers ahead, over the bridge's bow rail; the bridge's dome is no longer the forward pole.)* Lower decks see the sky past the
   level rims, and it goes **dark sideways at speed**. That's physics, and it's
   what makes the bridge the place to watch from.
 - **Conversations use large portraits.**
@@ -955,7 +963,17 @@ assumed a flat face-on mirror. The canon sphere has half the drag, which gives
 1.52 kg (`physics/higgs-bubble.md` §5).
 
 
+The 1,000-AU arrival above records the original D-14 baseline. The current
+guided itinerary uses the existing D-54 finite-star stop under the attended
+[D-65 ruling](#2026-10-11-guided-voyage-seven-real-highlight-legs-ledger-d-65),
+without an outer-system stop followed by an inward journey. The cited
+historical physics check values are unchanged.
+
 ## [2026-10-01] Shielding, γ Range, Boundary Optics and Bubble Defaults (ledger D-15)
+
+> **SUPERSEDED IN PART by ledger D-29 (2026-10-03):** the glow fraction ε is
+> now 10⁻¹⁰, not 10⁻⁹ (see "Forward Glow: Faint, With a Blackbody Spectrum"
+> below, D-29 and its follow-up).
 
 **Decision:** (1) The wall passes light of every energy; the crew is protected by
 real glazing and hull inside the bubble, which absorb the blueshifted UV and soft
@@ -1088,3 +1106,476 @@ change any of them on the PRs):
    - the `areas/` blob fetch target;
    - clamped parallax;
    - the importer from `assets/characters/` into `data/ai/core`.
+
+## [2026-10-03] Bridge v2: Illustrated Plate, Spire Light, 8K, and Levels That Follow the Sphere
+
+**Context:** Mark approved bridge v1 (game PR #97) for the playable demo, and
+asked for a final bridge as good as the captain avatar sprites (game PR #98).
+The Blender thread's quality study (game issue #93) compared:
+- (a) a textured toon GLB;
+- (b) (a) plus a richer kit;
+- (c) an illustrated plate projected through the fixed iso camera onto the
+  play GLB, with a Godot capture of (c).
+
+**Decision (Mark, attended 2026-10-03):**
+1. **Approach c, plus a Codex image-model refine pass** to reach the captain
+   sprites' hand-illustrated finish.
+2. **Baked static light and shadow of ship geometry are allowed in the plate.**
+   - The **spire is the dominant, ship-fixed light source**, so it is baked as the key
+     light with its shadows; that is what makes baking valid.
+   - **Nothing from outside the ship is baked.** The forward bubble-wall glow
+     (relativity 0.6.0 `glowEmittanceAt`, `ship.ism.glow_pole_w_m2`) and the
+     relativistic sky vary with speed and direction, so they become a thin live
+     layer: a directional tint and rim term on the iso layer, driven by the
+     sim's glow value and the forward sky brightness (emittance → radiance /π for
+     a Lambertian wall, M4.6a eval N3).
+   - Plates keep headroom in the highlights and ship a forward-facing hint.
+   - Characters are never baked, and space stays alpha 0.
+3. **8K plate density** (270 px/m), a **64 MB per-area bucket budget**, and the
+   **palette pulled toward the captain sheet's** cream, ochre and violet.
+4. **More ship structure in the panorama:**
+   - It should read as the top of the sphere's interior: the spire running down, and the
+     lower, larger levels below the bridge rim.
+   - Space stays mostly visible.
+5. **Game-side work (Claude):**
+   - the `layers.play.plate` manifest key;
+   - the projection shader in the M4.2 composite;
+   - a linear or compensated tonemap on the iso layer;
+   - the live glow term;
+   - plate checks in `validate-areas`.
+6. **Ship scale (canon):** the bridge is the topmost and smallest level.
+   - Levels follow the sphere: they widen down to the equator and shrink again
+     past it (radius ∝ R · sin θ; the spike's 55% of the bubble's cross-section).
+   - Lower levels (future areas) are much larger, so the kit and textures are
+     built to scale up: modular pieces, texel-density-based textures, and plates
+     tiled per area when needed.
+
+**Rationale:** Pillar 4 (The Ship Is Home): the bridge has to look as
+hand-made as its people. Pillar 5 (Grounded Strangeness): only the spire's
+fixed light is baked, so everything that depends on speed stays physically
+live.
+
+**Alternatives rejected:**
+- (a) and (b): a real-time toon finish reads as 3D next to the painted sprites.
+- Baking the forward glow or the sky: wrong the moment the speed changes.
+
+**Implications:**
+- Applied in:
+  - [art/m4-2-requirements.md §9](../art/m4-2-requirements.md#9-bridge-v2-amendments-2026-10-03);
+  - [art/handoff-m4-2-blender.md §10](../art/handoff-m4-2-blender.md#10-bridge-v2-final-art-mark-attended-2026-10-03);
+  - the ship-interior brief §3 (level sizes).
+- The camera is locked for the bridge (orthographic, yaw 45°, pitch −14°), and
+  layout changes mean a re-render and a re-paint.
+- **Trade-off flagged by the Blender thread:**
+  - In the iso composition the lower levels lie beneath the bridge deck, so
+    only their rims rise above the far rail.
+  - A panorama that looks down into the ship cannot show the forward pole, so
+    the 0.99c starbow leaves the panorama's frame. Mark to confirm.
+
+## [2026-10-03] Bridge v2 Follow-up: Forward Sky First; Levels Are Future-Area Guidance
+
+**Context:** The Blender thread built bridge v2 with a look-down panorama
+showing the lower levels (ruling 4 above). That framing hid the starbow at
+0.99c, and only a rim of the level below showed above the bridge's far rail.
+
+**Decision (Mark, attended 2026-10-03):**
+1. **Keep the starbow.** The bridge panorama prioritises the forward sky: it
+   keeps v1's up-looking camera, painted with the v2 look. This supersedes
+   ruling 4 of the bridge v2 entry above.
+2. **The bridge was never meant to show the lower levels**, and its
+   perspective can't. The sphere-scaled levels (ruling 6 above) are guidance
+   for **future areas**, as later generations move down the ship:
+   - each lower level is wider down to the equator, then narrower again;
+   - each lower level is **roofed** by the underside of the level above.
+3. Keep the moody spire-only lighting as built.
+4. Ship both facing hints.
+5. The palette shift is accepted.
+
+**Implications:**
+- Applied in m4-2-requirements §9.4 and §9.8, the Blender handoff §10 and
+  the ship-interior brief §3.
+- The backdrop script is parked for future level areas, a rim view or a
+  lift view.
+- **Open question for those areas:** enclosed levels see the sky only past
+  their rim (between floor and ceiling, and at the gap to the bubble). Their
+  sky visibility and starbow framing differ from the open-topped bridge.
+
+## [2026-10-03] Forward Glow: Faint at Cruise, a Cue at the Top, With a Blackbody Spectrum (ledger D-29 and its follow-up, D-30)
+
+**Context:** The M4.2 evaluation found the bubble-wall glow pole at 0.99c
+130× brighter than the 23.5 mag/arcsec² dark sky, using the canon ε = 10⁻⁹
+and a placeholder equal-energy white spectrum (182.6 lm/W). At that level it
+drowns the starfield, which contradicts "faint by design".
+`physics/higgs-bubble.md` gave no spectrum.
+
+**Decision (Mark, attended 2026-10-03):**
+1. **D-29:** lower the wall conversion efficiency ε to about 10⁻¹¹, so the
+   forward glow is faint and the starbow stays visible.
+2. **D-30:** the glow is a **hot-plasma blackbody whose temperature comes
+   from the impact energy**. It is computed in `sunholo/relativity` (0.8.0)
+   first and replaces the equal-energy white.
+3. **D-29 follow-up** (same session): "the glow can be any value right? but
+   I want our star effects to be seen, so just pick a value where we get
+   both." Canon ε = **10⁻¹⁰** (HB-111). It was chosen from a rendered
+   comparison of 10⁻¹¹, 3 × 10⁻¹¹, 10⁻¹⁰ and 3 × 10⁻¹⁰ through the game's eye
+   exposure at five speeds. The sheet is `stapledons-godot make
+   glow-eps-sheet`, published at
+   `gs://stapledons-voyage-assets/refs/glow/eps_compare.jpg`.
+
+**Physics, as canonised (`physics/higgs-bubble.md` §6):**
+- The wall is a greybody of emissivity ε. By Kirchhoff's law, a transparent
+  wall emits as weakly as it absorbs.
+- Its energy balance gives T = (K max(0, cos θ)/σ)^¼, independent of ε. ε
+  sets only the brightness.
+- Pole temperatures:
+  - 1,358 K (orange-red) at 0.99c;
+  - 14,114 K (blue-white) at 0.999999c;
+  - infrared below about 0.94c.
+- At ε = 10⁻¹⁰:
+  - the 0.99c pole is 1.65 × 10⁻³ of the dark sky (invisible);
+  - the pole reaches 0.3 of the dark sky at γ ≈ 13.5 (about 0.997c);
+  - it is about 6 dark skies at 0.999c and 560 at 0.9999c;
+  - at the cap it is 1.56 cd/m² (3.6 × 10⁴ dark skies), about the luminance
+    of a sky in civil twilight.
+- The blackbody is marked as a game approximation: real GeV impacts are not
+  thermal.
+
+**Why 10⁻¹⁰ (the comparison):**
+- ε mainly sets where the glow appears, because the glow rises about
+  2 × 10⁷-fold from 0.99c to the cap.
+- At 10⁻¹⁰:
+  - the starbow is untouched up to 0.995c;
+  - at 0.999c, 84 % of the forward stars stay visible, with no change in the
+    eye's adaptation;
+  - at 0.9999c, 28 % stay visible against 39 % at 10⁻¹¹. The veil is the
+    limit there for every candidate, and the starbow cluster stays plainly
+    readable;
+  - at the cap the CMB disc, not the glow, sets the eye's exposure, and the
+    disc is 10⁸ times brighter than the glow.
+- 3 × 10⁻¹⁰ crosses the line: 16 % of the stars and +3.7 EV of adaptation at
+  0.9999c, and 68 % of the stars at 0.999c.
+
+**Rationale:**
+- Pillar 5 (Grounded Strangeness): the colour follows the physics of the
+  impacts, red at the default cruise and blue-white at the top. Only one
+  admitted hand-wave remains, the bubble.
+- Pillar 3 (Time Has Emotional Weight): the starbow, the signature view of
+  relativistic travel, stays readable at every speed.
+- The glow is a motion cue from about 0.997c up. It appears as the player
+  pushes into the costly end of the slider, and fades as the ship brakes.
+
+**Alternatives rejected:**
+- 10⁻¹¹ (the first D-29 value): the glow is visible only from about 0.999c,
+  and Mark wants it seen as well.
+- 3 × 10⁻¹⁰: it costs the starbow at 0.999c and 0.9999c.
+- A temperature from the per-particle energy (about 7 × 10¹³ K, a fixed
+  Rayleigh–Jeans blue at every speed).
+- A black wall radiating only the glow flux (a few kelvin, invisible at every
+  speed, and in conflict with the transparent wall).
+- Neutral white, or hydrogen recombination lines (there is no ionised gas
+  at the wall; the impacts reflect).
+
+**Implications:**
+- `sunholo/relativity` 0.8.0 (published) adds:
+  - `medium.glowTemperatureAt`, `glowRadianceAt`, `glowEfficacyAt` and
+    `glowLuminanceAt`;
+  - `blackbody.luminousEfficacy` and `blackbody.stefanBoltzmannSI`.
+- In the game PR (stapledons-godot, branch `glow/blackbody-080`):
+  - the simulation default ε becomes 10⁻¹⁰;
+  - the simulation emits `ship.ism.glow_pole_w_m2` and `glow_pole_k`
+    (M4.1 step 2);
+  - `interior/forward_glow.gd` and the glow shader mirror the new functions,
+    in place of the 182.6 lm/W white;
+  - G-M4-4 is recomputed from HB-102 to HB-110, and a GPU-vs-CPU colour-ramp
+    golden (G-M4-5) is added.
+
+
+## [2026-10-06] The Premise and Loop Are Canon (consolidated)
+
+**Context:** The premise lived in the retired repo's `game_loop_origin.md` and in scattered 2025 decisions. Mark restated it in an attended session.
+
+**Decision:** [premise-and-loop.md](premise-and-loop.md) is the canonical statement:
+- You are the pilot of Earth's only bubble ship, and you come back: the ship emerges near the same rogue black hole that threatens Earth.
+- Memories are erased.
+- 100 ship years, an Earth clock of ~10,000–24,000 years (tunable, possibly a difficulty setting), and an epilogue to Year 1,000,000.
+
+**Rationale:** Nothing is lost between repos, and one document decides.
+
+**Implications:** `game_loop_origin.md` is preserved in `legacy/input/`. Feature docs link here.
+
+
+## [2026-10-06] The AI Is an Unreliable Narrator That Works It Out Each Iteration
+
+**Decision:** The ship's AI starts each run confused and gradually works out the loop again, from spire readings, archive errors and patterns in the sky. It may be wrong or withhold.
+
+**Rationale:** Mystery that is rediscovered every run supports replayability. It resolves "Can the Archive ever know its origin?" (open-questions.md): yes, each time, never certainly.
+
+
+## [2026-10-06] Anthropic Selection Is Shown, and the Neighbourhood Breaks the Cosmological Principle
+
+**Decision:** Runs are variations selected for winnability. Realistic values predict ~0.05 civilisations within reach before impact, so a neighbourhood full of minds is evidence the universe was chosen. Selection comes from the AI steering each reset towards winnable variations, and from the player's previous choices shifting the odds. The luck number is hidden at world generation, revealed by the AI, and visible on New Game+.
+
+**Rationale:** Pillar 5 (Grounded Strangeness): the game illustrates the anthropic principle honestly instead of hiding a fudge factor.
+
+
+## [2026-10-06] Saving Earth Is Very Hard; Generated Content Carries Over
+
+**Decision:** Saving Earth is the rare, hard ending that many runs build towards. Content generated on the fly in one universe (civilisation designs, portraits, voices, art, lore) is available to the next as variations ("déjà vu"). Memories never carry over.
+
+**Rationale:** Replayability and a clue channel for the recursion. It amends the 2025 constraint "no information survives the BH crossing" to "no memory survives; the universe's furniture can".
+
+
+## [2026-10-06] The Player Brings the News; the Spire Resets When Earth's Fate Is Sealed
+
+**Decision:**
+- Every run starts at emergence from the rogue black hole, a few light-years out, followed by a throw towards Earth.
+- Earth doesn't know of the doom; the player brings both the news and the only salvation (the bubble ship).
+- When Earth's fate is sealed, the spire resets the bubble and pulls it back to the next variation's start. That's the in-fiction end of a run.
+
+**Rationale:** It makes the opening a short real journey (a dark rogue black hole at 45–300 km/s is 1.5–24 ly away for a 10,000–24,000-year clock). It explains why Earth is unaware, and turns the run boundary into a spire mystery instead of a game-over screen.
+
+**Implications:** The black hole is an invented scenario object, labelled with provenance "scenario". What counts as "sealed", and how it combines with the captain's death, is open (premise-and-loop.md §9).
+
+## [2026-10-11] Guided Voyage: Seven Real Highlight Legs (ledger D-65)
+
+**Context:** Mark found the guided outer-system arrivals and their subsequent
+inward body legs repetitive and asked for a shorter tour of interesting
+views. The position audit found real 1,000-AU inward journeys of about
+5.8 light-days, rather than a coordinate error. The existing D-54 finite-star
+planner can reach the close view in the interstellar leg itself.
+
+**Decision (Mark, attended 2026-10-11):**
+
+1. Start at Earth, then visit Sun → Jupiter → Callisto → Saturn → one close
+   Alpha Centauri A → one TRAPPIST-1 → Aldebaran: seven travel legs.
+2. Use the existing `stop_rule = 54` finite-star arrival for the three
+   interstellar destinations. Remove the duplicate 1,000-AU arrival and
+   inward hop from the current guided tour. Preserve the historical
+   `stop_rule = 0` ten-leg itinerary for legacy replays and tests.
+3. Keep the existing interstellar speeds, drive and hold/safety limits.
+   Every leg starts from the preceding actual endpoint; ship and Earth
+   clocks stay continuous. Shorter presentation does not authorize
+   position resets, teleports or invented distances.
+4. TRAPPIST-1 uses its existing D-54 finite-star stop, without the former
+   engineered habitable-zone placement beside planet e. Show and describe
+   the actual planet positions and apparent sizes at that stop.
+5. Offer Sgr A* after completion as an optional, clearly labelled separate
+   GR demonstration. It is not an eighth continuous leg from Aldebaran.
+
+**Rationale:** Grounded Strangeness keeps the views tied to real positions
+and the existing planner. Time Has Emotional Weight keeps the two clocks
+honest across the shorter itinerary. Choices Are Final keeps every travel
+leg a genuine checked commitment. Callisto remains both an interesting moon
+view and the clearance leg needed after the close Jupiter stop.
+
+**Implementation and validation:** The scoped seven-leg controller has
+134 passing checks, strict-VM/interpreter direct-chain parity, and native
+braking/arrival references. [Game PR #201](https://github.com/sunholo-data/stapledons-godot/pull/201)
+is merged on main after complete matching local/CI checks and a 98/100
+independent evaluation. Remaining R1 visual and console-journey gates stay open. This ruling
+introduces no new physics formula or lore check value. The normative current
+route and the optional-demo distinction are specified in
+[Guided voyage highlights](../features/guided-voyage-highlights.md).
+
+
+## [2026-10-13] The Generator Is the Drive; One Closed Ledger of Resources (ledger D-69)
+
+**Decision (Mark, attended):**
+
+1. **Option B: the generator is the drive.** The generator converts the
+   bubble's interior mass directly into drive light, at 100% and with no
+   waste heat, and does nothing else. This makes explicit a hand-wave the
+   canon already assumed: no real fuel or radiator can supply the guided
+   tour's ~3,100 kg of mass-energy.
+2. **The household runs on ordinary physics.** That means fusion with a
+   carried deuterium stock, and radiators limited by the wall's area.
+3. **m_eff = 1 kg.** It is the inertia the pocket shows to the outside, not
+   the ship's weight. Lowering it (towards 0.1 kg) is a candidate spire
+   discovery.
+4. **Changing the wall's shape is a discovery,** not a starting ability.
+   A pointed bow cuts drag.
+5. **The energy options form the first basis of a discoverable tech tree:**
+   basking near stars, civilisation-beamed boosts, black-hole
+   superradiance, hot-gas maps and efficiency blueprints. The tree "will
+   evolve over time".
+6. **Atoms never grow; mass-energy can be topped up by incoming light.**
+   Every resource the crew use is one of eight: `mass`, `water`, `power`,
+   `heat`, `garden`, `fabrication`, `compute` and `signal`.
+
+**Constraint:** there must be enough mass for a good game run. It holds.
+Drag mass × ship-years is fixed per light-year², so 5 t of free mass and 60
+ship-years reach about 2,500 ly at 0.1 cm⁻³, which covers the canon play
+area.
+
+**Rationale:** Grounded Strangeness, because one named hand-wave replaces a
+silent one. Choices Are Final, because every departure burns part of the
+ship. Ship Is Home, because the household loop is real and fragile.
+
+**Specified in:** [bubble-resources.md](../features/next/bubble-resources.md)
+§1–§4b. The check values RES-n there stay proposed until they move into
+[higgs-bubble.md](../physics/higgs-bubble.md) §8 and `sunholo/relativity`.
+
+
+## [2026-10-13] The Social Strand: Population, Births, Mutiny, Lifespan, the Galaxy Clock (ledger D-71)
+
+**Decision (Mark, attended):**
+
+1. **The featured crew are a share of those aboard** (~1,000, growing to ~1,500, per D-75; originally written for ~100). The practical split
+   follows the scale tiers: featured individuals, the rest as cohorts
+   ([civ-mirror.md](../features/next/civ-mirror.md) §2; stapledons-godot
+   crew-population.md).
+2. **Births are a captain's duty:** to control and encourage the
+   population. This supersedes bubble-society's "the captain cannot prevent
+   births".
+3. **Mutiny.** Losing the captaincy for good is game over. Before that there
+   may be an interregnum in which the captain has no power and the ship is
+   mob-ruled. A mutiny may end with the captain murdered, as an extreme
+   consequence of decisions. This reconciles black-holes ("the ship changes
+   course"), which belongs to the interregnum, with design-decisions and
+   premise-and-loop (game over and reset).
+4. **100 years is the captain's lifespan.**
+5. **Skips:** the player chooses how long, with a sensible default.
+6. **The galaxy clock always runs.** Worlds advance whether or not the ship is
+   near; this is a core concept.
+7. **The bubble ship is the first interstellar ship for all worlds.** Worlds
+   can talk to each other, but they discover each other, and the technology
+   to talk, through the ship.
+
+**Specified in:** [roadmap/r2-voyage-life.md](../roadmap/r2-voyage-life.md),
+[voyage-life-loop.md](../features/next/voyage-life-loop.md),
+[civ-mirror.md](../features/next/civ-mirror.md).
+
+
+## [2026-10-13] Population: About 1,000 Aboard, Growing to About 1,500 (ledger D-75)
+
+**Decision (Mark, attended):** the ship starts with about **1,000** people and
+grows to about **1,500** over the voyage. This replaces ~100 (2025-12-06). It
+is what a 100 m bubble's floor supports: about 370,000 m² over 15 levels, so
+370 m² each at 1,000 and 247 m² at 1,500.
+
+**Rescaled with it:**
+- **Mass budget, ×10:** equipment 50 t, people 70 t, stores 30 t, free mass
+  50 t, so about 200 t inside, structure excluded.
+- **Household power:** 8 MW at 1,000 and 12 MW at 1,500. That is 14% and 21%
+  of the wall's 300 K heat-shedding ceiling.
+- **Heavy water:** about 370 kg of D₂O per century.
+- **Gardens:** 40,000–60,000 m² of lit beds.
+
+**Consequences:**
+- **Mass no longer limits reach on its own:** 50 t of free mass gives about
+  7,800 ly at 0.1 cm⁻³. Growth now competes with speed: 500 more people take
+  about 35 t, leaving about 4,250 ly.
+- **Growth must be steered.** At bubble-society's 2–4% a year the ship would
+  pass 1,500 within 10–20 years. Reaching 1,500 in a century is about 0.4% net
+  a year, so the captain's birth policy (D-71) matters from the start.
+- **The featured crew** are about 1% of the people aboard. Everyone else lives
+  in cohorts (stapledons-godot crew-population.md; D-73).
+
+**Specified in:** [bubble-resources.md](../features/next/bubble-resources.md)
+(RES-9…11, 19, 20, 38…45), [mass-budget.md](../features/future/mass-budget.md),
+[ship-structure.md](../features/phase1-data-models/ship-structure.md).
+
+
+## [2026-10-15] One Trust Scale, Never Shown; the Game Raises Archive Events
+
+**Context:** The Archive becomes a crew actor in the crew simulation
+(stapledons-godot archive-npc A1; crew_core 0.6). [archive-crew-trust.md](../features/future/archive-crew-trust.md)
+scores trust on −100..100, while the crew simulation scores all trust on
+0..100 with 50 neutral.
+
+**Decision (Mark, attended):**
+
+1. **One scale for all trust:** 0–100, 50 neutral. That covers crew to
+   captain, crew to crew, crew to Archive and the Archive to crew. The
+   archive-crew-trust table maps across by halving.
+2. **The numbers are not player-facing.** They influence descriptions: the
+   words on the crew console, the crew's lines, and the Archive's manner.
+3. **The game raises Archive events** from what happens (answer confirmed or
+   contradicted, crisis help or failure, confusion witnessed, captain backs
+   it, repair, degraded). The crew simulation only applies their effects,
+   by the table and each witness's personality, deterministically.
+4. Earlier rulings for the first release (archive-npc OQ3 and OQ4): trust in
+   the Archive only, with no captain coupling, and integrity changes only
+   from events. Both are switches, off by default.
+
+**Rationale:**
+- **The Game Doesn't Judge.** The player reads people, not meters.
+- AI text never decides anything in the simulation: the voice's words don't
+  move trust; the game's event rules do.
+- One scale lets every trust rule and readout treat the Archive like a crew
+  member.
+
+
+
+## [2026-10-19] The Earth Clock Is a Difficulty Setting; Home Pictures Follow Earth's Fate
+
+**Context:** R2-HOME-TIERS (stapledons-godot, D-86) gives the crossing review 16 home-time tiers.
+Tiers 13–15 (10,000 years and later) fall inside the canon doom window, so they show Earth's fate
+whether or not the game models it. Mark was asked when the black hole destroys Earth.
+
+**Decision (Mark, attended; game ledger D-87):**
+
+1. **N is a difficulty setting**, inside the canon ~10,000–24,000 Earth years: "lets make it a
+   difficulty setting how much time we have left." Proposed levels (not yet ruled): Gentle 24,000,
+   Standard 16,000, Hard 10,000.
+2. **Home pictures become fate-dependent** once the doom matters, with a pool of variants per fate
+   (approaching, saved, scorched, ejected, captured, comet showers, diaspora): "we could even have
+   a variation of the doom if the ship is uncuccessful" and "yeah lets have them so we can
+   reference them later."
+
+**Specified in:** [earth-fate-home.md](../features/future/earth-fate-home.md) (future, unscheduled).
+The fate art is a spoiler and never goes on the website.
+
+
+## [2026-10-19] Travel Runs Along the Deck, Into the Screen (ledger D-92)
+
+*(Implemented 2026-10-20: R2-CAMERA-FORWARD, game PRs #282 and #286, evaluation 88/100; Mark accepted the Bow view in play, D-94: "this looks great. we can do more ship building assets now assuming these".)*
+
+**Context:** R2-CAMERA-FORWARD (game PR #281) measured that with the forward
+pole straight overhead (D-14, "up = forward"), no camera can hold the deck and
+the journey in one frame. At the fixed 78° field of view the pole is in frame
+only at a pitch of 51° or more, and from there no deck is visible. Interior
+gravity is the generator's comfort 1 g (D-11, physics/higgs-bubble.md HB-6),
+not thrust, so nothing in the physics ties "up" to the direction of travel.
+
+**Mark's ruling (verbatim):**
+> shall we chaneg it so the direction of travel is the bubble moving sideways?
+> just for asethetic reasons? may make it all simpler?
+
+He then chose **"Into the screen"**.
+
+**Decision (ledger D-92, amends D-14 and the 2026-09-28 interior decision):**
+- **The direction of travel lies in the deck plane**, toward the ship's bow.
+  The decks stay level under the generator's 1 g, and the levels stack
+  vertically along the **generator mast** (the spire), which is no longer a
+  thrust axis.
+- **The default bridge view looks over the captain toward the bow.** The
+  forward pole sits near the horizon above the deck, so the starbow, the
+  destination and the bubble's forward glow share one frame with the deck and
+  the crew.
+- **It is a change of ship basis only**, with no new physics formula. The
+  physics frame keeps +Z = the direction of travel. Only its mapping onto the
+  ship's structure (Blender +Y, the bow) changes. Goldens and forward-pole tests
+  re-baseline to the new axis.
+- **The Blender frame:** +Z = up (the mast), and **+Y = the bow** (the direction
+  of travel).
+
+**Rationale:** Pillar 3 (Time Has Emotional Weight) and Pillar 5 (Grounded
+Strangeness): the journey ahead is on screen while the player walks, not one
+key away. Pillar 4 (The Ship Is Home): every open level's bow edge sees the
+forward sky, and its stern edge sees the sky go dark. The physics lesson now
+lives on every deck, not only at the bridge.
+
+**Alternatives rejected:**
+- Keep up = forward and switch views by hot key. It was measured and works, but
+  the journey and the deck are never seen together.
+- Travel to the side of the screen (a side-scroller): the starbow would sit at
+  the frame's edge and the deck would read flat.
+
+**Implications:**
+- These are amended to match: `art/ship-interior-blender-brief.md` §2–3,
+  `art/ship-exterior-blender-brief.md` §2, `art/README.md`, and the lore entries
+  `archive/one-g.md` and `archive/starbow.md`.
+- The game re-imports the vendored lore (`make lore-import`).
+- The exterior model's bow is +Y. The exterior's forward glow sits at the bow
+  equator, not the top.
