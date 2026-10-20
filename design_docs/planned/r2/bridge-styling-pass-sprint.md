@@ -2,8 +2,8 @@
 
 **Design doc:** [bridge-styling-pass.md](bridge-styling-pass.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-BRIDGE-STYLE.json`
-**Status:** **Awaiting Mark's approval.** Nothing is executed until he approves. There is one further hard stop, at the ST2 style frame.
-**Base:** R2-DECK-LAYOUT DL3 (`feat/deck-layout-dl3`, PR #292), merged first. This plan's branch is stacked on it.
+**Status:** **Approved** (Mark, 2026-10-20, ledger D-100). Executing; hard stop at the ST2 style frame.
+**Base:** main after R2-DECK-LAYOUT DL3 (#292, merged).
 **AILANG:** v0.54.14, pinned. No `.ail` code: syntax gate skipped. Registry reuse: none (Godot shaders, themes and Blender assets; no physics maths).
 **Estimate:** about 1,300 game LOC plus about 500 lines of `bpy`, over **8.5 working days**, excluding Mark's review at the pause. Engine and UI code (ST0, ST1, ST2, ST4: about 1,000 LOC) runs at the recent attended rate of about 300 LOC a day. The art milestones (ST3: 2 days; ST5: 1.5 days) are capped at their days, and Blender work is not counted in LOC. The blended rate is about 150 LOC a day.
 

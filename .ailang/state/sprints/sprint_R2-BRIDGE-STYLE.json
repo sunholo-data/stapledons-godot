@@ -1,29 +1,34 @@
 {
   "sprint_id": "R2-BRIDGE-STYLE",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
-  "approved_on": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended, ledger D-100)",
+  "approved_on": "2026-10-20",
   "created": "2026-10-20",
-  "started": null,
+  "started": "2026-10-20",
   "completed": null,
   "design_doc": "design_docs/planned/r2/bridge-styling-pass.md",
   "sprint_plan": "design_docs/planned/r2/bridge-styling-pass-sprint.md",
-  "branch": "design/bridge-style",
+  "branch": "feat/bridge-style",
   "history": [
     {
       "date": "2026-10-20",
       "event": "planned after D-97 ('yes we need more styling and graphic pass overall but in general happy'); review mocks in refs/bridge_style/mock/"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "APPROVED (D-100): \"approved style plan but we need more intricate level design now we have fixed position sorted\", every recommendation: OQ1 retire the broad key on the bridge; OQ2 three bands; OQ3 Josefin Sans + Nunito; OQ4 hand-drawn ink border; OQ5 physics overlays keep functional colours; OQ6 below-rail cues now; OQ7 bridge and HUD only. Intricate level design goes to the levels design (R2 levels), not this sprint."
     }
   ],
   "related_prs": {
-    "deck_layout_dl3": 292
+    "deck_layout_dl3": 292,
+    "plan": 293
   },
   "external_dependencies": [
     {
       "what": "R2-DECK-LAYOUT DL3 (every bridge hero dressed)",
       "where": "feat/deck-layout-dl3",
-      "status": "built, awaiting merge"
+      "status": "merged (#292)"
     },
     {
       "what": "Blender 5.2.1 workspace",
@@ -55,13 +60,13 @@
     }
   ],
   "questions_for_mark": [
-    "OQ1 retire the broad key on the bridge",
-    "OQ2 banded toon shading (three bands)",
-    "OQ3 HUD typeface pair",
-    "OQ4 hand-drawn ink panel border",
-    "OQ5 physics overlays keep functional colours",
-    "OQ6 below-rail scale cues now",
-    "OQ7 bridge and HUD only"
+    "RESOLVED D-100: OQ1 retire the broad key on the bridge",
+    "RESOLVED D-100: OQ2 banded toon shading (three bands)",
+    "RESOLVED D-100: OQ3 HUD typeface pair",
+    "RESOLVED D-100: OQ4 hand-drawn ink panel border",
+    "RESOLVED D-100: OQ5 physics overlays keep functional colours",
+    "RESOLVED D-100: OQ6 below-rail scale cues now",
+    "RESOLVED D-100: OQ7 bridge and HUD only"
   ],
   "features": [
     {

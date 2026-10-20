@@ -1,6 +1,6 @@
 # R2-BRIDGE-STYLE: the styling and graphic pass for the bridge and the HUD
 
-**Status:** Draft, awaiting Mark's approval (design doc and sprint plan only; nothing built). An independent Sonnet plan review scored it 74/100 (pass) with eight blocking items, all folded in (sprint JSON `reviews`).
+**Status:** Approved by Mark 2026-10-20 (ledger D-100, every recommendation); executing on `feat/bridge-style`. An independent Sonnet plan review scored it 74/100 (pass) with eight blocking items, all folded in (sprint JSON `reviews`).
 **Release:** R2. **Milestone:** the bridge and its HUD read as one illustrated world in the art bible's style, lit by its own spire in deep space and by the real star near one.
 **Priority:** P1 for R2. Every session opens on this deck, and the HUD is on screen the whole game.
 
@@ -202,17 +202,17 @@ The look itself is Mark's judgement at the style-frame pause; the evaluator scor
 | Stylisation drifts into the sky | AC3's check and the golden baseline (AC4) |
 | Retiring the key leaves the stern deck too dark near a star below the deck | The ambient floor and the spire's floor share stay. Captured at the Earth and Jupiter stops |
 
-## Open questions for Mark (with recommendations)
+## Open questions (resolved by Mark, D-100, 2026-10-20: every recommendation taken)
 
 | # | Question | Recommendation |
 |---|---|---|
-| OQ1 | Retire the broad key on the bridge and let the spire key it in deep space (row "key" of the mocks)? | **Yes** |
-| OQ2 | Banded toon shading on the whole bridge (row "toon")? Three bands, or two for a harder comic look? | **Yes, three bands.** The sprites have soft shadow edges |
-| OQ3 | Typeface pair for the HUD: (a) Fraunces + Source Sans 3; (b) Josefin Sans + Nunito (rounder, more 70s); (c) keep the current system face | **(b).** It echoes the comics' lettering. Recorded as the default with the plan's approval; the ST2 pause only confirms it on the status strip |
-| OQ4 | Panel shape: hand-drawn ink border (9-slice) or clean thin border in the palette? | **Hand-drawn ink border** |
-| OQ5 | Physics overlays (pole marker, star labels, the Doppler legend) keep their functional colours rather than the palette? | **Yes:** readable and physically honest beats on-brand |
-| OQ6 | Below-rail scale cues (the next deck's rim, the canopy below): wanted on the bridge now, or wait for the levels' own passes? | **Now:** a few low-poly silhouettes, replaced when those levels are built |
-| OQ7 | Scope: bridge and HUD only; the Commons keeps the broad key and its look until its pass? | **Yes** |
+| OQ1 | Retire the broad key on the bridge and let the spire key it in deep space (row "key" of the mocks)? | **Yes** (resolved D-100) |
+| OQ2 | Banded toon shading on the whole bridge (row "toon")? Three bands, or two for a harder comic look? | **Yes, three bands.** The sprites have soft shadow edges (resolved D-100) |
+| OQ3 | Typeface pair for the HUD: (a) Fraunces + Source Sans 3; (b) Josefin Sans + Nunito (rounder, more 70s); (c) keep the current system face | **(b).** It echoes the comics' lettering. Recorded as the default with the plan's approval; the ST2 pause only confirms it on the status strip (resolved D-100: Josefin Sans + Nunito) |
+| OQ4 | Panel shape: hand-drawn ink border (9-slice) or clean thin border in the palette? | **Hand-drawn ink border** (resolved D-100) |
+| OQ5 | Physics overlays (pole marker, star labels, the Doppler legend) keep their functional colours rather than the palette? | **Yes:** readable and physically honest beats on-brand (resolved D-100) |
+| OQ6 | Below-rail scale cues (the next deck's rim, the canopy below): wanted on the bridge now, or wait for the levels' own passes? | **Now:** a few low-poly silhouettes, replaced when those levels are built (resolved D-100) |
+| OQ7 | Scope: bridge and HUD only; the Commons keeps the broad key and its look until its pass? | **Yes** (resolved D-100) |
 
 ## Deliverables
 
