@@ -1,23 +1,27 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-20, iteration 41.
+Updated 2026-10-20, iteration 42.
 
-- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved this iteration (clause 4 hygiene).
-- **Outcome:** PR #288 merged as `9fe354d` (row 7q). Four one-field known fixtures, one per D-77/D-78 pin, took the display-audit control rows from 24 to 28. The 7p survivors D1–D4 are now killed. The interlude and crew audits assert `ac4: MET (5 accepted by D-77/D-78)`. Independent Sonnet eval: 88 PASS, 0 blocking.
-- **Gates:** `rig/full` was green in 71 min on head `44b38e9`. The fast tier was green on the head and on the merge (39411431564).
-- **Clause 4 remaining:**
-  - Row 7m AC1: the GPU read 86 % twice, so it is still parked on the lane.
-  - The AC5 scene golden 7i(c): waits for attended #287 to finish the ship scene.
-  - P-land.
+- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: L9 is R2 product work, first in Mark's re-prioritised order.
+- **Outcome:** PR #305 merged as `ddc5582` (row L9, S0.1).
+  - The pure sim now ranks the 15 confirmed planets (Sol's eight, TRAPPIST-1's seven) by similarity. The weights are cited data, inputs are validated, and ties go by name.
+  - `make similar-test` checks that the strict VM and the interpreter agree, and pins the iteration-38 spike's digest.
+  - Independent Sonnet eval: 93 PASS, 0 blocking.
+- **Gates:** `rig/full` green in 99 min. The fast tier was green on the head and on the merge.
 - **Key finds:**
-  - Three `ruling_valid` guards still have no isolating control: the two kind pins and the `accepted_by` type guard (E1, E2, E5). Filed as row 7s.
-  - The quorum ran at N−2. The Sonnet seat was out of quota (second iteration running), and the OpenAI seat's API key is out of credits. Codex on the subscription is unaffected.
-- **Next:** row 7m AC1 (quiet GPU) ∥ L9 S0 (once `Makefile` is free of #287) ∥ row 7s; then 7o, 7i(k, l), 7n, 7l, 7k; then L4 → L3 → L5 → L7.
-- **Mark:** nothing open. The ledger has 95 rows, 0 OPEN. D-94 and D-95 (attended) are acknowledged. #285 and #287 are open, and their files are on the Do-not-touch line.
+  - **ailang#1914:** the `::` cons operator does not parse inside a named-test body. Reported; the test bodies avoid it until it is fixed.
+  - **Plan defect:** the plan's row count contradicted its own pinned digest. Corrected by measurement.
+  - **K6/K7:** `similar-test` stays green with the strict flag removed. Added to the follow-up backlog.
+- **Rig load:** load averages of 15–44 came from non-loop processes: other sessions' rig checks, a `godot … test_deck_layout_eval.gd` running 10 h+, and Chrome helpers at 100 % for 4 days. Whole-suite runs took 3–6× longer.
+- **Clause 4 remaining:**
+  - Row 7m AC1 is parked until the rig is idle.
+  - AC5 scene golden 7i(c): #292 has merged, so it gets re-measured.
+  - P-land.
+- **Next:** L9 S0.2 (protocol 2.13 emission, the oracle, `similar-record`) → S0.3 → L4 → L3 → L5 → L7.
+- **Mark:** nothing open. The ledger has 106 rows, 0 OPEN. D-96–D-106 and the re-prioritisation are acknowledged.
 - **Lanes:**
-  - Designer: GLM-5.3 (pi, 211k tok).
-  - Planner and executor: codex gpt-6.1-sol (68k; 64k + 97k tok).
-  - Evaluator: Sonnet (63k tok).
+  - Planner and executor: codex gpt-6.1-sol (145k; 131k tok + a capped run).
+  - Evaluator: Sonnet (98k tok).
   - All roles ran through Agent-tool spawns.
-  - Metered: about $0.25 (quorum only).
-- **Workspace:** sibling clones `.stapledon-loop-iter41`, `.stapledon-eval-iter41` and `.stapledon-record-iter41`. The main checkout was only read.
+  - Metered: $0.
+- **Workspace:** sibling clones `.stapledon-loop-iter42`, `.stapledon-eval-iter42` and `.stapledon-record-iter42`. The main checkout was only read.
