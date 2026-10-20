@@ -98,6 +98,82 @@ func _show() -> void:
 		texture = textures[key]
 
 
+## R2-CAPTAIN-ANIMATION (§D3): manifest v2 "anim" holds painted clip frames per stage and facing,
+## each a trimmed cell of the contract canvas scaled by anim.cell_scale ({file, crop [x, y, w, h],
+## flip}). show_anim() draws a CaptainAnim.step() output: the clip's frame for the painted facing
+## when it exists, else today's still for the sector (STILL_FOR_SECTOR), mirrored as needed.
+## Stand-ins for clips not painted yet: start -> jog, every other non-gait clip -> idle.
+const STILL_FOR_SECTOR := [["back", false], ["ne", false], ["se", false], ["se", false],
+	["front", false], ["se", true], ["se", true], ["ne", true]]
+const CLIP_STAND_IN := {"start": "jog", "stop": "idle", "look_up": "idle", "lift": "idle",
+	"use_low": "idle", "use_mid": "idle", "use_high": "idle", "sit": "idle", "seated": "idle", "stand": "idle"}
+var anim := {} # the manifest's "anim" section
+var anim_dir := ""
+var shown := {} # what show_anim() drew: {source: "frame"|"still", file, flip, frame, clip}
+var _frames := {} # file -> Texture2D
+
+
+## file: the manifest holding the "anim" section (the CA1 pilot's frames live in anim_pilot.json until
+## Mark accepts them; the game loads manifest.json).
+func load_anim(dir: String, file := "manifest.json") -> void:
+	var m: Variant = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(file)))
+	anim = m.get("anim", {}) if m is Dictionary else {}
+	anim_dir = dir
+
+
+## The painted frame list for a clip at this stage and painted facing (empty when none).
+func clip_frames(clip: String, painted_facing: String) -> Array:
+	var c: Dictionary = anim.get("clips", {}).get(clip, {})
+	return c.get("stages", {}).get(str(stage), {}).get(painted_facing, [])
+
+
+## The frame index of a CaptainAnim output within n frames: gait clips by phase, timed by clip_t.
+func frame_index(clip: String, o: Dictionary, n: int) -> int:
+	var c: Dictionary = anim.get("clips", {}).get(clip, {})
+	if str(c.get("kind", "time")) == "gait":
+		return int(floor(float(o.get("phase", 0.0)) * n)) % n
+	var k := int(floor(float(o.get("clip_t", 0.0)) * float(c.get("fps", 2.0))))
+	return k % n if bool(c.get("loop", true)) else mini(k, n - 1)
+
+
+func show_anim(o: Dictionary) -> void:
+	var clip: String = o.get("clip", "idle")
+	var frames := clip_frames(clip, o.get("facing", "back"))
+	if frames.is_empty() and CLIP_STAND_IN.has(clip):
+		clip = CLIP_STAND_IN[clip]
+		frames = clip_frames(clip, o.get("facing", "back"))
+	if not frames.is_empty():
+		var i := frame_index(clip, o, frames.size())
+		var f: Dictionary = frames[i]
+		var tex := _frame(str(f["file"]))
+		if tex != null:
+			var s: float = anim.get("cell_scale", 1.0)
+			var crop: Array = f.get("crop", [0, 0, tex.get_width(), tex.get_height()])
+			var flip: bool = bool(f.get("flip", false)) != bool(o.get("flip", false))
+			texture = tex
+			pixel_size = 1.0 / (720.0 * s)
+			flip_h = flip
+			var ax := anchor_px.x * s
+			var ay := anchor_px.y * s
+			var bob_px := float(o.get("bob_m", 0.0)) / pixel_size
+			offset = Vector2((ax - float(crop[0]) - float(crop[2])) if flip else (float(crop[0]) - ax), ay - (float(crop[1]) + float(crop[3])) + bob_px)
+			shown = {"source": "frame", "file": f["file"], "flip": flip, "frame": i, "clip": clip}
+			return
+	var still: Array = STILL_FOR_SECTOR[int(o.get("sector", 0))]
+	facing = still[0]
+	_show()
+	pixel_size = 1.0 / 720.0
+	flip_h = still[1]
+	offset = Vector2((anchor_px.x - canvas_px.x) if flip_h else -anchor_px.x, anchor_px.y - canvas_px.y + float(o.get("bob_m", 0.0)) * 720.0)
+	shown = {"source": "still", "file": "y%d_%s" % [stage, facing], "flip": flip_h, "frame": 0, "clip": clip}
+
+
+func _frame(file: String) -> Texture2D:
+	if not _frames.has(file):
+		_frames[file] = make_texture(anim_dir.path_join(file))
+	return _frames[file]
+
+
 ## The sprite as a mipmapped texture: imported (editor and export) or the raw PNG.
 static func _texture(path: String) -> Texture2D:
 	if _offered.has(path): # made moments ago by the loading jump (ui/loading_jump.gd), one a frame
