@@ -341,5 +341,13 @@
       "Astern at the spawn: the lift box fills the near foreground: the deck re-plan"
     ],
     "build": "v0.4.0-dev.34-home-tiers-38-g0a787245 (publish-dev), PR #282"
-  }
+  },
+  "follow_ups": [
+    {
+      "id": "commons-interlude-hold",
+      "what": "On the legacy Commons the crossing review does not hold the camera on a view (sky() refuses off the bridge, so director.hold stays false), as on main before this sprint; no test pins it",
+      "when": "the Commons views pass (its own Bow/walk views)",
+      "source": "evaluation round 1 non-blocking; coordinator ruling 2026-10-20: leave it for the Commons views pass"
+    }
+  ]
 }
