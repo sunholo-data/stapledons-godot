@@ -2,6 +2,78 @@
 
 ## Unreleased
 
+## v0.4.0-dev.35-bow-view (2026-10-20)
+
+### deck-layout-dl2 (2026-10-20)
+
+#### Added
+
+- **The spire is the bridge's own light** (R2-DECK-LAYOUT DL2, D-96). A warm lamp on the mast lights
+  the bridge when no star is close and hands over to the star as one draws near (it dims with the
+  ship's broad key, down to the same 25 % floor); a lamp band on the mast glows with it. The lower
+  decks are unchanged.
+
+#### Changed
+
+- **The navigation arc and the captain's chair are dressed** (R2-DECK-LAYOUT DL2 style frame, for
+  Mark's approval): painted textures with contact shading and ink creases, an ink outline, and a
+  brass screen bezel on each navigation pod's operator face (the live screen sits in the middle
+  one). They ship in their own `bridge_props.glb` beside `ship.glb`. No light is baked: the spire
+  and the star light them live.
+
+### deck-layout-dl1 (2026-10-20)
+
+#### Changed
+
+- **The bridge faces the bow** (R2-DECK-LAYOUT DL1, D-95; a blockout). The navigation arc stands at
+  the bow rail on the centreline with the captain's chair behind it, and the Voyage and Crew
+  consoles flank it; at every station the captain stands stern of the console facing the way the
+  ship is going, and each console's close-up looks out at the sky ahead. A new game starts behind
+  the helm (the manifest's `spawn_captain`), and the first step forward walks to the helm, not into
+  the lift. Operator points are authored in Blender (`stations.<id>.use_m`). The props keep their
+  grounded-v2 look; the hand-finished art follows Mark's playtest.
+
+#### Added
+
+- `make deck-layout-eval` (the bow evaluator: every bridge walk sample through the Bow and Astern
+  views, §D4 thresholds), `make deck-layout-eval-test` and `make deck-assets-check` in `make test`;
+  `make ship-baseline` fetches the pinned pre-move deck for the evaluator's positive control; the
+  bridge's fading props are data (`views.json` `levels.bridge.occluders`).
+
+### camera-forward (2026-10-19)
+
+#### Changed
+
+- **Travel runs along the deck, toward the bow** (D-92, amends D-14). The ship's direction of travel
+  is now a horizontal axis in the deck plane, so the journey and the deck share one frame. One named
+  map per frame: `ShipCamera.ship_vector` / `gltf_from_ship` (kinematic) and
+  `ShipFrame.gltf_from_structure` (Blender structure); `make basis-gate` fails on any inline copy.
+  No physics formula, sim, protocol or replay changed; the GPU goldens re-posed one for one (393).
+- **A fixed bow camera** (R2-CAMERA-FORWARD F1, D-91, D-93). On the bridge the camera looks over the
+  captain toward the bow and slides with the captain without ever turning: W is always up the
+  screen. 7 Bow (default), 9 Astern, R back to Bow; 8 reserved. The spire and the lift fade while
+  they hide the captain or the journey. Every cue (departure, braking, a stop, Sgr A*) returns to
+  Bow; a guided stop now turns the ship so the body sits 30° off the bow, inside the frame, and at
+  Sgr A* the hole sits on the bow at every stop. Zoom levels are developer presets on the bridge;
+  the Commons keeps its views for now. The old sky views (Sky ahead, to the side, astern) are gone
+  as player views; they remain only as tool and golden poses.
+- Braking notice: "Braking. The bow is still the way we are travelling."
+- Developer tooling: `make camera-views-capture` renders Bow, Astern, the Commons and the lift at
+  rest, 0.99c, a guided stop and Sgr A* (plus a forced-fade frame and a real voyage at 0.9/0.99/
+  0.999c), gated on the pole, the stop body or the hole being in frame. `make camera-forward-targets`
+  records the live stop and Sgr A* targets the camera test checks. A fresh clone now gets
+  `data/raw/.gdignore` from `make sky-assets`, and `make publish-dev` fails with the fix
+  (`make ai-core-assets`) instead of publishing a build without the core layer.
+
+### context-controls (2026-10-16)
+
+#### Changed
+
+- Display audit controls now prove that absent frame paths are rejected, catalogue distance
+  must appear in binding parts even when carried in context, and Crew working counts match
+  the frame. The distance-presence rule reports `context-presence`, distinct from
+  `context-source`, and wrong-reason failures name the control fixture.
+
 ## v0.4.0-dev.34-home-tiers (2026-10-19)
 
 ### home-tiers (2026-10-19)

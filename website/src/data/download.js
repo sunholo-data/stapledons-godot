@@ -2,7 +2,7 @@
 // rewrites it on every tag (.github/workflows/release.yml), and the download card asks GitHub for
 // the newest release with a macOS zip when the page loads, so the site never needs a redeploy for
 // a new build.
-const TAG = 'v0.4.0-dev.34-home-tiers';
+const TAG = 'v0.4.0-dev.35-bow-view';
 const REPO = 'https://github.com/sunholo-data/stapledons-godot';
 export const RELEASES_API = 'https://api.github.com/repos/sunholo-data/stapledons-godot/releases?per_page=20';
 
