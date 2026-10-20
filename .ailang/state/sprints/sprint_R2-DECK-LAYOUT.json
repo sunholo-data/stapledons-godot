@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "paused_for_review",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-95)",
   "approved_on": "2026-10-20",
@@ -10,7 +10,7 @@
   "completed": null,
   "design_doc": "design_docs/planned/r2/deck-layout.md",
   "sprint_plan": "design_docs/planned/r2/deck-layout-sprint.md",
-  "branch": "feat/deck-layout-dl2",
+  "branch": "feat/deck-layout-dl3",
   "history": [
     {
       "date": "2026-10-19",
@@ -39,6 +39,10 @@
     {
       "date": "2026-10-20",
       "event": "DL2 style frame built (navigation arc with operator-side bezels, chair; painted, inked) and the SpireLight (section D5a); paused for Mark to approve the finish"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "DL2 accepted in general (ledger D-97: 'yes we need more styling and graphic pass overall but in general happy'); OQ6 amended as recommended (the spire light stays live). DL3 built on feat/deck-layout-dl3; the overall styling pass planned separately (R2-BRIDGE-STYLE)"
     }
   ],
   "implements": [
@@ -190,10 +194,10 @@
         "make deck-layout-capture TAG=dl3: frames opened and published (AC11)",
         "make ship-commons-test ship-commons-assets-test green"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "Test-first (6 DL3 failures, then deck-layout-eval-test 22/0). ~/dev/blender/scripts/stapledon_bridge_props_v2.py (v1's DL2 heroes rebuilt identically) dresses five texture sets, one shared painted WebP atlas each, moved to bridge_props.glb: desks (Voyage, Crew, reserved 2/3 and desk props; brass bezels on the two live desks), rail (31 rail segments, 16 rail lamps, 10 fronds; 2048 atlas), archive (terminal, detail, shrine ribs, spire vents), lift head (guides, 82 m guardrails), floor (benches, watch benches, conduits). Instancing kept for meshes shared inside one set: bridge_props.glb 4.45 MB, ship.glb 5.6 MB; two runs byte-identical; master pinned. The deck surface and the spire body stay in ship.glb for the styling pass (D-97); the runtime lift box (ship_demo_lift.gd) is still the blockout. Occluders now marked on the props too. Gates: deck-layout-eval ok; deck-assets-check ok; camera, camera-forward, ship-console, ship-ui, crew-console, bridge-floor, validate-ship-demo, ship-demo-assets, ship-demo-lift, ship-commons x3, ship-star-light green; full make -k test green on f57... (see PR); make golden 393 ok and 364 baseline lines match main after moving G-M4-S3's observer to (11, 82, -4.8) (the dressed +25 deg frond fell in its 12 px window); bench p99 15.58 ms at 2560x1440, host load ~12 (one earlier run at load ~16 with a capture running missed at 23.3 ms). Also: the in-game help and the display panel's camera buttons describe the current views (7/R Bow, 9 Astern, 8 reserved, console zoom, Z1-Z3 developer presets), pinned to views.json in ship-ui-test. ship-star-light-capture's pre-existing failure diagnosed, not fixed (the alpha Cen leg stays committed in braking at beta 0.999 for 39,021 ticks: no progress, likely an unanswered hold); the capture now says so."
     },
     {
       "id": "DL4_INTEGRATION",
