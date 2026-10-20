@@ -1,47 +1,22 @@
 class_name DeckLayout
 extends RefCounted
-## R2-DECK-LAYOUT (design_docs/planned/r2/deck-layout.md §D2-§D4): the layout evaluator's
-## measurements, shared by tools/deck_layout_eval.gd, tools/deck_layout_capture.gd and
-## tests/test_deck_layout_eval.gd.
-##
-## A layout (art/deck-layout-v1/*.json, schema stapledons.deck.layout/1) places the bridge's
-## movable prop groups by their pivot in ship metres (Blender +Z up; glTF is (x, z, -y)) and a
-## yaw about +Z. apply() moves the named nodes of a running ship demo in-engine and rebuilds the
-## bridge walk surface by the generator's rule (the old hole of a moved group is filled, its hole
-## shape is cut at the new pose), so candidates are scored in seconds. The Blender export is the
-## source of truth: every acceptance check runs on the exported GLB (no layout applied).
-##
-## Measurements (per view, 1280x720, FOV 78, the camera test's 0.5 m walk samples and cells):
-##   clear line        samples whose eye-to-head ray hits geometry (camera test AC1, shared rule)
-##   captain px        the captain's projected height at Z2 (min / median / max over samples)
-##   boom intrusion    samples whose boom (eye to 1.5 m short of the head) passes within
-##                     BOOM_CLEAR_M (0.75 m) of a movable prop's box
-##   station px        Z3: each active station's projected height where it is in frame and seen
-##   foreground        Z3: the largest single collider's share of frame rays that hit it nearer
-##                     than the captain (floors excluded)
-##   sky fraction      Sky forward: the share of a 64x36 ray grid through the frame reaching the
-##                     sky, over every landing pose (72 rail bearings + the 2 m grid), and the
-##                     forward pole's angular clearance from geometry
-##   sky side          the side view's rail anchor: the captain and the stop's body direction clear
+## R2-DECK-LAYOUT (design_docs/planned/r2/deck-layout.md §D2): layouts in-engine, for search,
+## review and the walk bake. A layout (art/deck-layout-v2/*.json, schema stapledons.deck.layout/1)
+## places the bridge's movable prop groups by their pivot in ship metres (Blender +Z up; glTF is
+## (x, z, -y)) and a yaw about +Z. apply() moves the named nodes of a running ship demo and rebuilds
+## the bridge walk surface (tools/deck_walk_bake.gd writes it out for the Blender generator). The
+## measurements are DeckBowMetrics' (tools/deck_bow_metrics.gd); the sector-view metrics of the
+## first plan went with the sector views (R2-CAMERA-FORWARD F3). Every acceptance check runs on
+## the exported GLB.
 
 const SCHEMA := "stapledons.deck.layout/1"
 const SAMPLE_M := 0.5
 const PX := Vector2(1280, 720)
-const FIGURE_M := 1.754 # the captain sprite's opaque height (tests/test_camera_director.gd)
-const BOOM_CLEAR_M := 0.75 # DL0: a prop grazing the line of sight (a 1.5 m tube flagged 22 % of today's Z2 samples)
-const BOOM_HEAD_M := 1.5 # the boom stops this far short of the head (the captain's own surroundings)
 const DECK_Y := 82.0
 const LOWER_Y := 57.0
 const WALK_CELL_M := 0.125
 const WALK_RIM_M := 20.3 # a vacated hole is refilled only inside the deck's walkable disc
 const HOLE_MARGIN_M := 1.0 # a group's walk hole is looked for this far around its footprint
-const SKY_W := 64
-const SKY_H := 36
-const SKY_FAR_M := 400.0
-const POLE_MAX_DEG := 30
-const FG_W := 96
-const FG_H := 54
-const SKY_GRID_M := 2.0
 ## Prop groups the layout may move or remove: the pivot node first, then its companions.
 const GROUPS := {
 	"captain_chair": ["captain_chair", "v2_chair_detail_00"],
@@ -516,7 +491,7 @@ func ray(from: Vector3, to: Vector3) -> Dictionary:
 func occluder(from: Vector3, to: Vector3) -> Dictionary:
 	var hit := ray(from, to)
 	var lift_t := INF
-	for b: AABB in dir.lift_boxes():
+	for b: AABB in lift_boxes(demo):
 		var at: Variant = b.intersects_segment(from, to)
 		if at != null:
 			lift_t = minf(lift_t, from.distance_to(at))
@@ -527,6 +502,21 @@ func occluder(from: Vector3, to: Vector3) -> Dictionary:
 
 func clear_line(eye: Vector3, head: Vector3) -> bool:
 	return ray(eye, head + (eye - head).normalized() * 0.25).is_empty()
+
+
+## The lift's visible boxes (they have no collision), as global AABBs (CameraDirector's copy left
+## with the dead sky views in R2-CAMERA-FORWARD F3).
+static func lift_boxes(demo_node: Node) -> Array:
+	var out := []
+	if demo_node == null or demo_node.lift == null:
+		return out
+	var stack: Array = [demo_node.lift]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D and n.is_visible_in_tree() and n.mesh != null:
+			out.append((n as MeshInstance3D).global_transform * n.mesh.get_aabb())
+		stack.append_array(n.get_children())
+	return out
 
 
 ## The name of the mesh a collider belongs to (create_trimesh_collision puts the body under it).
@@ -548,428 +538,3 @@ static func frame_dir(pose: Transform3D, u: float, v: float, px := PX) -> Vector
 	var x := (u * 2.0 - 1.0) * f * px.x / px.y
 	var y := (1.0 - v * 2.0) * f
 	return (pose.basis * Vector3(x, y, -1.0)).normalized()
-
-
-# ------------------------------------------------------------------ per-view measurements
-
-## Clear line, frame, captain px and boom intrusions for a level view over an area's samples.
-func level_metrics(area: String, lv: int, pts: Array = []) -> Dictionary:
-	var v: Dictionary = dir.level_view(lv, area)
-	if pts.is_empty():
-		pts = samples(area)
-	var props := _prop_boxes()
-	var blocked := []
-	var out_px := []
-	var heights := []
-	var intrusions := []
-	for p: Vector3 in pts:
-		var own := dir.sector_for(p, -1)
-		for kk: int in cells(p):
-			var pose := dir.resolve(v, p, kk)
-			var head := dir.head_of(v, p)
-			if not clear_line(pose.origin, head):
-				blocked.append([p, kk])
-			var sp := CameraDirector.screen_point(pose, head, PX)
-			if is_nan(sp.x) or not Rect2(Vector2.ZERO, PX).has_point(sp):
-				out_px.append([p, kk])
-			if kk == own:
-				heights.append(CameraDirector.figure_px(pose, p, FIGURE_M, PX.y))
-				var who := boom_intrusion(pose.origin, head, props)
-				if who != "":
-					intrusions.append([p, who])
-	heights.sort()
-	var r := {"view": str(v.id), "area": area, "level": lv, "samples": pts.size(), "blocked": blocked.size(), "out_of_frame": out_px.size(), "boom_intrusions": intrusions.size()}
-	if not blocked.is_empty():
-		r.first_blocked = str(blocked[0])
-	if not intrusions.is_empty():
-		r.first_intrusion = str(intrusions[0])
-		var names := {}
-		for it: Array in intrusions:
-			names[it[1]] = int(names.get(it[1], 0)) + 1
-		r.intruders = names
-	if not heights.is_empty():
-		r.captain_px = {"min": snappedf(heights[0], 0.1), "median": snappedf(heights[heights.size() / 2], 0.1), "max": snappedf(heights[-1], 0.1)}
-	return r
-
-
-func _prop_boxes() -> Array:
-	var out := []
-	var stack: Array = [demo.geometry]
-	while not stack.is_empty():
-		var n: Node = stack.pop_back()
-		if n is MeshInstance3D and n.is_visible_in_tree() and n.mesh != null:
-			for pre: String in PROP_PREFIXES:
-				if str(n.name).begins_with(pre):
-					out.append([str(n.name), (n as MeshInstance3D).global_transform * n.mesh.get_aabb()])
-					break
-		if n == demo.lift or str(n.name).begins_with("Commons"):
-			continue
-		stack.append_array(n.get_children())
-	for b: Node in _extra:
-		var m := b.get_child(1) as MeshInstance3D
-		out.append([str(b.name), m.global_transform * m.mesh.get_aabb()])
-	return out
-
-
-static func _aabb_dist(b: AABB, p: Vector3) -> float:
-	var q := Vector3(clampf(p.x, b.position.x, b.end.x), clampf(p.y, b.position.y, b.end.y), clampf(p.z, b.position.z, b.end.z))
-	return q.distance_to(p)
-
-
-## The first prop within BOOM_CLEAR_M of the boom (the eye to 1.5 m short of the head), or "".
-func boom_intrusion(eye: Vector3, head: Vector3, props: Array) -> String:
-	var d := head - eye
-	var length := d.length() - BOOM_HEAD_M
-	if length <= 0.0:
-		return ""
-	var stop := eye + d.normalized() * length
-	var seg := AABB(eye, Vector3.ZERO).expand(stop).grow(BOOM_CLEAR_M)
-	for pb: Array in props:
-		var box: AABB = pb[1]
-		if not seg.intersects(box):
-			continue
-		var steps := maxi(2, int(length / 0.25))
-		for i in steps + 1:
-			if _aabb_dist(box, eye.lerp(stop, float(i) / steps)) < BOOM_CLEAR_M:
-				return pb[0]
-	return ""
-
-
-## Representative standing points per cell: the sample nearest each cell's centroid.
-func cell_points(pts: Array) -> Dictionary:
-	var acc := {}
-	for p: Vector3 in pts:
-		var k := dir.sector_for(p, -1)
-		if not acc.has(k):
-			acc[k] = []
-		acc[k].append(p)
-	var out := {}
-	for k: int in acc:
-		var c := Vector3.ZERO
-		for p: Vector3 in acc[k]:
-			c += p
-		c /= float(acc[k].size())
-		var best: Vector3 = acc[k][0]
-		for p: Vector3 in acc[k]:
-			if p.distance_squared_to(c) < best.distance_squared_to(c):
-				best = p
-		out[k] = best
-	return out
-
-
-## Framing at a level, from each cell's representative point: each active station's projected
-## height (px) where it is in frame and seen, how many cells frame at least one station, and the
-## largest single collider's share of the frame nearer than the captain (floors excluded; the
-## lift's boxes count as "lift"). On the bridge at Z2 the spawn's own frame is measured too.
-func framing_metrics(area: String, lv: int, pts: Array = []) -> Dictionary:
-	var v: Dictionary = dir.level_view(lv, area)
-	if pts.is_empty():
-		pts = samples(area)
-	var reps := cell_points(pts)
-	var station_px := {}
-	var station_cells := 0
-	var worst_fg := 0.0
-	var worst_fg_who := ""
-	var worst_fg_cell := -1
-	var keys := reps.keys()
-	keys.sort()
-	for k: int in keys:
-		var p: Vector3 = reps[k]
-		var pose := dir.resolve(v, p, k)
-		var head := dir.head_of(v, p)
-		if area == "bridge":
-			var any := false
-			for sid: String in ACTIVE_STATIONS:
-				var hpx := station_height(pose, sid)
-				if hpx > 0.0:
-					any = true
-					if not station_px.has(sid):
-						station_px[sid] = []
-					station_px[sid].append(hpx)
-			if any:
-				station_cells += 1
-		var fg := foreground(pose, head)
-		if fg.share > worst_fg:
-			worst_fg = fg.share
-			worst_fg_who = fg.who
-			worst_fg_cell = k
-	var r := {"view": str(v.id), "area": area, "level": lv, "framing": true, "cells": keys.size(), "foreground_share": snappedf(worst_fg, 0.001), "foreground_by": worst_fg_who, "foreground_cell": worst_fg_cell}
-	if area == "bridge":
-		var st := {}
-		for sid: String in ACTIVE_STATIONS:
-			var arr: Array = station_px.get(sid, [])
-			arr.sort()
-			st[sid] = {"seen_in_cells": arr.size(), "min_px": snappedf(arr[0], 0.1) if not arr.is_empty() else 0.0, "max_px": snappedf(arr[-1], 0.1) if not arr.is_empty() else 0.0}
-		r.stations = st
-		r.station_cells = station_cells
-		var sp := spawn()
-		var k0 := dir.sector_for(sp, -1)
-		var spose := dir.resolve(v, sp, k0)
-		var sfg := foreground(spose, dir.head_of(v, sp))
-		r.spawn_foreground_share = snappedf(sfg.share, 0.001)
-		r.spawn_foreground_by = sfg.who
-		var seen := []
-		for sid: String in ACTIVE_STATIONS:
-			if station_height(spose, sid) > 0.0:
-				seen.append(sid)
-		r.spawn_stations = seen
-		r.spawn_frame = frame_shares(spose)
-	return r
-
-
-## What fills a frame (any distance, floors excluded): the top colliders' shares, and the lift's
-## (its boxes, guards and anything seen inside its opening, the platform included).
-func frame_shares(pose: Transform3D) -> Dictionary:
-	var count := {}
-	var lift := 0
-	var shaft := Rect2(5.5, -10.5, 5.0, 5.0) # glTF xz: the 4 m opening at ship (8, 8) and its guards
-	for j in FG_H:
-		for i in FG_W:
-			var d := frame_dir(pose, (i + 0.5) / FG_W, (j + 0.5) / FG_H)
-			var hit := occluder(pose.origin, pose.origin + d * 60.0)
-			if hit.is_empty():
-				continue
-			var who := collider_name(hit)
-			var at: Vector3 = hit.position
-			if who == "lift" or who.begins_with("Guardrail 82") or (shaft.has_point(Vector2(at.x, at.z)) and at.y > 75.0):
-				lift += 1
-			if (hit.normal as Vector3).y > 0.7:
-				continue
-			count[who] = int(count.get(who, 0)) + 1
-	var names := count.keys()
-	names.sort_custom(func(a: String, b: String) -> bool: return count[a] > count[b])
-	var top := []
-	for n: String in names.slice(0, 3):
-		top.append([n, snappedf(float(count[n]) / float(FG_W * FG_H), 0.001)])
-	return {"top": top, "lift": snappedf(float(lift) / float(FG_W * FG_H), 0.001)}
-
-
-## A station's projected height in px from a pose (0 when off frame or unseen).
-func station_height(pose: Transform3D, sid: String) -> float:
-	var box := AABB()
-	var first := true
-	for mesh_name: String in ACTIVE_STATIONS[sid]:
-		var n := demo.geometry.find_child(mesh_name, true, false) as MeshInstance3D
-		if n == null or not n.is_visible_in_tree():
-			continue
-		var a: AABB = n.global_transform * n.mesh.get_aabb()
-		box = a if first else box.merge(a)
-		first = false
-	if first:
-		return 0.0
-	var centre := box.get_center()
-	var sc := CameraDirector.screen_point(pose, centre, PX)
-	if is_nan(sc.x) or not Rect2(Vector2.ZERO, PX).has_point(sc):
-		return 0.0
-	var hit := occluder(pose.origin, centre)
-	if not hit.is_empty() and not str(collider_name(hit)) in ACTIVE_STATIONS[sid] and (hit.position as Vector3).distance_to(centre) > box.size.length() * 0.5:
-		return 0.0
-	var top := INF
-	var bottom := -INF
-	for i in 8:
-		var sp := CameraDirector.screen_point(pose, box.get_endpoint(i), PX)
-		if is_nan(sp.x):
-			return 0.0
-		top = minf(top, sp.y)
-		bottom = maxf(bottom, sp.y)
-	return bottom - top
-
-
-func foreground(pose: Transform3D, head: Vector3) -> Dictionary:
-	var near := pose.origin.distance_to(head) * 0.9
-	var count := {}
-	for j in FG_H:
-		for i in FG_W:
-			var d := frame_dir(pose, (i + 0.5) / FG_W, (j + 0.5) / FG_H)
-			var hit := occluder(pose.origin, pose.origin + d * near)
-			if hit.is_empty() or (hit.normal as Vector3).y > 0.7:
-				continue
-			var who := collider_name(hit)
-			count[who] = int(count.get(who, 0)) + 1
-	var best := ""
-	var most := 0
-	for who: String in count:
-		if count[who] > most:
-			most = count[who]
-			best = who
-	return {"share": float(most) / float(FG_W * FG_H), "who": best}
-
-
-## Sky forward over every landing pose. "rail": the 72 walk_to bearings (15 m), the poses the
-## design's floors apply to (§D4); "grid": the 2 m grid of bridge samples, the pose the game takes
-## there (in place when its pole ray is clear, else after walking to the rail), reported.
-func sky_metrics() -> Dictionary:
-	var fwd: Dictionary = dir.views["sky_forward"]
-	var rail := []
-	var grid := []
-	var none := 0
-	for deg in range(0, 360, 5):
-		var at: Variant = dir.anchor_of(fwd, Vector3(cos(deg_to_rad(deg)), 0.0, sin(deg_to_rad(deg))) * 10.0 + Vector3(0, DECK_Y, 0))
-		var pose: Variant = _landing(fwd, at, false)
-		if pose == null:
-			none += 1
-		else:
-			rail.append(pose)
-	for p: Vector3 in samples("bridge"):
-		if absf(fposmod(p.x, SKY_GRID_M)) > 1e-3 or absf(fposmod(p.z, SKY_GRID_M)) > 1e-3:
-			continue
-		var pose: Variant = _landing(fwd, p, true)
-		if pose == null:
-			none += 1
-		else:
-			grid.append(pose)
-	var spawn_pose: Variant = _landing(fwd, spawn(), true)
-	var r := _sky_set(rail)
-	r.merge({"view": "sky_forward", "rail_poses": rail.size(), "no_pose": none, "grid": _sky_set(grid), "grid_poses": grid.size(),
-		"spawn_sky_fraction": snappedf(sky_fraction(spawn_pose), 0.001) if spawn_pose != null else 0.0,
-		"spawn_pole_clearance_deg": pole_clearance(spawn_pose.origin) if spawn_pose != null else 0.0})
-	return r
-
-
-func _sky_set(poses: Array) -> Dictionary:
-	var fr := []
-	var worst_clear := float(POLE_MAX_DEG)
-	for pose: Transform3D in poses:
-		fr.append(sky_fraction(pose))
-		worst_clear = minf(worst_clear, pole_clearance(pose.origin))
-	fr.sort()
-	return {"sky_fraction": {"worst": snappedf(fr[0], 0.001) if not fr.is_empty() else 0.0, "median": snappedf(fr[fr.size() / 2], 0.001) if not fr.is_empty() else 0.0}, "pole_clearance_deg": worst_clear}
-
-
-func _landing(fwd: Dictionary, at: Variant, walk: bool) -> Variant:
-	if at == null:
-		return null
-	var p: Vector3 = at
-	var off: Variant = dir.choose_offset(fwd, p)
-	if off == null and walk:
-		var a: Variant = dir.anchor_of(fwd, p)
-		if a == null:
-			return null
-		p = a
-		off = dir.choose_offset(fwd, p)
-	if off == null:
-		return null
-	return dir._sky(fwd, p, dir.sector_for(p, -1), off)
-
-
-func sky_fraction(pose: Transform3D) -> float:
-	var sky := 0
-	for j in SKY_H:
-		for i in SKY_W:
-			var d := frame_dir(pose, (i + 0.5) / SKY_W, (j + 0.5) / SKY_H)
-			if occluder(pose.origin, pose.origin + d * SKY_FAR_M).is_empty():
-				sky += 1
-	return float(sky) / float(SKY_W * SKY_H)
-
-
-## The forward pole's clearance: the smallest tilt from +y (1 deg steps, 24 azimuths) at which a
-## ray from the eye meets geometry within SKY_FAR_M; POLE_MAX_DEG when none does.
-func pole_clearance(eye: Vector3) -> float:
-	for tilt in range(0, POLE_MAX_DEG):
-		for a in 24:
-			var az := TAU * a / 24.0
-			var d := Vector3.UP.rotated(Vector3(cos(az), 0, sin(az)), deg_to_rad(tilt))
-			if not occluder(eye, eye + d * SKY_FAR_M).is_empty():
-				return float(tilt)
-	return float(POLE_MAX_DEG)
-
-
-## The side view at its rail anchor: the captain clear and the stop's body direction (+x, 15 deg
-## up) clear from the eye.
-func side_metrics() -> Dictionary:
-	var side: Dictionary = dir.views["sky_side"]
-	var a: Variant = dir.anchor_of(side, spawn())
-	if a == null:
-		return {"view": "sky_side", "ok": false, "why": "no anchor"}
-	var pose := dir.resolve(side, a, dir.sector_for(a, -1))
-	var head := dir.head_of(side, a)
-	var body := Vector3(cos(deg_to_rad(15.0)), sin(deg_to_rad(15.0)), 0)
-	var captain_ok := clear_line(pose.origin, head)
-	var body_hit := ray(pose.origin, pose.origin + body * SKY_FAR_M)
-	return {"view": "sky_side", "anchor": [snappedf(a.x, 0.01), snappedf(a.z, 0.01)], "captain_clear": captain_ok, "body_clear": body_hit.is_empty(), "body_hit": collider_name(body_hit) if not body_hit.is_empty() else "", "ok": captain_ok and body_hit.is_empty()}
-
-
-# ------------------------------------------------------------------ the report and thresholds
-
-func evaluate(areas := ["bridge", "lower"]) -> Dictionary:
-	var r := {"schema": "stapledons.deck.eval/1", "layout": str(layout.get("name", "shipped")), "views": []}
-	for area: String in areas:
-		var pts := samples(area)
-		for lv in [1, 2, 3]:
-			r.views.append(level_metrics(area, lv, pts))
-		for lv in [2, 3]:
-			r.views.append(framing_metrics(area, lv, pts))
-	if "bridge" in areas:
-		r.views.append(sky_metrics())
-		r.views.append(side_metrics())
-	return r
-
-
-## Threshold failures as "<reason> <view>: <detail>" (reasons: clear-line, out-of-frame,
-## captain-px, boom-intrusion, station-legibility, frame-dominance, sky-fraction, pole-clearance,
-## no-sky-pose, sky-side). `t` is art/deck-layout-v1/thresholds.json.
-static func failures(report: Dictionary, t: Dictionary) -> PackedStringArray:
-	var out := PackedStringArray()
-	for v: Dictionary in report.views:
-		var area := str(v.get("area", "bridge"))
-		var tt: Dictionary = t.get(area, {})
-		var id := "%s (%s)" % [v.view, area]
-		if v.has("blocked"):
-			var ceiling := int((tt.get("blocked_ceiling", {}) as Dictionary).get(str(v.level), 0))
-			if int(v.blocked) > ceiling:
-				out.append("clear-line %s: %d blocked > %d" % [id, v.blocked, ceiling])
-			if int(v.out_of_frame) > 0:
-				out.append("out-of-frame %s: %d" % [id, v.out_of_frame])
-			if int(v.boom_intrusions) > int((tt.get("boom_intrusions_max", {}) as Dictionary).get(str(v.level), 0)):
-				out.append("boom-intrusion %s: %d (%s)" % [id, v.boom_intrusions, v.get("intruders", {})])
-			if int(v.level) == 2 and v.has("captain_px"):
-				var lo := float(tt.get("z2_captain_px_min", 0.0))
-				var hi := float(tt.get("z2_captain_px_max", 1e9))
-				if float(v.captain_px.min) < lo or float(v.captain_px.max) > hi:
-					out.append("captain-px %s: %.1f..%.1f outside %.0f..%.0f" % [id, v.captain_px.min, v.captain_px.max, lo, hi])
-		if v.get("framing", false):
-			var lvs := str(v.level)
-			var fmax := float((tt.get("foreground_share_max", {}) as Dictionary).get(lvs, 1.0))
-			if float(v.foreground_share) > fmax:
-				out.append("frame-dominance %s Z%s: %s fills %.1f%% of the frame (cell %d) > %.0f%%" % [id, lvs, v.foreground_by, 100.0 * float(v.foreground_share), v.foreground_cell, 100.0 * fmax])
-			if v.has("spawn_foreground_share") and float(v.spawn_foreground_share) > float((tt.get("spawn_foreground_share_max", {}) as Dictionary).get(lvs, 1.0)):
-				out.append("frame-dominance %s Z%s at the spawn: %s fills %.1f%%" % [id, lvs, v.spawn_foreground_by, 100.0 * float(v.spawn_foreground_share)])
-			if v.has("spawn_frame") and float(v.spawn_frame.lift) > float((tt.get("spawn_lift_share_max", {}) as Dictionary).get(lvs, 1.0)):
-				out.append("lift-in-frame %s Z%s at the spawn: the lift fills %.1f%%" % [id, lvs, 100.0 * float(v.spawn_frame.lift)])
-			if v.has("station_cells") and int(v.station_cells) < int((tt.get("station_cells_min", {}) as Dictionary).get(lvs, 0)):
-				out.append("station-spread %s Z%s: %d cells frame a station < %d" % [id, lvs, v.station_cells, tt.station_cells_min[lvs]])
-			if v.has("stations") and int(v.level) == 3:
-				for sid: String in v.stations:
-					var s: Dictionary = v.stations[sid]
-					if int(s.seen_in_cells) < 1 or float(s.min_px) < float(tt.get("z3_station_px_min", 0.0)):
-						out.append("station-legibility %s: %s %.1f px (seen in %d cells) < %.0f" % [id, sid, s.min_px, s.seen_in_cells, tt.z3_station_px_min])
-		if str(v.view) == "sky_forward":
-			if int(v.no_pose) > 0:
-				out.append("no-sky-pose sky_forward: %d landing points have no clear pose" % v.no_pose)
-			if float(v.sky_fraction.worst) < float(tt.get("sky_fraction_worst_min", 0.0)) or float(v.sky_fraction.median) < float(tt.get("sky_fraction_median_min", 0.0)):
-				out.append("sky-fraction sky_forward: worst %.3f median %.3f < %.2f / %.2f" % [v.sky_fraction.worst, v.sky_fraction.median, tt.get("sky_fraction_worst_min", 0.0), tt.get("sky_fraction_median_min", 0.0)])
-			if float(v.pole_clearance_deg) < float(tt.get("pole_clearance_deg_min", 0.0)):
-				out.append("pole-clearance sky_forward: %.0f deg < %.0f" % [v.pole_clearance_deg, tt.pole_clearance_deg_min])
-			if float(v.spawn_sky_fraction) < float(tt.get("spawn_sky_fraction_min", 0.0)):
-				out.append("sky-fraction sky_forward at the spawn: %.3f < %.3f" % [v.spawn_sky_fraction, tt.spawn_sky_fraction_min])
-			if float(v.spawn_pole_clearance_deg) < float(tt.get("spawn_pole_clearance_deg_min", 0.0)):
-				out.append("pole-clearance sky_forward at the spawn: %.0f deg < %.0f" % [v.spawn_pole_clearance_deg, tt.spawn_pole_clearance_deg_min])
-		if str(v.view) == "sky_side" and not v.ok:
-			out.append("sky-side sky_side: captain clear %s, body clear %s %s" % [v.get("captain_clear"), v.get("body_clear"), v.get("body_hit", "")])
-	return out
-
-
-## One line per view.
-static func summary(report: Dictionary) -> PackedStringArray:
-	var out := PackedStringArray()
-	for v: Dictionary in report.views:
-		var id := "%s (%s)" % [v.view, v.get("area", "bridge")]
-		if v.has("blocked"):
-			out.append("deck-layout %s: %d samples, %d blocked, %d out of frame, %d boom intrusions, captain px %s" % [id, v.samples, v.blocked, v.out_of_frame, v.boom_intrusions, v.get("captain_px", {})])
-		elif v.get("framing", false):
-			out.append("deck-layout %s framing Z%d: foreground %.1f%% (%s, cell %d)%s" % [id, v.level, 100.0 * float(v.foreground_share), v.foreground_by, v.foreground_cell, (", %d cells frame a station, spawn foreground %.1f%% (%s) frame %s stations %s, stations %s" % [v.station_cells, 100.0 * float(v.spawn_foreground_share), v.spawn_foreground_by, JSON.stringify(v.spawn_frame), v.spawn_stations, JSON.stringify(v.stations)]) if v.has("stations") else ""])
-		elif str(v.view) == "sky_forward":
-			out.append("deck-layout sky_forward: rail %d poses, sky fraction worst %.3f median %.3f, pole clearance %.0f deg; grid %d poses, worst %.3f median %.3f, clearance %.0f deg; %d without a pose; spawn %.3f, clearance %.0f deg" % [v.rail_poses, v.sky_fraction.worst, v.sky_fraction.median, v.pole_clearance_deg, v.grid_poses, v.grid.sky_fraction.worst, v.grid.sky_fraction.median, v.grid.pole_clearance_deg, v.no_pose, v.spawn_sky_fraction, v.spawn_pole_clearance_deg])
-		else:
-			out.append("deck-layout sky_side: anchor %s, captain clear %s, body clear %s %s" % [v.get("anchor"), v.get("captain_clear"), v.get("body_clear"), v.get("body_hit", "")])
-	return out

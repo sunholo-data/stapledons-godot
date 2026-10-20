@@ -203,7 +203,7 @@ func near(pose: Transform3D, foot: Vector3) -> Dictionary:
 	var fam := {}
 	var total := 0
 	var lift_n := 0
-	var lift: Array = demo.director.lift_boxes() # the lift's boxes have no colliders
+	var lift: Array = DeckLayout.lift_boxes(demo) # the lift's boxes have no colliders
 	for j in 36:
 		for i in 64:
 			var r := DeckLayout.frame_dir(pose, (i + 0.5) / 64.0, (j + 0.5) / 36.0)
