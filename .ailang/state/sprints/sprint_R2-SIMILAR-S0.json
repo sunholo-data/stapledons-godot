@@ -1,23 +1,30 @@
 {
   "sprint_id": "R2-SIMILAR-S0",
-  "status": "awaiting_approval",
-  "approved": false,
+  "status": "approved",
+  "approved": true,
   "approval": {
     "required": true,
     "required_by": "Mark",
     "charter_row": "L9",
-    "status": "awaiting_approval",
+    "status": "approved",
     "scope": "Approval of this sprint plan and the pure-module/protocol placement with no sim/core.ail edit before any execution.",
-    "prior_authorization": "Mark attended 2026-10-13: yes add S0; authorizes planning, not sprint execution.",
-    "approved_at": null
+    "prior_authorization": "D-85 RESOLVED A: Mark, attended 2026-10-19, approved the plan as written and execution of S0.1-S0.3; plan merged in PR #272.",
+    "approved_at": "2026-10-19",
+    "decision_id": "D-85",
+    "decision_status": "RESOLVED",
+    "approved_by": "Mark",
+    "channel": "attended",
+    "answer": "A",
+    "plan_pr": 272,
+    "plan_merge_commit": "514d35a"
   },
   "created": "2026-10-19",
-  "mission_iteration": 38,
-  "base_commit": "37d4a645473abeb504537be783532b40bdd49269",
-  "base_state": "detached, pristine before planner outputs",
+  "mission_iteration": 42,
+  "base_commit": "e6b273971c34f31e38ba307a36dda8092c0f73ec",
+  "base_state": "current HEAD, pristine before iteration 42 amendment outputs",
   "design_doc": "design_docs/planned/r2/semantic-memory-s0.md",
   "sprint_plan": "design_docs/planned/r2/semantic-memory-s0-sprint.md",
-  "protocol_minor": "2.12",
+  "protocol_minor": 13,
   "runtime": {
     "version": "v0.54.14",
     "make_argument": "AILANG=runtime/bin/ailang",
@@ -72,6 +79,7 @@
   "ci_gate_commands": [
     "make deps AILANG=runtime/bin/ailang",
     "make lore-import CHECK=1 D=../stapledons-design AILANG=runtime/bin/ailang",
+    "make ci-fast AILANG=runtime/bin/ailang",
     "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
   ],
   "new_deliverable_targets": [
@@ -82,7 +90,7 @@
       "in_make_test": true,
       "parts": [
         "strict ranking cmp and hash",
-        "2.12 session cmp and oracle",
+        "2.13 session cmp and oracle",
         "production GDScript guards"
       ]
     },
@@ -96,8 +104,8 @@
   ],
   "baseline": {
     "required_before_execution": true,
-    "owner": "controller out of sandbox on pristine 37d4a645",
-    "sandbox_rule": "Any result involving sockets, Godot or out-of-tree writes is UNINFORMATIVE UNDER SANDBOX, irrespective of exit status.",
+    "owner": "controller out of sandbox on pristine e6b273971c34f31e38ba307a36dda8092c0f73ec",
+    "sandbox_rule": "Every runtime result under sandbox is UNINFORMATIVE UNDER SANDBOX; no runtime command was run during this amendment.",
     "commands": [
       {
         "gate": "strict",
@@ -116,9 +124,9 @@
       {
         "gate": "python-guard",
         "command": "make python-guard AILANG=runtime/bin/ailang",
-        "status": "observed_pass",
-        "observed_exit_code": 0,
-        "result": "python-guard: ok (18 allowlisted, 0 awaiting AILANG port); read-only policy scan, no sandbox caveat needed"
+        "status": "not_run",
+        "observed_exit_code": null,
+        "result": "Not run at current base; iteration 38 pass is historical, not current evidence."
       },
       {
         "gate": "sim package tests",
@@ -144,18 +152,13 @@
     ],
     "additional_observed_checks": [
       {
-        "command": "runtime/bin/ailang --version",
-        "result": "v0.54.14, commit e1ef33f",
+        "command": "git rev-parse HEAD",
+        "result": "e6b273971c34f31e38ba307a36dda8092c0f73ec",
         "exit_code": 0
       },
       {
-        "command": "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
-        "result": "clean diff",
-        "exit_code": 0
-      },
-      {
-        "command": "git status --porcelain=v1 --untracked-files=all",
-        "result": "empty before planner outputs",
+        "command": "git status --short",
+        "result": "empty before amendment outputs",
         "exit_code": 0
       }
     ],
@@ -218,7 +221,7 @@
       "commands": [
         "(cd sim && ../runtime/bin/ailang test --package .)"
       ],
-      "evidence": "Negotiated 2.12; similar emitted only on new_game at >=12 in every scenario; literal pristine 2.11 bytes unchanged."
+      "evidence": "Negotiated 2.13; similar emitted only on new_game at >=13 in every scenario; literal pristine 2.12 bytes unchanged."
     },
     {
       "id": "AC8",
@@ -227,7 +230,7 @@
         "make similar-test AILANG=runtime/bin/ailang",
         "make ism-compat AILANG=runtime/bin/ailang"
       ],
-      "evidence": "2.12 strict VM = ordinary VM = interpreter = expected fixture by cmp; repeat strict run identical; frozen 2.7 still passes."
+      "evidence": "2.13 strict VM = ordinary VM = interpreter = expected fixture by cmp; repeat strict run identical; frozen 2.7 still passes."
     },
     {
       "id": "AC9",
@@ -241,7 +244,7 @@
       "id": "AC10",
       "milestone": "S0.2",
       "commands": [
-        "python3 tools/similar_oracle.py tests/fixtures/protocol_212_similar.expected.ndjson",
+        "python3 tools/similar_oracle.py tests/fixtures/protocol_213_similar.expected.ndjson",
         "make python-guard AILANG=runtime/bin/ailang"
       ],
       "evidence": "Independent typed cited inputs for Earth/Venus/d/e and all fixture-vector distances/order agree to 1e-12; new oracle allowlist row."
@@ -254,22 +257,24 @@
         "make sim AILANG=runtime/bin/ailang",
         "make similar-test AILANG=runtime/bin/ailang"
       ],
-      "evidence": "Deep equality against real-sim raw dictionary at 12; production vector-read guards; main remains CONSOLE_MINOR."
+      "evidence": "Deep equality against real-sim raw dictionary at 13; production vector-read guards; main remains HOME_TIERS_MINOR."
     },
     {
       "id": "AC12",
       "milestone": "Landing",
       "commands": [
+        "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "evidence": "Full local and CI suite green on v0.54.14 outside sandbox; never run by planner."
+      "evidence": "Full make test on the Studio rig (rig/full) and GitHub ci-fast green on pinned runtime; all new gates included; not run by planner."
     }
   ],
   "definition_of_done": [
     {
       "gate": 1,
-      "requirement": "Full make test green locally and in CI, new similar-test wired into test.",
+      "requirement": "Full make test green on the Studio rig (rig/full) and GitHub ci-fast green; new similar-test wired into test.",
       "commands": [
+        "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ]
     },
@@ -284,8 +289,8 @@
       "gate": 3,
       "requirement": "No package change; inverse square reused from celestial, vector weights are design choices; exports-only manifest diff.",
       "commands": [
-        "git diff --exit-code 37d4a645 -- sim/ailang.lock",
-        "git diff 37d4a645 -- sim/ailang.toml",
+        "git diff --exit-code e6b273971c34f31e38ba307a36dda8092c0f73ec -- sim/ailang.lock",
+        "git diff e6b273971c34f31e38ba307a36dda8092c0f73ec -- sim/ailang.toml",
         "runtime/bin/ailang check --package sim"
       ],
       "review_assertion": "Manifest dependency section unchanged; no publish or pin bump."
@@ -305,7 +310,7 @@
       "requirement": "Finite weights, 45 vector components, all 210 directed distances and invalid-input guard; float64 sim maths.",
       "commands": [
         "(cd sim && ../runtime/bin/ailang test --package .)",
-        "python3 tools/similar_oracle.py tests/fixtures/protocol_212_similar.expected.ndjson"
+        "python3 tools/similar_oracle.py tests/fixtures/protocol_213_similar.expected.ndjson"
       ]
     },
     {
@@ -330,19 +335,19 @@
     "starIlluminanceAt first parameter e1AU sounds like lux; linearity permits solar luminosity units for Earth-relative flux. Pin Earth and e package-call tests.",
     "Sol Earth radius 6378.1366 km and archive 6378.1 km differ about 6 ppm; normalize all radii through km and Earth row, keep mass/AU/luminosity units explicit.",
     "AC1 spike printer deleted: original 15-line sha256 remains a hard gate. If exact format cannot be recovered, stop acceptance; document canonical format, compare engines, pass numeric/order tests and independent oracle, compute shasum -a 256 .godot/tmp/similar/rank-strict.txt and revise plan with literal re-derived digest for review before pinning. Do not bless an observed hash automatically.",
-    "Controller must recheck minor 12 and pristine integration base; local consoleMinor=11 does not prove current remote PR state."
+    "Current base uses homeTiersMinor=12; S0 plans minor 13 and main retains HOME_TIERS_MINOR. Recheck if integration base advances; do not weaken AC6."
   ],
   "design_inconsistencies": [
-    "Sub-milestone table puts core guard in test, but AC6/core-placement exclude it: keep evaluator-run merge-base diff outside test and similar-test.",
-    "Deliverables says make strict line, but core-placement says unchanged strict entry set: strict coverage goes in new similar-test.",
+    "Historical core-guard table inconsistency was resolved in iteration 38: guard stays evaluator-run outside test and similar-test.",
+    "Historical strict-entry inconsistency was resolved in iteration 38: make strict keeps its entry set; new coverage goes in similar-test.",
     "Deleted spike command and illustrative brace alternatives are not runnable; tracked similarVm and explicit zsh engine loops replace them; no replacement digest invented.",
     "Bare ailang and same acceptance shorthand need pinned-runtime root commands; direct Godot needs AILANG_BIN.",
     "Fragility wording says second place although e is first and Venus second in Earth ranking; report adjacent order uncertainty.",
-    "Referenced base source line numbers checked and match; similar-test/similar-record are new deliverables, not existing targets."
+    "Source citations and gate inventory re-derived at current HEAD; see sprint plan iteration 42 verification notes. S0 targets and fixture remain new deliverables."
   ],
   "quorum_disposition": "round 2 BLOCKED 1 pass / 2 reject, gpt6-1-sol absent (unreachable); reviewer fixes applied under the carve-out",
   "pause_points": [
-    "Before execution: Mark approval required by charter L9.",
+    "Execution approved by D-85 RESOLVED A (Mark, attended 2026-10-19; PR #272); current pristine baseline still required.",
     "Any core expansion needs separate approval.",
     "Unrecoverable AC1 printer format requires reviewed plan/digest revision, with oracle work brought forward if needed.",
     "Old-stream change, oracle disagreement, non-finite values or engine mismatch block acceptance; never re-record older goldens.",
@@ -484,21 +489,23 @@
         "(cd sim && ../runtime/bin/ailang test --package .)",
         "make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang",
         "make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang",
-        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test AILANG=runtime/bin/ailang",
+        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang",
         "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
+        "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "gate_owner": "controller after Mark approval; full test not run by planner",
+      "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 42 planner",
       "passes": false,
       "started": null,
       "completed": null,
-      "actual_loc": null
+      "actual_loc": null,
+      "protocol_minor_dependency": false
     },
     {
       "id": "S0.2",
-      "title": "emission (protocol 2.12)",
+      "title": "emission (protocol 2.13)",
       "status": "pending",
-      "description": "Freeze literal pristine 2.11 hello/new_game/tick expectation before changing the encoder. Add red 2.12 negotiation and all-scenario new_game-only tests, then top-level similar emission via protocol. Add strict/VM/interpreter/fixture cmp, repeated-run identity, independent oracle and new similar-record target excluded from test. No core edit and no old golden changes.",
+      "description": "Freeze literal pristine 2.12 hello/new_game/tick expectation at minor 12 before changing the encoder. Add red 2.13 negotiation and all-scenario new_game-only tests, then top-level similar emission via protocol. Add strict/VM/interpreter/fixture cmp, repeated-run identity, independent oracle and new similar-record target excluded from test. No core edit and no old golden changes.",
       "estimated_loc": 140,
       "estimated_documentation_loc": 0,
       "estimated_days": 1.0,
@@ -509,14 +516,14 @@
       "files": [
         "sim/protocol.ail",
         "sim/protocol_test.ail",
-        "tests/fixtures/protocol_212_similar.input.ndjson",
-        "tests/fixtures/protocol_212_similar.expected.ndjson",
+        "tests/fixtures/protocol_213_similar.input.ndjson",
+        "tests/fixtures/protocol_213_similar.expected.ndjson",
         "tools/similar_oracle.py",
         "tools/python-allowlist.txt",
         "Makefile"
       ],
       "acceptance_criteria": [
-        "AC7: similarMinor 12 negotiates correctly, including want >12; complete section emitted in new_game only, all scenarios; no similar at <=11 or on any tick.",
+        "AC7: similarMinor 13 negotiates correctly, including want >13; complete section emitted in new_game only, all scenarios; no similar at <=12 or on any tick.",
         "AC8: strict VM = ordinary VM = interpreter = reviewed expected session fixture by cmp; frozen 2.7 compat remains green.",
         "AC9: replay and parity green and tests/replays diff empty; no old fixture re-recorded.",
         "AC10: typed cited Earth/Venus/d/e input vectors and all 210 fixture-vector distances and nearest order agree to 1e-12; tools/similar_oracle.py has oracle allowlist role.",
@@ -551,7 +558,7 @@
         {
           "ac": "AC10",
           "commands": [
-            "python3 tools/similar_oracle.py tests/fixtures/protocol_212_similar.expected.ndjson",
+            "python3 tools/similar_oracle.py tests/fixtures/protocol_213_similar.expected.ndjson",
             "make python-guard AILANG=runtime/bin/ailang"
           ]
         }
@@ -560,14 +567,14 @@
         {
           "test": "negotiation and new_game-only (AC7)",
           "file": "sim/protocol_test.ail",
-          "asserts": "Hello negotiates 12 (also for want >12); correct pin; similar at ≥12 in every scenario, absent at ≤11 and every tick",
-          "kills_which_mutation": "Minor 12 branch removed; similar emitted on a tick; scenario-specific omission"
+          "asserts": "Hello negotiates 13 (also for want >13); relativityPin() as at 2.12; similar at ≥13 in every scenario, absent at ≤12 and every tick",
+          "kills_which_mutation": "Minor 13 branch removed; similar emitted on a tick; scenario-specific omission"
         },
         {
-          "test": "frozen 2.11 bytes (AC7)",
+          "test": "frozen 2.12 bytes (AC7)",
           "file": "sim/protocol_test.ail",
-          "asserts": "Literal pristine hello/new_game/tick bytes unchanged; removing similar from 2.12 leaves 2.11 state bytes",
-          "kills_which_mutation": "Minor 12 leaking into 2.11 bytes; reserializing old fields differently"
+          "asserts": "Literal pristine hello/new_game/tick bytes unchanged; without similar a 2.13 stream equals 2.12's but for the hello's minor",
+          "kills_which_mutation": "Minor 13 leaking into 2.12 bytes; reserializing old fields differently"
         },
         {
           "test": "complete shape and ids (AC3, AC4, AC7)",
@@ -576,8 +583,8 @@
           "kills_which_mutation": "Missing excluded; vector truncated; neighbouring rank id replaced by name"
         },
         {
-          "test": "frozen 2.12 session (AC8)",
-          "file": "tests/fixtures/protocol_212_similar.input.ndjson`, `tests/fixtures/protocol_212_similar.expected.ndjson`, `Makefile",
+          "test": "frozen 2.13 session (AC8)",
+          "file": "tests/fixtures/protocol_213_similar.input.ndjson`, `tests/fixtures/protocol_213_similar.expected.ndjson`, `Makefile",
           "asserts": "Strict VM = ordinary VM = interpreter = fixture by cmp; repeated strict run identical",
           "kills_which_mutation": "Hidden state; non-strict fallback; nondeterministic section order"
         },
@@ -607,13 +614,14 @@
         "(cd sim && ../runtime/bin/ailang test --package .)",
         "make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang",
         "make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang",
-        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test AILANG=runtime/bin/ailang",
+        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang",
         "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
-        "python3 tools/similar_oracle.py tests/fixtures/protocol_212_similar.expected.ndjson",
+        "python3 tools/similar_oracle.py tests/fixtures/protocol_213_similar.expected.ndjson",
         "git diff --exit-code tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson",
+        "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "gate_owner": "controller after Mark approval; full test not run by planner",
+      "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 42 planner",
       "passes": false,
       "started": null,
       "completed": null,
@@ -623,7 +631,7 @@
       "id": "S0.3",
       "title": "bridge parse",
       "status": "pending",
-      "description": "Red real-sim deep-equality/lifetime/below-minor tests first. Add SIMILAR_MINOR=12, stored similar and parse_similar preserving the dictionary exactly, including unknown fields; reset on session lifecycle. Extend similar-test with production GDScript vector-read guards and main CONSOLE_MINOR assertion; validate scratch-copy negative controls. No display or main.gd change.",
+      "description": "Red real-sim deep-equality/lifetime/below-minor tests first. Add SIMILAR_MINOR=13, stored similar and parse_similar preserving the dictionary exactly, including unknown fields; reset on session lifecycle. Extend similar-test with production GDScript vector-read guards and main HOME_TIERS_MINOR assertion; validate scratch-copy negative controls. No display or main.gd change.",
       "estimated_loc": 80,
       "estimated_documentation_loc": 0,
       "estimated_days": 0.5,
@@ -637,8 +645,8 @@
         "Makefile"
       ],
       "acceptance_criteria": [
-        "AC11: real sim at 12 produces a raw similar dictionary deep-equal to stored and parsed values; survives ticks, resets between sessions, empty below 12.",
-        "AC11: shipped GDScript vector reads fail the guard for double/single quotes, get and dot access; main.gd continues asking for CONSOLE_MINOR.",
+        "AC11: real sim at 13 produces a raw similar dictionary deep-equal to stored and parsed values; survives ticks, resets between sessions, empty below 13.",
+        "AC11: shipped GDScript vector reads fail the guard for double/single quotes, get and dot access; main.gd continues asking for HOME_TIERS_MINOR.",
         "AC1-AC10 and real-sim shared bridge consumers stay green; no rendering or GDScript similarity maths."
       ],
       "acceptance_ids_first_passing": [
@@ -658,19 +666,19 @@
         {
           "test": "real-sim deep equality (AC11)",
           "file": "tests/test_sim_bridge.gd`, `bridge/sim_bridge.gd",
-          "asserts": "Entire raw similar dictionary equals stored and parse_similar results at 12; unknown key preserved",
+          "asserts": "Entire raw similar dictionary equals stored and parse_similar results at 13; unknown key preserved",
           "kills_which_mutation": "Parser drops a world/field or recomputes/rounds distance"
         },
         {
           "test": "lifetime and old minor (AC11)",
           "file": "tests/test_sim_bridge.gd",
-          "asserts": "Retained across ticks; cleared on new session; empty below 12",
+          "asserts": "Retained across ticks; cleared on new session; empty below 13",
           "kills_which_mutation": "Tick clears ranking; stale previous-game ranking leaks"
         },
         {
           "test": "production-source guards (AC11)",
           "file": "Makefile` similar-test, shipped `.gd` files",
-          "asserts": "Production vector reads fail; main keeps CONSOLE_MINOR; negative controls are rejected",
+          "asserts": "Production vector reads fail; main keeps HOME_TIERS_MINOR; negative controls are rejected",
           "kills_which_mutation": "GDScript reading \"vector\"; single-quote/get/dot bypass; main asks for SIMILAR_MINOR"
         },
         {
@@ -687,13 +695,14 @@
         "(cd sim && ../runtime/bin/ailang test --package .)",
         "make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang",
         "make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang",
-        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test AILANG=runtime/bin/ailang",
+        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang",
         "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
         "AILANG_BIN=\"$PWD/runtime/bin/ailang\" godot --headless --path . --script tests/test_sim_bridge.gd",
-        "git diff --exit-code 37d4a645 -- main.gd",
+        "git diff --exit-code e6b273971c34f31e38ba307a36dda8092c0f73ec -- main.gd",
+        "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "gate_owner": "controller after Mark approval; full test not run by planner",
+      "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 42 planner",
       "passes": false,
       "started": null,
       "completed": null,
@@ -724,10 +733,10 @@
         "design-repo:roadmap/r2-voyage-life.md"
       ],
       "acceptance_criteria": [
-        "AC12 and all AC1-AC11 command evidence green locally outside sandbox and in CI on v0.54.14.",
+        "AC12 and all AC1-AC11 command evidence green outside sandbox: full Studio rig (rig/full) and GitHub ci-fast on v0.54.14.",
         "All CLAUDE.md definition-of-done gates recorded, physics visual gate N/A with reason, no package change and core purity checked.",
         "Independent evaluator differs from executor, score >=70/100, actionable findings resolved with evidence in .ailang/state/evaluations/.",
-        "Implemented docs and report/index/changelog agree on protocol 2.12; design-repo PR updates S0 and measured Jupiter -> Saturn, Uranus, Neptune; visible work remains parked."
+        "Implemented docs and report/index/changelog agree on protocol 2.13; design-repo PR updates S0 and measured Jupiter -> Saturn, Uranus, Neptune; visible work remains parked."
       ],
       "acceptance_ids_first_passing": [
         "AC12"
@@ -736,6 +745,7 @@
         {
           "ac": "AC12",
           "commands": [
+            "make ci-fast AILANG=runtime/bin/ailang",
             "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
           ]
         }
@@ -744,7 +754,7 @@
         {
           "test": "full acceptance (AC1–AC12)",
           "file": "all new tests and existing CI",
-          "asserts": "Local and CI make test green, fixture cmp and oracle pass; no replay changes",
+          "asserts": "Full rig make test and GitHub ci-fast green, fixture cmp and oracle pass; no replay changes",
           "kills_which_mutation": "New target omitted from test; local-only success presented as CI green"
         },
         {
@@ -762,7 +772,7 @@
         {
           "test": "landing audit",
           "file": "implemented doc/report, index, changelog, design-repo PR",
-          "asserts": "Paths resolve, 2.12 named, Jupiter corrected, S0 completed without claiming display",
+          "asserts": "Paths resolve, 2.13 named, Jupiter corrected, S0 completed without claiming display",
           "kills_which_mutation": "Incorrect Jupiter second; broken links; reporting visible UI as shipped"
         }
       ],
@@ -773,13 +783,14 @@
         "(cd sim && ../runtime/bin/ailang test --package .)",
         "make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang",
         "make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang",
-        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test AILANG=runtime/bin/ailang",
+        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang",
         "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
-        "python3 tools/similar_oracle.py tests/fixtures/protocol_212_similar.expected.ndjson",
-        "git diff --exit-code 37d4a645 -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson",
+        "python3 tools/similar_oracle.py tests/fixtures/protocol_213_similar.expected.ndjson",
+        "git diff --exit-code e6b273971c34f31e38ba307a36dda8092c0f73ec -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson",
+        "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "gate_owner": "controller after Mark approval; full test not run by planner",
+      "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 42 planner",
       "passes": false,
       "started": null,
       "completed": null,
@@ -793,6 +804,161 @@
       "design_docs/planned/r2/semantic-memory-s0-sprint.md",
       ".ailang/state/sprints/sprint_R2-SIMILAR-S0.json"
     ],
-    "implementation_executed": false
-  }
+    "implementation_executed": false,
+    "json_result": "exit 0, valid JSON",
+    "whitespace_command": "git diff --check",
+    "whitespace_result": "exit 0",
+    "source_validation": "Only three authorized files differ; milestone progress, LOC/day estimates and velocity unchanged; approval/base/minor and all milestone gate lists checked without simulation runtime."
+  },
+  "amended": "2026-10-20",
+  "protocol_compatibility": {
+    "similar_minor": 13,
+    "frozen_pre_s0_minor": 12,
+    "hello_pin": "relativityPin() as at 2.12",
+    "negotiation": "Requests above 13 negotiate 13; similar absent at <=12 and on every tick.",
+    "without_section": "A 2.13 stream equals 2.12's but for the hello's minor.",
+    "main_request": "HOME_TIERS_MINOR (12), unchanged",
+    "s01_minor_dependency": false
+  },
+  "gate_inventory": {
+    "A": "python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism",
+    "B": "crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test",
+    "C": "ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check",
+    "coverage": "All included makefiles are accounted for at this base:\n\n| Include (Makefile line) | Coverage / reason |\n|---|---|\n| `mk/constellations.mk` (:21) | `constellation-test` via B's `ship-demo-ci` (include :11); visual golden/capture/bench remain outside headless S0. |\n| `mk/home-tiers.mk` (:22) | C explicitly lists `home-tiers-vm`, `home-art-check`, `home-site-check` (test additions :12/:34/:58). |\n| `mk/deck-layout.mk` (:23) | C explicitly lists `deck-layout-eval-test` and `deck-assets-check` (test additions :14/:19); `ship-baseline` runs through the former. Standalone `deck-layout-eval` and capture are outside S0. |\n| `mk/ai.mk` (:905) | C's `ai-test` includes all existing AI guards and checks; explicit `ai-live-guard` is :423. New `ai-core-staged` is publish-only, via `publish-dev`, outside S0. |\n| `mk/site.mk` (:906) | Build/serve/deploy/media/news operations only; no `test` additions. No site or publishing change in S0. |\n| `mk/m5.mk` (:907) | C's `m5-test` includes `strict-m5`, `parity-v2-system`, `hello-pin`, snapshot, planets, texture and alpha-Centauri checks. |\n| `mk/m45.mk` (:908) | A includes `parity-m4` and `session-audit-test`; root `test` retains `codex-unlocks`; B's `ship-demo-ci` includes scene/display audits. Authoring and explicit AI-mode playthrough remain outside unchanged `test`. |\n| `mk/ism.mk` (:909) | A's compatibility/determinism gates, C's bright/bubble/surfaces checks, and remaining root `test` ISM prerequisites remain mandatory. |\n| `mk/navigation-usability.mk` (:910) | C explicitly retains navigation and guided-highlights checks. |\n| `mk/planet-presentation.mk` (:1133) | `planet-presentation-test`, `moon-lifecycle-test`, `exposure-frames-test`, `manual-exposure-test` via B's `ship-demo-ci`; capture/golden/bench recipes remain outside headless S0. |\n\nSince the original base, `camera-test` (Makefile:1240) and `camera-forward-test` (:1255, including `basis-gate`) are covered by B's unchanged `ship-demo-ci`. The new/changed non-test recipes `capture-m4`, `capture-m4-publish`, `golden`, `bench`, `camera-forward-targets`, `camera-forward-review`, `camera-walk-capture`, `camera-views-capture`, `deck-layout-eval`, `deck-layout-capture`, `publish-dev` and `ai-core-staged` are visual capture, benchmark, recording or publication operations and do not add S0 gates. This is the existing headless scope, not a change to `make test`.",
+    "current_prerequisite_declarations": "mk/planet-presentation.mk:13:ship-demo-ci: planet-presentation-test moon-lifecycle-test\nmk/planet-presentation.mk:24:ship-demo-ci: exposure-frames-test\nmk/planet-presentation.mk:29:ship-demo-ci: manual-exposure-test\nmk/navigation-usability.mk:11:test: navigation-usability-test guided-highlights-strict\nmk/m5.mk:8:test: m5-test\nmk/ism.mk:72:test: ism-bright-oracle\nmk/ism.mk:78:test: bubble-surface-test\nmk/ism.mk:84:test: ism-surfaces-test\nmk/home-tiers.mk:12:test: home-tiers-vm\nmk/home-tiers.mk:34:test: home-art-check\nmk/home-tiers.mk:58:test: home-site-check\nmk/deck-layout.mk:14:test: deck-layout-eval-test\nmk/deck-layout.mk:19:test: deck-assets-check\nmk/ai.mk:7:test: ai-test\nMakefile:37:ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest\nMakefile:39:test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window\nMakefile:51:test: crew-sync-check\nMakefile:56:test: crew-faces-check\nMakefile:72:test: crew-bridge-test\nMakefile:77:test: crew-events-check\nMakefile:81:test: crew-console-test\nMakefile:90:test: crew-hold-test\nMakefile:94:test: crossing-review-test\nMakefile:136:test: crew-perf\nMakefile:139:test: crew-parity\nMakefile:167:test: export-filter-audit\nMakefile:974:test: ship-demo-ci\nMakefile:975:ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test ship-commons-test ship-commons-assets-test validate-ship-commons ship-commons-arcade-test ship-demo-live-test\nMakefile:994:ship-demo-ci: ship-star-identification-test\nMakefile:998:ship-demo-ci: free-nav-stop-test\nMakefile:1006:ship-demo-ci: ship-demo-consolidation-test\nMakefile:1017:ship-demo-ci: title-screen-test\nMakefile:1024:test: loading-jump-test\nMakefile:1051:ship-demo-ci: ship-movement-test map-origin-test ship-planets-test\nMakefile:1061:ship-demo-ci: ship-star-light-test\nMakefile:1080:ship-demo-ci: catalogue-coverage-test solar-departure-test\nMakefile:1091:ship-demo-ci: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test\nMakefile:1115:ship-demo-ci: ship-attitude-test\nMakefile:1119:ship-demo-ci: benchmark-upload-test\nMakefile:1123:ship-demo-ci: shadow-contacts-test\nMakefile:1127:ship-demo-ci: tour-attitude-test\nMakefile:1131:ship-demo-ci: bridge-floor-test\nMakefile:1138:ship-demo-ci: sim-bootstrap-test\nMakefile:1145:ship-demo-ci: tour-pacing-test\nMakefile:1151:ship-demo-ci: ship-ui-test\nMakefile:1173:ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude display-audit-crew\nMakefile:1240:ship-demo-ci: camera-test\nMakefile:1255:ship-demo-ci: camera-forward-test\nMakefile:1272:ship-demo-ci: free-nav-recovery-test\nmk/constellations.mk:11:ship-demo-ci: constellation-test",
+    "new_targets_since_original_base": "New gate targets since the original base: ci-fast; camera-test; camera-forward-test with basis-gate; home-tiers-vm, home-art-check, home-site-check; deck-layout-eval-test (ship-baseline) and deck-assets-check. Camera tests are covered by B's ship-demo-ci; home/deck gates are explicit C. Other new/changed recipes are visual capture/golden/benchmark/publish/recording operations, outside this headless scope (listed below)."
+  },
+  "amendment": {
+    "iteration": 42,
+    "date": "2026-10-20",
+    "changes": [
+      "- Renumber S0 to minor 13 / protocol 2.13 in the sim and bridge specifications, thresholds, first S0 session, commands and landing references.",
+      "- Rename the planned fixtures to `tests/fixtures/protocol_213_similar.{input,expected}.ndjson`.",
+      "- Freeze pre-S0 hello/new_game/tick bytes at minor 12; keep `relativityPin()` as at 2.12, absence at <=12, negotiation to 13 above 13, and equality with 2.12 except the hello minor when the section is removed.",
+      "- Preserve the game's `HOME_TIERS_MINOR` request and unchanged `main.gd`; minor 12 already belongs to home tiers.",
+      "- Record D-85 RESOLVED A (Mark, attended 2026-10-19), approved plan PR #272 (merge `514d35a`), and update current status/base to `e6b273971c34f31e38ba307a36dda8092c0f73ec`.",
+      "- Refresh moved source citations and all gate inventories against the current tree; include home/deck checks, camera coverage and the existing fast-CI/full-rig split, with command/result notes in the plan.",
+      "- Distinguish historical iteration 38 runtime evidence from the unrun current baseline; retain the existing AC1 printer-format issue for the controller.",
+      "- Confirm S0.1 data/ranking has no protocol-minor dependency; keep all feature progress false/null and JSON valid."
+    ],
+    "semantics_scope_acceptance_loc_unchanged": true
+  },
+  "verification_notes": [
+    {
+      "command": "rg -n 'finiteSystemOf|withSystem|helloFor|sessionMinor|homeTiersMinor|relativityPin|consoleMinor' sim/protocol.ail",
+      "observed": "sim/protocol.ail:68 relativityPin() = \"0.12.0\"; :74 helloFor, :75 first homeTiersMinor branch; :131 consoleMinor() = 11; :138 homeTiersMinor() = 12; :139 sessionMinor first home-tier branch; :423 finiteSystemOf; :434 withSystem; :884 tick calls withSystem.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'func field|func planetValue|nearTrappist|if nearTrappist' sim/trappist1.ail",
+      "observed": "sim/trappist1.ail:34 field missing-key fallback 0.0; :37 planetValue missing-id fallback 0.0; :106 nearTrappist <0.1 ly; :108 conditional trappistBodies.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'MINOR :=' bridge/sim_bridge.gd",
+      "observed": "bridge/sim_bridge.gd:50 CONSOLE_MINOR=11 (existing); :54 HOME_TIERS_MINOR=12 (newest).",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '_MINOR' main.gd",
+      "observed": "main.gd:240 system opt-in for map, :286 HOME_TIERS_MINOR for the game, :396 ISM/capture route; keep all unchanged.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^(python-guard|sim|replay|parity|parity-v2|strict|ism-compat|ism-determinism|ai-live-guard|lore-import|deps):|--entry protocolVm' Makefile mk/*.mk",
+      "observed": "Makefile:28 deps; :264 sim; :284 replay; :291 parity; :297 parity-v2; :331 strict; :343 strict protocolVm and :344 interpreter; :887 python-guard; :1192 lore-import. mk/ism.mk:26 ism-determinism, :59 ism-compat; mk/ai.mk:423 ai-live-guard.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^include ' Makefile",
+      "observed": "All ten includes: Makefile:21 constellations, :22 home-tiers, :23 deck-layout, :905 ai, :906 site, :907 m5, :908 m45, :909 ism, :910 navigation-usability, :1133 planet-presentation (all under mk/). Coverage table below accounts for every include.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^test:|^ship-demo-ci:|^ci-fast:' Makefile mk/*.mk",
+      "observed": "Makefile:39 full root test prerequisite list; :51/:56/:72/:77/:81/:90/:94/:136/:139/:167 crew/export additions; :974 ship-demo-ci; :1024 loading-jump-test; :37 ci-fast. Included test and ship-demo-ci prerequisites are reproduced verbatim below.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^ai-test:|^m5-test:|^[a-zA-Z0-9_-]+:' mk/site.mk mk/m45.mk mk/home-tiers.mk mk/deck-layout.mk mk/planet-presentation.mk mk/constellations.mk",
+      "observed": "mk/site.mk:7/10/13/16/20/24 build/serve/deploy/media/publish/news targets, no test additions (known-positive definitions included); mk/m45.mk:44/65/87 A gates, :32/:111/:123 shared scene/display checks via ship-demo-ci. mk/constellations.mk:11 and mk/planet-presentation.mk:13/:24/:29 add ship-demo-ci prerequisites. mk/home-tiers.mk:12/:34/:58 and mk/deck-layout.mk:14/:19 add direct test gates.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'make (deps|lore-import|ci-fast|test)|rig/full' .github/workflows/ci.yml tools/rig_check.sh",
+      "observed": "CI: .github/workflows/ci.yml:53 deps, :55 lore-import CHECK=1, :61 ci-fast for PR/push, :65 test for full workflow call; tools/rig_check.sh:35 posts rig/full, :65 runs full make test. No CI or rig run attempted.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'oracle' tools/python-allowlist.txt",
+      "observed": "tools/python-allowlist.txt:5 defines oracle role; :22 tools/rng_ref.py is an existing example; other oracle rows at :15/:17/:18/:23/:25–28.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg --files tests/fixtures | rg 'protocol_27|protocol_21[23]_similar'",
+      "observed": "Only tests/fixtures/protocol_27_inferred.input.ndjson and .expected.ndjson matched. Neither searched S0 fixture exists yet; protocol_27 is the known-positive control.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'similarMinor|SIMILAR_MINOR|homeTiersMinor|HOME_TIERS_MINOR' sim/protocol.ail bridge/sim_bridge.gd",
+      "observed": "No similarMinor/SIMILAR_MINOR definition matched; homeTiersMinor/HOME_TIERS_MINOR are the known-positive control (:75/:138/:139/:811 in protocol, :53/:54 in bridge). S0 minor 13 remains a deliverable.",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --unified=0 37d4a645 -- Makefile mk | rg '^\\+([a-zA-Z0-9_-]+:|include )'",
+      "observed": "New gate targets since the original base: ci-fast; camera-test; camera-forward-test with basis-gate; home-tiers-vm, home-art-check, home-site-check; deck-layout-eval-test (ship-baseline) and deck-assets-check. Camera tests are covered by B's ship-demo-ci; home/deck gates are explicit C. Other new/changed recipes are visual capture/golden/benchmark/publish/recording operations, outside this headless scope (listed below).",
+      "exit_code": 0
+    },
+    {
+      "command": "sed -n '/^## S0.1:/,/^## S0.2:/p' design_docs/planned/r2/semantic-memory-s0-sprint.md",
+      "observed": "Read the entire S0.1 section, including tests, file list, gates and strict ranking recipe. It edits only data/ranking/tests, sim/ailang.toml exports and Makefile; finiteSystemOf is read solely for body-id joins. No protocol/bridge edit or minor dependency; AC1–AC6 and 220 LOC unchanged.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'sunholo/(celestial|relativity)|^version' sim/ailang.toml",
+      "observed": "sim/ailang.toml:18 celestial 0.4.0 and :19 relativity 0.12.0 unchanged.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'nearest|euclidean|similar' sim/navigation.ail",
+      "observed": "sim/navigation.ail:203–227 still covers nearest approach, not world-to-world ranking.",
+      "exit_code": 0
+    },
+    {
+      "command": "sed -n '423,436p' sim/protocol.ail",
+      "observed": "sim/protocol.ail:423–436 confirms finiteSystemOf composition and withSystem resend guard (time/position/epoch, minor and GR).",
+      "exit_code": 0
+    },
+    {
+      "command": "sed -n '105,109p' sim/trappist1.ail",
+      "observed": "sim/trappist1.ail:106 defines <0.1 ly; :107 declares trappistBodies; :108 makes it conditional.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^ai-test:|^m5-test:' mk/ai.mk mk/m5.mk",
+      "observed": "mk/ai.mk:9/:331/:419/:521 jointly define ai-test, including ai-live-guard/ai-settings and ai-conversation/ai-playback-verify; mk/m5.mk:10/:146 define m5-test including hello-pin, strict-m5, parity-v2-system and alpha-centauri-test. Existing umbrella targets retain all prerequisites.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^similar-(test|record):|^strict:' Makefile mk/*.mk; rg -n 'tools/(similar_oracle|rng_ref)\\.py' tools/python-allowlist.txt",
+      "observed": "No similar-test/similar-record target or tools/similar_oracle.py allowlist row yet; known-positive controls Makefile:331 strict and tools/python-allowlist.txt:22 tools/rng_ref.py both matched.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n 'AILANG_RELEASE|AILANG_VERSION' Makefile .github/workflows/ci.yml",
+      "observed": "Makefile:13 and .github/workflows/ci.yml:23 both pin v0.54.14; source-only verification, no runtime invocation.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n homeTiersMinor sim/protocol.ail",
+      "observed": "homeTiersMinor() = 12 at sim/protocol.ail:138, hello branch :75, session branch :139, homeOf gate :811.",
+      "exit_code": 0
+    },
+    {
+      "command": "rg -n '^\\| D-85 ' design_docs/stapledon-mission.md",
+      "observed": "design_docs/stapledon-mission.md:199 is D-85 RESOLVED, answer A, Mark attended 2026-10-19: approve as written (top-level similar, protocol emission, core untouched), execute S0.1–S0.3; PR #272 named.",
+      "exit_code": 0
+    }
+  ],
+  "open_issue_for_controller": "No new non-mechanical issue; inherited AC1 deleted-printer format/digest reproducibility remains subject to the existing stop/review procedure. Not resolved or relaxed here."
 }
