@@ -129,7 +129,9 @@ func test_demo() -> void:
 	demo.star_light.energy = 2.0
 	demo.star_light.update(demo.lighting, demo.sky, 0.0, true)
 	var key: DirectionalLight3D = demo.lighting.key
-	check("no star: star light off, ship key at its moody base", demo.star_light.source_id == "" and demo.star_light.light.light_energy == 0.0 and absf(key.light_energy - float(demo.lighting.key_base)) < 1e-9 and key.shadow_enabled)
+	# R2-BRIDGE-STYLE S1 (D-100): on the bridge the broad key is retired and the spire is the ship's key.
+	var spire: OmniLight3D = demo.lighting.spire
+	check("no star: star light off, the bridge keyed by the spire at its base with the shadow (the broad key retired)", demo.star_light.source_id == "" and demo.star_light.light.light_energy == 0.0 and demo.lighting.bridge and key.light_energy == 0.0 and absf(spire.light_energy - float(demo.lighting.spire_base)) < 1e-9 and spire.shadow_enabled)
 	check("star-light HUD line says ship lights only", demo.star_light.hud_line().contains("ship lights only"))
 	# the scripted stops
 	var stops := [[10.0, "hover"], [5.0, "hover"], [3.0, "hover"], [3.0, "orbit"], [3.0, "hover"]]

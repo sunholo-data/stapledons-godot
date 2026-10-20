@@ -142,7 +142,7 @@ func _arrival() -> void:
 	# The review world is not an arrived journey, so the demo's own HUD pass would close the card:
 	# hold the demo for the shot and let only the HUD fade the card in.
 	demo.process_mode = Node.PROCESS_MODE_DISABLED
-	hud.update({}) # the bindings read the review values (hud.cardtext)
+	hud.update((hud._last_view as Dictionary).duplicate(true)) # the bindings read the review values (hud.cardtext); the strip keeps the world's
 	for k in 60:
 		hud.advance(1.0 / 60.0)
 	print("arrival card present: %s" % hud.has_card("arrival"))

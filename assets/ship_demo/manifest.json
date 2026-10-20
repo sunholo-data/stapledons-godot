@@ -180,7 +180,7 @@
     "points": "SPAWN_captain and INTERACT_<station>_use empties in the master (collection deck_layout_v2), ship metres"
   },
   "style": {
-    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list.",
+    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest.",
     "bridge_nodes": [
       "bridge_floor_top82",
       "deck_floor_fill",
@@ -221,6 +221,18 @@
     ],
     "spire_nodes": [
       "spire_needle"
+    ],
+    "shaped": [
+      "console_decision_0",
+      "console_decision_1",
+      "console_decision_2",
+      "console_decision_3",
+      "v2_desk_props_00",
+      "v2_desk_props_01",
+      "v2_desk_props_02",
+      "v2_desk_props_03",
+      "captain_chair",
+      "v2_chair_detail_00"
     ]
   }
 }

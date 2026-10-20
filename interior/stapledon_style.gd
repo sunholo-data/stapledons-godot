@@ -140,3 +140,44 @@ static func toon_in(r: Node) -> Array:
 			for i in mi.mesh.get_surface_count():
 				if is_toon(mi.get_surface_override_material(i)) or is_toon(mi.mesh.surface_get_material(i)): out.append(mi)
 	return out
+
+
+## R2-BRIDGE-STYLE S7 (D-104): the straight-edge share of a mesh, the share of its edge length on hard
+## creases (dihedral > crease_deg) or open boundaries. Vertices are welded by position (1e-4 m), so UV
+## seams and material splits do not count. Boxes score ~0.4-0.7; the grown props <= 0.10 (AC12).
+static func straight_share(mesh: Mesh, crease_deg := 35.0) -> float:
+	var edges := {} # key -> [length, normals...]
+	for s in mesh.get_surface_count():
+		var arrays := mesh.surface_get_arrays(s)
+		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+		if idx.is_empty():
+			idx.resize(verts.size())
+			for i in verts.size(): idx[i] = i
+		for t in range(0, idx.size(), 3):
+			var p := [verts[idx[t]], verts[idx[t + 1]], verts[idx[t + 2]]]
+			var n: Vector3 = (p[1] - p[0]).cross(p[2] - p[0])
+			if n.length_squared() < 1e-14: continue
+			n = n.normalized()
+			for k in 3:
+				var a: Vector3 = p[k]
+				var b: Vector3 = p[(k + 1) % 3]
+				var ka := _key(a)
+				var kb := _key(b)
+				var key := ka + "|" + kb if ka < kb else kb + "|" + ka
+				if not edges.has(key): edges[key] = [a.distance_to(b)]
+				edges[key].append(n)
+	var total := 0.0
+	var hard := 0.0
+	var cos_lim := cos(deg_to_rad(crease_deg))
+	for key in edges:
+		var e: Array = edges[key]
+		var length: float = e[0]
+		total += length
+		if e.size() != 3 or (e[1] as Vector3).dot(e[2]) < cos_lim:
+			hard += length
+	return hard / total if total > 0.0 else 0.0
+
+
+static func _key(v: Vector3) -> String:
+	return "%d,%d,%d" % [roundi(v.x * 1e4), roundi(v.y * 1e4), roundi(v.z * 1e4)]

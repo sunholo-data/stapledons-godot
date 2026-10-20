@@ -74,6 +74,25 @@ func _run() -> void:
 	check("the sky renders in its own viewport, apart from the ship's geometry_view", sky.get_viewport() != demo.geometry_view and not demo.geometry_view.is_ancestor_of(sky))
 	var sky_toon: Array = Style.toon_in(sky)
 	check("no sky layer uses the toon shader (%d)" % sky_toon.size(), sky_toon.is_empty())
+	# D-104 (S7, AC12): the shape language. Every prop the manifest lists in style.shaped has a
+	# straight-edge share <= 0.10; a box (the blockout's primitive) scores far above and fails.
+	var shaped: Array = demo.manifest.get("style", {}).get("shaped", [])
+	var worst := 0.0
+	var worst_name := ""
+	var missing_shaped := []
+	for n: String in shaped:
+		var mi := demo.props_visual.find_child(n, true, false) as MeshInstance3D if demo.props_visual != null else null
+		if mi == null:
+			missing_shaped.append(n)
+			continue
+		var share: float = Style.straight_share(mi.mesh)
+		if share > worst:
+			worst = share
+			worst_name = n
+	check("D-104: the manifest lists the grown props (style.shaped, %d; missing %s)" % [shaped.size(), missing_shaped], shaped.size() >= 8 and missing_shaped.is_empty())
+	check("D-104: every grown prop's straight-edge share <= 0.10 (worst %.3f, %s)" % [worst, worst_name], worst <= 0.10 and not shaped.is_empty())
+	var box_share: float = Style.straight_share(BoxMesh.new())
+	check("D-104 negative control: a box scores %.3f > 0.4 and would fail" % box_share, box_share > 0.4)
 	# Negative control 1: a PBR material seeded on a styled bridge mesh is caught.
 	var victim: MeshInstance3D = members[0]
 	var saved: Material = victim.get_surface_override_material(0)

@@ -153,6 +153,40 @@ After DL1–DL3 the bridge's furniture faces the bow and is painted with inked e
   - **Mark approves the look before S3–S5 are built.**
 - **Bench.** `make bench SCENE=bridge` p99 < 16.7 ms on a quiet rig, at the style-frame pause and at the end. The spire's shadow cube is the main risk, so §Risks lists the fallbacks.
 
+### S7. Shape language (D-104 amendment, Mark 2026-10-20)
+
+Mark, at ST2: "everything looks quite boxy with edges, isn't the style more rounded curves?" The art bible asks for
+"organic and mechanical blended: technology that looks grown" and "clean, flowing curves". The DL1–DL3 heroes are
+kit blockouts (boxes with bevels); shading alone cannot fix that.
+
+- **The rule.** No boxy primitive on a visible prop. Silhouettes are grown: roots that flare into the deck, narrow
+  waists, leaf-like tops, shells that curl, ribs that sweep. Straight runs are allowed only where the canon is straight
+  (the rail's circle, the mast).
+- **How the generator builds curves** (`~/dev/blender/scripts/stapledon_bridge_props_v3.py`, `reshape()`): smooth
+  parametric profiles only, never box primitives:
+  - surfaces of revolution from Catmull-Rom profiles, with lobed roots (`lathe`);
+  - superellipse slabs with a fully rounded rim, tilts, and a lip that drops into a chin (`pillow`);
+  - lofted shells along a Catmull-Rom profile with a cupped cross-section and a rolled edge (`shell`);
+  - swept tubes that ease at their ends (`tube`), and the rounded-rectangle screen bezel (`rounded_bezel`).
+  Subdivision only where the triangle budget allows (the cushion). Each form is built in the kit object's own
+  frame, inside its old footprint, so names, origins, materials, the game's use points and its screen rule hold.
+- **At the ST2 style frame** (built): the four desks (a lobed root, a waist flaring into a leaf top tilted to the
+  operator, the lip dropping into a chin under the screen; three grown dials replace the kit's desk props), the
+  captain's chair (a shell on a lobed root, the back curling forward like a petal, two sweeping ribs, a pillow
+  cushion), and every screen housing (the nav arc's three pods and the live desks: one rounded bezel, a curved brow,
+  a rounded pane). The pods themselves were already rounded.
+- **The metric** (cheap, checkable): the **straight-edge share**, the share of a mesh's edge length on hard creases
+  (dihedral > 35°, or an open boundary; vertices welded by position so UV seams do not count). Boxes score ~0.4–0.7;
+  grown forms ≤ 0.10. The generator reports it per object before and after; `make style-test` asserts it ≤ 0.10 for
+  every prop the manifest lists in `style.shaped`, with a seeded box as the negative control.
+- **The layout holds.** `make deck-layout-eval` (bridge ok) and `make camera-forward-test` re-run on the reshaped
+  props; the walk mesh is unchanged.
+- **The rest, scheduled:** ST3 (with the deck, spire and lift head): the rail segments and lamps, the bridge
+  guardrails and lift guides. ST5 (with the dressing): the watch benches and their details, the Archive terminal and
+  its detail, the conduits. Every later prop goes through `reshape()`, and `style.shaped` grows with it.
+- **Estimate change:** +~300 lines of `bpy` (the builders), +~60 game LOC (the metric and its check), +1.5 days
+  (ST2 +0.5, ST3 +0.5, ST5 +0.5): **8.5 → 10 days**; game LOC ~1,300 → ~1,360.
+
 ## Review mocks (made for this plan, nothing built)
 
 `tools/style_mock_capture.gd` applies S1 and S2 in-engine to the DL3 bridge, so Mark can choose before anything is built. Rows: **now**, **key retired** (S1), **toon** (S2), **both**. Columns: Bow in deep space, Bow near the Sun, Astern in deep space, Astern near the Sun.
@@ -177,6 +211,7 @@ The mocks made one finding that the design now carries. The spire light sits ins
 | AC9 | Frame time | `make bench SCENE=bridge` p99 < 16.7 ms with host load logged; on a shared rig, up to three runs while the 1-minute load is below 12, the best counting (the DL3 benches measured 15.6 ms at load ~12 and missed at 23 ms at ~16 with a capture running) |
 | AC10 | Style frame and final captures opened and published | `make style-capture TAG=sf` / `TAG=final`, published to `refs/bridge_style/<tag>/` with per-file URLs |
 | AC11 | The full suite | `make test`, `tools/rig_check.sh` on the PR head |
+| AC12 | D-104 shape language: every prop in the manifest's `style.shaped` has a straight-edge share ≤ 0.10 (a seeded box scores > 0.4 and fails); the reshaped bridge still passes the bow evaluator | `make style-test`; `make deck-layout-eval` |
 
 The look itself is Mark's judgement at the style-frame pause; the evaluator scores only that the pause happened with published, opened frames.
 
@@ -186,10 +221,10 @@ The look itself is Mark's judgement at the style-frame pause; the evaluator scor
 |---|---|---|---|
 | ST0 | `make style-capture`, `make style-test`, `make ui-theme-check` with their controls (red first) | ~300 | — |
 | ST1 | S1 lighting (spire key, shadow ownership, retire the bridge's broad key, rebalance) | ~200 | — |
-| ST2 | S2 toon material on the bridge; the theme on the status strip and one card; **style frame** | ~250 | **Mark approves the look** |
-| ST3 | S3 deck, spire and lift head painted (Blender) | ~100 + bpy | — |
+| ST2 | S2 toon material on the bridge; the theme on the status strip and one card; S7 the desks, chair and screen housings grown (D-104); **style frame** | ~310 + bpy | **Mark approves the look and the shapes** |
+| ST3 | S3 deck, spire and lift head painted (Blender); S7 the rail, lamps, guardrails and lift guides grown | ~100 + bpy | — |
 | ST4 | S4 the theme across every HUD panel; the consistency pass | ~250 | — |
-| ST5 | S5 per-view dressing and below-rail cues | ~200 + bpy | — |
+| ST5 | S5 per-view dressing and below-rail cues; S7 the benches, Archive terminal and conduits grown | ~200 + bpy | — |
 | ST6 | Landing: rig run, goldens, bench, final captures, report, independent evaluation | docs | — |
 
 ## Risks and mitigations

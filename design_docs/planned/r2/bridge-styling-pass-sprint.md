@@ -5,7 +5,7 @@
 **Status:** **Approved** (Mark, 2026-10-20, ledger D-100). Executing; hard stop at the ST2 style frame.
 **Base:** main after R2-DECK-LAYOUT DL3 (#292, merged).
 **AILANG:** v0.54.14, pinned. No `.ail` code: syntax gate skipped. Registry reuse: none (Godot shaders, themes and Blender assets; no physics maths).
-**Estimate:** about 1,300 game LOC plus about 500 lines of `bpy`, over **8.5 working days**, excluding Mark's review at the pause. Engine and UI code (ST0, ST1, ST2, ST4: about 1,000 LOC) runs at the recent attended rate of about 300 LOC a day. The art milestones (ST3: 2 days; ST5: 1.5 days) are capped at their days, and Blender work is not counted in LOC. The blended rate is about 150 LOC a day.
+**Estimate:** about 1,360 game LOC plus about 800 lines of `bpy`, over **10 working days** (D-104 shape language: +1.5 days, was 8.5), excluding Mark's review at the pause. Engine and UI code (ST0, ST1, ST2, ST4: about 1,000 LOC) runs at the recent attended rate of about 300 LOC a day. The art milestones (ST3: 2 days; ST5: 1.5 days) are capped at their days, and Blender work is not counted in LOC. The blended rate is about 150 LOC a day.
 
 ## Velocity
 
@@ -76,7 +76,8 @@ R2-DECK-LAYOUT ran DL0–DL3 in one long day each on this rig. That came to abou
   - `make style-test`, `make golden`, `make bench SCENE=bridge`;
   - `make deck-layout-eval`, unchanged numbers;
   - display-audit and its controls.
-- **Pause:** Mark approves the style frame (look, bands, typeface, panel) or redirects.
+- **D-104 shape language (S7):** the desks, the captain's chair and every screen housing rebuilt as grown forms by `~/dev/blender/scripts/stapledon_bridge_props_v3.py` (`reshape()`, then v2's bakes); the straight-edge share ≤ 0.10 on `style.shaped` (AC12); `make deck-layout-eval` still bridge ok.
+- **Pause:** Mark approves the style frame (look, bands, typeface, panel, and the shapes) or redirects.
 
 ### ST3: the deck, the spire and the lift head (~100 LOC + bpy, 2 days)
 - **`~/dev/blender/scripts/stapledon_bridge_props_v3.py`:**
@@ -85,6 +86,7 @@ R2-DECK-LAYOUT ran DL0–DL3 in one long day each on this rig. That came to abou
   - an authored lift cage, gates and platform;
   - the manifest's `style.bridge_nodes` list.
 - **Lift:** `demos/ship_demo_lift.gd` loads the authored lift; its behaviour and `ship-demo-lift-test` are unchanged.
+- **S7 (D-104):** the rail segments and lamps, the bridge guardrails and the lift guides grown (`reshape()`), added to `style.shaped`.
 - **Gate:**
   - `make deck-assets-check` (new budgets: images ≤ 24, VRAM ≤ baseline + 48 MB);
   - `make bridge-floor-test ship-demo-lift-test ship-commons-test deck-layout-eval`;
@@ -105,6 +107,7 @@ R2-DECK-LAYOUT ran DL0–DL3 in one long day each on this rig. That came to abou
   - Astern: the mast root and a cable run;
   - below the rail: silhouettes of the next deck's rim and the canopy, 25–50 m down, outside every lower-deck volume.
 - **Placement:** each piece is placed from `views.json` `levels.bridge.dressing` and shown only in its view.
+- **S7 (D-104):** the watch benches and details, the Archive terminal and detail, and the conduits grown, added to `style.shaped`.
 - **Evaluator:** gets a `dressing` row (≤ 8 % of each view), with a seeded oversized-prop negative control. Every §D4 threshold is kept.
 - **Gate:** `make deck-layout-eval deck-layout-eval-test camera-test camera-forward-test`; `make style-capture TAG=st5`, opened and published.
 
