@@ -1,0 +1,29 @@
+{
+ "sprint_id": "R1-M4-JOURNEY/M4.5bR3_7p_AC4_VERDICT", "round": 1, "head": "c4ddd5b4", "evaluator": "claude-sonnet-5-5",
+ "score": 90, "pass": true, "blocking": [],
+ "categories": {"tests_pass": 18, "lint": 10, "acceptance_criteria": 30, "code_quality": 11, "documentation": 12, "design_fidelity": 9},
+ "notes": "AC10 (make test) deferred to controller rig/full, so tests_pass docked 2.",
+ "ac_results": {"AC1":"rc0, 24 rejected rows","AC2":"rc0","AC3":"rc0 (OPEN (1 unaccepted known, 4 accepted by D-77/D-78))","AC4":"rc0","AC5":"rc0 (M1 killed)","AC6":"rc0 (M2 killed)","AC7":"rc0 (M3 killed)","AC8":"rc0; ac4: MET (5 accepted by D-77/D-78); samples=716 mismatches=0 new=0 known=828 stale=0 failures=0; 0 SCRIPT ERROR","AC9":"rc0 (true)","AC10":"skipped (rig/full)","AC11":"rc0 silent"},
+ "extra_checks": {"display-audit-interlude+crew":"rc0, failures=0 (known=146/120)","V13":"confirmed: open PRs #281,#282 touch 0 surface files; #283 is this PR; no origin/main commits on the surface since head","V14":"confirmed: DISPLAY_KNOWN ?= known_findings.json (mk/m45.mk:9) used by scene, interlude, crew","V15":"confirmed: 'display control X missed' has no colon; only success echo has ': rejected'; drills use SCRATCH temp","scope":"12 files changed = 10 Files-table paths + 2 design/plan docs; no historical evaluation or website text touched; no production paths"},
+ "ruling_check": "D-77 A: only Transit folded under Braking + medium-boundary notices (pinned card pair, node, text). D-78 A: only the four listed captions. Any other known entry stays OPEN; empty list stays bare MET. Matches the rulings, nothing extra.",
+ "drills": [
+  {"id":"M1","result":"killed"},{"id":"M2","result":"killed"},{"id":"M3","result":"killed"},
+  {"id":"D1 drop accompanying_card pin","result":"survived"},
+  {"id":"D2 drop D-77 node pin","result":"survived"},
+  {"id":"D3 drop D-78 kind+node pin","result":"survived"},
+  {"id":"D4 drop D-77 text pin","result":"survived"},
+  {"id":"D5 drop D-77 kind check","result":"survived (redundant with node/text pins)"},
+  {"id":"D6 drop D-78 kind check","result":"survived (redundant with node pin)"},
+  {"id":"D7 drop folding_card pin","result":"killed"},
+  {"id":"D8 caption any string","result":"killed"},
+  {"id":"D9 drop one caption from set","result":"killed"},
+  {"id":"D10 allow one unaccepted in MET","result":"killed"},
+  {"id":"D11 empty list prints OPEN","result":"killed"},
+  {"id":"D12 drop is-String guard","result":"survived (equivalent: non-string falls to return false)"}
+ ],
+ "drill_hygiene": "audit.gd backed up, cmp confirmed change per drill, sha256 identical after all drills",
+ "findings": [
+  {"severity":"non-blocking","summary":"ruling_valid pins accompanying_card, D-77 node, D-77 text and D-78 node, but no control fixture isolates any of them (drills D1-D4 survive). The design says each literal is pinned; the controls only cover accepted_by id, kind/node-mismatch, folding_card and caption.","suggestion":"Add one-field fixtures (wrong accompanying_card, wrong D-77 node, wrong D-77 text, wrong D-78 node) or state the narrower coverage in the design."},
+  {"severity":"non-blocking","summary":"The interlude and crew audits print the verdict line but assert nothing on it (design V9 admits this).","suggestion":"None required."}
+ ]
+}
