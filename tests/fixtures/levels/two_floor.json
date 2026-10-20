@@ -1,0 +1,42 @@
+{
+  "schema": "stapledons.level/1",
+  "id": "fixture_two_floor",
+  "version": 1,
+  "about": "R2-LEVELS level-test fixture (ship frame: x, y = bow, z = up; metres): a lower floor, an upper floor 4 m up over part of it, a ramp to a landing, an arc catwalk 8 m up (D-104), a ladder, and a hatch at the upper floor's edge.",
+  "deck_z_m": 0.0,
+  "roof": {"z_m": null, "radius_m": null},
+  "stages": [
+    {
+      "id": "main",
+      "bounds_ship_m": [-12, 12, 0, 14],
+      "surfaces": [{"id": "floor", "z_m": 0.0}, {"id": "upper", "z_m": 4.0}, {"id": "catwalk", "z_m": 8.0}],
+      "spawn": [0, 1, 0],
+      "default_view": "bow",
+      "journey": true,
+      "ambience": "fixture",
+      "views": [
+        {"id": "bow", "kind": "walk", "yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "captain_px": [45, 82]},
+        {"id": "astern", "kind": "walk", "yaw_deg": 90.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "captain_px": [45, 82]}
+      ],
+      "exits": []
+    }
+  ],
+  "routes": [
+    {"id": "ladder_up", "kind": "ladder", "from": "main/floor", "to": "main/upper", "from_at": [2, 3, 0], "to_at": [2, 5, 4], "clip": "climb_ladder"},
+    {"id": "hatch_edge", "kind": "hatch", "from": "main/upper", "to": "main/floor", "from_at": [-1, 4.6, 4], "to_at": [-1, 7, 0], "clip": "crouch"},
+    {"id": "ramp_east", "kind": "ramp", "from": "main/floor", "to": "main/upper", "from_at": [6, 1, 0], "to_at": [6, 10, 4]}
+  ],
+  "finds": [],
+  "set_pieces": [],
+  "lights": {},
+  "layers": {"foliage": []},
+  "pieces": [
+    {"name": "floor", "role": "surface", "shape": "box", "center": [0, 6, -0.15], "size": [16, 12, 0.3]},
+    {"name": "upper", "role": "surface", "shape": "box", "center": [0, 8, 3.85], "size": [6, 8, 0.3]},
+    {"name": "landing", "role": "surface", "shape": "box", "center": [6, 10.5, 3.85], "size": [4, 3, 0.3]},
+    {"name": "ramp", "role": "surface", "shape": "ramp", "from": [6, 1, 0], "to": [6, 9, 4], "width": 2.0, "thickness": 0.3},
+    {"name": "catwalk", "role": "surface", "shape": "arc", "center_xy": [0, 0], "r": [9.4, 10.6], "deg": [30, 90], "top_z": 8.0, "thickness": 0.25},
+    {"name": "post", "role": "structure", "shape": "box", "center": [3, 4.2, 1.85], "size": [0.3, 0.3, 3.7]},
+    {"name": "ladder", "role": "route", "shape": "box", "center": [2, 3.95, 2], "size": [0.6, 0.12, 4]}
+  ]
+}
