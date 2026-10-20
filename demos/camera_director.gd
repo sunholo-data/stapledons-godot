@@ -5,7 +5,7 @@ extends RefCounted
 ## validate()). ShipCamera stays the render boundary: the director only writes its transform and
 ## the demo calls _sync_observer(), so the sky is rendered through the same pose as the geometry.
 ##
-## R2-CAMERA-FORWARD (design_docs/planned/r2/camera-forward.md, D-91, D-92): on a level with walk
+## R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, D-91, D-92): on a level with walk
 ## views (the bridge) the player camera is a fixed stage view. Bow (the default) looks over the
 ## captain toward the bow, where the journey is (travel runs along the deck, D-92); Astern looks the
 ## other way. A walk view's yaw and pitch never change while the captain walks: the eye slides
@@ -101,7 +101,6 @@ var _pending := ""
 var _prompt_t := 0.0
 ## The hole's direction (glTF axes) when there is no demo to ask (tests); see aim_dir().
 var hole_override := Vector3.ZERO
-var _sky_offset := {} # view id -> the yaw offset (deg, from outward) chosen when the view started
 ## R2-CAMERA-FORWARD: the walk view on a walk level ("bow" / "astern"), the view WASD maps by (it
 ## changes at the end of a switch's ease, never mid-stride), the developer zoom preset flag (the
 ## bridge's Z1-Z3, OQ4), the slide anchor (the deck point the rig frames) and the occluders' fades.
@@ -380,12 +379,8 @@ func _boom(v: Dictionary, foot: Vector3, yaw: float, k := -1) -> Transform3D:
 ## C2 sky views: the eye back_m behind the captain (along the view's yaw) and rise_m above the
 ## deck, looking at a fixed pitch; the captain is a silhouette against the sky in the lower part
 ## of the frame. The sky is at infinity, so any eye on the bridge sees the same directions.
-func _sky(v: Dictionary, foot: Vector3, k: int, offset: Variant = null) -> Transform3D:
+func _sky(v: Dictionary, foot: Vector3, k: int) -> Transform3D:
 	var yaw := yaw_for(v, foot, k)
-	if offset == null:
-		offset = _sky_offset.get(str(v.id))
-	if offset != null:
-		yaw = atan2(foot.z, foot.x) + deg_to_rad(float(offset))
 	var f := Vector3(cos(yaw), 0.0, sin(yaw))
 	var head := head_of(v, foot)
 	var eye := _envelope(foot - f * float(v.back_m) + Vector3.UP * float(v.rise_m), head, str(v.id))
@@ -485,71 +480,6 @@ func aim_dir(v: Dictionary) -> Vector3:
 		if hole_override.length() > 0.5:
 			return hole_override.normalized()
 	return pole_dir()
-
-
-## A view with yaw_candidates (Sky forward) picks, once, as it starts, the first yaw (relative to
-## outward) whose eye sees the captain's whole figure and the forward pole clear; null when none
-## does (the captain then walks to the view's anchor). Chosen once, never re-chosen per frame.
-func choose_offset(v: Dictionary, foot: Vector3) -> Variant:
-	for off: float in v.get("yaw_candidates_deg", []):
-		var pose := _sky(v, foot, sector_for(foot, -1), off)
-		if pose.origin.length() <= float(data.get("envelope_m", 95.0)) and view_clear(pose, foot, true, aim_dir(v)):
-			return off
-	return null
-
-
-## The captain's figure (0.15 to 1.6 m) seen from a pose, through the ship's collision and the
-## lift's boxes; with `pole`, the forward pole (the bow) is clear too.
-func view_clear(pose: Transform3D, foot: Vector3, pole := false, aim := ShipCamera.BOW) -> bool:
-	if demo == null:
-		return true
-	var space: PhysicsDirectSpaceState3D = demo.camera.get_world_3d().direct_space_state
-	var boxes := lift_boxes()
-	var targets: Array = [foot + Vector3.UP * 0.15, foot + Vector3.UP * 0.9, foot + Vector3.UP * 1.6]
-	for p: Vector3 in targets:
-		var q := PhysicsRayQueryParameters3D.create(pose.origin, p + (pose.origin - p).normalized() * 0.25)
-		q.hit_back_faces = true
-		if not space.intersect_ray(q).is_empty():
-			return false
-		for b: AABB in boxes:
-			if b.intersects_segment(pose.origin, p.lerp(pose.origin, 0.02)):
-				return false
-	if pole:
-		var q2 := PhysicsRayQueryParameters3D.create(pose.origin, pose.origin + aim * 40.0)
-		q2.hit_back_faces = true
-		if not space.intersect_ray(q2).is_empty():
-			return false
-		var sp := screen_point(pose, pose.origin + aim * 1000.0, Vector2(1280, 720))
-		if is_nan(sp.x) or not Rect2(Vector2(0, 40), Vector2(1280, 680)).has_point(sp):
-			return false
-	return true
-
-
-## The lift's visible boxes (they have no collision), as global AABBs.
-func lift_boxes() -> Array:
-	var out := []
-	if demo == null or demo.lift == null:
-		return out
-	var stack: Array = [demo.lift]
-	while not stack.is_empty():
-		var n: Node = stack.pop_back()
-		if n is MeshInstance3D and n.is_visible_in_tree() and n.mesh != null:
-			out.append((n as MeshInstance3D).global_transform * n.mesh.get_aabb())
-		stack.append_array(n.get_children())
-	return out
-
-
-## The standing point a situation view needs (walk_to: a rail point at a fixed angle, or at the
-## captain's own angle), or null when the view works from anywhere on the bridge.
-func anchor_of(v: Dictionary, foot: Vector3) -> Variant:
-	var w: Variant = v.get("walk_to")
-	if not w is Dictionary or demo == null:
-		return null
-	if w.has("beyond_m") and Vector2(foot.x, foot.z).length() <= float(w.beyond_m):
-		return null
-	var ang: float = atan2(foot.z, foot.x) if str(w.get("angle_deg", "captain")) == "captain" else deg_to_rad(float(w.angle_deg))
-	var r := float(w.radius_m)
-	return demo.walk_bridge.closest_walkable(Vector3(r * cos(ang), 82.0, r * sin(ang)), 4.0)
 
 
 func _place(v: Dictionary, foot: Vector3, k: int) -> Transform3D:
@@ -761,40 +691,12 @@ func pinch(factor: float) -> bool:
 func sky(id: String, cued := false, force := false) -> bool:
 	# R2-CAMERA-FORWARD §D5: on a walk level the sky views are the walk views. A cue (departure,
 	# cruise, braking, a stop, Sgr A*) keeps or returns to Bow and never turns the camera; Sky astern
-	# is Astern. The old sky_* poses stay as tool and golden poses (_sky).
+	# is Astern. The old sky_* poses stay as tool and golden poses (_sky); no player enters them.
 	if demo != null and walk_level() and demo.active_level == 0:
 		return walk("astern" if id == "sky_aft" and views.has("astern") else str(levels[level_name()].get("default", "bow")), cued, force)
-	var v: Dictionary = views.get(id, {})
-	if v.is_empty() or demo == null or (cued and overridden):
-		return false
-	if demo.active_level != 0:
-		if not cued:
-			_prompt("Sky views are on the bridge")
-		return false
-	if demo.benchmark.running or (demo.lift != null and demo.lift.travelling()):
-		return false
-	if not force and not demo.consoles.focused.is_empty():
-		return false
-	if cued and not force and demo.panel_open():
-		return false
-	if cued and not force and motion == "reduced":
-		_prompt(str(v.get("prompt", "Sky · 7")))
-		return false
-	release()
-	var anchor: Variant = anchor_of(v, demo.avatar_pos)
-	if v.has("yaw_candidates_deg"):
-		var off: Variant = choose_offset(v, demo.avatar_pos)
-		if off != null:
-			anchor = null
-			_sky_offset[id] = off
-	if anchor is Vector3 and Vector2(demo.avatar_pos.x - anchor.x, demo.avatar_pos.z - anchor.z).length() > 0.75:
-		if demo.consoles.walk_to_point(anchor, str(v.get("name", "rail"))):
-			_pending = id
-			cue_prompt = ""
-			return true
-		return false
-	_enter(id, cued)
-	return true
+	if demo != null and demo.active_level != 0 and not cued:
+		_prompt("Sky views are on the bridge")
+	return false
 
 
 ## R2-CAMERA-FORWARD: a walk view (Bow, Astern) on the captain's level. A key (7, 9, R) or a cue;
@@ -827,15 +729,6 @@ func walk(id: String, cued := false, force := false) -> bool:
 	if _blend.is_empty():
 		mapping_view = deck_view
 	return true
-
-
-func _enter(id: String, cued: bool) -> void:
-	_finish_restore() # a cue while stepping back from a console takes the camera from there
-	situation = id
-	_pending = ""
-	cue_prompt = ""
-	var v: Dictionary = views[id]
-	_start_blend(float(v.get("cue_ease_s", 1.5) if cued else v.get("ease_s", 1.2)))
 
 
 ## Any level key, move key or R ends a sky view (back to the remembered level); not while the
@@ -945,15 +838,6 @@ func advance(dt: float) -> void:
 		cue_prompt = ""
 	if demo == null or overridden:
 		return
-	if not _pending.is_empty() and demo.consoles.walk_target.is_empty():
-		var anchor: Variant = anchor_of(views[_pending], demo.avatar_pos)
-		if anchor is Vector3 and Vector2(demo.avatar_pos.x - anchor.x, demo.avatar_pos.z - anchor.z).length() <= 0.75:
-			if views[_pending].has("yaw_candidates_deg"):
-				var off: Variant = choose_offset(views[_pending], demo.avatar_pos)
-				_sky_offset[_pending] = off if off != null else 90.0
-			_enter(_pending, true)
-		else:
-			_pending = ""
 	var foot: Vector3 = demo.avatar_pos
 	_follow(foot, dt)
 	area = "lower" if demo.active_level == 1 else "bridge"

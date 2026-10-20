@@ -4,7 +4,7 @@
 
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CAMERA-FORWARD.json`
 
-**Status:** **Approved** (Mark, attended 2026-10-19, ledger D-93, every recommendation). In progress: F1.
+**Status:** **Implemented** 2026-10-20: F1 (PR #282, D-94), F2 and F3 (PR #286); evaluation 88/100 PASS.
 
 **Approval gate:**
 - Mark answers OQ1–OQ4: the Bow framing, planet facing at stops, astern and side, and zoom.
