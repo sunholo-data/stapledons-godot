@@ -1,15 +1,16 @@
 {
   "sprint_id": "R2-CAPTAIN-ANIMATION",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
-  "approved_on": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended, ledger D-102)",
+  "approved_on": "2026-10-20",
   "created": "2026-10-20",
   "design_doc": "design_docs/planned/r2/captain-animation.md",
   "sprint_plan": "design_docs/planned/r2/captain-animation-sprint.md",
-  "branch": "design/captain-animation",
+  "branch": "feat/captain-animation",
   "history": [
-    "2026-10-20: planned after Mark's D-98 ('obviously we need animation on the captain a bit'); spike tools/captain_anim_spike.gd compared A (painted still), B (live rigged GLB), C (pre-rendered rig frames) and D (procedural motion on the still) through the real Bow view at 2560x1440 (figure 161 px); frames at gs://stapledons-voyage-assets/refs/captain_animation/spike/"
+    "2026-10-20: planned after Mark's D-98 ('obviously we need animation on the captain a bit'); spike tools/captain_anim_spike.gd compared A (painted still), B (live rigged GLB), C (pre-rendered rig frames) and D (procedural motion on the still) through the real Bow view at 2560x1440 (figure 161 px); frames at gs://stapledons-voyage-assets/refs/captain_animation/spike/",
+    "2026-10-20: approved by Mark with every recommendation (D-102): \"yeah painted animation no mannequin. I will review animations of it on website\"; design PR #34 (brief amendment) merged, so the CA1 pilot spend may start (OQ5: pilot, then age 0 after Mark's pilot review)"
   ],
   "implements": [
     "stapledons-design vision/design-decisions.md 2026-09-28 Static Portraits (amended for the captain by D-98)",
@@ -49,53 +50,7 @@
       "what": "Mark plays the stations and the chair"
     }
   ],
-  "questions_for_mark": [
-    {
-      "id": "OQ1",
-      "question": "How is the captain animated: (a) painted frames posed by a rig, (b) a live 3D captain painted like the props, (c) procedural motion on today's stills only?",
-      "recommendation": "(a)"
-    },
-    {
-      "id": "OQ2",
-      "question": "Keep 3.5 m/s (a jog everywhere) or walk 1.8 m/s with a hold-Shift jog?",
-      "recommendation": "Keep 3.5 m/s as a light jog with start and stop eases; revisit in level design"
-    },
-    {
-      "id": "OQ3",
-      "question": "5 painted facings plus 3 mirrored, or 4?",
-      "recommendation": "5 + 3 mirrored"
-    },
-    {
-      "id": "OQ4",
-      "question": "Animate all four life stages before landing?",
-      "recommendation": "Yes, age 0 first"
-    },
-    {
-      "id": "OQ5",
-      "question": "Spend: about 620 painted frames (780 with a walk) plus retries, through the Codex art thread",
-      "recommendation": "Approve the 10-frame pilot and, if it passes, age 0 (about 155 frames); decide stages 20-60 at the CA1 review"
-    },
-    {
-      "id": "OQ6",
-      "question": "Look-up on cues (arrivals, starbow forming)?",
-      "recommendation": "Yes, skipped under reduced motion"
-    },
-    {
-      "id": "OQ7",
-      "question": "Animate crew on deck too?",
-      "recommendation": "No; they stay portraits and static avatars"
-    },
-    {
-      "id": "OQ8",
-      "question": "Who checks the look?",
-      "recommendation": "Mark, at the CA1 pilot, the CA1 strips and dev build, and CA2"
-    },
-    {
-      "id": "OQ9",
-      "question": "Make the chair sittable (E at the seat, any move key stands)?",
-      "recommendation": "Yes; about 60 LOC, no camera change"
-    }
-  ],
+  "questions_for_mark": [],
   "features": [
     {
       "id": "CA0_ANIM_STATE",
@@ -174,6 +129,44 @@
       "verdict": "below pass before fixes; 3 blocking: Astern station/chair facings, GPU-memory budget, untested recommendation (no pilot); all three and every non-blocking item folded into the design doc, sprint plan and this JSON"
     }
   ],
-  "answers": [],
-  "follow_ups": []
+  "answers": [
+    {
+      "id": "OQ1",
+      "answer": "approved as recommended: (a)"
+    },
+    {
+      "id": "OQ2",
+      "answer": "approved as recommended: Keep 3.5 m/s as a light jog with start and stop eases; revisit in level design"
+    },
+    {
+      "id": "OQ3",
+      "answer": "approved as recommended: 5 + 3 mirrored"
+    },
+    {
+      "id": "OQ4",
+      "answer": "approved as recommended: Yes, age 0 first"
+    },
+    {
+      "id": "OQ5",
+      "answer": "approved as recommended: Approve the 10-frame pilot and, if it passes, age 0 (about 155 frames); decide stages 20-60 at the CA1 review"
+    },
+    {
+      "id": "OQ6",
+      "answer": "approved as recommended: Yes, skipped under reduced motion"
+    },
+    {
+      "id": "OQ7",
+      "answer": "approved as recommended: No; they stay portraits and static avatars"
+    },
+    {
+      "id": "OQ8",
+      "answer": "approved as recommended: Mark, at the CA1 pilot, the CA1 strips and dev build, and CA2"
+    },
+    {
+      "id": "OQ9",
+      "answer": "approved as recommended: Yes; about 60 LOC, no camera change"
+    }
+  ],
+  "follow_ups": [],
+  "started": "2026-10-20"
 }

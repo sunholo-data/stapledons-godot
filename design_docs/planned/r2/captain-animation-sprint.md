@@ -2,7 +2,7 @@
 
 **Design doc:** [captain-animation.md](captain-animation.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CAPTAIN-ANIMATION.json`
-**Status:** **Awaiting Mark's approval** (plan only; nothing built beyond the spike).
+**Status:** **Approved** (D-102, 2026-10-20, every recommendation). Executing CA0 and the CA1 pilot; the pilot pauses for Mark's review on a web page.
 **Base:** `origin/main` 8e49c160 (branch `design/captain-animation`). CA0 starts after #292 (DL3) merges; it does not touch #293's files.
 **AILANG:** v0.54.14 (pinned). No `.ail` code (syntax gate: skip). Registry reuse: none; no maths for `sunholo/relativity`.
 **Estimate:** about 1,400 game LOC, **9–10 working days** of execution, excluding Mark's three reviews and the art turnaround (the painted frames are made by the Codex art thread, and only after Mark approves the spend).

@@ -1,6 +1,6 @@
 # R2-CAPTAIN-ANIMATION: the captain moves like a person on the bow-facing bridge
 
-**Status:** Planned 2026-10-20, awaiting Mark's approval (design and sprint plan only; nothing built).
+**Status:** Approved by Mark on 2026-10-20 (ledger D-102), every recommendation: "yeah painted animation no mannequin. I will review animations of it on website". The brief amendment (design PR #34) is merged. Executing CA0 and the CA1 pilot on `feat/captain-animation`; Mark reviews the pilot as animations on a web page.
 **Release:** R2. **Milestone:** the player's captain animated in the fixed Bow and Astern views: idle, walking and jogging with the feet planted, facing the way they move, using each station, sitting in the chair, riding the lift, and looking up at arrivals.
 **Priority:** P1 for R2. The captain is on screen in every player view (third person, D-91).
 
@@ -182,7 +182,7 @@ About **1,400 game LOC over 9–10 working days** (about 150 LOC a day, half the
 | Conflicts with DL3 and the styling pass | CA0 starts after #292 merges; #293's files are not touched; re-read `git log HEAD..origin/main` before merging |
 | The jog looks frantic at 3.5 m/s | 12 frames a second over a 2.33 m cycle; OQ2 |
 
-## Open questions for Mark
+## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |
 |---|---|---|
