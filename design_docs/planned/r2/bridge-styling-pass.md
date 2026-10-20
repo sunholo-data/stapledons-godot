@@ -145,6 +145,25 @@ After DL1–DL3 the bridge's furniture faces the bow and is painted with inked e
   - A new `dressing` row caps the dressing's share of each view's frame at 8 %. Its negative control is a seeded oversized prop.
   - The below-rail silhouettes are checked to lie outside every lower-deck volume in `ship.glb`, so they never intersect real geometry.
 
+- **Painted foliage cards (D-106 amendment, Mark 2026-10-20; spike PR #299,
+  `design_docs/planned/r2/stylised-plants-spike.md`, painted sources at
+  `gs://stapledons-voyage-assets/refs/plants/spike/cards/`).** The ten rim fronds swap from meshes to painted frond
+  cards in S5:
+  - **One shader.** The spike's card shader (alpha cut, the rounded "sphere" normal, three bands) merges into the shared
+    `shaders/stapledon_toon.gdshader` as a card mode (`card` uniform: alpha-scissor from the painting's alpha, the
+    normal from a sphere centred on the card), so the cards band under the spire and the star exactly as the meshes do.
+    No second shader ships; `make style-test` audits cards as `bridge_style` members like any mesh.
+  - **Facing.** Cards turn toward the camera within ±25° of their authored facing (a clamped billboard), so the
+    slide never shows a card edge-on and never fully rotates the painting.
+  - **Even lighting.** The paintings are painted evenly lit (no baked light direction), so the live spire and star
+    never fight a painted shadow; `make foliage-check` (R2-LEVELS) gates alpha coverage, base anchor and palette.
+  - **Shadows.** A card's own shadow thins to a line when the light is edge-on, so large plants cast from a
+    low-poly proxy (the frond's old silhouette mesh, shadow-only); small cards cast none.
+  - **Fades.** The card material takes the occluder-fade the fade list (`views.json` `levels.bridge.occluders`)
+    drives, so the fronds keep their D-91 fade.
+  - **Estimate:** +0.5 day in ST5 (the card mode, the clamped billboard, the proxies, the swap): **10 → 10.5 days**;
+    +~80 game LOC.
+
 ### S6. Review, measurement and the pause
 
 - **`make style-capture TAG=<tag>`** writes a before/after sheet through the real views. The sheet covers Bow at rest in deep space, near the Sun, at 0.99c and at the first stop, plus Astern and the three console close-ups, with the HUD on and off.
@@ -224,7 +243,7 @@ The look itself is Mark's judgement at the style-frame pause; the evaluator scor
 | ST2 | S2 toon material on the bridge; the theme on the status strip and one card; S7 the desks, chair and screen housings grown (D-104); **style frame** | ~310 + bpy | **Mark approves the look and the shapes** |
 | ST3 | S3 deck, spire and lift head painted (Blender); S7 the rail, lamps, guardrails and lift guides grown | ~100 + bpy | — |
 | ST4 | S4 the theme across every HUD panel; the consistency pass | ~250 | — |
-| ST5 | S5 per-view dressing and below-rail cues; S7 the benches, Archive terminal and conduits grown | ~200 + bpy | — |
+| ST5 | S5 per-view dressing and below-rail cues; the rim fronds as painted cards in the shared toon material (D-106); S7 the benches, Archive terminal and conduits grown | ~280 + bpy | — |
 | ST6 | Landing: rig run, goldens, bench, final captures, report, independent evaluation | docs | — |
 
 ## Risks and mitigations

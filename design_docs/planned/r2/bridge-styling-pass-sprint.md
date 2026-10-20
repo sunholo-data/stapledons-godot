@@ -5,7 +5,7 @@
 **Status:** **Approved** (Mark, 2026-10-20, ledger D-100). Executing; hard stop at the ST2 style frame.
 **Base:** main after R2-DECK-LAYOUT DL3 (#292, merged).
 **AILANG:** v0.54.14, pinned. No `.ail` code: syntax gate skipped. Registry reuse: none (Godot shaders, themes and Blender assets; no physics maths).
-**Estimate:** about 1,360 game LOC plus about 800 lines of `bpy`, over **10 working days** (D-104 shape language: +1.5 days, was 8.5), excluding Mark's review at the pause. Engine and UI code (ST0, ST1, ST2, ST4: about 1,000 LOC) runs at the recent attended rate of about 300 LOC a day. The art milestones (ST3: 2 days; ST5: 1.5 days) are capped at their days, and Blender work is not counted in LOC. The blended rate is about 150 LOC a day.
+**Estimate:** about 1,440 game LOC plus about 800 lines of `bpy`, over **10.5 working days** (D-104 shape language +1.5 days, D-106 foliage cards +0.5 day; was 8.5), excluding Mark's review at the pause. Engine and UI code (ST0, ST1, ST2, ST4: about 1,000 LOC) runs at the recent attended rate of about 300 LOC a day. The art milestones (ST3: 2 days; ST5: 1.5 days) are capped at their days, and Blender work is not counted in LOC. The blended rate is about 150 LOC a day.
 
 ## Velocity
 
@@ -108,6 +108,7 @@ R2-DECK-LAYOUT ran DL0–DL3 in one long day each on this rig. That came to abou
   - below the rail: silhouettes of the next deck's rim and the canopy, 25–50 m down, outside every lower-deck volume.
 - **Placement:** each piece is placed from `views.json` `levels.bridge.dressing` and shown only in its view.
 - **S7 (D-104):** the watch benches and details, the Archive terminal and detail, and the conduits grown, added to `style.shaped`.
+- **D-106 painted foliage:** the ten rim fronds become painted frond cards (spike PR #299): the spike's card shader merged into `shaders/stapledon_toon.gdshader` as a card mode (alpha cut, sphere normal, the same three bands), cards clamped to ±25° toward the camera, evenly lit paintings, shadow-only proxy casters for the large fronds, the occluder fade kept. `make style-test` audits the cards; `make deck-layout-eval` keeps every threshold.
 - **Evaluator:** gets a `dressing` row (≤ 8 % of each view), with a seeded oversized-prop negative control. Every §D4 threshold is kept.
 - **Gate:** `make deck-layout-eval deck-layout-eval-test camera-test camera-forward-test`; `make style-capture TAG=st5`, opened and published.
 

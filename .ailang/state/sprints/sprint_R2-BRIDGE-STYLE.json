@@ -22,11 +22,16 @@
     {
       "date": "2026-10-20",
       "event": "D-104 amendment (Mark, attended): \"everything looks quite boxy with edges, isn't the style more rounded curves?\" Shape language S7 folded in: the desks, chair and screen housings grown at ST2 (stapledon_bridge_props_v3.py reshape()), the rail/guardrails/lift guides at ST3, the benches/Archive terminal/conduits at ST5; metric: straight-edge share <= 0.10 on manifest style.shaped (AC12). Estimate 8.5 -> 10 days, ~1,300 -> ~1,360 game LOC, ~500 -> ~800 bpy."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "D-106 amendment (Mark chose painted foliage cards, spike PR #299): the bridge's rim fronds swap to painted cards in ST5, lit through a rounded normal by the shared toon material (the spike's card shader merged in as a card mode, no second shader), clamped to +-25 deg toward the camera, evenly lit paintings, proxy shadow casters for big plants, the occluder fade kept. Estimate 10 -> 10.5 days, ~1,360 -> ~1,440 game LOC. ST2 unchanged."
     }
   ],
   "related_prs": {
     "deck_layout_dl3": 292,
-    "plan": 293
+    "plan": 293,
+    "plants_spike": 299
   },
   "external_dependencies": [
     {
@@ -162,8 +167,8 @@
     },
     {
       "id": "ST5_DRESSING",
-      "description": "per-view foreground silhouettes and below-rail scale cues (outside lower-deck volumes) from views.json levels.bridge.dressing; evaluator dressing row with a negative control; D-104: watch benches and details, Archive terminal and detail, conduits grown",
-      "estimated_loc": 200,
+      "description": "per-view foreground silhouettes and below-rail scale cues (outside lower-deck volumes) from views.json levels.bridge.dressing; evaluator dressing row with a negative control; D-104: watch benches and details, Archive terminal and detail, conduits grown; D-106: the rim fronds as painted frond cards (card mode of the shared toon shader, +-25 deg clamped billboard, evenly lit paintings, proxy shadow casters, occluder fade)",
+      "estimated_loc": 280,
       "dependencies": [
         "ST3_BIG_SURFACES",
         "ST4_THEME_EVERYWHERE"
@@ -171,7 +176,8 @@
       "acceptance_criteria": [
         "make deck-layout-eval: bridge ok with the dressing row (<= 8 % per view); deck-layout-eval-test's seeded oversized prop fails",
         "make camera-test camera-forward-test",
-        "make style-capture TAG=st5 opened and published"
+        "make style-capture TAG=st5 opened and published",
+        "D-106: make style-test audits the frond cards as bridge_style members (card mode of stapledon_toon.gdshader, no second shader); make deck-layout-eval thresholds kept"
       ],
       "passes": null,
       "started": null,
@@ -200,9 +206,9 @@
   ],
   "velocity": {
     "target_loc_per_day": 150,
-    "estimated_total_loc": 1360,
-    "estimated_days": 10.0,
-    "note": "engine/UI code (ST0-ST2, ST4, ~1,000 LOC) at the attended ~300 LOC/day; ST3 (2 d) and ST5 (1.5 d) art milestones capped at their days; ~500 lines of bpy not counted; D-104 shape language +1.5 days (ST2/ST3/ST5 +0.5 each), +~300 bpy, +~60 LOC"
+    "estimated_total_loc": 1440,
+    "estimated_days": 10.5,
+    "note": "engine/UI code (ST0-ST2, ST4, ~1,000 LOC) at the attended ~300 LOC/day; ST3 (2 d) and ST5 (1.5 d) art milestones capped at their days; ~500 lines of bpy not counted; D-104 shape language +1.5 days (ST2/ST3/ST5 +0.5 each), +~300 bpy, +~60 LOC; D-106 foliage cards +0.5 day (ST5), +~80 LOC"
   },
   "reviews": [
     {
