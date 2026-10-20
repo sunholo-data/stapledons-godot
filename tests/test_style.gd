@@ -39,7 +39,7 @@ func _run() -> void:
 	var members: Array = demo.get_tree().get_nodes_in_group(Style.GROUP)
 	check("the bridge_style group holds the bridge meshes (%d)" % members.size(), members.size() >= 20)
 	var props: int = members.filter(func(n: Node) -> bool: return demo.props_visual != null and demo.props_visual.is_ancestor_of(n)).size()
-	check("every bridge_props.glb mesh is in the group (%d)" % props, demo.props_visual != null and props == _meshes(demo.props_visual).size())
+	check("every bridge_props.glb mesh is in the group (%d)" % props, demo.props_visual != null and props == Style.meshes(demo.props_visual).size())
 	var lower := ["Deck 01 top 57m", "Deck 02 top 32m", "Spire below bridge"]
 	check("the lower decks are not styled (%s)" % [lower], lower.all(func(n: String) -> bool:
 		var x: Node = demo.geometry.find_child(n, true, false)
@@ -48,6 +48,23 @@ func _run() -> void:
 	check("every styled surface is the toon material with exactly the ink next_pass (%d problems%s)" % [problems.size(), (": " + str(problems.slice(0, 3))) if not problems.is_empty() else ""], problems.is_empty())
 	var excluded: Array = Style.excluded_surfaces(demo.get_tree())
 	check("the exclusions keep their own materials (%d excluded surfaces, none toon)" % excluded.size(), excluded.all(func(s: Dictionary) -> bool: return not Style.is_toon(s.material)))
+	# The exclusions, seeded (the shipped GLBs carry none): an emissive and a transparent surface and a
+	# screen quad put through apply() keep their own materials, and the audit accepts them.
+	var seeds := []
+	for k in 3:
+		var q := MeshInstance3D.new()
+		q.mesh = QuadMesh.new()
+		var sm := StandardMaterial3D.new()
+		if k == 0: sm.emission_enabled = true
+		if k == 1: sm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		q.name = "IdleScreen_seed" if k == 2 else "seed_%d" % k
+		q.set_surface_override_material(0, sm)
+		demo.geometry.add_child(q)
+		seeds.append(q)
+	Style.apply(seeds)
+	var kept: bool = seeds.all(func(q: MeshInstance3D) -> bool: return q.get_surface_override_material(0) is StandardMaterial3D)
+	check("seeded exclusions (emissive, transparent, IdleScreen_*) keep their own materials and pass the audit", kept and Style.audit(demo.get_tree()).is_empty())
+	for q: MeshInstance3D in seeds: q.queue_free()
 	var lamp: MeshInstance3D = demo.lighting.spire_lamp
 	check("the emissive spire lamp keeps its own material", lamp != null and not Style.is_toon(lamp.material_override))
 	# The sky: its named layers exist, live in their own viewport, and none uses the toon shader.

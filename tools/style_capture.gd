@@ -6,7 +6,9 @@ extends SceneTree
 ##   bow_cruise   0.99c in interstellar space (the review "cruise" world)
 ##   bow_stop     the guided voyage's first stop, after the stop turn
 ##   astern_deep, astern_star   the Astern view at the spawn
+##   bow_fade     the Bow view with the captain sternward of the spire (the mast fades), deep space
 ##   zoom_navigation, zoom_voyage, zoom_crew   the console close-ups (ShipConsoles.focus_pose), deep space
+##   hud_arrival  the Bow view near the Sun with the HUD and the arrival card (review values)
 ## Writes renders/style/<tag>/*.png, style.json (the lights per frame) and contact_sheet.png; with
 ## --before=<dir> also before_after.png (rows: before, after) for the frames both runs have.
 ## Usage: godot --path . --script tools/style_capture.gd -- --tag=<tag> [--before=res://renders/style/before]
@@ -17,7 +19,7 @@ var px := Vector2i(1280, 720)
 var rows := []
 var failures := 0
 const ZOOMS := {"navigation": "console_navigation_1", "voyage": "console_decision_0", "crew": "console_decision_1"}
-const SHEET := ["bow_deep", "bow_star", "bow_cruise", "bow_stop", "astern_deep", "astern_star", "zoom_navigation", "zoom_voyage", "zoom_crew", "bow_deep_hud", "bow_star_hud", "astern_deep_hud"]
+const SHEET := ["bow_deep", "bow_star", "bow_cruise", "bow_stop", "astern_deep", "astern_star", "bow_fade", "zoom_navigation", "zoom_voyage", "zoom_crew", "bow_deep_hud", "astern_deep_hud", "bow_star_hud", "bow_cruise_hud", "bow_stop_hud", "hud_arrival"]
 
 
 func _initialize() -> void:
@@ -45,8 +47,11 @@ func _run() -> void:
 			await _view("bow_" + st, "bow")
 			await _view("astern_" + st, "astern")
 		demo.set_sky_state("deep")
+		await _view("bow_fade", "bow", demo.walk_bridge.closest_walkable(Vector3(0, 82, 12), 4.0))
 		for id: String in ZOOMS:
 			await _zoom("zoom_" + id, id)
+		demo.set_sky_state("star")
+		await _arrival()
 		await _free()
 	if await _new_demo({"sky_state": "cruise"}):
 		await _view("bow_cruise", "bow")
@@ -100,12 +105,12 @@ func _free() -> void:
 	demo = null
 
 
-func _view(name: String, view: String) -> void:
+func _view(name: String, view: String, foot: Variant = null) -> void:
 	demo.consoles.cancel_walk()
 	demo.director.release()
 	demo.camera_mode = "player"
 	demo.director.walk(view)
-	demo.avatar_pos = demo.bridge_spawn() if not name.begins_with("bow_stop") else demo.walk_bridge.closest_walkable(Vector3(-12, 82, 6), 4.0)
+	demo.avatar_pos = foot if foot is Vector3 else (demo.bridge_spawn() if not name.begins_with("bow_stop") else demo.walk_bridge.closest_walkable(Vector3(-12, 82, 6), 4.0))
 	for k in 240:
 		demo._process(1.0 / 60.0)
 	demo.ship_hud.visible = false
@@ -113,6 +118,38 @@ func _view(name: String, view: String) -> void:
 	demo.ship_hud.visible = true
 	await _save(name + "_hud")
 	demo.ship_hud.visible = false
+
+
+## The arrival card as the game builds it (ship_geometry_demo: show_card("arrival"), one line per
+## ArrivalCard.ROWS, the Dismiss button), its values review text (the journey's real values need a
+## whole voyage), over the Bow view near the Sun with the HUD on.
+func _arrival() -> void:
+	demo.consoles.cancel_walk()
+	demo.director.release()
+	demo.camera_mode = "player"
+	demo.director.walk("bow")
+	demo.avatar_pos = demo.bridge_spawn()
+	var hud: ShipHud = demo.ship_hud
+	for k in 240:
+		demo._process(1.0 / 60.0)
+	hud.visible = true
+	hud.show_card("arrival", "Arrived")
+	var values := ["4.246 ly", "1.902 yr", "4.351 yr", "2.449 yr"]
+	for i in ArrivalCard.ROWS.size():
+		hud.set_card_value("review_%d" % i, values[i])
+		hud._binding_row(hud.card_body("arrival"), ArrivalCard.ROWS[i][0], "hud.cardtext.review_%d" % i, "text")
+	hud.card_button("arrival", "Dismiss [Enter]", func() -> void: pass)
+	# The review world is not an arrived journey, so the demo's own HUD pass would close the card:
+	# hold the demo for the shot and let only the HUD fade the card in.
+	demo.process_mode = Node.PROCESS_MODE_DISABLED
+	hud.update({}) # the bindings read the review values (hud.cardtext)
+	for k in 60:
+		hud.advance(1.0 / 60.0)
+	print("arrival card present: %s" % hud.has_card("arrival"))
+	await _save("hud_arrival")
+	demo.process_mode = Node.PROCESS_MODE_INHERIT
+	hud.visible = false
+	hud.hide_card("arrival")
 
 
 ## The game's console close-up pose, held without opening the station (its panel would cover the frame).

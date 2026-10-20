@@ -4,9 +4,10 @@ extends RefCounted
 ## light is ship_star_light.gd ("StarLight"), which dims this key as it takes over.
 const SPIRE_LAMP_Y:=89. # m (glTF y): 7 m above the 82 m bridge deck, on the mast axis
 const SPIRE_LAMP_R:=1.92 # m: the mast's radius at the lamp band (its cone runs 3.3 m at the deck to 0 at 98 m)
-const SPIRE_RANGE_M:=27. # m: lights the whole bridge disc (21.9 m to the rim's foot), ends 4 m above the Commons' 57 m deck
+const SPIRE_RANGE_M:=31. # m: lights the whole bridge to the rim's walk (R2-BRIDGE-STYLE S1: was 27, the rim fell outside the toon bands), ends 1 m above the Commons' 57 m deck
 const SPIRE_COLOUR:=Color(1.,.80,.58)
 const SPIRE_BASE:=8. # R2-BRIDGE-STYLE S1: the bridge's key in deep space now the broad key is retired there (was 5)
+const BRIDGE_AMBIENT_GAIN:=1.45 # R2-BRIDGE-STYLE S1: the bridge's readability floor with the broad key retired (the lower decks keep theirs)
 const SPIRE_SHADOW_BLUR:=2.5 # soft radial shadows (R2-BRIDGE-STYLE S1)
 static func install(host:Node3D)->Dictionary:
 	var env:=Environment.new();env.background_mode=Environment.BG_CLEAR_COLOR
@@ -47,7 +48,7 @@ static func apply(rig:Dictionary,profile:String)->void:
 	var fill:DirectionalLight3D=rig.fill
 	var baseline:=profile=="baseline"
 	env.ambient_light_color=Color(.65,.70,.78) if baseline else Color(.31,.37,.51)
-	env.ambient_light_energy=.65 if baseline else .22
+	rig.ambient_base=.65 if baseline else .22
 	key.light_color=Color.WHITE if baseline else Color(1.,.82,.65)
 	key.light_energy=1.3 if baseline else 1.5
 	key.shadow_enabled=profile=="moody"
@@ -60,12 +61,19 @@ static func apply(rig:Dictionary,profile:String)->void:
 	fill.shadow_enabled=false
 	rig.practical.visible=not baseline
 	rig.profile=profile
+	_ambient(rig)
 	if rig.has("star"):rig.star.apply_rig(rig)
 ## R2-BRIDGE-STYLE S1: the active level. On the bridge (0) the broad key is retired and the spire
 ## keys the deck; every other level keeps the broad key as before (their own passes follow).
 static func set_level(rig:Dictionary,level:int)->void:
 	rig.bridge=level==0
+	_ambient(rig)
 	if rig.has("star"):rig.star.apply_rig(rig)
+## The ambient: the readability floor. On the bridge, with the broad key retired, it is raised so the
+## rim and the stern stay readable when the star is below the deck and the spire at its floor.
+static func _ambient(rig:Dictionary)->void:
+	var env:Environment=rig.environment
+	env.ambient_light_energy=float(rig.get("ambient_base",.22))*(BRIDGE_AMBIENT_GAIN if rig.get("bridge",false) and rig.profile!="baseline" else 1.)
 ## The mast's meshes (manifest style.spire_nodes): the spire light sits on its axis, inside it, so
 ## the mast must not cast the spire's shadow; it casts the star's as before.
 static func set_mast(rig:Dictionary,nodes:Array)->void:

@@ -333,8 +333,10 @@ func _run() -> void:
 			and bounds[3][2] and is_equal_approx(bounds[3][3], 1.0) and not bounds[3][0] \
 			and bounds[4][2] and is_equal_approx(bounds[4][3], 1.0) and not bounds[4][0]
 		check("bridge: the handover ramp's boundaries (0, H-eps, H, 2H, 1): %s" % [bounds], b_ok)
+		var amb_bridge: float = rig.environment.ambient_light_energy
 		Lighting.set_level(rig, 1)
 		check("set_level(1): the lower decks get the broad key back and the spire gives up the shadow", rig.bridge == false and key.light_energy > 0.0 and not spire_b.shadow_enabled and mast.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
+		check("the bridge's ambient floor is raised (%.3f) and the lower decks keep theirs (%.3f)" % [amb_bridge, rig.environment.ambient_light_energy], is_equal_approx(amb_bridge, rig.ambient_base * Lighting.BRIDGE_AMBIENT_GAIN) and is_equal_approx(rig.environment.ambient_light_energy, rig.ambient_base) and Lighting.BRIDGE_AMBIENT_GAIN > 1.0)
 		Lighting.set_level(rig, 0)
 		sky.apply(dark); star.update(rig, sky, 0.0, true)
 		check("bridge: interstellar cruise: the spire is at spire_base (the key stays retired)", is_equal_approx(spire_b.light_energy, rig.spire_base) and key.light_energy == 0.0)
