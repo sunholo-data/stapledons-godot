@@ -72,7 +72,7 @@ func _run() -> void:
 ## The review "rest" world (no system section) with the Sun's system from the star-light test's
 ## recording (tests/fixtures/system_sol.ndjson): the observer near Earth, 1 AU from the Sun, the
 ## Sun's illuminance the sim's 1.27e5 lx at 1 AU; Earth itself removed so it does not fill the frame.
-func _with_sun(world: Dictionary) -> Dictionary:
+static func _with_sun(world: Dictionary) -> Dictionary:
 	var w := world.duplicate(true)
 	var lines := FileAccess.get_file_as_string("res://tests/fixtures/system_sol.ndjson").strip_edges().split("\n")
 	var sys: Dictionary = SimBridge.parse_system(JSON.parse_string(lines[1]).changes.system)
@@ -95,7 +95,7 @@ func _with_sun(world: Dictionary) -> Dictionary:
 
 
 ## The review world with every body moved `s` times further and dimmed by s^2 (no star close).
-func _pushed(world: Dictionary, s: float) -> Dictionary:
+static func _pushed(world: Dictionary, s: float) -> Dictionary:
 	var w := world.duplicate(true)
 	for b: Dictionary in w.system.bodies:
 		var r: Dictionary = b.rel_km
