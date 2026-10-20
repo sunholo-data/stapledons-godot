@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-DECK-LAYOUT",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-95)",
   "approved_on": "2026-10-20",
@@ -35,6 +35,10 @@
     {
       "date": "2026-10-20",
       "event": "DL1 accepted as built (ledger D-96, 'very nice'; #287 merged). D-96 direction: light sources for atmosphere, the spire as the bridge's own light when no star is close; eclipse/transition framings noted for a later design doc. DL2 amended (design section D5a)"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "DL2 style frame built (navigation arc with operator-side bezels, chair; painted, inked) and the SpireLight (section D5a); paused for Mark to approve the finish"
     }
   ],
   "implements": [
@@ -166,10 +170,10 @@
         "make ship-star-light-test: existing checks green plus the SpireLight's (follows the key's share, floor, full in interstellar cruise, lamp glow tracks it); ship-star-light-capture re-run and opened",
         "frames: deep space spire-lit, near a star star-lit, 0.99c, the navigation close-up, the style frame, published to refs/deck_layout_bow/dl2/"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-20",
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-20",
+      "notes": "Built: SpireLight (OmniLight3D on the mast axis at 89 m, warm, range 27 m ending above the Commons, attenuation 0.4, energy 5 in deep space) with a visible lamp band, sharing the broad key's dimming in ship_star_light.apply_rig (red first: 2 failures, then ship-star-light-test 58/0; the existing checks unchanged). Blender ~/dev/blender/scripts/stapledon_bridge_props_v1.py: brass bezel and hood on each pod's operator face (the live idle screen sits in the middle pod's; dark glass on the outer two; OQ7), heroes made single-user (the pods shared one mesh), painted textures = baked pigments x contact AO (0.8 m) x crease ink x grain, one 1024 WebP each; no light baked (D-96 amendment replaces OQ6's baked spire light, for Mark to confirm). bridge_props.glb 0.66 MB (8 meshes, EXT_texture_webp) beside ship.glb 8.6 MB (heroes removed); two runs byte-identical; master in the bucket (asset-pins.json). The demo loads the props with the engine's ink outline (interior/outline.gdshader, 0.018 m) as each surface's next pass. Gates: deck-layout-eval ok; deck-layout-eval-test 14/0 (4 DL2 checks); deck-assets-check ok with bridge_props budgets; camera, camera-forward, ship-console, ship-ui, crew-console, bridge-floor, validate-ship-demo, ship-demo-assets, ship-commons green; make golden 393 ok, 364 lines outside the re-posed families match main; make bench SCENE=bridge p99 14.3 ms and 15.2 ms in two runs at 2560x1440 (host load ~10, not quiet; plan baseline 15.5-16.3 ms). ship-star-light-capture re-run and opened: it reports FAIL on 'capture-arrival-failed: CNS5:3627' on the pre-DL2 head too (pre-existing, not in make test). Frames: refs/deck_layout_bow/dl2/."
     },
     {
       "id": "DL3_BRIDGE_HERO",
