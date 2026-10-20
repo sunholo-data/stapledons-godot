@@ -2,12 +2,55 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://www.sunholo.com/stapledons-godot/news</id>
     <title>Stapledon's Voyage news</title>
-    <updated>2026-10-19T00:00:00.000Z</updated>
+    <updated>2026-10-20T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://www.sunholo.com/stapledons-godot/news"/>
     <subtitle>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</subtitle>
     <icon>https://www.sunholo.com/stapledons-godot/https://ailang.sunholo.com/img/favicon.ico</icon>
     <rights>Copyright © 2026 Sunholo / Mark Edmondson</rights>
+    <entry>
+        <title type="html"><![CDATA[dev.34 and dev.35: home in sixteen steps, and a bridge that faces the way you're going]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow"/>
+        <updated>2026-10-20T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[The camera from dev.33 swung around the spire as you walked, and the controls turned with it. dev.35 fixes that at the root. The ship now travels toward its bow, along the deck. One fixed view looks forward, slides with the captain and never turns. The bridge has been rearranged so every console faces the way you're going. Far from any star, the ship's spire lights the deck.]]></summary>
+        <content type="html"><![CDATA[<p>The camera from dev.33 swung around the spire as you walked, and the controls turned with it. dev.35 fixes that at the root. The ship now travels toward its bow, along the deck. One fixed view looks forward, slides with the captain and never turns. The bridge has been rearranged so every console faces the way you're going. Far from any star, the ship's spire lights the deck.</p>
+<!-- -->
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="forward-always-up-the-screen-dev35">Forward, always up the screen (dev.35)<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow#forward-always-up-the-screen-dev35" class="hash-link" aria-label="Direct link to Forward, always up the screen (dev.35)" title="Direct link to Forward, always up the screen (dev.35)" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/4cc441d5681b20f5bd2087a7220984e431400ab24f341e119da2d3e02bfef5d9.png" alt="The Bow view at 0.99c: the starbow gathered ahead, over the helm" class="img_ev3q"></p>
+<p>The direction of travel used to point straight up from the deck, which meant the view ahead and the deck you walk on could not share a frame. Now the ship flies bow first, and the decks stay level under the generator's 1 g. The <strong>Bow</strong> view looks forward over the rail from behind and above the captain. It slides as you walk but never turns, so W always walks up the screen and the starbow always sits ahead. Press <strong>9</strong> to look <strong>Astern</strong>, and <strong>7</strong> or <strong>R</strong> to come back. Using a console zooms in on it, still looking forward. Props that would block the view, such as the spire or the lift, fade out of the way.</p>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/e5a057ee50851a5d894d4f3deac69d690174603685e4416fe286886dd10e496f.png" alt="At the first stop of the guided voyage the ship turns so the Sun sits about 30° off the bow" class="img_ev3q"></p>
+<p>At a stop, the ship turns itself rather than the camera. The body you've reached sits about 30° off the bow, inside the same view, from every spot on the bridge we measured. No physics changed: the relativity package already took the direction of travel as its one axis, and the sky is still the same live render, checked against the CPU reference in the GPU golden cases.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-bridge-faces-the-bow-dev35">The bridge faces the bow (dev.35)<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow#the-bridge-faces-the-bow-dev35" class="hash-link" aria-label="Direct link to The bridge faces the bow (dev.35)" title="Direct link to The bridge faces the bow (dev.35)" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/46a133e85f5bb40ad4df11bd45846d2e8cfad85054a87d6c21d6d5206cdd8221.png" alt="The captain's chair behind the navigation pods, lit by the spire in deep space" class="img_ev3q"></p>
+<p>The old bridge was laid out for the old camera: three of its four stations had you facing the stern or sideways. A probe that looks through the real Bow and Astern cameras at nearly 4,800 positions on the deck now scores every layout. The new one puts the navigation pods at the bow rail with the captain's chair behind them and the Voyage and Crew consoles either side. You start behind the helm with a clear walk ahead. Every station faces forward, and every console close-up looks out at the sky ahead.</p>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/cf5bf0f61a9a6107c9a7c49924034233e023d087f374bdcbdc44f0749fcb687d.png" alt="The same helm near a star: its light and shadows take over from the spire" class="img_ev3q"></p>
+<p>The pods and chair have a first painted finish: shading where surfaces meet, ink at the creases and an ink outline. In deep space the bridge is lit by a warm light on the spire. Near a star, its real light takes over: direction, colour and Doppler shift come from the simulation. The handover is gradual.</p>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/ac50e1cd99776bad0390143e93faa04177ca6013f8906e7e2830cbdd6a9871e6.png" alt="The navigation pod close-up, with its new screen on the captain's side" class="img_ev3q"></p>
+<p>Each navigation pod now has a brass-framed screen on the side facing the captain.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="home-in-sixteen-steps-dev34">Home in sixteen steps (dev.34)<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow#home-in-sixteen-steps-dev34" class="hash-link" aria-label="Direct link to Home in sixteen steps (dev.34)" title="Direct link to Home in sixteen steps (dev.34)" translate="no">​</a></h2>
+<p>The crossing review's Home page now has sixteen steps of time away instead of seven, with more than one picture for many of them, chosen per voyage. The pictures for up to a few thousand years are on the <a class="" href="https://www.sunholo.com/stapledons-godot/concept-art">concept art page</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<ul>
+<li class="">Travel toward the bow, a fixed Bow view that slides and never turns, Astern on <strong>9</strong>, and stops that turn the ship to the body (<a href="https://github.com/sunholo-data/stapledons-godot/pull/282" target="_blank" rel="noopener noreferrer" class="">#282</a>, <a href="https://github.com/sunholo-data/stapledons-godot/pull/286" target="_blank" rel="noopener noreferrer" class="">#286</a>).</li>
+<li class="">The bridge rearranged to face the bow, scored through the real cameras (<a href="https://github.com/sunholo-data/stapledons-godot/pull/287" target="_blank" rel="noopener noreferrer" class="">#287</a>).</li>
+<li class="">Painted navigation pods and captain's chair, operator-side screens, and the spire as the bridge's own light (<a href="https://github.com/sunholo-data/stapledons-godot/pull/290" target="_blank" rel="noopener noreferrer" class="">#290</a>).</li>
+<li class="">Sixteen home-time steps with picture variants on the crossing review's Home page (dev.34).</li>
+<li class="">Pull requests now run a fast check tier on GitHub; the full suite runs on the build machine before merge.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/20/the-bridge-faces-the-bow#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<ul>
+<li class="">The rest of the bridge props in the painted finish, and a wider styling pass over the whole bridge and its on-screen graphics.</li>
+<li class="">Views for the Commons and the other levels, each with its own fixed views and set dressing.</li>
+</ul>
+<p><strong>Releases:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.34-home-tiers" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.34-home-tiers</a>, <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.35-bow-view" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.35-bow-view</a></p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Release" term="Release"/>
+        <category label="Journey" term="Journey"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[dev.32 and dev.33: the crossing review, a crew videocom and a camera that follows you]]></title>
         <id>https://www.sunholo.com/stapledons-godot/news/2026/10/19/videocom-and-a-camera-that-follows</id>
