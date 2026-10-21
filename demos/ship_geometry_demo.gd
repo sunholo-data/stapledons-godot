@@ -404,7 +404,12 @@ func at_helm_closeup() -> bool:
 ## Show or hide the telescope; returns whether it is now shown. It refreshes every frame while shown
 ## and hides itself when the captain leaves the helm's close-up.
 func toggle_telescope(on: Variant = null) -> bool:
-	var want: bool = (telescope == null or not telescope.visible) if on == null else bool(on)
+	# T cycles: off -> whole disc -> close -> off
+	var want: bool = (telescope == null or not telescope.visible or telescope.level == 1) if on == null else bool(on)
+	if on == null and telescope != null and telescope.visible and telescope.level == 1:
+		telescope.level = 2
+	elif want and (telescope == null or not telescope.visible):
+		if telescope != null:telescope.level = 1
 	if want and telescope == null:
 		_telescope_layer = CanvasLayer.new();_telescope_layer.layer = 13;add_child(_telescope_layer)
 		telescope = TelescopeView.new();telescope.sv = sky.system_view;telescope.view_fov_deg = sky.camera.fov

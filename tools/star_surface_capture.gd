@@ -140,19 +140,21 @@ func _shots(name: String) -> int:
 	demo.set_auto_view(true)
 	demo.toggle_telescope(true)
 	demo.telescope.set_meta("pinned", true)
-	for enabled: bool in [true, false]:
-		sv.surfaces_enabled = enabled
-		for i in 8:
-			await process_frame
-		demo.telescope.refresh(demo.sky_world)
-		for i in 4:
-			await process_frame
-		await RenderingServer.frame_post_draw
-		var tel: Image = demo.telescope._vp.get_texture().get_image()
-		tel.save_png(out + "/" + name + ("_telescope" if enabled else "_telescope_today") + ".png")
-		frames += 1
-	rows.append({"stop": name, "telescope_star": demo.telescope.star_id, "magnification": demo.telescope.magnification})
-	print("star-surface-capture telescope ", name, " ", demo.telescope.star_id, " x", demo.telescope.magnification)
+	for lv: int in [1, 2]:
+		demo.telescope.level = lv
+		for enabled: bool in [true, false]:
+			sv.surfaces_enabled = enabled
+			for i in 8:
+				await process_frame
+			demo.telescope.refresh(demo.sky_world)
+			for i in 4:
+				await process_frame
+			await RenderingServer.frame_post_draw
+			var tel: Image = demo.telescope._vp.get_texture().get_image()
+			tel.save_png(out + "/" + name + ("_telescope" if lv == 1 else "_telescope_close") + ("" if enabled else "_today") + ".png")
+			frames += 1
+		rows.append({"stop": name, "telescope_star": demo.telescope.star_id, "level": lv, "magnification": demo.telescope.magnification})
+		print("star-surface-capture telescope ", name, " ", demo.telescope.star_id, " level ", lv, " x", demo.telescope.magnification)
 	demo.telescope.set_meta("pinned", false)
 	demo.toggle_telescope(false)
 	if demo.sky_only:

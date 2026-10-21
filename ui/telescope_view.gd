@@ -1,22 +1,30 @@
 class_name TelescopeView
 extends PanelContainer
 ## R2-STAR-SURFACES D-111 A1: the helm's telescope. At the navigation console close-up, T shows the
-## current stop's star through the ship's telescope: its own camera at a narrow field, so the disc is
-## magnified N times (N = the Bow view's vertical field / the telescope's), labelled "telescope ×N".
+## current stop's star through the ship's telescope, magnified N times (true angular magnification:
+## the disc's angular radius in the panel over its true one), labelled "telescope ×N". Two levels:
+## whole disc, and close (a convection cell 2.5 px across where N allows). The disc is drawn at N times
+## its angular radius in a fixed 14 deg field (Camera3D stops at 1 deg).
 ## The Bow view stays true-size. Self-contained: its own SubViewport and world; the star's disc is
 ## drawn with the sky's own material, copied each frame (every physical uniform: flux, exposure,
 ## Doppler, the surface record), and only the gate's pixel scale and the normaliser are the
 ## telescope's, so granules, spots and faculae resolve wherever the magnified disc allows.
 
 const PANEL_PX := 520
-const FILL := 0.7 # the disc's diameter as a fraction of the panel
-const N_MIN := 2.0
-const N_MAX := 2000.0
+const FOV_DEG := 14.0 # the telescope camera's field; magnification scales the disc, not the field (Camera3D stops at 1 deg)
+const FILL := 0.7 # "whole disc": the disc's diameter as a fraction of the panel
+const CELL_PX := 2.5 # "close": the magnification at which a convection cell is 2.5 px across
+const MAX_HALF_RAD := 1.0 # the magnified disc's largest angular radius (rad): the camera stays outside the sphere
+const N_MIN := 1.0
+const N_MAX := 5000.0
 
 var sv: SystemView
 var view_fov_deg := 78.0
 var star_id := ""
 var magnification := 1.0
+## 1 "whole disc" (the disc fills FILL of the panel), 2 "close" (cells CELL_PX across, or as close as
+## N_MAX and MAX_HALF_RAD allow; the panel then shows the disc's centre).
+var level := 1
 var _vp: SubViewport
 var _cam: Camera3D
 var _disc: MeshInstance3D
@@ -36,7 +44,7 @@ func _init() -> void:
 	tex.custom_minimum_size = Vector2(PANEL_PX, PANEL_PX)
 	box.add_child(tex)
 	var hint := Label.new()
-	hint.text = "true magnification · the Bow view is true size · T closes"
+	hint.text = "true magnification · the Bow view is true size · T: whole disc, close, off"
 	hint.add_theme_font_size_override("font_size", 13)
 	box.add_child(hint)
 	_vp = SubViewport.new()
@@ -104,12 +112,23 @@ func refresh(world: Dictionary) -> bool:
 	var centre: Vector3 = src.get_shader_parameter("centre_w")
 	var d := Planets.length64(Planets.world_of(b.rel_km))
 	var ang := Planets.angular_radius(b.radius_km, d)
-	var fov := rad_to_deg(2.0 * ang / FILL)
-	magnification = clampf(view_fov_deg / fov, N_MIN, N_MAX)
-	_cam.fov = view_fov_deg / magnification
+	var px_rad := deg_to_rad(FOV_DEG) / float(_vp.size.y)
+	var want_half := FILL * 0.5 * deg_to_rad(FOV_DEG) # whole disc
+	var surface0: Dictionary = b.get("surface", {})
+	if level == 2 and not surface0.is_empty():
+		var cells := 2.0 * float(b.radius_km) / float(surface0.cell_km)
+		want_half = CELL_PX * cells * 0.5 * px_rad # the disc radius at which a cell is CELL_PX across
+	magnification = clampf(want_half / ang, N_MIN, N_MAX)
+	var half := minf(ang * magnification, MAX_HALF_RAD)
+	magnification = half / ang
+	# Magnify by drawing the same star at N times its angular radius (the sky's material; surface
+	# brightness, colour and Doppler are unchanged, as through a real telescope)
+	_mat.set_shader_parameter("radius", centre.length() * sin(half))
+	_mat.set_shader_parameter("bounded_draw", false)
+	_mat.set_shader_parameter("beta_mag", 0.0)
+	_cam.fov = FOV_DEG
 	_cam.look_at_from_position(Vector3.ZERO, centre, Vector3.UP if absf(centre.normalized().y) < 0.95 else Vector3.RIGHT)
-	var px_rad := deg_to_rad(_cam.fov) / float(_vp.size.y)
-	var px_r := ang / px_rad
+	var px_r := half / px_rad
 	_mat.set_shader_parameter("ss", 3)
 	var surface: Dictionary = b.get("surface", {})
 	if not surface.is_empty():
@@ -127,7 +146,7 @@ func refresh(world: Dictionary) -> bool:
 			_mat.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
 			_mat.set_shader_parameter("surf_norm", sv.surface_norm(star_id + "@telescope", u.params, u.view_star, sv.surface_norm_wait).n)
 	_disc.visible = true
-	_label.text = "telescope ×%s · %s" % [_fmt(magnification), str(b.get("name", star_id))]
+	_label.text = "telescope ×%s %s · %s" % [_fmt(magnification), "whole disc" if level == 1 else "close", str(b.get("name", star_id))]
 	return true
 
 
