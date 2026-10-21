@@ -1,0 +1,4054 @@
+{
+  "sprint_id": "R2-KERR",
+  "status": "awaiting_approval",
+  "created": "2026-10-21",
+  "mission_iteration": 43,
+  "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+  "sprint_plan": "design_docs/planned/r2/kerr-black-holes-sprint.md",
+  "base_commit": "bc1f111134d2abac7cbfd9ca7bb2239da6382f04",
+  "approval": {
+    "status": "awaiting",
+    "by": "Mark"
+  },
+  "approved": false,
+  "runtime": {
+    "path": "runtime/bin/ailang",
+    "version": "v0.54.14",
+    "commit": "e1ef33fa52b16c3fc3ad15edd60103d2f4ba808e",
+    "prompt_version_loaded": "v0.16.7",
+    "prompt_loaded": true
+  },
+  "implements": [
+    "Charter R2: Kerr spinning black holes, design doc and sprint plan only",
+    "Design K1.0/K1.1a/K1.1b/K1.1p/K1.2/K1.3/K1.4/K1.5/K1.6; release1 visit scope"
+  ],
+  "quorum_disposition": "Both design quorum rounds BLOCKED; one external reviewer present; unit/domain reviewer refinements applied under narrow-refinement carve-out. No new quorum review or execution approval.",
+  "baseline": {
+    "gate_verdict": "unmeasured in sandbox",
+    "initial_untracked": [
+      ".ailang/state/brain.db"
+    ],
+    "runtime_tests_executed": false,
+    "godot_executed": false,
+    "network_used": false,
+    "git_writes": false
+  },
+  "velocity": {
+    "command": "git diff --numstat \"$rev^1\" \"$rev\" -- '*.ail' '*.gd' '*.gdshader' '*.gdshaderinc' '*.py' '*.sh' | awk '{a+=$1; d+=$2} END {printf \"source +%d -%d gross %d\\n\",a,d,a+d}'",
+    "source_extensions": [
+      ".ail",
+      ".gd",
+      ".gdshader",
+      ".gdshaderinc",
+      ".py",
+      ".sh"
+    ],
+    "measured_merges": [
+      {
+        "pr": 158,
+        "sha": "6ea0a945",
+        "add": 0,
+        "delete": 0
+      },
+      {
+        "pr": 161,
+        "sha": "112781a4",
+        "add": 555,
+        "delete": 10
+      },
+      {
+        "pr": 163,
+        "sha": "b891fe0a",
+        "add": 1116,
+        "delete": 0
+      },
+      {
+        "pr": 164,
+        "sha": "77056645",
+        "add": 719,
+        "delete": 36
+      },
+      {
+        "pr": 166,
+        "sha": "1adccd6f",
+        "add": 1461,
+        "delete": 16
+      },
+      {
+        "pr": 170,
+        "sha": "79545ea9",
+        "add": 911,
+        "delete": 15
+      },
+      {
+        "pr": 265,
+        "sha": "067243f0",
+        "add": 488,
+        "delete": 0
+      },
+      {
+        "pr": 252,
+        "sha": "64e5660a",
+        "add": 1,
+        "delete": 1
+      },
+      {
+        "pr": 283,
+        "sha": "598c866b",
+        "add": 25,
+        "delete": 1
+      },
+      {
+        "pr": 288,
+        "sha": "9fe354d5",
+        "add": 0,
+        "delete": 0
+      },
+      {
+        "pr": 305,
+        "sha": "ddc5582d",
+        "add": 294,
+        "delete": 0
+      }
+    ],
+    "m3_implementation_additions": 4762,
+    "m3_implementation_deletions": 77,
+    "m3_gross_churn": 4839,
+    "m3_mean_additions_per_merge": 952.4,
+    "m3_median_additions_per_merge": 911,
+    "limitations": "First-parent source diffs include tests/tools, exclude docs/JSON/Makefile/assets and separate package repo. Bundled PRs and one-day M3 landing do not measure agent hours.",
+    "target_loc_per_day": 170,
+    "estimated_total_loc": 3710,
+    "estimated_spec_doc_loc": 150,
+    "estimated_total_with_spec_doc_loc": 3860,
+    "estimated_active_days": 22,
+    "controller_evaluation_days": 2,
+    "contingency_days": 6,
+    "estimated_days": 30,
+    "gpu_allowance": "Approximately half ordinary throughput as inherited planning allowance, not a newly timed result.",
+    "approval_waits": "Excluded and unbounded"
+  },
+  "parent_milestones": [
+    {
+      "id": "K1.0",
+      "title": "Spec amendment",
+      "estimated_loc": 0,
+      "depends_on": [
+        "K1.1a-a"
+      ],
+      "executor_slices": [
+        "K1.0"
+      ]
+    },
+    {
+      "id": "K1.1a",
+      "title": "Closed forms and oracle",
+      "estimated_loc": 650,
+      "depends_on": [],
+      "executor_slices": [
+        "K1.1a-a",
+        "K1.1a-b",
+        "K1.1a-c",
+        "K1.1a-d",
+        "K1.1a-e"
+      ]
+    },
+    {
+      "id": "K1.1b",
+      "title": "Shadow, capture, Carter integration, tides and digest",
+      "estimated_loc": 710,
+      "depends_on": [
+        "K1.1a"
+      ],
+      "executor_slices": [
+        "K1.1b-a",
+        "K1.1b-b",
+        "K1.1b-c",
+        "K1.1b-d",
+        "K1.1b-e"
+      ]
+    },
+    {
+      "id": "K1.1p",
+      "title": "Release and publish",
+      "estimated_loc": 120,
+      "depends_on": [
+        "K1.1b"
+      ],
+      "executor_slices": [
+        "K1.1p"
+      ]
+    },
+    {
+      "id": "K1.2",
+      "title": "Offline tables and assets",
+      "estimated_loc": 410,
+      "depends_on": [
+        "K1.1p",
+        "K1.4-a"
+      ],
+      "executor_slices": [
+        "K1.2-a",
+        "K1.2-b",
+        "K1.2-c"
+      ]
+    },
+    {
+      "id": "K1.3",
+      "title": "CPU mirror and spec tests",
+      "estimated_loc": 460,
+      "depends_on": [
+        "K1.0",
+        "K1.2"
+      ],
+      "executor_slices": [
+        "K1.3-a",
+        "K1.3-b",
+        "K1.3-c",
+        "K1.3-d"
+      ]
+    },
+    {
+      "id": "K1.4",
+      "title": "Pure sim and protocol",
+      "estimated_loc": 480,
+      "depends_on": [
+        "K1.1p"
+      ],
+      "executor_slices": [
+        "K1.4-a",
+        "K1.4-b",
+        "K1.4-c",
+        "K1.4-d"
+      ]
+    },
+    {
+      "id": "K1.5",
+      "title": "GPU and goldens",
+      "estimated_loc": 560,
+      "depends_on": [
+        "K1.0",
+        "K1.3",
+        "K1.4"
+      ],
+      "executor_slices": [
+        "K1.5-a",
+        "K1.5-b",
+        "K1.5-c",
+        "K1.5-d"
+      ]
+    },
+    {
+      "id": "K1.6",
+      "title": "Demo, HUD, references and landing",
+      "estimated_loc": 320,
+      "depends_on": [
+        "K1.4",
+        "K1.5"
+      ],
+      "executor_slices": [
+        "K1.6-a",
+        "K1.6-b",
+        "K1.6-c"
+      ]
+    }
+  ],
+  "critical_path": [
+    "P0",
+    "K1.1a-a",
+    "K1.0 spec merged + K1.1a closed forms",
+    "K1.1b",
+    "K1.1p/Ppublish",
+    "K1.4-a freeze/pin",
+    "K1.2",
+    "K1.3",
+    "K1.4-b/c/d",
+    "K1.5",
+    "Prender5",
+    "K1.6",
+    "Prender6",
+    "controller/evaluator full gates"
+  ],
+  "external_dependencies": [
+    {
+      "repo": "sunholo-data/ailang-packages",
+      "path": "packages/relativity",
+      "scope": "K1.1a/b/p canonical physics source",
+      "version": "next free minor, planned0.14.0",
+      "reservation": "0.13.0 already claimed in source/unpublished domain-bounds, design V29 inherited controller evidence; recheck externally"
+    },
+    {
+      "repo": "../stapledons-design",
+      "path": "physics/relativity-spec.md",
+      "scope": "K1.0 separate PR §3b/§4/§7 merged before any visuals"
+    },
+    {
+      "repo": "game",
+      "path": "tools/kerr_ref.py",
+      "scope": "independent oracle, role oracle allowlisted; never runtime/pipeline"
+    }
+  ],
+  "protocol_minor": "the next free minor at implementation time",
+  "protocol_compatibility": {
+    "current_highest_minor_observed": 12,
+    "claimed_in_flight": [
+      "similar-worlds S0 minor13",
+      "attended PR302 surfaceMinor13 (inherited controller verification V13)"
+    ],
+    "reserve_minor_now": false,
+    "freeze_before_any_kerr_production_edit": true,
+    "freeze_files": [
+      "tests/fixtures/kerr/pre_kerr.input.ndjson",
+      "tests/fixtures/kerr/pre_kerr.expected.ndjson",
+      "data/refs/kerr_protocol_freeze.json"
+    ],
+    "zero_spin": "Old GR encoder bytes and paths; DI-15 must approve explicit0 new-minor comparison vs prior absent-spin equivalent while old-minor spin rejection remains frozen.",
+    "hello_pin": "Approved V only at Kerr minor; every older minor retains previous relativity pin.",
+    "no_old_fixture_rerecord": true
+  },
+  "scope_exclusions": [
+    "ergosphere interior/emergence",
+    "superradiance/energy ledger",
+    "spinning star inverse map/images/rings",
+    "polar/off-equator rendered observer",
+    "tables above.998",
+    "extremal limit",
+    "charge/accretion disk/jets",
+    "free-fall and time-skip gameplay",
+    "true Galactic-Centre sky"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "K1.0",
+      "package": "none",
+      "action": "none",
+      "reason": "Normative design-repo document, not a package capability.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-a",
+      "package": "none",
+      "action": "none",
+      "reason": "An independent second-language oracle must not reuse the implementation under test.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-b",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-c",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-d",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-e",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1b-a",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1b-b",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1b-c",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1b-d",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1b-e",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1p",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Extend the separate canonical relativity package; cached0.12.0 excludes Kerr.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.4-a",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.2-a",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.2-b",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.2-c",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.3-a",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.3-b",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.3-c",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.3-d",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.4-b",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.4-c",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.4-d",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.5-a",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.5-b",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.5-c",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.5-d",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "Reuse the published canonical Kerr package and its prescribed mirrors; no second physics source.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.6-a",
+      "package": "none",
+      "action": "none",
+      "reason": "Game-specific display/reference/landing glue consumes sim data; no new physics.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.6-b",
+      "package": "none",
+      "action": "none",
+      "reason": "Game-specific display/reference/landing glue consumes sim data; no new physics.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.6-c",
+      "package": "none",
+      "action": "none",
+      "reason": "Game-specific display/reference/landing glue consumes sim data; no new physics.",
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    }
+  ],
+  "registry_audit": {
+    "mode": "offline, explicit user network restriction overrides skill live-search requirement",
+    "inspected": "allowed relativity0.12.0 cache manifest/AGENT/code",
+    "live_search_performed": false,
+    "kerr_code_occurrences": 0,
+    "schwarzschild_control_occurrences": 21,
+    "refresh_owner": "controller after approval"
+  },
+  "new_deliverable_targets": [
+    {
+      "name": "kerr-oracle",
+      "status": "NEW",
+      "milestone": "K1.1a-a",
+      "wiring": "test",
+      "description": "Independent Python oracle --check plus digest, with allowlist role oracle; no runtime use"
+    },
+    {
+      "name": "kerr-assets",
+      "status": "NEW",
+      "milestone": "K1.2-b",
+      "wiring": "manual/controller",
+      "description": "Fetch and verify exact pinned asset set; no silent generation inside test"
+    },
+    {
+      "name": "kerr-lut",
+      "status": "NEW",
+      "milestone": "K1.2-b",
+      "wiring": "manual/controller",
+      "description": "Full sharded AILANG generation, timing and accuracy evidence"
+    },
+    {
+      "name": "kerr-publish",
+      "status": "NEW",
+      "milestone": "K1.2-b",
+      "wiring": "manual/controller",
+      "description": "Immutable bucket upload of pinned lens artifacts"
+    },
+    {
+      "name": "kerr-lut-check",
+      "status": "NEW",
+      "milestone": "K1.2-c",
+      "wiring": "test",
+      "description": "Sampled strict regeneration and full-row strict/interpreter cmp"
+    },
+    {
+      "name": "kerr-tables-test",
+      "status": "NEW",
+      "milestone": "K1.2-c",
+      "wiring": "physics/test",
+      "description": "All-texel finiteness/seam/domain audit"
+    },
+    {
+      "name": "kerr-physics-test",
+      "status": "NEW",
+      "milestone": "K1.3-a",
+      "wiring": "physics",
+      "description": "Single new companion CPU test file"
+    },
+    {
+      "name": "kerr-sim-test",
+      "status": "NEW",
+      "milestone": "K1.4-b",
+      "wiring": "test; named smoke in strict",
+      "description": "Single pure spinning-state test file and kerrVm"
+    },
+    {
+      "name": "parity-grk",
+      "status": "NEW",
+      "milestone": "K1.4-d",
+      "wiring": "test",
+      "description": "All engines/repeat/expected and old byte freeze"
+    },
+    {
+      "name": "kerr-golden-harness-test",
+      "status": "NEW",
+      "milestone": "K1.5-a",
+      "wiring": "test",
+      "description": "Single harness validator file; no GPU"
+    },
+    {
+      "name": "kerr-stars-test",
+      "status": "NEW",
+      "milestone": "K1.5-c",
+      "wiring": "ship-demo-ci/test",
+      "description": "Suppression, restore, diagnostic counts, asset errors"
+    },
+    {
+      "name": "kerr-mutation-test",
+      "status": "NEW",
+      "milestone": "K1.5-d",
+      "wiring": "manual GPU drill; GR17 selectors in golden",
+      "description": "ROOT explicit; source mutations and fail-closed sensitivity"
+    },
+    {
+      "name": "kerr-hud-test",
+      "status": "NEW",
+      "milestone": "K1.6-a",
+      "wiring": "sim/test",
+      "description": "Single Kerr HUD sentinel/demo file"
+    },
+    {
+      "name": "kerr-client-guard",
+      "status": "NEW",
+      "milestone": "K1.6-a",
+      "wiring": "test",
+      "description": "Client formula guard with positive/negative controls and semantic audit"
+    },
+    {
+      "name": "capture-bhk",
+      "status": "NEW",
+      "milestone": "K1.6-b",
+      "wiring": "manual GPU/controller",
+      "description": "54 matrix frames+2 sheets and capture metadata"
+    },
+    {
+      "name": "bhk-refs",
+      "status": "NEW",
+      "milestone": "K1.6-b",
+      "wiring": "manual/controller; diff prerequisite",
+      "description": "Fetch reviewed sha-pinned reference set"
+    },
+    {
+      "name": "bhk-refs-publish",
+      "status": "NEW",
+      "milestone": "K1.6-b",
+      "wiring": "manual/controller",
+      "description": "Upload reviewed baseline and provenance beside images"
+    },
+    {
+      "name": "bhk-render-diff",
+      "status": "NEW",
+      "milestone": "K1.6-b",
+      "wiring": "manual GPU/rig",
+      "description": "Use existing Godot render_diff; <=1/255 mean absolute difference per frame"
+    },
+    {
+      "name": "kerr-refs-test",
+      "status": "NEW",
+      "milestone": "K1.6-b",
+      "wiring": "test",
+      "description": "Local stubbed transport/diff failure controls"
+    }
+  ],
+  "ci_gate_commands": [
+    "make deps AILANG=runtime/bin/ailang",
+    "make lore-import CHECK=1 D=../stapledons-design AILANG=runtime/bin/ailang",
+    "make ci-fast AILANG=runtime/bin/ailang",
+    "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang",
+    "make golden AILANG=runtime/bin/ailang",
+    "tools/rig_check.sh <PR> --golden"
+  ],
+  "gate_inventory": {
+    "source": ".github/workflows/ci.yml run steps plus all Makefile/mk test/ship-demo-ci declarations retained in plan V11",
+    "ci_fast": "deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check",
+    "new_target_policy": "Every new target explicitly NEW; headless checks wired to test/physics/sim/ship-demo-ci; generation/publish/GPU capture/source mutation drills manual.",
+    "executor_policy": "One primary test file and targeted gates only; whole package and make test controller/evaluator outside sandbox.",
+    "deps_warning": "Current deps calls git checkout; no planner/executor invocation.",
+    "all_runtime_gate_verdicts": "unmeasured in sandbox"
+  },
+  "pause_points": [
+    {
+      "id": "P0",
+      "owner": "Mark",
+      "when": "Before any execution",
+      "stop": true,
+      "requires": [
+        "Approve this plan and execution separately from approval for planning.",
+        "Answer design OQ1 spin (recommend .9, scenario data); OQ2 inclination (equatorial only); OQ3 emergence (visit demo only); OQ4 superradiance (excluded); OQ5 priority (plan-only until explicit go), including acceptance of the two zero pillar scores.",
+        "Review proposed DI corrections; substantive frame/domain/AC changes require explicit design resolution before their blocked slice."
+      ],
+      "release_evidence": "Recorded Mark decision and approved design/plan revisions; defaults are proposals, not authorization."
+    },
+    {
+      "id": "Pspec",
+      "owner": "Mark/controller",
+      "when": "K1.0 design-repo PR, before any K1.5/K1.6 visual merges",
+      "stop": true,
+      "requires": [
+        "Separate ../stapledons-design/physics/relativity-spec.md §3b/§4/§7 PR merged.",
+        "Record reviewed merged SHA and RK/source provenance."
+      ],
+      "release_evidence": "Mark's spec disposition and merged design commit; grep presence alone is insufficient merge evidence."
+    },
+    {
+      "id": "Ppublish",
+      "owner": "Mark",
+      "when": "After K1.1b independent evaluation PASS and K1.1p quality/dry-run; immediately before irreversible publish",
+      "stop": true,
+      "requires": [
+        "Explicit go to publish sunholo/relativity at actual next free minor, planned0.14.0.",
+        "0.13.0 is the unpublished domain-bounds release already on ailang-packages main per inherited controller evidence V29; verify outside sandbox."
+      ],
+      "release_evidence": "Explicit Mark approval tied to version/content; M3 approval for0.10.0 does not carry."
+    },
+    {
+      "id": "Prender5",
+      "owner": "Mark",
+      "when": "After K1.5, before its visual merge and before K1.6",
+      "stop": true,
+      "requires": [
+        "Open three early grid hover frames r10/5/3 plus sheet; upload four images, manifest and generation provenance/source beside gs://stapledons-voyage-assets/refs/r2_kerr_sky/.",
+        "Review nonzero-spin pinch/twist, zero-spin regression and star suppression; record human name/date and Mark disposition."
+      ],
+      "release_evidence": "Human opened by record plus Mark visual approval and full golden evidence."
+    },
+    {
+      "id": "Prender6",
+      "owner": "Mark",
+      "when": "After K1.6 reference capture, before final landing",
+      "stop": true,
+      "requires": [
+        "Open all54 matrix frames and two contact sheets, uploaded with pins and source/command metadata to gs://stapledons-voyage-assets/refs/r2_kerr_ship/.",
+        "Review hover/pro/retro and close/far scope, honest HUD, no missing/mirrored sky."
+      ],
+      "release_evidence": "Human opened by record and explicit Mark render disposition in report."
+    }
+  ],
+  "process_rules": [
+    "Mutation drills: explicit ROOT argument, cleanup trap immediately after mktemp, cmp proves file changed else exit3, actual make rc passed through, counts asserted with test. Any pattern containing @ passed through environment, never inline Perl. Require named expected failure, clean restore, exact kill count.",
+    "Pinned digest/check travels with producing command and source in-tree or uploaded beside refs, never only /tmp.",
+    "Executor receives single test file and targeted gates; controller/evaluator runs whole package and make test outside sandbox.",
+    "Protocol minor is the next free minor at implementation time; minor13 claimed by S0 and attended PR302; freeze pre-Kerr bytes first.",
+    "Test-first relevant RED before production, trusted GREEN externally; no sandbox gate verdict evidence.",
+    "Controller owns all git writes, PRs, merging, dependency recipes, publishing, full suites and render uploads.",
+    "Canonical package first; pure sim core, float64 scalar precision, gamma/oneMinusBeta supplied by package/sim, every texel finite, exact deterministic parity.",
+    "Python only independent oracle with tools/python-allowlist.txt role oracle.",
+    "No unapproved design correction or weakened numeric AC; affected slices stop pending disposition."
+  ],
+  "design_inconsistencies": [
+    {
+      "id": "DI-01",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 104,
+      "issue": "Six-decimal RK literals cannot support the stated 1e-12 relative closed-form tolerance. RK-1 at s=.9 differs by 7.35752325482288e-08 relative from the design formula.",
+      "proposed_fix": "Keep rounded display rows but add reproducible 17-digit oracle fixtures and assert those at 1e-12; separately assert rounded spec text at its displayed precision.",
+      "blocks": "K1.0; K1.1a-a",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-02",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 134,
+      "issue": "Boundary is defined as angle psi_b, but its s=0 check compares it with sin(alpha_sh). At 3 r_s the values are pi/4 versus sqrt(.5).",
+      "proposed_fix": "Specify angles throughout: psi_b=alpha_sh, or compare sin(psi_b)=sin(alpha_sh); pin radians in headers and tests.",
+      "blocks": "K1.0; K1.2-a",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-03",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 138,
+      "issue": "Strict monotonicity in chi is incompatible with a periodic boundary, and with the chi-constant s=0 circle. The same line calls bucket-only bins committed.",
+      "proposed_fix": "Replace chi monotonicity with periodic continuity/seam, expected reflection symmetries and bounded positive capture angle; require the physically justified radial trend only. Say pinned, fetched bins.",
+      "blocks": "K1.0; K1.2-c; K1.3-c",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-04",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 135,
+      "issue": "The log coefficient is measured but the stored residual still adds a unit-coefficient log term. No format stores the measured coefficient for reconstruction; a finite truncated domain alone does not prove regularisation.",
+      "proposed_fix": "Define coefficient a_bar(chi,r), store its map/metadata and subtract/re-add it consistently; measure bounded residual and interpolation accuracy as resolution changes. If the raw 4096-column fallback is selected, review its schema and accuracy budget before proceeding.",
+      "blocks": "K1.0; K1.2-a",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-05",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 124,
+      "issue": "The precision rule requires one-minus-s as an input, while the listed scalar APIs (110-117) and bh_spin-only scenario interface cannot provide that independent input.",
+      "proposed_fix": "Define a validated spin input carrying s and oneMinusS (and consistency policy), or explicitly approve a narrower precision contract for scalar callers; document wrappers and table cap. Do not invent a second incompatible representation during coding.",
+      "blocks": "K1.0; K1.1a-e",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-06",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 150,
+      "issue": "Optional dir defaults to pro yet is refused at s=0, leaving omission ambiguous and potentially refusing every legacy gr_orbit.",
+      "proposed_fix": "Preserve the legacy no-dir s=0 intent byte-for-byte; refuse only an explicitly supplied handedness at s=0; define pro/retro/invalid-dir rules at the Kerr minor.",
+      "blocks": "K1.4-c",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-07",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 122,
+      "issue": "Rays are projected in a ZAMO tetrad, while K1.4/K1.5 (149,157) use a static hover with beta=0, ZAMO orbit speed, and static gravitational shift. A single unnamed local frame cannot satisfy all three for spin>0.",
+      "proposed_fix": "Choose one table tetrad and explicitly specify direction/velocity/frequency transformations between it, a static observer and the moving ship. Oracle-check a nonzero-spin hovering ray and both orbit senses; no shader work until the frame contract is approved.",
+      "blocks": "K1.0; K1.1b-c; K1.3-b; K1.5-b",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-08",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 162,
+      "issue": "GR14 applies infinity asymmetry 0.412112 to the same finite-radius renders as GR13, despite line 167 correctly distinguishing finite-r silhouettes.",
+      "proposed_fix": "At r=3/5/10 compare ratio and pinch sense with the finite-r CPU boundary; assert 0.412112 on a far-row/infinity case. Retain the stated 0.005 ratio tolerance and GR13's 0.75 px budget.",
+      "blocks": "K1.0; K1.5-a",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-09",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 148,
+      "issue": "The sim accepts any s<1 while tables cap at .998 and only one spin set per scenario is generated; line 157 dispatches every s>0 into a visual path.",
+      "proposed_fix": "Keep the metric domain and table domain distinct: require an exact spin/inclination/version/hash asset match before displaying Kerr. Missing/unsupported assets produce an explicit unavailable state, never a nearest-spin or Schwarzschild substitution; define that bridge/HUD state.",
+      "blocks": "K1.4-d; K1.5-c",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-10",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 221,
+      "issue": "The risk fallback permits null spinning tides, but G4/AC-K8 (48,189) require package-valued tide fields; no nullable protocol schema or acceptance rule is specified.",
+      "proposed_fix": "Stop for a scope decision if the oracle cannot verify tides. Approve nullable schema, sentinel text and amended ACs explicitly, or keep K1.1b-d/K1.4 blocked; never count null as satisfying the current numeric AC.",
+      "blocks": "K1.1b-d; K1.4-b",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-11",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 126,
+      "issue": "The test says lambda endpoints equal alpha extrema, while alpha=-lambda for the equatorial observer (121); the sign/order matters.",
+      "proposed_fix": "Assert alpha=-lambda (and beta squared=eta on the equator), with prograde/retrograde endpoints matched to RK-14; specify numerical endpoint tolerances rather than forcing floating residual eta exactly zero.",
+      "blocks": "K1.1b-a",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-12",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 122,
+      "issue": "RK4 on (u,theta) alone does not state how the outgoing azimuth/twist is recovered; turning-point sign handling and azimuth accumulation required by K1.2 channel G are unspecified.",
+      "proposed_fix": "Specify the full Carter first-integral state, including phi (and t if frequency transport needs it), observer projection and root/turning sign transitions. Test conservation, step refinement, nonzero-spin twist and analytic capture independently.",
+      "blocks": "K1.0; K1.1b-c",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-13",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 183,
+      "issue": "AC-K2 ends with an unpinned PATH invocation even though A is defined as the pinned binary.",
+      "proposed_fix": "Use the absolute A in every package command, including pkg info; keep publish controller-owned behind explicit Mark approval.",
+      "blocks": "K1.1p",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-14",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 165,
+      "issue": "GR17 requires every interpolation/boundary mutant to fail GR13, but GR13 observes the capture silhouette. A deflection-only interpolation mutation can leave that silhouette unchanged.",
+      "proposed_fix": "Map boundary mutants to GR13, twist/interpolation mutants to GR15 or an explicit float-direction probe. Require every acting rule to be killed by an appropriate golden; keep GR13/15 tolerances.",
+      "blocks": "K1.5-a; K1.5-d",
+      "status": "unresolved; proposed correction only"
+    },
+    {
+      "id": "DI-15",
+      "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
+      "line": 76,
+      "issue": "The zero-spin same-input byte comparison is ambiguous: the pristine decoder rejects bh_spin, including0, as bad_params (protocol.ail568-571). New-minor explicit0 cannot equal that old reply and also start a game; line151 also lists new fields without stating their zero-spin suppression.",
+      "proposed_fix": "Freeze absent-spin legacy requests literally, including old-minor rejection of explicit bh_spin. Define the new-minor explicit0 comparison against the prior equivalent absent-spin request (with hello excepted), and explicitly omit new GR fields for s=0 so previous GR bytes remain exact. Approve that clarification before coding.",
+      "blocks": "K1.4-a; K1.4-c; K1.4-d",
+      "status": "unresolved; proposed correction only"
+    }
+  ],
+  "risks": [
+    "Unresolved design inconsistencies alter frames, domains and ACs; affected executor slices stop until reviewed disposition, with no implicit approval from this plan.",
+    "Measured Kerr strong-field coefficient may not regularise both channels; retain source/row metadata, test accuracy with refinement, and review raw4096-column fallback rather than blessing finiteness alone.",
+    "18–25 CPU-hours/table set is the design estimate, not a new measurement. Benchmark a bounded shard first; full generation manual/controller only. Re-measure1024-column/48-azimuth/F16 fallbacks against every accuracy probe.",
+    "Static and ZAMO frames differ for spin>0; independent nonzero-spin hover/orbit frequency and direction checks must precede GPU mirrors.",
+    "Near-extremal cancellation and unsupported asset spins: cap tables at.998, use reviewed oneMinusS API/factored delta, refuse to display mismatched assets without substituting a different hole.",
+    "Signed alpha, handedness and sky basis can mirror the prograde pinch; RK endpoints, finite-r ratio, twist markers and source mutations must all constrain the sense.",
+    "Long Carter loops may diverge VM/interpreter or exceed a run budget; cmp exact, shrink/report bugs through controller, never relax a parity tolerance.",
+    "Weyl-to-ZAMO tides are the hardest package slice; re-split if150LOC is inadequate. Unverified spinning tides block numeric ACs unless Mark explicitly approves a nullable protocol redesign.",
+    "Texture layout/memory: two-channel F32 map is75,497,472bytes=72MiB per spin plus boundary/metadata; validate GPU texture support, periodic seam filtering and upload memory before full generation.",
+    "Deflection-only bugs may evade a black-mask golden; GR17 must use the acting GR15/direction probe, and independent package/oracle checks protect against CPU/GPU sharing the same defect.",
+    "Single-spin equatorial assets and suppressed stars are intentional release1 cuts. Keep an in-world unavailable-stars caption; inverse-map stars/polar views/emergence are separate future designs.",
+    "Protocol minor13 is claimed twice; freeze all old bytes before pin/decoder edits, choose the next free minor at implementation time, and never re-record old streams.",
+    "Package publish is irreversible and0.13.0 already claimed; explicit Mark version/content approval after quality/dry-run/evaluation, then exact content-hash lock.",
+    "Existing deps recipe performs git checkout and may network. It, full make test, rig and publishes belong to controller, not planner/executor sandbox.",
+    "Large existing files (core1012, protocol888, physics tests1768, main1236) need companion modules and small hooks; no unrelated extraction or broad refactor hidden in Kerr.",
+    "Approval/render waits are unbounded; the30-working-day budget excludes waiting on Mark and may grow if physics corrections require a new design round."
+  ],
+  "definition_of_done": [
+    "1 full make test rig/full and GitHub ci-fast green on exact PR head; not measured by planner",
+    "2 merged normative spec check values, test_physics assertions, full golden, human-opened refs and Mark render approvals before visual merges",
+    "3 canonical package tests/exports/CHANGELOG/AGENT feature release, no-gate quality and dry run, explicit publish go, exact content pin",
+    "4 strict pure core and VM/interpreter parity; independent evaluator>=70 with findings resolved",
+    "5 float64/hi-lo, reviewed spin precision contract, all-texel finite/seam/domain, independent10k accuracy probes",
+    "6 byte determinism across digest/table row/session/repeat and no changed old streams",
+    "Python oracle allowlist, reports/changelog/index/design-repo status, all pause points closed"
+  ],
+  "acceptance_map": [
+    {
+      "id": "AC-K1",
+      "commands": [
+        "(cd \"$PKG\" && \"$A\" test --package .)"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K2",
+      "commands": [
+        "(cd \"$PKG\" && \"$A\" pkg quality . && \"$A\" publish --dry-run)",
+        "(cd \"$PKG\" && \"$A\" publish)",
+        "\"$A\" pkg info sunholo/relativity | rg \"$V|kerr\""
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K3",
+      "commands": [
+        "mkdir -p .ailang/state/evidence/R2-KERR",
+        "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+        "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+        "make kerr-oracle AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K4",
+      "commands": [
+        "rg -F \"\\\"$V\\\"\" sim/ailang.toml",
+        "make deps AILANG=runtime/bin/ailang",
+        "make hello-pin AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K5",
+      "commands": [
+        "rg -n \"RK-\" ../stapledons-design/physics/relativity-spec.md",
+        "make physics AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K6",
+      "commands": [
+        "make kerr-lut-check AILANG=runtime/bin/ailang",
+        "make physics AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K7",
+      "commands": [
+        "make physics AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K8",
+      "commands": [
+        "make sim strict parity parity-gr parity-grk AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K9",
+      "commands": [
+        "make golden AILANG=runtime/bin/ailang",
+        "AILANG_BIN=\"$A\" godot --path . -- --golden=grk"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K10",
+      "commands": [
+        "make sim AILANG=runtime/bin/ailang",
+        "make kerr-client-guard AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K11",
+      "commands": [
+        "make capture-bhk AILANG=runtime/bin/ailang && make bhk-render-diff AILANG=runtime/bin/ailang",
+        "rg -n \"opened by\" design_docs/implemented/r2/kerr-black-holes-report.md"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    },
+    {
+      "id": "AC-K12",
+      "commands": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang",
+        "tools/rig_check.sh <PR> --golden",
+        "make kerr-client-guard AILANG=runtime/bin/ailang"
+      ],
+      "owner": "controller/evaluator outside sandbox",
+      "status": "unmeasured in sandbox"
+    }
+  ],
+  "features": [
+    {
+      "id": "K1.0",
+      "parent_id": "K1.0",
+      "title": "Normative spec amendment and design-repo merge",
+      "estimated_loc": 0,
+      "estimated_code_loc": 0,
+      "estimated_test_tool_loc": 0,
+      "files": [
+        "../stapledons-design/physics/relativity-spec.md"
+      ],
+      "test_file": "../stapledons-design/physics/relativity-spec.md",
+      "tests": [
+        {
+          "test": "registry completeness",
+          "file": "../stapledons-design/physics/relativity-spec.md",
+          "asserts": "§3b/§4/§7 contain RK-1..18 and RK-Q1, units, finite-r/infinity separation and approved DI corrections",
+          "kills_which_mutation": "Deleted RK-14 sign or missing §4 GPU requirement"
+        }
+      ],
+      "implementation": "Write ~150 documentation lines in a separate design-repo PR. Resolve mathematical DI rows through review; attach oracle generation source/command provenance, without claiming unavailable tide digits. No game implementation. Draft may start after P0; final merge also waits for K1.1a-a's precise oracle provenance. This does not block closed-form package work.",
+      "acceptance": [
+        {
+          "id": "AC-K5",
+          "commands": [
+            "rg -n \"RK-\" ../stapledons-design/physics/relativity-spec.md",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "rg -n \"3b|RK-|Kerr\" ../stapledons-design/physics/relativity-spec.md",
+        "git -C ../stapledons-design diff --check"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "P0",
+        "K1.1a-a"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "estimated_doc_loc": 150,
+      "mutation_drill": false,
+      "closure": "Spec review and merged design-repo SHA; AC-K5 physics half remains pending K1.3-d.",
+      "file_details": [
+        {
+          "path": "../stapledons-design/physics/relativity-spec.md",
+          "new": false,
+          "repo": "design"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-a",
+      "parent_id": "K1.1a",
+      "title": "Independent oracle and reproducible RK fixture",
+      "estimated_loc": 150,
+      "estimated_code_loc": 95,
+      "estimated_test_tool_loc": 55,
+      "files": [
+        "tools/kerr_ref.py",
+        "tools/test_kerr_oracle.sh",
+        "tests/fixtures/kerr/rk.json",
+        "tools/python-allowlist.txt",
+        "Makefile"
+      ],
+      "test_file": "tools/test_kerr_oracle.sh",
+      "tests": [
+        {
+          "test": "oracle literal anchors",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "RK-1..13 and RK-18 from independently expressed double-precision formulas, display rounding separately from precise values",
+          "kills_which_mutation": "r_s/M factor-two error; reuse rounded six-digit expected value"
+        },
+        {
+          "test": "invalid inputs",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "Reject nonfinite spin/domain inputs before sqrt; exact s=0 members",
+          "kills_which_mutation": "NaN accepted; omitted finite check"
+        }
+      ],
+      "implementation": "Write shell assertions first and observe missing-oracle RED outside sandbox; then independent Python oracle, precise JSON values with units/source/formula metadata, and allowlist role oracle. Add NEW kerr-oracle to test/.PHONY; initial --check covers available closed forms, expanded later.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_oracle.sh",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "P0"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01"
+      ],
+      "file_details": [
+        {
+          "path": "tools/kerr_ref.py",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/test_kerr_oracle.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/rk.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/python-allowlist.txt",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-b",
+      "parent_id": "K1.1a",
+      "title": "Horizons, static limit, lapse and dragging",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "packages/relativity/kerr.ail",
+        "packages/relativity/kerr_test.ail",
+        "packages/relativity/ailang.toml"
+      ],
+      "test_file": "packages/relativity/kerr_test.ail",
+      "tests": [
+        {
+          "test": "horizon and frame pins",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "RK-1/2/3/9/10/11/13 at precise oracle digits, exported radii r_s and frequencies c^3/GM",
+          "kills_which_mutation": "Dropped /2, wrong horizon branch, zero dragging"
+        },
+        {
+          "test": "Schwarzschild identity",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "s=0 calls existing staticClockRate/horizon exports, exact where specified",
+          "kills_which_mutation": "Always-Kerr rounding changes s=0 result"
+        }
+      ],
+      "implementation": "Create pure kerr module and exports. Cite each formula and domain; keep scalar radii distinct from u=2r. Require reviewed precision API before freezing signatures.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-a"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01",
+        "DI-05"
+      ],
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_test.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/ailang.toml",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-c",
+      "parent_id": "K1.1a",
+      "title": "Photon orbits and ISCO handedness",
+      "estimated_loc": 150,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 70,
+      "files": [
+        "packages/relativity/kerr.ail",
+        "packages/relativity/kerr_test.ail"
+      ],
+      "test_file": "packages/relativity/kerr_test.ail",
+      "tests": [
+        {
+          "test": "pro/retro radii",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "RK-4/5/6/7; s=0 is photonSphere=1.5 and isco=3; s=.998 finite",
+          "kills_which_mutation": "Swapped acos signs; ISCO forgot /2"
+        },
+        {
+          "test": "stable band",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "At s=.9 and r=3, pro stable and retro unstable; ret threshold >4.35 r_s",
+          "kills_which_mutation": "One Schwarzschild ISCO used for both directions"
+        }
+      ],
+      "implementation": "Implement photon and ISCO forms with unit-labelled contracts and stable intermediate expressions. Domain tests include 0,.5,.9,.998 and the scalar domain limit per approved DI-05.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-b"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_test.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-d",
+      "parent_id": "K1.1a",
+      "title": "Circular orbit clocks and local velocities",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "packages/relativity/kerr.ail",
+        "packages/relativity/kerr_test.ail"
+      ],
+      "test_file": "packages/relativity/kerr_test.ail",
+      "tests": [
+        {
+          "test": "clock and speed",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "RK-8/12 and pro/retro omega signs; SI period conversions RK-18",
+          "kills_which_mutation": "Direction sign lost; wrong c^3/GM conversion"
+        },
+        {
+          "test": "old orbit reduction",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "s=0 clock/speed equal existing circularOrbitClockRate/circularOrbitSpeed under agreed exactness",
+          "kills_which_mutation": "Wrong u/r_s input; beta from wrong frame"
+        }
+      ],
+      "implementation": "Implement circular equatorial orbit frequency, clock and ZAMO speed. Name the speed's frame; frame conversion is supplied by K1.1b-c after the spec ruling, never assumed equal to static speed.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-c"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_test.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-e",
+      "parent_id": "K1.1a",
+      "title": "Precision contracts and scalar boundary audit",
+      "estimated_loc": 50,
+      "estimated_code_loc": 30,
+      "estimated_test_tool_loc": 20,
+      "files": [
+        "packages/relativity/kerr.ail",
+        "packages/relativity/kerr_test.ail"
+      ],
+      "test_file": "packages/relativity/kerr_test.ail",
+      "tests": [
+        {
+          "test": "precision/domain contract",
+          "file": "packages/relativity/kerr_test.ail",
+          "asserts": "Reviewed spin representation, factored delta, nonfinite refusal, .998 and near-domain scalar probes",
+          "kills_which_mutation": "Unfactored cancellation; reconstruct oneMinusS contrary to approved API"
+        }
+      ],
+      "implementation": "Close near-extremal and domain tests, document which float contracts verify cannot prove, and record verifier skips honestly. No new demo file; use inline exact s=0 tests on small pure exports.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_test.ail)",
+        "(cd \"$PKG\" && \"$A\" verify kerr.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-d"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-05"
+      ],
+      "closure": "K1.1a complete; controller runs all package tests and check.",
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_test.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1b-a",
+      "parent_id": "K1.1b",
+      "title": "Shadow critical curve",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "packages/relativity/kerr_shadow.ail",
+        "packages/relativity/kerr_shadow_test.ail",
+        "packages/relativity/kerr.ail",
+        "packages/relativity/ailang.toml",
+        "tools/kerr_ref.py",
+        "tests/fixtures/kerr/rk.json"
+      ],
+      "test_file": "packages/relativity/kerr_shadow_test.ail",
+      "tests": [
+        {
+          "test": "RK-14..17",
+          "file": "packages/relativity/kerr_shadow_test.ail",
+          "asserts": "Equatorial and 45-degree visible arcs, alpha=-lambda at equator, prograde negative side and mean/height pins",
+          "kills_which_mutation": "Mirror alpha; incorrect inclination; negative beta-square sqrt"
+        },
+        {
+          "test": "s=0 circle",
+          "file": "packages/relativity/kerr_shadow_test.ail",
+          "asserts": "Explicit nonsingular zero-spin branch, alpha^2+beta^2=27 M^2 within stated numerical error",
+          "kills_which_mutation": "Evaluate 0/0 lambda at s=0"
+        }
+      ],
+      "implementation": "Add shadow helpers behind kerr facade; extend oracle fixture with scan resolution and visible-domain filtering. The 45-degree arithmetic check does not add a second rendered inclination.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_shadow_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-e"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-11"
+      ],
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr_shadow.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_shadow_test.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/ailang.toml",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "tools/kerr_ref.py",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/rk.json",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1b-b",
+      "parent_id": "K1.1b",
+      "title": "Analytic capture classification",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "packages/relativity/kerr_geodesic.ail",
+        "packages/relativity/kerr_capture_test.ail",
+        "packages/relativity/kerr.ail",
+        "packages/relativity/ailang.toml",
+        "tools/kerr_ref.py"
+      ],
+      "test_file": "packages/relativity/kerr_capture_test.ail",
+      "tests": [
+        {
+          "test": "capture roots",
+          "file": "packages/relativity/kerr_capture_test.ail",
+          "asserts": "Radial-potential roots classify inward/outward, near-tangent and near-horizon rays independently of integration termination",
+          "kills_which_mutation": "Capture inferred from step count; root interval reversed"
+        },
+        {
+          "test": "s=0 boundary",
+          "file": "packages/relativity/kerr_capture_test.ail",
+          "asserts": "M3 analytic boundary on deterministic probes, endpoint/NaN guards",
+          "kills_which_mutation": "Discriminant guard removed; r_s/M mismatch"
+        }
+      ],
+      "implementation": "Implement bounded analytic radial-root classification, with independent oracle probes and conservative grazing handling. The integrator may assert agreement but cannot decide capture.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_capture_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1b-a"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr_geodesic.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_capture_test.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/ailang.toml",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "tools/kerr_ref.py",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1b-c",
+      "parent_id": "K1.1b",
+      "title": "Carter integration and observer-frame projection",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "packages/relativity/kerr_geodesic.ail",
+        "packages/relativity/kerr_geodesic_test.ail",
+        "packages/relativity/kerr.ail",
+        "tools/kerr_ref.py",
+        "tests/fixtures/kerr/rk.json"
+      ],
+      "test_file": "packages/relativity/kerr_geodesic_test.ail",
+      "tests": [
+        {
+          "test": "Carter convergence",
+          "file": "packages/relativity/kerr_geodesic_test.ail",
+          "asserts": "Conserved lambda/eta, turning signs, outgoing azimuth and twist, refined-step convergence versus independent oracle",
+          "kills_which_mutation": "Freeze phi; wrong polar-turn sign; radial sign never flipped"
+        },
+        {
+          "test": "frame transport",
+          "file": "packages/relativity/kerr_geodesic_test.ail",
+          "asserts": "Nonzero-spin hover and both orbit directions use approved tetrad and frequency transforms",
+          "kills_which_mutation": "Treat static frame as ZAMO; hover beta wrongly zero in table frame"
+        },
+        {
+          "test": "a=0 deflection",
+          "file": "packages/relativity/kerr_geodesic_test.ail",
+          "asserts": "M3 probe radii vs deflectionExact: 1.2e-4 rad at r<=100, 1e-3 relative above",
+          "kills_which_mutation": "Wrong deflection sign; omit returning branch"
+        }
+      ],
+      "implementation": "Implement the complete reviewed first-integral state and observer projection. This is a 150-LOC budget with support helpers already in b-b; if the validated solver exceeds it, stop and re-split rather than omit phi, turning logic or an oracle check.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K7",
+          "commands": [
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_geodesic_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1b-b",
+        "K1.0"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-07",
+        "DI-12"
+      ],
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr_geodesic.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_geodesic_test.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "tools/kerr_ref.py",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/rk.json",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1b-d",
+      "parent_id": "K1.1b",
+      "title": "Weyl tides and independent tetrad check",
+      "estimated_loc": 150,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 70,
+      "files": [
+        "packages/relativity/kerr_tides.ail",
+        "packages/relativity/kerr_tides_test.ail",
+        "packages/relativity/kerr.ail",
+        "packages/relativity/ailang.toml",
+        "tools/kerr_ref.py",
+        "tests/fixtures/kerr/rk.json"
+      ],
+      "test_file": "packages/relativity/kerr_tides_test.ail",
+      "tests": [
+        {
+          "test": "Weyl eigenvalues",
+          "file": "packages/relativity/kerr_tides_test.ail",
+          "asserts": "Oracle-derived s=.9 equatorial eigenvalues at agreed radii, trace and dimensional scale",
+          "kills_which_mutation": "Use principal-tetrad eigenvalues without ZAMO transform; Schwarzschild substitute"
+        },
+        {
+          "test": "exact s=0 tides",
+          "file": "packages/relativity/kerr_tides_test.ail",
+          "asserts": "Existing tidalRadial/tidalTransverse with required exact reduction and sign convention",
+          "kills_which_mutation": "Wrong eigenvalue sign; lose exact zero-spin dispatch"
+        }
+      ],
+      "implementation": "Compute and commit independent oracle tide literals before production implementation. Float64 scalar/tensor arithmetic stays in package. If verified spin tides are unavailable, stop for DI-10 scope approval; null is not a current AC pass.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_tides_test.ail)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1b-c"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-10"
+      ],
+      "file_details": [
+        {
+          "path": "packages/relativity/kerr_tides.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_tides_test.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/ailang.toml",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "tools/kerr_ref.py",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/rk.json",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1b-e",
+      "parent_id": "K1.1b",
+      "title": "Digest, oracle closure and package evaluation",
+      "estimated_loc": 120,
+      "estimated_code_loc": 50,
+      "estimated_test_tool_loc": 70,
+      "files": [
+        "packages/relativity/_smoke.ail",
+        "packages/relativity/kerr_digest_test.ail",
+        "tools/kerr_ref.py",
+        "tests/fixtures/kerr/rk.json",
+        "tools/test_kerr_oracle.sh",
+        "Makefile"
+      ],
+      "test_file": "packages/relativity/kerr_digest_test.ail",
+      "tests": [
+        {
+          "test": "kerrDigest(16)",
+          "file": "packages/relativity/kerr_digest_test.ail",
+          "asserts": "Strict VM text=interpreter by cmp, independently within 1e-9 of Python; all RK rows reproduced",
+          "kills_which_mutation": "Engine-specific float order; omitted twist/tide term"
+        },
+        {
+          "test": "oracle completeness",
+          "file": "packages/relativity/kerr_digest_test.ail",
+          "asserts": "All RK ids plus zero-spin reductions, units, source revision, format and generation command retained",
+          "kills_which_mutation": "Drop a row; update digest without source"
+        }
+      ],
+      "implementation": "Add exported kerrDigest smoke entry and complete NEW kerr-oracle integration. Commit the eventual numeric digest only with the source and exact command; this planner pins no uncomputed Kerr digest. Commission independent package evaluation through controller before p.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" test --strict-bytecode kerr_digest_test.ail)",
+        "make kerr-oracle AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1b-d"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "closure": "K1.1b complete; independent evaluation PASS required before publishing.",
+      "generated_files": [
+        {
+          "path": ".ailang/state/evidence/R2-KERR/kerr-strict.txt",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": ".ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+          "new": true,
+          "repo": "game"
+        }
+      ],
+      "file_details": [
+        {
+          "path": "packages/relativity/_smoke.ail",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/kerr_digest_test.ail",
+          "new": true,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "tools/kerr_ref.py",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/rk.json",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tools/test_kerr_oracle.sh",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1p",
+      "parent_id": "K1.1p",
+      "title": "Quality, release metadata and explicit publish approval",
+      "estimated_loc": 120,
+      "estimated_code_loc": 30,
+      "estimated_test_tool_loc": 90,
+      "files": [
+        "packages/relativity/ailang.toml",
+        "packages/relativity/CHANGELOG.md",
+        "packages/relativity/AGENT.md"
+      ],
+      "test_file": "packages/relativity/ailang.toml",
+      "tests": [
+        {
+          "test": "release surface",
+          "file": "packages/relativity/ailang.toml",
+          "asserts": "kerr and support exports valid, feature release kind, precise domains, no stale Kerr exclusion",
+          "kills_which_mutation": "Missing export; describe interiors as supported"
+        },
+        {
+          "test": "publication identity",
+          "file": "packages/relativity/ailang.toml",
+          "asserts": "Quality clean without gates; dry run and post-publish version/export match approved candidate",
+          "kills_which_mutation": "Publish wrong minor; bypass quality gates"
+        }
+      ],
+      "implementation": "Prepare planned 0.14.0 release, respecting already-claimed unpublished 0.13.0. Recheck next free registry minor outside sandbox. Stop at Ppublish after quality/dry-run/evaluation evidence; only Mark's explicit go permits controller publication. M3's 0.10.0 standing go does not apply.",
+      "acceptance": [
+        {
+          "id": "AC-K2",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" pkg quality . && \"$A\" publish --dry-run)",
+            "(cd \"$PKG\" && \"$A\" publish)",
+            "\"$A\" pkg info sunholo/relativity | rg \"$V|kerr\""
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "(cd \"$PKG\" && \"$A\" pkg quality . && \"$A\" publish --dry-run)"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1b-e",
+        "Ppublish"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": false,
+      "design_blocks": [
+        "DI-13"
+      ],
+      "closure": "Controller verifies published content hash and export; no publish in executor sandbox.",
+      "file_details": [
+        {
+          "path": "packages/relativity/ailang.toml",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/CHANGELOG.md",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        },
+        {
+          "path": "packages/relativity/AGENT.md",
+          "new": false,
+          "repo": "sunholo-data/ailang-packages"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.4-a",
+      "parent_id": "K1.4",
+      "title": "Freeze pre-Kerr bytes, reserve minor and pin package",
+      "estimated_loc": 100,
+      "estimated_code_loc": 45,
+      "estimated_test_tool_loc": 55,
+      "files": [
+        "sim/ailang.toml",
+        "sim/ailang.lock",
+        "sim/protocol.ail",
+        "sim/protocol_kerr_test.ail",
+        "tests/fixtures/kerr/pre_kerr.input.ndjson",
+        "tests/fixtures/kerr/pre_kerr.expected.ndjson",
+        "data/refs/kerr_protocol_freeze.json",
+        "mk/m5.mk"
+      ],
+      "test_file": "sim/protocol_kerr_test.ail",
+      "tests": [
+        {
+          "test": "pristine byte freeze",
+          "file": "sim/protocol_kerr_test.ail",
+          "asserts": "Before any Kerr production edit: hello/new_game/tick at every supported old minor; absent/zero-spin inputs; literal output captures recorded against pre-Kerr SHA",
+          "kills_which_mutation": "Freeze after changing production encoder; changing old relativity pin"
+        },
+        {
+          "test": "highest-minor pin",
+          "file": "sim/protocol_kerr_test.ail",
+          "asserts": "Choose next free minor at implementation time; only Kerr hello reports V, every old minor retains its pin",
+          "kills_which_mutation": "Reuse 13; bump relativityPin changes old hellos"
+        }
+      ],
+      "implementation": "First capture pristine input/output bytes outside sandbox, record source revision, exact runtime/command and hashes in tracked freeze metadata. Only then install/lock published package using controller, add kerrMinor/hello branch and frozen old pin helper. No assumption that 13,14 or15 remains free; no protocol-minor reservation during planning. This explicit prep step breaks the design K1.2/K1.4 pin-order ambiguity.",
+      "acceptance": [
+        {
+          "id": "AC-K4",
+          "commands": [
+            "rg -F \"\\\"$V\\\"\" sim/ailang.toml",
+            "make deps AILANG=runtime/bin/ailang",
+            "make hello-pin AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K8",
+          "commands": [
+            "make sim strict parity parity-gr parity-grk AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "runtime/bin/ailang test --strict-bytecode sim/protocol_kerr_test.ail",
+        "make hello-pin AILANG=runtime/bin/ailang",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make deps AILANG=runtime/bin/ailang",
+        "make hello-pin AILANG=runtime/bin/ailang",
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1p"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "closure": "K1.4-a runs before K1.2, not after tables. Controller keeps incomplete schema preparation on an integration branch until K1.4 completes.",
+      "design_blocks": [
+        "DI-15"
+      ],
+      "file_details": [
+        {
+          "path": "sim/ailang.toml",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/ailang.lock",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/protocol.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/protocol_kerr_test.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/pre_kerr.input.ndjson",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/pre_kerr.expected.ndjson",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/refs/kerr_protocol_freeze.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "mk/m5.mk",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.2-a",
+      "parent_id": "K1.2",
+      "title": "Pure boundary and regularised table rows",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "sim/tools/kerr_lut.ail",
+        "sim/tools/kerr_lut_test.ail",
+        "sim/ailang.toml"
+      ],
+      "test_file": "sim/tools/kerr_lut_test.ail",
+      "tests": [
+        {
+          "test": "boundary and row schema",
+          "file": "sim/tools/kerr_lut_test.ail",
+          "asserts": "96x64 boundary, 1536x96x64x2 map; angle units, end radii 2/1e6, periodic chi layout and approved coefficient",
+          "kills_which_mutation": "Store sin(angle); wrong wrap; assumed unit log coefficient"
+        },
+        {
+          "test": "zero-spin probes and benchmark",
+          "file": "sim/tools/kerr_lut_test.ail",
+          "asserts": "s=0 M3 probes within AC-5 budgets; deterministic 400-ray timing before extrapolation",
+          "kills_which_mutation": "Drop table end row; claim 25 CPU-hours without timing"
+        }
+      ],
+      "implementation": "Build pure rows from published package, reusing catalogue_bytes F32 encoding later. Benchmark a bounded shard, record wall/CPU/memory and choose reviewed layout. Full generation is controller manual work, never a short executor gate. No all-spin regeneration or 45-degree rendered set.",
+      "acceptance": [
+        {
+          "id": "AC-K6",
+          "commands": [
+            "make kerr-lut-check AILANG=runtime/bin/ailang",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K7",
+          "commands": [
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "runtime/bin/ailang test --strict-bytecode sim/tools/kerr_lut_test.ail",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.4-a",
+        "K1.1b-c",
+        "K1.0"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-02",
+        "DI-04"
+      ],
+      "file_details": [
+        {
+          "path": "sim/tools/kerr_lut.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/tools/kerr_lut_test.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/ailang.toml",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.2-b",
+      "parent_id": "K1.2",
+      "title": "AILANG byte writer and pinned asset transport",
+      "estimated_loc": 140,
+      "estimated_code_loc": 85,
+      "estimated_test_tool_loc": 55,
+      "files": [
+        "sim/tools/kerr_lut_main.ail",
+        "sim/tools/kerr_lut_test.ail",
+        "sim/ailang.toml",
+        "tools/kerr_assets.sh",
+        "tools/test_kerr_assets.sh",
+        "Makefile",
+        ".gitignore",
+        "data/lens/kerr_boundary.json",
+        "data/lens/kerr_deflection.json",
+        "data/lens/kerr_manifest.json",
+        "data/lens/SHA256SUMS"
+      ],
+      "test_file": "tools/test_kerr_assets.sh",
+      "tests": [
+        {
+          "test": "asset integrity negative controls",
+          "file": "tools/test_kerr_assets.sh",
+          "asserts": "Known local small fixture accepted; corrupt hash/missing channel/wrong spin/header rejected; no partial writes",
+          "kills_which_mutation": "Skip sha verification; nearest-spin substitute; trust stale header"
+        },
+        {
+          "test": "transport semantics",
+          "file": "tools/test_kerr_assets.sh",
+          "asserts": "Explicit unavailable on missing pinned data; no network or whole regen in test gate; offline fixture mode",
+          "kills_which_mutation": "Auto-regenerate multi-hour tables inside make test"
+        }
+      ],
+      "implementation": "Add IO/FS shell around pure generator in AILANG, shell transport only. Define three logical artifacts as boundary, deflection, metadata manifest; pins include both JSON headers and both bins. Bins stay ignored/bucket-only. Add NEW kerr-assets, kerr-lut and kerr-publish; only manual/controller asset operations may use network. The test harness uses local fixtures and stubs.",
+      "acceptance": [
+        {
+          "id": "AC-K6",
+          "commands": [
+            "make kerr-lut-check AILANG=runtime/bin/ailang",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_assets.sh",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.2-a"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-04",
+        "DI-09"
+      ],
+      "generated_files": [
+        {
+          "path": "data/lens/kerr_boundary.bin",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/kerr_deflection.bin",
+          "new": true,
+          "repo": "game"
+        }
+      ],
+      "file_details": [
+        {
+          "path": "sim/tools/kerr_lut_main.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/tools/kerr_lut_test.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/ailang.toml",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tools/kerr_assets.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/test_kerr_assets.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": ".gitignore",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/kerr_boundary.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/kerr_deflection.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/kerr_manifest.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/SHA256SUMS",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.2-c",
+      "parent_id": "K1.2",
+      "title": "Strict regeneration, row parity and finite-table audit",
+      "estimated_loc": 120,
+      "estimated_code_loc": 70,
+      "estimated_test_tool_loc": 50,
+      "files": [
+        "sim/tools/kerr_lut.ail",
+        "sim/tools/kerr_lut_main.ail",
+        "sim/tools/kerr_lut_test.ail",
+        "tests/test_kerr_tables.gd",
+        "Makefile",
+        "data/lens/kerr_manifest.json",
+        "data/lens/SHA256SUMS"
+      ],
+      "test_file": "sim/tools/kerr_lut_test.ail",
+      "tests": [
+        {
+          "test": "regeneration counts and bytes",
+          "file": "sim/tools/kerr_lut_test.ail",
+          "asserts": "Named chi sample set [0,24,48,72], rows [0,32,63], columns 0..1535 step64 plus1535; exactly 300 two-channel texel probes; strict full row at chi0/rindex32 has1536 pairs and cmp=interpreter=pinned F32",
+          "kills_which_mutation": "Off-by-one sample count; engine difference; only compare digests"
+        },
+        {
+          "test": "every texel finite",
+          "file": "sim/tools/kerr_lut_test.ail",
+          "asserts": "Every boundary/map/coefficient value finite, periodic seam and valid angular range; no periodic strict-monotonic demand",
+          "kills_which_mutation": "NaN in unsampled texel; discontinuous chi seam"
+        },
+        {
+          "test": "s=0 independent reduction",
+          "file": "sim/tools/kerr_lut_test.ail",
+          "asserts": "Dedicated zero-spin probe output vs M3 pins at AC-5 budgets; no replaced old bins",
+          "kills_which_mutation": "Generator copies current Kerr output as expected"
+        }
+      ],
+      "implementation": "Add NEW kerr-lut-check to test and .PHONY. Separate exact-byte finite-grid reproduction from accuracy probes. NEW kerr-tables-test runs every-texel Godot scan; include it in physics/test. Full tables generated manually outside sandbox, pins only after independent accuracy review; log command and source/package hashes in manifest.",
+      "acceptance": [
+        {
+          "id": "AC-K6",
+          "commands": [
+            "make kerr-lut-check AILANG=runtime/bin/ailang",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K7",
+          "commands": [
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "runtime/bin/ailang test --strict-bytecode sim/tools/kerr_lut_test.ail",
+        "make kerr-lut-check AILANG=runtime/bin/ailang",
+        "make kerr-tables-test AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.2-b"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-03"
+      ],
+      "closure": "K1.2 complete only after controller full generation/publish verification and measured sampled/full-row results.",
+      "file_details": [
+        {
+          "path": "sim/tools/kerr_lut.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/tools/kerr_lut_main.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/tools/kerr_lut_test.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_tables.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/kerr_manifest.json",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/SHA256SUMS",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.3-a",
+      "parent_id": "K1.3",
+      "title": "Float64 CPU mirror, loaders and closed forms",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "physics/kerr.gd",
+        "tests/test_kerr_physics.gd",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_physics.gd",
+      "tests": [
+        {
+          "test": "loader identity",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "Reject wrong spin/inclination/schema/hash; float64 scalar API, hi/lo reconstruction <1e-12",
+          "kills_which_mutation": "Cast boundary to Vector3 float32; wrong asset accepted"
+        },
+        {
+          "test": "closed forms mirror",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "RK-1..13/18 against package-produced precise fixtures with units",
+          "kills_which_mutation": "Duplicate incorrect /2 or SI frequency scale"
+        }
+      ],
+      "implementation": "Create class_name Kerr and NEW kerr-physics-test with fail-closed Godot summary checks. Only mirror package forms; keep formulas out of upload/UI code. Use companion test module rather than adding hundreds of lines to tests/test_physics.gd.",
+      "acceptance": [
+        {
+          "id": "AC-K5",
+          "commands": [
+            "rg -n \"RK-\" ../stapledons-design/physics/relativity-spec.md",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "AILANG_BIN=\"$A\" godot --headless --path . --script tests/test_kerr_physics.gd",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.2-c",
+        "K1.0"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "file_details": [
+        {
+          "path": "physics/kerr.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_physics.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.3-b",
+      "parent_id": "K1.3",
+      "title": "CPU table interpolation and SR composition",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "physics/kerr.gd",
+        "tests/test_kerr_physics.gd",
+        "sim/tools/kerr_probe.ail",
+        "tests/fixtures/kerr/probes.ndjson",
+        "sim/ailang.toml"
+      ],
+      "test_file": "tests/test_kerr_physics.gd",
+      "tests": [
+        {
+          "test": "interpolation and composition",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "Periodic chi, Catmull-Rom radius end rules, within-column weighting, capture and twist; approved frame/frequency pipeline",
+          "kills_which_mutation": "x-linear weight; repeated first/last row; drop frame transform"
+        },
+        {
+          "test": "independent deterministic probes",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "10,000 seeded probes vs package integrator, 1.2e-4 rad r<=100 and1e-3 relative above; frozen source/seed",
+          "kills_which_mutation": "Use CPU mirror as its own oracle; random unrecorded seed"
+        }
+      ],
+      "implementation": "Implement boundary, deflection and compose from package/table contract. Use source/command/version-tagged package probe fixture, not Python to produce runtime assets. Retain zero-spin exact code dispatch.",
+      "acceptance": [
+        {
+          "id": "AC-K5",
+          "commands": [
+            "rg -n \"RK-\" ../stapledons-design/physics/relativity-spec.md",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K7",
+          "commands": [
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "make kerr-physics-test AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.3-a",
+        "K1.1b-c"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-07"
+      ],
+      "file_details": [
+        {
+          "path": "physics/kerr.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_physics.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/tools/kerr_probe.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/probes.ndjson",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/ailang.toml",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.3-c",
+      "parent_id": "K1.3",
+      "title": "Spec anchors and zero-spin CPU regressions",
+      "estimated_loc": 80,
+      "estimated_code_loc": 45,
+      "estimated_test_tool_loc": 35,
+      "files": [
+        "tests/test_kerr_physics.gd",
+        "tests/test_physics.gd",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_physics.gd",
+      "tests": [
+        {
+          "test": "normative RK section",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "All RK ids asserted through tests/test_physics.gd Kerr section/delegation; far boundary vs Bardeen within1e-4 rad",
+          "kills_which_mutation": "Leave values in orphaned test; wrong prograde sign"
+        },
+        {
+          "test": "RK-Q1/M3 bins",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "Zero-spin Synge boundary, deflectionExact and old pin probes at documented budget",
+          "kills_which_mutation": "s=0 uses Kerr rounded closed forms"
+        }
+      ],
+      "implementation": "Wire the new companion into make physics and preserve the existing summary/rc checks. Test-first add failing anchor calls before mirror fixes; retain all Schwarzschild checks.",
+      "acceptance": [
+        {
+          "id": "AC-K5",
+          "commands": [
+            "rg -n \"RK-\" ../stapledons-design/physics/relativity-spec.md",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K7",
+          "commands": [
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "make kerr-physics-test AILANG=runtime/bin/ailang",
+        "make physics AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.3-b"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01",
+        "DI-02",
+        "DI-03"
+      ],
+      "file_details": [
+        {
+          "path": "tests/test_kerr_physics.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_physics.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.3-d",
+      "parent_id": "K1.3",
+      "title": "Finite range, seams and probe evidence closure",
+      "estimated_loc": 80,
+      "estimated_code_loc": 45,
+      "estimated_test_tool_loc": 35,
+      "files": [
+        "tests/test_kerr_physics.gd",
+        "tests/test_kerr_tables.gd",
+        "data/lens/kerr_manifest.json"
+      ],
+      "test_file": "tests/test_kerr_physics.gd",
+      "tests": [
+        {
+          "test": "whole-range audit",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "All texels finite incl seam/end rows and coefficient map; capture angle within0..pi; justified radial trend",
+          "kills_which_mutation": "Only validate sampled rows; wrong end clamp"
+        },
+        {
+          "test": "evidence provenance",
+          "file": "tests/test_kerr_physics.gd",
+          "asserts": "Probe metadata retains seed10000 count, package hash, commands and max errors",
+          "kills_which_mutation": "Pin digest whose source exists only in tmp"
+        }
+      ],
+      "implementation": "Close the 10k-probe accuracy/finite audit with measured maxima and precise input provenance. No fabricated baseline pass. If a budget fails, stop for table-resolution review.",
+      "acceptance": [
+        {
+          "id": "AC-K5",
+          "commands": [
+            "rg -n \"RK-\" ../stapledons-design/physics/relativity-spec.md",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K6",
+          "commands": [
+            "make kerr-lut-check AILANG=runtime/bin/ailang",
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K7",
+          "commands": [
+            "make physics AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "make kerr-physics-test AILANG=runtime/bin/ailang",
+        "make physics kerr-lut-check AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.3-c"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "closure": "K1.3 complete; AC-K5/6/7 controller confirmation before visuals.",
+      "file_details": [
+        {
+          "path": "tests/test_kerr_physics.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_tables.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "data/lens/kerr_manifest.json",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.4-b",
+      "parent_id": "K1.4",
+      "title": "Pure spinning GR state and rates",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "sim/gr.ail",
+        "sim/gr_kerr.ail",
+        "sim/gr_kerr_test.ail",
+        "sim/core.ail",
+        "sim/ailang.toml",
+        "Makefile"
+      ],
+      "test_file": "sim/gr_kerr_test.ail",
+      "tests": [
+        {
+          "test": "state and package rates",
+          "file": "sim/gr_kerr_test.ail",
+          "asserts": "spin/orbitDir defaults, RK-7..12 rates/tides, signed phase and proper-time step; all rates from package",
+          "kills_which_mutation": "Use Schwarzschild clock/tides for spin; retro phase prograde"
+        },
+        {
+          "test": "refusals and stability",
+          "file": "sim/gr_kerr_test.ail",
+          "asserts": "Invalid/nonfinite spin bad_spin with no state mutation; r floor2 unchanged; pro/retro stability at r3",
+          "kills_which_mutation": "Clamp bad spin; raise floor to retro ISCO; refuse unstable orbit"
+        }
+      ],
+      "implementation": "Add pure package composition in gr_kerr; GrState adds spin/dir. Keep sim/core.ail changes to compact pure dispatch, no IO there. Add named kerr state smoke to existing strict and NEW kerr-sim-test for focused checks. No nullable tide fallback without DI-10 approval.",
+      "acceptance": [
+        {
+          "id": "AC-K8",
+          "commands": [
+            "make sim strict parity parity-gr parity-grk AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "runtime/bin/ailang test --strict-bytecode sim/gr_kerr_test.ail",
+        "make kerr-sim-test strict AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.4-a",
+        "K1.1b-d"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-05",
+        "DI-10"
+      ],
+      "file_details": [
+        {
+          "path": "sim/gr.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/gr_kerr.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/gr_kerr_test.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/core.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/ailang.toml",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.4-c",
+      "parent_id": "K1.4",
+      "title": "Additive intents, scenario and wire fields",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "sim/protocol.ail",
+        "sim/protocol_kerr.ail",
+        "sim/protocol_kerr_test.ail",
+        "sim/core.ail",
+        "sim/ailang.toml"
+      ],
+      "test_file": "sim/protocol_kerr_test.ail",
+      "tests": [
+        {
+          "test": "new-minor negotiation",
+          "file": "sim/protocol_kerr_test.ail",
+          "asserts": "Kerr fields only at actual new minor, old pins and bytes untouched; requests above negotiate newest",
+          "kills_which_mutation": "Fields leak to older minor; branch hidden behind home tier"
+        },
+        {
+          "test": "direction and domain",
+          "file": "sim/protocol_kerr_test.ail",
+          "asserts": "No-dir legacy s0 allowed; explicit dir at s0 rejected; both Kerr dirs accepted; invalid dir/static observer bad_gr leaves state unchanged",
+          "kills_which_mutation": "Default pro causes all s0 orbit refusals; invalid dir mutates state"
+        },
+        {
+          "test": "wire shape",
+          "file": "sim/protocol_kerr_test.ail",
+          "asserts": "spin,horizon_r,isco_pro_r,isco_ret_r,frame_drag_s,orbit_dir,orbit_clock and verified tide fields package-valued",
+          "kills_which_mutation": "Client recomputes field; SI value uses M where rs required"
+        },
+        {
+          "test": "new-minor zero-spin byte identity",
+          "file": "sim/protocol_kerr_test.ail",
+          "asserts": "Absent/explicit0 Kerr-minor requests match approved prior absent-spin equivalent outside hello; new GR fields omitted at zero spin; old minor explicit bh_spin refusal unchanged.",
+          "kills_which_mutation": "Emit spin:0/new keys at zero spin; accept unknown spin parameter at old minor; freeze after decoder edit"
+        }
+      ],
+      "implementation": "Implement companion codec without importing back into protocol; keep old encoders reachable unchanged. NEW kerr_demo scenario is gated at Kerr minor; bh_spin absent=0 on legacy sgr_a. Old minor opt-ins remain as frozen. Freeze-before-edit is mandatory even if the integration base advanced. Implement only the approved DI-15 comparison rule; zero-spin GR bytes retain the old encoder without new keys.",
+      "acceptance": [
+        {
+          "id": "AC-K4",
+          "commands": [
+            "rg -F \"\\\"$V\\\"\" sim/ailang.toml",
+            "make deps AILANG=runtime/bin/ailang",
+            "make hello-pin AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K8",
+          "commands": [
+            "make sim strict parity parity-gr parity-grk AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "runtime/bin/ailang test --strict-bytecode sim/protocol_kerr_test.ail",
+        "make strict parity-v2 parity parity-gr hello-pin AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.4-b"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-06",
+        "DI-15"
+      ],
+      "file_details": [
+        {
+          "path": "sim/protocol.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/protocol_kerr.ail",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/protocol_kerr_test.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/core.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sim/ailang.toml",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.4-d",
+      "parent_id": "K1.4",
+      "title": "Bridge, frozen session and parity-grk",
+      "estimated_loc": 100,
+      "estimated_code_loc": 45,
+      "estimated_test_tool_loc": 55,
+      "files": [
+        "bridge/sim_bridge.gd",
+        "tests/test_kerr_bridge.gd",
+        "tests/fixtures/grk.ndjson",
+        "tests/fixtures/grk.expected.ndjson",
+        "sim/protocol_kerr_test.ail",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_bridge.gd",
+      "tests": [
+        {
+          "test": "raw bridge equality",
+          "file": "tests/test_kerr_bridge.gd",
+          "asserts": "Preserve complete GR dictionary and unknown fields, clear on exit; unsupported asset state explicit",
+          "kills_which_mutation": "Parser drops tide/dir; stale Kerr state in flat world"
+        },
+        {
+          "test": "fixture and old bytes",
+          "file": "tests/test_kerr_bridge.gd",
+          "asserts": "Strict VM=ordinary VM=interpreter=repeat=expected via cmp; reply count=input excluding quit; both dirs/all refusals; frozen pre-Kerr fixture and old gr replay unchanged",
+          "kills_which_mutation": "Missing reply; nondeterministic ordering; regenerate old fixtures"
+        },
+        {
+          "test": "archive behavior",
+          "file": "tests/test_kerr_bridge.gd",
+          "asserts": "bh_enter/bh_hover retained, zero bh_ring for spin>0; s0 ring unchanged",
+          "kills_which_mutation": "Report ring unlock while Kerr star paths off"
+        }
+      ],
+      "implementation": "Add bridge Kerr minor request only for Kerr demo. NEW parity-grk joins test/.PHONY and uses exact fixtures and asserted counts, not printed counts alone. Controller captures expected bytes only after package/oracle assertions; do not bless an observed stream blindly.",
+      "acceptance": [
+        {
+          "id": "AC-K8",
+          "commands": [
+            "make sim strict parity parity-gr parity-grk AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "AILANG_BIN=\"$A\" godot --headless --path . --script tests/test_kerr_bridge.gd",
+        "make parity-grk parity-gr strict AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.4-c"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-09"
+      ],
+      "closure": "K1.4 complete; controller additionally runs sim and all replay/compat targets.",
+      "file_details": [
+        {
+          "path": "bridge/sim_bridge.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_bridge.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/grk.ndjson",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/grk.expected.ndjson",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sim/protocol_kerr_test.ail",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.5-a",
+      "parent_id": "K1.5",
+      "title": "Kerr golden harness and finite-radius expectations",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "tools/kerr_golden.gd",
+        "tests/test_kerr_golden.gd",
+        "main.gd",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_golden.gd",
+      "tests": [
+        {
+          "test": "golden harness negative controls",
+          "file": "tests/test_kerr_golden.gd",
+          "asserts": "Missing case/missing summary/parse failure is nonzero; GR13..17 groups counted once each",
+          "kills_which_mutation": "Process exit0 mistaken for valid run; skipped mutant group"
+        },
+        {
+          "test": "finite vs far expectations",
+          "file": "tests/test_kerr_golden.gd",
+          "asserts": "Finite-r half-width ratio from CPU boundary; far case0.412112 with prograde sign; tolerances0.75px/.005/1px/.5px",
+          "kills_which_mutation": "Infinity ratio asserted at r3; mirrored side accepted"
+        }
+      ],
+      "implementation": "Add separate kerr_golden helper and compact main.gd --golden=grk hook plus full-golden inclusion. Test harness validators first; do not claim GPU visual AC-K9 until b/d. Add NEW kerr-golden-harness-test for this one file; existing golden target later enforces all old/new counts.",
+      "acceptance": [
+        {
+          "id": "AC-K9",
+          "commands": [
+            "make golden AILANG=runtime/bin/ailang",
+            "AILANG_BIN=\"$A\" godot --path . -- --golden=grk"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "AILANG_BIN=\"$A\" godot --headless --path . --script tests/test_kerr_golden.gd",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.0",
+        "K1.3-d",
+        "K1.4-d"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-08"
+      ],
+      "file_details": [
+        {
+          "path": "tools/kerr_golden.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_golden.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "main.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender5"
+      ]
+    },
+    {
+      "id": "K1.5-b",
+      "parent_id": "K1.5",
+      "title": "Kerr shader and panorama upload",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "sky/kerr.gdshaderinc",
+        "sky/background.gdshader",
+        "sky/gr_lens.gd",
+        "sky/kerr_lens.gd",
+        "sky/background.gd",
+        "tools/kerr_golden.gd"
+      ],
+      "test_file": "tools/kerr_golden.gd",
+      "tests": [
+        {
+          "test": "GR13/15/16",
+          "file": "tools/kerr_golden.gd",
+          "asserts": "Hover s=.9 r10/5/3 GPU mask within.75px CPU; twist marker<=1px; forced s0 Kerr shader within.5px M3",
+          "kills_which_mutation": "Capture threshold off; suppress twist; s0 NaN"
+        },
+        {
+          "test": "frame and shift",
+          "file": "tools/kerr_golden.gd",
+          "asserts": "SR de-aberration before table mapping, reviewed tetrad transform and Dg*DSR; hover and both senses",
+          "kills_which_mutation": "Static/ZAMO speed confusion; reverse SR order"
+        }
+      ],
+      "implementation": "Mirror CPU/package function contracts in shader; helper uploads assets and sim fields without new formulas. Zero-spin production dispatch preserves old shader path; GR16 forces Kerr shader only in tests. Targeted GPU command is Studio/controller-only.",
+      "acceptance": [
+        {
+          "id": "AC-K9",
+          "commands": [
+            "make golden AILANG=runtime/bin/ailang",
+            "AILANG_BIN=\"$A\" godot --path . -- --golden=grk"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "AILANG_BIN=\"$A\" godot --path . -- --golden=grk",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.5-a"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-07"
+      ],
+      "file_details": [
+        {
+          "path": "sky/kerr.gdshaderinc",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sky/background.gdshader",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sky/gr_lens.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sky/kerr_lens.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "sky/background.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tools/kerr_golden.gd",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender5"
+      ]
+    },
+    {
+      "id": "K1.5-c",
+      "parent_id": "K1.5",
+      "title": "Kerr star suppression and honest diagnostics",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "sky/starfield.gdshader",
+        "sky/gr_lens.gd",
+        "sky/kerr_lens.gd",
+        "interior/interior_sky.gd",
+        "tests/test_kerr_stars.gd",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_stars.gd",
+      "tests": [
+        {
+          "test": "both star orders off",
+          "file": "tests/test_kerr_stars.gd",
+          "asserts": "s>0 suppresses primary/secondary/ring stars; debug_line exact suppressed count; s0 restores original images",
+          "kills_which_mutation": "Disable only one order; silent star loss; stale suppression after exit"
+        },
+        {
+          "test": "asset match",
+          "file": "tests/test_kerr_stars.gd",
+          "asserts": "Spin/inclination/version/hash mismatch explicit unavailable, does not draw wrong Kerr or Schwarzschild sky",
+          "kills_which_mutation": "Nearest-spin lookup; draw from mismatched table"
+        }
+      ],
+      "implementation": "Add NEW kerr-stars-test to test/ship-demo-ci and diagnostic count into GrLens.debug_line. Keep implementation terminology in developer diagnostic; visible caption is in-world and says the catalogue is unavailable, tested by in-world-voice-check.",
+      "acceptance": [
+        {
+          "id": "AC-K9",
+          "commands": [
+            "make golden AILANG=runtime/bin/ailang",
+            "AILANG_BIN=\"$A\" godot --path . -- --golden=grk"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K10",
+          "commands": [
+            "make sim AILANG=runtime/bin/ailang",
+            "make kerr-client-guard AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "AILANG_BIN=\"$A\" godot --headless --path . --script tests/test_kerr_stars.gd",
+        "make in-world-voice-check lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.5-b"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-09"
+      ],
+      "file_details": [
+        {
+          "path": "sky/starfield.gdshader",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sky/gr_lens.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sky/kerr_lens.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "interior/interior_sky.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_stars.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender5"
+      ]
+    },
+    {
+      "id": "K1.5-d",
+      "parent_id": "K1.5",
+      "title": "GR17 mutation sensitivity and render checkpoint",
+      "estimated_loc": 140,
+      "estimated_code_loc": 80,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "tools/kerr_golden.gd",
+        "sky/kerr.gdshaderinc",
+        "tools/kerr_mutation.sh",
+        "tests/test_kerr_golden.gd",
+        "Makefile",
+        "data/refs/bhk_sky_manifest.sha256",
+        "data/refs/bhk_sky_provenance.json"
+      ],
+      "test_file": "tools/kerr_golden.gd",
+      "tests": [
+        {
+          "test": "GR14 and GR17",
+          "file": "tools/kerr_golden.gd",
+          "asserts": "Correct pinch sign; each boundary/wrap/within-column/first-row/last-row mutation makes its acting golden fail; restore clean pass",
+          "kills_which_mutation": "Mirrored alpha; x-linear weighting; periodic wrap removed; repeated end rows"
+        },
+        {
+          "test": "regression accounting",
+          "file": "tools/kerr_golden.gd",
+          "asserts": "GR1..12 remain on original path and counts unchanged; all GR13..17 groups explicitly required",
+          "kills_which_mutation": "Silently omit old golden groups; only shell rc check"
+        }
+      ],
+      "implementation": "Add hardened NEW kerr-mutation-test ROOT=<copy> plus test-only shader mutant selectors, covering silhouette and twist/interpolation probes where each rule acts. A GR13 mask alone may miss deflection-only mutations: require GR15/float probe to kill them. Upload/open early Kerr grid references at Prender5 before any visual merge.",
+      "acceptance": [
+        {
+          "id": "AC-K9",
+          "commands": [
+            "make golden AILANG=runtime/bin/ailang",
+            "AILANG_BIN=\"$A\" godot --path . -- --golden=grk"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "make kerr-mutation-test ROOT=\"$ROOT\" AILANG=runtime/bin/ailang",
+        "AILANG_BIN=\"$A\" godot --path . -- --golden=grk"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.5-c"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "closure": "K1.5 complete only on controller full make golden + Prender5 human review; spec merge SHA required.",
+      "design_blocks": [
+        "DI-14"
+      ],
+      "file_details": [
+        {
+          "path": "tools/kerr_golden.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "sky/kerr.gdshaderinc",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tools/kerr_mutation.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_golden.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "data/refs/bhk_sky_manifest.sha256",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/refs/bhk_sky_provenance.json",
+          "new": true,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender5"
+      ]
+    },
+    {
+      "id": "K1.6-a",
+      "parent_id": "K1.6",
+      "title": "Kerr ship demo and HUD sentinels",
+      "estimated_loc": 150,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "demos/kerr_visit.gd",
+        "demos/black_hole_visit.gd",
+        "demos/ship_geometry_demo.gd",
+        "demos/ship_consoles.gd",
+        "main.gd",
+        "tests/test_kerr_hud.gd",
+        "tools/kerr_client_guard.sh",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_hud.gd",
+      "tests": [
+        {
+          "test": "demo dance",
+          "file": "tests/test_kerr_hud.gd",
+          "asserts": "kerr_demo Sgr A* 4.297e6, spin scenario data; 1e6->10->5->3 hover and both dirs; r3 pro stable/retro unstable, retro safe above4.36; 10Msun only far",
+          "kills_which_mutation": "Attempt pro ISCO below floor; hard-code spin in renderer"
+        },
+        {
+          "test": "HUD sentinels",
+          "file": "tests/test_kerr_hud.gd",
+          "asserts": "Inject distinctive spin/ergosphere/omega/two ISCO/clock/tides values, output every value from sim; no formula",
+          "kills_which_mutation": "HUD calculates shadow/clock; hardcoded .9; wrong handedness"
+        },
+        {
+          "test": "client source guard",
+          "file": "tests/test_kerr_hud.gd",
+          "asserts": "Grep plus scratch negative controls finds Kerr formulas in client while allowing physics mirrors/tests; semantic review checks aliases",
+          "kills_which_mutation": "Move maths to upload helper; guard ignores untracked source"
+        }
+      ],
+      "implementation": "Add demo aboard unified 3D ship and launch selection. OLD sgr_a unchanged. HUD formats sim fields only, includes unavailable stars/unsupported assets and static-limit meaning in-world; no code exposes lore mechanics. NEW kerr-hud-test in sim, NEW kerr-client-guard in test/.PHONY with positive and negative controls.",
+      "acceptance": [
+        {
+          "id": "AC-K10",
+          "commands": [
+            "make sim AILANG=runtime/bin/ailang",
+            "make kerr-client-guard AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K8",
+          "commands": [
+            "make sim strict parity parity-gr parity-grk AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "AILANG_BIN=\"$A\" godot --headless --path . --script tests/test_kerr_hud.gd",
+        "make kerr-client-guard in-world-voice-check AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.4-d",
+        "K1.5-d",
+        "Prender5"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "file_details": [
+        {
+          "path": "demos/kerr_visit.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "demos/black_hole_visit.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "demos/ship_geometry_demo.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "demos/ship_consoles.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "main.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_hud.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/kerr_client_guard.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender6"
+      ]
+    },
+    {
+      "id": "K1.6-b",
+      "parent_id": "K1.6",
+      "title": "Reference capture, manifest and render diff",
+      "estimated_loc": 110,
+      "estimated_code_loc": 65,
+      "estimated_test_tool_loc": 45,
+      "files": [
+        "tools/kerr_capture.gd",
+        "tools/kerr_refs.sh",
+        "tests/test_kerr_refs.sh",
+        "tools/render_diff.gd",
+        "data/refs/bhk_manifest.sha256",
+        "data/refs/bhk_provenance.json",
+        "Makefile"
+      ],
+      "test_file": "tests/test_kerr_refs.sh",
+      "tests": [
+        {
+          "test": "complete reference matrix",
+          "file": "tests/test_kerr_refs.sh",
+          "asserts": "3 radii x3 views x3 motions x2 backgrounds=54 matrix frames plus2 contact sheets (56 PNGs), all present/unique; metadata camera/exposure/seed/pins/source/command",
+          "kills_which_mutation": "Drop retro frames; stale copied baseline"
+        },
+        {
+          "test": "diff and provenance",
+          "file": "tests/test_kerr_refs.sh",
+          "asserts": "Missing baseline/hash/nonzero Godot rc fails; mean absolute diff<=1/255 each by M3 pattern; human open record is separate",
+          "kills_which_mutation": "Accept missing reference; blindly overwrite baseline; digest only in tmp"
+        }
+      ],
+      "implementation": "Add NEW capture-bhk, bhk-refs, bhk-refs-publish, bhk-render-diff and kerr-refs-test. Record human review, explicit baseline selection and exact capture invocation. Upload immutable frames and generating source/check metadata beside refs/r2_kerr_ship/. Capture full matrix; controller uses GPU, no planner rendering. Assert exactly56 PNGs (54 matrix+2 sheets), keeping any later extra images separately counted.",
+      "acceptance": [
+        {
+          "id": "AC-K11",
+          "commands": [
+            "make capture-bhk AILANG=runtime/bin/ailang && make bhk-render-diff AILANG=runtime/bin/ailang",
+            "rg -n \"opened by\" design_docs/implemented/r2/kerr-black-holes-report.md"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tests/test_kerr_refs.sh",
+        "make capture-bhk AILANG=runtime/bin/ailang",
+        "make bhk-render-diff AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.6-a"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "closure": "Prender6 must record Mark/person name+date opening every frame/contact sheet, not just uploaded objects.",
+      "file_details": [
+        {
+          "path": "tools/kerr_capture.gd",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/kerr_refs.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/test_kerr_refs.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/render_diff.gd",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "data/refs/bhk_manifest.sha256",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "data/refs/bhk_provenance.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender6"
+      ]
+    },
+    {
+      "id": "K1.6-c",
+      "parent_id": "K1.6",
+      "title": "Independent evaluation and cross-repo landing record",
+      "estimated_loc": 60,
+      "estimated_code_loc": 0,
+      "estimated_test_tool_loc": 60,
+      "files": [
+        "design_docs/implemented/r2/kerr-black-holes-report.md",
+        "design_docs/implemented/r2/kerr-black-holes.md",
+        "design_docs/implemented/r2/kerr-black-holes-sprint.md",
+        "design_docs/README.md",
+        "CHANGELOG.md",
+        "changelogs/unreleased/2026-10-21-kerr-black-holes.md",
+        ".ailang/state/sprints/sprint_R2-KERR.json",
+        ".ailang/state/evaluations/eval_R2-KERR.json",
+        "../stapledons-design/features/future/black-holes.md",
+        "../stapledons-design/features/future/gr-visual-mechanics.md",
+        "../stapledons-design/roadmap/r1-foundations.md"
+      ],
+      "test_file": "design_docs/implemented/r2/kerr-black-holes-report.md",
+      "tests": [
+        {
+          "test": "done evidence",
+          "file": "design_docs/implemented/r2/kerr-black-holes-report.md",
+          "asserts": "Independent evaluator score>=70, resolved findings, package/spec SHAs, old/new byte checks, rig/full+GitHub fast tier, opened by person, approved DI disposition",
+          "kills_which_mutation": "Executor self-approval; CI-only green; missing frame review"
+        },
+        {
+          "test": "landing scope",
+          "file": "design_docs/implemented/r2/kerr-black-holes-report.md",
+          "asserts": "Design-repo status/non-goals/roadmap updated through PR; docs moved by controller, no claim emergence/star inverse-map shipped",
+          "kills_which_mutation": "Mark release2 mechanics complete; stale future-work line"
+        }
+      ],
+      "implementation": "Controller moves documents, updates index/status and changelog fragment (adjust date to actual landing); commissions separate evaluator and design-repo landing PR. Optional canon spin amendment only if OQ1 explicitly answered, in separately approved named canon path. No changes to canon implied by demo default.",
+      "acceptance": [
+        {
+          "id": "AC-K11",
+          "commands": [
+            "make capture-bhk AILANG=runtime/bin/ailang && make bhk-render-diff AILANG=runtime/bin/ailang",
+            "rg -n \"opened by\" design_docs/implemented/r2/kerr-black-holes-report.md"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K12",
+          "commands": [
+            "make ci-fast AILANG=runtime/bin/ailang",
+            "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang",
+            "tools/rig_check.sh <PR> --golden",
+            "make kerr-client-guard AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "rg -n \"opened by\" design_docs/implemented/r2/kerr-black-holes-report.md",
+        "git diff --check"
+      ],
+      "controller_gates": [
+        "(cd \"$PKG\" && \"$A\" check --package . && \"$A\" test --package .)",
+        "make deps AILANG=runtime/bin/ailang",
+        "make lore-import CHECK=1 D=../stapledons-design AILANG=runtime/bin/ailang",
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang",
+        "make golden AILANG=runtime/bin/ailang",
+        "tools/rig_check.sh <PR> --golden"
+      ],
+      "depends_on": [
+        "K1.6-b",
+        "Prender6"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": false,
+      "closure": "K1.6 and sprint complete only after all six CLAUDE.md gates in order, human review and independent evaluation.",
+      "file_details": [
+        {
+          "path": "design_docs/implemented/r2/kerr-black-holes-report.md",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "design_docs/implemented/r2/kerr-black-holes.md",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "design_docs/implemented/r2/kerr-black-holes-sprint.md",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "design_docs/README.md",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "CHANGELOG.md",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "changelogs/unreleased/2026-10-21-kerr-black-holes.md",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": ".ailang/state/sprints/sprint_R2-KERR.json",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": ".ailang/state/evaluations/eval_R2-KERR.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "../stapledons-design/features/future/black-holes.md",
+          "new": false,
+          "repo": "design"
+        },
+        {
+          "path": "../stapledons-design/features/future/gr-visual-mechanics.md",
+          "new": false,
+          "repo": "design"
+        },
+        {
+          "path": "../stapledons-design/roadmap/r1-foundations.md",
+          "new": false,
+          "repo": "design"
+        }
+      ],
+      "merge_pause_points": [
+        "Pspec",
+        "Prender6"
+      ]
+    }
+  ],
+  "evaluations": [],
+  "planning_validation": {
+    "implementation_executed": false,
+    "source_only": true,
+    "json_command": "jq -e . .ailang/state/sprints/sprint_R2-KERR.json",
+    "json_exit_code": 0,
+    "plan_line_count": 1936,
+    "expected_new_files": [
+      "design_docs/planned/r2/kerr-black-holes-sprint.md",
+      ".ailang/state/sprints/sprint_R2-KERR.json"
+    ],
+    "expected_feature_count": 30,
+    "expected_parent_count": 9,
+    "expected_total_loc": 3710,
+    "expected_design_inconsistency_count": 15,
+    "max_mutation_slice_loc": 150,
+    "pre_existing_untracked_preserved": ".ailang/state/brain.db",
+    "network_used": false,
+    "git_writes": false,
+    "runtime_gate_verdicts": "unmeasured in sandbox",
+    "structure_result": "PASS source/format checks: jq exit0; 30 false features; nine parent totals; 3710 LOC; 15 design inconsistencies; all dependencies resolve and DAG acyclic; declared primary test files; gate commands mirrored in plan; every slice <=150 LOC. No existing tracked file changed; only the two task files added, pre-existing brain.db preserved. Runtime gate verdicts remain unmeasured in sandbox."
+  },
+  "verification_notes": [
+    {
+      "premise": "Base and initial state",
+      "command": "git rev-parse HEAD\ngit status --short",
+      "output": "bc1f111134d2abac7cbfd9ca7bb2239da6382f04\n?? .ailang/state/brain.db",
+      "exit_code": 0
+    },
+    {
+      "premise": "New outputs versus exemplar positive control",
+      "command": "git ls-files design_docs/planned/r2/kerr-black-holes-sprint.md .ailang/state/sprints/sprint_R2-KERR.json design_docs/planned/r2/semantic-memory-s0-sprint.md",
+      "output": "design_docs/planned/r2/semantic-memory-s0-sprint.md",
+      "exit_code": 0
+    },
+    {
+      "premise": "Pinned runtime and prompt version",
+      "command": "runtime/bin/ailang --version | head -3\nruntime/bin/ailang prompt --version-active",
+      "output": "AILANG v0.54.14\nCommit: e1ef33f\nFull:   e1ef33fa52b16c3fc3ad15edd60103d2f4ba808e\nv0.16.7",
+      "exit_code": 0
+    },
+    {
+      "premise": "Spec and canon",
+      "command": "git -C ../stapledons-design rev-parse HEAD\nrg -n -i 'kerr|schwarzschild' ../stapledons-design/physics/relativity-spec.md\nsed -n '14p' ../stapledons-design/vision/premise-and-loop.md",
+      "output": "864a4e4598e40ed33a76aef6fbd06eabfcc29e86\n63:## 3. General relativity (Schwarzschild; the black-hole feature)\n- **You come back.** The ship emerges violently from the ergosphere of a spinning black hole: the same rogue black hole that is heading for the Solar System. The crew's memories are erased and the ship's AI is confused. You stabilise the tumbling ship amid full SR and GR distortion. Then the ship is **thrown clear, towards Earth**. A Penrose-process slingshot out of the ergosphere is the physics-adjacent reading; *why* the throw points home is part of the spire mystery (§4). You coast in past Saturn and reach Earth.",
+      "exit_code": 0
+    },
+    {
+      "premise": "Charter and package source placement",
+      "command": "sed -n '367p' design_docs/stapledon-mission.md\nsed -n '7,13p' CLAUDE.md",
+      "output": "| R2 | Kerr (spinning) black holes, design doc and sprint plan only (the canon's rogue hole spins); execution needs Mark's approval. | `[LOOP+RENDER]` (plan) |\n| Repo | Role |\n|---|---|\n| `../stapledons-design` (sunholo-data/stapledons-design) | **What** the game is: vision, feature designs, the normative physics spec (`physics/relativity-spec.md`), the roadmap (`roadmap/r1-foundations.md`) |\n| this repo | **How** it's built: implementation design docs, sprints, code, tests |\n| sunholo-data/ailang-packages `packages/relativity` | The `sunholo/relativity` AILANG package, the single source of physics maths |\n| `../../stapledons_voyage` | The retired Go/Ebiten version. Reference only; never port code from it without checking the physics spec's audit |",
+      "exit_code": 0
+    },
+    {
+      "premise": "Current package/minor baseline, with old-stream pins",
+      "command": "rg -n 'relativityPin.*=|export pure func .*Minor.*=' sim/protocol.ail\nrg -n 'sunholo/relativity' sim/ailang.toml",
+      "output": "68:export pure func relativityPin() -> string = \"0.12.0\"\n69:export pure func relativityPinStops() -> string = \"0.11.0\"\n70:export pure func relativityPinGr() -> string = \"0.10.0\"\n71:export pure func relativityPinNav() -> string = \"0.9.0\"\n87:export pure func systemMinor() -> int = 3\n91:export pure func navMinor() -> int = 4\n93:export pure func departureMinor() -> int = 5\n98:export pure func grMinor() -> int = 6\n105:export pure func stopsMinor() -> int = 7\n112:export pure func ismMinor() -> int = 8\n119:export pure func crewMinor() -> int = 9\n124:export pure func interludeMinor() -> int = 10\n131:export pure func consoleMinor() -> int = 11\n138:export pure func homeTiersMinor() -> int = 12\n20:\"sunholo/relativity\" = \"0.12.0\"",
+      "exit_code": 0
+    },
+    {
+      "premise": "Offline package reuse",
+      "command": "rg -n 'version =|sunholo/relativity/(geodesic|schwarzschild)' /Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0/ailang.toml\nrg -n 'Kerr|Schwarzschild module' /Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0/AGENT.md",
+      "output": "3:version = \"0.12.0\"\n20:  \"sunholo/relativity/schwarzschild\",\n22:  \"sunholo/relativity/geodesic\",\n29:- Rotating (Kerr) black holes.\n49:- **Schwarzschild module:** radii in units of r_s = 2GM/c² (the horizon is at",
+      "exit_code": 0
+    },
+    {
+      "premise": "New code paths with existing controls",
+      "command": "rg --files sim physics sky tests tools | rg 'kerr|gr_test|geodesic_ref|gr_golden|gr_capture|render_diff'",
+      "output": "tools/gr_capture.gd\ntools/gr_capture.gd.uid\ntools/gr_golden.gd\ntools/geodesic_ref.py\ntools/render_diff.gd\ntools/gr_golden.gd.uid\nsim/gr_test.ail",
+      "exit_code": 0
+    },
+    {
+      "premise": "New make targets with existing controls",
+      "command": "rg -n '^(kerr-[[:alnum:]_-]+|parity-grk|capture-bhk|bhk-render-diff|physics|geodesic-oracle|lens-lut-check|parity-gr):' Makefile mk/*.mk",
+      "output": "Makefile:177:physics: lens-assets ## CPU physics reference (incl. the Schwarzschild mirror on the pinned lens tables) vs known values; fails unless the run prints its '<n> passed, 0 failed' summary (a script that fails to parse exits 0 without one)\nMakefile:329:parity-gr:          ## M3.4b protocol 2.6: tests/fixtures/gr.ndjson (sgr_a, every GR intent and refusal) VM == interpreter byte for byte; archive events bh_enter, bh_hover, bh_ring in order; Sgr A* mass 4.297e6\nMakefile:432:geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 geodesics, tides and hover (design V9-V16) passes --check, and its digests equal the values the package pins\nMakefile:859:lens-lut-check:   ## M3.2 AC-6: sampled regeneration (every 32nd row x every 64th column of lens_fwd, whole sampled rows of lens_inv) is bit-identical to the pinned bins; row 128 cols 0-63 strict VM = interpreter and = the bin bytes (~2 min)",
+      "exit_code": 0
+    },
+    {
+      "premise": "CI commands",
+      "command": "rg -n 'AILANG_VERSION|run:|make (deps|lore-import|ci-fast|test)' .github/workflows/ci.yml",
+      "output": "10:        description: run all of make test instead of the fast tier\n14:# Rig-first merges (Mark, 2026-10-19): pushes and PRs run the fast clean-Linux tier (make ci-fast).\n15:# The whole of make test (plus make golden for visual changes) runs on the Studio through\n17:# make test here (inputs.full is true only under workflow_call; elsewhere it is empty).\n20:    name: ${{ inputs.full && 'headless tests (full make test)' || 'fast tier (lock, strict VM, parity, replay)' }}\n23:      AILANG_VERSION: v0.54.14\n35:        run: |\n36:          gh release download \"$AILANG_VERSION\" --repo sunholo-data/ailang -p 'linux.x64.ailang.tar.gz' -D /tmp/ailang\n43:        run: |\n52:        run: |\n53:          make deps\n55:          make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang\n58:      # (Mark, 2026-10-16): every target in them is a prerequisite of make test, which ran them twice.\n59:      - name: make ci-fast\n61:        run: make ci-fast\n63:      - name: make test\n65:        run: make test",
+      "exit_code": 0
+    },
+    {
+      "premise": "Full target closure",
+      "command": "rg -n '^include |^ci-fast:|^test:|^ship-demo-ci:' Makefile mk/*.mk",
+      "output": "mk/planet-presentation.mk:13:ship-demo-ci: planet-presentation-test moon-lifecycle-test\nmk/planet-presentation.mk:24:ship-demo-ci: exposure-frames-test\nmk/planet-presentation.mk:29:ship-demo-ci: manual-exposure-test\nmk/navigation-usability.mk:11:test: navigation-usability-test guided-highlights-strict\nmk/m5.mk:8:test: m5-test\nmk/ism.mk:72:test: ism-bright-oracle\nmk/ism.mk:78:test: bubble-surface-test\nmk/ism.mk:84:test: ism-surfaces-test\nmk/deck-layout.mk:14:test: deck-layout-eval-test\nmk/deck-layout.mk:19:test: deck-assets-check\nmk/home-tiers.mk:12:test: home-tiers-vm\nmk/home-tiers.mk:34:test: home-art-check\nmk/home-tiers.mk:58:test: home-site-check\nmk/constellations.mk:11:ship-demo-ci: constellation-test\nmk/ai.mk:7:test: ai-test\nMakefile:21:include mk/constellations.mk\nMakefile:22:include mk/home-tiers.mk\nMakefile:23:include mk/deck-layout.mk\nMakefile:37:ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest\nMakefile:39:test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window\nMakefile:67:test: crew-sync-check\nMakefile:72:test: crew-faces-check\nMakefile:88:test: crew-bridge-test\nMakefile:93:test: crew-events-check\nMakefile:97:test: crew-console-test\nMakefile:106:test: crew-hold-test\nMakefile:110:test: crossing-review-test\nMakefile:152:test: crew-perf\nMakefile:155:test: crew-parity\nMakefile:183:test: export-filter-audit\nMakefile:921:include mk/ai.mk\nMakefile:922:include mk/site.mk\nMakefile:923:include mk/m5.mk\nMakefile:924:include mk/m45.mk\nMakefile:925:include mk/ism.mk\nMakefile:926:include mk/navigation-usability.mk\nMakefile:990:test: ship-demo-ci\nMakefile:991:ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test ship-commons-test ship-commons-assets-test validate-ship-commons ship-commons-arcade-test ship-demo-live-test\nMakefile:1010:ship-demo-ci: ship-star-identification-test\nMakefile:1014:ship-demo-ci: free-nav-stop-test\nMakefile:1022:ship-demo-ci: ship-demo-consolidation-test\nMakefile:1033:ship-demo-ci: title-screen-test\nMakefile:1040:test: loading-jump-test\nMakefile:1067:ship-demo-ci: ship-movement-test map-origin-test ship-planets-test\nMakefile:1077:ship-demo-ci: ship-star-light-test\nMakefile:1096:ship-demo-ci: catalogue-coverage-test solar-departure-test\nMakefile:1107:ship-demo-ci: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test\nMakefile:1131:ship-demo-ci: ship-attitude-test\nMakefile:1135:ship-demo-ci: benchmark-upload-test\nMakefile:1139:ship-demo-ci: shadow-contacts-test\nMakefile:1143:ship-demo-ci: tour-attitude-test\nMakefile:1147:ship-demo-ci: bridge-floor-test\nMakefile:1149:include mk/planet-presentation.mk\nMakefile:1154:ship-demo-ci: sim-bootstrap-test\nMakefile:1161:ship-demo-ci: tour-pacing-test\nMakefile:1167:ship-demo-ci: ship-ui-test\nMakefile:1189:ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude display-audit-crew\nMakefile:1256:ship-demo-ci: camera-test\nMakefile:1271:ship-demo-ci: camera-forward-test\nMakefile:1288:ship-demo-ci: free-nav-recovery-test",
+      "exit_code": 0
+    },
+    {
+      "premise": "Existing exact gate recipes",
+      "command": "sed -n '177,181p' Makefile\nsed -n '280,292p' Makefile\nsed -n '33,40p' mk/m5.mk",
+      "output": "physics: lens-assets ## CPU physics reference (incl. the Schwarzschild mirror on the pinned lens tables) vs known values; fails unless the run prints its '<n> passed, 0 failed' summary (a script that fails to parse exits 0 without one)\n\t@mkdir -p $(SCRATCH)\n\t@$(GODOT) --headless --path . --script tests/test_physics.gd > $(SCRATCH)/physics.txt 2>&1; rc=$$?; cat $(SCRATCH)/physics.txt; \\\n\t  [ $$rc -eq 0 ] || { echo \"physics: godot exited $$rc\"; exit 1; }; \\\n\t  grep -qE '^[0-9]+ passed, 0 failed$$' $(SCRATCH)/physics.txt || { echo \"physics: no '<n> passed, 0 failed' summary line (parse error or early exit?)\"; exit 1; }\nsim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics; M3.6: + the black-hole HUD sentinels and the Sgr A* demo aboard the ship (bh-hud-test)\n\t@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate\n\t$(AILANG) check --package sim\n\tcd sim && $(AILANG) test --package .\n\t$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd\n\t@$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)\n\nbh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state[\"gr\"] (sentinels), the navigation entry and --scenario=sgr_a, the scripted Sgr A* demo, codex unlocks, no-star key, GR off elsewhere (headless, real sim)\n\t@mkdir -p $(SCRATCH)\n\t@$(GODOT_SIM) --headless --path . --script tests/test_bh_hud.gd > $(SCRATCH)/bh-hud.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/bh-hud.log | grep -v '^ERROR: .*leaked\\|^   at: \\|^Godot Engine\\|^$$'; \\\n\t  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/bh-hud.log && grep -q '^bh-hud: [0-9]* passed, 0 failures$$' $(SCRATCH)/bh-hud.log || { echo \"bh-hud-test: FAILED (log $(SCRATCH)/bh-hud.log)\"; exit 1; }\n\t@! grep -rnE \"sqrt\\(1(\\.0)? *- *1(\\.0)? */ *r\" demos ui sky bridge interior && echo \"bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior\"\n\nhello-pin:         ## protocol.ail relativityPin() (the current pin, reported from the newest minor) == the sunholo/relativity pin in sim/ailang.toml; minors 4-5 stay 0.9.0, minor 6 stays 0.10.0\n\t@pin=$$(sed -n 's/^\"sunholo\\/relativity\" = \"\\(.*\\)\"/\\1/p' sim/ailang.toml); \\\n\tsaid=$$(sed -n 's/^export pure func relativityPin() -> string = \"\\(.*\\)\"/\\1/p' sim/protocol.ail); \\\n\tnav=$$(sed -n 's/^export pure func relativityPinNav() -> string = \"\\(.*\\)\"/\\1/p' sim/protocol.ail); \\\n\ttest -n \"$$pin\" && test \"$$pin\" = \"$$said\" && test \"$$nav\" = \"0.9.0\" && echo \"hello-pin: highest-minor hello reports relativity $$said = sim/ailang.toml pin; minors 4-5 keep $$nav\" || \\\n\t  { echo \"hello-pin FAILED: sim/ailang.toml pins relativity '$$pin', protocol.ail relativityPin() says '$$said', relativityPinNav() '$$nav' (must stay 0.9.0)\"; exit 1; }\n\n# M5.1b (AC4 system half): the protocol 2.3 tail of tests/fixtures/v2_session.ndjson.",
+      "exit_code": 0
+    },
+    {
+      "premise": "Companion file sizing",
+      "command": "wc -l sim/gr.ail sim/gr_test.ail sim/core.ail sim/protocol.ail sim/protocol_test.ail tests/test_physics.gd main.gd tools/gr_golden.gd demos/black_hole_visit.gd",
+      "output": "268 sim/gr.ail\n     205 sim/gr_test.ail\n    1012 sim/core.ail\n     888 sim/protocol.ail\n     641 sim/protocol_test.ail\n    1768 tests/test_physics.gd\n    1236 main.gd\n     487 tools/gr_golden.gd\n     233 demos/black_hole_visit.gd\n    6738 total",
+      "exit_code": 0
+    },
+    {
+      "premise": "Oracle placement and existing manifests",
+      "command": "rg -n 'oracle|geodesic_ref' tools/python-allowlist.txt | head -8\nhead -2 data/lens/lens_fwd.json\nhead -2 data/refs/bh_manifest.sha256",
+      "output": "5:#   oracle    an independent reference in a second language (catches bugs the VM and interpreter share)\n15:tests/offaxis_v11_equiv.py\toracle\n17:tools/check_companions.py\toracle\n18:tools/check_star_names.py\toracle\n22:tools/rng_ref.py\toracle\n23:tools/test_catalogue_bytes.py\toracle\n25:tools/check_trappist1.py\toracle\n26:tools/geodesic_ref.py\toracle\n{\"table\":\"lens_fwd\",\"format_version\":1,\"width\":2048,\"height\":256,\"channels\":2,\"dtype\":\"float32 little-endian\",\"layout\":\"row-major; row = observer radius; texel = (R, G) interleaved\",\"channel\":{\"R\":\"lensRegular = delta + ln tanh((psi - alpha_sh)/alpha_sh), rad\",\"G\":\"d delta/dx\"},\"column\":{\"coordinate\":\"x = ln((psi - alpha_sh)/alpha_sh)\",\"min\":-18.420680743952367,\"max\":\"ln((pi - alpha_sh)/alpha_sh) of the row; the last column is psi = pi exactly\"},\"row\":{\"coordinate\":\"y = ln(r - 1.5), r in r_s\",\"min\":-0.6931471805599453,\"max\":13.81550905796315,\"r_first\":2,\"r_last\":1000000},\"generator\":{\"function\":\"sunholo/relativity/geodesic.lensRegular (Binet RK4, analytic capture)\",\"h\":0.0025,\"G\":\"central difference of R in x (one-sided at the ends) + d/dx ln-tanh singular part\"},\"ailang\":\"v0.52.0\",\"package\":{\"name\":\"sunholo/relativity\",\"version\":\"0.10.0\",\"content_hash\":\"sha256:f94f46941690058a78c2c4050355da8c76bcb0ad5b4971805c1788bfa34d51c3\"},\"producer\":\"stapledons/sim/tools/lens_lut_main\",\"sha256\":{\"bin\":\"69cf728d8ba1e452fa7660e42f5b005f514952720d7afdec3d75bcc2ac56ed12\"}}\nd25140423052e1219d0a1b3f797aa2c6580d1a64b606635e998241fc9f248423  bh_bridge_r10_hover.png\n1182bafbbb4d6e48d655fb2cb672b1db7f9797b25a0a8bd7afb35721a9155267  bh_bridge_r3_orbit.png",
+      "exit_code": 0
+    },
+    {
+      "premise": "Controller-only git mutation in deps",
+      "command": "sed -n '28,32p' Makefile",
+      "output": "deps:              ## fetch locked AILANG packages into the cache; fail if the resolution would change\n\tcd sim && $(AILANG) lock\n\t@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file\n\tgit diff --exit-code -I '\"generated_at\"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc",
+      "exit_code": 0
+    },
+    {
+      "premise": "Claimed releases/minors are inherited controller evidence",
+      "command": "sed -n '268p' design_docs/planned/r2/kerr-black-holes.md\nsed -n '284p' design_docs/planned/r2/kerr-black-holes.md",
+      "output": "| V13 | Minor 13 is claimed in flight | `grep -n \"2.13\\|minor 13\" .ailang/state/sprints/sprint_R2-SIMILAR-S0.json; gh pr view 302 --json number,title,state` | the similar-worlds S0 sprint plans protocol 2.13 (\"Negotiated 2.13…\"); `gh` failed: `tls: failed to verify certificate` (sandboxed); **controller re-check outside the sandbox (2026-10-21):** `gh pr diff 302 | grep \"surfaceMinor() -> int\"` prints `+export pure func surfaceMinor() -> int = 13` (attended R2-STAR-SURFACES, open, paused for Mark's playtest), so both claims on minor 13 are real |\n| V29 | `sunholo/relativity` 0.13.0 is already taken (controller, outside the sandbox) | `git -C ~/dev/sunholo-data/ailang-packages show origin/main:packages/relativity/ailang.toml \\| grep -m1 version; ailang pkg versions sunholo/relativity \\| grep latest` | source `version = \"0.13.0\"` (ailang-packages #126, `7682890`: float64 domain bounds for seven generated properties, `hyper.sinh` saturation fix); registry latest `v0.12.0`. So 0.13.0 is unpublished but claimed; Kerr plans 0.14.0 unless the two ship together |",
+      "exit_code": 0
+    },
+    {
+      "premise": "History measurement",
+      "command": "for rev in 6ea0a945 112781a4 b891fe0a 77056645 1adccd6f 79545ea9 067243f0 64e5660a 598c866b 9fe354d5 ddc5582d; do\n  git show -s --format='%h %ad %s' --date=short \"$rev\"\n  git diff --numstat \"$rev^1\" \"$rev\" -- '*.ail' '*.gd' '*.gdshader' '*.gdshaderinc' '*.py' '*.sh' | awk '{a+=$1; d+=$2} END {printf \"source +%d -%d gross %d\\n\",a,d,a+d}'\ndone",
+      "output": "6ea0a945 2026-10-08 Merge pull request #158 from sunholo-data/plan/m3-black-holes\nsource +0 -0 gross 0\n112781a4 2026-10-08 Merge pull request #161 from sunholo-data/sprint/m3-wave1\nsource +555 -10 gross 565\nb891fe0a 2026-10-08 Merge pull request #163 from sunholo-data/sprint/m3-wave2a\nsource +1116 -0 gross 1116\n77056645 2026-10-08 Merge pull request #164 from sunholo-data/sprint/m3-wave2b\nsource +719 -36 gross 755\n1adccd6f 2026-10-08 Merge pull request #166 from sunholo-data/sprint/m3-wave3\nsource +1461 -16 gross 1477\n79545ea9 2026-10-08 Merge pull request #170 from sunholo-data/sprint/m3-6-demo\nsource +911 -15 gross 926\n067243f0 2026-10-19 Merge pull request #265 from sunholo-data/mission/stapledon-iter36-m46rr3\nsource +488 -0 gross 488\n64e5660a 2026-10-19 Merge pull request #252 from sunholo-data/mission/stapledon-iter34-7ij\nsource +1 -1 gross 2\n598c866b 2026-10-20 Merge pull request #283 from sunholo-data/mission/stapledon-iter40-7p\nsource +25 -1 gross 26\n9fe354d5 2026-10-20 Merge pull request #288 from sunholo-data/mission/stapledon-iter41-7q\nsource +0 -0 gross 0\nddc5582d 2026-10-20 Merge pull request #305 from sunholo-data/mission/stapledon-iter42-l9-s0\nsource +294 -0 gross 294",
+      "exit_code": 0
+    },
+    {
+      "premise": "Independent read-only oracle inspection; source retained with pinned values",
+      "command": "python3 -I - <<'PY'\nfrom pathlib import Path\nimport math\nr=Path('/Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0')\nfor word in ('kerr','schwarzschild'):\n print(word,'AILANG code occurrences',sum(p.read_text().lower().count(word) for p in r.glob('*.ail')))\ns=.9\nv=1+math.sqrt((1-s)*(1+s))\nprint('RK-1 exact from design formula',format(v,'.16g'),'printed',1.435890,'relative gap',abs(1.435890-v)/v)\nprint('psi vs sin psi at 3rs',math.pi/4,math.sin(math.pi/4))\nprint('Periodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)')\nPY",
+      "output": "kerr AILANG code occurrences 0\nschwarzschild AILANG code occurrences 21\nRK-1 exact from design formula 1.435889894354067 printed 1.43589 relative gap 7.35752325482288e-08\npsi vs sin psi at 3rs 0.7853981633974483 0.7071067811865475\nPeriodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)",
+      "exit_code": 0
+    }
+  ]
+}
