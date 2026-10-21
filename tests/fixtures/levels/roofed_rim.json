@@ -1,0 +1,111 @@
+{
+ "schema": "stapledons.level/1",
+ "id": "fixture_roofed_rim",
+ "version": 1,
+ "about": "R2-LEVELS level-eval-test: a roofed tier near its bow rim, far from the ship (z 300) so nothing else is hit: a 40 m floor disc, a 30 m roof disc with its underside at +24 m (arcs, D-104). From the stage the roof edge sits at atan(18.5 / 29) = 32.5 deg; it passes every threshold.",
+ "deck_z_m": 300.0,
+ "roof": {
+  "z_m": 324.0,
+  "radius_m": 30.0
+ },
+ "grid_m": 1.0,
+ "stages": [
+  {
+   "id": "rim",
+   "bounds_ship_m": [
+    -5,
+    5,
+    5,
+    15
+   ],
+   "surfaces": [
+    {
+     "id": "floor",
+     "z_m": 300.0
+    }
+   ],
+   "spawn": [
+    0,
+    10,
+    300
+   ],
+   "default_view": "bow",
+   "journey": true,
+   "ambience": "fixture",
+   "views": [
+    {
+     "id": "bow",
+     "kind": "walk",
+     "yaw_deg": 270.0,
+     "pitch_deg": -8.0,
+     "back_m": 9.0,
+     "rise_m": 5.5,
+     "captain_px": [
+      45,
+      82
+     ]
+    },
+    {
+     "id": "astern",
+     "kind": "walk",
+     "yaw_deg": 90.0,
+     "pitch_deg": -8.0,
+     "back_m": 9.0,
+     "rise_m": 5.5,
+     "captain_px": [
+      45,
+      82
+     ]
+    }
+   ],
+   "exits": []
+  }
+ ],
+ "routes": [],
+ "finds": [],
+ "set_pieces": [],
+ "lights": {},
+ "layers": {
+  "foliage": []
+ },
+ "pieces": [
+  {
+   "name": "floor",
+   "role": "surface",
+   "shape": "arc",
+   "center_xy": [
+    0,
+    0
+   ],
+   "r": [
+    0,
+    40
+   ],
+   "deg": [
+    0,
+    360
+   ],
+   "top_z": 300.0,
+   "thickness": 0.3
+  },
+  {
+   "name": "roof",
+   "role": "roof",
+   "shape": "arc",
+   "center_xy": [
+    0,
+    0
+   ],
+   "r": [
+    0,
+    30
+   ],
+   "deg": [
+    0,
+    360
+   ],
+   "top_z": 325.0,
+   "thickness": 1.0
+  }
+ ]
+}
