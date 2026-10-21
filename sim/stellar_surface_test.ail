@@ -136,9 +136,11 @@ export pure func checkActivity() -> bool {
   let ald = maxOver("aldebaran", "", 3927.0, 1.11, 31453988.0, 0, 40, 0);
   let flares = flareHours(0, 9600, 0);
   barnard <= 1 && trap >= 4 && acenB >= 6 && ald == 0
+  && activityOf("acen-b", "", 5231.0, 4.53).cycleYears == 8.2 && activityOf("acen-a", "", 5795.0, 4.3).cycleYears == 19.1
+  && activityOf("cat:x", "Gaia DR3 4472832130942575872", 3250.0, 5.16).cycleYears == 10.0 && activityOf("sun", "", 5772.0, 4.44).cycleYears == 11.0
   && flares > 150 && flares < 270 && length(flareAt(42, "trappist-1", 0.525, 3600.0 * 7.0 + 1500.0)) == 0
 }
-test "D-111 activity: Barnard's Star never more than one small spot; TRAPPIST-1 always spotted and flaring at ~0.525 a day (9,600 hours: 150-270; a flare lasts 20 min); alpha Cen B's groups at maximum; Aldebaran none" { checkActivity() }
+test "D-111 activity: Barnard's Star never more than one small spot; TRAPPIST-1 always spotted and flaring at ~0.525 a day (9,600 hours: 150-270; a flare lasts 20 min); alpha Cen B's groups at maximum; Aldebaran none; the cited cycles (B 8.2, A 19.1 tentative, Barnard 10, the Sun 11 years)" { checkActivity() }
 
 -- make strict: every check on the strict VM and the interpreter, plus the wire bytes' length.
 export pure func stellarSurfaceVm(k: int) -> string =

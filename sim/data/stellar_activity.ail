@@ -11,16 +11,19 @@ module stapledons/sim/data/stellar_activity
 export type Activity = { level: string, cycleYears: float, maxGroups: int, flaresPerDay: float, cite: string }
 
 -- The Sun: the 11-year cycle (Hathaway 2015, Living Rev. Sol. Phys. 12, 4); around 10 large groups
--- visible at a strong maximum. alpha Cen A and B: X-ray cycles of ~19 and ~8.1 years, A's maximum
--- weaker, B more spotted (Ayres 2015, AJ 149, 58). TRAPPIST-1: 42 flares in 80 days of K2 (Vida et
+-- visible at a strong maximum. alpha Cen B: an X-ray cycle of 8.2 +- 0.2 years, minimum-to-peak
+-- contrast ~4.5 (about half the Sun's); alpha Cen A: in a Maunder-minimum-like low state since 2005,
+-- read as an over-long cycle 19.1 +- 0.7 years with contrast 3.4, a tentative reading (Ayres 2014,
+-- "The Ups and Downs of Alpha Centauri", arXiv 1401.0847; the far-UV companion, Ayres 2015, AJ 149,
+-- 58, arXiv 1411.0038). TRAPPIST-1: 42 flares in 80 days of K2 (Vida et
 -- al. 2017, ApJ 841, 124) and large unocculted spots and faculae (Rackham et al. 2018, ApJ 853, 122).
--- Barnard's Star: an old, slowly rotating (P_rot ~145 d) M4 dwarf with low activity (Toledo-Padron et
--- al. 2019, MNRAS 488, 5145). Aldebaran: a K5 giant beyond the coronal dividing line (Linsky & Haisch
+-- Barnard's Star: an old, slowly rotating M4 dwarf with low activity, P_rot 145 +- 15 d and a magnetic
+-- cycle of 10 +- 2 years (Toledo-Padron et al. 2019, MNRAS 488, 5145, arXiv 1812.06712). Aldebaran: a K5 giant beyond the coronal dividing line (Linsky & Haisch
 -- 1979, ApJ 229, L27): no spots modelled.
 export pure func knownActivity() -> [(string, Activity)] = [
   ("sun", { level: "solar", cycleYears: 11.0, maxGroups: 10, flaresPerDay: 0.0, cite: "hathaway2015" }),
-  ("acen-a", { level: "solar", cycleYears: 19.0, maxGroups: 5, flaresPerDay: 0.0, cite: "ayres2015" }),
-  ("acen-b", { level: "solar", cycleYears: 8.1, maxGroups: 12, flaresPerDay: 0.0, cite: "ayres2015" }),
+  ("acen-a", { level: "solar", cycleYears: 19.1, maxGroups: 5, flaresPerDay: 0.0, cite: "ayres2014 (tentative)" }),
+  ("acen-b", { level: "solar", cycleYears: 8.2, maxGroups: 12, flaresPerDay: 0.0, cite: "ayres2014" }),
   ("trappist-1", { level: "active", cycleYears: 0.0, maxGroups: 7, flaresPerDay: 0.525, cite: "vida2017; rackham2018" }),
   ("aldebaran", { level: "none", cycleYears: 0.0, maxGroups: 0, flaresPerDay: 0.0, cite: "linskyhaisch1979" }),
   ("Gaia DR3 4472832130942575872", { level: "quiet", cycleYears: 10.0, maxGroups: 1, flaresPerDay: 0.0, cite: "toledopadron2019" })

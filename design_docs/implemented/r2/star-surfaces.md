@@ -1,6 +1,6 @@
 # R2-STAR-SURFACES: resolved stellar surfaces you can see when the disc is dimmed
 
-**Status:** **Approved** 2026-10-20 by Mark, attended ("yeah good continue"), with every recommendation: ledger D-105. Executing on `feat/star-surfaces`. Asked for in D-99. Plan review: one independent Sonnet pass scored the first draft 66/100 with seven blocking issues, all folded in (`.ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md`). Nothing is built. The spike in `spike/star_surfaces/` is throwaway: it is outside the export filter and not wired into `make`. Sprint plan: [star-surfaces-sprint.md](star-surfaces-sprint.md).
+**Status:** **Implemented** 2026-10-21: SS0-SS2 in PR #302, D-111 and SS3 in PR #315, landing (SS4) in this PR. Approved D-105; SS2 reviewed D-111 ("star surfaces look good ... aldebaran that looks great"), round 2 approved D-114 ("approved the star changes. the eclipses are nice"). Independent evaluation (Sonnet, read-only): 77/100 PASS, `.ailang/state/evaluations/eval_R2-STAR-SURFACES_round_1.json`; its two blockers (an uncommitted data correction, the landing) are resolved here. Report: [star-surfaces-report.md](star-surfaces-report.md). Sprint plan: [star-surfaces-sprint.md](star-surfaces-sprint.md).
 
 **Release:** R2. **Milestone:** the look of a star at a stop, and the eclipse framings of D-96.
 
@@ -38,9 +38,9 @@ Mark played SS2 (PR #302, merged): "star surfaces look good, although we dont se
 
 **A3. Active-star variety within each type's real range.** Activity is now per star, from cited data where it exists (`sim/data/stellar_activity.ail`):
 - the Sun: its real cycle (11 yr, cycle 25 from December 2019);
-- α Cen A: a ~19-year cycle with a weaker maximum; α Cen B: ~8.1 years and more spotted (Ayres 2015, AJ 149, 58);
+- α Cen A: in a Maunder-minimum-like low state since 2005, read as an over-long 19.1 ± 0.7-year cycle (tentative); α Cen B: 8.2 ± 0.2 years, more spotted (Ayres 2014, arXiv 1401.0847; far-UV companion Ayres 2015, AJ 149, 58);
 - TRAPPIST-1: active, large spots and frequent white-light flares (Vida et al. 2017, ApJ 841, 124: 42 flares in 80 days);
-- Barnard's Star: quiet, as it is (an old, slowly rotating M4 dwarf, P_rot ≈ 145 d; Toledo-Padrón et al. 2019, MNRAS 488, 5145): a rare small spot, no flares;
+- Barnard's Star: quiet, as it is (an old, slowly rotating M4 dwarf, P_rot 145 ± 15 d, a 10 ± 2-year cycle; Toledo-Padrón et al. 2019, MNRAS 488, 5145): a rare small spot, no flares;
 - other catalogue stars: assumed by type (FGK solar-like; M dwarfs moderate; hotter than 7,500 K no spots).
 Spots come in groups (a leader and followers, as sunspot groups do) and, at activity maximum, up to the star's cited maximum group count.
 

@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-STAR-SURFACES",
-  "status": "in_progress",
+  "status": "completed",
   "approved": {
     "ledger": "D-105",
     "date": "2026-10-20",
@@ -10,8 +10,8 @@
     "publish": "sunholo/celestial 0.5.0 under Mark's standing approval to publish sunholo packages, when SS0 is green (coordinator, 2026-10-20)"
   },
   "created": "2026-10-20",
-  "design_doc": "design_docs/planned/r2/star-surfaces.md",
-  "sprint_plan": "design_docs/planned/r2/star-surfaces-sprint.md",
+  "design_doc": "design_docs/implemented/r2/star-surfaces.md",
+  "sprint_plan": "design_docs/implemented/r2/star-surfaces-sprint.md",
   "branch": "feat/star-surfaces (execution); this plan on design/star-surfaces",
   "origin": "Mark, attended 2026-10-20 (ledger D-99): \"another strand is we could have more impressive textures for the stars/sun - we are dimming them anyway, so we can see structure?\"",
   "external_dependencies": [
@@ -160,7 +160,7 @@
       "description": "corona (Baumbach), H-alpha chromosphere and prominences with lineColour (black outside 360-830 nm), occlusion from SystemView, _displayed_peak = visible peak blended by the uncovered fraction (global k unchanged), a real eclipse sim state, captures",
       "estimated_loc": 250,
       "days": 1.5,
-      "passes": false,
+      "passes": true,
       "acceptance": [
         "AC9",
         "AC10",
@@ -170,17 +170,18 @@
     {
       "id": "D111_SHOW_MORE",
       "description": "A1 telescope, A2 close pass, A3 activity variety and flares (design doc, D-111 amendment)",
-      "passes": false
+      "passes": true
     },
     {
       "id": "SS4_LANDING",
       "description": "Archive entry (attended), inspector labels, report, changelog, design-repo PR merged, rig make test, independent evaluation; merge blocked until sunholo/celestial 0.5.0 is published and locked",
       "estimated_loc": 150,
       "days": 0.5,
-      "passes": false,
+      "passes": true,
       "acceptance": [
         "AC13"
-      ]
+      ],
+      "notes": "landed 2026-10-21: evaluation 77/100 PASS, docs moved, report, changelog, design-repo roadmap PR; Archive entry and inspector labels moved to follow_ups (attended canon text)"
     }
   ],
   "acceptance_criteria_source": "design_docs/planned/r2/star-surfaces.md ## Acceptance criteria (AC1-AC13)",
@@ -199,8 +200,31 @@
     "path": "spike/star_surfaces/ (throwaway; deleted at SS2)",
     "frames": "gs://stapledons-voyage-assets/refs/star_surfaces/"
   },
-  "evaluations": [],
-  "follow_ups": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "model": "claude-sonnet-5-5 (claude -p, read-only)",
+      "score": 77,
+      "verdict": "PASS",
+      "file": ".ailang/state/evaluations/eval_R2-STAR-SURFACES_round_1.json",
+      "blocking_resolved": [
+        "the activity data correction (Ayres 2014: B 8.2 yr, A 19.1 yr tentative) committed with its gates re-run",
+        "landing done"
+      ],
+      "non_blocking_addressed": [
+        "telescope scale now unit-tested (TelescopeView.scale_for)",
+        "the cited cycle lengths are pinned in checkActivity"
+      ]
+    }
+  ],
+  "follow_ups": [
+    "Archive entry explaining what the player sees (OQ7; canon text, attended with Mark)",
+    "inspector labels from surface.prov ('cells: chosen pattern, real size')",
+    "AC8 per-stop texel check (the fader's peak is tested through the peak factor and G-SS-7 only)",
+    "in a real sim eclipse the corona needs the eye meter to adapt (the fader never brightens); authored eclipse framings belong to D-96's doc",
+    "Planets.body_basis is not orthonormal for a pole on the NCP (stars use StarSurface.basis_of; planets with such a pole may be affected)",
+    "bench on Metal reports no GPU time; the +0.039 ms is Vulkan"
+  ],
   "citations": [
     {
       "value": "V-band quadratic LD, 508 rows",
@@ -272,6 +296,26 @@
       "value": "M-dwarf spot ratio 0.86 (assumed)",
       "source": "inside the range Rackham et al. 2018, ApJ 853, 122 consider",
       "verified": "labelled assumed"
+    },
+    {
+      "value": "alpha Cen B cycle 8.2 +- 0.2 yr (contrast ~4.5); alpha Cen A 19.1 +- 0.7 yr, tentative (Maunder-like low state since 2005)",
+      "source": "Ayres 2014, arXiv 1401.0847 (The Ups and Downs of Alpha Centauri); far-UV companion Ayres 2015, AJ 149, 58",
+      "verified": "abstract read 2026-10-21; B's 8.1 yr in the first D-111 commit corrected to 8.2"
+    },
+    {
+      "value": "Barnard's Star P_rot 145 +- 15 d, cycle 10 +- 2 yr, low activity",
+      "source": "Toledo-Padron et al. 2019, MNRAS 488, 5145, arXiv 1812.06712",
+      "verified": "abstract read 2026-10-21"
+    },
+    {
+      "value": "TRAPPIST-1 0.525 flares a day (42 in 80 days of K2)",
+      "source": "Vida et al. 2017, ApJ 841, 124",
+      "verified": "not opened"
+    },
+    {
+      "value": "white-light flare kernel ~9,000 K",
+      "source": "Kowalski et al. 2013, ApJS 207, 15",
+      "verified": "not opened"
     }
   ],
   "plan_review": {
@@ -301,5 +345,6 @@
     ],
     "branch": "feat/star-surfaces-2",
     "pause": "Mark plays the dev build"
-  }
+  },
+  "ac12_frames": "published to gs://stapledons-voyage-assets/refs/star_surfaces/{ss2,d111}/ (the d111 set supersedes the planned after/ prefix)"
 }
