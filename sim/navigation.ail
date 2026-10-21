@@ -27,9 +27,10 @@ import pkg/sunholo/relativity/kinematics (betaOf, rapidityOfBeta)
 import pkg/sunholo/relativity/optics (doppler)
 import ./celestial (System, BodyState, bodyAt, jdAt, lyKm)
 import ./data/sol (Planet, Moon, Ring, rings, planets, sun)
-import ./stops (starStopKm, planetStopKm, denseRingTau)
-import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA, catalogueId as alphaCatalogueId)
-import ./destination_stars (isDestinationStar, destinationBodyAt, destinationRadiusKm, destinationLy, destinationIds, destinationCatalogueId)
+import ./stops (starStopKm, starStopKmFor, planetStopKm, denseRingTau)
+import pkg/sunholo/celestial/stellar (loggFromMassRadius)
+import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA, catalogueId as alphaCatalogueId, stellarValue as alphaValue)
+import ./destination_stars (isDestinationStar, destinationBodyAt, destinationRadiusKm, destinationLy, destinationIds, destinationCatalogueId, destinationValue)
 import ./trappist1 (isTrappistPlanet, trappistPlanetAt, trappistPlanetIds, planetRadiusKm, hostId as trappistHostId)
 
 -- ------------------------------------------------------------ intent and result
@@ -85,12 +86,19 @@ export pure func safetyMinKm(radiusKm: float, bubbleKm: float) -> float = 1.1 * 
 -- dense rings. R_sun and R_earth are this data's Sun and Earth radii.
 export pure func earthRefKm() -> float = navFold(\acc p. if p.id == "earth" then p.radiusKm else acc, 0.0, planets())
 export pure func sunRefKm() -> float = (sun()).radiusKm
+-- D-111 A2: a stop star's Teff and log g (cited data: alpha Cen's masses and radii, the destination
+-- stars' log g or mass and radius), for the close pass.
+export pure func stopTeff(id: string) -> float = if id == "acen-a" || id == "acen-b" then alphaValue(id, "teff_k") else destinationValue(id, "teff_k")
+export pure func stopLogg(id: string) -> float =
+  if id == "acen-a" || id == "acen-b" then loggFromMassRadius(alphaValue(id, "mass_sun"), alphaValue(id, "radius_sun"))
+  else if destinationValue(id, "logg") > 0.0 then destinationValue(id, "logg")
+  else loggFromMassRadius(destinationValue(id, "mass_sun"), destinationValue(id, "radius_sun"))
 export pure func isStarStop(id: string) -> bool = id == "sun" || id == "acen-a" || id == "acen-b" || isDestinationStar(id)
 -- The outer edge of a host's dense rings (optical depth >= denseRingTau), 0 if none.
 export pure func denseRingKm(host: string) -> float =
   navFold(\acc r. if r.host == host then navFold(\m b. if b.tau >= denseRingTau() && b.rOut > m then b.rOut else m, acc, r.bands) else acc, 0.0, rings())
 export pure func defaultStopKm(id: string, radiusKm: float, bubbleKm: float) -> float =
-  if isStarStop(id) then starStopKm(radiusKm, sunRefKm())
+  if isStarStop(id) then (if id == "sun" then starStopKm(radiusKm, sunRefKm()) else starStopKmFor(radiusKm, sunRefKm(), stopTeff(id), stopLogg(id)))
   else planetStopKm(radiusKm, earthRefKm(), denseRingKm(id), safetyMinKm(radiusKm, bubbleKm))
 
 -- ------------------------------------------------------------ bodies

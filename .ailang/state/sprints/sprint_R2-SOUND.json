@@ -26,6 +26,11 @@
       "date": "2026-10-20",
       "event": "paused",
       "note": "S0a and S0b built; sound board for Mark (refs/sound/s0b/, build/sound_review/)."
+    },
+    {
+      "date": "2026-10-21",
+      "event": "rework",
+      "note": "D-108 notes: reworked room_bridge, console_wake/sleep, drive_boost/silent/brake, arrived, archive_ready; new spire_drift and spire_drift_bad following archive_degradation (Memory Health not emitted by the sim yet: layers silent in game until Archive phase 2). Legacy noise found to be an affine ramp; new white kind for reworked recipes. Budget decision needed before S1 (11.4 MB of 12 MB)."
     }
   ],
   "implements": [
@@ -296,5 +301,14 @@
       "answer": "accepted as recommended (D-101)"
     }
   ],
-  "follow_ups": []
+  "follow_ups": [
+    {
+      "id": "archive-memory-health",
+      "what": "Sim field archive.memory_health (pure, 0..100, design table) so the spire degradation layer moves in game; Archive phase 2, needs Mark's go"
+    },
+    {
+      "id": "audio-budget",
+      "what": "WAVs at 11.4 MB of the 12 MB git budget; zip growth over 6 MB: import assets/audio with QOA or render long loops at 24 kHz, before S1"
+    }
+  ]
 }

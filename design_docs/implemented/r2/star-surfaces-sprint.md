@@ -2,7 +2,7 @@
 
 **Design doc:** [star-surfaces.md](star-surfaces.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-STAR-SURFACES.json`
-**Status:** **Approved** (D-105, 2026-10-20, every recommendation). Executing on `feat/star-surfaces`. The spike in `spike/star_surfaces/` is throwaway and is deleted at SS2.
+**Status:** **Completed** 2026-10-21 (D-105, D-111, D-114). SS-1 to SS3 and the D-111 amendment built; SS4 landed with an independent evaluation of 77/100 PASS. The Archive entry and the inspector labels are follow-ups (canon text is attended work).
 **Branches:** this plan is on `design/star-surfaces` (from `origin/main` 5addab05); execution runs on `feat/star-surfaces` from `origin/main` after approval.
 **AILANG:** v0.54.14 (pinned). New AILANG code: the `stellar` module in `sunholo/celestial` (in a scratch clone of `sunholo-data/ailang-packages`) and the sim's star data and protocol section. Syntax gate: `ailang check --package` beside `ailang test --package` (CLAUDE.md: only `check` enforces STRICT_FALLBACK_001). Registry reuse: `sunholo/celestial` 0.4.0 (`reflect` is the pattern: probe → `tests/test_physics.gd`); `sunholo/relativity` 0.12.0 unchanged (Doppler and the blackbody LUT are already mirrored in `Blackbody`).
 **Estimate:** about 1,600 LOC, **8.5 working days**, excluding Mark's review at the SS2 pause and the publish go at SS0. That is about 190 LOC a day, under the recent attended rate of about 300.

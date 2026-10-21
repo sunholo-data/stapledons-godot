@@ -22,7 +22,8 @@ import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
 import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
-import ./stops (starStopKm)
+import ./stops (starStopKm, starStopKmFor)
+import pkg/sunholo/celestial/stellar (loggFromMassRadius)
 import ./crew (CrewState, CrewCmd, CrewLine, CrewHold, CrewRefusal, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
 import ./crew_names (nameCrew, nameCrewFit, nameOf)
 import ./crew_auto (autoStep, setPreset, resume)
@@ -301,7 +302,7 @@ pure func planStarIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pend
   -- D-58: in free navigation (stop_rule 54, standoff_au > 0) a star whose catalogue row came with
   -- the plan is made finite with an inferred radius and stops at its D-54 distance instead.
   let cat = if p.stopRule == 54.0 && p.standoffAu > 0.0 && rq.target.id != homeId() then (match rq.star { Some(si) => inferStar(rq.target.id, si.name, rq.target.pos, si.v, si.teff), None => None }) else None;
-  let dist = d - (match cat { Some(c) => starStopKm(c.radiusKm, sunRefKm()) / lyKm(), None => standoffFor(p.standoffAu, rq.target.id) });
+  let dist = d - (match cat { Some(c) => starStopKmFor(c.radiusKm, sunRefKm(), c.teff, loggFromMassRadius(c.radiusKm / 695700.0, c.radiusKm / 695700.0)) / lyKm(), None => standoffFor(p.standoffAu, rq.target.id) });
   let keep = \x. match cat { Some(c) => {x | catStars: remember(c, x.catStars)}, None => x };
   let reachable = d > 0.0 && d - d == 0.0 && dist > 0.0;
   match rq.flipG {

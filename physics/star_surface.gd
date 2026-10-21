@@ -238,6 +238,54 @@ static func basis_of(pole_gal: Dictionary) -> Basis:
 	return Basis(gw.call(q), gw.call(y), gw.call(p))
 
 
+## SS3: up to 6 prominences at the limb in star-frame directions, heights 0.015-0.15 stellar radii
+## (the range of the design's §D1; their places are chosen from the surface's salt).
+static func prominences(salt: int) -> PackedVector4Array:
+	var out := PackedVector4Array()
+	var n := 3 + int(pcg3d(salt & M32, 0x50524F4D, 1)[0] % 4)
+	for k in n:
+		var h := pcg3d(salt & M32, 0x50524F4D, k + 2)
+		var lat := (float(h[0]) / 4294967296.0 - 0.5) * PI * 0.8
+		var lon := float(h[1]) / 4294967296.0 * TAU
+		var height := 0.015 + 0.135 * float(h[2]) / 4294967296.0
+		out.append(Vector4(cos(lat) * cos(lon), cos(lat) * sin(lon), sin(lat), height))
+	while out.size() < 6:
+		out.append(Vector4.ZERO)
+	return out
+
+
+## SS3: H-alpha (656.28 nm, sunholo/celestial stellar hAlphaNm) seen at Doppler factor d: the line
+## lands at 656.28 / d (lineObservedNm) and has the CIE colour of a monochromatic line there
+## (relativity's cmf, mirrored by Blackbody.cmf), normalised to unit luminance; black outside
+## 360-830 nm (lineVisible).
+static func h_alpha_rgb(d: float) -> Vector3:
+	var lam := 656.28 / d
+	if lam < 360.0 or lam > 830.0:
+		return Vector3.ZERO
+	var c := Blackbody.cmf(lam)
+	if c.y <= 0.0:
+		return Vector3.ZERO
+	# out of the sRGB gamut (a spectral line is): clip negatives, then renormalise to unit luminance
+	var rgb := Blackbody.xyz_to_linear_srgb(c.x / c.y, 1.0, c.z / c.y).clamp(Vector3.ZERO, Vector3(1e6, 1e6, 1e6))
+	var y := 0.2126 * rgb.x + 0.7152 * rgb.y + 0.0722 * rgb.z
+	return rgb / y if y > 0.0 else Vector3.ZERO
+
+
+## SS3: the fraction of a disc of angular radius ra covered by a disc of angular radius rb whose
+## centre is s away (small-angle circles: the lens area of two circles over the first's area).
+static func covered_fraction(ra: float, rb: float, s: float) -> float:
+	if s >= ra + rb:
+		return 0.0
+	if s <= rb - ra:
+		return 1.0
+	if s <= ra - rb:
+		return (rb * rb) / (ra * ra)
+	var a1 := ra * ra * acos(clampf((s * s + ra * ra - rb * rb) / (2.0 * s * ra), -1.0, 1.0))
+	var a2 := rb * rb * acos(clampf((s * s + rb * rb - ra * ra) / (2.0 * s * rb), -1.0, 1.0))
+	var a3 := 0.5 * sqrt(maxf(0.0, (-s + ra + rb) * (s + ra - rb) * (s - ra + rb) * (s + ra + rb)))
+	return clampf((a1 + a2 - a3) / (PI * ra * ra), 0.0, 1.0)
+
+
 ## The surface record's spots as star-frame unit vectors.
 static func spots_of(surface: Dictionary) -> Array:
 	var out := []

@@ -65,6 +65,9 @@ var confirm_mode := "hold"
 ## R1-SHIP-UI U3: the bridge consoles (demos/ship_consoles.gd); every captain decision goes
 ## through consoles.use(station, action).
 var consoles: ShipConsoles
+## R2-STAR-SURFACES D-111 A1: the helm's telescope (ui/telescope_view.gd), T at the navigation console.
+var telescope: TelescopeView
+var _telescope_layer: CanvasLayer
 ## Tests: Esc's last resort (main menu or quit) can be switched off.
 var escape_exits := true
 ## R2-CAMERA D7: mouse look is the developer free camera's only (F8 / --free-camera, command-line
@@ -393,7 +396,34 @@ func set_lighting(profile:String)->void:
 	Lighting.apply(lighting,profile)
 func lighting_manifest()->Dictionary:
 	return Lighting.manifest(lighting)
+## D-111 A1: true at the navigation console's close-up (where the telescope belongs).
+func at_helm_closeup() -> bool:
+	return camera_mode == "console" and consoles != null and consoles.focused == "navigation"
+
+
+## Show or hide the telescope; returns whether it is now shown. It refreshes every frame while shown
+## and hides itself when the captain leaves the helm's close-up.
+func toggle_telescope(on: Variant = null) -> bool:
+	# T cycles: off -> whole disc -> close -> off
+	var want: bool = (telescope == null or not telescope.visible or telescope.level == 1) if on == null else bool(on)
+	if on == null and telescope != null and telescope.visible and telescope.level == 1:
+		telescope.level = 2
+	elif want and (telescope == null or not telescope.visible):
+		if telescope != null:telescope.level = 1
+	if want and telescope == null:
+		_telescope_layer = CanvasLayer.new();_telescope_layer.layer = 13;add_child(_telescope_layer)
+		telescope = TelescopeView.new();telescope.sv = sky.system_view;telescope.view_fov_deg = sky.camera.fov
+		telescope.position = Vector2(24, 140);_telescope_layer.add_child(telescope)
+	if telescope != null:
+		telescope.visible = want
+		if want:telescope.refresh(sky_world)
+	return want
+
+
 func _process(delta: float) -> void:
+	if telescope != null and telescope.visible:
+		if at_helm_closeup() or telescope.get_meta("pinned", false):telescope.refresh(sky_world)
+		else:telescope.visible = false
 	var uploaded:Dictionary=benchmark.upload.poll()
 	if not uploaded.is_empty():
 		caption=uploaded.status
@@ -459,6 +489,8 @@ func _process(delta: float) -> void:
 	_update_dwell(delta)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_T and at_helm_closeup():
+		toggle_telescope();get_viewport().set_input_as_handled();return
 	if UiScale.handle(get_window(),event):
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
@@ -864,7 +896,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.SURFACE_MINOR # R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.ARCHIVE_MINOR # D-113: 2.15 (the Archive's Memory Health for the spire's sound); R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().

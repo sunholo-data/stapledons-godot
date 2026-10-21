@@ -1,6 +1,6 @@
 # R2-STAR-SURFACES: resolved stellar surfaces you can see when the disc is dimmed
 
-**Status:** **Approved** 2026-10-20 by Mark, attended ("yeah good continue"), with every recommendation: ledger D-105. Executing on `feat/star-surfaces`. Asked for in D-99. Plan review: one independent Sonnet pass scored the first draft 66/100 with seven blocking issues, all folded in (`.ailang/state/evaluations/eval_R2-STAR-SURFACES_plan_round_1.md`). Nothing is built. The spike in `spike/star_surfaces/` is throwaway: it is outside the export filter and not wired into `make`. Sprint plan: [star-surfaces-sprint.md](star-surfaces-sprint.md).
+**Status:** **Implemented** 2026-10-21: SS0-SS2 in PR #302, D-111 and SS3 in PR #315, landing (SS4) in this PR. Approved D-105; SS2 reviewed D-111 ("star surfaces look good ... aldebaran that looks great"), round 2 approved D-114 ("approved the star changes. the eclipses are nice"). Independent evaluation (Sonnet, read-only): 77/100 PASS, `.ailang/state/evaluations/eval_R2-STAR-SURFACES_round_1.json`; its two blockers (an uncommitted data correction, the landing) are resolved here. Report: [star-surfaces-report.md](star-surfaces-report.md). Sprint plan: [star-surfaces-sprint.md](star-surfaces-sprint.md).
 
 **Release:** R2. **Milestone:** the look of a star at a stop, and the eclipse framings of D-96.
 
@@ -27,6 +27,28 @@
 - No AILANG change. No change to `sunholo/relativity`.
 
 **Estimated LOC:** about 1,600 in all: about 500 AILANG (package module and tests, sim data, protocol), about 550 GDScript and shader (renderer, CPU mirror, fader), about 550 tests, tools and goldens. The sprint plan schedules 8.5 days.
+
+## D-111 amendment (2026-10-21): show more, honestly
+
+Mark played SS2 (PR #302, merged): "star surfaces look good, although we dont see much difference in game aside aldebaran that looks great - centauri and barnards star look unchanged from before". He chose all three honest ways to show more; the OQ1 resolution gate stays. Executed with SS3 on `feat/star-surfaces-2`, up to the next pause (Mark plays it).
+
+**A1. Telescope (navigation console close-up).** At the helm's close-up, T toggles a labelled panel ("telescope ×N") that shows the current stop's star through its own camera at a narrow field, with true magnification N = (the Bow view's vertical field) / (the telescope's). It is self-contained (`ui/telescope_view.gd`, its own SubViewport and world): the star's disc is drawn with the sky's material, copied each frame, and the gate and the normaliser use the telescope's pixel scale, so granules, spots and faculae resolve wherever the magnified disc allows. The Bow view stays true-size. N is chosen so the disc spans about 70 % of the panel, between ×2 and ×2,000.
+
+**A2. A close pass for Sun-like stars.** The D-54 star curve (half-angle tan = tan 5° √(R/R☉)) stays for giants, M dwarfs, hot stars and the Sun. Main-sequence F, G and K stars (3,900-7,500 K, log g ≥ 4) stop at twice the curve's tangent (a "close pass"): α Cen A goes from 11.1° to 21.8°, α Cen B from 9.7° to 19.2°. Physical sense: 0.03 AU from α Cen A is ~6 R★ above the photosphere, outside its corona's dense base; the bubble's photon load at that distance is the same physics the stop already uses (HB, the ISM glow model), scaled by flux. No replay uses free-navigation stops (`stop_rule` 54 appears in none of `tests/replays`), so none is re-recorded; `sim/stops_test.ail` gains the close-pass checks and keeps the D-54 ones.
+
+**A3. Active-star variety within each type's real range.** Activity is now per star, from cited data where it exists (`sim/data/stellar_activity.ail`):
+- the Sun: its real cycle (11 yr, cycle 25 from December 2019);
+- α Cen A: in a Maunder-minimum-like low state since 2005, read as an over-long 19.1 ± 0.7-year cycle (tentative); α Cen B: 8.2 ± 0.2 years, more spotted (Ayres 2014, arXiv 1401.0847; far-UV companion Ayres 2015, AJ 149, 58);
+- TRAPPIST-1: active, large spots and frequent white-light flares (Vida et al. 2017, ApJ 841, 124: 42 flares in 80 days);
+- Barnard's Star: quiet, as it is (an old, slowly rotating M4 dwarf, P_rot 145 ± 15 d, a 10 ± 2-year cycle; Toledo-Padrón et al. 2019, MNRAS 488, 5145): a rare small spot, no flares;
+- other catalogue stars: assumed by type (FGK solar-like; M dwarfs moderate; hotter than 7,500 K no spots).
+Spots come in groups (a leader and followers, as sunspot groups do) and, at activity maximum, up to the star's cited maximum group count.
+
+**Flares: pulled in (visual only).** OQ6 deferred flares to land with sound. A white-light flare is a small, hot kernel (~9,000 K blackbody; Kowalski et al. 2013, ApJS 207, 15) lasting minutes, which the spot machinery already draws, so it costs almost nothing. TRAPPIST-1's rate (0.53 a day) makes one rare at a stop; the sound stays with the sound sprint. The total light stays fixed (OQ3).
+
+**SS3 (eclipse layers) as planned**, with the corona drawn only while a body covers part of the photosphere (so every unoccluded star, and every golden, is unchanged), the visible-peak fader rule, Hα prominences coloured by relativity's `cmf` at λ/D, and the OQ8 bloom: the last sliver of photosphere becomes a point source through the starfield's existing PSF.
+
+**No package change.** The new numbers are star data (cited in `sim/data`), the close pass is the sim's existing stop geometry, and the telescope is optics (a field ratio). No new spec check value.
 
 ## Game vision alignment
 

@@ -32,6 +32,7 @@ import ./protocol_interlude (cruiseStop, encodeCruiseSectionAt)
 import ./gr (GrView, grView, sgrAWith, sgrAMassMsun)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
+import ./archive_health (memoryHealthOf)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
   AiView, OpenView, aiView, isCancelReason, isSha256Hex, defaultAiMaxOpen, defaultAiTtlTicks)
 import ./celestial (SystemView, BodyView, solSystem, systemAt, jdAt, defaultEpochJd, lyKm)
@@ -40,6 +41,7 @@ import ./sync_orbit (syncOrbitOf)
 import ./navigation (BodyReq, NavPlan, Pass, Timing)
 import ./ism (Impact)
 import ./stellar_surface (Surface, Spot, surfaceOf, lightAgeOf, loggInferred, loggAssumed)
+import ./data/stellar_activity (activityOf)
 import pkg/sunholo/celestial/stellar (solarLogg)
 
 export type Override = { name: string, value: float }
@@ -74,7 +76,8 @@ export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= surfaceMinor() then {helloMsg() | minor: surfaceMinor(), relativity: relativityPin()}
+  if want >= archiveMinor() then {helloMsg() | minor: archiveMinor(), relativity: relativityPin()}
+  else if want >= surfaceMinor() then {helloMsg() | minor: surfaceMinor(), relativity: relativityPin()}
   else if want >= homeTiersMinor() then {helloMsg() | minor: homeTiersMinor(), relativity: relativityPin()}
   else if want >= consoleMinor() then {helloMsg() | minor: consoleMinor(), relativity: relativityPin()}
   else if want >= interludeMinor() then {helloMsg() | minor: interludeMinor(), relativity: relativityPin()}
@@ -146,7 +149,20 @@ export pure func homeTiersMinor() -> int = 12
 -- a finite star in the system a 2.13 stream equals 2.12's but for the hello's minor; below 13 the
 -- system section is byte for byte the 2.12 one.
 export pure func surfaceMinor() -> int = 13
-pure func sessionMinor(want: int) -> int = if want >= surfaceMinor() then surfaceMinor() else if want >= homeTiersMinor() then homeTiersMinor() else if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.15 (ledger D-113; R2-SOUND D-108): the Archive's hidden Memory Health. Full states and
+-- every tick on which it changes carry `archive` {memory_health} (sim/archive_health.ail: 100, -1 per
+-- decade of ship time, -10 per entry into a black hole's zone). It is derived from the ship's own time
+-- and the legacy log, so it adds no state and no replay input. Minor 14 is held for R2-SIMILAR-S0 S0.2
+-- (design_docs/planned/r2/semantic-memory-s0.md); until S0.2 lands a 2.15 stream is the 2.13 one plus
+-- this section. Below 15 every stream is byte for byte unchanged.
+export pure func archiveMinor() -> int = surfaceMinor() + 2
+pure func archiveSection(w: World) -> string = f("archive", obj([f("memory_health", intToStr(memoryHealthOf(w.ship.motion.tau, w.cq.log)))]))
+pure func archiveFull(s: Session, w: World) -> [string] = if s.minor >= archiveMinor() then [archiveSection(w)] else []
+pure func withArchiveHealth(s: Session, before: World, after: World, x: Extras) -> Extras =
+  if s.minor < archiveMinor() then x
+  else if memoryHealthOf(before.ship.motion.tau, before.cq.log) == memoryHealthOf(after.ship.motion.tau, after.cq.log) then x
+  else {x | tail: x.tail ++ [archiveSection(after)]}
+pure func sessionMinor(want: int) -> int = if want >= archiveMinor() then archiveMinor() else if want >= surfaceMinor() then surfaceMinor() else if want >= homeTiersMinor() then homeTiersMinor() else if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -428,11 +444,14 @@ pure func starParamsOf(w: World, b: BodyView) -> Option[StarParams] =
   }
 pure func withSurface(w: World, b: BodyView, o: string) -> string =
   match starParamsOf(w, b) {
-    Some(sp) => withField(o, f("surface", surfaceObj(surfaceOf(b.id, sp.teff, sp.logg, sp.prov, b.radiusKm, w.seed, w.ship.motion.t, w.params.epochJd, lightAgeOf(b))))),
+    Some(sp) => {
+      let catId = (if startsWith(b.id, "cat:") then substring(b.id, 4, length(b.id)) else destinationCatalogueId(b.id));
+      withField(o, f("surface", surfaceObj(surfaceOf(b.id, sp.teff, sp.logg, sp.prov, b.radiusKm, w.seed, w.ship.motion.t, w.params.epochJd, lightAgeOf(b), activityOf(b.id, catId, sp.teff, sp.logg)))))
+    },
     None => o
   }
 pure func spotObj(sp: Spot) -> string =
-  obj([f("lat_deg", num(sp.latDeg)), f("lon_deg", num(sp.lonDeg)), f("radius_rad", num(sp.radiusRad)), f("umbra_k", num(sp.umbraK)), f("penumbra_k", num(sp.penumbraK))])
+  obj([f("lat_deg", num(sp.latDeg)), f("lon_deg", num(sp.lonDeg)), f("radius_rad", num(sp.radiusRad)), f("umbra_k", num(sp.umbraK)), f("penumbra_k", num(sp.penumbraK)), f("kind", q(sp.kind))])
 pure func surfaceObj(s: Surface) -> string =
   obj([f("teff_k", num(s.teffK)), f("logg", num(s.logg)),
     f("ld", obj([f("law", q("quadratic")), f("a", num(s.ldA)), f("b", num(s.ldB)), f("source", q(s.ldSource)), f("teff_used", num(s.ldTeffUsed)), f("logg_used", num(s.ldLoggUsed))])),
@@ -905,7 +924,7 @@ export pure func serve(s: Session, line: string) -> Served =
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
                 events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ cruiseFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ cruiseFull(s, w) ++ archiveFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
               }
               }
             }
@@ -924,7 +943,7 @@ export pure func serve(s: Session, line: string) -> Served =
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withCruise(s, w, next, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next))))))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withArchiveHealth(s, w, next, withCruise(s, w, next, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next)))))))) else encodeState(state) }
         }
       }
     }
