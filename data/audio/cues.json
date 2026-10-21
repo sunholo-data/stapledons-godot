@@ -1,0 +1,432 @@
+{
+ "schema": "stapledons.audio.cues/1",
+ "about": "R2-SOUND (design_docs/planned/r2/sound.md \u00a7D1): one row per cue. volume_db sets the level; bands (RMS dBFS over the active span, at default settings) are what make sound-check holds each bus to; a row's own band overrides its bus's.",
+ "bands": {
+  "Ambience": [
+   -38,
+   -30
+  ],
+  "Effects": [
+   -28,
+   -20
+  ],
+  "Instruments": [
+   -32,
+   -22
+  ],
+  "UI": [
+   -32,
+   -26
+  ]
+ },
+ "peak_max_dbfs": -3.0,
+ "cues": [
+  {
+   "id": "spire_hum",
+   "trigger": {
+    "kind": "game",
+    "name": "level_bridge",
+    "stop_on": "level_none"
+   },
+   "streams": [
+    "spire_hum"
+   ],
+   "bus": "Ambience",
+   "volume_db": -24.0,
+   "visual": "ambient: the spire is always there; its light is on screen",
+   "about": "The spire's constant hum (ship-structure.md), at the mast from S1.",
+   "loop": true,
+   "band": [
+    -40,
+    -32
+   ],
+   "name": "The spire's hum",
+   "when": "Always, on the bridge (from S1 it sits at the mast).",
+   "listen_for": "It should be felt more than heard: low, slow, with a gentle beat every 4 s. Is it calm enough to forget after a minute, yet missed if it stopped?"
+  },
+  {
+   "id": "spire_drift",
+   "trigger": {
+    "kind": "game",
+    "name": "level_bridge",
+    "stop_on": "level_none"
+   },
+   "streams": [
+    "spire_drift"
+   ],
+   "bus": "Ambience",
+   "loop": true,
+   "volume_db": -26.0,
+   "param": {
+    "name": "archive_degradation",
+    "points": [
+     [
+      0.0,
+      -80.0
+     ],
+     [
+      0.15,
+      -30.0
+     ],
+     [
+      0.5,
+      -8.0
+     ],
+     [
+      1.0,
+      -4.0
+     ]
+    ]
+   },
+   "band": [
+    -48,
+    -30
+   ],
+   "visual": "ambient: the Archive's state is hidden by design (Memory Health is not a visible metric)",
+   "about": "The spire's longer beat with a slight grit, under the hum; it follows archive_degradation = 1 - Memory Health/100 (D-108). Silent while the sim does not emit Memory Health.",
+   "name": "The spire's degradation layer (mid)",
+   "when": "Always on the bridge, louder as the Archive's Memory Health falls (silent while it is intact).",
+   "listen_for": "A second, much slower beat (one cycle in 32 s) with a slight grit under the hum. Heard in the three 'degradation' mixes."
+  },
+  {
+   "id": "spire_drift_bad",
+   "trigger": {
+    "kind": "game",
+    "name": "level_bridge",
+    "stop_on": "level_none"
+   },
+   "streams": [
+    "spire_drift_bad"
+   ],
+   "bus": "Ambience",
+   "loop": true,
+   "volume_db": -26.0,
+   "param": {
+    "name": "archive_degradation",
+    "points": [
+     [
+      0.0,
+      -80.0
+     ],
+     [
+      0.5,
+      -80.0
+     ],
+     [
+      0.75,
+      -14.0
+     ],
+     [
+      1.0,
+      -3.0
+     ]
+    ]
+   },
+   "band": [
+    -48,
+    -30
+   ],
+   "visual": "ambient: the Archive's state is hidden by design (Memory Health is not a visible metric)",
+   "about": "The badly degraded spire layer: the long beat roughened, wavering and gritty; it takes over as Memory Health becomes critical (D-108).",
+   "name": "The spire's degradation layer (bad)",
+   "when": "On the bridge once the Archive's Memory Health is low (below about 40).",
+   "listen_for": "Wavering, gritty, with a tone that does not belong. It should feel wrong without being loud."
+  },
+  {
+   "id": "room_bridge",
+   "trigger": {
+    "kind": "game",
+    "name": "level_bridge",
+    "stop_on": "level_none"
+   },
+   "streams": [
+    "room_bridge"
+   ],
+   "bus": "Ambience",
+   "volume_db": -34.0,
+   "visual": "ambient: room tone carries no information",
+   "about": "Air and structure under the bridge dome, barely there (v2, D-108; 6 dB lower, D-112).",
+   "loop": true,
+   "name": "Bridge room tone",
+   "when": "Always, on the bridge.",
+   "listen_for": "Barely there: a soft low body of air under the hum, 6 dB lower than the last listen. It should never be what you notice.",
+   "band": [
+    -56,
+    -48
+   ]
+  },
+  {
+   "id": "ui_click",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "click"
+   },
+   "streams": [
+    "ui_click"
+   ],
+   "bus": "UI",
+   "volume_db": -12.0,
+   "visual": "ambient: interface feedback for a visible press",
+   "about": "An interface click.",
+   "cooldown": 1,
+   "name": "Interface click",
+   "when": "Pressing a button or a key on a panel.",
+   "listen_for": "Short and dry; should never be annoying after a hundred presses."
+  },
+  {
+   "id": "ui_back",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "back"
+   },
+   "streams": [
+    "ui_back"
+   ],
+   "bus": "UI",
+   "volume_db": -12.0,
+   "visual": "ambient: interface feedback for a visible close",
+   "about": "Back or cancel.",
+   "name": "Interface back",
+   "when": "Closing or cancelling a panel.",
+   "listen_for": "A click that falls; clearly 'back' next to the click."
+  },
+  {
+   "id": "ui_confirm",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "confirm"
+   },
+   "streams": [
+    "ui_confirm"
+   ],
+   "bus": "UI",
+   "volume_db": -15.0,
+   "visual": "ambient: interface feedback for a visible confirm",
+   "about": "Confirm.",
+   "name": "Interface confirm",
+   "when": "Confirming a choice on a panel.",
+   "listen_for": "Two quick tones up a fourth; clearly 'yes' but not cheerful."
+  },
+  {
+   "id": "console_wake",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "console_wake"
+   },
+   "streams": [
+    "console_wake"
+   ],
+   "bus": "Effects",
+   "volume_db": -14.0,
+   "visual": "ambient: the console close-up is on screen",
+   "about": "A console wakes (the zoom in): latch, thunk, servo, settle (v2, D-108).",
+   "name": "Console wakes",
+   "when": "Stepping up to a console (the close-up zooms in).",
+   "listen_for": "A latch, a soft low thunk and a fluttering servo: a precise old machine, not a toy. Compare with the v1 file.",
+   "band": [
+    -34,
+    -26
+   ]
+  },
+  {
+   "id": "console_sleep",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "console_sleep"
+   },
+   "streams": [
+    "console_sleep"
+   ],
+   "bus": "Effects",
+   "volume_db": -14.0,
+   "visual": "ambient: the console close-up closes on screen",
+   "about": "A console sleeps (the zoom out): the servo closes, the latch settles (v2, D-108).",
+   "name": "Console sleeps",
+   "when": "Stepping back from a console.",
+   "listen_for": "The servo closing down and settling; nothing rises.",
+   "band": [
+    -34,
+    -26
+   ]
+  },
+  {
+   "id": "commit_hold",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "commit_hold"
+   },
+   "streams": [
+    "commit_hold"
+   ],
+   "bus": "Effects",
+   "volume_db": -17.0,
+   "visual": "ambient: the hold-to-confirm ring fills on screen",
+   "about": "Holding to commit; stops on release (S2).",
+   "name": "Holding to commit",
+   "when": "While you hold the commit key (1.5 s).",
+   "listen_for": "A tone rising with the hold; in game it stops if you let go."
+  },
+  {
+   "id": "commit_seal",
+   "trigger": {
+    "kind": "sim_event",
+    "k": "committed"
+   },
+   "streams": [
+    "commit_seal"
+   ],
+   "bus": "Effects",
+   "volume_db": -8.0,
+   "visual": "ui/galaxy_map.gd::committed",
+   "about": "The sim accepted the commit: one sealing chord.",
+   "name": "The commit is sealed",
+   "when": "The sim accepts the commit: the voyage is now irreversible.",
+   "listen_for": "One low open chord that settles. Final, weighty, not triumphant (no fanfare: the game doesn't judge)."
+  },
+  {
+   "id": "drive_boost",
+   "trigger": {
+    "kind": "sim_event",
+    "k": "phase",
+    "match": {
+     "to": "boosting"
+    }
+   },
+   "streams": [
+    "drive_boost"
+   ],
+   "bus": "Effects",
+   "volume_db": -12.0,
+   "visual": "ui/journey_hud.gd::ship.phase",
+   "about": "Boost: lower and richer, beating partials and an opening noise band; no rumble (the teacup rule) (v2, D-108).",
+   "name": "Drive: boost",
+   "when": "The ship starts boosting toward cruise speed.",
+   "listen_for": "Lower and thicker than v1: several voices beating slowly and air opening up as the ship accelerates. Nothing below 200 Hz, nothing you would feel."
+  },
+  {
+   "id": "drive_silent",
+   "trigger": {
+    "kind": "sim_event",
+    "k": "phase",
+    "match": {
+     "to": "cruising"
+    }
+   },
+   "streams": [
+    "drive_silent"
+   ],
+   "bus": "Effects",
+   "volume_db": -9.5,
+   "visual": "ui/journey_hud.gd::ship.phase",
+   "about": "Cruise: the drive settles low and falls silent (v2, D-108).",
+   "name": "Drive: falls silent",
+   "when": "The boost ends and the ship coasts.",
+   "listen_for": "The drive settling down and closing off until only the hum and the room are left."
+  },
+  {
+   "id": "drive_brake",
+   "trigger": {
+    "kind": "sim_event",
+    "k": "phase",
+    "match": {
+     "to": "braking"
+    }
+   },
+   "streams": [
+    "drive_brake"
+   ],
+   "bus": "Effects",
+   "volume_db": -12.0,
+   "visual": "ui/journey_hud.gd::BRAKE_NOTICE",
+   "about": "Brake: falling, rougher than the boost (v2, D-108).",
+   "name": "Drive: brake",
+   "when": "The ship starts braking.",
+   "listen_for": "The boost's mirror, falling, and rougher: voices rubbing, faster beats, more air and a little grit."
+  },
+  {
+   "id": "stop_turn",
+   "trigger": {
+    "kind": "game",
+    "name": "stop_turn"
+   },
+   "streams": [
+    "stop_turn"
+   ],
+   "bus": "Instruments",
+   "volume_db": -12.0,
+   "visual": "ambient: the turn is on screen (the body swings to 30 degrees off the bow)",
+   "about": "A navigation tone while the ship turns at a stop; no hiss (S2 wires the tour's signal).",
+   "name": "Stop: the ship turns",
+   "when": "At a guided stop, while the ship turns the body 30 degrees off the bow.",
+   "listen_for": "A soft navigation tone with a slight flutter. No thruster hiss: nothing leaves the bubble but light."
+  },
+  {
+   "id": "dust_tick",
+   "trigger": {
+    "kind": "game",
+    "name": "dust_impact"
+   },
+   "streams": [
+    "dust_tick"
+   ],
+   "bus": "Instruments",
+   "volume_db": -10.0,
+   "visual": "ambient: each tick matches a flash on the dome (interior/dust_flash.gd)",
+   "about": "The dust counter; one tick per drawn grain, dead time in impact ship time (S2).",
+   "name": "Dust counter tick",
+   "when": "Each dust grain that flashes on the dome (the counter at the helm).",
+   "listen_for": "One dry tick; imagine it faster at speed in a warm cloud, sparse in the hot bubble, like a Geiger counter."
+  },
+  {
+   "id": "arrived",
+   "trigger": {
+    "kind": "sim_event",
+    "k": "arrived"
+   },
+   "streams": [
+    "arrived"
+   ],
+   "bus": "Instruments",
+   "volume_db": -12.0,
+   "visual": "ui/arrival_card.gd::class_name ArrivalCard",
+   "about": "Arrival: an understated suspended chord (v2, D-108).",
+   "name": "Arrival chime",
+   "when": "The ship arrives at its destination.",
+   "listen_for": "Understated and suspended, in commit_seal's mood: it tells you that you've arrived without celebrating."
+  },
+  {
+   "id": "archive_ready",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "archive_ready"
+   },
+   "streams": [
+    "archive_ready"
+   ],
+   "bus": "Instruments",
+   "volume_db": -12.0,
+   "visual": "ambient: the reply appears on the terminal",
+   "about": "The Archive's reply is ready: a small breathing figure (v2, D-108).",
+   "name": "The Archive's reply is ready",
+   "when": "The Archive's answer appears at its terminal.",
+   "listen_for": "A small breathing three-note figure with a glassy shimmer: more character than v1, still soft and in-world."
+  },
+  {
+   "id": "hold_limit",
+   "trigger": {
+    "kind": "sim_event",
+    "k": "hold_limit"
+   },
+   "streams": [
+    "hold_limit"
+   ],
+   "bus": "Instruments",
+   "volume_db": -12.0,
+   "visual": "ui/galaxy_map.gd::hold_limit",
+   "about": "A plan meets the drive's hold limit: an alert, not an alarm.",
+   "name": "Hold limit",
+   "when": "A plan meets the drive's hold limit.",
+   "listen_for": "Two soft pulses: an alert, not an alarm."
+  }
+ ]
+}

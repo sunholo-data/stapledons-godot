@@ -1,0 +1,39 @@
+{
+  "change_log": "design_docs/levels/bridge.md",
+  "document": "res://assets/levels/bridge/manifest.json",
+  "document_sha256": "fc61ee5e1f66403460d8183961b5949ddbdda20bbc1c304b6b26fd42fbdf1aef",
+  "fingerprint": {
+    "finds_seen": {},
+    "routes": {
+      "heights": [
+        82.0
+      ],
+      "surfaces": 1,
+      "unreached": []
+    },
+    "stages": {
+      "deck": {
+        "band_top": {},
+        "near_astern": 0.063,
+        "near_bow": 0.017,
+        "surfaces": {
+          "deck": {
+            "body_both": 8,
+            "head": 0,
+            "head_gb": 0,
+            "head_gb_clamped": 0,
+            "pole": 0,
+            "pole_first_hit": 260,
+            "px": [
+              76.9,
+              81.1
+            ],
+            "samples": 4771
+          }
+        }
+      }
+    }
+  },
+  "level": "bridge",
+  "schema": "stapledons.level.baseline/1"
+}

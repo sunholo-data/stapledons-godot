@@ -2,6 +2,97 @@
 
 ## Unreleased
 
+## v0.4.0-dev.36-styled-bridge (2026-10-21)
+
+### star-surfaces (2026-10-20)
+
+#### Added
+
+- **Stars show their surfaces** (R2-STAR-SURFACES SS0-SS2, D-105). In the Auto view a star's disc now
+  shows what its real surface would show at that size: Aldebaran's giant convection cells (about 33
+  across its disc at the stop), red dwarfs' dark starspots with bright faculae, and every star's own
+  limb darkening (Claret & Bloemen 2011, per temperature and gravity). Structure appears only where
+  it would resolve, so the Sun from home and every distant star look as before, and a star's total
+  light is unchanged. Each surface element is a blackbody at its own temperature, so spots are redder
+  and the whole surface Doppler-shifts as the disc does. The Realistic view still shows the clipped
+  white disc an eye would see.
+- **sunholo/celestial 0.5.0** (`stellar`, `stellar_ld`): limb darkening, convection, spot, rotation and
+  corona numbers, each cited. **Protocol 2.13**: every finite star carries its `surface` record.
+
+### sound-s0 (2026-10-20)
+
+#### Added
+- **Sound, first stage (R2-SOUND S0a and S0b; ledger D-98, D-101).** The game's first sound
+  system: a sound director that plays cues for the sim's events, interface signals, the walk and
+  game states, keyed in each trigger's own clock so the same session always gives the same cue log.
+  A bus layout with voices ducking everything else and a limiter at -1 dB. Per-bus volume settings,
+  Mute when unfocused and Reduced audio. Seventeen sounds synthesised by an AILANG tool
+  (`tools/audio/`, strict VM = interpreter, byte-identical on every machine): the spire's hum, the
+  bridge's air, the interface, the consoles, the commit, the drive (no rumble: the teacup rule),
+  the stop turn, the dust counter, arrival, the Archive and the hold limit. Nothing is heard from
+  space. The sounds are not yet wired into the bridge and the voyage (S1, S2).
+- `make sound-test`, `sound-assets-check`, `sound-synth-check` and `sound-check` in `make test`;
+  `make sound-review` renders the listening page (Ogg Opus via `std/audio`).
+
+#### Changed
+- The crew's conversation voice and the Archive's crossing voice play on the Voice bus.
+
+### sgr-a-final-stop (2026-10-20)
+
+#### Fixed
+
+- **Sgr A* sat behind the ship after the guided voyage.** The Sgr A* visit set the ship's heading on
+  the hole but kept the guided tour's last attitude, and the sky is oriented by that attitude when
+  one is set. After the tour (heading for Aldebaran, almost opposite the galactic centre) the hole
+  rendered 170° astern. The attitude now belongs to the session that set it: leaving a session
+  clears it, and the Sgr A* visit sets its own, nose on the hole. Free navigation after the tour had
+  the same stale attitude and is fixed too.
+- `make camera-forward-test` AC-V13 checks the hole on the rendered sky (the sky camera the player
+  sees through) after a guided voyage, at every stop. AC-V6 had recorded Sgr A* only in a fresh
+  session with no tour, so it never met the stale attitude.
+
+#### Changed
+
+- **Sgr A* is the guided voyage's last stop** (Mark, attended 2026-10-20). After the Aldebaran stop
+  dwells like every other (12 s of tour time, or Skip dwell [N]), the tour hands over to the Sgr A*
+  visit, announced as a demonstration jump with the hole ahead in the Bow view. The HUD reads
+  "GUIDED VOYAGE · FINAL STOP · SGR A*". The navigation station's entry still opens it directly.
+  `make guided-finale-test` (21 checks) drives the tour's final leg the honest way. The tour card's Skip dwell stays offered at the final stop.
+- `make bh-ahead-capture` (GPU window): the final stop and every Sgr A* stop after flying the last leg, Bow view with the HUD, with the hole's angle off the sky camera's axis in the manifest.
+
+### levels-pipeline (2026-10-20)
+
+#### R2-LEVELS: the level pipeline's tools (LP0, LP1a)
+- **The level pipeline has its tools** (design_docs/levels/README.md; ledger D-103). These are the shared commands every level of the ship goes through, from greybox to landing:
+  - `make level-eval LEVEL=<id>` (traversal, readability, sightlines, the sky band, captain size, finds);
+  - `make level-capture LEVEL=<id> TAG=<tag>`;
+  - `make levels-regress` (every landed level against its pinned baseline);
+  - `make bench SCENE=level LEVEL=<id>`;
+  - `sh tools/levels_backlog.sh --check|--next` (the backlog that Mark and the mission loop share).
+- **Greybox in the engine:** a level's layout builds as role-coloured boxes, arcs and ramps with colliders and walk surfaces. Curved platforms and catwalks are arcs (D-104).
+- **Walking on several heights:** the captain stays on the surface within a step of where they stand, so a terrace overhead is ignored, a ramp is climbed, and a raised edge stops you. The bridge walk is unchanged.
+- **The bridge is measured as a one-stage level,** with a regression baseline.
+
+### deck-layout-dl3 (2026-10-20)
+
+#### Changed
+
+- **The whole bridge is dressed** (R2-DECK-LAYOUT DL3, D-97). The Voyage, Crew and reserved desks
+  (the two live desks with a brass screen bezel), the rim rail with its lamps and fronds, the Archive
+  terminal and shrine ribs, the lift guides and guardrails, and the benches and floor conduits now
+  share the navigation arc's painted, inked finish (one painted atlas per set, in `bridge_props.glb`).
+  The deck surface and the spire body wait for the styling pass.
+- **The help names the current views.** 7 or R is the Bow view, 9 Astern, 8 is reserved, a console
+  zooms in; 1-3 and = / - are developer presets. The display panel's camera buttons match.
+
+### captain-animation-ca0 (2026-10-20)
+
+#### Changed
+- The captain faces the way they move on screen, in eight directions, so a sideways walk no longer shows the back (the moonwalk). A view switch turns the drawing, not the captain. (R2-CAPTAIN-ANIMATION CA0)
+
+#### Added
+- The captain's animation state (`CaptainAnim`): jog by distance, start, stop, stations, the chair, the lift and a look-up, with reduced motion and footstep events for sound. Painted frames come next, after Mark reviews the 10-frame pilot.
+
 ## v0.4.0-dev.35-bow-view (2026-10-20)
 
 ### deck-layout-dl2 (2026-10-20)

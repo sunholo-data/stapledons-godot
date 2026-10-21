@@ -1,0 +1,237 @@
+{
+  "sprint_id": "R2-BRIDGE-STYLE",
+  "status": "paused_for_review",
+  "approved": true,
+  "approved_by": "Mark (attended, ledger D-100)",
+  "approved_on": "2026-10-20",
+  "created": "2026-10-20",
+  "started": "2026-10-20",
+  "completed": null,
+  "design_doc": "design_docs/planned/r2/bridge-styling-pass.md",
+  "sprint_plan": "design_docs/planned/r2/bridge-styling-pass-sprint.md",
+  "branch": "feat/bridge-style",
+  "history": [
+    {
+      "date": "2026-10-20",
+      "event": "planned after D-97 ('yes we need more styling and graphic pass overall but in general happy'); review mocks in refs/bridge_style/mock/"
+    },
+    {
+      "date": "2026-10-20",
+      "event": "APPROVED (D-100): \"approved style plan but we need more intricate level design now we have fixed position sorted\", every recommendation: OQ1 retire the broad key on the bridge; OQ2 three bands; OQ3 Josefin Sans + Nunito; OQ4 hand-drawn ink border; OQ5 physics overlays keep functional colours; OQ6 below-rail cues now; OQ7 bridge and HUD only. Intricate level design goes to the levels design (R2 levels), not this sprint."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "D-104 amendment (Mark, attended): \"everything looks quite boxy with edges, isn't the style more rounded curves?\" Shape language S7 folded in: the desks, chair and screen housings grown at ST2 (stapledon_bridge_props_v3.py reshape()), the rail/guardrails/lift guides at ST3, the benches/Archive terminal/conduits at ST5; metric: straight-edge share <= 0.10 on manifest style.shaped (AC12). Estimate 8.5 -> 10 days, ~1,300 -> ~1,360 game LOC, ~500 -> ~800 bpy."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "D-106 amendment (Mark chose painted foliage cards, spike PR #299): the bridge's rim fronds swap to painted cards in ST5, lit through a rounded normal by the shared toon material (the spike's card shader merged in as a card mode, no second shader), clamped to +-25 deg toward the camera, evenly lit paintings, proxy shadow casters for big plants, the occluder fade kept. Estimate 10 -> 10.5 days, ~1,360 -> ~1,440 game LOC. ST2 unchanged."
+    },
+    {
+      "date": "2026-10-20",
+      "event": "ST0-ST2 built; paused at the ST2 style frame for Mark (look, bands, typeface, panel and the D-104 shapes). PR #300 (supersedes #293); dev build v0.4.0-dev.35-bow-view-22-g4e6b0d33; frames refs/bridge_style/st2/."
+    }
+  ],
+  "related_prs": {
+    "deck_layout_dl3": 292,
+    "plan": 293,
+    "plants_spike": 299,
+    "build": 300
+  },
+  "external_dependencies": [
+    {
+      "what": "R2-DECK-LAYOUT DL3 (every bridge hero dressed)",
+      "where": "feat/deck-layout-dl3",
+      "status": "merged (#292)"
+    },
+    {
+      "what": "Blender 5.2.1 workspace",
+      "where": "~/dev/blender",
+      "status": "available"
+    },
+    {
+      "what": "GPU window and a quiet rig for captures and the bench",
+      "where": "Studio",
+      "status": "shared with the mission loop"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "ST0-ST5",
+      "package": "none",
+      "action": "none",
+      "reason": "shaders, themes, Blender assets; no physics maths"
+    }
+  ],
+  "pause_points": [
+    {
+      "after": "plan approval",
+      "what": "OQ1-OQ7 (one ledger row)"
+    },
+    {
+      "after": "ST2_STYLE_FRAME",
+      "what": "Mark approves the look (bands, typeface, panel shape) and the D-104 shapes"
+    }
+  ],
+  "questions_for_mark": [
+    "RESOLVED D-100: OQ1 retire the broad key on the bridge",
+    "RESOLVED D-100: OQ2 banded toon shading (three bands)",
+    "RESOLVED D-100: OQ3 HUD typeface pair",
+    "RESOLVED D-100: OQ4 hand-drawn ink panel border",
+    "RESOLVED D-100: OQ5 physics overlays keep functional colours",
+    "RESOLVED D-100: OQ6 below-rail scale cues now",
+    "RESOLVED D-100: OQ7 bridge and HUD only"
+  ],
+  "features": [
+    {
+      "id": "ST0_CHECKS",
+      "description": "style-capture, style-test, ui-theme-check with negative controls, red first",
+      "estimated_loc": 300,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make style-test and make ui-theme-check fail as expected before ST1/ST2/ST4, and their negative controls fail",
+        "make style-capture TAG=before writes the frame set"
+      ],
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "style-test, ui-theme-check (report mode; both negative controls fail as they must) and style-capture (HUD on/off, before/after against renders/style/before, captured on the DL3 bridge) landed red first."
+    },
+    {
+      "id": "ST1_SPIRE_KEY",
+      "description": "the spire keys the bridge: broad key 0 on the bridge, spire shadow (mast a non-caster), one shadow owner of spire and star, rebalance",
+      "estimated_loc": 200,
+      "dependencies": [
+        "ST0_CHECKS"
+      ],
+      "acceptance_criteria": [
+        "make ship-star-light-test (existing checks unchanged + the new spire checks)",
+        "make ship-commons-test ship-lighting-test (lower levels keep the broad key)",
+        "make golden: 393 ok, 364 baseline lines match main",
+        "make bench SCENE=bridge p99 < 16.7 ms on a quiet rig"
+      ],
+      "passes": true,
+      "started": "2026-10-20",
+      "completed": "2026-10-20",
+      "notes": "Test-first (parse-red, then 77/0, was 58): the three key checks keep their old form on the lower decks; 19 bridge checks (owner, key 0, share, mast non-caster, continuity, ramp boundaries 0/H-eps/H/2H/1, level switch, ambient floor, no-shadow profile, demo integration). Rebalanced from captures: spire base 8, reach 31 m (still 1 m above the Commons), bridge ambient x1.45. ship-commons-test 39/0, ship-lighting-test OK. bh-hud's Sgr A* key check updated to the spire (an S1 consequence the plan did not list). make golden (once, after ST2): 430 ok; golden_baseline check: every one of main's 364 baseline lines matches; the only differences are 33 G-CONST lines main added after the fixture (constellation goldens, #271), not this branch. Bench SCENE=bridge MISS p99 25.8 ms at host load 25-35 (the docked control itself p99 19.3 ms): not a valid quiet-rig measurement under AC9's load < 12 rule; owed at the end of the sprint."
+    },
+    {
+      "id": "ST2_STYLE_FRAME",
+      "description": "toon material on every bridge mesh with the ink pass; the theme on the status strip and the arrival card; style frame; D-104: the desks, the captain's chair and every screen housing grown (S7)",
+      "estimated_loc": 310,
+      "dependencies": [
+        "ST1_SPIRE_KEY"
+      ],
+      "acceptance_criteria": [
+        "make style-test",
+        "D-104 AC12: make style-test straight-edge share <= 0.10 on style.shaped (seeded box fails); make deck-layout-eval bridge ok on the reshaped props",
+        "make golden; make deck-layout-eval unchanged",
+        "make bench SCENE=bridge",
+        "display-audit and controls green",
+        "make style-capture TAG=sf opened and published; Mark approves the look"
+      ],
+      "passes": null,
+      "started": "2026-10-20",
+      "completed": null,
+      "notes": "shaders/stapledon_toon.gdshader + StapledonStyle (bridge_style group, exact ink next_pass, exclusions); style-test 19/0 incl. both negative controls, seeded exclusions and AC12. Theme: StapledonTheme (palette, Josefin Sans + Nunito OFL pinned, seeded ink 9-slice) on the status strip and arrival card; ui-theme-check ok (68 leftovers reported). D-104: stapledon_bridge_props_v3.py grew the desks, dials, chair, cushion and every screen housing (straight-edge share <= 0.081 in-engine; box control 0.586); bridge_props.glb 169,292 tris; ship.glb byte-identical; deck-layout-eval bridge ok, deck-layout-eval-test 22/0, camera-forward-test 33/0, deck-assets-check ok. make style-capture TAG=sf: 18 frames, opened, published refs/bridge_style/st2/. Full make test: everything green except ai-godot's three 'frame never blocked' timing checks at host load 35 (no AI code changed; rerun alone failed the same way at load 35); rig_check on the final head pending. Paused for Mark."
+    },
+    {
+      "id": "ST3_BIG_SURFACES",
+      "description": "deck top (four quadrants, 1024^2 each), spire body and an authored lift head painted (Blender v3 generator); writes manifest style.bridge_nodes; D-104: rail segments and lamps, bridge guardrails, lift guides grown",
+      "estimated_loc": 100,
+      "dependencies": [
+        "ST2_STYLE_FRAME"
+      ],
+      "acceptance_criteria": [
+        "make deck-assets-check (images <= 24, VRAM <= baseline + 48 MB)",
+        "make bridge-floor-test ship-demo-lift-test ship-commons-test deck-layout-eval",
+        "make golden",
+        "make style-capture TAG=st3 opened and published"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "ST4_THEME_EVERYWHERE",
+      "description": "every HUD panel on the theme; no hard-coded styles or colours in ui/ (crew palette allow-listed); physics overlays keep functional colours",
+      "estimated_loc": 250,
+      "dependencies": [
+        "ST2_STYLE_FRAME"
+      ],
+      "acceptance_criteria": [
+        "make ui-theme-check fails on any leftover (now a gate)",
+        "display-audit (all four), ship-ui-test, crew-console-test, title-screen-test green",
+        "make style-capture TAG=st4 with the HUD"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "ST5_DRESSING",
+      "description": "per-view foreground silhouettes and below-rail scale cues (outside lower-deck volumes) from views.json levels.bridge.dressing; evaluator dressing row with a negative control; D-104: watch benches and details, Archive terminal and detail, conduits grown; D-106: the rim fronds as painted frond cards (card mode of the shared toon shader, +-25 deg clamped billboard, evenly lit paintings, proxy shadow casters, occluder fade)",
+      "estimated_loc": 280,
+      "dependencies": [
+        "ST3_BIG_SURFACES",
+        "ST4_THEME_EVERYWHERE"
+      ],
+      "acceptance_criteria": [
+        "make deck-layout-eval: bridge ok with the dressing row (<= 8 % per view); deck-layout-eval-test's seeded oversized prop fails",
+        "make camera-test camera-forward-test",
+        "make style-capture TAG=st5 opened and published",
+        "D-106: make style-test audits the frond cards as bridge_style members (card mode of stapledon_toon.gdshader, no second shader); make deck-layout-eval thresholds kept"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "ST6_LANDING",
+      "description": "rig make test, golden, bench (AC9 rule), final captures, dev build, report, changelog, independent evaluation",
+      "estimated_loc": 0,
+      "dependencies": [
+        "ST5_DRESSING"
+      ],
+      "acceptance_criteria": [
+        "make test on the rig (tools/rig_check.sh)",
+        "make golden 393 ok / 364 baseline",
+        "make bench SCENE=bridge per AC9",
+        "make style-capture TAG=final published",
+        "sprint-evaluator (Sonnet) >= 70"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 150,
+    "estimated_total_loc": 1440,
+    "estimated_days": 10.5,
+    "note": "engine/UI code (ST0-ST2, ST4, ~1,000 LOC) at the attended ~300 LOC/day; ST3 (2 d) and ST5 (1.5 d) art milestones capped at their days; ~500 lines of bpy not counted; D-104 shape language +1.5 days (ST2/ST3/ST5 +0.5 each), +~300 bpy, +~60 LOC; D-106 foliage cards +0.5 day (ST5), +~80 LOC"
+  },
+  "reviews": [
+    {
+      "round": 1,
+      "reviewer": "Claude Sonnet (independent, claude -p --model sonnet, read-only plan review)",
+      "score": 74,
+      "pass": true,
+      "blocking": [
+        "toon material inputs (emission, alpha, normals, shadows, billboards) unspecified",
+        "'bridge mesh' defined by a position hack",
+        "retiring the key changes existing star-light assertions; level switch unspecified",
+        "spire shadow handover ramp unspecified",
+        "S4 fonts and the 9-slice border have no authoring, pin or licence step",
+        "VRAM budget vs 2048^2 atlases",
+        "estimates inconsistent; ST5 overpacked",
+        "AC6 scope ui/ vs demos/"
+      ],
+      "resolution": "All folded in 2026-10-20: shader spec with exclusions and next_pass exactly the ink; membership by the bridge_style group and manifest style.bridge_nodes; the three changing key checks listed and the level switch defined; the spire's shadow opacity follows the key's ramp with boundary tests; fonts (OFL, pinned) and a seeded ink border tool; deck/spire at 1024^2 (~28 MB) with a runtime-compression fallback; 1,300 LOC over 8.5 days, ST5 split into ST5 dressing and ST6 landing, ST3 2 days; ui-theme-check covers ui/ and the demo HUD with explicit allow-lists. Suggestions taken: named sky layers in AC3, the SubViewport note, a slide flicker bound, the AC9 rerun rule, a dressing negative control, below-rail outside lower decks, the mock tool committed as review-only, OQ3's default recorded at approval, the D-96 framing hook, S4 as a separable PR."
+    }
+  ]
+}

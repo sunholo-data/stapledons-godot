@@ -77,6 +77,20 @@ var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m
 var _fader_star := {} # id -> true for emitters (stars)
 var _points_physical := [] # visible point sources at physical lux, before any fader gain
 var _points_key := []
+## R2-STAR-SURFACES: per star, the surface normaliser and peak factor (StarSurface.normaliser) for the
+## key they were computed for, and a worker task while one is running. The first frames of a new key
+## use the last result (or N 1): the flux is off by under 2 % for about a second (design §D5).
+var _surf_norm := {} # id -> {"key": String, "n": float, "peak": float}
+var _surf_task := {} # id -> {"key": String, "task": int, "out": Dictionary}
+## Goldens and captures wait for the normaliser instead of drawing a frame with the last one.
+var surface_norm_wait := false
+## The map on (the game) or off (the bench's A/B and reviews of "today"); the law is kept either way.
+var surfaces_enabled := true
+## SS3: per star id, the fraction of its photosphere covered by nearer bodies this frame, and the
+## occulter's direction (for the diamond ring's sliver).
+var _occ := {} # id -> {"f": float, "occ_dir": Vector3, "occ_ang": float, "sep": float}
+## The corona's streamer modulation depth (chosen; a golden sets 0 to measure the profile).
+var corona_streamers := 0.4
 ## The system section last drawn (sim bodies), for the I-key inspector.
 var last_system := {}
 
@@ -185,7 +199,7 @@ func update(system: Dictionary, k: float) -> void:
 				replacements[body.catalogue_id] = {"dir":Vector3(direction[0],direction[1],direction[2]).normalized(),"lux":body.e_v_lux,"t":body.teff_k,"body_id":body.id,"distance":distance}
 		starfield.set_catalogue_replacements(replaced)
 		starfield.set_catalogue_replacement_sources(replacements)
-	var view:=[px_rad,view_height_px,velocity_heading,velocity_beta,velocity_gamma,velocity_omb,relativistic_enabled,use_textures,lod_range]
+	var view:=[px_rad,view_height_px,velocity_heading,velocity_beta,velocity_gamma,velocity_omb,relativistic_enabled,use_textures,lod_range,surfaces_enabled]
 	if _prepared and view==_prepared_view and system==_prepared_system:
 		reuse_count+=1;set_exposure(k);return
 	var started:=Time.get_ticks_usec()
@@ -206,6 +220,7 @@ func update(system: Dictionary, k: float) -> void:
 	var points := []
 	var order := []
 	var floor_lux := CULL_LUX_FRACTION * Exposure.threshold_lux()
+	_occultations(bodies)
 	for b: Dictionary in bodies:
 		var w := Planets.world_of(b["rel_km"])
 		var dist := Planets.length64(w)
@@ -221,6 +236,16 @@ func update(system: Dictionary, k: float) -> void:
 		if weight<1.0 and (b["e_v_lux"] >= floor_lux or px >= CULL_PX):
 			points.append({"id":b.id,"distance":dist,"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"]*(1.-weight), "t": b.get("teff_k", Planets.T_SUN)})
 			drawn_points.append(b["id"])
+		# SS3, OQ8: the last sliver of an eclipsed star's photosphere is a point through the PSF
+		var occ: Dictionary = _occ.get(b.id, {})
+		if b.kind == "star" and weight > 0.0 and not occ.is_empty() and occ.f > 0.95 and occ.f < 1.0:
+			var sd := Vector3(w[0], w[1], w[2]) / dist
+			var away: Vector3 = (sd - occ.occ_dir).normalized()
+			var ang := Planets.angular_radius(r, dist)
+			var edge: float = float(occ.occ_ang) - float(occ.sep) # the occulter's far edge from the star's centre
+			var sl := (sd + away * 0.5 * (edge + ang)).normalized() # the middle of the uncovered sliver
+			points.append({"id": b.id + "#sliver", "body_id": b.id, "distance": dist, "dir": [sl.x, sl.y, sl.z], "lux": b["e_v_lux"] * (1.0 - occ.f), "t": b.get("teff_k", Planets.T_SUN)})
+			drawn_points.append(b.id + "#sliver")
 	order.sort_custom(func(a, c): return a[0] > c[0]) # far to near: nearer discs draw over farther ones
 	for i in order.size():
 		var record:Dictionary=order[i][1].duplicate(true)
@@ -251,7 +276,7 @@ func update(system: Dictionary, k: float) -> void:
 func _point_transmission(point:Dictionary)->float:
 	var rest:=PackedFloat64Array(point.dir);var ray:=Vector3(rest[0],rest[1],rest[2]);var transmission:=1.
 	for body:Dictionary in rendered_bodies:
-		if body.id==point.id:continue
+		if body.id==point.id or body.id==point.get("body_id",""):continue # a sliver point is its own star's light
 		var pl:Array=body._place
 		if pl[3]-body.radius_km>=point.distance:continue
 		var centre:Vector3=pl[1];var radius:float=pl[2];var along:=ray.dot(centre)
@@ -354,6 +379,8 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 		var ang := Planets.angular_radius(b["radius_km"], pl[3])
 		m.set_shader_parameter("star_mean", b["e_v_lux"] / (PI * sin(ang) * sin(ang)))
 		m.set_shader_parameter("limb_u", b.get("limb_u", Planets.SUN_LIMB_U))
+		_star_surface(m, b, ang, pl[1])
+		_eclipse_layers(m, b)
 	else:
 		var kk: float = b["minnaert_k"]
 		var sd := Planets.world_of(b["sun_dir"])
@@ -388,6 +415,145 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 			m.set_shader_parameter("tex_lod", maxf(0.0, log(tex[0].get_width() / (PI * diam)) / log(2.0)))
 	mi.visible = true
 	drawn_discs.append(id)
+
+
+## R2-STAR-SURFACES (design star-surfaces.md §D2, §D5): a star with a protocol-2.13 surface record gets
+## its quadratic law and, where a layer resolves, the temperature map; the Sun keeps today's linear law
+## and, unresolved, today's path bit for bit. A star without a record (an older minor) is unchanged.
+func _star_surface(m: ShaderMaterial, b: Dictionary, ang: float, centre_w: Vector3) -> void:
+	var surface: Dictionary = b.get("surface", {})
+	if surface.is_empty():
+		m.set_shader_parameter("ld_quad", false)
+		m.set_shader_parameter("surf_on", false)
+		return
+	var basis := StarSurface.basis_of(b["pole"])
+	var px_r := ang / px_rad
+	var u := StarSurface.uniforms(surface, b["id"], b["radius_km"], px_r, basis, -centre_w.normalized())
+	m.set_shader_parameter("ld_quad", u.ld_quad)
+	m.set_shader_parameter("ld_a", u.ld_a)
+	m.set_shader_parameter("ld_b", u.ld_b)
+	m.set_shader_parameter("surf_on", u.surf_on and surfaces_enabled)
+	if not (u.surf_on and surfaces_enabled):
+		return
+	m.set_shader_parameter("body_basis", basis)
+	m.set_shader_parameter("px_per_radius", px_r)
+	m.set_shader_parameter("cells_across", u.cells_across)
+	m.set_shader_parameter("sigma_t", u.sigma_t)
+	m.set_shader_parameter("facula_sigma_t", u.facula_sigma_t)
+	m.set_shader_parameter("salt0", u.salt0)
+	m.set_shader_parameter("salt1", u.salt1)
+	m.set_shader_parameter("fade_w", u.fade_w)
+	m.set_shader_parameter("spot_count", u.spot_count)
+	m.set_shader_parameter("spots", u.spots)
+	m.set_shader_parameter("spot_temps", u.spot_temps)
+	if bb_lut == null: bb_lut = Blackbody.build_lut()
+	m.set_shader_parameter("bb_lut", bb_lut)
+	m.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
+	m.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
+	m.set_shader_parameter("surf_norm", surface_norm(b["id"], u.params, u.view_star, surface_norm_wait).n)
+
+
+## SS3: every star's covered fraction by the nearer resolved bodies (circle overlaps on the sky).
+func _occultations(bodies: Array) -> void:
+	_occ.clear()
+	var seen := []
+	for b: Dictionary in bodies:
+		var w := Planets.world_of(b["rel_km"])
+		var dist := Planets.length64(w)
+		if dist <= float(b["radius_km"]) * 1.001:
+			continue
+		seen.append({"b": b, "dir": Vector3(w[0], w[1], w[2]) / dist, "d64": [w[0] / dist, w[1] / dist, w[2] / dist], "dist": dist, "ang": Planets.angular_radius(b["radius_km"], dist)})
+	for s: Dictionary in seen:
+		if s.b.kind != "star":
+			continue
+		var f := 0.0
+		var occ_dir := Vector3.ZERO
+		var occ_ang := 0.0
+		var occ_sep := 0.0
+		for o: Dictionary in seen:
+			if o == s or o.dist >= s.dist:
+				continue
+			# float64 (a Vector3 dot rounds a small eclipse separation to 0): atan2(|a x b|, a . b)
+			var a: Array = s.d64
+			var q: Array = o.d64
+			var cx: float = a[1] * q[2] - a[2] * q[1]
+			var cy: float = a[2] * q[0] - a[0] * q[2]
+			var cz: float = a[0] * q[1] - a[1] * q[0]
+			var sep := atan2(sqrt(cx * cx + cy * cy + cz * cz), a[0] * q[0] + a[1] * q[1] + a[2] * q[2])
+			var c := StarSurface.covered_fraction(s.ang, o.ang, sep)
+			if c > 0.0:
+				f += c
+				occ_dir = o.dir
+				occ_ang = o.ang
+				occ_sep = sep
+		if f > 0.0:
+			_occ[s.b.id] = {"f": minf(1.0, f), "occ_dir": occ_dir, "occ_ang": occ_ang, "sep": occ_sep}
+
+
+## SS3: the corona and prominences while part of the photosphere is covered (design §D6).
+func _eclipse_layers(m: ShaderMaterial, b: Dictionary) -> void:
+	var occ: Dictionary = _occ.get(b.id, {})
+	var on: bool = not occ.is_empty() and float(occ.f) > 0.0
+	m.set_shader_parameter("corona_on", on)
+	if not on:
+		return
+	var surface: Dictionary = b.get("surface", {})
+	var salt := int(surface.get("salt", b.id.hash()))
+	m.set_shader_parameter("body_basis", StarSurface.basis_of(b["pole"]))
+	m.set_shader_parameter("streamer_seed", float(salt & 1023) * (TAU / 1024.0))
+	m.set_shader_parameter("streamer_amp", corona_streamers)
+	var has_corona: bool = surface.get("corona", true)
+	m.set_shader_parameter("corona_outer", 10.0 if has_corona else 1.0)
+	m.set_shader_parameter("prom_count", 4 if has_corona else 0)
+	m.set_shader_parameter("proms", StarSurface.prominences(salt))
+	var d := 1.0
+	if relativistic_enabled and velocity_beta > 0.0:
+		var w := Planets.world_of(b.rel_km)
+		var dist := Planets.length64(w)
+		d = Planets.doppler_seen64(PackedFloat64Array([w[0] / dist, w[1] / dist, w[2] / dist]), PackedFloat64Array([velocity_heading.x, velocity_heading.y, velocity_heading.z]), velocity_beta, velocity_gamma, velocity_omb)
+	m.set_shader_parameter("prom_rgb", StarSurface.h_alpha_rgb(d))
+
+
+## A worker task still running when the view leaves the tree (a scene change, a test's quit) is waited
+## for, so the engine never tears down under a running normaliser.
+func _exit_tree() -> void:
+	for t: Dictionary in _surf_task.values():
+		WorkerThreadPool.wait_for_task_completion(t.task)
+	_surf_task.clear()
+
+
+## The normaliser for the current key, computing it on a worker thread when the key changes; the
+## last value meanwhile. The key quantises what moves N: the epochs, the weight (1/64), the gate
+## (px per radius to 1/8 of a doubling) and the view (2 degrees).
+func surface_norm(id: String, p: Dictionary, view_star: Vector3, wait := false) -> Dictionary:
+	var v := view_star.normalized()
+	var key := "%d:%d:%d:%d:%d:%d:%d" % [p.salt0, p.salt1, roundi(float(p.w) * 64.0), roundi(log(float(p.px_per_radius)) / log(2.0) * 8.0), roundi(v.x * 28.6), roundi(v.y * 28.6), roundi(v.z * 28.6)]
+	var have: Dictionary = _surf_norm.get(id, {"key": "", "n": 1.0, "peak": 1.0})
+	if have.key == key:
+		return have
+	var task: Dictionary = _surf_task.get(id, {})
+	if not task.is_empty() and WorkerThreadPool.is_task_completed(task.task):
+		WorkerThreadPool.wait_for_task_completion(task.task)
+		_surf_task.erase(id)
+		var out: Dictionary = task.out
+		have = {"key": task.key, "n": out.n, "peak": out.peak}
+		_surf_norm[id] = have
+		if task.key == key:
+			return have
+		task = {}
+	if task.is_empty():
+		Blackbody.lut_image() # build the shared LUT on this thread before a worker reads it
+		var out := {}
+		var params := p.duplicate(true)
+		var t := WorkerThreadPool.add_task(func() -> void: out.merge(StarSurface.normaliser(params, v, StarSurface.NORM_GRID)))
+		task = {"key": key, "task": t, "out": out}
+		_surf_task[id] = task
+	if wait:
+		WorkerThreadPool.wait_for_task_completion(task.task)
+		_surf_task.erase(id)
+		have = {"key": key, "n": task.out.n, "peak": task.out.peak}
+		_surf_norm[id] = have
+	return have
 
 
 ## Physical ray radiance before exposure: CPU mirror of the exact resolved
@@ -427,7 +593,12 @@ func ray_colour(direction: PackedFloat64Array, skip_compact_meter := false) -> V
 			if star:
 				var angle:=Planets.angular_radius(b.radius_km,pl[3])
 				var temp: float = b.get("teff_k", Planets.T_SUN)
-				value=Blackbody.rgb_unit_luminance(temp)*Planets.limb_darkened(b.e_v_lux/(PI*sin(angle)*sin(angle)),ce,b.get("limb_u", Planets.SUN_LIMB_U))
+				var surf: Dictionary = b.get("surface", {})
+				var mean_l: float = b.e_v_lux/(PI*sin(angle)*sin(angle))
+				if not surf.is_empty() and b.id != "sun": # R2-STAR-SURFACES: the quadratic law (the map's mean is 1 by N; the meter reads the law)
+					value=Blackbody.rgb_unit_luminance(temp)*mean_l/StarSurface.ld_mean(surf.ld.a,surf.ld.b)*StarSurface.ld(surf.ld.a,surf.ld.b,ce)
+				else:
+					value=Blackbody.rgb_unit_luminance(temp)*Planets.limb_darkened(mean_l,ce,b.get("limb_u", Planets.SUN_LIMB_U))
 				if doppler != 1.0 and temp != Planets.T_SUN:
 					value *= Blackbody.lut_rgb(temp*doppler)/Blackbody.lut_rgb(temp) * Blackbody.lut_rgb(Planets.T_SUN)/Blackbody.lut_rgb(Planets.T_SUN*doppler)
 					value *= pow(10.0,Blackbody.lut_log10_y(temp*doppler)-Blackbody.lut_log10_y(temp)-Blackbody.lut_log10_y(Planets.T_SUN*doppler)+Blackbody.lut_log10_y(Planets.T_SUN))
@@ -496,7 +667,21 @@ func _displayed_peak(b:Dictionary,dist:float)->float:
 	var surface:float
 	if b.kind=="star":
 		var s:=sin(Planets.angular_radius(b.radius_km,dist))
-		surface=Planets.limb_darkened(b.e_v_lux/(PI*s*s),1.0,b.get("limb_u",Planets.SUN_LIMB_U)) # the disc centre
+		var surf: Dictionary = b.get("surface", {})
+		if not surf.is_empty() and b.id != "sun": # R2-STAR-SURFACES: the quadratic law's centre, x the map's peak factor
+			var have: Dictionary = _surf_norm.get(b.id, {"peak": 1.0})
+			surface=b.e_v_lux/(PI*s*s)/StarSurface.ld_mean(surf.ld.a,surf.ld.b)*float(have.peak)
+		else:
+			surface=Planets.limb_darkened(b.e_v_lux/(PI*s*s),1.0,b.get("limb_u",Planets.SUN_LIMB_U)) # the disc centre
+		# SS3: in an eclipse the peak is the visible one: the photosphere's, blended in log space by the
+		# uncovered fraction toward the corona's inner peak (Baumbach at 1.05 R)
+		var occ: Dictionary = _occ.get(b.id, {})
+		if not occ.is_empty() and occ.f > 0.0:
+			var v: float = clampf(1.0 - float(occ.f), 0.0, 1.0)
+			# the corona's displayed peak is taken at 1.5 R: inside it the inner corona reads as saturated
+			# white, as eclipse watchers and photographs describe it
+			var corona: float = surface * 1.0e-6 * (0.0532 * pow(1.5, -2.5) + 1.425 * pow(1.5, -7.0) + 2.565 * pow(1.5, -17.0))
+			surface = pow(surface, v) * pow(corona, 1.0 - v)
 	else:
 		var lux:=Planets.star_illuminance_at(_e1_of(b),b.r_au) if b.r_au>0.0 else 0.0
 		surface=Planets.rho_from_geometric_albedo(b.p_v,b.minnaert_k)*lux/PI*FADER_TEX_PEAK

@@ -1,0 +1,150 @@
+module stapledons/sim/stellar_surface_test
+
+-- R2-STAR-SURFACES SS1 (design star-surfaces.md §D3, §D4, AC2, AC7): the 2.13 `surface` record of
+-- every finite star, its provenance, determinism, and the emission-time clock. Expected values are
+-- the cited data (sim/data) and closed forms, never this module's output:
+--   the Sun's log g 4.43807 (IAU 2015 nominal GM and R); Aldebaran log g 1.11 (Heiter et al. 2015);
+--   TRAPPIST-1 log g = log10(27420 x 0.0898 / 0.1192^2) = 5.2387 (Agol et al. 2021), read by the
+--   PHOENIX table at its 5.0 edge; Claret & Bloemen 2011 V row (ATLAS, log g 1.0, 4,000 K) for
+--   Aldebaran's neighbourhood.
+--   RS-25: for a ship closing on a static star at 0.9c, d t_e / d tau = gamma (1 + beta) = sqrt(19)
+--   = 4.358898943540674; receding gamma (1 - beta) = 0.2294157338705618.
+
+import std/math (sqrt, log10)
+import std/list (length)
+import std/math (intToFloat)
+import std/string (contains, concat, length as std_length, substring as std_substring, intToStr as intToStrL)
+import ./core (World, newWorld, defaultParams)
+import ./protocol (encodeSystemStops, encodeSystemStopsAt, surfaceMinor, homeTiersMinor)
+import ./celestial (BodyView)
+import ./data/stellar_activity (activityOf, Activity)
+import ./stellar_surface (Surface, flareAt, surfaceOf, lightAgeOf, emissionTimeS, idKey, spotSalt, spotWindowS, loggInferred, loggAssumed)
+import pkg/sunholo/celestial/kepler (absf)
+
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+
+pure func w0() -> World = newWorld(42, false, defaultParams())
+
+-- ---------- the wire
+
+pure func sys13() -> string = encodeSystemStopsAt(w0(), true)
+
+-- The star's body object, from its id to the end of the system string (enough to find its fields
+-- before the next body's id).
+pure func after(s: string, key: string) -> string = afterKey(s, key, 0)
+pure func afterKey(s: string, key: string, i: int) -> string =
+  if i + slen(key) > slen(s) then ""
+  else if sub(s, i, i + slen(key)) == key then sub(s, i + slen(key), slen(s))
+  else afterKey(s, key, i + 1)
+pure func slen(s: string) -> int = std_length(s)
+pure func sub(s: string, a: int, b: int) -> string = std_substring(s, a, b)
+pure func upTo(s: string, key: string) -> string = upToAt(s, key, 0)
+pure func upToAt(s: string, key: string, i: int) -> string =
+  if i + slen(key) > slen(s) then s
+  else if sub(s, i, i + slen(key)) == key then sub(s, 0, i)
+  else upToAt(s, key, i + 1)
+-- One body's object: from its id to the next "{\"id\":".
+pure func bodyOf(id: string) -> string = upTo(after(sys13(), concat(["{\"id\":\"", id, "\""])), "{\"id\":")
+
+
+export pure func checkWire() -> bool {
+  let sun = bodyOf("sun");
+  let ald = bodyOf("aldebaran");
+  let t1 = bodyOf("trappist-1");
+  let ac = bodyOf("acen-a");
+  contains(sun, "\"surface\":{\"teff_k\":5772") && contains(sun, "\"prov\":{\"logg\":\"measured: IAU 2015")
+  && contains(ald, "\"logg\":1.11") && contains(ald, "\"source\":\"claret2011-atlas\"") && contains(ald, "\"spots\":[]") && contains(ald, "\"corona\":false")
+  && contains(ald, "\"cells\":\"inferred:")
+  && contains(t1, "\"source\":\"claret2011-phoenix\"") && contains(t1, "\"logg_used\":5") && contains(t1, "\"corona\":true") && contains(t1, "\"umbra_k\":")
+  && contains(ac, "\"logg\":\"inferred: mass (Akeson")
+}
+test "2.13 system section: every finite star carries surface; Aldebaran ATLAS, spotless, no corona; TRAPPIST-1 PHOENIX at log g 5.0, spotted; alpha Cen A's log g inferred" { checkWire() }
+
+export pure func checkBelow13() -> bool =
+  surfaceMinor() == homeTiersMinor() + 1
+  && encodeSystemStopsAt(w0(), false) == encodeSystemStops(w0()) && !contains(encodeSystemStops(w0()), "\"surface\":")
+
+test "below 2.13 the system section is byte for byte the 2.12 one (no surface)" { checkBelow13() }
+
+export pure func checkDeterministic() -> bool =
+  sys13() == encodeSystemStopsAt(w0(), true)
+  && encodeSystemStopsAt(newWorld(43, false, defaultParams()), true) != sys13()
+  && encodeSystemStops(newWorld(43, false, defaultParams())) == encodeSystemStops(w0())
+
+test "surfaces are a pure function of the seed: same seed same bytes; another seed moves only the surfaces" { checkDeterministic() }
+
+-- ---------- log g
+
+export pure func checkLogg() -> bool =
+  near(loggInferred(0.0898, 0.1192), log10(27420.0 * 0.0898 / (0.1192 * 0.1192)), 0.0001)
+  && near(loggInferred(0.0898, 0.1192), 5.2387, 0.0005) && near(loggAssumed(1.0), 4.43807, 0.00001)
+
+test "log g: TRAPPIST-1 5.2387 from Agol 2021's mass and radius; an assumed main-sequence 1 R_sun star 4.43807" { checkLogg() }
+
+-- ---------- the emission-time clock (RS-25)
+
+pure func starAt(xKm: float) -> BodyView =
+  { id: "aldebaran", name: "", kind: "star", host: "", status: "star", relKm: { x: xKm, y: 0.0, z: 0.0 }, radiusKm: 1.0, flattening: 0.0,
+    pole: { x: 0.0, y: 0.0, z: 1.0 }, wDeg: 0.0, sunDir: { x: 0.0, y: 0.0, z: 0.0 }, rAu: 0.0, phaseDeg: 0.0, eVLux: 0.0, pV: 0.0,
+    minnaertK: 1.0, ringId: "", lightAgeS: 0.0, visitable: false, source: "" }
+
+-- Over 200 ticks of 1 s of Earth time, a ship moving at beta along x relative to a static star at
+-- L: rel = L - beta c t (closing, sign 1) or L + beta c t (receding, sign -1). t_e from the sim's
+-- own lightAgeOf / emissionTimeS; ship proper time tau = t / gamma.
+pure func rate(beta: float, sign: float) -> float {
+  let c = 299792.458;
+  let l = 1000000000.0;
+  let gamma = 1.0 / sqrt(1.0 - beta * beta);
+  let te0 = emissionTimeS(0.0, lightAgeOf(starAt(l)));
+  let t1 = 200.0;
+  let te1 = emissionTimeS(t1 / 31557600.0, lightAgeOf(starAt(l - sign * beta * c * t1)));
+  (te1 - te0) / (t1 / gamma)
+}
+
+export pure func checkClock() -> bool =
+  near(rate(0.9, 1.0) / 4.358898943540674, 1.0, 0.000001) && near(rate(0.9, 0.0 - 1.0) / 0.2294157338705618, 1.0, 0.000001)
+
+test "RS-25: from the sim's emission time alone, a static star's surface runs at D = sqrt(19) closing at 0.9c and 0.22942 receding (1e-6)" { checkClock() }
+
+-- ---------- spot windows
+
+export pure func checkWindows() -> bool {
+  let a = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 0.0, 2451545.0, 0.0, t1Act());
+  let b = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 1.0, 2451545.0, 0.0, t1Act());
+  let c = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 0.0, 2451545.0, 0.0, t1Act());
+  a.salt == c.salt && a.salt != b.salt && a.salt == spotSalt(42, "trappist-1", 0) && idKey("sun") != idKey("aldebaran")
+  && spotWindowS() == 2160000.0 && a.corona && a.ldSource == "claret2011-phoenix"
+}
+
+test "the spot pattern changes every 25-day window of emission time and repeats exactly within one" { checkWindows() }
+
+pure func t1Act() -> Activity = activityOf("trappist-1", "", 2566.0, 5.2387)
+
+-- ---------- D-111 A3: activity within each star's real range
+
+pure func spotsAt(id: string, cat: string, teff: float, logg: float, r: float, k: int) -> int =
+  length(surfaceOf(id, teff, logg, "x", r, 42, intToFloat(k) * 25.0 / 365.25, 2451545.0, 0.0, activityOf(id, cat, teff, logg)).spots)
+pure func maxOver(id: string, cat: string, teff: float, logg: float, r: float, k: int, n: int, m: int) -> int =
+  if k >= n then m else { let c = spotsAt(id, cat, teff, logg, r, k); maxOver(id, cat, teff, logg, r, k + 1, n, if c > m then c else m) }
+pure func flareHours(k: int, n: int, acc: int) -> int =
+  if k >= n then acc else flareHours(k + 1, n, acc + length(flareAt(42, "trappist-1", 0.525, intToFloat(k) * 3600.0 + 60.0)))
+
+export pure func checkActivity() -> bool {
+  let barnard = maxOver("cat:Gaia DR3 4472832130942575872", "Gaia DR3 4472832130942575872", 3250.0, 5.16, 132000.0, 0, 120, 0);
+  let trap = maxOver("trappist-1", "", 2566.0, 5.2387, 82927.0, 0, 40, 0);
+  let acenB = maxOver("acen-b", "", 5231.0, 4.53, 600000.0, 0, 160, 0);
+  let ald = maxOver("aldebaran", "", 3927.0, 1.11, 31453988.0, 0, 40, 0);
+  let flares = flareHours(0, 9600, 0);
+  barnard <= 1 && trap >= 4 && acenB >= 6 && ald == 0
+  && activityOf("acen-b", "", 5231.0, 4.53).cycleYears == 8.2 && activityOf("acen-a", "", 5795.0, 4.3).cycleYears == 19.1
+  && activityOf("cat:x", "Gaia DR3 4472832130942575872", 3250.0, 5.16).cycleYears == 10.0 && activityOf("sun", "", 5772.0, 4.44).cycleYears == 11.0
+  && flares > 150 && flares < 270 && length(flareAt(42, "trappist-1", 0.525, 3600.0 * 7.0 + 1500.0)) == 0
+}
+test "D-111 activity: Barnard's Star never more than one small spot; TRAPPIST-1 always spotted and flaring at ~0.525 a day (9,600 hours: 150-270; a flare lasts 20 min); alpha Cen B's groups at maximum; Aldebaran none; the cited cycles (B 8.2, A 19.1 tentative, Barnard 10, the Sun 11 years)" { checkActivity() }
+
+-- make strict: every check on the strict VM and the interpreter, plus the wire bytes' length.
+export pure func stellarSurfaceVm(k: int) -> string =
+  if checkWire() && checkBelow13() && checkDeterministic() && checkLogg() && checkClock() && checkWindows() && checkActivity()
+  then concat(["stellar-surface-ok ", showLen(slen(sys13()))])
+  else "stellar-surface-FAIL"
+pure func showLen(n: int) -> string = intToStrL(n)

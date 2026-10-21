@@ -1,5 +1,9 @@
 # R2-SIMILAR-S0: similar worlds in the sim
 
+> **Minor 15 taken (2026-10-21, ledger D-113):** the Archive's Memory Health ships at **minor 15** (`archiveMinor = surfaceMinor() + 2`, `sim/archive_health.ail`), leaving 14 to S0.2 as planned. Nothing shifts for S0: S0.2 adds `similarMinor` (14) between `surfaceMinor` and `archiveMinor` in `helloFor` and `sessionMinor`; a 2.15 stream then carries both sections.
+>
+> **Protocol minor renumbered (2026-10-21, R2-STAR-SURFACES merge of main):** minor 13 is taken by R2-STAR-SURFACES (#302, `surfaceMinor`, each finite star's `surface` record). S0.2 emits at **minor 14** (`similarMinor = surfaceMinor() + 1`), and its frozen pristine baseline is the 2.13 stream, not 2.12. Read every "2.13" / "minor 13" below for S0 as 2.14 / 14; the sprint JSON is already updated. S0.1 (data and ranking, #305) takes no minor and is unaffected.
+
 ## Amendment (iteration 42, 2026-10-20)
 
 - Renumber S0 to minor 13 / protocol 2.13 in the sim and bridge specifications, thresholds, first S0 session, commands and landing references.

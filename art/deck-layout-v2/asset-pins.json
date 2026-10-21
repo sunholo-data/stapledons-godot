@@ -23,8 +23,8 @@
       "all_materials_opaque": true
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 4451984,
-      "sha256": "f2f936de131fd2982960070b29fe2b57871e693ce7f951ec2fb3d0b54c9bc329",
+      "bytes": 4726860,
+      "sha256": "5989c6d85483e6fdadc00e8975220da71d6c4d2d6901d3c8d80b1d868138a935",
       "all_materials_opaque": true
     }
   },
@@ -43,6 +43,11 @@
       "bytes": 10476927,
       "sha256": "7ed3aff4891c01d4dfca5fe28531779aa7d6d74040ece1d1f4e52a89fe0c5493",
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/7ed3aff4891c01d4dfca5fe28531779aa7d6d74040ece1d1f4e52a89fe0c5493.blend"
+    },
+    "stapledon_bridge_props_v3.blend": {
+      "bytes": 10622442,
+      "sha256": "652f6da1d0dfad7529c00b009cdd2423255f6dd3cf3eff5ac76afeb516498140",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/652f6da1d0dfad7529c00b009cdd2423255f6dd3cf3eff5ac76afeb516498140.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
@@ -137,5 +142,43 @@
     ],
     "instancing": "a mesh shared only inside one set stays shared (rail segments, lamps, fronds); any other shared mesh is copied",
     "determinism": "two runs give byte-identical bridge_props.glb and ship.glb"
+  },
+  "d104": {
+    "authoring_script": "~/dev/blender/scripts/stapledon_bridge_props_v3.py (packed in the master)",
+    "authoring_script_sha256": "0d6819be68c962c9c18e3991537aa32ca1572f1af439462c4cc98f1dfdc9010d",
+    "source_master_sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13",
+    "what": "R2-BRIDGE-STYLE D-104 shape language at ST2: the four desks and their dials, the captain's chair and cushion, every screen housing rebuilt as grown forms (reshape()), then v2's bakes; ship.glb byte-identical to DL3 (f3eaf550)",
+    "straight_edge_share": {
+      "console_decision_0": {
+        "before": 0.4205,
+        "after": 0.0769,
+        "triangles": 3088
+      },
+      "console_decision_1": {
+        "before": 0.4205,
+        "after": 0.0769,
+        "triangles": 3088
+      },
+      "console_decision_2": {
+        "before": 0.4205,
+        "after": 0.0769,
+        "triangles": 3088
+      },
+      "console_decision_3": {
+        "before": 0.4205,
+        "after": 0.0769,
+        "triangles": 3088
+      },
+      "captain_chair": {
+        "before": 0.2891,
+        "after": 0.0711,
+        "triangles": 9440
+      },
+      "v2_chair_detail_00": {
+        "before": 0.7017,
+        "after": 0.0,
+        "triangles": 2400
+      }
+    }
   }
 }

@@ -1,0 +1,58 @@
+module stapledons/sim/archive_health_test
+
+-- Ledger D-113 (Mark, 2026-10-21): the Archive's Memory Health, the smallest honest source.
+-- stapledons-design features/future/archive-system.md "Degradation Causes": normal operation -1 per
+-- decade of ship time; a GR zone -10 (the low end of its -10 to -30), here each entry into a black
+-- hole's zone (the legacy log's bh_enter). Hidden from the player (design: "Memory Health Hidden");
+-- the sound director reads it (the spire's degradation layer).
+import std/list (map, foldl)
+import std/string (concat, join, contains, intToStr)
+import ./archive_health (memoryHealthOf, startHealth, decadeLoss, grZoneLoss)
+import ./consequence (Entry, entry)
+import ./protocol (Session, newSession, serve, archiveMinor, surfaceMinor)
+
+pure func bh(k: int) -> Entry = entry(k, "bh_enter", "Sgr A*", 0.0, 0.0)
+pure func other(k: int) -> Entry = entry(k, "arrived", "Sol", 0.0, 0.0)
+
+test "a new Archive is whole: 100 at ship time 0 with nothing in its log" {
+  startHealth() == 100 && memoryHealthOf(0.0, []) == 100
+}
+test "normal operation costs one point per whole decade of ship time" {
+  decadeLoss() == 1 && memoryHealthOf(9.999, []) == 100 && memoryHealthOf(10.0, []) == 99
+  && memoryHealthOf(25.0, []) == 98 && memoryHealthOf(123.4, []) == 88
+}
+test "each entry into a black hole's zone costs ten; other log entries cost nothing" {
+  grZoneLoss() == 10 && memoryHealthOf(0.0, [bh(0)]) == 90 && memoryHealthOf(0.0, [bh(0), other(1), bh(5)]) == 80
+  && memoryHealthOf(0.0, [other(1), other(2)]) == 100
+}
+test "the two causes add, and health stays within 0..100" {
+  memoryHealthOf(30.0, [bh(0)]) == 87 && memoryHealthOf(5000.0, []) == 0 && memoryHealthOf(0.0, map(bh, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])) == 0
+  && memoryHealthOf(-3.0, []) == 100
+}
+
+-- ---------------------------------------------------------------- the wire (protocol 2.15)
+pure func helloLine(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
+pure func gameLine(sc: string) -> string = concat(["{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"", sc, "\",\"diag\":false}"])
+pure func tickLine(t: int, dtau: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[]}"])
+pure func feed(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func reply(s: Session, line: string) -> string = serve(s, line).reply
+
+test "2.15 is the next free minor after 2.13 (2.14 is held for R2-SIMILAR-S0 S0.2)" {
+  archiveMinor() == surfaceMinor() + 2 && contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15")
+  && contains(reply(newSession(), helloLine(99)), "\"minor\":15") && contains(reply(newSession(), helloLine(14)), "\"minor\":13")
+}
+test "a 2.15 new game carries the archive section: 100 in Sol, 90 at Sgr A* (bh_enter)" {
+  let sol = reply(feed(newSession(), [helloLine(15)]), gameLine("sol"));
+  let bh = reply(feed(newSession(), [helloLine(15)]), gameLine("sgr_a"));
+  contains(sol, "\"archive\":{\"memory_health\":100}") && contains(bh, "\"archive\":{\"memory_health\":90}")
+}
+test "below 2.15 nothing changes: no archive section at 2.13" {
+  !contains(reply(feed(newSession(), [helloLine(13)]), gameLine("sol")), "\"memory_health\"") && !contains(reply(feed(newSession(), [helloLine(13)]), gameLine("sgr_a")), "\"memory_health\"")
+}
+test "a tick sends the section only when the value changes: 99 on the tick ship time reaches a decade" {
+  let s0 = feed(newSession(), [helloLine(15), gameLine("sol")]);
+  let s9 = feed(s0, map(\k. tickLine(k, "1"), [1, 2, 3, 4, 5, 6, 7, 8, 9]));
+  let s10 = feed(s9, [tickLine(10, "1")]);
+  !contains(reply(s0, tickLine(1, "1")), "\"memory_health\"") && contains(reply(s9, tickLine(10, "1")), "\"archive\":{\"memory_health\":99}")
+  && !contains(reply(s10, tickLine(11, "1")), "\"memory_health\"")
+}

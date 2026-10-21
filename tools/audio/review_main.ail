@@ -1,0 +1,91 @@
+module stapledons/audio/review_main
+-- R2-SOUND S0b (make sound-review): the listening page's audio. Re-renders each recipe with the
+-- synthesis core (so the page hears exactly what the game ships), applies one gain per item (the
+-- cue's in-game level plus one preview gain shared by every sound, so their balance is the game's),
+-- and writes <out>/<id>.ogg (Ogg Opus via std/audio.encode, deterministic) and <out>/<id>.wav (a
+-- fallback for browsers without Opus), named by each item's `file`. A mix tiles loops to a common length
+-- and sums them. A second plan over the previous recipes renders the <id>_v1 files for A/B listening.
+--   ailang run --quiet --bytecode --caps IO,FS --package-dir tools/audio --entry main --args-json '<plan>' \
+--     tools/audio/review_main.ail
+import ./synth (Recipe, parseRecipes, render, pcm16, rate, frames)
+import std/audio (wavFromPcm, encode, OggOpus)
+import std/fs (readFileResult, writeFileBytesResult)
+import std/list (map, range, foldl, filter, length as size, head)
+import std/array (fromList, toList, get, add, scale, make)
+import std/math (pow, round, floatToInt)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/io (println)
+import std/string (intToStr)
+
+export type Item = {id: string, file: string, gain_db: float}
+export type Part = {recipe: string, gain_db: float}
+export type Mix = {id: string, seconds: float, parts: [Part]}
+export type Plan = {recipes: string, out: string, items: [Item], mixes: [Mix]}
+
+pure func gain(db: float) -> float = pow(10.0, db / 20.0)
+
+pure func find(rs: [Recipe], id: string) -> Option[Recipe] = head(filter(\r. r.id == id, rs))
+
+-- A recipe tiled to n samples (a loop repeats; a one-shot is followed by silence).
+pure func tiled(r: Recipe, g: float, n: int) -> Array[float] {
+  let xs = fromList(render(r));
+  let m = frames(r);
+  fromList(map(\i. if r.loop || i < m then g * get(xs, i % m) else 0.0, range(0, n)))
+}
+
+func writeSound(out: string, id: string, xs: [float]) -> Result[(), string] ! {FS, IO} {
+  let pcm = pcm16(xs);
+  match encode(pcm, rate(), 1, OggOpus(96000)) {
+    Err(e) => Err("${id}: ${e}"),
+    Ok(ogg) => match writeFileBytesResult("${out}/${id}.ogg", ogg) {
+      Err(e) => Err("${id}.ogg: ${e}"),
+      Ok(_) => match writeFileBytesResult("${out}/${id}.wav", wavFromPcm(pcm, rate(), 1, 16)) {
+        Err(e) => Err("${id}.wav: ${e}"),
+        Ok(_) => { println("sound-review: ${id}"); Ok(()) }
+      }
+    }
+  }
+}
+
+func items(p: Plan, rs: [Recipe], is: [Item]) -> Result[(), string] ! {FS, IO} =
+  match is {
+    [] => Ok(()),
+    it :: more => match find(rs, it.id) {
+      None => Err("${it.id}: no such recipe"),
+      Some(r) => match writeSound(p.out, it.file, toList(scale(gain(it.gain_db), fromList(render(r))))) {
+        Err(e) => Err(e),
+        Ok(_) => items(p, rs, more)
+      }
+    }
+  }
+
+func mixes(p: Plan, rs: [Recipe], ms: [Mix]) -> Result[(), string] ! {FS, IO} =
+  match ms {
+    [] => Ok(()),
+    m :: more => {
+      let n = floatToInt(round(m.seconds * 48000.0));
+      let found = map(\pt. (find(rs, pt.recipe), pt.gain_db), m.parts);
+      let missing = filter(\x. match x { (None, _) => true, _ => false }, found);
+      if size(missing) > 0 then Err("${m.id}: a part names no recipe")
+      else {
+        let sum = foldl(\acc x. match x { (Some(r), g) => add(acc, tiled(r, gain(g), n)), (None, _) => acc }, make(n, 0.0), found);
+        match writeSound(p.out, m.id, toList(sum)) { Err(e) => Err(e), Ok(_) => mixes(p, rs, more) }
+      }
+    }
+  }
+
+export func main(p: Plan) -> () ! {FS, IO} =
+  match readFileResult(p.recipes) {
+    Err(e) => println("sound-review: FAIL reading ${p.recipes}: ${e}"),
+    Ok(text) => match parseRecipes(text) {
+      Err(e) => println("sound-review: FAIL ${e}"),
+      Ok(rs) => match items(p, rs, p.items) {
+        Err(e) => println("sound-review: FAIL ${e}"),
+        Ok(_) => match mixes(p, rs, p.mixes) {
+          Err(e) => println("sound-review: FAIL ${e}"),
+          Ok(_) => println("sound-review: ${intToStr(size(p.items) + size(p.mixes))} files written to ${p.out}")
+        }
+      }
+    }
+  }
