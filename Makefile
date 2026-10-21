@@ -1332,3 +1332,14 @@ in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the 
 	if [ -n "$$sb" ]; then echo "in-world-voice-check: the Archive model would be told a lore mechanic (sandboxed Archive, Mark 2026-10-13):"; echo "$$sb"; exit 1; fi; \
 	echo "in-world-voice-check: Archive entries, news copy and the news/log/codex/console panel strings speak in-world and keep the loop secret (D-67, D-68); the Archive model is told no lore mechanics (sandboxed)"
 
+
+# A fresh clone imports (art/ship-dimensions-v1/-v2 are .gdignore'd), so every file the game reads raw
+# needs importer="keep" (tools/import_keep.txt) or the export would ship only its imported form.
+.PHONY: import-keep import-keep-check
+import-keep:
+	@grep -v -E '^(#|$$)' tools/import_keep.txt | while read g; do for f in $$(git ls-files "$$g"); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; git add -f "$$f.import"; done; done; echo "import-keep: $$(git ls-files '*.import' | wc -l | tr -d ' ') keep files"
+import-keep-check:
+	@bad=0; n=0; for g in $$(grep -v -E '^(#|$$)' tools/import_keep.txt); do for f in $$(git ls-files "$$g"); do n=$$((n+1)); if ! git ls-files --error-unmatch "$$f.import" >/dev/null 2>&1 || ! grep -q '^importer="keep"$$' "$$f.import"; then echo "FAIL $$f has no committed importer=\"keep\" .import (make import-keep)"; bad=1; fi; done; done; \
+	  for d in art/ship-dimensions-v1 art/ship-dimensions-v2; do git ls-files --error-unmatch $$d/.gdignore >/dev/null 2>&1 || { echo "FAIL $$d/.gdignore missing: a fresh clone's import stops on its Blender masters"; bad=1; }; done; \
+	  test $$bad = 0 && echo "import-keep-check: $$n raw-read files keep their source in the export; Blender masters ignored"
+test: import-keep-check
