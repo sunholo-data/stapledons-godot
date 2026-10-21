@@ -24,17 +24,15 @@ const CELL_SCALE := 0.1875
 const ANIM_MANIFEST := "anim_pilot.json"
 const CANVAS := Vector2i(1024, 1536)
 const ANCHOR := Vector2(512, 1440)
-## Pose (§D4), per painted facing, set from the measured numbers (design doc "Jog v2"):
-##   back:    silhouette IoU >= 0.60 and leg coverage >= 0.65. The jog v2 back frames score IoU 0.615-0.688
-##            and legs 0.66-0.85 against their own guides, IoU 0.445-0.571 against the profile guides,
-##            so the IoU half separates the poses (the leg half alone does not: 0.48-0.826).
-##   profile: reported, not gated, for the jog (the idle keeps the first pilot's gate). Own IoU
-##            0.341-0.533 and legs 0.401-0.739 overlap the scores against the back guides (IoU
-##            0.385-0.514, legs 0.373-0.586): the flying open coat dominates the silhouette, so these
-##            metrics cannot tell profile jog poses apart. The profile pose is judged by eye at review
-##            and, for the planted frames, by the AC3 foot check below.
-const POSE_MIN := {"back": [0.60, 0.65]}
-const POSE_REPORT_ONLY := ["profile"] ## measured and reported, not gated (see above)
+## Pose (§D4), per painted facing [IoU, leg coverage], set from the measured numbers (design doc "Walk"):
+##   back:    IoU >= 0.65 and legs >= 0.65. The walk's back frames score IoU 0.694-0.764 and legs
+##            0.705-0.805 against their own guides, IoU 0.497-0.582 against the profile guides: the IoU
+##            half separates the poses (the leg half alone does not: 0.608-0.828).
+##   profile: IoU >= 0.50 and legs >= 0.60. Own IoU 0.534-0.732 and legs 0.688-0.873; against the back
+##            guides IoU 0.500-0.563 and legs 0.271-0.487: the leg half separates the poses.
+## Tighter than the jog's (back IoU 0.60, profile not gated): the walking coat hangs, so the silhouette
+## follows the guide. The idle frames (first pilot) pass both.
+const POSE_MIN := {"back": [0.65, 0.65], "profile": [0.50, 0.60]}
 const POSE_MIN_OTHER := [0.55, 0.65] ## facings not painted yet (the first pilot's gate)
 const HEIGHT_TOL := 0.12 ## the shipped figure's box height against its guide's: the facing shares one scale, so a
 ##   frame's box differs with its pose and the flying coat (jog v2: 0.902-1.052); 0.7x (the seeded defect) fails
@@ -49,6 +47,9 @@ const DISK_STAGE_MAX := 3 * 1024 * 1024
 const GPU_STAGE_MAX := 32 * 1024 * 1024
 const PALETTE_K := 6
 const PALETTE_SHARE_MIN := 0.08 ## the still's colour clusters checked: each >= 8% of the figure (coat, trousers, yoke, boots)
+## A cluster may shrink to this share of the still's (a walking back view hides more trouser under the
+## hanging coat: walk_back_10 shows 10% where the still shows 21%); a missing colour still fails.
+const PALETTE_SHARE_KEEP := 0.4
 ## The still each painted facing is compared with (the nearest stage-0 view).
 const REF_STILL := {"back": "avatar_captain_y0_back.png", "back_34": "avatar_captain_y0_ne.png", "profile": "avatar_captain_y0_se.png", "front_34": "avatar_captain_y0_se.png", "front": "avatar_captain_y0_front.png"}
 
@@ -334,18 +335,25 @@ func _check(selftest: bool) -> bool:
 					var g := Image.load_from_file(ProjectSettings.globalize_path("res://" + str(e.guide)))
 					g.convert(Image.FORMAT_RGBA8)
 					var hint := _key_sole(g, side_e)
-					pos.append(_sole_near(_cell_of_entry(e, s), 0.5, hint.x, 13))
+					pos.append(_sole_points(_cell_of_entry(e, s), 0.5, hint.x, 13))
 				else:
-					pos.append(Vector2.ZERO)
+					pos.append([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO])
 			for i in n:
 				var a: Dictionary = list[i]
 				var b: Dictionary = list[(i + 1) % n]
 				var side := str(a.get("planted", ""))
 				if side not in ["L", "R"] or str(b.get("planted", "")) != side:
 					continue
-				var d: Vector2 = pos[(i + 1) % n] - pos[i]
-				var moved: float = (-d.x / ppm) if facing == "profile" else (d.y / (ppm * sin(deg_to_rad(29.0))))
-				var drift := moved - mpf
+				# The planted foot rolls (heel strike, flat, heel off over the toe): whichever of its heel,
+				# centre and toe stays put is the contact, so the smallest drift of the three counts.
+				var drift := INF
+				var moved := 0.0
+				for k in 3:
+					var d: Vector2 = pos[(i + 1) % n][k] - pos[i][k]
+					var mv: float = (-d.x / ppm) if facing == "profile" else (d.y / (ppm * sin(deg_to_rad(29.0))))
+					if absf(mv - mpf) < absf(drift):
+						drift = mv - mpf
+						moved = mv
 				var px := absf(drift) * SCREEN_PX_PER_M
 				var row := {"clip": clip, "facing": facing, "from": i, "to": (i + 1) % n, "side": side, "moved_m": snappedf(moved, 0.0001), "deck_m": snappedf(mpf, 0.0001), "drift_m": snappedf(drift, 0.0001), "drift_px_1440": snappedf(px, 0.01)}
 				stance.append(row)
@@ -441,8 +449,6 @@ func _frame_checks(src: String, facing: String, cell: Image, refs: Dictionary, q
 	row["iou"] = float(inter) / maxf(1, uni)
 	row["legs"] = float(legs_hit) / maxf(1, legs)
 	var pmin: Array = POSE_MIN.get(facing, POSE_MIN_OTHER)
-	if facing in POSE_REPORT_ONLY and src.begins_with("jog_"):
-		pmin = [0.0, 0.0]
 	if row.iou < pmin[0]:
 		row.ok = false
 		row.notes.append("IoU %.3f < %.2f" % [row.iou, pmin[0]])
@@ -467,7 +473,7 @@ func _frame_checks(src: String, facing: String, cell: Image, refs: Dictionary, q
 		if ref.share[i] < PALETTE_SHARE_MIN:
 			continue
 		var key := "c%d" % i
-		if mine.n[i] < 0.5 * ref.share[i] * mine.total:
+		if mine.n[i] < PALETTE_SHARE_KEEP * ref.share[i] * mine.total:
 			row.ok = false
 			row.notes.append("%s (%.0f%% of the still) is %.0f%% here" % [key, 100.0 * ref.share[i], 100.0 * mine.n[i] / maxf(1, mine.total)])
 		de[key] = _de(mine.mean[i], ref.centroids[i]) if mine.n[i] > 0 else INF
@@ -641,3 +647,20 @@ static func _sole_near(img: Image, thr: float, x_hint: float, radius: int) -> Ve
 				sx += x
 				n += 1
 	return Vector2(sx / maxf(1, n), bottom)
+
+
+## The planted boot's [heel side, centre, toe side] at the bottom of the figure near the guide's boot:
+## the band's leftmost, centroid and rightmost points (the back view: the same band's centroid, thrice).
+static func _sole_points(img: Image, thr: float, x_hint: float, radius: int) -> Array:
+	var c := _sole_near(img, thr, x_hint, radius)
+	if c.x < 0.0:
+		return [c, c, c]
+	var band := maxi(2, int(img.get_height() * 0.015))
+	var x0 := INF
+	var x1 := -INF
+	for y in range(int(c.y) - band, int(c.y) + 1):
+		for x in range(maxi(0, int(x_hint) - radius), mini(img.get_width(), int(x_hint) + radius + 1)):
+			if img.get_pixel(x, y).a > thr:
+				x0 = minf(x0, x)
+				x1 = maxf(x1, x)
+	return [Vector2(x0, c.y), c, Vector2(x1, c.y)]

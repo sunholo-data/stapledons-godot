@@ -228,6 +228,53 @@ Mark: "its the same captain, but the jogging does not look real, needs more fram
 - the painted coat flies past the left edge of the contract canvas in some profile frames (crop x = 0), so its tip is cut;
 - the in-game A/B shows the bridge's new style (D-110) behind v2 and the old one behind v1; that difference is the bridge, not the animation.
 
+## Walk (2026-10-21, D-115: the captain walks calmly)
+
+Mark on jog v2: "the captain animation is still not right. she is jogging? she should be walking calmly". This amends D-102 OQ2 (keep 3.5 m/s as a light jog): the captain walks.
+
+**Speed: 1.3 m/s**, an unhurried adult walk; `ShipConsoles.WALK_SPEED_MPS` is the one constant for WASD and walk-to. No positional ease: control stays immediate, and the start and stop clips (and the stills' 2° lean) carry the ease visually. A speed ramp would also have moved every walk-distance check and the camera's slide envelope.
+
+What changed for feel at 1.3 m/s (it was 3.5 m/s):
+
+| Walk | Distance | Was | Now |
+|---|---|---|---|
+| Spawn to the helm | 3.5 m | 1.0 s | 2.7 s |
+| Spawn to the Voyage console | 15.2 m | 4.3 s | 11.7 s |
+| Spawn to the Archive terminal | 17.1 m | 4.9 s | 13.2 s |
+| Spawn to the navigation station | 19.6 m | 5.6 s | 15.1 s |
+| Across the bridge (44 m) | 44 m | 12.6 s | 33.8 s |
+
+The longer walks may feel slow. A held "hurry" (a brisk 2.0 m/s walk, painted later) is a follow-up option, not built.
+
+**Updated for the speed:**
+- `test_ship_movement` checks one second walks `WALK_SPEED_MPS`.
+- `test_camera_forward`'s W and D screen-motion checks walk 1.75 m (81 frames, not 30).
+- The director's sector-crossing walk is 14 m (650 frames, not 240).
+- `camera_forward_review` and `deck_bow_probe` walk 3 m at the walk speed.
+- The captain review's moonwalk uses the walk speed.
+- `m4_ship_capture`'s 30 s bound covers the 15 s walk to the helm.
+- The camera's dead zone, damping and slide envelope do not depend on speed and are unchanged.
+- No golden pose or benchmark walks the captain.
+
+**The gait** (`~/dev/blender/scripts/char_captain_pose_guides_v3.py`, a copy in `art/captain-anim-v3/`):
+- Cadence 105 steps a minute; duty factor 0.60, so two double supports of 10% and no flight.
+- Heel strike (toe up 14°), foot flat, heel off over the toe, toe off. A low swing (6 cm).
+- Pelvis highest at mid-stance, 2 cm peak to peak, nearly upright; arms ±12°, elbows soft; a small counter-rotation.
+- Drawn at the painted scale: the guide walks 1.3 × cos 29° = 1.137 m/s, so in game the cycle is 1.4857 m (0.743 m steps), 12 frames at 0.1238 m and 95.2 ms each (10.5 frames a second).
+- Measured on the guide: each flat-foot stance drifts 2–3 cm against the deck over 0.46 m, about 1 cm per frame (under 1 px at 1440p), as the contact rolls from heel to toe.
+
+**Frames:** 12 unique a cycle, back and profile. The art thread painted 24, then repainted `walk_back_06` once and `walk_profile_04` twice, because their planted boot was misplaced: 27 images in all. The coat hangs and sways, and no frame is clipped at the canvas edge.
+
+**Checks on the painted walk:**
+- **Planted feet (AC3, gated):** every one of the 16 stance steps is within 1.56 px at 1440p, with a limit of 2 px plus one cell px. The rolling contact counts at whichever of heel, centre and toe stays put.
+- **Pose, tightened (the coat no longer dominates the silhouette):**
+  - **back:** IoU ≥ 0.65 and legs ≥ 0.65. Own guides: IoU 0.694–0.764, legs 0.705–0.805; against the profile guides IoU 0.497–0.582, so the IoU half separates.
+  - **profile:** IoU ≥ 0.50 and legs ≥ 0.60. Own guides: IoU 0.534–0.732, legs 0.688–0.873; against the back guides legs 0.271–0.487, so the leg half separates.
+- **Palette:** a colour cluster may now shrink to 40% of the still's share (it was 50%). The walking back view hides more trouser under the hanging coat: `walk_back_10` shows 10% where the still shows 21%.
+- **Budgets:** 26 cells, 709 KB of WebP, 3.9 MB of GPU memory.
+
+**Review overlays:** they draw the planted boot's centre per step. At the toe-off frame (`walk_profile_04`) that centre moves while the toe stays, so the ring and disc sit apart, by up to 42 px at 2×. The check measures the point that stays put.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

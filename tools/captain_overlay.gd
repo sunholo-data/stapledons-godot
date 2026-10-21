@@ -1,7 +1,7 @@
 extends SceneTree
 ## R2-CAPTAIN-ANIMATION jog review extras (D-109), headless, from a review folder built by
 ## tools/captain_review.gd:
-##   overlay/<clip>_<facing>/fNN.png  the painted frames (2x their cell) with the foot contacts drawn: a
+##   overlay/<clip>_<facing>/fNN.png  the painted frames (2x their cell) with the foot contacts drawn, per step: a
 ##                                 disc on the planted sole (red L, blue R), and a ring where that sole
 ##                                 should be if it stayed on the deck (the contact's first position moved
 ##                                 back one frame spacing per frame); the disc on the ring = no slide
@@ -10,6 +10,7 @@ extends SceneTree
 ## Usage: godot --headless --path . --script tools/captain_overlay.gd -- --out=<review dir> --prev=<review dir>
 ##        [--clip=walk] [--prev-clip=jog] [--prev-ms=69.3]
 const DIR := "res://assets/characters/captain"
+const F := preload("res://tools/captain_frames.gd") ## the check's planted-boot finders
 var out := ""
 var v1 := "" ## the previous review folder (--prev; --v1 still accepted)
 var clip_name := "walk"
@@ -54,14 +55,20 @@ func _initialize() -> void:
 			img.blend_rect(cell, Rect2i(Vector2i.ZERO, cell.get_size()), Vector2i.ZERO)
 			var side := str(e.get("planted", ""))
 			if side in ["L", "R"]:
-				var p := _sole(cell)
+				var g := Image.load_from_file(ProjectSettings.globalize_path("res://" + str(e.guide)))
+				g.convert(Image.FORMAT_RGBA8)
+				var hint: Vector2 = F._key_sole(g, side) * 2.0
+				var p: Vector2 = F._sole_near(cell, 0.5, hint.x, 26) # the planted boot, as the check finds it
+				# Per step, as the check measures it: the ring is where the previous frame's contact should be
+				# now (moved back one frame spacing); the first frame of a stance has no ring.
 				if side != side_prev:
 					anchor = p; anchor_i = i
-				var k := i - anchor_i
+				var k := mini(1, i - anchor_i)
 				var want := anchor + (Vector2(-k * mpf * ppm, 0) if facing == "profile" else Vector2(0, k * mpf * ppm * sin(deg_to_rad(29.0))))
 				var col := Color(0.9, 0.15, 0.1) if side == "L" else Color(0.15, 0.35, 0.95)
 				_ring(img, want, 9.0, col)
 				_disc(img, p, 5.0, col)
+				anchor = p; anchor_i = i
 				marks.append({"frame": i, "side": side, "sole_px_2x": [snappedf(p.x, 0.1), snappedf(p.y, 0.1)], "on_deck_px_2x": [snappedf(want.x, 0.1), snappedf(want.y, 0.1)], "off_px_2x": snappedf(p.distance_to(want), 0.1)})
 			side_prev = side
 			img.save_png(dir.path_join("f%02d.png" % i))
