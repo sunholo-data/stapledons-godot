@@ -47,7 +47,12 @@ var walk: WalkArea
 var avatar := CaptainAvatar.new()
 var avatar_shadow:Node3D
 var avatar_pos := Vector3(8,82,-4.8)
-var active_level := 0
+## R2-BRIDGE-STYLE S1: the level the captain is on; the lights follow it (the broad key is retired on
+## the bridge, 0, where the spire keys the deck).
+var active_level := 0:
+	set(v):
+		active_level=v
+		if not lighting.is_empty():Lighting.set_level(lighting,v)
 var label := Label.new() # retired (R1-SHIP-UI U1); never shown
 var hud: Control # the status strip (ShipHud.strip)
 var ship_hud: ShipHud
@@ -159,10 +164,13 @@ func setup(opts := {}) -> bool:
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
 	_install_props()
+	_style_bridge(visual)
 	geometry_view.add_child(camera);camera.current=true
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
 	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
 	lighting=Lighting.install(geometry);star_light.install(lighting)
+	Lighting.set_mast(lighting,(manifest.get("style",{}).get("spire_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is GeometryInstance3D))
+	Lighting.set_level(lighting,active_level)
 	set_lighting(opts.get("lighting","moody"))
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
 		var n:=AreaBundle.load_glb(asset(file));_walk_nodes.append(n)
@@ -692,9 +700,9 @@ func _mark_occluders(visual: Node) -> void:
 		stack.append_array(n.get_children())
 ## R2-DECK-LAYOUT §D5 (DL2): the dressed hero props (the navigation arc, the chair) ship in their own
 ## GLB beside ship.glb (manifest assets.props), painted (WebP), with the engine's ink outline
-## (interior/outline.gdshader) as each surface's next pass. Light is never baked into them: the
+## (interior/outline.gdshader) as each surface's next pass (since R2-BRIDGE-STYLE S2, the toon
+## material's: StapledonStyle). Light is never baked into them: the
 ## spire and the star light them live (§D5a).
-const PROP_OUTLINE_M := 0.018
 var props_visual: Node3D
 func _install_props() -> void:
 	var file: String=manifest.get("assets",{}).get("props","")
@@ -702,16 +710,12 @@ func _install_props() -> void:
 	props_visual=AreaBundle.load_glb(asset(file))
 	if props_visual==null:push_error("ship demo missing "+file);return
 	props_visual.name="BridgeProps";geometry.add_child(props_visual);_collision(props_visual)
-	var ink:=ShaderMaterial.new();ink.shader=load("res://interior/outline.gdshader");ink.set_shader_parameter("width",PROP_OUTLINE_M)
-	var stack:Array=[props_visual]
-	while not stack.is_empty():
-		var n:Node=stack.pop_back()
-		if n is MeshInstance3D and n.mesh!=null:
-			for i in n.mesh.get_surface_count():
-				var m:Material=n.mesh.surface_get_material(i)
-				if m!=null:
-					var own:=m.duplicate() as Material;own.next_pass=ink;n.set_surface_override_material(i,own)
-		stack.append_array(n.get_children())
+	StapledonStyle.apply([props_visual]) # R2-BRIDGE-STYLE S2: the toon material, the ink as its next_pass
+## R2-BRIDGE-STYLE S2: the ship.glb meshes on the bridge level (manifest style.bridge_nodes) take the
+## same toon material and ink as the props; the lower decks keep their look until their own passes.
+func _style_bridge(visual: Node) -> void:
+	var nodes:Array=(manifest.get("style",{}).get("bridge_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is MeshInstance3D)
+	StapledonStyle.apply(nodes)
 func _collision(n: Node) -> void:
 	if n is MeshInstance3D and n.mesh!=null:n.create_trimesh_collision()
 	for child in n.get_children():

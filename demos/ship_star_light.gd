@@ -174,16 +174,26 @@ func apply_rig(rig: Dictionary) -> void:
 	else: light.basis = b
 	var key: DirectionalLight3D = rig.key
 	var base: float = rig.get("key_base", key.light_energy)
-	key.light_energy = base * maxf(KEY_FLOOR_SHARE, 1.0 - level)
+	# R2-BRIDGE-STYLE S1 (D-100): on the bridge the broad key is retired and the spire is the key.
+	var bridge: bool = rig.get("bridge", false) and rig.has("spire")
+	var owner_opacity := clampf(1.0 - level / SHADOW_HANDOVER, 0.0, 1.0)
+	key.light_energy = 0.0 if bridge else base * maxf(KEY_FLOOR_SHARE, 1.0 - level)
 	key.visible = key.light_energy >= VISIBLE_EPS
-	key.shadow_enabled = shadows and not star_owns
-	key.shadow_opacity = clampf(1.0 - level / SHADOW_HANDOVER, 0.0, 1.0)
+	key.shadow_enabled = shadows and not star_owns and not bridge
+	key.shadow_opacity = owner_opacity
 	# R2-DECK-LAYOUT §D5a (D-96): the spire, the bridge's own light, shares the key's dimming.
 	if rig.has("spire"):
 		var share := maxf(KEY_FLOOR_SHARE, 1.0 - level)
 		var spire: OmniLight3D = rig.spire
 		spire.light_energy = float(rig.get("spire_base", 0.0)) * share
 		spire.visible = spire.light_energy >= VISIBLE_EPS
+		# The spire holds the shadow on the bridge until the star takes it (the key's ramp): exactly
+		# one of spire and star has a shadow map; the mast, which holds the light, never casts its shadow.
+		spire.shadow_enabled = bridge and shadows and not star_owns and spire.visible
+		spire.shadow_opacity = owner_opacity
+		var mast_cast := GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if bridge and not star_owns else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		for m: GeometryInstance3D in rig.get("mast", []):
+			if is_instance_valid(m): m.cast_shadow = mast_cast
 		var lamp: MeshInstance3D = rig.get("spire_lamp")
 		if lamp != null:
 			(lamp.material_override as StandardMaterial3D).emission_energy_multiplier = float(rig.get("spire_lamp_base", 0.0)) * share
@@ -196,7 +206,7 @@ func manifest() -> Dictionary:
 		"direction": "physical: the star's aberrated apparent direction, the sky renderer's disc centre, in ship axes",
 		"colour": "physical hue: blackbody at Teff x Doppler factor (the renderer's lookup), unit max channel",
 		"brightness": "log-compressed, not physical: energy = %.1f x log10(E / %s lx) / log10(%s / %s), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission)" % [ENERGY_MAX, LUX_FLOOR, LUX_FULL, LUX_FLOOR],
-		"broad_key": "ship-fixed key dimmed by the star light's share down to a %d%% readability floor (ship light, not physical; no shadows while the star owns them); ambient, fill and practicals unchanged" % roundi(100.0 * KEY_FLOOR_SHARE),
+		"broad_key": "ship-fixed key dimmed by the star light's share down to a %d%% readability floor (ship light, not physical; no shadows while the star owns them); ambient, fill and practicals unchanged; retired on the bridge, where the spire takes this rule and the shadow (R2-BRIDGE-STYLE S1)" % roundi(100.0 * KEY_FLOOR_SHARE),
 		"easing_s": TAU_S, "switch_ratio": SWITCH_RATIO}
 
 
