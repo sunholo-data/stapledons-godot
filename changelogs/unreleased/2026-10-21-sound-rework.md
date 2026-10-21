@@ -9,3 +9,6 @@
 - **The spire's degradation layer.** A second, much slower beat under the hum that rises as the
   Archive's Memory Health falls. The sim does not emit Memory Health yet, so in game it stays silent.
 - Synthesis: vibrato, amplitude beats, filter sweeps, soft saturation and a true white noise.
+- **The export carries the sounds QOA-compressed** (D-112): 2.3 MB instead of 11.4 MB, staged by
+  `make sound-stage` and proven by `make sound-export-smoke` in the exported app. The room tone is
+  another 6 dB lower.

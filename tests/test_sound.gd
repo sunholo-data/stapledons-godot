@@ -259,7 +259,7 @@ func _run() -> void:
 	check(se.is_empty() and shipped.cues.size() >= 17, "the shipped cue table and manifest validate (%d cues; %s)" % [shipped.cues.size(), "; ".join(se)])
 	var hum := shipped.stream("spire_hum")
 	check(hum != null and hum.loop_mode == AudioStreamWAV.LOOP_FORWARD and hum.loop_end == 384000 and hum.mix_rate == 48000, "spire_hum loads as a 48 kHz loop of 384,000 frames (8 s)")
-	check(SoundDirector.source_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.wav.bin", "the export falls back to the staged audio_bundle (.bin)")
+	check(SoundDirector.bundle_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.res", "the export reads the staged QOA bundle (audio_bundle/<kind>/<file>.res)")
 	shipped.free()
 
 	# The bus layout (§D2).

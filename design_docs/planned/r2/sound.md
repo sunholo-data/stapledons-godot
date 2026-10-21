@@ -1,6 +1,6 @@
 # R2-SOUND: the ship's sound, heard from inside
 
-**Status:** S0a and S0b landed (#298); reworked after Mark's first listen (D-108, §D11), awaiting his second listen. Approved by Mark on 2026-10-20 (ledger D-101), every recommendation: "approve the sound but we will eventually allow for ai generated sound just not yet I guess". Executing S0a and S0b on `feat/sound`. Proposed 2026-10-20 (D-98). A throwaway spike de-risked the pipeline (§Evidence).
+**Status:** S0a and S0b landed (#298); reworked after Mark's first listen (D-108, §D11) and approved at the second (D-112) with the room 6 dB lower and the export compressed (QOA). Approved by Mark on 2026-10-20 (ledger D-101), every recommendation: "approve the sound but we will eventually allow for ai generated sound just not yet I guess". Executing S0a and S0b on `feat/sound`. Proposed 2026-10-20 (D-98). A throwaway spike de-risked the pipeline (§Evidence).
 **Release:** R2. **Milestone:** the first sound in the game: the bridge, the voyage's moments and the interface, mixed and tested headless.
 **Priority:** P1 for R2. Mark, after playing the bow-facing bridge (ledger D-98, 2026-10-20): *"it looks really great. obviously we need animation on the captain a bit and sound effects and the level design but such good potential"*.
 
@@ -229,7 +229,9 @@ Mark kept the interface sounds, commit_hold, stop_turn and hold_limit, and named
 
 **Synthesis additions** (no-ops at their defaults, so every unchanged recipe renders byte for byte): a slow vibrato, an amplitude beat, a filter sweep, and per-recipe soft saturation; loops must complete whole vibrato and beat cycles (checked).
 
-**Budget (needs a decision before S1):** the two 32 s layers bring the WAVs to 11.4 MB of the 12 MB git budget, and the uncompressed bundle would add about 11 MB to the zip against AC13's 6 MB. Recommendation: let Godot import `assets/audio` (QOA, measured 4.9× smaller; the one asset kind the repo would import) or render long loops at 24 kHz; decide before S1 adds the CC0 foley.
+**Budget (D-112, resolved).** Mark took the recommendation: Godot's own QOA compression. A fresh clone cannot import assets (its `--import` stops on the stray Blender masters in `art/ship-dimensions-v1` and `-v2`, which have no `.gdignore`; the repo reads assets as files anyway), so the same compression runs at stage time: `tools/sound_stage.gd` loads each WAV with the importer's `compress/mode` 2 (`AudioStreamWAV.load_from_buffer`), sets the manifest's loop points and saves `audio_bundle/<kind>/<file>.res`; the director reads the bundle when the source WAV is not shipped. The 19 sounds stage at 2.3 MB (from 11.4 MB, 4.9×), inside the 6 MB export budget, checked by `make sound-stage-check` (QOA, length to the frame, loop points, budget); `make sound-export-smoke` proves the exported `.app` loads every sound from the bundle and plays the bridge's loops. The WAV sources stay in git (11.4 MB of the 12 MB budget; S1's foley may need that budget raised).
+
+**Room tone, second pass (D-112):** Mark approved the rework but found the room "still pretty loud ... like a sea scape": its character stays, 6 dB lower (RMS −52.6 dBFS); the hum leads the bed by about 17 dB.
 
 ## Acceptance criteria
 
