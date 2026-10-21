@@ -1269,6 +1269,11 @@ camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V8, V1
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward)' $(SCRATCH)/camera-forward-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-test.log && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-forward-test.log
 ship-demo-ci: camera-forward-test
+.PHONY: guided-finale-test
+guided-finale-test: import ## the guided voyage's last stop is Sgr A* (after the dwell, or N), the hole ahead on the rendered sky; the navigation entry still works
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_guided_finale.gd > $(SCRATCH)/guided-finale-test.log 2>&1; rc=$$?; grep -E '^(FAIL|guided-finale)' $(SCRATCH)/guided-finale-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/guided-finale-test.log && grep -q '^guided-finale: [0-9]* passed, 0 failures$$' $(SCRATCH)/guided-finale-test.log
+ship-demo-ci: guided-finale-test
 .PHONY: camera-forward-targets
 camera-forward-targets: import ## R2-CAMERA-FORWARD AC-V6 fixture: record the live first guided stop and every Sgr A* stop -> tests/fixtures/camera_forward/targets.json (headless; re-run when the itinerary, the stop turn or the visit changes, and commit the diff)
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --headless --path . --script tools/camera_forward_targets.gd > $(SCRATCH)/camera-forward-targets.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward-targets)' $(SCRATCH)/camera-forward-targets.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-targets.log && grep -q 'Sgr A\* stops, 0 failures$$' $(SCRATCH)/camera-forward-targets.log
@@ -1279,6 +1284,9 @@ camera-forward-review: import ## R2-CAMERA-FORWARD F1 review set: Bow at rest (s
 camera-walk-capture: import ## R2-CAMERA-FORWARD AC-R1 evidence: the director's Bow (rest, 0.99c cruise) and Astern (rest) over the 16-sample bridge walk -> renders/camera_walk/*.png + contact_sheet.png + walk.json (GPU window; open every frame)
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_walk_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-walk-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-walk)' $(SCRATCH)/camera-walk-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-walk-capture.log && grep -q '^camera-walk-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-walk-capture.log
 
+.PHONY: bh-ahead-capture
+bh-ahead-capture: import ## Mark 2026-10-20: the guided voyage's final stop and every Sgr A* stop after flying the last leg, Bow view with the HUD -> renders/bh_ahead/<tag>/ (GPU window; CAPTURE_ARGS="-- --tag=before"; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/bh_ahead_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/bh-ahead-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|bh-ahead-capture|tour_|sgr_a)' $(SCRATCH)/bh-ahead-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bh-ahead-capture.log
 .PHONY: camera-views-capture
 camera-views-capture: import ## R2-CAMERA-FORWARD AC-R1: Bow, Astern, the legacy Commons and the lift at rest, 0.99c, a guided stop and Sgr A* (1280x720 and 2560x1440; CAPTURE_ARGS="-- --quick" for 720p), a forced-fade frame, a real voyage at 0.9/0.99/0.999c and every Sgr A* stop -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m, no captain in frame, or Bow not framing the pole, the stop body or the hole
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_views_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-views-capture.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|camera-views-capture)' $(SCRATCH)/camera-views-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-views-capture.log && grep -q '^camera-views-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-views-capture.log
