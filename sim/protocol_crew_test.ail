@@ -190,7 +190,7 @@ pure func caseBelow() -> bool {
   let c10 = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [offerPilot(""), askPilot()])], []);
   let c99 = feedAll(newSession(), [hello(99), game(",\"crew\":\"consent\""), input(1, [offerPilot(""), askPilot()])], []);
   contains(at(a, 2), "bad_intent") && contains(at(b, 3), "bad_intent") && !contains(at(c10, 1), "work_state") && !contains(at(c10, 2), "work_state")
-    && contains(at(c99, 0), "\"minor\":13")
+    && contains(at(c99, 0), "\"minor\":15") -- the highest minor (2.15, D-113; 14 is held for S0.2)
 }
 pure func caseEnvelope() -> bool {
   let r = feedAll(newSession(), [hello(consoleMinor()), game(",\"crew\":\"consent\""),
