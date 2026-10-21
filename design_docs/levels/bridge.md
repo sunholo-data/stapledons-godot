@@ -20,3 +20,4 @@ Decisions, navigation and the Archive shrine, with the helm at the bow rail faci
 | Version | Date | What changed, and why any baseline was re-pinned |
 |---|---|---|
 | v1 (manifest sha256 fc61ee5e) | 2026-10-20 | R2-LEVELS LP1a: the bridge measured as a one-stage level; first baseline pinned |
+| v1 (manifest sha256 fc61ee5e) | 2026-10-21 | Re-pinned after R2-BRIDGE-STYLE (#300) regrew the hero props with curves (D-104): `near_bow` 0.021 -> 0.017 (less of the bow near field taken). Layout unchanged; deck-layout-eval passes on the grown props. |
