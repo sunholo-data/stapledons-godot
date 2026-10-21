@@ -178,7 +178,7 @@ func setup(opts := {}) -> bool:
 	if opts.get("commons",true):
 		commons=Commons.install(self)
 		if commons.is_empty():return false
-	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.position=avatar_pos
+	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");avatar.position=avatar_pos
 	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
 	var ring_mesh:=TorusMesh.new();ring_mesh.inner_radius=.55;ring_mesh.outer_radius=.7;ring_mesh.rings=48;ring_mesh.ring_segments=6
 	var ring_mat:=StandardMaterial3D.new();ring_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;ring_mat.albedo_color=Color(1.,.78,.32)
@@ -378,9 +378,8 @@ func walk_motion(move: Vector2,delta: float) -> void:
 	_walking=move!=Vector2.ZERO
 	if move==Vector2.ZERO:
 		_walk_hold_yaw=NAN;return
-	# R2-CAMERA-FORWARD §D6: the yaw is fixed, so the captain's facing is the screen direction of
-	# the motion (walking toward the bow shows the back).
-	if director.walk_active():avatar.set_motion(Vector2(move.x,-move.y))
+	# R2-CAMERA-FORWARD §D6: the yaw is fixed; the captain's facing follows the motion on screen
+	# (R2-CAPTAIN-ANIMATION, _animate_captain).
 	if not director.situation.is_empty() or not director._pending.is_empty():director.end_situation() # C2: a move key ends a sky view
 	if is_nan(_walk_hold_yaw) or director.overridden:_walk_hold_yaw=director.walk_yaw()
 	var forward:=Vector3(cos(_walk_hold_yaw),0.,sin(_walk_hold_yaw))
@@ -442,11 +441,11 @@ func _process(delta: float) -> void:
 		# back into a giant card; the sky views stand the captain upright (a silhouette on the sky).
 		var upright:bool=str(director.views.get(director.view_id,{}).get("billboard",""))=="upright"
 		avatar.billboard=BaseMaterial3D.BILLBOARD_FIXED_Y if upright else BaseMaterial3D.BILLBOARD_ENABLED
-		if upright and not _walking and avatar.facing!="back":avatar.set_motion(Vector2(0,-1)) # D3: standing, the captain looks where the player looks
 	captain_ring.visible=not director.overridden and director.view_id.begins_with("z3") and camera_mode=="player"
 	captain_ring.global_position=avatar.global_position+Vector3.UP*.03
 	fade_rect.color.a=.85*director.fade
 	avatar_shadow.global_position=avatar.global_position
+	_animate_captain(delta)
 	_sync_observer()
 	sky.finish_exposure_frame(delta)
 	star_light.update(lighting,sky,delta)
@@ -1605,3 +1604,29 @@ func _sync_pointer() -> void:
 	var capture:bool=is_instance_valid(window) and window.has_focus() and wants_capture()
 	var desired:int=Input.MOUSE_MODE_CAPTURED if capture else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode!=desired:Input.mouse_mode=desired
+## R2-CAPTAIN-ANIMATION CA0 (§D2): the captain's clip, frame and facing from CaptainAnim, fed by the
+## captain's ground velocity (the walk position's change, so WASD, walk-to and the lift all count; a
+## jump of more than 1 m in a frame is a teleport, not motion), the walk view's yaw, the focused
+## station and the lift. Facing comes from motion on screen in 8 sectors; it replaces the front/back
+## rule (D3) that showed a sideways walk with the back (the moonwalk). The bow is -z (spawn, D-92).
+signal captain_event(e: Dictionary) ## foot_down and clip changes (the sound hook, §D5)
+var captain_anim := _new_captain_anim()
+func _new_captain_anim() -> CaptainAnim:
+	var a := CaptainAnim.new();a.heading=Vector3(0,0,-1);return a # the spawn faces the bow
+var _anim_pos := Vector3(NAN, NAN, NAN)
+var captain_anim_auto := true ## false: a review tool drives avatar.show_anim itself
+func _animate_captain(delta: float) -> void:
+	if not captain_anim_auto:return
+	var v := Vector3.ZERO
+	if delta > 0.0 and not is_nan(_anim_pos.x) and avatar_pos.distance_to(_anim_pos) < 1.0:
+		v = (avatar_pos - _anim_pos) / delta
+	_anim_pos = avatar_pos
+	var station := ""
+	if consoles != null and consoles.focused != "":
+		station = CaptainAnim.STATION_CLIP.get(consoles.focused, "use_mid")
+	var o := captain_anim.step({"velocity": v, "view_yaw": director.walk_yaw(), "station": station,
+		"face_dir": Vector3(0, 0, -1), "lift": lift != null and lift.state in ["descending", "ascending"],
+		"reduced": camera_motion == "reduced"}, delta)
+	avatar.show_anim(o)
+	for e: Dictionary in o.events:
+		captain_event.emit(e)

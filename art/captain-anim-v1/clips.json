@@ -1,0 +1,12 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION CA1 pilot clip plan (D-102): which painted frame is each clip frame. Jog: 4 painted frames are a half cycle; the back view's second half is the first half mirrored (the identity is mirror-safe), the profile's second half repeats the first (the near and far legs read alike at 81-161 px). Idle: one standing frame per facing. Guides: guides.json (pose-guide rig, elevation 29 deg); the full set is pinned in guides.sha256 (gs://stapledons-voyage-assets/captain/<sha256>.png).",
+  "painted": ["jog_back_00", "jog_back_01", "jog_back_02", "jog_back_03", "idle_back_00", "jog_profile_00", "jog_profile_01", "jog_profile_02", "jog_profile_03", "idle_profile_00"],
+  "clips": {
+    "jog": {"kind": "gait", "cycle_m": 2.3333, "contacts": [[0.0, "R"], [0.5, "L"]],
+      "frames": {
+        "back": [["jog_back_00", false], ["jog_back_01", false], ["jog_back_02", false], ["jog_back_03", false], ["jog_back_00", true], ["jog_back_01", true], ["jog_back_02", true], ["jog_back_03", true]],
+        "profile": [["jog_profile_00", false], ["jog_profile_01", false], ["jog_profile_02", false], ["jog_profile_03", false], ["jog_profile_00", false], ["jog_profile_01", false], ["jog_profile_02", false], ["jog_profile_03", false]]}},
+    "idle": {"kind": "time", "fps": 2.0, "loop": true,
+      "frames": {"back": [["idle_back_00", false]], "profile": [["idle_profile_00", false]]}}
+  }
+}

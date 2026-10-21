@@ -1,0 +1,30 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION test fixture: the manifest v2 anim section with flat 52x240 cells (crop [70, 30, 52, 240] in a 192x288 cell canvas, scale 0.1875); jog in back (4 frames + the same 4 mirrored, the half cycle) and profile, idle in back and profile",
+  "anim": {
+    "cell_scale": 0.1875,
+    "clips": {
+      "jog": {"kind": "gait", "cycle_m": 2.3333, "contacts": [[0.0, "L"], [0.5, "R"]], "stages": {"0": {
+        "back": [
+          {"file": "jog_back_00.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_back_01.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_back_02.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_back_03.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_back_00.png", "crop": [70, 30, 52, 240], "flip": true},
+          {"file": "jog_back_01.png", "crop": [70, 30, 52, 240], "flip": true},
+          {"file": "jog_back_02.png", "crop": [70, 30, 52, 240], "flip": true},
+          {"file": "jog_back_03.png", "crop": [70, 30, 52, 240], "flip": true}],
+        "profile": [
+          {"file": "jog_profile_00.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_01.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_02.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_03.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_00.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_01.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_02.png", "crop": [70, 30, 52, 240], "flip": false},
+          {"file": "jog_profile_03.png", "crop": [70, 30, 52, 240], "flip": false}]}}},
+      "idle": {"kind": "time", "fps": 2.0, "loop": true, "stages": {"0": {
+        "back": [{"file": "idle_back_00.png", "crop": [70, 30, 52, 240], "flip": false}],
+        "profile": [{"file": "idle_profile_00.png", "crop": [70, 30, 52, 240], "flip": false}]}}}
+    }
+  }
+}
