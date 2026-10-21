@@ -90,7 +90,7 @@
       "in_make_test": true,
       "parts": [
         "strict ranking cmp and hash",
-        "2.13 session cmp and oracle",
+        "2.14 session cmp and oracle",
         "production GDScript guards"
       ]
     },
@@ -221,7 +221,7 @@
       "commands": [
         "(cd sim && ../runtime/bin/ailang test --package .)"
       ],
-      "evidence": "Negotiated 2.13; similar emitted only on new_game at >=13 in every scenario; literal pristine 2.12 bytes unchanged."
+      "evidence": "Negotiated 2.14; similar emitted only on new_game at >=14 in every scenario; literal pristine 2.12 bytes unchanged."
     },
     {
       "id": "AC8",
@@ -230,7 +230,7 @@
         "make similar-test AILANG=runtime/bin/ailang",
         "make ism-compat AILANG=runtime/bin/ailang"
       ],
-      "evidence": "2.13 strict VM = ordinary VM = interpreter = expected fixture by cmp; repeat strict run identical; frozen 2.7 still passes."
+      "evidence": "2.14 strict VM = ordinary VM = interpreter = expected fixture by cmp; repeat strict run identical; frozen 2.7 still passes."
     },
     {
       "id": "AC9",
@@ -335,7 +335,7 @@
     "starIlluminanceAt first parameter e1AU sounds like lux; linearity permits solar luminosity units for Earth-relative flux. Pin Earth and e package-call tests.",
     "Sol Earth radius 6378.1366 km and archive 6378.1 km differ about 6 ppm; normalize all radii through km and Earth row, keep mass/AU/luminosity units explicit.",
     "AC1 spike printer deleted: original 15-line sha256 remains a hard gate. If exact format cannot be recovered, stop acceptance; document canonical format, compare engines, pass numeric/order tests and independent oracle, compute shasum -a 256 .godot/tmp/similar/rank-strict.txt and revise plan with literal re-derived digest for review before pinning. Do not bless an observed hash automatically.",
-    "Current base uses homeTiersMinor=12; S0 plans minor 13 and main retains HOME_TIERS_MINOR. Recheck if integration base advances; do not weaken AC6."
+    "Current base uses homeTiersMinor=12 and R2-STAR-SURFACES (#302) takes minor 13 (surfaceMinor, the star surface records); S0 emits at minor 14 (similarMinor = surfaceMinor() + 1), and its frozen-bytes baseline becomes the 2.13 stream (renumbered 2026-10-21 when #302 merged main). Recheck if integration base advances; do not weaken AC6."
   ],
   "design_inconsistencies": [
     "Historical core-guard table inconsistency was resolved in iteration 38: guard stays evaluator-run outside test and similar-test.",
@@ -530,9 +530,9 @@
     },
     {
       "id": "S0.2",
-      "title": "emission (protocol 2.13)",
+      "title": "emission (protocol 2.14)",
       "status": "pending",
-      "description": "Freeze literal pristine 2.12 hello/new_game/tick expectation at minor 12 before changing the encoder. Add red 2.13 negotiation and all-scenario new_game-only tests, then top-level similar emission via protocol. Add strict/VM/interpreter/fixture cmp, repeated-run identity, independent oracle and new similar-record target excluded from test. No core edit and no old golden changes.",
+      "description": "Freeze literal pristine 2.13 hello/new_game/tick expectation at minor 13 before changing the encoder. Add red 2.14 negotiation and all-scenario new_game-only tests, then top-level similar emission via protocol. Add strict/VM/interpreter/fixture cmp, repeated-run identity, independent oracle and new similar-record target excluded from test. No core edit and no old golden changes.",
       "estimated_loc": 140,
       "estimated_documentation_loc": 0,
       "estimated_days": 1.0,
@@ -600,7 +600,7 @@
         {
           "test": "frozen 2.12 bytes (AC7)",
           "file": "sim/protocol_test.ail",
-          "asserts": "Literal pristine hello/new_game/tick bytes unchanged; without similar a 2.13 stream equals 2.12's but for the hello's minor",
+          "asserts": "Literal pristine hello/new_game/tick bytes unchanged; without similar a 2.14 stream equals 2.13's but for the hello's minor",
           "kills_which_mutation": "Minor 13 leaking into 2.12 bytes; reserializing old fields differently"
         },
         {
@@ -610,7 +610,7 @@
           "kills_which_mutation": "Missing excluded; vector truncated; neighbouring rank id replaced by name"
         },
         {
-          "test": "frozen 2.13 session (AC8)",
+          "test": "frozen 2.14 session (AC8)",
           "file": "tests/fixtures/protocol_213_similar.input.ndjson`, `tests/fixtures/protocol_213_similar.expected.ndjson`, `Makefile",
           "asserts": "Strict VM = ordinary VM = interpreter = fixture by cmp; repeated strict run identical",
           "kills_which_mutation": "Hidden state; non-strict fallback; nondeterministic section order"
@@ -763,7 +763,7 @@
         "AC12 and all AC1-AC11 command evidence green outside sandbox: full Studio rig (rig/full) and GitHub ci-fast on v0.54.14.",
         "All CLAUDE.md definition-of-done gates recorded, physics visual gate N/A with reason, no package change and core purity checked.",
         "Independent evaluator differs from executor, score >=70/100, actionable findings resolved with evidence in .ailang/state/evaluations/.",
-        "Implemented docs and report/index/changelog agree on protocol 2.13; design-repo PR updates S0 and measured Jupiter -> Saturn, Uranus, Neptune; visible work remains parked."
+        "Implemented docs and report/index/changelog agree on protocol 2.14; design-repo PR updates S0 and measured Jupiter -> Saturn, Uranus, Neptune; visible work remains parked."
       ],
       "acceptance_ids_first_passing": [
         "AC12"
@@ -799,7 +799,7 @@
         {
           "test": "landing audit",
           "file": "implemented doc/report, index, changelog, design-repo PR",
-          "asserts": "Paths resolve, 2.13 named, Jupiter corrected, S0 completed without claiming display",
+          "asserts": "Paths resolve, 2.14 named, Jupiter corrected, S0 completed without claiming display",
           "kills_which_mutation": "Incorrect Jupiter second; broken links; reporting visible UI as shipped"
         }
       ],
@@ -843,7 +843,7 @@
     "frozen_pre_s0_minor": 12,
     "hello_pin": "relativityPin() as at 2.12",
     "negotiation": "Requests above 13 negotiate 13; similar absent at <=12 and on every tick.",
-    "without_section": "A 2.13 stream equals 2.12's but for the hello's minor.",
+    "without_section": "A 2.14 stream equals 2.12's but for the hello's minor.",
     "main_request": "HOME_TIERS_MINOR (12), unchanged",
     "s01_minor_dependency": false
   },
@@ -859,7 +859,7 @@
     "iteration": 42,
     "date": "2026-10-20",
     "changes": [
-      "- Renumber S0 to minor 13 / protocol 2.13 in the sim and bridge specifications, thresholds, first S0 session, commands and landing references.",
+      "- Renumber S0 to minor 13 / protocol 2.14 in the sim and bridge specifications, thresholds, first S0 session, commands and landing references.",
       "- Rename the planned fixtures to `tests/fixtures/protocol_213_similar.{input,expected}.ndjson`.",
       "- Freeze pre-S0 hello/new_game/tick bytes at minor 12; keep `relativityPin()` as at 2.12, absence at <=12, negotiation to 13 above 13, and equality with 2.12 except the hello minor when the section is removed.",
       "- Preserve the game's `HOME_TIERS_MINOR` request and unchanged `main.gd`; minor 12 already belongs to home tiers.",
