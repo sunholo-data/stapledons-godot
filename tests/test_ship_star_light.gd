@@ -209,11 +209,16 @@ func _run() -> void:
 	check("the DirectionalLight3D shines from the Sun (its +Z is the Sun direction, worst %.4f deg)" % worst_axis, worst_axis < 0.01)
 	cam.attitude_basis = bases[0]; cam.follow(Vector3(8, 82, -4.8), 0.0, 0.0, 0.0); cam.sync_sky(sky, PX)
 
-	# --- 5. Energy at Earth, at the ship's key, and the dark cruise.
+	# --- 5. Energy at Earth, at the ship's key, and the dark cruise. R2-BRIDGE-STYLE S1: the broad
+	# key is retired on the bridge only, so these checks keep their form on the lower decks (the
+	# Commons, level 1); section 5b checks the bridge (level 0), where the spire keys the deck.
+	var has_levels: bool = Lighting.new().has_method("set_level")
+	check("the rig switches by level (Lighting.set_level)", has_levels)
+	if has_levels: Lighting.set_level(rig, 1)
 	sky.apply(at_rest); star.update(rig, sky, 0.0, true)
 	var key: DirectionalLight3D = rig.key
 	check("at Earth the Sun light is full and shadowed (moody)", is_equal_approx(star.light.light_energy, StarLight.ENERGY_MAX) and star.light.visible and star.light.shadow_enabled)
-	check("at Earth the broad key sits at its 25%% readability floor and casts no shadow", is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and not key.shadow_enabled and StarLight.KEY_FLOOR_SHARE == 0.25)
+	check("lower decks: at Earth the broad key sits at its 25%% readability floor and casts no shadow", is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and not key.shadow_enabled and StarLight.KEY_FLOOR_SHARE == 0.25)
 	# Shadow ownership across the whole range: exactly one shadowed directional light.
 	var one_owner := true
 	var key_floor_ok := true
@@ -235,7 +240,7 @@ func _run() -> void:
 		var star_op: float = star.light.shadow_opacity if star.light.shadow_enabled else 0.0
 		opacity_jump = maxf(opacity_jump, maxf(absf(key_op - op_prev[0]), absf(star_op - op_prev[1])))
 		op_prev = [key_op, star_op]
-	check("exactly one shadow-casting directional light from 0.3 lx to 1e6 lx (moody)", one_owner)
+	check("lower decks: exactly one shadow-casting directional light from 0.3 lx to 1e6 lx (moody)", one_owner)
 	# R2-DECK-LAYOUT §D5a (D-96): the spire is the bridge's own light. It shares the broad key's
 	# dimming: full with no star close, never below the floor, monotonic as the star rises; its
 	# lamp's glow tracks it; no shadow in DL2; its reach ends above the Commons' deck (57 m).
@@ -270,8 +275,72 @@ func _run() -> void:
 		b.e_v_lux = b.e_v_lux / (s * s)
 	sky.apply(dark); star.update(rig, sky, 0.0, true)
 	check("interstellar cruise: no star light (below the floor)", star.light.light_energy == 0.0 and not star.light.visible and not star.light.shadow_enabled)
-	check("interstellar cruise: the moody broad key is fully restored", is_equal_approx(key.light_energy, rig.key_base) and key.shadow_enabled)
+	check("lower decks: interstellar cruise: the moody broad key is fully restored", is_equal_approx(key.light_energy, rig.key_base) and key.shadow_enabled)
 	check("interstellar cruise: the spire is the bridge's key at full (§D5a)", rig.has("spire") and is_equal_approx(rig.spire.light_energy, rig.spire_base) and rig.spire_base > 0.0 and rig.spire.visible)
+
+	# --- 5b. The bridge (R2-BRIDGE-STYLE S1, AC1): the broad key retired, the spire keys the deck in
+	# deep space with the shadow (the mast a non-caster while it does), the star takes over near a
+	# star, and exactly one of spire and star holds a shadow map, with a continuous handover.
+	if has_levels:
+		var spire_b: OmniLight3D = rig.spire
+		var mast := MeshInstance3D.new(); mast.name = "spire_needle"; mast.mesh = BoxMesh.new(); host.add_child(mast)
+		Lighting.set_mast(rig, [mast])
+		Lighting.set_level(rig, 0)
+		check("set_level: level 0 is the bridge, level 1 is not", rig.bridge == true)
+		sky.apply(dark); star.update(rig, sky, 0.0, true)
+		check("bridge, no star close: the broad key is off (0, hidden, no shadow)", key.light_energy == 0.0 and not key.visible and not key.shadow_enabled)
+		check("bridge, no star close: the spire is at spire_base and holds the only shadow (cube map, soft)", is_equal_approx(spire_b.light_energy, rig.spire_base) and spire_b.shadow_enabled and is_equal_approx(spire_b.shadow_opacity, 1.0) and spire_b.omni_shadow_mode == OmniLight3D.SHADOW_CUBE and spire_b.shadow_blur > 1.0 and not star.light.shadow_enabled and not rig.fill.shadow_enabled)
+		check("bridge, no star close: the mast does not cast the spire's shadow", mast.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+		sky.apply(at_rest); star.update(rig, sky, 0.0, true)
+		check("bridge, at Earth: the key is 0, the spire sits at its floor, the star holds the shadow and the mast casts it", key.light_energy == 0.0 and is_equal_approx(spire_b.light_energy, StarLight.KEY_FLOOR_SHARE * rig.spire_base) and not spire_b.shadow_enabled and star.light.shadow_enabled and mast.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
+		var owner_ok := true
+		var key_zero := true
+		var share_ok := true
+		var mast_ok := true
+		var jump := 0.0
+		var prev_op := [1.0, 0.0]
+		var prev_e := INF
+		for i in 81:
+			body(levels, "sun").e_v_lux = pow(10.0, -0.5 + i * 0.08)
+			sky.apply(levels); star.update(rig, sky, 0.0, true)
+			var lvl: float = star.energy / StarLight.ENERGY_MAX
+			if int(star.light.shadow_enabled) + int(spire_b.shadow_enabled) + int(key.shadow_enabled) + int(rig.fill.shadow_enabled) != 1: owner_ok = false
+			if key.light_energy != 0.0 or key.visible: key_zero = false
+			var want: float = rig.spire_base * maxf(StarLight.KEY_FLOOR_SHARE, 1.0 - lvl)
+			if not is_equal_approx(spire_b.light_energy, want) or spire_b.light_energy > prev_e + 1e-6: share_ok = false
+			prev_e = spire_b.light_energy
+			if (mast.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON) != star.light.shadow_enabled: mast_ok = false
+			var sp_op: float = spire_b.shadow_opacity if spire_b.shadow_enabled else 0.0
+			var st_op: float = star.light.shadow_opacity if star.light.shadow_enabled else 0.0
+			jump = maxf(jump, maxf(absf(sp_op - prev_op[0]), absf(st_op - prev_op[1])))
+			prev_op = [sp_op, st_op]
+		body(levels, "sun").e_v_lux = lux_earth
+		check("bridge: exactly one shadow owner among spire and star from 0.3 lx to 1e6 lx", owner_ok)
+		check("bridge: the broad key is 0 at every level", key_zero)
+		check("bridge: the spire takes the key's share rule (monotonic, never below the floor)", share_ok)
+		check("bridge: the mast casts only while the star holds the shadow", mast_ok)
+		check("bridge: the spire-to-star shadow handover is continuous (max opacity step %.3f < 0.2)" % jump, jump < 0.2)
+		# The ramp's boundaries, set directly: level 0, HANDOVER - eps, HANDOVER, 2 x HANDOVER, 1.
+		var hh := StarLight.SHADOW_HANDOVER
+		var bounds := []
+		for lv: float in [0.0, hh - 1e-3, hh, 2.0 * hh, 1.0]:
+			star.energy = lv * StarLight.ENERGY_MAX
+			star.apply_rig(rig)
+			bounds.append([spire_b.shadow_enabled, spire_b.shadow_opacity if spire_b.shadow_enabled else 0.0, star.light.shadow_enabled, star.light.shadow_opacity if star.light.shadow_enabled else 0.0])
+		var b_ok: bool = bounds[0][0] and is_equal_approx(bounds[0][1], 1.0) and not bounds[0][2] \
+			and bounds[1][0] and bounds[1][1] > 0.0 and bounds[1][1] < 0.01 and not bounds[1][2] \
+			and not bounds[2][0] and bounds[2][2] and is_zero_approx(bounds[2][3]) \
+			and bounds[3][2] and is_equal_approx(bounds[3][3], 1.0) and not bounds[3][0] \
+			and bounds[4][2] and is_equal_approx(bounds[4][3], 1.0) and not bounds[4][0]
+		check("bridge: the handover ramp's boundaries (0, H-eps, H, 2H, 1): %s" % [bounds], b_ok)
+		var amb_bridge: float = rig.environment.ambient_light_energy
+		Lighting.set_level(rig, 1)
+		check("set_level(1): the lower decks get the broad key back and the spire gives up the shadow", rig.bridge == false and key.light_energy > 0.0 and not spire_b.shadow_enabled and mast.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
+		check("the bridge's ambient floor is raised (%.3f) and the lower decks keep theirs (%.3f)" % [amb_bridge, rig.environment.ambient_light_energy], is_equal_approx(amb_bridge, rig.ambient_base * Lighting.BRIDGE_AMBIENT_GAIN) and is_equal_approx(rig.environment.ambient_light_energy, rig.ambient_base) and Lighting.BRIDGE_AMBIENT_GAIN > 1.0)
+		Lighting.set_level(rig, 0)
+		sky.apply(dark); star.update(rig, sky, 0.0, true)
+		check("bridge: interstellar cruise: the spire is at spire_base (the key stays retired)", is_equal_approx(spire_b.light_energy, rig.spire_base) and key.light_energy == 0.0)
+		Lighting.set_level(rig, 1)
 	var empty := world.duplicate(true); empty.erase("system")
 	sky.apply(empty); star.update(rig, sky, 0.0, true)
 	check("a world without a system section gives no star light", star.light.light_energy == 0.0 and star.source_id == "")
@@ -334,6 +403,10 @@ func _run() -> void:
 	check("HUD line labels the compression", star.hud_line().contains("compressed") and star.hud_line().contains("Sun"))
 	Lighting.apply(rig, "moody_no_shadows"); star.update(rig, sky, 0.0, true)
 	check("the shadow-disabled profile also disables star shadows", not star.light.shadow_enabled and star.light.visible)
+	if has_levels:
+		Lighting.set_level(rig, 0); sky.apply(dark); star.update(rig, sky, 0.0, true)
+		check("the shadow-disabled profile also disables the spire's shadow on the bridge", not rig.spire.shadow_enabled and rig.spire.visible)
+		Lighting.set_level(rig, 1); sky.apply(at_rest); star.update(rig, sky, 0.0, true)
 	Lighting.apply(rig, "moody"); star.update(rig, sky, 0.0, true)
 
 	# --- 10. Integration: the playable demo carries the star light.
@@ -347,6 +420,12 @@ func _run() -> void:
 		for f in 90: await process_frame
 		check("demo frames converge the light on the Sun's rendered direction", rig2.star.source_id == "sun" and angle_deg(rig2.star.dir_world, vec_of(StarLight.apparent_direction(demo.sky.system_view, sun.rel_km, sun.radius_km))) < 0.5 and rig2.star.light.light_energy > 0.9 * StarLight.ENERGY_MAX)
 		check("demo lighting manifest carries the star light", demo.lighting_manifest().has("star_light"))
+		var needle: Node = demo.geometry.find_child("spire_needle", true, false)
+		check("demo: the captain spawns on the bridge level, the key retired, the ship's spire_needle the mast", rig2.get("bridge", false) and rig2.key.light_energy == 0.0 and needle != null and rig2.get("mast", []).has(needle))
+		demo.active_level = 1
+		check("demo: arriving on the lower deck restores the broad key (active_level 1)", not rig2.bridge and rig2.key.light_energy > 0.0)
+		demo.active_level = 0
+		check("demo: back on the bridge the key is retired again", rig2.bridge and rig2.key.light_energy == 0.0)
 		demo.queue_free(); await process_frame
 	else:
 		check("ship demo assets present (make ship-demo-assets)", false)

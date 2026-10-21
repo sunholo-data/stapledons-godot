@@ -1,0 +1,708 @@
+{
+ "schema": "stapledons.audio.recipes/1",
+ "about": "R2-SOUND S0b (design_docs/planned/r2/sound.md \u00a7D8): recipes for tools/audio/synth.ail. 48 kHz mono 16-bit; loops complete whole cycles; peak_db is the file's peak, the cue table sets the level.",
+ "recipes": [
+  {
+   "id": "spire_hum",
+   "about": "The spire: low, slow, slightly beating (55 Hz against 55.25 Hz); harmonics to 440 Hz so laptop speakers carry it. Constant, never tied to the drive.",
+   "seconds": 8.0,
+   "loop": true,
+   "peak_db": -3.0,
+   "fade_ms": 20.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 55.0,
+     "amp": 0.3
+    },
+    {
+     "kind": "sine",
+     "freq": 55.25,
+     "amp": 0.15
+    },
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.2
+    },
+    {
+     "kind": "sine",
+     "freq": 165.0,
+     "amp": 0.22
+    },
+    {
+     "kind": "sine",
+     "freq": 220.0,
+     "amp": 0.2
+    },
+    {
+     "kind": "sine",
+     "freq": 330.0,
+     "amp": 0.12
+    },
+    {
+     "kind": "sine",
+     "freq": 440.0,
+     "amp": 0.05
+    },
+    {
+     "kind": "noise",
+     "amp": 0.04,
+     "lowpass_hz": 180.0,
+     "seed": 11
+    }
+   ],
+   "swell": {
+    "rate": 0.125,
+    "depth": 0.12
+   }
+  },
+  {
+   "id": "room_bridge",
+   "about": "Air handling under the 100 m dome: soft, wide, slowly breathing.",
+   "seconds": 12.0,
+   "loop": true,
+   "peak_db": -6.0,
+   "fade_ms": 20.0,
+   "layers": [
+    {
+     "kind": "noise",
+     "amp": 0.5,
+     "lowpass_hz": 500.0,
+     "seed": 3
+    },
+    {
+     "kind": "noise",
+     "amp": 0.08,
+     "lowpass_hz": 2500.0,
+     "highpass_hz": 800.0,
+     "seed": 9
+    }
+   ],
+   "swell": {
+    "rate": 0.25,
+    "depth": 0.06
+   }
+  },
+  {
+   "id": "ui_click",
+   "about": "A short, dry interface click.",
+   "seconds": 0.04,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 5.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 2200.0,
+     "amp": 0.6,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.006
+     }
+    },
+    {
+     "kind": "noise",
+     "amp": 0.2,
+     "highpass_hz": 3000.0,
+     "seed": 5,
+     "env": {
+      "tau": 0.002
+     }
+    }
+   ]
+  },
+  {
+   "id": "ui_back",
+   "about": "Back or cancel: a click that falls.",
+   "seconds": 0.06,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 8.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 1400.0,
+     "amp": 0.6,
+     "glide_to": 1000.0,
+     "glide_from_s": 0.0,
+     "glide_until_s": 0.04,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    }
+   ]
+  },
+  {
+   "id": "ui_confirm",
+   "about": "Confirm: two quick tones a fourth apart.",
+   "seconds": 0.14,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 15.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 1600.0,
+     "amp": 0.5,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.03,
+      "stop": 0.06
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2133.0,
+     "amp": 0.5,
+     "env": {
+      "delay": 0.05,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    }
+   ]
+  },
+  {
+   "id": "console_wake",
+   "about": "A console wakes: a small servo rising, then the screen's glass hum.",
+   "seconds": 0.7,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 260.0,
+     "amp": 0.35,
+     "glide_to": 780.0,
+     "glide_until_s": 0.3,
+     "env": {
+      "attack": 0.01,
+      "tau": 0.25
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 520.0,
+     "amp": 0.12,
+     "glide_to": 1560.0,
+     "glide_until_s": 0.3,
+     "env": {
+      "attack": 0.01,
+      "tau": 0.25
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 660.0,
+     "amp": 0.25,
+     "env": {
+      "delay": 0.15,
+      "attack": 0.08,
+      "tau": 0.35
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 990.0,
+     "amp": 0.1,
+     "env": {
+      "delay": 0.15,
+      "attack": 0.08,
+      "tau": 0.3
+     }
+    },
+    {
+     "kind": "noise",
+     "amp": 0.05,
+     "lowpass_hz": 3000.0,
+     "seed": 21,
+     "env": {
+      "tau": 0.2
+     }
+    }
+   ]
+  },
+  {
+   "id": "console_sleep",
+   "about": "A console sleeps: the servo falling away.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 780.0,
+     "amp": 0.35,
+     "glide_to": 260.0,
+     "glide_until_s": 0.35,
+     "env": {
+      "attack": 0.005,
+      "tau": 0.25
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 660.0,
+     "amp": 0.2,
+     "env": {
+      "tau": 0.15
+     }
+    }
+   ]
+  },
+  {
+   "id": "arrived",
+   "about": "Arrival: a neutral two-note chime from the navigation instruments (a fourth, not a fanfare).",
+   "seconds": 2.2,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 659.25,
+     "amp": 0.5,
+     "env": {
+      "attack": 0.003,
+      "tau": 0.9
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1318.5,
+     "amp": 0.15,
+     "env": {
+      "attack": 0.003,
+      "tau": 0.6
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1819.5,
+     "amp": 0.08,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.4
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 880.0,
+     "amp": 0.45,
+     "env": {
+      "delay": 0.35,
+      "attack": 0.003,
+      "tau": 1.0
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1760.0,
+     "amp": 0.12,
+     "env": {
+      "delay": 0.35,
+      "attack": 0.003,
+      "tau": 0.7
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2428.8,
+     "amp": 0.06,
+     "env": {
+      "delay": 0.35,
+      "attack": 0.002,
+      "tau": 0.45
+     }
+    }
+   ]
+  },
+  {
+   "id": "commit_seal",
+   "about": "The commit is accepted: one low-mid open chord, settling. It sounds final because it is.",
+   "seconds": 3.2,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 300.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.35,
+     "env": {
+      "attack": 0.03,
+      "tau": 1.4
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 165.0,
+     "amp": 0.28,
+     "env": {
+      "attack": 0.03,
+      "tau": 1.4
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 220.0,
+     "amp": 0.25,
+     "env": {
+      "attack": 0.03,
+      "tau": 1.3
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 330.0,
+     "amp": 0.12,
+     "env": {
+      "attack": 0.03,
+      "tau": 1.1
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 440.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.03,
+      "tau": 0.9
+     }
+    },
+    {
+     "kind": "noise",
+     "amp": 0.1,
+     "lowpass_hz": 400.0,
+     "seed": 31,
+     "env": {
+      "tau": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "id": "commit_hold",
+   "about": "Holding to commit: a tone that rises for the 1.5 s hold (the game stops it on release).",
+   "seconds": 1.5,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 220.0,
+     "amp": 0.4,
+     "glide_to": 660.0,
+     "glide_until_s": 1.5,
+     "env": {
+      "attack": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 440.0,
+     "amp": 0.12,
+     "glide_to": 1320.0,
+     "glide_until_s": 1.5,
+     "env": {
+      "attack": 0.05
+     }
+    }
+   ]
+  },
+  {
+   "id": "drive_boost",
+   "about": "Boost (the teacup rule): no rumble, nothing below 200 Hz; the emitter rises to a clean high tone while the generator's partials step up.",
+   "seconds": 6.0,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 1500.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 1200.0,
+     "amp": 0.3,
+     "glide_to": 2400.0,
+     "glide_until_s": 4.0,
+     "env": {
+      "attack": 1.0
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1800.0,
+     "amp": 0.1,
+     "glide_to": 3600.0,
+     "glide_until_s": 4.0,
+     "env": {
+      "attack": 1.5
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 220.0,
+     "amp": 0.12,
+     "env": {
+      "delay": 0.5,
+      "attack": 0.5
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 330.0,
+     "amp": 0.1,
+     "env": {
+      "delay": 1.5,
+      "attack": 0.5
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 440.0,
+     "amp": 0.08,
+     "env": {
+      "delay": 2.5,
+      "attack": 0.5
+     }
+    }
+   ]
+  },
+  {
+   "id": "drive_silent",
+   "about": "Cruise: the drive falls silent; the emitter fades away and only the hum and the room remain.",
+   "seconds": 6.0,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 800.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 2400.0,
+     "amp": 0.25,
+     "glide_to": 1800.0,
+     "glide_until_s": 5.0,
+     "env": {
+      "tau": 2.0
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 3600.0,
+     "amp": 0.07,
+     "glide_to": 2700.0,
+     "glide_until_s": 5.0,
+     "env": {
+      "tau": 1.6
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 440.0,
+     "amp": 0.08,
+     "env": {
+      "tau": 1.0
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 330.0,
+     "amp": 0.08,
+     "env": {
+      "tau": 1.5
+     }
+    }
+   ]
+  },
+  {
+   "id": "drive_brake",
+   "about": "Brake: the boost's mirror, the emitter falling; still no rumble.",
+   "seconds": 6.0,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 1500.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 2400.0,
+     "amp": 0.3,
+     "glide_to": 1200.0,
+     "glide_until_s": 4.0,
+     "env": {
+      "attack": 0.3
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 3600.0,
+     "amp": 0.1,
+     "glide_to": 1800.0,
+     "glide_until_s": 4.0,
+     "env": {
+      "attack": 0.3
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 440.0,
+     "amp": 0.08,
+     "env": {
+      "attack": 0.3,
+      "tau": 3.0
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 330.0,
+     "amp": 0.1,
+     "env": {
+      "attack": 0.3,
+      "tau": 3.5
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 220.0,
+     "amp": 0.12,
+     "env": {
+      "attack": 0.3,
+      "tau": 4.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "stop_turn",
+   "about": "The ship turns at a stop: a soft navigation tone, no thruster hiss (nothing leaves the bubble but light).",
+   "seconds": 1.6,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 523.25,
+     "amp": 0.35,
+     "env": {
+      "attack": 0.15,
+      "tau": 0.9
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 784.0,
+     "amp": 0.12,
+     "env": {
+      "delay": 0.2,
+      "attack": 0.2,
+      "tau": 0.7
+     }
+    }
+   ],
+   "swell": {
+    "rate": 5.0,
+    "depth": 0.15
+   }
+  },
+  {
+   "id": "dust_tick",
+   "about": "The dust counter: one dry tick per grain that flashes on the dome.",
+   "seconds": 0.03,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 5.0,
+   "layers": [
+    {
+     "kind": "noise",
+     "amp": 0.7,
+     "highpass_hz": 2500.0,
+     "seed": 41,
+     "env": {
+      "tau": 0.0015
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 4200.0,
+     "amp": 0.25,
+     "env": {
+      "tau": 0.003
+     }
+    }
+   ]
+  },
+  {
+   "id": "archive_ready",
+   "about": "The Archive's reply is ready: a soft rising pair from the terminal (not a voice).",
+   "seconds": 1.0,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 150.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 740.0,
+     "amp": 0.35,
+     "env": {
+      "attack": 0.02,
+      "tau": 0.35
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1110.0,
+     "amp": 0.2,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.02,
+      "tau": 0.4
+     }
+    }
+   ]
+  },
+  {
+   "id": "hold_limit",
+   "about": "A plan meets the drive's hold limit: two soft pulses, an alert, not an alarm.",
+   "seconds": 1.2,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 100.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 660.0,
+     "amp": 0.4,
+     "env": {
+      "attack": 0.01,
+      "tau": 0.12,
+      "stop": 0.3
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 660.0,
+     "amp": 0.4,
+     "env": {
+      "delay": 0.35,
+      "attack": 0.01,
+      "tau": 0.12,
+      "stop": 0.65
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 990.0,
+     "amp": 0.1,
+     "env": {
+      "attack": 0.01,
+      "tau": 0.1
+     }
+    }
+   ]
+  }
+ ]
+}

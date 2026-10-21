@@ -75,13 +75,16 @@ func test_props() -> void:
 		var n: Node = stack.pop_back()
 		if n is MeshInstance3D and n.mesh != null:
 			for i in n.mesh.get_surface_count():
-				var m := n.get_surface_override_material(i) as BaseMaterial3D
+				# R2-BRIDGE-STYLE S2: the override is the toon material (its next_pass the ink); the
+				# painted source material (the GLB's) carries emission and transparency.
+				var m: Material = n.get_surface_override_material(i)
+				var src := n.mesh.surface_get_material(i) as BaseMaterial3D
 				surfaces += 1
 				if m != null and m.next_pass is ShaderMaterial:
 					inked += 1
-				if m != null and m.emission_enabled:
+				if src != null and src.emission_enabled:
 					lit += 1
-				if m != null and m.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+				if src != null and src.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 					opaque = false
 		stack.append_array(n.get_children())
 	check("DL2: every hero surface (%d) is inked (%d), opaque, and none emits (%d)" % [surfaces, inked, lit], surfaces > 0 and inked == surfaces and lit == 0 and opaque)

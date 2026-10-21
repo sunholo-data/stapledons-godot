@@ -60,6 +60,8 @@ var has_background := false
 var env := Environment.new()
 var camera := FreeLookCamera.new() # yaw, pitch, roll; client state, never sent to the sim
 var hud := Label.new()
+## R2-SOUND §D2: the player's audio settings, applied to the buses at launch and on focus changes.
+var sound_settings := GameSettings.new()
 var heading := HEADING # the sim's, for the HUD's view-to-velocity angle
 var warp := 0.2 # ship-years per real second
 var _accum := 0.0
@@ -184,6 +186,8 @@ func _route_now(route: String) -> void:
 
 func _ready() -> void:
 	var args := _user_args()
+	sound_settings.load_settings()
+	SoundMix.apply(sound_settings)
 	if launch_route(args) == "title":
 		_show_title()
 		return
@@ -218,6 +222,10 @@ func _ready() -> void:
 		return
 	if args.has("planet-smoke"): # exported builds: the bundled planet textures load and draw (planets/planet_smoke.gd)
 		get_tree().quit(await load("res://planets/planet_smoke.gd").new().run(self, args["planet-smoke"]))
+		return
+	if args.has("golden-ss"): # R2-STAR-SURFACES goldens alone (tools/star_surface_golden.gd)
+		var ss: GDScript = load("res://tools/star_surface_golden.gd")
+		get_tree().quit(await ss.new().run(self) if ss != null and ss.can_instantiate() else 2)
 		return
 	if args.has("golden-m5") or args.has("capture-m5"): # M5 goldens / reference renders (tools/m5_golden.gd)
 		var m5: GDScript = load("res://tools/m5_golden.gd")
@@ -283,7 +291,7 @@ func _run_transit(args: Dictionary) -> void:
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture") or args.has("movie")
-	if not capture:sim.want_minor=SimBridge.HOME_TIERS_MINOR # R2-HOME-TIERS: 2.12; R1-ISM-DUST: lism-1 (D-61); 2.10 (R2-INTERLUDE, as the ship) so it adopts the loading jump's prefetch; no crew on the map route
+	if not capture:sim.want_minor=SimBridge.SURFACE_MINOR # R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R1-ISM-DUST: lism-1 (D-61); 2.10 (R2-INTERLUDE, as the ship) so it adopts the loading jump's prefetch; no crew on the map route
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
@@ -688,6 +696,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
 		sim.stop()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		SoundMix.focus_changed(what == NOTIFICATION_APPLICATION_FOCUS_IN, sound_settings) # R2-SOUND: Mute when unfocused
 
 
 func _grab() -> Image:
@@ -895,6 +905,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
 	failures += await load("res://tools/ism_golden.gd").new().run(self) # R1-ISM-DUST: G-ISM-1..3
 	failures += await load("res://tools/m5_golden.gd").new().run(self)
+	failures += await load("res://tools/star_surface_golden.gd").new().run(self) # R2-STAR-SURFACES: G-SS-1..5
 	failures += await load("res://tools/gr_golden.gd").new().run(self) # M3.5: GR1-GR9
 	failures += await load("res://tools/m4_ship_golden.gd").new().run(self) # M4.6gR3: G-M4-S2..S4
 	print("golden: %d failures" % failures)

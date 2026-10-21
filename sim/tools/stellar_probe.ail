@@ -1,0 +1,23 @@
+module stapledons/sim/tools/stellar_probe
+
+-- R2-STAR-SURFACES check values for tests/test_physics.gd (_star_surface_photometry): the pinned
+-- sunholo/celestial stellar functions the renderer mirrors (physics/star_surface.gd: ld, ld_mean),
+-- printed at 17 significant digits. Run:
+--   ailang run --quiet --package-dir sim --entry main sim/tools/stellar_probe.ail
+import pkg/sunholo/celestial/stellar (ldQuadratic, ldQuadraticMean, ldCoeffs, cellSizeKm, granulationSigmaT, solarLogg)
+import std/io (println)
+
+export func main() -> () ! {IO} {
+  let ald = ldCoeffs(3927.0, 1.11);
+  let t1 = ldCoeffs(2566.0, 5.2387);
+  println("ldQuadratic(0.4650, 0.2565, 0.3)  ${show(ldQuadratic(0.4650, 0.2565, 0.3))}");
+  println("ldQuadratic(1.6811, -0.6783, 0)  ${show(ldQuadratic(1.6811, 0.0 - 0.6783, 0.0))}");
+  println("ldQuadraticMean(0.4650, 0.2565)  ${show(ldQuadraticMean(0.4650, 0.2565))}");
+  println("ldCoeffs(3927, 1.11).a  ${show(ald.a)}");
+  println("ldCoeffs(3927, 1.11).b  ${show(ald.b)}");
+  println("ldCoeffs(2566, 5.2387).a  ${show(t1.a)}");
+  println("ldCoeffs(2566, 5.2387).b  ${show(t1.b)}");
+  println("cellSizeKm(3927, 1.11)  ${show(cellSizeKm(3927.0, 1.11))}");
+  println("granulationSigmaT()  ${show(granulationSigmaT())}");
+  println("solarLogg()  ${show(solarLogg())}")
+}

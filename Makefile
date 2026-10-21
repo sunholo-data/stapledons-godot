@@ -21,6 +21,11 @@ all: test
 include mk/constellations.mk
 include mk/home-tiers.mk
 include mk/deck-layout.mk
+include mk/sound.mk
+include mk/captain-anim.mk
+include mk/style.mk
+include mk/star-surfaces.mk
+include mk/levels.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
@@ -445,7 +450,7 @@ wd-vm:             ## WD package NaN contract on the strict VM
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6; R2-CAMERA-FORWARD (D-92, travel toward the bow): G-CAM-1 Bow pole at the spawn / helm / Sgr A* 9, G-CAM-2 glow from the Bow spawn / bow rail / helm and Astern eyes 8, G-CAM-3 tonemap Bow 0.99c and Astern rest 2; G-M4-S2/S3/S4 re-posed through the bow basis
+golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6; R2-CAMERA-FORWARD (D-92, travel toward the bow): G-CAM-1 Bow pole at the spawn / helm / Sgr A* 9, G-CAM-2 glow from the Bow spawn / bow rail / helm and Astern eyes 8, G-CAM-3 tonemap Bow 0.99c and Astern rest 2; G-M4-S2/S3/S4 re-posed through the bow basis; R2-STAR-SURFACES: G-SS-1..3 a mapped star's flux = e_v_lux (giant, spotted dwarf, Sun-like), G-SS-4 centred, G-SS-5 the unresolved Sun byte-identical
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
@@ -464,7 +469,8 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    G-CAM-1 forward pole' $(SCRATCH)/golden.log)" = 9 && \
 	  test "$$(grep -c '^ok    G-CAM-2 glow' $(SCRATCH)/golden.log)" = 8 && \
 	  test "$$(grep -c '^ok    G-CAM-3 one tonemap' $(SCRATCH)/golden.log)" = 2 && \
-	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 393 && \
+	  test "$$(grep -c '^ok    G-SS-' $(SCRATCH)/golden.log)" = 5 && grep -q '^star surface golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 398 && \
 	  grep -q '^m4 ship golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -cE '^ok    GR[123] shadow' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR4 orbit mask' $(SCRATCH)/golden.log)" = 3 && \
 	  test "$$(grep -c '^ok    GR5 two images' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR6 Einstein ring' $(SCRATCH)/golden.log)" = 3 && \
@@ -473,7 +479,7 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-ISM-5 surface wall observer' $(SCRATCH)/golden.log)" = 3 && grep -q '^ok    G-ISM-5 integrated radiance' $(SCRATCH)/golden.log && grep -q '^ok    G-ISM-5 surface dim overlaps' $(SCRATCH)/golden.log && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3 + M4.6gR3 G-M4-S2, G-M4-S3 3, G-M4-S4 6 + R2-CAMERA G-CAM-1 9, G-CAM-2 8, G-CAM-3 2; 393 ok lines (main had 374, its pin said 373))"; exit 1; }
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3 + M4.6gR3 G-M4-S2, G-M4-S3 3, G-M4-S4 6 + R2-CAMERA G-CAM-1 9, G-CAM-2 8, G-CAM-3 2 + R2-STAR-SURFACES G-SS-1..5; 398 ok lines (393 before R2-STAR-SURFACES; main had 374, its pin said 373))"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
@@ -481,14 +487,18 @@ BENCH_SECONDS ?= 30
 BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
 BRIDGE_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),medium)
 BENCH_SIZE ?=
-bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default); SCENE=bridge: M4.6rR3 AC12, live 3D-ship transit (30 s, 2560x1440, vsync off, medium tier, Metal), p99 < 16.7 ms or make nonzero (driver invalid=1, MISS=2)
+bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default); SCENE=bridge; SCENE=level LEVEL=<id> [STAGE=] (R2-LEVELS): M4.6rR3 AC12, live 3D-ship transit (30 s, 2560x1440, vsync off, medium tier, Metal), p99 < 16.7 ms or make nonzero (driver invalid=1, MISS=2)
 ifeq ($(SCENE),bridge)
 	@mkdir -p $(SCRATCH); echo "bench-bridge: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --script tools/m4_ship_bench.gd -- --tier=$(BRIDGE_TIER) > $(SCRATCH)/bench-bridge.log 2>&1; rc=$$?; grep '^bench-bridge' $(SCRATCH)/bench-bridge.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-bridge.log && test "$$(grep -c '^bench-bridge: OK$$' $(SCRATCH)/bench-bridge.log)" = 1 && ! grep -q '^bench-bridge: FAIL' $(SCRATCH)/bench-bridge.log && \
 	  grep -q '^bench-bridge: frame ms .*(target p99 < [0-9.]*: ok)$$' $(SCRATCH)/bench-bridge.log || { echo "bench-bridge: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-bridge.log)"; exit 1; }
+else ifeq ($(SCENE),level)
+	@mkdir -p $(SCRATCH); echo "bench-level: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --script tools/level_bench.gd -- --level $(LEVEL) $(if $(STAGE),--stage $(STAGE)) > $(SCRATCH)/bench-level.log 2>&1; rc=$$?; grep '^bench-level' $(SCRATCH)/bench-level.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-level.log && grep -q '^bench-level: OK$$' $(SCRATCH)/bench-level.log || { echo "bench-level: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-level.log)"; exit 1; }
 else ifneq ($(SCENE),)
-	@echo "bench: unknown SCENE=$(SCENE) (want SCENE=bridge, or none for the starfield bench)"; exit 2
+	@echo "bench: unknown SCENE=$(SCENE) (want SCENE=bridge, SCENE=level LEVEL=<id>, or none for the starfield bench)"; exit 2
 else
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
@@ -546,7 +556,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+export-macos: runtime sky-bundle areas-stage sound-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	@git diff --quiet && git diff --cached --quiet || { echo 'export-macos: commit tracked source changes before building a review artifact'; exit 1; }
 	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
@@ -1269,6 +1279,11 @@ camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V8, V1
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward)' $(SCRATCH)/camera-forward-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-test.log && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-forward-test.log
 ship-demo-ci: camera-forward-test
+.PHONY: guided-finale-test
+guided-finale-test: import ## the guided voyage's last stop is Sgr A* (after the dwell, or N), the hole ahead on the rendered sky; the navigation entry still works
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_guided_finale.gd > $(SCRATCH)/guided-finale-test.log 2>&1; rc=$$?; grep -E '^(FAIL|guided-finale)' $(SCRATCH)/guided-finale-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/guided-finale-test.log && grep -q '^guided-finale: [0-9]* passed, 0 failures$$' $(SCRATCH)/guided-finale-test.log
+ship-demo-ci: guided-finale-test
 .PHONY: camera-forward-targets
 camera-forward-targets: import ## R2-CAMERA-FORWARD AC-V6 fixture: record the live first guided stop and every Sgr A* stop -> tests/fixtures/camera_forward/targets.json (headless; re-run when the itinerary, the stop turn or the visit changes, and commit the diff)
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --headless --path . --script tools/camera_forward_targets.gd > $(SCRATCH)/camera-forward-targets.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward-targets)' $(SCRATCH)/camera-forward-targets.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-targets.log && grep -q 'Sgr A\* stops, 0 failures$$' $(SCRATCH)/camera-forward-targets.log
@@ -1279,6 +1294,9 @@ camera-forward-review: import ## R2-CAMERA-FORWARD F1 review set: Bow at rest (s
 camera-walk-capture: import ## R2-CAMERA-FORWARD AC-R1 evidence: the director's Bow (rest, 0.99c cruise) and Astern (rest) over the 16-sample bridge walk -> renders/camera_walk/*.png + contact_sheet.png + walk.json (GPU window; open every frame)
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_walk_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-walk-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-walk)' $(SCRATCH)/camera-walk-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-walk-capture.log && grep -q '^camera-walk-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-walk-capture.log
 
+.PHONY: bh-ahead-capture
+bh-ahead-capture: import ## Mark 2026-10-20: the guided voyage's final stop and every Sgr A* stop after flying the last leg, Bow view with the HUD -> renders/bh_ahead/<tag>/ (GPU window; CAPTURE_ARGS="-- --tag=before"; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/bh_ahead_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/bh-ahead-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|bh-ahead-capture|tour_|sgr_a)' $(SCRATCH)/bh-ahead-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bh-ahead-capture.log
 .PHONY: camera-views-capture
 camera-views-capture: import ## R2-CAMERA-FORWARD AC-R1: Bow, Astern, the legacy Commons and the lift at rest, 0.99c, a guided stop and Sgr A* (1280x720 and 2560x1440; CAPTURE_ARGS="-- --quick" for 720p), a forced-fade frame, a real voyage at 0.9/0.99/0.999c and every Sgr A* stop -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m, no captain in frame, or Bow not framing the pole, the stop body or the hole
 	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_views_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-views-capture.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|camera-views-capture)' $(SCRATCH)/camera-views-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-views-capture.log && grep -q '^camera-views-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-views-capture.log
