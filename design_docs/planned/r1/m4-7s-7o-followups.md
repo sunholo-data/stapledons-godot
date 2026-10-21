@@ -82,7 +82,7 @@ Two edits in `tools/rig_check.sh`, measured on a copy (V5):
 ```
 
 - **Where the cap lives.** It is in `status()`, so pending, success and failure are all covered, including the unbounded `$have` and version-line cases.
-- **What the description holds.** The failure description becomes `<short sha>: <reason>`, with the sha first so the cut keeps it. `4bf95435: make test failed or ran over 5400s` is 44 characters.
+- **What the description holds.** The failure description becomes `<short sha>: <reason>`, with the sha first so the cut keeps it. `4bf95435: make test failed or ran over 5400s` is 44 characters. `short` is the script's existing 8-character variable, `short=$(printf %s "$sha" | cut -c1-8)` at `tools/rig_check.sh:29`. It is set before `fail()` is defined (:42) and before the first `fail` call (:45), so `set -u` cannot trip on it inside `fail()` (V19). No other line of the script changes: the diff is exactly the two lines shown plus one comment line (V20).
 - **Where the log path goes.** It moves to stdout. The start line already prints it, and the controller reads stdout.
 - **Order of the failure path.** `fail()` echoes first. Then a refused post (an outage, say) is reported, not fatal, and the exit stays 1.
 - **The pending post.** It is unchanged: if `pending` cannot post, the script still aborts before posting anything, so there is no stuck status to leave behind.
@@ -121,7 +121,7 @@ It runs four cases, each counted, and the script exits nonzero if any case fails
 
 | Case | Set-up | Asserts |
 |---|---|---|
-| `make-test-red` | `RIG_DIR` padded so `log` is the rig's 104 characters, `make test` fails | rc 1; posts `pending`, then an accepted `failure` matching `01234567: make test failed`; stdout `rig-check: FAIL: make test failed … (log: ….log)`. This is the #252 scenario; the pre-fix script posts 160. |
+| `make-test-red` | `RIG_DIR` padded so `log` is the rig's 104 characters, `make test` fails | rc 1; posts `pending`, then an accepted `failure` whose stub-log line matches `^failure <n> 01234567: make test failed`, so the description must **begin** with the 8-character sha (`long-reason` anchors the same way); stdout `rig-check: FAIL: make test failed … (log: ….log)`. This is the #252 scenario; the pre-fix script posts 160. |
 | `long-reason` | a 207-character version line, so the reason alone is over 140 | rc 1; accepted `failure`; stdout has the reason |
 | `long-success` | the version line carries the pin plus 200 characters, every make succeeds | rc 0; accepted `success`; `rig-check: ok, 01234567 green` |
 | `failure-refused` | the stub refuses every `failure` post | rc 1; stdout has `rig-check: FAIL: …` and `rig-check: could not post the failure status` |
@@ -165,7 +165,7 @@ run() {
   : > "$STUB_POSTS"; why=
   rc=0; STUB_VERSION=$6 STUB_MAKE_FAIL=$7 RIG_DIR=$8 RIG_NO_STATUS=0 PATH="$T/bin:$PATH" sh "$RIG" 7 > "$T/out" 2>&1 || rc=$?
   test "$rc" = "$2" || why="rc $rc, want $2"
-  ! grep -q refused "$STUB_POSTS" || why="$why; refused: $(grep refused "$STUB_POSTS" | tr '\n' ' ')"
+  if grep -q refused "$STUB_POSTS"; then why="$why; refused: $(grep refused "$STUB_POSTS" | tr '\n' ' ')"; fi
   test "$(cut -d' ' -f1 "$STUB_POSTS" | tr '\n' ' ')" = "pending $3 " || why="$why; posts: $(cut -d' ' -f1-2 "$STUB_POSTS" | tr '\n' ' ')"
   grep -Eq "^$3 [0-9]+ $4" "$STUB_POSTS" || why="$why; no $3 description /$4/"
   grep -Eq "$5" "$T/out" || why="$why; no stdout /$5/"
@@ -184,7 +184,7 @@ echo "rig-check control: 4 cases, $fails failures"
 test "$fails" = 0
 ```
 
-On mid-script AND-lists: the only `!` pipeline here is the left side of an `||`, so its status is used, not ignored. Every assertion feeds `why` or `fails`. The last command is `test`.
+No `!` assertion appears anywhere in this script, nor in the drill functions below. The refused-post check is an `if grep -q refused …; then why=…; fi` (quorum r1, gemini-4-argon). That keeps the new code free of the `!`-pipeline footgun this doc removes from `mk/m45.mk`. Every assertion feeds `why` or `fails`, and the last command is `test`.
 
 ### 3. Row 7s: three fixtures, three spec rows, a row count, a live script-error guard
 
@@ -442,3 +442,19 @@ Measured first-hand on 2026-10-21 in `/Users/voightkampff/dev/sunholo-data/.stap
 | V16 | Drills are not vacuous | `drill7s "$PWD" E1 28` and `drill7s "$PWD" E7b 28` on the clean tree | Both rc 1 (the mutant survives, so the drill fails) |
 | V17 | Open-PR surface | `gh pr diff <n> --repo sunholo-data/stapledons-godot --name-only` for 298–304 and 307 | No PR lists `tools/rig_check.sh`, `tools/test_rig_check.sh`, `mk/m45.mk`, `tests/display_audit.gd` or `tests/fixtures/display_audit/*`. #298, #300–#304 hold `Makefile`; #298 `mk/sound.mk`, #300 `mk/style.mk`, #301 `mk/levels.mk`, #302 `mk/star-surfaces.mk`, #304 `mk/captain-anim.mk` |
 | V18 | Standalone `!` guards | `grep -nE '^[[:space:]]*! grep' mk/*.mk Makefile`; `git grep -nE '(;\|then\|do) *! grep' -- mk Makefile` | `mk/m45.mk:26` (fixed here) and `Makefile:778` (held, Deferred 2). `mk/m5.mk:68` sits at the end of an `if` body's AND list, so it is live |
+| V19 | `short` is defined before `fail()` can run (quorum r1, kimi-k3; controller measured first) | `grep -n '^short=\|^fail()\|fail "' tools/rig_check.sh \| head -3` | `29:short=$(printf %s "$sha" \| cut -c1-8)`, then `42:fail() { …`, then `45:git clone … \|\| fail "clone failed"` (the first call). It is set unconditionally after `sha` resolves and is checked non-empty (:24–28), so `set -u` cannot abort `fail()` on it |
+| V20 | Revision r1 re-measure | The control extracted verbatim from §2 after the `if grep` edit; a copy of `tools/rig_check.sh` with exactly the §1 edits (`diff \| grep -c '^>'` gives `2`); two extra mutants of that copy: post `"$1"` without the sha, and `$shortx` for `$short` | Pre-fix script: `4 cases, 4 failures`. Fixed copy: `4 cases, 0 failures`, rc 0 (also under dash); `shellcheck -s sh -S warning` clean. No-sha mutant: make-test-red and long-reason FAIL (`no failure description /01234567: …/`). Unset-`short` mutant: `set -u` aborts `fail()` after its echo, leaving `posts: pending 31`, so make-test-red, long-reason and failure-refused FAIL (3 failures). The control catches exactly the stuck-pending symptom kimi-k3 described |
+
+## Quorum log
+
+- **Round 1** (2026-10-21, artifact `m4-7s-7o-followups-2026-10-21T12-17-08Z.json`): **BLOCKED.**
+  - oc-kimi-k3: REJECT. Blocking: the doc never showed that `short`, used by the new `fail()`, is defined. Under `set -u` an unset `short` would recreate the stuck pending.
+  - gemini-4-argon: PASS. Non-blocking: the control's `! grep -q refused … || why=…` carries the `!` footgun the doc removes elsewhere.
+  - gpt6-1-sol and oc-glm-5-3: absent (unreachable).
+  - Controller: pass. It measured `short` at `tools/rig_check.sh:29`, before `fail()`, so the premise is false, though the completeness gap was real.
+- **Revision pass 1** (designer):
+  - §1 now names `short` as the existing 8-character variable and cites its line order (V19). The LOC claim stands: the diff is 2 changed lines plus 1 comment (V20).
+  - The `make-test-red` row now states that the control's description regex is anchored, so the failure description must begin with the 8-character sha. It already did; V20 shows the no-sha and unset-`short` mutants are both caught.
+  - The control's refused check became an `if grep …; then …; fi`, and the doc now states that no planned script uses a `!` assertion.
+  - The control was re-measured after the edit (V20).
+  - The design direction is unchanged.
