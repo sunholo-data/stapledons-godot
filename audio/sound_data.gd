@@ -137,7 +137,9 @@ static func wav_info(b: PackedByteArray) -> Dictionary:
 
 ## The cue table against the manifest: schema, unique ids, known trigger kinds with their fields,
 ## streams that exist, a cue bus, the visual counterpart rule and the forbidden words.
-static func check_cues(table: Variant, assets: Dictionary, root := "res://") -> Array[String]:
+## check_refs: the visual-counterpart rule reads the game's source files, so it is an authoring check
+## (tests, tools); an exported build has no .gd text to read and skips it (SoundDirector.setup).
+static func check_cues(table: Variant, assets: Dictionary, root := "res://", check_refs := true) -> Array[String]:
 	var bad: Array[String] = []
 	if not table is Dictionary or table.get("schema", "") != CUES_SCHEMA or not table.get("cues", null) is Array:
 		return ["cue table: not a %s table" % CUES_SCHEMA]
@@ -181,7 +183,7 @@ static func check_cues(table: Variant, assets: Dictionary, root := "res://") -> 
 			elif not c.get("loop", false):
 				bad.append("%s: only a loop can follow a param" % id)
 		var vis := str(c.get("visual", ""))
-		if kind in ["sim_event", "sim_state"]:
+		if kind in ["sim_event", "sim_state"] and check_refs:
 			var ref := vis.split("::")
 			if ref.size() != 2 or not FileAccess.file_exists(root.path_join(ref[0])) or not FileAccess.get_file_as_string(root.path_join(ref[0])).contains(ref[1]):
 				bad.append("%s: an informative cue needs a visual counterpart 'file::text' that exists in the code (got '%s')" % [id, vis])

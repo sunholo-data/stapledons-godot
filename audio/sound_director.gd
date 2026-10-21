@@ -55,7 +55,7 @@ func setup(cues_path := SoundData.CUES_PATH, assets_path := SoundData.ASSETS_PAT
 	errors.append_array(SoundData.check_rows(m))
 	assets = m.assets
 	var table: Variant = SoundData.read_json(cues_path)
-	errors.append_array(SoundData.check_cues(table, assets, root))
+	errors.append_array(SoundData.check_cues(table, assets, root, not OS.has_feature("template")))
 	cues.clear()
 	if errors.is_empty():
 		for c: Dictionary in table.cues:
