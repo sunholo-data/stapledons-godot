@@ -30,6 +30,7 @@ func _initialize() -> void:
 	_fader()
 	_uniforms()
 	_basis()
+	_eclipse()
 	print("star-surface: %s (%d failures)" % ["OK" if failures == 0 else "FAIL", failures])
 	quit(1 if failures > 0 else 0)
 
@@ -179,6 +180,26 @@ func _basis() -> void:
 	check("(control) Planets.body_basis at the NCP is not orthonormal", not ortho.call(Planets.body_basis(ncp, 0.0)))
 	var other := StarSurface.basis_of({"x": 0.3, "y": 0.2, "z": 0.93})
 	check("an ordinary pole: orthonormal too", ortho.call(other))
+
+
+## SS3: the covered fraction (lens area of two circles), the H-alpha line's colour under Doppler, and the
+## prominences' count and heights (design §D6; AC9, AC10).
+func _eclipse() -> void:
+	check("covered: disjoint 0", StarSurface.covered_fraction(1.0, 0.5, 1.6) == 0.0)
+	check("covered: a larger disc centred covers all", StarSurface.covered_fraction(1.0, 1.04, 0.0) == 1.0)
+	check("covered: a smaller disc inside covers (rb/ra)^2", near(StarSurface.covered_fraction(1.0, 0.5, 0.2), 0.25, 1e-12))
+	check("covered: equal circles one radius apart cover (2 pi/3 - sqrt3/2)/pi = 0.3910", near(StarSurface.covered_fraction(1.0, 1.0, 1.0), (2.0 * PI / 3.0 - sqrt(3.0) / 2.0) / PI, 1e-9))
+	var ha := StarSurface.h_alpha_rgb(1.0)
+	check("H-alpha at rest is red (r > g, r > b) with unit luminance", ha.x > ha.y and ha.x > ha.z and near(0.2126 * ha.x + 0.7152 * ha.y + 0.0722 * ha.z, 1.0, 0.02))
+	check("H-alpha ahead at 0.9c (150.6 nm) and astern (2,860 nm) is black", StarSurface.h_alpha_rgb(sqrt(19.0)) == Vector3.ZERO and StarSurface.h_alpha_rgb(0.22942) == Vector3.ZERO)
+	var pr := StarSurface.prominences(1234)
+	var n := 0
+	var ok := true
+	for v: Vector4 in pr:
+		if v.w > 0.0:
+			n += 1
+			ok = ok and v.w >= 0.015 and v.w <= 0.15 and near(Vector3(v.x, v.y, v.z).length(), 1.0, 1e-6)
+	check("prominences: 3-6, heights 0.015-0.15 R, unit directions; deterministic", n >= 3 and n <= 6 and ok and StarSurface.prominences(1234) == pr)
 
 
 func _sun_params(px_r: float) -> Dictionary:

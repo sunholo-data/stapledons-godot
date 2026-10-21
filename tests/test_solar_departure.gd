@@ -142,10 +142,12 @@ func _run()->void:
 				if body.id==finite_id:star=body
 			check("interstellar plan retains high cruise speed and finite intercept",sim.world.journey.plan.cruise_phi>2.6466524123622457 and sim.world.journey.plan.get("target_kind", "")=="body" and sim.world.journey.plan.hold.body==finite_id)
 			check("stellar arrival is exactly the checked finite endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
-			var required:float=star.radius_km/sin(atan(tan(deg_to_rad(5.))*sqrt(star.radius_km/695700.)))
+			# D-54, with the D-111 close pass (twice the tangent) for the G2 dwarf alpha Cen A
+			var pass_k:float=2.0 if finite_id=="acen-a" else 1.0
+			var required:float=star.radius_km/sin(atan(pass_k*tan(deg_to_rad(5.))*sqrt(star.radius_km/695700.)))
 			check("D54 finite stop replaces distant catalogue system arrival",absf(sim.world.journey.plan.hold.offset_km-required)<0.001 and absf(Planets.length64(Planets.world_of(star.rel_km))-required)<20000. and required<149597870.7)
 			var deg:float=rad_to_deg(2.*Planets.angular_radius(star.radius_km,Planets.length64(Planets.world_of(star.rel_km))))
-			var wanted:float=rad_to_deg(2.*atan(tan(deg_to_rad(5.))*sqrt(star.radius_km/695700.)))
+			var wanted:float=rad_to_deg(2.*atan(pass_k*tan(deg_to_rad(5.))*sqrt(star.radius_km/695700.)))
 			check("finite stellar view has D54 angular size and exact catalogue replacement",absf(deg-wanted)<0.01 and star.get("catalogue_id", "")==id)
 			check("direct stellar arrival needs no timed inward boost",not sim.world.journey.plan.has("drive") and counts.approaching==0)
 			if finite_id=="acen-a":

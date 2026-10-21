@@ -36,6 +36,16 @@ export pure func sphereViewKm(radiusKm: float, halfRad: float) -> float = radius
 
 export pure func starViewDeg(radiusKm: float, sunKm: float) -> float = viewDeg(starRefDeg(), radiusKm / sunKm)
 export pure func starStopKm(radiusKm: float, sunKm: float) -> float = sphereViewKm(radiusKm, viewHalfRad(starRefDeg(), radiusKm / sunKm))
+-- D-111 A2 (R2-STAR-SURFACES): a close pass for main-sequence F, G and K stars (3,900-7,500 K,
+-- log g >= 4): twice the D-54 tangent, so alpha Cen A fills 21.8 deg instead of 11.1. Giants, M
+-- dwarfs, hot stars and the Sun keep the D-54 curve.
+export pure func closePassFactor() -> float = 2.0
+export pure func isClosePassStar(teff: float, logg: float) -> bool = teff >= 3900.0 && teff <= 7500.0 && logg >= 4.0
+export pure func closePassHalfRad(ratio: float) -> float = atan(closePassFactor() * tan(degRad(starRefDeg())) * sqrt(ratio))
+export pure func starStopKmFor(radiusKm: float, sunKm: float, teff: float, logg: float) -> float =
+  if isClosePassStar(teff, logg) then sphereViewKm(radiusKm, closePassHalfRad(radiusKm / sunKm)) else starStopKm(radiusKm, sunKm)
+export pure func starViewDegFor(radiusKm: float, sunKm: float, teff: float, logg: float) -> float =
+  if isClosePassStar(teff, logg) then 2.0 * radDeg(closePassHalfRad(radiusKm / sunKm)) else starViewDeg(radiusKm, sunKm)
 
 export pure func planetViewDeg(radiusKm: float, earthKm: float) -> float = viewDeg(planetRefDeg(), radiusKm / earthKm)
 -- The planet or moon stop: the D-54 view distance, but never inside the safety
