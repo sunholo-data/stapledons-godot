@@ -6,12 +6,13 @@ extends SceneTree
 ##                        -> matte (alpha remapped: the generator's figure alpha sits at ~0.9-0.99),
 ##                        aligned to their pose guide (scale by figure height, the planted sole on the
 ##                        guide's), downscaled to cells (CELL_SCALE), trimmed to the alpha box, saved
-##                        as lossless WebP in assets/characters/captain/anim/y0/, the manifest's "anim"
-##                        section written from art/captain-anim-v1/clips.json.
-##   (default: check)     every manifest frame against its own guide mask (the entry's guide, cell size) and the identity's stills: silhouette IoU, palette class means
-##                        (CIE76 dE against the stage-0 still of the nearest facing), figure scale
-##                        figure height against the guide, cell geometry, disk and GPU budgets, and AC3: a
-##                        planted foot slides <= STANCE_PX_MAX at 1440p between stance frames.
+##                        as lossless WebP in assets/characters/captain/anim/y0/; the "anim" section is
+##                        written to ANIM_MANIFEST from <art>/clips.json (default art/captain-anim-v2;
+##                        "keep" clips carry over). Each frame records its guide and planted foot.
+##   (default: check)     every manifest frame against its own guide (cell size) and the stage-0 stills:
+##                        pose (silhouette IoU and leg coverage), palette (k-means of the still, CIE76
+##                        dE), figure height against the guide, cell geometry, disk and GPU budgets; and
+##                        AC3: a planted foot slides <= STANCE_PX_MAX at 1440p between stance frames.
 ##   --selftest           the check must FAIL on three seeded defects: a recoloured frame (another
 ##                        identity's palette), a frame drawn for the wrong pose (the other facing's
 ##                        guide), a frame at the wrong scale.
