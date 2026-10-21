@@ -1808,3 +1808,131 @@ DECISIONS FOR MARK: none. The ledger has 0 OPEN rows (93).
 - **Next:** row 7m AC1 when the GPU is quiet ∥ L9 (minor 13, then S0.1 → S0.3, once `Makefile` is free) ∥ row 7s; then 7o, 7i(k, l), 7n, 7l, 7k, 7i(b–f, h), 7h; then L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: none. The ledger has 0 OPEN rows (95).
+
+## 42 — 2026-10-20 — iteration 42, row L9 semantic-memory S0.1 similar-worlds data and ranking LANDED (PR #305, merge `ddc5582`): 15 confirmed planets ranked in the pure sim, strict VM = interpreter, the iteration-38 spike's digest reproduced; plan renumbered to protocol minor 13; ailang#1914 found and reported; independent eval Sonnet 93/100 PASS [PRODUCT]
+
+- **Pick:** row L9 (semantic-memory S0), first in Mark's attended re-prioritisation of 2026-10-20 (`989abdef`, which landed mid-iteration and confirmed this pick). Clause map at pick: 1 UNMET (attended M1.5b); 2/3 MET; 4 UNMET → 7m AC1 PARKED-ON-LANE (GPU `Device Utilization %` 84, 1-min load 10.6 at 17:19 UTC; predicate < 15 and < 5), the AC5 scene golden 7i(c) blocked (attended #292 DL3 was still rewriting the ship scene and `tools/m4_ship_golden.gd`), P-land; 5 ongoing. No routable UNMET-clause row. L9's blocker re-measured: no open PR edits `Makefile` (#292 and #293 file lists), so S0.1 could add its target. Reality check at `e6b27397`: `git log --grep 'S0\.1\|similar'` showed only the design and plan; minor 13 is free (`grep 'MINOR :=' bridge/sim_bridge.gd` tops out at `HOME_TIERS_MINOR := 12`).
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Goal unmoved (L9 is R2 product work outside the R1 bar; it adds strict-VM coverage under clause 5).
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. #274: 0 allowlisted directives since 2026-10-20T11:16:38Z (5 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). Attended since iteration 41: D-96 and D-97 at Gate 1, then D-98–D-106 and the queue re-prioritisation (`989abdef`) mid-iteration, all RESOLVED or recorded attended, acknowledged here. `mission_ledger_provenance.sh` reads `fleet` for D-96/D-97 (born resolved in attended PRs #287/#290; this rig's attended sessions commit as the bot, as for D-94/D-95 in iteration 41). Not re-opened; noted in the report. Ledger valid at 106 rows, 0 OPEN. Weekly sweep: already done this week.
+- **Gate 1:** origin/main `e6b27397`; the main checkout is 196 behind and was only read. Main fast tier pending on `e6b27397` at read (preceding merges success). Skill and its 13 resources byte-identical to origin/dev and to the pin. Open PRs: attended #292 (DL3) and #293 (bridge styling design); neither touches this row's files. #292 merged mid-iteration (`55c82f91`): test-merged into the row branch, `check --package sim` and `make similar-test` re-run on the merged tree, rc 0, same digest.
+- **Design:** none needed (doc approved under D-85). No quorum round (mechanical amendment, no new ask).
+- **Plan:** planner = codex gpt-6.1-sol (resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`; Agent `opus` transport; ~7 min, 145,001 tok). It renumbered S0 to minor 13 (`similarMinor() = 13`, `SIMILAR_MINOR := 13`, fixtures `protocol_213_similar.*`, frozen pre-S0 bytes at 12, `main.gd` keeps `HOME_TIERS_MINOR`), re-derived every citation and gate list at `e6b27397`, and set the sprint JSON to approved (D-85, #272). Commit `987d97a6`.
+- **Execution:** executor = codex gpt-6.1-sol (`recipe codex:gpt-6.1-sol declared:provider-pin`; Agent `opus` transport).
+  - Controller pre-work: iteration 38's spike survived at `/tmp/s0_spike.ail`. Re-run on the pinned v0.54.14, its output is strict VM = interpreter with sha256 `4f1a16d7…`, the plan's pin. Its file ends in `\n\n`, so the plan's `wc -l = 15` contradicted its own digest. Corrected in the directive (rows `grep -c .` = 15, `wc -l` = 16).
+  - Run 1 (~8 min, 130,922 tok): tests first (RED: 16 of 16 failed, module not found), then the production modules, `similar-test` green with the pinned digest. It STOPPED correctly on an AILANG defect: `::` does not parse in a named-test body. The controller reproduced it on v0.54.14 and v0.54.16 (parenthesised and plain-`let` controls fail; a module-level function passes) and reported it: **ailang#1914** (`inbox_1792518753896_d86f403b`). The first send lost its body to a `--body-file` the CLI does not have (`inbox_1792518722294_483898df`, empty).
+  - Run 2 (cap hit at 50 min, no final message): cons-free test bodies with a restore comment, whole package 531/531, five drills (mass divisor, reciprocal, tie order, guard skipped, TRAPPIST id) all killed and restored. It then spent its last ~25 min waiting on a second sandboxed whole-package run under rig load 35–44. The controller killed the orphaned run (PIDs 49979/50012, in this row's clone).
+  - Controller, outside the sandbox, on `7f608e0f`: `check --package sim` rc 0; `make similar-test` rc 0 (`4f1a16d7…`); `make strict` rc 0; `make python-guard` rc 0; core merge-base guard rc 0. Drill (b), reciprocal multiplication, was reproduced: the bit-exact test fails and `similar-test` rc 2, restored byte for byte. The controller's whole-package and `ci-fast` runs were cut at the 60-min background limit under load (UNMEASURED by the controller; measured by the evaluator).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter42`) on `7f608e0f`: **93 PASS**, 0 blocking, `eval_R2-SIMILAR-S0_S0.1_round_1.json` (commit `aaf4b966`). It ran AC1–AC6 itself (whole package rc 0, 531 passed, 57m49s under load) plus a one-off Python oracle in `/tmp` that matched all 15 rows to 1e-12. 54 drills: 44 killed, 10 survived; 7 equivalent or redundant (NaN self-check, raw guards covered by `valid`, `--args-json`). Real gap K6/K7: `similar-test` stays green with `--strict-bytecode` removed or both engines on the interpreter (the controller reproduced K6, rc 0).
+- **Gate 3b:** merge rule `rig/full` + fast tier. Fast tier success on head `aaf4b966`. `rig/full` on `aaf4b966` (`RIG_TEST_S=9000` for the load): **success, 99 min** (status posted 21:47:52 UTC). Fast tier success on head (`aaf4b966`). `git log HEAD..origin/main` held #292 (DL3) and attended ledger rows D-98–D-106, none touching `Makefile` or `sim/` (test-merged earlier, row checks rc 0); MERGEABLE/CLEAN; no closing keyword. Merged 21:48:38 UTC with `--match-head-commit aaf4b966`: merge `ddc5582`. **Fast tier success on the merge (39503346478) → LANDED.**
+- **Routing evidence:** fire `stapledon-1792516689-62843`; gate1 base `e6b27397`. Routing note: empty (as configured). Operator's standing request: every role through the Agent tool.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: none (approved doc; the rotation pointer stays at `pi:ollama/glm-5.3:cloud`).
+  - Planner: `codex:gpt-6.1-sol` (145,001 tok).
+  - Executor: `codex:gpt-6.1-sol` (130,922 tok run 1; run 2 not reported, cap hit).
+  - Evaluator: `sonnet` (98,241 tok; `agent-tool sonnet declared:alias-pin`). Judge independence: cross-vendor (Anthropic judge, OpenAI executor and planner).
+  - Agent `opus` transports: 31,321 and 30,324 + 43,209 tok.
+  - Quorum: none. Metered: $0.
+- **Ruled out:**
+  - 7m AC1: GPU 84 % and load 10.6 at pick, 23–44 during the iteration (other sessions' rig checks, a 10 h `godot … test_deck_layout_eval.gd`, Chrome helpers at 100 % for 4 days; none the loop's).
+  - 7i(c) AC5 golden now: #292 was still changing the ship scene at pick.
+  - Blessing a new digest: the spike's bytes were reproduced exactly, so no re-derivation was needed.
+  - A pi fallback after run 2's cap: the worktree held complete, controller-verified work; a second lane would only re-run the same sandboxed package test.
+  - Fixing K6/K7, `ci-fast` wiring and the `distances()` guard tests in this PR: beyond the approved S0.1; appended to the follow-up backlog per Mark's new rule.
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. The plan pinned a digest whose own file contradicts its row-count line. The planner could not see this, because the spike was deleted from the tree. A pinned digest should travel with the command and output that produced it, kept in-tree or under `refs/`.
+  2. The executor directive asked codex to run the whole-package test in its sandbox. Under rig load that took 30+ min and consumed the cap before the final message. Process note: executor directives skip the whole-package run (the controller and evaluator run it outside the sandbox) and give codex the single test file.
+  3. The `ailang messages send --body-file` trap (gate 5's rule) bit in Gate 3's upstream report. The fix is the positional body.
+  4. Rig load from non-loop processes made every whole-suite command 3–6× slower. Reported to Mark.
+- **Next:** L9 S0.2 (protocol 2.13 emission, the oracle, `similar-record`) → S0.3 (bridge parse) → L4 → L3 → L5 → L7 → R2 plan → 7m AC1 (idle rig) → the follow-up backlog.
+
+DECISIONS FOR MARK: none. The ledger has 0 OPEN rows (106).
+
+## 43 — 2026-10-21 — iteration 43, row R2 Kerr (spinning black holes) design doc and sprint plan BUILT (PR #307), PARKED for Mark on D-107; independent eval Sonnet 84/100 PASS; L5 closed as already done, L7 found landed in the package (unpublished) [PRODUCT]
+
+- **Pick:** row R2 (Kerr design doc + sprint plan, plan only), the first routable row in Mark's attended order of 2026-10-20. The rows above it:
+  - **L9 S0.2:** blocked. Open attended #302 (R2-STAR-SURFACES SS0–SS2, paused for Mark's playtest) edits `sim/protocol.ail`, `bridge/sim_bridge.gd` and `main.gd` and claims protocol minor 13 (`gh pr diff 302`: `+export pure func surfaceMinor() -> int = 13`). Six open attended PRs (#298, #300, #301, #302, #303, #304) edit `Makefile`.
+  - **L4 and L3:** blocked on the same `Makefile` hold.
+  - **L5:** a ghost (see Ruled out).
+  - **L7:** landed in the package (see Ruled out).
+  - **Clause map at pick:**
+    - Clause 1: UNMET (attended M1.5b).
+    - Clauses 2 and 3: MET.
+    - Clause 4: UNMET. Row 7m AC1 is PARKED-ON-LANE (GPU 86 %, 1-min load 30.8 at 04:14 UTC; predicate < 15 and < 5). 7i(c) is blocked (#298, #300, #303 and #304 edit `demos/ship_geometry_demo.gd`). P-land.
+    - Clause 5: ongoing.
+    - No routable UNMET-clause row.
+  - **Reality check:** at `8d17f90b`, `git grep -i kerr` finds no Kerr code (the design doc's V9), and no R2 design doc existed.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Goal unmoved (R2 is R2-release plan work, outside the R1 bar).
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - #274: 0 allowlisted directives since 2026-10-20T22:06:15Z (6 comments, all self).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2). Ledger valid at 106 rows, 0 OPEN, no ledger changes since iteration 42.
+  - Weekly sweep already done this week. Issue #274 was created 2026-10-19 08:55Z, after the Monday 07:00 CEST boundary, so no rotation.
+- **Gate 1:**
+  - origin/main `8d17f90b`; the main checkout is 205 commits behind and was only read.
+  - Fast tier success on `8d17f90b` (1 check).
+  - The running skill and its 13 resources are byte-identical to origin/dev.
+  - Open PRs by the bot account: #293–#304, all attended and none mission-branch.
+  - Process slip: `mission-base.sh record gate1` was not run; the Gate-1 base was read by `git rev-parse` (`8d17f90b`), and `record gate4` read the same SHA.
+- **Design:**
+  - Designer: `pi:ollama/kimi-k3:cloud`, the rotation after glm-5.3. Resolver said `recipe claude:claude-opus-5-5`; the rotation was followed, as in iterations 40–41. Probe rc 0. Agent `opus` transport. `mission_pi_run.sh` verdict ok, 1,462 s, 99 tool calls, 258,306 in / 99,397 out / 8.36M cache-read.
+  - Output: `design_docs/planned/r2/kerr-black-holes.md`, 278 lines, pillars net +7 Go, 9 sub-milestones, 28 Verification rows. It is kimi's first designer run on this mission, and it delivered.
+  - Controller corrections from first-party measurements:
+    - `sunholo/relativity` 0.13.0 is already taken in source (ailang-packages #126, unpublished), so Kerr plans 0.14.0 (V29).
+    - #302's claim on minor 13 is verified (V13); the sandboxed designer could not reach GitHub.
+  - Quorum r1 (`--author pi:ollama/kimi-k3:cloud`; kimi benched): BLOCKED.
+    - gemini-4-argon REJECT on K1.1 units.
+    - claude-sonnet-5@claude-p absent (quota); gpt6-1-sol absent (unreachable); oc-glm-5-3 absent (invalid: hit 65,536 output tokens, no verdict, $0.31).
+    - The reviewer's factor-2 claim was measured false (V30: the formula already returns 1.5 r_s at s = 0), but its explicitness fix was applied verbatim.
+  - Quorum r2: BLOCKED, gemini alone, on a new surface: the s = 0.9 prograde ISCO (1.16 r_s) lies below the 2 r_s floor.
+    - Same three absences; glm invalid a second time, so a durable named absence.
+    - Narrow-refinement carve-out: the fix was applied verbatim; no third round.
+    - Effective review: one external reviewer present in both rounds.
+- **Plan:**
+  - Planner: codex gpt-6.1-sol (`recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`). Agent `opus` transport. Probe rc 0; run rc 0; 1,377 s; 253,226 tok.
+  - Output: `kerr-black-holes-sprint.md` (1,936 lines) and `sprint_R2-KERR.json` (30 slices, ~3,710 LOC; `awaiting_approval`).
+  - Pause points: P0 approval; the design-repo spec PR before any visual; the publish; render review.
+  - It recorded 15 design inconsistencies for P0 rather than planning around them. The controller removed one stray blank line that split the DI table.
+- **Execution:** none (plan only).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter43`) on `bd88abc3`: **84 PASS**, 0 blocking, `eval_R2-KERR_plan_round_1.json` (commit `7d92ad39`).
+  - Rubric: format 17/20, physics 20/25, claims 18/20, DIs 14/15, charter 9/10.
+  - It recomputed about 15 RK values with its own oracle; all match except RK-16 at s = 0.998.
+  - It re-ran 13 Verification rows and 5 planning premises, and confirmed every existing make target in the gate lists. All 19 NEW targets are absent from the tree and marked NEW.
+  - DI adjudication: 14 REAL, 1 PARTLY.
+  - Non-blocking findings (7), all for P0: RK-16 is measure-dependent; the V21 s = 0.998 endpoint is quantised; the table cost estimate looks low; the "exact" static-clock reduction depends on its evaluation form; K1.0 ordering differs between doc and plan; the JSON has no `milestones` key; V13/V29 could not be re-checked inside its bounds.
+  - The controller reproduced the V21 finding: exact α_max = 6.9966662714 against the doc's 6.99657841.
+- **Gate 3b:**
+  - PR #307 opened and PARKED (plan only; it merges only after Mark's D-107 ruling, as #272 did after D-85). Closing-keyword scan: 0 (control 1).
+  - Record PR: this entry; it merges on the fast tier.
+- **Routing evidence:**
+  - Run identity: fire `stapledon-1792555607-52758`; base=8d17f90bbe4c6d6928dd822bf278b8e4e402b5ac@2026-10-21T05:21:21Z (`record gate4`). Routing note: empty (as configured). Operator's standing request: every role through the Agent tool.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: `pi:ollama/kimi-k3:cloud` (357,703 tok + 8.36M cache-read). The rotation pointer now holds kimi-k3.
+  - Planner: `codex:gpt-6.1-sol` (253,226 tok).
+  - Executor: none.
+  - Evaluator: `sonnet` (97,301 tok; `agent-tool sonnet declared:alias-pin`). Judge independence: cross-vendor (Anthropic judge, Moonshot designer, OpenAI planner).
+  - Agent `opus` transports: 32,756 and 38,187 tok.
+  - Quorum: gemini-4-argon both rounds; sonnet (quota), gpt6-1-sol (unreachable) and glm-5.3 (invalid) absent both rounds.
+  - Metered: about $0.72 (quorum: gemini $0.046 × 2, glm $0.313 + $0.314 for no verdict).
+  - Fleet tickets filed: `quorum:oc-glm-5-3-output-cap-invalid` (new) and `quorum:gpt6-1-sol-openai-api-credits-exhausted` (repeat), both `--blocking none`.
+- **Ruled out:**
+  - L9 S0.2 now: #302 holds `sim/protocol.ail` and minor 13, and `Makefile` is held. A loop PR taking 13 first would force a renumber onto a paused attended sprint.
+  - L4 and L3 now: both need `Makefile`, which six attended PRs edit.
+  - L5: a ghost. 0 in-tree markers for the v0.52.0 workaround issues (positive control: ailang#1914, 5 hits); CLAUDE.md already records the removal.
+  - L7 as loop work: the fix is in ailang-packages #126 (0.13.0, unpublished). Publishing and pinning are attended. The controller's run found most properties now skip as out-of-contract (94 of 139, 53 after one input) with `vacuous_skips` 0; reported upstream as ailang#1921 (ailang#1921).
+  - 7m AC1: GPU 86 %, load 30.8.
+  - 7i(c): the ship scene is held by four attended PRs.
+  - A kimi revision pass after r1: both objections carried verbatim fixes on one surface each.
+  - A third quorum round: the carve-out applies.
+  - Correcting the eval's numeric findings in the reviewed doc after review: left to P0, so the reviewed commit stays the reviewed doc.
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. **Quorum seats: the Anthropic seat was absent on quota for the third iteration running** (40, 41, 43), and the OpenAI seat was unreachable again (41, 43). This iteration, glm-5.3 ran to its output cap twice for $0.63 and no verdict. The Kerr doc, a physics design, was reviewed by one external model. That is ≥3 evidence rows: a routing signal for Mark (in the digest), and tickets are filed.
+  2. The Gate-1 `mission-base.sh record gate1` step was skipped. On this mission the helper lives under `$MISSION_DRIVER_ROOT/tools/launchd/`, and the gate prints the repo-relative path. Process note: run it with the driver root, as Gate 0 does for the heartbeat.
+  3. The skill's quorum reader fails under zsh's `nomatch` when no artifact exists (rc 1 from a glob error, not from the lookup). Run it under `bash`, which gave rc 1 (UNREVIEWED) with a firing control (rc 0 on `m4-7q-ruling-pin-controls`).
+  4. Six attended PRs hold `Makefile`, which blocks every Makefile-touching loop row (L9 S0.2, L4, L3). A loop-safe include point (for example `mk/loop-*.mk`, already included by `Makefile`) would let headless rows add targets without touching the held file. This is a proposal for Mark; it is not done.
+- **Next:** Mark rules D-107 → (A) a doc revision for DI-01..DI-15 and the eval findings, then the headless K1.1a. Meanwhile:
+  - L9 S0.2 when #302 merges or closes (renumber to 14 if #302 takes 13).
+  - L4 and L3 when `Makefile` is free.
+  - 7m AC1 when the rig is idle.
+  - The follow-up backlog.
+
+DECISIONS FOR MARK: D-107 (approve the R2 Kerr design and plan, PR #307). The ledger has 1 OPEN row (107).

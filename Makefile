@@ -37,7 +37,23 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 # VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
 ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+
+.PHONY: similar-test
+similar-test:      ## S0.1 ranking: strict VM = interpreter, pinned spike bytes
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; \
+	  mkdir -p "$$out"; \
+	  for engine in strict interpreter; do \
+	    flags=""; \
+	    if [[ "$$engine" == strict ]]; then flags="--bytecode --strict-bytecode"; fi; \
+	    "$(AILANG)" run --quiet --package-dir sim $${=flags} --entry similarVm --args-json 0 sim/similar_test.ail > "$$out/rank-$$engine.txt"; \
+	  done; \
+	  cmp "$$out/rank-strict.txt" "$$out/rank-interpreter.txt"; \
+	  test "$$(grep -c . "$$out/rank-strict.txt")" = 15; \
+	  test "$$(wc -l < "$$out/rank-strict.txt" | tr -d " ")" = 16; \
+	  shasum -a 256 "$$out/rank-strict.txt"; \
+	  test "$$(shasum -a 256 "$$out/rank-strict.txt" | cut -d " " -f1)" = 4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b'
 
 # R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is a registry pin
 # (sim/ailang.toml) and the crew scenario pack is synced from the crew lab (data/crew, SYNC;
