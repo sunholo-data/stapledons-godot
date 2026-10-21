@@ -4,7 +4,7 @@
 **Priority:** P2 (backlog). 7o first: a red rig run currently reads as a run still in flight.
 **Implements:** [charter](../../stapledon-mission.md) queue rows 7o and 7s and backlog row 7i(l); the parent [m4-7q-ruling-pin-controls.md](m4-7q-ruling-pin-controls.md) and its evaluation [`eval_R1-M4-JOURNEY_7q_round_1.json`](../../../.ailang/state/evaluations/eval_R1-M4-JOURNEY_7q_round_1.json) (N2, N3, N4); [m4-first-journey.md](m4-first-journey.md) AC4 as amended by D-77 A and D-78 A, unchanged. The rig-first merge rule (Mark, 2026-10-19; attended #278, merge `ff13700`) is the 7o context. The [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) is untouched.
 **Depends on:** 7q landed (PR #288, merge `9fe354d`, 28 control rows); D-88 A; AILANG v0.54.14, Godot 4.7.2. No package, sim, protocol, physics, scene or player-visible change.
-**Estimated LOC:** about **85**, all test or tooling: `tools/rig_check.sh` 2 changed lines plus 1 comment line (the only behaviour change: the status description, plus the failure reason and log path now always reaching stdout); the new `tools/test_rig_check.sh` (~53); `mk/m45.mk` 4 changed loop lines plus a 7-line target; three compact fixtures (~21 data lines). Zero lines in `tests/display_audit.gd` and `Makefile`.
+**Estimated LOC:** about **105**, all test or tooling. `tools/rig_check.sh`: 3 lines removed, 10 added, 2 of them comments. The behaviour changes are only the status descriptions (cap, sha first, conditional log pointer), the failure reason and log path always reaching stdout, and a refused success post now exiting 1. The new `tools/test_rig_check.sh` (~64). `mk/m45.mk`: 4 changed loop lines plus a 7-line target. Three compact fixtures (~21 data lines). Zero lines in `tests/display_audit.gd` and `Makefile`.
 **Evidence:** the Verification log below. I ran every row first-hand in this clone at `4bf95435` (origin/main), using throwaway copies under `mktemp -d` and EXIT-trap restores. After every run, `git status --porcelain` listed only the untracked Godot `*.uid` files.
 
 ## Game vision alignment
@@ -50,7 +50,7 @@ Scored against [core pillars](https://github.com/sunholo-data/stapledons-design/
 ## Goals and non-goals
 
 **Goals.**
-- 7o: `rig_check.sh` never posts a description over 140 characters, and always prints the failure reason and log path, even when the post is refused. A network-free control inside `make test` proves it.
+- 7o: `rig_check.sh` never posts a description over 140 characters, keeps the log pointer in a failure description whenever it fits, and always prints the failure reason and log path. A refused failure or success post is reported on stdout and exits 1. A network-free control inside `make test` proves it.
 - 7s: E1, E2 and E5b are killed with exact signatures, and E5 is recorded as equivalent with evidence.
 - 7s(b) and 7i(l): the loop asserts its own row count, 31.
 - The loop's script-error guard is made live.
@@ -65,28 +65,56 @@ Scored against [core pillars](https://github.com/sunholo-data/stapledons-design/
 
 ## Design
 
-### 1. Row 7o: cap every description, report before posting
+### 1. Row 7o: cap every description, keep the log pointer when it fits, report every refused post
 
-Two edits in `tools/rig_check.sh`, measured on a copy (V5):
+The edits to `tools/rig_check.sh` are below, measured on a copy (V20–V23). Quorum round 2 (oc-glm-5-3's fix, applied verbatim) added the conditional log pointer and the success-post treatment.
 
 ```diff
+@@ -32,14 +32,21 @@
+ 
  status() {
    [ "${RIG_NO_STATUS:-0}" = 1 ] && return 0
 -  gh api "repos/$REPO/statuses/$sha" -f state="$1" -f context=rig/full -f description="$2" > /dev/null
 +  # GitHub refuses a description over 140 characters (row 7o): cut every post to fit.
 +  gh api "repos/$REPO/statuses/$sha" -f state="$1" -f context=rig/full -f description="$(printf %s "$2" | cut -c1-140)" > /dev/null
  }
-@@
+ 
+ suite="make test"; [ $golden = 1 ] && suite="make test + make golden"
+ echo "rig-check: $target -> $short in $dir ($suite); log $log"
+ status pending "$suite running on the Studio"
+ 
 -fail() { status failure "$1 (log on the Studio: $log)"; echo "rig-check: FAIL: $1"; exit 1; }
-+fail() { echo "rig-check: FAIL: $1 (log: $log)"; status failure "$short: $1" || echo "rig-check: could not post the failure status"; exit 1; }
++fail() {
++  echo "rig-check: FAIL: $1 (log: $log)"
++  d="$short: $1"   # the log pointer goes in too whenever it fits GitHub's 140 characters (row 7o)
++  if [ $((${#d} + ${#log} + 8)) -le 140 ]; then d="$d (log: $log)"; fi
++  status failure "$d" || echo "rig-check: could not post the failure status"
++  exit 1
++}
+ 
+ rm -rf "$dir"; mkdir -p "$(dirname "$dir")"
+ git clone --quiet "https://github.com/$REPO.git" "$dir" || fail "clone failed"
+@@ -67,5 +74,5 @@
+   perl -e 'alarm shift; exec @ARGV' "$GOLDEN_S" make golden >> "$log" 2>&1 || fail "make golden failed or ran over ${GOLDEN_S}s"
+ fi
+ mins=$(( ($(date +%s) - start + 59) / 60 ))
+-status success "$suite green on the Studio in ${mins} min ($(ailang --version 2>&1 | head -1))"
+ echo "rig-check: ok, $short green ($suite, ${mins} min)"
++status success "$suite green on the Studio in ${mins} min ($(ailang --version 2>&1 | head -1))" || { echo "rig-check: could not post the success status"; exit 1; }
 ```
 
 - **Where the cap lives.** It is in `status()`, so pending, success and failure are all covered, including the unbounded `$have` and version-line cases.
-- **What the description holds.** The failure description becomes `<short sha>: <reason>`, with the sha first so the cut keeps it. `4bf95435: make test failed or ran over 5400s` is 44 characters. `short` is the script's existing 8-character variable, `short=$(printf %s "$sha" | cut -c1-8)` at `tools/rig_check.sh:29`. It is set before `fail()` is defined (:42) and before the first `fail` call (:45), so `set -u` cannot trip on it inside `fail()` (V19). No other line of the script changes: the diff is exactly the two lines shown plus one comment line (V20).
-- **Where the log path goes.** It moves to stdout. The start line already prints it, and the controller reads stdout.
-- **Order of the failure path.** `fail()` echoes first. Then a refused post (an outage, say) is reported, not fatal, and the exit stays 1.
+- **What the failure description holds.** It is `d="$short: $1"`, with the sha first so the cut keeps it. `4bf95435: make test failed or ran over 5400s` is 44 characters. `short` is the script's existing 8-character variable, `short=$(printf %s "$sha" | cut -c1-8)` at `tools/rig_check.sh:29`. It is set before `fail()` is defined (:42) and before the first `fail` call (:45), so `set -u` cannot trip on it inside `fail()` (V19).
+- **The conditional log pointer** (quorum r2). When `${#d} + ${#log} + 8` is at most 140, `fail()` appends ` (log: $log)`; the 8 is ` (log: ` plus `)`. This is deterministic.
+  - With this rig's 104-character log, it fits for `clone failed` only, at 134 characters. Every other fixed reason needs 141–167 (V24).
+  - It helps any shorter `RIG_DIR`: with a 59-character `/tmp/rig-check/<sha>.log`, every fixed reason fits (V24).
+  - The unbounded `$have` reason never relies on it.
+- **The log path on stdout.** It is printed whatever the pointer does: on the start line (unchanged, `tools/rig_check.sh:39`) and on the `rig-check: FAIL:` line.
+  - Under the default `RIG_DIR` the path is a pure function of the full sha, `${TMPDIR}rig-check/<full sha>.log`. GitHub attaches the status to that full-sha commit, so the pointer is derivable from GitHub alone on the Studio (V21).
+- **Order of the failure path.** `fail()` echoes first. A refused failure post (an outage, say) is then reported, not fatal, and the exit stays 1.
+- **The success path** (quorum r2). The `rig-check: ok` line now comes first. If the success post is refused, the script prints `rig-check: could not post the success status` and exits 1, so the operator sees a nonzero rc. GitHub still shows `pending`, because no post can repair a refused post (Risks).
 - **The pending post.** It is unchanged: if `pending` cannot post, the script still aborts before posting anything, so there is no stuck status to leave behind.
-
+- **Size of the change.** Nothing else in the script changes: 3 lines removed and 10 added, 2 of them comments (V23).
 ### 2. Row 7o control: `tools/test_rig_check.sh` in `make test`
 
 **Home.** `tools/test_rig_check.sh` sits beside its precedents `tools/test_sky_assets.sh` and `tools/test_lens_assets.sh`, the hermetic tests of `tools/` scripts. It is wired from `mk/m45.mk`:
@@ -109,35 +137,39 @@ test: rig-check-control
 - The other candidates are each owned by a feature: `ai.mk`, `site.mk`, `ism.mk`, `m5.mk`, `constellations.mk`, `home-tiers.mk`, `deck-layout.mk`, `navigation-usability.mk` and `planet-presentation.mk`. Rig tooling would be a stranger there.
 - The comment says where it belongs.
 
-**What the control does.** It is POSIX `sh`, about 2 s, and touches no network (V5). It puts stubs on `PATH` for `rig_check.sh` only:
+**What the control does.** It is POSIX `sh`, about 1.3 s, and touches no network (V23). It puts stubs on `PATH` for `rig_check.sh` only:
 
 | Stub | Behaviour |
 |---|---|
 | `gh` | `pr view` prints a 40-character sha. `api …/statuses` appends `state length description` to a log and refuses any description over 140 characters with exit 1 and `Validation failed: Description is too long (maximum is 140 characters) (HTTP 422)`, the way GitHub does. It also refuses one named state on request. |
-| `git` | `clone` creates the directory with a one-line `Makefile` pin and a stub `runtime/bin/ailang` that prints `$STUB_VERSION`; every other `git` call succeeds. |
+| `git` | `clone` creates the directory with a one-line `Makefile` pin and a stub `runtime/bin/ailang` that prints `$STUB_VERSION`, or fails when `STUB_GIT_FAIL=clone`; every other `git` call succeeds. |
 | `make` | Fails only for the named target. |
 
-It runs four cases, each counted, and the script exits nonzero if any case fails:
+It runs six cases, each counted, and the script exits nonzero if any case fails:
 
 | Case | Set-up | Asserts |
 |---|---|---|
-| `make-test-red` | `RIG_DIR` padded so `log` is the rig's 104 characters, `make test` fails | rc 1; posts `pending`, then an accepted `failure` whose stub-log line matches `^failure <n> 01234567: make test failed`, so the description must **begin** with the 8-character sha (`long-reason` anchors the same way); stdout `rig-check: FAIL: make test failed … (log: ….log)`. This is the #252 scenario; the pre-fix script posts 160. |
-| `long-reason` | a 207-character version line, so the reason alone is over 140 | rc 1; accepted `failure`; stdout has the reason |
+| `make-test-red` | `RIG_DIR` padded so `log` is the rig's 104 characters, `make test` fails | rc 1; posts `pending`, then an accepted `failure` whose stub-log line matches `^failure <n> 01234567: make test failed or ran over 5400s$`. So the description begins with the 8-character sha and carries no pointer, because it does not fit. stdout `rig-check: FAIL: make test failed … (log: ….log)`. This is the #252 scenario; the pre-fix script posts 160. |
+| `long-reason` | a 207-character version line, so the reason alone is over 140 | rc 1; accepted `failure` beginning `01234567: runtime is`; stdout has the reason |
 | `long-success` | the version line carries the pin plus 200 characters, every make succeeds | rc 0; accepted `success`; `rig-check: ok, 01234567 green` |
-| `failure-refused` | the stub refuses every `failure` post | rc 1; stdout has `rig-check: FAIL: …` and `rig-check: could not post the failure status` |
+| `clone-red-pointer` | `RIG_DIR=$T/c`, a short log; the clone fails | rc 1; accepted `failure` matching `01234567: clone failed \(log: .*/c\.log\)$`, so the pointer is present because it fits. The script first asserts `${#T}` is at most 100 so this precondition holds on any machine. |
+| `failure-refused` | the stub refuses every `failure` post | rc 1; stdout has `rig-check: FAIL: …` and `rig-check: could not post the failure status`; the post was refused |
+| `success-refused` | the stub refuses every `success` post; every make succeeds | rc 1; stdout has `rig-check: ok, 01234567 green` and `rig-check: could not post the success status`; the post was refused |
 
-The full script as measured (V4, V5) follows. Copy it verbatim, changing only the header comment's path:
+The full script as measured (V20, V23) follows. Copy it verbatim:
 
 ```sh
 #!/bin/sh
 # Row 7o control: tools/rig_check.sh must post only descriptions GitHub accepts (at most 140
-# characters) and must report a failure even when a post is refused. No network: gh, git and
-# make are stubs on PATH; the stub gh refuses a long description the way GitHub does (HTTP 422).
+# characters), keep the log pointer in a failure description whenever it fits, and report a
+# refused failure or success post on stdout with a nonzero exit. No network: gh, git and make
+# are stubs on PATH; the stub gh refuses a long description the way GitHub does (HTTP 422).
 #   sh tools/test_rig_check.sh [path/to/rig_check.sh]
 set -eu
 RIG=$(cd "$(dirname "${1:-tools/rig_check.sh}")" && pwd -P)/$(basename "${1:-tools/rig_check.sh}")
 T=$(mktemp -d "${TMPDIR:-/tmp}/rig-check-control.XXXXXX")
 trap 'rm -rf "$T"' EXIT
+test "${#T}" -le 100   # the clone-red-pointer case needs a log path short enough for the pointer to fit
 export STUB_POSTS="$T/posts" STUB_SHA=0123456789abcdef0123456789abcdef01234567
 mkdir "$T/bin"
 cat > "$T/bin/gh" <<'STUB'
@@ -151,6 +183,7 @@ STUB
 cat > "$T/bin/git" <<'STUB'
 #!/bin/sh
 [ "$1" = clone ] || exit 0
+[ "${STUB_GIT_FAIL:-}" = clone ] && exit 1
 for d; do :; done
 mkdir -p "$d/runtime/bin"; echo 'AILANG_RELEASE ?= v0.54.14' > "$d/Makefile"
 printf '#!/bin/sh\necho "%s"\n' "$STUB_VERSION" > "$d/runtime/bin/ailang"; chmod +x "$d/runtime/bin/ailang"
@@ -159,11 +192,11 @@ printf '#!/bin/sh\ncase " $* " in *" $STUB_MAKE_FAIL "*) exit 1 ;; esac\n' > "$T
 chmod +x "$T/bin/gh" "$T/bin/git" "$T/bin/make"
 long=$(printf '%0200d' 0)
 pad="$T/rig-check/"; while [ ${#pad} -lt 100 ]; do pad="${pad}x"; done   # the rig's 104-character log path
-# run <case> <want rc> <want final state> <want description (ERE)> <want stdout (ERE)> <version> <failing make target> <RIG_DIR>
 fails=0
+# run <case> <want rc> <want final state> <want description (ERE)> <want stdout (ERE)> <version> <failing make target> <RIG_DIR> [clone]
 run() {
   : > "$STUB_POSTS"; why=
-  rc=0; STUB_VERSION=$6 STUB_MAKE_FAIL=$7 RIG_DIR=$8 RIG_NO_STATUS=0 PATH="$T/bin:$PATH" sh "$RIG" 7 > "$T/out" 2>&1 || rc=$?
+  rc=0; STUB_VERSION=$6 STUB_MAKE_FAIL=$7 RIG_DIR=$8 STUB_GIT_FAIL=${9:-} RIG_NO_STATUS=0 PATH="$T/bin:$PATH" sh "$RIG" 7 > "$T/out" 2>&1 || rc=$?
   test "$rc" = "$2" || why="rc $rc, want $2"
   if grep -q refused "$STUB_POSTS"; then why="$why; refused: $(grep refused "$STUB_POSTS" | tr '\n' ' ')"; fi
   test "$(cut -d' ' -f1 "$STUB_POSTS" | tr '\n' ' ')" = "pending $3 " || why="$why; posts: $(cut -d' ' -f1-2 "$STUB_POSTS" | tr '\n' ' ')"
@@ -171,20 +204,28 @@ run() {
   grep -Eq "$5" "$T/out" || why="$why; no stdout /$5/"
   if [ -z "$why" ]; then echo "rig-check control $1: ok"; else echo "rig-check control $1: FAIL ($why)"; fails=$((fails + 1)); fi
 }
-run make-test-red 1 failure '01234567: make test failed' '^rig-check: FAIL: make test failed.*\.log\)$' 'AILANG v0.54.14' test "$pad"
+# The rig's 104-character log: the pointer does not fit, so the description is exactly sha and reason.
+run make-test-red 1 failure '01234567: make test failed or ran over 5400s$' '^rig-check: FAIL: make test failed.*\.log\)$' 'AILANG v0.54.14' test "$pad"
 run long-reason 1 failure "01234567: runtime is 'AILANG 0{100}" '^rig-check: FAIL: runtime is ' "AILANG $long" none "$T/r2"
 run long-success 0 success 'make test green on the Studio' '^rig-check: ok, 01234567 green' "AILANG v0.54.14 $long" none "$T/r3"
-# A refused failure post (GitHub down, say) still prints the reason and the log, and exits 1.
-: > "$STUB_POSTS"; rc=0
-STUB_REFUSE=failure STUB_VERSION='AILANG v0.54.14' STUB_MAKE_FAIL=test RIG_DIR="$T/r4" RIG_NO_STATUS=0 PATH="$T/bin:$PATH" sh "$RIG" 7 > "$T/out" 2>&1 || rc=$?
-if test "$rc" = 1 && grep -Eq '^rig-check: FAIL: make test failed.*\.log\)$' "$T/out" && grep -qx 'rig-check: could not post the failure status' "$T/out"; then
-  echo 'rig-check control failure-refused: ok'
-else echo "rig-check control failure-refused: FAIL (rc $rc)"; fails=$((fails + 1)); fi
-echo "rig-check control: 4 cases, $fails failures"
+# A short log path: the pointer fits, so it is in the description.
+run clone-red-pointer 1 failure '01234567: clone failed \(log: .*/c\.log\)$' '^rig-check: FAIL: clone failed \(log: .*/c\.log\)$' 'AILANG v0.54.14' none "$T/c" clone
+# refused <case> <state to refuse> <failing make target> <want rc> <want stdout line 1 (ERE)> <want stdout line 2 (exact)>
+refused() {
+  : > "$STUB_POSTS"; rc=0
+  STUB_REFUSE=$2 STUB_VERSION='AILANG v0.54.14' STUB_MAKE_FAIL=$3 RIG_DIR="$T/$1" RIG_NO_STATUS=0 PATH="$T/bin:$PATH" sh "$RIG" 7 > "$T/out" 2>&1 || rc=$?
+  if test "$rc" = "$4" && grep -Eq "$5" "$T/out" && grep -qx "$6" "$T/out" && grep -q "^$2 [0-9]* refused$" "$STUB_POSTS"; then
+    echo "rig-check control $1: ok"
+  else echo "rig-check control $1: FAIL (rc $rc)"; fails=$((fails + 1)); fi
+}
+# A refused post (GitHub down, say) still reports on stdout and exits 1; GitHub keeps showing pending.
+refused failure-refused failure test 1 '^rig-check: FAIL: make test failed.*\.log\)$' 'rig-check: could not post the failure status'
+refused success-refused success none 1 '^rig-check: ok, 01234567 green' 'rig-check: could not post the success status'
+echo "rig-check control: 6 cases, $fails failures"
 test "$fails" = 0
 ```
 
-No `!` assertion appears anywhere in this script, nor in the drill functions below. The refused-post check is an `if grep -q refused …; then why=…; fi` (quorum r1, gemini-4-argon). That keeps the new code free of the `!`-pipeline footgun this doc removes from `mk/m45.mk`. Every assertion feeds `why` or `fails`, and the last command is `test`.
+No `!` assertion appears anywhere in this script or in the drill functions below. The refused-post check is an `if grep -q refused …; then why=…; fi` (quorum r1, gemini-4-argon). Every assertion feeds `why` or `fails`, and the last command is `test`. The control is a separate `sh` process, so a caller's `||` cannot switch its `set -e` off (V22).
 
 ### 3. Row 7s: three fixtures, three spec rows, a row count, a live script-error guard
 
@@ -233,15 +274,15 @@ Run these from the implementation root with `PATH="$PWD/runtime/bin:$PATH"` and 
 
 | # | Command | Expected output |
 |---|---|---|
-| AC1 | `make rig-check-control > .godot/tmp/7o.log 2>&1; echo "rc=$? $(tail -1 .godot/tmp/7o.log)"` | `rc=0 rig-check control: 4 cases, 0 failures` |
-| AC2 | `git show 4bf95435:tools/rig_check.sh > .godot/tmp/rig_check.4bf95435.sh; sh tools/test_rig_check.sh .godot/tmp/rig_check.4bf95435.sh \| tail -1` | `rig-check control: 4 cases, 4 failures` (RED on the pre-fix script, V4) |
+| AC1 | `make rig-check-control > .godot/tmp/7o.log 2>&1; echo "rc=$? $(tail -1 .godot/tmp/7o.log)"` | `rc=0 rig-check control: 6 cases, 0 failures` |
+| AC2 | `git show 4bf95435:tools/rig_check.sh > .godot/tmp/rig_check.4bf95435.sh; sh tools/test_rig_check.sh .godot/tmp/rig_check.4bf95435.sh \| tail -1` | `rig-check control: 6 cases, 6 failures` (RED on the pre-fix script, V4) |
 | AC3 | `make -qp AILANG="$AILANG" 2>/dev/null \| grep '^test:' \| tr ' ' '\n' \| grep -cx rig-check-control` | `1` (inside `make test`) |
-| AC4 | `sh -c '. .godot/tmp/iter44-drills.sh; for d in R1 R2 R3; do drill7o "$PWD" $d \|\| exit 1; done' && git diff --quiet -- tools/rig_check.sh && echo killed` | `killed` |
+| AC4 | `sh -c '. .godot/tmp/iter44-drills.sh; for d in R1 R2 R3 R4 R5; do drill7o "$PWD" $d \|\| exit 1; done' && git diff --quiet -- tools/rig_check.sh && echo killed` | `killed` |
 | AC5 | `make display-audit-controls AILANG="$AILANG" > .godot/tmp/7s-controls.log 2>&1 && grep -c ': rejected$' .godot/tmp/7s-controls.log && (cd .godot/tmp/display-audit/playthrough && grep -lx 'FAIL known-ruling invalid acceptance' display-known-known_wrong_transit_kind.json.log display-known-known_wrong_caption_kind.json.log display-known-known_nonstring_ruling.json.log \| wc -l \| tr -d ' ')` | `31`, then `3` |
 | AC6 | `sh -c '. .godot/tmp/iter44-drills.sh; for d in E1 E2 E5 E5b E7 E7b S1 C1 C2 C3 C4; do drill7s "$PWD" $d \|\| exit 1; done' && git diff --quiet -- tests/display_audit.gd mk/m45.mk && echo killed` | `killed`. Each kill signature is as in the Test plan; E5 is asserted equivalent. About 7 minutes. |
 | AC7 | `grep -c "^[[:space:]]*! grep -q 'SCRIPT ERROR:'" mk/m45.mk` | `0` (the dead guard is gone; S1 in AC6 proves its replacement live) |
 | AC8 | `git diff --name-only origin/main...HEAD \| grep -cvE '^(tools/rig_check\.sh\|tools/test_rig_check\.sh\|mk/m45\.mk\|tests/fixtures/display_audit/known_(wrong_transit_kind\|wrong_caption_kind\|nonstring_ruling)\.json\|design_docs/planned/r1/m4-7s-7o-followups(-sprint)?\.md\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json)$'` | `0` (no `Makefile`, no `tests/display_audit.gd`, no production path) |
-| AC9 | `shellcheck -s sh -S warning tools/rig_check.sh tools/test_rig_check.sh && dash tools/test_rig_check.sh tools/rig_check.sh \| tail -1` | `rig-check control: 4 cases, 0 failures` (warning-clean; portable to dash, which is Linux's `sh`) |
+| AC9 | `shellcheck -s sh -S warning tools/rig_check.sh tools/test_rig_check.sh && dash tools/test_rig_check.sh tools/rig_check.sh \| tail -1` | `rig-check control: 6 cases, 0 failures` (warning-clean; portable to dash, which is Linux's `sh`) |
 | AC10 | `make python-guard AILANG="$AILANG" > /dev/null 2>&1; echo rc=$?` | `rc=0` |
 | AC11 | `tools/rig_check.sh <PR>` (controller) | `rig/full` success on the PR head. The fixed script posts its own pending and success statuses. |
 
@@ -249,7 +290,7 @@ Run these from the implementation root with `PATH="$PWD/runtime/bin:$PATH"` and 
 
 **Order.** Test-first:
 
-1. RED: `drill7s "$PWD" E1 28` and `drill7s "$PWD" E7b 28` on the pre-change tree each exit 1, because the mutant survives (V16). AC2 is 7o's RED.
+1. RED: `drill7s "$PWD" E1 28` and `drill7s "$PWD" E5 28` on the pre-change tree each exit 1 (V16, V23). AC2 is 7o's RED: `6 cases, 6 failures`.
 2. GREEN: land the fixtures, loop edits, script fix and control. Then run AC1–AC9.
 
 **Drill shape.** Both functions use the hardened shape:
@@ -260,61 +301,82 @@ Run these from the implementation root with `PATH="$PWD/runtime/bin:$PATH"` and 
 - make's rc passed through;
 - counts asserted with `test`, never printed.
 
-They also make two corrections to the shape 7q used:
+They also correct three things in the shape 7q used:
 
-- No mid-function `!` or `&&` assertion is used. Under `set -e` those can fail without stopping the script. Every mid-function check is a bare `test` or `grep`.
-- Script errors are counted in the per-row logs under `$T/scratch`, not in make's stdout, where Godot's output never appears.
+- **Every assertion carries its own `|| exit`.** A caller's `||`, `&&` or `if` (the ACs use `drill … || exit 1`) switches `set -e` off for the whole function body, subshell included (V22). Only `set -u` is kept.
+- **No `!` assertion.**
+- **Script errors are counted in the per-row logs** under `$T/scratch`, not in make's stdout, where Godot's output never appears.
 
-The patterns go through the environment, because inline Perl interpolates `$(` and `@`. Run the drills sequentially (they share the import cache) under `sh`. They were validated as written in a rehearsal of the GREEN tree (V15).
+The patterns go through the environment, because inline Perl interpolates `$(` and `@`. Run the drills sequentially (they share the import cache) under `sh`. They were validated as written, through the AC form, in a rehearsal of the GREEN tree (V23).
 
 ```sh
-# Row 7o drills: R1 (no cut), R2 (the old fail line), R3 (a refused failure post aborts).
+# Every assertion carries its own `|| exit`: a caller's `||`, `&&` or `if` switches `set -e` off
+# inside the whole function body (measured, V22), so the drills never rely on it.
+
+# Row 7o drills: R1 (no cut), R2 (the old fail()), R3 (a refused failure post aborts),
+# R4 (a refused success post aborts), R5 (no conditional log pointer).
 drill7o() (
-  set -eu
+  set -u
   ROOT=${1:?explicit checkout ROOT required}
-  mutant=${2:?R1, R2 or R3 required}
-  cd "$ROOT"; ROOT=$(pwd -P)
-  T=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7o.XXXXXX")
+  mutant=${2:?R1, R2, R3, R4 or R5 required}
+  cd "$ROOT" || exit 2
+  ROOT=$(pwd -P)
+  T=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7o.XXXXXX") || exit 2
   trap 'if test -f "$T/orig"; then cp "$T/orig" "$ROOT/tools/rig_check.sh"; fi; rm -rf "$T"' EXIT
   trap 'exit 130' INT; trap 'exit 143' TERM HUP
-  sh tools/test_rig_check.sh tools/rig_check.sh > "$T/baseline.log" 2>&1
-  test "$(grep -c ': ok$' "$T/baseline.log")" -eq 4
-  cp tools/rig_check.sh "$T/orig"
+  sh tools/test_rig_check.sh tools/rig_check.sh > "$T/baseline.log" 2>&1 || exit 1
+  test "$(grep -c ': ok$' "$T/baseline.log")" -eq 6 || exit 1
+  cp tools/rig_check.sh "$T/orig" || exit 2
   case "$mutant" in   # patterns via env: inline Perl interpolates $( and @ (iteration-41 lesson)
     R1) PAT='"$(printf %s "$2" | cut -c1-140)"' REP='"$2"' ;;
-    R2) PAT='fail() { echo "rig-check: FAIL: $1 (log: $log)"; status failure "$short: $1" || echo "rig-check: could not post the failure status"; exit 1; }'
+    R2) PAT='fail() {
+  echo "rig-check: FAIL: $1 (log: $log)"
+  d="$short: $1"   # the log pointer goes in too whenever it fits GitHub'"'"'s 140 characters (row 7o)
+  if [ $((${#d} + ${#log} + 8)) -le 140 ]; then d="$d (log: $log)"; fi
+  status failure "$d" || echo "rig-check: could not post the failure status"
+  exit 1
+}'
         REP='fail() { status failure "$1 (log on the Studio: $log)"; echo "rig-check: FAIL: $1"; exit 1; }' ;;
     R3) PAT=' || echo "rig-check: could not post the failure status"' REP='' ;;
+    R4) PAT=' || { echo "rig-check: could not post the success status"; exit 1; }' REP='' ;;
+    R5) PAT='  if [ $((${#d} + ${#log} + 8)) -le 140 ]; then d="$d (log: $log)"; fi
+' REP='' ;;
     *) exit 2 ;;
   esac
-  PAT=$PAT REP=$REP perl -0pi -e 's{\Q$ENV{PAT}\E}{$ENV{REP}}' tools/rig_check.sh
+  PAT=$PAT REP=$REP perl -0pi -e 's{\Q$ENV{PAT}\E}{$ENV{REP}}' tools/rig_check.sh || exit 2
   cmp -s "$T/orig" tools/rig_check.sh && exit 3
   rc=0; sh tools/test_rig_check.sh tools/rig_check.sh > "$T/mutant.log" 2>&1 || rc=$?
-  test "$rc" -ne 0
+  test "$rc" -ne 0 || exit 1
   case "$mutant" in
-    R1) grep -q '^rig-check control long-reason: FAIL' "$T/mutant.log" && grep -q '^rig-check control long-success: FAIL' "$T/mutant.log" ;;
-    R2) grep -q '^rig-check control make-test-red: FAIL' "$T/mutant.log" ;;
-    R3) grep -q '^rig-check control failure-refused: FAIL' "$T/mutant.log" ;;
+    R1) grep -q '^rig-check control long-reason: FAIL' "$T/mutant.log" || exit 1
+        grep -q '^rig-check control long-success: FAIL' "$T/mutant.log" || exit 1 ;;
+    R2) grep -q '^rig-check control make-test-red: FAIL' "$T/mutant.log" || exit 1
+        grep -q '^rig-check control clone-red-pointer: FAIL' "$T/mutant.log" || exit 1 ;;
+    R3) grep -q '^rig-check control failure-refused: FAIL' "$T/mutant.log" || exit 1 ;;
+    R4) grep -q '^rig-check control success-refused: FAIL' "$T/mutant.log" || exit 1 ;;
+    R5) grep -q '^rig-check control clone-red-pointer: FAIL' "$T/mutant.log" || exit 1 ;;
   esac
+  exit 0
 )
 
 # Row 7s drills: E1/E2 (kind pins), E5 (type guard deleted: equivalent), E5b (type guard flipped),
 # E7/E7b (a spec row deleted, new and old), S1 (a script error on the known-ruling path),
 # C1-C4 (one D-78 caption dropped from the accepted list: the positive control already kills it).
 drill7s() (
-  set -eu
+  set -u
   ROOT=${1:?explicit checkout ROOT required}
   mutant=${2:?E1, E2, E5, E5b, E7, E7b, S1 or C1-C4 required}
   expected=${3:-31}
-  cd "$ROOT"; ROOT=$(pwd -P)
+  cd "$ROOT" || exit 2
+  ROOT=$(pwd -P)
   case "$mutant" in E7|E7b) F=mk/m45.mk ;; *) F=tests/display_audit.gd ;; esac
-  T=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7s.XXXXXX")
+  T=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7s.XXXXXX") || exit 2
   trap 'if test -f "$T/orig"; then cp "$T/orig" "$ROOT/$F"; fi; rm -rf "$T"' EXIT
   trap 'exit 130' INT; trap 'exit 143' TERM HUP
   PATH="$ROOT/runtime/bin:$PATH" make display-audit-controls \
-    SCRATCH="$T/scratch" AILANG="$ROOT/runtime/bin/ailang" > "$T/baseline.log" 2>&1
-  test "$(grep -c ': rejected$' "$T/baseline.log")" -eq "$expected"
-  cp "$F" "$T/orig"
+    SCRATCH="$T/scratch" AILANG="$ROOT/runtime/bin/ailang" > "$T/baseline.log" 2>&1 || exit 1
+  test "$(grep -c ': rejected$' "$T/baseline.log")" -eq "$expected" || exit 1
+  cp "$F" "$T/orig" || exit 2
   case "$mutant" in
     E1) PAT='entry.kind == "transit-ISM" and ' REP='' ;;
     E2) PAT='entry.kind == "unbound" and ' REP='' ;;
@@ -331,39 +393,43 @@ drill7s() (
         REP='check(false, "known-ruling invalid acceptance"); var probe: Array = []; print(probe[0]); continue' ;;
     *) exit 2 ;;
   esac
-  PAT=$PAT REP=$REP perl -0pi -e 's{\Q$ENV{PAT}\E}{$ENV{REP}}' "$F"
+  PAT=$PAT REP=$REP perl -0pi -e 's{\Q$ENV{PAT}\E}{$ENV{REP}}' "$F" || exit 2
   cmp -s "$T/orig" "$F" && exit 3
   rc=0; PATH="$ROOT/runtime/bin:$PATH" make display-audit-controls \
     SCRATCH="$T/scratch" AILANG="$ROOT/runtime/bin/ailang" > "$T/mutant.log" 2>&1 || rc=$?
   errs=$(grep -l 'SCRIPT ERROR:' "$T"/scratch/display-audit/*/*.log 2>/dev/null | wc -l | tr -d ' ')
   if [ "$mutant" = E5 ]; then   # equivalent: same rows, the non-String fixture still rejected for the ruling
-    test "$rc" -eq 0
-    test "$errs" -eq 0
-    test "$(grep -c ': rejected$' "$T/mutant.log")" -eq "$expected"
-    grep -qx 'FAIL known-ruling invalid acceptance' "$T"/scratch/display-audit/*/display-known-known_nonstring_ruling.json.log
+    test "$rc" -eq 0 || exit 1
+    test "$errs" -eq 0 || exit 1
+    test "$(grep -c ': rejected$' "$T/mutant.log")" -eq "$expected" || exit 1
+    grep -qx 'FAIL known-ruling invalid acceptance' "$T"/scratch/display-audit/*/display-known-known_nonstring_ruling.json.log || exit 1
     exit 0
   fi
-  test "$rc" -ne 0
-  if [ "$mutant" = S1 ]; then test "$errs" -gt 0; else test "$errs" -eq 0; fi
+  test "$rc" -ne 0 || exit 1
+  if [ "$mutant" = S1 ]; then test "$errs" -gt 0 || exit 1; else test "$errs" -eq 0 || exit 1; fi
   case "$mutant" in
-    E1) grep -qx 'display control known/known_wrong_transit_kind.json wrong reason (want known-ruling)' "$T/mutant.log" ;;
-    E2) grep -qx 'display control known/known_wrong_caption_kind.json wrong reason (want known-ruling)' "$T/mutant.log" ;;
-    E5b) grep -qx 'display control known/known_nonstring_ruling.json missed' "$T/mutant.log" ;;
-    E7|E7b) grep -qx "display control rows: $((expected - 1)), want $expected" "$T/mutant.log" ;;
-    S1) grep -qx 'display control known/known_bad_ruling.json script error' "$T/mutant.log" ;;
-    C[1-4]) test "$(grep -c ': rejected$' "$T/mutant.log")" -eq 0 && grep -qx 'FAIL known-ruling invalid acceptance' "$T"/scratch/display-audit/*/display-known.log ;;
+    E1) grep -qx 'display control known/known_wrong_transit_kind.json wrong reason (want known-ruling)' "$T/mutant.log" || exit 1 ;;
+    E2) grep -qx 'display control known/known_wrong_caption_kind.json wrong reason (want known-ruling)' "$T/mutant.log" || exit 1 ;;
+    E5b) grep -qx 'display control known/known_nonstring_ruling.json missed' "$T/mutant.log" || exit 1 ;;
+    E7|E7b) grep -qx "display control rows: $((expected - 1)), want $expected" "$T/mutant.log" || exit 1 ;;
+    S1) grep -qx 'display control known/known_bad_ruling.json script error' "$T/mutant.log" || exit 1 ;;
+    C[1-4]) test "$(grep -c ': rejected$' "$T/mutant.log")" -eq 0 || exit 1
+            grep -qx 'FAIL known-ruling invalid acceptance' "$T"/scratch/display-audit/*/display-known.log || exit 1 ;;
   esac
+  exit 0
 )
 ```
 
-**Expected outcomes, all measured (V14–V16):**
+**Expected outcomes, all measured (V14, V16, V23):**
 
 | Drill | Mutation | Expected outcome |
 |---|---|---|
 | R1 | no cut | `long-reason` and `long-success` FAIL (340 and 257 refused) |
-| R2 | the old `fail` line | `make-test-red` FAIL |
-| R3 | no `\|\| echo` | `failure-refused` FAIL |
-| R4 | echo after the post | **Equivalent** while R3's `\|\|` stands: order matters only if the post can abort `fail()`. Measured surviving; no drill. |
+| R2 | the old one-line `fail()` | `make-test-red` and `clone-red-pointer` FAIL |
+| R3 | no failure `\|\| echo` | `failure-refused` FAIL |
+| R4 | no success `\|\| { echo …; exit 1; }` | `success-refused` FAIL |
+| R5 | no conditional pointer line | `clone-red-pointer` FAIL |
+| — | echo moved after the failure post | **Equivalent** while R3's `\|\|` stands: order matters only if the post can abort `fail()`. Measured surviving in round 1; no drill. |
 | E1 | D-77 kind pin deleted | `known/known_wrong_transit_kind.json wrong reason (want known-ruling)` |
 | E2 | D-78 kind pin deleted | `known/known_wrong_caption_kind.json wrong reason (want known-ruling)` |
 | E5 | type guard deleted | **Equivalent**: green, 31 rows, non-String fixture rejected for the ruling |
@@ -377,20 +443,20 @@ drill7s() (
 
 | File | Executor change |
 |---|---|
-| `tools/rig_check.sh` | The two edits in §1 (cap in `status()`; `fail()` reports first, posts `<short>: <reason>`). |
+| `tools/rig_check.sh` | The edits in §1: the cap in `status()`; `fail()` reports first and posts `<short>: <reason>`, plus the log pointer when it fits; the success post reports a refusal and exits 1. |
 | `tools/test_rig_check.sh` | New; §2, verbatim. |
 | `mk/m45.mk` | The four loop edits in §3; the `rig-check-control` target and `test: rig-check-control`. |
 | `tests/fixtures/display_audit/known_wrong_transit_kind.json` | New; §3. |
 | `tests/fixtures/display_audit/known_wrong_caption_kind.json` | New; §3. |
 | `tests/fixtures/display_audit/known_nonstring_ruling.json` | New; §3. |
-| `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json` | A dated note on milestone `M4.5bR3_7q_RULING_PIN_CONTROLS` (or a sibling `…_7s_7o_FOLLOWUPS`). It records: the commands; 31 rows; the drill verdicts (E5 and R4 equivalent); the `080b4f7` correction; 7i(l) closed; the Deferred list. Aggregate gates untouched. |
+| `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json` | A dated note on milestone `M4.5bR3_7q_RULING_PIN_CONTROLS` (or a sibling `…_7s_7o_FOLLOWUPS`). It records: the commands; 31 rows; the drill verdicts (E5 and the echo-order mutant equivalent); the `080b4f7` correction; 7i(l) closed; the Deferred list. Aggregate gates untouched. |
 | `design_docs/planned/r1/m4-7s-7o-followups.md` | This doc. |
 
 **Not touched:** `Makefile`, `tests/display_audit.gd`, `sim/*`, `bridge/*`, `main.gd`, `demos/*`, `ui/*`, `sim/ailang.lock`, `sim/ailang.toml`. Open-PR check (V17): #298, #300, #301, #302, #303 and #304 hold the `Makefile` and their own `mk/*.mk` files (sound, style, levels, star-surfaces, captain-anim). None of them, nor #299 or #307, lists any file in the table above. Before AC1 the executor re-runs `git log 4bf95435..origin/main -- tools/rig_check.sh mk/m45.mk tests/display_audit.gd tests/fixtures/display_audit/`, and rebases if it is non-empty.
 
 ## Deferred (recorded, not changed here)
 
-1. **Move `rig-check-control`** into `tools-test`, next to `tools/test_sky_assets.sh`, and into `ci-fast`, once the `Makefile` is free. It is hermetic, takes about 2 s and runs under dash (V5), so it suits the clean-Linux fast tier. Adding it there needs a `Makefile` edit, which is held.
+1. **Move `rig-check-control`** into `tools-test`, next to `tools/test_sky_assets.sh`, and into `ci-fast`, once the `Makefile` is free. It is hermetic, takes about 1.3 s and runs under dash (V23), so it suits the clean-Linux fast tier. Adding it there needs a `Makefile` edit, which is held.
 2. **`Makefile:778`** has the same dead standalone guard, `; ! grep -q "nothing written" $$d/mid.txt;`, in `catalogue-main`. The `Makefile` is held, so this is one backlog line.
 3. **The four non-loop control lines** of `display-audit-controls` (`mk/m45.mk:17–21`) end in unconditional `echo '… PASS'` lines (28–31), so deleting a whole positive-control line is not counted. This is a sibling of 7i(l); it gets one backlog line.
 
@@ -402,6 +468,8 @@ drill7s() (
 - **S1 depends on Godot's runtime-error semantics.** The erroring function returns and the run continues (V13). If a Godot bump made this a hard abort, S1 would change signature. Re-measure on any Godot bump.
 - **Fixture drift.** As with 7q: a later change to a pinned value turns a copy into a multi-field fixture. The drills are the evaluator's gate.
 - **Sandbox false kills.** Socket or write failures under a sandbox are UNINFORMATIVE; re-run the drills on the rig.
+- **A refused success post still leaves `rig/full` at `pending` on a green run** (quorum r2; kimi-k3 and oc-glm-5-3). Before this row, the refusal aborted under `set -e`: rc 1, no stdout explanation. Decision: fix it with the same `||`-echo treatment rather than freeze the flow. The script prints `rig-check: ok …` first, then `rig-check: could not post the success status`, and exits 1 (pinned by `success-refused`). GitHub still shows pending, because no post can repair a refused post; the loud rc and the stdout line are the mitigation, and the operator re-posts by hand. With the cap in place, the realistic cause is a GitHub or network outage, not length.
+- **The log pointer usually does not fit on the Studio.** With the 104-character log it fits only for `clone failed` (V24). The pointer is still derivable there: under the default `RIG_DIR` the log is `${TMPDIR}rig-check/<full sha>.log`, and GitHub ties the status to that full sha (V21). That this holds for every real run, meaning nobody sets `RIG_DIR` and `TMPDIR` is as measured, is an assumption that the 20 real logs on the Studio support but cannot prove.
 
 ## Open questions
 
@@ -416,7 +484,7 @@ Single milestone, one PR, in this order:
 3. Record (sprint JSON).
 4. AC8, AC10 and the rig (AC11).
 
-About 85 LOC. Executor work is about 2 h, including about 8 min of drills. Rig `make test` is 70–100 min.
+About 105 LOC. Executor work is about 2 h, including about 8 min of drills. Rig `make test` is 70–100 min.
 
 ## Verification log
 
@@ -427,9 +495,9 @@ Measured first-hand on 2026-10-21 in `/Users/voightkampff/dev/sunholo-data/.stap
 | V1 | Rig paths | `echo ${#TMPDIR}`; `log=${TMPDIR:-/tmp}/rig-check/$(git rev-parse HEAD).log; echo ${#log}` | TMPDIR 49 characters (ends in `/`, so `T//rig-check`); log 104 |
 | V2 | Description lengths at `4bf95435` | Shell loop over each `fail` reason: `d="$r (log on the Studio: $log)"; echo ${#d}` | `clone failed` 138; `checkout of 4bf95435 failed` 153; `no AILANG_RELEASE pin in the Makefile` 163; `make runtime failed` 145; `runtime is 'ailang v0.54.11', pin is v0.54.14` 171 (unbounded: embeds `$have`); `make sky-assets failed` 148; `make test failed or ran over 5400s` **160**; `make golden failed or ran over 1800s` 162. Pending 31 / 45; success 57 / 71 with `AILANG v0.54.14`; `LC_ALL=C grep -c '[^ -~]'` on the version line gives 0 |
 | V3 | `set -e` aborts `fail()` and leaves `pending` | Pre-fix `tools/rig_check.sh 7` with V4's stubs, `RIG_DIR` padded to a 104-character log, `make test` failing | rc 1; output is only the start line and the stub's `Validation failed: Description is too long (maximum is 140 characters) (HTTP 422)`; no `rig-check: FAIL:` line; posts `pending 31` accepted, `failure 160 refused`, so the status stays pending |
-| V4 | Control RED on the pre-fix script | `sh test_rig_check.sh tools/rig_check.sh` | `4 cases, 4 failures`: 160, 340 and 257 refused; failure-refused has no FAIL line; rc 1 |
-| V5 | Control GREEN on the fixed copy | Same script against a copy with the §1 diff; `dash …`; `shellcheck -s sh -S warning` | `4 cases, 0 failures`, rc 0, 2.0 s wall; dash rc 0; shellcheck warning-clean (info-level only: the pre-existing SC2015 at the `git fetch` line, and the intentional SC2016 on the quoted make stub) |
-| V6 | 7o drills | `drill7o` on a scratch ROOT with the fix | R1, R2 and R3 killed (drill rc 0); R4 (echo moved after the post) survived, equivalent while `\|\|` stands; an unapplied pattern exits 3 (seen while tuning) |
+| V4 | Control RED on the pre-fix script (round 1, 4 cases; superseded by V23) | `sh test_rig_check.sh tools/rig_check.sh` | `4 cases, 4 failures`: 160, 340 and 257 refused; failure-refused has no FAIL line; rc 1 |
+| V5 | Control GREEN on the round-1 fixed copy (superseded by V23) | Same script against a copy with the round-1 §1 diff; `dash …`; `shellcheck -s sh -S warning` | `4 cases, 0 failures`, rc 0, 2.0 s wall; dash rc 0; shellcheck warning-clean |
+| V6 | 7o drills, round 1 (superseded by V23) | `drill7o` on a scratch ROOT with the round-1 fix | R1, R2 and R3 killed; the echo-order mutant (echo moved after the post) survived, equivalent while `\|\|` stands; an unapplied pattern exits 3 |
 | V7 | Make wiring | Rehearsal: target appended to `mk/m45.mk`, files restored by trap | `make -qp \| grep '^test:' … -cx rig-check-control` is `1`; `make rig-check-control` gives rc 2 on the pre-fix script (4 failures) and rc 0 on the fix |
 | V8 | Controls baseline | `make display-audit-controls AILANG=$PWD/runtime/bin/ailang > .godot/tmp/iter44-baseline.log 2>&1` | rc 0, 37 s (including import), 28 `: rejected`, ending `display control known_unaccepted: OPEN (PASS)` |
 | V9 | E1, E2, E5 and E5b survive today | `survive7s` (hardened: ROOT, trap, `cmp`, rc passed through), `SCRATCH=$T/scratch` | Each make rc 0 with 28 rows. C2 on the same tree: make rc 2, 0 rows |
@@ -438,12 +506,16 @@ Measured first-hand on 2026-10-21 in `/Users/voightkampff/dev/sunholo-data/.stap
 | V12 | Captions C1–C4 | Same probe with `known_findings.json` under C1–C4 | Each rc 1 with `known-ruling invalid acceptance` + NEW unbound at that caption's label, so the positive control (`mk/m45.mk:18`) fails |
 | V13 | Dead script-error guard | `/bin/sh -c 'set -e; ! grep -q "SCRIPT ERROR:" f; echo reached'` on a log containing it; a probe makefile copying line 26's shape; S1 via make on the clean tree | `reached`, rc 0; the probe make echoes `rejected`, rc 0; S1: make rc 0, 28 rows, 8 per-row logs contain `SCRIPT ERROR: Out of bounds get index '0'`. With the `if grep … exit 1` form the probe make fails (rc 2) |
 | V14 | GREEN rehearsal | The §3 edits and fixtures applied in the clone, then make, then a trap restore | Baseline rc 0, 31. E1 rc 2 `known/known_wrong_transit_kind.json wrong reason (want known-ruling)` (28 before it). E2 rc 2 `…caption_kind… wrong reason` (29 before). E5 rc 0, 31. E5b rc 2 `known/known_nonstring_ruling.json missed` (30 before). E7 rc 2 `display control rows: 30, want 31`. S1 rc 2 `known/known_bad_ruling.json script error` (20 before) |
-| V15 | Final drill functions | The Test-plan block, in a restored GREEN rehearsal | drill7o R1–R3 and drill7s E1, E2, E5, E5b, E7, E7b, S1, C1–C4 all drill rc 0; each drill7s takes 25–52 s |
+| V15 | Round-1 drill functions (superseded by V23) | The round-1 Test-plan block, invoked inside `if` | All drill rc 0, 25–52 s each. V22 shows that an `if` caller switches `set -e` off, so only each drill's last check was live; V23 re-validates the corrected functions |
 | V16 | Drills are not vacuous | `drill7s "$PWD" E1 28` and `drill7s "$PWD" E7b 28` on the clean tree | Both rc 1 (the mutant survives, so the drill fails) |
 | V17 | Open-PR surface | `gh pr diff <n> --repo sunholo-data/stapledons-godot --name-only` for 298–304 and 307 | No PR lists `tools/rig_check.sh`, `tools/test_rig_check.sh`, `mk/m45.mk`, `tests/display_audit.gd` or `tests/fixtures/display_audit/*`. #298, #300–#304 hold `Makefile`; #298 `mk/sound.mk`, #300 `mk/style.mk`, #301 `mk/levels.mk`, #302 `mk/star-surfaces.mk`, #304 `mk/captain-anim.mk` |
 | V18 | Standalone `!` guards | `grep -nE '^[[:space:]]*! grep' mk/*.mk Makefile`; `git grep -nE '(;\|then\|do) *! grep' -- mk Makefile` | `mk/m45.mk:26` (fixed here) and `Makefile:778` (held, Deferred 2). `mk/m5.mk:68` sits at the end of an `if` body's AND list, so it is live |
 | V19 | `short` is defined before `fail()` can run (quorum r1, kimi-k3; controller measured first) | `grep -n '^short=\|^fail()\|fail "' tools/rig_check.sh \| head -3` | `29:short=$(printf %s "$sha" \| cut -c1-8)`, then `42:fail() { …`, then `45:git clone … \|\| fail "clone failed"` (the first call). It is set unconditionally after `sha` resolves and is checked non-empty (:24–28), so `set -u` cannot abort `fail()` on it |
-| V20 | Revision r1 re-measure | The control extracted verbatim from §2 after the `if grep` edit; a copy of `tools/rig_check.sh` with exactly the §1 edits (`diff \| grep -c '^>'` gives `2`); two extra mutants of that copy: post `"$1"` without the sha, and `$shortx` for `$short` | Pre-fix script: `4 cases, 4 failures`. Fixed copy: `4 cases, 0 failures`, rc 0 (also under dash); `shellcheck -s sh -S warning` clean. No-sha mutant: make-test-red and long-reason FAIL (`no failure description /01234567: …/`). Unset-`short` mutant: `set -u` aborts `fail()` after its echo, leaving `posts: pending 31`, so make-test-red, long-reason and failure-refused FAIL (3 failures). The control catches exactly the stuck-pending symptom kimi-k3 described |
+| V20 | Revision r1 re-measure (round-1 script; superseded by V23 for the current diff) | The control extracted verbatim from §2 after the `if grep` edit; a copy of `tools/rig_check.sh` with exactly the §1 edits (`diff \| grep -c '^>'` gives `2`); two extra mutants of that copy: post `"$1"` without the sha, and `$shortx` for `$short` | Pre-fix script: `4 cases, 4 failures`. Fixed copy: `4 cases, 0 failures`, rc 0 (also under dash); `shellcheck -s sh -S warning` clean. No-sha mutant: make-test-red and long-reason FAIL (`no failure description /01234567: …/`). Unset-`short` mutant: `set -u` aborts `fail()` after its echo, leaving `posts: pending 31`, so make-test-red, long-reason and failure-refused FAIL (3 failures). The control catches exactly the stuck-pending symptom kimi-k3 described |
+| V21 | The log path survives the fix on an automated run (quorum r2, oc-glm-5-3) | `sed -n 30,45p tools/rig_check.sh` (start line `:39 echo "rig-check: $target -> $short in $dir ($suite); log $log"`); then the fixed copy run once with the §2 stubs, a forced-red `make test`, **default `RIG_DIR`** and the real `TMPDIR`, stdout saved to `.godot/tmp/iter44-v21-stdout.log` (the stub-sha dir and log removed by an EXIT trap) | **Measured (stub run):** `rig-check: 252 -> 01234567 in /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T//rig-check/0123456789abcdef0123456789abcdef01234567 (make test); log /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T//rig-check/0123456789abcdef0123456789abcdef01234567.log`, then `rig-check: FAIL: make test failed or ran over 5400s (log: /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T//rig-check/0123456789abcdef0123456789abcdef01234567.log)`, `rc=1`. Posts: `pending 31`, then `failure 44 01234567: make test failed or ran over 5400s` (no pointer: 156 > 140). The log path is `${TMPDIR}rig-check/<full sha>.log`, a pure function of the sha. **Measured on the Studio:** `ls ${TMPDIR}rig-check` lists 20 real `<40-hex>.log` files, including `663bae4d4e09c84ebe0cfc898c87d3702da624cb.log`, the #252 head of row 7o. **Assumption, not measured:** that real controller runs keep the default `RIG_DIR` and this `TMPDIR`, and that the controller's transcript keeps the stdout lines |
+| V22 | `set -e` is off inside a function called from `\|\|` or `if` | `sh -c 'f() ( set -eu; false; echo "after false (set -e ignored)"; exit 0 ); f; echo "plain call rc=$?"; f \|\| echo never; if f; then echo body-continued; fi'` | Plain call: rc 1, nothing printed. Through `\|\|` and through `if`: `after false (set -e ignored)` is printed and the call returns 0. A round-1 drill called from `drill … \|\| exit 1` would have had only its last check live. Also seen directly: the round-1 `drill7o` run on the pre-fix tree went past its failing baseline and exited 3 at the `cmp` proof |
+| V23 | Revision r2 re-measure (the control, drills and make wiring as now written) | Control RED on `git show 4bf95435:tools/rig_check.sh`, and GREEN on a copy with exactly the §1 diff; `dash`; `shellcheck -s sh -S warning` on the control, the fixed copy and the drill functions; a GREEN rehearsal of the tree (fixtures, loop edits, fixed script, control, target), each drill invoked in the AC form `sh -c '. drills; drill… \|\| exit 1'`; non-vacuity on the pre-fix tree in the same form | RED: `6 cases, 6 failures` (160, 340 and 257 refused; no pointer; both refusals unreported); rc 1. GREEN: `6 cases, 0 failures`, rc 0, 1.3 s; dash the same; shellcheck warning-clean; no `!` assertion in any script. Rehearsal: AC1 `rig-check control: 6 cases, 0 failures`; AC3 `1`; R1–R5 killed; E1, E2, E5, E5b, E7, E7b, S1 and C1–C4 each rc 0 (35–46 s; C 24 s). Non-vacuity through `\|\|`: `drill7s E1 28` rc 1, `drill7s E5 28` rc 1, `drill7o R1` with no control rc 1, `drill7o R4` with the pre-fix script and the new control rc 1. `git status` clean after every run |
+| V24 | Where the log pointer fits | Shell loop: `d="4bf95435: $r"; echo $(( ${#d} + L + 8 ))` for each fixed reason, with L = 104 (this rig) and L = 59 (`/tmp/rig-check/<sha>.log`) | L = 104: `clone failed` 134 fits; `make runtime failed` 141, `make sky-assets failed` 144, `checkout of 4bf95435 failed` 149, `make test failed or ran over 5400s` 156, `make golden failed or ran over 1800s` 158, `no AILANG_RELEASE pin in the Makefile` 159, and the runtime mismatch with a short `$have` 167 do not. L = 59: all eight fit (89–122) |
 
 ## Quorum log
 
@@ -458,3 +530,14 @@ Measured first-hand on 2026-10-21 in `/Users/voightkampff/dev/sunholo-data/.stap
   - The control's refused check became an `if grep …; then …; fi`, and the doc now states that no planned script uses a `!` assertion.
   - The control was re-measured after the edit (V20).
   - The design direction is unchanged.
+- **Round 2** (2026-10-21, artifact `m4-7s-7o-followups-2026-10-21T12-27-18Z.json`): **BLOCKED** by one seat.
+  - oc-kimi-k3: PASS. It flagged the success-post asymmetry.
+  - gemini-4-argon: PASS.
+  - oc-glm-5-3: REJECT. It asked that the stdout-only log pointer be proven (V21) or backed by a conditional pointer in the description, and that a refused success post be pinned and recorded.
+  - gpt6-1-sol: absent (unreachable).
+- **Round 3 was skipped** under the narrow-refinement carve-out. glm's proposed fix was applied verbatim, both branches, as the controller directed:
+  - V21 was produced, saying which half is measured and which is assumed.
+  - The conditional log pointer was adopted, with its fit measured (V24) and the case `clone-red-pointer`.
+  - The success post got the `||`-echo treatment and exits 1, with the case `success-refused` and the Risks row.
+  - The control went from 4 to 6 cases; drills R4 and R5 were added; the ACs and LOC were updated.
+- **Found while re-measuring, and fixed:** the drill functions relied on `set -e`, which a caller's `||` or `if` switches off (V22). Every assertion now carries its own `|| exit`, and V23 re-validates them through the AC form. The design direction is unchanged.
