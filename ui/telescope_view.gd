@@ -113,14 +113,11 @@ func refresh(world: Dictionary) -> bool:
 	var d := Planets.length64(Planets.world_of(b.rel_km))
 	var ang := Planets.angular_radius(b.radius_km, d)
 	var px_rad := deg_to_rad(FOV_DEG) / float(_vp.size.y)
-	var want_half := FILL * 0.5 * deg_to_rad(FOV_DEG) # whole disc
 	var surface0: Dictionary = b.get("surface", {})
-	if level == 2 and not surface0.is_empty():
-		var cells := 2.0 * float(b.radius_km) / float(surface0.cell_km)
-		want_half = CELL_PX * cells * 0.5 * px_rad # the disc radius at which a cell is CELL_PX across
-	magnification = clampf(want_half / ang, N_MIN, N_MAX)
-	var half := minf(ang * magnification, MAX_HALF_RAD)
-	magnification = half / ang
+	var cells := 2.0 * float(b.radius_km) / float(surface0.cell_km) if not surface0.is_empty() else 0.0
+	var sc := scale_for(ang, level, cells, _vp.size.y)
+	var half: float = sc.half
+	magnification = sc.n
 	# Magnify by drawing the same star at N times its angular radius (the sky's material; surface
 	# brightness, colour and Doppler are unchanged, as through a real telescope)
 	_mat.set_shader_parameter("radius", centre.length() * sin(half))
@@ -148,6 +145,20 @@ func refresh(world: Dictionary) -> bool:
 	_disc.visible = true
 	_label.text = "telescope ×%s %s · %s" % [_fmt(magnification), "whole disc" if level == 1 else "close", str(b.get("name", star_id))]
 	return true
+
+
+## The magnified disc's angular radius in the panel and the true magnification N for a star of
+## angular radius ang: level 1 fills FILL of the panel, level 2 makes a convection cell CELL_PX
+## across (cells: across the diameter, 0 if unknown); N is clamped to [N_MIN, N_MAX] and the drawn
+## radius to MAX_HALF_RAD.
+static func scale_for(ang: float, lvl: int, cells: float, panel_px: int) -> Dictionary:
+	var px_rad := deg_to_rad(FOV_DEG) / float(panel_px)
+	var want_half := FILL * 0.5 * deg_to_rad(FOV_DEG)
+	if lvl == 2 and cells > 0.0:
+		want_half = CELL_PX * cells * 0.5 * px_rad
+	var n := clampf(want_half / ang, N_MIN, N_MAX)
+	var half := minf(ang * n, MAX_HALF_RAD)
+	return {"half": half, "n": half / ang}
 
 
 static func _fmt(n: float) -> String:

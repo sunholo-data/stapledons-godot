@@ -1,0 +1,180 @@
+{
+  "sprint_id": "R2-STAR-SURFACES",
+  "evaluator_model": "claude-sonnet-5-5",
+  "score": 77,
+  "verdict": "PASS",
+  "criteria": [
+    {
+      "id": "AC0",
+      "status": "MET",
+      "evidence": "Sprint JSON `citations` (SS-1) pins the cited values. Five rows were verified from source; the rest are marked secondary or not opened. The Claret & Bloemen PHOENIX table covers TRAPPIST-1 with no clamp: `sim/stellar_surface.ail` reports `ldTeffUsed` and `ldLoggUsed`, and `sim/stellar_surface_test.ail` checks that TRAPPIST-1 gets PHOENIX at log g 5.0. The unopened rows are a small weakness."
+    },
+    {
+      "id": "AC1",
+      "status": "MET",
+      "evidence": "sunholo/celestial 0.5.0 is published. `sim/ailang.toml:19` pins it, and `sim/ailang.lock` records source registry and hash sha256:d94c27d3\u2026 The package has 142 tests, with check and pkg quality at no gates (sprint JSON SS0, ac13). `tests/test_physics.gd:1215` `_star_surface_photometry` probes the law and mean against the package. I did not re-run the package tests."
+    },
+    {
+      "id": "AC2",
+      "status": "MET",
+      "evidence": "`stellar_surface_test.ail` has wire, below-2.13 byte-identical and determinism tests. The sprint JSON records 539 sim tests, replay 11 identical, and strict and parity green. `mk/star-surfaces.mk` runs `stellarSurfaceVm` on the strict VM and compares it with the interpreter. The `stellar-protocol-test` target is in `ci-fast`."
+    },
+    {
+      "id": "AC3",
+      "status": "MET",
+      "evidence": "`tests/test_star_surface.gd` `_flux` and `_spot_oracle` compare the NORM_GRID quadrature with a grid twice as fine (1e-3) and with the single-spot closed form (3e-6 recorded). The oracle is independent of the quadrature."
+    },
+    {
+      "id": "AC4",
+      "status": "MET",
+      "evidence": "Recorded: goldens G-SS-1..3 show flux equal to e_v_lux within 0.3 % (limit 0.5 %). G-SS-4 is the centroid within 0.75 px. rig/full on d09bad78 is green with make golden, so the existing `star lux` and `sky cd/m\u00b2` lines are unchanged. I could not re-run the GPU goldens."
+    },
+    {
+      "id": "AC5",
+      "status": "MET",
+      "evidence": "G-SS-5 shows the Sun with and without its surface record byte-identical. `test_star_surface.gd` `_uniforms` asserts that the Sun has `surf_on` false and `ld_quad` false. The Sun keeps the linear law (u = 0.6) in the sim and GDScript."
+    },
+    {
+      "id": "AC6",
+      "status": "MET",
+      "evidence": "`test_star_surface.gd` `_colour` compares chromaticity with `Blackbody.rgb_unit_luminance` to 0.002, at rest and at D\u00b7T ahead at 0.9c. The comparison is against an independent CPU blackbody."
+    },
+    {
+      "id": "AC7",
+      "status": "MET",
+      "evidence": "`stellar_surface_test.ail` checkClock measures the rate from the sim's own t_e (`emissionTimeS` and `lightAgeOf`): 4.3589 closing and 0.22942 receding, to 1e-6. `test_star_surface.gd` `_phases` shows epoch is an int, 1 s moves the weight by 1/360, and a control shows float32 cannot hold the step. It asserts only that the float32 control differs from 1.0. The sim and renderer do not apply D a second time."
+    },
+    {
+      "id": "AC8",
+      "status": "PARTLY",
+      "evidence": "Headless `_fader` only checks that the peak factor lies in (1, 2) and that the unresolved case is exactly 1. The claim 'brightest displayed texel \u2264 1.2 pre-tonemap at every stop' is covered only indirectly, by G-SS-7 (totality) and the rig golden run. No per-stop texel check was found."
+    },
+    {
+      "id": "AC9",
+      "status": "MET",
+      "evidence": "G-SS-6 (corona at 1.5, 3 and 4 R against Baumbach, worst 0.6 %, limit 5 %), G-SS-7 (corona at 2 R in [0.1, 0.6] with the eye adapted to the visible peak) and G-SS-8 (corona on only while a body covers the photosphere). `_eclipse` unit-tests `covered_fraction` with closed forms: 0.25 for a body inside, and 0.3910 for equal circles one radius apart. GPU-only checks, recorded rather than re-run. 'Global k same with and without the eclipse' rests on the design (the fader is per body) and G-SS-7, with no explicit assertion."
+    },
+    {
+      "id": "AC10",
+      "status": "MET",
+      "evidence": "`_eclipse` asserts H-alpha at rest is red with unit luminance, and black at D = \u221a19 (150.6 nm) and at 0.22942 (2,860 nm). The `lineObservedNm` check values are in the package tests. The coloured-by-cmf claim rests on `h_alpha_rgb`."
+    },
+    {
+      "id": "AC11",
+      "status": "MET",
+      "evidence": "The recorded bench shows Aldebaran sky GPU p50 at 4.874 ms off and 4.913 ms on, a delta of +0.039 ms (limit 0.50), on Vulkan. Host load was about 40. `make bench SCENE=bridge` p99 is not evidenced separately."
+    },
+    {
+      "id": "AC12",
+      "status": "PARTLY",
+      "evidence": "`tools/star_surface_capture.gd` and the make target exist, and Mark viewed the frames (D-111, D-114: 'the eclipses are nice'). The sprint JSON `evaluations` and `follow_ups` are empty. I found no record that the 12 frames, including the partial and total eclipse, were published to gs://\u2026/refs/star_surfaces/after/."
+    },
+    {
+      "id": "AC13",
+      "status": "MET",
+      "evidence": "`sim/ailang.lock` carries celestial 0.5.0 from the registry, `sim/vendor` is removed, and rig/full is green on d09bad78 (62 min, make test plus make golden). The fast tier was not checked by me."
+    },
+    {
+      "id": "D-111 A1 telescope",
+      "status": "PARTLY",
+      "evidence": "`ui/telescope_view.gd` exists and Mark played it. No headless test references `TelescopeView`, so the magnification formula N, the \u00d72 to \u00d72,000 clamp and the 70 % framing are unchecked. Only the capture checks it."
+    },
+    {
+      "id": "D-111 A2 close pass",
+      "status": "MET",
+      "evidence": "`sim/stops_test.ail`: checkClosePass (F, G and K dwarfs only; not a giant, an M dwarf or Vega; 1 R_sun at 19.85\u00b0), checkFreeNavStars (\u03b1 Cen A at 21.9\u00b0, Aldebaran and TRAPPIST-1 on the D-54 curve) and checkDefaultStarStops."
+    },
+    {
+      "id": "D-111 A3 activity",
+      "status": "PARTLY",
+      "evidence": "`stellar_surface_test.ail` checkActivity tests the quiet, active, flare-rate and no-spot cases. But the working tree has uncommitted edits to `sim/data/stellar_activity.ail`: \u03b1 Cen A's cycle goes from 19.0 to 19.1 years, \u03b1 Cen B's from 8.1 to 8.2, and the citations change. These change the sim's `cyclePhase` input and so the spot pattern, and no re-run is recorded. The A3 flare rate (0.525 a day) is Vida-cited and checked."
+    }
+  ],
+  "gates": [
+    {
+      "gate": "1 make test green on rig and fast tier",
+      "status": "MET",
+      "evidence": "rig/full green on d09bad78, 62 min. Fast tier recorded green. The uncommitted `stellar_activity.ail` edit postdates that run."
+    },
+    {
+      "gate": "2 Physics: spec check values, goldens, opened renders",
+      "status": "MET",
+      "evidence": "RS-24 and RS-25 are asserted. Goldens G-SS-1..8 are recorded as ok. Renders were opened and Mark approved (D-111, D-114). The RS-25 check lives in the sim tests; the spec check values RS-24 and RS-25 sit in the design repo (#37) and I did not confirm they are merged."
+    },
+    {
+      "gate": "3 Package-first maths",
+      "status": "MET",
+      "evidence": "The LD laws, Baumbach, differential rotation and `lineObservedNm` are in `sunholo/celestial` 0.5.0 and published. `sim/stellar_surface.ail` imports them. `physics/star_surface.gd` mirrors them, with the `test_physics.gd` probe."
+    },
+    {
+      "gate": "4 Pure strict sim, VM = interpreter",
+      "status": "MET",
+      "evidence": "`sim/stellar_surface.ail` is pure, with no Rng stream advanced (hash only). `make strict` and `make parity` are green. `stellarSurfaceVm` is run on both the VM and the interpreter."
+    },
+    {
+      "gate": "5 Precision",
+      "status": "MET",
+      "evidence": "Phases are reduced in float64 (epoch is an int, w is a fraction). `test_star_surface.gd` `_phases` has a float32 control. The hashing is pcg3d uint, exact on CPU and GPU."
+    },
+    {
+      "gate": "6 Determinism",
+      "status": "MET",
+      "evidence": "The spot salt is `mix64(seed, idKey(id), window)`. checkDeterministic and checkWindows (same bytes within a window, changes across windows) pass."
+    },
+    {
+      "gate": "Honest real-vs-chosen labelling",
+      "status": "MET",
+      "evidence": "`Surface.prov` labels each field measured, inferred, assumed or chosen. The spot layout is 'chosen: seeded layout' and the cells are 'inferred: the Sun's scaled'. \u03b1 Cen A's cycle is cited as 'tentative'. The inspector labels from provenance (SS4) are not done."
+    },
+    {
+      "gate": "Landing (SS4)",
+      "status": "NOT MET",
+      "evidence": "The sprint JSON has SS4_LANDING and D111_SHOW_MORE with `passes: false` and status 'in_progress'. The design doc is still in `design_docs/planned/r2/`, and `design_docs/implemented/r2/` has no star-surfaces report. No Archive entry, changelog fragment or inspector labels are evidenced, and `evaluations` is empty. Moving the design doc to `implemented/` and syncing the roadmap are landing steps."
+    }
+  ],
+  "drills": [
+    {
+      "mutation": "Drop the flux normaliser N (return 1.0 for resolved stars)",
+      "caught": true,
+      "by": "`test_star_surface.gd` `_flux` (RS-24 quadrature and the spot closed form), plus G-SS-1..3 (flux = e_v_lux within 0.5 %)"
+    },
+    {
+      "mutation": "Multiply the surface clock by D again (double-count Doppler)",
+      "caught": true,
+      "by": "`stellar_surface_test.ail` checkClock (RS-25, 1e-6). It tests the sim's emission-time series, so a renderer-side extra factor of D is caught only if it reaches that series. The renderer receives phases only through `StarSurface.phases`, which `_phases` tests, but there is no direct test that the renderer never multiplies by D."
+    },
+    {
+      "mutation": "Remove the close-pass condition, so \u03b1 Cen A reverts to 11.1\u00b0",
+      "caught": true,
+      "by": "`sim/stops_test.ail` checkFreeNavStars (21.9\u00b0), checkDefaultStarStops and checkClosePass"
+    },
+    {
+      "mutation": "Make the Sun go through the new quadratic-LD and surface path",
+      "caught": true,
+      "by": "`test_star_surface.gd` `_uniforms` ('Sun: surf_on false and ld_quad false') and golden G-SS-5 (byte-identical)"
+    },
+    {
+      "mutation": "Change the telescope magnification formula, for example N = field ratio squared, or lose the \u00d72 clamp",
+      "caught": false,
+      "by": "No headless test references `ui/telescope_view.gd`; only the visual capture would show it."
+    },
+    {
+      "mutation": "Change \u03b1 Cen A's `cycleYears` from 19.1 to 19.0 (the uncommitted edit)",
+      "caught": false,
+      "by": "`checkActivity` covers Barnard, TRAPPIST-1, \u03b1 Cen B at maximum and Aldebaran, not A's cycle value. No test pins the cited cycle lengths, so a transcription slip passes."
+    }
+  ],
+  "blocking": [
+    "The working tree carries an uncommitted edit to `sim/data/stellar_activity.ail` (cycle 19.0 to 19.1 years and 8.1 to 8.2 for \u03b1 Cen A and B, plus citations). It is outside the recorded rig/full run on d09bad78. Commit it and re-run `make strict parity replay sim-test` before landing.",
+    "Landing is incomplete. SS4 and D111_SHOW_MORE are `passes: false`. There is no Archive entry, report, changelog fragment or inspector labels, the design doc is still under planned/, and the design-repo roadmap is not updated. The sprint cannot close until these are done."
+  ],
+  "non_blocking": [
+    "The telescope (A1, the main D-111 deliverable) has no automated test: magnification N, the clamp and the label are untested.",
+    "AC8 'texel \u2264 1.2 at every stop' is not asserted per stop, only through the peak factor and G-SS-7.",
+    "AC12: the publication of the 12 frames to gs://\u2026/refs/star_surfaces/after/ is not evidenced in the sprint JSON.",
+    "The bench ran under host load of about 40. The +0.039 ms is Vulkan only; the primary Metal path reports no GPU time.",
+    "Some AC0 citation rows were not opened from source (marked secondary). \u03b1 Cen A's 19.1-year cycle is flagged as a tentative reading, which is honest but still chosen data.",
+    "The `evaluations` and `follow_ups` fields in the sprint JSON are empty; record this evaluation there."
+  ],
+  "summary": "The sim, package, renderer and test work is strong. The sim and CPU tests check the claims against independent expected values (closed forms, a finer quadrature, an exact blackbody, \u221a19), and the recorded GPU goldens, bench and rig/full are green. Mark accepted both rounds (D-111, D-114). The score is held below 80 by the open SS4 landing (no Archive entry, report, changelog or design-doc move), an untested telescope, and an uncommitted data edit that postdates the green rig run. This is a PASS at 77/100, conditional on committing and re-verifying the data edit and completing the landing steps."
+}
