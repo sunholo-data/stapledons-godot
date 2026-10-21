@@ -32,14 +32,14 @@ log="$dir.log"
 
 status() {
   [ "${RIG_NO_STATUS:-0}" = 1 ] && return 0
-  gh api "repos/$REPO/statuses/$sha" -f state="$1" -f context=rig/full -f description="$2" > /dev/null
+  gh api "repos/$REPO/statuses/$sha" -f state="$1" -f context=rig/full -f description="${2:0:140}" > /dev/null
 }
 
 suite="make test"; [ $golden = 1 ] && suite="make test + make golden"
 echo "rig-check: $target -> $short in $dir ($suite); log $log"
 status pending "$suite running on the Studio"
 
-fail() { status failure "$1 (log on the Studio: $log)"; echo "rig-check: FAIL: $1"; exit 1; }
+fail() { status failure "$1 (log: rig-check/$short.log on the Studio)"; echo "rig-check: FAIL: $1"; exit 1; }
 
 rm -rf "$dir"; mkdir -p "$(dirname "$dir")"
 git clone --quiet "https://github.com/$REPO.git" "$dir" || fail "clone failed"
