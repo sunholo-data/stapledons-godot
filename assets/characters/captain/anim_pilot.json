@@ -1,6 +1,6 @@
 {
   "anim": {
-    "about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame (the half cycle). Made by tools/captain_frames.gd --ingest from art/captain-anim-v1/.",
+    "about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.",
     "cell_scale": 0.1875,
     "clips": {
       "idle": {
@@ -12,25 +12,27 @@
             "back": [
               {
                 "crop": [
-                  50,
-                  28,
-                  96,
-                  247
+                  50.0,
+                  28.0,
+                  96.0,
+                  247.0
                 ],
                 "file": "anim/y0/idle_back_00.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v1/guides/idle_back_00.png"
               }
             ],
             "profile": [
               {
                 "crop": [
-                  42,
-                  27,
-                  95,
-                  255
+                  42.0,
+                  27.0,
+                  95.0,
+                  255.0
                 ],
                 "file": "anim/y0/idle_profile_00.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v1/guides/idle_profile_00.png"
               }
             ]
           }
@@ -40,196 +42,439 @@
         "contacts": [
           [
             0.0,
-            "R"
+            "L"
           ],
           [
             0.5,
-            "L"
+            "R"
           ]
         ],
-        "cycle_m": 2.3333,
+        "cycle_m": 2.9104,
+        "cycle_note": "In game: the guide cycle 2.5455 m / cos 29 deg. The guide camera looks down 29 deg and the canvas is scaled so a standing figure is 720 px/m; ground distances across the view are then drawn at 720 / cos 29 = 823 px/m, and the billboard shows painted pixels at 720 px/m, so a painted step of 0.212 m is 0.2425 m on the deck. The game advances 0.2425 m a frame (69.3 ms at 3.5 m/s) so the planted foot stays put.",
         "kind": "gait",
         "stages": {
           "0": {
             "back": [
               {
                 "crop": [
-                  51,
-                  35,
-                  110,
-                  244
+                  56,
+                  43,
+                  103,
+                  208
                 ],
                 "file": "anim/y0/jog_back_00.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_00.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  44,
-                  33,
-                  123,
-                  254
+                  47,
+                  39,
+                  126,
+                  229
                 ],
                 "file": "anim/y0/jog_back_01.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_01.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  38,
-                  35,
-                  127,
-                  253
+                  48,
+                  42,
+                  123,
+                  241
                 ],
                 "file": "anim/y0/jog_back_02.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_02.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  43,
-                  33,
-                  127,
-                  253
+                  50,
+                  57,
+                  116,
+                  228
                 ],
                 "file": "anim/y0/jog_back_03.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_03.png",
+                "planted": "flight"
               },
               {
                 "crop": [
-                  51,
-                  35,
+                  48,
+                  49,
+                  116,
+                  229
+                ],
+                "file": "anim/y0/jog_back_04.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_04.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  48,
+                  45,
+                  117,
+                  230
+                ],
+                "file": "anim/y0/jog_back_05.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_05.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  48,
+                  48,
+                  117,
+                  224
+                ],
+                "file": "anim/y0/jog_back_06.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_06.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  48,
+                  36,
+                  122,
+                  231
+                ],
+                "file": "anim/y0/jog_back_07.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_07.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  47,
+                  50,
+                  122,
+                  233
+                ],
+                "file": "anim/y0/jog_back_08.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_08.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  47,
+                  55,
                   110,
-                  244
+                  225
                 ],
-                "file": "anim/y0/jog_back_00.webp",
-                "flip": true
+                "file": "anim/y0/jog_back_09.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_09.png",
+                "planted": "flight"
               },
               {
                 "crop": [
-                  44,
-                  33,
-                  123,
-                  254
+                  40,
+                  47,
+                  126,
+                  238
                 ],
-                "file": "anim/y0/jog_back_01.webp",
-                "flip": true
+                "file": "anim/y0/jog_back_10.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_10.png",
+                "planted": "flight"
               },
               {
                 "crop": [
-                  38,
-                  35,
+                  39,
+                  45,
                   127,
-                  253
+                  237
                 ],
-                "file": "anim/y0/jog_back_02.webp",
-                "flip": true
-              },
-              {
-                "crop": [
-                  43,
-                  33,
-                  127,
-                  253
-                ],
-                "file": "anim/y0/jog_back_03.webp",
-                "flip": true
+                "file": "anim/y0/jog_back_11.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_back_11.png",
+                "planted": "flight"
               }
             ],
             "profile": [
               {
                 "crop": [
-                  20,
-                  32,
-                  124,
-                  254
+                  17,
+                  38,
+                  154,
+                  219
                 ],
                 "file": "anim/y0/jog_profile_00.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_00.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  13,
-                  37,
-                  140,
-                  245
+                  0,
+                  41,
+                  146,
+                  231
                 ],
                 "file": "anim/y0/jog_profile_01.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_01.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  2,
-                  34,
-                  174,
-                  236
+                  0,
+                  42,
+                  144,
+                  226
                 ],
                 "file": "anim/y0/jog_profile_02.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_02.png",
+                "planted": "L"
+              },
+              {
+                "crop": [
+                  22,
+                  40,
+                  136,
+                  224
+                ],
+                "file": "anim/y0/jog_profile_03.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_03.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  5,
+                  37,
+                  145,
+                  217
+                ],
+                "file": "anim/y0/jog_profile_04.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_04.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  5,
+                  37,
+                  143,
+                  221
+                ],
+                "file": "anim/y0/jog_profile_05.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_05.png",
+                "planted": "flight"
               },
               {
                 "crop": [
                   12,
+                  39,
+                  141,
+                  221
+                ],
+                "file": "anim/y0/jog_profile_06.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_06.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  4,
+                  42,
+                  144,
+                  218
+                ],
+                "file": "anim/y0/jog_profile_07.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_07.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  17,
+                  43,
+                  143,
+                  244
+                ],
+                "file": "anim/y0/jog_profile_08.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_08.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  15,
+                  40,
+                  142,
+                  229
+                ],
+                "file": "anim/y0/jog_profile_09.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_09.png",
+                "planted": "flight"
+              },
+              {
+                "crop": [
+                  7,
                   37,
-                  161,
-                  237
+                  150,
+                  229
                 ],
-                "file": "anim/y0/jog_profile_03.webp",
-                "flip": false
+                "file": "anim/y0/jog_profile_10.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_10.png",
+                "planted": "flight"
               },
               {
                 "crop": [
-                  20,
-                  32,
-                  124,
-                  254
+                  16,
+                  35,
+                  155,
+                  214
                 ],
-                "file": "anim/y0/jog_profile_00.webp",
-                "flip": false
-              },
-              {
-                "crop": [
-                  13,
-                  37,
-                  140,
-                  245
-                ],
-                "file": "anim/y0/jog_profile_01.webp",
-                "flip": false
-              },
-              {
-                "crop": [
-                  2,
-                  34,
-                  174,
-                  236
-                ],
-                "file": "anim/y0/jog_profile_02.webp",
-                "flip": false
-              },
-              {
-                "crop": [
-                  12,
-                  37,
-                  161,
-                  237
-                ],
-                "file": "anim/y0/jog_profile_03.webp",
-                "flip": false
+                "file": "anim/y0/jog_profile_11.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v2/guides/jog_profile_11.png",
+                "planted": "flight"
               }
             ]
           }
         }
       }
     },
+    "ingest_head_dy_px": {
+      "jog_profile_00": -184,
+      "jog_profile_01": 16,
+      "jog_profile_02": 15,
+      "jog_profile_03": -115,
+      "jog_profile_04": -37,
+      "jog_profile_05": -102,
+      "jog_profile_06": -96,
+      "jog_profile_07": -89,
+      "jog_profile_08": -6,
+      "jog_profile_09": -75,
+      "jog_profile_10": -9,
+      "jog_profile_11": -36
+    },
+    "ingest_pin_px": {
+      "jog_back_00": [
+        0,
+        -27
+      ],
+      "jog_back_01": [
+        0,
+        -48
+      ],
+      "jog_back_02": [
+        0,
+        -36
+      ],
+      "jog_back_07": [
+        0,
+        -64
+      ],
+      "jog_back_08": [
+        0,
+        -4
+      ],
+      "jog_profile_00": [
+        29,
+        0
+      ],
+      "jog_profile_01": [
+        -20,
+        0
+      ],
+      "jog_profile_02": [
+        -38,
+        0
+      ],
+      "jog_profile_07": [
+        -4,
+        0
+      ],
+      "jog_profile_08": [
+        -3,
+        0
+      ]
+    },
+    "ingest_pin_wanted_px": {
+      "jog_back_00": [
+        -16,
+        -27
+      ],
+      "jog_back_01": [
+        -14,
+        -48
+      ],
+      "jog_back_02": [
+        -15,
+        -36
+      ],
+      "jog_back_07": [
+        -9,
+        -64
+      ],
+      "jog_back_08": [
+        -6,
+        -4
+      ],
+      "jog_profile_00": [
+        29,
+        61
+      ],
+      "jog_profile_01": [
+        -20,
+        -15
+      ],
+      "jog_profile_02": [
+        -38,
+        8
+      ],
+      "jog_profile_07": [
+        -4,
+        116
+      ],
+      "jog_profile_08": [
+        -3,
+        -26
+      ]
+    },
     "ingest_scale": {
       "idle_back_00": 1.00551615445232,
       "idle_profile_00": 0.982169390787519,
-      "jog_back_00": 0.966335118592196,
-      "jog_back_01": 0.954248366013072,
-      "jog_back_02": 1.01153846153846,
-      "jog_back_03": 0.987933634992459,
-      "jog_profile_00": 0.945441493180187,
-      "jog_profile_01": 0.874827109266943,
-      "jog_profile_02": 0.915726109857035,
-      "jog_profile_03": 0.90014684287812
+      "jog_back_00": 0.930359937402191,
+      "jog_back_01": 0.930359937402191,
+      "jog_back_02": 0.930359937402191,
+      "jog_back_03": 0.930359937402191,
+      "jog_back_04": 0.930359937402191,
+      "jog_back_05": 0.930359937402191,
+      "jog_back_06": 0.930359937402191,
+      "jog_back_07": 0.930359937402191,
+      "jog_back_08": 0.930359937402191,
+      "jog_back_09": 0.930359937402191,
+      "jog_back_10": 0.930359937402191,
+      "jog_back_11": 0.930359937402191,
+      "jog_profile_00": 0.915644171779141,
+      "jog_profile_01": 0.915644171779141,
+      "jog_profile_02": 0.915644171779141,
+      "jog_profile_03": 0.915644171779141,
+      "jog_profile_04": 0.915644171779141,
+      "jog_profile_05": 0.915644171779141,
+      "jog_profile_06": 0.915644171779141,
+      "jog_profile_07": 0.915644171779141,
+      "jog_profile_08": 0.915644171779141,
+      "jog_profile_09": 0.915644171779141,
+      "jog_profile_10": 0.915644171779141,
+      "jog_profile_11": 0.915644171779141
     }
   }
 }

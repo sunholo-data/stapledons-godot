@@ -196,6 +196,38 @@ Findings that change the plan:
 5. **The half cycle.** The back view's second half is the first half mirrored; the profile's repeats the first half (near and far legs read alike at 67–81 px). Both look right at game size in the review; the age-0 set would paint all 8.
 6. **Budgets:** 10 cells, 279 KB of WebP, 1.7 MB of GPU memory with mipmaps.
 
+## Jog v2 (2026-10-21, after Mark's pilot review, D-109)
+
+Mark: "its the same captain, but the jogging does not look real, needs more frames I guess. profiles and backview etc is fine. guide gait needs fixing yeah". The identity, costume, style and the back and profile facings stand; the jog was redone.
+
+**The guide gait** (`~/dev/blender/scripts/char_captain_pose_guides_v2.py`, a copy in `art/captain-anim-v2/`) is now a stance gait, in place like a treadmill:
+- 3.5 m/s, cadence 165 steps a minute: a 1.273 m step and a 2.545 m cycle in 0.727 s.
+- Duty factor 0.30. The planted ankle goes from 0.30 m ahead of the hip back to 0.46 m behind at exactly the deck's speed; the heel rises over the toe at the end. IK legs (thigh and shin) keep the knee ahead and soft (the pelvis 8 cm below standing).
+- Phases per step: contact, down, push-off, flight, recovery (the heel folds up behind the seat), next contact.
+- The pelvis bobs 2.5 cm (lowest at mid-stance), turns 6° with the forward leg, the torso counter-rotates and leans forward, the arms swing opposite the legs with elbows bent about 85°.
+- **Measured (240 samples a cycle):** each stance drifts 8–10 mm against the deck over 0.47 m of travel. That is under 1 px at 1440p, against v1's lowest foot moving forward up to 0.39 m.
+
+**Frames: 12 a cycle, every one unique** (0.212 m and 60.6 ms of guide motion apart; 16.5 frames a second). Six a step gives a frame each for contact, down, push-off, flight and two of recovery. At 67–81 px the extra frames are what make the legs read as a run, not a shuffle: the strided frames (02, 05, 08, 11) carry the leg extension that v1's 8 frames skipped. The pilot painted 24 (12 back, 12 profile); no mirrored or repeated half.
+
+**The scale finding.** The guide camera looks down 29° and the canvas is scaled so a standing figure is 720 px/m; distances across the view are then drawn at 720 / cos 29° = 823 px/m. The billboard shows painted pixels at 720 px/m, so a painted 0.212 m step is 0.2425 m on the deck. The game's jog cycle is therefore 2.9104 m (0.2425 m and 69.3 ms a frame at 3.5 m/s, cadence 144), and with it the planted foot stays put. The same 14% widening applies to every painted figure, the stills included.
+
+**Ingest** now:
+- uses one scale per painted facing (the median of the frames' height ratios), since a frame's box swings with the pose and the flying coat;
+- puts each profile frame's head where the guide's is, so the body follows the guide's bob;
+- pins a planted frame by its planted boot along the travel axis (x in profile, y in the back view; found through the guide's leg-colour key, so the trailing boot is ignored), capped at 64 canvas px.
+
+**Checks on the 24 painted frames:**
+- **AC3 planted feet (gated):** every stance step is within 2 px at 1440p plus one cell px of measurement resolution. Back: 0.18, 0.18 and 0.18 px. Profile: 2.11, 1.40 and 0.71 px (limit 2.68).
+- **Pose, back (gated):** IoU ≥ 0.60 and leg coverage ≥ 0.65. Own guides: IoU 0.615–0.688, legs 0.66–0.85. Profile guides: IoU 0.445–0.571, so it separates.
+- **Pose, profile (reported, not gated):** own IoU 0.341–0.533, legs 0.401–0.739, overlapping the scores against the back guides (IoU 0.385–0.514, legs 0.373–0.586). The flying coat dominates the silhouette, so these metrics cannot tell profile jog poses apart. "Tighten the pose gate" was not possible; the numbers went the other way. The profile pose is judged by eye and, where a foot is planted, by AC3.
+- **Height (gated):** 0.902–1.052 of the guide's box, tolerance ±12%; the seeded 0.7× still fails.
+- **Palette:** ΔE ≤ 12 holds on every frame.
+- **Budgets:** 36 cells, 697 KB of WebP, 4.1 MB of GPU memory.
+
+**Seen in the review:**
+- the painted coat flies past the left edge of the contract canvas in some profile frames (crop x = 0), so its tip is cut;
+- the in-game A/B shows the bridge's new style (D-110) behind v2 and the old one behind v1; that difference is the bridge, not the animation.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

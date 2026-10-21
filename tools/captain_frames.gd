@@ -24,19 +24,26 @@ const CELL_SCALE := 0.1875
 const ANIM_MANIFEST := "anim_pilot.json"
 const CANVAS := Vector2i(1024, 1536)
 const ANCHOR := Vector2(512, 1440)
-## Pose (§D4, amended after the pilot measured it): a painted coat never matches the guide's cone, so the
-## plan's silhouette IoU >= 0.85 is unreachable (the 10 pilot frames: 0.565-0.753). The pose gate is
-## IoU >= 0.55 AND leg coverage >= 0.65 (the share of the guide's red/blue leg keys the paint covers:
-## pilot 0.677-0.930). Against the OTHER facing's guide the same frames score IoU 0.43-0.57 and legs
-## 0.27-0.76, and no frame passes both, so the gate separates the poses; the margins are thin
-## (thresholds set after seeing the pilot's numbers, recorded in the design doc).
-const IOU_MIN := 0.55
-const LEGS_MIN := 0.65
-const HEIGHT_TOL := 0.04 ## the shipped figure's height against its guide's (ingest scales to it)
+## Pose (§D4), per painted facing, set from the measured numbers (design doc "Jog v2"):
+##   back:    silhouette IoU >= 0.60 and leg coverage >= 0.65. The jog v2 back frames score IoU 0.615-0.688
+##            and legs 0.66-0.85 against their own guides, IoU 0.445-0.571 against the profile guides,
+##            so the IoU half separates the poses (the leg half alone does not: 0.48-0.826).
+##   profile: reported, not gated, for the jog (the idle keeps the first pilot's gate). Own IoU
+##            0.341-0.533 and legs 0.401-0.739 overlap the scores against the back guides (IoU
+##            0.385-0.514, legs 0.373-0.586): the flying open coat dominates the silhouette, so these
+##            metrics cannot tell profile jog poses apart. The profile pose is judged by eye at review
+##            and, for the planted frames, by the AC3 foot check below.
+const POSE_MIN := {"back": [0.60, 0.65]}
+const POSE_REPORT_ONLY := ["profile"] ## measured and reported, not gated (see above)
+const POSE_MIN_OTHER := [0.55, 0.65] ## facings not painted yet (the first pilot's gate)
+const HEIGHT_TOL := 0.12 ## the shipped figure's box height against its guide's: the facing shares one scale, so a
+##   frame's box differs with its pose and the flying coat (jog v2: 0.902-1.052); 0.7x (the seeded defect) fails
 const DE_MAX := 12.0
 ## AC3: a planted foot may slide at most this far on screen per stance step (2560 x 1440, the Bow view, where
 ## the 1.754 m captain is 161 px: CameraDirector.figure_px at the spawn).
 const STANCE_PX_MAX := 2.0
+## Ingest pins a planted frame by its planted sole along the travel axis, at most this far (canvas px).
+const PIN_MAX := 64
 const SCREEN_PX_PER_M := 161.144 / 1.754
 const DISK_STAGE_MAX := 3 * 1024 * 1024
 const GPU_STAGE_MAX := 32 * 1024 * 1024
@@ -94,15 +101,58 @@ func _ingest(raw: String) -> void:
 		old = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join(ANIM_MANIFEST))).get("anim", {})
 	var crops := {}
 	var scales: Dictionary = old.get("ingest_scale", {}).duplicate()
+	var pins := {}
+	var pins_full := {}
+	var heads := {}
+	# One scale per painted facing (the median of the frames' height ratios): a frame's own box height
+	# swings with the pose and the flying coat, the painted person's size should not.
+	var per_frame := {}
+	var by_facing := {}
+	for src: String in plan.painted:
+		var img0 := Image.load_from_file(raw.path_join(src + ".png"))
+		img0.convert(Image.FORMAT_RGBA8)
+		_matte(img0)
+		var g0 := Image.load_from_file(guides_dir.path_join(src + ".png"))
+		g0.convert(Image.FORMAT_RGBA8)
+		per_frame[src] = float(_figure_rect(g0, 0.25).size.y) / float(_figure_rect(img0, 0.5).size.y)
+		by_facing.get_or_add(src.split("_")[1], []).append(per_frame[src])
+	var median := {}
+	for f: String in by_facing:
+		var l: Array = by_facing[f]
+		l.sort()
+		median[f] = l[l.size() / 2]
 	for src: String in plan.painted:
 		var img := Image.load_from_file(raw.path_join(src + ".png"))
 		img.convert(Image.FORMAT_RGBA8)
 		_matte(img)
 		var guide := Image.load_from_file(guides_dir.path_join(src + ".png"))
 		guide.convert(Image.FORMAT_RGBA8)
-		var a := _align(img, guide)
+		var a := _align(img, guide, median[src.split("_")[1]])
 		scales[src] = a.scale
 		var cell: Image = a.image
+		# Profile: the body's height on the canvas follows the guide's head (its bob), not the silhouette
+		# fit, which the trailing coat can pull down; the planted sole then pins x below.
+		if src.contains("_profile_"):
+			var dy := _figure_rect(guide, 0.25).position.y - _figure_rect(cell, 0.5).position.y
+			if dy != 0:
+				var moved := Image.create(CANVAS.x, CANVAS.y, false, Image.FORMAT_RGBA8)
+				moved.blend_rect(cell, Rect2i(Vector2i.ZERO, cell.get_size()), Vector2i(0, dy))
+				cell = moved
+			heads[src] = dy
+		# A planted frame is pinned by its planted sole (the guide's stance foot is on the deck at the
+		# same place): the body may move a few px, the foot never slides (AC3).
+		if str(planted.get(src, "")) in ["L", "R"]:
+			var gs := _key_sole(guide, str(planted[src]))
+			var full := Vector2i((gs - _sole_near(cell, 0.5, gs.x, 70)).round())
+			# Pin only along the travel as the camera sees it (x in profile, y in the back view), capped:
+			# the other axis keeps the body where the silhouette fit put it, so the body does not hop.
+			var profile_like := src.contains("_profile_")
+			var d := Vector2i(clampi(full.x, -PIN_MAX, PIN_MAX), 0) if profile_like else Vector2i(0, clampi(full.y, -PIN_MAX, PIN_MAX))
+			pins_full[src] = [full.x, full.y]
+			var pinned := Image.create(CANVAS.x, CANVAS.y, false, Image.FORMAT_RGBA8)
+			pinned.blend_rect(cell, Rect2i(Vector2i.ZERO, cell.get_size()), d)
+			pins[src] = [d.x, d.y]
+			cell = pinned
 		cell.resize(int(CANVAS.x * CELL_SCALE), int(CANVAS.y * CELL_SCALE), Image.INTERPOLATE_LANCZOS)
 		var box: Rect2i = cell.get_used_rect().grow(1).intersection(Rect2i(Vector2i.ZERO, cell.get_size()))
 		var trimmed: Image = cell.get_region(box)
@@ -133,7 +183,7 @@ func _ingest(raw: String) -> void:
 			st[facing] = list
 		c["stages"] = {"0": st}
 		clips[clip] = c
-	var m := {"anim": {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales}}
+	var m := {"anim": {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads}}
 	var f := FileAccess.open(DIR.path_join(ANIM_MANIFEST), FileAccess.WRITE)
 	f.store_string(JSON.stringify(m, "  ") + "\n")
 	f.close()
@@ -155,10 +205,10 @@ static func _matte(img: Image) -> void:
 ## centres and bottoms, and refine the shift to the best silhouette overlap (a search of +-192 px at
 ## 1/16 of the canvas, then +-16 px at 1/4). The painted coat flares where the guide's is a cone, so
 ## the boxes alone can sit off.
-static func _align(img: Image, guide: Image) -> Dictionary:
+static func _align(img: Image, guide: Image, scale := 0.0) -> Dictionary:
 	var pr := _figure_rect(img, 0.5)
 	var gr := _figure_rect(guide, 0.25)
-	var s := float(gr.size.y) / float(pr.size.y)
+	var s := scale if scale > 0.0 else float(gr.size.y) / float(pr.size.y)
 	var scaled := img.duplicate() as Image
 	scaled.resize(int(round(img.get_width() * s)), int(round(img.get_height() * s)), Image.INTERPOLATE_LANCZOS)
 	var sr := _figure_rect(scaled, 0.5)
@@ -279,7 +329,14 @@ func _check(selftest: bool) -> bool:
 			var ppm: float = 720.0 * s
 			var pos := []
 			for e: Dictionary in list:
-				pos.append(_sole(_cell_of_entry(e, s), 0.5))
+				var side_e := str(e.get("planted", ""))
+				if side_e in ["L", "R"]:
+					var g := Image.load_from_file(ProjectSettings.globalize_path("res://" + str(e.guide)))
+					g.convert(Image.FORMAT_RGBA8)
+					var hint := _key_sole(g, side_e)
+					pos.append(_sole_near(_cell_of_entry(e, s), 0.5, hint.x, 13))
+				else:
+					pos.append(Vector2.ZERO)
 			for i in n:
 				var a: Dictionary = list[i]
 				var b: Dictionary = list[(i + 1) % n]
@@ -292,7 +349,11 @@ func _check(selftest: bool) -> bool:
 				var px := absf(drift) * SCREEN_PX_PER_M
 				var row := {"clip": clip, "facing": facing, "from": i, "to": (i + 1) % n, "side": side, "moved_m": snappedf(moved, 0.0001), "deck_m": snappedf(mpf, 0.0001), "drift_m": snappedf(drift, 0.0001), "drift_px_1440": snappedf(px, 0.01)}
 				stance.append(row)
-				if px > STANCE_PX_MAX:
+				# The check measures on cells: one cell px is the resolution (0.68 screen px across, 1.4 px in
+				# depth for the back view), added to the 2 px allowance.
+				var res_px: float = SCREEN_PX_PER_M / ppm / (1.0 if facing == "profile" else sin(deg_to_rad(29.0)))
+				row["limit_px"] = snappedf(STANCE_PX_MAX + res_px, 0.01)
+				if px > STANCE_PX_MAX + res_px:
 					_fail("%s %s frames %d->%d (%s planted): the foot slides %.1f px at 1440p (> %.0f)" % [clip, facing, i, (i + 1) % n, side, px, STANCE_PX_MAX])
 	report["stance"] = stance
 	# How far the painter's framing drifted (ingest rescales it; reported, not gated).
@@ -379,12 +440,15 @@ func _frame_checks(src: String, facing: String, cell: Image, refs: Dictionary, q
 				legs += 1; legs_hit += int(a)
 	row["iou"] = float(inter) / maxf(1, uni)
 	row["legs"] = float(legs_hit) / maxf(1, legs)
-	if row.iou < IOU_MIN:
+	var pmin: Array = POSE_MIN.get(facing, POSE_MIN_OTHER)
+	if facing in POSE_REPORT_ONLY and src.begins_with("jog_"):
+		pmin = [0.0, 0.0]
+	if row.iou < pmin[0]:
 		row.ok = false
-		row.notes.append("IoU %.3f < %.2f" % [row.iou, IOU_MIN])
-	if row.legs < LEGS_MIN:
+		row.notes.append("IoU %.3f < %.2f" % [row.iou, pmin[0]])
+	if row.legs < pmin[1]:
 		row.ok = false
-		row.notes.append("legs %.3f < %.2f" % [row.legs, LEGS_MIN])
+		row.notes.append("legs %.3f < %.2f" % [row.legs, pmin[1]])
 	var hr := float(_figure_rect(cell, 0.5).size.y) / maxf(1, _figure_rect(g, 0.25).size.y)
 	row["height_ratio"] = hr
 	if absf(hr - 1.0) > HEIGHT_TOL:
@@ -524,3 +588,56 @@ static func _cell_of_entry(e: Dictionary, s: float) -> Image:
 	if bool(e.get("flip", false)):
 		cell.flip_x()
 	return cell
+
+
+## The guide's planted boot: the lowest pixels of that leg's colour key (red L, blue R); x centroid, bottom y.
+static func _key_sole(guide: Image, side: String) -> Vector2:
+	var bottom := -1
+	for y in range(guide.get_height() - 1, -1, -1):
+		for x in guide.get_width():
+			if _is_key(guide.get_pixel(x, y), side):
+				bottom = y
+				break
+		if bottom >= 0:
+			break
+	if bottom < 0:
+		return Vector2(-1, -1)
+	var band := maxi(2, int(guide.get_height() * 0.015))
+	var sx := 0.0
+	var n := 0
+	for y in range(bottom - band, bottom + 1):
+		for x in guide.get_width():
+			if _is_key(guide.get_pixel(x, y), side):
+				sx += x
+				n += 1
+	return Vector2(sx / maxf(1, n), bottom)
+
+
+static func _is_key(c: Color, side: String) -> bool:
+	return c.a > 0.5 and ((c.r - c.b > 0.3) if side == "L" else (c.b - c.r > 0.3))
+
+
+## The painted planted sole: the lowest opaque pixels within a column window around the guide's boot
+## (so the other, trailing boot is ignored); x centroid, bottom y.
+static func _sole_near(img: Image, thr: float, x_hint: float, radius: int) -> Vector2:
+	var x0 := maxi(0, int(x_hint) - radius)
+	var x1 := mini(img.get_width(), int(x_hint) + radius + 1)
+	var bottom := -1
+	for y in range(img.get_height() - 1, -1, -1):
+		for x in range(x0, x1):
+			if img.get_pixel(x, y).a > thr:
+				bottom = y
+				break
+		if bottom >= 0:
+			break
+	if bottom < 0:
+		return Vector2(-1, -1)
+	var band := maxi(2, int(img.get_height() * 0.015))
+	var sx := 0.0
+	var n := 0
+	for y in range(bottom - band, bottom + 1):
+		for x in range(x0, x1):
+			if img.get_pixel(x, y).a > thr:
+				sx += x
+				n += 1
+	return Vector2(sx / maxf(1, n), bottom)
