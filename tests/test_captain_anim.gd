@@ -32,6 +32,7 @@ func _initialize() -> void:
 	_stations_chair_lift()
 	_reduced_and_cues()
 	_determinism()
+	_gait_from_clip()
 	_avatar()
 	print("captain-anim: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -229,3 +230,14 @@ func _avatar() -> void:
 
 static func crop_of(av: CaptainAvatar, clip: String, f: String) -> Array:
 	return av.anim.clips[clip].stages["0"][f][0].crop
+
+
+func _gait_from_clip() -> void:
+	var a := CaptainAnim.new()
+	a.use_gait({"cycle_m": 2.5455, "contacts": [[0.0, "L"], [0.5, "R"]]})
+	for k in 60:
+		a.step({"velocity": BOW * 3.5, "view_yaw": BOW_YAW}, DT)
+	check("use_gait: the phase follows the clip's cycle (1 s at 3.5 m/s over 2.5455 m)", absf(a.phase - fposmod(3.5 / 2.5455, 1.0)) < 1e-6, str(a.phase))
+	var b := CaptainAnim.new()
+	b.use_gait({})
+	check("use_gait: an empty clip keeps the default cycle", b.cycle_m == CaptainAnim.DEFAULT_CYCLE_M)

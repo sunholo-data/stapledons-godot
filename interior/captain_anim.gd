@@ -152,3 +152,12 @@ func step(inp: Dictionary, dt: float) -> Dictionary:
 func _set_chair(state: String) -> void:
 	chair = state
 	clip_t = 0.0
+
+
+## Take the gait from a painted clip (manifest anim.clips.jog): its cycle length and contacts, so the
+## phase advances one painted frame per (cycle_m / frames) of ground and the feet stay planted.
+func use_gait(clip: Dictionary) -> void:
+	if float(clip.get("cycle_m", 0.0)) > 0.0:
+		cycle_m = float(clip.cycle_m)
+	if clip.get("contacts", []) is Array and not clip.get("contacts", []).is_empty():
+		contacts = clip.contacts

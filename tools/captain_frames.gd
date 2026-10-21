@@ -1,23 +1,22 @@
 extends SceneTree
 ## R2-CAPTAIN-ANIMATION §D1, §D3, §D4 (AC4, AC5): the painted captain frames.
 ##
-##   --ingest <raw dir> --guides <dir>
+##   --ingest <raw dir> --guides <dir> [--art <res dir>]
 ##                        painted frames at the contract canvas (1024 x 1536, from the art thread)
 ##                        -> matte (alpha remapped: the generator's figure alpha sits at ~0.9-0.99),
 ##                        aligned to their pose guide (scale by figure height, the planted sole on the
 ##                        guide's), downscaled to cells (CELL_SCALE), trimmed to the alpha box, saved
 ##                        as lossless WebP in assets/characters/captain/anim/y0/, the manifest's "anim"
 ##                        section written from art/captain-anim-v1/clips.json.
-##   (default: check)     every manifest frame against its guide mask (art/captain-anim-v1/guides/,
-##                        cell size) and the identity's stills: silhouette IoU, palette class means
+##   (default: check)     every manifest frame against its own guide mask (the entry's guide, cell size) and the identity's stills: silhouette IoU, palette class means
 ##                        (CIE76 dE against the stage-0 still of the nearest facing), figure scale
-##                        consistency within a facing, cell geometry, disk and GPU budgets.
+##                        figure height against the guide, cell geometry, disk and GPU budgets, and AC3: a
+##                        planted foot slides <= STANCE_PX_MAX at 1440p between stance frames.
 ##   --selftest           the check must FAIL on three seeded defects: a recoloured frame (another
 ##                        identity's palette), a frame drawn for the wrong pose (the other facing's
 ##                        guide), a frame at the wrong scale.
 ## Prints "captain-frames: ok" or FAIL lines. Writes --json <file> with every number.
 const DIR := "res://assets/characters/captain"
-const ART := "res://art/captain-anim-v1"
 const CELL_SCALE := 0.1875
 ## The manifest the painted frames are written to and checked in: the pilot's own until Mark accepts it
 ## (then the "anim" section moves into manifest.json and the game shows it).
@@ -34,6 +33,10 @@ const IOU_MIN := 0.55
 const LEGS_MIN := 0.65
 const HEIGHT_TOL := 0.04 ## the shipped figure's height against its guide's (ingest scales to it)
 const DE_MAX := 12.0
+## AC3: a planted foot may slide at most this far on screen per stance step (2560 x 1440, the Bow view, where
+## the 1.754 m captain is 161 px: CameraDirector.figure_px at the spawn).
+const STANCE_PX_MAX := 2.0
+const SCREEN_PX_PER_M := 161.144 / 1.754
 const DISK_STAGE_MAX := 3 * 1024 * 1024
 const GPU_STAGE_MAX := 32 * 1024 * 1024
 const PALETTE_K := 6
@@ -43,7 +46,8 @@ const REF_STILL := {"back": "avatar_captain_y0_back.png", "back_34": "avatar_cap
 
 var report := {"frames": [], "failures": []}
 var json_out := ""
-var guides_dir := "" ## --guides: the full-size pose guides (pinned in art/captain-anim-v1/guides.sha256)
+var guides_dir := "" ## --guides: the full-size pose guides (pinned in <art>/guides.sha256)
+var art_dir := "res://art/captain-anim-v2" ## --art: the clip plan, guides.json and the cell-size guides
 
 
 func _initialize() -> void:
@@ -54,6 +58,7 @@ func _initialize() -> void:
 		match args[i]:
 			"--ingest": mode = "ingest"; raw = args[i + 1]
 			"--guides": guides_dir = args[i + 1]
+			"--art": art_dir = args[i + 1]
 			"--selftest": mode = "selftest"
 			"--json": json_out = args[i + 1]
 	if mode == "ingest":
@@ -70,17 +75,24 @@ func _initialize() -> void:
 	quit(0 if ok else 1)
 
 
-## The clip plan: which painted file is each frame (art/captain-anim-v1/clips.json).
+## The clip plan: which painted file is each frame (<art>/clips.json).
 func _plan() -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string(ART.path_join("clips.json")))
+	return JSON.parse_string(FileAccess.get_file_as_string(art_dir.path_join("clips.json")))
 
 
 func _ingest(raw: String) -> void:
 	var plan := _plan()
 	var out_dir := DIR.path_join("anim/y0")
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir))
+	var gmeta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(art_dir.path_join("guides.json")))
+	var planted := {}
+	for row: Dictionary in gmeta.get("frames", []):
+		planted[str(row.file).get_basename()] = row.get("planted", "")
+	var old: Dictionary = {}
+	if FileAccess.file_exists(DIR.path_join(ANIM_MANIFEST)):
+		old = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join(ANIM_MANIFEST))).get("anim", {})
 	var crops := {}
-	var scales := {}
+	var scales: Dictionary = old.get("ingest_scale", {}).duplicate()
 	for src: String in plan.painted:
 		var img := Image.load_from_file(raw.path_join(src + ".png"))
 		img.convert(Image.FORMAT_RGBA8)
@@ -95,22 +107,32 @@ func _ingest(raw: String) -> void:
 		var trimmed: Image = cell.get_region(box)
 		trimmed.save_webp(ProjectSettings.globalize_path(out_dir.path_join(src + ".webp")), false)
 		crops[src] = [box.position.x, box.position.y, box.size.x, box.size.y]
-	# The anim section.
-	var m := {}
+	# The anim section: painted clips from this plan; "keep" clips carried over from the manifest.
 	var clips := {}
+	var guide_rel := art_dir.trim_prefix("res://").path_join("guides")
 	for clip: String in plan.clips:
 		var c: Dictionary = plan.clips[clip].duplicate(true)
+		if bool(c.get("keep", false)) and old.get("clips", {}).has(clip):
+			var kept: Dictionary = old.clips[clip].duplicate(true)
+			for facing: String in kept.stages["0"]:
+				for e: Dictionary in kept.stages["0"][facing]:
+					if not e.has("guide"):
+						e["guide"] = "art/captain-anim-v1/guides/" + str(e.file).get_file().get_basename() + ".png"
+			clips[clip] = kept
+			continue
 		var facings: Dictionary = c.get("frames", {})
 		c.erase("frames")
+		c.erase("keep")
 		var st := {}
 		for facing: String in facings:
 			var list: Array = []
 			for e: Array in facings[facing]:
-				list.append({"file": "anim/y0/" + str(e[0]) + ".webp", "crop": crops[e[0]], "flip": bool(e[1])})
+				list.append({"file": "anim/y0/" + str(e[0]) + ".webp", "crop": crops[e[0]], "flip": bool(e[1]),
+					"guide": guide_rel.path_join(str(e[0]) + ".png"), "planted": planted.get(str(e[0]), "")})
 			st[facing] = list
 		c["stages"] = {"0": st}
 		clips[clip] = c
-	m["anim"] = {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame (the half cycle). Made by tools/captain_frames.gd --ingest from art/captain-anim-v1/.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales}
+	var m := {"anim": {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales}}
 	var f := FileAccess.open(DIR.path_join(ANIM_MANIFEST), FileAccess.WRITE)
 	f.store_string(JSON.stringify(m, "  ") + "\n")
 	f.close()
@@ -236,9 +258,42 @@ func _check(selftest: bool) -> bool:
 					var cell := Image.create(int(CANVAS.x * s), int(CANVAS.y * s), false, Image.FORMAT_RGBA8)
 					cell.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(crop[0]), int(crop[1])))
 					var src: String = file.get_file().get_basename()
-					var row := _frame_checks(src, facing, cell, refs)
+					var row := _frame_checks(src, facing, cell, refs, false, ("res://" + str(e.guide)) if e.has("guide") else "")
 					by_facing.get_or_add(facing, []).append(row)
 					report.frames.append(row)
+	# AC3: planted feet, measured on the painted frames. In place, a planted foot must move back by
+	# exactly one frame's spacing (cycle_m / frames) from one stance frame to the next; in game the
+	# sprite advances by that spacing, so any difference is the foot sliding on the deck. Measured at
+	# the bottom of the figure (the planted sole), in cell px (720 * cell_scale px/m; the back view's
+	# depth is foreshortened by sin 29 deg), reported in screen px at 2560 x 1440 (the Bow view).
+	var stance := []
+	for clip: String in anim.clips:
+		var c: Dictionary = anim.clips[clip]
+		if str(c.get("kind", "")) != "gait":
+			continue
+		for facing: String in c.stages["0"]:
+			var list: Array = c.stages["0"][facing]
+			var n := list.size()
+			var mpf: float = float(c.get("cycle_m", 0.0)) / n
+			var ppm: float = 720.0 * s
+			var pos := []
+			for e: Dictionary in list:
+				pos.append(_sole(_cell_of_entry(e, s), 0.5))
+			for i in n:
+				var a: Dictionary = list[i]
+				var b: Dictionary = list[(i + 1) % n]
+				var side := str(a.get("planted", ""))
+				if side not in ["L", "R"] or str(b.get("planted", "")) != side:
+					continue
+				var d: Vector2 = pos[(i + 1) % n] - pos[i]
+				var moved: float = (-d.x / ppm) if facing == "profile" else (d.y / (ppm * sin(deg_to_rad(29.0))))
+				var drift := moved - mpf
+				var px := absf(drift) * SCREEN_PX_PER_M
+				var row := {"clip": clip, "facing": facing, "from": i, "to": (i + 1) % n, "side": side, "moved_m": snappedf(moved, 0.0001), "deck_m": snappedf(mpf, 0.0001), "drift_m": snappedf(drift, 0.0001), "drift_px_1440": snappedf(px, 0.01)}
+				stance.append(row)
+				if px > STANCE_PX_MAX:
+					_fail("%s %s frames %d->%d (%s planted): the foot slides %.1f px at 1440p (> %.0f)" % [clip, facing, i, (i + 1) % n, side, px, STANCE_PX_MAX])
+	report["stance"] = stance
 	# How far the painter's framing drifted (ingest rescales it; reported, not gated).
 	report["ingest_scale"] = anim.get("ingest_scale", {})
 	report["disk_bytes"] = disk
@@ -259,31 +314,30 @@ func _check(selftest: bool) -> bool:
 			var c := recol.get_pixel(x, y)
 			if c.a > 0.0:
 				recol.set_pixel(x, y, Color(c.g * 0.6, c.b * 0.9, c.r, c.a)) # a cool, other palette
-	var r1 := _frame_checks(first.src, first.facing, recol, refs, true)
+	var r1 := _frame_checks(first.src, first.facing, recol, refs, true, first.guide)
 	var other := "profile" if first.facing == "back" else "back"
-	var wrong := _frame_checks(_guide_name(first.src, other), other, cell0, refs, true)
+	var wrong := _frame_checks(first.src, other, cell0, refs, true, _other_guide(first.guide, first.facing, other))
 	report["selftest_wrong_pose_iou"] = wrong.get("iou", 0.0)
 	# The pose control for every frame: its IoU against the other facing's guide of the same index.
 	var cross := {}
 	for row: Dictionary in report.frames:
 		var o2 := "profile" if row.facing == "back" else "back"
 		var c2 := _cell_of(anim, row.src)
-		var cr := _frame_checks(_guide_name(row.src, o2), o2, c2, refs, true)
+		var cr := _frame_checks(row.src, o2, c2, refs, true, _other_guide(row.guide, row.facing, o2))
 		cross[row.src] = {"iou": cr.get("iou", 0.0), "legs": cr.get("legs", 0.0)}
 	report["cross_pose_iou"] = cross
 	var small := cell0.duplicate() as Image
 	small.resize(int(cell0.get_width() * 0.7), int(cell0.get_height() * 0.7), Image.INTERPOLATE_BILINEAR)
 	var padded := Image.create(cell0.get_width(), cell0.get_height(), false, Image.FORMAT_RGBA8)
 	padded.blit_rect(small, Rect2i(Vector2i.ZERO, small.get_size()), Vector2i((cell0.get_width() - small.get_width()) / 2, cell0.get_height() - small.get_height()))
-	var r3 := _frame_checks(first.src, first.facing, padded, refs, true)
+	var r3 := _frame_checks(first.src, first.facing, padded, refs, true, first.guide)
 	report["selftest"] = {"recoloured_fails": not r1.ok, "wrong_pose_fails": not wrong.ok, "wrong_scale_fails": not r3.ok, "real_frames_pass": real_ok}
 	print("selftest: recoloured %s, wrong pose %s, wrong scale %s" % ["fails" if not r1.ok else "PASSES", "fails" if not wrong.ok else "PASSES", "fails" if not r3.ok else "PASSES"])
 	return real_ok and not r1.ok and not wrong.ok and not r3.ok
 
 
-static func _guide_name(src: String, facing: String) -> String:
-	var parts := src.split("_")
-	return "%s_%s_%s" % [parts[0], facing, parts[parts.size() - 1]]
+static func _other_guide(guide: String, facing: String, other: String) -> String:
+	return guide.replace("_%s_" % facing, "_%s_" % other)
 
 
 func _cell_of(anim: Dictionary, src: String) -> Image:
@@ -301,9 +355,10 @@ func _cell_of(anim: Dictionary, src: String) -> Image:
 
 
 ## IoU against the guide mask (cell size) and palette class means against the reference still.
-func _frame_checks(src: String, facing: String, cell: Image, refs: Dictionary, quiet := false) -> Dictionary:
-	var gpath := ART.path_join("guides/" + src + ".png")
-	var row := {"src": src, "facing": facing, "ok": true, "notes": []}
+func _frame_checks(src: String, facing: String, cell: Image, refs: Dictionary, quiet := false, gpath := "") -> Dictionary:
+	if gpath == "":
+		gpath = "res://art/captain-anim-v1/guides/" + src + ".png"
+	var row := {"src": src, "facing": facing, "ok": true, "notes": [], "guide": gpath}
 	if not FileAccess.file_exists(gpath):
 		row.ok = false
 		row.notes.append("no guide")
@@ -458,3 +513,13 @@ static func _assign(img: Image, cents: Array) -> Dictionary:
 	for i in c2.size():
 		mean.append(sum[i] / n[i] if n[i] > 0 else Vector3.ZERO)
 	return {"mean": mean, "n": n, "total": total}
+
+
+static func _cell_of_entry(e: Dictionary, s: float) -> Image:
+	var img := Image.load_from_file(ProjectSettings.globalize_path(DIR.path_join(e.file)))
+	img.convert(Image.FORMAT_RGBA8)
+	var cell := Image.create(int(CANVAS.x * s), int(CANVAS.y * s), false, Image.FORMAT_RGBA8)
+	cell.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(e.crop[0]), int(e.crop[1])))
+	if bool(e.get("flip", false)):
+		cell.flip_x()
+	return cell

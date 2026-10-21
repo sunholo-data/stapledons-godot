@@ -1,0 +1,13 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION jog re-pilot (D-109): one full jog cycle of 12 unique painted frames in back and profile, from the v2 stance-gait guides (guides.json: 3.5 m/s, cadence 165, cycle 2.545 m, 0.212 m and 60.6 ms a frame; char_captain_pose_guides_v2.py.txt). The idle frames are the accepted first pilot's (art/captain-anim-v1). All 60 guides pinned in guides.sha256 (gs://stapledons-voyage-assets/captain/<sha256>.png).",
+  "painted": ["jog_profile_00", "jog_profile_01", "jog_profile_02", "jog_profile_03", "jog_profile_04", "jog_profile_05", "jog_profile_06", "jog_profile_07", "jog_profile_08", "jog_profile_09", "jog_profile_10", "jog_profile_11",
+    "jog_back_00", "jog_back_01", "jog_back_02", "jog_back_03", "jog_back_04", "jog_back_05", "jog_back_06", "jog_back_07", "jog_back_08", "jog_back_09", "jog_back_10", "jog_back_11"],
+  "clips": {
+    "jog": {"kind": "gait", "cycle_m": 2.5455, "contacts": [[0.0, "L"], [0.5, "R"]],
+      "frames": {
+        "back": [["jog_back_00", false], ["jog_back_01", false], ["jog_back_02", false], ["jog_back_03", false], ["jog_back_04", false], ["jog_back_05", false], ["jog_back_06", false], ["jog_back_07", false], ["jog_back_08", false], ["jog_back_09", false], ["jog_back_10", false], ["jog_back_11", false]],
+        "profile": [["jog_profile_00", false], ["jog_profile_01", false], ["jog_profile_02", false], ["jog_profile_03", false], ["jog_profile_04", false], ["jog_profile_05", false], ["jog_profile_06", false], ["jog_profile_07", false], ["jog_profile_08", false], ["jog_profile_09", false], ["jog_profile_10", false], ["jog_profile_11", false]]}},
+    "idle": {"kind": "time", "fps": 2.0, "loop": true, "keep": true,
+      "frames": {"back": [["idle_back_00", false]], "profile": [["idle_profile_00", false]]}}
+  }
+}
