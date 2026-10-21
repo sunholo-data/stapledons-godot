@@ -1,0 +1,835 @@
+{
+ "sprint_id": "R2-SIMILAR-S0",
+ "milestone": "S0.1",
+ "round": 1,
+ "commit": "7f608e0f53be63481dcd0073bc8ff25a8acfeed1",
+ "evaluator": "Anthropic Sonnet 5.5",
+ "score": 93,
+ "categories": {
+  "tests_pass": 20,
+  "lint_clean": 10,
+  "acceptance_criteria": 30,
+  "code_quality": 13,
+  "documentation": 10,
+  "design_fidelity": 10
+ },
+ "acceptance_criteria": [
+  {
+   "ac": "AC1",
+   "verdict": "pass",
+   "evidence": "fixture rankings test and Earth-e 0.26386705430076196 pass; independent Python oracle reproduces all 15 rows; digest pinned and checked by make similar-test"
+  },
+  {
+   "ac": "AC2",
+   "verdict": "pass",
+   "evidence": "tie test (both input orders, self by id) passes; drills S12/S13/S14 killed"
+  },
+  {
+   "ac": "AC3",
+   "verdict": "pass",
+   "evidence": "weights/range/guard/units tests pass (45 components, 210 directed distances, every invalid kind); drills D1-D8, S2, S3, S5, S7, S10, S21, S22 killed. Redundant raw radius/massUnit guards are unobservable (equivalent), see findings"
+  },
+  {
+   "ac": "AC4",
+   "verdict": "pass",
+   "evidence": "corpus tests pass incl. finiteSystemOf join at Sol and at the TRAPPIST stop; drill S16 killed"
+  },
+  {
+   "ac": "AC5",
+   "verdict": "pass",
+   "evidence": "make similar-test rc=0: strict VM = interpreter by cmp, 15 non-empty rows, wc -l 16, sha256 pinned; drills K3-K5, K9, P1-P7 killed"
+  },
+  {
+   "ac": "AC6",
+   "verdict": "pass",
+   "evidence": "git diff --exit-code vs merge-base on sim/core.ail rc=0; make strict rc=0"
+  }
+ ],
+ "drills": [
+  {
+   "id": "D1",
+   "file": "sim/data/similar.ail",
+   "mutation": "mass divisor 3.0->2.0",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: e mass uses direct division bit-exact",
+    "finite: positive unique cited features, model and k pinned"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "D2",
+   "file": "sim/data/similar.ail",
+   "mutation": "mass divisor ->0.0",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: Earth mass bit-exact",
+    "components: e mass uses direct division bit-exact",
+    "by name: A before B in both input orders, self excluded by id",
+    "finite: positive unique cited features, model and k pinned"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "D3",
+   "file": "sim/data/similar.ail",
+   "mutation": "duplicate key",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: Earth insolation bit-exact",
+    "finite: positive unique cited features, model and k pinned"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "D4",
+   "file": "sim/data/similar.ail",
+   "mutation": "empty citation",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "finite: positive unique cited features, model and k pinned"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "D5",
+   "file": "sim/data/similar.ail",
+   "mutation": "k 3->2",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "finite: positive unique cited features, model and k pinned",
+    "finite: all 45 components and all 210 directed non-self distances"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "D6",
+   "file": "sim/data/similar.ail",
+   "mutation": "model id bump",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "finite: positive unique cited features, model and k pinned"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "D8",
+   "file": "sim/data/similar.ail",
+   "mutation": "radius divisor 1.0->1.0000001",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "distance: Earth-e pinned spike within 1e-9",
+    "finite: positive unique cited features, model and k pinned"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "K1",
+   "file": "Makefile",
+   "mutation": "Makefile: remove cmp",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "cmp is the only guard for interpreter divergence; with identical outputs removing it is unobservable. K9 (interpreter output forced to differ) is killed by cmp, so the line is live."
+  },
+  {
+   "id": "K2",
+   "file": "Makefile",
+   "mutation": "Makefile: grep -c row count 15->14",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "K3",
+   "file": "Makefile",
+   "mutation": "Makefile: wc -l 16->15",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "K4",
+   "file": "Makefile",
+   "mutation": "Makefile: digest last... first-half nibble",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "K5",
+   "file": "Makefile",
+   "mutation": "Makefile: digest last nibble",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "K6",
+   "file": "Makefile",
+   "mutation": "Makefile: drop --strict-bytecode",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Dropping --strict-bytecode leaves output identical, so nothing detects it; the recipe never proves the strict engine was used."
+  },
+  {
+   "id": "K7",
+   "file": "Makefile",
+   "mutation": "Makefile: both engines interpreter",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Both engines on the interpreter passes: parity gate is vacuous if the flag line is edited."
+  },
+  {
+   "id": "K8",
+   "file": "Makefile",
+   "mutation": "Makefile: args-json 1 (printer ignores n; expect equivalent)",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Printer ignores n; equivalent mutant."
+  },
+  {
+   "id": "K9",
+   "file": "Makefile",
+   "mutation": "Makefile: interpreter output diverges from strict (cmp should kill)",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    ".godot/tmp/similar/rank-strict.txt .godot/tmp/similar/rank-interpreter.txt differ: char 5, line 1",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P1",
+   "file": "sim/similar_test.ail",
+   "mutation": "printer: drop space after semicolon",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "0b0aecee3b1eec90e300de3ba31f22d7fdbab87245363c22c89a988b0ce48bb7  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P2",
+   "file": "sim/similar_test.ail",
+   "mutation": "printer: arrow",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "f75b53a0eb2eaa3f976fa8bf474d0dab9f11b31c9ef1ebce52832bf8a4938a8e  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P3",
+   "file": "sim/similar_test.ail",
+   "mutation": "printer: drop newline",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P4",
+   "file": "sim/similar_test.ail",
+   "mutation": "printer: reversed rows",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "85cde5c3a3c8dec029fb831505d0785d075846830a83c83f17d0ea50069ded02  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P5",
+   "file": "sim/similar_test.ail",
+   "mutation": "printer: id for name",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "64251749fa1e2b9b4a058c9ab5289ba8aaaa661ca21d961c590d638513ccc8e3  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P6",
+   "file": "sim/similar.ail",
+   "mutation": "corpus order swapped (digest side)",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "edc6d6b30fb36397f3f4d99a1562399de6df148dcbc74d1754d2882a68e44c73  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "P7",
+   "file": "sim/similar.ail",
+   "mutation": "reciprocal multiplication (digest side)",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "02b5d85b2a0a9b1de39fca269eb892888ad4d7c07b3123d9c45aa2634588ea19  .godot/tmp/similar/rank-strict.txt",
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S1",
+   "file": "sim/similar.ail",
+   "mutation": "reciprocal multiplication",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "components: e mass uses direct division bit-exact"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S10",
+   "file": "sim/similar.ail",
+   "mutation": "normalize: drop post-normalisation valid",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "normalized underflow overflow and invalid mass units excluded with ids"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S11",
+   "file": "sim/similar.ail",
+   "mutation": "no self-exclusion",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "by name: A before B in both input orders, self excluded by id",
+    "finite: all 45 components and all 210 directed non-self distances",
+    "rank and vector reject invalid normalized inputs before logs"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S12",
+   "file": "sim/similar.ail",
+   "mutation": "self-exclusion by name instead of id",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "by name: A before B in both input orders, self excluded by id"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S13",
+   "file": "sim/similar.ail",
+   "mutation": "tie comparator reversed",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "by name: A before B in both input orders, self excluded by id"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S14",
+   "file": "sim/similar.ail",
+   "mutation": "no tie-break (input order)",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "by name: A before B in both input orders, self excluded by id"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S15",
+   "file": "sim/similar.ail",
+   "mutation": "distance order reversed",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S16",
+   "file": "sim/similar.ail",
+   "mutation": "corpus order swapped",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "exactly 15 unique ids/names and only confirmed planet ids"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S17",
+   "file": "sim/similar.ail",
+   "mutation": "take 4 not k",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "finite: all 45 components and all 210 directed non-self distances"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S18",
+   "file": "sim/similar.ail",
+   "mutation": "Earth radius 6378.1 constant",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "components: Earth radius bit-exact",
+    "and insolation: solar flux units and km normalization through Earth row"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S19",
+   "file": "sim/similar.ail",
+   "mutation": "Sol mass unit 1",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: Earth mass bit-exact",
+    "and insolation: solar flux units and km normalization through Earth row"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S2",
+   "file": "sim/similar.ail",
+   "mutation": "positive: drop +inf bound",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "each raw zero negative missing infinity and NaN excluded with its id",
+    "normalized underflow overflow and invalid mass units excluded with ids",
+    "rank and vector reject invalid normalized inputs before logs"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S20",
+   "file": "sim/similar.ail",
+   "mutation": "insolation uses radius as a",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: Earth insolation bit-exact",
+    "normalized underflow overflow and invalid mass units excluded with ids",
+    "and insolation: solar flux units and km normalization through Earth row"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S21",
+   "file": "sim/similar.ail",
+   "mutation": "vector: drop guard",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rank and vector reject invalid normalized inputs before logs"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S22",
+   "file": "sim/similar.ail",
+   "mutation": "rank: drop valid filter",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rank and vector reject invalid normalized inputs before logs"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S23",
+   "file": "sim/similar.ail",
+   "mutation": "distances: drop filter (expect equivalent via rank)",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "distances() is exported, but only tested with valid corpus input; rank filters first, so unguarded paths are untested."
+  },
+  {
+   "id": "S24",
+   "file": "sim/similar.ail",
+   "mutation": "distances: drop query guard",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Same: the exported distances() query guard has no test with an invalid q."
+  },
+  {
+   "id": "S25",
+   "file": "sim/similar.ail",
+   "mutation": "insolation component uses mass",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: Earth insolation bit-exact"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S26",
+   "file": "sim/similar.ail",
+   "mutation": "excluded id order reversed",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "missing source lookup is zero and excluded with id",
+    "normalized underflow overflow and invalid mass units excluded with ids"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S27",
+   "file": "sim/similar.ail",
+   "mutation": "Sol a = radius",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: Earth insolation bit-exact",
+    "and insolation: solar flux units and km normalization through Earth row"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S28",
+   "file": "sim/similar.ail",
+   "mutation": "TRAPPIST mass from radius",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "components: e mass uses direct division bit-exact",
+    "and insolation: solar flux units and km normalization through Earth row"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S29",
+   "file": "sim/similar.ail",
+   "mutation": "TRAPPIST luminosity x2",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "rankings: Earth, e, Jupiter and mutual Uranus/Neptune",
+    "distance: Earth-e pinned spike within 1e-9",
+    "and insolation: solar flux units and km normalization through Earth row"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S3",
+   "file": "sim/similar.ail",
+   "mutation": "positive: > to >=",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "each raw zero negative missing infinity and NaN excluded with its id",
+    "missing source lookup is zero and excluded with id",
+    "normalized underflow overflow and invalid mass units excluded with ids",
+    "rank and vector reject invalid normalized inputs before logs"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S4",
+   "file": "sim/similar.ail",
+   "mutation": "positive: drop NaN self-equality (expect equivalent)",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Equivalent: x > 0.0 already false for NaN."
+  },
+  {
+   "id": "S5",
+   "file": "sim/similar.ail",
+   "mutation": "valid: drop sEarth check",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "normalized underflow overflow and invalid mass units excluded with ids",
+    "rank and vector reject invalid normalized inputs before logs"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S6",
+   "file": "sim/similar.ail",
+   "mutation": "normalize: drop raw radius check",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Redundant with post-normalisation valid(w): zero/negative radius yields non-positive radiusEarth."
+  },
+  {
+   "id": "S7",
+   "file": "sim/similar.ail",
+   "mutation": "normalize: drop raw a check",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "killed",
+   "failing": [
+    "each raw zero negative missing infinity and NaN excluded with its id"
+   ],
+   "restore_sha_ok": true
+  },
+  {
+   "id": "S8",
+   "file": "sim/similar.ail",
+   "mutation": "normalize: drop massUnit check",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "Redundant with post-normalisation valid(w): massUnit 0 gives inf mass, NaN gives NaN mass."
+  },
+  {
+   "id": "S9",
+   "file": "sim/similar.ail",
+   "mutation": "normalize: drop earth.radiusKm check",
+   "changed": true,
+   "test_run": "similar_test.ail minus the 2m20s corpus-join test (similar_drill_test.ail)",
+   "result": "survived",
+   "failing": null,
+   "restore_sha_ok": true,
+   "note": "earth.radiusKm comes from cited data, always positive; defensive."
+  },
+  {
+   "id": "K2",
+   "file": "Makefile",
+   "mutation": "grep -c row count 15->14",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "make: *** [similar-test] Error 1"
+   ],
+   "restore_sha_ok": true,
+   "note": "first attempt matched 4 sites (void); rerun with rank-strict.txt\")\" = 15 anchor"
+  },
+  {
+   "id": "K9",
+   "file": "Makefile",
+   "mutation": "interpreter output forced to differ via sed (cmp control)",
+   "changed": true,
+   "test_run": "make similar-test",
+   "result": "killed",
+   "failing": [
+    "cmp: rank-strict.txt rank-interpreter.txt differ"
+   ],
+   "restore_sha_ok": true
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "severity": "non-blocking",
+   "description": "Parity gate is vacuous if the engine flags are edited: dropping --strict-bytecode (K6) or the whole flags line (K7) passes, since outputs are identical and the sha check reads only the strict file.",
+   "fix": "Add a negative control to similar-test: assert the strict run fails or differs on a known VM-unsupported probe, or grep the recipe for --strict-bytecode, or reuse the existing strict harness conventions."
+  },
+  {
+   "id": "F2",
+   "severity": "non-blocking",
+   "description": "similar-test is in test but not in ci-fast, though ci-fast carries strict/parity and the recipe costs ~30 s and needs no GPU or sky assets.",
+   "fix": "Add similar-test to ci-fast (the recipe uses zsh, as strict already does)."
+  },
+  {
+   "id": "F3",
+   "severity": "non-blocking",
+   "description": "Exported distances() is only tested on the valid corpus: its own guards (query validity, filter(valid, xs)) survive drills S23/S24 because rank() filters first. Raw radius and massUnit checks in normalize are likewise redundant with the post-normalisation valid(w) (S6, S8).",
+   "fix": "Add a direct distances(invalid, ws) and distances(q, ws ++ bad) assertion, or drop the redundant guards."
+  },
+  {
+   "id": "F4",
+   "severity": "non-blocking",
+   "description": "The corpus-join test (finiteSystemOf at the TRAPPIST stop) takes 2m20s of the 2m47s file runtime on the loaded rig, slowing every package run and drills.",
+   "fix": "Accept for now; S0.2 may reuse a cheaper fixture."
+  },
+  {
+   "id": "F5",
+   "severity": "non-blocking",
+   "description": "ailang#1914 handling is accurate: a named-test body containing :: fails to parse (reproduced, PAR_NO_PREFIX_PARSE), the same pattern in pure funcs works. Comments sit above five tests that were rewritten; the ties test and others are unannotated but use no ::.",
+   "fix": "None required; remove the comments when #1914 is fixed."
+  },
+  {
+   "id": "F6",
+   "severity": "non-blocking",
+   "description": "Earth insolation is 1/1.00000018^2 (0.99999964), not exactly 1, because the cited Standish a is the Earth-Moon barycentre mean element. The tests pin this deliberately; it is a documented design choice.",
+   "fix": "None."
+  }
+ ],
+ "commands": [
+  {
+   "cmd": "make runtime",
+   "result": "rc=0"
+  },
+  {
+   "cmd": "runtime/bin/ailang check --package sim",
+   "result": "rc=0 (121 files checked, all passed; pre-existing \"compiled but not listed in exports\" notes for other modules)"
+  },
+  {
+   "cmd": "(cd sim && ../runtime/bin/ailang test similar_test.ail)",
+   "result": "rc=0, 16/16 passed (2m47s; corpus-join test alone 2m20s)"
+  },
+  {
+   "cmd": "(cd sim && ../runtime/bin/ailang test --package .)",
+   "result": "rc=0, 531 passed 0 failed (57m49s, loaded rig)"
+  },
+  {
+   "cmd": "make similar-test AILANG=runtime/bin/ailang",
+   "result": "rc=0, sha256 4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b, ~30s"
+  },
+  {
+   "cmd": "make strict AILANG=runtime/bin/ailang",
+   "result": "rc=0"
+  },
+  {
+   "cmd": "make python-guard AILANG=runtime/bin/ailang",
+   "result": "rc=0 (18 allowlisted, 0 awaiting port)"
+  },
+  {
+   "cmd": "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
+   "result": "rc=0; merge-base e6b273971c34f31e38ba307a36dda8092c0f73ec"
+  },
+  {
+   "cmd": "python3 -I /tmp/stap_i42_oracle/oracle.py rank-strict.txt (independent Python oracle from the cited catalogue numbers)",
+   "result": "15 rows, 0 mismatches (names, order, distances to 1e-12)"
+  },
+  {
+   "cmd": "make -n test | grep similar",
+   "result": "similar-test is a prerequisite of test; not in ci-fast"
+  }
+ ],
+ "claude_md": {
+  "pure_core": "untouched",
+  "physics_in_package": "S from package starIlluminanceAt; no re-derived maths",
+  "precision": "direct division, finite checks",
+  "determinism": "no state; digest stable across both engines",
+  "python": "no tracked Python added; guard rc=0"
+ },
+ "blocking_findings": [],
+ "unmeasured": [],
+ "pass": true
+}

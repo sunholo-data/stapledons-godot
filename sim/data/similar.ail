@@ -1,0 +1,16 @@
+module stapledons/sim/data/similar
+
+-- R2-SIMILAR-S0 S0.1. Design choices, not physical laws. Changing a divisor
+-- requires a model bump and a newly approved ranking fixture/digest.
+export type Feature = {key: string, divisor: float, cite: string}
+export pure func similarModel() -> string = "s0-v1"
+export pure func neighbours() -> int = 3
+export pure func features() -> [Feature] = [
+  {key: "ln_radius", divisor: 1.0, cite: "stapledons-design/features/next/semantic-memory.md S0"},
+  {key: "ln_mass", divisor: 3.0, cite: "stapledons-design/features/next/semantic-memory.md S0"},
+  {key: "ln_insolation", divisor: 2.0, cite: "stapledons-design/features/next/semantic-memory.md S0"}
+]
+-- Catalogue-fixed, independent of ship position; no moons, stars, candidates
+-- or minimum-mass planets. Source field citations remain beside their data.
+export pure func corpusRule() -> string =
+  "Sol planets() order (data/sol.ail: Archinal 2018 radius, Park 2021 GM, Standish 1992 a), then trappistPlanetIds() order (data/trappist1.ail: Agol 2021 radius/mass/a; data/stars.ail: Agol 2021 luminosity); 15 confirmed planets only; semantic-memory.md S0"

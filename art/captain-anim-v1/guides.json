@@ -1,0 +1,1221 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION pose guides (never shown in game): colour-keyed silhouettes on the avatar canvas contract",
+  "canvas_px": [
+    1024,
+    1536
+  ],
+  "foot_anchor_px": [
+    512,
+    1440
+  ],
+  "px_per_m_standing": 720,
+  "elevation_deg": 29,
+  "projection": "orthographic",
+  "keys": {
+    "L_leg": [
+      0.85,
+      0.12,
+      0.1
+    ],
+    "R_leg": [
+      0.1,
+      0.25,
+      0.85
+    ],
+    "L_arm": [
+      0.95,
+      0.55,
+      0.1
+    ],
+    "R_arm": [
+      0.1,
+      0.75,
+      0.8
+    ],
+    "coat": [
+      0.62,
+      0.62,
+      0.62
+    ],
+    "yoke": [
+      0.8,
+      0.62,
+      0.25
+    ],
+    "skin": [
+      0.78,
+      0.58,
+      0.45
+    ],
+    "hair": [
+      0.12,
+      0.1,
+      0.12
+    ]
+  },
+  "coat_skirt_alpha": 0.5,
+  "facings": {
+    "back": "moving away (up the screen)",
+    "back_34": "away and right",
+    "profile": "right",
+    "front_34": "toward and right",
+    "front": "toward (down the screen)",
+    "mirror": "the left-moving facings are these, flipped"
+  },
+  "clips": {
+    "jog": {
+      "speed_mps": 3.5,
+      "cycle_s": 0.6666666666666666,
+      "cycle_m": 2.3333,
+      "frames": 8,
+      "m_per_frame": 0.2917
+    },
+    "idle": {
+      "cycle_s": 2.0,
+      "frames": 4,
+      "fps": 2.0
+    }
+  },
+  "frames": [
+    {
+      "file": "jog_back_00.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 0,
+      "action": "jog",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        },
+        "R": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_01.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 1,
+      "action": "jog",
+      "action_frame": 3.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0644,
+          "y_m": 0.0419
+        },
+        "R": {
+          "z_m": 0.0757,
+          "y_m": 0.3233
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_02.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 2,
+      "action": "jog",
+      "action_frame": 6.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        },
+        "R": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_03.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 3,
+      "action": "jog",
+      "action_frame": 8.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0673,
+          "y_m": -0.3099
+        },
+        "R": {
+          "z_m": 0.1266,
+          "y_m": 0.4276
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_04.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 4,
+      "action": "jog",
+      "action_frame": 11.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        },
+        "R": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_05.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 5,
+      "action": "jog",
+      "action_frame": 13.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0763,
+          "y_m": 0.3248
+        },
+        "R": {
+          "z_m": 0.0644,
+          "y_m": 0.0404
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_06.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 6,
+      "action": "jog",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        },
+        "R": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_07.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 7,
+      "action": "jog",
+      "action_frame": 18.5,
+      "soles": {
+        "L": {
+          "z_m": 0.1262,
+          "y_m": 0.4268
+        },
+        "R": {
+          "z_m": 0.0668,
+          "y_m": -0.3084
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_34_00.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 0,
+      "action": "jog",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        },
+        "R": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_34_01.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 1,
+      "action": "jog",
+      "action_frame": 3.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0644,
+          "y_m": 0.0419
+        },
+        "R": {
+          "z_m": 0.0757,
+          "y_m": 0.3233
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_02.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 2,
+      "action": "jog",
+      "action_frame": 6.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        },
+        "R": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_03.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 3,
+      "action": "jog",
+      "action_frame": 8.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0673,
+          "y_m": -0.3099
+        },
+        "R": {
+          "z_m": 0.1266,
+          "y_m": 0.4276
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_04.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 4,
+      "action": "jog",
+      "action_frame": 11.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        },
+        "R": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_05.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 5,
+      "action": "jog",
+      "action_frame": 13.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0763,
+          "y_m": 0.3248
+        },
+        "R": {
+          "z_m": 0.0644,
+          "y_m": 0.0404
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_34_06.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 6,
+      "action": "jog",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        },
+        "R": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_34_07.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 7,
+      "action": "jog",
+      "action_frame": 18.5,
+      "soles": {
+        "L": {
+          "z_m": 0.1262,
+          "y_m": 0.4268
+        },
+        "R": {
+          "z_m": 0.0668,
+          "y_m": -0.3084
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_profile_00.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 0,
+      "action": "jog",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        },
+        "R": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_profile_01.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 1,
+      "action": "jog",
+      "action_frame": 3.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0644,
+          "y_m": 0.0419
+        },
+        "R": {
+          "z_m": 0.0757,
+          "y_m": 0.3233
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_02.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 2,
+      "action": "jog",
+      "action_frame": 6.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        },
+        "R": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_03.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 3,
+      "action": "jog",
+      "action_frame": 8.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0673,
+          "y_m": -0.3099
+        },
+        "R": {
+          "z_m": 0.1266,
+          "y_m": 0.4276
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_04.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 4,
+      "action": "jog",
+      "action_frame": 11.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        },
+        "R": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_05.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 5,
+      "action": "jog",
+      "action_frame": 13.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0763,
+          "y_m": 0.3248
+        },
+        "R": {
+          "z_m": 0.0644,
+          "y_m": 0.0404
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_profile_06.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 6,
+      "action": "jog",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        },
+        "R": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_profile_07.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 7,
+      "action": "jog",
+      "action_frame": 18.5,
+      "soles": {
+        "L": {
+          "z_m": 0.1262,
+          "y_m": 0.4268
+        },
+        "R": {
+          "z_m": 0.0668,
+          "y_m": -0.3084
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_34_00.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 0,
+      "action": "jog",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        },
+        "R": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_34_01.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 1,
+      "action": "jog",
+      "action_frame": 3.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0644,
+          "y_m": 0.0419
+        },
+        "R": {
+          "z_m": 0.0757,
+          "y_m": 0.3233
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_02.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 2,
+      "action": "jog",
+      "action_frame": 6.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        },
+        "R": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_03.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 3,
+      "action": "jog",
+      "action_frame": 8.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0673,
+          "y_m": -0.3099
+        },
+        "R": {
+          "z_m": 0.1266,
+          "y_m": 0.4276
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_04.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 4,
+      "action": "jog",
+      "action_frame": 11.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        },
+        "R": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_05.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 5,
+      "action": "jog",
+      "action_frame": 13.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0763,
+          "y_m": 0.3248
+        },
+        "R": {
+          "z_m": 0.0644,
+          "y_m": 0.0404
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_34_06.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 6,
+      "action": "jog",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        },
+        "R": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_34_07.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 7,
+      "action": "jog",
+      "action_frame": 18.5,
+      "soles": {
+        "L": {
+          "z_m": 0.1262,
+          "y_m": 0.4268
+        },
+        "R": {
+          "z_m": 0.0668,
+          "y_m": -0.3084
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_00.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 0,
+      "action": "jog",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        },
+        "R": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_01.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 1,
+      "action": "jog",
+      "action_frame": 3.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0644,
+          "y_m": 0.0419
+        },
+        "R": {
+          "z_m": 0.0757,
+          "y_m": 0.3233
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_02.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 2,
+      "action": "jog",
+      "action_frame": 6.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        },
+        "R": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_03.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 3,
+      "action": "jog",
+      "action_frame": 8.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0673,
+          "y_m": -0.3099
+        },
+        "R": {
+          "z_m": 0.1266,
+          "y_m": 0.4276
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_04.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 4,
+      "action": "jog",
+      "action_frame": 11.0,
+      "soles": {
+        "L": {
+          "z_m": 0.0192,
+          "y_m": 0.0096
+        },
+        "R": {
+          "z_m": 0.146,
+          "y_m": 0.3355
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_05.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 5,
+      "action": "jog",
+      "action_frame": 13.5,
+      "soles": {
+        "L": {
+          "z_m": 0.0763,
+          "y_m": 0.3248
+        },
+        "R": {
+          "z_m": 0.0644,
+          "y_m": 0.0404
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_06.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 6,
+      "action": "jog",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": 0.1247,
+          "y_m": 0.4415
+        },
+        "R": {
+          "z_m": 0.0762,
+          "y_m": -0.3467
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_07.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 7,
+      "action": "jog",
+      "action_frame": 18.5,
+      "soles": {
+        "L": {
+          "z_m": 0.1262,
+          "y_m": 0.4268
+        },
+        "R": {
+          "z_m": 0.0668,
+          "y_m": -0.3084
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_00.png",
+      "clip": "idle",
+      "facing": "back",
+      "index": 0,
+      "action": "idle",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_01.png",
+      "clip": "idle",
+      "facing": "back",
+      "index": 1,
+      "action": "idle",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_02.png",
+      "clip": "idle",
+      "facing": "back",
+      "index": 2,
+      "action": "idle",
+      "action_frame": 31.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_03.png",
+      "clip": "idle",
+      "facing": "back",
+      "index": 3,
+      "action": "idle",
+      "action_frame": 46.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_34_00.png",
+      "clip": "idle",
+      "facing": "back_34",
+      "index": 0,
+      "action": "idle",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_34_01.png",
+      "clip": "idle",
+      "facing": "back_34",
+      "index": 1,
+      "action": "idle",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_34_02.png",
+      "clip": "idle",
+      "facing": "back_34",
+      "index": 2,
+      "action": "idle",
+      "action_frame": 31.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_back_34_03.png",
+      "clip": "idle",
+      "facing": "back_34",
+      "index": 3,
+      "action": "idle",
+      "action_frame": 46.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_profile_00.png",
+      "clip": "idle",
+      "facing": "profile",
+      "index": 0,
+      "action": "idle",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_profile_01.png",
+      "clip": "idle",
+      "facing": "profile",
+      "index": 1,
+      "action": "idle",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_profile_02.png",
+      "clip": "idle",
+      "facing": "profile",
+      "index": 2,
+      "action": "idle",
+      "action_frame": 31.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_profile_03.png",
+      "clip": "idle",
+      "facing": "profile",
+      "index": 3,
+      "action": "idle",
+      "action_frame": 46.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_34_00.png",
+      "clip": "idle",
+      "facing": "front_34",
+      "index": 0,
+      "action": "idle",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_34_01.png",
+      "clip": "idle",
+      "facing": "front_34",
+      "index": 1,
+      "action": "idle",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_34_02.png",
+      "clip": "idle",
+      "facing": "front_34",
+      "index": 2,
+      "action": "idle",
+      "action_frame": 31.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_34_03.png",
+      "clip": "idle",
+      "facing": "front_34",
+      "index": 3,
+      "action": "idle",
+      "action_frame": 46.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_00.png",
+      "clip": "idle",
+      "facing": "front",
+      "index": 0,
+      "action": "idle",
+      "action_frame": 1.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_01.png",
+      "clip": "idle",
+      "facing": "front",
+      "index": 1,
+      "action": "idle",
+      "action_frame": 16.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_02.png",
+      "clip": "idle",
+      "facing": "front",
+      "index": 2,
+      "action": "idle",
+      "action_frame": 31.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "idle_front_03.png",
+      "clip": "idle",
+      "facing": "front",
+      "index": 3,
+      "action": "idle",
+      "action_frame": 46.0,
+      "soles": {
+        "L": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        },
+        "R": {
+          "z_m": -0.005,
+          "y_m": -0.035
+        }
+      },
+      "planted": "R"
+    }
+  ]
+}

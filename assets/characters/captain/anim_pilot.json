@@ -1,0 +1,235 @@
+{
+  "anim": {
+    "about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame (the half cycle). Made by tools/captain_frames.gd --ingest from art/captain-anim-v1/.",
+    "cell_scale": 0.1875,
+    "clips": {
+      "idle": {
+        "fps": 2.0,
+        "kind": "time",
+        "loop": true,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  50,
+                  28,
+                  96,
+                  247
+                ],
+                "file": "anim/y0/idle_back_00.webp",
+                "flip": false
+              }
+            ],
+            "profile": [
+              {
+                "crop": [
+                  42,
+                  27,
+                  95,
+                  255
+                ],
+                "file": "anim/y0/idle_profile_00.webp",
+                "flip": false
+              }
+            ]
+          }
+        }
+      },
+      "jog": {
+        "contacts": [
+          [
+            0.0,
+            "R"
+          ],
+          [
+            0.5,
+            "L"
+          ]
+        ],
+        "cycle_m": 2.3333,
+        "kind": "gait",
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  51,
+                  35,
+                  110,
+                  244
+                ],
+                "file": "anim/y0/jog_back_00.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  44,
+                  33,
+                  123,
+                  254
+                ],
+                "file": "anim/y0/jog_back_01.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  38,
+                  35,
+                  127,
+                  253
+                ],
+                "file": "anim/y0/jog_back_02.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  43,
+                  33,
+                  127,
+                  253
+                ],
+                "file": "anim/y0/jog_back_03.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  51,
+                  35,
+                  110,
+                  244
+                ],
+                "file": "anim/y0/jog_back_00.webp",
+                "flip": true
+              },
+              {
+                "crop": [
+                  44,
+                  33,
+                  123,
+                  254
+                ],
+                "file": "anim/y0/jog_back_01.webp",
+                "flip": true
+              },
+              {
+                "crop": [
+                  38,
+                  35,
+                  127,
+                  253
+                ],
+                "file": "anim/y0/jog_back_02.webp",
+                "flip": true
+              },
+              {
+                "crop": [
+                  43,
+                  33,
+                  127,
+                  253
+                ],
+                "file": "anim/y0/jog_back_03.webp",
+                "flip": true
+              }
+            ],
+            "profile": [
+              {
+                "crop": [
+                  20,
+                  32,
+                  124,
+                  254
+                ],
+                "file": "anim/y0/jog_profile_00.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  13,
+                  37,
+                  140,
+                  245
+                ],
+                "file": "anim/y0/jog_profile_01.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  2,
+                  34,
+                  174,
+                  236
+                ],
+                "file": "anim/y0/jog_profile_02.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  12,
+                  37,
+                  161,
+                  237
+                ],
+                "file": "anim/y0/jog_profile_03.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  20,
+                  32,
+                  124,
+                  254
+                ],
+                "file": "anim/y0/jog_profile_00.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  13,
+                  37,
+                  140,
+                  245
+                ],
+                "file": "anim/y0/jog_profile_01.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  2,
+                  34,
+                  174,
+                  236
+                ],
+                "file": "anim/y0/jog_profile_02.webp",
+                "flip": false
+              },
+              {
+                "crop": [
+                  12,
+                  37,
+                  161,
+                  237
+                ],
+                "file": "anim/y0/jog_profile_03.webp",
+                "flip": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    "ingest_scale": {
+      "idle_back_00": 1.00551615445232,
+      "idle_profile_00": 0.982169390787519,
+      "jog_back_00": 0.966335118592196,
+      "jog_back_01": 0.954248366013072,
+      "jog_back_02": 1.01153846153846,
+      "jog_back_03": 0.987933634992459,
+      "jog_profile_00": 0.945441493180187,
+      "jog_profile_01": 0.874827109266943,
+      "jog_profile_02": 0.915726109857035,
+      "jog_profile_03": 0.90014684287812
+    }
+  }
+}

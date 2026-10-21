@@ -106,7 +106,7 @@ func test_demo() -> void:
 	demo.consoles.use("navigation", "open")
 	var entry: Button = demo.navigation_window.find_child("SgrAEntry", true, false) if demo.navigation_window != null else null
 	check("navigation menu has 'Sgr A* (black hole)'", entry != null and entry.text.begins_with("Sgr A* (black hole)"))
-	check("a normal navigation session has no gr (protocol 2.8, lism-1: R1-ISM-DUST)", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.HOME_TIERS_MINOR and not demo.journey_sim.world.has("gr"))
+	check("a normal navigation session has no gr (protocol 2.8, lism-1: R1-ISM-DUST)", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.SURFACE_MINOR and not demo.journey_sim.world.has("gr"))
 	if entry == null:
 		return
 	entry.pressed.emit()
@@ -129,7 +129,9 @@ func test_demo() -> void:
 	demo.star_light.energy = 2.0
 	demo.star_light.update(demo.lighting, demo.sky, 0.0, true)
 	var key: DirectionalLight3D = demo.lighting.key
-	check("no star: star light off, ship key at its moody base", demo.star_light.source_id == "" and demo.star_light.light.light_energy == 0.0 and absf(key.light_energy - float(demo.lighting.key_base)) < 1e-9 and key.shadow_enabled)
+	# R2-BRIDGE-STYLE S1 (D-100): on the bridge the broad key is retired and the spire is the ship's key.
+	var spire: OmniLight3D = demo.lighting.spire
+	check("no star: star light off, the bridge keyed by the spire at its base with the shadow (the broad key retired)", demo.star_light.source_id == "" and demo.star_light.light.light_energy == 0.0 and demo.lighting.bridge and key.light_energy == 0.0 and absf(spire.light_energy - float(demo.lighting.spire_base)) < 1e-9 and spire.shadow_enabled)
 	check("star-light HUD line says ship lights only", demo.star_light.hud_line().contains("ship lights only"))
 	# the scripted stops
 	var stops := [[10.0, "hover"], [5.0, "hover"], [3.0, "hover"], [3.0, "orbit"], [3.0, "hover"]]
@@ -171,7 +173,7 @@ func test_demo() -> void:
 	demo._process(0.7) # the gravity card's 0.6 s fade
 	check("the HUD drops the black-hole lines, GR off", not demo.ship_hud.all_text().contains("Sgr A*") and not demo.ship_hud.all_text().contains("HOVERING"))
 	demo.open_navigation()
-	check("navigation after the visit is a normal 2.8 session without gr", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.HOME_TIERS_MINOR and not demo.journey_sim.world.has("gr") and not demo.sky.gr_lens.active)
+	check("navigation after the visit is a normal 2.8 session without gr", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.SURFACE_MINOR and not demo.journey_sim.world.has("gr") and not demo.sky.gr_lens.active)
 	demo.close_navigation()
 	# --scenario through setup options (make run-bh)
 	demo.queue_free()
