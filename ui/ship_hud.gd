@@ -30,6 +30,8 @@ const CLOCK_SIZE := 17
 ## §A2 priority, high to low (the I card is ShipStarIdentification's own panel and the
 ## cruise interlude keeps its crossing review (R2-INTERLUDE I3); both are listed so the order is complete).
 ## dev.31: the arrival card leads, so its Dismiss button is never folded into a chip.
+## R2-BRIDGE-STYLE S4: the cards on the HUD theme so far (ST2: the arrival card; ST4: every card).
+const THEMED_CARDS := ["arrival"]
 const PRIORITY := ["arrival", "identify", "medium_here", "refusal", "gravity", "notice", "medium_notice", "transit", "tour", "interlude", "unlock"]
 ## The transit card's compact rows (M4.3a JourneyHud.ROWS by field); the full set is in Tab.
 const TRANSIT_COMPACT := ["ship.phase", "consequence.gap_years", "consequence.distance_remaining", "consequence.earth_years_remaining", "consequence.load_suns", "ship.ism.glow_w_m2", "client.warp"]
@@ -105,16 +107,20 @@ static func _shadow(l: Control) -> void:
 	l.add_theme_constant_override("shadow_offset_y", 1)
 
 
-func _caption(l: Label, text: String) -> Label:
+func _caption(l: Label, text: String, themed := false) -> Label:
 	l.text = text
 	l.add_theme_font_size_override("font_size", 11)
-	l.add_theme_color_override("font_color", Color(0.62, 0.68, 0.8))
+	if themed: l.theme_type_variation = "HUDCaption" # R2-BRIDGE-STYLE: the theme's caption colour and face
+	else: l.add_theme_color_override("font_color", Color(0.62, 0.68, 0.8))
 	return l
 
 
 func _build_strip() -> void:
 	strip.name = "StatusStrip"
-	strip.add_theme_stylebox_override("panel", _panel_style(0.72))
+	# R2-BRIDGE-STYLE S4 (ST2): the status strip is the first panel on the HUD theme (the ink panel,
+	# the palette, Josefin Sans and Nunito); the rest of the HUD follows at ST4.
+	strip.theme = StapledonTheme.theme()
+	strip.theme_type_variation = "HUDPanel"
 	strip.mouse_filter = Control.MOUSE_FILTER_PASS
 	add_child(strip)
 	var rows := VBoxContainer.new()
@@ -124,21 +130,22 @@ func _build_strip() -> void:
 	row.add_theme_constant_override("separation", 10)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	rows.add_child(row)
-	row.add_child(_caption(ship_cap, "Ship"))
+	row.add_child(_caption(ship_cap, "Ship", true))
 	row.add_child(ship_clock)
-	row.add_child(_caption(home_cap, "Earth"))
+	row.add_child(_caption(home_cap, "Earth", true))
 	row.add_child(home_clock)
 	for c in [ship_clock, home_clock]:
 		c.add_theme_font_size_override("font_size", CLOCK_SIZE)
-		c.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
+		c.theme_type_variation = "HUDClock"
 	view_tag.name = "ViewTag"
 	view_tag.flat = true
 	view_tag.add_theme_font_size_override("font_size", 12)
 	view_tag.tooltip_text = "V: Auto (bodies faded to fit) or Realistic (one exposure)"
 	view_tag.focus_mode = Control.FOCUS_NONE
+	view_tag.theme_type_variation = "HUDButton"
 	view_tag.pressed.connect(func() -> void: view_tag_pressed.emit())
 	speed.add_theme_font_size_override("font_size", 13)
-	speed.add_theme_color_override("font_color", Color(0.86, 0.9, 0.98))
+	speed.theme_type_variation = "HUDValue"
 	row.add_child(speed)
 	row.add_child(view_tag)
 	var row2 := HBoxContainer.new()
@@ -147,7 +154,7 @@ func _build_strip() -> void:
 	rows.add_child(row2)
 	for b: DisplayBinding in [where, distance]:
 		b.add_theme_font_size_override("font_size", 13)
-		b.add_theme_color_override("font_color", Color(0.86, 0.9, 0.98))
+		b.theme_type_variation = "HUDValue"
 		row2.add_child(b)
 	corner.position = Vector2(MARGIN, MARGIN)
 	add_child(corner)
@@ -245,9 +252,11 @@ func _build_tab() -> void:
 func _binding_row(parent: Container, caption: String, field: String, fmt: String) -> DisplayBinding:
 	var line := HBoxContainer.new()
 	parent.add_child(line)
-	line.add_child(_caption(Label.new(), caption))
+	var themed: bool = parent.get_meta("themed", false)
+	line.add_child(_caption(Label.new(), caption, themed))
 	var b := DisplayBinding.new().bind(field, fmt)
 	b.add_theme_font_size_override("font_size", 13)
+	if themed: b.theme_type_variation = "HUDValue"
 	line.add_child(b)
 	_bindings_dirty = true
 	return b
@@ -311,7 +320,11 @@ func show_card(id: String, title: String, ttl := 0.0) -> VBoxContainer:
 		return c.body
 	var panel := PanelContainer.new()
 	panel.name = "Card_" + id
-	panel.add_theme_stylebox_override("panel", _panel_style(0.82))
+	var themed: bool = id in THEMED_CARDS
+	if themed: # R2-BRIDGE-STYLE S4 (ST2): the arrival card is the first card on the HUD theme
+		panel.theme = StapledonTheme.theme()
+		panel.theme_type_variation = "HUDCard"
+	else: panel.add_theme_stylebox_override("panel", _panel_style(0.82))
 	panel.custom_minimum_size.x = card_width()
 	panel.modulate.a = 0.0
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -321,9 +334,11 @@ func show_card(id: String, title: String, ttl := 0.0) -> VBoxContainer:
 	var t := Label.new()
 	t.text = title
 	t.add_theme_font_size_override("font_size", 13)
-	t.add_theme_color_override("font_color", Color(0.95, 0.82, 0.5))
+	if themed: t.theme_type_variation = "HUDCardTitle"
+	else: t.add_theme_color_override("font_color", Color(0.95, 0.82, 0.5))
 	box.add_child(t)
 	var body := VBoxContainer.new()
+	body.set_meta("themed", themed)
 	body.add_theme_constant_override("separation", 2)
 	box.add_child(body)
 	column.add_child(panel)

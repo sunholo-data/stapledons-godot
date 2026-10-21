@@ -47,7 +47,12 @@ var walk: WalkArea
 var avatar := CaptainAvatar.new()
 var avatar_shadow:Node3D
 var avatar_pos := Vector3(8,82,-4.8)
-var active_level := 0
+## R2-BRIDGE-STYLE S1: the level the captain is on; the lights follow it (the broad key is retired on
+## the bridge, 0, where the spire keys the deck).
+var active_level := 0:
+	set(v):
+		active_level=v
+		if not lighting.is_empty():Lighting.set_level(lighting,v)
 var label := Label.new() # retired (R1-SHIP-UI U1); never shown
 var hud: Control # the status strip (ShipHud.strip)
 var ship_hud: ShipHud
@@ -159,10 +164,13 @@ func setup(opts := {}) -> bool:
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
 	_install_props()
+	_style_bridge(visual)
 	geometry_view.add_child(camera);camera.current=true
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
 	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
 	lighting=Lighting.install(geometry);star_light.install(lighting)
+	Lighting.set_mast(lighting,(manifest.get("style",{}).get("spire_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is GeometryInstance3D))
+	Lighting.set_level(lighting,active_level)
 	set_lighting(opts.get("lighting","moody"))
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
 		var n:=AreaBundle.load_glb(asset(file));_walk_nodes.append(n)
@@ -602,6 +610,24 @@ func under_way() -> bool:
 ## The sky view under way: at Sgr A* the hole (sky_hole, aimed from the GR state), else the forward sky.
 func under_way_view() -> String:
 	return "sky_hole" if black_hole!=null else "sky_forward"
+## Mark, attended 2026-10-20: the guided voyage's last stop is Sgr A*. After the final leg's stop dwells like every
+## other (SolarDeparture.DWELL_SECONDS of tour ticks, counted only while time runs: not paused,
+## turning, held or in the review), or at Skip dwell [N], the tour hands over to the Sgr A* visit.
+var guided_finale := false
+var _finale_ticks := 0
+func finale_ticks_total() -> int:
+	return int(round(SolarDeparture.DWELL_SECONDS*SolarDeparture.TICK_HZ))
+## One tour tick at the completed final stop; true when the Sgr A* finale has started.
+func _finale_tick() -> bool:
+	if solar_tour.paused or solar_tour.attitude_hold or solar_tour.pending_index>=0 or solar_tour.crew_held() or (crossing_review!=null and crossing_review.visible):return false
+	_finale_ticks+=1
+	return _finale_ticks>=finale_ticks_total() and start_guided_finale()
+func start_guided_finale() -> bool:
+	if solar_tour==null or not solar_tour.complete or live_journey:return false
+	if not start_black_hole():return false
+	guided_finale=true
+	note("Guided voyage, final stop: Sgr A*, the black hole at the centre of the galaxy. A demonstration jump, not a flight; the ship holds its nose on the hole. The stops are at the navigation station (K finishes an approach).")
+	return true
 ## The black hole's direction in the ship's glTF axes (zero without a Sgr A* session): the sim's
 ## gr.hole_dir taken into the ship frame by the attitude the sky is oriented with.
 func hole_direction() -> Vector3:
@@ -673,9 +699,9 @@ func _mark_occluders(visual: Node) -> void:
 		stack.append_array(n.get_children())
 ## R2-DECK-LAYOUT §D5 (DL2): the dressed hero props (the navigation arc, the chair) ship in their own
 ## GLB beside ship.glb (manifest assets.props), painted (WebP), with the engine's ink outline
-## (interior/outline.gdshader) as each surface's next pass. Light is never baked into them: the
+## (interior/outline.gdshader) as each surface's next pass (since R2-BRIDGE-STYLE S2, the toon
+## material's: StapledonStyle). Light is never baked into them: the
 ## spire and the star light them live (§D5a).
-const PROP_OUTLINE_M := 0.018
 var props_visual: Node3D
 func _install_props() -> void:
 	var file: String=manifest.get("assets",{}).get("props","")
@@ -683,16 +709,12 @@ func _install_props() -> void:
 	props_visual=AreaBundle.load_glb(asset(file))
 	if props_visual==null:push_error("ship demo missing "+file);return
 	props_visual.name="BridgeProps";geometry.add_child(props_visual);_collision(props_visual)
-	var ink:=ShaderMaterial.new();ink.shader=load("res://interior/outline.gdshader");ink.set_shader_parameter("width",PROP_OUTLINE_M)
-	var stack:Array=[props_visual]
-	while not stack.is_empty():
-		var n:Node=stack.pop_back()
-		if n is MeshInstance3D and n.mesh!=null:
-			for i in n.mesh.get_surface_count():
-				var m:Material=n.mesh.surface_get_material(i)
-				if m!=null:
-					var own:=m.duplicate() as Material;own.next_pass=ink;n.set_surface_override_material(i,own)
-		stack.append_array(n.get_children())
+	StapledonStyle.apply([props_visual]) # R2-BRIDGE-STYLE S2: the toon material, the ink as its next_pass
+## R2-BRIDGE-STYLE S2: the ship.glb meshes on the bridge level (manifest style.bridge_nodes) take the
+## same toon material and ink as the props; the lower decks keep their look until their own passes.
+func _style_bridge(visual: Node) -> void:
+	var nodes:Array=(manifest.get("style",{}).get("bridge_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is MeshInstance3D)
+	StapledonStyle.apply(nodes)
 func _collision(n: Node) -> void:
 	if n is MeshInstance3D and n.mesh!=null:n.create_trimesh_collision()
 	for child in n.get_children():
@@ -842,7 +864,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.HOME_TIERS_MINOR # R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.SURFACE_MINOR # R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -900,7 +922,7 @@ func start_solar_departure() -> bool:
 	_drop_navigation()
 	_create_navigation("solar_departure")
 	if journey_map==null:return false
-	solar_tour=SolarDeparture.new()
+	solar_tour=SolarDeparture.new();_finale_ticks=0
 	solar_tour.reviewed=true # R2-INTERLUDE I3: the player reads the crossing review; only its Brake ends it
 	solar_tour.deferred_commit=true
 	_attitude_stop=-99;_attitude_pending=-99;_attitude_mode=""
@@ -920,6 +942,7 @@ func _drop_navigation() -> void:
 	if navigation_window!=null:
 		remove_child(navigation_window);navigation_window.queue_free()
 	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
+	camera.attitude_basis=PackedFloat64Array() # the attitude belongs to the session that set it (AC-V13)
 	if ai_session!=null:ai_session.queue_free();ai_session=null
 	if consoles!=null:consoles.archive_ask.abandon() # the question's session is gone
 func close_navigation() -> void:
@@ -956,6 +979,7 @@ func journey_tick() -> bool:
 	if solar_tour!=null:journey_map.refresh()
 	_apply_journey_world()
 	_show_interlude()
+	if solar_tour!=null and solar_tour.complete and not live_journey and _finale_tick():return true # the guided finale: the tour handed over
 	if live_journey and not was_committed:
 		leg_from=last_stop
 		if consoles!=null and consoles.focused=="navigation":consoles.leave() # watch the departure
@@ -1230,7 +1254,7 @@ func _update_cards(view: Dictionary) -> void:
 		var row: Node = ship_hud.card_body("tour").get_node_or_null("Buttons")
 		if row != null:
 			(row.get_node("Pause") as Button).text = "Resume [P]" if solar_tour.paused else "Pause [P]"
-			(row.get_node("SkipDwell") as Button).disabled = live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index >= 0
+			(row.get_node("SkipDwell") as Button).disabled = live_journey or solar_tour.attitude_hold or solar_tour.pending_index >= 0 # at the final stop it goes to Sgr A*
 			(row.get_node("SkipStage") as Button).disabled = not live_journey or solar_tour.paused or solar_tour.attitude_hold
 	else:
 		ship_hud.hide_card("tour")
@@ -1294,7 +1318,7 @@ func tour_line() -> String:
 	var parts := PackedStringArray()
 	if solar_tour.pending_index >= 0 or solar_tour.attitude_hold: parts.append("turning to " + solar_tour.pending_name if solar_tour.pending_index >= 0 else "attitude turn")
 	elif live_journey: parts.append("→ %s · %s" % [solar_tour.leg_name(), stage])
-	elif solar_tour.complete: parts.append("At %s · voyage complete · optional Sgr A* demo at Navigation" % solar_tour.leg_name())
+	elif solar_tour.complete: parts.append("At %s · final stop next: Sgr A* in %.0f s" % [solar_tour.leg_name(), maxf(0.0, (finale_ticks_total() - _finale_ticks) / SolarDeparture.TICK_HZ)])
 	else: parts.append("At %s · next stop in %.0f s" % [solar_tour.leg_name(), solar_tour.dwell_left])
 	if solar_tour.leg_index >= 0: parts.append("Leg %d of %d" % [solar_tour.leg_index + 1, solar_tour.itinerary.size()])
 	if solar_tour.skips > 0: parts.append("skipped %d stage%s" % [solar_tour.skips, "" if solar_tour.skips == 1 else "s"])
@@ -1322,6 +1346,7 @@ func toggle_tour_pause() -> void:
 		note("Time paused [P]. The ship keeps its course; resume to reach the stop before changing destination." if journey_map.paused else "Time resumed [P].")
 ## The tour card's Skip dwell: the itinerary's own next leg comes forward (pacing).
 func skip_dwell() -> bool:
+	if solar_tour != null and solar_tour.complete and not live_journey: return start_guided_finale() # the final stop: Sgr A* now
 	if solar_tour == null or live_journey or not solar_tour.prepare_next(): return false
 	_apply_journey_world()
 	return true
@@ -1455,7 +1480,7 @@ static func duration_text(years: float) -> String:
 	return ShipHud.duration_text(years)
 
 func journey_label() -> String:
-	if black_hole!=null:return "SGR A* DEMO · stop %d of %d · %s" % [black_hole.stops_taken,BlackHoleVisit.STOPS.size(),"next: "+black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop"]
+	if black_hole!=null:return ("GUIDED VOYAGE · FINAL STOP · SGR A*" if guided_finale else "SGR A* DEMO")+" · stop %d of %d · %s" % [black_hole.stops_taken,BlackHoleVisit.STOPS.size(),"next: "+black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop"]
 	if solar_tour!=null:return solar_tour.status_text()+ (" · PAUSED" if solar_tour.paused else "")
 	if sky_state!="live":return "FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT"
 	return "LIVE %s · %.6fc\nEarth +%.8f yr / ship +%.8f yr · Variable time compression · %s ship-yr/real-s \nM navigation · 7 look forward" % [sky_world.ship.phase,sky.beta,sky_world.clock.year,sky_world.clock.tau,GalaxyMap.sci(journey_map.pacing.rate)]
@@ -1496,7 +1521,7 @@ func start_black_hole() -> bool:
 	var v:=BlackHoleVisit.new()
 	if not v.start(LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])):
 		refuse("Sgr A* unavailable: "+v.last_error);return false
-	black_hole=v;_bh_accum=0.
+	black_hole=v;_bh_accum=0.;guided_finale=false
 	_ensure_codex()
 	sky_state="black_hole"
 	_apply_bh_world();director.sky("sky_hole",true) # C2 cue: the hole (shadow, ring) framed
@@ -1511,6 +1536,9 @@ func _apply_bh_world() -> void:
 	var h:Dictionary=g.hole_dir
 	sky_world.ship.heading={"x":h.x,"y":h.y,"z":h.z}
 	camera.heading=PackedFloat64Array([h.x,h.y,h.z])
+	# The nose on the hole is the session's attitude: an earlier session's (the guided voyage's
+	# turns) must not orient this sky (AC-V13: after the tour the hole sat 170 deg astern).
+	camera.attitude_basis=ShipFrame.ship_basis(camera.heading)
 	sky.apply(sky_world);_sync_observer()
 	if codex!=null:codex.show_world(sky_world)
 ## One live tick of the visit; the first ring star (the sky's ring path) is reported to the sim.
@@ -1543,7 +1571,8 @@ func _arrived() -> void:
 ## Back to Sol at rest: the sgr_a session ends and the sky is flat again (GR off).
 func leave_black_hole() -> void:
 	if black_hole==null:return
-	black_hole.stop();black_hole=null
+	black_hole.stop();black_hole=null;guided_finale=false
+	camera.attitude_basis=PackedFloat64Array()
 	if codex!=null:codex.close()
 	sky_state="rest";set_sky_state("rest")
 	note("Back at Sol (rest snapshot).")

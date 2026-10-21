@@ -1209,6 +1209,20 @@ func _m5_photometry() -> void:
 	check("limb-darkened Sun (u 0.6): disc mean of L(mu) = the mean it was given", _limb_mean(), 1.0, 1e-4)
 
 
+
+## R2-STAR-SURFACES (AC1, gate 3): physics/star_surface.gd's limb-darkening law and mean against the
+## pinned sunholo/celestial stellar, as printed by sim/tools/stellar_probe.ail (0.5.0). Relative 1e-12.
+func _star_surface_photometry() -> void:
+	print("R2-STAR-SURFACES limb darkening (sunholo/celestial stellar probe)")
+	var rel := func(name: String, got: float, want: float) -> void:
+		check(name, got / want if want != 0.0 else got, 1.0 if want != 0.0 else 0.0, 1e-12)
+	rel.call("ldQuadratic(0.4650, 0.2565, mu 0.3) (Claret 2011 ATLAS 5,750 K 4.5)", StarSurface.ld(0.4650, 0.2565, 0.3), 0.548815)
+	rel.call("ldQuadratic(1.6811, -0.6783, mu 0) clamped at 0 (PHOENIX 2,000 K)", StarSurface.ld(1.6811, -0.6783, 0.0), 0.0)
+	rel.call("ldQuadraticMean(0.4650, 0.2565) = 1 - a/3 - b/6", StarSurface.ld_mean(0.4650, 0.2565), 0.80225)
+	rel.call("Aldebaran's law at mu 0.5 (ldCoeffs(3927, 1.11) = 0.955648264, -0.115710464)", StarSurface.ld(0.955648264, -0.115710464, 0.5), 1.0 - 0.955648264 * 0.5 + 0.115710464 * 0.25)
+	rel.call("TRAPPIST-1's law at mu 0.5 (ldCoeffs(2566, 5.2387) = 1.187903, -0.187009, PHOENIX)", StarSurface.ld(1.187903, -0.187009, 0.5), 1.0 - 1.187903 * 0.5 + 0.187009 * 0.25)
+
+
 func _limb_mean() -> float:
 	# area-weighted mean of L(mu) over the disc: integral of 2 r L(sqrt(1 - r^2)) dr
 	var s := 0.0
@@ -1524,6 +1538,7 @@ func _init() -> void:
 	test_ship_frame()
 	test_sky_frame()
 	_m5_photometry()
+	_star_surface_photometry()
 	test_schwarzschild()
 	test_rapidity()
 	test_blackbody_table()

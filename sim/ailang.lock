@@ -1,11 +1,11 @@
 {
-  "ailang_version": "v0.54.11",
-  "generated_at": "2026-10-17T07:57:00.29078Z",
-  "generator": "ailang lock v0.54.11",
+  "ailang_version": "v0.54.14",
+  "generated_at": "2026-10-21T08:12:50.746005Z",
+  "generator": "ailang lock v0.54.14",
   "packages": [
     {
       "ailang": ">=0.52.0",
-      "content_hash": "sha256:57769dd8547c2ffb3dc4e6380bd3106ace22c4f11e10033054c2adef46d40860",
+      "content_hash": "sha256:d94c27d37dee500e0422a23ad354cee898c9f5291b0f26e78755f874c3464370",
       "effects": [
         "IO"
       ],
@@ -17,12 +17,14 @@
         "sunholo/celestial/kepler",
         "sunholo/celestial/lighttime",
         "sunholo/celestial/reflect",
-        "sunholo/celestial/rings"
+        "sunholo/celestial/rings",
+        "sunholo/celestial/stellar",
+        "sunholo/celestial/stellar_ld"
       ],
-      "interface_hash": "sha256:fa91ecdb88c32ad5d88956945c5647ab7a0c7123a8bada9f9783209fea8727e5",
+      "interface_hash": "sha256:c43d276cf17f7f58c0fe23d5bbb9611fce9470060954465caada06a991e8160e",
       "name": "sunholo/celestial",
       "source": "registry",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "ailang": ">=0.52.0",
