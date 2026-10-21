@@ -1,0 +1,156 @@
+module stapledons/sim/stellar_surface
+
+-- R2-STAR-SURFACES SS1 (design star-surfaces.md §D1-§D4; ledger D-105): what each finite star's
+-- visible surface is made of, as numbers the renderer draws. Pure; no Rng stream is advanced (the
+-- spot layout is a salted hash of the voyage seed, the star's id and the emission time, as
+-- home_tiers.homeVariant is), so every other stream and replay is untouched.
+--
+-- Every number comes from sunholo/celestial/stellar (cited there) or from the star data (cited in
+-- sim/data); each field's provenance travels with it:
+--   measured  : observed, cited (Aldebaran's log g);
+--   inferred  : derived from cited inputs by a named relation (log g from mass and radius);
+--   assumed   : a stated assumption (log g of an uncited catalogue star from M/M_sun ~ R/R_sun);
+--   chosen    : a seeded pattern (where the cells and spots sit), real in size, not in place.
+--
+-- Time (design §D4): the surface is seen at its emission time t_e = t - light age. For a ship
+-- closing on a static star the light age shrinks as it closes, so dt_e/dtau = gamma (1 + beta) = D
+-- falls out of t_e itself; the renderer must never multiply by D again (RS-25).
+
+import std/math (sqrt, floor, sin, cos, pow, log10, intToFloat, floatToInt)
+import std/string (chars, find)
+import std/list (foldl)
+import ./rng (mix64, splitmix64, top53)
+import ./celestial (BodyView)
+import pkg/sunholo/celestial/stellar (ldCoeffs, LdQuad, solarLogg, solarTeff, loggFromMassRadius, cellSizeKm, granulationLifetimeS, granulationSigmaT, faculaSigmaT, sunUmbraTeff, sunPenumbraTeff, mDwarfSpotRatio, diffRotation, solarCyclePhase, sporerLatitudeDeg, activityLevel, solarCycleYears)
+
+-- One spot (or spot group's main spot) on the star, in the star's own frame: heliographic latitude
+-- and longitude at the emission time (degrees; longitude measured in the frame whose zero is the
+-- star's prime meridian, rotating with the star), its penumbral radius as an angle on the sphere
+-- (radians), and the umbra and penumbra temperatures (K).
+export type Spot = { latDeg: float, lonDeg: float, radiusRad: float, umbraK: float, penumbraK: float }
+
+-- Provenance of the fields (see the header).
+export type SurfaceProv = { logg: string, ld: string, cells: string, spots: string, corona: string }
+
+export type Surface = {
+  teffK: float, logg: float,
+  ldA: float, ldB: float, ldSource: string, ldTeffUsed: float, ldLoggUsed: float,
+  cellKm: float, sigmaT: float, lifetimeS: float, faculaSigmaT: float,
+  spots: [Spot], tEmitS: float, salt: int, corona: bool, prov: SurfaceProv
+}
+
+-- The speed of light (km/s, exact) and the Julian year (s).
+pure func cKmS() -> float = 299792.458
+pure func yearS() -> float = 31557600.0
+pure func degToRad(d: float) -> float = d * 3.141592653589793 / 180.0
+
+-- ---------------------------------------------------------------- the emission time
+
+-- The light age of what the ship sees now: the sim's own (retarded) light time where it has one
+-- (the Sun, alpha Cen), else the present distance / c, which is exact for a star at rest in the
+-- frame (the destination and catalogue stars are static: light received now left when the ship
+-- was where light and ship meet, i.e. at the present distance).
+export pure func lightAgeOf(b: BodyView) -> float =
+  if b.lightAgeS > 0.0 then b.lightAgeS
+  else sqrt(b.relKm.x * b.relKm.x + b.relKm.y * b.relKm.y + b.relKm.z * b.relKm.z) / cKmS()
+
+-- t_e (s since the voyage's epoch): Earth time t (Julian years) minus the light age.
+export pure func emissionTimeS(tYears: float, lightAgeS: float) -> float = tYears * yearS() - lightAgeS
+
+-- ---------------------------------------------------------------- the salted hash
+
+-- A stable 64-bit key for a star id: each character's position in a fixed alphabet, mixed in.
+pure func alphabet() -> string = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:-_.+/"
+export pure func idKey(id: string) -> int = foldl(\h c. mix64(h ^ (find(alphabet(), c) + 2)), 1469598103934665603, chars(id))
+
+-- The n-th uniform in [0, 1) of the salt.
+pure func u(salt: int, n: int) -> float = intToFloat(top53(splitmix64(salt, n))) / 9007199254740992.0
+
+-- The salt of a star's spot pattern in one window of emission time: the voyage seed, the star and
+-- the window index (a new pattern every window; spots live days to months).
+export pure func spotSalt(seed: int, id: string, window: int) -> int = mix64(mix64(seed ^ idKey(id)) + window)
+
+-- ---------------------------------------------------------------- classes
+
+-- Giants (log g < 3) are spotless and, cooler than K1 III, have no hot corona (the coronal
+-- dividing line, Linsky & Haisch 1979, ApJ 229, L27). M dwarfs (Teff < 4,000 K, log g >= 4) are
+-- always spotted. Everything else follows a Sun-like activity cycle.
+pure func isGiant(logg: float) -> bool = logg < 3.0
+pure func isMDwarf(teff: float, logg: float) -> bool = teff < 4000.0 && logg >= 4.0
+
+-- Spot-pattern window (s): 25 days for every class (assumed; solar spots live days to months).
+export pure func spotWindowS() -> float = 25.0 * 86400.0
+
+-- ---------------------------------------------------------------- spots
+
+-- Sun-like: a group count set by the cycle's activity (up to 10, assumed), latitudes in the
+-- Spoerer band (+-5 degrees about it, either hemisphere), penumbral radii 8,000-25,000 km, and the
+-- Sun's spot temperatures scaled by Teff (scaled: assumed for stars other than the Sun). Longitudes
+-- drift with the Sun's differential rotation from the window's start to t_e.
+pure func sunlikeSpot(salt: int, k: int, teff: float, radiusKm: float, phase: float, sinceS: float) -> Spot {
+  let band = sporerLatitudeDeg(phase);
+  let hemi = (if u(salt, 10 * k) < 0.5 then 0.0 - 1.0 else 1.0);
+  let lat = hemi * (band + 10.0 * (u(salt, 10 * k + 1) - 0.5));
+  let lon0 = 360.0 * u(salt, 10 * k + 2);
+  let rKm = 8000.0 + 17000.0 * u(salt, 10 * k + 3);
+  { latDeg: lat, lonDeg: wrap360(lon0 + diffRotation(lat) * sinceS / 86400.0), radiusRad: rKm / radiusKm,
+    umbraK: teff * sunUmbraTeff() / solarTeff(), penumbraK: teff * sunPenumbraTeff() / solarTeff() }
+}
+
+-- M dwarf: 4-7 large cool spots anywhere within +-60 degrees, radii 0.06-0.22 rad (assumed: large
+-- coverage, as inferred for TRAPPIST-1 by Rackham et al. 2018), at Teff x mDwarfSpotRatio.
+pure func mDwarfSpot(salt: int, k: int, teff: float) -> Spot {
+  let t = teff * mDwarfSpotRatio();
+  { latDeg: 120.0 * (u(salt, 10 * k + 1) - 0.5), lonDeg: 360.0 * u(salt, 10 * k + 2),
+    radiusRad: 0.06 + 0.16 * u(salt, 10 * k + 3), umbraK: t, penumbraK: (t + teff) / 2.0 }
+}
+
+pure func wrap360(x: float) -> float = x - 360.0 * floor(x / 360.0)
+
+pure func spotsN(n: int, k: int, g: int -> Spot) -> [Spot] = if k >= n then [] else g(k) :: spotsN(n, k + 1, g)
+
+-- The cycle phase of a star at emission Julian date jdE: the Sun's real one; other stars a phase
+-- drawn from their salt-free key (assumed: unknown cycles), advancing with the same 11 years.
+export pure func cyclePhase(id: string, seed: int, jdE: float) -> float =
+  if id == "sun" then solarCyclePhase(jdE)
+  else {
+    let c = u(mix64(seed ^ idKey(id)), 999) + jdE / (solarCycleYears() * 365.25);
+    c - floor(c)
+  }
+
+-- ---------------------------------------------------------------- the surface
+
+-- teff (K), logg (cgs) and its provenance; the star's id and radius; the voyage seed; Earth time t
+-- (Julian years since the epoch) and the epoch's Julian date; the light age (s).
+export pure func surfaceOf(id: string, teff: float, logg: float, loggProv: string, radiusKm: float,
+    seed: int, tYears: float, epochJd: float, lightAgeS: float) -> Surface {
+  let ld = ldCoeffs(teff, logg);
+  let tE = emissionTimeS(tYears, lightAgeS);
+  let window = floatToInt(floor(tE / spotWindowS()));
+  let salt = spotSalt(seed, id, window);
+  let sinceS = tE - intToFloat(window) * spotWindowS();
+  let jdE = epochJd + tE / 86400.0;
+  let phase = cyclePhase(id, seed, jdE);
+  let giant = isGiant(logg);
+  let mdwarf = isMDwarf(teff, logg);
+  let nSun = floatToInt(floor(10.0 * activityLevel(phase) + u(salt, 0)));
+  let nM = 4 + floatToInt(floor(4.0 * u(salt, 0)));
+  let spots = (if giant then [] else if mdwarf then spotsN(nM, 0, \k. mDwarfSpot(salt, k, teff))
+    else spotsN(nSun, 0, \k. sunlikeSpot(salt, k, teff, radiusKm, phase, sinceS)));
+  { teffK: teff, logg: logg,
+    ldA: ld.a, ldB: ld.b, ldSource: (if ld.source == 1 then "claret2011-phoenix" else "claret2011-atlas"),
+    ldTeffUsed: ld.teffUsed, ldLoggUsed: ld.loggUsed,
+    cellKm: cellSizeKm(teff, logg), sigmaT: granulationSigmaT(), lifetimeS: granulationLifetimeS(teff, logg),
+    faculaSigmaT: (if giant then 0.0 else faculaSigmaT()),
+    spots: spots, tEmitS: tE, salt: salt, corona: not giant,
+    prov: { logg: loggProv, ld: "measured: Claret & Bloemen 2011 V, quadratic",
+      cells: (if id == "sun" then "measured: Roudier & Muller 1986; Danilovic et al. 2008" else "inferred: the Sun's scaled by the pressure scale height"),
+      spots: (if giant then "none: giant" else "chosen: seeded layout; sizes and temperatures cited or assumed (sunholo/celestial stellar)"),
+      corona: (if giant then "none: beyond the coronal dividing line (Linsky & Haisch 1979)" else "measured: Baumbach 1937 mean corona") } }
+}
+
+-- log g for a star known by mass and radius (solar units), inferred.
+export pure func loggInferred(mSun: float, rSun: float) -> float = loggFromMassRadius(mSun, rSun)
+
+-- log g of a catalogue star with only a radius: assumed main sequence, M/M_sun ~ R/R_sun.
+export pure func loggAssumed(rSun: float) -> float = loggFromMassRadius(rSun, rSun)

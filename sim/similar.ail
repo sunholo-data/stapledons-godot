@@ -1,0 +1,89 @@
+module stapledons/sim/similar
+
+-- R2-SIMILAR-S0 S0.1. Pure catalogue composition; no protocol or ship state.
+import std/math (log, abs_Float)
+import std/embedding (euclidean_distance)
+import std/list (map, filter, take)
+import std/option (Option, Some, None)
+import pkg/sunholo/celestial/reflect (starIlluminanceAt)
+import ./data/sol (Planet, planets)
+import ./trappist1 (trappistPlanetIds, planetName, planetRadiusKm, planetValue)
+import ./destination_stars (destinationValue)
+import ./data/similar (Feature, features, neighbours)
+
+export type World = {id: string, name: string, radiusEarth: float, massEarth: float, sEarth: float}
+-- Options make missing inputs explicit; massUnit converts GM to Earth masses
+-- for Sol, and is 1 for the archive's masses already in Earth units.
+export type RawWorld = {id: string, name: string, radiusKm: Option[float], mass: Option[float],
+  massUnit: float, luminositySun: Option[float], aAu: Option[float]}
+export type Prepared = {worlds: [World], excluded: [string]}
+export type Neighbour = {id: string, name: string, distance: float}
+export type Ranked = {world: World, vector: [float], nearest: [Neighbour]}
+
+pure func positive(x: float) -> bool = x > 0.0 && x == x && abs_Float(x) <= 1.7976931348623157e308
+pure func valid(w: World) -> bool = positive(w.radiusEarth) && positive(w.massEarth) && positive(w.sEarth)
+-- Read the normalization references from Earth's cited row, not a duplicate
+-- constant or the archive's slightly different nominal Earth radius.
+pure func earthOf(ps: [Planet]) -> {radiusKm: float, gm: float} = match ps {
+  [] => {radiusKm: 0.0, gm: 0.0},
+  p :: rest => if p.id == "earth" then {radiusKm: p.radiusKm, gm: p.gm} else earthOf(rest)
+}
+pure func solRaw(p: Planet) -> RawWorld = {id: p.id, name: p.name, radiusKm: Some(p.radiusKm),
+  mass: Some(p.gm), massUnit: (earthOf(planets())).gm, luminositySun: Some(1.0), aAu: Some(p.el.a)}
+pure func trapRaw(id: string) -> RawWorld = {id: id, name: planetName(id), radiusKm: Some(planetRadiusKm(id)),
+  mass: Some(planetValue(id, "mass_earth")), massUnit: 1.0,
+  luminositySun: Some(destinationValue("trappist-1", "luminosity_sun")), aAu: Some(planetValue(id, "a_au"))}
+export pure func rawCorpus() -> [RawWorld] = map(solRaw, planets()) ++ map(trapRaw, trappistPlanetIds())
+
+pure func normalize(r: RawWorld) -> Option[World] = match (r.radiusKm, r.mass, r.luminositySun, r.aAu) {
+  (Some(radius), Some(mass), Some(luminosity), Some(a)) => {
+    let earth = earthOf(planets());
+    -- Nothing is divided or inverse-squared until every raw input is valid.
+    if !(positive(radius) && positive(mass) && positive(luminosity) && positive(a)
+      && positive(r.massUnit) && positive(earth.radiusKm)) then None else {
+      -- reflect is linear in its first argument: L_sun units give Earth flux
+      -- units here, despite that parameter being named e1AU (often lux).
+      let w = {id: r.id, name: r.name, radiusEarth: radius / earth.radiusKm,
+        massEarth: mass / r.massUnit, sEarth: starIlluminanceAt(luminosity, a)};
+      if valid(w) then Some(w) else None
+    }
+  },
+  _ => None
+}
+export pure func prepare(xs: [RawWorld]) -> Prepared = match xs {
+  [] => {worlds: [], excluded: []},
+  r :: rest => {
+    let tail = prepare(rest);
+    match normalize(r) {
+      None => {worlds: tail.worlds, excluded: r.id :: tail.excluded},
+      Some(w) => {worlds: w :: tail.worlds, excluded: tail.excluded}
+    }
+  }
+}
+export pure func corpus() -> [World] = (prepare(rawCorpus())).worlds
+export pure func excluded() -> [string] = (prepare(rawCorpus())).excluded
+
+pure func component(w: World, f: Feature) -> float =
+  log(if f.key == "ln_radius" then w.radiusEarth else if f.key == "ln_mass" then w.massEarth else w.sEarth) / f.divisor
+-- Direct division is intentional: reciprocal multiplication changes bits.
+export pure func vector(w: World) -> [float] = if !valid(w) then [] else map(\f. component(w, f), features())
+pure func distancesOf(q: World, xs: [World]) -> [Neighbour] = match xs {
+  [] => [], w :: rest => if w.id == q.id then distancesOf(q, rest) else
+    {id: w.id, name: w.name, distance: euclidean_distance(vector(q), vector(w))} :: distancesOf(q, rest)
+}
+-- All directed non-self distances, exposed so tests check the full range.
+export pure func distances(q: World, xs: [World]) -> [Neighbour] =
+  if !valid(q) then [] else distancesOf(q, filter(valid, xs))
+pure func before(a: Neighbour, b: Neighbour) -> bool =
+  a.distance < b.distance || (a.distance == b.distance && a.name < b.name)
+pure func insert(n: Neighbour, xs: [Neighbour]) -> [Neighbour] = match xs {
+  [] => [n], x :: rest => if before(n, x) then n :: xs else x :: insert(n, rest)
+}
+pure func sorted(xs: [Neighbour]) -> [Neighbour] = match xs {
+  [] => [], n :: rest => insert(n, sorted(rest))
+}
+export pure func rank(xs: [World]) -> [Ranked] {
+  let ws = filter(valid, xs);
+  map(\w. {world: w, vector: vector(w), nearest: take(neighbours(), sorted(distances(w, ws)))}, ws)
+}
+export pure func similarWorlds() -> [Ranked] = rank(corpus())

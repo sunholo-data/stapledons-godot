@@ -68,12 +68,47 @@ func is_walkable(p: Vector3) -> bool:
 	return true
 
 
-## Move by delta (XZ used), sliding along X or Z when the full move would leave the surface.
+## R2-LEVELS §B2 (design_docs/planned/r2/levels.md): levels stack surfaces (a terrace over a
+## court, a catwalk over both). The captain stands on the HIGHEST surface within STEP_M of the
+## current height: a ramp or stair lying on a floor is climbed (it is within a step up), a terrace
+## 4 m overhead is ignored (out of reach), and walking off a raised edge is refused (nothing within
+## a step). On a single-height walk this is exactly height_at.
+const STEP_M := 0.45
+
+
+func height_at_near(x: float, z: float, y_now: float, step_m := STEP_M) -> float:
+	var best := NAN
+	var cell := Vector2i(floori(x / CELL), floori(z / CELL))
+	if not _grid.has(cell):
+		return best
+	for t: int in _grid[cell]:
+		var y := _tri_height(t, x, z)
+		if not is_nan(y) and absf(y - y_now) <= step_m and (is_nan(best) or y > best):
+			best = y
+	return best
+
+
+## Walkable at p's own height: the centre and the RING points all have a surface within a step.
+func is_walkable_near(p: Vector3, step_m := STEP_M) -> bool:
+	if is_nan(height_at_near(p.x, p.z, p.y, step_m)):
+		return false
+	for i in RING:
+		var a := TAU * i / RING
+		if is_nan(height_at_near(p.x + radius * cos(a), p.z + radius * sin(a), p.y, step_m)):
+			return false
+	return true
+
+
+## Move by delta (XZ used), sliding along X or Z when the full move would leave the surface. The
+## captain stays on the surface reachable from the current height (height_at_near).
 func step(from: Vector3, delta: Vector3) -> Vector3:
 	for d in [Vector3(delta.x, 0.0, delta.z), Vector3(delta.x, 0.0, 0.0), Vector3(0.0, 0.0, delta.z)]:
 		var p: Vector3 = from + d
-		if d != Vector3.ZERO and is_walkable(p):
-			return Vector3(p.x, height_at(p.x, p.z), p.z)
+		if d == Vector3.ZERO:
+			continue
+		var y := height_at_near(p.x, p.z, from.y)
+		if not is_nan(y) and is_walkable_near(Vector3(p.x, y, p.z)):
+			return Vector3(p.x, y, p.z)
 	return from
 
 
