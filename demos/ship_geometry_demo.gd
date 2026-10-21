@@ -156,6 +156,7 @@ func setup(opts := {}) -> bool:
 	menu_return=opts.get("from_menu",false);asset_dir=str(opts.get("asset_dir",""))
 	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
+	StapledonTheme.install(get_window()) # R2-BRIDGE-STYLE ST4: the HUD theme on every panel
 	var px: Vector2i=opts.get("size",get_window().size)
 	var visual := AreaBundle.load_glb(asset("ship.glb"))
 	if visual==null:push_error("ship demo missing GLB");return false
@@ -217,8 +218,7 @@ func setup(opts := {}) -> bool:
 	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";archive_voice.bus = &"Voice";add_child(archive_voice) # R2-SOUND: voices duck the ship (§D2)
 	wait_hint.name = "WaitHint";wait_hint.visible = false;wait_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	wait_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE;wait_hint.add_theme_font_size_override("font_size", 15)
-	wait_hint.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78));wait_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	wait_hint.add_theme_constant_override("outline_size", 6);interlude_canvas.add_child(wait_hint)
+	wait_hint.theme_type_variation = "HUDOverlay";interlude_canvas.add_child(wait_hint) # R2-BRIDGE-STYLE ST4: text over the world
 	crossing_review.brake_pressed.connect(func()->void:continue_interlude())
 	crossing_review.open_crew.connect(_review_open_crew)
 	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
@@ -713,7 +713,7 @@ func _install_props() -> void:
 ## R2-BRIDGE-STYLE S2: the ship.glb meshes on the bridge level (manifest style.bridge_nodes) take the
 ## same toon material and ink as the props; the lower decks keep their look until their own passes.
 func _style_bridge(visual: Node) -> void:
-	var nodes:Array=(manifest.get("style",{}).get("bridge_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is MeshInstance3D)
+	var nodes:Array=(manifest.get("style",{}).get("bridge_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is Node3D) # meshes, or a parent of meshes (the deck's quadrants)
 	StapledonStyle.apply(nodes)
 func _collision(n: Node) -> void:
 	if n is MeshInstance3D and n.mesh!=null:n.create_trimesh_collision()

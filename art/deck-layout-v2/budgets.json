@@ -3,8 +3,8 @@
   "about": "R2-DECK-LAYOUT section D5 and AC7 (ledger D-95): make deck-assets-check. Pins of every runtime deck file (bytes, sha256), per-GLB budgets (the bridge: 220,000 triangles, 18 materials, 16 images, < 10 MB so it stays in git; bridge_props.glb joins at DL2 with its own < 10 MB cap), the stations and structure the game finds by name, opaque materials, no emission outside the console screens (no painted space, section D8), a clean reimport; the WebP route (EXT_texture_webp, a one-texture fixture decodes); and with a GPU window the bridge's texture memory against the DL0 baseline + 32 MB. Masters are pinned under masters and checked with --masters after make ship-masters.",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 5617652,
-      "sha256": "f3eaf550fe6ac089a918ddde67d9451ec93e193b18024e013adffec6339ddd6c"
+      "bytes": 2261484,
+      "sha256": "c4e54704b399e00a6769979d83a0d364c286796cd90dcc86a91ceba09dff4afd"
     },
     "assets/ship_demo/walk_bridge.glb": {
       "bytes": 379960,
@@ -15,8 +15,8 @@
       "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213"
     },
     "assets/ship_demo/manifest.json": {
-      "bytes": 5256,
-      "sha256": "a23958ba5c1e457e21cee0c171cf3c497f97d67daea3d7fd41f9b4b7341bde3e"
+      "bytes": 6079,
+      "sha256": "8718bf643830f4dd4347c02706427be9ea6c883909eda9695fd46f267c566919"
     },
     "assets/ship_commons/walk.glb": {
       "bytes": 373208,
@@ -39,8 +39,12 @@
       "sha256": "b5b810b1b7e4e85606fb45f579086616c1b7e66e1eb37b163c9494e25e466364"
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 4726860,
-      "sha256": "5989c6d85483e6fdadc00e8975220da71d6c4d2d6901d3c8d80b1d868138a935"
+      "bytes": 4759828,
+      "sha256": "1cfd8289aae65165664b930a2f54a6354250d702fb5f1b9a14439e3528a90029"
+    },
+    "assets/ship_demo/lift_head.glb": {
+      "bytes": 166444,
+      "sha256": "d3d8b5e239b7400c2b31cdaeebe51fcbfffc677eda7bc7a2ed224b212a0e2e5b"
     }
   },
   "glb": {
@@ -48,11 +52,14 @@
       "max_bytes": 10000000,
       "max_triangles": 220000,
       "max_materials": 18,
-      "max_images": 16,
+      "max_images": 24,
       "nodes": [
         "spire_needle",
         "Spire below bridge",
-        "bridge_floor_top82"
+        "bridge_floor_top82_q0",
+        "bridge_floor_top82_q1",
+        "bridge_floor_top82_q2",
+        "bridge_floor_top82_q3"
       ]
     },
     "assets/ship_demo/walk_bridge.glb": {
@@ -116,6 +123,17 @@
         "v2_nav_detail_01",
         "v2_nav_detail_02"
       ]
+    },
+    "assets/ship_demo/lift_head.glb": {
+      "max_bytes": 1000000,
+      "max_triangles": 12000,
+      "max_materials": 2,
+      "max_images": 2,
+      "nodes": [
+        "lift_pad",
+        "lift_rail_3_6",
+        "lift_gate_4_4"
+      ]
     }
   },
   "emissive_allow": [
@@ -123,8 +141,9 @@
   ],
   "vram": {
     "baseline_mb": 112.6,
-    "max_increase_mb": 32,
-    "measured": "DL0, 2026-10-19, Mac Studio M4 Max (Metal), the shipped grounded-bridge-v2 deck with the Commons, 1280x720 GPU window, RenderingServer texture memory after six frames"
+    "max_increase_mb": 48,
+    "measured": "DL0, 2026-10-19, Mac Studio M4 Max (Metal), the shipped grounded-bridge-v2 deck with the Commons, 1280x720 GPU window, RenderingServer texture memory after six frames",
+    "note_st3": "R2-BRIDGE-STYLE ST3 (plan S3): the deck's four 1024 atlases and the spire's: the cap grows from 32 to 48 MB, images to 24."
   },
   "masters": {}
 }
