@@ -59,7 +59,7 @@ func _stage() -> Array:
 	root.add_child(bg)
 	var panel := PanelContainer.new()
 	panel.name = "ConsolePanel"
-	panel.add_theme_stylebox_override("panel", ShipHud._panel_style(0.94))
+	panel.theme = StapledonTheme.theme(); panel.theme_type_variation = "HUDSheet"
 	var r := ShipConsoles.crew_panel_rect(Vector2(root.get_visible_rect().size), 42.0)
 	panel.position = r.position
 	panel.custom_minimum_size = r.size

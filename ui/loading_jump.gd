@@ -459,12 +459,11 @@ func _apply_white(t: float) -> void:
 	_box.modulate.a = clampf(1.0 - grow * 1.5, 0.0, 1.0)
 
 
-func _label(l: Label, size: int, color: Color, font: Font = null) -> Label:
+## R2-BRIDGE-STYLE ST4: `kind` is the text's meaning (a StapledonTheme label variation; the theme's ink shadow).
+func _label(l: Label, size: int, kind: String, font: Font = null) -> Label:
 	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	l.add_theme_constant_override("shadow_offset_x", 1)
-	l.add_theme_constant_override("shadow_offset_y", 2)
+	l.theme = StapledonTheme.theme()
+	l.theme_type_variation = kind
 	if font != null:
 		l.add_theme_font_override("font", font)
 	return l
@@ -514,21 +513,21 @@ func _build_ui() -> void:
 	_box.add_theme_constant_override("separation", 4)
 	_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_box)
-	_label(_kicker, 13, Color(0.7, 0.78, 0.92))
+	_label(_kicker, 13, "HUDCaption")
 	_kicker.text = "LOADING  ·  %s" % TITLES.get(route, route).to_upper()
 	_box.add_child(_kicker)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 28)
 	row.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_box.add_child(row)
-	_label(_beta_label, 40, Color(0.95, 0.97, 1.0), font)
+	_label(_beta_label, 40, "HUDLabel", font)
 	row.add_child(_beta_label)
 	var gcol := VBoxContainer.new()
 	gcol.alignment = BoxContainer.ALIGNMENT_END
 	row.add_child(gcol)
-	_label(_gamma_label, 15, Color(0.82, 0.87, 0.96))
+	_label(_gamma_label, 15, "HUDLabel")
 	gcol.add_child(_gamma_label)
-	_label(_range_label, 12, Color(0.6, 0.67, 0.8))
+	_label(_range_label, 12, "HUDHint")
 	_range_label.text = "β 0.000c → %sc" % beta_text(BETA_MAX, Relativity.one_minus_beta_of_rapidity(phi_max()))
 	gcol.add_child(_range_label)
 	var bar_row := HBoxContainer.new()
@@ -547,13 +546,13 @@ func _build_ui() -> void:
 	_bar.size = Vector2(0, 3)
 	holder.add_child(_bar)
 	holder.resized.connect(func() -> void: _bar.size = Vector2(_bar_back.size.x * clampf(shown, 0.0, 1.0), 3))
-	_label(_pct, 16, Color(0.95, 0.97, 1.0), font)
+	_label(_pct, 16, "HUDLabel", font)
 	_pct.custom_minimum_size = Vector2(56, 0)
 	_pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	bar_row.add_child(_pct)
-	_label(_stage, 13, Color(0.78, 0.83, 0.92))
+	_label(_stage, 13, "HUDLabel")
 	_box.add_child(_stage)
-	_label(_note, 11, Color(0.58, 0.64, 0.76))
+	_label(_note, 11, "HUDHint")
 	_note.text = "Loading view: the speed is illustrative; the optics are the game's own renderer (aberration, Doppler colour, the starbow)."
 	_box.add_child(_note)
 	# the white-out (transition effect): a radial bloom from the forward point, then full white
