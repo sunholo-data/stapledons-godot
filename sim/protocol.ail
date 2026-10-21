@@ -40,6 +40,7 @@ import ./sync_orbit (syncOrbitOf)
 import ./navigation (BodyReq, NavPlan, Pass, Timing)
 import ./ism (Impact)
 import ./stellar_surface (Surface, Spot, surfaceOf, lightAgeOf, loggInferred, loggAssumed)
+import ./data/stellar_activity (activityOf)
 import pkg/sunholo/celestial/stellar (solarLogg)
 
 export type Override = { name: string, value: float }
@@ -428,11 +429,14 @@ pure func starParamsOf(w: World, b: BodyView) -> Option[StarParams] =
   }
 pure func withSurface(w: World, b: BodyView, o: string) -> string =
   match starParamsOf(w, b) {
-    Some(sp) => withField(o, f("surface", surfaceObj(surfaceOf(b.id, sp.teff, sp.logg, sp.prov, b.radiusKm, w.seed, w.ship.motion.t, w.params.epochJd, lightAgeOf(b))))),
+    Some(sp) => {
+      let catId = (if startsWith(b.id, "cat:") then substring(b.id, 4, length(b.id)) else destinationCatalogueId(b.id));
+      withField(o, f("surface", surfaceObj(surfaceOf(b.id, sp.teff, sp.logg, sp.prov, b.radiusKm, w.seed, w.ship.motion.t, w.params.epochJd, lightAgeOf(b), activityOf(b.id, catId, sp.teff, sp.logg)))))
+    },
     None => o
   }
 pure func spotObj(sp: Spot) -> string =
-  obj([f("lat_deg", num(sp.latDeg)), f("lon_deg", num(sp.lonDeg)), f("radius_rad", num(sp.radiusRad)), f("umbra_k", num(sp.umbraK)), f("penumbra_k", num(sp.penumbraK))])
+  obj([f("lat_deg", num(sp.latDeg)), f("lon_deg", num(sp.lonDeg)), f("radius_rad", num(sp.radiusRad)), f("umbra_k", num(sp.umbraK)), f("penumbra_k", num(sp.penumbraK)), f("kind", q(sp.kind))])
 pure func surfaceObj(s: Surface) -> string =
   obj([f("teff_k", num(s.teffK)), f("logg", num(s.logg)),
     f("ld", obj([f("law", q("quadratic")), f("a", num(s.ldA)), f("b", num(s.ldB)), f("source", q(s.ldSource)), f("teff_used", num(s.ldTeffUsed)), f("logg_used", num(s.ldLoggUsed))])),

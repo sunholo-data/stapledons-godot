@@ -231,6 +231,27 @@ func _run() -> void:
 	check(vt == v2.log_text() and vt.contains(" v0 ") and vt.contains(" v1 ") and cents_ok, "deterministic variation: 40 fires use both variants, pitch within +/-20 cents, identical in two directors")
 	check(s.cue_log.size() > 0 and s.errors.is_empty(), "the director logs while silent (audible = false)")
 
+	# D-108: the spire's degradation layer follows a parameter; the sim's Memory Health drives it when present.
+	var drift := {"id": "drift", "trigger": {"kind": "game", "name": "level_bridge", "stop_on": "level_none"}, "streams": ["a"], "bus": "Ambience", "loop": true,
+		"volume_db": -20.0, "param": {"name": "archive_degradation", "points": [[0.0, -80.0], [0.5, -10.0], [1.0, -4.0]]}, "visual": "ambient: no information", "about": "test"}
+	var pd := director(root, base_cues() + [drift], rows)
+	check(pd.errors.is_empty(), "D-108: a loop with a param curve validates (%s)" % "; ".join(pd.errors))
+	check(is_equal_approx(SoundDirector.curve_db(drift.param.points, 0.25), -45.0) and is_equal_approx(SoundDirector.curve_db(drift.param.points, 1.5), -4.0), "D-108: the param curve interpolates (0.25 -> -45 dB) and clamps")
+	pd.on_sim_world(5, {"ship": {}})
+	check(not pd.params.has("archive_degradation"), "D-108: with no Memory Health in the world the layer stays pristine (nothing is invented)")
+	pd.on_sim_world(6, {"archive": {"memory_health": 50}})
+	check(is_equal_approx(float(pd.params.archive_degradation), 0.5) and pd.log_text().contains("p1 archive_degradation 0.50"), "D-108: archive.memory_health 50 -> archive_degradation 0.50, logged")
+	pd.on_sim_world(7, {"archive": {"memory_health": 50.4}})
+	check(not pd.log_text().contains("p2 "), "D-108: a change under 0.01 is not logged again")
+	pd.on_game("level_bridge")
+	check(pd.log_text().contains("drift v0 +0c -30.0dB"), "D-108: the layer starts at its curve's level for the current degradation (-20 + -10 dB):\n" + pd.log_text())
+	var badp := base_cues() + [drift.duplicate(true)]
+	badp.back().loop = false
+	check(SoundData.check_cues({"schema": SoundData.CUES_SCHEMA, "cues": badp}, pd.assets).size() == 1, "D-108: a one-shot cannot follow a param")
+	var badn := base_cues() + [drift.duplicate(true)]
+	badn.back().param = {"name": "mood", "points": [[0.0, 0.0], [1.0, 0.0]]}
+	check(SoundData.check_cues({"schema": SoundData.CUES_SCHEMA, "cues": badn}, pd.assets).size() == 1, "D-108: an unknown param is rejected")
+
 	# The shipped tables (S0b): they validate, and a loop loads with its manifest loop points.
 	var shipped := SoundDirector.new()
 	shipped.audible = false
@@ -238,7 +259,7 @@ func _run() -> void:
 	check(se.is_empty() and shipped.cues.size() >= 17, "the shipped cue table and manifest validate (%d cues; %s)" % [shipped.cues.size(), "; ".join(se)])
 	var hum := shipped.stream("spire_hum")
 	check(hum != null and hum.loop_mode == AudioStreamWAV.LOOP_FORWARD and hum.loop_end == 384000 and hum.mix_rate == 48000, "spire_hum loads as a 48 kHz loop of 384,000 frames (8 s)")
-	check(SoundDirector.source_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.wav.bin", "the export falls back to the staged audio_bundle (.bin)")
+	check(SoundDirector.bundle_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.res", "the export reads the staged QOA bundle (audio_bundle/<kind>/<file>.res)")
 	shipped.free()
 
 	# The bus layout (§D2).

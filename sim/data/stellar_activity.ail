@@ -1,0 +1,50 @@
+module stapledons/sim/data/stellar_activity
+
+-- D-111 A3 (R2-STAR-SURFACES): each finite star's magnetic activity, from cited data where it exists,
+-- so a visited star shows spots and flares within its real range: an active M dwarf flares and is
+-- heavily spotted, Barnard's Star is quiet, alpha Cen B is livelier than A. Pure; no I/O.
+--   level      "solar" (a cycle of spot groups), "active" (large spots, flares), "quiet" (a rare
+--              small spot), "moderate" (a few spots), "none" (no spots: hot stars, giants)
+--   cycleYears the magnetic cycle; maxGroups the most spot groups at maximum; flaresPerDay
+--   the white-light flare rate; cite the source (or "assumed: ...").
+
+export type Activity = { level: string, cycleYears: float, maxGroups: int, flaresPerDay: float, cite: string }
+
+-- The Sun: the 11-year cycle (Hathaway 2015, Living Rev. Sol. Phys. 12, 4); around 10 large groups
+-- visible at a strong maximum. alpha Cen A and B: X-ray cycles of ~19 and ~8.1 years, A's maximum
+-- weaker, B more spotted (Ayres 2015, AJ 149, 58). TRAPPIST-1: 42 flares in 80 days of K2 (Vida et
+-- al. 2017, ApJ 841, 124) and large unocculted spots and faculae (Rackham et al. 2018, ApJ 853, 122).
+-- Barnard's Star: an old, slowly rotating (P_rot ~145 d) M4 dwarf with low activity (Toledo-Padron et
+-- al. 2019, MNRAS 488, 5145). Aldebaran: a K5 giant beyond the coronal dividing line (Linsky & Haisch
+-- 1979, ApJ 229, L27): no spots modelled.
+export pure func knownActivity() -> [(string, Activity)] = [
+  ("sun", { level: "solar", cycleYears: 11.0, maxGroups: 10, flaresPerDay: 0.0, cite: "hathaway2015" }),
+  ("acen-a", { level: "solar", cycleYears: 19.0, maxGroups: 5, flaresPerDay: 0.0, cite: "ayres2015" }),
+  ("acen-b", { level: "solar", cycleYears: 8.1, maxGroups: 12, flaresPerDay: 0.0, cite: "ayres2015" }),
+  ("trappist-1", { level: "active", cycleYears: 0.0, maxGroups: 7, flaresPerDay: 0.525, cite: "vida2017; rackham2018" }),
+  ("aldebaran", { level: "none", cycleYears: 0.0, maxGroups: 0, flaresPerDay: 0.0, cite: "linskyhaisch1979" }),
+  ("Gaia DR3 4472832130942575872", { level: "quiet", cycleYears: 10.0, maxGroups: 1, flaresPerDay: 0.0, cite: "toledopadron2019" })
+]
+
+-- A star without data: assumed by type (Teff K, log g cgs).
+export pure func assumedActivity(teff: float, logg: float) -> Activity =
+  if logg < 3.0 || teff > 7500.0 then { level: "none", cycleYears: 0.0, maxGroups: 0, flaresPerDay: 0.0, cite: "assumed: giant or hot star, no spots" }
+  else if teff < 3900.0 then { level: "moderate", cycleYears: 0.0, maxGroups: 3, flaresPerDay: 0.05, cite: "assumed: an M dwarf of unknown age, a few spots, rare flares" }
+  else { level: "solar", cycleYears: 11.0, maxGroups: 8, flaresPerDay: 0.0, cite: "assumed: a solar-like cycle" }
+
+pure func lookup(xs: [(string, Activity)], key: string) -> [Activity] = match xs {
+  [] => [],
+  (k, a) :: rest => if k == key then [a] else lookup(rest, key)
+}
+
+-- The star's activity: by its sim id, else its catalogue id, else assumed by type.
+export pure func activityOf(id: string, catalogueId: string, teff: float, logg: float) -> Activity =
+  match lookup(knownActivity(), id) {
+    a :: _ => a,
+    [] => match lookup(knownActivity(), catalogueId) { a :: _ => a, [] => assumedActivity(teff, logg) }
+  }
+
+-- A white-light flare kernel's temperature (K): ~9,000 K blackbody continuum (Kowalski et al. 2013,
+-- ApJS 207, 15); its lifetime here 20 minutes, its radius 0.02-0.035 rad (assumed).
+export pure func flareKernelK() -> float = 9000.0
+export pure func flareMinutes() -> float = 20.0

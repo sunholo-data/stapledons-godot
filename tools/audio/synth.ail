@@ -10,7 +10,7 @@ module stapledons/audio/synth
 -- (sample i reads the generator at i mod n; its filters run over two periods and keep the second).
 import std/list (map, range, foldl, zipWith, mapAccumL, drop, flatMap, length as size, maximumFloat)
 import std/array (fromList, toList, add, scale, make)
-import std/math (sin, exp, log, round, floatToInt, PI, pow)
+import std/math (sin, cos, exp, log, round, floatToInt, PI, pow)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (join, floatToStr)
@@ -22,8 +22,13 @@ pure func rateF() -> float = 48000.0
 pure func twoPi() -> float = 2.0 * PI(())
 
 export type Env = {delay: float, attack: float, tau: float, stop: float}
-export type Layer = {kind: string, freq: float, freqTo: float, glide0: float, glide1: float, amp: float, lowpass: float, highpass: float, seed: int, env: Env}
-export type Recipe = {id: string, seconds: float, loop: bool, peakDb: float, fadeMs: float, swellRate: float, swellDepth: float, layers: [Layer]}
+-- R2-SOUND rework (D-108) adds, each a no-op at its default of 0 so every earlier recipe renders
+-- byte for byte as before: a slow vibrato (vibRate Hz, vibCents), an amplitude beat (amRate Hz,
+-- amDepth 0..1), a low-pass that sweeps from lowpass to lowpassTo over the sound, and per recipe a
+-- soft saturation (drive k: x(1+k)/(1+k|x|), the grit of the spire's degradation layer and the brake).
+export type Layer = {kind: string, freq: float, freqTo: float, glide0: float, glide1: float, amp: float, lowpass: float, highpass: float, seed: int, env: Env,
+  vibRate: float, vibCents: float, amRate: float, amDepth: float, lowpassTo: float}
+export type Recipe = {id: string, seconds: float, loop: bool, peakDb: float, fadeMs: float, swellRate: float, swellDepth: float, drive: float, layers: [Layer]}
 
 -- The int16 range: every sample is clamped into it before it becomes two bytes.
 export func clamp16(v: int) -> int ! {}
@@ -68,26 +73,66 @@ export pure func noise(i: int, seed: int) -> float {
   intToFloat(x2) / 1073741824.0 - 1.0
 }
 
+-- Note (D-108 rework): `noise` above is not white. Three affine LCG rounds over a sequential index are
+-- still affine in the index, so it is a fast ramp mod 2^31 with a buzzy, tonal edge. The sounds Mark
+-- approved by ear (the hum, the interface, commit_seal, dust_tick) keep it so their bytes do not
+-- change; new and reworked recipes use `white` instead.
+-- White noise in [-1, 1): an affine start, then two rounds of squaring mod 2^31 (nonlinear, so
+-- neighbouring samples decorrelate); every product stays below 2^62.
+export pure func white(i: int, seed: int) -> float {
+  let m = 2147483648;
+  let x0 = (i * 1103515245 + seed * 12347 + 12345) % m;
+  let x1 = (x0 * x0 + 2654435) % m;
+  let x2 = (x1 * x1 + i * 40503 + 97) % m;
+  let x3 = (x2 * x2 + 7) % m;
+  intToFloat(x3) / 1073741824.0 - 1.0
+}
+
+pure func gen(l: Layer, i: int) -> float = if l.kind == "white" then white(i, l.seed) else noise(i, l.seed)
+
 pure func onePole(cut: float) -> float = 1.0 - exp(0.0 - twoPi() * cut / rateF())
 
 -- One-pole low-pass; a high-pass is the input minus its own low-pass.
 pure func lowpassList(a: float, xs: [float]) -> [float] =
   match mapAccumL(\y x. { let y2 = y + a * (x - y); (y2, y2) }, 0.0, xs) { (out, _) => out }
 
+-- A low-pass whose cutoff moves exponentially from c0 to c1 across the n samples (period n).
+pure func sweepList(c0: float, c1: float, n: int, xs: [float]) -> [float] =
+  match mapAccumL(\st x. { let y = st.y + onePole(c0 * pow(c1 / c0, intToFloat(st.i % n) / intToFloat(n))) * (x - st.y); (y, {y: y, i: st.i + 1}) }, {y: 0.0, i: 0}, xs) { (out, _) => out }
+
 pure func filtered(l: Layer, xs: [float]) -> [float] {
-  let lp = if l.lowpass > 0.0 then lowpassList(onePole(l.lowpass), xs) else xs;
+  let n = size(xs);
+  let lp = if l.lowpass > 0.0 && l.lowpassTo > 0.0 && l.lowpassTo != l.lowpass then sweepList(l.lowpass, l.lowpassTo, n, xs)
+    else if l.lowpass > 0.0 then lowpassList(onePole(l.lowpass), xs) else xs;
   if l.highpass > 0.0 then zipWith(\x y. x - y, lp, lowpassList(onePole(l.highpass), lp)) else lp
 }
 
 -- One layer, n samples. Noise in a loop is periodic: its filters run over two periods, keeping the second.
 export pure func layerSamples(l: Layer, n: int, loop: bool) -> [float] =
-  if l.kind == "noise" then {
+  if l.kind == "noise" || l.kind == "white" then {
     let periods = if loop then 2 else 1;
-    let raw = map(\i. noise(i % n, l.seed), range(0, periods * n));
-    let f = drop((periods - 1) * n, filtered(l, raw));
-    zipWith(\x i. l.amp * x * envAt(l.env, intToFloat(i) / rateF()), f, range(0, n))
+    let raw = map(\i. gen(l, i % n), range(0, periods * n));
+    let f = drop((periods - 1) * n, filteredN(l, raw, n));
+    zipWith(\x i. { let t = intToFloat(i) / rateF(); l.amp * x * envAt(l.env, t) * amAt(l, t) }, f, range(0, n))
   } else
-    map(\i. { let t = intToFloat(i) / rateF(); l.amp * sin(phaseAt(l, t)) * envAt(l.env, t) }, range(0, n))
+    map(\i. { let t = intToFloat(i) / rateF(); l.amp * sin(phaseAt(l, t) + vibAt(l, t)) * envAt(l.env, t) * amAt(l, t) }, range(0, n))
+
+-- The sweep's period is the sound's length n, also when a loop's noise is filtered over two periods.
+pure func filteredN(l: Layer, xs: [float], n: int) -> [float] =
+  if l.lowpass > 0.0 && l.lowpassTo > 0.0 && l.lowpassTo != l.lowpass then {
+    let lp = sweepList(l.lowpass, l.lowpassTo, n, xs);
+    if l.highpass > 0.0 then zipWith(\x y. x - y, lp, lowpassList(onePole(l.highpass), lp)) else lp
+  } else filtered(l, xs)
+
+-- Vibrato as a phase offset: instantaneous frequency f(1 + d sin 2πrt), d from cents.
+pure func vibAt(l: Layer, t: float) -> float =
+  if l.vibCents <= 0.0 || l.vibRate <= 0.0 then 0.0
+  else { let d = pow(2.0, l.vibCents / 1200.0) - 1.0; l.freq * d / l.vibRate * (1.0 - cos(twoPi() * l.vibRate * t)) }
+
+pure func amAt(l: Layer, t: float) -> float =
+  if l.amDepth <= 0.0 then 1.0 else 1.0 - l.amDepth + l.amDepth * (0.5 + 0.5 * sin(twoPi() * l.amRate * t))
+
+pure func sat(k: float, x: float) -> float = x * (1.0 + k) / (1.0 + k * absF(x))
 
 pure func swellAt(r: Recipe, t: float) -> float =
   if r.swellDepth <= 0.0 then 1.0 else 1.0 - r.swellDepth + r.swellDepth * sin(twoPi() * r.swellRate * t)
@@ -107,7 +152,8 @@ export pure func absF(x: float) -> float = if x < 0.0 then 0.0 - x else x
 export pure func render(r: Recipe) -> [float] {
   let n = frames(r);
   let summed = foldl(\acc l. add(acc, fromList(layerSamples(l, n, r.loop))), make(n, 0.0), r.layers);
-  let shaped = zipWith(\x i. x * swellAt(r, intToFloat(i) / rateF()) * edgeAt(r, i, n), toList(summed), range(0, n));
+  let summed2 = if r.drive > 0.0 then { let pk = match maximumFloat(map(absF, toList(summed))) { Some(p) => p, None => 1.0 }; map(\x. sat(r.drive, x / pk), toList(summed)) } else toList(summed);
+  let shaped = zipWith(\x i. x * swellAt(r, intToFloat(i) / rateF()) * edgeAt(r, i, n), summed2, range(0, n));
   let peak = match maximumFloat(map(absF, shaped)) { Some(p) => p, None => 0.0 };
   if peak <= 0.0 then shaped else toList(scale(pow(10.0, r.peakDb / 20.0) / peak, fromList(shaped)))
 }
@@ -126,6 +172,10 @@ export pure func loopErrors(r: Recipe) -> [string] =
       else if not whole(l.freq, r.seconds) then ["${r.id}: a sine does not complete whole cycles over the loop: ${floatToStr(l.freq)}"]
       else if l.env.attack > 0.0 || l.env.tau > 0.0 || l.env.delay > 0.0 || l.env.stop > 0.0 then ["${r.id}: a loop layer cannot have an envelope"]
       else [], r.layers)
+    ++ flatMap(\l. if l.vibCents > 0.0 && not whole(l.vibRate, r.seconds) then ["${r.id}: a vibrato does not complete whole cycles over the loop"]
+      else if l.amDepth > 0.0 && not whole(l.amRate, r.seconds) then ["${r.id}: a beat does not complete whole cycles over the loop"]
+      else if l.lowpassTo > 0.0 && l.lowpassTo != l.lowpass then ["${r.id}: a loop cannot sweep its filter"]
+      else [], r.layers)
     ++ (if r.swellDepth > 0.0 && not whole(r.swellRate, r.seconds) then ["${r.id}: the swell does not complete whole cycles over the loop"] else [])
 
 -- Recipes from JSON (data/audio/recipes.json, schema stapledons.audio.recipes/1).
@@ -141,7 +191,9 @@ pure func layerOf(j: Json) -> Layer {
   {kind: match getString(j, "kind") { Some(k) => k, None => "sine" }, freq: f, freqTo: num(j, "glide_to", f),
    glide0: num(j, "glide_from_s", 0.0), glide1: num(j, "glide_until_s", 0.0), amp: num(j, "amp", 0.0),
    lowpass: num(j, "lowpass_hz", 0.0), highpass: num(j, "highpass_hz", 0.0),
-   seed: match getInt(j, "seed") { Some(s) => s, None => 1 }, env: envOf(j)}
+   seed: match getInt(j, "seed") { Some(s) => s, None => 1 }, env: envOf(j),
+   vibRate: num(j, "vib_hz", 0.0), vibCents: num(j, "vib_cents", 0.0), amRate: num(j, "beat_hz", 0.0), amDepth: num(j, "beat_depth", 0.0),
+   lowpassTo: num(j, "lowpass_to_hz", 0.0)}
 }
 
 pure func recipeOf(j: Json) -> Result[Recipe, string] = match getString(j, "id") {
@@ -153,7 +205,7 @@ pure func recipeOf(j: Json) -> Result[Recipe, string] = match getString(j, "id")
       peakDb: num(j, "peak_db", -6.0), fadeMs: num(j, "fade_ms", 20.0),
       swellRate: match sw { Some(s) => num(s, "rate", 0.0), None => 0.0 },
       swellDepth: match sw { Some(s) => num(s, "depth", 0.0), None => 0.0 },
-      layers: layers};
+      drive: num(j, "drive", 0.0), layers: layers};
     if r.seconds <= 0.0 then Err("${id}: seconds must be positive")
     else if size(layers) == 0 then Err("${id}: no layers")
     else match loopErrors(r) { [] => Ok(r), es => Err(join("; ", es)) }

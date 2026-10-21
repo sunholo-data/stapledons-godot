@@ -70,6 +70,18 @@ uniform float surf_norm = 1.0;                  // N: the map's disc mean (StarS
 uniform int spot_count = 0;
 uniform vec4 spots[12];                         // star-frame unit direction, spot radius (rad on the sphere)
 uniform vec2 spot_temps[12];                    // umbra, penumbra (K)
+// SS3 eclipse layers (design §D6): drawn only while a body covers part of the photosphere, so an
+// unoccluded star is unchanged. The mean K+F corona (Baumbach 1937, sunholo/celestial stellar) out
+// to corona_outer radii with a chosen streamer modulation; H-alpha prominences at the limb, coloured
+// by the line at 656.28 nm / D (relativity's cmf; black outside 360-830 nm).
+uniform bool corona_on = false;
+uniform float corona_outer = 10.0;
+uniform int prom_count = 0;
+uniform vec4 proms[6];                          // star-frame unit direction, height (stellar radii)
+uniform vec3 prom_rgb = vec3(0.0);              // unit-luminance colour of the line as seen
+uniform float prom_rel = 1.0e-5;                // prominence radiance / disc centre (assumed)
+uniform float streamer_seed = 0.0;
+uniform float streamer_amp = 0.4;              // the streamers' depth (chosen)
 
 #include "res://planets/rings.gdshaderinc"
 
@@ -83,7 +95,7 @@ void vertex() {
 	vec3 draw_centre = beta_mag > 0.0 ? apparent_centre_w : centre_w;
 	vec3 c = (VIEW_MATRIX * vec4(draw_centre, 1.0)).xyz;
 	float dist = length(c);
-	float s = beta_mag > 0.0 ? apparent_radius_sin : clamp(radius * ring_outer / dist, 0.0, 0.999);
+	float s = beta_mag > 0.0 ? apparent_radius_sin : clamp(radius * max(ring_outer, corona_on ? corona_outer : 1.0) / dist, 0.0, 0.999);
 	if (beta_mag > 0.0 && (!bounded_draw || abs(c.z) <= dist*s)) {
 		// Large caps and caps crossing the camera plane retain the safe fallback.
 		POSITION = vec4(VERTEX.xy, 0.0, 1.0);
@@ -249,6 +261,25 @@ void fragment() {
 				vec3 hit=ray*globe_distance;
 				radiance=shade((hit-c)/radius,ray,inv_view,t_loc);
 				sample_alpha=1.0;
+			} else if (star && corona_on && b > 0.0) {
+				float rr = sqrt(dot(perp, perp)) / radius;
+				if (rr < corona_outer) {
+					float centre = ld_quad ? star_mean / (1.0 - ld_a / 3.0 - ld_b / 6.0) : star_mean / (1.0 - limb_u / 3.0);
+					float r1 = max(rr, 1.0);
+					float k_corona = 1.0e-6 * (0.0532 * pow(r1, -2.5) + 1.425 * pow(r1, -7.0) + 2.565 * pow(r1, -17.0));
+					vec3 pw = normalize(inv_view * (-perp));
+					vec3 pb = transpose(body_basis) * pw;
+					float st = 1.0 - streamer_amp + streamer_amp * pow(0.5 + 0.5 * sin(dot(pb, vec3(3.1, 1.7, 2.3)) * 3.0 + streamer_seed), 3.0);
+					float fade = 1.0 - smoothstep(0.85 * corona_outer, corona_outer, rr);
+					vec3 col = tint;
+					radiance = col * min(centre * k_corona * st * fade * exposure, clip_max);
+					for (int k = 0; k < prom_count; k++) {
+						float along = dot(pb, proms[k].xyz);
+						float loop_ = smoothstep(0.985, 0.999, along) * (1.0 - smoothstep(1.0, 1.0 + proms[k].w, rr));
+						radiance += prom_rgb * min(centre * prom_rel * loop_ * exposure, clip_max);
+					}
+					sample_alpha = clamp(dot(radiance, vec3(0.2126, 0.7152, 0.0722)) * 4.0, 0.0, 1.0);
+				}
 			}
 			if (ring_count>0) {
 				vec3 rw=normalize(inv_view*ray);

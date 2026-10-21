@@ -45,6 +45,94 @@
    "listen_for": "It should be felt more than heard: low, slow, with a gentle beat every 4 s. Is it calm enough to forget after a minute, yet missed if it stopped?"
   },
   {
+   "id": "spire_drift",
+   "trigger": {
+    "kind": "game",
+    "name": "level_bridge",
+    "stop_on": "level_none"
+   },
+   "streams": [
+    "spire_drift"
+   ],
+   "bus": "Ambience",
+   "loop": true,
+   "volume_db": -26.0,
+   "param": {
+    "name": "archive_degradation",
+    "points": [
+     [
+      0.0,
+      -80.0
+     ],
+     [
+      0.15,
+      -30.0
+     ],
+     [
+      0.5,
+      -8.0
+     ],
+     [
+      1.0,
+      -4.0
+     ]
+    ]
+   },
+   "band": [
+    -48,
+    -30
+   ],
+   "visual": "ambient: the Archive's state is hidden by design (Memory Health is not a visible metric)",
+   "about": "The spire's longer beat with a slight grit, under the hum; it follows archive_degradation = 1 - Memory Health/100 (D-108). Silent while the sim does not emit Memory Health.",
+   "name": "The spire's degradation layer (mid)",
+   "when": "Always on the bridge, louder as the Archive's Memory Health falls (silent while it is intact).",
+   "listen_for": "A second, much slower beat (one cycle in 32 s) with a slight grit under the hum. Heard in the three 'degradation' mixes."
+  },
+  {
+   "id": "spire_drift_bad",
+   "trigger": {
+    "kind": "game",
+    "name": "level_bridge",
+    "stop_on": "level_none"
+   },
+   "streams": [
+    "spire_drift_bad"
+   ],
+   "bus": "Ambience",
+   "loop": true,
+   "volume_db": -26.0,
+   "param": {
+    "name": "archive_degradation",
+    "points": [
+     [
+      0.0,
+      -80.0
+     ],
+     [
+      0.5,
+      -80.0
+     ],
+     [
+      0.75,
+      -14.0
+     ],
+     [
+      1.0,
+      -3.0
+     ]
+    ]
+   },
+   "band": [
+    -48,
+    -30
+   ],
+   "visual": "ambient: the Archive's state is hidden by design (Memory Health is not a visible metric)",
+   "about": "The badly degraded spire layer: the long beat roughened, wavering and gritty; it takes over as Memory Health becomes critical (D-108).",
+   "name": "The spire's degradation layer (bad)",
+   "when": "On the bridge once the Archive's Memory Health is low (below about 40).",
+   "listen_for": "Wavering, gritty, with a tone that does not belong. It should feel wrong without being loud."
+  },
+  {
    "id": "room_bridge",
    "trigger": {
     "kind": "game",
@@ -55,13 +143,17 @@
     "room_bridge"
    ],
    "bus": "Ambience",
-   "volume_db": -22.0,
+   "volume_db": -34.0,
    "visual": "ambient: room tone carries no information",
-   "about": "Air under the bridge dome.",
+   "about": "Air and structure under the bridge dome, barely there (v2, D-108; 6 dB lower, D-112).",
    "loop": true,
    "name": "Bridge room tone",
    "when": "Always, on the bridge.",
-   "listen_for": "Air under a big dome: soft and wide. Too hissy? Too dull?"
+   "listen_for": "Barely there: a soft low body of air under the hum, 6 dB lower than the last listen. It should never be what you notice.",
+   "band": [
+    -56,
+    -48
+   ]
   },
   {
    "id": "ui_click",
@@ -125,12 +217,16 @@
     "console_wake"
    ],
    "bus": "Effects",
-   "volume_db": -10.0,
+   "volume_db": -14.0,
    "visual": "ambient: the console close-up is on screen",
-   "about": "A console wakes (the zoom in); 3D at the station from S1.",
+   "about": "A console wakes (the zoom in): latch, thunk, servo, settle (v2, D-108).",
    "name": "Console wakes",
    "when": "Stepping up to a console (the close-up zooms in).",
-   "listen_for": "A small servo rising, then the screen's glass hum. Does it feel like an old precise machine?"
+   "listen_for": "A latch, a soft low thunk and a fluttering servo: a precise old machine, not a toy. Compare with the v1 file.",
+   "band": [
+    -34,
+    -26
+   ]
   },
   {
    "id": "console_sleep",
@@ -142,12 +238,16 @@
     "console_sleep"
    ],
    "bus": "Effects",
-   "volume_db": -10.0,
+   "volume_db": -14.0,
    "visual": "ambient: the console close-up closes on screen",
-   "about": "A console sleeps (the zoom out).",
+   "about": "A console sleeps (the zoom out): the servo closes, the latch settles (v2, D-108).",
    "name": "Console sleeps",
    "when": "Stepping back from a console.",
-   "listen_for": "The servo falling away; the pair with 'Console wakes'."
+   "listen_for": "The servo closing down and settling; nothing rises.",
+   "band": [
+    -34,
+    -26
+   ]
   },
   {
    "id": "commit_hold",
@@ -196,12 +296,12 @@
     "drive_boost"
    ],
    "bus": "Effects",
-   "volume_db": -10.0,
+   "volume_db": -12.0,
    "visual": "ui/journey_hud.gd::ship.phase",
-   "about": "Boost: the emitter rises; no rumble (the teacup rule).",
+   "about": "Boost: lower and richer, beating partials and an opening noise band; no rumble (the teacup rule) (v2, D-108).",
    "name": "Drive: boost",
    "when": "The ship starts boosting toward cruise speed.",
-   "listen_for": "The teacup rule: no rumble, nothing below 200 Hz. A clean high tone rising while the generator's notes step in."
+   "listen_for": "Lower and thicker than v1: several voices beating slowly and air opening up as the ship accelerates. Nothing below 200 Hz, nothing you would feel."
   },
   {
    "id": "drive_silent",
@@ -216,12 +316,12 @@
     "drive_silent"
    ],
    "bus": "Effects",
-   "volume_db": -10.0,
+   "volume_db": -9.5,
    "visual": "ui/journey_hud.gd::ship.phase",
-   "about": "Cruise: the drive falls silent.",
+   "about": "Cruise: the drive settles low and falls silent (v2, D-108).",
    "name": "Drive: falls silent",
    "when": "The boost ends and the ship coasts.",
-   "listen_for": "The emitter fading away until only the hum and the room are left. The coast should feel quiet."
+   "listen_for": "The drive settling down and closing off until only the hum and the room are left."
   },
   {
    "id": "drive_brake",
@@ -236,12 +336,12 @@
     "drive_brake"
    ],
    "bus": "Effects",
-   "volume_db": -10.0,
+   "volume_db": -12.0,
    "visual": "ui/journey_hud.gd::BRAKE_NOTICE",
-   "about": "Brake: the emitter falls.",
+   "about": "Brake: falling, rougher than the boost (v2, D-108).",
    "name": "Drive: brake",
    "when": "The ship starts braking.",
-   "listen_for": "The boost's mirror, falling; still no rumble."
+   "listen_for": "The boost's mirror, falling, and rougher: voices rubbing, faster beats, more air and a little grit."
   },
   {
    "id": "stop_turn",
@@ -289,10 +389,10 @@
    "bus": "Instruments",
    "volume_db": -12.0,
    "visual": "ui/arrival_card.gd::class_name ArrivalCard",
-   "about": "Arrival: a neutral two-note chime.",
+   "about": "Arrival: an understated suspended chord (v2, D-108).",
    "name": "Arrival chime",
    "when": "The ship arrives at its destination.",
-   "listen_for": "A neutral two-note chime from the instruments, a fourth apart. It should inform, not celebrate."
+   "listen_for": "Understated and suspended, in commit_seal's mood: it tells you that you've arrived without celebrating."
   },
   {
    "id": "archive_ready",
@@ -306,10 +406,10 @@
    "bus": "Instruments",
    "volume_db": -12.0,
    "visual": "ambient: the reply appears on the terminal",
-   "about": "The Archive's reply is ready at the terminal.",
+   "about": "The Archive's reply is ready: a small breathing figure (v2, D-108).",
    "name": "The Archive's reply is ready",
    "when": "The Archive's answer appears at its terminal.",
-   "listen_for": "A soft rising pair; quieter and warmer than the arrival chime."
+   "listen_for": "A small breathing three-note figure with a glassy shimmer: more character than v1, still soft and in-world."
   },
   {
    "id": "hold_limit",

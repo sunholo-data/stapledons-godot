@@ -11,11 +11,14 @@ module stapledons/sim/stellar_surface_test
 --   = 4.358898943540674; receding gamma (1 - beta) = 0.2294157338705618.
 
 import std/math (sqrt, log10)
+import std/list (length)
+import std/math (intToFloat)
 import std/string (contains, concat, length as std_length, substring as std_substring, intToStr as intToStrL)
 import ./core (World, newWorld, defaultParams)
 import ./protocol (encodeSystemStops, encodeSystemStopsAt, surfaceMinor, homeTiersMinor)
 import ./celestial (BodyView)
-import ./stellar_surface (Surface, surfaceOf, lightAgeOf, emissionTimeS, idKey, spotSalt, spotWindowS, loggInferred, loggAssumed)
+import ./data/stellar_activity (activityOf, Activity)
+import ./stellar_surface (Surface, flareAt, surfaceOf, lightAgeOf, emissionTimeS, idKey, spotSalt, spotWindowS, loggInferred, loggAssumed)
 import pkg/sunholo/celestial/kepler (absf)
 
 pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
@@ -106,18 +109,40 @@ test "RS-25: from the sim's emission time alone, a static star's surface runs at
 -- ---------- spot windows
 
 export pure func checkWindows() -> bool {
-  let a = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 0.0, 2451545.0, 0.0);
-  let b = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 1.0, 2451545.0, 0.0);
-  let c = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 0.0, 2451545.0, 0.0);
+  let a = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 0.0, 2451545.0, 0.0, t1Act());
+  let b = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 1.0, 2451545.0, 0.0, t1Act());
+  let c = surfaceOf("trappist-1", 2566.0, 5.2387, "x", 82927.0, 42, 0.0, 2451545.0, 0.0, t1Act());
   a.salt == c.salt && a.salt != b.salt && a.salt == spotSalt(42, "trappist-1", 0) && idKey("sun") != idKey("aldebaran")
   && spotWindowS() == 2160000.0 && a.corona && a.ldSource == "claret2011-phoenix"
 }
 
 test "the spot pattern changes every 25-day window of emission time and repeats exactly within one" { checkWindows() }
 
+pure func t1Act() -> Activity = activityOf("trappist-1", "", 2566.0, 5.2387)
+
+-- ---------- D-111 A3: activity within each star's real range
+
+pure func spotsAt(id: string, cat: string, teff: float, logg: float, r: float, k: int) -> int =
+  length(surfaceOf(id, teff, logg, "x", r, 42, intToFloat(k) * 25.0 / 365.25, 2451545.0, 0.0, activityOf(id, cat, teff, logg)).spots)
+pure func maxOver(id: string, cat: string, teff: float, logg: float, r: float, k: int, n: int, m: int) -> int =
+  if k >= n then m else { let c = spotsAt(id, cat, teff, logg, r, k); maxOver(id, cat, teff, logg, r, k + 1, n, if c > m then c else m) }
+pure func flareHours(k: int, n: int, acc: int) -> int =
+  if k >= n then acc else flareHours(k + 1, n, acc + length(flareAt(42, "trappist-1", 0.525, intToFloat(k) * 3600.0 + 60.0)))
+
+export pure func checkActivity() -> bool {
+  let barnard = maxOver("cat:Gaia DR3 4472832130942575872", "Gaia DR3 4472832130942575872", 3250.0, 5.16, 132000.0, 0, 120, 0);
+  let trap = maxOver("trappist-1", "", 2566.0, 5.2387, 82927.0, 0, 40, 0);
+  let acenB = maxOver("acen-b", "", 5231.0, 4.53, 600000.0, 0, 160, 0);
+  let ald = maxOver("aldebaran", "", 3927.0, 1.11, 31453988.0, 0, 40, 0);
+  let flares = flareHours(0, 9600, 0);
+  barnard <= 1 && trap >= 4 && acenB >= 6 && ald == 0
+  && flares > 150 && flares < 270 && length(flareAt(42, "trappist-1", 0.525, 3600.0 * 7.0 + 1500.0)) == 0
+}
+test "D-111 activity: Barnard's Star never more than one small spot; TRAPPIST-1 always spotted and flaring at ~0.525 a day (9,600 hours: 150-270; a flare lasts 20 min); alpha Cen B's groups at maximum; Aldebaran none" { checkActivity() }
+
 -- make strict: every check on the strict VM and the interpreter, plus the wire bytes' length.
 export pure func stellarSurfaceVm(k: int) -> string =
-  if checkWire() && checkBelow13() && checkDeterministic() && checkLogg() && checkClock() && checkWindows()
+  if checkWire() && checkBelow13() && checkDeterministic() && checkLogg() && checkClock() && checkWindows() && checkActivity()
   then concat(["stellar-surface-ok ", showLen(slen(sys13()))])
   else "stellar-surface-FAIL"
 pure func showLen(n: int) -> string = intToStrL(n)
