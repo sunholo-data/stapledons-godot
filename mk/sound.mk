@@ -1,6 +1,6 @@
 # R2-SOUND (design_docs/planned/r2/sound.md): the cue table, the mix, the synthesised sounds and
 # their checks. Every check here runs headless (the Dummy audio driver still mixes; design §Evidence).
-.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-check sound-review sound-stage sound-stage-check sound-export-smoke
+.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-check sound-review sound-stage sound-stage-check sound-export-smoke sound-archive-test
 
 # AC1-AC5, AC8 (rules), §D2 layout: validators with negative controls, the clocks, deterministic
 # variation; then the same scripted session in two separate processes must give the same cue log (AC2).
@@ -79,3 +79,8 @@ sound-export-smoke:
 	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" --headless -- --sound-smoke > $(SCRATCH)/export-smoke/sound-smoke.log 2>&1; \
 	grep -E '^sound-smoke' $(SCRATCH)/export-smoke/sound-smoke.log; grep -q '^sound-smoke: OK' $(SCRATCH)/export-smoke/sound-smoke.log
 export-smoke: sound-export-smoke
+
+# D-113: the real sim at 2.15 drives the spire's degradation layer (end to end).
+sound-archive-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_sound_archive.gd > $(SCRATCH)/sound-archive.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-archive)' $(SCRATCH)/sound-archive.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound-archive.log && grep -q '^sound-archive: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound-archive.log
+test: sound-archive-test
