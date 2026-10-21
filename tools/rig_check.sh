@@ -32,14 +32,21 @@ log="$dir.log"
 
 status() {
   [ "${RIG_NO_STATUS:-0}" = 1 ] && return 0
-  gh api "repos/$REPO/statuses/$sha" -f state="$1" -f context=rig/full -f description="$2" > /dev/null
+  # GitHub refuses a description over 140 characters (row 7o): cut every post to fit.
+  gh api "repos/$REPO/statuses/$sha" -f state="$1" -f context=rig/full -f description="$(printf %s "$2" | cut -c1-140)" > /dev/null
 }
 
 suite="make test"; [ $golden = 1 ] && suite="make test + make golden"
 echo "rig-check: $target -> $short in $dir ($suite); log $log"
 status pending "$suite running on the Studio"
 
-fail() { status failure "$1 (log on the Studio: $log)"; echo "rig-check: FAIL: $1"; exit 1; }
+fail() {
+  echo "rig-check: FAIL: $1 (log: $log)"
+  d="$short: $1"   # the log pointer goes in too whenever it fits GitHub's 140 characters (row 7o)
+  if [ $((${#d} + ${#log} + 8)) -le 140 ]; then d="$d (log: $log)"; fi
+  status failure "$d" || echo "rig-check: could not post the failure status"
+  exit 1
+}
 
 rm -rf "$dir"; mkdir -p "$(dirname "$dir")"
 git clone --quiet "https://github.com/$REPO.git" "$dir" || fail "clone failed"
@@ -67,5 +74,5 @@ if [ $golden = 1 ]; then
   perl -e 'alarm shift; exec @ARGV' "$GOLDEN_S" make golden >> "$log" 2>&1 || fail "make golden failed or ran over ${GOLDEN_S}s"
 fi
 mins=$(( ($(date +%s) - start + 59) / 60 ))
-status success "$suite green on the Studio in ${mins} min ($(ailang --version 2>&1 | head -1))"
 echo "rig-check: ok, $short green ($suite, ${mins} min)"
+status success "$suite green on the Studio in ${mins} min ($(ailang --version 2>&1 | head -1))" || { echo "rig-check: could not post the success status"; exit 1; }
