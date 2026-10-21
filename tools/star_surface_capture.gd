@@ -40,7 +40,7 @@ func _run() -> void:
 	for a in OS.get_cmdline_user_args():
 		if not a.begins_with("--"):
 			only.append(a)
-	var list := [["trappist1", "Gaia DR3 2635476908753563008"], ["aldebaran", "CNS5:1142"], ["acen_a", "CNS5:3627"], ["barnard", "Gaia DR3 4472832130942575872"], ["earth", "Sol"]]
+	var list := [["trappist1", "Gaia DR3 2635476908753563008"], ["aldebaran", "CNS5:1142"], ["acen_a", "CNS5:3627"], ["acen_b", "HIP 71681"], ["barnard", "Gaia DR3 4472832130942575872"], ["earth", "Sol"]]
 	var n := 0
 	for stop: Array in list:
 		if not only.is_empty() and not only.has(stop[0]):
@@ -136,6 +136,27 @@ func _shots(name: String) -> int:
 			_crop(real, name + "_crop_realistic", px_r, at)
 			crops.append(name)
 			frames += 3
+	# D-111 A1: the helm's telescope on this stop's star, with and without the surface map
+	demo.set_auto_view(true)
+	demo.toggle_telescope(true)
+	demo.telescope.set_meta("pinned", true)
+	for lv: int in [1, 2]:
+		demo.telescope.level = lv
+		for enabled: bool in [true, false]:
+			sv.surfaces_enabled = enabled
+			for i in 8:
+				await process_frame
+			demo.telescope.refresh(demo.sky_world)
+			for i in 4:
+				await process_frame
+			await RenderingServer.frame_post_draw
+			var tel: Image = demo.telescope._vp.get_texture().get_image()
+			tel.save_png(out + "/" + name + ("_telescope" if lv == 1 else "_telescope_close") + ("" if enabled else "_today") + ".png")
+			frames += 1
+		rows.append({"stop": name, "telescope_star": demo.telescope.star_id, "level": lv, "magnification": demo.telescope.magnification})
+		print("star-surface-capture telescope ", name, " ", demo.telescope.star_id, " level ", lv, " x", demo.telescope.magnification)
+	demo.telescope.set_meta("pinned", false)
+	demo.toggle_telescope(false)
 	if demo.sky_only:
 		demo.toggle_sky_only()
 	demo.set_auto_view(false)

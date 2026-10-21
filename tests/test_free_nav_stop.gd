@@ -66,13 +66,13 @@ func _run() -> void:
 		check(ident.card.visible and text.contains("Barnard's Star") and text.contains("Radius inferred, not measured") and text.contains("inferred radius: R = sqrt(L)") and text.contains("Catalogue: Barnard's Star"), "its card says the radius is inferred: " + text.replace("\n", " | "))
 	ident.set_held(false); ident.close_card()
 	# A second leg from the stop: D-54 (Mark, 2026-10-08) stops at alpha Cen A where it looks
-	# 2 atan(tan 5 deg sqrt(1.22)) = 11 deg across (0.059 AU), not 1,000 AU; the HUD names the stop it left.
+	# D-111 close pass (a G2 dwarf): 2 atan(2 tan 5 deg sqrt(1.22)) = 21.9 deg across (0.030 AU), not 1,000 AU; the HUD names the stop it left.
 	fly(demo, "CNS5:3627", "Barnard's Star")
 	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
-	check(hud.begins_with("At Alpha Centauri A 0.059 AU · from Barnard's Star 6.") and hud.contains("· from Earth 4.3"), "HUD at the D-54 alpha Cen A stop: " + hud)
+	check(hud.begins_with("At Alpha Centauri A 0.030 AU · from Barnard's Star 6.") and hud.contains("· from Earth 4.3"), "HUD at the alpha Cen A close-pass stop (D-111): " + hud)
 	var a_body := body_of(demo, "acen-a")
 	var a_deg := rad_to_deg(2.0 * Planets.angular_radius(a_body.radius_km, Planets.length64(Planets.world_of(a_body.rel_km))))
-	check(absf(a_deg - 11.05) < 0.1, "alpha Cen A fills %.2f deg (D-54: 11.05)" % a_deg)
+	check(absf(a_deg - 21.91) < 0.1, "alpha Cen A fills %.2f deg (D-111 close pass: 21.91)" % a_deg)
 	demo.avatar_pos = Vector3(8, 82, -4.8) # a fixed eye: R2-DECK-LAYOUT's spawn stands behind the helm, whose pods fill a level look ahead
 	demo.look_direction("forward"); await process_frame
 	ident.set_held(true); ident.update_candidates()
