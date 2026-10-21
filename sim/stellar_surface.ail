@@ -17,17 +17,18 @@ module stapledons/sim/stellar_surface
 -- falls out of t_e itself; the renderer must never multiply by D again (RS-25).
 
 import std/math (sqrt, floor, sin, cos, pow, log10, intToFloat, floatToInt)
-import std/string (chars, find)
+import std/string (chars, find, concat)
 import std/list (foldl)
 import ./rng (mix64, splitmix64, top53)
 import ./celestial (BodyView)
+import ./data/stellar_activity (Activity, flareKernelK, flareMinutes)
 import pkg/sunholo/celestial/stellar (ldCoeffs, LdQuad, solarLogg, solarTeff, loggFromMassRadius, cellSizeKm, granulationLifetimeS, granulationSigmaT, faculaSigmaT, sunUmbraTeff, sunPenumbraTeff, mDwarfSpotRatio, diffRotation, solarCyclePhase, sporerLatitudeDeg, activityLevel, solarCycleYears)
 
 -- One spot (or spot group's main spot) on the star, in the star's own frame: heliographic latitude
 -- and longitude at the emission time (degrees; longitude measured in the frame whose zero is the
 -- star's prime meridian, rotating with the star), its penumbral radius as an angle on the sphere
 -- (radians), and the umbra and penumbra temperatures (K).
-export type Spot = { latDeg: float, lonDeg: float, radiusRad: float, umbraK: float, penumbraK: float }
+export type Spot = { latDeg: float, lonDeg: float, radiusRad: float, umbraK: float, penumbraK: float, kind: string }
 
 -- Provenance of the fields (see the header).
 export type SurfaceProv = { logg: string, ld: string, cells: string, spots: string, corona: string }
@@ -94,16 +95,52 @@ pure func sunlikeSpot(salt: int, k: int, teff: float, radiusKm: float, phase: fl
   let lon0 = 360.0 * u(salt, 10 * k + 2);
   let rKm = 8000.0 + 17000.0 * u(salt, 10 * k + 3);
   { latDeg: lat, lonDeg: wrap360(lon0 + diffRotation(lat) * sinceS / 86400.0), radiusRad: rKm / radiusKm,
-    umbraK: teff * sunUmbraTeff() / solarTeff(), penumbraK: teff * sunPenumbraTeff() / solarTeff() }
+    umbraK: teff * sunUmbraTeff() / solarTeff(), penumbraK: teff * sunPenumbraTeff() / solarTeff(), kind: "spot" }
 }
+
+-- D-111 A3: a sunspot group as real ones come, a leader and 1-3 smaller followers trailing it in
+-- longitude (2-6 degrees apart) at nearly the same latitude.
+pure func sunlikeGroup(salt: int, g: int, teff: float, radiusKm: float, phase: float, sinceS: float) -> [Spot] {
+  let lead = sunlikeSpot(salt, 10 * g, teff, radiusKm, phase, sinceS);
+  let nf = 1 + floatToInt(floor(3.0 * u(salt, 100 * g + 7)));
+  followers(salt, g, nf, 0, lead)
+}
+pure func followers(salt: int, g: int, nf: int, k: int, lead: Spot) -> [Spot] =
+  if k > nf then [] else if k == 0 then lead :: followers(salt, g, nf, 1, lead)
+  else {lead | lonDeg: wrap360(lead.lonDeg - (2.0 + 4.0 * u(salt, 100 * g + 10 + k)) * intToFloat(k)),
+    latDeg: lead.latDeg + 2.0 * (u(salt, 100 * g + 20 + k) - 0.5),
+    radiusRad: lead.radiusRad * (0.4 + 0.3 * u(salt, 100 * g + 30 + k))} :: followers(salt, g, nf, k + 1, lead)
+pure func groupsN(n: int, k: int, g: int -> [Spot]) -> [Spot] = if k >= n then [] else g(k) ++ groupsN(n, k + 1, g)
+pure func takeN(xs: [Spot], n: int) -> [Spot] = if n <= 0 then [] else match xs { [] => [], x :: r => x :: takeN(r, n - 1) }
 
 -- M dwarf: 4-7 large cool spots anywhere within +-60 degrees, radii 0.06-0.22 rad (assumed: large
 -- coverage, as inferred for TRAPPIST-1 by Rackham et al. 2018), at Teff x mDwarfSpotRatio.
 pure func mDwarfSpot(salt: int, k: int, teff: float) -> Spot {
   let t = teff * mDwarfSpotRatio();
   { latDeg: 120.0 * (u(salt, 10 * k + 1) - 0.5), lonDeg: 360.0 * u(salt, 10 * k + 2),
-    radiusRad: 0.06 + 0.16 * u(salt, 10 * k + 3), umbraK: t, penumbraK: (t + teff) / 2.0 }
+    radiusRad: 0.06 + 0.16 * u(salt, 10 * k + 3), umbraK: t, penumbraK: (t + teff) / 2.0, kind: "spot" }
 }
+
+-- D-111 A3: a quiet star's rare small spot, a moderate M dwarf's few medium ones (assumed sizes).
+pure func smallSpot(salt: int, k: int, teff: float, rMin: float, rMax: float) -> Spot {
+  let t = (if teff < 3900.0 then teff * mDwarfSpotRatio() else teff * sunUmbraTeff() / solarTeff());
+  { latDeg: 120.0 * (u(salt, 10 * k + 1) - 0.5), lonDeg: 360.0 * u(salt, 10 * k + 2),
+    radiusRad: rMin + (rMax - rMin) * u(salt, 10 * k + 3), umbraK: t, penumbraK: (t + teff) / 2.0, kind: "spot" }
+}
+
+-- A white-light flare in progress at emission time tE (s), or none: each hour of emission time
+-- holds one with probability flaresPerDay / 24, lasting flareMinutes from the hour's start; a small
+-- ~9,000 K kernel (Kowalski et al. 2013) anywhere within +-60 degrees.
+export pure func flareAt(seed: int, id: string, flaresPerDay: float, tE: float) -> [Spot] =
+  if flaresPerDay <= 0.0 then [] else {
+    let hour = floatToInt(floor(tE / 3600.0));
+    let salt = mix64(mix64(seed ^ idKey(id) ^ 7777) + hour);
+    let since = tE - intToFloat(hour) * 3600.0;
+    if u(salt, 0) < flaresPerDay / 24.0 && since < flareMinutes() * 60.0
+    then [{ latDeg: 120.0 * (u(salt, 1) - 0.5), lonDeg: 360.0 * u(salt, 2), radiusRad: 0.02 + 0.015 * u(salt, 3),
+      umbraK: flareKernelK(), penumbraK: flareKernelK(), kind: "flare" }]
+    else []
+  }
 
 pure func wrap360(x: float) -> float = x - 360.0 * floor(x / 360.0)
 
@@ -111,10 +148,10 @@ pure func spotsN(n: int, k: int, g: int -> Spot) -> [Spot] = if k >= n then [] e
 
 -- The cycle phase of a star at emission Julian date jdE: the Sun's real one; other stars a phase
 -- drawn from their salt-free key (assumed: unknown cycles), advancing with the same 11 years.
-export pure func cyclePhase(id: string, seed: int, jdE: float) -> float =
+export pure func cyclePhase(id: string, seed: int, jdE: float, cycleYears: float) -> float =
   if id == "sun" then solarCyclePhase(jdE)
   else {
-    let c = u(mix64(seed ^ idKey(id)), 999) + jdE / (solarCycleYears() * 365.25);
+    let c = u(mix64(seed ^ idKey(id)), 999) + jdE / ((if cycleYears > 0.0 then cycleYears else solarCycleYears()) * 365.25);
     c - floor(c)
   }
 
@@ -123,20 +160,24 @@ export pure func cyclePhase(id: string, seed: int, jdE: float) -> float =
 -- teff (K), logg (cgs) and its provenance; the star's id and radius; the voyage seed; Earth time t
 -- (Julian years since the epoch) and the epoch's Julian date; the light age (s).
 export pure func surfaceOf(id: string, teff: float, logg: float, loggProv: string, radiusKm: float,
-    seed: int, tYears: float, epochJd: float, lightAgeS: float) -> Surface {
+    seed: int, tYears: float, epochJd: float, lightAgeS: float, act: Activity) -> Surface {
   let ld = ldCoeffs(teff, logg);
   let tE = emissionTimeS(tYears, lightAgeS);
   let window = floatToInt(floor(tE / spotWindowS()));
   let salt = spotSalt(seed, id, window);
   let sinceS = tE - intToFloat(window) * spotWindowS();
   let jdE = epochJd + tE / 86400.0;
-  let phase = cyclePhase(id, seed, jdE);
-  let giant = isGiant(logg);
-  let mdwarf = isMDwarf(teff, logg);
-  let nSun = floatToInt(floor(10.0 * activityLevel(phase) + u(salt, 0)));
-  let nM = 4 + floatToInt(floor(4.0 * u(salt, 0)));
-  let spots = (if giant then [] else if mdwarf then spotsN(nM, 0, \k. mDwarfSpot(salt, k, teff))
-    else spotsN(nSun, 0, \k. sunlikeSpot(salt, k, teff, radiusKm, phase, sinceS)));
+  let phase = cyclePhase(id, seed, jdE, act.cycleYears);
+  let giant = isGiant(logg) || act.level == "none";
+  let nGroups = floatToInt(floor(intToFloat(act.maxGroups) * activityLevel(phase) + u(salt, 0)));
+  let nActive = 4 + floatToInt(floor(intToFloat(act.maxGroups - 3) * u(salt, 0)));
+  let nModerate = 1 + floatToInt(floor(intToFloat(act.maxGroups) * u(salt, 0)));
+  let base = (if giant then []
+    else if act.level == "active" then spotsN(nActive, 0, \k. mDwarfSpot(salt, k, teff))
+    else if act.level == "moderate" then spotsN(nModerate, 0, \k. smallSpot(salt, k, teff, 0.04, 0.12))
+    else if act.level == "quiet" then (if u(salt, 1) < 0.25 then [smallSpot(salt, 0, teff, 0.02, 0.05)] else [])
+    else groupsN(nGroups, 0, \g. sunlikeGroup(salt, g, teff, radiusKm, phase, sinceS)));
+  let spots = takeN(flareAt(seed, id, act.flaresPerDay, tE) ++ base, 12);
   { teffK: teff, logg: logg,
     ldA: ld.a, ldB: ld.b, ldSource: (if ld.source == 1 then "claret2011-phoenix" else "claret2011-atlas"),
     ldTeffUsed: ld.teffUsed, ldLoggUsed: ld.loggUsed,
@@ -145,7 +186,7 @@ export pure func surfaceOf(id: string, teff: float, logg: float, loggProv: strin
     spots: spots, tEmitS: tE, salt: salt, corona: not giant,
     prov: { logg: loggProv, ld: "measured: Claret & Bloemen 2011 V, quadratic",
       cells: (if id == "sun" then "measured: Roudier & Muller 1986; Danilovic et al. 2008" else "inferred: the Sun's scaled by the pressure scale height"),
-      spots: (if giant then "none: giant" else "chosen: seeded layout; sizes and temperatures cited or assumed (sunholo/celestial stellar)"),
+      spots: (if giant then "none: giant or hot star" else concat(["chosen: seeded layout; level ", act.level, " (", act.cite, "); sizes and temperatures cited or assumed (sunholo/celestial stellar)"])),
       corona: (if giant then "none: beyond the coronal dividing line (Linsky & Haisch 1979)" else "measured: Baumbach 1937 mean corona") } }
 }
 
