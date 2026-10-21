@@ -14,7 +14,7 @@ Updated 2026-10-21, iteration 43.
   - 7i(c): four PRs edit `demos/ship_geometry_demo.gd`.
 - **Closed:**
   - L5 was already done attended.
-  - L7's fix is in `sunholo/relativity` 0.13.0 source (unpublished; publishing is attended). Most properties now skip as out-of-contract while `vacuous_skips` reads 0; reported upstream.
+  - L7's fix is in `sunholo/relativity` 0.13.0 source (unpublished; publishing is attended). Most properties now skip as out-of-contract while `vacuous_skips` reads 0; reported upstream as ailang#1921.
 - **Rig:** load 30.8, GPU 86 % at pick (non-loop processes). 7m AC1 needs an idle rig.
 - **Next:** D-107 → Kerr doc revision → K1.1a. Then L9 S0.2 when #302 resolves, L4 and L3 when `Makefile` is free, 7m AC1, and the follow-up backlog.
 - **Lanes:**

@@ -1918,7 +1918,7 @@ DECISIONS FOR MARK: none. The ledger has 0 OPEN rows (106).
   - L9 S0.2 now: #302 holds `sim/protocol.ail` and minor 13, and `Makefile` is held. A loop PR taking 13 first would force a renumber onto a paused attended sprint.
   - L4 and L3 now: both need `Makefile`, which six attended PRs edit.
   - L5: a ghost. 0 in-tree markers for the v0.52.0 workaround issues (positive control: ailang#1914, 5 hits); CLAUDE.md already records the removal.
-  - L7 as loop work: the fix is in ailang-packages #126 (0.13.0, unpublished). Publishing and pinning are attended. The controller's run found most properties now skip as out-of-contract (94 of 139, 53 after one input) with `vacuous_skips` 0; reported upstream as a DX gap.
+  - L7 as loop work: the fix is in ailang-packages #126 (0.13.0, unpublished). Publishing and pinning are attended. The controller's run found most properties now skip as out-of-contract (94 of 139, 53 after one input) with `vacuous_skips` 0; reported upstream as ailang#1921 (ailang#1921).
   - 7m AC1: GPU 86 %, load 30.8.
   - 7i(c): the ship scene is held by four attended PRs.
   - A kimi revision pass after r1: both objections carried verbatim fixes on one surface each.
