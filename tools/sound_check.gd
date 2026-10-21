@@ -73,6 +73,33 @@ static func highpass_keep_db(x: PackedFloat32Array) -> float:
 	return db(sqrt(hi / maxf(all, 1e-12)))
 
 
+## The loudest dB a param loop reaches (its curve's highest point); 0 for an ordinary cue.
+static func max_param_db(c: Dictionary) -> float:
+	var pc: Variant = c.get("param", null)
+	if not pc is Dictionary:
+		return 0.0
+	var m := -80.0
+	for p: Array in pc.points:
+		m = maxf(m, float(p[1]))
+	return m
+
+
+## RMS through four one-pole 120 Hz low-passes, in dB relative to the whole (the felt band).
+static func lowband_db(x: PackedFloat32Array) -> float:
+	var a := 1.0 - exp(-TAU * 120.0 / 48000.0)
+	var y := [0.0, 0.0, 0.0, 0.0]
+	var all := 0.0
+	var lo := 0.0
+	for v in x:
+		var u := v
+		for k in 4:
+			y[k] = y[k] + a * (u - y[k])
+			u = y[k]
+		all += v * v
+		lo += u * u
+	return db(sqrt(lo / maxf(all, 1e-12)))
+
+
 ## The band and peak errors of one cue's level (empty = within).
 func band_errors(c: Dictionary, lv: Dictionary) -> Array[String]:
 	var bad: Array[String] = []
@@ -126,7 +153,7 @@ func _run() -> void:
 	for id: String in d.cues:
 		var c: Dictionary = d.cues[id]
 		var x := samples(str(c.streams[0]))
-		var lv := level(x, float(c.volume_db))
+		var lv := level(x, float(c.volume_db) + max_param_db(c)) # a param loop at its loudest (fully degraded)
 		measures[id] = lv
 		var bad := band_errors(c, lv)
 		check(bad.is_empty(), "AC6: %s on %s: RMS %.1f dBFS, peak %.1f dBFS (%s)" % [id, c.bus, lv.rms_dbfs, lv.peak_dbfs, "; ".join(bad) if not bad.is_empty() else "in band"])
@@ -134,6 +161,18 @@ func _run() -> void:
 		var keep := highpass_keep_db(samples(id))
 		measures[id]["highpass150_keep_db"] = snappedf(keep, 0.01)
 		check(keep >= -6.0, "AC6 laptop speakers: %s keeps %.1f dB of its RMS above 150 Hz (>= -6)" % [id, keep])
+
+	# The teacup rule (§D3.2): the drive is never felt. Energy under about 200 Hz (a 4-pole 120 Hz
+	# low-pass) stays at least 20 dB below the whole.
+	for id: String in ["drive_boost", "drive_silent", "drive_brake"]:
+		var low := lowband_db(samples(id))
+		measures[id]["below_200hz_db"] = snappedf(low, 0.01)
+		check(low <= -20.0, "AC6 teacup rule: %s keeps %.1f dB below 200 Hz (<= -20)" % [id, low])
+	var thud := PackedFloat32Array()
+	thud.resize(48000)
+	for i in 48000:
+		thud[i] = 0.5 * sin(TAU * 60.0 * i / 48000.0) + 0.2 * sin(TAU * 300.0 * i / 48000.0)
+	check(lowband_db(thud) > -20.0, "AC6 teacup negative control: a 60 Hz rumble fails the guard")
 
 	# Negative control: 30 dB too hot fails both the band and the peak.
 	var hot: Dictionary = d.cues["ui_click"].duplicate(true)
@@ -174,7 +213,9 @@ func _run() -> void:
 	d.on_game("level_none")
 	await capture_for(cap, 0.5)
 
-	# Every cue at once: the mix fits under -1 dBFS before the limiter.
+	# Every cue at once, with the Archive fully degraded (the drift layers at their loudest): the mix
+	# fits under -1 dBFS before the limiter.
+	d.set_param("archive_degradation", 1.0)
 	for id: String in d.cues:
 		d.fire(id, "all", 0)
 	var all := stereo_level(await capture_for(cap, 1.5))

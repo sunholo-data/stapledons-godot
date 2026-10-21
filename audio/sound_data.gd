@@ -12,6 +12,8 @@ const ASSETS_PATH := "res://data/audio/assets.json"
 ## Buses a cue may play on (Ship and Master are mixing buses, never a cue's own).
 const CUE_BUSES := ["Voice", "Ambience", "Effects", "Instruments", "UI", "Music"]
 const TRIGGER_KINDS := ["sim_event", "sim_state", "ui_signal", "game"]
+## Continuous parameters a looping cue may follow (SoundDirector.set_param).
+const PARAMS := ["archive_degradation"]
 ## §D7, Pillar 2 (The Game Doesn't Judge): no cue may be named or described as a verdict.
 const FORBIDDEN_WORDS := ["success", "successful", "fail", "failed", "failure", "win", "won", "lose", "reward", "penalty", "fanfare", "victory"]
 ## §D8 and D-101: generated sound is reserved, off until a later ruling sets allow_generated.
@@ -135,7 +137,9 @@ static func wav_info(b: PackedByteArray) -> Dictionary:
 
 ## The cue table against the manifest: schema, unique ids, known trigger kinds with their fields,
 ## streams that exist, a cue bus, the visual counterpart rule and the forbidden words.
-static func check_cues(table: Variant, assets: Dictionary, root := "res://") -> Array[String]:
+## check_refs: the visual-counterpart rule reads the game's source files, so it is an authoring check
+## (tests, tools); an exported build has no .gd text to read and skips it (SoundDirector.setup).
+static func check_cues(table: Variant, assets: Dictionary, root := "res://", check_refs := true) -> Array[String]:
 	var bad: Array[String] = []
 	if not table is Dictionary or table.get("schema", "") != CUES_SCHEMA or not table.get("cues", null) is Array:
 		return ["cue table: not a %s table" % CUES_SCHEMA]
@@ -167,8 +171,19 @@ static func check_cues(table: Variant, assets: Dictionary, root := "res://") -> 
 					bad.append("%s: stream %s is not in the asset manifest" % [id, s])
 		if not str(c.get("bus", "")) in CUE_BUSES:
 			bad.append("%s: bus '%s' is not a cue bus (%s)" % [id, c.get("bus", ""), ", ".join(CUE_BUSES)])
+		var pc: Variant = c.get("param", null)
+		if pc != null:
+			var pts: Variant = pc.get("points", null) if pc is Dictionary else null
+			var ok: bool = pc is Dictionary and str(pc.get("name", "")) in PARAMS and pts is Array and pts.size() >= 2
+			if ok:
+				for i in pts.size():
+					ok = ok and pts[i] is Array and pts[i].size() == 2 and (i == 0 or float(pts[i][0]) > float(pts[i - 1][0]))
+			if not ok:
+				bad.append("%s: param needs a known name (%s) and two or more [value, dB] points in rising order" % [id, ", ".join(PARAMS)])
+			elif not c.get("loop", false):
+				bad.append("%s: only a loop can follow a param" % id)
 		var vis := str(c.get("visual", ""))
-		if kind in ["sim_event", "sim_state"]:
+		if kind in ["sim_event", "sim_state"] and check_refs:
 			var ref := vis.split("::")
 			if ref.size() != 2 or not FileAccess.file_exists(root.path_join(ref[0])) or not FileAccess.get_file_as_string(root.path_join(ref[0])).contains(ref[1]):
 				bad.append("%s: an informative cue needs a visual counterpart 'file::text' that exists in the code (got '%s')" % [id, vis])

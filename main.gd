@@ -188,6 +188,9 @@ func _ready() -> void:
 	var args := _user_args()
 	sound_settings.load_settings()
 	SoundMix.apply(sound_settings)
+	if args.has("sound-smoke"): # R2-SOUND AC13 (make sound-export-smoke): the export loads and plays its sounds
+		await _sound_smoke()
+		return
 	if launch_route(args) == "title":
 		_show_title()
 		return
@@ -1245,3 +1248,28 @@ func _open_ship_demo_review(smoke := false) -> int:
 	var pid:=OS.create_instance(launch)
 	if pid<0:push_error("Could not launch ship geometry review window")
 	return pid
+
+
+## R2-SOUND AC13: from inside the exported .app, the cue table validates, every sound loads (from the
+## staged QOA bundle when the sources are not shipped) and the bridge's loops play through the buses.
+func _sound_smoke() -> void:
+	var d := SoundDirector.new()
+	add_child(d)
+	var errs := d.setup()
+	var loaded := 0
+	var qoa := 0
+	for id: String in d.assets:
+		var s := d.stream(id)
+		if s != null:
+			loaded += 1
+			if s.format == AudioStreamWAV.FORMAT_QOA:
+				qoa += 1
+	d.on_game("level_bridge")
+	d.on_ui("click")
+	await get_tree().create_timer(0.5).timeout
+	var hum: AudioStreamPlayer = d.get_node_or_null("Loop_spire_hum")
+	var ok := errs.is_empty() and loaded == d.assets.size() and hum != null and hum.playing
+	print("sound-smoke: %s %d/%d sounds loaded, %d QOA%s, spire_hum %s, layout %s%s" % ["OK" if ok else "FAIL", loaded, d.assets.size(), qoa,
+		" (sources)" if FileAccess.file_exists("res://" + str(d.assets.get("spire_hum", {}).get("path", ""))) else " (bundle)",
+		"playing" if hum != null and hum.playing else "silent", "ok" if SoundMix.is_layout_ok().is_empty() else "wrong", "" if errs.is_empty() else "; " + "; ".join(errs)])
+	get_tree().quit(0 if ok else 1)
