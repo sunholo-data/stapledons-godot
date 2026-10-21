@@ -122,7 +122,7 @@
         "AC1",
         "AC10"
       ],
-      "notes": "sunholo/celestial 0.5.0 stellar + stellar_ld (508 Claret & Bloemen 2011 V rows as record literals); 16 checks, package 142 tests, check and pkg quality with no gates; publish blocked by the auto-mode classifier (Create Public Surface): the sim pins a path dependency on the dev checkout until Mark or the coordinator runs `ailang publish`. Strict-VM residue of #1865 (5-arg call elements with a negated literal) reported upstream (inbox_1792521010389_386db89c)."
+      "notes": "sunholo/celestial 0.5.0 stellar + stellar_ld (508 Claret & Bloemen 2011 V rows as record literals); 16 checks, package 142 tests, check and pkg quality with no gates. Published by Mark 2026-10-21 (content hash sha256:d94c27d3...4370, the dry run's); the sim pins the registry version (AC13). Source: ailang-packages PR #152. Strict-VM residue of #1865 (5-arg call elements with a negated literal) reported upstream (inbox_1792521010389_386db89c)."
     },
     {
       "id": "SS1_SIM_PROTOCOL",
@@ -281,5 +281,6 @@
     "tool": "make star-surface-bench (Vulkan; Metal reports no GPU time)",
     "result": "Aldebaran stop, Bow view, Auto: sky GPU p50 off 4.874 ms, on 4.913 ms, delta +0.039 ms (limit +0.50): OK -> OQ2 procedural kept",
     "host_load": "~40 (other agents)"
-  }
+  },
+  "ac13": "sim/ailang.toml pins \"sunholo/celestial\" = \"0.5.0\"; sim/ailang.lock: source registry, content_hash sha256:d94c27d37dee500e0422a23ad354cee898c9f5291b0f26e78755f874c3464370; sim/vendor removed"
 }

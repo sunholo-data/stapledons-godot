@@ -15,7 +15,7 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/celestial" = { path = "vendor/celestial" } # R2-STAR-SURFACES: 0.5.0 vendored until published (classifier-blocked publish); becomes "0.5.0" from the registry before merge (AC13)
+"sunholo/celestial" = "0.5.0" # R2-STAR-SURFACES: stellar, stellar_ld (ledger D-105)
 "sunholo/relativity" = "0.12.0"
 "sunholo/crew_core" = "0.6.0" # 0.6.0: stand-downs (R2-CREW-CONSOLE-V2 V8); 0.5.0: resource units as data (units.ail; the game keeps its table here): ailang-packages #146
 "sunholo/social_dynamics" = "0.4.0" # crew_core's engine; sim/protocol_crew.ail reads its State for the crew view
