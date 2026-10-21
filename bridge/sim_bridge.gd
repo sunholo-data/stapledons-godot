@@ -53,7 +53,7 @@ const CONSOLE_MINOR := 11
 const HOME_TIERS_MINOR := 12
 ## Protocol 2.13 (R2-STAR-SURFACES, ledger D-105): each finite star in the system section carries
 ## `surface` (its limb-darkening law, convection cells, spots at the emission time, provenance), which
-## SystemView draws through StarSurface. The game's sessions ask for it (want_minor = SURFACE_MINOR).
+## SystemView draws through StarSurface. The game's sessions ask for 2.15 (ARCHIVE_MINOR), which includes it.
 const SURFACE_MINOR := 13
 ## Protocol 2.15 (ledger D-113): `archive` {memory_health}, the Archive's hidden Memory Health (0..100;
 ## sim/archive_health.ail), in full states and whenever it changes. Not shown to the player; the sound
