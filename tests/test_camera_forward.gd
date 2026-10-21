@@ -17,6 +17,10 @@ extends SceneTree
 ##   AC-V10 the lift's arrival selects the level default (bridge Bow, the Commons legacy Z2)
 ##   AC-V11 the same scripted inputs give bit-identical poses
 ##   AC-V12 a fade changes no sky uniform and no sim input
+##   AC-V13 the player's path (Mark, attended 2026-10-20): after the guided voyage, the Sgr A* hole
+##          is ahead on the RENDERED sky (the sky camera the player sees through, in Bow) at every
+##          stop, and a session change leaves no stale attitude (free navigation's travel axis is its
+##          heading). AC-V6 recorded Sgr A* in a fresh demo with no tour, so it never saw this.
 ## Prints `ok    <name>` / `FAIL  <name>: <why>` and `camera-forward: <n> passed, <m> failures`.
 ## Time is the director's fake clock (advance(dt) through the demo's _process); no wall-clock reads.
 
@@ -59,6 +63,7 @@ func _run() -> void:
 	test_level_default(demo)
 	demo.queue_free()
 	await process_frame
+	await test_hole_after_tour()
 	await test_determinism()
 	print("camera-forward: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -312,6 +317,68 @@ func test_targets(demo: Node) -> void:
 	var n_hole := _count_in_frame(demo, pts, holes)
 	check("in frame bow sgr_a_hole %d/16" % n_hole, n_hole == 16 and pts.size() == 16,
 		"%d of %d in frame over %d Sgr A* stops (worst %.3f deg off the bow)" % [n_hole, pts.size(), holes.size(), worst])
+
+
+# ------------------------------------------------------------------ AC-V13
+
+## The hole on the sky camera the player looks through: degrees off that camera's axis, and whether
+## it projects inside the frame (in front of the camera).
+func _hole_on_sky(demo: Node) -> Array:
+	var cam: Camera3D = demo.sky.camera
+	var g: Dictionary = demo.black_hole.gr()
+	var h := GrLens._world(g.hole_dir)
+	var fwd := -cam.global_transform.basis.z
+	var p := cam.global_position + h * 1000.0
+	var vp := cam.get_viewport().get_visible_rect().size
+	var px := cam.unproject_position(p)
+	var inside := not cam.is_position_behind(p) and px.x >= 0.0 and px.y >= 0.0 and px.x <= vp.x and px.y <= vp.y
+	return [rad_to_deg(fwd.angle_to(h)), inside]
+
+
+func _frames(demo: Node, n: int) -> void:
+	for i in n:
+		demo._process(DT)
+	await process_frame
+
+
+func test_hole_after_tour() -> void:
+	var demo: Node = await new_demo({"live_start": true})
+	var started: bool = demo.start_solar_departure()
+	await _frames(demo, 30)
+	var tour_att: PackedFloat64Array = demo.camera.attitude_basis.duplicate()
+	var ok_bh: bool = started and demo.start_black_hole()
+	var BlackHoleVisit := load("res://demos/black_hole_visit.gd")
+	var worst := 0.0
+	var inside := 0
+	var stops := 0
+	if ok_bh:
+		for stop in BlackHoleVisit.STOPS.size() + 1:
+			if stop > 0:
+				if not demo.bh_next_stop():
+					break
+				if demo.black_hole.approaching():
+					demo.bh_finish_approach()
+			await _frames(demo, 30)
+			var r: Array = _hole_on_sky(demo)
+			worst = maxf(worst, r[0])
+			inside += int(r[1])
+			stops += 1
+	check("sgr_a hole ahead on the rendered sky after the guided voyage %d/%d" % [inside, stops],
+		started and ok_bh and stops == BlackHoleVisit.STOPS.size() + 1 and inside == stops and worst < 15.0,
+		"tour %s, Sgr A* %s, %d of %d stops in frame, worst %.2f deg off the sky camera's axis (Bow pitch is 8)" % [str(started), str(ok_bh), inside, stops, worst])
+	# Leaving Sgr A*, then free navigation: the sky's travel axis (row z of its attitude) is the heading.
+	if ok_bh:
+		demo.leave_black_hole()
+	await _frames(demo, 5)
+	demo.open_navigation()
+	await _frames(demo, 5)
+	var b: PackedFloat64Array = demo.sky.basis
+	var hd: PackedFloat64Array = demo.camera.heading
+	var dot := b[6] * hd[0] + b[7] * hd[1] + b[8] * hd[2] if b.size() == 9 else 0.0
+	check("no stale attitude after Sgr A* and the guided voyage", demo.camera.attitude_basis.is_empty() and dot > 1.0 - 1e-9,
+		"attitude %s (the tour's was %s), sky travel axis . heading = %.12f" % ["empty" if demo.camera.attitude_basis.is_empty() else "kept", "set" if not tour_att.is_empty() else "empty", dot])
+	demo.queue_free()
+	await process_frame
 
 
 # ------------------------------------------------------------------ AC-V8, AC-V5 (after a switch)
