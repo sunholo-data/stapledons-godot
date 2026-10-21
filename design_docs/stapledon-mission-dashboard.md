@@ -1,31 +1,23 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-21, iteration 43.
+Updated 2026-10-21, iteration 44.
 
-- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: R2 is plan work for the R2 release.
-- **Outcome:** row R2 BUILT and PARKED. PR #307 holds the Kerr (spinning black holes) design doc and sprint plan.
-  - The design puts the `kerr` package module first, then a design-repo spec §3b, equatorial lens tables, a CPU mirror, additive sim fields and a visit demo.
-  - The plan has 30 slices (~3,710 LOC) and 15 design inconsistencies for the approval pause.
-  - Independent Sonnet review: 84 PASS, 0 blocking.
-- **Mark:** **D-107**, approve the Kerr plan (A: direction, OQ recommendations, the loop revises for the DIs; B: record only; C: amend). Default B.
-- **Blocked by attended holds:**
-  - L9 S0.2: #302 claims protocol minor 13 and edits `sim/protocol.ail`.
-  - L4 and L3: `Makefile` is edited by #298, #300, #301, #302, #303 and #304.
-  - 7i(c): four PRs edit `demos/ship_geometry_demo.gd`.
-- **Closed:**
-  - L5 was already done attended.
-  - L7's fix is in `sunholo/relativity` 0.13.0 source (unpublished; publishing is attended). Most properties now skip as out-of-contract while `vacuous_skips` reads 0; reported upstream as ailang#1921.
-- **Rig:** load 30.8, GPU 86 % at pick (non-loop processes). 7m AC1 needs an idle rig.
-- **Next:** D-107 → Kerr doc revision → K1.1a. Then L9 S0.2 when #302 resolves, L4 and L3 when `Makefile` is free, 7m AC1, and the follow-up backlog.
+- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: this was hygiene, the last runnable tier at pick.
+- **Outcome:** follow-up rows 7o + 7s BUILT in one PR (#309); the merge is PARKED on `rig/full`.
+  - **7o:** `tools/rig_check.sh` now posts only descriptions GitHub accepts (≤140 characters), and a refused post still reports and exits 1. A 6-case stub control runs in `make test`. Its first live use already paid off: the rig's first red on this PR posted `failure` instead of sticking at pending.
+  - **7s:** three ruling-pin fixtures (E1 and E2 killed; E5 measured equivalent). The controls loop counts its own 31 rows. The `! grep SCRIPT ERROR` guards in `mk/m45.mk` were dead (`!` never trips `set -e`) and are now live.
+  - Independent Sonnet eval: 91 PASS, 0 blocking.
+- **Collision:** attended #310 fixed 7o more narrowly while the loop was building it. The merge kept the reviewed superset: POSIX, dash-safe, refused-post handling.
+- **Rig:** first `rig/full` red was the inherited `levels-regress` baseline (main `3541da27`, fixed by #310). Final head: red twice on `free-nav-stop-test` (`sim stopped: step_timeout`, the bridge's 2 s per-step read deadline, at the Saturn and Jupiter stops; run 1 at 1-min load 13–16, run 2 at 8–10 gave 36 passed and 16 failed), while the same head passes it alone (52/0, 295 s). The PR touches no sim, bridge or navigation file, and main has no `rig/full` since the attended merges. GPU 88 % at pick, so 7m AC1 still needs an idle rig.
+- **Mark:** **D-107**, approve the Kerr plan (PR #307). Default B. Nothing else is OPEN.
+- **Resume first:** re-run `rig/full` on #309 on an idle rig and merge on green. If main shows the same `free-nav-stop-test` step_timeout in-suite, the red is inherited and becomes its own row.
+- **Unblocked for the next fire:** #302 and the six PRs that held `Makefile` have merged. L9 S0.2 at minor 14 (already renumbered attended) is routable, then S0.3, L4 and L3.
 - **Lanes:**
-  - Designer: kimi-k3 (pi; 358k tok, first designer run here, delivered).
-  - Planner: codex gpt-6.1-sol (253k).
-  - Evaluator: Sonnet (97k).
+  - Designer: Opus 5.5 (rotation; Agent `opus`).
+  - Planner: codex gpt-6.1-sol (118k).
+  - Executor: codex gpt-6.1-sol (175k).
+  - Evaluator: Sonnet (84k).
   - All roles were spawned through the Agent tool.
-  - Metered: ~$0.72 (quorum).
-- **Quorum health:**
-  - The Anthropic seat was absent on quota for the third iteration running.
-  - The OpenAI seat was unreachable (API credits).
-  - glm-5.3 hit its output cap twice.
-  - So the Kerr doc had one external reviewer. Tickets are filed.
-- **Workspace:** sibling clones `.stapledon-loop-iter43` and `.stapledon-eval-iter43`. The main checkout was only read.
+  - Metered: ~$0.79 (two quorum rounds).
+- **Quorum health:** the OpenAI seat was unreachable in both rounds for the third iteration in four (ticket repeat). glm-5.3 was unreachable in r1 and rejected in r2 with a usable fix. kimi-k3 and gemini were present both rounds.
+- **Workspace:** sibling clones `.stapledon-loop-iter44`, `.stapledon-eval-iter44` and `.stapledon-record-iter44`. The main checkout was only read.
