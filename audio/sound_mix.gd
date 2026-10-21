@@ -133,3 +133,15 @@ static func apply(s: GameSettings) -> void:
 ## background and returns to the player's setting when it comes back.
 static func focus_changed(focused: bool, s: GameSettings) -> void:
 	AudioServer.set_bus_mute(0, (not focused and s.mute_unfocused) or s.volume("Master") <= 0)
+
+
+## S1 (§D5): a level's room on the Ship bus reverb (data/audio/rooms.json): room_size, damping, wet (dB).
+static func set_room(room: Dictionary) -> void:
+	var ship := AudioServer.get_bus_index("Ship")
+	var r := _find_effect(ship, "AudioEffectReverb") as AudioEffectReverb
+	if r == null:
+		return
+	r.room_size = clampf(float(room.get("room_size", 0.0)), 0.0, 1.0)
+	r.damping = clampf(float(room.get("damping", 0.5)), 0.0, 1.0)
+	r.wet = clampf(db_to_linear(float(room.get("wet_db", -80.0))), 0.0, 1.0)
+	r.dry = 1.0

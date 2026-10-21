@@ -981,6 +981,515 @@
      }
     }
    ]
+  },
+  {
+   "id": "footstep_deck_1",
+   "about": "S1: a step on the bridge's plating: a soft heel, a low thump and a faint metal ring; variant 1 of 6.",
+   "seconds": 0.28,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 2400,
+     "highpass_hz": 220.0,
+     "seed": 70,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 92,
+     "amp": 0.45,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1100,
+     "amp": 0.05,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1628.0,
+     "amp": 0.035,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2343.0,
+     "amp": 0.02,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.03
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_2",
+   "about": "S1: a step on the bridge's plating: a soft heel, a low thump and a faint metal ring; variant 2 of 6.",
+   "seconds": 0.28,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 2100,
+     "highpass_hz": 220.0,
+     "seed": 71,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 88,
+     "amp": 0.45,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1160,
+     "amp": 0.05,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1716.8,
+     "amp": 0.035,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2470.7999999999997,
+     "amp": 0.02,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.03
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_3",
+   "about": "S1: a step on the bridge's plating: a soft heel, a low thump and a faint metal ring; variant 3 of 6.",
+   "seconds": 0.28,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 2700,
+     "highpass_hz": 220.0,
+     "seed": 72,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 97,
+     "amp": 0.45,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1040,
+     "amp": 0.05,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1539.2,
+     "amp": 0.035,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2215.2,
+     "amp": 0.02,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.03
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_4",
+   "about": "S1: a step on the bridge's plating: a soft heel, a low thump and a faint metal ring; variant 4 of 6.",
+   "seconds": 0.28,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 2300,
+     "highpass_hz": 220.0,
+     "seed": 73,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 90,
+     "amp": 0.45,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1210,
+     "amp": 0.05,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1790.8,
+     "amp": 0.035,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2577.2999999999997,
+     "amp": 0.02,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.03
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_5",
+   "about": "S1: a step on the bridge's plating: a soft heel, a low thump and a faint metal ring; variant 5 of 6.",
+   "seconds": 0.28,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 2550,
+     "highpass_hz": 220.0,
+     "seed": 74,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 94,
+     "amp": 0.45,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1080,
+     "amp": 0.05,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1598.4,
+     "amp": 0.035,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2300.4,
+     "amp": 0.02,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.03
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_6",
+   "about": "S1: a step on the bridge's plating: a soft heel, a low thump and a faint metal ring; variant 6 of 6.",
+   "seconds": 0.28,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 40.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 2200,
+     "highpass_hz": 220.0,
+     "seed": 75,
+     "env": {
+      "attack": 0.001,
+      "tau": 0.012
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 86,
+     "amp": 0.45,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1130,
+     "amp": 0.05,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1672.4,
+     "amp": 0.035,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.04
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 2406.9,
+     "amp": 0.02,
+     "env": {
+      "delay": 0.004,
+      "attack": 0.001,
+      "tau": 0.03
+     }
+    }
+   ]
+  },
+  {
+   "id": "lift_start",
+   "about": "S1: the lift's latch lets go and its motor spins up.",
+   "seconds": 1.4,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 300.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.3,
+     "highpass_hz": 1500.0,
+     "lowpass_hz": 6000.0,
+     "seed": 81,
+     "env": {
+      "tau": 0.006
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.35,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.06
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.35,
+     "lowpass_hz": 200.0,
+     "lowpass_to_hz": 700.0,
+     "highpass_hz": 90.0,
+     "seed": 82,
+     "beat_hz": 24.0,
+     "beat_depth": 0.4,
+     "env": {
+      "delay": 0.1,
+      "attack": 0.6
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 98.0,
+     "amp": 0.18,
+     "glide_to": 118.0,
+     "glide_until_s": 1.0,
+     "env": {
+      "delay": 0.1,
+      "attack": 0.6
+     }
+    }
+   ]
+  },
+  {
+   "id": "lift_run",
+   "about": "S1: the lift's motor while the platform travels (a loop that rides with it).",
+   "seconds": 4.0,
+   "loop": true,
+   "peak_db": -6.0,
+   "fade_ms": 20.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 98.0,
+     "amp": 0.22
+    },
+    {
+     "kind": "sine",
+     "freq": 196.0,
+     "amp": 0.1,
+     "beat_hz": 0.5,
+     "beat_depth": 0.3
+    },
+    {
+     "kind": "sine",
+     "freq": 294.0,
+     "amp": 0.05
+    },
+    {
+     "kind": "white",
+     "amp": 0.3,
+     "lowpass_hz": 650.0,
+     "highpass_hz": 90.0,
+     "seed": 83,
+     "beat_hz": 6.0,
+     "beat_depth": 0.35
+    }
+   ]
+  },
+  {
+   "id": "lift_arrive",
+   "about": "S1: the platform settles with a soft clunk and one old brass bell (a single low note, not a jingle).",
+   "seconds": 2.4,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 400.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.4,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.25,
+     "lowpass_hz": 1800.0,
+     "highpass_hz": 200.0,
+     "seed": 84,
+     "env": {
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 293.66,
+     "amp": 0.3,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.004,
+      "tau": 0.9
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 810.5,
+     "amp": 0.06,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.002,
+      "tau": 0.4
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1585.8,
+     "amp": 0.03,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.002,
+      "tau": 0.25
+     }
+    }
+   ]
   }
  ]
 }

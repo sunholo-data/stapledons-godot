@@ -42,6 +42,16 @@ var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _loops := {} ## cue id -> its own player
 var _state := {} ## sim_state cue id -> last value seen
+## S1 (§D4): where a cue's `source` is. A cue whose source is not "ui" plays in 3D at
+## position_of.call(source) (ShipSound supplies it: "mast", "captain", "station", "lift"); without a
+## resolver every cue plays in 2D, as in the tests and the tools.
+var position_of: Callable
+## Attenuation (§D4): unit size 3 m, inverse distance, out to 60 m.
+const UNIT_SIZE := 3.0
+const MAX_DISTANCE := 60.0
+var _pool3d: Array[AudioStreamPlayer3D] = []
+var _next3d := 0
+const PLAYERS_3D := 10
 var params := {} ## parameter name -> 0..1 (archive_degradation)
 var _param_seq := 0
 
@@ -129,7 +139,7 @@ func set_param(param_name: String, value: float) -> void:
 	for id: String in _loops:
 		var c: Dictionary = cues.get(id, {})
 		if c.get("param", {}).get("name", "") == param_name:
-			(_loops[id] as AudioStreamPlayer).volume_db = float(c.get("volume_db", 0.0)) + param_offset(c)
+			_loops[id].volume_db = float(c.get("volume_db", 0.0)) + param_offset(c)
 
 
 ## The dB offset a row's param curve gives at the parameter's current value (0 without a param).
@@ -194,7 +204,7 @@ func fire(id: String, key: String, clock: int) -> void:
 
 func stop(id: String) -> void:
 	if _loops.has(id):
-		(_loops[id] as AudioStreamPlayer).stop()
+		_loops[id].stop()
 
 
 func log_text() -> String:
@@ -233,16 +243,25 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 	var s := stream(asset_id)
 	if s == null or not is_inside_tree():
 		return
-	var p: AudioStreamPlayer
+	var src := str(c.get("source", "ui"))
+	var spatial := src != "ui" and src != "" and position_of.is_valid()
+	var p: Node
 	if c.get("loop", false):
 		if not _loops.has(c.id):
-			p = AudioStreamPlayer.new()
+			p = _player3d() if spatial else AudioStreamPlayer.new()
 			p.name = "Loop_" + str(c.id)
 			add_child(p)
 			_loops[c.id] = p
 		p = _loops[c.id]
 		if p.playing:
 			return
+	elif spatial:
+		while _pool3d.size() < PLAYERS_3D:
+			var q := _player3d()
+			add_child(q)
+			_pool3d.append(q)
+		p = _pool3d[_next3d]
+		_next3d = (_next3d + 1) % PLAYERS_3D
 	else:
 		while _pool.size() < PLAYERS_2D:
 			var q := AudioStreamPlayer.new()
@@ -250,11 +269,33 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 			_pool.append(q)
 		p = _pool[_next]
 		_next = (_next + 1) % PLAYERS_2D
+	if p is AudioStreamPlayer3D:
+		(p as AudioStreamPlayer3D).global_position = position_of.call(src)
+		p.set_meta("source", src)
 	p.bus = StringName(c.bus)
 	p.stream = s
 	p.pitch_scale = pitch
 	p.volume_db = vol
 	p.play()
+
+
+func _player3d() -> AudioStreamPlayer3D:
+	var q := AudioStreamPlayer3D.new()
+	q.unit_size = UNIT_SIZE
+	q.max_distance = MAX_DISTANCE
+	q.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	q.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
+	return q
+
+
+## Spatial loops follow their source (the lift's motor rides with the platform).
+func _process(_delta: float) -> void:
+	if not position_of.is_valid():
+		return
+	for id: String in _loops:
+		var p: Node = _loops[id]
+		if p is AudioStreamPlayer3D and p.playing and p.has_meta("source"):
+			(p as AudioStreamPlayer3D).global_position = position_of.call(str(p.get_meta("source")))
 
 
 func _cooled(id: String, clock: int) -> bool:

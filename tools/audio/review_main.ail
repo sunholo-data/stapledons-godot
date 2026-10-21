@@ -19,7 +19,7 @@ import std/io (println)
 import std/string (intToStr)
 
 export type Item = {id: string, file: string, gain_db: float}
-export type Part = {recipe: string, gain_db: float}
+export type Part = {recipe: string, gain_db: float, at: [float]}
 export type Mix = {id: string, seconds: float, parts: [Part]}
 export type Plan = {recipes: string, out: string, items: [Item], mixes: [Mix]}
 
@@ -27,11 +27,16 @@ pure func gain(db: float) -> float = pow(10.0, db / 20.0)
 
 pure func find(rs: [Recipe], id: string) -> Option[Recipe] = head(filter(\r. r.id == id, rs))
 
--- A recipe tiled to n samples (a loop repeats; a one-shot is followed by silence).
-pure func tiled(r: Recipe, g: float, n: int) -> Array[float] {
+-- A recipe over n samples: a loop tiles from 0; a one-shot plays once at each start in `at` (seconds;
+-- empty = at 0) and is silent elsewhere (a later start cuts an earlier one short, like one voice).
+pure func tiled(r: Recipe, g: float, n: int, at: [float]) -> Array[float] {
   let xs = fromList(render(r));
   let m = frames(r);
-  fromList(map(\i. if r.loop || i < m then g * get(xs, i % m) else 0.0, range(0, n)))
+  let starts = map(\s. floatToInt(round(s * 48000.0)), if size(at) == 0 then [0.0] else at);
+  fromList(map(\i. if r.loop then g * get(xs, i % m) else {
+      let k = foldl(\best st. if st <= i && i - st < m then st else best, 0 - 1, starts);
+      if k < 0 then 0.0 else g * get(xs, i - k)
+    }, range(0, n)))
 }
 
 func writeSound(out: string, id: string, xs: [float]) -> Result[(), string] ! {FS, IO} {
@@ -65,11 +70,11 @@ func mixes(p: Plan, rs: [Recipe], ms: [Mix]) -> Result[(), string] ! {FS, IO} =
     [] => Ok(()),
     m :: more => {
       let n = floatToInt(round(m.seconds * 48000.0));
-      let found = map(\pt. (find(rs, pt.recipe), pt.gain_db), m.parts);
+      let found = map(\pt. (find(rs, pt.recipe), (pt.gain_db, pt.at)), m.parts);
       let missing = filter(\x. match x { (None, _) => true, _ => false }, found);
       if size(missing) > 0 then Err("${m.id}: a part names no recipe")
       else {
-        let sum = foldl(\acc x. match x { (Some(r), g) => add(acc, tiled(r, gain(g), n)), (None, _) => acc }, make(n, 0.0), found);
+        let sum = foldl(\acc x. match x { (Some(r), (g, at)) => add(acc, tiled(r, gain(g), n, at)), (None, _) => acc }, make(n, 0.0), found);
         match writeSound(p.out, m.id, toList(sum)) { Err(e) => Err(e), Ok(_) => mixes(p, rs, more) }
       }
     }
