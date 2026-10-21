@@ -1,27 +1,31 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-20, iteration 42.
+Updated 2026-10-21, iteration 43.
 
-- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: L9 is R2 product work, first in Mark's re-prioritised order.
-- **Outcome:** PR #305 merged as `ddc5582` (row L9, S0.1).
-  - The pure sim now ranks the 15 confirmed planets (Sol's eight, TRAPPIST-1's seven) by similarity. The weights are cited data, inputs are validated, and ties go by name.
-  - `make similar-test` checks that the strict VM and the interpreter agree, and pins the iteration-38 spike's digest.
-  - Independent Sonnet eval: 93 PASS, 0 blocking.
-- **Gates:** `rig/full` green in 99 min. The fast tier was green on the head and on the merge.
-- **Key finds:**
-  - **ailang#1914:** the `::` cons operator does not parse inside a named-test body. Reported; the test bodies avoid it until it is fixed.
-  - **Plan defect:** the plan's row count contradicted its own pinned digest. Corrected by measurement.
-  - **K6/K7:** `similar-test` stays green with the strict flag removed. Added to the follow-up backlog.
-- **Rig load:** load averages of 15–44 came from non-loop processes: other sessions' rig checks, a `godot … test_deck_layout_eval.gd` running 10 h+, and Chrome helpers at 100 % for 4 days. Whole-suite runs took 3–6× longer.
-- **Clause 4 remaining:**
-  - Row 7m AC1 is parked until the rig is idle.
-  - AC5 scene golden 7i(c): #292 has merged, so it gets re-measured.
-  - P-land.
-- **Next:** L9 S0.2 (protocol 2.13 emission, the oracle, `similar-record`) → S0.3 → L4 → L3 → L5 → L7.
-- **Mark:** nothing open. The ledger has 106 rows, 0 OPEN. D-96–D-106 and the re-prioritisation are acknowledged.
+- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: R2 is plan work for the R2 release.
+- **Outcome:** row R2 BUILT and PARKED. PR #307 holds the Kerr (spinning black holes) design doc and sprint plan.
+  - The design puts the `kerr` package module first, then a design-repo spec §3b, equatorial lens tables, a CPU mirror, additive sim fields and a visit demo.
+  - The plan has 30 slices (~3,710 LOC) and 15 design inconsistencies for the approval pause.
+  - Independent Sonnet review: 84 PASS, 0 blocking.
+- **Mark:** **D-107**, approve the Kerr plan (A: direction, OQ recommendations, the loop revises for the DIs; B: record only; C: amend). Default B.
+- **Blocked by attended holds:**
+  - L9 S0.2: #302 claims protocol minor 13 and edits `sim/protocol.ail`.
+  - L4 and L3: `Makefile` is edited by #298, #300, #301, #302, #303 and #304.
+  - 7i(c): four PRs edit `demos/ship_geometry_demo.gd`.
+- **Closed:**
+  - L5 was already done attended.
+  - L7's fix is in `sunholo/relativity` 0.13.0 source (unpublished; publishing is attended). Most properties now skip as out-of-contract while `vacuous_skips` reads 0; reported upstream as ailang#1921.
+- **Rig:** load 30.8, GPU 86 % at pick (non-loop processes). 7m AC1 needs an idle rig.
+- **Next:** D-107 → Kerr doc revision → K1.1a. Then L9 S0.2 when #302 resolves, L4 and L3 when `Makefile` is free, 7m AC1, and the follow-up backlog.
 - **Lanes:**
-  - Planner and executor: codex gpt-6.1-sol (145k; 131k tok + a capped run).
-  - Evaluator: Sonnet (98k tok).
-  - All roles ran through Agent-tool spawns.
-  - Metered: $0.
-- **Workspace:** sibling clones `.stapledon-loop-iter42`, `.stapledon-eval-iter42` and `.stapledon-record-iter42`. The main checkout was only read.
+  - Designer: kimi-k3 (pi; 358k tok, first designer run here, delivered).
+  - Planner: codex gpt-6.1-sol (253k).
+  - Evaluator: Sonnet (97k).
+  - All roles were spawned through the Agent tool.
+  - Metered: ~$0.72 (quorum).
+- **Quorum health:**
+  - The Anthropic seat was absent on quota for the third iteration running.
+  - The OpenAI seat was unreachable (API credits).
+  - glm-5.3 hit its output cap twice.
+  - So the Kerr doc had one external reviewer. Tickets are filed.
+- **Workspace:** sibling clones `.stapledon-loop-iter43` and `.stapledon-eval-iter43`. The main checkout was only read.
