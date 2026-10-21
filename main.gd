@@ -60,6 +60,8 @@ var has_background := false
 var env := Environment.new()
 var camera := FreeLookCamera.new() # yaw, pitch, roll; client state, never sent to the sim
 var hud := Label.new()
+## R2-SOUND §D2: the player's audio settings, applied to the buses at launch and on focus changes.
+var sound_settings := GameSettings.new()
 var heading := HEADING # the sim's, for the HUD's view-to-velocity angle
 var warp := 0.2 # ship-years per real second
 var _accum := 0.0
@@ -184,6 +186,8 @@ func _route_now(route: String) -> void:
 
 func _ready() -> void:
 	var args := _user_args()
+	sound_settings.load_settings()
+	SoundMix.apply(sound_settings)
 	if launch_route(args) == "title":
 		_show_title()
 		return
@@ -692,6 +696,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
 		sim.stop()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		SoundMix.focus_changed(what == NOTIFICATION_APPLICATION_FOCUS_IN, sound_settings) # R2-SOUND: Mute when unfocused
 
 
 func _grab() -> Image:

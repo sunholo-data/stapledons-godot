@@ -42,6 +42,7 @@ func key(code: Key) -> InputEventKey:
 func _run() -> void:
 	test_launch_routes()
 	test_settings()
+	test_audio_settings()
 	test_credits()
 	await test_menu_alone()
 	await test_routes()
@@ -100,6 +101,47 @@ func test_settings() -> void:
 	bad.dir = d.path_join("missing/dir")
 	bad.load_settings()
 	check(not bad.save_settings() and bad.auto_view == GameSettings.DEFAULT_AUTO_VIEW, "an unwritable settings dir reports failure, never throws")
+
+
+## R2-SOUND AC9 (§D2): per-bus volumes persist and drive the buses; 0% mutes; Mute when unfocused;
+## Reduced audio switches the Master compressor.
+func test_audio_settings() -> void:
+	var d := fresh("audio_settings")
+	var s := GameSettings.new()
+	s.dir = d
+	s.load_settings()
+	var all_full := SoundMix.SETTABLE.all(func(b: String) -> bool: return s.volume(b) == 100)
+	check(all_full and s.mute_unfocused and not s.reduced_audio, "audio defaults: every bus 100%, Mute when unfocused on, Reduced audio off")
+	s.set_volume("Ambience", 40)
+	s.set_volume("UI", 0)
+	s.set_volume("Effects", 250)
+	s.mute_unfocused = false
+	s.reduced_audio = true
+	check(s.save_settings(), "audio settings save")
+	var t := GameSettings.new()
+	t.dir = d
+	t.load_settings()
+	check(t.volume("Ambience") == 40 and t.volume("UI") == 0 and t.volume("Effects") == 100 and not t.mute_unfocused and t.reduced_audio, "audio settings round-trip (Ambience 40, UI 0, an out-of-range value clamps to 100, both toggles)")
+	SoundMix.apply(t)
+	var amb := AudioServer.get_bus_index("Ambience")
+	var ui := AudioServer.get_bus_index("UI")
+	check(absf(AudioServer.get_bus_volume_db(amb) - SoundMix.percent_to_db(40)) < 0.001 and not AudioServer.is_bus_mute(amb), "apply: Ambience 40% sets its bus volume")
+	check(AudioServer.is_bus_mute(ui), "apply: 0% mutes the UI bus")
+	check(AudioServer.is_bus_effect_enabled(0, 0), "apply: Reduced audio enables the Master compressor")
+	t.mute_unfocused = true
+	SoundMix.focus_changed(false, t)
+	var muted := AudioServer.is_bus_mute(0)
+	SoundMix.focus_changed(true, t)
+	check(muted and not AudioServer.is_bus_mute(0), "Mute when unfocused: Master mutes in the background and returns on focus")
+	var cf := ConfigFile.new()
+	cf.load(d.path_join(GameSettings.FILE))
+	cf.set_value("audio", "volume_music", "loud")
+	cf.set_value("audio", "reduced_audio", 3)
+	cf.save(d.path_join(GameSettings.FILE))
+	t.load_settings()
+	check(t.volume("Music") == 100 and not t.reduced_audio, "mistyped audio values read the defaults")
+	t.reduced_audio = false
+	SoundMix.apply(t)
 
 
 func test_credits() -> void:

@@ -21,6 +21,7 @@ all: test
 include mk/constellations.mk
 include mk/home-tiers.mk
 include mk/deck-layout.mk
+include mk/sound.mk
 include mk/captain-anim.mk
 include mk/style.mk
 include mk/star-surfaces.mk
@@ -555,7 +556,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+export-macos: runtime sky-bundle areas-stage sound-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	@git diff --quiet && git diff --cached --quiet || { echo 'export-macos: commit tracked source changes before building a review artifact'; exit 1; }
 	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field

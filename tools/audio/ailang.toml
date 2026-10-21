@@ -1,0 +1,14 @@
+[package]
+name = "stapledons/audio"
+version = "0.1.0"
+edition = "1"
+description = "Stapledon's Voyage sound synthesis (R2-SOUND): recipes in, deterministic 48 kHz 16-bit WAVs and their manifest rows out. Authoring tool; not shipped."
+
+[exports]
+modules = ["stapledons/audio/synth", "stapledons/audio/synth_main", "stapledons/audio/synth_test", "stapledons/audio/review_main"]
+
+[effects]
+max = ["IO", "FS"]
+
+[stability]
+level = "experimental"

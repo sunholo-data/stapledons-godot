@@ -1,0 +1,62 @@
+# R2-SOUND (design_docs/planned/r2/sound.md): the cue table, the mix, the synthesised sounds and
+# their checks. Every check here runs headless (the Dummy audio driver still mixes; design §Evidence).
+.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-check sound-review sound-stage
+
+# AC1-AC5, AC8 (rules), §D2 layout: validators with negative controls, the clocks, deterministic
+# variation; then the same scripted session in two separate processes must give the same cue log (AC2).
+sound-test: import
+	@mkdir -p $(SCRATCH)/sound
+	@$(GODOT) --headless --path . --script tests/test_sound.gd -- --log-out=$(CURDIR)/$(SCRATCH)/sound/log1.txt > $(SCRATCH)/sound/test.log 2>&1; rc=$$?; grep -E '^(FAIL|sound:)' $(SCRATCH)/sound/test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound/test.log && grep -q '^sound: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound/test.log
+	@$(GODOT) --headless --path . --script tests/test_sound.gd -- --log-out=$(CURDIR)/$(SCRATCH)/sound/log2.txt > $(SCRATCH)/sound/test2.log 2>&1
+	@test -s $(SCRATCH)/sound/log1.txt && cmp $(SCRATCH)/sound/log1.txt $(SCRATCH)/sound/log2.txt && echo "sound-test: cue log byte-identical in two processes ($$(wc -l < $(SCRATCH)/sound/log1.txt | tr -d ' ') cues)"
+test: sound-test
+
+# AC8: the shipped manifest (rows and files).
+sound-assets-check: import
+	@$(GODOT) --headless --path . --script tools/sound_assets_check.gd > $(SCRATCH)/sound-assets.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-assets-check)' $(SCRATCH)/sound-assets.log; test $$rc = 0 && grep -q ', 0 failures$$' $(SCRATCH)/sound-assets.log
+test: sound-assets-check
+
+# S0b: recipes -> assets/audio/synth/*.wav + data/audio/assets_synth.json (authoring; review the diff).
+SOUND_PKG = --package-dir tools/audio
+SOUND_SYNTH_ARGS = '{"recipes":"data/audio/recipes.json","out":"$(1)","part":"$(2)","generator":"tools/audio/synth.ail"}'
+sound-synth:
+	@mkdir -p assets/audio/synth
+	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json $(call SOUND_SYNTH_ARGS,assets/audio/synth,data/audio/assets_synth.json) tools/audio/synth_main.ail | tee $(SCRATCH)/sound-synth.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound-synth.log
+
+# AC7: the synthesis core type-checks (STRICT_FALLBACK), its contracts verify, its named checks pass on
+# the strict VM and the interpreter with byte-identical output, and regenerating every sound into
+# scratch reproduces every sha256 in the shipped manifest part.
+sound-synth-check:
+	@mkdir -p $(SCRATCH)/sound-synth
+	@$(AILANG) check --package tools/audio > $(SCRATCH)/sound-synth/check.log 2>&1 || { cat $(SCRATCH)/sound-synth/check.log; exit 1; }
+	@$(AILANG) verify tools/audio/synth.ail > $(SCRATCH)/sound-synth/verify.log 2>&1 || { cat $(SCRATCH)/sound-synth/verify.log; exit 1; }
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --caps IO $(SOUND_PKG) --entry main tools/audio/synth_test.ail > $(SCRATCH)/sound-synth/vm.txt
+	@$(AILANG) run --quiet --caps IO $(SOUND_PKG) --entry main tools/audio/synth_test.ail > $(SCRATCH)/sound-synth/interp.txt
+	@cmp $(SCRATCH)/sound-synth/vm.txt $(SCRATCH)/sound-synth/interp.txt && grep -q '^synth-ok ' $(SCRATCH)/sound-synth/vm.txt || { cat $(SCRATCH)/sound-synth/vm.txt $(SCRATCH)/sound-synth/interp.txt; exit 1; }
+	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json $(call SOUND_SYNTH_ARGS,$(SCRATCH)/sound-synth,$(SCRATCH)/sound-synth/part.json) tools/audio/synth_main.ail > $(SCRATCH)/sound-synth/regen.log; ! grep -q FAIL $(SCRATCH)/sound-synth/regen.log
+	@want=$$(jq -r '.assets[] | .id + " " + .sha256' data/audio/assets_synth.json); got=$$(jq -r '.assets[] | .id + " " + .sha256' $(SCRATCH)/sound-synth/part.json); \
+	  [ "$$want" = "$$got" ] && echo "sound-synth-check: $$(cut -c1-15 $(SCRATCH)/sound-synth/vm.txt) VM = interpreter; $$(echo "$$want" | wc -l | tr -d ' ') sounds regenerate byte for byte" || { echo "sound-synth-check: FAIL regenerated sounds differ from data/audio/assets_synth.json"; echo "$$got" > $(SCRATCH)/sound-synth/got.txt; echo "$$want" > $(SCRATCH)/sound-synth/want.txt; diff $(SCRATCH)/sound-synth/want.txt $(SCRATCH)/sound-synth/got.txt; exit 1; }
+test: sound-synth-check
+
+# AC6: levels against the bands, the 150 Hz high-pass, ducking, headroom before the limiter (headless mixer).
+sound-check: import
+	@mkdir -p $(SCRATCH)/sound
+	@$(GODOT) --headless --path . --script tools/sound_check.gd -- --out=$(CURDIR)/$(SCRATCH)/sound/measure.json > $(SCRATCH)/sound/check.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-check)' $(SCRATCH)/sound/check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound/check.log && grep -q '^sound-check: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound/check.log
+test: sound-check
+
+# The listening page: every cue (Ogg Opus + WAV) and the bridge ambience mix, sounds.json and index.html
+# in $(SOUND_REVIEW_OUT); STAGE=s0b PUBLISH=1 also uploads to gs://stapledons-voyage-assets/refs/sound/$(STAGE)/.
+STAGE ?= s0b
+SOUND_REVIEW_OUT ?= $(CURDIR)/build/sound_review
+sound-review: sound-check
+	@rm -rf $(SOUND_REVIEW_OUT); mkdir -p $(SOUND_REVIEW_OUT)
+	@$(GODOT) --headless --path . --script tools/sound_review.gd -- --measure=$(CURDIR)/$(SCRATCH)/sound/measure.json --out=$(SOUND_REVIEW_OUT) 2>&1 | grep -E '^sound-review'
+	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json "$$(cat $(SOUND_REVIEW_OUT)/plan.json)" tools/audio/review_main.ail | tee $(SCRATCH)/sound/review.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound/review.log
+	@cp $(SCRATCH)/sound/measure.json $(SOUND_REVIEW_OUT)/measure.json
+	@if [ "$(PUBLISH)" = 1 ]; then gcloud storage cp --cache-control=no-cache $(SOUND_REVIEW_OUT)/*.ogg $(SOUND_REVIEW_OUT)/*.wav $(SOUND_REVIEW_OUT)/sounds.json $(SOUND_REVIEW_OUT)/index.html gs://stapledons-voyage-assets/refs/sound/$(STAGE)/ && echo "sound-review: published https://storage.googleapis.com/stapledons-voyage-assets/refs/sound/$(STAGE)/index.html"; fi
+
+# The export: assets/audio is .gdignore'd (read as files, like the other assets), so stage the WAVs as
+# audio_bundle/<kind>/<file>.bin for the .pck (SoundDirector.source_path falls back to them).
+sound-stage:
+	@rm -rf audio_bundle; for f in assets/audio/*/*.wav; do d=audio_bundle/$$(basename $$(dirname $$f)); mkdir -p $$d; cp "$$f" "$$d/$$(basename $$f).bin"; done
+	@echo "sound-stage: staged $$(find audio_bundle -name '*.bin' | wc -l | tr -d ' ') sounds ($$(du -sh audio_bundle | cut -f1))"

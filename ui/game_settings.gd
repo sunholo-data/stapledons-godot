@@ -27,6 +27,13 @@ var confirm_mode := "hold"
 ## anything else reads "full". Presentation only: no sim input.
 const CAMERA_MOTIONS := ["full", "reduced"]
 var camera_motion := "full"
+## R2-SOUND §D2 (D-101): per-bus volumes 0..100 ([audio] volume_<bus>; SoundMix.SETTABLE), Mute when
+## the window is unfocused (on) and Reduced audio (off). Anything out of range or mistyped reads the
+## default. Presentation only: no sim input.
+const DEFAULT_VOLUME := 100
+var volumes := {}
+var mute_unfocused := true
+var reduced_audio := false
 
 
 func cfg_path() -> String:
@@ -44,8 +51,19 @@ func load_settings() -> void:
 	auto_view = DEFAULT_AUTO_VIEW
 	confirm_mode = "hold"
 	camera_motion = "full"
+	volumes = {}
+	mute_unfocused = true
+	reduced_audio = false
 	var cf := ConfigFile.new()
 	if cf.load(cfg_path()) == OK:
+		for bus: String in SoundMix.SETTABLE:
+			var v: Variant = cf.get_value("audio", "volume_" + bus.to_lower(), DEFAULT_VOLUME)
+			if v is int and v >= 0 and v <= 100:
+				volumes[bus] = v
+		var mu: Variant = cf.get_value("audio", "mute_unfocused", true)
+		mute_unfocused = mu if mu is bool else true
+		var ra: Variant = cf.get_value("audio", "reduced_audio", false)
+		reduced_audio = ra if ra is bool else false
 		var v: Variant = cf.get_value("display", "auto_view", DEFAULT_AUTO_VIEW)
 		auto_view = v if v is bool else DEFAULT_AUTO_VIEW
 		var c: Variant = cf.get_value("controls", "confirm_mode", "hold")
@@ -61,10 +79,25 @@ func save_settings() -> bool:
 	cf.set_value("display", "auto_view", auto_view)
 	cf.set_value("display", "camera_motion", camera_motion if camera_motion in CAMERA_MOTIONS else "full")
 	cf.set_value("controls", "confirm_mode", confirm_mode if confirm_mode in CONFIRM_MODES else "hold")
+	for bus: String in SoundMix.SETTABLE:
+		cf.set_value("audio", "volume_" + bus.to_lower(), volume(bus))
+	cf.set_value("audio", "mute_unfocused", mute_unfocused)
+	cf.set_value("audio", "reduced_audio", reduced_audio)
 	var ok := cf.save(cfg_path()) == OK
 	var ai := _ai()
 	ai.text_only = text_only
 	return ai.save_settings() and ok
+
+
+## A bus's volume 0..100 (the default when unset or out of range).
+func volume(bus: String) -> int:
+	var v: Variant = volumes.get(bus, DEFAULT_VOLUME)
+	return v if v is int and v >= 0 and v <= 100 else DEFAULT_VOLUME
+
+
+func set_volume(bus: String, p: int) -> void:
+	if bus in SoundMix.SETTABLE:
+		volumes[bus] = clampi(p, 0, 100)
 
 
 func view_label() -> String:

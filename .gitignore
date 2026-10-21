@@ -32,3 +32,4 @@ ship_commons_bundle/
 data/lens/*.bin
 data/lens/*.part*
 data/lens/*.tmp
+audio_bundle/
