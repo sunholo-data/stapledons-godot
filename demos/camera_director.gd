@@ -697,7 +697,7 @@ func pinch(factor: float) -> bool:
 ## C2: a sky view. A player key (7 / 8 / 9) or a cue (departure, a guided stop, braking, Sgr A*).
 ## A cue starts only with no panel open, not at a console and not in the lift; under reduced
 ## motion it is a HUD prompt instead. A view with an anchor walks the captain there first (the
-## consoles' walk path, 3.5 m/s) and starts on arrival. `force`: the interlude hold.
+## consoles' walk path at ShipConsoles.WALK_SPEED_MPS) and starts on arrival. `force`: the interlude hold.
 func sky(id: String, cued := false, force := false) -> bool:
 	# R2-CAMERA-FORWARD §D5: on a walk level the sky views are the walk views. A cue (departure,
 	# cruise, braking, a stop, Sgr A*) keeps or returns to Bow and never turns the camera; Sky astern

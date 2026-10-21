@@ -11,7 +11,7 @@ extends RefCounted
 ##             the three left-moving ones are mirrors (the identity is mirror-safe, 2026-10-03).
 ##   phase   : the gait cycle advances with DISTANCE (|v| dt / cycle_m), never with time, so a planted
 ##             foot cannot skate: no distance, no advance.
-##   clips   : idle, start, jog, stop, use_low/mid/high, sit/seated/stand, lift, look_up.
+##   clips   : idle, start, walk, stop, use_low/mid/high, sit/seated/stand, lift, look_up.
 ##   events  : foot_down (L or R) when the phase crosses a contact (the sound hook, §D5).
 ##   reduced : reduced motion keeps the stride and the poses; drops the bob, the lean and look-ups.
 ## Presentation only: nothing here goes to the sim.
@@ -23,9 +23,9 @@ const STOP_S := 0.3
 const SIT_S := 0.6
 const STAND_S := 0.5
 const LOOK_UP_S := 2.0
-const BOB_M := 0.025
-const LEAN_DEG := 4.0
-const DEFAULT_CYCLE_M := 2.3333 # the pose-guide rig's jog: 20 frames at 30 fps at 3.5 m/s
+const BOB_M := 0.01 ## the stills' bob (a painted walk carries its own)
+const LEAN_DEG := 2.0
+const DEFAULT_CYCLE_M := 1.4857 # the calm walk's cycle in game (D-115: art/captain-anim-v3, 1.3 m/s, 105 steps a minute)
 const STATION_CLIPS := ["use_low", "use_mid", "use_high"]
 ## The use height per station (DL1 heights: the Voyage and Crew desks 0.95 m, the Archive terminal and
 ## the navigation pods 1.1 m); unknown stations use the middle height.
@@ -120,7 +120,7 @@ func step(inp: Dictionary, dt: float) -> Dictionary:
 	elif station in STATION_CLIPS and not moving:
 		next = station
 	elif moving:
-		next = "start" if not _moving or (clip == "start" and clip_t + dt < START_S) else "jog"
+		next = "start" if not _moving or (clip == "start" and clip_t + dt < START_S) else "walk"
 	else:
 		if _moving or (clip == "stop" and clip_t + dt < STOP_S):
 			next = "stop"
@@ -138,7 +138,7 @@ func step(inp: Dictionary, dt: float) -> Dictionary:
 	var bob := 0.0
 	var lean := 0.0
 	if not reduced:
-		if clip in ["jog", "start"]:
+		if clip in ["walk", "start"]:
 			bob = BOB_M * absf(sin(TAU * phase))
 		if clip == "start":
 			lean = LEAN_DEG

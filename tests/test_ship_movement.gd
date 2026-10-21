@@ -18,7 +18,7 @@ func _run()->void:
 		var start:Vector3=demo.avatar_pos
 		demo.walk_motion(Vector2(1,0),1.)
 		var distance:float=demo.avatar_pos.distance_to(start)
-		check("one second traverses a brisk 3.5 metres",distance>3.4 and distance<3.6)
+		check("one second traverses the calm walk (%.2f m at %.1f m/s, D-115)" % [distance,ShipConsoles.WALK_SPEED_MPS],absf(distance-ShipConsoles.WALK_SPEED_MPS)<0.05)
 		demo.avatar_pos=start
 		for step in 60:demo.walk_motion(Vector2(1,0),1./60.)
 		check("distance is stable across frame rates",absf(demo.avatar_pos.distance_to(start)-distance)<.02)

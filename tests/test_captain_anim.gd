@@ -33,6 +33,7 @@ func _initialize() -> void:
 	_reduced_and_cues()
 	_determinism()
 	_gait_from_clip()
+	_speed()
 	_avatar()
 	print("captain-anim: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -123,7 +124,7 @@ func _transitions() -> void:
 	var clips: Array = []
 	for k in 30:
 		clips.append(a.step({"velocity": BOW * 3.5, "view_yaw": BOW_YAW}, DT).clip)
-	check("starting: start for 0.25 s, then jog", clips[0] == "start" and clips[14] == "start" and clips[16] == "jog" and clips[29] == "jog", str(clips))
+	check("starting: start for 0.25 s, then walk", clips[0] == "start" and clips[14] == "start" and clips[16] == "walk" and clips[29] == "walk", str(clips))
 	clips.clear()
 	for k in 30:
 		clips.append(a.step({"velocity": Vector3.ZERO, "view_yaw": BOW_YAW}, DT).clip)
@@ -159,7 +160,7 @@ func _reduced_and_cues() -> void:
 	var bob := 0.0
 	for k in 40:
 		bob = maxf(bob, a.step({"velocity": BOW * 3.5, "view_yaw": BOW_YAW}, DT).bob_m)
-	check("jogging bobs (2-3 cm)", bob > 0.015 and bob <= CaptainAnim.BOB_M + 1e-9, str(bob))
+	check("walking bobs the stills about 1 cm", bob > 0.006 and bob <= CaptainAnim.BOB_M + 1e-9, str(bob))
 	var r := CaptainAnim.new()
 	var rbob := 0.0
 	var lean := 0.0
@@ -168,7 +169,7 @@ func _reduced_and_cues() -> void:
 		rbob = maxf(rbob, o.bob_m)
 		lean = maxf(lean, absf(o.lean_deg))
 	check("reduced motion: no bob, no lean", rbob == 0.0 and lean == 0.0)
-	check("reduced motion keeps the stride", r.phase > 0.0 and r.clip == "jog")
+	check("reduced motion keeps the stride", r.phase > 0.0 and r.clip == "walk")
 	var c := CaptainAnim.new()
 	var o := c.step({"view_yaw": BOW_YAW, "cue": "look_up"}, DT)
 	check("a look-up cue at rest", o.clip == "look_up", o.clip)
@@ -209,22 +210,26 @@ func _avatar() -> void:
 		var anchor_x := (r.position.x + (av.canvas_px.x - av.anchor_px.x if av.flip_h else av.anchor_px.x)) * av.pixel_size
 		check("sector %d: the foot anchor stays on the walk point" % c[0], absf(anchor_x) < 1e-6 and absf((r.position.y + av.canvas_px.y - av.anchor_px.y) * av.pixel_size) < 1e-6)
 	av.stage = 0
-	# The fixture paints jog in back (4 frames + 4 mirrored) and profile.
-	var o := {"clip": "jog", "sector": 0, "facing": "back", "flip": false, "phase": 0.6}
+	# The fixture paints walk in back (4 frames + 4 mirrored) and profile.
+	var o := {"clip": "walk", "sector": 0, "facing": "back", "flip": false, "phase": 0.6}
 	av.show_anim(o)
 	check("a painted facing shows its frame by phase (0.6 of 8 -> 4)", av.shown.source == "frame" and av.shown.frame == 4, str(av.shown))
 	check("frame 4 is frame 0 mirrored (the half cycle)", av.shown.file == "jog_back_00.png" and av.shown.flip, str(av.shown))
 	var s: float = av.anim.cell_scale
-	var crop: Array = av.anim.clips.jog.stages["0"].back[4].crop
+	var crop: Array = av.anim.clips.walk.stages["0"].back[4].crop
 	var r := av.get_item_rect()
 	var ax := av.anchor_px.x * s
 	check("a mirrored cell keeps the anchor on the walk point", absf(r.position.x - (ax - crop[0] - crop[2])) < 1e-6, "%s" % r)
 	av.show_anim({"clip": "start", "sector": 2, "facing": "profile", "flip": false, "phase": 0.0})
-	check("start falls back to the painted jog", av.shown.source == "frame" and av.shown.clip == "jog", str(av.shown))
-	av.show_anim({"clip": "jog", "sector": 3, "facing": "front_34", "flip": false, "phase": 0.0})
+	check("start falls back to the painted walk", av.shown.source == "frame" and av.shown.clip == "walk", str(av.shown))
+	av.show_anim({"clip": "walk", "sector": 3, "facing": "front_34", "flip": false, "phase": 0.0})
 	check("an unpainted facing falls back to the still", av.shown.source == "still" and av.facing == "se", str(av.shown))
 	av.show_anim({"clip": "idle", "sector": 2, "facing": "profile", "flip": false, "clip_t": 0.0, "bob_m": 0.02})
-	check("bob lifts the drawing (0.02 m)", av.shown.source == "frame" and absf((av.get_item_rect().position.y - (s * av.anchor_px.y - (crop_of(av, "idle", "profile")[1] + crop_of(av, "idle", "profile")[3]))) * av.pixel_size - 0.02) < 1e-6, str(av.get_item_rect()))
+	check("a painted frame ignores the procedural bob (it carries its own)", av.shown.source == "frame" and absf((av.get_item_rect().position.y - (s * av.anchor_px.y - (crop_of(av, "idle", "profile")[1] + crop_of(av, "idle", "profile")[3]))) * av.pixel_size) < 1e-6, str(av.get_item_rect()))
+	av.stage = 20
+	av.show_anim({"clip": "idle", "sector": 0, "facing": "back", "flip": false, "bob_m": 0.01})
+	check("a still lifts by the bob (0.01 m)", av.shown.source == "still" and absf((av.get_item_rect().position.y - (av.anchor_px.y - av.canvas_px.y)) * av.pixel_size - 0.01) < 1e-6, str(av.get_item_rect()))
+	av.stage = 0
 	av.free()
 
 
@@ -241,3 +246,9 @@ func _gait_from_clip() -> void:
 	var b := CaptainAnim.new()
 	b.use_gait({})
 	check("use_gait: an empty clip keeps the default cycle", b.cycle_m == CaptainAnim.DEFAULT_CYCLE_M)
+
+
+## D-115: one calm walking speed for WASD and walk-to.
+func _speed() -> void:
+	check("the captain walks calmly: 1.3 m/s (D-115)", is_equal_approx(ShipConsoles.WALK_SPEED_MPS, 1.3))
+	check("the default cycle is the painted walk's (1.4857 m)", is_equal_approx(CaptainAnim.DEFAULT_CYCLE_M, 1.4857))

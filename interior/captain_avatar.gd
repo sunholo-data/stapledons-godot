@@ -105,7 +105,7 @@ func _show() -> void:
 ## Stand-ins for clips not painted yet: start -> jog, every other non-gait clip -> idle.
 const STILL_FOR_SECTOR := [["back", false], ["ne", false], ["se", false], ["se", false],
 	["front", false], ["se", true], ["se", true], ["ne", true]]
-const CLIP_STAND_IN := {"start": "jog", "stop": "idle", "look_up": "idle", "lift": "idle",
+const CLIP_STAND_IN := {"start": "walk", "stop": "idle", "look_up": "idle", "lift": "idle",
 	"use_low": "idle", "use_mid": "idle", "use_high": "idle", "sit": "idle", "seated": "idle", "stand": "idle"}
 var anim := {} # the manifest's "anim" section
 var anim_dir := ""
@@ -155,7 +155,7 @@ func show_anim(o: Dictionary) -> void:
 			flip_h = flip
 			var ax := anchor_px.x * s
 			var ay := anchor_px.y * s
-			var bob_px := float(o.get("bob_m", 0.0)) / pixel_size
+			var bob_px := 0.0 # a painted frame carries its own bob (the guide's pelvis); only the stills get one
 			offset = Vector2((ax - float(crop[0]) - float(crop[2])) if flip else (float(crop[0]) - ax), ay - (float(crop[1]) + float(crop[3])) + bob_px)
 			shown = {"source": "frame", "file": f["file"], "flip": flip, "frame": i, "clip": clip}
 			return

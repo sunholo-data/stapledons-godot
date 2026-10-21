@@ -20,7 +20,9 @@ const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
 const REACH_M := 2.5
 const FACING_DEG := 60.0
 const DOLLY_S := 0.6 # the director's "console" view ease (data/camera/views.json)
-const WALK_SPEED_MPS := 3.5
+## D-115 (Mark, 2026-10-21): the captain walks calmly. 1.3 m/s is an unhurried adult walk; the painted
+## walk cycle (art/captain-anim-v3) is drawn for it. No positional ease: the start and stop clips carry it.
+const WALK_SPEED_MPS := 1.3
 const PATH_CEILING_M := 40.0
 const HOLD_S := 1.5
 ## The stations, from ship.glb node names (§B, D-57 Q5). The navigation station is the arc
@@ -430,7 +432,7 @@ func dolly_active() -> bool:
 
 # ------------------------------------------------------------------ walking
 
-## Walk to a station's use point along WalkArea.path (3.5 m/s, the WASD speed). From the
+## Walk to a station's use point along WalkArea.path (WALK_SPEED_MPS, the WASD speed). From the
 ## lower deck it walks to the lift landing and says decisions need the bridge.
 func walk_to(id: String) -> bool:
 	if not stations.has(id) or not focused.is_empty() or demo.lift.travelling():

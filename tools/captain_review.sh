@@ -33,21 +33,26 @@ for m in before_today after_ca0_stills after_ca0_pilot; do
 done
 ls "$OUT/anim"
 echo "captain-review: $OUT"
-# The jog A/B with the first pilot (V1=<its review folder>) and the foot-contact overlays.
-V1=${V1:-build/captain_review_v1}
-if [ -d "$V1/clips/jog_back" ]; then
-  perl -e 'alarm 600; exec @ARGV' "$GODOT" --headless --path . --script tools/captain_overlay.gd -- --out="$OUT" --v1="$(cd "$V1" && pwd)" > "$OUT/overlay.log" 2>&1 || { cat "$OUT/overlay.log" | tail -5; exit 1; }
+# The A/B against the previous review (PREV=<its folder>, PREV_CLIP, PREV_MS a frame) and the
+# foot-contact overlays of the moving clip (CLIP, default walk).
+CLIP=${CLIP:-walk}
+PREV=${PREV:-build/captain_review_jog_v2}
+PREV_CLIP=${PREV_CLIP:-jog}
+PREV_MS=${PREV_MS:-69.3}
+SPEED=$(grep -E '^const WALK_SPEED_MPS := ' demos/ship_consoles.gd | sed 's/.*:= //')
+if [ -d "$PREV/clips/${PREV_CLIP}_back" ]; then
+  perl -e 'alarm 600; exec @ARGV' "$GODOT" --headless --path . --script tools/captain_overlay.gd -- --out="$OUT" --prev="$(cd "$PREV" && pwd)" --clip="$CLIP" --prev-clip="$PREV_CLIP" --prev-ms="$PREV_MS" > "$OUT/overlay.log" 2>&1 || { tail -5 "$OUT/overlay.log"; exit 1; }
   for f in back profile; do
-    ms=$(jq -r ".$f.m_per_frame * 1000 / 3.5 | floor" "$OUT/overlay.json")
-    img2webp -loop 0 -lossy -q 90 -d "$ms" $(ls "$OUT/overlay/jog_$f"/f??.png) -o "$OUT/anim/jog_${f}_contacts_2x.webp" >/dev/null
-    img2webp -loop 0 -lossy -q 85 -d 17 $(ls "$OUT/ab/jog_$f"/f???.png) -o "$OUT/anim/jog_${f}_ab_v1_v2.webp" >/dev/null
+    ms=$(jq -r ".$f.m_per_frame * 1000 / $SPEED | floor" "$OUT/overlay.json")
+    img2webp -loop 0 -lossy -q 90 -d "$ms" $(ls "$OUT/overlay/${CLIP}_$f"/f??.png) -o "$OUT/anim/${CLIP}_${f}_contacts_2x.webp" >/dev/null
+    img2webp -loop 0 -lossy -q 85 -d 17 $(ls "$OUT/ab/${CLIP}_$f"/f???.png) -o "$OUT/anim/${CLIP}_${f}_ab_${PREV_CLIP}_${CLIP}.webp" >/dev/null
   done
 fi
 # The frame checks and the review description.
 perl -e 'alarm 600; exec @ARGV' "$GODOT" --headless --path . --script tools/captain_frames.gd -- --json "$OUT/frames_check.json" > "$OUT/frames_check.log" 2>&1 || true
-for n in art/captain-anim-v1/NOTES.md art/captain-anim-v2/NOTES.md; do [ -f "$n" ] && cp "$n" "$OUT/generation_notes_$(basename $(dirname $n)).md"; done
+for n in art/captain-anim-v1/NOTES.md art/captain-anim-v2/NOTES.md art/captain-anim-v3/NOTES.md; do [ -f "$n" ] && cp "$n" "$OUT/generation_notes_$(basename $(dirname $n)).md"; done
 [ -f "$OUT/overlay.json" ] || echo null > "$OUT/overlay.json"
-jq -n --slurpfile cap "$OUT/review_capture.json" --slurpfile chk "$OUT/frames_check.json" --slurpfile ov "$OUT/overlay.json" '
+jq -n --arg clip "$CLIP" --arg prev "$PREV_CLIP" --arg speed "$SPEED" --slurpfile cap "$OUT/review_capture.json" --slurpfile chk "$OUT/frames_check.json" --slurpfile ov "$OUT/overlay.json" '
   ($chk[0].frames | map({key: .src, value: {pose_iou: .iou, leg_coverage: .legs, height_ratio: .height_ratio, palette_dE: .de, passed: .ok, notes: .notes}}) | from_entries) as $c |
   {about: "R2-CAPTAIN-ANIMATION CA1 pilot review (ledger D-102): 10 painted frames (jog half cycle and idle, back and profile, age 0) and the CA0 facing fix, seen through the real Bow view at 1280x720 (the captain ~81 px). anim/<clip>_<facing>.webp loops at game speed, _3x is the same 3x, _painted_2x is the art itself; side_by_side.webp shows the four clips at real size; moonwalk_*.webp is a 2 s walk to starboard before and after.",
    figure_px_720p: $cap[0].figure_px_720p,
@@ -60,5 +65,5 @@ jq -n --slurpfile cap "$OUT/review_capture.json" --slurpfile chk "$OUT/frames_ch
    side_by_side: ($cap[0].side_by_side + {loop: "anim/side_by_side.webp"}),
    moonwalk: [$cap[0].moonwalk[] | . + {loop: "anim/moonwalk_\(.mode).webp"}],
    contact_sheet: "contact_sheet.png", cells_dir: "cells/",
-   jog_v2: {ab_loops: {back: "anim/jog_back_ab_v1_v2.webp", profile: "anim/jog_profile_ab_v1_v2.webp"}, contact_loops: {back: "anim/jog_back_contacts_2x.webp", profile: "anim/jog_profile_contacts_2x.webp"}, overlay: ($ov[0] // null), planted_feet: $chk[0].stance}}' > "$OUT/review.json"
+   moving_clip: {name: $clip, walk_speed_mps: ($speed | tonumber), ab_loops: {back: "anim/\($clip)_back_ab_\($prev)_\($clip).webp", profile: "anim/\($clip)_profile_ab_\($prev)_\($clip).webp"}, contact_loops: {back: "anim/\($clip)_back_contacts_2x.webp", profile: "anim/\($clip)_profile_contacts_2x.webp"}, overlay: ($ov[0] // null), planted_feet: $chk[0].stance}}' > "$OUT/review.json"
 echo "captain-review: review.json written ($(jq -r '.checks_passed' "$OUT/review.json"))"

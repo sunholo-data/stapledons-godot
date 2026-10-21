@@ -1,35 +1,45 @@
 extends SceneTree
 ## R2-CAPTAIN-ANIMATION jog review extras (D-109), headless, from a review folder built by
 ## tools/captain_review.gd:
-##   overlay/jog_<facing>/fNN.png  the painted frames (2x their cell) with the foot contacts drawn: a
+##   overlay/<clip>_<facing>/fNN.png  the painted frames (2x their cell) with the foot contacts drawn: a
 ##                                 disc on the planted sole (red L, blue R), and a ring where that sole
 ##                                 should be if it stayed on the deck (the contact's first position moved
 ##                                 back one frame spacing per frame); the disc on the ring = no slide
-##   ab/jog_<facing>/fNN.png       A/B at game speed on one 2 s timeline (60 fps): the first pilot's jog
-##                                 (8 frames, half mirrored or repeated) beside this one (12 frames)
-## Usage: godot --headless --path . --script tools/captain_overlay.gd -- --out=<review dir> --v1=<v1 review dir>
+##   ab/<clip>_<facing>/fNN.png    A/B at game speed on one 2 s timeline (60 fps): the previous review's
+##                                 clip (--prev, --prev-clip, --prev-ms a frame) beside this one
+## Usage: godot --headless --path . --script tools/captain_overlay.gd -- --out=<review dir> --prev=<review dir>
+##        [--clip=walk] [--prev-clip=jog] [--prev-ms=69.3]
 const DIR := "res://assets/characters/captain"
 var out := ""
-var v1 := ""
+var v1 := "" ## the previous review folder (--prev; --v1 still accepted)
+var clip_name := "walk"
+var prev_clip := "jog"
+var prev_ms := 69.3
 
 
 func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
-		elif a.begins_with("--v1="):
-			v1 = a.trim_prefix("--v1=")
+		elif a.begins_with("--v1=") or a.begins_with("--prev="):
+			v1 = a.get_slice("=", 1)
+		elif a.begins_with("--clip="):
+			clip_name = a.trim_prefix("--clip=")
+		elif a.begins_with("--prev-clip="):
+			prev_clip = a.trim_prefix("--prev-clip=")
+		elif a.begins_with("--prev-ms="):
+			prev_ms = float(a.trim_prefix("--prev-ms="))
 	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join("anim_pilot.json")))
 	var anim: Dictionary = m.anim
 	var s: float = anim.cell_scale
-	var jog: Dictionary = anim.clips.jog
+	var jog: Dictionary = anim.clips[clip_name]
 	var rows := {}
 	for facing: String in jog.stages["0"]:
 		var list: Array = jog.stages["0"][facing]
 		var n := list.size()
 		var mpf: float = float(jog.cycle_m) / n
 		var ppm := 720.0 * s * 2.0 # 2x cells
-		var dir := out.path_join("overlay/jog_" + facing)
+		var dir := out.path_join("overlay/%s_%s" % [clip_name, facing])
 		DirAccess.make_dir_recursive_absolute(dir)
 		var anchor := Vector2(-1, -1)
 		var anchor_i := -1
@@ -57,13 +67,13 @@ func _initialize() -> void:
 			img.save_png(dir.path_join("f%02d.png" % i))
 		rows[facing] = {"frames": n, "m_per_frame": mpf, "marks": marks}
 		# A/B on one timeline.
-		var v1dir := v1.path_join("clips/jog_" + facing)
-		var v2dir := out.path_join("clips/jog_" + facing)
+		var v1dir := v1.path_join("clips/%s_%s" % [prev_clip, facing])
+		var v2dir := out.path_join("clips/%s_%s" % [clip_name, facing])
 		var v1n := Array(DirAccess.get_files_at(v1dir)).filter(func(f): return f.ends_with(".png") and not f.ends_with("_3x.png")).size()
-		var abdir := out.path_join("ab/jog_" + facing)
+		var abdir := out.path_join("ab/%s_%s" % [clip_name, facing])
 		DirAccess.make_dir_recursive_absolute(abdir)
-		var v1_ms := 1000.0 * 2.3333 / 3.5 / maxf(1, v1n)
-		var v2_ms := 1000.0 * float(jog.cycle_m) / 3.5 / n
+		var v1_ms := prev_ms
+		var v2_ms := 1000.0 * float(jog.cycle_m) / ShipConsoles.WALK_SPEED_MPS / n
 		var cache := {}
 		for t in 120:
 			var ms := t * 1000.0 / 60.0
@@ -75,7 +85,7 @@ func _initialize() -> void:
 			ab.blit_rect(b, Rect2i(Vector2i.ZERO, b.get_size()), Vector2i(a.get_width() + 8, 0))
 			ab.resize(ab.get_width() * 2, ab.get_height() * 2, Image.INTERPOLATE_NEAREST)
 			ab.save_png(abdir.path_join("f%03d.png" % t))
-		rows[facing]["ab"] = {"v1_frames": v1n, "v1_ms": snappedf(v1_ms, 0.1), "v2_frames": n, "v2_ms": snappedf(v2_ms, 0.1), "timeline_frames": 120, "ms": 1000.0 / 60.0}
+		rows[facing]["ab"] = {"prev_clip": prev_clip, "prev_frames": v1n, "prev_ms": snappedf(v1_ms, 0.1), "frames": n, "ms": snappedf(v2_ms, 0.1), "timeline_frames": 120, "timeline_ms": 1000.0 / 60.0}
 	var f := FileAccess.open(out.path_join("overlay.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(rows, "  "))
 	f.close()
