@@ -44,14 +44,19 @@ sound-check: import
 	@$(GODOT) --headless --path . --script tools/sound_check.gd -- --out=$(CURDIR)/$(SCRATCH)/sound/measure.json > $(SCRATCH)/sound/check.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-check)' $(SCRATCH)/sound/check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound/check.log && grep -q '^sound-check: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound/check.log
 test: sound-check
 
-# The listening page: every cue (Ogg Opus + WAV) and the bridge ambience mix, sounds.json and index.html
-# in $(SOUND_REVIEW_OUT); STAGE=s0b PUBLISH=1 also uploads to gs://stapledons-voyage-assets/refs/sound/$(STAGE)/.
+# The listening page: every cue (Ogg Opus + WAV), the bridge ambience mix and the spire at three
+# degradation levels, sounds.json and index.html in $(SOUND_REVIEW_OUT). V1_REF=<git ref> also renders
+# every sound that changed since that ref as <id>_v1 (its old recipe at its old level) for A/B.
+# STAGE=<s> PUBLISH=1 uploads to gs://stapledons-voyage-assets/refs/sound/$(STAGE)/.
 STAGE ?= s0b
+V1_REF ?=
 SOUND_REVIEW_OUT ?= $(CURDIR)/build/sound_review
 sound-review: sound-check
-	@rm -rf $(SOUND_REVIEW_OUT); mkdir -p $(SOUND_REVIEW_OUT)
-	@$(GODOT) --headless --path . --script tools/sound_review.gd -- --measure=$(CURDIR)/$(SCRATCH)/sound/measure.json --out=$(SOUND_REVIEW_OUT) 2>&1 | grep -E '^sound-review'
+	@rm -rf $(SOUND_REVIEW_OUT) $(SCRATCH)/sound/v1; mkdir -p $(SOUND_REVIEW_OUT) $(SCRATCH)/sound/v1
+	@if [ -n "$(V1_REF)" ]; then git show $(V1_REF):data/audio/recipes.json > $(SCRATCH)/sound/v1/recipes_v1.json && git show $(V1_REF):data/audio/cues.json > $(SCRATCH)/sound/v1/cues_v1.json && git show $(V1_REF):data/audio/assets_synth.json > $(SCRATCH)/sound/v1/assets_synth_v1.json; fi
+	@$(GODOT) --headless --path . --script tools/sound_review.gd -- --measure=$(CURDIR)/$(SCRATCH)/sound/measure.json --out=$(SOUND_REVIEW_OUT) --stage=$(STAGE) $(if $(V1_REF),--v1-dir=$(CURDIR)/$(SCRATCH)/sound/v1) 2>&1 | grep -E '^sound-review'
 	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json "$$(cat $(SOUND_REVIEW_OUT)/plan.json)" tools/audio/review_main.ail | tee $(SCRATCH)/sound/review.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound/review.log
+	@if [ -f $(SOUND_REVIEW_OUT)/plan_v1.json ]; then $(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json "$$(cat $(SOUND_REVIEW_OUT)/plan_v1.json)" tools/audio/review_main.ail | tee $(SCRATCH)/sound/review_v1.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound/review_v1.log; fi
 	@cp $(SCRATCH)/sound/measure.json $(SOUND_REVIEW_OUT)/measure.json
 	@if [ "$(PUBLISH)" = 1 ]; then gcloud storage cp --cache-control=no-cache $(SOUND_REVIEW_OUT)/*.ogg $(SOUND_REVIEW_OUT)/*.wav $(SOUND_REVIEW_OUT)/sounds.json $(SOUND_REVIEW_OUT)/index.html gs://stapledons-voyage-assets/refs/sound/$(STAGE)/ && echo "sound-review: published https://storage.googleapis.com/stapledons-voyage-assets/refs/sound/$(STAGE)/index.html"; fi
 

@@ -15,6 +15,12 @@ extends Node
 ## Variant and pitch come from a hash of (cue id, the cue's fire count), not an RNG (§D1).
 
 const LOG_MAX := 4096
+## R2-SOUND rework (D-108): the spire's degradation layer follows the Archive's Memory Health.
+## Memory Health is designed (stapledons-design features/next/archive-voice.md §5, archive-system.md:
+## 0..100, hidden, deterministic in the sim) but the sim does not emit it yet (Archive phase 2). When
+## it does, at this path, the director maps it to archive_degradation = 1 − health/100. Until then the
+## parameter stays 0 (pristine) and the layer is silent: nothing here invents a value.
+const ARCHIVE_HEALTH_PATH := "archive.memory_health"
 const STEP_MM := 700
 const PLAYERS_2D := 12
 
@@ -36,6 +42,8 @@ var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _loops := {} ## cue id -> its own player
 var _state := {} ## sim_state cue id -> last value seen
+var params := {} ## parameter name -> 0..1 (archive_degradation)
+var _param_seq := 0
 
 
 ## Loads and validates the tables; returns the errors (also kept in `errors`). With errors the
@@ -72,6 +80,9 @@ func on_sim_step(tick: int, events: Array) -> void:
 ## A sim state edge (§D1): the cue fires when the value at its path changes to its `equals` (or to
 ## anything, without `equals`). Paths are dotted into the mirrored world, e.g. "ship.ism.medium".
 func on_sim_world(tick: int, world: Dictionary) -> void:
+	var h: Variant = _at(world, ARCHIVE_HEALTH_PATH)
+	if h is float or h is int:
+		set_param("archive_degradation", 1.0 - clampf(float(h), 0.0, 100.0) / 100.0)
 	for id: String in cues:
 		var t: Dictionary = cues[id].trigger
 		if t.kind != "sim_state":
@@ -106,6 +117,42 @@ func on_game(state_name: String) -> void:
 
 ## The captain walked this many metres this frame. Integer millimetres, so 6,990 mm gives 9 steps
 ## and 7,000 mm gives 10 whatever the frame split (§D1).
+## A continuous parameter (0..1). Cues with a matching `param` follow it: their volume moves along
+## the row's points (value -> dB offset, linear between points). Logged when it moves by 0.01 or more.
+func set_param(param_name: String, value: float) -> void:
+	var v := clampf(value, 0.0, 1.0)
+	if absf(v - float(params.get(param_name, 0.0))) < 0.01 and params.has(param_name):
+		return
+	params[param_name] = v
+	_param_seq += 1
+	cue_log.append("p%d %s %.2f" % [_param_seq, param_name, v])
+	for id: String in _loops:
+		var c: Dictionary = cues.get(id, {})
+		if c.get("param", {}).get("name", "") == param_name:
+			(_loops[id] as AudioStreamPlayer).volume_db = float(c.get("volume_db", 0.0)) + param_offset(c)
+
+
+## The dB offset a row's param curve gives at the parameter's current value (0 without a param).
+func param_offset(c: Dictionary) -> float:
+	var pc: Variant = c.get("param", null)
+	if not pc is Dictionary:
+		return 0.0
+	return curve_db(pc.points, float(params.get(pc.name, 0.0)))
+
+
+static func curve_db(points: Array, x: float) -> float:
+	if points.is_empty():
+		return 0.0
+	if x <= float(points[0][0]):
+		return float(points[0][1])
+	for i in range(1, points.size()):
+		var a: Array = points[i - 1]
+		var b: Array = points[i]
+		if x <= float(b[0]):
+			return lerpf(float(a[1]), float(b[1]), (x - float(a[0])) / maxf(float(b[0]) - float(a[0]), 1e-9))
+	return float(points.back()[1])
+
+
 func walked(metres: float) -> void:
 	add_walk_mm(roundi(maxf(0.0, metres) * 1000.0))
 
@@ -137,7 +184,7 @@ func fire(id: String, key: String, clock: int) -> void:
 	var variant := h % streams.size()
 	var spread := int(c.get("pitch_cents_spread", 0))
 	var cents := 0 if spread <= 0 else (h / 7) % (2 * spread + 1) - spread
-	var vol := float(c.get("volume_db", 0.0))
+	var vol := float(c.get("volume_db", 0.0)) + param_offset(c)
 	cue_log.append("%s %s v%d %+dc %.1fdB" % [key, id, variant, cents, vol])
 	if cue_log.size() > LOG_MAX:
 		cue_log.remove_at(0)
