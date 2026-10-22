@@ -1936,3 +1936,151 @@ DECISIONS FOR MARK: none. The ledger has 0 OPEN rows (106).
   - The follow-up backlog.
 
 DECISIONS FOR MARK: D-107 (approve the R2 Kerr design and plan, PR #307). The ledger has 1 OPEN row (107).
+
+## 44 — 2026-10-21 — iteration 44, follow-up backlog rows 7o + 7s BUILT (PR #309), merge PARKED on `rig/full`: rig_check posts only descriptions GitHub accepts and still reports a refused post; three ruling-pin controls, an in-make row count (31), and live script-error guards; independent eval Sonnet 91/100 PASS [PRODUCT]
+
+- **Pick:** follow-up backlog rows **7o + 7s**, batched into one PR as Mark's 2026-10-20 order asks when nothing above the backlog is runnable. At pick (11:40 UTC):
+  - **L9 S0.2:** blocked; #302 open, holding `sim/protocol.ail` and minor 13.
+  - **L4 and L3:** blocked; `Makefile` was edited by the open #298, #300, #301, #302, #303 and #304.
+  - **R2:** PARKED on D-107 (OPEN).
+  - **7m AC1:** PARKED-ON-LANE (GPU `Device Utilization %` 88, 1-min load 5.9; predicate < 15 and < 5).
+  - **7i(c):** the ship scene was held.
+  - **The batch:** 7o (`tools/rig_check.sh`) and 7s (`mk/m45.mk`, fixtures) touched no held file.
+  - **Clause map at pick:** 1 UNMET (M1.5b, attended); 2 and 3 MET; 4 UNMET (7m AC1 parked on GPU, 7i(c) held, P-land); 5 ongoing. No routable UNMET-clause row.
+  - **Reality check at `4bf95435`:** 7o's `fail()` still appended the 104-character log path and ran under `set -eu`. 7s's E1 survived (later reproduced by the evaluator on `74e68540`: E1 and E2 both rc 0, 28 rows).
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing (7o is clause-5 tooling). Goal unmoved: hygiene, the last runnable tier.
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - #274: 0 allowlisted directives since 2026-10-21T05:33:30Z (7 comments, all self).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Ledger valid at 107 rows at pick, 1 OPEN (D-107). Mid-iteration the attended rulings D-108..D-113 landed (113 rows, still only D-107 OPEN). D-113 orders a loop-suitable sim field, `archive.memory_health`, queued after S0.2.
+- **Gate 1:**
+  - origin/main `4bf95435` at pick (`mission-base.sh record gate1` run with the driver root, closing iteration 43's process slip).
+  - The main checkout is behind and was only read.
+  - The running skill and its 13 resources are byte-identical to origin/dev (28 of 28 copies).
+  - No died-mid-flight trace (no iteration-44 clone or branch, no own mission PR beyond #307).
+- **Design:**
+  - Designer: `claude:claude-opus-5-5`, the rotation after kimi-k3. Resolver `recipe claude:claude-opus-5-5 declared:provider-pin`; Agent `opus`, as in iteration 39. Wrote `design_docs/planned/r1/m4-7s-7o-followups.md` (pillars all 0, D-88).
+  - Measured findings:
+    - 7o: descriptions are 141–167 characters on this rig, with only `clone failed` at 138 fitting.
+    - E1: killable by a one-field fixture.
+    - E2: killable, but only with the transit card fields added.
+    - E5: equivalent, because GDScript `match` never matches a non-String. Its flipped twin, E5b, survived and is now killed.
+    - 7s(c): a false premise; all four D-78 captions were already exercised.
+    - **New defect:** every `! grep -q 'SCRIPT ERROR:'` guard in `mk/m45.mk` was dead inside the controls loop. `!` never trips `set -e`; the controller reproduced this in `sh`. The S1 mutant (8 logs with script errors) left make rc 0 at 28 rows.
+  - Quorum r1 (`--author claude:claude-opus-5-5`, Claude benched): BLOCKED.
+    - kimi-k3 REJECT: `$short` was unverified. Its premise was false (`short=` at `tools/rig_check.sh:29`, measured), but the completeness gap was real, so a V-row was added.
+    - gemini-4-argon PASS; its `if grep` suggestion was applied.
+    - gpt6-1-sol and glm-5.3 absent (unreachable).
+  - Quorum r2: BLOCKED.
+    - glm-5.3 REJECT: the log pointer leaves the description, and a refused success post is unhandled.
+    - kimi-k3 and gemini PASS; gpt6-1-sol absent (unreachable).
+    - Narrow-refinement carve-out: glm's `proposed_fix` was applied verbatim (V21 stdout evidence, a conditional log pointer, a success-refused case, a Risks row). No third round.
+    - Effective review: two to three external reviewers per round, with the OpenAI seat absent in both rounds.
+- **Plan:** planner codex gpt-6.1-sol (`recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`; Agent `opus` transport; probe rc 0, run rc 0, 118,199 tok).
+  - Output: `m4-7s-7o-followups-sprint.md` and feature `M4.5bR3_7s7o_FOLLOWUPS` (17 → 18 features; the jq proof shows only it was added).
+  - DI-01..DI-04, all about reading evidence: the E5 RED exit, E7 labelling, the AC4/AC6 HEAD comparison, and rc vs printed output.
+- **Execution:** executor codex gpt-6.1-sol (Agent `opus` transport; rc 0, 175,200 tok, no cap). 7 files; the Godot results inside the sandbox were labelled UNINFORMATIVE.
+  - The controller committed `d7eb0f55`.
+  - It re-ran every AC outside the sandbox:
+    - AC1: 6/0. AC2: RED 6/6 on `4bf95435`. AC3: 1.
+    - AC4: R1–R5 killed. AC5: 31, then 3.
+    - AC6: E1 E2 E5 E5b E7 E7b S1 C1–C4 killed (E5 equivalent).
+    - AC7: 0. AC8: 0. AC9: shellcheck clean, dash 6/0. AC10: rc 0.
+  - The executor replaced all eight dead guards in `mk/m45.mk` (the directive's wording; the design required the loop one). The controller checked each `&& if …; fi && …` chain keeps the old pass/fail semantics.
+- **Integration with attended work landed mid-iteration:**
+  - #298, #300, #301, #302, #303 and #304 merged; then #310 (`18c5cc6e`), a combined-main integration that re-pinned the bridge level baseline and **also fixed row 7o, narrower**: `${2:0:140}` and `(log: rig-check/$short.log …)`.
+  - `tools/rig_check.sh` conflicted. The controller kept the reviewed version, a superset:
+    - It uses POSIX `cut`. #310's `${2:0:140}` is `Bad substitution` under dash; it works on the Studio only because macOS `/bin/sh` is bash.
+    - The log pointer names the real file. It is `<full sha>.log`, not `$short.log`.
+    - A refused failure or success post reports and exits 1. #310's script fails the control's failure-refused and success-refused cases (5 of 6 fail on it, mostly on format).
+  - Merge `ea5426ee`, re-verified: control 6/0 under sh and dash; 31 control rows; `levels-regress` ok.
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter44`) on `f7510b14`: **91 PASS**, 0 blocking, `eval_R1-M4-JOURNEY_7s7o_round_1.json` (commit `4d6e3763`).
+  - It re-ran AC1–AC10 and the RED proof on `74e68540` (E1 and E2 survive at 28 rows).
+  - It confirmed that S1 is killed only by the new guard (the old form put back: rc 0, 31 rows).
+  - Its own drills: 6 killed (`cut` dropped, 141, 100, a silent success post, a silent failure post, a spec row deleted) and 2 survived (N1, N2).
+  - Non-blocking findings, to the follow-up backlog:
+    - N1: the pointer-fit boundary is untested.
+    - N2: only the loop's script-error guard is drilled.
+    - N3: `wc -m` depends on locale and every case is ASCII.
+    - N4: the sprint JSON status was planned (fixed in `4d6e3763`).
+    - N5: a script error at the start of `_run` hangs Godot.
+- **Gate 3b:**
+  - `rig/full` on `f7510b14`: **failure**, `levels-regress` (`bridge … near_bow 0.021 -> 0.017`). This is inherited: the same red reproduces at main `3541da27` (rc 2), #310 re-pinned it, and it was ok on `7babe6af` and `ea5426ee`. That failure status **posted** (`f7510b14: make test failed or ran over 5400s`); before 7o it would have stuck at pending. First live evidence for the row.
+  - `rig/full` on `4d6e3763`, run 1: **failure**, `free-nav-stop-test` (`sim stopped: step_timeout` at the Saturn and Jupiter stops; 1-min load 13–16 with an attended `make test + make golden` running beside it). This is row 7h(c)'s known load-sensitive bound. The same head passed it alone, 52 passed and 0 failures in 295 s (load 8.5), and the PR touches no navigation code.
+  - `rig/full` on `4d6e3763`, run 2: **failure** again. Across both runs it was red on `free-nav-stop-test` (`sim stopped: step_timeout`, the bridge's 2 s per-step read deadline, at the Saturn and Jupiter stops; run 1 at 1-min load 13–16, run 2 at 8–10 gave 36 passed and 16 failed), while the same head passes it alone (52/0, 295 s). The PR touches no sim, bridge or navigation file, and main has no `rig/full` since the attended merges.
+  - Fast tier: success on `4d6e3763` (1 check; the endpoint control `checks=1`).
+  - **Merge PARKED.** Merging over a red `rig/full` would force a guardrail (standing rule 2). About 4.6 h of the slot was gone, so a fourth 75-minute run did not fit. Resume predicate: `rig/full` success on the PR head, or the same `free-nav-stop-test` red measured in-suite on main (then it is inherited, and it becomes its own row). Closing-keyword scan of PR #309: 0.
+- **Routing evidence:**
+  - Run identity: fire `stapledon-1792582790-21599`; base=4bf95435e86d5761fd491b8589654a9904aded93@2026-10-21T11:40:28Z (`record gate1`). Routing note: empty. Operator's standing request: every role through the Agent tool.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: `claude:claude-opus-5-5`, Agent `opus` (206,796 tok first run; 218,331 and 272,082 reported after the two revisions). The rotation pointer now holds `claude:claude-opus-5-5`.
+  - Planner: `codex:gpt-6.1-sol` (118,199 tok; transport 28,320). Resolver before the doc: `agent-tool opus fail-closed:no-doc`; with the doc: `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`.
+  - Executor: `codex:gpt-6.1-sol` (175,200 tok; transport 30,349; `recipe codex:gpt-6.1-sol declared:provider-pin`).
+  - Evaluator: `sonnet` (83,581 tok; `agent-tool sonnet declared:alias-pin`). Judge independence: cross-vendor against the OpenAI executor and planner.
+  - Codex runs stripped `OPENAI_API_KEY` (subscription); the 1-token probe ran with it set.
+  - Quorum: r1 $0.346, r2 $0.439. Metered about $0.79.
+  - Fleet tickets: `quorum:gpt6-1-sol-openai-api-credits-exhausted` repeat (`inbox_1792592210328_5011c823`) and `rotate-log:heading-parse-stapledon` new (`inbox_1792596261639_e811b568`), both `--blocking none`. Gate 4 ran `ailang mission rotate-log stapledon --keep 20` against a temporary registry pointed at the record clone. It recognised 8 of 44 entries, rotated none, prepended a false "Older entries are ARCHIVED" notice and reformatted the index, so the controller reverted both files. The log stays unrotated.
+- **Ruled out:**
+  - L9 S0.2, L4 and L3 at pick (the holds above). All released mid-iteration; see Next.
+  - 7m AC1: GPU 88 %.
+  - A third quorum round: the carve-out applies.
+  - Taking #310's `rig_check.sh`: it is narrower and bash-only (measured above).
+  - Attributing the first `rig/full` red to this PR: the negative control at `3541da27` reproduces it without the PR.
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. **The attended session and the loop fixed the same row in parallel.** #310 landed a 7o fix about 90 minutes after this iteration picked 7o, and the conflict surfaced only at merge time. The pick is not visible to attended sessions until the PR opens. Proposal for Mark: the loop opens a draft PR (or a charter row tag such as `[IN-SPRINT iteration 44]`) at pick time, so an attended session can see a loop claim before duplicating it.
+  2. **The 7q drill template carries two dead-assertion defects.** Its mid-function `!` and `&&` checks never trip `set -e`, and a caller's `||` disables `set -e` inside the function (designer V22). Anyone reusing it inherits vacuous drills. The iteration-35 "hardened drill shape" note in the charter should add: no `!` assertions; every check carries its own `|| exit`.
+  3. **The OpenAI quorum seat was absent for the third iteration in four** (41, 43, 44), while the same model ran fine as planner and executor over the codex subscription. The ticket is a repeat.
+- **Next:** **first, re-run `rig/full` on PR #309 on an idle rig and merge on green** (or measure `free-nav-stop-test` in-suite on main to attribute the red). Then: L9 S0.2 is now routable. #302 merged (minor 13 = `surfaceMinor`), the S0 plan was renumbered attended to minor 14, and no open PR edits `Makefile` or `sim/protocol.ail`. So: L9 S0.2 (minor 14) → S0.3 → D-113 `archive.memory_health` (attended ruling 2026-10-21; next free minor after 14; needs a design doc) → L4 → L3 → 7m AC1 (idle rig only) → the follow-up backlog. D-107 is the only OPEN decision.
+
+DECISIONS FOR MARK: D-107 (approve the R2 Kerr design and plan, PR #307; default B). The ledger has 1 OPEN row (107).
+
+## 45 — 2026-10-22 — iteration 45, row R2 Kerr design doc REVISED for D-107 A (PR #307): DI-01..DI-15 and the plan eval's F1–F7 resolved, quorum round 3 BLOCKED and its fixes applied under the carve-out; scheduling PARKED-ON-LANE (no Anthropic or OpenAI quorum seat present); independent eval Sonnet 86/100 PASS; PR #309 merge still PARKED: two `rig/full` re-runs timed out at 5400 s with 0 failures and one went red on the controller's own override, though every target passed [PRODUCT]
+
+- **Pick:** row **R2**, the Kerr doc revision. Mark's attended ruling D-107 = A (2026-10-21, after iteration 44's record) unparked it and ordered it next: one designer pass for DI-01..DI-15 and the evaluator's 7 findings, one re-quorum including an Anthropic or OpenAI reviewer, then the headless slices become loop work. An attended ruling outranks the queue. Alongside it, iteration 44's parked landing (PR #309, `rig/full`) was resumed in the background as its **Next** asked.
+  - **Clause map at pick:** 1 UNMET (M1.5b, attended); 2 and 3 MET; 4 UNMET (7m AC1 PARKED-ON-LANE: GPU `Device Utilization %` 82, 1-min load 3.8 at 22:26 UTC, predicate < 15 and < 5; 7i(c) held, attended #318 edits `demos/ship_geometry_demo.gd`; P-land); 5 ongoing. No routable UNMET-clause row.
+  - **Reality check:** origin/main `23928d01`. #302 (minor 13 = `surfaceMinor`) and #314 (minor 15 = `archiveMinor`, D-113) merged; 14 stays reserved for L9 S0.2 (`sim/archive_health_test.ail:41`). Registry latest for `sunholo/relativity` is 0.12.0; 0.13.0 is unpublished source on ailang-packages main.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Goal unmoved (R2 plan work, first in Mark's 2026-10-20 order).
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - #274: 0 allowlisted directives since 2026-10-21T16:23:08Z (8 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Ledger valid at 115 rows, 0 OPEN at pick. Attended since iteration 44, acknowledged here: D-107 A (Kerr), D-114 (star surfaces approved), D-115 (the captain walks calmly). `mission_ledger_provenance.sh` reads `fleet` for D-106, D-107, D-113, D-114 and D-115 (this rig's attended sessions commit as the bot; each row carries Mark's quoted words and the attended stamp). Not re-opened, as in iterations 41 and 42.
+  - Weekly sweep: already done this week.
+- **Gate 1:**
+  - origin/main `23928d01` (`mission-base.sh record gate1` at 22:25:16Z). The main checkout is 10+ commits behind and was only read.
+  - The running skill and all 13 resources are byte-identical to origin/dev (14 of 14 files; one resolved copy, the CWD and symlink paths are the same file).
+  - No died-mid-flight trace: the open loop PRs are #307 and #309, both recorded by iterations 43 and 44.
+- **Design (round 3 revision):**
+  - Designer: `codex:gpt-6.1-sol`, the rotation turn after Opus (pointer now `codex:gpt-6.1-sol`). Recipe run from the loop clone, `OPENAI_API_KEY` stripped; probe rc 0 (a first probe outside a git directory failed `Not inside a trusted directory`: an instrument failure, not a lane verdict). Run rc 0, 318,317 tok. 285 → 496 lines.
+  - It resolved all 15 DIs and F1–F7 in normative text with a revision-log row each, and embedded a stdlib-only Decimal60 oracle in the doc. The controller extracted that source from the doc, confirmed it byte-identical to the designer's file and re-ran it: s = 0.998 α_max **6.9966662714** and RK-16 **4.8770013845**, matching the plan evaluator's independent values (6.99666627, 4.877001). The s = 0.9 horizon and prograde photon orbit were checked by hand (1.4358898944, 1.5578546274).
+  - Commit ``9852a3e6``.
+- **Quorum round 3** (`--author codex:gpt-6.1-sol`, OpenAI benched; seated `claude-sonnet-5@claude-p`, `gemini-4-argon`, `oc-glm-5-3`, reserve `oc-kimi-k3`): **BLOCKED**, $0.588.
+  - Absent: `claude-sonnet-5@claude-p` (`quota`: "Anthropic usage endpoint returned HTTP 429; CLI fallback also failed (no "Current session" line in `claude -p /usage` output)"). A solo re-probe (`--reviewers claude-sonnet-5@claude-p --seats 1`) failed identically (rc 3). `ailang design-review --reviewer claude-sonnet-5@claude-p` answers `unknown-model`, so there is no other solo route; a metered Anthropic id was not tried (billing guard).
+  - Present, all REJECT, each with a concrete fix and none disputing the direction. Surfaces: gemini the K1.1 frame contract (Wigner rotation between a two-step and a single boost); glm the pillar table's numbers and the K1.2/K1.5 evidence for M3's encoder and interpolation; kimi the status header, the round-2 carve-out's source, V2 and the 0.0927 clock.
+  - **Measured before applying (rule 3f):** gemini's formula is the forward aberration (`+γv`, `1 + n·v`); spec §2 defines the inverse as `aberrate(n′, −β)`, which flips both. A brute-force check (V43): the corrected inverse maps n_ship (0.6, 0, 0.8) to n_Z (0.789301, 0, 0.614006) with round-trip error 9e-60. The encoder K1.2 named (`catalogue_bytes`) is not what M3's lens tables call: they call `encodeF32LE` at `sim/tools/lens_lut_main.ail:42`. The Catmull-Rom and cot(ψ/2) rules are at `sky/schwarzschild.gdshaderinc:14-15`. The carve-out lives in the shared skill (`gate-2-pick.md:236`); the charter has no authorising row (5 usage mentions).
+  - **Narrow-refinement carve-out, controller-applied 2nd revision** (``4618f92a``): glm's fixes verbatim (V22 tide ≈1.05 × 10⁹ g, RK-8b 0.092670 as V40, V41, V42); kimi's V2 and clock fixes verbatim and its search as V39; kimi's status text with D-107 A's condition named; gemini's single-pure-boost rule and approach ray with spec §2's sign. The round-2 history was kept as it happened. All 20 printed oracle lines appear in the doc.
+  - **Disposition:** the doc's status is now "pending quorum, not scheduled". D-107 A's reviewer condition is unmet (no Anthropic seat present, OpenAI benched), so the planner pass did not run. **PARKED-ON-LANE**: role = quorum Anthropic seat; lane `claude-sonnet-5@claude-p` refused by the mission ration probe (`design-quorum` rc 3, HTTP 429); resume predicate = a quorum round on `kerr-black-holes.md` with that seat (or an OpenAI seat) present and no outstanding objection, then the planner pass. Fleet ticket `quorum:claude-p-ration-usage-429` (`inbox_1792623460687_d00d542e`, `--blocking item`). This is the third consecutive Kerr round without the Claude seat (rounds 1, 2 and 3).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter45` at `4618f92a`): **86 PASS**, 0 blocking, `eval_R2-KERR_design_rev_round_1.json` (``f1537d9e``).
+  - It recomputed the physics by its own route (horizons, photon orbits, ISCOs from the quartic, both shadow endpoints, RK-8b, frame drag, the DI-07 frame relations, the tide): all within 2e-15 relative. It confirmed the aberration-sign correction with a brute-force photon boost (the forward form lands at (−0.315, 0, 0.949)). The embedded oracle reproduces the doc byte for byte.
+  - PARTLY: DI-06, DI-15, F4. Non-blocking findings, owed to the next revision round (row R2): (1) DI-06 names `bad_gr` without saying whether it is a decode-time malformed status or a sim refusal; (2) DI-15's "minor-aware dispatch" must be decode-level, because `decodeInput(line)` (`sim/protocol.ail:654`) has no session minor and `no_hello` is checked after decode (`:898`), and nullary `IGrOrbit` (`:231`, `:590`) needs a `dir` (reproduced by the controller); (3) RK-8b is not in the normative RK table; (4) V34's four probes do not discriminate the clock operation order (0.8 % of 2e5 random u differ); (5) no doc-level command compares the table literals to the oracle; (6) AC-K9's `$ROOT` is undefined in the doc, escaped `\|` inside `grep -E`/`jq` strings, and V12's `grep -n 'Minor() *='` matches tests, not definitions; (7) the round-2 paragraph is not annotated with kimi's carve-out finding. Mutation checks: 5 of 7 killed; a changed RK-14 table digit and V34's clock swap survive.
+- **Row 7o + 7s (PR #309), resumed:** main merged into `mission/stapledon-iter44-followups` (`f5a88e5a`, a clean merge; `git diff 4d6e3763 HEAD` over the PR's 10 files is empty). `rig/full` run 1 (22:29 UTC, default 5400 s watchdog): `Alarm clock` after `display-audit` with **0 test failures** across 117 summary lines; an attended `rig/full` on #319 (`f1feae58`) ran beside it, 1-min load up to 10. Run 2 (`RIG_TEST_S=7200`): red at about 60 min on the PR's own `rig-check-control`, case `make-test-red`, which expects the default `ran over 5400s` description. The controller's override leaked into the stub through make's environment: `make rig-check-control` is rc 0 with the variable unset and rc 2 with `RIG_TEST_S=7200` (an instrument failure of this iteration, and a real hermeticity gap in the control, to the follow-up backlog). Run 3 (default watchdog, from 01:05 UTC, 1-min load 3–8): `Alarm clock` again at 5400 s, after `camera-director`, with 0 failures. `rig-check-control` passed (6/0), confirming run 2's attribution. The six targets it did not reach (`basis-gate`, `camera-forward-test`, `guided-finale-test`, `free-nav-recovery-test`, `loading-jump-test`, `import-keep-check`) were then run on the same tree: rc 0 in 180 s. So every `make test` target passed on `f5a88e5a`, but `rig/full` reads `failure` (timeout); the fast tier is `success` (`checks=1`). **Merge stays PARKED**: merging over a non-green `rig/full` would waive Mark's rig-first rule. PARKED-ON-LANE (rig capacity): the suite's loaded duration (90+ min here) exceeds the 5400 s bound, while attended runs today took 62 min (`9d1c950`, `d64879ae`, `f1feae58`). Rig load came from an overlapping attended `rig/full`, the other missions' suites, and a `godot --headless … tests/test_deck_layout_eval.gd` (PID 70329, started 2026-10-20 11:45 local) that had been running for 38 h at about 76 % CPU, apparently hung. It is not the loop's, so it was left alone. Resume predicate: `rig/full` success on the PR head on a quieter rig. The follow-up backlog gains the 5400 s default and the script's stale `~50 min` comment.
+- **Routing evidence:**
+  - Run identity: fire `stapledon-1792621426-3348`; base=23928d01f62444fc7f2f8d5f244c1721b5a85787@2026-10-21T22:25:16Z (`record gate1`). Routing note: empty. Operator's standing request: roles through the Agent tool, the evaluator required.
+  - Resolver: designer `recipe claude:claude-opus-5-5 declared:provider-pin` (the env seed; the rotation's next entry was used); planner `agent-tool opus fail-closed:no-doc` before the branch checkout; executor `recipe codex:gpt-6.1-sol declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`. The spawn-pin hook is not wired for this mission (no `mission-stapledon-spawn-hook.log`).
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: `codex:gpt-6.1-sol` (318,317 tok), run through the codex recipe directly, as the routing table specifies for a `provider:model` role (not an Agent transport).
+  - Planner: not spawned (scheduling parked). Executor: not spawned (plan-only row).
+  - Evaluator: `sonnet` via the Agent tool (150,492 tok, 37 tool calls). Judge independence: cross-vendor against the OpenAI designer; the controller-applied round-3 fixes were judged by a different model from the controller.
+  - Quorum: r3 $0.588 (gemini $0.066, glm $0.285, kimi $0.237); solo re-probe $0. Metered about $0.59.
+- **Ruled out:**
+  - Applying gemini's formula verbatim: wrong sign (V43, spec §2, and the evaluator's independent boost).
+  - A metered Anthropic reviewer id in place of the `@claude-p` seat: the billing tripwire.
+  - Running the planner on a doc whose own status (kimi, verbatim) and D-107 A both say not scheduled.
+  - Asking Mark to wait: capacity is not a decision (standing rule 8). D-116 asks a real question instead.
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. **A doc's quorum can be structurally unable to seat the reviewer a ruling asks for.** Mark asked for an Anthropic or OpenAI reviewer. The bench rule removes OpenAI whenever the designer is codex, and the `@claude-p` seat has failed the ration probe in every Kerr round (three). Had the rotation handed this turn to Opus, OpenAI's seat would have had to carry it, and that seat has the open `quorum:gpt6-1-sol-openai-api-credits-exhausted` ticket. Proposal: when a ruling names a vendor for review, the designer turn skips that vendor.
+  2. **Reviewer-authored fixes can be wrong, and the carve-out says "verbatim".** Gemini's text would have put a sign error into the frame contract that every mirror copies. The carve-out needs "verbatim, after measuring its premise (rule 3f)", and the record should say which clause changed and why, as this one does.
+  3. **`design-review` and `design-quorum` disagree on the reviewer catalogue** (`@claude-p` is quorum-only), so gate 2's "re-run that reviewer alone" has no form for the subscription Claude seat. Included in the ticket.
+- **Next:** **first, re-run `rig/full` on PR #309 (`f5a88e5a`) on a quieter rig and merge on green.** Every target already passed across run 3 and the tail; the blocker is the 5400 s bound under load, not the PR. Then **R2**: re-probe the Kerr quorum's Claude seat (`ailang design-quorum design_docs/planned/r2/kerr-black-holes.md --author codex:gpt-6.1-sol`); if present and clean, or D-116 = A, run the planner pass (fold in the eval's 8 findings) then K1.1a (stop before publish). Otherwise **L9 S0.2** at minor 14 → S0.3 → L4 → L3 → 7m AC1 (idle rig only) → the follow-up backlog. D-116 is the only OPEN decision.
+
+DECISIONS FOR MARK: D-116 (does the independent Sonnet evaluation, 86 PASS, count as D-107 A's Anthropic reviewer, so the Kerr planner pass runs next fire? default B: wait for the quorum seat).

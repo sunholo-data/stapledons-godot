@@ -30,6 +30,8 @@ func _initialize() -> void:
 	_fader()
 	_uniforms()
 	_basis()
+	_eclipse()
+	_telescope()
 	print("star-surface: %s (%d failures)" % ["OK" if failures == 0 else "FAIL", failures])
 	quit(1 if failures > 0 else 0)
 
@@ -179,6 +181,41 @@ func _basis() -> void:
 	check("(control) Planets.body_basis at the NCP is not orthonormal", not ortho.call(Planets.body_basis(ncp, 0.0)))
 	var other := StarSurface.basis_of({"x": 0.3, "y": 0.2, "z": 0.93})
 	check("an ordinary pole: orthonormal too", ortho.call(other))
+
+
+## SS3: the covered fraction (lens area of two circles), the H-alpha line's colour under Doppler, and the
+## prominences' count and heights (design §D6; AC9, AC10).
+func _eclipse() -> void:
+	check("covered: disjoint 0", StarSurface.covered_fraction(1.0, 0.5, 1.6) == 0.0)
+	check("covered: a larger disc centred covers all", StarSurface.covered_fraction(1.0, 1.04, 0.0) == 1.0)
+	check("covered: a smaller disc inside covers (rb/ra)^2", near(StarSurface.covered_fraction(1.0, 0.5, 0.2), 0.25, 1e-12))
+	check("covered: equal circles one radius apart cover (2 pi/3 - sqrt3/2)/pi = 0.3910", near(StarSurface.covered_fraction(1.0, 1.0, 1.0), (2.0 * PI / 3.0 - sqrt(3.0) / 2.0) / PI, 1e-9))
+	var ha := StarSurface.h_alpha_rgb(1.0)
+	check("H-alpha at rest is red (r > g, r > b) with unit luminance", ha.x > ha.y and ha.x > ha.z and near(0.2126 * ha.x + 0.7152 * ha.y + 0.0722 * ha.z, 1.0, 0.02))
+	check("H-alpha ahead at 0.9c (150.6 nm) and astern (2,860 nm) is black", StarSurface.h_alpha_rgb(sqrt(19.0)) == Vector3.ZERO and StarSurface.h_alpha_rgb(0.22942) == Vector3.ZERO)
+	var pr := StarSurface.prominences(1234)
+	var n := 0
+	var ok := true
+	for v: Vector4 in pr:
+		if v.w > 0.0:
+			n += 1
+			ok = ok and v.w >= 0.015 and v.w <= 0.15 and near(Vector3(v.x, v.y, v.z).length(), 1.0, 1e-6)
+	check("prominences: 3-6, heights 0.015-0.15 R, unit directions; deterministic", n >= 3 and n <= 6 and ok and StarSurface.prominences(1234) == pr)
+
+
+## D-111 A1: the telescope's magnification is true angular magnification: the drawn disc's angular
+## radius over the star's. Whole disc fills 70 % of the 14 deg field; close makes a cell 2.5 px.
+func _telescope() -> void:
+	var sun_ang := deg_to_rad(0.536 / 2.0)
+	var w: Dictionary = TelescopeView.scale_for(sun_ang, 1, 1090.0, 520)
+	check("whole disc: the Sun from 1 AU at x%.1f fills 70%% of the 14 deg panel (N = 0.7 x 7 deg / 0.268 deg = 18.3)" % w.n, near(w.n, 0.7 * 7.0 / 0.268, 1e-6) and near(w.half, 0.7 * deg_to_rad(7.0), 1e-12))
+	var c: Dictionary = TelescopeView.scale_for(sun_ang, 2, 1090.0, 520)
+	var cell_px: float = 2.0 * c.half / 1090.0 / (deg_to_rad(14.0) / 520.0)
+	check("close: a solar cell is 2.5 px across (%.3f px) at x%.0f" % [cell_px, c.n], near(cell_px, 2.5, 1e-9))
+	var big: Dictionary = TelescopeView.scale_for(deg_to_rad(30.0), 1, 33.0, 520)
+	check("a disc already larger than the panel stays at x1 (no demagnification)", big.n == 1.0)
+	var clamp_: Dictionary = TelescopeView.scale_for(deg_to_rad(1.75), 2, 1e6, 520)
+	check("close is clamped so the drawn disc stays within 1 rad (camera outside the sphere)", near(clamp_.half, 1.0, 1e-12) and near(clamp_.n, 1.0 / deg_to_rad(1.75), 1e-9))
 
 
 func _sun_params(px_r: float) -> Dictionary:

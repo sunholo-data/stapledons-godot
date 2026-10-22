@@ -1,6 +1,6 @@
 # R2-SOUND (design_docs/planned/r2/sound.md): the cue table, the mix, the synthesised sounds and
 # their checks. Every check here runs headless (the Dummy audio driver still mixes; design §Evidence).
-.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-check sound-review sound-stage
+.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-check sound-review sound-stage sound-stage-check sound-export-smoke sound-archive-test
 
 # AC1-AC5, AC8 (rules), §D2 layout: validators with negative controls, the clocks, deterministic
 # variation; then the same scripted session in two separate processes must give the same cue log (AC2).
@@ -44,19 +44,43 @@ sound-check: import
 	@$(GODOT) --headless --path . --script tools/sound_check.gd -- --out=$(CURDIR)/$(SCRATCH)/sound/measure.json > $(SCRATCH)/sound/check.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-check)' $(SCRATCH)/sound/check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound/check.log && grep -q '^sound-check: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound/check.log
 test: sound-check
 
-# The listening page: every cue (Ogg Opus + WAV) and the bridge ambience mix, sounds.json and index.html
-# in $(SOUND_REVIEW_OUT); STAGE=s0b PUBLISH=1 also uploads to gs://stapledons-voyage-assets/refs/sound/$(STAGE)/.
+# The listening page: every cue (Ogg Opus + WAV), the bridge ambience mix and the spire at three
+# degradation levels, sounds.json and index.html in $(SOUND_REVIEW_OUT). V1_REF=<git ref> also renders
+# every sound that changed since that ref as <id>_v1 (its old recipe at its old level) for A/B.
+# STAGE=<s> PUBLISH=1 uploads to gs://stapledons-voyage-assets/refs/sound/$(STAGE)/.
 STAGE ?= s0b
+V1_REF ?=
 SOUND_REVIEW_OUT ?= $(CURDIR)/build/sound_review
 sound-review: sound-check
-	@rm -rf $(SOUND_REVIEW_OUT); mkdir -p $(SOUND_REVIEW_OUT)
-	@$(GODOT) --headless --path . --script tools/sound_review.gd -- --measure=$(CURDIR)/$(SCRATCH)/sound/measure.json --out=$(SOUND_REVIEW_OUT) 2>&1 | grep -E '^sound-review'
+	@rm -rf $(SOUND_REVIEW_OUT) $(SCRATCH)/sound/v1; mkdir -p $(SOUND_REVIEW_OUT) $(SCRATCH)/sound/v1
+	@if [ -n "$(V1_REF)" ]; then git show $(V1_REF):data/audio/recipes.json > $(SCRATCH)/sound/v1/recipes_v1.json && git show $(V1_REF):data/audio/cues.json > $(SCRATCH)/sound/v1/cues_v1.json && git show $(V1_REF):data/audio/assets_synth.json > $(SCRATCH)/sound/v1/assets_synth_v1.json; fi
+	@$(GODOT) --headless --path . --script tools/sound_review.gd -- --measure=$(CURDIR)/$(SCRATCH)/sound/measure.json --out=$(SOUND_REVIEW_OUT) --stage=$(STAGE) $(if $(V1_REF),--v1-dir=$(CURDIR)/$(SCRATCH)/sound/v1) 2>&1 | grep -E '^sound-review'
 	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json "$$(cat $(SOUND_REVIEW_OUT)/plan.json)" tools/audio/review_main.ail | tee $(SCRATCH)/sound/review.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound/review.log
+	@if [ -f $(SOUND_REVIEW_OUT)/plan_v1.json ]; then $(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json "$$(cat $(SOUND_REVIEW_OUT)/plan_v1.json)" tools/audio/review_main.ail | tee $(SCRATCH)/sound/review_v1.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound/review_v1.log; fi
 	@cp $(SCRATCH)/sound/measure.json $(SOUND_REVIEW_OUT)/measure.json
 	@if [ "$(PUBLISH)" = 1 ]; then gcloud storage cp --cache-control=no-cache $(SOUND_REVIEW_OUT)/*.ogg $(SOUND_REVIEW_OUT)/*.wav $(SOUND_REVIEW_OUT)/sounds.json $(SOUND_REVIEW_OUT)/index.html gs://stapledons-voyage-assets/refs/sound/$(STAGE)/ && echo "sound-review: published https://storage.googleapis.com/stapledons-voyage-assets/refs/sound/$(STAGE)/index.html"; fi
 
-# The export: assets/audio is .gdignore'd (read as files, like the other assets), so stage the WAVs as
-# audio_bundle/<kind>/<file>.bin for the .pck (SoundDirector.source_path falls back to them).
-sound-stage:
-	@rm -rf audio_bundle; for f in assets/audio/*/*.wav; do d=audio_bundle/$$(basename $$(dirname $$f)); mkdir -p $$d; cp "$$f" "$$d/$$(basename $$f).bin"; done
-	@echo "sound-stage: staged $$(find audio_bundle -name '*.bin' | wc -l | tr -d ' ') sounds ($$(du -sh audio_bundle | cut -f1))"
+# The export (D-112): assets/audio stays .gdignore'd, so the export carries each sound as Godot's own
+# QOA-compressed resource, audio_bundle/<kind>/<file>.res (tools/sound_stage.gd); SoundDirector reads
+# the bundle when the source WAV is absent. sound-stage-check stages into scratch, reloads every
+# resource against its source and holds the bundle to the 6 MB export budget (AC13).
+sound-stage: import
+	@rm -rf audio_bundle
+	@$(GODOT) --headless --path . --script tools/sound_stage.gd -- --out=res://audio_bundle 2>&1 | grep -E '^(FAIL|sound-stage)'
+sound-stage-check: import
+	@rm -rf $(SCRATCH)/audio_bundle
+	@$(GODOT) --headless --path . --script tools/sound_stage.gd -- --out=$(CURDIR)/$(SCRATCH)/audio_bundle --check > $(SCRATCH)/sound-stage.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-stage)' $(SCRATCH)/sound-stage.log; test $$rc = 0 && grep -q ', 0 failures$$' $(SCRATCH)/sound-stage.log
+test: sound-stage-check
+
+# The exported .app loads the cue table and plays from the staged bundle (AC13).
+sound-export-smoke:
+	@mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" --headless -- --sound-smoke > $(SCRATCH)/export-smoke/sound-smoke.log 2>&1; \
+	grep -E '^sound-smoke' $(SCRATCH)/export-smoke/sound-smoke.log; grep -q '^sound-smoke: OK' $(SCRATCH)/export-smoke/sound-smoke.log
+export-smoke: sound-export-smoke
+
+# D-113: the real sim at 2.15 drives the spire's degradation layer (end to end).
+sound-archive-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_sound_archive.gd > $(SCRATCH)/sound-archive.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-archive)' $(SCRATCH)/sound-archive.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound-archive.log && grep -q '^sound-archive: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound-archive.log
+test: sound-archive-test

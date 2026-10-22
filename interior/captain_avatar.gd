@@ -210,11 +210,11 @@ static func sprite_paths(dir: String) -> Array[String]:
 
 static func make_texture(path: String) -> Texture2D:
 	var img: Image = null
-	if ResourceLoader.exists(path):
+	if ResourceLoader.exists(path) and ResourceLoader.get_recognized_extensions_for_type("Texture2D").has(path.get_extension()) and _imported(path):
 		var t := load(path) as Texture2D
 		img = t.get_image() if t != null else null
-	elif FileAccess.file_exists(path):
-		img = Image.load_from_file(path)
+	if img == null and FileAccess.file_exists(path):
+		img = Image.load_from_file(path) # raw: never imported, or importer="keep" (tools/import_keep.txt)
 	if img == null or img.is_empty():
 		return null
 	if img.is_compressed():
@@ -241,3 +241,9 @@ static func _shadow_part(parent:Node3D,mesh:Mesh,position:Vector3)->void:
 	var part:=MeshInstance3D.new();part.mesh=mesh;part.position=position
 	part.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 	parent.add_child(part)
+
+
+## True when the file has an import that makes it a texture (not importer="keep", which ships the raw file).
+static func _imported(path: String) -> bool:
+	var cfg := ConfigFile.new()
+	return cfg.load(path + ".import") == OK and str(cfg.get_value("remap", "importer", "")) != "keep"

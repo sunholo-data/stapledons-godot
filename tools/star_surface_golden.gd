@@ -12,7 +12,14 @@ extends RefCounted
 ##           projection; the light-weighted centroid moves with the cells (reported, not limited).
 ##   G-SS-5  the Sun with its surface record at 10 px across (nothing resolves) renders byte-identical
 ##           to the Sun without one: the unresolved path is today's disc bit for bit (AC5).
+##   G-SS-6  SS3 a total eclipse (a dark body 4 % larger than the star, centred): the corona's
+##           radiance along a radius follows Baumbach 1937 to 5 % between 1.5 and 4 R (ratios to 2 R).
+##   G-SS-7  at totality the star's displayed peak is the corona's (taken at 1.5 R), so at the
+##           exposure that puts that peak at the fader target (what an adapting eye does) the corona
+##           at 2 R reads within [0.1, 0.6].
+##   G-SS-8  a partial eclipse: the corona is on; an unoccluded star has none (G-SS-5's Sun).
 ## Expected values are the body's e_v_lux (the sim's) and the camera projection, never the shader.
+## --golden-ss with SS_OUT set in the environment also saves the eclipse frames there.
 
 const M5 := preload("res://tools/m5_golden.gd")
 
@@ -27,6 +34,9 @@ func run(main: Node) -> int:
 	sv.queue_free()
 	sv = _setup(main)
 	failures += await _identical(main, sv)
+	sv.queue_free()
+	sv = _setup(main)
+	failures += await _eclipse(main, sv)
 	sv.queue_free()
 	main.starfield.clear_point_sources()
 	print("star surface golden: %d failures" % failures)
@@ -192,6 +202,82 @@ func _lit_box(img: Image) -> Rect2i:
 				lo = Vector2i(mini(lo.x, x), mini(lo.y, y))
 				hi = Vector2i(maxi(hi.x, x), maxi(hi.y, y))
 	return Rect2i(lo, hi - lo + Vector2i.ONE)
+
+
+## A dark occulter (a moon with no light) at a quarter of the star's distance.
+static func occulter(d: float, ang: float, scale: float, offset_rad: float) -> Dictionary:
+	var dd := d * 0.25
+	return {"id": "occulter", "name": "occulter", "kind": "moon", "host": "", "status": "confirmed",
+		"rel_km": {"x": dd * cos(offset_rad), "y": dd * sin(offset_rad), "z": 0.0}, "radius_km": dd * tan(ang * scale), "flattening": 0.0,
+		"pole": {"x": 0.0, "y": 0.0, "z": 1.0}, "w_deg": 0.0, "sun_dir": {"x": 1.0, "y": 0.0, "z": 0.0}, "r_au": 1.0, "phase_deg": 180.0,
+		"e_v_lux": 0.0, "p_v": 0.0, "minnaert_k": 1.0, "ring_id": "", "light_age_s": 0.0, "visitable": false, "source": "golden"}
+
+
+func _eclipse(main: Node, sv: SystemView) -> int:
+	var radius := 695700.0
+	var d := _place(main, sv, radius, 60.0) # the star 60 px across: the corona to 6 R spans 360 px
+	var e_v := 1000.0
+	var ang := Planets.angular_radius(radius, d)
+	var centre := e_v / (PI * sin(ang) * sin(ang)) / (1.0 - 0.6 / 3.0)
+	var bk := func(r: float) -> float: return 1.0e-6 * (0.0532 * pow(r, -2.5) + 1.425 * pow(r, -7.0) + 2.565 * pow(r, -17.0))
+	var k: float = 0.8 / (centre * bk.call(1.5)) # the corona at 1.5 R reads 0.8 (linear, unclipped)
+	var sun := star("sun", radius, d, 5772.0, e_v, {})
+	sun["limb_u"] = 0.6
+	var occ := occulter(d, ang, 1.04, 0.0)
+	sv.corona_streamers = 0.0 # the profile itself; the streamers are a chosen modulation
+	sv.update(M5.section([sun, occ]), k)
+	var img: Image = await main._grab()
+	var size: Vector2 = main.get_viewport().get_texture().get_size()
+	var c: Vector2 = main.camera.project(Vector3(0, 0, -1), size)
+	var px_r: float = ang / main.exposure.pixel_rad
+	var lum := func(r: float) -> float:
+		var tot := 0.0
+		for a: float in [0.0, PI / 2.0, PI, 1.5 * PI]: # four radii, the streamers averaged out a little
+			var p: Vector2 = c + Vector2(cos(a), sin(a)) * r * px_r
+			tot += img.get_pixel(int(p.x), int(p.y)).srgb_to_linear().get_luminance()
+		return tot / 4.0
+	var l2: float = lum.call(2.0)
+	var worst := 0.0
+	for r: float in [1.5, 3.0, 4.0]:
+		worst = maxf(worst, absf((lum.call(r) / l2) / (bk.call(r) / bk.call(2.0)) - 1.0))
+	var ok6 := l2 > 0.0 and worst < 0.05
+	print("%s  G-SS-6 total eclipse: corona at 1.5, 3, 4 R relative to 2 R follows Baumbach, worst %.1f%% (limit 5%%, streamers off); at 2 R %.3f" % ["ok  " if ok6 else "FAIL", 100.0 * worst, l2])
+	sv.corona_streamers = 0.4
+	var out := OS.get_environment("SS_OUT")
+	if not out.is_empty():
+		img.save_png(out.path_join("eclipse_total_linear.png"))
+	# G-SS-7: the exposure an adapting eye reaches at totality: the star's displayed peak at the target
+	sv.body_fader = true
+	sv.update(M5.section([sun, occ]), k)
+	var k_real: float = SystemView.FADER_STAR_TARGET / float(sv._fader_peak["sun"])
+	sv.update(M5.section([sun, occ]), k_real)
+	var img7: Image = await main._grab()
+	var l7: float = 0.0
+	for a: float in [0.0, PI / 2.0, PI, 1.5 * PI]:
+		var p: Vector2 = c + Vector2(cos(a), sin(a)) * 2.0 * px_r
+		l7 += img7.get_pixel(int(p.x), int(p.y)).srgb_to_linear().get_luminance() / 4.0
+	var gain := sv.fader_gain("sun", k_real)
+	var ok7 := l7 >= 0.1 and l7 <= 0.6
+	print("%s  G-SS-7 totality, the eye adapted to the visible (coronal) peak: the corona at 2 R reads %.3f (limit 0.1-0.6; fader gain %s)" % ["ok  " if ok7 else "FAIL", l7, String.num_scientific(gain)])
+	if not out.is_empty():
+		img7.save_png(out.path_join("eclipse_total_auto.png"))
+	# G-SS-8: a partial eclipse turns the corona on; the sliver point appears near totality
+	var part := occulter(d, ang, 1.04, ang * 1.9)
+	sv.update(M5.section([sun, part]), k_real)
+	var img8: Image = await main._grab()
+	var on8: bool = (sv.discs["sun"].material_override as ShaderMaterial).get_shader_parameter("corona_on")
+	var near_total := occulter(d, ang, 1.04, ang * 0.06)
+	sv.update(M5.section([sun, near_total]), k_real)
+	var img8b: Image = await main._grab()
+	var sliver := sv.drawn_points.has("sun#sliver")
+	sv.body_fader = false
+	_restore(main)
+	var ok8 := on8 and sliver
+	print("%s  G-SS-8 partial eclipse: corona on %s; near totality the sliver is a PSF point %s" % ["ok  " if ok8 else "FAIL", on8, sliver])
+	if not out.is_empty():
+		img8.save_png(out.path_join("eclipse_partial_auto.png"))
+		img8b.save_png(out.path_join("eclipse_diamond_ring_auto.png"))
+	return (0 if ok6 else 1) + (0 if ok7 else 1) + (0 if ok8 else 1)
 
 
 func _identical(main: Node, sv: SystemView) -> int:

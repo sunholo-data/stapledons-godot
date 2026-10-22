@@ -1,0 +1,11 @@
+# Files the game reads raw at runtime (FileAccess, Image.load_from_file, FontFile.load_dynamic_font) that
+# Godot would otherwise import and replace in the export. Each gets a committed <file>.import with
+# importer="keep", so the export ships the file itself (the ai/fixtures stub portraits set the pattern).
+# make import-keep writes them; make import-keep-check (in make test) fails on any that is missing.
+# One shell glob per line, relative to the repo root.
+ui/splash/Montserrat-Bold.ttf
+assets/fonts/*.ttf
+ui/theme/*.png
+data/crew/portraits/*.png
+data/interlude/home/*.webp
+ai/fixtures/*.png

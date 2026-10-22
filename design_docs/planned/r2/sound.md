@@ -1,6 +1,6 @@
 # R2-SOUND: the ship's sound, heard from inside
 
-**Status:** Approved by Mark on 2026-10-20 (ledger D-101), every recommendation: "approve the sound but we will eventually allow for ai generated sound just not yet I guess". Executing S0a and S0b on `feat/sound`. Proposed 2026-10-20 (D-98). A throwaway spike de-risked the pipeline (§Evidence).
+**Status:** S0a and S0b landed (#298); reworked after Mark's first listen (D-108, §D11) and approved at the second (D-112) with the room 6 dB lower and the export compressed (QOA). Approved by Mark on 2026-10-20 (ledger D-101), every recommendation: "approve the sound but we will eventually allow for ai generated sound just not yet I guess". Executing S0a and S0b on `feat/sound`. Proposed 2026-10-20 (D-98). A throwaway spike de-risked the pipeline (§Evidence).
 **Release:** R2. **Milestone:** the first sound in the game: the bridge, the voyage's moments and the interface, mixed and tested headless.
 **Priority:** P1 for R2. Mark, after playing the bow-facing bridge (ledger D-98, 2026-10-20): *"it looks really great. obviously we need animation on the captain a bit and sound effects and the level design but such good potential"*.
 
@@ -210,6 +210,28 @@ game state (walk distance, view, level, settings) ──────────
 ### D10. Canon for the design repo
 
 The **what** belongs in stapledons-design: a short `features/next/sound.md` with §D3 (the diegetic rule, the teacup rule, no exhaust, the spire's constant hum, instruments, no judgement) and the palette in words, linking the lore it rests on. Opened as a design-repo PR alongside this plan, not merged.
+
+### D11. Rework after the first listen (D-108, 2026-10-21)
+
+Mark kept the interface sounds, commit_hold, stop_turn and hold_limit, and named **commit_seal** ("good and moody") and **dust_tick** ("good") as the tone to follow: moody, dry, restrained. Reworked, each kept beside its v1 on the listening page:
+
+| Sound | Note | v2 |
+|---|---|---|
+| room_bridge | "really annoying", dominant | barely there: low air and structure, almost no hiss, RMS −46.6 dBFS (was −34); the hum now leads the bed by about 11 dB |
+| console_wake / sleep | "bit silly" / "too perky" | a latch, a soft low thunk, a fluttering servo (a 38 Hz flutter on a band of noise whose filter opens); sleep closes and settles, nothing rises; 7 dB quieter |
+| drive_boost / silent / brake | "too high, not complex enough" / "too high" / "too pure" | 220–275 Hz instead of 1.2–2.4 kHz; detuned partials beating slowly, an inharmonic voice, a noise band whose filter opens (boost) or closes (silent); the brake rougher (three voices rubbing, faster beats, more air, a little saturation). The teacup rule holds and is now checked: under 200 Hz each stays ≥ 26 dB below the whole (a 4-pole 120 Hz low-pass; a 60 Hz rumble fails it) |
+| arrived | "too jolly" | an understated suspended chord (G3, C4, D4), low and soft, in commit_seal's mood |
+| archive_ready | "bit boring" | a small breathing three-note figure (D, A, E) with a glassy shimmer and breath |
+
+**The spire's degradation layer.** Two new 32 s loops under the hum: `spire_drift` (a second, much slower beat, one cycle in 32 s, with slow wavers and slight saturation) and `spire_drift_bad` (roughened, wavering, with a 137.5 Hz tone that does not belong). They follow a director parameter, `archive_degradation` (0..1), along per-cue curves: drift silent at 0, −8 dB at 0.5, −4 dB at 1; bad silent to 0.5, then in. **The source:** the Archive's Memory Health is designed (stapledons-design `features/next/archive-voice.md` §5 and `features/future/archive-system.md`: hidden, 0–100, deterministic in the sim, decaying with ship time, GR zones and spire readings) but **the sim does not emit it yet** (Archive phase 2, out of scope of R1-ARCHIVE-VOICE). The director reads it at `archive.memory_health` when it exists (degradation = 1 − health/100); until then the parameter stays 0 and the layers are silent. Nothing invents a value. **Smallest honest source (proposal, not built):** a pure sim field `archive.memory_health`, starting at 100, decaying by the design's table: −1 per decade of ship time in normal operation and −10 on a GR zone (`bh_enter`, the low end of its −10 to −30 range); repair choices and spire readings later. That is Archive phase 2 sim work and needs Mark's go. The listening page renders the hum at three levels (pristine 0, mid 0.5, badly degraded 0.9).
+
+**Found on the way: the legacy noise is not white.** `noise` (three affine LCG rounds over a sequential index) is still affine in the index: a fast ramp mod 2³¹ with a buzzy, tonal edge, likely part of why the v1 room tone grated. A new `white` kind (an affine start, then three rounds of squaring mod 2³¹; lag-1 autocorrelation under 0.03, checked) serves every reworked and new recipe. The sounds Mark kept still use `noise`, so their bytes do not change (checked: only the eight reworked sounds and the two new layers differ from main).
+
+**Synthesis additions** (no-ops at their defaults, so every unchanged recipe renders byte for byte): a slow vibrato, an amplitude beat, a filter sweep, and per-recipe soft saturation; loops must complete whole vibrato and beat cycles (checked).
+
+**Budget (D-112, resolved).** Mark took the recommendation: Godot's own QOA compression. A fresh clone cannot import assets (its `--import` stops on the stray Blender masters in `art/ship-dimensions-v1` and `-v2`, which have no `.gdignore`; the repo reads assets as files anyway), so the same compression runs at stage time: `tools/sound_stage.gd` loads each WAV with the importer's `compress/mode` 2 (`AudioStreamWAV.load_from_buffer`), sets the manifest's loop points and saves `audio_bundle/<kind>/<file>.res`; the director reads the bundle when the source WAV is not shipped. The 19 sounds stage at 2.3 MB (from 11.4 MB, 4.9×), inside the 6 MB export budget, checked by `make sound-stage-check` (QOA, length to the frame, loop points, budget); `make sound-export-smoke` proves the exported `.app` loads every sound from the bundle and plays the bridge's loops. The WAV sources stay in git (11.4 MB of the 12 MB budget; S1's foley may need that budget raised).
+
+**Room tone, second pass (D-112):** Mark approved the rework but found the room "still pretty loud ... like a sea scape": its character stays, 6 dB lower (RMS −52.6 dBFS); the hum leads the bed by about 17 dB.
 
 ## Acceptance criteria
 

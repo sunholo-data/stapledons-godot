@@ -3,7 +3,8 @@ module stapledons/audio/review_main
 -- synthesis core (so the page hears exactly what the game ships), applies one gain per item (the
 -- cue's in-game level plus one preview gain shared by every sound, so their balance is the game's),
 -- and writes <out>/<id>.ogg (Ogg Opus via std/audio.encode, deterministic) and <out>/<id>.wav (a
--- fallback for browsers without Opus). A mix tiles loops to a common length and sums them.
+-- fallback for browsers without Opus), named by each item's `file`. A mix tiles loops to a common length
+-- and sums them. A second plan over the previous recipes renders the <id>_v1 files for A/B listening.
 --   ailang run --quiet --bytecode --caps IO,FS --package-dir tools/audio --entry main --args-json '<plan>' \
 --     tools/audio/review_main.ail
 import ./synth (Recipe, parseRecipes, render, pcm16, rate, frames)
@@ -17,7 +18,7 @@ import std/result (Result, Ok, Err)
 import std/io (println)
 import std/string (intToStr)
 
-export type Item = {id: string, gain_db: float}
+export type Item = {id: string, file: string, gain_db: float}
 export type Part = {recipe: string, gain_db: float}
 export type Mix = {id: string, seconds: float, parts: [Part]}
 export type Plan = {recipes: string, out: string, items: [Item], mixes: [Mix]}
@@ -52,7 +53,7 @@ func items(p: Plan, rs: [Recipe], is: [Item]) -> Result[(), string] ! {FS, IO} =
     [] => Ok(()),
     it :: more => match find(rs, it.id) {
       None => Err("${it.id}: no such recipe"),
-      Some(r) => match writeSound(p.out, it.id, toList(scale(gain(it.gain_db), fromList(render(r))))) {
+      Some(r) => match writeSound(p.out, it.file, toList(scale(gain(it.gain_db), fromList(render(r))))) {
         Err(e) => Err(e),
         Ok(_) => items(p, rs, more)
       }

@@ -1,31 +1,19 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-21, iteration 43.
+Updated 2026-10-22, iteration 45.
 
-- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: R2 is plan work for the R2 release.
-- **Outcome:** row R2 BUILT and PARKED. PR #307 holds the Kerr (spinning black holes) design doc and sprint plan.
-  - The design puts the `kerr` package module first, then a design-repo spec §3b, equatorial lens tables, a CPU mirror, additive sim fields and a visit demo.
-  - The plan has 30 slices (~3,710 LOC) and 15 design inconsistencies for the approval pause.
-  - Independent Sonnet review: 84 PASS, 0 blocking.
-- **Mark:** **D-107**, approve the Kerr plan (A: direction, OQ recommendations, the loop revises for the DIs; B: record only; C: amend). Default B.
-- **Blocked by attended holds:**
-  - L9 S0.2: #302 claims protocol minor 13 and edits `sim/protocol.ail`.
-  - L4 and L3: `Makefile` is edited by #298, #300, #301, #302, #303 and #304.
-  - 7i(c): four PRs edit `demos/ship_geometry_demo.gd`.
-- **Closed:**
-  - L5 was already done attended.
-  - L7's fix is in `sunholo/relativity` 0.13.0 source (unpublished; publishing is attended). Most properties now skip as out-of-contract while `vacuous_skips` reads 0; reported upstream as ailang#1921.
-- **Rig:** load 30.8, GPU 86 % at pick (non-loop processes). 7m AC1 needs an idle rig.
-- **Next:** D-107 → Kerr doc revision → K1.1a. Then L9 S0.2 when #302 resolves, L4 and L3 when `Makefile` is free, 7m AC1, and the follow-up backlog.
+- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: R2 plan work, first in Mark's 2026-10-20 order, after D-107 A.
+- **Outcome:** the R2 Kerr design doc is REVISED on PR #307. Scheduling is PARKED-ON-LANE.
+  - Designer codex gpt-6.1-sol resolved DI-01..DI-15 and the plan evaluation's 7 findings in normative text, with an embedded Decimal60 oracle the controller re-ran from the doc.
+  - Quorum round 3 was BLOCKED: gemini, glm and kimi all REJECT with concrete fixes, and none disputes the direction. The fixes were applied under the carve-out. Gemini's aberration formula had the forward sign; the inverse was taken from spec §2 and confirmed by the evaluator's brute-force boost.
+  - Independent Sonnet eval: 86 PASS, 0 blocking. 8 non-blocking findings are owed to the next round: DI-06's refusal channel, and DI-15 must dispatch at decode level.
+- **Why parked:** D-107 A asked for an Anthropic or OpenAI reviewer. The `claude-sonnet-5@claude-p` seat fails the mission ration probe (HTTP 429) in every Kerr round, and OpenAI is benched for a codex author. Ticket `quorum:claude-p-ration-usage-429`.
+- **PR #309 (rows 7o + 7s):** main merged into the branch (`f5a88e5a`; the PR's own files are unchanged) and `rig/full` re-run. Run 1 hit the 5400 s watchdog with 0 test failures while an attended `rig/full` (#319) overlapped it. Run 2 (`RIG_TEST_S=7200`) went red on the PR's own `rig-check-control`, because the override leaked into the stub (proven: rc 0 without it, rc 2 with it). Run 3 timed out again at 0 failures, and the six targets it did not reach then passed on the same tree. So every target is green, but `rig/full` is not, and the merge stays parked under Mark's rig-first rule. Separately, a `godot … test_deck_layout_eval.gd` (PID 70329) has been running for 38 h at about 76 % CPU, apparently hung; it is not the loop's.
+- **Mark:** **D-116**. Does the Sonnet evaluation count as D-107's Anthropic reviewer? A runs the planner next fire; the default B waits for the seat.
+- **Resume first:** re-run `rig/full` on #309 on a quieter rig and merge on green (or Mark merges attended on the per-target evidence). Then the Kerr quorum re-probe (or D-116), then L9 S0.2 at minor 14.
 - **Lanes:**
-  - Designer: kimi-k3 (pi; 358k tok, first designer run here, delivered).
-  - Planner: codex gpt-6.1-sol (253k).
-  - Evaluator: Sonnet (97k).
-  - All roles were spawned through the Agent tool.
-  - Metered: ~$0.72 (quorum).
-- **Quorum health:**
-  - The Anthropic seat was absent on quota for the third iteration running.
-  - The OpenAI seat was unreachable (API credits).
-  - glm-5.3 hit its output cap twice.
-  - So the Kerr doc had one external reviewer. Tickets are filed.
-- **Workspace:** sibling clones `.stapledon-loop-iter43` and `.stapledon-eval-iter43`. The main checkout was only read.
+  - Designer: codex gpt-6.1-sol (rotation; 318k).
+  - Evaluator: Sonnet via the Agent tool (150k).
+  - Planner and executor were not run.
+  - Quorum: $0.59 metered.
+- **Rig:** GPU 82 % at pick, so 7m AC1 still needs an idle rig. 7i(c) is held by attended #318.

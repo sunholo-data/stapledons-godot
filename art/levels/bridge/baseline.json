@@ -15,7 +15,7 @@
       "deck": {
         "band_top": {},
         "near_astern": 0.063,
-        "near_bow": 0.021,
+        "near_bow": 0.017,
         "surfaces": {
           "deck": {
             "body_both": 8,
