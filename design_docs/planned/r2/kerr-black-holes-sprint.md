@@ -85,6 +85,7 @@ JSON includes a populated decision for every executor slice. The game currently 
 - Approve this plan and execution separately from approval for planning.
 - Answer design OQ1 spin (recommend .9, scenario data); OQ2 inclination (equatorial only); OQ3 emergence (visit demo only); OQ4 superradiance (excluded); OQ5 priority (plan-only until explicit go), including acceptance of the two zero pillar scores.
 - Review proposed DI corrections; substantive frame/domain/AC changes require explicit design resolution before their blocked slice.
+- **D-116 A (Mark, attended 2026-10-22)** approves exactly "the planner pass on the revised doc folding in the evaluation's 8 non-blocking findings, then the headless K1.1a package maths in your 2026-10-20 order, stopping before publish; K1.0 (design-repo spec PR) stays parked for Mark." It does NOT approve K1.0, K1.1b execution or anything visual, and the OQ answers above remain defaults-as-proposals. P0 remains **Stop for Mark** for everything beyond that named scope.
 
 Resume evidence: Recorded Mark decision and approved design/plan revisions; defaults are proposals, not authorization.
 
@@ -304,7 +305,7 @@ For each slice: write its tests first, show relevant RED before production, then
 
 | test | file | asserts | kills which mutation |
 |---|---|---|---|
-| registry completeness | `../stapledons-design/physics/relativity-spec.md` | §3b/§4/§7 contain RK-1..18 and RK-Q1, units, finite-r/infinity separation and approved DI corrections | Deleted RK-14 sign or missing §4 GPU requirement |
+| registry completeness | `../stapledons-design/physics/relativity-spec.md` | §3b/§4/§7 contain RK-1..18 including RK-8b, and RK-Q1, units, finite-r/infinity separation and approved DI corrections | Deleted RK-14 sign or missing §4 GPU requirement |
 
 **Acceptance / exact commands:**
 
@@ -687,7 +688,7 @@ Controller/evaluator checkpoint: whole package `check --package .` and `test --p
 
 **Acceptance / exact commands:**
 
-- AC-K2: `(cd "$PKG" && "$A" pkg quality . && "$A" publish --dry-run)`; `(cd "$PKG" && "$A" publish)`; `"$A" pkg info sunholo/relativity | rg "$V|kerr"`. Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification.
+- AC-K2: `(cd "$PKG" && "$A" pkg quality . && "$A" publish --dry-run)`; `(cd "$PKG" && "$A" publish)`; `"$A" pkg info sunholo/relativity | rg -e "$V" -e kerr`. Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification.
 
 Parent/closure evidence: Controller verifies published content hash and export; no publish in executor sandbox.
 
@@ -1047,7 +1048,7 @@ Controller/evaluator checkpoint: existing `make ci-fast AILANG=runtime/bin/ailan
 - `sim/core.ail`.
 - `sim/ailang.toml`.
 
-**Work:** Implement companion codec without importing back into protocol; keep old encoders reachable unchanged. NEW kerr_demo scenario is gated at Kerr minor; bh_spin absent=0 on legacy sgr_a. Old minor opt-ins remain as frozen. Implement only the approved DI-15 comparison rule; zero-spin GR bytes retain the old encoder without new keys. Freeze-before-edit is mandatory even if the integration base advanced.
+**Work:** Implement companion codec without importing back into protocol; keep old encoders reachable unchanged. NEW kerr_demo scenario is gated at Kerr minor; bh_spin absent=0 on legacy sgr_a. Old minor opt-ins remain as frozen. Implement only the approved DI-15 comparison rule; zero-spin GR bytes retain the old encoder without new keys. Freeze-before-edit is mandatory even if the integration base advanced. Refusal channel is explicit (DI-06): explicit `dir` at zero spin and any invalid dir string/type are refused `bad_gr` on the **decode-time malformed-status channel** (a `bad_gr` status line; no tick executes; session state byte-preserved) — never a `refused[]` entry, which would proceed with the tick. The minor-aware dispatch is **decode-level** (DI-15): the pre-Kerr `bh_spin` rejection stays exactly where it is today, `decodeOverride`/`inRange` answering `bad_params` inside param decoding before the session's `no_hello` check; at/above the Kerr minor the decoder accepts `bh_spin` and the orbit intent gains the optional `dir` field, and the `IGrOrbit` encoder (protocol.ail:231) gains a `dir` member at the Kerr minor only.
 
 **Primary test file:** `sim/protocol_kerr_test.ail`. Source mutation drill required, ≤150 LOC slice.
 
