@@ -15,7 +15,7 @@
       "deck": {
         "band_top": {},
         "near_astern": 0.063,
-        "near_bow": 0.017,
+        "near_bow": 0.003,
         "surfaces": {
           "deck": {
             "body_both": 8,
@@ -26,7 +26,7 @@
             "pole_first_hit": 260,
             "px": [
               76.9,
-              81.1
+              76.9
             ],
             "samples": 4771
           }
