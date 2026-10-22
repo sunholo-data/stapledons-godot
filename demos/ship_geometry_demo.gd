@@ -168,6 +168,9 @@ func setup(opts := {}) -> bool:
 	_style_bridge(visual)
 	geometry_view.add_child(camera);camera.current=true
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
+	if props_visual!=null: # R2-BRIDGE-STYLE S5: the bridge dressed for its views (fronds as painted cards, below-rail silhouettes, foreground)
+		dressing=ShipDressing.new();geometry.add_child(dressing)
+		dressing.build(manifest,director.data.get("levels",{}).get("bridge",{}),props_visual)
 	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
 	lighting=Lighting.install(geometry);star_light.install(lighting)
 	Lighting.set_mast(lighting,(manifest.get("style",{}).get("spire_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is GeometryInstance3D))
@@ -431,6 +434,7 @@ func _process(delta: float) -> void:
 	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
+	if dressing!=null:dressing.update(camera,director.view_id if not director.overridden else "",active_level) # R2-BRIDGE-STYLE S5: per-view dressing
 	if director.overridden:
 		if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
 		avatar.visible=camera.pullback>.5 or camera.external
@@ -703,6 +707,7 @@ func _mark_occluders(visual: Node) -> void:
 ## material's: StapledonStyle). Light is never baked into them: the
 ## spire and the star light them live (§D5a).
 var props_visual: Node3D
+var dressing: ShipDressing
 func _install_props() -> void:
 	var file: String=manifest.get("assets",{}).get("props","")
 	if file=="":return

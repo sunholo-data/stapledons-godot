@@ -49,6 +49,42 @@ static func toon_material(src: Material) -> ShaderMaterial:
 	return m
 
 
+## D-106: a painted card in the toon shader's card mode (alpha-cut, the rounded normal, turned toward
+## the camera within +-25 deg). Its ink is painted in, so it has no outline pass.
+static func card_material(tex: Texture2D, tint := Color.WHITE) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = toon_shader()
+	m.set_shader_parameter("card", true)
+	m.set_shader_parameter("card_tex", tex)
+	m.set_shader_parameter("albedo", tint)
+	m.set_shader_parameter("clamp_deg", 25.0)
+	return m
+
+
+static func is_card(m: Material) -> bool:
+	return is_toon(m) and (m as ShaderMaterial).get_shader_parameter("card") == true
+
+
+## A card (and its shadow proxy) joins the bridge's group with its card material.
+static func add_card(mi: MeshInstance3D, m: ShaderMaterial) -> void:
+	mi.material_override = m
+	mi.add_to_group(GROUP)
+
+
+static var _cards := {}
+
+
+## A bundled card painting (assets/foliage/<kind>.png; read from the pack, not imported).
+static func card_texture(kind: String) -> Texture2D:
+	if not _cards.has(kind):
+		var img := Image.load_from_file("res://assets/foliage/%s.png" % kind)
+		if img == null or img.is_empty():
+			return null
+		img.generate_mipmaps()
+		_cards[kind] = ImageTexture.create_from_image(img)
+	return _cards[kind]
+
+
 static func is_toon(m: Material) -> bool:
 	return m is ShaderMaterial and (m as ShaderMaterial).shader != null and (m as ShaderMaterial).shader.resource_path == TOON_PATH
 
@@ -94,6 +130,7 @@ static func meshes(r: Node) -> Array:
 
 
 static func _surface(mi: MeshInstance3D, i: int) -> Material:
+	if mi.material_override != null: return mi.material_override
 	var m: Material = mi.get_surface_override_material(i)
 	return m if m != null else mi.mesh.surface_get_material(i)
 
@@ -110,6 +147,8 @@ static func audit(tree: SceneTree) -> Array:
 			var m := _surface(mi, i)
 			if excluded(mi, m): continue
 			if not is_toon(m): problems.append("%s[%d]: %s, not the toon material" % [mi.name, i, m.get_class() if m else "null"])
+			elif is_card(m): # D-106: its ink is painted in; a card with an outline pass is a mistake
+				if (m as ShaderMaterial).next_pass != null: problems.append("%s[%d]: a card with an outline pass" % [mi.name, i])
 			elif not is_ink((m as ShaderMaterial).next_pass) or (m as ShaderMaterial).next_pass.next_pass != null: problems.append("%s[%d]: next_pass is not exactly the ink" % [mi.name, i])
 	return problems
 

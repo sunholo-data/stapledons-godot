@@ -15,3 +15,8 @@ test: ui-theme-check
 style-capture: import ## AC10 (GPU window): Bow deep/star/0.99c/first stop, Astern, the console zooms, HUD on and off -> renders/style/$(TAG)/ (contact_sheet.png, style.json; before_after.png against renders/style/before). Open every frame
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/style_capture.gd -- --tag=$(TAG) $(if $(wildcard renders/style/before/bow_deep.png),--before=res://renders/style/before) > $(SCRATCH)/style-capture-$(TAG).log 2>&1; rc=$$?; grep -E '^(FAIL|shot|style-capture)' $(SCRATCH)/style-capture-$(TAG).log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/style-capture-$(TAG).log
+.PHONY: dressing-test
+dressing-test: import ## AC8 (S5, D-106): the rim fronds as card-mode painted cards with crossed shadow proxies, the below-rail silhouettes clear of the slabs, each view's foreground <= 8 % of the frame, off the pole and the head, bounded drift; negative control: an oversized seeded card
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_dressing.gd > $(SCRATCH)/dressing-test.log 2>&1; rc=$$?; grep -E '^(  ok|  FAIL|dressing-test)' $(SCRATCH)/dressing-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/dressing-test.log && grep -q '^dressing-test: [0-9]* passed, 0 failures$$' $(SCRATCH)/dressing-test.log
+test: dressing-test

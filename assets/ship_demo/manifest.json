@@ -181,7 +181,7 @@
     "points": "SPAWN_captain and INTERACT_<station>_use empties in the master (collection deck_layout_v2), ship metres"
   },
   "style": {
-    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest.",
+    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest. foliage: the rim fronds' roots and inward facings (v4 generator), drawn as painted cards (D-106, ShipDressing).",
     "bridge_nodes": [
       "deck_floor_fill",
       "deck_body_00",
@@ -265,6 +265,158 @@
         "deck_seam_"
       ],
       "why": "painted floor markings no more than 3 cm tall: no silhouette, so the straight-edge share does not apply (D-104)"
-    }
+    },
+    "foliage": [
+      {
+        "name": "rim_frond_0",
+        "root_m": [
+          20.68,
+          82.0,
+          -0.0
+        ],
+        "facing": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_1",
+        "root_m": [
+          15.8418,
+          82.0,
+          -13.2928
+        ],
+        "facing": [
+          -0.766,
+          0.0,
+          0.6428
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_2",
+        "root_m": [
+          8.7397,
+          82.0,
+          -18.7424
+        ],
+        "facing": [
+          -0.4226,
+          0.0,
+          0.9063
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_3",
+        "root_m": [
+          -8.7397,
+          82.0,
+          -18.7424
+        ],
+        "facing": [
+          0.4226,
+          0.0,
+          0.9063
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_4",
+        "root_m": [
+          -19.9753,
+          82.0,
+          -5.3524
+        ],
+        "facing": [
+          0.9659,
+          0.0,
+          0.2588
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_5",
+        "root_m": [
+          -20.4787,
+          82.0,
+          2.8781
+        ],
+        "facing": [
+          0.9903,
+          0.0,
+          -0.1392
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_6",
+        "root_m": [
+          -15.3682,
+          82.0,
+          13.8376
+        ],
+        "facing": [
+          0.7431,
+          0.0,
+          -0.6691
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_7",
+        "root_m": [
+          -8.7397,
+          82.0,
+          18.7424
+        ],
+        "facing": [
+          0.4226,
+          0.0,
+          -0.9063
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_8",
+        "root_m": [
+          10.34,
+          82.0,
+          17.9094
+        ],
+        "facing": [
+          -0.5,
+          0.0,
+          -0.866
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      },
+      {
+        "name": "rim_frond_9",
+        "root_m": [
+          17.9094,
+          82.0,
+          10.34
+        ],
+        "facing": [
+          -0.866,
+          0.0,
+          -0.5
+        ],
+        "kind": "frond",
+        "height_m": 1.9
+      }
+    ]
   }
 }

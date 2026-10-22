@@ -12,7 +12,7 @@ extends RefCounted
 ## focus_pose. Failure names are the §D4 IDs.
 
 const PX := Vector2(1280, 720)
-const FAMILIES := ["spire", "lift", "shrine", "archive_terminal", "frond"]
+const FAMILIES := ["spire", "lift", "shrine", "archive_terminal", "archive_detail", "frond"]
 const BODY_OFF_DEG := 30.0
 const CAPTAIN_M := 1.754 # the captain sprite's real height (F1, D-94)
 const ZOOM_STATIONS := ["navigation", "voyage", "crew"]

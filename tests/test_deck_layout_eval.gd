@@ -73,7 +73,7 @@ func test_props() -> void:
 	var stack: Array = [props]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
-		if n is MeshInstance3D and n.mesh != null:
+		if n is MeshInstance3D and n.mesh != null and not StapledonStyle.is_card(n.material_override): # D-106: the painted frond cards carry their ink in the painting
 			for i in n.mesh.get_surface_count():
 				# R2-BRIDGE-STYLE S2: the override is the toon material (its next_pass the ink); the
 				# painted source material (the GLB's) carries emission and transparency.
@@ -92,7 +92,7 @@ func test_props() -> void:
 	# DL3 (§D5, sprint DL3): the rest of the heroes join them, by texture set (one shared painted
 	# atlas per set); the deck surface and the spire stay in ship.glb (the styling pass, D-97).
 	var dl3 := {"desks": ["console_decision_0", "console_decision_1", "console_decision_2", "console_decision_3", "v2_desk_props_00", "v2_desk_props_03"],
-		"rail": ["rim_rail_00", "rim_rail_31", "rim_frond_0", "rim_frond_9", "v2_rail_lamp_00", "v2_rail_lamp_15"],
+		"rail": ["rim_rail_00", "rim_rail_31", "v2_rail_lamp_00", "v2_rail_lamp_15"], # the rim fronds became painted cards (D-106; dressing-test)
 		"archive": ["archive_terminal", "v2_archive_detail_00", "archive_shrine_ribs", "v2_spire_vents_00"],
 		"lift": ["Lift guide", "Lift guide_001", "Guardrail 82", "Guardrail 82_002"],
 		"floor": ["v2_bench_detail_00", "v2_bench_detail_03", "watch_bench_0", "watch_bench_3", "v2_conduit_00", "v2_conduit_06"]}
