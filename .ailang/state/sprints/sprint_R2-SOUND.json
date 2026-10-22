@@ -36,6 +36,11 @@
       "date": "2026-10-22",
       "event": "paused",
       "note": "S1 built; dev build v0.4.0-dev.36-styled-bridge-29-g58648716 and refs/sound/s1/ for Mark's bridge listen."
+    },
+    {
+      "date": "2026-10-22",
+      "event": "rework",
+      "note": "D-117 (Mark on S1): 'the sounds are all great aside the footsteps - too clunky?'. Footsteps v2: soft-soled pads with a little coat rustle, almost no low thump, no metal ring; pitch spread 60 cents; RMS -37.2 dBFS (was -32.7); band [-42,-32]. Everything else kept byte-identical. A/B at refs/sound/s1-footsteps/."
     }
   ],
   "implements": [

@@ -450,15 +450,15 @@
    "bus": "Effects",
    "volume_db": -16.0,
    "visual": "ambient: the walk is on screen",
-   "about": "A step on the plating at each of the captain's foot contacts (CA0 foot_down).",
+   "about": "A soft-soled step at each of the captain's foot contacts (CA0 foot_down), v2 after D-117.",
    "name": "Footsteps on the bridge",
    "when": "Each time the captain's foot touches the deck (CA0's foot_down).",
-   "listen_for": "Soft and low, with a faint metal ring; they should sit under the dome's tail and match the walk, never clatter.",
+   "listen_for": "Soft and light: a pad on the deck with a little coat rustle, no clunk, no ring; six variants and a wider pitch spread so it never repeats.",
    "source": "captain",
-   "pitch_cents_spread": 40,
+   "pitch_cents_spread": 60,
    "band": [
-    -34,
-    -24
+    -42,
+    -32
    ]
   },
   {
