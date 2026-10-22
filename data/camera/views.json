@@ -7,7 +7,7 @@
   "default_level": 2,
   "sectors": {"count": 8, "hysteresis_deg": 10.0, "ring_split_m": 12.0, "ring_hysteresis_m": 1.0, "switch_s": 0.8},
   "levels": {
-    "bridge": {"deck_y_m": 82.0, "default": "bow", "occluders": ["spire", "shrine_ribs", "archive_terminal", "archive_detail", "rim_frond", "lift"], "dressing": {"about": "R2-BRIDGE-STYLE S5 (ShipDressing): below_rail = grown canopy silhouettes standing on the Commons deck (57 m) past the bridge's edge, inside the bubble, shown on the bridge only; foreground.<view> = near-field painted cards in that view's camera frame (metres: x right, y up, -z ahead), drifting 0.6x against a slide (bounded 0.8 m). make dressing-test caps each view's share at 8 %.",
+    "bridge": {"deck_y_m": 82.0, "default": "bow", "occluders": ["spire", "shrine_ribs", "archive_terminal", "archive_detail", "rim_frond", "lift"], "dressing": {"about": "R2-BRIDGE-STYLE S5 (ShipDressing): below_rail = grown canopy silhouettes standing on the Commons deck (57 m) past the bridge's edge, inside the bubble, shown on the bridge only. (The camera-attached foreground cards were removed on Mark's review of #322.)",
       "below_rail": [
         {"kind": "canopy", "pos_m": [27.5, 57.0, 0.0], "radius_m": 3.2, "height_m": 5.5, "colour": "#6E968F"},
         {"kind": "canopy", "pos_m": [21.07, 57.0, 17.68], "radius_m": 2.6, "height_m": 4.2, "colour": "#7A8F6E"},
@@ -17,11 +17,8 @@
         {"kind": "canopy", "pos_m": [-13.75, 57.0, -23.82], "radius_m": 2.6, "height_m": 4.2, "colour": "#7A8F6E"},
         {"kind": "canopy", "pos_m": [4.78, 57.0, -27.08], "radius_m": 3.6, "height_m": 6.4, "colour": "#6A8C95"},
         {"kind": "canopy", "pos_m": [21.07, 57.0, -17.68], "radius_m": 2.8, "height_m": 4.8, "colour": "#8A9070"}
-      ],
-      "foreground": {
-        "bow": [{"kind": "frond", "offset": [-3.9, -2.5, -4.4], "height_m": 1.8, "flip": false}, {"kind": "frond", "offset": [4.0, -2.6, -4.6], "height_m": 1.7, "flip": true}],
-        "astern": [{"kind": "frond", "offset": [3.9, -2.6, -4.4], "height_m": 1.8, "flip": true}]
-      }}, "views": [
+      ]
+      }, "views": [
       {"id": "bow", "kind": "walk", "name": "Bow", "anchor": "captain", "yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "height_m": 1.6, "dead_zone": [0.24, 0.2], "ease_s": 1.2, "cue_ease_s": 1.5, "billboard": "upright", "prompt": "Bow · 7"},
       {"id": "astern", "kind": "walk", "name": "Astern", "anchor": "captain", "yaw_deg": 90.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "height_m": 1.6, "dead_zone": [0.24, 0.2], "ease_s": 1.2, "cue_ease_s": 1.5, "billboard": "upright", "prompt": "Astern · 9"}
     ]},

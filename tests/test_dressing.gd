@@ -4,9 +4,9 @@ extends SceneTree
 ##     with a crossed shadow-only proxy, in the occluder fade group and the style group, none left as a mesh;
 ##   - the below-rail silhouettes stand on the Commons deck outside every deck slab (bottom >= 57 m, top
 ##     below the bridge deck's underside), shown on the bridge only;
-##   - each view's foreground cards hold <= 8 % of the frame (projected bounds), never cover the forward pole
-##     or the captain's head, and show only in their own view; the drift against a slide stays bounded;
-##   - negative control: a seeded oversized foreground card is caught by the same measure.
+##   - every plant stands on the deck and its footprint clears the lift, its guards and its landing (the
+##     lift's real triangles); negative control: a plant seeded on the lift guard;
+##   - the plants vary (D-106): >= 3 painted kinds, no two neighbours alike, some mirrored.
 const PX := Vector2i(1280, 720)
 const SHARE_MAX := 0.08
 var passed := 0
@@ -52,56 +52,77 @@ func _run() -> void:
 		var a: AABB = mi.global_transform * mi.get_aabb()
 		if a.position.y < 57.0 - 1e-3 or a.end.y > 81.3: slab_ok = false
 	check("the below-rail silhouettes (%d) stand on the Commons deck, clear of the bridge's slab" % d.below_rail.size(), d.below_rail.size() >= 6 and slab_ok)
-	# The views.
-	for vid: String in ["bow", "astern"]:
-		demo.consoles.cancel_walk()
-		demo.director.release()
-		demo.camera_mode = "player"
-		demo.director.walk(vid)
-		var worst := 0.0
-		var covers := false
-		var shown_elsewhere := false
-		for foot: Vector3 in [demo.bridge_spawn(), demo.consoles.stations.navigation.use, demo.walk_bridge.closest_walkable(Vector3(-12, 82, 4), 4.0)]:
-			demo.avatar_pos = foot
-			for k in 240:
-				demo._process(1.0 / 60.0)
-			var share := 0.0
-			var pose: Transform3D = demo.camera.global_transform
-			var v := Vector2(PX)
-			var pole := CameraDirector.screen_point(pose, pose.origin + CameraDirector.pole_dir() * 1000.0, v)
-			var head := CameraDirector.screen_point(pose, foot + Vector3.UP * 1.6, v)
-			for pair: Array in d.foreground.get(vid, []):
-				var r := _rect(demo.camera, pair[0])
-				share += r.get_area() / (v.x * v.y)
-				if (not is_nan(pole.x) and r.has_point(pole)) or (not is_nan(head.x) and r.has_point(head)): covers = true
-			for other: String in d.foreground:
-				if other != vid:
-					for pair: Array in d.foreground[other]:
-						if (pair[0] as MeshInstance3D).visible: shown_elsewhere = true
-			worst = maxf(worst, share)
-		check("%s: the foreground holds %.1f %% of the frame (<= %d %%), covers neither the pole nor the head" % [vid, worst * 100.0, roundi(SHARE_MAX * 100.0)], worst <= SHARE_MAX and worst > 0.0 and not covers)
-		check("%s: other views' foreground hidden" % vid, not shown_elsewhere)
-	# The drift is bounded.
-	demo.director.walk("bow")
-	demo.avatar_pos = demo.bridge_spawn()
-	for k in 120: demo._process(1.0 / 60.0)
-	demo.avatar_pos = demo.walk_bridge.closest_walkable(Vector3(-12, 82, 4), 4.0)
-	for k in 240: demo._process(1.0 / 60.0)
-	var pair0: Array = d.foreground.bow[0]
-	var expected: Vector3 = demo.camera.global_position + demo.camera.global_basis * pair0[1]
-	var drift := ((pair0[0] as MeshInstance3D).global_position - expected)
-	check("the foreground's drift against a slide stays within %.1f m (%.2f m)" % [ShipDressing.DRIFT_MAX_M, drift.length()], drift.length() <= ShipDressing.DRIFT_MAX_M + 1e-3)
-	# Negative control: an oversized foreground card is caught.
-	var big: MeshInstance3D = d._card("foreground_seeded", StapledonStyle.card_texture("frond"), 6.0)
-	d.add_child(big)
-	big.global_transform = Transform3D(demo.camera.global_basis, demo.camera.global_position + demo.camera.global_basis * Vector3(0, -1.5, -4.0))
-	var seeded := _rect(demo.camera, big).get_area() / float(PX.x * PX.y)
-	check("negative control: a seeded oversized card measures %.0f %% and would fail" % (seeded * 100.0), seeded > SHARE_MAX)
-	big.queue_free()
+	# Placement (Mark on #322: a plant stood over the lift's railing): every plant stands on the deck's walk
+	# or ground and its footprint (a cylinder of PLANT_R round its root, its height) touches no lift,
+	# shaft-guard or other walk-blocking triangle, and keeps clear of the lift's landing.
+	var blockers := _blockers(demo)
+	var bad := []
+	for c: MeshInstance3D in d.fronds:
+		var why := _placement(demo, c, float(c.get_meta("height_m", 1.9)), blockers)
+		if why != "": bad.append("%s: %s" % [c.name, why])
+	check("every plant stands on the deck and clears the lift, its guards, the rim rail and the landing (%d plants%s)" % [d.fronds.size(), (": " + str(bad)) if not bad.is_empty() else ""], bad.is_empty() and d.fronds.size() == 10)
+	# Negative control: a plant seeded on the lift's guard rail is caught.
+	var seeded: MeshInstance3D = d._card("rim_frond_seeded", StapledonStyle.card_texture("frond"), 1.9)
+	demo.props_visual.add_child(seeded)
+	seeded.global_position = Vector3(5.8, 82.0, -8.0)
+	var why_seeded := _placement(demo, seeded, 1.9, blockers)
+	check("negative control: a plant seeded on the lift guard is caught (%s)" % why_seeded, why_seeded != "")
+	seeded.queue_free()
+	# Variety (D-106): at least three painted kinds, no two neighbours alike, mirrors and tints vary.
+	var kinds := d.fronds.map(func(c: MeshInstance3D) -> String: return str(c.get_meta("kind", "")))
+	var neighbours_differ := true
+	for k in kinds.size():
+		if kinds[k] == kinds[(k + 1) % kinds.size()]: neighbours_differ = false
+	var distinct := {}
+	for k: String in kinds: distinct[k] = true
+	var flips := d.fronds.filter(func(c: MeshInstance3D) -> bool: return (c.material_override as ShaderMaterial).get_shader_parameter("card_flip") == true).size()
+	check("the rim plants vary: %d kinds %s, no two neighbours alike, %d of 10 mirrored" % [distinct.size(), distinct.keys(), flips], distinct.size() >= 3 and neighbours_differ and flips > 0 and flips < 10)
 	_done()
 
 
 ## The card's projected bounds, clipped to the frame.
+const PLANT_R := 0.45 # the footprint a plant's pot or root mass takes on the deck (m)
+const LANDING := Vector3(8, 82, -4.8) # the lift's board point (ship_demo_lift.gd BOARD_POINT)
+
+
+## The lift's pieces, the shaft guards and guides, and the rim rail: their world triangles.
+func _blockers(demo: Node) -> Array:
+	var out := []
+	var stack: Array = [demo.lift, demo.props_visual]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if not (n is MeshInstance3D and (n as MeshInstance3D).mesh != null and n.is_visible_in_tree()): continue
+		var nm := String(n.name)
+		if not (demo.lift.is_ancestor_of(n) or nm.begins_with("Guardrail") or nm.begins_with("Lift guide") or nm.begins_with("rim_rail")): continue
+		var mi := n as MeshInstance3D
+		for sidx in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(sidx)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array(range(v.size()))
+			for t in range(0, idx.size(), 3):
+				out.append([mi.global_transform * v[idx[t]], mi.global_transform * v[idx[t + 1]], mi.global_transform * v[idx[t + 2]]])
+	return out
+
+
+## "" when the plant stands on the deck and its footprint is clear; else why not.
+func _placement(demo: Node, c: MeshInstance3D, h: float, blockers: Array) -> String:
+	var root := c.global_position
+	var w: Vector3 = demo.walk_bridge.closest_walkable(root, 3.0)
+	var space: PhysicsDirectSpaceState3D = demo.geometry.get_world_3d().direct_space_state
+	var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(root + Vector3.UP * 0.3, root + Vector3.DOWN * 0.3))
+	if root.distance_to(w) > 0.6 and ground.is_empty(): return "not on the deck"
+	if Vector2(root.x - LANDING.x, root.z - LANDING.z).length() < 2.0: return "on the lift's landing"
+	for k in 12:
+		var a := TAU * k / 12.0
+		var off := Vector3(cos(a), 0.0, sin(a)) * PLANT_R
+		for seg: Array in [[root + off + Vector3.UP * 0.05, root + off + Vector3.UP * h], [root + Vector3.UP * 0.3, root + off + Vector3.UP * 0.3]]:
+			for tri: Array in blockers:
+				if Geometry3D.segment_intersects_triangle(seg[0], seg[1], tri[0], tri[1], tri[2]) != null:
+					return "touches the lift, its guards or the rim rail"
+	return ""
+
+
 func _rect(cam: Camera3D, mi: MeshInstance3D) -> Rect2:
 	var a: AABB = mi.global_transform * mi.get_aabb()
 	var lo := Vector2(INF, INF)

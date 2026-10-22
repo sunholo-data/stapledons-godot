@@ -15,8 +15,8 @@
       "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213"
     },
     "assets/ship_demo/manifest.json": {
-      "bytes": 8824,
-      "sha256": "d4416324d426ab32e81cbbc28c9e2c7e09c47e0458ad0d80c4829007c062cdc6"
+      "bytes": 10224,
+      "sha256": "d58c769f35e0704cb052a795b69fde353637392f7bdf6a2c0b843a8d21f2f88a"
     },
     "assets/ship_commons/walk.glb": {
       "bytes": 373208,

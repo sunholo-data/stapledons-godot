@@ -163,6 +163,12 @@ After DL1–DL3 the bridge's furniture faces the bow and is painted with inked e
     drives, so the fronds keep their D-91 fade.
   - **Estimate:** +0.5 day in ST5 (the card mode, the clamped billboard, the proxies, the swap): **10 → 10.5 days**;
     +~80 game LOC.
+  - **As built, after Mark's review of #322:** the ten rim plants mix three painted kinds from the plants spike
+    (frond, shrub, grown planter) in a ring where no two neighbours match, each with a seeded height, mirror and
+    palette tint (manifest `style.foliage`), and every plant is tested to stand on the deck clear of the lift, its
+    guards, the rim rail and the landing. The camera-attached foreground cards were removed (one read as a plant
+    standing on the lift's railing). **The final per-kind painted set comes with the R2-LEVELS foliage library
+    (D-106);** this bridge set is its first, cheap instance.
 
 ### S6. Review, measurement and the pause
 
