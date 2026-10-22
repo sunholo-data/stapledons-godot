@@ -58,6 +58,7 @@ static func card_material(tex: Texture2D, tint := Color.WHITE) -> ShaderMaterial
 	m.set_shader_parameter("card_tex", tex)
 	m.set_shader_parameter("albedo", tint)
 	m.set_shader_parameter("clamp_deg", 25.0)
+	m.set_meta("identification_cutout", true) # its rectangle is mostly clear: not a solid mask for star picks (ui/star_occlusion.gd)
 	return m
 
 
