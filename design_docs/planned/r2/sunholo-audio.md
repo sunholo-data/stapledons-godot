@@ -1,6 +1,6 @@
 # R2-SUNHOLO-AUDIO: the sound synthesis and its loudness checks as the package `sunholo/audio`
 
-**Status:** Planned 2026-10-22, **awaiting Mark's approval** (plan only; nothing ships until approved). Mark approved designing the package in an attended session on 2026-10-22; the approval of this plan and its open questions will be a new ledger row.
+**Status:** **Approved** by Mark on 2026-10-22 (ledger D-119: "approve the sunholo/audio plan"), every recommendation OQ1–OQ8. Executing.
 **Release:** R2. **Milestone:** a tooling extraction under R2-SOUND (sound.md): no player-facing change.
 **Priority:** P2. It pays off when a second consumer appears (other sunholo games and demos, the website's listening pages, the crew lab's voice bed) and it moves the loudness checks out of GDScript into AILANG, as CLAUDE.md asks of every offline tool.
 

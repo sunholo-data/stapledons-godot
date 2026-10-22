@@ -1,7 +1,14 @@
 {
   "sprint_id": "R2-SUNHOLO-AUDIO",
-  "status": "awaiting_approval",
-  "approved": null,
+  "status": "approved",
+  "approved": {
+    "ledger": "D-119",
+    "date": "2026-10-22",
+    "by": "Mark, attended",
+    "quote": "approve the sunholo/audio plan",
+    "with": "every recommendation (OQ1-OQ8)",
+    "publish": "sunholo/audio 0.1.0 under Mark's standing approval to publish sunholo packages, once quality has no gates and the path-pin gate is green"
+  },
   "created": "2026-10-22",
   "design_doc": "design_docs/planned/r2/sunholo-audio.md",
   "sprint_plan": "design_docs/planned/r2/sunholo-audio-sprint.md",
@@ -67,49 +74,49 @@
       "id": "OQ1",
       "q": "Package name sunholo/audio or sunholo/synth?",
       "recommendation": "sunholo/audio (synthesis, mixing, PCM/WAV reading and analysis)",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ2",
       "q": "Is the loudness analysis in scope; what happens to the GDScript copy?",
       "recommendation": "in scope; AILANG is the source of the offline checks (make sound-levels); sound_check.gd keeps its four offline functions as the parity mirror and all mixer checks",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ3",
       "q": "Include a QOA encoder?",
       "recommendation": "no; Godot import does QOA (D-112); revisit for a non-Godot consumer",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ4",
       "q": "Fixed 48 kHz or a rate per recipe?",
       "recommendation": "a rate field, default 48000; the game's recipes omit it",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ5",
       "q": "Recipe schema id?",
       "recommendation": "sunholo.audio.recipes/1 plus parseRecipesAs so the game keeps stapledons.audio.recipes/1 and V1_REF files parse",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ6",
       "q": "Provenance of synthesised rows?",
       "recommendation": "generator sunholo/audio@<version>, generator_sha256 = the lock's content_hash",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ7",
       "q": "Move the guarded cue lists into cues.json?",
       "recommendation": "not now; keep them in levels.ail",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     },
     {
       "id": "OQ8",
       "q": "Rename the legacy generator to rampNoise in the package?",
       "recommendation": "yes; the recipe kind string stays \"noise\"",
-      "answer": null
+      "answer": "approved as recommended (D-119)"
     }
   ],
   "features": [

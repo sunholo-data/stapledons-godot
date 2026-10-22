@@ -2,7 +2,7 @@
 
 **Design doc:** [sunholo-audio.md](sunholo-audio.md)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-SUNHOLO-AUDIO.json` (`awaiting_approval`)
-**Status:** **Awaiting Mark's approval** of the plan and OQ1–OQ8. Nothing is executed or published before it.
+**Status:** **Approved** (D-119, 2026-10-22, every recommendation OQ1–OQ8). Executing.
 **Plan review:** an independent Sonnet review (read-only, `claude -p --model sonnet`) scored the first draft **82/100 (pass)** with five blocking items, all fixed here and in the design doc: the AC commands moved out of the markdown table so pipes are real (AC5 gained a positive control); `verify` retargeted to the game's `levels.ail`; the provenance plumbing (`Args.lock`, `SOUND_SYNTH_ARGS`) spelled out; no PR, rig or CI run while the path pin is in place; `sound-levels-parity` in `make test` with per-guard comparison. Non-blocking ones folded in: the exact `db()` formula, a `wavProbe`, Opus in the review fixture, an AU0 stop condition, the `rate` record-literal note, the LOC reconciled, the spike deleted (`sprint_R2-SUNHOLO-AUDIO.json` `reviews`).
 **Base:** `origin/main` adf34a67 (branch `design/sunholo-audio`). Execution starts from the `main` that contains PR #319 (R2-SOUND S1), on `feat/sunholo-audio` in the game and `feat/audio` in `sunholo-data/ailang-packages`.
 **AILANG:** v0.54.14 (pinned). AILANG prompt version loaded: v0.16.7 (`ailang prompt --version-active`). Every milestone writes `.ail` code; the syntax checklist is below.
