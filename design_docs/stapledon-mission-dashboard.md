@@ -1,19 +1,18 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-22, iteration 45.
+Updated 2026-10-22, iteration 46.
 
-- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal unmoved: R2 plan work, first in Mark's 2026-10-20 order, after D-107 A.
-- **Outcome:** the R2 Kerr design doc is REVISED on PR #307. Scheduling is PARKED-ON-LANE.
-  - Designer codex gpt-6.1-sol resolved DI-01..DI-15 and the plan evaluation's 7 findings in normative text, with an embedded Decimal60 oracle the controller re-ran from the doc.
-  - Quorum round 3 was BLOCKED: gemini, glm and kimi all REJECT with concrete fixes, and none disputes the direction. The fixes were applied under the carve-out. Gemini's aberration formula had the forward sign; the inverse was taken from spec §2 and confirmed by the evaluator's brute-force boost.
-  - Independent Sonnet eval: 86 PASS, 0 blocking. 8 non-blocking findings are owed to the next round: DI-06's refusal channel, and DI-15 must dispatch at decode level.
-- **Why parked:** D-107 A asked for an Anthropic or OpenAI reviewer. The `claude-sonnet-5@claude-p` seat fails the mission ration probe (HTTP 429) in every Kerr round, and OpenAI is benched for a codex author. Ticket `quorum:claude-p-ration-usage-429`.
-- **PR #309 (rows 7o + 7s):** main merged into the branch (`f5a88e5a`; the PR's own files are unchanged) and `rig/full` re-run. Run 1 hit the 5400 s watchdog with 0 test failures while an attended `rig/full` (#319) overlapped it. Run 2 (`RIG_TEST_S=7200`) went red on the PR's own `rig-check-control`, because the override leaked into the stub (proven: rc 0 without it, rc 2 with it). Run 3 timed out again at 0 failures, and the six targets it did not reach then passed on the same tree. So every target is green, but `rig/full` is not, and the merge stays parked under Mark's rig-first rule. Separately, a `godot … test_deck_layout_eval.gd` (PID 70329) has been running for 38 h at about 76 % CPU, apparently hung; it is not the loop's.
-- **Mark:** **D-116**. Does the Sonnet evaluation count as D-107's Anthropic reviewer? A runs the planner next fire; the default B waits for the seat.
-- **Resume first:** re-run `rig/full` on #309 on a quieter rig and merge on green (or Mark merges attended on the per-target evidence). Then the Kerr quorum re-probe (or D-116), then L9 S0.2 at minor 14.
+- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal moved: L9 S0.2 is R2 sim work, in Mark's 2026-10-20 order.
+- **Landed this iteration:**
+  - **L9 S0.2** (PR #323, merge `db54e525`). Protocol minor 14 sits between surface (13) and archive (15). Every new_game at minor 14 or more carries a top-level `similar` section (15 worlds, vectors, 3 nearest), just before `archive`. 2.13 bytes are unchanged; a 2.15 stream minus `similar` equals the pristine bytes. Live 2.15 games receive it now; the bridge copies unknown sections. Sonnet eval 93 PASS, 0 blocking, 7 of 7 drills killed.
+  - **Rows 7o + 7s** (PR #309, merge `2272527d`). `rig/full` went green in 65 min on an idle rig.
+  - **Row 7r.** The log is rotated with a binary built from the driver pin. The rig's `~/go/bin/ailang` predates fix #1912 (fleet D-FLEET-29).
+- **Mark (attended, mid-run):** D-116 A (the Sonnet review counts for Kerr), D-117 (S1 sounds approved, footsteps softer), D-118 (captain walk: fix the feet), D-119 (sunholo/audio plan approved).
+- **Resume first:** the R2 Kerr planner pass (D-116 A), folding in the Sonnet eval's 8 findings, then K1.1a (stop before publish). After that, L9 S0.3 (bridge parse, `SIMILAR_MINOR := 14`).
+- **Open decisions:** none.
 - **Lanes:**
-  - Designer: codex gpt-6.1-sol (rotation; 318k).
-  - Evaluator: Sonnet via the Agent tool (150k).
-  - Planner and executor were not run.
-  - Quorum: $0.59 metered.
-- **Rig:** GPU 82 % at pick, so 7m AC1 still needs an idle rig. 7i(c) is held by attended #318.
+  - Planner and executor: codex gpt-6.1-sol (156k and 145k tok).
+  - Evaluator: Sonnet via the Agent tool (69k tok).
+  - Designer: not needed (approved plan).
+  - Quorum: one $0 seat probe (Claude seat absent, quota).
+- **Rig:** GPU 80 to 90 %, so 7m AC1 still needs an idle rig. 7i(c) is held by attended #318, #319 and #322.
