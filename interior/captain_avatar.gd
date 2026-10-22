@@ -210,7 +210,9 @@ static func sprite_paths(dir: String) -> Array[String]:
 
 static func make_texture(path: String) -> Texture2D:
 	var img: Image = null
-	if ResourceLoader.exists(path) and ResourceLoader.get_recognized_extensions_for_type("Texture2D").has(path.get_extension()) and _imported(path):
+	# An imported texture loads by its source path in the editor and in an export alike (an export recognises
+	# no .png loader, so the old extension test sent exported builds to a raw file the pack does not carry).
+	if _imported(path) and ResourceLoader.exists(path):
 		var t := load(path) as Texture2D
 		img = t.get_image() if t != null else null
 	if img == null and FileAccess.file_exists(path):
