@@ -196,6 +196,113 @@ Findings that change the plan:
 5. **The half cycle.** The back view's second half is the first half mirrored; the profile's repeats the first half (near and far legs read alike at 67–81 px). Both look right at game size in the review; the age-0 set would paint all 8.
 6. **Budgets:** 10 cells, 279 KB of WebP, 1.7 MB of GPU memory with mipmaps.
 
+## Jog v2 (2026-10-21, after Mark's pilot review, D-109)
+
+Mark: "its the same captain, but the jogging does not look real, needs more frames I guess. profiles and backview etc is fine. guide gait needs fixing yeah". The identity, costume, style and the back and profile facings stand; the jog was redone.
+
+**The guide gait** (`~/dev/blender/scripts/char_captain_pose_guides_v2.py`, a copy in `art/captain-anim-v2/`) is now a stance gait, in place like a treadmill:
+- 3.5 m/s, cadence 165 steps a minute: a 1.273 m step and a 2.545 m cycle in 0.727 s.
+- Duty factor 0.30. The planted ankle goes from 0.30 m ahead of the hip back to 0.46 m behind at exactly the deck's speed; the heel rises over the toe at the end. IK legs (thigh and shin) keep the knee ahead and soft (the pelvis 8 cm below standing).
+- Phases per step: contact, down, push-off, flight, recovery (the heel folds up behind the seat), next contact.
+- The pelvis bobs 2.5 cm (lowest at mid-stance), turns 6° with the forward leg, the torso counter-rotates and leans forward, the arms swing opposite the legs with elbows bent about 85°.
+- **Measured (240 samples a cycle):** each stance drifts 8–10 mm against the deck over 0.47 m of travel. That is under 1 px at 1440p, against v1's lowest foot moving forward up to 0.39 m.
+
+**Frames: 12 a cycle, every one unique** (0.212 m and 60.6 ms of guide motion apart; 16.5 frames a second). Six a step gives a frame each for contact, down, push-off, flight and two of recovery. At 67–81 px the extra frames are what make the legs read as a run, not a shuffle: the strided frames (02, 05, 08, 11) carry the leg extension that v1's 8 frames skipped. The pilot painted 24 (12 back, 12 profile); no mirrored or repeated half.
+
+**The scale finding.** The guide camera looks down 29° and the canvas is scaled so a standing figure is 720 px/m; distances across the view are then drawn at 720 / cos 29° = 823 px/m. The billboard shows painted pixels at 720 px/m, so a painted 0.212 m step is 0.2425 m on the deck. The game's jog cycle is therefore 2.9104 m (0.2425 m and 69.3 ms a frame at 3.5 m/s, cadence 144), and with it the planted foot stays put. The same 14% widening applies to every painted figure, the stills included.
+
+**Ingest** now:
+- uses one scale per painted facing (the median of the frames' height ratios), since a frame's box swings with the pose and the flying coat;
+- puts each profile frame's head where the guide's is, so the body follows the guide's bob;
+- pins a planted frame by its planted boot along the travel axis (x in profile, y in the back view; found through the guide's leg-colour key, so the trailing boot is ignored), capped at 64 canvas px.
+
+**Checks on the 24 painted frames:**
+- **AC3 planted feet (gated):** every stance step is within 2 px at 1440p plus one cell px of measurement resolution. Back: 0.18, 0.18 and 0.18 px. Profile: 2.11, 1.40 and 0.71 px (limit 2.68).
+- **Pose, back (gated):** IoU ≥ 0.60 and leg coverage ≥ 0.65. Own guides: IoU 0.615–0.688, legs 0.66–0.85. Profile guides: IoU 0.445–0.571, so it separates.
+- **Pose, profile (reported, not gated):** own IoU 0.341–0.533, legs 0.401–0.739, overlapping the scores against the back guides (IoU 0.385–0.514, legs 0.373–0.586). The flying coat dominates the silhouette, so these metrics cannot tell profile jog poses apart. "Tighten the pose gate" was not possible; the numbers went the other way. The profile pose is judged by eye and, where a foot is planted, by AC3.
+- **Height (gated):** 0.902–1.052 of the guide's box, tolerance ±12%; the seeded 0.7× still fails.
+- **Palette:** ΔE ≤ 12 holds on every frame.
+- **Budgets:** 36 cells, 697 KB of WebP, 4.1 MB of GPU memory.
+
+**Seen in the review:**
+- the painted coat flies past the left edge of the contract canvas in some profile frames (crop x = 0), so its tip is cut;
+- the in-game A/B shows the bridge's new style (D-110) behind v2 and the old one behind v1; that difference is the bridge, not the animation.
+
+## Walk (2026-10-21, D-115: the captain walks calmly)
+
+Mark on jog v2: "the captain animation is still not right. she is jogging? she should be walking calmly". This amends D-102 OQ2 (keep 3.5 m/s as a light jog): the captain walks.
+
+**Speed: 1.3 m/s**, an unhurried adult walk; `ShipConsoles.WALK_SPEED_MPS` is the one constant for WASD and walk-to. No positional ease: control stays immediate, and the start and stop clips (and the stills' 2° lean) carry the ease visually. A speed ramp would also have moved every walk-distance check and the camera's slide envelope.
+
+What changed for feel at 1.3 m/s (it was 3.5 m/s):
+
+| Walk | Distance | Was | Now |
+|---|---|---|---|
+| Spawn to the helm | 3.5 m | 1.0 s | 2.7 s |
+| Spawn to the Voyage console | 15.2 m | 4.3 s | 11.7 s |
+| Spawn to the Archive terminal | 17.1 m | 4.9 s | 13.2 s |
+| Spawn to the navigation station | 19.6 m | 5.6 s | 15.1 s |
+| Across the bridge (44 m) | 44 m | 12.6 s | 33.8 s |
+
+The longer walks may feel slow. A held "hurry" (a brisk 2.0 m/s walk, painted later) is a follow-up option, not built.
+
+**Updated for the speed:**
+- `test_ship_movement` checks one second walks `WALK_SPEED_MPS`.
+- `test_camera_forward`'s W and D screen-motion checks walk 1.75 m (81 frames, not 30).
+- The director's sector-crossing walk is 14 m (650 frames, not 240).
+- `camera_forward_review` and `deck_bow_probe` walk 3 m at the walk speed.
+- The captain review's moonwalk uses the walk speed.
+- `m4_ship_capture`'s 30 s bound covers the 15 s walk to the helm.
+- The camera's dead zone, damping and slide envelope do not depend on speed and are unchanged.
+- No golden pose or benchmark walks the captain.
+
+**The gait** (`~/dev/blender/scripts/char_captain_pose_guides_v3.py`, a copy in `art/captain-anim-v3/`):
+- Cadence 105 steps a minute; duty factor 0.60, so two double supports of 10% and no flight.
+- Heel strike (toe up 14°), foot flat, heel off over the toe, toe off. A low swing (6 cm).
+- Pelvis highest at mid-stance, 2 cm peak to peak, nearly upright; arms ±12°, elbows soft; a small counter-rotation.
+- Drawn at the painted scale: the guide walks 1.3 × cos 29° = 1.137 m/s, so in game the cycle is 1.4857 m (0.743 m steps), 12 frames at 0.1238 m and 95.2 ms each (10.5 frames a second).
+- Measured on the guide: each flat-foot stance drifts 2–3 cm against the deck over 0.46 m, about 1 cm per frame (under 1 px at 1440p), as the contact rolls from heel to toe.
+
+**Frames:** 12 unique a cycle, back and profile. The art thread painted 24, then repainted `walk_back_06` once and `walk_profile_04` twice, because their planted boot was misplaced: 27 images in all. The coat hangs and sways, and no frame is clipped at the canvas edge.
+
+**Checks on the painted walk:**
+- **Planted feet (AC3, gated):** every one of the 16 stance steps is within 1.56 px at 1440p, with a limit of 2 px plus one cell px. The rolling contact counts at whichever of heel, centre and toe stays put.
+- **Pose, tightened (the coat no longer dominates the silhouette):**
+  - **back:** IoU ≥ 0.65 and legs ≥ 0.65. Own guides: IoU 0.694–0.764, legs 0.705–0.805; against the profile guides IoU 0.497–0.582, so the IoU half separates.
+  - **profile:** IoU ≥ 0.50 and legs ≥ 0.60. Own guides: IoU 0.534–0.732, legs 0.688–0.873; against the back guides legs 0.271–0.487, so the leg half separates.
+- **Palette:** a colour cluster may now shrink to 40% of the still's share (it was 50%). The walking back view hides more trouser under the hanging coat: `walk_back_10` shows 10% where the still shows 21%.
+- **Budgets:** 26 cells, 709 KB of WebP, 3.9 MB of GPU memory.
+
+**Review overlays:** they draw the planted boot's centre per step. At the toe-off frame (`walk_profile_04`) that centre moves while the toe stays, so the ring and disc sit apart, by up to 42 px at 2×. The check measures the point that stays put.
+
+## Feet on the floor and the between-frame effect (2026-10-22, D-118)
+
+Mark on the walk: "the foot sinks underneath the floor. the pace is about right. the jerkiness is kinda ok even if unintentional, alien a little. perhaps blurring or trails or something in between the frames will reinforce that?" The 1.3 m/s pace and the painted walk frames stand.
+
+**The sinking foot: cause and fix.**
+- **Cause:** the billboard stands on the walk point, so any painted sole drawn below the foot anchor is drawn below the deck, and the floor's depth test cuts it off.
+- **Measured:** after ingest, the soles sat up to 18 cell px below the anchor. Ingest had aligned frames by the silhouette fit, the guide's head (profile) and the planted boot along the travel, never the sole height. In game at 1280 × 720 that showed as soles up to 5.9 px below the deck line.
+- **Fix:** `captain_frames.gd` now settles every frame, idle included, so the bottom edge of its lowest opaque row sits 2 cell px (15 mm) above the anchor. It moves the crop; the cells are untouched.
+  - The lift is measured. Mipmapped at 67–81 px, a sole exactly on the line bleeds about a pixel below it.
+- **Checked in game** (`tools/captain_fx_review.gd`, on the sprite alone so the floor cannot hide a sunk sole; Bow at the spawn, Bow at a far spot, Astern), across every walk frame and both facings:
+  - **after:** 0.1 px above the deck line at 1280 × 720, and 0.1–1.1 px above at 2560 × 1440;
+  - **before:** up to 5.9 px below.
+- **Gated:**
+  - `captain-frames-check`: a sole below the line fails, and a sole more than the lift plus 1 px above it fails. The selftest's lowered frame fails.
+  - `captain-anim-test`: through `show_anim`, on both the plain path and the effect's canvas, no sole is below the walk point or more than 15 mm above it.
+- **Two consequences:**
+  - The back view's planted foot can no longer move in depth. A billboard cannot draw depth once every sole rests on the line, so that foot travels about 5.5 px a frame at 1440p with the body. This is reported, not gated; the profile planted-feet check still holds (≤ 1.56 px).
+  - The idle frames' earlier settle increments are not recoverable, so their pose check compares a frame moved by up to 8 cell px.
+
+**The between-frame effect** (`interior/captain_fx.gdshader`, the billboard's material on a walking painted clip): the stepped cadence stays as a deliberate, slightly alien look, and the effect only adds to it.
+- **echo:** the previous painted frame, drawn where the body was a frame ago, fades from 40% over 60 ms.
+- **trail:** a short smear of the current frame behind the travel, in the ink colour, while walking.
+- **blur:** a brief directional blur on each frame change, fading over 60 ms.
+
+All three are sized to one painted frame's travel on the canvas (16.7 cell px across, foreshortened in depth). They are off under reduced motion, off on non-gait clips, and deterministic: `t` comes from the walk phase. Each draws both frames on the full cell canvas, so they share coordinates and the settled sole. The cost is at most 5 extra texture taps per captain pixel; the Metal driver's GPU timers read 0 here, so it is not measured.
+
+**Recommended and the demo default: echo.** It turns each step into a brief afterimage of the step before, which leans into the alien stepping without smearing the painting. The trail tints the figure's back edge; the blur is barely visible at 67 px.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

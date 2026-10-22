@@ -75,7 +75,7 @@ func _run() -> void:
 func _helm() -> bool:
 	if not _check(demo.consoles.walk_to("navigation"), "walk to navigation"):
 		return false
-	# Walking is real-time (3.5 m/s per frame delta), so bound it in wall time, not frames:
+	# Walking is real-time (WALK_SPEED_MPS per frame delta; 19.6 m is ~15 s at 1.3 m/s), so bound it in wall time:
 	# 600 frames at a fast frame rate were too short for the walk on the rig.
 	var deadline := Time.get_ticks_msec() + 30000
 	while Time.get_ticks_msec() < deadline:

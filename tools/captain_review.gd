@@ -85,7 +85,7 @@ func _run() -> void:
 				big.save_png(out.path_join(dir + "/f%02d_3x.png" % i))
 				imgs.append(img)
 			var gait := str(c.get("kind", "")) == "gait"
-			var ms := (1000.0 * float(c.get("cycle_m", CaptainAnim.DEFAULT_CYCLE_M)) / 3.5 / frames.size()) if gait else 1000.0 / float(c.get("fps", 2.0))
+			var ms := (1000.0 * float(c.get("cycle_m", CaptainAnim.DEFAULT_CYCLE_M)) / ShipConsoles.WALK_SPEED_MPS / frames.size()) if gait else 1000.0 / float(c.get("fps", 2.0))
 			var row := {"clip": clip, "facing": facing, "frames": frames.size(), "kind": c.get("kind", "time"),
 				"ms_per_frame_at_game_speed": snappedf(ms, 0.1), "m_per_frame": snappedf(float(c.get("cycle_m", 0.0)) / frames.size(), 0.0001) if gait else null,
 				"fps": c.get("fps", null), "dir": dir, "files": frames.map(func(e): return {"file": e.file, "flip": e.flip}),
@@ -130,7 +130,7 @@ func _run() -> void:
 			row.append(r[i % r.size()])
 		_sheet([row]).save_png(out.path_join("side_by_side/f%02d.png" % i))
 	review["side_by_side"] = {"order": review.clips.map(func(c): return "%s_%s" % [c.clip, c.facing]), "frames": longest}
-	# The moonwalk: a 2 s walk to starboard at 3.5 m/s, before and after.
+	# The moonwalk: a 2 s walk to starboard at the walk speed, before and after.
 	var starboard := Vector3(1, 0, 0) # the Bow view's screen right (-sin(-pi/2), 0, cos(-pi/2))
 	for mode in ["warmup", "before_today", "after_ca0_stills", "after_ca0_pilot"]: # warmup: the camera's slide state matches for all three
 		var dir: String = "moonwalk/" + mode
@@ -147,7 +147,7 @@ func _run() -> void:
 			demo.avatar.anim = {}
 		var n := 0
 		for k in 120:
-			demo.avatar_pos = demo.walk.step(demo.avatar_pos, starboard * 3.5 * DT)
+			demo.avatar_pos = demo.walk.step(demo.avatar_pos, starboard * ShipConsoles.WALK_SPEED_MPS * DT)
 			demo._process(DT)
 			if mode == "before_today":
 				demo.avatar.facing = "back" # today's rule: a sideways walk keeps the back (D3)
@@ -156,7 +156,7 @@ func _run() -> void:
 				demo.avatar.flip_h = false
 				demo.avatar.offset = Vector2(-demo.avatar.anchor_px.x, demo.avatar.anchor_px.y - demo.avatar.canvas_px.y)
 			else:
-				var o := a.step({"velocity": starboard * 3.5, "view_yaw": demo.director.walk_yaw()}, DT)
+				var o := a.step({"velocity": starboard * ShipConsoles.WALK_SPEED_MPS, "view_yaw": demo.director.walk_yaw()}, DT)
 				demo.avatar.show_anim(o)
 			if k % 5 == 0 and mode != "warmup": # 12 frames a second
 				var img := await _crop(demo.avatar_pos)

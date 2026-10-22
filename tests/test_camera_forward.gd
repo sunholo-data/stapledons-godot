@@ -28,6 +28,8 @@ const PX := Vector2(1280, 720)
 const ANGLES := 8
 const RADII := [10.0, 17.0]
 const DT := 1.0 / 60.0
+## Frames of a held key that walk 1.75 m (D-115: the calm walk; the screen-motion checks want > 20 px).
+const W_FRAMES := 81
 ## relativity-spec §2: a rest-frame 90 deg star appears at acos(beta) from the pole.
 const STARBOW := {"0.9c": 25.842, "0.99c": 8.1}
 const MARGIN := 40.0
@@ -256,7 +258,7 @@ func test_keys(demo: Node) -> void:
 			var pose := settle(demo, start)
 			var move := Vector2(0, 1) if key == "W" else Vector2(1, 0)
 			var a := CameraDirector.screen_point(pose, demo.avatar_pos, PX)
-			for k in 30:
+			for k in W_FRAMES:
 				demo.walk_motion(move, DT)
 			var b := CameraDirector.screen_point(pose, demo.avatar_pos, PX)
 			var d := b - a
@@ -383,12 +385,13 @@ func test_hole_after_tour() -> void:
 
 # ------------------------------------------------------------------ AC-V8, AC-V5 (after a switch)
 
-## W held for 0.5 s from `start` moves the captain up-screen under the current pose.
+## W held for 1.75 m of walking (W_FRAMES at the walk speed; 0.5 s at the old 3.5 m/s) from `start` moves the
+## captain up-screen under the current pose.
 func _w_up(demo: Node, start: Vector3) -> String:
 	demo.walk_motion(Vector2.ZERO, DT)
 	var pose := settle(demo, start)
 	var a := CameraDirector.screen_point(pose, demo.avatar_pos, PX)
-	for k in 30:
+	for k in W_FRAMES:
 		demo.walk_motion(Vector2(0, 1), DT)
 	var d := CameraDirector.screen_point(pose, demo.avatar_pos, PX) - a
 	return "" if d.y < -20.0 and absf(d.x) < 0.3 * absf(d.y) else "screen motion %s" % d

@@ -1,0 +1,219 @@
+"""R2-CAPTAIN-ANIMATION pose guides v3 (D-115): a calm WALK for the painted frames.
+Mark on jog v2: "the captain animation is still not right. she is jogging? she should be walking calmly".
+
+The gait (in place, as a treadmill: the body stays at the origin, the deck moves back under it):
+  game speed 1.3 m/s; the guide walks at 1.3 * cos 29 deg = 1.137 m/s because the painted canvas draws
+  ground distances across the 29 deg view at 823 px/m (the v2 scale finding); cadence 105 steps/min,
+  a 0.650 m step (0.743 m in game), cycle 1.300 m in 1.143 s
+  duty factor 0.60: each foot down 60% of the cycle, so two double supports of 10% and no flight
+  stance: heel strike (toe up 14 deg) -> foot flat -> heel off -> toe off, the planted point moving back
+          at exactly the deck speed, the ankle from 0.28 m ahead of the hip to 0.50 m behind
+  swing:  a low step (6 cm clearance), the toe trailing then lifting for the next heel strike
+  pelvis: highest at mid-stance, 2 cm peak to peak; nearly upright (6 cm below standing)
+  torso:  upright (2 deg), a small counter-rotation; arms swing +-12 deg, elbows soft
+Renders N_JOG frames per cycle per facing (five painted facings), the avatar canvas contract and the
+colour keys of v1/v2. Measures the gait at 240 samples: stance runs and their drift against the deck.
+Out: exports/stapledon/characters/captain_pose_guides_v3/walk_<facing>_<kk>.png + guides.json.
+Rebuild: ./blender.sh --background --python scripts/char_captain_pose_guides_v3.py
+"""
+import bpy, math, json
+from pathlib import Path
+from mathutils import Vector
+ROOT = Path(__file__).resolve().parents[1]
+SPIKE = ROOT / 'scripts/char_captain_anim_spike_v1.py'
+src = SPIKE.read_text().split('# Option C')[0]
+g = {'__file__': str(SPIKE), '__name__': 'spike'}
+exec(compile(src, str(SPIKE), 'exec'), g)  # the model and the 16-bone rig (rigid parts)
+rig = g['rig']; objs = g['objs']; scene = bpy.context.scene; R = math.radians
+OUT = ROOT / 'exports/stapledon/characters/captain_pose_guides_v3'; OUT.mkdir(parents=True, exist_ok=True)
+N_JOG = 12                                 # painted frames per cycle (the name is kept from v2's code)
+GAME_SPEED = 1.3                           # the captain's calm walk in game (D-115)
+# The guide is drawn at the painted scale: ground distances across a 29 deg view are drawn at
+# 720 / cos 29 px/m on a canvas whose standing figure is 720 px/m, so the guide walks at
+# GAME_SPEED * cos 29 and the game advances CYCLE_M / cos 29 a cycle (the v2 scale finding).
+SPEED = GAME_SPEED * math.cos(math.radians(29.0))   # 1.137 m/s in the guide
+CADENCE = 105.0 / 60.0                     # steps per second: unhurried
+STEP_M = SPEED / CADENCE                   # 0.650 m (0.743 m in game)
+CYCLE_M = 2.0 * STEP_M                     # 1.300 m
+PERIOD = CYCLE_M / SPEED                   # 1.143 s
+DUTY = 0.60                                # each foot down 60% of the cycle: two double supports of 10%
+STANCE_M = SPEED * DUTY * PERIOD           # 0.780 m of deck passes under a planted foot
+AHEAD = 0.28                               # heel strike: the ankle 0.28 m ahead of the hip ...
+BEHIND = STANCE_M - AHEAD                  # ... toe-off 0.50 m behind, the heel risen over the toe
+ANKLE = 0.10                               # the ankle (the shin's tail) above the deck, foot flat
+PELVIS = -0.06                             # nearly upright: the pelvis 6 cm below standing (the legs reach)
+FPS = 120                                  # action frames per second (fine sampling for the IK)
+NFR = int(round(PERIOD * FPS))
+FOOT_SIGN = 1.0
+HEEL_SIGN = 1.0
+# The calf-length coat of the picked identity (as v1).
+sk = bpy.data.objects['coat_skirt'].data
+for v in sk.vertices:
+    v.co.z = 0.95 - (0.95 - v.co.z) * (0.95 - 0.36) / (0.95 - 0.50)
+# --- IK legs: a target per foot, the knee poled ahead -------------------------------------------------
+pb = rig.pose.bones
+targets = {}
+for s in 'LR':
+    t = bpy.data.objects.new('ik_foot_' + s, None); scene.collection.objects.link(t); targets[s] = t
+    pole = bpy.data.objects.new('ik_pole_' + s, None); scene.collection.objects.link(pole)
+    x = 0.09 if s == 'L' else -0.09
+    pole.location = (x, -1.0, 0.5)
+    c = pb['shin.' + s].constraints.new('IK'); c.target = t; c.pole_target = pole; c.chain_count = 2; c.pole_angle = R(-90)
+    pb['foot.' + s].rotation_mode = 'XYZ'
+for p in pb: p.rotation_mode = 'XYZ'
+HIP_X = {'L': 0.09, 'R': -0.09}
+def smooth(u): return u * u * (3 - 2 * u)
+def foot_at(phase, s):
+    """Foot target (x, y, z) at cycle phase in [0, 1); L strikes at 0, R at 0.5. -Y is forward."""
+    u = (phase - (0.0 if s == 'L' else 0.5)) % 1.0
+    x = HIP_X[s]
+    if u < DUTY:                            # stance: back at exactly SPEED (the treadmill)
+        y = -AHEAD + SPEED * u * PERIOD
+        heel = 0.13 * max(0.0, (y - 0.10) / (BEHIND - 0.10)) ** 1.5  # heel off, then toe off
+        return Vector((x, y, ANKLE + heel)), True
+    w = (u - DUTY) / (1.0 - DUTY)           # swing 0..1: a low, smooth step forward
+    y = BEHIND - (BEHIND + AHEAD) * smooth(w)
+    lift = 0.06 * math.sin(math.pi * w) ** 0.8
+    off = 0.13 * (1.0 - smooth(min(1.0, w * 3.0)))  # the heel still raised from toe-off
+    return Vector((x, y, ANKLE + off + lift)), False
+def foot_pitch(phase, s):
+    """Heel strike (toe up), foot flat, heel off over the toe; in swing the toe trails, then lifts for the strike."""
+    u = (phase - (0.0 if s == 'L' else 0.5)) % 1.0
+    p, st = foot_at(phase, s)
+    if st:
+        strike = -R(14) * max(0.0, 1.0 - u / (0.15 * DUTY))
+        return strike + math.asin(min(0.95, (p.z - ANKLE) / 0.12)) * HEEL_SIGN
+    w = (u - DUTY) / (1.0 - DUTY)
+    return R(20) * (1.0 - smooth(min(1.0, w * 2.0))) - R(14) * smooth(max(0.0, (w - 0.6) / 0.4))
+def pose(phase):
+    for s in 'LR':
+        p, _ = foot_at(phase, s); targets[s].location = p
+    # Pelvis: highest at mid-stance (the inverted pendulum, phases 0.3 and 0.8), lowest in double support.
+    bob = PELVIS + 0.010 * math.cos(2 * math.tau * (phase - DUTY / 2.0))
+    pb['hips'].location = (0, bob, 0)          # bone-local y is world up for the hips
+    yaw = R(4) * math.cos(math.tau * phase)    # the pelvis turns a little with the forward leg
+    pb['hips'].rotation_euler = (0, yaw, 0)
+    pb['spine'].rotation_euler = (-R(2), -1.5 * yaw, 0)  # upright; the shoulders counter the pelvis
+    pb['head'].rotation_euler = (R(1), 0.5 * yaw, 0)
+    for s, off in (('L', 0.5), ('R', 0.0)):    # each arm swings gently with the opposite leg
+        a = math.tau * (phase - off)
+        pb['upper_arm.' + s].rotation_euler = (R(12) * math.cos(a), 0, 0)
+        pb['forearm.' + s].rotation_euler = (-R(14) + R(6) * math.cos(a), 0, 0)
+def shin_tilt(s):
+    """The shin's turn about X from its rest direction (world), so the foot can cancel it and stay level."""
+    bpy.context.view_layer.update()
+    posed = (rig.matrix_world.to_3x3() @ pb['shin.' + s].matrix.to_3x3()).col[1]
+    rest = (rig.matrix_world.to_3x3() @ rig.data.bones['shin.' + s].matrix_local.to_3x3()).col[1]
+    return math.atan2(posed.z, posed.y) - math.atan2(rest.z, rest.y)
+def heel_pitch(phase, s):
+    """Late stance: pitch the boot so the toe stays down while the heel rises (radians)."""
+    p, st = foot_at(phase, s)
+    return math.asin(min(0.95, (p.z - ANKLE) / 0.12)) * HEEL_SIGN if st else 0.0
+rig.animation_data_create(); act = bpy.data.actions.new('walk_v3'); rig.animation_data.action = act
+for f in range(NFR + 1):
+    pose(f / NFR)
+    for s in 'LR':
+        _, st = foot_at(f / NFR, s)
+        pb['foot.' + s].rotation_euler = (-shin_tilt(s) * FOOT_SIGN + foot_pitch(f / NFR, s), 0, 0)
+    for p in pb:
+        p.keyframe_insert('rotation_euler', frame=f + 1); p.keyframe_insert('location', frame=f + 1)
+    for s in 'LR':
+        targets[s].keyframe_insert('location', frame=f + 1)
+# Keys every 1/120 s, so the interpolation between them is negligible at the sampling below.
+# --- Measure the gait at fine sampling ---------------------------------------------------------------
+def sole(s):
+    o = bpy.data.objects['boot_' + s]; dg = bpy.context.evaluated_depsgraph_get(); ev = o.evaluated_get(dg)
+    vs = [ev.matrix_world @ v.co for v in ev.data.vertices]
+    zmin = min(v.z for v in vs)
+    low = [v for v in vs if v.z < zmin + 0.01]
+    return Vector((sum(v.x for v in low) / len(low), sum(v.y for v in low) / len(low), zmin))
+samples = []
+for i in range(240):
+    f = 1 + NFR * i / 240.0
+    scene.frame_set(int(f), subframe=f - int(f))
+    samples.append({'phase': i / 240.0, 'L': sole('L'), 'R': sole('R')})
+GROUND = min(min(s['L'].z, s['R'].z) for s in samples)
+CONTACT_Z = GROUND + 0.012
+slip = {}; stance_frac = {}
+for s in 'LR':
+    on = [x[s].z < CONTACT_Z for x in samples]
+    stance_frac[s] = sum(on) / 240.0
+    # Contiguous stance runs (cyclic): drift = how far the planted point moved minus the deck's travel.
+    start = next(i for i in range(240) if on[i] and not on[i - 1])
+    runs = []; i = start
+    while True:
+        if on[i % 240] and not on[(i - 1) % 240]:
+            j = i
+            while on[(j + 1) % 240]: j += 1
+            a = samples[i % 240][s]; b = samples[j % 240][s]
+            dt = (j - i) * PERIOD / 240.0
+            runs.append({'from_phase': round((i % 240) / 240.0, 3), 'samples': j - i + 1, 'moved_m': round(b.y - a.y, 4), 'deck_m': round(SPEED * dt, 4), 'drift_m': round((b.y - a.y) - SPEED * dt, 4)})
+            i = j + 1
+        else:
+            i += 1
+        if i - start >= 240: break
+    slip[s] = runs
+# --- Render the guides (colour keys as v1) -------------------------------------------------------------
+KEY = {'L_leg': (0.85, 0.12, 0.10), 'R_leg': (0.10, 0.25, 0.85), 'L_arm': (0.95, 0.55, 0.10), 'R_arm': (0.10, 0.75, 0.80),
+       'coat': (0.62, 0.62, 0.62), 'yoke': (0.80, 0.62, 0.25), 'skin': (0.78, 0.58, 0.45), 'hair': (0.12, 0.10, 0.12)}
+def key_of(name):
+    for part in ('thigh', 'shin', 'boot'):
+        if name.startswith(part + '_'): return name[-1] + '_leg'
+    for part in ('upper_arm', 'forearm', 'hand'):
+        if name.startswith(part + '_'): return name[-1] + '_arm'
+    if name.startswith('coat'): return 'coat'
+    if name in ('yoke', 'clasp'): return 'yoke'
+    if name == 'hair': return 'hair'
+    return 'skin'
+mats = {}
+for k, c in KEY.items():
+    m = bpy.data.materials.new('guide_' + k); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+    em = nt.nodes.new('ShaderNodeEmission'); em.inputs[0].default_value = (*c, 1)
+    out = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(em.outputs[0], out.inputs[0]); mats[k] = m
+skirt = bpy.data.materials.new('guide_coat_skirt'); skirt.use_nodes = True; nt = skirt.node_tree; nt.nodes.clear()
+em = nt.nodes.new('ShaderNodeEmission'); em.inputs[0].default_value = (*KEY['coat'], 1)
+tr = nt.nodes.new('ShaderNodeBsdfTransparent'); mix = nt.nodes.new('ShaderNodeMixShader'); mix.inputs[0].default_value = 0.5
+out = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(em.outputs[0], mix.inputs[1]); nt.links.new(tr.outputs[0], mix.inputs[2]); nt.links.new(mix.outputs[0], out.inputs[0])
+try: skirt.surface_render_method = 'BLENDED'
+except Exception: pass
+for o in objs:
+    o.data.materials.clear(); o.data.materials.append(skirt if o.name == 'coat_skirt' else mats[key_of(o.name)])
+engines = [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items]
+scene.render.engine = 'BLENDER_EEVEE' if 'BLENDER_EEVEE' in engines else 'BLENDER_EEVEE_NEXT'
+scene.render.resolution_x = 1024; scene.render.resolution_y = 1536; scene.render.resolution_percentage = 100
+scene.render.film_transparent = True; scene.render.image_settings.file_format = 'PNG'; scene.render.image_settings.color_mode = 'RGBA'
+scene.view_settings.view_transform = 'Standard'
+ELEV = R(29); DIST = 8.0
+cam = bpy.data.objects.new('guide_cam', bpy.data.cameras.new('guide_cam')); scene.collection.objects.link(cam); scene.camera = cam
+cam.data.type = 'ORTHO'; cam.data.sensor_fit = 'VERTICAL'
+cam.data.ortho_scale = 1536.0 / 720.0 * math.cos(ELEV); cam.data.shift_y = (1440 - 768) / 1536.0
+FACINGS = {'back': (0, 1), 'back_34': (-math.sqrt(.5), math.sqrt(.5)), 'profile': (-1, 0),
+           'front_34': (-math.sqrt(.5), -math.sqrt(.5)), 'front': (0, -1)}
+rows = []
+for facing, (hx, hy) in FACINGS.items():
+    cam.location = Vector((hx * DIST * math.cos(ELEV), hy * DIST * math.cos(ELEV), DIST * math.sin(ELEV)))
+    cam.rotation_euler = (Vector((0, 0, 0)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
+    for i in range(N_JOG):
+        ph = i / N_JOG
+        f = 1 + NFR * ph
+        scene.frame_set(int(f), subframe=f - int(f))
+        name = f'walk_{facing}_{i:02d}.png'
+        scene.render.filepath = str(OUT / name); bpy.ops.render.render(write_still=True)
+        sl = {s: sole(s) for s in 'LR'}
+        planted = [s for s in 'LR' if sl[s].z < CONTACT_Z]
+        rows.append({'file': name, 'clip': 'walk', 'facing': facing, 'index': i, 'phase': round(ph, 4),
+                     'soles': {s: {'y_m': round(sl[s].y, 4), 'z_m': round(sl[s].z - GROUND, 4)} for s in 'LR'},
+                     'planted': planted[0] if len(planted) == 1 else ('both' if planted else 'flight')})
+meta = {'about': 'R2-CAPTAIN-ANIMATION pose guides v3 (D-115): a calm walking stance gait in place (the deck moves back under a planted foot; double support, no flight); colour-keyed silhouettes on the avatar canvas contract, never shown in game',
+        'canvas_px': [1024, 1536], 'foot_anchor_px': [512, 1440], 'px_per_m_standing': 720, 'elevation_deg': 29, 'projection': 'orthographic',
+        'gait': {'speed_mps': round(SPEED, 4), 'game_speed_mps': GAME_SPEED, 'game_cycle_m': round(CYCLE_M / math.cos(math.radians(29.0)), 4), 'cadence_steps_per_min': CADENCE * 60, 'step_m': round(STEP_M, 4), 'cycle_m': round(CYCLE_M, 4),
+                 'period_s': round(PERIOD, 4), 'duty_factor': DUTY, 'stance_m': round(STANCE_M, 4), 'contact_ahead_m': AHEAD, 'toe_off_behind_m': round(BEHIND, 4), 'frames': N_JOG,
+                 'm_per_frame': round(CYCLE_M / N_JOG, 4), 'ms_per_frame': round(1000 * PERIOD / N_JOG, 1),
+                 'contacts': [[0.0, 'L'], [0.5, 'R']],
+                 'measured': {'stance_runs': slip, 'stance_fraction': stance_frac,
+                              'ground_z_m': round(GROUND, 4), 'samples': 240}},
+        'keys': {k: [round(x, 3) for x in v] for k, v in KEY.items()}, 'coat_skirt_alpha': 0.5,
+        'facings': {'back': 'moving away (up the screen)', 'back_34': 'away and right', 'profile': 'right', 'front_34': 'toward and right', 'front': 'toward', 'mirror': 'the left-moving facings are these, flipped'},
+        'frames': rows}
+(OUT / 'guides.json').write_text(json.dumps(meta, indent=2) + '\n')
+print('POSE_GUIDES_V2', json.dumps(meta['gait']))

@@ -7,11 +7,14 @@
   "created": "2026-10-20",
   "design_doc": "design_docs/planned/r2/captain-animation.md",
   "sprint_plan": "design_docs/planned/r2/captain-animation-sprint.md",
-  "branch": "feat/captain-animation",
+  "branch": "feat/captain-walk",
   "history": [
     "2026-10-20: planned after Mark's D-98 ('obviously we need animation on the captain a bit'); spike tools/captain_anim_spike.gd compared A (painted still), B (live rigged GLB), C (pre-rendered rig frames) and D (procedural motion on the still) through the real Bow view at 2560x1440 (figure 161 px); frames at gs://stapledons-voyage-assets/refs/captain_animation/spike/",
     "2026-10-20: approved by Mark with every recommendation (D-102): \"yeah painted animation no mannequin. I will review animations of it on website\"; design PR #34 (brief amendment) merged, so the CA1 pilot spend may start (OQ5: pilot, then age 0 after Mark's pilot review)",
-    "2026-10-20: CA0 built; CA1 pilot painted (10 frames), ingested, checked; paused for Mark's pilot review on a web page"
+    "2026-10-20: CA0 built; CA1 pilot painted (10 frames), ingested, checked; paused for Mark's pilot review on a web page",
+    "2026-10-21: D-109 (pilot reviewed): identity and facings accepted, jog to redo; guide gait rebuilt as a stance gait (v2), 24 unique jog frames painted (12 back, 12 profile), AC3 met on the painted frames, in-game jog cycle 2.9104 m (the 29 deg scale finding); paused for Mark's jog review",
+    "2026-10-21: D-115 (Mark on jog v2: 'she should be walking calmly', amends OQ2): speed 1.3 m/s; v3 walking stance-gait guides; 24 walk frames painted (+3 repaints); AC3 met (<= 1.56 px), pose gate tightened (back IoU 0.65/legs 0.65, profile IoU 0.50/legs 0.60); paused for Mark's walk review; supersedes #312",
+    "2026-10-22: D-118 (pace right; foot sinks; between-frame effect wanted): every sole settled 15 mm above the deck anchor (was up to 5.9 px below in game), gated in captain-frames-check and captain-anim-test; billboard effects echo/trail/blur prototyped (interior/captain_fx.gdshader), echo recommended and the demo default; paused for Mark's review"
   ],
   "implements": [
     "stapledons-design vision/design-decisions.md 2026-09-28 Static Portraits (amended for the captain by D-98)",
@@ -90,7 +93,7 @@
       ],
       "passes": false,
       "started": "2026-10-20",
-      "notes": "Pilot done, paused for Mark: 10 frames painted by the Codex art thread (gpt-6.1-sol), ingested to assets/characters/captain/anim/y0/ with anim_pilot.json (the game does not load it yet); tools/captain_frames.gd ingest + check + selftest (make captain-frames-check, in make test). Pose gate amended: IoU >= 0.55 AND leg coverage >= 0.65 (0.85 IoU unreachable against a mannequin guide; thresholds set after the pilot numbers). AC3 NOT met: the guide rig's jog has no planted stance; production guides need one before the rest of age 0. Review folder: build/captain_review/."
+      "notes": "Pilot done, paused for Mark: 10 frames painted by the Codex art thread (gpt-6.1-sol), ingested to assets/characters/captain/anim/y0/ with anim_pilot.json (the game does not load it yet); tools/captain_frames.gd ingest + check + selftest (make captain-frames-check, in make test). Pose gate amended: IoU >= 0.55 AND leg coverage >= 0.65 (0.85 IoU unreachable against a mannequin guide; thresholds set after the pilot numbers). AC3 NOT met: the guide rig's jog has no planted stance; production guides need one before the rest of age 0. Review folder: build/captain_review/. Jog v2 (D-109): stance-gait guides (char_captain_pose_guides_v2.py), 12 unique frames a cycle, 24 painted; AC3 met (<= 2.11 px at 1440p); back pose gated (IoU >= 0.60, legs >= 0.65), profile pose reported only (silhouette metrics cannot separate it)."
     },
     {
       "id": "CA2_STATIONS_CHAIR",
@@ -142,7 +145,7 @@
     },
     {
       "id": "OQ2",
-      "answer": "approved as recommended: Keep 3.5 m/s as a light jog with start and stop eases; revisit in level design"
+      "answer": "amended by D-115 (2026-10-21): the captain walks calmly at 1.3 m/s; no positional ease (the start and stop clips carry it)"
     },
     {
       "id": "OQ3",

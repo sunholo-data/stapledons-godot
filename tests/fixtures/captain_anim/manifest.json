@@ -3,7 +3,7 @@
   "anim": {
     "cell_scale": 0.1875,
     "clips": {
-      "jog": {"kind": "gait", "cycle_m": 2.3333, "contacts": [[0.0, "L"], [0.5, "R"]], "stages": {"0": {
+      "walk": {"kind": "gait", "cycle_m": 2.3333, "contacts": [[0.0, "L"], [0.5, "R"]], "stages": {"0": {
         "back": [
           {"file": "jog_back_00.png", "crop": [70, 30, 52, 240], "flip": false},
           {"file": "jog_back_01.png", "crop": [70, 30, 52, 240], "flip": false},

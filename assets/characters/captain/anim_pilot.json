@@ -1,6 +1,6 @@
 {
   "anim": {
-    "about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame (the half cycle). Made by tools/captain_frames.gd --ingest from art/captain-anim-v1/.",
+    "about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.",
     "cell_scale": 0.1875,
     "clips": {
       "idle": {
@@ -12,224 +12,601 @@
             "back": [
               {
                 "crop": [
-                  50,
-                  28,
-                  96,
-                  247
+                  50.0,
+                  25.0,
+                  96.0,
+                  247.0
                 ],
                 "file": "anim/y0/idle_back_00.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v1/guides/idle_back_00.png"
               }
             ],
             "profile": [
               {
                 "crop": [
-                  42,
-                  27,
-                  95,
-                  255
+                  42.0,
+                  17.0,
+                  95.0,
+                  255.0
                 ],
                 "file": "anim/y0/idle_profile_00.webp",
-                "flip": false
+                "flip": false,
+                "guide": "art/captain-anim-v1/guides/idle_profile_00.png"
               }
             ]
           }
         }
       },
-      "jog": {
+      "walk": {
         "contacts": [
           [
             0.0,
-            "R"
+            "L"
           ],
           [
             0.5,
-            "L"
+            "R"
           ]
         ],
-        "cycle_m": 2.3333,
+        "cycle_m": 1.4857,
+        "cycle_note": "In game: the guide cycle 1.2994 m / cos 29 deg (the v2 scale finding: the guide's 29 deg view draws ground distances at 823 px/m, the billboard shows painted pixels at 720 px/m). 0.1238 m and 95.2 ms a frame at 1.3 m/s; cadence 105 steps a minute.",
         "kind": "gait",
         "stages": {
           "0": {
             "back": [
               {
                 "crop": [
-                  51,
-                  35,
-                  110,
-                  244
+                  58.0,
+                  30.0,
+                  86.0,
+                  241.0
                 ],
-                "file": "anim/y0/jog_back_00.webp",
-                "flip": false
+                "file": "anim/y0/walk_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_00.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  44,
-                  33,
-                  123,
-                  254
+                  53.0,
+                  25.0,
+                  92.0,
+                  245.0
                 ],
-                "file": "anim/y0/jog_back_01.webp",
-                "flip": false
+                "file": "anim/y0/walk_back_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_01.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  38,
-                  35,
-                  127,
-                  253
+                  52.0,
+                  25.0,
+                  99.0,
+                  247.0
                 ],
-                "file": "anim/y0/jog_back_02.webp",
-                "flip": false
+                "file": "anim/y0/walk_back_02.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_02.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  43,
-                  33,
-                  127,
-                  253
+                  49.0,
+                  21.0,
+                  98.0,
+                  251.0
                 ],
-                "file": "anim/y0/jog_back_03.webp",
-                "flip": false
+                "file": "anim/y0/walk_back_03.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_03.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  51,
-                  35,
-                  110,
-                  244
+                  47.0,
+                  17.0,
+                  98.0,
+                  255.0
                 ],
-                "file": "anim/y0/jog_back_00.webp",
-                "flip": true
+                "file": "anim/y0/walk_back_04.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_04.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  44,
-                  33,
-                  123,
-                  254
+                  45.0,
+                  17.0,
+                  100.0,
+                  251.0
                 ],
-                "file": "anim/y0/jog_back_01.webp",
-                "flip": true
+                "file": "anim/y0/walk_back_05.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_05.png",
+                "planted": "flight"
               },
               {
                 "crop": [
-                  38,
-                  35,
-                  127,
-                  253
+                  45.0,
+                  20.0,
+                  108.0,
+                  252.0
                 ],
-                "file": "anim/y0/jog_back_02.webp",
-                "flip": true
+                "file": "anim/y0/walk_back_06.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_06.png",
+                "planted": "R"
               },
               {
                 "crop": [
-                  43,
-                  33,
-                  127,
-                  253
+                  47.0,
+                  19.0,
+                  101.0,
+                  252.0
                 ],
-                "file": "anim/y0/jog_back_03.webp",
-                "flip": true
+                "file": "anim/y0/walk_back_07.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_07.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  45.0,
+                  19.0,
+                  103.0,
+                  252.0
+                ],
+                "file": "anim/y0/walk_back_08.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_08.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  46.0,
+                  25.0,
+                  100.0,
+                  246.0
+                ],
+                "file": "anim/y0/walk_back_09.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_09.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  49.0,
+                  23.0,
+                  100.0,
+                  249.0
+                ],
+                "file": "anim/y0/walk_back_10.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_10.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  51.0,
+                  24.0,
+                  98.0,
+                  248.0
+                ],
+                "file": "anim/y0/walk_back_11.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_back_11.png",
+                "planted": "flight"
               }
             ],
             "profile": [
               {
                 "crop": [
-                  20,
-                  32,
-                  124,
-                  254
+                  27.0,
+                  35.0,
+                  146.0,
+                  237.0
                 ],
-                "file": "anim/y0/jog_profile_00.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_00.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  13,
-                  37,
-                  140,
-                  245
+                  1.0,
+                  34.0,
+                  163.0,
+                  238.0
                 ],
-                "file": "anim/y0/jog_profile_01.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_01.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  2,
-                  34,
-                  174,
-                  236
+                  5.0,
+                  31.0,
+                  143.0,
+                  241.0
                 ],
-                "file": "anim/y0/jog_profile_02.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_02.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_02.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  12,
-                  37,
-                  161,
-                  237
+                  34.0,
+                  32.0,
+                  93.0,
+                  240.0
                 ],
-                "file": "anim/y0/jog_profile_03.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_03.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_03.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  20,
-                  32,
-                  124,
-                  254
+                  50.0,
+                  52.0,
+                  99.0,
+                  219.0
                 ],
-                "file": "anim/y0/jog_profile_00.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_04.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_04.png",
+                "planted": "L"
               },
               {
                 "crop": [
-                  13,
-                  37,
-                  140,
-                  245
+                  33.0,
+                  26.0,
+                  133.0,
+                  245.0
                 ],
-                "file": "anim/y0/jog_profile_01.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_05.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_05.png",
+                "planted": "flight"
               },
               {
                 "crop": [
-                  2,
-                  34,
-                  174,
-                  236
+                  29.0,
+                  23.0,
+                  142.0,
+                  249.0
                 ],
-                "file": "anim/y0/jog_profile_02.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_06.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_06.png",
+                "planted": "R"
               },
               {
                 "crop": [
-                  12,
-                  37,
-                  161,
-                  237
+                  4.0,
+                  23.0,
+                  153.0,
+                  248.0
                 ],
-                "file": "anim/y0/jog_profile_03.webp",
-                "flip": false
+                "file": "anim/y0/walk_profile_07.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_07.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  2.0,
+                  24.0,
+                  142.0,
+                  248.0
+                ],
+                "file": "anim/y0/walk_profile_08.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_08.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  13.0,
+                  30.0,
+                  128.0,
+                  242.0
+                ],
+                "file": "anim/y0/walk_profile_09.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_09.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  32.0,
+                  29.0,
+                  138.0,
+                  242.0
+                ],
+                "file": "anim/y0/walk_profile_10.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_10.png",
+                "planted": "R"
+              },
+              {
+                "crop": [
+                  35.0,
+                  29.0,
+                  140.0,
+                  243.0
+                ],
+                "file": "anim/y0/walk_profile_11.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v3/guides/walk_profile_11.png",
+                "planted": "flight"
               }
             ]
           }
         }
       }
     },
+    "ingest_head_dy_px": {
+      "walk_profile_00": -10.0,
+      "walk_profile_01": 5.0,
+      "walk_profile_02": -18.0,
+      "walk_profile_03": -32.0,
+      "walk_profile_04": -200.0,
+      "walk_profile_05": -5.0,
+      "walk_profile_06": 12.0,
+      "walk_profile_07": 10.0,
+      "walk_profile_08": -19.0,
+      "walk_profile_09": -80.0,
+      "walk_profile_10": -15.0,
+      "walk_profile_11": -8.0
+    },
+    "ingest_pin_px": {
+      "walk_back_00": [
+        0.0,
+        4.0
+      ],
+      "walk_back_01": [
+        0.0,
+        -1.0
+      ],
+      "walk_back_02": [
+        0.0,
+        -47.0
+      ],
+      "walk_back_03": [
+        0.0,
+        -17.0
+      ],
+      "walk_back_04": [
+        0.0,
+        -28.0
+      ],
+      "walk_back_06": [
+        0.0,
+        -64.0
+      ],
+      "walk_back_07": [
+        0.0,
+        -60.0
+      ],
+      "walk_back_08": [
+        0.0,
+        -15.0
+      ],
+      "walk_back_09": [
+        0.0,
+        -21.0
+      ],
+      "walk_back_10": [
+        0.0,
+        -4.0
+      ],
+      "walk_profile_00": [
+        8.0,
+        0.0
+      ],
+      "walk_profile_01": [
+        -40.0,
+        0.0
+      ],
+      "walk_profile_02": [
+        -29.0,
+        0.0
+      ],
+      "walk_profile_03": [
+        -27.0,
+        0.0
+      ],
+      "walk_profile_04": [
+        35.0,
+        0.0
+      ],
+      "walk_profile_06": [
+        27.0,
+        0.0
+      ],
+      "walk_profile_07": [
+        2.0,
+        0.0
+      ],
+      "walk_profile_08": [
+        -15.0,
+        0.0
+      ],
+      "walk_profile_09": [
+        -30.0,
+        0.0
+      ],
+      "walk_profile_10": [
+        -4.0,
+        0.0
+      ]
+    },
+    "ingest_pin_wanted_px": {
+      "walk_back_00": [
+        -27.0,
+        4.0
+      ],
+      "walk_back_01": [
+        -27.0,
+        -1.0
+      ],
+      "walk_back_02": [
+        -35.0,
+        -47.0
+      ],
+      "walk_back_03": [
+        -38.0,
+        -17.0
+      ],
+      "walk_back_04": [
+        -28.0,
+        -28.0
+      ],
+      "walk_back_06": [
+        7.0,
+        -67.0
+      ],
+      "walk_back_07": [
+        22.0,
+        -60.0
+      ],
+      "walk_back_08": [
+        27.0,
+        -15.0
+      ],
+      "walk_back_09": [
+        17.0,
+        -21.0
+      ],
+      "walk_back_10": [
+        11.0,
+        -4.0
+      ],
+      "walk_profile_00": [
+        8.0,
+        -33.0
+      ],
+      "walk_profile_01": [
+        -40.0,
+        -35.0
+      ],
+      "walk_profile_02": [
+        -29.0,
+        -45.0
+      ],
+      "walk_profile_03": [
+        -27.0,
+        -33.0
+      ],
+      "walk_profile_04": [
+        35.0,
+        74.0
+      ],
+      "walk_profile_06": [
+        27.0,
+        -27.0
+      ],
+      "walk_profile_07": [
+        2.0,
+        -18.0
+      ],
+      "walk_profile_08": [
+        -15.0,
+        -10.0
+      ],
+      "walk_profile_09": [
+        -30.0,
+        28.0
+      ],
+      "walk_profile_10": [
+        -4.0,
+        23.0
+      ]
+    },
     "ingest_scale": {
       "idle_back_00": 1.00551615445232,
       "idle_profile_00": 0.982169390787519,
-      "jog_back_00": 0.966335118592196,
-      "jog_back_01": 0.954248366013072,
-      "jog_back_02": 1.01153846153846,
-      "jog_back_03": 0.987933634992459,
-      "jog_profile_00": 0.945441493180187,
-      "jog_profile_01": 0.874827109266943,
-      "jog_profile_02": 0.915726109857035,
-      "jog_profile_03": 0.90014684287812
+      "jog_back_00": 0.930359937402191,
+      "jog_back_01": 0.930359937402191,
+      "jog_back_02": 0.930359937402191,
+      "jog_back_03": 0.930359937402191,
+      "jog_back_04": 0.930359937402191,
+      "jog_back_05": 0.930359937402191,
+      "jog_back_06": 0.930359937402191,
+      "jog_back_07": 0.930359937402191,
+      "jog_back_08": 0.930359937402191,
+      "jog_back_09": 0.930359937402191,
+      "jog_back_10": 0.930359937402191,
+      "jog_back_11": 0.930359937402191,
+      "jog_profile_00": 0.915644171779141,
+      "jog_profile_01": 0.915644171779141,
+      "jog_profile_02": 0.915644171779141,
+      "jog_profile_03": 0.915644171779141,
+      "jog_profile_04": 0.915644171779141,
+      "jog_profile_05": 0.915644171779141,
+      "jog_profile_06": 0.915644171779141,
+      "jog_profile_07": 0.915644171779141,
+      "jog_profile_08": 0.915644171779141,
+      "jog_profile_09": 0.915644171779141,
+      "jog_profile_10": 0.915644171779141,
+      "jog_profile_11": 0.915644171779141,
+      "walk_back_00": 0.956133828996283,
+      "walk_back_01": 0.956133828996283,
+      "walk_back_02": 0.956133828996283,
+      "walk_back_03": 0.956133828996283,
+      "walk_back_04": 0.956133828996283,
+      "walk_back_05": 0.956133828996283,
+      "walk_back_06": 0.956133828996283,
+      "walk_back_07": 0.956133828996283,
+      "walk_back_08": 0.956133828996283,
+      "walk_back_09": 0.956133828996283,
+      "walk_back_10": 0.956133828996283,
+      "walk_back_11": 0.956133828996283,
+      "walk_profile_00": 0.94309559939302,
+      "walk_profile_01": 0.94309559939302,
+      "walk_profile_02": 0.94309559939302,
+      "walk_profile_03": 0.94309559939302,
+      "walk_profile_04": 0.94309559939302,
+      "walk_profile_05": 0.94309559939302,
+      "walk_profile_06": 0.94309559939302,
+      "walk_profile_07": 0.94309559939302,
+      "walk_profile_08": 0.94309559939302,
+      "walk_profile_09": 0.94309559939302,
+      "walk_profile_10": 0.94309559939302,
+      "walk_profile_11": 0.94309559939302
+    },
+    "settle_dy_cell_px": {
+      "idle_back_00": 0.0,
+      "idle_profile_00": 0.0,
+      "walk_back_00": -15.0,
+      "walk_back_01": -18.0,
+      "walk_back_02": -5.0,
+      "walk_back_03": -11.0,
+      "walk_back_04": -13.0,
+      "walk_back_05": -20.0,
+      "walk_back_06": -8.0,
+      "walk_back_07": -9.0,
+      "walk_back_08": -17.0,
+      "walk_back_09": -8.0,
+      "walk_back_10": -13.0,
+      "walk_back_11": -16.0,
+      "walk_profile_00": -2.0,
+      "walk_profile_01": -3.0,
+      "walk_profile_02": -5.0,
+      "walk_profile_03": -3.0,
+      "walk_profile_04": 17.0,
+      "walk_profile_05": -10.0,
+      "walk_profile_06": -14.0,
+      "walk_profile_07": -14.0,
+      "walk_profile_08": -12.0,
+      "walk_profile_09": -5.0,
+      "walk_profile_10": -6.0,
+      "walk_profile_11": -7.0
     }
   }
 }
