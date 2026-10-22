@@ -127,8 +127,10 @@ func test_positive() -> void:
 	var st: Dictionary = m.stations
 	var faces := st.keys().filter(func(k: String) -> bool: return st[k].faces_bow).size()
 	var zoom := st.keys().filter(func(k: String) -> bool: return st[k].get("zoom_pole_in_frame", false)).size()
-	check("positive control: today's Bow fades 530 (%d), pole blocked 0 (%d), head blocked 0 / 4 (%d / %d), body blocked on both sides 8 (%d)" % [m.bow.fade, m.bow.blocked.pole_ray, m.bow.blocked.captain, m.astern.blocked.captain, m.bow.body_both],
-		m.bow.fade == 530 and m.bow.blocked.pole_ray == 0 and m.bow.blocked.captain == 0 and m.astern.blocked.captain == 4 and m.bow.body_both == 8)
+	# R2-BRIDGE-STYLE ST5: the Archive's tomes joined the fade list (views.json occluders "archive_detail"),
+	# which clears one of today's four Astern head blocks (the measure, not the deck, changed).
+	check("positive control: today's Bow fades 530 (%d), pole blocked 0 (%d), head blocked 0 / 3 (%d / %d), body blocked on both sides 8 (%d)" % [m.bow.fade, m.bow.blocked.pole_ray, m.bow.blocked.captain, m.astern.blocked.captain, m.bow.body_both],
+		m.bow.fade == 530 and m.bow.blocked.pole_ray == 0 and m.bow.blocked.captain == 0 and m.astern.blocked.captain == 3 and m.bow.body_both == 8)
 	check("positive control: spawn open 0 m (%.2f) into the lift guard (%s), stations facing the bow 1 of 4 (%d), pole in the console zoom 0 of 3 (%d), captain 80.6 px (%.1f)" % [m.spawn.open_ahead_m, m.spawn.first_hit, faces, zoom, m.spawn.captain_px],
 		is_zero_approx(m.spawn.open_ahead_m) and str(m.spawn.first_hit).begins_with("Guardrail") and faces == 1 and zoom == 0 and is_equal_approx(m.spawn.captain_px, 80.6))
 	var f := ids(DeckBowMetrics.failures(m, t))
