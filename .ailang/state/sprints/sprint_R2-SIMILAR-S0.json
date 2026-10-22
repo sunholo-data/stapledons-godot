@@ -987,5 +987,12 @@
       "exit_code": 0
     }
   ],
-  "open_issue_for_controller": "No new non-mechanical issue; inherited AC1 deleted-printer format/digest reproducibility remains subject to the existing stop/review procedure. Not resolved or relaxed here."
+  "open_issue_for_controller": "No new non-mechanical issue; inherited AC1 deleted-printer format/digest reproducibility remains subject to the existing stop/review procedure. Not resolved or relaxed here.",
+  "history": [
+    {
+      "date": "2026-10-21",
+      "event": "note",
+      "note": "Minor 15 is taken by the Archive's Memory Health (D-113, archiveMinor = surfaceMinor() + 2). S0.2 keeps minor 14 and slots similarMinor between surfaceMinor and archiveMinor in helloFor and sessionMinor; nothing else shifts."
+    }
+  ]
 }

@@ -1,0 +1,26 @@
+module stapledons/sim/archive_health
+-- Ledger D-113 (Mark, 2026-10-21): the Archive's Memory Health, the smallest honest source for the
+-- spire's degradation layer (R2-SOUND D-108). stapledons-design features/future/archive-system.md,
+-- "Memory Health System": hidden, 0..100; "Degradation Causes": normal operation -1 per decade, GR zones
+-- -10 to -30 (here -10 per entry into a black hole's zone, the legacy log's bh_enter). Repair choices,
+-- spire readings, long-voyage and first-contact losses are later Archive work.
+--
+-- Pure and derived: a function of the ship's own time and the legacy log the sim already keeps, so it
+-- adds no state, no hidden variable and nothing to the replay inputs. Integer points, so no float drift
+-- reaches the wire.
+import std/list (filter, length)
+import std/math (floor, floatToInt)
+import ./consequence (Entry)
+
+export pure func startHealth() -> int = 100
+export pure func decadeLoss() -> int = 1
+export pure func grZoneLoss() -> int = 10
+
+pure func clampHealth(h: int) -> int = if h < 0 then 0 else if h > 100 then 100 else h
+
+-- tauYears: the ship's proper time (World.ship.motion.tau, ship-years); log: Cq.log.
+export pure func memoryHealthOf(tauYears: float, log: [Entry]) -> int {
+  let decades = if tauYears <= 0.0 then 0 else floatToInt(floor(tauYears / 10.0));
+  let zones = length(filter(\e. e.kind == "bh_enter", log));
+  clampHealth(startHealth() - decadeLoss() * decades - grZoneLoss() * zones)
+}
