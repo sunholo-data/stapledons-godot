@@ -181,7 +181,7 @@ func setup(opts := {}) -> bool:
 	if opts.get("commons",true):
 		commons=Commons.install(self)
 		if commons.is_empty():return false
-	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");captain_anim.use_gait(avatar.anim.get("clips",{}).get("walk",{}));avatar.position=avatar_pos
+	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");avatar.effect="echo";captain_anim.use_gait(avatar.anim.get("clips",{}).get("walk",{}));avatar.position=avatar_pos
 	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
 	var ring_mesh:=TorusMesh.new();ring_mesh.inner_radius=.55;ring_mesh.outer_radius=.7;ring_mesh.rings=48;ring_mesh.ring_segments=6
 	var ring_mat:=StandardMaterial3D.new();ring_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;ring_mat.albedo_color=Color(1.,.78,.32)

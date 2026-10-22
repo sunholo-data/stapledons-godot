@@ -275,6 +275,34 @@ The longer walks may feel slow. A held "hurry" (a brisk 2.0 m/s walk, painted la
 
 **Review overlays:** they draw the planted boot's centre per step. At the toe-off frame (`walk_profile_04`) that centre moves while the toe stays, so the ring and disc sit apart, by up to 42 px at 2×. The check measures the point that stays put.
 
+## Feet on the floor and the between-frame effect (2026-10-22, D-118)
+
+Mark on the walk: "the foot sinks underneath the floor. the pace is about right. the jerkiness is kinda ok even if unintentional, alien a little. perhaps blurring or trails or something in between the frames will reinforce that?" The 1.3 m/s pace and the painted walk frames stand.
+
+**The sinking foot: cause and fix.**
+- **Cause:** the billboard stands on the walk point, so any painted sole drawn below the foot anchor is drawn below the deck, and the floor's depth test cuts it off.
+- **Measured:** after ingest, the soles sat up to 18 cell px below the anchor. Ingest had aligned frames by the silhouette fit, the guide's head (profile) and the planted boot along the travel, never the sole height. In game at 1280 × 720 that showed as soles up to 5.9 px below the deck line.
+- **Fix:** `captain_frames.gd` now settles every frame, idle included, so the bottom edge of its lowest opaque row sits 2 cell px (15 mm) above the anchor. It moves the crop; the cells are untouched.
+  - The lift is measured. Mipmapped at 67–81 px, a sole exactly on the line bleeds about a pixel below it.
+- **Checked in game** (`tools/captain_fx_review.gd`, on the sprite alone so the floor cannot hide a sunk sole; Bow at the spawn, Bow at a far spot, Astern), across every walk frame and both facings:
+  - **after:** 0.1 px above the deck line at 1280 × 720, and 0.1–1.1 px above at 2560 × 1440;
+  - **before:** up to 5.9 px below.
+- **Gated:**
+  - `captain-frames-check`: a sole below the line fails, and a sole more than the lift plus 1 px above it fails. The selftest's lowered frame fails.
+  - `captain-anim-test`: through `show_anim`, on both the plain path and the effect's canvas, no sole is below the walk point or more than 15 mm above it.
+- **Two consequences:**
+  - The back view's planted foot can no longer move in depth. A billboard cannot draw depth once every sole rests on the line, so that foot travels about 5.5 px a frame at 1440p with the body. This is reported, not gated; the profile planted-feet check still holds (≤ 1.56 px).
+  - The idle frames' earlier settle increments are not recoverable, so their pose check compares a frame moved by up to 8 cell px.
+
+**The between-frame effect** (`interior/captain_fx.gdshader`, the billboard's material on a walking painted clip): the stepped cadence stays as a deliberate, slightly alien look, and the effect only adds to it.
+- **echo:** the previous painted frame, drawn where the body was a frame ago, fades from 40% over 60 ms.
+- **trail:** a short smear of the current frame behind the travel, in the ink colour, while walking.
+- **blur:** a brief directional blur on each frame change, fading over 60 ms.
+
+All three are sized to one painted frame's travel on the canvas (16.7 cell px across, foreshortened in depth). They are off under reduced motion, off on non-gait clips, and deterministic: `t` comes from the walk phase. Each draws both frames on the full cell canvas, so they share coordinates and the settled sole. The cost is at most 5 extra texture taps per captain pixel; the Metal driver's GPU timers read 0 here, so it is not measured.
+
+**Recommended and the demo default: echo.** It turns each step into a brief afterimage of the step before, which leans into the alien stepping without smearing the painting. The trail tints the figure's back edge; the blur is barely visible at 67 px.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

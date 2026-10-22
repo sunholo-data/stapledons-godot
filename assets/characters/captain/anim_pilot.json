@@ -13,7 +13,7 @@
               {
                 "crop": [
                   50.0,
-                  28.0,
+                  25.0,
                   96.0,
                   247.0
                 ],
@@ -26,7 +26,7 @@
               {
                 "crop": [
                   42.0,
-                  27.0,
+                  17.0,
                   95.0,
                   255.0
                 ],
@@ -57,10 +57,10 @@
             "back": [
               {
                 "crop": [
-                  58,
-                  45,
-                  86,
-                  241
+                  58.0,
+                  30.0,
+                  86.0,
+                  241.0
                 ],
                 "file": "anim/y0/walk_back_00.webp",
                 "flip": false,
@@ -69,10 +69,10 @@
               },
               {
                 "crop": [
-                  53,
-                  43,
-                  92,
-                  245
+                  53.0,
+                  25.0,
+                  92.0,
+                  245.0
                 ],
                 "file": "anim/y0/walk_back_01.webp",
                 "flip": false,
@@ -81,10 +81,10 @@
               },
               {
                 "crop": [
-                  52,
-                  30,
-                  99,
-                  247
+                  52.0,
+                  25.0,
+                  99.0,
+                  247.0
                 ],
                 "file": "anim/y0/walk_back_02.webp",
                 "flip": false,
@@ -93,10 +93,10 @@
               },
               {
                 "crop": [
-                  49,
-                  32,
-                  98,
-                  251
+                  49.0,
+                  21.0,
+                  98.0,
+                  251.0
                 ],
                 "file": "anim/y0/walk_back_03.webp",
                 "flip": false,
@@ -105,10 +105,10 @@
               },
               {
                 "crop": [
-                  47,
-                  30,
-                  98,
-                  255
+                  47.0,
+                  17.0,
+                  98.0,
+                  255.0
                 ],
                 "file": "anim/y0/walk_back_04.webp",
                 "flip": false,
@@ -117,10 +117,10 @@
               },
               {
                 "crop": [
-                  45,
-                  37,
-                  100,
-                  251
+                  45.0,
+                  17.0,
+                  100.0,
+                  251.0
                 ],
                 "file": "anim/y0/walk_back_05.webp",
                 "flip": false,
@@ -129,10 +129,10 @@
               },
               {
                 "crop": [
-                  45,
-                  28,
-                  108,
-                  252
+                  45.0,
+                  20.0,
+                  108.0,
+                  252.0
                 ],
                 "file": "anim/y0/walk_back_06.webp",
                 "flip": false,
@@ -141,10 +141,10 @@
               },
               {
                 "crop": [
-                  47,
-                  28,
-                  101,
-                  252
+                  47.0,
+                  19.0,
+                  101.0,
+                  252.0
                 ],
                 "file": "anim/y0/walk_back_07.webp",
                 "flip": false,
@@ -153,10 +153,10 @@
               },
               {
                 "crop": [
-                  45,
-                  36,
-                  103,
-                  252
+                  45.0,
+                  19.0,
+                  103.0,
+                  252.0
                 ],
                 "file": "anim/y0/walk_back_08.webp",
                 "flip": false,
@@ -165,10 +165,10 @@
               },
               {
                 "crop": [
-                  46,
-                  33,
-                  100,
-                  246
+                  46.0,
+                  25.0,
+                  100.0,
+                  246.0
                 ],
                 "file": "anim/y0/walk_back_09.webp",
                 "flip": false,
@@ -177,10 +177,10 @@
               },
               {
                 "crop": [
-                  49,
-                  36,
-                  100,
-                  249
+                  49.0,
+                  23.0,
+                  100.0,
+                  249.0
                 ],
                 "file": "anim/y0/walk_back_10.webp",
                 "flip": false,
@@ -189,10 +189,10 @@
               },
               {
                 "crop": [
-                  51,
-                  40,
-                  98,
-                  248
+                  51.0,
+                  24.0,
+                  98.0,
+                  248.0
                 ],
                 "file": "anim/y0/walk_back_11.webp",
                 "flip": false,
@@ -203,10 +203,10 @@
             "profile": [
               {
                 "crop": [
-                  27,
-                  37,
-                  146,
-                  237
+                  27.0,
+                  35.0,
+                  146.0,
+                  237.0
                 ],
                 "file": "anim/y0/walk_profile_00.webp",
                 "flip": false,
@@ -215,10 +215,10 @@
               },
               {
                 "crop": [
-                  1,
-                  37,
-                  163,
-                  238
+                  1.0,
+                  34.0,
+                  163.0,
+                  238.0
                 ],
                 "file": "anim/y0/walk_profile_01.webp",
                 "flip": false,
@@ -227,10 +227,10 @@
               },
               {
                 "crop": [
-                  5,
-                  36,
-                  143,
-                  241
+                  5.0,
+                  31.0,
+                  143.0,
+                  241.0
                 ],
                 "file": "anim/y0/walk_profile_02.webp",
                 "flip": false,
@@ -239,10 +239,10 @@
               },
               {
                 "crop": [
-                  34,
-                  35,
-                  93,
-                  240
+                  34.0,
+                  32.0,
+                  93.0,
+                  240.0
                 ],
                 "file": "anim/y0/walk_profile_03.webp",
                 "flip": false,
@@ -251,10 +251,10 @@
               },
               {
                 "crop": [
-                  50,
-                  35,
-                  99,
-                  219
+                  50.0,
+                  52.0,
+                  99.0,
+                  219.0
                 ],
                 "file": "anim/y0/walk_profile_04.webp",
                 "flip": false,
@@ -263,10 +263,10 @@
               },
               {
                 "crop": [
-                  33,
-                  36,
-                  133,
-                  245
+                  33.0,
+                  26.0,
+                  133.0,
+                  245.0
                 ],
                 "file": "anim/y0/walk_profile_05.webp",
                 "flip": false,
@@ -275,10 +275,10 @@
               },
               {
                 "crop": [
-                  29,
-                  37,
-                  142,
-                  249
+                  29.0,
+                  23.0,
+                  142.0,
+                  249.0
                 ],
                 "file": "anim/y0/walk_profile_06.webp",
                 "flip": false,
@@ -287,10 +287,10 @@
               },
               {
                 "crop": [
-                  4,
-                  37,
-                  153,
-                  248
+                  4.0,
+                  23.0,
+                  153.0,
+                  248.0
                 ],
                 "file": "anim/y0/walk_profile_07.webp",
                 "flip": false,
@@ -299,10 +299,10 @@
               },
               {
                 "crop": [
-                  2,
-                  36,
-                  142,
-                  248
+                  2.0,
+                  24.0,
+                  142.0,
+                  248.0
                 ],
                 "file": "anim/y0/walk_profile_08.webp",
                 "flip": false,
@@ -311,10 +311,10 @@
               },
               {
                 "crop": [
-                  13,
-                  35,
-                  128,
-                  242
+                  13.0,
+                  30.0,
+                  128.0,
+                  242.0
                 ],
                 "file": "anim/y0/walk_profile_09.webp",
                 "flip": false,
@@ -323,10 +323,10 @@
               },
               {
                 "crop": [
-                  32,
-                  35,
-                  138,
-                  242
+                  32.0,
+                  29.0,
+                  138.0,
+                  242.0
                 ],
                 "file": "anim/y0/walk_profile_10.webp",
                 "flip": false,
@@ -335,10 +335,10 @@
               },
               {
                 "crop": [
-                  35,
-                  36,
-                  140,
-                  243
+                  35.0,
+                  29.0,
+                  140.0,
+                  243.0
                 ],
                 "file": "anim/y0/walk_profile_11.webp",
                 "flip": false,
@@ -351,181 +351,181 @@
       }
     },
     "ingest_head_dy_px": {
-      "walk_profile_00": -10,
-      "walk_profile_01": 5,
-      "walk_profile_02": -18,
-      "walk_profile_03": -32,
-      "walk_profile_04": -200,
-      "walk_profile_05": -5,
-      "walk_profile_06": 12,
-      "walk_profile_07": 10,
-      "walk_profile_08": -19,
-      "walk_profile_09": -80,
-      "walk_profile_10": -15,
-      "walk_profile_11": -8
+      "walk_profile_00": -10.0,
+      "walk_profile_01": 5.0,
+      "walk_profile_02": -18.0,
+      "walk_profile_03": -32.0,
+      "walk_profile_04": -200.0,
+      "walk_profile_05": -5.0,
+      "walk_profile_06": 12.0,
+      "walk_profile_07": 10.0,
+      "walk_profile_08": -19.0,
+      "walk_profile_09": -80.0,
+      "walk_profile_10": -15.0,
+      "walk_profile_11": -8.0
     },
     "ingest_pin_px": {
       "walk_back_00": [
-        0,
-        4
+        0.0,
+        4.0
       ],
       "walk_back_01": [
-        0,
-        -1
+        0.0,
+        -1.0
       ],
       "walk_back_02": [
-        0,
-        -47
+        0.0,
+        -47.0
       ],
       "walk_back_03": [
-        0,
-        -17
+        0.0,
+        -17.0
       ],
       "walk_back_04": [
-        0,
-        -28
+        0.0,
+        -28.0
       ],
       "walk_back_06": [
-        0,
-        -64
+        0.0,
+        -64.0
       ],
       "walk_back_07": [
-        0,
-        -60
+        0.0,
+        -60.0
       ],
       "walk_back_08": [
-        0,
-        -15
+        0.0,
+        -15.0
       ],
       "walk_back_09": [
-        0,
-        -21
+        0.0,
+        -21.0
       ],
       "walk_back_10": [
-        0,
-        -4
+        0.0,
+        -4.0
       ],
       "walk_profile_00": [
-        8,
-        0
+        8.0,
+        0.0
       ],
       "walk_profile_01": [
-        -40,
-        0
+        -40.0,
+        0.0
       ],
       "walk_profile_02": [
-        -29,
-        0
+        -29.0,
+        0.0
       ],
       "walk_profile_03": [
-        -27,
-        0
+        -27.0,
+        0.0
       ],
       "walk_profile_04": [
-        35,
-        0
+        35.0,
+        0.0
       ],
       "walk_profile_06": [
-        27,
-        0
+        27.0,
+        0.0
       ],
       "walk_profile_07": [
-        2,
-        0
+        2.0,
+        0.0
       ],
       "walk_profile_08": [
-        -15,
-        0
+        -15.0,
+        0.0
       ],
       "walk_profile_09": [
-        -30,
-        0
+        -30.0,
+        0.0
       ],
       "walk_profile_10": [
-        -4,
-        0
+        -4.0,
+        0.0
       ]
     },
     "ingest_pin_wanted_px": {
       "walk_back_00": [
-        -27,
-        4
+        -27.0,
+        4.0
       ],
       "walk_back_01": [
-        -27,
-        -1
+        -27.0,
+        -1.0
       ],
       "walk_back_02": [
-        -35,
-        -47
+        -35.0,
+        -47.0
       ],
       "walk_back_03": [
-        -38,
-        -17
+        -38.0,
+        -17.0
       ],
       "walk_back_04": [
-        -28,
-        -28
+        -28.0,
+        -28.0
       ],
       "walk_back_06": [
-        7,
-        -67
+        7.0,
+        -67.0
       ],
       "walk_back_07": [
-        22,
-        -60
+        22.0,
+        -60.0
       ],
       "walk_back_08": [
-        27,
-        -15
+        27.0,
+        -15.0
       ],
       "walk_back_09": [
-        17,
-        -21
+        17.0,
+        -21.0
       ],
       "walk_back_10": [
-        11,
-        -4
+        11.0,
+        -4.0
       ],
       "walk_profile_00": [
-        8,
-        -33
+        8.0,
+        -33.0
       ],
       "walk_profile_01": [
-        -40,
-        -35
+        -40.0,
+        -35.0
       ],
       "walk_profile_02": [
-        -29,
-        -45
+        -29.0,
+        -45.0
       ],
       "walk_profile_03": [
-        -27,
-        -33
+        -27.0,
+        -33.0
       ],
       "walk_profile_04": [
-        35,
-        74
+        35.0,
+        74.0
       ],
       "walk_profile_06": [
-        27,
-        -27
+        27.0,
+        -27.0
       ],
       "walk_profile_07": [
-        2,
-        -18
+        2.0,
+        -18.0
       ],
       "walk_profile_08": [
-        -15,
-        -10
+        -15.0,
+        -10.0
       ],
       "walk_profile_09": [
-        -30,
-        28
+        -30.0,
+        28.0
       ],
       "walk_profile_10": [
-        -4,
-        23
+        -4.0,
+        23.0
       ]
     },
     "ingest_scale": {
@@ -579,6 +579,34 @@
       "walk_profile_09": 0.94309559939302,
       "walk_profile_10": 0.94309559939302,
       "walk_profile_11": 0.94309559939302
+    },
+    "settle_dy_cell_px": {
+      "idle_back_00": 0.0,
+      "idle_profile_00": 0.0,
+      "walk_back_00": -15.0,
+      "walk_back_01": -18.0,
+      "walk_back_02": -5.0,
+      "walk_back_03": -11.0,
+      "walk_back_04": -13.0,
+      "walk_back_05": -20.0,
+      "walk_back_06": -8.0,
+      "walk_back_07": -9.0,
+      "walk_back_08": -17.0,
+      "walk_back_09": -8.0,
+      "walk_back_10": -13.0,
+      "walk_back_11": -16.0,
+      "walk_profile_00": -2.0,
+      "walk_profile_01": -3.0,
+      "walk_profile_02": -5.0,
+      "walk_profile_03": -3.0,
+      "walk_profile_04": 17.0,
+      "walk_profile_05": -10.0,
+      "walk_profile_06": -14.0,
+      "walk_profile_07": -14.0,
+      "walk_profile_08": -12.0,
+      "walk_profile_09": -5.0,
+      "walk_profile_10": -6.0,
+      "walk_profile_11": -7.0
     }
   }
 }

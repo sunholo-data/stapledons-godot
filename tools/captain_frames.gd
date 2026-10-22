@@ -69,9 +69,13 @@ func _initialize() -> void:
 			"--guides": guides_dir = args[i + 1]
 			"--art": art_dir = args[i + 1]
 			"--selftest": mode = "selftest"
+			"--settle": mode = "settle"
 			"--json": json_out = args[i + 1]
 	if mode == "ingest":
 		_ingest(raw)
+		_settle()
+	if mode == "settle":
+		_settle()
 	var ok := _check(mode == "selftest")
 	if json_out != "":
 		var f := FileAccess.open(json_out, FileAccess.WRITE)
@@ -308,7 +312,14 @@ func _check(selftest: bool) -> bool:
 					disk += FileAccess.get_file_as_bytes(path).size()
 					gpu += int(img.get_width() * img.get_height() * 4 * 4.0 / 3.0)
 					var cell := Image.create(int(CANVAS.x * s), int(CANVAS.y * s), false, Image.FORMAT_RGBA8)
-					cell.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(crop[0]), int(crop[1])))
+					# Pose and palette compare the frame where it was painted against its guide: undo the deck
+					# settle (D-118), which moves the frame, not the guide.
+					var settled := float(anim.get("settle_dy_cell_px", {}).get(file.get_file().get_basename(), 0.0))
+					cell.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(crop[0]), int(float(crop[1]) - settled)))
+					# D-118: the lowest sole rests on the deck line: never below it, at most the lift plus 1 cell px above.
+					var below := sole_below_anchor_px(e, s)
+					if below > 0.0 or below < -(SETTLE_LIFT_PX + 1.0):
+						_fail("%s: the lowest sole is %.1f cell px %s the deck line" % [file, absf(below), "below" if below > 0.0 else "above"])
 					var src: String = file.get_file().get_basename()
 					var row := _frame_checks(src, facing, cell, refs, false, ("res://" + str(e.guide)) if e.has("guide") else "")
 					by_facing.get_or_add(facing, []).append(row)
@@ -324,6 +335,11 @@ func _check(selftest: bool) -> bool:
 		if str(c.get("kind", "")) != "gait":
 			continue
 		for facing: String in c.stages["0"]:
+			# The back view's planted foot moves in depth, which a billboard cannot draw once every sole
+			# rests on the deck line (D-118): reported (deck_m per frame), not gated. Profile is gated.
+			if facing != "profile":
+				report.get_or_add("stance_depth_unrepresented", {})[clip + "_" + facing] = {"m_per_frame": float(c.get("cycle_m", 0.0)) / c.stages["0"][facing].size(), "screen_px_1440_per_frame": snappedf(float(c.get("cycle_m", 0.0)) / c.stages["0"][facing].size() * sin(deg_to_rad(29.0)) * SCREEN_PX_PER_M, 0.1)}
+				continue
 			var list: Array = c.stages["0"][facing]
 			var n := list.size()
 			var mpf: float = float(c.get("cycle_m", 0.0)) / n
@@ -401,9 +417,13 @@ func _check(selftest: bool) -> bool:
 	var padded := Image.create(cell0.get_width(), cell0.get_height(), false, Image.FORMAT_RGBA8)
 	padded.blit_rect(small, Rect2i(Vector2i.ZERO, small.get_size()), Vector2i((cell0.get_width() - small.get_width()) / 2, cell0.get_height() - small.get_height()))
 	var r3 := _frame_checks(first.src, first.facing, padded, refs, true, first.guide)
-	report["selftest"] = {"recoloured_fails": not r1.ok, "wrong_pose_fails": not wrong.ok, "wrong_scale_fails": not r3.ok, "real_frames_pass": real_ok}
-	print("selftest: recoloured %s, wrong pose %s, wrong scale %s" % ["fails" if not r1.ok else "PASSES", "fails" if not wrong.ok else "PASSES", "fails" if not r3.ok else "PASSES"])
-	return real_ok and not r1.ok and not wrong.ok and not r3.ok
+	# A frame lowered 3 cell px must fail the deck line (D-118).
+	var e0: Dictionary = anim.clips.values()[0].stages["0"].values()[0][0].duplicate(true)
+	e0.crop[1] = float(e0.crop[1]) + 3.0
+	var sunk := sole_below_anchor_px(e0, s) > 0.0
+	report["selftest"] = {"recoloured_fails": not r1.ok, "wrong_pose_fails": not wrong.ok, "wrong_scale_fails": not r3.ok, "sunk_sole_fails": sunk, "real_frames_pass": real_ok}
+	print("selftest: recoloured %s, wrong pose %s, wrong scale %s, sunk sole %s" % ["fails" if not r1.ok else "PASSES", "fails" if not wrong.ok else "PASSES", "fails" if not r3.ok else "PASSES", "fails" if sunk else "PASSES"])
+	return real_ok and not r1.ok and not wrong.ok and not r3.ok and sunk
 
 
 static func _other_guide(guide: String, facing: String, other: String) -> String:
@@ -419,7 +439,8 @@ func _cell_of(anim: Dictionary, src: String) -> Image:
 						var img := Image.load_from_file(ProjectSettings.globalize_path(DIR.path_join(e.file)))
 						img.convert(Image.FORMAT_RGBA8)
 						var cell := Image.create(int(CANVAS.x * anim.cell_scale), int(CANVAS.y * anim.cell_scale), false, Image.FORMAT_RGBA8)
-						cell.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(e.crop[0]), int(e.crop[1])))
+						var settled := float(anim.get("settle_dy_cell_px", {}).get(src, 0.0))
+						cell.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(e.crop[0]), int(float(e.crop[1]) - settled)))
 						return cell
 	return null
 
@@ -664,3 +685,43 @@ static func _sole_points(img: Image, thr: float, x_hint: float, radius: int) -> 
 				x0 = minf(x0, x)
 				x1 = maxf(x1, x)
 	return [Vector2(x0, c.y), c, Vector2(x1, c.y)]
+
+
+## D-118 ("the foot sinks underneath the floor"): every painted frame's lowest sole rests on the deck line,
+## the foot anchor (ANCHOR.y * cell_scale). The billboard stands on the walk point, so a sole drawn below
+## the anchor is drawn below the deck. Moves each frame's crop vertically (the cells are not touched): the
+## bottom edge of its lowest opaque row (alpha > 0.5) lands SETTLE_LIFT_PX above the anchor row. Kept clips too.
+## Two cell px (15 mm) of lift: mipmapped at 67-81 px a sole on the line bleeds up to a screen px below it.
+## Measured in game on the sprite alone (tools/captain_fx_review.gd): with this lift the sole's lowest
+## pixel ends in the deck line's own pixel row or above at 1280x720, and 0.1-1.1 px above it at 2560x1440.
+const SETTLE_LIFT_PX := 2.0
+
+
+func _settle() -> void:
+	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join(ANIM_MANIFEST)))
+	var s: float = m.anim.cell_scale
+	var moved: Dictionary = m.anim.get("settle_dy_cell_px", {}).duplicate() # cumulative over runs
+	for clip: String in m.anim.clips:
+		for stage: String in m.anim.clips[clip].stages:
+			for facing: String in m.anim.clips[clip].stages[stage]:
+				for e: Dictionary in m.anim.clips[clip].stages[stage][facing]:
+					var d := sole_below_anchor_px(e, s) + SETTLE_LIFT_PX
+					e.crop[1] = float(e.crop[1]) - d
+					var key := str(e.file).get_file().get_basename()
+					moved[key] = float(moved.get(key, 0.0)) - d
+	m.anim["settle_dy_cell_px"] = moved
+	var f := FileAccess.open(DIR.path_join(ANIM_MANIFEST), FileAccess.WRITE)
+	f.store_string(JSON.stringify(m, "  ") + "\n")
+	f.close()
+	print("settle: %d frames on the deck line" % moved.size())
+
+
+## How far a frame's lowest sole sits below the deck line, in cell px (negative: above it).
+static func sole_below_anchor_px(e: Dictionary, s: float) -> float:
+	var img := Image.load_from_file(ProjectSettings.globalize_path(DIR.path_join(e.file)))
+	img.convert(Image.FORMAT_RGBA8)
+	for y in range(img.get_height() - 1, -1, -1):
+		for x in img.get_width():
+			if img.get_pixel(x, y).a > 0.5:
+				return float(e.crop[1]) + y + 1 - ANCHOR.y * s
+	return 0.0

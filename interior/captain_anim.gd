@@ -146,7 +146,8 @@ func step(inp: Dictionary, dt: float) -> Dictionary:
 			lean = -LEAN_DEG * 0.75
 	var p: Array = PAINTED[sector]
 	return {"clip": clip, "phase": phase, "clip_t": clip_t, "sector": sector, "facing": p[0], "flip": p[1],
-		"bob_m": bob, "lean_deg": lean, "events": events, "hold_move": seated}
+		"bob_m": bob, "lean_deg": lean, "events": events, "hold_move": seated,
+		"speed": speed if moving else 0.0, "screen_dir": screen_dir(heading, yaw).normalized() if heading.length() > 1e-9 else Vector2(0, 1), "reduced": reduced}
 
 
 func _set_chair(state: String) -> void:

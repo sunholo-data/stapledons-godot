@@ -34,6 +34,8 @@ func _initialize() -> void:
 	_determinism()
 	_gait_from_clip()
 	_speed()
+	_feet_on_floor()
+	_between_frames()
 	_avatar()
 	print("captain-anim: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -252,3 +254,84 @@ func _gait_from_clip() -> void:
 func _speed() -> void:
 	check("the captain walks calmly: 1.3 m/s (D-115)", is_equal_approx(ShipConsoles.WALK_SPEED_MPS, 1.3))
 	check("the default cycle is the painted walk's (1.4857 m)", is_equal_approx(CaptainAnim.DEFAULT_CYCLE_M, 1.4857))
+
+
+## D-118: on the billboard as the game draws it (show_anim's offset and pixel size), every painted frame's
+## lowest sole rests on the walk point: never below the deck, at most the settle lift (15 mm) above it.
+func _feet_on_floor() -> void:
+	var av := CaptainAvatar.new()
+	av.load_dir(CAPTAIN)
+	av.load_anim(CAPTAIN, "anim_pilot.json")
+	var worst_below := -INF
+	var worst_above := INF
+	var n := 0
+	for clip: String in av.anim.get("clips", {}):
+		var c: Dictionary = av.anim.clips[clip]
+		for facing: String in c.stages["0"]:
+			var frames: Array = c.stages["0"][facing]
+			for i in frames.size():
+				var o := {"clip": clip, "facing": facing, "flip": false, "sector": 0, "phase": (i + 0.5) / frames.size(), "clip_t": float(i) / float(c.get("fps", 2.0))}
+				av.show_anim(o)
+				var img: Image = av.texture.get_image()
+				if img.is_compressed():
+					img.decompress()
+				var low := -1
+				for y in range(img.get_height() - 1, -1, -1):
+					for x in img.get_width():
+						if img.get_pixel(x, y).a > 0.5:
+							low = y
+							break
+					if low >= 0:
+						break
+				# Sprite3D local pixels, y up: the rect's bottom edge is offset.y.
+				var sole_m := (av.get_item_rect().position.y + (img.get_height() - (low + 1))) * av.pixel_size
+				worst_below = maxf(worst_below, -sole_m)
+				worst_above = minf(worst_above, -sole_m)
+				n += 1
+	check("feet on the floor: %d painted frames, no sole below the deck (worst %.4f m)" % [n, maxf(0.0, worst_below)], n > 0 and worst_below <= 1e-6)
+	check("feet on the floor: no sole more than the settle lift (2 cell px, 15 mm; about 1 px at 1440p) above the deck (%.4f m)" % maxf(0.0, -worst_above), -worst_above <= 0.0155)
+	av.free()
+
+
+## D-118: the between-frame effect: on a walking painted clip only, off under reduced motion, `t` from the
+## walk phase (1 at a frame change, 0 after EFFECT_MS), deterministic, and the canvas keeps the feet down.
+func _between_frames() -> void:
+	var av := CaptainAvatar.new()
+	av.load_dir(CAPTAIN)
+	av.load_anim(CAPTAIN, "anim_pilot.json")
+	var walk: Dictionary = av.anim.get("clips", {}).get("walk", {})
+	if walk.is_empty():
+		check("between frames: the pilot has a walk clip", false)
+		av.free()
+		return
+	var n: int = walk.stages["0"].back.size()
+	var frame_ms := 1000.0 * float(walk.cycle_m) / n / 1.3
+	for fx: String in ["echo", "trail", "blur"]:
+		av.effect = fx
+		var o := {"clip": "walk", "facing": "profile", "flip": false, "sector": 2, "phase": 3.0 / n + 1e-6, "speed": 1.3, "screen_dir": Vector2(1, 0)}
+		av.show_anim(o)
+		check("%s: drawn through the effect shader on the walk" % fx, av.material_override != null and av.shown.get("effect", "") == fx)
+		check("%s: t is 1 at a frame change" % fx, absf(float(av.shown.effect_t) - 1.0) < 1e-3, str(av.shown.effect_t))
+		o.phase = 3.0 / n + (30.0 / frame_ms) / n
+		av.show_anim(o)
+		check("%s: t is 0.5 after 30 ms of walking" % fx, absf(float(av.shown.effect_t) - 0.5) < 1e-3, str(av.shown.effect_t))
+		o.reduced = true
+		av.show_anim(o)
+		check("%s: off under reduced motion" % fx, av.material_override == null)
+	av.effect = "echo"
+	av.show_anim({"clip": "idle", "facing": "back", "flip": false, "sector": 0, "clip_t": 0.0})
+	check("the effect is off on the idle clip", av.material_override == null)
+	# On the canvas the sole still rests on the walk point (the canvas carries the settled crop).
+	av.show_anim({"clip": "walk", "facing": "back", "flip": true, "sector": 0, "phase": 0.5, "speed": 1.3, "screen_dir": Vector2(0, 1)})
+	var img: Image = av.texture.get_image()
+	var low := -1
+	for y in range(img.get_height() - 1, -1, -1):
+		for x in img.get_width():
+			if img.get_pixel(x, y).a > 0.5:
+				low = y
+				break
+		if low >= 0:
+			break
+	var sole_m := (av.get_item_rect().position.y + (img.get_height() - (low + 1))) * av.pixel_size
+	check("on the effect's canvas the sole still rests on the walk point (%.4f m, the 15 mm lift)" % sole_m, sole_m >= 0.0 and sole_m <= 0.0155)
+	av.free()
