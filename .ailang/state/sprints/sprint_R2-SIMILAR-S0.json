@@ -554,7 +554,7 @@
     {
       "id": "S0.2",
       "title": "emission (protocol 2.14, cumulative at 2.15)",
-      "status": "pending",
+      "status": "done",
       "description": "Freeze independent pristine 2.13 and 2.15 hello/new_game/tick bytes before production edits. Add similarMinor=surfaceMinor()+1 (14) between archive 15 and surface 13 in both negotiators. Want 14 -> 14; >=15 -> 15. Emit similar at every negotiated minor >=14, in every scenario, new_game only, after cruiseFull and before archiveFull. Change only the two helloLine(14) expectations at sim/archive_health_test.ail:42 and sim/gr_test.ail:143. Add new 2.14 and 2.15 fixture pairs, strict/VM/interpreter/fixture cmp and repeat identity, independent oracle and reviewed similar-record. Existing bridge accepts unknown sections; no S0.2 Godot fix or old fixture update.",
       "estimated_loc": 140,
       "estimated_documentation_loc": 0,
@@ -693,10 +693,62 @@
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
       "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 46 planner",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null
+      "passes": true,
+      "started": "2026-10-22",
+      "completed": "2026-10-22",
+      "actual_loc": {
+        "production": 18,
+        "tests": 86,
+        "makefile": 37,
+        "oracle": 130,
+        "allowlist": 1,
+        "fixture_lines": 18
+      },
+      "evidence": {
+        "scope": "S0.2 only. Runtime results are indicative sandbox evidence. The controller owns full package, integration and rig gates outside the sandbox.",
+        "runtime": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang v0.54.14",
+        "red_tests": {
+          "rc": 1,
+          "passed": 30,
+          "failed": 6,
+          "failure": "Each returned expected true, got false against pristine production.",
+          "names": [
+            "S0.2 negotiation 13->13 14->14 15/16/99->15 and pin",
+            "S0.2 sol shape ids and new_game-only at 14 and 15",
+            "S0.2 solar_departure shape ids and new_game-only at 14 and 15",
+            "S0.2 free_nav shape ids and new_game-only at 14 and 15",
+            "S0.2 sgr_a shape ids and new_game-only at 14 and 15",
+            "S0.2 raw similar immediately before archive in every scenario"
+          ]
+        },
+        "final_gate_rc": {
+          "test protocol_test.ail archive_health_test.ail gr_test.ail (58 passed)": 0,
+          "test similar_test.ail (16 passed)": 0,
+          "check --package sim (127 files)": 0,
+          "make similar-test": 0,
+          "make similar-record": 0,
+          "make ism-compat": 0,
+          "make replay (11 cases, default session10k)": 0,
+          "make parity": 0,
+          "make strict": 0,
+          "make python-guard": 0,
+          "git diff --exit-code tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson": 0,
+          "protected source diff": 0
+        },
+        "mutation": "Removed only helloFor's similarMinor branch. protocol_test.ail returned rc 1 with only the negotiation test failing (35 passed). Restored the saved protocol.ail and cmp returned rc 0.",
+        "pristine": "New protocol_213_pristine and protocol_215_pristine expected fixtures are exact copies of the controller's captures, with supplied hashes verified. similar-test uses cmp for 2.13 and for 2.15 after removing only the raw similar object and following comma. It also strips 2.14 and normalizes only its hello minor before cmp to pristine 2.13. No JSON reserialization.",
+        "fixture_sha256": {
+          "protocol_214_similar.expected.ndjson": "56eee0543d763ba8b1d2bd9151e523c872f482aae7c2fd817e3b4d4cd2d8adee",
+          "protocol_215_similar.expected.ndjson": "a64e963401f56888d56ccaaf5514124a8c0e44af3be760c6e356b9a65ef7cdf6"
+        },
+        "recording": "Ranking tests and both independent candidate oracles passed before either expected fixture was copied. Strict VM, VM, interpreter, repeated strict run and fixture compare identically for both pairs. The ranking digest is unchanged.",
+        "fixed_during_validation": [
+          "Added the missing std/list.map import in the new encoder.",
+          "Handled the final section's preceding comma at 2.14 in the raw stripping helper; 2.15 still removes the following comma only.",
+          "Moved-tick coverage uses diagnostic Sol because thrust in a non-diagnostic Sol game is refused. The test asserts positive ship displacement."
+        ],
+        "not_run": "Whole-package tests, make test and Godot integration gates were excluded by the executor's task. No environmental gate failure occurred. The design doc's stale minor and bridge request references remain for the controller."
+      }
     },
     {
       "id": "S0.3",

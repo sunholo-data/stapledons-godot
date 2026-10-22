@@ -1,0 +1,3 @@
+{"v":2,"type":"hello","want":{"major":2,"minor":15}}
+{"v":2,"type":"new_game","seed":7,"scenario":"sol","diag":false}
+{"v":2,"type":"input","tick":1,"dtau":1,"intents":[]}
