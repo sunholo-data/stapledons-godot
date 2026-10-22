@@ -1,0 +1,249 @@
+{
+  "sprint_id": "R2-SUNHOLO-AUDIO",
+  "status": "awaiting_approval",
+  "approved": null,
+  "created": "2026-10-22",
+  "design_doc": "design_docs/planned/r2/sunholo-audio.md",
+  "sprint_plan": "design_docs/planned/r2/sunholo-audio-sprint.md",
+  "branch": "feat/sunholo-audio (game, execution) + feat/audio (sunholo-data/ailang-packages); this plan on design/sunholo-audio",
+  "origin": "Mark, attended 2026-10-22: approved designing a shared AILANG package sunholo/audio extracted from the game's in-tree synthesis code (plan only, stop for approval)",
+  "external_dependencies": [
+    "PR #319 (R2-SOUND S1) merged first",
+    "sunholo/audio 0.1.0 (new package in sunholo-data/ailang-packages packages/audio; publish under the standing approval for sunholo/* once the path-pin gate is green)",
+    "upstream DX request ailang#1930 (std/audio WAV reader, std/string fixed-precision float); not blocking"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "AU1",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "ailang pkg search audio|synth|dsp|wav|sound (2026-10-22) found only sunholo/gemini_live (voice protocol); no synthesis package exists, so this creates it. std/audio (stdlib) reused for wavFromPcm and Opus encode"
+    },
+    {
+      "milestone": "AU2",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "analysis module added to the new package; no registry package measures audio loudness"
+    },
+    {
+      "milestone": "AU3",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "docs, smoke, contracts and publish of the new package"
+    },
+    {
+      "milestone": "AU4",
+      "package": "sunholo/audio",
+      "action": "depend",
+      "reason": "the game pins the published 0.1.0 and deletes its in-tree copy"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 1500,
+    "estimated_days": 5,
+    "note": "package 920 incl. tests and smoke + about 250 prose, game 330; recent attended R2 rate about 300 LOC/day"
+  },
+  "critical_path": [
+    "AU0",
+    "AU1",
+    "AU2",
+    "AU3",
+    "AU4",
+    "AU5"
+  ],
+  "pause_points": [
+    {
+      "after": "plan",
+      "mark_decides": "approve the plan and OQ1-OQ8 (new ledger row, attended)"
+    },
+    {
+      "after": "AU3 gate, only if it fails",
+      "mark_decides": "any byte or loudness-number change needed to pass AC6-AC9 stops execution and goes to Mark; otherwise publish under the standing approval"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "Package name sunholo/audio or sunholo/synth?",
+      "recommendation": "sunholo/audio (synthesis, mixing, PCM/WAV reading and analysis)",
+      "answer": null
+    },
+    {
+      "id": "OQ2",
+      "q": "Is the loudness analysis in scope; what happens to the GDScript copy?",
+      "recommendation": "in scope; AILANG is the source of the offline checks (make sound-levels); sound_check.gd keeps its four offline functions as the parity mirror and all mixer checks",
+      "answer": null
+    },
+    {
+      "id": "OQ3",
+      "q": "Include a QOA encoder?",
+      "recommendation": "no; Godot import does QOA (D-112); revisit for a non-Godot consumer",
+      "answer": null
+    },
+    {
+      "id": "OQ4",
+      "q": "Fixed 48 kHz or a rate per recipe?",
+      "recommendation": "a rate field, default 48000; the game's recipes omit it",
+      "answer": null
+    },
+    {
+      "id": "OQ5",
+      "q": "Recipe schema id?",
+      "recommendation": "sunholo.audio.recipes/1 plus parseRecipesAs so the game keeps stapledons.audio.recipes/1 and V1_REF files parse",
+      "answer": null
+    },
+    {
+      "id": "OQ6",
+      "q": "Provenance of synthesised rows?",
+      "recommendation": "generator sunholo/audio@<version>, generator_sha256 = the lock's content_hash",
+      "answer": null
+    },
+    {
+      "id": "OQ7",
+      "q": "Move the guarded cue lists into cues.json?",
+      "recommendation": "not now; keep them in levels.ail",
+      "answer": null
+    },
+    {
+      "id": "OQ8",
+      "q": "Rename the legacy generator to rampNoise in the package?",
+      "recommendation": "yes; the recipe kind string stays \"noise\"",
+      "answer": null
+    }
+  ],
+  "features": [
+    {
+      "id": "AU0",
+      "description": "Baseline on the base containing #319: sound-synth-check, sound-check measure.json, sound-review WAV hashes fixture; spike measures re-run on all 28 sounds",
+      "estimated_loc": 20,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make sound-synth-check prints '28 sounds regenerate byte for byte' on the base (stop and report otherwise)",
+        "tests/fixtures/sound/review_sha256.txt committed from make sound-review on the base (WAV and Opus, LC_ALL=C sorted)",
+        "#319's merged review_main.ail re-read; the AILANG-vs-GDScript cell differences on all 28 sounds recorded (expected none) and the parity rule fixed"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AU1",
+      "description": "sunholo/audio core in ailang-packages: dsp, noise (rampNoise, white), recipe, pcm (pcm16, wavInfo, pcm16Floats, wav16), mix (tile with starts, sum); verbatim move first, then rate/parseRecipesAs; tests red first",
+      "estimated_loc": 630,
+      "dependencies": [
+        "AU0"
+      ],
+      "acceptance_criteria": [
+        "ailang check --package $PKG and ailang test --package $PKG pass (recipe_test pins PCM sha256 28ee281fd0d0f02f67aa83295b89490a94895a654084a095ccf9772b59797467)",
+        "ailang pkg quality $PKG prints 'no gates'",
+        "with tools/audio pinned by path, make sound-synth-check passes after the verbatim move and again after the generalisation",
+        "the path pin stays local: no PR, rig or CI run until AU4"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AU2",
+      "description": "analysis module (peak, gated RMS, level in centi-dB, highpassKeepDb, lowbandDb, seam) with closed-form tests; game levels.ail/levels_main.ail; make sound-levels and sound-levels-parity",
+      "estimated_loc": 450,
+      "dependencies": [
+        "AU1"
+      ],
+      "acceptance_criteria": [
+        "analysis_test.ail passes: gated full-scale 1 kHz sine RMS -2.83 dB, one-pole |H| at 1 kHz, 60 Hz fails and 2 kHz passes the -20 dB low-band guard, seam of whole-cycle vs cut sine",
+        "make sound-levels prints 'sound-levels: N passed, 0 failures' with the 30 dB hot cue and the 60 Hz thud failing as negative controls; levelsProbe strict VM = interpreter",
+        "make sound-levels-parity (in make test) prints ', 0 differences' comparing every cue's RMS and peak and the guard values where present",
+        "sound-synth-check verifies tools/audio/levels.ail"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AU3",
+      "description": "_smoke.ail probes, contracts, AGENT.md (schema, render-stability contract, 32767/32768 note), CHANGELOG 0.1.0, ai_summary, release kind feature; publish sunholo/audio 0.1.0",
+      "estimated_loc": 320,
+      "dependencies": [
+        "AU2"
+      ],
+      "acceptance_criteria": [
+        "ailang verify --package $PKG: 0 refuted; ailang pkg quality $PKG: no gates",
+        "renderProbe, wavProbe and levelProbe: strict VM output cmp-equal to the interpreter; _smoke main prints OK:",
+        "make sound-synth-check and make sound-levels-parity green on the path pin from the final tree, then ailang publish; ailang pkg search audio lists sunholo/audio@0.1.0"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AU4",
+      "description": "game pins sunholo/audio 0.1.0 from the registry: lock, deps target, delete tools/audio/synth.ail, trim synth_test, provenance from the lock, regenerate the manifest part",
+      "estimated_loc": 80,
+      "dependencies": [
+        "AU3"
+      ],
+      "acceptance_criteria": [
+        "jq finds sunholo/audio 0.1.0 source registry in tools/audio/ailang.lock; make deps passes",
+        "test ! -e tools/audio/synth.ail and no in-tree definition of white/noise/rampNoise/pcm16/layerSamples under tools or sim",
+        "synth_main Args.lock and SOUND_SYNTH_ARGS pass tools/audio/ailang.lock; provenance generator sunholo/audio@0.1.0 with the lock content_hash",
+        "make sound-synth-check green; assets_synth.json differs from the base only in provenance; make sound-assets-check green",
+        "make sound-review WAV and Opus hashes equal tests/fixtures/sound/review_sha256.txt",
+        "git diff --stat $BASE -- sim/ audio/ tools/python-allowlist.txt empty; make python-guard green",
+        "make test green on the rig (tools/rig_check.sh)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AU5",
+      "description": "independent evaluation by a different model; landing (docs to implemented/r2, report, changelog fragment, index row)",
+      "estimated_loc": 0,
+      "dependencies": [
+        "AU4"
+      ],
+      "acceptance_criteria": [
+        ".ailang/state/evaluations/eval_R2-SUNHOLO-AUDIO_round_1.json scores >= 70",
+        "design_docs/implemented/r2/sunholo-audio.md and -report.md exist; changelogs/unreleased/*-sunholo-audio.md opens with ###"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "reviews": [
+    {
+      "date": "2026-10-22",
+      "reviewer": "claude -p --model sonnet (read-only: Read, Grep, Glob)",
+      "score": 82,
+      "verdict": "pass",
+      "blocking": [
+        "AC commands inside a markdown table: escaped pipes make AC5 pass vacuously (and break AC3/AC4/AC7)",
+        "ailang verify of synth.ail dropped without replacement; D4 and D8 contradicted",
+        "provenance plumbing (synth_main Args.generator, SOUND_SYNTH_ARGS) not covered",
+        "path-pin branch cannot pass CI/rig/make deps",
+        "sound-levels-parity outside make test; guard fields exist only for some cues"
+      ],
+      "fixed": "all five: commands in a sh block with a positive control for AC5; verify retargeted to levels.ail; Args.lock + SOUND_SYNTH_ARGS specified; no PR/rig/CI until AU4; parity in test: with per-guard comparison",
+      "non_blocking_folded": [
+        "exact db() formula and snappedf convention",
+        "wavProbe and levelsProbe for strict-VM coverage",
+        "Opus hashes and LC_ALL=C sort in the review fixture",
+        "AU0 stop condition and re-read of merged #319",
+        "rate record-literal note",
+        "LOC/velocity reconciled (1,500 / 5 days)",
+        "design-section to sub-milestone mapping",
+        "spike deleted"
+      ],
+      "not_changed": "the 30 dB-hot ui_click negative control already exists in sound_check.gd; the doc now says it mirrors it"
+    }
+  ]
+}
