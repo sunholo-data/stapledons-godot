@@ -698,7 +698,8 @@ func _build_screens() -> void:
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.add_theme_font_size_override("font_size", 26)
-		l.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0) if st.active else Color(0.3, 0.32, 0.36))
+		l.theme = StapledonTheme.theme() # the screen's own viewport: the theme set on the label (R2-BRIDGE-STYLE ST4)
+		l.theme_type_variation = "HUDAccent" if st.active else "HUDDisabled"
 		vp.add_child(l)
 		add_child(vp)
 		var quad := MeshInstance3D.new()
@@ -804,7 +805,8 @@ func _build_panel() -> void:
 	add_child(panel_layer)
 	panel.name = "ConsolePanel"
 	panel.visible = false
-	panel.add_theme_stylebox_override("panel", ShipHud._panel_style(0.94))
+	panel.theme = StapledonTheme.theme()
+	panel.theme_type_variation = "HUDSheet"
 	panel_layer.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
@@ -812,7 +814,7 @@ func _build_panel() -> void:
 	var head := HBoxContainer.new()
 	box.add_child(head)
 	panel_title.add_theme_font_size_override("font_size", 18)
-	panel_title.add_theme_color_override("font_color", Color(0.95, 0.82, 0.5))
+	panel_title.theme_type_variation = "HUDCardTitle"
 	panel_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(panel_title)
 	step_back.text = "Step back [Esc]"
@@ -902,11 +904,10 @@ func _reading() -> NewsPanel:
 		legacy_screen.build()
 		legacy_screen.visible = false
 		answer_panel = PanelContainer.new(); answer_panel.name = "ArchiveAnswer"; answer_panel.visible = false
-		var st := StyleBoxFlat.new(); st.bg_color = Color(0.04, 0.06, 0.1, 0.96); st.set_content_margin_all(16)
-		answer_panel.add_theme_stylebox_override("panel", st)
+		answer_panel.theme = StapledonTheme.theme(); answer_panel.theme_type_variation = "HUDSheet"
 		var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 10); answer_panel.add_child(box)
 		var head := _label("The Archive", 20); box.add_child(head)
-		answer_question = _label("", 14, Color(0.62, 0.68, 0.8)); box.add_child(answer_question)
+		answer_question = _label("", 14, "HUDHint"); box.add_child(answer_question)
 		answer_text = _label("", 17); box.add_child(answer_text)
 		_reading_layer.add_child(answer_panel)
 		_fit_archive()
@@ -963,12 +964,13 @@ func _show_answer() -> void:
 		ask_button.disabled = archive_ask.state == "waiting"
 
 
-func _label(text: String, size := 14, color := Color(0.86, 0.9, 0.98)) -> Label:
+## A console label; `kind` is its meaning (a StapledonTheme label variation), never a colour (ST4).
+func _label(text: String, size := 14, kind := "HUDLabel") -> Label:
 	var l := Label.new()
 	l.text = text
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
+	l.theme_type_variation = kind
 	return l
 
 
@@ -1000,7 +1002,7 @@ func _navigation_panel() -> void:
 		var stops: Array = BlackHoleVisit.STOPS
 		for i in stops.size():
 			var mark := "✓ " if i < bh.stops_taken else ("→ " if i == bh.stops_taken else "· ")
-			panel_body.add_child(_label(mark + str(stops[i].label), 13, Color(0.7, 0.75, 0.85) if i < bh.stops_taken else Color(0.86, 0.9, 0.98)))
+			panel_body.add_child(_label(mark + str(stops[i].label), 13, "HUDHint" if i < bh.stops_taken else "HUDLabel"))
 		var row := HFlowContainer.new()
 		panel_body.add_child(row)
 		var nl: String = bh.next_label()
@@ -1017,16 +1019,16 @@ func _navigation_panel() -> void:
 func _voyage_panel() -> void:
 	panel_body.add_child(_label("The guided voyage (D-46, D-47, D-49)", 15))
 	panel_body.add_child(_label(ITINERARY, 14))
-	panel_body.add_child(_label("Each leg is flown in real time; at each stop the ship turns to show the body and holds for a dwell. Pause (P), Skip dwell (N) and Skip stage (K) only change how fast you watch.", 13, Color(0.7, 0.75, 0.85)))
+	panel_body.add_child(_label("Each leg is flown in real time; at each stop the ship turns to show the body and holds for a dwell. Pause (P), Skip dwell (N) and Skip stage (K) only change how fast you watch.", 13, "HUDHint"))
 	if demo.solar_tour != null:
 		panel_body.add_child(_label("Under way: " + demo.tour_line(), 14))
 	else:
-		panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
+		panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, "HUDWarn"))
 		panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
 	# crew-work W1: the crew live at the Crew console; here, one line and any moment that needs you.
 	var sim = demo.get("journey_sim") if demo != null else null
 	if sim is SimBridge and not (sim as SimBridge).crew.is_empty():
-		crew_summary = _label(crew_summary_text((sim as SimBridge).crew), 13, Color(0.7, 0.75, 0.85))
+		crew_summary = _label(crew_summary_text((sim as SimBridge).crew), 13, "HUDHint")
 		crew_summary.name = "CrewSummary"
 		panel_body.add_child(crew_summary)
 
@@ -1107,7 +1109,7 @@ func _archive_panel() -> void:
 	nl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	news.add_child(nl)
 	for spec in [["log entries", "consequence.legacy.count", "%d"], ["latest news from", "consequence.news.star_id", "%s"]]:
-		var cap := _label(spec[0], 12, Color(0.62, 0.68, 0.8))
+		var cap := _label(spec[0], 12, "HUDCaption")
 		cap.autowrap_mode = TextServer.AUTOWRAP_OFF
 		news.add_child(cap)
 		var b := DisplayBinding.new().bind(spec[1], spec[2])

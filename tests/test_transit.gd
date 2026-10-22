@@ -145,7 +145,13 @@ func test_card_layout(h: TransitHarness) -> void:
 	var c := h.card.get_global_rect()
 	var u := h.hud.get_global_rect()
 	ok("arrived: the card is visible and its rect (%s) does not overlap the HUD's (%s)" % [c, u], h.card.visible and h.hud.visible and c.size.x > 0.0 and not c.intersects(u))
-	ok("the card is inside the viewport and its panel is opaque enough to read over the sky", Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(c) and (h.card.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a >= 0.9)
+	ok("the card is inside the viewport and its panel is opaque enough to read over the sky", Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(c) and _panel_alpha(h.card.get_theme_stylebox("panel")) >= 0.9)
+
+
+## R2-BRIDGE-STYLE ST4: the card is the theme's ink panel (a StyleBoxTexture carrying its fill colour).
+static func _panel_alpha(sb: StyleBox) -> float:
+	if sb is StyleBoxFlat: return (sb as StyleBoxFlat).bg_color.a
+	return (sb.get_meta("panel_colour", Color(0, 0, 0, 0)) as Color).a if sb != null else 0.0
 
 
 ## F1: a refusal of the pending warp, matched by index, drops it; any other refusal does not.

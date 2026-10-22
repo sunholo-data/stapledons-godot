@@ -64,6 +64,7 @@ func _init(opts := {}) -> void:
 
 
 func _ready() -> void:
+	theme = StapledonTheme.theme() # R2-BRIDGE-STYLE ST4: the title on the HUD theme
 	if options.get("sky", true):
 		_build_sky()
 	var shade := TextureRect.new() # left-to-right darkening so the type reads over the Milky Way
@@ -129,32 +130,20 @@ func _process(delta: float) -> void:
 	sky.camera.look(BASE_YAW + _drift, 0.0, 0.0)
 
 
-func _label(text: String, size: int, color: Color) -> Label:
+## R2-BRIDGE-STYLE ST4: `kind` is the text's meaning (a StapledonTheme label variation).
+func _label(text: String, size: int, kind := "HUDLabel") -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	l.add_theme_constant_override("shadow_offset_x", 1)
-	l.add_theme_constant_override("shadow_offset_y", 2)
+	l.theme_type_variation = kind
 	return l
-
-
-func _panel_style(alpha := 0.86) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.04, 0.05, 0.08, alpha)
-	s.border_color = Color(0.55, 0.65, 0.85, 0.35)
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(6)
-	s.set_content_margin_all(18)
-	return s
 
 
 func _build_menu() -> void:
 	col.position = Vector2(64, 48)
 	col.add_theme_constant_override("separation", 6)
 	add_child(col)
-	var title := _label(TITLE, 36, Color(0.93, 0.95, 1.0))
+	var title := _label(TITLE, 36, "HUDTitle")
 	var font := FontFile.new() # read as data (the .ttf is not an imported resource; export_presets include_filter ships it)
 	if font.load_dynamic_font(FONT) == OK:
 		var spaced := FontVariation.new()
@@ -162,24 +151,13 @@ func _build_menu() -> void:
 		spaced.spacing_glyph = 3
 		title.add_theme_font_override("font", spaced)
 	col.add_child(title)
-	col.add_child(_label(TAGLINE, 15, Color(0.78, 0.83, 0.92)))
+	col.add_child(_label(TAGLINE, 15, "HUDHint"))
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 16)
 	col.add_child(gap)
 	menu.add_theme_constant_override("separation", 6)
 	menu.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	col.add_child(menu)
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.06, 0.08, 0.13, 0.55)
-	normal.set_corner_radius_all(4)
-	normal.content_margin_left = 16
-	normal.content_margin_right = 16
-	normal.content_margin_top = 5
-	normal.content_margin_bottom = 5
-	var hot := normal.duplicate() as StyleBoxFlat
-	hot.bg_color = Color(0.22, 0.32, 0.55, 0.85)
-	hot.border_color = Color(0.7, 0.8, 1.0, 0.9)
-	hot.border_width_left = 3
 	for e in ENTRIES:
 		var b := Button.new()
 		b.text = e[1]
@@ -188,13 +166,7 @@ func _build_menu() -> void:
 		b.custom_minimum_size = Vector2(260, 0)
 		b.focus_mode = Control.FOCUS_ALL
 		b.add_theme_font_size_override("font_size", 16)
-		b.add_theme_stylebox_override("normal", normal)
-		b.add_theme_stylebox_override("hover", hot)
-		b.add_theme_stylebox_override("focus", hot)
-		b.add_theme_stylebox_override("pressed", hot)
-		b.add_theme_color_override("font_color", Color(0.86, 0.9, 0.98))
-		b.add_theme_color_override("font_focus_color", Color.WHITE)
-		b.add_theme_color_override("font_hover_color", Color.WHITE)
+		b.theme_type_variation = "HUDMenu" # R2-BRIDGE-STYLE ST4: the theme's menu button
 		b.pressed.connect(press.bind(e[0]))
 		b.focus_entered.connect(func() -> void: hint.text = e[2])
 		b.mouse_entered.connect(func() -> void: b.grab_focus())
@@ -213,8 +185,7 @@ func _build_menu() -> void:
 	hint.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 13)
-	hint.add_theme_color_override("font_color", Color(0.75, 0.8, 0.9))
-	hint.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	hint.theme_type_variation = "HUDHint"
 	hint.text = ENTRIES[0][2]
 	col.add_child(hint)
 
@@ -278,7 +249,7 @@ func _back_button() -> Button:
 
 
 func _build_settings() -> void:
-	settings_panel.add_theme_stylebox_override("panel", _panel_style())
+	settings_panel.theme_type_variation = "HUDSheet"
 	settings_panel.position = Vector2(64, 150)
 	settings_panel.custom_minimum_size = Vector2(470, 0)
 	settings_panel.visible = false
@@ -286,9 +257,9 @@ func _build_settings() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	settings_panel.add_child(box)
-	box.add_child(_label("Settings", 22, Color.WHITE))
+	box.add_child(_label("Settings", 22, "HUDTitle"))
 	var row := HBoxContainer.new()
-	row.add_child(_label("Ship view", 15, Color(0.86, 0.9, 0.98)))
+	row.add_child(_label("Ship view", 15, "HUDLabel"))
 	view_option.add_item("Realistic (one exposure)", 0)
 	view_option.add_item("Auto (bodies faded to fit)", 1)
 	view_option.select(1 if settings.auto_view else 0)
@@ -296,12 +267,12 @@ func _build_settings() -> void:
 	view_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(view_option)
 	box.add_child(row)
-	var note := _label("Realistic: one physical exposure for sky and planets; sunlit planets clip so the stars show. Auto: the same sky, each planet faded on its own so planets and stars show together (V switches aboard).", 12, Color(0.7, 0.75, 0.85))
+	var note := _label("Realistic: one physical exposure for sky and planets; sunlit planets clip so the stars show. Auto: the same sky, each planet faded on its own so planets and stars show together (V switches aboard).", 12, "HUDHint")
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.custom_minimum_size = Vector2(430, 0)
 	box.add_child(note)
 	var crow := HBoxContainer.new()
-	crow.add_child(_label("Confirm decisions", 15, Color(0.86, 0.9, 0.98)))
+	crow.add_child(_label("Confirm decisions", 15, "HUDLabel"))
 	confirm_option.add_item("Hold (1.5 s)", 0)
 	confirm_option.add_item("Press twice", 1)
 	confirm_option.select(1 if settings.confirm_mode == "twice" else 0)
@@ -310,7 +281,7 @@ func _build_settings() -> void:
 	crow.add_child(confirm_option)
 	box.add_child(crow)
 	var mrow := HBoxContainer.new()
-	mrow.add_child(_label("Camera motion", 15, Color(0.86, 0.9, 0.98)))
+	mrow.add_child(_label("Camera motion", 15, "HUDLabel"))
 	motion_option.add_item("Full (eased)", 0)
 	motion_option.add_item("Reduced (cuts, no camera travel)", 1)
 	motion_option.select(1 if settings.camera_motion == "reduced" else 0)
@@ -322,12 +293,12 @@ func _build_settings() -> void:
 	text_only_box.button_pressed = settings.text_only
 	text_only_box.toggled.connect(set_text_only)
 	box.add_child(text_only_box)
-	var ai_note := _label("Live AI is off unless you add your own key (the AI button, top right of the galaxy map). Text-only applies there too.", 12, Color(0.7, 0.75, 0.85))
+	var ai_note := _label("Live AI is off unless you add your own key (the AI button, top right of the galaxy map). Text-only applies there too.", 12, "HUDHint")
 	ai_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ai_note.custom_minimum_size = Vector2(430, 0)
 	box.add_child(ai_note)
 	settings_status.add_theme_font_size_override("font_size", 12)
-	settings_status.add_theme_color_override("font_color", Color(0.6, 0.85, 0.65))
+	settings_status.theme_type_variation = "HUDOk"
 	box.add_child(settings_status)
 	box.add_child(_back_button())
 
@@ -356,7 +327,7 @@ func set_text_only(on: bool) -> void:
 func _save() -> void:
 	var ok := settings.save_settings()
 	settings_status.text = ("Saved: view %s, text-only %s" % [settings.view_label(), "on" if settings.text_only else "off"]) if ok else "Could not save settings"
-	settings_status.add_theme_color_override("font_color", Color(0.6, 0.85, 0.65) if ok else Color(1.0, 0.55, 0.45))
+	settings_status.theme_type_variation = "HUDOk" if ok else "HUDWarn"
 
 
 ## Every reference the simulation's data cites: the ("key", "reference") rows of the
@@ -416,7 +387,7 @@ static func credits_text() -> String:
 
 
 func _build_credits() -> void:
-	credits_panel.add_theme_stylebox_override("panel", _panel_style(0.9))
+	credits_panel.theme_type_variation = "HUDSheet"
 	credits_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	credits_panel.offset_left = 48
 	credits_panel.offset_top = 36
@@ -428,7 +399,7 @@ func _build_credits() -> void:
 	box.add_theme_constant_override("separation", 10)
 	credits_panel.add_child(box)
 	var head := HBoxContainer.new()
-	var t := _label("Credits", 22, Color.WHITE)
+	var t := _label("Credits", 22, "HUDTitle")
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(t)
 	head.add_child(_back_button())
@@ -441,21 +412,21 @@ func _build_credits() -> void:
 	credits_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credits_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	credits_body.add_theme_font_size_override("font_size", 12)
-	credits_body.add_theme_color_override("font_color", Color(0.84, 0.87, 0.94))
+	credits_body.theme_type_variation = "HUDLabel"
 	scroll.add_child(credits_body)
 
 
 func _build_footer() -> void:
 	version_label.text = "dev build · %s" % build_label()
 	version_label.add_theme_font_size_override("font_size", 12)
-	version_label.add_theme_color_override("font_color", Color(0.65, 0.7, 0.8, 0.85))
+	version_label.theme_type_variation = "HUDHint"
 	version_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 14)
 	version_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(version_label)
 	var credit := Label.new() # CC BY 4.0 attribution where the panorama is shown
 	credit.text = "Sky: NOIRLab / E. Slawik, CC BY 4.0 · stars: CNS5, Gaia, Hipparcos"
 	credit.add_theme_font_size_override("font_size", 11)
-	credit.add_theme_color_override("font_color", Color(0.65, 0.7, 0.8, 0.75))
+	credit.theme_type_variation = "HUDHint"
 	credit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 14)
 	credit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	credit.grow_vertical = Control.GROW_DIRECTION_BEGIN

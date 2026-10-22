@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-BRIDGE-STYLE AC6/AC7 (design_docs/planned/r2/bridge-styling-pass.md §S4): the HUD's one theme.
+## R2-BRIDGE-STYLE AC6/AC7 (design_docs/implemented/r2/bridge-styling-pass.md §S4): the HUD's one theme.
 ##   1. Leftovers: no `StyleBoxFlat.new()` and no `add_theme_color_override` in ui/ or in the demo's HUD
 ##      code (demos/ship_geometry_demo.gd, demos/ship_consoles.gd) outside the theme builder; the crew
 ##      palette (D-80) and the physics overlays (OQ5) are explicit allow-lists (ui/theme/allow.json).

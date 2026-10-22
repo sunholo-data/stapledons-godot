@@ -1,0 +1,67 @@
+{
+ "sprint": "R2-BRIDGE-STYLE",
+ "stages": "ST3-ST6",
+ "commit": "bb3fd962a2ee2d08f0dc8e1df3099c8404a4ff50",
+ "evaluator": "Claude Sonnet, independent",
+ "score": 82,
+ "pass": true,
+ "rubric": {
+  "acs_and_behaviour": {
+   "score": 25,
+   "max": 30,
+   "notes": "I ran all ten requested gates and every one exited 0. style-test passed 21/0 and dressing-test 13/0 (Bow 7.2 %, Astern 5.5 %, cap 8 %). ui-theme-check ran strict with 0 leftovers across 57 contrast pairs. deck-assets-check passed (bridge_props 176,760 tris against the 180k cap, lift_head 4,752). deck-layout-eval reported the bridge ok. deck-layout-eval-test passed 22. ship-star-light-test passed 77, bridge-floor-test 14, ship-demo-lift-test 24, camera-forward-test 35. Not verifiable by me: AC4, AC9 and AC11 (golden, GPU/VRAM, full make test), which the report defers to the rig. AC9 is judged from the report alone: three runs gave p99 16.0, 16.2 and 30.1 ms. The target is claimed met on the best run, and the cold run fails it. That is honest but soft. AC12 (straight-edge share <= 0.10) is enforced by style-test, with a box scoring 0.586 as the negative control. The report's ship.glb figure (42,378 tris, 11 images) does not match the gate output (42,048 tris, 15 mats, 11 imgs); this looks like a stale number."
+  },
+  "tests_and_gates": {
+   "score": 20,
+   "max": 25,
+   "notes": "The red-first and negative-control discipline is good: style-test, ui-theme-check, dressing-test and deck-assets-check each ship their own negative controls and they fire. Three of four drills were caught (see drills). Two gaps: clamp_deg is pinned only in test_dressing.gd, so the toon-card default and the dressing path are not independently guarded. style.shaped membership is not pinned, so a prop dropped from the list silently leaves AC12. The ship-star-light and ship-demo-lift logs end in Godot RID-leak ERROR lines at exit; those are harmless but noisy."
+  },
+  "design_fidelity": {
+   "score": 17,
+   "max": 20,
+   "notes": "The implementation follows the design and the recorded decisions. The spire is the key, the toon shader's card mode avoids a second shader (D-106), the shape language (D-104) is measured, and the theme is on every panel with an explicit allow-list. The documented deviations are honest: 1.9 m fronds because of the 530 fade budget, foreground cards used in place of stanchions, and the Archive tomes joining the fade list. These are justified and listed in the report. Deductions: the below-rail canopies are weak scale cues, and the plan's named foreground props were swapped for fronds."
+  },
+  "code_quality": {
+   "score": 12,
+   "max": 15,
+   "notes": "The work is well factored (ShipDressing, StapledonStyle, StapledonTheme, a pinned generator v4). The branch also merged in unrelated main work (captain anim, sound, telescope), which makes the diff noisy, although that is not the sprint's fault. Sprint JSON is incomplete: ST6 has passes/completed null and the sprint status is in_progress. That is expected before the evaluation, but it must be closed after it. -3 for those loose ends and the weak pins above."
+  },
+  "process_and_docs": {
+   "score": 8,
+   "max": 10,
+   "notes": "The design doc, sprint plan and report are already in implemented/r2. The changelog, ledger references and a deviations section are all present. -2 for the stale ship.glb number in the report and for sprint JSON ST6/status not closed."
+  }
+ },
+ "drills": [
+  {
+   "mutation": "Seeded `StyleBoxFlat.new()` in ui/ship_hud.gd",
+   "caught_by": "make ui-theme-check (strict)",
+   "result": "caught: rc=2, 'leftover res://ui/ship_hud.gd: 1'"
+  },
+  {
+   "mutation": "Raised the Bow foreground frond height from 1.8 to 9.0 in data/camera/views.json",
+   "caught_by": "make dressing-test",
+   "result": "caught: 'bow: the foreground holds 53.3 % of the frame (<= 8 %)'"
+  },
+  {
+   "mutation": "Set the card clamp_deg to 80 in interior/stapledon_style.gd",
+   "caught_by": "make dressing-test (the pin in test_dressing.gd:48). style-test and ui-theme-check did not catch it.",
+   "result": "caught by dressing-test (rc=2) only; the other two gates stayed green"
+  },
+  {
+   "mutation": "Removed 'console_decision_0' from style.shaped in assets/ship_demo/manifest.json",
+   "caught_by": "none (style-test stayed green)",
+   "result": "NOT caught: shaped-list membership is not pinned. The tree was restored."
+  }
+ ],
+ "blocking": [],
+ "non_blocking": [
+  "style.shaped membership (AC12) is not pinned by a count or name list, so a prop can be dropped without any gate failing; add a minimum count or a name pin to style-test.",
+  "The clamp_deg default is guarded only by dressing-test; add a style-test assertion on the toon card default (25).",
+  "The report's ship.glb figures (42,378 tris, 11 images) do not match deck-assets-check (42,048 tris, 15 mats, 11 imgs). Update the report.",
+  "Sprint JSON: ST6_LANDING passes/completed are null and the sprint status is in_progress. Close them after this evaluation passes.",
+  "AC4, AC9, AC11 and the VRAM cap are verified only by the rig and the report. The AC9 target is met only on the best run (a cold first run was 30.1 ms), so the rig bench should be re-read before merge.",
+  "Branch diff includes merged unrelated main work (captain anim, sound, telescope); that is acceptable, but judge the PR on the sprint files only."
+ ],
+ "followed_up": "After the evaluation (commit below): style-test pins the 28 grown props by name (the dropped-name drill now fails) and the card's clamp_deg default 25 with no outline pass; the report's ship.glb figures corrected (42,048 tris, 15 materials, 11 images); the sprint JSON closed. AC4/AC9/AC11 and VRAM: tools/rig_check.sh --golden on the PR head."
+}

@@ -1,0 +1,14 @@
+{
+  "about": "R2-BRIDGE-STYLE ST4 (AC6): the explicit allow-list for make ui-theme-check STRICT=1. Each entry keeps its own colours for a reason the theme must not override.",
+  "files": [
+    "res://ui/crew_chip.gd",
+    "res://ui/crew_console.gd",
+    "res://ui/crew_palette.gd"
+  ],
+  "reasons": {
+    "res://ui/crew_chip.gd": "D-80 crew identity colours: each crew member's chip colour and edge pattern (solid, striped, outline) is their identity; crew-console-test checks the palette's contrast and colour-vision separation on CrewPalette.PANEL.",
+    "res://ui/crew_console.gd": "D-80 crew palette: the crew board's panels, stance bars and buttons are drawn in CrewPalette so the identity colours stay separable (crew-console-test AC6-AC12); it sits inside the console's HUDSheet panel and takes the theme's typefaces.",
+    "res://ui/crew_palette.gd": "The crew palette itself (constants, no overrides)."
+  },
+  "lines": []
+}
