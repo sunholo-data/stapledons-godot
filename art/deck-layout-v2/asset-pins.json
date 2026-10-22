@@ -11,8 +11,8 @@
   "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 be6bf75111fa30969adc119eff165fedc2aad97bb26f417de2dbdaa5e5a6e984, 15391 triangles after Blender import), put into WALK_bridge by the generator",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 2261484,
-      "sha256": "c4e54704b399e00a6769979d83a0d364c286796cd90dcc86a91ceba09dff4afd",
+      "bytes": 2303608,
+      "sha256": "c8a55cd0cf0effbdb85a2078d7238a3658fc49b973edd67af8ab2ff96d2f4175",
       "all_materials_opaque": true
     },
     "assets/ship_demo/walk_bridge.glb": {
@@ -23,14 +23,14 @@
       "all_materials_opaque": true
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 4759828,
-      "sha256": "1cfd8289aae65165664b930a2f54a6354250d702fb5f1b9a14439e3528a90029",
+      "bytes": 4531504,
+      "sha256": "86d2e858d6d766885c1e81d241201c334ab1426cfd908155940f153818311079",
       "all_materials_opaque": true
     },
     "assets/ship_demo/lift_head.glb": {
       "all_materials_opaque": true,
-      "bytes": 166444,
-      "sha256": "d3d8b5e239b7400c2b31cdaeebe51fcbfffc677eda7bc7a2ed224b212a0e2e5b"
+      "bytes": 159748,
+      "sha256": "ff90afeffa35db8aa4027638a91b8d102e184695cc4d5e4a6b32e3d063919635"
     }
   },
   "masters": {
@@ -55,9 +55,9 @@
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/652f6da1d0dfad7529c00b009cdd2423255f6dd3cf3eff5ac76afeb516498140.blend"
     },
     "stapledon_bridge_props_v4.blend": {
-      "bytes": 11001670,
-      "sha256": "9e1e0c034d93e954e595322237de3a331a2aeadcd77583802a07e93eb505a750",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/9e1e0c034d93e954e595322237de3a331a2aeadcd77583802a07e93eb505a750.blend"
+      "bytes": 11017077,
+      "sha256": "45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
@@ -193,7 +193,7 @@
   },
   "st3": {
     "authoring_script": "~/dev/blender/scripts/stapledon_bridge_props_v4.py (packed in the master)",
-    "authoring_script_sha256": "1d96cba33626e25c76bf19feb8045429276907f7553761fdf8ca7b4655eac61c",
+    "authoring_script_sha256": "adb35d921b5a2382451f2f0396e7ab9aaa85b46a5b6060570fb05e93361fdf6f",
     "source_master_sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13",
     "what": "R2-BRIDGE-STYLE ST3/ST5 (v4): v3 plus the Archive terminal and tomes, the watch benches and their cushions and pots, the shaft guardrails, the lift guides grown and the pods' bands softened (D-104); the authored lift head (lift_head.glb); the deck top painted in four planar quadrants under an empty that keeps its name, and the spire painted with a warm wash at its lamp; ship.glb exports WebP",
     "straight_edge_share": {
@@ -325,7 +325,13 @@
         "object": "spire_needle",
         "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/spire_needle_paint.webp",
         "triangles": 11720
+      },
+      {
+        "object": "deck_floor_fill",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/deck_floor_fill_paint.webp",
+        "triangles": 9237
       }
-    ]
+    ],
+    "fronds": "the ten rim-frond meshes dropped from the export (D-106: painted cards in the game, manifest style.foliage)"
   }
 }
