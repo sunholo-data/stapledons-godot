@@ -1,4 +1,4 @@
-// R2-BRIDGE-STYLE S2 (design_docs/planned/r2/bridge-styling-pass.md, D-100): the art bible's banded
+// R2-BRIDGE-STYLE S2 (design_docs/implemented/r2/bridge-styling-pass.md, D-100): the art bible's banded
 // toon shading for the bridge (art/ship-interior-blender-brief.md §4). Keeps the albedo (texture x
 // colour) and the normal map; every light's diffuse falls into three bands, with a soft edge against
 // aliasing at the slide's motion; no specular. The ink outline (interior/outline.gdshader) is this

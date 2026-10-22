@@ -1,6 +1,6 @@
 class_name StapledonTheme
 extends RefCounted
-## R2-BRIDGE-STYLE S4 (design_docs/planned/r2/bridge-styling-pass.md, D-100): the HUD's one theme, so
+## R2-BRIDGE-STYLE S4 (design_docs/implemented/r2/bridge-styling-pass.md, D-100): the HUD's one theme, so
 ## the HUD reads as part of the comic world rather than a debugging overlay. The palette comes from the
 ## captain sheet and DL2's pigments; the typefaces are Josefin Sans (display) and Nunito (text), both
 ## SIL OFL, bundled in assets/fonts/ (OQ3); the panel is the hand-drawn ink 9-slice from

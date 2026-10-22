@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-BRIDGE-STYLE AC3 (design_docs/planned/r2/bridge-styling-pass.md §S2): every bridge_style mesh
+## R2-BRIDGE-STYLE AC3 (design_docs/implemented/r2/bridge-styling-pass.md §S2): every bridge_style mesh
 ## uses the toon material with exactly the ink outline as next_pass (the stated exclusions keep their
 ## own); every manifest style.bridge_nodes entry exists; the lower decks are not styled; the named sky
 ## layers exist, render in their own viewport and none uses the toon shader. Negative controls: a

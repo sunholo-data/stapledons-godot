@@ -1,15 +1,15 @@
 {
   "sprint_id": "R2-BRIDGE-STYLE",
-  "status": "paused_for_review",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-100)",
   "approved_on": "2026-10-20",
   "created": "2026-10-20",
   "started": "2026-10-20",
   "completed": null,
-  "design_doc": "design_docs/planned/r2/bridge-styling-pass.md",
-  "sprint_plan": "design_docs/planned/r2/bridge-styling-pass-sprint.md",
-  "branch": "feat/bridge-style",
+  "design_doc": "design_docs/implemented/r2/bridge-styling-pass.md",
+  "sprint_plan": "design_docs/implemented/r2/bridge-styling-pass-sprint.md",
+  "branch": "feat/bridge-style-2",
   "history": [
     {
       "date": "2026-10-20",
@@ -30,6 +30,10 @@
     {
       "date": "2026-10-20",
       "event": "ST0-ST2 built; paused at the ST2 style frame for Mark (look, bands, typeface, panel and the D-104 shapes). PR #300 (supersedes #293); dev build v0.4.0-dev.35-bow-view-22-g4e6b0d33; frames refs/bridge_style/st2/."
+    },
+    {
+      "date": "2026-10-21",
+      "event": "D-110: Mark approved the ST2 style frame ('bridge style frames look good continue'); #300 merged; ST3-ST6 on feat/bridge-style-2"
     }
   ],
   "related_prs": {
@@ -130,9 +134,9 @@
         "display-audit and controls green",
         "make style-capture TAG=sf opened and published; Mark approves the look"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-20",
-      "completed": null,
+      "completed": "2026-10-21",
       "notes": "shaders/stapledon_toon.gdshader + StapledonStyle (bridge_style group, exact ink next_pass, exclusions); style-test 19/0 incl. both negative controls, seeded exclusions and AC12. Theme: StapledonTheme (palette, Josefin Sans + Nunito OFL pinned, seeded ink 9-slice) on the status strip and arrival card; ui-theme-check ok (68 leftovers reported). D-104: stapledon_bridge_props_v3.py grew the desks, dials, chair, cushion and every screen housing (straight-edge share <= 0.081 in-engine; box control 0.586); bridge_props.glb 169,292 tris; ship.glb byte-identical; deck-layout-eval bridge ok, deck-layout-eval-test 22/0, camera-forward-test 33/0, deck-assets-check ok. make style-capture TAG=sf: 18 frames, opened, published refs/bridge_style/st2/. Full make test: everything green except ai-godot's three 'frame never blocked' timing checks at host load 35 (no AI code changed; rerun alone failed the same way at load 35); rig_check on the final head pending. Paused for Mark."
     },
     {
@@ -148,10 +152,10 @@
         "make golden",
         "make style-capture TAG=st3 opened and published"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-21",
+      "completed": "2026-10-22",
+      "notes": "v4 generator (stapledon_bridge_props_v4.py, master pinned): the deck top in four planar painted quadrants under an empty that keeps its name, the deck fill painted to match, the spire with a warm wash at its lamp; the authored lift head (lift_head.glb) placed where the boxes were (ship-demo-lift-test 24/0); the rest of the bridge grown (D-104: terminal, tomes, benches, guardrails, lift guides; pods' bands softened). style-test 21/0, bridge-floor-test 14/0 (painted deck family by chroma), deck-assets-check ok (images <= 24, VRAM +48 MB)."
     },
     {
       "id": "ST4_THEME_EVERYWHERE",
@@ -165,10 +169,10 @@
         "display-audit (all four), ship-ui-test, crew-console-test, title-screen-test green",
         "make style-capture TAG=st4 with the HUD"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-21",
+      "completed": "2026-10-22",
+      "notes": "StapledonTheme across the HUD (panels by kind, text by meaning, buttons, slider, progress bars; install() on the window); ui-theme-check strict at 0 leftovers, one allow-list (crew palette, D-80); 57 pairs >= 4.5:1; ship-ui, title-screen, crew-console, loading-jump, crossing-review, codex and the four display audits green."
     },
     {
       "id": "ST5_DRESSING",
@@ -184,10 +188,10 @@
         "make style-capture TAG=st5 opened and published",
         "D-106: make style-test audits the frond cards as bridge_style members (card mode of stapledon_toon.gdshader, no second shader); make deck-layout-eval thresholds kept"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-21",
+      "completed": "2026-10-22",
+      "notes": "ShipDressing: the rim fronds as painted cards in the toon shader's card mode with crossed shadow proxies (1.9 m: the fade budget 527/530), below-rail canopies, per-view foreground cards (Bow 7.2 %, Astern 5.5 %, cap 8 %). dressing-test 13/0. The spire's falloff flat inside its range (the dark rim reads)."
     },
     {
       "id": "ST6_LANDING",
@@ -204,9 +208,9 @@
         "sprint-evaluator (Sonnet) >= 70"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-21",
       "completed": null,
-      "notes": null
+      "notes": "Bench SCENE=bridge at load 3-5: p99 16.0 / 16.2 ms (cold first run 30.1). style-capture final with a before/after against the ST2 style frame. Report, changelog, index row; doc moved to implemented/r2. Independent evaluation and rig_check --golden pending at this commit."
     }
   ],
   "velocity": {

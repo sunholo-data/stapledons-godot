@@ -1,6 +1,6 @@
 class_name ShipDressing
 extends Node3D
-## R2-BRIDGE-STYLE S5 (design_docs/planned/r2/bridge-styling-pass.md §S5, D-106): the bridge dressed for its
+## R2-BRIDGE-STYLE S5 (design_docs/implemented/r2/bridge-styling-pass.md §S5, D-106): the bridge dressed for its
 ## fixed views, all from data, all in the shared toon material:
 ##   fronds      the ten rim fronds as painted cards (manifest style.foliage, from the v4 generator): each a
 ##               card turned toward the camera within +-25 deg of its inward facing, a crossed card as its

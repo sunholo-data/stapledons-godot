@@ -1,6 +1,6 @@
 class_name StapledonStyle
 extends RefCounted
-## R2-BRIDGE-STYLE S2 (design_docs/planned/r2/bridge-styling-pass.md, D-100): the bridge's shading.
+## R2-BRIDGE-STYLE S2 (design_docs/implemented/r2/bridge-styling-pass.md, D-100): the bridge's shading.
 ## Every mesh of the bridge level takes one shared toon material (shaders/stapledon_toon.gdshader)
 ## with exactly the ink outline (interior/outline.gdshader) as its next_pass. Membership is the node
 ## group GROUP, never a position test: every bridge_props.glb mesh and the ship.glb nodes the manifest

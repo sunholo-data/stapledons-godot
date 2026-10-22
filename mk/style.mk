@@ -1,4 +1,4 @@
-# R2-BRIDGE-STYLE (design_docs/planned/r2/bridge-styling-pass.md, ledger D-100): the bridge's toon and
+# R2-BRIDGE-STYLE (design_docs/implemented/r2/bridge-styling-pass.md, ledger D-100): the bridge's toon and
 # ink material audit, the HUD theme check and the review captures.
 .PHONY: style-test ui-theme-check style-capture
 style-test: import ## AC3: every bridge_style mesh is the toon material with exactly the ink next_pass (exclusions keep theirs); style.bridge_nodes exist; lower decks unstyled; the sky layers exist apart and never toon. Negative controls: a seeded PBR bridge surface and a seeded toon sky layer are caught
