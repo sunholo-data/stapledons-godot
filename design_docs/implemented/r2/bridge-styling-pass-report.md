@@ -26,9 +26,9 @@ forms; the deck and mast are painted; the rim fronds are painted cards; the whol
 |---|---|
 | AC1 | `make ship-star-light-test` 77 passed (the three key checks in their old form on the lower decks; 19 bridge checks) |
 | AC2 | `make ship-commons-test` 39, `make ship-lighting-test` OK |
-| AC3 | `make style-test` 21 passed (toon + exact ink on every member, exclusions, sky untouched, lift and deck quadrants, both negative controls) |
+| AC3 | `make style-test` 22 passed (toon + exact ink on every member, exclusions, sky untouched, lift and deck quadrants, the card default, both negative controls) |
 | AC4 | `make golden`: run by `tools/rig_check.sh --golden` on the final head (see the PR) |
-| AC5 | `make deck-assets-check` ok: `ship.glb` 42,378 tris 11 images 2.3 MB; `bridge_props.glb` 176,760 tris (cap 180,000); `lift_head.glb` 4,752 tris; images ≤ 24, VRAM cap +48 MB (measured with a GPU window in the rig run) |
+| AC5 | `make deck-assets-check` ok: `ship.glb` 42,048 tris, 15 materials, 11 images, 2.3 MB; `bridge_props.glb` 176,760 tris (cap 180,000); `lift_head.glb` 4,752 tris; images ≤ 24, VRAM cap +48 MB (measured with a GPU window in the rig run) |
 | AC6/AC7 | `make ui-theme-check` (strict): 0 leftovers; fonts, OFL licences, ink border and frond card pinned; 57 text/panel pairs ≥ 4.5:1 over night and cream; both negative controls fail |
 | AC8 | `make dressing-test` 13 passed: Bow foreground 7.2 %, Astern 5.5 % (cap 8 %), never over the pole or the head; `make deck-layout-eval` bridge ok (fades 527 of 530) |
 | AC9 | `make bench SCENE=bridge`, three runs at host load 3–5: p99 **16.0 ms** (best), 16.2 ms, and a cold first run at 30.1 ms; target < 16.7 ms met |
@@ -54,6 +54,10 @@ forms; the deck and mast are painted; the rim fronds are painted cards; the whol
   reads the painted deck's colour family by chroma.
 - **The project theme** is installed on the window at run time and set on each panel root (the bundled fonts load
   raw); no `.tres` ships.
+
+## Independent evaluation
+
+Claude Sonnet, independent (`.ailang/state/evaluations/eval_R2-BRIDGE-STYLE_round_1.json`): **82/100, pass**, no blocking findings; three of four mutation drills caught. Followed up: `style-test` now pins the 28 grown props by name (the fourth drill, a name dropped from `style.shaped`, now fails) and the card's ±25° default; the `ship.glb` figures above corrected.
 
 ## Follow-ups
 

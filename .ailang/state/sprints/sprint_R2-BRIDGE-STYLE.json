@@ -1,12 +1,12 @@
 {
   "sprint_id": "R2-BRIDGE-STYLE",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-100)",
   "approved_on": "2026-10-20",
   "created": "2026-10-20",
   "started": "2026-10-20",
-  "completed": null,
+  "completed": "2026-10-22",
   "design_doc": "design_docs/implemented/r2/bridge-styling-pass.md",
   "sprint_plan": "design_docs/implemented/r2/bridge-styling-pass-sprint.md",
   "branch": "feat/bridge-style-2",
@@ -34,6 +34,10 @@
     {
       "date": "2026-10-21",
       "event": "D-110: Mark approved the ST2 style frame ('bridge style frames look good continue'); #300 merged; ST3-ST6 on feat/bridge-style-2"
+    },
+    {
+      "date": "2026-10-22",
+      "event": "ST3-ST6 landed on feat/bridge-style-2; independent evaluation 82/100 PASS"
     }
   ],
   "related_prs": {
@@ -207,10 +211,10 @@
         "make style-capture TAG=final published",
         "sprint-evaluator (Sonnet) >= 70"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-21",
-      "completed": null,
-      "notes": "Bench SCENE=bridge at load 3-5: p99 16.0 / 16.2 ms (cold first run 30.1). style-capture final with a before/after against the ST2 style frame. Report, changelog, index row; doc moved to implemented/r2. Independent evaluation and rig_check --golden pending at this commit."
+      "completed": "2026-10-22",
+      "notes": "Bench SCENE=bridge at load 3-5: p99 16.0 / 16.2 ms (cold first run 30.1). style-capture final with a before/after against the ST2 style frame. Report, changelog, index row; doc moved to implemented/r2. Independent evaluation and rig_check --golden pending at this commit. Independent Sonnet evaluation 82/100 PASS (eval_R2-BRIDGE-STYLE_round_1.json), no blocking; its follow-ups done (style-test name pin and card default; report figures)."
     }
   ],
   "velocity": {
