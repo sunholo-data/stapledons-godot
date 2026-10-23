@@ -981,6 +981,479 @@
      }
     }
    ]
+  },
+  {
+   "id": "footstep_deck_1",
+   "about": "S1 v2 (D-117: 'too clunky'): a soft-soled pad on the deck with a little coat rustle; almost no low thump and no metal ring. Variant 1 of 6.",
+   "seconds": 0.32,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 1100.0,
+     "highpass_hz": 140.0,
+     "seed": 170,
+     "env": {
+      "attack": 0.005,
+      "tau": 0.03
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.12,
+     "lowpass_hz": 550.0,
+     "highpass_hz": 90.0,
+     "seed": 180,
+     "env": {
+      "delay": 0.012,
+      "attack": 0.004,
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 74.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.022
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.07,
+     "highpass_hz": 2600.0,
+     "lowpass_hz": 7000.0,
+     "seed": 190,
+     "env": {
+      "delay": 0.018,
+      "attack": 0.02,
+      "tau": 0.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_2",
+   "about": "S1 v2 (D-117: 'too clunky'): a soft-soled pad on the deck with a little coat rustle; almost no low thump and no metal ring. Variant 2 of 6.",
+   "seconds": 0.32,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 950.0,
+     "highpass_hz": 140.0,
+     "seed": 171,
+     "env": {
+      "attack": 0.006,
+      "tau": 0.034
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.12,
+     "lowpass_hz": 475.0,
+     "highpass_hz": 90.0,
+     "seed": 181,
+     "env": {
+      "delay": 0.012,
+      "attack": 0.004,
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 70.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.022
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.06,
+     "highpass_hz": 2600.0,
+     "lowpass_hz": 7000.0,
+     "seed": 191,
+     "env": {
+      "delay": 0.026,
+      "attack": 0.02,
+      "tau": 0.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_3",
+   "about": "S1 v2 (D-117: 'too clunky'): a soft-soled pad on the deck with a little coat rustle; almost no low thump and no metal ring. Variant 3 of 6.",
+   "seconds": 0.32,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 1250.0,
+     "highpass_hz": 140.0,
+     "seed": 172,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.028
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.12,
+     "lowpass_hz": 625.0,
+     "highpass_hz": 90.0,
+     "seed": 182,
+     "env": {
+      "delay": 0.012,
+      "attack": 0.004,
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 78.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.022
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.08,
+     "highpass_hz": 2600.0,
+     "lowpass_hz": 7000.0,
+     "seed": 192,
+     "env": {
+      "delay": 0.014,
+      "attack": 0.02,
+      "tau": 0.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_4",
+   "about": "S1 v2 (D-117: 'too clunky'): a soft-soled pad on the deck with a little coat rustle; almost no low thump and no metal ring. Variant 4 of 6.",
+   "seconds": 0.32,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 1050.0,
+     "highpass_hz": 140.0,
+     "seed": 173,
+     "env": {
+      "attack": 0.007,
+      "tau": 0.038
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.12,
+     "lowpass_hz": 525.0,
+     "highpass_hz": 90.0,
+     "seed": 183,
+     "env": {
+      "delay": 0.012,
+      "attack": 0.004,
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 72.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.022
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.05,
+     "highpass_hz": 2600.0,
+     "lowpass_hz": 7000.0,
+     "seed": 193,
+     "env": {
+      "delay": 0.03,
+      "attack": 0.02,
+      "tau": 0.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_5",
+   "about": "S1 v2 (D-117: 'too clunky'): a soft-soled pad on the deck with a little coat rustle; almost no low thump and no metal ring. Variant 5 of 6.",
+   "seconds": 0.32,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 1180.0,
+     "highpass_hz": 140.0,
+     "seed": 174,
+     "env": {
+      "attack": 0.005,
+      "tau": 0.031
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.12,
+     "lowpass_hz": 590.0,
+     "highpass_hz": 90.0,
+     "seed": 184,
+     "env": {
+      "delay": 0.012,
+      "attack": 0.004,
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 76.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.022
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.075,
+     "highpass_hz": 2600.0,
+     "lowpass_hz": 7000.0,
+     "seed": 194,
+     "env": {
+      "delay": 0.022,
+      "attack": 0.02,
+      "tau": 0.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_6",
+   "about": "S1 v2 (D-117: 'too clunky'): a soft-soled pad on the deck with a little coat rustle; almost no low thump and no metal ring. Variant 6 of 6.",
+   "seconds": 0.32,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 60.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.55,
+     "lowpass_hz": 980.0,
+     "highpass_hz": 140.0,
+     "seed": 175,
+     "env": {
+      "attack": 0.006,
+      "tau": 0.036
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.12,
+     "lowpass_hz": 490.0,
+     "highpass_hz": 90.0,
+     "seed": 185,
+     "env": {
+      "delay": 0.012,
+      "attack": 0.004,
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 68.0,
+     "amp": 0.06,
+     "env": {
+      "attack": 0.004,
+      "tau": 0.022
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.065,
+     "highpass_hz": 2600.0,
+     "lowpass_hz": 7000.0,
+     "seed": 195,
+     "env": {
+      "delay": 0.034,
+      "attack": 0.02,
+      "tau": 0.06
+     }
+    }
+   ]
+  },
+  {
+   "id": "lift_start",
+   "about": "S1: the lift's latch lets go and its motor spins up.",
+   "seconds": 1.4,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 300.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.3,
+     "highpass_hz": 1500.0,
+     "lowpass_hz": 6000.0,
+     "seed": 81,
+     "env": {
+      "tau": 0.006
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.35,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.06
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.35,
+     "lowpass_hz": 200.0,
+     "lowpass_to_hz": 700.0,
+     "highpass_hz": 90.0,
+     "seed": 82,
+     "beat_hz": 24.0,
+     "beat_depth": 0.4,
+     "env": {
+      "delay": 0.1,
+      "attack": 0.6
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 98.0,
+     "amp": 0.18,
+     "glide_to": 118.0,
+     "glide_until_s": 1.0,
+     "env": {
+      "delay": 0.1,
+      "attack": 0.6
+     }
+    }
+   ]
+  },
+  {
+   "id": "lift_run",
+   "about": "S1: the lift's motor while the platform travels (a loop that rides with it).",
+   "seconds": 4.0,
+   "loop": true,
+   "peak_db": -6.0,
+   "fade_ms": 20.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 98.0,
+     "amp": 0.22
+    },
+    {
+     "kind": "sine",
+     "freq": 196.0,
+     "amp": 0.1,
+     "beat_hz": 0.5,
+     "beat_depth": 0.3
+    },
+    {
+     "kind": "sine",
+     "freq": 294.0,
+     "amp": 0.05
+    },
+    {
+     "kind": "white",
+     "amp": 0.3,
+     "lowpass_hz": 650.0,
+     "highpass_hz": 90.0,
+     "seed": 83,
+     "beat_hz": 6.0,
+     "beat_depth": 0.35
+    }
+   ]
+  },
+  {
+   "id": "lift_arrive",
+   "about": "S1: the platform settles with a soft clunk and one old brass bell (a single low note, not a jingle).",
+   "seconds": 2.4,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 400.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.4,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.25,
+     "lowpass_hz": 1800.0,
+     "highpass_hz": 200.0,
+     "seed": 84,
+     "env": {
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 293.66,
+     "amp": 0.3,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.004,
+      "tau": 0.9
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 810.5,
+     "amp": 0.06,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.002,
+      "tau": 0.4
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1585.8,
+     "amp": 0.03,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.002,
+      "tau": 0.25
+     }
+    }
+   ]
   }
  ]
 }

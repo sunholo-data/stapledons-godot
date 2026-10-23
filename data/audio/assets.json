@@ -1,8 +1,8 @@
 {
  "schema": "stapledons.audio.assets/1",
- "about": "R2-SOUND \u00a7D8 (design_docs/planned/r2/sound.md): every audio file the game ships. Parts by source kind: assets_synth.json is written by make sound-synth (tools/audio/synth.ail); library (CC0) rows join at S1. Generated sound is reserved (D-101) and off: allow_generated stays false until a later approved sprint.",
+ "about": "R2-SOUND \u00a7D8 (design_docs/planned/r2/sound.md): every audio file the game ships. Parts by source kind: assets_synth.json is written by make sound-synth (tools/audio/synth.ail); library (CC0) rows join at S1. Generated sound is reserved (D-101) and off: allow_generated stays false until a later approved sprint. Budget (S1, 2026-10-21): 20 MB of WAV sources in git (S1's footsteps and lift took it past 12 MB); what ships is held separately to 6 MB of QOA by make sound-stage-check.",
  "allow_generated": false,
- "budget_bytes": 12000000,
+ "budget_bytes": 20000000,
  "parts": [
   "assets_synth.json"
  ]
