@@ -1,0 +1,82 @@
+{
+  "sprint_id": "R2-KERR",
+  "round": 1,
+  "reviewed_commit": "bd88abc3",
+  "evaluator_model": "claude-sonnet-5-5",
+  "review_kind": "plan review (design doc + sprint plan + sprint JSON); nothing executed",
+  "score": 84,
+  "verdict": "PASS",
+  "rubric": {
+    "format_and_process_20": {"points": 17, "reason": "README format followed: pillar table nets +7 Go (arithmetic checks), call-out on the two zero pillars, every AC row names a command, five open questions with defaults, deliverables, quorum log. Plan is test-first (RED then GREEN per slice), 30 slices mostly <=250 LOC, five explicit pause points (P0, Pspec, Ppublish, Prender5, Prender6). Deductions: the doc lists 9 sub-milestones while the plan has 30 slices and 30 working days against the doc's 3-4 weeks (disclosed); K1.0 is 'Depends on K1.1a-a' in the plan but '1st' in the doc; AC-K2 and AC-K11/K12 mix controller-only steps into ACs."},
+    "physics_correctness_25": {"points": 20, "reason": "All 8+ sampled RK rows reproduce to the printed digits (see physics_recomputed), formulas match BPT72/Bardeen 1973/Cunningham-Bardeen, units convention (K1.1 exports in r_s, RK table in GM/c^2, u=2r) is consistent with the 2 r_s floor (u=4) and the s=0 reductions. Deductions: RK-16 for s=0.998 (4.876991) is off by ~1e-5 from my 4.877001 (trapezoid 4.877003), outside the doc's own 1e-6 tolerance; V21's s=0.998 alpha_max (6.99657841) is off by ~9e-5 from the exact endpoint value 6.99666627; the 'mean shadow radius' is defined only by a u-uniform sampling measure, so it is not a physical quantity; 'staticClockRateKerr(u,theta,0) = staticClockRate(u/2) exactly' is not guaranteed bit-exact for sqrt(1-2u/Sigma) with Sigma=u^2; the Kerr table cost (18-25 CPU-h) looks low by about 1.5-2x against the M3 anchor (9.44M rays x 3 x ~4.6 ms = ~36 CPU-h)."},
+    "codebase_claims_20": {"points": 18, "reason": "13 verification rows re-run, all hold (V1-V6, V7, V9-V12, V14, V16-V18, V23, V26, V28-ish); every existing make target in the plan's gate lists exists in Makefile/mk, all 19 NEW targets are absent from the tree and marked NEW; tools/rig_check.sh and tools/render_diff.gd exist. Small drift only (V9 hit count differs because the branch adds Kerr docs; sim/gr.ail comment is line 4 as stated). V13/V29 are inherited controller evidence, not re-checkable in my bounds, and the plan says so honestly."},
+    "design_inconsistencies_15": {"points": 14, "reason": "The plan found 15 inconsistencies; I judge 14 REAL and 1 PARTLY (DI-03's 'committed bins' clause), all with verifiable evidence, and each is routed to a blocked slice and to P0. The plan does not silently adopt corrections. It missed the RK-16/V21 s=0.998 numeric error, the cost under-estimate and the ill-defined mean radius."},
+    "charter_fit_10": {"points": 9, "reason": "Plan-only (diff touches only three files, no code); package-first with explicit publish pause; protocol minor never hard-coded (kerrMinor() = next free, 13 flagged as claimed twice, verified in tree: minors 3-12 taken, grMinor=6); float64, 1-s-as-input and finite-table rules are planned (though DI-05 shows the scalar API cannot honour 1-s as input); spec amendment precedes any visual (Pspec). Minor: doc asserts K1.0 gates K1.5/K1.6 merges only, the plan strengthens it to 'any K1.5 work', which is stricter and fine."}
+  },
+  "physics_recomputed": [
+    {"id": "RK-1", "doc": "1.866025 / 1.435890 / 1.063214", "mine": "1.8660254 / 1.4358899 / 1.0632139", "match": true},
+    {"id": "RK-2", "doc": "0.133975 / 0.564110 / 0.936786", "mine": "0.1339746 / 0.5641101 / 0.9367861", "match": true},
+    {"id": "RK-4", "doc": "1.557855 / 3.910268 (s=0.9)", "mine": "1.5578546 / 3.9102679", "match": true},
+    {"id": "RK-5", "doc": "1.073909 / 3.998222 (s=0.998)", "mine": "1.0739093 / 3.9982219", "match": true},
+    {"id": "RK-6", "doc": "4.233003 / 7.554585", "mine": "4.2330025 / 7.5545847", "match": true},
+    {"id": "RK-7", "doc": "2.320883 / 8.717352", "mine": "2.3208830 / 8.7173523", "match": true},
+    {"id": "RK-8", "doc": "0.370868 (0.793193)", "mine": "0.3708679 (0.7931925)", "match": true},
+    {"id": "RK-9", "doc": "0.313395", "mine": "0.3133945", "match": true},
+    {"id": "RK-10", "doc": "0.160142", "mine": "0.1601423", "match": true},
+    {"id": "RK-11", "doc": "0.379642", "mine": "0.3796421", "match": true},
+    {"id": "RK-12", "doc": "0.624549 (0.561649)", "mine": "0.6245487 (0.5616492), cross-checked independently as (Omega-omega)*sqrt(g_phiphi)/lapse, identical", "match": true},
+    {"id": "RK-14", "doc": "-2.844421, +6.832319", "mine": "-2.8444214, +6.8323192 (endpoints with eta~1e-14)", "match": true},
+    {"id": "RK-15", "doc": "5.196152 = 3*sqrt(3) for s=0.5,0.9,0.998", "mine": "5.1961524227 at all three; also proven analytically (u=3 gives lambda=-2s, eta=27 for every s)", "match": true},
+    {"id": "RK-16", "doc": "5.043737 (4.876991 for s=0.998)", "mine": "5.0437369 uniform-u mean (5.0437379 trapezoid) ; s=0.998: 4.877001 (4.877003 trapezoid)", "match": "s=0.9 yes; s=0.998 NO (off by 1.0e-5, beyond the doc's 1e-6 tolerance). Quantity also depends on the sampling measure"},
+    {"id": "RK-17", "doc": "-3.417050, +6.296362, 5.069635", "mine": "-3.4170496, +6.2963622, 5.0696345", "match": true},
+    {"id": "RK-14 asymmetry (GR14)", "doc": "0.412112", "mine": "0.4121117 = (R-L)/(R+L)", "match": true},
+    {"id": "RK-18", "doc": "29.532501 km; 21.202710 km; 34.270740 km; 1.372762 ms; 6362.705900 rad/s", "mine": "29.5325008; 21.2027097; 34.2707401; 1.3727616 ms; 6362.7059001 rad/s; frame drag 3251.29719 rad/s", "match": true},
+    {"id": "tide estimate", "doc": "~1.1e9 g (V22: 1.0508e9 g)", "mine": "1.0508e9 g", "match": true},
+    {"id": "V21 s=0.998 alpha_max", "doc": "6.99657841", "mine": "6.99666627", "match": false}
+  ],
+  "units_check": "Consistent. K1.1 exports in r_s (horizonR(.9)=0.7179, photonOrbitPro(.9)=0.77893, iscoPro(.9)=1.1604), the RK table and shadow in GM/c^2, u=2r. The sim floor 2 r_s = u 4 lies above both photon orbits for s<=0.998 (retro 1.999111 r_s at 0.998 < 2.0, checked) and above the equatorial static limit (1 r_s), so the 'no domain change' claim holds. Retro ISCO 8.7174 M = 4.3587 r_s and prograde 1.1604 r_s as stated in K1.4/K1.6. a=0 members: horizonR=1, iscoPro=iscoRet=3.0, photon 1.5 are exactly representable, so the bit-exact claims are plausible.",
+  "literature_check": "BPT72 horizon, Omega_H, photon-orbit cos form (arccos(-s) prograde), ISCO Z1/Z2 (eq. 2.21), Bardeen 1970 ZAMO omega=2su/A, Bardeen 1973 lapse sqrt(Delta Sigma/A), lambda(u)/eta(u) critical curve (matches Bardeen's xi,eta), Carter 1968, Thorne 1974 s=0.998, Bozza 2003 and Cunningham-Bardeen 1973 citations are correct as far as I know. The sign convention (alpha<0 = prograde, pinched side) agrees with the standard Bardeen picture (flat edge on the left).",
+  "verification_rows_rerun": {
+    "count": 13,
+    "rows": ["V1 charter row R2 (sed 367p)", "V2 runtime v0.54.14", "V3 sim/ailang.toml pin 0.12.0", "V4 package kerr=1 / schwarzschild=21 (control holds)", "V6 spec kerr=0, lines 63/149", "V7 premise-and-loop:14", "V9 no kerr code (only playbackError substring; control: schwarzschild 330 hits in tree)", "V10 M3 files present", "V11 test_physics.gd RS-10..13 at 1232-1236", "V12 protocol minors 3-12, grMinor=6", "V14 sim/gr.ail lines 4, 54, gr_test.ail:157", "V16 gr_on in background.gdshader lines 108/146", "V17/V28 lens_fwd.json header and M3 doc cost line 177 (~5 s/row, 40 CPU-min)", "V18 grMinR/grMaxR", "V23 earth-fate-home:135", "V26 armed order line 376"],
+    "not_recheckable": ["V13 (PR 302 / S0 minor 13) and V29 (ailang-packages 0.13.0) are inherited controller evidence outside my search bounds"],
+    "planning_premises_rerun": ["design repo HEAD 864a4e4 and bc1f1111 exists", "spec has no Kerr (positive control schwarzschild)", "protocol.ail decodeOverride rejects unknown keys as bad_params (bh_r is the control), so DI-15's premise holds", "IGrOrbit has no fields (protocol.ail:205,528), so DI-06's premise holds", "every existing make target in the gate lists exists; none of the 19 NEW targets exists; tools/rig_check.sh, tools/render_diff.gd, tools/geodesic_ref.py (allowlisted role oracle) exist"]
+  },
+  "di_adjudication": {
+    "DI-01": {"verdict": "REAL", "evidence": "Doc line 104 asserts closed forms at 1e-12 relative against 6-decimal RK literals; 1.435890 vs 1.4358898944 differs ~7e-8 relative."},
+    "DI-02": {"verdict": "REAL", "evidence": "K1.2 stores psi_b as an angle but says its s=0 row 'equals sin alpha_sh'; at 3 r_s that is pi/4 vs 0.7071 (low severity wording fix)."},
+    "DI-03": {"verdict": "REAL", "evidence": "Strict monotonicity of psi_b in chi is impossible for a periodic variable and for the chi-constant s=0 circle; line 138 also says 'committed bins' while line 136 says bins are never committed (that clause alone is only PARTLY: pins are committed)."},
+    "DI-04": {"verdict": "REAL", "evidence": "Channel R subtracts a unit-coefficient ln tanh term while the same paragraph says the Kerr log coefficient is measured per row (and is not 1 off Schwarzschild); no schema stores it."},
+    "DI-05": {"verdict": "REAL", "evidence": "Line 124 requires (1-s) as an input but every K1.1 signature and bh_spin take s only; severity is low at s<=0.998 (1-s=0.002 loses ~5e-14 relative) but the contract is internally inconsistent."},
+    "DI-06": {"verdict": "REAL", "evidence": "IGrOrbit currently has no fields; doc line 150 makes dir default 'pro' yet refuses at s=0, so a legacy field-less gr_orbit at s=0 would be refused or the rule is ambiguous."},
+    "DI-07": {"verdict": "REAL", "evidence": "Table rays are projected in a ZAMO tetrad (K1.1) but hover is a static observer with beta=0 (K1.4/K1.5); at s=0.9, u=4 the ZAMO moves ~0.1c relative to static, so one unnamed frame cannot serve both."},
+    "DI-08": {"verdict": "REAL", "evidence": "GR14 applies the observer-at-infinity ratio 0.412112 to finite-radius renders (r=10/5/3), while line 167 itself says no closed form exists at finite r."},
+    "DI-09": {"verdict": "REAL", "evidence": "Sim accepts any s<1 (bad_spin only outside [0,1)), tables exist for one spin, and K1.5 dispatches on spin>0; missing-table behaviour is undefined."},
+    "DI-10": {"verdict": "REAL", "evidence": "Risk row allows null spinning-tide fields while G4 and AC-K8 require package-valued tide fields; no nullable schema or amended AC."},
+    "DI-11": {"verdict": "REAL", "evidence": "Equatorial alpha = -lambda (sign), and my eta at the exact photon-orbit endpoints is ~1e-14, not exactly 0; 'equal ... exactly' needs a tolerance and sign (low severity)."},
+    "DI-12": {"verdict": "REAL", "evidence": "'RK4 on the (u,theta) pair' gives no phi (or t) evolution, but channel G (out-of-plane twist) needs the accumulated azimuth and turning-point sign handling."},
+    "DI-13": {"verdict": "REAL", "evidence": "AC-K2 ends with bare 'ailang pkg info' after defining $A as the pinned binary (trivial)."},
+    "DI-14": {"verdict": "REAL", "evidence": "GR17 says every interpolation/boundary mutant must fail GR13 (silhouette from the black-pixel mask), but a deflection-only interpolation mutant leaves the silhouette unchanged."},
+    "DI-15": {"verdict": "REAL", "evidence": "protocol.ail:558-571: decodeOverride returns bad_params for an unrecognised key, so the pristine previous minor rejects explicit bh_spin=0; doc line 76's 'bh_spin = 0 bytes equal the previous minor' is only meaningful against the absent-spin request."}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "RK-16 s=0.998 value 4.876991 is wrong (mine 4.877001/4.877003) and V21's s=0.998 alpha_max 6.99657841 is wrong (exact endpoint 6.99666627); the first executor slice (K1.1a-a oracle) will expose both, and DI-01's 17-digit oracle fixture is the right fix. Fix the spec rows before they are copied into relativity-spec.md section 3b.",
+    "'Mean shadow radius' (RK-16) is defined by a u-uniform 200,000-sample average, which is a measure-dependent number, not a physical quantity; normatively pin the measure (or drop the row) in section 3b.",
+    "Table-generation cost estimate (18-25 CPU-h per spin) looks low against the M3 anchor (about 36 CPU-h by ray count x 3x cost); the plan's re-measure task and fallbacks cover it, but Mark should treat the three-to-four-week estimate as optimistic (plan already says 6 weeks).",
+    "'staticClockRateKerr(u,theta,0) = staticClockRate(u/2) exactly' is bit-exact only if the implementation form is arranged so 2u/Sigma reproduces 2/u; state the evaluation form or test with a tolerance.",
+    "Doc and plan disagree on K1.0 ordering (doc: first, needs only doc approval; plan: depends on K1.1a-a oracle provenance) and on decomposition (9 sub-milestones vs 30 slices); harmless but should be reconciled at P0.",
+    "The sprint JSON has no top-level 'milestones' key (uses sprint_plan/parent_milestones); it parses with jq -e and is internally consistent, but any tooling expecting 'milestones' will see zero.",
+    "V13 (minor 13 claimed by S0 and PR #302) and V29 (relativity 0.13.0 unpublished) could not be re-verified inside my search bounds; both are honestly labelled as inherited controller evidence."
+  ],
+  "commands_run": [
+    "git diff origin/main...HEAD --stat; git log --oneline origin/main..HEAD",
+    "python3 -I /tmp/kerr_eval.py (scratch oracle: horizons, photon orbits, ISCOs, clocks, Omega_H, omega, ZAMO lapse, v_Z, shadow scans, SI conversions, tide)",
+    "python3 -I /tmp/vz.py (independent ZAMO-speed check via (Omega-omega) sqrt(g_phiphi)/lapse)",
+    "python3 -I /tmp/e2.py (endpoint eta, alpha extremes, mean-radius sampling measures)",
+    "sed/grep re-runs of verification rows V1-V28 (see verification_rows_rerun)",
+    "git grep -hE '^<target>:' -- Makefile 'mk/*.mk' for 30 existing and 19 NEW make targets",
+    "sed -n 556,582p sim/protocol.ail; grep gr_orbit sim/*.ail",
+    "jq -e on sprint_R2-KERR.json"
+  ]
+}

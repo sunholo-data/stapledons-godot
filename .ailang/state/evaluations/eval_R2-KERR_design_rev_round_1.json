@@ -1,0 +1,468 @@
+{
+ "sprint_id": "R2-KERR",
+ "review_kind": "design-revision",
+ "round": 1,
+ "reviewed_commit": "4618f92a834058a5a30a5ff76b56ef3e49dbdc18",
+ "evaluator_model": "claude-sonnet-5-5 (independent evaluator)",
+ "score": 86,
+ "verdict": "PASS",
+ "rubric": {
+  "item_resolution_DI_F_Q3 (30)": 25,
+  "physics_independent_recomputation (20)": 20,
+  "embedded_oracle_vs_doc_numbers (10)": 10,
+  "protocol_contract_implementable (10)": 6,
+  "acceptance_criteria_checkable (10)": 8,
+  "status_honesty (10)": 10,
+  "internal_consistency_no_regressions (10)": 7,
+  "mutation_resilience_of_verification_rows (-)": "deduction folded into consistency: 2 doc-level mutants survive"
+ },
+ "item_adjudication": {
+  "DI-01": {
+   "status": "RESOLVED",
+   "line": "84-108",
+   "evidence": "RK table now 17-digit fixtures; display rounding tested separately. VERIFIED BY ME: every fixture in the table appears verbatim in the doc oracle output, and my independent float64 recomputation agrees to <=2e-15 relative."
+  },
+  "DI-02": {
+   "status": "RESOLVED",
+   "line": "148",
+   "evidence": "psi_b = alpha_sh in radians, asin form stated. Correct per spec s3."
+  },
+  "DI-03": {
+   "status": "RESOLVED",
+   "line": "154",
+   "evidence": "Periodic seam/reflection/range/zero-spin checks replace chi monotonicity; pinned fetched bins stated."
+  },
+  "DI-04": {
+   "status": "RESOLVED",
+   "line": "149",
+   "evidence": "Per-(chi,r) coefficients a_par/a_perp stored in artifact 1, reconstruction delta=channel-aL, convergence gate and STOP. Execution-time evidence still pending, correctly flagged."
+  },
+  "DI-05": {
+   "status": "RESOLVED",
+   "line": "138",
+   "evidence": "Narrowed to scalar s only, accuracy relative to represented s, cap 0.998, replaces the impossible independent (1-s) input. Coherent."
+  },
+  "DI-06": {
+   "status": "PARTLY",
+   "line": "166",
+   "evidence": "Rules stated (absent+s=0 legacy; explicit at s=0 refused; s>0 default pro; invalid string/null bad_gr; pre-Kerr ignores dir). Ambiguity: sim.protocol has two refusal channels (decode-time malformed = status code, no tick; sim refusal in the refused[] list with the tick proceeding, protocol.ail:827, gr.ail:194-201). The doc says 'refused bad_gr' for explicit-at-zero and 'answers bad_gr without executing that intent' for invalid dir, and AC-K8 says 'both refusals preserve state', which is only true of the malformed channel. IGrOrbit is nullary (protocol.ail:231,590) so the intent type and recording encoder must change; not stated."
+  },
+  "DI-07": {
+   "status": "RESOLVED",
+   "line": "128-132",
+   "evidence": "VERIFIED BY ME from the metric: ZAMO tetrad, static v_S=-omega h/N (-0.151608852119 at u=4,s=.9), static clock sqrt(-g_tt)=N/gamma_S exactly, ray-dependent g=(1-omega lambda)gamma(1+v.n)/N equals 1/sqrt(-g_tt) for five hover rays and (1-Omega lambda)/clock for both circular orbits (pro/retro, 2 rays each); single-boost gamma_Z=gamma_S gamma_b and v_r=b/gamma_S correct. Package-first ownership stated."
+  },
+  "DI-08": {
+   "status": "RESOLVED",
+   "line": "181-182",
+   "evidence": "GR13/GR14 split: finite-r CPU boundary in the same static frame; 0.41211167869793890 only for the far/infinity case (my recomputation 0.4121116786979391)."
+  },
+  "DI-09": {
+   "status": "RESOLVED",
+   "line": "172",
+   "evidence": "Exact binary64 spin/inclination/version/hash manifest match, three named unavailable reasons, no nearest-spin or Schwarzschild fallback; client-side status, not a sim null."
+  },
+  "DI-10": {
+   "status": "RESOLVED",
+   "line": "122, 242",
+   "evidence": "Numeric tides mandatory; STOP for Mark if tools/kerr_ref.py cannot verify; no null schema. Honest that no tide value is asserted yet."
+  },
+  "DI-11": {
+   "status": "RESOLVED",
+   "line": "140",
+   "evidence": "alpha=-lambda(u_pro) = alpha_min, alpha=-lambda(u_ret)=alpha_max, beta^2=eta with |eta|<=1e-10 tolerance. VERIFIED BY ME: lambda_pro=2.8444214034761695, lambda_ret=-6.832319230446666, eta(3)=27."
+  },
+  "DI-12": {
+   "status": "RESOLVED",
+   "line": "134-136",
+   "evidence": "Mino-time system dphi/dzeta=sP/Delta+lambda csc^2-s, dt/dzeta=(u^2+s^2)P/Delta+s(lambda-s sin^2), R, Theta all match Carter/BPT72 (checked from memory of the standard forms and eta(3)=27). Root-event sign flips, phi accumulation, analytic capture specified. Solver tests are execution gates."
+  },
+  "DI-13": {
+   "status": "RESOLVED",
+   "line": "197-212",
+   "evidence": "A=\"$PWD/runtime/bin/ailang\" set before any cd and used in every package command including pkg info. Residual: AC-K9 uses $ROOT, defined only in the plan (sprint.md:143-148), not in the doc setup line."
+  },
+  "DI-14": {
+   "status": "RESOLVED",
+   "line": "184, 209",
+   "evidence": "GR17 mutants mapped: boundary->GR13, twist->GR15, deflection-only->float probe, each must fail then restore."
+  },
+  "DI-15": {
+   "status": "PARTLY",
+   "line": "169",
+   "evidence": "Strong byte-level contract (B@m vs candidate@m for m<K including hello and refusals; candidate@K with absent or explicit zero == B@P on the bh_spin-removed request except hello; suppress Kerr keys). Implementability gap not stated: decodeInput(line) (protocol.ail:654) has no session minor and bh_spin is rejected inside decodeOverride/inRange (L613-633), before the hello/no_hello check in serve (L898). A 'minor-aware dispatch' needs decodeInput to take the minor, or a post-decode check like hasIsmModel (L902), which would change refusal priority (e.g. bh_spin before no_hello) and therefore bytes. The doc should say which; fixture must cover that ordering."
+  },
+  "F1": {
+   "status": "RESOLVED",
+   "line": "101, 106, 351-358",
+   "evidence": "RK-16 s=.998 corrected to 4.8770013845209779 and alpha_max to 6.9966662713999613; VERIFIED BY ME: mine 4.877001384521019 and 6.9966662713999614."
+  },
+  "F2": {
+   "status": "RESOLVED",
+   "line": "106",
+   "evidence": "RK-16 pinned as a named uniform-u N=200000 inclusive equal-weight diagnostic, explicitly not a physical mean."
+  },
+  "F3": {
+   "status": "RESOLVED",
+   "line": "15, 152, 227",
+   "evidence": "Six-week budget; 19.2-36.0 CPU-h; VERIFIED BY ME arithmetic (9437184 rays; 18x(40/60)x3=36). Header, table and total LOC agree (2080+1630=3710)."
+  },
+  "F4": {
+   "status": "PARTLY",
+   "line": "118, 375-380",
+   "evidence": "Evaluation form and zero-spin direct dispatch are specified in normative text (resolved), but the V34 evidence does not discriminate: all four sampled u give identical bits for the legacy and 'naive' forms. VERIFIED BY ME: over 2e5 log-uniform u in [4,2e6], sqrt(1-1/(u/2)) and sqrt(1-2u/u^2) differ in 1598 cases (0.8%), 0 differ between sqrt(1-1/(u/2)) and sqrt(1-2/u)."
+  },
+  "F5": {
+   "status": "RESOLVED",
+   "line": "80, 218, 229",
+   "evidence": "Ordering reconciled: K1.0 not first prerequisite; nine parents = 30 slices."
+  },
+  "F6": {
+   "status": "RESOLVED",
+   "line": "231, 247, 320",
+   "evidence": "VERIFIED BY ME: the jq in V37 returns true (exit 0) on sprint_R2-KERR.json."
+  },
+  "F7": {
+   "status": "RESOLVED",
+   "line": "295-296, 312",
+   "evidence": "V12/V13/V29 refreshed and labelled controller-verified. VERIFIED BY ME: origin/main is 23928d01, protocol.ail minors 3..13 and archive=surface+2 =15; sim/ailang.toml pins 0.12.0. Residual: the controller command in V12 (grep -n 'Minor() *=') matches no definition (defs are 'Minor() -> int ='); the rg form given beside it works."
+  },
+  "Q3-G": {
+   "status": "RESOLVED",
+   "line": "130, 321, 326",
+   "evidence": "VERIFIED BY ME: gemini's literal formula (+gamma v, 1+n.v) is the forward form; spec s2 line 21 defines aberrate(n,beta) with that form and line 22 inverse = aberrate(n',-beta). The doc's inverse (-gamma|v| and 1-n.v) is correct. Brute-force Lorentz transform of a photon four-momentum confirms: the doc n_Z=(0.78930098917940921, 0, 0.61400647266979697) boosts back to n_ship=(0.6,0,0.8) with D=gamma(1+v.n_Z)=0.60375; the forward form boosts to (-0.315,0,0.949), wrong. The pure-boost convention (no Wigner rotation) is fixed and gamma_Z=gamma_S gamma_b holds. Controller claim confirmed."
+  },
+  "Q3-Z": {
+   "status": "RESOLVED",
+   "line": "29, 26, 146, 176, 323-325",
+   "evidence": "1.05e9 g (VERIFIED BY ME 1.0508005e9 g), 0.0927 = RK-8b (mine 0.09267030836537096), encodeF32LE at sim/tools/lens_lut_main.ail:42 (verified; also in lens_lut.ail:20), catmull/cot comments at schwarzschild.gdshaderinc:14-15,70 verified. Residual: RK-8b is cited as a fixture but is absent from the normative RK-1..18 table, so the spec/test set would not carry it."
+  },
+  "Q3-K": {
+   "status": "RESOLVED",
+   "line": "3, 276, 285, 322",
+   "evidence": "Status states pending quorum and not scheduled with the Anthropic/OpenAI condition; V2 relabelled historical; V39 verified (gate-2-pick.md:236 exists, charter has 5 'carve-out' mentions, VERIFIED BY ME). Honest: round 3 had present seats glm, gemini, kimi, all REJECT, and neither Anthropic nor OpenAI. The round-2 paragraph (275) itself does not mention that the carve-out lacks a charter basis; only V39 does."
+  }
+ },
+ "physics_recomputed": [
+  {
+   "quantity": "horizon u+ s=0.9",
+   "mine": 1.4358898943540672,
+   "doc": 1.4358898943540674,
+   "abs_diff": 2.220446049250313e-16,
+   "rel_diff": 1.546390191881096e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "horizon u+ s=0.998",
+   "mine": 1.0632139225171164,
+   "doc": 1.0632139225171164,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "photon pro s=0.9",
+   "mine": 1.5578546274233829,
+   "doc": 1.5578546274233829,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "photon ret s=0.9",
+   "mine": 3.9102679391030377,
+   "doc": 3.910267939103037,
+   "abs_diff": 8.881784197001252e-16,
+   "rel_diff": 2.2714004092104783e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "photon pro s=0.998",
+   "mine": 1.0739092576799494,
+   "doc": 1.0739092576799516,
+   "abs_diff": 2.220446049250313e-15,
+   "rel_diff": 2.0676291161204e-15,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py (my float64 bisection is ill-conditioned there)"
+  },
+  {
+   "quantity": "photon ret s=0.998",
+   "mine": 3.998221892847946,
+   "doc": 3.998221892847946,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "ISCO pro s=0.9 (quartic u^2-6u+8s sqrt u-3s^2=0)",
+   "mine": 2.320883041761887,
+   "doc": 2.320883041761887,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "ISCO ret s=0.9",
+   "mine": 8.717352279606489,
+   "doc": 8.717352279606489,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "ISCO pro s=0.998",
+   "mine": 1.2369706551751904,
+   "doc": 1.2369706552,
+   "abs_diff": 2.4809487797483598e-11,
+   "rel_diff": 2.0056650247270633e-11,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "alpha_min s=0.9 (-lambda_pro from R=R'=0, eta=0)",
+   "mine": -2.8444214034761695,
+   "doc": -2.8444214034761695,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "alpha_max s=0.9",
+   "mine": 6.832319230446666,
+   "doc": 6.832319230446666,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "alpha_max s=0.998",
+   "mine": 6.9966662713999614,
+   "doc": 6.9966662713999614,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-8b clock at pro ISCO s=0.998",
+   "mine": 0.09267030836537096,
+   "doc": 0.09267030836536858,
+   "abs_diff": 2.3869795029440866e-15,
+   "rel_diff": 2.575775936271854e-14,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "Omega_H s=0.9",
+   "mine": 0.3133945031366293,
+   "doc": 0.31339450313662925,
+   "abs_diff": 5.551115123125783e-17,
+   "rel_diff": 1.771286690598299e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "omega at u=2, s=0.9",
+   "mine": 0.16014234875444835,
+   "doc": 0.1601423487544484,
+   "abs_diff": 5.551115123125783e-17,
+   "rel_diff": 3.4663629991074327e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "ZAMO lapse at u=2",
+   "mine": 0.37964208654863796,
+   "doc": 0.379642086548638,
+   "abs_diff": 5.551115123125783e-17,
+   "rel_diff": 1.4621969796846006e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "frame drag SI rad/s",
+   "mine": 3251.297189595645,
+   "doc": 3251.29719,
+   "abs_diff": 4.043549779453315e-07,
+   "rel_diff": 1.2436727690996822e-10,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-12 ZAMO speed at pro ISCO s=0.9",
+   "mine": 0.6245486954608654,
+   "doc": 0.6245486954608652,
+   "abs_diff": 2.220446049250313e-16,
+   "rel_diff": 3.555280901854751e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-12 s=0.5",
+   "mine": 0.5616492422819277,
+   "doc": 0.5616492422819278,
+   "abs_diff": 1.1102230246251565e-16,
+   "rel_diff": 1.9767195271454927e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-16 s=0.9 (float64 sum)",
+   "mine": 5.043736894514357,
+   "doc": 5.043736894514295,
+   "abs_diff": 6.217248937900877e-14,
+   "rel_diff": 1.2326671806895649e-14,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-16 s=0.998",
+   "mine": 4.877001384521019,
+   "doc": 4.877001384520978,
+   "abs_diff": 4.1744385725905886e-14,
+   "rel_diff": 8.559436923351632e-15,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "asymmetry s=0.9",
+   "mine": 0.4121116786979391,
+   "doc": 0.4121116786979389,
+   "abs_diff": 1.6653345369377348e-16,
+   "rel_diff": 4.040978751680457e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-17 beta_max 45deg (grid 2e6)",
+   "mine": 5.069634529557692,
+   "doc": 5.069634529558124,
+   "abs_diff": 4.32542890393961e-13,
+   "rel_diff": 8.532032987231172e-14,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py grid-limited"
+  },
+  {
+   "quantity": "static velocity wrt ZAMO u=4 s=.9",
+   "mine": -0.15160885211907207,
+   "doc": -0.15160885211907205,
+   "abs_diff": 2.7755575615628914e-17,
+   "rel_diff": 1.8307358196888113e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "static clock = N/gamma_S",
+   "mine": 0.7071067811865476,
+   "doc": 0.7071067811865476,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "hover redshift all rays",
+   "mine": 1.414213562373095,
+   "doc": 1.414213562373095,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "pro-orbit g (n_phi=.6)",
+   "mine": 2.3084941047201766,
+   "doc": 2.3084941047201766,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "retro-orbit g",
+   "mine": 2.586618126438867,
+   "doc": 2.5866181264388675,
+   "abs_diff": 4.440892098500626e-16,
+   "rel_diff": 1.7168719468515575e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "n_Z^r approach ray",
+   "mine": 0.7893009891794092,
+   "doc": 0.7893009891794092,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "n_Z^phi approach ray",
+   "mine": 0.614006472669797,
+   "doc": 0.614006472669797,
+   "abs_diff": 0.0,
+   "rel_diff": 0.0,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "10 Msun ergosphere tide in g",
+   "mine": 1050800528.7008789,
+   "doc": 1050800000.0,
+   "abs_diff": 528.7008788585663,
+   "rel_diff": 5.031413007789934e-07,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-18 ISCO km",
+   "mine": 34.27074009851537,
+   "doc": 34.27074009851536,
+   "abs_diff": 7.105427357601002e-15,
+   "rel_diff": 2.073321829985462e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  },
+  {
+   "quantity": "RK-18 Omega_H rad/s",
+   "mine": 6362.705900143996,
+   "doc": 6362.705900143995,
+   "abs_diff": 9.094947017729282e-13,
+   "rel_diff": 1.429414962826343e-16,
+   "command": "python3 -I /tmp/ev45/mine.py | frames.py | more.py"
+  }
+ ],
+ "aberration_sign_verdict": "Doc is right. Spec s2 (relativity-spec.md:21-22): aberrate(n,beta) has +gamma beta and 1+beta n.beta_hat; inverse = aberrate(n',-beta). The doc's n_Z=aberrate(n_ship,-v_Z) with -gamma|v| and 1-n.v is that inverse; gemini's literal formula was the forward form. Brute-force Lorentz check agrees.",
+ "mutation_checks": [
+  {
+   "mutation": "aberration sign flipped to forward form in doc oracle frames (aberr(ns,vz))",
+   "result": "KILLED: n_Z becomes (0.2244,0.9745) vs quoted (0.7893,0.6140) and round-trip error 0.915 vs 9e-60. The round-trip line is itself sign-sensitive here because back uses the fixed vz."
+  },
+  {
+   "mutation": "redshift factor (1-omega lambda) -> (1+omega lambda)",
+   "result": "KILLED only by comparing printed output to the quoted V33 block: hover g becomes 1.1569 not sqrt2. The oracle never asserts hover==sqrt(2); detection is by eye."
+  },
+  {
+   "mutation": "swap prograde/retrograde ISCO returns",
+   "result": "Crashes (Decimal cube root of a negative), loud kill."
+  },
+  {
+   "mutation": "RK-15 constant 3*sqrt(3) -> 3*sqrt(2)",
+   "result": "KILLED by output diff, but no doc command performs the diff."
+  },
+  {
+   "mutation": "RK-16 N 200000 -> 200001",
+   "result": "KILLED by output diff (5.0437368945194291 vs ...142949); again by comparison to the quoted block only."
+  },
+  {
+   "mutation": "change last digit of RK-14 alpha_max in the doc table (6.8323192304466666 -> ...67)",
+   "result": "SURVIVES at doc level: no command in the doc compares table literals to oracle output; caught only later by K1.0/AC-K3 `make kerr-oracle` and the 1e-12 package tests. My own loop (every table literal grepped in oracle output) would catch it."
+  },
+  {
+   "mutation": "V34: replace legacy sqrt(1-1/(u/2)) by naive sqrt(1-2u/u^2) in the clock mode",
+   "result": "SURVIVES: the output is bit-identical for all four probes, so V34 cannot detect the operation-order hazard F4 was about (0.8% of random u differ)."
+  }
+ ],
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "DI-06/DI-15 (K1.4 L166, L169): refusal channel is ambiguous. Explicit-dir-at-zero 'refused bad_gr' and invalid dir 'answers bad_gr without executing' may mean a decode-time malformed status (no tick, state preserved) or a sim refusal in refused[] (tick proceeds); AC-K8 says 'both refusals preserve state', true only of the first. Byte fixtures cannot be written until K1.4-c chooses; the doc should name it.",
+  "DI-15: decodeInput(line) is minor-blind (protocol.ail:654) and old bh_spin rejection lives in decodeOverride/inRange before the hello check. The 'minor-aware dispatch' must be specified as decode-level (preserving bad_params-before-no_hello priority) or the refusal bytes for hello-less streams change. IGrOrbit is nullary and its encoder (L231) must gain dir; not mentioned.",
+  "RK-8b is cited by the pillar table and V40 but is not in the normative RK-1..18 table (L84-104), so the spec amendment and AC-K3 reproduction list (RK-1..18) will not carry the 0.0927 figure.",
+  "V34 evidence is non-discriminating: four probes produce identical bits for legacy and naive forms; choose a u where they differ (found in 0.8% of samples) or state that the probes are only illustrative (it does say 'illustrate').",
+  "No doc-level command checks the RK table and V-row literals against the oracle output (table digit mutations survive until K1.1a-a); a one-line diff or grep loop in the AC or V31 row would close it.",
+  "AC-K9 uses $ROOT which the acceptance setup line (197) does not define (defined in the plan only); AC-K2 and V37 contain markdown-escaped '\\|' inside grep -E / jq strings, which is a literal pipe in ERE if copied raw.",
+  "V12's first (controller) command, grep -n 'Minor() *=' sim/*.ail, matches no definition in the tree; only the rg form beside it reproduces.",
+  "Process: the round-3 fixes were applied under the same narrow-refinement carve-out whose charter basis kimi objected to (V39: none); the doc is candid and does not schedule on it, but the round-2 quorum paragraph (275) is not annotated with that finding."
+ ],
+ "commands_run": [
+  "git clone/checkout; git rev-parse HEAD = 4618f92a834058a5a30a5ff76b56ef3e49dbdc18",
+  "git log --oneline 4dee08e5..HEAD",
+  "python3 -I /tmp/ev45/mine.py (own photon/ISCO/lambda via R=R'=0)",
+  "python3 -I /tmp/ev45/frames.py (own metric/ZAMO/static/orbit/aberration, brute-force Lorentz)",
+  "python3 -I /tmp/ev45/more.py (own RK-9..18, SI, RK-16/17)",
+  "extract doc oracle to /tmp/ev45/doc_oracle.py; run modes closed, shadow, frames, clock, cost; diff sorted output vs ```text blocks: IDENTICAL; grep every RK table literal in output: none missing",
+  "5 mutation runs of the doc oracle (/tmp/ev45/mut.py)",
+  "jq V37 on sprint_R2-KERR.json: true",
+  "git grep encodeF32LE; grep catmull/cot in sky/schwarzschild.gdshaderinc; protocol.ail minors; mk/m5.mk hello-pin exists; ailang run lensDigest on cached package (works without AILANG_RELAX_MODULES, installed ailang is v0.54.16-dirty not the pin)",
+  "jq quorum JSON round-3 objections; read sim/protocol.ail 575-680, 880-930; gr.ail 190-220",
+  "Not run: make test, golden, package tests (no code change; runtime/bin absent in clone)"
+ ],
+ "note": "Doc correctly stays unscheduled: round-3 had no Anthropic/OpenAI seat; one more quorum round with that seat (or a Mark waiver D-row) is required before K1.1a."
+}
