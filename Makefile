@@ -18,6 +18,11 @@ APP := build/macos/Stapledons Voyage.app
 
 all: test
 
+.PHONY: kerr-oracle
+test: kerr-oracle
+kerr-oracle:
+	sh tools/test_kerr_oracle.sh
+
 include mk/constellations.mk
 include mk/home-tiers.mk
 include mk/deck-layout.mk
