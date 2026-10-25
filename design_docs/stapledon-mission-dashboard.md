@@ -1,18 +1,14 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-22, iteration 46.
+Updated 2026-10-25, iteration 49.
 
-- **Bar:** clauses 2 and 3 are MET; 1 and 4 are UNMET; 5 is ongoing. Goal moved: L9 S0.2 is R2 sim work, in Mark's 2026-10-20 order.
-- **Landed this iteration:**
-  - **L9 S0.2** (PR #323, merge `db54e525`). Protocol minor 14 sits between surface (13) and archive (15). Every new_game at minor 14 or more carries a top-level `similar` section (15 worlds, vectors, 3 nearest), just before `archive`. 2.13 bytes are unchanged; a 2.15 stream minus `similar` equals the pristine bytes. Live 2.15 games receive it now; the bridge copies unknown sections. Sonnet eval 93 PASS, 0 blocking, 7 of 7 drills killed.
-  - **Rows 7o + 7s** (PR #309, merge `2272527d`). `rig/full` went green in 65 min on an idle rig.
-  - **Row 7r.** The log is rotated with a binary built from the driver pin. The rig's `~/go/bin/ailang` predates fix #1912 (fleet D-FLEET-29).
-- **Mark (attended, mid-run):** D-116 A (the Sonnet review counts for Kerr), D-117 (S1 sounds approved, footsteps softer), D-118 (captain walk: fix the feet), D-119 (sunholo/audio plan approved).
-- **Resume first:** the R2 Kerr planner pass (D-116 A), folding in the Sonnet eval's 8 findings, then K1.1a (stop before publish). After that, L9 S0.3 (bridge parse, `SIMILAR_MINOR := 14`).
-- **Open decisions:** none.
-- **Lanes:**
-  - Planner and executor: codex gpt-6.1-sol (156k and 145k tok).
-  - Evaluator: Sonnet via the Agent tool (69k tok).
-  - Designer: not needed (approved plan).
-  - Quorum: one $0 seat probe (Claude seat absent, quota).
-- **Rig:** GPU 80 to 90 %, so 7m AC1 still needs an idle rig. 7i(c) is held by attended #318, #319 and #322.
+- **Bar:** Clauses 2/3 MET; 1/4 UNMET; 5 ongoing; goal unmoved. R2 K1.1a-a1 (1/5 oracle children) landed; the K1.1a parent remains open.
+- **Landed:** PR #325, merge `72bac6489e53646a666c747e70fd360166082e55`. RK-1/2 outer/inner horizons at spins 0/.5/.9/.998, exact fixture metadata, finite subextremal domain and separate precise/display values. 150 total physical lines. No package implementation or publication.
+- **Independent judge:** OpenRouter MiniMax M3, 95/100 PASS, zero blocking, six nonblocking. Four independent numerical routes; detailed matrix 13 source, 12 fixture, 6 removal and 1 paired drill. S5 is traceback-red, not an assertion kill.
+- **Gates:** full `make test` via rig/full green on `d235f6c0`; fast CI 40173640151 green on that exact head; merge CI 40180931545 green on `72bac648`. AILANG v0.54.14 / Godot 4.7.2. GPU gates N/A for the headless oracle seed.
+- **Recovered history:** iteration 47's Kimi planner amendment was already merged; iteration 48's oversized unreviewed orphan was preserved and not adopted wholesale.
+- **Next:** K1.1a-a2, the next bounded oracle child under D-116 A (then a3–a5 and the remaining approved K1.1a maths; stop before publish). L9 S0.3 bridge parsing follows. L4 test-suite speed is next in the attended product/toolchain order. K1.0/spec, P0, render and publish remain held.
+- **Open decisions:** none. Existing approval fences stay in place.
+- **Capacity/ownership parks:** row 7m requires GPU<15% three samples and load<5 (pick97%/load1.99; prelanding93%/load2.02 at09:22Z); 7i(c) held by attended PRs #318/#319/#322 at pick.
+- **Lanes:** native designer/planner/executor/evaluator roles all spawned. Explicit Codex designer/executor; Kimi fallback planner; independent MiniMax evaluator. Controller Codex; token total unreported. Metered $1.489045; quota usage in the full log.
+- **Harness share:** 2/20, escalation-only iterations31/32. Last three prior landings #323/#309/#305 moved no currently UNMET R1 clause; no drift alarm because no UNMET row was routable at pick.

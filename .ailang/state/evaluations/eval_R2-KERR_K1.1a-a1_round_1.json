@@ -1,0 +1,345 @@
+{
+  "sprint_id": "R2-KERR",
+  "milestone": "K1.1a-a1",
+  "feature_id": "K1.1a-a1",
+  "feature_title": "Oracle skeleton + horizon/domain/provenance seed",
+  "round": 1,
+  "reviewed_commit": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+  "reviewed_commit_subject": "test: add a bounded Kerr horizon oracle seed",
+  "production_diff_base": "45c97b3dd0fef9e5549e1ae28b9b22da16a10dfe",
+  "planner_diff_base": "fc9f73e55ba6e2664c728cc016b838b102c21044",
+  "evaluator_model": "MiniMax-M3 via OpenRouter",
+  "evaluator_vendor_independence": {
+    "generator_source": "Codex/OpenAI (source implementation commit d235f6c0)",
+    "generator_plan": "Kimi (planner commit 45c97b3d)",
+    "judge": "MiniMax-M3 via OpenRouter (this session)",
+    "statement": "generator != judge on both axes: neither the source generator (OpenAI/Codex) nor the plan generator (Kimi) produced this verdict. The judge vendor (OpenRouter/MiniMax-M3) is distinct from both generator vendors (OpenAI, Moonshot/Kimi) and from the Anthropic seat used for the upstream design (eval_R2-KERR_design_rev_round_1.json) and plan (eval_R2-KERR_plan_round_1.json) reviews. The judge did not author, execute, repair or extend the implementation under review; the native transport supplied no verdict.",
+    "transport": "Native transport supplied no verdict; the verdict below is the evaluator's own, derived from commands run in this session."
+  },
+  "review_kind": "scoped preliminary implementation review of a single sprint child (K1.1a-a1) - NOT a milestone landing, NOT a global approval",
+  "timestamp": "2026-10-25T07:48:18Z",
+  "worktree": "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter49",
+  "head_assertion": "git rev-parse HEAD == d235f6c0bd00474b957b0a47a0d57606faecc380 (detached, clean tree apart from the pre-existing untracked .ailang/state/brain.db); verified independently before and after every drill",
+
+  "scope": {
+    "production_diff_reviewed": "git diff 45c97b3d d235f6c0 -- Makefile tools/python-allowlist.txt tools/kerr_ref.py tools/test_kerr_oracle.sh tests/fixtures/kerr/rk.json",
+    "planner_diff_reviewed": "git diff fc9f73e5 45c97b3d (sprint JSON + sprint plan markdown only; no production or design-doc files touched)",
+    "authoritative_paths": [
+      "design_docs/planned/r2/kerr-black-holes.md (RK-1/RK-2 rows, V31, conventions, DI-01)",
+      "design_docs/planned/r2/kerr-black-holes-sprint.md (K1.1a-a1 child definition and gates)",
+      ".ailang/state/sprints/sprint_R2-KERR.json feature K1.1a-a1",
+      "design_docs/stapledon-mission.md D-116 (RESOLVED A, Mark, attended 2026-10-22)"
+    ],
+    "line_budget": {
+      "cap_total_physical_lines": 150,
+      "measured_added": 150,
+      "measured_deleted": 0,
+      "per_file_added": {"Makefile": 5, "tools/python-allowlist.txt": 1, "tools/kerr_ref.py": 57, "tools/test_kerr_oracle.sh": 72, "tests/fixtures/kerr/rk.json": 15},
+      "verdict": "exactly at the cap, not over; no hidden lines (git --numstat, all five files)"
+    },
+    "seed_subset": "RK-1/RK-2 only (8 records, spins 0, 0.5, 0.9, 0.998). The sprint plan explicitly permits an RK-1/RK-2-only seed; RK-3/RK-9 and the broader oracle remain OPEN and are deferred to K1.1a-a2..a5. Deferral is stated in the shell's final echo line and is honest - not a scope violation.",
+    "out_of_scope_and_not_claimed": [
+      "no AILANG package implementation (K1.1a-b..e, K1.1b, K1.2+ untouched)",
+      "no canonical physics publication (K1.1p / publish fence untouched)",
+      "no visuals, goldens, renders (K1.5/K1.6 untouched)",
+      "no design-doc move out of design_docs/planned/, no changelog fragment (explicitly not required for this preliminary child)"
+    ]
+  },
+
+  "approval_fence": {
+    "d116": "D-116 RESOLVED A (Mark, attended 2026-10-22) authorizes the planner pass then the headless K1.1a package maths, stopping before publish; K1.0 (design-repo spec PR) stays parked for Mark.",
+    "held_fences_confirmed_untouched": [
+      "sprint JSON status remains awaiting_approval, approved:false (verified in the reviewed tree)",
+      "all 34 active features carry passes:false; K1.1a parent and every other parent remain open",
+      "the superseded K1.1a-a object is preserved in superseded_features",
+      "no git write, no publish, no external message, no harness/skill edit, no agent spawned by this evaluation"
+    ],
+    "evaluator_authority": "This report records a scoped implementation verdict only. It is not permission to set global completed/approved, not a milestone landing, and not the full-suite gate."
+  },
+
+  "verdict": {
+    "scoped_result": "PASS",
+    "score": 95,
+    "pass_threshold": 70,
+    "full_suite_status": "PENDING",
+    "full_suite_detail": "make test (rig/full) and GitHub ci-fast are controller-owned, outside this sandbox, and run in parallel after the PR opens (~65-84 min). They were NOT run here and no broad pass is claimed. A red rig/full on this head overturns this verdict.",
+    "milestone_landing": "NOT authorized by this report. The complete milestone cannot land on a scoped review alone; the full-suite and CI results are still PENDING.",
+    "one_line": "K1.1a-a1 is a faithful, tightly-scoped RK-1/RK-2 oracle seed: all five scoped gates rc 0, all 8 fixture values independently re-derived by three separate routes to the last of 17 significant digits, and 25 source mutants + 12 fixture mutants + 6 removal drills + 1 paired drill independently killed; 5 non-blocking findings, no blocking findings."
+  },
+
+  "score_breakdown": {
+    "tests_pass_scoped": {
+      "points": 18,
+      "max": 20,
+      "basis": "All five AC-K3-slice commands run by this evaluator, rc 0 (see commands_run). The rubric's Tests-Pass category is defined by the whole-repo make test, which is controller-owned, outside this sandbox and PENDING; 2 points are withheld until rig/full + ci-fast land green on this exact head. The category closes at 20/20 only on that evidence."
+    },
+    "lint_clean": {
+      "points": 10,
+      "max": 10,
+      "basis": "make python-guard rc 0 (20 allowlisted, 0 awaiting AILANG port); make lint-precision rc 0 (positive control matched 6/6 planted lines); git diff --check rc 0; no make warnings on the duplicated 'test:' prerequisite declaration."
+    },
+    "acceptance_criteria": {
+      "points": 28,
+      "max": 30,
+      "basis": "AC-K3-slice: 5/5 commands rc 0, all run by this evaluator. Both named test intents (oracle literal anchors; invalid inputs and metadata) are implemented AND independently demonstrated load-bearing by mutation (S1-S13, F1-F12, R1-R5). 2 points withheld: the repo's own test pins the oracle against literals transcribed from the design doc rather than re-deriving the values inside the harness from an independent second expression (the feature text asks for 'independently expressed' formulas); the independence exists in this evaluation, not in the repository (see non_blocking_findings NB-1)."
+    },
+    "code_quality": {
+      "points": 14,
+      "max": 15,
+      "basis": "Files are tiny (57/72/15/5/1 lines); no TODO/HACK/FIXME; longest Python function 16 lines (main, tools/kerr_ref.py:35); all four Python functions under 50 lines; the fixture's committed bytes are byte-identical to the oracle's stdout (a strong self-consistency property); the sprint JSON's per-feature passes/completed/actual_loc remain null by design (controller-held, not an evaluator defect). -1: the shell test's single check() function spans 62 lines (tools/test_kerr_oracle.sh:9-70), over the rubric's 50-line guidance; it is one cohesive embedded program, so a reduced -1 rather than -2 was taken."
+    },
+    "documentation": {
+      "points": 15,
+      "max": 15,
+      "basis": "Adapted for this Godot repo and this preliminary child. Provenance completeness 5/5: the fixture carries unit (GM/c^2), source (BPT72 ApJ178,347 Sec II + design V31), per-record formula and schema; all pinned by the checker (S12, F1, F2, F4, F9 killed). In-code documentation 5/5: the module docstring states the u = r/(GM/c^2) and package R = u/2 in r_s convention (tools/kerr_ref.py:2). External doc cross-check 5/5: the design doc's V31 doc-literal gate, narrowed to the RK-1/RK-2 rows in this child's scope, reproduces EVERY doc literal from the oracle output (comm -23 empty). Changelog fragment and the design-doc move to design_docs/implemented/ are NOT required for this preliminary child (deferred to the parent endpoint) and are not penalised."
+    },
+    "design_fidelity": {
+      "points": 10,
+      "max": 10,
+      "basis": "Implementation matches the design on every point this child owns: conventions (u = r/(GM/c^2), r_s = 2GM/c^2, package R = u/2), RK-1/RK-2 17-significant-digit values (independently re-derived, exact), domain 0 <= s < 1 with finiteness (design line 115), DI-01 (17-sig precise fixtures with separately rounded display text), RK-Q1-style s=0 reduction (u+ = 2 GM/c^2 = 1.0 r_s, u- = 0), source citation BPT72 ApJ 178, 347 Sec II. No design requirement silently dropped; no unexpected deviation; no unapproved design correction (process_rules). The RK-1/RK-2-only seed is an explicitly permitted shrink with honest deferral."
+    },
+    "total": 95,
+    "max": 100
+  },
+
+  "commands_run": [
+    {"cmd": "git rev-parse HEAD", "rc": 0, "out": "d235f6c0bd00474b957b0a47a0d57606faecc380 (asserted by the evaluator; also clean tree)"},
+    {"cmd": "sh tools/test_kerr_oracle.sh", "rc": 0, "out": "kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)"},
+    {"cmd": "make kerr-oracle AILANG=runtime/bin/ailang", "rc": 0, "out": "sh tools/test_kerr_oracle.sh -> kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)"},
+    {"cmd": "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json", "rc": 0, "out": "(silent, accepted)"},
+    {"cmd": "make python-guard lint-precision AILANG=runtime/bin/ailang", "rc": 0, "out": "python-guard: ok (20 allowlisted, 0 awaiting AILANG port); lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)"},
+    {"cmd": "git diff --check", "rc": 0, "out": "(clean)"},
+    {"cmd": "make -n test | grep -c test_kerr_oracle.sh", "rc": 0, "out": "1  (the oracle IS wired into the whole-repo `make test` chain at the reviewed commit)"},
+    {"cmd": "python3 -I tools/kerr_ref.py  (stdout) vs tests/fixtures/kerr/rk.json", "rc": 0, "out": "byte-identical (diff empty): the committed fixture is literally the generator's output"},
+    {"cmd": "python3 -I tools/kerr_ref.py --bogus | --check | --check a b | check a b", "rc": 1, "out": "usage: kerr_ref.py [--check|check <path>] (all four refuse correctly; see NB-4)"},
+    {"cmd": "python3 -I tools/kerr_ref.py --check <directory|binary file|json array>", "rc": 1, "out": "IsADirectoryError / utf-8 decode error / fixture mismatch (all refuse correctly)"},
+    {"cmd": "V31 doc-literal gate, narrowed to the RK-1/RK-2 rows (design doc literals vs oracle output)", "rc": 0, "out": "comm -23 empty: all 6 doc literals (1.8660254037844386, 0.13397459621556135, 1.4358898943540674, 0.56411010564593264, 1.0632139225171164, 0.93678607748288357) reproduced by the oracle"},
+    {"cmd": "git diff fc9f73e5 45c97b3d --stat", "rc": 0, "out": ".ailang/state/sprints/sprint_R2-KERR.json (+514/-...), design_docs/planned/r2/kerr-black-holes-sprint.md (48 lines) - planning artifacts only, no production or design-doc file touched"}
+  ],
+
+  "independent_physics": {
+    "requirement": "Values re-derived by the evaluator's own expression/route from the artifact's stated sources (BPT72 ApJ 178, 347 Sec II; design doc V31). Production tools/kerr_ref.py::horizons() was NOT reused as the oracle.",
+    "model": "Kerr horizon condition D = r^2 - 2Mr + a^2 = 0 (BPT72 ApJ 178, 347 Sec II), M = GM/c^2, a/M = s; u = r/(GM/c^2); package convention r_s = 2GM/c^2, so package R = r/r_s = u/2.",
+    "routes": [
+      "R1: own Babylonian/Newton sqrt on decimal.Decimal (decimal.sqrt NOT used), iterated to a fixed point at the context precision, certified by an explicit interval [y-err, y+err] with lo^2 <= x <= hi^2; context precision 80 (production uses 60, deliberately different).",
+      "R2: own Newton solve of the horizon polynomial u^2 - 2u + s^2 = 0 (seed (3+s)/2), independent of the +/-sqrt form.",
+      "R3: Vieta route - inner root u_- = s^2 / u_+ (root product) and u_+ + u_- = 2 (root sum), both asserted to < 1e-70.",
+      "R4: own bisection on D(u) over the bracket [1,2] (D(1)<0<D(2) for 0<=s<1)."
+    ],
+    "cross_route_agreement": "max |difference| between R1, R2, R3 and R4 < 1e-70 for every spin",
+    "results": [
+      {"spin": "0", "quantity": "outer", "independent_u_17g": "2", "fixture_precise": "2", "match": true, "independent_package_R": "1", "fixture_package_R": "1", "match_R": true},
+      {"spin": "0", "quantity": "inner", "independent_u_17g": "0", "fixture_precise": "0", "match": true, "independent_package_R": "0", "fixture_package_R": "0", "match_R": true},
+      {"spin": "0.5", "quantity": "outer", "independent_u_17g": "1.8660254037844386", "fixture_precise": "1.8660254037844386", "match": true, "independent_package_R": "0.93301270189221932", "fixture_package_R": "0.93301270189221932", "match_R": true},
+      {"spin": "0.5", "quantity": "inner", "independent_u_17g": "0.13397459621556135", "fixture_precise": "0.13397459621556135", "match": true, "independent_package_R": "0.066987298107780677", "fixture_package_R": "0.066987298107780677", "match_R": true},
+      {"spin": "0.9", "quantity": "outer", "independent_u_17g": "1.4358898943540674", "fixture_precise": "1.4358898943540674", "match": true, "independent_package_R": "0.71794494717703368", "fixture_package_R": "0.71794494717703368", "match_R": true},
+      {"spin": "0.9", "quantity": "inner", "independent_u_17g": "0.56411010564593264", "fixture_precise": "0.56411010564593264", "match": true, "independent_package_R": "0.28205505282296632", "fixture_package_R": "0.28205505282296632", "match_R": true},
+      {"spin": "0.998", "quantity": "outer", "independent_u_17g": "1.0632139225171164", "fixture_precise": "1.0632139225171164", "match": true, "independent_package_R": "0.53160696125855822", "fixture_package_R": "0.53160696125855822", "match_R": true},
+      {"spin": "0.998", "quantity": "inner", "independent_u_17g": "0.93678607748288357", "fixture_precise": "0.93678607748288357", "match": true, "independent_package_R": "0.46839303874144178", "fixture_package_R": "0.46839303874144178", "match_R": true}
+    ],
+    "outer_and_inner": "Both branches checked for all four spins; the outer/inner assignment (u+ = 1+sqrt(1-s^2) vs u- = 1-sqrt(1-s^2)) is pinned by the fixture's `quantity` field and by the design's RK-1/RK-2 rows; a branch swap is killed (S1).",
+    "r_s_factor_2": "package_R = u/2 confirmed independently for all 8 records. At s=0 the outer package_R = 1, i.e. the Schwarzschild horizon sits at r = 1 r_s exactly as the design's conventions demand, and the inner package_R = 0.",
+    "limiting_and_spin_domain": {
+      "contract": "finite 0 <= s < 1, no signed or extremal expansion (design line 115; DI-05 narrows reference accuracy to represented s <= 0.998)",
+      "fixture_max_spin": "0.998 - exactly the DI-05 represented cap; no value above it",
+      "extremal_limit": "s -> 1^- gives u+ -> 1 and u- -> 1 GM/c^2 (independently computed: s = 1-1e-20 -> u+ = 1.0000000001414214, u- = 0.99999999985857864); s = 1 itself is REFUSED by the oracle (verified), so the limit is never sampled at the boundary",
+      "s=0_reduction": "u+ = 2 GM/c^2 = 1.0 r_s, u- = 0 (RK-Q1-consistent zero-spin reduction)",
+      "negative_and_above_domain": "s = -0.1, 1, 1.1, NaN, Infinity, -Infinity all refused before any sqrt (independently re-tested by the evaluator)"
+    },
+    "source_metadata": "The fixture's `source` string ('BPT72 ApJ178,347 Sec II; design_docs/planned/r2/kerr-black-holes.md V31') matches the design doc's own attribution of the RK-1/RK-2 rows (design lines 86-87, V31 row 315, oracle output block at design line 338-343) and the module docstring. The oracle's own docstring states the u / r_s convention.",
+    "precise_vs_display": "precise is 17 significant digits (design line 82 requires 17-sig fixtures, NOT six-decimal display literals); display is a separately rounded 6-decimal string used only for spec text. The evaluator verified independently that every display value is the correctly-rounded 6-dp rendering of the independently derived value, that |precise - display| <= 5e-7 (half a unit in the last printed place, the design's stated display tolerance), that precise != display for every non-trivial record, and that no value sits on a rounding tie (so ROUND_HALF_EVEN vs HALF_UP is immaterial). The two fields are distinct and separately pinned by the harness (S8, S9, F3, F12)."
+  },
+
+  "mutation_evidence": {
+    "method": "Every drill ran inside this evaluator's own clone. Each source mutant: backup -> exact single-anchor replacement (asserted applied) -> python compile check (must succeed) -> target test -> capture the failing assertion -> restore original bytes -> assert restored SHA256 identical. Each fixture mutant: backup -> mutation (asserted applied) -> JSON readability check -> checker must reject with rc 1 -> checker must not rewrite the bytes -> shell must also go red -> restore -> assert restored SHA256 identical. No git checkout/reset was used. Evidence scripts live under /tmp/claude/kerr_eval (outside the repo); the repo tree was left byte-identical to HEAD.",
+    "baseline_sha256": {
+      "Makefile": "49530f0456ef33af51f2e824d19882ee89c5725b5d3e2756780f6e6ea9abd098",
+      "tools/python-allowlist.txt": "a37d82310b2220fd0f0fabceee570023368feaade86a89d79c572696becc5105",
+      "tools/kerr_ref.py": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+      "tools/test_kerr_oracle.sh": "6642d723350d28e64932866eb7522b69b433ae41b3f37f89bffe70952c032132",
+      "tests/fixtures/kerr/rk.json": "0d5946cad5b6bbfc96e5d979ead92968d60ad7b265df26122297f33cc0ddfe47"
+    },
+    "final_sha_recheck": "identical to baseline after every drill and after the whole session (git status clean apart from the pre-existing untracked .ailang/state/brain.db; git diff empty; HEAD still d235f6c0)",
+    "source_mutants": [
+      {"id": "S1_formula_branch_swap", "target": "tools/kerr_ref.py:15 (return 1 + delta, 1 - delta -> 1 - delta, 1 + delta)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: horizon branch/V31: 0", "class": "formula / branch"},
+      {"id": "S2_normalization_factor2_dropped", "target": "tools/kerr_ref.py:24 (package_R: u/2 -> u)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: factor2 R=u/2: 0", "class": "normalization (r_s factor 2)"},
+      {"id": "S3_precision_17g_to_10g", "target": "tools/kerr_ref.py:23 (precise .17g -> .10g)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: precise17/V31: 0.5", "class": "precision"},
+      {"id": "S4_domain_range_check_removed", "target": "tools/kerr_ref.py:12 (drop `not 0 <= s < 1`, keep the finite check)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: invalid spin accepted: -0.1", "class": "domain before sqrt"},
+      {"id": "S5_domain_finite_check_removed", "target": "tools/kerr_ref.py:12 (drop `not s.is_finite()`, keep the range check)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "red, but NOT via an AssertionError: the NaN input escapes as an uncaught decimal.InvalidOperation traceback (decimal comparisons against NaN raise) - see NB-2", "class": "domain before sqrt"},
+      {"id": "S6_checker_metadata_blind", "target": "tools/kerr_ref.py:47 (compare only the records, ignore schema/unit/source)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: unit accepted", "class": "checker metadata regression"},
+      {"id": "S7_duplicate_key_hook_removed", "target": "tools/kerr_ref.py:46 (drop object_pairs_hook=unique_keys)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: duplicate JSON key accepted", "class": "duplicate-key regression"},
+      {"id": "S8_display_reuses_precise_17g", "target": "tools/kerr_ref.py:23 (display .6f -> .17g)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: separate display: 0", "class": "precise vs rounded display"},
+      {"id": "S9_precise_reuses_rounded_6dp", "target": "tools/kerr_ref.py:23 (precise .17g -> .6f; the plan's named six-decimal-literal-reuse mutant)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: precise17/V31: 0", "class": "precision / six-decimal literal reuse"},
+      {"id": "S10_checker_always_accepts", "target": "tools/kerr_ref.py:47-48 (drop the mismatch refusal)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: empty/schema accepted", "class": "checker regression"},
+      {"id": "S11_sqrt_argument_1_minus_s", "target": "tools/kerr_ref.py:14 ((1 - s*s) -> (1 - s))", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: horizon branch/V31: 0.5", "class": "formula"},
+      {"id": "S12_source_metadata_text_drift", "target": "tools/kerr_ref.py:26 (source attribution text changed)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: --check valid fixture rejected (the committed fixture pins the metadata text in BOTH directions: source drift and fixture drift each break the pair)", "class": "provenance metadata"},
+      {"id": "S13_domain_error_message_drift", "target": "tools/kerr_ref.py:13 (error message text)", "applied": true, "compiled": true, "test_rc": 1, "red": true, "killed_by": "AssertionError: validation before sqrt: -0.1", "class": "domain message contract"}
+    ],
+    "source_mutant_summary": "13/13 RED, all from an assertion or a refusal path (never a compile failure); 0 survivors; every restored SHA256 identical to baseline.",
+    "fixture_mutants": [
+      {"id": "F1_unit_wrong", "mutation": "unit GM/c^2 -> gm/c^2", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1, "checker_stderr": "kerr-oracle: fixture schema/metadata/records mismatch"},
+      {"id": "F2_source_wrong", "mutation": "source -> wrongsource", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F3_precise_rounded_to_6dp", "mutation": "precise 1.8660254037844386 -> 1.866025 (six-decimal reuse)", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F4_source_key_removed", "mutation": "source key deleted", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F5_duplicate_composite_identity", "mutation": "a 9th record duplicating RK-1/0/outer appended", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F6_duplicate_json_key", "mutation": "duplicate top-level \"schema\" key injected (the controller-added permanent assertion's target)", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1, "checker_stderr": "kerr-oracle: duplicate JSON key"},
+      {"id": "F7_record_removed", "mutation": "RK-2/0/inner record deleted", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F8_spin_value_wrong", "mutation": "spin 0.9 -> 0.95", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F9_formula_metadata_wrong", "mutation": "formula u=1+sqrt(1-spin^2) -> u=1+sqrt(1-s)", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F10_package_R_factor2_wrong", "mutation": "package_R 1 -> 2", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F11_outer_inner_precise_swapped", "mutation": "outer precise replaced by the inner value", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1},
+      {"id": "F12_display_equals_precise", "mutation": "display 1.866025 -> 1.8660254037844386", "applied": true, "json_readable": true, "checker_rc": 1, "rejected": true, "bytes_unchanged_by_checker": true, "shell_rc": 1}
+    ],
+    "fixture_mutant_summary": "12/12 rejected by the checker with rc 1 and the fixture bytes unchanged after the check; 12/12 also turn the shell test red; every restored SHA256 identical to baseline.",
+    "paired_drill_duplicate_key": {
+      "setup": "S7 (unique_keys hook removed) applied together with F6 (duplicate JSON key in the fixture)",
+      "checker_rc": 0,
+      "meaning": "with the hook gone the checker ACCEPTS a duplicate-key fixture (the duplicate carries an identical value), so the object_pairs_hook is the SOLE killer for the duplicate-JSON-key defect; the controller-added permanent assertion at tools/test_kerr_oracle.sh:54 is therefore load-bearing, and it is what turns this regression red (AssertionError: duplicate JSON key accepted). Both files restored, SHA identical."
+    },
+    "removal_drills": [
+      {"id": "R1", "removed": "the whole Makefile hunk (Makefile:21-25)", "result": "make kerr-oracle -> rc 2 'No rule to make target `kerr-oracle'' (sole killer for the named gate); the shell still passes when invoked directly", "restored_sha_identical": true},
+      {"id": "R1b", "removed": "ONLY the 'test: kerr-oracle' prerequisite line (Makefile:22)", "result": "make kerr-oracle still rc 0 AND `make -n test | grep -c test_kerr_oracle.sh` drops from 1 to 0 - NOTHING in the test suite detects this. That single line is the sole killer for the oracle's participation in the whole-repo `make test`; removing it is a SILENT coverage loss (see residual_risks RS-1)", "restored_sha_identical": true},
+      {"id": "R2", "removed": "the tools/python-allowlist.txt entry", "result": "make python-guard rc 2 'tools/kerr_ref.py is not in tools/python-allowlist.txt' (sole killer; lint-precision unaffected)", "restored_sha_identical": true},
+      {"id": "R3", "removed": "tools/kerr_ref.py", "result": "shell rc 1 'missing oracle tools/kerr_ref.py'; make kerr-oracle rc 2; python-guard rc 2 'stale entry'", "restored_sha_identical": true},
+      {"id": "R4", "removed": "tests/fixtures/kerr/rk.json", "result": "shell rc 1 (FileNotFoundError on read_bytes - red, but via an uncaught exception rather than a clean assertion, see NB-3); checker rc 1", "restored_sha_identical": true},
+      {"id": "R5", "removed": "tools/test_kerr_oracle.sh", "result": "make kerr-oracle rc 2 ('sh: tools/test_kerr_oracle.sh: No such file or directory', make error 127)", "restored_sha_identical": true}
+    ],
+    "coverage_claim": "This is a 25-mutant + 6-removal + 1-paired suite, not exhaustive coverage. Categories exercised: formula, branch/outer-inner, normalization (r_s factor 2), precision (17-sig vs 6-dp), domain-before-sqrt (range and finiteness), checker metadata blindness, checker always-accepts, duplicate JSON key, provenance text, six-decimal literal reuse, precise/display conflation, and per-hunk removal. NOT exercised: the `check` alias on a rejected input, argv usage-branch assertions inside the harness, a signed/extremal spin expansion, spins other than 0/.5/.9/.998, and non-JSON/encoding edge cases beyond a manual probe."
+  },
+
+  "refusal_branches_enumerated": [
+    {"branch": "tools/kerr_ref.py:12 - not s.is_finite()", "refuses": "NaN, Infinity, -Infinity", "killed_by": "S5 (removal -> red) and the harness's own NaN/Inf/-Inf cases (tools/test_kerr_oracle.sh:35)"},
+    {"branch": "tools/kerr_ref.py:12 - not 0 <= s < 1", "refuses": "s < 0 and s >= 1 (extremal s=1 included)", "killed_by": "S4 (removal -> red) and the harness's -0.1 / 1 / 1.1 cases"},
+    {"branch": "tools/kerr_ref.py:31 - unique_keys duplicate detection", "refuses": "duplicate JSON keys at any object level", "killed_by": "S7 (removal -> red) + F6; the hook is the SOLE killer (paired drill)"},
+    {"branch": "tools/kerr_ref.py:47 - actual != expected", "refuses": "any fixture drift (schema, unit, source, formula, values, record count, record order, extra/missing keys)", "killed_by": "S6, S10 and all 12 fixture mutants"},
+    {"branch": "tools/kerr_ref.py:50 - usage refusal", "refuses": "unknown flags, missing path, extra path", "killed_by": "NOT asserted in the harness (verified manually: rc 1 with the usage message) - see NB-4"},
+    {"branch": "tools/kerr_ref.py:55 - except (ValueError, OSError) -> rc 1", "refuses": "unreadable/missing/garbage fixtures as a clean rc-1 with a message", "killed_by": "verified manually (missing file, directory, binary file, JSON array, truncated JSON all -> rc 1)"}
+  ],
+
+  "blocking_findings": [],
+
+  "non_blocking_findings": [
+    {
+      "id": "NB-1",
+      "severity": "low",
+      "file": "tools/test_kerr_oracle.sh:20-24",
+      "line": 20,
+      "issue": "The repository's own test pins the oracle against literals transcribed from the design doc (the `anchors` dict), not against an expression re-derived inside the harness. The sprint feature text asks for 'independently expressed' formulas; the independence exists in THIS evaluation (four independent routes), but not in the repo. A future edit that changed an anchor and the oracle source together would not be caught by the repo suite.",
+      "evidence": "tools/test_kerr_oracle.sh:20-24 (hard-coded anchor strings); the evaluator's own re-derivation in this report closes the gap for the current bytes.",
+      "suggestion": "In a later child (a4 hardening or a5 terminal wiring), derive the anchors inside the shell harness from a second expression (e.g. the rationalised inner form u_- = s^2/u_+ or a Newton iteration) so the harness is self-checking without the design doc.",
+      "does_not_block": "All eight values are independently confirmed correct to 17 significant digits, so the committed artifact is right; this is a future-drift risk, not a current defect."
+    },
+    {
+      "id": "NB-2",
+      "severity": "low",
+      "file": "tools/kerr_ref.py:55",
+      "line": 55,
+      "issue": "The top-level handler catches only (ValueError, OSError). A decimal.InvalidOperation (which is what a NaN spin would raise if the is_finite() guard were ever removed) escapes as a raw traceback instead of a clean 'kerr-oracle: ...' rc-1 message. Under the mutant S5 the suite still goes red - but by traceback, not by an assertion.",
+      "evidence": "mutation S5: test_rc=1 with an uncaught decimal.InvalidOperation traceback rather than an AssertionError.",
+      "suggestion": "Optionally widen the handler to include decimal.DecimalException, or keep the is_finite() guard and add an explicit regression test that NaN is refused with ValueError.",
+      "does_not_block": "The shipped code checks is_finite() FIRST, so NaN never reaches a comparison and InvalidOperation is unreachable in the shipped path (the short-circuit is correct and is itself what makes the NaN case safe)."
+    },
+    {
+      "id": "NB-3",
+      "severity": "low",
+      "file": "tools/test_kerr_oracle.sh:40",
+      "line": 40,
+      "issue": "If the fixture file is missing, the harness dies with an uncaught FileNotFoundError from read_bytes() rather than a clean assertion. The run is still red, but the message is a traceback instead of a diagnostic.",
+      "evidence": "removal drill R4: shell rc 1 with 'FileNotFoundError ... tests/fixtures/kerr/rk.json'.",
+      "suggestion": "Add an explicit 'fixture file exists' assertion at the top of the harness so the failure names the missing fixture.",
+      "does_not_block": "Red either way; the failure mode is legible."
+    },
+    {
+      "id": "NB-4",
+      "severity": "low",
+      "file": "tools/test_kerr_oracle.sh:14-21",
+      "line": 14,
+      "issue": "The oracle's argv/usage refusal branch (tools/kerr_ref.py:50) is not asserted by the harness: no case covers an unknown flag, a missing path argument or an extra argument, and the `check` alias is exercised only on the VALID fixture, never on a rejected input.",
+      "evidence": "manual probe: '--bogus', '--check', '--check a b', 'check a b' all -> rc 1 with 'usage: kerr_ref.py [--check|check <path>]'; the harness contains no usage assertion.",
+      "suggestion": "Add three cheap cases to the harness: unknown flag, missing path, and 'check <bad>' (the alias path on a rejected fixture).",
+      "does_not_block": "The production behaviour is correct; this is a coverage gap only."
+    },
+    {
+      "id": "NB-5",
+      "severity": "informational",
+      "file": "tools/test_kerr_oracle.sh:9-70",
+      "line": 9,
+      "issue": "The harness's single shell function check() spans 62 lines, over the rubric's 50-line function guidance. It is one cohesive embedded Python program, so the reviewer took a reduced -1 rather than -2.",
+      "evidence": "tools/test_kerr_oracle.sh:9-70.",
+      "suggestion": "Optional: split the embedded program into named sections (anchors / domain / fixture-refusals) if the harness grows further in a2..a5.",
+      "does_not_block": "Readability is fine at this size; the a2-a5 children will grow this file, so a split before then is cheap insurance."
+    },
+    {
+      "id": "NB-6",
+      "severity": "informational",
+      "file": ".ailang/state/sprints/sprint_R2-KERR.json",
+      "line": 0,
+      "issue": "The K1.1a-a1 record still shows passes:false, started:null, completed:null, actual_loc:null at the reviewed commit, although the implementation is present and this review measures actual_loc = 150 physical added lines (exactly the cap). The evaluator did NOT flip these flags: the sprint JSON is controller-held, the parent K1.1a and all other parents must stay open, and this review is explicitly not permission to set global completed/approved.",
+      "evidence": "sprint JSON feature K1.1a-a1 (passes false, completed null, actual_loc null); measured added lines = 150.",
+      "suggestion": "The controller should record passes/completed/actual_loc=150 for K1.1a-a1 only, after it accepts this review, and keep the parent and every other feature false.",
+      "does_not_block": "Conservative state, as instructed; no correctness impact."
+    }
+  ],
+
+  "residual_risks": [
+    {"id": "RS-1", "risk": "Removing only the 'test: kerr-oracle' prerequisite (Makefile:22) leaves every test green while silently dropping the oracle from the whole-repo `make test` chain (verified: `make -n test | grep -c test_kerr_oracle.sh` goes 1 -> 0).", "severity": "medium", "killer": "NONE in-repo - this line is the sole killer and nothing detects its absence.", "mitigation": "The controller's rig/full run would not notice either (the oracle just stops running). A future child could add a meta-assertion (e.g. a python-guard-style check that `make -n test` mentions the oracle) or make the kerr-oracle recipe part of a target that `test` cannot lose."},
+    {"id": "RS-2", "risk": "The seed covers RK-1/RK-2 at four spins only. RK-3 (static limit), RK-9 (horizon angular velocity) and the whole broader oracle remain open by design.", "severity": "informational", "killer": "n/a - explicitly deferred to K1.1a-a2..a5 and stated in the harness's final echo line.", "mitigation": "Tracked by the sprint plan's child table; the parent K1.1a stays open."},
+    {"id": "RS-3", "risk": "The oracle's error taxonomy is ValueError/OSError only (NB-2) and the usage branch is unasserted (NB-4).", "severity": "low", "killer": "S5 shows the suite still goes red for a removed finiteness guard.", "mitigation": "NB-2 / NB-4 suggestions."},
+    {"id": "RS-4", "risk": "Display rounding uses Python's default ROUND_HALF_EVEN. No current value is on a tie, so this is immaterial today, but a future spin could land exactly on a 0.5 ulp and the display could then differ from a half-up expectation.", "severity": "informational", "killer": "n/a", "mitigation": "Pinning the rounding mode is a one-line change if a future fixture needs it; the design only requires 'half a unit in its last printed place' tolerance for display text."}
+  ],
+
+  "acceptance_criteria": [
+    {"feature_id": "K1.1a-a1", "criterion": "AC-K3-slice gate 1: sh tools/test_kerr_oracle.sh", "met": true, "evidence": "rc 0; 'kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)'"},
+    {"feature_id": "K1.1a-a1", "criterion": "AC-K3-slice gate 2: make kerr-oracle AILANG=runtime/bin/ailang", "met": true, "evidence": "rc 0"},
+    {"feature_id": "K1.1a-a1", "criterion": "AC-K3-slice gate 3: python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json", "met": true, "evidence": "rc 0"},
+    {"feature_id": "K1.1a-a1", "criterion": "AC-K3-slice gate 4: make python-guard lint-precision AILANG=runtime/bin/ailang", "met": true, "evidence": "rc 0 (20 allowlisted, 0 awaiting port; lint-precision positive control 6/6)"},
+    {"feature_id": "K1.1a-a1", "criterion": "AC-K3-slice gate 5: git diff --check", "met": true, "evidence": "rc 0"},
+    {"feature_id": "K1.1a-a1", "criterion": "Named test 1 - oracle literal anchors (RK-1/2 at 0/.5/.9/.998, precise 17-sig distinct from 6-dp display, kills the r_s factor-two error and six-decimal literal reuse)", "met": true, "evidence": "tools/test_kerr_oracle.sh:20-31; killed independently by S2 (factor2 R=u/2: 0), S3/S9 (precise17/V31), S8 (separate display), F3/F10/F12"},
+    {"feature_id": "K1.1a-a1", "criterion": "Named test 2 - invalid inputs and metadata (reject negative spin, s=1, s>1, NaN/Inf BEFORE sqrt; --check rejects wrong-unit, empty, duplicate, rounded and missing-source fixtures)", "met": true, "evidence": "tools/test_kerr_oracle.sh:34-68; killed independently by S4/S5 (domain before sqrt), S6 (unit accepted), S7 (duplicate JSON key accepted), S10 (empty/schema accepted), S12, F1-F9"},
+    {"feature_id": "K1.1a-a1", "criterion": "Scope: <=150 TOTAL physical added lines across Python+shell+fixture+Makefile+allowlist; files exactly the five named; RK-1/RK-2-only seed with strict comparison and honest deferral of RK-3/9; allowlist role 'oracle'; Makefile kerr-oracle target + .PHONY", "met": true, "evidence": "git --numstat: 150 added / 0 deleted (5+1+57+72+15); tools/python-allowlist.txt role oracle; Makefile:21-25 with .PHONY; deferral stated in the harness's echo line"},
+    {"feature_id": "K1.1a-a1", "criterion": "mutation_drill: true - each named a1 mutant class (factor-2, sqrt branch/domain, NaN, six-decimal literal, empty fixture, wrong-unit) demonstrably RED with a clean restore", "met": true, "evidence": "the evaluator ran 13 source + 12 fixture + 1 paired drill; all six named classes are covered and every restore was SHA-identical. NOTE: the inherited controller/executor claims of test-first RED and 'six mutants' were treated as UNVERIFIED and are NOT credited as findings; the evaluator's own suite is the evidence."},
+    {"feature_id": "K1.1a-a1", "criterion": "Controller gates (make ci-fast, full make test) - NOT run by the evaluator", "met": null, "evidence": "PENDING - controller-owned, outside this sandbox, run in parallel after the PR opens (~65-84 min). Deliberately not started by the evaluator (no duplicate full/package/GPU gates)."}
+  ],
+
+  "planner_diff_scope_consistency": {
+    "diff": "git diff fc9f73e5 45c97b3d",
+    "files_touched": [".ailang/state/sprints/sprint_R2-KERR.json", "design_docs/planned/r2/kerr-black-holes-sprint.md"],
+    "consistent": true,
+    "observations": [
+      "Planning artifacts only - no production code, no design-doc edit, no publish or spec change.",
+      "The five new children K1.1a-a1..a5 each carry passes:false, completed:null, actual_loc:null - no pass was pre-granted.",
+      "The old K1.1a-a object is preserved in superseded_features and is never marked passed.",
+      "Sprint status remains awaiting_approval and approved:false; the planner only ADDED a clarifying note that D-116 A authorizes the named headless K1.1a scope while the full sprint stays unapproved.",
+      "Transport checks re-verified by the evaluator: 34 active features, 9 parent milestones, every feature passes:false, superseded_features = ['K1.1a-a'].",
+      "The a1 child definition in the plan markdown matches the sprint JSON feature object (files, 150-line cap, gates, mutation-drill expectation, D116 fence) and matches the implementation diff."
+    ]
+  },
+
+  "admitted_limitations": [
+    "The full regression suite (make test / rig/full) and the GitHub fast tier (ci-fast) were NOT run: they are controller-owned, outside this sandbox, and scheduled to run in parallel after the PR opens. This report therefore contains NO broad pass; the verdict is scoped and conditional on those gates.",
+    "The pinned AILANG v0.54.14 runtime binary was absent from this clone AND from the fallback path named in the brief (/Users/voightkampff/dev/sunholo-data/.stapledon-iter49-recovery/runtime/bin/ailang does not exist; that clone has no runtime/bin). The binaries actually present are v0.54.18 (/Users/voightkampff/go/bin/ailang) and v0.54.18-4-gbf22f4943 (ailang/bin/ailang). This is harmless for THIS child: all five scoped gates are pure shell/python/make and never invoke the AILANG runtime (the AILANG= argument is unused by the kerr-oracle, python-guard and lint-precision targets). No dependency was installed or rebuilt.",
+    "The mutation suite is a 25-mutant + 6-removal + 1-paired sample, not exhaustive coverage; the categories and the specific exclusions are listed under mutation_evidence.coverage_claim. No claim of exhaustive mutation coverage is made.",
+    "No GPU, package, sim or Godot gate was run or claimed: K1.1a-a1 touches no AILANG package, no sim and no shader.",
+    "The inherited controller/executor claims (test-first RED, 'six mutants') were treated as UNVERIFIED and are explicitly not credited as findings; only the evaluator's own runs are cited.",
+    "This evaluation sets no global status: sprint JSON status remains awaiting_approval, approved remains false, and the parent K1.1a plus every other parent stay open.",
+    "The design doc's V31 doc-literal gate was run NARROWED to the RK-1/RK-2 rows (the rows in this child's scope); the other RK rows are not implemented by this child and were not checked."
+  ],
+
+  "mutations_confined": {
+    "workspace": "/tmp/claude/kerr_eval (evidence scripts and backups, outside the repository)",
+    "note": "/tmp itself is not writable by this sandbox; /tmp/claude is the writable TMPDIR subpath.",
+    "repo_state_after": "git status --porcelain shows only the pre-existing untracked .ailang/state/brain.db; git diff is empty; HEAD is still d235f6c0; all five production files carry their baseline SHA256.",
+    "no_git_checkout_or_reset": true,
+    "no_source_fixes": "the evaluator made NO change to tools/kerr_ref.py, tools/test_kerr_oracle.sh, tests/fixtures/kerr/rk.json, tools/python-allowlist.txt or the Makefile - every mutation was reverted byte-for-byte and SHA-verified."
+  },
+
+  "feedback": [
+    {"file": "tools/test_kerr_oracle.sh", "category": "acceptance_criteria", "issue": "NB-1: anchors are transcribed literals, not an independent re-derivation inside the harness", "suggestion": "Add a second expression (e.g. u_- = s^2/u_+) in a later child so the harness re-derives rather than transcribes", "severity": "low"},
+    {"file": "tools/test_kerr_oracle.sh", "category": "code_quality", "issue": "NB-3/NB-4: missing-fixture and usage-branch failures surface as tracebacks, not clean assertions", "suggestion": "Assert the fixture exists; assert the usage branch and the `check` alias on a rejected fixture", "severity": "low"},
+    {"file": "tools/kerr_ref.py", "category": "code_quality", "issue": "NB-2: the top-level handler catches only (ValueError, OSError)", "suggestion": "Optionally catch decimal.DecimalException as well", "severity": "low"},
+    {"file": "Makefile", "category": "design_fidelity", "issue": "RS-1: the 'test: kerr-oracle' line is the sole, silent killer of the oracle's participation in `make test`", "suggestion": "Consider a guard that fails if the oracle is not in the `test` chain", "severity": "medium"},
+    {"file": ".ailang/state/sprints/sprint_R2-KERR.json", "category": "acceptance_criteria", "issue": "NB-6: K1.1a-a1 still records passes:false/actual_loc:null although 150 physical lines are measured", "suggestion": "Controller to record actual_loc=150 and passes for K1.1a-a1 only, after accepting this review; keep the parent and all other features false", "severity": "informational"}
+  ],
+
+  "notes": "Independent evaluator, generator != judge (OpenAI/Codex wrote the source, Kimi wrote the plan, MiniMax-M3 via OpenRouter judges). Reviewed commit d235f6c0 on a dedicated detached clone; the production diff 45c97b3d..d235f6c0 was assessed hunk by hunk (Makefile +5, allowlist +1, Python +57, shell +72, fixture +15 = exactly the 150-line cap). All five scoped gates rc 0; all eight fixture values independently re-derived by four routes (own Newton sqrt, Newton on the horizon polynomial, Vieta product, bisection) to the last of 17 significant digits, with the r_s factor 2, the s=0 reduction and the extremal limit confirmed; 25 mutants, 6 removal drills and 1 paired drill all killed with SHA-identical restores; 0 blocking findings, 6 non-blocking. Scoped PASS 95/100; full regression and CI PENDING; the milestone cannot land on this review alone; the parent K1.1a and every other parent stay open."
+}

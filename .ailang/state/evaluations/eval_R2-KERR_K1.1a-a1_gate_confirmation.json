@@ -1,0 +1,286 @@
+{
+  "sprint_id": "R2-KERR",
+  "milestone": "K1.1a-a1",
+  "feature_id": "K1.1a-a1",
+  "feature_title": "Oracle skeleton + horizon/domain/provenance seed",
+  "review_kind": "small final gate-confirmation of a single sprint child (K1.1a-a1). Confirms the controller-owned full-suite + fast-CI gates have landed green on the exact prelim head, with no fresh numerical/mutation audit (source SHA-identical to prelim), and resolves the ambient environment failure that initially turned crossing-review red.",
+  "round": "gate-confirmation (post-round-1)",
+  "reviewed_head_sha": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+  "reviewed_head_subject": "test: add a bounded Kerr horizon oracle seed",
+  "production_diff_base": "45c97b3dd0fef9e5549e1ae28b9b22da16a10dfe",
+  "planner_diff_base": "fc9f73e55ba6e2664c728cc016b838b102c21044",
+  "preliminary_report_sha256": "82487564bf31b8ef5a1a47fa90e64cb1e2817207294f48a32a2076ee35ee85f6",
+  "preliminary_report_path": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_round_1.json",
+  "evaluator_model": "MiniMax-M3 via OpenRouter (pi:openrouter/minimax/minimax-m3)",
+  "evaluator_vendor_independence": {
+    "generator_source": "Codex/OpenAI (source implementation commit d235f6c0)",
+    "generator_plan": "Kimi (planner commit 45c97b3d, recovery branch mission/stapledon-iter49-recovery)",
+    "judge": "MiniMax-M3 via OpenRouter (this session)",
+    "statement": "generator != judge on both axes: neither the source generator (OpenAI/Codex) nor the plan generator (Kimi/Moonshot) produced this verdict. The judge vendor (OpenRouter/MiniMax-M3) is distinct from both generators and from the Anthropic seat used for upstream design and plan reviews. The native Agent transport supplied no verdict; this report is the evaluator's own, derived from commands run in this session."
+  },
+  "transport": "Native Agent transport supplied no verdict; this gate confirmation was produced inside a pi session whose own session_protocol_ack was called and returned success before any judge work began.",
+  "session_protocol_ack": {
+    "tool": "session_protocol_ack",
+    "input": {},
+    "result": "Session protocol acknowledged - mutating tools unlocked for this session. Work routing per AGENTS.md still applies.",
+    "acked": true,
+    "acked_in_this_session": true,
+    "note": "Called and verified before any read of CLAUDE.md contents, any gate artifact read, or any report write. Independent of the controller-provided triage and of any prior round_1 ack (round_1 was authored in a different session and worktree)."
+  },
+  "worktree": "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter49",
+  "head_assertion": "git rev-parse HEAD == d235f6c0bd00474b957b0a47a0d57606faecc380 (detached, clean tree apart from the pre-existing untracked .ailang/state/brain.db). Independently re-confirmed at the start and end of this gate confirmation. No source edit, no git write, no harness/skill edit.",
+  "production_path_sha256_unchanged": {
+    "method": "shasum -a 256 of each tracked production path in the working tree, then git show HEAD:<path> | shasum -a 256 -; identical on all six.",
+    "sim/core.ail": "ead2fc9c130de63e212e8d90621eba7647f0e5f64794609a4b8d4b4e480fe1d2",
+    "sim/ship.ail": "31862438ac3bd8cce4ae015a7ba0a2e961d109bce6fec45eeaf3049c9585a77c",
+    "tests/test_physics.gd": "b23fbefda0df06b2a7dfbd8c88c4d411190ddbd4db0aef5ce4b21e6581a9cca6",
+    "tests/fixtures/kerr/rk.json": "0d5946cad5b6bbfc96e5d979ead92968d60ad7b265df26122297f33cc0ddfe47",
+    "tools/kerr_ref.py": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+    "tools/test_kerr_oracle.sh": "6642d723350d28e64932866eb7522b69b433ae41b3f37f89bffe70952c032132",
+    "all_six_match_git_HEAD": true,
+    "matches_preliminary_eval_round_1": true,
+    "no_source_or_assertion_or_pin_weakened": true
+  },
+  "scope": {
+    "this_review": "small final gate confirmation - controller-owned rig/full + ci-fast gates only; no fresh numerical/mutation re-audit (source bytes SHA-identical to the round_1 prelim); no broadened scope; no merge commit yet.",
+    "not_in_scope": [
+      "merge CI (the merge commit does not yet exist; the controller will trigger a fresh fast CI after merge; this report does not claim or require merge CI)",
+      "K1.1a parent, K1.0, P0, spec/publish/render gates (held open per task instructions)",
+      "any other child in the R2-KERR or R2-* sprints",
+      "the global awaiting_approval / approved:false sprint JSON status",
+      "the rig's original first failure (kept as evidence; see environment_failure_repro)"
+    ]
+  },
+  "observed_gate_evidence": {
+    "rig_full": {
+      "source": "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49-clean.log (fresh full log, sha256 e650d8a6b5f8f040c9e7c2250d148374987d3148b9dcf19e3111c0d5424e8231)",
+      "rig_check_launch_log": "/tmp/stapledon-iter49-rig-clean-launch.log",
+      "rig_check_rc": "/tmp/stapledon-iter49-rig-clean.rc (contents: '0\\n')",
+      "head": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+      "exit_code": 0,
+      "elapsed_minutes_rounded": 69,
+      "ailang_pinned": "v0.54.14",
+      "session": 12878,
+      "rig_check_status_line": "rig-check: ok, d235f6c0 green (make test, 69 min)",
+      "key_passing_summaries_observed_in_log": [
+        "crossing-review: 102 passed, 0 failures (the previously failing target is now green after the environment fix)",
+        "554 tests: 554 passed, 0 failed, 0 skipped (8m12.394278119s)",
+        "playthrough: 111204 passed, 0 failures",
+        "playthrough: 112067 passed, 0 failures",
+        "playthrough-negative: 3 passed, 0 failures",
+        "playthrough: 19719 passed, 0 failures",
+        "playthrough: 3453 passed, 0 failures",
+        "ship-ui: 245 passed, 0 failures",
+        "ship-consoles: 133 passed, 0 failures",
+        "kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)  (the K1.1a-a1 child target)",
+        "loading-jump: 82 passed, 0 failures",
+        "camera-director: 187 passed, 0 failures; camera-forward: 35 passed, 0 failures; guided-finale: 21 passed, 0 failures; free-nav-recovery: 28 passed, 0 failures",
+        "All tests passed (4 tests: 4 passed, 0 failed, 0 skipped)",
+        "All tests passed (second green block later in the log)",
+        "transit: 43 passed, 0 failures; ism-layer: 19 passed, 0 failures; dust-flash: 29 passed, 0 failures",
+        "bh-hud: 64 passed, 0 failures; codex: 45 passed, 0 failures; news: 95 passed, 0 failures; interior: 142 passed, 0 failures",
+        "display-audit: samples=28 checks=6584 mismatches=0 missing=0 new=0 known=84 stale=0 failures=0  (the 'FAIL'-prefixed lines inside the display-audit block are negative-control audit categories, NOT test failures; the summary line shows failures=0)",
+        "no make-target-level errors observed (no 'make: *** [...] Error N' lines after the gate fix)"
+      ],
+      "matches_facts_json_rig_block": true
+    },
+    "fast_ci_github": {
+      "run_id": 40173640151,
+      "url": "https://api.github.com/repos/sunholo-data/stapledons-godot/actions/runs/40173640151",
+      "head_sha": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+      "head_branch": "mission/stapledon-iter49-recovery",
+      "base_sha": "fc9f73e55ba6e2664c728cc016b838b102c21044",
+      "pr_number": 325,
+      "pr_title": "Test: add the bounded Kerr horizon oracle seed",
+      "name": "CI",
+      "run_number": 967,
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-25T07:40:10Z",
+      "updated_at": "2026-10-25T07:46:22Z",
+      "nonempty_completed_check_present": true,
+      "single_check_run_observed": {
+        "id": 121109607078,
+        "name": "fast tier (lock, strict VM, parity, replay)",
+        "status": "completed",
+        "conclusion": "success",
+        "details_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/40173640151/job/121109607078",
+        "started_at": "2026-10-25T07:40:13Z",
+        "completed_at": "2026-10-25T07:46:21Z"
+      },
+      "matches_facts_json_fast_ci_block": true,
+      "gh_api_method": "read-only public https GET via curl, with TLS verification disabled because gh CLI auth was invalid (gh auth status: 'The token in .../hosts.yml is invalid'). No auth was sent; the repository is public."
+    },
+    "rig_full_github_status": {
+      "endpoint": "/repos/sunholo-data/stapledons-godot/commits/d235f6c0bd00474b957b0a47a0d57606faecc380/status",
+      "state": "success",
+      "context": "rig/full",
+      "context_state": "success",
+      "description": "make test green on the Studio in 69 min (AILANG v0.54.14)",
+      "created_at": "2026-10-25T09:21:27Z",
+      "note": "This is a StatusContext (separate from a CheckRun), posted by the rig_check.sh wrapper script; one status context total on the exact head. Combined with the fast-tier CheckRun above, both controller-owned gates are green."
+    },
+    "required_thresholds_met": {
+      "whole_make_test_completed_rc0": true,
+      "exact_head_fast_ci_success": true,
+      "at_least_one_nonempty_completed_ci_check": true,
+      "no_pending_or_missing_or_failing_check": true
+    }
+  },
+  "environment_failure_repro": {
+    "summary": "The initial rig/full run on the exact prelim head d235f6c0 turned crossing-review red with 101 passed, 1 failure; the failing assertion was 'PICTURE_OF_SEVEN is the sim pictureOfSeven', with the actual stdout starting with 'Google Cloud OpenTelemetry Trace exporter for Go is deprecated...' (a Go-runtime deprecation warning from the OpenTelemetry exporter written to the captured child-process stdout before the sim's own pictureOfSeven payload). The exact same base fc9f73e55ba6e2664c728cc016b838b102c21044, same head d235f6c0, and same test/UI/sim blobs reproduce the failure while the inherited environment variables GOOGLE_CLOUD_PROJECT, OTLP_GOOGLE_CLOUD_PROJECT, and OTEL_EXPORTER_OTLP_ENDPOINT are present, and pass cleanly with only those three variables removed (crossing-review 102 passed, 0 failures). No source/assertion/pin was weakened; the exact-head whole suite was restarted fresh in that measured local environment. The first failed run remains evidence, not erased.",
+    "first_run_initial_failure": {
+      "log": "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49.log (sha256 553a60686abe83d5c32d742df2ce557273ddc80bc2c06cf603276b826519de5f)",
+      "head": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+      "exit_code": 1,
+      "scope_result": "101 passed, 1 failures",
+      "failing_assertion": "PICTURE_OF_SEVEN is the sim's pictureOfSeven (captured stdout actually began with 'Google Cloud OpenTelemetry Trace exporter for Go is deprecated and will be archived after January 1st, 2027. Please migrate to the OpenTelemetry OTLP exporters. ...')",
+      "make_target_outcome": "make: *** [crossing-review-test] Error 1",
+      "observed_duration": "about 28 min; assertion failure, not watchdog timeout",
+      "verdict": "real, observed failure on the exact head"
+    },
+    "crossing_environment_repro_artifact": "/tmp/stapledon-iter49-crossing-environment-repro.json",
+    "baseline_logs_referenced": [
+      "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49.log (the trace_env run that failed)",
+      "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49-clean.log (the clean_env run that passed)"
+    ],
+    "removed_env_vars": [
+      "GOOGLE_CLOUD_PROJECT",
+      "OTLP_GOOGLE_CLOUD_PROJECT",
+      "OTEL_EXPORTER_OTLP_ENDPOINT"
+    ],
+    "trace_env_rc": 2,
+    "clean_env_rc": 0,
+    "independent_assessment": {
+      "root_cause": "The Google Cloud OpenTelemetry Trace exporter for Go writes a deprecation warning to stdout/stderr at startup, and exports only when at least one OTEL-related environment variable is set; setting/keeping those variables in the rig's inherited ambient environment caused the deprecation text to be captured into the crossing-review child-process test's expected output, breaking a strict-prefix equality assertion on pictureOfSeven.",
+      "is_environmental_not_source": true,
+      "weakening_of_source_or_assertion_or_pin": "none - no byte in sim/, tests/, Makefile, tools/, or fixtures was changed between the trace_env and clean_env runs",
+      "fix_locality": "the fix lives in the test environment (unset three OTEL/Google-Cloud env vars), not in the repository; this is consistent with the upstream Go OpenTelemetry exporter's documented behavior",
+      "closes_ambient_failure": "yes, with three qualifications: (1) the first failure remains on disk as evidence and is not erased; (2) the fix is environment-scoped, not source-scoped, so a future rig session that re-inherits those env vars will reproduce the failure; (3) a permanent fix in the form of 'crossing-review-test strips Go-runtime deprecation lines from captured child stdout' or a pinned 'unset OTEL_* at rig start' wrapper script is the right hardening, but is out of this child's scope and is recorded as a future item below.",
+      "matches_controller_claim": true
+    }
+  },
+  "preliminary_report_summary_count_corrections": {
+    "rationale": "Task brief requires correction of prelim summary-count errors without rewriting the prelim JSON itself. The corrections below are recorded here so the controller, charter, and downstream consumers see the correct counts.",
+    "mutation_matrix_correct": "13 source + 12 fixture + 6 removal + 1 paired = 32 distinct drills (prelim one_line said '25 source mutants + 12 fixture mutants + 6 removal drills + 1 paired drill', which was a summary typo: the source-mutant count is 13, not 25; the 25 figure was the sum of source+fixture+paired in an earlier note and should not appear in the one-line summary)",
+    "nonblocking_count_correct": 6,
+    "nonblocking_count_in_prelim_one_line_was": 5,
+    "S5_classification_correct": "decimal.InvalidOperation traceback-red, not an assertion kill",
+    "S5_classification_in_prelim_one_line_implied": "a normal assertion kill (the prelim text body was correct in the mutation_evidence block; the one_line summary glossed it)",
+    "prelim_score_breakdown_unchanged": "still 95/100 (these are text corrections, not score changes)",
+    "prelim_sha256_preserved": "82487564bf31b8ef5a1a47fa90e64cb1e2817207294f48a32a2076ee35ee85f6",
+    "prelim_path_unchanged": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_round_1.json (no edits to the prelim artifact in this session)"
+  },
+  "preliminary_findings_state": {
+    "blocking_findings_count": 0,
+    "nonblocking_findings_count": 6,
+    "residual_makefile_prerequisite_removal_survivor": {
+      "id": "RS-1 (from prelim)",
+      "summary": "Removing only the 'test: kerr-oracle' prerequisite (Makefile:22) leaves every test green while silently dropping the oracle from the whole-repo 'make test' chain (verified: 'make -n test | grep -c test_kerr_oracle.sh' goes 1 -> 0). No in-repo killer detects the absence.",
+      "state_at_gate_confirmation": "still residual; the gate fix does not touch this. The rig/full log shows the oracle running ('kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)'), so on this exact head the prerequisite is present and the chain is wired correctly. The risk is a future edit that silently drops it.",
+      "honest_disclosure": "this survivor is not resolved by the gate confirmation and is carried forward as RS-1 (medium severity, no in-repo killer)."
+    }
+  },
+  "blocking_findings": [],
+  "nonblocking_findings": [
+    {
+      "id": "GC-NB-1",
+      "severity": "informational",
+      "file": "rig environment",
+      "issue": "The fix for the ambient OTEL/Google-Cloud exporter deprecation warning is environment-scoped (unset three env vars in the rig session) and is not pinned in the rig_check.sh wrapper or in the CI runner. A future rig session that inherits those env vars will reproduce the crossing-review 101/1 failure on an unchanged head.",
+      "suggestion": "In a hardening child, either pin 'unset GOOGLE_CLOUD_PROJECT OTLP_GOOGLE_CLOUD_PROJECT OTEL_EXPORTER_OTLP_ENDPOINT' at the top of tools/rig_check.sh (or a new tools/rig_env.sh sourced by both rig_check.sh and CI), or harden crossing-review-test to strip known Go-runtime deprecation lines from captured child stdout before the strict-prefix equality check.",
+      "does_not_block": "The exact-head gate is green; this is a future-drift risk, not a current defect."
+    },
+    {
+      "id": "GC-NB-2",
+      "severity": "informational",
+      "file": "preliminary report (one_line)",
+      "issue": "Corrected here, not in the prelim JSON. The prelim one_line summary still says '5 non-blocking findings' and '25 source mutants + 12 fixture mutants + 6 removal drills + 1 paired drill'; the correct numbers are 6 non-blocking findings and 13 source mutants (plus the same 12 fixture + 6 removal + 1 paired). The mutation_evidence block in the prelim JSON is already correct; the error is in the one-line verdict summary.",
+      "suggestion": "If/when the prelim JSON is rewritten, the one_line summary should read '13 source mutants + 12 fixture mutants + 6 removal drills + 1 paired drill independently killed; 6 non-blocking findings, no blocking findings.'",
+      "does_not_block": "All numbers are also present in machine-checkable form elsewhere in the prelim JSON."
+    }
+  ],
+  "approval_fence": {
+    "this_report_authorizes": [
+      "the K1.1a-a1 child itself: it is faithful, scope-tight (150 physical lines, RK-1/RK-2 only), byte-identical between prelim and now, and lands on a green rig/full + green fast CI at the exact head"
+    ],
+    "held_fences_confirmed_untouched": [
+      "K1.1a parent stays open (the broader oracle, RK-3/RK-9, multi-spin) per sprint plan",
+      "all other R2 features stay open (K1.0, P0, K1.1b, K1.2+, K1.5, K1.6, spec/publish/render)",
+      "global sprint JSON status remains awaiting_approval / approved:false",
+      "no git write, no publish, no external message, no harness/skill edit, no agent spawned by this evaluation"
+    ],
+    "merge_commit_status": "the merge commit does not yet exist (PR #325 is open, mergeable=true, state=open, merged_at=null). The post-merge fast CI is a controller-owned prerequisite and is explicitly NOT claimed by this report; it must be run after the controller merges.",
+    "evaluator_authority": "This gate confirmation closes the prelim's two pending gates (rig/full + ci-fast) for the K1.1a-a1 child only. It is NOT permission to set global completed/approved, NOT a milestone landing for K1.1a, NOT permission to merge, and NOT permission to run the design-doc move or write the changelog fragment."
+  },
+  "verdict": {
+    "scoped_result": "PASS",
+    "score": 95,
+    "pass_threshold": 70,
+    "score_change_rationale": "No change from the prelim. The prelim withheld 2 points from tests_pass_scoped (18/20) and 2 points from acceptance_criteria (28/30) on the basis that the controller-owned gates were PENDING. Those two categories are now both provably green at the exact head (rig/full rc 0 with crossing-review 102/0, kerr-oracle RK-1/2 satisfied, plus a completed success conclusion on fast-tier CI run 40173640151 plus a success rig/full status context). On strict score-arithmetic that evidence unlocks the withheld 2+2 points (i.e. 97/100). The task brief, however, is explicit that the prelim 95/100 is a scoped PASS with full gates pending and 'assess the final child on the evidence, with no requirement to increase its score.' The risk-controlled call is to hold at 95/100, note the arithmetic in this report, and let a downstream review decide whether to lift the final 2 points in tests_pass and the 2 in acceptance_criteria to 100/100; the task does not authorise this evaluator to make that call unilaterally. Final child score: 95/100, PASS, gates now green.",
+    "full_suite_status": "GREEN at exact head d235f6c0bd00474b957b0a47a0d57606faecc380",
+    "full_suite_detail": "make test rc 0 (rig/full, session 12878, 69 min, AILANG v0.54.14); rig/full GitHub status context = success on the exact head; fast-tier CI run 40173640151 = status completed, conclusion success on the exact head, with one nonempty completed check ('fast tier (lock, strict VM, parity, replay)') observed.",
+    "merge_ci_status": "NOT CLAIMED (merge commit does not yet exist; this is a controller-owned post-merge prerequisite)",
+    "kerr_oracle_target_in_clean_log": "kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)",
+    "environment_failure_resolution": "CLOSED with the qualifications in environment_failure_repro.independent_assessment",
+    "milestone_landing": "K1.1a-a1 child: scoped PASS with full gates green. K1.1a parent milestone: NOT authorized by this report (per the held_fences).",
+    "one_line": "Gate confirmation closes the prelim's two pending gates on the exact prelim head: rig/full green (rc 0, 69 min, crossing-review 102/0, kerr-oracle RK-1/2 satisfied) and fast-tier CI run 40173640151 green (status completed, conclusion success, one nonempty check). Source SHA-identical to prelim; no byte changed; no merge CI claimed; K1.1a parent and every other parent stay open. 6 non-blocking findings, 0 blocking. Final child score: 95/100 PASS (held; arithmetic could unlock +4 to 99/100 once the controller decides the policy)."
+  },
+  "commands_run_this_session": [
+    "git rev-parse HEAD && git status --short  (HEAD = d235f6c0bd00474b957b0a47a0d57606faecc380; clean apart from brain.db and the prelim eval)",
+    "shasum -a 256 on .ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_round_1.json  (matches expected 82487564bf31b8ef5a1a47fa90e64cb1e2817207294f48a32a2076ee35ee85f6, byte-for-byte preserved)",
+    "shasum -a 256 on the six production paths (sim/core.ail, sim/ship.ail, tests/test_physics.gd, tests/fixtures/kerr/rk.json, tools/kerr_ref.py, tools/test_kerr_oracle.sh)  (all six identical to git show HEAD:<path> | shasum -a 256)",
+    "cat /tmp/stapledon-iter49-rig-clean-launch.log  (rig-check status line: 'rig-check: ok, d235f6c0 green (make test, 69 min)')",
+    "cat /tmp/stapledon-iter49-rig-clean.rc  (rc = 0)",
+    "tail/grep /Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49-clean.log  (crossing-review 102 passed, 0 failures; kerr-oracle satisfied; many 0-failures summaries; All tests passed)",
+    "cat /tmp/stapledon-iter49-facts.json  (read-only inspection of the controller's facts file)",
+    "cat /tmp/stapledon-iter49-crossing-environment-repro.json  (read-only inspection of the controller's repro artifact)",
+    "tail/grep /Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49.log  (initial failure: 101/1, 'PICTURE_OF_SEVEN ... Google Cloud OpenTelemetry Trace exporter for Go is deprecated...', make: *** [crossing-review-test] Error 1)",
+    "curl https://api.github.com/repos/sunholo-data/stapledons-godot/actions/runs/40173640151  (HTTP 200, status completed, conclusion success, head_sha d235f6c0bd00474b957b0a47a0d57606faecc380)",
+    "curl https://api.github.com/repos/sunholo-data/stapledons-godot/commits/d235f6c0bd00474b957b0a47a0d57606faecc380/status  (HTTP 200, state success, rig/full state success, description 'make test green on the Studio in 69 min (AILANG v0.54.14)')",
+    "curl https://api.github.com/repos/sunholo-data/stapledons-godot/commits/d235f6c0bd00474b957b0a47a0d57606faecc380/check-runs  (HTTP 200, one check run id=121109607078 name='fast tier (lock, strict VM, parity, replay)' status=completed conclusion=success)",
+    "curl https://api.github.com/repos/sunholo-data/stapledons-godot/pulls/325  (HTTP 200, number=325 state=open mergeable=true, merged_at=null, base_sha fc9f73e55ba6e2664c728cc016b838b102c21044, head_sha d235f6c0bd00474b957b0a47a0d57606faecc380)",
+    "gh --version and gh auth status  (gh CLI installed but token invalid; curl used as a read-only fallback for the public GitHub API)"
+  ],
+  "metrics": {
+    "model": "MiniMax-M3 via OpenRouter (pi:openrouter/minimax/minimax-m3)",
+    "session_protocol_ack_in_this_session": true,
+    "source_paths_re_sha256_in_this_session": 6,
+    "fixture_paths_re_sha256_in_this_session": 1,
+    "oracle_shell_path_re_sha256_in_this_session": 1,
+    "gate_artifacts_inspected": [
+      "/tmp/stapledon-iter49-rig-clean-launch.log",
+      "/tmp/stapledon-iter49-rig-clean.rc",
+      "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49-clean.log",
+      "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49.log",
+      "/tmp/stapledon-iter49-facts.json",
+      "/tmp/stapledon-iter49-crossing-environment-repro.json",
+      "https://api.github.com/repos/sunholo-data/stapledons-godot/actions/runs/40173640151",
+      "https://api.github.com/repos/sunholo-data/stapledons-godot/commits/d235f6c0bd00474b957b0a47a0d57606faecc380/status",
+      "https://api.github.com/repos/sunholo-data/stapledons-godot/commits/d235f6c0bd00474b957b0a47a0d57606faecc380/check-runs",
+      "https://api.github.com/repos/sunholo-data/stapledons-godot/pulls/325"
+    ],
+    "fresh_mutations_run_this_session": 0,
+    "fresh_numerical_audit_run_this_session": 0,
+    "reason_no_fresh_audit": "all six production path SHAs match HEAD and match the prelim JSON byte-for-byte; the prelim's 32-drill mutation suite and 4-route physics re-derivation remain valid as of this head; per task brief, no fresh numerical/mutation re-audit was required or performed"
+  },
+  "residual_risks": [
+    {
+      "id": "GC-RR-1",
+      "severity": "medium",
+      "carryover": "RS-1 from the prelim (Makefile:22 'test: kerr-oracle' prerequisite can be silently dropped; no in-repo killer detects its absence). State unchanged at this head (the rig/full log shows the oracle running on this exact head)."
+    },
+    {
+      "id": "GC-RR-2",
+      "severity": "low",
+      "carryover": "The fix for the ambient OTEL/Google-Cloud exporter warning is environment-scoped and not pinned in tools/rig_check.sh or in the CI runner; see GC-NB-1."
+    },
+    {
+      "id": "GC-RR-3",
+      "severity": "informational",
+      "carryover": "RK-3 and RK-9 (and the broader oracle) remain deferred to K1.1a-a2..a5; K1.1a parent stays open."
+    }
+  ],
+  "notes": "Independent evaluator, generator != judge (OpenAI/Codex wrote the source; Kimi/Moonshot wrote the plan; MiniMax-M3 via OpenRouter judges). Gate confirmation only - no fresh numerical/mutation campaign; SHA-identical source. The K1.1a-a1 child lands on a green rig/full and a green fast CI at the exact prelim head, with the originally-failing crossing-review target now passing cleanly under an environment-only fix. K1.1a parent and every other parent remain open; merge CI is not claimed; sprint JSON global status is not touched."
+}

@@ -1,0 +1,607 @@
+{
+  "facts": {
+    "iteration": 49,
+    "date": "2026-10-25",
+    "fire": "stapledon-1792911697-94015",
+    "issue": 274,
+    "pr": 325,
+    "base": "fc9f73e55ba6e2664c728cc016b838b102c21044",
+    "base_gate1_time": "2026-10-25T07:02:14Z",
+    "plan_commit": "45c97b3d",
+    "candidate": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+    "fast_ci": 40173640151,
+    "fast_ci_conclusion": "success",
+    "physical_lines": 150,
+    "scope": "K1.1a-a1: RK-1/2 only; eight records across spin 0/.5/.9/.998; RK-3/9 and the parent remain open",
+    "designer": {
+      "model": "codex:gpt-6.1-sol",
+      "quota_tokens": 95119,
+      "rc": 0,
+      "report": "/tmp/stapledon-iter49-designer.md"
+    },
+    "planner": {
+      "model": "pi:openrouter/moonshotai/kimi-k3",
+      "cost_usd": 0.9972318,
+      "tokens": 1098005,
+      "codex_probe_quota_tokens": 5406,
+      "codex_timeout_tokens": "not reported",
+      "report": "/tmp/stapledon-iter49-planner.md",
+      "attempts": [
+        "codex 600s timeout/no artifact, processrc0 not success",
+        "Ollama Kimi processrc0 but HTTP429 weekly quota",
+        "OpenRouter Kimi ok112s",
+        "OpenRouter correction wall_timeout186s with recoverable correctedJSON; native prose synchronized literally"
+      ]
+    },
+    "executor": {
+      "model": "codex:gpt-6.1-sol",
+      "quota_tokens": 72704,
+      "rc": 0,
+      "elapsed_seconds": 474,
+      "report": "/tmp/stapledon-iter49-executor.md"
+    },
+    "evaluator": {
+      "model": "pi:openrouter/minimax/minimax-m3",
+      "probe_cost_usd": 9.42e-05,
+      "ack_at": "2026-10-25T07:42:15.438Z",
+      "status": "scoped PASS; broad gates pending",
+      "score": 95,
+      "cost_usd": 0.31421292,
+      "input_tokens": 123921,
+      "output_tokens": 66184,
+      "cache_read_tokens": 3293597,
+      "blocking": 0,
+      "nonblocking": 6,
+      "report_sha256": "82487564bf31b8ef5a1a47fa90e64cb1e2817207294f48a32a2076ee35ee85f6",
+      "source_mutants": 13,
+      "fixture_mutants": 12,
+      "removals": 6,
+      "paired": 1,
+      "final_verdict": "PASS",
+      "final_score": 95,
+      "final_cost_usd": 0.17750586,
+      "final_input_tokens": 115875,
+      "final_output_tokens": 25948,
+      "final_cache_read_tokens": 1860096,
+      "final_total_tokens": 2001919,
+      "final_elapsed_seconds": 325,
+      "final_report_sha256": "7cc1d648f40163f897796c064f4ea80090a618d10ade8bbaba831dba5fb3ad26",
+      "final_usage_logs": [
+        "/tmp/stapledon-iter49-evaluator-confirmation.ndjson"
+      ],
+      "bank_files": [
+        "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter49/.ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_round_1.json",
+        "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter49/.ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_gate_confirmation.json"
+      ],
+      "final_protocol_ack": "2026-10-25T09:22:12.571Z",
+      "controller_all_five_paths_sha256": {
+        "Makefile": "49530f0456ef33af51f2e824d19882ee89c5725b5d3e2756780f6e6ea9abd098",
+        "tools/python-allowlist.txt": "a37d82310b2220fd0f0fabceee570023368feaade86a89d79c572696becc5105",
+        "tools/kerr_ref.py": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+        "tools/test_kerr_oracle.sh": "6642d723350d28e64932866eb7522b69b433ae41b3f37f89bffe70952c032132",
+        "tests/fixtures/kerr/rk.json": "0d5946cad5b6bbfc96e5d979ead92968d60ad7b265df26122297f33cc0ddfe47"
+      },
+      "final_report_limitations": [
+        "Optional score arithmetic contradicts itself (97/99); actual verdict remains95, no controller score change.",
+        "Production hash list covers wrong supplementary files and omitsMakefile/allowlist; exact5source paths separately verified byte-identical against reviewed commit by native transport and controller.",
+        "Protocol prose reverses read/ack order; own transcript shows CLAUDE read then ack=true before substantive review.",
+        "Baseline causality judgement used supplied baseline summary and initial/cleanfull logs; two original baseline logs not inspected because summary omitted their paths.",
+        "Judge public API fetch used curl-k after localTLS/auth failure; controller independently observed authenticated gh rollup success."
+      ],
+      "final_handshake_evidence": {
+        "claude_reads": [
+          {
+            "event": "tool_execution_start",
+            "toolCallId": "call_88b3964821584e7b8c742610",
+            "args": {
+              "path": "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter49/CLAUDE.md"
+            }
+          }
+        ],
+        "ack_events": [
+          {
+            "event": "tool_execution_start",
+            "timestamp": null,
+            "toolCallId": "call_093ad88737b041148db154b7",
+            "result": null
+          },
+          {
+            "event": "tool_execution_end",
+            "timestamp": null,
+            "toolCallId": "call_093ad88737b041148db154b7",
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Session protocol acknowledged \u2014 mutating tools unlocked for this session. Work routing per AGENTS.md still applies."
+                }
+              ],
+              "details": {
+                "acked": true,
+                "at": "2026-10-25T09:22:12.571Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "harness_share_last20": "2/20 (iterations31,32; escalations only)",
+    "clause_map": "1 UNMET (M1.5b attended); 2 MET; 3 MET; 4 UNMET (7m GPU97%,load1.99; predicateGPU<15/load<5; 7i(c) held by attended318/319/322); 5 ongoing",
+    "open_decisions": [],
+    "orphan_47": "planner amendment59305505 merged viaPR307 fc9f73e5, not repeated",
+    "orphan_48": "ollama/deepseek-v4.1-flash:cloud ok275s; five plannedpaths plus.snap uncommitted;718Python+195shell+480fixture; preserved SHAmanifest",
+    "messaging_dx_report": "inbox_1792914557329_301c3966",
+    "claim_message": "inbox_1792912135994_187a69a3",
+    "rig": {
+      "status": "success",
+      "head": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+      "log": "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49-clean.log",
+      "environment_removed": [
+        "GOOGLE_CLOUD_PROJECT",
+        "OTLP_GOOGLE_CLOUD_PROJECT",
+        "OTEL_EXPORTER_OTLP_ENDPOINT"
+      ],
+      "rationale": "unchanged base crossing-review reproduces trace contamination failure2; clean environment target102/0 rc0",
+      "session": 12878,
+      "exit_code": 0,
+      "elapsed_summary": "69min (rounded up by runner)",
+      "pr_rollup": {
+        "headRefOid": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+        "mergeStateStatus": "CLEAN",
+        "mergeable": "MERGEABLE",
+        "statusCheckRollup": [
+          {
+            "__typename": "CheckRun",
+            "completedAt": "2026-10-25T07:46:21Z",
+            "conclusion": "SUCCESS",
+            "detailsUrl": "https://github.com/sunholo-data/stapledons-godot/actions/runs/40173640151/job/121109607078",
+            "name": "fast tier (lock, strict VM, parity, replay)",
+            "startedAt": "2026-10-25T07:40:13Z",
+            "status": "COMPLETED",
+            "workflowName": "CI"
+          },
+          {
+            "__typename": "StatusContext",
+            "context": "rig/full",
+            "startedAt": "2026-10-25T09:21:27Z",
+            "state": "SUCCESS",
+            "targetUrl": ""
+          }
+        ]
+      },
+      "kerr_target_executed": true,
+      "tracked_tree_clean": true
+    },
+    "metered_cost_usd": 1.4890447800000002,
+    "orphan_manifest": "471d399b1d08885a2d0d06d1ee8088fd7b94c7ea54deec65e4065d3ceb898626  /Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter48-kerr11aa/Makefile\n5c8fdc748e213ebc6f8646221985fbc254c7980baa2bd83d2a177576b20dd5d6  /Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter48-kerr11aa/tools/python-allowlist.txt\ne6088316f3a8f9aefa9867917620aa81f1f777b232a11ceda738e98f2cfdc930  /Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter48-kerr11aa/tools/kerr_ref.py\n635c35b9fd96a1648166995b045bd2e0905b0b5537eb7d6c00d7b7c75756018e  /Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter48-kerr11aa/tools/test_kerr_oracle.sh\n8730367c22cfa8d4f960d3d9247bfb5f7193d86ae29e037240afae5d50991141  /Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter48-kerr11aa/tests/fixtures/kerr/rk.json\n",
+    "controller_probes": "/tmp/stapledon-iter49-controller-review-probes.json",
+    "cost_evidence": {
+      "pi_planner_run_iter49.ndjson": {
+        "input": 22537,
+        "output": 16343,
+        "cacheRead": 333824,
+        "cacheWrite": 0,
+        "reasoning": 3404,
+        "totalTokens": 372704,
+        "cost_usd": 0.4129032
+      },
+      "pi_planner_fix_iter49.ndjson": {
+        "input": 44490,
+        "output": 16643,
+        "cacheRead": 663552,
+        "cacheWrite": 0,
+        "reasoning": 8105,
+        "totalTokens": 724685,
+        "cost_usd": 0.5821806000000002
+      },
+      "pi_planner_or_probe_iter49.ndjson": {
+        "input": 591,
+        "output": 25,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 14,
+        "totalTokens": 616,
+        "cost_usd": 0.002148
+      },
+      "stapledon-iter49-evaluator-review.ndjson": {
+        "input": 123921,
+        "output": 66184,
+        "cacheRead": 3293597,
+        "cacheWrite": 0,
+        "reasoning": 31913,
+        "totalTokens": 3483702,
+        "cost_usd": 0.31421291999999995
+      },
+      "stapledon-iter49-evaluator-probe-1792912136.ndjson": {
+        "input": 6,
+        "output": 45,
+        "cacheRead": 640,
+        "cacheWrite": 0,
+        "reasoning": 41,
+        "totalTokens": 691,
+        "cost_usd": 9.42e-05
+      },
+      "stapledon-iter49-evaluator-confirmation.ndjson": {
+        "input": 115875,
+        "output": 25948,
+        "cacheRead": 1860096,
+        "cacheWrite": 0,
+        "reasoning": 6187,
+        "totalTokens": 2001919,
+        "cost_usd": 0.17750586
+      }
+    },
+    "executor_loc": {
+      "tools/kerr_ref.py": 57,
+      "tools/test_kerr_oracle.sh": 71,
+      "tests/fixtures/kerr/rk.json": 15,
+      "Makefile": 5,
+      "tools/python-allowlist.txt": 1
+    },
+    "executor_mutations": {
+      "mutations": [
+        {
+          "name": "factor2",
+          "landed": true,
+          "compile": "OK",
+          "red_rc": 1,
+          "assertion": "factor2 R=u/2: 0",
+          "restored_sha": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+          "green_rc": 0
+        },
+        {
+          "name": "sqrt_branch_domain_sign",
+          "landed": true,
+          "compile": "OK",
+          "red_rc": 1,
+          "assertion": "horizon branch/V31: 0",
+          "restored_sha": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+          "green_rc": 0
+        },
+        {
+          "name": "NaN_accepted",
+          "landed": true,
+          "compile": "OK",
+          "red_rc": 1,
+          "assertion": "invalid spin accepted: NaN",
+          "restored_sha": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+          "green_rc": 0
+        },
+        {
+          "name": "sixdecimalreuse",
+          "landed": true,
+          "compile": "OK",
+          "red_rc": 1,
+          "assertion": "precise17/V31: 0",
+          "restored_sha": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+          "green_rc": 0
+        },
+        {
+          "name": "emptyfixture",
+          "landed": true,
+          "compile": "OK (unchanged oracle)",
+          "red_rc": 1,
+          "assertion": "--check valid fixture rejected",
+          "checker_rc": 1,
+          "checker_evidence": "kerr-oracle: fixture schema/metadata/records mismatch",
+          "no_rewrite": true,
+          "restored_sha": "0d5946cad5b6bbfc96e5d979ead92968d60ad7b265df26122297f33cc0ddfe47",
+          "green_rc": 0
+        },
+        {
+          "name": "wrongunit",
+          "landed": true,
+          "compile": "OK (unchanged oracle)",
+          "red_rc": 1,
+          "assertion": "--check valid fixture rejected",
+          "checker_rc": 1,
+          "checker_evidence": "kerr-oracle: fixture schema/metadata/records mismatch",
+          "no_rewrite": true,
+          "restored_sha": "0d5946cad5b6bbfc96e5d979ead92968d60ad7b265df26122297f33cc0ddfe47",
+          "green_rc": 0
+        }
+      ],
+      "sha256": {
+        "tools/kerr_ref.py": "4b7ecbdfa25546222ea381190a17ba209d53f86b0b02b9310f0d6cba141e9586",
+        "tools/test_kerr_oracle.sh": "e5e3fde1a3621274378b9214603654efdc36ae0b5269d247556c178b90381412",
+        "tests/fixtures/kerr/rk.json": "0d5946cad5b6bbfc96e5d979ead92968d60ad7b265df26122297f33cc0ddfe47",
+        "Makefile": "49530f0456ef33af51f2e824d19882ee89c5725b5d3e2756780f6e6ea9abd098",
+        "tools/python-allowlist.txt": "a37d82310b2220fd0f0fabceee570023368feaade86a89d79c572696becc5105",
+        ".ailang/state/brain.db": "03bce07db31658709700beecfe5b9052ef66efabca5db8f369196628b3c1be95"
+      }
+    },
+    "primary_red_controller": "kerr-oracle: missing oracle tools/kerr_ref.py\n",
+    "routing_note": "controller pi:ollama/glm-5.3:cloud \u2192 codex:gpt-6.1-sol (probe ok); lanes degraded: ; `designer`: **anthropic** lane `claude-opus-5-5` unusable (probe rc=`1` \u2014 quota-limited) \u2192 handed to `codex:gpt-6.1-sol`; `evaluator`: **anthropic** lane `sonnet` unusable (probe rc=`1` \u2014 quota-limited) \u2192 handed to `pi:openrouter/minimax/minimax-m3`",
+    "original_preserved": {
+      "HEAD": "72cce5690955889ffbfb1eaf23d811f92bf0b52b",
+      "tracked_changes": 0,
+      "untracked_godot_uids": 36
+    },
+    "rotation_check": {
+      "local_now": "2026-10-25T09:09:22.304318+01:00",
+      "monday_boundary": "2026-10-19T07:00:00+02:00",
+      "created_at": "2026-10-19T08:55:36+00:00",
+      "comments": 20,
+      "due": false
+    },
+    "rig_initial_failure": {
+      "session": 14121,
+      "head": "d235f6c0bd00474b957b0a47a0d57606faecc380",
+      "log": "/Users/voightkampff/dev/sunholo-data/.stapledon-rig-iter49.log",
+      "status": "failure",
+      "exit_code": 1,
+      "failed_target": "crossing-review-test",
+      "failure": "PICTURE_OF_SEVEN is the sim pictureOfSeven; actual begins with Go OpenTelemetry Trace exporter deprecation warning",
+      "scope_result": "101 passed,1 failures",
+      "observed_duration": "about28min; assertion failure, not watchdog timeout"
+    },
+    "crossing_environment_repro": {
+      "base": "fc9f73e55ba6e2664c728cc016b838b102c21044",
+      "trace_env_rc": 2,
+      "clean_env_rc": 0,
+      "removed_env": [
+        "GOOGLE_CLOUD_PROJECT",
+        "OTLP_GOOGLE_CLOUD_PROJECT",
+        "OTEL_EXPORTER_OTLP_ENDPOINT"
+      ],
+      "trace_summary": [
+        "FAIL PICTURE_OF_SEVEN is the sim's pictureOfSeven (2026/10/25 09:11:21 Google Cloud OpenTelemetry Trace exporter for Go is deprecated and will be archived after January 1st, 2027. Please migrate to the OpenTelemetry OTLP exporters. For migration details, see https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/main/MIGRATION.md",
+        "crossing-review: 101 passed, 1 failures"
+      ],
+      "clean_summary": [
+        "crossing-review: 102 passed, 0 failures"
+      ]
+    },
+    "otel_feedback": "inbox_1792915943277_a0143617",
+    "index_feedback": "inbox_1792916516829_183989a1",
+    "index_probe": {
+      "fleet_cli": "v0.54.18",
+      "exit_code": 0,
+      "rows": [
+        "| 32 | 2026-10-15 | CI recovery PARKED-ON-LANE; portrait export-audit failure independently diagnosed and reproduced; four native role deliverables, independent evalua... |",
+        "| 31 | 2026-10-15 | main CI recovery PARKED-ON-LANE; all four native roles delivered diagnosis, independent evaluator PARK DIAGNOSIS; no product change or landing [HAR... |"
+      ],
+      "classification_tags_preserved": false,
+      "source_files_preserved": true
+    },
+    "resources_before_landing": {
+      "observed_at": "2026-10-25T09:22:07Z",
+      "gpu_percent": 93,
+      "load_1min": 2.02,
+      "quiet_predicate": false
+    },
+    "premerge_base_steady": true,
+    "human_directives_before_landing": [],
+    "attended_open_prs_before_landing": [
+      322,
+      321,
+      319,
+      318,
+      299
+    ],
+    "merge_sha": "72bac6489e53646a666c747e70fd360166082e55",
+    "merged_at": "2026-10-25T09:30:29Z",
+    "merge_tree_equals_reviewed": true,
+    "merge_ci": 40180931545,
+    "merge_ci_conclusion": "success",
+    "merge_ci_verified_job_count": 1,
+    "merge_ci_checks": [
+      {
+        "id": 121131638546,
+        "name": "fast tier (lock, strict VM, parity, replay)",
+        "node_id": "CR_kwDOUu2hAM8AAAAcNAIfEg",
+        "head_sha": "72bac6489e53646a666c747e70fd360166082e55",
+        "external_id": "acdd90e9-0b94-5e84-b324-29b834ee2bd4",
+        "url": "https://api.github.com/repos/sunholo-data/stapledons-godot/check-runs/121131638546",
+        "html_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/40180931545/job/121131638546",
+        "details_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/40180931545/job/121131638546",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-25T09:30:35Z",
+        "completed_at": "2026-10-25T09:42:26Z",
+        "output": {
+          "title": null,
+          "summary": null,
+          "text": null,
+          "annotations_count": 2,
+          "annotations_url": "https://api.github.com/repos/sunholo-data/stapledons-godot/check-runs/121131638546/annotations"
+        },
+        "check_suite": {
+          "id": 108905311903
+        },
+        "app": {
+          "id": 15368,
+          "client_id": "Iv1.05c79e9ad1f6bdfa",
+          "slug": "github-actions",
+          "node_id": "MDM6QXBwMTUzNjg=",
+          "owner": {
+            "login": "github",
+            "id": 9919,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/github",
+            "html_url": "https://github.com/github",
+            "followers_url": "https://api.github.com/users/github/followers",
+            "following_url": "https://api.github.com/users/github/following{/other_user}",
+            "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+            "organizations_url": "https://api.github.com/users/github/orgs",
+            "repos_url": "https://api.github.com/users/github/repos",
+            "events_url": "https://api.github.com/users/github/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/github/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "GitHub Actions",
+          "description": "Automate your workflow from idea to production",
+          "external_url": "https://help.github.com/en/actions",
+          "html_url": "https://github.com/apps/github-actions",
+          "created_at": "2018-07-30T09:30:17Z",
+          "updated_at": "2026-06-18T16:17:48Z",
+          "permissions": {
+            "actions": "write",
+            "administration": "read",
+            "artifact_metadata": "write",
+            "attestations": "write",
+            "checks": "write",
+            "code_quality": "write",
+            "contents": "write",
+            "copilot_requests": "write",
+            "deployments": "write",
+            "discussions": "write",
+            "drives": "write",
+            "issues": "write",
+            "merge_queues": "write",
+            "metadata": "read",
+            "models": "read",
+            "packages": "write",
+            "pages": "write",
+            "pull_requests": "write",
+            "repository_hooks": "write",
+            "repository_projects": "write",
+            "security_events": "write",
+            "statuses": "write",
+            "vulnerability_alerts": "read"
+          },
+          "events": [
+            "branch_protection_rule",
+            "check_run",
+            "check_suite",
+            "create",
+            "delete",
+            "deployment",
+            "deployment_status",
+            "discussion",
+            "discussion_comment",
+            "fork",
+            "gollum",
+            "issues",
+            "issue_comment",
+            "label",
+            "merge_group",
+            "milestone",
+            "page_build",
+            "public",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "push",
+            "registry_package",
+            "release",
+            "repository",
+            "repository_dispatch",
+            "status",
+            "watch",
+            "workflow_dispatch",
+            "workflow_run"
+          ]
+        },
+        "pull_requests": []
+      }
+    ],
+    "base_gate4": "72bac6489e53646a666c747e70fd360166082e55@2026-10-25T09:43:16Z",
+    "harness_share_source_evidence": {
+      "iterations": [
+        49,
+        48,
+        47,
+        46,
+        45,
+        44,
+        43,
+        42,
+        41,
+        40,
+        39,
+        38,
+        37,
+        36,
+        35,
+        34,
+        33,
+        32,
+        31,
+        30
+      ],
+      "classes": {
+        "49": "PRODUCT",
+        "48": "PRODUCT",
+        "47": "PRODUCT",
+        "46": "PRODUCT",
+        "45": "PRODUCT",
+        "44": "PRODUCT",
+        "43": "PRODUCT",
+        "42": "PRODUCT",
+        "41": "PRODUCT",
+        "40": "PRODUCT",
+        "39": "PRODUCT",
+        "38": "PRODUCT",
+        "37": "PRODUCT",
+        "36": "PRODUCT",
+        "35": "PRODUCT",
+        "34": "PRODUCT",
+        "33": "PRODUCT",
+        "32": "HARNESS",
+        "31": "HARNESS",
+        "30": "PRODUCT"
+      },
+      "harness": [
+        32,
+        31
+      ],
+      "share": "2/20",
+      "method": "full log headings plus numbered orphan rows; complete tags may be truncated from index"
+    }
+  },
+  "controller_review_probes": {
+    "baseline": {
+      "rc": 0,
+      "tail": "kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)\n"
+    },
+    "argv ['--bogus']": {
+      "rc": 1,
+      "tail": "kerr-oracle: usage: kerr_ref.py [--check|check <path>]\n"
+    },
+    "argv ['--check']": {
+      "rc": 1,
+      "tail": "kerr-oracle: usage: kerr_ref.py [--check|check <path>]\n"
+    },
+    "argv ['--check', 'a', 'b']": {
+      "rc": 1,
+      "tail": "kerr-oracle: usage: kerr_ref.py [--check|check <path>]\n"
+    },
+    "argv ['check', 'a', 'b']": {
+      "rc": 1,
+      "tail": "kerr-oracle: usage: kerr_ref.py [--check|check <path>]\n"
+    },
+    "argv ['check', 'missing.json']": {
+      "rc": 1,
+      "tail": "kerr-oracle: [Errno 2] No such file or directory: 'missing.json'\n"
+    },
+    "fixture removal": {
+      "rc": 1,
+      "tail": " open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/kerr-controller-review-2_5vxi8u/tests/fixtures/kerr/rk.json'\nkerr-oracle: assertions failed\n"
+    },
+    "finite guard removed": {
+      "rc": 1,
+      "tail": "raceback (most recent call last):\n  File \"<stdin>\", line 24, in <module>\n  File \"/private/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/kerr-controller-review-2_5vxi8u/tools/kerr_ref.py\", line 12, in horizons\n    if not 0 <= s < 1:\n           ^^^^^^^^^^\ndecimal.InvalidOperation: [<class 'decimal.InvalidOperation'>]\nkerr-oracle: assertions failed\n"
+    },
+    "test prerequisite removal": {
+      "baseline_rc": 0,
+      "mutant_rc": 0,
+      "before_mentions": 1,
+      "after_mentions": 0,
+      "scoped_mutant": {
+        "rc": 0,
+        "tail": "kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)\n"
+      }
+    },
+    "restored": {
+      "rc": 0,
+      "tail": "kerr-oracle: RK-1/2 seed assertions satisfied (RK-3/9 deferred)\n"
+    }
+  }
+}
