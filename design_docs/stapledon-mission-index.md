@@ -12,6 +12,9 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 49 | 2026-10-25 | K1.1a-a1 Kerr horizon oracle seed LANDED (PR #325); recovered unrecorded planner iteration 47 and preserved orphan 48; independent MiniMax M3 95/10... |
+| 48 | 2026-10-23 | [PRODUCT] Unrecorded orphan: Ollama DeepSeek v4.1 Flash authored oversized unreviewed K1.1a-a files; uncommitted tree preserved; recovered record in iteration49. |
+| 47 | 2026-10-23 | [PRODUCT] Unrecorded Kimi K3 planner pass59305505 already merged via PR307 atfc9f73e5; not repeated; recovered record in iteration49. |
 | 46 | 2026-10-22 | iteration 46, row L9 semantic-memory S0.2 LANDED (PR #323, merge `db54e525`): similar worlds at protocol minor 14, cumulative at 15, just before `a... |
 | 45 | 2026-10-22 | iteration 45, row R2 Kerr design doc REVISED for D-107 A (PR #307): DI-01..DI-15 and the plan eval's F1–F7 resolved, quorum round 3 BLOCKED and its... |
 | 44 | 2026-10-21 | iteration 44, follow-up backlog rows 7o + 7s BUILT (PR #309), merge PARKED on `rig/full`: rig_check posts only descriptions GitHub accepts and stil... |

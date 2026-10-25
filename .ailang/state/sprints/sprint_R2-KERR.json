@@ -1195,17 +1195,18 @@
       "depends_on": [
         "P0"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
+      "passes": true,
+      "started": "2026-10-25",
+      "completed": "2026-10-25",
+      "actual_loc": 150,
       "mutation_drill": true,
       "design_blocks": [
         "DI-01"
       ],
       "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": " Iteration49: RK-1/2-only seed; PR325 merge72bac6489e53646a666c747e70fd360166082e55; full rig/full exactd235f6c0 and fast CI40173640151 green; mergeCI40180931545 green; independent MiniMax M3 95 PASS. RK-3/9 and parent remain open. GPU/render N/A; no publish/spec approval."
     },
     {
       "id": "K1.1a-a2",
@@ -4291,7 +4292,25 @@
       "history_provenance": "iter49 planner artifact-only correction: moved out of active features to remove the double count (original 150 retained alongside 650 of children). Full object preserved; never marked passed after a subset; dependents resolve on terminal child K1.1a-a5."
     }
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "feature_id": "K1.1a-a1",
+      "round": 1,
+      "report": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_round_1.json",
+      "score": 95,
+      "verdict": "PASS scoped; full gates pending at review time",
+      "reviewed_commit": "d235f6c0bd00474b957b0a47a0d57606faecc380"
+    },
+    {
+      "feature_id": "K1.1a-a1",
+      "round": 1,
+      "review_kind": "gate_confirmation",
+      "report": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a1_gate_confirmation.json",
+      "score": 95,
+      "verdict": "PASS child only; full and fast head gates green",
+      "reviewed_commit": "d235f6c0bd00474b957b0a47a0d57606faecc380"
+    }
+  ],
   "planning_validation": {
     "implementation_executed": false,
     "source_only": true,
@@ -4423,7 +4442,8 @@
       "command": "python3 -I - <<'PY'\nfrom pathlib import Path\nimport math\nr=Path('/Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0')\nfor word in ('kerr','schwarzschild'):\n print(word,'AILANG code occurrences',sum(p.read_text().lower().count(word) for p in r.glob('*.ail')))\ns=.9\nv=1+math.sqrt((1-s)*(1+s))\nprint('RK-1 exact from design formula',format(v,'.16g'),'printed',1.435890,'relative gap',abs(1.435890-v)/v)\nprint('psi vs sin psi at 3rs',math.pi/4,math.sin(math.pi/4))\nprint('Periodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)')\nPY",
       "output": "kerr AILANG code occurrences 0\nschwarzschild AILANG code occurrences 21\nRK-1 exact from design formula 1.435889894354067 printed 1.43589 relative gap 7.35752325482288e-08\npsi vs sin psi at 3rs 0.7853981633974483 0.7071067811865475\nPeriodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)",
       "exit_code": 0
-    }
+    },
+    "Iteration49: only K1.1a-a1 passes after exact-head full rig and fast CI, independent MiniMax95 PASS and mergeCI40180931545 success. Parent/full sprint remain open; implementation_executed:false in planning_validation is historical planning-stage evidence, not the current child state."
   ],
   "amendments": [
     {
