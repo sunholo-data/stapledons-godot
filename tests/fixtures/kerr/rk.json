@@ -1,0 +1,15 @@
+{
+  "schema": "kerr-rk-seed-v1",
+  "unit": "GM/c^2",
+  "source": "BPT72 ApJ178,347 \u00a7II; design_docs/planned/r2/kerr-black-holes.md V31",
+  "records": [
+    {"id": "RK-1", "spin": "0", "quantity": "outer", "precise": "2", "display": "2.000000", "package_R": "1", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0", "quantity": "inner", "precise": "0", "display": "0.000000", "package_R": "0", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-1", "spin": "0.5", "quantity": "outer", "precise": "1.8660254037844386", "display": "1.866025", "package_R": "0.93301270189221932", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0.5", "quantity": "inner", "precise": "0.13397459621556135", "display": "0.133975", "package_R": "0.066987298107780677", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-1", "spin": "0.9", "quantity": "outer", "precise": "1.4358898943540674", "display": "1.435890", "package_R": "0.71794494717703368", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0.9", "quantity": "inner", "precise": "0.56411010564593264", "display": "0.564110", "package_R": "0.28205505282296632", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-1", "spin": "0.998", "quantity": "outer", "precise": "1.0632139225171164", "display": "1.063214", "package_R": "0.53160696125855822", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0.998", "quantity": "inner", "precise": "0.93678607748288357", "display": "0.936786", "package_R": "0.46839303874144178", "formula": "u=1-sqrt(1-spin^2)"}
+  ]
+}

@@ -8,7 +8,8 @@
   "base_commit": "bc1f111134d2abac7cbfd9ca7bb2239da6382f04",
   "approval": {
     "status": "awaiting",
-    "by": "Mark"
+    "by": "Mark",
+    "note": "D116 scoped authorization covers the K1.1a children only; global approved:false/awaiting_approval remains for the unscheduled rest."
   },
   "approved": false,
   "runtime": {
@@ -118,15 +119,16 @@
     "m3_median_additions_per_merge": 911,
     "limitations": "First-parent source diffs include tests/tools, exclude docs/JSON/Makefile/assets and separate package repo. Bundled PRs and one-day M3 landing do not measure agent hours.",
     "target_loc_per_day": 170,
-    "estimated_total_loc": 3710,
+    "estimated_total_loc": 4210,
     "estimated_spec_doc_loc": 150,
-    "estimated_total_with_spec_doc_loc": 3860,
-    "estimated_active_days": 22,
+    "estimated_total_with_spec_doc_loc": 4360,
+    "estimated_active_days": 25,
     "controller_evaluation_days": 2,
     "contingency_days": 6,
-    "estimated_days": 30,
+    "estimated_days": 33,
     "gpu_allowance": "Approximately half ordinary throughput as inherited planning allowance, not a newly timed result.",
-    "approval_waits": "Excluded and unbounded"
+    "approval_waits": "Excluded and unbounded",
+    "iter49_amendment_note": "iter49 amendment: active LOC 4210 (= pre-amendment 3710 - 150 superseded K1.1a-a + 650 children a1..a5 at 150/140/140/120/100); with K1.0 spec doc 4360; at 170 LOC/day 25 active + 2 controller/evaluation + 6 contingency = 33 days. Pre-amendment figures (3710 total, 3860 with spec, 22+2+6=30 days) are historical."
   },
   "parent_milestones": [
     {
@@ -134,7 +136,7 @@
       "title": "Spec amendment",
       "estimated_loc": 0,
       "depends_on": [
-        "K1.1a-a"
+        "K1.1a-a5"
       ],
       "executor_slices": [
         "K1.0"
@@ -143,15 +145,20 @@
     {
       "id": "K1.1a",
       "title": "Closed forms and oracle",
-      "estimated_loc": 650,
+      "estimated_loc": 1150,
       "depends_on": [],
       "executor_slices": [
-        "K1.1a-a",
+        "K1.1a-a1",
+        "K1.1a-a2",
+        "K1.1a-a3",
+        "K1.1a-a4",
+        "K1.1a-a5",
         "K1.1a-b",
         "K1.1a-c",
         "K1.1a-d",
         "K1.1a-e"
-      ]
+      ],
+      "estimated_loc_note": "iter49 amendment: 650 - 150 (superseded K1.1a-a) + 650 (children a1..a5 at 150/140/140/120/100) = 1150; mechanical consequence of verified 1393-line orphan measurement."
     },
     {
       "id": "K1.1b",
@@ -255,7 +262,7 @@
   ],
   "critical_path": [
     "P0",
-    "K1.1a-a",
+    "K1.1a-a1..a5 (sequential)",
     "K1.0 spec merged + K1.1a closed forms",
     "K1.1b",
     "K1.1p/Ppublish",
@@ -280,7 +287,7 @@
     {
       "repo": "../stapledons-design",
       "path": "physics/relativity-spec.md",
-      "scope": "K1.0 separate PR §3b/§4/§7 merged before any visuals"
+      "scope": "K1.0 separate PR \u00a73b/\u00a74/\u00a77 merged before any visuals"
     },
     {
       "repo": "game",
@@ -330,7 +337,8 @@
       "package": "none",
       "action": "none",
       "reason": "An independent second-language oracle must not reuse the implementation under test.",
-      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+      "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission.",
+      "note": "Superseded slice id (full object now in superseded_features); applies unchanged to children K1.1a-a1..a5."
     },
     {
       "milestone": "K1.1a-b",
@@ -527,6 +535,41 @@
       "action": "none",
       "reason": "Game-specific display/reference/landing glue consumes sim data; no new physics.",
       "evidence": "Offline cache0.12.0 ailang.toml/AGENT.md/schwarzschild.ail inspected; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-a1",
+      "package": "none",
+      "action": "none",
+      "reason": "An independent second-language oracle must not reuse the implementation under test.",
+      "evidence": "Inherited from K1.1a-a registry audit; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-a2",
+      "package": "none",
+      "action": "none",
+      "reason": "An independent second-language oracle must not reuse the implementation under test.",
+      "evidence": "Inherited from K1.1a-a registry audit; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-a3",
+      "package": "none",
+      "action": "none",
+      "reason": "An independent second-language oracle must not reuse the implementation under test.",
+      "evidence": "Inherited from K1.1a-a registry audit; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-a4",
+      "package": "none",
+      "action": "none",
+      "reason": "An independent second-language oracle must not reuse the implementation under test.",
+      "evidence": "Inherited from K1.1a-a registry audit; no network registry query under this mission."
+    },
+    {
+      "milestone": "K1.1a-a5",
+      "package": "none",
+      "action": "none",
+      "reason": "An independent second-language oracle must not reuse the implementation under test.",
+      "evidence": "Inherited from K1.1a-a registry audit; no network registry query under this mission."
     }
   ],
   "registry_audit": {
@@ -541,7 +584,7 @@
     {
       "name": "kerr-oracle",
       "status": "NEW",
-      "milestone": "K1.1a-a",
+      "milestone": "K1.1a-a5",
       "wiring": "test",
       "description": "Independent Python oracle --check plus digest, with allowlist role oracle; no runtime use"
     },
@@ -707,7 +750,7 @@
       "when": "K1.0 design-repo PR, before any K1.5/K1.6 visual merges",
       "stop": true,
       "requires": [
-        "Separate ../stapledons-design/physics/relativity-spec.md §3b/§4/§7 PR merged.",
+        "Separate ../stapledons-design/physics/relativity-spec.md \u00a73b/\u00a74/\u00a77 PR merged.",
         "Record reviewed merged SHA and RK/source provenance."
       ],
       "release_evidence": "Mark's spec disposition and merged design commit; grep presence alone is insufficient merge evidence."
@@ -897,7 +940,7 @@
   "risks": [
     "Unresolved design inconsistencies alter frames, domains and ACs; affected executor slices stop until reviewed disposition, with no implicit approval from this plan.",
     "Measured Kerr strong-field coefficient may not regularise both channels; retain source/row metadata, test accuracy with refinement, and review raw4096-column fallback rather than blessing finiteness alone.",
-    "18–25 CPU-hours/table set is the design estimate, not a new measurement. Benchmark a bounded shard first; full generation manual/controller only. Re-measure1024-column/48-azimuth/F16 fallbacks against every accuracy probe.",
+    "18\u201325 CPU-hours/table set is the design estimate, not a new measurement. Benchmark a bounded shard first; full generation manual/controller only. Re-measure1024-column/48-azimuth/F16 fallbacks against every accuracy probe.",
     "Static and ZAMO frames differ for spin>0; independent nonzero-spin hover/orbit frequency and direction checks must precede GPU mirrors.",
     "Near-extremal cancellation and unsupported asset spins: cap tables at.998, use reviewed oneMinusS API/factored delta, refuse to display mismatched assets without substituting a different hole.",
     "Signed alpha, handedness and sky basis can mirror the prograde pinch; RK endpoints, finite-r ratio, twist markers and source mutations must all constrain the sense.",
@@ -1050,8 +1093,8 @@
         {
           "test": "registry completeness",
           "file": "../stapledons-design/physics/relativity-spec.md",
-          "asserts": "§3b/§4/§7 contain RK-1..18 and RK-Q1, units, finite-r/infinity separation and approved DI corrections",
-          "kills_which_mutation": "Deleted RK-14 sign or missing §4 GPU requirement"
+          "asserts": "\u00a73b/\u00a74/\u00a77 contain RK-1..18 and RK-Q1, units, finite-r/infinity separation and approved DI corrections",
+          "kills_which_mutation": "Deleted RK-14 sign or missing \u00a74 GPU requirement"
         }
       ],
       "implementation": "Write ~150 documentation lines in a separate design-repo PR. Resolve mathematical DI rows through review; attach oracle generation source/command provenance, without claiming unavailable tide digits. No game implementation. Draft may start after P0; final merge also waits for K1.1a-a's precise oracle provenance. This does not block closed-form package work.",
@@ -1075,7 +1118,7 @@
       ],
       "depends_on": [
         "P0",
-        "K1.1a-a"
+        "K1.1a-a5"
       ],
       "passes": false,
       "started": null,
@@ -1094,12 +1137,14 @@
       "merge_pause_points": []
     },
     {
-      "id": "K1.1a-a",
+      "id": "K1.1a-a1",
       "parent_id": "K1.1a",
-      "title": "Independent oracle and reproducible RK fixture",
+      "title": "Oracle skeleton + horizon/domain/provenance seed",
       "estimated_loc": 150,
       "estimated_code_loc": 95,
       "estimated_test_tool_loc": 55,
+      "loc_cap_total_physical": 150,
+      "loc_cap_note": "Cap is TOTAL physical added/modified lines across Python, shell, fixture, Makefile, allowlist and changelog; comments, fixtures and generated data are counted, not hidden.",
       "files": [
         "tools/kerr_ref.py",
         "tools/test_kerr_oracle.sh",
@@ -1112,39 +1157,36 @@
         {
           "test": "oracle literal anchors",
           "file": "tools/test_kerr_oracle.sh",
-          "asserts": "RK-1..13 and RK-18 from independently expressed double-precision formulas, display rounding separately from precise values",
-          "kills_which_mutation": "r_s/M factor-two error; reuse rounded six-digit expected value"
+          "asserts": "RK-1/2/3/9 from independently expressed double-precision formulas at s=0, .9 and .998 anchors (as budget fits); precise 17-sig strings distinct from six-decimal display",
+          "kills_which_mutation": "r_s/M factor-two error; reuse of rounded six-digit expected value"
         },
         {
-          "test": "invalid inputs",
+          "test": "invalid inputs and metadata",
           "file": "tools/test_kerr_oracle.sh",
-          "asserts": "Reject nonfinite spin/domain inputs before sqrt; exact s=0 members",
-          "kills_which_mutation": "NaN accepted; omitted finite check"
+          "asserts": "Reject negative spin, s=1, s>1 and NaN/Inf BEFORE any sqrt (approved domain: finite 0<=s<1); --check rejects wrong-unit, empty, duplicate, rounded, missing-source fixture defects",
+          "kills_which_mutation": "NaN accepted; omitted finite check; unit metadata ignored (verified wrong-unit silent-pass defect)"
         }
       ],
-      "implementation": "Write shell assertions first and observe missing-oracle RED outside sandbox; then independent Python oracle, precise JSON values with units/source/formula metadata, and allowlist role oracle. Add NEW kerr-oracle to test/.PHONY; initial --check covers available closed forms, expanded later.",
+      "implementation": "Test-first: shell assertions observed RED before implementation. Distinct RED codes: after the shell is written but the oracle is absent the shell exits rc1 (loud missing oracle); on a pristine checkout where tools/test_kerr_oracle.sh itself is absent the rc is 127. kerr_ref.py gains working `--check <fixture>` (plus bare `check` alias) doing EXACT schema+metadata comparison: rejects missing keys, empty fixture, duplicate composite record identities (RK id, spin, quantity), rounded six-decimal values where precise 17-significant strings required, wrong unit strings, missing source/formula metadata, wrong quantity/spin, numeric value mismatch. Domain validation BEFORE any sqrt: approved contract is finite 0<=s<1 -- reject negative spin, s=1, s>1 and NaN/Inf; NO semantic expansion to signed or extremal spin. u=GM/c^2 convention with explicit factor-2 to package r_s=u/2. Seed fixture RK-1, RK-2, RK-3, RK-9 at s=0, .9 and .998 anchors as budget fits, with units/source/formula metadata; a deliberate minimal seed shrink to RK-1/RK-2 is allowed only while preserving full checker strictness and honestly documenting the subset. Makefile kerr-oracle target + .PHONY; allowlist role oracle. RK-14..17 excluded (deferred to later parents).",
       "acceptance": [
         {
-          "id": "AC-K1",
+          "id": "AC-K3-slice",
           "commands": [
-            "(cd \"$PKG\" && \"$A\" test --package .)"
+            "sh tools/test_kerr_oracle.sh",
+            "make kerr-oracle AILANG=runtime/bin/ailang",
+            "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+            "make python-guard lint-precision AILANG=runtime/bin/ailang",
+            "git diff --check"
           ],
-          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
-        },
-        {
-          "id": "AC-K3",
-          "commands": [
-            "mkdir -p .ailang/state/evidence/R2-KERR",
-            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
-            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
-            "make kerr-oracle AILANG=runtime/bin/ailang"
-          ],
-          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification."
         }
       ],
       "gates": [
         "sh tools/test_kerr_oracle.sh",
-        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+        "make kerr-oracle AILANG=runtime/bin/ailang",
+        "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang",
+        "git diff --check"
       ],
       "controller_gates": [
         "make ci-fast AILANG=runtime/bin/ailang",
@@ -1161,33 +1203,255 @@
       "design_blocks": [
         "DI-01"
       ],
-      "file_details": [
+      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-a2",
+      "parent_id": "K1.1a",
+      "title": "Fixture growth RK-4..RK-8 plus RK-8b with shell anchors",
+      "estimated_loc": 140,
+      "estimated_code_loc": 90,
+      "estimated_test_tool_loc": 50,
+      "loc_cap_total_physical": 140,
+      "loc_cap_note": "Cap is TOTAL physical added/modified lines across Python, shell, fixture, Makefile, allowlist and changelog; comments, fixtures and generated data are counted, not hidden.",
+      "files": [
+        "tests/fixtures/kerr/rk.json",
+        "tools/test_kerr_oracle.sh",
+        "tools/kerr_ref.py"
+      ],
+      "test_file": "tools/test_kerr_oracle.sh",
+      "tests": [
         {
-          "path": "tools/kerr_ref.py",
-          "new": true,
-          "repo": "game"
-        },
-        {
-          "path": "tools/test_kerr_oracle.sh",
-          "new": true,
-          "repo": "game"
-        },
-        {
-          "path": "tests/fixtures/kerr/rk.json",
-          "new": true,
-          "repo": "game"
-        },
-        {
-          "path": "tools/python-allowlist.txt",
-          "new": false,
-          "repo": "game"
-        },
-        {
-          "path": "Makefile",
-          "new": false,
-          "repo": "game"
+          "test": "RK-4..RK-8 and RK-8b literal anchors",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "New records match independent formulas at 17 significant digits: RK-4/5 photon prograde/retrograde, RK-6/7 ISCO prograde/retrograde, RK-8 and RK-8b orbit clocks",
+          "kills_which_mutation": "swapped pro/retro branch; dropped factor; missing RK-8b clock record"
         }
       ],
+      "implementation": "Add RK-4..RK-8 plus RK-8b closed-form records with full metadata: RK-4/RK-5 photon prograde/retrograde, RK-6/RK-7 ISCO prograde/retrograde, RK-8 and RK-8b orbit clocks. Shell literal anchors for each new record.",
+      "acceptance": [
+        {
+          "id": "AC-K3-slice",
+          "commands": [
+            "sh tools/test_kerr_oracle.sh",
+            "make kerr-oracle AILANG=runtime/bin/ailang",
+            "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+            "make python-guard lint-precision AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_oracle.sh",
+        "make kerr-oracle AILANG=runtime/bin/ailang",
+        "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-a1"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01"
+      ],
+      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-a3",
+      "parent_id": "K1.1a",
+      "title": "Fixture closure RK-10..13, RK-18, RK-Q1",
+      "estimated_loc": 140,
+      "estimated_code_loc": 95,
+      "estimated_test_tool_loc": 45,
+      "loc_cap_total_physical": 140,
+      "loc_cap_note": "Cap is TOTAL physical added/modified lines across Python, shell, fixture, Makefile, allowlist and changelog; comments, fixtures and generated data are counted, not hidden.",
+      "files": [
+        "tests/fixtures/kerr/rk.json",
+        "tools/test_kerr_oracle.sh",
+        "tools/kerr_ref.py"
+      ],
+      "test_file": "tools/test_kerr_oracle.sh",
+      "tests": [
+        {
+          "test": "spin near 1 and s=0 exactness",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "s=1-2^-53 finite; s=0 members exact where specified",
+          "kills_which_mutation": "nonfinite near-extremal output; always-Kerr rounding changing s=0"
+        }
+      ],
+      "implementation": "Complete approved closed forms: RK-10 frame dragging, RK-11 lapse, RK-12 speed, RK-13 static clock, plus RK-18 and RK-Q1. Precise 17-significant strings kept distinct from six-decimal display field. Exact s=0 Schwarzschild-limit members. Binary64 spin probe s=1-2^-53 asserted finite; explicitly NO Decimal-arbitrarily-close-to-1 broad guarantee. RK-13 radius stated only inside its verified domain (no radius-0 claim).",
+      "acceptance": [
+        {
+          "id": "AC-K3-slice",
+          "commands": [
+            "sh tools/test_kerr_oracle.sh",
+            "make kerr-oracle AILANG=runtime/bin/ailang",
+            "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+            "make python-guard lint-precision AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_oracle.sh",
+        "make kerr-oracle AILANG=runtime/bin/ailang",
+        "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-a2"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01"
+      ],
+      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-a4",
+      "parent_id": "K1.1a",
+      "title": "Mutation-drill hardening with permanent negative asserts",
+      "estimated_loc": 120,
+      "estimated_code_loc": 40,
+      "estimated_test_tool_loc": 80,
+      "loc_cap_total_physical": 120,
+      "loc_cap_note": "Cap is TOTAL physical added/modified lines across Python, shell, fixture, Makefile, allowlist and changelog; comments, fixtures and generated data are counted, not hidden.",
+      "files": [
+        "tools/test_kerr_oracle.sh",
+        "tools/kerr_ref.py",
+        "tests/fixtures/kerr/rk.json"
+      ],
+      "test_file": "tools/test_kerr_oracle.sh",
+      "tests": [
+        {
+          "test": "negative fixture/source drills",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "Each drilled defect fails --check or the shell loudly (rc!=0)",
+          "kills_which_mutation": "silent metadata acceptance (verified wrong-unit defect)"
+        }
+      ],
+      "implementation": "In an isolated copy (never the iter48 orphan, never main): drills factor-2 (r_s vs u), sqrt branch/domain, NaN accepted, six-decimal literal reuse, empty fixture, wrong unit \u2014 each observed RED then restored GREEN. Permanent negative tests added to the shell for every drill.",
+      "acceptance": [
+        {
+          "id": "AC-K3-slice",
+          "commands": [
+            "sh tools/test_kerr_oracle.sh",
+            "make kerr-oracle AILANG=runtime/bin/ailang",
+            "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+            "make python-guard lint-precision AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_oracle.sh",
+        "make kerr-oracle AILANG=runtime/bin/ailang",
+        "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-a3"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01"
+      ],
+      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
+      "merge_pause_points": []
+    },
+    {
+      "id": "K1.1a-a5",
+      "parent_id": "K1.1a",
+      "title": "Terminal wiring and RK closure audit",
+      "estimated_loc": 100,
+      "estimated_code_loc": 30,
+      "estimated_test_tool_loc": 70,
+      "loc_cap_total_physical": 100,
+      "loc_cap_note": "Cap is TOTAL physical added/modified lines across Python, shell, fixture, Makefile, allowlist and changelog; comments, fixtures and generated data are counted, not hidden.",
+      "files": [
+        "CHANGELOG.md",
+        "tools/test_kerr_oracle.sh",
+        "Makefile",
+        "tests/fixtures/kerr/rk.json"
+      ],
+      "test_file": "tools/test_kerr_oracle.sh",
+      "tests": [
+        {
+          "test": "completeness audit",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "RK-1..13, RK-8b, RK-18, RK-Q1 all present with units/source/formula metadata; RK-14..17 absent (deferred)",
+          "kills_which_mutation": "dropped record silently passes"
+        }
+      ],
+      "implementation": "Document regenerate-fixture -> full-shell metadata-drift path (--check is compare-only); fixture completeness audit RK-1..13 plus RK-8b, RK-18 and RK-Q1; changelog fragment; final gate pass. Terminal dependency node for K1.0, K1.1a-b and the critical path.",
+      "acceptance": [
+        {
+          "id": "AC-K3-slice",
+          "commands": [
+            "sh tools/test_kerr_oracle.sh",
+            "make kerr-oracle AILANG=runtime/bin/ailang",
+            "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+            "make python-guard lint-precision AILANG=runtime/bin/ailang",
+            "git diff --check"
+          ],
+          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_oracle.sh",
+        "make kerr-oracle AILANG=runtime/bin/ailang",
+        "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang",
+        "git diff --check"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "K1.1a-a4"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01"
+      ],
+      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
       "merge_pause_points": []
     },
     {
@@ -1235,7 +1499,7 @@
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
       "depends_on": [
-        "K1.1a-a"
+        "K1.1a-a5"
       ],
       "passes": false,
       "started": null,
@@ -3919,6 +4183,114 @@
       ]
     }
   ],
+  "superseded_features": [
+    {
+      "id": "K1.1a-a",
+      "parent_id": "K1.1a",
+      "title": "Independent oracle and reproducible RK fixture",
+      "estimated_loc": 150,
+      "estimated_code_loc": 95,
+      "estimated_test_tool_loc": 55,
+      "files": [
+        "tools/kerr_ref.py",
+        "tools/test_kerr_oracle.sh",
+        "tests/fixtures/kerr/rk.json",
+        "tools/python-allowlist.txt",
+        "Makefile"
+      ],
+      "test_file": "tools/test_kerr_oracle.sh",
+      "tests": [
+        {
+          "test": "oracle literal anchors",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "RK-1..13 and RK-18 from independently expressed double-precision formulas, display rounding separately from precise values",
+          "kills_which_mutation": "r_s/M factor-two error; reuse rounded six-digit expected value"
+        },
+        {
+          "test": "invalid inputs",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "Reject nonfinite spin/domain inputs before sqrt; exact s=0 members",
+          "kills_which_mutation": "NaN accepted; omitted finite check"
+        }
+      ],
+      "implementation": "Write shell assertions first and observe missing-oracle RED outside sandbox; then independent Python oracle, precise JSON values with units/source/formula metadata, and allowlist role oracle. Add NEW kerr-oracle to test/.PHONY; initial --check covers available closed forms, expanded later.",
+      "acceptance": [
+        {
+          "id": "AC-K1",
+          "commands": [
+            "(cd \"$PKG\" && \"$A\" test --package .)"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        },
+        {
+          "id": "AC-K3",
+          "commands": [
+            "mkdir -p .ailang/state/evidence/R2-KERR",
+            "(cd \"$PKG\" && \"$A\" run --quiet --bytecode --strict-bytecode --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-strict.txt\" && \"$A\" run --quiet --entry kerrDigest --args-json 16 _smoke.ail > \"$GAME_ROOT/.ailang/state/evidence/R2-KERR/kerr-interpreter.txt\")",
+            "cmp .ailang/state/evidence/R2-KERR/kerr-strict.txt .ailang/state/evidence/R2-KERR/kerr-interpreter.txt",
+            "make kerr-oracle AILANG=runtime/bin/ailang"
+          ],
+          "scope": "Contributes the slice checks below; full AC closes only at the parent endpoint and controller verification."
+        }
+      ],
+      "gates": [
+        "sh tools/test_kerr_oracle.sh",
+        "make python-guard lint-precision AILANG=runtime/bin/ailang"
+      ],
+      "controller_gates": [
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
+      ],
+      "depends_on": [
+        "P0"
+      ],
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "actual_loc": null,
+      "mutation_drill": true,
+      "design_blocks": [
+        "DI-01"
+      ],
+      "file_details": [
+        {
+          "path": "tools/kerr_ref.py",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/test_kerr_oracle.sh",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tests/fixtures/kerr/rk.json",
+          "new": true,
+          "repo": "game"
+        },
+        {
+          "path": "tools/python-allowlist.txt",
+          "new": false,
+          "repo": "game"
+        },
+        {
+          "path": "Makefile",
+          "new": false,
+          "repo": "game"
+        }
+      ],
+      "merge_pause_points": [],
+      "superseded_by": [
+        "K1.1a-a1",
+        "K1.1a-a2",
+        "K1.1a-a3",
+        "K1.1a-a4",
+        "K1.1a-a5"
+      ],
+      "superseded_note": "iter49 planner amendment (D116 frame): split into five oracle-only children; this 150-LOC estimate is preserved as history and is never marked passed after a subset. Verified iter48 orphan measured 1393 physical lines before glue and is not adopted.",
+      "history_provenance": "iter49 planner artifact-only correction: moved out of active features to remove the double count (original 150 retained alongside 650 of children). Full object preserved; never marked passed after a subset; dependents resolve on terminal child K1.1a-a5."
+    }
+  ],
   "evaluations": [],
   "planning_validation": {
     "implementation_executed": false,
@@ -3930,16 +4302,18 @@
       "design_docs/planned/r2/kerr-black-holes-sprint.md",
       ".ailang/state/sprints/sprint_R2-KERR.json"
     ],
-    "expected_feature_count": 30,
+    "expected_feature_count": 34,
     "expected_parent_count": 9,
-    "expected_total_loc": 3710,
+    "expected_total_loc": 4210,
     "expected_design_inconsistency_count": 15,
     "max_mutation_slice_loc": 150,
     "pre_existing_untracked_preserved": ".ailang/state/brain.db",
     "network_used": false,
     "git_writes": false,
     "runtime_gate_verdicts": "unmeasured in sandbox",
-    "structure_result": "PASS source/format checks: jq exit0; 30 false features; nine parent totals; 3710 LOC; 15 design inconsistencies; all dependencies resolve and DAG acyclic; declared primary test files; gate commands mirrored in plan; every slice <=150 LOC. No existing tracked file changed; only the two task files added, pre-existing brain.db preserved. Runtime gate verdicts remain unmeasured in sandbox."
+    "structure_result": "PASS source/format checks: jq exit0; 34 active false features (superseded K1.1a-a preserved in superseded_features); nine parent totals; 4210 LOC; 15 design inconsistencies; all dependencies resolve and DAG acyclic; declared primary test files; gate commands mirrored in plan; every slice <=150 LOC. No existing tracked file changed beyond the two task files; pre-existing brain.db preserved. Runtime gate verdicts remain unmeasured in sandbox. iter49 correction: the original validation claimed 30 features / 3710 LOC; that claim is now historical (double count removed by moving K1.1a-a to superseded_features and adding five children).",
+    "historical_feature_count": 30,
+    "historical_total_loc": 3710
   },
   "verification_notes": [
     {
@@ -3963,7 +4337,7 @@
     {
       "premise": "Spec and canon",
       "command": "git -C ../stapledons-design rev-parse HEAD\nrg -n -i 'kerr|schwarzschild' ../stapledons-design/physics/relativity-spec.md\nsed -n '14p' ../stapledons-design/vision/premise-and-loop.md",
-      "output": "864a4e4598e40ed33a76aef6fbd06eabfcc29e86\n63:## 3. General relativity (Schwarzschild; the black-hole feature)\n- **You come back.** The ship emerges violently from the ergosphere of a spinning black hole: the same rogue black hole that is heading for the Solar System. The crew's memories are erased and the ship's AI is confused. You stabilise the tumbling ship amid full SR and GR distortion. Then the ship is **thrown clear, towards Earth**. A Penrose-process slingshot out of the ergosphere is the physics-adjacent reading; *why* the throw points home is part of the spire mystery (§4). You coast in past Saturn and reach Earth.",
+      "output": "864a4e4598e40ed33a76aef6fbd06eabfcc29e86\n63:## 3. General relativity (Schwarzschild; the black-hole feature)\n- **You come back.** The ship emerges violently from the ergosphere of a spinning black hole: the same rogue black hole that is heading for the Solar System. The crew's memories are erased and the ship's AI is confused. You stabilise the tumbling ship amid full SR and GR distortion. Then the ship is **thrown clear, towards Earth**. A Penrose-process slingshot out of the ergosphere is the physics-adjacent reading; *why* the throw points home is part of the spire mystery (\u00a74). You coast in past Saturn and reach Earth.",
       "exit_code": 0
     },
     {
@@ -3981,7 +4355,7 @@
     {
       "premise": "Offline package reuse",
       "command": "rg -n 'version =|sunholo/relativity/(geodesic|schwarzschild)' /Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0/ailang.toml\nrg -n 'Kerr|Schwarzschild module' /Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0/AGENT.md",
-      "output": "3:version = \"0.12.0\"\n20:  \"sunholo/relativity/schwarzschild\",\n22:  \"sunholo/relativity/geodesic\",\n29:- Rotating (Kerr) black holes.\n49:- **Schwarzschild module:** radii in units of r_s = 2GM/c² (the horizon is at",
+      "output": "3:version = \"0.12.0\"\n20:  \"sunholo/relativity/schwarzschild\",\n22:  \"sunholo/relativity/geodesic\",\n29:- Rotating (Kerr) black holes.\n49:- **Schwarzschild module:** radii in units of r_s = 2GM/c\u00b2 (the horizon is at",
       "exit_code": 0
     },
     {
@@ -4035,7 +4409,7 @@
     {
       "premise": "Claimed releases/minors are inherited controller evidence",
       "command": "sed -n '268p' design_docs/planned/r2/kerr-black-holes.md\nsed -n '284p' design_docs/planned/r2/kerr-black-holes.md",
-      "output": "| V13 | Minor 13 is claimed in flight | `grep -n \"2.13\\|minor 13\" .ailang/state/sprints/sprint_R2-SIMILAR-S0.json; gh pr view 302 --json number,title,state` | the similar-worlds S0 sprint plans protocol 2.13 (\"Negotiated 2.13…\"); `gh` failed: `tls: failed to verify certificate` (sandboxed); **controller re-check outside the sandbox (2026-10-21):** `gh pr diff 302 | grep \"surfaceMinor() -> int\"` prints `+export pure func surfaceMinor() -> int = 13` (attended R2-STAR-SURFACES, open, paused for Mark's playtest), so both claims on minor 13 are real |\n| V29 | `sunholo/relativity` 0.13.0 is already taken (controller, outside the sandbox) | `git -C ~/dev/sunholo-data/ailang-packages show origin/main:packages/relativity/ailang.toml \\| grep -m1 version; ailang pkg versions sunholo/relativity \\| grep latest` | source `version = \"0.13.0\"` (ailang-packages #126, `7682890`: float64 domain bounds for seven generated properties, `hyper.sinh` saturation fix); registry latest `v0.12.0`. So 0.13.0 is unpublished but claimed; Kerr plans 0.14.0 unless the two ship together |",
+      "output": "| V13 | Minor 13 is claimed in flight | `grep -n \"2.13\\|minor 13\" .ailang/state/sprints/sprint_R2-SIMILAR-S0.json; gh pr view 302 --json number,title,state` | the similar-worlds S0 sprint plans protocol 2.13 (\"Negotiated 2.13\u2026\"); `gh` failed: `tls: failed to verify certificate` (sandboxed); **controller re-check outside the sandbox (2026-10-21):** `gh pr diff 302 | grep \"surfaceMinor() -> int\"` prints `+export pure func surfaceMinor() -> int = 13` (attended R2-STAR-SURFACES, open, paused for Mark's playtest), so both claims on minor 13 are real |\n| V29 | `sunholo/relativity` 0.13.0 is already taken (controller, outside the sandbox) | `git -C ~/dev/sunholo-data/ailang-packages show origin/main:packages/relativity/ailang.toml \\| grep -m1 version; ailang pkg versions sunholo/relativity \\| grep latest` | source `version = \"0.13.0\"` (ailang-packages #126, `7682890`: float64 domain bounds for seven generated properties, `hyper.sinh` saturation fix); registry latest `v0.12.0`. So 0.13.0 is unpublished but claimed; Kerr plans 0.14.0 unless the two ship together |",
       "exit_code": 0
     },
     {
@@ -4049,6 +4423,16 @@
       "command": "python3 -I - <<'PY'\nfrom pathlib import Path\nimport math\nr=Path('/Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0')\nfor word in ('kerr','schwarzschild'):\n print(word,'AILANG code occurrences',sum(p.read_text().lower().count(word) for p in r.glob('*.ail')))\ns=.9\nv=1+math.sqrt((1-s)*(1+s))\nprint('RK-1 exact from design formula',format(v,'.16g'),'printed',1.435890,'relative gap',abs(1.435890-v)/v)\nprint('psi vs sin psi at 3rs',math.pi/4,math.sin(math.pi/4))\nprint('Periodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)')\nPY",
       "output": "kerr AILANG code occurrences 0\nschwarzschild AILANG code occurrences 21\nRK-1 exact from design formula 1.435889894354067 printed 1.43589 relative gap 7.35752325482288e-08\npsi vs sin psi at 3rs 0.7853981633974483 0.7071067811865475\nPeriodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)",
       "exit_code": 0
+    }
+  ],
+  "amendments": [
+    {
+      "id": "iter49-kerr11aa-resplit",
+      "author": "openrouter/moonshotai/kimi-k3 (fallback pinned sprint-planner; ollama/kimi-k3:cloud probe failed HTTP 429; inherited codex:gpt-6.1-sol audit attempt hit the 600 s cap, elapsed 605 s, graceful rc0, no artifact)",
+      "kind": "planner proposal \u2014 no execution approved",
+      "report": ".ailang/state/planning/stapledon-iter49-planner.md",
+      "summary": "K1.1a-a re-split into K1.1a-a1..a5 (each <=150 total physical lines, oracle-only, registry_reuse none); original K1.1a-a moved from active features to superseded_features (double count removed); active features 34, active LOC 4210 (=3710-150+650; with K1.0 spec 4360); dependents re-pointed to terminal child K1.1a-a5; parent K1.1a estimated_loc 1150; approved spin domain finite 0<=s<1 (reject negative, s=1, >1, NaN/Inf BEFORE any sqrt; no signed/extremal expansion); RK labels corrected (RK-4/5 photon pro/retro, RK-6/7 ISCO pro/retro, RK-8 and RK-8b orbit clocks, RK-9 horizon omega in a1, RK-10 drag/RK-11 lapse/RK-12 speed/RK-13 static clock in a3); D116 scoped authorization already covers K1.1a children -- all other parents/P0/Mark spec/publish fences remain; global approved:false/awaiting_approval unchanged for the unscheduled rest.",
+      "passes_changed": false
     }
   ]
 }
