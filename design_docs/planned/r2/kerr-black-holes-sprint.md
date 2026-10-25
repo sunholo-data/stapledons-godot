@@ -2,7 +2,7 @@
 
 **Design doc:** [kerr-black-holes.md](kerr-black-holes.md), read in full, including Quorum log and Verification log.
 **Sprint id:** `R2-KERR`.
-**Status:** `awaiting_approval`; design approved for planning only, not execution.
+**Status:** `awaiting_approval` for the full sprint; D-116 A already authorizes the named headless K1.1a scope (including its oracle children), stopping before publish. Other P0/spec/render/publish fences remain.
 **Mission iteration:** 43; charter row R2, plan only.
 **Base commit:** `bc1f111134d2abac7cbfd9ca7bb2239da6382f04` (`git rev-parse HEAD`).
 **Runtime:** `runtime/bin/ailang`, AILANG v0.54.14, commit `e1ef33fa52b16c3fc3ad15edd60103d2f4ba808e`.
@@ -11,9 +11,9 @@
 
 Deliver release 1: package-first Kerr closed forms, analytic capture and Carter lensing, verified tides, pinned equatorial tables, pure sim/readouts, a CPU/GPU mirror and a visit aboard the existing 3D ship. The canon emergence scene, ergosphere interiors, superradiance, spinning-hole star inverse maps, polar rendered views, disks/jets/charge and time-skip gameplay remain outside this plan.
 
-**Budget:** 3,710 LOC across the design's nine parent milestones and 30 executor slices, plus about 150 K1.0 spec lines. Code/test/tool estimates include supporting glue, fixtures and release/landing records; binaries and reference PNGs are excluded. Each mutation-bearing slice is at most 150 LOC total, so also below the 150-code-LOC threshold. Every other implementation slice is below 250 LOC. This conservatively enforces both limits without hiding a large tool/oracle in the test column.
+**Budget:** 4,210 active LOC across the design's nine parent milestones and 34 active executor slices, plus about 150 K1.0 spec lines (4,360 including spec). The original 3,710/30 estimate is historical; iteration 49 replaces the original 150-line oracle leaf with five children totaling 650, preserving the old object in `superseded_features`. Code/test/tool estimates include supporting glue, fixtures and release/landing records; binaries and reference PNGs are excluded. Each mutation-bearing slice is at most 150 LOC total, so also below the 150-code-LOC threshold. Every other implementation slice is below 250 LOC. This conservatively enforces both limits without hiding a large tool/oracle in the test column.
 
-**Duration:** 22 planned working days, two controller/evaluator validation days and six contingency days = 30 working days (about six weeks), excluding approval, registry, GPU availability and human-review waits. This replaces the design's optimistic 3–4 weeks with a budget for explicit small runs and physics review. The LOC estimate remains the design's 3,710; substantive DI resolutions can require re-estimation before execution.
+**Duration:** 25 planned working days, two controller/evaluator validation days and six contingency days = 33 working days, excluding approval, registry, GPU availability and human-review waits. This iteration-49 estimate uses 4,210 active LOC at the existing 170 LOC/day assumption; the original 22+2+6=30 estimate remains historical. Each oracle child retains its individual physical-line cap; a larger aggregate estimate does not waive a cap.
 
 ## Authority, sources and baseline
 
@@ -323,6 +323,8 @@ git -C ../stapledons-design diff --check
 Controller/evaluator checkpoint: design-repo review and merged SHA; game physics gate closes at K1.3.
 
 ### K1.1a-a: Independent oracle and reproducible RK fixture
+
+> **Superseded (iter49 amendment, planner proposal, D116 frame):** split into **K1.1a-a1 … K1.1a-a5** (see "Amendment iter49" at end of file). This 150-LOC single-slice estimate is preserved as history — the full feature object now lives in the sprint JSON `superseded_features`, out of the active 34 — and it is never marked passed after a subset. Dependents now resolve on K1.1a-a5.
 
 **Parent:** K1.1a. **LOC:** 95 implementation + 55 tests/tools/records = **150**. **Depends on:** P0.
 **Design resolution required:** DI-01; proposed corrections below are not silently adopted.
@@ -1929,8 +1931,44 @@ psi vs sin psi at 3rs 0.7853981633974483 0.7071067811865475
 Periodic strict monotonicity implies f(0)<f(2pi), contradicts f(0)=f(2pi)
 ```
 
-Arithmetic source retained for estimate totals: measured M3 additions `555+1116+719+1461+911=4762`, deletions `10+0+36+16+15=77`; gross4839; mean4762/5=952.4; sorted median911. Design row sum `650+710+120+410+460+480+560+320=3710`; K1.0 adds150 doc lines. Table bytes `1536*96*64*2*4=75497472` (72MiB). These calculations were also checked by a read-only in-memory Python arithmetic command; no script file or pipeline was created. Sample check count `4 chi *3 rows *25 columns=300`; render matrix `3*3*3*2=54` plus2 sheets=56; calendar budget22+2+6=30.
+Arithmetic source retained for estimate totals: measured M3 additions `555+1116+719+1461+911=4762`, deletions `10+0+36+16+15=77`; gross4839; mean4762/5=952.4; sorted median911. Design row sum `650+710+120+410+460+480+560+320=3710`; K1.0 adds150 doc lines. (Pre-amendment historical; after the iter49 amendment the active design-row sum is `1150+710+120+410+460+480+560+320=4210`, 4360 with the K1.0 spec lines.) Table bytes `1536*96*64*2*4=75497472` (72MiB). These calculations were also checked by a read-only in-memory Python arithmetic command; no script file or pipeline was created. Sample check count `4 chi *3 rows *25 columns=300`; render matrix `3*3*3*2=54` plus2 sheets=56; calendar budget22+2+6=30 (pre-amendment historical; post-amendment at 170 LOC/day: active25+2controller+6contingency=33).
 
 Additional read-only source check: `sed -n '558,579p' sim/protocol.ail` → inRange recognizes bh_mass_msun/bh_r, then false; decodeOverride returns bad_params for an unrecognized key. `nl -ba design_docs/planned/r2/kerr-black-holes.md | sed -n '72,81p'` → line76 says explicit0/absent same-input bytes. Existing bh_r is the positive control for the missing bh_spin branch. This source evidence supports DI-15; no protocol run was attempted.
 
-Post-write validation commands (source/format only): `jq -e . .ailang/state/sprints/sprint_R2-KERR.json`, JSON LOC/dependency/schema/NEW-target checks, `wc -l design_docs/planned/r2/kerr-black-holes-sprint.md`, `git diff --check`, `git diff --name-only` and `git status --short --untracked-files=all`. JSON must exit0; total must be3710 across30 false features and nine parent totals; every dependency resolves to a feature or explicit pause; all mutation slices<=150. The only added task files must be this plan and JSON, with no existing tracked file changed and the pre-existing brain entry preserved. See JSON planning_validation for the checked result; no runtime result is claimed.
+Post-write validation commands (source/format only): `jq -e . .ailang/state/sprints/sprint_R2-KERR.json`, JSON LOC/dependency/schema/NEW-target checks, `wc -l design_docs/planned/r2/kerr-black-holes-sprint.md`, `git diff --check`, `git diff --name-only` and `git status --short --untracked-files=all`. JSON must exit0; total must be4210 across34 active false features and nine parent totals (pre-amendment claim of 3710 across 30 is historical — K1.1a-a moved to `superseded_features`); every dependency resolves to a feature or explicit pause; all mutation slices<=150. The only added task files must be this plan and JSON, with no existing tracked file changed and the pre-existing brain entry preserved. See JSON planning_validation for the checked result; no runtime result is claimed.
+
+---
+
+## Amendment iter49: K1.1a-a mechanical re-split (planner proposal, D116 frame)
+
+**Status:** proposal only — no execution approved by this amendment. Authored by the fallback pinned sprint-planner (openrouter/moonshotai/kimi-k3) at iter49 after the codex:gpt-6.1-sol audit timed out without artifacts; no re-audit performed, measured facts inherited from codex/controller audits. The canonical provider run returned ok after 112 s; its corrective run hit the 180 s cap after producing a validated partial JSON amendment. Native transport synchronized the prose from that corrected JSON. Raw run evidence remains outside the repository; this tracked amendment and sprint JSON carry the decision-bearing contract.
+
+**Approval frame (D116, attended A):** named headless K1.1a `maths/oracle` package only; stops before publish. K1.0 spec stays Mark's; D-116 already grants the named headless K1.1a children; general P0 for other parents, Mark-owned spec and publish fences remain unchanged. Mechanical re-split inside K1.1a-a required no new human input.
+
+**Why:** verified iter48 orphan measured 1393 physical lines before glue (913 source) vs the 150-line slice — 9.3×. The orphan (SHAs oracle e6088316…, shell 635c35b9…, fixture 8730367c…) is **not adopted and not mutated**. Verified defects to fix: `--check` spelling rejected (rc3); `unit='wrong-unit'` mutation passed rc0 (checker ignores metadata); missing-oracle rc127.
+
+**Children (all oracle-only, game repo, registry_reuse none, each ≤150 TOTAL physical added/modified lines across Python+shell+fixture+Makefile+allowlist+changelog — nothing hidden):**
+
+| child | scope | files | cap | depends_on |
+|---|---|---|---|---|
+| K1.1a-a1 | Oracle skeleton + horizon/domain/provenance seed: `kerr_ref.py --check` (exact schema+metadata comparison; rejects missing/empty/duplicate/rounded/unit/source/quantity/spin/value defects; finite 0 <= s < 1 before sqrt (reject negative, s=1, larger, NaN/Inf); u=GM/c² with explicit factor-2 vs package r_s=u/2); seed fixture RK-1/2/3/9 at s=0, .9 and .998 as budget fits (RK-1/2-only seed permitted with strict comparison and explicit deferred coverage) at 17 significant digits with units/source/formula; shell; `kerr-oracle` Makefile target; allowlist role oracle | tools/kerr_ref.py, tools/test_kerr_oracle.sh, tests/fixtures/kerr/rk.json, tools/python-allowlist.txt, Makefile | 150 | P0 |
+| K1.1a-a2 | Fixture growth RK-4/5 photon pro/retro, RK-6/7 ISCO pro/retro and RK-8/8b orbit clocks + shell anchors | rk.json, test_kerr_oracle.sh, kerr_ref.py | 140 | K1.1a-a1 |
+| K1.1a-a3 | Fixture closure RK-10..13, RK-18, RK-Q1; precise 17-sig strings distinct from six-decimal display; exact s=0 members; binary64 spin probe s=1−2⁻⁵³ finite (no Decimal→1 broad claim; no RK-13 radius-0 claim) | rk.json, test_kerr_oracle.sh, kerr_ref.py | 140 | K1.1a-a2 |
+| K1.1a-a4 | Mutation-drill hardening in isolated copy: factor-2, sqrt branch/domain, NaN, six-decimal literal reuse, empty fixture, wrong unit — each RED→GREEN with permanent negative asserts | test_kerr_oracle.sh, kerr_ref.py, rk.json | 120 | K1.1a-a3 |
+| K1.1a-a5 | Terminal wiring: documented regenerate→full-shell metadata-drift path (`--check` compare-only), RK-1..13 including RK-8b, plus RK-18 and RK-Q1 completeness audit, changelog fragment | changelog, test_kerr_oracle.sh, Makefile, rk.json | 100 | K1.1a-a4 |
+
+RK-14..17 (lens/tide, external data) remain deferred to later parents and appear in no child. Aggregate 650 replaces the 150 estimate; parent K1.1a estimated_loc becomes **1150**. All dependency references to K1.1a-a (K1.0, K1.1a-b, critical path, parent totals) now resolve on **K1.1a-a5**. The original K1.1a-a section above is preserved as history and is never marked passed after a subset.
+
+**K1.1a-a1 gates (exact, in order):**
+
+```sh
+sh tools/test_kerr_oracle.sh
+make kerr-oracle AILANG=runtime/bin/ailang
+python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json
+make python-guard lint-precision AILANG=runtime/bin/ailang
+git diff --check
+```
+
+Baseline expected RED: pristine primary file absent gives shell rc127; after writing the shell first with the oracle absent, its missing-oracle assertion must give rc1. The oracle invocation is file-not-found before implementation. Test-first RED → implement → mutation drills (a1 set: factor-2, sqrt domain, NaN, six-decimal literal, empty fixture, wrong-unit) → independent evaluator (generator ≠ judge). Line counts enforced by the outer controller. rc0 alone is not review.
+
+Transport verification: active JSON contains 34 unique feature IDs; active LOC 4210 = parent total = velocity total; DAG acyclic; all passes false/null; five new children are at most 150 total physical lines each. The original K1.1a-a object remains in `superseded_features`. The historical/full-sprint approval status is retained; D-116 is the execution authority for this named headless scope. No implementation or independent evaluation is claimed by these planning checks.
