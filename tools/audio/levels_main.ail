@@ -1,0 +1,76 @@
+module stapledons/audio/levels_main
+-- R2-SUNHOLO-AUDIO (make sound-levels): the FS shell around levels.ail. Reads the cue table and the
+-- asset manifest (data/audio/assets.json and its parts), decodes each cue's first stream with
+-- sunholo/audio/pcm, applies the offline loudness rules and the negative controls, prints one line
+-- per check and `sound-levels: N passed, M failures`, and writes the measurements (centi-dB) as JSON.
+--   ailang run --quiet --bytecode --caps IO,FS --package-dir tools/audio --entry main --args-json \
+--     '{"cues":"data/audio/cues.json","assets":"data/audio/assets.json","dir":"data/audio","out":"<file>"}' tools/audio/levels_main.ail
+import ./levels (Cue, Table, Measure, tableOf, measure, checks, negativeControls, entry)
+import pkg/sunholo/audio/pcm (wavInfo, pcm16Floats)
+import std/fs (readFileResult, readFileRaw, writeFileResult)
+import std/json (Json, decode, encode, getString, getArray, jo, asString)
+import std/list (map, filter, flatMap, foldl, head, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (intToStr)
+import std/io (println)
+
+-- dir: the directory the manifest's parts are relative to (data/audio).
+export type Args = {cues: string, assets: string, dir: string, out: string}
+type Path = {id: string, path: string}
+
+pure func pathsOf(text: string) -> [Path] = match decode(text) {
+  Ok(j) => match getArray(j, "assets") {
+    Some(rs) => flatMap(\r. match (getString(r, "id"), getString(r, "path")) { (Some(i), Some(p)) => [{id: i, path: p}], _ => [] }, rs),
+    None => []
+  },
+  Err(_) => []
+}
+
+func parts(dir: string, ps: [string]) -> [Path] ! {FS} = match ps {
+  [] => [],
+  p :: more => match readFileResult("${dir}/${p}") { Ok(t) => pathsOf(t) ++ parts(dir, more), Err(_) => parts(dir, more) }
+}
+
+func samples(paths: [Path], id: string) -> Result[[float], string] ! {FS} =
+  match head(filter(\p. p.id == id, paths)) {
+    None => Err("${id}: not in the asset manifest"),
+    Some(p) => match readFileRaw(p.path) {
+      Err(e) => Err("${p.path}: ${e}"),
+      Ok(b) => match wavInfo(b) { Err(e) => Err("${p.path}: ${e}"), Ok(i) => Ok(pcm16Floats(b, i)) }
+    }
+  }
+
+type Acc = {passed: int, failed: int, rows: [Measure]}
+
+func report(acc: Acc, cs: [{ok: bool, msg: string}]) -> Acc ! {IO} = match cs {
+  [] => acc,
+  c :: more => { println("${if c.ok then "ok" else "FAIL"} ${c.msg}"); report(if c.ok then {acc | passed: acc.passed + 1} else {acc | failed: acc.failed + 1}, more) }
+}
+
+func each(t: Table, paths: [Path], cs: [Cue], acc: Acc) -> Acc ! {FS, IO} = match cs {
+  [] => acc,
+  c :: more => match samples(paths, c.stream) {
+    Err(e) => each(t, paths, more, report(acc, [{ok: false, msg: e}])),
+    Ok(xs) => { let m = measure(c, xs); each(t, paths, more, report({acc | rows: acc.rows ++ [m]}, checks(c, t.peakMax, m))) }
+  }
+}
+
+export func main(a: Args) -> () ! {FS, IO} =
+  match (readFileResult(a.cues), readFileResult(a.assets)) {
+    (Ok(ct), Ok(at)) => match tableOf(ct) {
+      Err(e) => println("sound-levels: FAIL ${a.cues}: ${e}"),
+      Ok(t) => {
+        let ps = match decode(at) { Ok(j) => match getArray(j, "parts") { Some(xs) => flatMap(\x. match asString(x) { Some(s) => [s], None => [] }, xs), None => [] }, Err(_) => [] };
+        let paths = parts(a.dir, ps);
+        let acc = each(t, paths, t.cues, {passed: 0, failed: 0, rows: []});
+        let click = match samples(paths, "ui_click") { Ok(xs) => xs, Err(_) => [] };
+        let acc2 = report(acc, negativeControls(t, click));
+        match writeFileResult(a.out, "${encode(jo(map(entry, acc2.rows)))}\n") {
+          Err(e) => println("sound-levels: FAIL writing ${a.out}: ${e}"),
+          Ok(_) => println("sound-levels: ${intToStr(acc2.passed)} passed, ${intToStr(acc2.failed)} failures")
+        }
+      }
+    },
+    _ => println("sound-levels: FAIL reading ${a.cues} or ${a.assets}")
+  }

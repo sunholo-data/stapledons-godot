@@ -1,6 +1,6 @@
 {
  "schema": "stapledons.audio.recipes/1",
- "about": "R2-SOUND S0b (design_docs/planned/r2/sound.md \u00a7D8): recipes for tools/audio/synth.ail. 48 kHz mono 16-bit; loops complete whole cycles; peak_db is the file's peak, the cue table sets the level.",
+ "about": "R2-SOUND S0b (design_docs/planned/r2/sound.md \u00a7D8): recipes rendered by the sunholo/audio package (pinned in tools/audio/ailang.toml; schema sunholo.audio.recipes/1, parsed under this file's own id). 48 kHz mono 16-bit; loops complete whole cycles; peak_db is the file's peak, the cue table sets the level.",
  "recipes": [
   {
    "id": "spire_hum",

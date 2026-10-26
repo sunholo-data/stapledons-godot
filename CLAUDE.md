@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.54.14** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.54.18** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -165,18 +165,20 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.14 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+- **Workarounds, re-checked on v0.54.18 (re-check again at each bump; still-needed ones reported as ailang#1783):**
   - Open (ailang#1827 fixed in v0.54.10, performance): with crew_core 0.5.0 the busy no-hold crew skip
     measures about 11 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
     accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
   - Kept on purpose: `ailang check --package` beside `ailang test --package`. Since v0.54.13 the
     test runner type-checks every module and exits 1 on a compile error, but only `check` enforces
-    STRICT_FALLBACK_001 (an unannotated empty `Ok`).
+    STRICT_FALLBACK_001 (an unannotated empty `Ok`; re-checked on v0.54.18: `test` passes, `check` fails).
   - Process, not a bug: run `ailang lock` after `ailang install`; on a clean machine `ailang lock`
     also fills the package cache (`make deps`).
   - Language rule since v0.52.0: an explicitly imported name may not also be defined at module
-    level (MOD015). Alias the import (`import M (x as mX)`) or rename. An aliased constructor
-    import is rejected in a pattern (TC_MATCH_001); `sim/tripphase.ail` maps phases to an index.
+    level (MOD015). Alias the import (`import M (x as mX)`) or rename. Since v0.54.18 an aliased
+    constructor import also matches in a pattern (TC_MATCH_001 no longer fires); `sim/tripphase.ail`
+    still maps phases to an index, kept as the module boundary that keeps relativity's `Arrived` apart
+    from the Journey constructor.
   - Fixed and removed from the tree on v0.54.13/v0.54.14 (byte-identical outputs unless noted):
     every strict-VM list-literal split (ailang#1736, #1865: the ISM efficacy LUT, cloud planes and
     members are single literals; `applyOverride` is one chain; the crew-names table runs strict,
@@ -185,6 +187,8 @@ The brain is local and untracked.
     tail-recursive lens-table builders; the #1737 named test checks; the v0.52.0 workarounds (#1460,
     #1461, #1465, #1467, #1473, #1478, #1486, #1503, #1505, #1516, #1517, #1419 notes). The arm64
     and x86_64 replay goldens are identical but still kept per architecture.
+  - New in v0.54.18 and used by sunholo/audio (our ailang#1930): `std/audio.wavInfo`,
+    `pcm16ToFloats` and checked WAV writers; `std/string.formatFixed`.
   - Fixed upstream, nothing in-tree: `std/env.getEnvOr` of an unset variable on the bytecode VM
     (broken in v0.54.13, fixed in v0.54.14, #1864); std/map on the strict VM and `readLineOpt`
     (v0.54.11); the ~20 GB cold compile of crew_core (v0.54.8, #1812). `spawnProcessResult`

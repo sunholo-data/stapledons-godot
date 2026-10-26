@@ -33,3 +33,6 @@ data/lens/*.bin
 data/lens/*.part*
 data/lens/*.tmp
 audio_bundle/
+
+# The project brain is local (CLAUDE.md "Project brain"); never commit it.
+.ailang/state/brain.db*
