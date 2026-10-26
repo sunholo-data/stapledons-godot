@@ -28,6 +28,11 @@
 
 An AILANG port of `sound_check.gd`'s four offline measures matched the GDScript to 0.01 dB on six shipped sounds. It measured all 19 sounds then shipped in 9.8 s on the VM. Both engines agree to the centi-dB on every cue today.
 
+## Notes
+
+- Two Godot files changed by one cosmetic string each: `tools/sound_review.gd` names the generator from the provenance, and the fixture provenance in `tests/test_sound.gd` names the package.
+- `sound-levels-parity` first checks that it catches a 1 centi-dB mutant; `levels.ail` refuses a malformed cue instead of skipping it.
+
 ## Upstream
 
 - ailang#1930 (2026-10-22) reported that `std/audio` could not read a WAV and `std/string` had no fixed-precision formatter. Both shipped in v0.54.18.

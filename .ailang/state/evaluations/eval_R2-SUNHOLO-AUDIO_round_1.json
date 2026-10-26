@@ -1,0 +1,29 @@
+{
+  "sprint_id": "R2-SUNHOLO-AUDIO",
+  "round": 1,
+  "date": "2026-10-26",
+  "evaluator": "claude -p --model sonnet (read-only: Read, Grep, Glob, git diff/log/show, jq); executor was Claude Opus 5.5",
+  "score": 86,
+  "verdict": "PASS",
+  "blocking": [],
+  "rubric": {
+    "acceptance_criteria": 35,
+    "correctness_determinism": 22,
+    "tests": 12,
+    "docs_hygiene": 7,
+    "scope": 10
+  },
+  "findings_fixed": [
+    "ACs updated to the as-built pins (0.5.0) and AC10's direct comparison; sprint doc v0.54.18 and 0.5.0 noted",
+    "the sound-synth-check verify step labelled compile-under-verify",
+    "sound-levels-parity first proves it catches a 1 centi-dB mutant",
+    "levels.ail refuses a malformed cue instead of skipping it (checked: 1 cue without a bus -> FAIL)",
+    "review_main notes the tile start semantics (equal for ascending starts)",
+    "report notes the two cosmetic Godot string edits"
+  ],
+  "findings_not_changed": [
+    "provenance trusts the lock's content_hash (make deps guards the lock)",
+    "sprint JSON uses features[], not milestones[]"
+  ],
+  "full_text": "SCORE: 86/100 PASS\n\nI read the diff and the package source. I did not re-run any make target; the pass/fail numbers below are the executor's, and the rig `make test` is still pending.\n\n**Rubric**\n- Acceptance criteria with evidence: 35/40\n- Correctness and determinism: 22/25\n- Test quality and negative controls: 12/15\n- Docs, landing and hygiene: 7/10\n- Scope discipline: 10/10\n\n**BLOCKING issues:** none.\n\n**NON-BLOCKING findings**\n1. **Stale acceptance text.** `design_docs/implemented/r2/sunholo-audio.md` still says the following, which is stale next to the as-built facts:\n   - Depends on v0.54.14.\n   - AC4 and AC7 greps expect `sunholo/audio@0.1.0`, but 0.5.0 is what landed.\n   - AC10 and the Deliverables list `tests/fixtures/sound/review_sha256.txt`, which doesn't exist; the as-built section explains that AC10 was checked directly.\n   - Anyone running the AC block verbatim will fail AC4, AC7 and AC10. An \"AC commands as run\" block would fix this.\n   - `sunholo-audio-sprint.md:8,42,46` still says v0.54.14 and `0.1.0`.\n2. **The `verify` step is now vacuous.** `mk/sound.mk` (the `sound-synth-check` recipe) runs `ailang verify tools/audio/levels.ail`, which has no contracts. The design doc admits this, but the comment in `mk/sound.mk` still presents it as a \"verify\" gate. Consider dropping the step or labelling it compile-only.\n3. **No negative control for the parity check.** `tools/audio/levels_parity.jq` and the `sound-levels-parity` recipe have no test that a perturbed `levels.json` or `measure.json` is actually reported as a difference. The jq logic reads correctly:\n   - null/null guard cells are skipped.\n   - A guard value present on only one side is reported.\n   - Cues present on only one side are reported.\n   - `_`-prefixed mixer keys are ignored.\n   - Rounding is safe because `measure.json` is already snapped to 0.01.\n   - Still, \"0 differences\" is unfalsified by test.\n4. **Silent drops in `tools/audio/levels.ail` (`cueOf`, line 41 on).** A cue with no `id`, `bus` or `streams`, or a malformed one, is skipped without a failure. Only the parity cue-count comparison against `sound_check.gd` catches it, so `make sound-levels` alone would not. Also, `levels_main.ail`'s `parts` ignores an unreadable manifest part. That one fails safe, because the cues come out as \"not in the asset manifest\".\n5. **`mix.tile` is not identical to the old `tiled` for unsorted `at` lists.** The package uses the greatest start `<= i`; the old code used the last list entry that matched. Sorted lists, which are all the current review plans use, behave the same. The 58-file identity result covers the current plans only. Worth one line in `review_main.ail` or the report.\n6. **Small Godot-side edits.** `tools/sound_review.gd:69` and `tests/test_sound.gd:50` changed, although AC11 says \"no Godot sound-code change\". The AC11 command only checks `sim/`, `audio/` and the Python allowlist, and both edits are cosmetic provenance strings. The report should say so.\n7. **Provenance trusts the lock.** `generatorOf` in `tools/audio/synth_main.ail` takes the lock's `content_hash` as given and doesn't check it against the cache. That fits the design, since `make deps` guards the lock. Not verified: whether `ailang lock` actually re-hashes the cached package.\n8. **Sprint JSON.** `.ailang/state/sprints/sprint_R2-SUNHOLO-AUDIO.json` has `status: completed`, but my `jq` query for `.milestones[]` returned nothing. The key name may differ, so I could not confirm per-milestone progress was recorded.\n\n**Verified by reading code**\n- `tools/audio/synth.ail` is deleted, and the AC5 grep for the core functions in `tools/` and `sim/` finds nothing.\n- `git diff` is empty for `sim/`, `audio/` and the Python allowlist.\n- `Makefile` `deps` locks `tools/audio` with the `generated_at`-insensitive diff, as it does for `sim/`.\n- `tools/audio/ailang.lock` shows registry 0.5.0 with a `sha256:` hash, and the toml pin is exact.\n- The `CLAUDE.md` workaround list is updated for v0.54.18 (the `STRICT_FALLBACK_001` re-check, the `TC_MATCH_001` note, the `std/audio.wavInfo` and `formatFixed` entry), and the changelog fragments exist.\n- `levels.ail` has two negative controls whose pass condition is that the guard fails. If the click samples can't be read, the empty-sample case fails closed.\n- The manifest diff is provenance-only, per the executor's `jq` result; I did not re-run it.\n\n**Could not verify**\n- Byte-identity of the 28 WAVs, the 58 review files, and the `sound-levels`, parity and `ci-fast` results. I took these from the executor's evidence.\n- That the parity numbers match `sound_check.gd`; I did not read it.\n- The package's own `ailang pkg quality` result; I read the changelog and `mix.ail` only.\n- The rig `rig/full` status.\n"
+}

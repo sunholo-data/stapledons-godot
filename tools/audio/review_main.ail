@@ -32,7 +32,8 @@ pure func find(rs: [Recipe], id: string) -> Option[Recipe] = head(filter(\r. r.i
 
 -- A recipe over n samples (sunholo/audio mix.tile): a loop tiles from 0; a one-shot plays once at
 -- each start in `at` (seconds; empty = at 0) and is silent elsewhere (a later start cuts an earlier
--- one short, like one voice).
+-- one short, like one voice). The package takes the greatest start at or before each sample; the
+-- review plans list starts in ascending order, where that equals the old last-matching rule.
 pure func tiled(r: Recipe, g: float, n: int, at: [float]) -> Array[float] =
   fromList(tile(render(r), r.loop, g, n, map(\s. floatToInt(round(s * 48000.0)), at)))
 

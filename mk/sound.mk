@@ -25,8 +25,8 @@ sound-synth:
 	@mkdir -p assets/audio/synth
 	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json $(call SOUND_SYNTH_ARGS,assets/audio/synth,data/audio/assets_synth.json) tools/audio/synth_main.ail | tee $(SCRATCH)/sound-synth.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound-synth.log
 
-# AC7: the authoring package type-checks (STRICT_FALLBACK), the game's pure levels module passes verify
-# (the synthesis package's contracts are verified in its own repo), the game's pin on the package
+# AC7: the authoring package type-checks (STRICT_FALLBACK), the game's pure levels module compiles under
+# verify (it carries no contracts; the synthesis package's contracts are verified in its own repo), the game's pin on the package
 # (synth_test: the reference loop's PCM sha256) gives byte-identical output on the strict VM and the
 # interpreter, and regenerating every sound into scratch reproduces every sha256 in the manifest part.
 sound-synth-check:
@@ -57,6 +57,9 @@ test: sound-levels
 # The AILANG measures equal tools/sound_check.gd's (the second-language mirror) for every cue: peak,
 # RMS and, where measured, the high-pass keep and the low band, in centi-dB (tools/audio/levels_parity.jq).
 sound-levels-parity: sound-check sound-levels
+	@jq '(to_entries[0].key) as $$k | .[$$k].rms_cdb += 1' $(SCRATCH)/sound/levels.json > $(SCRATCH)/sound/levels-mutant.json; \
+	  test -n "$$(jq -r --slurpfile l $(SCRATCH)/sound/levels-mutant.json -f tools/audio/levels_parity.jq $(SCRATCH)/sound/measure.json)" \
+	  || { echo "sound-levels-parity: FAIL the comparison does not catch a 1 centi-dB mutant"; exit 1; }
 	@diffs=$$(jq -r --slurpfile l $(SCRATCH)/sound/levels.json -f tools/audio/levels_parity.jq $(SCRATCH)/sound/measure.json) || exit 1; \
 	  cues=$$(jq 'length' $(SCRATCH)/sound/levels.json); guards=$$(jq '[.[] | (.highpass150_keep_cdb, .below_200hz_cdb) | select(. != null)] | length' $(SCRATCH)/sound/levels.json); \
 	  if [ -n "$$diffs" ]; then echo "$$diffs" | sed 's/^/FAIL /'; echo "sound-levels-parity: $$cues cues, $$guards guard values, $$(echo "$$diffs" | wc -l | tr -d ' ') differences"; exit 1; \

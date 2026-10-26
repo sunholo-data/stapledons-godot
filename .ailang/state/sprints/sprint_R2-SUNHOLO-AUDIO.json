@@ -219,10 +219,10 @@
         ".ailang/state/evaluations/eval_R2-SUNHOLO-AUDIO_round_1.json scores >= 70",
         "design_docs/implemented/r2/sunholo-audio.md and -report.md exist; changelogs/unreleased/*-sunholo-audio.md opens with ###"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-26",
-      "completed": null,
-      "notes": "Independent Sonnet evaluation and landing docs in this PR."
+      "completed": "2026-10-26",
+      "notes": "Independent Sonnet evaluation 86/100 PASS, 0 blocking; six non-blocking findings fixed (eval_R2-SUNHOLO-AUDIO_round_1.json). Landing docs in implemented/r2."
     }
   ],
   "reviews": [

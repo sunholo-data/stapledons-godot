@@ -55,7 +55,11 @@ export pure func tableOf(text: string) -> Result[Table, string] = match decode(t
   Err(e) => Err(e),
   Ok(j) => if getString(j, "schema") != Some("stapledons.audio.cues/1") then Err("not a stapledons.audio.cues/1 file")
     else match (getArray(j, "cues"), getObject(j, "bands")) {
-      (Some(cs), Some(bands)) => Ok({peakMax: num(j, "peak_max_dbfs", 0.0), cues: flatMap(\c. match cueOf(bands, c) { Some(x) => [x], None => [] }, cs)}),
+      (Some(cs), Some(bands)) => {
+        let parsed = flatMap(\c. match cueOf(bands, c) { Some(x) => [x], None => [] }, cs);
+        if size(parsed) != size(cs) then Err("${intToStr(size(cs) - size(parsed))} cue(s) without an id, a bus or a stream")
+        else Ok({peakMax: num(j, "peak_max_dbfs", 0.0), cues: parsed})
+      },
       _ => Err("no cues or no bands")
     }
 }

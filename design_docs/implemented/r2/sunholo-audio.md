@@ -11,7 +11,7 @@
 
 **Depends on:**
 - **PR #319 (R2-SOUND S1) merged first.** It adds nine synthesised sounds, the mix part `at` starts in `tools/audio/review_main.ail` and edits `mk/sound.mk`. This sprint starts from the `main` that contains it, and does not touch `audio/*.gd` (S1's files) at all.
-- AILANG v0.54.14 (pinned): `std/audio` (`wavFromPcm`, `encode` to Ogg Opus), `std/bytes`, `std/json`, path dependencies (`{ path = "..." }`, resolution path > git > registry) for the pre-publish gate.
+- AILANG v0.54.14 at planning, **v0.54.18 as built** (sunholo/audio 0.3+ requires it): `std/audio` (`wavFromPcm`, `encode` to Ogg Opus), `std/bytes`, `std/json`, path dependencies (`{ path = "..." }`, resolution path > git > registry) for the pre-publish gate.
 - `sunholo-data/ailang-packages` (new directory `packages/audio`); Mark's standing approval to publish `sunholo/*` packages (memory: publish standing approval; never crew_lab).
 
 **Estimated LOC:** about 1,500 in all. Package about 920 (code 520: the synthesis core moved 290, PCM/WAV 80, mix 40, analysis 110; tests 330; `_smoke.ail` 70) plus about 250 lines of AGENT.md and CHANGELOG prose. Game about 330 (the shells re-pointed and the provenance plumbing 80, `levels.ail` + `levels_main.ail` 170, make targets 60, fixture 20) and about **−300** deleted (`tools/audio/synth.ail` and most of `synth_test.ail`).
@@ -37,6 +37,12 @@ What landed differs from the plan in these ways; everything else is as written b
 - **AC10** was checked directly instead of through a committed fixture: `make sound-review` rendered
   on the base (`origin/main` 53b206a0, in-tree synth, v0.54.14) and on this branch gives the same 58
   WAV and Opus files byte for byte. A fixture would have to change with every sound.
+- **AC commands:** the block below is updated to the as-built pins (0.5.0) and AC10's direct
+  comparison. AC11's command covers `sim/`, `audio/` and the Python allowlist; two Godot files outside
+  it changed by one cosmetic string each (`tools/sound_review.gd` shows the generator from the
+  provenance; `tests/test_sound.gd`'s fixture provenance names the package).
+- **`levels.ail`** refuses a cue table with a malformed cue instead of skipping it, and
+  `sound-levels-parity` first proves it catches a 1 centi-dB mutant.
 - **`sound-synth-check`'s `verify`** now targets `tools/audio/levels.ail`, which has no contracts, so
   it is a compile-under-verify step; the package's contracts are verified in its own repo.
 
@@ -239,8 +245,8 @@ cd $PKG && for p in renderProbe wavProbe levelProbe; do
       <(ailang run --quiet --relax-modules --entry $p --args-json 0 _smoke.ail) || exit 1; done
 ailang run --quiet --relax-modules --caps IO --entry main _smoke.ail | grep -q '^OK:'; cd -
 # AC4 (the search output format is confirmed at AU3, as for celestial)
-ailang pkg search audio | grep -q 'sunholo/audio@0.1.0'
-jq -e '.packages[] | select(.name == "sunholo/audio" and .version == "0.1.0" and .source == "registry")' tools/audio/ailang.lock
+ailang pkg search audio | grep -q 'sunholo/audio@0.5.0'
+jq -e '.packages[] | select(.name == "sunholo/audio" and .version == "0.5.0" and .source == "registry")' tools/audio/ailang.lock
 # AC5: the positive control proves the pattern can match; then nothing in the game defines the core
 git -C $PKG/../.. grep -q -E 'func (layerSamples|rampNoise)\(' -- packages/audio
 test ! -e tools/audio/synth.ail
@@ -250,15 +256,16 @@ make sound-synth-check | grep -q '^sound-synth-check: synth-ok 28ee28 VM = inter
 # AC7
 diff <(git show $BASE:data/audio/assets_synth.json | jq -S 'del(.assets[].provenance)') \
      <(jq -S 'del(.assets[].provenance)' data/audio/assets_synth.json)
-jq -e '[.assets[].provenance.generator] | unique == ["sunholo/audio@0.1.0"]' data/audio/assets_synth.json
+jq -e '[.assets[].provenance.generator] | unique == ["sunholo/audio@0.5.0"]' data/audio/assets_synth.json
 make sound-assets-check
 # AC8
 make sound-levels-parity | grep -q ', 0 differences$'
 # AC9
 make sound-levels | grep -q '^sound-levels: [0-9]* passed, 0 failures$'
-# AC10 (fixture recorded at AU0 on BASE)
-make sound-review && (cd build/sound_review && shasum -a 256 *.wav *.ogg | LC_ALL=C sort -k2) \
-  | diff - tests/fixtures/sound/review_sha256.txt
+# AC10 (as built: no fixture; render BASE in its own clone with its own runtime, then compare)
+make sound-review SOUND_REVIEW_OUT=$PWD/build/review_pkg   # on this branch; on BASE: SOUND_REVIEW_OUT=<base>/build/review_base
+diff <(cd <base>/build/review_base && shasum -a 256 *.wav *.ogg | LC_ALL=C sort -k2) \
+     <(cd build/review_pkg && shasum -a 256 *.wav *.ogg | LC_ALL=C sort -k2)
 # AC11
 test -z "$(git diff --stat $BASE -- sim/ audio/ tools/python-allowlist.txt)" && make python-guard
 # AC12
@@ -310,5 +317,5 @@ Design sections by sub-milestone: D1, D2, D3, D5, D7 → AU1 (D2's `analysis` �
 ## Deliverables
 
 - `sunholo-data/ailang-packages` `packages/audio/`: `ailang.toml`, `dsp.ail`, `noise.ail`, `recipe.ail`, `pcm.ail`, `mix.ail`, `analysis.ail`, one `*_test.ail` per module, `_smoke.ail`, `AGENT.md`, `CHANGELOG.md`; published `sunholo/audio` 0.1.0.
-- This repo: `tools/audio/ailang.toml` + `ailang.lock` (pin), `synth_main.ail` (`Args.lock`, provenance from the lock), `review_main.ail`, `synth_test.ail` (trimmed), `levels.ail`, `levels_main.ail`; `tools/audio/synth.ail` deleted; `mk/sound.mk` (`SOUND_SYNTH_ARGS` with `lock`, `verify` on `levels.ail`, `sound-levels`, `sound-levels-parity`, both in `test:`), `Makefile` `deps`; `data/audio/assets_synth.json` (provenance only); `tests/fixtures/sound/review_sha256.txt`; a changelog fragment; this doc moved to `implemented/r2/` with a report.
+- This repo: `tools/audio/ailang.toml` + `ailang.lock` (pin), `synth_main.ail` (`Args.lock`, provenance from the lock), `review_main.ail`, `synth_test.ail` (trimmed), `levels.ail`, `levels_main.ail`; `tools/audio/synth.ail` deleted; `mk/sound.mk` (`SOUND_SYNTH_ARGS` with `lock`, `verify` on `levels.ail`, `sound-levels`, `sound-levels-parity`, both in `test:`), `Makefile` `deps`; `data/audio/assets_synth.json` (provenance only); a changelog fragment (as built: no review fixture, see §As built); this doc moved to `implemented/r2/` with a report.
 - The design spike (`tools/audio_spike/`, never committed) was deleted after it ran; its numbers are in §Evidence.
