@@ -1,0 +1,1199 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION pose guides v2 (D-109): a stance-gait jog in place (the deck moves back under a planted foot at the jog speed); colour-keyed silhouettes on the avatar canvas contract, never shown in game",
+  "canvas_px": [
+    1024,
+    1536
+  ],
+  "foot_anchor_px": [
+    512,
+    1440
+  ],
+  "px_per_m_standing": 720,
+  "elevation_deg": 29,
+  "projection": "orthographic",
+  "gait": {
+    "speed_mps": 3.5,
+    "cadence_steps_per_min": 165.0,
+    "step_m": 1.2727,
+    "cycle_m": 2.5455,
+    "period_s": 0.7273,
+    "duty_factor": 0.3,
+    "stance_m": 0.7636,
+    "contact_ahead_m": 0.3,
+    "toe_off_behind_m": 0.4636,
+    "frames": 12,
+    "m_per_frame": 0.2121,
+    "ms_per_frame": 60.6,
+    "contacts": [
+      [
+        0.0,
+        "L"
+      ],
+      [
+        0.5,
+        "R"
+      ]
+    ],
+    "measured": {
+      "stance_runs": {
+        "L": [
+          {
+            "from_phase": 0.0,
+            "samples": 46,
+            "moved_m": 0.4673,
+            "deck_m": 0.4773,
+            "drift_m": -0.01
+          }
+        ],
+        "R": [
+          {
+            "from_phase": 0.504,
+            "samples": 45,
+            "moved_m": 0.4586,
+            "deck_m": 0.4667,
+            "drift_m": -0.0081
+          }
+        ]
+      },
+      "stance_fraction": {
+        "L": 0.19166666666666668,
+        "R": 0.1875
+      },
+      "ground_z_m": -0.0058,
+      "samples": 240
+    }
+  },
+  "keys": {
+    "L_leg": [
+      0.85,
+      0.12,
+      0.1
+    ],
+    "R_leg": [
+      0.1,
+      0.25,
+      0.85
+    ],
+    "L_arm": [
+      0.95,
+      0.55,
+      0.1
+    ],
+    "R_arm": [
+      0.1,
+      0.75,
+      0.8
+    ],
+    "coat": [
+      0.62,
+      0.62,
+      0.62
+    ],
+    "yoke": [
+      0.8,
+      0.62,
+      0.25
+    ],
+    "skin": [
+      0.78,
+      0.58,
+      0.45
+    ],
+    "hair": [
+      0.12,
+      0.1,
+      0.12
+    ]
+  },
+  "coat_skirt_alpha": 0.5,
+  "facings": {
+    "back": "moving away (up the screen)",
+    "back_34": "away and right",
+    "profile": "right",
+    "front_34": "toward and right",
+    "front": "toward",
+    "mirror": "the left-moving facings are these, flipped"
+  },
+  "frames": [
+    {
+      "file": "jog_back_00.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 0,
+      "phase": 0.0,
+      "soles": {
+        "L": {
+          "y_m": -0.345,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_01.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 1,
+      "phase": 0.0833,
+      "soles": {
+        "L": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_02.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 2,
+      "phase": 0.1667,
+      "soles": {
+        "L": {
+          "y_m": 0.081,
+          "z_m": 0.0015
+        },
+        "R": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_03.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 3,
+      "phase": 0.25,
+      "soles": {
+        "L": {
+          "y_m": 0.2795,
+          "z_m": 0.0297
+        },
+        "R": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_04.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 4,
+      "phase": 0.3333,
+      "soles": {
+        "L": {
+          "y_m": 0.4413,
+          "z_m": 0.2085
+        },
+        "R": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_05.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 5,
+      "phase": 0.4167,
+      "soles": {
+        "L": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        },
+        "R": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_06.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 6,
+      "phase": 0.5,
+      "soles": {
+        "L": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        },
+        "R": {
+          "y_m": -0.3275,
+          "z_m": 0.0256
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_07.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 7,
+      "phase": 0.5833,
+      "soles": {
+        "L": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        },
+        "R": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_08.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 8,
+      "phase": 0.6667,
+      "soles": {
+        "L": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        },
+        "R": {
+          "y_m": 0.0802,
+          "z_m": 0.0014
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_09.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 9,
+      "phase": 0.75,
+      "soles": {
+        "L": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        },
+        "R": {
+          "y_m": 0.2795,
+          "z_m": 0.0298
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_10.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 10,
+      "phase": 0.8333,
+      "soles": {
+        "L": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        },
+        "R": {
+          "y_m": 0.4411,
+          "z_m": 0.2086
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_11.png",
+      "clip": "jog",
+      "facing": "back",
+      "index": 11,
+      "phase": 0.9167,
+      "soles": {
+        "L": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        },
+        "R": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_00.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 0,
+      "phase": 0.0,
+      "soles": {
+        "L": {
+          "y_m": -0.345,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_01.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 1,
+      "phase": 0.0833,
+      "soles": {
+        "L": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_02.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 2,
+      "phase": 0.1667,
+      "soles": {
+        "L": {
+          "y_m": 0.081,
+          "z_m": 0.0015
+        },
+        "R": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_back_34_03.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 3,
+      "phase": 0.25,
+      "soles": {
+        "L": {
+          "y_m": 0.2795,
+          "z_m": 0.0297
+        },
+        "R": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_04.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 4,
+      "phase": 0.3333,
+      "soles": {
+        "L": {
+          "y_m": 0.4413,
+          "z_m": 0.2085
+        },
+        "R": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_05.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 5,
+      "phase": 0.4167,
+      "soles": {
+        "L": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        },
+        "R": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_06.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 6,
+      "phase": 0.5,
+      "soles": {
+        "L": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        },
+        "R": {
+          "y_m": -0.3275,
+          "z_m": 0.0256
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_07.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 7,
+      "phase": 0.5833,
+      "soles": {
+        "L": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        },
+        "R": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_34_08.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 8,
+      "phase": 0.6667,
+      "soles": {
+        "L": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        },
+        "R": {
+          "y_m": 0.0802,
+          "z_m": 0.0014
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_back_34_09.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 9,
+      "phase": 0.75,
+      "soles": {
+        "L": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        },
+        "R": {
+          "y_m": 0.2795,
+          "z_m": 0.0298
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_10.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 10,
+      "phase": 0.8333,
+      "soles": {
+        "L": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        },
+        "R": {
+          "y_m": 0.4411,
+          "z_m": 0.2086
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_back_34_11.png",
+      "clip": "jog",
+      "facing": "back_34",
+      "index": 11,
+      "phase": 0.9167,
+      "soles": {
+        "L": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        },
+        "R": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_00.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 0,
+      "phase": 0.0,
+      "soles": {
+        "L": {
+          "y_m": -0.345,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_01.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 1,
+      "phase": 0.0833,
+      "soles": {
+        "L": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_02.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 2,
+      "phase": 0.1667,
+      "soles": {
+        "L": {
+          "y_m": 0.081,
+          "z_m": 0.0015
+        },
+        "R": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_profile_03.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 3,
+      "phase": 0.25,
+      "soles": {
+        "L": {
+          "y_m": 0.2795,
+          "z_m": 0.0297
+        },
+        "R": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_04.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 4,
+      "phase": 0.3333,
+      "soles": {
+        "L": {
+          "y_m": 0.4413,
+          "z_m": 0.2085
+        },
+        "R": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_05.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 5,
+      "phase": 0.4167,
+      "soles": {
+        "L": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        },
+        "R": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_06.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 6,
+      "phase": 0.5,
+      "soles": {
+        "L": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        },
+        "R": {
+          "y_m": -0.3275,
+          "z_m": 0.0256
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_07.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 7,
+      "phase": 0.5833,
+      "soles": {
+        "L": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        },
+        "R": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_profile_08.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 8,
+      "phase": 0.6667,
+      "soles": {
+        "L": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        },
+        "R": {
+          "y_m": 0.0802,
+          "z_m": 0.0014
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_profile_09.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 9,
+      "phase": 0.75,
+      "soles": {
+        "L": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        },
+        "R": {
+          "y_m": 0.2795,
+          "z_m": 0.0298
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_10.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 10,
+      "phase": 0.8333,
+      "soles": {
+        "L": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        },
+        "R": {
+          "y_m": 0.4411,
+          "z_m": 0.2086
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_profile_11.png",
+      "clip": "jog",
+      "facing": "profile",
+      "index": 11,
+      "phase": 0.9167,
+      "soles": {
+        "L": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        },
+        "R": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_00.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 0,
+      "phase": 0.0,
+      "soles": {
+        "L": {
+          "y_m": -0.345,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_01.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 1,
+      "phase": 0.0833,
+      "soles": {
+        "L": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_02.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 2,
+      "phase": 0.1667,
+      "soles": {
+        "L": {
+          "y_m": 0.081,
+          "z_m": 0.0015
+        },
+        "R": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_34_03.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 3,
+      "phase": 0.25,
+      "soles": {
+        "L": {
+          "y_m": 0.2795,
+          "z_m": 0.0297
+        },
+        "R": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_04.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 4,
+      "phase": 0.3333,
+      "soles": {
+        "L": {
+          "y_m": 0.4413,
+          "z_m": 0.2085
+        },
+        "R": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_05.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 5,
+      "phase": 0.4167,
+      "soles": {
+        "L": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        },
+        "R": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_06.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 6,
+      "phase": 0.5,
+      "soles": {
+        "L": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        },
+        "R": {
+          "y_m": -0.3275,
+          "z_m": 0.0256
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_07.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 7,
+      "phase": 0.5833,
+      "soles": {
+        "L": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        },
+        "R": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_34_08.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 8,
+      "phase": 0.6667,
+      "soles": {
+        "L": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        },
+        "R": {
+          "y_m": 0.0802,
+          "z_m": 0.0014
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_34_09.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 9,
+      "phase": 0.75,
+      "soles": {
+        "L": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        },
+        "R": {
+          "y_m": 0.2795,
+          "z_m": 0.0298
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_10.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 10,
+      "phase": 0.8333,
+      "soles": {
+        "L": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        },
+        "R": {
+          "y_m": 0.4411,
+          "z_m": 0.2086
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_34_11.png",
+      "clip": "jog",
+      "facing": "front_34",
+      "index": 11,
+      "phase": 0.9167,
+      "soles": {
+        "L": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        },
+        "R": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_00.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 0,
+      "phase": 0.0,
+      "soles": {
+        "L": {
+          "y_m": -0.345,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_01.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 1,
+      "phase": 0.0833,
+      "soles": {
+        "L": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        },
+        "R": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_02.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 2,
+      "phase": 0.1667,
+      "soles": {
+        "L": {
+          "y_m": 0.081,
+          "z_m": 0.0015
+        },
+        "R": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        }
+      },
+      "planted": "L"
+    },
+    {
+      "file": "jog_front_03.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 3,
+      "phase": 0.25,
+      "soles": {
+        "L": {
+          "y_m": 0.2795,
+          "z_m": 0.0297
+        },
+        "R": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_04.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 4,
+      "phase": 0.3333,
+      "soles": {
+        "L": {
+          "y_m": 0.4413,
+          "z_m": 0.2085
+        },
+        "R": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_05.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 5,
+      "phase": 0.4167,
+      "soles": {
+        "L": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        },
+        "R": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_06.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 6,
+      "phase": 0.5,
+      "soles": {
+        "L": {
+          "y_m": 0.2949,
+          "z_m": 0.2765
+        },
+        "R": {
+          "y_m": -0.3275,
+          "z_m": 0.0256
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_07.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 7,
+      "phase": 0.5833,
+      "soles": {
+        "L": {
+          "y_m": 0.1723,
+          "z_m": 0.3045
+        },
+        "R": {
+          "y_m": -0.1329,
+          "z_m": 0.0008
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_08.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 8,
+      "phase": 0.6667,
+      "soles": {
+        "L": {
+          "y_m": 0.0372,
+          "z_m": 0.3108
+        },
+        "R": {
+          "y_m": 0.0802,
+          "z_m": 0.0014
+        }
+      },
+      "planted": "R"
+    },
+    {
+      "file": "jog_front_09.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 9,
+      "phase": 0.75,
+      "soles": {
+        "L": {
+          "y_m": -0.0947,
+          "z_m": 0.2959
+        },
+        "R": {
+          "y_m": 0.2795,
+          "z_m": 0.0298
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_10.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 10,
+      "phase": 0.8333,
+      "soles": {
+        "L": {
+          "y_m": -0.2081,
+          "z_m": 0.2586
+        },
+        "R": {
+          "y_m": 0.4411,
+          "z_m": 0.2086
+        }
+      },
+      "planted": "flight"
+    },
+    {
+      "file": "jog_front_11.png",
+      "clip": "jog",
+      "facing": "front",
+      "index": 11,
+      "phase": 0.9167,
+      "soles": {
+        "L": {
+          "y_m": -0.2875,
+          "z_m": 0.1925
+        },
+        "R": {
+          "y_m": 0.3897,
+          "z_m": 0.2467
+        }
+      },
+      "planted": "flight"
+    }
+  ]
+}

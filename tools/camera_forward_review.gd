@@ -86,7 +86,7 @@ func _free() -> void:
 	demo = null
 
 
-## foot null: walk the captain 3 m toward the bow (W held 0.86 s) from where it stands.
+## foot null: walk the captain 3 m toward the bow (W held 3 m / WALK_SPEED_MPS) from where it stands.
 func _shot(name: String, view: String, foot: Variant) -> void:
 	demo.consoles.cancel_walk()
 	demo.director.walk(view)
@@ -97,7 +97,7 @@ func _shot(name: String, view: String, foot: Variant) -> void:
 	else:
 		var before: Transform3D = demo.camera.global_transform
 		var start: Vector3 = demo.avatar_pos
-		for k in 52:
+		for k in int(3.0 / ShipConsoles.WALK_SPEED_MPS * 60.0): # 3 m toward the bow at the walk speed
 			demo.walk_motion(Vector2(0, 1), 1.0 / 60.0)
 			demo._process(1.0 / 60.0)
 		demo.walk_motion(Vector2.ZERO, 1.0 / 60.0)
