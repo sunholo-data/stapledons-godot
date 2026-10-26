@@ -6,7 +6,8 @@
 //   mode 3  blur   a brief directional blur of the current frame on each frame change, fading over `t`
 // cur_tex and prev_tex are the full cell canvas (so both frames share coordinates). `t` is 1 at a frame
 // change and 0 after the effect's duration; the avatar computes it from the walk phase (deterministic).
-// Billboard as BaseMaterial3D's: fixed Y in the upright walk views, full otherwise.
+// Billboard as BaseMaterial3D's: fixed Y in the upright walk views, full otherwise. Every painted frame is
+// drawn through this material (mode 0 = no effect), so a start or stop can lean (lean_tan, CA2).
 shader_type spatial;
 render_mode unshaded, cull_disabled, depth_prepass_alpha, shadows_disabled;
 
@@ -20,8 +21,10 @@ uniform float px = 0.0052;      // one cell pixel in uv (1/192)
 uniform float step_px = 16.0;   // one painted frame's travel on the canvas, cell px (the deck's 0.124 m)
 uniform vec3 ink = vec3(0.259, 0.208, 0.333); // #423555
 uniform bool fixed_y = true;
+uniform float lean_tan = 0.0; // the procedural lean of a start or stop: the quad sheared about the feet (screen x)
 
 void vertex() {
+	VERTEX.x += VERTEX.y * lean_tan;
 	if (fixed_y) {
 		vec3 up = vec3(0.0, 1.0, 0.0);
 		vec3 right = normalize(cross(up, INV_VIEW_MATRIX[2].xyz));

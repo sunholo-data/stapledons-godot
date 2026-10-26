@@ -1,509 +1,4 @@
 {
-  "entity_id": "captain",
-  "status": "proposed",
-  "role": "captain",
-  "departure_age": 30,
-  "departure_age_status": "scenario default",
-  "identity_status": "picked",
-  "identity_proposal": "A — Longline Navigator",
-  "identity_reference": {
-    "file": "proposals/avatar_captain_proposal_a.png",
-    "sha256": "f5bd39f99932fafd46c14c31faca2272fe43bbba780bed076eca924b5987a74e"
-  },
-  "identity_note": "Slender androgynous captain with warm medium skin and short swept hair, wearing a cream longline open coat with rounded panels, broad ochre shoulder yoke and stand collar, grown oval closures, violet trousers and practical soft boots. Dark hair becomes salt-and-pepper, silver and fine white; build and posture age honestly while the civilian costume wears and is repaired.",
-  "palette": [
-    "#D9A340",
-    "#F2E3C7",
-    "#3B2959",
-    "#423555"
-  ],
-  "rights": "AI-generated (gpt-6.1-sol); no copyright claimed.",
-  "avatar_spec": {
-    "canvas_px": [
-      1024,
-      1536
-    ],
-    "foot_anchor_px": [
-      512,
-      1440
-    ],
-    "px_per_m": 720,
-    "view_pitch_deg": -14,
-    "mirror_safe": true,
-    "view_yaw_deg": 45,
-    "facing_variants": {
-      "0": "front",
-      "1": "back",
-      "2": "se",
-      "3": "ne"
-    }
-  },
-  "files": [
-    {
-      "file": "avatar_captain_y0_front.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 0,
-      "variant": "0",
-      "facing": "front",
-      "biological_age": 30,
-      "height_m": 1.75,
-      "figure_height_px": 1259,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd",
-      "source": "re-keyed: proposals/avatar_captain_proposal_a.png (sha256 f5bd39f99932fafd46c14c31faca2272fe43bbba780bed076eca924b5987a74e)",
-      "measured_foot_anchor_px": [
-        512.5,
-        1440.5
-      ],
-      "sole_contact_centres_px": [
-        [
-          423.0,
-          1440
-        ],
-        [
-          602.0,
-          1441
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y0_back.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 0,
-      "variant": "1",
-      "facing": "back",
-      "biological_age": 30,
-      "height_m": 1.75,
-      "figure_height_px": 1260,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "f30c7325a641a34cdddc61e8d5bd3b25c6fb71a9b9134328f8e9328a1efeb5d7",
-      "source": "generated (see generation_notes.md#avatar_captain_y0_back)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          406.0,
-          1440
-        ],
-        [
-          618.5,
-          1440
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y20_front.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 20,
-      "variant": "0",
-      "facing": "front",
-      "biological_age": 50,
-      "height_m": 1.75,
-      "figure_height_px": 1260,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "504a28f9949009710b1673fd0b368b85235a5a4e5a2f228f8571eaa38e908549",
-      "source": "generated (see generation_notes.md#avatar_captain_y20_front)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1439.5
-      ],
-      "sole_contact_centres_px": [
-        [
-          418.5,
-          1439
-        ],
-        [
-          606.0,
-          1440
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y20_back.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 20,
-      "variant": "1",
-      "facing": "back",
-      "biological_age": 50,
-      "height_m": 1.75,
-      "figure_height_px": 1259,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "b94eb896352a4aa184cc6e4fab68778c9092c72fe7adf9ba0ec596ff0217a405",
-      "source": "generated (see generation_notes.md#avatar_captain_y20_back)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          403.0,
-          1441
-        ],
-        [
-          621.5,
-          1439
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y40_front.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 40,
-      "variant": "0",
-      "facing": "front",
-      "biological_age": 70,
-      "height_m": 1.73,
-      "figure_height_px": 1246,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "eef651298ccac2790b37749de22c6f84dd7492ce1674d23a83cbb6a28e46702a",
-      "source": "generated (see generation_notes.md#avatar_captain_y40_front)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1439.5
-      ],
-      "sole_contact_centres_px": [
-        [
-          447.5,
-          1439
-        ],
-        [
-          577.0,
-          1440
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y40_back.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 40,
-      "variant": "1",
-      "facing": "back",
-      "biological_age": 70,
-      "height_m": 1.73,
-      "figure_height_px": 1245,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "63f8121ac4ffcd15efdeb50f0c600d820da89d3a20131c9df3c5e83c489b6415",
-      "source": "generated (see generation_notes.md#avatar_captain_y40_back)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          416.5,
-          1440
-        ],
-        [
-          608.0,
-          1440
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y60_front.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 60,
-      "variant": "0",
-      "facing": "front",
-      "biological_age": 90,
-      "height_m": 1.7,
-      "figure_height_px": 1224,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "c359aa7fb78cb9da36e401bff853785db1d3c5fea48ef463ba0256fdd377cee0",
-      "source": "generated (see generation_notes.md#avatar_captain_y60_front)",
-      "measured_foot_anchor_px": [
-        512.5,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          428.0,
-          1439
-        ],
-        [
-          597.0,
-          1441
-        ]
-      ]
-    },
-    {
-      "file": "avatar_captain_y60_back.png",
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 60,
-      "variant": "1",
-      "facing": "back",
-      "biological_age": 90,
-      "height_m": 1.7,
-      "figure_height_px": 1224,
-      "width": 1024,
-      "height": 1536,
-      "sha256": "1d5ca66ec8af66e635ce27961926e25b36cd4762ca3abc9c95501362ab42e210",
-      "source": "generated (see generation_notes.md#avatar_captain_y60_back)",
-      "measured_foot_anchor_px": [
-        512.0,
-        1439.5
-      ],
-      "sole_contact_centres_px": [
-        [
-          430.0,
-          1441
-        ],
-        [
-          594.0,
-          1438
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 0,
-      "biological_age": 30,
-      "height_m": 1.75,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y0_se.png",
-      "variant": "2",
-      "facing": "se",
-      "figure_height_px": 1260.0,
-      "sha256": "2c096677d3cbe20995564280ff99d64cbf4ec53854b09c4f187e5617b7690124",
-      "source": "generated (see generation_notes.md#avatar_captain_y0_se)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          426.0,
-          1442
-        ],
-        [
-          598.5,
-          1438
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 0,
-      "biological_age": 30,
-      "height_m": 1.75,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y0_ne.png",
-      "variant": "3",
-      "facing": "ne",
-      "figure_height_px": 1259.0,
-      "sha256": "b99958dbda122db5dda47c74ffe756bae52d3e1b501f42bd8840e8d174edaed7",
-      "source": "generated (see generation_notes.md#avatar_captain_y0_ne)",
-      "measured_foot_anchor_px": [
-        512.0,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          437.0,
-          1440
-        ],
-        [
-          587.0,
-          1440
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 20,
-      "biological_age": 50,
-      "height_m": 1.75,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y20_se.png",
-      "variant": "2",
-      "facing": "se",
-      "figure_height_px": 1261.0,
-      "sha256": "390571919b9a11c6b68bfb1ae1bc4cab3e55b73049fa6bc49bf7e4ba1b171815",
-      "source": "generated (see generation_notes.md#avatar_captain_y20_se)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          421.5,
-          1441
-        ],
-        [
-          603.0,
-          1439
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 20,
-      "biological_age": 50,
-      "height_m": 1.75,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y20_ne.png",
-      "variant": "3",
-      "facing": "ne",
-      "figure_height_px": 1260.0,
-      "sha256": "b27e332401a0961a9c4ee1d83b1ee09078cc516ef7f3c2220f96d0035ab5a6c9",
-      "source": "generated (see generation_notes.md#avatar_captain_y20_ne)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          420.5,
-          1439
-        ],
-        [
-          604.0,
-          1441
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 40,
-      "biological_age": 70,
-      "height_m": 1.73,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y40_se.png",
-      "variant": "2",
-      "facing": "se",
-      "figure_height_px": 1246.0,
-      "sha256": "626f6b42fade199a88d7a97a4fd2f850d0c98f559ac53f233ff0b124de107d7a",
-      "source": "generated (see generation_notes.md#avatar_captain_y40_se)",
-      "measured_foot_anchor_px": [
-        512.25,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          423.0,
-          1442
-        ],
-        [
-          601.5,
-          1438
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 40,
-      "biological_age": 70,
-      "height_m": 1.73,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y40_ne.png",
-      "variant": "3",
-      "facing": "ne",
-      "figure_height_px": 1246.5,
-      "sha256": "d71e7868f138589318e77070bf2bbe8287ea7992f23500da15ec8db5c9b9af1d",
-      "source": "generated (see generation_notes.md#avatar_captain_y40_ne)",
-      "measured_foot_anchor_px": [
-        512.5,
-        1439.5
-      ],
-      "sole_contact_centres_px": [
-        [
-          435.5,
-          1439
-        ],
-        [
-          589.5,
-          1440
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 60,
-      "biological_age": 90,
-      "height_m": 1.7,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y60_se.png",
-      "variant": "2",
-      "facing": "se",
-      "figure_height_px": 1224.5,
-      "sha256": "ee0f1ba34a11a5fee30d1eebcb35c7bebcc72bd0d2840d62004c351165a65ba7",
-      "source": "generated (see generation_notes.md#avatar_captain_y60_se)",
-      "measured_foot_anchor_px": [
-        512.0,
-        1439.5
-      ],
-      "sole_contact_centres_px": [
-        [
-          424.0,
-          1441
-        ],
-        [
-          600.0,
-          1438
-        ]
-      ]
-    },
-    {
-      "kind": "avatar",
-      "emotion": "-",
-      "age_stage": 60,
-      "biological_age": 90,
-      "height_m": 1.7,
-      "width": 1024,
-      "height": 1536,
-      "file": "avatar_captain_y60_ne.png",
-      "variant": "3",
-      "facing": "ne",
-      "figure_height_px": 1224.0,
-      "sha256": "7161360ec9817dd0629c1abecc62be676979bbf24ea83f83139a1cef090f33ec",
-      "source": "generated (see generation_notes.md#avatar_captain_y60_ne)",
-      "measured_foot_anchor_px": [
-        512.5,
-        1440.0
-      ],
-      "sole_contact_centres_px": [
-        [
-          424.0,
-          1438
-        ],
-        [
-          601.0,
-          1442
-        ]
-      ]
-    }
-  ],
   "anim": {
     "about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.",
     "cell_scale": 0.1875,
@@ -538,6 +33,411 @@
                 "file": "anim/y0/idle_profile_00.webp",
                 "flip": false,
                 "guide": "art/captain-anim-v1/guides/idle_profile_00.png"
+              }
+            ]
+          }
+        }
+      },
+      "leave_low": {
+        "fps": 5.0,
+        "kind": "time",
+        "loop": false,
+        "reverse_of": "use_low",
+        "stages": {
+          "0": {}
+        }
+      },
+      "leave_mid": {
+        "fps": 5.0,
+        "kind": "time",
+        "loop": false,
+        "reverse_of": "use_mid",
+        "stages": {
+          "0": {}
+        }
+      },
+      "lift": {
+        "fps": 1.0,
+        "kind": "time",
+        "loop": true,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  48.0,
+                  31.0,
+                  141.0,
+                  241.0
+                ],
+                "file": "anim/y0/lift_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/lift_back_00.png",
+                "planted": "both"
+              }
+            ],
+            "back_34": [
+              {
+                "crop": [
+                  45.0,
+                  21.0,
+                  143.0,
+                  251.0
+                ],
+                "file": "anim/y0/lift_back_34_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/lift_back_34_00.png",
+                "planted": "both"
+              }
+            ],
+            "front": [
+              {
+                "crop": [
+                  1.0,
+                  18.0,
+                  146.0,
+                  254.0
+                ],
+                "file": "anim/y0/lift_front_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/lift_front_00.png",
+                "planted": "both"
+              }
+            ],
+            "front_34": [
+              {
+                "crop": [
+                  41.0,
+                  14.0,
+                  141.0,
+                  258.0
+                ],
+                "file": "anim/y0/lift_front_34_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/lift_front_34_00.png",
+                "planted": "both"
+              }
+            ],
+            "profile": [
+              {
+                "crop": [
+                  44.0,
+                  17.0,
+                  133.0,
+                  255.0
+                ],
+                "file": "anim/y0/lift_profile_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/lift_profile_00.png",
+                "planted": "both"
+              }
+            ]
+          }
+        }
+      },
+      "look_up": {
+        "fps": 1.0,
+        "kind": "time",
+        "loop": true,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  47.0,
+                  35.0,
+                  99.0,
+                  237.0
+                ],
+                "file": "anim/y0/look_up_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/look_up_back_00.png",
+                "planted": "both"
+              }
+            ],
+            "back_34": [
+              {
+                "crop": [
+                  52.0,
+                  17.0,
+                  94.0,
+                  255.0
+                ],
+                "file": "anim/y0/look_up_back_34_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/look_up_back_34_00.png",
+                "planted": "both"
+              }
+            ],
+            "front": [
+              {
+                "crop": [
+                  52.0,
+                  20.0,
+                  89.0,
+                  252.0
+                ],
+                "file": "anim/y0/look_up_front_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/look_up_front_00.png",
+                "planted": "both"
+              }
+            ],
+            "front_34": [
+              {
+                "crop": [
+                  45.0,
+                  16.0,
+                  93.0,
+                  255.0
+                ],
+                "file": "anim/y0/look_up_front_34_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/look_up_front_34_00.png",
+                "planted": "both"
+              }
+            ],
+            "profile": [
+              {
+                "crop": [
+                  48.0,
+                  16.0,
+                  89.0,
+                  256.0
+                ],
+                "file": "anim/y0/look_up_profile_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/look_up_profile_00.png",
+                "planted": "both"
+              }
+            ]
+          }
+        }
+      },
+      "seated": {
+        "fps": 1.0,
+        "kind": "time",
+        "loop": true,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  30.0,
+                  88.0,
+                  132.0,
+                  182.0
+                ],
+                "file": "anim/y0/seated_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/seated_back_00.png",
+                "planted": "both"
+              }
+            ],
+            "front": [
+              {
+                "crop": [
+                  27.0,
+                  42.0,
+                  136.0,
+                  226.0
+                ],
+                "file": "anim/y0/seated_front_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/seated_front_00.png",
+                "planted": "both"
+              }
+            ]
+          }
+        }
+      },
+      "sit": {
+        "fps": 3.34,
+        "kind": "time",
+        "loop": false,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  35.0,
+                  75.0,
+                  136.0,
+                  193.0
+                ],
+                "file": "anim/y0/sit_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/sit_back_00.png",
+                "planted": "both"
+              },
+              {
+                "crop": [
+                  35.0,
+                  99.0,
+                  125.0,
+                  172.0
+                ],
+                "file": "anim/y0/sit_back_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/sit_back_01.png",
+                "planted": "both"
+              }
+            ],
+            "front": [
+              {
+                "crop": [
+                  17.0,
+                  22.0,
+                  157.0,
+                  246.0
+                ],
+                "file": "anim/y0/sit_front_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/sit_front_00.png",
+                "planted": "both"
+              },
+              {
+                "crop": [
+                  16.0,
+                  27.0,
+                  161.0,
+                  241.0
+                ],
+                "file": "anim/y0/sit_front_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/sit_front_01.png",
+                "planted": "both"
+              }
+            ]
+          }
+        }
+      },
+      "stand": {
+        "fps": 4.0,
+        "kind": "time",
+        "loop": false,
+        "reverse_of": "sit",
+        "stages": {
+          "0": {}
+        }
+      },
+      "use_low": {
+        "fps": 5.0,
+        "kind": "time",
+        "loop": false,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  35.0,
+                  19.0,
+                  122.0,
+                  249.0
+                ],
+                "file": "anim/y0/use_low_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_low_back_00.png",
+                "planted": "both"
+              },
+              {
+                "crop": [
+                  32.0,
+                  21.0,
+                  128.0,
+                  250.0
+                ],
+                "file": "anim/y0/use_low_back_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_low_back_01.png",
+                "planted": "both"
+              }
+            ],
+            "front": [
+              {
+                "crop": [
+                  37.0,
+                  5.0,
+                  120.0,
+                  266.0
+                ],
+                "file": "anim/y0/use_low_front_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_low_front_00.png",
+                "planted": "both"
+              },
+              {
+                "crop": [
+                  26.0,
+                  18.0,
+                  137.0,
+                  254.0
+                ],
+                "file": "anim/y0/use_low_front_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_low_front_01.png",
+                "planted": "both"
+              }
+            ]
+          }
+        }
+      },
+      "use_mid": {
+        "fps": 5.0,
+        "kind": "time",
+        "loop": false,
+        "stages": {
+          "0": {
+            "back": [
+              {
+                "crop": [
+                  43.0,
+                  29.0,
+                  106.0,
+                  243.0
+                ],
+                "file": "anim/y0/use_mid_back_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_mid_back_00.png",
+                "planted": "both"
+              },
+              {
+                "crop": [
+                  35.0,
+                  17.0,
+                  120.0,
+                  251.0
+                ],
+                "file": "anim/y0/use_mid_back_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_mid_back_01.png",
+                "planted": "both"
+              }
+            ],
+            "front": [
+              {
+                "crop": [
+                  38.0,
+                  31.0,
+                  116.0,
+                  241.0
+                ],
+                "file": "anim/y0/use_mid_front_00.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_mid_front_00.png",
+                "planted": "both"
+              },
+              {
+                "crop": [
+                  32.0,
+                  13.0,
+                  130.0,
+                  259.0
+                ],
+                "file": "anim/y0/use_mid_front_01.webp",
+                "flip": false,
+                "guide": "art/captain-anim-v4/guides/use_mid_front_01.png",
+                "planted": "both"
               }
             ]
           }
@@ -856,183 +756,11 @@
       }
     },
     "ingest_head_dy_px": {
-      "walk_profile_00": -10.0,
-      "walk_profile_01": 5.0,
-      "walk_profile_02": -18.0,
-      "walk_profile_03": -32.0,
-      "walk_profile_04": -200.0,
-      "walk_profile_05": -5.0,
-      "walk_profile_06": 12.0,
-      "walk_profile_07": 10.0,
-      "walk_profile_08": -19.0,
-      "walk_profile_09": -80.0,
-      "walk_profile_10": -15.0,
-      "walk_profile_11": -8.0
+      "lift_profile_00": 0.0,
+      "look_up_profile_00": 14.0
     },
-    "ingest_pin_px": {
-      "walk_back_00": [
-        0.0,
-        4.0
-      ],
-      "walk_back_01": [
-        0.0,
-        -1.0
-      ],
-      "walk_back_02": [
-        0.0,
-        -47.0
-      ],
-      "walk_back_03": [
-        0.0,
-        -17.0
-      ],
-      "walk_back_04": [
-        0.0,
-        -28.0
-      ],
-      "walk_back_06": [
-        0.0,
-        -64.0
-      ],
-      "walk_back_07": [
-        0.0,
-        -60.0
-      ],
-      "walk_back_08": [
-        0.0,
-        -15.0
-      ],
-      "walk_back_09": [
-        0.0,
-        -21.0
-      ],
-      "walk_back_10": [
-        0.0,
-        -4.0
-      ],
-      "walk_profile_00": [
-        8.0,
-        0.0
-      ],
-      "walk_profile_01": [
-        -40.0,
-        0.0
-      ],
-      "walk_profile_02": [
-        -29.0,
-        0.0
-      ],
-      "walk_profile_03": [
-        -27.0,
-        0.0
-      ],
-      "walk_profile_04": [
-        35.0,
-        0.0
-      ],
-      "walk_profile_06": [
-        27.0,
-        0.0
-      ],
-      "walk_profile_07": [
-        2.0,
-        0.0
-      ],
-      "walk_profile_08": [
-        -15.0,
-        0.0
-      ],
-      "walk_profile_09": [
-        -30.0,
-        0.0
-      ],
-      "walk_profile_10": [
-        -4.0,
-        0.0
-      ]
-    },
-    "ingest_pin_wanted_px": {
-      "walk_back_00": [
-        -27.0,
-        4.0
-      ],
-      "walk_back_01": [
-        -27.0,
-        -1.0
-      ],
-      "walk_back_02": [
-        -35.0,
-        -47.0
-      ],
-      "walk_back_03": [
-        -38.0,
-        -17.0
-      ],
-      "walk_back_04": [
-        -28.0,
-        -28.0
-      ],
-      "walk_back_06": [
-        7.0,
-        -67.0
-      ],
-      "walk_back_07": [
-        22.0,
-        -60.0
-      ],
-      "walk_back_08": [
-        27.0,
-        -15.0
-      ],
-      "walk_back_09": [
-        17.0,
-        -21.0
-      ],
-      "walk_back_10": [
-        11.0,
-        -4.0
-      ],
-      "walk_profile_00": [
-        8.0,
-        -33.0
-      ],
-      "walk_profile_01": [
-        -40.0,
-        -35.0
-      ],
-      "walk_profile_02": [
-        -29.0,
-        -45.0
-      ],
-      "walk_profile_03": [
-        -27.0,
-        -33.0
-      ],
-      "walk_profile_04": [
-        35.0,
-        74.0
-      ],
-      "walk_profile_06": [
-        27.0,
-        -27.0
-      ],
-      "walk_profile_07": [
-        2.0,
-        -18.0
-      ],
-      "walk_profile_08": [
-        -15.0,
-        -10.0
-      ],
-      "walk_profile_09": [
-        -30.0,
-        28.0
-      ],
-      "walk_profile_10": [
-        -4.0,
-        23.0
-      ]
-    },
+    "ingest_pin_px": {},
+    "ingest_pin_wanted_px": {},
     "ingest_scale": {
       "idle_back_00": 1.00551615445232,
       "idle_profile_00": 0.982169390787519,
@@ -1060,6 +788,30 @@
       "jog_profile_09": 0.915644171779141,
       "jog_profile_10": 0.915644171779141,
       "jog_profile_11": 0.915644171779141,
+      "lift_back_00": 0.964750957854406,
+      "lift_back_34_00": 0.999230769230769,
+      "lift_front_00": 0.97341211225997,
+      "lift_front_34_00": 0.976401179941003,
+      "lift_profile_00": 0.979925650557621,
+      "look_up_back_00": 0.964750957854406,
+      "look_up_back_34_00": 0.999230769230769,
+      "look_up_front_00": 0.97341211225997,
+      "look_up_front_34_00": 0.976401179941003,
+      "look_up_profile_00": 0.979925650557621,
+      "seated_back_00": 0.964750957854406,
+      "seated_front_00": 0.97341211225997,
+      "sit_back_00": 0.964750957854406,
+      "sit_back_01": 0.964750957854406,
+      "sit_front_00": 0.97341211225997,
+      "sit_front_01": 0.97341211225997,
+      "use_low_back_00": 0.964750957854406,
+      "use_low_back_01": 0.964750957854406,
+      "use_low_front_00": 0.97341211225997,
+      "use_low_front_01": 0.97341211225997,
+      "use_mid_back_00": 0.964750957854406,
+      "use_mid_back_01": 0.964750957854406,
+      "use_mid_front_00": 0.97341211225997,
+      "use_mid_front_01": 0.97341211225997,
       "walk_back_00": 0.956133828996283,
       "walk_back_01": 0.956133828996283,
       "walk_back_02": 0.956133828996283,
@@ -1088,6 +840,30 @@
     "settle_dy_cell_px": {
       "idle_back_00": 0.0,
       "idle_profile_00": 0.0,
+      "lift_back_00": 3.0,
+      "lift_back_34_00": -10.0,
+      "lift_front_00": -8.0,
+      "lift_front_34_00": -10.0,
+      "lift_profile_00": -10.0,
+      "look_up_back_00": 3.0,
+      "look_up_back_34_00": -7.0,
+      "look_up_front_00": -8.0,
+      "look_up_front_34_00": -7.0,
+      "look_up_profile_00": -13.0,
+      "seated_back_00": -18.0,
+      "seated_front_00": -20.0,
+      "sit_back_00": -20.0,
+      "sit_back_01": -9.0,
+      "sit_front_00": -20.0,
+      "sit_front_01": -20.0,
+      "use_low_back_00": -20.0,
+      "use_low_back_01": -17.0,
+      "use_low_front_00": -17.0,
+      "use_low_front_01": -5.0,
+      "use_mid_back_00": -5.0,
+      "use_mid_back_01": -20.0,
+      "use_mid_front_00": 0.0,
+      "use_mid_front_01": -10.0,
       "walk_back_00": -15.0,
       "walk_back_01": -18.0,
       "walk_back_02": -5.0,
@@ -1113,5 +889,510 @@
       "walk_profile_10": -6.0,
       "walk_profile_11": -7.0
     }
-  }
+  },
+  "avatar_spec": {
+    "canvas_px": [
+      1024.0,
+      1536.0
+    ],
+    "facing_variants": {
+      "0": "front",
+      "1": "back",
+      "2": "se",
+      "3": "ne"
+    },
+    "foot_anchor_px": [
+      512.0,
+      1440.0
+    ],
+    "mirror_safe": true,
+    "px_per_m": 720.0,
+    "view_pitch_deg": -14.0,
+    "view_yaw_deg": 45.0
+  },
+  "departure_age": 30.0,
+  "departure_age_status": "scenario default",
+  "entity_id": "captain",
+  "files": [
+    {
+      "age_stage": 0.0,
+      "biological_age": 30.0,
+      "emotion": "-",
+      "facing": "front",
+      "figure_height_px": 1259.0,
+      "file": "avatar_captain_y0_front.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.5,
+        1440.5
+      ],
+      "sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd",
+      "sole_contact_centres_px": [
+        [
+          423.0,
+          1440.0
+        ],
+        [
+          602.0,
+          1441.0
+        ]
+      ],
+      "source": "re-keyed: proposals/avatar_captain_proposal_a.png (sha256 f5bd39f99932fafd46c14c31faca2272fe43bbba780bed076eca924b5987a74e)",
+      "variant": "0",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 0.0,
+      "biological_age": 30.0,
+      "emotion": "-",
+      "facing": "back",
+      "figure_height_px": 1260.0,
+      "file": "avatar_captain_y0_back.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "f30c7325a641a34cdddc61e8d5bd3b25c6fb71a9b9134328f8e9328a1efeb5d7",
+      "sole_contact_centres_px": [
+        [
+          406.0,
+          1440.0
+        ],
+        [
+          618.5,
+          1440.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y0_back)",
+      "variant": "1",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 20.0,
+      "biological_age": 50.0,
+      "emotion": "-",
+      "facing": "front",
+      "figure_height_px": 1260.0,
+      "file": "avatar_captain_y20_front.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1439.5
+      ],
+      "sha256": "504a28f9949009710b1673fd0b368b85235a5a4e5a2f228f8571eaa38e908549",
+      "sole_contact_centres_px": [
+        [
+          418.5,
+          1439.0
+        ],
+        [
+          606.0,
+          1440.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y20_front)",
+      "variant": "0",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 20.0,
+      "biological_age": 50.0,
+      "emotion": "-",
+      "facing": "back",
+      "figure_height_px": 1259.0,
+      "file": "avatar_captain_y20_back.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "b94eb896352a4aa184cc6e4fab68778c9092c72fe7adf9ba0ec596ff0217a405",
+      "sole_contact_centres_px": [
+        [
+          403.0,
+          1441.0
+        ],
+        [
+          621.5,
+          1439.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y20_back)",
+      "variant": "1",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 40.0,
+      "biological_age": 70.0,
+      "emotion": "-",
+      "facing": "front",
+      "figure_height_px": 1246.0,
+      "file": "avatar_captain_y40_front.png",
+      "height": 1536.0,
+      "height_m": 1.73,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1439.5
+      ],
+      "sha256": "eef651298ccac2790b37749de22c6f84dd7492ce1674d23a83cbb6a28e46702a",
+      "sole_contact_centres_px": [
+        [
+          447.5,
+          1439.0
+        ],
+        [
+          577.0,
+          1440.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y40_front)",
+      "variant": "0",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 40.0,
+      "biological_age": 70.0,
+      "emotion": "-",
+      "facing": "back",
+      "figure_height_px": 1245.0,
+      "file": "avatar_captain_y40_back.png",
+      "height": 1536.0,
+      "height_m": 1.73,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "63f8121ac4ffcd15efdeb50f0c600d820da89d3a20131c9df3c5e83c489b6415",
+      "sole_contact_centres_px": [
+        [
+          416.5,
+          1440.0
+        ],
+        [
+          608.0,
+          1440.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y40_back)",
+      "variant": "1",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 60.0,
+      "biological_age": 90.0,
+      "emotion": "-",
+      "facing": "front",
+      "figure_height_px": 1224.0,
+      "file": "avatar_captain_y60_front.png",
+      "height": 1536.0,
+      "height_m": 1.7,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.5,
+        1440.0
+      ],
+      "sha256": "c359aa7fb78cb9da36e401bff853785db1d3c5fea48ef463ba0256fdd377cee0",
+      "sole_contact_centres_px": [
+        [
+          428.0,
+          1439.0
+        ],
+        [
+          597.0,
+          1441.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y60_front)",
+      "variant": "0",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 60.0,
+      "biological_age": 90.0,
+      "emotion": "-",
+      "facing": "back",
+      "figure_height_px": 1224.0,
+      "file": "avatar_captain_y60_back.png",
+      "height": 1536.0,
+      "height_m": 1.7,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.0,
+        1439.5
+      ],
+      "sha256": "1d5ca66ec8af66e635ce27961926e25b36cd4762ca3abc9c95501362ab42e210",
+      "sole_contact_centres_px": [
+        [
+          430.0,
+          1441.0
+        ],
+        [
+          594.0,
+          1438.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y60_back)",
+      "variant": "1",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 0.0,
+      "biological_age": 30.0,
+      "emotion": "-",
+      "facing": "se",
+      "figure_height_px": 1260.0,
+      "file": "avatar_captain_y0_se.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "2c096677d3cbe20995564280ff99d64cbf4ec53854b09c4f187e5617b7690124",
+      "sole_contact_centres_px": [
+        [
+          426.0,
+          1442.0
+        ],
+        [
+          598.5,
+          1438.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y0_se)",
+      "variant": "2",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 0.0,
+      "biological_age": 30.0,
+      "emotion": "-",
+      "facing": "ne",
+      "figure_height_px": 1259.0,
+      "file": "avatar_captain_y0_ne.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.0,
+        1440.0
+      ],
+      "sha256": "b99958dbda122db5dda47c74ffe756bae52d3e1b501f42bd8840e8d174edaed7",
+      "sole_contact_centres_px": [
+        [
+          437.0,
+          1440.0
+        ],
+        [
+          587.0,
+          1440.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y0_ne)",
+      "variant": "3",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 20.0,
+      "biological_age": 50.0,
+      "emotion": "-",
+      "facing": "se",
+      "figure_height_px": 1261.0,
+      "file": "avatar_captain_y20_se.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "390571919b9a11c6b68bfb1ae1bc4cab3e55b73049fa6bc49bf7e4ba1b171815",
+      "sole_contact_centres_px": [
+        [
+          421.5,
+          1441.0
+        ],
+        [
+          603.0,
+          1439.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y20_se)",
+      "variant": "2",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 20.0,
+      "biological_age": 50.0,
+      "emotion": "-",
+      "facing": "ne",
+      "figure_height_px": 1260.0,
+      "file": "avatar_captain_y20_ne.png",
+      "height": 1536.0,
+      "height_m": 1.75,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "b27e332401a0961a9c4ee1d83b1ee09078cc516ef7f3c2220f96d0035ab5a6c9",
+      "sole_contact_centres_px": [
+        [
+          420.5,
+          1439.0
+        ],
+        [
+          604.0,
+          1441.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y20_ne)",
+      "variant": "3",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 40.0,
+      "biological_age": 70.0,
+      "emotion": "-",
+      "facing": "se",
+      "figure_height_px": 1246.0,
+      "file": "avatar_captain_y40_se.png",
+      "height": 1536.0,
+      "height_m": 1.73,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sha256": "626f6b42fade199a88d7a97a4fd2f850d0c98f559ac53f233ff0b124de107d7a",
+      "sole_contact_centres_px": [
+        [
+          423.0,
+          1442.0
+        ],
+        [
+          601.5,
+          1438.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y40_se)",
+      "variant": "2",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 40.0,
+      "biological_age": 70.0,
+      "emotion": "-",
+      "facing": "ne",
+      "figure_height_px": 1246.5,
+      "file": "avatar_captain_y40_ne.png",
+      "height": 1536.0,
+      "height_m": 1.73,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.5,
+        1439.5
+      ],
+      "sha256": "d71e7868f138589318e77070bf2bbe8287ea7992f23500da15ec8db5c9b9af1d",
+      "sole_contact_centres_px": [
+        [
+          435.5,
+          1439.0
+        ],
+        [
+          589.5,
+          1440.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y40_ne)",
+      "variant": "3",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 60.0,
+      "biological_age": 90.0,
+      "emotion": "-",
+      "facing": "se",
+      "figure_height_px": 1224.5,
+      "file": "avatar_captain_y60_se.png",
+      "height": 1536.0,
+      "height_m": 1.7,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.0,
+        1439.5
+      ],
+      "sha256": "ee0f1ba34a11a5fee30d1eebcb35c7bebcc72bd0d2840d62004c351165a65ba7",
+      "sole_contact_centres_px": [
+        [
+          424.0,
+          1441.0
+        ],
+        [
+          600.0,
+          1438.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y60_se)",
+      "variant": "2",
+      "width": 1024.0
+    },
+    {
+      "age_stage": 60.0,
+      "biological_age": 90.0,
+      "emotion": "-",
+      "facing": "ne",
+      "figure_height_px": 1224.0,
+      "file": "avatar_captain_y60_ne.png",
+      "height": 1536.0,
+      "height_m": 1.7,
+      "kind": "avatar",
+      "measured_foot_anchor_px": [
+        512.5,
+        1440.0
+      ],
+      "sha256": "7161360ec9817dd0629c1abecc62be676979bbf24ea83f83139a1cef090f33ec",
+      "sole_contact_centres_px": [
+        [
+          424.0,
+          1438.0
+        ],
+        [
+          601.0,
+          1442.0
+        ]
+      ],
+      "source": "generated (see generation_notes.md#avatar_captain_y60_ne)",
+      "variant": "3",
+      "width": 1024.0
+    }
+  ],
+  "identity_note": "Slender androgynous captain with warm medium skin and short swept hair, wearing a cream longline open coat with rounded panels, broad ochre shoulder yoke and stand collar, grown oval closures, violet trousers and practical soft boots. Dark hair becomes salt-and-pepper, silver and fine white; build and posture age honestly while the civilian costume wears and is repaired.",
+  "identity_proposal": "A — Longline Navigator",
+  "identity_reference": {
+    "file": "proposals/avatar_captain_proposal_a.png",
+    "sha256": "f5bd39f99932fafd46c14c31faca2272fe43bbba780bed076eca924b5987a74e"
+  },
+  "identity_status": "picked",
+  "palette": [
+    "#D9A340",
+    "#F2E3C7",
+    "#3B2959",
+    "#423555"
+  ],
+  "rights": "AI-generated (gpt-6.1-sol); no copyright claimed.",
+  "role": "captain",
+  "status": "proposed"
 }

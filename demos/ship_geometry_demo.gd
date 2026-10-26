@@ -382,6 +382,9 @@ func toggle_sky_only() -> void:
 ## WASD is screen-relative (W up the screen). D2: the walk direction is held in world space while
 ## any move key stays down, so a view change mid-stride never reverses the captain.
 func walk_motion(move: Vector2,delta: float) -> void:
+	if seated(): # CA2: a move key stands the captain first (CaptainAnim plays the stand), then walking resumes
+		if move!=Vector2.ZERO:_chair_stand=true
+		_walking=false;return
 	_walking=move!=Vector2.ZERO
 	if move==Vector2.ZERO:
 		_walk_hold_yaw=NAN;return
@@ -1664,7 +1667,50 @@ func _animate_captain(delta: float) -> void:
 		station = CaptainAnim.STATION_CLIP.get(consoles.focused, "use_mid")
 	var o := captain_anim.step({"velocity": v, "view_yaw": director.walk_yaw(), "station": station,
 		"face_dir": Vector3(0, 0, -1), "lift": lift != null and lift.state in ["descending", "ascending"],
-		"reduced": camera_motion == "reduced"}, delta)
+		"reduced": camera_motion == "reduced", "chair": "sit" if _chair_sit else "", "move_request": _chair_stand,
+		"cue": _look_up_cue()}, delta)
+	_chair_sit = false
+	_chair_stand = false
+	if _chair_return != Vector3.INF and captain_anim.chair == "":
+		avatar_pos = _chair_return # stood up: back to the walkable side of the chair
+		_anim_pos = avatar_pos
+		_chair_return = Vector3.INF
 	avatar.show_anim(o)
 	for e: Dictionary in o.events:
 		captain_event.emit(e)
+## CA2 (OQ9): the captain's chair. E in reach sits (the captain moves onto the seat, facing the bow);
+## E again or a move key stands, back to the walkable point beside the chair.
+var _chair_sit := false
+var _chair_stand := false
+var _chair_return := Vector3.INF
+func chair_seat() -> Variant:
+	var c: Variant = manifest.get("captain_chair")
+	if not c is Dictionary:return null
+	return Vector3(float(c.position_m[0]),82.,-float(c.position_m[1]))
+func seated() -> bool:
+	return captain_anim.chair != "" or _chair_sit
+func sit_chair() -> bool:
+	var seat: Variant = chair_seat()
+	if seat == null or seated() or active_level != 0:return false
+	consoles.cancel_walk()
+	_chair_return = walk.closest_walkable(avatar_pos, 2.0)
+	avatar_pos = seat
+	_anim_pos = avatar_pos
+	_chair_sit = true
+	return true
+func stand_chair() -> bool:
+	if not seated():return false
+	_chair_stand = true
+	return true
+## CA2: the captain looks up when the ship arrives at a stop or the starbow forms (beta past 0.9).
+var _was_under_way := false
+var _was_starbow := false
+var _cue_primed := false # the first frame only records the state (a voyage that starts at speed is no cue)
+func _look_up_cue() -> String:
+	var under: bool = under_way() if has_method("under_way") else false
+	var starbow: bool = sky != null and float(sky.beta) >= 0.9
+	var cue := "look_up" if _cue_primed and ((_was_under_way and not under) or (starbow and not _was_starbow)) else ""
+	_cue_primed = true
+	_was_under_way = under
+	_was_starbow = starbow
+	return cue

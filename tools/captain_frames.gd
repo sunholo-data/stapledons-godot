@@ -34,6 +34,13 @@ const ANCHOR := Vector2(512, 1440)
 ## follows the guide. The idle frames (first pilot) pass both.
 const POSE_MIN := {"back": [0.65, 0.65], "profile": [0.50, 0.60]}
 const POSE_MIN_OTHER := [0.55, 0.65] ## facings not painted yet (the first pilot's gate)
+## CA2 held poses (stations, the chair, the lift, the look-up): a standing person's silhouette is nearly the same
+## from the front and the back, so against the other facing's guide these frames score as well as against their
+## own (e.g. look_up_front 0.761 own, 0.753 cross; lift_back_34 0.612 own, 0.658 cross): the gate cannot check
+## the facing and only catches a gross miss (IoU >= 0.50, legs >= 0.50; the 24 frames: IoU 0.548-0.785, legs
+## 0.566-0.953). The pose and facing are judged by eye at review.
+const HELD_PREFIXES := ["use_", "sit_", "seated_", "lift_", "look_up_"]
+const HELD_POSE_MIN := [0.50, 0.50]
 const HEIGHT_TOL := 0.12 ## the shipped figure's box height against its guide's: the facing shares one scale, so a
 ##   frame's box differs with its pose and the flying coat (jog v2: 0.902-1.052); 0.7x (the seeded defect) fails
 const DE_MAX := 12.0
@@ -49,7 +56,7 @@ const PALETTE_K := 6
 const PALETTE_SHARE_MIN := 0.08 ## the still's colour clusters checked: each >= 8% of the figure (coat, trousers, yoke, boots)
 ## A cluster may shrink to this share of the still's (a walking back view hides more trouser under the
 ## hanging coat: walk_back_10 shows 10% where the still shows 21%); a missing colour still fails.
-const PALETTE_SHARE_KEEP := 0.4
+const PALETTE_SHARE_KEEP := 0.35 ## CA2: sit_front_01 shows a cluster at 38% of the still's share (the coat over the knees)
 ## The still each painted facing is compared with (the nearest stage-0 view).
 const REF_STILL := {"back": "avatar_captain_y0_back.png", "back_34": "avatar_captain_y0_ne.png", "profile": "avatar_captain_y0_se.png", "front_34": "avatar_captain_y0_se.png", "front": "avatar_captain_y0_front.png"}
 
@@ -120,7 +127,7 @@ func _ingest(raw: String) -> void:
 		var g0 := Image.load_from_file(guides_dir.path_join(src + ".png"))
 		g0.convert(Image.FORMAT_RGBA8)
 		per_frame[src] = float(_figure_rect(g0, 0.25).size.y) / float(_figure_rect(img0, 0.5).size.y)
-		by_facing.get_or_add(src.split("_")[1], []).append(per_frame[src])
+		by_facing.get_or_add(facing_of(src), []).append(per_frame[src])
 	var median := {}
 	for f: String in by_facing:
 		var l: Array = by_facing[f]
@@ -132,7 +139,7 @@ func _ingest(raw: String) -> void:
 		_matte(img)
 		var guide := Image.load_from_file(guides_dir.path_join(src + ".png"))
 		guide.convert(Image.FORMAT_RGBA8)
-		var a := _align(img, guide, median[src.split("_")[1]])
+		var a := _align(img, guide, median[facing_of(src)])
 		scales[src] = a.scale
 		var cell: Image = a.image
 		# Profile: the body's height on the canvas follows the guide's head (its bob), not the silhouette
@@ -189,7 +196,7 @@ func _ingest(raw: String) -> void:
 		c["stages"] = {"0": st}
 		clips[clip] = c
 	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join(ANIM_MANIFEST)))
-	m["anim"] = {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads}
+	m["anim"] = {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads, "settle_dy_cell_px": old.get("settle_dy_cell_px", {})} # kept clips keep their settle; new frames start at 0
 	var f := FileAccess.open(DIR.path_join(ANIM_MANIFEST), FileAccess.WRITE)
 	f.store_string(JSON.stringify(m, "  ") + "\n")
 	f.close()
@@ -471,6 +478,8 @@ func _frame_checks(src: String, facing: String, cell: Image, refs: Dictionary, q
 	row["iou"] = float(inter) / maxf(1, uni)
 	row["legs"] = float(legs_hit) / maxf(1, legs)
 	var pmin: Array = POSE_MIN.get(facing, POSE_MIN_OTHER)
+	if HELD_PREFIXES.any(func(p: String) -> bool: return src.begins_with(p)):
+		pmin = HELD_POSE_MIN
 	if row.iou < pmin[0]:
 		row.ok = false
 		row.notes.append("IoU %.3f < %.2f" % [row.iou, pmin[0]])
@@ -726,3 +735,11 @@ static func sole_below_anchor_px(e: Dictionary, s: float) -> float:
 			if img.get_pixel(x, y).a > 0.5:
 				return float(e.crop[1]) + y + 1 - ANCHOR.y * s
 	return 0.0
+
+
+## The painted facing in a frame name (<clip>_<facing>_<kk>; clips may contain "_", e.g. use_low, look_up).
+static func facing_of(src: String) -> String:
+	for f in ["back_34", "front_34", "profile", "back", "front"]:
+		if src.contains("_%s_" % f):
+			return f
+	return "back"

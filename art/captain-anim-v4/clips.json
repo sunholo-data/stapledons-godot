@@ -1,0 +1,20 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION CA2 (D-120 go, the trimmed set): the captain's held poses, 24 painted frames from the v4 guides (char_captain_pose_guides_v4.py.txt; pinned in guides.sha256, gs://stapledons-voyage-assets/captain/<sha256>.png). Stations and the chair face the bow, so only back (Bow view) and front (Astern) are painted; the lift and the look-up in all five facings. The step back (leave_*) and the stand are their reach and sit played backwards (reverse_of). Start and stop are the walk frames with a procedural lean (no paintings). The walk and the idle are kept.",
+  "painted": ["use_low_back_00", "use_low_back_01", "use_low_front_00", "use_low_front_01", "use_mid_back_00", "use_mid_back_01", "use_mid_front_00", "use_mid_front_01",
+    "sit_back_00", "sit_back_01", "sit_front_00", "sit_front_01", "seated_back_00", "seated_front_00",
+    "lift_back_00", "lift_back_34_00", "lift_profile_00", "lift_front_34_00", "lift_front_00",
+    "look_up_back_00", "look_up_back_34_00", "look_up_profile_00", "look_up_front_34_00", "look_up_front_00"],
+  "clips": {
+    "walk": {"keep": true},
+    "idle": {"keep": true},
+    "use_low": {"kind": "time", "fps": 5.0, "loop": false, "frames": {"back": [["use_low_back_00", false], ["use_low_back_01", false]], "front": [["use_low_front_00", false], ["use_low_front_01", false]]}},
+    "leave_low": {"kind": "time", "fps": 5.0, "loop": false, "reverse_of": "use_low"},
+    "use_mid": {"kind": "time", "fps": 5.0, "loop": false, "frames": {"back": [["use_mid_back_00", false], ["use_mid_back_01", false]], "front": [["use_mid_front_00", false], ["use_mid_front_01", false]]}},
+    "leave_mid": {"kind": "time", "fps": 5.0, "loop": false, "reverse_of": "use_mid"},
+    "sit": {"kind": "time", "fps": 3.34, "loop": false, "frames": {"back": [["sit_back_00", false], ["sit_back_01", false]], "front": [["sit_front_00", false], ["sit_front_01", false]]}},
+    "seated": {"kind": "time", "fps": 1.0, "loop": true, "frames": {"back": [["seated_back_00", false]], "front": [["seated_front_00", false]]}},
+    "stand": {"kind": "time", "fps": 4.0, "loop": false, "reverse_of": "sit"},
+    "lift": {"kind": "time", "fps": 1.0, "loop": true, "frames": {"back": [["lift_back_00", false]], "back_34": [["lift_back_34_00", false]], "profile": [["lift_profile_00", false]], "front_34": [["lift_front_34_00", false]], "front": [["lift_front_00", false]]}},
+    "look_up": {"kind": "time", "fps": 1.0, "loop": true, "frames": {"back": [["look_up_back_00", false]], "back_34": [["look_up_back_34_00", false]], "profile": [["look_up_profile_00", false]], "front_34": [["look_up_front_34_00", false]], "front": [["look_up_front_00", false]]}}
+  }
+}
