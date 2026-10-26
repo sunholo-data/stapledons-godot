@@ -120,7 +120,7 @@ func _ingest(raw: String) -> void:
 		var g0 := Image.load_from_file(guides_dir.path_join(src + ".png"))
 		g0.convert(Image.FORMAT_RGBA8)
 		per_frame[src] = float(_figure_rect(g0, 0.25).size.y) / float(_figure_rect(img0, 0.5).size.y)
-		by_facing.get_or_add(src.split("_")[1], []).append(per_frame[src])
+		by_facing.get_or_add(facing_of(src), []).append(per_frame[src])
 	var median := {}
 	for f: String in by_facing:
 		var l: Array = by_facing[f]
@@ -132,7 +132,7 @@ func _ingest(raw: String) -> void:
 		_matte(img)
 		var guide := Image.load_from_file(guides_dir.path_join(src + ".png"))
 		guide.convert(Image.FORMAT_RGBA8)
-		var a := _align(img, guide, median[src.split("_")[1]])
+		var a := _align(img, guide, median[facing_of(src)])
 		scales[src] = a.scale
 		var cell: Image = a.image
 		# Profile: the body's height on the canvas follows the guide's head (its bob), not the silhouette
@@ -189,7 +189,7 @@ func _ingest(raw: String) -> void:
 		c["stages"] = {"0": st}
 		clips[clip] = c
 	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join(ANIM_MANIFEST)))
-	m["anim"] = {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads}
+	m["anim"] = {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads, "settle_dy_cell_px": old.get("settle_dy_cell_px", {})} # kept clips keep their settle; new frames start at 0
 	var f := FileAccess.open(DIR.path_join(ANIM_MANIFEST), FileAccess.WRITE)
 	f.store_string(JSON.stringify(m, "  ") + "\n")
 	f.close()
@@ -726,3 +726,11 @@ static func sole_below_anchor_px(e: Dictionary, s: float) -> float:
 			if img.get_pixel(x, y).a > 0.5:
 				return float(e.crop[1]) + y + 1 - ANCHOR.y * s
 	return 0.0
+
+
+## The painted facing in a frame name (<clip>_<facing>_<kk>; clips may contain "_", e.g. use_low, look_up).
+static func facing_of(src: String) -> String:
+	for f in ["back_34", "front_34", "profile", "back", "front"]:
+		if src.contains("_%s_" % f):
+			return f
+	return "back"

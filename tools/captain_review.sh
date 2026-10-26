@@ -64,6 +64,21 @@ for f in back profile; do
   img2webp -loop 0 -lossy -q 85 -d 17 $(ls "$OUT/fx_side/$f"/f???.png) -o "$OUT/anim/fx_options_${f}.webp" >/dev/null
   img2webp -loop 0 -lossy -q 85 -d 95 $(ls "$OUT/feet_side/$f"/f??.png) -o "$OUT/anim/feet_before_after_${f}.webp" >/dev/null
 done
+# CA2: the held poses as the game plays them (stations, chair, look-up, start/stop, lift), the 3x views, the
+# painted clips forward and reversed, all at game speed (60 fps sequences; the painted previews at the clip fps).
+if [ "${CA2:-1}" = 1 ]; then
+  perl -e 'alarm 2400; exec @ARGV' "$GODOT" --path . --resolution 1280x720 --script tools/captain_ca2_review.gd -- --out="$OUT" > "$OUT/ca2.log" 2>&1 || { grep -E '^(FAIL|captain-ca2)' "$OUT/ca2.log"; exit 1; }
+  grep -E '^(seq|captain-ca2)' "$OUT/ca2.log"
+  perl -e 'alarm 900; exec @ARGV' "$GODOT" --headless --path . --script tools/captain_ca2_sheet.gd -- --out="$OUT" > "$OUT/ca2_sheet.log" 2>&1 || { tail -3 "$OUT/ca2_sheet.log"; exit 1; }
+  for d in "$OUT"/seq/*; do
+    n=$(basename "$d")
+    img2webp -loop 0 -lossy -q 82 -d 17 $(ls "$d"/f???.png) -o "$OUT/anim/ca2_${n}.webp" >/dev/null
+  done
+  for d in "$OUT"/painted/*; do
+    n=$(basename "$d")
+    case "$n" in use_*|sit_*|seated_*|lift_*|look_up_*) img2webp -loop 0 -lossy -q 90 -d 220 $(ls "$d"/f??.png) -o "$OUT/anim/ca2_painted_${n}.webp" >/dev/null ;; esac
+  done
+fi
 # The frame checks and the review description.
 perl -e 'alarm 600; exec @ARGV' "$GODOT" --headless --path . --script tools/captain_frames.gd -- --json "$OUT/frames_check.json" > "$OUT/frames_check.log" 2>&1 || true
 for n in art/captain-anim-v1/NOTES.md art/captain-anim-v2/NOTES.md art/captain-anim-v3/NOTES.md; do [ -f "$n" ] && cp "$n" "$OUT/generation_notes_$(basename $(dirname $n)).md"; done

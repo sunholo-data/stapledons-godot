@@ -1,0 +1,83 @@
+"""R2-CAPTAIN-ANIMATION pose guides v4 (CA2): the captain's held poses, on the v3 rig, colour keys,
+canvas and camera (1024 x 1536, foot anchor (512, 1440), standing figure 1263 px, orthographic, 29 deg).
+  use_low_00, use_low_01    reach to a desk (0.95 m) and hold        back, front
+  use_mid_00, use_mid_01    reach to a console (1.1 m) and hold      back, front
+  sit_00, sit_01            lowering onto the chair                  back, front
+  seated_00                 seated, hands on the thighs              back, front
+  lift_00                   standing, one hand on the lift rail      all five facings
+  look_up_00                standing, head and chest raised          all five facings
+The stations and the chair face the bow, so only the back (Bow view) and the front (Astern) are seen.
+Reversed clips (the step back, the stand) reuse these frames. Feet planted (IK) in every pose.
+Out: exports/stapledon/characters/captain_pose_guides_v4/<pose>_<facing>.png + guides.json.
+Rebuild: ./blender.sh --background --python scripts/char_captain_pose_guides_v4.py
+"""
+import bpy, math, json
+from pathlib import Path
+from mathutils import Vector
+ROOT = Path(__file__).resolve().parents[1]
+V3 = ROOT / 'scripts/char_captain_pose_guides_v3.py'
+src = V3.read_text().split('# --- Render the guides')[0]
+g = {'__file__': str(V3), '__name__': 'v3'}
+exec(compile(src, str(V3), 'exec'), g)  # model, rig, IK legs, the walk (unused here)
+rig = g['rig']; pb = g['pb']; targets = g['targets']; objs = g['objs']; scene = bpy.context.scene; R = math.radians
+rig.animation_data.action = None
+for t in targets.values():
+    if t.animation_data: t.animation_data.action = None
+src_render = V3.read_text().split('# --- Render the guides')[1].split('\n', 1)[1].split('rows = []')[0]
+exec(compile(src_render, str(V3), 'exec'), g)  # materials, camera, FACINGS
+cam = g['cam']; FACINGS = g['FACINGS']; ELEV = g['ELEV']; DIST = g['DIST']
+OUT = ROOT / 'exports/stapledon/characters/captain_pose_guides_v4'; OUT.mkdir(parents=True, exist_ok=True)
+ANKLE = 0.10
+def reset():
+    for p in pb:
+        p.rotation_euler = (0, 0, 0); p.location = (0, 0, 0)
+    rig.location = (0, 0, 0)
+    for s, x in (('L', 0.09), ('R', -0.09)):
+        targets[s].location = (x, 0.0, ANKLE)
+def stand_lean(spine_deg, head_deg):
+    pb['spine'].rotation_euler = (-R(spine_deg), 0, 0); pb['head'].rotation_euler = (R(head_deg), 0, 0)
+def arms(upper, fore):
+    for s in 'LR':
+        pb['upper_arm.' + s].rotation_euler = (R(upper), 0, 0); pb['forearm.' + s].rotation_euler = (-R(fore), 0, 0)
+def use_low(k):
+    reset(); stand_lean(10 + 4 * k, 10 + 6 * k); arms(45 + 8 * k, 25 - 10 * k)
+def use_mid(k):
+    reset(); stand_lean(4 + 3 * k, 4 + 3 * k); arms(55 + 10 * k, 45 - 10 * k)
+def sit(k):
+    reset()
+    drop, back = (0.20, 0.12) if k == 0 else (0.34, 0.22)
+    rig.location = (0, back, -drop)            # the body lowers and moves stern-ward; the feet stay (IK)
+    for s, x in (('L', 0.09), ('R', -0.09)):
+        targets[s].location = (x, -0.10, ANKLE)
+    stand_lean(22 - 8 * k, -10 + 4 * k); arms(25, 30)
+def seated():
+    reset()
+    rig.location = (0, 0.28, -0.40)            # seat height ~0.46 m
+    for s, x in (('L', 0.11), ('R', -0.11)):
+        targets[s].location = (x, -0.18, ANKLE)
+    stand_lean(-2, 0); arms(28, 70)
+def lift():
+    reset(); stand_lean(0, 0)
+    pb['upper_arm.R'].rotation_euler = (R(10), 0, R(40)); pb['forearm.R'].rotation_euler = (-R(20), 0, 0)
+    pb['upper_arm.L'].rotation_euler = (R(3), 0, 0)
+def look_up():
+    reset(); pb['spine'].rotation_euler = (R(6), 0, 0); pb['head'].rotation_euler = (-R(22), 0, 0); arms(4, 8)
+POSES = [('use_low_00', lambda: use_low(0), ['back', 'front']), ('use_low_01', lambda: use_low(1), ['back', 'front']),
+         ('use_mid_00', lambda: use_mid(0), ['back', 'front']), ('use_mid_01', lambda: use_mid(1), ['back', 'front']),
+         ('sit_00', lambda: sit(0), ['back', 'front']), ('sit_01', lambda: sit(1), ['back', 'front']),
+         ('seated_00', seated, ['back', 'front']),
+         ('lift_00', lift, list(FACINGS)), ('look_up_00', look_up, list(FACINGS))]
+rows = []
+for name, fn, facings in POSES:
+    for facing in facings:
+        fn(); bpy.context.view_layer.update()  # re-pose before every render (a render re-evaluates the scene)
+        print('DBG', name, facing, tuple(round(v, 3) for v in rig.location), tuple(round(v, 3) for v in (rig.matrix_world @ pb['head'].head)))
+        hx, hy = FACINGS[facing]
+        cam.location = Vector((hx * DIST * math.cos(ELEV), hy * DIST * math.cos(ELEV), DIST * math.sin(ELEV)))
+        cam.rotation_euler = (Vector((0, 0, 0)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
+        clip, idx = name.rsplit('_', 1)
+        fname = f'{clip}_{facing}_{idx}.png'
+        scene.render.filepath = str(OUT / fname); bpy.ops.render.render(write_still=True)
+        rows.append({'file': fname, 'clip': clip, 'facing': facing, 'index': int(idx), 'planted': 'both'})
+(OUT / 'guides.json').write_text(json.dumps({'about': 'R2-CAPTAIN-ANIMATION pose guides v4 (CA2): held poses (stations, the chair, the lift, the look-up) on the v3 rig; colour keys, canvas and camera as v3; feet planted', 'canvas_px': [1024, 1536], 'foot_anchor_px': [512, 1440], 'elevation_deg': 29, 'frames': rows}, indent=2) + '\n')
+print('POSE_GUIDES_V4', len(rows))
