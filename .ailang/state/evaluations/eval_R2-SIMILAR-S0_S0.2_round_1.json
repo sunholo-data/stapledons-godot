@@ -1,0 +1,42 @@
+{
+ "sprint": "R2-SIMILAR-S0",
+ "milestone": "S0.2",
+ "round": 1,
+ "commit": "bef58082",
+ "evaluator_model": "claude-sonnet-5-5",
+ "score": 93,
+ "pass": true,
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Full package test (ailang test --package . in sim/) was not run: UNMEASURED. Ran protocol_test, archive_health_test, gr_test (all pass), ailang check --package sim (127 files ok), make similar-test ism-compat replay strict parity parity-v2 python-guard (all exit 0).",
+  "Oracle inputs (Sol and TRAPPIST-1 tables) are typed with citations but match the sim data to 1e-12, so they were most likely copied from the sim data files. The formulas (ln r, ln m /3, ln S /2, Euclidean distance, full sort of all 14 neighbours) are recomputed independently. This is independence of maths, not of data. Acceptable for S0.",
+  "Mutation of the tick path was done through withArchiveHealth (the only tick extras hook at minor 15). Ticks at minor 14 have no extras hook; the tick-absence tests cover both 14 and 15 and sol thrust moves, so this is covered, but only one mutation route was tried.",
+  "At 2.14 similar is the last or near-last key in new_game changes (before solar_departure/gr when present). The plan only fixes order relative to archive, so this is fine, but S0.3 must parse by key, not by position.",
+  "Plan amendment 8674925d is consistent. The iteration 42 block still says 'minor 13 / protocol 2.13' but is explicitly labelled historical and superseded. Sprint JSON change history for iteration 42 has a stale 'minor 13 / protocol 2.14' string in the changes list (historical record only).",
+  "Live game already asks for 2.15, so every new_game gains about 4.4 KB (62117 -> 66481 bytes in the Sol session). The bridge copies unknown sections, so nothing breaks, but S0.3 should keep SIMILAR_MINOR at 14 and ARCHIVE_MINOR at 15."
+ ],
+ "mutation_results": [
+  {"id": "M1", "mutation": "drop the similarMinor branch from sessionMinor only", "command": "(cd sim && ailang test protocol_test.ail); make similar-test", "result": "killed (both red)"},
+  {"id": "M2", "mutation": "similarFull gate '< 14' changed to '!= 14' (emit at ==14 only)", "command": "same", "result": "killed (both red)"},
+  {"id": "M3", "mutation": "move similarFull after archiveFull in new_game tail", "command": "same", "result": "killed (both red)"},
+  {"id": "M4", "mutation": "also emit similar on ticks (withArchiveHealth tail), confirmed as 4 real assertion failures not a compile error", "command": "same", "result": "killed (both red)"},
+  {"id": "M5", "mutation": "oracle divisor ln_mass /3.0 -> /2.0", "command": "make similar-test", "result": "killed by make similar-test (unit tests do not use the oracle, as expected)"},
+  {"id": "M6", "mutation": "strip-similar leaves the separator comma at 2.14", "command": "make similar-test", "result": "killed (pristine 2.13 cmp fails)"},
+  {"id": "M7", "mutation": "drop the 14 branch from helloFor only", "command": "same as M1", "result": "killed (both red)"}
+ ],
+ "independent_evidence": {
+  "pristine_fixtures": "Built a pristine copy of sim/ from git archive adf34a67 and ran a hand-written 3-line session on the pinned strict VM at want 13, 14 and 15. Output equals protocol_213_pristine and protocol_215_pristine byte for byte (cmp). Want 14 at base equals want 13 except nothing (hello says minor 13).",
+  "emission": "On the new sim at 14 and 15 in sol, solar_departure, free_nav and sgr_a: similar present once on new_game, absent in hello and tick, followed by archive at 15.",
+  "scope": "git diff adf34a67 bef58082 shows no change to sim/core.ail, bridge/, main.gd, tests/replays/ or existing fixtures. Existing tests changed only at archive_health_test.ail:42 and gr_test.ail:143 (helloLine(14) expects 14).",
+  "restore": "Every mutated file restored by git checkout; git status clean apart from scratch dirs, which were removed."
+ },
+ "commands_run": [
+  "git diff 8674925d bef58082 -- sim/ Makefile tools/",
+  "ailang run --quiet --package-dir scratch_pristine/sim --bytecode --strict-bytecode --caps IO --entry main (want 13/14/15)",
+  "(cd sim && ailang test protocol_test.ail archive_health_test.ail gr_test.ail)",
+  "make similar-test ism-compat replay strict parity parity-v2 python-guard AILANG=pinned",
+  "ailang check --package sim",
+  "mutation script M1..M7"
+ ],
+ "summary": "S0.2 meets AC7-AC10 as amended. Negotiation 13/14/15/16/99 is correct, similar appears once on new_game at every minor >= 14 in all four scenarios, never on ticks, directly before archive. Pristine fixtures were re-derived independently and match. The oracle is a real recomputation, the strip mode removes exactly the section and separator and the make target fails if it does not. All seven mutations were killed. Scope is clean. No blocking findings. Full package test not run."
+}

@@ -23,6 +23,10 @@ import std/string (join, contains, startsWith)
 import std/list (map, foldl)
 import ./protocol (systemMinor, helloFor, encodeSystem, decodeSystem)
 import ./celestial (SystemView, BodyView, solSystem, systemAt, defaultEpochJd)
+import std/json (get, getArray)
+import std/list (length as listLength, filter)
+import std/string (split, concat)
+import ./protocol (relativityPin)
 
 pure func status(line: string) -> string =
   match decode(line) { Ok(j) => match getString(j, "status") { Some(x) => x, None => "missing" }, Err(_) => "decode_error" }
@@ -639,3 +643,83 @@ export pure func checkSystemRoundTrip() -> bool {
   && (match decodeSystem("{\"jd\":1,\"ephemeris\":\"jpl-approx\",\"frame\":\"galactic\",\"bodies\":[{\"id\":\"x\"}]}") { Err(c) => c == "bad_state", Ok(_) => false })
 }
 test "2.3 decodeSystem(encodeSystem(v)) re-encodes byte for byte; a body missing fields is bad_state" { checkSystemRoundTrip() }
+
+-- S0.2. Pristine stream bytes are frozen in the protocol_213/215_pristine
+-- fixtures. similar-test compares them without JSON reserialization.
+pure func all(f: a -> bool, xs: [a]) -> bool = foldl(\acc x. acc && f(x), true, xs)
+pure func similarGame(sc: string) -> string =
+  newGame(concat(["\"seed\":7,\"scenario\":\"", sc, "\",\"diag\":false"]))
+pure func similarStart(m: int, sc: string) -> Served =
+  serve(serve(newSession(), helloWant(m)).session, similarGame(sc))
+pure func jsonField(j: Json, key: string) -> Json = match get(j, key) { Some(x) => x, None => JNull }
+pure func jsonArray(j: Json, key: string) -> [Json] = match getArray(j, key) { Some(xs) => xs, None => [] }
+pure func similarJson(line: string) -> Json = match decode(line) {
+  Ok(j) => jsonField(jsonField(j, "changes"), "similar"), Err(_) => JNull
+}
+pure func worldId(j: Json) -> string = match getString(j, "id") { Some(x) => x, None => "" }
+pure func similarIds() -> [string] = ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune",
+  "trappist-1b", "trappist-1c", "trappist-1d", "trappist-1e", "trappist-1f", "trappist-1g", "trappist-1h"]
+pure func jsonKeys(j: Json) -> [string] = match j { JObject(fs) => map(\p. p.key, fs), _ => [] }
+pure func similarFeature(j: Json, key: string, divisor: float) -> bool =
+  jsonKeys(j) == ["key", "divisor", "cite"] && getString(j, "key") == Some(key)
+  && getNumber(j, "divisor") == Some(divisor)
+  && getString(j, "cite") == Some("stapledons-design/features/next/semantic-memory.md S0")
+pure func similarShape(line: string) -> bool {
+  let j = similarJson(line);
+  let ws = jsonArray(j, "worlds");
+  jsonKeys(j) == ["model", "k", "features", "excluded", "worlds"]
+  && getString(j, "model") == Some("s0-v1") && getNumber(j, "k") == Some(3.0)
+  && jsonField(j, "excluded") == JArray([])
+  && (match jsonArray(j, "features") { [a, b, c] => similarFeature(a, "ln_radius", 1.0)
+      && similarFeature(b, "ln_mass", 3.0) && similarFeature(c, "ln_insolation", 2.0), _ => false })
+  && map(worldId, ws) == similarIds()
+  && all(\w. jsonKeys(w) == ["id", "name", "s_earth", "vector", "near"]
+    && (match getString(w, "name") { Some(n) => n != "", None => false })
+    && (match getNumber(w, "s_earth") { Some(s) => s > 0.0 && s - s == 0.0, None => false })
+    && (match jsonArray(w, "vector") { [JNumber(a), JNumber(b), JNumber(c)] => a - a == 0.0 && b - b == 0.0 && c - c == 0.0, _ => false })
+    && listLength(jsonArray(w, "near")) == 3
+    && all(\n. jsonKeys(n) == ["id", "d"] && worldId(n) != worldId(w)
+      && listLength(filter(\id. id == worldId(n), similarIds())) == 1
+      && (match getNumber(n, "d") { Some(d) => d >= 0.0 && d - d == 0.0, None => false }), jsonArray(w, "near")), ws)
+}
+pure func similarMoved(m: int) -> bool {
+  let g = serve(serve(newSession(), helloWant(m)).session, diagGame());
+  let t = serve(g.session, tickLine(1, "0.25", "{\"k\":\"thrust\",\"thrust\":0.1}"));
+  let z = serve(t.session, tickLine(2, "0", ""));
+  shipX(stateOf(t.reply)) > 0.0
+  && all(\r. status(r) == "ok" && !contains(r, "\"similar\":"), [t.reply, z.reply])
+}
+pure func similarLife(m: int, sc: string) -> bool {
+  let g = similarStart(m, sc);
+  let t1 = serve(g.session, tickLine(1, "0.25", "{\"k\":\"thrust\",\"thrust\":0.1}"));
+  let t2 = serve(t1.session, tickLine(2, "0", ""));
+  let t3 = serve(t2.session, tickLine(3, "1", ""));
+  status(g.reply) == "ok" && similarShape(g.reply)
+  && (sc != "sol" || similarMoved(m))
+  && all(\r. status(r) == "ok" && !contains(r, "\"similar\":"), [t1.reply, t2.reply, t3.reply])
+  && (m != 15 || contains(g.reply, "\"archive\":{\"memory_health\":"))
+}
+-- Decode only the raw substring between the two keys. An intervening section
+-- makes this invalid JSON, so this also asserts immediate raw adjacency.
+pure func similarBeforeArchive(line: string) -> bool = match split(line, ",\"similar\":") {
+  [_, tail] => match split(tail, ",\"archive\":") {
+    [raw, _] => match decode(raw) { Ok(j) => j == similarJson(line), Err(_) => false }, _ => false
+  }, _ => false
+}
+test "S0.2 negotiation 13->13 14->14 15/16/99->15 and pin" {
+  map(helloMinor, [13, 14, 15, 16, 99]) == [13, 14, 15, 15, 15]
+  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 99]) == [13, 14, 15, 15, 15]
+  && all(\m. (helloFor(m)).relativity == "0.12.0", [13, 14, 15, 16, 99])
+  && relativityPin() == "0.12.0"
+}
+test "S0.2 sol shape ids and new_game-only at 14 and 15" { similarLife(14, "sol") && similarLife(15, "sol") }
+test "S0.2 solar_departure shape ids and new_game-only at 14 and 15" { similarLife(14, "solar_departure") && similarLife(15, "solar_departure") }
+test "S0.2 free_nav shape ids and new_game-only at 14 and 15" { similarLife(14, "free_nav") && similarLife(15, "free_nav") }
+test "S0.2 sgr_a shape ids and new_game-only at 14 and 15" { similarLife(14, "sgr_a") && similarLife(15, "sgr_a") }
+test "S0.2 absent at every minor below 14" {
+  all(\m. !contains((similarStart(m, "sol")).reply, "\"similar\":"), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+  && all(\sc. !contains((similarStart(13, sc)).reply, "\"similar\":"), ["solar_departure", "free_nav", "sgr_a"])
+}
+test "S0.2 raw similar immediately before archive in every scenario" {
+  all(\sc. similarBeforeArchive((similarStart(15, sc)).reply), ["sol", "solar_departure", "free_nav", "sgr_a"])
+}
