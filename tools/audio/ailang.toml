@@ -5,10 +5,13 @@ edition = "1"
 description = "Stapledon's Voyage sound synthesis (R2-SOUND): recipes in, deterministic 48 kHz 16-bit WAVs and their manifest rows out. Authoring tool; not shipped."
 
 [exports]
-modules = ["stapledons/audio/synth", "stapledons/audio/synth_main", "stapledons/audio/synth_test", "stapledons/audio/review_main"]
+modules = ["stapledons/audio/synth_main", "stapledons/audio/synth_test", "stapledons/audio/review_main", "stapledons/audio/levels", "stapledons/audio/levels_main"]
 
 [effects]
 max = ["IO", "FS"]
 
 [stability]
 level = "experimental"
+
+[dependencies]
+"sunholo/audio" = "0.5.0" # R2-SUNHOLO-AUDIO (D-119, D-124): synthesis, PCM/WAV, mix, loudness measures

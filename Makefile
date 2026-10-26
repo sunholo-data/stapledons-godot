@@ -37,8 +37,9 @@ import:            ## register class_name scripts (needed once after clone)
 
 deps:              ## fetch locked AILANG packages into the cache; fail if the resolution would change
 	cd sim && $(AILANG) lock
-	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
-	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
+	cd tools/audio && $(AILANG) lock # sunholo/audio for the sound tools (R2-SUNHOLO-AUDIO)
+	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the files
+	git diff --exit-code -I '"generated_at"' sim/ailang.lock tools/audio/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock tools/audio/ailang.lock; exit $$rc
 
 # Rig-first merges (Mark, 2026-10-19): PRs merge on a green rig/full status (tools/rig_check.sh runs
 # the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast

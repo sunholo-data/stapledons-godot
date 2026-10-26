@@ -47,7 +47,7 @@ func tone(root: String, id: String, kind := "synth", frames := 4800) -> Dictiona
 	var f := FileAccess.open(p, FileAccess.WRITE)
 	f.store_buffer(SoundData.wav_bytes(pcm, 48000, 1))
 	f.close()
-	var prov := {"generator": "tools/audio/synth.ail", "generator_sha256": "0".repeat(64), "recipe": id}
+	var prov := {"generator": "sunholo/audio@0.5.0", "generator_sha256": "0".repeat(64), "recipe": id}
 	var lic := "synth-own"
 	if kind == "library":
 		prov = {"url": "https://kenney.nl/assets/x", "author": "Kenney", "retrieved": "2026-10-20", "download_sha256": "1".repeat(64)}

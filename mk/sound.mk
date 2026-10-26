@@ -1,6 +1,6 @@
 # R2-SOUND (design_docs/planned/r2/sound.md): the cue table, the mix, the synthesised sounds and
 # their checks. Every check here runs headless (the Dummy audio driver still mixes; design §Evidence).
-.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-check sound-review sound-stage sound-stage-check sound-export-smoke ship-sound-test sound-archive-test
+.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-levels sound-levels-parity sound-check sound-review sound-stage sound-stage-check sound-export-smoke ship-sound-test sound-archive-test
 
 # AC1-AC5, AC8 (rules), §D2 layout: validators with negative controls, the clocks, deterministic
 # variation; then the same scripted session in two separate processes must give the same cue log (AC2).
@@ -17,19 +17,22 @@ sound-assets-check: import
 test: sound-assets-check
 
 # S0b: recipes -> assets/audio/synth/*.wav + data/audio/assets_synth.json (authoring; review the diff).
+# The synthesis is the sunholo/audio package pinned in tools/audio/ailang.toml (R2-SUNHOLO-AUDIO);
+# each row's provenance is that package's version and locked content hash.
 SOUND_PKG = --package-dir tools/audio
-SOUND_SYNTH_ARGS = '{"recipes":"data/audio/recipes.json","out":"$(1)","part":"$(2)","generator":"tools/audio/synth.ail"}'
+SOUND_SYNTH_ARGS = '{"recipes":"data/audio/recipes.json","out":"$(1)","part":"$(2)","lock":"tools/audio/ailang.lock"}'
 sound-synth:
 	@mkdir -p assets/audio/synth
 	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json $(call SOUND_SYNTH_ARGS,assets/audio/synth,data/audio/assets_synth.json) tools/audio/synth_main.ail | tee $(SCRATCH)/sound-synth.log | tail -1; ! grep -q FAIL $(SCRATCH)/sound-synth.log
 
-# AC7: the synthesis core type-checks (STRICT_FALLBACK), its contracts verify, its named checks pass on
-# the strict VM and the interpreter with byte-identical output, and regenerating every sound into
-# scratch reproduces every sha256 in the shipped manifest part.
+# AC7: the authoring package type-checks (STRICT_FALLBACK), the game's pure levels module passes verify
+# (the synthesis package's contracts are verified in its own repo), the game's pin on the package
+# (synth_test: the reference loop's PCM sha256) gives byte-identical output on the strict VM and the
+# interpreter, and regenerating every sound into scratch reproduces every sha256 in the manifest part.
 sound-synth-check:
 	@mkdir -p $(SCRATCH)/sound-synth
 	@$(AILANG) check --package tools/audio > $(SCRATCH)/sound-synth/check.log 2>&1 || { cat $(SCRATCH)/sound-synth/check.log; exit 1; }
-	@$(AILANG) verify tools/audio/synth.ail > $(SCRATCH)/sound-synth/verify.log 2>&1 || { cat $(SCRATCH)/sound-synth/verify.log; exit 1; }
+	@$(AILANG) verify tools/audio/levels.ail > $(SCRATCH)/sound-synth/verify.log 2>&1 || { cat $(SCRATCH)/sound-synth/verify.log; exit 1; }
 	@$(AILANG) run --quiet --bytecode --strict-bytecode --caps IO $(SOUND_PKG) --entry main tools/audio/synth_test.ail > $(SCRATCH)/sound-synth/vm.txt
 	@$(AILANG) run --quiet --caps IO $(SOUND_PKG) --entry main tools/audio/synth_test.ail > $(SCRATCH)/sound-synth/interp.txt
 	@cmp $(SCRATCH)/sound-synth/vm.txt $(SCRATCH)/sound-synth/interp.txt && grep -q '^synth-ok ' $(SCRATCH)/sound-synth/vm.txt || { cat $(SCRATCH)/sound-synth/vm.txt $(SCRATCH)/sound-synth/interp.txt; exit 1; }
@@ -37,6 +40,28 @@ sound-synth-check:
 	@want=$$(jq -r '.assets[] | .id + " " + .sha256' data/audio/assets_synth.json); got=$$(jq -r '.assets[] | .id + " " + .sha256' $(SCRATCH)/sound-synth/part.json); \
 	  [ "$$want" = "$$got" ] && echo "sound-synth-check: $$(cut -c1-15 $(SCRATCH)/sound-synth/vm.txt) VM = interpreter; $$(echo "$$want" | wc -l | tr -d ' ') sounds regenerate byte for byte" || { echo "sound-synth-check: FAIL regenerated sounds differ from data/audio/assets_synth.json"; echo "$$got" > $(SCRATCH)/sound-synth/got.txt; echo "$$want" > $(SCRATCH)/sound-synth/want.txt; diff $(SCRATCH)/sound-synth/want.txt $(SCRATCH)/sound-synth/got.txt; exit 1; }
 test: sound-synth-check
+
+# R2-SUNHOLO-AUDIO: the offline loudness rules in AILANG (tools/audio/levels.ail over sunholo/audio's
+# measures): each cue's band and peak, the laptop high-pass, the teacup guard, two negative controls;
+# the rules' probe on the strict VM = the interpreter. Writes $(SCRATCH)/sound/levels.json (centi-dB).
+SOUND_LEVELS_ARGS = '{"cues":"data/audio/cues.json","assets":"data/audio/assets.json","dir":"data/audio","out":"$(CURDIR)/$(SCRATCH)/sound/levels.json"}'
+sound-levels:
+	@mkdir -p $(SCRATCH)/sound
+	@$(AILANG) run --quiet --bytecode --strict-bytecode $(SOUND_PKG) --entry levelsProbe --args-json 0 tools/audio/levels.ail > $(SCRATCH)/sound/levels-vm.txt
+	@$(AILANG) run --quiet $(SOUND_PKG) --entry levelsProbe --args-json 0 tools/audio/levels.ail > $(SCRATCH)/sound/levels-interp.txt
+	@cmp $(SCRATCH)/sound/levels-vm.txt $(SCRATCH)/sound/levels-interp.txt || { echo "sound-levels: FAIL levelsProbe differs between the strict VM and the interpreter"; exit 1; }
+	@$(AILANG) run --quiet --bytecode --caps IO,FS $(SOUND_PKG) --entry main --args-json $(SOUND_LEVELS_ARGS) tools/audio/levels_main.ail > $(SCRATCH)/sound/levels.log; \
+	  grep -E '^(FAIL|sound-levels)' $(SCRATCH)/sound/levels.log; grep -q '^sound-levels: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound/levels.log
+test: sound-levels
+
+# The AILANG measures equal tools/sound_check.gd's (the second-language mirror) for every cue: peak,
+# RMS and, where measured, the high-pass keep and the low band, in centi-dB (tools/audio/levels_parity.jq).
+sound-levels-parity: sound-check sound-levels
+	@diffs=$$(jq -r --slurpfile l $(SCRATCH)/sound/levels.json -f tools/audio/levels_parity.jq $(SCRATCH)/sound/measure.json) || exit 1; \
+	  cues=$$(jq 'length' $(SCRATCH)/sound/levels.json); guards=$$(jq '[.[] | (.highpass150_keep_cdb, .below_200hz_cdb) | select(. != null)] | length' $(SCRATCH)/sound/levels.json); \
+	  if [ -n "$$diffs" ]; then echo "$$diffs" | sed 's/^/FAIL /'; echo "sound-levels-parity: $$cues cues, $$guards guard values, $$(echo "$$diffs" | wc -l | tr -d ' ') differences"; exit 1; \
+	  else echo "sound-levels-parity: $$cues cues, $$guards guard values, 0 differences"; fi
+test: sound-levels-parity
 
 # AC6: levels against the bands, the 150 Hz high-pass, ducking, headroom before the limiter (headless mixer).
 sound-check: import

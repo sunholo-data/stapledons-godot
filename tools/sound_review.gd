@@ -66,7 +66,7 @@ func _initialize() -> void:
 		var row := {"id": id, "name": c.name, "when": c.when, "file_ogg": id + ".ogg", "file_wav": id + ".wav",
 			"loop": c.get("loop", false), "duration_s": lv.seconds, "bus": c.bus,
 			"in_game": {"rms_dbfs": lv.rms_dbfs, "peak_dbfs": lv.peak_dbfs}, "preview_gain_db": preview,
-			"source": "synthesised (AILANG, tools/audio/synth.ail, recipe %s)" % a.provenance.recipe, "licence": a.licence,
+			"source": "synthesised (AILANG, %s, recipe %s)" % [a.provenance.generator, a.provenance.recipe], "licence": a.licence,
 			"listen_for": c.listen_for, "status": changed if not v1.is_empty() else "new"}
 		if c.has("param"):
 			row["in_game_note"] = "level shown is the fully degraded maximum; silent while the Archive is intact"

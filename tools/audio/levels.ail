@@ -1,0 +1,120 @@
+module stapledons/audio/levels
+-- R2-SUNHOLO-AUDIO (make sound-levels): the game's offline loudness rules over sunholo/audio's
+-- measures. The same rules tools/sound_check.gd applies offline (sound.md §D9), which stays as the
+-- second-language mirror (make sound-levels-parity):
+--   - each cue's level at default settings: its first stream's samples times volume_db plus the
+--     loudest point of its param curve (a param loop at its loudest), RMS (|x| > 0.001) inside the
+--     cue's band (else its bus's band), peak at or below peak_max_dbfs;
+--   - laptop speakers: spire_hum and drive_boost keep at least -6 dB of their RMS through a 150 Hz
+--     one-pole high-pass;
+--   - the teacup rule (§D3.2): the drive cues keep at most -20 dB under four 120 Hz one-pole
+--     low-passes;
+--   - negative controls: ui_click 30 dB too hot fails its band and the ceiling; a 60 Hz + 300 Hz
+--     rumble fails the teacup guard.
+import pkg/sunholo/audio/analysis (Level, level, highpassKeepDb, lowbandDb)
+import pkg/sunholo/audio/dsp (centiDb, twoPi)
+import std/json (Json, decode, encode, getString, getNumber, getArray, getObject, asNumber, asArray, asString, jo, kv, jint, jnum)
+import std/list (map, filter, flatMap, foldl, range, length as size, head, nth)
+import std/math (sin)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (join, intToStr)
+
+export pure func laptopIds() -> [string] = ["spire_hum", "drive_boost"]
+export pure func teacupIds() -> [string] = ["drive_boost", "drive_silent", "drive_brake"]
+
+export type Cue = {id: string, bus: string, volumeDb: float, stream: string, band: [float], maxParamDb: float}
+export type Table = {peakMax: float, cues: [Cue]}
+
+pure func num(j: Json, k: string, d: float) -> float = match getNumber(j, k) { Some(x) => x, None => d }
+pure func nums(js: [Json]) -> [float] = flatMap(\x. match asNumber(x) { Some(v) => [v], None => [] }, js)
+
+-- The loudest dB a param curve reaches (its highest point, floored at -80); 0 without a param.
+export pure func maxParamDb(c: Json) -> float = match getObject(c, "param") {
+  None => 0.0,
+  Some(p) => match getArray(p, "points") {
+    None => 0.0 - 80.0,
+    Some(pts) => foldl(\m pt. match asPair(pt) { Some(y) => if y > m then y else m, None => m }, 0.0 - 80.0, pts)
+  }
+}
+pure func asPair(pt: Json) -> Option[float] = match asArray(pt) { Some(a) => match nums(a) { [_, y] => Some(y), _ => None }, None => None }
+
+pure func cueOf(bands: Json, c: Json) -> Option[Cue] = match (getString(c, "id"), getString(c, "bus"), getArray(c, "streams")) {
+  (Some(id), Some(bus), Some(ss)) => match head(flatMap(\s. match asString(s) { Some(v) => [v], None => [] }, ss)) {
+    None => None,
+    Some(st) => {
+      let band = match getArray(c, "band") { Some(b) => nums(b), None => match getArray(bands, bus) { Some(b) => nums(b), None => [0.0 - 120.0, 0.0] } };
+      Some({id: id, bus: bus, volumeDb: num(c, "volume_db", 0.0), stream: st, band: band, maxParamDb: maxParamDb(c)})
+    }
+  },
+  _ => None
+}
+
+-- The cue table (data/audio/cues.json, schema stapledons.audio.cues/1).
+export pure func tableOf(text: string) -> Result[Table, string] = match decode(text) {
+  Err(e) => Err(e),
+  Ok(j) => if getString(j, "schema") != Some("stapledons.audio.cues/1") then Err("not a stapledons.audio.cues/1 file")
+    else match (getArray(j, "cues"), getObject(j, "bands")) {
+      (Some(cs), Some(bands)) => Ok({peakMax: num(j, "peak_max_dbfs", 0.0), cues: flatMap(\c. match cueOf(bands, c) { Some(x) => [x], None => [] }, cs)}),
+      _ => Err("no cues or no bands")
+    }
+}
+
+-- The band and peak errors of one cue's level (empty = within).
+export pure func bandErrors(c: Cue, peakMax: float, lv: Level) -> [string] {
+  let lo = match nth(c.band, 0) { Some(v) => v, None => 0.0 - 120.0 };
+  let hi = match nth(c.band, 1) { Some(v) => v, None => 0.0 };
+  (if lv.rmsCdb < centiDb(lo) || lv.rmsCdb > centiDb(hi) then ["${c.id}: RMS ${cdb(lv.rmsCdb)} dBFS is outside its band [${cdb(centiDb(lo))}, ${cdb(centiDb(hi))}]"] else [])
+  ++ (if lv.peakCdb > centiDb(peakMax) then ["${c.id}: peak ${cdb(lv.peakCdb)} dBFS is over ${cdb(centiDb(peakMax))}"] else [])
+}
+
+-- A centi-dB integer printed as dB with two decimals.
+export pure func cdb(x: int) -> string {
+  let a = if x < 0 then 0 - x else x;
+  let f = a % 100;
+  "${if x < 0 then "-" else ""}${intToStr(a / 100)}.${if f < 10 then "0" else ""}${intToStr(f)}"
+}
+
+export type Measure = {id: string, lv: Level, hp: Option[float], low: Option[float]}
+
+pure func member(x: string, xs: [string]) -> bool = foldl(\b y. b || y == x, false, xs)
+
+-- One cue measured: its level and, where the rules ask, its high-pass keep and low band (dB).
+export pure func measure(c: Cue, xs: [float]) -> Measure =
+  {id: c.id, lv: level(xs, c.volumeDb + c.maxParamDb, 48000),
+   hp: if member(c.id, laptopIds()) then Some(highpassKeepDb(xs, 150.0, 48000)) else None,
+   low: if member(c.id, teacupIds()) then Some(lowbandDb(xs, 120.0, 4, 48000)) else None}
+
+-- Checks as (passed, message) for one measured cue.
+export pure func checks(c: Cue, peakMax: float, m: Measure) -> [{ok: bool, msg: string}] {
+  let bad = bandErrors(c, peakMax, m.lv);
+  [{ok: size(bad) == 0, msg: "${c.id} on ${c.bus}: RMS ${cdb(m.lv.rmsCdb)} dBFS, peak ${cdb(m.lv.peakCdb)} dBFS (${if size(bad) == 0 then "in band" else join("; ", bad)})"}]
+  ++ (match m.hp { Some(k) => [{ok: k >= 0.0 - 6.0, msg: "laptop speakers: ${c.id} keeps ${cdb(centiDb(k))} dB of its RMS above 150 Hz (>= -6)"}], None => [] })
+  ++ (match m.low { Some(k) => [{ok: k <= 0.0 - 20.0, msg: "teacup rule: ${c.id} keeps ${cdb(centiDb(k))} dB below 200 Hz (<= -20)"}], None => [] })
+}
+
+-- The 60 Hz + 300 Hz rumble of the teacup negative control (1 s).
+export pure func thud() -> [float] = map(\i. 0.5 * sin(twoPi() * 60.0 * intToFloat(i) / 48000.0) + 0.2 * sin(twoPi() * 300.0 * intToFloat(i) / 48000.0), range(0, 48000))
+
+-- The negative controls: both must fail.
+export pure func negativeControls(t: Table, clickSamples: [float]) -> [{ok: bool, msg: string}] =
+  (match head(filter(\c. c.id == "ui_click", t.cues)) {
+    None => [{ok: false, msg: "negative control: no ui_click cue"}],
+    Some(c) => { let hot = {c | volumeDb: c.volumeDb + 30.0};
+      [{ok: size(bandErrors(hot, t.peakMax, level(clickSamples, hot.volumeDb, 48000))) == 2, msg: "negative control: a cue 30 dB too hot fails its band and the peak ceiling"}] }
+  })
+  ++ [{ok: lowbandDb(thud(), 120.0, 4, 48000) > 0.0 - 20.0, msg: "teacup negative control: a 60 Hz rumble fails the guard"}]
+
+-- One measured cue as a levels.json entry (centi-dB integers).
+export pure func entry(m: Measure) -> {key: string, value: Json} =
+  kv(m.id, jo([kv("peak_cdb", jint(m.lv.peakCdb)), kv("rms_cdb", jint(m.lv.rmsCdb)), kv("seconds", jnum(m.lv.seconds))]
+    ++ (match m.hp { Some(k) => [kv("highpass150_keep_cdb", jint(centiDb(k)))], None => [] })
+    ++ (match m.low { Some(k) => [kv("below_200hz_cdb", jint(centiDb(k)))], None => [] })))
+
+-- Strict VM = interpreter probe on in-memory signals (make sound-levels compares the two).
+export pure func levelsProbe(n: int) -> string {
+  let c = {id: "drive_boost", bus: "Effects", volumeDb: -15.0, stream: "x", band: [-28.0, -20.0], maxParamDb: 0.0};
+  let m = measure(c, thud());
+  let oks = map(\x. if x.ok then "1" else "0", checks(c, -3.0, m));
+  "${cdb(m.lv.peakCdb)} ${cdb(m.lv.rmsCdb)} ${join("", oks)} ${encode(jo([entry(m)]))}"
+}
