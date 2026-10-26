@@ -327,6 +327,8 @@ Guides: `~/dev/blender/scripts/char_captain_pose_guides_v4.py` (copied as `art/c
 
 **Worth funding from the full plan** (`review.json` `ca2.fund_later`), in order: a 5-frame sit and a painted stand (16 frames: the 2-frame sit pops in Astern), painted start and stop steps in back and profile (16), a painted half-step back from a station (8), and three-quarter station reaches only if the deck layout pass angles the stations (12).
 
+**Accepted (2026-10-26, D-121):** "the actual animation frames are all looking great". One note goes to the backlog, not CA2: from the front (Astern) the hands don't rest on the console correctly (from behind they do). Per-facing hand contact with furniture (station and console reach offsets, the chair alignment) is a furniture-alignment follow-up, likely bundled with the deck layout pass. No more paintings until Mark funds a beat; the ~58 left stay unspent.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CAPTAIN-ANIMATION",
-  "status": "paused_for_review",
+  "status": "accepted_ca2",
   "approved": true,
   "approved_by": "Mark (attended, ledger D-102)",
   "approved_on": "2026-10-20",
@@ -16,7 +16,8 @@
     "2026-10-21: D-115 (Mark on jog v2: 'she should be walking calmly', amends OQ2): speed 1.3 m/s; v3 walking stance-gait guides; 24 walk frames painted (+3 repaints); AC3 met (<= 1.56 px), pose gate tightened (back IoU 0.65/legs 0.65, profile IoU 0.50/legs 0.60); paused for Mark's walk review; supersedes #312",
     "2026-10-22: D-118 (pace right; foot sinks; between-frame effect wanted): every sole settled 15 mm above the deck anchor (was up to 5.9 px below in game), gated in captain-frames-check and captain-anim-test; billboard effects echo/trail/blur prototyped (interior/captain_fx.gdshader), echo recommended and the demo default; paused for Mark's review",
     "2026-10-26: D-120 (Mark: 'yeah looks good - we go with echo'): the feet fix (incl. the back-view depth trade-off), echo (off under reduced motion) and the walk accepted; the painted walk moves into manifest.json (the game loads it), echo on by default; CA2 next after #318 merges",
-    "2026-10-26: CA2 built on feat/captain-ca2 with the trimmed set (24 paintings, 36 generations; ~58 of the age-0 spend left). Paused for Mark's review: build/captain_review (ca2 section of review.json lists the beats worth funding from the full plan)."
+    "2026-10-26: CA2 built on feat/captain-ca2 with the trimmed set (24 paintings, 36 generations; ~58 of the age-0 spend left). Paused for Mark's review: build/captain_review (ca2 section of review.json lists the beats worth funding from the full plan).",
+    "2026-10-26: D-121 Mark accepted CA2 (\"the actual animation frames are all looking great\"). Front-view hand contact with the console is a furniture-alignment follow-up for the deck layout pass, not a CA2 fix. No more paintings until Mark funds a beat; ~58 of the age-0 spend stays unspent."
   ],
   "implements": [
     "stapledons-design vision/design-decisions.md 2026-09-28 Static Portraits (amended for the captain by D-98)",
@@ -179,6 +180,8 @@
       "answer": "approved as recommended: Yes; about 60 LOC, no camera change"
     }
   ],
-  "follow_ups": [],
+  "follow_ups": [
+    "Per-facing hand contact with furniture (D-121, Mark 2026-10-26): from the front (Astern) the hands do not rest on the console correctly; from behind they do. Add per-facing station/console reach offsets and the chair alignment (seat position and yaw against the painted seated/sit frames). Furniture alignment, not new paintings; likely bundled with the deck layout pass (deck-layout-after-camera)."
+  ],
   "started": "2026-10-20"
 }
