@@ -15,6 +15,9 @@ D-73	2026-10-13	Population cohorts (design_docs/planned/r2/crew-population.md; h
 D-86	2026-10-19	R2-HOME-TIERS home pictures (design design_docs/implemented/r2/home-tiers.md, OQ	keyword "fate"
 D-87	2026-10-19	Earth's doom clock and fate-dependent Home pictures (follow-up to R2-HOME-TIERS'	keyword "fate"
 D-89	2026-10-19	Earth fate follow-ups (D-87; design repo features/future/earth-fate-home.md OQ1 	keyword "fate"
+D-108	2026-10-21	R2-SOUND S0b listening stop (sound board of the 17 synthesised sounds, PR #298 m	deny map
+D-112	2026-10-21	R2-SOUND rework round (PR #311; board v2 https://claude.ai/artifact/V6pZWZHLF9BN	deny map
+D-113	2026-10-21	Archive Memory Health in the sim (drives the spire degradation layer, R2-SOUND D	deny map
 DD-2025-11-30-player-ocean-is-emergent	2025-11-30	Player OCEAN Is Emergent	keyword "legacy report"
 DD-2025-11-30-ocean-values-drift-over-time	2025-11-30	OCEAN Values Drift Over Time	deny map
 DD-2025-11-30-ocean-drift-hidden-until-end-screen	2025-11-30	OCEAN Drift Hidden Until End Screen	keyword "Drift Hidden"
