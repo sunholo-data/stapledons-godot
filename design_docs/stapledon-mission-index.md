@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 50 | 2026-10-26 | K1.1a-a2 Kerr oracle RK-4..RK-8 and RK-8b LANDED (PR #327, merge `3bd298e2`); independent Sonnet 93/100 PASS, zero blocking; controller replaced a ... |
 | 49 | 2026-10-25 | K1.1a-a1 Kerr horizon oracle seed LANDED (PR #325); recovered unrecorded planner iteration 47 and preserved orphan 48; independent MiniMax M3 95/10... |
 | 48 | 2026-10-23 | [PRODUCT] Unrecorded orphan: Ollama DeepSeek v4.1 Flash authored oversized unreviewed K1.1a-a files; uncommitted tree preserved; recovered record in iteration49. |
 | 47 | 2026-10-23 | [PRODUCT] Unrecorded Kimi K3 planner pass59305505 already merged via PR307 atfc9f73e5; not repeated; recovered record in iteration49. |
