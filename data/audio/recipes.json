@@ -984,95 +984,82 @@
   },
   {
    "id": "footstep_deck_1",
-   "about": "S1 v3 (D-122: v2 'way too annoying and metallic'; 'softer padding sounds'): a soft-soled foot on a cushioned deck. A low-mid thud (two-pole low-pass, white noise), a softer body under it and a quiet cloth/sole brush as the foot rolls; no sine, no ring, no click (10-15 ms attacks). Variant 1 of 6.",
-   "seconds": 0.42,
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, a barely-there brush; a rounded 32 ms attack and a smooth 90 ms decay, no transient. Variant 1 of 6; peak -3.0 dB for level variety.",
+   "seconds": 0.55,
    "loop": false,
    "peak_db": -3.0,
-   "fade_ms": 120.0,
+   "fade_ms": 200.0,
    "layers": [
     {
      "kind": "white",
-     "amp": 0.7,
-     "lowpass_hz": 300,
-     "lowpass_poles": 2,
-     "highpass_hz": 70,
-     "seed": 201,
+     "amp": 0.8,
+     "lowpass_hz": 230,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 301,
      "env": {
-      "attack": 0.012,
-      "tau": 0.05
+      "attack": 0.032,
+      "tau": 0.09
      }
     },
     {
      "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 650,
+     "amp": 0.22,
+     "lowpass_hz": 420,
      "lowpass_poles": 2,
-     "highpass_hz": 180,
-     "seed": 211,
+     "highpass_hz": 140,
+     "seed": 311,
      "env": {
-      "delay": 0.006,
-      "attack": 0.012,
-      "tau": 0.04
+      "delay": 0.01,
+      "attack": 0.037,
+      "tau": 0.063
      }
     },
     {
      "kind": "white",
-     "amp": 0.05,
-     "lowpass_hz": 1700,
-     "lowpass_poles": 2,
-     "highpass_hz": 500,
-     "seed": 221,
+     "amp": 0.012,
+     "lowpass_hz": 900,
+     "lowpass_poles": 3,
+     "highpass_hz": 400,
+     "seed": 321,
      "env": {
-      "delay": 0.04,
-      "attack": 0.035,
-      "tau": 0.07
+      "delay": 0.06,
+      "attack": 0.05,
+      "tau": 0.08
      }
     }
    ]
   },
   {
    "id": "footstep_deck_2",
-   "about": "S1 v3 (D-122: v2 'way too annoying and metallic'; 'softer padding sounds'): a soft-soled foot on a cushioned deck. A low-mid thud (two-pole low-pass, white noise), a softer body under it and a quiet cloth/sole brush as the foot rolls; no sine, no ring, no click (10-15 ms attacks). Variant 2 of 6.",
-   "seconds": 0.42,
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, no brush; a rounded 36 ms attack and a smooth 100 ms decay, no transient. Variant 2 of 6; peak -3.8 dB for level variety.",
+   "seconds": 0.55,
    "loop": false,
-   "peak_db": -3.0,
-   "fade_ms": 120.0,
+   "peak_db": -3.8,
+   "fade_ms": 200.0,
    "layers": [
     {
      "kind": "white",
-     "amp": 0.7,
-     "lowpass_hz": 270,
-     "lowpass_poles": 2,
-     "highpass_hz": 65,
-     "seed": 202,
+     "amp": 0.8,
+     "lowpass_hz": 205,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 302,
      "env": {
-      "attack": 0.014,
-      "tau": 0.056
+      "attack": 0.036,
+      "tau": 0.1
      }
     },
     {
      "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 600,
+     "amp": 0.18,
+     "lowpass_hz": 390,
      "lowpass_poles": 2,
-     "highpass_hz": 180,
-     "seed": 212,
+     "highpass_hz": 140,
+     "seed": 312,
      "env": {
-      "delay": 0.006,
-      "attack": 0.014,
-      "tau": 0.045
-     }
-    },
-    {
-     "kind": "white",
-     "amp": 0.045,
-     "lowpass_hz": 1500,
-     "lowpass_poles": 2,
-     "highpass_hz": 500,
-     "seed": 222,
-     "env": {
-      "delay": 0.05,
-      "attack": 0.035,
+      "delay": 0.01,
+      "attack": 0.040999999999999995,
       "tau": 0.07
      }
     }
@@ -1080,192 +1067,166 @@
   },
   {
    "id": "footstep_deck_3",
-   "about": "S1 v3 (D-122: v2 'way too annoying and metallic'; 'softer padding sounds'): a soft-soled foot on a cushioned deck. A low-mid thud (two-pole low-pass, white noise), a softer body under it and a quiet cloth/sole brush as the foot rolls; no sine, no ring, no click (10-15 ms attacks). Variant 3 of 6.",
-   "seconds": 0.42,
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, a barely-there brush; a rounded 30 ms attack and a smooth 85 ms decay, no transient. Variant 3 of 6; peak -3.4 dB for level variety.",
+   "seconds": 0.55,
    "loop": false,
-   "peak_db": -3.0,
-   "fade_ms": 120.0,
+   "peak_db": -3.4,
+   "fade_ms": 200.0,
    "layers": [
     {
      "kind": "white",
-     "amp": 0.7,
-     "lowpass_hz": 330,
-     "lowpass_poles": 2,
-     "highpass_hz": 75,
-     "seed": 203,
+     "amp": 0.8,
+     "lowpass_hz": 250,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 303,
      "env": {
-      "attack": 0.011,
-      "tau": 0.046
+      "attack": 0.03,
+      "tau": 0.085
      }
     },
     {
      "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 700,
+     "amp": 0.25,
+     "lowpass_hz": 450,
      "lowpass_poles": 2,
-     "highpass_hz": 180,
-     "seed": 213,
+     "highpass_hz": 140,
+     "seed": 313,
      "env": {
-      "delay": 0.006,
-      "attack": 0.011,
-      "tau": 0.037
+      "delay": 0.01,
+      "attack": 0.034999999999999996,
+      "tau": 0.059
      }
     },
     {
      "kind": "white",
-     "amp": 0.055,
-     "lowpass_hz": 1800,
-     "lowpass_poles": 2,
-     "highpass_hz": 500,
-     "seed": 223,
+     "amp": 0.015,
+     "lowpass_hz": 900,
+     "lowpass_poles": 3,
+     "highpass_hz": 400,
+     "seed": 323,
      "env": {
-      "delay": 0.036,
-      "attack": 0.035,
-      "tau": 0.07
+      "delay": 0.06,
+      "attack": 0.05,
+      "tau": 0.08
      }
     }
    ]
   },
   {
    "id": "footstep_deck_4",
-   "about": "S1 v3 (D-122: v2 'way too annoying and metallic'; 'softer padding sounds'): a soft-soled foot on a cushioned deck. A low-mid thud (two-pole low-pass, white noise), a softer body under it and a quiet cloth/sole brush as the foot rolls; no sine, no ring, no click (10-15 ms attacks). Variant 4 of 6.",
-   "seconds": 0.42,
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, no brush; a rounded 38 ms attack and a smooth 95 ms decay, no transient. Variant 4 of 6; peak -4.4 dB for level variety.",
+   "seconds": 0.55,
    "loop": false,
-   "peak_db": -3.0,
-   "fade_ms": 120.0,
+   "peak_db": -4.4,
+   "fade_ms": 200.0,
    "layers": [
     {
      "kind": "white",
-     "amp": 0.7,
-     "lowpass_hz": 285,
-     "lowpass_poles": 2,
-     "highpass_hz": 70,
-     "seed": 204,
+     "amp": 0.8,
+     "lowpass_hz": 215,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 304,
      "env": {
-      "attack": 0.013,
-      "tau": 0.053
+      "attack": 0.038,
+      "tau": 0.095
      }
     },
     {
      "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 620,
+     "amp": 0.2,
+     "lowpass_hz": 400,
      "lowpass_poles": 2,
-     "highpass_hz": 180,
-     "seed": 214,
+     "highpass_hz": 140,
+     "seed": 314,
      "env": {
-      "delay": 0.006,
-      "attack": 0.013,
-      "tau": 0.042
-     }
-    },
-    {
-     "kind": "white",
-     "amp": 0.04,
-     "lowpass_hz": 1600,
-     "lowpass_poles": 2,
-     "highpass_hz": 500,
-     "seed": 224,
-     "env": {
-      "delay": 0.046,
-      "attack": 0.035,
-      "tau": 0.07
+      "delay": 0.01,
+      "attack": 0.043,
+      "tau": 0.066
      }
     }
    ]
   },
   {
    "id": "footstep_deck_5",
-   "about": "S1 v3 (D-122: v2 'way too annoying and metallic'; 'softer padding sounds'): a soft-soled foot on a cushioned deck. A low-mid thud (two-pole low-pass, white noise), a softer body under it and a quiet cloth/sole brush as the foot rolls; no sine, no ring, no click (10-15 ms attacks). Variant 5 of 6.",
-   "seconds": 0.42,
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, a barely-there brush; a rounded 34 ms attack and a smooth 88 ms decay, no transient. Variant 5 of 6; peak -3.2 dB for level variety.",
+   "seconds": 0.55,
    "loop": false,
-   "peak_db": -3.0,
-   "fade_ms": 120.0,
+   "peak_db": -3.2,
+   "fade_ms": 200.0,
    "layers": [
     {
      "kind": "white",
-     "amp": 0.7,
-     "lowpass_hz": 315,
-     "lowpass_poles": 2,
-     "highpass_hz": 72,
-     "seed": 205,
+     "amp": 0.8,
+     "lowpass_hz": 240,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 305,
      "env": {
-      "attack": 0.012,
-      "tau": 0.048
+      "attack": 0.034,
+      "tau": 0.088
      }
     },
     {
      "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 680,
+     "amp": 0.23,
+     "lowpass_hz": 430,
      "lowpass_poles": 2,
-     "highpass_hz": 180,
-     "seed": 215,
+     "highpass_hz": 140,
+     "seed": 315,
      "env": {
-      "delay": 0.006,
-      "attack": 0.012,
-      "tau": 0.038
+      "delay": 0.01,
+      "attack": 0.039,
+      "tau": 0.062
      }
     },
     {
      "kind": "white",
-     "amp": 0.05,
-     "lowpass_hz": 1750,
-     "lowpass_poles": 2,
-     "highpass_hz": 500,
-     "seed": 225,
+     "amp": 0.01,
+     "lowpass_hz": 900,
+     "lowpass_poles": 3,
+     "highpass_hz": 400,
+     "seed": 325,
      "env": {
-      "delay": 0.042,
-      "attack": 0.035,
-      "tau": 0.07
+      "delay": 0.06,
+      "attack": 0.05,
+      "tau": 0.08
      }
     }
    ]
   },
   {
    "id": "footstep_deck_6",
-   "about": "S1 v3 (D-122: v2 'way too annoying and metallic'; 'softer padding sounds'): a soft-soled foot on a cushioned deck. A low-mid thud (two-pole low-pass, white noise), a softer body under it and a quiet cloth/sole brush as the foot rolls; no sine, no ring, no click (10-15 ms attacks). Variant 6 of 6.",
-   "seconds": 0.42,
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, no brush; a rounded 40 ms attack and a smooth 105 ms decay, no transient. Variant 6 of 6; peak -4.0 dB for level variety.",
+   "seconds": 0.55,
    "loop": false,
-   "peak_db": -3.0,
-   "fade_ms": 120.0,
+   "peak_db": -4.0,
+   "fade_ms": 200.0,
    "layers": [
     {
      "kind": "white",
-     "amp": 0.7,
-     "lowpass_hz": 260,
-     "lowpass_poles": 2,
-     "highpass_hz": 62,
-     "seed": 206,
+     "amp": 0.8,
+     "lowpass_hz": 200,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 306,
      "env": {
-      "attack": 0.015,
-      "tau": 0.058
+      "attack": 0.04,
+      "tau": 0.105
      }
     },
     {
      "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 580,
+     "amp": 0.17,
+     "lowpass_hz": 380,
      "lowpass_poles": 2,
-     "highpass_hz": 180,
-     "seed": 216,
+     "highpass_hz": 140,
+     "seed": 316,
      "env": {
-      "delay": 0.006,
-      "attack": 0.015,
-      "tau": 0.046
-     }
-    },
-    {
-     "kind": "white",
-     "amp": 0.045,
-     "lowpass_hz": 1450,
-     "lowpass_poles": 2,
-     "highpass_hz": 500,
-     "seed": 226,
-     "env": {
-      "delay": 0.054,
-      "attack": 0.035,
-      "tau": 0.07
+      "delay": 0.01,
+      "attack": 0.045,
+      "tau": 0.073
      }
     }
    ]

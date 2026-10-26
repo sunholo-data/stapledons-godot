@@ -448,18 +448,20 @@
     "footstep_deck_6"
    ],
    "bus": "Effects",
-   "volume_db": -20.0,
+   "volume_db": -30.0,
    "visual": "ambient: the walk is on screen",
-   "about": "A soft padding step at each of the captain's foot contacts (CA0 foot_down), v3 after D-122 (v2 was 'way too annoying and metallic').",
+   "about": "A step felt more than heard at each of the captain's foot contacts (CA0 foot_down), v4 after D-123 (v3 'still sound aggressive ... not banging in the skull'): under the hum, dark, no transient; level jitter per step and every other foot softer.",
    "name": "Footsteps on the bridge",
    "when": "Each time the captain's foot touches the deck (CA0's foot_down).",
-   "listen_for": "Soft padding: a low-mid thud of a soft sole on a cushioned deck and a faint cloth brush as the foot rolls; nothing bright, metallic or clicky, quieter than v2, and six variants plus the pitch spread so a calm walk never sounds like a machine.",
+   "listen_for": "Barely noticed: a soft, dark padding under the spire's hum and the room, rounded with no hit, pleasant after hundreds of steps; never a metronome.",
    "source": "captain",
    "pitch_cents_spread": 60,
    "band": [
-    -44,
-    -34
-   ]
+    -52,
+    -42
+   ],
+   "volume_jitter_db": 1.5,
+   "alternate_db": -1.5
   },
   {
    "id": "console_key",

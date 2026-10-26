@@ -193,8 +193,19 @@ func fire(id: String, key: String, clock: int) -> void:
 	var streams: Array = c.streams
 	var variant := h % streams.size()
 	var spread := int(c.get("pitch_cents_spread", 0))
-	var cents := 0 if spread <= 0 else (h / 7) % (2 * spread + 1) - spread
+	# D-123: the string hash of "<id>#<n>" moves by only a few units from one fire to the next, so
+	# its high bits barely change; mix it (multiplicative hash mod 2^31 - 1) before taking the pitch
+	# and level, or a walk gets nearly the same pitch every step.
+	var m := (h * 2654435761) % 2147483647
+	var cents := 0 if spread <= 0 else (m / 7) % (2 * spread + 1) - spread
 	var vol := float(c.get("volume_db", 0.0)) + param_offset(c)
+	# D-123: per-fire level jitter (tenths of a dB from the same hash) and every other fire softer
+	# (alternate feet), so a walk never reads as a metronome. Both default to 0 (no change).
+	var jit := int(roundf(10.0 * float(c.get("volume_jitter_db", 0.0))))
+	if jit > 0:
+		vol += float((m / 131) % (2 * jit + 1) - jit) / 10.0
+	if n % 2 == 1:
+		vol += float(c.get("alternate_db", 0.0))
 	cue_log.append("%s %s v%d %+dc %.1fdB" % [key, id, variant, cents, vol])
 	if cue_log.size() > LOG_MAX:
 		cue_log.remove_at(0)
