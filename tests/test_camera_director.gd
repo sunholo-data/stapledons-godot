@@ -420,7 +420,7 @@ func test_sectors_and_walk(demo: Node) -> void:
 	var jump_deg := 0.0
 	var last: Transform3D = demo.camera.global_transform
 	var prev_pos: Vector3 = demo.avatar_pos
-	for i in 240:
+	for i in 650: # 14 m of walking (D-115: the calm walk; 240 frames at the old 3.5 m/s)
 		demo.walk_motion(walk_key, 1.0 / 60.0)
 		demo._process(1.0 / 60.0)
 		var moved: Vector3 = demo.avatar_pos - prev_pos

@@ -18,6 +18,11 @@ APP := build/macos/Stapledons Voyage.app
 
 all: test
 
+.PHONY: kerr-oracle
+test: kerr-oracle
+kerr-oracle:
+	sh tools/test_kerr_oracle.sh
+
 include mk/constellations.mk
 include mk/home-tiers.mk
 include mk/deck-layout.mk
@@ -43,8 +48,8 @@ ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr repl
 
 test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
-.PHONY: similar-test
-similar-test:      ## S0.1 ranking: strict VM = interpreter, pinned spike bytes
+.PHONY: similar-test similar-record
+similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = frozen bytes
 	@zsh -eu -c '\
 	  out=.godot/tmp/similar; \
 	  mkdir -p "$$out"; \
@@ -58,6 +63,41 @@ similar-test:      ## S0.1 ranking: strict VM = interpreter, pinned spike bytes
 	  test "$$(wc -l < "$$out/rank-strict.txt" | tr -d " ")" = 16; \
 	  shasum -a 256 "$$out/rank-strict.txt"; \
 	  test "$$(shasum -a 256 "$$out/rank-strict.txt" | cut -d " " -f1)" = 4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b'
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; \
+	  for minor in 214 215; do \
+	    for engine in strict vm interpreter repeat; do \
+	      flags=""; \
+	      if [[ "$$engine" == strict || "$$engine" == repeat ]]; then flags="--bytecode --strict-bytecode"; fi; \
+	      if [[ "$$engine" == vm ]]; then flags="--bytecode"; fi; \
+	      "$(AILANG)" run $(SIMFLAGS) $${=flags} $(SIM) < "tests/fixtures/protocol_$${minor}_similar.input.ndjson" > "$$out/session-$$minor-$$engine.ndjson"; \
+	    done; \
+	    for engine in vm interpreter repeat; do cmp "$$out/session-$$minor-strict.ndjson" "$$out/session-$$minor-$$engine.ndjson"; done; \
+	    cmp "$$out/session-$$minor-strict.ndjson" "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	    python3 tools/similar_oracle.py "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	    python3 tools/similar_oracle.py --strip-similar "$$out/session-$$minor-strict.ndjson" "$$out/stripped-$$minor.ndjson"; \
+	    shasum -a 256 "$$out/session-$$minor-strict.ndjson"; \
+	  done; \
+	  sed '\''1s/"minor":14/"minor":13/'\'' tests/fixtures/protocol_214_similar.input.ndjson > "$$out/input-213.ndjson"; \
+	  "$(AILANG)" run $(SIMFLAGS) --bytecode --strict-bytecode $(SIM) < "$$out/input-213.ndjson" > "$$out/session-213.ndjson"; \
+	  cmp "$$out/session-213.ndjson" tests/fixtures/protocol_213_pristine.expected.ndjson; \
+	  sed '\''1s/"minor":14/"minor":13/'\'' "$$out/stripped-214.ndjson" > "$$out/stripped-214-as-213.ndjson"; \
+	  cmp "$$out/stripped-214-as-213.ndjson" tests/fixtures/protocol_213_pristine.expected.ndjson; \
+	  cmp "$$out/stripped-215.ndjson" tests/fixtures/protocol_215_pristine.expected.ndjson'
+
+# Recording is separate from test. Validate both candidates before accepting either.
+similar-record:    ## Record new S0 sessions after ranking tests and independent oracles
+	cd sim && "$(AILANG)" test similar_test.ail
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; mkdir -p "$$out"; \
+	  for minor in 214 215; do \
+	    "$(AILANG)" run $(SIMFLAGS) --bytecode --strict-bytecode $(SIM) < "tests/fixtures/protocol_$${minor}_similar.input.ndjson" > "$$out/candidate-$$minor.ndjson"; \
+	    python3 tools/similar_oracle.py "$$out/candidate-$$minor.ndjson"; \
+	  done; \
+	  for minor in 214 215; do \
+	    cp "$$out/candidate-$$minor.ndjson" "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	    shasum -a 256 "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	  done'
 
 # R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is a registry pin
 # (sim/ailang.toml) and the crew scenario pack is synced from the crew lab (data/crew, SYNC;
@@ -1332,3 +1372,14 @@ in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the 
 	if [ -n "$$sb" ]; then echo "in-world-voice-check: the Archive model would be told a lore mechanic (sandboxed Archive, Mark 2026-10-13):"; echo "$$sb"; exit 1; fi; \
 	echo "in-world-voice-check: Archive entries, news copy and the news/log/codex/console panel strings speak in-world and keep the loop secret (D-67, D-68); the Archive model is told no lore mechanics (sandboxed)"
 
+
+# A fresh clone imports (art/ship-dimensions-v1/-v2 are .gdignore'd), so every file the game reads raw
+# needs importer="keep" (tools/import_keep.txt) or the export would ship only its imported form.
+.PHONY: import-keep import-keep-check
+import-keep:
+	@grep -v -E '^(#|$$)' tools/import_keep.txt | while read g; do for f in $$(git ls-files "$$g"); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; git add -f "$$f.import"; done; done; echo "import-keep: $$(git ls-files '*.import' | wc -l | tr -d ' ') keep files"
+import-keep-check:
+	@bad=0; n=0; for g in $$(grep -v -E '^(#|$$)' tools/import_keep.txt); do for f in $$(git ls-files "$$g"); do n=$$((n+1)); if ! git ls-files --error-unmatch "$$f.import" >/dev/null 2>&1 || ! grep -q '^importer="keep"$$' "$$f.import"; then echo "FAIL $$f has no committed importer=\"keep\" .import (make import-keep)"; bad=1; fi; done; done; \
+	  for d in art/ship-dimensions-v1 art/ship-dimensions-v2; do git ls-files --error-unmatch $$d/.gdignore >/dev/null 2>&1 || { echo "FAIL $$d/.gdignore missing: a fresh clone's import stops on its Blender masters"; bad=1; }; done; \
+	  test $$bad = 0 && echo "import-keep-check: $$n raw-read files keep their source in the export; Blender masters ignored"
+test: import-keep-check

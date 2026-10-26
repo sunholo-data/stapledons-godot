@@ -279,7 +279,7 @@ func _shot(tag: String, name: String, view: String, foot: Variant) -> void:
 		for k in 240:
 			demo._process(1.0 / 60.0)
 	else:
-		for k in 52:
+		for k in int(3.0 / ShipConsoles.WALK_SPEED_MPS * 60.0): # 3 m toward the bow at the walk speed
 			demo.walk_motion(Vector2(0, 1), 1.0 / 60.0)
 			demo._process(1.0 / 60.0)
 		demo.walk_motion(Vector2.ZERO, 1.0 / 60.0)

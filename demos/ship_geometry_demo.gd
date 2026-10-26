@@ -23,7 +23,7 @@ var _tour_view_from:=Vector2.ZERO
 var _tour_view_to:=Vector2.ZERO
 var _tour_view_elapsed:=0.
 var _tour_view_active:=false
-const WALK_SPEED_MPS := 3.5
+const WALK_SPEED_MPS := ShipConsoles.WALK_SPEED_MPS # one speed for WASD and walk-to (D-115: a calm 1.3 m/s)
 ## D-92 (camera-forward.md §D1.5): the developer free camera's first-person turn at a departure
 ## (level, toward the bow) and at a stop (level, toward the body 30 deg off the bow, kinematic +X
 ## = glTF -X): Vector2(tilt deg, yaw rad, ShipCamera's convention).
@@ -181,7 +181,7 @@ func setup(opts := {}) -> bool:
 	if opts.get("commons",true):
 		commons=Commons.install(self)
 		if commons.is_empty():return false
-	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");avatar.position=avatar_pos
+	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");avatar.effect="echo";captain_anim.use_gait(avatar.anim.get("clips",{}).get("walk",{}));avatar.position=avatar_pos
 	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
 	var ring_mesh:=TorusMesh.new();ring_mesh.inner_radius=.55;ring_mesh.outer_radius=.7;ring_mesh.rings=48;ring_mesh.ring_segments=6
 	var ring_mat:=StandardMaterial3D.new();ring_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;ring_mat.albedo_color=Color(1.,.78,.32)

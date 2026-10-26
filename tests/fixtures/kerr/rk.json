@@ -1,0 +1,26 @@
+{
+  "schema": "kerr-rk-seed-v1",
+  "unit": "radii GM/c^2 (package R=u/2 in r_s); clocks dimensionless dtau/dt",
+  "source": "BPT72 ApJ178,347 \u00a7II; design_docs/planned/r2/kerr-black-holes.md V31, V40",
+  "records": [
+    {"id": "RK-1", "spin": "0", "quantity": "outer", "precise": "2", "display": "2.000000", "package_R": "1", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0", "quantity": "inner", "precise": "0", "display": "0.000000", "package_R": "0", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-1", "spin": "0.5", "quantity": "outer", "precise": "1.8660254037844386", "display": "1.866025", "package_R": "0.93301270189221932", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0.5", "quantity": "inner", "precise": "0.13397459621556135", "display": "0.133975", "package_R": "0.066987298107780677", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-1", "spin": "0.9", "quantity": "outer", "precise": "1.4358898943540674", "display": "1.435890", "package_R": "0.71794494717703368", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0.9", "quantity": "inner", "precise": "0.56411010564593264", "display": "0.564110", "package_R": "0.28205505282296632", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-1", "spin": "0.998", "quantity": "outer", "precise": "1.0632139225171164", "display": "1.063214", "package_R": "0.53160696125855822", "formula": "u=1+sqrt(1-spin^2)"},
+    {"id": "RK-2", "spin": "0.998", "quantity": "inner", "precise": "0.93678607748288357", "display": "0.936786", "package_R": "0.46839303874144178", "formula": "u=1-sqrt(1-spin^2)"},
+    {"id": "RK-4", "spin": "0.9", "quantity": "photon-pro", "precise": "1.5578546274233828", "display": "1.557855", "package_R": "0.77892731371169140", "formula": "u(u-3)^2=4spin^2; prograde root in (1,3), retrograde in (3,4)"},
+    {"id": "RK-4", "spin": "0.9", "quantity": "photon-retro", "precise": "3.9102679391030367", "display": "3.910268", "package_R": "1.9551339695515184", "formula": "u(u-3)^2=4spin^2; prograde root in (1,3), retrograde in (3,4)"},
+    {"id": "RK-5", "spin": "0.998", "quantity": "photon-pro", "precise": "1.0739092576799517", "display": "1.073909", "package_R": "0.53695462883997585", "formula": "u(u-3)^2=4spin^2; prograde root in (1,3), retrograde in (3,4)"},
+    {"id": "RK-5", "spin": "0.998", "quantity": "photon-retro", "precise": "3.9982218928479460", "display": "3.998222", "package_R": "1.9991109464239730", "formula": "u(u-3)^2=4spin^2; prograde root in (1,3), retrograde in (3,4)"},
+    {"id": "RK-6", "spin": "0.5", "quantity": "isco-pro", "precise": "4.2330025295308257", "display": "4.233003", "package_R": "2.1165012647654128", "formula": "BPT72 ISCO Z1/Z2; prograde = smaller root, retrograde = larger"},
+    {"id": "RK-6", "spin": "0.5", "quantity": "isco-retro", "precise": "7.5545847145123584", "display": "7.554585", "package_R": "3.7772923572561792", "formula": "BPT72 ISCO Z1/Z2; prograde = smaller root, retrograde = larger"},
+    {"id": "RK-7", "spin": "0.9", "quantity": "isco-pro", "precise": "2.3208830417618872", "display": "2.320883", "package_R": "1.1604415208809436", "formula": "BPT72 ISCO Z1/Z2; prograde = smaller root, retrograde = larger"},
+    {"id": "RK-7", "spin": "0.9", "quantity": "isco-retro", "precise": "8.7173522796064893", "display": "8.717352", "package_R": "4.3586761398032447", "formula": "BPT72 ISCO Z1/Z2; prograde = smaller root, retrograde = larger"},
+    {"id": "RK-8", "spin": "0.9", "quantity": "clock-pro", "precise": "0.37086794439864592", "display": "0.370868", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"},
+    {"id": "RK-8", "spin": "0.9", "quantity": "clock-retro", "precise": "0.79319251811829484", "display": "0.793193", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"},
+    {"id": "RK-8b", "spin": "0.998", "quantity": "clock-pro", "precise": "0.092670308365368573", "display": "0.092670", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"}
+  ]
+}

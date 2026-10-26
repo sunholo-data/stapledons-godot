@@ -39,7 +39,7 @@ pure func reply(s: Session, line: string) -> string = serve(s, line).reply
 
 test "2.15 is the next free minor after 2.13 (2.14 is held for R2-SIMILAR-S0 S0.2)" {
   archiveMinor() == surfaceMinor() + 2 && contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15")
-  && contains(reply(newSession(), helloLine(99)), "\"minor\":15") && contains(reply(newSession(), helloLine(14)), "\"minor\":13")
+  && contains(reply(newSession(), helloLine(99)), "\"minor\":15") && contains(reply(newSession(), helloLine(14)), "\"minor\":14")
 }
 test "a 2.15 new game carries the archive section: 100 in Sol, 90 at Sgr A* (bh_enter)" {
   let sol = reply(feed(newSession(), [helloLine(15)]), gameLine("sol"));

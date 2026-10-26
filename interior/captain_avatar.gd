@@ -105,7 +105,7 @@ func _show() -> void:
 ## Stand-ins for clips not painted yet: start -> jog, every other non-gait clip -> idle.
 const STILL_FOR_SECTOR := [["back", false], ["ne", false], ["se", false], ["se", false],
 	["front", false], ["se", true], ["se", true], ["ne", true]]
-const CLIP_STAND_IN := {"start": "jog", "stop": "idle", "look_up": "idle", "lift": "idle",
+const CLIP_STAND_IN := {"start": "walk", "stop": "idle", "look_up": "idle", "lift": "idle",
 	"use_low": "idle", "use_mid": "idle", "use_high": "idle", "sit": "idle", "seated": "idle", "stand": "idle"}
 var anim := {} # the manifest's "anim" section
 var anim_dir := ""
@@ -113,8 +113,7 @@ var shown := {} # what show_anim() drew: {source: "frame"|"still", file, flip, f
 var _frames := {} # file -> Texture2D
 
 
-## file: the manifest holding the "anim" section (the CA1 pilot's frames live in anim_pilot.json until
-## Mark accepts them; the game loads manifest.json).
+## file: the manifest holding the "anim" section (manifest.json: the painted walk is the game's since D-120).
 func load_anim(dir: String, file := "manifest.json") -> void:
 	var m: Variant = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(file)))
 	anim = m.get("anim", {}) if m is Dictionary else {}
@@ -155,10 +154,12 @@ func show_anim(o: Dictionary) -> void:
 			flip_h = flip
 			var ax := anchor_px.x * s
 			var ay := anchor_px.y * s
-			var bob_px := float(o.get("bob_m", 0.0)) / pixel_size
+			var bob_px := 0.0 # a painted frame carries its own bob (the guide's pelvis); only the stills get one
 			offset = Vector2((ax - float(crop[0]) - float(crop[2])) if flip else (float(crop[0]) - ax), ay - (float(crop[1]) + float(crop[3])) + bob_px)
 			shown = {"source": "frame", "file": f["file"], "flip": flip, "frame": i, "clip": clip}
+			_effect(o, clip, frames, i, flip, s)
 			return
+	material_override = null
 	var still: Array = STILL_FOR_SECTOR[int(o.get("sector", 0))]
 	facing = still[0]
 	_show()
@@ -167,6 +168,74 @@ func show_anim(o: Dictionary) -> void:
 	offset = Vector2((anchor_px.x - canvas_px.x) if flip_h else -anchor_px.x, anchor_px.y - canvas_px.y + float(o.get("bob_m", 0.0)) * 720.0)
 	shown = {"source": "still", "file": "y%d_%s" % [stage, facing], "flip": flip_h, "frame": 0, "clip": clip}
 
+
+
+## D-118: the between-frame effect (interior/captain_fx.gdshader) on a walking painted clip: "none",
+## "echo" (the previous frame fading behind), "trail" (an ink smear behind the travel) or "blur" (a brief
+## directional blur on each frame change). Off under reduced motion and on clips that are not gaits. Both
+## frames are drawn on the full cell canvas so they share coordinates. `t` comes from the walk phase:
+## 1 at a frame change, 0 after EFFECT_MS of walking (deterministic).
+const EFFECTS := ["none", "echo", "trail", "blur"]
+const EFFECT_MS := 60.0
+var effect := "none" ## the demo sets "echo" (D-118 recommendation; shows only on painted walk frames)
+var _fx: ShaderMaterial
+var _canvas := {} # "file|flip" -> the frame on the full cell canvas
+
+
+func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: float) -> void:
+	var c: Dictionary = anim.get("clips", {}).get(clip, {})
+	if effect == "none" or bool(o.get("reduced", false)) or str(c.get("kind", "")) != "gait":
+		material_override = null
+		return
+	if _fx == null:
+		_fx = ShaderMaterial.new()
+		_fx.shader = load("res://interior/captain_fx.gdshader")
+	var n := frames.size()
+	var prev: Dictionary = frames[(i - 1 + n) % n]
+	var prev_flip: bool = bool(prev.get("flip", false)) != bool(o.get("flip", false))
+	var cur := _canvas_tex(frames[i], flip, s)
+	texture = cur
+	flip_h = false
+	offset = Vector2(-anchor_px.x * s, anchor_px.y * s - float(cur.get_height()))
+	var speed := float(o.get("speed", 0.0))
+	var frame_ms := 1000.0 * float(c.get("cycle_m", 1.0)) / n / maxf(speed, 1e-3)
+	var since_ms := fposmod(float(o.get("phase", 0.0)) * n, 1.0) * frame_ms
+	var sd: Vector2 = o.get("screen_dir", Vector2(0, 1))
+	_fx.set_shader_parameter("mode", EFFECTS.find(effect))
+	_fx.set_shader_parameter("cur_tex", cur)
+	_fx.set_shader_parameter("prev_tex", _canvas_tex(prev, prev_flip, s))
+	_fx.set_shader_parameter("t", clampf(1.0 - since_ms / EFFECT_MS, 0.0, 1.0) if speed > 0.0 else 0.0)
+	_fx.set_shader_parameter("moving", 1.0 if speed > 0.0 else 0.0)
+	_fx.set_shader_parameter("dir", Vector2(sd.x, -sd.y).normalized()) # sampling at UV + dir shifts the image back along the travel (uv: v down)
+	_fx.set_shader_parameter("px", 1.0 / float(cur.get_width()))
+	# One frame's travel on the canvas: across the view at the painted scale, in depth foreshortened by sin 29.
+	var step_m := float(c.get("cycle_m", 1.0)) / n
+	_fx.set_shader_parameter("step_px", step_m * 720.0 * s * (absf(sd.x) + absf(sd.y) * sin(deg_to_rad(29.0))))
+	_fx.set_shader_parameter("fixed_y", billboard == BaseMaterial3D.BILLBOARD_FIXED_Y)
+	material_override = _fx
+	shown["effect"] = effect
+	shown["effect_t"] = _fx.get_shader_parameter("t")
+
+
+func _canvas_tex(e: Dictionary, flip: bool, s: float) -> Texture2D:
+	var key := "%s|%s|%s" % [e.file, flip, e.crop] # the crop too: a settle moves it
+	if not _canvas.has(key):
+		var src := _frame(str(e.file)).get_image()
+		if src.is_compressed():
+			src.decompress()
+		src.convert(Image.FORMAT_RGBA8)
+		var w := int(1024.0 * s)
+		var h := int(1536.0 * s)
+		var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+		img.blit_rect(src, Rect2i(Vector2i.ZERO, src.get_size()), Vector2i(int(e.crop[0]), int(e.crop[1])))
+		if flip:
+			img.flip_x()
+			var sh := Image.create(w, h, false, Image.FORMAT_RGBA8)
+			sh.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(int(2.0 * anchor_px.x * s) - w, 0)) # mirror about the anchor, not the canvas centre
+			img = sh
+		img.generate_mipmaps()
+		_canvas[key] = ImageTexture.create_from_image(img)
+	return _canvas[key]
 
 func _frame(file: String) -> Texture2D:
 	if not _frames.has(file):
@@ -210,11 +279,11 @@ static func sprite_paths(dir: String) -> Array[String]:
 
 static func make_texture(path: String) -> Texture2D:
 	var img: Image = null
-	if ResourceLoader.exists(path):
+	if ResourceLoader.exists(path) and ResourceLoader.get_recognized_extensions_for_type("Texture2D").has(path.get_extension()) and _imported(path):
 		var t := load(path) as Texture2D
 		img = t.get_image() if t != null else null
-	elif FileAccess.file_exists(path):
-		img = Image.load_from_file(path)
+	if img == null and FileAccess.file_exists(path):
+		img = Image.load_from_file(path) # raw: never imported, or importer="keep" (tools/import_keep.txt)
 	if img == null or img.is_empty():
 		return null
 	if img.is_compressed():
@@ -241,3 +310,9 @@ static func _shadow_part(parent:Node3D,mesh:Mesh,position:Vector3)->void:
 	var part:=MeshInstance3D.new();part.mesh=mesh;part.position=position
 	part.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 	parent.add_child(part)
+
+
+## True when the file has an import that makes it a texture (not importer="keep", which ships the raw file).
+static func _imported(path: String) -> bool:
+	var cfg := ConfigFile.new()
+	return cfg.load(path + ".import") == OK and str(cfg.get_value("remap", "importer", "")) != "keep"

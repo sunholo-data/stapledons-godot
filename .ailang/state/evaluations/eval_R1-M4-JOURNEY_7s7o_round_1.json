@@ -1,0 +1,220 @@
+{
+ "sprint_id": "R1-M4-JOURNEY",
+ "feature": "M4.5bR3_7s7o_FOLLOWUPS",
+ "round": 1,
+ "evaluator": "claude-sonnet-5-5 (independent of codex gpt-6.1-sol executor / Opus 5.5 designer)",
+ "head": "f7510b14 (impl d7eb0f55 merged with origin/main 3541da27)",
+ "total_score": 91,
+ "pass": true,
+ "threshold": 70,
+ "verdict": "PASS",
+ "scores": {
+  "acceptance_criteria": {
+   "score": 38,
+   "max": 40,
+   "note": "AC1-AC10 re-run and met; AC11 (rig/full) is the controller's, pending (rig/full running)."
+  },
+  "test_quality_mutation": {
+   "score": 26,
+   "max": 30,
+   "note": "All design drills killed with claimed signatures; RED proof reproduced on 74e68540; own drills mostly killed. Survivors: pointer-fit boundary in rig_check (cosmetic, cut backstops), positive-control/playthrough script-error guards not proven live."
+  },
+  "scope_fidelity": {
+   "score": 19,
+   "max": 20,
+   "note": "Only the 7 allowed implementation files plus design/sprint docs; Makefile and tests/display_audit.gd untouched vs origin/main; merge d7eb0f55..f7510b14 changed none of the 7 files."
+  },
+  "docs_claims": {
+   "score": 8,
+   "max": 10,
+   "note": "Claims reproduced (E5 equivalent, 31 rows, S1 kill only via the new guard). Sprint JSON milestone still status planned, passes null (artifact not closed)."
+  }
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  {
+   "id": "N1",
+   "text": "Pointer-fit boundary in rig_check.sh fail() is untested: changing the margin 8 to 0 or 30, or the limit 140 to 150, leaves the control green. Cosmetic only: the final cut -c1-140 guarantees validity, so a wrong boundary only truncates or drops the log pointer.",
+   "command": "sed variants of tools/rig_check.sh passed to sh tools/test_rig_check.sh <variant>: M3 (-le 150), M7 (+0), M8 (+30) all '6 cases, 0 failures'"
+  },
+  {
+   "id": "N2",
+   "text": "Only the loop guard is proven live (S1). The four positive-control guards and the interlude/crew/scene guards are converted but no drill injects a script error on those paths; weakening the valid-log guard pattern leaves make rc 0.",
+   "command": "X6: sed 'SCRIPT ERROR:' -> 'SCRIPT ERRORX:' on display-valid.log guard, make display-audit-controls rc 0, 31 rejected"
+  },
+  {
+   "id": "N3",
+   "text": "The stub gh counts with wc -m (locale dependent: bytes in the C locale) and the cut -c in the script is likewise locale bound. All cases are ASCII so characters vs bytes is never distinguished; a multi-byte description would not be exercised. GitHub's real unit was not tested.",
+   "command": "read tools/test_rig_check.sh: no non-ASCII case"
+  },
+  {
+   "id": "N4",
+   "text": "Sprint JSON milestone M4.5bR3_7s7o_FOLLOWUPS still has status planned, passes null, completed null, evaluation null (artifact not closed by the executor; evaluator does not edit it).",
+   "command": "python json read of .ailang/state/sprints/sprint_R1-M4-JOURNEY.json"
+  },
+  {
+   "id": "N5",
+   "text": "Drill X1 (script error injected at start of _run) made Godot hang until killed rather than fail, so it is not a usable drill; no effect on the deliverable.",
+   "command": "own drill, discarded"
+  }
+ ],
+ "acceptance_runs": [
+  {
+   "ac": "AC1",
+   "rc": 0,
+   "evidence": "rig-check control: 6 cases, 0 failures (make rig-check-control)"
+  },
+  {
+   "ac": "AC2",
+   "rc": 0,
+   "evidence": "git show 4bf95435:tools/rig_check.sh -> 6 cases, 6 failures; stub refusals 160, 340, 257 chars; unreported refusals"
+  },
+  {
+   "ac": "AC3",
+   "rc": 0,
+   "evidence": "1"
+  },
+  {
+   "ac": "AC4",
+   "rc": 0,
+   "evidence": "drill7o R1 R2 R3 R4 R5 each rc 0 (killed); tools/rig_check.sh unchanged afterwards"
+  },
+  {
+   "ac": "AC5",
+   "rc": 0,
+   "evidence": "31 rejected, then 3 logs with exact 'FAIL known-ruling invalid acceptance'; transit_kind and nonstring also show FAIL NEW transit-ISM, caption_kind shows FAIL NEW unbound"
+  },
+  {
+   "ac": "AC6",
+   "rc": 0,
+   "evidence": "drill7s E1 E2 E5 E5b E7 E7b S1 C1 C2 C3 C4 each rc 0; tests/display_audit.gd and mk/m45.mk unchanged afterwards"
+  },
+  {
+   "ac": "AC7",
+   "rc": 0,
+   "evidence": "0"
+  },
+  {
+   "ac": "AC8",
+   "rc": 0,
+   "evidence": "0; changed files are the allowed list only"
+  },
+  {
+   "ac": "AC9",
+   "rc": 0,
+   "evidence": "shellcheck -s sh -S warning clean; dash: 6 cases, 0 failures"
+  },
+  {
+   "ac": "AC10",
+   "rc": 0,
+   "evidence": "make python-guard rc 0"
+  },
+  {
+   "ac": "AC11",
+   "rc": null,
+   "evidence": "not run by evaluator; rig/full is the controller's gate"
+  }
+ ],
+ "drills": [
+  {
+   "id": "RED-E1-pre",
+   "tree": "74e68540",
+   "result": "survived",
+   "evidence": "E1 mutant (delete D-77 kind pin) on the pre-change tree: make display-audit-controls rc 0, 28 rejected; drill7s E1 28 exits 1"
+  },
+  {
+   "id": "RED-E2-pre",
+   "tree": "74e68540",
+   "result": "survived",
+   "evidence": "E2 mutant: rc 0, 28 rejected; drill7s E2 28 exits 1"
+  },
+  {
+   "id": "E1",
+   "result": "killed",
+   "evidence": "drill rc 0 (display control known/known_wrong_transit_kind.json wrong reason)"
+  },
+  {
+   "id": "E2",
+   "result": "killed",
+   "evidence": "drill rc 0"
+  },
+  {
+   "id": "E5",
+   "result": "equivalent confirmed",
+   "evidence": "drill rc 0: rc 0, 31 rows, 0 script errors, non-String fixture still rejected for the ruling; ruling_valid code (display_audit.gd:55-66): match on non-String falls to the final return false"
+  },
+  {
+   "id": "E5b",
+   "result": "killed (missed)"
+  },
+  {
+   "id": "E7",
+   "result": "killed (rows: 30, want 31)"
+  },
+  {
+   "id": "E7b",
+   "result": "killed"
+  },
+  {
+   "id": "S1",
+   "result": "killed",
+   "evidence": "rc 2 'display control known/known_bad_ruling.json script error' after 20 rows"
+  },
+  {
+   "id": "C1-C4",
+   "result": "killed"
+  },
+  {
+   "id": "R1-R5",
+   "result": "killed"
+  },
+  {
+   "id": "X2 S1 with old dead '! grep' loop guard",
+   "result": "survived (rc 0, 31 rejected)",
+   "evidence": "proves S1 is killed only because of the change"
+  },
+  {
+   "id": "X3 S1 with new guard",
+   "result": "killed (rc 2, 20 rejected, script error)"
+  },
+  {
+   "id": "X4 delete known_nonstring_ruling spec row",
+   "result": "killed (rows: 30, want 31)"
+  },
+  {
+   "id": "X5 -ge plus delete row",
+   "result": "killed (30 < 31, not informative about -ge)"
+  },
+  {
+   "id": "X6 weaken valid-log script-error guard",
+   "result": "survived (N2)"
+  },
+  {
+   "id": "M1 drop cut on both posts",
+   "result": "killed (2 failures)"
+  },
+  {
+   "id": "M2 cut -c1-141",
+   "result": "killed (2 failures; stub refuses 141)"
+  },
+  {
+   "id": "M4 cut -c1-100",
+   "result": "killed (2 failures)"
+  },
+  {
+   "id": "M5 success post failure silent",
+   "result": "killed (1 failure)"
+  },
+  {
+   "id": "M6 failure post failure silent",
+   "result": "killed (1 failure)"
+  },
+  {
+   "id": "M3/M7/M8 pointer boundary",
+   "result": "survived (N1)"
+  }
+ ],
+ "stub_review": "gh stub parses state= and description=, counts with wc -m, refuses over 140 with HTTP 422 text and records 'refused'; run() asserts the post sequence is exactly pending then the final state, so a refused post is a failure; non-vacuous (RED 6/6 on the pre-fix script, and per-mutant kills). Refused cases assert nonzero rc plus the stdout line. A case cannot pass vacuously on an empty STUB_POSTS since the pending sequence is required.",
+ "hygiene": "All mutants restored; git status --porcelain (ignoring *.uid) clean; throwaway worktree removed.",
+ "merge_check": "git diff d7eb0f55 f7510b14 on the 7 files is empty; Makefile differs from 4bf95435 only through origin/main (AC8 against origin/main is 0)."
+}
