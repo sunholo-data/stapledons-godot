@@ -108,7 +108,8 @@ func _sequence(name: String, view: String, foot: Vector3, script: Callable, n: i
 		var deck_y := float(CROP) / 2.0 + _deck_offset()
 		var low := _lowest_alpha(await _alone(demo.avatar_pos))
 		var below := snappedf(low + 1.0 - deck_y, 0.1)
-		_line(img, int(round(deck_y)), Color(0.2, 0.9, 1.0))
+		# The window may be larger than the geometry view (no aspect keep): scale the offset as the crop is.
+		_line(img, int(round(float(CROP) / 2.0 + _deck_offset() * _window_scale())), Color(0.2, 0.9, 1.0))
 		img.save_png(dir.path_join("f%03d.png" % k))
 		rows.append({"clip": o.clip, "frame": demo.avatar.shown.get("frame", 0), "source": demo.avatar.shown.get("source", ""), "lean_tan": snappedf(float(demo.avatar.shown.get("lean_tan", 0.0)), 0.0001), "sole_below_px": below})
 		if below > 1.0 and demo.avatar.shown.get("source", "") == "frame":
@@ -131,6 +132,10 @@ static func _runs(rows: Array) -> String:
 		count += 1
 	s.append("%s x%d" % [last, count])
 	return ", ".join(s)
+
+
+func _window_scale() -> float:
+	return float(root.get_texture().get_height()) / float(demo.geometry_view.size.y)
 
 
 func _deck_offset() -> float:

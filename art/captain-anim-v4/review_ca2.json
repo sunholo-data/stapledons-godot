@@ -1,0 +1,19 @@
+{
+  "about": "CA2 for Mark's review: the held poses on the trimmed set (24 paintings kept; 36 image generations this round including 9 repaints of frames that missed their pose). Loops: anim/ca2_<beat>_<view>.webp at game speed (60 fps), _3x for the figure at 3x; anim/ca2_painted_<clip>_<facing>.webp: the painted cells forward then reversed (the reach then the step back, the sit then the stand); ca2_cells.png: every CA2 cell on the deck line.",
+  "beats": {
+    "station_low / station_mid": "reach 2 frames at 5 fps, hold, the step back is the reach reversed (0.4 s), then idle; walking straight off skips the step back",
+    "chair": "sit 2 frames at 3.34 fps, seated, stand = the sit reversed; E or a move key stands first. In the Bow view the chair back hides the seated captain almost entirely (by design of the view; the Astern view shows it)",
+    "look_up": "one frame in five facings on a cue: arriving at a stop, or the starbow forming (beta past 0.9); 2 s",
+    "start_stop": "no paintings: the walk frames with a 2 degree procedural lean via the billboard shader (forward at start, back at stop); none under reduced motion",
+    "lift": "one frame in five facings while the lift moves"
+  },
+  "fund_later": [
+    {"beat": "sit / stand", "why": "two frames each way read as a pop in the Astern view; a 5-frame sit and a painted stand (weight forward, hands on the arms) would carry most of the remaining polish", "frames": 16},
+    {"beat": "start / stop", "why": "the procedural lean is subtle; painted first and last steps (weight shift, the trailing foot) in back and profile", "frames": 16},
+    {"beat": "station step back", "why": "the reversed reach un-reaches but the feet do not move; a painted half-step back in back and front", "frames": 8},
+    {"beat": "station reach in the three-quarter facings", "why": "only if stations are approached at an angle after the deck layout pass; today they face the bow exactly", "frames": 12},
+    {"beat": "lift / look_up", "why": "single holds read fine; lowest priority (a 2-frame settle each)", "frames": 0}
+  ],
+  "gate_note": "Front and back silhouettes of a standing person are nearly identical, so the pose gate cannot tell the facing for held poses (look_up_front 0.761 own vs 0.753 cross). Held poses are gated only for gross misses (IoU and legs >= 0.50) and judged by eye here.",
+  "spend": {"age0_approved_remaining_before": 94, "generations_this_round": 36, "remaining_after": 58}
+}

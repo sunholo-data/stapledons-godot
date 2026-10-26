@@ -100,4 +100,7 @@ jq -n --arg clip "$CLIP" --arg prev "$PREV_CLIP" --arg speed "$SPEED" --slurpfil
 if [ -f "$OUT/feet.json" ] && [ -f "$OUT/fx.json" ]; then
   jq --slurpfile feet "$OUT/feet.json" --slurpfile fx "$OUT/fx.json" '. + {feet_on_floor: {about: $feet[0].about, before_after_loops: {back: "anim/feet_before_after_back.webp", profile: "anim/feet_before_after_profile.webp"}, rows: $feet[0].rows}, between_frame_effects: {about: "D-118 options on the billboard shader (no new paintings); fx_options_<facing>.webp left to right: none, echo, trail, blur; recommended and the demo default: echo", options: $fx[0].options, loops: {back: "anim/fx_options_back.webp", profile: "anim/fx_options_profile.webp"}, per_option: "anim/fx_<effect>_<facing>.webp and _3x.webp", note: $fx[0].about}}' "$OUT/review.json" > "$OUT/review.json.tmp" && mv "$OUT/review.json.tmp" "$OUT/review.json"
 fi
+if [ -f "$OUT/ca2.json" ]; then
+  jq --slurpfile ca2 art/captain-anim-v4/review_ca2.json --slurpfile seq "$OUT/ca2.json" '. + {ca2: ($ca2[0] + {sequences: ($seq[0].sequences | map_values({view, frames, ms_per_frame, sole_below_px_max: ([.rows[].sole_below_px] | max)}))})}' "$OUT/review.json" > "$OUT/review.json.tmp" && mv "$OUT/review.json.tmp" "$OUT/review.json"
+fi
 echo "captain-review: review.json written ($(jq -r '.checks_passed' "$OUT/review.json"))"

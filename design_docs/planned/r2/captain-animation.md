@@ -306,6 +306,27 @@ All three are sized to one painted frame's travel on the canvas (16.7 cell px ac
 
 **Accepted (2026-10-26, D-120):** "yeah looks good - we go with echo". This covers the feet fix with the back-view depth trade-off, echo (off under reduced motion), and the walk. The painted walk now lives in `assets/characters/captain/manifest.json`, so the game shows it, and echo is on by default. The pilot-only `anim_pilot.json` is gone.
 
+## CA2: the held poses (2026-10-26, the trimmed set; paused for Mark's review)
+
+The stations and the chair face the bow exactly, so they are painted only in back (the Bow view) and front (Astern). The trimmed set has 24 paintings instead of the ~46 proposed and the 95 of the full plan:
+
+| Beat | Frames | How it plays |
+|---|---|---|
+| Station reach (`use_low` the Voyage desk and crew, `use_mid` Archive and navigation) | 2 x 2 facings each | 5 fps, then held; `use_high` is unused (stand-in: `use_mid`) |
+| Step back (`leave_*`) | 0 | the reach reversed (`reverse_of`), 0.4 s; walking straight off skips it |
+| Chair: `sit`, `seated`; `stand` | 2 + 1 per facing; 0 | sit at 3.34 fps; the stand is the sit reversed. E at the seat sits (reach 2.6 m); E or a move key stands first, back at the walkable point |
+| Look-up | 1 x 5 facings | on a cue: arriving at a stop or the starbow forming (beta past 0.9); off under reduced motion |
+| Lift | 1 x 5 facings | while the lift moves |
+| Start / stop | 0 | the walk frames with a 2 degree lean sheared in the billboard shader (`lean_tan`); none under reduced motion |
+
+Guides: `~/dev/blender/scripts/char_captain_pose_guides_v4.py` (copied as `art/captain-anim-v4/*.py.txt`, pinned in `guides.sha256`, uploaded by sha256). The art thread painted 24 frames; 9 missed their pose (the sits came out standing, the chest-high reach read as "hands up") and were repainted, for 36 generations in all. That leaves about 58 of the approved age-0 spend.
+
+**The gate for held poses.** Front and back silhouettes of a person standing still are nearly identical, so the pose IoU cannot check the facing (`look_up_front` 0.761 against its own guide, 0.753 against the back one). Held poses are gated only for gross misses (IoU and legs at least 0.50), and the facing is judged by eye in the review. Palette share keep goes from 0.40 to 0.35 for the coat spread over the knees.
+
+**Review** (`sh tools/captain_review.sh`, then `build/captain_review/`): `anim/ca2_<beat>_<view>.webp` at game speed and `_3x`, with the deck line drawn; `anim/ca2_painted_<clip>_<facing>.webp` forward then reversed; `ca2_cells.png`; and the `ca2` section of `review.json`, with the soles measured on the sprite alone (every sequence 1.6 px above to 0.9 px below the deck). In the Bow view the chair back hides the seated captain almost entirely; the Astern view shows it.
+
+**Worth funding from the full plan** (`review.json` `ca2.fund_later`), in order: a 5-frame sit and a painted stand (16 frames: the 2-frame sit pops in Astern), painted start and stop steps in back and profile (16), a painted half-step back from a station (8), and three-quarter station reaches only if the deck layout pass angles the stations (12).
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |
