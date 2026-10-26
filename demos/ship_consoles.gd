@@ -25,6 +25,8 @@ const DOLLY_S := 0.6 # the director's "console" view ease (data/camera/views.jso
 const WALK_SPEED_MPS := 1.3
 const PATH_CEILING_M := 40.0
 const HOLD_S := 1.5
+const CHAIR_REACH_M := 2.6 ## the chair's E reach from its seat point: the walk keeps 0.5 m clear of the chair, so the nearest
+## walkable point is 1.9-2.2 m from the seat (measured round it, CA2)
 ## The stations, from ship.glb node names (§B, D-57 Q5). The navigation station is the arc
 ## of three consoles; "walk" names the mesh Walk-to aims for.
 const STATIONS := {
@@ -187,6 +189,13 @@ func e_target() -> Dictionary:
 	var dl: float = demo.avatar_pos.distance_to(point)
 	if dl <= 1.5 and (best.is_empty() or dl < best.d):
 		best = {"kind": "lift", "id": "lift", "d": dl}
+	# CA2 (OQ9): the captain's chair, from its walkable side (the bridge only).
+	if demo.active_level == 0 and demo.has_method("chair_seat"):
+		var seat: Variant = demo.chair_seat()
+		if seat is Vector3:
+			var dc: float = Vector2(demo.avatar_pos.x - seat.x, demo.avatar_pos.z - seat.z).length()
+			if dc <= CHAIR_REACH_M and (best.is_empty() or dc < best.d):
+				best = {"kind": "chair", "id": "chair", "d": dc}
 	return best
 
 
@@ -194,17 +203,23 @@ func press_e() -> bool:
 	if focused != "":
 		leave()
 		return true
+	if demo.has_method("seated") and demo.seated():
+		return demo.stand_chair()
 	var t := e_target()
 	if t.is_empty():
 		return false
 	if t.kind == "lift":
 		return demo.lift.board()
+	if t.kind == "chair":
+		return demo.sit_chair()
 	return use(t.id, "open")
 
 
 func prompt_text() -> String:
 	if focused != "":
 		return "%s · E or Esc steps back" % stations[focused].name
+	if demo.has_method("seated") and demo.seated():
+		return "Captain's chair · E or a move key stands"
 	if not walk_target.is_empty():
 		if walk_target.begins_with("point:"):
 			return "Walking to the %s · WASD takes over" % walk_target.trim_prefix("point:")
@@ -215,6 +230,8 @@ func prompt_text() -> String:
 	if not t.is_empty():
 		if t.kind == "lift":
 			return "Lift · E " + ("to the lower deck" if demo.active_level == 0 else "to the bridge")
+		if t.kind == "chair":
+			return "Captain's chair · E sit"
 		var st: Dictionary = stations[t.id]
 		return "%s · E use" % st.name if st.active else "%s · offline (reserved)" % st.name
 	if demo.active_level == 1:

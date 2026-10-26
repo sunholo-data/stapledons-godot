@@ -234,5 +234,13 @@
       "captain_chair",
       "v2_chair_detail_00"
     ]
+  },
+  "captain_chair": {
+    "position_m": [
+      -2.599,
+      12.227
+    ],
+    "yaw_deg": 0.0,
+    "about": "CA2 (OQ9): the captain's chair seat point, ship metres (x, -z), as art/deck-layout-v2/bow_a.json layout A places it; the captain sits facing the bow"
   }
 }

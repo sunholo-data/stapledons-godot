@@ -37,6 +37,7 @@ func _initialize() -> void:
 	_feet_on_floor()
 	_between_frames()
 	_walk_in_game()
+	_ca2_beats()
 	_avatar()
 	print("captain-anim: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -222,13 +223,13 @@ func _avatar() -> void:
 	var crop: Array = av.anim.clips.walk.stages["0"].back[4].crop
 	var r := av.get_item_rect()
 	var ax := av.anchor_px.x * s
-	check("a mirrored cell keeps the anchor on the walk point", absf(r.position.x - (ax - crop[0] - crop[2])) < 1e-6, "%s" % r)
+	check("a mirrored cell keeps the anchor on the walk point (drawn on the full canvas, mirrored about the anchor)", absf(r.position.x + ax) < 1e-6 and absf(r.position.y - (s * av.anchor_px.y - s * 1536.0)) < 1e-6, "%s" % r)
 	av.show_anim({"clip": "start", "sector": 2, "facing": "profile", "flip": false, "phase": 0.0})
 	check("start falls back to the painted walk", av.shown.source == "frame" and av.shown.clip == "walk", str(av.shown))
 	av.show_anim({"clip": "walk", "sector": 3, "facing": "front_34", "flip": false, "phase": 0.0})
 	check("an unpainted facing falls back to the still", av.shown.source == "still" and av.facing == "se", str(av.shown))
 	av.show_anim({"clip": "idle", "sector": 2, "facing": "profile", "flip": false, "clip_t": 0.0, "bob_m": 0.02})
-	check("a painted frame ignores the procedural bob (it carries its own)", av.shown.source == "frame" and absf((av.get_item_rect().position.y - (s * av.anchor_px.y - (crop_of(av, "idle", "profile")[1] + crop_of(av, "idle", "profile")[3]))) * av.pixel_size) < 1e-6, str(av.get_item_rect()))
+	check("a painted frame ignores the procedural bob (it carries its own)", av.shown.source == "frame" and absf(av.get_item_rect().position.y - (s * av.anchor_px.y - s * 1536.0)) < 1e-6, str(av.get_item_rect()))
 	av.stage = 20
 	av.show_anim({"clip": "idle", "sector": 0, "facing": "back", "flip": false, "bob_m": 0.01})
 	check("a still lifts by the bob (0.01 m)", av.shown.source == "still" and absf((av.get_item_rect().position.y - (av.anchor_px.y - av.canvas_px.y)) * av.pixel_size - 0.01) < 1e-6, str(av.get_item_rect()))
@@ -318,10 +319,10 @@ func _between_frames() -> void:
 		check("%s: t is 0.5 after 30 ms of walking" % fx, absf(float(av.shown.effect_t) - 0.5) < 1e-3, str(av.shown.effect_t))
 		o.reduced = true
 		av.show_anim(o)
-		check("%s: off under reduced motion" % fx, av.material_override == null)
+		check("%s: off under reduced motion" % fx, av.shown.get("effect", "") == "none")
 	av.effect = "echo"
 	av.show_anim({"clip": "idle", "facing": "back", "flip": false, "sector": 0, "clip_t": 0.0})
-	check("the effect is off on the idle clip", av.material_override == null)
+	check("the effect is off on the idle clip", av.shown.get("effect", "") == "none")
 	# On the canvas the sole still rests on the walk point (the canvas carries the settled crop).
 	av.show_anim({"clip": "walk", "facing": "back", "flip": true, "sector": 0, "phase": 0.5, "speed": 1.3, "screen_dir": Vector2(0, 1)})
 	var img: Image = av.texture.get_image()
@@ -348,3 +349,35 @@ func _walk_in_game() -> void:
 		check("12 walk frames in back and in profile", walk.stages["0"].get("back", []).size() == 12 and walk.stages["0"].get("profile", []).size() == 12)
 		check("no pilot-only manifest left", not FileAccess.file_exists(CAPTAIN.path_join("anim_pilot.json")))
 	av.free()
+
+
+## CA2: stepping back from a station plays the reach reversed (leave_<height>, LEAVE_S); a start or stop
+## leans the painted frame (a shear about the feet, screen x), never under reduced motion.
+func _ca2_beats() -> void:
+	var a := CaptainAnim.new()
+	for k in 30:
+		a.step({"view_yaw": BOW_YAW, "station": "use_low", "face_dir": BOW}, DT)
+	var clips: Array = []
+	for k in 40:
+		clips.append(a.step({"view_yaw": BOW_YAW, "face_dir": BOW}, DT).clip)
+	check("leaving a station: leave_low for 0.4 s, then idle", clips[0] == "leave_low" and clips[22] == "leave_low" and clips[25] == "idle", str(clips))
+	var b := CaptainAnim.new()
+	for k in 30:
+		b.step({"view_yaw": BOW_YAW, "station": "use_mid", "face_dir": BOW}, DT)
+	var o := b.step({"view_yaw": BOW_YAW, "velocity": BOW * 1.3}, DT)
+	check("walking straight off a station skips the step back", o.clip == "start", o.clip)
+	var av := CaptainAvatar.new()
+	av.load_anim(FIXTURE)
+	av.anim.clips["leave_test"] = {"kind": "time", "fps": 2.0, "loop": false, "reverse_of": "walk"}
+	var fwd := av.clip_frames("walk", "back")
+	var rev := av.clip_frames("leave_test", "back")
+	check("a reverse_of clip is its source's frames backwards", rev.size() == fwd.size() and rev[0] == fwd[fwd.size() - 1] and rev[rev.size() - 1] == fwd[0])
+	av.effect = "none"
+	av.show_anim({"clip": "walk", "facing": "profile", "flip": false, "sector": 2, "phase": 0.1, "speed": 1.3, "screen_dir": Vector2(1, 0), "lean_deg": CaptainAnim.LEAN_DEG})
+	check("a start leans the painted frame toward the travel", absf(float(av.shown.get("lean_tan", 0.0)) - tan(deg_to_rad(CaptainAnim.LEAN_DEG))) < 1e-6, str(av.shown))
+	av.free()
+	var r := CaptainAnim.new()
+	var lean := 0.0
+	for k in 10:
+		lean = maxf(lean, absf(r.step({"view_yaw": BOW_YAW, "velocity": BOW * 1.3, "reduced": true}, DT).lean_deg))
+	check("reduced motion: no start lean", lean == 0.0)
