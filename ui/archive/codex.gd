@@ -38,10 +38,8 @@ func _build() -> void:
 	_built = true
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.09, 0.96)
-	style.set_content_margin_all(16)
-	panel.add_theme_stylebox_override("panel", style)
+	theme = StapledonTheme.theme() # R2-BRIDGE-STYLE ST4
+	panel.theme_type_variation = "HUDSheet"
 	panel.custom_minimum_size = PANEL_SIZE
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -58,7 +56,7 @@ func _build() -> void:
 	var head := Label.new()
 	head.text = "ARCHIVE: CODEX   (Esc closes)"
 	head.add_theme_font_size_override("font_size", 12)
-	head.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
+	head.theme_type_variation = "HUDCaption"
 	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(head)
 	var scroll := ScrollContainer.new()
@@ -72,7 +70,7 @@ func _build() -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	split.add_child(right)
 	_hint.add_theme_font_size_override("font_size", 12)
-	_hint.add_theme_color_override("font_color", Color(0.65, 0.7, 0.8))
+	_hint.theme_type_variation = "HUDHint"
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right.add_child(_hint)
 	_body.bbcode_enabled = true
@@ -187,7 +185,7 @@ func _refresh_rows() -> void:
 		b.disabled = not open_row
 		b.modulate = Color(1, 1, 1, 1.0 if open_row else GREY)
 		b.tooltip_text = LoreLoader.HINT_TEXT.get(_entry(id).get("unlock", ""), "")
-		b.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0) if id == selected else Color(0.88, 0.9, 0.95))
+		b.theme_type_variation = "HUDSelected" if id == selected else "HUDButton"
 	if selected == "":
 		_show_placeholder()
 
@@ -213,10 +211,7 @@ func _title_of(id: String) -> String:
 ## One toast per batch of unlocks (a tick can open several): the titles, on at most two lines.
 func _toast(titles: Array) -> void:
 	var p := PanelContainer.new()
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.08, 0.1, 0.16, 0.95)
-	st.set_content_margin_all(8)
-	p.add_theme_stylebox_override("panel", st)
+	p.theme_type_variation = "HUDCard"
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var l := Label.new()
 	l.text = "Archive entry open: %s" % titles[0] if titles.size() == 1 else "Archive: %d entries open: %s" % [titles.size(), ", ".join(titles)]

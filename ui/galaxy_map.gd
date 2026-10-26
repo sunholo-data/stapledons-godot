@@ -239,22 +239,20 @@ func _build() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	panel.offset_left = -PANEL_WIDTH
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.09, 0.92)
-	style.set_content_margin_all(14)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.theme = StapledonTheme.theme() # R2-BRIDGE-STYLE ST4
+	panel.theme_type_variation = "HUDCard"
 	layer.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 6)
 	panel.add_child(box)
 	_title.add_theme_font_size_override("font_size", 20)
 	_title.text = "Select a star"
-	_subtitle.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+	_subtitle.theme_type_variation = "HUDHint"
 	_subtitle.add_theme_font_size_override("font_size", 13)
 	chart_banner.text = "Star chart · read only. Plot and commit at the navigation station (Tab · Walk to)."
 	chart_banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	chart_banner.custom_minimum_size.x = PANEL_WIDTH - 40
-	chart_banner.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
+	chart_banner.theme_type_variation = "HUDCaption"
 	chart_banner.visible = false
 	box.add_child(chart_banner)
 	for l in [_title, _status]:
@@ -319,15 +317,15 @@ func _build() -> void:
 	ism_legend.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	ism_legend.custom_minimum_size.x=PANEL_WIDTH-40
 	ism_legend.add_theme_font_size_override("font_size",12)
-	ism_legend.add_theme_color_override("font_color",Color(.6,.75,.8))
+	ism_legend.theme_type_variation = "HUDHint"
 	ism_legend.visible = ism_layer.visible
 	details.add_child(ism_legend)
 	_coverage.add_theme_font_size_override("font_size",12)
-	_coverage.add_theme_color_override("font_color",Color(.6,.65,.75))
+	_coverage.theme_type_variation = "HUDHint"
 	details.add_child(_coverage)
 	progress_bar.show_percentage = false
 	progress_bar.step = 0.0
-	_bar_style(progress_bar, Color(1.0, 0.6, 0.35))
+	progress_bar.theme_type_variation = "HUDProgress"
 	progress_bar.custom_minimum_size = Vector2(PANEL_WIDTH - 40, 10)
 	progress_bar.visible = false
 	details.add_child(progress_bar)
@@ -342,15 +340,7 @@ func _build() -> void:
 	slider.step = 0.0
 	slider.custom_minimum_size = Vector2(PANEL_WIDTH - 40, 24)
 	slider.value_changed.connect(func(v: float) -> void: set_cruise_phi(v))
-	var track := StyleBoxFlat.new() # M2.6a eval: the default track was too faint
-	track.bg_color = Color(0.34, 0.4, 0.52)
-	track.set_content_margin_all(3)
-	track.set_corner_radius_all(3)
-	var filled: StyleBoxFlat = track.duplicate()
-	filled.bg_color = Color(0.45, 0.75, 0.95)
-	slider.add_theme_stylebox_override("slider", track)
-	slider.add_theme_stylebox_override("grabber_area", filled)
-	slider.add_theme_stylebox_override("grabber_area_highlight", filled)
+	# M2.6a eval: the default track was too faint; the theme's HSlider track and fill (R2-BRIDGE-STYLE ST4).
 	box.add_child(slider)
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 10)
@@ -366,11 +356,11 @@ func _build() -> void:
 	help.text = "Select a destination → Review journey → confirm\nDrag chart: orbit · Shift-drag: pan · wheel or +/−: zoom"
 	help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	help.custom_minimum_size.x=PANEL_WIDTH-40
-	help.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+	help.theme_type_variation = "HUDHint"
 	help.add_theme_font_size_override("font_size", 13)
 	box.add_child(help)
 	hint.text = "Pinch or scroll to zoom · %s+/− UI size" % ("⌘" if OS.get_name() == "macOS" else "Ctrl ")
-	hint.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+	hint.theme_type_variation = "HUDHint"
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.visible = show_hint
 	box.add_child(hint)
@@ -380,14 +370,7 @@ func _build() -> void:
 	_update_camera()
 
 
-static func _bar_style(bar: ProgressBar, fill: Color) -> void:
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.2, 0.23, 0.3)
-	bg.set_corner_radius_all(3)
-	var fg: StyleBoxFlat = bg.duplicate()
-	fg.bg_color = fill
-	bar.add_theme_stylebox_override("background", bg)
-	bar.add_theme_stylebox_override("fill", fg)
+## R2-BRIDGE-STYLE ST4: progress bars take the theme (ProgressBar: ochre fill; HUDProgress: coral).
 
 
 ## The commit dialog (D-12), centred over the map: both clocks and the years
@@ -398,12 +381,8 @@ func _build_dialog(layer: CanvasLayer) -> void:
 	dialog.offset_left = 60.0
 	dialog.offset_top = -170.0
 	dialog.custom_minimum_size = Vector2(460, 0)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.07, 0.08, 0.12, 0.97)
-	style.border_color = Color(0.9, 0.75, 0.35)
-	style.set_border_width_all(2)
-	style.set_content_margin_all(18)
-	dialog.add_theme_stylebox_override("panel", style)
+	dialog.theme = StapledonTheme.theme()
+	dialog.theme_type_variation = "HUDDialog"
 	layer.add_child(dialog)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
@@ -416,18 +395,18 @@ func _build_dialog(layer: CanvasLayer) -> void:
 		var l := Label.new() if i % 2 == 0 else DisplayBinding.new()
 		l.add_theme_font_size_override("font_size", 17)
 		if i % 2 == 0:
-			l.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4))
+			l.theme_type_variation = "HUDCaption"
 		dialog_grid.add_child(l)
 	box.add_child(dialog_grid)
 	var warn := ComposedBinding.new()
 	warn.record_context = true
 	warn.compose(["A commitment cannot be undone. Hold Space or the button for ", ["client.map.hold_s", "%.1f"], " s.\nPress-twice mode: Space twice. Esc backs out."])
 	warn.update_from({"client": {"map": {"hold_s": HOLD_S}}})
-	warn.add_theme_color_override("font_color", Color(0.95, 0.6, 0.4))
+	warn.theme_type_variation = "HUDWarn"
 	box.add_child(warn)
 	hold_bar.show_percentage = false
 	hold_bar.step = 0.0
-	_bar_style(hold_bar, Color(0.9, 0.75, 0.35))
+
 	hold_bar.max_value = HOLD_S
 	hold_bar.custom_minimum_size = Vector2(0, 12)
 	box.add_child(hold_bar)
@@ -622,7 +601,7 @@ func _refresh_system_list() -> void:
 	_system_buttons.clear()
 	for child in system_box.get_children():system_box.remove_child(child);child.queue_free()
 	if bodies.is_empty():return
-	var title := Label.new();title.text = "In this system";title.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4))
+	var title := Label.new();title.text = "In this system";title.theme_type_variation = "HUDCaption"
 	system_box.add_child(title)
 	var flow := HFlowContainer.new();flow.custom_minimum_size.x = PANEL_WIDTH - 40
 	system_box.add_child(flow)
@@ -1089,7 +1068,7 @@ func refresh() -> void:
 		var r: Dictionary = rows[i / 2] if i / 2 < rows.size() else {}
 		if i % 2 == 0:
 			l.text = "" if r.is_empty() else r.label
-			l.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4) if i < 4 else Color(0.65, 0.7, 0.8))
+			l.theme_type_variation = "HUDCaption" if i < 4 else "HUDHint"
 		else:
 			var binding := l as DisplayBinding
 			binding.bind("client.map.empty" if r.is_empty() else r.field, "text" if r.is_empty() else r.fmt)

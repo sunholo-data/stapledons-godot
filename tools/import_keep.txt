@@ -9,3 +9,4 @@ ui/theme/*.png
 data/crew/portraits/*.png
 data/interlude/home/*.webp
 ai/fixtures/*.png
+assets/foliage/*.png

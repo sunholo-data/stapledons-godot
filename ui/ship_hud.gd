@@ -30,8 +30,6 @@ const CLOCK_SIZE := 17
 ## §A2 priority, high to low (the I card is ShipStarIdentification's own panel and the
 ## cruise interlude keeps its crossing review (R2-INTERLUDE I3); both are listed so the order is complete).
 ## dev.31: the arrival card leads, so its Dismiss button is never folded into a chip.
-## R2-BRIDGE-STYLE S4: the cards on the HUD theme so far (ST2: the arrival card; ST4: every card).
-const THEMED_CARDS := ["arrival"]
 const PRIORITY := ["arrival", "identify", "medium_here", "refusal", "gravity", "notice", "medium_notice", "transit", "tour", "interlude", "unlock"]
 ## The transit card's compact rows (M4.3a JourneyHud.ROWS by field); the full set is in Tab.
 const TRANSIT_COMPACT := ["ship.phase", "consequence.gap_years", "consequence.distance_remaining", "consequence.earth_years_remaining", "consequence.load_suns", "ship.ism.glow_w_m2", "client.warp"]
@@ -79,6 +77,7 @@ func setup(developer: bool) -> void:
 	dev = developer
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	theme = StapledonTheme.theme() # R2-BRIDGE-STYLE ST4: the whole HUD on the one theme
 	_build_strip()
 	_build_column()
 	_build_prompt()
@@ -91,27 +90,16 @@ func setup(developer: bool) -> void:
 	_layout()
 
 
-static func _panel_style(alpha := 0.78) -> StyleBoxFlat:
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.03, 0.04, 0.07, alpha)
-	st.border_color = Color(0.45, 0.55, 0.75, 0.35)
-	st.set_border_width_all(1)
-	st.set_corner_radius_all(5)
-	st.set_content_margin_all(8)
-	return st
-
-
+## R2-BRIDGE-STYLE ST4: the panel and text styles come from StapledonTheme (the theme's text shadow is the
+## ink); these helpers only pick the meaning.
 static func _shadow(l: Control) -> void:
-	l.add_theme_color_override("font_shadow_color", Color.BLACK)
-	l.add_theme_constant_override("shadow_offset_x", 1)
-	l.add_theme_constant_override("shadow_offset_y", 1)
+	if l is Label: (l as Label).theme_type_variation = "HUDLabel"
 
 
-func _caption(l: Label, text: String, themed := false) -> Label:
+func _caption(l: Label, text: String, _themed := true) -> Label:
 	l.text = text
 	l.add_theme_font_size_override("font_size", 11)
-	if themed: l.theme_type_variation = "HUDCaption" # R2-BRIDGE-STYLE: the theme's caption colour and face
-	else: l.add_theme_color_override("font_color", Color(0.62, 0.68, 0.8))
+	l.theme_type_variation = "HUDCaption"
 	return l
 
 
@@ -178,7 +166,7 @@ func _build_prompt() -> void:
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_shadow(prompt)
 	add_child(prompt)
-	hint.add_theme_stylebox_override("panel", _panel_style(0.85))
+	hint.theme_type_variation = "HUDCard"
 	hint.visible = false
 	add_child(hint)
 	var row := HBoxContainer.new()
@@ -196,7 +184,7 @@ func _build_prompt() -> void:
 func _build_tab() -> void:
 	tab_panel.name = "TabPanel"
 	tab_panel.visible = false
-	tab_panel.add_theme_stylebox_override("panel", _panel_style(0.9))
+	tab_panel.theme_type_variation = "HUDCard"
 	add_child(tab_panel)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -320,11 +308,8 @@ func show_card(id: String, title: String, ttl := 0.0) -> VBoxContainer:
 		return c.body
 	var panel := PanelContainer.new()
 	panel.name = "Card_" + id
-	var themed: bool = id in THEMED_CARDS
-	if themed: # R2-BRIDGE-STYLE S4 (ST2): the arrival card is the first card on the HUD theme
-		panel.theme = StapledonTheme.theme()
-		panel.theme_type_variation = "HUDCard"
-	else: panel.add_theme_stylebox_override("panel", _panel_style(0.82))
+	var themed := true # R2-BRIDGE-STYLE ST4: every card on the HUD theme
+	panel.theme_type_variation = "HUDCard"
 	panel.custom_minimum_size.x = card_width()
 	panel.modulate.a = 0.0
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -334,8 +319,7 @@ func show_card(id: String, title: String, ttl := 0.0) -> VBoxContainer:
 	var t := Label.new()
 	t.text = title
 	t.add_theme_font_size_override("font_size", 13)
-	if themed: t.theme_type_variation = "HUDCardTitle"
-	else: t.add_theme_color_override("font_color", Color(0.95, 0.82, 0.5))
+	t.theme_type_variation = "HUDCardTitle"
 	box.add_child(t)
 	var body := VBoxContainer.new()
 	body.set_meta("themed", themed)

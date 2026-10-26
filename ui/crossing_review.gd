@@ -43,10 +43,11 @@ const WIDTH := 640.0 ## the panel's width (canvas units) when there is room
 const ASPECT := 1.5 ## width / height on every page: the home picture's 3:2, so it covers the panel uncropped; the buttons stay put
 const PAD := 18 ## the panel's content margin (the home picture bleeds through it to the panel's edge)
 const HOME_TEXT := 0.42 ## the home page's text column: this share of the width, over the picture's calm left side
-const WARM := Color(1.0, 0.92, 0.78)
-const DIM := Color(0.62, 0.68, 0.8)
-const TEXT := Color(0.88, 0.91, 0.98)
-const LOW := Color(0.95, 0.6, 0.4)
+# R2-BRIDGE-STYLE ST4: text meanings (StapledonTheme label variations), not colours.
+const WARM := "HUDLabel"
+const DIM := "HUDHint"
+const TEXT := "HUDLabel"
+const LOW := "HUDWarn"
 
 var ai_text: Dictionary = {} ## ai_req -> accepted AI words (the Crew page's)
 var narration: ArchiveNarration = null ## I4: the Archive's telling, when live AI told one (else the sim's authored lines)
@@ -74,7 +75,8 @@ static var _art_cache: Dictionary = {} ## path -> Texture2D (a 1536x1024 PNG is 
 
 func _init() -> void:
 	name = "CrossingReview"
-	add_theme_stylebox_override("panel", _style())
+	theme = StapledonTheme.theme()
+	theme_type_variation = "HUDReview"
 	custom_minimum_size = Vector2(600, 0)
 	_build_backdrop()
 	_box.add_theme_constant_override("separation", 6)
@@ -82,13 +84,13 @@ func _init() -> void:
 	var head := HBoxContainer.new()
 	_title.name = "PageTitle"
 	_title.add_theme_font_size_override("font_size", 13)
-	_title.add_theme_color_override("font_color", Color(0.6, 0.7, 0.9))
+	_title.theme_type_variation = "HUDCaption"
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(_title)
 	_leg.name = "Leg"
 	_leg.bind("review.leg", "text")
 	_leg.add_theme_font_size_override("font_size", 13)
-	_leg.add_theme_color_override("font_color", Color(0.6, 0.7, 0.9))
+	_leg.theme_type_variation = "HUDCaption"
 	head.add_child(_leg)
 	_box.add_child(head)
 	_box.add_child(HSeparator.new())
@@ -189,14 +191,7 @@ static func home_texture(path: String) -> Texture2D:
 	return _art_cache[path]
 
 
-static func _style() -> StyleBoxFlat:
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.02, 0.03, 0.06, 0.86)
-	st.border_color = Color(0.55, 0.65, 0.85, 0.5)
-	st.set_border_width_all(1)
-	st.set_corner_radius_all(6)
-	st.set_content_margin_all(PAD)
-	return st
+
 
 
 ## Show the crossing as the view has it. `over`: the braking boundary is reached (the last page can
@@ -644,24 +639,24 @@ func _column() -> VBoxContainer:
 	return b
 
 
-func _style_label(l: Label, size: int, color: Color) -> void:
+func _style_label(l: Label, size: int, kind: String) -> void:
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
+	l.theme_type_variation = kind
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.custom_minimum_size = Vector2(160, 0)
 
 
-func _label(text: String, size := 15, color := TEXT) -> Label:
+func _label(text: String, size := 15, kind := TEXT) -> Label:
 	var l := Label.new()
 	l.text = text
-	_style_label(l, size, color)
+	_style_label(l, size, kind)
 	return l
 
 
-func _composed(parts: Array, size := 15, color := TEXT) -> ComposedBinding:
+func _composed(parts: Array, size := 15, kind := TEXT) -> ComposedBinding:
 	var c := ComposedBinding.new().compose(parts)
-	_style_label(c, size, color)
+	_style_label(c, size, kind)
 	return c
 
 

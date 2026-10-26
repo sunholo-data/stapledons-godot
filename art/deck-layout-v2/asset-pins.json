@@ -11,8 +11,8 @@
   "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 be6bf75111fa30969adc119eff165fedc2aad97bb26f417de2dbdaa5e5a6e984, 15391 triangles after Blender import), put into WALK_bridge by the generator",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 5617652,
-      "sha256": "f3eaf550fe6ac089a918ddde67d9451ec93e193b18024e013adffec6339ddd6c",
+      "bytes": 2303608,
+      "sha256": "c8a55cd0cf0effbdb85a2078d7238a3658fc49b973edd67af8ab2ff96d2f4175",
       "all_materials_opaque": true
     },
     "assets/ship_demo/walk_bridge.glb": {
@@ -23,9 +23,14 @@
       "all_materials_opaque": true
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 4726860,
-      "sha256": "5989c6d85483e6fdadc00e8975220da71d6c4d2d6901d3c8d80b1d868138a935",
+      "bytes": 4531504,
+      "sha256": "86d2e858d6d766885c1e81d241201c334ab1426cfd908155940f153818311079",
       "all_materials_opaque": true
+    },
+    "assets/ship_demo/lift_head.glb": {
+      "all_materials_opaque": true,
+      "bytes": 159748,
+      "sha256": "ff90afeffa35db8aa4027638a91b8d102e184695cc4d5e4a6b32e3d063919635"
     }
   },
   "masters": {
@@ -48,6 +53,11 @@
       "bytes": 10622442,
       "sha256": "652f6da1d0dfad7529c00b009cdd2423255f6dd3cf3eff5ac76afeb516498140",
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/652f6da1d0dfad7529c00b009cdd2423255f6dd3cf3eff5ac76afeb516498140.blend"
+    },
+    "stapledon_bridge_props_v4.blend": {
+      "bytes": 11017077,
+      "sha256": "45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
@@ -180,5 +190,148 @@
         "triangles": 2400
       }
     }
+  },
+  "st3": {
+    "authoring_script": "~/dev/blender/scripts/stapledon_bridge_props_v4.py (packed in the master)",
+    "authoring_script_sha256": "adb35d921b5a2382451f2f0396e7ab9aaa85b46a5b6060570fb05e93361fdf6f",
+    "source_master_sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13",
+    "what": "R2-BRIDGE-STYLE ST3/ST5 (v4): v3 plus the Archive terminal and tomes, the watch benches and their cushions and pots, the shaft guardrails, the lift guides grown and the pods' bands softened (D-104); the authored lift head (lift_head.glb); the deck top painted in four planar quadrants under an empty that keeps its name, and the spire painted with a warm wash at its lamp; ship.glb exports WebP",
+    "straight_edge_share": {
+      "archive_terminal": {
+        "before": 0.2375,
+        "after": 0.0628,
+        "triangles": 3376
+      },
+      "v2_archive_detail_00": {
+        "before": 0.6939,
+        "after": 0.0,
+        "triangles": 5760
+      },
+      "watch_bench_0": {
+        "before": 0.4381,
+        "after": 0.0788,
+        "triangles": 4048
+      },
+      "watch_bench_1": {
+        "before": 0.4381,
+        "after": 0.0788,
+        "triangles": 4048
+      },
+      "watch_bench_2": {
+        "before": 0.4381,
+        "after": 0.0788,
+        "triangles": 4048
+      },
+      "watch_bench_3": {
+        "before": 0.4381,
+        "after": 0.0788,
+        "triangles": 4048
+      },
+      "v2_bench_detail_00": {
+        "before": 0.7302,
+        "after": 0.0085,
+        "triangles": 4752
+      },
+      "v2_bench_detail_01": {
+        "before": 0.7302,
+        "after": 0.0085,
+        "triangles": 4752
+      },
+      "v2_bench_detail_02": {
+        "before": 0.7302,
+        "after": 0.0085,
+        "triangles": 4752
+      },
+      "v2_bench_detail_03": {
+        "before": 0.7302,
+        "after": 0.0085,
+        "triangles": 4752
+      },
+      "Guardrail 82": {
+        "before": 1.0,
+        "after": 0.0398,
+        "triangles": 2448
+      },
+      "Guardrail 82.001": {
+        "before": 1.0,
+        "after": 0.0398,
+        "triangles": 2448
+      },
+      "Guardrail 82.002": {
+        "before": 1.0,
+        "after": 0.0398,
+        "triangles": 2448
+      },
+      "Lift guide": {
+        "before": 1.0,
+        "after": 0.0072,
+        "triangles": 1760
+      },
+      "Lift guide.001": {
+        "before": 1.0,
+        "after": 0.0072,
+        "triangles": 1760
+      },
+      "v2_nav_detail_00": {
+        "before": 0.7074,
+        "after": 0.0126,
+        "triangles": 10484
+      },
+      "v2_nav_detail_01": {
+        "before": 0.7074,
+        "after": 0.0126,
+        "triangles": 10484
+      },
+      "v2_nav_detail_02": {
+        "before": 0.7074,
+        "after": 0.0126,
+        "triangles": 10484
+      },
+      "lift_pad": {
+        "after": 0.0856,
+        "triangles": 896
+      },
+      "lift_rail_3_6": {
+        "after": 0.0418,
+        "triangles": 1928
+      },
+      "lift_gate_4_4": {
+        "after": 0.037,
+        "triangles": 1928
+      }
+    },
+    "big_surfaces": [
+      {
+        "object": "bridge_floor_top82_q0",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q0_paint.webp",
+        "triangles": 935
+      },
+      {
+        "object": "bridge_floor_top82_q1",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q1_paint.webp",
+        "triangles": 990
+      },
+      {
+        "object": "bridge_floor_top82_q2",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q2_paint.webp",
+        "triangles": 1337
+      },
+      {
+        "object": "bridge_floor_top82_q3",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q3_paint.webp",
+        "triangles": 1110
+      },
+      {
+        "object": "spire_needle",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/spire_needle_paint.webp",
+        "triangles": 11720
+      },
+      {
+        "object": "deck_floor_fill",
+        "texture": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/deck_floor_fill_paint.webp",
+        "triangles": 9237
+      }
+    ],
+    "fronds": "the ten rim-frond meshes dropped from the export (D-106: painted cards in the game, manifest style.foliage)"
   }
 }
