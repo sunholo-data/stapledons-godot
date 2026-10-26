@@ -240,6 +240,9 @@ const DENY = new Set([
   'DD-2025-12-02-game-starts-post-black-hole', // the game's premise and backstory
   'DD-2025-12-02-human-incompatibility-theme', // a story theme
   'DD-2025-12-06-memory-health-hidden', // hidden state revealed later
+  'D-108', // sound ruling names the spire's Memory Health degradation layer (hidden state)
+  'D-112', // sound ruling refers to the Memory Health source and the spire's Archive states
+  'D-113', // adds the hidden Archive Memory Health to the sim
   'DD-2025-12-06-archive-repair-as-player-choice', // Archive storyline
   'DD-2025-11-30-ocean-values-drift-over-time', // revealed on the end screen
   // parent review: Spire and Archive lore, and long-horizon society outcomes
