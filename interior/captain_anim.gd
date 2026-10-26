@@ -11,7 +11,8 @@ extends RefCounted
 ##             the three left-moving ones are mirrors (the identity is mirror-safe, 2026-10-03).
 ##   phase   : the gait cycle advances with DISTANCE (|v| dt / cycle_m), never with time, so a planted
 ##             foot cannot skate: no distance, no advance.
-##   clips   : idle, start, walk, stop, use_low/mid/high, sit/seated/stand, lift, look_up.
+##   clips   : idle, start, walk, stop, use_low/mid/high and leave_low/mid/high (the reach reversed),
+##             sit/seated/stand, lift, look_up.
 ##   events  : foot_down (L or R) when the phase crosses a contact (the sound hook, §D5).
 ##   reduced : reduced motion keeps the stride and the poses; drops the bob, the lean and look-ups.
 ## Presentation only: nothing here goes to the sim.
@@ -23,6 +24,7 @@ const STOP_S := 0.3
 const SIT_S := 0.6
 const STAND_S := 0.5
 const LOOK_UP_S := 2.0
+const LEAVE_S := 0.4 ## the step back from a station: the reach clip reversed
 const BOB_M := 0.01 ## the stills' bob (a painted walk carries its own)
 const LEAN_DEG := 2.0
 const DEFAULT_CYCLE_M := 1.4857 # the calm walk's cycle in game (D-115: art/captain-anim-v3, 1.3 m/s, 105 steps a minute)
@@ -128,6 +130,12 @@ func step(inp: Dictionary, dt: float) -> Dictionary:
 			next = "look_up"
 		else:
 			next = "idle"
+	# Leaving a station: the reach played backwards (a step back, LEAVE_S) unless already walking away.
+	if not seated and not moving and station == "" and not bool(inp.get("lift", false)):
+		if clip.begins_with("use_"):
+			next = "leave_" + clip.trim_prefix("use_")
+		elif clip.begins_with("leave_") and clip_t + dt < LEAVE_S:
+			next = clip
 	if next != clip:
 		clip = next
 		clip_t = 0.0
@@ -162,3 +170,8 @@ func use_gait(clip: Dictionary) -> void:
 		cycle_m = float(clip.cycle_m)
 	if clip.get("contacts", []) is Array and not clip.get("contacts", []).is_empty():
 		contacts = clip.contacts
+
+
+## The painted facing of the current sector (tests and tools).
+func facing_for_test() -> String:
+	return PAINTED[sector][0]

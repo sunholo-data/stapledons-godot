@@ -15,3 +15,8 @@ captain-frames-ingest: import ## authoring: RAW=<dir of painted 1024x1536 frames
 	@$(GODOT) --headless --path . --script tools/captain_frames.gd -- --ingest $(RAW) --guides $(GUIDES) --json $(SCRATCH)/captain-frames-ingest.json
 captain-anim-capture: import ## AC6: the captain through the real Bow view at 1280x720: every clip and facing, the side-by-side, the moonwalk before/after, animated WebPs -> OUT (default build/captain_review; GPU window; open them)
 	@sh tools/captain_review.sh $(or $(OUT),build/captain_review)
+.PHONY: captain-chair-test
+captain-chair-test: import ## CA2 (OQ9): the chair in the real demo: E in reach sits on the seat facing the bow, a move key or E stands first then walks, no chair below; arrival and starbow look-up cues
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_captain_chair.gd > $(SCRATCH)/captain-chair-test.log 2>&1; rc=$$?; grep -E '^(FAIL|captain-chair)' $(SCRATCH)/captain-chair-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/captain-chair-test.log && grep -q '^captain-chair: [0-9]* passed, 0 failures$$' $(SCRATCH)/captain-chair-test.log
+test: captain-chair-test

@@ -479,5 +479,13 @@
       }
     ],
     "foliage_about": "D-106 variety (Mark on #322): three painted kinds (frond, shrub, grown_planter from the plants spike) in a ring order where no two neighbours match, with seeded (20261022) height, mirror and a small tint within the palette per plant; heights capped so the bow evaluator's fade budget holds. The final per-kind painted set comes with the levels foliage library (D-106)."
+  },
+  "captain_chair": {
+    "position_m": [
+      -2.599,
+      12.227
+    ],
+    "yaw_deg": 0.0,
+    "about": "CA2 (OQ9): the captain's chair seat point, ship metres (x, -z), as art/deck-layout-v2/bow_a.json layout A places it; the captain sits facing the bow"
   }
 }

@@ -86,7 +86,8 @@ func _run() -> void:
 					var low := _lowest_alpha(await _alone(demo.avatar_pos))
 					var seen := await _crop(demo.avatar_pos) # as the game draws it
 					rows.append(snappedf(low + 1.0 - deck_y, 0.1)) # the bottom edge of the lowest captain pixel
-					_line(seen, int(round(deck_y)), Color(0.2, 0.9, 1.0))
+					# The window may be larger than the geometry view (no aspect keep): scale the offset as the crop is.
+					_line(seen, int(round(float(CROP) / 2.0 + _deck_offset() * float(root.get_texture().get_height()) / float(demo.geometry_view.size.y))), Color(0.2, 0.9, 1.0))
 					seen.save_png(dir.path_join("f%02d.png" % i))
 				feet["%s_%s_%s" % [mode, spot, facing]] = rows
 				print("feet %s %s %s: below the deck (px, + = below) %s" % [mode, spot, facing, rows])

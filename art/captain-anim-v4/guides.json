@@ -1,0 +1,182 @@
+{
+  "about": "R2-CAPTAIN-ANIMATION pose guides v4 (CA2): held poses (stations, the chair, the lift, the look-up) on the v3 rig; colour keys, canvas and camera as v3; feet planted",
+  "canvas_px": [
+    1024,
+    1536
+  ],
+  "foot_anchor_px": [
+    512,
+    1440
+  ],
+  "elevation_deg": 29,
+  "frames": [
+    {
+      "file": "use_low_back_00.png",
+      "clip": "use_low",
+      "facing": "back",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "use_low_front_00.png",
+      "clip": "use_low",
+      "facing": "front",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "use_low_back_01.png",
+      "clip": "use_low",
+      "facing": "back",
+      "index": 1,
+      "planted": "both"
+    },
+    {
+      "file": "use_low_front_01.png",
+      "clip": "use_low",
+      "facing": "front",
+      "index": 1,
+      "planted": "both"
+    },
+    {
+      "file": "use_mid_back_00.png",
+      "clip": "use_mid",
+      "facing": "back",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "use_mid_front_00.png",
+      "clip": "use_mid",
+      "facing": "front",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "use_mid_back_01.png",
+      "clip": "use_mid",
+      "facing": "back",
+      "index": 1,
+      "planted": "both"
+    },
+    {
+      "file": "use_mid_front_01.png",
+      "clip": "use_mid",
+      "facing": "front",
+      "index": 1,
+      "planted": "both"
+    },
+    {
+      "file": "sit_back_00.png",
+      "clip": "sit",
+      "facing": "back",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "sit_front_00.png",
+      "clip": "sit",
+      "facing": "front",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "sit_back_01.png",
+      "clip": "sit",
+      "facing": "back",
+      "index": 1,
+      "planted": "both"
+    },
+    {
+      "file": "sit_front_01.png",
+      "clip": "sit",
+      "facing": "front",
+      "index": 1,
+      "planted": "both"
+    },
+    {
+      "file": "seated_back_00.png",
+      "clip": "seated",
+      "facing": "back",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "seated_front_00.png",
+      "clip": "seated",
+      "facing": "front",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "lift_back_00.png",
+      "clip": "lift",
+      "facing": "back",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "lift_back_34_00.png",
+      "clip": "lift",
+      "facing": "back_34",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "lift_profile_00.png",
+      "clip": "lift",
+      "facing": "profile",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "lift_front_34_00.png",
+      "clip": "lift",
+      "facing": "front_34",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "lift_front_00.png",
+      "clip": "lift",
+      "facing": "front",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "look_up_back_00.png",
+      "clip": "look_up",
+      "facing": "back",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "look_up_back_34_00.png",
+      "clip": "look_up",
+      "facing": "back_34",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "look_up_profile_00.png",
+      "clip": "look_up",
+      "facing": "profile",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "look_up_front_34_00.png",
+      "clip": "look_up",
+      "facing": "front_34",
+      "index": 0,
+      "planted": "both"
+    },
+    {
+      "file": "look_up_front_00.png",
+      "clip": "look_up",
+      "facing": "front",
+      "index": 0,
+      "planted": "both"
+    }
+  ]
+}

@@ -106,7 +106,8 @@ func _show() -> void:
 const STILL_FOR_SECTOR := [["back", false], ["ne", false], ["se", false], ["se", false],
 	["front", false], ["se", true], ["se", true], ["ne", true]]
 const CLIP_STAND_IN := {"start": "walk", "stop": "idle", "look_up": "idle", "lift": "idle",
-	"use_low": "idle", "use_mid": "idle", "use_high": "idle", "sit": "idle", "seated": "idle", "stand": "idle"}
+	"use_low": "idle", "use_mid": "idle", "use_high": "use_mid", "leave_low": "idle", "leave_mid": "idle", "leave_high": "leave_mid",
+	"sit": "idle", "seated": "idle", "stand": "idle"}
 var anim := {} # the manifest's "anim" section
 var anim_dir := ""
 var shown := {} # what show_anim() drew: {source: "frame"|"still", file, flip, frame, clip}
@@ -123,6 +124,10 @@ func load_anim(dir: String, file := "manifest.json") -> void:
 ## The painted frame list for a clip at this stage and painted facing (empty when none).
 func clip_frames(clip: String, painted_facing: String) -> Array:
 	var c: Dictionary = anim.get("clips", {}).get(clip, {})
+	if c.has("reverse_of"): # CA2: a step back or a stand is its reach or its sit, played backwards
+		var r := clip_frames(str(c.reverse_of), painted_facing).duplicate()
+		r.reverse()
+		return r
 	return c.get("stages", {}).get(str(stage), {}).get(painted_facing, [])
 
 
@@ -184,14 +189,14 @@ var _canvas := {} # "file|flip" -> the frame on the full cell canvas
 
 func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: float) -> void:
 	var c: Dictionary = anim.get("clips", {}).get(clip, {})
-	if effect == "none" or bool(o.get("reduced", false)) or str(c.get("kind", "")) != "gait":
-		material_override = null
-		return
+	# Every painted frame goes through the material (CA2: the start and stop lean); the effect itself runs
+	# only on a walking gait clip, never under reduced motion.
+	var active := effect != "none" and not bool(o.get("reduced", false)) and str(c.get("kind", "")) == "gait"
 	if _fx == null:
 		_fx = ShaderMaterial.new()
 		_fx.shader = load("res://interior/captain_fx.gdshader")
 	var n := frames.size()
-	var prev: Dictionary = frames[(i - 1 + n) % n]
+	var prev: Dictionary = frames[(i - 1 + n) % n] if str(c.get("kind", "")) == "gait" else frames[i]
 	var prev_flip: bool = bool(prev.get("flip", false)) != bool(o.get("flip", false))
 	var cur := _canvas_tex(frames[i], flip, s)
 	texture = cur
@@ -201,7 +206,8 @@ func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: 
 	var frame_ms := 1000.0 * float(c.get("cycle_m", 1.0)) / n / maxf(speed, 1e-3)
 	var since_ms := fposmod(float(o.get("phase", 0.0)) * n, 1.0) * frame_ms
 	var sd: Vector2 = o.get("screen_dir", Vector2(0, 1))
-	_fx.set_shader_parameter("mode", EFFECTS.find(effect))
+	_fx.set_shader_parameter("mode", EFFECTS.find(effect) if active else 0)
+	_fx.set_shader_parameter("lean_tan", tan(deg_to_rad(float(o.get("lean_deg", 0.0)))) * sd.x)
 	_fx.set_shader_parameter("cur_tex", cur)
 	_fx.set_shader_parameter("prev_tex", _canvas_tex(prev, prev_flip, s))
 	_fx.set_shader_parameter("t", clampf(1.0 - since_ms / EFFECT_MS, 0.0, 1.0) if speed > 0.0 else 0.0)
@@ -213,8 +219,9 @@ func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: 
 	_fx.set_shader_parameter("step_px", step_m * 720.0 * s * (absf(sd.x) + absf(sd.y) * sin(deg_to_rad(29.0))))
 	_fx.set_shader_parameter("fixed_y", billboard == BaseMaterial3D.BILLBOARD_FIXED_Y)
 	material_override = _fx
-	shown["effect"] = effect
+	shown["effect"] = effect if active else "none"
 	shown["effect_t"] = _fx.get_shader_parameter("t")
+	shown["lean_tan"] = _fx.get_shader_parameter("lean_tan")
 
 
 func _canvas_tex(e: Dictionary, flip: bool, s: float) -> Texture2D:
