@@ -12,7 +12,7 @@ command -v img2webp >/dev/null || { echo "captain-review: FAIL img2webp missing 
 perl -e 'alarm 900; exec @ARGV' "$GODOT" --path . --resolution 1280x720 --script tools/captain_review.gd -- --out="$OUT" > "$OUT/capture.log" 2>&1 || { grep -E '^(FAIL|captain-review)' "$OUT/capture.log"; exit 1; }
 grep -E '^(clip|moonwalk|captain-review)' "$OUT/capture.log"
 mkdir -p "$OUT/cells" "$OUT/anim"
-jq -r ".anim.clips[].stages[][][] | .file" assets/characters/captain/anim_pilot.json | sort -u | while read -r f; do
+jq -r ".anim.clips[].stages[][][] | .file" assets/characters/captain/manifest.json | sort -u | while read -r f; do
   cp "assets/characters/captain/$f" "$OUT/cells/"; done
 # One loop per clip: game speed and 3x.
 jq -c '.clips[]' "$OUT/review_capture.json" | while read -r c; do

@@ -52,7 +52,7 @@ func _run() -> void:
 	demo.avatar_pos = foot
 	for k in 240:
 		demo._process(DT)
-	demo.avatar.load_anim("res://assets/characters/captain", "anim_pilot.json") # the CA1 pilot (not in the game yet)
+	demo.avatar.load_anim("res://assets/characters/captain") # the painted clips (the game's own since D-120)
 	var anim: Dictionary = demo.avatar.anim
 	demo.captain_anim_auto = false
 	# The deck without the captain: a frame that differs from it by too few pixels is blank.

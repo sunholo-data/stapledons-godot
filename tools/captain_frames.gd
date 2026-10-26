@@ -19,9 +19,9 @@ extends SceneTree
 ## Prints "captain-frames: ok" or FAIL lines. Writes --json <file> with every number.
 const DIR := "res://assets/characters/captain"
 const CELL_SCALE := 0.1875
-## The manifest the painted frames are written to and checked in: the pilot's own until Mark accepts it
-## (then the "anim" section moves into manifest.json and the game shows it).
-const ANIM_MANIFEST := "anim_pilot.json"
+## The manifest the painted frames are written to and checked in: the captain's own (the game loads its
+## "anim" section; Mark accepted the walk, D-120).
+const ANIM_MANIFEST := "manifest.json"
 const CANVAS := Vector2i(1024, 1536)
 const ANCHOR := Vector2(512, 1440)
 ## Pose (§D4), per painted facing [IoU, leg coverage], set from the measured numbers (design doc "Walk"):
@@ -188,7 +188,8 @@ func _ingest(raw: String) -> void:
 			st[facing] = list
 		c["stages"] = {"0": st}
 		clips[clip] = c
-	var m := {"anim": {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads}}
+	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join(ANIM_MANIFEST)))
+	m["anim"] = {"about": "R2-CAPTAIN-ANIMATION painted frames (manifest v2): cells of the contract canvas at cell_scale, trimmed (crop = [x, y, w, h] in the cell canvas), per stage and painted facing; flip mirrors a frame; guide is the pose guide (cell size) each frame is checked against; planted is the guide's stance foot (L, R, flight). Made by tools/captain_frames.gd --ingest.", "cell_scale": CELL_SCALE, "clips": clips, "ingest_scale": scales, "ingest_pin_px": pins, "ingest_pin_wanted_px": pins_full, "ingest_head_dy_px": heads}
 	var f := FileAccess.open(DIR.path_join(ANIM_MANIFEST), FileAccess.WRITE)
 	f.store_string(JSON.stringify(m, "  ") + "\n")
 	f.close()

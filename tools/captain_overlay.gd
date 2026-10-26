@@ -30,7 +30,7 @@ func _initialize() -> void:
 			prev_clip = a.trim_prefix("--prev-clip=")
 		elif a.begins_with("--prev-ms="):
 			prev_ms = float(a.trim_prefix("--prev-ms="))
-	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join("anim_pilot.json")))
+	var m: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DIR.path_join("manifest.json")))
 	var anim: Dictionary = m.anim
 	var s: float = anim.cell_scale
 	var jog: Dictionary = anim.clips[clip_name]

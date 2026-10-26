@@ -36,6 +36,7 @@ func _initialize() -> void:
 	_speed()
 	_feet_on_floor()
 	_between_frames()
+	_walk_in_game()
 	_avatar()
 	print("captain-anim: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -261,7 +262,7 @@ func _speed() -> void:
 func _feet_on_floor() -> void:
 	var av := CaptainAvatar.new()
 	av.load_dir(CAPTAIN)
-	av.load_anim(CAPTAIN, "anim_pilot.json")
+	av.load_anim(CAPTAIN)
 	var worst_below := -INF
 	var worst_above := INF
 	var n := 0
@@ -298,7 +299,7 @@ func _feet_on_floor() -> void:
 func _between_frames() -> void:
 	var av := CaptainAvatar.new()
 	av.load_dir(CAPTAIN)
-	av.load_anim(CAPTAIN, "anim_pilot.json")
+	av.load_anim(CAPTAIN)
 	var walk: Dictionary = av.anim.get("clips", {}).get("walk", {})
 	if walk.is_empty():
 		check("between frames: the pilot has a walk clip", false)
@@ -334,4 +335,16 @@ func _between_frames() -> void:
 			break
 	var sole_m := (av.get_item_rect().position.y + (img.get_height() - (low + 1))) * av.pixel_size
 	check("on the effect's canvas the sole still rests on the walk point (%.4f m, the 15 mm lift)" % sole_m, sole_m >= 0.0 and sole_m <= 0.0155)
+	av.free()
+
+
+## D-120: the painted walk is the game's (manifest.json), back and profile, 12 frames each.
+func _walk_in_game() -> void:
+	var av := CaptainAvatar.new()
+	av.load_anim(CAPTAIN)
+	var walk: Dictionary = av.anim.get("clips", {}).get("walk", {})
+	check("the game's manifest carries the painted walk (D-120)", not walk.is_empty())
+	if not walk.is_empty():
+		check("12 walk frames in back and in profile", walk.stages["0"].get("back", []).size() == 12 and walk.stages["0"].get("profile", []).size() == 12)
+		check("no pilot-only manifest left", not FileAccess.file_exists(CAPTAIN.path_join("anim_pilot.json")))
 	av.free()

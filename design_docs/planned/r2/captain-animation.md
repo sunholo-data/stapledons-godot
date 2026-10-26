@@ -303,6 +303,9 @@ All three are sized to one painted frame's travel on the canvas (16.7 cell px ac
 
 **Recommended and the demo default: echo.** It turns each step into a brief afterimage of the step before, which leans into the alien stepping without smearing the painting. The trail tints the figure's back edge; the blur is barely visible at 67 px.
 
+
+**Accepted (2026-10-26, D-120):** "yeah looks good - we go with echo". This covers the feet fix with the back-view depth trade-off, echo (off under reduced motion), and the walk. The painted walk now lives in `assets/characters/captain/manifest.json`, so the game shows it, and echo is on by default. The pilot-only `anim_pilot.json` is gone.
+
 ## Open questions for Mark (all answered: D-102, as recommended)
 
 | # | Question | Recommendation |

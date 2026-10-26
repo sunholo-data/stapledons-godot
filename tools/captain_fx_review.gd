@@ -50,7 +50,7 @@ func _run() -> void:
 	demo.ship_hud.visible = false
 	demo.process_mode = Node.PROCESS_MODE_DISABLED
 	demo.captain_anim_auto = false
-	demo.avatar.load_anim(CAPTAIN, "anim_pilot.json")
+	demo.avatar.load_anim(CAPTAIN)
 	var anim: Dictionary = demo.avatar.anim
 	var walk: Dictionary = anim.clips.walk
 	var settled: Dictionary = anim.get("settle_dy_cell_px", {})

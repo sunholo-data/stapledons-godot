@@ -113,8 +113,7 @@ var shown := {} # what show_anim() drew: {source: "frame"|"still", file, flip, f
 var _frames := {} # file -> Texture2D
 
 
-## file: the manifest holding the "anim" section (the CA1 pilot's frames live in anim_pilot.json until
-## Mark accepts them; the game loads manifest.json).
+## file: the manifest holding the "anim" section (manifest.json: the painted walk is the game's since D-120).
 func load_anim(dir: String, file := "manifest.json") -> void:
 	var m: Variant = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(file)))
 	anim = m.get("anim", {}) if m is Dictionary else {}
