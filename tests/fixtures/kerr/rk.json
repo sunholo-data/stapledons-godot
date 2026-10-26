@@ -1,7 +1,7 @@
 {
   "schema": "kerr-rk-seed-v1",
-  "unit": "radii GM/c^2 (package R=u/2 in r_s); clocks dimensionless dtau/dt",
-  "source": "BPT72 ApJ178,347 \u00a7II; design_docs/planned/r2/kerr-black-holes.md V31, V40",
+  "unit": "radii GM/c^2 (package R=u/2 in r_s); clocks dimensionless; frequencies c^3/GM; speeds in c; RK-18 SI (km, ms, rad/s)",
+  "source": "BPT72 ApJ178,347 \u00a7II; Bardeen 1970/1973; design_docs/planned/r2/kerr-black-holes.md V31, V34, V40",
   "records": [
     {"id": "RK-1", "spin": "0", "quantity": "outer", "precise": "2", "display": "2.000000", "package_R": "1", "formula": "u=1+sqrt(1-spin^2)"},
     {"id": "RK-2", "spin": "0", "quantity": "inner", "precise": "0", "display": "0.000000", "package_R": "0", "formula": "u=1-sqrt(1-spin^2)"},
@@ -21,6 +21,23 @@
     {"id": "RK-7", "spin": "0.9", "quantity": "isco-retro", "precise": "8.7173522796064893", "display": "8.717352", "package_R": "4.3586761398032447", "formula": "BPT72 ISCO Z1/Z2; prograde = smaller root, retrograde = larger"},
     {"id": "RK-8", "spin": "0.9", "quantity": "clock-pro", "precise": "0.37086794439864592", "display": "0.370868", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"},
     {"id": "RK-8", "spin": "0.9", "quantity": "clock-retro", "precise": "0.79319251811829484", "display": "0.793193", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"},
-    {"id": "RK-8b", "spin": "0.998", "quantity": "clock-pro", "precise": "0.092670308365368573", "display": "0.092670", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"}
+    {"id": "RK-8b", "spin": "0.998", "quantity": "clock-pro", "precise": "0.092670308365368573", "display": "0.092670", "package_R": null, "formula": "dtau/dt=sqrt(u^1.5-3sqrt(u)+2k spin)u^0.75/(u^1.5+k spin), k=+1 at prograde ISCO, -1 at retrograde ISCO"},
+    {"id": "RK-10", "spin": "0.9", "quantity": "frame-drag-static-limit", "precise": "0.16014234875444840", "display": "0.160142", "package_R": null, "formula": "omega=2su/A, A=(u^2+s^2)^2-Delta s^2, Delta=u^2-2u+s^2; equator"},
+    {"id": "RK-11", "spin": "0.9", "quantity": "lapse-static-limit", "precise": "0.37964208654863802", "display": "0.379642", "package_R": null, "formula": "N=sqrt(Delta Sigma/A), Sigma=u^2 on equator"},
+    {"id": "RK-12", "spin": "0.5", "quantity": "zamo-speed-isco-pro", "precise": "0.56164924228192780", "display": "0.561649", "package_R": null, "formula": "v=(Omega-omega)sqrt(g_pp)/N, prograde ISCO, Omega=1/(u^1.5+s); c"},
+    {"id": "RK-12", "spin": "0.9", "quantity": "zamo-speed-isco-pro", "precise": "0.62454869546086524", "display": "0.624549", "package_R": null, "formula": "v=(Omega-omega)sqrt(g_pp)/N, prograde ISCO, Omega=1/(u^1.5+s); c"},
+    {"id": "RK-13", "spin": "0.9", "quantity": "static-clock-static-limit", "precise": "0", "display": "0.000000", "package_R": null, "formula": "sqrt(1-2u/Sigma), equator; requires u>=2 (static limit); s=0 form sqrt(1-1/R), R=u/2; no claim at u=0"},
+    {"id": "RK-18", "spin": "0.9", "quantity": "rs-km", "precise": "29.532500761002495", "display": "29.532501", "package_R": null, "formula": "10 Msun, GM_sun=1.3271244e20 m^3/s^2 (IAU 2015 nominal), c=299792458 m/s"},
+    {"id": "RK-18", "spin": "0.9", "quantity": "static-limit-km", "precise": "29.532500761002495", "display": "29.532501", "package_R": null, "formula": "10 Msun, GM_sun=1.3271244e20 m^3/s^2 (IAU 2015 nominal), c=299792458 m/s"},
+    {"id": "RK-18", "spin": "0.9", "quantity": "horizon-km", "precise": "21.202709698863643", "display": "21.202710", "package_R": null, "formula": "10 Msun, GM_sun=1.3271244e20 m^3/s^2 (IAU 2015 nominal), c=299792458 m/s"},
+    {"id": "RK-18", "spin": "0.9", "quantity": "isco-pro-km", "precise": "34.270740098515360", "display": "34.270740", "package_R": null, "formula": "10 Msun, GM_sun=1.3271244e20 m^3/s^2 (IAU 2015 nominal), c=299792458 m/s"},
+    {"id": "RK-18", "spin": "0.9", "quantity": "period-ms", "precise": "1.3727616115380832", "display": "1.372762", "package_R": null, "formula": "10 Msun, GM_sun=1.3271244e20 m^3/s^2 (IAU 2015 nominal), c=299792458 m/s"},
+    {"id": "RK-18", "spin": "0.9", "quantity": "omega-h-rad-s", "precise": "6362.7059001439946", "display": "6362.705900", "package_R": null, "formula": "10 Msun, GM_sun=1.3271244e20 m^3/s^2 (IAU 2015 nominal), c=299792458 m/s"},
+    {"id": "RK-Q1", "spin": "0", "quantity": "photon-pro", "precise": "3.0000000000000000", "display": "3.000000", "package_R": "1.5000000000000000", "formula": "RK-Q1 s=0 exact Schwarzschild member"},
+    {"id": "RK-Q1", "spin": "0", "quantity": "photon-retro", "precise": "3.0000000000000000", "display": "3.000000", "package_R": "1.5000000000000000", "formula": "RK-Q1 s=0 exact Schwarzschild member"},
+    {"id": "RK-Q1", "spin": "0", "quantity": "isco-pro", "precise": "6", "display": "6.000000", "package_R": "3", "formula": "RK-Q1 s=0 exact Schwarzschild member"},
+    {"id": "RK-Q1", "spin": "0", "quantity": "isco-retro", "precise": "6", "display": "6.000000", "package_R": "3", "formula": "RK-Q1 s=0 exact Schwarzschild member"},
+    {"id": "RK-Q1", "spin": "0", "quantity": "shadow", "precise": "5.1961524227066319", "display": "5.196152", "package_R": "2.5980762113533159", "formula": "RK-Q1 s=0 exact Schwarzschild member"},
+    {"id": "RK-Q1", "spin": "0", "quantity": "frame-drag", "precise": "0", "display": "0.000000", "package_R": null, "formula": "omega=2su/A, A=(u^2+s^2)^2-Delta s^2, Delta=u^2-2u+s^2; equator"}
   ]
 }
