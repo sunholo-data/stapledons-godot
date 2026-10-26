@@ -1,9 +1,12 @@
 {
-  "about": "R2-BRIDGE-STYLE (D-100): the HUD theme's bundled assets, pinned. Fonts: google/fonts (assets/fonts/README.md), SIL OFL 1.1. The ink border: tools/theme_assets.gd (seed 20261020), reproducible.",
+  "about": "R2-BRIDGE-STYLE (D-100): the HUD theme's bundled assets, pinned. Fonts: google/fonts (assets/fonts/README.md), SIL OFL 1.1. The ink border: tools/theme_assets.gd (seed 20261020), reproducible. The foliage cards (assets/foliage/README.md) are pinned here too.",
   "files": {
     "res://assets/fonts/JosefinSans-wght.ttf": "9255abdb5f393bc51e101abbd07a716a977fd3e15472b1b84b260f426a342bfd",
     "res://assets/fonts/Nunito-wght.ttf": "bb55a5ca5c2042335b3991af27c4d0705d0ef41cac6164ac737fd8f2a1e85207",
-    "res://ui/theme/ink_panel.png": "ad5f7448156e8051ed991243841cd35d744733429a42f30f0dbb3f85c5b771d3"
+    "res://ui/theme/ink_panel.png": "ad5f7448156e8051ed991243841cd35d744733429a42f30f0dbb3f85c5b771d3",
+    "res://assets/foliage/frond.png": "c0170cc3e6528459e27fc5f1812889c4520dd722cd8b82db94c3553d08f78864",
+    "res://assets/foliage/shrub.png": "2d8c5db91b3af0212545c915cd575c2eb08e51c2b316091d8167dd24014b5607",
+    "res://assets/foliage/grown_planter.png": "2e855f4e8f5a4799d0b046e08fd7df37f634382fc8540badb8810097d8aef01d"
   },
   "licences": [
     "res://assets/fonts/OFL-JosefinSans.txt",

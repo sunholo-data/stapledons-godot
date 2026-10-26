@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-BRIDGE-STYLE AC10 (design_docs/planned/r2/bridge-styling-pass.md §S6): the review set through the
+## R2-BRIDGE-STYLE AC10 (design_docs/implemented/r2/bridge-styling-pass.md §S6): the review set through the
 ## real views, GPU window, 1280x720. Frames (each with the HUD off, and "<name>_hud" with it on):
 ##   bow_deep     the Bow view at the spawn, interstellar at rest (no star close: the spire keys the bridge)
 ##   bow_star     the same near the Sun (the star keys it, the spire at its floor)

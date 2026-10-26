@@ -92,10 +92,8 @@ func build() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	grow_vertical = Control.GROW_DIRECTION_BOTH
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.09, 0.96)
-	style.set_content_margin_all(16)
-	add_theme_stylebox_override("panel", style)
+	theme = StapledonTheme.theme() # R2-BRIDGE-STYLE ST4
+	theme_type_variation = "HUDSheet"
 	var box := VBoxContainer.new()
 	add_child(box)
 	var labels: Dictionary = copy["labels"]
@@ -120,9 +118,9 @@ func build() -> void:
 	box.add_child(ai_body)
 	tag = _copy_label(box, "Tag", "consequence.news.body_source", {"template": "", "ai": labels["ai_tag"], "fallback": ""})
 	tag.add_theme_font_size_override("font_size", 11)
-	tag.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+	tag.theme_type_variation = "HUDAccent"
 	notice = _copy_label(box, "Notice", "consequence.news.body_source", {"template": "", "ai": "", "fallback": labels["fallback_notice"]})
-	notice.add_theme_color_override("font_color", Color(1.0, 0.8, 0.45))
+	notice.theme_type_variation = "HUDCaption"
 	var phrases := {}
 	for code: String in copy["reasons"]:
 		phrases[code] = "%s %s" % [labels["reason_lead"], copy["reasons"][code]]

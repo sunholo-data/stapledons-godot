@@ -159,6 +159,7 @@ func setup(opts := {}) -> bool:
 	menu_return=opts.get("from_menu",false);asset_dir=str(opts.get("asset_dir",""))
 	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
+	StapledonTheme.install(get_window()) # R2-BRIDGE-STYLE ST4: the HUD theme on every panel
 	var px: Vector2i=opts.get("size",get_window().size)
 	var visual := AreaBundle.load_glb(asset("ship.glb"))
 	if visual==null:push_error("ship demo missing GLB");return false
@@ -170,6 +171,9 @@ func setup(opts := {}) -> bool:
 	_style_bridge(visual)
 	geometry_view.add_child(camera);camera.current=true
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
+	if props_visual!=null: # R2-BRIDGE-STYLE S5: the bridge dressed for its views (fronds as painted cards, below-rail silhouettes, foreground)
+		dressing=ShipDressing.new();geometry.add_child(dressing)
+		dressing.build(manifest,director.data.get("levels",{}).get("bridge",{}),props_visual)
 	camera_motion=str(opts.get("camera_motion","full"));director.set_motion(camera_motion)
 	lighting=Lighting.install(geometry);star_light.install(lighting)
 	Lighting.set_mast(lighting,(manifest.get("style",{}).get("spire_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is GeometryInstance3D))
@@ -203,6 +207,7 @@ func setup(opts := {}) -> bool:
 	if not set_sky_state(opts.get("sky_state","cruise")):
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
+	if opts.get("sound",true):add_child(ShipSound.new().attach(self)) # R2-SOUND S1: self-contained (audio/ship_sound.gd)
 	mouse_look_enabled=opts.get("mouse_look",true)
 	get_window().focus_exited.connect(func()->void:Input.mouse_mode=Input.MOUSE_MODE_VISIBLE)
 	set_brightness_trial(opts.get("brightness_stops",2))
@@ -220,8 +225,7 @@ func setup(opts := {}) -> bool:
 	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";archive_voice.bus = &"Voice";add_child(archive_voice) # R2-SOUND: voices duck the ship (§D2)
 	wait_hint.name = "WaitHint";wait_hint.visible = false;wait_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	wait_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE;wait_hint.add_theme_font_size_override("font_size", 15)
-	wait_hint.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78));wait_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	wait_hint.add_theme_constant_override("outline_size", 6);interlude_canvas.add_child(wait_hint)
+	wait_hint.theme_type_variation = "HUDOverlay";interlude_canvas.add_child(wait_hint) # R2-BRIDGE-STYLE ST4: text over the world
 	crossing_review.brake_pressed.connect(func()->void:continue_interlude())
 	crossing_review.open_crew.connect(_review_open_crew)
 	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
@@ -464,6 +468,7 @@ func _process(delta: float) -> void:
 	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
+	if dressing!=null:dressing.update(camera,director.view_id if not director.overridden else "",active_level) # R2-BRIDGE-STYLE S5: per-view dressing
 	if director.overridden:
 		if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
 		avatar.visible=camera.pullback>.5 or camera.external
@@ -738,6 +743,7 @@ func _mark_occluders(visual: Node) -> void:
 ## material's: StapledonStyle). Light is never baked into them: the
 ## spire and the star light them live (§D5a).
 var props_visual: Node3D
+var dressing: ShipDressing
 func _install_props() -> void:
 	var file: String=manifest.get("assets",{}).get("props","")
 	if file=="":return
@@ -748,7 +754,7 @@ func _install_props() -> void:
 ## R2-BRIDGE-STYLE S2: the ship.glb meshes on the bridge level (manifest style.bridge_nodes) take the
 ## same toon material and ink as the props; the lower decks keep their look until their own passes.
 func _style_bridge(visual: Node) -> void:
-	var nodes:Array=(manifest.get("style",{}).get("bridge_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is MeshInstance3D)
+	var nodes:Array=(manifest.get("style",{}).get("bridge_nodes",[]) as Array).map(func(n:String)->Node:return visual.find_child(n,true,false)).filter(func(n:Node)->bool:return n is Node3D) # meshes, or a parent of meshes (the deck's quadrants)
 	StapledonStyle.apply(nodes)
 func _collision(n: Node) -> void:
 	if n is MeshInstance3D and n.mesh!=null:n.create_trimesh_collision()

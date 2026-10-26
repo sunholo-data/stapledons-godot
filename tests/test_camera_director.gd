@@ -666,6 +666,25 @@ func lift_boxes(demo: Node) -> Array:
 	return out
 
 
+func lift_hits(demo: Node, a: Vector3, b: Vector3) -> bool:
+	var stack: Array = [demo.lift]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if not (n is MeshInstance3D and n.is_visible_in_tree() and n.mesh != null): continue
+		var mi := n as MeshInstance3D
+		if not (mi.global_transform * mi.mesh.get_aabb()).intersects_segment(a, b): continue
+		var xf := mi.global_transform
+		for s in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(s)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array(range(v.size()))
+			for t in range(0, idx.size(), 3):
+				if Geometry3D.segment_intersects_triangle(a, b, xf * v[idx[t]], xf * v[idx[t + 1]], xf * v[idx[t + 2]]) != null:
+					return true
+	return false
+
+
 func figure_clear(demo: Node, eye: Vector3, foot: Vector3) -> Array:
 	var blocked := []
 	for h in [0.15, 0.5, 0.9, 1.3, 1.6]:
@@ -673,10 +692,10 @@ func figure_clear(demo: Node, eye: Vector3, foot: Vector3) -> Array:
 		if not clear_line(demo, eye, p):
 			blocked.append("%.2f m (ship)" % h)
 			continue
-		for b: AABB in lift_boxes(demo):
-			if b.intersects_segment(eye, p.lerp(eye, 0.02)):
-				blocked.append("%.2f m (lift)" % h)
-				break
+		# R2-BRIDGE-STYLE S3: the authored lift head is one mesh per rail (two bars and their posts), so the
+		# line is tested against its triangles (an AABB would close the gap between the bars).
+		if lift_hits(demo, eye, p.lerp(eye, 0.02)):
+			blocked.append("%.2f m (lift)" % h)
 	return blocked
 
 

@@ -28,19 +28,16 @@ func _init() -> void: # built at construction, so the text exists before the nod
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint.text = "C  credits"
 	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 0.7))
+	theme = StapledonTheme.theme() # R2-BRIDGE-STYLE ST4
+	hint.theme_type_variation = "HUDHint"
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 12)
 	hint.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(hint)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.09, 0.88)
-	style.set_corner_radius_all(6)
-	style.set_content_margin_all(12)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.theme_type_variation = "HUDCard"
 	body.text = "Credits\n\n" + "\n".join(LINES)
 	body.add_theme_font_size_override("font_size", 13)
-	body.add_theme_color_override("font_color", Color(0.8, 0.84, 0.92))
+	body.theme_type_variation = "HUDLabel"
 	panel.add_child(body)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 32)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN

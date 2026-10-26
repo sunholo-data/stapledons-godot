@@ -229,6 +229,25 @@ func _run() -> void:
 		var cts := int(l.split(" ")[3].trim_suffix("c"))
 		cents_ok = cents_ok and absi(cts) <= 20
 	check(vt == v2.log_text() and vt.contains(" v0 ") and vt.contains(" v1 ") and cents_ok, "deterministic variation: 40 fires use both variants, pitch within +/-20 cents, identical in two directors")
+	# D-123: a cue's level jitter stays within +/- volume_jitter_db and every other fire is alternate_db softer.
+	var jc := base_cues()
+	for cr: Dictionary in jc:
+		if cr.id == "footstep":
+			cr["volume_jitter_db"] = 1.5
+			cr["alternate_db"] = -2.0
+	var vj := director(root, jc, rows)
+	for i in 40:
+		vj.fire("footstep", "s%d" % i, i)
+	var jit_ok := true
+	var levels := {}
+	var pitches := {}
+	for i in vj.cue_log.size():
+		pitches[vj.cue_log[i].split(" ")[3]] = true
+		var db := float(vj.cue_log[i].split(" ")[4].trim_suffix("dB"))
+		var base := -14.0 + (-2.0 if i % 2 == 1 else 0.0)
+		jit_ok = jit_ok and absf(db - base) <= 1.5 + 0.051
+		levels[db] = true
+	check(jit_ok and levels.size() >= 15 and pitches.size() >= 15, "D-123: footstep level jitter within +/-1.5 dB, odd steps 2 dB softer; %d distinct levels and %d distinct pitches in 40 steps (no metronome)" % [levels.size(), pitches.size()])
 	check(s.cue_log.size() > 0 and s.errors.is_empty(), "the director logs while silent (audible = false)")
 
 	# D-108: the spire's degradation layer follows a parameter; the sim's Memory Health drives it when present.

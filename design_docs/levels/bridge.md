@@ -21,3 +21,4 @@ Decisions, navigation and the Archive shrine, with the helm at the bow rail faci
 |---|---|---|
 | v1 (manifest sha256 fc61ee5e) | 2026-10-20 | R2-LEVELS LP1a: the bridge measured as a one-stage level; first baseline pinned |
 | v1 (manifest sha256 fc61ee5e) | 2026-10-21 | Re-pinned after R2-BRIDGE-STYLE (#300) regrew the hero props with curves (D-104): `near_bow` 0.021 -> 0.017 (less of the bow near field taken). Layout unchanged; deck-layout-eval passes on the grown props. |
+| v1 (manifest sha256 fc61ee5e) | 2026-10-22 | Re-pinned after R2-BRIDGE-STYLE ST3–ST5 (#322): the rest of the bridge grown (D-104), the rim fronds turned into painted cards (D-106) and the authored lift head: `near_bow` 0.017 -> 0.003 (the bow's near field is now almost clear), the captain's px range [76.9, 81.1] -> [76.9, 76.9]. Layout unchanged; deck-layout-eval bridge ok. |

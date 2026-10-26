@@ -1,0 +1,8 @@
+{
+ "schema": "stapledons.audio.rooms/1",
+ "about": "R2-SOUND S1 (design §D5): per level, the Ship bus reverb and the cue that starts on arrival. The bridge sits under the 100 m dome: a long, soft tail that makes footsteps sound small.",
+ "levels": {
+  "0": {"name": "bridge", "game": "level_bridge", "room_size": 0.8, "damping": 0.55, "wet_db": -14.0},
+  "1": {"name": "lower deck", "game": "level_lower", "room_size": 0.45, "damping": 0.7, "wet_db": -20.0}
+ }
+}

@@ -981,6 +981,404 @@
      }
     }
    ]
+  },
+  {
+   "id": "footstep_deck_1",
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, a barely-there brush; a rounded 32 ms attack and a smooth 90 ms decay, no transient. Variant 1 of 6; peak -3.0 dB for level variety.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.8,
+     "lowpass_hz": 230,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 301,
+     "env": {
+      "attack": 0.032,
+      "tau": 0.09
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.22,
+     "lowpass_hz": 420,
+     "lowpass_poles": 2,
+     "highpass_hz": 140,
+     "seed": 311,
+     "env": {
+      "delay": 0.01,
+      "attack": 0.037,
+      "tau": 0.063
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.012,
+     "lowpass_hz": 900,
+     "lowpass_poles": 3,
+     "highpass_hz": 400,
+     "seed": 321,
+     "env": {
+      "delay": 0.06,
+      "attack": 0.05,
+      "tau": 0.08
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_2",
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, no brush; a rounded 36 ms attack and a smooth 100 ms decay, no transient. Variant 2 of 6; peak -3.8 dB for level variety.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -3.8,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.8,
+     "lowpass_hz": 205,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 302,
+     "env": {
+      "attack": 0.036,
+      "tau": 0.1
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.18,
+     "lowpass_hz": 390,
+     "lowpass_poles": 2,
+     "highpass_hz": 140,
+     "seed": 312,
+     "env": {
+      "delay": 0.01,
+      "attack": 0.040999999999999995,
+      "tau": 0.07
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_3",
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, a barely-there brush; a rounded 30 ms attack and a smooth 85 ms decay, no transient. Variant 3 of 6; peak -3.4 dB for level variety.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -3.4,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.8,
+     "lowpass_hz": 250,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 303,
+     "env": {
+      "attack": 0.03,
+      "tau": 0.085
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.25,
+     "lowpass_hz": 450,
+     "lowpass_poles": 2,
+     "highpass_hz": 140,
+     "seed": 313,
+     "env": {
+      "delay": 0.01,
+      "attack": 0.034999999999999996,
+      "tau": 0.059
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.015,
+     "lowpass_hz": 900,
+     "lowpass_poles": 3,
+     "highpass_hz": 400,
+     "seed": 323,
+     "env": {
+      "delay": 0.06,
+      "attack": 0.05,
+      "tau": 0.08
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_4",
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, no brush; a rounded 38 ms attack and a smooth 95 ms decay, no transient. Variant 4 of 6; peak -4.4 dB for level variety.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -4.4,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.8,
+     "lowpass_hz": 215,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 304,
+     "env": {
+      "attack": 0.038,
+      "tau": 0.095
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.2,
+     "lowpass_hz": 400,
+     "lowpass_poles": 2,
+     "highpass_hz": 140,
+     "seed": 314,
+     "env": {
+      "delay": 0.01,
+      "attack": 0.043,
+      "tau": 0.066
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_5",
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, a barely-there brush; a rounded 34 ms attack and a smooth 88 ms decay, no transient. Variant 5 of 6; peak -3.2 dB for level variety.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -3.2,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.8,
+     "lowpass_hz": 240,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 305,
+     "env": {
+      "attack": 0.034,
+      "tau": 0.088
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.23,
+     "lowpass_hz": 430,
+     "lowpass_poles": 2,
+     "highpass_hz": 140,
+     "seed": 315,
+     "env": {
+      "delay": 0.01,
+      "attack": 0.039,
+      "tau": 0.062
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.01,
+     "lowpass_hz": 900,
+     "lowpass_poles": 3,
+     "highpass_hz": 400,
+     "seed": 325,
+     "env": {
+      "delay": 0.06,
+      "attack": 0.05,
+      "tau": 0.08
+     }
+    }
+   ]
+  },
+  {
+   "id": "footstep_deck_6",
+   "about": "S1 v4 (D-123: v3 'still sound aggressive ... has to be pleasant-ish ... not banging in the skull'): a step felt more than heard, under the hum. A dark padded thud (three-pole low-pass white noise, most energy 120-300 Hz), a soft body, no brush; a rounded 40 ms attack and a smooth 105 ms decay, no transient. Variant 6 of 6; peak -4.0 dB for level variety.",
+   "seconds": 0.55,
+   "loop": false,
+   "peak_db": -4.0,
+   "fade_ms": 200.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.8,
+     "lowpass_hz": 200,
+     "lowpass_poles": 3,
+     "highpass_hz": 80,
+     "seed": 306,
+     "env": {
+      "attack": 0.04,
+      "tau": 0.105
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.17,
+     "lowpass_hz": 380,
+     "lowpass_poles": 2,
+     "highpass_hz": 140,
+     "seed": 316,
+     "env": {
+      "delay": 0.01,
+      "attack": 0.045,
+      "tau": 0.073
+     }
+    }
+   ]
+  },
+  {
+   "id": "lift_start",
+   "about": "S1: the lift's latch lets go and its motor spins up.",
+   "seconds": 1.4,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 300.0,
+   "layers": [
+    {
+     "kind": "white",
+     "amp": 0.3,
+     "highpass_hz": 1500.0,
+     "lowpass_hz": 6000.0,
+     "seed": 81,
+     "env": {
+      "tau": 0.006
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.35,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.06
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.35,
+     "lowpass_hz": 200.0,
+     "lowpass_to_hz": 700.0,
+     "highpass_hz": 90.0,
+     "seed": 82,
+     "beat_hz": 24.0,
+     "beat_depth": 0.4,
+     "env": {
+      "delay": 0.1,
+      "attack": 0.6
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 98.0,
+     "amp": 0.18,
+     "glide_to": 118.0,
+     "glide_until_s": 1.0,
+     "env": {
+      "delay": 0.1,
+      "attack": 0.6
+     }
+    }
+   ]
+  },
+  {
+   "id": "lift_run",
+   "about": "S1: the lift's motor while the platform travels (a loop that rides with it).",
+   "seconds": 4.0,
+   "loop": true,
+   "peak_db": -6.0,
+   "fade_ms": 20.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 98.0,
+     "amp": 0.22
+    },
+    {
+     "kind": "sine",
+     "freq": 196.0,
+     "amp": 0.1,
+     "beat_hz": 0.5,
+     "beat_depth": 0.3
+    },
+    {
+     "kind": "sine",
+     "freq": 294.0,
+     "amp": 0.05
+    },
+    {
+     "kind": "white",
+     "amp": 0.3,
+     "lowpass_hz": 650.0,
+     "highpass_hz": 90.0,
+     "seed": 83,
+     "beat_hz": 6.0,
+     "beat_depth": 0.35
+    }
+   ]
+  },
+  {
+   "id": "lift_arrive",
+   "about": "S1: the platform settles with a soft clunk and one old brass bell (a single low note, not a jingle).",
+   "seconds": 2.4,
+   "loop": false,
+   "peak_db": -3.0,
+   "fade_ms": 400.0,
+   "layers": [
+    {
+     "kind": "sine",
+     "freq": 110.0,
+     "amp": 0.4,
+     "env": {
+      "attack": 0.002,
+      "tau": 0.05
+     }
+    },
+    {
+     "kind": "white",
+     "amp": 0.25,
+     "lowpass_hz": 1800.0,
+     "highpass_hz": 200.0,
+     "seed": 84,
+     "env": {
+      "tau": 0.02
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 293.66,
+     "amp": 0.3,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.004,
+      "tau": 0.9
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 810.5,
+     "amp": 0.06,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.002,
+      "tau": 0.4
+     }
+    },
+    {
+     "kind": "sine",
+     "freq": 1585.8,
+     "amp": 0.03,
+     "env": {
+      "delay": 0.12,
+      "attack": 0.002,
+      "tau": 0.25
+     }
+    }
+   ]
   }
  ]
 }

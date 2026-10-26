@@ -17,7 +17,8 @@
     "visual": "ship.glb",
     "walk_bridge": "walk_bridge.glb",
     "walk_lower": "walk_lower.glb",
-    "props": "bridge_props.glb"
+    "props": "bridge_props.glb",
+    "lift": "lift_head.glb"
   },
   "lift_route": {
     "clear": true,
@@ -180,9 +181,8 @@
     "points": "SPAWN_captain and INTERACT_<station>_use empties in the master (collection deck_layout_v2), ship metres"
   },
   "style": {
-    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest.",
+    "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest. foliage: the rim fronds' roots and inward facings (v4 generator), drawn as painted cards (D-106, ShipDressing).",
     "bridge_nodes": [
-      "bridge_floor_top82",
       "deck_floor_fill",
       "deck_body_00",
       "deck_body_01",
@@ -217,7 +217,8 @@
       "deck_seam_14",
       "deck_seam_15",
       "ramp_down",
-      "spire_needle"
+      "spire_needle",
+      "bridge_floor_top82"
     ],
     "spire_nodes": [
       "spire_needle"
@@ -232,8 +233,252 @@
       "v2_desk_props_02",
       "v2_desk_props_03",
       "captain_chair",
-      "v2_chair_detail_00"
-    ]
+      "v2_chair_detail_00",
+      "archive_terminal",
+      "v2_archive_detail_00",
+      "watch_bench_0",
+      "watch_bench_1",
+      "watch_bench_2",
+      "watch_bench_3",
+      "v2_bench_detail_00",
+      "v2_bench_detail_01",
+      "v2_bench_detail_02",
+      "v2_bench_detail_03",
+      "Guardrail 82",
+      "Guardrail 82_001",
+      "Guardrail 82_002",
+      "Lift guide",
+      "Lift guide_001",
+      "v2_nav_detail_00",
+      "v2_nav_detail_01",
+      "v2_nav_detail_02"
+    ],
+    "lift_shaped": [
+      "lift_pad",
+      "lift_rail_3_6",
+      "lift_gate_4_4"
+    ],
+    "decals": {
+      "names": [
+        "v2_conduit_",
+        "v2_spire_vents_",
+        "deck_seam_"
+      ],
+      "why": "painted floor markings no more than 3 cm tall: no silhouette, so the straight-edge share does not apply (D-104)"
+    },
+    "foliage": [
+      {
+        "name": "rim_frond_0",
+        "root_m": [
+          20.68,
+          82.0,
+          -0.0
+        ],
+        "facing": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "kind": "frond",
+        "height_m": 1.85,
+        "flip": false,
+        "tint": [
+          0.95,
+          1.0,
+          0.97
+        ]
+      },
+      {
+        "name": "rim_frond_1",
+        "root_m": [
+          15.8418,
+          82.0,
+          -13.2928
+        ],
+        "facing": [
+          -0.766,
+          0.0,
+          0.6428
+        ],
+        "kind": "shrub",
+        "height_m": 1.05,
+        "flip": false,
+        "tint": [
+          0.95,
+          1.0,
+          0.97
+        ]
+      },
+      {
+        "name": "rim_frond_2",
+        "root_m": [
+          8.7397,
+          82.0,
+          -18.7424
+        ],
+        "facing": [
+          -0.4226,
+          0.0,
+          0.9063
+        ],
+        "kind": "grown_planter",
+        "height_m": 1.51,
+        "flip": false,
+        "tint": [
+          0.95,
+          1.0,
+          0.97
+        ]
+      },
+      {
+        "name": "rim_frond_3",
+        "root_m": [
+          -8.7397,
+          82.0,
+          -18.7424
+        ],
+        "facing": [
+          0.4226,
+          0.0,
+          0.9063
+        ],
+        "kind": "shrub",
+        "height_m": 1.05,
+        "flip": true,
+        "tint": [
+          1.0,
+          0.97,
+          0.92
+        ]
+      },
+      {
+        "name": "rim_frond_4",
+        "root_m": [
+          -19.9753,
+          82.0,
+          -5.3524
+        ],
+        "facing": [
+          0.9659,
+          0.0,
+          0.2588
+        ],
+        "kind": "frond",
+        "height_m": 1.86,
+        "flip": false,
+        "tint": [
+          1.0,
+          0.97,
+          0.92
+        ]
+      },
+      {
+        "name": "rim_frond_5",
+        "root_m": [
+          -20.4787,
+          82.0,
+          2.8781
+        ],
+        "facing": [
+          0.9903,
+          0.0,
+          -0.1392
+        ],
+        "kind": "grown_planter",
+        "height_m": 1.5,
+        "flip": true,
+        "tint": [
+          1.0,
+          0.97,
+          0.92
+        ]
+      },
+      {
+        "name": "rim_frond_6",
+        "root_m": [
+          -15.3682,
+          82.0,
+          13.8376
+        ],
+        "facing": [
+          0.7431,
+          0.0,
+          -0.6691
+        ],
+        "kind": "frond",
+        "height_m": 1.8,
+        "flip": false,
+        "tint": [
+          0.98,
+          0.95,
+          1.0
+        ]
+      },
+      {
+        "name": "rim_frond_7",
+        "root_m": [
+          -8.7397,
+          82.0,
+          18.7424
+        ],
+        "facing": [
+          0.4226,
+          0.0,
+          -0.9063
+        ],
+        "kind": "shrub",
+        "height_m": 1.05,
+        "flip": false,
+        "tint": [
+          0.95,
+          1.0,
+          0.97
+        ]
+      },
+      {
+        "name": "rim_frond_8",
+        "root_m": [
+          10.34,
+          82.0,
+          17.9094
+        ],
+        "facing": [
+          -0.5,
+          0.0,
+          -0.866
+        ],
+        "kind": "grown_planter",
+        "height_m": 1.48,
+        "flip": true,
+        "tint": [
+          1.0,
+          0.97,
+          0.92
+        ]
+      },
+      {
+        "name": "rim_frond_9",
+        "root_m": [
+          17.9094,
+          82.0,
+          10.34
+        ],
+        "facing": [
+          -0.866,
+          0.0,
+          -0.5
+        ],
+        "kind": "shrub",
+        "height_m": 1.15,
+        "flip": false,
+        "tint": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    ],
+    "foliage_about": "D-106 variety (Mark on #322): three painted kinds (frond, shrub, grown_planter from the plants spike) in a ring order where no two neighbours match, with seeded (20261022) height, mirror and a small tint within the palette per plant; heights capped so the bow evaluator's fade budget holds. The final per-kind painted set comes with the levels foliage library (D-106)."
   },
   "captain_chair": {
     "position_m": [

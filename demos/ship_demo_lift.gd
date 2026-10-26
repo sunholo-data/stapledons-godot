@@ -13,14 +13,28 @@ var _time := 0.
 var _from_level := 0
 var _to_level := 1
 var _start := Vector3.ZERO
+## R2-BRIDGE-STYLE S3: the authored lift head (manifest assets.lift, lift_head.glb: a grown pad, rails and
+## gates painted on the DL2 recipe, toon and ink like the bridge); the white blockout boxes only without it.
+var pieces: Node3D
 func setup(owner_demo: Node) -> void:
 	demo=owner_demo;add_child(platform);platform.position=Vector3(8,82,-8)
+	var file:String=str(demo.manifest.get("assets",{}).get("lift","")) if demo.get("manifest") is Dictionary else ""
+	if file!="":pieces=AreaBundle.load_glb(demo.asset(file))
 	var material:=StandardMaterial3D.new();material.albedo_color=Color(.25,.20,.35);material.roughness=.8
-	_box(platform,Vector3(0,-.08,0),Vector3(3.6,.16,3.6),material)
+	if pieces!=null:_piece(platform,"lift_pad",Vector3.ZERO,true)
+	else:_box(platform,Vector3(0,-.08,0),Vector3(3.6,.16,3.6),material)
 	for pair in [[Vector3(-1.7,.65,0),Vector3(.12,1.3,3.6)],[Vector3(1.7,.65,0),Vector3(.12,1.3,3.6)],[Vector3(0,.65,-1.7),Vector3(3.6,1.3,.12)]]:
 		_rail(platform,pair[0],pair[1],material)
 	cabin_gate=_rail(platform,Vector3(0,.65,1.7),Vector3(3.6,1.3,.12),material)
 	for y in [82.,57.]:gates.append(_rail(self,Vector3(8,y+.65,-5.8),Vector3(4.4,1.3,.12),material))
+	if pieces!=null:StapledonStyle.apply([platform]+gates)
+## One authored piece (a copy of the GLB's mesh), placed and turned as the box it replaces.
+func _piece(parent: Node3D, kind: String, position_m: Vector3, along_x: bool) -> Node3D:
+	var src:=pieces.find_child(kind,true,false) as MeshInstance3D
+	var group:=Node3D.new();group.position=position_m;parent.add_child(group)
+	var mi:=MeshInstance3D.new();mi.name=kind;mi.mesh=src.mesh;group.add_child(mi)
+	if not along_x:group.rotation.y=PI*.5
+	return group
 func _box(parent: Node3D, position_m: Vector3, size_m: Vector3, material: Material) -> MeshInstance3D:
 	var n:=MeshInstance3D.new();var mesh:=BoxMesh.new();mesh.size=size_m;n.mesh=mesh;n.material_override=material;n.position=position_m;parent.add_child(n);return n
 func travelling() -> bool:
@@ -70,8 +84,9 @@ func reset() -> void:
 	cabin_gate.visible=true
 
 func _rail(parent: Node3D, position_m: Vector3, size_m: Vector3, material: Material) -> Node3D:
-	var group:=Node3D.new();group.position=position_m;parent.add_child(group)
 	var along_x:=size_m.x>size_m.z
+	if pieces!=null:return _piece(parent,"lift_gate_4_4" if maxf(size_m.x,size_m.z)>4. else "lift_rail_3_6",position_m,along_x)
+	var group:=Node3D.new();group.position=position_m;parent.add_child(group)
 	for y in [-.1,.55]:
 		_box(group,Vector3(0,y,0),Vector3(size_m.x,.12,size_m.z),material)
 	for side in [-1.,1.]:

@@ -28,7 +28,7 @@ static func install(host:Node3D)->Dictionary:
 	# R2-DECK-LAYOUT §D5a (D-96): the spire is the bridge's own light, a warm lamp on the mast
 	# that keys the deck when no star is close; it shares the broad key's dimming (ship_star_light).
 	var spire:=OmniLight3D.new();spire.name="SpireLight"
-	spire.position=Vector3(0,SPIRE_LAMP_Y,0);spire.omni_range=SPIRE_RANGE_M;spire.omni_attenuation=.4
+	spire.position=Vector3(0,SPIRE_LAMP_Y,0);spire.omni_range=SPIRE_RANGE_M;spire.omni_attenuation=0. # R2-BRIDGE-STYLE ST5: no distance falloff inside the range window, so the dark ash rim far from the mast still reads
 	spire.light_color=SPIRE_COLOUR;spire.shadow_enabled=false;host.add_child(spire)
 	# R2-BRIDGE-STYLE S1: on the bridge the spire holds the shadow in deep space (cube map, soft for
 	# the comic look); ship_star_light.apply_rig hands it to the star as the star rises.

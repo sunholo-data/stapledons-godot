@@ -1257,17 +1257,26 @@
       "depends_on": [
         "K1.1a-a1"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
+      "passes": true,
+      "started": "2026-10-26",
+      "completed": "2026-10-26",
+      "actual_loc": 109,
       "mutation_drill": true,
       "design_blocks": [
         "DI-01"
       ],
       "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "evidence": {
+        "commit": "74c04b2932fba2be7762e1b903749c45f168f992",
+        "pr": 327,
+        "merge": "3bd298e28365eb080a19cd7176e857ee0b25a910",
+        "rig_full": "success on 74c04b29 (77 min)",
+        "fast_ci": "40275184862 success (head), 40282276669 success (merge)",
+        "evaluation": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a2_round_1.json (Sonnet 93 PASS, 0 blocking)",
+        "mission_iteration": 50
+      }
     },
     {
       "id": "K1.1a-a3",

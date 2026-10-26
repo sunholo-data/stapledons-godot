@@ -42,7 +42,8 @@
    ],
    "name": "The spire's hum",
    "when": "Always, on the bridge (from S1 it sits at the mast).",
-   "listen_for": "It should be felt more than heard: low, slow, with a gentle beat every 4 s. Is it calm enough to forget after a minute, yet missed if it stopped?"
+   "listen_for": "It should be felt more than heard: low, slow, with a gentle beat every 4 s. Is it calm enough to forget after a minute, yet missed if it stopped?",
+   "source": "mast"
   },
   {
    "id": "spire_drift",
@@ -86,7 +87,8 @@
    "about": "The spire's longer beat with a slight grit, under the hum; it follows archive_degradation = 1 - Memory Health/100 (D-108). Silent while the sim does not emit Memory Health.",
    "name": "The spire's degradation layer (mid)",
    "when": "Always on the bridge, louder as the Archive's Memory Health falls (silent while it is intact).",
-   "listen_for": "A second, much slower beat (one cycle in 32 s) with a slight grit under the hum. Heard in the three 'degradation' mixes."
+   "listen_for": "A second, much slower beat (one cycle in 32 s) with a slight grit under the hum. Heard in the three 'degradation' mixes.",
+   "source": "mast"
   },
   {
    "id": "spire_drift_bad",
@@ -130,7 +132,8 @@
    "about": "The badly degraded spire layer: the long beat roughened, wavering and gritty; it takes over as Memory Health becomes critical (D-108).",
    "name": "The spire's degradation layer (bad)",
    "when": "On the bridge once the Archive's Memory Health is low (below about 40).",
-   "listen_for": "Wavering, gritty, with a tone that does not belong. It should feel wrong without being loud."
+   "listen_for": "Wavering, gritty, with a tone that does not belong. It should feel wrong without being loud.",
+   "source": "mast"
   },
   {
    "id": "room_bridge",
@@ -226,7 +229,8 @@
    "band": [
     -34,
     -26
-   ]
+   ],
+   "source": "station"
   },
   {
    "id": "console_sleep",
@@ -247,7 +251,8 @@
    "band": [
     -34,
     -26
-   ]
+   ],
+   "source": "station"
   },
   {
    "id": "commit_hold",
@@ -427,6 +432,117 @@
    "name": "Hold limit",
    "when": "A plan meets the drive's hold limit.",
    "listen_for": "Two soft pulses: an alert, not an alarm."
+  },
+  {
+   "id": "footstep_deck",
+   "trigger": {
+    "kind": "game",
+    "name": "foot_down"
+   },
+   "streams": [
+    "footstep_deck_1",
+    "footstep_deck_2",
+    "footstep_deck_3",
+    "footstep_deck_4",
+    "footstep_deck_5",
+    "footstep_deck_6"
+   ],
+   "bus": "Effects",
+   "volume_db": -30.0,
+   "visual": "ambient: the walk is on screen",
+   "about": "A step felt more than heard at each of the captain's foot contacts (CA0 foot_down), v4 after D-123 (v3 'still sound aggressive ... not banging in the skull'): under the hum, dark, no transient; level jitter per step and every other foot softer.",
+   "name": "Footsteps on the bridge",
+   "when": "Each time the captain's foot touches the deck (CA0's foot_down).",
+   "listen_for": "Barely noticed: a soft, dark padding under the spire's hum and the room, rounded with no hit, pleasant after hundreds of steps; never a metronome.",
+   "source": "captain",
+   "pitch_cents_spread": 60,
+   "band": [
+    -52,
+    -42
+   ],
+   "volume_jitter_db": 1.5,
+   "alternate_db": -1.5
+  },
+  {
+   "id": "console_key",
+   "trigger": {
+    "kind": "ui_signal",
+    "name": "console_key"
+   },
+   "streams": [
+    "ui_click"
+   ],
+   "bus": "UI",
+   "volume_db": -16.0,
+   "visual": "ambient: interface feedback for a visible press",
+   "about": "A key press at a console (ShipConsoles.used).",
+   "name": "Console key",
+   "when": "Using a console's action.",
+   "listen_for": "The interface click, a little quieter, at the console.",
+   "band": [
+    -34,
+    -26
+   ]
+  },
+  {
+   "id": "lift_start",
+   "trigger": {
+    "kind": "game",
+    "name": "lift_start"
+   },
+   "streams": [
+    "lift_start"
+   ],
+   "bus": "Effects",
+   "volume_db": -11.0,
+   "visual": "ambient: the lift's doors and motion are on screen",
+   "about": "The lift's latch and its motor spinning up.",
+   "name": "Lift: start",
+   "when": "The lift platform starts moving between levels.",
+   "listen_for": "A latch, then the motor winding up; mechanical, not sci-fi.",
+   "source": "lift"
+  },
+  {
+   "id": "lift_run",
+   "trigger": {
+    "kind": "game",
+    "name": "lift_start",
+    "stop_on": "lift_arrive"
+   },
+   "streams": [
+    "lift_run"
+   ],
+   "bus": "Effects",
+   "volume_db": -20.0,
+   "visual": "ambient: the lift's motion is on screen",
+   "about": "The lift's motor while it travels (a loop riding with the platform).",
+   "name": "Lift: running",
+   "when": "While the platform travels.",
+   "listen_for": "A steady low motor with a slight flutter; it should move with the platform.",
+   "source": "lift",
+   "loop": true,
+   "band": [
+    -36,
+    -24
+   ]
+  },
+  {
+   "id": "lift_arrive",
+   "trigger": {
+    "kind": "game",
+    "name": "lift_arrive"
+   },
+   "streams": [
+    "lift_arrive"
+   ],
+   "bus": "Effects",
+   "volume_db": -11.0,
+   "visual": "ambient: the arrival is on screen",
+   "about": "The platform settles; one old brass bell.",
+   "name": "Lift: arrive",
+   "when": "The platform reaches its level.",
+   "listen_for": "A soft clunk and a single low bell, restrained like the commit chord.",
+   "source": "lift"
   }
  ]
 }

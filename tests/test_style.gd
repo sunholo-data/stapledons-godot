@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-BRIDGE-STYLE AC3 (design_docs/planned/r2/bridge-styling-pass.md §S2): every bridge_style mesh
+## R2-BRIDGE-STYLE AC3 (design_docs/implemented/r2/bridge-styling-pass.md §S2): every bridge_style mesh
 ## uses the toon material with exactly the ink outline as next_pass (the stated exclusions keep their
 ## own); every manifest style.bridge_nodes entry exists; the lower decks are not styled; the named sky
 ## layers exist, render in their own viewport and none uses the toon shader. Negative controls: a
@@ -89,8 +89,24 @@ func _run() -> void:
 		if share > worst:
 			worst = share
 			worst_name = n
-	check("D-104: the manifest lists the grown props (style.shaped, %d; missing %s)" % [shaped.size(), missing_shaped], shaped.size() >= 8 and missing_shaped.is_empty())
+	var pinned := ["console_decision_0", "console_decision_1", "console_decision_2", "console_decision_3", "v2_desk_props_00", "v2_desk_props_01", "v2_desk_props_02", "v2_desk_props_03", "captain_chair", "v2_chair_detail_00",
+		"archive_terminal", "v2_archive_detail_00", "watch_bench_0", "watch_bench_1", "watch_bench_2", "watch_bench_3", "v2_bench_detail_00", "v2_bench_detail_01", "v2_bench_detail_02", "v2_bench_detail_03",
+		"Guardrail 82", "Guardrail 82_001", "Guardrail 82_002", "Lift guide", "Lift guide_001", "v2_nav_detail_00", "v2_nav_detail_01", "v2_nav_detail_02"]
+	var unlisted := pinned.filter(func(n: String) -> bool: return not shaped.has(n))
+	check("D-104: the manifest lists the grown props (style.shaped, %d; missing %s; pinned props unlisted %s)" % [shaped.size(), missing_shaped, unlisted], missing_shaped.is_empty() and unlisted.is_empty())
 	check("D-104: every grown prop's straight-edge share <= 0.10 (worst %.3f, %s)" % [worst, worst_name], worst <= 0.10 and not shaped.is_empty())
+	# ST3: the authored lift head is grown and on the toon too; the painted deck's quadrants are styled.
+	var lift_parts: Array = Style.meshes(demo.lift).filter(func(m: MeshInstance3D) -> bool: return String(m.name).begins_with("lift_"))
+	var lift_names: Array = demo.manifest.get("style", {}).get("lift_shaped", [])
+	var lift_worst := 0.0
+	for m: MeshInstance3D in lift_parts:
+		lift_worst = maxf(lift_worst, Style.straight_share(m.mesh))
+	check("ST3: the lift head's pieces (%d: %s) are toon-styled and grown (worst share %.3f)" % [lift_parts.size(), lift_names, lift_worst], lift_parts.size() >= 6 and lift_parts.all(func(m: MeshInstance3D) -> bool: return m.is_in_group(Style.GROUP)) and lift_worst <= 0.10 and lift_names.size() == 3)
+	var deck: Node = demo.geometry.find_child("bridge_floor_top82", true, false)
+	var quads: Array = Style.meshes(deck) if deck != null else []
+	check("ST3: the deck top is four painted quadrants in the group (%d)" % quads.size(), quads.size() == 4 and quads.all(func(m: MeshInstance3D) -> bool: return m.is_in_group(Style.GROUP) and String(m.name).begins_with("bridge_floor_top82_q")))
+	var cm: ShaderMaterial = Style.card_material(null)
+	check("D-106: a card turns toward the camera within +-25 deg and carries no outline pass", is_equal_approx(float(cm.get_shader_parameter("clamp_deg")), 25.0) and cm.next_pass == null and Style.is_card(cm))
 	var box_share: float = Style.straight_share(BoxMesh.new())
 	check("D-104 negative control: a box scores %.3f > 0.4 and would fail" % box_share, box_share > 0.4)
 	# Negative control 1: a PBR material seeded on a styled bridge mesh is caught.

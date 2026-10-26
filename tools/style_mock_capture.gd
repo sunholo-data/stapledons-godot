@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-BRIDGE-STYLE (design_docs/planned/r2/bridge-styling-pass.md) review mocks: before/after frames
+## R2-BRIDGE-STYLE (design_docs/implemented/r2/bridge-styling-pass.md) review mocks: before/after frames
 ## of the styling pass's two engine-side levers, applied in-engine to today's bridge (DL3), so Mark
 ## can choose before anything is built. Review only: nothing here ships.
 ##   now      the bridge as it ships (broad key + spire + star, PBR shading, ink outline on props)
