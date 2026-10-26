@@ -448,17 +448,17 @@
     "footstep_deck_6"
    ],
    "bus": "Effects",
-   "volume_db": -16.0,
+   "volume_db": -20.0,
    "visual": "ambient: the walk is on screen",
-   "about": "A soft-soled step at each of the captain's foot contacts (CA0 foot_down), v2 after D-117.",
+   "about": "A soft padding step at each of the captain's foot contacts (CA0 foot_down), v3 after D-122 (v2 was 'way too annoying and metallic').",
    "name": "Footsteps on the bridge",
    "when": "Each time the captain's foot touches the deck (CA0's foot_down).",
-   "listen_for": "Soft and light: a pad on the deck with a little coat rustle, no clunk, no ring; six variants and a wider pitch spread so it never repeats.",
+   "listen_for": "Soft padding: a low-mid thud of a soft sole on a cushioned deck and a faint cloth brush as the foot rolls; nothing bright, metallic or clicky, quieter than v2, and six variants plus the pitch spread so a calm walk never sounds like a machine.",
    "source": "captain",
    "pitch_cents_spread": 60,
    "band": [
-    -42,
-    -32
+    -44,
+    -34
    ]
   },
   {

@@ -41,6 +41,11 @@
       "date": "2026-10-22",
       "event": "rework",
       "note": "D-117 (Mark on S1): 'the sounds are all great aside the footsteps - too clunky?'. Footsteps v2: soft-soled pads with a little coat rustle, almost no low thump, no metal ring; pitch spread 60 cents; RMS -37.2 dBFS (was -32.7); band [-42,-32]. Everything else kept byte-identical. A/B at refs/sound/s1-footsteps/."
+    },
+    {
+      "date": "2026-10-26",
+      "event": "rework",
+      "note": "D-122 (Mark on footsteps v2): 'the footsteps are way too annoying and metallic. I think we want softer padding sounds.' Footsteps v3: a soft sole on a cushioned deck, two-pole low-passed white noise (a low-mid thud 260-330 Hz, a softer body under it, a faint cloth/sole brush as the foot rolls), 11-15 ms attacks, no sine, no ring; energy centred near 400 Hz (v2 near 3.2 kHz, essentially white to 10 kHz). The synth gains lowpass_poles (default 1: every other sound byte-identical, 28 sounds regenerate). In game at -20 dB (v2 -16): RMS -38.1 dBFS (variant 1), peak -23, about 5 dB quieter A-weighted; band -44..-34. Review: 20 s calm walk (105 steps a minute) with hum and room, and the six variants, each with v2 for A/B. Paused for Mark's listen."
     }
   ],
   "implements": [

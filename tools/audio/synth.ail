@@ -8,7 +8,7 @@ module stapledons/audio/synth
 -- Loops (room tone, the spire's hum) must join without a click: every sine in a loop completes a
 -- whole number of cycles over the loop (checked by loopErrors), the swell too, and noise is periodic
 -- (sample i reads the generator at i mod n; its filters run over two periods and keep the second).
-import std/list (map, range, foldl, zipWith, mapAccumL, drop, flatMap, length as size, maximumFloat)
+import std/list (map, range, foldl, zipWith, mapAccumL, drop, flatMap, length as size, maximumFloat, filter)
 import std/array (fromList, toList, add, scale, make)
 import std/math (sin, cos, exp, log, round, floatToInt, PI, pow)
 import std/option (Option, Some, None)
@@ -26,8 +26,11 @@ export type Env = {delay: float, attack: float, tau: float, stop: float}
 -- byte for byte as before: a slow vibrato (vibRate Hz, vibCents), an amplitude beat (amRate Hz,
 -- amDepth 0..1), a low-pass that sweeps from lowpass to lowpassTo over the sound, and per recipe a
 -- soft saturation (drive k: x(1+k)/(1+k|x|), the grit of the spire's degradation layer and the brake).
+-- D-122 adds lpPoles (recipe lowpass_poles, default 1): the low-pass applied that many times in
+-- series, so a soft footstep can be dark (a single pole on white noise keeps a third of its energy
+-- above 2 kHz at a 1.1 kHz cutoff); at 1 every earlier recipe renders byte for byte as before.
 export type Layer = {kind: string, freq: float, freqTo: float, glide0: float, glide1: float, amp: float, lowpass: float, highpass: float, seed: int, env: Env,
-  vibRate: float, vibCents: float, amRate: float, amDepth: float, lowpassTo: float}
+  vibRate: float, vibCents: float, amRate: float, amDepth: float, lowpassTo: float, lpPoles: int}
 export type Recipe = {id: string, seconds: float, loop: bool, peakDb: float, fadeMs: float, swellRate: float, swellDepth: float, drive: float, layers: [Layer]}
 
 -- The int16 range: every sample is clamped into it before it becomes two bytes.
@@ -100,10 +103,13 @@ pure func lowpassList(a: float, xs: [float]) -> [float] =
 pure func sweepList(c0: float, c1: float, n: int, xs: [float]) -> [float] =
   match mapAccumL(\st x. { let y = st.y + onePole(c0 * pow(c1 / c0, intToFloat(st.i % n) / intToFloat(n))) * (x - st.y); (y, {y: y, i: st.i + 1}) }, {y: 0.0, i: 0}, xs) { (out, _) => out }
 
+-- f applied k times in series (k <= 1: once).
+pure func times(k: int, f: [float] -> [float], xs: [float]) -> [float] = if k <= 1 then f(xs) else times(k - 1, f, f(xs))
+
 pure func filtered(l: Layer, xs: [float]) -> [float] {
   let n = size(xs);
-  let lp = if l.lowpass > 0.0 && l.lowpassTo > 0.0 && l.lowpassTo != l.lowpass then sweepList(l.lowpass, l.lowpassTo, n, xs)
-    else if l.lowpass > 0.0 then lowpassList(onePole(l.lowpass), xs) else xs;
+  let lp = if l.lowpass > 0.0 && l.lowpassTo > 0.0 && l.lowpassTo != l.lowpass then times(l.lpPoles, \v. sweepList(l.lowpass, l.lowpassTo, n, v), xs)
+    else if l.lowpass > 0.0 then times(l.lpPoles, \v. lowpassList(onePole(l.lowpass), v), xs) else xs;
   if l.highpass > 0.0 then zipWith(\x y. x - y, lp, lowpassList(onePole(l.highpass), lp)) else lp
 }
 
@@ -120,7 +126,7 @@ export pure func layerSamples(l: Layer, n: int, loop: bool) -> [float] =
 -- The sweep's period is the sound's length n, also when a loop's noise is filtered over two periods.
 pure func filteredN(l: Layer, xs: [float], n: int) -> [float] =
   if l.lowpass > 0.0 && l.lowpassTo > 0.0 && l.lowpassTo != l.lowpass then {
-    let lp = sweepList(l.lowpass, l.lowpassTo, n, xs);
+    let lp = times(l.lpPoles, \v. sweepList(l.lowpass, l.lowpassTo, n, v), xs);
     if l.highpass > 0.0 then zipWith(\x y. x - y, lp, lowpassList(onePole(l.highpass), lp)) else lp
   } else filtered(l, xs)
 
@@ -193,7 +199,7 @@ pure func layerOf(j: Json) -> Layer {
    lowpass: num(j, "lowpass_hz", 0.0), highpass: num(j, "highpass_hz", 0.0),
    seed: match getInt(j, "seed") { Some(s) => s, None => 1 }, env: envOf(j),
    vibRate: num(j, "vib_hz", 0.0), vibCents: num(j, "vib_cents", 0.0), amRate: num(j, "beat_hz", 0.0), amDepth: num(j, "beat_depth", 0.0),
-   lowpassTo: num(j, "lowpass_to_hz", 0.0)}
+   lowpassTo: num(j, "lowpass_to_hz", 0.0), lpPoles: match getInt(j, "lowpass_poles") { Some(k) => k, None => 1 }}
 }
 
 pure func recipeOf(j: Json) -> Result[Recipe, string] = match getString(j, "id") {
@@ -208,6 +214,7 @@ pure func recipeOf(j: Json) -> Result[Recipe, string] = match getString(j, "id")
       drive: num(j, "drive", 0.0), layers: layers};
     if r.seconds <= 0.0 then Err("${id}: seconds must be positive")
     else if size(layers) == 0 then Err("${id}: no layers")
+    else if size(filter(\l. l.lpPoles < 1 || l.lpPoles > 4, layers)) > 0 then Err("${id}: lowpass_poles must be 1 to 4")
     else match loopErrors(r) { [] => Ok(r), es => Err(join("; ", es)) }
   }
 }
