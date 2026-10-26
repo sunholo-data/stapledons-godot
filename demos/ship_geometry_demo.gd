@@ -207,6 +207,7 @@ func setup(opts := {}) -> bool:
 	if not set_sky_state(opts.get("sky_state","cruise")):
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
+	if opts.get("sound",true):add_child(ShipSound.new().attach(self)) # R2-SOUND S1: self-contained (audio/ship_sound.gd)
 	mouse_look_enabled=opts.get("mouse_look",true)
 	get_window().focus_exited.connect(func()->void:Input.mouse_mode=Input.MOUSE_MODE_VISIBLE)
 	set_brightness_trial(opts.get("brightness_stops",2))

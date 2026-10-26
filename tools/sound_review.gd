@@ -11,7 +11,7 @@ extends SceneTree
 ##   index.html    a plain page of players (<audio> with Ogg Opus and a WAV fallback).
 ## Run: godot --headless --path . --script tools/sound_review.gd -- --measure=<file> --out=<dir> [--v1-dir=<dir>] [--stage=<s>]
 
-const FIRST := ["spire_hum", "spire_degradation_pristine", "spire_degradation_mid", "spire_degradation_bad", "room_bridge", "bridge_ambience"]
+const FIRST := ["bridge_walk", "footstep_deck", "console_wake", "console_sleep", "console_key", "lift_start", "lift_run", "lift_arrive", "spire_hum", "spire_degradation_pristine", "spire_degradation_mid", "spire_degradation_bad", "room_bridge", "bridge_ambience"]
 ## The three Archive states Mark hears (archive_degradation = 1 − Memory Health/100).
 const LEVELS := {"pristine": 0.0, "mid": 0.5, "bad": 0.9}
 
@@ -59,7 +59,7 @@ func _initialize() -> void:
 			top = -80.0
 			for p: Array in c.param.points:
 				top = maxf(top, float(p[1]))
-		items.append({"id": id, "file": id, "gain_db": float(c.volume_db) + top + preview})
+		items.append({"id": str(c.streams[0]), "file": id, "gain_db": float(c.volume_db) + top + preview})
 		var changed := "new"
 		if v1.has(id):
 			changed = "changed" if v1[id].get("sha256", "") != a.sha256 or float(v1[id].cue.volume_db) != float(c.volume_db) else "unchanged"
@@ -71,15 +71,15 @@ func _initialize() -> void:
 		if c.has("param"):
 			row["in_game_note"] = "level shown is the fully degraded maximum; silent while the Archive is intact"
 		if changed == "changed":
-			items_v1.append({"id": id, "file": id + "_v1", "gain_db": float(v1[id].cue.volume_db) + preview})
+			items_v1.append({"id": str(v1[id].cue.streams[0]), "file": id + "_v1", "gain_db": float(v1[id].cue.volume_db) + preview})
 			row["v1_ogg"] = id + "_v1.ogg"
 			row["v1_wav"] = id + "_v1.wav"
 		rows.append(row)
 	var hum: Dictionary = cues["spire_hum"]
 	var room: Dictionary = cues["room_bridge"]
 	var mixes := [{"id": "bridge_ambience", "seconds": 24.0, "parts": [
-		{"recipe": "spire_hum", "gain_db": float(hum.volume_db) + preview},
-		{"recipe": "room_bridge", "gain_db": float(room.volume_db) + preview}]}]
+		{"recipe": "spire_hum", "gain_db": float(hum.volume_db) + preview, "at": []},
+		{"recipe": "room_bridge", "gain_db": float(room.volume_db) + preview, "at": []}]}]
 	var amb := {"id": "bridge_ambience", "name": "The bridge, standing still (hum + room together)",
 		"when": "Always, on the bridge: what you hear with nothing happening (the Archive intact).", "file_ogg": "bridge_ambience.ogg", "file_wav": "bridge_ambience.wav",
 		"loop": true, "duration_s": 24.0, "bus": "Ambience", "in_game": {"rms_dbfs": null, "peak_dbfs": null}, "preview_gain_db": preview,
@@ -88,8 +88,8 @@ func _initialize() -> void:
 	var mixes_v1 := []
 	if v1.has("room_bridge") and v1.has("spire_hum"):
 		mixes_v1.append({"id": "bridge_ambience_v1", "seconds": 24.0, "parts": [
-			{"recipe": "spire_hum", "gain_db": float(v1.spire_hum.cue.volume_db) + preview},
-			{"recipe": "room_bridge", "gain_db": float(v1.room_bridge.cue.volume_db) + preview}]})
+			{"recipe": "spire_hum", "gain_db": float(v1.spire_hum.cue.volume_db) + preview, "at": []},
+			{"recipe": "room_bridge", "gain_db": float(v1.room_bridge.cue.volume_db) + preview, "at": []}]})
 		amb["v1_ogg"] = "bridge_ambience_v1.ogg"
 		amb["v1_wav"] = "bridge_ambience_v1.wav"
 	rows.append(amb)
@@ -102,9 +102,9 @@ func _initialize() -> void:
 			probe.params["archive_degradation"] = x
 			var mid := "spire_degradation_" + lvl
 			mixes.append({"id": mid, "seconds": 32.0, "parts": [
-				{"recipe": "spire_hum", "gain_db": float(hum.volume_db) + preview},
-				{"recipe": "spire_drift", "gain_db": float(dr.volume_db) + probe.param_offset(dr) + preview},
-				{"recipe": "spire_drift_bad", "gain_db": float(bd.volume_db) + probe.param_offset(bd) + preview}]})
+				{"recipe": "spire_hum", "gain_db": float(hum.volume_db) + preview, "at": []},
+				{"recipe": "spire_drift", "gain_db": float(dr.volume_db) + probe.param_offset(dr) + preview, "at": []},
+				{"recipe": "spire_drift_bad", "gain_db": float(bd.volume_db) + probe.param_offset(bd) + preview, "at": []}]})
 			rows.append({"id": mid, "name": "The spire, Archive %s (degradation %.1f, Memory Health %d)" % [lvl, x, roundi(100.0 * (1.0 - x))],
 				"when": "The bridge's hum as the Archive's Memory Health falls. The sim does not emit Memory Health yet, so in the game today the hum is always 'pristine'.",
 				"file_ogg": mid + ".ogg", "file_wav": mid + ".wav", "loop": true, "duration_s": 32.0, "bus": "Ambience",
@@ -113,6 +113,36 @@ func _initialize() -> void:
 				"listen_for": {"pristine": "The hum alone, as it is today.", "mid": "The second, slower beat under the hum: one long cycle every 32 s with a little grit. Unsettling, not broken.", "bad": "The beat roughened and wavering, a tone that does not belong. It should feel wrong without being loud."}[lvl],
 				"status": "new"})
 		probe.free()
+	if cues.has("footstep_deck") and cues.has("lift_start"):
+		# S1: a scripted minute on the bridge, flat (the dev build has the real 3D placement): a walk,
+		# a console, another walk, the lift. Footsteps every 0.55 s, the six variants in turn.
+		var fs: Dictionary = cues["footstep_deck"]
+		var steps := []
+		for k in 6:
+			steps.append([])
+		var t := 0.6
+		var k := 0
+		while t < 8.0:
+			steps[k % 6].append(snappedf(t, 0.001)); t += 0.55; k += 1
+		t = 14.0
+		while t < 18.5:
+			steps[k % 6].append(snappedf(t, 0.001)); t += 0.55; k += 1
+		var walk := {"id": "bridge_walk", "seconds": 30.0, "parts": [
+			{"recipe": "spire_hum", "gain_db": float(hum.volume_db) + preview, "at": []},
+			{"recipe": "room_bridge", "gain_db": float(room.volume_db) + preview, "at": []},
+			{"recipe": "console_wake", "gain_db": float(cues.console_wake.volume_db) + preview, "at": [9.0]},
+			{"recipe": "ui_click", "gain_db": float(cues.console_key.volume_db) + preview, "at": [10.5, 11.2]},
+			{"recipe": "console_sleep", "gain_db": float(cues.console_sleep.volume_db) + preview, "at": [12.6]},
+			{"recipe": "lift_start", "gain_db": float(cues.lift_start.volume_db) + preview, "at": [19.5]},
+			{"recipe": "lift_arrive", "gain_db": float(cues.lift_arrive.volume_db) + preview, "at": [26.0]}]}
+		for i in 6:
+			walk.parts.append({"recipe": fs.streams[i], "gain_db": float(fs.volume_db) + preview, "at": steps[i]})
+		mixes.append(walk)
+		rows.append({"id": "bridge_walk", "name": "A minute on the bridge (flat mix)", "when": "Walk to the helm, use the navigation console, walk on, take the lift down.",
+			"file_ogg": "bridge_walk.ogg", "file_wav": "bridge_walk.wav", "loop": false, "duration_s": 30.0, "bus": "mix",
+			"in_game": {"rms_dbfs": null, "peak_dbfs": null}, "preview_gain_db": preview,
+			"source": "a scripted mix of the shipped sounds at their in-game levels; flat here, positioned around the captain in the dev build", "licence": "synth-own",
+			"listen_for": "Do the steps sit under the hum without clattering? Does the console feel like a precise machine? The lift: latch, motor, one low bell.", "status": "new"})
 	var ordered := []
 	for id: String in FIRST:
 		ordered.append_array(rows.filter(func(r: Dictionary) -> bool: return r.id == id))

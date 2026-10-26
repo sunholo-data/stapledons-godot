@@ -145,6 +145,8 @@ game state (walk distance, view, level, settings) ──────────
 - **The listener** (`AudioListener3D`) sits at the captain's head, turned to the active view's yaw, so what is on the left of the screen is on the left in the ears, in Bow and in Astern (OQ7). The console zoom keeps the captain's position.
 - **Attenuation:** inverse distance, unit size 3 m, max distance 60 m; the spire's hum has a floor so it is never fully gone on the bridge.
 
+**As built (S1, 2026-10-22).** `audio/ship_sound.gd` (ShipSound) is attached to the ship by one line and reads only what the ship exposes, so the bridge styling work can move props freely: CA0's `foot_down` events give the footsteps (instead of the distance accumulator, which stays for tools), console focus edges give wake and sleep at the focused station, `ShipConsoles.used` gives key presses, lift state edges give start, a motor loop that rides with the platform, and arrival, `active_level` gives the level's loops and room, and the journey session's world gives Memory Health (D-113). The listener faces where the active camera faces. The foley is synthesised (the plan's fallback): six footsteps on plating, the lift's latch, motor and one low bell.
+
 ### D5. Levels and rooms
 
 - `data/audio/rooms.json`: per level, the room tone cue and the Ship bus reverb (room size, damping, wet). The bridge under the 100 m dome: room size 0.8, wet −14 dB, a long tail that makes footsteps sound small.

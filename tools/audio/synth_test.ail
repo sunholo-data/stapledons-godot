@@ -12,14 +12,14 @@ import std/string (join, intToStr)
 import std/io (println)
 
 pure func noEnv() -> Env = {delay: 0.0, attack: 0.0, tau: 0.0, stop: 0.0}
-pure func sine(f: float, a: float) -> Layer = {kind: "sine", freq: f, freqTo: f, glide0: 0.0, glide1: 0.0, amp: a, lowpass: 0.0, highpass: 0.0, seed: 1, env: noEnv(), vibRate: 0.0, vibCents: 0.0, amRate: 0.0, amDepth: 0.0, lowpassTo: 0.0}
-pure func hiss(lp: float) -> Layer = {kind: "noise", freq: 0.0, freqTo: 0.0, glide0: 0.0, glide1: 0.0, amp: 0.3, lowpass: lp, highpass: 0.0, seed: 7, env: noEnv(), vibRate: 0.0, vibCents: 0.0, amRate: 0.0, amDepth: 0.0, lowpassTo: 0.0}
+pure func sine(f: float, a: float) -> Layer = {kind: "sine", freq: f, freqTo: f, glide0: 0.0, glide1: 0.0, amp: a, lowpass: 0.0, highpass: 0.0, seed: 1, env: noEnv(), vibRate: 0.0, vibCents: 0.0, amRate: 0.0, amDepth: 0.0, lowpassTo: 0.0, lpPoles: 1}
+pure func hiss(lp: float) -> Layer = {kind: "noise", freq: 0.0, freqTo: 0.0, glide0: 0.0, glide1: 0.0, amp: 0.3, lowpass: lp, highpass: 0.0, seed: 7, env: noEnv(), vibRate: 0.0, vibCents: 0.0, amRate: 0.0, amDepth: 0.0, lowpassTo: 0.0, lpPoles: 1}
 
 -- A 0.25 s loop: 440 Hz (110 cycles), 220 Hz (55 cycles), filtered noise, a 4 Hz swell (1 cycle).
 pure func loopRecipe() -> Recipe = {id: "t_loop", seconds: 0.25, loop: true, peakDb: -6.0, fadeMs: 0.0, swellRate: 4.0, swellDepth: 0.2, drive: 0.0,
   layers: [sine(440.0, 0.5), sine(220.0, 0.3), hiss(800.0)]}
 pure func shotRecipe() -> Recipe = {id: "t_shot", seconds: 0.1, loop: false, peakDb: -3.0, fadeMs: 10.0, swellRate: 0.0, swellDepth: 0.0, drive: 0.0,
-  layers: [{kind: "sine", freq: 300.0, freqTo: 900.0, glide0: 0.0, glide1: 0.08, amp: 0.6, lowpass: 0.0, highpass: 0.0, seed: 1, env: {delay: 0.0, attack: 0.005, tau: 0.04, stop: 0.0}, vibRate: 0.0, vibCents: 0.0, amRate: 0.0, amDepth: 0.0, lowpassTo: 0.0}]}
+  layers: [{kind: "sine", freq: 300.0, freqTo: 900.0, glide0: 0.0, glide1: 0.08, amp: 0.6, lowpass: 0.0, highpass: 0.0, seed: 1, env: {delay: 0.0, attack: 0.005, tau: 0.04, stop: 0.0}, vibRate: 0.0, vibCents: 0.0, amRate: 0.0, amDepth: 0.0, lowpassTo: 0.0, lpPoles: 1}]}
 
 pure func q(x: float) -> int = clamp16(floatToInt(round(x * 32767.0)))
 pure func at(xs: [int], i: int) -> int = match nth(xs, i) { Some(v) => v, None => 0 }
@@ -65,6 +65,11 @@ pure func checks() -> [string] {
       let early = roughness(take(4000, drop(2000, sw)));
       let late = roughness(take(4000, drop(18000, sw)));
       if late > 2.0 * early then "" else "a filter sweep from 200 Hz to 8 kHz does not brighten the noise" },
+    -- D-122: two poles in series darken white noise (less high-frequency movement than one pole at the same cutoff).
+    { let one = render({id: "p1", seconds: 0.2, loop: false, peakDb: -3.0, fadeMs: 10.0, swellRate: 0.0, swellDepth: 0.0, drive: 0.0, layers: [{hiss(400.0) | kind: "white"}]});
+      let two = render({id: "p2", seconds: 0.2, loop: false, peakDb: -3.0, fadeMs: 10.0, swellRate: 0.0, swellDepth: 0.0, drive: 0.0, layers: [{hiss(400.0) | kind: "white", lpPoles: 2}]});
+      if roughness(two) < 0.5 * roughness(one) then "" else "a two-pole low-pass is not darker than one pole" },
+    match parseRecipes("{\"schema\":\"stapledons.audio.recipes/1\",\"recipes\":[{\"id\":\"x\",\"seconds\":1,\"layers\":[{\"kind\":\"white\",\"amp\":0.5,\"lowpass_hz\":300,\"lowpass_poles\":9}]}]}") { Err(_) => "", Ok(_) => "lowpass_poles 9 is accepted" },
     match parseRecipes("{\"schema\":\"stapledons.audio.recipes/1\",\"recipes\":[{\"id\":\"x\",\"seconds\":1,\"loop\":true,\"layers\":[{\"kind\":\"sine\",\"freq\":1.5,\"amp\":0.5}]}]}") { Err(_) => "", Ok(_) => "a bad loop recipe is accepted" }
   ]
 }

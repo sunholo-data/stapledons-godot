@@ -31,6 +31,26 @@
       "date": "2026-10-21",
       "event": "rework",
       "note": "D-108 notes: reworked room_bridge, console_wake/sleep, drive_boost/silent/brake, arrived, archive_ready; new spire_drift and spire_drift_bad following archive_degradation (Memory Health not emitted by the sim yet: layers silent in game until Archive phase 2). Legacy noise found to be an affine ramp; new white kind for reworked recipes. Budget decision needed before S1 (11.4 MB of 12 MB)."
+    },
+    {
+      "date": "2026-10-22",
+      "event": "paused",
+      "note": "S1 built; dev build v0.4.0-dev.36-styled-bridge-29-g58648716 and refs/sound/s1/ for Mark's bridge listen."
+    },
+    {
+      "date": "2026-10-22",
+      "event": "rework",
+      "note": "D-117 (Mark on S1): 'the sounds are all great aside the footsteps - too clunky?'. Footsteps v2: soft-soled pads with a little coat rustle, almost no low thump, no metal ring; pitch spread 60 cents; RMS -37.2 dBFS (was -32.7); band [-42,-32]. Everything else kept byte-identical. A/B at refs/sound/s1-footsteps/."
+    },
+    {
+      "date": "2026-10-26",
+      "event": "rework",
+      "note": "D-122 (Mark on footsteps v2): 'the footsteps are way too annoying and metallic. I think we want softer padding sounds.' Footsteps v3: a soft sole on a cushioned deck, two-pole low-passed white noise (a low-mid thud 260-330 Hz, a softer body under it, a faint cloth/sole brush as the foot rolls), 11-15 ms attacks, no sine, no ring; energy centred near 400 Hz (v2 near 3.2 kHz, essentially white to 10 kHz). The synth gains lowpass_poles (default 1: every other sound byte-identical, 28 sounds regenerate). In game at -20 dB (v2 -16): RMS -38.1 dBFS (variant 1), peak -23, about 5 dB quieter A-weighted; band -44..-34. Review: 20 s calm walk (105 steps a minute) with hum and room, and the six variants, each with v2 for A/B. Paused for Mark's listen."
+    },
+    {
+      "date": "2026-10-26",
+      "event": "rework",
+      "note": "D-123 (Mark on footsteps v3): 'footsteps still sound aggressive - I figure players will hear this a lot so it has to be pleasant-ish to listen to not banging in the skull!' Footsteps v4, a new approach: felt more than heard, under the bed. Three-pole low-passed white noise (energy centred near 190 Hz, most of it 120-300 Hz), a soft body, a barely-there brush on three variants; 30-40 ms rounded attacks, 85-105 ms decay constants, 0.55 s, no transient. In game at -30 dB: peak -33 dBFS (6 dB under the hum's -27), gated RMS -45.9; 13.6 dB under the bed in 120-300 Hz and in 2-5 kHz. The director gains volume_jitter_db (1.5) and alternate_db (-1.5, every other foot), and its pitch and level now come from a mixed hash (the raw string hash moved so little per fire that a walk got nearly one pitch). Review folder offers a 6 dB quieter walk as a level option. Paused for Mark's listen."
     }
   ],
   "implements": [
@@ -189,10 +209,10 @@
         "full make test green on the rig via tools/rig_check.sh (AC16)",
         "make publish-dev dev build and make sound-review STAGE=s1 (60 s bridge walk) published for Mark"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-21",
+      "completed": "2026-10-22",
+      "notes": "Built: audio/ship_sound.gd (ShipSound, attached by one line in demos/ship_geometry_demo.gd; reads only captain_event foot_down (CA0), consoles.focused/used, lift.state, active_level, journey_sim's world; listener at the captain's head facing the camera), SoundDirector 3D sources (mast, captain, station, lift; spatial loops follow), SoundMix.set_room + data/audio/rooms.json, synthesised footsteps (6), lift start/run/arrive; footsteps come from CA0's foot_down instead of the distance accumulator (the accumulator stays for tools). Foley synthesised rather than CC0 (the plan's fallback). make ship-sound-test 15 passed (pan through the mixer: Bow L/R 3.8, Astern R/L 3.9); ship-demo suites green with ShipSound attached; sound-check 36 passed; git WAV budget raised to 20 MB (export 2.5 MB QOA of 6 MB). Dev build v0.4.0-dev.36-styled-bridge-29-g58648716 (sound-smoke 28/28 from the bundle). Listening page refs/sound/s1/."
     },
     {
       "id": "S2_VOYAGE",
