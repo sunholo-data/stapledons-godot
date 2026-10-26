@@ -2,6 +2,126 @@
 
 ## Unreleased
 
+## v0.4.0-dev.37-living-bridge (2026-10-26)
+
+### sunholo-audio (2026-10-26)
+
+#### Changed
+
+- **The sound tools use the `sunholo/audio` package** (R2-SUNHOLO-AUDIO, D-119). The game's
+  synthesised sounds are now rendered by the published AILANG package (pinned 0.5.0) instead of a
+  copy in the game; every sound is byte-identical. The loudness checks (bands, the laptop-speaker
+  high-pass, the teacup rule) also run in AILANG now (`make sound-levels`), and agree with the
+  Godot-side checks on every cue.
+
+### captain-ca2 (2026-10-26)
+
+#### Added
+- The captain's held poses (R2-CAPTAIN-ANIMATION CA2): painted reaches at the stations with a step back, the captain's chair (E at the seat sits; E or a move key stands), a look-up when the ship arrives or the starbow forms, a lift pose, and a slight lean when the captain starts and stops walking (none under reduced motion).
+
+### ailang-0.54.18 (2026-10-26)
+
+#### Changed
+
+#### AILANG v0.54.18
+
+- **Upgrade:** CI, the bundled runtime and the CLAUDE.md pin move to AILANG v0.54.18. The lockfiles
+  are unchanged (relativity 0.12.0, celestial 0.5.0, crew_core 0.6.0); `ailang lock` on v0.54.18
+  rewrites nothing.
+- **Why now:** `sunholo/audio` 0.3.0 onwards requires v0.54.18, which adds the WAV reader and
+  fixed-decimal formatting we asked for (ailang#1930); the sound tools move onto the package next.
+- **Workarounds re-checked:** an aliased constructor import now matches in a pattern (TC_MATCH_001
+  no longer fires); `sim/tripphase.ail` stays as the module boundary. `ailang check --package`
+  stays beside `ailang test --package` (only `check` enforces STRICT_FALLBACK_001).
+
+### sound-s1 (2026-10-22)
+
+#### Added
+- **The bridge has sound around the captain** (R2-SOUND S1). Footsteps on the plating with every
+  step, consoles waking and sleeping where they stand, the lift's latch, motor and bell, and the
+  spire's hum at the mast, all placed in 3D so a sound on the left of the screen is on the left,
+  in Bow and in Astern. The bridge's air has a long, soft tail under the dome.
+- **Footsteps you barely notice** (D-122, D-123). The captain's steps are a soft, dark padding felt
+  under the spire's hum rather than heard over it: no hit, nothing bright or metallic, each step a
+  little different in level and pitch and every other foot softer, so a long walk never sounds
+  like a metronome. The synthesis tool gains `lowpass_poles` (low-passes in series, so a sound can
+  be truly dark); every other sound is byte-identical.
+
+### bridge-style (2026-10-22)
+
+#### Changed
+
+- **The bridge is one illustrated world** (R2-BRIDGE-STYLE, D-100, D-104, D-106, D-110). In deep space the
+  spire lights the deck and casts soft radial shadows; near a star the star takes over. Every bridge surface is
+  banded toon shading with an ink line; the deck and the mast are painted; the desks, the captain's chair, the
+  Archive terminal, the benches, the guardrails and the lift are grown, curved forms; the rim fronds are painted
+  potted palms, and a few painted fronds frame the Bow and Astern views.
+- **The HUD has one look.** Every panel, card, button and screen uses the same ink panels, palette and
+  typefaces (Josefin Sans and Nunito, both SIL OFL), with text coloured by what it means.
+
+### star-surfaces-landing (2026-10-21)
+
+#### Star surfaces landed (R2-STAR-SURFACES SS4)
+
+- R2-STAR-SURFACES is complete. The design doc, sprint plan and a new report move to `design_docs/implemented/r2/`. The independent evaluation scored 77/100 (PASS).
+- α Cen's activity cycles now use the opened source, Ayres 2014 (arXiv 1401.0847). B's cycle is 8.2 years. A's is 19.1 years, marked as tentative.
+- Barnard's Star's 10-year cycle is now cited.
+- New tests:
+  - the telescope's magnification (whole disc, close-up cell size, no demagnification, clamp);
+  - the cited cycle lengths.
+
+### star-surfaces-d111 (2026-10-21)
+
+#### Added
+
+- **The helm's telescope** (R2-STAR-SURFACES, D-111). At the navigation console's close-up, T shows the
+  stop's star through the ship's telescope, labelled "telescope ×N" with its true magnification: alpha
+  Centauri's spot groups and faculae, TRAPPIST-1's starspots and flares resolve there. The Bow view
+  stays true size.
+- **A close pass of Sun-like stars.** Free navigation now stops main-sequence F, G and K stars at twice
+  the D-54 size: alpha Centauri A fills about 22° of the sky instead of 11°.
+- **Each star's own activity.** Spot groups follow each star's real cycle (alpha Cen A quieter, B
+  livelier), TRAPPIST-1 is heavily spotted and flares, and Barnard's Star stays quiet, as it is.
+- **Eclipses** (SS3). When a body covers part of a star, the corona appears (the Baumbach mean corona,
+  with streamers), with hydrogen-alpha prominences at the limb; the last sliver of photosphere glints
+  through the starfield's point-spread glow.
+
+### sound-rework (2026-10-21)
+
+#### Changed
+- **Sound rework after the first listen (R2-SOUND, D-108).** The bridge's room tone is now barely
+  there and the spire's hum leads. The consoles wake and sleep like a precise machine. The drive is
+  lower and richer (beating partials, a noise band whose filter opens and closes) and the brake
+  rougher, still with nothing felt (a new check keeps everything under 200 Hz at least 20 dB down).
+  Arrival is an understated suspended chord. The Archive's reply is a small breathing figure.
+
+#### Added
+- **The spire's degradation layer.** A second, much slower beat under the hum that rises as the
+  Archive's Memory Health falls. The sim does not emit Memory Health yet, so in game it stays silent.
+- Synthesis: vibrato, amplitude beats, filter sweeps, soft saturation and a true white noise.
+- **The export carries the sounds QOA-compressed** (D-112): 2.3 MB instead of 11.4 MB, staged by
+  `make sound-stage` and proven by `make sound-export-smoke` in the exported app. The room tone is
+  another 6 dB lower.
+
+### captain-walk (2026-10-21)
+
+#### Changed
+- The captain walks calmly at 1.3 m/s (was a 3.5 m/s jog), for WASD and walk-to: the bridge takes longer to cross (spawn to the helm 2.7 s, to the navigation station 15 s). (D-115)
+- The captain's painted animation is a calm walk, now in the game: 12 unique frames a cycle in the back and side views, heel strike to toe off, the coat hanging, the planted foot staying put. (R2-CAPTAIN-ANIMATION)
+#### Fixed
+- The captain's painted feet rest on the deck instead of sinking below it. (D-118)
+
+#### Added
+- A between-frame "echo" on the painted walk: the previous step fades behind the captain for 60 ms, leaning into the stepped cadence (off under reduced motion). (D-118)
+
+### archive-memory-health (2026-10-21)
+
+#### Added
+- **The Archive's Memory Health** (ledger D-113). The sim now tracks it, hidden from the player:
+  100, one point lost per decade of ship time, ten per entry into a black hole's zone (protocol 2.15).
+  The spire's degradation layer under the bridge's hum follows it, so a long or hard voyage
+  begins to sound wrong.
+
 ## v0.4.0-dev.36-styled-bridge (2026-10-21)
 
 ### star-surfaces (2026-10-20)
