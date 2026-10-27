@@ -1,0 +1,85 @@
+---
+title: "Listening for home"
+date: 2026-10-27T12:00:00
+authors: [sunholo]
+tags: [design, physics]
+---
+
+import {Chase, EarthRate, Beams, Lens} from '@site/src/components/ListeningForHome';
+
+Only light crosses the bubble wall. So everything Earth ever tells you is a beam of light chasing a ship that is nearly as fast as it is. This is the design for how the ship hears home, and it is all physics: your speed sets how fast Earth's news plays, your route sets where Earth can point, and the stars themselves can be your telescopes. None of it is built yet.
+
+{/* truncate */}
+
+## Space is the buffer
+
+Light always catches a ship that is slower than light, but late. A broadcast Earth sends one day after you leave reaches you:
+
+| Your cruise speed | The broadcast catches you |
+|---|---|
+| 0.9c | 11 days later |
+| 0.99c | 100 days later |
+| 0.999c | 2.7 years later |
+| 0.999999c (γ 707) | 2,738 years later |
+
+At the top speed that is long after you have arrived anywhere. A 1,000 light-year leg at γ 707 delivers only about **nine hours** of Earth's broadcasts on the way. The rest is not lost. It is in the space behind you, still coming, and it plays when your motion lets it.
+
+<Chase />
+
+## Your speed is the playback speed
+
+Aboard, Earth's history plays at the **Earth rate**: D Earth seconds per ship second, where D is the same Doppler factor that colours the sky outside. Fly away fast and home almost stops. Stop anywhere and it plays in real time, but as many years old as you are light-years from Earth. Fly home and it rushes in: at γ 707, about four Earth years of news per ship day.
+
+<EarthRate />
+
+The rate is one effect. The other is colour: the signal shifts with it. An X-band radio carrier at 10 GHz arrives at 709 MHz when you fly away at 0.99c, and at 7 MHz at γ 707. A laser at 1 µm arrives at 14 µm, then 1.4 mm. The ship's receivers have to follow the signal down the spectrum.
+
+## Which light works
+
+| Link | At rest | Flying away |
+|---|---|---|
+| 1 MW radio from a 70 m dish, at α Centauri | about 1 kbit/s | about 5 bit/s at 0.99c |
+| 1 GW laser at 1 µm, 10 m apertures, at 1,000 ly | about 300,000 photons a second | about 250 a second at γ 707 |
+
+- **Radio** reaches the nearest stars, and only while you are stopped.
+- **Lasers** from large telescopes in Earth orbit are the real link. The beam stays narrow: about 15 AU across at 1,000 light-years.
+- **Speed costs time, not photons.** A laser link counts photons, and every photon Earth aims at you still arrives; it just arrives later and redder. Distance is what costs information, by the inverse square.
+- **There is a floor.** Earth could send shorter wavelengths so they land in your receivers' band, but below 91 nm interstellar hydrogen absorbs light within tens of parsecs. So Earth sends a comb of colours, and one of them lands where your receivers listen.
+- **The sky behind you is cold.** At γ 707 the cosmic microwave background astern is redshifted to 1.9 thousandths of a kelvin, which makes the background noise behind you almost nothing.
+
+## Straight lines: tell Earth your route
+
+A beam goes where it is aimed. Earth has to point at where you *will be* when its light arrives, and it only knows that if you told it. A beam aimed at a port covers the whole line from Sol through it, so a new port further out along that line, or back along it, is already in the beam. Anywhere else, Earth has to hear your change of plan first and then aim anew.
+
+<Beams />
+
+If you abandon a plan Earth has heard, everything it already sent along that plan is aimed at empty space. That is the one way Earth's words to you are truly lost. Silence travels at the speed of light too: if Earth ever stops sending, you hear the silence years later.
+
+## Stars are telescopes
+
+Every star bends the light passing close to it, and the light from a world far behind the star comes to a focus on a line beyond it. A telescope on that line sees the world magnified about a hundred billion times. That is enough to map continents on a planet a hundred light-years away, after months of building the picture pixel by pixel.
+
+<Lens />
+
+The focal line starts at a distance set by the star's size and mass:
+
+| Lens star | Focal line begins | Light time from the star |
+|---|---|---|
+| The Sun | 548 AU | 3.2 days |
+| An orange dwarf (0.7 solar radii, 0.75 solar masses) | 358 AU | 2.1 days |
+| A red dwarf (0.2 solar radii, 0.2 solar masses) | 110 AU | 0.6 days |
+| Sirius A | 777 AU | 4.5 days |
+
+A lens near the world you want to see does better. An Earth-sized planet 100 light-years behind the Sun makes an image 0.65 km across on the focal line; seen through a star only 5 light-years from it, the image is 13 km across. A star on the way to somewhere is a place to stop and look before the last leg.
+
+Lenses work the other way too: a transmitter on a star's focal line sends a beam magnified just as much towards the far side. Earth can put relays on the Sun's focal lines pointing at the stars on your route, and you can sit on a destination star's focal line, pointing at Sol, to hear home far more clearly. Earth can watch through the Sun's lenses as well, and send you what it sees.
+
+## Not yet
+
+This is design, written for the next strand of work after the first journey. The plan is:
+
+- a **comms station** on the bridge, showing what is arriving from home, its colour shift, its age and the live Earth rate;
+- **Earth's beams on the galaxy map**: where home should be pointing given what you have told it, where it can't point yet because your message is still on its way, and how long you would wait at each port to hear it;
+- the **lens look**: flying to a star's focal line and spending months building a picture of a world.
+
+The numbers above come from the formulas the game's physics package already uses: Doppler and aberration, and the bending of light that the black-hole work checked against Einstein's prediction.
