@@ -572,6 +572,18 @@ bh-render-diff: bh-refs ## M3.6 AC-13: the current renders/bh_*.png against the 
 	@$(GODOT) --headless --path . --script tools/render_diff.gd -- $$(cd . && ls renders/bh_*.png) > $(SCRATCH)/bh-render-diff.log 2>&1; rc=$$?; grep '^render-diff' $(SCRATCH)/bh-render-diff.log | tail -45; \
 	  test $$rc = 0 && grep -q '^render-diff: OK$$' $(SCRATCH)/bh-render-diff.log
 
+.PHONY: m1-refs m1-refs-publish bright-audit
+M1_REFS_URL ?= https://storage.googleapis.com/stapledons-voyage-assets/refs/m1_sky
+m1-refs:           ## M1.5b AC9: fetch the reviewed reference renders pinned in data/refs/m1_sky_manifest.sha256 to renders/m1_baseline (public bucket, sha256-checked)
+	@mkdir -p renders/m1_baseline; n=0; while read -r sum name; do f=renders/m1_baseline/$$name; \
+	  if [ "$$(shasum -a 256 "$$f" 2>/dev/null | cut -d' ' -f1)" != "$$sum" ]; then curl -fsSL -o "$$f" "$(M1_REFS_URL)/$$name" || { echo "m1-refs: cannot fetch $$name"; exit 1; }; fi; \
+	  [ "$$(shasum -a 256 "$$f" | cut -d' ' -f1)" = "$$sum" ] || { echo "m1-refs: $$name differs from its pin"; exit 1; }; n=$$((n+1)); done < data/refs/m1_sky_manifest.sha256; \
+	  echo "m1-refs: $$n reference renders match data/refs/m1_sky_manifest.sha256"
+m1-refs-publish:   ## maintainers (gcloud): upload the make capture renders pinned in data/refs/m1_sky_manifest.sha256 (immutable names checked by sha256)
+	@while read -r sum name; do [ "$$(shasum -a 256 "renders/$$name" | cut -d' ' -f1)" = "$$sum" ] || { echo "m1-refs-publish: renders/$$name is not the pinned render"; exit 1; }; \
+	  gcloud storage cp --cache-control="public, max-age=300" "renders/$$name" "gs://stapledons-voyage-assets/refs/m1_sky/$$name" > /dev/null && echo "  uploaded $$name"; done < data/refs/m1_sky_manifest.sha256
+
+
 splash:            ## compose the boot splash ui/splash/splash.png (Milky Way crop + wordmark + AILANG, like the site hero); needs a GPU window and data/raw/background/noirlab_10k_destarred.png
 	$(GODOT) --path . --script tools/splash_compose.gd
 
@@ -741,6 +753,9 @@ companions-test:  ## the companion rule (sim/tools/companions.ail): thresholds, 
 	@$(AILANG) run --quiet --caps FS --package-dir sim --entry companionsFixtures --args-json '"tools/fixtures"' sim/tools/companions_test.ail > $(SCRATCH)/companions-fx-interp.txt
 	@cmp $(SCRATCH)/companions-fx-vm.txt $(SCRATCH)/companions-fx-interp.txt && test "$$(cat $(SCRATCH)/companions-fx-vm.txt)" = "companions-fixtures-ok"
 	@echo "companions-test: $$(cat $(SCRATCH)/companions-vm.txt), $$(cat $(SCRATCH)/companions-fx-vm.txt) (VM = interpreter)"
+
+bright-audit:      ## M1.5b AC11 render gate (GPU window): make capture writes renders/bright_audit/ (six rest-frame cube faces + predicted star pixels); >= 95% of V < 2.5 within 1 px, 5,000-9,100 rendered V < 6.5
+	@$(GODOT) --headless --path . --script tools/bright_star_audit.gd -- renders/bright_audit
 
 test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
 	$(GODOT) --headless --path . --script tests/test_bright_audit.gd

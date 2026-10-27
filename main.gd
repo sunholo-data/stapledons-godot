@@ -713,7 +713,7 @@ func _grab() -> Image:
 ## Accelerate at 1 g through the AILANG sim and photograph the sky at set speeds.
 func _run_capture(dir: String) -> void:
 	var out := _out_dir(dir)
-	var targets := [0.0, 0.5, 0.9, 0.99]
+	var targets := [0.0, 0.5, 0.9, 0.99, 0.999] # M1 AC9: 0, 0.5, 0.9, 0.99 and 0.999c
 	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port.
 	# D-28: starboard looks at l 270 (Canopus, alpha Cen, Sirius's side, the LMC), port at l 90
 	var views := {"forward": [VIEW_YAW["forward"], 0.0, 0.0], "starboard": [VIEW_YAW["starboard"], 0.0, 0.0], "port": [VIEW_YAW["port"], 0.0, 0.0], "astern": [VIEW_YAW["astern"], 0.0, 0.0],
@@ -734,6 +734,8 @@ func _run_capture(dir: String) -> void:
 			tiles.append(img)
 			if view == "starboard" and target in [0.0, 0.99]:
 				exposure_tiles.append_array(await _capture_exposure_pair(out, target))
+		if target == 0.0:
+			await _capture_bright_audit(out.path_join("bright_audit"))
 	_save_sheet(tiles, views.size(), out.path_join("contact_sheet.png"))
 	_save_sheet(exposure_tiles, 3, out.path_join("exposure_sheet.png"))
 	if not await _capture_cmb(out):
@@ -750,6 +752,54 @@ func _capture_one(out: String, name: String) -> Image:
 	print("captured %s  beta=%.9f gamma=%.4f tau=%.4f t=%.4f  %s  EV %+.2f %s %s (meter %s, eye meter %s cd/m^2)" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"],
 		camera.hud_line(heading), exposure.ev, exposure.mode_name(), exposure.state_name(), String.num_scientific(_meter(ship["beta"])), String.num_scientific(_meter_eye(ship["beta"]))])
 	return img
+
+
+const AUDIT_V := 6.5 # tools/bright_star_audit.gd COUNT_V; tools/ stays out of the export
+
+
+## M1.5b AC11 render gate: at rest, six 90 deg cube faces cover the sky once with the HUD
+## hidden. Beside each face, <face>.audit.json lists every V < 6.5 catalogue star the camera
+## projects into it (predicted pixel, origin top-left), the contract tools/bright_star_audit.gd reads.
+func _capture_bright_audit(out: String) -> void:
+	# V comes from each star's illuminance at Sol: refuse anywhere but at rest at Sol
+	var off := Vector3(starfield.ship[0], starfield.ship[1], starfield.ship[2]).length()
+	if sim.world["ship"]["beta"] > 0.0 or off > 1e-6:
+		push_error("bright-audit: needs the ship at rest at Sol (beta %s, %s ly out)" % [sim.world["ship"]["beta"], off])
+		return
+	DirAccess.make_dir_recursive_absolute(out)
+	var faces := {"forward": [0.0, 0.0], "starboard": [-PI / 2, 0.0], "astern": [PI, 0.0], "port": [PI / 2, 0.0], "up": [0.0, PI / 2], "down": [0.0, -PI / 2]}
+	hud.visible = false
+	camera.fov = 90.0
+	_configure_pixel()
+	for face: String in faces:
+		camera.look(faces[face][0], faces[face][1], 0.0)
+		_apply_state()
+		var img := await _grab()
+		img.save_png(out.path_join(face + ".png"))
+		var scale := Vector2(img.get_size()) / get_viewport().get_visible_rect().size
+		var stars := []
+		for k in starfield.count:
+			var v := Relativity.v_from_illuminance(starfield.custom[4 * k + 1])
+			if v >= AUDIT_V:
+				continue
+			var n := Vector3(starfield.pos[3 * k] - starfield.ship[0], starfield.pos[3 * k + 1] - starfield.ship[1], starfield.pos[3 * k + 2] - starfield.ship[2]).normalized()
+			var p := camera.global_position + n * 10.0
+			if camera.is_position_behind(p):
+				continue
+			var px := camera.unproject_position(p) * scale
+			if px.x < 0.0 or px.y < 0.0 or px.x > img.get_width() or px.y > img.get_height():
+				continue
+			var id := starfield.ids[k] if k < starfield.ids.size() else "row %d" % k
+			stars.append({"id": id, "x": px.x, "y": px.y, "v": v})
+		var f := FileAccess.open(out.path_join(face + ".audit.json"), FileAccess.WRITE)
+		f.store_string(JSON.stringify({"face": face, "fov": camera.fov, "stars": stars}))
+		f.close()
+		print("bright-audit frame %s: %d predicted V < %.1f stars" % [face, stars.size(), AUDIT_V])
+	camera.fov = 70.0
+	_configure_pixel()
+	camera.look(0.0, 0.0, 0.0)
+	hud.visible = true
+	_apply_state()
 
 
 ## M1.5a exposure honesty (corrected F5): beside the default (eye) starboard

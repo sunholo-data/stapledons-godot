@@ -1,0 +1,69 @@
+{
+  "sprint": "R1-M1-SKY-2",
+  "milestone": "M1.5b_RENDERS_REPORT_LANDING",
+  "round": 1,
+  "pr": "sunholo-data/stapledons-godot#337 (branch sprint/m1.5b-landing, c0a9e9d2 + 6e84a30c on 8e742dca)",
+  "evaluator": "independent agent (Claude Sonnet 5.5), generator != judge; fresh clone, AILANG v0.54.18 from make runtime, Godot 4.7.2, Mac Studio M4 Max",
+  "score": 87,
+  "verdict": "PASS",
+  "breakdown": {
+    "tests_pass": {"score": 18, "max": 20, "note": "targeted targets all green; full make test (~60 min) not rerun, the report's 'rc 0' is not independently reproduced"},
+    "lint_clean": {"score": 9, "max": 10, "note": "uid-guard ok (352), python-guard ok; no ailang lint surface in this diff"},
+    "acceptance_criteria": {"score": 27, "max": 30, "note": "AC5-AC11 reproduced; AC9 R-f human review legitimately pending (clause 1 not claimed met)"},
+    "code_quality": {"score": 12, "max": 15, "note": "matches idiom, export-safe; gate lenient in places, see findings"},
+    "documentation": {"score": 12, "max": 15, "note": "landing correct, links resolve; stale landing-check line, bench load claim differs"},
+    "design_fidelity": {"score": 9, "max": 10}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "design_docs/implemented/r1/m1-relativistic-sky.md line 3: the 'Landing check (2026-10-15)' paragraph still says 'Remaining: M1.5b only'. It is dated, and the Status line below is correct, but it reads stale in an implemented doc.",
+    "AC11 gate leniency (not wrong, worth knowing): the auditor counts a hit when ANY luminance peak lies within 1 px (not id-specific), and the count window 5,000-9,100 is wide. 8,107 detected of 8,773 unique predicted V<6.5 stars (92%) is the real detection rate. The 1.5 px positive control fails hard (0/93), so predicted positions are sub-pixel accurate in x; the gate can fail.",
+    "main.gd _capture_bright_audit computes V from custom[4k+1] (E_v at Sol) and direction from pos - ship; that is correct only at rest at the origin, which is where it is called (target == 0.0). A comment states 'at rest' but nothing asserts ship == 0.",
+    "camera.fov is restored to a hard-coded 70.0 (and look(0,0,0)); consistent with lines 842/855 idiom but fragile if the default FOV changes (main.gd:536 sets it to 70.0 too).",
+    "m1-report 'Bench host load 1.2-3.1': my bench ran at load 5-7.5 (other agents on the Studio). p99 still 9.7 ms Metal / 10.0 ms Vulkan, so the claim of margin holds, but the load sentence is not a general property.",
+    "make golden needs make planet-assets for the 401-ok-line count (skip G-M5-4 otherwise, giving 400 and 'golden: FAILED'). Pre-existing, not this PR, but the report's 'make golden rc 0' silently assumes it.",
+    "0.999c starboard and astern reference frames are fully black (physically correct: D=1/gamma ~0.045 and ~0.022 at 90 and 180 deg), so those two pins have little review value beyond the HUD text; the report says so honestly.",
+    "R-f (Mark) human review of AC9 renders is pending; the PR correctly does not claim bar clause 1 met. Sprint JSON row has passes: null as intended."
+  ],
+  "verification": {
+    "AC11": {
+      "reasoning": "unproject_position(camera.global_position + n*10) with is_position_behind culling, scaled by image/viewport size (capture is 960x540), origin top-left; Godot unproject coords are continuous so pixel centres at +0.5 matches the auditor's contract. ids are unique across faces (max 2 faces per star, 0 'row N' fallbacks, 8,773 unique ids). Six 90 deg faces at 16:9: fov 90 is vertical so horizontal ~121 deg; four side faces overlap and up/down cover the poles; per-face predicted counts 2076/2360/2123/2033/1318/1369 (sum 11,279 vs 8,773 unique, overlap deduped by id).",
+      "make capture + make bright-audit": "bright-star-audit: 6 frames; V < 2.5: 93/93 within 1 px (100.0%, need 95%); rendered V < 6.5: 8107 (need 5000-9100): PASS",
+      "positive_controls": [
+        "all predicted x += 1.5 px: 0/93 within 1 px, rendered 302 -> FAIL",
+        "all predicted x += 0.7 px: 93/93, rendered 7632 -> PASS (tolerance behaves)",
+        "predicted positions scaled 3% about a wrong centre: 16/93 (17.2%), rendered 1055 -> FAIL"
+      ]
+    },
+    "AC9": {
+      "make m1-refs": "m1-refs: 16 reference renders match data/refs/m1_sky_manifest.sha256",
+      "fresh capture vs pins": "all 16 sha256 of my fresh make capture renders equal the manifest (16 same, 0 DIFF): byte-identical reproduction",
+      "visual": "Opened contact sheet, sky_b0999_forward/starboard/astern (sips -Z 700). Forward 0.999c: compact blue-white cone with aberrated Milky Way band and pink emission arcs at the edge (physically plausible). Starboard and astern: black, as expected at D<<1. Contact sheet shows the progressive forward concentration 0 to 0.999c."
+    },
+    "AC7_AC8": {
+      "make bench rc": 0,
+      "metal": "2560x1440, 335,189 stars, background on: p50 8.414 p95 9.295 p99 9.701 ms, 2/3568 frames over 16.7 ms (target p99<16.7 ok)",
+      "vulkan": "p50 8.412 p95 9.349 p99 10.040 ms, 9/3535 over 16.7; star pass GPU p50 0.317 ms",
+      "V_lim": "6.9 (Crumey F=2 model 6.897), inside 6.6-7.4",
+      "host_load": "5-7.5 during my run (report: 1.2-3.1)"
+    },
+    "AC5_AC6_AC10": {
+      "make golden": "rc 0, golden: 0 failures, 401 ok lines (after make planet-assets); off-axis 144 cases worst 0.102 px; background markers worst 0.724 px; colour dxy 0.0001/0.0006/0.0006; matches report",
+      "make physics": "925 passed, 0 failed (matches report)",
+      "make strict": "rc 0; VM 21.392852753780428 = interpreter (matches report)",
+      "make parity-v2": "identical (23 lines)",
+      "make catalogue-stats TIER=medium": "PASS: 50,000 rows, 50,000 with photometry, M-dwarf share 74.4% (37,200), 0 defaulted-photometry violations (matches report)",
+      "make test-bright-audit": "16 passed, 0 failed",
+      "make uid-guard / python-guard": "ok (352 .uid) / ok (20 allowlisted)",
+      "not rerun": "full make test; replay 11-case claim; CI on the PR"
+    },
+    "landing": "design doc, both sprint plans and m1-4a-background-options in design_docs/implemented/r1 (renames, 0 content change on the plans); README row, ai-service-foundation-sprint link and m1.2b links fixed; scripted link check found no broken relative link in changed files (4 broken repo-wide, all pre-existing and unrelated); changelog fragment present with Added/Changed; sprint JSON diff is 6 lines in the row only; no unrelated files in the diff.",
+    "export_safety": "main.gd loads tools/ only by load('res://tools/...') as before; the new code uses a local const AUDIT_V instead of preloading tools/bright_star_audit.gd, with a comment explaining why."
+  },
+  "commands_run": [
+    "make runtime (AILANG v0.54.18); make starmap-assets sky-assets lens-assets import; make planet-assets",
+    "make capture; make bright-audit; make m1-refs; sha256 compare of 16 pins",
+    "make bench; make golden (x2: first 400 ok lines because textures unfetched, second 401 ok, rc 0)",
+    "make physics; make strict; make parity-v2; make catalogue-stats TIER=medium; make test-bright-audit; make uid-guard; make python-guard"
+  ]
+}

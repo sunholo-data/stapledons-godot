@@ -35,7 +35,7 @@ under D-8/D-20; and the Medic style frame, which **stops for Mark**.
 
 Mark approved planning on 2026-10-02 (D-20: "plan the AI foundation sprint now
 to run alongside M1"). This sprint is sequenced to share the repo with
-`R1-M1-SKY-2` ([m1-remaining-sprint.md](m1-remaining-sprint.md)) with as few
+`R1-M1-SKY-2` ([m1-remaining-sprint.md](../../implemented/r1/m1-remaining-sprint.md)) with as few
 file conflicts as possible: see [Sequencing against M1](#sequencing-against-m1).
 
 **Design doc:** [ai-service-foundation.md](ai-service-foundation.md)

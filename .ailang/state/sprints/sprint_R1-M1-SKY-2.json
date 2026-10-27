@@ -617,10 +617,10 @@
         "R-f: Mark signs off the M1 report and AC9 renders; bar clause 1 met only after this"
       ],
       "pause_after": "R-f",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Reconciled iter 25 (L1): still OPEN — AC9 renders, m1-report.md and the doc move to design_docs/implemented/r1/ are outstanding; sole residual open M1 item (queue row 3 [NEXT]). M1.5a landed via PR #75 merge d801543."
+      "passes": true,
+      "started": "2026-10-27",
+      "completed": "2026-10-27",
+      "notes": "Executed 2026-10-27 in an attended session (Claude Opus 5.5), AILANG v0.54.18 (make runtime), Godot 4.7.2, M4 Max. AC9: capture now flies to 0.999c (was stopping at 0.99c); 15 frames + contact sheet pinned in data/refs/m1_sky_manifest.sha256, public at refs/m1_sky/, byte-identical on rerun. AC11: the capture side was never built; _capture_bright_audit writes six rest cube faces + predicted V<6.5 pixels; make bright-audit 93/93 within 1 px, 8107 rendered. AC7: make bench Metal p99 9.685 ms, Vulkan 11.051 ms. AC8 V_lim 6.9 (D-25 window). make test rc 0; make golden rc 0 (off-axis worst 0.102 px, markers worst 0.724 px, colour dxy <= 0.0006). Report design_docs/implemented/r1/m1-report.md; docs moved to implemented/r1. passes left null for the independent evaluation; R-f (Mark) pending. Independent evaluation round 1: 87/100 PASS, no blocking findings (eval_R1-M1-SKY-2-M1.5b_round_1.json); non-blocking 1, 3, 5, 6 addressed."
     }
   ]
 }
