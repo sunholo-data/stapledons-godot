@@ -1,7 +1,7 @@
 # M1: The relativistic sky
 
 **Landing check (2026-10-27):** every milestone has shipped. M1.5b (PR #337) added the 0.999c renders, the AC11 render gate on real renders and the AC7 bench, and landed this doc; see [m1-report.md](m1-report.md). The 2026-10-15 check had M1.5b as the only item left.
-**Status:** Implemented 2026-10-27 (M1.5b landed the AC9 renders, the AC11 render gate and the AC7 bench; evidence in [m1-report.md](m1-report.md)). Bar clause 1 waits on Mark's R-f review.
+**Status:** Implemented 2026-10-27 (M1.5b landed the AC9 renders, the AC11 render gate and the AC7 bench; evidence in [m1-report.md](m1-report.md)). Mark approved the renders (R-f) on 2026-10-27; bar clause 1 is met.
 **Release:** r1 · **Milestone:** M1 of [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md)
 **Priority:** P0: every later milestone looks through this sky
 **Implements:**

@@ -1,6 +1,6 @@
 # M1 the relativistic sky: report
 
-**Status:** M1.0–M1.8 built and evaluated (2026-09-27 to 2026-10-03); M1.5b (renders, render gate, bench, report, landing) built 2026-10-27 in an attended session. Sprints `R1-M1-SKY` and `R1-M1-SKY-2`. **Bar clause 1 of the R1 charter is met only after Mark's R-f review** of this report and the AC9 renders (below). Design: [m1-relativistic-sky.md](m1-relativistic-sky.md). Plans: [m1-relativistic-sky-sprint.md](m1-relativistic-sky-sprint.md), [m1-remaining-sprint.md](m1-remaining-sprint.md). Progress files: `.ailang/state/sprints/sprint_R1-M1-SKY.json`, `sprint_R1-M1-SKY-2.json`. Evaluations: `.ailang/state/evaluations/eval_R1-M1-SKY*`.
+**Status:** M1.0–M1.8 built and evaluated (2026-09-27 to 2026-10-03); M1.5b (renders, render gate, bench, report, landing) built 2026-10-27 in an attended session. Sprints `R1-M1-SKY` and `R1-M1-SKY-2`. **Bar clause 1 of the R1 charter is met** (Mark's R-f review, 2026-10-27, below). Design: [m1-relativistic-sky.md](m1-relativistic-sky.md). Plans: [m1-relativistic-sky-sprint.md](m1-relativistic-sky-sprint.md), [m1-remaining-sprint.md](m1-remaining-sprint.md). Progress files: `.ailang/state/sprints/sprint_R1-M1-SKY.json`, `sprint_R1-M1-SKY-2.json`. Evaluations: `.ailang/state/evaluations/eval_R1-M1-SKY*`.
 
 ## Toolchain (M1.5b runs)
 
@@ -26,7 +26,7 @@ Bar clause 1: *M1's acceptance criteria AC1–AC10 are met. The relativistic sky
 | AC6 | Linear-tonemap colour golden within 0.01 of rgb(D·T) at D ∈ {0.3, 1, 3} | `make golden` | Δxy **0.0001 / 0.0006 / 0.0006** at D 0.3 / 1 / 3 (on a background texel; see Deviations) | M1.4 |
 | AC7 | p99 < 16.7 ms at 2560 × 1440, large tier plus background, 30 s flight | `make bench` | **Metal p99 9.685 ms**, **Vulkan p99 11.051 ms**; 335,189 stars drawn, background on, end β 0.99 | M1.3, M1.5b |
 | AC8 | Naked-eye limiting magnitude at the default dark-adapted exposure | `make bench` report | **V_lim 6.9** measured in the frame (Crumey F = 2 model 6.897), inside the D-25 window 6.6–7.4 | M1.5a |
-| AC9 | Reference renders at 0, 0.5, 0.9, 0.99, 0.999c × forward, starboard, astern, reviewed by a human | `make capture`; `make m1-refs` | 15 frames plus contact sheet, pinned in `data/refs/m1_sky_manifest.sha256`, served from `gs://stapledons-voyage-assets/refs/m1_sky/`; reproduced byte-identical on v0.54.18 (16/16); **R-f review pending** | M1.5b |
+| AC9 | Reference renders at 0, 0.5, 0.9, 0.99, 0.999c × forward, starboard, astern, reviewed by a human | `make capture`; `make m1-refs` | 15 frames plus contact sheet, pinned in `data/refs/m1_sky_manifest.sha256`, served from `gs://stapledons-voyage-assets/refs/m1_sky/`; reproduced byte-identical on v0.54.18 (16/16); **approved by Mark 2026-10-27 (R-f)** | M1.5b |
 | AC10 | `make test` green; strict bytecode; parity | `make test`; GitHub Actions | `make test` **rc 0**; strict VM 21.392852753780428 = interpreter; parity-v2 identical; replay 11 cases identical; CI on the PR | all |
 | AC11 | ≥ 95 % of HIP2 V < 2.5 within 1 px; 5,000–9,100 rendered V < 6.5 | `make capture && make bright-audit` | **93/93 within 1 px (100 %)**; **8,107** rendered V < 6.5 | M1.2d, M1.5b |
 | AC12 | Protocol v1.1 reason codes and bounded waits | `make test` (`tests/test_sim_bridge.gd`) | sim bridge **0 failures** (the protocol has since moved to 2.x; the v1.1 behaviours are kept) | M1.6a |
@@ -48,7 +48,7 @@ Bar clause 1: *M1's acceptance criteria AC1–AC10 are met. The relativistic sky
 - **0.99c:** a bright blue-white forward cone; most of the sky has moved into it.
 - **0.999c (γ 22.45):** a compact forward cone. Starboard is black: a source seen at 90° has D = 1/γ ≈ 0.045, redshifted out of sight. Astern is black (D ≈ 0.022). Faint pink arcs at the cone's edge are Milky Way emission regions in the background compressed by aberration; flagged for Mark's look.
 
-**R-f (Mark): pending.** Bar clause 1 is met only after this sign-off.
+**R-f (Mark): approved 2026-10-27**, attended, after reviewing the 15 frames, the contact sheet and the 0.999c cone zoom on the review page (https://claude.ai/artifact/9HAv1ucZRfU9dtvMENVSYj): "approved". **Bar clause 1 is met.**
 
 ## Deviations from the design
 
