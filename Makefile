@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.54.14
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit export-pack-check export-pack-check-strict
+.PHONY: geodesic-oracle kerr-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit export-pack-check export-pack-check-strict
 
 all: test
 
@@ -41,7 +41,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 # VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
 ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle kerr-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
 .PHONY: similar-test similar-record
 similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = frozen bytes
@@ -477,6 +477,9 @@ geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 g
 	  else echo "geodesic-oracle: $$smoke not in the runtime cache (make runtime); package digest not rerun"; fi
 	@d=$$(python3 tools/geodesic_ref.py digest 16); s=$$(python3 tools/geodesic_ref.py sdigest 64); echo "lensDigest 16 = $$d, schwarzschildDigest 64 = $$s"; \
 	  python3 -c "import sys; d, s = float(sys.argv[1]), float(sys.argv[2]); ok = abs(d - $(GEODESIC_LENS_DIGEST)) <= 1e-9 and abs(s - $(GEODESIC_SCHW_DIGEST)) <= 1e-9 * abs(s); print('geodesic-oracle: digests ' + ('match' if ok else 'DIFFER from') + ' the package pins'); sys.exit(0 if ok else 1)" "$$d" "$$s"
+
+kerr-oracle:       ## R2-KERR K1.1a-a: the independent Kerr oracle tools/kerr_ref.py (role oracle) -- the design doc's RK-1..RK-13/RK-18 precise 17-digit anchors, the six-decimal display strings kept separate, the domain refusals before any square root, the exact s = 0 members, and the generated fixture with its digest; no AILANG, never at runtime
+	@sh tools/test_kerr_oracle.sh
 
 journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM == interpreter == golden (replay case alpha_cen)
 	AILANG="$(AILANG)" python3 tools/replay.py --case alpha_cen

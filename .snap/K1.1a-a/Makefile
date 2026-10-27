@@ -1,0 +1,1383 @@
+GODOT ?= godot
+AILANG ?= ailang
+# A path with a slash (make test AILANG=runtime/bin/ailang) is made absolute, so recipes that cd still find it
+override AILANG := $(if $(findstring /,$(AILANG)),$(abspath $(AILANG)),$(AILANG))
+# Godot runs that start the sim use the same ailang as the make line, never a stale one on PATH
+GODOT_SIM = AILANG_BIN="$$(command -v $(AILANG))" $(GODOT)
+SIM := sim/ship.ail
+SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
+SCRATCH := .godot/tmp
+# sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
+GEODESIC_LENS_DIGEST := 8.612720147193743
+GEODESIC_SCHW_DIGEST := 92833.6848137945
+AILANG_RELEASE ?= v0.54.14
+RUNTIME := runtime
+APP := build/macos/Stapledons Voyage.app
+
+.PHONY: geodesic-oracle kerr-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit export-pack-check export-pack-check-strict
+
+all: test
+
+include mk/constellations.mk
+include mk/home-tiers.mk
+include mk/deck-layout.mk
+include mk/sound.mk
+include mk/captain-anim.mk
+include mk/style.mk
+include mk/star-surfaces.mk
+include mk/levels.mk
+
+import:            ## register class_name scripts (needed once after clone)
+	$(GODOT) --headless --path . --import
+
+deps:              ## fetch locked AILANG packages into the cache; fail if the resolution would change
+	cd sim && $(AILANG) lock
+	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
+	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
+
+# Rig-first merges (Mark, 2026-10-19): PRs merge on a green rig/full status (tools/rig_check.sh runs
+# the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast
+# tier: the checks a clean Linux box adds (fresh deps and lock, the x86_64 replay golden, strict VM,
+# VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
+ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle kerr-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+
+.PHONY: similar-test similar-record
+similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = frozen bytes
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; \
+	  mkdir -p "$$out"; \
+	  for engine in strict interpreter; do \
+	    flags=""; \
+	    if [[ "$$engine" == strict ]]; then flags="--bytecode --strict-bytecode"; fi; \
+	    "$(AILANG)" run --quiet --package-dir sim $${=flags} --entry similarVm --args-json 0 sim/similar_test.ail > "$$out/rank-$$engine.txt"; \
+	  done; \
+	  cmp "$$out/rank-strict.txt" "$$out/rank-interpreter.txt"; \
+	  test "$$(grep -c . "$$out/rank-strict.txt")" = 15; \
+	  test "$$(wc -l < "$$out/rank-strict.txt" | tr -d " ")" = 16; \
+	  shasum -a 256 "$$out/rank-strict.txt"; \
+	  test "$$(shasum -a 256 "$$out/rank-strict.txt" | cut -d " " -f1)" = 4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b'
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; \
+	  for minor in 214 215; do \
+	    for engine in strict vm interpreter repeat; do \
+	      flags=""; \
+	      if [[ "$$engine" == strict || "$$engine" == repeat ]]; then flags="--bytecode --strict-bytecode"; fi; \
+	      if [[ "$$engine" == vm ]]; then flags="--bytecode"; fi; \
+	      "$(AILANG)" run $(SIMFLAGS) $${=flags} $(SIM) < "tests/fixtures/protocol_$${minor}_similar.input.ndjson" > "$$out/session-$$minor-$$engine.ndjson"; \
+	    done; \
+	    for engine in vm interpreter repeat; do cmp "$$out/session-$$minor-strict.ndjson" "$$out/session-$$minor-$$engine.ndjson"; done; \
+	    cmp "$$out/session-$$minor-strict.ndjson" "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	    python3 tools/similar_oracle.py "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	    python3 tools/similar_oracle.py --strip-similar "$$out/session-$$minor-strict.ndjson" "$$out/stripped-$$minor.ndjson"; \
+	    shasum -a 256 "$$out/session-$$minor-strict.ndjson"; \
+	  done; \
+	  sed '\''1s/"minor":14/"minor":13/'\'' tests/fixtures/protocol_214_similar.input.ndjson > "$$out/input-213.ndjson"; \
+	  "$(AILANG)" run $(SIMFLAGS) --bytecode --strict-bytecode $(SIM) < "$$out/input-213.ndjson" > "$$out/session-213.ndjson"; \
+	  cmp "$$out/session-213.ndjson" tests/fixtures/protocol_213_pristine.expected.ndjson; \
+	  sed '\''1s/"minor":14/"minor":13/'\'' "$$out/stripped-214.ndjson" > "$$out/stripped-214-as-213.ndjson"; \
+	  cmp "$$out/stripped-214-as-213.ndjson" tests/fixtures/protocol_213_pristine.expected.ndjson; \
+	  cmp "$$out/stripped-215.ndjson" tests/fixtures/protocol_215_pristine.expected.ndjson'
+
+# Recording is separate from test. Validate both candidates before accepting either.
+similar-record:    ## Record new S0 sessions after ranking tests and independent oracles
+	cd sim && "$(AILANG)" test similar_test.ail
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; mkdir -p "$$out"; \
+	  for minor in 214 215; do \
+	    "$(AILANG)" run $(SIMFLAGS) --bytecode --strict-bytecode $(SIM) < "tests/fixtures/protocol_$${minor}_similar.input.ndjson" > "$$out/candidate-$$minor.ndjson"; \
+	    python3 tools/similar_oracle.py "$$out/candidate-$$minor.ndjson"; \
+	  done; \
+	  for minor in 214 215; do \
+	    cp "$$out/candidate-$$minor.ndjson" "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	    shasum -a 256 "tests/fixtures/protocol_$${minor}_similar.expected.ndjson"; \
+	  done'
+
+# R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is a registry pin
+# (sim/ailang.toml) and the crew scenario pack is synced from the crew lab (data/crew, SYNC;
+# generated sim/data/crew_pack.ail). Both are changed upstream only.
+CREW_SRC ?=
+CREW_REV ?=
+crew-sync:         ## re-sync the crew pack: make crew-sync CREW_SRC=<ailang-packages clone> CREW_REV=<sha>
+	@test -n "$(CREW_SRC)" -a -n "$(CREW_REV)" || { echo "usage: make crew-sync CREW_SRC=<ailang-packages clone> CREW_REV=<sha>"; exit 2; }
+	AILANG="$(AILANG)" sh tools/crew_sync.sh sync "$(CREW_SRC)" "$(CREW_REV)"
+crew-sync-check:   ## AC7: data/crew matches SYNC, sim/data/crew_pack.ail regenerates identically, embedded text round-trips
+	@AILANG="$(AILANG)" SCRATCH="$(SCRATCH)/crew-sync" sh tools/crew_sync.sh check
+test: crew-sync-check
+crew-faces-check: ## D-80: the portraits' face rows (data/crew/portraits/SOURCES) are exactly the sim's (sim/data/crew_faces.ail)
+	@want=$$(grep '^face ' data/crew/portraits/SOURCES); \
+	got=$$($(AILANG) run --quiet --package-dir sim --entry facesText --args-json 0 sim/data/crew_faces.ail | tr -d '"' | sed 's/\\n/\n/g'); \
+	[ "$$want" = "$$got" ] && echo "crew-faces-check: ok ($$(echo "$$want" | wc -l | tr -d ' ') faces)" || { echo "crew-faces-check: FAIL: SOURCES face rows differ from sim/data/crew_faces.ail"; echo "$$want"; echo "--"; echo "$$got"; exit 1; }
+test: crew-faces-check
+CREW_PARITY = --package-dir sim --entry parity --args-json 0 sim/tools/crew_parity.ail
+crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew_core (byte for byte), VM == interpreter, lines == tests/crew/*.ndjson
+	@mkdir -p $(SCRATCH)/crew-parity
+	@$(AILANG) run --quiet --bytecode --strict-bytecode $(CREW_PARITY) > $(SCRATCH)/crew-parity/vm.txt
+	@$(AILANG) run --quiet $(CREW_PARITY) > $(SCRATCH)/crew-parity/interp.txt
+	@cat $(SCRATCH)/crew-parity/vm.txt
+	@cmp -s $(SCRATCH)/crew-parity/vm.txt $(SCRATCH)/crew-parity/interp.txt || { echo "crew-parity: FAIL: VM and interpreter differ"; exit 1; }
+	@! grep -v ' ok lines ' $(SCRATCH)/crew-parity/vm.txt
+	@for n in consent orders shipevent argument console_v2 crossing_hold; do \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > $(SCRATCH)/crew-parity/$$n.ndjson; \
+	  cmp -s $(SCRATCH)/crew-parity/$$n.ndjson tests/crew/$$n.ndjson || { echo "crew-parity: FAIL: $$n recording changed (review, then make crew-parity-record)"; exit 1; }; done
+	@echo "crew-parity: ok (6 recordings, VM == interpreter; console_v2: offers that start on agreement, a concern answered, orders over it; crossing_hold: the digest per chunk, repeat run identical)"
+crew-bridge-test:  ## AC6 (Godot side): the real sim at protocol 2.9 over SimBridge: crew section, crew intents, refusals, no crew below 2.9
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_bridge.gd > $(SCRATCH)/crew-bridge.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-bridge)' $(SCRATCH)/crew-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-bridge.log && grep -q '^crew-bridge: 0 failures$$' $(SCRATCH)/crew-bridge.log
+test: crew-bridge-test
+crew-events-check: ## AC8: the news templates whose words carry a death are exactly sim/crew_events.ail lossTemplateIds (major loss)
+	@want=$$(jq -r '[.tiers[] as $$t | $$t.templates | to_entries[] | select(.value | tostring | test("died")) | ($$t.tier * 4 + .key)] | map(tostring) | join(",")' data/news/templates.json); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lossIdsText --args-json 0 sim/crew_events.ail | tr -d '"'); \
+	[ "$$want" = "$$got" ] && echo "crew-events-check: ok (loss templates $$got)" || { echo "crew-events-check: FAIL: templates with a death are [$$want], lossTemplateIds says [$$got]"; exit 1; }
+test: crew-events-check
+crew-console-test: import ## R2-CREW-CONSOLE-V2 AC6-AC12: palette (contrast, CVD), board and call on recorded 2.11 crews, the sending lock, How, then the real sim
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > $(SCRATCH)/crew-console.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
+test: crew-console-test
+crew-console-capture: ## R2-CREW-CONSOLE-V2 AC15: six frames (board, offer, sending, concern, working, hold) at 1280x720 and 2560x1440 -> renders/crew_console/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . --resolution 1280x720 --script tools/crew_console_capture.gd > $(SCRATCH)/crew-console-capture.log 2>&1; rc=$$?; grep -E '^(frame|crew-console-capture)' $(SCRATCH)/crew-console-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console-capture.log
+crew-console-fixtures: ## R2-CREW-CONSOLE-V2: re-record tests/crew/console_v2/*.json from the real sim at 2.11 (a reviewed diff; never in make test)
+	@$(GODOT_SIM) --headless --path . --script tools/crew_console_fixture.gd; git diff --stat tests/crew/console_v2
+crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resume, presets, and the guided voyage holding ship time until the real sim's hold clears
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
+test: crew-hold-test
+crossing-review-test: import ## R2-INTERLUDE I3 (AC9, AC10): the crossing review's pages, Hold page, paging, portraits and bindings on recorded 2.10 frames
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_crossing_review.gd > $(SCRATCH)/crossing-review.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crossing-review)' $(SCRATCH)/crossing-review.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review.log && grep -q '^crossing-review: [0-9]* passed, 0 failures$$' $(SCRATCH)/crossing-review.log
+test: crossing-review-test
+crossing-review-fixtures: import ## R2-INTERLUDE I3: re-record tests/fixtures/crossing_review/*.ndjson from the real sim (guided voyage, 2.10); review the diff
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tools/crossing_review_fixture.gd > $(SCRATCH)/crossing-review-fixture.log 2>&1; rc=$$?; grep -E '^(FAIL|fixture|crossing-review-fixture)' $(SCRATCH)/crossing-review-fixture.log; test $$rc = 0 && grep -q '^crossing-review-fixture: 0 failures$$' $(SCRATCH)/crossing-review-fixture.log
+crossing-review-capture: ## R2-INTERLUDE I3 (AC11): the crossing review's pages -> renders/crossing_review/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/crossing_review_capture.gd > $(SCRATCH)/crossing-review-capture.log 2>&1; rc=$$?; grep -E '^(frame|FAIL|crossing-review-capture)' $(SCRATCH)/crossing-review-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review-capture.log && grep -q '^crossing-review-capture: OK' $(SCRATCH)/crossing-review-capture.log
+## AC11 budgets. crewSkip (critical_only, as played): 2 s. crewSkipUnheld (no rules, concerns
+## answered, the crew busy for ten years): a regression ceiling, not the goal (D-82). ailang#1827
+## (the VM's O(n^2) list tail) is fixed in v0.54.10+; with crew_core 0.5.0 on v0.54.11 the busy
+## decade measures 11.2 s on the Studio (was ~40 s; about 20 s expected on CI), so the 2 s D-82
+## hoped for is not reached. Mark (2026-10-16): 11 s is acceptable; the ceiling is 30 s (was 150 s).
+## crewSkip under crew_core 0.6 (monthly stand-down check-ins): ~1.1 s on the Studio, 2.33 s on CI
+## (2026-10-19, PR #267). The 2 s once matched the bridge's step_timeout, but since R2-INTERLUDE the game
+## never runs a decade in one step: crewSkipChunked below holds every chunk under CREW_PERF_CHUNK_S. This
+## one-step run is now a regression ceiling (4 s).
+CREW_PERF_BUDGET_crewSkip := 4.0
+CREW_PERF_BUDGET_crewSkipUnheld := 30.0
+## crewSkipChunked critical_only (the decade crossed chunk by chunk): under crew_core 0.5 its one hold
+## came early and stayed open, so the decade went in cap-sized chunks (20); under 0.6 the hold comes
+## later and the decade checks in monthly until then (39 chunks, ~0.08 s each, slowest 0.13 s), so the
+## total is ~3.2 s. The per-chunk ceiling below is unchanged. R2-CREW-CONSOLE-V2 V8, for Mark's review.
+## The total is a regression ceiling sized for CI, which runs about twice the Studio's time (3.1 s here,
+## ~6.5 s expected there); the player-facing limit is the per-chunk CREW_PERF_CHUNK_S (slowest 0.13 s).
+CREW_PERF_BUDGET_chunked := 8.0
+CREW_PERF_CHUNK_S := 1.0
+crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless (warm cache); critical_only under 2 s, the busy no-hold worst case under its measured ceiling
+	@for e in crewSkip crewSkipUnheld; do \
+	  case $$e in crewSkip) b=$(CREW_PERF_BUDGET_crewSkip);; *) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; esac; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 1 sim/crew_script.ail > /dev/null; \
+	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$(env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
+	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
+	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < $$b ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget $$b s)"; exit 1; }; done
+	@# R2-INTERLUDE I1, AC6: the decade crossed chunk by chunk as the host steps it (sim/tools/crew_perf.ail).
+	@# Each chunk is timed from its line's arrival; every chunk under CREW_PERF_CHUNK_S (the bridge's
+	@# step_timeout is 2 s), critical_only (the game's default) in all under its crewSkip budget, the
+	@# busy decade under the crewSkipUnheld ceiling.
+	@for w in busy critical_only; do \
+	  case $$w in busy) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; *) b=$(CREW_PERF_BUDGET_chunked);; esac; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --caps IO --package-dir sim --entry crewSkipChunked --args-json "\"$$w\"" sim/tools/crew_perf.ail | \
+	  perl -MTime::HiRes=time -ne 'BEGIN { $$max = 0; $$worst = "none"; $$n = 0 } chomp; my $$t = time; if (/^start$$/) { $$s = $$t; $$p = $$t; next } if (/^chunk /) { my $$d = $$t - $$p; $$n++; ($$max, $$worst) = ($$d, $$_) if $$d > $$max; print "crew-perf crewSkipChunked '"$$w"': SLOW $$_ took ", sprintf("%.3f", $$d), " s\n" if $$d >= $(CREW_PERF_CHUNK_S); $$p = $$t; next } $$end = $$_; END { my $$tot = defined $$s ? $$p - $$s : -1; printf "crew-perf crewSkipChunked '"$$w"': %s in %.2f s; %d chunks, slowest %.3f s (%s)\n", $$end // "no end", $$tot, $$n, $$max, $$worst; exit(($$end // "") =~ /^days 3652 holds \d+ chunks \d+$$/ && $$tot >= 0 && $$tot < '"$$b"' && $$max < $(CREW_PERF_CHUNK_S) ? 0 : 1) }' \
+	  || { echo "crew-perf: FAIL (crewSkipChunked $$w: a chunk at or over $(CREW_PERF_CHUNK_S) s, or the total over $$b s)"; exit 1; }; done
+test: crew-perf
+crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
+	@for n in consent orders shipevent argument console_v2 crossing_hold; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
+test: crew-parity
+
+tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
+	python3 tools/test_replay.py
+	python3 tools/check_star_names.py
+	sh tools/test_sky_assets.sh
+	sh tools/test_lens_assets.sh
+
+extract-test:      ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-interp.txt
+	@cmp $(SCRATCH)/extract-vm.txt $(SCRATCH)/extract-interp.txt && test "$$(cat $(SCRATCH)/extract-vm.txt)" = "extract-vm-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry extractFixtures --args-json '"tools/fixtures"' sim/tools/extract_test.ail > $(SCRATCH)/extract-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry extractFixtures --args-json '"tools/fixtures"' sim/tools/extract_test.ail > $(SCRATCH)/extract-fx-interp.txt
+	@cmp $(SCRATCH)/extract-fx-vm.txt $(SCRATCH)/extract-fx-interp.txt && test "$$(cat $(SCRATCH)/extract-fx-vm.txt)" = "extract-fixtures-ok"
+	@echo "extract-test: $$(cat $(SCRATCH)/extract-vm.txt), $$(cat $(SCRATCH)/extract-fx-vm.txt) (VM = interpreter)"
+
+extract:           ## data/raw/{cns5,table1c}.dat -> data/raw/{cns5,gcns}.csv (AILANG; GCNS takes ~4.5 min on the VM)
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail
+
+physics: lens-assets ## CPU physics reference (incl. the Schwarzschild mirror on the pinned lens tables) vs known values; fails unless the run prints its '<n> passed, 0 failed' summary (a script that fails to parse exits 0 without one)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_physics.gd > $(SCRATCH)/physics.txt 2>&1; rc=$$?; cat $(SCRATCH)/physics.txt; \
+	  [ $$rc -eq 0 ] || { echo "physics: godot exited $$rc"; exit 1; }; \
+	  grep -qE '^[0-9]+ passed, 0 failed$$' $(SCRATCH)/physics.txt || { echo "physics: no '<n> passed, 0 failed' summary line (parse error or early exit?)"; exit 1; }
+
+test: export-filter-audit
+
+export-filter-audit: import   ## L6a: shipped res:// reads vs export_presets.cfg; fails when the export would drop one
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_export_audit.gd > $(SCRATCH)/export-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|UNCLASSIFIED|scoped files|distinct literals|filters|export-filter-audit)' $(SCRATCH)/export-audit.log; test $$rc = 0 && grep -q '^export-filter-audit: [0-9]* literals.*, 0 failures$$' $(SCRATCH)/export-audit.log
+
+# Gate 5: never compute gamma or 1 - beta near c. A hand-written 1 - beta or 1 - b (also 1.0-beta,
+# 1 -b, and so any hand gamma 1/sqrt(1 - b*b)) in code of a .gd, .gdshader or .gdshaderinc outside
+# physics/ and tests/ (plus LINT_OMB_ALSO, the planet renderer) fails. String literals and comments are stripped first,
+# so labels such as "1 - beta" never match. Hits that are not a live computation are listed in
+# tests/fixtures/lint_precision/allowlist.txt as path<TAB>stripped code<TAB>reason, keyed on the code
+# text and not the line number: edits that move lines keep the entry, and any other line in that file
+# that matches is still reported. The fixture bad_one_minus_beta.gd MUST match all 6 planted lines (else
+# the pattern matches nothing) and good_one_minus_beta.gd must match none. Plain shell, no Python.
+LINT_OMB_DIR := tests/fixtures/lint_precision
+LINT_OMB_RE := (^|[^A-Za-z0-9_.])1(\.0*)?[[:space:]]*-[[:space:]]*(beta|b)([^A-Za-z0-9_]|$$)
+LINT_OMB_ALSO := physics/planets.gd
+lint-precision:    ## no hand-computed gamma or 1 - beta in *.gd / *.gdshader / *.gdshaderinc outside physics/ (bar LINT_OMB_ALSO) and tests/ (positive control: tests/fixtures/lint_precision/bad_one_minus_beta.gd must fail)
+	@hits_in() { sed -E -e 's/"[^"]*"/""/g' -e "s/'[^']*'/''/g" -e 's#(//|\#).*$$##' -e 's/^[[:space:]]+//' -e 's/[[:space:]]+$$//' "$$1" | grep -n -E '$(LINT_OMB_RE)' | sed "s|^|$$1:|"; }; \
+	  git ls-files --error-unmatch $(LINT_OMB_ALSO) >/dev/null 2>&1 || { echo "lint-precision: LINT_OMB_ALSO names an untracked file"; exit 1; }; \
+	  [ -z "$$(hits_in $(LINT_OMB_DIR)/good_one_minus_beta.gd)" ] || { echo "lint-precision: the clean control file matched; the pattern is too broad"; exit 1; }; \
+	  bad=$$(hits_in $(LINT_OMB_DIR)/bad_one_minus_beta.gd | wc -l | tr -d ' '); \
+	  [ "$$bad" -eq 6 ] || { echo "lint-precision: positive control matched $$bad of 6 planted lines; the pattern is broken"; exit 1; }; \
+	  hits=$$({ git ls-files -co --exclude-standard -- '*.gd' '*.gdshader' '*.gdshaderinc' | grep -v -E '^(physics|tests|runtime|addons)/'; printf '%s\n' $(LINT_OMB_ALSO); } | while read -r f; do hits_in "$$f"; done \
+	    | awk -F'\t' 'FILENAME == ARGV[1] { allow[$$1 "\t" $$2] = 1; next } { i = index($$0, ":"); p = substr($$0, 1, i - 1); r = substr($$0, i + 1); c = substr(r, index(r, ":") + 1); if (!((p "\t" c) in allow)) print }' $(LINT_OMB_DIR)/allowlist.txt -); \
+	  if [ -n "$$hits" ]; then echo "$$hits"; echo "lint-precision: hand-computed gamma or 1 - beta outside physics/ and tests/ (take gamma and 1 - beta from the sim or sunholo/relativity, or allowlist it with a reason)"; exit 1; fi; \
+	  echo "lint-precision: ok (positive control matched $$bad lines; $$(grep -c . $(LINT_OMB_DIR)/allowlist.txt) allowlisted non-computations; no live hand-computed gamma or 1 - beta)"
+
+# M4.0 area bundles (brief §9). BUNDLE=dir checks one bundle; the default checks the blockout
+# test fixture and the current shipping bundle (AC13, AC14 validation half).
+BUNDLE ?= tests/fixtures/areas/bridge_blockout assets/areas/bridge
+validate-areas:    ## M4.0 AC13/AC14: area bundle(s) valid: V17 schema, alpha 0 where space shows, camera round trip <= 1 px, GLB metres/Y-up with WALK_/SPAWN_/INTERACT_
+	$(GODOT) --headless --path . --script tools/validate_area.gd -- $(BUNDLE)
+
+area-test:         ## M4.0 bundle loader + validate-areas positive controls (each check must fail on a bundle broken its way)
+	$(GODOT) --headless --path . --script tests/test_area_bundle.gd
+
+m4-smoke:          ## M4.2 AC14 smoke half (headless, real sim): on each BUNDLE the captain walks to the nav console, it opens the map, alpha Cen A is committed, the sky follows the cruise to the arrival; walking sends no intents
+	@mkdir -p $(SCRATCH)
+	@for b in $(BUNDLE); do n=$$(echo $$b | tr '/' '_'); \
+	  $(GODOT_SIM) --headless --path . -- --m4-smoke --bundle=$$b --record=$(CURDIR)/$(SCRATCH)/m4-smoke-$$n.ndjson > $(SCRATCH)/m4-smoke-$$n.log 2>&1; rc=$$?; \
+	  grep -E '^(m4-smoke|interior):' $(SCRATCH)/m4-smoke-$$n.log; \
+	  test $$rc = 0 && grep -q '^m4-smoke: OK$$' $(SCRATCH)/m4-smoke-$$n.log || { echo "m4-smoke: FAILED on $$b (exit $$rc; log $(SCRATCH)/m4-smoke-$$n.log)"; exit 1; }; done
+
+interior-test:     ## M4.2 composite order and pan factors, one tonemap, glow CPU mirror vs the package probe, WALK_, the captain, bundle fields, parallax clamp, export staging
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_interior.gd > $(SCRATCH)/interior-test.log 2>&1; rc=$$?; cat $(SCRATCH)/interior-test.log | grep -v '^  ok'; \
+	  test $$rc = 0 && grep -q '^interior: [0-9]* passed, 0 failures$$' $(SCRATCH)/interior-test.log || { echo "interior-test: FAILED (a parse error exits 0, so the summary line is required)"; exit 1; }
+
+transit-test:      ## M4.3a: warp intent, 3 s burn pacing, HUD bindings + audit positive controls, phases, arrival card, standoff_au 1000 (real sim, headless); AC3 grep half
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_transit.gd > $(SCRATCH)/transit-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/transit-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/transit-test.log && grep -q '^transit: [0-9]* passed, 0 failures$$' $(SCRATCH)/transit-test.log || { echo "transit-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/transit-test.log)"; exit 1; }
+	@! grep -rniE "save_game|load_game|ResourceSaver" interior ui || { echo "transit-test: AC3 grep half found a save/load path"; exit 1; }
+
+glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.8.0 (tools/glow_probe), VM = interpreter
+	@mkdir -p $(SCRATCH)
+	cd tools/glow_probe && $(AILANG) lock >/dev/null && git checkout -q ailang.lock 2>/dev/null || true
+	$(AILANG) run --quiet --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe.txt
+	$(AILANG) run --quiet --bytecode --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe-vm.txt
+	diff $(SCRATCH)/glow-probe.txt $(SCRATCH)/glow-probe-vm.txt && cat $(SCRATCH)/glow-probe.txt
+
+m4-physics-probe:  ## M4.6 check values: cruise (gammaOf, coastAt, planBurnCoastBurn), ISM load, glow profile, every guided-voyage stop (sim/tools/m4_physics_probe.ail), VM = interpreter
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --quiet --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail > $(SCRATCH)/m4-physics-probe.txt
+	$(AILANG) run --quiet --bytecode --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail > $(SCRATCH)/m4-physics-probe-vm.txt
+	diff $(SCRATCH)/m4-physics-probe.txt $(SCRATCH)/m4-physics-probe-vm.txt && cat $(SCRATCH)/m4-physics-probe.txt
+
+capture-m4: sky-assets lens-assets ## M4.6rR3 S1 set aboard the 3D ship (GPU window): captain eye at the helm; docked, boost 0.5/0.9, cruise 0.99 with the glow, brake 0.5, arrived alpha Cen, arrived home; deck + forward views + contact sheet -> renders/m4/ (manifest.json, m4_manifest.sha256, worlds.sha256). The interior set: godot --path . -- --interior-capture=DIR
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/m4_ship_capture.gd > $(SCRATCH)/capture-m4.log 2>&1; rc=$$?; grep '^capture-m4' $(SCRATCH)/capture-m4.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-m4.log && test "$$(grep -c '^capture-m4: OK$$' $(SCRATCH)/capture-m4.log)" = 1 && ! grep -q '^capture-m4: FAIL' $(SCRATCH)/capture-m4.log && \
+	  test "$$(grep -c '^capture-m4: ok frame' $(SCRATCH)/capture-m4.log)" = 14 && \
+	  test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15 && \
+	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/worlds.sha256 | tr -d ' ')" = 14 && \
+	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4: FAILED (log $(SCRATCH)/capture-m4.log)"; exit 1; }
+
+capture-m4-publish: ## maintainers (gcloud): verify and upload the 18-file 3D-ship S1 set to the public refs/m4_ship_s1 bucket path
+	@set -eu; test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15; \
+	  test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15; \
+	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15; \
+	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null); \
+	  n=0; for f in renders/m4/*.png renders/m4/manifest.json renders/m4/m4_manifest.sha256 renders/m4/worlds.sha256; do \
+	    test -s "$$f"; gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
+	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
+.PHONY: capture-m4-publish
+
+glow-eps-sheet:    ## D-29 follow-up: interior + forward sky at 0.99c..cap for each candidate eps through the eye exposure -> renders/glow/eps_compare.{png,jpg} + glow_eps_sheet.json (needs a GPU window)
+	$(GODOT_SIM) --path . -- --glow-eps-sheet=renders/glow
+	test -s renders/glow/eps_compare.jpg
+
+areas-stage:       ## M4.2: stage assets/areas/<area>/ into areas_bundle/<area>/<file>.bin for the export (assets/areas is .gdignore'd; previews and review/ stay out)
+	@rm -rf areas_bundle
+	@for d in assets/areas/*/; do a=$$(basename $$d); mkdir -p areas_bundle/$$a; \
+	  for f in $$d*; do [ -f "$$f" ] || continue; case "$$(basename $$f)" in preview_*|SHA256SUMS|validation.json) continue;; esac; \
+	  cp "$$f" "areas_bundle/$$a/$$(basename $$f).bin"; done; done
+	@echo "areas-stage: staged $$(ls areas_bundle | tr '\n' ' ')($$(du -sh areas_bundle | cut -f1))"
+
+sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics; M3.6: + the black-hole HUD sentinels and the Sgr A* demo aboard the ship (bh-hud-test)
+	@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
+	$(AILANG) check --package sim
+	cd sim && $(AILANG) test --package .
+	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
+	@$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)
+
+bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"] (sentinels), the navigation entry and --scenario=sgr_a, the scripted Sgr A* demo, codex unlocks, no-star key, GR off elsewhere (headless, real sim)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_bh_hud.gd > $(SCRATCH)/bh-hud.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/bh-hud.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/bh-hud.log && grep -q '^bh-hud: [0-9]* passed, 0 failures$$' $(SCRATCH)/bh-hud.log || { echo "bh-hud-test: FAILED (log $(SCRATCH)/bh-hud.log)"; exit 1; }
+	@! grep -rnE "sqrt\(1(\.0)? *- *1(\.0)? */ *r" demos ui sky bridge interior && echo "bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior"
+
+ui:                ## galaxy map + plan panel against the real sim (headless, fake 800x600 viewport; AC15 part)
+	$(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
+
+map-capture:       ## galaxy map PNGs + panel dump (alpha Cen A at 0.9c / cap / 0.99c) to renders/ (needs a GPU window; AC17 map part)
+	$(GODOT_SIM) --path . -- --map-capture=renders --map-commit
+	test -s renders/galaxy_map.png && test -s renders/galaxy_map_panel.json && test -s renders/galaxy_map_commit.png && test -s renders/galaxy_map_transit.png && test -s renders/galaxy_map_arrived.png
+
+replay:            ## AC12/AC13: every tests/replays log + the generated 10k session: VM == interpreter, then == this arch's golden (SESSION=log for one log, TICKS=2000 for the PR-sized session)
+	AILANG="$(AILANG)" python3 tools/replay.py $(if $(SESSION),--session $(SESSION)) $(if $(TICKS),--ticks $(TICKS))
+
+replay-record:     ## P5: regenerate this arch's golden for LOG=path|case|session10k|all (a reviewed diff; never in make test)
+	@test -n "$(LOG)" || { echo "usage: make replay-record LOG=tests/replays/NAME.ndjson|NAME|session10k|all"; exit 2; }
+	AILANG="$(AILANG)" python3 tools/replay.py --record $(LOG)
+
+parity:            ## v2 diag session, 600 thrust ticks: VM == interpreter == golden (replay case diag_thrust600)
+	AILANG="$(AILANG)" python3 tools/replay.py --case diag_thrust600
+
+parity-offaxis:     ## v2 off-axis log (turns, burns, refusals, malformed lines): VM == interpreter == golden, and == v1.1 (replay case offaxis_v11_equiv)
+	AILANG="$(AILANG)" python3 tools/replay.py --case offaxis_v11_equiv
+
+parity-v2:          ## protocol v2 session through ship.ail (hello first, malformed, refused): VM/interpreter identical; nothing printed before the first input
+	@mkdir -p $(SCRATCH)
+	@for vm in --bytecode ""; do \
+	  out=$$(printf '' | $(AILANG) run $$vm $(SIMFLAGS) $(SIM)); test -z "$$out" || { echo "ship printed before any input: $$out"; exit 1; }; \
+	  out=$$(printf '{"v":2,"type":"quit"}\n' | $(AILANG) run $$vm $(SIMFLAGS) $(SIM)); test -z "$$out" || { echo "ship printed before hello: $$out"; exit 1; }; \
+	  out=$$(printf '{"v":2,"type":"hello","want":{"major":2,"minor":0}}\n' | $(AILANG) run $$vm $(SIMFLAGS) $(SIM)); \
+	  test "$$(printf '%s\n' "$$out" | wc -l | tr -d ' ')" = 1 && case "$$out" in '{"v":2,"type":"hello","proto":{"major":2,'*) ;; *) echo "first line is not the hello reply: $$out"; exit 1;; esac; \
+	done; echo "parity-v2: silent until the first input; first output is the hello reply (VM and interpreter)"
+	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_vm.txt
+	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_interp.txt
+	cmp $(SCRATCH)/v2_vm.txt $(SCRATCH)/v2_interp.txt && echo "parity-v2: identical ($$(wc -l < $(SCRATCH)/v2_vm.txt) lines)"
+	@# M1.6b: rest-tolerance edge through the protocol (ticks 6-9): a turn at phi 0.9e-9 is accepted, at 1.1e-9 refused moving
+	@grep -q '"tick":7,"status":"ok".*"heading":{"x":0,"y":1,"z":0}.*"refused":\[\]' $(SCRATCH)/v2_vm.txt && \
+	  grep -q '"tick":9,"status":"ok".*"heading":{"x":0,"y":1,"z":0}.*"refused":\[{"i":1,"reason":"moving"}\]' $(SCRATCH)/v2_vm.txt && \
+	  echo "parity-v2: rest tolerance edge (turn at phi 0.9e-9 accepted, 1.1e-9 refused moving)" || { echo "parity-v2: rest tolerance edge FAILED"; exit 1; }
+
+parity-gr:          ## M3.4b protocol 2.6: tests/fixtures/gr.ndjson (sgr_a, every GR intent and refusal) VM == interpreter byte for byte; archive events bh_enter, bh_hover, bh_ring in order; Sgr A* mass 4.297e6
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/gr.ndjson > $(SCRATCH)/gr.out
+	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/gr.ndjson > $(SCRATCH)/gr_interp.out
+	@cmp $(SCRATCH)/gr.out $(SCRATCH)/gr_interp.out && echo "parity-gr: VM = interpreter ($$(wc -l < $(SCRATCH)/gr.out | tr -d ' ') lines, $$(grep -o '"k":"archive"' $(SCRATCH)/gr.out | wc -l | tr -d ' ') archive events)"
+	@test "$$(wc -l < $(SCRATCH)/gr.out | tr -d ' ')" = "$$(grep -vc '"type":"quit"' tests/fixtures/gr.ndjson)" || { echo "parity-gr: not one reply per input line"; exit 1; }
+	@test "$$(grep -o '"k":"archive","event":"[a-z_]*"' $(SCRATCH)/gr.out | cut -d'"' -f8 | tr '\n' ' ')" = "bh_enter bh_hover bh_ring " && echo "parity-gr: archive events in order: bh_enter bh_hover bh_ring" || { echo "parity-gr: archive events out of order"; exit 1; }
+	@head -1 $(SCRATCH)/gr.out | grep -q '"proto":{"major":2,"minor":6},"sim":"stapledons/sim 0.1.0","relativity":"0.10.0"' && \
+	  sed -n 2p $(SCRATCH)/gr.out | grep -q '"gr":{"hole_id":"Sgr A\*","mass_msun":4297000,' && echo "parity-gr: hello 2.6 (relativity 0.10.0); sgr_a reports mass_msun 4297000 (4.297e6)" || { echo "parity-gr: hello or Sgr A* mass wrong"; exit 1; }
+	@# not_in_gr needs a flat world: grVm's wire tests (make strict) cover it
+	@for r in bad_radius bad_gr moving in_gr; do grep -q "\"reason\":\"$$r\"" $(SCRATCH)/gr.out || { echo "parity-gr: no $$r refusal"; exit 1; }; done; \
+	  grep -q '"status":"bad_gr"' $(SCRATCH)/gr.out && grep -q '"r":10,"mode":"hover"' $(SCRATCH)/gr.out && grep -q '"r":3,"mode":"orbit"' $(SCRATCH)/gr.out && \
+	  grep -q '"unlocked":\["archive.two-clocks","archive.tides","archive.shadow-ring"\]' $(SCRATCH)/gr.out && \
+	  echo "parity-gr: refusals bad_radius, bad_gr, moving, in_gr; a bad_gr line; hover at 10, orbit at 3; first_black_hole unlocks the tides and shadow entries"
+
+offaxis-v11-equiv:  ## AC13: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (replay case offaxis_v11_equiv)
+	AILANG="$(AILANG)" python3 tools/replay.py --case offaxis_v11_equiv
+
+strict:            ## pure sim core and protocol v2 codecs must run entirely on the bytecode VM (no evaluator fallback)
+	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(2*math.sinh(g*3.0)/g))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scripted --args-json 300 sim/core.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry scripted --args-json 300 sim/core.ail); \
+	echo "strict VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
+	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(math.sqrt(2)*2*(math.cosh(g*3.0)-1)/g))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scriptedOffAxis --args-json 300 sim/core.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedOffAxis --args-json 300 sim/core.ail); \
+	echo "strict off-axis VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry protocolVm --args-json 0 sim/protocol_test.ail > $(SCRATCH)/protocol-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry protocolVm --args-json 0 sim/protocol_test.ail > $(SCRATCH)/protocol-interp.txt
+	@cmp $(SCRATCH)/protocol-vm.txt $(SCRATCH)/protocol-interp.txt && test "$$(tail -1 $(SCRATCH)/protocol-vm.txt)" = "protocol-ok" && \
+	  echo "strict protocolVm: $$(tail -1 $(SCRATCH)/protocol-vm.txt), $$(wc -l < $(SCRATCH)/protocol-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/protocol-vm.txt | cut -c1-16) (strict VM = interpreter)"
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry worldVm --args-json 0 sim/core_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry worldVm --args-json 0 sim/core_test.ail); \
+	echo "strict worldVm: VM $$got | interpreter $$interp"; [ "$$got" = "world-ok" ] && [ "$$interp" = "world-ok" ]
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry planVm --args-json 0 sim/core_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry planVm --args-json 0 sim/core_test.ail); \
+	echo "strict planVm: VM $$got | interpreter $$interp"; [ "$$got" = "plan-ok" ] && [ "$$interp" = "plan-ok" ]
+	@# journeyVm: alpha Cen 0.99c, commit, 70 ticks of 0.01 yr; arrived, then at rest. Closed form: galaxyTime + (0.7 - tauTotal)
+	@want=$$(python3 -c "import math; a=750000*1.032295275553596; p=2.6466524123622457; d=4.37; db=2*math.sinh(p/2)**2/a; dc=d-2*db; print(repr(2*math.sinh(p)/a + dc/math.tanh(p) + 0.7 - (2*p/a + dc/math.sinh(p))))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry journeyVm --args-json 70 sim/core.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry journeyVm --args-json 70 sim/core.ail); \
+	echo "strict journeyVm VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
+	echo "strict voyageVm: VM $$got | interpreter $$interp"; [ "$$got" = "voyage-ok" ] && [ "$$interp" = "voyage-ok" ]
+	@# scriptedRoundTrip (M4.1, AC1): Sol -> alpha Cen -> Sol, 0.99c, 1,000 AU stand-off, zero dwell; which = Earth yr, ship yr, news epoch at alpha Cen, end gap, tier at alpha Cen, tier at the return
+	@for k in 0 1 2 3 4 5; do \
+	  want=$$(python3 -c "import math,sys; a=750000*1.032295275553596; p=2.6466524123622457; s=1000*149597870700/9460730472580800; dl=4.37-s; db=2*math.sinh(p/2)**2/a; dc=dl-2*db; t=2*math.sinh(p)/a+dc/math.tanh(p); tau=2*p/a+dc/math.sinh(p); print(repr([2*t,2*tau,t-dl,2*t-2*tau,0.0,2.0][int(sys.argv[1])]))" $$k); \
+	  got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scriptedRoundTrip --args-json $$k sim/core.ail); \
+	  interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedRoundTrip --args-json $$k sim/core.ail); \
+	  echo "strict scriptedRoundTrip($$k): VM $$got | interpreter $$interp | closed form $$want"; \
+	  [ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)" || exit 1; \
+	done
+	@# scriptedApproach (M3.4a): Sgr A*, 1e6 -> 10 r_s at beta_local 0.1 in 100 ticks; coordinate time (t_s) vs t = [r1 - r2 + ln((r1 - 1)/(r2 - 1))]/beta, 1e-9 relative
+	@want=$$(python3 -c "import math; print(repr((1e6 - 10 + math.log((1e6 - 1)/(10 - 1)))/0.1))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scriptedApproach --args-json 100 sim/gr.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedApproach --args-json 100 sim/gr.ail); \
+	echo "strict scriptedApproach VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) <= 1e-9 * $$want else 1)"
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
+	echo "strict grVm (M3.4): VM $$got | interpreter $$interp"; [ "$$got" = "gr-ok" ] && [ "$$interp" = "gr-ok" ]
+	@# stopsVm (D-54): the stop rules' check values and free-navigation legs (alpha Cen A, Aldebaran, TRAPPIST-1, home at Earth); strict VM = interpreter byte for byte
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry stopsVm --args-json 0 sim/stops_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry stopsVm --args-json 0 sim/stops_test.ail); \
+	echo "strict stopsVm (D-54): VM $$got | interpreter $$interp"; [ "$$got" = "$$interp" ] && case "$$got" in "stops-ok "*) true;; *) false;; esac
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
+	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry transitVm --args-json 0 sim/transit_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry transitVm --args-json 0 sim/transit_test.ail); \
+	echo "strict transitVm (M4.3a): VM $$got | interpreter $$interp"; [ "$$got" = "transit-ok" ] && [ "$$interp" = "transit-ok" ]
+	@# rngVm (M2.4): vectors, independence, then a digest of 10,000 draws per stream (integers only); strict VM = interpreter = tools/rng_ref.py
+	@for seed in 7 9007199254740991; do \
+	  want="rng-ok $$(python3 tools/rng_ref.py --digest $$seed 10000)"; \
+	  got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry rngVm --args-json $$seed sim/rng_test.ail); \
+	  interp=$$($(AILANG) run --quiet --package-dir sim --entry rngVm --args-json $$seed sim/rng_test.ail); \
+	  echo "strict rngVm seed $$seed: VM $$got | interpreter $$interp | reference $$want"; \
+	  [ "$$got" = "$$want" ] && [ "$$interp" = "$$want" ] || exit 1; \
+	done
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
+	echo "strict crew: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict crew: FAIL (VM != interpreter, or a script refused)"; exit 1; }
+	@# consoleScripted (R2-CREW-CONSOLE-V2 V1, AC5): the console session (start on agreement, a concern answered, an order over it, start now) on the strict VM; VM == interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consoleScripted --args-json 2 sim/crew_script.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry consoleScripted --args-json 2 sim/crew_script.ail); \
+	echo "strict console: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict console: FAIL (VM != interpreter, or the session refused)"; exit 1; }
+	@# namesVm: the crew-names table (sim/data/crew_names.ail) and five generated names on the strict VM; VM == interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry namesVm --args-json 7 sim/crew_names.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry namesVm --args-json 7 sim/crew_names.ail); \
+	echo "strict namesVm: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -q 'names regions 14 given 224 family 224 crew ' || { echo "strict namesVm: FAIL (VM != interpreter: $$in)"; exit 1; }
+	@# digestScripted (R2-INTERLUDE I2, AC2): the scripted crossing (its holds resumed; under crew_core 0.6 the first is a stand-down) and its cruise digest on the strict VM; VM == interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
+	echo "strict digestScripted: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -qE '^"?crossing chunks [0-9]+ holds 1 turn 391 digest [0-9a-f]{64}"?$$' || { echo "strict digestScripted: FAIL (VM != interpreter: $$in)"; exit 1; }
+
+rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
+	AILANG=$(AILANG) python3 tools/rng_ref.py --check
+
+geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 geodesics, tides and hover (design V9-V16) passes --check, and its digests equal the values the package pins
+	python3 tools/geodesic_ref.py --check
+	@smoke=runtime/cache/registry/sunholo/relativity/$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml)/_smoke.ail; \
+	  if [ -f "$$smoke" ]; then v=$$(AILANG_RELAX_MODULES=1 $(AILANG) run --quiet --bytecode --strict-bytecode --entry lensDigest --args-json 16 $$smoke 2>/dev/null); \
+	  test "$$v" = "$(GEODESIC_LENS_DIGEST)" && echo "geodesic-oracle: pinned package lensDigest 16 on the strict VM = $$v" || { echo "geodesic-oracle: package lensDigest 16 = '$$v', pin $(GEODESIC_LENS_DIGEST)"; exit 1; }; \
+	  else echo "geodesic-oracle: $$smoke not in the runtime cache (make runtime); package digest not rerun"; fi
+	@d=$$(python3 tools/geodesic_ref.py digest 16); s=$$(python3 tools/geodesic_ref.py sdigest 64); echo "lensDigest 16 = $$d, schwarzschildDigest 64 = $$s"; \
+	  python3 -c "import sys; d, s = float(sys.argv[1]), float(sys.argv[2]); ok = abs(d - $(GEODESIC_LENS_DIGEST)) <= 1e-9 and abs(s - $(GEODESIC_SCHW_DIGEST)) <= 1e-9 * abs(s); print('geodesic-oracle: digests ' + ('match' if ok else 'DIFFER from') + ' the package pins'); sys.exit(0 if ok else 1)" "$$d" "$$s"
+
+kerr-oracle:       ## R2-KERR K1.1a-a: the independent Kerr oracle tools/kerr_ref.py (role oracle) -- the design doc's RK-1..RK-13/RK-18 precise 17-digit anchors, the six-decimal display strings kept separate, the domain refusals before any square root, the exact s = 0 members, and the generated fixture with its digest; no AILANG, never at runtime
+	@sh tools/test_kerr_oracle.sh
+
+journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM == interpreter == golden (replay case alpha_cen)
+	AILANG="$(AILANG)" python3 tools/replay.py --case alpha_cen
+
+wd-vm:             ## WD package NaN contract on the strict VM
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
+	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
+
+golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror and its mutants); M4.6gR3: ship G-M4-S2 one tonemap, S3 pole 3, S4 glow 6; R2-CAMERA-FORWARD (D-92, travel toward the bow): G-CAM-1 Bow pole at the spawn / helm / Sgr A* 9, G-CAM-2 glow from the Bow spawn / bow rail / helm and Astern eyes 8, G-CAM-3 tonemap Bow 0.99c and Astern rest 2; G-M4-S2/S3/S4 re-posed through the bow basis; R2-STAR-SURFACES: G-SS-1..3 a mapped star's flux = e_v_lux (giant, spotted dwarf, Sun-like), G-SS-4 centred, G-SS-5 the unresolved Sun byte-identical; SS3: G-SS-6 corona profile = Baumbach, G-SS-7 the corona at totality, G-SS-8 partial eclipse and the sliver point
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
+	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && test "$$(grep -c '^ok    stand-off alpha Cen A' $(SCRATCH)/golden.log)" = 8 && \
+	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && \
+	  grep -q '^ok    display floor' $(SCRATCH)/golden.log && grep -q '^ok    exposure golden (star)' $(SCRATCH)/golden.log && \
+	  grep -q '^ok    exposure golden (sky)' $(SCRATCH)/golden.log && grep -q '^ok    limiting magnitude' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    CMB golden' $(SCRATCH)/golden.log)" = 10 && \
+	  grep -q '^ok    G-M4-1 composite position: 72 cases' $(SCRATCH)/golden.log && grep -q '^ok    G-M4-2 one tonemap' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-M4-3 forward pole' $(SCRATCH)/golden.log)" = 6 && test "$$(grep -c '^ok    G-M4-4 glow' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-M4-6 colour' $(SCRATCH)/golden.log)" = 10 && \
+	  test "$$(grep -c '^ok    G-M4-5 plate' $(SCRATCH)/golden.log)" = 6 && \
+	  grep -q '^interior golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-M4-S2 one tonemap (ship)' $(SCRATCH)/golden.log)" = 1 && \
+	  test "$$(grep -c '^ok    G-M4-S3 forward pole (ship)' $(SCRATCH)/golden.log)" = 3 && \
+	  test "$$(grep -c '^ok    G-M4-S4 glow' $(SCRATCH)/golden.log)" = 6 && \
+	  test "$$(grep -c '^ok    G-CAM-1 forward pole' $(SCRATCH)/golden.log)" = 9 && \
+	  test "$$(grep -c '^ok    G-CAM-2 glow' $(SCRATCH)/golden.log)" = 8 && \
+	  test "$$(grep -c '^ok    G-CAM-3 one tonemap' $(SCRATCH)/golden.log)" = 2 && \
+	  test "$$(grep -c '^ok    G-SS-' $(SCRATCH)/golden.log)" = 8 && grep -q '^star surface golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 401 && \
+	  grep -q '^m4 ship golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -cE '^ok    GR[123] shadow' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR4 orbit mask' $(SCRATCH)/golden.log)" = 3 && \
+	  test "$$(grep -c '^ok    GR5 two images' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR6 Einstein ring' $(SCRATCH)/golden.log)" = 3 && \
+	  grep -q '^ok    GR7 inside the shadow' $(SCRATCH)/golden.log && grep -q '^ok    GR8 colour' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    GR9 weak-field' $(SCRATCH)/golden.log)" = 2 && test "$$(grep -c '^ok    GR10 lens_fwd mirror' $(SCRATCH)/golden.log)" = 5 && \
+	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-ISM-5 surface wall observer' $(SCRATCH)/golden.log)" = 3 && grep -q '^ok    G-ISM-5 integrated radiance' $(SCRATCH)/golden.log && grep -q '^ok    G-ISM-5 surface dim overlaps' $(SCRATCH)/golden.log && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3 + M4.6gR3 G-M4-S2, G-M4-S3 3, G-M4-S4 6 + R2-CAMERA G-CAM-1 9, G-CAM-2 8, G-CAM-3 2 + R2-STAR-SURFACES G-SS-1..8; 401 ok lines (393 before R2-STAR-SURFACES, 398 before SS3; main had 374, its pin said 373))"; exit 1; }
+
+# M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
+# driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
+BENCH_SECONDS ?= 30
+BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
+BRIDGE_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),medium)
+BENCH_SIZE ?=
+bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default); SCENE=bridge; SCENE=level LEVEL=<id> [STAGE=] (R2-LEVELS): M4.6rR3 AC12, live 3D-ship transit (30 s, 2560x1440, vsync off, medium tier, Metal), p99 < 16.7 ms or make nonzero (driver invalid=1, MISS=2)
+ifeq ($(SCENE),bridge)
+	@mkdir -p $(SCRATCH); echo "bench-bridge: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --script tools/m4_ship_bench.gd -- --tier=$(BRIDGE_TIER) > $(SCRATCH)/bench-bridge.log 2>&1; rc=$$?; grep '^bench-bridge' $(SCRATCH)/bench-bridge.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-bridge.log && test "$$(grep -c '^bench-bridge: OK$$' $(SCRATCH)/bench-bridge.log)" = 1 && ! grep -q '^bench-bridge: FAIL' $(SCRATCH)/bench-bridge.log && \
+	  grep -q '^bench-bridge: frame ms .*(target p99 < [0-9.]*: ok)$$' $(SCRATCH)/bench-bridge.log || { echo "bench-bridge: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-bridge.log)"; exit 1; }
+else ifeq ($(SCENE),level)
+	@mkdir -p $(SCRATCH); echo "bench-level: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --script tools/level_bench.gd -- --level $(LEVEL) $(if $(STAGE),--stage $(STAGE)) > $(SCRATCH)/bench-level.log 2>&1; rc=$$?; grep '^bench-level' $(SCRATCH)/bench-level.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bench-level.log && grep -q '^bench-level: OK$$' $(SCRATCH)/bench-level.log || { echo "bench-level: FAILED (exit $$rc: 1 = invalid measurement, 2 = p99 MISS; log $(SCRATCH)/bench-level.log)"; exit 1; }
+else ifneq ($(SCENE),)
+	@echo "bench: unknown SCENE=$(SCENE) (want SCENE=bridge, SCENE=level LEVEL=<id>, or none for the starfield bench)"; exit 2
+else
+	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
+	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
+	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
+endif
+
+capture-bh-sky: lens-assets ## M3.5a/b: the lensed sky through InteriorSky (debug grid, Milky Way + large tier, rings, two images) -> renders/bh_sky/*.png (GPU window; open them)
+	@mkdir -p $(SCRATCH); $(GODOT) --path . --script tools/gr_capture.gd > $(SCRATCH)/capture-bh-sky.log 2>&1; rc=$$?; cat $(SCRATCH)/capture-bh-sky.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-bh-sky.log && grep -q '^capture-bh-sky: OK$$' $(SCRATCH)/capture-bh-sky.log
+
+capture-bh: lens-assets ## M3.6: the Sgr A* demo aboard the 3D ship, sim-driven -> renders/bh_r{10,5,3}_{toward,side,away}_{hover,orbit}.png (+ bh_grid_*), two bridge views, contact sheets, renders/bh_manifest.sha256 (GPU window; open them)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/bh_ship_capture.gd > $(SCRATCH)/capture-bh.log 2>&1; rc=$$?; grep '^capture-bh' $(SCRATCH)/capture-bh.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-bh.log && grep -q '^capture-bh: OK$$' $(SCRATCH)/capture-bh.log || { echo "capture-bh: FAILED (log $(SCRATCH)/capture-bh.log)"; exit 1; }
+
+bench-bh: lens-assets ## M3.6: the 3D ship with GR on (hover 10 r_s; live orbit 3 r_s) vs GR off at the large tier, vsync off: wall p50/p99 and GPU ms of the sky and ship viewports (GPU window; BENCH_SIZE=WxH)
+	@mkdir -p $(SCRATCH); for drv in metal vulkan; do $(GODOT_SIM) --path . --rendering-driver $$drv --script tools/bh_ship_bench.gd -- $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench-bh_$$drv.log 2>&1; rc=$$?; \
+	  echo "bench-bh ($$drv, host $$(uptime | sed 's/.*load/load/')):"; grep '^bench-bh' $(SCRATCH)/bench-bh_$$drv.log; test $$rc = 0 && grep -q '^bench-bh: OK$$' $(SCRATCH)/bench-bh_$$drv.log || { echo "bench-bh: $$drv FAILED (log $(SCRATCH)/bench-bh_$$drv.log)"; exit 1; }; done
+
+BH_REFS_URL ?= https://storage.googleapis.com/stapledons-voyage-assets/refs/m3_bh_ship
+bh-refs:           ## M3.6: fetch the reviewed baseline renders pinned in data/refs/bh_manifest.sha256 to renders/bh_baseline (public bucket, sha256-checked)
+	@mkdir -p renders/bh_baseline; n=0; while read -r sum name; do f=renders/bh_baseline/$$name; \
+	  if [ "$$(shasum -a 256 "$$f" 2>/dev/null | cut -d' ' -f1)" != "$$sum" ]; then curl -fsSL -o "$$f" "$(BH_REFS_URL)/$$name" || { echo "bh-refs: cannot fetch $$name"; exit 1; }; fi; \
+	  [ "$$(shasum -a 256 "$$f" | cut -d' ' -f1)" = "$$sum" ] || { echo "bh-refs: $$name differs from its pin"; exit 1; }; n=$$((n+1)); done < data/refs/bh_manifest.sha256; \
+	  echo "bh-refs: $$n baseline renders match data/refs/bh_manifest.sha256"
+bh-refs-publish:   ## maintainers (gcloud): upload renders/bh_*.png pinned in data/refs/bh_manifest.sha256 as the baseline (immutable names checked by sha256)
+	@while read -r sum name; do [ "$$(shasum -a 256 "renders/$$name" | cut -d' ' -f1)" = "$$sum" ] || { echo "bh-refs-publish: renders/$$name is not the pinned render"; exit 1; }; \
+	  gcloud storage cp --cache-control="public, max-age=300" "renders/$$name" "gs://stapledons-voyage-assets/refs/m3_bh_ship/$$name" > /dev/null && echo "  uploaded $$name"; done < data/refs/bh_manifest.sha256
+bh-render-diff: bh-refs ## M3.6 AC-13: the current renders/bh_*.png against the pinned baseline, mean |d| <= 1/255 each (run after make capture-bh)
+	@$(GODOT) --headless --path . --script tools/render_diff.gd -- $$(cd . && ls renders/bh_*.png) > $(SCRATCH)/bh-render-diff.log 2>&1; rc=$$?; grep '^render-diff' $(SCRATCH)/bh-render-diff.log | tail -45; \
+	  test $$rc = 0 && grep -q '^render-diff: OK$$' $(SCRATCH)/bh-render-diff.log
+
+splash:            ## compose the boot splash ui/splash/splash.png (Milky Way crop + wordmark + AILANG, like the site hero); needs a GPU window and data/raw/background/noirlab_10k_destarred.png
+	$(GODOT) --path . --script tools/splash_compose.gd
+
+capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window); M1.5a: + camera auto / fixed-EV starboard pairs, exposure_sheet.png; M1.8: gamma 275/707 CMB views, cmb_sheet.png
+	$(GODOT_SIM) --path . -- --capture=renders
+
+run-bh:            ## M3.6: the Sgr A* demo aboard the 3D ship (approach 10^6 -> 10 r_s, hover 10/5/3, orbit 3; N next stop, K finish approach, C Archive, L leave)
+	$(GODOT_SIM) --path . -- --ship-demo --scenario=sgr_a
+
+run:               ## the default launch: the title screen (board the ship, guided voyage, galaxy map, settings, credits)
+	$(GODOT_SIM) --path .
+
+voyage:            ## the M0/M1 sky flight: W/S thrust, arrows look, 1-4 views, +/- warp
+	$(GODOT_SIM) --path . -- --voyage
+
+runtime:           ## stage the bundled sim runtime: pinned ailang release + fetched package cache (no dotfiles)
+	@rm -rf $(RUNTIME) && mkdir -p $(RUNTIME)/bin $(RUNTIME)/home
+	gh release download $(AILANG_RELEASE) --repo sunholo-data/ailang -p 'darwin.arm64.ailang.tar.gz' -D $(SCRATCH)/ailang-rel --clobber
+	tar xzf $(SCRATCH)/ailang-rel/darwin.arm64.ailang.tar.gz -C $(RUNTIME)/bin && chmod +x $(RUNTIME)/bin/ailang
+	cd sim && HOME=$(CURDIR)/$(RUNTIME)/home $(CURDIR)/$(RUNTIME)/bin/ailang lock
+	git checkout -q sim/ailang.lock
+	mkdir -p $(RUNTIME)/cache && mv $(RUNTIME)/home/.ailang/cache/registry $(RUNTIME)/cache/registry && rm -rf $(RUNTIME)/home
+	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
+	@find $(RUNTIME) -type f | sed 's/^/  staged /'
+
+export-macos: runtime sky-bundle areas-stage sound-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+	@mkdir -p build/macos
+	@git diff --quiet && git diff --cached --quiet || { echo 'export-macos: commit tracked source changes before building a review artifact'; exit 1; }
+	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
+	@git rev-parse HEAD > runtime/build_commit.txt
+	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
+	@du -sh "$(APP)"
+
+export-pack-check: import   ## L6b (rig-only): re-measure AUTO_EXT and the classified paths on a real --export-pack zip (no templates)
+	@mkdir -p $(SCRATCH)/export-pack
+	@rm -f $(SCRATCH)/export-pack/game.zip
+	@$(GODOT) --headless --path . --export-pack "macOS" $(SCRATCH)/export-pack/game.zip
+	@STRICT="$(STRICT)" $(GODOT) --headless --path . --script tests/test_export_pack.gd -- $(SCRATCH)/export-pack/game.zip > $(SCRATCH)/export-pack.log 2>&1; rc=$$?; grep -E '^(FAIL|SKIP|export-pack-check)' $(SCRATCH)/export-pack.log; test $$rc = 0 && grep -q '^export-pack-check: [0-9]* checked, [0-9]* skips, 0 failures$$' $(SCRATCH)/export-pack.log
+
+export-pack-check-strict:   ## publish-dev gate: an absent witness is a hard failure; no silent skips (AC8)
+	@$(MAKE) --no-print-directory export-pack-check STRICT=1
+	@grep -q ', 0 skips, 0 failures$$' $(SCRATCH)/export-pack.log || { echo 'export-pack-check-strict: silent skips at the publish-dev gate'; exit 1; }
+
+export-smoke:      ## run the exported .app's capture with NO ailang on PATH; must produce the contact sheet
+	@rm -rf $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home && mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
+	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
+	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
+	@# M4.2: the interior slice from inside the .app (the bridge bundle staged as areas_bundle/*.bin in the .pck)
+	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" --headless -- --m4-smoke > $(SCRATCH)/export-smoke/m4-smoke.log 2>&1; \
+	grep -E '^(m4-smoke|interior):' $(SCRATCH)/export-smoke/m4-smoke.log; grep -q 'interior: bundle res://areas_bundle/bridge' $(SCRATCH)/export-smoke/m4-smoke.log && grep -q '^m4-smoke: OK$$' $(SCRATCH)/export-smoke/m4-smoke.log && echo "export-smoke: interior OK from the staged bundle"
+
+DEV_BUCKET ?= stapledons-voyage-dev-builds
+
+publish-dev: export-pack-check-strict   # L6b pack oracle, strict: an absent witness fails here (AC8)
+
+publish-dev: export-macos export-smoke   ## upload this build to the private dev bucket (needs gcloud auth); install with tools/install_review_build.sh --dev
+	@ver=$$(cat runtime/build_version.txt); commit=$$(cat runtime/build_commit.txt); \
+	git diff --quiet && git diff --cached --quiet && test "$$commit" = "$$(git rev-parse HEAD)" && test "$$ver" = "$$(git describe --tags --always --dirty)" || { echo 'publish-dev: checkout changed since export; rebuild before publishing'; exit 1; }; \
+	zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
+	rm -f "$$zip"; (cd build/macos && ditto -c -k --keepParent "Stapledons Voyage.app" "$(CURDIR)/$$zip"); \
+	sum=$$(shasum -a 256 "$$zip" | cut -d' ' -f1); name=$$(basename "$$zip"); \
+	gcloud storage cp "$$zip" "gs://$(DEV_BUCKET)/macos/builds/$$name" && \
+	printf '%s  %s\n' "$$sum" "$$name" | gcloud storage cp - "gs://$(DEV_BUCKET)/macos/builds/$$name.sha256" && \
+	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$commit" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	  | gcloud storage cp --cache-control="no-cache" - "gs://$(DEV_BUCKET)/macos/latest.json" && \
+	echo "publish-dev: $$name ($$sum) -> gs://$(DEV_BUCKET)/macos/latest.json"
+
+.PHONY: catalogue-probe
+catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM parity runs
+	AILANG=$(AILANG) python3 tools/catalogue_probe.py
+
+.PHONY: catalogue-vm
+catalogue-vm:     ## T1 transform/selection + T3 validation, T4 N3 (exact 50,000 quota with missing rows between), first-error order, writer plan: strict VM, interpreter and exact anchors
+	@mkdir -p $(SCRATCH)
+	@set -e; for entry in transformVm selectionVm quotaVm mainVm; do \
+	  case $$entry in mainVm) f=sim/tools/catalogue_main_test.ail;; *) f=sim/tools/catalogue_test.ail;; esac; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
+	  env -u AI_LIVE $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
+	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt; \
+	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; quotaVm) want=quota-ok;; mainVm) want=main-ok;; esac; \
+	  test "$$(cat $(SCRATCH)/$$entry-vm.txt)" = "$$want"; cat $(SCRATCH)/$$entry-vm.txt; \
+	done
+
+# M1.2b-T3 tier writer. TIER picks the source; the AILANG shell validates, encodes and hashes
+# (std/crypto sha256), then writes temp files and renames them, so a refusal ships nothing.
+TIER ?= quick
+CATALOGUE_OUT ?= data/starmap
+CAT_RUN = $(AILANG) run --quiet --caps IO,FS --package-dir sim
+CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
+cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
+bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
+# The companion rule (design_docs/implemented/r1/m1-companion-parallax.md): `make companions` writes the table, every
+# tier and the map apply it (COMPANIONS picks the file; catalogue-verify uses its own rebuilt copy).
+COMPANIONS ?= data/starmap/companions/companions.csv
+gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
+.PHONY: catalogue catalogue-scan catalogue-main bright-test test-bright-audit companions companions-test
+catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).bin + sidecar on the VM (TIER=quick|medium|large|bright; quick carries the HIP photometry fill)
+	@case "$(TIER)" in \
+	  quick) $(CAT_RUN) --bytecode --entry mainFill --args-json $(call fill_args,$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
+	  bright) $(CAT_RUN) --bytecode --entry brightMain --args-json $(call bright_args,$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
+	  medium|large) $(CAT_RUN) --bytecode --entry gcnsMain --args-json $(call gcns_args,$(TIER),$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
+	  *) echo "catalogue: TIER must be quick, medium, large or bright (got '$(TIER)')"; exit 2;; esac
+
+# M1.7 (F6, Q7): the galaxy map catalogue, from the quick + bright tier rows within 25 pc (float64; ids
+# "Gaia DR3 n" / "CNS5:n" / "HIP n"). STARMAP_OUT picks the file (catalogue-verify writes a scratch copy).
+STARMAP_OUT ?= data/starmap/stars.json
+map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+.PHONY: starmap starmap-test
+starmap:          ## M1.7: data/raw -> $(STARMAP_OUT), the galaxy map catalogue (quick + bright within 25 pc) on the VM
+	$(CAT_RUN) --bytecode --entry mapMain --args-json $(call map_args,$(STARMAP_OUT)) sim/tools/bright_main.ail
+
+starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, strict VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-interp.txt
+	@cmp $(SCRATCH)/starmap-vm.txt $(SCRATCH)/starmap-interp.txt && test "$$(cat $(SCRATCH)/starmap-vm.txt)" = "starmap-ok"
+	@echo "starmap-test: $$(cat $(SCRATCH)/starmap-vm.txt) (strict VM = interpreter)"
+
+# One position per star (design_docs/implemented/r1/starmap-single-truth.md): the star-truth table that every
+# tier and the map take positions from. TRUTH picks the table (catalogue-verify uses its own rebuilt copy).
+TRUTH ?= data/starmap/truth/positions.csv
+TRUTH_OUT ?= data/starmap/truth
+truth_args = "{\"cns5\":\"data/raw/cns5.dat\",\"cns5Csv\":\"data/raw/cns5.csv\",\"gcnsRaw\":\"data/raw/table1c.dat.gz\",\"gcnsDat\":\"$(SCRATCH)/table1c.dat\",\"gcns\":\"data/raw/gcns.csv\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+.PHONY: starmap-truth starmap-truth-parity starmap-truth-audit starmap-consistency starmap-consistency-large truth-test
+starmap-truth:    ## star truth: CNS5 x GCNS x cross-ids -> $(TRUTH_OUT)/positions.csv + positions.json on the VM (rule truth-1)
+	@mkdir -p $(SCRATCH) $(TRUTH_OUT); test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(TRUTH_OUT)) sim/tools/bright_main.ail
+
+starmap-truth-parity: ## star truth on the VM and the interpreter into scratch: byte-identical to each other and to the committed table
+	@mkdir -p $(SCRATCH)/truth-vm $(SCRATCH)/truth-interp; test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	@$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(SCRATCH)/truth-vm) sim/tools/bright_main.ail
+	@$(CAT_RUN) --entry truthMain --args-json $(call truth_args,$(SCRATCH)/truth-interp) sim/tools/bright_main.ail
+	@for f in positions.csv positions.json; do cmp $(SCRATCH)/truth-vm/$$f $(SCRATCH)/truth-interp/$$f && cmp $(SCRATCH)/truth-vm/$$f $(TRUTH_OUT)/$$f || exit 1; done
+	@echo "starmap-truth-parity: VM = interpreter = committed ($$(shasum -a 256 $(TRUTH_OUT)/positions.csv | cut -c1-16))"
+
+starmap-truth-audit: ## AC4: every truth disagreement over max(3 sigma, 1%) has a resolution and is listed in the audit doc
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry auditMain --args-json '{"truth":"$(TRUTH)","doc":"design_docs/implemented/r1/starmap-truth-audit.md"}' sim/tools/bright_main.ail
+
+starmap-consistency: ## AC3 (headless): every stars.json destination in the sky stack once, at the navigation position (<= 1e-9 ly); pins are no-ops (TIER=medium|large)
+	@mkdir -p $(SCRATCH); log=$(SCRATCH)/starmap-consistency-$(if $(filter command line environment,$(origin TIER)),$(TIER),medium)-$$$$.log; $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > "$$log" 2>&1; rc=$$?; \
+	  grep -E '^(starmap-consistency|  )' "$$log"; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' "$$log" && grep -q '^starmap-consistency: PASS$$' "$$log"
+
+# The large tier is a gate too (eval R1-STARMAP-LARGE round 1): make test fetches it (starmap-assets, pinned)
+# and checks the large stack; a missing or short file FAILS here (the game's runtime fallback is only a warning).
+starmap-consistency-large: ## the consistency gate on the large stack: stars_large.bin present with 331,311 rows, every destination once, no identity twice
+	@$(MAKE) --no-print-directory starmap-consistency TIER=large CONSISTENCY_ARGS="--expect-rows 331311"
+
+truth-test:       ## star truth (sim/tools/truth.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry truthVm --args-json 0 sim/tools/truth_test.ail > $(SCRATCH)/truth-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry truthVm --args-json 0 sim/tools/truth_test.ail > $(SCRATCH)/truth-interp.txt
+	@cmp $(SCRATCH)/truth-vm.txt $(SCRATCH)/truth-interp.txt && test "$$(cat $(SCRATCH)/truth-vm.txt)" = "truth-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry truthFixtures --args-json '"tools/fixtures"' sim/tools/truth_test.ail > $(SCRATCH)/truth-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry truthFixtures --args-json '"tools/fixtures"' sim/tools/truth_test.ail > $(SCRATCH)/truth-fx-interp.txt
+	@cmp $(SCRATCH)/truth-fx-vm.txt $(SCRATCH)/truth-fx-interp.txt && test "$$(cat $(SCRATCH)/truth-fx-vm.txt)" = "truth-fixtures-ok"
+	@echo "truth-test: $$(cat $(SCRATCH)/truth-vm.txt), $$(cat $(SCRATCH)/truth-fx-vm.txt) (VM = interpreter)"
+
+companions-test:  ## the companion rule (sim/tools/companions.ail): thresholds, Sirius B, alpha Cen B, Luyten 726-8 B, Wolf 424 B, false pairs; strict VM = interpreter, real-line fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry companionsVm --args-json 0 sim/tools/companions_test.ail > $(SCRATCH)/companions-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry companionsVm --args-json 0 sim/tools/companions_test.ail > $(SCRATCH)/companions-interp.txt
+	@cmp $(SCRATCH)/companions-vm.txt $(SCRATCH)/companions-interp.txt && test "$$(cat $(SCRATCH)/companions-vm.txt)" = "companions-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry companionsFixtures --args-json '"tools/fixtures"' sim/tools/companions_test.ail > $(SCRATCH)/companions-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry companionsFixtures --args-json '"tools/fixtures"' sim/tools/companions_test.ail > $(SCRATCH)/companions-fx-interp.txt
+	@cmp $(SCRATCH)/companions-fx-vm.txt $(SCRATCH)/companions-fx-interp.txt && test "$$(cat $(SCRATCH)/companions-fx-vm.txt)" = "companions-fixtures-ok"
+	@echo "companions-test: $$(cat $(SCRATCH)/companions-vm.txt), $$(cat $(SCRATCH)/companions-fx-vm.txt) (VM = interpreter)"
+
+test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
+	$(GODOT) --headless --path . --script tests/test_bright_audit.gd
+
+bright-test:      ## M1.2d bright tier + CNS5 fill (sim/tools/bright.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry brightVm --args-json 0 sim/tools/bright_test.ail > $(SCRATCH)/bright-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry brightVm --args-json 0 sim/tools/bright_test.ail > $(SCRATCH)/bright-interp.txt
+	@cmp $(SCRATCH)/bright-vm.txt $(SCRATCH)/bright-interp.txt && test "$$(cat $(SCRATCH)/bright-vm.txt)" = "bright-vm-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry brightFixtures --args-json '"tools/fixtures"' sim/tools/bright_test.ail > $(SCRATCH)/bright-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry brightFixtures --args-json '"tools/fixtures"' sim/tools/bright_test.ail > $(SCRATCH)/bright-fx-interp.txt
+	@cmp $(SCRATCH)/bright-fx-vm.txt $(SCRATCH)/bright-fx-interp.txt && test "$$(cat $(SCRATCH)/bright-fx-vm.txt)" = "bright-fixtures-ok"
+	@echo "bright-test: $$(cat $(SCRATCH)/bright-vm.txt), $$(cat $(SCRATCH)/bright-fx-vm.txt) (VM = interpreter)"
+
+companions:       ## the companion rule over CNS5 + GCNS + bright rows -> $(COMPANIONS) (std/gzip stops at 100 MB, so table1c is gunzipped into the scratch dir first)
+	@mkdir -p $(SCRATCH)
+	gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	$(CAT_RUN) --bytecode --entry companionsMain --args-json "{\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"gcnsRaw\":\"data/raw/table1c.dat.gz\",\"gcnsDat\":\"$(SCRATCH)/table1c.dat\",\"out\":\"$(COMPANIONS)\"}" sim/tools/bright_main.ail
+	@rm -f $(SCRATCH)/table1c.dat
+
+catalogue-scan:   ## M1.2b-T3: the conservative F32 bound on every real CNS5 and GCNS row (0 refusals; refused ids are listed for review)
+	@for src in cns5 gcns; do $(CAT_RUN) --bytecode --entry scan --args-json "\"data/raw/$$src.csv\"" sim/tools/catalogue_main.ail || exit 1; done
+
+# M1.2c: the committed quick + medium tiers (D-3) and the M1.2d bright tier (Q4); large stays ignored. The stats run in CI on the
+# committed bins; verify rebuilds them from the pinned inputs and needs data/raw (make catalogue-inputs).
+.PHONY: catalogue-stats star-catalogue-test catalogue-verify catalogue-inputs
+catalogue-stats:  ## M1.2c AC2/AC3: count, excluded, M-dwarf share, defaulted-photometry check per committed tier (TIER=medium judges only medium)
+	@$(GODOT) --headless --path . --script tools/catalogue_stats.gd -- $(if $(filter command line environment,$(origin TIER)),--tier $(TIER))
+
+star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, endianness), every refusal, stats breaches, committed tiers
+	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
+
+VERIFY_OUT := $(SCRATCH)/verify
+catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, the star-truth table, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
+	@rm -rf $(VERIFY_OUT); mkdir -p $(VERIFY_OUT); \
+	$(MAKE) --no-print-directory companions COMPANIONS=$(VERIFY_OUT)/companions.csv AILANG=$(AILANG) >/dev/null || exit 1; \
+	cmp data/starmap/companions/companions.csv $(VERIFY_OUT)/companions.csv || { echo "catalogue-verify: companions.csv DIFFERS from the committed table"; exit 1; }; \
+	echo "companions.csv identical"; \
+	$(MAKE) --no-print-directory starmap-truth TRUTH_OUT=$(VERIFY_OUT)/truth AILANG=$(AILANG) >/dev/null || exit 1; \
+	for f in positions.csv positions.json; do cmp data/starmap/truth/$$f $(VERIFY_OUT)/truth/$$f || { echo "catalogue-verify: truth/$$f DIFFERS from the committed table"; exit 1; }; done; \
+	echo "truth/positions.csv identical"; \
+	for t in quick medium bright; do \
+	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
+	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \
+	    || { echo "catalogue-verify: $$t DIFFERS from the committed tier"; exit 1; }; \
+	  echo "$$t identical"; done; \
+	$(MAKE) --no-print-directory starmap STARMAP_OUT=$(VERIFY_OUT)/stars.json AILANG=$(AILANG) >/dev/null || exit 1; \
+	cmp data/starmap/stars.json $(VERIFY_OUT)/stars.json || { echo "catalogue-verify: stars.json DIFFERS from the committed map"; exit 1; }; \
+	echo "stars.json identical"; \
+	python3 tools/check_companions.py
+
+.PHONY: catalogue-parity
+PARITY_TIER ?= medium
+catalogue-parity: ## M1.2b-T4: real tier (PARITY_TIER=medium) on the interpreter once + ordinary VM 5x, cmp bin + sidecar, wall time and peak RSS per run
+	@sh tools/catalogue_parity.sh $(AILANG) $(PARITY_TIER) $(SCRATCH)/catalogue-parity 5
+
+CAT_FIX := tests/fixtures/catalogue
+catalogue-main:   ## M1.2b-T3 writer on committed fixtures: VM bytes == interpreter bytes, sizes, independent shasum of every digest, atomic refusal
+	@set -e; d=$(SCRATCH)/catalogue-main; rm -rf $$d; mkdir -p $$d/atomic; \
+	for t in quick medium; do \
+	  $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$$t,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$d/vm) sim/tools/catalogue_main.ail >/dev/null; \
+	  $(CAT_RUN) --entry main --args-json $(call cat_args,$$t,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$d/interp/) sim/tools/catalogue_main.ail >/dev/null; \
+	  cmp $$d/vm/stars_$$t.bin $$d/interp/stars_$$t.bin; cmp $$d/vm/stars_$$t.json $$d/interp/stars_$$t.json; \
+	  j=$$d/vm/stars_$$t.json; b=$$d/vm/stars_$$t.bin; \
+	  case $$t in quick) n=5;; medium) n=3;; esac; \
+	  test "$$(wc -c < $$b | tr -d ' ')" = $$((n * 24)); grep -q "\"count\":$$n," $$j; \
+	  for k in "raw:$(CAT_FIX)/raw.dat" "csv:$(CAT_FIX)/rows.csv" "bin:$$b"; do \
+	    grep -q "\"$${k%%:*}\":\"$$(shasum -a 256 $${k#*:} | cut -d' ' -f1)\"" $$j || { echo "catalogue-main: $$t sha256.$${k%%:*} wrong"; exit 1; }; done; \
+	  echo "catalogue-main $$t: $$n rows, $$((n * 24)) B, VM = interpreter, digests match shasum"; \
+	done; \
+	printf keep > $$d/atomic/stars_quick.bin; \
+	if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/bad_row.csv,$(CAT_FIX)/raw.dat,$$d/atomic) sim/tools/catalogue_main.ail 2>$$d/refusal.txt; \
+	then echo "catalogue-main: invalid row was accepted"; exit 1; fi; \
+	test "$$(cat $$d/atomic/stars_quick.bin)" = keep; test "$$(ls -A $$d/atomic)" = stars_quick.bin; \
+	echo "catalogue-main atomic: refused ($$(cat $$d/refusal.txt)); existing file untouched, no sidecar or temp left"; \
+	$(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$d/vm) sim/tools/catalogue_main.ail >/dev/null; \
+	cmp $$d/vm/stars_quick.bin $$d/interp/stars_quick.bin; cmp $$d/vm/stars_quick.json $$d/interp/stars_quick.json; \
+	test "$$(ls -A $$d/vm | tr '\n' ' ')" = "stars_medium.bin stars_medium.json stars_quick.bin stars_quick.json "; \
+	echo "catalogue-main replace: rewrite over an existing tier is identical, no .tmp or .bak left"; \
+	for old in keep none; do m=$$d/mid-$$old; mkdir -p $$m/stars_quick.json; printf old > $$m/stars_quick.json/inside; \
+	  if [ $$old = keep ]; then printf keep > $$m/stars_quick.bin; want="stars_quick.bin stars_quick.json "; else want="stars_quick.json "; fi; \
+	  if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$m) sim/tools/catalogue_main.ail 2>$$d/mid.txt; \
+	  then echo "catalogue-main: sidecar rename into a directory succeeded"; exit 1; fi; \
+	  test "$$(ls -A $$m | tr '\n' ' ')" = "$$want" || { echo "catalogue-main mid-$$old: left $$(ls -A $$m)"; exit 1; }; \
+	  if [ $$old = keep ]; then test "$$(cat $$m/stars_quick.bin)" = keep; fi; test "$$(cat $$m/stars_quick.json/inside)" = old; \
+	  grep -q "nothing changed" $$d/mid.txt; ! grep -q "nothing written" $$d/mid.txt; \
+	  echo "catalogue-main mid-commit ($$old bin): sidecar rename failed after the bin landed; rolled back, no temp left ($$(cat $$d/mid.txt))"; \
+	done; \
+	m=$$d/tmpfail; mkdir -p $$m/stars_quick.bin.tmp; printf x > $$m/stars_quick.bin.tmp/inside; printf keep > $$m/stars_quick.bin; \
+	if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$m) sim/tools/catalogue_main.ail 2>$$d/tmpfail.txt; \
+	then echo "catalogue-main: unwritable bin temp was accepted"; exit 1; fi; \
+	test "$$(ls -A $$m | tr '\n' ' ')" = "stars_quick.bin stars_quick.bin.tmp "; test "$$(cat $$m/stars_quick.bin)" = keep; \
+	grep -q "cannot write .*stars_quick.bin.tmp.*nothing changed" $$d/tmpfail.txt; \
+	echo "catalogue-main bin-temp write: checked Err, old bin untouched ($$(cat $$d/tmpfail.txt))"
+
+.PHONY: sky-vm
+sky-vm:           ## M1.4b sky-model fitter (pure core): strict VM and interpreter must both print sky-ok
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry skyVm --args-json 0 sim/tools/sky_model_test.ail > $(SCRATCH)/sky-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry skyVm --args-json 0 sim/tools/sky_model_test.ail > $(SCRATCH)/sky-interp.txt
+	@cmp $(SCRATCH)/sky-vm.txt $(SCRATCH)/sky-interp.txt && test "$$(cat $(SCRATCH)/sky-vm.txt)" = "sky-ok" && echo "sky-vm: $$(cat $(SCRATCH)/sky-vm.txt) (strict VM = interpreter)"
+
+SKY := data/raw/background
+.PHONY: sky-model
+sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (Godot I/O, AILANG fit, ~12 min); report to data/sky/
+	$(GODOT) --headless --path . --script tools/sky_colours.gd -- histogram $(SKY)/noirlab_10k_destarred.png $(SKY)/colours.csv
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+	  --args-json '{"colours":"$(SKY)/colours.csv","fits":"$(SKY)/fits.csv","report":"data/sky/sky_model_report.json","size":"[10000, 5000]"}' \
+	  sim/tools/sky_model.ail
+	$(GODOT) --headless --path . --script tools/sky_colours.gd -- paint $(SKY)/noirlab_10k_destarred.png $(SKY)/fits.csv $(SKY)/noirlab_10k_skymodel.png
+
+# M1.4d: the sky textures are generated, not committed (two ~80 MB PNGs). `make sky-assets`
+# rebuilds them byte for byte from pinned downloads; data/sky/SHA256SUMS pins inputs AND outputs.
+STARMAP_SCRIPTS := .claude/skills/starmap-manager/scripts
+.PHONY: sky-inputs destar sky-assets sky-verify sky-bundle
+sky-inputs: catalogue-inputs   ## M1.4d: sky pipeline inputs into data/raw: the public bucket first (D-18), then the original sources; check pins
+	@sh tools/sky_assets.sh fetch inputs || echo "sky-inputs: bucket incomplete; falling back to the original sources"
+	@test -f $(SKY)/noirlab_10k.tif || bash $(STARMAP_SCRIPTS)/download_background.sh raw
+	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
+
+# M1.2c: the catalogue inputs (CNS5 cns5.dat + cns5.csv, GCNS table1c.dat.gz + gcns.csv; M1.2d: HIP2
+# hip2.dat.gz + hip_main.dat), pinned in data/sky/SHA256SUMS: the bucket first, then VizieR
+# (download_stars.sh) and extract.ail for whatever is absent.
+CAT_INPUTS := data/raw/(cns5\.dat|cns5\.csv|table1c\.dat\.gz|gcns\.csv|hip2\.dat\.gz|hip_main\.dat)$$
+catalogue-inputs: ## M1.2c: catalogue tier inputs into data/raw (bucket, else VizieR + extract.ail); check their pins
+	@sh tools/sky_assets.sh fetch inputs '$(CAT_INPUTS)' || echo "catalogue-inputs: bucket incomplete; falling back to VizieR"
+	@test -f data/raw/table1c.dat.gz || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
+	@test -f data/raw/cns5.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh quick
+	@test -f data/raw/hip2.dat.gz -a -f data/raw/hip_main.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh bright
+	@test -f data/raw/cns5.csv || $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
+	@test -f data/raw/gcns.csv || { gunzip -kf data/raw/table1c.dat.gz && $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail; }
+	@sh tools/sky_assets.sh verify inputs '$(CAT_INPUTS)'
+
+sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in seconds, else regenerate (inputs -> destar -> sky model, ~15 min)
+	@if sh tools/sky_assets.sh fetch textures; then $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures; \
+	else echo "sky-assets: textures not in the bucket; regenerating"; $(MAKE) --no-print-directory sky-regen; fi
+
+sky-regen: sky-inputs destar sky-model   ## M1.4d: full regeneration; outputs must match data/sky/SHA256SUMS
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=all
+
+# Starmap tiers too large for git (D-18; starmap-large-tier-and-reach.md L1): the large tier, pinned in
+# data/starmap/SHA256SUMS, fetched from gs://stapledons-voyage-assets/starmap/<sha256>.<ext>.
+.PHONY: starmap-assets starmap-publish
+starmap-assets:   ## L1: the pinned large tier (331,311 GCNS stars, truth positions) from the public bucket in seconds, else rebuilt from the pinned inputs; sha256-checked
+	@if sh tools/starmap_assets.sh fetch; then sh tools/starmap_assets.sh verify; \
+	else echo "starmap-assets: not in the bucket; rebuilding (make catalogue-inputs + catalogue TIER=large)"; \
+	  $(MAKE) --no-print-directory catalogue-inputs catalogue TIER=large AILANG=$(AILANG) && sh tools/starmap_assets.sh verify; fi
+
+starmap-publish:  ## D-18 maintainers (gcloud auth): upload the pinned tiers to gs://stapledons-voyage-assets/starmap/<sha256>.<ext> (never overwrites)
+	sh tools/starmap_assets.sh publish
+
+# M3.2 (R1-M3-BLACK-HOLES): the Schwarzschild lens tables (2 x 4 MiB float32), generated by AILANG on the
+# VM from sunholo/relativity 0.10.0, pinned in data/lens/SHA256SUMS, fetched from
+# gs://stapledons-voyage-assets/lens/<sha256>.<ext> (D-18, D-53). The headers are committed; the bins are not.
+.PHONY: lens-assets lens-lut lens-lut-check lens-publish
+LENS_RUN = $(AILANG) run --quiet --package-dir sim
+lens-assets:      ## M3.2: the pinned lens tables from the public bucket in seconds, else regenerated on the VM (~15 min on 16 cores) and checked against the pins (a mismatch fails loudly)
+	@if sh tools/lens_assets.sh fetch; then sh tools/lens_assets.sh verify; \
+	else echo "lens-assets: not in the bucket; regenerating on the VM (make lens-lut)"; \
+	  $(MAKE) --no-print-directory lens-lut AILANG=$(AILANG) || { echo "lens-assets: regenerated tables do NOT match data/lens/SHA256SUMS"; exit 1; }; fi
+
+lens-lut:         ## M3.2: regenerate data/lens/lens_{fwd,inv}.{bin,json} on the VM (LENS_JOBS parallel shards; bytes independent of sharding), then verify the pins
+	AILANG=$(AILANG) sh tools/lens_assets.sh regen
+	sh tools/lens_assets.sh verify
+
+lens-lut-check:   ## M3.2 AC-6: sampled regeneration (every 32nd row x every 64th column of lens_fwd, whole sampled rows of lens_inv) is bit-identical to the pinned bins; row 128 cols 0-63 strict VM = interpreter and = the bin bytes (~2 min)
+	@mkdir -p $(SCRATCH)
+	@$(LENS_RUN) --bytecode --caps IO,FS --entry check --args-json '"data/lens"' sim/tools/lens_lut_main.ail
+	@$(LENS_RUN) --bytecode --strict-bytecode --entry rowSlice128 --args-json 64 sim/tools/lens_lut.ail > $(SCRATCH)/lens-row128-vm.txt
+	@$(LENS_RUN) --entry rowSlice128 --args-json 64 sim/tools/lens_lut.ail > $(SCRATCH)/lens-row128-interp.txt
+	@cmp $(SCRATCH)/lens-row128-vm.txt $(SCRATCH)/lens-row128-interp.txt && test "$$(wc -l < $(SCRATCH)/lens-row128-vm.txt | tr -d ' ')" = 128 && \
+	  echo "lens-lut-check: row 128 cols 0-63 (R, G) strict VM = interpreter, digest $$(shasum -a 256 $(SCRATCH)/lens-row128-vm.txt | cut -c1-16)"
+	@got=$$(od -An -t x1 -j $$((128 * 2048 * 8)) -N 512 data/lens/lens_fwd.bin | tr -d ' \n'); \
+	  want=$$($(LENS_RUN) --bytecode --strict-bytecode --entry rowSlice128Hex --args-json 64 sim/tools/lens_lut.ail); \
+	  [ "$$got" = "$$want" ] && echo "lens-lut-check: row 128 cols 0-63 strict VM = the pinned bin bytes" || { echo "lens-lut-check: row 128 cols 0-63 differ from the bin"; exit 1; }
+
+lens-publish:     ## D-53 maintainers (gcloud auth): upload the pinned lens tables to gs://stapledons-voyage-assets/lens/<sha256>.<ext> (never overwrites)
+	sh tools/lens_assets.sh publish
+
+sky-publish:      ## D-18 maintainers (gcloud auth): upload pinned sky inputs + textures to gs://stapledons-voyage-assets/sky/<sha256>.<ext> (never overwrites)
+	sh tools/sky_assets.sh publish
+
+# Godot's export skips data/raw (it has a .gdignore), so the textures are staged as byte
+# copies in sky_bundle/ (gitignored). Pinned outputs only: a texture that does not match
+# data/sky/SHA256SUMS never ships. No textures -> a warning and a black-sky build.
+sky-bundle:       ## M1.4d: stage the pinned sky textures into sky_bundle/ for the export (.png.bin, not imported)
+	@rm -rf sky_bundle
+	@if [ -f $(SKY)/noirlab_10k_destarred.png ] && [ -f $(SKY)/noirlab_10k_skymodel.png ]; then \
+	  $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures && mkdir -p sky_bundle && \
+	  cp $(SKY)/noirlab_10k_destarred.png sky_bundle/noirlab_10k_destarred.png.bin && \
+	  cp $(SKY)/noirlab_10k_skymodel.png sky_bundle/noirlab_10k_skymodel.png.bin && \
+	  echo "sky-bundle: staged $$(du -sh sky_bundle | cut -f1) of pinned sky textures"; \
+	else echo "sky-bundle: WARNING no sky textures in $(SKY); this build renders a black sky (run make sky-assets)"; fi
+
+SKY_VERIFY ?= all
+sky-verify:       ## M1.4d: sha256-check the sky inputs and generated textures against data/sky/SHA256SUMS (SKY_VERIFY=inputs|textures|all)
+	@case "$(SKY_VERIFY)" in inputs) k='input';; textures) k='texture';; *) k='input|output|texture';; esac; \
+	grep -E "^[0-9a-f]{64} +($$k) " data/sky/SHA256SUMS \
+	  | while read -r sum kind path; do \
+	      if [ "$$path" = data/raw/hip_v7.tsv ]; then got=$$(grep -v '^#' "$$path" | shasum -a 256 | cut -d' ' -f1); \
+	      else got=$$(shasum -a 256 "$$path" 2>/dev/null | cut -d' ' -f1); fi; \
+	      if [ "$$got" = "$$sum" ]; then echo "  ok      $$path"; else echo "  MISMATCH $$path (got $${got:-missing})"; exit 1; fi; \
+	    done && echo "sky-verify: $(SKY_VERIFY) match data/sky/SHA256SUMS"
+
+.PHONY: catalogue-bytes
+catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter and five ordinary VM runs
+	AILANG=$(AILANG) python3 tools/test_catalogue_bytes.py
+
+.PHONY: python-guard
+python-guard:     ## Python policy: every *.py allowlisted with a role (CLAUDE.md "Python")
+	@sh tools/python_guard.sh
+
+.PHONY: destar-test destar
+destar-test:      ## star removal core (sim/tools/destar.ail) on a synthetic panorama: strict VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry destarVm --args-json 0 sim/tools/destar_test.ail > $(SCRATCH)/destar-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry destarVm --args-json 0 sim/tools/destar_test.ail > $(SCRATCH)/destar-interp.txt
+	@cmp $(SCRATCH)/destar-vm.txt $(SCRATCH)/destar-interp.txt && test "$$(cat $(SCRATCH)/destar-vm.txt)" = "destar-ok" && echo "destar-test: $$(cat $(SCRATCH)/destar-vm.txt) (strict VM = interpreter)"
+
+destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars removed (Godot I/O, AILANG core); needs data/raw/{hip_v7.tsv,gcns.csv,cns5.csv}
+	@if [ ! -f $(SKY)/noirlab_10k.png ] || [ $(SKY)/noirlab_10k.tif -nt $(SKY)/noirlab_10k.png ]; then sips -s format png $(SKY)/noirlab_10k.tif --out $(SKY)/noirlab_10k.png; fi
+	$(GODOT) --headless --path . --script tools/destar_io.gd -- dump $(SKY)/noirlab_10k.png $(SKY)/noirlab_10k.rgb
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+	  --args-json '{"rgb":"$(SKY)/noirlab_10k.rgb","w":10000,"h":5000,"hip":"data/raw/hip_v7.tsv","gcns":"data/raw/gcns.csv","cns5":"data/raw/cns5.csv","patches":"$(SKY)/destar_patches.bin","report":"data/sky/destar_report.json"}' \
+	  sim/tools/destar.ail
+	$(GODOT) --headless --path . --script tools/destar_io.gd -- apply $(SKY)/noirlab_10k.png $(SKY)/destar_patches.bin $(SKY)/noirlab_10k_destarred.png
+
+include mk/ai.mk
+include mk/site.mk
+include mk/m5.mk
+include mk/m45.mk
+include mk/ism.mk
+include mk/navigation-usability.mk
+
+# Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
+run-ship-demo:
+	$(GODOT) --path . demos/ship_geometry_demo.tscn
+validate-ship-demo:
+	$(GODOT) --headless --path . --script tools/validate_ship_demo.gd
+ship-demo-test:
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_ship_demo.gd > $(SCRATCH)/ship-demo-test.log 2>&1; rc=$$?; tail -3 $(SCRATCH)/ship-demo-test.log; test $$rc = 0 && grep -q '^ship-demo: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-test.log
+ship-demo-capture:
+	$(GODOT) --path . --script tools/ship_demo_capture.gd
+ship-demo-stage:
+	@mkdir -p ship_demo_bundle
+	@for f in assets/ship_demo/*.glb assets/ship_demo/*.json; do cp "$$f" "ship_demo_bundle/$$(basename "$$f").bin"; done
+ship-commons-stage:
+	@mkdir -p ship_commons_bundle
+	@for name in manifest.json commons_painted.glb commons_coarse.glb collision.glb walk.glb; do cp "assets/ship_commons/$$name" "ship_commons_bundle/$$name.bin"; done
+ship-commons-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_commons.gd > $(SCRATCH)/ship-commons-test.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-commons-test.log; test $$rc = 0 && grep -q '^ship-commons: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-commons-test.log
+ship-commons-assets-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_commons_assets.gd > $(SCRATCH)/ship-commons-assets.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-commons-assets.log; test $$rc = 0 && grep -q '^ship-commons-assets: OK$$' $(SCRATCH)/ship-commons-assets.log
+	@$(GODOT) --headless --path . --script tools/validate_ship_commons.gd -- bad-envelope > $(SCRATCH)/ship-commons-negative.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-commons: FAIL$$' $(SCRATCH)/ship-commons-negative.log
+ship-commons-arcade-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_commons_arcade.gd > $(SCRATCH)/ship-commons-arcade.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-commons-arcade.log; test $$rc = 0 && grep -q '^ship-commons-arcade: OK' $(SCRATCH)/ship-commons-arcade.log
+.PHONY: ship-demo-live-test ship-demo-live-capture ship-commons-arcade-test
+ship-demo-live-test: import
+	@$(GODOT) --headless --path . --script tests/test_runtime_fingerprint.gd > $(SCRATCH)/ship-runtime-fingerprint.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-runtime-fingerprint.log; test $$rc = 0 && grep -q '^ok nested module edit invalidates bundled cache$$' $(SCRATCH)/ship-runtime-fingerprint.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_live_journey.gd > $(SCRATCH)/ship-live-sim.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-live-sim.log; test $$rc = 0 && grep -q '^ok both clocks match plan$$' $(SCRATCH)/ship-live-sim.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_demo_live.gd > $(SCRATCH)/ship-live-demo.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-live-demo.log; test $$rc = 0 && grep -q '^ok arrival stays rest$$' $(SCRATCH)/ship-live-demo.log
+ship-demo-live-capture:
+	$(GODOT_SIM) --path . --script tools/ship_demo_live_capture.gd
+validate-ship-commons:
+	$(GODOT) --headless --path . --script tools/validate_ship_commons.gd
+ship-commons-capture:
+	$(GODOT) --path . --script tools/ship_commons_capture.gd
+ship-commons-bench: ship-demo-bench
+ship-demo-assets-test:
+	$(GODOT) --headless --path . --script tests/test_ship_demo_assets.gd
+	$(GODOT) --headless --path . --script tools/validate_ship_demo.gd
+	@$(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- tests/fixtures/ship_demo/bad_height.json > $(SCRATCH)/ship-demo-negative.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-negative.log
+ship-demo-lift-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_lift.gd > $(SCRATCH)/ship-demo-lift.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-lift.log | grep -v '^  ok'; test $$rc = 0 && grep -q '^ship-demo-lift: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-lift.log
+ship-demo-smoke: validate-ship-demo ship-demo-test ship-demo-lift-test
+ship-demo-movie:
+	$(GODOT) --path . --script tools/ship_demo_movie.gd
+	ffmpeg -y -framerate 24 -i renders/ship_demo/movie/%05d.png -c:v libx264 -crf 22 -pix_fmt yuv420p -movflags +faststart renders/ship_demo/bridge_lift_roundtrip.mp4
+ship-demo-optics:
+	$(GODOT) --path . --script tools/ship_demo_optics.gd
+ship-demo-bench:
+	$(GODOT) --path . --script tools/ship_demo_bench.gd
+ship-demo-benchmark-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_benchmark.gd > $(SCRATCH)/ship-demo-benchmark.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-benchmark.log; test $$rc = 0 && grep -q '^ship-demo-benchmark: OK$$' $(SCRATCH)/ship-demo-benchmark.log
+ship-demo-geometry-negative-test:
+	@for mutation in wrong-tier wrong-tip; do $(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- assets/ship_demo/manifest.json $$mutation > $(SCRATCH)/ship-demo-$$mutation.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-$$mutation.log || exit 1; done
+export-macos: ship-demo-stage ship-commons-stage
+publish-dev: ship-demo-export-smoke # the exported ship, incl. the GR lens tables (dev.23 shipped without them)
+ship-demo-export-smoke:
+	@mkdir -p $(SCRATCH)
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); "$(APP)/Contents/MacOS/$$exe" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
+ship-demo-launch-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_launch.gd > $(SCRATCH)/ship-demo-launch.log 2>&1; rc=$$?; tail -5 $(SCRATCH)/ship-demo-launch.log; test $$rc = 0 && grep -q '^ship-demo-launch: OK$$' $(SCRATCH)/ship-demo-launch.log
+
+# Headless demo regressions are part of the normal CI suite; GPU optics stays explicit.
+test: ship-demo-ci
+ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test ship-commons-test ship-commons-assets-test validate-ship-commons ship-commons-arcade-test ship-demo-live-test
+
+ship-demo-input-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_input.gd > $(SCRATCH)/ship-demo-input.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-input.log; test $$rc = 0 && grep -q '^ship-demo-input: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-input.log
+ship-demo-journey-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_journey.gd > $(SCRATCH)/ship-demo-journey.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-journey.log; test $$rc = 0 && grep -q '^ship-demo-journey: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-journey.log
+ship-demo-sky-states:
+	AILANG_BIN=$$(command -v $(AILANG)) $(GODOT) --headless --path . --script tools/ship_demo_sky_states.gd
+ship-demo-journey-capture:
+	$(GODOT) --path . --script tools/ship_demo_journey_capture.gd
+
+# Known-star identification: actual source, GPU and packaged interactions.
+.PHONY: ship-star-identification-test ship-star-identification-capture ship-star-identification-bench ship-star-identification-export-smoke
+ship-star-identification-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_star_identification.gd > $(SCRATCH)/ship-star-identification.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-identification.log; test $$rc = 0 && grep -q '^ship-star-identification: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-star-identification.log
+ship-star-identification-capture:
+	$(GODOT_SIM) --path . --script tools/ship_star_identification_capture.gd
+ship-star-identification-bench:
+	$(GODOT_SIM) --path . --script tools/ship_star_identification_bench.gd
+ship-demo-ci: ship-star-identification-test
+.PHONY: free-nav-stop-test
+free-nav-stop-test: import ## free navigation, the real flow: commit, fly to Barnard's Star then alpha Cen A, HUD stop line, I offers the destination with its card
+	@$(GODOT_SIM) --headless --path . --script tests/test_free_nav_stop.gd > $(SCRATCH)/free-nav-stop.log 2>&1; rc=$$?; cat $(SCRATCH)/free-nav-stop.log | grep -E '^(ok|FAIL|free-nav)'; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/free-nav-stop.log && grep -q '^free-nav-stop: [0-9]* passed, 0 failures$$' $(SCRATCH)/free-nav-stop.log
+ship-demo-ci: free-nav-stop-test
+ship-star-identification-export-smoke:
+	@mkdir -p $(SCRATCH)/identify-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/identify-export-home" "$(APP)/Contents/MacOS/$$exe" -- --ship-identification-smoke > $(SCRATCH)/ship-identification-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-identification-export.log; test $$rc = 0 && grep -q '^ship-star-identification-export-smoke: OK$$' $(SCRATCH)/ship-identification-export.log
+publish-dev: ship-star-identification-export-smoke
+.PHONY: ship-demo-consolidation-test
+ship-demo-consolidation-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_demo_consolidation.gd > $(SCRATCH)/ship-demo-consolidation.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-consolidation.log; test $$rc = 0 && grep -q '^ship-demo-consolidation: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-consolidation.log
+ship-demo-ci: ship-demo-consolidation-test
+.PHONY: current-ship-export-smoke
+current-ship-export-smoke:
+	@mkdir -p $(SCRATCH)/current-ship-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 -- --ship-demo > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest deck-view single-navigation$$' $(SCRATCH)/current-ship-export.log
+publish-dev: current-ship-export-smoke
+
+# Title screen (design_docs/implemented/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
+.PHONY: title-screen-test title-capture title-export-smoke
+title-screen-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/title-screen.log && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
+ship-demo-ci: title-screen-test
+title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
+	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd
+	@for f in title settings credits; do sips -Z 700 renders/title_screen/$$f.png --out renders/title_screen/$${f}_700.png > /dev/null; done
+# Lightspeed loading view (design_docs/implemented/r1/lightspeed-loading.md): each title route through the jump, real monotone
+# progress reaching 1.0 exactly at the destination, beta 0.99999 at 100%, the prefetched sim taken, shared loads = fresh loads.
+.PHONY: loading-jump-test loading-jump-capture loading-profile
+test: loading-jump-test
+loading-jump-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_loading_jump.gd > $(SCRATCH)/loading-jump.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/loading-jump.log | grep -E '^(FAIL|loading-jump)' ; test $$rc = 0 && grep -q '^loading-jump: [0-9]* passed, 0 failures$$' $(SCRATCH)/loading-jump.log
+loading-jump-capture: ## the jump at 0/50/90/99/100 %, the white-out and its fade at 1280x720 -> renders/loading_jump/ (needs a GPU window)
+	$(GODOT) --path . --resolution 1280x720 --script tools/loading_jump_capture.gd
+	@for f in p000 p050 p090 p099 p100 whiteout fade; do sips -Z 700 renders/loading_jump/$$f.png --out renders/loading_jump/$${f}_700.png > /dev/null; done
+loading-profile:   ## where each title route's load time goes: pieces, then each route through the jump (needs a GPU window)
+	$(GODOT_SIM) --path . --resolution 1280x720 --script tools/loading_profile.gd -- --pieces 2>&1 | grep '^loading-profile'
+	@for r in ship guided map; do LOADING_ROUTE=$$r $(GODOT_SIM) --path . --resolution 1280x720 --script tools/loading_profile.gd 2>&1 | grep -E '^loading-(jump|profile): (route|title|[a-z]+ ready)'; done
+# The exported .app on a plain double-click opens the title screen over the bundled sky, with its build id.
+title-export-smoke:
+	@mkdir -p $(SCRATCH)/title-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/title-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 120 > $(SCRATCH)/title-export.log 2>&1; rc=$$?; grep '^title-screen' $(SCRATCH)/title-export.log; test $$rc = 0 && grep -q '^title-screen: OK 6 buttons, sky on, build ' $(SCRATCH)/title-export.log && ! grep -q '^title-screen: OK .*build source checkout$$' $(SCRATCH)/title-export.log
+publish-dev: title-export-smoke
+
+.PHONY: ship-movement-test map-origin-test ship-planets-test ship-lighting-capture ship-lighting-test ship-lighting-bench
+ship-movement-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_movement.gd > $(SCRATCH)/ship-movement.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-movement.log; test $$rc = 0 && grep -q '^ship-movement: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-movement.log
+map-origin-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_map_origin.gd > $(SCRATCH)/map-origin.log 2>&1; rc=$$?; cat $(SCRATCH)/map-origin.log; test $$rc = 0 && grep -q '^map-origin: [0-9]* passed, 0 failures$$' $(SCRATCH)/map-origin.log
+ship-planets-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_planets.gd > $(SCRATCH)/ship-planets.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-planets.log; test $$rc = 0 && grep -q '^ship-planets: [0-9]* passed, 0 failed$$' $(SCRATCH)/ship-planets.log
+ship-lighting-capture:
+	@$(GODOT_SIM) --path . --script tools/ship_lighting_capture.gd > $(SCRATCH)/ship-lighting-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-lighting-capture.log; test $$rc = 0 && grep -q '^ship-lighting-capture: OK$$' $(SCRATCH)/ship-lighting-capture.log
+ship-lighting-test: ship-lighting-capture
+ship-lighting-bench:
+	$(GODOT_SIM) --path . --script tools/ship_lighting_bench.gd
+ship-demo-ci: ship-movement-test map-origin-test ship-planets-test
+
+# R1-SHIP-STAR-LIGHT: the real star's light on the ship (direction, colour, compressed energy).
+.PHONY: ship-star-light-test ship-star-light-capture ship-star-light-bench
+ship-star-light-test: import
+	@$(GODOT) --headless --path . --script tests/test_ship_star_light.gd > $(SCRATCH)/ship-star-light.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light.log; test $$rc = 0 && grep -q '^ship-star-light: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-star-light.log
+ship-star-light-capture:
+	@$(GODOT_SIM) --path . --script tools/ship_star_light_capture.gd > $(SCRATCH)/ship-star-light-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-star-light-capture.log && grep -q '^ship-star-light-capture: OK$$' $(SCRATCH)/ship-star-light-capture.log
+ship-star-light-bench:
+	@$(GODOT) --path . --script tools/ship_star_light_bench.gd > $(SCRATCH)/ship-star-light-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-bench.log; test $$rc = 0 && grep -q '^ship-star-light-bench: OK$$' $(SCRATCH)/ship-star-light-bench.log
+ship-demo-ci: ship-star-light-test
+.PHONY: trappist1-test
+trappist1-test:    ## TRAPPIST-1 planets (trappist1-planets-sprint.md): snapshot pin, sim checks strict VM = interpreter, and the Python orbit/transcription oracle
+	@mkdir -p $(SCRATCH)
+	@tools/fetch_trappist1.sh --verify
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry trappistVm --args-json 0 sim/trappist1_test.ail > $(SCRATCH)/trappist1-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry trappistVm --args-json 0 sim/trappist1_test.ail > $(SCRATCH)/trappist1-interp.txt
+	@cmp -s $(SCRATCH)/trappist1-vm.txt $(SCRATCH)/trappist1-interp.txt || { echo "trappist1-test: strict VM != interpreter"; diff $(SCRATCH)/trappist1-vm.txt $(SCRATCH)/trappist1-interp.txt | head; exit 1; }
+	@python3 tools/check_trappist1.py $(SCRATCH)/trappist1-vm.txt
+.PHONY: trappist1-capture
+trappist1-capture: ## TB6 renders at the TRAPPIST-1 habitable-zone stop -> renders/trappist1/*.png (GPU window; open them)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/trappist1_capture.gd > $(SCRATCH)/trappist1-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/trappist1-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/trappist1-capture.log
+
+.PHONY: catalogue-coverage-test solar-departure-test
+catalogue-coverage-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_catalogue_coverage.gd > $(SCRATCH)/catalogue-coverage.log 2>&1; rc=$$?; cat $(SCRATCH)/catalogue-coverage.log; test $$rc = 0 && grep -q '^catalogue-coverage: [0-9]* passed, 0 failures$$' $(SCRATCH)/catalogue-coverage.log
+solar-departure-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_solar_departure.gd > $(SCRATCH)/solar-departure.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure.log; test $$rc = 0 && grep -q '^solar-departure: [0-9]* passed, 0 failures$$' $(SCRATCH)/solar-departure.log
+ship-demo-ci: catalogue-coverage-test solar-departure-test
+
+.PHONY: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test solar-departure-capture solar-departure-export-smoke
+flyby-optics-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_flyby_optics.gd > $(SCRATCH)/flyby-optics.log 2>&1; rc=$$?; cat $(SCRATCH)/flyby-optics.log; test $$rc = 0 && grep -q '^flyby-optics: [0-9]* checks, 0 failures$$' $(SCRATCH)/flyby-optics.log
+planet-rings-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_planet_rings.gd > $(SCRATCH)/planet-rings.log 2>&1; rc=$$?; cat $(SCRATCH)/planet-rings.log; test $$rc = 0 && grep -q '^planet-rings: [0-9]* checks 0 failures$$' $(SCRATCH)/planet-rings.log
+ring-protocol-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ring_protocol.gd > $(SCRATCH)/ring-protocol.log 2>&1; rc=$$?; cat $(SCRATCH)/ring-protocol.log; test $$rc = 0 && grep -q '^ring-protocol: 0 failures$$' $(SCRATCH)/ring-protocol.log
+planet-meter-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_planet_meter.gd > $(SCRATCH)/planet-meter.log 2>&1; rc=$$?; cat $(SCRATCH)/planet-meter.log; test $$rc = 0 && grep -q '^planet-meter: [0-9]* checks 0 failures$$' $(SCRATCH)/planet-meter.log
+ship-demo-ci: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test
+solar-departure-capture:
+	@$(GODOT_SIM) --path . --script tools/solar_departure_capture.gd > $(SCRATCH)/solar-departure-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/solar-departure-capture.log && grep -q '^solar-departure-capture: OK$$' $(SCRATCH)/solar-departure-capture.log
+.PHONY: solar-departure-bench
+solar-departure-bench:
+	@$(GODOT_SIM) --path . --script tools/solar_departure_bench.gd > $(SCRATCH)/solar-departure-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-bench.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/solar-departure-bench.log && grep -q '^solar-departure-bench: OK$$' $(SCRATCH)/solar-departure-bench.log
+solar-departure-export-smoke:
+	@mkdir -p $(SCRATCH)/solar-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/solar-export-home" "$(APP)/Contents/MacOS/$$exe" -- --solar-departure-smoke > $(SCRATCH)/solar-export.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-export.log; test $$rc = 0 && grep -q '^solar-departure-smoke: OK$$' $(SCRATCH)/solar-export.log
+publish-dev: solar-departure-export-smoke
+
+# Large tier in the exported app (eval R1-STARMAP-LARGE round 1): the .app's default sky is the large tier
+# (331,311 rows, bundled from data/starmap/ by export-macos -> starmap-assets); prints its peak RSS at the sky scene.
+.PHONY: starmap-export-smoke
+starmap-export-smoke:
+	@mkdir -p $(SCRATCH)/starmap-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/starmap-export-home" /usr/bin/time -l "$(APP)/Contents/MacOS/$$exe" -- --starmap-smoke > $(SCRATCH)/starmap-export.log 2>&1; rc=$$?; \
+	  grep -E '^starmap-smoke:' $(SCRATCH)/starmap-export.log; echo "starmap-export-smoke: peak RSS $$(awk '/maximum resident set size/{printf "%.0f MB", $$1/1048576}' $(SCRATCH)/starmap-export.log), app $$(du -sh "$(APP)" | cut -f1)"; \
+	  test $$rc = 0 && grep -q '^starmap-smoke: OK$$' $(SCRATCH)/starmap-export.log
+export-smoke: starmap-export-smoke
+
+.PHONY: ship-attitude-test
+ship-attitude-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_attitude.gd > $(SCRATCH)/ship-attitude.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-attitude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-attitude.log && grep -q '^ship-attitude: 0 failures$$' $(SCRATCH)/ship-attitude.log
+ship-demo-ci: ship-attitude-test
+.PHONY: benchmark-upload-test
+benchmark-upload-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_benchmark_upload.gd > $(SCRATCH)/benchmark-upload.log 2>&1; rc=$$?; cat $(SCRATCH)/benchmark-upload.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/benchmark-upload.log && grep -q '^benchmark-upload: 0 failures$$' $(SCRATCH)/benchmark-upload.log
+ship-demo-ci: benchmark-upload-test
+.PHONY: shadow-contacts-test
+shadow-contacts-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_shadow_contacts.gd > $(SCRATCH)/shadow-contacts.log 2>&1; rc=$$?; cat $(SCRATCH)/shadow-contacts.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/shadow-contacts.log && grep -q '^shadow-contacts: 0 failures$$' $(SCRATCH)/shadow-contacts.log
+ship-demo-ci: shadow-contacts-test
+.PHONY: tour-attitude-test
+tour-attitude-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_tour_attitude.gd > $(SCRATCH)/tour-attitude.log 2>&1; rc=$$?; cat $(SCRATCH)/tour-attitude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/tour-attitude.log && grep -q '^tour-attitude: 0 failures$$' $(SCRATCH)/tour-attitude.log
+ship-demo-ci: tour-attitude-test
+.PHONY: bridge-floor-test
+bridge-floor-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_bridge_floor.gd > $(SCRATCH)/bridge-floor.log 2>&1; rc=$$?; cat $(SCRATCH)/bridge-floor.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bridge-floor.log && grep -q '^bridge-floor: [0-9]* passed, 0 failures$$' $(SCRATCH)/bridge-floor.log
+ship-demo-ci: bridge-floor-test
+
+include mk/planet-presentation.mk
+
+.PHONY: sim-bootstrap-test
+sim-bootstrap-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_sim_bootstrap.gd > $(SCRATCH)/sim-bootstrap.log 2>&1; rc=$$?; cat $(SCRATCH)/sim-bootstrap.log; test $$rc = 0 && grep -q '^sim-bootstrap: [0-9]* checks 0 failures$$' $(SCRATCH)/sim-bootstrap.log
+ship-demo-ci: sim-bootstrap-test
+
+.PHONY: tour-pacing-test
+tour-pacing-test: import
+	@$(GODOT) --headless --path . --script tests/test_tour_pacing.gd > $(SCRATCH)/tour-pacing.log 2>&1; rc=$$?; cat $(SCRATCH)/tour-pacing.log; test $$rc = 0 && grep -q "^tour-pacing: 0 failures$$" $(SCRATCH)/tour-pacing.log
+	@$(GODOT) --headless --path . --script tests/test_destination_pin.gd > $(SCRATCH)/destination-pin.log 2>&1; rc=$$?; cat $(SCRATCH)/destination-pin.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/destination-pin.log && grep -q "^destination-pin: 0 failures$$" $(SCRATCH)/destination-pin.log
+	@$(GODOT) --headless --path . --script tests/test_cruise_interlude.gd > $(SCRATCH)/cruise-interlude.log 2>&1; rc=$$?; cat $(SCRATCH)/cruise-interlude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/cruise-interlude.log && grep -q "^cruise-interlude: 0 failures$$" $(SCRATCH)/cruise-interlude.log
+ship-demo-ci: tour-pacing-test
+
+# R1-SHIP-UI (D-56, design_docs/implemented/r1/ship-ui-hud-consoles.md): the HUD informs, the bridge consoles decide.
+.PHONY: ship-ui-test
+ship-ui-test: import ## AC1-3, 7, 11: status strip in every scene state, contextual cards, control table <-> key handler, dev gating
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_ui.gd > $(SCRATCH)/ship-ui.log 2>&1; rc=$$?; grep -E '^(FAIL|ship-ui)' $(SCRATCH)/ship-ui.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui.log && grep -q '^ship-ui: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-ui.log
+ship-demo-ci: ship-ui-test
+.PHONY: ship-console-test no-twitch-test ship-ui-window-check
+ship-console-test: import ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach and facing, dolly, confirms, helm/chart, Voyage, Archive, Sgr A*, Walk to
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_consoles.gd > $(SCRATCH)/ship-consoles.log 2>&1; rc=$$?; grep -E '^(FAIL|path|ship-consoles)' $(SCRATCH)/ship-consoles.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-consoles.log && grep -q '^ship-consoles: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-consoles.log
+sim-pipeline-test: import ## performance pass: pipelined heartbeat ticks end in the same world, journal and crew as synchronous ones, and free the main thread
+	@$(GODOT_SIM) --headless --path . --script tests/test_sim_pipeline.gd > $(SCRATCH)/sim-pipeline.log 2>&1; rc=$$?; grep -E '^(FAIL|heartbeat|sim-pipeline)' $(SCRATCH)/sim-pipeline.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sim-pipeline.log && grep -q '^sim-pipeline: 0 failures$$' $(SCRATCH)/sim-pipeline.log
+frame-check-test: import ## B frame check: measures play in any launch, changes nothing, reports the sim's share (Mark 2026-10-14)
+	@$(GODOT_SIM) --headless --path . --script tests/test_frame_check.gd > $(SCRATCH)/frame-check.log 2>&1; rc=$$?; grep -E '^(FAIL|frame check|frame-check)' $(SCRATCH)/frame-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/frame-check.log && grep -q '^frame-check: 0 failures$$' $(SCRATCH)/frame-check.log
+no-twitch-test: import ## AC4, 5 (NT1, NT2): no decision from any key, click or gesture in four states; no deadlines over 600 s of fake time
+	@$(GODOT_SIM) --headless --path . --script tests/test_no_twitch.gd > $(SCRATCH)/no-twitch.log 2>&1; rc=$$?; grep -E '^(FAIL|no-twitch)' $(SCRATCH)/no-twitch.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/no-twitch.log && grep -q '^no-twitch: [0-9]* passed, 0 failures$$' $(SCRATCH)/no-twitch.log
+SCRIPT ?= tests/playthrough_min.json
+AI ?= none
+PLAYTHROUGH_OUT ?= $(SCRATCH)/playthrough
+.PHONY: playthrough playthrough-adversarial playthrough-negative
+playthrough: import ## M4.5aR3: walk the current ship through a JSON script; record session, events and displays
+	@mkdir -p $(PLAYTHROUGH_OUT)
+	@$(GODOT_SIM) --headless --path . --script tests/m4_playthrough_ship.gd -- $(SCRIPT) $(PLAYTHROUGH_OUT) $(AI) > $(PLAYTHROUGH_OUT)/run.log 2>&1; rc=$$?; grep -E '^(FAIL|walk|pole|session|playthrough)' $(PLAYTHROUGH_OUT)/run.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(PLAYTHROUGH_OUT)/run.log && grep -q '^playthrough: [0-9]* passed, 0 failures$$' $(PLAYTHROUGH_OUT)/run.log
+playthrough-adversarial: ## M4.5aR3 AC3: re-plan, cancel and commit during transit
+	@$(MAKE) --no-print-directory playthrough SCRIPT=tests/adversarial.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/adversarial
+playthrough-negative: import ## M4.5aR3: driver failures must exit nonzero for the declared reason
+	@mkdir -p $(SCRATCH)/playthrough
+	@GODOT='$(GODOT)' AILANG_BIN="$$(command -v $(AILANG))" sh tests/test_playthrough.sh
+ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude display-audit-crew
+ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation station) in a real GPU window: open, click-select, hold-commit -> renders/ship_ui/window_check_*.png
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/ship_ui_window_check.gd > $(SCRATCH)/ship-ui-window-check.log 2>&1; rc=$$?; grep -E '^(host|click|held|ship-ui-window-check)' $(SCRATCH)/ship-ui-window-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-window-check.log && grep -q '^ship-ui-window-check: OK$$' $(SCRATCH)/ship-ui-window-check.log
+.PHONY: ship-ui-capture
+ship-ui-capture: ## AC14: the ship UI's review frames at 1280x720 and 2560x1440 + contact sheet -> renders/ship_ui/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/ship_ui_capture.gd > $(SCRATCH)/ship-ui-capture.log 2>&1; rc=$$?; grep -E '^(frame|ship-ui-capture)' $(SCRATCH)/ship-ui-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-capture.log && grep -q '^ship-ui-capture: OK' $(SCRATCH)/ship-ui-capture.log
+	@for f in renders/ship_ui/*_1280x720.png renders/ship_ui/contact_sheet.png; do sips -Z 700 $$f --out $${f%.png}_700.png > /dev/null; done
+
+# ---- M4.7: the Archive codex's lore (design m4-first-journey.md "M4.7")
+D ?= ../stapledons-design
+LORE_DATA ?= data/lore
+LORE ?=
+CHECK ?=
+LORE_ENV = D=$(D) LORE_DATA=$(LORE_DATA) AILANG=$(AILANG) SCRATCH=$(SCRATCH) LORE=$(LORE)
+
+.PHONY: lore-import lore-import-check lore-values lore-check lore-test lore-import-test
+
+lore-import:       ## M4.7 AC17: copy the design repo's lore (git objects at D's HEAD) into data/lore + manifest; CHECK=1 verifies the manifest (fail-closed, offline) and, where D has its sha, the design repo
+	@mkdir -p $(SCRATCH)
+	@if [ "$(CHECK)" = 1 ]; then $(LORE_ENV) sh tools/lore_import.sh check; else $(LORE_ENV) sh tools/lore_import.sh import; fi
+
+lore-import-check: ## M4.7 AC17 (in make test): lore-import CHECK=1
+	@$(MAKE) --no-print-directory lore-import CHECK=1
+
+lore-values:       ## M4.7 AC8/AC15: the check-value registry data/lore/check_values.json; fails unless package values equal their HB rows at printed s.f. and eps <= HB-61
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry values --args-json '{"dir":"$(LORE_DATA)","out":"$(LORE_DATA)/check_values.json"}' sim/tools/lore_values.ail
+
+lore-check: lore-values  ## M4.7 AC15: every entry's unlock is a known hint, every checks id resolves, every number binds (LORE=file|dir checks that instead, e.g. LORE=tests/fixtures/lore/drifted.md must fail)
+	@$(LORE_ENV) sh tools/lore_check.sh
+
+lore-test:         ## M4.7 lore binding, registry and checker: strict VM = interpreter, then the positive controls (drifted.md, unknown hint, unresolved id) on the real files
+	@mkdir -p $(SCRATCH)
+	@for m in lore_test:loreVm lore_check_test:loreCheckVm lore_values_test:loreValuesVm; do f=$${m%%:*}; e=$${m##*:}; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-vm.txt 2>&1; \
+	  env -u AI_LIVE $(AILANG) run --quiet --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-interp.txt 2>&1; \
+	  cmp $(SCRATCH)/$$f-vm.txt $(SCRATCH)/$$f-interp.txt && grep -q -- '-ok$$' $(SCRATCH)/$$f-vm.txt || { echo "lore-test: $$f FAILED"; cat $(SCRATCH)/$$f-vm.txt $(SCRATCH)/$$f-interp.txt; exit 1; }; \
+	  echo "lore-test: $$f: $$(cat $(SCRATCH)/$$f-vm.txt) (strict VM = interpreter)"; done
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry loreValuesReal --args-json '"$(LORE_DATA)"' sim/tools/lore_values_test.ail | grep -q -- '-ok$$' || { echo "lore-test: the real HB rows disagree with the package"; exit 1; }
+	@echo "lore-test: the ten AC8/AC15 HB rows (16 17 35 40 41 45 49 53 54 61) agree with the package at printed s.f."
+	@$(MAKE) --no-print-directory lore-values
+	@AILANG=$(AILANG) sh tests/test_lore_check.sh
+	@AILANG=$(AILANG) SCRATCH=$(SCRATCH) sh tests/test_lore_import.sh
+
+.PHONY: codex-test
+news-lint:         ## M4.4 template lint: numerals only in {slots}, five tiers of four, 280 characters filled, fixed labels and reason phrases digit-free; the stray-digit fixture must fail
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tools/news_lint.gd > $(SCRATCH)/news-lint.log 2>&1; rc=$$?; grep '^news-lint' $(SCRATCH)/news-lint.log; \
+	  test $$rc = 0 && grep -q '^news-lint: ok$$' $(SCRATCH)/news-lint.log || { echo "news-lint: FAILED on data/news (log $(SCRATCH)/news-lint.log)"; exit 1; }
+	@$(GODOT) --headless --path . --script tools/news_lint.gd -- res://tests/fixtures/news/stray_digit.json > $(SCRATCH)/news-lint-bad.log 2>&1; rc=$$?; \
+	  test $$rc = 1 && grep -q 'a numeral outside a slot' $(SCRATCH)/news-lint-bad.log || { echo "news-lint: the stray-digit fixture did NOT fail the lint (rc=$$rc)"; cat $(SCRATCH)/news-lint-bad.log; exit 1; }
+	@echo "news-lint: the stray-digit fixture fails as it must"
+
+news-test:         ## M4.4 news panel (template / ai / fallback renderings), reason table, return trip, legacy screen + Begin again, over the real sim (headless)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_news.gd > $(SCRATCH)/news-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/news-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/news-test.log && grep -q '^news: [0-9]* passed, 0 failures$$' $(SCRATCH)/news-test.log || { echo "news-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/news-test.log)"; exit 1; }
+
+codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Markdown subset, locked/greyed rows, toasts, LoreBinding, the real sim's minimum-path unlocks vs tests/expected_unlocks.json (headless)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/codex-test.log && grep -q '^codex: [0-9]* passed, 0 failures$$' $(SCRATCH)/codex-test.log || { echo "codex-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/codex-test.log)"; exit 1; }
+
+# R2-CAMERA (design_docs/implemented/r2/camera-fixed-views.md): the camera director, three fixed zoom levels,
+# the envelope and clear-line sweep, gesture steps, sectors, motion, the developer free camera.
+.PHONY: camera-test
+ship-demo-ci: camera-test
+camera-test: import ## R2-CAMERA AC1-5, 7, 9: views.json schema, |eye| <= 95 m and a clear line from every walk sample, one level per notch/unit/pinch, Z2 60-80 px, hysteresis, no jumps, reduced motion, F8 dev-only
+	@$(GODOT_SIM) --headless --path . --script tests/test_camera_director.gd > $(SCRATCH)/camera-test.log 2>&1; rc=$$?; grep -E '^(FAIL|figure|transitions|camera-director)' $(SCRATCH)/camera-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-test.log && grep -q '^camera-director: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-test.log
+
+# R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, D-91, D-92): travel toward the bow,
+# one fixed Bow / Astern stage view that slides with the captain, and the one named map per frame.
+BASIS_GATE_RE := \[2\], *-[a-z_.]*\[1\]|\.x, *-[a-z_.]*\.z, *[a-z_.]*\.y|-[a-z_.]*\.x, *[a-z_.]*\.y, *-[a-z_.]*\.z
+.PHONY: camera-forward-test basis-gate
+basis-gate: ## AC-B1: no inline structure or kinematic conversion outside ShipFrame.gltf_from_structure / ShipCamera.ship_vector (positive control: tests/fixtures/basis_gate/inline.gd.txt must be caught)
+	@n=$$(git ls-files '*.gd' | xargs grep -nE '$(BASIS_GATE_RE)' | grep -vE '^(interior/ship_frame|demos/ship_demo_camera)\.gd:' | tee /dev/stderr | wc -l | tr -d ' '); \
+	  c=$$(grep -cE '$(BASIS_GATE_RE)' tests/fixtures/basis_gate/inline.gd.txt); \
+	  test "$$n" = 0 && test "$$c" -ge 3 && echo "basis-gate: ok (0 inline conversions; the control's $$c caught)" || { echo "basis-gate: FAIL ($$n inline conversion(s) outside the named maps, control caught $$c of 3)"; exit 1; }
+camera-forward-test: import basis-gate ## R2-CAMERA-FORWARD AC-B2, AC-V1..V8, V10..V12: R proper, Bow/Astern constant yaw over the 16-sample walk, pole and starbow in frame, clear after fades, 60-80 px, W/D after switches, the stop body and the Sgr A* hole in frame, switch eases <= 90 deg/s or cut, console round trip exact, slide envelope, level defaults, deterministic poses, fades leave the sky alone
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_camera_forward.gd > $(SCRATCH)/camera-forward-test.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward)' $(SCRATCH)/camera-forward-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-test.log && grep -q '^camera-forward: [0-9]* passed, 0 failures$$' $(SCRATCH)/camera-forward-test.log
+ship-demo-ci: camera-forward-test
+.PHONY: guided-finale-test
+guided-finale-test: import ## the guided voyage's last stop is Sgr A* (after the dwell, or N), the hole ahead on the rendered sky; the navigation entry still works
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_guided_finale.gd > $(SCRATCH)/guided-finale-test.log 2>&1; rc=$$?; grep -E '^(FAIL|guided-finale)' $(SCRATCH)/guided-finale-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/guided-finale-test.log && grep -q '^guided-finale: [0-9]* passed, 0 failures$$' $(SCRATCH)/guided-finale-test.log
+ship-demo-ci: guided-finale-test
+.PHONY: camera-forward-targets
+camera-forward-targets: import ## R2-CAMERA-FORWARD AC-V6 fixture: record the live first guided stop and every Sgr A* stop -> tests/fixtures/camera_forward/targets.json (headless; re-run when the itinerary, the stop turn or the visit changes, and commit the diff)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --headless --path . --script tools/camera_forward_targets.gd > $(SCRATCH)/camera-forward-targets.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-forward-targets)' $(SCRATCH)/camera-forward-targets.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-targets.log && grep -q 'Sgr A\* stops, 0 failures$$' $(SCRATCH)/camera-forward-targets.log
+.PHONY: camera-forward-review
+camera-forward-review: import ## R2-CAMERA-FORWARD F1 review set: Bow at rest (spawn, helm, the spire faded), Astern, Bow at 0.99c, Bow at the first guided stop and after a 3 m walk -> renders/camera_forward/*.png + review.json (GPU window; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_forward_review.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-forward-review.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|bow_stop_walk|camera-forward-review)' $(SCRATCH)/camera-forward-review.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-forward-review.log && grep -q '^camera-forward-review: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-forward-review.log
+.PHONY: camera-walk-capture
+camera-walk-capture: import ## R2-CAMERA-FORWARD AC-R1 evidence: the director's Bow (rest, 0.99c cruise) and Astern (rest) over the 16-sample bridge walk -> renders/camera_walk/*.png + contact_sheet.png + walk.json (GPU window; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_walk_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-walk-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|camera-walk)' $(SCRATCH)/camera-walk-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-walk-capture.log && grep -q '^camera-walk-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-walk-capture.log
+
+.PHONY: bh-ahead-capture
+bh-ahead-capture: import ## Mark 2026-10-20: the guided voyage's final stop and every Sgr A* stop after flying the last leg, Bow view with the HUD -> renders/bh_ahead/<tag>/ (GPU window; CAPTURE_ARGS="-- --tag=before"; open every frame)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/bh_ahead_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/bh-ahead-capture.log 2>&1; rc=$$?; grep -E '^(FAIL|bh-ahead-capture|tour_|sgr_a)' $(SCRATCH)/bh-ahead-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bh-ahead-capture.log
+.PHONY: camera-views-capture
+camera-views-capture: import ## R2-CAMERA-FORWARD AC-R1: Bow, Astern, the legacy Commons and the lift at rest, 0.99c, a guided stop and Sgr A* (1280x720 and 2560x1440; CAPTURE_ARGS="-- --quick" for 720p), a forced-fade frame, a real voyage at 0.9/0.99/0.999c and every Sgr A* stop -> renders/camera_views/*.png (GPU window; open every frame). Fails on |eye| > 95 m, no captain in frame, or Bow not framing the pole, the stop body or the hole
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/camera_views_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/camera-views-capture.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|camera-views-capture)' $(SCRATCH)/camera-views-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/camera-views-capture.log && grep -q '^camera-views-capture: [0-9]* frames, 0 failures$$' $(SCRATCH)/camera-views-capture.log
+
+# D-63 attended navigation recovery: genuine body clearance, stable controls and scoped parity.
+.PHONY: free-nav-recovery-test
+ship-demo-ci: free-nav-recovery-test
+free-nav-recovery-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_free_nav_recovery.gd > $(SCRATCH)/free-nav-recovery.log 2>&1; rc=$$?; grep -E '^(FAIL|free-nav-recovery)' $(SCRATCH)/free-nav-recovery.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/free-nav-recovery.log && grep -q '^free-nav-recovery: [0-9]* passed, 0 failures$$' $(SCRATCH)/free-nav-recovery.log
+	@$(AILANG) test --strict-bytecode sim/free_nav_test.ail
+	@$(AILANG) run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.vm.ndjson
+	@$(AILANG) run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.interp.ndjson
+	@cmp $(SCRATCH)/free-nav-recovery.vm.ndjson $(SCRATCH)/free-nav-recovery.interp.ndjson
+
+.PHONY: in-world-voice-check
+VOICE_RE := \b(game|games|gameplay|approximation|approximate[ds]?|hand.?wav(e|ed|ing)|invented|fiction(al)?|simulat(ion|ed|or|e)|renderer|shader|hypothetical|placeholder|player|toy|sandbox)\b
+## D-68: the loop is the secret (stapledons-design vision/premise-and-loop.md §4); in-world text never hints at it.
+SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past (runs|voyages|universes|lives)|re-?runs?|new game\+?|begin(ning)? again|start(ing)? over|multiverse|reset(s|ting)? the (bubble|ship|universe|voyage))\b
+## Mark, 2026-10-13: the Archive and every AI character are sandboxed. No model is told the lore's mechanics (the loop,
+## the reset, the pocket universe, the selection) and infers what it can from evidence. What it sees
+## (its cast, its prompt golden, the canon it cites) names none of them.
+SANDBOX_RE := \b(loops?|looping|reset(s|ting)?|pocket universes?|universes?|multiverse|luck(y|ier)?|selection|selected|chosen|happened before|d[eé]j[aà] vu|variations? of|iterations?|anthropic|crossing(s)? before)\b
+SANDBOX_SEEN := $(wildcard data/ai/cast/*.json) $(wildcard tests/ai/prompts/*.golden.txt) ui/archive_narration.gd
+VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd ui/crossing_review.gd ui/archive_narration.gd sim/cruise_digest.ail
+## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
+SPOILER_UI := demos/ship_consoles.gd
+in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the Archive's AI prompt (its golden) and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)
+	@bad=$$(grep -n -i -E '$(VOICE_RE)|$(SPOILER_RE)' $$(ls data/lore/archive/*.md | grep -v '/README.md$$') data/news/templates.json data/news/copy.json tests/ai/prompts/archive.golden.txt data/ai/cast/archive.json; \
+	  for f in $(VOICE_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(VOICE_RE)|$(SPOILER_RE)' | sed "s|^|$$f:|"; done; \
+	  for f in $(SPOILER_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(SPOILER_RE)' | sed "s|^|$$f:|"; done); \
+	if [ -n "$$bad" ]; then echo "in-world-voice-check: out-of-world or loop-spoiling wording in in-world text (D-67, D-68):"; echo "$$bad"; exit 1; fi; \
+	sb=$$(grep -n -i -E '$(SANDBOX_RE)' $(SANDBOX_SEEN); jq -r '.lore | to_entries[] | select(.key | startswith("archive.")) | "data/ai/lore.json \(.key): \(.value)"' data/ai/lore.json | grep -i -E '$(SANDBOX_RE)'); \
+	if [ -n "$$sb" ]; then echo "in-world-voice-check: the Archive model would be told a lore mechanic (sandboxed Archive, Mark 2026-10-13):"; echo "$$sb"; exit 1; fi; \
+	echo "in-world-voice-check: Archive entries, news copy and the news/log/codex/console panel strings speak in-world and keep the loop secret (D-67, D-68); the Archive model is told no lore mechanics (sandboxed)"
+
+
+# A fresh clone imports (art/ship-dimensions-v1/-v2 are .gdignore'd), so every file the game reads raw
+# needs importer="keep" (tools/import_keep.txt) or the export would ship only its imported form.
+.PHONY: import-keep import-keep-check
+import-keep:
+	@grep -v -E '^(#|$$)' tools/import_keep.txt | while read g; do for f in $$(git ls-files "$$g"); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; git add -f "$$f.import"; done; done; echo "import-keep: $$(git ls-files '*.import' | wc -l | tr -d ' ') keep files"
+import-keep-check:
+	@bad=0; n=0; for g in $$(grep -v -E '^(#|$$)' tools/import_keep.txt); do for f in $$(git ls-files "$$g"); do n=$$((n+1)); if ! git ls-files --error-unmatch "$$f.import" >/dev/null 2>&1 || ! grep -q '^importer="keep"$$' "$$f.import"; then echo "FAIL $$f has no committed importer=\"keep\" .import (make import-keep)"; bad=1; fi; done; done; \
+	  for d in art/ship-dimensions-v1 art/ship-dimensions-v2; do git ls-files --error-unmatch $$d/.gdignore >/dev/null 2>&1 || { echo "FAIL $$d/.gdignore missing: a fresh clone's import stops on its Blender masters"; bad=1; }; done; \
+	  test $$bad = 0 && echo "import-keep-check: $$n raw-read files keep their source in the export; Blender masters ignored"
+test: import-keep-check

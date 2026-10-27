@@ -27,3 +27,6 @@ tools/geodesic_ref.py	oracle
 tools/ism_dust_ref.py	oracle
 tools/ism_bright_ref.py	oracle
 tools/similar_oracle.py	oracle
+# R2-KERR K1.1a-a: the Kerr closed-form/RK oracle; an independent Decimal-60 reference for the
+# package kerr module and the tests/fixtures/kerr/rk.json fixture (design V31/V40), never at runtime.
+tools/kerr_ref.py	oracle
