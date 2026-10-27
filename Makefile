@@ -45,9 +45,9 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 # the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast
 # tier: the checks a clean Linux box adds (fresh deps and lock, the x86_64 replay golden, strict VM,
 # VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
-ci-fast: deps python-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+test: python-guard uid-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
 .PHONY: similar-test similar-record
 similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = frozen bytes
@@ -953,6 +953,10 @@ catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter an
 .PHONY: python-guard
 python-guard:     ## Python policy: every *.py allowlisted with a role (CLAUDE.md "Python")
 	@sh tools/python_guard.sh
+
+.PHONY: uid-guard
+uid-guard:        ## every tracked script and shader has its Godot .uid tracked (CLAUDE.md "Checkouts and Godot .uid files")
+	@bash tools/uid_guard.sh
 
 .PHONY: destar-test destar
 destar-test:      ## star removal core (sim/tools/destar.ail) on a synthetic panorama: strict VM = interpreter
