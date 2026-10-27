@@ -38,7 +38,7 @@ replay-scene: ## VM-only scene golden, input/golden controls, effects and archiv
 	else rc=$$?; test $$rc -eq 1; grep -qx 'm4_scene_session.ndjson: FAILED' "$$pin/check.log"; fi; \
 	echo 'scene input pin control: one-byte change detected'
 	@set -e; session='$(M45_SCENE).ndjson'; $(M45_SCENE_SHAPE)
-	@set -e; recorded=$$(sed -nE 's/^recorded $(M45_SCENE)\.state\.arm64\.sha256 \([0-9]+ replies, [0-9]+ bytes, sha256 ([0-9a-f]{64}), VM [0-9.]+ s, interpreter [0-9.]+ s\)$$/\1/p' $(M45_SCENE).record.txt); \
+	@set -e; recorded=$$(sed -nE 's#^recorded $(M45_SCENE)\.state\.arm64\.sha256 \([0-9]+ replies, [0-9]+ bytes, sha256 ([0-9a-f]{64}), VM [0-9.]+ s, interpreter [0-9.]+ s\)$$#\1#p' $(M45_SCENE).record.txt); \
 	test -n "$$recorded" && test "$$recorded" = "$$(cut -c1-64 $(M45_SCENE).state.arm64.sha256)"
 	@grep -Eq '^export func main\(\) -> \(\) ! \{IO\} =' sim/ship.ail && echo 'scene effects: main ! {IO}, --caps IO'
 	@env -u AI_LIVE AILANG=$(AILANG) python3 tools/replay.py --sim-only --vm-only --positive-control --scratch $(SCRATCH)/replay --session $(M45_SCENE).ndjson
