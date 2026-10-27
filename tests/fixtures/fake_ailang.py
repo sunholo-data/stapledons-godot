@@ -17,6 +17,9 @@ if "--version" in sys.argv:
     print("AILANG fake")
     sys.exit(0)
 vm = "--bytecode" in sys.argv
+if os.environ.get("FAKE_LOG"):
+    with open(os.environ["FAKE_LOG"], "a") as f:
+        f.write("vm\n" if vm else "interpreter\n")
 skip = int(os.environ.get("FAKE_SKIP", "0"))
 proto = os.environ.get("FAKE_PROTO", "")
 extra = ',"ai_seed_hint":5' if os.environ.get("FAKE_EXTRA") else ""
