@@ -1,7 +1,7 @@
 # M1.4a: background options (spike report)
 
 **Status:** Decided (D-10) and implemented: PR #16, 2026-10-01.
-**Design:** [m1-relativistic-sky.md §M1.4](../../planned/r1/m1-relativistic-sky.md#m14-milky-way-background).
+**Design:** [m1-relativistic-sky.md §M1.4](m1-relativistic-sky.md#m14-milky-way-background).
 **Branch:** `m1.4a-background-spike`. Images and full method are in [`docs/m1.4a/README.md`](../../../docs/m1.4a/README.md).
 
 ## Candidates
