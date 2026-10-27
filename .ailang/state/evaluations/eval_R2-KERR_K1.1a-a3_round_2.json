@@ -1,0 +1,327 @@
+{
+ "sprint": "R2-KERR",
+ "feature": "K1.1a-a3",
+ "round": 2,
+ "evaluator": "Claude Sonnet 5.5 (claude-sonnet-5-5)",
+ "head": "7e94beff2720d4e32fb997d522cd2842ed6e1a98",
+ "score": 90,
+ "verdict": "PASS",
+ "criteria": {
+  "tests_pass": {
+   "max": 20,
+   "got": 18,
+   "note": "All slice gates rc=0, fixture regenerates byte-identical. Full make test deliberately not run (controller rig/full), so 2 points held back."
+  },
+  "lint_clean": {
+   "max": 10,
+   "got": 10,
+   "note": "python-guard ok, lint-precision ok, git diff --check rc=0."
+  },
+  "acceptance_criteria": {
+   "max": 30,
+   "got": 30,
+   "note": "All a3 scope delivered: RK-10, RK-11, RK-12 (s=0.5,0.9), RK-13 (domain-guarded, no u=0 claim), six RK-18 SI rows, RK-Q1 s=0 members, s=1-2^-53 finite probe, exact s=0. 17-sig precise vs six-decimal display kept separate."
+  },
+  "code_quality": {
+   "max": 15,
+   "got": 13,
+   "note": "Cap met (numstat 140 = 132 added + 8 deleted; added 132 <= 140). Test-first doc-literal anchors independent of oracle output. Minus: unused cos_theta param untested off-equator (M7 survivor); precision margin ungated (V10)."
+  },
+  "documentation": {
+   "max": 15,
+   "got": 10,
+   "note": "Deferral (RK-3, RK-9, RK-14..17) recorded in the shell success message and the sprint notes; but sprint JSON a3 not marked passes/completed in the commit (controller's job), no CHANGELOG (none required for an oracle-only slice)."
+  },
+  "design_fidelity": {
+   "max": 10,
+   "got": 9,
+   "note": "Doc literals lines 96-105 match exactly. Minus: the amendment says RK-9 lands in a1, but the fixture has no RK-9 row and the shell still lists RK-9 as deferred; horizon_omega is only checked through the RK-18 omega-h-rad-s row."
+  }
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  {
+   "id": "NB1",
+   "evidence": "Mutation M7: static_limit(spin, cos_theta) with the (s*cos)^2 term changed to (s*cos) survives. cos_theta defaults to 0 and no caller or test passes non-zero, so the parameter is dead and the mutant is equivalent for all tested use. Off-equator static limit is untested; either drop the parameter or add an anchor (e.g. s=0.9, cos=1 gives 2 horizon-aligned value 1+sqrt(1-0.81))."
+  },
+  {
+   "id": "NB2",
+   "evidence": "Mutation V10: getcontext().prec 60 -> 20 survives. Anchors are 17 significant digits, so a regression of the Decimal60 claim in the module docstring would go unnoticed. Add an assert on getcontext().prec or one anchor at >=30 digits."
+  },
+  {
+   "id": "NB3",
+   "evidence": "RK-9 (dimensionless Omega_H=0.31339450313662925) and RK-3 have no fixture row, while the sprint amendment iter49 text assigns RK-9 to a1. horizon_omega() exists and is used only inside RK-18 omega-h-rad-s. Deferral is noted in the shell message but the plan should say which child closes RK-9/RK-3."
+  },
+  {
+   "id": "NB4",
+   "evidence": "Several new test assertions are redundant with the DOC literal loop and survive loosening (T4 photon s=0 exact, T5 shadow tol 1e-16->1e-1, T6 static_clock==0, T9 V34 tol 1e-15->1e-1, T12 finite probe removal, T13/T14 sweep entries for zamo_speed/horizon_omega). All are equivalent under the correct oracle since a function-level mutant is killed elsewhere (M1-M25, V1-V4 all killed); the one weak point is V34 tolerance has no kill for sub-1e-1 drift at s=0 except via M9."
+  },
+  {
+   "id": "NB5",
+   "evidence": "Sprint JSON gate lists `kerr_ref.py --check`; the task brief uses `check`. Both accepted (rc 0 each), no defect."
+  }
+ ],
+ "rederivation_method": "Separate Decimal(50) script (/tmp/iter52eval_r2/indep.py) using Boyer-Lindquist equatorial metric components g_tt=-(1-2/u), g_tphi=-2s/u, g_phiphi=u^2+s^2+2s^2/u: omega=-g_tphi/g_phiphi, N^2=-(g_tt-g_tphi^2/g_phiphi), v=sqrt(g_phiphi)(Omega-omega)/N with Omega=1/(u^1.5+s); ISCO by bisection on the Bardeen marginal-stability condition u^2-6u+8s sqrt(u)-3s^2=0 (not the Z1/Z2 closed form); static clock sqrt(-g_tt); Omega_H=-g_tphi/g_phiphi at r_+; SI from IAU GM_sun and c.",
+ "independent_values": {
+  "worst_relative_error": "1.97e-17 (RK-18 period-ms; consistent with 17-sig-digit rounding of fixture strings)",
+  "RK-10": "0.16014234875444840",
+  "RK-11": "0.37964208654863802",
+  "RK-12_s0.5": "0.56164924228192780",
+  "RK-12_s0.9": "0.62454869546086524",
+  "RK-13": "0 exactly",
+  "RK-18": "all six rows agree, 29.5325..., 29.5325..., 21.2027..., 34.2707..., 1.37276..., 6362.7059...",
+  "RK-Q1": "photon 3/3, ISCO 6/6, shadow 3sqrt3, frame-drag 0 all agree",
+  "doc_literals": "fixture strings equal design doc lines 96-105 exactly (shell DOC dict transcribed from the doc, not oracle output)"
+ },
+ "drills": [
+  {
+   "id": "M1",
+   "mutation": "frame_drag numerator 2su -> su",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M2",
+   "mutation": "equator A: delta*s*s -> delta*s",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M3",
+   "mutation": "lapse Sigma u^2 -> u",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M4",
+   "mutation": "zamo_speed drops -omega",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M5",
+   "mutation": "zamo_speed drops /N",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M6",
+   "mutation": "zamo_speed uses retrograde ISCO",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M7",
+   "mutation": "static_limit (s cos)^2 -> (s cos)",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 0,
+   "killed": false,
+   "note": "dead parameter, equivalent for all callers (NB1)"
+  },
+  {
+   "id": "M8",
+   "mutation": "static_clock domain guard u<2 -> u<1",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M9",
+   "mutation": "static_clock s=0 form 1/(u/2) -> 1/u",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M10",
+   "mutation": "static_clock s!=0 Sigma u^2 -> u^2+s",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M11",
+   "mutation": "horizon_omega s/(2u+) -> s/u+",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M12",
+   "mutation": "shadow_s0 (u-2)->(u-1)",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M13",
+   "mutation": "GM_SUN last digit",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M14",
+   "mutation": "C 299792458->299792456",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M15",
+   "mutation": "rs-km 2*km -> km",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M16",
+   "mutation": "static-limit-km uses horizon",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M17",
+   "mutation": "period drops 2 pi",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M18",
+   "mutation": "period ms *1000 -> *100",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M19",
+   "mutation": "omega-h c^3 -> c^2",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M22",
+   "mutation": "RK-Q1 frame-drag at spin 0.1",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M23",
+   "mutation": "RK-Q1 isco-pro hard-coded 6.0000000000000001",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M24",
+   "mutation": "RK-12 spin list 0.5,0.9 -> 0.5,0.8",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "M25",
+   "mutation": "RK-13 evaluated at u=2.0001",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "V1-V4",
+   "mutation": "spin_value validation removed in frame_drag, zamo_lapse, static_clock, static_limit",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "V5",
+   "mutation": "spin_value removed in horizon_omega",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 0,
+   "killed": false,
+   "note": "equivalent: horizons(spin) validates downstream"
+  },
+  {
+   "id": "V6",
+   "mutation": "spin_value removed in zamo_speed",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 0,
+   "killed": false,
+   "note": "equivalent: isco_radii(spin) validates downstream"
+  },
+  {
+   "id": "V7",
+   "mutation": "value_row precise .17g->.16g",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "V8",
+   "mutation": "value_row display .6f->.5f",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "V9",
+   "mutation": "static_clock drop s==0 branch",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 0,
+   "killed": false,
+   "note": "equivalent: 1-1/(u/2) == 1-2/u mathematically; V34 tolerance holds"
+  },
+  {
+   "id": "V10",
+   "mutation": "Decimal prec 60->20",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 0,
+   "killed": false,
+   "note": "not equivalent semantically; anchors only 17 digits (NB2)"
+  },
+  {
+   "id": "T1-T2",
+   "mutation": "DOC literal last digit changed (RK-10, RK-18 period)",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true
+  },
+  {
+   "id": "T11",
+   "mutation": "near-extremal probe 1-2^-53 -> 1-2^-54",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 1,
+   "killed": true,
+   "note": "also shows the probe is a real binary64-boundary test"
+  },
+  {
+   "id": "T3-T10,T12-T16",
+   "mutation": "assertion removal/loosening in the shell test (missing-record, s=0 exact, shadow tol, static_clock==0, u<2 error type/else, V34 tol/anchor, finite probe, sweep entries)",
+   "gate": "test_kerr_oracle.sh",
+   "rc": 0,
+   "killed": false,
+   "note": "all redundant with DOC literals / function-level kills; equivalent under correct oracle (NB4)"
+  }
+ ],
+ "drill_tally": "Function/fixture mutants: 28 of 33 killed (M1-M19, M22-M25, V1-V4, V7, V8 killed); survivors M7 (dead cos_theta param, equivalent), V5, V6 (equivalent, downstream validation), V9 (equivalent form), V10 (precision 60->20, non-equivalent, NB2). Assertion-weakening drills T1-T16: 3 killed (T1, T2, T11), rest redundant/equivalent. Clone restored (git diff --quiet rc 0).",
+ "gates": {
+  "sh tools/test_kerr_oracle.sh": 0,
+  "make kerr-oracle AILANG=runtime/bin/ailang": 0,
+  "python3 -I tools/kerr_ref.py check tests/fixtures/kerr/rk.json": 0,
+  "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json": 0,
+  "python3 -I tools/kerr_ref.py > regen; cmp regen tests/fixtures/kerr/rk.json": 0,
+  "make python-guard lint-precision AILANG=runtime/bin/ailang": 0,
+  "git diff --check 90d6f628 7e94beff": 0,
+  "make test": "not run by design (controller rig/full)"
+ }
+}
