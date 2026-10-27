@@ -140,7 +140,7 @@
     },
     {
       "id": "EL1",
-      "description": "sunholo/observe 0.1.0: seenAt, catchUp(delta, oneMinusBeta), triangleExcess, onBeamLine(port, p, cosTol) (ray from Sol), linkWindow(a, b, legT, covered), earthRate (wraps relativity optics.doppler; Sol direction = -heading at |pos| < 1e-12); tests; publish; sim pin",
+      "description": "sunholo/observe 0.1.0: seenAt, catchUp(delta, oneMinusBeta), triangleExcess, onBeamLine(port, p, angTol) (ray from Sol), linkWindow(a, b, legT, covered), earthRate (wraps relativity optics.doppler; Sol direction = -heading at |pos| < 1e-12); tests; publish; sim pin",
       "estimated_loc": 250,
       "dependencies": [
         "EL0"
@@ -239,6 +239,14 @@
         "AC9 named a non-existent make display-audit; new tests not stated as wired into make test"
       ],
       "addressed": "RS-35 redefined (far side of Sol), RS-36/RS-37 added (design PR #44); linkWindow(a,b,legT,covered); onBeamLine = ray from Sol; display-audit-comms target in make test; all new tests wired; in-beam rule pinned (at Sol / on heard plan / on heard ray) with mid-transit asserts; Sol guard; earth.preview sim field + equality test; synthetic Target fixtures; AC1b sim-side RS checks; signatures aligned (oneMinusBeta, cosTol); closed-form comparison; replay golden check right after World.link; [release] kind in EL1 acceptance; AC13 moved to pr_gate"
+    },
+    {
+      "date": "2026-10-27",
+      "reviewer": "Agent tool, model sonnet, read-only (round 2)",
+      "score": 86,
+      "verdict": "pass",
+      "blocking": [],
+      "addressed": "covered = onBeamLine(prevPort, B) with prevPort the newest message heard at commit time (not the plan aimed at arrival); case 2 requires a committed or arrived leg; onBeamLine uses atan2 angle form with angTol; sprint syntax-gate row RS-31..37"
     }
   ],
   "pr_gate": "tools/rig_check.sh <PR> --golden green (rig/full) and the GitHub fast tier green (AC13)"

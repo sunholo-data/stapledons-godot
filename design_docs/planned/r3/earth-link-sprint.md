@@ -39,7 +39,7 @@ New `.ail` modules: `packages/observe/lightcone.ail` (+ tests), `sim/earth_link.
 
 | Module | Contracts | Effects | Inline tests |
 |---|---|---|---|
-| `observe/lightcone` | **include:** `triangleExcess(a, b)` `ensures { result >= 0.0 - 1e-12 }` (the triangle inequality), `catchUp(delta, omb)` `requires { delta >= 0.0, omb > 0.0 } ensures { result >= delta }`; checked with `ailang verify` where the float theory allows, otherwise the check stays a test and the plan records it | **include:** every function pure, `! {}` | **include:** `test "RS-31..35"` blocks in `lightcone_test.ail` (the package's convention), not inline `tests [...]`, since the inputs are records |
+| `observe/lightcone` | **include:** `triangleExcess(a, b)` `ensures { result >= 0.0 - 1e-12 }` (the triangle inequality), `catchUp(delta, omb)` `requires { delta >= 0.0, omb > 0.0 } ensures { result >= delta }`; checked with `ailang verify` where the float theory allows, otherwise the check stays a test and the plan records it | **include:** every function pure, `! {}` | **include:** `test "RS-31..37"` blocks in `lightcone_test.ail` (the package's convention), not inline `tests [...]`, since the inputs are records |
 | `sim/earth_link` | skip: the sim's pure modules use `_test.ail` checks plus strict-VM entries, not contracts (`sim/consequence.ail` precedent) | **include:** pure, no I/O (gate 4); I/O stays in `sim/ship.ail` | skip: `earth_link_test.ail` plus `earthLinkVm` cover it |
 
 ## Milestones
@@ -56,7 +56,7 @@ New `.ail` modules: `packages/observe/lightcone.ail` (+ tests), `sim/earth_link.
 - **Files:**
   - `packages/observe/{ailang.toml, lightcone.ail, lightcone_test.ail, CHANGELOG.md, README.md}`;
   - the `[release] kind = "minor"` section in `ailang.toml`.
-- **Functions** (design EL1): `seenAt`, `catchUp(delta, oneMinusBeta)`, `triangleExcess`, `onBeamLine(port, p, cosTol)` (the ray from Sol, the far side excluded), `linkWindow(a, b, legT, covered)`, `earthRate(pos, heading, phi)`. `earthRate` wraps `relativity.optics.doppler(normalize(−pos), heading, φ)` and takes Sol's direction as −heading when |pos| < 1e-12 ly.
+- **Functions** (design EL1): `seenAt`, `catchUp(delta, oneMinusBeta)`, `triangleExcess`, `onBeamLine(port, p, angTol)` (the ray from Sol, the far side excluded), `linkWindow(a, b, legT, covered)`, `earthRate(pos, heading, phi)`. `earthRate` wraps `relativity.optics.doppler(normalize(−pos), heading, φ)` and takes Sol's direction as −heading when |pos| < 1e-12 ly.
 - **Tests:** RS-26..RS-30 against the closed forms e^(∓φ) to 1e-9 relative; RS-31..RS-37 (RS-34 to 1e-3 absolute, its stated precision); the guard at Sol (rate 1 at rest, e^(−φ) leaving); and the α Cen epoch 0.043984 from the M4.4 fixture position.
 - **Gates:**
   - `ailang test`;
