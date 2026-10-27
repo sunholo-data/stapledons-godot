@@ -1056,3 +1056,65 @@ DECISIONS FOR MARK: none.
 - **Next:** per D-125's default, **7i(c)** (the AC5 scene-session golden, `make replay-record` on arm64, the CI budget per Mark's answer). If D-125 is answered B: K1.1a-a4, then a5, with RK-3 and RK-9 folded into a4 if its cap allows, otherwise a5 (amendment `iter52-kerr-a3-landing`). Then L9 S0.3, L4, L3, and 7m AC1 (idle rig only).
 
 DECISIONS FOR MARK: D-125 (position of 7i(c), the now-unblocked AC5 scene-session golden: A = next, ahead of Kerr a4/a5, recording the arm64 golden and running only the 118 s VM replay in `rig/full`, because the 2,107 s interpreter replay would push `rig/full` (77 min) past its 5,400 s watchdog; B = after Kerr a5; recommendation A; default A).
+
+## 53 — 2026-10-27 — row 7i(c), the M4 AC5 scene-session golden, LANDED (PR #341, merge `fc9e2187`): AI=stub session committed and pinned, arm64 golden recorded with VM = interpreter, `make replay-scene` (VM only) in `rig/full`; independent Sonnet 88/100 PASS, zero blocking; `rig/full` green at 90 min, on the watchdog (D-126) [PRODUCT]
+
+- **Pick:** row 7i(c). Mark ruled **D-125 A** in an attended session today: "row 7i(c) goes next, ahead of Kerr a4/a5; record the reviewed arm64 golden with make replay-record and run only the 118 s VM replay in rig/full". `mission_ledger_provenance.sh` reads `attended` (flip `8e742dca`, creation `9a1d8bb0`), so it outranks the queue and is not re-asked. Already-landed check on a fresh origin: no scene golden in `tests/replays/`, no matching commit or PR. **Clause map at pick:** 1 MET (attended M1.5b, PR #337); 2/3 MET; 4 UNMET → 7i(c) routable (moves AC5), 7m AC1 PARKED-ON-LANE, P-land; 5 ongoing.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET, **moved** (M4 AC5 met); 5 ongoing. Clause 4 now waits on row 7m AC1 (quiet-rig p99) and P-land.
+- **Gate 0:** armed (`mission-stapledon.disabled` absent); gh `sunholo-voight-kampff`; billing CLEAN. Bookkeeping issue #329 (week of 2026-10-26; prev #274). `mission_directives.sh`: 0 allowlisted directives since 11:22:14Z (5 comments, all ours). Self-notices rc 0 (control 4:5, watermarks 2/2). Ledger valid, 125 rows, 0 OPEN at start. Mission inboxes `mission-stapledon` and `stapledon`: no unread messages. Not the first iteration after the Monday rotation (iteration 50 swept), so no sweep.
+- **Gate 1:** base `b11078786ed96583b1d45c91a6fdf26ecb6e4caa` at 2026-10-27T17:23:47Z; main and origin/main equal; the main checkout was clean and was not used for work. The running skill and all 13 resources at the resolved symlink matched `origin/dev` and the driver pin (14/14). Open PRs: #339 and #340 (attended docs and the R3 Earth link plan; neither touches the loop's files). All work ran in non-hardlinked clones `.stap-iter53-{src,plan,exec,eval,rec}`.
+- **Design:** resolver `recipe claude:claude-opus-5-5 declared:provider-pin`; probe rc 0; designer Opus 5.5 via `claude-sub`, 32 min, 60 turns. It measured, among 26 verification rows:
+  - AC5 needs `AI=stub`, because the default `AI=none` session has no `record` intent;
+  - the session is the sim's input stream and byte-reproducible (`ab44d47c…` twice);
+  - a real record on v0.54.18 took VM 97 s and interpreter 1,403 s, against the inherited 2,107 s on v0.54.6;
+  - archive unlocks need `sceneCodex` over the input plus the output.
+  - **Quorum round 1 BLOCKED:** kimi-k3 REJECT, glm-5.3 REJECT, gemini-4-argon PASS; gpt6-1-sol absent (unreachable), so reserve glm took the seat. Both rejects named the 2,428 input lines vs 2,427 recorded lines and the `/tmp` record input's provenance. The controller measured both: the input sha equals the fixture's, and the summary counts replies, which is the input lines minus the final `quit`. It handed these over as M1–M5, and the designer made one revision (resumed session, 19 turns).
+  - **Round 2 BLOCKED** on new surfaces: kimi on subdirectory golden lookup and AC4 literals, glm on the `replay-record LOG=all` enumeration and the merged-PR claim; gemini PASS; sol unreachable again. The controller measured every premise and all held (`case_of` uses the log's own directory; `--record all` is top-level only; 0 workflow callers, control 3; both literals at `replay.py:381`/`:428`; #318/#319/#322 merged). Every reject carried a concrete fix and none disputed the direction, so the narrow-refinement carve-out applied: the controller pasted the reviewers' fixes verbatim (V32–V35, the placement sentence, the x86_64 assumption, the control wording).
+- **Plan:** `derive-planner-lane.sh` → `codex:gpt-6.1-sol declared:planner-lane-default-pin`; probe rc 0; codex in its own clone, 131,788 tokens. It wrote `m4-7ic-scene-session-golden-sprint.md` (224 lines) and the feature `M4.5bR3_7ic_SCENE_SESSION_GOLDEN`, baselining its gate list on the pristine tree. It also resolved a controller finding I passed it: today's `--positive-control` returns before the verify loop, so the vm-only control has to reuse one VM run and still print the ok and sim-only lines. The split: S1 and the S2 code went to the executor, while the fixture, the record and the data ACs went to the controller.
+- **Execution:** `recipe codex:gpt-6.1-sol declared:provider-pin`; codex `workspace-write` in its own clone, 95,896 tokens, about 10 min. It delivered S1 (`replay.py --vm-only`, the arm64 fallback line, a one-run vm-only control, a `--caps IO` assertion, the record summary; FAKE_LOG; 9 `VmOnly` tests) and the S2 code (`.gitattributes`, three `mk/m45.mk` targets, `test: replay-scene`, changelog). All its gates were green, 7 of 7 of its drills were killed, and snapshots went to `/tmp/stap53_snap`. The controller rebuilt commits `fe3a54bc` (S1) and `3f85c240` (S2 code) from the snapshots, ran tests at each boundary, and a sha manifest matched.
+- **Controller verification and data (outside the sandbox):**
+  - Read the full diff. Nothing writes outside the repo or scratch, and the old control path is unchanged.
+  - `make scene-session-fixture`: 2,428 lines, 187,139 bytes, `ab44d47c…`, `record=1 ai_open=1 commit=2`. `CHECK=1` was identical to a fresh playthrough.
+  - `make replay-scene-record`: 2,427 replies, 83,297,783 bytes, `77f7ec49…`, VM 92.31 s, interpreter 1,149.14 s. This is the designer's prototype digest exactly. Committed as `b18dc6ea`.
+  - AC2, AC3, AC5–AC9 and AC11's list passed. AC7 printed the named line; AC8 found 11 cases, all identical. `parity-m4` and the policy gates passed.
+  - **AC4 failed:** `sed: bad flag in substitute command`. The executor's recipe used `s/…/` around `$(M45_SCENE)`, a path containing slashes. The sandbox hid it because the executor had no data to run the target on. The controller fixed it in `c87ee9e8` (a `#` delimiter), and AC4 then passed with 7 lines (VM 148 s under load).
+  - Drills: a one-byte input flip fails at the pin before any harness run (rc 2), and a one-character digest mismatch fails the summary-sha step before the harness (rc 2, with no named message, so it went to the backlog).
+- **Evaluation:** `agent-tool sonnet declared:alias-pin`; Sonnet via the Agent tool, foreground, in its own clone at `c87ee9e8`. It was given no controller findings. **88/100 PASS, 0 blocking** (`eval_R1-M4-JOURNEY_7ic_round_1.json`). It reproduced AC2–AC9, related the record, digest, pin and fixture to each other, and drilled each milestone against its own diff. S1: 12 of 18 killed, with 5 real survivors (M2, M3, M9–M12) and M18 equivalent. S2: 5 of 10 killed by `make replay-scene`; D1/D6/D8/D9/D12 survive `make test` and are caught only by the AC greps, and D7 survives outright. All findings are non-blocking. The controller confirmed the main one by reading the recipe: it never greps its own control, sim-only or effect lines. The findings are on the follow-up backlog line (Mark's 2026-10-20 rule), with no new row.
+- **Landing / Gate 3b:**
+  - PR #341 head `c87ee9e8`: fast tier 40566702491 success (11 min).
+  - `rig/full` posted **success, "make test green on the Studio in 90 min (AILANG v0.54.18)"**, and the log shows `replay-scene: PASS`. 90 min is the 5,400 s watchdog itself (earlier runs: 66–77 min; 1-min load 3.1–10 during the run), so **D-126** asks about it.
+  - The closing-keyword scan found 0 hits (control 1). Main had not moved (`b1107878`). The PR was MERGEABLE/CLEAN and merged as `fc9e2187e67cd59564ab6aef8d0eb2a646e7d7ad`.
+  - Merge CI 40582083418 success: 1 check expected, 1 present.
+  - GPU gates N/A (no visible change). The sprint JSON records the feature as passed with its evaluation.
+- **Routing evidence**
+
+  base=fc9e2187e67cd59564ab6aef8d0eb2a646e7d7ad@2026-10-27T20:54:28Z. Resolver output: designer `recipe claude:claude-opus-5-5 declared:provider-pin`, planner `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin` (with no doc the resolver said `agent-tool opus fail-closed:no-doc`, and was re-run with the doc), executor `recipe codex:gpt-6.1-sol declared:provider-pin`, evaluator `agent-tool sonnet declared:alias-pin`. No role spawn error. Generator ≠ judge: codex wrote the code, Opus the design, and a separate Sonnet in its own clone judged it.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Designer `claude:claude-opus-5-5` via `claude-sub` (subscription, quota bucket anthropic). The create run took 60 turns: 114 in, 140,560 cache-create, 5,625,716 cache-read, 56,966 out. The revision took 19 turns: 22 in, 21,570 cache-create, 1,821,497 cache-read, 10,946 out. The protocol-mandated revision fired once (round 1 blocked).
+  - Planner `codex:gpt-6.1-sol` (131,788 tok; probe 10,527).
+  - Executor `codex:gpt-6.1-sol` (95,896 tok).
+  - Evaluator Agent `sonnet` (81,672 tok, 20 tool calls, 812 s).
+  - Quorum (metered): round 1 kimi-k3 $0.1236 (7,398/6,758), gemini-4-argon $0.0407 (8,407/353), glm-5.3 $0.0942 (7,423/19,042); round 2 kimi $0.1799 (8,946/10,202), gemini $0.0473 (10,251/316), glm $0.1121 (9,054/22,601). gpt6-1-sol absent (unreachable) both rounds, so the round-2 pass is quoted as "BLOCKED at N−1 plus reserve, `gpt6-1-sol` absent (unreachable)".
+  - metered=$0.60 of the $5 cap.
+- **Ruled out:**
+  - Reopening the CI budget (D-125 A settled it).
+  - Committing the scene log in `tests/replays/` top level: that would put the interpreter run into `make test` and `ci-fast`, and fail x86_64 for want of a golden.
+  - Recording from `AI=none`, which has no `record` intent.
+  - A third quorum round or a second designer revision (the carve-out applied).
+  - Treating the sandbox green as acceptance (the controller's run found the sed defect).
+  - Handing the judge the controller's drill results.
+  - Running the evaluator concurrently with `rig/full` (sequential, after iteration 52's lesson).
+  - Raising `RIG_TEST_S` for this run (iteration 52's override reddened `rig-check-control`; the run used the default).
+  - Editing the shared skill or driver.
+- **Upstream:** none new. Observed and not filed: Godot's import writes five untracked `*.translation` files from CSVs under `data/` on every playthrough ("Invalid locale format ''"). This is pre-existing, and the clones were cleaned.
+- **Retro:** no skill, process or routing-policy change.
+  - Frictions:
+    1. A sandboxed executor cannot run a target whose inputs the controller generates later, so the sed defect surfaced only at the controller's run. This is one instance, and the plan already split the work this way. The process lesson is to run the new targets once on real data before spawning the judge, which happened here.
+    2. gpt6-1-sol was unreachable as a quorum reviewer twice in one iteration (one instance). A reserve seated, so this is not a capacity park.
+    3. `rig/full` is at the watchdog. That is not a loop defect; it goes to Mark as D-126.
+  - Harness share: 0/20 over iterations 34–53.
+  - Last three landings: #341 moved clause 4, #333 and #327 none. No DRIFT.
+- **Next:** K1.1a-a4, then a5 (RK-3/RK-9 owed), L9 S0.3, L4, L3, and 7m AC1 (idle rig only), per Mark's 2026-10-20 order. If D-126 is answered A or C, the loop raises the watchdog first, as a one-line change with its control test.
+
+DECISIONS FOR MARK: D-126 (`rig/full` took 90 min on #341, the 5,400 s watchdog. A = the loop raises it to 7,200 s; B = move L4 suite speed ahead of Kerr a4; C = both; D = neither. Recommendation C; default D, which means no change, and a 0-failure timeout is re-run on an idle rig.)
