@@ -45,9 +45,15 @@ class Base(unittest.TestCase):
 class Replay(Base):
     def test_positive_control(self):
         self.write("c1.state.testarch.ndjson", GOOD)
-        rc, out = self.replay("--case", "c1", "--positive-control", "--sim-only")
+        log = os.path.join(self.dir, "engines.log")
+        rc, out = self.replay("--case", "c1", "--positive-control", "--sim-only", FAKE_LOG=log)
         self.assertEqual(rc, 0, out)
         self.assertIn("one-bit golden-copy divergence detected", out)
+        self.assertNotIn("  ok  ", out)
+        self.assertNotIn("replay sim-only:", out)
+        with open(log) as f:
+            engines = f.read().splitlines()
+        self.assertEqual(sorted(engines), ["interpreter"] * 3 + ["vm"] * 3)
 
     def test_identical_passes(self):
         self.write("c1.state.testarch.ndjson", GOOD)
@@ -116,6 +122,96 @@ class Replay(Base):
         with open(os.path.join(self.replays, "c1.state.testarch.ndjson")) as f:
             self.assertEqual(f.read(), GOOD)
         self.assertEqual(self.replay("--case", "c1")[0], 0)
+
+
+class VmOnly(Base):
+    def setUp(self):
+        super().setUp()
+        self.log = os.path.join(self.dir, "engines.log")
+
+    def engines(self):
+        with open(self.log) as f:
+            return f.read().splitlines()
+
+    def vm(self, *args, **env):
+        return self.replay("--vm-only", "--case", "c1", *args, FAKE_LOG=self.log, **env)
+
+    def test_vm_only_never_interpreter(self):
+        self.write("c1.state.testarch.ndjson", GOOD)
+        rc, out = self.vm()
+        self.assertEqual(self.engines(), ["vm"])
+        self.assertEqual(rc, 0, out)
+        self.assertIn("vm-only (VM = interpreter proven at record time)\n", out)
+        self.assertTrue(os.path.exists(os.path.join(self.dir, "scratch", "c1.vm.ndjson")))
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "scratch", "c1.interp.ndjson")))
+
+    def test_arm64_fallback(self):
+        self.write("c1.state.arm64.ndjson", GOOD)
+        rc, out = self.vm()
+        self.assertEqual(rc, 0, out)
+        self.assertIn("replay vm-only: no testarch golden for c1; compared with the arm64 golden", out)
+        self.assertEqual(self.engines(), ["vm"])
+
+    def test_corrupt_arm64_fallback_fails(self):
+        self.write("c1.state.arm64.sha256", "0" * 64 + "  c1.state.ndjson\n")
+        rc, out = self.vm()
+        self.assertEqual(rc, 1, out)
+        self.assertRegex(out, r"golden .*arm64.sha256: sha256 [0-9a-f]+ != 0{64}")
+        self.assertEqual(self.engines(), ["vm"])
+
+    def test_missing_golden_fails(self):
+        rc, out = self.vm()
+        self.assertEqual(rc, 1, out)
+        self.assertIn("no testarch golden", out)
+
+    def test_positive_control_reuses_one_run(self):
+        for kind, gold in (("ndjson", GOOD), ("sha256", hashlib.sha256(GOOD.encode()).hexdigest() + "  c1.state.ndjson\n")):
+            with self.subTest(kind=kind):
+                name = "c1.state.arm64." + kind
+                self.write(name, gold)
+                if os.path.exists(self.log):
+                    os.remove(self.log)
+                rc, out = self.vm("--sim-only", "--positive-control")
+                self.assertEqual(rc, 0, out)
+                self.assertEqual(out.count("  ok  "), 1, out)
+                self.assertEqual(out.count("replay positive control: one-bit golden-copy divergence detected\n"), 1, out)
+                self.assertEqual(out.count("replay sim-only:"), 1, out)
+                self.assertLess(out.index("  ok  "), out.index("replay positive control:"))
+                self.assertLess(out.index("replay positive control:"), out.index("replay: 1 cases"))
+                self.assertEqual(self.engines(), ["vm"])
+                with open(os.path.join(self.replays, name)) as f:
+                    self.assertEqual(f.read(), gold)
+                copy_dir = os.path.join(self.dir, "scratch", "positive-control")
+                self.assertEqual(os.listdir(copy_dir), ["c1.state.testarch." + kind])
+                os.remove(os.path.join(copy_dir, "c1.state.testarch." + kind))
+                os.remove(os.path.join(self.replays, name))
+
+    def test_record_summary(self):
+        rc, out = self.replay("--record", "c1", FAKE_LOG=self.log)
+        self.assertEqual(rc, 0, out)
+        self.assertRegex(out, r"recorded .*c1.state.testarch.ndjson \(3 replies, %d bytes, sha256 %s, VM [0-9.]+ s, interpreter [0-9.]+ s\)\n" % (len(GOOD), hashlib.sha256(GOOD.encode()).hexdigest()))
+        self.assertEqual(sorted(self.engines()), ["interpreter", "vm"])
+
+    def test_reply_count_still_checked(self):
+        self.write("c1.state.testarch.ndjson", GOOD.replace('{"n":2,"len":32,"x":0.25}\n', ""))
+        rc, out = self.vm(FAKE_SKIP="2")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("expected 3 replies", out)
+
+    def test_reject_record_and_compat(self):
+        for args in (("--record", "c1"), ("--compat",)):
+            rc, out = self.vm(*args)
+            self.assertEqual(rc, 2, out)
+            self.assertIn("--vm-only cannot be combined with --record or --compat", out)
+            self.assertFalse(os.path.exists(self.log))
+
+    def test_bad_real_golden_fails_before_control(self):
+        self.write("c1.state.testarch.sha256", "0" * 64)
+        rc, out = self.vm("--positive-control")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("golden ", out)
+        self.assertNotIn("replay positive control:", out)
+        self.assertEqual(self.engines(), ["vm"])
 
 
 # replay-compat (AI.3, design AC13): a 2.1 stream, with exactly the new fields stripped,

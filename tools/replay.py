@@ -37,6 +37,7 @@ import os
 import platform
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -100,6 +101,7 @@ class Ctx:
         self.ailang = shlex.split(os.environ.get("AILANG", "ailang"))
         self.ticks = a.ticks
         self.sim_only = a.sim_only
+        self.vm_only = a.vm_only
         os.makedirs(self.scratch, exist_ok=True)
 
 
@@ -158,6 +160,7 @@ def run(ctx, case, vm):
         # ai_request/record exchanges are bytes, never dispatched to a provider.
         assert args[-1] == os.path.join(ctx.root, "sim", "ship.ail")
         assert "ai/service.ail" not in " ".join(args)
+        assert args.count("--caps") == 1 and args[args.index("--caps") + 1] == "IO"
     t = time.monotonic()
     with open(case.log, "rb") as f:
         r = subprocess.run(args, stdin=f, capture_output=True)
@@ -199,9 +202,33 @@ def both(ctx, case):
     return out, out_i, tvm, tit
 
 
-def verify(ctx, case):
-    """Returns a list of failure strings (empty = pass)."""
-    out, out_i, tvm, tit = both(ctx, case)
+def capture_vm(ctx, case):
+    captured = run(ctx, case, True)
+    with open(os.path.join(ctx.scratch, case.name + ".vm.ndjson"), "wb") as f:
+        f.write(captured[0])
+    return captured
+
+
+def golden_paths(ctx, case):
+    full, digest = case.golden(ctx, "ndjson"), case.golden(ctx, "sha256")
+    fallback = ""
+    if ctx.vm_only and not (os.path.exists(full) or os.path.exists(digest)):
+        arm = Note(ctx, [])
+        arm.arch = "arm64"
+        af, ad = case.golden(arm, "ndjson"), case.golden(arm, "sha256")
+        if os.path.exists(af) or os.path.exists(ad):
+            full, digest = af, ad
+            fallback = "replay vm-only: no %s golden for %s; compared with the arm64 golden\n" % (ctx.arch, case.name)
+    return full, digest, fallback
+
+
+def verify(ctx, case, captured=None):
+    """Return (text, failures); captured VM bytes let the control compare without rerunning."""
+    if ctx.vm_only:
+        out, tvm = captured if captured is not None else capture_vm(ctx, case)
+        out_i, tit = out, 0.0
+    else:
+        out, out_i, tvm, tit = both(ctx, case)
     fails = []
     lines = out.count(b"\n")
     if out != out_i:
@@ -209,7 +236,7 @@ def verify(ctx, case):
     want = expected_replies(case.log)
     if lines != want or not out.endswith(b"\n"):
         fails.append("expected %d replies (one per input line before quit), got %d" % (want, lines))
-    full, digest = case.golden(ctx, "ndjson"), case.golden(ctx, "sha256")
+    full, digest, fallback = golden_paths(ctx, case)
     sha = hashlib.sha256(out).hexdigest()
     if os.path.exists(full):
         with open(full, "rb") as f:
@@ -238,8 +265,36 @@ def verify(ctx, case):
             fails.append(e)
     text = "  %s  %-22s %6d lines %9d bytes  VM %6.2f s  interpreter %6.2f s  sha256 %s  %s\n" % (
         "ok  " if not fails else "FAIL", case.name, lines, len(out), tvm, tit, sha[:16], how)
+    if ctx.vm_only:
+        text = text.rstrip("\n") + "  vm-only (VM = interpreter proven at record time)\n"
+    text = fallback + text
     text += "".join("        %s\n" % n for n in notes) + "".join("        %s\n" % f for f in fails)
     return text, fails
+
+
+def vm_positive_control(ctx, case, captured):
+    full, digest, _ = golden_paths(ctx, case)
+    kind, source = ("ndjson", full) if os.path.exists(full) else ("sha256", digest)
+    control_dir = os.path.join(ctx.scratch, "positive-control")
+    os.makedirs(control_dir, exist_ok=True)
+    control = Case(case.name, case.log, control_dir, case.ticks)
+    # Remove a stale alternate so digest controls never select an old full copy.
+    other = control.golden(ctx, "sha256" if kind == "ndjson" else "ndjson")
+    if os.path.exists(other):
+        os.remove(other)
+    copy = control.golden(ctx, kind)
+    shutil.copyfile(source, copy)
+    _, clean = verify(ctx, control, captured)
+    if clean:
+        sys.exit("positive control: clean copy failed")
+    with open(copy, "r+b") as f:
+        byte = f.read(1)
+        f.seek(0)
+        f.write(bytes([byte[0] ^ 1]))
+    _, mutated = verify(ctx, control, captured)
+    if len(mutated) != 1 or not mutated[0].startswith("golden "):
+        sys.exit("positive control: one-bit divergence was not detected")
+    print("replay positive control: one-bit golden-copy divergence detected")
 
 
 HELLO21 = rb'^(\{"v":2,"type":"hello","proto":\{"major":2,"minor":)1(\})'
@@ -358,8 +413,8 @@ def record(ctx, case):
         with open(full, "wb") as f:
             f.write(out)
         path = full
-    print("recorded %s (%d lines, VM %.2f s, interpreter %.2f s); review the diff before committing" % (
-        rel(path, ctx), out.count(b"\n"), tvm, tit))
+    print("recorded %s (%d replies, %d bytes, sha256 %s, VM %.2f s, interpreter %.2f s)" % (
+        rel(path, ctx), out.count(b"\n"), len(out), hashlib.sha256(out).hexdigest(), tvm, tit))
 
 
 def main():
@@ -369,6 +424,7 @@ def main():
     p.add_argument("--record")
     p.add_argument("--compat", action="store_true")
     p.add_argument("--sim-only", action="store_true")
+    p.add_argument("--vm-only", action="store_true")
     p.add_argument("--positive-control", action="store_true")
     p.add_argument("--ticks", type=int, default=int(os.environ.get("REPLAY_TICKS", "10000")))
     p.add_argument("--arch")
@@ -376,6 +432,8 @@ def main():
     p.add_argument("--replays")
     p.add_argument("--scratch")
     a = p.parse_args()
+    if a.vm_only and (a.record or a.compat):
+        p.error("--vm-only cannot be combined with --record or --compat")
     ctx = Ctx(a)
     ver = subprocess.run(ctx.ailang + ["--version"], capture_output=True, text=True).stdout.strip().split("\n")[0]
     print("replay: %s, %s (%s)" % (ver, ctx.arch, " ".join(ctx.ailang)))
@@ -390,7 +448,7 @@ def main():
         cases = [case_of(ctx, n) for n in a.case]
     else:
         cases = all_cases(ctx)
-    if a.positive_control:
+    if a.positive_control and not a.vm_only:
         # Real verify path, isolated full golden copy even for digest cases.
         case = cases[0]
         out, _, _, _ = both(ctx, case)
@@ -417,23 +475,26 @@ def main():
     t = time.monotonic()
     # cases run concurrently (each runs its VM and interpreter concurrently too); output order is the case order
     with concurrent.futures.ThreadPoolExecutor(max(1, min(len(cases), (os.cpu_count() or 2) // 2))) as ex:
-        futures = [ex.submit(lambda c: (c, _guard(verify, ctx, c)), c) for c in cases]
+        futures = [ex.submit(_checked_case, ctx, c) for c in cases]
         results = [f.result() for f in futures]
     fails = 0
-    for c, (text, f) in results:
+    for c, (text, f), captured in results:
         sys.stdout.write(text)
         fails += len(f)
+        if a.vm_only and a.positive_control and c is cases[0] and not f:
+            vm_positive_control(ctx, c, captured)
     print("replay: %d cases, %s (%.1f s wall)" % (len(cases), "all identical" if fails == 0 else "%d failures" % fails, time.monotonic() - t))
     if ctx.sim_only:
         print("replay sim-only: only sim/ship.ail is launched (by construction: the replay path builds no AI-service command; no process count is measured)")
     sys.exit(1 if fails else 0)
 
 
-def _guard(f, ctx, case):
+def _checked_case(ctx, case):
     try:
-        return f(ctx, case)
+        captured = capture_vm(ctx, case) if ctx.vm_only else None
+        return case, verify(ctx, case, captured), captured
     except RuntimeError as e:
-        return "  FAIL  %s\n" % e, [str(e)]
+        return case, ("  FAIL  %s\n" % e, [str(e)]), None
 
 
 if __name__ == "__main__":
