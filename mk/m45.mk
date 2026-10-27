@@ -1,5 +1,53 @@
 # M4.5 legacy and scene-session audits (D-66/D-68).
 
+# Row 7i(c): the real AI=stub scene session, proven on both engines at record time.
+M45_SCENE := tests/replays/scene/m4_scene_session
+M45_SCENE_WORK := $(SCRATCH)/replay-scene
+define M45_SCENE_SHAPE
+lines=$$(wc -l < "$$session" | tr -d ' '); bytes=$$(wc -c < "$$session" | tr -d ' '); sha=$$(shasum -a 256 "$$session" | cut -d ' ' -f1); \
+record=$$(grep -c '"k":"record"' "$$session" || :); ai_open=$$(grep -c '"k":"ai_open"' "$$session" || :); commit=$$(grep -c '"k":"commit"' "$$session" || :); \
+hello=$$(grep -c '"type":"hello"' "$$session" || :); new_game=$$(grep -c '"type":"new_game"' "$$session" || :); quit=$$(grep -c '"type":"quit"' "$$session" || :); input=$$(grep -c '"type":"input"' "$$session" || :); \
+test "$$bytes" -gt 0 && test "$$input" -gt 0 && test "$$record" -ge 1 && test "$$ai_open" -ge 1 && test "$$commit" -eq 2 && test "$$hello" -eq 1 && test "$$new_game" -eq 1 && test "$$quit" -eq 1 && test "$$lines" -eq "$$((input + 3))" && test "$$(tail -1 "$$session")" = '{"v":2,"type":"quit"}' || { echo 'scene input shape: FAIL'; exit 1; }
+endef
+.PHONY: scene-session-fixture replay-scene-record replay-scene
+scene-session-fixture: ## Record the real stub playthrough input; CHECK=1 compares without writing data
+	@env -u AI_LIVE $(MAKE) playthrough AI=stub SCRIPT=tests/playthrough_min.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/scene-golden
+	@set -e; session='$(SCRATCH)/playthrough/scene-golden/session.ndjson'; $(M45_SCENE_SHAPE); \
+	test "$$record" -eq 1; test "$$ai_open" -eq 1; \
+	echo "scene fixture: lines=$$lines bytes=$$bytes sha256=$$sha record=$$record ai_open=$$ai_open commit=$$commit new_game=$$new_game quit=$$quit"; \
+	if [ '$(CHECK)' = 1 ]; then cmp "$$session" '$(M45_SCENE).ndjson'; echo 'scene fixture: identical to a fresh playthrough'; \
+	else mkdir -p tests/replays/scene; cp "$$session" '$(M45_SCENE).ndjson'; (cd tests/replays/scene && shasum -a 256 m4_scene_session.ndjson > m4_scene_session.input.sha256); fi
+
+replay-scene-record: ## Explicit arm64 record, retaining the VM/interpreter proof and producer status
+	@mkdir -p $(M45_SCENE_WORK)
+	@test "$$(uname -m)" = arm64 || { echo 'scene record: arm64 required'; exit 1; }
+	@set -e; env -u AI_LIVE $(AILANG) --version > $(M45_SCENE_WORK)/version.log; grep -qx 'AILANG v0.54.18' $(M45_SCENE_WORK)/version.log
+	@env -u AI_LIVE AILANG=$(AILANG) python3 tools/replay.py --record $(M45_SCENE).ndjson > $(M45_SCENE_WORK)/record.log 2>&1; rc=$$?; \
+	if [ $$rc -ne 0 ]; then cat $(M45_SCENE_WORK)/record.log; exit $$rc; fi; \
+	set -e; grep -E '^(replay:|recorded )' $(M45_SCENE_WORK)/record.log > $(M45_SCENE_WORK)/record.txt; \
+	test "$$(wc -l < $(M45_SCENE_WORK)/record.txt | tr -d ' ')" -eq 2; grep -Eq '^replay: AILANG v0\.54\.18, arm64 ' $(M45_SCENE_WORK)/record.txt; \
+	grep -Eq '^recorded $(M45_SCENE)\.state\.arm64\.sha256 \([0-9]+ replies, [0-9]+ bytes, sha256 [0-9a-f]{64}, VM [0-9.]+ s, interpreter [0-9.]+ s\)$$' $(M45_SCENE_WORK)/record.txt; \
+	tee $(M45_SCENE).record.txt < $(M45_SCENE_WORK)/record.txt
+
+replay-scene: ## VM-only scene golden, input/golden controls, effects and archive unlocks
+	@(cd tests/replays/scene && shasum -a 256 -c m4_scene_session.input.sha256)
+	@set -e; pin='$(M45_SCENE_WORK)/input-pin-control'; mkdir -p "$$pin"; \
+	cp $(M45_SCENE).ndjson "$$pin/m4_scene_session.ndjson"; cp $(M45_SCENE).input.sha256 "$$pin/m4_scene_session.input.sha256"; \
+	perl -0777 -i -pe 'substr($$_,0,1)=chr(ord(substr($$_,0,1)) ^ 1)' "$$pin/m4_scene_session.ndjson"; \
+	if (cd "$$pin" && shasum -a 256 -c m4_scene_session.input.sha256) > "$$pin/check.log" 2>&1; then echo 'scene input pin control: one-byte divergence was not detected'; exit 1; \
+	else rc=$$?; test $$rc -eq 1; grep -qx 'm4_scene_session.ndjson: FAILED' "$$pin/check.log"; fi; \
+	echo 'scene input pin control: one-byte change detected'
+	@set -e; session='$(M45_SCENE).ndjson'; $(M45_SCENE_SHAPE)
+	@set -e; recorded=$$(sed -nE 's/^recorded $(M45_SCENE)\.state\.arm64\.sha256 \([0-9]+ replies, [0-9]+ bytes, sha256 ([0-9a-f]{64}), VM [0-9.]+ s, interpreter [0-9.]+ s\)$$/\1/p' $(M45_SCENE).record.txt); \
+	test -n "$$recorded" && test "$$recorded" = "$$(cut -c1-64 $(M45_SCENE).state.arm64.sha256)"
+	@grep -Eq '^export func main\(\) -> \(\) ! \{IO\} =' sim/ship.ail && echo 'scene effects: main ! {IO}, --caps IO'
+	@env -u AI_LIVE AILANG=$(AILANG) python3 tools/replay.py --sim-only --vm-only --positive-control --scratch $(SCRATCH)/replay --session $(M45_SCENE).ndjson
+	@set -e; mkdir -p $(M45_SCENE_WORK); ln -sf '$(abspath $(M45_SCENE).ndjson)' $(M45_SCENE_WORK)/session.ndjson; ln -sf '$(abspath $(SCRATCH)/replay/m4_scene_session.vm.ndjson)' $(M45_SCENE_WORK)/states.ndjson; \
+	env -u AI_LIVE $(AILANG) run $(M45_FLAGS) --bytecode --entry sceneCodex --args-json '"$(abspath $(M45_SCENE_WORK)/session.ndjson)"' $(M45_TOOL) > $(M45_SCENE_WORK)/codex.log; \
+	cat $(M45_SCENE_WORK)/codex.log; grep -qx 'codex-unlocks=PASS' $(M45_SCENE_WORK)/codex.log
+	@echo 'replay-scene: PASS (VM only; interpreter proven at record time, see m4_scene_session.record.txt)'
+test: replay-scene
+
 # Row 7o: tools/rig_check.sh posts only status descriptions GitHub accepts (at most 140 characters)
 # and still reports a failure when a post is refused; stubs only (gh, git, make), no network.
 # Lives here while the Makefile is held; it belongs in tools-test and ci-fast (deferred).
