@@ -1,0 +1,2 @@
+replay: AILANG v0.54.18, arm64 (/Users/voightkampff/dev/sunholo-data/.stap-iter53-exec/runtime/bin/ailang)
+recorded tests/replays/scene/m4_scene_session.state.arm64.sha256 (2427 replies, 83297783 bytes, sha256 77f7ec49d1589644dbee7cb6b0b50c908cbd298e0084fe7218aeda7db460fa79, VM 92.31 s, interpreter 1149.14 s)
