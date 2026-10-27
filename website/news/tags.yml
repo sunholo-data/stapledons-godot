@@ -19,3 +19,9 @@ planets:
 art:
   label: Art
   description: Concept and in-game art.
+design:
+  label: Design
+  description: Designs for features that are planned, not built yet.
+physics:
+  label: Physics
+  description: The real physics behind a mechanic.
