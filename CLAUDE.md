@@ -146,6 +146,27 @@ paths: AILANG packages in runtime/cache/registry/OWNER/PKG/VER/ (or
 ../stapledons-design, Blender work at ~/dev/blender. A PreToolUse hook
 (.claude/hooks/no-broad-find.sh) enforces this for every agent in a session.
 
+## Checkouts and Godot .uid files
+
+A weekly audit on the Studio (`~/.local/lib/checkout-audit/`) deletes side checkouts
+that have been idle 7 days with nothing uncommitted, unpushed or stashed. Leave yours in
+a state it can judge:
+
+- **Commit each `.uid` with its script.** Godot 4 writes `foo.gd.uid` beside every
+  script and shader, and this repo tracks them. Stage it in the same commit
+  (`git add foo.gd foo.gd.uid`). An untracked `.uid` makes every copy look dirty, and
+  `make uid-guard` (part of `make test` and `ci-fast`) fails on a missing one. Stray
+  `.uid` files from other work go in their own `chore: track .uid files` commit, never
+  swept into a sprint commit. If a pull or rebase stops with "untracked working tree
+  files would be overwritten" naming only `.uid` files, delete those files and retry: git
+  refuses even when they are identical, and the tracked copy is the one to keep.
+- **Side checkouts are full clones named `../stapledons-godot-<topic>`.** When the PR
+  merges or the work is dropped, delete the clone after checking that `git status
+  --porcelain`, `git log --branches --not --remotes` and `git stash list` are all empty.
+- **No local-only branches.** Push a `backup/*` or WIP branch, or delete it. A
+  commit that exists in one clone keeps that clone (and its gigabytes) alive forever,
+  and still leaves the commit one `rm -rf` from gone.
+
 ## Project brain (semantic memory)
 
 `.claude/settings.json` wires the AILANG brain, the same embedding search the game's AI layer will
