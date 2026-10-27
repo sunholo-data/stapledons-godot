@@ -1,0 +1,429 @@
+{
+ "sprint": "R2-KERR",
+ "feature": "K1.1a-a3",
+ "round": 1,
+ "evaluator": "Claude Sonnet 5.5",
+ "head": "7e94beff2720d4e32fb997d522cd2842ed6e1a98",
+ "score": 92,
+ "verdict": "PASS",
+ "criteria": {
+  "tests_gates_pass": {
+   "max": 20,
+   "got": 20,
+   "note": "all slice gates rc0; full make test is the controller's"
+  },
+  "lint_clean": {
+   "max": 10,
+   "got": 10,
+   "note": "python-guard, lint-precision, git diff --check rc0"
+  },
+  "acceptance_criteria": {
+   "max": 30,
+   "got": 28,
+   "note": "every new value re-derived independently and matches design literals; -2 because the nonzero-spin static-clock branch is only exercised at u=2 and display for new rows is not independently asserted (N2, N3)"
+  },
+  "code_quality": {
+   "max": 15,
+   "got": 13,
+   "note": "small, no dead code except nothing notable; static_limit theta form is untested off-equator (N1); oracle's nonzero-spin static-clock form is the one the design says not to use in the package (N4, harmless in Decimal)"
+  },
+  "documentation": {
+   "max": 15,
+   "got": 12,
+   "note": "RK-3/RK-9 drop recorded only in commit message and the shell's final echo, not in the sprint JSON amendments (N5)"
+  },
+  "design_fidelity": {
+   "max": 10,
+   "got": 9,
+   "note": "all of RK-10/11/12/13/18/Q1 delivered; RK-13 stated only at u=2 with refusal for u<2, no radius-0 claim; near-1 finite only"
+  }
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  {
+   "id": "N1",
+   "evidence": "Drill M5 (static_limit uses s*cos^2 instead of (s cos)^2) rc=0 SURVIVED; M26 default cos_theta change is killed only via RK-18 static-limit-km",
+   "note": "off-equator branch of static_limit has no assertion; RK-3 identity deferred to a5 so acceptable, but a5 must test cos_theta != 0"
+  },
+  {
+   "id": "N2",
+   "evidence": "Drill M22 (display column = 17g precise for the new value_row rows) rc=0 SURVIVED; M32 (hand-edited fixture display) killed only by --check",
+   "note": "the 6-decimal display of RK-10..18/Q1 is never asserted against an independent literal; only the precise strings are. The 'distinct from display' requirement is met by construction but unguarded"
+  },
+  {
+   "id": "N3",
+   "evidence": "Drill M12 (s=0 branch swapped to 2u/u^2) rc=0 SURVIVED (numerically equivalent in Decimal60 and under the 1e-15 V34 tolerance)",
+   "note": "operation-order / byte-exact dispatch is a package property (binary64) and cannot be proven by a Decimal oracle; V34 anchors hold only to 1e-15. Honest comment in the test. Also the s!=0 static_clock branch is checked only at u=2 (result 0)"
+  },
+  {
+   "id": "N4",
+   "evidence": "kerr_ref.py static_clock: nonzero spin uses 1 - 2u/(u*u); design line 119 says the package must use sqrt(1.0-1.0/(u/2.0))",
+   "note": "no impact on a Decimal oracle; mention for the package milestone"
+  },
+  {
+   "id": "N5",
+   "evidence": "git show 7e94beff touches no sprint JSON; a5 test text still demands RK-1..13 present; a1 asserts text says RK-1/2/3/9",
+   "note": "RK-3 and RK-9 dropped for the 140-line cap is consistent with the a3 implementation text (which lists only RK-10..13, 18, Q1) and the iter49 amendment (RK-9 assigned to a1), and is stated in the commit message and shell echo, but the sprint JSON has no amendment moving RK-3/RK-9 records to a5 (or a1 'as budget fits'). Add one when the controller records completion. RK-9 value is exercised via omega-h-rad-s in RK-18; RK-3 via static-limit-km"
+  },
+  {
+   "id": "N6",
+   "evidence": "Drill M11 (refuse at u==2) killed only by 'stdout generation failed' (generation crash), M30 (horizons swapped near 1) survived",
+   "note": "M11 is loud but incidental; M30 survives by design (plan says finiteness only, no accuracy claim near 1)"
+  },
+  {
+   "id": "N7",
+   "evidence": "git diff --numstat 90d6f628 7e94beff: 20+74+38 = 132 added, 3+3+2 = 8 deleted, 140 touched",
+   "note": "cap of 140 met whichever way counted, with zero headroom when deletions are counted"
+  }
+ ],
+ "rederivation_method": "Independent Decimal(70) from the Boyer-Lindquist equatorial metric built from scratch: g_tt=-(1-2u/u^2), g_tphi=-2su/u^2, g_phiphi=u^2+s^2+2s^2/u; omega=-g_tphi/g_phiphi; N^2=-(g_tt - g_tphi^2/g_phiphi); ISCO roots by bisection on x^4-6x^2+8sx-3s^2 (x=sqrt(u)) rather than the Z1/Z2 closed form; v=(Omega-omega)sqrt(g_phiphi)/N with Omega=1/(u^1.5+s); SI by direct GM_sun, c arithmetic. Static clock s=0 checked in binary64 math.sqrt(1-1/(u/2)). Source /tmp/stap_iter51_eval/mine.py (not committed). Also the controller's own float-metric claim was not relied on.",
+ "independent_values": [
+  {
+   "id": "RK-10",
+   "spin": "0.9",
+   "mine": "0.16014234875444840",
+   "fixture": "0.16014234875444840",
+   "design": "0.16014234875444840",
+   "agree": true
+  },
+  {
+   "id": "RK-11",
+   "spin": "0.9",
+   "mine": "0.37964208654863802",
+   "fixture": "0.37964208654863802",
+   "design": "0.37964208654863802",
+   "agree": true
+  },
+  {
+   "id": "RK-12",
+   "spin": "0.9",
+   "mine": "0.62454869546086524",
+   "fixture": "0.62454869546086524",
+   "design": "0.62454869546086524",
+   "agree": true
+  },
+  {
+   "id": "RK-12",
+   "spin": "0.5",
+   "mine": "0.56164924228192780",
+   "fixture": "0.56164924228192780",
+   "design": "0.56164924228192780",
+   "agree": true
+  },
+  {
+   "id": "RK-13",
+   "spin": "0.9",
+   "mine": "1-2u/u^2 = 0 exactly at u=2",
+   "fixture": "0",
+   "design": "qualitative zero at static limit",
+   "agree": true
+  },
+  {
+   "id": "RK-13 s=0 V34",
+   "mine": "math.sqrt(1-1/(u/2)) = 0.7156780854205468, 0.816496580927726, 0.9486832980505138 for u=4.1,6,20",
+   "fixture_test": "anchors 0.71567808542054678, 0.81649658092772603, 0.94868329805051377 at 1e-15",
+   "agree": true
+  },
+  {
+   "id": "RK-18 rs-km / static-limit-km",
+   "mine": "29.532500761002495 (29.5325007610024946)",
+   "fixture": "29.532500761002495",
+   "agree": true
+  },
+  {
+   "id": "RK-18 horizon-km",
+   "mine": "21.202709698863643",
+   "fixture": "21.202709698863643",
+   "agree": true
+  },
+  {
+   "id": "RK-18 isco-pro-km",
+   "mine": "34.270740098515360 (34.27074009851535978)",
+   "fixture": "34.270740098515360",
+   "agree": true
+  },
+  {
+   "id": "RK-18 period-ms",
+   "mine": "1.3727616115380832",
+   "fixture": "1.3727616115380832",
+   "agree": true
+  },
+  {
+   "id": "RK-18 omega-h",
+   "mine": "6362.7059001439946",
+   "fixture": "6362.7059001439946",
+   "agree": true
+  },
+  {
+   "id": "RK-Q1",
+   "mine": "s=0: photon 3, ISCO 6, shadow 3sqrt3=5.196152422706632 (= circle radius 3sqrt3/2 r_s), omega 0, static limit = horizon = 2",
+   "fixture": "same",
+   "agree": true
+  },
+  {
+   "id": "near-extremal",
+   "mine": "1-2^-53 = 0.9999999999999999 exactly representable; oracle outputs finite",
+   "agree": true
+  }
+ ],
+ "drills": [
+  {
+   "id": "M1",
+   "mutation": "cbrt returns NaN when 1-s^2<1e-15 (fixture regenerated)",
+   "rc": 1,
+   "message": "near-extremal s=1-2^-53 not finite",
+   "result": "KILLED (sole killer: plan's named nonfinite kill)"
+  },
+  {
+   "id": "M2",
+   "mutation": "photon_orbits returns Infinity for s>0.9999999",
+   "rc": 1,
+   "message": "near-extremal ... not finite",
+   "result": "KILLED"
+  },
+  {
+   "id": "M28",
+   "mutation": "orbit_clock k=-1 NaN for s>1-1e-12",
+   "rc": 1,
+   "message": "near-extremal ... not finite",
+   "result": "KILLED"
+  },
+  {
+   "id": "M30",
+   "mutation": "horizons swap inner/outer for s>1-1e-10",
+   "rc": 0,
+   "message": "",
+   "result": "SURVIVED (by design: finiteness only)"
+  },
+  {
+   "id": "M3",
+   "mutation": "photon cubic -1e-30 (root shift ~1e-15)",
+   "rc": 1,
+   "message": "doc literal: ('RK-Q1','0','photon-pro')",
+   "result": "KILLED"
+  },
+  {
+   "id": "M3b",
+   "mutation": "photon cubic -1e-70 (shift ~1e-35, strings identical)",
+   "rc": 1,
+   "message": "RK-Q1 s=0 photon orbits not exact",
+   "result": "KILLED (sole killer: plan's always-Kerr-rounding kill)"
+  },
+  {
+   "id": "M4b",
+   "mutation": "ISCO pro +1e-40 at all spins",
+   "rc": 1,
+   "message": "RK-Q1 s=0 ISCO not exact",
+   "result": "KILLED (sole killer)"
+  },
+  {
+   "id": "M4",
+   "mutation": "cbrt via float",
+   "rc": 1,
+   "message": "precise17 anchor RK-6",
+   "result": "KILLED"
+  },
+  {
+   "id": "M5",
+   "mutation": "static_limit s*cos^2 instead of (s cos)^2",
+   "rc": 0,
+   "message": "",
+   "result": "SURVIVED (equivalent at tested cos=0; N1)"
+  },
+  {
+   "id": "M6",
+   "mutation": "frame_drag factor 2 dropped",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M7",
+   "mutation": "lapse Sigma=u not u^2",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M8",
+   "mutation": "zamo_speed omits omega",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M9",
+   "mutation": "zamo_speed at retrograde ISCO",
+   "rc": 1,
+   "message": "doc literal RK-12",
+   "result": "KILLED"
+  },
+  {
+   "id": "M10",
+   "mutation": "static_clock no refusal below 2",
+   "rc": 1,
+   "message": "RK-13 u<2 not refused",
+   "result": "KILLED"
+  },
+  {
+   "id": "M11",
+   "mutation": "static_clock refuses at u==2",
+   "rc": 1,
+   "message": "stdout generation failed",
+   "result": "KILLED (incidental crash)"
+  },
+  {
+   "id": "M12",
+   "mutation": "s=0 branch uses 2u/u^2",
+   "rc": 0,
+   "message": "",
+   "result": "SURVIVED (numerically equivalent; N3)"
+  },
+  {
+   "id": "M13",
+   "mutation": "s=0 branch 1-1/u",
+   "rc": 1,
+   "message": "V34 static clock s=0: 4.1",
+   "result": "KILLED"
+  },
+  {
+   "id": "M14",
+   "mutation": "nonzero branch 1-1/u",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M15",
+   "mutation": "GM_sun 1.32712440018e20",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M16",
+   "mutation": "period without 2pi",
+   "rc": 1,
+   "message": "doc literal RK-18 period-ms",
+   "result": "KILLED"
+  },
+  {
+   "id": "M17",
+   "mutation": "horizon-km uses inner horizon",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M18",
+   "mutation": "Omega_H uses u_-",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M19",
+   "mutation": "shadow s=0 off by 1e-10 relative",
+   "rc": 1,
+   "message": "doc literal RK-Q1 shadow",
+   "result": "KILLED"
+  },
+  {
+   "id": "M29",
+   "mutation": "shadow +1e-17",
+   "rc": 0,
+   "message": "",
+   "result": "SURVIVED (below 1e-16 tolerance and 17-digit string)"
+  },
+  {
+   "id": "M20",
+   "mutation": "Q1 frame_drag +1e-20",
+   "rc": 1,
+   "message": "doc literal RK-Q1 frame-drag",
+   "result": "KILLED"
+  },
+  {
+   "id": "M21",
+   "mutation": "rs-km = GM not 2GM",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M22",
+   "mutation": "value_row display uses 17g",
+   "rc": 0,
+   "message": "",
+   "result": "SURVIVED (N2)"
+  },
+  {
+   "id": "M23-M25",
+   "mutation": "frame_drag / horizon_omega / static_limit skip spin_value",
+   "rc": 1,
+   "message": "invalid spin accepted",
+   "result": "KILLED"
+  },
+  {
+   "id": "M26",
+   "mutation": "static_limit default cos_theta 0.01",
+   "rc": 1,
+   "message": "doc literal static-limit-km",
+   "result": "KILLED"
+  },
+  {
+   "id": "M27",
+   "mutation": "RK-12 spin list 0.5 -> 0.9 (fixture only)",
+   "rc": 1,
+   "message": "assertion",
+   "result": "KILLED"
+  },
+  {
+   "id": "M31",
+   "mutation": "fixture RK-Q1 shadow last digit tampered, oracle intact",
+   "rc": 1,
+   "message": "--check valid fixture rejected",
+   "result": "KILLED"
+  },
+  {
+   "id": "M32",
+   "mutation": "fixture RK-13 display tampered",
+   "rc": 1,
+   "message": "--check valid fixture rejected",
+   "result": "KILLED"
+  },
+  {
+   "id": "M33",
+   "mutation": "Omega_H x(1+1e-18)",
+   "rc": 0,
+   "message": "",
+   "result": "SURVIVED (below 17-digit resolution)"
+  }
+ ],
+ "gates": [
+  {
+   "cmd": "sh tools/test_kerr_oracle.sh",
+   "rc": 0
+  },
+  {
+   "cmd": "make kerr-oracle AILANG=ailang",
+   "rc": 0
+  },
+  {
+   "cmd": "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+   "rc": 0
+  },
+  {
+   "cmd": "python3 -I tools/kerr_ref.py | cmp - tests/fixtures/kerr/rk.json",
+   "rc": 0
+  },
+  {
+   "cmd": "make python-guard lint-precision AILANG=ailang",
+   "rc": 0
+  },
+  {
+   "cmd": "git diff --check 90d6f628 7e94beff",
+   "rc": 0
+  }
+ ],
+ "rules": "Anchors in the shell are design literals (rows 86-105, V34) and match my independent values; oracle is stdlib Python run with -I; fixture regenerates byte-identically (cmp rc0); only the three planned files changed. Full make test not run (controller)."
+}

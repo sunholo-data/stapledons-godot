@@ -12,6 +12,8 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 52 | 2026-10-27 | iteration 52, K1.1a-a3 Kerr oracle RK-10..13, RK-18 and RK-Q1 LANDED (PR #333, merge `f97d5ef1`), built by orphan iteration 51 and verified and lan... |
+| 51 | 2026-10-26 | [PRODUCT] Unrecorded orphan: built K1.1a-a3 (PR #333, `7e94beff`, Sonnet 92 PASS round 1); killed when the rig crashed (reboot 17:05) during its rig/full re-run; recovered record and landing in iteration 52. |
 | 50 | 2026-10-26 | K1.1a-a2 Kerr oracle RK-4..RK-8 and RK-8b LANDED (PR #327, merge `3bd298e2`); independent Sonnet 93/100 PASS, zero blocking; controller replaced a ... |
 | 49 | 2026-10-25 | K1.1a-a1 Kerr horizon oracle seed LANDED (PR #325); recovered unrecorded planner iteration 47 and preserved orphan 48; independent MiniMax M3 95/10... |
 | 48 | 2026-10-23 | [PRODUCT] Unrecorded orphan: Ollama DeepSeek v4.1 Flash authored oversized unreviewed K1.1a-a files; uncommitted tree preserved; recovered record in iteration49. |

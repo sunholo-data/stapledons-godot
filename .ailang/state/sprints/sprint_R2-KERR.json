@@ -1327,17 +1327,26 @@
       "depends_on": [
         "K1.1a-a2"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
+      "passes": true,
+      "started": "2026-10-26",
+      "completed": "2026-10-27",
+      "actual_loc": 140,
       "mutation_drill": true,
       "design_blocks": [
         "DI-01"
       ],
       "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "evidence": {
+        "commit": "7e94beff2720d4e32fb997d522cd2842ed6e1a98",
+        "pr": 333,
+        "merge": "f97d5ef183f96406837fee85e6f349b953b6008f",
+        "rig_full": "success on 7e94beff (66 min, run 2); run 1 red only on rig-check-control from the controller's RIG_TEST_S=6600 override (paired control rc 1 vs rc 0)",
+        "fast_ci": "40343573482 success (head), 40484301691 (merge, see the iteration 52 log)",
+        "evaluation": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a3_round_2.json (Sonnet 90 PASS, 0 blocking); round 1 eval_R2-KERR_K1.1a-a3_round_1.json (Sonnet 92 PASS, iteration 51)",
+        "mission_iteration": "51 (built, orphaned by the 2026-10-26 17:05 rig crash) and 52 (verified and landed)"
+      }
     },
     {
       "id": "K1.1a-a4",
@@ -4462,6 +4471,13 @@
       "report": ".ailang/state/planning/stapledon-iter49-planner.md",
       "summary": "K1.1a-a re-split into K1.1a-a1..a5 (each <=150 total physical lines, oracle-only, registry_reuse none); original K1.1a-a moved from active features to superseded_features (double count removed); active features 34, active LOC 4210 (=3710-150+650; with K1.0 spec 4360); dependents re-pointed to terminal child K1.1a-a5; parent K1.1a estimated_loc 1150; approved spin domain finite 0<=s<1 (reject negative, s=1, >1, NaN/Inf BEFORE any sqrt; no signed/extremal expansion); RK labels corrected (RK-4/5 photon pro/retro, RK-6/7 ISCO pro/retro, RK-8 and RK-8b orbit clocks, RK-9 horizon omega in a1, RK-10 drag/RK-11 lapse/RK-12 speed/RK-13 static clock in a3); D116 scoped authorization already covers K1.1a children -- all other parents/P0/Mark spec/publish fences remain; global approved:false/awaiting_approval unchanged for the unscheduled rest.",
       "passes_changed": false
+    },
+    {
+      "id": "iter52-kerr-a3-landing",
+      "author": "controller claude:claude-opus-5-5 (mission iteration 52), from the a3 round-1 eval N5 and round-2 eval NB3",
+      "kind": "bookkeeping: record assignment, no scope or approval change",
+      "summary": "K1.1a-a3 landed without RK-3 (static limit record, the constant 2 at the equator) and RK-9 (dimensionless horizon angular velocity record), because both would exceed its 140-line cap (150 with them). Both records are owed before K1.1a-a5's completeness audit, which requires RK-1..13: fold them into K1.1a-a4 if its cap allows, otherwise into a5. Carried with them from the a3 evals: an off-equator static_limit anchor or drop of the unused cos_theta parameter (round 1 N1, round 2 NB1), and a guard on the Decimal precision (round 2 V10: precision 20 survives, reproduced by the controller).",
+      "passes_changed": true
     }
   ]
 }
