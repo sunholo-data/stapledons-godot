@@ -1,0 +1,245 @@
+{
+  "sprint_id": "R3-EARTH-LINK",
+  "status": "awaiting_approval",
+  "approved": null,
+  "created": "2026-10-27",
+  "design_doc": "design_docs/planned/r3/earth-link.md",
+  "sprint_plan": "design_docs/planned/r3/earth-link-sprint.md",
+  "branch": "feat/earth-link (game, attended clone) + feat/observe (fresh sunholo-data/ailang-packages clone); this plan on design/r3-earth-link",
+  "origin": "Mark, attended 2026-10-27: 'yes lets get all the decisions up to date and then start building' after approving R3 (stapledons-design #42); roadmap order-of-work step 1 (S1, K1, F6)",
+  "github_issues": [],
+  "ailang": {
+    "pin": "v0.54.18",
+    "binary": "runtime/bin/ailang",
+    "prompt_version_loaded": "v0.16.7",
+    "note": "PATH ailang on the Studio reads v0.54.19-dirty; never use it for gates"
+  },
+  "external_dependencies": [
+    "stapledons-design fix/catch-up-times merged (RS-26..RS-35)",
+    "sunholo/observe 0.1.0 published under the standing approval for sunholo/*",
+    "free protocol minor (2.16 expected; checked at execution)"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "EL1",
+      "package": "sunholo/observe",
+      "action": "contribute",
+      "reason": "ailang pkg search 'light cone'|observe|'link budget'|doppler (2026-10-27): no light-cone or link-geometry package; roadmap names sunholo/observe for S2; this creates 0.1.0 (geometry only)"
+    },
+    {
+      "milestone": "EL1",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "optics.doppler and kinematics.oneMinusBeta (0.12.0): the Earth rate is the existing Doppler factor"
+    },
+    {
+      "milestone": "EL2",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "the sim already pins 0.12.0; Doppler for Sol's direction"
+    },
+    {
+      "milestone": "EL1",
+      "package": "sunholo/celestial",
+      "action": "none",
+      "reason": "its retarded-time iteration is for moving Solar System bodies (AU, days); stars are static in the galaxy frame, t - d is exact"
+    },
+    {
+      "milestone": "EL3",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI"
+    },
+    {
+      "milestone": "EL4",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI"
+    },
+    {
+      "milestone": "EL5",
+      "package": "none",
+      "action": "none",
+      "reason": "GDScript mirror and tests"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 1350,
+    "estimated_days": 5,
+    "basis": "recent attended R2 rate about 300 counted LOC/day (R2-SUNHOLO-AUDIO, R2-HOME-TIERS); plus rig/full 66-77 min and Mark's render review"
+  },
+  "critical_path": [
+    "EL0",
+    "EL1",
+    "EL2",
+    "EL3",
+    "EL4",
+    "EL5"
+  ],
+  "pause_points": [
+    {
+      "after": "plan",
+      "mark_decides": "approve the plan and design OQ1-OQ5"
+    },
+    {
+      "after": "EL2, only if the free minor is not 2.16 or a replay golden below 2.16 changes",
+      "mark_decides": "stop and report"
+    },
+    {
+      "after": "EL5",
+      "mark_decides": "review the five renders (AC11) before the PR merges"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "Comms station on the spare console reserved_2?",
+      "recommendation": "yes; reserved_3 stays spare",
+      "answer": null
+    },
+    {
+      "id": "OQ2",
+      "q": "The ship sends its plan home automatically at every commit?",
+      "recommendation": "yes, automatic, shown in the Exchange log",
+      "answer": null
+    },
+    {
+      "id": "OQ3",
+      "q": "Earth always transmits in this sprint (earth.sending true)?",
+      "recommendation": "yes; Earth's fate switches it later",
+      "answer": null
+    },
+    {
+      "id": "OQ4",
+      "q": "Gate 2 golden for a 2D overlay = projected geometry vs a CPU reference?",
+      "recommendation": "yes",
+      "answer": null
+    },
+    {
+      "id": "OQ5",
+      "q": "Create sunholo/observe now for the geometry?",
+      "recommendation": "yes, as the roadmap names it",
+      "answer": null
+    }
+  ],
+  "features": [
+    {
+      "id": "EL0",
+      "description": "Spec rows RS-26..RS-37 and the 0.9c catch-up fix merged in stapledons-design (PR #44, branch fix/catch-up-times)",
+      "estimated_loc": 0,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "RS-26..RS-37 on stapledons-design main",
+        "git grep -c 'RS-3[0-7]' physics/relativity-spec.md >= 8"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "EL1",
+      "description": "sunholo/observe 0.1.0: seenAt, catchUp(delta, oneMinusBeta), triangleExcess, onBeamLine(port, p, cosTol) (ray from Sol), linkWindow(a, b, legT, covered), earthRate (wraps relativity optics.doppler; Sol direction = -heading at |pos| < 1e-12); tests; publish; sim pin",
+      "estimated_loc": 250,
+      "dependencies": [
+        "EL0"
+      ],
+      "acceptance_criteria": [
+        "ailang test in packages/observe: RS-26..RS-30 vs closed forms e^(-+phi) to 1e-9 relative; RS-31..RS-37 (RS-34 to 1e-3); the Sol guard; alpha Cen epoch 0.043984",
+        "ailang pkg quality reports no gates; [release] kind present",
+        "published 0.1.0; sim/ailang.toml pins it; ailang lock and make deps clean"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "EL2",
+      "description": "sim/earth_link.ail (Message with from/port), World link record appended at commit, consequence.clocks via seenAt, in-beam rule (at Sol / on heard plan / on heard ray), linkWindow, stale beams, earth.preview for an uncommitted plan, protocol 2.16 earth section, earthLinkVm in strict and parity, EARTH_MINOR in sim_bridge.gd; synthetic Target fixtures",
+      "estimated_loc": 400,
+      "dependencies": [
+        "EL1"
+      ],
+      "acceptance_criteria": [
+        "make replay right after adding World.link: pre-2.16 goldens unchanged (stop otherwise)",
+        "make sim: alpha Cen news epoch 0.043984 unchanged (checkNewsEpoch)",
+        "make sim: Earth rate matches e^(-+phi) to 1e-9 at the RS speeds; 1 at rest at Sol",
+        "make sim (AC4): synthetic A 40 ly, B 30 ly at right angle; in beam at Sol and on leg 1; out of beam mid-transit and on arrival after the re-plan; wait_years = |A|+|B|-T to 1e-9 yr; back in beam exactly when t-|p| >= new heard_t",
+        "make sim (AC5): beyond A on its ray or between Sol and A -> wait 0, in beam throughout; far side of Sol -> excess 0, not covered",
+        "make sim (AC1b): RS-31..RS-37 through the pinned package",
+        "make sim (AC6, AC12 sim half): stale beam until the new heard_t; earth.preview equals the committed window and stale, three keys only",
+        "make strict and make parity: earthLinkVm VM = interpreter; a 2.15 session prints no earth key"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "EL3",
+      "description": "Comms station on reserved_2: Listen pane (newest Earth light, age, live Earth rate with data-driven phrase, in-beam state and reason, silence) and Exchange log (plans sent, heard at Earth, earliest reply at port)",
+      "estimated_loc": 330,
+      "dependencies": [
+        "EL2"
+      ],
+      "acceptance_criteria": [
+        "make display-audit-comms (new target, in make test): 0 unbound digits on the Listen and Exchange-log panes",
+        "tests/test_comms_station.gd green in make ui: rate phrase thresholds from data at four D values; out-of-beam reasons from sim fields; console opens from the deck"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "EL4",
+      "description": "ui/earth_beams.gd overlay on the galaxy map: heard beams, plans in flight with their light-fronts, stale beams, link window bars, silence, plan preview from the sim; filter toggle on by default",
+      "estimated_loc": 270,
+      "dependencies": [
+        "EL2"
+      ],
+      "acceptance_criteria": [
+        "tests/test_earth_beams.gd green in make ui: each element drawn from its earth.* field at fixture states; nothing below 2.16",
+        "while a plan is uncommitted the map reads only earth.preview (AC12)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "EL5",
+      "description": "physics/observe.gd mirror, test_physics.gd RS-26..RS-35, make golden G-EL-1, make capture-earth-link (5 states + contact sheet), report draft",
+      "estimated_loc": 100,
+      "dependencies": [
+        "EL3",
+        "EL4"
+      ],
+      "acceptance_criteria": [
+        "make physics asserts RS-26..RS-37 against physics/observe.gd and physics/relativity.gd",
+        "make golden G-EL-1 within 0.5 px at three fixture states",
+        "make capture-earth-link: five renders, neither blank nor duplicated; Mark has opened them (recorded in the report)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "reviews": [
+    {
+      "date": "2026-10-27",
+      "reviewer": "Agent tool, model sonnet, read-only",
+      "score": 66,
+      "verdict": "revise",
+      "blocking": [
+        "RS-35 / triangleExcess inconsistent: |A|+|B|-|AB| is 80 beyond A on its ray and 20 between Sol and A; the zero wait there is beam coverage, not the formula",
+        "AC9 named a non-existent make display-audit; new tests not stated as wired into make test"
+      ],
+      "addressed": "RS-35 redefined (far side of Sol), RS-36/RS-37 added (design PR #44); linkWindow(a,b,legT,covered); onBeamLine = ray from Sol; display-audit-comms target in make test; all new tests wired; in-beam rule pinned (at Sol / on heard plan / on heard ray) with mid-transit asserts; Sol guard; earth.preview sim field + equality test; synthetic Target fixtures; AC1b sim-side RS checks; signatures aligned (oneMinusBeta, cosTol); closed-form comparison; replay golden check right after World.link; [release] kind in EL1 acceptance; AC13 moved to pr_gate"
+    }
+  ],
+  "pr_gate": "tools/rig_check.sh <PR> --golden green (rig/full) and the GitHub fast tier green (AC13)"
+}
