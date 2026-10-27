@@ -2,6 +2,8 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-25 — ITERATION 49: K1.1a-a1 Kerr horizon oracle seed LANDED (PR #325, merge `72bac648`); independent MiniMax M3 95 PASS, zero blocking; eight RK-1/2 records, 150 physical lines; parent open; clauses 1/4 UNMET, goal unmoved
+
 ## STATUS 2026-10-22 — ITERATION 46: row L9 semantic-memory S0.2 LANDED (PR #323, merge `db54e525`): protocol minor 14 (`similarMinor = surfaceMinor() + 1`) negotiates between surface 13 and archive 15, and every new_game at a negotiated minor of 14 or more carries a top-level `similar` section just before `archive`; 2.13 bytes unchanged, 2.15 minus `similar` equals the pristine 2.15 bytes; planner codex amended the plan for minor 15 (`8674925d`), executor codex built it test-first (`bef58082`); independent Sonnet eval 93 PASS, 0 blocking, 7 of 7 drills killed; rows 7o + 7s LANDED (PR #309, merge `2272527d`, `rig/full` green 65 min on an idle rig); row 7r rotate-log RESOLVED with a dev-built binary; D-116 RESOLVED A attended mid-run; clause 2/3 MET, 1/4 UNMET, 5 ongoing; goal moved (R2 sim work, Mark's 2026-10-20 order)
 
 - **Clause map**: 1 UNMET → M1.5b renders + report (attended); 2 MET; 3 MET; 4 UNMET → row 7m AC1 PARKED-ON-LANE (GPU `Device Utilization %` 90 at pick and 80 at record, 1-min load 2.7 to 10; predicate < 15 and < 5), 7i(c) held (attended #318, #319 and #322 edit `demos/ship_geometry_demo.gd`), P-land; 5 ongoing. No routable UNMET-clause row, so Mark's 2026-10-20 order governs.

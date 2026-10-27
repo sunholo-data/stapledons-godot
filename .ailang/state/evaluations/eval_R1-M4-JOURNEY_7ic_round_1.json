@@ -1,0 +1,430 @@
+{
+ "sprint_id": "R1-M4-JOURNEY",
+ "feature": "M4.5bR3_7ic_SCENE_SESSION_GOLDEN",
+ "round": 1,
+ "head": "c87ee9e8a463677278dc5617f77780142a9afd18",
+ "evaluator": "claude sonnet, Agent tool, iteration 53",
+ "score": 88,
+ "categories": [
+  {
+   "name": "Acceptance criteria / functionality",
+   "points": 38,
+   "max": 40,
+   "reason": "All runnable ACs (2-9, 11) pass first time, plus ordinary positive control; AC1/AC10 not mine"
+  },
+  {
+   "name": "Test quality and mutation resistance",
+   "points": 14,
+   "max": 20,
+   "reason": "S1: 12 of 18 mutants killed, survivors M2,M3,M9,M10,M11,M12 (M18 equivalent); S2: 5 killed by make, 4 only by manual AC grep, D7 survived"
+  },
+  {
+   "name": "Design adherence",
+   "points": 14,
+   "max": 15,
+   "reason": "Matches design; record provenance plausible; record.txt line 1 embeds a sibling-clone absolute path"
+  },
+  {
+   "name": "Code quality / safety",
+   "points": 13,
+   "max": 15,
+   "reason": "env -u AI_LIVE everywhere, ai_live_guard rc 0, writes only to SCRATCH/repo, ci-fast unchanged, no interpreter reachable from make test target"
+  },
+  {
+   "name": "Documentation / process",
+   "points": 9,
+   "max": 10,
+   "reason": "Changelog fragment, sprint JSON updated; AC6 expected-string in design uses awk label that matches"
+  }
+ ],
+ "ac_results": [
+  {
+   "id": "AC2",
+   "command": "git check-attr + shasum -c",
+   "rc": 0,
+   "observed": "tests/replays/scene/m4_scene_session.ndjson: text: unset / m4_scene_session.ndjson: OK",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC3",
+   "command": "grep -cE record.txt; cut -c1-64 golden",
+   "rc": 0,
+   "observed": "1 / 77f7ec49d1589644dbee7cb6b0b50c908cbd298e0084fe7218aeda7db460fa79",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC4",
+   "command": "make replay-scene | grep -cE ...",
+   "rc": 0,
+   "observed": "make rc 0, count 7; VM 51.79 s; replay-scene: PASS",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC5",
+   "command": "python3 tools/test_replay.py | tail -1",
+   "rc": 0,
+   "observed": "Ran 32 tests; OK",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC6",
+   "command": "make -pnq test | awk",
+   "rc": 0,
+   "observed": "ci-fast: - replay / test: scene replay",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC7",
+   "command": "replay.py --sim-only --vm-only --arch x86_64 ... | grep -c",
+   "rc": 0,
+   "observed": "2 (named fallback line + ok line, VM 122.7 s)",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC8",
+   "command": "replay.py | tail -1",
+   "rc": 0,
+   "observed": "replay: 11 cases, all identical (72.9 s wall)",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC9",
+   "command": "sh tools/ai_live_guard.sh .",
+   "rc": 0,
+   "observed": "rc=0",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC11",
+   "command": "git diff --name-only b1107878 -- '*.py' (origin/main ref absent in clone)",
+   "rc": 0,
+   "observed": "tests/fixtures/fake_ailang.py tools/replay.py tools/test_replay.py; changelog fragment present; CI green not mine",
+   "verdict": "PASS"
+  },
+  {
+   "id": "AC1",
+   "command": "not run (Godot playthrough optional)",
+   "rc": null,
+   "observed": "not run",
+   "verdict": "NOT_RUN"
+  },
+  {
+   "id": "AC10",
+   "command": "not mine (controller)",
+   "rc": null,
+   "observed": "not run",
+   "verdict": "NOT_RUN"
+  },
+  {
+   "id": "item4 ordinary positive control",
+   "command": "make replay-positive-control",
+   "rc": 0,
+   "observed": "one-bit golden-copy divergence detected; cmp positive control: divergence detected (old path unchanged); ci-fast has no scene target",
+   "verdict": "PASS"
+  }
+ ],
+ "drills": [
+  {
+   "milestone": "S1",
+   "mutation": "M1 verify(): vm_only branch disabled (interpreter would run)",
+   "killer": "python3 tools/test_replay.py 6 VmOnly tests (vm_only_never_interpreter ...)",
+   "rc": 1,
+   "output": "FAILED (failures=6)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M2 golden_paths fallback no longer requires ctx.vm_only (arm64 fallback leaks into ordinary mode)",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real survivor: ordinary-mode x86_64 would silently compare arm64 golden; no test"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M3 delete --caps IO assert in run()",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real survivor (guard untested; make only greps source for the signature)"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M4 vm_positive_control flips ^0 instead of ^1",
+   "killer": "python3 tools/test_replay.py test_positive_control_reuses_one_run",
+   "rc": 1,
+   "output": "FAILED (failures=2)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M5 record summary byte count replaced by reply count",
+   "killer": "python3 tools/test_replay.py test_record_summary",
+   "rc": 1,
+   "output": "FAILED (failures=1)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M6 vm-only rejection ignores --compat",
+   "killer": "python3 tools/test_replay.py test_reject_record_and_compat",
+   "rc": 1,
+   "output": "FAILED (failures=1)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M7 drop 'vm-only (VM = interpreter proven...)' suffix",
+   "killer": "python3 tools/test_replay.py test_vm_only_never_interpreter",
+   "rc": 1,
+   "output": "FAILED (failures=1)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M8 ordinary positive-control branch taken under --vm-only",
+   "killer": "python3 tools/test_replay.py bad_real_golden + reuses_one_run",
+   "rc": 1,
+   "output": "FAILED (failures=3)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M9 control accepts any mutated failure count != 0 and any message",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real survivor (weak: control no longer checks exactly one 'golden ' failure)"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M10 run control even when real verify failed",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK; bad-golden case still rc 1 via 'clean copy failed' exit",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real but low impact: rc is 1 either way, assertNotIn matches a different string"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M11 remove stale-alternate removal in vm_positive_control",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real survivor, minor (stale file only after kind switch in same scratch)"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M12 neutralise 'clean copy failed' check",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real survivor, minor"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M13 _checked_case never captures (captured=None)",
+   "killer": "python3 tools/test_replay.py reuses_one_run",
+   "rc": 1,
+   "output": "FAILED (failures=2)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M14 fallback arch arm64->x86_64",
+   "killer": "python3 tools/test_replay.py 4 tests",
+   "rc": 1,
+   "output": "FAILED (failures=4)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M15 vm_only out_i != out",
+   "killer": "python3 tools/test_replay.py 4 tests",
+   "rc": 1,
+   "output": "FAILED (failures=4)",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M16 main loop drops results (never prints)",
+   "killer": "python3 tools/test_replay.py many Replay tests",
+   "rc": 1,
+   "output": "FAILED",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M17 verify ignores captured and re-runs VM",
+   "killer": "python3 tools/test_replay.py 6 tests",
+   "rc": 1,
+   "output": "FAILED",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S1",
+   "mutation": "M18 control on cases[-1] not cases[0]",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "Ran 32 OK",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "equivalent with single case (make uses one session)"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D1 .gitattributes emptied (rm leaves index copy, so emptied)",
+   "killer": "AC2 check-attr only (text: unspecified); not killed by make test",
+   "rc": null,
+   "output": "unspecified",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "survives production gate, killed by manual AC2 only; non-blocking"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D2 shape check commit -eq 3",
+   "killer": "make replay-scene",
+   "rc": 2,
+   "output": "scene input shape: FAIL",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D3 pin control perl xor ^0",
+   "killer": "make replay-scene",
+   "rc": 2,
+   "output": "scene input pin control: one-byte divergence was not detected",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D4 golden digest first char altered",
+   "killer": "make replay-scene",
+   "rc": 2,
+   "output": "Error 1 at record.txt/golden compare, before VM",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D5 record.txt sha altered",
+   "killer": "make replay-scene",
+   "rc": 2,
+   "output": "Error 1 at record.txt/golden compare",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D6 drop --positive-control from harness call",
+   "killer": "AC4 count only (6 not 7); make rc 0",
+   "rc": 0,
+   "output": "replay-scene: PASS",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "survives make test; real, non-blocking"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D7 codex grep -qx 'codex-unlocks=PASS' -> grep -q 'codex-unlocks'",
+   "killer": "SURVIVED",
+   "rc": 0,
+   "output": "PASS",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "real weak survivor (would accept codex-unlocks=FAIL if printed)"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D8 remove 'test: replay-scene'",
+   "killer": "AC6 awk only (test: -); make test not affected by itself",
+   "rc": null,
+   "output": "test: -",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed by manual AC6 only"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D9 drop --sim-only from scene harness call",
+   "killer": "AC4 count only (6)",
+   "rc": 0,
+   "output": "PASS",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "survives make test; cosmetic (summary line), non-blocking"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D11 revert sed delimiter # to /",
+   "killer": "make replay-scene",
+   "rc": 2,
+   "output": "sed: bad flag in substitute command",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "killed"
+  },
+  {
+   "milestone": "S2",
+   "mutation": "D12 delete 'scene effects' grep line",
+   "killer": "AC4 count only (6)",
+   "rc": 0,
+   "output": "PASS",
+   "restored_cmp": "cmp rc 0 vs /tmp backup",
+   "classification": "survives make test; real, non-blocking"
+  }
+ ],
+ "blocking": [],
+ "findings": [
+  {
+   "severity": "non-blocking",
+   "file": "mk/m45.mk:44-48",
+   "what": "Positive control, --sim-only and effects-row lines are not asserted by the recipe; removing them leaves make replay-scene rc 0 (D6, D9, D12), only the manual AC4 count notices",
+   "evidence": "/tmp/d_D6.out etc: rc 0, AC4 count 6"
+  },
+  {
+   "severity": "non-blocking",
+   "file": "mk/m45.mk:46",
+   "what": "codex check uses grep -qx on a line only, but a mutated weaker grep survives; also no dependency of test on replay-scene is guarded by any test (D8)",
+   "evidence": "D7 rc 0"
+  },
+  {
+   "severity": "non-blocking",
+   "file": "tools/replay.py:155-165",
+   "what": "--caps IO assert (M3) and ordinary-mode arm64 fallback guard (M2) have no unit test",
+   "evidence": "test_replay 32 OK under mutation"
+  },
+  {
+   "severity": "non-blocking",
+   "file": "tools/replay.py:~290-300",
+   "what": "vm_positive_control checks are weakly tested: M9, M10, M11, M12 survive",
+   "evidence": "32 OK under mutation"
+  },
+  {
+   "severity": "non-blocking",
+   "file": "tests/replays/scene/m4_scene_session.record.txt:1",
+   "what": "Provenance line records a developer-local runtime path of the executor clone; record is not bound to the input sha (only indirectly via the golden matching a live VM run)",
+   "evidence": "cat record.txt"
+  },
+  {
+   "severity": "non-blocking",
+   "file": ".gitattributes:1",
+   "what": "Only AC2 (manual) defends the -text attribute; git falls back to the index copy if the file is deleted from the worktree",
+   "evidence": "D1"
+  }
+ ],
+ "notes": "Provenance: golden digest equals a live VM run on the committed input (AC4 and AC7), record.txt shape/regex and equality with the golden are enforced by make replay-scene; record() in tools/replay.py refuses to write unless VM==interpreter and reply count matches, and the 1149 s interpreter time and 2427/83297783/sha in record.txt are consistent. make replay-scene-record not run (24 min). AC1 (Godot) not run. No interpreter run reachable from test:replay-scene (--vm-only only); ci-fast has no scene target. Dedup: mutations M13-M17 and D-set measured against each milestone's own diff. Files restored by copy and cmp; git status clean.",
+ "pass": true
+}

@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 53 | 2026-10-27 | row 7i(c), the M4 AC5 scene-session golden, LANDED (PR #341, merge `fc9e2187`): AI=stub session committed and pinned, arm64 golden recorded with VM... |
 | 52 | 2026-10-27 | iteration 52, K1.1a-a3 Kerr oracle RK-10..13, RK-18 and RK-Q1 LANDED (PR #333, merge `f97d5ef1`), built by orphan iteration 51 and verified and lan... |
 | 51 | 2026-10-26 | [PRODUCT] Unrecorded orphan: built K1.1a-a3 (PR #333, `7e94beff`, Sonnet 92 PASS round 1); killed when the rig crashed (reboot 17:05) during its rig/full re-run; recovered record and landing in iteration 52. |
 | 50 | 2026-10-26 | K1.1a-a2 Kerr oracle RK-4..RK-8 and RK-8b LANDED (PR #327, merge `3bd298e2`); independent Sonnet 93/100 PASS, zero blocking; controller replaced a ... |
