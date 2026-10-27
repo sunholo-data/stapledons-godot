@@ -1,6 +1,6 @@
 # CI test tiers: categorise `make test`, run it in parallel, and stop paying for duplicates
 
-**Status:** Draft (proposed 2026-10-15), not yet scored or approved.
+**Status:** Superseded (2026-10-27). The 2026-10-19 merge rule (CLAUDE.md "Merges") replaced it: the full `make test` runs on the rig as `rig/full`, and GitHub CI runs only `make ci-fast` in one job, so the duplicate pre-steps it lists are gone. Kept for its timing data.
 **Release:** infra (applies to every release; proposed under `design_docs/planned/r2/ci-test-tiers.md`)
 **Milestone:** none (hygiene, triggered by Mark's request on 2026-10-15)
 **Priority:** P1. One PR run of CI takes 55 to 85 min today, and a docs-only PR pays the same price (`docs/r1-landing` took 70 min on 2026-10-15).

@@ -1,6 +1,6 @@
 # R2-ARCHIVE-NPC: the Archive as a crew member, and its presence at the spire
 
-**Status:** Proposed 2026-10-14 (attended, Mark: "can we also make the archive console another npc in the system, but special? and an avatar for when interacting with it on the spire"). OQ3 and OQ4 answered 2026-10-15 (attended, relayed by the crew-lab agent); it needs OQ1 and OQ2, then a sprint plan.
+**Status:** Proposed 2026-10-14 (attended, Mark: "can we also make the archive console another npc in the system, but special? and an avatar for when interacting with it on the spire"). OQ3 and OQ4 answered 2026-10-15 (attended, relayed by the crew-lab agent); OQ2 answered 2026-10-27 (Mark, attended): **a Crew-console card, marked special**. OQ1 (the presence) waits on the Codex bake-off below: one still per direction, for Mark to choose. Then a sprint plan.
 **Release:** R2, after [crew-work.md](crew-work.md) W1. It shares the W4 `archive` readout.
 **Priority:** P2 for R2.
 
@@ -103,8 +103,8 @@ Charon stays provisional (cast file) until the audition (archive-voice OQ1). The
 
 ## Open questions for Mark
 
-- **OQ1, the presence:** (a) light in the spire, (b) the spire's patterns, or (c) a robot proxy? I'd make one bake-off still of each for you to choose.
-- **OQ2, on the Crew console:** should the Archive be a card there, or only at its terminal?
+- **OQ1, the presence:** (a) light in the spire, (b) the spire's patterns, or (c) a robot proxy? I'd make one bake-off still of each for you to choose. **2026-10-27: bake-off first** (Mark).
+- **OQ2, on the Crew console:** should the Archive be a card there, or only at its terminal? **Answered 2026-10-27: a card, marked special** (Mark).
 - **OQ3, coupling now or later:** turn on the captain–Archive coupling in this release, or only trust first?
   **Answered (Mark, 2026-10-15): trust only.** No captain–Archive coupling in the first release; crew_core 0.6 builds the coupling behind a switch that defaults to off.
 - **OQ4, integrity:** should it decay with ship time (my proposal), or only from events?
