@@ -761,6 +761,11 @@ const AUDIT_V := 6.5 # tools/bright_star_audit.gd COUNT_V; tools/ stays out of t
 ## hidden. Beside each face, <face>.audit.json lists every V < 6.5 catalogue star the camera
 ## projects into it (predicted pixel, origin top-left), the contract tools/bright_star_audit.gd reads.
 func _capture_bright_audit(out: String) -> void:
+	# V comes from each star's illuminance at Sol: refuse anywhere but at rest at Sol
+	var off := Vector3(starfield.ship[0], starfield.ship[1], starfield.ship[2]).length()
+	if sim.world["ship"]["beta"] > 0.0 or off > 1e-6:
+		push_error("bright-audit: needs the ship at rest at Sol (beta %s, %s ly out)" % [sim.world["ship"]["beta"], off])
+		return
 	DirAccess.make_dir_recursive_absolute(out)
 	var faces := {"forward": [0.0, 0.0], "starboard": [-PI / 2, 0.0], "astern": [PI, 0.0], "port": [PI / 2, 0.0], "up": [0.0, PI / 2], "down": [0.0, -PI / 2]}
 	hud.visible = false

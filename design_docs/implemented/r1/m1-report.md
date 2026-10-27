@@ -65,7 +65,9 @@ Bar clause 1: *M1's acceptance criteria AC1–AC10 are met. The relativistic sky
 
 - **The panorama is valid to about 50 ly** from Sol; beyond that the background's parallax error grows (M1.4).
 - **HIP giants' B−V relation:** the bright tier's T_eff from B−V is a main-sequence relation; giants are approximate (M1.2d).
-- **Bench host load:** the M1.5b bench ran with load 1.2–3.1 on the Studio; numbers on a busier host will be higher.
+- **Bench host load:** the executor's bench ran at load 1.2–3.1 (p99 9.685 / 11.051 ms); the evaluator's at load 5–7.5 still gave 9.701 / 10.040 ms, well inside 16.7.
+- **`make golden` needs `make planet-assets`** first: without the planet textures G-M5-4 is skipped and the run reports a failure (pre-existing; the M1.5b run had them).
+- **The AC11 gate is lenient by design:** a hit is any detected peak within 1 px of a predicted star, not an identity match; 8,107 of the 8,773 predicted V < 6.5 stars (92 %) are detected. Positive controls fail as they should (evaluator: a 1.5 px shift gives 0/93; a 3 % scale error gives 16/93).
 
 ## Upstream (AILANG)
 
@@ -86,4 +88,4 @@ Issues filed during M1 and cited in its rows: ailang#1354 and #1355 (fixed in v0
 | M1.5a | 90 | independent |
 | M1.6a, M1.6b | 87, 97 | independent; Fable 5.1 |
 | M1.7, M1.8, M1.P | 91, 90, 96 | Sonnet 5.5; Fable 5.1 |
-| M1.5b | pending | independent (to run before merge) |
+| M1.5b | 87 | Sonnet 5.5, independent; `eval_R1-M1-SKY-2-M1.5b_round_1.json` (no blocking findings) |
