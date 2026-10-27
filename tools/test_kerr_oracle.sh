@@ -49,9 +49,45 @@ for key, anchor in NEW.items():
     if key[2].startswith(('photon', 'isco')) and key[2].endswith('-pro'):
         retro = rows[(key[0], key[1], key[2].replace('-pro', '-retro'))]['precise']
         assert Decimal(rows[key]['precise']) < Decimal(retro), f'prograde not below retrograde (pro/retro swap): {key}'
+# Doc literals: design lines 86-105 and V31/V34 (never copied from oracle output); rows must exist first.
+DOC = {('RK-10', '0.9', 'frame-drag-static-limit'): '0.16014234875444840',
+       ('RK-11', '0.9', 'lapse-static-limit'): '0.37964208654863802',
+       ('RK-12', '0.9', 'zamo-speed-isco-pro'): '0.62454869546086524',
+       ('RK-12', '0.5', 'zamo-speed-isco-pro'): '0.56164924228192780',
+       ('RK-13', '0.9', 'static-clock-static-limit'): '0',
+       ('RK-18', '0.9', 'rs-km'): '29.532500761002495', ('RK-18', '0.9', 'static-limit-km'): '29.532500761002495',
+       ('RK-18', '0.9', 'horizon-km'): '21.202709698863643', ('RK-18', '0.9', 'isco-pro-km'): '34.270740098515360',
+       ('RK-18', '0.9', 'period-ms'): '1.3727616115380832', ('RK-18', '0.9', 'omega-h-rad-s'): '6362.7059001439946',
+       ('RK-Q1', '0', 'photon-pro'): '3', ('RK-Q1', '0', 'photon-retro'): '3', ('RK-Q1', '0', 'isco-pro'): '6',
+       ('RK-Q1', '0', 'isco-retro'): '6', ('RK-Q1', '0', 'frame-drag'): '0', ('RK-Q1', '0', 'shadow'): '5.1961524227066319'}
+for key, anchor in DOC.items():
+    assert key in rows, f'missing record: {key}'
+    assert Decimal(rows[key]['precise']) == Decimal(anchor), f'doc literal: {key}'
+# Exactness reads the oracle's outputs; s=0 members are exact Decimal values, not rounded approximations.
+assert ref['photon_orbits']('0') == (Decimal(3), Decimal(3)), 'RK-Q1 s=0 photon orbits not exact'
+assert ref['isco_radii']('0') == (Decimal(6), Decimal(6)), 'RK-Q1 s=0 ISCO not exact'
+assert ref['static_limit']('0') == ref['horizons']('0')[0] == Decimal(2), 'RK-Q1 s=0 static limit != horizon'
+assert abs(Decimal(rows[('RK-Q1', '0', 'shadow')]['precise']) - 3 * Decimal(3).sqrt()) < Decimal('1e-16'), 'RK-Q1 shadow != 3 sqrt(3)'
+assert ref['static_clock']('2', '0.9') == 0, 'RK-13 not exactly 0 at the static limit'
+try:
+    ref['static_clock']('1.9', '0.9')
+except Exception as error:
+    assert type(error) is ValueError and 'no static observer' in str(error), f'RK-13 u<2 not refused: {error!r}'
+else:
+    raise AssertionError('RK-13 u<2 accepted')
+for u, anchor in (('4.1', 0.71567808542054678), ('6', 0.81649658092772603), ('20', 0.94868329805051377)):
+    # V34 anchors are binary64 numbers: 1e-15 relative tolerance, not Decimal equality.
+    assert abs(float(ref['static_clock'](u, '0')) - anchor) <= 1e-15 * anchor, f'V34 static clock s=0: {u}'
+near = 1 - 2.0 ** -53  # exact binary64 spin; finiteness only, no accuracy claim near 1
+probe = [*ref['horizons'](near), *ref['photon_orbits'](near), *ref['isco_radii'](near),
+         ref['orbit_clock'](near, 1), ref['orbit_clock'](near, -1)]
+assert all(value.is_finite() for value in probe), 'near-extremal s=1-2^-53 not finite'
 for spin in ('-0.1', '1', '1.1', 'NaN', 'Infinity', '-Infinity'):
     for name, call in (('horizons', lambda s: ref['horizons'](s)), ('photon_orbits', lambda s: ref['photon_orbits'](s)),
-                       ('isco_radii', lambda s: ref['isco_radii'](s)), ('orbit_clock', lambda s: ref['orbit_clock'](s, 1))):
+                       ('isco_radii', lambda s: ref['isco_radii'](s)), ('orbit_clock', lambda s: ref['orbit_clock'](s, 1)),
+                       ('frame_drag', lambda s: ref['frame_drag']('2', s)), ('zamo_lapse', lambda s: ref['zamo_lapse']('2', s)),
+                       ('zamo_speed', lambda s: ref['zamo_speed'](s)), ('static_clock', lambda s: ref['static_clock']('2', s)),
+                       ('horizon_omega', lambda s: ref['horizon_omega'](s)), ('static_limit', lambda s: ref['static_limit'](s))):
         try:
             call(spin)
         except ValueError as error:
@@ -91,4 +127,4 @@ with tempfile.TemporaryDirectory() as directory:
 PY
 }
 check || fail "assertions failed"
-echo "kerr-oracle: RK-1/2 and RK-4..RK-8, RK-8b assertions satisfied (RK-3, RK-9 and the rest deferred)"
+echo "kerr-oracle: RK-1/2, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-3, RK-9, RK-14..RK-17 deferred)"
