@@ -1118,3 +1118,55 @@ DECISIONS FOR MARK: D-125 (position of 7i(c), the now-unblocked AC5 scene-sessio
 - **Next:** K1.1a-a4, then a5 (RK-3/RK-9 owed), L9 S0.3, L4, L3, and 7m AC1 (idle rig only), per Mark's 2026-10-20 order. If D-126 is answered A or C, the loop raises the watchdog first, as a one-line change with its control test.
 
 DECISIONS FOR MARK: D-126 (`rig/full` took 90 min on #341, the 5,400 s watchdog. A = the loop raises it to 7,200 s; B = move L4 suite speed ahead of Kerr a4; C = both; D = neither. Recommendation C; default D, which means no change, and a 0-failure timeout is re-run on an idle rig.)
+
+## 54 — 2026-10-28 — row 7m AC1, the quiet-rig bench for M4.6pR3, MEASURED and PARKED on D-127: live-transit p99 15.22–16.48 ms in 6 of 6 quiet runs (loop 3, independent Sonnet 3, judge 80/100 PASS), DR1 red at 34.3 ms; the approved plan's docked-control validity rule failed in 9 of 9 runs, so AC1 is not recorded as met [PRODUCT]
+
+- **Pick:** row 7m AC1. Its resume predicate held at this fire: GPU `Device Utilization %` read 0 on three samples 10 s apart (04:46:02–04:46:22Z), with 1-min load 1.45–1.74. 7m moves the UNMET clause 4 (M4 AC12), while the STATUS **Next**, K1.1a-a4, moves no clause. So by gate 2 rule (b) 7m was the pick, and no position ask was needed because the row parks on D-127 anyway. Already-landed check on a fresh origin: no AC1 measurement in `git log origin/main --since=2026-10-19`, no 7m PR, and the sprint feature `M4.6pR3_LIVE_TRANSIT_FRAME_COST` reads `status: null`. The fix is on main (`ui/ism_layer.gd:259–266`, merged 2026-10-19 as `067243f`). Quorum at pick: the artifact `m4-6pr3-live-transit-frame-cost-2026-10-17T05-33-41Z.json` exists, PROCEED with gemini-4-argon the only present seat (glm-5.3, kimi-k3 and gpt6-1-sol absent, unreachable). The plan was approved under D-84 A, so no re-quorum.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET, goal unmoved (7m AC1 measured and parked on D-127; P-land is Mark's); 5 ongoing.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 allowlisted directives since 2026-10-27T11:22:14Z (6 comments, all ours). Self-notices rc 0 (control 4:5, watermarks 2/2). Ledger valid at start, 126 rows, 1 OPEN (D-126). Inbox `mission-stapledon`: one `harness-resolved` reply for `gate5:controlplane-assert-marks-read` (fleet iteration 64, PR #1975, `8f8294c4`). No queue row carries that ticket (0 hits in the charter, log and archives), so there was nothing to unpark; acknowledged. Not the first iteration after the Monday rotation, so no sweep.
+- **Gate 1:** base `854003c8204204188aecf566d4944490d1d90da8` at 2026-10-28T04:44:56Z. main equals origin/main after a fast-forward of the clean main checkout, which was not used for work. All 14 skill files at the resolved symlink match `origin/dev`. Fast tier success on `854003c8` (1 check). Open PRs: #339 and #340 (attended docs and the R3 plan); neither touches the loop's files.
+- **Routing:** resolver output: designer `recipe claude:claude-opus-5-5 declared:provider-pin`, planner `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`, executor `recipe codex:gpt-6.1-sol declared:provider-pin`, evaluator `agent-tool sonnet declared:alias-pin`.
+  - Designer, planner and executor were **not spawned**, and no spawn failed. The design (iteration 37), the plan (approved, D-84 A) and the code (merged) already existed. The deliverable is a measurement in the Studio's GPU window, which a `workspace-write` sandbox cannot give an informative result for (the plan itself: "No timing result from a sandbox run may be labeled pass/fail").
+  - The evaluator ran as required: Sonnet via the Agent tool, foreground, in its own clone. Generator ≠ judge holds: the controller (Opus) measured, and a separate Sonnet re-measured and judged.
+- **Controller measurement** (fresh clone `.stap-iter54-bench` at `854003c8`; `make runtime` → AILANG v0.54.18; `make deps`, `make sky-assets lens-assets`, `make import`; Godot 4.7.2; Apple M4 Max, Metal, forward_plus, 2560×1440, medium tier, vsync off). Each run was preceded by `wait_quiet.sh` (3 consecutive samples with GPU < 15 and load < 5) and sampled GPU every 2 s throughout (peak 41–43 %, the bench itself). Logs are in `/tmp/stap54/`.
+  - Run 1: p99 15.218 ms, 3,245 frames, OK, rc 0. **Not counted**: its pre-run 1-min load was 9.81 (this iteration's own clone and import).
+  - Run 2 (load 3.42): p99 15.433, 3,254 frames (boosting 2,077, cruising 1,177), 18 over 16.7, OK, `target p99 < 16.7: ok`, make rc 0.
+  - Run 3 (load 2.80): p99 15.991, 3,212 frames, 22 over, OK, ok, rc 0.
+  - AC2 (≥ 2,500 frames) and AC3 (no `FAIL`, boosting and cruising nonzero) hold in every run.
+  - Docked control p99: 17.75 / 18.15 / 17.99 ms.
+  - Drills (design-doc wrapper, verbatim): DR1 `if false:` → red, valid run, 1 MISS (p99 34.311, 1,464 frames, make rc 2). DR4 comment-only → green (p99 14.614, 3,234 frames). DR5 no-op → rc 3. DR2 and DR3 → `map-ism-test` red. AC4 → `ism-layer: 19 passed, 0 failures`. `ui/ism_layer.gd` was byte-identical afterwards.
+- **Evaluation:** Sonnet via the Agent tool (66,532 tok, 12 tool calls, 505 s) in its own clone `.stap-iter54-eval`. It was given the row, the design and plan paths, and the precondition, but none of the controller's numbers. **80/100 PASS** (`eval_R1-M4-JOURNEY_7m-AC1_round_1.json`).
+  - Its runs (load 1.93 / 1.52 / 2.33, GPU 0 ×3 each): p99 15.824 / 16.479 / 15.889, frames 3,257 / 3,209 / 3,253. DR1 red (33.986, 1,471 frames, rc 2); DR4 green (16.102); DR2/DR3 red; DR5 rc 3.
+  - Finding 1 (medium, non-blocking): the docked-control p99 rule fails in every run (17.62–19.28, and 18.17 / 18.62 in its drills). The judge treated it as a flawed criterion and passed AC1 on the AC table's Expected column.
+  - Finding 2 (low): the margin is thin (run 2 is 0.22 ms under). Finding 3 (low): `make import` leaves untracked `*.translation` files.
+  - **Controller adjudication (reproduced, not adopted):** the sprint plan states the rule as a validity condition: `:105` "exceeding it invalidates that run", and `:471` "invalidates that measurement: record it and repeat after quiet conditions return". With 9 of 9 runs above 16.7 on a quiet rig, every measurement is invalid under the approved plan. Setting an approved acceptance rule aside is not the loop's call (`:471`: a thin margin "is not license to change" the thresholds), so the feature stays `null` and the row parks on **D-127**. The judge's PASS is recorded as its verdict under its stated reading. The controller being stricter than the judge does not weaken generator ≠ judge.
+- **Landing / Gate 3b:** no code landed. The record PR carries the charter (STATUS 54, 50 rotated to the archive, D-127, the row 7m tag), this entry, the index, the dashboard, the sprint feature notes (status unchanged) and the evaluation report. It merges on the fast tier: docs and state JSON only, as for every record PR. GPU gates: the bench is the GPU gate, run above; no visual change.
+- **Routing evidence**
+
+  base=854003c8204204188aecf566d4944490d1d90da8@2026-10-28T04:44:56Z. Resolver output as listed under Routing. No role spawn error; designer, planner and executor were not needed (reason above).
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Designer: not spawned (doc exists, iteration 37).
+  - Planner: not spawned (plan approved, D-84 A).
+  - Executor: not spawned (fix merged; GPU measurement outside the sandbox).
+  - Evaluator Agent `sonnet` (66,532 tok, 12 tool calls, 505 s; quota bucket anthropic).
+  - Quorum: none (artifact exists). metered=$0 of the $5 cap.
+- **Ruled out:**
+  - Recording AC1 as met on the judge's reading (it would set aside an approved validity rule without Mark).
+  - Re-running until a docked control lands under 16.7 (9 of 9 quiet runs over; "do not select only the best of many valid runs", plan `:471`).
+  - Counting run 1 (pre-run load 9.81).
+  - Taking `rig.lock` for the bench (the GPU rule reserves it for steps that drive local models; the quiet predicate and per-run sampling did the job).
+  - Spawning a sandboxed executor to time the bench.
+  - Using the main checkout's stale `runtime/bin/ailang` (v0.54.14; the clone staged the v0.54.18 pin).
+  - Handing the judge the controller's numbers.
+  - Editing the shared skill or driver.
+- **Upstream:** none new. Observed again, not filed: Godot's import writes untracked `*.translation` files from CSVs under `data/` (the judge's finding 3; pre-existing, noted in iteration 53).
+- **Retro:** no skill, process or routing-policy change.
+  - Frictions:
+    1. A validity rule in an approved plan can be unsatisfiable on the hardware it targets: the docked control's p99 (about 3 of 300 frames) was above 16.7 in every quiet run. That is one instance, and it goes to Mark as D-127, not to a rule change.
+    2. The iteration's own setup (clone and `make import`) raised the 1-min load to 9.8 just before run 1. Waiting for the predicate before each run caught it; this is in the record, not a skill gap.
+  - Harness share: 0/20 over iterations 35–54.
+  - Last three landings: #341 moved clause 4, #333 and #327 none. This iteration worked the routable clause-4 row, so no DRIFT.
+- **Next:** D-127 first (A → record AC1 met and run the feature's remaining checks, AC5–AC8 and the visual review; B → a measurement row for the docked p99; C → a longer docked control with a drill, then re-measure). Meanwhile, per Mark's 2026-10-20 order: K1.1a-a4, then a5 (RK-3/RK-9 owed), L9 S0.3, L4 and L3.
+
+DECISIONS FOR MARK: D-126 (unchanged: the `rig/full` watchdog; A raise to 7,200 s, B move L4 up, C both, D neither; recommendation C, default D). D-127 (new: 7m AC1's live p99 passes in 6 of 6 quiet runs, but the plan's docked-control validity rule, p99 ≤ 16.7, failed 9 of 9. A = drop the rule and record AC1 met; B = keep it, with a row to investigate; C = a longer docked control, then re-measure. Recommendation A; default no change.)

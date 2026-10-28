@@ -1,27 +1,24 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-27, iteration 53.
+Updated 2026-10-28, iteration 54.
 
-- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. This iteration moved clause 4: M4 AC5, the scene-session golden, is met. Clause 4 now waits on row 7m AC1 (quiet-rig p99, parked on rig load) and P-land (Mark).
-- **Landed:** PR #341, merge `fc9e2187e67cd59564ab6aef8d0eb2a646e7d7ad`.
-  - The AI=stub ship session is committed in `tests/replays/scene/`: 2,428 lines, sha-pinned, `-text`.
-  - Its arm64 golden: 2,427 replies, 83,297,783 bytes, `77f7ec49…`. It was recorded with VM = interpreter (VM 92 s, interpreter 1,149 s).
-  - `make replay-scene` (VM only, about 2.5 min) is part of `make test`, so it runs in `rig/full`. It is not in `ci-fast`.
-  - `tools/replay.py` gains `--vm-only` and a named x86_64→arm64 comparison line.
-- **Judge:** a fresh Sonnet in its own clone scored it 88/100 PASS with zero blocking findings. It killed 21 of 29 drills. Its non-blocking findings went to the follow-up backlog line: the recipe doesn't assert its own control and effect lines.
-- **Gates:**
-  - `rig/full` green on `c87ee9e8` in **90 min**, which is the 5,400 s watchdog (D-126).
-  - Fast tier success on the head (40566702491) and on the merge (40582083418).
-  - AILANG v0.54.18 / Godot 4.7.2. GPU gates N/A (no visual change).
-- **Controller catch:** the executor's `replay-scene` recipe broke on BSD sed (a `/` delimiter around a path). The sandbox hid it, because the executor had no scene data to run the target on. The controller fixed it in `c87ee9e8`; a drill confirmed the step now fails on a digest mismatch.
-- **Next:** K1.1a-a4 → a5 (RK-3/RK-9 owed) → L9 S0.3 → L4 (suite speed) → L3 → 7m AC1 (idle rig only).
-- **Open decisions:** D-126 asks about the `rig/full` watchdog: A raise it to 7,200 s, B move L4 up, C both, D neither. Recommendation C; the default is D.
-- **Capacity/ownership parks:** row 7m needs GPU < 15 % and load < 5 (load 3–10 today). Attended PRs #339 (docs) and #340 (R3 Earth link plan) are open; neither overlaps the loop's files.
+- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Clause 4 waits on row 7m AC1 (now measured, parked on D-127) and P-land (Mark). Goal unmoved this iteration.
+- **Measured (not landed):** row 7m AC1, the quiet-rig bench for M4.6pR3 (the hidden-map redraw fix, on main since 2026-10-19).
+  - The rig was idle at the fire (GPU 0 % on three samples, 1-min load 1.5), so 7m was the critical-path pick ahead of Kerr a4.
+  - `make bench SCENE=bridge` on main `854003c8`: live-transit p99 15.22 / 15.43 / 15.99 ms (loop) and 15.82 / 16.48 / 15.89 ms (judge), 3,209–3,257 frames. AC1–AC3 hold in 6 of 6 quiet runs.
+  - DR1 (fix reverted) misses at p99 34.3 / 34.0 ms; DR4 stays green; DR2/DR3 turn `map-ism-test` red; AC4 19 passed.
+  - **Why it is parked:** the approved sprint plan says a docked-control p99 above 16.7 ms invalidates a run, and the docked control read 17.6–19.3 ms in 9 of 9 runs.
+- **Judge:** a fresh Sonnet in its own clone re-ran the benches and drills and scored 80/100 PASS. It set the docked-control rule aside as a flawed criterion. The controller confirmed that the plan states it as a validity rule, so changing it goes to Mark.
+- **Gates:** no code changed. Measured with AILANG v0.54.18 and Godot 4.7.2 on the M4 Max (Metal, 2560×1440, medium tier, vsync off).
+- **Next:** D-127 first. Then, per Mark's 2026-10-20 order: K1.1a-a4 → a5 (RK-3/RK-9 owed) → L9 S0.3 → L4 (suite speed) → L3.
+- **Open decisions:**
+  - D-126 (`rig/full` watchdog): A raise it to 7,200 s, B move L4 up, C both, D neither. Recommendation C; default D.
+  - D-127 (7m docked-control rule): A drop it and record AC1 met, B keep it and investigate the docked p99, C use a longer docked control. Recommendation A; default no change.
+- **Capacity/ownership parks:** none new. Attended PRs #339 (docs) and #340 (R3 Earth link plan) are open; neither overlaps the loop's files.
 - **Lanes:**
   - controller: Opus;
-  - designer: Opus via `claude-sub` (create and one revision);
-  - planner and executor: codex gpt-6.1-sol;
-  - evaluator: Sonnet via the Agent tool.
+  - evaluator: Sonnet via the Agent tool;
+  - designer, planner and executor: not spawned, because the doc, the plan and the fix already existed and the work was a GPU measurement.
 
-  Metered spend was $0.60, all on the design quorum's two rounds. gpt6-1-sol was unreachable as a quorum reviewer twice.
-- **Harness share:** 0/20 over iterations 34–53. Of the last three landings, #341 moved clause 4, while #333 and #327 (Kerr R2) moved none.
+  Metered spend: $0.
+- **Harness share:** 0/20 over iterations 35–54. Of the last three landings, #341 moved clause 4, while #333 and #327 (Kerr R2) moved none. This iteration landed no code and worked the clause-4 row.

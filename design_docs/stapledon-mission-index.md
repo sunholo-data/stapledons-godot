@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 54 | 2026-10-28 | row 7m AC1, the quiet-rig bench for M4.6pR3, MEASURED and PARKED on D-127: live-transit p99 15.22–16.48 ms in 6 of 6 quiet runs (loop 3 and independent Sonnet 3, 80 PASS), DR1 red;... |
 | 53 | 2026-10-27 | row 7i(c), the M4 AC5 scene-session golden, LANDED (PR #341, merge `fc9e2187`): AI=stub session committed and pinned, arm64 golden recorded with VM... |
 | 52 | 2026-10-27 | iteration 52, K1.1a-a3 Kerr oracle RK-10..13, RK-18 and RK-Q1 LANDED (PR #333, merge `f97d5ef1`), built by orphan iteration 51 and verified and lan... |
 | 51 | 2026-10-26 | [PRODUCT] Unrecorded orphan: built K1.1a-a3 (PR #333, `7e94beff`, Sonnet 92 PASS round 1); killed when the rig crashed (reboot 17:05) during its rig/full re-run; recovered record and landing in iteration 52. |
