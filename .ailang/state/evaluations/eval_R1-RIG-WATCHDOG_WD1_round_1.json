@@ -1,0 +1,62 @@
+{
+  "sprint_id": "R1-RIG-WATCHDOG",
+  "milestone": "WD1",
+  "evaluator": "sonnet",
+  "round": 1,
+  "commit_judged": "552f5626",
+  "base": "origin/main 7e0e6860",
+  "score": 95,
+  "pass": true,
+  "rubric": {
+    "acceptance_criteria": {"max": 40, "score": 40, "note": "AC1-AC8, AC10 match Expected; AC9 is the controller's rig run"},
+    "mutation_strength": {"max": 25, "score": 21, "note": "Design and diff-derived mutants killed except equivalent or cosmetic survivors; removing the RIG_CHECK_NESTED guard is caught only as a runaway recursion"},
+    "scope_and_hygiene": {"max": 15, "score": 15, "note": "Only the two scripts plus doc, plan and sprint JSON changed; charter untouched"},
+    "portability": {"max": 10, "score": 10, "note": "dash 8 cases 0 failures; shellcheck -s sh -S warning rc 0"},
+    "hermeticity_claim": {"max": 10, "score": 9, "note": "True for RIG_TEST_S and RIG_GOLDEN_S; explicit override reaches rig_check.sh; RIG_GOLDEN_S half unprovable since no case reads it"}
+  },
+  "ac_results": {
+    "AC1": {"expected": "1, 0", "observed": "1, 0", "ok": true},
+    "AC2": {"expected": "1,0,drillwd D killed,rc=0", "observed": "1,0,drillwd D: killed (make-test-red caller-poison),rc=0", "ok": true},
+    "AC3": {"expected": "rc=0 8 cases 0 failures twice; drillwd H killed; rc=0", "observed": "RIG_TEST_S=1234 rc=0 '8 cases, 0 failures'; RIG_GOLDEN_S=999 rc=0 '8 cases, 0 failures'; drillwd H: killed (caller-poison); rc=0", "ok": true},
+    "AC4": {"expected": "rc=0,count-ok,1,8 cases 0 failures,sc=0", "observed": "rc=0, count-ok, 1, dash '8 cases, 0 failures', sc=0", "ok": true},
+    "AC5": {"expected": "1, drillwd O killed, rc=0", "observed": "1, drillwd O: killed (watchdog-override caller-poison), rc=0", "ok": true},
+    "AC6": {"expected": "0 then 1", "observed": "0 then 1", "ok": true},
+    "AC7": {"expected": "rc=1", "observed": "rc=1", "ok": true},
+    "AC8": {"expected": "0 then 0", "observed": "0 then 0, run on the PR checkout against origin/main. The scope check is meaningful for tools/ and the charter: the same grep over HEAD~6..HEAD returned 4, so it counts out-of-scope paths. It is loose for .ailang/state/(sprints|evaluations)/*.json.", "ok": true},
+    "AC9": {"observed": "not run (controller, rig/full)", "ok": null},
+    "AC10": {"expected": "1", "observed": "1", "ok": true}
+  },
+  "mutation_table": [
+    {"mutant": "H: delete unset (drill)", "killed": true, "by": "caller-poison"},
+    {"mutant": "D: default back to 5400 (drill)", "killed": true, "by": "make-test-red, caller-poison"},
+    {"mutant": "O: ignore RIG_TEST_S (drill)", "killed": true, "by": "watchdog-override, caller-poison"},
+    {"mutant": "default 6000", "killed": true, "by": "make-test-red, caller-poison"},
+    {"mutant": "drop export in run subshell", "killed": true, "by": "watchdog-override, caller-poison"},
+    {"mutant": "empty 10th arg of watchdog-override", "killed": true, "by": "watchdog-override, caller-poison"},
+    {"mutant": "watchdog-override expectation 60s to 7200s", "killed": true, "by": "watchdog-override, caller-poison"},
+    {"mutant": "caller-poison nok 7 to 6", "killed": true, "by": "caller-poison"},
+    {"mutant": "nested -eq 7 and nok 7 both to 6", "killed": true, "by": "caller-poison"},
+    {"mutant": "unset only RIG_GOLDEN_S (drop RIG_TEST_S)", "killed": true, "by": "caller-poison"},
+    {"mutant": "remove RIG_CHECK_NESTED guard", "killed": true, "by": "unbounded recursion: the perl alarm reaped only the top shell and I pkilled the chain. Detected as a hang, not an assertion", "blocking": false},
+    {"mutant": "caller-poison accepts nested rc 1", "killed": false, "equivalent": true, "note": "a nonzero nested rc implies fewer than 7 ok lines, so the count check already covers it"},
+    {"mutant": "nok check always true", "killed": false, "note": "survives while the nested run is green; the rc check still holds; redundant pair"},
+    {"mutant": "grep ': ok$' loosened to 'ok'", "killed": false, "note": "cosmetic"},
+    {"mutant": "poison values removed (TEST_S, GOLDEN_S or both)", "killed": false, "note": "single mutant: nested env is then clean, so green. Matters only combined with H"},
+    {"mutant": "unset only RIG_TEST_S (drop RIG_GOLDEN_S)", "killed": false, "note": "no case reads RIG_GOLDEN_S; the design calls it prophylaxis"},
+    {"mutant": "trailer n=8 to n=7", "killed": false, "note": "trailer count is not asserted"},
+    {"mutant": "${RIG_TEST_S:-7200} to ${RIG_TEST_S-7200}", "killed": false, "note": "differs only for an exported empty value; harmless"}
+  ],
+  "findings": [
+    {"id": "F1", "severity": "low", "blocking": false, "evidence": "Removing the RIG_CHECK_NESTED guard recurses without bound, detected only by timeout.", "fix": "Optional depth fail-fast. The guard runs on every run, so removal hangs make test visibly."},
+    {"id": "F2", "severity": "low", "blocking": false, "evidence": "The nested rc check is redundant with the 7-ok count (equivalent mutant), and the trailer case count is unasserted (n=7 survives).", "fix": "Optionally grep the nested log for '7 cases, 0 failures'."},
+    {"id": "F3", "severity": "low", "blocking": false, "evidence": "RIG_GOLDEN_S in the unset cannot be proven load-bearing: no case reads it.", "fix": "None required."},
+    {"id": "F4", "severity": "info", "blocking": false, "evidence": "AC8 allow-list admits any .ailang/state sprint or evaluation JSON.", "fix": "None required."},
+    {"id": "F5", "severity": "info", "blocking": false, "evidence": "AC9 (rig/full on PR head at 7200 s) not run by the evaluator.", "fix": "Controller runs it."}
+  ],
+  "hermeticity": {
+    "RIG_TEST_S=1234 sh and make": "8 cases, 0 failures",
+    "RIG_GOLDEN_S=999 make": "8 cases, 0 failures",
+    "both exported, direct sh": "green",
+    "explicit override": "reaches rig_check.sh via the watchdog-override case"
+  }
+}

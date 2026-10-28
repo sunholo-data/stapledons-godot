@@ -1170,3 +1170,63 @@ DECISIONS FOR MARK: D-126 (`rig/full` took 90 min on #341, the 5,400 s watchdog.
 - **Next:** D-127 first (A → record AC1 met and run the feature's remaining checks, AC5–AC8 and the visual review; B → a measurement row for the docked p99; C → a longer docked control with a drill, then re-measure). Meanwhile, per Mark's 2026-10-20 order: K1.1a-a4, then a5 (RK-3/RK-9 owed), L9 S0.3, L4 and L3.
 
 DECISIONS FOR MARK: D-126 (unchanged: the `rig/full` watchdog; A raise to 7,200 s, B move L4 up, C both, D neither; recommendation C, default D). D-127 (new: 7m AC1's live p99 passes in 6 of 6 quiet runs, but the plan's docked-control validity rule, p99 ≤ 16.7, failed 9 of 9. A = drop the rule and record AC1 met; B = keep it, with a row to investigate; C = a longer docked control, then re-measure. Recommendation A; default no change.)
+
+## 55 — 2026-10-28 — D-126 C's A half LANDED (PR #345, merge `d63b47a4`): `rig/full` watchdog default 7,200 s and a hermetic rig-check control (8 cases, committed caller-poison guard); independent Sonnet 95/100 PASS, zero blocking; `rig/full` green in 117 min on run 2 after a run-1 `ship-demo-launch` load flake; D-126 B and D-127 B recorded, row 7m-d filed (position D-128) [TOOLING]
+
+- **Pick:** Mark's attended rulings, both dated 2026-10-28 and authored with the attended identity (`5c8ff3a6` D-126, `7e0e6860` D-127), outrank the queue. D-126 C: the loop raises the watchdog to 7,200 s (A), and L4 moves ahead of Kerr a4 (B). D-127 B: keep the docked-control rule, and the loop files a row to measure the docked p99. The A half was this iteration's build item. It also absorbed the iteration 52 backlog note (a caller's `RIG_TEST_S` reddened the control), because that note touches the same two files. B and the D-127 row are charter edits in this record. Already-landed check on a fresh origin: no watchdog change on main (`tools/rig_check.sh:15` `RIG_TEST_S:-5400`), and no open loop PR. Attended draft #344 (R3-EARTH-LINK) holds `Makefile` and `sim/*`, but neither script.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET, goal unmoved. 7m AC1 stays open by D-127 B and now waits on row 7m-d; P-land is Mark's. 5 ongoing.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 allowlisted directives since 2026-10-27T11:22:14Z (7 comments). Self-notices rc 0 (control 4:5, watermarks 2/2). Inbox `mission-stapledon`: 0 unread. The two attended ledger rows are the human input this fire. Not the first iteration after the Monday rotation, so no sweep.
+- **Gate 1:** base `7e0e68605d52971fb4c1371dd8ea00397690e534` at 2026-10-28T11:39:01Z. The main checkout was 4 merges behind origin, so it was read from origin and not used for work. All 14 skill files at the resolved symlink match `origin/dev`. Fast tier success on `7e0e6860`.
+- **Routing:**
+  - Resolver output: designer `recipe claude:claude-opus-5-5 declared:provider-pin`; planner `agent-tool opus fail-closed:no-doc` without the doc, and `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin` with it (codex over ration, per `MISSION_ROUTING_NOTE`); executor `recipe claude:claude-haiku-5-5 declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`.
+  - Per the operator's standing request, Agent-tool spawns were used wherever the spawn-pin hook allows them: designer `opus` and executor `haiku` (`allow:same-model-alias`), and evaluator `sonnet`.
+  - The planner's provider pin denies an Agent spawn (`deny:provider-pin`, hook source read), so it ran through its own recipe, `scripts/mission_pi_run.sh`. Its probe gave rc 0. No role failed to spawn.
+- **Design:** `design_docs/implemented/r1/rig-watchdog-7200.md` (238 lines, pillars all 0, D-88).
+  - The designer measured the coupling at HEAD: `RIG_TEST_S=1234` gives rc 1, 6 cases with 1 failure; unset gives rc 0. The controller reproduced it first-party.
+  - Quorum round 1 BLOCKED. gemini-4-argon passed; oc-glm-5-3 rejected (the RIG_GOLDEN_S half was unverified); oc-kimi-k3 rejected (hermeticity was guarded only at design time); gpt6-1-sol was absent (unreachable).
+  - The controller measured both premises: `RIG_GOLDEN_S=1` gives rc 0 with 0 golden cases, and #344 holds 0 `mk/` paths. The designer revised: GOLDEN_S is now prophylaxis, AC10 was added, and so was a committed `caller-poison` case.
+  - Round 2 BLOCKED at N-2. gemini passed; kimi rejected (no audit of the output shape, and `.godot/tmp` not shown to be ignored); glm and gpt6-1-sol were absent (unreachable).
+  - The controller measured kimi's premises: no live consumer of the control's output, since `mk/m45.mk:56` uses only the exit code, and `.gitignore:1:.godot/` covers the drill path. Kimi's verbatim fix (V20, V21, the cost line, the §4 line) was applied under the narrow-refinement carve-out. There was no third round. The doc has a Quorum log section.
+- **Plan:** sprint `R1-RIG-WATCHDOG`, one milestone WD1, `…-sprint.md` (107 lines), 10 ACs. Approval basis: D-126 C plus D-88. The planner ran kimi-k3 in a sibling clone (not a worktree): verdict `ok`, rc 0, 213 s, 22 tool calls, 512,091 tokens, $0.
+- **Execution:** Haiku 5.5 in the loop clone. AC7 was RED first (rc 1). AC1–AC6, AC8 and AC10 matched their Expected values, and drills H/D/O were all killed. The diff is `tools/rig_check.sh` (1 line) and `tools/test_rig_check.sh` (+16/−5). The controller re-ran the control clean (8 cases, 0 failures) and with `RIG_TEST_S=1234` (8 cases, 0 failures).
+- **Evaluation:** Sonnet via the Agent tool, foreground, in its own clone `.stap-iter55-eval`, with no controller numbers handed over. **95/100 PASS** (`eval_R1-RIG-WATCHDOG_WD1_round_1.json`), zero blocking.
+  - It ran 14 mutants derived from the diff. Seven survived, all non-blocking: the nested-rc check is redundant with the 7-ok count; the trailer's `n` is not asserted; the poison values; the RIG_GOLDEN_S unset; and `:-` vs `-`.
+  - The controller reproduced the `n=8`→`n=7` survivor (rc 0, `7 cases`). It is cosmetic, because the exit code comes from `test "$fails" = 0`.
+  - F1: removing the `RIG_CHECK_NESTED` guard recurses without bound, caught only by a timeout. The judge killed the runaway shells, and the controller confirmed 0 `test_rig_check` processes left.
+- **Landing / Gate 3b:**
+  - PR #345 head `552f5626`. Fast tier success.
+  - `rig/full` run 1 (12:17Z), at the new default with no override exported: **red** at `ship-demo-launch-test` after about 44 min. That test gives a native launch/voyage 90 s and notes about 21 s on the Studio; rig load was 6–20 from an attended session's tests in `stapledons-godot-attended` and other fleet jobs.
+  - Attribution: the PR diff is two rig scripts plus docs, which nothing in the launch test loads. The same target in the same tree then passed twice, 63 s and 53 s, at load 14–20.
+  - Run 2 (13:07Z): **green, `make test` 117 min**. That is past the old 5,400 s limit, so this landing was only possible with the raise.
+  - Merged `d63b47a4`, merge CI fast tier success. GPU gates: no visual change.
+- **Record:** charter (STATUS 55; 52 rotated to the archive; D-128 OPEN; row 7m tagged D-127 B; new row 7m-d; the D-126 C order note; the L4 row note; the iteration 52 backlog clause struck), this entry, the index, the dashboard, the design doc and plan moved to `implemented/r1/`, the README index row, the CHANGELOG, the sprint JSON (passes true, landed) and the evaluation.
+- **Routing evidence**
+
+  base=7e0e68605d52971fb4c1371dd8ea00397690e534@2026-10-28T11:39:01Z. Fire `stapledon-1793187477-62011`. Routing note: codex over daily ration, so the planner went to kimi-k3 and the executor to Haiku. Resolver output as listed under Routing.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Designer Agent `opus` = `claude:claude-opus-5-5` (89,927 tok first run, plus 125,601 tok revision; quota bucket anthropic). One doc, one protocol-mandated revision.
+  - Planner `pi:ollama/kimi-k3:cloud` (512,091 tok; ollama cloud, $0).
+  - Executor Agent `haiku` = `claude:claude-haiku-5-5` (68,215 tok).
+  - Evaluator Agent `sonnet` (62,328 tok). Judge independence: a different model from the executor, the designer and the controller, but the same vendor as the executor and designer (Anthropic). The cross-vendor seats were the quorum (gemini, glm, kimi).
+  - Quorum: round 1 $0.2934, round 2 $0.2589. metered=$0.5523 of the $5 cap.
+- **Ruled out:**
+  - Attributing the run 1 red to the PR (the diff cannot reach the launch test, and the target was green twice in isolation).
+  - Raising or editing the launch test's 90 s guard (not this item's scope, and not a pattern on record: 0 earlier `ship-demo-launch` hits in the log and charter).
+  - A third quorum round.
+  - Editing `mk/m45.mk` (kimi's in-script alternative keeps the non-goal).
+  - Running the planner through the Agent tool (hook-denied by its provider pin).
+  - Using a git worktree for the planner (memory: no worktrees; a sibling clone instead).
+  - Pushing the eval JSON to PR #345 (it would have moved the head that `rig/full` was testing).
+  - Editing the shared skill or driver.
+- **Upstream:** none new. Harness observation: the driver pin worktree `~/.ailang-driver-pin/stapledon` (`MISSION_DRIVER_ROOT`) was deleted mid-iteration (present at 11:39Z, absent at about 15:00Z). Later script calls used the `AILANG_DRIVER_SRC` copies. Filed as a fleet ticket (see the report).
+- **Retro:** no skill, process or routing-policy change.
+  - Frictions:
+    1. `rig/full` took 117 min under an attended session's concurrent load, within 3 min of the new ceiling, and one run flaked on a 90 s launch guard. L4 is the remedy Mark already ordered (D-126 B), and it is now next after 7m-d.
+    2. The driver pin vanished under a live fire. That is harness work, so it was ticketed rather than fixed.
+    3. My own `make -s -p` probe in the rig clone started the default target. I stopped it within 2 min. It wrote nothing the record relies on, since the rig log and the run 1 verdict were already complete. Use `make -qp` for database reads.
+  - Harness share: 0/21 over iterations 35–55.
+  - Last three landings: #345 moved no clause (directed tooling), #341 moved clause 4, #333 none. This iteration worked an attended directive, and D-128 puts the clause-4 row 7m-d next, so no DRIFT.
+- **Next:** D-128 (default A): 7m-d on a quiet rig (GPU < 15 %, 1-min load < 5); otherwise L4 → K1.1a-a4 → a5 → L9 S0.3 → L3.
+
+DECISIONS FOR MARK: D-128 (new: position of row 7m-d, the docked-p99 measurement you asked for in D-127 B. A = next whenever the rig is quiet, otherwise L4; B = after L4. Recommendation A, default A.)

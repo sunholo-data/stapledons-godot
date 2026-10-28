@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### rig-watchdog (2026-10-28)
+
+#### Changed
+
+- **`rig/full` allows 120 minutes** (R1-RIG-WATCHDOG, D-126 C). `tools/rig_check.sh` now defaults to a 7,200 s `make test` watchdog (it was 5,400 s, and a 90-minute run had reached it). The rig-check control ignores a caller's `RIG_TEST_S`, so raising the watchdog by hand no longer turns the run red, and a new case checks that an explicit override still takes effect.
+
 ## v0.4.0-dev.37-living-bridge (2026-10-26)
 
 ### sunholo-audio (2026-10-26)

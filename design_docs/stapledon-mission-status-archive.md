@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-27 — ITERATION 52: K1.1a-a3 Kerr oracle RK-10..13, RK-18, RK-Q1 LANDED (PR #333, merge `f97d5ef1`), built by orphan iteration 51 (killed by the 2026-10-26 17:05 rig crash) and verified and landed here; independent Sonnet 90 PASS round 2, zero blocking; 140 physical lines; 7i(c) unblocked → D-125; clauses 1/4 UNMET, goal unmoved
+
+- **Clause map**: 1 UNMET → M1.5b renders + report (attended); 2 MET; 3 MET; 4 UNMET → row 7m AC1 PARKED-ON-LANE (1-min load 26 at 09:03 local; predicate GPU < 15 and load < 5), **7i(c) hold FLIPPED** (attended #318/#319/#322 all merged, #319 at 2026-10-26T08:53:51Z; nothing open edits `demos/ship_geometry_demo.gd`) but ranked in the follow-up backlog by Mark's 2026-10-20 order, so **D-125** proposes its position (default: 7i(c) next), P-land; 5 ongoing.
+- **Done**: iteration 51 built a3 (`7e94beff`, PR #333) and was judged Sonnet 92 PASS, then died when the rig crashed mid-`rig/full`. Iteration 52 re-verified the code in a fresh clone (slice gates rc 0, fixture regenerates byte-identically, all 13 anchors are design literals, an independent metric route agrees to about 2e-16). A fresh Sonnet judge scored round 2 90 PASS with 0 blocking findings (28/33 mutants killed; V10 precision survivor reproduced, non-blocking). `rig/full` run 1 was red only on `rig-check-control`, caused by the controller's own `RIG_TEST_S=6600` override (paired control rc 1 vs rc 0). Run 2 was green in 66 min. Merged as `f97d5ef1`. Sprint JSON: a3 passed (140 lines), amendment `iter52-kerr-a3-landing` assigns RK-3/RK-9 to a4 or a5.
+- **Next**: per D-125's default, **7i(c)** (AC5 scene-session golden). If D-125 is answered B: K1.1a-a4, then a5 (RK-3/RK-9 folded in). Then L9 S0.3, L4, L3, and 7m AC1 (idle rig only). D-121..D-124 acknowledged; 1 OPEN decision (D-125).
+
 ## STATUS 2026-10-26 — ITERATION 50: K1.1a-a2 Kerr oracle RK-4..RK-8 and RK-8b LANDED (PR #327, merge `3bd298e2`); independent Sonnet 93 PASS, zero blocking; 11 records, 109 physical lines; controller replaced a vacuous pro/retro check; parent open; clauses 1/4 UNMET, goal unmoved
 
 - **Clause map**: 1 UNMET → M1.5b renders + report (attended); 2 MET; 3 MET; 4 UNMET → row 7m AC1 PARKED-ON-LANE (GPU `Device Utilization %` 95, 1-min load 3.40 at 05:27Z; predicate < 15 and < 5), 7i(c) held (#319 still edits `demos/ship_geometry_demo.gd`), P-land; 5 ongoing. No routable UNMET-clause row; Mark's 2026-10-20 order governs.
