@@ -1171,7 +1171,7 @@ DECISIONS FOR MARK: D-126 (`rig/full` took 90 min on #341, the 5,400 s watchdog.
 
 DECISIONS FOR MARK: D-126 (unchanged: the `rig/full` watchdog; A raise to 7,200 s, B move L4 up, C both, D neither; recommendation C, default D). D-127 (new: 7m AC1's live p99 passes in 6 of 6 quiet runs, but the plan's docked-control validity rule, p99 ≤ 16.7, failed 9 of 9. A = drop the rule and record AC1 met; B = keep it, with a row to investigate; C = a longer docked control, then re-measure. Recommendation A; default no change.)
 
-## 55 — 2026-10-28 — D-126 C's A half LANDED (PR #345, merge `d63b47a4`): `rig/full` watchdog default 7,200 s and a hermetic rig-check control (8 cases, committed caller-poison guard); independent Sonnet 95/100 PASS, zero blocking; `rig/full` green in 117 min on run 2 after a run-1 `ship-demo-launch` load flake; D-126 B and D-127 B recorded, row 7m-d filed (position D-128) [TOOLING]
+## 55 — 2026-10-28 — D-126 C's A half LANDED (PR #345, merge `d63b47a4`): `rig/full` watchdog default 7,200 s and a hermetic rig-check control (8 cases, committed caller-poison guard); independent Sonnet 95/100 PASS, zero blocking; `rig/full` green in 117 min on run 2 after a run-1 `ship-demo-launch` load flake; D-126 B and D-127 B recorded, row 7m-d filed (position D-128) [HARNESS]
 
 - **Pick:** Mark's attended rulings, both dated 2026-10-28 and authored with the attended identity (`5c8ff3a6` D-126, `7e0e6860` D-127), outrank the queue. D-126 C: the loop raises the watchdog to 7,200 s (A), and L4 moves ahead of Kerr a4 (B). D-127 B: keep the docked-control rule, and the loop files a row to measure the docked p99. The A half was this iteration's build item. It also absorbed the iteration 52 backlog note (a caller's `RIG_TEST_S` reddened the control), because that note touches the same two files. B and the D-127 row are charter edits in this record. Already-landed check on a fresh origin: no watchdog change on main (`tools/rig_check.sh:15` `RIG_TEST_S:-5400`), and no open loop PR. Attended draft #344 (R3-EARTH-LINK) holds `Makefile` and `sim/*`, but neither script.
 - **Progress:** clauses 1/2/3 MET; 4 UNMET, goal unmoved. 7m AC1 stays open by D-127 B and now waits on row 7m-d; P-land is Mark's. 5 ongoing.
@@ -1225,7 +1225,7 @@ DECISIONS FOR MARK: D-126 (unchanged: the `rig/full` watchdog; A raise to 7,200 
     1. `rig/full` took 117 min under an attended session's concurrent load, within 3 min of the new ceiling, and one run flaked on a 90 s launch guard. L4 is the remedy Mark already ordered (D-126 B), and it is now next after 7m-d.
     2. The driver pin vanished under a live fire. That is harness work, so it was ticketed rather than fixed.
     3. My own `make -s -p` probe in the rig clone started the default target. I stopped it within 2 min. It wrote nothing the record relies on, since the rig log and the run 1 verdict were already complete. Use `make -qp` for database reads.
-  - Harness share: 0/21 over iterations 35–55.
+  - Harness share: 1/21 over iterations 35–55 (this one: the repo's own merge tooling, directed by Mark's D-126 C, not loop-harness work).
   - Last three landings: #345 moved no clause (directed tooling), #341 moved clause 4, #333 none. This iteration worked an attended directive, and D-128 puts the clause-4 row 7m-d next, so no DRIFT.
 - **Next:** D-128 (default A): 7m-d on a quiet rig (GPU < 15 %, 1-min load < 5); otherwise L4 → K1.1a-a4 → a5 → L9 S0.3 → L3.
 
