@@ -19,6 +19,10 @@
       "hint": "first_commit"
     },
     {
+      "id": "archive.earths-voice",
+      "hint": "first_commit"
+    },
+    {
       "id": "archive.photon-drive",
       "hint": "first_boost"
     },
@@ -32,6 +36,10 @@
     },
     {
       "id": "archive.weather-between-the-stars",
+      "hint": "cruise_above_0.9c"
+    },
+    {
+      "id": "archive.following-light",
       "hint": "cruise_above_0.9c"
     }
   ],

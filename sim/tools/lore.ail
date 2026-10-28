@@ -81,7 +81,7 @@ export pure func sameValue(a: Dec, b: Dec) -> bool = a.sig == b.sig && (a.sig ==
 -- ------------------------------------------------------------ units (the README's alias table)
 -- Prose spelling -> registry spelling. Anything not here is its own spelling.
 pure func aliasOf(w: string) -> string =
-  if w == "years" then "yr" else if w == "minutes" then "min" else if w == "suns" then "sun" else if w == "kelvin" then "K"
+  if w == "years" then "yr" else if w == "days" then "day" else if w == "minutes" then "min" else if w == "suns" then "sun" else if w == "kelvin" then "K"
   else if w == "solar masses" then "M☉" else if w == "horizon radii" then "r_s" else if w == "°" then "deg" else w
 export pure func normUnit(u: string) -> string = if u == "—" || u == "-" then "" else aliasOf(trim(u))
 

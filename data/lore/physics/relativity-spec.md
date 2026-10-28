@@ -21,9 +21,11 @@ must be accurate in all directions".
 | Aberration | n' = (n + ((γ−1)(n·β̂) + γβ) β̂) / (γ(1 + β n·β̂)); scalar form cos θ' = (cos θ + β)/(1 + β cos θ) | 90° at 0.9c → 25.842°. 90° at 0.5c → 60°. Straight ahead and straight behind are unchanged. Result is unit length. |
 | Inverse aberration (sky sampling) | n = aberrate(n', −β) | Round trip error < 1e-6 |
 | Doppler | D = γ(1 + β cos θ) = 1/(γ(1 − β cos θ')) | Ahead at 0.9c: √19 = 4.3589. Astern: 0.22942. Appearing at 90°: 1/γ |
+| Light cone and Earth's link (signals-and-instruments §2–§3.1) | A static source at distance d is seen as it was at t − d/c. The Earth rate (Earth-seconds of history per ship-second) is the Doppler factor for Sol's direction; straight astern D = e^(−φ) = 1/(γ(1+β)), straight ahead e^(φ). A signal sent Δ after departure catches a ship on a straight outbound cruise at Δ/(1 − β) after departure. A plan announced from port A to port B is first heard at B a wait max(0, d_A + d_B − T) after arrival (T the leg's galaxy time; the triangle excess d_A + d_B − \|AB\| at high γ). A port on a heard beam's ray from Sol needs no wait: the beam already covers it. Earth aims ahead along a heard course, at where the ship will be when its light arrives; the aim swings at v⊥ / (r (1 − β_r)), never faster than βγ / r | Earth rate astern 0.99c: 0.070888; at β = 0.999999: 7.0711 × 10⁻⁴; ahead at β = 0.999999: 1414.2. Catch-up of a signal sent one day after leaving, 0.9c: 10 days. Excess from a port 40 ly out, a 30 ly sideways turn: 60 ly. Aim swing for a 0.99c crossing 40 ly out: 1.418° a year; the fastest at the top speed, 40 ly out: 2.773° a day (110.9° a day at 1 ly) |
 | Spectrum | A blackbody at T is seen as a blackbody at D·T (because I_ν/ν³ is invariant) | |
 | Point-source brightness | F'_band/F_band = (Y(D·T)/Y(T)) / D², where Y is CIE luminance of the Planck spectrum | Bolometric total = D² |
 | Extended-source brightness (sky, nebulae) | Radiance I' = D⁴ I bolometric; in a band, the radiance of a blackbody at D·T | |
+| Resolved emitter with surface structure (a star's disc; proposed, star-surfaces) | A map of local temperature T(x): each surface element is a blackbody at T(x), seen at D·T(x); at rest the map is normalised so the disc-integrated band luminance equals the uniform disc's | RS-24. The surface's apparent evolution rate is D × its proper rate, which follows from the emission time t − (light travel time); D is not applied twice (RS-25) |
 | Colour | Planck × CIE 1931 2° observer → XYZ → linear sRGB (D65). Out-of-gamut colours are desaturated at constant Y | 2856 K → (0.4476, 0.4074) ±0.002. 6500 K → (0.3135, 0.3236). |
 | 3D objects nearby (planets, ships) | Aberrate every vertex. For rapidly moving geometry, use retarded-time positions (Terrell–Penrose rotation) | Sphere stays circular in outline |
 
@@ -178,6 +180,23 @@ dimensionless.
 | RS-21 | Photon sphere radius | 1.5 | r_s |
 | RS-22 | Reference speed for RS-1, RS-3 and RS-4 | 0.9 | c |
 | RS-23 | Reference speed for RS-2 | 0.5 | c |
+| RS-24 | Proposed (star-surfaces): disc-integrated V luminance of a temperature-mapped stellar disc ÷ the uniform disc's, at β = 0 (tolerance 1e-4 by quadrature, 1e-6 for a closed-form single spot, 0.5% GPU) | 1 | — |
+| RS-25 | Proposed (star-surfaces): apparent ÷ proper rate of a static source's surface evolution, straight ahead at 0.9c (√19; receding 0.22942) | 4.3589 | — |
+| RS-26 | Earth rate (Doppler factor for Sol straight astern) at 0.99c | 0.070888 | — |
+| RS-27 | Earth rate straight astern at 0.999c | 0.022366 | — |
+| RS-28 | Earth rate straight astern at the top speed, β = 0.999999 (γ 707.1, D-15) | 7.0711 × 10⁻⁴ | — |
+| RS-29 | Earth rate straight ahead (heading home) at 0.99c | 14.107 | — |
+| RS-30 | Earth rate straight ahead at β = 0.999999 | 1414.2 | — |
+| RS-31 | Catch-up: a signal sent one day after departure reaches a 0.9c ship, days after departure, 1/(1 − β) | 10 | day |
+| RS-32 | Catch-up of the same signal at β = 0.999999: 1/(1 − β) = 10⁶ days | 2,737.9 | yr |
+| RS-33 | Triangle excess d_A + d_B − \|AB\|: from a port 40 ly out, a 30 ly turn at right angles | 60 | ly |
+| RS-34 | Triangle excess: from a port 40 ly out to a star 10 ly from Sol, off to the side at right angles to the Sol–port line | 8.769 | ly |
+| RS-35 | Triangle excess \|A\| + \|B\| − \|AB\| for B on the far side of Sol from A (A 40 ly out, B 40 ly the other way; the formula's only zero) | 0 | ly |
+| RS-36 | Triangle excess for B beyond A on Sol's ray through A (A 40 ly, B 60 ly): the formula is not the wait here; coverage makes the wait 0 (RS-37) | 80 | ly |
+| RS-37 | Wait at a new port on a heard beam's ray (beyond the port, or between Sol and the port): covered by the beam already aimed along it | 0 | yr |
+| RS-38 | Swing of Earth's aim (degrees per year) following a ship that crosses its sky at right angles at 0.99c, 40 ly out: β/r | 1.418 | deg |
+| RS-39 | The fastest swing Earth's aim ever needs (degrees per day) for a ship at the top speed, 40 ly out: βγ/r, when the ship recedes at cos α = β off the line of sight | 2.773 | deg |
+| RS-40 | The same fastest swing (degrees per day) for a ship at the top speed 1 ly from Sol | 110.9 | deg |
 
 Qualitative checks (not numbers, so not in the registry):
 - **RS-Q1:** straight ahead and straight behind are unchanged by aberration,
