@@ -209,7 +209,7 @@
         "make feed-art-check: the event catalogue and the pinned feed pictures agree; every picture inspected at 1:1 for text or digits",
         "tests/test_earth_feed.gd: tint and jumble bands chosen by D at RS-26..RS-29; static over the last beamed frame when out of beam; the frame shown is earth.feed",
         "make display-audit-comms: every digit on the station an earth.* binding; Mark's render review of the four moments",
-        "Live frames (EL3b.6): on each look the AI lane paints at most N new weeks from earth.feed.context (the week's Earth event and the era by homeTier16(t_e); nothing from the ship: news from home, outside the bubble), with the player keys under the spend ceiling; cache replays revisits; AI off, no key or failure shows the library frame at once (stub-image tests)",
+        "Live frames (EL3b.6): on each look the AI lane paints at most N new weeks from earth.feed.context (the week's Earth event and the era by homeTier16(t_e); no ship telemetry: news from home, outside the bubble; the bubble's consequences enter as Earth's own news only for weeks with t_e >= since_t), with the player keys under the spend ceiling; cache replays revisits; AI off, no key or failure shows the library frame at once (stub-image tests)",
         "The mix (Mark: variety, spread the cost): each week has a kind (painted live, library, news card, home snapshot, sky over home) drawn by the sim from data/feed/mix.json; shares match over many weeks, painted live the minority; only painted-live weeks spend"
       ],
       "passes": null,

@@ -119,7 +119,8 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28
   - **Tests:**
     - determinism: same seed, same feed;
     - the mix: over many weeks each kind's share matches `mix.json`, and painted live stays the minority;
-    - `context` holds only Earth-side fields (the era words by `homeTier16(t_e)`, the years): no ship, plan, port or crew field, since the feed is news from home, outside the bubble;
+    - `context` holds only Earth-side fields (the era words by `homeTier16(t_e)`, the years, and `influences`, the bubble's consequences as Earth's own news): no ship telemetry (plan, port, crew), since the feed is news from home, outside the bubble;
+    - an influence enters `context.influences` only for weeks with t_e ≥ its `since_t` (light cone plus Earth's lag), checked with a fixture influence; it is empty in this sprint (the ship sends only plans);
     - over one cruise leg the frame count is the closed form (t_e advance / bin), small flying away and large flying home: the stillness and the torrent are the physics.
 - **EL3b.2 The feed library** (art, attended):
   - generate about 100 pictures (about 6 categories × 8 events × 2) by the home-tier route;
@@ -142,7 +143,7 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28
   - a `feed` image kind in the AI lane: `ai/prompt.ail` `feedPrompt` from `earth.feed.context` (the week's Earth event and the era only, nothing from the ship; no text or digits), keyed by (seed, week, event, era);
   - `ui/earth_feed.gd` asks for the next few weeks when the station opens and while the feed is shown, with the player's keys and under the spend ceiling, and shows the library frame until the painted one arrives.
   - the free kinds (news cards from the news templates or accepted AI text, home snapshots, the procedural sky over home) in `ui/earth_feed.gd`;
-  - **Tests:** with stub images: a look requests at most N frames, and only for painted-live weeks; a painted-live week that cannot paint shows the library frame; a revisit replays from the cache with no new spend; AI off, no key, or a failed call shows the library frame at once; no prompt carries a ship, plan, port or crew word.
+  - **Tests:** with stub images: a look requests at most N frames, and only for painted-live weeks; a painted-live week that cannot paint shows the library frame; a revisit replays from the cache with no new spend; AI off, no key, or a failed call shows the library frame at once; no prompt carries ship telemetry (plan, port, crew); a fixture influence reaches the prompt only for weeks at or after its `since_t`.
 - **EL3b.5 The exchange as light, layout, renders** (about 130 LOC):
   - the spacetime strip from `earth.messages`;
   - the station layout, with EL3's words behind Details;
