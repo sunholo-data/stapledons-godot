@@ -239,6 +239,14 @@ What the player sees at a glance, and feels:
   - Frames are cached by key (seed, week, event, era), so a revisit replays the same pictures. Every look adds new weeks; a returning player sees the frames already painted.
   - Spend-capped under the AI layer's ceiling (default $0.50, player-set): a few frames per look, never a burst. Images carry no text or digits (prompt rule, as the portraits).
   - When AI is off, the key is missing or a call fails, the frame comes from the shipped library at once, so the feed never waits on the network.
+- **The feed is a mix, for variety and to spread the cost** (Mark, 2026-10-28: "we can mix it in with non-ai spend images and text/news/ etc to help spread the cost - variety is good"). Each week's frame has a *kind*, drawn by the sim with the event (`mix(seed, frame)`, shares in `data/feed/mix.json`), so the same voyage always mixes the same way:
+  - **painted live** (AI): the minority share, and the only kind that spends;
+  - **library pictures** (shipped, free): the event's pictures, so the event still reads as a picture;
+  - **news cards** (free): a postcard of the week's news, an image with a few words. The words are the news templates' (or the accepted AI news text) with slots from sim fields, never digits outside a binding;
+  - **home snapshots** (free): the crew's own pictures from before departure, a face or a kitchen, shown when the news touches someone they left;
+  - **the sky over home** (free, procedural): Earth from the Moon, a launch plume, the town's night lights, drawn from the event's category.
+
+  A painted-live slot that cannot paint (AI off, no key, the spend ceiling reached, a failure) falls back to the library kind, so the mix never stalls. Stillness and torrent apply to every kind alike.
 - **The fallback library, generated once and shipped.**
   - About 8 events × 2 variants in each of about 6 categories (about 100 pictures).
   - Generated through the established home-art route: Codex imagegen, the home-tier style reference, no text or digits in frame, every picture inspected at 1:1 (as `data/interlude/home/generation_notes.md`), or through the AI lane's image slot (`gemini-2.5-flash-image`, $0.039 a call, unverified).
