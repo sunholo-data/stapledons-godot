@@ -1,7 +1,7 @@
 # Sprint R3-EARTH-LINK: plan
 
 **Design:** [earth-link.md](earth-link.md) (R3 S1, K1, F6).
-**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅, EL3 ✅ (words layer); EL3b (the visual station) planned, awaiting approval; EL4 next.
+**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅, EL3 ✅ (words layer); EL3b (the visual station) approved 2026-10-28, executing; EL4 after.
 **Progress file:** `.ailang/state/sprints/sprint_R3-EARTH-LINK.json`
 **Branches:**
 - this plan: `design/r3-earth-link`;
@@ -111,7 +111,7 @@ New `.ail` modules: `packages/observe/lightcone.ail` (+ tests), `sim/earth_link.
 
 ### EL3b. The comms station, visual (Mark 2026-10-28), about 650 LOC plus art
 
-Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28, **awaiting Mark's approval** (the art spend and the crew-portrait scope).
+Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2026-10-28 (the library is seeded now and builds up over playthroughs and shared packs; crew emotion portraits in scope).
 
 - **EL3b.1 `earth.feed` in the sim** (about 150 LOC):
   - `sim/earth_feed.ail`: `{frame, kind, event, variant, context}` from t_e (`kind` from the mix shares in `data/feed/mix.json`: painted live, library, news card, home snapshot, sky over home) (a weekly `feedBinYears`, `mix(seed, frame)`), with `data/feed/events.json` as the event catalogue at the scale of weeks to decades (a pure AILANG table, `sim/data/feed_events.ail`);

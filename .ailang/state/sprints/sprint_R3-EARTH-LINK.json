@@ -213,9 +213,9 @@
         "The mix (Mark: variety, spread the cost): each week has a kind (painted live, library, news card, home snapshot, sky over home) drawn by the sim from data/feed/mix.json; shares match over many weeks, painted live the minority; only painted-live weeks spend"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-28T14:23:20Z",
       "completed": null,
-      "notes": "Planned 2026-10-28; awaiting Mark's approval of the art route and spend (about 100 event pictures; gemini-2.5-flash-image $0.039 a call unverified, or Codex imagegen as for the home tiers) and the crew-portrait scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v3). Live frames are the main path (Mark: new images each time a user looks, from in-game events and history in the right era); the library is the fallback."
+      "notes": "Approved by Mark 2026-10-28 (attended): go ahead; seed the library now, it builds up over playthroughs and shared asset packs (painted-live frames join the library by content hash + feed key + provenance); crew emotion portraits for every member in scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v4). Executing in the full clone stapledons-godot-earth-link (the attended clone is in use by another session)."
     },
     {
       "id": "EL4",
