@@ -1221,6 +1221,7 @@ bridge-floor-test: import
 ship-demo-ci: bridge-floor-test
 
 include mk/planet-presentation.mk
+include mk/earth-link.mk
 
 .PHONY: sim-bootstrap-test
 sim-bootstrap-test: import

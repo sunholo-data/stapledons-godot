@@ -7,7 +7,8 @@ module stapledons/sim/earth_link_test
 -- never this module's output.
 import ./core (World, Params, Intent, IPlan, ICommit, Target, Ticked, Journey, Idle, Planned, Committed, Arrived,
   defaultParams, newWorld, tick, position, scriptedLeg, tauTotalOf, earthOf, legOf, cqView)
-import ./earth_link (Earth, Link, Message, Stale, Window, Preview, LinkLeg, beamTolRad, newestHeard, inBeam)
+import ./earth_link (Earth, Link, Message, Stale, Window, Preview, LinkLeg, Out, beamTolRad, newestHeard, inBeam, outOf, replyT,
+  emptyLink, sendPlan, homeRadiusLy, coveredAt, windowOf, earthView)
 import ./consequence (clocks)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta, oneMinusBeta)
@@ -87,9 +88,9 @@ pure func checkLeg1() -> bool {
   let first = run(c, 0.0001, []);
   let mid = run(c, total / 2.0, []);
   let a = atA();
-  let m = match c.link.messages { x :: _ => x, [] => { planId: 0, from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
+  let m = match c.link.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
   let em = earthOf(mid);
-  elAll([length((earthOf(c)).pending) == 0, length(c.link.messages) == 1, m.planId == c.lastPlanId, m.heardT == m.sentT, m.sentT == 0.0, elSame(m.port, elV(40.0, 0.0, 0.0)),
+  elAll([length((earthOf(c)).pending) == 0, length(c.link.messages) == 1, m.planId == c.lastPlanId, m.portId == "A", m.heardT == m.sentT, m.sentT == 0.0, elSame(m.port, elV(40.0, 0.0, 0.0)),
     (earthOf(c)).inBeam, (earthOf(first)).inBeam, em.inBeam, (earthOf(a)).inBeam, isArrived(a.journey), length(a.link.messages) == 1,
     -- leg 1 from Sol: the wait is max(0, 0 + 40 - T) = 0, and no beam is stale
     waitOf(earthOf(c)) == 0.0, length(em.stale) == 0, length(em.pending) == 0,
@@ -195,7 +196,7 @@ test "AC4b: a short first leg: Earth has heard B by arrival, yet the wait stays 
 -- Case 2 needs a committed or arrived leg: a planned leg never counts as the heard plan, even with
 -- a matching id (unreachable through the journey, whose planned ids are fresh; checked directly).
 pure func checkCases() -> bool {
-  let l = { messages: [{ planId: 1, from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true };
+  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0 };
   let off = elV(20.0, 20.0, 0.0);
   let g = { planId: 1, from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), t0: 0.0, legT: 41.0, flying: true };
   elAll([inBeam(l, 40.0, off, Some(g)), !inBeam(l, 40.0, off, Some({ g | flying: false })), !inBeam(l, 40.0, off, None),
@@ -205,6 +206,72 @@ pure func checkCases() -> bool {
     !inBeam({ l | messages: [] }, 70.0, elV(60.0, 0.0, 0.0), None), inBeam({ l | messages: [] }, 0.0, elV(0.0, 0.0, 0.0), None)])
 }
 test "in-beam cases: Sol, the heard committed leg (not a planned one), the heard ray; nothing heard or not sending is out" { checkCases() }
+
+-- ------------------------------------------------------------ EL3: the comms station's fields
+-- The Listen pane's reason and silence, and the Exchange log's reply time, come from the sim (D-21).
+-- Expected values are the AC4 closed forms: Earth hears B at heard2 = t0 + |A| and its beam reaches
+-- B at heard2 + |B|; the last beamed light before the re-plan left Sol at t0 - |A| (seen at A).
+pure func reasonOf(e: Earth) -> string = match e.out { Some(o) => o.reason, None => "" }
+pure func checkComms() -> bool {
+  let e0 = earthOf(start());
+  let a = atA();
+  let c = committed(planned(a, portB()));
+  let t0 = c.ship.motion.t;
+  let heard2 = t0 + 40.0;
+  let mid = run(c, tauTotalOf(c) / 2.0, []);
+  let em = earthOf(mid);
+  let b = scriptedLeg(a, portB(), phi099());
+  let eb = earthOf(b);
+  let after = run(b, heard2 + 50.0 - b.ship.motion.t + 0.000001, []);
+  let ea = earthOf(after);
+  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0 };
+  let m2 = match c.link.messages { _ :: x :: [] => x, _ => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
+  elAll([
+    -- at Sol: in beam, no reason, rate and its inverse 1, the beamed light is the newest
+    none(e0.out), e0.rateInverse == 1.0, e0.lastBeamT == 0.0,
+    -- cruising: the inverse is 1 / D
+    em.rateInverse == 1.0 / em.rate,
+    -- the re-plan: the message names its port, and Earth's reply reaches B at heard2 + |B|
+    m2.portId == "B", m2.heardT == heard2, elNear(replyT(m2), heard2 + 50.0, 0.000000001),
+    -- mid-transit and on arrival: out of beam, not heard yet, due at B at heard2 + |B|
+    reasonOf(em) == "not_heard", (match em.out { Some(o) => o.portId == "B" && o.dueT == replyT(m2) && o.dueInYears == replyT(m2) - mid.ship.motion.t, None => false }),
+    reasonOf(eb) == "not_heard", (match eb.out { Some(o) => elNear(o.dueInYears, heard2 + 50.0 - b.ship.motion.t, 0.000000001), None => false }),
+    -- the silence line: the last beamed light left Sol at t0 - |A| (received at A, at the commit)
+    elNear(em.lastBeamT, t0 - 40.0, 0.000000001), elNear(eb.lastBeamT, t0 - 40.0, 0.000000001),
+    -- back in beam at B: no reason; the beamed light is the newest again
+    ea.inBeam, none(ea.out), ea.lastBeamT == ea.newestLightT,
+    -- Earth silent: "silent"; off the heard plan and its ray, Earth having heard it: "off_line"
+    (match outOf({ l | sending: false }, 0.0, elV(0.0, 0.0, 0.0), None) { Some(o) => o.reason == "silent", None => false }),
+    (match outOf(l, 70.0, elV(-60.0, 0.0, 0.0), None) { Some(o) => o.reason == "off_line", None => false }),
+    (match outOf(l, 10.0, elV(20.0, 0.0, 0.0), None) { Some(o) => o.reason == "not_heard" && o.portId == "A" && o.dueT == 40.0 && o.dueInYears == 30.0, None => false })])
+}
+test "EL3: the out-of-beam reason, its due time, the silence date and the reply time come from the sim" { checkComms() }
+
+-- ------------------------------------------------------------ EL3: home is the Solar System
+-- The game starts at Earth, 1 AU from the light cone's origin (Sol). Inside the heliopause (120 AU)
+-- the ship is in beam; a plan made at home is heard at once and its beam rides out with the ship:
+-- at 0.999999c the light reaching the ship is Sol-centred older than the plan (t - |p| < 0) for
+-- years, yet the ship is in beam on the heard leg, with no wait and no stale beam.
+pure func checkHomeStart() -> bool {
+  let au = 1.0 / 63241.077;
+  let e = elV(au, 0.0, 0.0);
+  let l = sendPlan(emptyLink(), 1, "A", e, elV(40.0, 0.0, 0.0), 0.0, 0.0);
+  let g = { planId: 1, from: e, port: elV(40.0, 0.0, 0.0), t0: 0.0, legT: 40.0, flying: true };
+  let p = elV(au + 0.999999, 0.0, 0.0);
+  let m = match l.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
+  let ev = earthView(l, 1.0, p, elV(1.0, 0.0, 0.0), rapidityOfOneMinusBeta(0.000001), Some(g));
+  elAll([
+    -- at Earth before any commit, and anywhere inside 120 AU: in beam; outside it, with nothing heard: out
+    inBeam(emptyLink(), 0.0, e, None), inBeam(emptyLink(), 0.0, elV(0.0, 100.0 * au, 0.0), None), !inBeam(emptyLink(), 1.0, elV(0.0, 130.0 * au, 0.0), None),
+    elNear(homeRadiusLy(), 120.0 * au, 0.0000000001), (earthView(emptyLink(), 0.0, e, elV(0.0, 0.0, 0.0), 0.0, None)).atHome,
+    -- a plan from home is heard at once
+    m.heardT == 0.0, length((earthView(l, 0.0, e, elV(1.0, 0.0, 0.0), 0.0, Some(g))).pending) == 0,
+    -- one year out at the top speed: t - |p| < 0 (older than the plan), still in beam on the heard leg
+    1.0 - norm(p) < 0.0, inBeam(l, 1.0, p, Some(g)), ev.inBeam, none(ev.out), !ev.atHome,
+    -- the leg from home is covered: no wait at the port, no stale beam
+    coveredAt(l, g), (windowOf(l, g)).waitYears == 0.0, length(ev.stale) == 0])
+}
+test "EL3: home is the Solar System: at Earth in beam before any commit; a leg from Earth near c stays in beam" { checkHomeStart() }
 
 -- ------------------------------------------------------------ the 2.16 wire (AC7, AC8)
 pure func helloLine(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
@@ -226,10 +293,11 @@ pure func checkWire() -> bool {
   elAll([earthMinor() == surfaceMinor() + 3, earthMinor() == 16, contains(reply(newSession(), helloLine(earthMinor())), "\"minor\":16"),
     contains(reply(newSession(), helloLine(earthMinor() + 5)), "\"minor\":16"), contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15"),
     -- 2.16: the full state carries earth; at Sol before any commit: rate 1, in beam, no messages
-    contains(g16, "\"earth\":{\"rate\":1,"), contains(g16, "\"in_beam\":true,\"sending\":true,\"beam\":null,\"stale\":[],\"pending\":[],\"window\":null,\"preview\":null,\"messages\":[]}"),
+    contains(g16, "\"earth\":{\"rate\":1,\"rate_inverse\":1,"), contains(g16, "\"at_home\":true,\"in_beam\":true,\"sending\":true,\"last_beam_t\":0,"),
+    contains(g16, "\"out\":null,\"beam\":null,\"stale\":[],\"pending\":[],\"window\":null,\"preview\":null,\"messages\":[]}"),
     -- a planned leg carries its preview; the commit sends the plan home; a cruising tick moves the rate
     contains(p16, "\"preview\":{\"port\":{\"x\":40,\"y\":0,\"z\":0},\"wait_years\":0,\"would_stale\":null}"),
-    contains(c16, "\"messages\":[{\"plan_id\":1,"), contains(c16, "\"window\":{"), contains(m16, "\"earth\":{\"rate\":0.0"),
+    contains(c16, "\"messages\":[{\"plan_id\":1,\"port_id\":\"A\","), contains(c16, "\"reply_t\":40,"), contains(c16, "\"window\":{"), contains(m16, "\"earth\":{\"rate\":0.0"),
     -- nothing changed on an idle zero-length tick: no section
     !contains(q16, "\"earth\":{"),
     -- 2.15 and below: no earth key anywhere
@@ -238,5 +306,5 @@ pure func checkWire() -> bool {
 test "AC7/AC8: the 2.16 earth section in full states and on change; a 2.15 session never sees it" { checkWire() }
 
 export pure func earthLinkVm(n: int) -> string =
-  if checkRsPinned() && checkNewsEpochSame() && checkHome() && checkLeg1() && checkReplan() && checkCovered() && checkHomeward() && checkShortFirstLeg() && checkCases() && checkWire()
+  if checkRsPinned() && checkNewsEpochSame() && checkHome() && checkLeg1() && checkReplan() && checkCovered() && checkHomeward() && checkShortFirstLeg() && checkCases() && checkComms() && checkHomeStart() && checkWire()
   then "earth-link-ok" else "earth-link-BAD"

@@ -28,12 +28,13 @@ var generated_segment := RegEx.create_from_string("^@([^/@]+)@[0-9]+$")
 # never a numeral; make ui (map_text_identity.json) pins its text.
 const CONTEXT_ONLY := ["client.map.target_name"]
 # Context-only client paths whose producer value is looked up from the frame or the catalogue.
-const CONTEXT_SOURCED := ["client.map.target_id", "client.map.distance_ly", "client.map.count", "client.map.radius_pc", "client.map.rate", "client.map.hold_s", "client.archive.unlocked_count", "client.crew.working", "client.crew.status", "client.map.empty", "client.archive.empty", "client.crew.empty"]
+const CONTEXT_SOURCED := ["client.map.target_id", "client.map.distance_ly", "client.map.count", "client.map.radius_pc", "client.map.rate", "client.map.hold_s", "client.archive.unlocked_count", "client.crew.working", "client.crew.status", "client.map.empty", "client.archive.empty", "client.crew.empty", "client.comms.empty"]
 # R2-CREW-CONSOLE-V2 V7: the Crew console's own call state (who is on the call, what is on its
 # way, the inline Ask or Order, refusal words, the captain's words, accepted AI words) is client
 # state with no frame source: context-only, under these prefixes.
 const CONTEXT_ONLY_PREFIX := ["client.crew.call", "client.crew.sending.", "client.crew.how.", "client.crew.notice.", "client.crew.said.", "client.crew.ai_text."]
 var crew_seen := {}
+var comms_seen := {} # R3-EARTH-LINK EL3: listen:in, listen:<reason>, log, and the panes' bindings
 var stars_header: Dictionary = {}
 var stars: Array = []
 var review_seen := {}
@@ -168,7 +169,7 @@ func expected_source(p: String, view: Dictionary) -> Variant:
 		"client.crew.status":
 			if not crew is Dictionary or crew.is_empty(): return "no crew aboard yet"
 			return "needs you" if not crew.get("holds", []).is_empty() else ""
-		"client.map.empty", "client.archive.empty", "client.crew.empty": return ""
+		"client.map.empty", "client.archive.empty", "client.crew.empty", "client.comms.empty": return ""
 	return null
 
 
@@ -283,6 +284,10 @@ func audit(row: Dictionary) -> void:
 		binding.set_meta("node", b.get("node", binding.field))
 		root_node.add_child(binding)
 		fields[binding.field] = true
+		# R3-EARTH-LINK EL3 (AC9): every number on the comms panes is an earth.* field.
+		if str(b.get("node", "")).contains("/CommsPanel/"):
+			for part: Variant in b.get("parts", [[b.get("field", "")]]):
+				if part is Array: check(str(part[0]).begins_with("earth."), "comms-field %s %s" % [b.get("node", ""), part[0]])
 	for l: Dictionary in row.get("labels", []):
 		var label := Label.new(); label.text = l.get("text", ""); label.set_meta("node", l.get("node", "")); root_node.add_child(label)
 		# R2-CREW-CONSOLE-V2 V7: every Label on the Crew console is a binding, digits or not.
@@ -311,6 +316,12 @@ func audit(row: Dictionary) -> void:
 	if not cr.is_empty():
 		crew_seen["board" if str(cr.get("call", "")) == "" else "call:" + str(cr.get("state", ""))] = true
 		crew_seen["bindings"] = int(crew_seen.get("bindings", 0)) + row.get("bindings", []).filter(func(b: Dictionary) -> bool: return str(b.get("node", "")).contains("/CrewConsole/")).size()
+	var cm: Dictionary = row.get("comms", {}) if row.get("comms") is Dictionary else {}
+	if not cm.is_empty():
+		var key := "log" if str(cm.get("pane", "")) == "log" else ("listen:in" if cm.get("in_beam") == true else "listen:" + str(cm.get("reason", "")))
+		comms_seen[key] = true
+		if key == "log" and int(cm.get("lines", 0)) >= 2: comms_seen["log:rows"] = true
+		comms_seen["bindings"] = int(comms_seen.get("bindings", 0)) + row.get("bindings", []).filter(func(b: Dictionary) -> bool: return str(b.get("node", "")).contains("/CommsPanel/")).size()
 	var lore: Dictionary = row.get("lore", {})
 	if not lore.is_empty():
 		var binding := LoreBinding.new(); binding.entry_id = lore.get("id", "")
@@ -372,6 +383,15 @@ func _run() -> void:
 		check(calls.size() >= 3, "crew calls sampled in fewer than three states %s" % [calls])
 		check(int(crew_seen.get("bindings", 0)) > 0, "no Crew console bindings sampled")
 		print("display-audit crew: %s, %d console bindings" % [crew_seen.keys().filter(func(k): return k != "bindings"), int(crew_seen.get("bindings", 0))])
+		known_hits.clear()
+		for i in known_entries.size(): known_hits[i] = 0
+	elif route == "comms":
+		# R3-EARTH-LINK EL3 (AC9): the comms playthrough (tests/playthrough_comms.json): the Listen
+		# pane in beam and out of it (the sim's reason), the Exchange log with two plans sent home.
+		check(state_file != null, "missing state stream")
+		for k in ["listen:in", "listen:not_heard", "log", "log:rows"]: check(comms_seen.has(k), "comms never sampled: " + k)
+		check(int(comms_seen.get("bindings", 0)) > 0, "no comms bindings sampled")
+		print("display-audit comms: %s, %d pane bindings" % [comms_seen.keys().filter(func(k): return k != "bindings"), int(comms_seen.get("bindings", 0))])
 		known_hits.clear()
 		for i in known_entries.size(): known_hits[i] = 0
 	elif route != "control":

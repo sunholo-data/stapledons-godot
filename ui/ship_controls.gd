@@ -69,6 +69,7 @@ const CONSOLE := [
 	{"decision": "leave Sgr A*", "station": "navigation", "action": "leave", "confirm": true},
 	{"decision": "begin the guided voyage", "station": "voyage", "action": "begin", "confirm": true},
 	{"decision": "open the Archive", "station": "archive", "action": "open", "confirm": false},
+	{"decision": "listen for Earth (the comms station)", "station": "comms", "action": "open", "confirm": false},
 ]
 
 const GROUP_ORDER := ["Move", "Camera", "Display", "Pacing", "Developer"]

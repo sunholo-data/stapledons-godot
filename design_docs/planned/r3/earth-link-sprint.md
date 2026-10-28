@@ -1,7 +1,7 @@
 # Sprint R3-EARTH-LINK: plan
 
 **Design:** [earth-link.md](earth-link.md) (R3 S1, K1, F6).
-**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅; EL3 next.
+**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅, EL3 ✅; EL4 next.
 **Progress file:** `.ailang/state/sprints/sprint_R3-EARTH-LINK.json`
 **Branches:**
 - this plan: `design/r3-earth-link`;

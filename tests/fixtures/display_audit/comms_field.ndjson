@@ -1,0 +1,1 @@
+{"view":{"clock":{"year":1.5}},"bindings":[{"node":"/root/ShipGeometryDemo/@CanvasLayer@288/ConsolePanel/@VBoxContainer@12/@VBoxContainer@14/CommsPanel/@VBoxContainer@3/@Label@5","field":"clock.year","fmt":"%s","text":"Newest light: Earth at +547.9 days","visible":true,"parts":["Newest light: Earth at ",["clock.year","comms_clock"]]}],"labels":[]}

@@ -192,10 +192,10 @@
         "make display-audit-comms (new target, in make test): 0 unbound digits on the Listen and Exchange-log panes",
         "tests/test_comms_station.gd green in make ui: rate phrase thresholds from data at four D values; out-of-beam reasons from sim fields; console opens from the deck"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Start here: switch the game sessions (ship_geometry_demo, main.gd, loading_jump, tests that assert ARCHIVE_MINOR) to SimBridge.EARTH_MINOR when the comms panel first reads earth."
+      "passes": true,
+      "started": "2026-10-28T12:30:00Z",
+      "completed": "2026-10-28T13:36:33Z",
+      "notes": "Comms station on console_decision_2 (STATIONS comms, ACTIONS open/listen/log, ShipControls.CONSOLE, HUD WALK_TO); ui/comms_panel.gd (Listen: newest light + age or the at-home line, Earth rate D with data-driven phrase bands, in beam or the sim's reason, silence line; Exchange log: one row per message) with every line a ComposedBinding on earth.* (data/ui/comms_copy.json); idle screen bound. Sessions on SimBridge.EARTH_MINOR (ship demo, main map route, loading-jump prefetch; test_bh_hud, test_ship_ui). Sim additions for the panes (no GDScript arithmetic): out {reason, port_id, due_t, due_in_years}, last_beam_t (noteBeam each tick), rate_inverse, at_home, port_id and *_year on messages/beam/stale/pending, reply_t. Model fix found by running the station in the game: the ship starts at Earth (1 AU), so home is the Solar System (120 AU, heliopause): in beam there, a plan from home heard at once and covered, its beam carried from sentT - |from| (beamFrom); design doc amended. Gates: make comms-station-test 37/0 (in make ui); make display-audit-comms (tests/playthrough_comms.json, 1122 samples, listen in beam / not_heard / log with 2 rows, new=0 failures=0; in ship-demo-ci) plus a comms-field negative control (32 controls); earthLinkVm on strict VM and interpreter (checkComms, checkHomeStart; 4 mutants killed); ailang test --package 566/566; make strict, parity, replay 11/11; ship-console-test 135/0. Also refreshed the session-audit codex mirrors for the two Archive entries (missed in e7dbc359)."
     },
     {
       "id": "EL4",
@@ -211,7 +211,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Start here: ui/earth_beams.gd after ui/ism_layer.gd; read earth.beam/pending/stale/window/preview (port_id and *_year fields are on the wire since EL3); the window may need port_id and a reach year for its label."
     },
     {
       "id": "EL5",

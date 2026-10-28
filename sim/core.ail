@@ -17,7 +17,7 @@ import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndB
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag, columnDragEnergy, tripEnergyColumn, driveHoldMaxPhi)
 import ./ism (Medium, Seg, Thresh, DustTick, DustCfg, MediaRow, Impact, mediumAt, profile, window, columnEff, peakMedium, mediaRows, holdMaxPhi, hotMedium, uniformMedium, defaultDustCfg, dustTick, dustKey, dustWithTotal, tripBright, noDust, lutArray, grainsSwept, visibleAlong)
 import ./tripphase (tripPhaseIndex)
-import ./earth_link (Link, LinkLeg, Earth, emptyLink, sendPlan, earthView)
+import ./earth_link (Link, LinkLeg, Earth, emptyLink, sendPlan, noteBeam, earthView)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
 import ./celestial (defaultEpochJd, solSystem, lyKm)
@@ -750,13 +750,17 @@ export pure func tick(w: World, input: TickInput) -> Ticked
 -- R3-EARTH-LINK (sim/earth_link.ail): a tick that commits a plan sends it home. A commit and an
 -- arrival can fall in one tick, so a new Committed or Arrived plan id is the commit. The port is
 -- where the autopilot lands (arrivalPoint), so a later stop on its ray from Sol is on the beam.
+-- Every tick also notes the newest beamed light while in beam (the silence line's date).
 pure func flownOf(j: Journey) -> Option[Commitment] = match j { Committed(c) => Some(c), Arrived(c) => Some(c), _ => None }
-export pure func linkAfter(before: World, after: World) -> Link =
-  match (flownOf(before.journey), flownOf(after.journey)) {
-    (Some(b), Some(c)) => if b.plan.id == c.plan.id then after.link else sendPlan(after.link, c.plan.id, c.plan.from, arrivalPoint(after.params, c.plan), c.t0, c.tau0),
-    (None, Some(c)) => sendPlan(after.link, c.plan.id, c.plan.from, arrivalPoint(after.params, c.plan), c.t0, c.tau0),
+pure func sendOf(l: Link, c: Commitment, p: Params) -> Link = sendPlan(l, c.plan.id, c.plan.target.id, c.plan.from, arrivalPoint(p, c.plan), c.t0, c.tau0)
+export pure func linkAfter(before: World, after: World) -> Link {
+  let sent = match (flownOf(before.journey), flownOf(after.journey)) {
+    (Some(b), Some(c)) => if b.plan.id == c.plan.id then after.link else sendOf(after.link, c, after.params),
+    (None, Some(c)) => sendOf(after.link, c, after.params),
     _ => after.link
-  }
+  };
+  noteBeam(sent, after.ship.motion.t, position(after.ship), legOf(after))
+}
 -- The journey's current leg for the Earth link: committed or arrived (flying), or a planned leg
 -- from here now (the preview's); None when idle.
 export pure func legOf(w: World) -> Option[LinkLeg] =

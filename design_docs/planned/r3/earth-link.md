@@ -126,10 +126,10 @@ What it stores is only the messages. The ship's path comes from the journey core
 
 - **Sending.**
   - At every commit the ship sends its plan home. The sim appends a `Message`: `sentT` is the commit's galaxy time, and `heardT = sentT + |from|`.
-  - The first commit from Sol has `heardT = sentT` (the plan Earth had before departure).
+  - A commit from home (inside the Solar System, below) has `heardT = sentT` (the plan Earth had before departure).
 - **Earth's aim at emission time t_e.** Earth aims at the plan of the newest message it had heard by t_e (`heardT ≤ t_e`), or nowhere if it had heard none. Each beam covers the ray from Sol through its port (stapledons-design 2026-10-27).
 - **In beam.** At galaxy time t and position p, the Earth light reaching the ship left at t_e = t − |p| (`seenAt`). Let m be the newest message with `heardT ≤ t_e`. The ship is **in beam** iff Earth was sending at t_e and one of these holds:
-  1. **At home:** |p| < 1e-12 ly (the ship is at Sol). This includes a hold at Sol before any commit.
+  1. **At home:** inside the Solar System, |p| < 120 AU (`homeRadiusLy`, the heliopause). This includes the hold at Earth before any commit. Amended in EL3 (see "Home is the Solar System" below): the plan had |p| < 1e-12 ly, at Sol itself, but the voyage starts at Earth, 1 AU from the origin.
   2. **On the heard plan:** the ship's current leg is m's plan (`planId` equal) and that leg is committed or arrived. A plan that is only planned, not committed, never counts. Earth aims at the ship's predicted position on it. Cases 2 and 3 can both hold; either is enough.
   3. **On the heard beam's ray:** `onBeamLine(m.port, p, angTol)`. This covers a stop beyond m's port or between it and Sol.
 
@@ -146,6 +146,16 @@ What it stores is only the messages. The ship's path comes from the journey core
   - The sim reports each stale beam with the galaxy time Earth stops aiming it (`heardT` of the next message).
 - **The Earth rate.** `earthRate(position, heading, φ)` on every tick: 1 at rest; below 1 receding; above 1 approaching.
 - **The news epoch is unchanged.** `consequence.clocks` calls `seenAt` and gives byte-identical results; M4.4 AC1 stays pinned.
+- **Home is the Solar System (amended in EL3, 2026-10-28).** The light cone puts Earth at the origin, but the game starts the ship at Earth, 1 AU out (8.3 light-minutes), and the EL2 fixtures started it at the origin. Running the comms station in the game showed two faults:
+  - before the first commit the ship read "out of beam, off the beam line", because the old case 1 (|p| < 1e-12 ly) never holds at Earth;
+  - on a first leg from Earth near c, the light reaching the ship is older, measured from Sol, than the plan by up to 8.3 minutes, and t − |p| stays below `heardT` for years. At 0.999999c it gains only (1 − β) per year, so the ship read out of beam on its own first leg for about 15 years.
+
+  The fix, in `sim/earth_link.ail`:
+  - **at home** is |p| < 120 AU, the heliopause (Voyager 1 crossed it at 121.6 AU in 2012, Voyager 2 at 119 AU in 2018). Inside it Earth tracks the ship directly, as the Deep Space Network tracks the Voyagers;
+  - a plan made at home is heard at once, and its leg is **covered** (no wait, no stale beam);
+  - its beam is carried by Earth light from `beamFrom = sentT − |from|` (the earliest Sol-centred emission time of light from Earth at the commit: the ship riding Earth's own light outward). Every other message's beam starts at `heardT`.
+
+  Stars are tens of light-years out, so nothing else moves. Checked by `checkHomeStart` in `earth_link_test.ail`, with mutants of both rules caught.
 
 **Wire, 2.16, gated by `earthMinor()`.** The `earth` section:
 
@@ -153,16 +163,20 @@ What it stores is only the messages. The ship's path comes from the journey core
 |---|---|
 | `rate` | D, float64 |
 | `newest_light_t` | t_e, galaxy time |
-| `newest_light_year` | calendar year of t_e |
+| `rate_inverse` | 1 / D, ship-seconds per Earth-second (EL3: the "one Earth day every …" phrase) |
+| `newest_light_year` | params.epoch + t_e, the Earth clock (the game's epoch is 0, so this reads as the HUD's "Earth +t"; every `*_year` below is the same) |
 | `light_age_years` | \|p\| |
+| `at_home` | inside the Solar System (EL3) |
 | `in_beam` | in-beam state |
 | `sending` | Earth is transmitting (true throughout this sprint) |
-| `beam` | `{port, heard_t}` or null |
-| `stale` | `[{port, until_t}]` |
-| `pending` | `[{port, sent_t, heard_t}]`, plans still in flight to Earth |
+| `last_beam_t`, `last_beam_year` | when the newest beamed Earth light the ship received left Sol: the silence line (EL3; noted every tick in beam) |
+| `out` | `{reason, port_id, due_t, due_year, due_in_years}` or null in beam (EL3): `silent`, `not_heard` (the newest plan's beam reaches its port at `due_t`, `due_in_years` from now) or `off_line` |
+| `beam` | `{port_id, port, heard_t, heard_year}` or null |
+| `stale` | `[{port_id, port, until_t, until_year}]` |
+| `pending` | `[{port_id, port, sent_t, heard_t, heard_year}]`, plans still in flight to Earth |
 | `window` | `{port, from_t, wait_years}` or null, for the committed or arrived leg |
-| `preview` | `{port, wait_years, would_stale: {port, until_t} or null}` or null, for a planned, uncommitted leg (cost fields only) |
-| `messages` | `[{plan_id, from, port, sent_t, sent_tau, heard_t}]` |
+| `preview` | `{port, wait_years, would_stale: {port_id, port, until_t, until_year} or null}` or null, for a planned, uncommitted leg (cost fields only) |
+| `messages` | `[{plan_id, port_id, from, port, sent_t, sent_year, sent_tau, heard_t, heard_year, reply_t, reply_year}]`; `reply_t` = heard_t + \|port\|, Earth's reply at the port at the earliest (EL3) |
 
 The minor's other required edits:
 - `helloFor`;
@@ -177,9 +191,9 @@ Streams below 2.16 carry no `earth` section and stay byte-identical; the replay 
   - `reserved_2` becomes **Comms** (`STATIONS`, `ACTIONS`, `ui/ship_controls.gd` `CONSOLE`, the HUD's `WALK_TO`), with the existing SubViewport screen and panel pattern (`_build_screens`, `_open_panel`).
   - `reserved_3` stays spare.
 - **Listen pane**, Earth only:
-  - **Newest Earth light:** the calendar year, and how old it is ("Earth as of 2412, light 4.3 years old").
+  - **Newest Earth light:** Earth's clock in it, and how old it is ("Newest light: Earth at +109.6 days, 4.32 yr old"). The game has no calendar (its epoch is 0), so times read as the HUD's Earth clock. Inside the Solar System: "Earth tracks the ship directly".
   - **The Earth rate, live:** the value of D and a phrase built only from it ("one Earth day every 3.9 ship-years"; "real time"; "two weeks of Earth per ship-day"), with the phrase thresholds in data.
-  - **In beam or not**, and the reason when not, from the sim: "Earth has not heard this plan yet: its beam reaches you at 2,467 (wait 60 years at the port)", or "off the beam line".
+  - **In beam or not**, and the reason when not, from the sim (`earth.out`): "the light reaching the ship left before Earth heard your plan for Proxima Centauri. Earth's beam reaches Proxima Centauri at Earth +12.60 yr, 8.30 yr from now", or "off the beam line".
   - **Silence:** when not in beam, the date of the last Earth light the ship received.
 - **Exchange log:**
   - one row per plan sent home: sent (ship-year and galaxy year), heard at Earth (galaxy year), and Earth's reply reaching the port at the earliest (`heard_t + |port|`);

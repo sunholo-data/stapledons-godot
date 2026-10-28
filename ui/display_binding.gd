@@ -61,6 +61,10 @@ static func format_field(view: Dictionary, f: String, format: String) -> String:
 	# a sim field (or the client's sending/selector state) in words.
 	if format.begins_with("crew_"):
 		return CrewConsoleModel.format(format, raw)
+	# R3-EARTH-LINK EL3: the comms station's formats (CommsPanel.format): calendar years, spans,
+	# beam words and port names, formatting only.
+	if format.begins_with("comms_"):
+		return CommsPanel.format(format, raw)
 	if format == "days": # a whole number of days, singular at one ("1 day", "70 days")
 		return "-" if raw == null else ("%d day" if int(raw) == 1 else "%d days") % int(raw)
 	if format == "days_into": # a moment's crew day in the crossing (0 is the day it began)

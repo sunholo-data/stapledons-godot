@@ -33,7 +33,7 @@ const CLOCK_SIZE := 17
 const PRIORITY := ["arrival", "identify", "medium_here", "refusal", "gravity", "notice", "medium_notice", "transit", "tour", "interlude", "unlock"]
 ## The transit card's compact rows (M4.3a JourneyHud.ROWS by field); the full set is in Tab.
 const TRANSIT_COMPACT := ["ship.phase", "consequence.gap_years", "consequence.distance_remaining", "consequence.earth_years_remaining", "consequence.load_suns", "ship.ism.glow_w_m2", "client.warp"]
-const WALK_TO := [["navigation", "Navigation station"], ["voyage", "Voyage console"], ["archive", "Archive terminal"]]
+const WALK_TO := [["navigation", "Navigation station"], ["voyage", "Voyage console"], ["archive", "Archive terminal"], ["comms", "Comms station"]]
 
 var now_s := 0.0
 var dev := false
