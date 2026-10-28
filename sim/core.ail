@@ -20,7 +20,7 @@ import ./tripphase (tripPhaseIndex)
 import ./earth_link (Link, LinkLeg, Earth, emptyLink, sendPlan, noteBeam, earthView)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
-import ./celestial (defaultEpochJd, solSystem, lyKm)
+import ./celestial (defaultEpochJd, solSystem, lyKm, bodyAt, jdAt)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm, starStopKmFor)
@@ -771,7 +771,14 @@ export pure func legOf(w: World) -> Option[LinkLeg] =
     Idle => None
   }
 -- The Earth link as the ship has it now (sim/earth_link.ail earthView): the protocol's earth section.
-export pure func earthOf(w: World) -> Earth = earthView(w.link, w.ship.motion.t, position(w.ship), w.ship.heading, w.ship.motion.phi, legOf(w))
+-- Earth's place now (celestial ephemeris, km to ly) sets the Earth rate's direction.
+pure func earthLyAt(p: Params, t: float) -> Vec3 =
+  match bodyAt(solSystem(), "earth", jdAt(p.epochJd, t)) { Some(b) => { x: b.pos.x / lyKm(), y: b.pos.y / lyKm(), z: b.pos.z / lyKm() }, None => { x: 0.0, y: 0.0, z: 0.0 } }
+export pure func earthOf(w: World) -> Earth {
+  let p = position(w.ship);
+  let e = earthLyAt(w.params, w.ship.motion.t);
+  earthView(w.link, w.ship.motion.t, p, { x: p.x - e.x, y: p.y - e.y, z: p.z - e.z }, w.ship.heading, w.ship.motion.phi, legOf(w))
+}
 
 -- R2-INTERLUDE I2 (design interlude-card.md D1): the digest is begun from the world before a commit
 -- tick and folded on every tick that starts or ends committed (the arrival tick included); it is

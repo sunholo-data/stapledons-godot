@@ -163,8 +163,13 @@ export pure func outOf(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> Opti
     None => Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0 })
   }
 
-export pure func earthView(l: Link, t: float, p: Vec3, heading: Vec3, phi: float, leg: Option[LinkLeg]) -> Earth {
-  let rate = rateOf(p, heading, phi);
+-- fromEarth: the ship's position relative to Earth now (ly; core.ail earthOf, from the ephemeris).
+-- The rate is Earth's Doppler factor, so it is measured from Earth itself: inside the Solar System
+-- the Sun is the wrong reference (a ship leaving Earth past the Sun would read Earth's history
+-- running fast). Beyond it the two differ by under 1 AU / r. The light cone and the beam stay
+-- Sol-centred (the design's geometry; home covers the difference).
+export pure func earthView(l: Link, t: float, p: Vec3, fromEarth: Vec3, heading: Vec3, phi: float, leg: Option[LinkLeg]) -> Earth {
+  let rate = rateOf(fromEarth, heading, phi);
   let here = inBeam(l, t, p, leg);
   { rate: rate, rateInverse: 1.0 / rate, newestLightT: seenAt(t, p, origin()), lightAgeYears: norm(p), atHome: atHome(p), inBeam: here, sending: l.sending,
     lastBeamT: if here then seenAt(t, p, origin()) else l.lastBeamT, out: outOf(l, t, p, leg),
