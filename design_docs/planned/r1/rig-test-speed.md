@@ -4,7 +4,7 @@
 **Priority:** P1. `rig/full` gates every merge and has taken 66–117 min (V31); the 117-min run came within 3 min of the 7,200 s watchdog, and run 1 of the same landing went red on a 90 s launch guard under load (V18).
 **Implements:** charter row [L4](../../stapledon-mission.md) ("Profile and parallelise without losing coverage, and report before/after") and ledger D-126 answer **C**, the **B half** (Mark, attended 2026-10-28: "move L4 (test-suite speed) ahead of Kerr a4"). The A half (watchdog 7,200 s) landed in iteration 55 ([rig-watchdog-7200.md](../../implemented/r1/rig-watchdog-7200.md), PR #345). CLAUDE.md "Definition of done" gates 1–6 are unchanged: no test is removed, no check value moves.
 **Depends on:** PR #345 (merged, `d63b47a4`); AILANG v0.54.18; GNU Make 4.4.1 at `/opt/homebrew/bin/gmake` on the Studio (OQ2). Milestone 3 also depends on PRs #344 and #346 being merged or closed (the `Makefile` hold, below).
-**Estimated LOC:** about 595 in three milestones (M1 ≈ 230, M2 ≈ 245, M3 ≈ 120). M1 and M2 touch **no** `Makefile` line and no `mk/m45.mk` line; M3 is the only milestone that edits `Makefile` (flagged at each step).
+**Estimated LOC:** about 630 in three milestones (M1 ≈ 258, M2 ≈ 251, M3 ≈ 120; M1 splits into M1a/M1b if it passes 270). M1 and M2 touch **no** `Makefile` line and no `mk/m45.mk` line; M3 is the only milestone that edits `Makefile` (flagged at each step).
 
 **Provenance key used in every number below.**
 - `[rig profile c2e70e15]`: **measured for this design.** The controller's serial `gmake --trace test` on main `c2e70e15` in a fresh clone on the Studio, every output line prefixed with a Unix second (`/tmp/stap56/profile.ts.log`, 14,613 lines, rc 0, **complete**; V29). A target's time is the gap between its `update target` line and the next one, summed per top-level target (sub-make targets are folded into the top-level target that ran them).
@@ -54,6 +54,8 @@ Scored with the `game-vision-designer` skill in feature-validation mode against 
 | 12 | `lens-lut-check` | 82 | 2.0 % | sampled LUT regeneration = pinned bins | 188 s `[CI]` |
 | 13–20 | `ship-console-test` 66, `replay` 65, `sound-synth-check` 63, `ship-ui-test` 63, `camera-test` 63, `free-nav-recovery-test` 54, `destar-test` 54, `crew-parity` 53 | 481 | 11.7 % | | |
 
+**The sum, spelled out (V41):** rows 1–12 = 740 + 437 + 248 + 201 + 177 + 130 + 104 + 103 + 87 + 86 + 83 + 82 = **2,478 s**; rows 13–20 = **481 s**; together **2,959 s = 71.8 %** of 4,123 s.
+
 **The inherited slowest-AILANG-tests table is stale.** In this run the slowest test files are `crew_hold_test.ail` 105.0 s (22 tests), `protocol_interlude_test.ail` 91.0 s (14), `solar_departure_test.ail` 61.8 s, `cruise_digest_test.ail` 43.2 s, `ism_test.ail` 39.3 s and `core_ism_test.ail` 34.1 s (V30). `trappist1_test.ail`, the slowest file on 2026-10-15 (132 s `[CI 38718669155]`), is no longer in the top 15. Any shard plan must be rebalanced from a fresh run, not from the old doc.
 
 **Wall floor or CPU-bound: not yet measured.** The `--trace` instrument records wall time only. The old doc called the three long Godot legs "real-time floors"; the evidence is mixed: `moon-lifecycle` says so in its header, `solar-departure` has no `await` at all (V32). Milestone 1's instrument records the children's CPU seconds per recipe line, so each target is classed by measurement (CPU/wall below 0.3: a floor; 0.9 or more: CPU-bound; above 1: internally parallel). Until then every class in this doc is labelled as a hypothesis.
@@ -75,7 +77,7 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 |---|---|---|---|
 | H1 | Lock files rewritten by `deps`, `deps-ai` | V10 | **Setup stage**: both finish before any other target starts (M2). |
 | H2 | **`import` reruns inside sub-makes and rewrites `.godot/` while other Godot runs read it.** `playthrough: import` and `display-audit: import display-audit-controls` are re-entered by `$(MAKE)` from `scene-session-audits`, `playthrough-adversarial`, `display-audit-interlude` and `display-audit-crew`; `import` ran **5 times** (1 top-level, 4 nested, 1–8 s each). The last nested run rewrote `.godot/global_script_class_cache.cfg` and `.godot/uid_cache.bin` (mtimes 1793227726/727 = its start), and 7 files outside `.godot/tmp` changed after the first import. | V11, V12 | `-o` does not reach a sub-make (V8), so in M2 these four targets run in the **exclusive phase** (serial, after the parallel phase). M3 removes the cause (a stamped `import`). |
-| H3 | Missing `import`/`deps` edges (35 + 58 targets) | V6 | **Setup stage** edges, generated (M2); declared in the makefiles (M3). |
+| H3 | Missing `import`/`deps` edges (35 + 58 targets) | V6 | **Setup stage**, run to completion before the parallel phase (M2); the edges are declared in the makefiles in M3. |
 | H4 | `home-art-check` and `home-site-check` both write `$(SCRATCH)/home-tiers/counts.txt` with `>` (`mk/home-tiers.mk:22,43`) | V13 | M2 gives each its own file (`mk/home-tiers.mk` is not held). |
 | H5 | **The replay family shares `.godot/tmp/replay/`, and two targets silently read `replay`'s output.** `tools/replay.py` writes `<case>.vm.ndjson` for every case into `.godot/tmp/replay` (`replay.py:99,207`), which includes `m4_min_path.vm.ndjson`, the very file `$(M45_STATE)` names (`mk/m45.mk:61,118`). In the serial run **the `$(M45_STATE)` rule never ran** (0 `update target` lines): `replay` (48th) had already written the file, so `parity-m4` (77th, whose sub-make `replay-positive-control` `cmp`s it undeclared, `mk/m45.mk:115`) and `codex-unlocks` (80th) read `replay`'s copy. Under `-j` the rule and `replay` could write the same file at once while those two read it. | V14 | **Lane** in serial order, `replay → tools-test → parity-m4 → .godot/tmp/replay/m4_min_path.vm.ndjson → codex-unlocks → replay-compat → replay-scene` (order-only edges, M2); the real edges (`parity-m4: $(M45_STATE)`, and `$(M45_STATE)` after `replay`) land in M3 (`mk/m45.mk` is held by #344). |
 | H6 | `ai-live-guard` (`--launch-default`) and `ai-settings` both run `tests/test_ai_settings.gd`, whose `test_launch_default` calls `fresh("default")`: `rm -rf res://.godot/tmp/ai_settings/default`, then uses it | V15 | **Lane** in serial order, `ai-live-guard → ai-settings`. |
@@ -89,7 +91,15 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 | H14 | `lens-assets` rerun by the `bh-hud-test` sub-make | `tools/lens_assets.sh fetch` skips a file whose sha256 matches, and writes through `.part` + `mv` (V22) | None: read-only after the first run. |
 | H15 | The watchdog (`perl alarm` + `exec`) kills only the process it replaced; under `-j` more children would be orphaned | `tools/rig_check.sh:72` (V25) | The M2 runner traps `ALRM`/`TERM` and kills its process group. |
 
-**A side finding, not L4's to fix:** a full `make test` leaves 5 untracked `*.translation` files (Godot imports `data/planets/trappist1_ps.*.csv` and a `data/starmap/truth/positions…csv` as translations), so "`git status` clean after the run" is false today (V35). M2's hazard check compares the status before and after instead. The loop should file it as its own row.
+**A side finding, not L4's to fix:** a full `make test` leaves exactly these 5 untracked files (V35, V42):
+
+- `data/planets/trappist1_ps.default.translation`
+- `data/planets/trappist1_ps.pl.translation`
+- `data/planets/trappist1_ps.rowupdate.translation`
+- `data/planets/trappist1_ps.st.translation`
+- `data/starmap/truth/positions. 1%) is resolved in the audit.translation`
+
+The last name is literal, not corruption: Godot imported a CSV as a translation table and took a header cell as a locale (V42). So "`git status` clean after the run" is false today. AC8 compares the run's status against this five-line list instead. The loop should file the import itself as its own row.
 
 ### 5. Repeated work
 
@@ -98,7 +108,8 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 ## Goals and non-goals
 
 **Goals.**
-- One instrument for before and after: per-target wall time and children's CPU seconds on serial and parallel runs, on GNU Make 3.81 and 4.4.1, with a committed before/after report produced by one command from committed raw data.
+- One instrument for before and after: per-target wall time and children's CPU seconds on serial and parallel runs, with a committed before/after report produced by one command from committed raw data. **Before and after both use GNU Make 4.4.1**, so the make version is not confounded with `-j`. The instrument also works on 3.81 (the fallback path), but a 3.81 run never enters the comparison.
+- **Every fallback is loud.** A run that falls back to serial says so in the log (`rig-check FALLBACK <reason>`) and in the GitHub status (`SERIAL FALLBACK: <reason>`).
 - `rig/full` wall time at most **0.5×** the serial baseline after M2 and at most **0.35×** after M3, both measured by that instrument under the comparability rule (AC9).
 - **Coverage invariant:** the set of targets `make test` executes, and the number of recipe lines each executes, never shrink. It is proved mechanically on every parallel run.
 - Local `make test` stays serial and unchanged (it is the dev-tag gate, CLAUDE.md "Tags"); `RIG_JOBS=1` restores today's serial `rig/full` in one variable.
@@ -114,25 +125,65 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 
 ### Milestone 1: the instrument and the baseline (no `Makefile` edit)
 
-**1a. `tools/timed_recipe_shell.sh` (≈ 25 lines).** A `SHELL` wrapper: it runs `/bin/sh "$@"`, then appends one tab-separated row per recipe line to `$SUITE_PROFILE_LOG`: start and end (milliseconds, `perl -MTime::HiRes`), children's user + sys CPU seconds (the shell builtin `times`, written to a file in the same shell; a command substitution would run it in a subshell and read 0, V9), the exit code, `$MAKELEVEL`, and the target from `$SUITE_TARGET`. It exits with the recipe's code. Make is invoked as `make SHELL=$PWD/tools/timed_recipe_shell.sh 'SUITE_TARGET=$@' …`: a command-line variable is exported to recipes and re-expanded per target, sub-makes included, on both makes (V9). Rows with an empty target come from parse-time `$(shell …)` calls and are reported as `(parse)`.
-- The file name must not start with a shell's name (`sh`, `bash`, `dash`, `ksh`, `zsh`, `ash`), or GNU Make's fast path may exec simple lines without it. The control asserts that a bare `@true` line is logged.
+**1a. `tools/timed_recipe_shell.sh` (≈ 28 lines).** A `SHELL` wrapper. It runs `/bin/sh "$@"` and then appends one tab-separated row per recipe line to `$SUITE_PROFILE_LOG`. Each row holds:
+- start and end, in milliseconds (`perl -MTime::HiRes`);
+- children's user + sys CPU seconds, from the shell builtin `times` written to a file in the same shell (a command substitution would run it in a subshell and read 0, V9);
+- the exit code and `$MAKELEVEL`;
+- the target, `$SUITE_TARGET`;
+- the **top-level target**, `$SUITE_TOP_TARGET`.
+
+It exits with the recipe's code.
+
+Make is invoked as `make SHELL=$PWD/tools/timed_recipe_shell.sh 'SUITE_TARGET=$@' …`. A command-line variable is exported to recipes and re-expanded per target, sub-makes included, on both makes (V9). Inside a sub-make, `$@` therefore names the sub-make's own target. Under `-j` that alone cannot say which top-level target a nested row belongs to.
+
+**Top-level attribution.** The wrapper sets `SUITE_TOP_TARGET=${SUITE_TOP_TARGET:-$SUITE_TARGET}` and exports it before it runs the recipe. A top-level recipe line starts with the variable unset, so it records its own target. A `$(MAKE)` inside it inherits that value through the environment, and so does every deeper row. The result is deterministic under `-j`. `suite_profile.sh run` unsets `SUITE_TOP_TARGET` before starting make, so a caller's value cannot poison the attribution.
+
+Rows with an empty target come from parse-time `$(shell …)` calls and are reported as `(parse)`.
+- **Naming (a defensive rule, not a known failure).** The concern was that GNU Make might exec simple lines directly, bypassing a `SHELL` whose name starts with a shell's name. The controller tested three wrapper names, `timed_recipe_shell.sh`, `wrap.sh` and the deliberately shell-prefixed `shwrap`, over `@true` and `echo hi > /dev/null`. Every name logged 2 of 2 lines on 3.81 and on 4.4.1 (V40), so no bypass was observed. The name stays neutral anyway. The guard is the 1c control: a bare `@true` line must produce a row, on both makes.
 - CPU caveats, stated in the report: a process that is not reaped through the chain (a daemon) is not counted, so Godot + sim targets' CPU is a lower bound.
 
 **1b. `tools/suite_profile.sh` (≈ 110 lines, shell + awk; no Python).**
 - `run [--make M] [--jobs N] [--out DIR] -- <make args>`: writes `DIR/profile.tsv` (the rows) and `DIR/header.txt` (sha, `M --version`, jobs, `hw.ncpu`, `vm.loadavg` at start and end, start/end epoch, rc) and passes make's rc through.
-- `summary TSV`: per top-level target (MAKELEVEL 1; deeper rows fold into their top-level parent): wall, CPU, CPU/wall, class (floor < 0.3 ≤ mixed < 0.9 ≤ cpu), share; the top 20; totals (wall, CPU-seconds, run span); and for a parallel run the busy-jobs histogram. Output is deterministic (sorted, fixed formats), so the committed summary is reproducible byte for byte.
+- `summary TSV`: per top-level target (rows grouped by `SUITE_TOP_TARGET`, so nested rows fold into their parent): wall, CPU, CPU/wall, class (floor < 0.3 ≤ mixed < 0.9 ≤ cpu), share; the top 20; totals (wall, CPU-seconds, run span); and for a parallel run the busy-jobs histogram. Output is deterministic (sorted, fixed formats), so the committed summary is reproducible byte for byte.
 - `targets TSV`: the sorted unique set of targets with at least one row, with their recipe-line counts.
 - `compare BEFORE AFTER`: prints `missing=<n> fewer=<n> extra=<n>` and exits 1 if a target of BEFORE is absent from AFTER or runs fewer recipe lines. `extra` (repeats, e.g. a setup target run twice) is reported, not failed.
 - `gap TRACELOG`: the `--trace` gap method used for the controller's baseline (this doc's numbers), and `agree TSV TRACELOG`: rc 0 iff every top-20 target's instrument wall is within max(2 s, 2 %) of its gap on the same run (AC3).
 - `report BEFORE… -- AFTER…`: the before/after table (each run's span, CPU-seconds, start/end load, comparable or "loaded", medians and the ratio) that becomes the committed report (AC9).
 
-**1c. `tools/test_suite_profile.sh` (≈ 70 lines).** Hermetic control on fixture makefiles under `mktemp -d` (trap right after `mktemp`): rc pass-through (a failing recipe gives make rc 2 and a row with rc 1); a bare `@true` line is logged; a sub-make row carries the child target and MAKELEVEL 2; `-j2` rows overlap in time; CPU of a busy loop ≥ 0.5 × its wall and of `sleep 1` ≤ 0.1 s; `compare` reports `missing=1` when one target's rows are deleted; per-line overhead ≤ 50 ms over 200 trivial lines. Run on `/usr/bin/make` and `gmake`.
+**1c. `tools/test_suite_profile.sh` (≈ 70 lines).** Hermetic control on fixture makefiles under `mktemp -d` (trap right after `mktemp`): rc pass-through (a failing recipe gives make rc 2 and a row with rc 1); a bare `@true` line is logged; a sub-make row carries the child target and MAKELEVEL 2; **`top-target-j2`**: under `-j2`, two top-level targets `p` and `q` each `$(MAKE)` a child that sleeps 1 s, and every nested row carries its own parent (`p`'s child rows say `p`, `q`'s say `q`), even though the children overlap in time; a poisoned caller `SUITE_TOP_TARGET=x` changes nothing; `-j2` rows overlap in time; CPU of a busy loop ≥ 0.5 × its wall and of `sleep 1` ≤ 0.1 s; `compare` reports `missing=1` when one target's rows are deleted; per-line overhead ≤ 50 ms over 200 trivial lines. Run on `/usr/bin/make` and `gmake`.
 
-**1d. `tools/rig_check.sh` (≈ 12 lines).** `make test` runs through `tools/suite_profile.sh run --make make -- test` **when the PR clone has the tool** (an older PR head falls back to plain `make test`), serial as today. The raw rows land beside the log as `<sha>.profile/`, and the log ends with the summary's top 10. `RIG_PROFILE=0` restores the plain call. The watchdog wraps the same command as today.
+**1d. `tools/rig_check.sh` (≈ 20 lines).** The serial suite runs as `tools/suite_profile.sh run --make gmake -- test`, still serial, when two things hold: the PR clone has the tool, and `gmake` is on `PATH`.
+- `RIG_TRACE=1` adds `--trace`, for the AC3 run.
+- The raw rows land beside the log as `<sha>.profile/`, and the log ends with the summary's top 10.
+- The watchdog wraps the same command as today.
 
-**1e. `tools/test_rig_check.sh` (≈ 15 lines).** Its stub `make` must now be reached through the profiler: new cases `profile-on` (the stub sees `SHELL=…timed_recipe_shell.sh` and `test`), `profile-off` (`RIG_PROFILE=0`: plain `make test`), `profile-absent` (the clone lacks `tools/suite_profile.sh`: plain `make test`), and the caller-poison case gains `RIG_PROFILE`. The stub `git clone` copies the real profiler into the fake clone for `profile-on`. This control is already in `make test` through `rig-check-control` (`mk/m45.mk:54-57`), so M1 needs no make wiring; `tools/test_suite_profile.sh` is called from it as one more case.
+**Every other branch is a loud fallback.** It writes one line `rig-check FALLBACK <reason>` to the log, and the success status reads `make test green (SERIAL FALLBACK: <reason>) in N min …`, cut to 140 characters as today. The M1 reasons are:
+- `RIG_PROFILE=0`: plain `make test`.
+- `profile-absent`: an older PR head without the tool; plain `make test`.
+- `gmake-missing`: the profiler on 3.81 (`--make make`). In M1 this is a fallback. After M2 it becomes a failure; see 2d and OQ4.
 
-**1f. The baseline (the "before").** On main, serial, on the rig, recorded by the instrument with `--make make` (3.81, what `rig/full` runs today), twice. One of the two runs also passes `--trace` to `gmake` so the gap method and the instrument are compared on the same run (AC3). Committed: `design_docs/planned/r1/rig-test-speed-report.md` (the `report` output, moved to `implemented/` at landing) and, per run, `design_docs/planned/r1/rig-test-speed-data/before-<n>.tsv`, `before-<n>.header.txt` and `before-<n>.summary.txt` (the `summary` output), plus `before-2.trace.log` for AC3 (about 1,500 rows, roughly 120 KB per TSV). The controller's `[rig profile c2e70e15]` numbers in this doc are quoted in the report as the independent cross-check.
+**1e. `tools/test_rig_check.sh` (≈ 25 lines).** Its stub `make` must now be reached through the profiler, and the control gains a stub `gmake` so the real `/opt/homebrew/bin/gmake` is never reached (V26). New cases:
+- `profile-on`: the stub `gmake` sees `SHELL=…timed_recipe_shell.sh` and `test`, and the log has no `FALLBACK` line.
+- `profile-off`, `profile-absent` and `gmake-missing`: each asserts the right command, the log line `rig-check FALLBACK <reason>`, and a success description that contains `SERIAL FALLBACK: <reason>` and is at most 140 characters.
+
+The caller-poison case gains `RIG_PROFILE`, `RIG_TRACE` and `SUITE_TOP_TARGET`. For `profile-on`, the stub `git clone` copies the real profiler into the fake clone. This control is already in `make test` through `rig-check-control` (`mk/m45.mk:54-57`), so M1 needs no make wiring. `tools/test_suite_profile.sh` is called from it as one more case.
+
+**1f. The baseline (the "before").** The baseline is the median of **two serial runs on GNU Make 4.4.1, recorded by the instrument** (`--make gmake`). One of them also passes `--trace`, so on that run the gap method and the instrument can be compared (AC3). Using gmake on both sides keeps the make version from being confounded with `-j`, because the after runs use gmake too.
+
+A **3.81 run is kept only as evidence for the fallback path** (`--make make`): it shows the instrument and the serial fallback work on the system make. It never enters the AC9 median.
+
+**Saving rig hours: M1's own `rig/full` runs are the baseline runs.** M1 adds no make target and changes no recipe line, so its closure hash equals main's and `compare` accepts it (Coverage invariant, item 2). The controller runs `tools/rig_check.sh <M1 PR>` from the M1 branch three times:
+1. `RIG_TRACE=1` gives `before-gmake-1.tsv` and `before-gmake-1.trace.log` (AC3).
+2. The default gives `before-gmake-2.tsv`.
+3. `PATH` without `gmake` gives `fallback-make381.tsv` and exercises the `gmake-missing` fallback end to end.
+
+Those are the runs M1's landing needs anyway. A run that fails the AC9 load rule is repeated under the same rule.
+
+**Committed outputs:**
+- `design_docs/planned/r1/rig-test-speed-report.md`: the `report` output, moved to `implemented/` at landing.
+- Per run, under `design_docs/planned/r1/rig-test-speed-data/`: `<name>.tsv`, `<name>.header.txt` and `<name>.summary.txt` (the `summary` output). About 1,500 rows, roughly 120 KB per TSV.
+
+The controller's existing gap-method run (`/tmp/stap56/profile.ts.log`: gmake `--trace`, serial, 4,123 s, `[rig profile c2e70e15]`) is quoted in the report as the independent cross-check. Note for the planner: it is the same make and the same mode as the new baseline, so the two should agree to within load noise.
 
 ### Milestone 2: parallel lanes on the rig (no `Makefile` edit)
 
@@ -151,7 +202,21 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 
 **2c. `tools/test_suite_parallel.sh` (≈ 70 lines).** Hermetic fixture makefile: a missing-edge target that fails if setup has not run (passes under the runner, fails under plain `-j`), a lane whose second member reads the first's file, an exclusive target behind an aggregator (must run in P2 only), a lane naming an unknown target (`check` rc 1), a lane cycle (`check` rc 1), and `compare` of the serial and runner TSVs (`missing=0 fewer=0`). Called as a case from `tools/test_rig_check.sh`.
 
-**2d. `tools/rig_check.sh` (≈ 10 lines) and its control (≈ 15).** `jobs=${RIG_JOBS:-6}`: when `jobs > 1`, `gmake` is on `PATH` and the clone has `tools/suite_parallel.sh`, it runs `suite_parallel.sh run --jobs $jobs` under the watchdog; otherwise M1's serial path. The status description becomes `make test (-j6 lanes) green on the Studio in N min (…)`, cut to 140 characters as today. New control cases: `parallel-on`, `serial-jobs1` (`RIG_JOBS=1`), `parallel-no-gmake` (no `gmake` stub on `PATH` gives serial make; the control must stub `gmake` so the real `/opt/homebrew/bin/gmake` is never reached), `parallel-absent`; caller-poison gains `RIG_JOBS`.
+**2d. `tools/rig_check.sh` (≈ 12 lines) and its control (≈ 20).** The script sets `jobs=${RIG_JOBS:-6}`.
+- **Parallel path.** When `jobs > 1`, `gmake` is on `PATH` and the clone has `tools/suite_parallel.sh`, it runs `suite_parallel.sh run --jobs $jobs` under the watchdog. The status reads `make test (-j6 lanes) green on the Studio in N min (…)`, cut to 140 characters as today.
+- **Loud fallbacks.** Each fallback runs M1's serial path, writes `rig-check FALLBACK <reason>` to the log, and posts `make test green (SERIAL FALLBACK: <reason>) in N min …`:
+  - `RIG_JOBS=1`: the operator's explicit opt-out.
+  - `parallel-absent`: a PR head that predates M2, i.e. a property of the PR, not of the rig.
+- **A missing `gmake` with `RIG_JOBS` unset is a failure, not a fallback.** The script posts `failure` with `gmake not found; set RIG_JOBS=1 to run serial` and exits 1.
+  - The reason: on the Studio, a missing `gmake` is a broken rig, not a property of the PR. Falling back silently would quietly bring back the 69–117-min serial suite that L4 exists to remove, and the PR's status would not show it.
+  - The explicit `RIG_JOBS=1` keeps every PR mergeable while the rig is repaired.
+  - This changes how the merge gate fails, so it is **OQ4**, with this as the default.
+- **New control cases** (the stub `gmake` from 1e is reused):
+  - `parallel-on`;
+  - `serial-jobs1`, `parallel-absent`: each asserts its FALLBACK line and its `SERIAL FALLBACK:` description;
+  - `parallel-no-gmake`: no `gmake` stub on `PATH`, `RIG_JOBS` unset; asserts rc 1, a `failure` post naming `RIG_JOBS=1`, and that `make test` was never started;
+  - `no-gmake-jobs1`: no `gmake`, `RIG_JOBS=1`; asserts serial 3.81 with the FALLBACK marker.
+  - Caller-poison gains `RIG_JOBS`.
 
 **2e. `mk/home-tiers.mk` (4 lines).** H4: `home-art-check` writes `counts-art.txt`, `home-site-check` writes `counts-site.txt`. Same commands, same assertions.
 
@@ -161,7 +226,17 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 
 **Resume predicate (a command):** `test "$(gh pr view 344 --json state -q .state)" != OPEN && test "$(gh pr view 346 --json state -q .state)" != OPEN`. Until it holds, M3 is not started. After it holds, M3 rebases, re-runs `suite_parallel.sh check` and re-takes one serial baseline (#344 adds `feed-art-check`, `display-audit-comms`, `comms-station-test` and `earth-feed-test` to the closure; #346 adds `star-names`; V24).
 
-- **3a. Shard `sim`'s unit suite (`Makefile`, ≈ 30 lines).** `sim: sim-check sim-unit sim-bridge`, with `sim-unit: sim-unit-1 … sim-unit-K` running `ailang test` over a fixed, committed file list per shard (K = 4, greedy-balanced from the M1 baseline's per-file times; today's data gives a 105 s floor from `crew_hold_test.ail` and about 130 s per shard plus compile). First a spike: does `ailang test --package` accept a file subset, and what does each shard pay in compile (the whole suite pays ≈ 62 s, V30)? `ailang test` has no `--jobs` option (V27); the sprint reports that as an AILANG DX request (`ailang messages`, inbox `user`). **Coverage check:** the shards' `--json` test counts sum to the whole-package count (554 today) and every `*_test.ail` the package discovers is in exactly one shard. `sim-check` (the `ailang check --package sim` gate kept for STRICT_FALLBACK_001, CLAUDE.md) and `sim-bridge` (`test_sim_bridge.gd` + `bh-hud-test`) are unchanged commands.
+- **3a. Shard `sim`'s unit suite (`Makefile`, ≈ 30 lines).** The target becomes `sim: sim-check sim-unit sim-bridge`, with `sim-unit: sim-unit-1 … sim-unit-K`.
+  - **How a shard runs.** Each shard runs `cd sim && ailang test <file> <file> …` over a fixed, committed file list, using **positional file paths, not `--package`**. The controller measured both forms on v0.54.18 (V39):
+    - `--package . <file>` is refused: `--package takes one package directory, got 2 paths`.
+    - `ailang test rng_test.ail protocol_test.ail` runs: rc 0, `41 tests: 41 passed`, 22.8 s wall, 39.1 s user (173 % CPU). The runner is already partly parallel inside one process.
+
+    No syntax spike is owed.
+  - **Still unmeasured:** what each shard pays to compile (the whole suite pays ≈ 62 s, V30), and how the runner's own parallelism interacts with `-j`. The sprint measures both before it fixes K.
+  - **Sizing.** K = 4 as a starting point, greedy-balanced from the M1 baseline's per-file times. Today's data gives a 105 s floor from `crew_hold_test.ail` and about 130 s of tests per shard, plus the unmeasured compile.
+  - `ailang test` has no `--jobs` option (V27); the sprint sends that to AILANG as a DX request (`ailang messages`, inbox `user`).
+  - **What the shards partition: the package's 50 test files** (V39). That is the 34 `sim/*_test.ail` plus the 16 `sim/tools/*_test.ail`, matching the "50 test files" `ailang test --package .` reports (V30). A `sim/`-only listing (34) would silently drop the 16 tool tests.
+  - **Coverage check (AC15).** It fails if the shards' `--json` test counts do not sum to the `--package` count (554 today). It also fails unless the union of the shard lists equals both `git ls-files 'sim/*_test.ail' 'sim/tools/*_test.ail'` and the count `--package` reports, with no file in two shards. So a test file that `--package` discovers but no shard lists, such as a new file added later, turns it red. `sim-check` (the `ailang check --package sim` gate kept for STRICT_FALLBACK_001, CLAUDE.md) and `sim-bridge` (`test_sim_bridge.gd` + `bh-hud-test`) are unchanged commands.
 - **3b. Declared edges (≈ 45 lines).** A new `mk/test-edges.mk`, included from `Makefile` (one `include` line): `$(GODOT_TESTS): | import`, `$(AILANG_TESTS): | deps`, `$(AI_TESTS): | deps-ai`, with the lists generated once by `suite_parallel.sh plan` and committed, plus, in `mk/m45.mk` (H5), `parity-m4: $(M45_STATE)` and `$(M45_STATE): | replay` (so the rule and `replay` never write the file at once). `suite_parallel.sh check` gains "a closure target that starts Godot without reaching `import` fails".
 - **3c. A stamped `import` (≈ 10 lines).** `import` runs Godot once per make run and touches `$(SCRATCH)/import.stamp`; a nested make sees the stamp of its top-level run and skips (keyed on an exported `SUITE_RUN_ID`, so a new run always imports). That removes H2, and the four sub-make targets leave `EXCL`.
 - **3d.** `suite_lanes.txt` keeps only the lanes that 3b does not replace; the generated edges file shrinks to the lanes.
@@ -170,7 +245,9 @@ Every hazard below is backed by a Verification Log row; "absent" claims carry a 
 
 1. **Static, every run:** `sh tools/suite_parallel.sh check` proves the plan reaches every closure target with a rule (`closure covered e of e`).
 2. **Dynamic, every parallel run:** `sh tools/suite_profile.sh compare <serial baseline TSV> <this run's TSV>` gives `missing=0 fewer=0`. The serial baseline is re-taken whenever the closure changes (the plan prints the closure's sha256; `compare` refuses TSVs whose closure hashes differ, so a stale baseline cannot pass silently).
-3. **Unit-test level (M3):** the shard counts sum to the package count, and the shard file lists partition the package's test files.
+3. **Unit-test level (M3):** the shard counts sum to the package count, and the shard file lists partition the package's 50 test files (`sim/` and `sim/tools/`).
+
+The closure hash in item 2 is the sha256 of the sorted closure target names, so a tools-only change such as M1 keeps the hash and a new or removed target changes it.
 
 ## Acceptance criteria
 
@@ -179,14 +256,14 @@ Run from the implementation root after saving the drill block (below) as `.godot
 | # | Criterion | Command | Expected |
 |---|---|---|---|
 | AC1 | The instrument's control is green on both makes | `sh tools/test_suite_profile.sh > .godot/tmp/sp.log 2>&1; echo rc=$?; tail -1 .godot/tmp/sp.log` | `rc=0`, `suite-profile control: <k> cases, 0 failures` (k ≥ 8, each run on `make` and `gmake`) |
-| AC2 | The committed before summary is reproducible from the committed raw data | `sh tools/suite_profile.sh summary design_docs/planned/r1/rig-test-speed-data/before-1.tsv \| cmp - design_docs/planned/r1/rig-test-speed-data/before-1.summary.txt; echo rc=$?` | `rc=0` |
-| AC3 | The instrument agrees with the `--trace` gap method on one run | `sh tools/suite_profile.sh agree design_docs/planned/r1/rig-test-speed-data/before-2.tsv design_docs/planned/r1/rig-test-speed-data/before-2.trace.log; echo rc=$?` | `rc=0`; every top-20 target within max(2 s, 2 %) |
-| AC4 | The rig-check control is green with the new cases | `env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS sh tools/test_rig_check.sh tools/rig_check.sh \| tail -1; echo rc=$?` | `rig-check control: <n> cases, 0 failures` (n = 8 + the M1/M2 cases), `rc=0` |
-| AC5 | The serial fallbacks hold | after AC4 with its output saved to `.godot/tmp/rc.log`: `grep -c -E '^rig-check control (profile-off\|profile-absent\|serial-jobs1\|parallel-no-gmake\|parallel-absent): ok$' .godot/tmp/rc.log` | `5` (M2; `2` after M1) |
+| AC2 | The committed baseline summaries are reproducible from the committed raw data | `rc=0; for n in before-gmake-1 before-gmake-2 fallback-make381; do sh tools/suite_profile.sh summary design_docs/planned/r1/rig-test-speed-data/$n.tsv \| cmp - design_docs/planned/r1/rig-test-speed-data/$n.summary.txt \|\| rc=1; done; echo rc=$rc` | `rc=0` |
+| AC3 | The instrument agrees with the `--trace` gap method on the same gmake run | `sh tools/suite_profile.sh agree design_docs/planned/r1/rig-test-speed-data/before-gmake-1.tsv design_docs/planned/r1/rig-test-speed-data/before-gmake-1.trace.log; echo rc=$?` | `rc=0`; every top-20 target within max(2 s, 2 %). The controller's `/tmp/stap56/profile.ts.log` (4,123 s) is quoted beside it as the cross-check, not asserted. |
+| AC4 | The rig-check control is green with the new cases | `env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET sh tools/test_rig_check.sh tools/rig_check.sh \| tail -1; echo rc=$?` | `rig-check control: <n> cases, 0 failures` (n = 8 + the M1/M2 cases), `rc=0` |
+| AC5 | The fallbacks are loud, and a missing `gmake` fails | after AC4 with its output saved to `.godot/tmp/rc.log`: `grep -c -E '^rig-check control (profile-off\|profile-absent\|gmake-missing\|serial-jobs1\|parallel-absent\|no-gmake-jobs1\|parallel-no-gmake): ok$' .godot/tmp/rc.log` | `7` after M2 (`3` after M1). The cases assert, respectively, the log line `rig-check FALLBACK <reason>` and a ≤ 140-character success description containing `SERIAL FALLBACK: <reason>` (the six fallback cases), and rc 1 with a `failure` post naming `RIG_JOBS=1` and no `make test` started (`parallel-no-gmake`). |
 | AC6 | The plan covers the closure, with no unknown lane name, cycle or mutant target | `sh tools/suite_parallel.sh check; echo rc=$?` | `plan: … closure covered <e> of <e>`, `rc=0` |
-| AC7 | **Coverage invariant** on each rig run of M2 (and M3) | `sh tools/suite_profile.sh compare design_docs/planned/r1/rig-test-speed-data/before-1.tsv "$TMPDIR/rig-check/<sha>.profile/profile.tsv"; echo rc=$?` | `missing=0 fewer=0 extra=<x>`, `rc=0` |
+| AC7 | **Coverage invariant** on each rig run of M2 (and M3) | `sh tools/suite_profile.sh compare design_docs/planned/r1/rig-test-speed-data/before-gmake-1.tsv "$TMPDIR/rig-check/<sha>.profile/profile.tsv"; echo rc=$?` | `missing=0 fewer=0 extra=<x>`, `rc=0` |
 | AC8 | No cache or tracked-file side effect from parallelism | the runner's own lines in the rig log: `grep -c '^godot cache writes outside .godot/tmp during P1: 0$' <log>`; `git -C <rig clone> status --porcelain \| sort \| cmp - <baseline status list>` | `1`; `cmp` rc 0 (the 5 known `*.translation` files only, V35) |
-| AC9 | **Before/after wall time, comparable** | `sh tools/suite_profile.sh report design_docs/planned/r1/rig-test-speed-data/before-*.tsv -- design_docs/planned/r1/rig-test-speed-data/after-*.tsv` | The report prints each run's span and start/end load. A run is **comparable** if its start and end 1-min load are both ≤ 5.0; otherwise it is repeated (at most twice) or marked "loaded" and excluded. M2: median of 3 comparable `-j6` runs ≤ **0.5 ×** the median of the 2 comparable serial runs, plus one `-j8` run recorded. M3: ≤ **0.35 ×**. CPU-seconds per run are printed too (the load-insensitive measure). |
+| AC9 | **Before/after wall time, comparable, same make** | `sh tools/suite_profile.sh report design_docs/planned/r1/rig-test-speed-data/before-gmake-*.tsv -- design_docs/planned/r1/rig-test-speed-data/after-j6-*.tsv design_docs/planned/r1/rig-test-speed-data/after-j8-*.tsv` | The report prints each run's make version, span, CPU-seconds and start/end load, and refuses (rc 1) any TSV whose header is not GNU Make 4.4.1. A run is **comparable** only if its start and end 1-min loads are both ≤ 5.0; a run that fails the rule is repeated, at most twice per slot. **Baseline:** the median of the 2 comparable serial gmake runs from 1f. **M2:** the median of 3 comparable `-j6` runs must be ≤ **0.5 ×** the baseline, and one `-j8` run is recorded. **M3:** ≤ **0.35 ×**. **Exhaustion:** if fewer than 3 comparable `-j6` runs survive the load rule after the two permitted repeats, M2 does not land. The blockage goes to Mark; it is not certified on excluded runs. CPU-seconds are reported as the load-insensitive second measure. `fallback-make381.tsv` never enters a median. |
 | AC10 | `make test` green (gate 1), serial and local, on the M1/M2 tree | `PATH=$PWD/runtime/bin:$PATH make test > .godot/tmp/mt.log 2>&1; echo rc=$?` | `rc=0` |
 | AC11 | `rig/full` green on each milestone's PR, three times for M2 (stability) | `tools/rig_check.sh <PR>` (×3 for M2) | three `rig/full` successes, each with AC7 and AC8 holding |
 | AC12 | Drills: every new guard kills its mutant | `for m in R C D L E; do sh -c ". .godot/tmp/suite-drills.sh; drillsp \"$PWD\" $m"; echo "$m rc=$?"; done` | `drillsp R: killed`, `C: killed`, `D: killed`, `L: killed`, `E: killed`, each `rc=0` |
@@ -246,8 +323,8 @@ The `sed` anchors name the lines the executor writes; if the implementation's li
 
 | Step | Files | LOC | `Makefile`? | Order |
 |---|---|---:|---|---|
-| **M1** instrument + baseline | `tools/timed_recipe_shell.sh` (new, 25), `tools/suite_profile.sh` (new, 110), `tools/test_suite_profile.sh` (new, 70), `tools/rig_check.sh` (+12), `tools/test_rig_check.sh` (+15); `design_docs/planned/r1/rig-test-speed-report.md` + `rig-test-speed-data/` (data) | ≈ 230 | **no** | first; one PR; two serial rig runs for the baseline |
-| **M2** lanes on the rig | `tools/suite_lanes.txt` (new, 25), `tools/suite_parallel.sh` (new, 120), `tools/test_suite_parallel.sh` (new, 70), `tools/rig_check.sh` (+10), `tools/test_rig_check.sh` (+15), `mk/home-tiers.mk` (4) | ≈ 245 | **no** | after M1 lands; 3 + 1 rig runs (AC9, AC11) |
+| **M1** instrument + baseline | `tools/timed_recipe_shell.sh` (new, 28), `tools/suite_profile.sh` (new, 110), `tools/test_suite_profile.sh` (new, 75), `tools/rig_check.sh` (+20), `tools/test_rig_check.sh` (+25); `design_docs/planned/r1/rig-test-speed-report.md` + `rig-test-speed-data/` (data) | ≈ 258 | **no** | First, as one PR. Its own three `rig/full` runs are the baseline (1f). At ≈ 258 lines it sits at the limit; if the executor's count passes 270, the `rig_check.sh`/control wiring (1d, 1e, ≈ 45) splits off as **M1b**, landing after M1a, and the baseline runs move to M1b's PR. |
+| **M2** lanes on the rig | `tools/suite_lanes.txt` (new, 25), `tools/suite_parallel.sh` (new, 120), `tools/test_suite_parallel.sh` (new, 70), `tools/rig_check.sh` (+12), `tools/test_rig_check.sh` (+20), `mk/home-tiers.mk` (4) | ≈ 251 | **no** | After M1 lands. Needs at least 3 comparable `-j6` runs plus 1 `-j8` run (AC9 exhaustion rule applies) and AC11. |
 | **M3** edges + shards | `Makefile` (**yes**: `sim` split ≈ 30, one `include`, `import` stamp ≈ 10), `mk/test-edges.mk` (new, ≈ 45), `mk/m45.mk` (**held by #344**, 1 line), `tools/suite_lanes.txt` (−), `tools/suite_parallel.sh` (+ `shards-check`, `check --edges`, ≈ 30) | ≈ 120 | **yes** | only after AC14 holds; one serial re-baseline first |
 
 The `.uid` rule (CLAUDE.md) does not apply: no `.gd` or shader is added. Each new `tools/*.sh` needs no allowlist entry (only `*.py` are listed).
@@ -259,7 +336,7 @@ The `.uid` rule (CLAUDE.md) does not apply: no `.gd` or shader is added. Each ne
 | A hidden dependency not found by this audit makes a parallel run flaky (red on a green tree). | Three green `-j6` runs before M2 lands (AC11); `RIG_JOBS=1` restores serial in one variable; any flake is diagnosed from the per-target TSV (which target started when) and fixed with a lane. Iteration 55's `ship-demo-launch` flake is already isolated in P2. |
 | A parallel run passes where serial would fail (a test that depends on something another target leaves behind, which parallel order happens to provide). | Local `make test` stays serial (the dev-tag gate); M1's instrument keeps a serial baseline per closure change; AC10 runs serial `make test` on every milestone. |
 | The instrument changes behaviour (`SHELL` override). | It execs the same `/bin/sh`; rc pass-through, sub-make naming and `-j` overlap are controlled (AC1); `RIG_PROFILE=0` turns it off. Per-line overhead ≤ 50 ms is asserted; with ≈ 1,500 recipe lines that is ≤ 75 s, about 2 % of a serial run, and it is the same on both sides of the comparison. |
-| `gmake` 4.4.1 parses or runs the Makefile differently from 3.81. | `gmake --trace test` is already green on `c2e70e15` (V29), and GitHub's `ci-fast` runs Linux make 4.x. Local `make test` and the serial fallback stay on 3.81. |
+| `gmake` 4.4.1 parses or runs the Makefile differently from 3.81. | `gmake --trace test` is already green on `c2e70e15` (V29), and GitHub's `ci-fast` runs Linux make 4.x. Before and after both use gmake (1f, AC9), so a version effect cannot pose as a `-j` effect. The 3.81 fallback run (`fallback-make381.tsv`) shows the fallback path works. Local `make test` stays on 3.81. |
 | The rig's load varies (2.5–20 seen). | The comparability rule (AC9), recorded load at start and end, medians, and CPU-seconds as a second measure. |
 | `-j` raises the rig's load for attended sessions running beside it. | `N` defaults to 6 of 12 performance cores and is a variable; the suite finishes sooner, so the total CPU-seconds are unchanged. |
 | #344 or #346 changes the closure before M2 lands. | `suite_parallel.sh` derives everything from the database; `check` fails on a stale lane name; `compare` refuses a baseline from a different closure. |
@@ -270,8 +347,9 @@ The `.uid` rule (CLAUDE.md) does not apply: no `.gd` or shader is added. Each ne
 | # | Question | Recommendation | Default if unanswered |
 |---|---|---|---|
 | OQ1 | May `rig/full` run `make test`'s targets as the parallel runner (setup, then `-j6` lanes, then the exclusive set) instead of one serial `make test`, given the coverage invariant is proved on every run (AC6, AC7) and `RIG_JOBS=1` restores serial? Local `make test` stays serial. | Yes: L4's text asks for parallelisation without losing coverage, and the proof is mechanical. | **Yes.** M2 ships `RIG_JOBS` defaulting to 6, and it cannot land before AC9 and AC11 (three green parallel runs, coverage proved on each) are recorded. A "no" from Mark is a one-line change of the default to 1. |
-| OQ2 | Run the rig's parallel phase with Homebrew GNU Make 4.4.1 (`gmake`) rather than the system make 3.81? Cost: one more tool the rig depends on (already installed, and the rig already depends on Homebrew's `shellcheck`, `dash` and `jq`); gain: `--output-sync=target` (each target's output in one block, so a red log stays readable) and `--eval` for a safe database dump. 3.81 has neither, and its interleaved `-j` output would make failures hard to read. | Yes, with the automatic serial fallback when `gmake` is missing. | **Yes** (the fallback keeps every PR mergeable). |
+| OQ2 | Use Homebrew GNU Make 4.4.1 (`gmake`) on the rig instead of the system make 3.81? From M1, the serial instrumented run uses it; from M2, so does the parallel phase. **Cost:** one more tool the rig depends on. It is already installed, and the rig already depends on Homebrew's `shellcheck`, `dash` and `jq`. **Gain:** `--output-sync=target` keeps each target's output in one block, so a red log stays readable; `--eval` gives a safe database dump; and before and after run on the same make (AC9). 3.81 has neither feature, and its interleaved `-j` output would make failures hard to read. | Yes. | **Yes.** In M1 a missing `gmake` falls back, loudly, to 3.81; from M2 it is OQ4. |
 | OQ3 | Remove true duplicates? Candidates, re-checked today: `checkN3` runs in `ailang test` **and** in `catalogue-vm quotaVm` on both engines (`sim/tools/catalogue_test.ail:133,148`); the `navigation_test`/`navigationVm`, `trappist1_test`/`trappistVm` and D65/`directHighlightsVm` overlaps listed in the old doc (overlap not re-measured); `playthrough` re-entered 4 times and `import` 5 times (cheap, and M3 fixes `import`). | Keep all of them for L4; decide separately per item after M3's measurements, because each removal is a coverage-policy change. | **Keep everything.** |
+| OQ4 | After M2 lands, should a Studio with no `gmake` on `PATH` and no explicit `RIG_JOBS=1` **fail** `rig/full` (`gmake not found; set RIG_JOBS=1 to run serial`) or fall back loudly to serial? | **Fail** (kimi's proposal, adopted). A missing `gmake` is a broken rig, not a property of the PR, and a fallback would quietly bring back the 69–117-min suite. `RIG_JOBS=1` is the explicit, visible way to merge while the rig is repaired. A PR head that predates M2 (`parallel-absent`) still falls back loudly, because that is a property of the PR. | **Fail.** The `parallel-no-gmake` case asserts it (AC5). |
 
 ## Deliverables
 
@@ -321,7 +399,30 @@ All rows were run by the designer on 2026-10-28 in `/Users/voightkampff/dev/sunh
 | V32 | The long Godot legs | per script: `grep -c -E 'process_frame\|create_timer\|await'`, `grep -c time_scale`, first `real.?time\|fake time` line | `test_solar_departure.gd` 0 awaits; `test_free_nav_stop.gd` 5; `test_moon_lifecycle.gd` 1, "Guided legs run in real time (D-39)"; `test_no_twitch.gd` 19, "600 s of fake time"; `time_scale` 0 in all four |
 | V33 | Inherited duplicates, re-checked | `sed -n 101,103p mk/m45.mk`; `grep -n 'checkN3\|quotaVm' sim/tools/catalogue_test.ail Makefile` | `parity-m4` already runs one `--sim-only` case (the old 55 s duplicate is gone); `checkN3` still in both (`catalogue_test.ail:133,148`, `Makefile:663`) |
 | V34 | Pillars | `grep -n '^#' ../stapledons-design/vision/core-pillars.md` | the six pillars, headings 5, 22, 40, 57, 75, 93 |
-| V35 | `make test` leaves untracked files | profile clone: `git status --porcelain` | 5 `??` lines: four `data/planets/trappist1_ps.*.translation`, one `data/starmap/truth/positions. 1%) is resolved in the audit.translation` |
+| V35 | `make test` leaves untracked files | profile clone: `git status --porcelain` | 5 `??` lines: four `data/planets/trappist1_ps.*.translation`, one `data/starmap/truth/positions. 1%) is resolved in the audit.translation` (a literal name, V42) |
 | V36 | The drill path is ignored | `git check-ignore -v .godot/tmp/x` | `.gitignore:1:.godot/	.godot/tmp/x` |
 | V37 | Shared scratch paths, static scan (and its limit) | awk over `Makefile mk/*.mk`: `$(SCRATCH)/…` tokens per rule, paths used by 2+ rules | 31 shared paths; the real in-closure ones are H4, H5 and `v2_vm.txt` (`parity-v2-system: parity-v2`, declared) and `sound/measure.json` (`sound-levels-parity: sound-check sound-levels`, declared); `ai-pkg-test`/`ai-stub` was a **false positive** (the `define ai_stub_runs` block is expanded only by `ai-stub` and the non-test `ai-stub-record`), which is why M1 records the expanded commands' targets at run time instead of trusting a static scan |
 | V38 | Serial order of the lane and exclusive members | profile: first `update target` position of each name | `replay` 48, `tools-test` 70, `parity-m4` 77, `codex-unlocks` 80, `crew-perf` 99, `replay-compat` 108, `ai-relay` 110, `replay-noai` 111, `ai-live-guard` 113, `ai-settings` 114, `replay-scene` 126, `ship-demo-launch-test` 140, `playthrough` 176, `scene-session-audits` 177, `display-audit-controls` 179, `playthrough-adversarial` 181, `display-audit-interlude` 183, `display-audit-crew` 184 |
+| V39 | Sharding works through positional files, not `--package`; the package has 50 test files | **Controller-measured 2026-10-28** in the profile clone's `sim/` (runtime v0.54.18): `ailang test --package . rng_test.ail`; `ailang test rng_test.ail protocol_test.ail`; `ls sim/*_test.ail \| wc -l`. **Designer:** `git ls-files 'sim/**/*_test.ail' 'sim/*_test.ail'`, counted per directory | `Error: --package takes one package directory, got 2 paths: . rng_test.ail` (refused); rc 0, `41 tests: 41 passed, 0 failed, 0 skipped`, 22.8 s wall, 39.1 s user (173 % CPU); `34`; per directory, `34 sim` and `16 sim/tools`, i.e. 50, which equals `--package`'s "50 test files" (V30) |
+| V40 | No fast-path bypass of a `SHELL` wrapper was observed | **Controller-measured 2026-10-28:** wrappers named `timed_recipe_shell.sh`, `wrap.sh` and `shwrap` (deliberately shell-prefixed), each set as `SHELL` over a Makefile with `@true` and `echo hi > /dev/null`, on `/usr/bin/make` 3.81 and `gmake` 4.4.1 | each name logged 2 of 2 lines on both makes; no bypass for any name |
+| V41 | The top-20 arithmetic | **Controller-checked 2026-10-28:** the sum of the Problem 2 rows | rows 1–12 = 2,478 s, rows 13–20 = 481 s, total 2,959 s = 71.8 % of 4,123 s (the doc's 71.8 % is right; the reviewer's 67.8 % was not) |
+| V42 | The fifth untracked file's name is literal | **Controller-measured 2026-10-28** in the profile clone: `od -c` of the name, `ls data/starmap/truth/` | the file is named `positions. 1%) is resolved in the audit.translation`: Godot took a CSV header cell as a locale. Not corruption. The exact five paths are listed in Problem 4. |
+
+## Quorum log
+
+- **Round 1 (2026-10-28): BLOCKED.** oc-kimi-k3, gemini-4-argon and oc-glm-5-3 rejected; gpt6-1-sol was absent (unreachable). None disputed the direction.
+  - **oc-kimi-k3:** fallbacks were silent, so a serial fallback could pass as a normal green, and AC9 had no rule for when load excludes too many runs. **Changed:**
+    - every fallback writes `rig-check FALLBACK <reason>` and posts `SERIAL FALLBACK: <reason>`;
+    - the control cases and AC5 assert the marker;
+    - a missing `gmake` after M2 now **fails** unless `RIG_JOBS=1` (2d, OQ4, default fail);
+    - AC9 gains the exhaustion rule: fewer than 3 comparable `-j6` runs means no landing, and the blockage goes to Mark.
+  - **gemini-4-argon:** under `-j`, `SUITE_TARGET=$@` re-expands to a sub-make's own target, so MAKELEVEL > 1 rows lose their parent. It also asked to test the M3a sharding premise. **Changed:**
+    - the wrapper exports `SUITE_TOP_TARGET=${SUITE_TOP_TARGET:-$SUITE_TARGET}`, and `summary` groups by it (1a, 1b);
+    - new `top-target-j2` control case (1c);
+    - 3a is rewritten on the controller's measurement (V39): positional files work and `--package` with files is refused, so no syntax spike is owed; the compile cost per shard stays labelled unmeasured; the shards partition the package's 50 files in `sim/` and `sim/tools/`, and the coverage check catches a discovered-but-unlisted file.
+  - **oc-glm-5-3:** §1f contradicted itself (3.81 runs, yet a gmake `--trace` run) and confounded the make version with `-j`. It also challenged the wrapper-name caution, the 71.8 % share and the fifth file name in V35. **Changed:**
+    - the baseline is two serial **gmake 4.4.1** runs through the instrument, one with `--trace` for AC3; one 3.81 run is fallback evidence only and never enters a median;
+    - AC2, AC3, AC9 and the artifact names were updated (`before-gmake-1/2`, `fallback-make381`), and M1's own `rig/full` runs supply these baselines (1f);
+    - the wrapper-name rule is now defensive, backed by V40 (no bypass observed); the bare-`@true` control stays on both makes;
+    - the 71.8 % share stands, with the sum spelled out (V41);
+    - the five untracked paths are quoted exactly, with the literal-name note (V42).
