@@ -1,0 +1,779 @@
+{
+  "sprint_id": "R1-RIG-TEST-SPEED",
+  "id": "R1-RIG-TEST-SPEED",
+  "design_doc": "design_docs/planned/r1/rig-test-speed.md",
+  "sprint_plan": "design_docs/planned/r1/rig-test-speed-sprint.md",
+  "release": "r1",
+  "implements": [
+    "Charter L4: profile and parallelise without losing coverage, report before/after",
+    "D-126 C B half: L4 ahead of Kerr a4; D-88 test/tooling hygiene"
+  ],
+  "mission_iteration": 56,
+  "base_commit": "c2e70e15bd28955cd9aac01b67ec6b458862f681",
+  "created": "2026-10-29",
+  "status": "in_progress",
+  "approval": "M1a authorized by D-126 C plus D-88. Controller-required split: M1b/M2 blocked on D-129 RESOLVED; M3 also blocked on held PR predicate; approved design is approved for planning, not a resolution of its OQ1-OQ4.",
+  "planning_baseline": {
+    "at": "c2e70e15bd28955cd9aac01b67ec6b458862f681",
+    "checkout_head": "817f4ba69585d205f08a94133416c8d51819d3de",
+    "measured_by": "planner, iteration 56",
+    "created": "2026-10-29",
+    "source_diff_from_base": "none; intervening commits update design only; git status --short initially empty",
+    "gates": [
+      {
+        "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S sh tools/test_rig_check.sh tools/rig_check.sh",
+        "rc": 0,
+        "observed": "8 cases, 0 failures; every original case ok",
+        "verdict": "GREEN"
+      },
+      {
+        "command": "sh -n tools/timed_recipe_shell.sh",
+        "rc": 127,
+        "observed": "No such file or directory",
+        "verdict": "ALREADY RED: new script absent"
+      },
+      {
+        "command": "sh -n tools/suite_profile.sh",
+        "rc": 127,
+        "observed": "No such file or directory",
+        "verdict": "ALREADY RED: new script absent"
+      },
+      {
+        "command": "sh -n tools/test_suite_profile.sh",
+        "rc": 127,
+        "observed": "No such file or directory",
+        "verdict": "ALREADY RED: new script absent"
+      },
+      {
+        "command": "make python-guard",
+        "rc": 0,
+        "observed": "python-guard: ok (20 allowlisted, 0 awaiting AILANG port)",
+        "verdict": "GREEN"
+      },
+      {
+        "command": "make uid-guard",
+        "rc": 0,
+        "observed": "uid-guard: ok (352 .uid files)",
+        "verdict": "GREEN"
+      }
+    ],
+    "cheap_probes": [
+      "/usr/bin/make GNU Make 3.81; gmake /opt/homebrew/bin/gmake GNU Make 4.4.1",
+      "make -n rig-check-control prints sh tools/test_rig_check.sh tools/rig_check.sh",
+      "Safe gmake -pq --eval='__nop__:' __nop__ confirms one direct test->rig-check-control edge",
+      "Held paths have no diff from source base"
+    ],
+    "premises": "Design Verification Log V1-V44 and quorum refinements accepted; no timing rerun or full suite in planning"
+  },
+  "features": [
+    {
+      "id": "M1a",
+      "description": "Instrument only, design 1a/1b/1c and one suite-profile case in the existing rig control; no rig_check.sh or make wiring edit. Test-first fixture control then implementation then hardened R/C and supplemental guard drills. All seven profile subcommands, 30-second load sampler and single-printf append are included.",
+      "status": "in_progress",
+      "approval": "D-126 C (L4 ordered) plus D-88 (approved test/tooling hygiene); no open question touches M1a",
+      "depends_on": [
+
+      ],
+      "dependencies": [
+
+      ],
+      "blocker": null,
+      "resume_predicate": "No blocker; M1a only is authorized",
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "milestones": "M1a+",
+          "command": "sh tools/test_suite_profile.sh > .godot/tmp/sp.log 2>&1; rc=$?; tail -1 .godot/tmp/sp.log; echo rc=$rc",
+          "expected": "suite-profile control: 40 cases, 0 failures, rc=0; every case exercises both makes",
+          "base_verdict": "RED: control absent"
+        },
+        {
+          "id": "AC12",
+          "milestones": "M1a",
+          "command": "for m in R C; do sh -c '. .godot/tmp/suite-drills.sh; drillsp \"$PWD\" \"$1\"' sh \"$m\"; echo \"$m rc=$?\"; done",
+          "expected": "R killed (rc-passthrough), C killed (compare-missing), each rc=0",
+          "base_verdict": "RED: drill/control/tools absent; pinned-base control baseline must fail (verbatim missing-source drill preflight is rc2)"
+        },
+        {
+          "id": "AC4",
+          "milestones": "each",
+          "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET -u RIG_CHECK_NESTED sh tools/test_rig_check.sh tools/rig_check.sh > .godot/tmp/rc.log 2>&1; rc=$?; tail -1 .godot/tmp/rc.log; echo rc=$rc",
+          "expected": "M1a: 9 cases; M1b: 13; M2/M3: 18 (8 original + profile-control + parallel-control + 4 M1 cases − retired gmake-missing +5 M2 cases); zero failures, rc=0; assert named cases too",
+          "base_verdict": "Observed base 8 GREEN; enhanced count/names RED"
+        },
+        {
+          "id": "M1a fast gates",
+          "milestones": "each",
+          "command": "sh -n tools/timed_recipe_shell.sh; echo rc=$?; sh -n tools/suite_profile.sh; echo rc=$?; sh -n tools/test_suite_profile.sh; echo rc=$?; make python-guard; echo rc=$?; make uid-guard; echo rc=$?",
+          "expected": "Each rc=0; include sh -n on each later changed/new shell script in its milestone",
+          "base_verdict": "Observed three rc127 RED; policy gates GREEN"
+        },
+        {
+          "id": "AC13",
+          "milestones": "M1a/M1b/M2",
+          "command": "git diff --name-only origin/main...HEAD | grep -c -x -E 'Makefile|mk/m45\\.mk|mk/earth-link\\.mk|tools/import_keep\\.txt|tools/python-allowlist\\.txt|tools/python_guard\\.sh'; git diff --name-only origin/main...HEAD | grep -c '\\.py$'",
+          "expected": "0 then 0 (grep rc1 means zero matches). Also inspect working-tree/untracked paths before controller commit; committed diff alone is vacuous for executor edits",
+          "base_verdict": "GREEN at base; no implementation diff"
+        },
+        {
+          "id": "M1a-cases",
+          "command": "sh tools/test_suite_profile.sh; echo rc=$?",
+          "expected": "20 named aggregate control cases, each on both /usr/bin/make 3.81 and gmake 4.4.1; trailer 40 cases, 0 failures; no skipped cases",
+          "base_verdict": "RED: control absent",
+          "owner": "executor"
+        },
+        {
+          "id": "M1a-wiring",
+          "command": "make -n rig-check-control; env -u RIG_TEST_S -u RIG_GOLDEN_S sh tools/test_rig_check.sh tools/rig_check.sh; echo rc=$?",
+          "expected": "dry run prints same existing shell control command; outer count 9, nested count 8; suite-profile case executes new fixture control; rc0",
+          "base_verdict": "Observed existing control GREEN at 8; new case/count RED",
+          "owner": "executor"
+        },
+        {
+          "id": "M1a-scope",
+          "command": "git diff c2e70e15bd28955cd9aac01b67ec6b458862f681 -- tools/rig_check.sh Makefile mk/m45.mk mk/earth-link.mk tools/import_keep.txt tools/python-allowlist.txt tools/python_guard.sh",
+          "expected": "empty; inspect untracked paths too",
+          "base_verdict": "GREEN: empty at planning baseline",
+          "owner": "executor"
+        }
+      ],
+      "test_first": [
+        "Create fixture control and run before production tools: require rc1 named missing-instrument failures.",
+        "Save verbatim drill block; entirely pristine R/C missing source preflight rc2 is not a killed mutant. Copy test-first control into pinned-base scratch ROOT and require its RED rc1.",
+        "Implement wrapper and all subcommands, run GREEN controls and hardened actual R/C plus supplemental mutations.",
+        "Wire suite-profile case only; policy/syntax/scope checks, changelog and evidence notes."
+      ],
+      "guard_drills": {
+        "R": "always-exit-0 -> rc-passthrough FAIL",
+        "C": "ignore-missing -> compare-missing FAIL",
+        "supplemental": "Every other case/mutation pair in M1a control table, same hardened scratch protocol; base rc0, mutation changed by cmp, mutant rc1, exact FAIL set. Aggregate duplicate make names."
+      },
+      "control_cases": [
+        "rc-passthrough",
+        "bare-true",
+        "submake-level",
+        "top-target-j2",
+        "caller-top-poison",
+        "parallel-overlap",
+        "cpu-busy-sleep",
+        "compare-missing",
+        "compare-fewer-extra",
+        "closure-mismatch",
+        "overhead-200",
+        "atomic-rows",
+        "load-sampler",
+        "sampler-cleanup",
+        "report-version",
+        "report-load",
+        "report-medians",
+        "summary-targets",
+        "gap-agree",
+        "temp-only"
+      ],
+      "risks": [
+        "248 LOC is tight; return to controller to split further if needed, never omit checks.",
+        "Perl startup overhead and shell CPU accounting must be measured on both makes.",
+        "Daemon CPU is a lower bound; sampler and attribution require explicit tests."
+      ],
+      "notes": [
+        "Authorized status in_progress means ready for execution, not implementation complete. Planner writes only the plan and JSON.",
+        "All control writes stay under mktemp T; no writes under HOME or ~/.ailang. External guards are observations, never seeded writes."
+      ],
+      "files": [
+        "tools/timed_recipe_shell.sh",
+        "tools/suite_profile.sh",
+        "tools/test_suite_profile.sh",
+        "tools/test_rig_check.sh",
+        "CHANGELOG.md"
+      ],
+      "file_loc": {
+        "tools/timed_recipe_shell.sh": 28,
+        "tools/suite_profile.sh": 125,
+        "tools/test_suite_profile.sh": 86,
+        "tools/test_rig_check.sh": 5,
+        "CHANGELOG.md": 4
+      },
+      "est_loc": 248,
+      "estimated_loc": 248,
+      "estimated_doc_loc": 0,
+      "estimated_minutes": 180,
+      "schedule": "Day 1: two focused sessions; RED first; currently authorized",
+      "forbidden_files": [
+        "Makefile",
+        "mk/m45.mk",
+        "mk/earth-link.mk",
+        "tools/import_keep.txt",
+        "tools/python-allowlist.txt",
+        "tools/python_guard.sh",
+        "tools/rig_check.sh"
+      ],
+      "passes": false,
+      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX."
+    },
+    {
+      "id": "M1b",
+      "description": "Design 1d/1e rig profile wiring and loud fallback cases, then 1f baseline runs; no held-file edits. Three comparable serial gmake instrumented runs (one traced), fourth system-make fallback run.",
+      "status": "blocked",
+      "approval": "BLOCKED pending D-129; defaults in the design are not approval",
+      "depends_on": [
+        "M1a",
+        "D-129 RESOLVED"
+      ],
+      "dependencies": [
+        "M1a",
+        "D-129 RESOLVED"
+      ],
+      "blocker": "D-129 RESOLVED and M1a acceptance",
+      "resume_predicate": "D-129 RESOLVED",
+      "acceptance_criteria": [
+        {
+          "id": "AC2",
+          "milestones": "M1b+",
+          "command": "D=design_docs/planned/r1/rig-test-speed-data; rc=0; for n in before-gmake-1 before-gmake-2 before-gmake-3 fallback-make381; do sh tools/suite_profile.sh summary \"$D/$n.tsv\" > .godot/tmp/summary.txt && cmp .godot/tmp/summary.txt \"$D/$n.summary.txt\" || rc=1; done; echo rc=$rc",
+          "expected": "rc=0; design AC2 extended to third required serial baseline, no weakening",
+          "base_verdict": "RED: tool/data absent"
+        },
+        {
+          "id": "AC3",
+          "milestones": "M1b+",
+          "command": "sh tools/suite_profile.sh agree design_docs/planned/r1/rig-test-speed-data/before-gmake-1.tsv design_docs/planned/r1/rig-test-speed-data/before-gmake-1.trace.log; echo rc=$?",
+          "expected": "rc=0, each top-20 within max(2s,2%) on same traced run",
+          "base_verdict": "RED: tool/data absent"
+        },
+        {
+          "id": "AC5",
+          "milestones": "M1b",
+          "command": "grep -c -E '^rig-check control (profile-off|profile-absent|gmake-missing): ok$' .godot/tmp/rc.log",
+          "expected": "3",
+          "base_verdict": "RED: base control has none"
+        },
+        {
+          "id": "AC4",
+          "milestones": "each",
+          "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET -u RIG_CHECK_NESTED sh tools/test_rig_check.sh tools/rig_check.sh > .godot/tmp/rc.log 2>&1; rc=$?; tail -1 .godot/tmp/rc.log; echo rc=$rc",
+          "expected": "M1a: 9 cases; M1b: 13; M2/M3: 18 (8 original + profile-control + parallel-control + 4 M1 cases − retired gmake-missing +5 M2 cases); zero failures, rc=0; assert named cases too",
+          "base_verdict": "Observed base 8 GREEN; enhanced count/names RED"
+        },
+        {
+          "id": "M1a fast gates",
+          "milestones": "each",
+          "command": "sh -n tools/timed_recipe_shell.sh; echo rc=$?; sh -n tools/suite_profile.sh; echo rc=$?; sh -n tools/test_suite_profile.sh; echo rc=$?; make python-guard; echo rc=$?; make uid-guard; echo rc=$?",
+          "expected": "Each rc=0; include sh -n on each later changed/new shell script in its milestone",
+          "base_verdict": "Observed three rc127 RED; policy gates GREEN"
+        },
+        {
+          "id": "AC13",
+          "milestones": "M1a/M1b/M2",
+          "command": "git diff --name-only origin/main...HEAD | grep -c -x -E 'Makefile|mk/m45\\.mk|mk/earth-link\\.mk|tools/import_keep\\.txt|tools/python-allowlist\\.txt|tools/python_guard\\.sh'; git diff --name-only origin/main...HEAD | grep -c '\\.py$'",
+          "expected": "0 then 0 (grep rc1 means zero matches). Also inspect working-tree/untracked paths before controller commit; committed diff alone is vacuous for executor edits",
+          "base_verdict": "GREEN at base; no implementation diff"
+        },
+        {
+          "id": "AC10",
+          "command": "PATH=$PWD/runtime/bin:$PATH make test > .godot/tmp/mt.log 2>&1; echo rc=$?",
+          "expected": "rc=0; unchanged local serial suite; controller outside sandbox only",
+          "base_verdict": "NOT RUN; no base verdict claimed",
+          "owner": "controller"
+        },
+        {
+          "id": "AC11",
+          "command": ": \"${PR:?controller sets milestone PR number}\"; tools/rig_check.sh \"$PR\"",
+          "expected": "rig/full success on exact milestone PR head; three comparable successes for M2; baseline runs for M1b per plan",
+          "base_verdict": "NOT RUN; no base verdict claimed",
+          "owner": "controller"
+        },
+        {
+          "id": "M1b-baseline",
+          "command": "D=design_docs/planned/r1/rig-test-speed-data; for n in before-gmake-1 before-gmake-2 before-gmake-3 fallback-make381; do for ext in tsv header.txt load.tsv summary.txt status.txt; do test -s \"$D/$n.$ext\" || exit 1; done; done; test -s \"$D/before-gmake-1.trace.log\"; echo rc=$?",
+          "expected": "rc=0; >=3 comparable GNU Make 4.4.1 before runs; 3.81 never enters a median; header companions reproducible after copying",
+          "base_verdict": "RED: data absent",
+          "owner": "controller"
+        }
+      ],
+      "test_first": [
+        "Add four rig profile/fallback cases and caller-poison extensions; run RED before rig edit.",
+        "Add stub gmake and fake-clone profiler copies without host-gmake access.",
+        "Implement serial profile and loud fallbacks under existing watchdog; GREEN controls and each guard drill.",
+        "Controller takes >=3 comparable serial gmake runs plus one 3.81 fallback; AC2/AC3 and preliminary baseline report; record data/load/status."
+      ],
+      "guard_drills": {
+        "bypass-profiler": "profile-on FAIL",
+        "ignore-profile0": "profile-off FAIL",
+        "force-present": "profile-absent FAIL",
+        "ignore-missing-gmake": "gmake-missing FAIL",
+        "drop-marker-or-description-or-clamp": "corresponding profile-off/profile-absent/gmake-missing FAIL, long description fixture",
+        "remove-sanitization": "caller-poison FAIL; pin nested exact set"
+      },
+      "risks": [
+        "At least four real rig runs plus load repeats; no calendar guarantee.",
+        "Changed closure invalidates baseline.",
+        "D-129 may change policy; reconcile before unblocking."
+      ],
+      "notes": [
+        "BLOCKED: do not implement 1d, rig profile cases or collect baselines until D-129 RESOLVED.",
+        "M1b report is before-only evidence; it cannot certify final AC9 speed ratio."
+      ],
+      "files": [
+        "tools/rig_check.sh",
+        "tools/test_rig_check.sh",
+        "CHANGELOG.md",
+        "design_docs/planned/r1/rig-test-speed-report.md",
+        "design_docs/planned/r1/rig-test-speed-data/"
+      ],
+      "file_loc": {
+        "tools/rig_check.sh": 20,
+        "tools/test_rig_check.sh": 25,
+        "CHANGELOG.md": 4
+      },
+      "est_loc": 49,
+      "estimated_loc": 49,
+      "estimated_doc_loc": 40,
+      "estimated_minutes": 90,
+      "schedule": "Day 2 after resolution: one coding session, >=4 controller rig slots plus load repeats",
+      "forbidden_files": [
+        "Makefile",
+        "mk/m45.mk",
+        "mk/earth-link.mk",
+        "tools/import_keep.txt",
+        "tools/python-allowlist.txt",
+        "tools/python_guard.sh"
+      ],
+      "passes": false,
+      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX."
+    },
+    {
+      "id": "M2",
+      "description": "Design 2a-2e: safe setup/P1/P2 lanes runner, mechanical coverage, rig default jobs and serial escape, split home counts files; unchanged serial local make test.",
+      "status": "blocked",
+      "approval": "BLOCKED pending D-129 (especially OQ1/OQ4)",
+      "depends_on": [
+        "M1b",
+        "D-129 RESOLVED",
+        "M1b baseline data accepted"
+      ],
+      "dependencies": [
+        "M1b",
+        "D-129 RESOLVED",
+        "M1b baseline data accepted"
+      ],
+      "blocker": "D-129 RESOLVED plus M1b comparable baseline",
+      "resume_predicate": "D-129 RESOLVED AND M1b accepted with >=3 comparable serial gmake baseline runs and matching closure",
+      "acceptance_criteria": [
+        {
+          "id": "AC5",
+          "milestones": "M2+",
+          "command": "grep -c -E '^rig-check control (profile-off|profile-absent|serial-jobs1|parallel-absent|no-gmake-jobs1|parallel-no-gmake): ok$' .godot/tmp/rc.log",
+          "expected": "6, with all marker/description/failure assertions inside cases",
+          "base_verdict": "RED: cases absent"
+        },
+        {
+          "id": "AC6",
+          "milestones": "M2+",
+          "command": "sh tools/suite_parallel.sh check; echo rc=$?",
+          "expected": "plan: setup <a>, P1 <b> goals, P2 <c> goals, lanes <d>, closure covered <e> of <e>, rc=0; hash printed",
+          "base_verdict": "RED: runner absent; counts derived, not hardcoded"
+        },
+        {
+          "id": "AC12",
+          "milestones": "M2+",
+          "command": "for m in R C D L E; do sh -c '. .godot/tmp/suite-drills.sh; drillsp \"$PWD\" \"$1\"' sh \"$m\"; echo \"$m rc=$?\"; done",
+          "expected": "All killed, rc=0; D serial-jobs1 (plus caller-poison if nested), L lane-order, E exclusive-p2",
+          "base_verdict": "RED: controls/tools absent"
+        },
+        {
+          "id": "AC4",
+          "milestones": "each",
+          "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET -u RIG_CHECK_NESTED sh tools/test_rig_check.sh tools/rig_check.sh > .godot/tmp/rc.log 2>&1; rc=$?; tail -1 .godot/tmp/rc.log; echo rc=$rc",
+          "expected": "M1a: 9 cases; M1b: 13; M2/M3: 18 (8 original + profile-control + parallel-control + 4 M1 cases − retired gmake-missing +5 M2 cases); zero failures, rc=0; assert named cases too",
+          "base_verdict": "Observed base 8 GREEN; enhanced count/names RED"
+        },
+        {
+          "id": "M1a fast gates",
+          "milestones": "each",
+          "command": "sh -n tools/timed_recipe_shell.sh; echo rc=$?; sh -n tools/suite_profile.sh; echo rc=$?; sh -n tools/test_suite_profile.sh; echo rc=$?; make python-guard; echo rc=$?; make uid-guard; echo rc=$?",
+          "expected": "Each rc=0; include sh -n on each later changed/new shell script in its milestone",
+          "base_verdict": "Observed three rc127 RED; policy gates GREEN"
+        },
+        {
+          "id": "AC13",
+          "milestones": "M1a/M1b/M2",
+          "command": "git diff --name-only origin/main...HEAD | grep -c -x -E 'Makefile|mk/m45\\.mk|mk/earth-link\\.mk|tools/import_keep\\.txt|tools/python-allowlist\\.txt|tools/python_guard\\.sh'; git diff --name-only origin/main...HEAD | grep -c '\\.py$'",
+          "expected": "0 then 0 (grep rc1 means zero matches). Also inspect working-tree/untracked paths before controller commit; committed diff alone is vacuous for executor edits",
+          "base_verdict": "GREEN at base; no implementation diff"
+        },
+        {
+          "id": "AC7",
+          "command": ": \"${RUN_DIR:?controller sets completed rig clone directory}\"; sh tools/suite_profile.sh compare design_docs/planned/r1/rig-test-speed-data/before-gmake-1.tsv \"$RUN_DIR.profile/profile.tsv\"; echo rc=$?",
+          "expected": "missing=0 fewer=0 extra=<x>, rc=0; refuse differing closure hashes on every parallel run",
+          "base_verdict": "RED: tool and baseline absent",
+          "owner": "controller"
+        },
+        {
+          "id": "AC8",
+          "command": ": \"${RUN_DIR:?controller sets completed rig clone directory}\"; grep -c \"^godot cache writes outside .godot/tmp during P1: 0$\" \"$RUN_DIR.log\"; git -C \"$RUN_DIR\" status --porcelain | LC_ALL=C sort > .godot/tmp/after.status.txt; cmp .godot/tmp/after.status.txt design_docs/planned/r1/rig-test-speed-data/before-gmake-1.status.txt; echo rc=$?",
+          "expected": "1; cmp rc=0; status baseline is exactly five known translation paths (V35/V42), not a clean tree",
+          "base_verdict": "UNCERTIFIED: no P1 run or status evidence; not a base regression",
+          "owner": "controller"
+        },
+        {
+          "id": "AC9",
+          "command": "D=design_docs/planned/r1/rig-test-speed-data; sh tools/suite_profile.sh report \"$D\"/before-gmake-*.tsv -- \"$D\"/after-j6-*.tsv \"$D\"/after-j8-*.tsv; echo rc=$?",
+          "expected": "rc=0; GNU Make 4.4.1 only; load.tsv required; every sample <=5.0 or explicitly recorded common fallback median<=5.0/max<=8; >=3 comparable serial and >=3 comparable -j6 runs, one -j8; M2 median ratio<=0.5, M3<=0.35; at most two repeats per slot, exhaustion blocks landing",
+          "base_verdict": "RED: tool/data absent",
+          "owner": "controller"
+        },
+        {
+          "id": "AC10",
+          "command": "PATH=$PWD/runtime/bin:$PATH make test > .godot/tmp/mt.log 2>&1; echo rc=$?",
+          "expected": "rc=0; unchanged local serial suite; controller outside sandbox only",
+          "base_verdict": "NOT RUN; no base verdict claimed",
+          "owner": "controller"
+        },
+        {
+          "id": "AC11",
+          "command": ": \"${PR:?controller sets milestone PR number}\"; tools/rig_check.sh \"$PR\"",
+          "expected": "rig/full success on exact milestone PR head; three comparable successes for M2; baseline runs for M1b per plan",
+          "base_verdict": "NOT RUN; no base verdict claimed",
+          "owner": "controller"
+        },
+        {
+          "id": "M2-control",
+          "command": "sh tools/test_suite_parallel.sh; echo rc=$?",
+          "expected": "fixture control zero failures, rc0; all 14 named cases and hardened L/E mutations, D killed by serial-jobs1 in rig control",
+          "base_verdict": "RED: control/runner absent",
+          "owner": "executor"
+        }
+      ],
+      "test_first": [
+        "Add parallel fixture and new rig cases, require RED before implementation; new source absence is preflight, not a killed drill.",
+        "Implement lane plan/check/run, safe db, reach including lane file rules, setup/P1/P2, process-group cleanup and observations.",
+        "Wire rig jobs/fallback/failure policy only after D-129; retire gmake-missing; split four counts-file references.",
+        "GREEN controls/drills; controller runs serial full gate and three comparable -j6 plus one -j8, proving dynamic coverage/status per run."
+      ],
+      "control_cases": [
+        "setup-first",
+        "lane-order",
+        "exclusive-p2",
+        "unknown-lane",
+        "lane-cycle",
+        "mutant-closure",
+        "uncovered-rule",
+        "lane-file-reach",
+        "coverage-counts",
+        "phase-rc",
+        "group-cleanup",
+        "cache-observe",
+        "user-observe",
+        "counts-disjoint"
+      ],
+      "guard_drills": {
+        "D": "force-jobs6 -> serial-jobs1 FAIL (caller-poison included if nested fails)",
+        "L": "drop-emit_lanes -> lane-order FAIL",
+        "E": "put-EXCL-in-P1 -> exclusive-p2 FAIL",
+        "supplemental": "All M2 mutation/case rows in plan: setup, unknown/cycle/mutants/uncovered/file reach, coverage, phase rc, group cleanup, observations, counts, rig policy and fallback markers."
+      },
+      "risks": [
+        "Hidden races and 90-second wall guards need repeated real-rig evidence.",
+        "Static closure size changes; never freeze the design counts.",
+        "Load exhaustion blocks landing; never certify excluded runs."
+      ],
+      "notes": [
+        "BLOCKED on D-129 and M1b baseline data.",
+        "Held files remain forbidden. Missing gmake default fails; RIG_JOBS=1 explicitly restores serial; keep all tests and duplicates."
+      ],
+      "files": [
+        "tools/suite_lanes.txt",
+        "tools/suite_parallel.sh",
+        "tools/test_suite_parallel.sh",
+        "tools/rig_check.sh",
+        "tools/test_rig_check.sh",
+        "mk/home-tiers.mk",
+        "CHANGELOG.md",
+        "design_docs/planned/r1/rig-test-speed-report.md",
+        "design_docs/planned/r1/rig-test-speed-data/"
+      ],
+      "file_loc": {
+        "tools/suite_lanes.txt": 25,
+        "tools/suite_parallel.sh": 120,
+        "tools/test_suite_parallel.sh": 70,
+        "tools/rig_check.sh": 12,
+        "tools/test_rig_check.sh": 20,
+        "mk/home-tiers.mk": 4,
+        "CHANGELOG.md": 4
+      },
+      "est_loc": 255,
+      "estimated_loc": 255,
+      "estimated_doc_loc": 20,
+      "estimated_minutes": 180,
+      "schedule": "Day 3: two coding sessions plus >=4 controller rig slots and repeats",
+      "forbidden_files": [
+        "Makefile",
+        "mk/m45.mk",
+        "mk/earth-link.mk",
+        "tools/import_keep.txt",
+        "tools/python-allowlist.txt",
+        "tools/python_guard.sh"
+      ],
+      "passes": false,
+      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX."
+    },
+    {
+      "id": "M3",
+      "description": "Design 3a-3d: sharded sim unit suite, real Godot/AILANG/AI edges, replay-state ordering, run-keyed stamped import and updated speed report, only after held PRs clear.",
+      "status": "blocked",
+      "approval": "BLOCKED pending D-129 and held-file predicate",
+      "depends_on": [
+        "M2",
+        "D-129 RESOLVED",
+        "AC14 held-file predicate"
+      ],
+      "dependencies": [
+        "M2",
+        "D-129 RESOLVED",
+        "AC14 held-file predicate"
+      ],
+      "blocker": "D-129 RESOLVED, M2 accepted, PR #344 and #346 both not OPEN with successful lookups",
+      "resume_predicate": "D-129 RESOLVED AND M2 accepted AND test \"$(gh pr view 344 --json state -q .state)\" != OPEN && test \"$(gh pr view 346 --json state -q .state)\" != OPEN; require successful gh lookups first",
+      "acceptance_criteria": [
+        {
+          "id": "AC6",
+          "milestones": "M2+",
+          "command": "sh tools/suite_parallel.sh check; echo rc=$?",
+          "expected": "plan: setup <a>, P1 <b> goals, P2 <c> goals, lanes <d>, closure covered <e> of <e>, rc=0; hash printed",
+          "base_verdict": "RED: runner absent; counts derived, not hardcoded"
+        },
+        {
+          "id": "AC14",
+          "milestones": "M3 only",
+          "command": "test \"$(gh pr view 344 --json state -q .state)\" != OPEN && test \"$(gh pr view 346 --json state -q .state)\" != OPEN; echo rc=$?",
+          "expected": "rc=0 **and successful lookups** before edits",
+          "base_verdict": "Held per V23; expected RED pending controller's external recheck; not queried here"
+        },
+        {
+          "id": "AC15",
+          "milestones": "M3",
+          "command": "sh tools/suite_parallel.sh shards-check; echo rc=$?",
+          "expected": "shards: <K> shards, <t> tests = package <t>, files <f> = package <f>, rc=0; current premises t=554 f=50",
+          "base_verdict": "RED: runner/subcommand absent",
+          "owner": "controller"
+        },
+        {
+          "id": "AC16",
+          "milestones": "M3",
+          "command": "sh tools/suite_parallel.sh check --edges; echo rc=$?",
+          "expected": "godot targets without import: 0, rc=0",
+          "base_verdict": "RED: runner absent and V6 has 35 missing edges"
+        },
+        {
+          "id": "AC4",
+          "milestones": "each",
+          "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET -u RIG_CHECK_NESTED sh tools/test_rig_check.sh tools/rig_check.sh > .godot/tmp/rc.log 2>&1; rc=$?; tail -1 .godot/tmp/rc.log; echo rc=$rc",
+          "expected": "M1a: 9 cases; M1b: 13; M2/M3: 18 (8 original + profile-control + parallel-control + 4 M1 cases − retired gmake-missing +5 M2 cases); zero failures, rc=0; assert named cases too",
+          "base_verdict": "Observed base 8 GREEN; enhanced count/names RED"
+        },
+        {
+          "id": "M1a fast gates",
+          "milestones": "each",
+          "command": "sh -n tools/timed_recipe_shell.sh; echo rc=$?; sh -n tools/suite_profile.sh; echo rc=$?; sh -n tools/test_suite_profile.sh; echo rc=$?; make python-guard; echo rc=$?; make uid-guard; echo rc=$?",
+          "expected": "Each rc=0; include sh -n on each later changed/new shell script in its milestone",
+          "base_verdict": "Observed three rc127 RED; policy gates GREEN"
+        },
+        {
+          "id": "AC7",
+          "command": ": \"${RUN_DIR:?controller sets completed rig clone directory}\"; sh tools/suite_profile.sh compare design_docs/planned/r1/rig-test-speed-data/before-gmake-1.tsv \"$RUN_DIR.profile/profile.tsv\"; echo rc=$?",
+          "expected": "missing=0 fewer=0 extra=<x>, rc=0; refuse differing closure hashes on every parallel run",
+          "base_verdict": "RED: tool and baseline absent",
+          "owner": "controller"
+        },
+        {
+          "id": "AC8",
+          "command": ": \"${RUN_DIR:?controller sets completed rig clone directory}\"; grep -c \"^godot cache writes outside .godot/tmp during P1: 0$\" \"$RUN_DIR.log\"; git -C \"$RUN_DIR\" status --porcelain | LC_ALL=C sort > .godot/tmp/after.status.txt; cmp .godot/tmp/after.status.txt design_docs/planned/r1/rig-test-speed-data/before-gmake-1.status.txt; echo rc=$?",
+          "expected": "1; cmp rc=0; status baseline is exactly five known translation paths (V35/V42), not a clean tree",
+          "base_verdict": "UNCERTIFIED: no P1 run or status evidence; not a base regression",
+          "owner": "controller"
+        },
+        {
+          "id": "AC9",
+          "command": "D=design_docs/planned/r1/rig-test-speed-data; sh tools/suite_profile.sh report \"$D\"/before-gmake-*.tsv -- \"$D\"/after-j6-*.tsv \"$D\"/after-j8-*.tsv; echo rc=$?",
+          "expected": "rc=0; GNU Make 4.4.1 only; load.tsv required; every sample <=5.0 or explicitly recorded common fallback median<=5.0/max<=8; >=3 comparable serial and >=3 comparable -j6 runs, one -j8; M2 median ratio<=0.5, M3<=0.35; at most two repeats per slot, exhaustion blocks landing",
+          "base_verdict": "RED: tool/data absent",
+          "owner": "controller"
+        },
+        {
+          "id": "AC10",
+          "command": "PATH=$PWD/runtime/bin:$PATH make test > .godot/tmp/mt.log 2>&1; echo rc=$?",
+          "expected": "rc=0; unchanged local serial suite; controller outside sandbox only",
+          "base_verdict": "NOT RUN; no base verdict claimed",
+          "owner": "controller"
+        },
+        {
+          "id": "AC11",
+          "command": ": \"${PR:?controller sets milestone PR number}\"; tools/rig_check.sh \"$PR\"",
+          "expected": "rig/full success on exact milestone PR head; three comparable successes for M2; baseline runs for M1b per plan",
+          "base_verdict": "NOT RUN; no base verdict claimed",
+          "owner": "controller"
+        },
+        {
+          "id": "M3-controls",
+          "command": "sh tools/test_suite_parallel.sh; echo rc=$?",
+          "expected": "zero failures; shard-counts/shard-partition/discovered-unlisted/godot-import-edge/replay-state-edge/import-once/import-new-run/held-open all exercised and mutation killed",
+          "base_verdict": "RED: control/subcommands absent",
+          "owner": "executor"
+        },
+        {
+          "id": "M3-no-python",
+          "command": "git diff --name-only origin/main...HEAD | grep -c \"\\.py$\"",
+          "expected": "0 matches (grep rc1); held Makefile/m45 now allowed only after AC14; other held files still forbidden",
+          "base_verdict": "GREEN: no Python diff",
+          "owner": "executor"
+        }
+      ],
+      "test_first": [
+        "Verify successful held PR lookups and AC14 before any edit; controller refreshes base and serial evidence.",
+        "Add eight fixture cases and run RED before production edits; AC15/16 unsupported-subcommand RED is only preflight.",
+        "Measure compile overhead/internal parallelism, start K=4, partition all 50 sim and sim/tools files, compare shard JSON/package/file union.",
+        "Declare edges/replay state ordering, run-keyed import stamp, remove only proven-unneeded exclusions; GREEN controls/drills and full controller performance gates."
+      ],
+      "control_cases": [
+        "shard-counts",
+        "shard-partition",
+        "discovered-unlisted",
+        "godot-import-edge",
+        "replay-state-edge",
+        "import-once",
+        "import-new-run",
+        "held-open"
+      ],
+      "guard_drills": {
+        "wrong-json-count": "shard-counts FAIL",
+        "duplicate-file": "shard-partition FAIL",
+        "omit-discovered-file": "discovered-unlisted FAIL",
+        "remove-godot-edge": "godot-import-edge FAIL",
+        "remove-replay-edge": "replay-state-edge FAIL",
+        "disable-stamp": "import-once FAIL",
+        "reuse-run-id": "import-new-run FAIL",
+        "fake-gh-open-or-error": "held-open FAIL; no real held-file edit"
+      },
+      "risks": [
+        "Shard compile amplification and internal parallelism are unmeasured; choose K from evidence.",
+        "sim-only file lists would drop 16 tool tests.",
+        "Raw AC7 target/count comparison may conflict with sim decomposition: preserve equivalent work and obtain design refinement if raw missing=0/fewer=0 cannot hold; never waive the invariant."
+      ],
+      "notes": [
+        "BLOCKED on D-129 and the exact held-file predicate plus M2 acceptance.",
+        "After closure changes, one refresh baseline detects drift but AC9 still requires >=3 comparable serial runs on the new closure.",
+        "Controller owns AILANG test --jobs DX request with measurements; no planner/executor message in this run."
+      ],
+      "files": [
+        "Makefile",
+        "mk/test-edges.mk",
+        "mk/m45.mk",
+        "tools/suite_lanes.txt",
+        "tools/suite_parallel.sh",
+        "tools/test_suite_parallel.sh",
+        "CHANGELOG.md",
+        "design_docs/planned/r1/rig-test-speed-report.md",
+        "design_docs/planned/r1/rig-test-speed-data/"
+      ],
+      "file_loc": {
+        "Makefile": 41,
+        "mk/test-edges.mk": 45,
+        "mk/m45.mk": 1,
+        "tools/suite_lanes.txt": 3,
+        "tools/suite_parallel.sh": 30,
+        "tools/test_suite_parallel.sh": 20,
+        "CHANGELOG.md": 4
+      },
+      "est_loc": 144,
+      "estimated_loc": 144,
+      "estimated_doc_loc": 20,
+      "estimated_minutes": 180,
+      "schedule": "Days 4-5 after held PRs clear: two coding sessions, refreshed baseline and controller stability/performance slots",
+      "forbidden_files": [
+        "mk/earth-link.mk",
+        "tools/import_keep.txt",
+        "tools/python-allowlist.txt",
+        "tools/python_guard.sh"
+      ],
+      "passes": false,
+      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX."
+    }
+  ],
+  "ci_gate_commands": [
+    "env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET -u RIG_CHECK_NESTED sh tools/test_rig_check.sh tools/rig_check.sh",
+    "sh -n tools/timed_recipe_shell.sh",
+    "sh -n tools/suite_profile.sh",
+    "sh -n tools/test_suite_profile.sh",
+    "sh -n tools/test_rig_check.sh",
+    "sh tools/test_suite_profile.sh",
+    "make python-guard",
+    "make uid-guard",
+    "make deps",
+    "make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang",
+    "make ci-fast",
+    "PATH=$PWD/runtime/bin:$PATH make test",
+    ": \"${PR:?controller sets milestone PR number}\"; tools/rig_check.sh \"$PR\""
+  ],
+  "definition_of_done": "M1a: AC1, enhanced AC4, syntax/policy/scope gates, hardened R/C and every supplemental guard mutation GREEN, all cases on both makes, no rig_check.sh or held edits. Controller reruns all gates outside sandbox, then rig/full plus fast tier and independent evaluator >=70 with zero blocking findings before marking passes true. Later milestones require explicit blockers cleared, their assigned ACs and data: >=3 comparable gmake before, >=3 after-j6 plus one -j8, AC7/8 on every parallel run, ratio <=0.5 M2 / <=0.35 M3; no test/assertion/duplicate removed. No executor commits. Landing per CLAUDE.md; no sandbox socket/GPU/launchctl verdict can certify success.",
+  "risks": [
+    "OQ1-OQ4 are unresolved until D-129 RESOLVED; planner cannot assume defaults authorized.",
+    "M1a 248 LOC budget is tight; no test may be deleted to meet it.",
+    "Load variation and retries can consume many rig hours; exhaustion blocks landing.",
+    "Held PRs may alter closure, invalidating baseline and requiring >=3 new comparable serial runs.",
+    "M3 sim decomposition and raw AC7 count invariant must be reconciled without weakening coverage."
+  ],
+  "evaluations": [
+
+  ],
+  "notes": [
+    "Exactly two planner outputs; no tool implementation, git writes, full suite, unsafe make database dump, or long target run.",
+    "M1a in_progress; M1b BLOCKED: D-129 RESOLVED; M2 BLOCKED: D-129 plus M1b baseline; M3 BLOCKED: D-129 plus held-file predicate and M2.",
+    "Controller files D-129 and owns executor handoff, external gates, status/pass advancement and commits.",
+    "Ignored hardened drill saved during execution only; pristine missing-source rc2 preflight is separate from test-first control RED rc1 and from killed mutants.",
+    "ci_gate_commands entries make deps/lore-import/ci-fast/test and real rig_check are controller-only outside-sandbox gates, not planner or executor instructions; plan schedules them per milestone. No target is run by JSON validation."
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "M1a",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
+    },
+    {
+      "milestone": "M1b",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
+    },
+    {
+      "milestone": "M2",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
+    },
+    {
+      "milestone": "M3",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": null,
+    "estimated_total_loc": 696,
+    "estimated_days": 5,
+    "basis": "Recent watchdog 17 lines/45-60 minutes is too small to extrapolate LOC/day; estimates are session budgets with controller rig time additional."
+  }
+}
