@@ -200,6 +200,40 @@ Streams below 2.16 carry no `earth` section and stay byte-identical; the replay 
   - outbound messages draw as light-fronts on the map (EL4).
 - **Numbers only from the wire** (D-21): every digit on the panes binds to an `earth.*` field. A new target `make display-audit-comms` (beside `display-audit-interlude` and `display-audit-crew`, and a prerequisite of `make test`) audits the new panes.
 
+### EL3b. The comms station, visual (Mark 2026-10-28: "visual first, words last")
+
+Mark on the EL3 panes: "the comms station is boring - this is the connection of the crew to home it should be a wash of images, text, emotions and feelings, and a good visual UI not lots of text". Then: "we can represent the earth updates with a stillness or fast flowing images of a jumbled video feed", and "we can have fun generating images for the feed based off of latest events on earth". That set a standing order (design-decisions 2026-10-28, "Visual First, Words Last"). Visual concept: [the mock-up artifact](https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ), version 3. EL3's sentence panes stay as the words layer behind a Details tap.
+
+What the player sees at a glance, and feels:
+
+| Element | Shows | Driven by |
+|---|---|---|
+| **Earth's feed** (the centre, 16:9) | Home as of the newest light, one frame per moment of Earth's history. It plays at the Earth rate: near-still flying away near c, real time at rest, a jumbled torrent turning for home | `earth.feed` (below): the frame key advances with t_e, so the playback rate *is* D times the game's pacing. Godot never computes a rate |
+| Doppler tint | The feed warms (receding) or cools (approaching) by the signal's real shift | `earth.rate`, through data thresholds. A stylized indicator, not a spectral render: gate 2 asserts the RS-26..RS-29 D values select the documented tint bands |
+| Static and the ring | Out of beam, the last beamed frame (`last_beam_t`) freezes under static. A ring fills until Earth's voice arrives | `earth.in_beam`, `earth.out.due_in_years`, and the window or plan span |
+| Live tag, corner clock | "live" inside the Solar System; otherwise the Earth clock in the newest light and its age | `earth.at_home`, `newest_light_year`, `light_age_years` (bound) |
+| Twin clocks | The ship's hand and Earth's hand, Earth's turning D times as fast (a blur past a cap) | `earth.rate` |
+| The crew at the console | Faces with feelings that follow home and the beam: glad, longing, cut off, waiting, home! | `crew_core` emotions (the R2 medic emotion work). Portrait variants per member and feeling (D-7 sets; today only the medic has them) |
+| The exchange as light | A small spacetime strip: Earth's line, the ship's, each plan travelling home at light speed, Earth's reply, the wait at the port | `earth.messages` (sent, heard, reply), `t` and \|p\| |
+| Words layer | EL3's panes, unchanged, behind Details | as EL3 |
+
+**The feed's frames come from Earth's events.** The sim generates them deterministically, and Godot only shows them.
+- `earth.feed = {era, frame, event, variant}`:
+  - `era` is `homeTier16` of Earth years in the newest light (the R2-HOME-TIERS ladder, 16 eras from "launch" to "aeons");
+  - `frame = floor(t_e / feedBinYears)`, with one bin per Earth week;
+  - `event` is drawn from the era's event catalogue (`data/feed/events.json`) by `mix(seed, frame)`;
+  - `variant` picks among that event's pictures.
+- Same seed, same feed, the same as the home pictures today. Because the frame key moves with t_e, the stillness and the torrent are both the physics.
+- **The event catalogue** is in-world Earth history per era: family moments, a niece's first day at school, elections, storms, festivals, launch anniversaries, cities and coasts changing, and later strangers and new languages. It is written in the home-tiers voice, never judging (pillar 2), and is consistent with the news templates the Archive reads.
+- **Images: a shipped library, generated.**
+  - About 6 events × 2 variants for each of the 16 eras (about 190 pictures).
+  - Generated through the established home-art route: Codex imagegen, the home-tier style reference, no text or digits in frame, every picture inspected at 1:1 (as `data/interlude/home/generation_notes.md`), or through the AI lane's image slot (`gemini-2.5-flash-image`, $0.039 a call, unverified).
+  - Prompts come from the catalogue rows. Each picture is pinned by sha256, its master is in the public bucket (D-18), and it is fetched by `make feed-assets`.
+  - The 28 home-tier pictures seed the library as each era's establishing frame.
+- **Live frames (stretch, AI on).** While the AI indicator is on, the AI lane can also paint frames from the actual news reaching the ship (its accepted text), cached by key and spend-capped. They fall back to the library, so the feed never waits on the network.
+
+Out of scope here: composing messages home (S-track), voices and audio from Earth (a later sound pass).
+
 ### EL4. Earth's beams on the galaxy map (F6)
 
 A new 2D overlay layer `ui/earth_beams.gd`. It follows `ui/ism_layer.gd`'s pattern: `draw(overlay, camera, to_world)`, projected with `unproject_position` and skipped behind the camera.
@@ -264,6 +298,7 @@ Every new test is wired into `make test`, so `rig/full` runs it:
 | EL1 | `sunholo/observe` 0.1.0: the geometry, the tests, publish; the sim pin | 250 | EL0 |
 | EL2 | `sim/earth_link.ail`, the World record, the commit hook, protocol 2.16, the tests, the strict and parity entries, the bridge constant | 400 | EL1 |
 | EL3 | The comms station: the console, the Listen and Exchange-log panes, the copy data, `tests/test_comms_station.gd`, display-audit rows | 330 | EL2 |
+| EL3b | The visual comms station: `earth.feed` in the sim, the feed with tint, static and ring, twin clocks, the crew's faces, the light strip, the event catalogue and the generated feed library | 650 + art | EL3 |
 | EL4 | `ui/earth_beams.gd`, the map toggle, the plan preview, `tests/test_earth_beams.gd` | 270 | EL2 |
 | EL5 | `physics/observe.gd` mirror, `test_physics.gd` rows, `G-EL-1`, `make capture-earth-link`, the report | 100 | EL3, EL4 |
 

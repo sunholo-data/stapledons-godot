@@ -198,6 +198,24 @@
       "notes": "Comms station on console_decision_2 (STATIONS comms, ACTIONS open/listen/log, ShipControls.CONSOLE, HUD WALK_TO); ui/comms_panel.gd (Listen: newest light + age or the at-home line, Earth rate D with data-driven phrase bands, in beam or the sim's reason, silence line; Exchange log: one row per message) with every line a ComposedBinding on earth.* (data/ui/comms_copy.json); idle screen bound. Sessions on SimBridge.EARTH_MINOR (ship demo, main map route, loading-jump prefetch; test_bh_hud, test_ship_ui). Sim additions for the panes (no GDScript arithmetic): out {reason, port_id, due_t, due_in_years}, last_beam_t (noteBeam each tick), rate_inverse, at_home, port_id and *_year on messages/beam/stale/pending, reply_t. Model fix found by running the station in the game: the ship starts at Earth (1 AU), so home is the Solar System (120 AU, heliopause): in beam there, a plan from home heard at once and covered, its beam carried from sentT - |from| (beamFrom); design doc amended. Gates: make comms-station-test 37/0 (in make ui); make display-audit-comms (tests/playthrough_comms.json, 1122 samples, listen in beam / not_heard / log with 2 rows, new=0 failures=0; in ship-demo-ci) plus a comms-field negative control (32 controls); earthLinkVm on strict VM and interpreter (checkComms, checkHomeStart; 4 mutants killed); ailang test --package 566/566; make strict, parity, replay 11/11; ship-console-test 135/0. Also refreshed the session-audit codex mirrors for the two Archive entries (missed in e7dbc359)."
     },
     {
+      "id": "EL3b",
+      "description": "The visual comms station (Mark 2026-10-28, standing order: visual first, words last): earth.feed in the sim (era, frame by t_e, event, variant), Earth's feed playing at D (stillness to torrent), Doppler tint, static and the ring out of beam, twin clocks, the crew's faces and feelings, the exchange as light; a generated feed library from Earth's events; EL3's words behind Details",
+      "estimated_loc": 650,
+      "dependencies": [
+        "EL3"
+      ],
+      "acceptance_criteria": [
+        "earthFeedVm: same seed same feed; era = homeTier16(t_e); frame count over a leg = t_e advance / feedBinYears (still flying away, torrent flying home)",
+        "make feed-art-check: the event catalogue and the pinned feed pictures agree; every picture inspected at 1:1 for text or digits",
+        "tests/test_earth_feed.gd: tint and jumble bands chosen by D at RS-26..RS-29; static over the last beamed frame when out of beam; the frame shown is earth.feed",
+        "make display-audit-comms: every digit on the station an earth.* binding; Mark's render review of the four moments"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Planned 2026-10-28; awaiting Mark's approval of the art route and spend (about 190 pictures; gemini-2.5-flash-image $0.039 a call unverified, or Codex imagegen as for the home tiers) and the crew-portrait scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v3)."
+    },
+    {
       "id": "EL4",
       "description": "ui/earth_beams.gd overlay on the galaxy map: heard beams, plans in flight with their light-fronts, stale beams, link window bars, silence, plan preview from the sim; filter toggle on by default",
       "estimated_loc": 270,

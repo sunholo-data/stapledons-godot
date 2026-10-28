@@ -1,7 +1,7 @@
 # Sprint R3-EARTH-LINK: plan
 
 **Design:** [earth-link.md](earth-link.md) (R3 S1, K1, F6).
-**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅, EL3 ✅; EL4 next.
+**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅, EL3 ✅ (words layer); EL3b (the visual station) planned, awaiting approval; EL4 next.
 **Progress file:** `.ailang/state/sprints/sprint_R3-EARTH-LINK.json`
 **Branches:**
 - this plan: `design/r3-earth-link`;
@@ -108,6 +108,44 @@ New `.ail` modules: `packages/observe/lightcone.ail` (+ tests), `sim/earth_link.
   - the out-of-beam reason strings come from sim fields;
   - the console opens from the deck.
 - **Acceptance:** design AC9 (`make display-audit-comms`), and `tests/test_comms_station.gd` green in `make ui`.
+
+### EL3b. The comms station, visual (Mark 2026-10-28), about 650 LOC plus art
+
+Design EL3b. Visual concept: the mock-up artifact, version 3. Planned 2026-10-28, **awaiting Mark's approval** (the art spend and the crew-portrait scope).
+
+- **EL3b.1 `earth.feed` in the sim** (about 150 LOC):
+  - `sim/earth_feed.ail`: `{era, frame, event, variant}` from t_e (`homeTier16`, a weekly `feedBinYears`, `mix(seed, frame)`), with `data/feed/events.json` as the per-era catalogue (a pure AILANG table, `sim/data/feed_events.ail`);
+  - wire 2.16 `earth.feed`, plus `earthFeedVm` (strict VM equals the interpreter).
+  - **Tests:**
+    - determinism: same seed, same feed;
+    - the era follows the tier ladder;
+    - over one cruise leg the frame count is the closed form (t_e advance / bin), small flying away and large flying home: the stillness and the torrent are the physics.
+- **EL3b.2 The feed library** (art, attended):
+  - generate about 190 pictures (16 eras × about 6 events × 2) by the home-tier route;
+  - inspect each at 1:1 for text or digit marks;
+  - `data/feed/SOURCES`, `generation_notes.md`, sha256 pins, masters in the public bucket;
+  - `make feed-assets` (fetch) and `make feed-art-check` (catalogue = files), with the 28 home-tier pictures as each era's establishing frame.
+  - **Pause point:** Mark reviews the pictures.
+- **EL3b.3 The feed in Godot** (about 250 LOC):
+  - `ui/earth_feed.gd`: frames by `earth.feed`, the jumble and tint bands in `data/ui/comms_feed.json` chosen by D (never computed), static over the frozen `last_beam_t` frame, the ring, the live tag and the corner clock bound;
+  - the twin clocks.
+  - **Tests and gates:**
+    - `tests/test_earth_feed.gd` covers the bands at the RS-26..RS-29 values, static when out of beam, and the frame shown equals `earth.feed`;
+    - display audit: every digit bound;
+    - gate 2: `test_physics.gd` asserts the tint bands at RS-26..RS-29.
+- **EL3b.4 The crew at the console** (about 120 LOC plus portraits):
+  - faces with feelings from `crew_core` emotions, following the beam and home news;
+  - portrait variants per member and feeling (D-7 sets);
+  - until those exist, the medic's variants and the others' neutral faces with the feeling chip.
+- **EL3b.5 The exchange as light, layout, renders** (about 130 LOC):
+  - the spacetime strip from `earth.messages`;
+  - the station layout, with EL3's words behind Details;
+  - `make capture-earth-link` gains the station at the four moments.
+  - **Pause point:** Mark's render review.
+- **Acceptance:**
+  - design EL3b's table, each row a test or an audit;
+  - `make comms-station-test`, `make display-audit-comms`, `make feed-art-check`;
+  - the renders reviewed by Mark.
 
 ### EL4. Earth's beams on the map (F6), about 270 LOC (about 170 code, 100 tests)
 
