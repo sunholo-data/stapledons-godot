@@ -119,7 +119,7 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28
   - **Tests:**
     - determinism: same seed, same feed;
     - the mix: over many weeks each kind's share matches `mix.json`, and painted live stays the minority;
-    - `context` (era words by `homeTier16(t_e)`, and only the plans with `heard_t ≤ t_e`): Earth's pictures never know what Earth had not yet heard;
+    - `context` holds only Earth-side fields (the era words by `homeTier16(t_e)`, the years): no ship, plan, port or crew field, since the feed is news from home, outside the bubble;
     - over one cruise leg the frame count is the closed form (t_e advance / bin), small flying away and large flying home: the stillness and the torrent are the physics.
 - **EL3b.2 The feed library** (art, attended):
   - generate about 100 pictures (about 6 categories × 8 events × 2) by the home-tier route;
@@ -139,10 +139,10 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28
   - portrait variants per member and feeling (D-7 sets);
   - until those exist, the medic's variants and the others' neutral faces with the feeling chip.
 - **EL3b.6 Live frames each time the player looks** (about 200 LOC; Mark 2026-10-28):
-  - a `feed` image kind in the AI lane: `ai/prompt.ail` `feedPrompt` from `earth.feed.context` (the event, the era, the voyage as Earth heard it; no text or digits), keyed by (seed, week, event, era);
+  - a `feed` image kind in the AI lane: `ai/prompt.ail` `feedPrompt` from `earth.feed.context` (the week's Earth event and the era only, nothing from the ship; no text or digits), keyed by (seed, week, event, era);
   - `ui/earth_feed.gd` asks for the next few weeks when the station opens and while the feed is shown, with the player's keys and under the spend ceiling, and shows the library frame until the painted one arrives.
   - the free kinds (news cards from the news templates or accepted AI text, home snapshots, the procedural sky over home) in `ui/earth_feed.gd`;
-  - **Tests:** with stub images: a look requests at most N frames, and only for painted-live weeks; a painted-live week that cannot paint shows the library frame; a revisit replays from the cache with no new spend; AI off, no key, or a failed call shows the library frame at once; a prompt built from a context that has not heard a plan never names it.
+  - **Tests:** with stub images: a look requests at most N frames, and only for painted-live weeks; a painted-live week that cannot paint shows the library frame; a revisit replays from the cache with no new spend; AI off, no key, or a failed call shows the library frame at once; no prompt carries a ship, plan, port or crew word.
 - **EL3b.5 The exchange as light, layout, renders** (about 130 LOC):
   - the spacetime strip from `earth.messages`;
   - the station layout, with EL3's words behind Details;
