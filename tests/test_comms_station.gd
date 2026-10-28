@@ -64,19 +64,16 @@ func texts(pane: String, view: Dictionary) -> Array:
 	return out
 
 
-## Every binding under `root`: a ComposedBinding reading earth.* fields only, and nothing unbound.
+## Every binding under `root` reads earth.* fields only, and nothing with a digit is unbound.
 func earth_bound(root: Node) -> bool:
 	var labels := root.find_children("*", "Label", true, false)
 	if labels.is_empty() or not DisplayBinding.audit(root).is_empty():
 		return false
 	for l: Label in labels:
-		if l.get_parent() != (root as CommsPanel).lines:
-			continue
-		if not l is ComposedBinding:
-			return false
-		for p: Variant in (l as ComposedBinding).parts:
-			if p is Array and not str(p[0]).begins_with("earth."):
-				return false
+		if l is ComposedBinding:
+			for p: Variant in (l as ComposedBinding).parts:
+				if p is Array and not str(p[0]).begins_with("earth."):
+					return false
 	return true
 
 
@@ -141,7 +138,13 @@ func test_console() -> void:
 	check("its idle screen, bound (%s)" % c.screen_text("comms"), c.screen_text("comms") == "Comms\nEarth, close by" and (c.screens.comms.label as ComposedBinding).text == "Comms\nEarth, close by")
 	check("use() refuses it out of reach", not c.use("comms", "open") and c.focused == "")
 	c.go_to("comms")
-	check("it opens from the deck", c.use("comms", "open") and c.focused == "comms" and c.panel.visible and c.comms_panel != null and c.comms_panel.get_parent() == c.panel_body)
+	check("it opens from the deck", c.use("comms", "open") and c.focused == "comms" and c.panel.visible and c.comms_station != null and c.comms_station.get_parent() == c.panel_body)
+	step(demo, 0.1)
+	var st: CommsStation = c.comms_station
+	check("visual first: the feed and the clocks show, the words wait behind Details", st.feed.is_visible_in_tree() and st.feed.picture.texture != null and st.clocks.is_visible_in_tree() and not st.words.is_visible_in_tree())
+	check("at Earth the feed is live, in beam, no static", st.feed.signal_tag.text == "● live" and not st.feed.static_rect.visible and not st.feed.ring.visible)
+	check("AC9 the feed and clocks: every label bound to earth.*", earth_bound(st))
+	check("Listen opens the words layer", c.use("comms", "listen") and st.words.is_visible_in_tree())
 	step(demo, 0.1)
 	var p: CommsPanel = c.comms_panel
 	check("Listen at Earth: home, rate, beam (%s)" % [p.lines.get_children().map(func(l: Label) -> String: return l.text)],
@@ -162,6 +165,7 @@ func test_console() -> void:
 	step(demo, 0.1)
 	var row := c.comms_panel.lines.get_child(0) as ComposedBinding
 	check("the pane chosen survives stepping back", c.comms_panel.pane == "log")
+	check("the feed's week is earth.feed's (%s)" % c.comms_station.feed.shown_key, c.comms_station.feed.shown_key == EarthFeed.source_of(demo.journey_sim.world.earth.feed))
 	check("one row, bound to earth.messages.0 (%s)" % row.text, c.comms_panel.lines.get_child_count() == 1 and row.parts.filter(func(x: Variant) -> bool: return x is Array).all(func(x: Array) -> bool: return str(x[0]).begins_with("earth.messages.0.")) and row.text.begins_with("Plan "))
 	check("AC9 after the commit: every label bound to earth.*", earth_bound(c.comms_panel))
 	c.use("comms", "listen")

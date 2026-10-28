@@ -19,3 +19,25 @@ display-audit-comms: import display-audit-controls ## R3-EARTH-LINK AC9: the com
 	@mkdir -p $(SCRATCH)/display-audit/comms
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(COMMS_OUT)/display_samples.ndjson comms $(DISPLAY_KNOWN) > $(SCRATCH)/display-audit/comms/display-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|display-audit)' $(SCRATCH)/display-audit/comms/display-audit.log; test $$rc = 0 && if grep -q 'SCRIPT ERROR:' $(SCRATCH)/display-audit/comms/display-audit.log; then echo "display audit $(SCRATCH)/display-audit/comms/display-audit.log script error"; exit 1; fi && grep -q '^display-audit: .* new=0 .* failures=0$$' $(SCRATCH)/display-audit/comms/display-audit.log && grep -Eq '^ac4: MET \(5 accepted by D-77/D-78\)$$' $(SCRATCH)/display-audit/comms/display-audit.log
 ship-demo-ci: display-audit-comms
+
+# EL3b.3: Earth's feed at the comms station (tests/test_earth_feed.gd): the week's picture from the
+# sim's earth.feed, the band by D, the frozen last beamed week under static, the ring, the clocks.
+.PHONY: earth-feed-test
+earth-feed-test: import ## R3-EARTH-LINK EL3b: Earth's feed (picture by earth.feed, band by D, static and ring out of beam, clocks), every number bound
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_earth_feed.gd > $(SCRATCH)/earth-feed.log 2>&1; rc=$$?; grep -E '^(FAIL|earth-feed)' $(SCRATCH)/earth-feed.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-feed.log && grep -q '^earth-feed: [0-9]* passed, 0 failures$$' $(SCRATCH)/earth-feed.log
+ui: earth-feed-test
+
+# EL3b.2: the feed's picture library. The sim's catalogue (sim/data/feed_events.ail), events.json and
+# data/feed/SOURCES name the same events, and every shipped picture matches its pin. In make test.
+.PHONY: feed-art-check
+feed-art-check: ## R3-EARTH-LINK EL3b: catalogue = events.json = SOURCES, and every feed picture matches its sha256 pin
+	@set -e; sim=$$($(AILANG) run --quiet --package-dir sim --entry feedIdsText --args-json 0 sim/data/feed_events.ail | tr -d '"' | sed 's/\\n/\n/g' | sort); \
+	json=$$(jq -r '.events[].id' data/feed/events.json | sort); \
+	src=$$(sed -nE 's/^([a-z0-9-]+)_v[0-9]+\.webp sha256 .*/\1/p' data/feed/SOURCES | sort -u); \
+	[ "$$sim" = "$$json" ] || { echo "feed-art-check: FAIL: events.json ids differ from sim/data/feed_events.ail"; exit 1; }; \
+	[ "$$sim" = "$$src" ] || { echo "feed-art-check: FAIL: data/feed/SOURCES does not picture every catalogue event"; exit 1; }; \
+	sed -nE 's/^([a-z0-9-]+_v[0-9]+\.webp) sha256 ([0-9a-f]{64}) .*/\2  \1/p' data/feed/SOURCES > $(SCRATCH)/feed-pins.txt; \
+	(cd data/feed/pictures && shasum -a 256 -c --quiet $(abspath $(SCRATCH))/feed-pins.txt) || { echo "feed-art-check: FAIL: a picture differs from its pin"; exit 1; }; \
+	echo "feed-art-check: ok ($$(echo "$$sim" | wc -l | tr -d ' ') events, $$(wc -l < $(SCRATCH)/feed-pins.txt | tr -d ' ') pictures)"
+test: feed-art-check

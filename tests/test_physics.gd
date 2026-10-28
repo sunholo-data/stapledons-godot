@@ -727,6 +727,22 @@ func test_sky_meter() -> void:
 ## Every game script compiles. A parse error in one class (e.g. two PRs that each add the
 ## same `var`, merged cleanly by git: #101 + #102 both added SimBridge.want_minor) otherwise
 ## surfaces only as a distant "main.gd loads" failure, and Godot exits 0 on it.
+## R3-EARTH-LINK EL3b.3 (gate 2): the comms feed's look is chosen by the Earth rate D alone
+## (data/ui/comms_feed.json). At the spec's check values the stillness and the torrent land in
+## their bands: RS-27 7.0711e-4 still, RS-26 0.070888 slow, rest 1 real, RS-28 14.107 fast,
+## RS-29 1414.2 torrent; the tint is warm (receding) below 1 and cool (approaching) above.
+func test_earth_feed_bands() -> void:
+	var want := [[0.00070711, "still"], [0.070888, "slow"], [1.0, "real"], [14.107, "fast"], [1414.2, "torrent"]]
+	for w: Array in want:
+		var b: Dictionary = EarthFeed.band_for(float(w[0]))
+		check("EL3b feed band at D = %s is %s" % [w[0], w[1]], 1.0 if str(b.get("name", "")) == w[1] else 0.0, 1.0, 0.0)
+	var warm := Color(str(EarthFeed.band_for(0.070888).tint))
+	var cool := Color(str(EarthFeed.band_for(14.107).tint))
+	check("EL3b receding tint is warm (red over blue)", 1.0 if warm.r > warm.b else 0.0, 1.0, 0.0)
+	check("EL3b approaching tint is cool (blue over red)", 1.0 if cool.b > cool.r else 0.0, 1.0, 0.0)
+	check("EL3b the torrent whirls Earth's clock, the still band does not", 1.0 if EarthFeed.band_for(1414.2).whirl and not EarthFeed.band_for(0.00070711).whirl else 0.0, 1.0, 0.0)
+
+
 func test_scripts_compile() -> void:
 	print("Game scripts compile (load + can_instantiate)")
 	for dir in ["res://bridge", "res://interior", "res://sky", "res://ui", "res://ui/conversation", "res://ui/settings", "res://physics"]:
@@ -1532,6 +1548,7 @@ func _init() -> void:
 	test_sideways_darker()
 	test_angular_psf()
 	test_cmb()
+	test_earth_feed_bands()
 	test_scripts_compile()
 	test_sky_meter()
 	test_forward_glow()

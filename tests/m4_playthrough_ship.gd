@@ -266,12 +266,14 @@ func crew_row() -> Dictionary:
 
 ## R3-EARTH-LINK EL3 (AC9): the comms station in the sample row: the pane shown, the beam state, the rows.
 func comms_row() -> Dictionary:
-	var p: CommsPanel = demo.consoles.comms_panel
-	if p == null or not p.is_visible_in_tree(): return {}
+	var st: CommsStation = demo.consoles.comms_station
+	if st == null or not st.is_visible_in_tree(): return {}
+	var p: CommsPanel = st.words
 	var e: Variant = demo.ship_hud._last_view.get("earth")
 	var o: Variant = e.get("out") if e is Dictionary else null
-	return {"pane": p.pane, "lines": p.lines.get_child_count(), "in_beam": e.get("in_beam") if e is Dictionary else null,
-		"reason": str(o.get("reason", "")) if o is Dictionary else ""}
+	return {"pane": p.pane if p.is_visible_in_tree() else "feed", "lines": p.lines.get_child_count() if p.is_visible_in_tree() else 0,
+		"in_beam": e.get("in_beam") if e is Dictionary else null, "reason": str(o.get("reason", "")) if o is Dictionary else "",
+		"feed": st.feed.is_visible_in_tree() and st.feed.picture.texture != null, "source": st.feed.shown_key}
 
 
 ## {"crew": [actions], "tick": bool}: press each action on the open Crew console (as the captain's

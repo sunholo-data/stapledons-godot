@@ -1,0 +1,20 @@
+{
+  "about": "R3-EARTH-LINK EL3b.3 (design r3/earth-link.md EL3b): how Earth's feed looks at each Earth rate. The band is chosen by earth.rate (D) alone: the first band whose min <= D (and D < max, when max is given). Nothing is computed from D: the feed's speed is the sim's earth.feed frame moving with the newest light, and the band only styles it. jumble 0..1: ghosts of the weeks that flicked past; drift: a near-still frame breathes slowly; tint: the Doppler shift as a stylized warm (receding) or cool (approaching) wash, an indicator and not a spectral render (gate 2 asserts the bands at RS-26..RS-29 in tests/test_physics.gd); whirl: Earth's clock hand blurs. Calibrated on the RS values: 7.0711e-4 (top speed, astern) still, 0.070888 (0.99c astern) slow, 1 real, 14.107 (0.99c ahead) fast, 1414.2 (top speed, ahead) torrent.",
+  "bands": [
+    {"name": "still", "max": 0.01, "jumble": 0.0, "drift": true, "tint": "#F2967E", "tint_alpha": 0.24, "whirl": false},
+    {"name": "slow", "min": 0.01, "max": 0.5, "jumble": 0.0, "drift": true, "tint": "#F2967E", "tint_alpha": 0.14, "whirl": false},
+    {"name": "real", "min": 0.5, "max": 2.0, "jumble": 0.0, "drift": false, "tint": "", "tint_alpha": 0.0, "whirl": false},
+    {"name": "fast", "min": 2.0, "max": 50.0, "jumble": 0.45, "drift": false, "tint": "#7F9CFF", "tint_alpha": 0.14, "whirl": false},
+    {"name": "torrent", "min": 50.0, "jumble": 0.9, "drift": false, "tint": "#7F9CFF", "tint_alpha": 0.24, "whirl": true}
+  ],
+  "words": {
+    "live": "live",
+    "no_signal": "no signal",
+    "last_week": " · the last week that got through",
+    "sky": "the sky over home",
+    "until_voice": "until Earth's voice",
+    "ship": "ship",
+    "earth": "Earth",
+    "details": "Details"
+  }
+}

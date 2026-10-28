@@ -81,7 +81,8 @@ var panel_body := VBoxContainer.new()
 ## the roster board and the two-panel call (ui/crew_console.gd). It persists across refreshes, so a
 ## pending confirm and an open call survive them.
 var crew_console: CrewConsole
-var comms_panel: CommsPanel ## R3-EARTH-LINK EL3: kept across refreshes, so the chosen pane survives
+var comms_station: CommsStation ## R3-EARTH-LINK EL3b: kept across refreshes and visits, so the feed and the chosen pane survive
+var comms_panel: CommsPanel ## the station's words layer (EL3's Listen pane and Exchange log)
 var crew_summary: Label ## the Voyage console's one-line crew summary (crew-work W1)
 var _crew_sim: SimBridge
 var step_back := Button.new()
@@ -328,7 +329,7 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 				news_panel.close(); legacy_screen.visible = false; answer_panel.visible = false
 			return true
 		["comms", "listen"], ["comms", "log"]:
-			_comms().show_pane(action)
+			_comms().show_words(action)
 			return true
 		["voyage", "begin"]:
 			return demo.start_solar_departure()
@@ -661,6 +662,8 @@ func advance(dt: float) -> void:
 	if archive_ask.check_timeout():
 		_show_answer()
 	_advance_walk(dt)
+	if focused == "comms" and comms_station != null and comms_station.is_inside_tree():
+		comms_station.advance(dt)
 	if _confirm.get("holding", false):
 		_confirm.held_s += dt
 		_set_confirm_progress(minf(1.0, _confirm.held_s / HOLD_S))
@@ -920,7 +923,7 @@ func _close_panel(id: String) -> void:
 	panel.visible = false
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != comms_panel: # kept, so the comms pane chosen survives stepping back
+		if c != comms_station: # kept, so the feed and the pane chosen survive stepping back
 			c.queue_free()
 	if id == "navigation":
 		demo.close_navigation()
@@ -1016,7 +1019,7 @@ func _refresh_panel() -> void:
 		return
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != crew_console and c != comms_panel: # the Crew console persists, so a pending confirm and an open call survive a refresh
+		if c != crew_console and c != comms_station: # the Crew console persists, so a pending confirm and an open call survive a refresh
 			c.queue_free()
 	_cancel_confirm()
 	match focused:
@@ -1132,39 +1135,35 @@ func _on_crew_step(events: Array) -> void:
 		crew_summary.text = crew_summary_text(_crew_sim.crew)
 
 
-## R3-EARTH-LINK EL3 (K1): the comms station, Earth only: the Listen pane and the Exchange log.
-func _comms() -> CommsPanel:
-	if comms_panel == null:
-		comms_panel = CommsPanel.new()
-		comms_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	return comms_panel
+## R3-EARTH-LINK EL3b (K1; Mark 2026-10-28, "visual first, words last"): the comms station, Earth
+## only: Earth's feed and the twin clocks, with EL3's Listen pane and Exchange log behind Details.
+func _comms() -> CommsStation:
+	if comms_station == null:
+		comms_station = CommsStation.new()
+		comms_station.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		comms_station.pane_requested.connect(func(p: String) -> void: use("comms", p))
+		comms_panel = comms_station.words
+	return comms_station
 
 
 func _exit_tree() -> void:
-	if comms_panel != null and not comms_panel.is_inside_tree(): # kept out of the tree between visits
-		comms_panel.free()
+	if comms_station != null and not comms_station.is_inside_tree(): # kept out of the tree between visits
+		comms_station.free()
+		comms_station = null
 		comms_panel = null
 
 
 func _comms_panel() -> void:
 	panel_title.text = CommsPanel.copy().title
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	panel_body.add_child(row)
-	for p: String in CommsPanel.PANES:
-		var b := Button.new(); b.text = CommsPanel.copy().panes[p]; b.name = "Comms_" + p
-		b.toggle_mode = true; b.button_pressed = _comms().pane == p; b.focus_mode = Control.FOCUS_NONE
-		b.pressed.connect(func() -> void: use("comms", p))
-		row.add_child(b)
 	panel_body.add_child(_comms())
-	comms_panel.refresh(demo.hud_view())
+	comms_station.refresh(demo.hud_view())
 
 
-## Every presented frame (the demo's _update_hud): the open comms panes from the frame's HUD view,
-## the view the display audit replays.
+## Every presented frame (the demo's _update_hud): the station from the frame's HUD view, the view
+## the display audit replays.
 func refresh_view(view: Dictionary) -> void:
-	if focused == "comms" and comms_panel != null and comms_panel.get_parent() == panel_body:
-		comms_panel.refresh(view)
+	if focused == "comms" and comms_station != null and comms_station.get_parent() == panel_body:
+		comms_station.refresh(view)
 
 
 func _archive_panel() -> void:
