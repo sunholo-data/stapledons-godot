@@ -259,16 +259,16 @@ pure func checkHomeStart() -> bool {
   let g = { planId: 1, from: e, port: elV(40.0, 0.0, 0.0), t0: 0.0, legT: 40.0, flying: true };
   let p = elV(au + 0.999999, 0.0, 0.0);
   let m = match l.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
-  let ev = earthView(l, 1.0, p, elV(0.999999, 0.0, 0.0), elV(1.0, 0.0, 0.0), rapidityOfOneMinusBeta(0.000001), Some(g));
+  let ev = earthView(l, 5, 1.0, p, elV(0.999999, 0.0, 0.0), elV(1.0, 0.0, 0.0), rapidityOfOneMinusBeta(0.000001), Some(g));
   -- between the Sun and Earth, flying away from Earth (towards the Sun) at 0.99c: Earth recedes, e^-phi
-  let mid = earthView(emptyLink(), 0.0, elV(au / 2.0, 0.0, 0.0), elV(0.0 - au / 2.0, 0.0, 0.0), elV(-1.0, 0.0, 0.0), phi099(), None);
+  let mid = earthView(emptyLink(), 5, 0.0, elV(au / 2.0, 0.0, 0.0), elV(0.0 - au / 2.0, 0.0, 0.0), elV(-1.0, 0.0, 0.0), phi099(), None);
   elAll([
     -- at Earth before any commit, and anywhere inside 120 AU: in beam; outside it, with nothing heard: out
     inBeam(emptyLink(), 0.0, e, None), inBeam(emptyLink(), 0.0, elV(0.0, 100.0 * au, 0.0), None), !inBeam(emptyLink(), 1.0, elV(0.0, 130.0 * au, 0.0), None),
-    elNear(homeRadiusLy(), 120.0 * au, 0.0000000001), (earthView(emptyLink(), 0.0, e, elV(0.0, 0.0, 0.0), elV(0.0, 0.0, 0.0), 0.0, None)).atHome,
+    elNear(homeRadiusLy(), 120.0 * au, 0.0000000001), (earthView(emptyLink(), 5, 0.0, e, elV(0.0, 0.0, 0.0), elV(0.0, 0.0, 0.0), 0.0, None)).atHome,
     elRel(mid.rate, exp(0.0 - phi099()), 0.000000001), elRel(ev.rate, exp(0.0 - rapidityOfOneMinusBeta(0.000001)), 0.000000001),
     -- a plan from home is heard at once
-    m.heardT == 0.0, length((earthView(l, 0.0, e, elV(0.0, 0.0, 0.0), elV(1.0, 0.0, 0.0), 0.0, Some(g))).pending) == 0,
+    m.heardT == 0.0, length((earthView(l, 5, 0.0, e, elV(0.0, 0.0, 0.0), elV(1.0, 0.0, 0.0), 0.0, Some(g))).pending) == 0,
     -- one year out at the top speed: t - |p| < 0 (older than the plan), still in beam on the heard leg
     1.0 - norm(p) < 0.0, inBeam(l, 1.0, p, Some(g)), ev.inBeam, none(ev.out), !ev.atHome,
     -- the leg from home is covered: no wait at the port, no stale beam
@@ -297,7 +297,7 @@ pure func checkWire() -> bool {
     contains(reply(newSession(), helloLine(earthMinor() + 5)), "\"minor\":16"), contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15"),
     -- 2.16: the full state carries earth; at Sol before any commit: rate 1, in beam, no messages
     contains(g16, "\"earth\":{\"rate\":1,\"rate_inverse\":1,"), contains(g16, "\"at_home\":true,\"in_beam\":true,\"sending\":true,\"last_beam_t\":0,"),
-    contains(g16, "\"out\":null,\"beam\":null,\"stale\":[],\"pending\":[],\"window\":null,\"preview\":null,\"messages\":[]}"),
+    contains(g16, "\"out\":null,\"feed\":{\"frame\":0,"), contains(g16, "\"beam\":null,\"stale\":[],\"pending\":[],\"window\":null,\"preview\":null,\"messages\":[]}"),
     -- a planned leg carries its preview; the commit sends the plan home; a cruising tick moves the rate
     contains(p16, "\"preview\":{\"port\":{\"x\":40,\"y\":0,\"z\":0},\"wait_years\":0,\"would_stale\":null}"),
     contains(c16, "\"messages\":[{\"plan_id\":1,\"port_id\":\"A\","), contains(c16, "\"reply_t\":40,"), contains(c16, "\"window\":{"), contains(m16, "\"earth\":{\"rate\":0.0"),

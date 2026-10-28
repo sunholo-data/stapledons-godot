@@ -24,6 +24,7 @@ import std/list (filter, foldl)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/observe/lightcone (seenAt, onBeamLine, linkWindow, earthRate)
+import ./earth_feed (Feed, feedAt)
 
 export type Message = { planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float, heardT: float }
 -- messages oldest first. heardT never decreases along the list: a commit
@@ -48,7 +49,7 @@ export type Out = { reason: string, portId: string, dueT: float, dueInYears: flo
 -- rateInverse: 1 / rate, ship-seconds per Earth-second (the comms phrase's "one Earth day every ...").
 -- atHome: the ship is inside the Solar System (homeRadiusLy), where Earth tracks it directly.
 export type Earth = { rate: float, rateInverse: float, newestLightT: float, lightAgeYears: float, atHome: bool, inBeam: bool, sending: bool,
-  lastBeamT: float, out: Option[Out],
+  lastBeamT: float, out: Option[Out], feed: Feed,
   beam: Option[Beam], stale: [Stale], pending: [Message], window: Option[Window], preview: Option[Preview], messages: [Message] }
 
 -- Earth transmits throughout R3-EARTH-LINK (design OQ3); Earth's fate turns it off later.
@@ -168,11 +169,12 @@ export pure func outOf(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> Opti
 -- the Sun is the wrong reference (a ship leaving Earth past the Sun would read Earth's history
 -- running fast). Beyond it the two differ by under 1 AU / r. The light cone and the beam stay
 -- Sol-centred (the design's geometry; home covers the difference).
-export pure func earthView(l: Link, t: float, p: Vec3, fromEarth: Vec3, heading: Vec3, phi: float, leg: Option[LinkLeg]) -> Earth {
+-- seed: the voyage's, for Earth's feed (sim/earth_feed.ail: the week of the newest light).
+export pure func earthView(l: Link, seed: int, t: float, p: Vec3, fromEarth: Vec3, heading: Vec3, phi: float, leg: Option[LinkLeg]) -> Earth {
   let rate = rateOf(fromEarth, heading, phi);
   let here = inBeam(l, t, p, leg);
   { rate: rate, rateInverse: 1.0 / rate, newestLightT: seenAt(t, p, origin()), lightAgeYears: norm(p), atHome: atHome(p), inBeam: here, sending: l.sending,
-    lastBeamT: if here then seenAt(t, p, origin()) else l.lastBeamT, out: outOf(l, t, p, leg),
+    lastBeamT: if here then seenAt(t, p, origin()) else l.lastBeamT, out: outOf(l, t, p, leg), feed: feedAt(seed, seenAt(t, p, origin()), []),
     beam: match aimAt(l, t) { Some(m) => Some({ portId: m.portId, port: m.port, heardT: m.heardT }), None => None },
     stale: staleAt(l, t),
     pending: filter(\m. m.heardT > t, l.messages),

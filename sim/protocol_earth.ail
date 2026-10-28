@@ -24,6 +24,9 @@ module stapledons/sim/protocol_earth
 --   window             {port, from_t, wait_years} | null: the wait at the committed or arrived leg's port
 --   preview            {port, wait_years, would_stale: {port_id, port, until_t, until_year} | null} | null:
 --                      a planned, uncommitted leg's cost (no state after the commit)
+--   feed               {frame, kind, event: {id, category, words}, pick, context: {era_tier, era_word,
+--                      years, influences: [{kind, since_t}]}}: Earth's feed, the week of the newest
+--                      light (sim/earth_feed.ail; EL3b); context is Earth-side only
 --   messages           [{plan_id, port_id, from, port, sent_t, sent_year, sent_tau, heard_t, heard_year,
 --                      reply_t, reply_year}]: every plan sent home; reply_t is when Earth's beam for it
 --                      reaches the port at the earliest (heard_t + |port|)
@@ -32,6 +35,7 @@ import std/option (Option, Some, None)
 import std/list (map)
 import pkg/sunholo/relativity/optics (Vec3)
 import ./earth_link (Earth, Message, Stale, Window, Preview, Beam, Out, replyT)
+import ./earth_feed (Feed, Influence)
 
 pure func vec(v: Vec3) -> Json = jo([kv("x", jnum(v.x)), kv("y", jnum(v.y)), kv("z", jnum(v.z))])
 pure func stale(s: Stale, epoch: float) -> Json =
@@ -57,9 +61,16 @@ pure func out(o: Option[Out], epoch: float) -> Json =
     None => JNull
   }
 
+pure func influence(i: Influence) -> Json = jo([kv("kind", js(i.kind)), kv("since_t", jnum(i.sinceT))])
+pure func feed(f: Feed) -> Json =
+  jo([kv("frame", jint(f.frame)), kv("kind", js(f.kind)),
+    kv("event", jo([kv("id", js(f.event.id)), kv("category", js(f.event.category)), kv("words", js(f.event.words))])), kv("pick", jint(f.pick)),
+    kv("context", jo([kv("era_tier", jint(f.context.eraTier)), kv("era_word", js(f.context.eraWord)), kv("years", jnum(f.context.years)),
+      kv("influences", ja(map(influence, f.context.influences)))]))])
+
 export pure func encodeEarth(e: Earth, epoch: float) -> string =
   encode(jo([kv("rate", jnum(e.rate)), kv("rate_inverse", jnum(e.rateInverse)), kv("newest_light_t", jnum(e.newestLightT)), kv("newest_light_year", jnum(epoch + e.newestLightT)),
     kv("light_age_years", jnum(e.lightAgeYears)), kv("at_home", JBool(e.atHome)), kv("in_beam", JBool(e.inBeam)), kv("sending", JBool(e.sending)),
-    kv("last_beam_t", jnum(e.lastBeamT)), kv("last_beam_year", jnum(epoch + e.lastBeamT)), kv("out", out(e.out, epoch)),
+    kv("last_beam_t", jnum(e.lastBeamT)), kv("last_beam_year", jnum(epoch + e.lastBeamT)), kv("out", out(e.out, epoch)), kv("feed", feed(e.feed)),
     kv("beam", beam(e.beam, epoch)), kv("stale", ja(map(\s. stale(s, epoch), e.stale))), kv("pending", ja(map(\m. pending(m, epoch), e.pending))),
     kv("window", window(e.window)), kv("preview", preview(e.preview, epoch)), kv("messages", ja(map(\m. message(m, epoch), e.messages)))]))

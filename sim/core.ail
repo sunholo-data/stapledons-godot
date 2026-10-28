@@ -777,7 +777,7 @@ pure func earthLyAt(p: Params, t: float) -> Vec3 =
 export pure func earthOf(w: World) -> Earth {
   let p = position(w.ship);
   let e = earthLyAt(w.params, w.ship.motion.t);
-  earthView(w.link, w.ship.motion.t, p, { x: p.x - e.x, y: p.y - e.y, z: p.z - e.z }, w.ship.heading, w.ship.motion.phi, legOf(w))
+  earthView(w.link, w.seed, w.ship.motion.t, p, { x: p.x - e.x, y: p.y - e.y, z: p.z - e.z }, w.ship.heading, w.ship.motion.phi, legOf(w))
 }
 
 -- R2-INTERLUDE I2 (design interlude-card.md D1): the digest is begun from the world before a commit

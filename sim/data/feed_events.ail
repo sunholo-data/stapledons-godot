@@ -1,0 +1,72 @@
+module stapledons/sim/data/feed_events
+
+-- R3-EARTH-LINK EL3b (design r3/earth-link.md EL3b; Mark, attended 2026-10-28): the catalogue of
+-- Earth's events the comms feed shows, one per Earth week of the newest light. Home's own news at
+-- the scale a voyage receives (weeks to a couple of centuries; the home-time tiers 0-8 of
+-- sim/home_tiers.ail), never the ship (no plan, port or crew): "its news from home, outside the
+-- bubble". A row fits the weeks whose era tier is in [minTier, maxTier].
+--
+-- words: the caption chip, two to seven words, no digits (D-21), in the news voice, never judging
+-- (Pillar 2). The picture prompts and the shipped pictures are data/feed/events.json and
+-- data/feed/SOURCES; `make feed-art-check` checks their ids against ids() here.
+export type FeedEvent = { id: string, category: string, minTier: int, maxTier: int, words: string }
+
+pure func ev(id: string, category: string, minTier: int, maxTier: int, words: string) -> FeedEvent =
+  { id: id, category: category, minTier: minTier, maxTier: maxTier, words: words }
+
+export pure func categories() -> [string] = ["family", "home", "town", "world", "science", "sky"]
+
+export pure func feedEvents() -> [FeedEvent] = [
+  ev("family-birthday", "family", 0, 8, "a birthday party"),
+  ev("family-baby", "family", 1, 8, "a new baby in the family"),
+  ev("family-school", "family", 1, 3, "the children's first day at school"),
+  ev("family-wedding", "family", 3, 8, "a family wedding"),
+  ev("family-graduation", "family", 3, 6, "graduation day"),
+  ev("family-empty-chair", "family", 0, 2, "dinner, and your empty chair"),
+  ev("family-reunion", "family", 2, 8, "a family reunion"),
+  ev("family-farewell", "family", 4, 8, "a quiet farewell"),
+  ev("home-first-snow", "home", 0, 8, "first snow on the roofs"),
+  ev("home-blossom", "home", 0, 8, "spring blossom"),
+  ev("home-storm", "home", 0, 8, "a summer storm"),
+  ev("home-harvest", "home", 0, 8, "harvest in the hills"),
+  ev("home-repainted", "home", 2, 8, "the old house repainted"),
+  ev("home-new-road", "home", 3, 8, "a new road through the valley"),
+  ev("home-overgrown", "home", 5, 8, "the garden grown wild"),
+  ev("home-strangers", "home", 7, 8, "strangers at the old house"),
+  ev("town-festival", "town", 0, 8, "the harvest festival"),
+  ev("town-market", "town", 0, 8, "market day"),
+  ev("town-school-fair", "town", 0, 5, "the school fair"),
+  ev("town-new-tower", "town", 3, 8, "a new tower on the skyline"),
+  ev("town-flood", "town", 2, 8, "the harbour floods"),
+  ev("town-lights", "town", 0, 8, "the town lights at night"),
+  ev("town-dawn", "town", 0, 8, "a quiet street at dawn"),
+  ev("town-cinema", "town", 4, 8, "the old cinema closes"),
+  ev("world-election", "world", 0, 8, "election day"),
+  ev("world-treaty", "world", 1, 8, "a treaty is signed"),
+  ev("world-march", "world", 0, 8, "a march in the capital"),
+  ev("world-heat", "world", 0, 8, "the hottest summer yet"),
+  ev("world-final", "world", 0, 8, "the cup final"),
+  ev("world-rebuilt", "world", 2, 8, "a city rebuilt after the quake"),
+  ev("world-new-nation", "world", 4, 8, "a new nation's first morning"),
+  ev("world-eclipse", "world", 0, 8, "a total eclipse"),
+  ev("science-launch", "science", 0, 8, "a rocket launch"),
+  ev("science-telescope", "science", 1, 8, "a telescope's first light"),
+  ev("science-medicine", "science", 2, 8, "a new medicine"),
+  ev("science-fusion", "science", 4, 8, "the first fusion plant"),
+  ev("science-moon-base", "science", 3, 8, "a base on the Moon"),
+  ev("science-mars", "science", 5, 8, "footsteps on Mars"),
+  ev("science-deep-sea", "science", 2, 8, "the deep sea mapped"),
+  ev("science-asteroid", "science", 5, 8, "an asteroid turned aside"),
+  ev("sky-earthrise", "sky", 0, 8, "Earth from the Moon"),
+  ev("sky-aurora", "sky", 0, 8, "the aurora"),
+  ev("sky-meteors", "sky", 0, 8, "a meteor shower"),
+  ev("sky-comet", "sky", 2, 8, "a comet over the bay"),
+  ev("sky-full-moon", "sky", 0, 8, "the full moon over town"),
+  ev("sky-milky-way", "sky", 0, 8, "the Milky Way from the hills"),
+  ev("sky-station", "sky", 3, 8, "a station crossing the sky"),
+  ev("sky-sunset", "sky", 0, 8, "sunset over the sea")
+]
+
+-- The frame kinds and their shares in thousandths (design EL3b "The feed is a mix"): painted live
+-- is the minority and the only kind that spends; a live slot that cannot paint shows the library.
+export pure func feedKinds() -> [(string, int)] = [("live", 200), ("library", 400), ("card", 200), ("snapshot", 100), ("sky", 100)]
