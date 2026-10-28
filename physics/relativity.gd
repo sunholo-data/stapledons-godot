@@ -189,19 +189,3 @@ static func limiting_magnitude(lb: float, f: float) -> float:
 ## Relative flux from an apparent magnitude.
 static func flux_from_mag(mag: float) -> float:
 	return pow(10.0, -0.4 * mag)
-
-
-## Effective temperature by spectral class (main-sequence midpoints).
-## Spike-level: the catalogue only carries a class letter today.
-static func temperature_for_class(spectral: String) -> float:
-	match spectral.substr(0, 1):
-		"O": return 35000.0
-		"B": return 15000.0
-		"A": return 8500.0
-		"F": return 6700.0
-		"G": return 5700.0
-		"K": return 4500.0
-		"M": return 3300.0
-		"L": return 2000.0
-		"T": return 1200.0
-	return 5700.0
