@@ -1,0 +1,294 @@
+{
+  "about": "R3-EARTH-LINK EL3b: the comms feed picture library (design r3/earth-link.md EL3b). One entry per event of sim/data/feed_events.ail, in its order, with id, category and words copied exactly. Each picture prompt is `style`, a blank line, then the event's `scene`; `scene` is the paragraph that produced the shipped v0 picture (the full prompts, retries and every decision: generation_notes.md). Shipped pictures: pictures/<id>_v<k>.webp, pinned in SOURCES. Seeded 2026-10-28 with v0 for every event (Mark: \"go ahead and we will start seeding the library - this is something that can build up over playthroughs\"). Home's own news only: nothing from the ship.",
+  "style": "Asset: one wide landscape illustration, a single frame of the news feed from home in the game Stapledon's Voyage, a relativistic starship voyage in which years pass on Earth while the crew lives far less; this picture shows only home's own life on Earth, never the ship. Style: sophisticated hand-drawn 1970s European science-fiction graphic-novel illustration, delicate expressive ink contours, selective cross-hatching, textured gouache and watercolour on warm paper, muted earthy palette with restrained teal, ochre and coral accents. The attached image is a style reference only for line, hatching, paint texture and palette; do not draw that woman or any face from it. Landscape 3:2 at native 1536x1024. The series is set in and around one small Mediterranean-style coastal town of ochre walls, terracotta roofs and dark cypresses that climbs a slope toward a rocky headland where a large white radio telescope dish stands, above a bay and the open sea; when the news comes from elsewhere, the scene says where. Each picture is a snapshot from home's news feed with its own viewpoint (a kitchen, a street, the square, the beach, the hills, the sky), not a fixed view. The picture will be cropped to 16:9 for display, so keep every important element inside the central horizontal band and nothing important in the top or bottom tenth of the frame. Timeless everyday life: plain simple clothes, no phones, screens or electronic devices, no vehicles, machines, fashion or technology that would date the picture to any particular year. People may appear, but faces stay small, distant or turned away. No starship and nothing about a space voyage. Absolutely no text, letters, numbers, digits, writing, signage, symbols, flags, logos, brands, captions, frames, borders, UI or watermark anywhere in the image. No recognisable real people or real places. Mood: warm and human, melancholy at most, grounded and restrained, never kitsch, never judging.",
+  "events": [
+    {
+      "id": "family-birthday",
+      "category": "family",
+      "words": "a birthday party",
+      "scene": "Scene, a birthday party: a warm family kitchen in one of the town's old houses on a summer evening, seen from the doorway across the room so that everyone is small in the frame, the window beyond open on terracotta roofs and the sea. A small child, seen from behind, leans over a plain round cake on the table to blow out a few slim candles; parents, a grandparent and friends crowd round the table clapping, all seen from behind or in distant profile, their faces turned toward the child and the cake, away from us. Paper streamers in plain colours, glasses, a bowl of fruit. Golden candlelight, laughter, ordinary happiness."
+    },
+    {
+      "id": "family-baby",
+      "category": "family",
+      "words": "a new baby in the family",
+      "scene": "Scene, a new baby in the family: a quiet morning bedroom with whitewashed walls and green shutters opened on the bay. A young parent sits by the window holding a newborn wrapped in a plain cream blanket; a grandparent bends close to look, a hand resting on the parent's shoulder. Faces turned toward the baby and away from us. Soft early light, a vase of wildflowers on the sill. Tender and hushed."
+    },
+    {
+      "id": "family-school",
+      "category": "family",
+      "words": "the children's first day at school",
+      "scene": "Scene, the children's first day at school: a narrow cobbled lane of the town on a bright autumn morning, ochre walls and potted geraniums. A parent walks two small children, each with a plain leather satchel, toward an old stone schoolhouse with an arched doorway at the end of the lane, all seen from behind. Other small children and parents gather at the door. One child glances back over a shoulder. Hopeful, a little nervous, the ordinary courage of a first day."
+    },
+    {
+      "id": "family-wedding",
+      "category": "family",
+      "words": "a family wedding",
+      "scene": "Scene, a family wedding: an outdoor wedding under old olive trees on a terrace above the sea in late afternoon. A couple in simple light-coloured clothes stand hand in hand under a garland arch of greenery and white flowers, seen from a little distance and mostly from behind; guests on wooden chairs, a few wiping their eyes, children with petals. Long lace tablecloths and lanterns waiting for the evening. Warm, joyful, gently bittersweet."
+    },
+    {
+      "id": "family-graduation",
+      "category": "family",
+      "words": "graduation day",
+      "scene": "Scene, graduation day: the stone cloister courtyard of an old college in the region, arches and a cypress, bright early-summer noon. A crowd of young graduates in plain dark gowns throw flat caps into the air, seen from behind and from a distance; families stand along the arcade clapping, an older relative holding a bunch of flowers. Caps and gowns completely plain, no emblems. Proud, light, the moment before everyone scatters."
+    },
+    {
+      "id": "family-empty-chair",
+      "category": "family",
+      "words": "dinner, and your empty chair",
+      "scene": "Scene, dinner, and your empty chair: a family kitchen in the town at dusk, a long wooden table set for supper, a lamp warm over it, the window showing the last light on the sea and the white dish on the headland far off. A family of four sits eating and talking quietly, seen from behind and side-on; one chair at the end of the table stays empty with its plate and glass set, a folded napkin on it. Someone glances at it. Loving, missing someone, not tragic."
+    },
+    {
+      "id": "family-reunion",
+      "category": "family",
+      "words": "a family reunion",
+      "scene": "Scene, a family reunion: a long table under a vine-covered pergola in a garden on the town's slope, late summer afternoon. Three or four generations crowd round it: old people, middle-aged couples, teenagers, small children running between the chairs; plates of food, bread, jugs of water and wine. Seen from a little above at one end of the table, most faces small or turned. The sea glitters beyond the garden wall. Noisy, warm, abundant."
+    },
+    {
+      "id": "family-farewell",
+      "category": "family",
+      "words": "a quiet farewell",
+      "scene": "Scene, a quiet farewell: a small hillside cemetery among dark cypresses above the town, the sea pale beyond, a soft overcast late afternoon. A small group of mourners in plain dark clothes stands around a simple grave with flowers laid on it, seen from behind at a distance; one person rests a hand on another's back. The stones are plain and completely unmarked. Calm, grieving, gentle, full of love."
+    },
+    {
+      "id": "home-first-snow",
+      "category": "home",
+      "words": "first snow on the roofs",
+      "scene": "Scene, first snow on the roofs: a rare winter morning in the town, a thin clean layer of snow on the terracotta roofs, the cypresses dusted white, smoke rising from chimneys. Seen from an upstairs window looking across the rooftops toward the grey-green sea and the headland with its white dish. In the lane below, two small figures in coats stop to catch flakes. Hushed, bright, a little magical."
+    },
+    {
+      "id": "home-blossom",
+      "category": "home",
+      "words": "spring blossom",
+      "scene": "Scene, spring blossom: an almond orchard on the hillside above the town in full pink and white blossom, petals drifting across the path, the terracotta roofs and the blue bay below. An old woman and a child walk slowly between the trees, seen from behind, the child reaching up for a low branch. Fresh, soft, renewing."
+    },
+    {
+      "id": "home-storm",
+      "category": "home",
+      "words": "a summer storm",
+      "scene": "Scene, a summer storm: a sudden summer thunderstorm rolling in over the bay, heavy indigo clouds, a fork of lightning far out over the sea, rain sweeping the water. On a seafront street of the town, seen from a little above and behind, people dash away from us toward shelter under awnings and doorways, a couple running hand in hand with their backs to us, shirts darkened by rain, someone holding a jacket over their head. Wet cobbles shining in lamplight. Faces not visible. Exhilarating, brief, alive."
+    },
+    {
+      "id": "home-harvest",
+      "category": "home",
+      "words": "harvest in the hills",
+      "scene": "Scene, harvest in the hills: terraced vineyards and olive groves on the hills behind the town at golden late-summer afternoon. People of several ages pick grapes into wide woven baskets along the rows, a cart of baskets waiting, a child carrying a bunch overhead. Seen from a little above, figures small, the town and the sea in the distance below. Tired, generous, unhurried."
+    },
+    {
+      "id": "home-repainted",
+      "category": "home",
+      "words": "the old house repainted",
+      "scene": "Scene, the old house repainted: a narrow two-storey house of the town with green shutters and a lemon tree in its little front garden, its old ochre walls now freshly painted a soft new colour, a pale warm rose. A ladder leans against it, paint pots on the step, a person in paint-spattered clothes stands back to look, a neighbour admiring from the lane. Bright morning, sun on the new wall. Fresh start, a small change in a familiar place."
+    },
+    {
+      "id": "home-new-road",
+      "category": "home",
+      "words": "a new road through the valley",
+      "scene": "Scene, a new road through the valley: seen from a hillside above, a pale freshly laid road curving through the green valley behind the town, past olive groves and stone farmhouses, toward the terracotta roofs and the sea. Fresh earth at its edges, young trees newly planted along it, a few walkers trying it out. No vehicles, no road markings, no signs. Broad daylight. Change arriving quietly."
+    },
+    {
+      "id": "home-overgrown",
+      "category": "home",
+      "words": "the garden grown wild",
+      "scene": "Scene, the garden grown wild: the little front garden of the same narrow house of the town with green shutters and a lemon tree, now overgrown: tall grasses, wild roses and climbing vines over the gate and the low wall, the shutters closed and faded, the lemon tree heavy with unpicked fruit. Late golden afternoon, bees and butterflies, a cat asleep on the wall. Quiet, time passing, beautiful rather than sad."
+    },
+    {
+      "id": "home-strangers",
+      "category": "home",
+      "words": "strangers at the old house",
+      "scene": "Scene, strangers at the old house: the same narrow house of the town with green shutters and a lemon tree, on a bright morning. A young family nobody here knew is moving in: boxes and a rolled carpet on the step, a parent carrying a chair through the door, a small child standing at the gate looking up at the windows. Seen from across the lane, faces small and turned. Life going on, gentle, a little poignant."
+    },
+    {
+      "id": "town-festival",
+      "category": "town",
+      "words": "the harvest festival",
+      "scene": "Scene, the harvest festival: the town's main square on a warm evening, seen from a high balcony at the edge of the square so that every figure is small, strings of paper lanterns criss-crossing above, long tables with food and wine, musicians with accordion and fiddle on the steps of an old stone loggia, couples dancing on the cobbles, children weaving through the crowd. No church, crosses or religious symbols in view. Lantern light glowing amber against the dusk-blue sky. Joyful, communal, timeless."
+    },
+    {
+      "id": "town-market",
+      "category": "town",
+      "words": "market day",
+      "scene": "Scene, market day: a busy morning market along the harbour front of the town, stalls under plain striped canvas awnings piled with tomatoes, peppers, lemons, fish on ice, bread, flowers. Shoppers with woven baskets, a vendor weighing fruit on an old balance scale, a dog under a table, fishing boats at the quay behind. Seen at street level, faces small or turned. Bustling, colourful, everyday."
+    },
+    {
+      "id": "town-school-fair",
+      "category": "town",
+      "words": "the school fair",
+      "scene": "Scene, the school fair: the courtyard of the town's old stone school on a sunny afternoon, plain coloured bunting in triangles overhead, trestle tables with cakes and jars of jam, a ring-toss game, children running with balloons, a teacher handing out lemonade, parents chatting under a plane tree. Seen from the school steps, figures small. Light-hearted, a little chaotic, kind."
+    },
+    {
+      "id": "town-new-tower",
+      "category": "town",
+      "words": "a new tower on the skyline",
+      "scene": "Scene, a new tower on the skyline: seen from the hillside path above the town in clear morning light, a new tall slender tower rises above the old terracotta roofs and cypresses near the harbour, pale stone and glass with planted green terraces stepping up its sides, quite unlike anything else in town. Two townspeople on the path stop to look at it. The bay and the white dish on the headland beyond. Curious, not hostile: the town changing."
+    },
+    {
+      "id": "town-flood",
+      "category": "town",
+      "words": "the harbour floods",
+      "scene": "Scene, the harbour floods: a grey storm morning after a high surge, the sea spilling over the harbour wall into the waterfront street of the town. Fishing boats bob high against the quay, cafe chairs float, people in boots wade knee-deep carrying belongings and helping one another, a rowing boat ferrying an old couple. Seen from a staircase above the street. Serious but steady, neighbours helping neighbours."
+    },
+    {
+      "id": "town-lights",
+      "category": "town",
+      "words": "the town lights at night",
+      "scene": "Scene, the town lights at night: seen from the dark hillside above, the town at night spread down the slope to the bay, hundreds of small warm windows and streetlamps glowing gold, their reflections trembling on the black water, a few boat lights in the bay, the white dish on the headland a pale silhouette under a deep starry sky. A single figure sits on a low wall in the foreground, seen from behind. Calm, beautiful, homesick."
+    },
+    {
+      "id": "town-dawn",
+      "category": "town",
+      "words": "a quiet street at dawn",
+      "scene": "Scene, a quiet street at dawn: a narrow sloping street of the town just after sunrise, long pink-gold light catching the tops of the ochre walls, shutters still closed, a baker setting out loaves on a wooden board outside an open doorway, a cat on a step, a sweeper with a broom further down, the sea glimpsed at the bottom of the street. Still, peaceful, the day not yet begun."
+    },
+    {
+      "id": "town-cinema",
+      "category": "town",
+      "words": "the old cinema closes",
+      "scene": "Scene, the old cinema closes: a little old picture house on a corner of the town, its curved plaster facade faded, the canopy over the door completely blank, the glass doors shut and the poster cases empty and bare. A small group of townspeople stand outside on a dusky evening, an old man touching the door, a couple arm in arm. Warm streetlamp light. Nostalgic, an ending, gentle."
+    },
+    {
+      "id": "world-election",
+      "category": "world",
+      "words": "election day",
+      "scene": "Scene, election day: early morning outside the town hall, an old stone building on the square, a patient line of townspeople of all ages waiting to vote, an old woman on a cane helped by a young man, a parent with a child on their hip. Through the open door a simple wooden box on a table; nothing on the walls or doors. Seen across the square, faces small. Civic, ordinary, quietly hopeful."
+    },
+    {
+      "id": "world-treaty",
+      "category": "world",
+      "words": "a treaty is signed",
+      "scene": "Scene, a treaty is signed: in a grand high hall far from the town, tall windows full of daylight, a long polished table, two small distant figures at its centre leaning to sign plain blank sheets while rows of delegates watch from the sides; nobody recognisable, no emblems or banners anywhere. Seen from the back of the hall, high and far. In the warm light it feels solemn and hopeful."
+    },
+    {
+      "id": "world-march",
+      "category": "world",
+      "words": "a march in the capital",
+      "scene": "Scene, a march in the capital: a broad straight avenue of an unnamed modern capital city, plain handsome stone and glass buildings of no famous style, rows of plane trees, no domes, towers, monuments or river in view, filled from side to side with a peaceful march of ordinary people of every age, walking arm in arm, some carrying flowers and small paper lanterns, a child on someone's shoulders. No banners, placards, signs or flags at all. Seen from a balcony above, the crowd flowing away into the distance, faces small. Determined, peaceful, together."
+    },
+    {
+      "id": "world-heat",
+      "category": "world",
+      "words": "the hottest summer yet",
+      "scene": "Scene, the hottest summer yet: the town under a white-hot afternoon sky, the hills behind it parched gold and brown, the air shimmering, shutters closed against the sun. In the square people crowd into the narrow shade of a plane tree and an awning, an old man fanning himself, children cooling their hands and feet in the stone fountain, a dog flat on the cool step. Heavy, sweltering, endured together, without alarm."
+    },
+    {
+      "id": "world-final",
+      "category": "world",
+      "words": "the cup final",
+      "scene": "Scene, the cup final: the town's square on a warm night, a crowd packed outside the cafe in front of an open doorway glowing with light, everyone facing away from us toward something inside we cannot see; at the front some leap up with arms raised, others clutch their heads or hug; plain coloured scarves with no patterns, a boy on his father's shoulders. Faces turned away. Electric, communal, joy and agony at once."
+    },
+    {
+      "id": "world-rebuilt",
+      "category": "world",
+      "words": "a city rebuilt after the quake",
+      "scene": "Scene, a city rebuilt after the quake: far inland from the town, a hillside city of pale stone among mountains, with no sea and no radio dish anywhere in view, in clear morning light: new pale houses with fresh roofs stand among a few old cracked walls kept as they were, a rebuilt square stone civic tower with plain arched openings and its scaffolding just coming down, gardens planted in former rubble. No churches, crosses or religious symbols anywhere. Families carry furniture into new homes, a market setting up in a new square. Seen from a terrace above, figures small. Resilient, healing, hopeful."
+    },
+    {
+      "id": "world-new-nation",
+      "category": "world",
+      "words": "a new nation's first morning",
+      "scene": "Scene, a new nation's first morning: far from the town, a wide plaza in an unnamed city on a hillside at sunrise, a gathering of ordinary people of all ages, some embracing, some sitting quietly on steps, a few releasing paper lanterns, plain pale confetti drifting in the low gold light, the last smoke of fireworks thinning in the sky. No flags, banners, emblems or signs at all. Seen from above at the edge of the plaza, faces small. Tired, moved, a new beginning."
+    },
+    {
+      "id": "world-eclipse",
+      "category": "world",
+      "words": "a total eclipse",
+      "scene": "Scene, a total eclipse: midday turned to dusk over the bay, the black disc of the Moon covering the Sun high in a deep blue-grey sky, the pale silver corona streaming around it, a few bright stars and planets out, a ring of sunset colour along the whole horizon. On the town's beach people stand and sit looking up, a child pointing, birds settling on the water. Seen from behind the crowd. Awe, stillness, a shared intake of breath."
+    },
+    {
+      "id": "science-launch",
+      "category": "science",
+      "words": "a rocket launch",
+      "scene": "Scene, a rocket launch: seen from the town's beach in the evening, far down the coast across the bay a generic rocket lifts off from a distant launch site on a short column of bright flame and billowing white smoke, still low in the sky just above the far headland, near the middle of the frame, its glow reflected on the calm sea. People on the sand stand and watch, a child on a parent's shoulders, seen from behind. The rocket is small and distant, plain and unmarked, and the whole rocket and its flame sit in the middle band of the picture, well below the top edge. Wonder, quiet pride."
+    },
+    {
+      "id": "science-telescope",
+      "category": "science",
+      "words": "a telescope's first light",
+      "scene": "Scene, a telescope's first light: on a high bare mountain ridge inland at dusk, a large new observatory dome of smooth pale shell stands with its slit open to the first stars; the telescope inside is hidden in shadow, only a soft warm glow showing through the slit. Its curved shell catches the last pink light, the coast and the bay faint and far below. A handful of small figures stand outside on the ridge, one with an arm round another, looking up at the clearing sky, seen from behind. The dome plain and unmarked. Anticipation, wonder, calm."
+    },
+    {
+      "id": "science-medicine",
+      "category": "science",
+      "words": "a new medicine",
+      "scene": "Scene, a new medicine: a sunlit room of the town's small clinic with whitewashed walls and an open window on the sea, seen from across the room so the people are small in the frame. A nurse in plain clothes, seen from behind, sits beside an elderly man in a chair by the window, handing him a dose from a small plain glass vial with no label; his grown daughter stands at the window with her back to us, one hand on his shoulder, looking out at the bay, relieved. Faces turned away or in distant profile. A potted plant and a jug of water on the sill. Gentle, quietly hopeful."
+    },
+    {
+      "id": "science-fusion",
+      "category": "science",
+      "words": "the first fusion plant",
+      "scene": "Scene, the first fusion plant: seen from the hills behind the town at dusk, far off on the coastal plain a new power station: a broad low ring-shaped hall of pale stone and glass with soft blue light glowing from within, no smoke and no chimneys, clean lines among fields. On a hillside terrace two townspeople, one old and one young, sit side by side looking at it. The town's lights are coming on below. Quiet wonder, a turning point."
+    },
+    {
+      "id": "science-moon-base",
+      "category": "science",
+      "words": "a base on the Moon",
+      "scene": "Scene, a base on the Moon: a clear night, a large bright crescent Moon low over the sea, and on its dark, earthlit part a tiny cluster of faint warm lights can be seen. On a rooftop terrace of the town a family looks up at it together, a parent pointing, a child leaning on the parapet, seen from behind. Potted herbs, a lamp, the bay shining below. Wonder, closeness, something new up there."
+    },
+    {
+      "id": "science-mars",
+      "category": "science",
+      "words": "footsteps on Mars",
+      "scene": "Scene, footsteps on Mars: the town's square at night, a crowd gathered in silence before a large image projected onto the whitewashed wall of a building: a rust-red rocky plain under a pale butterscotch sky, and on it one small figure in a plain white spacesuit, seen from behind, with a clear line of boot prints trailing behind it across the dust. Only the picture, with no writing, frame or graphics around it, and nothing on the suit. The crowd seen from behind in silhouette, a child on shoulders, an old woman with a hand on her heart. Above the rooftops, the small red point of Mars in the sky. Awe, a hush."
+    },
+    {
+      "id": "science-deep-sea",
+      "category": "science",
+      "words": "the deep sea mapped",
+      "scene": "Scene, the deep sea mapped: the deep ocean far below the surface, almost black-blue water, a small smooth pale rounded submersible of very simple shape, with no rivets, portholes, markings or lettering, casting two soft beams of light across a vast undersea landscape of ridges and canyons, glowing jellyfish and luminous creatures drifting in the dark, a pale field of feathery sea lilies and sponges on the slope below. No people visible. Quiet, vast, newly seen."
+    },
+    {
+      "id": "science-asteroid",
+      "category": "science",
+      "words": "an asteroid turned aside",
+      "scene": "Scene, an asteroid turned aside: the night sky over the hills behind the town, a bright small point of light with a faint short tail sliding harmlessly past among the stars, far from Earth. On the hillside, townspeople have come out with blankets to watch, sitting together on the grass, one couple holding each other, a child asleep in a lap, seen from behind. The town's lights below. Relief, gratitude, quiet."
+    },
+    {
+      "id": "sky-earthrise",
+      "category": "sky",
+      "words": "Earth from the Moon",
+      "scene": "Scene, Earth from the Moon: a grey lunar landscape of soft craters and long shadows under a black sky, and above the curved horizon the Earth hangs, half lit, blue oceans and white swirling clouds and brown land, small and luminous. No people, no machines, no footprints. Silent, fragile, home."
+    },
+    {
+      "id": "sky-aurora",
+      "category": "sky",
+      "words": "the aurora",
+      "scene": "Scene, the aurora: a rare night when the aurora reaches far south: soft curtains of deep red and faint green light ripple across the starry sky above the bay, reflected in the still sea. On the harbour wall of the town a scattering of people in coats stand and look up, a couple with heads tilted back, a child wrapped in a blanket. The white dish on the headland a dark silhouette. Wonder, a little uncanny, beautiful."
+    },
+    {
+      "id": "sky-meteors",
+      "category": "sky",
+      "words": "a meteor shower",
+      "scene": "Scene, a meteor shower: a clear moonless summer night on the hills above the town, many thin bright meteor streaks across the dense starry sky and the Milky Way. Townspeople lie on blankets in a meadow looking up, a couple pointing, a teenager with arms behind the head, seen from behind and low. The town's warm lights and the bay below. Peaceful, open, making wishes."
+    },
+    {
+      "id": "sky-comet",
+      "category": "sky",
+      "words": "a comet over the bay",
+      "scene": "Scene, a comet over the bay: a great comet hangs over the sea after dusk, a bright head and a long curved pale tail sweeping up across the deep blue sky, reflected faintly on the water. On the beach and the harbour wall people have gathered to look, small figures seen from behind, an old man with a child on the sand. The terracotta town and the white dish on the headland at the edge of the view. Awe, once in a lifetime."
+    },
+    {
+      "id": "sky-full-moon",
+      "category": "sky",
+      "words": "the full moon over town",
+      "scene": "Scene, the full moon over town: a huge golden full moon rising over the sea behind the headland and its white dish, laying a glittering path across the bay, the terracotta roofs of the town silvered, a few windows lit. In the foreground a couple sits on a low garden wall seen from behind, sharing a quiet moment. Warm, calm, romantic without kitsch."
+    },
+    {
+      "id": "sky-milky-way",
+      "category": "sky",
+      "words": "the Milky Way from the hills",
+      "scene": "Scene, the Milky Way from the hills: far inland on a dark hilltop above the coast, the full arch of the Milky Way spanning the sky, dense with stars and dust lanes, a few dark cypress silhouettes and a stone shepherd's hut. A single small figure stands on the ridge looking up, seen from behind, a faint glow of the distant town at the horizon. Vast, solitary, peaceful."
+    },
+    {
+      "id": "sky-station",
+      "category": "sky",
+      "words": "a station crossing the sky",
+      "scene": "Scene, a station crossing the sky: a clear evening sky over the town just after sunset, deep blue fading to coral at the horizon. High above the bay, in the middle of the sky, a generic orbital station catches the last sunlight: small and far away, but just big enough to see as a tiny glinting shape of a ring and long solar panels, with no markings, followed by a faint dotted line of its path across the sky. It is not a meteor and not a spacecraft of any voyage. On a rooftop terrace and in the lane below, a few townspeople stop and look up at it, a child pointing, seen from behind. The first stars appearing. Ordinary wonder."
+    },
+    {
+      "id": "sky-sunset",
+      "category": "sky",
+      "words": "sunset over the sea",
+      "scene": "Scene, sunset over the sea: the sun sinking into the open sea beyond the bay, the sky in bands of coral, ochre and violet, long gold light across the water, fishing boats returning. On the rocks below the town a few people sit watching, small figures seen from behind, a dog at the water's edge, the white dish on the headland catching the last light. Calm, the end of an ordinary day."
+    }
+  ]
+}

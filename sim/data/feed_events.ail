@@ -9,10 +9,16 @@ module stapledons/sim/data/feed_events
 -- words: the caption chip, two to seven words, no digits (D-21), in the news voice, never judging
 -- (Pillar 2). The picture prompts and the shipped pictures are data/feed/events.json and
 -- data/feed/SOURCES; `make feed-art-check` checks their ids against ids() here.
+import std/list (map)
+import std/string (join)
+
 export type FeedEvent = { id: string, category: string, minTier: int, maxTier: int, words: string }
 
 pure func ev(id: string, category: string, minTier: int, maxTier: int, words: string) -> FeedEvent =
   { id: id, category: category, minTier: minTier, maxTier: maxTier, words: words }
+
+-- The ids one per line, for make feed-art-check (events.json and data/feed/SOURCES name the same).
+export pure func feedIdsText(_u: int) -> string = join("\n", map(\e. e.id, feedEvents()))
 
 export pure func categories() -> [string] = ["family", "home", "town", "world", "science", "sky"]
 
