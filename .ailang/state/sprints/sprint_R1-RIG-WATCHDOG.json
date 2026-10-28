@@ -1,0 +1,131 @@
+{
+  "id": "R1-RIG-WATCHDOG",
+  "sprint_id": "R1-RIG-WATCHDOG",
+  "status": "approved",
+  "approval": "D-126 C (Mark, attended 2026-10-28) directs this change; D-88 test hygiene",
+  "base_commit": "834db76c",
+  "mission_iteration": 55,
+  "created": "2026-10-28",
+  "design_doc": "design_docs/planned/r1/rig-watchdog-7200.md",
+  "sprint_plan": "design_docs/planned/r1/rig-watchdog-7200-sprint.md",
+  "release": "r1",
+  "implements": [
+    "D-126 answer C, A half only: rig/full watchdog default 7,200 s and the make-test-red case (Mark, attended 2026-10-28)",
+    "Charter iteration 52 backlog note: unset RIG_TEST_S inside tools/test_rig_check.sh (hermetic control)"
+  ],
+  "planning_baseline": {
+    "command": "sh tools/test_rig_check.sh tools/rig_check.sh",
+    "observed": "rc=0; six 'rig-check control ...: ok' lines; trailer 'rig-check control: 6 cases, 0 failures'",
+    "measured_by": "planner (mission iteration 55)",
+    "at": "834db76c",
+    "matches_design_verification": "V3"
+  },
+  "features": [
+    {
+      "id": "WD1_RIG_WATCHDOG_HERMETIC",
+      "description": "One milestone, test-first: (1) save the design's section 3 drill block verbatim as .godot/tmp/wd-drills.sh (ignored, never committed); (2) show RED via AC7 (rc=1 on the pre-change tree); (3) apply design section 1 (tools/rig_check.sh: TEST_S=${RIG_TEST_S:-7200} with the D-126 C comment) and design section 2 (tools/test_rig_check.sh: hermetic 'unset RIG_TEST_S RIG_GOLDEN_S' after set -eu, make-test-red expecting 7200s, run() with an optional 10th RIG_TEST_S argument exported only inside the subshell, the watchdog-override case, the caller-poison guard with RIG_CHECK_NESTED recursion skip, trailer 'rig-check control: $n cases, $fails failures' with n=7/8) verbatim in substance, keeping the one-hermeticity-mechanism shape exactly as designed; (4) run AC1-AC8 and AC10 in order. AC9 (rig/full on the PR head) is the controller's. Do not run make test.",
+      "estimated_loc": 17,
+      "estimated_doc_loc": 0,
+      "estimated_minutes": 60,
+      "schedule": "single session",
+      "dependencies": [],
+      "files": [
+        "tools/rig_check.sh",
+        "tools/test_rig_check.sh"
+      ],
+      "forbidden_files": [
+        "Makefile",
+        "mk/*",
+        "design_docs/stapledon-mission.md",
+        "design_docs/stapledon-mission-log.md",
+        "design_docs/stapledon-mission*.md",
+        "sim/*",
+        "anything held by attended PR #344",
+        ".godot/tmp/wd-drills.sh may be written but never committed (git-ignored)"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "criterion": "The default is 7,200 s",
+          "command": "grep -c '^TEST_S=\\${RIG_TEST_S:-7200}' tools/rig_check.sh; grep -c 5400 tools/rig_check.sh",
+          "expected": "1, then 0"
+        },
+        {
+          "id": "AC2",
+          "criterion": "make-test-red expects the new default, and a reverted default is killed",
+          "command": "grep -c \"ran over 7200s\\\\$'\" tools/test_rig_check.sh; grep -c 5400 tools/test_rig_check.sh; sh -c '. .godot/tmp/wd-drills.sh; drillwd \"$PWD\" D'; echo rc=$?",
+          "expected": "1, 0, drillwd D: killed (make-test-red caller-poison), rc=0"
+        },
+        {
+          "id": "AC3",
+          "criterion": "Hermetic against a caller's RIG_TEST_S (and RIG_GOLDEN_S); deleting the unset reds a clean run",
+          "command": "RIG_TEST_S=1234 make rig-check-control > .godot/tmp/wd-h.log 2>&1; echo \"rc=$? $(tail -1 .godot/tmp/wd-h.log)\"; RIG_GOLDEN_S=999 make rig-check-control > .godot/tmp/wd-g.log 2>&1; echo \"rc=$? $(tail -1 .godot/tmp/wd-g.log)\"; sh -c '. .godot/tmp/wd-drills.sh; drillwd \"$PWD\" H'; echo rc=$?",
+          "expected": "rc=0 rig-check control: 8 cases, 0 failures (twice), drillwd H: killed (caller-poison), rc=0"
+        },
+        {
+          "id": "AC4",
+          "criterion": "Green with the count asserted, under make, dash and shellcheck",
+          "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S make rig-check-control > .godot/tmp/wd.log 2>&1; echo rc=$?; test \"$(grep -c ': ok$' .godot/tmp/wd.log)\" -eq 8 && echo count-ok; grep -c '^rig-check control caller-poison: ok$' .godot/tmp/wd.log; dash tools/test_rig_check.sh tools/rig_check.sh | tail -1; shellcheck -s sh -S warning tools/rig_check.sh tools/test_rig_check.sh; echo sc=$?",
+          "expected": "rc=0, count-ok, 1, rig-check control: 8 cases, 0 failures, sc=0"
+        },
+        {
+          "id": "AC5",
+          "criterion": "An explicit RIG_TEST_S still takes effect, and ignoring it is killed",
+          "command": "grep -c '^rig-check control watchdog-override: ok$' .godot/tmp/wd.log; sh -c '. .godot/tmp/wd-drills.sh; drillwd \"$PWD\" O'; echo rc=$?",
+          "expected": "1, drillwd O: killed (watchdog-override caller-poison), rc=0"
+        },
+        {
+          "id": "AC6",
+          "criterion": "The CI tiers are unaffected: ci.yml's run: steps are make deps, make lore-import CHECK=1, make ci-fast and (release, inputs.full) make test; ci-fast does not reach the control, test does (AC4 covers it under Linux sh/dash)",
+          "command": "make -qp 2>/dev/null | grep '^ci-fast:' | tr ' ' '\\n' | grep -cx rig-check-control; make -qp 2>/dev/null | grep '^test:' | tr ' ' '\\n' | grep -cx rig-check-control",
+          "expected": "0, then 1"
+        },
+        {
+          "id": "AC7",
+          "criterion": "RED first: the pre-change control fails the drill baseline",
+          "command": "R0=$(mktemp -d) && mkdir \"$R0/tools\" && git show origin/main:tools/rig_check.sh > \"$R0/tools/rig_check.sh\" && git show origin/main:tools/test_rig_check.sh > \"$R0/tools/test_rig_check.sh\" && sh -c \". .godot/tmp/wd-drills.sh; drillwd $R0 H\"; echo rc=$?; rm -rf \"$R0\"",
+          "expected": "rc=1"
+        },
+        {
+          "id": "AC8",
+          "criterion": "Scope: two scripts, no charter",
+          "command": "git diff --name-only origin/main...HEAD | grep -cvE '^(tools/(test_)?rig_check\\.sh|design_docs/planned/r1/rig-watchdog-7200(-sprint)?\\.md|\\.ailang/state/(sprints|evaluations)/.*\\.json)$'; git diff --name-only origin/main...HEAD | grep -c stapledon-mission",
+          "expected": "0, then 0"
+        },
+        {
+          "id": "AC9",
+          "criterion": "Landing (controller)",
+          "command": "tools/rig_check.sh <PR>",
+          "expected": "rig/full success on the PR head. The run uses the new 7,200 s default, with no override exported.",
+          "owner": "controller"
+        },
+        {
+          "id": "AC10",
+          "criterion": "The hermetic line is exactly as designed",
+          "command": "grep -c '^unset RIG_TEST_S RIG_GOLDEN_S' tools/test_rig_check.sh",
+          "expected": "1"
+        }
+      ],
+      "passes": null,
+      "status": "planned",
+      "passes_policy": "passes/status are set by the controller only, after AC9 rig/full is green on the PR head; the executor never sets passes and records AC evidence in notes only",
+      "notes": []
+    }
+  ],
+  "ci_gate_commands": [
+    "make deps",
+    "make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang",
+    "make ci-fast",
+    "make test",
+    "make rig-check-control"
+  ],
+  "risks": [
+    "Drill block saved wrong so RED never shows; WD1.2 gates edits on AC7 giving rc=1.",
+    "Executor reshapes the hermeticity mechanism, making the unset untestable; design section 2 shape is pinned and drill H (AC3) must kill its mutant, AC10 pins the line verbatim.",
+    "A caller exporting RIG_CHECK_NESTED skips caller-poison; AC4 asserts exactly 8 ': ok' lines under a clean environment.",
+    "A hung make test may now hold the rig up to 30 minutes longer before reporting; accepted by D-126 C, escape hatch still lowers the limit (AC5).",
+    "A rig run past 120 min under load would need a new ruling; L4 (test-suite speed) removes the cause."
+  ],
+  "definition_of_done": "AC1-AC8 and AC10 green per the design's AC table, then AC9 rig/full green on the PR head run by the controller; only then does the controller set features[].passes = true and status = done. make test is not run by the executor.",
+  "notes": []
+}
