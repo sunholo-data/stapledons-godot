@@ -1,6 +1,6 @@
 # R2-CREW-WORK: work that matters
 
-**Status:** W1 approved and built 2026-10-14 (Mark, attended: "yep go ahead. lets make the work matter"). W2–W5 are proposed and **need Mark's answers to OQ1–OQ4**, then a sprint plan.
+**Status:** W1 approved and built 2026-10-14 (Mark, attended: "yep go ahead. lets make the work matter"). **W2–W5 approved 2026-10-27** (Mark, attended): OQ1–OQ4 answered with every recommendation (below); next is a sprint plan, and the crew-lab request (the W3 table).
 **Release:** R2, after [crew-integration.md](../../implemented/r2/crew-integration.md) (R2-CREW). It runs alongside [crew-population.md](crew-population.md), which builds on the same work loop.
 **Priority:** P1 for R2. Without it the crew are a status panel. Mark's playtest (2026-10-14): "I can offer work but no idea what I'm offering … it seems random and no consequence".
 
@@ -152,6 +152,8 @@ Readouts show at the Crew console and, where they act, at the station they affec
 - **Too many prompts.** Recurring work runs under standing orders by default (W5). The captain sees it, but isn't asked every week.
 
 ## Open questions for Mark
+
+**Answered 2026-10-27 (Mark, attended), every recommendation:** OQ1 (a) "Stay a while", a confirmed choice that costs ship and Earth time; OQ2 the W3 cadence as proposed; OQ3 the three starting values, for the lab to tune (an Earth reply to recorded messages also needs the ship inside Earth's beam: stapledons-design 2026-10-27 "Earth Aims Only at Plans It Has Heard"); OQ4 icon plus a short word, from the V7b icon set.
 
 - **OQ1, time at a stop:**
   - (a) "Stay a while": a confirmed choice that costs ship and Earth time *(recommended)*;
