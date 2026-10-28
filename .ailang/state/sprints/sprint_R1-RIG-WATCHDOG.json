@@ -109,7 +109,20 @@
       "passes": null,
       "status": "planned",
       "passes_policy": "passes/status are set by the controller only, after AC9 rig/full is green on the PR head; the executor never sets passes and records AC evidence in notes only",
-      "notes": []
+      "notes": [
+        "WD1.1: drill block saved verbatim to .godot/tmp/wd-drills.sh (byte-identical to design section 3, checked by awk extract + diff).",
+        "WD1.2 AC7 RED (pre-change origin/main tree): rc=1.",
+        "WD1.3: applied design section 1 (tools/rig_check.sh line 15) and section 2 (tools/test_rig_check.sh). Hermetic mechanism as designed: unset line only; run() 10th-arg export inside subshell.",
+        "AC1: 1 then 0. PASS.",
+        "AC2: 1, 0, drillwd D: killed (make-test-red caller-poison), rc=0. PASS.",
+        "AC3: rc=0 rig-check control: 8 cases, 0 failures (RIG_TEST_S=1234 make); rc=0 rig-check control: 8 cases, 0 failures (RIG_GOLDEN_S=999 make); drillwd H: killed (caller-poison), rc=0. PASS.",
+        "AC4: rc=0, count-ok, caller-poison ok 1, dash tail rig-check control: 8 cases, 0 failures, shellcheck sc=0. PASS.",
+        "AC5: watchdog-override ok 1; drillwd O: killed (watchdog-override caller-poison), rc=0. PASS.",
+        "AC6: ci-fast 0, test 1. PASS.",
+        "AC8: committed-diff form gives 0 then 0 (vacuous until the controller commits; uncommitted scope is tools/rig_check.sh and tools/test_rig_check.sh only, per git status). PASS.",
+        "AC10: 1. PASS.",
+        "AC9 not run (controller: rig/full). make test not run. passes and status untouched."
+      ]
     }
   ],
   "ci_gate_commands": [
