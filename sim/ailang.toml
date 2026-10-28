@@ -18,6 +18,6 @@ level = "experimental"
 [dependencies]
 "sunholo/celestial" = "0.5.0" # R2-STAR-SURFACES: stellar, stellar_ld (ledger D-105)
 "sunholo/relativity" = "0.12.0"
-"sunholo/observe" = { path = "../../ailang-packages-observe/packages/observe" } # R3-EARTH-LINK EL1: lightcone (TEMP path until 0.1.0 is published; then the registry pin)
+"sunholo/observe" = "0.1.0" # R3-EARTH-LINK EL1: lightcone (light cone, catch-up, link windows, beam rays, the Earth rate)
 "sunholo/crew_core" = "0.6.0" # 0.6.0: stand-downs (R2-CREW-CONSOLE-V2 V8); 0.5.0: resource units as data (units.ail; the game keeps its table here): ailang-packages #146
 "sunholo/social_dynamics" = "0.4.0" # crew_core's engine; sim/protocol_crew.ail reads its State for the crew view
