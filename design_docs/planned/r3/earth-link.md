@@ -264,6 +264,15 @@ EL3 and EL4 are independent once EL2 lands. EL1–EL2 are headless and could go 
 - **Protocol minor collisions.** An open plan could also claim 2.16. Mitigation: check the free minor at execution time and record it, as R2-HOME-TIERS did.
 - **"In beam" on the first leg.** The guided tour starts at Sol with the plan known before departure, so it never shows a gap. The re-plan fixture (AC4) exercises the gap headless; a dev build shows it only on a second leg.
 
+## Archive entries (standing order, Mark 2026-10-28)
+
+The real physics behind this feature, in the in-game Archive (stapledons-design `lore/archive/`, PR #45; imported at `0fedb48`):
+
+| Entry | Unlock | Teaches | Check values |
+|---|---|---|---|
+| `archive.earths-voice` | `first_commit` | the light cone, the Earth rate astern and ahead, signals that chase a ship, the wait after a turn | RS-26, RS-28, RS-30..RS-33 |
+| `archive.following-light` | `cruise_above_0.9c` | how Earth aims at a ship crossing its sky near c: a gentle swing, at most βγ/r, and aiming ahead along the heard course | RS-38..RS-40 |
+
 ## Decisions (Mark, attended 2026-10-28)
 
 Mark approved the plan with every recommendation ("please merge in the plan", PR #340).
