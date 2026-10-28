@@ -218,7 +218,7 @@ What the player sees at a glance, and feels:
 | Words layer | EL3's panes, unchanged, behind Details | as EL3 |
 
 **The feed's frames are Earth's recent events, at the scale a voyage actually receives.** The light the ship gets spans weeks to a few decades of Earth time in a session (the comms playthrough reaches Earth +8.7 yr), and up to about two centuries on the longest voyages. So a frame is one event in Earth's week, not an era. Mark, 2026-10-28: "those are very far apart eras not what we will use in the game - we are not streaming millions of years". The sim generates the chronicle deterministically, and Godot only shows it.
-- `earth.feed = {frame, event, variant}`:
+- `earth.feed = {frame, event, variant, context}`, where `context = {era_tier, era_word, years, heard: [{port_id, heard_t}]}` holds the sim fields a live frame's prompt reads (below):
   - `frame = floor(t_e / feedBinYears)`, with one bin per Earth week;
   - `event` is the chronicle's entry for that week: `mix(seed, frame)` draws a category and an event from `data/feed/events.json`;
   - `variant` picks among the event's pictures.
@@ -230,12 +230,20 @@ What the player sees at a glance, and feels:
   - science and space: a launch, a telescope's first light, a message sent after the ship.
 
   Over decades the slow drift (the children grow up, the town changes) comes through the catalogue's later rows. It is written in the news voice, never judging (pillar 2), and is consistent with the news templates the Archive reads.
-- **Images: a shipped library, generated.**
+- **Live frames, painted each time the player looks: the main path** (Mark, 2026-10-28: "we can update as we go new images each time a user looks at it, using api keys etc and based on in game events and history in the right era").
+  - When the station opens, or while the feed is on screen, the AI lane paints the next few frames for the weeks being received. It uses the player's own keys (the AI indicator, as for the news and the Archive; no key ships in the build).
+  - Each frame's prompt is built in the AI lane (`ai/prompt.ail` `feedPrompt`) from sim fields only, carried in `earth.feed.context`:
+    - **the week's chronicle event**;
+    - **the right era**: Earth years since departure in the newest light, through the home-time ladder's words (`homeTier16` of t_e: launch, seasons, years, decade, decades, generation…). Fashion, technology, faces and the town drift with it: a frame twenty years on shows the niece grown and the street changed;
+    - **the voyage as Earth knows it, by the light cone.** These are only the in-game events Earth had heard by t_e: the plans whose `heard_t ≤ t_e` (the ship turned for Sirius A), the ports reached and reported, the crew's names. Earth's pictures never know what Earth could not yet have heard. That is the game's physics showing up in the news.
+  - Frames are cached by key (seed, week, event, era), so a revisit replays the same pictures. Every look adds new weeks; a returning player sees the frames already painted.
+  - Spend-capped under the AI layer's ceiling (default $0.50, player-set): a few frames per look, never a burst. Images carry no text or digits (prompt rule, as the portraits).
+  - When AI is off, the key is missing or a call fails, the frame comes from the shipped library at once, so the feed never waits on the network.
+- **The fallback library, generated once and shipped.**
   - About 8 events × 2 variants in each of about 6 categories (about 100 pictures).
   - Generated through the established home-art route: Codex imagegen, the home-tier style reference, no text or digits in frame, every picture inspected at 1:1 (as `data/interlude/home/generation_notes.md`), or through the AI lane's image slot (`gemini-2.5-flash-image`, $0.039 a call, unverified).
   - Pinned by sha256, with masters in the public bucket (D-18), fetched by `make feed-assets`.
   - The home-tier pictures are not feed frames: they summarise whole eras of home time, and stay on the crossing review.
-- **Live frames (AI on): the fun part.** While the AI indicator is on, the AI lane paints frames from the latest events actually reaching the ship: the accepted news text and the week's chronicle entry. They are cached by key, spend-capped, and fall back to the library, so the feed never waits on the network.
 
 Out of scope here: composing messages home (S-track), voices and audio from Earth (a later sound pass).
 

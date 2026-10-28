@@ -200,7 +200,7 @@
     {
       "id": "EL3b",
       "description": "The visual comms station (Mark 2026-10-28, standing order: visual first, words last): earth.feed in the sim (frame by Earth week of t_e, event, variant), Earth's feed playing at D (stillness to torrent), Doppler tint, static and the ring out of beam, twin clocks, the crew's faces and feelings, the exchange as light; a generated feed library from Earth's events; EL3's words behind Details",
-      "estimated_loc": 650,
+      "estimated_loc": 850,
       "dependencies": [
         "EL3"
       ],
@@ -208,12 +208,13 @@
         "earthFeedVm: same seed same feed; frame = floor(t_e / feedBinYears) (weekly); frame count over a leg = t_e advance / bin (still flying away, torrent flying home); events at the scale of weeks to decades",
         "make feed-art-check: the event catalogue and the pinned feed pictures agree; every picture inspected at 1:1 for text or digits",
         "tests/test_earth_feed.gd: tint and jumble bands chosen by D at RS-26..RS-29; static over the last beamed frame when out of beam; the frame shown is earth.feed",
-        "make display-audit-comms: every digit on the station an earth.* binding; Mark's render review of the four moments"
+        "make display-audit-comms: every digit on the station an earth.* binding; Mark's render review of the four moments",
+        "Live frames (EL3b.6): on each look the AI lane paints at most N new weeks from earth.feed.context (event, era by homeTier16(t_e), only plans heard by t_e), with the player keys under the spend ceiling; cache replays revisits; AI off, no key or failure shows the library frame at once (stub-image tests)"
       ],
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "Planned 2026-10-28; awaiting Mark's approval of the art route and spend (about 100 event pictures; gemini-2.5-flash-image $0.039 a call unverified, or Codex imagegen as for the home tiers) and the crew-portrait scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v3)."
+      "notes": "Planned 2026-10-28; awaiting Mark's approval of the art route and spend (about 100 event pictures; gemini-2.5-flash-image $0.039 a call unverified, or Codex imagegen as for the home tiers) and the crew-portrait scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v3). Live frames are the main path (Mark: new images each time a user looks, from in-game events and history in the right era); the library is the fallback."
     },
     {
       "id": "EL4",

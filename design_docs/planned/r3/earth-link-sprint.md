@@ -114,10 +114,11 @@ New `.ail` modules: `packages/observe/lightcone.ail` (+ tests), `sim/earth_link.
 Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28, **awaiting Mark's approval** (the art spend and the crew-portrait scope).
 
 - **EL3b.1 `earth.feed` in the sim** (about 150 LOC):
-  - `sim/earth_feed.ail`: `{frame, event, variant}` from t_e (a weekly `feedBinYears`, `mix(seed, frame)`), with `data/feed/events.json` as the event catalogue at the scale of weeks to decades (a pure AILANG table, `sim/data/feed_events.ail`);
+  - `sim/earth_feed.ail`: `{frame, event, variant, context}` from t_e (a weekly `feedBinYears`, `mix(seed, frame)`), with `data/feed/events.json` as the event catalogue at the scale of weeks to decades (a pure AILANG table, `sim/data/feed_events.ail`);
   - wire 2.16 `earth.feed`, plus `earthFeedVm` (strict VM equals the interpreter).
   - **Tests:**
     - determinism: same seed, same feed;
+    - `context` (era words by `homeTier16(t_e)`, and only the plans with `heard_t ≤ t_e`): Earth's pictures never know what Earth had not yet heard;
     - over one cruise leg the frame count is the closed form (t_e advance / bin), small flying away and large flying home: the stillness and the torrent are the physics.
 - **EL3b.2 The feed library** (art, attended):
   - generate about 100 pictures (about 6 categories × 8 events × 2) by the home-tier route;
@@ -136,6 +137,10 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28
   - faces with feelings from `crew_core` emotions, following the beam and home news;
   - portrait variants per member and feeling (D-7 sets);
   - until those exist, the medic's variants and the others' neutral faces with the feeling chip.
+- **EL3b.6 Live frames each time the player looks** (about 200 LOC; Mark 2026-10-28):
+  - a `feed` image kind in the AI lane: `ai/prompt.ail` `feedPrompt` from `earth.feed.context` (the event, the era, the voyage as Earth heard it; no text or digits), keyed by (seed, week, event, era);
+  - `ui/earth_feed.gd` asks for the next few weeks when the station opens and while the feed is shown, with the player's keys and under the spend ceiling, and shows the library frame until the painted one arrives.
+  - **Tests:** with stub images: a look requests at most N frames; a revisit replays from the cache with no new spend; AI off, no key, or a failed call shows the library frame at once; a prompt built from a context that has not heard a plan never names it.
 - **EL3b.5 The exchange as light, layout, renders** (about 130 LOC):
   - the spacetime strip from `earth.messages`;
   - the station layout, with EL3's words behind Details;
