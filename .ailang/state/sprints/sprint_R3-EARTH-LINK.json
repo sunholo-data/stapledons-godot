@@ -1,7 +1,11 @@
 {
   "sprint_id": "R3-EARTH-LINK",
-  "status": "awaiting_approval",
-  "approved": null,
+  "status": "in_progress",
+  "approved": {
+    "by": "Mark (attended 2026-10-28)",
+    "how": "\"please merge in the plan\": plan PR #340 merged with OQ1-OQ5 at their recommendations",
+    "at": "2026-10-28T08:22:37Z"
+  },
   "created": "2026-10-27",
   "design_doc": "design_docs/planned/r3/earth-link.md",
   "sprint_plan": "design_docs/planned/r3/earth-link-sprint.md",
@@ -96,31 +100,31 @@
       "id": "OQ1",
       "q": "Comms station on the spare console reserved_2?",
       "recommendation": "yes; reserved_3 stays spare",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ2",
       "q": "The ship sends its plan home automatically at every commit?",
       "recommendation": "yes, automatic, shown in the Exchange log",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ3",
       "q": "Earth always transmits in this sprint (earth.sending true)?",
       "recommendation": "yes; Earth's fate switches it later",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ4",
       "q": "Gate 2 golden for a 2D overlay = projected geometry vs a CPU reference?",
       "recommendation": "yes",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ5",
       "q": "Create sunholo/observe now for the geometry?",
       "recommendation": "yes, as the roadmap names it",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     }
   ],
   "features": [
@@ -133,10 +137,10 @@
         "RS-26..RS-37 on stapledons-design main",
         "git grep -c 'RS-3[0-7]' physics/relativity-spec.md >= 8"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-28T08:22:37Z",
+      "completed": "2026-10-28T08:22:37Z",
+      "notes": "stapledons-design PR #44 merged (dd68310..): physics/relativity-spec.md RS-26..RS-37 and the light-cone row; git grep -c RS-3[0-7] = 8 on design main."
     },
     {
       "id": "EL1",
@@ -150,10 +154,10 @@
         "ailang pkg quality reports no gates; [release] kind present",
         "published 0.1.0; sim/ailang.toml pins it; ailang lock and make deps clean"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-28T08:22:37Z",
+      "completed": "2026-10-28T08:22:37Z",
+      "notes": "sunholo/observe 0.1.0 in ailang-packages branch feat/observe (5d6b4ee + README row): lightcone seenAt, catchUp, triangleExcess (clamped at 0), onBeamLine (atan2), linkWindow, earthRate (relativity 0.12.0 optics.gammaOnePlusBetaCos with the cosine clamped to [-1,1], since normalised vectors can dot to 1+1ulp outside doppler's contract; -heading at Sol). 16 tests (RS-26..37 vs closed forms written from 1-beta; five mutants killed), smoke OK, linkProbe VM = interpreter (6,790 bytes), pkg quality: no gates. Contracts: the verifier cannot encode sqrt/exp, so they stay runtime contracts backed by tests (reported upstream). [release] kind = feature (the plan said minor; the field takes security|fix|feature|breaking). PUBLISH PENDING: the classifier blocks ailang-publish; Mark runs it. Until then sim/ailang.toml carries a TEMP path dependency; swap to the registry pin before the PR merges."
     },
     {
       "id": "EL2",
@@ -172,10 +176,10 @@
         "make sim (AC6, AC12 sim half): stale beam until the new heard_t; earth.preview equals the committed window and stale, three keys only",
         "make strict and make parity: earthLinkVm VM = interpreter; a 2.15 session prints no earth key"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-28T08:22:37Z",
+      "completed": "2026-10-28T08:49:18Z",
+      "notes": "sim/earth_link.ail (Message, Link, LinkLeg; inBeam three cases, coveredAt at the commit, windowOf, previewOf, staleAt, rateOf, earthView), World.link + linkAfter/legOf/earthOf in core (make replay 11/11 identical right after the field, AC8), clocks via seenAt, protocol 2.16 (earthMinor = surfaceMinor()+3 = 16, free: no open PR edits sim/protocol.ail) with sim/protocol_earth.ail, EARTH_MINOR := 16, strict earthLinkVm. 10 tests incl. AC4 (40 ly), AC4b (10 ly first leg: kills covered-at-arrival), AC5, cases, the 2.16 wire; 11 mutants killed (the flying guard is unreachable via the journey, checked directly). Sessions stay on ARCHIVE_MINOR until EL3/EL4 read earth. Gates (pinned v0.54.18): make sim green (564 AILANG tests; bridge 0 failures; bh-hud 64 after make import refreshed a stale class cache in the clone), make strict (earthLinkVm VM = interpreter = earth-link-ok), make parity, make replay 11/11 identical. Four older tests that pinned 2.15 as the newest minor now pin 2.16 (archive_health_test, protocol_interlude_test, protocol_crew_test, protocol_test S0.2 negotiation). LOC: earth_link 125, protocol_earth 44, tests 242, core/consequence/protocol +60."
     },
     {
       "id": "EL3",
@@ -191,7 +195,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Start here: switch the game sessions (ship_geometry_demo, main.gd, loading_jump, tests that assert ARCHIVE_MINOR) to SimBridge.EARTH_MINOR when the comms panel first reads earth."
     },
     {
       "id": "EL4",

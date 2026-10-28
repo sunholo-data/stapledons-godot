@@ -1,6 +1,6 @@
 # R3-EARTH-LINK: Earth's signal, the live Earth rate, the comms station and Earth's beams
 
-**Status:** Planned 2026-10-27, awaiting Mark's approval.
+**Status:** Planned 2026-10-27; approved by Mark 2026-10-28 (OQ1–OQ5 as recommended). In progress.
 **Release:** R3 (Signals and Contact), the roadmap's first step: milestones **S1**, **K1** and **F6**.
 **Priority:** P1. It makes home the ship's anchor from the first leg, and every later R3 track (evidence, finder, contact) builds on its light cone.
 **Origin:** Mark, attended 2026-10-27: "it will be crazy to receive updates from earth at different rates according to distance and speed traveling towards or away"; "it's only straight lines - so as soon as we change course the signal will be lost unless we say where we are going"; "we could then have a map graphic showing which direction earth is sending its signals as far as we know, and where they will point, I guess an important anchor for the ship." R3 approved the same day (stapledons-design #42).
@@ -264,9 +264,11 @@ EL3 and EL4 are independent once EL2 lands. EL1–EL2 are headless and could go 
 - **Protocol minor collisions.** An open plan could also claim 2.16. Mitigation: check the free minor at execution time and record it, as R2-HOME-TIERS did.
 - **"In beam" on the first leg.** The guided tour starts at Sol with the plan known before departure, so it never shows a gap. The re-plan fixture (AC4) exercises the gap headless; a dev build shows it only on a second leg.
 
-## Open questions for Mark
+## Decisions (Mark, attended 2026-10-28)
 
-| # | Question | Recommendation |
+Mark approved the plan with every recommendation ("please merge in the plan", PR #340).
+
+| # | Question | Decision |
 |---|---|---|
 | OQ1 | Put the comms station on the spare console `reserved_2` | **Yes**; `reserved_3` stays spare |
 | OQ2 | The ship sends its plan home automatically at every commit, shown in the Exchange log; composing content comes later | **Yes, automatic** |

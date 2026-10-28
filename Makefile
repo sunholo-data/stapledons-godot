@@ -445,6 +445,10 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]
+	@# earthLinkVm (R3-EARTH-LINK EL2): Earth's link (in beam, windows, previews, stale beams, the 2.16 wire); strict VM = interpreter
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry earthLinkVm --args-json 0 sim/earth_link_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry earthLinkVm --args-json 0 sim/earth_link_test.ail); \
+	echo "strict earthLinkVm (R3-EARTH-LINK): VM $$got | interpreter $$interp"; [ "$$got" = "earth-link-ok" ] && [ "$$interp" = "earth-link-ok" ]
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry transitVm --args-json 0 sim/transit_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry transitVm --args-json 0 sim/transit_test.ail); \
 	echo "strict transitVm (M4.3a): VM $$got | interpreter $$interp"; [ "$$got" = "transit-ok" ] && [ "$$interp" = "transit-ok" ]

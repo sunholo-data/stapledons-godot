@@ -37,9 +37,9 @@ pure func tickLine(t: int, dtau: string) -> string = join("", ["{\"v\":2,\"type\
 pure func feed(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
 pure func reply(s: Session, line: string) -> string = serve(s, line).reply
 
-test "2.15 is the next free minor after 2.13 (2.14 is held for R2-SIMILAR-S0 S0.2)" {
+test "2.15 is the next free minor after 2.13 (2.14 is held for R2-SIMILAR-S0 S0.2); 99 answers the newest, 2.16 (R3-EARTH-LINK)" {
   archiveMinor() == surfaceMinor() + 2 && contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15")
-  && contains(reply(newSession(), helloLine(99)), "\"minor\":15") && contains(reply(newSession(), helloLine(14)), "\"minor\":14")
+  && contains(reply(newSession(), helloLine(99)), "\"minor\":16") && contains(reply(newSession(), helloLine(14)), "\"minor\":14")
 }
 test "a 2.15 new game carries the archive section: 100 in Sol, 90 at Sgr A* (bh_enter)" {
   let sol = reply(feed(newSession(), [helloLine(15)]), gameLine("sol"));

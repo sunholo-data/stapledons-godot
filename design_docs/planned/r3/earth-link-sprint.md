@@ -1,7 +1,7 @@
 # Sprint R3-EARTH-LINK: plan
 
 **Design:** [earth-link.md](earth-link.md) (R3 S1, K1, F6).
-**Status:** Awaiting Mark's approval (plan only; nothing executes before it).
+**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (publish pending: Mark runs ailang-publish), EL2 ✅; EL3 next.
 **Progress file:** `.ailang/state/sprints/sprint_R3-EARTH-LINK.json`
 **Branches:**
 - this plan: `design/r3-earth-link`;

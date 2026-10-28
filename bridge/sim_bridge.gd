@@ -59,6 +59,11 @@ const SURFACE_MINOR := 13
 ## sim/archive_health.ail), in full states and whenever it changes. Not shown to the player; the sound
 ## director's spire degradation layer follows it. Minor 14 is held for R2-SIMILAR-S0 S0.2.
 const ARCHIVE_MINOR := 15
+## Protocol 2.16 (R3-EARTH-LINK, design r3/earth-link.md): `earth`, Earth's link (the Earth rate, the
+## newest Earth light and its age, in_beam, Earth's beams, stale beams, plans in flight, the link window
+## and a planned leg's preview; sim/earth_link.ail), in full states and whenever it changes. The comms
+## station and the map's Earth beams read it; until they land the sessions stay on ARCHIVE_MINOR.
+const EARTH_MINOR := 16
 const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
