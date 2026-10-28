@@ -111,20 +111,19 @@ New `.ail` modules: `packages/observe/lightcone.ail` (+ tests), `sim/earth_link.
 
 ### EL3b. The comms station, visual (Mark 2026-10-28), about 650 LOC plus art
 
-Design EL3b. Visual concept: the mock-up artifact, version 3. Planned 2026-10-28, **awaiting Mark's approval** (the art spend and the crew-portrait scope).
+Design EL3b. Visual concept: the mock-up artifact, version 4. Planned 2026-10-28, **awaiting Mark's approval** (the art spend and the crew-portrait scope).
 
 - **EL3b.1 `earth.feed` in the sim** (about 150 LOC):
-  - `sim/earth_feed.ail`: `{era, frame, event, variant}` from t_e (`homeTier16`, a weekly `feedBinYears`, `mix(seed, frame)`), with `data/feed/events.json` as the per-era catalogue (a pure AILANG table, `sim/data/feed_events.ail`);
+  - `sim/earth_feed.ail`: `{frame, event, variant}` from t_e (a weekly `feedBinYears`, `mix(seed, frame)`), with `data/feed/events.json` as the event catalogue at the scale of weeks to decades (a pure AILANG table, `sim/data/feed_events.ail`);
   - wire 2.16 `earth.feed`, plus `earthFeedVm` (strict VM equals the interpreter).
   - **Tests:**
     - determinism: same seed, same feed;
-    - the era follows the tier ladder;
     - over one cruise leg the frame count is the closed form (t_e advance / bin), small flying away and large flying home: the stillness and the torrent are the physics.
 - **EL3b.2 The feed library** (art, attended):
-  - generate about 190 pictures (16 eras × about 6 events × 2) by the home-tier route;
+  - generate about 100 pictures (about 6 categories × 8 events × 2) by the home-tier route;
   - inspect each at 1:1 for text or digit marks;
   - `data/feed/SOURCES`, `generation_notes.md`, sha256 pins, masters in the public bucket;
-  - `make feed-assets` (fetch) and `make feed-art-check` (catalogue = files), with the 28 home-tier pictures as each era's establishing frame.
+  - `make feed-assets` (fetch) and `make feed-art-check` (catalogue = files).
   - **Pause point:** Mark reviews the pictures.
 - **EL3b.3 The feed in Godot** (about 250 LOC):
   - `ui/earth_feed.gd`: frames by `earth.feed`, the jumble and tint bands in `data/ui/comms_feed.json` chosen by D (never computed), static over the frozen `last_beam_t` frame, the ring, the live tag and the corner clock bound;

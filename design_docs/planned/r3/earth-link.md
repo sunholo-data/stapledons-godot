@@ -202,7 +202,7 @@ Streams below 2.16 carry no `earth` section and stay byte-identical; the replay 
 
 ### EL3b. The comms station, visual (Mark 2026-10-28: "visual first, words last")
 
-Mark on the EL3 panes: "the comms station is boring - this is the connection of the crew to home it should be a wash of images, text, emotions and feelings, and a good visual UI not lots of text". Then: "we can represent the earth updates with a stillness or fast flowing images of a jumbled video feed", and "we can have fun generating images for the feed based off of latest events on earth". That set a standing order (design-decisions 2026-10-28, "Visual First, Words Last"). Visual concept: [the mock-up artifact](https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ), version 3. EL3's sentence panes stay as the words layer behind a Details tap.
+Mark on the EL3 panes: "the comms station is boring - this is the connection of the crew to home it should be a wash of images, text, emotions and feelings, and a good visual UI not lots of text". Then: "we can represent the earth updates with a stillness or fast flowing images of a jumbled video feed", and "we can have fun generating images for the feed based off of latest events on earth". That set a standing order (design-decisions 2026-10-28, "Visual First, Words Last"). Visual concept: [the mock-up artifact](https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ), version 4. EL3's sentence panes stay as the words layer behind a Details tap.
 
 What the player sees at a glance, and feels:
 
@@ -217,20 +217,25 @@ What the player sees at a glance, and feels:
 | The exchange as light | A small spacetime strip: Earth's line, the ship's, each plan travelling home at light speed, Earth's reply, the wait at the port | `earth.messages` (sent, heard, reply), `t` and \|p\| |
 | Words layer | EL3's panes, unchanged, behind Details | as EL3 |
 
-**The feed's frames come from Earth's events.** The sim generates them deterministically, and Godot only shows them.
-- `earth.feed = {era, frame, event, variant}`:
-  - `era` is `homeTier16` of Earth years in the newest light (the R2-HOME-TIERS ladder, 16 eras from "launch" to "aeons");
+**The feed's frames are Earth's recent events, at the scale a voyage actually receives.** The light the ship gets spans weeks to a few decades of Earth time in a session (the comms playthrough reaches Earth +8.7 yr), and up to about two centuries on the longest voyages. So a frame is one event in Earth's week, not an era. Mark, 2026-10-28: "those are very far apart eras not what we will use in the game - we are not streaming millions of years". The sim generates the chronicle deterministically, and Godot only shows it.
+- `earth.feed = {frame, event, variant}`:
   - `frame = floor(t_e / feedBinYears)`, with one bin per Earth week;
-  - `event` is drawn from the era's event catalogue (`data/feed/events.json`) by `mix(seed, frame)`;
-  - `variant` picks among that event's pictures.
-- Same seed, same feed, the same as the home pictures today. Because the frame key moves with t_e, the stillness and the torrent are both the physics.
-- **The event catalogue** is in-world Earth history per era: family moments, a niece's first day at school, elections, storms, festivals, launch anniversaries, cities and coasts changing, and later strangers and new languages. It is written in the home-tiers voice, never judging (pillar 2), and is consistent with the news templates the Archive reads.
+  - `event` is the chronicle's entry for that week: `mix(seed, frame)` draws a category and an event from `data/feed/events.json`;
+  - `variant` picks among the event's pictures.
+- Same seed, same feed. The frame key moves with t_e, so the stillness (one week held for days or months aboard) and the torrent (weeks flicking past) are both the physics.
+- **The event catalogue** is everyday-to-world Earth news at the scale of weeks to decades:
+  - family and friends: a birthday, a wedding, a new baby, a funeral;
+  - home and town: seasons, a storm, a festival, a new building;
+  - the nation and the world: an election, a treaty, a protest, a record heat year;
+  - science and space: a launch, a telescope's first light, a message sent after the ship.
+
+  Over decades the slow drift (the children grow up, the town changes) comes through the catalogue's later rows. It is written in the news voice, never judging (pillar 2), and is consistent with the news templates the Archive reads.
 - **Images: a shipped library, generated.**
-  - About 6 events × 2 variants for each of the 16 eras (about 190 pictures).
+  - About 8 events × 2 variants in each of about 6 categories (about 100 pictures).
   - Generated through the established home-art route: Codex imagegen, the home-tier style reference, no text or digits in frame, every picture inspected at 1:1 (as `data/interlude/home/generation_notes.md`), or through the AI lane's image slot (`gemini-2.5-flash-image`, $0.039 a call, unverified).
-  - Prompts come from the catalogue rows. Each picture is pinned by sha256, its master is in the public bucket (D-18), and it is fetched by `make feed-assets`.
-  - The 28 home-tier pictures seed the library as each era's establishing frame.
-- **Live frames (stretch, AI on).** While the AI indicator is on, the AI lane can also paint frames from the actual news reaching the ship (its accepted text), cached by key and spend-capped. They fall back to the library, so the feed never waits on the network.
+  - Pinned by sha256, with masters in the public bucket (D-18), fetched by `make feed-assets`.
+  - The home-tier pictures are not feed frames: they summarise whole eras of home time, and stay on the crossing review.
+- **Live frames (AI on): the fun part.** While the AI indicator is on, the AI lane paints frames from the latest events actually reaching the ship: the accepted news text and the week's chronicle entry. They are cached by key, spend-capped, and fall back to the library, so the feed never waits on the network.
 
 Out of scope here: composing messages home (S-track), voices and audio from Earth (a later sound pass).
 
