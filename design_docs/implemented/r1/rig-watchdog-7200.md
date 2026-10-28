@@ -1,6 +1,6 @@
 # Rig watchdog 7,200 s, and a hermetic rig-check control
 
-**Status:** Planned (mission iteration 55, designer, 2026-10-28). **Release:** r1. **Milestone:** none (merge tooling).
+**Status:** Implemented 2026-10-28 (mission iteration 55; PR #345, merge `d63b47a4`; evaluation Sonnet 95/100 PASS; `rig/full` green 117 min). **Release:** r1. **Milestone:** none (merge tooling).
 **Priority:** P1. It protects every landing: `rig/full` on PR #341 took 90 min, which is the whole 5,400 s watchdog.
 **Implements:** ledger [D-126](../../stapledon-mission.md) answer **C**, the **A half only** (Mark, attended 2026-10-28: "raise the rig/full watchdog default to 7,200 s (TEST_S=${RIG_TEST_S:-7200} and the make-test-red case in tools/test_rig_check.sh)"). It also covers the charter's iteration 52 backlog note: "`tools/test_rig_check.sh` inherits `RIG_TEST_S` from the caller ... (unset it in the test)". The B half (moving L4 ahead of Kerr a4) is a charter edit that the controller makes. L4 itself is a separate item.
 **Depends on:** row 7o landed (PR #309, `tools/test_rig_check.sh` inside `make test` via `mk/m45.mk`); AILANG v0.54.18. No sim, package, physics, scene or player-visible change.

@@ -1,13 +1,13 @@
 {
   "id": "R1-RIG-WATCHDOG",
   "sprint_id": "R1-RIG-WATCHDOG",
-  "status": "approved",
+  "status": "landed",
   "approval": "D-126 C (Mark, attended 2026-10-28) directs this change; D-88 test hygiene",
   "base_commit": "834db76c",
   "mission_iteration": 55,
   "created": "2026-10-28",
-  "design_doc": "design_docs/planned/r1/rig-watchdog-7200.md",
-  "sprint_plan": "design_docs/planned/r1/rig-watchdog-7200-sprint.md",
+  "design_doc": "design_docs/implemented/r1/rig-watchdog-7200.md",
+  "sprint_plan": "design_docs/implemented/r1/rig-watchdog-7200-sprint.md",
   "release": "r1",
   "implements": [
     "D-126 answer C, A half only: rig/full watchdog default 7,200 s and the make-test-red case (Mark, attended 2026-10-28)",
@@ -106,8 +106,8 @@
           "expected": "1"
         }
       ],
-      "passes": null,
-      "status": "planned",
+      "passes": true,
+      "status": "landed",
       "passes_policy": "passes/status are set by the controller only, after AC9 rig/full is green on the PR head; the executor never sets passes and records AC evidence in notes only",
       "notes": [
         "WD1.1: drill block saved verbatim to .godot/tmp/wd-drills.sh (byte-identical to design section 3, checked by awk extract + diff).",
@@ -121,7 +121,8 @@
         "AC6: ci-fast 0, test 1. PASS.",
         "AC8: committed-diff form gives 0 then 0 (vacuous until the controller commits; uncommitted scope is tools/rig_check.sh and tools/test_rig_check.sh only, per git status). PASS.",
         "AC10: 1. PASS.",
-        "AC9 not run (controller: rig/full). make test not run. passes and status untouched."
+        "AC9 not run (controller: rig/full). make test not run. passes and status untouched.",
+        "controller iteration 55: rig/full run 1 on 552f5626 red at ship-demo-launch-test (90 s launch guard under rig load 6-20; same target green twice in isolation, 63 s and 53 s; PR diff cannot reach it); run 2 green in 117 min (rig/full success); fast tier success on head and merge d63b47a4; evaluation eval_R1-RIG-WATCHDOG_WD1_round_1.json Sonnet 95/100 PASS; merged as d63b47a4"
       ]
     }
   ],
@@ -140,5 +141,14 @@
     "A rig run past 120 min under load would need a new ruling; L4 (test-suite speed) removes the cause."
   ],
   "definition_of_done": "AC1-AC8 and AC10 green per the design's AC table, then AC9 rig/full green on the PR head run by the controller; only then does the controller set features[].passes = true and status = done. make test is not run by the executor.",
-  "notes": []
+  "notes": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "model": "sonnet",
+      "score": 95,
+      "pass": true,
+      "path": ".ailang/state/evaluations/eval_R1-RIG-WATCHDOG_WD1_round_1.json"
+    }
+  ]
 }

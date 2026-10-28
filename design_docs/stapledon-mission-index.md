@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 55 | 2026-10-28 | D-126 C's A half LANDED (PR #345, merge `d63b47a4`): `rig/full` watchdog default 7,200 s, hermetic rig-check control; Sonnet 95 PASS; rig/full 117 min; row 7m-d filed (D-127 B), D-128... |
 | 54 | 2026-10-28 | row 7m AC1, the quiet-rig bench for M4.6pR3, MEASURED and PARKED on D-127: live-transit p99 15.22–16.48 ms in 6 of 6 quiet runs (loop 3 and independent Sonnet 3, 80 PASS), DR1 red;... |
 | 53 | 2026-10-27 | row 7i(c), the M4 AC5 scene-session golden, LANDED (PR #341, merge `fc9e2187`): AI=stub session committed and pinned, arm64 golden recorded with VM... |
 | 52 | 2026-10-27 | iteration 52, K1.1a-a3 Kerr oracle RK-10..13, RK-18 and RK-Q1 LANDED (PR #333, merge `f97d5ef1`), built by orphan iteration 51 and verified and lan... |
