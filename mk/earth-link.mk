@@ -39,5 +39,7 @@ feed-art-check: ## R3-EARTH-LINK EL3b: catalogue = events.json = SOURCES, and ev
 	[ "$$sim" = "$$src" ] || { echo "feed-art-check: FAIL: data/feed/SOURCES does not picture every catalogue event"; exit 1; }; \
 	sed -nE 's/^([a-z0-9-]+_v[0-9]+\.webp) sha256 ([0-9a-f]{64}) .*/\2  \1/p' data/feed/SOURCES > $(SCRATCH)/feed-pins.txt; \
 	(cd data/feed/pictures && shasum -a 256 -c --quiet $(abspath $(SCRATCH))/feed-pins.txt) || { echo "feed-art-check: FAIL: a picture differs from its pin"; exit 1; }; \
+	live=$$(jq -r '.live_style' data/feed/events.json); ai=$$($(AILANG) run --quiet --package-dir ai --entry feedStyleText --args-json 0 ai/prompt.ail); \
+	[ -n "$$live" ] && [ "$$live" = "$$ai" ] || { echo "feed-art-check: FAIL: ai/prompt.ail feedStyle differs from data/feed/events.json live_style"; exit 1; }; \
 	echo "feed-art-check: ok ($$(echo "$$sim" | wc -l | tr -d ' ') events, $$(wc -l < $(SCRATCH)/feed-pins.txt | tr -d ' ') pictures)"
 test: feed-art-check

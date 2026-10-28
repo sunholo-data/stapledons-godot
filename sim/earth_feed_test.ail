@@ -3,7 +3,7 @@ module stapledons/sim/earth_feed_test
 -- R3-EARTH-LINK EL3b.1 (design r3/earth-link.md EL3b): Earth's feed. Expected values are closed
 -- forms (the week count of an Earth-time span, e^-+phi for the Earth rate), never this module's
 -- output. earthFeedVm runs every check on the strict VM and the interpreter (make strict).
-import ./earth_feed (Feed, Influence, feedAt, frameOf, feedBinYears, kindOf, eventOf, eventsFor)
+import ./earth_feed (Feed, Influence, feedAt, frameOf, feedBinYears, kindOf, eventOf, eventsFor, homeFeeling)
 import ./data/feed_events (FeedEvent, feedEvents, feedKinds, categories)
 import ./core (World, Target, Intent, IPlan, ICommit, defaultParams, newWorld, tick, scriptedLeg, tauTotalOf, earthOf)
 import ./home_tiers (homeTier16)
@@ -104,16 +104,42 @@ pure func checkPhysics() -> bool {
 }
 test "stillness and torrent: a ship-year moves the feed D / one week frames (3.7 flying away, 736 flying home)" { checkPhysics() }
 
+-- ------------------------------------------------------------ the crew's home feelings (EL3b.4)
+pure func feel(i: int, work: string, beam: bool, home: bool, reason: string, rate: float, cat: string, f: int) -> string = homeFeeling(5, i, work, beam, home, reason, rate, cat, f)
+pure func oneOf(x: string, xs: [string]) -> bool = any(\y. y == x, xs)
+pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
+pure func checkFeelings() -> bool {
+  let ms = range(0, 5);
+  let fs = range(0, 40);
+  efAll([
+    -- work strain shows first
+    all(\w. feel(0, w, true, true, "", 1.0, "family", 3) == w, ["angry", "fearful", "sad"]),
+    -- cut off: grieving or sad; Earth silent: grieving
+    all(\i. oneOf(feel(i, "neutral", false, false, "not_heard", 1.0, "town", 7), ["grieving", "sad"]), ms), feel(2, "happy", false, false, "silent", 1.0, "town", 7) == "grieving",
+    -- at home glad; home receding, longing; the torrent, curious
+    all(\i. oneOf(feel(i, "neutral", true, true, "", 1.0, "town", 7), ["happy", "neutral"]), ms),
+    all(\i. oneOf(feel(i, "neutral", true, false, "", 0.070888, "town", 7), ["loving", "sad"]), ms),
+    all(\i. oneOf(feel(i, "neutral", true, false, "", 14.107, "town", 7), ["curious", "happy"]), ms),
+    -- real time: the news decides
+    feel(0, "neutral", true, false, "", 1.0, "family", 7) == "loving", feel(0, "neutral", true, false, "", 1.0, "town", 7) == "happy", feel(0, "neutral", true, false, "", 1.0, "science", 7) == "curious",
+    -- the crew is never one face: both feelings appear across members and weeks
+    any(\f. feel(0, "neutral", false, false, "not_heard", 1.0, "town", f) == "grieving", fs) && any(\f. feel(0, "neutral", false, false, "not_heard", 1.0, "town", f) == "sad", fs),
+    any(\i. feel(i, "neutral", true, true, "", 1.0, "town", 7) != feel(0, "neutral", true, true, "", 1.0, "town", 7), ms),
+    -- every feeling has a portrait (the eight emotions)
+    all(\f. all(\i. oneOf(feel(i, "neutral", f % 2 == 0, f % 3 == 0, if f % 5 == 0 then "silent" else "not_heard", intToFloat(f) * 0.1, "world", f), emotions8()), ms), fs)])
+}
+test "the crew's home feelings: work strain first, then the link (cut off, home, receding, torrent, the news); never one face" { checkFeelings() }
+
 -- ------------------------------------------------------------ the wire
 pure func helloLine() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":16}}"
 pure func gameLine() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false}"
 pure func checkWire() -> bool {
   let s = serve(newSession(), helloLine()).session;
   let g = serve(s, gameLine()).reply;
-  efAll([earthMinor() == 16, contains(g, "\"feed\":{\"frame\":0,\"kind\":\""), contains(g, "\"context\":{\"era_tier\":0,\"era_word\":\"launch\",\"years\":0,\"influences\":[]}")])
+  efAll([earthMinor() == 16, contains(g, "\"feed\":{\"frame\":0,\"kind\":\""), contains(g, "\"context\":{\"era_tier\":0,\"era_word\":\"launch\",\"years\":0,\"influences\":[]}"), contains(g, "\"crew\":[]")])
 }
 test "2.16: the earth section carries the feed, its context Earth-side only" { checkWire() }
 
 export pure func earthFeedVm(n: int) -> string =
-  if checkFrames() && checkDeterminism() && checkEra() && checkMix() && checkInfluences() && checkWords() && checkPhysics() && checkWire()
+  if checkFrames() && checkDeterminism() && checkEra() && checkMix() && checkInfluences() && checkWords() && checkPhysics() && checkFeelings() && checkWire()
   then "earth-feed-ok" else "earth-feed-BAD"

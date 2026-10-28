@@ -14,6 +14,7 @@ pure func shipped() -> string = join("", [
   "\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:google/gemini-2.5-flash-lite\"},{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash\"}],",
   "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-image\"}],",
   "\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-image\"}],",
+  "\"feed\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-image\"}],",
   "\"voice\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-preview-tts\"}]}}"])
 -- A table that tries to put OpenRouter first everywhere it may (text) and
 -- names Gemini second: resolution must still never pick OpenRouter for media.
@@ -40,14 +41,14 @@ pure func mediaOk(t: Routing, kind: string, model: string) -> bool =
 pure func checkRouteMedia() -> bool {
   let t = table();
   mediaOk(t, "portrait", "gemini-2.5-flash-image") && mediaOk(t, "avatar", "gemini-2.5-flash-image") &&
-  mediaOk(t, "voice", "gemini-2.5-flash-preview-tts") && none(resolve(t, "music", both(), false), "bad_request") &&
+  mediaOk(t, "voice", "gemini-2.5-flash-preview-tts") && mediaOk(t, "feed", "gemini-2.5-flash-image") && none(resolve(t, "music", both(), false), "bad_request") &&
   routeName(resolve(t, "text", ["gemini"], false)) == "gemini"
 }
 
 -- Config errors at start: each names its fault.
 pure func cfg(routes: string) -> string = join("", ["{\"v\":1,\"routes\":{", routes, "}}"])
 pure func gem(kind: string) -> string = join("", ["\"", kind, "\":[{\"provider\":\"gemini\",\"model\":\"m\"}]"])
-pure func three() -> string = join(",", [gem("portrait"), gem("avatar"), gem("voice")])
+pure func three() -> string = join(",", [gem("portrait"), gem("avatar"), gem("voice"), gem("feed")])
 pure func refused(text: string, prefix: string) -> bool = match parseRouting(text) { Ok(_) => false, Err(e) => startsWith(e, prefix) }
 pure func checkRouteConfig() -> bool =
   refused("not json", "config: routing is not JSON") &&
@@ -57,7 +58,7 @@ pure func checkRouteConfig() -> bool =
   refused(cfg(join(",", [three(), "\"text\":[{\"model\":\"gemini-2.5-flash\"}]"])), "config: text: model gemini-2.5-flash has no provider") &&
   refused(cfg(join(",", [three(), "\"text\":[{\"provider\":\"gemini\"}]"])), "config: text: gemini has no model") &&
   refused(cfg(join(",", [three(), "\"text\":[{\"provider\":\"openrouter\",\"model\":\"gpt\"}]"])), "config: text: openrouter model gpt is not vendor/model") &&
-  refused(cfg(join(",", [gem("text"), gem("avatar"), gem("voice"), "\"portrait\":[{\"provider\":\"openrouter\",\"model\":\"a/b\"},{\"provider\":\"gemini\",\"model\":\"m\"}]"])), "config: portrait: openrouter cannot serve portrait") &&
+  refused(cfg(join(",", [gem("text"), gem("avatar"), gem("voice"), gem("feed"), "\"portrait\":[{\"provider\":\"openrouter\",\"model\":\"a/b\"},{\"provider\":\"gemini\",\"model\":\"m\"}]"])), "config: portrait: openrouter cannot serve portrait") &&
   refused(cfg(three()), "config: kind text has no route") &&
   refused(cfg(join(",", [three(), "\"text\":[]"])), "config: text: empty route") &&
   refused(cfg(join(",", [three(), gem("text"), gem("music")])), "config: unknown kind music") &&

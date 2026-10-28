@@ -160,14 +160,14 @@ func test_kinds() -> bool:
 	var g := s.kinds_for("gemini")
 	g.sort()
 	assert_bool("OpenRouter -> text", s.kinds_for("openrouter") == ["text"])
-	assert_bool("Gemini -> text, portraits (and avatar), voice: %s" % [g], g == ["avatar", "portrait", "text", "voice"])
+	assert_bool("Gemini -> text, portraits (and avatar), voice, pictures from home: %s" % [g], g == ["avatar", "feed", "portrait", "text", "voice"])
 	s.save_key("openrouter", KEY_O)
 	assert_bool("only an OpenRouter key: live kinds [text] (%s)" % [s.live_kinds()], s.live_kinds() == ["text"])
 	s.save_key("gemini", KEY_G)
-	assert_bool("both keys: every kind live", s.live_kinds().size() == 4)
+	assert_bool("both keys: every kind live", s.live_kinds().size() == 5)
 	var e := s.estimates()
 	assert_bool("price estimates per kind from prices.json: text %.6f, voice %.6f, portrait %.3f" % [e["text"], e["voice"], e["portrait"]],
-		e["text"] > 0.0 and e["voice"] > 0.0 and is_equal_approx(e["portrait"], 0.039))
+		e["text"] > 0.0 and e["voice"] > 0.0 and is_equal_approx(e["portrait"], 0.039) and is_equal_approx(e["feed"], 0.039))
 	return true
 
 

@@ -469,12 +469,28 @@ pure func recordScript() -> [string] = [game("true"),
     wireRec("3", "voice", hexA(), voice(q("3f2a9c0d1e4b5a6c"), "5300", "[0,2100]")), openText(), wireText("4", "{joyful}Hi"), wireText("9", "Hi")])),
   tickLine(3, "0", join(",", [openText(), openText(), openText(), wireText("5", "Year 2041"), wireText("6", "{loving}​"), wireText("7", repeat("a{sad}", 100))]))]
 pure func replies(s: Session, lines: [string]) -> [string] = match lines { [] => [], l :: more => { let r = serve(s, l); r.reply :: replies(r.session, more) } }
+-- R3-EARTH-LINK EL3b.6: a live frame of Earth's feed. The event is the entity (hyphens as
+-- underscores), the era tier the age_stage, the week the variant, so each week paints its own picture.
+pure func feedOpen(week: string) -> AiOpen =
+  {open("feed", "feed", "town_market") | ageStage: Some(2.0), context: [{ name: "event", value: CStr("town-market") }, { name: "era", value: CStr("years") }, { name: "week", value: CStr(week) }]}
+pure func checkAiFeed() -> bool {
+  let w = play();
+  let t = run(w, [IAiOpen(feedOpen("312"))]);
+  allTrue([accepts(w, feedOpen("312")),
+    (match requests(t.events) { r :: [] => r.kind == "feed" && r.purpose == "feed" && r.key.entityId == "town_market" && r.key.emotion == "-" && r.key.ageStage == 2 && r.key.variant == "312", _ => false }),
+    refusesWith(w, open("feed", "line", "town_market"), "ai_kind"), refusesWith(w, open("portrait", "feed", "medic"), "ai_kind"),
+    refusesWith(w, {feedOpen("312") | emotion: Some("happy")}, "ai_bad_key"),
+    refusesWith(w, open("feed", "feed", "town_market"), "ai_bad_key"), refusesWith(w, feedOpen("12a"), "ai_bad_key"), refusesWith(w, feedOpen(""), "ai_bad_key"),
+    refusesWith(w, feedOpen("12345678"), "ai_bad_key")])
+}
+
 export pure func aiVm(n: int) -> string =
   if checkAiOpenRefusals() && checkAiRequestFields() && checkAiIds() && checkAiSeeds() && checkAiExpiry() && checkAiCancel() && checkAiNeverTouchesJourney() &&
-    checkAiRefusals() && checkAiOnce() && checkAiHash() && checkAiLines() && checkAiOpenPrecedence() && checkAiRecordWhileCommitted()
+    checkAiRefusals() && checkAiOnce() && checkAiHash() && checkAiLines() && checkAiOpenPrecedence() && checkAiRecordWhileCommitted() && checkAiFeed()
   then join("\n", replies(newSession(), script()) ++ ["ai-ok"]) else "ai-BAD"
 
 test "AC3 ai_open refusals: ai_kind, diag_only, ai_bad_key, ai_stale, ai_too_many open nothing" { checkAiOpenRefusals() }
+test "EL3b.6 feed: purpose feed only, no emotion, a week in context; the key is (event, era tier, week)" { checkAiFeed() }
 test "ai_request carries key, constraints, context and expires_tick" { checkAiRequestFields() }
 test "AC4 request ids monotonic, decimal, never reused" { checkAiIds() }
 test "seed = top 53 bits of one ai-stream draw per open" { checkAiSeeds() }

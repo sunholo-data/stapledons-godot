@@ -323,6 +323,7 @@ func audit(row: Dictionary) -> void:
 		if key == "log" and int(cm.get("lines", 0)) >= 2: comms_seen["log:rows"] = true
 		comms_seen["bindings"] = int(comms_seen.get("bindings", 0)) + row.get("bindings", []).filter(func(b: Dictionary) -> bool: return str(b.get("node", "")).contains("/CommsStation/")).size()
 		if bool(cm.get("feed", false)): comms_seen["feed"] = true
+		if int(cm.get("faces", 0)) > 0: comms_seen["faces"] = true
 	var lore: Dictionary = row.get("lore", {})
 	if not lore.is_empty():
 		var binding := LoreBinding.new(); binding.entry_id = lore.get("id", "")
@@ -390,7 +391,7 @@ func _run() -> void:
 		# R3-EARTH-LINK EL3 (AC9): the comms playthrough (tests/playthrough_comms.json): the Listen
 		# pane in beam and out of it (the sim's reason), the Exchange log with two plans sent home.
 		check(state_file != null, "missing state stream")
-		for k in ["listen:in", "listen:not_heard", "log", "log:rows", "feed"]: check(comms_seen.has(k), "comms never sampled: " + k)
+		for k in ["listen:in", "listen:not_heard", "log", "log:rows", "feed", "faces"]: check(comms_seen.has(k), "comms never sampled: " + k)
 		check(int(comms_seen.get("bindings", 0)) > 0, "no comms bindings sampled")
 		print("display-audit comms: %s, %d pane bindings" % [comms_seen.keys().filter(func(k): return k != "bindings"), int(comms_seen.get("bindings", 0))])
 		known_hits.clear()

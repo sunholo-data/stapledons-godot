@@ -171,7 +171,7 @@ func estimates() -> Dictionary:
 	var rt := routes()
 	var have := keys_present()
 	var out := {}
-	for kind in ["text", "voice", "portrait"]:
+	for kind in ["text", "voice", "portrait", "feed"]: # feed: R3-EARTH-LINK EL3b.6, a picture from home
 		var p := AiRelay.route_in(rt, kind, have, false)
 		var hop: Dictionary = {}
 		for h in rt.get(kind, []):

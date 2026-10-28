@@ -31,7 +31,7 @@ import ./route (Routing, Route, Via, NoRoute, Hop, resolve)
 import ./wire (Request, In, WRequest, Out, OOk, OErr, CtxField, CStr, CList, Meta, Seg, encodeIn, keyObj)
 import ./cache (Blob, Origin, Timing, indexLine, blobPath)
 import ./spend (Price, Units, Ledger, Usage, priceFor, cost, admit, charge, usageLine, usdOf)
-import ./prompt (Lore, Prompt, buildPrompt, imagePrompt)
+import ./prompt (Lore, Prompt, buildPrompt, imagePrompt, feedPrompt)
 import ./reply (Image, pngSize)
 import ./voice (Clip, stubPcm, assemble, voiceVariant, voiceDescriptor, markedLine)
 
@@ -162,6 +162,7 @@ export pure func estimate(r: Request, p: Price, pr: Prompt) -> int =
 pure func promptFor(c: Ctx, r: Request) -> Result[Prompt, string] =
   if r.kind == "text" then buildPrompt(r, c.lore)
   else if r.kind == "voice" then Ok({ system: "", user: markedLine(voiceSegs(r)) })
+  else if r.kind == "feed" then Ok({ system: "", user: feedPrompt(r) })
   else Ok({ system: "", user: imagePrompt(r) })
 
 -- prov: "stub" in stub mode; live mode stamps the real provider on refusals after routing.
@@ -244,7 +245,7 @@ export pure func reservation(l: Ledger, j: Job, prov: string) -> string {
 pure func pngFor(ps: [Png], e: string) -> Option[string] = match ps { [] => None, p :: r => if p.emotion == e then Some(p.b64) else pngFor(r, e) }
 pure func stubPcms(ss: [Seg]) -> [bytes] = match ss { [] => [], s :: r => stubPcm(s) :: stubPcms(r) }
 pure func stubImage(ps: [Png], r: Request) -> Option[Image] =
-  match pngFor(ps, if r.kind == "avatar" then "neutral" else r.key.emotion) {
+  match pngFor(ps, if r.kind == "avatar" || r.kind == "feed" then "neutral" else r.key.emotion) {
     None => None,
     Some(b64) => match fromBase64(b64) { None => None, Some(d) => match pngSize(d) { Some(s) => Some({ data: d, w: s.w, h: s.h }), None => None } }
   }

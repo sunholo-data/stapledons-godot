@@ -425,6 +425,8 @@ func focus(id: String, mesh_name := "") -> void:
 				mesh_name = m.name
 	focused = id
 	focus_mesh = mesh_name
+	if id == "comms": # EL3b.6: a new visit may paint a few more weeks
+		_comms().feed.begin_visit()
 	if not used_once:
 		used_once = true
 		set_glow(false)
@@ -1156,6 +1158,9 @@ func _exit_tree() -> void:
 func _comms_panel() -> void:
 	panel_title.text = CommsPanel.copy().title
 	panel_body.add_child(_comms())
+	# EL3b.6: painted-live weeks through the session's AI relay (none when AI is off: the library shows).
+	var sim = demo.get("journey_sim") if demo != null else null
+	comms_station.feed.relay = (sim as SimBridge).ai_relay if sim is SimBridge and (sim as SimBridge).ai_relay is AiRelay else null
 	comms_station.refresh(demo.hud_view())
 
 

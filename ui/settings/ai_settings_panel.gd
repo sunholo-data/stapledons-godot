@@ -40,7 +40,7 @@ func _ready() -> void:
 	opt_in.text = "Use live AI (needs a key)"
 	opt_in.toggled.connect(_on_opt_in)
 	box.add_child(opt_in)
-	text_only.text = "Text only (no voices or new portraits)"
+	text_only.text = "Text only (no voices, new portraits or pictures from home)"
 	text_only.toggled.connect(_on_text_only)
 	box.add_child(text_only)
 	var crow := HBoxContainer.new()
@@ -73,7 +73,7 @@ func refresh() -> void:
 			{"env": "key from %s" % AiSettings.KEY_ENV[p], "file": "key saved", "": "no key"}[src]]
 		key_rows[p]["edit"].placeholder_text = "paste a key to save it (enables %s)" % ", ".join(s.kinds_for(p))
 	var est := s.estimates()
-	info.text = "About $%.4f a text line, $%.4f a voice line, $%.3f a portrait.\n%s" % [est["text"], est["voice"], est["portrait"],
+	info.text = "About $%.4f a text line, $%.4f a voice line, $%.3f a portrait, $%.3f a picture from home.\n%s" % [est["text"], est["voice"], est["portrait"], est["feed"],
 		("Live now: %s; the rest use the ship's archive." % ", ".join(s.live_kinds())) if s.live_on() else "Live AI is off: lines use templates, portraits the ship's archive."]
 
 

@@ -9,12 +9,16 @@ extends Control
 ## earth.out.progress. Every number on it is a binding. Time comes from advance(dt) only.
 
 const FEED := "res://data/ui/comms_feed.json"
+const EVENTS := "res://data/feed/events.json"
+## Painted-live frames asked for in one visit to the station (design EL3b: a few per look, never a burst).
+const LIVE_PER_VISIT := 3
 const SOURCES := "res://data/feed/SOURCES"
 const PICTURES := "res://data/feed/pictures/"
 
 static var _copy: Dictionary = {}
 static var _library: Dictionary = {} # event id -> [picture paths], variant order
 static var _textures: Dictionary = {}
+static var _scenes: Dictionary = {} # event id -> its scene paragraph (data/feed/events.json)
 
 var picture := TextureRect.new()
 var ghosts: Array[TextureRect] = []
@@ -31,6 +35,10 @@ var shown_key := ""
 var now_s := 0.0
 var _noise_frame := -1
 var _rng := RandomNumberGenerator.new()
+## EL3b.6: the session's AI relay (ShipConsoles sets it), or null when AI is off.
+var relay: AiRelay = null
+var asked := {} # week -> true: each week is asked for once per session
+var visit_asks := 0
 
 
 static func copy() -> Dictionary:
@@ -62,6 +70,57 @@ static func band_for(rate: float) -> Dictionary:
 	return {}
 
 
+static func scene_of(id: String) -> String:
+	if _scenes.is_empty():
+		var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(EVENTS))
+		for e: Dictionary in (d.get("events", []) if d is Dictionary else []):
+			_scenes[str(e.get("id", ""))] = str(e.get("scene", ""))
+	return str(_scenes.get(id, ""))
+
+
+## The AI cache's entity for an event: its id with hyphens as underscores (the key pattern).
+static func entity_of(id: String) -> String:
+	return id.replace("-", "_")
+
+
+## A new visit to the station: a few more weeks may be painted.
+func begin_visit() -> void:
+	visit_asks = 0
+
+
+## EL3b.6: a painted-live week. "live:<blob>" when its painting is in the AI cache (the player's
+## library); otherwise it is asked for (once per week, a few per visit, with the player's keys) and
+## the library shows until it arrives.
+func live_source(feed: Dictionary) -> String:
+	if relay == null or relay.cache == null or str(feed.get("kind", "")) != "live":
+		return ""
+	var id := str(feed.get("event", {}).get("id", ""))
+	var ctx: Dictionary = feed.get("context", {})
+	var tier := int(ctx.get("era_tier", 0))
+	var week := str(int(feed.get("frame", 0)))
+	var key := {"kind": "feed", "entity_id": entity_of(id), "emotion": "-", "variant": week}
+	var hit := relay.cache.lookup(key, tier)
+	if not hit.is_empty() and FileAccess.file_exists(relay.cache.blob_path(hit)):
+		return "live:" + relay.cache.blob_path(hit)
+	if not asked.has(week) and visit_asks < LIVE_PER_VISIT and relay.enabled and relay.mode not in ["off", "replay"] and relay.route_for("feed") != "":
+		var fields := {"age_stage": tier, "context": {"event": id, "scene": scene_of(id), "era": str(ctx.get("era_word", "")),
+			"years": str(int(float(ctx.get("years", 0.0)))), "week": week}}
+		if relay.open("feed", "feed", entity_of(id), fields):
+			asked[week] = true
+			visit_asks += 1
+	return ""
+
+
+## The event's pictures: the shipped library, then the frames painted for it in earlier weeks and
+## voyages (the AI cache), so the library grows over playthroughs.
+func pictures_of(id: String) -> Array:
+	var out: Array = library().get(id, []).duplicate()
+	if relay != null and relay.cache != null:
+		for e: Dictionary in relay.cache.entries_for("feed", entity_of(id)):
+			out.append("painted:" + relay.cache.blob_path(e))
+	return out
+
+
 ## What a feed frame shows: "library:<path>" for a picture, or "sky:<frame>" for the procedural sky
 ## over home (the sky kind, and any week whose event has no picture yet). A painted-live week shows
 ## the library until EL3b.6 paints it; a snapshot week shows the library until the crew's own
@@ -74,6 +133,18 @@ static func source_of(feed: Dictionary) -> String:
 	if paths.is_empty():
 		return "sky:%d" % frame
 	return "library:" + str(paths[int(feed.get("pick", 0)) % paths.size()])
+
+
+## source_of over this session's pictures (shipped and painted): what a library week shows.
+func picked_source(feed: Dictionary) -> String:
+	var frame := int(feed.get("frame", 0))
+	if str(feed.get("kind", "")) == "sky":
+		return "sky:%d" % frame
+	var paths := pictures_of(str(feed.get("event", {}).get("id", "")))
+	if paths.is_empty():
+		return "sky:%d" % frame
+	var p: String = paths[int(feed.get("pick", 0)) % paths.size()]
+	return p if p.begins_with("painted:") else "library:" + p
 
 
 func _init() -> void:
@@ -124,7 +195,9 @@ func refresh(view: Dictionary) -> void:
 	beam = e.get("in_beam") == true
 	band = band_for(float(e.get("rate", 1.0)))
 	var feed: Dictionary = e.get("feed", {}) if beam else e.get("last_feed", {})
-	var key := source_of(feed)
+	var key := live_source(feed) if beam else ""
+	if key.is_empty():
+		key = picked_source(feed)
 	if key != shown_key:
 		shown_key = key
 		var tex := texture_of(key)
@@ -195,6 +268,9 @@ func texture_of(key: String) -> Texture2D:
 	var tex: Texture2D = null
 	if key.begins_with("library:"):
 		tex = CaptainAvatar.make_texture(key.trim_prefix("library:"))
+	elif key.begins_with("live:") or key.begins_with("painted:"):
+		var img := Image.load_from_file(key.substr(key.find(":") + 1)) # after the first ":" (the path keeps its own user://)
+		tex = ImageTexture.create_from_image(img) if img != null and not img.is_empty() else null
 	if tex == null:
 		tex = sky_texture(int(key.get_slice(":", 1)) if key.begins_with("sky:") else 0)
 	_textures[key] = tex

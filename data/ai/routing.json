@@ -12,6 +12,9 @@
     "avatar": [
       {"provider": "gemini", "model": "gemini-2.5-flash-image"}
     ],
+    "feed": [
+      {"provider": "gemini", "model": "gemini-2.5-flash-image"}
+    ],
     "voice": [
       {"provider": "gemini", "model": "gemini-2.5-flash-preview-tts"}
     ]

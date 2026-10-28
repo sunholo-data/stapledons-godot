@@ -1,32 +1,102 @@
 {
-  "about": "R3-EARTH-LINK EL3 (AC9): the comms station through a voyage. At Sol: the Listen pane (in beam, real time) and an empty Exchange log; a commit to Alpha Centauri, the panes again while cruising (in beam on the heard leg, Earth's rate astern); on arrival a re-plan to CNS5:1676, off Alpha Centauri's ray, so the ship flies out of beam (Earth has not heard the plan yet: the sim's reason and the silence line) with two plans in the log; the Listen pane again on arrival. make display-audit-comms audits every sampled frame (every digit on the panes an earth.* binding).",
+  "about": "R3-EARTH-LINK EL3 (AC9): the comms station through a voyage. At Sol: the Listen pane (in beam, real time) and an empty Exchange log; a commit to Alpha Centauri, the panes again while cruising (in beam on the heard leg, Earth's rate astern); on arrival a re-plan to CNS5:1676, off Alpha Centauri's ray, so the ship flies out of beam (Earth has not heard the plan yet: the sim's reason and the silence line) with two plans in the log; the Listen pane again on arrival. make display-audit-comms audits every sampled frame (every digit on the panes an earth.* binding). A consent crew flies along, so the station's crew faces (their home feelings, earth.crew) are sampled too.",
+  "crew": "consent",
   "commits_min": 2,
   "poles": false,
   "steps": [
-    {"walk": "comms"},
-    {"use": "comms", "action": "open"},
-    {"use": "comms", "action": "log"},
-    {"walk": "navigation"},
-    {"use": "navigation", "action": "open"},
-    {"use": "navigation", "action": "select", "arg": "CNS5:3627"},
-    {"use": "navigation", "action": "commit"},
-    {"until": "cruising"},
-    {"walk": "comms"},
-    {"use": "comms", "action": "open"},
-    {"use": "comms", "action": "listen"},
-    {"until": "arrived", "target": "CNS5:3627"},
-    {"walk": "navigation"},
-    {"use": "navigation", "action": "open"},
-    {"use": "navigation", "action": "select", "arg": "CNS5:1676"},
-    {"use": "navigation", "action": "commit"},
-    {"until": "cruising"},
-    {"walk": "comms"},
-    {"use": "comms", "action": "open"},
-    {"use": "comms", "action": "log"},
-    {"use": "comms", "action": "listen"},
-    {"until": "arrived", "target": "CNS5:1676"},
-    {"walk": "comms"},
-    {"use": "comms", "action": "open"},
-    {"use": "comms", "action": "listen"}
+    {
+      "walk": "comms"
+    },
+    {
+      "use": "comms",
+      "action": "open"
+    },
+    {
+      "use": "comms",
+      "action": "log"
+    },
+    {
+      "walk": "navigation"
+    },
+    {
+      "use": "navigation",
+      "action": "open"
+    },
+    {
+      "use": "navigation",
+      "action": "select",
+      "arg": "CNS5:3627"
+    },
+    {
+      "use": "navigation",
+      "action": "commit"
+    },
+    {
+      "until": "cruising"
+    },
+    {
+      "walk": "comms"
+    },
+    {
+      "use": "comms",
+      "action": "open"
+    },
+    {
+      "use": "comms",
+      "action": "listen"
+    },
+    {
+      "until": "arrived",
+      "target": "CNS5:3627"
+    },
+    {
+      "walk": "navigation"
+    },
+    {
+      "use": "navigation",
+      "action": "open"
+    },
+    {
+      "use": "navigation",
+      "action": "select",
+      "arg": "CNS5:1676"
+    },
+    {
+      "use": "navigation",
+      "action": "commit"
+    },
+    {
+      "until": "cruising"
+    },
+    {
+      "walk": "comms"
+    },
+    {
+      "use": "comms",
+      "action": "open"
+    },
+    {
+      "use": "comms",
+      "action": "log"
+    },
+    {
+      "use": "comms",
+      "action": "listen"
+    },
+    {
+      "until": "arrived",
+      "target": "CNS5:1676"
+    },
+    {
+      "walk": "comms"
+    },
+    {
+      "use": "comms",
+      "action": "open"
+    },
+    {
+      "use": "comms",
+      "action": "listen"
+    }
   ]
 }

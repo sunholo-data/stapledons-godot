@@ -36,6 +36,23 @@ export pure func feedSalt() -> int = 1802071113
 pure func feedKey(seed: int) -> int = mix64(mix64(seed) ^ feedSalt())
 pure func draw(seed: int, frame: int, lane: int) -> int = top53(splitmix64(feedKey(seed) + lane, frame))
 
+-- R3-EARTH-LINK EL3b.4: what a member feels at the comms station, watching home. Work strain shows
+-- first (crew_core's angry, fearful or sad); otherwise the link: glad at home, longing as home
+-- recedes, curious in the torrent, warm at family news, grieving when cut off. Two members in the
+-- same moment may differ (a draw per member and week), so the crew never reads as one face.
+-- A presentation of the link, not crew_core state: it feeds nothing back.
+export pure func homeFeeling(seed: int, index: int, work: string, inBeam: bool, atHome: bool, reason: string, rate: float, category: string, frame: int) -> string {
+  let pick = \a. \b. if draw(seed + 7919 * (index + 1), frame, 3) % 2 == 0 then a else b;
+  if work == "angry" || work == "fearful" || work == "sad" then work
+  else if !inBeam then (if reason == "silent" then "grieving" else pick("grieving")("sad"))
+  else if atHome then pick("happy")("neutral")
+  else if rate < 0.5 then pick("loving")("sad")
+  else if rate > 2.0 then pick("curious")("happy")
+  else if category == "family" then "loving"
+  else if category == "home" || category == "town" then "happy"
+  else "curious"
+}
+
 -- The week of the newest light. Light from before the Earth clock's zero (the Sol-centred
 -- light cone puts it up to 8.3 minutes early near Earth) is week 0.
 export pure func frameOf(te: float) -> int = if te <= 0.0 then 0 else floatToInt(floor(te / feedBinYears()))

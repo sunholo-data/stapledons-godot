@@ -273,7 +273,8 @@ func comms_row() -> Dictionary:
 	var o: Variant = e.get("out") if e is Dictionary else null
 	return {"pane": p.pane if p.is_visible_in_tree() else "feed", "lines": p.lines.get_child_count() if p.is_visible_in_tree() else 0,
 		"in_beam": e.get("in_beam") if e is Dictionary else null, "reason": str(o.get("reason", "")) if o is Dictionary else "",
-		"feed": st.feed.is_visible_in_tree() and st.feed.picture.texture != null, "source": st.feed.shown_key}
+		"feed": st.feed.is_visible_in_tree() and st.feed.picture.texture != null, "source": st.feed.shown_key,
+		"faces": st.crew.get_child_count() if st.crew.is_visible_in_tree() else 0}
 
 
 ## {"crew": [actions], "tick": bool}: press each action on the open Crew console (as the captain's
