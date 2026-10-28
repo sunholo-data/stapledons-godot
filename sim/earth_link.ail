@@ -32,7 +32,8 @@ export type Message = { planId: int, portId: string, from: Vec3, port: Vec3, sen
 -- >= T - |A| + |B| >= 0 by the triangle inequality).
 -- lastBeamT: the emission time of the newest beamed Earth light the ship has received (noteBeam,
 -- every tick); the silence line's date when the ship is out of beam.
-export type Link = { messages: [Message], sending: bool, lastBeamT: float }
+-- lastInBeamAt: the galaxy time of the last tick in beam (the comms ring's start, out.progress).
+export type Link = { messages: [Message], sending: bool, lastBeamT: float, lastInBeamAt: float }
 -- The journey's current leg. flying: committed or arrived (a plan that is
 -- only planned never counts as the heard plan); t0 is the commit time, or
 -- now for a planned leg; legT is the leg's galaxy time from the journey core.
@@ -45,15 +46,17 @@ export type Preview = { port: Vec3, waitYears: float, wouldStale: Option[Stale] 
 -- Why the ship is out of beam: "silent" (Earth is not sending), "not_heard" (the light reaching the
 -- ship left before Earth heard the newest plan; its beam reaches that plan's port at dueT, dueInYears
 -- of galaxy time from now) or "off_line" (off the heard plan and its ray).
-export type Out = { reason: string, portId: string, dueT: float, dueInYears: float }
+-- progress: how far through the wait the ship is, 0 when it left the beam and 1 when the beam is
+-- due (lastInBeamAt to dueT, galaxy time); 0 for silent and off_line (no due time).
+export type Out = { reason: string, portId: string, dueT: float, dueInYears: float, progress: float }
 -- rateInverse: 1 / rate, ship-seconds per Earth-second (the comms phrase's "one Earth day every ...").
 -- atHome: the ship is inside the Solar System (homeRadiusLy), where Earth tracks it directly.
 export type Earth = { rate: float, rateInverse: float, newestLightT: float, lightAgeYears: float, atHome: bool, inBeam: bool, sending: bool,
-  lastBeamT: float, out: Option[Out], feed: Feed,
+  lastBeamT: float, out: Option[Out], feed: Feed, lastFeed: Feed,
   beam: Option[Beam], stale: [Stale], pending: [Message], window: Option[Window], preview: Option[Preview], messages: [Message] }
 
 -- Earth transmits throughout R3-EARTH-LINK (design OQ3); Earth's fate turns it off later.
-export pure func emptyLink() -> Link = { messages: [], sending: true, lastBeamT: 0.0 }
+export pure func emptyLink() -> Link = { messages: [], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 }
 
 -- The beam's angular tolerance about its ray (radians): 1e-7 rad is about
 -- 4 AU off a 40 ly ray, far inside any beam and far outside float64 noise.
@@ -151,18 +154,21 @@ export pure func rateOf(p: Vec3, heading: Vec3, phi: float) -> float =
 
 -- Every tick: while in beam, the newest light received is beamed light (the silence line's date).
 export pure func noteBeam(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> Link =
-  if inBeam(l, t, p, leg) then {l | lastBeamT: seenAt(t, p, origin())} else l
+  if inBeam(l, t, p, leg) then {l | lastBeamT: seenAt(t, p, origin()), lastInBeamAt: t} else l
 
 -- The reason the ship is out of beam (None in beam).
 export pure func outOf(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> Option[Out] =
   if inBeam(l, t, p, leg) then None
-  else if !l.sending then Some({ reason: "silent", portId: "", dueT: 0.0, dueInYears: 0.0 })
+  else if !l.sending then Some({ reason: "silent", portId: "", dueT: 0.0, dueInYears: 0.0, progress: 0.0 })
   else match last(l.messages) {
     Some(n) => if beamFrom(n) > seenAt(t, p, origin())
-      then Some({ reason: "not_heard", portId: n.portId, dueT: replyT(n), dueInYears: if replyT(n) > t then replyT(n) - t else 0.0 })
-      else Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0 }),
-    None => Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0 })
+      then Some({ reason: "not_heard", portId: n.portId, dueT: replyT(n), dueInYears: if replyT(n) > t then replyT(n) - t else 0.0,
+        progress: progressOf(l.lastInBeamAt, t, replyT(n)) })
+      else Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0, progress: 0.0 }),
+    None => Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0, progress: 0.0 })
   }
+pure func progressOf(from: float, t: float, due: float) -> float =
+  if due <= from then 1.0 else { let f = (t - from) / (due - from); if f < 0.0 then 0.0 else if f > 1.0 then 1.0 else f }
 
 -- fromEarth: the ship's position relative to Earth now (ly; core.ail earthOf, from the ephemeris).
 -- The rate is Earth's Doppler factor, so it is measured from Earth itself: inside the Solar System
@@ -175,6 +181,7 @@ export pure func earthView(l: Link, seed: int, t: float, p: Vec3, fromEarth: Vec
   let here = inBeam(l, t, p, leg);
   { rate: rate, rateInverse: 1.0 / rate, newestLightT: seenAt(t, p, origin()), lightAgeYears: norm(p), atHome: atHome(p), inBeam: here, sending: l.sending,
     lastBeamT: if here then seenAt(t, p, origin()) else l.lastBeamT, out: outOf(l, t, p, leg), feed: feedAt(seed, seenAt(t, p, origin()), []),
+    lastFeed: feedAt(seed, if here then seenAt(t, p, origin()) else l.lastBeamT, []),
     beam: match aimAt(l, t) { Some(m) => Some({ portId: m.portId, port: m.port, heardT: m.heardT }), None => None },
     stale: staleAt(l, t),
     pending: filter(\m. m.heardT > t, l.messages),

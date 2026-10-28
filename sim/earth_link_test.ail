@@ -10,6 +10,7 @@ import ./core (World, Params, Intent, IPlan, ICommit, Target, Ticked, Journey, I
 import ./earth_link (Earth, Link, Message, Stale, Window, Preview, LinkLeg, Out, beamTolRad, newestHeard, inBeam, outOf, replyT,
   emptyLink, sendPlan, homeRadiusLy, coveredAt, windowOf, earthView)
 import ./consequence (clocks)
+import ./earth_feed (frameOf)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf, atanh)
@@ -196,7 +197,7 @@ test "AC4b: a short first leg: Earth has heard B by arrival, yet the wait stays 
 -- Case 2 needs a committed or arrived leg: a planned leg never counts as the heard plan, even with
 -- a matching id (unreachable through the journey, whose planned ids are fresh; checked directly).
 pure func checkCases() -> bool {
-  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0 };
+  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 };
   let off = elV(20.0, 20.0, 0.0);
   let g = { planId: 1, from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), t0: 0.0, legT: 41.0, flying: true };
   elAll([inBeam(l, 40.0, off, Some(g)), !inBeam(l, 40.0, off, Some({ g | flying: false })), !inBeam(l, 40.0, off, None),
@@ -224,7 +225,7 @@ pure func checkComms() -> bool {
   let eb = earthOf(b);
   let after = run(b, heard2 + 50.0 - b.ship.motion.t + 0.000001, []);
   let ea = earthOf(after);
-  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0 };
+  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 };
   let m2 = match c.link.messages { _ :: x :: [] => x, _ => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
   elAll([
     -- at Sol: in beam, no reason, rate and its inverse 1, the beamed light is the newest
@@ -238,6 +239,11 @@ pure func checkComms() -> bool {
     reasonOf(eb) == "not_heard", (match eb.out { Some(o) => elNear(o.dueInYears, heard2 + 50.0 - b.ship.motion.t, 0.000000001), None => false }),
     -- the silence line: the last beamed light left Sol at t0 - |A| (received at A, at the commit)
     elNear(em.lastBeamT, t0 - 40.0, 0.000000001), elNear(eb.lastBeamT, t0 - 40.0, 0.000000001),
+    -- the ring: from the last tick in beam (the commit at A, t0) to the due time at B
+    (match em.out { Some(o) => elNear(o.progress, (mid.ship.motion.t - t0) / (replyT(m2) - t0), 0.000000001) && o.progress > 0.0 && o.progress < 1.0, None => false }),
+    (match eb.out { Some(o) => elNear(o.progress, (b.ship.motion.t - t0) / (replyT(m2) - t0), 0.000000001), None => false }),
+    -- the frozen frame is the feed at the last beamed light
+    (em.lastFeed).frame == frameOf(t0 - 40.0), (ea.lastFeed).frame == (ea.feed).frame,
     -- back in beam at B: no reason; the beamed light is the newest again
     ea.inBeam, none(ea.out), ea.lastBeamT == ea.newestLightT,
     -- Earth silent: "silent"; off the heard plan and its ray, Earth having heard it: "off_line"
