@@ -532,7 +532,7 @@ func test_walk_to() -> void:
 			break
 		demo._process(0.05)
 		walked += 0.05
-	check("AC14a the captain arrives at its use point at 3.5 m/s (%.1f s)" % walked, demo.avatar_pos.distance_to(c.stations.voyage.use) < 0.05 and walked >= from.distance_to(c.stations.voyage.use) / ShipConsoles.WALK_SPEED_MPS - 0.1)
+	check("AC14a the captain arrives at its use point at the shared walk pace (%.1f s)" % walked, demo.avatar_pos.distance_to(c.stations.voyage.use) < 0.05 and walked >= from.distance_to(c.stations.voyage.use) / ShipConsoles.WALK_SPEED_MPS - 0.1)
 	check("AC14a and faces it: the prompt says E use", hud.prompt.text == "Voyage console · E use")
 	for id in ["navigation", "archive", "comms"]:
 		c.walk_to(id)

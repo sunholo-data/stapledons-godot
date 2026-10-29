@@ -43,7 +43,7 @@ Live `gh pr list` / `gh pr view` checks on 2026-10-29 found game PRs [#344](http
 - D-97/D-100/D-110: the spire and nearby star light the ship live, with their approved handover. Bake pigment/AO/contact treatment only. Sky, starbow, bodies, eclipses and lensing remain live.
 - D-104: flowing curves and grown structures. Commons is an open civic plaza and curved arcade, not the rejected barrel pavilion.
 - D-106 and #322 review: painted foliage cards placed in world space, footprint/shadow checks, varied plants. Do not restore camera-attached foreground plants.
-- Preserve Josefin Sans/Nunito, cream/teal/ochre/violet materials, restrained ink and the existing functional UI colors. Preserve the captain's accepted calm walk, held poses and reduced-motion behavior (D-115/D-120/D-121).
+- Preserve Josefin Sans/Nunito, cream/teal/ochre/violet materials, restrained ink and the existing functional UI colors. Preserve the captain's accepted painted walk, held poses and reduced-motion behavior (D-115/D-120/D-121); attended playtest D-138 raises traversal from 1.3 to 2.2 m/s for manual movement and Walk to.
 - D-132 refines the console-contact contract: move the actual Voyage/Crew working destinations closer and use a gentle working lean on the existing desks. Check front and rear views. This explicitly releases the old fixed-use-point constraint for those two destinations; the proposed loops and desk leaves are retired without installation.
 - Follow D-34's measured seven-tier geometry and the approved Commons brief over obsolete prose in older art briefs. No literal copying of concept-art sky, external camera or oversized spire.
 

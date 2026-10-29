@@ -23,7 +23,7 @@ var _tour_view_from:=Vector2.ZERO
 var _tour_view_to:=Vector2.ZERO
 var _tour_view_elapsed:=0.
 var _tour_view_active:=false
-const WALK_SPEED_MPS := ShipConsoles.WALK_SPEED_MPS # one speed for WASD and walk-to (D-115: a calm 1.3 m/s)
+const WALK_SPEED_MPS := ShipConsoles.WALK_SPEED_MPS # one pace for WASD and Walk to (D-138)
 ## D-92 (camera-forward.md §D1.5): the developer free camera's first-person turn at a departure
 ## (level, toward the bow) and at a stop (level, toward the body 30 deg off the bow, kinematic +X
 ## = glTF -X): Vector2(tilt deg, yaw rad, ShipCamera's convention).
@@ -1504,7 +1504,7 @@ func toggle_confirm_mode() -> void:
 	confirm_button.text = "Confirm decisions: " + ("press twice" if confirm_mode == "twice" else "hold")
 	if menu_return:
 		var gs := GameSettings.new(); gs.dir = settings_dir; gs.load_settings(); gs.confirm_mode = confirm_mode; gs.save_settings()
-## Tab "Walk to": walk to a station along the walk mesh (3.5 m/s; WASD takes over).
+## Tab "Walk to": walk to a station along the walk mesh at the shared pace; WASD takes over.
 func walk_to(station: String) -> bool:
 	if active_level==1 and level_runtime!=null:
 		if absf(avatar_pos.y-57.)>WalkArea.STEP_M:

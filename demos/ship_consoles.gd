@@ -20,9 +20,9 @@ const BlackHoleVisit := preload("res://demos/black_hole_visit.gd")
 const REACH_M := 2.5
 const FACING_DEG := 60.0
 const DOLLY_S := 0.6 # the director's "console" view ease (data/camera/views.json)
-## D-115 (Mark, 2026-10-21): the captain walks calmly. 1.3 m/s is an unhurried adult walk; the painted
-## walk cycle (art/captain-anim-v3) is drawn for it. No positional ease: the start and stop clips carry it.
-const WALK_SPEED_MPS := 1.3
+## D-138 (Mark, attended playtest, 2026-10-29): quicker traversal of the expanded decks.
+## Both manual movement and Walk to use this pace; the painted gait follows distance travelled.
+const WALK_SPEED_MPS := 2.2
 const PATH_CEILING_M := 40.0
 const HOLD_S := 1.5
 const CHAIR_REACH_M := 2.6 ## the chair's E reach from its seat point: the walk keeps 0.5 m clear of the chair, so the nearest
