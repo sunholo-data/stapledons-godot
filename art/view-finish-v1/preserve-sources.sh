@@ -7,6 +7,7 @@ STUDIO=${1:-/Users/voightkampff/dev/blender}
 DEST="$GAME/build/view-finish-source"
 test ! -e "$DEST" || { echo "Refusing to overwrite preservation directory: $DEST" >&2; exit 1; }
 mkdir -p "$DEST/scripts" "$DEST/scenes" "$DEST/inputs" "$DEST/extracted"
+: > "$DEST/.gdignore"
 for script in configure.py stapledon_bridge_mesh_paint_v1.py stapledon_bridge_mesh_paint_render.py stapledon_bridge_floor_restore_v2.py stapledon_deck_layout_v2.py stapledon_bridge_props_v1.py stapledon_bridge_props_v2.py stapledon_bridge_props_v3.py stapledon_bridge_props_v4.py; do
   cp -p "$STUDIO/scripts/$script" "$DEST/scripts/$script"
 done
