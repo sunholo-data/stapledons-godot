@@ -13,6 +13,11 @@ level-test: import ## AC2/AC3: stapledons.level/1 schema cases, LevelGreybox (bo
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_levels.gd > $(SCRATCH)/level-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-test)' $(SCRATCH)/level-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-test.log && grep -q '^level-test: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-test.log
 test: level-test
+.PHONY: level-runtime-test
+level-runtime-test: import ## VF1: manifest camera sources, stage resolution and shared fixed-height/clamp poses
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_level_runtime.gd > $(SCRATCH)/level-runtime-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-runtime)' $(SCRATCH)/level-runtime-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-runtime-test.log && grep -q '^level-runtime: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-runtime-test.log
+test: level-runtime-test
 LEVEL ?= bridge
 .PHONY: level-eval level-eval-test
 level-eval: import ## AC8 (S2): a level against its thresholds (prints "level-eval: <id> ok"); LEVEL=<id>, LAYOUT=<json> scores a candidate (search only)

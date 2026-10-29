@@ -1,8 +1,9 @@
 # Bridge / Commons finishing sources (VF0)
 
 Recovered on 2026-10-29 for approved R2-VIEW-FINISH (D-130). This directory records
-source preservation; the actual large snapshots are ignored build artifacts until
-published. **A local snapshot is not a durable remote backup.**
+source preservation; large snapshots stay outside git. The content-addressed
+archive is now backed up publicly at the approved project asset bucket; its
+downloaded SHA-256 was independently checked against the local archive.
 
 `source-inventory.json` records SHA-256 and byte length for every preserved file,
 plus Blender read-only inspection of both current art masters. Bridge v4 master
@@ -35,8 +36,13 @@ and an inventory. The recovery scripts do not regenerate or export runtime GLBs.
 
 Archive: `build/view-finish-source.tar.gz`, SHA-256
 `2e13388120ca13101d657e7d7af7637ea47a8837cb1caaf695e25bfb33bc5237`.
-Remote archive publication is pending coordinator action. Published bridge v4
-master recovery remains available at the content-addressed URL already pinned in
+Mark explicitly approved this exact archive and destination in the attended
+session after automatic review required payload/destination approval. The upload
+used a create-only generation precondition and its public download hashes to the
+value above. [Download the preserved sources](https://storage.googleapis.com/stapledons-voyage-assets/ship/2e13388120ca13101d657e7d7af7637ea47a8837cb1caaf695e25bfb33bc5237.tar.gz).
+The inventory's local-snapshot status describes the inspection before upload;
+this note records completed publication. Published bridge v4 master recovery
+also remains available at the content-addressed URL already pinned in
 `art/deck-layout-v2/asset-pins.json`; no duplicate large `.blend` is added here.
 
 VF0's full milestone also includes the coordinator's baseline captures/gallery;
