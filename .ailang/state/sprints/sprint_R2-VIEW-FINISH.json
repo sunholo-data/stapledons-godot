@@ -447,6 +447,27 @@
       352
     ],
     "main_merge_346": "26697b7ac259490283fd2b51ce65c588fceb48d3",
-    "incomplete_scope": "Earth-link EL4/EL5 and finishing/S3/S5/performance remain open; inclusion in test build is not completion or merge certification."
+    "incomplete_scope": "Earth-link EL4/EL5 and finishing/S3/S5/performance remain open; inclusion in test build is not completion or merge certification.",
+    "status": "publishing",
+    "integrated_heads": {
+      "344": "afe78941ab4bc0ff74f556332dcffb55f81b6db0",
+      "346": "4ed8ec3891719f2aa861d3931e14289ab15f13e7",
+      "351": "758614bb5e99b82d6b6577006f9ed01c2179e063",
+      "352": "2b47456b4ef43033607694e6c528911b8ab267db"
+    },
+    "functional_checks": {
+      "physics": 959,
+      "ai_package": 53,
+      "civic": 18,
+      "ai_relay_groups": 7,
+      "ai_settings_groups": 10
+    },
+    "integration_repairs": [
+      "Merged sim package exports preserve both star-name and Earth modules",
+      "Earth feed raw art export included and witnessed",
+      "Legacy Archive smoke validates13 canonical IDs and10 exact sim unlock IDs; negative controls pass",
+      "Guided-departure smoke waits for civic startup and a rendered Saturn frame, preserving its assertions"
+    ],
+    "pre_repair_ci": "Combined fba84528 fast tier green; new diagnostic fixes rerun on final head"
   }
 }

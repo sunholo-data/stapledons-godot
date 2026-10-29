@@ -1644,17 +1644,23 @@ func journey_label() -> String:
 
 func _solar_departure_smoke()->void:
 	auto=false;journey_auto_tick=false
+	if not await await_civic_art():
+		print("solar-departure-smoke: FAIL civic art");get_tree().quit(1);return
 	var ok:=start_solar_departure()
+	print("solar-departure-smoke-stage start: ",ok," ",caption)
 	if ok:
 		ok=solar_tour.advance() and journey_tick() and live_journey
+		print("solar-departure-smoke-stage commit: ",ok," ",solar_tour.failed)
 		var before:Dictionary=journey_sim.world.duplicate(true)
 		ok=not start_solar_departure() and journey_sim.world==before and ok
 		open_chart()
 		ok=not solar_tour.paused and journey_map.mode=="chart" and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
 		close_navigation()
 		for tick in 20:ok=journey_tick() and ok
-		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
+		# drawn_points belongs to the renderer; let the committed world reach a drawn frame first.
 		for frame in 12:await get_tree().process_frame
+		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
+		print("solar-departure-smoke-stage rendered: ",ok," saturn=",sky.system_view.drawn_points.has("saturn")," phase=",sky_world.ship.phase)
 	print("solar-departure-smoke: %s" %("OK" if ok else "FAIL"))
 	var tree:=get_tree()
 	solar_tour=null
