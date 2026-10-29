@@ -1397,17 +1397,25 @@
       "depends_on": [
         "K1.1a-a3"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
+      "passes": true,
+      "started": "2026-10-29",
+      "completed": "2026-10-29",
+      "actual_loc": 73,
       "mutation_drill": true,
       "design_blocks": [
         "DI-01"
       ],
       "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "evidence": {
+        "commit": "2b47456b4ef43033607694e6c528911b8ab267db",
+        "pr": 352,
+        "merge": "165c9f2ff0c82d449321f419508c9e2cc3f61003",
+        "rig_full": "success on 2b47456b (100 min, run 3, quiet rig: crewSkip 2.37 s); runs 1 and 2 red at crew-perf only (5.08 s, 4.34 s against 4.0 s) under rig load, main failing the same check",
+        "fast_ci": "success on head; 40940247891 success on the merge",
+        "evaluation": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a4_round_1.json (90 PASS) and eval_R2-KERR_K1.1a-a4_landing_confirmation.json (93 MERGE-SAFE, merged tree)"
+      }
     },
     {
       "id": "K1.1a-a5",
@@ -4327,6 +4335,23 @@
       "score": 95,
       "verdict": "PASS child only; full and fast head gates green",
       "reviewed_commit": "d235f6c0bd00474b957b0a47a0d57606faecc380"
+    },
+    {
+      "feature_id": "K1.1a-a4",
+      "round": 1,
+      "report": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a4_round_1.json",
+      "score": 90,
+      "verdict": "PASS, zero blocking",
+      "reviewed_commit": "2b47456b4ef43033607694e6c528911b8ab267db"
+    },
+    {
+      "feature_id": "K1.1a-a4",
+      "round": 1,
+      "review_kind": "landing_confirmation",
+      "report": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a4_landing_confirmation.json",
+      "score": 93,
+      "verdict": "MERGE-SAFE on the merged tree (main 26697b7a + 2b47456b); rig/full green on the head",
+      "reviewed_commit": "2b47456b4ef43033607694e6c528911b8ab267db"
     }
   ],
   "planning_validation": {
