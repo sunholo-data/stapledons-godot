@@ -26,7 +26,7 @@ import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/observe/lightcone (seenAt, onBeamLine, linkWindow, earthRate)
 import ./earth_feed (Feed, feedAt)
 
-export type Message = { planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float, heardT: float }
+export type Message = { planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float, heardT: float, arriveT: float }
 -- messages oldest first. heardT never decreases along the list: a commit
 -- happens only at rest at a port, after the previous leg (heardT' - heardT
 -- >= T - |A| + |B| >= 0 by the triangle inequality).
@@ -73,10 +73,11 @@ export pure func homeRadiusLy() -> float = 120.0 / 63241.077
 export pure func atHome(p: Vec3) -> bool = norm(p) < homeRadiusLy()
 
 -- At a commit the ship sends its plan home: Earth hears it |from| later
--- (at once for a commit from home).
-export pure func sendPlan(l: Link, planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float) -> Link =
+-- (at once for a commit from home). arriveT: when the ship reaches the port (the commit plus the
+-- leg's galaxy time), for the comms station's light strip (EL3b.5).
+export pure func sendPlan(l: Link, planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float, legT: float) -> Link =
   {l | messages: l.messages ++ [{ planId: planId, portId: portId, from: from, port: port, sentT: sentT, sentTau: sentTau,
-    heardT: if atHome(from) then sentT else sentT + norm(from) }]}
+    heardT: if atHome(from) then sentT else sentT + norm(from), arriveT: sentT + legT }]}
 
 -- The earliest emission time t_e (t - |p|, Sol-centred) of Earth light that carries a message's
 -- beam. For a plan heard at Sol this is heardT. A plan made at home leaves with the ship from Earth

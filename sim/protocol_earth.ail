@@ -31,13 +31,15 @@ module stapledons/sim/protocol_earth
 --                      (sim/earth_feed.ail homeFeeling; work strain first); [] with no crew aboard
 --   last_feed          the feed at last_beam_t: the frame the station freezes under static out of beam
 --   out.progress       0..1 through the wait (from the last tick in beam to due_t): the ring's fill
---   messages           [{plan_id, port_id, from, port, sent_t, sent_year, sent_tau, heard_t, heard_year,
---                      reply_t, reply_year}]: every plan sent home; reply_t is when Earth's beam for it
---                      reaches the port at the earliest (heard_t + |port|)
+--   messages           [{plan_id, port_id, from, port, from_ly, port_ly, sent_t, sent_year, sent_tau, heard_t,
+--                      heard_year, reply_t, reply_year, arrive_t, arrive_year}]: every plan sent home; reply_t
+--                      is when Earth's beam for it reaches the port at the earliest (heard_t + |port|);
+--                      from_ly and port_ly are |from| and |port|, arrive_t when the ship reaches the port
+--                      (the comms station's light strip, EL3b.5)
 import std/json (Json, JNull, JBool, encode, jo, ja, kv, jnum, jint, js)
 import std/option (Option, Some, None)
 import std/list (map)
-import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/relativity/optics (Vec3, norm)
 import ./earth_link (Earth, Message, Stale, Window, Preview, Beam, Out, replyT)
 import ./earth_feed (Feed, Influence, homeFeeling)
 
@@ -48,8 +50,10 @@ pure func pending(m: Message, epoch: float) -> Json =
   jo([kv("port_id", js(m.portId)), kv("port", vec(m.port)), kv("sent_t", jnum(m.sentT)), kv("heard_t", jnum(m.heardT)), kv("heard_year", jnum(epoch + m.heardT))])
 pure func message(m: Message, epoch: float) -> Json =
   jo([kv("plan_id", jint(m.planId)), kv("port_id", js(m.portId)), kv("from", vec(m.from)), kv("port", vec(m.port)),
+    kv("from_ly", jnum(norm(m.from))), kv("port_ly", jnum(norm(m.port))),
     kv("sent_t", jnum(m.sentT)), kv("sent_year", jnum(epoch + m.sentT)), kv("sent_tau", jnum(m.sentTau)),
-    kv("heard_t", jnum(m.heardT)), kv("heard_year", jnum(epoch + m.heardT)), kv("reply_t", jnum(replyT(m))), kv("reply_year", jnum(epoch + replyT(m)))])
+    kv("heard_t", jnum(m.heardT)), kv("heard_year", jnum(epoch + m.heardT)), kv("reply_t", jnum(replyT(m))), kv("reply_year", jnum(epoch + replyT(m))),
+    kv("arrive_t", jnum(m.arriveT)), kv("arrive_year", jnum(epoch + m.arriveT))])
 pure func beam(o: Option[Beam], epoch: float) -> Json =
   match o { Some(b) => jo([kv("port_id", js(b.portId)), kv("port", vec(b.port)), kv("heard_t", jnum(b.heardT)), kv("heard_year", jnum(epoch + b.heardT))]), None => JNull }
 pure func window(o: Option[Window]) -> Json =

@@ -170,6 +170,7 @@ func _init() -> void:
 	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tint)
 	static_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	static_rect.modulate = Color(1, 1, 1, 0.6) # the last week shows through, dimmed
 	add_child(static_rect)
 	ring.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	add_child(ring)
@@ -180,6 +181,13 @@ func _init() -> void:
 		tag.set_anchors_and_offsets_preset(t[1], Control.PRESET_MODE_MINSIZE, 10)
 		tag.grow_horizontal = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_TOP_RIGHT else Control.GROW_DIRECTION_END
 		tag.grow_vertical = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_BOTTOM_LEFT else Control.GROW_DIRECTION_END
+		var back := StyleBoxFlat.new() # readable over any picture or the static
+		back.bg_color = Color(StapledonTheme.INK, 0.62)
+		back.set_corner_radius_all(4)
+		back.set_content_margin_all(4)
+		back.content_margin_left = 8
+		back.content_margin_right = 8
+		tag.add_theme_stylebox_override("normal", back)
 		add_child(tag)
 	caption.add_theme_font_size_override("font_size", 16)
 
@@ -214,7 +222,7 @@ func refresh(view: Dictionary) -> void:
 	var out: Variant = e.get("out")
 	ring.visible = not beam and out is Dictionary and str(out.get("reason", "")) == "not_heard"
 	ring.fill = float(out.get("progress", 0.0)) if out is Dictionary else 0.0
-	ring.label.compose([["earth.out.due_in_years", "comms_years"], " " + str(w.until_voice)])
+	ring.label.compose([["earth.out.due_in_years", "comms_years"], "\n" + str(w.until_voice)])
 	ring.label.update_from(view)
 	ring.queue_redraw()
 	var home: bool = e.get("at_home") == true
@@ -345,6 +353,7 @@ class FeedRing extends Control:
 
 	func _draw() -> void:
 		var c := size * 0.5
-		draw_arc(c, 62.0, 0.0, TAU, 96, Color(0.94, 0.89, 0.78, 0.2), 9.0, true)
+		draw_circle(c, 72.0, Color(StapledonTheme.INK, 0.78))
+		draw_arc(c, 62.0, 0.0, TAU, 96, Color(0.94, 0.89, 0.78, 0.3), 9.0, true)
 		if fill > 0.0:
 			draw_arc(c, 62.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(fill, 0.0, 1.0), 96, StapledonTheme.CORAL, 9.0, true)

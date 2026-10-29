@@ -89,7 +89,7 @@ pure func checkLeg1() -> bool {
   let first = run(c, 0.0001, []);
   let mid = run(c, total / 2.0, []);
   let a = atA();
-  let m = match c.link.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
+  let m = match c.link.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0, arriveT: -1.0 } };
   let em = earthOf(mid);
   elAll([length((earthOf(c)).pending) == 0, length(c.link.messages) == 1, m.planId == c.lastPlanId, m.portId == "A", m.heardT == m.sentT, m.sentT == 0.0, elSame(m.port, elV(40.0, 0.0, 0.0)),
     (earthOf(c)).inBeam, (earthOf(first)).inBeam, em.inBeam, (earthOf(a)).inBeam, isArrived(a.journey), length(a.link.messages) == 1,
@@ -197,7 +197,7 @@ test "AC4b: a short first leg: Earth has heard B by arrival, yet the wait stays 
 -- Case 2 needs a committed or arrived leg: a planned leg never counts as the heard plan, even with
 -- a matching id (unreachable through the journey, whose planned ids are fresh; checked directly).
 pure func checkCases() -> bool {
-  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 };
+  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0, arriveT: 40.4 }], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 };
   let off = elV(20.0, 20.0, 0.0);
   let g = { planId: 1, from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), t0: 0.0, legT: 41.0, flying: true };
   elAll([inBeam(l, 40.0, off, Some(g)), !inBeam(l, 40.0, off, Some({ g | flying: false })), !inBeam(l, 40.0, off, None),
@@ -225,8 +225,8 @@ pure func checkComms() -> bool {
   let eb = earthOf(b);
   let after = run(b, heard2 + 50.0 - b.ship.motion.t + 0.000001, []);
   let ea = earthOf(after);
-  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0 }], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 };
-  let m2 = match c.link.messages { _ :: x :: [] => x, _ => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
+  let l = { messages: [{ planId: 1, portId: "A", from: elV(0.0, 0.0, 0.0), port: elV(40.0, 0.0, 0.0), sentT: 0.0, sentTau: 0.0, heardT: 0.0, arriveT: 40.4 }], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 };
+  let m2 = match c.link.messages { _ :: x :: [] => x, _ => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0, arriveT: -1.0 } };
   elAll([
     -- at Sol: in beam, no reason, rate and its inverse 1, the beamed light is the newest
     none(e0.out), e0.rateInverse == 1.0, e0.lastBeamT == 0.0,
@@ -261,10 +261,10 @@ test "EL3: the out-of-beam reason, its due time, the silence date and the reply 
 pure func checkHomeStart() -> bool {
   let au = 1.0 / 63241.077;
   let e = elV(au, 0.0, 0.0);
-  let l = sendPlan(emptyLink(), 1, "A", e, elV(40.0, 0.0, 0.0), 0.0, 0.0);
+  let l = sendPlan(emptyLink(), 1, "A", e, elV(40.0, 0.0, 0.0), 0.0, 0.0, 40.4);
   let g = { planId: 1, from: e, port: elV(40.0, 0.0, 0.0), t0: 0.0, legT: 40.0, flying: true };
   let p = elV(au + 0.999999, 0.0, 0.0);
-  let m = match l.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0 } };
+  let m = match l.messages { x :: _ => x, [] => { planId: 0, portId: "", from: elV(0.0, 0.0, 0.0), port: elV(0.0, 0.0, 0.0), sentT: -1.0, sentTau: -1.0, heardT: -1.0, arriveT: -1.0 } };
   let ev = earthView(l, 5, 1.0, p, elV(0.999999, 0.0, 0.0), elV(1.0, 0.0, 0.0), rapidityOfOneMinusBeta(0.000001), Some(g));
   -- between the Sun and Earth, flying away from Earth (towards the Sun) at 0.99c: Earth recedes, e^-phi
   let mid = earthView(emptyLink(), 5, 0.0, elV(au / 2.0, 0.0, 0.0), elV(0.0 - au / 2.0, 0.0, 0.0), elV(-1.0, 0.0, 0.0), phi099(), None);
@@ -306,7 +306,9 @@ pure func checkWire() -> bool {
     contains(g16, "\"out\":null,\"feed\":{\"frame\":0,"), contains(g16, "\"beam\":null,\"stale\":[],\"pending\":[],\"window\":null,\"preview\":null,\"messages\":[]}"),
     -- a planned leg carries its preview; the commit sends the plan home; a cruising tick moves the rate
     contains(p16, "\"preview\":{\"port\":{\"x\":40,\"y\":0,\"z\":0},\"wait_years\":0,\"would_stale\":null}"),
-    contains(c16, "\"messages\":[{\"plan_id\":1,\"port_id\":\"A\","), contains(c16, "\"reply_t\":40,"), contains(c16, "\"window\":{"), contains(m16, "\"earth\":{\"rate\":0.0"),
+    contains(c16, "\"messages\":[{\"plan_id\":1,\"port_id\":\"A\","), contains(c16, "\"reply_t\":40,"), contains(c16, "\"window\":{"),
+    -- EL3b.5: the light strip's distances and the port arrival
+    contains(c16, "\"port_ly\":40,\"sent_t\":"), contains(c16, "\"from_ly\":0,"), contains(c16, "\"arrive_t\":"), contains(m16, "\"earth\":{\"rate\":0.0"),
     -- nothing changed on an idle zero-length tick: no section
     !contains(q16, "\"earth\":{"),
     -- 2.15 and below: no earth key anywhere
