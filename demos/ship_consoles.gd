@@ -57,6 +57,7 @@ var used_once := false
 var confirm_mode := "hold"
 var walking := PackedVector3Array()
 var walk_target := ""
+var _open_on_arrival := "" # D-132: finish the short real approach before reaching onto a low desk
 var _confirm := {} # {id, action, held_s, holding, armed, button, label}
 var _aimed := ""
 var _glow: Array = [] # [MeshInstance3D, StandardMaterial3D]
@@ -272,6 +273,15 @@ func use(id: String, action: String, arg: Variant = null) -> bool:
 		if not near:
 			demo.refuse("Walk to the %s first (Tab · Walk to)." % st.name)
 			return false
+		# E/click may be in reach while still away from the working edge. Walk the physical
+		# captain into place before playing a contact pose or opening the console panel.
+		if id in ["voyage", "crew"] and demo.avatar_pos.distance_to(st.use) > 0.025:
+			if not walk_to(id):
+				return false
+			_open_on_arrival = id
+			return true
+		if id in ["voyage", "crew"]:
+			face(id)
 		focus(id, reach.get("mesh", "") if reach.get("id", "") == id else "")
 		used.emit(id, action)
 		return true
@@ -454,6 +464,7 @@ func dolly_active() -> bool:
 func walk_to(id: String) -> bool:
 	if not stations.has(id) or not focused.is_empty() or demo.lift.travelling():
 		return false
+	cancel_walk()
 	var target: Vector3
 	if demo.active_level != 0:
 		target = demo.lift.BOARD_POINT
@@ -477,6 +488,7 @@ func walk_to(id: String) -> bool:
 func walk_to_point(target: Vector3, label: String) -> bool:
 	if not focused.is_empty() or demo.lift.travelling() or demo.active_level != 0:
 		return false
+	cancel_walk()
 	walking = demo.walk.path(demo.avatar_pos, target)
 	if walking.is_empty():
 		return false
@@ -488,6 +500,7 @@ func walk_to_point(target: Vector3, label: String) -> bool:
 func cancel_walk() -> void:
 	walking = PackedVector3Array()
 	walk_target = ""
+	_open_on_arrival = ""
 
 
 func _advance_walk(dt: float) -> void:
@@ -509,9 +522,13 @@ func _advance_walk(dt: float) -> void:
 			budget = 0.0
 	if walking.is_empty():
 		var id := walk_target
+		var open_after_walk := _open_on_arrival == id and not id.is_empty()
 		walk_target = ""
+		_open_on_arrival = ""
 		if stations.has(id):
 			face(id)
+			if open_after_walk:
+				use(id, "open")
 
 
 ## Turn the captain to face a station's walk mesh.
@@ -739,6 +756,10 @@ func _build_screens() -> void:
 		# captain's use point.
 		half = minf(half, Vector2(m.use.x - c.x, m.use.z - c.z).length() - 1.0)
 		var pos: Vector3 = Vector3(c.x, m.box.position.y + minf(1.3, m.box.size.y * 0.75), c.z) + out * (half + 0.04)
+		# The screen belongs to its authored housing; a closer working point must not bury it.
+		var screen: Variant = demo.manifest.get("stations",{}).get(id,{}).get("screen_ship_m")
+		if screen is Array and screen.size()==3 and screen.all(func(value: Variant)->bool:return (value is float or value is int) and is_finite(float(value))):
+			pos = ShipFrame.gltf_from_structure(screen)
 		demo.geometry.add_child(quad)
 		quad.global_transform = Transform3D(Basis.looking_at(-out, Vector3.UP), pos)
 		screens[id] = {"viewport": vp, "label": l, "text": "", "quad": quad}

@@ -16,7 +16,9 @@
       "description": "Preserve Blender sources and publish current baseline",
       "estimated_loc": 100,
       "estimated_days": 0.75,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "Source hashes recorded and packed masters open without missing resources",
         "Current player-camera/HUD baseline inspected and dedicated private gallery verified"
@@ -24,7 +26,7 @@
       "passes": true,
       "started": "2026-10-29",
       "completed": "2026-10-29",
-      "notes": "Bridge 18, Commons diagnostic 9, focused UI 6 baseline frames rendered; contact sheet and representative full frames inspected. 22 gallery images staged and HTTPS/hash verified at :8452. Sources inspected with zero missing resources; archive preserved locally, optional public backup upload awaits explicit auto-review-required approval."
+      "notes": "Sources recovered; zero missing resources; exact public archive approved, uploaded and download-hash verified. Bridge18, Commons diagnostic9 and focusedUI6 baseline frames captured; 22 baseline gallery images plus contact/UI proposals staged over verified Tailnet HTTPS."
     },
     {
       "id": "VF1",
@@ -41,7 +43,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": null
+      "notes": "Manifest camera migration integrated; CPU physics949/0 with independent stage refs. All prior GPU families green and raised G-LVL2 three cases pass; clamp G-LVL1 still blocked by legacy Commons geometry, awaiting actual stage adapter/valid specimen."
     },
     {
       "id": "VF2",
@@ -76,7 +78,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": null
+      "notes": "D-132 installed: actual Voyage/Crew working points advance 0.775 m, bounded 15-degree foot-anchored work lean uses existing paintings; original furniture/screen housings preserved. 40 contact/clearance/pose/entry-path checks pass; and eight matched front/back engine captures staged over verified HTTPS. E/click now walks into place before opening the low console. V1/v2 extensions retired, never installed. Broader finishing and landing gates remain pending."
     },
     {
       "id": "VFU",
@@ -93,7 +95,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": null
+      "notes": "UI committed/integrated: UI284/0, console133/0, no-twitch41/0, Crew console green, strict theme negative controls green in isolated lane. Normal/enlarged help frames inspected/staged. Runtime context hook/stage captures and window check pending."
     },
     {
       "id": "VF3",
@@ -146,49 +148,63 @@
       "milestone": "VF0",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF1",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF2",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VFB",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VFU",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF3",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF4",
       "package": "none",
       "action": "none",
-      "search_terms": [],
+      "search_terms": [
+
+      ],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     }
   ],
@@ -253,6 +269,14 @@
     {
       "date": "2026-10-29",
       "event": "Mark approved the proposed scope and sequence: proceed. VF0 started; later visual gates remain pending."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-131 contact study review: refine shape before installing. Art lane preparing v2; Commons/runtime and UI continue."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-132: Mark finds v2 front view surprising and identifies captain placement/lean as likely cause. Withdraw furniture-extension approach; correct natural contact on original desks."
     }
   ],
   "preview": {
@@ -260,8 +284,8 @@
     "port": 8984,
     "https_port": 8452,
     "session_id": 46822,
-    "round": "baseline",
-    "frames": 22,
+    "round": "natural captain contact on original desks",
+    "frames": 32,
     "verified": "HTTPS page and image content hash matched local staging"
   }
 }

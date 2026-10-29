@@ -42,14 +42,13 @@ func _run() -> void:
 				for k in 90:
 					o=a.step({"station":"use_low","face_dir":Vector3(0,0,-1),"view_yaw":demo.director.walk_yaw()},DT)
 				demo.avatar.show_anim(o)
-				if variant=="corrected":
-					var source: ShaderMaterial=demo.avatar.material_override
-					var working:=ShaderMaterial.new()
-					working.shader=load("res://art/view-finish-v1/captain_work_lean.gdshader")
-					for parameter: Dictionary in source.shader.get_shader_uniform_list():
-						working.set_shader_parameter(parameter.name,source.get_shader_parameter(parameter.name))
-					working.set_shader_parameter("work_lean_deg",15.0)
-					demo.avatar.material_override=working
+				# Corrected frames use the installed shared runtime shader, not a review material.
+				# Reconstruct only the old zero-lean pose for the matched before frame.
+				if variant=="current":
+					(demo.avatar.material_override as ShaderMaterial).set_shader_parameter("work_lean_deg",0.0)
+					demo.avatar.shown["work_lean_deg"]=0.0
+				elif demo.consoles.stations[station].use.distance_to(demo.avatar_pos)>.001:
+					push_error("Working destination differs from corrected physical feet");quit(1);return
 				for k in 3:await process_frame
 				await RenderingServer.frame_post_draw
 				var name := "%s_%s_%s" % [station,view,variant]
@@ -61,7 +60,7 @@ func _run() -> void:
 				crop.save_png(out.path_join(name+"_detail.png"))
 				rows.append({"name":name,"station":station,"view":view,"variant":variant,"display_aid_stops":demo.brightness_stops,"display_aid_multiplier":pow(2.,demo.brightness_stops),"world":"rest","hud":false,"foot_gltf_m":[demo.avatar_pos.x,demo.avatar_pos.y,demo.avatar_pos.z],"render_foot_gltf_m":[demo.avatar.position.x,demo.avatar.position.y,demo.avatar.position.z],"walkable":demo.walk_bridge.is_walkable(demo.avatar_pos),"shown":demo.avatar.shown,"camera":str(demo.camera.global_transform),"added_furniture":false,"work_lean_deg":15.0 if variant=="corrected" else 0.0})
 	var f := FileAccess.open(out.path_join("review.json"),FileAccess.WRITE)
-	f.store_string(JSON.stringify({"status":"operator placement correction; original desks only; not installed in game","size":[1280,720],"frames":rows},"  "))
+	f.store_string(JSON.stringify({"status":"installed operator placement and shared runtime work pose; original desks only; old pose reconstructed for before frames","size":[1280,720],"frames":rows},"  "))
 	print("bridge-operator-review: %d matched frames; physical operator points corrected, original desks retained" % rows.size())
 	_sheet()
 	demo.queue_free()

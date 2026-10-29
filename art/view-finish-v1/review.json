@@ -1,63 +1,89 @@
 {
-  "title": "Bridge & Commons · first finish study",
-  "revision": "c7a27522 (game assets/runtime unchanged from b07c9763)",
-  "round": "baseline + optional bridge contact study",
+  "title": "Bridge & Commons · natural console contact",
+  "revision": "D-132 · original-console working position and runtime work lean",
+  "round": "corrected operator placement",
   "frames": [
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/contact_sheet.png",
-      "file": "contact_contact_sheet.png",
-      "title": "Low-console contact study · comparison sheet",
-      "note": "Voyage above, Crew below. Columns: Astern current/proposal, Bow current/proposal. The added curved controller rests are optional and not installed in gameplay. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Optional bridge contact study · awaiting review"
+      "source": "res://renders/view-finish/operator-placement/voyage_astern_current_detail.png",
+      "file": "operator_voyage_astern_current_detail.png",
+      "title": "Voyage · front · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap"
     },
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/voyage_astern_current_detail.png",
-      "file": "contact_voyage_astern_current_detail.png",
-      "title": "Voyage · existing hand contact",
-      "note": "Current front-facing held pose, enlarged from the actual Astern player camera. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Current · contact comparison"
+      "source": "res://renders/view-finish/operator-placement/voyage_astern_corrected_detail.png",
+      "file": "operator_voyage_astern_corrected_detail.png",
+      "title": "Voyage · front · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch"
     },
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/voyage_astern_proposal_detail.png",
-      "file": "contact_voyage_astern_proposal_detail.png",
-      "title": "Voyage · proposed palm rests",
-      "note": "Two curved supports meet the existing hand pose without moving the captain or console. Assess the new silhouette as well as contact. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Optional bridge contact study · awaiting review"
+      "source": "res://renders/view-finish/operator-placement/voyage_bow_current_detail.png",
+      "file": "operator_voyage_bow_current_detail.png",
+      "title": "Voyage · back · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap"
     },
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/voyage_bow_current.png",
-      "file": "contact_voyage_bow_current.png",
-      "title": "Voyage · current Bow view",
-      "note": "Matched full player view, no HUD. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Current · contact comparison"
+      "source": "res://renders/view-finish/operator-placement/voyage_bow_corrected_detail.png",
+      "file": "operator_voyage_bow_corrected_detail.png",
+      "title": "Voyage · back · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch"
     },
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/voyage_bow_proposal.png",
-      "file": "contact_voyage_bow_proposal.png",
-      "title": "Voyage · proposed Bow view",
-      "note": "Same camera, lighting, captain and console. Only the additive rests differ. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Optional bridge contact study · awaiting review"
+      "source": "res://renders/view-finish/operator-placement/crew_astern_current_detail.png",
+      "file": "operator_crew_astern_current_detail.png",
+      "title": "Crew · front · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap"
     },
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/crew_astern_current_detail.png",
-      "file": "contact_crew_astern_current_detail.png",
-      "title": "Crew · existing hand contact",
-      "note": "Current front-facing held pose. Existing lift composition is unchanged. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Current · contact comparison"
+      "source": "res://renders/view-finish/operator-placement/crew_astern_corrected_detail.png",
+      "file": "operator_crew_astern_corrected_detail.png",
+      "title": "Crew · front · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch"
     },
     {
       "group": "proposal",
-      "source": "res://renders/view-finish/contact-pilot/crew_astern_proposal_detail.png",
-      "file": "contact_crew_astern_proposal_detail.png",
-      "title": "Crew · proposed palm rests",
-      "note": "Same two-console pilot. Navigation and Archive contact are outside this proposal. Frozen rest world; historical +2 EV sky display aid; not a paintover.",
-      "label": "Optional bridge contact study · awaiting review"
+      "source": "res://renders/view-finish/operator-placement/crew_bow_current_detail.png",
+      "file": "operator_crew_bow_current_detail.png",
+      "title": "Crew · back · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/crew_bow_corrected_detail.png",
+      "file": "operator_crew_bow_corrected_detail.png",
+      "title": "Crew · back · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/bridge_help_1280x720.png",
+      "file": "ui_proposal_bridge_help_1280x720.png",
+      "title": "Bridge help · normal UI scale",
+      "note": "Level-aware controls, immediate keyboard focus and wrapped labels. Actual engine frame at 1280×720.",
+      "label": "UI proposal · integrated branch · visual review pending",
+      "revision": "b16a18d6"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/bridge_help_1280x720_ui1p5.png",
+      "file": "ui_proposal_bridge_help_1280x720_ui1p5.png",
+      "title": "Bridge help · enlarged UI scale",
+      "note": "UI scale 1.5 on a 1280×720 window (853×480 logical canvas). The controls remain within a scrollable panel; lower rows are reached by scrolling.",
+      "label": "UI proposal · integrated branch · visual review pending",
+      "revision": "b16a18d6"
     },
     {
       "group": "bridge",
@@ -236,5 +262,5 @@
       "label": "Baseline · player camera · 2560x1440"
     }
   ],
-  "notice": "First proposal: compare the existing low consoles with curved palm rests in the contact study. It is not installed. Commons layout and UI work continue independently; baseline views remain below."
+  "notice": "The captain now stands closer and leans onto the original Voyage/Crew consoles. These are matched front/back before-and-after engine captures. The earlier loops and desk leaves are retired and were never installed. Commons layout review follows separately."
 }

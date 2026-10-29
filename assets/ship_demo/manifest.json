@@ -162,15 +162,17 @@
       ]
     },
     "voyage": {
+      "screen_ship_m": [-7.8289999961853, 11.3394985198975, 82.8538513183594],
       "use_m": [
         -7.829,
-        10.207
+        10.982
       ]
     },
     "crew": {
+      "screen_ship_m": [8.47900009155273, 13.3014984130859, 82.8538513183594],
       "use_m": [
         8.479,
-        12.169
+        12.944
       ]
     }
   },
@@ -178,7 +180,7 @@
     "layout": "art/deck-layout-v2/bow_a.json",
     "generator": "~/dev/blender/scripts/stapledon_deck_layout_v2.py",
     "walk": "tools/deck_walk_bake.gd (DeckLayout.build_walk on the pinned grounded v2 walk)",
-    "points": "SPAWN_captain and INTERACT_<station>_use empties in the master (collection deck_layout_v2), ship metres"
+    "points": "SPAWN_captain and INTERACT_<station>_use empties in the original master, ship metres; D-132 revises Voyage/Crew working points in bow_a.json and this manifest. Original screen housings keep their independent screen_ship_m anchors."
   },
   "style": {
     "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest. foliage: the rim fronds' roots and inward facings (v4 generator), drawn as painted cards (D-106, ShipDressing).",

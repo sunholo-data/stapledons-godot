@@ -4,7 +4,7 @@ Mark rejected the extension silhouette and clarified the intended correction:
 "I think just the captain avatar is misplaced? they should be leaning on the
 console? just make it look non surprising". The previous fixed operator-position
 constraint is released for this contact correction. **No furniture extensions
-are loaded in this study.** Original desks, sprites and their transforms remain.
+are loaded.** Original desks and painted sprite textures remain.
 
 The original low-console use points stand two metres stern of the desk centre,
 about 1.17 m behind the nearest desk bound. The accepted flat held-pose paintings
@@ -28,8 +28,11 @@ Walk-to destinations must be these same feet; the renderer receives no separate
 position offset. The standing-only trial closed much of the gap but retained front-facing hand
 separation. The final study keeps the accepted held-pose textures and adds a
 bounded 15-degree work lean toward the bow about the physical foot anchor. The
-render origin stays on the corrected real feet; head reach is at most 0.455 m. Parent owns any final `demos/ship_consoles.gd` / manifest edits
-and their pins after this comparison is assessed.
+render origin stays on the corrected real feet; head reach is at most 0.455 m.
+Both destinations are installed in the runtime manifest and layout metadata.
+Independent screen anchors preserve the idle labels in their original housings:
+the old screen-placement rule depended on the operator's distance and would
+otherwise bury the labels when the captain approached.
 
 ## Verification
 
@@ -40,11 +43,14 @@ process mode removes its collision objects from physics and would falsely report
 clearance. The independent negative control catches the real desk 5 cm deeper
 than the proposed foot point.
 
-`godot --headless --path . --script tests/test_bridge_operator_contact.gd`:
-22 passed, zero failures. It checks actual WALK support, continuous 0.025 m
+`make bridge-operator-test`: 40 passed, zero failures. It checks actual WALK support, continuous 0.025 m
 stepping, the real Walk-to path ending at the corrected point, full-capsule
 clearance and the deeper-collision negative, and rendered feet equaling physical
-feet. It also checks that no proposed support mesh is loaded.
+feet. It also checks original screen anchors, working/reduced-motion poses,
+reset on leaving, and that no proposed support mesh is loaded.
+The real E/open entry is also exercised from the former in-reach point: no
+teleport or distant contact pose, ordinary 1.3 m/s walking, WASD cancellation,
+and panel opening only after arrival at the corrected physical destination.
 
 `tools/bridge_operator_review.gd` prepares matched actual Bow/Astern current and
 corrected frames, with 320px native crops enlarged to 640px to show both feet and
@@ -54,16 +60,17 @@ back crops were opened and inspected: the palms now meet the original console
 edge and the feet remain grounded. The standing-only diagnostic is retained
 under ignored build/operator-standing-only. The final comparison has no custom
 furniture. It retains +2-stop/4x sky display aid, frozen rest world and no HUD.
-No runtime point or shared-shader edits were made by this worker.
+The corrected frames use the installed shared runtime shader and destinations;
+the previous position and flat pose are reconstructed only for before frames.
 
-## Runtime handoff
+## Runtime implementation
 
-Apply corrected real use points to movement/Walk-to as well as the renderer.
-The review-only captain_work_lean.gdshader adds a default-zero working lean to
+Corrected real use points drive movement/Walk-to as well as the renderer.
+The shared interior/captain_fx.gdshader adds a default-zero working lean to
 the existing fixed-Y billboard: its local up column rotates toward world bow,
-while the model origin is unchanged. Parent should port that small delta into
-the runtime shader and drive it only for Voyage/Crew low-console use/leave
-poses, with the existing reach/leave timing. Other clips keep the zero default.
+while the model origin is unchanged. CaptainAvatar drives it only for
+Voyage/Crew low-console use/leave poses, with the existing reach/leave timing.
+Other clips keep the zero default.
 The 15-degree posture is static under reduced motion; no new sway is proposed.
 
 GPU harness exited 0 with 8 frames, no script errors. Existing image-import and
@@ -71,6 +78,7 @@ shutdown RID warnings remain. Tests preserve collision processing while frozen
 and reject a deeper body intersection; they also hold lean direction/angle and
 maximum head reach. No Blender models, textures or furniture pins changed.
 
-After runtime installation, rerun the guard with `-- --installed`; that mode
-requires the actual station working destination to equal the corrected physical
-point. The default mode measures the unchanged source used by this review.
+The guard's `-- --installed` mode requires the actual station working destination
+to equal the corrected physical point. The historical source study mode is for
+the pre-installation revision only. The earlier loops, desk leaves and custom
+study shader are historical review artifacts; none is loaded by gameplay.

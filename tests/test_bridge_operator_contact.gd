@@ -35,6 +35,31 @@ func _run() -> void:
 		check(id+" negative control rejects 5cm deeper body intersection",not capsule_clear(demo,target+Vector3.FORWARD*.05))
 		demo.avatar_pos=target;demo._process(1./60.)
 		check(id+" rendered feet equal physical feet",demo.avatar.position.distance_to(demo.avatar_pos)<.001)
+		if installed:
+			var anchor: Variant=demo.manifest.stations[id].get("screen_ship_m")
+			check(id+" screen stays in original authored housing",anchor is Array and demo.consoles.screens[id].quad.global_position.distance_to(ShipFrame.gltf_from_structure(anchor))<.001)
+			demo.consoles.focused=id
+			demo.captain_anim=demo._new_captain_anim();demo._anim_pos=target
+			for k in 3:demo._animate_captain(.5)
+			check(id+" held work pose leans toward original desk",demo.avatar.shown.get("work_lean_deg",0.0)==15.0)
+			demo.set_camera_motion("reduced")
+			demo._animate_captain(.5)
+			check(id+" reduced motion retains static working posture",demo.avatar.shown.get("work_lean_deg",0.0)==15.0 and demo.avatar.shown.get("effect","")=="none")
+			demo.consoles.focused=""
+			for k in 3:demo._animate_captain(.5)
+			check(id+" leaving resets work posture",demo.avatar.shown.get("work_lean_deg",-1.0)==0.0)
+			demo.set_camera_motion("full")
+			# Actual E/open entry from the former in-reach position must approach before use.
+			demo.avatar_pos=old;demo.consoles.face(id)
+			check(id+" E starts a calm physical approach",demo.consoles.press_e() and demo.consoles.focused.is_empty() and not demo.consoles.walking.is_empty() and demo.avatar_pos.distance_to(old)<.001)
+			demo.consoles.advance(.1)
+			check(id+" approach moves at ordinary walking speed",demo.avatar_pos.distance_to(old)>0. and demo.avatar_pos.distance_to(old)<=ShipConsoles.WALK_SPEED_MPS*.1+.001 and demo.consoles.focused.is_empty())
+			demo.consoles.cancel_walk();demo.consoles.advance(2.)
+			check(id+" taking over movement cancels pending console open",demo.consoles.focused.is_empty())
+			check(id+" open resumes real approach",demo.consoles.use(id,"open"))
+			for k in 120:demo.consoles.advance(1./60.)
+			check(id+" panel and contact pose wait for real working point",demo.consoles.focused==id and demo.avatar_pos.distance_to(target)<.001)
+			demo.consoles.leave()
 	check("no custom contact extension loaded",demo.geometry.find_children("VF_*_contact_*","",true,false).is_empty())
 	demo.queue_free();await process_frame
 	print("bridge-operator-contact: %d passed, %d failures" % [passed,failed])
