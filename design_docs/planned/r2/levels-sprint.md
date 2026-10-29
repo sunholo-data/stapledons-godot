@@ -2,14 +2,14 @@
 
 **Design doc:** [levels.md](levels.md). **Process doc:** [design_docs/levels/README.md](../../levels/README.md). **Backlog:** [design_docs/levels/backlog.md](../../levels/backlog.md).
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-LEVELS.json`
-**Status:** **Approved** (ledger D-103, 2026-10-20, with every recommendation; the charter rows are on main). Executing LP0 and LP1a on `feat/levels`. LP1b waits for the held files. D-104 (curves) and the plants follow-up (a foliage hook only) are folded in.
+**Status:** **Approved** (ledger D-103, 2026-10-20, with every recommendation; the charter rows are on main). LP0/LP1a complete. D-130 (2026-10-29) resumes LP1b–LP4 through [R2-VIEW-FINISH](bridge-commons-finish-sprint.md), which owns current concurrency and review sequencing. D-104/D-106 remain binding. Historical merge holds below are cleared by D-125; current runtime ownership is assigned by the overlay. S3 and S5 approval gates remain.
 **Base:** `origin/main` 8e49c160, on branch `design/levels`.
 
 **Shared files, and how the sprint is split.** R2-BRIDGE-STYLE (approved as D-100, executing) and DL3 (#292) hold `data/camera/views.json`, `demos/camera_director.gd`, `tests/test_camera_director.gd`, `demos/ship_demo_lift.gd`, `demos/ship_lighting.gd` and `demos/ship_star_light.gd` on the charter's do-not-touch line. This sprint never edits the bridge's art, lighting rig or HUD.
 - **LP0 and LP1a start on approval.** They use only new files plus `interior/walk.gd`, `mk/levels.mk` and one `Makefile` include and bench branch. The `Makefile` is released on the do-not-touch line.
 - **LP1b waits for those merges.** It edits the held files: `views.json` v3, the vertical camera, the lift and per-level light.
 
-**AILANG:** v0.54.14 (pinned). The sprint writes no `.ail` code, so the syntax gate is skipped. Registry reuse: none (Godot tools, data and Blender assets; no maths for `sunholo/relativity`).
+**AILANG:** v0.54.18 (current pin). The sprint writes no `.ail` code, so the syntax gate is skipped. Registry reuse: none (Godot tools, data and Blender assets; no maths for `sunholo/relativity`).
 
 **Estimate:** about 2,350 game LOC plus about 600 lines of `bpy`, over **14.5 working days**, or **16 with buffer**. Mark's time at the two pauses is extra.
 

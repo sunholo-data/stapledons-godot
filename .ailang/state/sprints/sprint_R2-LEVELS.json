@@ -30,12 +30,12 @@
   "external_dependencies": [
     {
       "what": "R2-DECK-LAYOUT DL3 and R2-BRIDGE-STYLE bridge files merged",
-      "where": "#292, #293 (executing)",
+      "where": "D-125, merged bridge styling report and live gh PR audit 2026-10-29",
       "owner": "those sprints",
       "blocks": [
         "LP1B_CAMERA_VIEWS_LIFT_LIGHT"
       ],
-      "status": "in flight; LP0 and LP1a use only new files (plus interior/walk.gd and the Makefile) and start on approval; LP1b edits held files (views.json, camera_director.gd, test_camera_director.gd, ship_demo_lift.gd, ship_lighting.gd, ship_star_light.gd) and waits; the bridge's art, lighting rig and HUD are never edited"
+      "status": "cleared: held bridge scene work merged per D-125; resumed by D-130 / R2-VIEW-FINISH, runtime files have one owner"
     },
     {
       "what": "Blender 5.2.1 LTS workspace",
@@ -352,6 +352,10 @@
     {
       "date": "2026-10-20",
       "event": "LP0 and LP1a done on feat/levels; LP1b blocked on held files"
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-130 approved R2-VIEW-FINISH overlay; LP0/LP1a remain complete, obsolete merge hold cleared, LP1b–LP4 resumed with S3/S5 gates intact."
     }
   ]
 }

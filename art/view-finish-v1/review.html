@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stapledon's Voyage · ship review</title>
+<style>
+:root{color-scheme:dark;--paper:#f2e7cb;--ink:#25202f;--muted:#c4baa4;--teal:#9abfb4}
+*{box-sizing:border-box}body{margin:0;background:#17161c;color:var(--paper);font:16px/1.55 system-ui,sans-serif}header,main,footer{max-width:1500px;margin:auto;padding:30px clamp(18px,4vw,64px)}header{border-bottom:1px solid #5c5068}small,.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}h1{font:400 clamp(30px,5vw,58px)/1.12 Georgia,serif;margin:16px 0}p{max-width:76ch}.intro{color:var(--muted)}nav{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 0}button{border:1px solid #89778d;background:transparent;color:var(--paper);padding:10px 18px;border-radius:3px;font:inherit;cursor:pointer}button[aria-pressed=true]{color:var(--ink);background:var(--paper)}button:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:4px}.notice{border-left:3px solid #d2a14c;padding:8px 18px;background:#24202b}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px}figure{margin:0;background:#222028;border:1px solid #504459;border-radius:4px;overflow:hidden}figure img{width:100%;height:auto;display:block;background:#0c0b10;aspect-ratio:16/9;object-fit:contain}figcaption{padding:18px 20px}h2{font-size:21px;margin:5px 0 10px}figcaption p{margin:0;color:var(--muted);font-size:14px}a{color:var(--teal)}.meta{font:12px/1.6 ui-monospace,monospace;color:var(--muted);overflow-wrap:anywhere}footer{color:var(--muted);font-size:13px}details{margin:14px 0 0}summary{cursor:pointer}#error{color:#f4b4a4}@media(max-width:800px){.grid{grid-template-columns:1fr}header,main{padding-top:22px}}
+</style>
+<header><div class="eyebrow">Stapledon's Voyage / attended ship review</div><h1 id="title">Bridge & Commons</h1>
+<p class="intro">A continuous journey from the bridge, down the lift and into the ship's civic heart. Open any image at full size to inspect its finish.</p>
+<p class="notice" id="notice">Loading the review manifest…</p><p class="meta" id="revision"></p>
+<nav aria-label="Review filters"><button data-filter="all" aria-pressed="true">All views</button><button data-filter="bridge" aria-pressed="false">Bridge</button><button data-filter="commons" aria-pressed="false">Commons & lift</button><button data-filter="ui" aria-pressed="false">UI</button></nav></header>
+<main><p id="error" role="alert"></p><div class="grid" id="frames"></div></main>
+<footer>Private Tailnet preview. Images are engine captures, unless individually labelled otherwise. <a href="manifest.json">Review manifest & image hashes</a>. Visual approval is recorded in the attended session.</footer>
+<script>
+let frames=[];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function render(filter='all'){
+document.querySelector('#frames').innerHTML=frames.filter(f=>filter==='all'||f.group===filter).map(f=>'<figure><a href="'+esc(f.file)+'" target="_blank" rel="noopener"><img loading="lazy" src="'+esc(f.file)+'" alt="'+esc(f.title)+'"></a><figcaption><small>'+esc(f.label)+'</small><h2>'+esc(f.title)+'</h2><p>'+esc(f.note)+'</p><details><summary>Capture evidence</summary><p class="meta">'+esc(f.file)+'<br>SHA256 '+esc(f.sha256)+'</p></details></figcaption></figure>').join('');
+}
+document.querySelectorAll('button[data-filter]').forEach(button=>button.onclick=()=>{document.querySelectorAll('button[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));render(button.dataset.filter)});
+fetch('manifest.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Manifest unavailable');return r.json()}).then(data=>{document.querySelector('#title').textContent=data.title;document.querySelector('#revision').textContent='Capture revision '+data.revision+' · '+data.round;document.querySelector('#notice').textContent=data.round==='baseline'?'Baseline reference: these are the current views before the finishing pass. Proposed layouts and finishes will be labelled separately. No new visual approval is requested for these images.':'Review round: proposed changes are labelled per image. Please review the layout or finish in the attended session; this page does not submit approval.';frames=data.frames;render()}).catch(e=>document.querySelector('#error').textContent=e.message);
+</script></html>

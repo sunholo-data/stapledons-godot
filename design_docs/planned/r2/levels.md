@@ -1,6 +1,6 @@
 # R2-LEVELS: a repeatable level pipeline for intricate 2.5D levels, first run on the Commons
 
-**Status:** **Approved** by Mark on 2026-10-20 (ledger D-103, "ok yes good"), with every recommendation (OQ1–OQ10) and the proposed charter rows, which are on main. D-104 adds the shape-language rule (§B8). Executing LP0 and LP1a on `feat/levels`; LP1b waits for the held files.
+**Status:** **Approved** by Mark on 2026-10-20 (ledger D-103, "ok yes good"), with every recommendation (OQ1–OQ10) and the proposed charter rows, which are on main. D-104 adds the shape-language rule (§B8). LP0/LP1a landed. On 2026-10-29, D-130 approved resuming LP1b–LP4 through [R2-VIEW-FINISH](bridge-commons-finish-sprint.md); old bridge-style/DL3 merge holds are cleared (D-125). S3/S5 approvals remain required.
 **Release:** R2, then ongoing: every level of the ship goes through this pipeline, one after another.
 **Priority:** P1 for R2. It is one of the three tracks Mark named after playing the bridge (D-98); captain animation and sound have their own plans.
 
@@ -41,11 +41,11 @@ The living process doc is [design_docs/levels/README.md](../../levels/README.md)
 
 **Depends on:**
 - R2-CAMERA-FORWARD (landed): `views.json` v2 keyed by level, the slide rig and the occluder fades.
-- R2-DECK-LAYOUT (DL0–DL2 landed; DL3 #292 in flight): `DeckBowMetrics`, the Blender generator pattern, the asset check and the pinned masters.
-- **R2-BRIDGE-STYLE** (approved as D-100, executing): the finish and graphic language that each level's style stage (A1 S5) applies.
+- R2-DECK-LAYOUT (bridge layout/hero assets landed): `DeckBowMetrics`, the Blender generator pattern, the asset check and the pinned masters.
+- **R2-BRIDGE-STYLE** (landed, including #322): the finish and graphic language that each level's style stage (A1 S5) applies.
   - This plan never edits the bridge's art (`assets/ship_demo/*`), its lighting rig (`demos/ship_lighting.gd`, `demos/ship_star_light.gd`) or the HUD.
-  - The shared files it must edit are held by that sprint or DL3 (#292) on the charter's do-not-touch line: `data/camera/views.json`, `demos/camera_director.gd`, `tests/test_camera_director.gd`, `demos/ship_demo_lift.gd`, and the lighting files for per-level light.
-  - The sprint is therefore split. **LP0 and LP1a use only new files plus `interior/walk.gd`, so they can start on approval.** LP1b, which edits the held files, waits for those merges.
+  - Former shared-file holds are cleared per D-125. R2-VIEW-FINISH now gives a single runtime owner `data/camera/views.json`, `demos/camera_director.gd`, `tests/test_camera_director.gd`, `demos/ship_demo_lift.gd`, and per-level lighting integration; bounded bridge/UI work remains separate.
+  - **LP0 and LP1a are complete.** LP1b may resume after the source/baseline stage, with active PR/file ownership rechecked at execution.
   - Readers of `views.json` levels that LP1b updates: `demos/camera_director.gd`, `demos/ship_geometry_demo.gd`, `tests/test_camera_director.gd` and `tools/deck_bow_metrics.gd`.
 - Sibling plans (D-98): captain animation (climb, ride and sit clips; §B3) and sound (each stage names an ambience; §A4).
 - No physics change. `sunholo/relativity`, `sim/`, the protocol and the replays are untouched.

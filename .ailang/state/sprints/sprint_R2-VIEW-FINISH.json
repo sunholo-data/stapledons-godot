@@ -21,10 +21,10 @@
         "Source hashes recorded and packed masters open without missing resources",
         "Current player-camera/HUD baseline inspected and dedicated private gallery verified"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-29",
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-29",
+      "notes": "Bridge 18, Commons diagnostic 9, focused UI 6 baseline frames rendered; contact sheet and representative full frames inspected. 22 gallery images staged and HTTPS/hash verified at :8452. Sources inspected with zero missing resources; archive preserved locally, optional public backup upload awaits explicit auto-review-required approval."
     },
     {
       "id": "VF1",
@@ -39,7 +39,7 @@
         "Required G-LVL GPU/CPU golden cases and opened pose references"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-29",
       "completed": null,
       "notes": null
     },
@@ -74,7 +74,7 @@
         "Console facing/contact frames and actual player-camera finish inspected; approved layout preserved"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-29",
       "completed": null,
       "notes": null
     },
@@ -91,7 +91,7 @@
         "make ship-ui-window-check and expanded ship-ui-capture verified at tested resolutions and laptop scaling"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-29",
       "completed": null,
       "notes": null
     },
@@ -254,5 +254,14 @@
       "date": "2026-10-29",
       "event": "Mark approved the proposed scope and sequence: proceed. VF0 started; later visual gates remain pending."
     }
-  ]
+  ],
+  "preview": {
+    "url": "https://voights-mac-studio.tail97eda0.ts.net:8452/",
+    "port": 8984,
+    "https_port": 8452,
+    "session_id": 46822,
+    "round": "baseline",
+    "frames": 22,
+    "verified": "HTTPS page and image content hash matched local staging"
+  }
 }

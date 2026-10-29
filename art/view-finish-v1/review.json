@@ -1,0 +1,183 @@
+{
+  "title": "Bridge & Commons · current baseline",
+  "revision": "c7a27522 (game assets/runtime unchanged from b07c9763)",
+  "round": "baseline",
+  "frames": [
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_deep.png",
+      "file": "before_bridge_bow_deep.png",
+      "title": "Bridge · Bow at rest",
+      "note": "Current approved bridge, spire-lit in deep space.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_cruise.png",
+      "file": "before_bridge_bow_cruise.png",
+      "title": "Bridge · 0.99c",
+      "note": "Same deck composition with the live relativistic sky.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_star.png",
+      "file": "before_bridge_bow_star.png",
+      "title": "Bridge · nearby star",
+      "note": "Live star/spire light handover.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/astern_deep.png",
+      "file": "before_bridge_astern_deep.png",
+      "title": "Bridge · Astern",
+      "note": "Current mast, chair and lift composition.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/zoom_navigation.png",
+      "file": "before_bridge_zoom_navigation.png",
+      "title": "Helm · console close-up",
+      "note": "Baseline furnishing and screen relationship.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/zoom_voyage.png",
+      "file": "before_bridge_zoom_voyage.png",
+      "title": "Voyage · console close-up",
+      "note": "Baseline furnishing before the contact/readability proposal.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/zoom_crew.png",
+      "file": "before_bridge_zoom_crew.png",
+      "title": "Crew · console close-up",
+      "note": "Existing console shell; Crew feature work remains separately owned.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_deep_hud.png",
+      "file": "before_bridge_bow_deep_hud.png",
+      "title": "Bridge · HUD at rest",
+      "note": "Current strip, help and prompt treatment.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_cruise_hud.png",
+      "file": "before_bridge_bow_cruise_hud.png",
+      "title": "Bridge · HUD in cruise",
+      "note": "Current ship/home clocks and journey presentation.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/mid_lift.png",
+      "file": "before_commons_mid_lift.png",
+      "title": "Lift · descent",
+      "note": "Existing lift diagnostic camera; not final fixed-view sign-off. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/arrival.png",
+      "file": "before_commons_arrival.png",
+      "title": "Commons · arrival",
+      "note": "Existing geometry and painted finish. Diagnostic standing-eye camera. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/courtyard.png",
+      "file": "before_commons_courtyard.png",
+      "title": "Commons · court",
+      "note": "Existing open civic plaza; not the proposed five-stage layout. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/arcade_inside.png",
+      "file": "before_commons_arcade_inside.png",
+      "title": "Commons · inside the arcade",
+      "note": "Current curved arcade kit and lighting, to be refined after layout acceptance. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/arcade_along.png",
+      "file": "before_commons_arcade_along.png",
+      "title": "Commons · along the arcade",
+      "note": "Current structure and material reference. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/reverse_to_bridge.png",
+      "file": "before_commons_reverse_to_bridge.png",
+      "title": "Commons · looking back",
+      "note": "Current relationship to the bridge above. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/ship_commons/painted/planted_plaza.png",
+      "file": "before_commons_planted_plaza.png",
+      "title": "Commons · planted plaza",
+      "note": "Current foliage and furniture baseline. Diagnostic camera. Historical display aid: +2 EV; simulation/geometry unchanged.",
+      "label": "Baseline · diagnostic camera · 1280×720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/strip_rest_1280x720.png",
+      "file": "before_ui_strip_rest_1280x720.png",
+      "title": "Status strip · 1280x720",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 1280x720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/prompt_navigation_1280x720.png",
+      "file": "before_ui_prompt_navigation_1280x720.png",
+      "title": "Navigation prompt · 1280x720",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 1280x720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_deck_1280x720.png",
+      "file": "before_ui_lower_deck_1280x720.png",
+      "title": "Commons landing UI · 1280x720",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 1280x720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/strip_rest_2560x1440.png",
+      "file": "before_ui_strip_rest_2560x1440.png",
+      "title": "Status strip · 2560x1440",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 2560x1440"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/prompt_navigation_2560x1440.png",
+      "file": "before_ui_prompt_navigation_2560x1440.png",
+      "title": "Navigation prompt · 2560x1440",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 2560x1440"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_deck_2560x1440.png",
+      "file": "before_ui_lower_deck_2560x1440.png",
+      "title": "Commons landing UI · 2560x1440",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 2560x1440"
+    }
+  ]
+}
