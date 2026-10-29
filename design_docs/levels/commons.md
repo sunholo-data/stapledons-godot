@@ -1,6 +1,6 @@
-# Level: Commons (`commons`), layout v1 (draft brief)
+# Level: Commons (`commons`), layout v1 (S3 review)
 
-**Tier:** +57 m, radius 75.9 m. Its roof is the bridge's 22 m disc only; the floor beyond that is open to the sky. **Stage of the pipeline:** S1 (greybox). The brief was approved with R2-LEVELS (D-103).
+**Tier:** +57 m, radius 75.9 m. Its roof is the bridge's 22 m disc only; the floor beyond that is open to the sky. **Stage of the pipeline:** S3 (playtest awaiting Mark). The brief was approved with R2-LEVELS (D-103); execution through D-130. Detailed art has not begun.
 **Concept refs:** `art/ship-tier-concepts-v1/commons.png`; the approved Commons zoning (open civic plaza, curved arcades, planted walks; `website/docs/ship-layer-reference.mdx`); the existing painted court and arcade (`assets/ship_commons/`). **Ledger:** D-34, D-35, D-100.
 
 ## Purpose
@@ -45,7 +45,15 @@ The civic heart: where news from home arrives, the crew meet and argue, and the 
 | set piece | `lift_descent` | the lift ride | the court and its lights rising into view under the bridge's underside |
 
 ## Thresholds
-The §B5 defaults. The greybox v0 fails `pole-ray` (the civic tower stands on the pole line) and `head` under the terrace (8% even with the clamp). Fixing both is the S2 work.
+The §B5 defaults remain unchanged. The historical v0 mock failed `pole-ray` and `head` under the terrace. Production v1 now passes the Commons evaluator and bridge regression: seven surfaces/four heights reachable, zero final head/pole blocks in sampled views; landing near-field shares 3.1% Bow / 9.5% Astern. The service stage remains enclosed/non-journey and additionally passes a strict full-resolution geometry-alpha test: zero uncovered pixels in all six Bow/Astern rest/cruise/real-stop frames.
+
+## Current review package
+
+Private gallery and native download: https://voights-mac-studio.tail97eda0.ts.net:8452/ (both devices on Tailscale). Native game source is `f3e0b11c`, bundled AILANG v0.54.18. Cold ship/title startup passed with fresh settings and no external runtime; signature, ZIP integrity and full HTTPS download hash verified. The build is a review artifact, not a landed release.
+
+`renders/levels/commons/s3/` contains 42 representative player views; `s3-clamp/` adds six actual under-terrace views, clamp share 1.0. The service has six independently checked final frames in `s3-service-final/`. Capture manifests, metrics and image hashes accompany them. Geometry and coloured find markers are placeholders for layout review. Use the checklist below before approving S3; approval is not inferred from automated checks or silence.
+
+After S3 acceptance: dress one court/arcade pilot, review its finish, then propagate the accepted treatment and request S5 appearance approval. Final performance, independent evaluation and exact-head `rig/full`/fast CI remain landing gates.
 
 ## Playtest checklist (S3)
 - [ ] The lift arrival shows the court, the stalls and the starbow.

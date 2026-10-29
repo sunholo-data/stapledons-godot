@@ -31,7 +31,7 @@ func _stage() -> int:
 		printerr("preview: invalid config")
 		return 1
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
-	var manifest := {"title": data.title, "revision": data.revision, "round": data.round, "notice": data.get("notice", ""), "frames": []}
+	var manifest := {"title": data.title, "revision": data.revision, "round": data.round, "notice": data.get("notice", ""), "frames": [], "downloads": []}
 	for frame: Dictionary in data.frames:
 		var source: String = frame.source
 		var name: String = frame.file
@@ -47,6 +47,19 @@ func _stage() -> int:
 		row.erase("source")
 		row.sha256 = FileAccess.get_sha256(destination)
 		manifest.frames.append(row)
+	for item: Dictionary in data.get("downloads", []):
+		var source: String=item.source
+		var name: String=item.file
+		if not _safe_name(name) or name.get_extension()!="zip" or not FileAccess.file_exists(source):
+			printerr("preview: missing or unsafe download ",source);return 1
+		var destination:=OUT.path_join(name)
+		if DirAccess.copy_absolute(ProjectSettings.globalize_path(source),ProjectSettings.globalize_path(destination))!=OK:
+			printerr("preview: download copy failed ",source);return 1
+		var row:=item.duplicate();row.erase("source")
+		row.sha256=FileAccess.get_sha256(destination)
+		var archive:=FileAccess.open(destination,FileAccess.READ)
+		row.bytes=archive.get_length()
+		manifest.downloads.append(row)
 	var file := FileAccess.open(OUT.path_join("manifest.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(manifest, "  ") + "\n")
 	file.close()
@@ -61,7 +74,7 @@ func _safe_name(name: String) -> bool:
 	if name.is_empty() or name.get_file() != name or name.begins_with("."):
 		return false
 	var expression := RegEx.new()
-	expression.compile("^[a-zA-Z0-9_-]+\\.(png|json|html|webp)$")
+	expression.compile("^[a-zA-Z0-9_-]+\\.(png|json|html|webp|zip)$")
 	return expression.search(name) != null
 
 func _process(_dt: float) -> bool:
@@ -95,6 +108,7 @@ func _respond(socket: StreamPeerTCP, request: String) -> void:
 	var status := "404 Not Found"
 	var mime := "text/plain; charset=utf-8"
 	var body := "Not found\n".to_utf8_buffer()
+	var body_size:=body.size()
 	var method := parts[0] if parts.size() >= 2 else ""
 	if method in ["GET", "HEAD"]:
 		var name := parts[1].get_slice("?", 0).trim_prefix("/")
@@ -106,16 +120,21 @@ func _respond(socket: StreamPeerTCP, request: String) -> void:
 		if manifest is Dictionary:
 			for frame: Dictionary in manifest.get("frames", []):
 				allowed.append(str(frame.file))
+			for item: Dictionary in manifest.get("downloads", []):
+				allowed.append(str(item.file))
 		if _safe_name(name) and name in allowed:
 			var path := OUT.path_join(name)
 			if FileAccess.file_exists(path):
-				body = FileAccess.get_file_as_bytes(path)
+				var file:=FileAccess.open(path,FileAccess.READ)
+				body_size=file.get_length()
+				if method=="GET":body=file.get_buffer(body_size)
 				status = "200 OK"
-				mime = {"png": "image/png", "webp": "image/webp", "json": "application/json", "html": "text/html; charset=utf-8"}.get(name.get_extension(), mime)
+				mime = {"png": "image/png", "webp": "image/webp", "json": "application/json", "html": "text/html; charset=utf-8", "zip": "application/zip"}.get(name.get_extension(), mime)
 	else:
 		status = "405 Method Not Allowed"
 		body = "Method not allowed\n".to_utf8_buffer()
-	var headers := "HTTP/1.1 %s\r\nContent-Type: %s\r\nContent-Length: %d\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n" % [status, mime, body.size()]
+		body_size=body.size()
+	var headers := "HTTP/1.1 %s\r\nContent-Type: %s\r\nContent-Length: %d\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n" % [status, mime, body_size]
 	socket.put_data(headers.to_utf8_buffer())
 	if method != "HEAD":
 		socket.put_data(body)

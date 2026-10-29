@@ -1,6 +1,6 @@
 {
   "title": "Bridge & Commons · natural console contact",
-  "revision": "D-132 · original-console working position and runtime work lean",
+  "revision": "Runtime/assets f3e0b11c · D-132 natural contact · final transparency correction",
   "round": "corrected operator placement",
   "frames": [
     {
@@ -9,7 +9,8 @@
       "file": "operator_voyage_astern_current_detail.png",
       "title": "Voyage · front · before",
       "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
-      "label": "Before · previous gap"
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -17,7 +18,8 @@
       "file": "operator_voyage_astern_corrected_detail.png",
       "title": "Voyage · front · corrected",
       "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
-      "label": "Corrected · installed in sprint branch"
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -25,7 +27,8 @@
       "file": "operator_voyage_bow_current_detail.png",
       "title": "Voyage · back · before",
       "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
-      "label": "Before · previous gap"
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -33,7 +36,8 @@
       "file": "operator_voyage_bow_corrected_detail.png",
       "title": "Voyage · back · corrected",
       "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
-      "label": "Corrected · installed in sprint branch"
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -41,7 +45,8 @@
       "file": "operator_crew_astern_current_detail.png",
       "title": "Crew · front · before",
       "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
-      "label": "Before · previous gap"
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -49,7 +54,8 @@
       "file": "operator_crew_astern_corrected_detail.png",
       "title": "Crew · front · corrected",
       "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
-      "label": "Corrected · installed in sprint branch"
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -57,7 +63,8 @@
       "file": "operator_crew_bow_current_detail.png",
       "title": "Crew · back · before",
       "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
-      "label": "Before · previous gap"
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
     },
     {
       "group": "proposal",
@@ -65,7 +72,8 @@
       "file": "operator_crew_bow_corrected_detail.png",
       "title": "Crew · back · corrected",
       "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
-      "label": "Corrected · installed in sprint branch"
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
     },
     {
       "group": "ui",
@@ -74,7 +82,7 @@
       "title": "Bridge help · normal UI scale",
       "note": "Level-aware controls, immediate keyboard focus and wrapped labels. Actual engine frame at 1280×720.",
       "label": "UI proposal · integrated branch · visual review pending",
-      "revision": "b16a18d6"
+      "revision": "f3e0b11c"
     },
     {
       "group": "ui",
@@ -83,7 +91,7 @@
       "title": "Bridge help · enlarged UI scale",
       "note": "UI scale 1.5 on a 1280×720 window (853×480 logical canvas). The controls remain within a scrollable panel; lower rows are reached by scrolling.",
       "label": "UI proposal · integrated branch · visual review pending",
-      "revision": "b16a18d6"
+      "revision": "f3e0b11c"
     },
     {
       "group": "bridge",
@@ -495,50 +503,50 @@
     },
     {
       "group": "commons",
-      "source": "res://renders/levels/commons/s3/service_service_gallery_bow_rest.png",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_bow_rest.png",
       "file": "commons_s3_service_service_gallery_bow_rest.png",
       "title": "Service gallery · Bow · rest",
-      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
       "label": "Commons S3 · layout only · not final art"
     },
     {
       "group": "commons",
-      "source": "res://renders/levels/commons/s3/service_service_gallery_bow_cruise.png",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_bow_cruise.png",
       "file": "commons_s3_service_service_gallery_bow_cruise.png",
       "title": "Service gallery · Bow · cruise",
-      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
       "label": "Commons S3 · layout only · not final art"
     },
     {
       "group": "commons",
-      "source": "res://renders/levels/commons/s3/service_service_gallery_bow_stop.png",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_bow_stop.png",
       "file": "commons_s3_service_service_gallery_bow_stop.png",
       "title": "Service gallery · Bow · stop",
-      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
       "label": "Commons S3 · layout only · not final art"
     },
     {
       "group": "commons",
-      "source": "res://renders/levels/commons/s3/service_service_gallery_astern_rest.png",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_astern_rest.png",
       "file": "commons_s3_service_service_gallery_astern_rest.png",
       "title": "Service gallery · Astern · rest",
-      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
       "label": "Commons S3 · layout only · not final art"
     },
     {
       "group": "commons",
-      "source": "res://renders/levels/commons/s3/service_service_gallery_astern_cruise.png",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_astern_cruise.png",
       "file": "commons_s3_service_service_gallery_astern_cruise.png",
       "title": "Service gallery · Astern · cruise",
-      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
       "label": "Commons S3 · layout only · not final art"
     },
     {
       "group": "commons",
-      "source": "res://renders/levels/commons/s3/service_service_gallery_astern_stop.png",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_astern_stop.png",
       "file": "commons_s3_service_service_gallery_astern_stop.png",
       "title": "Service gallery · Astern · stop",
-      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
       "label": "Commons S3 · layout only · not final art"
     },
     {
@@ -588,7 +596,88 @@
       "title": "Under the terrace · Astern · stop",
       "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
       "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_help_1280x720.png",
+      "file": "review_ui_lower_help_1280x720.png",
+      "title": "Lower help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_help_1280x720_ui1p5.png",
+      "file": "review_ui_lower_help_1280x720_ui1p5.png",
+      "title": "Lower help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_court_help_1280x720.png",
+      "file": "review_ui_commons_court_help_1280x720.png",
+      "title": "Commons court help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_court_help_1280x720_ui1p5.png",
+      "file": "review_ui_commons_court_help_1280x720_ui1p5.png",
+      "title": "Commons court help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_gantry_help_1280x720.png",
+      "file": "review_ui_commons_gantry_help_1280x720.png",
+      "title": "Commons gantry help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_gantry_help_1280x720_ui1p5.png",
+      "file": "review_ui_commons_gantry_help_1280x720_ui1p5.png",
+      "title": "Commons gantry help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_service_help_1280x720.png",
+      "file": "review_ui_commons_service_help_1280x720.png",
+      "title": "Commons service help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_service_help_1280x720_ui1p5.png",
+      "file": "review_ui_commons_service_help_1280x720_ui1p5.png",
+      "title": "Commons service help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
     }
   ],
-  "notice": "The captain now stands closer and leans onto the original Voyage/Crew consoles. These are matched front/back before-and-after engine captures. The earlier loops and desk leaves are retired and were never installed. Commons layout review follows separately."
+  "notice": "The captain now stands closer and leans onto the original Voyage/Crew consoles. Matched front/back comparisons come first; earlier desk extensions are retired. The macOS playtest and Commons images are ready for layout review. Detailed Commons art waits for S3 layout acceptance.",
+  "downloads": [
+    {
+      "source": "res://build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
+      "file": "Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
+      "title": "macOS playtest · bridge and Commons layout",
+      "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
+      "note": "Unzip and open the app. This is an ad-hoc signed, unmerged developer preview. Cold native ship/title startup checked with fresh settings and bundled AILANGv0.54.18. Tab walks to bridge consoles, E uses the lift/ladder/hatch,7/9 select Bow/Astern. Commons surfaces and coloured find markers are greybox placeholders; review routes and views before detailed art."
+    }
+  ]
 }

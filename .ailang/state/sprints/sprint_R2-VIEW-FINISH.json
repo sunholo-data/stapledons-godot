@@ -43,7 +43,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "Manifest cameras, configured lift and real stage runtime integrated. CPU physics949/0; full released AILANGv0.54.18 GPU golden407/0, including six actual clamp/raised-eye cases and independent pole references opened. Six under-terrace Bow/Astern rest/cruise/real-stop frames activate clamp_share1.0. Runtime floor-jump reviewer repro fixed and independently rechecked76/0. Source cold hello measured89.21s under load vs30s budget; after completing compile, warm SimBridge9.025s succeeds. Canonical AILANG feedback sent; sequential source checks/native cold launch and rig/full remain pending."
+      "notes": "Manifest cameras, configured lift and real stage runtime integrated. CPU physics949/0; full released AILANGv0.54.18 GPU golden407/0, including six actual clamp/raised-eye cases and independent pole references opened. Six under-terrace Bow/Astern rest/cruise/real-stop frames activate clamp_share1.0. Runtime floor-jump reviewer repro fixed and independently rechecked76/0. Source cold hello measured89.21s under load vs30s budget; after completing compile, warm SimBridge9.025s succeeds. Canonical AILANG feedback sent; Sequential affected source checks pass; cold native ship/title startup passes. Exact-head rig/full remains the final landing gate."
     },
     {
       "id": "VF2",
@@ -61,7 +61,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "Five-stage production greybox, seven surfaces/four heights;42 actual Bow/Astern rest/cruise/guided-stop captures inspected in contact sheet and critical full frames.42 staged in private gallery as layout placeholders. Full court return and stair-ramp probe pass. Native playtest build and S3 attended layout approval pending; no detailed Commons art begun. Independent visual review found and fixed service sky leak: opaque enclosure beyond actual camera eyes,576/576 service rays covered, runtime95/0, Commons eval and bridge regression pass. Full-resolution service pixel guard added; final GPU capture and native playtest pending, S3 approval remains open."
+      "notes": "S3 review ready, approval pending: seven surfaces/four heights reachable; current full42 representative frames plus6 actual clamp frames and6 final service frames pass. Service enclosure and captain alpha prepass fixed without weakening no-sky guard; zero uncovered pixels in all6 service views. Native f3e0b11c cold ship/title smoke and signedZIP integrity/HTTPS hash pass. Independent contact44/runtime95 checks pass. No detailed Commons art begun."
     },
     {
       "id": "VFB",
@@ -78,7 +78,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "D-132 installed: actual Voyage/Crew working points advance 0.775 m, bounded 15-degree foot-anchored work lean uses existing paintings; original furniture/screen housings preserved. 44 contact/clearance/pose/entry-path checks pass; eight matched front/back engine captures staged over verified HTTPS. E/click now walks into place before opening the low console. V1/v2 extensions retired, never installed. Broader finishing and landing gates remain pending."
+      "notes": "D-132 installed: actual Voyage/Crew working points advance 0.775 m, bounded 15-degree foot-anchored work lean uses existing paintings; original furniture/screen housings preserved. 44 contact/clearance/pose/entry-path checks pass; eight matched front/back engine captures staged over verified HTTPS. E/click now walks into place before opening the low console. V1/v2 extensions retired, never installed. Broader finishing and landing gates remain pending. Final front/back captures use f3e0b11c, inspected; independent contact44/0, consoles133/0, shader golden407/0 pass. Further appearance feedback remains welcome; no support meshes installed."
     },
     {
       "id": "VFU",
@@ -95,7 +95,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "UI committed/integrated: UI284/0, console133/0, no-twitch41/0, Crew console green, strict theme negative controls green in isolated lane. Normal/enlarged help frames inspected/staged. Runtime context hook/stage captures and window check pending."
+      "notes": "Integrated deck-aware help and quiet Commons idle prompt; UI288/0, consoles133/0, no-twitch41/0, theme/export/UID guards pass on prepared released18. Ten actual normal/enlarged UI frames inspected; real embedded-helm click/select/commit window check passes. Actual laptop playtest still part of S3 review; final full-suite/performance/landing gates pending."
     },
     {
       "id": "VF3",
@@ -283,10 +283,10 @@
     "url": "https://voights-mac-studio.tail97eda0.ts.net:8452/",
     "port": 8984,
     "https_port": 8452,
-    "session_id": 46822,
-    "round": "natural captain contact on original desks",
-    "frames": 73,
-    "verified": "HTTPS page and image content hash matched local staging"
+    "session_id": 35173,
+    "round": "D-132 natural contact and Commons S3 playable layout",
+    "frames": 81,
+    "verified": "HTTPS page/image and native433MB ZIP downloaded with matching SHA256; only declared files served; repo traversal404"
   },
   "feedback": {
     "skill": "ailang-feedback",
@@ -295,5 +295,19 @@
       "inbox_1793270071011_e062fae0"
     ],
     "topic": "Cold-source bootstrap89.21s, warm9.025s; no gameplay budget relaxed."
+  },
+  "native_preview": {
+    "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
+    "zip": "build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
+    "sha256": "85fa3f641329a9197aaee8b2c7581f14e2f7e8167daa1efb32d74558e1d57263",
+    "bytes": 432961751,
+    "runtime": "v0.54.18",
+    "cold_smoke": "ship and title pass, fresh HOME and no external runtime; shutdown RID/resource warnings remain"
+  },
+  "review_gate": {
+    "stage": "S3",
+    "status": "awaiting_attended_layout_review",
+    "source": "design_docs/planned/r2/bridge-commons-finish-sprint.md",
+    "next": "After acceptance: one actual Commons art pilot for approval, then repeat finish and S5 review."
   }
 }

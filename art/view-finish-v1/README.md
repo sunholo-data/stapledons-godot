@@ -47,3 +47,24 @@ also remains available at the content-addressed URL already pinned in
 
 VF0's full milestone also includes the coordinator's baseline captures/gallery;
 source inspection alone does not mark VF0 or VFB complete.
+
+## Current attended review
+
+The private gallery at https://voights-mac-studio.tail97eda0.ts.net:8452/ now
+foregrounds the D-132 original-console captain correction, with matched front
+and rear views. The added desk-support proposals are retired and never loaded
+by gameplay. Commons images are S3 layout placeholders, including real ceiling
+clamps and a fully enclosed service gallery; detailed art awaits acceptance.
+
+The declared download is the native `f3e0b11c` review build, bundled AILANG
+v0.54.18, 432,961,751 bytes. SHA256:
+`85fa3f641329a9197aaee8b2c7581f14e2f7e8167daa1efb32d74558e1d57263`.
+Fresh-HOME ship/title smoke, signature, ZIP integrity and the complete HTTPS
+download passed. Shutdown resource/RID warnings remain; these smoke checks do
+not replace `rig/full` or the final performance/evaluation gates.
+
+`review.json` explicitly lists every served image and ZIP. The server binds
+loopback only; Tailscale Serve supplies the existing private HTTPS route.
+Neither repository paths nor directory listings are exposed. `HEAD` reads file
+length without loading the native archive into memory. Update staging with
+`godot --headless --path . --script tools/view_finish_preview.gd -- stage`.
