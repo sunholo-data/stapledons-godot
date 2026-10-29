@@ -20,7 +20,7 @@ The new image adds:
 
 `placements.json` is the exact composition; `furniture.json` is its extra kit
 layer. `commons_civic_pilot.gd` combines the authored assets, ground pigment and
-activity only in the review tools. The production game has no activation hook.
+activity in the visual studies. D-136 subsequently authorizes playable review: normal ship entry now loads the same pinned layers from the staged civic bundle, waits for installation, and enables ambient motion subject to the player setting.
 Existing WALK, routes, camera rules, deck dimensions, spire and sky are unchanged.
 Remote occupied scenery does not add navigation or population/crew simulation.
 
@@ -48,4 +48,4 @@ acceptance; final production performance and rig/CI gates remain open.
 Native Blender sources and packed master are preserved in the Blender workspace
 and the local ignored `build/commons-grown-source/` archive. Kit pins and measured
 bounds are in `kit-source.json`; new foliage provenance is in `foliage-source.json`.
-The earlier downloadable native S3 build contains none of these review art layers.
+The earlier downloadable native S3 build contains none of these art layers. D-136 creates a separately labelled native civic playtest containing them.

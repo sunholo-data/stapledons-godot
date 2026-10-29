@@ -395,15 +395,14 @@
   },
   "playable_civic_review": {
     "decision": "D-136",
-    "status": "in_progress",
-    "scope": "Normal ship entry activates the reviewed art and ambient activity; native build on existing private Tailscale route. No full S3/S5/landing acceptance inferred.",
     "status": "building_native_artifact",
+    "scope": "Normal ship entry activates the reviewed art and ambient activity; native build on existing private Tailscale route. No full S3/S5/landing acceptance inferred.",
     "runtime_tests": {
       "passed": 18,
       "failed": 0
     },
     "asset_tests": {
-      "passed": 19,
+      "passed": 21,
       "failed": 0
     },
     "lift_tests": {
@@ -416,6 +415,12 @@
     },
     "source_smoke": "normal player startup, packed art, live/reduced activity, movement and lift round trip pass; HUD captures opened",
     "export_audit": "118 literals,0 failures; raw transitive closure audit added",
-    "notes": "Normal ship/main entry enables civic art and loading jump awaits installation; raw art-review scene setup remains opt-in."
+    "notes": "Normal ship/main entry enables civic art and loading jump awaits installation; raw art-review scene setup remains opt-in.",
+    "export_pack": {
+      "checked": 1308,
+      "skips": 0,
+      "failed": 0
+    },
+    "packaging_correction": "Actual pack test caught ignored nested directories; switched to explicit nested includes and raw .glb.bin/.png.bin staging without .gdignore. Runtime loader now reads its own JSON and PNG buffers without excluded tool dependencies. No checks weakened."
   }
 }

@@ -2,8 +2,12 @@ extends RefCounted
 const CIVIC_BUNDLE_DIR:="res://ship_commons_bundle/civic/"
 ## D-135/D-136 civic composition: shared by the visual study and attended playable build.
 ## No navigation, simulation, sky or camera changes.
+static func _doc(path:String)->Dictionary:
+ var value:Variant=JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+ return value if value is Dictionary else {}
+
 static func install_world(demo:Node,path:String)->Dictionary:
- var doc:=LevelEval.load_doc(path)
+ var doc:=_doc(path)
  var bases:Array=[]
  var errors:Array=[]
  var main_source:=str(doc.get("source_glb",""))
@@ -11,7 +15,7 @@ static func install_world(demo:Node,path:String)->Dictionary:
  if doc.is_empty() or FileAccess.get_sha256(main_source)!=str(doc.get("source_sha256","")):
   return {"ok":false,"errors":["civic main source pin mismatch: "+path]}
  for base_path:String in doc.get("base_configs",[]):
-  var base_doc:=LevelEval.load_doc(base_path)
+  var base_doc:=_doc(base_path)
   var source:=str(base_doc.get("source_glb",""))
   if not source.begins_with("res://"):source=base_path.get_base_dir().path_join(source)
   if base_doc.is_empty() or FileAccess.get_sha256(source)!=str(base_doc.get("source_sha256","")):
@@ -29,7 +33,7 @@ static func install_world(demo:Node,path:String)->Dictionary:
   var base:Dictionary=bases[i];base.node.reparent(world)
   for key:String in ["colliders","plants","plant_shadows","practicals"]:result[key].append_array(base[key])
   for name:String in base.placements:result.placements["base%d_"%i+name]=base.placements[name]
-  var base_doc:=LevelEval.load_doc(str(doc.base_configs[i]))
+  var base_doc:=_doc(str(doc.base_configs[i]))
   for id:String in base_doc.get("replace_markers",[]):
    var marker:Node3D=demo.geometry.find_child(id,true,false)
    if marker!=null:
@@ -40,11 +44,11 @@ static func install_world(demo:Node,path:String)->Dictionary:
  return result
 
 static func install(demo:Node,path:String,freeze_activity:bool=true)->Dictionary:
- var doc:=LevelEval.load_doc(path)
+ var doc:=_doc(path)
  var result:Dictionary=load("res://demos/commons_art_pilot.gd").install(demo,path)
  if not result.ok:return result
  for extra:String in doc.get("extra_art",[]):
-  var layer_doc:=LevelEval.load_doc(extra)
+  var layer_doc:=_doc(extra)
   var source:=str(layer_doc.get("source_glb",""))
   if not source.begins_with("res://"):source=extra.get_base_dir().path_join(source)
   if FileAccess.get_sha256(source)!=str(layer_doc.get("source_sha256","")):
@@ -71,12 +75,13 @@ static func install(demo:Node,path:String,freeze_activity:bool=true)->Dictionary
 
 static func _vines(demo:Node,result:Dictionary,doc:Dictionary)->void:
  if doc.get("trailing_vines",[]).is_empty():return
- var bundled:=CIVIC_BUNDLE_DIR+"trailing-vine-v1.png"
+ var bundled:=CIVIC_BUNDLE_DIR+"trailing-vine-v1.png.bin"
  var fallback:=bundled if FileAccess.file_exists(bundled) else "res://art/commons-grown-pilot/trailing-vine-v1.png"
  var path:=str(doc.get("vine_texture",fallback))
  if FileAccess.get_sha256(path)!=str(doc.get("vine_sha256","")):
   result.errors.append("trailing foliage source pin mismatch");return
- var painting:=Image.load_from_file(path)
+ var painting:=Image.new()
+ if painting.load_png_from_buffer(FileAccess.get_file_as_bytes(path))!=OK:result.errors.append("invalid trailing foliage painting");return
  if painting==null or painting.is_empty():result.errors.append("missing trailing foliage painting");return
  painting.generate_mipmaps();var texture:=ImageTexture.create_from_image(painting)
  for row:Dictionary in doc.trailing_vines:
@@ -94,10 +99,11 @@ static func _vines(demo:Node,result:Dictionary,doc:Dictionary)->void:
 
 static func _material(kind:String,textures:Dictionary)->ShaderMaterial:
  var src:=StandardMaterial3D.new()
- var bundled:=CIVIC_BUNDLE_DIR+kind+".png"
+ var bundled:=CIVIC_BUNDLE_DIR+kind+".png.bin"
  var fallback:=bundled if FileAccess.file_exists(bundled) else "res://art/ship-demo-v1/painted-bridge-v1/textures/%s.png"%kind
  var path:=str(textures.get(kind,fallback))
- var image:=Image.load_from_file(path)
+ var image:=Image.new()
+ if image.load_png_from_buffer(FileAccess.get_file_as_bytes(path))!=OK:push_error("missing civic pigment: "+path)
  if image!=null:image.generate_mipmaps();src.albedo_texture=ImageTexture.create_from_image(image)
  var paint:=StapledonStyle.toon_material(src)
  # Inlaid floor pigment has no raised silhouette: keep the ink shader at zero extrusion.

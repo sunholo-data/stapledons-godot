@@ -94,7 +94,7 @@ static func install(demo:Node,config_path:String)->Dictionary:
 static func validate(value:Variant)->PackedStringArray:
  var errors:=PackedStringArray()
  if not value is Dictionary:return PackedStringArray(["pilot config must be an object"])
- if not value.get("source_glb") is String or not str(value.source_glb).ends_with(".glb") or str(value.source_glb).contains("..") or (str(value.source_glb).contains("://") and not str(value.source_glb).begins_with("res://")):
+ if not value.get("source_glb") is String or not (str(value.source_glb).ends_with(".glb") or str(value.source_glb).ends_with(".glb.bin")) or str(value.source_glb).contains("..") or (str(value.source_glb).contains("://") and not str(value.source_glb).begins_with("res://")):
   errors.append("source_glb must be a local GLB path")
  var b:Variant=value.get("bounds")
  if not b is Dictionary or not _vec(b.get("min")) or not _vec(b.get("max")):
