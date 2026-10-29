@@ -9,7 +9,7 @@ extends SceneTree
 ## metrics.json (LevelMetrics) and frames.sha256. Exits 1 on a missing or blank frame (a frame
 ## with near-zero pixel variance). Opening every frame and posting per-file URLs is the stated
 ## manual gate.
-##   --level <id> [--layout <json>] [--tag <tag>] [--out <dir>]
+##   --level <id> [--layout <json>] [--tag <tag>] [--out <dir>] [--stage <stage>]
 ##   --check-stop  headless smoke: real sim stop + actual gantry/balcony camera, no image rendering
 ##   --clamp-check  Commons under-terrace Bow/Astern at rest, cruise and stop (actual runtime clamp)
 
@@ -82,6 +82,7 @@ func _run() -> void:
 			if not _prepare_stop():bad.append("sim-driven stop not reached");continue
 		elif not demo.set_sky_state(sky):bad.append("sky state "+sky);continue
 		for s: Dictionary in doc.stages:
+			if not _arg(args,"--stage").is_empty() and str(s.id)!=_arg(args,"--stage"):continue
 			if clamp_check and str(s.id) != "court":continue
 			for f: Dictionary in s.surfaces:
 				var c := LevelMetrics.gltf(f.get("at", [float(s.spawn[0]), float(s.spawn[1]), float(f.z_m)]))
@@ -120,6 +121,7 @@ func _run() -> void:
 					if str(v.get("kind",""))=="enclosed":
 						var geometry_image: Image=demo.geometry_view.get_texture().get_image()
 						var uncovered:=uncovered_geometry_pixels(geometry_image)
+						geometry_image.save_png(out.path_join(name+"_geometry.png"))
 						poses[-1]["uncovered_geometry_pixels"]=uncovered
 						if uncovered!=0:bad.append("%s enclosed view exposes %d sky pixels" % [name,uncovered])
 					if sky=="stop":

@@ -1,6 +1,6 @@
 # R2-VIEW-FINISH: finish the bridge and first Commons views
 
-**Status:** Approved by Mark in this attended session, 2026-10-29: "proceed". Executing VF0 and preparing isolated parallel work. Commons S3, art-pilot and S5 visual approvals remain pending.
+**Status:** Approved by Mark in this attended session, 2026-10-29: "proceed" (D-130). VF0 preserved and backed up; Commons runtime/layout, natural bridge contact and UI integrated in draft PR #351. Commons S3, art-pilot and S5 visual approvals remain pending.
 **Request:** audit existing work, respect settled art decisions, propose concurrent sprints, and provide laptop asset previews before final visual approval.
 **Base audited:** `b07c9763` on `main`. Runtime: AILANG v0.54.18.
 **Design authority:** [R2-LEVELS](levels.md), [its approved sprint](levels-sprint.md), [Commons brief](../../levels/commons.md), [level lifecycle](../../levels/README.md), [approved bridge styling](../../implemented/r2/bridge-styling-pass.md), and [camera-forward](../../implemented/r2/camera-forward.md).
@@ -43,6 +43,7 @@ Live `gh pr list` / `gh pr view` checks on 2026-10-29 found game PRs [#344](http
 - D-104: flowing curves and grown structures. Commons is an open civic plaza and curved arcade, not the rejected barrel pavilion.
 - D-106 and #322 review: painted foliage cards placed in world space, footprint/shadow checks, varied plants. Do not restore camera-attached foreground plants.
 - Preserve Josefin Sans/Nunito, cream/teal/ochre/violet materials, restrained ink and the existing functional UI colors. Preserve the captain's accepted calm walk, held poses and reduced-motion behavior (D-115/D-120/D-121).
+- D-132 refines the console-contact contract: move the actual Voyage/Crew working destinations closer and use a gentle working lean on the existing desks. Check front and rear views. This explicitly releases the old fixed-use-point constraint for those two destinations; the proposed loops and desk leaves are retired without installation.
 - Follow D-34's measured seven-tier geometry and the approved Commons brief over obsolete prose in older art briefs. No literal copying of concept-art sky, external camera or oversized spire.
 
 ## Sprint packages and dependencies
@@ -125,7 +126,7 @@ No tests/full suite were run during this documentation-only audit. At implementa
 
 **Cut order:** retain the existing approved service-gallery → N-stop lift generalization → enclosed-view cut order if the runtime/layout cap is exceeded; report any cut and adjust the S3 checklist before claiming five-stage completion. Never trade away core arrival/court/terrace/gantry readability or weaken thresholds silently.
 
-This plan is awaiting sign-off because Mark explicitly requested a plan first. The existing S3/S5 pauses come from [levels-sprint.md](levels-sprint.md#pause-points); CLAUDE.md's cycle says **"Stop for approval before executing."** At any required review: preserve/commit current task work, report the precise pending decision, and end the executor run. Already settled design rulings are not reopened. No dispatch to executors before plan sign-off; no detailed Commons production before S3 acceptance; no propagation beyond the art pilot before its finish is accepted.
+Mark approved execution through D-130. The remaining S3/S5 pauses come from [levels-sprint.md](levels-sprint.md#pause-points). At each required review: preserve/commit current task work, report the concrete pending decision, and end the executor run. Already settled design rulings are not reopened. No detailed Commons production before S3 acceptance; no propagation beyond the art pilot before its finish is accepted.
 
 ## Registry reuse
 
