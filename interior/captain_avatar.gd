@@ -59,7 +59,8 @@ func load_dir(dir: String) -> bool:
 	offset = Vector2(-anchor_px.x, anchor_px.y - canvas_px.y) # Sprite3D local y is up: rect bottom at offset.y
 	billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	shaded = false
-	alpha_cut = SpriteBase3D.ALPHA_CUT_OPAQUE_PREPASS
+	# Keep the opaque ship behind soft painted edges; an opaque prepass would mask its colour/alpha.
+	alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
 	texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	stage = stages[0]
 	_show()

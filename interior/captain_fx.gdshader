@@ -9,7 +9,10 @@
 // Billboard as BaseMaterial3D's: fixed Y in the upright walk views, full otherwise. Every painted frame is
 // drawn through this material (mode 0 = no effect), so a start or stop can lean (lean_tan, CA2).
 shader_type spatial;
-render_mode unshaded, cull_disabled, depth_prepass_alpha, shadows_disabled;
+// Draw after opaque ship geometry. An alpha depth prepass would suppress the enclosing wall
+// behind near-opaque painted texels, leaving fractional viewport alpha that leaks the live sky.
+// Ordinary alpha blending keeps the painted edge and echo while retaining opaque coverage behind it.
+render_mode unshaded, cull_disabled, shadows_disabled;
 
 uniform sampler2D cur_tex : source_color, filter_linear_mipmap;
 uniform sampler2D prev_tex : source_color, filter_linear_mipmap;
