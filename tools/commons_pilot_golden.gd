@@ -13,13 +13,15 @@ func _run()->void:
   var at:=args.find("--config")
   var path:=args[at+1] if at>=0 and at+1<args.size() else "res://art/commons-lived-in-pilot/placements.json"
   var config:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(path))
-  var configs:Array=[str(config.base_config),path] if config.has("base_config") else [path]
+  var configs:Array=config.get("base_configs",[str(config.base_config)] if config.has("base_config") else []).duplicate()
+  configs.append(path)
   installed=true
   for source:String in configs:
-   var pilot:Dictionary=load("res://demos/commons_art_pilot.gd").install(helper.demo,source)
+   var doc:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(source))
+   var loader:=load("res://demos/commons_civic_pilot.gd") if doc.get("grown_civic",false) else load("res://demos/commons_art_pilot.gd")
+   var pilot:Dictionary=loader.install(helper.demo,source)
    installed=installed and pilot.ok
    if not pilot.ok:printerr("commons-pilot-golden: ",pilot.errors)
-   var doc:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(source))
    for id:String in doc.get("replace_markers",[]):
     var marker:CollisionObject3D=helper.demo.geometry.find_child(id,true,false)
     marker.visible=false;marker.collision_layer=0;marker.collision_mask=0

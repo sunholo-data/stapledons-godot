@@ -1,8 +1,717 @@
 {
-  "title": "Bridge & Commons · wider civic backdrop",
-  "revision": "D-134 · kit33eb1f60 · configac8dc7a8",
-  "round": "Wider Commons architectural backdrop review",
+  "title": "Bridge & Commons · grown civic life",
+  "revision": "D-135 · grown4a9d9340 · config5de067ef",
+  "round": "D-135 comic/grown living Commons review",
   "frames": [
+    {
+      "group": "grown",
+      "source": "res://art/ship-tier-concepts-v1/commons.png",
+      "file": "grown_commons_concept_reference.png",
+      "title": "Commons · comic style and civic life reference",
+      "note": "Illustrated style and density reference. The measured ship remains the dimensional authority; gameplay uses its established spire, decks and invisible boundary.",
+      "label": "Concept illustration · reference, not gameplay",
+      "revision": "Approved art-direction reference,2026-10-04"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-motion/frame_000.png",
+      "file": "grown_life_frame_000.png",
+      "sequence": [
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_000.png",
+          "file": "grown_life_frame_000.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_001.png",
+          "file": "grown_life_frame_001.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_002.png",
+          "file": "grown_life_frame_002.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_003.png",
+          "file": "grown_life_frame_003.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_004.png",
+          "file": "grown_life_frame_004.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_005.png",
+          "file": "grown_life_frame_005.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_006.png",
+          "file": "grown_life_frame_006.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_007.png",
+          "file": "grown_life_frame_007.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_008.png",
+          "file": "grown_life_frame_008.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_009.png",
+          "file": "grown_life_frame_009.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_010.png",
+          "file": "grown_life_frame_010.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_011.png",
+          "file": "grown_life_frame_011.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_012.png",
+          "file": "grown_life_frame_012.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_013.png",
+          "file": "grown_life_frame_013.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_014.png",
+          "file": "grown_life_frame_014.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_015.png",
+          "file": "grown_life_frame_015.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_016.png",
+          "file": "grown_life_frame_016.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_017.png",
+          "file": "grown_life_frame_017.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_018.png",
+          "file": "grown_life_frame_018.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_019.png",
+          "file": "grown_life_frame_019.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_020.png",
+          "file": "grown_life_frame_020.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_021.png",
+          "file": "grown_life_frame_021.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_022.png",
+          "file": "grown_life_frame_022.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_023.png",
+          "file": "grown_life_frame_023.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_024.png",
+          "file": "grown_life_frame_024.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_025.png",
+          "file": "grown_life_frame_025.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_026.png",
+          "file": "grown_life_frame_026.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_027.png",
+          "file": "grown_life_frame_027.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_028.png",
+          "file": "grown_life_frame_028.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_029.png",
+          "file": "grown_life_frame_029.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_030.png",
+          "file": "grown_life_frame_030.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_031.png",
+          "file": "grown_life_frame_031.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_032.png",
+          "file": "grown_life_frame_032.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_033.png",
+          "file": "grown_life_frame_033.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_034.png",
+          "file": "grown_life_frame_034.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_035.png",
+          "file": "grown_life_frame_035.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_036.png",
+          "file": "grown_life_frame_036.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_037.png",
+          "file": "grown_life_frame_037.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_038.png",
+          "file": "grown_life_frame_038.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_039.png",
+          "file": "grown_life_frame_039.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_040.png",
+          "file": "grown_life_frame_040.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_041.png",
+          "file": "grown_life_frame_041.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_042.png",
+          "file": "grown_life_frame_042.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_043.png",
+          "file": "grown_life_frame_043.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_044.png",
+          "file": "grown_life_frame_044.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_045.png",
+          "file": "grown_life_frame_045.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_046.png",
+          "file": "grown_life_frame_046.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_047.png",
+          "file": "grown_life_frame_047.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_048.png",
+          "file": "grown_life_frame_048.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_049.png",
+          "file": "grown_life_frame_049.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_050.png",
+          "file": "grown_life_frame_050.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_051.png",
+          "file": "grown_life_frame_051.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_052.png",
+          "file": "grown_life_frame_052.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_053.png",
+          "file": "grown_life_frame_053.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_054.png",
+          "file": "grown_life_frame_054.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_055.png",
+          "file": "grown_life_frame_055.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_056.png",
+          "file": "grown_life_frame_056.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_057.png",
+          "file": "grown_life_frame_057.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_058.png",
+          "file": "grown_life_frame_058.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_059.png",
+          "file": "grown_life_frame_059.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_060.png",
+          "file": "grown_life_frame_060.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_061.png",
+          "file": "grown_life_frame_061.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_062.png",
+          "file": "grown_life_frame_062.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_063.png",
+          "file": "grown_life_frame_063.png"
+        }
+      ],
+      "fps": 8,
+      "title": "Grown Commons · moving activity study",
+      "note": "People share meals, read, tend the market and stroll between the planted courts. Play the eight-second study from the fixed Court Astern player view. These are ambient review vignettes.",
+      "label": "Engine preview · moving civic life",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_rest_before.png",
+      "file": "commons_grown_court_bow_rest_before.png",
+      "title": "Court · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_rest_after.png",
+      "file": "commons_grown_court_bow_rest_after.png",
+      "title": "Court · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_rest_before.png",
+      "file": "commons_grown_court_astern_rest_before.png",
+      "title": "Court · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_rest_after.png",
+      "file": "commons_grown_court_astern_rest_after.png",
+      "title": "Court · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_cruise_before.png",
+      "file": "commons_grown_court_bow_cruise_before.png",
+      "title": "Court · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_cruise_after.png",
+      "file": "commons_grown_court_bow_cruise_after.png",
+      "title": "Court · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_cruise_before.png",
+      "file": "commons_grown_court_astern_cruise_before.png",
+      "title": "Court · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_cruise_after.png",
+      "file": "commons_grown_court_astern_cruise_after.png",
+      "title": "Court · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_stop_before.png",
+      "file": "commons_grown_court_bow_stop_before.png",
+      "title": "Court · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_stop_after.png",
+      "file": "commons_grown_court_bow_stop_after.png",
+      "title": "Court · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_stop_before.png",
+      "file": "commons_grown_court_astern_stop_before.png",
+      "title": "Court · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_stop_after.png",
+      "file": "commons_grown_court_astern_stop_after.png",
+      "title": "Court · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_rest_before.png",
+      "file": "commons_grown_underterrace_bow_rest_before.png",
+      "title": "Under terrace · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_rest_after.png",
+      "file": "commons_grown_underterrace_bow_rest_after.png",
+      "title": "Under terrace · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_rest_before.png",
+      "file": "commons_grown_underterrace_astern_rest_before.png",
+      "title": "Under terrace · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_rest_after.png",
+      "file": "commons_grown_underterrace_astern_rest_after.png",
+      "title": "Under terrace · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_cruise_before.png",
+      "file": "commons_grown_underterrace_bow_cruise_before.png",
+      "title": "Under terrace · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_cruise_after.png",
+      "file": "commons_grown_underterrace_bow_cruise_after.png",
+      "title": "Under terrace · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_cruise_before.png",
+      "file": "commons_grown_underterrace_astern_cruise_before.png",
+      "title": "Under terrace · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_cruise_after.png",
+      "file": "commons_grown_underterrace_astern_cruise_after.png",
+      "title": "Under terrace · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_stop_before.png",
+      "file": "commons_grown_underterrace_bow_stop_before.png",
+      "title": "Under terrace · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_stop_after.png",
+      "file": "commons_grown_underterrace_bow_stop_after.png",
+      "title": "Under terrace · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_stop_before.png",
+      "file": "commons_grown_underterrace_astern_stop_before.png",
+      "title": "Under terrace · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_stop_after.png",
+      "file": "commons_grown_underterrace_astern_stop_after.png",
+      "title": "Under terrace · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_rest_before.png",
+      "file": "commons_grown_arcade_edge_bow_rest_before.png",
+      "title": "Arcade approach · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_rest_after.png",
+      "file": "commons_grown_arcade_edge_bow_rest_after.png",
+      "title": "Arcade approach · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_rest_before.png",
+      "file": "commons_grown_arcade_edge_astern_rest_before.png",
+      "title": "Arcade approach · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_rest_after.png",
+      "file": "commons_grown_arcade_edge_astern_rest_after.png",
+      "title": "Arcade approach · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_cruise_before.png",
+      "file": "commons_grown_arcade_edge_bow_cruise_before.png",
+      "title": "Arcade approach · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_cruise_after.png",
+      "file": "commons_grown_arcade_edge_bow_cruise_after.png",
+      "title": "Arcade approach · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_cruise_before.png",
+      "file": "commons_grown_arcade_edge_astern_cruise_before.png",
+      "title": "Arcade approach · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_cruise_after.png",
+      "file": "commons_grown_arcade_edge_astern_cruise_after.png",
+      "title": "Arcade approach · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_stop_before.png",
+      "file": "commons_grown_arcade_edge_bow_stop_before.png",
+      "title": "Arcade approach · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_stop_after.png",
+      "file": "commons_grown_arcade_edge_bow_stop_after.png",
+      "title": "Arcade approach · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_stop_before.png",
+      "file": "commons_grown_arcade_edge_astern_stop_before.png",
+      "title": "Arcade approach · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_stop_after.png",
+      "file": "commons_grown_arcade_edge_astern_stop_after.png",
+      "title": "Arcade approach · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_rest_before.png",
+      "file": "commons_grown_bridge_rim_bow_rest_before.png",
+      "title": "Bridge rim · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_rest_after.png",
+      "file": "commons_grown_bridge_rim_bow_rest_after.png",
+      "title": "Bridge rim · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_rest_before.png",
+      "file": "commons_grown_bridge_rim_astern_rest_before.png",
+      "title": "Bridge rim · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_rest_after.png",
+      "file": "commons_grown_bridge_rim_astern_rest_after.png",
+      "title": "Bridge rim · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_cruise_before.png",
+      "file": "commons_grown_bridge_rim_bow_cruise_before.png",
+      "title": "Bridge rim · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_cruise_after.png",
+      "file": "commons_grown_bridge_rim_bow_cruise_after.png",
+      "title": "Bridge rim · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_cruise_before.png",
+      "file": "commons_grown_bridge_rim_astern_cruise_before.png",
+      "title": "Bridge rim · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_cruise_after.png",
+      "file": "commons_grown_bridge_rim_astern_cruise_after.png",
+      "title": "Bridge rim · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_stop_before.png",
+      "file": "commons_grown_bridge_rim_bow_stop_before.png",
+      "title": "Bridge rim · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_stop_after.png",
+      "file": "commons_grown_bridge_rim_bow_stop_after.png",
+      "title": "Bridge rim · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_stop_before.png",
+      "file": "commons_grown_bridge_rim_astern_stop_before.png",
+      "title": "Bridge rim · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_stop_after.png",
+      "file": "commons_grown_bridge_rim_astern_stop_after.png",
+      "title": "Bridge rim · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
     {
       "group": "macro",
       "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_rest_before.png",
@@ -1543,14 +2252,14 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "New wider-backdrop comparison: each Before keeps the furniture pilot; each After adds civic arcades, planted terraces, market canopies and low rim gardens across the real Commons deck. Review-only. The earlier native download below contains neither art pilot. S3/S5 and production propagation remain pending. This establishes civic extent; broad pale floor and repeated distant fronts remain visible work in progress, especially Astern. Further connected planting and paving are still needed for the concept’s richness.",
+  "notice": "New concept-led preview: sweeping rooted architecture, connected planted courts, trailing foliage and occupied market/dining spaces. Compare the reference with the moving study, then the matched before/after views. Review-only; the existing routes, ship proportions and live sky are retained. The native download is the earlier S3 build and does not contain these art pilots.",
   "downloads": [
     {
       "source": "res://build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
       "file": "Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
       "title": "macOS S3 layout playtest · earlier build without pilot furniture",
       "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
-      "note": "Unzip and open the app. This is an ad-hoc signed, unmerged developer preview. Cold native ship/title startup checked with fresh settings and bundled AILANGv0.54.18. Tab walks to bridge consoles, E uses the lift/ladder/hatch,7/9 select Bow/Astern. Commons surfaces and coloured find markers are greybox placeholders; review routes and views before detailed art. The new lived-in art pilot is currently shown in the engine images above, not installed in this earlier download."
+      "note": "Earlier S3 layout review build. None of the furniture, wider-backdrop or grown civic-life pilots shown here is installed in this download."
     }
   ]
 }

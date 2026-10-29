@@ -21,20 +21,25 @@ func _run()->void:
  var doc:=LevelEval.load_doc(config_path)
  check("macro config is present",not doc.is_empty())
  if doc.is_empty():_finish({});return
- var base_path:=str(doc.get("base_config","res://art/commons-lived-in-pilot/placements.json"))
+ var base_paths:Array=doc.get("base_configs",[str(doc.get("base_config","res://art/commons-lived-in-pilot/placements.json"))]).duplicate()
+ var base_path:=str(base_paths[0])
  if not base_path.begins_with("res://"):base_path=config_path.get_base_dir().path_join(base_path)
  var base:=LevelEval.load_doc(base_path)
  if not _pin(base,base_path,"furniture") or not _pin(doc,config_path,"macro"):_finish({});return
+ for extra:String in base_paths:
+  if not _pin(LevelEval.load_doc(extra),extra,"base layer"):_finish({});return
  demo=load("res://demos/ship_geometry_demo.tscn").instantiate()
  demo.setup_options={"stars":false,"background":false,"sky_state":"rest","sound":false,"size":LevelMetrics.PX}
  root.size=LevelMetrics.PX;root.add_child(demo);await process_frame
  demo.auto=false;demo.journey_auto_tick=false;demo.active_level=1;demo.walk=demo.walk_lower;demo._process(0.);demo.set_process(false)
- for path:String in [base_path,config_path]:
-  var installed:Dictionary=load("res://demos/commons_art_pilot.gd").install(demo,path)
+ base_paths.append(config_path)
+ for path:String in base_paths:
+  var config:=LevelEval.load_doc(path)
+  var loader:=load("res://demos/commons_civic_pilot.gd") if config.get("grown_civic",false) else load("res://demos/commons_art_pilot.gd")
+  var installed:Dictionary=loader.install(demo,path)
   check("pilot installs atomically "+path,installed.ok)
   if not installed.ok:printerr(installed.errors);demo.queue_free();await process_frame;_finish({});return
   pilots.append(installed)
-  var config:=LevelEval.load_doc(path)
   for id:String in config.get("replace_markers",[]):
    var marker:Node3D=demo.geometry.find_child(id,true,false)
    check("replacement marker exists "+id,marker!=null)
@@ -50,8 +55,8 @@ func _run()->void:
  var floor:Node=demo.geometry.find_child("Deck 01 top 57m",true,false)
  check("actual full Commons base floor collider exists",floor!=null)
  if floor!=null:_exclude_nonfloor(demo.geometry,floor)
- for name:String in pilots[1].placements:
-  var foot:Vector3=pilots[1].placements[name].global_position
+ for name:String in pilots[-1].placements:
+  var foot:Vector3=pilots[-1].placements[name].global_position
   check(name+" rests on physical existing Commons floor",floor!=null and _floor_support(foot))
  for placement:Dictionary in doc.placements:
   check(str(placement.name)+" has intentional structural collision",not placement.solid_meshes.is_empty())

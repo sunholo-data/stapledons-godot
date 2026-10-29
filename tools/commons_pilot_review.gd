@@ -26,15 +26,17 @@ func _run()->void:
  demo.setup_options={"size":PX,"sky_state":"rest","sound":false}
  root.add_child(demo);await process_frame
  demo.auto=false;demo.journey_auto_tick=false;demo.ship_hud.visible=false
- if pilot_config.has("base_config"):
-  base_pilot=load("res://demos/commons_art_pilot.gd").install(demo,str(pilot_config.base_config))
+ var bases:Array=pilot_config.get("base_configs",[pilot_config.base_config] if pilot_config.has("base_config") else [])
+ for base_path:String in bases:
+  base_pilot=load("res://demos/commons_art_pilot.gd").install(demo,base_path)
   if not base_pilot.ok:printerr("commons-pilot-review: base ",base_pilot.errors);quit(1);return
-  var base_doc:=LevelEval.load_doc(str(pilot_config.base_config))
+  var base_doc:=LevelEval.load_doc(base_path)
   for id:String in base_doc.get("replace_markers",[]):
    var marker:Node3D=demo.geometry.find_child(id,true,false)
    marker.visible=false
    if marker is CollisionObject3D:marker.collision_layer=0;marker.collision_mask=0
- pilot=load("res://demos/commons_art_pilot.gd").install(demo,config_path)
+ var loader:=load("res://demos/commons_civic_pilot.gd") if pilot_config.get("grown_civic",false) else load("res://demos/commons_art_pilot.gd")
+ pilot=loader.install(demo,config_path)
  if not pilot.ok:printerr("commons-pilot-review: ",pilot.errors);quit(1);return
  for id:String in pilot_config.get("replace_markers",[]):
   var marker:Node=demo.geometry.find_child(id,true,false)

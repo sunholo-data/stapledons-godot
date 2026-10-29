@@ -78,6 +78,7 @@ exact-head `rig/full`/fast CI remain landing gates.
 | 2026-10-20 | D-104 | Curves: the terrace, gantry and balcony read as flowing, grown structures at S4 and S5; the greybox draws the gantry and balcony as arcs |
 | 2026-10-29 | D-133 | Develop one bounded lived-in court/arcade pilot; no blanket S3/S5 acceptance inferred. |
 | 2026-10-29 | D-134 | Enrich the wider backdrop toward the ship edge, using the concept's architectural/landscape depth and existing physical design. Review before propagation. |
+| 2026-10-29 | D-135 | Go further with the comic aesthetic and long tendril architecture; make the still-bare deck a living, breathing civic level. The next review adds connected planted middle ground, patterned paths and ambient activity; S3/S5 remain open. |
 
 ## Change log
 | Version | Date | What changed |

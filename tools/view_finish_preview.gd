@@ -46,6 +46,14 @@ func _stage() -> int:
 		var row := frame.duplicate()
 		row.erase("source")
 		row.sha256 = FileAccess.get_sha256(destination)
+		if frame.has("sequence"):
+			row.sequence=[]
+			for step:Dictionary in frame.sequence:
+				if not _safe_name(str(step.file)) or not FileAccess.file_exists(str(step.source)):
+					printerr("preview: missing or unsafe moving frame ",step.get("file"));return 1
+				var target:=OUT.path_join(str(step.file))
+				if DirAccess.copy_absolute(ProjectSettings.globalize_path(str(step.source)),ProjectSettings.globalize_path(target))!=OK:return 1
+				row.sequence.append({"file":step.file,"sha256":FileAccess.get_sha256(target)})
 		manifest.frames.append(row)
 	for item: Dictionary in data.get("downloads", []):
 		var source: String=item.source
@@ -124,6 +132,7 @@ func _respond(socket: StreamPeerTCP, request: String) -> void:
 		if manifest is Dictionary:
 			for frame: Dictionary in manifest.get("frames", []):
 				allowed.append(str(frame.file))
+				for step:Dictionary in frame.get("sequence",[]):allowed.append(str(step.file))
 			for item: Dictionary in manifest.get("downloads", []):
 				allowed.append(str(item.file))
 		if _safe_name(name) and name in allowed:

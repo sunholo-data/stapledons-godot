@@ -351,5 +351,45 @@
     "independent_review": "art/commons-backdrop-pilot/independent-review.md",
     "visual_limit": "Ready for density/layout feedback; concept richness only partly resolved. Astern retains broad pale floor and distant repetition. Connected middle-distance planting/paving remains follow-up.",
     "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#macro"
+  },
+  "grown_civic_review": {
+    "decision": "D-135",
+    "status": "ready_for_visual_review",
+    "scope": "Concept-faithful comic/grown architectural and inhabited middle-ground refinement. Tendril arches, planted islands, curved paving and ambient resident vignettes; no new gameplay/navigation/population model.",
+    "production_propagation": false,
+    "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#grown",
+    "source_sha256": "4a9d9340a8ec58be26361910dbc82a2dd598d47ece2d577c33b63402b12382d2",
+    "config_sha256": "5de067efd6c42e54fc374071c202b8de667155cf9c3cae9fdde4dc0d8a220897",
+    "source_archive_sha256": "9e5819a6e1fdd3333c325ff14fdd7f1c7ca4d3f980b37fce710c47e5d4bacba7",
+    "grown_modules": 16,
+    "new_plants": 88,
+    "hanging_vines": 28,
+    "extra_furnishings": 28,
+    "ambient_residents": 42,
+    "captures": 48,
+    "capture_errors": 0,
+    "moving_study": {
+      "frames": 64,
+      "fps": 8,
+      "duration_seconds": 8,
+      "actual_camera": "Court Astern,960x540"
+    },
+    "geometry_routes_sightlines": {
+      "passed": 110,
+      "failed": 0
+    },
+    "activity_tests": {
+      "passed": 20,
+      "failed": 0
+    },
+    "gpu_pole_cases": {
+      "passed": 6,
+      "failed": 0,
+      "max_error_px": 0.103,
+      "limit_px": 0.75
+    },
+    "independent_review": "art/commons-grown-pilot/independent-review.md",
+    "visual_limit": "Materially addresses grown/comic inhabited middle ground; repeated ornamental arches, sparse Astern right edge and simplified civilian proxies remain visible. No completed-level acceptance or production propagation.",
+    "gallery_verification": "Private HTTPS image hash matches; isolated headless Chrome screenshot inspected;64 activity images load, playback advances and ends with replay control. Export audit110/0; UID378/0. Review-only helpers explicitly excluded from native export."
   }
 }

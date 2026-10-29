@@ -20,6 +20,18 @@ level-runtime-test: import ## VF1: manifest camera sources, stage resolution and
 test: level-runtime-test
 .PHONY: commons-art-pilot-test commons-pilot-check commons-pilot-capture commons-pilot-golden
 .PHONY: commons-backdrop-check commons-backdrop-capture commons-backdrop-golden
+.PHONY: commons-life-pilot-test commons-grown-check commons-grown-capture commons-grown-golden commons-grown-motion
+test: commons-life-pilot-test
+commons-life-pilot-test: ## Resident clock, reduced motion, hidden pause and physical floor controls
+	@$(GODOT_SIM) --headless --path . --script tests/test_commons_life_pilot.gd > $(SCRATCH)/commons-life-pilot.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-life-pilot)' $(SCRATCH)/commons-life-pilot.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-life-pilot.log
+commons-grown-check: ## Connected civic art layers, original geometry/sightline thresholds and routes
+	@$(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd -- --config res://art/commons-grown-pilot/placements.json > $(SCRATCH)/commons-grown-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-backdrop)' $(SCRATCH)/commons-grown-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-check.log
+commons-grown-capture: ## Matched real player views of the grown living Commons candidate
+	@$(GODOT_SIM) --path . --script tools/commons_pilot_review.gd -- --config res://art/commons-grown-pilot/placements.json --out res://renders/view-finish/commons-grown-pilot > $(SCRATCH)/commons-grown-capture.log 2>&1; rc=$$?; grep '^commons-pilot-review:' $(SCRATCH)/commons-grown-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-capture.log
+commons-grown-golden: lens-assets m4-physics-probe ## Existing CPU/pixel pole references with every grown civic layer present
+	@$(GODOT) --path . --script tools/commons_pilot_golden.gd -- --config res://art/commons-grown-pilot/placements.json > $(SCRATCH)/commons-grown-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|commons-pilot-golden)' $(SCRATCH)/commons-grown-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-golden.log && test "$$(grep -c '^ok    G-LVL-' $(SCRATCH)/commons-grown-golden.log)" = 6
+commons-grown-motion: ## Eight-second actual Court Astern resident activity study for the gallery
+	@$(GODOT_SIM) --path . --script tools/commons_civic_motion.gd > $(SCRATCH)/commons-grown-motion.log 2>&1; rc=$$?; grep '^commons-civic-motion:' $(SCRATCH)/commons-grown-motion.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-motion.log
 commons-backdrop-check: ## Whole-vertex envelope, actual floor, original sightline thresholds and routes
 	@$(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd > $(SCRATCH)/commons-backdrop-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-backdrop)' $(SCRATCH)/commons-backdrop-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-check.log
 commons-backdrop-capture: ## Matched actual player views; furniture remains present in both variants
