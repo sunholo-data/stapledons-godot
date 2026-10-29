@@ -2,13 +2,15 @@ extends SceneTree
 ## R2-LEVELS AC14 (design_docs/planned/r2/levels.md §A1, §A8; ledger D-103): make level-capture
 ## LEVEL=<id> TAG=<tag>. GPU window, 1280x720, the live sky. For every stage and surface: each of the
 ## stage's views from the surface's representative point (its `at`, else the stage spawn), at rest
-## and at 0.99c (the review cruise snapshot), through LevelMetrics.pose (the ceiling clamp applies
+## at 0.99c (the review cruise snapshot), and at the first sim-driven guided stop. Production
+## Commons frames use the real runtime camera and its fades (the ceiling clamp applies
 ## under an overhang, as in the game from LP1b). Greybox pieces are laid when the document has them.
 ## Writes renders/levels/<id>/<tag>/: <stage>_<surface>_<view>_<sky>.png, contact_sheet.png,
 ## metrics.json (LevelMetrics) and frames.sha256. Exits 1 on a missing or blank frame (a frame
 ## with near-zero pixel variance). Opening every frame and posting per-file URLs is the stated
 ## manual gate.
 ##   --level <id> [--layout <json>] [--tag <tag>] [--out <dir>]
+##   --check-stop  headless smoke: real sim stop + actual gantry/balcony camera, no image rendering
 
 const PX := Vector2i(1280, 720)
 var demo: Node
@@ -58,10 +60,22 @@ func _run() -> void:
 	for k in 4:
 		await physics_frame
 	var lm := LevelMetrics.new(demo, doc, walk)
+	if args.has("--check-stop"):
+		var stopped:=_prepare_stop()
+		var framed:=false
+		if stopped:
+			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=Vector3(42,66,-14)
+			demo.director.release();demo.director.set_motion("reduced");demo.director.zoom_preset=false;demo.director.deck_view="bow";demo.director.has_pose=false;demo.director.advance(0.)
+			framed=_stop_body_in_frame()
+		print("level-stop-check: %s (sim stop %s, real balcony body framed %s)" % ["ok" if stopped and framed else "FAIL",stopped,framed])
+		quit(0 if stopped and framed else 1);return
 	var names := []
 	var bad := []
-	for sky: String in ["rest", "cruise"]:
-		demo.set_sky_state(sky)
+	var poses := []
+	for sky: String in ["rest", "cruise", "stop"]:
+		if sky=="stop":
+			if not _prepare_stop():bad.append("sim-driven stop not reached");continue
+		elif not demo.set_sky_state(sky):bad.append("sky state "+sky);continue
 		for s: Dictionary in doc.stages:
 			for f: Dictionary in s.surfaces:
 				var c := LevelMetrics.gltf(f.get("at", [float(s.spawn[0]), float(s.spawn[1]), float(f.z_m)]))
@@ -91,10 +105,19 @@ func _run() -> void:
 					var img := root.get_texture().get_image()
 					var path := "%s/%s.png" % [out, name]
 					img.save_png(path)
+					var eye: Vector3=demo.camera.global_position
+					poses.append({"name":name,"stage":s.id,"surface":f.id,"view":demo.director.view_id,"foot_gltf_m":[c.x,c.y,c.z],"eye_gltf_m":[eye.x,eye.y,eye.z],"clamp_share":demo.director.ceiling_blend,"sim_stop":sky=="stop"})
+					if sky=="stop":
+						var body_point: Vector3=demo.camera.global_position+_stop_body_direction()*1000.
+						var body_pixel: Vector2=demo.camera.unproject_position(body_point)
+						poses[-1]["stop_body_pixel"]=[body_pixel.x,body_pixel.y]
+						poses[-1]["stop_body_in_frame"]=_stop_body_in_frame()
+					if sky=="stop" and str(s.id)=="gantry" and str(f.id)=="balcony" and str(v.id)=="bow" and not _stop_body_in_frame():bad.append(name+" stop body outside the actual balcony frame")
 					names.append(name)
 					if not FileAccess.file_exists(path) or _variance(img) < 1e-5:
-						bad.append(name)
+						bad.append("blank or missing frame "+name)
 					print("shot %s%s" % [name, " (ceiling clamp)" if under else ""])
+	FileAccess.open(out+"/poses.json",FileAccess.WRITE).store_string(JSON.stringify(poses,"  ")+"\n")
 	var m := lm.measure()
 	var mf := FileAccess.open(out + "/metrics.json", FileAccess.WRITE)
 	mf.store_string(JSON.stringify(m, "  "))
@@ -105,9 +128,40 @@ func _run() -> void:
 	sf.store_string("\n".join(sums) + "\n")
 	_sheet(out, names)
 	for b: String in bad:
-		print("level-capture: FAIL blank or missing frame %s" % b)
+		print("level-capture: FAIL %s" % b)
 	print("level-capture: %s %d frames%s" % [id, names.size(), "" if bad.is_empty() else ", FAIL"])
 	quit(0 if bad.is_empty() and not names.is_empty() else 1)
+
+
+## The same first-stop bootstrap used by style_capture/camera_views_capture: simulation and the
+## attended stop-turn rule supply the body and attitude. No invented review planet or sky.
+func _prepare_stop() -> bool:
+	demo.active_level=0;demo.walk=demo.walk_bridge;demo.avatar_pos=demo.bridge_spawn()
+	demo.camera_mode="player";demo.director.release();demo.director.zoom_preset=false
+	if not demo.start_solar_departure():return false
+	for step in 2400:
+		demo._process(1./60.)
+		if demo.solar_tour==null:return false
+		if demo.solar_tour.attitude_hold:demo.journey_tick()
+		if step>10 and not demo.solar_tour.attitude_hold and not demo.under_way() and demo._attitude_stop>=-1 and demo._attitude_mode.is_empty() and not demo.tour_attitude.turning():
+			demo.solar_tour.paused=true
+			return true
+	return false
+
+func _stop_body_direction() -> Vector3:
+	if demo.solar_tour==null:return Vector3.ZERO
+	var id: String="earth" if demo.solar_tour.leg_index<0 else str(demo.solar_tour.itinerary[demo.solar_tour.leg_index].id)
+	for body: Dictionary in demo.sky_world.get("system",{}).get("bodies",[]):
+		if body.id==id or str(body.get("catalogue_id",""))==id:
+			var direction:=ShipFrame.to_ship(demo.camera.attitude_basis,PackedFloat64Array(ShipFrame._unit([float(body.rel_km.x),float(body.rel_km.y),float(body.rel_km.z)])))
+			return ShipCamera.gltf_from_ship([direction[0],direction[1],direction[2]]).normalized()
+	return Vector3.ZERO
+
+func _stop_body_in_frame() -> bool:
+	var direction:=_stop_body_direction()
+	if direction.length()<.9:return false
+	var point: Vector3=demo.camera.global_position+direction*1000.
+	return not demo.camera.is_position_behind(point) and Rect2(Vector2.ZERO,Vector2(PX)).has_point(demo.camera.unproject_position(point))
 
 
 func _variance(img: Image) -> float:
