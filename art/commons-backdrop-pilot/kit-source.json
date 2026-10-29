@@ -1,0 +1,528 @@
+{
+  "schema": "stapledons.commons-backdrop.kit/1",
+  "status": "bounded modular architectural backdrop pilot; review only; no navigation or production activation",
+  "frame": "metres; each root identity at floor centre; Blender+Zup,+Yfront; glTF(x,z,-y)",
+  "asset": "commons_backdrop_kit_v1.glb",
+  "asset_bytes": 4303624,
+  "asset_sha256": "33eb1f6057004afba4deba9a8673082e1862e9699a2255b49632761287e0776a",
+  "triangles": 46446,
+  "materials": 1,
+  "images": 1,
+  "texture_size_px": [
+    1536,
+    1024
+  ],
+  "texture_sha256": "ee6753e59aa3992b30c9ccde6f2c21fce1ef6d9a9cc02c44c1e862074b5f4e26",
+  "palette": [
+    "cream",
+    "teal",
+    "ochre",
+    "violet",
+    "coral",
+    "leaf"
+  ],
+  "texture_sources": [
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/cream.png",
+      "sha256": "d32429596eb837f5ee33dd19deb790566beff581648e2e1845a78342e803a4f0"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/teal.png",
+      "sha256": "9b1bb53aa9be942345ca60dde419cc4612dc2475bf5137259a27ebd337c513ac"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/ochre.png",
+      "sha256": "2074468e54dda721d944ec6a774ee004fafafd4958122c07d83e3e7fde522c85"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/violet.png",
+      "sha256": "d10f364697518fa28079d54d22a3f329efbda0364cb3fc9ae5e23dd2b2891622"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/coral.png",
+      "sha256": "4cd5aa278e0825b9cfcbd19a890f712adf997907d8ac96b393f797dd496edb16"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/leaf.png",
+      "sha256": "a4f0df524351b86d4b5316c7d997a2a1ed8737d2de7382a66e640303edab63a7"
+    }
+  ],
+  "surface": "Existing pigments only, roughness0.82. No emission, sky, AO/light bake, dome or camera projection. Shared game toon/ink and live lighting remain authoritative.",
+  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_commons_backdrop_pilot_v1.py",
+  "authoring_script_sha256": "2cd363d3d67822ca4e1a303e386ae01c30e1db6a9d6e4b1875c96eb70eb30ff1",
+  "master": "/Users/voightkampff/dev/blender/scenes/stapledon_commons_backdrop_pilot_v1.blend",
+  "master_sha256": "10c768bc65577f3df0dc9141a83cf321edf50cf81c389a2fa92aeab3517df562",
+  "props": [
+    {
+      "id": "civic_arcade",
+      "source_root": "civic_arcade",
+      "triangles": 23418,
+      "bounds_blender_m": {
+        "min": [
+          -5.150000095367432,
+          -2.7300000190734863,
+          0.0
+        ],
+        "max": [
+          5.150000095367432,
+          2.7300000190734863,
+          7.179999828338623
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -5.150000095367432,
+          0.0,
+          -2.7300000190734863
+        ],
+        "max": [
+          5.150000095367432,
+          7.179999828338623,
+          2.7300000190734863
+        ]
+      },
+      "solid_meshes": [
+        "civic_arcade__structure"
+      ],
+      "foliage_anchors": [
+        {
+          "name": "FOLIAGE_civic_arcade_terrace_bed_0",
+          "local_blender_m": [
+            -3.35,
+            1.81,
+            4.225
+          ],
+          "local_gltf_m": [
+            -3.35,
+            4.225,
+            -1.81
+          ]
+        },
+        {
+          "name": "FOLIAGE_civic_arcade_terrace_bed_1",
+          "local_blender_m": [
+            0,
+            1.81,
+            4.225
+          ],
+          "local_gltf_m": [
+            0,
+            4.225,
+            -1.81
+          ]
+        },
+        {
+          "name": "FOLIAGE_civic_arcade_terrace_bed_2",
+          "local_blender_m": [
+            3.35,
+            1.81,
+            4.225
+          ],
+          "local_gltf_m": [
+            3.35,
+            4.225,
+            -1.81
+          ]
+        },
+        {
+          "name": "FOLIAGE_civic_arcade_ground_bed_0",
+          "local_blender_m": [
+            -4.46,
+            0.66,
+            0.5349999999999999
+          ],
+          "local_gltf_m": [
+            -4.46,
+            0.5349999999999999,
+            -0.66
+          ]
+        },
+        {
+          "name": "FOLIAGE_civic_arcade_ground_bed_1",
+          "local_blender_m": [
+            4.46,
+            0.66,
+            0.5349999999999999
+          ],
+          "local_gltf_m": [
+            4.46,
+            0.5349999999999999,
+            -0.66
+          ]
+        }
+      ]
+    },
+    {
+      "id": "low_market_canopy",
+      "source_root": "low_market_canopy",
+      "triangles": 10616,
+      "bounds_blender_m": {
+        "min": [
+          -2.6500000953674316,
+          -2.0250000953674316,
+          0.0
+        ],
+        "max": [
+          2.6500000953674316,
+          2.0250000953674316,
+          3.191495895385742
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -2.6500000953674316,
+          0.0,
+          -2.0250000953674316
+        ],
+        "max": [
+          2.6500000953674316,
+          3.191495895385742,
+          2.0250000953674316
+        ]
+      },
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "curved_garden_parapet",
+      "source_root": "curved_garden_parapet",
+      "triangles": 2416,
+      "bounds_blender_m": {
+        "min": [
+          -2.969848394393921,
+          -1.032268762588501,
+          0.0
+        ],
+        "max": [
+          2.969848394393921,
+          1.032268762588501,
+          1.1299999952316284
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -2.969848394393921,
+          0.0,
+          -1.032268762588501
+        ],
+        "max": [
+          2.969848394393921,
+          1.1299999952316284,
+          1.032268762588501
+        ]
+      },
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ],
+      "foliage_anchors": [
+        {
+          "name": "FOLIAGE_curved_garden_0",
+          "local_blender_m": [
+            -2.05,
+            0.2572158317278346,
+            0.72
+          ],
+          "local_gltf_m": [
+            -2.05,
+            0.72,
+            -0.2572158317278346
+          ]
+        },
+        {
+          "name": "FOLIAGE_curved_garden_1",
+          "local_blender_m": [
+            -0.72,
+            -0.3186995896983871,
+            0.72
+          ],
+          "local_gltf_m": [
+            -0.72,
+            0.72,
+            0.3186995896983871
+          ]
+        },
+        {
+          "name": "FOLIAGE_curved_garden_2",
+          "local_blender_m": [
+            0.72,
+            -0.3186995896983871,
+            0.72
+          ],
+          "local_gltf_m": [
+            0.72,
+            0.72,
+            0.3186995896983871
+          ]
+        },
+        {
+          "name": "FOLIAGE_curved_garden_3",
+          "local_blender_m": [
+            2.05,
+            0.2572158317278346,
+            0.72
+          ],
+          "local_gltf_m": [
+            2.05,
+            0.72,
+            -0.2572158317278346
+          ]
+        }
+      ]
+    },
+    {
+      "id": "civic_alcove",
+      "source_root": "civic_alcove",
+      "triangles": 9996,
+      "bounds_blender_m": {
+        "min": [
+          -3.6500000953674316,
+          -2.0899999141693115,
+          0.0
+        ],
+        "max": [
+          3.6500000953674316,
+          1.9199999570846558,
+          5.126104354858398
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -3.6500000953674316,
+          0.0,
+          -1.9199999570846558
+        ],
+        "max": [
+          3.6500000953674316,
+          5.126104354858398,
+          2.0899999141693115
+        ]
+      },
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ],
+      "foliage_anchors": [
+        {
+          "name": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+          "local_blender_m": [
+            -2.48,
+            0.6,
+            4.505
+          ],
+          "local_gltf_m": [
+            -2.48,
+            4.505,
+            -0.6
+          ]
+        },
+        {
+          "name": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+          "local_blender_m": [
+            2.48,
+            0.6,
+            4.505
+          ],
+          "local_gltf_m": [
+            2.48,
+            4.505,
+            -0.6
+          ]
+        }
+      ]
+    }
+  ],
+  "preview": "Neutral studio diagnostic; authoring linked-copy arrangement is not export/world placement. Actual review needs independent real game views.",
+  "geometry_constraints": "Commons floor57.025/radius75.9; whole placed mesh vertices must remain inside95m sphere. Proposed large modulesR48..64 and low peripheryR68..72 are placement hints only. Root owns exact transform/vertex envelope/pole-corridor QA; bridge radius22 and spire remain unchanged.",
+  "human_door_height_m": 2.2,
+  "batching": {
+    "meshes_per_module": 2,
+    "same_atlas_material": true,
+    "original_parts": {
+      "civic_arcade": {
+        "structure": [
+          "civic_arcade__arcade_pier_0",
+          "civic_arcade__arcade_pier_1",
+          "civic_arcade__arcade_pier_2",
+          "civic_arcade__arcade_pier_3",
+          "civic_arcade__civic_roof_backbone_0",
+          "civic_arcade__civic_roof_backbone_1",
+          "civic_arcade__civic_roof_backbone_2",
+          "civic_arcade__continuous_civic_roof",
+          "civic_arcade__ground_bed_0_shell",
+          "civic_arcade__ground_bed_1_shell",
+          "civic_arcade__ground_plinth",
+          "civic_arcade__open_ground_arch_0",
+          "civic_arcade__open_ground_arch_1",
+          "civic_arcade__open_ground_arch_2",
+          "civic_arcade__rear_civic_rooms",
+          "civic_arcade__terrace_bed_0_shell",
+          "civic_arcade__terrace_bed_1_shell",
+          "civic_arcade__terrace_bed_2_shell",
+          "civic_arcade__terrace_deck",
+          "civic_arcade__terrace_toprail",
+          "civic_arcade__upper_room_0",
+          "civic_arcade__upper_room_1"
+        ],
+        "details": [
+          "civic_arcade__arch_painted_reveal_0",
+          "civic_arcade__arch_painted_reveal_1",
+          "civic_arcade__arch_painted_reveal_2",
+          "civic_arcade__civic_roof_eave",
+          "civic_arcade__ground_bed_0_soil",
+          "civic_arcade__ground_bed_1_soil",
+          "civic_arcade__ground_door_0_centre",
+          "civic_arcade__ground_door_0_handle",
+          "civic_arcade__ground_door_0_leaf",
+          "civic_arcade__ground_door_0_reveal",
+          "civic_arcade__ground_door_1_centre",
+          "civic_arcade__ground_door_1_handle",
+          "civic_arcade__ground_door_1_leaf",
+          "civic_arcade__ground_door_1_reveal",
+          "civic_arcade__ground_door_2_centre",
+          "civic_arcade__ground_door_2_handle",
+          "civic_arcade__ground_door_2_leaf",
+          "civic_arcade__ground_door_2_reveal",
+          "civic_arcade__ground_window_0_mullion",
+          "civic_arcade__ground_window_0_recess",
+          "civic_arcade__ground_window_0_surround",
+          "civic_arcade__ground_window_1_mullion",
+          "civic_arcade__ground_window_1_recess",
+          "civic_arcade__ground_window_1_surround",
+          "civic_arcade__ground_window_2_mullion",
+          "civic_arcade__ground_window_2_recess",
+          "civic_arcade__ground_window_2_surround",
+          "civic_arcade__ground_window_3_mullion",
+          "civic_arcade__ground_window_3_recess",
+          "civic_arcade__ground_window_3_surround",
+          "civic_arcade__terrace_baluster_0",
+          "civic_arcade__terrace_baluster_1",
+          "civic_arcade__terrace_baluster_10",
+          "civic_arcade__terrace_baluster_11",
+          "civic_arcade__terrace_baluster_12",
+          "civic_arcade__terrace_baluster_2",
+          "civic_arcade__terrace_baluster_3",
+          "civic_arcade__terrace_baluster_4",
+          "civic_arcade__terrace_baluster_5",
+          "civic_arcade__terrace_baluster_6",
+          "civic_arcade__terrace_baluster_7",
+          "civic_arcade__terrace_baluster_8",
+          "civic_arcade__terrace_baluster_9",
+          "civic_arcade__terrace_bed_0_soil",
+          "civic_arcade__terrace_bed_1_soil",
+          "civic_arcade__terrace_bed_2_soil",
+          "civic_arcade__terrace_lowerrail",
+          "civic_arcade__upper_door_0_centre",
+          "civic_arcade__upper_door_0_handle",
+          "civic_arcade__upper_door_0_leaf",
+          "civic_arcade__upper_door_0_reveal",
+          "civic_arcade__upper_door_1_centre",
+          "civic_arcade__upper_door_1_handle",
+          "civic_arcade__upper_door_1_leaf",
+          "civic_arcade__upper_door_1_reveal",
+          "civic_arcade__upper_window_0_0_mullion",
+          "civic_arcade__upper_window_0_0_recess",
+          "civic_arcade__upper_window_0_0_surround",
+          "civic_arcade__upper_window_0_1_mullion",
+          "civic_arcade__upper_window_0_1_recess",
+          "civic_arcade__upper_window_0_1_surround",
+          "civic_arcade__upper_window_1_0_mullion",
+          "civic_arcade__upper_window_1_0_recess",
+          "civic_arcade__upper_window_1_0_surround",
+          "civic_arcade__upper_window_1_1_mullion",
+          "civic_arcade__upper_window_1_1_recess",
+          "civic_arcade__upper_window_1_1_surround"
+        ]
+      },
+      "low_market_canopy": {
+        "structure": [
+          "low_market_canopy__canopy_root_0",
+          "low_market_canopy__canopy_root_1",
+          "low_market_canopy__canopy_root_2",
+          "low_market_canopy__canopy_root_3",
+          "low_market_canopy__market_counter",
+          "low_market_canopy__market_shelf",
+          "low_market_canopy__tension_shade"
+        ],
+        "details": [
+          "low_market_canopy__ceramic_market_vessel_0",
+          "low_market_canopy__ceramic_market_vessel_1",
+          "low_market_canopy__ceramic_market_vessel_2",
+          "low_market_canopy__ceramic_market_vessel_3",
+          "low_market_canopy__sewn_front_edge_1",
+          "low_market_canopy__sewn_front_edge_neg1",
+          "low_market_canopy__sewn_side_edge_1",
+          "low_market_canopy__sewn_side_edge_neg1"
+        ]
+      },
+      "curved_garden_parapet": {
+        "structure": [
+          "curved_garden_parapet__parapet_back",
+          "curved_garden_parapet__planter_bed"
+        ],
+        "details": [
+          "curved_garden_parapet__grown_parapet_rib_0",
+          "curved_garden_parapet__grown_parapet_rib_1",
+          "curved_garden_parapet__grown_parapet_rib_2",
+          "curved_garden_parapet__grown_parapet_rib_3",
+          "curved_garden_parapet__parapet_ochre_cap",
+          "curved_garden_parapet__soil_bed"
+        ]
+      },
+      "civic_alcove": {
+        "structure": [
+          "civic_alcove__alcove_front_root_0",
+          "civic_alcove__alcove_front_root_1",
+          "civic_alcove__alcove_garden_root_0",
+          "civic_alcove__alcove_garden_root_1",
+          "civic_alcove__alcove_ground",
+          "civic_alcove__alcove_grown_fin",
+          "civic_alcove__alcove_open_arch",
+          "civic_alcove__alcove_rear",
+          "civic_alcove__alcove_roof_backbone_0",
+          "civic_alcove__alcove_roof_backbone_1",
+          "civic_alcove__alcove_roof_garden_0_shell",
+          "civic_alcove__alcove_roof_garden_1_shell",
+          "civic_alcove__alcove_side_room_0",
+          "civic_alcove__alcove_side_room_1",
+          "civic_alcove__alcove_swept_roof"
+        ],
+        "details": [
+          "civic_alcove__alcove_human_door_centre",
+          "civic_alcove__alcove_human_door_handle",
+          "civic_alcove__alcove_human_door_leaf",
+          "civic_alcove__alcove_human_door_reveal",
+          "civic_alcove__alcove_open_reveal",
+          "civic_alcove__alcove_roof_garden_0_soil",
+          "civic_alcove__alcove_roof_garden_1_soil",
+          "civic_alcove__alcove_side_window_0_mullion",
+          "civic_alcove__alcove_side_window_0_recess",
+          "civic_alcove__alcove_side_window_0_surround",
+          "civic_alcove__alcove_side_window_1_mullion",
+          "civic_alcove__alcove_side_window_1_recess",
+          "civic_alcove__alcove_side_window_1_surround"
+        ]
+      }
+    }
+  },
+  "apertures": "True hollow civic room shells and cut arched wall apertures; closed painted door/window leaves sit inside reveals. Open front arcade passages remain clear.",
+  "concept_authority": "Approved density/palette/architectural layering only; concept broad spire and glass dome are rejected geometry drift.",
+  "source_preservation": {
+    "status": "local recoverable archive only; no off-host backup/publication claimed",
+    "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-backdrop-source/commons-backdrop-source-v1.tar.gz",
+    "sha256": "19e88892641eac07e1b28e5ad1bb395f0c04163e395c43a5483a39c6c1ed5302",
+    "bytes": 5795847
+  },
+  "validation": {
+    "clean_glb_reimport": "passed:4identityroots/8meshes/11exactsoilanchors/46446triangles; exact source bounds; nonblack1536x1024atlas",
+    "real_aperture_rays": "passed:3frontarcades+4groundwindow openings+2upperdoor structural rays; window rays start behind physical foreground piers; closed leaves are intentionally separate details",
+    "validator": "/Users/voightkampff/dev/blender/scripts/validate_stapledon_commons_backdrop_pilot_v1.py",
+    "validator_sha256": "23c06f0ebd9cde78855a63e1c31bae0be0fce4980111c072877b469d2916a1f9",
+    "glb_referenced_materials": 1,
+    "glb_embedded_images": 1,
+    "meshes_per_module": 2,
+    "hero": "kit-hero-studio.png",
+    "hero_sha256": "ddd06421e8d0366ab738da76e2675f0cc87eb694871c718375e8587a71a0316e",
+    "hero_render": "Cycles Metal Apple M4 Max48samples; visually inspected. Final partition-only correction retained identical visible geometry; actual player composition remains independent review."
+  }
+}
