@@ -249,7 +249,8 @@
         "ROUND 2 mutant busy-cpu-200ms: unmutated rc=0; mutated rc=1; named FAIL=overhead-200; both GNU makes failed this case.",
         "ROUND 2 mutant report-any-jobs: unmutated rc=0; mutated rc=1; named FAIL=report-medians; both GNU makes failed this case.",
         "ROUND 2 mutant empty-load-proc-only: unmutated rc=0; mutated rc=1; named FAIL=load-sampler; both GNU makes failed this case.",
-        "ROUND 2 mutant user-only-sys-recipe: unmutated rc=0; mutated rc=1; named FAIL=cpu-busy-sleep; both GNU makes failed this case."
+        "ROUND 2 mutant user-only-sys-recipe: unmutated rc=0; mutated rc=1; named FAIL=cpu-busy-sleep; both GNU makes failed this case.",
+        "Controller, iteration 56, after rig/full run 2 went RED on 0a8876ba (log 0a8876ba-iter56-run2.log): under make test, the outer make's MAKELEVEL/MAKEFLAGS leaked into the fixture makes, so submake-level and atomic-rows failed on gmake (gmake[1] 'Entering directory'), and caller-poison failed as a knock-on (25 of 8 ok). Every earlier AC4 run had invoked the script directly with sh, never through make (plan, executor, evaluator and controller alike). Reproduced deterministically: make rig-check-control rc=2. Fix: test_suite_profile.sh and suite_profile.sh run unset MAKELEVEL, MAKEFLAGS, MFLAGS, MAKEOVERRIDES, GNUMAKEFLAGS and MAKE_TERMOUT/ERR. After the fix: make rig-check-control rc=0 (9/0), gmake rig-check-control rc=0 (9/0), direct AC4 9/0, R and C killed."
       ],
       "files": [
         "tools/timed_recipe_shell.sh",

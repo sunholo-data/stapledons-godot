@@ -126,6 +126,8 @@ case "$cmd" in
     SUITE_PROFILE_LOG=$out/profile.tsv; export SUITE_PROFILE_LOG
     : > "$SUITE_PROFILE_LOG"; : > "$out/load.tsv"; : > "$out/header.txt"
     unset SUITE_TOP_TARGET
+    # A profiled run is a top-level make even when a make started us (levels, -w, jobserver).
+    unset MAKELEVEL MAKEFLAGS MFLAGS MAKEOVERRIDES GNUMAKEFLAGS MAKE_TERMOUT MAKE_TERMERR
     hash=$(closure "$@") || die 'closure query failed'
     version=$("$maker" --version | sed -n '1p')
     cores=$(sysctl -n hw.ncpu 2>/dev/null) || cores=$(getconf _NPROCESSORS_ONLN)

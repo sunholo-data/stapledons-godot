@@ -1,6 +1,9 @@
 #!/bin/sh
 # Hermetic fixture control. Each case runs on every distinct GNU make on PATH.
 set -u
+# Under `make test` the outer make's MAKELEVEL/MAKEFLAGS leak into every fixture make
+# (levels shift by one, -w adds "Entering directory" lines); fixtures must start top-level.
+unset MAKELEVEL MAKEFLAGS MFLAGS MAKEOVERRIDES GNUMAKEFLAGS MAKE_TERMOUT MAKE_TERMERR
 ROOT=$(cd "$(dirname "$0")/.." && pwd -P)
 T=$(mktemp -d "${TMPDIR:-/tmp}/suite-profile-control.XXXXXX") || exit 1
 trap 'rm -rf "$T"' EXIT
