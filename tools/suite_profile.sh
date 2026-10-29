@@ -152,7 +152,9 @@ case "$cmd" in
         # A kill during $(load1) leaves it empty; never write that half row (report would refuse it).
         now=$(date +%s); l=$(load1)
         if [ -n "$l" ]; then printf '%s\t%s\n' "$now" "$l" >> "$out/load.tsv"; fi
-        sleep 30 & sleeper=$!; wait "$sleeper" || :
+        sleep 30 & sleeper=$!
+        printf '%s\n' "$sleeper" > "$out/sleeper.pid"
+        wait "$sleeper" || :
       done
     ) & sampler=$!
     printf 'sha=%s\nmake=%s\njobs=%s\ncores=%s\nstart_ms=%s\nload_start=%s\nclosure_sha256=%s\nsampler_pid=%s\nsampler_interval=30\nload_rule=strict\n' "$sha" "$version" "$jobs" "$cores" "$start" "$load_start" "$hash" "$sampler" > "$out/header.txt"

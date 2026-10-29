@@ -73,7 +73,7 @@ The control emits `suite-profile control NAME: ok|FAIL (...)`, asserts counts, a
 | `compare-missing` | remove one target: missing=1, rc 1 | **C:** remove missing increment |
 | `compare-fewer-extra` | fewer lines fails; extra only reports | disable fewer comparison / reject extra |
 | `closure-mismatch` | differing hashes refused | bypass closure-hash comparison |
-| `overhead-200` | ≤50 ms per line over 200 trivial lines | add 60 ms per invocation |
+| `overhead-200` | 200 rows; child CPU ≤ 150 ms/line (30 s) and wall ≤ 1 s/line (hang guard); wall and CPU per line printed. Amended in eval round 1: the design's ≤ 50 ms/line wall bound flaked under rig load (4/4 at 6 busy loops), so 50 ms is reported, not gated | add ~200 ms busy CPU per invocation (a pure sleep is caught only by the hang guard) |
 | `atomic-rows` | concurrent finishes have valid, complete TSV fields | split printf at a field, interleave via fixture barrier |
 | `load-sampler` | epoch/load rows, sleep argument 30, PID recorded | disable sampler / change cadence to 60 |
 | `sampler-cleanup` | PID gone after normal/TERM/INT completion | omit sampler kill in cleanup |

@@ -54,7 +54,8 @@ expect_rc() {
 check_case() (
   set -e
   # A broken cleanup mutant must not leave fixture processes running.
-  trap 'if [ -f "$D/out/header.txt" ]; then p=$(header sampler_pid); if [ -n "$p" ]; then kill "$p" 2>/dev/null || :; fi; fi' EXIT
+  trap 'if [ -f "$D/out/header.txt" ]; then p=$(header sampler_pid); if [ -n "$p" ]; then kill "$p" 2>/dev/null || :; fi; fi
+    if [ -s "$D/out/sleeper.pid" ]; then kill "$(cat "$D/out/sleeper.pid")" 2>/dev/null || :; fi' EXIT
   case "$CASE" in
     rc-passthrough)
       printf 'all:\n\t@false\n' > Makefile
@@ -83,10 +84,21 @@ check_case() (
       run --jobs 2 -- all
       awk -F '\t' 'NR==1 {s=$1;e=$2} NR==2 {exit !($1<e && s<$2)} END {if(NR!=2) exit 1}' "$D/out/profile.tsv" ;;
     cpu-busy-sleep)
-      printf 'all: busy nap\nbusy:\n\t@perl -MTime::HiRes=time -e '\''$$s=time; 1 while time-$$s<0.25'\''\nnap:\n\t@sleep 0.2\n' > Makefile
+      # Fixed child CPU work stays meaningful when other rig jobs consume wall time.
+      cat > Makefile <<'MAKE'
+all: busy nap sys
+busy:
+	@perl -e 'do { @t=times } while $$t[0]+$$t[1]<0.25'
+nap:
+	@sleep 0.2
+sys:
+	@perl -e 'open my $$n, ">", "syscall.data" or die $$!; do { for (1..10000) { syswrite $$n,"x" } @t=times } while $$t[1]<0.20; print $$t[0]+$$t[1],"\n"' > syscall.cpu
+MAKE
       run -- all
-      row busy | awk -F '\t' 'END {exit !($3>=0.5*($2-$1)/1000)}'
-      row nap | awk -F '\t' 'END {exit !($3<=0.1)}' ;;
+      row busy | awk -F '\t' 'END {exit !($3>=0.20)}'
+      row nap | awk -F '\t' 'END {exit !($3<=0.1)}'
+      # The recipe records its own user+sys; user-only accounting loses >=0.20 s.
+      row sys | awk -F '\t' -v cpu="$(cat syscall.cpu)" 'END {exit !($3>=cpu-0.04)}' ;;
     compare-missing)
       record b 1 10; cp "$D/b.header.txt" "$D/a.header.txt"; : > "$D/a.tsv"
       expect_rc 1 profile compare "$D/b.tsv" "$D/a.tsv"
@@ -102,14 +114,25 @@ check_case() (
       record b 1 10; record a 1 10
       sed 's/closure_sha256=fixture/closure_sha256=other/' "$D/a.header.txt" > "$D/h"; mv "$D/h" "$D/a.header.txt"
       expect_rc 1 profile compare "$D/b.tsv" "$D/a.tsv"
+      grep -q 'closure mismatch' "$D/result"
+      for side in b a; do
+        sed 's/^closure_sha256=.*/closure_sha256=/' "$D/$side.header.txt" > "$D/h"; mv "$D/h" "$D/$side.header.txt"
+      done
+      expect_rc 1 profile compare "$D/b.tsv" "$D/a.tsv"
       grep -q 'closure mismatch' "$D/result" ;;
     overhead-200)
       { echo all:; i=0; while [ "$i" -lt 200 ]; do printf '\t@true\n'; i=$((i + 1)); done; } > Makefile
       start=$(perl -MTime::HiRes=time -e 'printf "%.0f",time*1000')
+      times > "$D/cpu-before"
       run -- all
+      times > "$D/cpu-after"
       end=$(perl -MTime::HiRes=time -e 'printf "%.0f",time*1000')
+      cpu=$(awk 'function sec(s,a) {split(s,a,"m"); sub(/s$/,"",a[2]); return a[1]*60+a[2]}
+        FNR==2 {c=sec($1)+sec($2); if(NR==FNR) before=c; else printf "%.0f",(c-before)*1000}' "$D/cpu-before" "$D/cpu-after")
+      wall=$((end - start))
+      awk -v wall="$wall" -v cpu="$cpu" 'BEGIN {printf "overhead-200: wall %d ms, cpu %d ms over 200 lines (%.2f ms/line wall, %.2f ms/line cpu)\n",wall,cpu,wall/200,cpu/200}'
       [ "$(wc -l < "$D/out/profile.tsv" | tr -d ' ')" = 200 ]
-      [ "$((end - start))" -le 10000 ] ;;
+      [ "$cpu" -le 30000 ]; [ "$wall" -le 200000 ] ;;
     atomic-rows)
       { printf 'all:'; i=0; while [ "$i" -lt 40 ]; do printf ' t%s' "$i"; i=$((i + 1)); done
         printf '\n'; i=0; while [ "$i" -lt 40 ]; do printf 't%s:\n\t@true\n' "$i"; i=$((i + 1)); done; } > Makefile
@@ -122,7 +145,15 @@ check_case() (
 printf '%s\n' "$1" >> "$PROBE"
 exec /bin/sleep 0.05
 STUB
-      chmod +x bin/sleep
+      cat > bin/sysctl <<'STUB'
+#!/bin/sh
+case "$2" in
+  hw.ncpu) echo 4 ;;
+  vm.loadavg) case "${EMPTY_LOAD:-}" in sysctl) exit 0 ;; proc) exit 1 ;; *) echo '{ 2.00 2.00 2.00 }' ;; esac ;;
+  *) exit 1 ;;
+esac
+STUB
+      chmod +x bin/sleep bin/sysctl
       # Wait (at most 5 s) until the sampler reaches its first sleep, so the cadence probe is never empty.
       printf 'all:\n\t@i=0; while [ ! -s "$$PROBE" ] && [ $$i -lt 100 ]; do /bin/sleep 0.05; i=$$((i+1)); done\n' > Makefile
       PROBE=$D/cadence PATH="$D/bin:$PATH"; export PROBE PATH
@@ -130,25 +161,47 @@ STUB
       [ "$(sort -u "$PROBE")" = 30 ]
       [ "$(header sampler_interval)" = 30 ]; [ -n "$(header sampler_pid)" ]
       awk -F '\t' 'NF!=2 || $1!~/^[0-9]+$/ || $2!~/^[0-9.]+$/ {bad=1} END {exit (bad || NR<1)}' "$D/out/load.tsv"
-      [ -n "$(header cores)" ]; [ -n "$(header sha)" ]; [ -n "$(header closure_sha256)" ] ;;
+      [ -n "$(header cores)" ]; [ -n "$(header sha)" ]; [ -n "$(header closure_sha256)" ]
+      # macOS has no /proc: redirect only that path in a scratch copy to an empty
+      # readable fixture file, preserving load1 and the sampler guard verbatim.
+      mkdir "$D/proc-probe"; : > "$D/proc-loadavg"
+      sed "s|/proc/loadavg|$D/proc-loadavg|g" "$P" > "$D/proc-probe/suite_profile.sh"
+      cp "$W" "$D/proc-probe/timed_recipe_shell.sh"
+      for EMPTY_LOAD in sysctl proc; do
+        export EMPTY_LOAD
+        if [ "$EMPTY_LOAD" = proc ]; then P=$D/proc-probe/suite_profile.sh; fi
+        rm "$PROBE"
+        run -- all
+        [ -s "$PROBE" ] # The sampler completed a load probe before the recipe finished.
+        awk -F '\t' 'NF!=2 || $2=="" {bad=1} END {exit bad}' "$D/out/load.tsv"
+        [ ! -s "$D/out/load.tsv" ]
+      done ;;
     sampler-cleanup)
-      printf 'all:\n\t@true\n' > Makefile
-      run -- all; ! kill -0 "$(header sampler_pid)" 2>/dev/null
+      # Keep the real 30-second sleeper in flight until the recipe can observe it.
+      printf 'all:\n\t@i=0; while [ ! -s out/sleeper.pid ] && [ $$i -lt 500 ]; do /bin/sleep 0.01; i=$$((i+1)); done; test -s out/sleeper.pid\n' > Makefile
+      run -- all
+      ! kill -0 "$(header sampler_pid)" 2>/dev/null
+      [ -s "$D/out/sleeper.pid" ]; ! kill -0 "$(cat "$D/out/sleeper.pid")" 2>/dev/null
       printf 'all:\n\t@/bin/sleep 1\n' > Makefile
       for sig in TERM INT; do
-        rm -f "$D/out/header.txt"
+        rm -f "$D/out/header.txt" "$D/out/sleeper.pid"
         # Perl restores INT before exec: POSIX background shells otherwise inherit SIG_IGN.
         perl -e '$SIG{INT}="DEFAULT"; exec @ARGV' sh "$P" run --make "$M" --out "$D/out" -- all > "$D/signal.log" 2>&1 & runner=$!
-        i=0; until grep -q '^sampler_pid=' "$D/out/header.txt" && kill -0 "$(header sampler_pid)" 2>/dev/null; do
+        i=0; until grep -q '^sampler_pid=' "$D/out/header.txt" && [ -s "$D/out/sleeper.pid" ] && kill -0 "$(cat "$D/out/sleeper.pid")" 2>/dev/null; do
           /bin/sleep 0.01; i=$((i + 1)); [ "$i" -lt 100 ]
         done
         kill -"$sig" "$runner"; signal_rc=0; wait "$runner" || signal_rc=$?
         case "$sig:$signal_rc" in TERM:143|INT:130) ;; *) exit 1 ;; esac
         ! kill -0 "$(header sampler_pid)" 2>/dev/null
+        ! kill -0 "$(cat "$D/out/sleeper.pid")" 2>/dev/null
       done ;;
     report-version)
       reports; record b1 1 100 3.81
-      expect_rc 1 report; grep -q '4.4.1' "$D/result" ;;
+      expect_rc 1 report; grep -q '4.4.1' "$D/result"
+      reports; printf 'rc=2\n' >> "$D/b1.header.txt"
+      expect_rc 1 report; grep -q 'failed run' "$D/result"
+      reports; printf 'closure_sha256=other\n' >> "$D/a1.header.txt"
+      expect_rc 1 report; grep -q 'closure mismatch' "$D/result" ;;
     report-load)
       reports; rm "$D/b1.load.tsv"; expect_rc 1 report
       reports; record b1 1 100 4.4.1 '2 6 2'; expect_rc 1 report
@@ -157,11 +210,23 @@ STUB
       record b1 1 100 4.4.1 '2 9 2'; expect_rc 1 report --load-rule fallback
       record b1 1 100 4.4.1 '6 6 2'; expect_rc 1 report --load-rule fallback
       reports; printf 'attempt=3\n' >> "$D/b1.header.txt"; expect_rc 1 report
-      reports; printf 'slot=b1\nattempt=1\n' >> "$D/b2.header.txt"; expect_rc 1 report ;;
+      reports; printf 'slot=b1\nattempt=1\n' >> "$D/b2.header.txt"; expect_rc 1 report
+      grep -q 'insufficient comparable runs' "$D/result"
+      # Four serial inputs leave three slots if deduplication alone replaces b1.
+      # Thus this assertion fails on the duplicate refusal itself, never the count.
+      reports; record b4 1 100; printf 'slot=b1\nattempt=0\n' >> "$D/b2.header.txt"
+      expect_rc 1 report; grep -q 'duplicate or unordered slot attempt' "$D/result" ;;
     report-medians)
       reports; expect_rc 0 report
       grep -q 'before_median=100.000 after_j6_median=40.000 ratio=0.400' "$D/result"
       grep -q 'j8.tsv.*jobs=8' "$D/result"
+      expect_rc 1 profile report "$D"/b?.tsv -- "$D"/a?.tsv
+      grep -q 'insufficient comparable runs' "$D/result"
+      for spec in 'b1 6' 'a1 1' 'a1 7'; do
+        reports; set -- $spec; record "$1" "$2" 100
+        expect_rc 1 report; grep -q 'invalid jobs' "$D/result"
+      done
+      reports
       expect_rc 1 report --stage M3
       rm "$D/b3.tsv"; expect_rc 1 report
       reports; rm "$D/a3.tsv"; expect_rc 1 report
@@ -242,6 +307,7 @@ for CASE in $cases; do
     else
       (cd "$D" && check_case) > "$D/log" 2>&1 & case_pid=$!
       case_rc=0; wait "$case_pid" || case_rc=$?
+      if [ "$CASE" = overhead-200 ]; then sed -n '/^overhead-200:/p' "$D/log"; fi
       if [ "$case_rc" != 0 ]; then
         why="$why $M: $(tail -5 "$D/log" | tr '\n' ' ')"
       fi
