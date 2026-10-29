@@ -521,6 +521,15 @@ func test_strip_and_cards() -> void:
 	demo._process(0.016)
 	strip_ok(demo, "lower deck")
 	check("lower deck: the prompt says decisions need the bridge", demo.active_level == 1 and (hud.prompt.text.contains("bridge")))
+	check("VFU live lower deck supplies Commons help context", hud._level_context.get("id") == "commons")
+	var court: Variant = demo.walk_lower.closest_walkable(Vector3(26, 57, -4), 4.0)
+	check("VFU idle prompt specimen is reachable away from the lift", court is Vector3)
+	if court is Vector3:
+		demo.avatar_pos = court
+		demo.consoles.cancel_walk()
+		demo._process(0.016)
+		check("VFU Commons idle view keeps the bottom prompt quiet", hud.prompt.text.is_empty())
+		check("VFU Commons return guidance remains in help", hud.help.text.contains("Commons") and hud.help.text.contains("lift"))
 	demo.queue_free()
 	await process_frame
 

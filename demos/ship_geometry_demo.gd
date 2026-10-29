@@ -1214,6 +1214,7 @@ func level_context() -> Dictionary:
 
 func _update_hud(delta: float, details: String) -> void:
 	var view := hud_view()
+	ship_hud.set_level_context(level_context())
 	ship_hud.details.text = details
 	ship_hud.set_view_tag(view_tag_text())
 	_update_cards(view)

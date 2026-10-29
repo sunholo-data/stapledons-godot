@@ -286,20 +286,48 @@ func _walk_pose(id: String, spot: String) -> void:
 ## _pole retains independent CPU projection, geometry-alpha and subpixel centroid requirements.
 func _level_poses(built: bool) -> int:
 	var failures := 0
-	for row: Array in [["G-LVL-1 clamp", Vector3(25, 57, -5), true], ["G-LVL-2 raised", Vector3(26, 66, -12), false]]:
+	var original_foot: Vector3 = demo.avatar_pos if built else Vector3.ZERO
+	var original_motion: String = demo.director.motion if built else "full"
+	for row: Array in [["G-LVL-1 clamp", Vector3(34, 57, -6), true, "court"], ["G-LVL-2 raised", Vector3(26, 66, -12), false, "gantry"]]:
 		var foot: Vector3 = row[1]
 		var clamped: bool = row[2]
-		failures += await _pole(built, func() -> void:
-			demo.avatar_pos = foot
-			demo.avatar.position = foot
-			var view := {"yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5}
-			demo.camera.global_transform = demo.director.stage_pose(view, foot, clamped)
-			demo.avatar.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
-			demo._sync_observer(), row[0], "Commons eye")
+		var valid := built and _level_eye(foot)
+		valid = valid and demo.active_stage_id() == row[3] and demo.walk_lower.is_walkable_near(foot) and is_equal_approx(demo.director.ceiling_blend, 1.0 if clamped else 0.0)
+		if not valid: push_warning("%s requires a supported production stage and actual overhead clamp state" % row[0])
+		failures += await _pole(valid, func() -> void: _level_eye(foot), row[0], "Commons eye", true)
+	if built:
+		demo.active_level = 0
+		demo.walk = demo.walk_bridge
+		demo.level_runtime.set_active(false)
+		demo.avatar_pos = original_foot
+		demo.avatar.position = original_foot
+		demo.director.has_pose = false
+		demo.director.set_motion(original_motion)
+		demo.director.advance(0.016)
+		demo._sync_observer()
 	return failures
 
 
-func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int:
+func _level_eye(foot: Vector3) -> bool:
+	if demo.level_runtime == null: return false
+	demo.active_level = 1
+	demo.walk = demo.walk_lower
+	demo.level_runtime.set_active(true)
+	demo.avatar_pos = foot
+	demo.avatar.position = foot
+	demo.camera_mode = "player"
+	demo.director.release()
+	demo.director.deck_view = "bow"
+	demo.director.mapping_view = "bow"
+	demo.director.has_pose = false
+	demo.director.set_motion("reduced")
+	demo.director.advance(0.016)
+	demo.avatar.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	demo._sync_observer()
+	return not demo.director.stage_view("commons", foot, "bow").is_empty()
+
+
+func _pole(built: bool, pose: Callable, label: String, eye_label: String, paired_baseline := false) -> int:
 	var failures := 0
 	for phase: String in ["boosting", "cruising", "braking"]:
 		var phi := Relativity.rapidity_of_beta(0.99 if phase == "cruising" else 0.5)
@@ -318,9 +346,15 @@ func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int
 			var projected := AreaBundle.project(cam, [p[0], p[1], float(p[2]) + 1000.0])
 			var cross_error := sqrt(pow(projected[0] - want.x, 2.0) + pow(projected[1] - want.y, 2.0))
 			await _settle()
-			var clean := _centroid(_read(main.get_viewport()), want)
+			var clean_image := _read(main.get_viewport())
+			var clean := _centroid(clean_image, want)
 			var geometry := _read(demo.geometry_view)
-			var clear: bool = _window_ok(want) and _image_ok(geometry) and is_finite(clean[1]) and clean[1] < 0.02
+			if label.begins_with("G-LVL-") and phase == "cruising":
+				var evidence := "res://renders/levels/physics"
+				DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(evidence))
+				_read(main.get_viewport()).save_png(evidence.path_join(label.get_slice(" ", 0).to_lower() + "-clean.png"))
+				geometry.save_png(evidence.path_join(label.get_slice(" ", 0).to_lower() + "-geometry.png"))
+			var clear: bool = _window_ok(want) and _image_ok(geometry) and is_finite(clean[1]) and (paired_baseline or clean[1] < 0.02)
 			if clear:
 				clear = geometry.get_pixel(int(want.x), int(want.y)).a == 0.0
 			if clear and is_finite(cross_error) and cross_error <= 0.001:
@@ -336,7 +370,8 @@ func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int
 				sf.set_velocity(vw, demo.sky_world.ship.beta, demo.sky_world.ship.gamma)
 				sf.set_exposure(5.0)
 				await _settle()
-				var centroid := _centroid(_read(main.get_viewport()), want)
+				var rendered := _read(main.get_viewport())
+				var centroid := _centroid(_star_difference(rendered, clean_image, want) if paired_baseline else rendered, want)
 				got = centroid[0]
 				error = got.distance_to(want)
 				# FOV-sensitive: the design's 78 deg constant (CameraDirector.FOV_DEG), not the camera's
@@ -352,6 +387,20 @@ func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int
 				push_warning("m4 ship golden: %s forward pole covered (geometry or clean peak)" % phase)
 		failures += _report(ok, "%s %s beta %.2f: %s pole (%.2f, %.2f) rendered (%.2f, %.2f) error %.3f px (limit 0.75)" % [label, phase, b, eye_label, want.x, want.y, got.x, got.y, error])
 	return failures
+
+
+## G-LVL only: the low eye puts the captain's hair within 12px of the physically clear pole.
+## Subtract a same-pose/no-star baseline without hiding the captain or geometry. The opaque
+## pole-pixel rejection above, positive signal, independent CPU projection and .75px limit stay.
+func _star_difference(after: Image, before: Image, at: Vector2) -> Image:
+	if not _image_ok(after) or not _image_ok(before) or not _window_ok(at): return Image.new()
+	var image := Image.create(size.x, size.y, false, Image.FORMAT_RGB8)
+	image.fill(Color.BLACK)
+	for y in range(int(at.y) - WIN, int(at.y) + WIN + 1):
+		for x in range(int(at.x) - WIN, int(at.x) + WIN + 1):
+			var delta := after.get_pixel(x, y) - before.get_pixel(x, y)
+			image.set_pixel(x, y, Color(maxf(0.0, delta.r), maxf(0.0, delta.g), maxf(0.0, delta.b)))
+	return image
 
 
 func _s2(built: bool) -> int:

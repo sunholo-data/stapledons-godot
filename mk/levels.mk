@@ -18,6 +18,18 @@ level-runtime-test: import ## VF1: manifest camera sources, stage resolution and
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_level_runtime.gd > $(SCRATCH)/level-runtime-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-runtime)' $(SCRATCH)/level-runtime-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-runtime-test.log && grep -q '^level-runtime: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-runtime-test.log
 test: level-runtime-test
+.PHONY: level-export-test
+level-export-test: import ## VF2: real pack JSON closure with missing manifest, greybox and lift negative controls
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_level_export.gd > $(SCRATCH)/level-export-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-export)' $(SCRATCH)/level-export-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-export-test.log && grep -q '^level-export: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-export-test.log
+test: level-export-test
+.PHONY: level-golden-test level-stage
+level-golden-test: import ## VF1: paired no-star baseline cannot mistake the nearby captain for a pole marker
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_level_golden.gd > $(SCRATCH)/level-golden-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-golden)' $(SCRATCH)/level-golden-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-golden-test.log && grep -q '^level-golden: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-golden-test.log
+test: level-golden-test
+level-stage: import ## Explicit authoring command: reproducibly cook LEVEL's layout and manifest; tests only verify their pins
+	@$(GODOT) --headless --path . --script tools/level_stage.gd -- --level $(LEVEL)
 LEVEL ?= bridge
 .PHONY: level-eval level-eval-test
 level-eval: import ## AC8 (S2): a level against its thresholds (prints "level-eval: <id> ok"); LEVEL=<id>, LAYOUT=<json> scores a candidate (search only)

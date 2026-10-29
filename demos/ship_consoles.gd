@@ -235,7 +235,7 @@ func prompt_text() -> String:
 		var st: Dictionary = stations[t.id]
 		return "%s · E use" % st.name if st.active else "%s · offline (reserved)" % st.name
 	if demo.active_level == 1:
-		return "Decisions are made on the bridge · take the lift (E at the landing)"
+		return ""
 	if not _aimed.is_empty():
 		return "%s · click to walk there" % stations[_aimed].name
 	return ""

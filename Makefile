@@ -1264,7 +1264,7 @@ ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation 
 .PHONY: ship-ui-capture
 ship-ui-capture: ## AC14: the ship UI's review frames at 1280x720 and 2560x1440 + contact sheet -> renders/ship_ui/ (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --path . --script tools/ship_ui_capture.gd > $(SCRATCH)/ship-ui-capture.log 2>&1; rc=$$?; grep -E '^(frame|ship-ui-capture)' $(SCRATCH)/ship-ui-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-capture.log && grep -q '^ship-ui-capture: OK' $(SCRATCH)/ship-ui-capture.log
+	@$(GODOT_SIM) --path . --script tools/ship_ui_capture.gd $(CAPTURE_ARGS) > $(SCRATCH)/ship-ui-capture.log 2>&1; rc=$$?; grep -E '^(frame|ship-ui-capture)' $(SCRATCH)/ship-ui-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-capture.log && grep -q '^ship-ui-capture: OK' $(SCRATCH)/ship-ui-capture.log
 	@for f in renders/ship_ui/*_1280x720.png renders/ship_ui/contact_sheet.png; do sips -Z 700 $$f --out $${f%.png}_700.png > /dev/null; done
 
 # ---- M4.7: the Archive codex's lore (design m4-first-journey.md "M4.7")
