@@ -71,12 +71,8 @@
       "description": "Instrument only, design 1a/1b/1c and one suite-profile case in the existing rig control; no rig_check.sh or make wiring edit. Test-first fixture control then implementation then hardened R/C and supplemental guard drills. All seven profile subcommands, 30-second load sampler and single-printf append are included.",
       "status": "in_progress",
       "approval": "D-126 C (L4 ordered) plus D-88 (approved test/tooling hygiene); no open question touches M1a",
-      "depends_on": [
-
-      ],
-      "dependencies": [
-
-      ],
+      "depends_on": [],
+      "dependencies": [],
       "blocker": null,
       "resume_predicate": "No blocker; M1a only is authorized",
       "acceptance_criteria": [
@@ -177,7 +173,57 @@
       ],
       "notes": [
         "Authorized status in_progress means ready for execution, not implementation complete. Planner writes only the plan and JSON.",
-        "All control writes stay under mktemp T; no writes under HOME or ~/.ailang. External guards are observations, never seeded writes."
+        "All control writes stay under mktemp T; no writes under HOME or ~/.ailang. External guards are observations, never seeded writes.",
+        "M1a executor evidence, iteration 56: implemented instrument/control only, uncommitted. M1b/M2/M3 remain blocked; passes remains false and all statuses/blockers are unchanged. Controller outside-sandbox gates and independent evaluation remain required.",
+        "RED: tools/test_suite_profile.sh written before either instrument; .godot/tmp/m1a_red.log has 40 cases, 20 named missing-instrument failures, rc=1. Read-only git archive of pinned c2e70e15 with only the control copied in independently produced the same rc=1 (.godot/tmp/m1a_red_base.log).",
+        "Pristine drill preflight: missing wrapper source gives rc=2 (.godot/tmp/m1a_preflight.log), not a killed mutation. The plan drill block is byte-for-byte saved in .godot/tmp/suite-drills.sh; final cmp rc=0. R/C source anchors are unchanged.",
+        "AC1 GREEN: suite-profile control: 40 cases, 0 failures; rc=0 (.godot/tmp/sp.log). Every case ran on /usr/bin/make GNU Make 3.81 and /opt/homebrew/bin/gmake GNU Make 4.4.1. Timed full control: real 17.07s, user 7.30s, sys 6.81s (.godot/tmp/sp.time).",
+        "AC12 GREEN: drillsp R: killed (rc-passthrough), R rc=0; drillsp C: killed (compare-missing), C rc=0 (.godot/tmp/m1a_rc_drills.log). Each verbatim drill asserts an unmutated rc=0, changed source, mutated rc=1 and exactly its intended aggregate FAIL name.",
+        "Supplemental GREEN: 31 independent scratch mutations; each baseline rc=0, mutated rc=1, exact named FAIL, and both distinct makes failed that case. .godot/tmp/m1a_mutations_final.log contains every source diff and both transcripts; .godot/tmp/m1a_mutations_table.txt lists the results. Atomic split mutation uses a fixture barrier to guarantee interleaving.",
+        "AC4 GREEN: rig-check control: 9 cases, 0 failures; rc=0 (.godot/tmp/rc.log). All eight original named cases remain ok; exactly one suite-profile case invokes sh tools/test_suite_profile.sh. Nested count is 8, outer count 9. tools/rig_check.sh has no changes.",
+        "Fast gates GREEN: sh -n and dash -n on all three new scripts plus tools/test_rig_check.sh, each rc=0 (.godot/tmp/m1a_syntax.log); make python-guard rc=0, 20 allowlisted and 0 awaiting AILANG port (.godot/tmp/m1a_python_guard.log); make uid-guard rc=0, 352 .uid files (.godot/tmp/m1a_uid_guard.log).",
+        "AC13: working-tree/untracked scope is the six authorized paths only; no Makefile, mk/*, held policy file, rig_check.sh or Python edits. Scope evidence .godot/tmp/m1a_scope.log; final diff whitespace and JSON checks recorded in .godot/tmp/m1a_final_checks.log. No git write operations, real suite targets or network actions were used.",
+        "Controller deviation A (portability): discover make and gmake on PATH, accept GNU only, dedupe by version first line, require at least one, count actual executions. No-gmake and duplicate-version fixtures both pass 20 cases; absent-gmake emits exactly one required line: suite-profile control: gmake absent; ran on GNU Make 3.81 only (.godot/tmp/m1a_discovery.log).",
+        "Controller deviation B (portability): POSIX sh wrapper, milliseconds via Perl Time::HiRes, same-shell times, sysctl vm.loadavg else /proc/loadavg and sysctl hw.ncpu else getconf _NPROCESSORS_ONLN. sh -n and installed dash -n pass. Actual host sysctl reads are denied by sandbox and are UNINFORMATIVE UNDER SANDBOX; control probes are deterministic binaries inside T. Actual Linux runtime was unavailable; controller must rerun host probes outside sandbox.",
+        "Controller deviation C (speed): sampler interval 30 is asserted via header and a fixture sleep stub recording its argument, without waiting 30s or adding a production cadence knob. Fixture sleeps are at most 1s. Full 40-execution control measured 17.07s, below 60s.",
+        "Controller deviation D (coverage over estimate): retained all 20 cases and all mutation variants despite exceeding approximately 300 LOC. Shared helpers cover fixtures, synthetic records, reports and rc checks. New source/control LOC: timed_recipe_shell.sh 14, suite_profile.sh 247, test_suite_profile.sh 254 (515 total).",
+        "Implementation deviation: closure metadata uses an inert scratch makefile/goal for a safe fixture database query rather than --eval, which GNU Make 3.81 lacks. Hash input is the sorted closure target names. No real Makefile database or suite was executed by this executor.",
+        "Implementation deviation: optional named-case argument to the control runs that case on every discovered distinct GNU make; used only to keep independent supplemental drills fast. Default invocation still asserts all 20 cases per make, and R/C use the complete default control.",
+        "Implementation deviation: report adds explicit --load-rule strict|fallback (strict default) and --stage M2|M3 (M2 default) so the common load fallback and 0.35 stage threshold are reviewable, never silently inferred. Repeated slots replace rather than inflate independent sample counts, with attempt limited to 0..2.",
+        "Implementation deviation: the verbatim drill block was initially saved in ignored scratch while reading the contract, before the initial RED run; instrument sources were still absent at RED and no drill anchors were adjusted. Supplemental cleanup mutation removes both sampler kill and wait to avoid a deliberately unbounded wait; the case reaps the leaked fixture sampler.",
+        "Execution constraint: no sprint-executor skill was exposed in the available catalog or found under the bounded repo/global skill locations. Followed the explicit test-first sprint contract directly; no subagents, external messages or permission requests were needed.",
+        "bare-true / bare: baseline=0 mutated=1 killed=yes",
+        "submake-level / child: baseline=0 mutated=1 killed=yes",
+        "top-target-j2 / top: baseline=0 mutated=1 killed=yes",
+        "caller-top-poison / poison: baseline=0 mutated=1 killed=yes",
+        "parallel-overlap / serial: baseline=0 mutated=1 killed=yes",
+        "cpu-busy-sleep / cpu: baseline=0 mutated=1 killed=yes",
+        "compare-fewer-extra / fewer: baseline=0 mutated=1 killed=yes",
+        "compare-fewer-extra / extra: baseline=0 mutated=1 killed=yes",
+        "closure-mismatch / closure: baseline=0 mutated=1 killed=yes",
+        "overhead-200 / slow: baseline=0 mutated=1 killed=yes",
+        "atomic-rows / split: baseline=0 mutated=1 killed=yes",
+        "load-sampler / sampler: baseline=0 mutated=1 killed=yes",
+        "load-sampler / cadence: baseline=0 mutated=1 killed=yes",
+        "sampler-cleanup / cleanup: baseline=0 mutated=1 killed=yes",
+        "report-version / version: baseline=0 mutated=1 killed=yes",
+        "report-load / loadfile: baseline=0 mutated=1 killed=yes",
+        "report-load / edges: baseline=0 mutated=1 killed=yes",
+        "report-load / max8: baseline=0 mutated=1 killed=yes",
+        "report-load / medianload: baseline=0 mutated=1 killed=yes",
+        "report-load / attempt: baseline=0 mutated=1 killed=yes",
+        "report-load / slot: baseline=0 mutated=1 killed=yes",
+        "report-medians / include381: baseline=0 mutated=1 killed=yes",
+        "report-medians / two: baseline=0 mutated=1 killed=yes",
+        "report-medians / threshold: baseline=0 mutated=1 killed=yes",
+        "report-medians / m3: baseline=0 mutated=1 killed=yes",
+        "summary-targets / group: baseline=0 mutated=1 killed=yes",
+        "summary-targets / count: baseline=0 mutated=1 killed=yes",
+        "summary-targets / sort: baseline=0 mutated=1 killed=yes",
+        "gap-agree / agree: baseline=0 mutated=1 killed=yes",
+        "gap-agree / trace: baseline=0 mutated=1 killed=yes",
+        "temp-only / outside: baseline=0 mutated=1 killed=yes",
+        "Controller re-run outside the sandbox (iteration 56): the first AC1 run gave 40 cases, 1 failure (load-sampler on gmake); 5 reruns were green. Under 16 busy loops, 1 of 25 to 40 runs failed. Debug capture (set -x plus a copy of the fixture dir): load.tsv held a half row '<epoch><TAB>' because the sampler was killed during $(load1) and printf still wrote. That is a production defect (report would refuse the run), so the controller fixed it in tools/suite_profile.sh: write a row only when load1 returned a value. Also hardened the fixture: its recipe waits at most 5 s for the sampler's first sleep. After the fix: 0 of 80 under the same load; AC1 3/3 green (40 cases, 0 failures); AC4 9 cases, 0 failures; drills R and C killed; cadence-60 mutant still killed (rc 1). passes stays false until rig/full and the evaluator."
       ],
       "files": [
         "tools/timed_recipe_shell.sh",
@@ -722,9 +768,7 @@
     "Held PRs may alter closure, invalidating baseline and requiring >=3 new comparable serial runs.",
     "M3 sim decomposition and raw AC7 count invariant must be reconciled without weakening coverage."
   ],
-  "evaluations": [
-
-  ],
+  "evaluations": [],
   "notes": [
     "Exactly two planner outputs; no tool implementation, git writes, full suite, unsafe make database dump, or long target run.",
     "M1a in_progress; M1b BLOCKED: D-129 RESOLVED; M2 BLOCKED: D-129 plus M1b baseline; M3 BLOCKED: D-129 plus held-file predicate and M2.",
@@ -737,36 +781,28 @@
       "milestone": "M1a",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
     },
     {
       "milestone": "M1b",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
     },
     {
       "milestone": "M2",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
     },
     {
       "milestone": "M3",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "No package-like capability: repo-specific shell/awk make orchestration and fixture tests only; registry search/info/docs inapplicable, no new package dependency or source logic."
     }
   ],

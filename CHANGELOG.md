@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### rig-test-speed (2026-10-29)
+
+#### Added
+
+- **Suite profiling instruments and fixture controls** (R1-RIG-TEST-SPEED M1a). Per-recipe wall/CPU timing, nested-target attribution, load sampling, coverage comparisons and reproducible reports are available through `tools/suite_profile.sh`. The existing rig-check control now runs the profiler's 20 cases on each distinct GNU make; suite execution and rig policy are unchanged.
+
 ### rig-watchdog (2026-10-28)
 
 #### Changed
