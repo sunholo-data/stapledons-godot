@@ -11,6 +11,7 @@ extends SceneTree
 ## manual gate.
 ##   --level <id> [--layout <json>] [--tag <tag>] [--out <dir>]
 ##   --check-stop  headless smoke: real sim stop + actual gantry/balcony camera, no image rendering
+##   --clamp-check  Commons under-terrace Bow/Astern at rest, cruise and stop (actual runtime clamp)
 
 const PX := Vector2i(1280, 720)
 var demo: Node
@@ -28,6 +29,10 @@ func _arg(args: PackedStringArray, k: String, def := "") -> String:
 func _run() -> void:
 	var args := OS.get_cmdline_user_args()
 	var id := _arg(args, "--level", "bridge")
+	var clamp_check := args.has("--clamp-check")
+	if clamp_check and id != "commons":
+		printerr("level-capture: --clamp-check requires Commons")
+		quit(2);return
 	var doc := LevelEval.load_doc(_arg(args, "--layout", LevelEval.doc_path(id)))
 	var out := _arg(args, "--out", "res://renders/levels/%s/%s" % [id, _arg(args, "--tag", "capture")])
 	if doc.is_empty() or not LevelSchema.validate(doc).is_empty():
@@ -77,12 +82,16 @@ func _run() -> void:
 			if not _prepare_stop():bad.append("sim-driven stop not reached");continue
 		elif not demo.set_sky_state(sky):bad.append("sky state "+sky);continue
 		for s: Dictionary in doc.stages:
+			if clamp_check and str(s.id) != "court":continue
 			for f: Dictionary in s.surfaces:
 				var c := LevelMetrics.gltf(f.get("at", [float(s.spawn[0]), float(s.spawn[1]), float(f.z_m)]))
+				var surface_id := str(f.id)
+				if clamp_check:
+					c=Vector3(34,57,-6);surface_id="underterrace"
 				for v: Dictionary in s.views:
 					var head := c + Vector3(0, LevelMetrics.HEAD_M, 0)
 					var under := str(v.get("kind", "walk")) == "walk" and not lm.hit(head, head + Vector3(0, float((v.get("ceiling_clamp", LevelMetrics.CLAMP) as Dictionary).get("probe_m", 8.0)), 0)).is_empty()
-					var name := "%s_%s_%s_%s" % [s.id, f.id, v.id, sky]
+					var name := "%s_%s_%s_%s" % [s.id, surface_id, v.id, sky]
 					demo.consoles.cancel_walk()
 					if id=="commons" and demo.level_runtime!=null:
 						demo.active_level=1;demo.walk=demo.walk_lower
@@ -106,7 +115,8 @@ func _run() -> void:
 					var path := "%s/%s.png" % [out, name]
 					img.save_png(path)
 					var eye: Vector3=demo.camera.global_position
-					poses.append({"name":name,"stage":s.id,"surface":f.id,"view":demo.director.view_id,"foot_gltf_m":[c.x,c.y,c.z],"eye_gltf_m":[eye.x,eye.y,eye.z],"clamp_share":demo.director.ceiling_blend,"sim_stop":sky=="stop"})
+					poses.append({"name":name,"stage":s.id,"surface":surface_id,"view":demo.director.view_id,"foot_gltf_m":[c.x,c.y,c.z],"eye_gltf_m":[eye.x,eye.y,eye.z],"clamp_share":demo.director.ceiling_blend,"sim_stop":sky=="stop"})
+					if clamp_check and demo.director.ceiling_blend<.95:bad.append(name+" did not engage the actual ceiling clamp")
 					if sky=="stop":
 						var body_point: Vector3=demo.camera.global_position+_stop_body_direction()*1000.
 						var body_pixel: Vector2=demo.camera.unproject_position(body_point)
