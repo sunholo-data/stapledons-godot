@@ -173,7 +173,7 @@ func test_control_table() -> void:
 	# R2-CAMERA-FORWARD views in the help (D-93): each bridge walk view's prompt key ("Bow · 7",
 	# "Astern · 9", views.json) names that view in its help row; R returns to the level's default;
 	# 8 is reserved; 1-3 and = / - are the developer presets; no row describes the old sky looks.
-	var vd: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/camera/views.json"))
+	var vd: Dictionary = CameraDirector.load_views()
 	var bridge: Dictionary = vd.levels.bridge
 	var named := []
 	for v: Dictionary in bridge.views:

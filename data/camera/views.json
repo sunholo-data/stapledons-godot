@@ -1,29 +1,12 @@
 {
-  "schema": "stapledons.camera.views/2",
-  "about": "R2-CAMERA-FORWARD (design_docs/implemented/r2/camera-forward.md, ledger D-91/D-92): every pose the player camera takes. Validated by CameraDirector.validate (make camera-test). Angles in degrees, lengths in metres, glTF axes (y up, the bow is -z). levels: each deck level's authored views; a walk view has a FIXED yaw and pitch and slides with the captain (never turns); yaw_deg uses ShipCamera's convention, forward = (cos, 0, sin), so 270 looks along -z, the bow. A legacy level keeps the R2-CAMERA sector views (the Commons, until its own pass). views: the R2-CAMERA views, kept as the Commons' player views, the bridge's developer zoom presets (z1/z2/z3_bridge, OQ4), and tool and golden poses (sky_*); per-ring values are [stations ring, rail ring].",
+  "schema": "stapledons.camera.views/3",
+  "about": "Global camera settings and developer/tool presets. Player views, occluders and dressing are owned by level manifests (R2-LEVELS LP1b; fixed views slide, never turn).",
   "fov_deg": 78.0,
   "envelope_m": 95.0,
   "travel_axis": "bow",
   "default_level": 2,
   "sectors": {"count": 8, "hysteresis_deg": 10.0, "ring_split_m": 12.0, "ring_hysteresis_m": 1.0, "switch_s": 0.8},
-  "levels": {
-    "bridge": {"deck_y_m": 82.0, "default": "bow", "occluders": ["spire", "shrine_ribs", "archive_terminal", "archive_detail", "rim_frond", "lift"], "dressing": {"about": "R2-BRIDGE-STYLE S5 (ShipDressing): below_rail = grown canopy silhouettes standing on the Commons deck (57 m) past the bridge's edge, inside the bubble, shown on the bridge only. (The camera-attached foreground cards were removed on Mark's review of #322.)",
-      "below_rail": [
-        {"kind": "canopy", "pos_m": [27.5, 57.0, 0.0], "radius_m": 3.2, "height_m": 5.5, "colour": "#6E968F"},
-        {"kind": "canopy", "pos_m": [21.07, 57.0, 17.68], "radius_m": 2.6, "height_m": 4.2, "colour": "#7A8F6E"},
-        {"kind": "canopy", "pos_m": [4.78, 57.0, 27.08], "radius_m": 3.6, "height_m": 6.4, "colour": "#6A8C95"},
-        {"kind": "canopy", "pos_m": [-13.75, 57.0, 23.82], "radius_m": 2.8, "height_m": 4.8, "colour": "#8A9070"},
-        {"kind": "canopy", "pos_m": [-25.84, 57.0, -9.41], "radius_m": 3.2, "height_m": 5.5, "colour": "#6E968F"},
-        {"kind": "canopy", "pos_m": [-13.75, 57.0, -23.82], "radius_m": 2.6, "height_m": 4.2, "colour": "#7A8F6E"},
-        {"kind": "canopy", "pos_m": [4.78, 57.0, -27.08], "radius_m": 3.6, "height_m": 6.4, "colour": "#6A8C95"},
-        {"kind": "canopy", "pos_m": [21.07, 57.0, -17.68], "radius_m": 2.8, "height_m": 4.8, "colour": "#8A9070"}
-      ]
-      }, "views": [
-      {"id": "bow", "kind": "walk", "name": "Bow", "anchor": "captain", "yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "height_m": 1.6, "dead_zone": [0.24, 0.2], "ease_s": 1.2, "cue_ease_s": 1.5, "billboard": "upright", "prompt": "Bow · 7"},
-      {"id": "astern", "kind": "walk", "name": "Astern", "anchor": "captain", "yaw_deg": 90.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "height_m": 1.6, "dead_zone": [0.24, 0.2], "ease_s": 1.2, "cue_ease_s": 1.5, "billboard": "upright", "prompt": "Astern · 9"}
-    ]},
-    "commons": {"deck_y_m": 57.0, "legacy": true, "default": "z2_lower"}
-  },
+  "level_manifest_index": "res://assets/levels/index.json",
   "views": [
     {"id": "z1", "kind": "level", "level": 1, "area": "bridge", "name": "Close", "anchor": "captain", "yaw_rule": "sector", "turn_deg": [135.0, 30.0], "pitch_deg": -25.0, "distance_m": 4.5, "height_m": 1.6, "frame_deg": 15.1, "ease_s": 0.45, "cells": {"7": {"turn_deg": -120.0}}},
     {"id": "z2", "kind": "level", "level": 2, "area": "bridge", "name": "Deck", "anchor": "captain", "yaw_rule": "sector", "turn_deg": [135.0, 30.0], "pitch_deg": -35.0, "distance_m": 12.0, "height_m": 1.6, "frame_deg": 15.1, "ease_s": 0.45},

@@ -1,0 +1,11 @@
+{
+  "schema": "stapledons.level.index/1",
+  "levels": {
+    "bridge": "res://assets/levels/bridge/manifest.json",
+    "commons": {
+      "deck_y_m": 57.0,
+      "legacy": true,
+      "default": "z2_lower"
+    }
+  }
+}

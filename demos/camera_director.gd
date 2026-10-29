@@ -112,12 +112,76 @@ var _anchor := Vector3.ZERO
 var _occ := {} # MeshInstance3D -> its current transparency (0 = opaque)
 var occ_fading: Array = [] # the members fading this frame (rules a, b, c)
 var _was_lifting := false
+var _stage_key := ""
+var ceiling_blend := 0.0
 const PROMPT_S := 10.0
 
 
 static func load_views(path := VIEWS_PATH) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	return parsed if parsed is Dictionary else {}
+	if not parsed is Dictionary:return {}
+	var d: Dictionary = parsed
+	if d.get("schema") != "stapledons.camera.views/3":return d
+	var index_path := str(d.get("level_manifest_index", ""))
+	var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path)) if FileAccess.file_exists(index_path) else null
+	d["levels"] = {}
+	d["manifest_errors"] = []
+	if not index is Dictionary or index.get("schema") != "stapledons.level.index/1":
+		d.manifest_errors.append("level manifest index missing or invalid")
+		return d
+	for id: String in index.get("levels", {}):
+		var source: Variant = index.levels[id]
+		if source is Dictionary and source.get("legacy", false):
+			d.levels[id] = source
+			continue
+		var file := str(source)
+		var m: Variant = JSON.parse_string(FileAccess.get_file_as_string(file)) if FileAccess.file_exists(file) else null
+		var errs := LevelSchema.validate(m)
+		if not errs.is_empty():
+			d.manifest_errors.append("%s: %s" % [id, errs])
+			continue
+		if m.id != id:
+			d.manifest_errors.append("level id does not match index: %s" % id)
+			continue
+		var config: Dictionary = m.get("camera", {}).duplicate(true)
+		config["manifest"] = m
+		config["manifest_source"] = file
+		config["deck_y_m"] = m.deck_z_m
+		config["default"] = m.stages[0].default_view
+		config["views"] = []
+		for view: Dictionary in m.stages[0].views:
+			config.views.append(_stage_defaults(view))
+		d.levels[id] = config
+	return d
+
+
+static func _stage_defaults(v: Dictionary) -> Dictionary:
+	var out := {"anchor": "captain", "height_m": 1.6, "dead_zone": [0.24, 0.2], "ease_s": 1.2,
+		"cue_ease_s": 1.5, "billboard": "upright", "prompt": "Astern · 9" if v.get("id") == "astern" else "Bow · 7"}
+	out.merge(v, true)
+	return out
+
+
+## Resolve overlapping stages by floor height, never by the highest surface above the captain.
+func stage_at(id: String, foot: Vector3) -> Dictionary:
+	var m: Dictionary = levels.get(id, {}).get("manifest", {})
+	var best := {}
+	var distance := INF
+	for s: Dictionary in m.get("stages", []):
+		var b: Array = s.bounds_ship_m
+		if foot.x < float(b[0]) or foot.x > float(b[1]) or -foot.z < float(b[2]) or -foot.z > float(b[3]):continue
+		for surface: Dictionary in s.surfaces:
+			var delta := absf(foot.y - float(surface.z_m))
+			if delta < distance:
+				distance = delta;best = s
+	return best
+
+
+func stage_view(id: String, foot: Vector3, which: String) -> Dictionary:
+	var stage := stage_at(id, foot)
+	for v: Dictionary in stage.get("views", []):
+		if str(v.id) == which:return _stage_defaults(v)
+	return {}
 
 
 func _init(owner_demo: Node = null, path := VIEWS_PATH) -> void:
@@ -204,8 +268,9 @@ static func validate(d: Dictionary) -> PackedStringArray:
 ## rule has a negative control in make camera-test.
 static func validate_levels(d: Dictionary) -> PackedStringArray:
 	var out := PackedStringArray()
-	if str(d.get("schema", "")) != "stapledons.camera.views/2":
-		out.append("schema must be stapledons.camera.views/2")
+	if str(d.get("schema", "")) != "stapledons.camera.views/3":
+		out.append("schema must be stapledons.camera.views/3")
+	for error: String in d.get("manifest_errors", []):out.append(error)
 	if str(d.get("travel_axis", "")) != ShipCamera.TRAVEL_AXIS:
 		out.append("travel_axis must be '%s' (ShipCamera.TRAVEL_AXIS, D-92)" % ShipCamera.TRAVEL_AXIS)
 	var lv: Variant = d.get("levels")
@@ -409,12 +474,40 @@ func _sky(v: Dictionary, foot: Vector3, k: int) -> Transform3D:
 ## R2-CAMERA-FORWARD §D2/§D3: a walk view's pose for the slide anchor `at` (a deck point): the
 ## eye back_m behind it along the view's fixed yaw and rise_m above the deck, looking at the fixed
 ## pitch. Past the envelope the eye SLIDES toward the mast axis (same height, same angle).
+func stage_pose(v: Dictionary, at: Vector3, clamped := false) -> Transform3D:
+	var result := LevelCamera.pose(v, at, clamped)
+	result.origin = _envelope_slide(result.origin, str(v.get("id", "")))
+	return result
+
+
 func walk_pose(v: Dictionary, at: Vector3) -> Transform3D:
-	var yaw := deg_to_rad(float(v.get("yaw_deg", 270.0)))
-	var f := Vector3(cos(yaw), 0.0, sin(yaw))
-	var eye := at - f * float(v.get("back_m", 9.0)) + Vector3.UP * maxf(float(v.get("rise_m", 5.5)), DECK_CLEAR_M)
-	eye = _envelope_slide(eye, str(v.get("id", "")))
-	return Transform3D(basis_of(yaw, deg_to_rad(float(v.get("pitch_deg", -8.0)))), eye)
+	return stage_pose(v, at)
+
+
+func _select_stage(foot: Vector3) -> void:
+	var stage := stage_at(level_name(), foot)
+	if stage.is_empty():return
+	for v: Dictionary in stage.views:views[str(v.id)] = _stage_defaults(v)
+	var key := "%s/%s" % [level_name(),stage.id]
+	if key != _stage_key:
+		_stage_key = key
+		if not stage.views.any(func(v: Dictionary) -> bool:return v.id == deck_view):
+			deck_view = str(stage.default_view)
+		_anchor = _foot
+		ceiling_blend = 0.0
+
+
+func _stage_target(v: Dictionary, anchor: Vector3, foot: Vector3, dt: float) -> Transform3D:
+	var under := false
+	if level_name() != "bridge" and str(v.get("kind", "walk")) != "enclosed" and demo.camera.is_inside_tree():
+		var probe := float((v.get("ceiling_clamp", LevelCamera.CLAMP) as Dictionary).get("probe_m",8.0))
+		var head := foot + Vector3.UP * 1.6
+		var query := PhysicsRayQueryParameters3D.create(head,head+Vector3.UP*probe)
+		query.hit_back_faces = true
+		under = not demo.camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+	var amount := 1.0 if under else 0.0
+	ceiling_blend = amount if motion == "reduced" or not has_pose else move_toward(ceiling_blend,amount,dt/0.3)
+	return stage_pose(v,anchor).interpolate_with(stage_pose(v,anchor,true),ceiling_blend)
 
 
 func _envelope_slide(eye: Vector3, id: String) -> Vector3:
@@ -713,7 +806,7 @@ func sky(id: String, cued := false, force := false) -> bool:
 ## a switch eases once (or cuts under reduced motion) and the key mapping follows at the ease's
 ## end. `force`: the interlude hold. Not at a console, in the lift or during the benchmark.
 func walk(id: String, cued := false, force := false) -> bool:
-	if demo == null or not walk_level() or not views.has(id) or str(views[id].get("kind", "")) != "walk":
+	if demo == null or not walk_level() or not views.has(id) or not str(views[id].get("kind", "")) in ["walk", "enclosed"]:
 		return false
 	if (hold and not force) or (cued and overridden):
 		return false
@@ -851,6 +944,7 @@ func advance(dt: float) -> void:
 	var foot: Vector3 = demo.avatar_pos
 	_follow(foot, dt)
 	area = "lower" if demo.active_level == 1 else "bridge"
+	_select_stage(foot)
 	var target: Transform3D
 	var lifting: bool = demo.lift != null and demo.lift.travelling()
 	if _was_lifting and not lifting:
@@ -870,11 +964,11 @@ func advance(dt: float) -> void:
 		var wv: Dictionary = views[deck_view]
 		if view_id == "lift":
 			_start_blend(float(views.get("lift", {}).get("ease_s", 0.6)))
-		if not has_pose or not views.has(view_id) or str(views[view_id].get("kind", "")) != "walk":
+		if not has_pose or not views.has(view_id) or not str(views[view_id].get("kind", "")) in ["walk", "enclosed"]:
 			_anchor = _foot # entering the stage (spawn, a teleport, the lift, a preset): frame the captain
 		view_id = deck_view
 		sector = -1
-		target = walk_pose(wv, _slide(wv))
+		target = _stage_target(wv, _slide(wv), foot, dt)
 	else:
 		if area != "bridge" and not hold:
 			situation = ""

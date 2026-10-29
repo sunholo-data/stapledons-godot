@@ -111,7 +111,7 @@ func test_schema() -> void:
 	none.views[0].distance_m = 0.0
 	check("AC1 mutant: a level view at distance 0 (first person) is refused", not CameraDirector.validate(none).is_empty())
 	# R2-CAMERA-FORWARD AC-V9: views.json v2 (level-keyed walk views) and its negative controls.
-	check("schema v2", str(d.schema) == "stapledons.camera.views/2" and CameraDirector.validate_levels(d).is_empty() and str(d.levels.bridge.default) == "bow" and bool(d.levels.commons.legacy))
+	check("schema v3 manifest camera", str(d.schema) == "stapledons.camera.views/3" and CameraDirector.validate_levels(d).is_empty() and str(d.levels.bridge.default) == "bow" and bool(d.levels.commons.legacy))
 	var controls := {
 		"no default": func(x: Dictionary) -> void: x.levels.bridge.erase("default"),
 		"foreign default": func(x: Dictionary) -> void: x.levels.bridge.default = "z2",
