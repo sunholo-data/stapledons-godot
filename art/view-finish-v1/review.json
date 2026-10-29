@@ -1,8 +1,440 @@
 {
-  "title": "Bridge & Commons · lived-in art pilot",
-  "revision": "Pilot dfc4142f · current layout and cameras retained",
-  "round": "D-133 bounded Commons art pilot",
+  "title": "Bridge & Commons · wider civic backdrop",
+  "revision": "D-134 · kit33eb1f60 · configac8dc7a8",
+  "round": "Wider Commons architectural backdrop review",
   "frames": [
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_rest_before.png",
+      "file": "commons_backdrop_court_bow_rest_before.png",
+      "title": "Court · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_rest_after.png",
+      "file": "commons_backdrop_court_bow_rest_after.png",
+      "title": "Court · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_rest_before.png",
+      "file": "commons_backdrop_court_astern_rest_before.png",
+      "title": "Court · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_rest_after.png",
+      "file": "commons_backdrop_court_astern_rest_after.png",
+      "title": "Court · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_cruise_before.png",
+      "file": "commons_backdrop_court_bow_cruise_before.png",
+      "title": "Court · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_cruise_after.png",
+      "file": "commons_backdrop_court_bow_cruise_after.png",
+      "title": "Court · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_cruise_before.png",
+      "file": "commons_backdrop_court_astern_cruise_before.png",
+      "title": "Court · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_cruise_after.png",
+      "file": "commons_backdrop_court_astern_cruise_after.png",
+      "title": "Court · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_stop_before.png",
+      "file": "commons_backdrop_court_bow_stop_before.png",
+      "title": "Court · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_stop_after.png",
+      "file": "commons_backdrop_court_bow_stop_after.png",
+      "title": "Court · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_stop_before.png",
+      "file": "commons_backdrop_court_astern_stop_before.png",
+      "title": "Court · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_stop_after.png",
+      "file": "commons_backdrop_court_astern_stop_after.png",
+      "title": "Court · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_rest_before.png",
+      "file": "commons_backdrop_underterrace_bow_rest_before.png",
+      "title": "Under terrace · actual clamp · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_rest_after.png",
+      "file": "commons_backdrop_underterrace_bow_rest_after.png",
+      "title": "Under terrace · actual clamp · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_rest_before.png",
+      "file": "commons_backdrop_underterrace_astern_rest_before.png",
+      "title": "Under terrace · actual clamp · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_rest_after.png",
+      "file": "commons_backdrop_underterrace_astern_rest_after.png",
+      "title": "Under terrace · actual clamp · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_cruise_before.png",
+      "file": "commons_backdrop_underterrace_bow_cruise_before.png",
+      "title": "Under terrace · actual clamp · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_cruise_after.png",
+      "file": "commons_backdrop_underterrace_bow_cruise_after.png",
+      "title": "Under terrace · actual clamp · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_cruise_before.png",
+      "file": "commons_backdrop_underterrace_astern_cruise_before.png",
+      "title": "Under terrace · actual clamp · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_cruise_after.png",
+      "file": "commons_backdrop_underterrace_astern_cruise_after.png",
+      "title": "Under terrace · actual clamp · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_stop_before.png",
+      "file": "commons_backdrop_underterrace_bow_stop_before.png",
+      "title": "Under terrace · actual clamp · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_stop_after.png",
+      "file": "commons_backdrop_underterrace_bow_stop_after.png",
+      "title": "Under terrace · actual clamp · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_stop_before.png",
+      "file": "commons_backdrop_underterrace_astern_stop_before.png",
+      "title": "Under terrace · actual clamp · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_stop_after.png",
+      "file": "commons_backdrop_underterrace_astern_stop_after.png",
+      "title": "Under terrace · actual clamp · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_rest_before.png",
+      "file": "commons_backdrop_arcade_edge_bow_rest_before.png",
+      "title": "Arcade approach · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_rest_after.png",
+      "file": "commons_backdrop_arcade_edge_bow_rest_after.png",
+      "title": "Arcade approach · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_rest_before.png",
+      "file": "commons_backdrop_arcade_edge_astern_rest_before.png",
+      "title": "Arcade approach · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_rest_after.png",
+      "file": "commons_backdrop_arcade_edge_astern_rest_after.png",
+      "title": "Arcade approach · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_cruise_before.png",
+      "file": "commons_backdrop_arcade_edge_bow_cruise_before.png",
+      "title": "Arcade approach · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_cruise_after.png",
+      "file": "commons_backdrop_arcade_edge_bow_cruise_after.png",
+      "title": "Arcade approach · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_cruise_before.png",
+      "file": "commons_backdrop_arcade_edge_astern_cruise_before.png",
+      "title": "Arcade approach · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_cruise_after.png",
+      "file": "commons_backdrop_arcade_edge_astern_cruise_after.png",
+      "title": "Arcade approach · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_stop_before.png",
+      "file": "commons_backdrop_arcade_edge_bow_stop_before.png",
+      "title": "Arcade approach · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_stop_after.png",
+      "file": "commons_backdrop_arcade_edge_bow_stop_after.png",
+      "title": "Arcade approach · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_stop_before.png",
+      "file": "commons_backdrop_arcade_edge_astern_stop_before.png",
+      "title": "Arcade approach · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_stop_after.png",
+      "file": "commons_backdrop_arcade_edge_astern_stop_after.png",
+      "title": "Arcade approach · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_rest_before.png",
+      "file": "commons_backdrop_bridge_rim_bow_rest_before.png",
+      "title": "Bridge rim · look toward Commons · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_rest_after.png",
+      "file": "commons_backdrop_bridge_rim_bow_rest_after.png",
+      "title": "Bridge rim · look toward Commons · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_rest_before.png",
+      "file": "commons_backdrop_bridge_rim_astern_rest_before.png",
+      "title": "Bridge rim · look toward Commons · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_rest_after.png",
+      "file": "commons_backdrop_bridge_rim_astern_rest_after.png",
+      "title": "Bridge rim · look toward Commons · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_cruise_before.png",
+      "file": "commons_backdrop_bridge_rim_bow_cruise_before.png",
+      "title": "Bridge rim · look toward Commons · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_cruise_after.png",
+      "file": "commons_backdrop_bridge_rim_bow_cruise_after.png",
+      "title": "Bridge rim · look toward Commons · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_cruise_before.png",
+      "file": "commons_backdrop_bridge_rim_astern_cruise_before.png",
+      "title": "Bridge rim · look toward Commons · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_cruise_after.png",
+      "file": "commons_backdrop_bridge_rim_astern_cruise_after.png",
+      "title": "Bridge rim · look toward Commons · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_stop_before.png",
+      "file": "commons_backdrop_bridge_rim_bow_stop_before.png",
+      "title": "Bridge rim · look toward Commons · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_stop_after.png",
+      "file": "commons_backdrop_bridge_rim_bow_stop_after.png",
+      "title": "Bridge rim · look toward Commons · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_stop_before.png",
+      "file": "commons_backdrop_bridge_rim_astern_stop_before.png",
+      "title": "Bridge rim · look toward Commons · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_stop_after.png",
+      "file": "commons_backdrop_bridge_rim_astern_stop_after.png",
+      "title": "Bridge rim · look toward Commons · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
     {
       "group": "pilot",
       "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_rest_before.png",
@@ -1111,7 +1543,7 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "New: a lived-in Commons court pilot, with shared seating, books/cups/cloth, a reading corner, storage, plants and task lamps. Compare the same player views before/after. This is one art pilot, awaiting feedback before repetition; upper routes and other stages remain greybox. The macOS download below is the earlier S3 layout build and does not include the pilot furniture.",
+  "notice": "New wider-backdrop comparison: each Before keeps the furniture pilot; each After adds civic arcades, planted terraces, market canopies and low rim gardens across the real Commons deck. Review-only. The earlier native download below contains neither art pilot. S3/S5 and production propagation remain pending. This establishes civic extent; broad pale floor and repeated distant fronts remain visible work in progress, especially Astern. Further connected planting and paving are still needed for the concept’s richness.",
   "downloads": [
     {
       "source": "res://build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",

@@ -61,7 +61,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "S3 review ready, approval pending: seven surfaces/four heights reachable; current full42 representative frames plus6 actual clamp frames and6 final service frames pass. Service enclosure and captain alpha prepass fixed without weakening no-sky guard; zero uncovered pixels in all6 service views. Native f3e0b11c cold ship/title smoke and signedZIP integrity/HTTPS hash pass. Independent contact44/runtime95 checks pass. No detailed Commons art begun."
+      "notes": "S3 review ready, approval pending: seven surfaces/four heights reachable; current full42 representative frames plus6 actual clamp frames and6 final service frames pass. Service enclosure and captain alpha prepass fixed without weakening no-sky guard; zero uncovered pixels in all6 service views. Native f3e0b11c cold ship/title smoke and signedZIP integrity/HTTPS hash pass. Independent contact44/runtime95 checks pass. D-133/D-134 subsequently authorize the bounded art pilot while manual S3 acceptance remains pending."
     },
     {
       "id": "VFB",
@@ -327,8 +327,29 @@
   },
   "macro_backdrop_review": {
     "decision": "D-134",
-    "status": "in_progress",
+    "status": "ready_for_visual_review",
     "scope": "Layered architecture/planting across the wider physical Commons deck; review-only refinement of D-133. Existing WALK/cameras/bridge/spire/live sky retained.",
-    "production_propagation": false
+    "production_propagation": false,
+    "modules": 60,
+    "planted_anchors_and_cards": 120,
+    "practicals": 6,
+    "source_sha256": "33eb1f6057004afba4deba9a8673082e1862e9699a2255b49632761287e0776a",
+    "config_sha256": "ac8dc7a8d63dd7d46773d2c07294f9d6c75ebd2e7231d46843ba3756686b6c17",
+    "captures": 48,
+    "capture_errors": 0,
+    "geometry_routes_sightlines": {
+      "passed": 166,
+      "failed": 0
+    },
+    "notes": "Connected low planted arcs at two depths, civic fronts/alcoves and market shades. Original body-both thresholds exposed opposing fronts; lowered/repositioned NW and NE groups until all unchanged thresholds passed. No new WALK/camera/production activation. Local Blender source archive preserved; no upload.",
+    "gpu_pole_cases": {
+      "passed": 6,
+      "failed": 0,
+      "max_error_px": 0.103,
+      "limit_px": 0.75
+    },
+    "independent_review": "art/commons-backdrop-pilot/independent-review.md",
+    "visual_limit": "Ready for density/layout feedback; concept richness only partly resolved. Astern retains broad pale floor and distant repetition. Connected middle-distance planting/paving remains follow-up.",
+    "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#macro"
   }
 }

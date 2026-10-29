@@ -19,6 +19,13 @@ level-runtime-test: import ## VF1: manifest camera sources, stage resolution and
 	@$(GODOT_SIM) --headless --path . --script tests/test_level_runtime.gd > $(SCRATCH)/level-runtime-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-runtime)' $(SCRATCH)/level-runtime-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-runtime-test.log && grep -q '^level-runtime: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-runtime-test.log
 test: level-runtime-test
 .PHONY: commons-art-pilot-test commons-pilot-check commons-pilot-capture commons-pilot-golden
+.PHONY: commons-backdrop-check commons-backdrop-capture commons-backdrop-golden
+commons-backdrop-check: ## Whole-vertex envelope, actual floor, original sightline thresholds and routes
+	@$(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd > $(SCRATCH)/commons-backdrop-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-backdrop)' $(SCRATCH)/commons-backdrop-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-check.log
+commons-backdrop-capture: ## Matched actual player views; furniture remains present in both variants
+	@$(GODOT_SIM) --path . --script tools/commons_pilot_review.gd -- --config res://art/commons-backdrop-pilot/placements.json --out res://renders/view-finish/commons-backdrop-pilot > $(SCRATCH)/commons-backdrop-capture.log 2>&1; rc=$$?; grep '^commons-pilot-review:' $(SCRATCH)/commons-backdrop-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-capture.log
+commons-backdrop-golden: lens-assets m4-physics-probe ## Existing six pole cases with furniture and macro backdrop installed
+	@$(GODOT) --path . --script tools/commons_pilot_golden.gd -- --config res://art/commons-backdrop-pilot/placements.json > $(SCRATCH)/commons-backdrop-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|commons-pilot-golden)' $(SCRATCH)/commons-backdrop-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-golden.log && test "$$(grep -c '^ok    G-LVL-' $(SCRATCH)/commons-backdrop-golden.log)" = 6
 commons-art-pilot-test: import ## D-133 review loader: real authored GLB, material/transform/collision guards and atomic negative controls
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_commons_art_pilot.gd > $(SCRATCH)/commons-art-pilot.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-art-pilot)' $(SCRATCH)/commons-art-pilot.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-art-pilot.log && grep -q '^commons-art-pilot: [0-9]* passed, 0 failures$$' $(SCRATCH)/commons-art-pilot.log

@@ -53,7 +53,13 @@ Private gallery and native download: https://voights-mac-studio.tail97eda0.ts.ne
 
 `renders/levels/commons/s3/` contains 42 representative player views; `s3-clamp/` adds six actual under-terrace views, clamp share 1.0. The service has six independently checked final frames in `s3-service-final/`. Capture manifests, metrics and image hashes accompany them. Geometry and coloured find markers are placeholders for layout review. Use the checklist below before approving S3; approval is not inferred from automated checks or silence.
 
-After S3 acceptance: dress one court/arcade pilot, review its finish, then propagate the accepted treatment and request S5 appearance approval. Final performance, independent evaluation and exact-head `rig/full`/fast CI remain landing gates.
+D-133 authorized a bounded court/arcade art pilot before all manual S3 items were
+certified. D-134 refines that pilot across the wider physical deck: civic fronts,
+planted alcoves, market shades and low garden arcs, compared against furniture alone.
+See `art/commons-backdrop-pilot/README.md`. Existing WALK and cameras are unchanged;
+remote scenery does not add traversable area. Review this appearance before
+propagation; S3/S5 remain open. Final performance, independent evaluation and
+exact-head `rig/full`/fast CI remain landing gates.
 
 ## Playtest checklist (S3)
 - [ ] The lift arrival shows the court, the stalls and the starbow.
@@ -70,6 +76,8 @@ After S3 acceptance: dress one court/arcade pilot, review its finish, then propa
 | 2026-10-20 | D-100 | "we need more intricate level design now we have fixed position sorted" |
 | 2026-10-20 | D-103 | The brief was approved with the R2-LEVELS plan ("ok yes good") |
 | 2026-10-20 | D-104 | Curves: the terrace, gantry and balcony read as flowing, grown structures at S4 and S5; the greybox draws the gantry and balcony as arcs |
+| 2026-10-29 | D-133 | Develop one bounded lived-in court/arcade pilot; no blanket S3/S5 acceptance inferred. |
+| 2026-10-29 | D-134 | Enrich the wider backdrop toward the ship edge, using the concept's architectural/landscape depth and existing physical design. Review before propagation. |
 
 ## Change log
 | Version | Date | What changed |
