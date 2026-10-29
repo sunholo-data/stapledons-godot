@@ -67,3 +67,4 @@ The §B5 defaults. The greybox v0 fails `pole-ray` (the civic tower stands on th
 | Version | Date | What changed |
 |---|---|---|
 | v0 (mock) | 2026-10-20 | Greybox mock on `design/levels` (`tools/levels_intricate_mock.gd`): 7 surfaces, 4 heights, all reachable |
+| v1 (S2 enclosure correction) | 2026-10-29 | The service gallery gains an opaque shell beyond both fixed camera eyes (ship X 17–35, Y −15–21; floor 52.75, ceiling underside 56.5 m), plus its practical. WALK, routes, stage flags and camera poses are unchanged. The shell never fades. Runtime frustum/clearance tests and the full-resolution geometry-alpha capture guard prevent an enclosed view exposing sky. |

@@ -117,6 +117,11 @@ func _run() -> void:
 					var eye: Vector3=demo.camera.global_position
 					poses.append({"name":name,"stage":s.id,"surface":surface_id,"view":demo.director.view_id,"foot_gltf_m":[c.x,c.y,c.z],"eye_gltf_m":[eye.x,eye.y,eye.z],"clamp_share":demo.director.ceiling_blend,"sim_stop":sky=="stop"})
 					if clamp_check and demo.director.ceiling_blend<.95:bad.append(name+" did not engage the actual ceiling clamp")
+					if str(v.get("kind",""))=="enclosed":
+						var geometry_image: Image=demo.geometry_view.get_texture().get_image()
+						var uncovered:=uncovered_geometry_pixels(geometry_image)
+						poses[-1]["uncovered_geometry_pixels"]=uncovered
+						if uncovered!=0:bad.append("%s enclosed view exposes %d sky pixels" % [name,uncovered])
 					if sky=="stop":
 						var body_point: Vector3=demo.camera.global_position+_stop_body_direction()*1000.
 						var body_pixel: Vector2=demo.camera.unproject_position(body_point)
@@ -172,6 +177,18 @@ func _stop_body_in_frame() -> bool:
 	if direction.length()<.9:return false
 	var point: Vector3=demo.camera.global_position+direction*1000.
 	return not demo.camera.is_position_behind(point) and Rect2(Vector2.ZERO,Vector2(PX)).has_point(demo.camera.unproject_position(point))
+
+
+## Enclosed stages must cover every pixel in the actual geometry render, before sky composition.
+## Check full resolution: downsampling could erase a narrow space slit or a single open corner.
+static func uncovered_geometry_pixels(image: Image) -> int:
+	if image==null or image.is_empty():return -1
+	var rgba:=image.duplicate() as Image
+	rgba.convert(Image.FORMAT_RGBA8)
+	var bytes:=rgba.get_data();var uncovered:=0
+	for alpha in range(3,bytes.size(),4):
+		if bytes[alpha]<255:uncovered+=1
+	return uncovered
 
 
 func _variance(img: Image) -> float:

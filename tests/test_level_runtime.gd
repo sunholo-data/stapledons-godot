@@ -118,6 +118,7 @@ func test_playable_stage_camera() -> void:
 		demo.avatar_pos=ShipFrame.gltf_from_structure(stage.spawn);director.has_pose=false;director.advance(.016)
 		check("real stage %s spawn stays on its floor" % stage.id,demo.walk_lower.is_walkable_near(demo.avatar_pos))
 		check("real stage %s selects fixed player view" % stage.id,demo.active_stage_id()==stage.id and director.view_id in ["bow","astern"])
+	await test_service_enclosure(demo)
 	for route: Dictionary in demo.level_runtime.layout.routes:
 		if not route.kind in ["ladder","hatch"]:continue
 		demo.avatar_pos=LevelGreybox.route_end(route,"from");director.advance(0.)
@@ -167,3 +168,32 @@ func test_playable_stage_camera() -> void:
 	demo.lift.advance(1.0);demo.set_camera_motion("reduced")
 	check("enabling reduced motion completes current lift ride",not demo.lift.travelling() and demo.active_level==0 and director.view_id=="bow")
 	demo.queue_free();await process_frame
+
+
+func test_service_enclosure(demo: Node) -> void:
+	var director: CameraDirector=demo.director
+	demo.active_level=1;demo.walk=demo.walk_lower;demo.camera_mode="player"
+	director.set_motion("reduced");director.zoom_preset=false
+	for foot: Vector3 in [Vector3(26,52.75,-3),Vector3(20,52.75,-6),Vector3(18.5,52.75,3.5),Vector3(33.5,52.75,-9.5)]:
+		for view: String in ["bow","astern"]:
+			demo.avatar_pos=foot;director.deck_view=view;director.mapping_view=view;director.has_pose=false;director._blend={}
+			director.advance(.016)
+			var clear:=director.clear_after_fades(director.pose,foot)
+			check("enclosed %s at %s preserves captain clearance" % [view,foot],clear.captain and clear.eye_free and demo.walk_lower.is_walkable_near(foot))
+			var open_rays:=0
+			var size:=Vector2(demo.geometry_view.size)
+			var eye: Vector3=demo.camera.global_position
+			var space: PhysicsDirectSpaceState3D=demo.camera.get_world_3d().direct_space_state
+			for x in 32:
+				for y in 18:
+					var direction: Vector3=demo.camera.project_ray_normal(Vector2((x+.5)*size.x/32.,(y+.5)*size.y/18.))
+					var q:=PhysicsRayQueryParameters3D.create(eye,eye+direction*200.);q.hit_back_faces=true
+					if space.intersect_ray(q).is_empty():open_rays+=1
+			check("enclosed %s at %s has no open frustum rays (%d)" % [view,foot,open_rays],open_rays==0)
+	var capture: GDScript=load("res://tools/level_capture.gd")
+	check("actual capture has a geometry no-sky guard",capture.has_method("uncovered_geometry_pixels"))
+	if capture.has_method("uncovered_geometry_pixels"):
+		var image:=Image.create(4,3,false,Image.FORMAT_RGBA8);image.fill(Color(0.2,0.3,0.4,1.))
+		check("no-sky guard accepts opaque geometry",capture.uncovered_geometry_pixels(image)==0)
+		image.set_pixel(2,1,Color(0,0,0,0))
+		check("no-sky guard rejects even one uncovered pixel",capture.uncovered_geometry_pixels(image)==1)
