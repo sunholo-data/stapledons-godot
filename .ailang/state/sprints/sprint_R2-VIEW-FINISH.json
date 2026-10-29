@@ -1,0 +1,258 @@
+{
+  "sprint_id": "R2-VIEW-FINISH",
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark, attended: proceed (D-130)",
+  "approved_on": "2026-10-29",
+  "created": "2026-10-29",
+  "base_commit": "b07c9763",
+  "design_doc": "design_docs/planned/r2/levels.md",
+  "sprint_plan": "design_docs/planned/r2/bridge-commons-finish-sprint.md",
+  "parent_sprint": "R2-LEVELS",
+  "parent_approval": "D-103 remains approved; overlay plan not yet approved",
+  "features": [
+    {
+      "id": "VF0",
+      "description": "Preserve Blender sources and publish current baseline",
+      "estimated_loc": 100,
+      "estimated_days": 0.75,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Source hashes recorded and packed masters open without missing resources",
+        "Current player-camera/HUD baseline inspected and dedicated private gallery verified"
+      ],
+      "passes": null,
+      "started": "2026-10-29",
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "VF1",
+      "description": "Resume LP1b: Commons camera, lift and light integration",
+      "estimated_loc": 650,
+      "estimated_days": 3,
+      "dependencies": [
+        "VF0"
+      ],
+      "acceptance_criteria": [
+        "make camera-test camera-forward-test level-test ship-demo-lift-test ship-star-light-test ship-console-test deck-layout-eval physics pass",
+        "Required G-LVL GPU/CPU golden cases and opened pose references"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "VF2",
+      "description": "Resume LP2: production Commons greybox and S3 review",
+      "estimated_loc": 300,
+      "estimated_days": 2.5,
+      "dependencies": [
+        "VF1"
+      ],
+      "acceptance_criteria": [
+        "make level-eval LEVEL=commons and make levels-regress pass",
+        "make level-capture LEVEL=commons TAG=s3 inspected; routes/captain/pole sightlines checked",
+        "Mark accepts S3 playable layout and ruling is recorded"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "VFB",
+      "description": "Bounded bridge contact and asset finish",
+      "estimated_loc": 150,
+      "estimated_days": 1.5,
+      "dependencies": [
+        "VF0"
+      ],
+      "acceptance_criteria": [
+        "make deck-assets-check deck-layout-eval style-test dressing-test ship-console-test pass",
+        "Console facing/contact frames and actual player-camera finish inspected; approved layout preserved"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "VFU",
+      "description": "UI polish for bridge and Commons at laptop scale",
+      "estimated_loc": 250,
+      "estimated_days": 2,
+      "dependencies": [
+        "VF0"
+      ],
+      "acceptance_criteria": [
+        "make ui-theme-check ship-ui-test ship-console-test no-twitch-test crew-console-test pass",
+        "make ship-ui-window-check and expanded ship-ui-capture verified at tested resolutions and laptop scaling"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "VF3",
+      "description": "Resume LP3: Commons art pilot then approved dressing",
+      "estimated_loc": 250,
+      "estimated_days": 4,
+      "dependencies": [
+        "VF2"
+      ],
+      "acceptance_criteria": [
+        "S3 acceptance recorded before detailed production; art pilot accepted before propagation",
+        "Add and pass level-assets-check and foliage-check with negative controls; repeated exports match hashes",
+        "make level-eval LEVEL=commons and make export-filter-audit pass; S5 stage captures inspected and accepted"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "VF4",
+      "description": "Integrate, independently evaluate and deliver dev build",
+      "estimated_loc": 250,
+      "estimated_days": 1.5,
+      "dependencies": [
+        "VFB",
+        "VFU",
+        "VF3"
+      ],
+      "acceptance_criteria": [
+        "make levels-regress; final-head rig/full with golden and fast CI green; make export-smoke passes",
+        "Quiet bridge and Commons benchmarks meet approved p99 and D-127 docked validity",
+        "Independent evaluator scores at least 70; final reviewed gallery and dev build delivered"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 160,
+    "estimated_total_loc": 1950,
+    "estimated_agent_days": 15.25,
+    "estimated_critical_path_days": "12–15 including contingency; excludes review/rig waits",
+    "note": "Provisional; original remaining LP1b–LP4 estimates anchor duration. Blender authoring ~600–1,000 additional LOC."
+  },
+  "registry_reuse": [
+    {
+      "milestone": "VF0",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF1",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF2",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VFB",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VFU",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF3",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF4",
+      "package": "none",
+      "action": "none",
+      "search_terms": [],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    }
+  ],
+  "approval_gates": [
+    {
+      "id": "plan",
+      "source": "Mark attended request 2026-10-29 and CLAUDE.md development cycle",
+      "status": "approved",
+      "blocks": [
+        "VF0",
+        "VF1",
+        "VF2",
+        "VFB",
+        "VFU",
+        "VF3",
+        "VF4"
+      ]
+    },
+    {
+      "id": "S3",
+      "source": "design_docs/planned/r2/levels-sprint.md Pause points",
+      "status": "pending",
+      "blocks": [
+        "VF3 detailed production"
+      ]
+    },
+    {
+      "id": "art_pilot",
+      "source": "R2-VIEW-FINISH proposed preview sequence",
+      "status": "pending",
+      "blocks": [
+        "VF3 finish propagation"
+      ]
+    },
+    {
+      "id": "S5",
+      "source": "design_docs/planned/r2/levels-sprint.md Pause points",
+      "status": "pending",
+      "blocks": [
+        "VF4 landing"
+      ]
+    }
+  ],
+  "related_prs": [
+    344,
+    346,
+    349
+  ],
+  "constraints": [
+    "Use gh, not GitHub connector",
+    "Max three workers plus coordinator; independent evaluation after executor work",
+    "One owner for camera/scene/lift/light and shared export wiring",
+    "Serialize GPU work; preserve D-127 docked validity and coordinate 7m-d owner",
+    "Do not reset or clean Blender workspace",
+    "Tailscale preview serves dedicated staged exports only; actual hostname/routes checked at hosting time"
+  ],
+  "history": [
+    {
+      "date": "2026-10-29",
+      "event": "Audit and draft only; no implementation, captures, hosting or sprint dispatch performed."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "Mark approved the proposed scope and sequence: proceed. VF0 started; later visual gates remain pending."
+    }
+  ]
+}
