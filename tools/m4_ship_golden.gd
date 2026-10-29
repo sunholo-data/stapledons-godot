@@ -24,6 +24,7 @@ func run(m: Node) -> int:
 	var failures := await _s3(built)
 	failures += await _s4(built) # before any player pose: S4 aims from the captain's eye the S3 cases leave
 	failures += await _cam1(built)
+	failures += await _level_poses(built)
 	if built:
 		demo.sky.set_debug_unit(true) # G-CAM-2 reads the unit-gain target, as S4
 	failures += await _cam2(built)
@@ -281,6 +282,23 @@ func _walk_pose(id: String, spot: String) -> void:
 	demo._sync_observer()
 
 
+## R2-LEVELS C6: the lowered ceiling pose and raised gantry eye, through the real ship composite.
+## _pole retains independent CPU projection, geometry-alpha and subpixel centroid requirements.
+func _level_poses(built: bool) -> int:
+	var failures := 0
+	for row: Array in [["G-LVL-1 clamp", Vector3(25, 57, -5), true], ["G-LVL-2 raised", Vector3(26, 66, -12), false]]:
+		var foot: Vector3 = row[1]
+		var clamped: bool = row[2]
+		failures += await _pole(built, func() -> void:
+			demo.avatar_pos = foot
+			demo.avatar.position = foot
+			var view := {"yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5}
+			demo.camera.global_transform = demo.director.stage_pose(view, foot, clamped)
+			demo.avatar.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+			demo._sync_observer(), row[0], "Commons eye")
+	return failures
+
+
 func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int:
 	var failures := 0
 	for phase: String in ["boosting", "cruising", "braking"]:
@@ -326,6 +344,10 @@ func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int
 				var want78 := CameraDirector.screen_point(demo.camera.global_transform, demo.camera.global_position + CameraDirector.pole_dir() * 1000.0, Vector2(size))
 				error = maxf(error, got.distance_to(want78))
 				ok = is_finite(centroid[2]) and centroid[2] > 0.0 and is_finite(error) and error <= 0.75
+				if label.begins_with("G-LVL-") and phase == "cruising":
+					var out := "res://renders/levels/physics"
+					DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+					_read(main.get_viewport()).save_png(out.path_join(label.get_slice(" ", 0).to_lower() + ".png"))
 			elif not clear:
 				push_warning("m4 ship golden: %s forward pole covered (geometry or clean peak)" % phase)
 		failures += _report(ok, "%s %s beta %.2f: %s pole (%.2f, %.2f) rendered (%.2f, %.2f) error %.3f px (limit 0.75)" % [label, phase, b, eye_label, want.x, want.y, got.x, got.y, error])

@@ -510,8 +510,9 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    G-CAM-1 forward pole' $(SCRATCH)/golden.log)" = 9 && \
 	  test "$$(grep -c '^ok    G-CAM-2 glow' $(SCRATCH)/golden.log)" = 8 && \
 	  test "$$(grep -c '^ok    G-CAM-3 one tonemap' $(SCRATCH)/golden.log)" = 2 && \
+	  test "$$(grep -c '^ok    G-LVL-1 clamp' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    G-LVL-2 raised' $(SCRATCH)/golden.log)" = 3 && \
 	  test "$$(grep -c '^ok    G-SS-' $(SCRATCH)/golden.log)" = 8 && grep -q '^star surface golden: 0 failures$$' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 401 && \
+	  test "$$(grep -c '^ok' $(SCRATCH)/golden.log)" = 407 && \
 	  grep -q '^m4 ship golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -cE '^ok    GR[123] shadow' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR4 orbit mask' $(SCRATCH)/golden.log)" = 3 && \
 	  test "$$(grep -c '^ok    GR5 two images' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR6 Einstein ring' $(SCRATCH)/golden.log)" = 3 && \
@@ -520,7 +521,7 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-ISM-5 surface wall observer' $(SCRATCH)/golden.log)" = 3 && grep -q '^ok    G-ISM-5 integrated radiance' $(SCRATCH)/golden.log && grep -q '^ok    G-ISM-5 surface dim overlaps' $(SCRATCH)/golden.log && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3 + M4.6gR3 G-M4-S2, G-M4-S3 3, G-M4-S4 6 + R2-CAMERA G-CAM-1 9, G-CAM-2 8, G-CAM-3 2 + R2-STAR-SURFACES G-SS-1..8; 401 ok lines (393 before R2-STAR-SURFACES, 398 before SS3; main had 374, its pin said 373))"; exit 1; }
+	  { echo "golden: FAILED (exit $$rc or named case count changed: expected all existing families plus 3 G-LVL-1 clamp and 3 G-LVL-2 raised reports, 407 ok lines total; see $(SCRATCH)/golden.log)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.

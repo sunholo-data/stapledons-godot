@@ -393,7 +393,7 @@ The legacy Commons views and its Z1–Z3 player keys are retired in S3's dev bui
 ## C6. The physics guard
 
 - **No painted space:** the asset check's emissive scan, as in deck-layout §D8.
-- **New poses that frame the sky get the full physics gate (CLAUDE.md gate 2).** The ceiling clamp (pitch −4°), a raised surface (the catwalk at +9 m) and the enclosed view are new camera poses, and the plan relies on where the pole and the band fall in them. They get:
+- **New poses that frame the sky get the full physics gate (CLAUDE.md gate 2).** The ceiling clamp (pitch −3°, per §B3), a raised surface (the catwalk at +9 m) and the enclosed view are new camera poses, and the plan relies on where the pole and the band fall in them. They get:
   - **check values in `tests/test_physics.gd`:** the forward pole's screen position for each pose (from `ShipCamera.ship_vector`, the same mapping as F1's AC-B2), and the band's roof edge against the slab model (`atan((24 − rise)/D)`, within 0.5°);
   - **`make golden` cases G-LVL-1 (the clamp pose) and G-LVL-2 (the raised pose):** GPU vs CPU for the starbow at 0.99c, with the forward pole in frame, through each pose;
   - **reference renders that are opened**, which `level-capture` makes.

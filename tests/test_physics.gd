@@ -1514,6 +1514,7 @@ func _initialize() -> void:
 	test_view_velocity_angle(vp)
 	test_camera_views_invariance(vp)
 	test_camera_views_sky_points(vp)
+	test_level_stage_physics(vp)
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -1720,6 +1721,47 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 
 static func _ship_cam(pose: Transform3D, size: Vector2) -> Dictionary:
 	return {"position_m": ShipCamera.ship_vector(pose.origin), "forward": ShipCamera.ship_vector(-pose.basis.z), "up": ShipCamera.ship_vector(pose.basis.y), "fov_vertical_deg": 78.0, "resolution": [size.x, size.y]}
+
+
+## R2-LEVELS C6: independent literal screen/slab references for the new clamp and raised eyes.
+## RS-1/RS-2 still hold at both translated eyes; a slab is geometry, never a painted sky band.
+func test_level_stage_physics(vp: SubViewport) -> void:
+	var cam := Camera3D.new()
+	cam.fov = 78.0
+	vp.add_child(cam)
+	var size := Vector2(vp.size)
+	var view := {"yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5}
+	var director := CameraDirector.new()
+	for row: Array in [["clamp", 57.0, true, 59.2, 9.5, 336.7014416579001, 34.6856940993],
+		["raised", 66.0, false, 71.5, 9.0, 297.5207482256235, 17.0377677956]]:
+		var pose := director.stage_pose(view, Vector3(0, row[1], 0), row[2])
+		cam.global_transform = pose
+		check("level %s eye height (independent metres)" % row[0], pose.origin.y, row[3], 1e-5)
+		check("level %s eye stern offset (metres)" % row[0], pose.origin.z, row[4], 1e-5)
+		var pole := pose.origin + Vector3.FORWARD * 1000.0
+		var pixel := cam.unproject_position(pole)
+		check("level %s pole horizontal centre" % row[0], pixel.x, size.x * 0.5, 1e-3)
+		check("level %s pole independent 78-degree pinhole reference" % row[0], pixel.y, float(row[5]) * size.y / 720.0, 1e-3)
+		var cpu := _ship_cam(pose, size)
+		var eye: Array = cpu.position_m
+		var projected := AreaBundle.project(cpu, [eye[0], eye[1], float(eye[2]) + 1000.0])
+		check("level %s CPU/Godot pole projection" % row[0], Vector2(projected[0], projected[1]).distance_to(pixel), 0.0, 1e-3)
+		for rs: Array in [[0.9, 25.842, "RS-1"], [0.5, 60.0, "RS-2"]]:
+			var apparent := Relativity.aberrate(Vector3.RIGHT, Vector3.FORWARD, rs[0])
+			check("level %s %s transverse-source angle" % [row[0], rs[2]], angle_deg(apparent, Vector3.FORWARD), rs[1], 2e-3)
+			var p := cam.unproject_position(pose.origin + apparent * 1e7)
+			check("level %s %s camera ray recovers apparent source" % [row[0], rs[2]], cam.project_ray_normal(p).distance_to(apparent), 0.0, 1e-6)
+		# Independent finite slab: roof at81m, radius22m. Test both sides of its edge, not only a model formula.
+		var edge := Vector3(0, 81, -22)
+		var ray := cam.project_ray_normal(cam.unproject_position(edge))
+		var elevation := rad_to_deg(atan2(ray.y, sqrt(ray.x * ray.x + ray.z * ray.z)))
+		check("level %s roof-band edge against literal slab reference (degrees)" % row[0], elevation, row[6], 0.001)
+		for side: float in [-0.5, 0.5]:
+			var theta := deg_to_rad(float(row[6]) + side)
+			var hit: Variant = Plane(Vector3.UP, 81.0).intersects_ray(pose.origin, Vector3(0, sin(theta), -cos(theta)))
+			var inside := hit is Vector3 and Vector2(hit.x, hit.z).length() <= 22.0
+			check("level %s ray %.1fdeg from edge hits slab iff above band" % [row[0], side], 1.0 if inside else 0.0, 1.0 if side > 0 else 0.0, 0.0)
+	cam.queue_free()
 
 
 ## R2-CAMERA AC11, not a translation tautology: at every views.json eye and at a captain's eye
