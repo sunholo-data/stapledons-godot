@@ -1,11 +1,29 @@
 {
   "schema": "stapledons.commons-lived-in.kit/1",
+  "revision": 2,
+  "fixture_centres_blender_m": {
+    "communal_table": [
+      0.65,
+      0,
+      1.17
+    ],
+    "notice_read_station": [
+      0,
+      0.3,
+      1.6
+    ],
+    "arcade_counter": [
+      0,
+      0.2,
+      1.22
+    ]
+  },
   "status": "bounded art pilot; review only; no layout or navigation changes",
   "frame": "metres; each named prop root identity at local floor centre; Blender+Z up,+Y front; glTF(x,z,-y)",
   "asset": "commons_lived_in_kit_v1.glb",
-  "asset_bytes": 3552120,
-  "asset_sha256": "edcec020550f608836e62da080bc2d32711c5470f37e9706a2a7867c97fe0cd0",
-  "triangles": 29116,
+  "asset_bytes": 3662360,
+  "asset_sha256": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+  "triangles": 32224,
   "materials": 1,
   "images": 1,
   "texture_size_px": [
@@ -48,10 +66,10 @@
     }
   ],
   "surface": "Existing pigment only, roughness0.82. No emission, sky, AO/light bake or camera projection. Game lights and toon/ink remain live.",
-  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_commons_lived_in_pilot_v1.py",
-  "authoring_script_sha256": "860cdd6da93dc2fdb5aa47984f814e1443c05d2781db76a074cb4d42d7c887e3",
-  "master": "/Users/voightkampff/dev/blender/scenes/stapledon_commons_lived_in_pilot_v1.blend",
-  "master_sha256": "f33f9bca2d8262277a77cd9b5426b53c3860b63413b9f126a98b834707ee296d",
+  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_commons_lived_in_pilot_v2.py",
+  "authoring_script_sha256": "c478cddd81650c39cfc9e67cdc9c81039d014b3039126f6c638e72e087644133",
+  "master": "/Users/voightkampff/dev/blender/scenes/stapledon_commons_lived_in_pilot_v2.blend",
+  "master_sha256": "646f385d1e483d33c44fdf531752b3b5d434856393c3ed5cb788555dfc345c24",
   "props": [
     {
       "id": "civic_bench",
@@ -94,7 +112,7 @@
     {
       "id": "communal_table",
       "source_root": "communal_table",
-      "triangles": 3996,
+      "triangles": 5128,
       "bounds_blender_m": {
         "min": [
           -0.949999988079071,
@@ -104,7 +122,7 @@
         "max": [
           0.949999988079071,
           0.550000011920929,
-          0.8650000095367432
+          1.321707010269165
         ]
       },
       "bounds_gltf_m": {
@@ -115,7 +133,7 @@
         ],
         "max": [
           0.949999988079071,
-          0.8650000095367432,
+          1.321707010269165,
           0.550000011920929
         ]
       },
@@ -162,7 +180,7 @@
     {
       "id": "notice_read_station",
       "source_root": "notice_read_station",
-      "triangles": 4004,
+      "triangles": 4848,
       "bounds_blender_m": {
         "min": [
           -0.5799999833106995,
@@ -331,7 +349,7 @@
     {
       "id": "arcade_counter",
       "source_root": "arcade_counter",
-      "triangles": 3564,
+      "triangles": 4696,
       "bounds_blender_m": {
         "min": [
           -1.100000023841858,
@@ -341,7 +359,7 @@
         "max": [
           1.100000023841858,
           0.46000000834465027,
-          1.222000002861023
+          1.3720581531524658
         ]
       },
       "bounds_gltf_m": {
@@ -352,7 +370,7 @@
         ],
         "max": [
           1.100000023841858,
-          1.222000002861023,
+          1.3720581531524658,
           0.46000000834465027
         ]
       },
@@ -368,23 +386,36 @@
   "preview": "Blender neutral studio diagnostic only; authoritative pilot review uses the actual game camera after independent placement.",
   "limits": "No text/content functionality, crowd simulation, new comms console, inaccessible terrace or full-level propagation; painted foliage supplied by consumer from D106 assets.",
   "source_preservation": {
-    "status": "local recoverable archive only; no publication or off-host backup claimed",
-    "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/commons-lived-in-source-v1.tar.gz",
-    "bytes": 5475404,
-    "sha256": "2e566c6ee55e8de97670c353d0594388e74c58f64e38f4a46e0d466a5776514e",
+    "status": "local recoverable archives only; no publication or off-host backup claimed",
+    "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/commons-lived-in-source-v2.tar.gz",
+    "bytes": 5509716,
+    "sha256": "311212706db908e0f60126f9b7fe77bbf8800fb680b0f823179ea8c30f7e3c81",
+    "previous_archive": {
+      "status": "local recoverable archive only; no publication or off-host backup claimed",
+      "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/commons-lived-in-source-v1.tar.gz",
+      "bytes": 5475404,
+      "sha256": "2e566c6ee55e8de97670c353d0594388e74c58f64e38f4a46e0d466a5776514e",
+      "contents": [
+        "scripts/stapledon_commons_lived_in_pilot_v1.py",
+        "scenes/stapledon_commons_lived_in_pilot_v1.blend",
+        "textures/commons_pigment_atlas_v1.png"
+      ]
+    },
+    "previous_assets": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/pre-fixtures-v1",
     "contents": [
-      "scripts/stapledon_commons_lived_in_pilot_v1.py",
-      "scenes/stapledon_commons_lived_in_pilot_v1.blend",
+      "scripts/stapledon_commons_lived_in_pilot_v2.py",
+      "scenes/stapledon_commons_lived_in_pilot_v2.blend",
       "textures/commons_pigment_atlas_v1.png"
     ]
   },
   "validation": {
-    "workspace_inspect": "passed; no missing external resources; master includes one hidden source kit plus linked hero copies and diagnostic floor, so source scene triangles are not export count",
-    "clean_glb_reimport": "passed; eight identity roots; all structural names/soil anchors retained; per-root triangle counts equal source; embedded atlas 1536x1024; first cream RGB [0.78823537,0.74901962,0.68235296]",
+    "workspace_inspect": "passed; no missing external resources; source scene contains the hidden export kit plus linked studio duplicates",
+    "clean_glb_reimport": "passed; eight identity roots; all per-root counts retained; original structural solid_meshes lists unchanged; soil anchors retained; nonblack1536x1024atlas",
     "glb_referenced_materials": 1,
     "glb_embedded_images": 1,
     "hero": "kit-hero-studio.png",
-    "hero_sha256": "d87c447747d7cbd48357b7620a4dc365b0167c691d4ea66c0dd3ff9ec4f676a3",
+    "hero_sha256": "2d5cc30f087fe1b3ad46d6d17db0ff4055414fe04dbea41a7aaecde145b53687",
     "hero_render": "Cycles Metal Apple M4 Max;48samples; neutral-studio diagnostic only; visually inspected"
-  }
+  },
+  "fixture_contract": "Opaque painted physical fixtures only; cream bulbs are not emissive. Consumer owns live lights. Bulb centres given in Blender metres; convert to glTF(x,z,-y). Tiny fixtures add no collider meshes."
 }
