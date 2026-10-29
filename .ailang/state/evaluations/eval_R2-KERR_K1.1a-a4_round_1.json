@@ -1,0 +1,218 @@
+{
+ "sprint_id": "R2-KERR",
+ "milestone": "K1.1a-a4",
+ "round": 1,
+ "commit": "2b47456b",
+ "evaluator_model": "claude-sonnet-5-5",
+ "score": 90,
+ "verdict": "PASS",
+ "rubric": {
+  "correctness": 37,
+  "test_strength": 26,
+  "scope_plan_fidelity": 14,
+  "hygiene": 13
+ },
+ "gates": [
+  {
+   "command": "sh tools/test_kerr_oracle.sh",
+   "rc": 0,
+   "tail": "kerr-oracle drill precision: killed (Decimal60 precision) | kerr-oracle: RK-1/2/3/9, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-14..RK-17 deferred) (2.7s)"
+  },
+  {
+   "command": "make kerr-oracle",
+   "rc": 0,
+   "tail": "kerr-oracle drill precision: killed (Decimal60 precision) | kerr-oracle: RK-1/2/3/9, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-14..RK-17 deferred)"
+  },
+  {
+   "command": "gmake kerr-oracle",
+   "rc": 0,
+   "tail": "kerr-oracle drill precision: killed (Decimal60 precision) | kerr-oracle: RK-1/2/3/9, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-14..RK-17 deferred)"
+  },
+  {
+   "command": "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+   "rc": 0,
+   "tail": "silent ok"
+  },
+  {
+   "command": "python3 -I tools/kerr_ref.py | cmp - tests/fixtures/kerr/rk.json",
+   "rc": 0,
+   "tail": "identical"
+  },
+  {
+   "command": "make python-guard lint-precision",
+   "rc": 0,
+   "tail": "python-guard: ok (20 allowlisted); lint-precision: ok"
+  },
+  {
+   "command": "git diff --check 81e240f0 2b47456b",
+   "rc": 0,
+   "tail": "clean"
+  }
+ ],
+ "mutations": [
+  {
+   "name": "drill factor2 (in-script)",
+   "result": "killed",
+   "killed_by": "factor2 R=u/2 (line 31/48, the intended assert)"
+  },
+  {
+   "name": "drill sqrt-branch",
+   "result": "killed",
+   "killed_by": "horizon branch/V31 (intended)"
+  },
+  {
+   "name": "drill domain (drop upper bound)",
+   "result": "killed",
+   "killed_by": "invalid spin accepted (intended)"
+  },
+  {
+   "name": "drill nan (drop is_finite)",
+   "result": "killed",
+   "killed_by": "validation before sqrt: horizons NaN; relies on the ArithmeticError broadening (decimal.InvalidOperation) so the label is reached"
+  },
+  {
+   "name": "drill six-decimal",
+   "result": "killed",
+   "killed_by": "doc literal: ('RK-10'... first DOC key by dict order; correct assert, label is order-dependent"
+  },
+  {
+   "name": "drill empty-fixture",
+   "result": "killed",
+   "killed_by": "empty/schema accepted (intended)"
+  },
+  {
+   "name": "drill wrong-unit",
+   "result": "killed",
+   "killed_by": "unit accepted (intended)"
+  },
+  {
+   "name": "drill precision (prec 20)",
+   "result": "killed",
+   "killed_by": "Decimal60 precision (intended)"
+  },
+  {
+   "name": "own: delete Decimal60 assert",
+   "result": "killed",
+   "killed_by": "precision drill reports survived"
+  },
+  {
+   "name": "own: assert weakened to prec >= 20",
+   "result": "killed",
+   "killed_by": "precision drill survived"
+  },
+  {
+   "name": "own: narrow (ValueError, ArithmeticError) to ValueError",
+   "result": "killed",
+   "killed_by": "decimal.InvalidOperation traceback on NaN (broadening is necessary)"
+  },
+  {
+   "name": "own: test n -eq 7",
+   "result": "killed",
+   "killed_by": "drill count is not 8"
+  },
+  {
+   "name": "own: cmp -s no-op guard disabled",
+   "result": "survived",
+   "killed_by": "guard-of-guard untested; all real mutants do change the file"
+  },
+  {
+   "name": "own: grep -F reason check replaced with true",
+   "result": "survived",
+   "killed_by": "wrong-reason detection untested; non-blocking"
+  },
+  {
+   "name": "own: remove RK-3 DOC entries",
+   "result": "survived",
+   "killed_by": "redundant with the RK-18 static-limit-km DOC and fixture equality, but see rk3row"
+  },
+  {
+   "name": "own: remove RK-9 DOC entry",
+   "result": "survived",
+   "killed_by": "no other literal covers RK-9 omega except fixture self-consistency; see rk9row"
+  },
+  {
+   "name": "own: oracle emits RK-3=3, fixture regenerated",
+   "result": "killed",
+   "killed_by": "doc literal RK-3 0.5 static-limit"
+  },
+  {
+   "name": "own: oracle RK-9 x2, fixture regenerated",
+   "result": "killed",
+   "killed_by": "doc literal RK-9 (with DOC entry present)"
+  },
+  {
+   "name": "own: RK-9 omega using inner horizon, regenerated",
+   "result": "killed",
+   "killed_by": "doc literal RK-18 omega-h-rad-s"
+  },
+  {
+   "name": "own: drop RK-9 record",
+   "result": "killed",
+   "killed_by": "missing record RK-9"
+  },
+  {
+   "name": "own: fixture-only RK-3 display edit",
+   "result": "killed",
+   "killed_by": "--check valid fixture rejected"
+  },
+  {
+   "name": "own: static_limit loses spin_value validation",
+   "result": "killed",
+   "killed_by": "invalid spin accepted by static_limit: -0.1"
+  },
+  {
+   "name": "own: remove rm -rf $tmp at end of drill",
+   "result": "survived (leak)",
+   "killed_by": "EXIT trap only removes the last dir; 7 temp dirs leaked per run (3894->3901), 0 leaked with the line. Cleanup is untested"
+  },
+  {
+   "name": "own: remove EXIT trap",
+   "result": "survived",
+   "killed_by": "redundant with explicit rm on success; trap matters only for failure paths"
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "severity": "non-blocking",
+   "summary": "RK-3 and RK-9 values verified; RK-9 independent.",
+   "evidence": "Omega_H = s/(2u+), s=0.9: Python Decimal prec 50 gives 0.31339450313662924709..., which rounds to 0.31339450313662925, the design doc line 95/350 literal; float64 also 0.3133945031366293. RK-3 = 2 matches doc line 88 (equator static limit 2 = 1.0 r_s)."
+  },
+  {
+   "id": "F2",
+   "severity": "non-blocking",
+   "summary": "static_limit is now the constant Decimal(2); it weakens oracle independence for RK-3 and the RK-18 static-limit-km row.",
+   "evidence": "A real bug in an eventual formula could not appear here. Acceptable: the doc defines RK-3 as a spin identity, DOC literals and the RK-18 anchor pin it, and the spin_value validation is retained and tested. Dropping cos_theta is a defensible YAGNI call, but the off-equator Chandrasekhar formula (doc line 116) loses its Python oracle and should be re-added with an off-equator anchor when K1.x needs staticLimitR(s, cosTheta)."
+  },
+  {
+   "id": "F3",
+   "severity": "non-blocking",
+   "summary": "The cleanup line the controller added is untested and is the only thing preventing a temp leak.",
+   "evidence": "With 'rm -rf $tmp' removed, the suite still passes and leaks 7 dirs per run in $TMPDIR, because the single EXIT trap is re-set each drill and only covers the last dir. Harmless at ~3 KB each but accumulates on a shared rig. A fix would be one parent mktemp -d with a single trap."
+  },
+  {
+   "id": "F4",
+   "severity": "non-blocking",
+   "summary": "Instrument self-checks (cmp -s no-op guard, grep -F reason check) are themselves unverified; the six-decimal kill label depends on DOC dict order.",
+   "evidence": "Disabling either leaves the suite green. The six-decimal drill greps \"doc literal: ('RK-10'\", which holds only because RK-10 is the first DOC key."
+  },
+  {
+   "id": "F5",
+   "severity": "non-blocking",
+   "summary": "The nan drill is killed by the ArithmeticError broadening, a behaviour change to an existing assert.",
+   "evidence": "Decimal NaN comparison raises InvalidOperation. The test now accepts it only when the message contains 'finite 0 <= spin < 1' (via the else/assert path), so a raw InvalidOperation from the oracle would fail the message assert: this is as intended. Covered by the ValueError-only mutation. Diff also changes check() to take an argument ($1 root), covered by this description."
+  },
+  {
+   "id": "F6",
+   "severity": "non-blocking",
+   "summary": "Runtime and flakiness.",
+   "evidence": "Whole script about 2.7 s (check run 9 times), no network, no randomness, deterministic; mktemp under TMPDIR only. Low flake risk on a loaded rig. Change list matches the description: the only extra is the check() argument parameterisation and the success-line text update."
+  }
+ ],
+ "line_count": {
+  "added": 66,
+  "deleted": 7,
+  "total_changed": 73,
+  "cap": 120
+ }
+}

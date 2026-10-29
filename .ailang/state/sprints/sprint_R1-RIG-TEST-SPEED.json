@@ -69,7 +69,7 @@
     {
       "id": "M1a",
       "description": "Instrument only, design 1a/1b/1c and one suite-profile case in the existing rig control; no rig_check.sh or make wiring edit. Test-first fixture control then implementation then hardened R/C and supplemental guard drills. All seven profile subcommands, 30-second load sampler and single-printf append are included.",
-      "status": "in_progress",
+      "status": "landed",
       "approval": "D-126 C (L4 ordered) plus D-88 (approved test/tooling hygiene); no open question touches M1a",
       "depends_on": [],
       "dependencies": [],
@@ -280,8 +280,20 @@
         "tools/python_guard.sh",
         "tools/rig_check.sh"
       ],
-      "passes": false,
-      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX."
+      "passes": true,
+      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX.",
+      "landing": {
+        "pr": 349,
+        "head": "86b961030c24f3f606842002d934f804e774e31d",
+        "merge": "81e240f042764c9f4562a2137c590e183d219a6d",
+        "rig_full": "success on 86b96103, 87 min (run 3)",
+        "fast_tier_merge": "success on 81e240f0",
+        "evaluations": [
+          "eval_R1-RIG-TEST-SPEED_M1a_round_2.json (90 PASS)",
+          "eval_R1-RIG-TEST-SPEED_M1a_round_3.json (88 PASS)"
+        ],
+        "recorded_by": "mission iteration 57"
+      }
     },
     {
       "id": "M1b",

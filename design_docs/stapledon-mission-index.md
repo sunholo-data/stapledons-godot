@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 57 | 2026-10-29 | L4 M1a LANDED (PR #349, merge `81e240f0`; `rig/full` 87 min, fast tier green on the merge) and Kerr K1.1a-a4 BUILT (PR #352), merge PARKED-ON-LANE:... |
 | 56 | 2026-10-29 | L4 test-suite speed: design (2 quorum rounds) and plan `R1-RIG-TEST-SPEED`, M1a suite profiler built (PR #349) — BUILT, not landed: `rig/full` run ... |
 | 55 | 2026-10-28 | D-126 C's A half LANDED (PR #345, merge `d63b47a4`): `rig/full` watchdog default 7,200 s and a hermetic rig-check control (8 cases, committed calle... |
 | 54 | 2026-10-28 | row 7m AC1, the quiet-rig bench for M4.6pR3, MEASURED and PARKED on D-127: live-transit p99 15.22–16.48 ms in 6 of 6 quiet runs (loop 3, independen... |
