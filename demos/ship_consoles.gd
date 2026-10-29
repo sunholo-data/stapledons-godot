@@ -511,13 +511,19 @@ func _advance_walk(dt: float) -> void:
 		var next: Vector3 = walking[0]
 		var flat := Vector3(next.x - demo.avatar_pos.x, 0.0, next.z - demo.avatar_pos.z)
 		var d := flat.length()
-		if d <= budget:
-			demo.avatar_pos = Vector3(next.x, next.y, next.z)
+		var at_endpoint := d <= budget
+		var p: Vector3 = next if at_endpoint else demo.avatar_pos + flat / d * budget
+		# Execute on the surface reachable from this segment's current floor. A terrace
+		# overhead is never an auto-walk destination merely because it is the highest hit.
+		var floor_y: float = demo.walk.height_at_near(p.x, p.z, demo.avatar_pos.y)
+		if is_nan(floor_y) or (at_endpoint and absf(floor_y - next.y) > WalkArea.STEP_M):
+			cancel_walk()
+			return
+		demo.avatar_pos = Vector3(p.x, floor_y, p.z)
+		if at_endpoint:
 			walking.remove_at(0)
 			budget -= d
 		else:
-			var p: Vector3 = demo.avatar_pos + flat / d * budget
-			demo.avatar_pos = Vector3(p.x, demo.walk.height_at(p.x, p.z) if not is_nan(demo.walk.height_at(p.x, p.z)) else demo.avatar_pos.y, p.z)
 			demo.captain_yaw = atan2(flat.z, flat.x)
 			budget = 0.0
 	if walking.is_empty():

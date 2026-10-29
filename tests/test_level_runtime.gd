@@ -126,6 +126,22 @@ func test_playable_stage_camera() -> void:
 		check("%s return transfer arrives on walk" % route.id,demo.use_nearest() and demo.walk_lower.is_walkable_near(demo.avatar_pos) and demo.avatar_pos.distance_to(LevelGreybox.route_end(route,"from"))<.1)
 	demo.avatar_pos=Vector3(34,57,-6)
 	check("court auto-walk uses the caller's floor",demo.walk_to("navigation") and Array(demo.consoles.walking).all(func(p: Vector3)->bool:return absf(p.y-57.)<.1))
+	demo.consoles._advance_walk(1./60.)
+	check("executing the first partial step stays under the terrace",absf(demo.avatar_pos.y-57.)<.1 and demo.avatar_pos.x<34.)
+	var walk_frames:=0;var highest_floor: float=demo.avatar_pos.y
+	while not demo.consoles.walking.is_empty() and walk_frames<3000:
+		demo.consoles._advance_walk(1./60.);walk_frames+=1
+		highest_floor=maxf(highest_floor,demo.avatar_pos.y)
+	check("complete court return never snaps onto the terrace",highest_floor<57.1)
+	check("complete court return finishes at the lift without cancellation",demo.consoles.walking.is_empty() and demo.consoles.walk_target.is_empty() and demo.avatar_pos.distance_to(Vector3(8,57,-4.8))<.02 and walk_frames<3000)
+	demo.avatar_pos=Vector3(34,57,-6);demo.consoles.walking=PackedVector3Array([Vector3(34,61,-6)]);demo.consoles.walk_target="lift"
+	demo.consoles._advance_walk(1.)
+	check("invalid vertical endpoint cancels without changing floors",demo.consoles.walking.is_empty() and demo.consoles.walk_target.is_empty() and demo.avatar_pos==Vector3(34,57,-6))
+	demo.active_level=0;demo.walk=demo.walk_bridge;demo.avatar_pos=demo.bridge_spawn()
+	check("bridge route still plans",demo.walk_to("navigation"))
+	demo.consoles._advance_walk(60.)
+	check("bridge route still completes on the bridge",demo.consoles.walking.is_empty() and demo.avatar_pos.distance_to(demo.consoles.stations.navigation.use)<.02 and absf(demo.avatar_pos.y-82.)<.001)
+	demo.active_level=1;demo.walk=demo.walk_lower
 	demo.consoles.cancel_walk();demo.avatar_pos=Vector3(34,61,-6)
 	check("raised auto-walk requires the authored route first",not demo.walk_to("navigation"))
 	demo.active_level=1;demo.avatar_pos=Vector3(13.9,57,-5);director.set_motion("full");director.has_pose=false;director._blend={};director.advance(0.)
