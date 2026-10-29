@@ -68,8 +68,10 @@ export pure func emptyAi() -> AiState = { lastReq: 0, open: [], lines: [], core:
 export pure func defaultAiMaxOpen() -> int = 8
 export pure func defaultAiTtlTicks() -> int = 3600
 export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
-export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar"]
-export pure func aiPurposes() -> [string] = ["line", "news", "archive", "probe", "crew_reply"]
+-- feed (R3-EARTH-LINK EL3b.6): a frame of Earth's feed painted live, one Earth week of home's own
+-- news (purpose feed only; key: the event as entity_id, the era tier as age_stage, the week as variant).
+export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar", "feed"]
+export pure func aiPurposes() -> [string] = ["line", "news", "archive", "probe", "crew_reply", "feed"]
 export pure func cancelReasons() -> [string] = ["offline", "no_key", "text_only", "timeout", "service_down", "budget", "provider_error"]
 -- Display-text budget per purpose (code points), ledger D-21 (Mark,
 -- 2026-10-02): 280 for crew lines, 280 for news items, 600 for Archive
@@ -105,7 +107,7 @@ export type AiStep = { ai: AiState, rng: Rng, refusal: Option[string], events: [
 pure func refused(st: AiState, rng: Rng, why: string) -> AiStep = { ai: st, rng: rng, refusal: Some(why), events: [] }
 
 pure func kindError(diag: bool, o: AiOpen) -> Option[string] =
-  if !member(o.kind, aiKinds()) || !member(o.purpose, aiPurposes()) then Some("ai_kind")
+  if !member(o.kind, aiKinds()) || !member(o.purpose, aiPurposes()) || (o.kind == "feed") != (o.purpose == "feed") then Some("ai_kind")
   else if o.purpose == "probe" && !diag then Some("diag_only")
   else None
 -- emotion: required for portraits, absent for voice and avatars, optional
@@ -113,7 +115,7 @@ pure func kindError(diag: bool, o: AiOpen) -> Option[string] =
 -- emotions non-empty and all known; line_req only on voice.
 pure func emotionOk(o: AiOpen) -> bool =
   match o.emotion {
-    Some(e) => member(e, emotions8()) && o.kind != "voice" && o.kind != "avatar",
+    Some(e) => member(e, emotions8()) && o.kind != "voice" && o.kind != "avatar" && o.kind != "feed",
     None => o.kind != "portrait"
   }
 pure func keyError(o: AiOpen) -> Option[string] =
@@ -121,7 +123,14 @@ pure func keyError(o: AiOpen) -> Option[string] =
   else if (match o.ageStage { Some(a) => !wholeIn(a, 0.0, 1000.0), None => false }) then Some("ai_bad_key")
   else if (match o.emotions { Some(es) => count(es) == 0 || !allIn(es, emotions8()), None => false }) then Some("ai_bad_key")
   else if o.kind != "voice" && o.lineReq != None then Some("ai_bad_key")
+  else if o.kind == "feed" && !weekOk(ctxStr(o.context, "week")) then Some("ai_bad_key")
   else None
+-- A context string field by name ("" when absent or a list).
+pure func ctxStr(cs: [CtxField], name: string) -> string =
+  match cs { [] => "", c :: r => if c.name == name then (match c.value { CStr(s) => s, CList(_) => "" }) else ctxStr(r, name) }
+-- A feed week: 1 to 7 decimal digits (a voyage's weeks, up to a couple of centuries).
+pure func digitsTail(s: string, i: int, n: int) -> bool = if i >= n then true else contains("0123456789", substring(s, i, i + 1)) && digitsTail(s, i + 1, n)
+pure func weekOk(s: string) -> bool = length(s) >= 1 && length(s) <= 7 && digitsTail(s, 0, length(s))
 -- The segment count of accepted line `r` in ai.lines, or -1.
 pure func lineSegsOf(ls: [Line], r: string) -> int = match ls { [] => -1, l :: more => if intToStr(l.req) == r then count(l.segments) else lineSegsOf(more, r) }
 pure func lineSegsFor(st: AiState, o: AiOpen) -> int = match o.lineReq { Some(r) => lineSegsOf(st.lines, r), None => -1 }
@@ -132,7 +141,7 @@ pure func firstError(xs: [Option[string]]) -> Option[string] = match xs { [] => 
 pure func keyOf(o: AiOpen) -> CacheKey =
   { kind: o.kind, entityId: o.entityId, emotion: match o.emotion { Some(e) => e, None => "-" },
     ageStage: match o.ageStage { Some(a) => floatToInt(a), None => 0 },
-    variant: if o.kind == "portrait" || o.kind == "avatar" then "0" else "-" }
+    variant: if o.kind == "portrait" || o.kind == "avatar" then "0" else if o.kind == "feed" then ctxStr(o.context, "week") else "-" }
 export pure func requestOf(r: OpenReq) -> AiRequest =
   { req: intToStr(r.req), kind: r.kind, purpose: r.purpose, lineReq: r.lineReq, key: r.key, seed: r.seed,
     constraints: r.constraints, context: r.context, expiresTick: r.expiresTick }

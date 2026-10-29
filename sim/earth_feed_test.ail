@@ -1,0 +1,145 @@
+module stapledons/sim/earth_feed_test
+
+-- R3-EARTH-LINK EL3b.1 (design r3/earth-link.md EL3b): Earth's feed. Expected values are closed
+-- forms (the week count of an Earth-time span, e^-+phi for the Earth rate), never this module's
+-- output. earthFeedVm runs every check on the strict VM and the interpreter (make strict).
+import ./earth_feed (Feed, Influence, feedAt, frameOf, feedBinYears, kindOf, eventOf, eventsFor, homeFeeling)
+import ./data/feed_events (FeedEvent, feedEvents, feedKinds, categories)
+import ./core (World, Target, Intent, IPlan, ICommit, defaultParams, newWorld, tick, scriptedLeg, tauTotalOf, earthOf)
+import ./home_tiers (homeTier16)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import pkg/sunholo/relativity/hyper (absf)
+import std/list (length, foldl, filter, map, any)
+import std/math (exp, floor, floatToInt, intToFloat)
+import std/string (contains, chars, intToStr)
+import std/option (Option, Some, None)
+import ./protocol (Session, newSession, serve, earthMinor)
+
+pure func efAll(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func range(a: int, b: int) -> [int] = if a >= b then [] else a :: range(a + 1, b)
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func all(p: a -> bool, xs: [a]) -> bool = !any(\x. !p(x), xs)
+
+-- ------------------------------------------------------------ the week of the newest light
+pure func checkFrames() -> bool = efAll([
+  frameOf(0.0) == 0, frameOf(0.0 - 0.0000158) == 0, frameOf(feedBinYears() * 0.999) == 0, frameOf(feedBinYears() * 1.001) == 1,
+  -- one Earth year is 365.25 / 7 = 52.18 weeks
+  frameOf(1.0) == 52, frameOf(10.0) == 521,
+  (feedAt(5, 1.0, [])).frame == 52
+])
+test "the frame is the Earth week of the newest light (light from before the clock's zero is week 0)" { checkFrames() }
+
+-- ------------------------------------------------------------ determinism and the era
+pure func sameFeed(a: Feed, b: Feed) -> bool = a.frame == b.frame && a.kind == b.kind && a.event.id == b.event.id && a.pick == b.pick && a.context.eraTier == b.context.eraTier
+pure func checkDeterminism() -> bool {
+  let ts = map(\i. intToFloat(i) * 0.37, range(0, 200));
+  efAll([all(\t. sameFeed(feedAt(5, t, []), feedAt(5, t, [])), ts),
+    -- another seed is another feed somewhere in those weeks
+    any(\t. (feedAt(5, t, [])).event.id != (feedAt(6, t, [])).event.id, ts)])
+}
+test "same seed, same feed; another seed, another feed" { checkDeterminism() }
+
+pure func checkEra() -> bool {
+  let ts = map(\i. intToFloat(i) * 1.3, range(0, 160));
+  efAll([(feedAt(5, 0.5, [])).context.eraWord == "launch", (feedAt(5, 25.0, [])).context.eraWord == "decades",
+    (feedAt(5, 25.0, [])).context.eraTier == homeTier16(25.0),
+    -- every week's event fits its era: the children start school only in the first decade or so
+    all(\t. { let f = feedAt(5, t, []); f.event.minTier <= f.context.eraTier && f.context.eraTier <= f.event.maxTier }, ts),
+    -- every era of a voyage (tiers 0-8, up to 250 years) has events in at least four categories
+    all(\k. length(filter(\c. any(\e. e.category == c, eventsFor(k)), categories())) >= 4, range(0, 9))])
+}
+test "the era is the home-time tier of the newest light, and each week's event fits it" { checkEra() }
+
+-- ------------------------------------------------------------ the mix
+pure func countKind(seed: int, n: int, k: string) -> int = foldl(\acc f. if kindOf(seed, f) == k then acc + 1 else acc, 0, range(0, n))
+pure func shareOk(seed: int, n: int, kv: (string, int)) -> bool =
+  match kv { (k, share) => absf(intToFloat(countKind(seed, n, k)) / intToFloat(n) - intToFloat(share) / 1000.0) <= 0.02 }
+pure func checkMix() -> bool = efAll([
+  foldl(\acc kv. acc + (match kv { (_, s) => s }), 0, feedKinds()) == 1000,
+  all(\kv. shareOk(5, 4000, kv), feedKinds()),
+  -- painted live is the minority
+  countKind(5, 4000, "live") < countKind(5, 4000, "library")
+])
+test "the mix: each kind's share over many weeks matches feedKinds; painted live is the minority" { checkMix() }
+
+-- ------------------------------------------------------------ the bubble's consequences
+pure func checkInfluences() -> bool {
+  let i = { kind: "fusion-help", sinceT: 10.0 };
+  efAll([length((feedAt(5, 9.9, [i])).context.influences) == 0, length((feedAt(5, 10.1, [i])).context.influences) == 1,
+    length((feedAt(5, 50.0, [])).context.influences) == 0])
+}
+test "an influence reaches the feed only from its since_t (the light cone plus Earth's lag)" { checkInfluences() }
+
+-- ------------------------------------------------------------ the words: no digits, no ship
+pure func hasDigit(s: string) -> bool = any(\c. c >= "0" && c <= "9", chars(s))
+pure func checkWords() -> bool = efAll([
+  length(feedEvents()) >= 48,
+  all(\e. !hasDigit(e.words) && !contains(e.words, "ship") && !contains(e.words, "crew") && !contains(e.words, "voyage"), feedEvents()),
+  all(\e. any(\c. c == e.category, categories()) && e.minTier >= 0 && e.minTier <= e.maxTier && e.maxTier <= 8, feedEvents())
+])
+test "the catalogue: no digits (D-21) and nothing from the ship in any caption; tiers within a voyage" { checkWords() }
+
+-- ------------------------------------------------------------ stillness and torrent are the physics
+-- One ship-year mid-cruise at 0.99c: the newest light advances D * 1 yr of Earth time, so the
+-- feed moves D * 1 yr / one week frames: about 3.7 flying away (e^-phi), about 736 flying home (e^phi).
+pure func at(id: string, x: float) -> Target = { index: 1, id: id, pos: { x: x, y: 0.0, z: 0.0 } }
+pure func run(w: World, dtau: float) -> World = (tick(w, { dtau: dtau, intents: [] })).world
+pure func planI(t: Target, phi: float) -> Intent = IPlan({ target: t, cruisePhi: phi, flipG: None, star: None })
+pure func committed(w: World, t: Target) -> World {
+  let p = (tick(w, { dtau: 0.0, intents: [planI(t, rapidityOfBeta(0.99))] })).world;
+  (tick(p, { dtau: 0.0, intents: [ICommit(p.lastPlanId)] })).world
+}
+pure func weeksIn(w: World, dtau: float) -> int = ((earthOf(run(w, dtau))).feed).frame - ((earthOf(w)).feed).frame
+pure func checkPhysics() -> bool {
+  let phi = rapidityOfBeta(0.99);
+  let out = committed(newWorld(5, false, defaultParams()), at("A", 40.0));
+  let outMid = run(out, tauTotalOf(out) / 2.0);
+  let a = scriptedLeg(newWorld(5, false, defaultParams()), at("A", 40.0), phi);
+  let home = committed(a, at("Sol", 0.0));
+  let homeMid = run(home, tauTotalOf(home) / 2.0);
+  let away = intToFloat(weeksIn(outMid, 1.0));
+  let toward = intToFloat(weeksIn(homeMid, 1.0));
+  efAll([near(away, exp(0.0 - phi) / feedBinYears(), 1.0), near(toward, exp(phi) / feedBinYears(), 1.0),
+    away < 5.0, toward > 700.0])
+}
+test "stillness and torrent: a ship-year moves the feed D / one week frames (3.7 flying away, 736 flying home)" { checkPhysics() }
+
+-- ------------------------------------------------------------ the crew's home feelings (EL3b.4)
+pure func feel(i: int, work: string, beam: bool, home: bool, reason: string, rate: float, cat: string, f: int) -> string = homeFeeling(5, i, work, beam, home, reason, rate, cat, f)
+pure func oneOf(x: string, xs: [string]) -> bool = any(\y. y == x, xs)
+pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
+pure func checkFeelings() -> bool {
+  let ms = range(0, 5);
+  let fs = range(0, 40);
+  efAll([
+    -- work strain shows first
+    all(\w. feel(0, w, true, true, "", 1.0, "family", 3) == w, ["angry", "fearful", "sad"]),
+    -- cut off: grieving or sad; Earth silent: grieving
+    all(\i. oneOf(feel(i, "neutral", false, false, "not_heard", 1.0, "town", 7), ["grieving", "sad"]), ms), feel(2, "happy", false, false, "silent", 1.0, "town", 7) == "grieving",
+    -- at home glad; home receding, longing; the torrent, curious
+    all(\i. oneOf(feel(i, "neutral", true, true, "", 1.0, "town", 7), ["happy", "neutral"]), ms),
+    all(\i. oneOf(feel(i, "neutral", true, false, "", 0.070888, "town", 7), ["loving", "sad"]), ms),
+    all(\i. oneOf(feel(i, "neutral", true, false, "", 14.107, "town", 7), ["curious", "happy"]), ms),
+    -- real time: the news decides
+    feel(0, "neutral", true, false, "", 1.0, "family", 7) == "loving", feel(0, "neutral", true, false, "", 1.0, "town", 7) == "happy", feel(0, "neutral", true, false, "", 1.0, "science", 7) == "curious",
+    -- the crew is never one face: both feelings appear across members and weeks
+    any(\f. feel(0, "neutral", false, false, "not_heard", 1.0, "town", f) == "grieving", fs) && any(\f. feel(0, "neutral", false, false, "not_heard", 1.0, "town", f) == "sad", fs),
+    any(\i. feel(i, "neutral", true, true, "", 1.0, "town", 7) != feel(0, "neutral", true, true, "", 1.0, "town", 7), ms),
+    -- every feeling has a portrait (the eight emotions)
+    all(\f. all(\i. oneOf(feel(i, "neutral", f % 2 == 0, f % 3 == 0, if f % 5 == 0 then "silent" else "not_heard", intToFloat(f) * 0.1, "world", f), emotions8()), ms), fs)])
+}
+test "the crew's home feelings: work strain first, then the link (cut off, home, receding, torrent, the news); never one face" { checkFeelings() }
+
+-- ------------------------------------------------------------ the wire
+pure func helloLine() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":16}}"
+pure func gameLine() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false}"
+pure func checkWire() -> bool {
+  let s = serve(newSession(), helloLine()).session;
+  let g = serve(s, gameLine()).reply;
+  efAll([earthMinor() == 16, contains(g, "\"feed\":{\"frame\":0,\"kind\":\""), contains(g, "\"context\":{\"era_tier\":0,\"era_word\":\"launch\",\"years\":0,\"influences\":[]}"), contains(g, "\"crew\":[]")])
+}
+test "2.16: the earth section carries the feed, its context Earth-side only" { checkWire() }
+
+export pure func earthFeedVm(n: int) -> string =
+  if checkFrames() && checkDeterminism() && checkEra() && checkMix() && checkInfluences() && checkWords() && checkPhysics() && checkFeelings() && checkWire()
+  then "earth-feed-ok" else "earth-feed-BAD"

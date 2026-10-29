@@ -190,7 +190,7 @@ pure func caseBelow() -> bool {
   let c10 = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [offerPilot(""), askPilot()])], []);
   let c99 = feedAll(newSession(), [hello(99), game(",\"crew\":\"consent\""), input(1, [offerPilot(""), askPilot()])], []);
   contains(at(a, 2), "bad_intent") && contains(at(b, 3), "bad_intent") && !contains(at(c10, 1), "work_state") && !contains(at(c10, 2), "work_state")
-    && contains(at(c99, 0), "\"minor\":15") -- the highest minor (2.15, D-113; 14 is held for S0.2)
+    && contains(at(c99, 0), "\"minor\":16") -- the highest minor (2.16, R3-EARTH-LINK; 14 is held for S0.2)
 }
 pure func caseEnvelope() -> bool {
   let r = feedAll(newSession(), [hello(consoleMinor()), game(",\"crew\":\"consent\""),
@@ -200,7 +200,7 @@ pure func caseEnvelope() -> bool {
     && contains(at(r, 5), "\"refused\":[]") && contains(at(r, 5), "\"work_state\":\"working\"")
 }
 test "2.11: work_state and terms in the crew view; a start as orders under consent (AC1, AC3)" { caseConsole() }
-test "below 2.11: as and start are bad_intent, no work_state; a later minor still answers (2.13 is the newest, R2-STAR-SURFACES) (AC2)" { caseBelow() }
+test "below 2.11: as and start are bad_intent, no work_state; a later minor still answers (2.16 is the newest, R3-EARTH-LINK) (AC2)" { caseBelow() }
 test "as only on crew_start and start only on crew_offer, with known values; start now over the protocol (AC4)" { caseEnvelope() }
 
 pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }

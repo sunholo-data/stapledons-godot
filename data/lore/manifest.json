@@ -1,10 +1,12 @@
 {
   "design_repo": "sunholo-data/stapledons-design",
-  "design_sha": "30f6674162564bc7bb17342cf032516c0e3701b7",
+  "design_sha": "0fedb48dcbe9dfc26f0199dde7d424aa86fb3ebf",
   "files": [
-    {"path": "archive/README.md", "sha256": "76732c06711a23cef43fcc0dd0efb72efffcb862942817ee79ebcb0d30d527f9"},
+    {"path": "archive/README.md", "sha256": "f33621e4ca938209f2727994bfcdf3c8374b1263dd88bafd37df8ab43faa6368"},
     {"path": "archive/bubble.md", "sha256": "b5c3e084d70703560ea80b4ca1bf4f4b5d95bf08aa6a1b3d133d1284881964a5"},
     {"path": "archive/cmb-forward.md", "sha256": "0c4792739ecc2078f7a686861e9895148707739d6af8dea75388c14113e9fd38"},
+    {"path": "archive/earths-voice.md", "sha256": "0333ce11392c169691a91fc7e397e37937ba91d93408d8b8a51363ccf85c76c4"},
+    {"path": "archive/following-light.md", "sha256": "d0f21da8596a4f7796c95b50381db55ec1e23b648fe6aebcff2c8cb16e2c7355"},
     {"path": "archive/ism-glow.md", "sha256": "dd3b34358a6e03d0890cf84625cf404c4a104eb41519fe96392d88d24861142e"},
     {"path": "archive/nothing-crosses.md", "sha256": "039c098ab4642672be2d000c1294321e693e65a5d6e79aa2b13aca790c959297"},
     {"path": "archive/one-g.md", "sha256": "4151b4342c96792d16b950620e7160abc3c26bd199a6dbde2d0e73f810437748"},
@@ -16,6 +18,6 @@
     {"path": "archive/weather-between-the-stars.md", "sha256": "0003ef25115a03a9180f8bab2c817b9e588ebb6c05dfa039eb102925209098d2"},
     {"path": "physics/higgs-bubble.md", "sha256": "bc159ee7ea5cb46c553ae0da7e7ef5418ff1988743b4263cd443eaf56c3a8361"},
     {"path": "physics/ism-structure.md", "sha256": "c048834d304a758abd03f9004b8a99f5f5dead37d847d86951db2e86c6a80ca7"},
-    {"path": "physics/relativity-spec.md", "sha256": "e306b4e9cbbf17e0cfd47646e1d5fe1267f55a6c5ae7bc4c0ca71a9a2f1a8c50"}
+    {"path": "physics/relativity-spec.md", "sha256": "b3350d4fb32d3feef09584cd993598819d69793ac2c163a441ff516b5631e76f"}
   ]
 }

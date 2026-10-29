@@ -20,8 +20,9 @@ import std/string (length, substring, contains, intToStr, join, split, stringToI
 export type CacheKey = { kind: string, entityId: string, emotion: string, ageStage: int, variant: string }
 
 export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
-export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar"]
-export pure func isMedia(kind: string) -> bool = kind == "voice" || kind == "portrait" || kind == "avatar"
+-- feed (R3-EARTH-LINK EL3b.6): a live frame of Earth's feed; its variant is the Earth week.
+export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar", "feed"]
+export pure func isMedia(kind: string) -> bool = kind == "voice" || kind == "portrait" || kind == "avatar" || kind == "feed"
 
 export pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
 export pure func allIn(xs: [string], set: [string]) -> bool = match xs { [] => true, x :: r => member(x, set) && allIn(r, set) }
@@ -47,7 +48,7 @@ pure func emotionOk(k: CacheKey) -> bool =
   else if k.kind == "text" then k.emotion == "-" || member(k.emotion, emotions8())
   else k.emotion == "-"
 pure func variantOk(k: CacheKey) -> bool =
-  if k.kind == "portrait" || k.kind == "avatar" then isDecimal(k.variant)
+  if k.kind == "portrait" || k.kind == "avatar" || k.kind == "feed" then isDecimal(k.variant)
   else k.variant == "-" || isLowerHex(k.variant, 16)
 
 -- The first failing field, as "bad_key:<field>", or None.

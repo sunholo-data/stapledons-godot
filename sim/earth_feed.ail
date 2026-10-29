@@ -1,0 +1,84 @@
+module stapledons/sim/earth_feed
+
+-- R3-EARTH-LINK EL3b.1 (design r3/earth-link.md EL3b): Earth's feed at the comms station. Pure: no
+-- effects, runs on the strict VM; Godot shows what this says and never chooses.
+--
+-- One frame per Earth week of the newest light: frame = floor(t_e / feedBinYears). The frame key
+-- moves with t_e, so the feed's playback rate is the Earth rate D (times the game's pacing):
+-- flying away near c one week holds for months aboard, flying home the weeks flick past. Both
+-- are the physics, and nothing here computes a rate.
+--
+-- Each frame draws, from the voyage's seed and the frame alone (same seed, same feed):
+--   event  a row of sim/data/feed_events.ail whose era tiers contain the week's era
+--   kind   live | library | card | snapshot | sky, by the shares of feedKinds()
+--   pick   a draw the host uses to choose among the pictures it holds for the event (the
+--          library grows over playthroughs, so its size is the host's, not the sim's)
+-- context holds only Earth-side fields for a painted frame's prompt (ai/prompt.ail feedPrompt):
+-- the era (home-time tier and word of the Earth years in the newest light) and the bubble's
+-- consequences as Earth's own news. No ship telemetry: "its news from home, outside the bubble".
+import std/list (filter, length, foldl)
+import std/option (Option, Some, None)
+import std/math (floor, floatToInt)
+import ./rng (mix64, splitmix64, top53)
+import ./home_tiers (homeTier16, tierWord16)
+import ./data/feed_events (FeedEvent, feedEvents, feedKinds)
+
+-- Something the ship changed on Earth (tech or knowledge sent home, help given), shown as Earth's
+-- own news from sinceT: the light-cone time Earth received it plus Earth's lag to act. Empty in
+-- R3-EARTH-LINK (the ship sends only its plans); the S-track's message content fills it.
+export type Influence = { kind: string, sinceT: float }
+export type FeedContext = { eraTier: int, eraWord: string, years: float, influences: [Influence] }
+export type Feed = { frame: int, kind: string, event: FeedEvent, pick: int, context: FeedContext }
+
+-- One Earth week, in years.
+export pure func feedBinYears() -> float = 7.0 / 365.25
+export pure func feedSalt() -> int = 1802071113
+pure func feedKey(seed: int) -> int = mix64(mix64(seed) ^ feedSalt())
+pure func draw(seed: int, frame: int, lane: int) -> int = top53(splitmix64(feedKey(seed) + lane, frame))
+
+-- R3-EARTH-LINK EL3b.4: what a member feels at the comms station, watching home. Work strain shows
+-- first (crew_core's angry, fearful or sad); otherwise the link: glad at home, longing as home
+-- recedes, curious in the torrent, warm at family news, grieving when cut off. Two members in the
+-- same moment may differ (a draw per member and week), so the crew never reads as one face.
+-- A presentation of the link, not crew_core state: it feeds nothing back.
+export pure func homeFeeling(seed: int, index: int, work: string, inBeam: bool, atHome: bool, reason: string, rate: float, category: string, frame: int) -> string {
+  let pick = \a. \b. if draw(seed + 7919 * (index + 1), frame, 3) % 2 == 0 then a else b;
+  if work == "angry" || work == "fearful" || work == "sad" then work
+  else if !inBeam then (if reason == "silent" then "grieving" else pick("grieving")("sad"))
+  else if atHome then pick("happy")("neutral")
+  else if rate < 0.5 then pick("loving")("sad")
+  else if rate > 2.0 then pick("curious")("happy")
+  else if category == "family" then "loving"
+  else if category == "home" || category == "town" then "happy"
+  else "curious"
+}
+
+-- The week of the newest light. Light from before the Earth clock's zero (the Sol-centred
+-- light cone puts it up to 8.3 minutes early near Earth) is week 0.
+export pure func frameOf(te: float) -> int = if te <= 0.0 then 0 else floatToInt(floor(te / feedBinYears()))
+
+pure func nthEvent(xs: [FeedEvent], i: int) -> Option[FeedEvent] =
+  match xs { [] => None, x :: r => if i == 0 then Some(x) else nthEvent(r, i - 1) }
+export pure func eventsFor(tier: int) -> [FeedEvent] = filter(\e. e.minTier <= tier && tier <= e.maxTier, feedEvents())
+
+-- The kind whose cumulative share first exceeds u (u in [0, 1000)).
+pure func kindAt(ks: [(string, int)], u: int) -> string =
+  match ks { [] => "library", k :: r => match k { (name, share) => if u < share then name else kindAt(r, u - share) } }
+export pure func kindOf(seed: int, frame: int) -> string = kindAt(feedKinds(), draw(seed, frame, 1) % 1000)
+
+pure func fallbackEvent() -> FeedEvent = { id: "town-dawn", category: "town", minTier: 0, maxTier: 8, words: "a quiet street at dawn" }
+export pure func eventOf(seed: int, frame: int, tier: int) -> FeedEvent {
+  let xs = eventsFor(tier);
+  let n = length(xs);
+  if n == 0 then fallbackEvent() else match nthEvent(xs, draw(seed, frame, 0) % n) { Some(e) => e, None => fallbackEvent() }
+}
+
+-- The feed for the newest light emitted at te (Earth years since departure), with the bubble's
+-- influences Earth has received by then.
+export pure func feedAt(seed: int, te: float, influences: [Influence]) -> Feed {
+  let frame = frameOf(te);
+  let years = if te > 0.0 then te else 0.0;
+  let tier = homeTier16(years);
+  { frame: frame, kind: kindOf(seed, frame), event: eventOf(seed, frame, tier), pick: draw(seed, frame, 2) % 1000000,
+    context: { eraTier: tier, eraWord: tierWord16(tier), years: years, influences: filter(\i. i.sinceT <= te, influences) } }
+}

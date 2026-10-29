@@ -151,6 +151,17 @@ export pure func buildPrompt(r: Request, lore: [Lore]) -> Result[Prompt, string]
   }
 export pure func promptText(p: Prompt) -> string = concat([p.system, "\n\n", p.user, "\n"])
 
+-- R3-EARTH-LINK EL3b.6: a live frame of Earth's feed, one Earth week of home's own news (never the
+-- ship). The style is data/feed/events.json live_style (make feed-art-check keeps them equal); the
+-- request's context carries the week's scene paragraph (`scene`), the era word (`era`) and the Earth
+-- years since departure (`years`), so home drifts with the decades.
+export pure func feedStyle() -> string = "Asset: one wide landscape illustration, a single frame of the news feed from home in the game Stapledon's Voyage, a relativistic starship voyage in which years pass on Earth while the crew lives far less; this picture shows only home's own life on Earth, never the ship. Style: sophisticated hand-drawn 1970s European science-fiction graphic-novel illustration, delicate expressive ink contours, selective cross-hatching, textured gouache and watercolour on warm paper, muted earthy palette with restrained teal, ochre and coral accents. Landscape 3:2 at native 1536x1024. The series is set in and around one small Mediterranean-style coastal town of ochre walls, terracotta roofs and dark cypresses that climbs a slope toward a rocky headland where a large white radio telescope dish stands, above a bay and the open sea; when the news comes from elsewhere, the scene says where. Each picture is a snapshot from home's news feed with its own viewpoint (a kitchen, a street, the square, the beach, the hills, the sky), not a fixed view. The picture will be cropped to 16:9 for display, so keep every important element inside the central horizontal band and nothing important in the top or bottom tenth of the frame. Timeless everyday life: plain simple clothes, no phones, screens or electronic devices, no vehicles, machines, fashion or technology that would date the picture to any particular year. People may appear, but faces stay small, distant or turned away. No starship and nothing about a space voyage. Absolutely no text, letters, numbers, digits, writing, signage, symbols, flags, logos, brands, captions, frames, borders, UI or watermark anywhere in the image. No recognisable real people or real places. Mood: warm and human, melancholy at most, grounded and restrained, never kitsch, never judging."
+-- For make feed-art-check (equal to data/feed/events.json live_style).
+export pure func feedStyleText(_u: int) -> string = feedStyle()
+export pure func feedPrompt(r: Request) -> string =
+  join("\n\n", [feedStyle(), ctxOf(r.context, "scene"),
+    concat(["Home time: ", ctxOf(r.context, "era"), " after the departure (about ", ctxOf(r.context, "years"), " Earth years). Let clothes, technology, the town and the people's ages fit that time, changing gently with it."])])
+
 -- Portraits and avatars: one image prompt (no golden; the image model is
 -- bound to the handler, gap G2).
 export pure func imagePrompt(r: Request) -> string =

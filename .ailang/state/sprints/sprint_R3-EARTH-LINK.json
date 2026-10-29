@@ -1,7 +1,11 @@
 {
   "sprint_id": "R3-EARTH-LINK",
-  "status": "awaiting_approval",
-  "approved": null,
+  "status": "in_progress",
+  "approved": {
+    "by": "Mark (attended 2026-10-28)",
+    "how": "\"please merge in the plan\": plan PR #340 merged with OQ1-OQ5 at their recommendations",
+    "at": "2026-10-28T08:22:37Z"
+  },
   "created": "2026-10-27",
   "design_doc": "design_docs/planned/r3/earth-link.md",
   "sprint_plan": "design_docs/planned/r3/earth-link-sprint.md",
@@ -96,31 +100,31 @@
       "id": "OQ1",
       "q": "Comms station on the spare console reserved_2?",
       "recommendation": "yes; reserved_3 stays spare",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ2",
       "q": "The ship sends its plan home automatically at every commit?",
       "recommendation": "yes, automatic, shown in the Exchange log",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ3",
       "q": "Earth always transmits in this sprint (earth.sending true)?",
       "recommendation": "yes; Earth's fate switches it later",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ4",
       "q": "Gate 2 golden for a 2D overlay = projected geometry vs a CPU reference?",
       "recommendation": "yes",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     },
     {
       "id": "OQ5",
       "q": "Create sunholo/observe now for the geometry?",
       "recommendation": "yes, as the roadmap names it",
-      "answer": null
+      "answer": "yes, as recommended (Mark, attended 2026-10-28, merging the plan)"
     }
   ],
   "features": [
@@ -133,10 +137,10 @@
         "RS-26..RS-37 on stapledons-design main",
         "git grep -c 'RS-3[0-7]' physics/relativity-spec.md >= 8"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-28T08:22:37Z",
+      "completed": "2026-10-28T08:22:37Z",
+      "notes": "stapledons-design PR #44 merged (dd68310..): physics/relativity-spec.md RS-26..RS-37 and the light-cone row; git grep -c RS-3[0-7] = 8 on design main."
     },
     {
       "id": "EL1",
@@ -150,10 +154,10 @@
         "ailang pkg quality reports no gates; [release] kind present",
         "published 0.1.0; sim/ailang.toml pins it; ailang lock and make deps clean"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-28T08:22:37Z",
+      "completed": "2026-10-28T08:22:37Z",
+      "notes": "sunholo/observe 0.1.0 in ailang-packages branch feat/observe (5d6b4ee + README row): lightcone seenAt, catchUp, triangleExcess (clamped at 0), onBeamLine (atan2), linkWindow, earthRate (relativity 0.12.0 optics.gammaOnePlusBetaCos with the cosine clamped to [-1,1], since normalised vectors can dot to 1+1ulp outside doppler's contract; -heading at Sol). 16 tests (RS-26..37 vs closed forms written from 1-beta; five mutants killed), smoke OK, linkProbe VM = interpreter (6,790 bytes), pkg quality: no gates. Contracts: the verifier cannot encode sqrt/exp, so they stay runtime contracts backed by tests (reported upstream). [release] kind = feature (the plan said minor; the field takes security|fix|feature|breaking). PUBLISHED 2026-10-28 by Mark (ailang-publish; the classifier blocks it for agents): content hash 5b5bd4eb… equal to the dry run. The sim pins sunholo/observe 0.1.0 from the registry (lock source registry, same hash); ailang-packages PR #171."
     },
     {
       "id": "EL2",
@@ -172,10 +176,10 @@
         "make sim (AC6, AC12 sim half): stale beam until the new heard_t; earth.preview equals the committed window and stale, three keys only",
         "make strict and make parity: earthLinkVm VM = interpreter; a 2.15 session prints no earth key"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-28T08:22:37Z",
+      "completed": "2026-10-28T08:49:18Z",
+      "notes": "sim/earth_link.ail (Message, Link, LinkLeg; inBeam three cases, coveredAt at the commit, windowOf, previewOf, staleAt, rateOf, earthView), World.link + linkAfter/legOf/earthOf in core (make replay 11/11 identical right after the field, AC8), clocks via seenAt, protocol 2.16 (earthMinor = surfaceMinor()+3 = 16, free: no open PR edits sim/protocol.ail) with sim/protocol_earth.ail, EARTH_MINOR := 16, strict earthLinkVm. 10 tests incl. AC4 (40 ly), AC4b (10 ly first leg: kills covered-at-arrival), AC5, cases, the 2.16 wire; 11 mutants killed (the flying guard is unreachable via the journey, checked directly). Sessions stay on ARCHIVE_MINOR until EL3/EL4 read earth. Gates (pinned v0.54.18): make sim green (564 AILANG tests; bridge 0 failures; bh-hud 64 after make import refreshed a stale class cache in the clone), make strict (earthLinkVm VM = interpreter = earth-link-ok), make parity, make replay 11/11 identical. Four older tests that pinned 2.15 as the newest minor now pin 2.16 (archive_health_test, protocol_interlude_test, protocol_crew_test, protocol_test S0.2 negotiation). LOC: earth_link 125, protocol_earth 44, tests 242, core/consequence/protocol +60."
     },
     {
       "id": "EL3",
@@ -188,10 +192,30 @@
         "make display-audit-comms (new target, in make test): 0 unbound digits on the Listen and Exchange-log panes",
         "tests/test_comms_station.gd green in make ui: rate phrase thresholds from data at four D values; out-of-beam reasons from sim fields; console opens from the deck"
       ],
+      "passes": true,
+      "started": "2026-10-28T12:30:00Z",
+      "completed": "2026-10-28T13:36:33Z",
+      "notes": "Comms station on console_decision_2 (STATIONS comms, ACTIONS open/listen/log, ShipControls.CONSOLE, HUD WALK_TO); ui/comms_panel.gd (Listen: newest light + age or the at-home line, Earth rate D with data-driven phrase bands, in beam or the sim's reason, silence line; Exchange log: one row per message) with every line a ComposedBinding on earth.* (data/ui/comms_copy.json); idle screen bound. Sessions on SimBridge.EARTH_MINOR (ship demo, main map route, loading-jump prefetch; test_bh_hud, test_ship_ui). Sim additions for the panes (no GDScript arithmetic): out {reason, port_id, due_t, due_in_years}, last_beam_t (noteBeam each tick), rate_inverse, at_home, port_id and *_year on messages/beam/stale/pending, reply_t. Model fix found by running the station in the game: the ship starts at Earth (1 AU), so home is the Solar System (120 AU, heliopause): in beam there, a plan from home heard at once and covered, its beam carried from sentT - |from| (beamFrom); design doc amended. Gates: make comms-station-test 37/0 (in make ui); make display-audit-comms (tests/playthrough_comms.json, 1122 samples, listen in beam / not_heard / log with 2 rows, new=0 failures=0; in ship-demo-ci) plus a comms-field negative control (32 controls); earthLinkVm on strict VM and interpreter (checkComms, checkHomeStart; 4 mutants killed); ailang test --package 566/566; make strict, parity, replay 11/11; ship-console-test 135/0. Also refreshed the session-audit codex mirrors for the two Archive entries (missed in e7dbc359)."
+    },
+    {
+      "id": "EL3b",
+      "description": "The visual comms station (Mark 2026-10-28, standing order: visual first, words last): earth.feed in the sim (frame by Earth week of t_e, event, variant), Earth's feed playing at D (stillness to torrent), Doppler tint, static and the ring out of beam, twin clocks, the crew's faces and feelings, the exchange as light; a generated feed library from Earth's events; EL3's words behind Details",
+      "estimated_loc": 850,
+      "dependencies": [
+        "EL3"
+      ],
+      "acceptance_criteria": [
+        "earthFeedVm: same seed same feed; frame = floor(t_e / feedBinYears) (weekly); frame count over a leg = t_e advance / bin (still flying away, torrent flying home); events at the scale of weeks to decades",
+        "make feed-art-check: the event catalogue and the pinned feed pictures agree; every picture inspected at 1:1 for text or digits",
+        "tests/test_earth_feed.gd: tint and jumble bands chosen by D at RS-26..RS-29; static over the last beamed frame when out of beam; the frame shown is earth.feed",
+        "make display-audit-comms: every digit on the station an earth.* binding; Mark's render review of the four moments",
+        "Live frames (EL3b.6): on each look the AI lane paints at most N new weeks from earth.feed.context (the week's Earth event and the era by homeTier16(t_e); no ship telemetry: news from home, outside the bubble; the bubble's consequences enter as Earth's own news only for weeks with t_e >= since_t), with the player keys under the spend ceiling; cache replays revisits; AI off, no key or failure shows the library frame at once (stub-image tests)",
+        "The mix (Mark: variety, spread the cost): each week has a kind (painted live, library, news card, home snapshot, sky over home) drawn by the sim from data/feed/mix.json; shares match over many weeks, painted live the minority; only painted-live weeks spend"
+      ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-28T14:23:20Z",
       "completed": null,
-      "notes": null
+      "notes": "Approved by Mark 2026-10-28 (attended): go ahead; seed the library now, it builds up over playthroughs and shared asset packs (painted-live frames join the library by content hash + feed key + provenance); crew emotion portraits for every member in scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v4). Executing in the full clone stapledons-godot-earth-link (the attended clone is in use by another session). Progress 2026-10-28: EL3b.1 done (13166ba1, 334b64d0: earth.feed, last_feed, out.progress; earthFeedVm in make strict); EL3b.2 seed done (f08cc00a: 48 pictures, masters in gs://stapledons-voyage-assets/feed/, make feed-art-check); EL3b.3 done (26f5c303: CommsStation, EarthFeed, EarthClocks; earth-feed-test 20/0, comms-station-test 42/0, display-audit-comms new=0, physics 937/0). Next: EL3b.4 crew faces (29 emotion portraits generating), EL3b.6 live frames, EL3b.5 light strip and renders. Progress 2: EL3b.4 done (56851a7b: 28 emotion portraits, every member has all eight; 6506e04b: earth.crew home feelings, work strain first; presentation only. Follow-up: crew_core itself reacting to news from home is a package change, not here); EL3b.6 done (6506e04b: feed AI kind, feedPrompt, live frames per look, library grows via AiCache.entries_for); 4815e84d import-keep for feed pictures and portraits. Remaining: EL3b.5 (light strip, layout, renders for Mark)."
     },
     {
       "id": "EL4",
@@ -207,7 +231,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Start here: ui/earth_beams.gd after ui/ism_layer.gd; read earth.beam/pending/stale/window/preview (port_id and *_year fields are on the wire since EL3); the window may need port_id and a reach year for its label."
     },
     {
       "id": "EL5",

@@ -74,6 +74,7 @@ Prose may use the readable form; the checker treats each pair as the same unit.
 | Registry | Prose |
 |---|---|
 | yr | years |
+| day | days |
 | min | minutes |
 | deg | ° |
 | sun | suns |
@@ -92,10 +93,12 @@ Prose may use the readable form; the checker treats each pair as the same unit.
 | `archive.one-g` | Why you feel 1 g | `always` |
 | `archive.nothing-crosses` | Why nothing can cross, and what can | `always` |
 | `archive.two-clocks` | Time dilation and the two clocks | `first_commit` |
+| `archive.earths-voice` | Earth's light cone, the Earth rate, signals that chase you, and the wait after a turn | `first_commit` |
 | `archive.photon-drive` | The photon drive and the cost of speed | `first_boost` |
 | `archive.ism-glow` | The interstellar medium and the glow | `cruise_above_0.9c` |
 | `archive.starbow` | Why the sky crowds forward | `cruise_above_0.9c` |
 | `archive.weather-between-the-stars` | Clouds, dust and the drive-hold limit | `cruise_above_0.9c` |
+| `archive.following-light` | How Earth aims at a ship crossing its sky near light speed | `cruise_above_0.9c` |
 | `archive.cmb-forward` | The blueshifted cosmic background | `cruise_above_gamma_275` |
 | `archive.tides` | Tides near black holes, and why Sgr A* is safe | `first_black_hole` |
 | `archive.shadow-ring` | The black hole's shadow and the Einstein ring | `first_black_hole` |

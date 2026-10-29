@@ -83,7 +83,7 @@ func sample() -> void:
 		cards.append({"node": str(card.panel.get_path()), "visible": card.panel.is_visible_in_tree(),
 			"expanded": card.body.is_visible_in_tree(), "leaving": card.leaving})
 	samples.store_line(SimBridge.encode({"frame": frame, "view": view, "bindings": bindings,
-		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row(), "crew": crew_row()}))
+		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row(), "crew": crew_row(), "comms": comms_row()}))
 	# D-68 applies to every action list and all currently visible text, including windows.
 	for actions: Array in ShipConsoles.ACTIONS.values():
 		for a: String in actions:
@@ -262,6 +262,19 @@ func crew_row() -> Dictionary:
 	if cc == null or not cc.is_visible_in_tree(): return {}
 	var m := CrewConsoleModel.member(cc.crew, cc.call_id)
 	return {"call": cc.call_id, "state": CrewConsoleModel.state(m, {"sending": cc.sending}) if not m.is_empty() else ""}
+
+
+## R3-EARTH-LINK EL3 (AC9): the comms station in the sample row: the pane shown, the beam state, the rows.
+func comms_row() -> Dictionary:
+	var st: CommsStation = demo.consoles.comms_station
+	if st == null or not st.is_visible_in_tree(): return {}
+	var p: CommsPanel = st.words
+	var e: Variant = demo.ship_hud._last_view.get("earth")
+	var o: Variant = e.get("out") if e is Dictionary else null
+	return {"pane": p.pane if p.is_visible_in_tree() else "feed", "lines": p.lines.get_child_count() if p.is_visible_in_tree() else 0,
+		"in_beam": e.get("in_beam") if e is Dictionary else null, "reason": str(o.get("reason", "")) if o is Dictionary else "",
+		"feed": st.feed.is_visible_in_tree() and st.feed.picture.texture != null, "source": st.feed.shown_key,
+		"faces": st.crew.get_child_count() if st.crew.is_visible_in_tree() else 0}
 
 
 ## {"crew": [actions], "tick": bool}: press each action on the open Crew console (as the captain's

@@ -998,7 +998,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.ARCHIVE_MINOR # D-113: 2.15 (the Archive's Memory Health for the spire's sound); R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.EARTH_MINOR # R3-EARTH-LINK: 2.16 (Earth's link, the comms station); D-113: 2.15 (the Archive's Memory Health for the spire's sound); R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -1311,6 +1311,7 @@ func _update_hud(delta: float, details: String) -> void:
 	ship_hud.set_prompt(prompt)
 	ship_hud.advance(delta)
 	ship_hud.update(view)
+	consoles.refresh_view(view) # R3-EARTH-LINK EL3: the comms panes from this frame's view
 ## A new sim session (navigation, the guided voyage, Sgr A*): its cards start clean, and
 ## what it opens with (its own world's unlocks, phase, journey state) is not news.
 func _reset_hud_session() -> void:

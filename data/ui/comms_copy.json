@@ -1,0 +1,44 @@
+{
+  "about": "R3-EARTH-LINK EL3 (K1, design r3/earth-link.md): the comms station's copy. A line is a list of parts: a string is copy, a [field, format] pair is one earth.* sim field, formatted and nothing more (D-21; ui/comms_panel.gd CommsPanel.format). Times read as the HUD's Earth clock (comms_clock: +4.31 yr). {i} in a field is the Exchange log row's message index. rate_bands are tried in order: the first whose min <= earth.rate (and earth.rate < max, when max is given) gives the Earth-rate phrase.",
+  "title": "Comms station",
+  "screen": ["Comms\nEarth at ", ["earth.newest_light_year", "comms_clock"]],
+  "screen_home": ["Comms\n", ["earth.at_home", "comms_home_short"]],
+  "screen_no_link": "Comms\nno link to Earth",
+  "no_link": "No link to Earth here: Earth's light does not reach this place as a signal.",
+  "panes": {"listen": "Listen", "log": "Exchange log"},
+  "listen": {
+    "head": "Listening for Earth",
+    "light": ["Newest light: Earth at ", ["earth.newest_light_year", "comms_clock"], ", ", ["earth.light_age_years", "comms_years"], " old"],
+    "light_home": [["earth.at_home", "comms_home"]],
+    "rate": ["Earth rate ", ["earth.rate", "sci"], ": "],
+    "in_beam": [["earth.in_beam", "comms_beam"]],
+    "out": {
+      "not_heard": [["earth.in_beam", "comms_beam"], ": the light reaching the ship left before Earth heard your plan for ", ["earth.out.port_id", "comms_port"], ". Earth's beam reaches ", ["earth.out.port_id", "comms_port"], " at Earth ", ["earth.out.due_year", "comms_clock"], ", ", ["earth.out.due_in_years", "comms_years"], " from now."],
+      "off_line": [["earth.in_beam", "comms_beam"], ": off the beam line. Earth aims only at plans it has heard."],
+      "silent": [["earth.in_beam", "comms_beam"], ": Earth is silent."]
+    },
+    "silence": ["Silence: the last beamed light left Earth at ", ["earth.last_beam_year", "comms_clock"], "."]
+  },
+  "rate_bands": [
+    {"min": 1.05, "phrase": [["earth.rate", "comms_days"], " of Earth per ship-day"]},
+    {"min": 1.0000001, "max": 1.05, "phrase": ["Earth runs a little faster than the ship"]},
+    {"min": 0.9999999, "max": 1.0000001, "phrase": ["real time"]},
+    {"min": 0.95, "max": 0.9999999, "phrase": ["Earth runs a little slower than the ship"]},
+    {"min": 0.0, "max": 0.95, "phrase": ["one Earth day every ", ["earth.rate_inverse", "comms_days"], " aboard"]}
+  ],
+  "log": {
+    "head": "Plans sent home",
+    "empty": [["earth.sending", "comms_sending"], " No plan has been sent home yet: every commit sends one."],
+    "row": ["Plan ", ["earth.messages.{i}.plan_id", "%d"], " to ", ["earth.messages.{i}.port_id", "comms_port"], ": sent at Earth ", ["earth.messages.{i}.sent_year", "comms_clock"], " (", ["earth.messages.{i}.sent_tau", "comms_years"], " aboard). Earth hears it at ", ["earth.messages.{i}.heard_year", "comms_clock"], "; its reply reaches ", ["earth.messages.{i}.port_id", "comms_port"], " at ", ["earth.messages.{i}.reply_year", "comms_clock"], " at the earliest."]
+  },
+  "words": {
+    "beam_on": "In Earth's beam",
+    "beam_off": "Out of Earth's beam",
+    "sending": "Earth is transmitting.",
+    "not_sending": "Earth is silent.",
+    "sol": "Sol",
+    "home": "Inside the Solar System: Earth tracks the ship directly, its light minutes or hours old.",
+    "home_short": "Earth, close by",
+    "away": "Beyond the Solar System"
+  }
+}

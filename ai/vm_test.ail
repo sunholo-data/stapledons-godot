@@ -24,7 +24,7 @@ import ./provider (Ctx, Act, Say, handle)
 
 pure func vmTable() -> Routing = match parseRouting(join("", [
   "{\"v\":1,\"routes\":{\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:v/m\"},{\"provider\":\"gemini\",\"model\":\"gtext\"}],",
-  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"voice\":[{\"provider\":\"gemini\",\"model\":\"gtts\"}]}}"])) {
+  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"feed\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"voice\":[{\"provider\":\"gemini\",\"model\":\"gtts\"}]}}"])) {
   Ok(r) => r, Err(_) => { routes: [] } }
 pure func vmKeySets() -> [{name: string, keys: [string], textOnly: bool}] = [
   { name: "both", keys: ["gemini", "openrouter"], textOnly: false }, { name: "gemini", keys: ["gemini"], textOnly: false },

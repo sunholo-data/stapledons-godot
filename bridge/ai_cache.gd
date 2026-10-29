@@ -62,6 +62,20 @@ func has_blob(sha: String) -> bool:
 	return not find_sha(sha).is_empty()
 
 
+## R3-EARTH-LINK EL3b.6: every entry of `kind` for `entity` on disk (core then library, any variant
+## and stage), in file order: the feed's painted frames of an event, so its library grows with play.
+func entries_for(kind: String, entity: String) -> Array:
+	var out: Array = []
+	var prefix := "%s/%s/" % [kind, entity]
+	for layer in [_core, _lib]:
+		for s: String in layer:
+			if s.begins_with(prefix):
+				for x in layer[s]:
+					if FileAccess.file_exists(blob_path(x["entry"])):
+						out.append(x["entry"])
+	return out
+
+
 ## The index entry (core first) whose blob is `sha` and is on disk, or {}.
 func find_sha(sha: String) -> Dictionary:
 	for layer in [_core, _lib]:

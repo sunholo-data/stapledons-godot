@@ -437,8 +437,8 @@ func test_routes() -> bool:
 	for run in [[e2e, "openrouter"], [g, "gemini"]]:
 		var r: Dictionary = run[0]
 		var routes: Dictionary = r["bridge"].hello_reply.get("routes", {})
-		var same := routes.size() == 4
-		for kind in ["text", "voice", "portrait", "avatar"]:
+		var same := routes.size() == 5
+		for kind in ["text", "voice", "portrait", "avatar", "feed"]: # feed: R3-EARTH-LINK EL3b.6, the comms feed's live frames
 			var want: String = routes.get(kind, {}).get("route", "?")
 			same = same and r["relay"].route_for(kind) == ("" if want == "none" else want)
 		var text_routes := []

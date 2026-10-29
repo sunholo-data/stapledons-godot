@@ -1,6 +1,6 @@
 # R3-EARTH-LINK: Earth's signal, the live Earth rate, the comms station and Earth's beams
 
-**Status:** Planned 2026-10-27, awaiting Mark's approval.
+**Status:** Planned 2026-10-27; approved by Mark 2026-10-28 (OQ1–OQ5 as recommended). In progress.
 **Release:** R3 (Signals and Contact), the roadmap's first step: milestones **S1**, **K1** and **F6**.
 **Priority:** P1. It makes home the ship's anchor from the first leg, and every later R3 track (evidence, finder, contact) builds on its light cone.
 **Origin:** Mark, attended 2026-10-27: "it will be crazy to receive updates from earth at different rates according to distance and speed traveling towards or away"; "it's only straight lines - so as soon as we change course the signal will be lost unless we say where we are going"; "we could then have a map graphic showing which direction earth is sending its signals as far as we know, and where they will point, I guess an important anchor for the ship." R3 approved the same day (stapledons-design #42).
@@ -126,10 +126,10 @@ What it stores is only the messages. The ship's path comes from the journey core
 
 - **Sending.**
   - At every commit the ship sends its plan home. The sim appends a `Message`: `sentT` is the commit's galaxy time, and `heardT = sentT + |from|`.
-  - The first commit from Sol has `heardT = sentT` (the plan Earth had before departure).
+  - A commit from home (inside the Solar System, below) has `heardT = sentT` (the plan Earth had before departure).
 - **Earth's aim at emission time t_e.** Earth aims at the plan of the newest message it had heard by t_e (`heardT ≤ t_e`), or nowhere if it had heard none. Each beam covers the ray from Sol through its port (stapledons-design 2026-10-27).
 - **In beam.** At galaxy time t and position p, the Earth light reaching the ship left at t_e = t − |p| (`seenAt`). Let m be the newest message with `heardT ≤ t_e`. The ship is **in beam** iff Earth was sending at t_e and one of these holds:
-  1. **At home:** |p| < 1e-12 ly (the ship is at Sol). This includes a hold at Sol before any commit.
+  1. **At home:** inside the Solar System, |p| < 120 AU (`homeRadiusLy`, the heliopause). This includes the hold at Earth before any commit. Amended in EL3 (see "Home is the Solar System" below): the plan had |p| < 1e-12 ly, at Sol itself, but the voyage starts at Earth, 1 AU from the origin.
   2. **On the heard plan:** the ship's current leg is m's plan (`planId` equal) and that leg is committed or arrived. A plan that is only planned, not committed, never counts. Earth aims at the ship's predicted position on it. Cases 2 and 3 can both hold; either is enough.
   3. **On the heard beam's ray:** `onBeamLine(m.port, p, angTol)`. This covers a stop beyond m's port or between it and Sol.
 
@@ -146,6 +146,16 @@ What it stores is only the messages. The ship's path comes from the journey core
   - The sim reports each stale beam with the galaxy time Earth stops aiming it (`heardT` of the next message).
 - **The Earth rate.** `earthRate(position, heading, φ)` on every tick: 1 at rest; below 1 receding; above 1 approaching.
 - **The news epoch is unchanged.** `consequence.clocks` calls `seenAt` and gives byte-identical results; M4.4 AC1 stays pinned.
+- **Home is the Solar System (amended in EL3, 2026-10-28).** The light cone puts Earth at the origin, but the game starts the ship at Earth, 1 AU out (8.3 light-minutes), and the EL2 fixtures started it at the origin. Running the comms station in the game showed two faults:
+  - before the first commit the ship read "out of beam, off the beam line", because the old case 1 (|p| < 1e-12 ly) never holds at Earth;
+  - on a first leg from Earth near c, the light reaching the ship is older, measured from Sol, than the plan by up to 8.3 minutes, and t − |p| stays below `heardT` for years. At 0.999999c it gains only (1 − β) per year, so the ship read out of beam on its own first leg for about 15 years.
+
+  The fix, in `sim/earth_link.ail`:
+  - **at home** is |p| < 120 AU, the heliopause (Voyager 1 crossed it at 121.6 AU in 2012, Voyager 2 at 119 AU in 2018). Inside it Earth tracks the ship directly, as the Deep Space Network tracks the Voyagers;
+  - a plan made at home is heard at once, and its leg is **covered** (no wait, no stale beam);
+  - its beam is carried by Earth light from `beamFrom = sentT − |from|` (the earliest Sol-centred emission time of light from Earth at the commit: the ship riding Earth's own light outward). Every other message's beam starts at `heardT`.
+
+  Stars are tens of light-years out, so nothing else moves. Checked by `checkHomeStart` in `earth_link_test.ail`, with mutants of both rules caught.
 
 **Wire, 2.16, gated by `earthMinor()`.** The `earth` section:
 
@@ -153,16 +163,20 @@ What it stores is only the messages. The ship's path comes from the journey core
 |---|---|
 | `rate` | D, float64 |
 | `newest_light_t` | t_e, galaxy time |
-| `newest_light_year` | calendar year of t_e |
+| `rate_inverse` | 1 / D, ship-seconds per Earth-second (EL3: the "one Earth day every …" phrase) |
+| `newest_light_year` | params.epoch + t_e, the Earth clock (the game's epoch is 0, so this reads as the HUD's "Earth +t"; every `*_year` below is the same) |
 | `light_age_years` | \|p\| |
+| `at_home` | inside the Solar System (EL3) |
 | `in_beam` | in-beam state |
 | `sending` | Earth is transmitting (true throughout this sprint) |
-| `beam` | `{port, heard_t}` or null |
-| `stale` | `[{port, until_t}]` |
-| `pending` | `[{port, sent_t, heard_t}]`, plans still in flight to Earth |
+| `last_beam_t`, `last_beam_year` | when the newest beamed Earth light the ship received left Sol: the silence line (EL3; noted every tick in beam) |
+| `out` | `{reason, port_id, due_t, due_year, due_in_years}` or null in beam (EL3): `silent`, `not_heard` (the newest plan's beam reaches its port at `due_t`, `due_in_years` from now) or `off_line` |
+| `beam` | `{port_id, port, heard_t, heard_year}` or null |
+| `stale` | `[{port_id, port, until_t, until_year}]` |
+| `pending` | `[{port_id, port, sent_t, heard_t, heard_year}]`, plans still in flight to Earth |
 | `window` | `{port, from_t, wait_years}` or null, for the committed or arrived leg |
-| `preview` | `{port, wait_years, would_stale: {port, until_t} or null}` or null, for a planned, uncommitted leg (cost fields only) |
-| `messages` | `[{plan_id, from, port, sent_t, sent_tau, heard_t}]` |
+| `preview` | `{port, wait_years, would_stale: {port_id, port, until_t, until_year} or null}` or null, for a planned, uncommitted leg (cost fields only) |
+| `messages` | `[{plan_id, port_id, from, port, sent_t, sent_year, sent_tau, heard_t, heard_year, reply_t, reply_year}]`; `reply_t` = heard_t + \|port\|, Earth's reply at the port at the earliest (EL3) |
 
 The minor's other required edits:
 - `helloFor`;
@@ -177,14 +191,71 @@ Streams below 2.16 carry no `earth` section and stay byte-identical; the replay 
   - `reserved_2` becomes **Comms** (`STATIONS`, `ACTIONS`, `ui/ship_controls.gd` `CONSOLE`, the HUD's `WALK_TO`), with the existing SubViewport screen and panel pattern (`_build_screens`, `_open_panel`).
   - `reserved_3` stays spare.
 - **Listen pane**, Earth only:
-  - **Newest Earth light:** the calendar year, and how old it is ("Earth as of 2412, light 4.3 years old").
+  - **Newest Earth light:** Earth's clock in it, and how old it is ("Newest light: Earth at +109.6 days, 4.32 yr old"). The game has no calendar (its epoch is 0), so times read as the HUD's Earth clock. Inside the Solar System: "Earth tracks the ship directly".
   - **The Earth rate, live:** the value of D and a phrase built only from it ("one Earth day every 3.9 ship-years"; "real time"; "two weeks of Earth per ship-day"), with the phrase thresholds in data.
-  - **In beam or not**, and the reason when not, from the sim: "Earth has not heard this plan yet: its beam reaches you at 2,467 (wait 60 years at the port)", or "off the beam line".
+  - **In beam or not**, and the reason when not, from the sim (`earth.out`): "the light reaching the ship left before Earth heard your plan for Proxima Centauri. Earth's beam reaches Proxima Centauri at Earth +12.60 yr, 8.30 yr from now", or "off the beam line".
   - **Silence:** when not in beam, the date of the last Earth light the ship received.
 - **Exchange log:**
   - one row per plan sent home: sent (ship-year and galaxy year), heard at Earth (galaxy year), and Earth's reply reaching the port at the earliest (`heard_t + |port|`);
   - outbound messages draw as light-fronts on the map (EL4).
 - **Numbers only from the wire** (D-21): every digit on the panes binds to an `earth.*` field. A new target `make display-audit-comms` (beside `display-audit-interlude` and `display-audit-crew`, and a prerequisite of `make test`) audits the new panes.
+
+### EL3b. The comms station, visual (Mark 2026-10-28: "visual first, words last")
+
+Mark on the EL3 panes: "the comms station is boring - this is the connection of the crew to home it should be a wash of images, text, emotions and feelings, and a good visual UI not lots of text". Then: "we can represent the earth updates with a stillness or fast flowing images of a jumbled video feed", and "we can have fun generating images for the feed based off of latest events on earth". That set a standing order (design-decisions 2026-10-28, "Visual First, Words Last"). Visual concept: [the mock-up artifact](https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ), version 4. EL3's sentence panes stay as the words layer behind a Details tap.
+
+What the player sees at a glance, and feels:
+
+| Element | Shows | Driven by |
+|---|---|---|
+| **Earth's feed** (the centre, 16:9) | Home as of the newest light, one frame per moment of Earth's history. It plays at the Earth rate: near-still flying away near c, real time at rest, a jumbled torrent turning for home | `earth.feed` (below): the frame key advances with t_e, so the playback rate *is* D times the game's pacing. Godot never computes a rate |
+| Doppler tint | The feed warms (receding) or cools (approaching) by the signal's real shift | `earth.rate`, through data thresholds. A stylized indicator, not a spectral render: gate 2 asserts the RS-26..RS-29 D values select the documented tint bands |
+| Static and the ring | Out of beam, the last beamed frame (`last_beam_t`) freezes under static. A ring fills until Earth's voice arrives | `earth.in_beam`, `earth.out.due_in_years`, and the window or plan span |
+| Live tag, corner clock | "live" inside the Solar System; otherwise the Earth clock in the newest light and its age | `earth.at_home`, `newest_light_year`, `light_age_years` (bound) |
+| Twin clocks | The ship's hand and Earth's hand, Earth's turning D times as fast (a blur past a cap) | `earth.rate` |
+| The crew at the console | Faces with feelings that follow home and the beam: glad, longing, cut off, waiting, home! | `crew_core` emotions (the R2 medic emotion work). Portrait variants per member and feeling (D-7 sets; today only the medic has them) |
+| The exchange as light | A small spacetime strip: Earth's line, the ship's, each plan travelling home at light speed, Earth's reply, the wait at the port | `earth.messages` (sent, heard, reply), `t` and \|p\| |
+| Words layer | EL3's panes, unchanged, behind Details | as EL3 |
+
+**The feed's frames are Earth's recent events, at the scale a voyage actually receives.** The light the ship gets spans weeks to a few decades of Earth time in a session (the comms playthrough reaches Earth +8.7 yr), and up to about two centuries on the longest voyages. So a frame is one event in Earth's week, not an era. Mark, 2026-10-28: "those are very far apart eras not what we will use in the game - we are not streaming millions of years". The sim generates the chronicle deterministically, and Godot only shows it.
+- `earth.feed = {frame, event, variant, context}`, where `context = {era_tier, era_word, years, influences: [{kind, since_t}]}` holds the sim fields a live frame's prompt reads (below):
+  - `frame = floor(t_e / feedBinYears)`, with one bin per Earth week;
+  - `event` is the chronicle's entry for that week: `mix(seed, frame)` draws a category and an event from `data/feed/events.json`;
+  - `variant` picks among the event's pictures.
+- Same seed, same feed. The frame key moves with t_e, so the stillness (one week held for days or months aboard) and the torrent (weeks flicking past) are both the physics.
+- **The event catalogue** is everyday-to-world Earth news at the scale of weeks to decades:
+  - family and friends: a birthday, a wedding, a new baby, a funeral;
+  - home and town: seasons, a storm, a festival, a new building;
+  - the nation and the world: an election, a treaty, a protest, a record heat year;
+  - science and space: a launch, a telescope's first light, a message sent after the ship.
+
+  Over decades the slow drift (the children grow up, the town changes) comes through the catalogue's later rows. It is written in the news voice, never judging (pillar 2), and is consistent with the news templates the Archive reads.
+- **Live frames, painted each time the player looks: the main path** (Mark, 2026-10-28: "we can update as we go new images each time a user looks at it, using api keys etc and based on in game events and history in the right era").
+  - When the station opens, or while the feed is on screen, the AI lane paints the next few frames for the weeks being received. It uses the player's own keys (the AI indicator, as for the news and the Archive; no key ships in the build).
+  - Each frame's prompt is built in the AI lane (`ai/prompt.ail` `feedPrompt`) from sim fields only, carried in `earth.feed.context`:
+    - **the week's chronicle event** (home's own news: family, town, the world, science);
+    - **the right era**: Earth years since departure in the newest light, through the home-time ladder's words (`homeTier16` of t_e: launch, seasons, years, decade, decades, generation…). Fashion, technology, faces and the town drift with it: a frame twenty years on shows the niece grown and the street changed;
+    - **no ship telemetry** (Mark, 2026-10-28: "earths pictures dont include ship events data - its news from home, outside the bubble right?"). The feed is home living its own life: no plans, ports, crew roster or the voyage's course in any prompt or picture. The ship's side of the exchange is the light strip, not the feed;
+    - **but home can carry the bubble's consequences** (Mark: "the in game events the bubble may make (e.g. helping earth with tech etc) may influence the feed"). When something the ship did changes Earth (knowledge or tech sent home, a discovery reported, help given), Earth's later history shows it as Earth's own news: a new power station, a festival in the ship's honour, a city that grew from it. Each influence carries `since_t`, the light-cone time Earth received it (the message's `heard_t`) plus Earth's own lag to act. It enters `context.influences` only for weeks with t_e ≥ `since_t`, so the feed never shows home changed by help it has not yet received. In this sprint the ship sends only its plans (OQ2), so `influences` stays empty; the S-track's message content and the bubble's discoveries fill it later, with the catalogue's influence rows ready.
+  - Frames are cached by key (seed, week, event, era), so a revisit replays the same pictures. Every look adds new weeks; a returning player sees the frames already painted.
+  - **The library builds up** (Mark: "this is something that can build up over playthroughs and if people share assets"). A painted-live frame joins the player's library under its content hash and its feed key (event, kind, era), with provenance (model, prompt sha, date), in the same format as the shipped pins. Later voyages draw on it for the library kind, and a library can be exported or imported as an asset pack. The sharing channel itself comes later.
+  - Spend-capped under the AI layer's ceiling (default $0.50, player-set): a few frames per look, never a burst. Images carry no text or digits (prompt rule, as the portraits).
+  - When AI is off, the key is missing or a call fails, the frame comes from the shipped library at once, so the feed never waits on the network.
+- **The feed is a mix, for variety and to spread the cost** (Mark, 2026-10-28: "we can mix it in with non-ai spend images and text/news/ etc to help spread the cost - variety is good"). Each week's frame has a *kind*, drawn by the sim with the event (`mix(seed, frame)`, shares in `data/feed/mix.json`), so the same voyage always mixes the same way:
+  - **painted live** (AI): the minority share, and the only kind that spends;
+  - **library pictures** (shipped, free): the event's pictures, so the event still reads as a picture;
+  - **news cards** (free): a postcard of the week's news, an image with a few words. The words are the news templates' (or the accepted AI news text) with slots from sim fields, never digits outside a binding;
+  - **home snapshots** (free): the crew's own pictures from before departure, a face or a kitchen, shown when the news touches someone they left;
+  - **the sky over home** (free, procedural): Earth from the Moon, a launch plume, the town's night lights, drawn from the event's category.
+
+  A painted-live slot that cannot paint (AI off, no key, the spend ceiling reached, a failure) falls back to the library kind, so the mix never stalls. Stillness and torrent apply to every kind alike.
+- **The fallback library, generated once and shipped.**
+  - About 8 events × 2 variants in each of about 6 categories (about 100 pictures).
+  - Generated through the established home-art route: Codex imagegen, the home-tier style reference, no text or digits in frame, every picture inspected at 1:1 (as `data/interlude/home/generation_notes.md`), or through the AI lane's image slot (`gemini-2.5-flash-image`, $0.039 a call, unverified).
+  - Pinned by sha256, with masters in the public bucket (D-18), fetched by `make feed-assets`.
+  - The home-tier pictures are not feed frames: they summarise whole eras of home time, and stay on the crossing review.
+
+Out of scope here: composing messages home (S-track), voices and audio from Earth (a later sound pass).
 
 ### EL4. Earth's beams on the galaxy map (F6)
 
@@ -250,6 +321,7 @@ Every new test is wired into `make test`, so `rig/full` runs it:
 | EL1 | `sunholo/observe` 0.1.0: the geometry, the tests, publish; the sim pin | 250 | EL0 |
 | EL2 | `sim/earth_link.ail`, the World record, the commit hook, protocol 2.16, the tests, the strict and parity entries, the bridge constant | 400 | EL1 |
 | EL3 | The comms station: the console, the Listen and Exchange-log panes, the copy data, `tests/test_comms_station.gd`, display-audit rows | 330 | EL2 |
+| EL3b | The visual comms station: `earth.feed` in the sim, the feed with tint, static and ring, twin clocks, the crew's faces, the light strip, the event catalogue and the generated feed library | 650 + art | EL3 |
 | EL4 | `ui/earth_beams.gd`, the map toggle, the plan preview, `tests/test_earth_beams.gd` | 270 | EL2 |
 | EL5 | `physics/observe.gd` mirror, `test_physics.gd` rows, `G-EL-1`, `make capture-earth-link`, the report | 100 | EL3, EL4 |
 
@@ -264,15 +336,29 @@ EL3 and EL4 are independent once EL2 lands. EL1–EL2 are headless and could go 
 - **Protocol minor collisions.** An open plan could also claim 2.16. Mitigation: check the free minor at execution time and record it, as R2-HOME-TIERS did.
 - **"In beam" on the first leg.** The guided tour starts at Sol with the plan known before departure, so it never shows a gap. The re-plan fixture (AC4) exercises the gap headless; a dev build shows it only on a second leg.
 
-## Open questions for Mark
+## Archive entries (standing order, Mark 2026-10-28)
 
-| # | Question | Recommendation |
+The real physics behind this feature, in the in-game Archive (stapledons-design `lore/archive/`, PR #45; imported at `0fedb48`):
+
+| Entry | Unlock | Teaches | Check values |
+|---|---|---|---|
+| `archive.earths-voice` | `first_commit` | the light cone, the Earth rate astern and ahead, signals that chase a ship, the wait after a turn | RS-26, RS-28, RS-30..RS-33 |
+| `archive.following-light` | `cruise_above_0.9c` | how Earth aims at a ship crossing its sky near c: a gentle swing, at most βγ/r, and aiming ahead along the heard course | RS-38..RS-40 |
+
+## Decisions (Mark, attended 2026-10-28)
+
+Mark approved the plan with every recommendation ("please merge in the plan", PR #340).
+
+| # | Question | Decision |
 |---|---|---|
 | OQ1 | Put the comms station on the spare console `reserved_2` | **Yes**; `reserved_3` stays spare |
 | OQ2 | The ship sends its plan home automatically at every commit, shown in the Exchange log; composing content comes later | **Yes, automatic** |
 | OQ3 | Earth always transmits in this sprint (`earth.sending` true), with Earth's fate switching it off later | **Yes** |
 | OQ4 | Gate 2's golden for a 2D overlay: the projected geometry against a CPU reference, since no shader is involved | **Yes** |
 | OQ5 | Create `sunholo/observe` now for the geometry (S2 extends it), rather than putting the light cone in `sunholo/relativity` | **Yes**, as the roadmap names it |
+| EL3b | The visual comms station (attended 2026-10-28): the feed of Earth's weeks at D, the mix, live frames on every look, nothing from the ship but the bubble's consequences as Earth's own news, the crew's faces | **Approved**: "yep good go ahead and we will start seeding the library - this is something that can build up over playthroughs and if people share assets. yeah we can do the crew faces as well" |
+| EL3b library | How the feed library grows | **It builds up**: seeded now, then every painted-live frame joins the player's library, keyed by its content (sha256) and its feed key (week, event, kind, era), with its provenance, so libraries can be shared as asset packs later. The sharing channel itself is out of scope here |
+| EL3b crew | Emotion portraits for every crew member | **Yes**, in this sprint (EL3b.4) |
 
 ## Deliverables
 

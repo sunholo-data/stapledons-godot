@@ -21,7 +21,7 @@ import ./reply (pngSize)
 
 pure func routing() -> Routing = match parseRouting(join("", [
   "{\"v\":1,\"routes\":{\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:v/m\"},{\"provider\":\"gemini\",\"model\":\"gtext\"}],",
-  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"voice\":[{\"provider\":\"gemini\",\"model\":\"gtts\"}]}}"])) {
+  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"feed\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"voice\":[{\"provider\":\"gemini\",\"model\":\"gtts\"}]}}"])) {
   Ok(r) => r, Err(_) => { routes: [] } }
 -- n$ per token and per call: 0.02/0.04 $/Mtok, 0.3/2.5 $/Mtok, 0.039 $/image, 0.5/10 $/Mtok.
 pure func stubPrices() -> [Price] = [{ provider: "openrouter", model: "openrouter:v/m", inTok: 20, outTok: 40, perCall: 0 },
