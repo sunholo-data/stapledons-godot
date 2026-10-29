@@ -1,0 +1,19 @@
+{
+  "schema": "stapledons.lift/1",
+  "speed_mps": 6.0,
+  "transfer_seconds": 0.8,
+  "stops": [
+    {
+      "id": "bridge",
+      "level": 0,
+      "z_m": 82.0,
+      "landing_stage": "deck"
+    },
+    {
+      "id": "commons",
+      "level": 1,
+      "z_m": 57.0,
+      "landing_stage": "landing"
+    }
+  ]
+}
