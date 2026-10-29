@@ -922,7 +922,7 @@ func _bars(m: Dictionary) -> Control:
 		if v == null:
 			continue
 		var f: String = "trust" if k == "trust" else "indicators." + k
-		var hot: bool = k != "trust" and float(v) >= CrewPage.STRAINED
+		var hot: bool = k != "trust" and float(v) >= CrewPage.strained()
 		var cap := HBoxContainer.new()
 		cap.add_theme_constant_override("separation", 4)
 		cap.add_child(_icon(k, CrewPalette.color_of("concern") if hot else CrewPalette.DIM, 13, k))

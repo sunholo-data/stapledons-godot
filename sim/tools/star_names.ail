@@ -1,0 +1,190 @@
+module stapledons/sim/tools/star_names
+-- `make star-names` (D-17; re-keyed in M1.7): data/starmap/names.json against data/starmap/stars.json.
+-- Each name row is keyed by the stable catalogue id ("Gaia DR3 n", "CNS5:n" or "HIP n"), unique in
+-- both files. Its `ref` holds literature values (J2000 RA/Dec, distance, V; SIMBAD/RECONS). A row
+-- passes only when the catalogue entry agrees with them:
+--   the id is in stars.json, once, and named once;
+--   direction within 0.1 degree of the J2000 position (the catalogue rows are at their own epoch,
+--   mostly Gaia J2016.0: Barnard's Star moves 0.046 degree in 16 years);
+--   distance within 3 % (alpha Cen sits at the CNS5 system parallax, per D-19), a note past 1 %;
+--   V within 0.3 mag, unless the row has no photometry (flags bit 2: direction + distance only).
+-- The direction uses the pipeline's own rotation (extract.icrsToGalactic). tools/check_star_names.py
+-- is the second-language oracle (its own IAU matrix); the Makefile compares the two outputs byte for
+-- byte. Negative controls, each of which must fail for its own reason: alpha Cen A and B ids swapped
+-- (V), an id the catalogue lacks, a reference position 5 degrees off (direction), a reference distance
+-- 10 % off (distance), and one row named twice. FS shell only; `report` is pure.
+import ./extract (icrsToGalactic)
+import std/string (concat, join, length, repeat, formatFixed, compare, startsWith, contains)
+import std/list (map, filter, flatMap, reverse, sortBy, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, get, getString, getNumber, getInt, getArray)
+import std/math (sqrt, atan2, PI)
+import std/map (fromList, lookup)
+import std/fs (readFile)
+import std/io (println, exit)
+
+export type Star = { id: string, x: float, y: float, z: float, vmag: float, flags: int }
+export type Ref = { ra: float, dec: float, dist: float, vmag: float }
+export type Named = { name: string, id: string, ref: Ref }
+
+pure func starOf(j: Json) -> Option[Star] =
+  match (getString(j, "id"), getNumber(j, "x"), getNumber(j, "y"), getNumber(j, "z"), getNumber(j, "vmag"), getInt(j, "flags")) {
+    (Some(i), Some(x), Some(y), Some(z), Some(v), Some(f)) => Some({ id: i, x: x, y: y, z: z, vmag: v, flags: f }),
+    _ => None
+  }
+pure func refOf(j: Json) -> Option[Ref] =
+  match (getNumber(j, "ra_deg"), getNumber(j, "dec_deg"), getNumber(j, "dist_ly"), getNumber(j, "vmag")) {
+    (Some(a), Some(d), Some(l), Some(v)) => Some({ ra: a, dec: d, dist: l, vmag: v }),
+    _ => None
+  }
+pure func namedOf(j: Json) -> Option[Named] =
+  match (getString(j, "name"), getString(j, "id"), get(j, "ref")) {
+    (Some(n), Some(i), Some(r)) => match refOf(r) { Some(f) => Some({ name: n, id: i, ref: f }), None => None },
+    _ => None
+  }
+pure func allOf[a](f: (Json) -> Option[a], xs: [Json], acc: [a], at: int, what: string) -> Result[[a], string] =
+  match xs {
+    [] => Ok(reverse(acc)),
+    x :: rest => match f(x) {
+      Some(v) => allOf(f, rest, v :: acc, at + 1, what),
+      None => Err(concat([what, ": row ", show(at), " is missing a field"]))
+    }
+  }
+pure func rowsOf[a](text: string, key: string, f: (Json) -> Option[a], what: string) -> Result[[a], string] =
+  match decode(text) {
+    Err(_) => Err(concat([what, " is not valid JSON"])),
+    Ok(j) => match getArray(j, key) { None => Err(concat([what, " has no ", key, " array"])), Some(xs) => allOf(f, xs, [], 0, what) }
+  }
+
+-- Python's %-Ns, %N.Df and %+.1f.
+pure func padR(s: string, n: int) -> string = if length(s) >= n then s else concat([s, repeat(" ", n - length(s))])
+pure func fixed(x: float, w: int, d: int) -> string {
+  let s = formatFixed(x, d);
+  if length(s) >= w then s else concat([repeat(" ", w - length(s)), s])
+}
+pure func signed1(x: float) -> string { let s = formatFixed(x, 1); if startsWith(s, "-") then s else concat(["+", s]) }
+pure func absF(x: float) -> float = if x < 0.0 then 0.0 - x else x
+-- The angle between s and the unit vector u in degrees, as atan2(|s x u|, s . u): acos of the
+-- normalised dot product loses digits near 0 (at 0.003 degree a 1e-10 matrix rounding moves it 1e-4).
+pure func sepDeg(sx: float, sy: float, sz: float, u: (float, float, float)) -> float =
+  match u {
+    (ux, uy, uz) => {
+      let cx = sy * uz - sz * uy;
+      let cy = sz * ux - sx * uz;
+      let cz = sx * uy - sy * ux;
+      atan2(sqrt(cx * cx + cy * cy + cz * cz), sx * ux + sy * uy + sz * uz) * 180.0 / PI()
+    }
+  }
+
+-- The catalogue as checked: stars by id (the first row of an id), and one problem per repeated id.
+export type Catalogue = { byId: Map[string, Star], dups: [string] }
+pure func runs(ids: [string], cur: string, n: int, acc: [string]) -> [string] =
+  match ids {
+    [] => reverse(if n > 1 then concat(["stars.json: id ", cur, " occurs ", show(n), " times"]) :: acc else acc),
+    i :: rest => if i == cur then runs(rest, cur, n + 1, acc)
+      else runs(rest, i, 1, if n > 1 then concat(["stars.json: id ", cur, " occurs ", show(n), " times"]) :: acc else acc)
+  }
+export pure func catalogue(stars: [Star]) -> Catalogue =
+  match sortBy(\a b. compare(a, b), map(\s. s.id, stars)) {
+    [] => { byId: fromList([]), dups: [] },
+    i :: rest => { byId: fromList(reverse(map(\s. (s.id, s), stars))), dups: runs(rest, i, 1, []) }
+  }
+
+-- One row: its printed line (None when the id is unknown) and its problems.
+pure func checkRow(r: Named, cat: Catalogue, twice: bool) -> (Option[string], [string]) {
+  let tag = concat([r.name, " (", r.id, ")"]);
+  let again = if twice then [concat([tag, ": id named twice"])] else [];
+  match lookup(cat.byId, r.id) {
+    None => (None, again ++ [concat([tag, ": id not in stars.json"])]),
+    Some(s) => {
+      let d = sqrt(s.x * s.x + s.y * s.y + s.z * s.z);
+      let sep = sepDeg(s.x, s.y, s.z, icrsToGalactic(r.ref.ra, r.ref.dec));
+      let noPhot = (s.flags / 2) % 2 == 1;
+      let errs = (if sep > 0.1 then [concat(["direction ", formatFixed(sep, 3), " deg off"])] else [])
+        ++ (if absF(d - r.ref.dist) > 0.03 * r.ref.dist then [concat(["distance ", formatFixed(d, 3), " vs ", formatFixed(r.ref.dist, 3), " ly"])] else [])
+        ++ (if !noPhot && absF(s.vmag - r.ref.vmag) > 0.3 then [concat(["V ", formatFixed(s.vmag, 2), " vs ", formatFixed(r.ref.vmag, 2)])] else []);
+      let notes = (if absF(d - r.ref.dist) > 0.01 * r.ref.dist then [concat(["catalogue distance ", signed1(100.0 * (d / r.ref.dist - 1.0)), " %"])] else [])
+        ++ (if noPhot then ["no photometry in the catalogue: V not checked"] else []);
+      let line = concat(["  ", if errs == [] then "ok  " else "FAIL", " ", padR(r.name, 30), " ", padR(r.id, 30),
+        " sep ", formatFixed(sep, 4), "  d ", fixed(d, 7, 3), "/", fixed(r.ref.dist, 6, 2),
+        "  V ", fixed(s.vmag, 5, 2), "/", fixed(r.ref.vmag, 5, 2), " ", join("; ", errs ++ notes)]);
+      (Some(line), again ++ (if errs == [] then [] else [concat([tag, ": ", join("; ", errs)])]))
+    }
+  }
+}
+pure func seenIn(xs: [string], x: string) -> bool = match xs { [] => false, y :: r => y == x || seenIn(r, x) }
+pure func checkFrom(rs: [Named], cat: Catalogue, seen: [string], lines: [string], bad: [string]) -> ([string], [string]) =
+  match rs {
+    [] => (reverse(lines), bad),
+    r :: rest => match checkRow(r, cat, seenIn(seen, r.id)) {
+      (Some(l), b) => checkFrom(rest, cat, r.id :: seen, l :: lines, bad ++ b),
+      (None, b) => checkFrom(rest, cat, r.id :: seen, lines, bad ++ b)
+    }
+  }
+-- The printed rows and the problems, the catalogue's own problems first.
+export pure func check(rs: [Named], cat: Catalogue) -> ([string], [string]) =
+  match checkFrom(rs, cat, [], [], []) { (ls, b) => (ls, cat.dups ++ b) }
+
+pure func named(rs: [Named], n: string) -> [Named] = filter(\r. r.name == n, rs)
+
+-- The negative controls: their printed lines and any control that did not fail as it must.
+pure func control(label: string, rs: [Named], cat: Catalogue, why: string) -> ([string], [string]) =
+  match check(rs, cat) {
+    (ls, got) => (concat(["negative control (", label, "):"]) :: ls,
+      match got { [g] => if contains(g, why) then [] else [concat(["negative control: ", label, " gave ", g, ", want one '", why, "' failure"])],
+        _ => [concat(["negative control: ", label, " gave ", show(size(got)), " problems, want one '", why, "' failure"])] })
+  }
+export pure func controls(rs: [Named], cat: Catalogue) -> ([string], [string]) {
+  let swapped = match (named(rs, "Alpha Centauri A"), named(rs, "Alpha Centauri B")) {
+    ([a], [b]) => match check([{ name: a.name, id: b.id, ref: a.ref }, { name: b.name, id: a.id, ref: b.ref }], cat) {
+      (ls, got) => ("negative control (alpha Cen A/B ids swapped):" :: ls, if size(got) == 2 then [] else ["negative control: swapped A/B passed"])
+    },
+    _ => ([], ["negative control: alpha Cen A and B are not both named"])
+  };
+  let ghost = match rs {
+    r :: _ => match check([{ name: r.name, id: "CNS5:999999", ref: r.ref }], cat) {
+      (ls, got) => ("negative control (id not in the catalogue):" :: ls, if got == [] then ["negative control: unknown id passed"] else [])
+    },
+    [] => ([], ["negative control: names.json is empty"])
+  };
+  match (match named(rs, "Barnard's Star") { b :: _ => Some(b), [] => match rs { r :: _ => Some(r), [] => None } }) {
+    None => match (swapped, ghost) { ((l1, b1), (l2, b2)) => (l1 ++ l2, b1 ++ b2) },
+    Some(base) => {
+      let baseRun = match check([base], cat) {
+        (ls, got) => ("control base row (must pass):" :: ls, if got == [] then [] else [concat(["negative control: the base row ", base.name, " does not pass"])])
+      };
+      let dec = base.ref.dec;
+      let far = { name: base.name, id: base.id, ref: { ra: base.ref.ra, dec: if dec > 0.0 then dec - 5.0 else dec + 5.0, dist: base.ref.dist, vmag: base.ref.vmag } };
+      let near = { name: base.name, id: base.id, ref: { ra: base.ref.ra, dec: dec, dist: base.ref.dist * 1.10, vmag: base.ref.vmag } };
+      let runs3 = [control("reference position 5 deg off", [far], cat, "direction"),
+        control("reference distance 10 % off", [near], cat, "distance"),
+        control("one row named twice", [base, base], cat, "named twice")];
+      let all = [swapped, ghost, baseRun] ++ runs3;
+      (flatMap(\p. match p { (l, _) => l }, all), flatMap(\p. match p { (_, b) => b }, all))
+    }
+  }
+}
+
+-- The whole report, as tools/check_star_names.py prints it, and whether every row and control passed.
+export pure func report(namesText: string, starsText: string) -> ([string], bool) =
+  match (rowsOf(namesText, "names", namedOf, "names.json"), rowsOf(starsText, "stars", starOf, "stars.json")) {
+    (Err(e), _) => ([concat(["star names: FAILED: ", e])], false),
+    (_, Err(e)) => ([concat(["star names: FAILED: ", e])], false),
+    (Ok(rs), Ok(ss)) => {
+      let cat = catalogue(ss);
+      match (check(rs, cat), controls(rs, cat)) {
+        ((l1, b1), (l2, b2)) => {
+          let bad = b1 ++ b2;
+          (l1 ++ l2 ++ [concat(["star names: ", show(size(rs)), " rows, ", show(size(bad)), " failures"])] ++ map(\b. concat(["  ", b]), bad), bad == [])
+        }
+      }
+    }
+  }
+
+-- Named starNames, not main: on the VM (v0.54.18) `--entry main` in a module that imports ./extract
+-- runs extract.main instead (reported to ailang core 2026-10-28, inbox_1793198009538_c8a573c2); rename back once fixed.
+export func starNames(a: {names: string, stars: string}) -> () ! {IO, FS} =
+  match report(readFile(a.names), readFile(a.stars)) {
+    (ls, ok) => { println(join("\n", ls)); if ok then () else exit(1) }
+  }
