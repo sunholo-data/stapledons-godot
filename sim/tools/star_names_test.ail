@@ -1,0 +1,51 @@
+module stapledons/sim/tools/star_names_test
+-- The star-name gate (sim/tools/star_names.ail). `make star-names`: these named checks strict VM =
+-- interpreter, then the real files on the VM, the interpreter and the Python oracle, byte for byte.
+import ./star_names (Star, Named, catalogue, check, report)
+import ./extract (icrsToGalactic)
+import std/string (concat, join, startsWith, contains, floatToStr)
+import std/list (map, filter, length as size)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+-- A catalogue star exactly at (ra, dec, dist), and a name row whose reference says (ra, dec, dist, v).
+pure func at(id: string, ra: float, dec: float, dist: float, v: float, flags: int) -> Star =
+  match icrsToGalactic(ra, dec) { (x, y, z) => { id: id, x: x * dist, y: y * dist, z: z * dist, vmag: v, flags: flags } }
+pure func row(name: string, id: string, ra: float, dec: float, dist: float, v: float) -> Named =
+  { name: name, id: id, ref: { ra: ra, dec: dec, dist: dist, vmag: v } }
+pure func stars() -> [Star] = [at("CNS5:1", 120.0, 30.0, 10.0, 5.0, 0), at("CNS5:2", 200.0, 0.0 - 40.0, 20.0, 99.0, 2)]
+pure func good() -> Named = row("One", "CNS5:1", 120.0, 30.0, 10.0, 5.0)
+
+pure func problems(rs: [Named], ss: [Star]) -> [string] = match check(rs, catalogue(ss)) { (_, b) => b }
+pure func lines(rs: [Named], ss: [Star]) -> [string] = match check(rs, catalogue(ss)) { (l, _) => l }
+pure func oneLike(ps: [string], part: string) -> bool = match ps { [p] => contains(p, part), _ => false }
+
+pure func checks() -> [(string, bool)] = [
+  ("good row passes", problems([good()], stars()) == [] && size(lines([good()], stars())) == 1),
+  ("good row prints ok", match lines([good()], stars()) { [l] => startsWith(l, "  ok   One "), _ => false }),
+  ("V 0.5 off fails on V", oneLike(problems([row("One", "CNS5:1", 120.0, 30.0, 10.0, 5.5)], stars()), ": V 5.00 vs 5.50")),
+  ("V 0.2 off passes", problems([row("One", "CNS5:1", 120.0, 30.0, 10.0, 5.2)], stars()) == []),
+  ("no photometry skips V", problems([row("Two", "CNS5:2", 200.0, 0.0 - 40.0, 20.0, 9.0)], stars()) == []),
+  ("no photometry is noted", match lines([row("Two", "CNS5:2", 200.0, 0.0 - 40.0, 20.0, 9.0)], stars()) { [l] => contains(l, "no photometry in the catalogue: V not checked"), _ => false }),
+  ("distance 5 % off fails", oneLike(problems([row("One", "CNS5:1", 120.0, 30.0, 10.5, 5.0)], stars()), "distance 10.000 vs 10.500 ly")),
+  ("distance 2 % off passes with a note", problems([row("One", "CNS5:1", 120.0, 30.0, 10.2, 5.0)], stars()) == []
+    && (match lines([row("One", "CNS5:1", 120.0, 30.0, 10.2, 5.0)], stars()) { [l] => contains(l, "catalogue distance -2.0 %"), _ => false })),
+  ("direction 1 degree off fails", oneLike(problems([row("One", "CNS5:1", 120.0, 31.0, 10.0, 5.0)], stars()), "direction 1.000 deg off")),
+  ("direction 0.05 degree off passes", problems([row("One", "CNS5:1", 120.0, 30.05, 10.0, 5.0)], stars()) == []),
+  ("unknown id fails, prints nothing", oneLike(problems([row("Ghost", "CNS5:9", 0.0, 0.0, 1.0, 1.0)], stars()), "Ghost (CNS5:9): id not in stars.json")
+    && lines([row("Ghost", "CNS5:9", 0.0, 0.0, 1.0, 1.0)], stars()) == []),
+  ("named twice fails once", oneLike(problems([good(), good()], stars()), "One (CNS5:1): id named twice")),
+  ("repeated catalogue id fails", oneLike(problems([good()], stars() ++ [at("CNS5:1", 120.0, 30.0, 10.0, 5.0, 0)]), "stars.json: id CNS5:1 occurs 2 times")),
+  ("bad JSON is a failure", match report("{", "{}") { (ls, ok) => !ok && ls == ["star names: FAILED: names.json is not valid JSON"] }),
+  ("controls need alpha Cen A and B", match report(namesText(), starsText()) { (ls, ok) => !ok && size(filter(\l. contains(l, "alpha Cen A and B are not both named"), ls)) == 1 })
+]
+
+-- The good row and its star as the files hold them.
+pure func namesText() -> string = "{\"names\": [{\"id\": \"CNS5:1\", \"name\": \"One\", \"ref\": {\"ra_deg\": 120.0, \"dec_deg\": 30.0, \"dist_ly\": 10.0, \"vmag\": 5.0}}]}"
+pure func starsText() -> string =
+  match stars() { s :: _ => concat(["{\"stars\": [{\"id\": \"", s.id, "\", \"x\": ", floatToStr(s.x), ", \"y\": ", floatToStr(s.y), ", \"z\": ", floatToStr(s.z), ", \"vmag\": 5.0, \"flags\": 0}]}"]), [] => "{}" }
+
+export func starNamesVm(_: int) -> string = verdictOf("star-names", failedChecks(checks()))

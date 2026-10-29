@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.54.18
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit export-pack-check export-pack-check-strict
+.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test star-names extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit export-pack-check export-pack-check-strict
 
 all: test
 
@@ -48,7 +48,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 # VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
 ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
 
-test: python-guard uid-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+test: python-guard uid-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test star-names area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
 .PHONY: similar-test similar-record
 similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = frozen bytes
@@ -201,13 +201,25 @@ crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in
 	@for n in consent orders shipevent argument console_v2 crossing_hold; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
 test: crew-parity
 
-tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
+tools-test:        ## replay harness unit tests, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
-	python3 tools/check_star_names.py
 	sh tools/test_sky_assets.sh
 	sh tools/test_lens_assets.sh
 
-extract-test:      ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
+STAR_NAMES_ARGS := {"names":"data/starmap/names.json","stars":"data/starmap/stars.json"}
+star-names:        ## D-17 names.json vs stars.json (sim/tools/star_names.ail): named checks strict VM = interpreter; the real files on the VM, the interpreter and the Python oracle (tools/check_star_names.py), byte for byte
+	@mkdir -p $(SCRATCH)/star-names
+	@$(AILANG) run --quiet --strict-bytecode --package-dir sim --entry starNamesVm --args-json 0 sim/tools/star_names_test.ail > $(SCRATCH)/star-names/test-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry starNamesVm --args-json 0 sim/tools/star_names_test.ail > $(SCRATCH)/star-names/test-interp.txt
+	@cmp $(SCRATCH)/star-names/test-vm.txt $(SCRATCH)/star-names/test-interp.txt && test "$$(cat $(SCRATCH)/star-names/test-vm.txt)" = "star-names-ok" || { cat $(SCRATCH)/star-names/test-vm.txt; exit 1; }
+	@# readFile is evaluator-only on the VM, so the FS shell runs --bytecode (not strict), as lore-check does
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry starNames --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/vm.txt || { cat $(SCRATCH)/star-names/vm.txt; exit 1; }
+	@$(AILANG) run --quiet --caps IO,FS --package-dir sim --entry starNames --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/interp.txt
+	@python3 tools/check_star_names.py > $(SCRATCH)/star-names/oracle.txt
+	@cmp $(SCRATCH)/star-names/vm.txt $(SCRATCH)/star-names/interp.txt && cmp $(SCRATCH)/star-names/vm.txt $(SCRATCH)/star-names/oracle.txt
+	@echo "star-names: $$(cat $(SCRATCH)/star-names/test-vm.txt); $$(tail -1 $(SCRATCH)/star-names/vm.txt) (VM = interpreter = Python oracle)"
+
+extract-test:     ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
 	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-vm.txt
 	@$(AILANG) run --quiet --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-interp.txt
@@ -654,10 +666,6 @@ publish-dev: export-macos export-smoke   ## upload this build to the private dev
 	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$commit" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 	  | gcloud storage cp --cache-control="no-cache" - "gs://$(DEV_BUCKET)/macos/latest.json" && \
 	echo "publish-dev: $$name ($$sum) -> gs://$(DEV_BUCKET)/macos/latest.json"
-
-.PHONY: catalogue-probe
-catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM parity runs
-	AILANG=$(AILANG) python3 tools/catalogue_probe.py
 
 .PHONY: catalogue-vm
 catalogue-vm:     ## T1 transform/selection + T3 validation, T4 N3 (exact 50,000 quota with missing rows between), first-error order, writer plan: strict VM, interpreter and exact anchors

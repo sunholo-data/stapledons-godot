@@ -15,8 +15,10 @@ entry agrees with them:
   * V within 0.3 mag, unless the row has no photometry (flags bit 2, V 99:
     the identification then rests on direction + distance, and it is listed).
 
-The IAU ICRS -> galactic matrix below is the one tools/extract.py used; it is
-independent of the AILANG pipeline (sim/tools/extract.ail, bright.ail).
+The gate itself is sim/tools/star_names.ail (`make star-names`); this is its
+second-language oracle, and the Makefile compares the two outputs byte for byte.
+The IAU ICRS -> galactic matrix below is full precision, independent of the
+AILANG pipeline's (sim/tools/extract.ail icrsToGalactic, ten digits).
 Negative controls, each of which must fail for its own reason: alpha Cen A and
 B ids swapped (V), a row whose id is not in the catalogue, a reference
 position 5 degrees off (direction; kills a removed or loosened-to-30-degree
@@ -64,7 +66,9 @@ def check(names, stars):
         s = by_id[row["id"]][0]
         d = math.sqrt(s["x"] ** 2 + s["y"] ** 2 + s["z"] ** 2)
         u = galactic_unit(ref["ra_deg"], ref["dec_deg"])
-        sep = math.degrees(math.acos(max(-1.0, min(1.0, (s["x"] * u[0] + s["y"] * u[1] + s["z"] * u[2]) / d))))
+        # atan2(|s x u|, s . u): acos of the normalised dot product loses digits near 0
+        c = (s["y"] * u[2] - s["z"] * u[1], s["z"] * u[0] - s["x"] * u[2], s["x"] * u[1] - s["y"] * u[0])
+        sep = math.degrees(math.atan2(math.sqrt(c[0] ** 2 + c[1] ** 2 + c[2] ** 2), s["x"] * u[0] + s["y"] * u[1] + s["z"] * u[2]))
         no_phot = (int(s["flags"]) & 2) != 0
         errs = []
         if sep > 0.1:

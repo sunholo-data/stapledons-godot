@@ -141,6 +141,8 @@ func calls() -> void:
 	check("V7b each answer has its own icon %s" % [kinds.keys()], kinds.size() == 4)
 	var terms := c.find_child("Terms", true, false)
 	var info := CrewPage.work_info("work_pilot")
+	var pack = JSON.parse_string(FileAccess.get_file_as_string(CrewPage.SCENARIO))
+	check("strained is the pack's overextended threshold (%s)" % CrewPage.strained(), pack is Dictionary and CrewPage.strained() == float(pack["overextended"]["threshold"]))
 	check("V7b the terms are icons: a day pip per day, each resource with its pips, each effect with its arrow; the sentence is the tooltip",
 		terms != null and terms.find_child("Days", true, false).get_children().filter(func(x): return x is CrewChip.ChipIcon and x.kind == "pip").size() == int(info.duration)
 		and terms.find_children("Cost_*", "", true, false).size() == info.costs.size() and terms.tooltip_text == CrewPage.work_terms(info) and not texts(c).any(func(t): return t.begins_with("Takes ")))
