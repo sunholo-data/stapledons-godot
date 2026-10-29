@@ -44,7 +44,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	test_schema()
-	var demo: Node = await new_demo({"size": Vector2i(1280, 720)})
+	# Retain the retired developer-preset compatibility sweeps on their original kit.
+	# Actual Commons fixed-view/multiheight coverage is tests/test_level_runtime.gd + level-eval.
+	var demo: Node = await new_demo({"size": Vector2i(1280, 720), "level_greybox": false})
 	await test_sweep(demo)
 	test_bow_sweep(demo)
 	test_spawn_occlusion(demo)

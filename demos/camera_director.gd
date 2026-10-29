@@ -490,6 +490,7 @@ func _select_stage(foot: Vector3) -> void:
 	for v: Dictionary in stage.views:views[str(v.id)] = _stage_defaults(v)
 	var key := "%s/%s" % [level_name(),stage.id]
 	if key != _stage_key:
+		if not _stage_key.is_empty():_start_blend(float(views.get(deck_view,{}).get("ease_s",1.2)))
 		_stage_key = key
 		if not stage.views.any(func(v: Dictionary) -> bool:return v.id == deck_view):
 			deck_view = str(stage.default_view)

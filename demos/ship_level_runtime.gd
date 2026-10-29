@@ -47,7 +47,7 @@ func transfer() -> bool:
 	var destination:=LevelGreybox.transfer(demo.walk_lower,target.route,demo.avatar_pos)
 	if not demo.walk_lower.is_walkable_near(destination):return false
 	demo.consoles.cancel_walk();demo.avatar_pos=destination;demo.avatar.position=destination
-	demo.director.zoom_preset=false;demo.director.advance(0.)
+	demo.director.zoom_preset=false;demo.director.has_pose=false;demo.director._blend={};demo.director.advance(0.)
 	return true
 
 func route_hint() -> String:

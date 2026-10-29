@@ -117,7 +117,7 @@ func advance(delta: float) -> void:
 func skip() -> bool:
 	if not travelling():return false
 	advance(transfer_seconds*2.+ride_seconds()+.001)
-	demo.director._arrive();demo.director.has_pose=false;demo.director.advance(0.)
+	demo.director._arrive();demo.director._blend={};demo.director.has_pose=false;demo.director.advance(0.)
 	return not travelling()
 func reset() -> void:
 	if demo.avatar.get_parent()!=demo.geometry:demo.avatar.reparent(demo.geometry,true)

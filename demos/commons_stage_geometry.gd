@@ -41,6 +41,7 @@ static func split(kit: Dictionary) -> void:
 			var mi:=MeshInstance3D.new();mi.name="CommonsChunk_"+key;mi.mesh=row.tool.commit()
 			mi.mesh.surface_set_material(0,row.material);mi.material_override=source.material_override
 			group.add_child(mi);mi.create_trimesh_collision()
+			mi.set_meta("stage_occluder",not row.floor)
 			if not row.floor:mi.add_to_group(CameraDirector.OCCLUDER_GROUP)
 		source.visible=false
 	kit.stage_chunks=true;kit.chunk_groups=groups;kit.original_visuals=sources
@@ -54,6 +55,10 @@ static func set_active(kit: Dictionary, active: bool) -> void:
 		else:node.remove_from_group(CameraDirector.OCCLUDER_GROUP)
 	for group: Node3D in kit.chunk_groups:
 		group.visible=active
+		for mesh: MeshInstance3D in group.get_children():
+			if mesh.get_meta("stage_occluder",false):
+				if active:mesh.add_to_group(CameraDirector.OCCLUDER_GROUP)
+				else:mesh.remove_from_group(CameraDirector.OCCLUDER_GROUP)
 		_collision_layers(group,1 if active else 0)
 	_collision_layers(kit.collision,0 if active else 1)
 

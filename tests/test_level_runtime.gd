@@ -48,7 +48,7 @@ func _run() -> void:
 func _write_json(path: String, doc: Variant) -> void:
 	FileAccess.open(path,FileAccess.WRITE).store_string(JSON.stringify(doc))
 func test_bad_sources(raw: Dictionary) -> void:
-	var dir := "user://vf_level_runtime"
+	var dir := "res://.godot/tmp/vf_level_runtime"
 	DirAccess.make_dir_recursive_absolute(dir)
 	var file := dir+"/camera.json";var index := dir+"/index.json"
 	var data:=raw.duplicate(true);data.level_manifest_index=index
@@ -100,6 +100,14 @@ func test_playable_stage_camera() -> void:
 	ceiling.queue_free();await physics_frame;await physics_frame
 	director.advance(.016)
 	check("leaving actual overhang restores normal camera",director.ceiling_blend==0. and director.pose.origin.distance_to(Vector3(24,62.5,6))<.001)
+	var barrier:=StaticBody3D.new();barrier.name="VF_TransparentBarrier"
+	var barrier_shape:=CollisionShape3D.new();var barrier_box:=BoxShape3D.new();barrier_box.size=Vector3(.2,1.8,.8);barrier_shape.shape=barrier_box
+	barrier.add_child(barrier_shape);barrier.position=Vector3(24.5,57.9,-3);demo.geometry.add_child(barrier)
+	var ghost:=MeshInstance3D.new();var ghost_mesh:=BoxMesh.new();ghost_mesh.size=barrier_box.size;ghost.mesh=ghost_mesh;ghost.transparency=.75;barrier.add_child(ghost)
+	await physics_frame;await physics_frame
+	check("faded presentation cannot remove physical walk collision",demo.level_runtime.step(Vector3(24,57,-3),Vector3(.4,0,0))==Vector3(24,57,-3))
+	check("clear floor motion remains possible",demo.level_runtime.step(Vector3(24,57,-3),Vector3(-.1,0,0)).x<24.)
+	barrier.queue_free();await physics_frame;await physics_frame
 	director.set_motion("full");ceiling=StaticBody3D.new();shape=CollisionShape3D.new();shape.shape=box;ceiling.add_child(shape);ceiling.position=Vector3(24,61,-3);demo.geometry.add_child(ceiling)
 	await physics_frame;await physics_frame
 	director.advance(.05)
@@ -114,11 +122,17 @@ func test_playable_stage_camera() -> void:
 		if not route.kind in ["ladder","hatch"]:continue
 		demo.avatar_pos=LevelGreybox.route_end(route,"from");director.advance(0.)
 		check("%s E transfer arrives on walk" % route.id,demo.use_nearest() and demo.walk_lower.is_walkable_near(demo.avatar_pos) and demo.avatar_pos.distance_to(LevelGreybox.route_end(route,"to"))<.1)
+		check("%s camera follows the destination floor immediately" % route.id,demo.director.pose.origin.y>demo.avatar_pos.y+1.5)
 		check("%s return transfer arrives on walk" % route.id,demo.use_nearest() and demo.walk_lower.is_walkable_near(demo.avatar_pos) and demo.avatar_pos.distance_to(LevelGreybox.route_end(route,"from"))<.1)
 	demo.avatar_pos=Vector3(34,57,-6)
 	check("court auto-walk uses the caller's floor",demo.walk_to("navigation") and Array(demo.consoles.walking).all(func(p: Vector3)->bool:return absf(p.y-57.)<.1))
 	demo.consoles.cancel_walk();demo.avatar_pos=Vector3(34,61,-6)
 	check("raised auto-walk requires the authored route first",not demo.walk_to("navigation"))
+	demo.active_level=1;demo.avatar_pos=Vector3(13.9,57,-5);director.set_motion("full");director.has_pose=false;director._blend={};director.advance(0.)
+	var before_transition:=director.pose
+	demo.avatar_pos=Vector3(14.1,57.025,-5);director.advance(1./60.)
+	check("crossing landing to court eases the authored framing",director.blending() and director.pose.origin.distance_to(before_transition.origin)<.1)
+	check("stage transition never rotates the fixed view",director.pose.basis.is_equal_approx(before_transition.basis))
 	# Both golden samples are actual supported stage poses; clamp has a real overhead surface.
 	demo.avatar_pos=Vector3(34,57,-6);director.set_motion("reduced");director.has_pose=false;director.deck_view="bow";director.advance(.016)
 	check("golden clamp specimen is supported and overhead-triggered",demo.walk_lower.is_walkable_near(demo.avatar_pos) and director.ceiling_blend==1.)
