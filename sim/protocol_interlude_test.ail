@@ -150,7 +150,7 @@ test "below 2.12 the 2.10 and 2.11 streams are byte for byte what they were befo
 }
 test "2.12 hello: minor 12 with the current relativity pin; 11 stays 11" {
   homeTiersMinor() == 12 && homeTiersMinor() == consoleMinor() + 1 && helloFor(homeTiersMinor()).minor == 12
-  && helloFor(consoleMinor()).minor == consoleMinor() && helloFor(99).minor == archiveMinor() && helloFor(homeTiersMinor()).relativity == relativityPin()
+  && helloFor(consoleMinor()).minor == consoleMinor() && helloFor(99).minor == archiveMinor() + 1 && helloFor(homeTiersMinor()).relativity == relativityPin()
   && (match decodeHello(serve(newSession(), helloW(homeTiersMinor())).reply) { Ok(h) => h.minor == 12, Err(_) => false })
 }
 -- The session's seed is 2 (game()). The arrival leg (a ship year at speed) lands in tier one or two;

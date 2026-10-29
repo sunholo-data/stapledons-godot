@@ -1,7 +1,7 @@
 {
-  "ailang_version": "v0.54.14",
-  "generated_at": "2026-10-21T08:12:50.746005Z",
-  "generator": "ailang lock v0.54.14",
+  "ailang_version": "v0.54.18",
+  "generated_at": "2026-10-28T08:51:51.504193Z",
+  "generator": "ailang lock v0.54.18",
   "packages": [
     {
       "ailang": ">=0.52.0",
@@ -79,6 +79,20 @@
       "name": "sunholo/decisions",
       "source": "registry",
       "version": "0.4.0"
+    },
+    {
+      "ailang": ">=0.54.18",
+      "content_hash": "sha256:5b5bd4ebfeba3b793e6d5de8f8b25f615a239430e8e72789a5dcb028ab78cd95",
+      "effects": [
+        "IO"
+      ],
+      "exports": [
+        "sunholo/observe/lightcone"
+      ],
+      "interface_hash": "sha256:aabf94f2b5dab5f14c58bfdd4e0b1ea295d46e992e2e3cc86bf957efada9c3a3",
+      "name": "sunholo/observe",
+      "source": "registry",
+      "version": "0.1.0"
     },
     {
       "ailang": ">=0.45.0",

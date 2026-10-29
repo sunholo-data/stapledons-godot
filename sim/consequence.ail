@@ -11,6 +11,7 @@ import std/option (Option, Some, None)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/medium (astronomicalUnitM, lightYearM, loadScale, mirrorDragForce, glowInwardFlux, glowEmittanceAt, glowTemperatureAt)
 import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/observe/lightcone (seenAt)
 
 -- ------------------------------------------------------------ stand-off (D-14)
 -- The target with id "Sol" is home, where the ship docks (no stand-off). Any
@@ -24,11 +25,11 @@ export pure func standoffFor(au: float, targetId: string) -> float = if targetId
 
 -- ------------------------------------------------------------ clocks and news epoch
 -- c = 1, Sol at the origin. The newest Earth news receivable at galaxy time t
--- and position p is from t_e = t - |p|; its age is the light time |p|.
+-- and position p is from t_e = t - |p| (sunholo/observe seenAt); its age is the light time |p|.
 export type Clocks = { gapYears: float, newsEpoch: float, newsAgeYears: float }
 export pure func clocks(t: float, tau: float, p: Vec3) -> Clocks {
   let r = norm(p);
-  { gapYears: t - tau, newsEpoch: t - r, newsAgeYears: r }
+  { gapYears: t - tau, newsEpoch: seenAt(t, p, { x: 0.0, y: 0.0, z: 0.0 }), newsAgeYears: r }
 }
 
 -- ------------------------------------------------------------ news tier and template

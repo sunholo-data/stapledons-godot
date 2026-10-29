@@ -113,6 +113,11 @@ pure func trustOf(st: State, id: string) -> Json = match filter(\r. r.from == id
 }
 pure func memberObj(st: State, names: [CrewName], a: Actor) -> Json =
   jo([kv("id", js(a.id)), kv("name", js(match nameOf(names, a.id) { Some(n) => n, None => a.id })), kv("indicators", valuesObj(a.indicators)), kv("trust", trustOf(st, a.id)), kv("work", workOf(st, a.id)), kv("done", doneOf(st, a.id)), kv("regard_low", regardOf(st, a.id))])
+-- R3-EARTH-LINK EL3b.4: each member (not the captain) as (id, name, the face their work shows), for
+-- the comms station's home feelings (sim/earth_feed.ail homeFeeling).
+export pure func crewFacesOf(c: CrewState) -> [(string, string, string)] =
+  map(\a. (a.id, match nameOf(c.names, a.id) { Some(n) => n, None => a.id }, emotionOf(latestLabel(c.lines, a.id, ""), stressIn(a))),
+    filter(\a. a.id != "captain", c.session.state.actors))
 -- 2.10: the face each member shows (their latest line's label and their stress).
 pure func memberObjE(c: CrewState, a: Actor) -> Json = match memberObj(c.session.state, c.names, a) {
   JObject(kvs) => JObject(kvs ++ [kv("emotion", js(emotionOf(latestLabel(c.lines, a.id, ""), stressIn(a))))]),

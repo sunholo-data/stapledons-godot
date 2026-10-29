@@ -85,7 +85,7 @@ func test_stations() -> void:
 			var length := c.path_length(id)
 			print("path %s %.1f m" % [id, length])
 			check("AC8 %s: a walkable path from the bridge spawn, %.1f m <= 40 m" % [id, length], length > 0.0 and length <= ShipConsoles.PATH_CEILING_M)
-	check("AC8 reserved consoles are dark and offline", ["reserved_2", "reserved_3"].all(func(id: String) -> bool: return not c.stations[id].active and c.screen_text(id) == "offline"))
+	check("AC8 the reserved console is dark and offline", ["reserved_3"].all(func(id: String) -> bool: return not c.stations[id].active and c.screen_text(id) == "offline"))
 	check("crew-work W1: the first crew console is live (console_decision_1)", c.stations["crew"].active and c.screen_text("crew").begins_with("Crew console"))
 	# The prompt: in reach and facing, not otherwise.
 	c.go_to("navigation")
@@ -139,8 +139,8 @@ func test_stations() -> void:
 	demo.director.set_level(2)
 	check("use() refuses a decision away from its console", not c.use("voyage", "begin") and demo.solar_tour == null and demo.ship_hud.has_card("refusal"))
 	check("use() refuses to open a console out of reach", not c.use("navigation", "open") and c.focused == "")
-	c.go_to("reserved_2")
-	check("a reserved console refuses: offline", not c.use("reserved_2", "open") and c.focused == "")
+	c.go_to("reserved_3")
+	check("a reserved console refuses: offline", not c.use("reserved_3", "open") and c.focused == "")
 	demo.queue_free()
 	await process_frame
 
@@ -507,7 +507,7 @@ func test_walk_to() -> void:
 	var c: ShipConsoles = demo.consoles
 	var hud: ShipHud = demo.ship_hud
 	demo.toggle_controls()
-	check("AC14a Tab shows the Walk to list", hud.tab_panel.visible and hud.walk_box.visible and hud.walk_buttons.size() == 3)
+	check("AC14a Tab shows the Walk to list", hud.tab_panel.visible and hud.walk_box.visible and hud.walk_buttons.size() == 4 and hud.walk_buttons.has("comms")) # R3-EARTH-LINK EL3: the Comms station
 	var first: Button = hud.walk_buttons["navigation"]
 	first.grab_focus()
 	var down := InputEventAction.new()
@@ -534,7 +534,7 @@ func test_walk_to() -> void:
 		walked += 0.05
 	check("AC14a the captain arrives at its use point at 3.5 m/s (%.1f s)" % walked, demo.avatar_pos.distance_to(c.stations.voyage.use) < 0.05 and walked >= from.distance_to(c.stations.voyage.use) / ShipConsoles.WALK_SPEED_MPS - 0.1)
 	check("AC14a and faces it: the prompt says E use", hud.prompt.text == "Voyage console · E use")
-	for id in ["navigation", "archive"]:
+	for id in ["navigation", "archive", "comms"]:
 		c.walk_to(id)
 		for i in 400:
 			if c.walk_target.is_empty():

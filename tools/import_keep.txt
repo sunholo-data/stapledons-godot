@@ -8,5 +8,6 @@ assets/fonts/*.ttf
 ui/theme/*.png
 data/crew/portraits/*.png
 data/interlude/home/*.webp
+data/feed/pictures/*.webp
 ai/fixtures/*.png
 assets/foliage/*.png

@@ -1,0 +1,90 @@
+module stapledons/sim/protocol_earth
+
+-- Protocol 2.16 (R3-EARTH-LINK EL2, design r3/earth-link.md): Earth's link. Pure codec; the
+-- session (sim/protocol.ail) sends `earth` only at minor >= 16, in full states and on every tick it
+-- changes, outside a black hole's scenario (where Sol is not the origin). Every number is a field;
+-- Godot formats and never computes (sim/earth_link.ail earthView). A *_year is params.epoch plus
+-- the galaxy time beside it: the Earth clock's reading (the game's epoch is 0, so it reads as the
+-- HUD's "Earth +t"; a calendar epoch would make it a year), for the comms station and the map:
+--   rate               the Earth rate D: Earth-seconds of history received per ship-second
+--   rate_inverse       1 / D: ship-seconds per Earth-second
+--   newest_light_t     galaxy time t_e = t - |p| the newest Earth light left Sol (and _year)
+--   light_age_years    |p|
+--   at_home            the ship is inside the Solar System (120 AU): Earth tracks it directly, in beam
+--   in_beam            the light reaching the ship carries Earth's beam
+--   sending            Earth is transmitting (true throughout R3-EARTH-LINK)
+--   last_beam_t        when the newest beamed light the ship received left Sol (and _year); the
+--                      silence line's date
+--   out                {reason, port_id, due_t, due_year, due_in_years} | null: why the ship is out of
+--                      beam ("silent", "not_heard", "off_line"); for not_heard, when the newest plan's
+--                      beam reaches its port, and how many galaxy years from now
+--   beam               {port_id, port, heard_t, heard_year} | null: the plan Earth aims at now (galaxy time t)
+--   stale              [{port_id, port, until_t, until_year}]: Earth still aiming at a port the ship has left
+--   pending            [{port_id, port, sent_t, heard_t, heard_year}]: plans still in flight to Earth
+--   window             {port, from_t, wait_years} | null: the wait at the committed or arrived leg's port
+--   preview            {port, wait_years, would_stale: {port_id, port, until_t, until_year} | null} | null:
+--                      a planned, uncommitted leg's cost (no state after the commit)
+--   feed               {frame, kind, event: {id, category, words}, pick, context: {era_tier, era_word,
+--                      years, influences: [{kind, since_t}]}}: Earth's feed, the week of the newest
+--                      light (sim/earth_feed.ail; EL3b); context is Earth-side only
+--   crew               [{id, name, feeling}]: each member's home feeling at the comms station
+--                      (sim/earth_feed.ail homeFeeling; work strain first); [] with no crew aboard
+--   last_feed          the feed at last_beam_t: the frame the station freezes under static out of beam
+--   out.progress       0..1 through the wait (from the last tick in beam to due_t): the ring's fill
+--   messages           [{plan_id, port_id, from, port, sent_t, sent_year, sent_tau, heard_t, heard_year,
+--                      reply_t, reply_year}]: every plan sent home; reply_t is when Earth's beam for it
+--                      reaches the port at the earliest (heard_t + |port|)
+import std/json (Json, JNull, JBool, encode, jo, ja, kv, jnum, jint, js)
+import std/option (Option, Some, None)
+import std/list (map)
+import pkg/sunholo/relativity/optics (Vec3)
+import ./earth_link (Earth, Message, Stale, Window, Preview, Beam, Out, replyT)
+import ./earth_feed (Feed, Influence, homeFeeling)
+
+pure func vec(v: Vec3) -> Json = jo([kv("x", jnum(v.x)), kv("y", jnum(v.y)), kv("z", jnum(v.z))])
+pure func stale(s: Stale, epoch: float) -> Json =
+  jo([kv("port_id", js(s.portId)), kv("port", vec(s.port)), kv("until_t", jnum(s.untilT)), kv("until_year", jnum(epoch + s.untilT))])
+pure func pending(m: Message, epoch: float) -> Json =
+  jo([kv("port_id", js(m.portId)), kv("port", vec(m.port)), kv("sent_t", jnum(m.sentT)), kv("heard_t", jnum(m.heardT)), kv("heard_year", jnum(epoch + m.heardT))])
+pure func message(m: Message, epoch: float) -> Json =
+  jo([kv("plan_id", jint(m.planId)), kv("port_id", js(m.portId)), kv("from", vec(m.from)), kv("port", vec(m.port)),
+    kv("sent_t", jnum(m.sentT)), kv("sent_year", jnum(epoch + m.sentT)), kv("sent_tau", jnum(m.sentTau)),
+    kv("heard_t", jnum(m.heardT)), kv("heard_year", jnum(epoch + m.heardT)), kv("reply_t", jnum(replyT(m))), kv("reply_year", jnum(epoch + replyT(m)))])
+pure func beam(o: Option[Beam], epoch: float) -> Json =
+  match o { Some(b) => jo([kv("port_id", js(b.portId)), kv("port", vec(b.port)), kv("heard_t", jnum(b.heardT)), kv("heard_year", jnum(epoch + b.heardT))]), None => JNull }
+pure func window(o: Option[Window]) -> Json =
+  match o { Some(w) => jo([kv("port", vec(w.port)), kv("from_t", jnum(w.fromT)), kv("wait_years", jnum(w.waitYears))]), None => JNull }
+pure func preview(o: Option[Preview], epoch: float) -> Json =
+  match o {
+    Some(p) => jo([kv("port", vec(p.port)), kv("wait_years", jnum(p.waitYears)), kv("would_stale", match p.wouldStale { Some(s) => stale(s, epoch), None => JNull })]),
+    None => JNull
+  }
+pure func out(o: Option[Out], epoch: float) -> Json =
+  match o {
+    Some(x) => jo([kv("reason", js(x.reason)), kv("port_id", js(x.portId)), kv("due_t", jnum(x.dueT)), kv("due_year", jnum(epoch + x.dueT)), kv("due_in_years", jnum(x.dueInYears)), kv("progress", jnum(x.progress))]),
+    None => JNull
+  }
+
+pure func influence(i: Influence) -> Json = jo([kv("kind", js(i.kind)), kv("since_t", jnum(i.sinceT))])
+pure func feed(f: Feed) -> Json =
+  jo([kv("frame", jint(f.frame)), kv("kind", js(f.kind)),
+    kv("event", jo([kv("id", js(f.event.id)), kv("category", js(f.event.category)), kv("words", js(f.event.words))])), kv("pick", jint(f.pick)),
+    kv("context", jo([kv("era_tier", jint(f.context.eraTier)), kv("era_word", js(f.context.eraWord)), kv("years", jnum(f.context.years)),
+      kv("influences", ja(map(influence, f.context.influences)))]))])
+
+-- EL3b.4: each member's home feeling at the comms station ([(id, name, work face)] from
+-- protocol_crew crewFacesOf), in crew order.
+pure func feelings(seed: int, e: Earth, faces: [(string, string, string)], i: int) -> [Json] =
+  match faces {
+    [] => [],
+    f :: r => match f { (id, name, work) =>
+      jo([kv("id", js(id)), kv("name", js(name)),
+        kv("feeling", js(homeFeeling(seed, i, work, e.inBeam, e.atHome, match e.out { Some(o) => o.reason, None => "" }, e.rate, e.feed.event.category, e.feed.frame)))]) :: feelings(seed, e, r, i + 1) }
+  }
+
+export pure func encodeEarth(e: Earth, epoch: float, seed: int, faces: [(string, string, string)]) -> string =
+  encode(jo([kv("rate", jnum(e.rate)), kv("rate_inverse", jnum(e.rateInverse)), kv("newest_light_t", jnum(e.newestLightT)), kv("newest_light_year", jnum(epoch + e.newestLightT)),
+    kv("light_age_years", jnum(e.lightAgeYears)), kv("at_home", JBool(e.atHome)), kv("in_beam", JBool(e.inBeam)), kv("sending", JBool(e.sending)),
+    kv("last_beam_t", jnum(e.lastBeamT)), kv("last_beam_year", jnum(epoch + e.lastBeamT)), kv("out", out(e.out, epoch)), kv("feed", feed(e.feed)), kv("last_feed", feed(e.lastFeed)), kv("crew", ja(feelings(seed, e, faces, 0))),
+    kv("beam", beam(e.beam, epoch)), kv("stale", ja(map(\s. stale(s, epoch), e.stale))), kv("pending", ja(map(\m. pending(m, epoch), e.pending))),
+    kv("window", window(e.window)), kv("preview", preview(e.preview, epoch)), kv("messages", ja(map(\m. message(m, epoch), e.messages)))]))

@@ -34,7 +34,7 @@ const STATIONS := {
 	"voyage": {"name": "Voyage console", "meshes": ["console_decision_0"], "walk": "console_decision_0", "active": true},
 	"archive": {"name": "Archive terminal", "meshes": ["archive_terminal"], "walk": "archive_terminal", "active": true},
 	"crew": {"name": "Crew console", "meshes": ["console_decision_1"], "walk": "console_decision_1", "active": true}, # crew-work W1 (Mark 2026-10-14)
-	"reserved_2": {"name": "Crew console", "meshes": ["console_decision_2"], "walk": "console_decision_2", "active": false},
+	"comms": {"name": "Comms station", "meshes": ["console_decision_2"], "walk": "console_decision_2", "active": true}, # R3-EARTH-LINK EL3 (K1): the spare console (OQ1)
 	"reserved_3": {"name": "Crew console", "meshes": ["console_decision_3"], "walk": "console_decision_3", "active": false},
 }
 ## Actions use() accepts per station (ShipControls.CONSOLE names each decision's action).
@@ -42,6 +42,7 @@ const ACTIONS := {
 	"navigation": ["open", "select", "speed", "commit", "cancel", "home", "sgr_a", "approach", "leave"],
 	"voyage": ["open", "begin"],
 	"crew": ["open"],
+	"comms": ["open", "listen", "log"], # R3-EARTH-LINK EL3: Earth's Listen pane and the Exchange log
 	"archive": ["open", "news", "log", "ask", "codex"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console. R1-ARCHIVE-VOICE: ask the Archive; codex returns to the entries
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
@@ -81,6 +82,8 @@ var panel_body := VBoxContainer.new()
 ## the roster board and the two-panel call (ui/crew_console.gd). It persists across refreshes, so a
 ## pending confirm and an open call survive them.
 var crew_console: CrewConsole
+var comms_station: CommsStation ## R3-EARTH-LINK EL3b: kept across refreshes and visits, so the feed and the chosen pane survive
+var comms_panel: CommsPanel ## the station's words layer (EL3's Listen pane and Exchange log)
 var crew_summary: Label ## the Voyage console's one-line crew summary (crew-work W1)
 var _crew_sim: SimBridge
 var step_back := Button.new()
@@ -335,6 +338,9 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 			if news_panel != null:
 				news_panel.close(); legacy_screen.visible = false; answer_panel.visible = false
 			return true
+		["comms", "listen"], ["comms", "log"]:
+			_comms().show_words(action)
+			return true
 		["voyage", "begin"]:
 			return demo.start_solar_departure()
 		["navigation", "sgr_a"]:
@@ -429,6 +435,8 @@ func focus(id: String, mesh_name := "") -> void:
 				mesh_name = m.name
 	focused = id
 	focus_mesh = mesh_name
+	if id == "comms": # EL3b.6: a new visit may paint a few more weeks
+		_comms().feed.begin_visit()
 	if not used_once:
 		used_once = true
 		set_glow(false)
@@ -682,6 +690,8 @@ func advance(dt: float) -> void:
 	if archive_ask.check_timeout():
 		_show_answer()
 	_advance_walk(dt)
+	if focused == "comms" and comms_station != null and comms_station.is_inside_tree():
+		comms_station.advance(dt)
 	if _confirm.get("holding", false):
 		_confirm.held_s += dt
 		_set_confirm_progress(minf(1.0, _confirm.held_s / HOLD_S))
@@ -737,7 +747,7 @@ func _build_screens() -> void:
 		bg.color = Color(0.02, 0.05, 0.09) if st.active else Color(0.01, 0.01, 0.012)
 		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		vp.add_child(bg)
-		var l := ComposedBinding.new() if id in ["archive", "crew"] else Label.new()
+		var l := ComposedBinding.new() if id in ["archive", "crew", "comms"] else Label.new()
 		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -804,6 +814,10 @@ func screen_text(id: String) -> String:
 		"archive":
 			var view := archive_screen_view()
 			return "Archive\n%s entries open" % DisplayBinding.format_field(view, "client.archive.unlocked_count", archive_count_format(view))
+		"comms":
+			var w: Dictionary = demo.sky_world if demo.sky_world is Dictionary else {}
+			if not w.get("earth") is Dictionary: return CommsPanel.copy().screen_no_link
+			return "Comms\n" + (DisplayBinding.format_field(w, "earth.at_home", "comms_home_short") if w.earth.get("at_home") == true else "Earth at " + DisplayBinding.format_field(w, "earth.newest_light_year", "comms_clock"))
 	return ""
 
 
@@ -841,9 +855,16 @@ func _refresh_screens() -> void:
 			var words: String = view.client.crew.status
 			binding.compose(["offline", ["client.crew.empty", "text"]] if not stations[id].active else (["Crew console\n", ["client.crew.status", "%s"]] if not words.is_empty() else ["Crew console\n", ["client.crew.working", "%d"], " working"]))
 			binding.update_from(view)
+		if id == "comms": # R3-EARTH-LINK EL3: Earth's newest light, from the sim; no link in a black hole's session
+			var binding := screens[id].label as ComposedBinding
+			var w: Dictionary = demo.sky_world if demo.sky_world is Dictionary else {}
+			var linked: bool = w.get("earth") is Dictionary
+			binding.record_context = true
+			binding.compose((CommsPanel.copy().screen_home if w.earth.get("at_home") == true else CommsPanel.copy().screen) if linked else [CommsPanel.copy().screen_no_link, ["client.comms.empty", "text"]])
+			binding.update_from(w if linked else {"client": {"comms": {"empty": ""}}})
 		if t != screens[id].text:
 			screens[id].text = t
-			if id not in ["archive", "crew"]: (screens[id].label as Label).text = t
+			if id not in ["archive", "crew", "comms"]: (screens[id].label as Label).text = t
 			(screens[id].viewport as SubViewport).render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
@@ -934,7 +955,8 @@ func _close_panel(id: String) -> void:
 	panel.visible = false
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		c.queue_free()
+		if c != comms_station: # kept, so the feed and the pane chosen survive stepping back
+			c.queue_free()
 	if id == "navigation":
 		demo.close_navigation()
 	if id == "archive" and demo.codex != null:
@@ -1029,7 +1051,7 @@ func _refresh_panel() -> void:
 		return
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != crew_console: # the Crew console persists, so a pending confirm and an open call survive a refresh
+		if c != crew_console and c != comms_station: # the Crew console persists, so a pending confirm and an open call survive a refresh
 			c.queue_free()
 	_cancel_confirm()
 	match focused:
@@ -1039,6 +1061,8 @@ func _refresh_panel() -> void:
 			_voyage_panel()
 		"crew":
 			_crew_panel()
+		"comms":
+			_comms_panel()
 		"archive":
 			_archive_panel()
 
@@ -1141,6 +1165,40 @@ func _on_crew_step(events: Array) -> void:
 		crew_console.show_crew(_crew_sim.crew)
 	if focused == "voyage" and is_instance_valid(crew_summary):
 		crew_summary.text = crew_summary_text(_crew_sim.crew)
+
+
+## R3-EARTH-LINK EL3b (K1; Mark 2026-10-28, "visual first, words last"): the comms station, Earth
+## only: Earth's feed and the twin clocks, with EL3's Listen pane and Exchange log behind Details.
+func _comms() -> CommsStation:
+	if comms_station == null:
+		comms_station = CommsStation.new()
+		comms_station.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		comms_station.pane_requested.connect(func(p: String) -> void: use("comms", p))
+		comms_panel = comms_station.words
+	return comms_station
+
+
+func _exit_tree() -> void:
+	if comms_station != null and not comms_station.is_inside_tree(): # kept out of the tree between visits
+		comms_station.free()
+		comms_station = null
+		comms_panel = null
+
+
+func _comms_panel() -> void:
+	panel_title.text = CommsPanel.copy().title
+	panel_body.add_child(_comms())
+	# EL3b.6: painted-live weeks through the session's AI relay (none when AI is off: the library shows).
+	var sim = demo.get("journey_sim") if demo != null else null
+	comms_station.feed.relay = (sim as SimBridge).ai_relay if sim is SimBridge and (sim as SimBridge).ai_relay is AiRelay else null
+	comms_station.refresh(demo.hud_view())
+
+
+## Every presented frame (the demo's _update_hud): the station from the frame's HUD view, the view
+## the display audit replays.
+func refresh_view(view: Dictionary) -> void:
+	if focused == "comms" and comms_station != null and comms_station.get_parent() == panel_body:
+		comms_station.refresh(view)
 
 
 func _archive_panel() -> void:

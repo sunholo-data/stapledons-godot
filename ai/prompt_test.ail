@@ -9,7 +9,7 @@ import std/string (contains, join, startsWith)
 import std/json (decode)
 import ./key (CacheKey)
 import ./wire (Request, CStr, CList)
-import ./prompt (Lore, Prompt, buildPrompt, promptText, parseLore, imagePrompt, rules, figureless)
+import ./prompt (Lore, Prompt, buildPrompt, promptText, parseLore, imagePrompt, rules, figureless, feedPrompt, feedStyle)
 
 export pure func lore() -> [Lore] = [{ id: "archive.two-clocks", text: "Two clocks." }, { id: "archive.sol", text: "Sol is home." }, { id: "archive.fig", text: "Light at 0.99c." }]
 pure func promptRq(purpose: string, emotions: [string], noNum: bool) -> Request =
@@ -70,6 +70,19 @@ export pure func promptChecks() -> bool = checkPromptGuardrails() && checkPrompt
 test "AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap" { checkPromptGuardrails() }
 test "AI.5 prompts name the speaker, the context and lore snippets by id" { checkPromptContext() }
 test "AI.5 lore table parses and refuses bad entries" { checkPromptLore() }
+
+-- R3-EARTH-LINK EL3b.6: a live feed frame's prompt is the feed style, the week's scene and the era,
+-- from the request context only; nothing from the ship reaches it.
+pure func feedRq() -> Request =
+  {promptRq("feed", [], false) | kind: "feed", key: { kind: "feed", entityId: "town_market", emotion: "-", ageStage: 3, variant: "640" },
+    context: [{ name: "event", value: CStr("town-market") }, { name: "scene", value: CStr("Scene, market day: stalls under awnings.") }, { name: "era", value: CStr("decade") }, { name: "years", value: CStr("12") }, { name: "week", value: CStr("640") }]}
+pure func checkFeedPrompt() -> bool {
+  let p = feedPrompt(feedRq());
+  contains(p, feedStyle()) && contains(p, "Scene, market day: stalls under awnings.") && contains(p, "Home time: decade after the departure (about 12 Earth years).") &&
+  contains(feedStyle(), "never the ship") && contains(feedStyle(), "Absolutely no text") &&
+  !contains(p, "attached image") && !contains(p, "medic") && !contains(p, "captain")
+}
+test "EL3b.6 a live feed frame's prompt: the feed style, the week's scene, the era; nothing from the ship" { checkFeedPrompt() }
 test "R1-ARCHIVE-VOICE the Archive prompt is its in-world boot record: persona, bounds, sensors, the question, no meta words" { checkArchivePrompt() }
 
 -- R2-CREW C5: a crew reply carries the persona and manner, fixes the decided reaction, keeps every

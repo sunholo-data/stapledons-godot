@@ -706,9 +706,9 @@ pure func similarBeforeArchive(line: string) -> bool = match split(line, ",\"sim
     [raw, _] => match decode(raw) { Ok(j) => j == similarJson(line), Err(_) => false }, _ => false
   }, _ => false
 }
-test "S0.2 negotiation 13->13 14->14 15/16/99->15 and pin" {
-  map(helloMinor, [13, 14, 15, 16, 99]) == [13, 14, 15, 15, 15]
-  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 99]) == [13, 14, 15, 15, 15]
+test "S0.2 negotiation 13->13 14->14 15->15 16/17/99->16 (R3-EARTH-LINK) and pin" {
+  map(helloMinor, [13, 14, 15, 16, 17, 99]) == [13, 14, 15, 16, 16, 16]
+  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 17, 99]) == [13, 14, 15, 16, 16, 16]
   && all(\m. (helloFor(m)).relativity == "0.12.0", [13, 14, 15, 16, 99])
   && relativityPin() == "0.12.0"
 }

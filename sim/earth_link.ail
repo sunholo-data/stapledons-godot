@@ -1,0 +1,191 @@
+module stapledons/sim/earth_link
+
+-- Earth's link (R3-EARTH-LINK EL2, design r3/earth-link.md; stapledons-design
+-- signals-and-instruments §2–§3.1, relativity-spec RS-26..RS-37). Pure: no
+-- effects, runs on the strict VM (`make strict`); I/O stays in ship.ail.
+--
+-- c = 1, light-years and years, galaxy frame, Sol (Earth) at the origin. The
+-- geometry is sunholo/observe's lightcone; nothing here derives a formula.
+--
+-- What is stored is only the messages: at every commit the ship sends its
+-- plan home (core.ail linkAfter), and Earth hears it |from| later. Earth
+-- always aims its beam at the newest plan it has heard; the beam covers the
+-- ray from Sol through that plan's port. This module does not import core:
+-- the journey reaches it as a LinkLeg (core.ail legOf).
+--
+-- Two clocks are used, and each field says which:
+--   Earth's aim now (galaxy time t): beam, stale, pending. What Earth is
+--     doing at this moment, known from its fixed rule, not received light.
+--   The light reaching the ship (emitted at t_e = t - |p|): in_beam and the
+--     newest light. What the ship actually receives.
+
+import std/option (Option, Some, None)
+import std/list (filter, foldl)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/observe/lightcone (seenAt, onBeamLine, linkWindow, earthRate)
+import ./earth_feed (Feed, feedAt)
+
+export type Message = { planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float, heardT: float }
+-- messages oldest first. heardT never decreases along the list: a commit
+-- happens only at rest at a port, after the previous leg (heardT' - heardT
+-- >= T - |A| + |B| >= 0 by the triangle inequality).
+-- lastBeamT: the emission time of the newest beamed Earth light the ship has received (noteBeam,
+-- every tick); the silence line's date when the ship is out of beam.
+-- lastInBeamAt: the galaxy time of the last tick in beam (the comms ring's start, out.progress).
+export type Link = { messages: [Message], sending: bool, lastBeamT: float, lastInBeamAt: float }
+-- The journey's current leg. flying: committed or arrived (a plan that is
+-- only planned never counts as the heard plan); t0 is the commit time, or
+-- now for a planned leg; legT is the leg's galaxy time from the journey core.
+export type LinkLeg = { planId: int, from: Vec3, port: Vec3, t0: float, legT: float, flying: bool }
+
+export type Beam = { portId: string, port: Vec3, heardT: float }
+export type Stale = { portId: string, port: Vec3, untilT: float }
+export type Window = { port: Vec3, fromT: float, waitYears: float }
+export type Preview = { port: Vec3, waitYears: float, wouldStale: Option[Stale] }
+-- Why the ship is out of beam: "silent" (Earth is not sending), "not_heard" (the light reaching the
+-- ship left before Earth heard the newest plan; its beam reaches that plan's port at dueT, dueInYears
+-- of galaxy time from now) or "off_line" (off the heard plan and its ray).
+-- progress: how far through the wait the ship is, 0 when it left the beam and 1 when the beam is
+-- due (lastInBeamAt to dueT, galaxy time); 0 for silent and off_line (no due time).
+export type Out = { reason: string, portId: string, dueT: float, dueInYears: float, progress: float }
+-- rateInverse: 1 / rate, ship-seconds per Earth-second (the comms phrase's "one Earth day every ...").
+-- atHome: the ship is inside the Solar System (homeRadiusLy), where Earth tracks it directly.
+export type Earth = { rate: float, rateInverse: float, newestLightT: float, lightAgeYears: float, atHome: bool, inBeam: bool, sending: bool,
+  lastBeamT: float, out: Option[Out], feed: Feed, lastFeed: Feed,
+  beam: Option[Beam], stale: [Stale], pending: [Message], window: Option[Window], preview: Option[Preview], messages: [Message] }
+
+-- Earth transmits throughout R3-EARTH-LINK (design OQ3); Earth's fate turns it off later.
+export pure func emptyLink() -> Link = { messages: [], sending: true, lastBeamT: 0.0, lastInBeamAt: 0.0 }
+
+-- The beam's angular tolerance about its ray (radians): 1e-7 rad is about
+-- 4 AU off a 40 ly ray, far inside any beam and far outside float64 noise.
+export pure func beamTolRad() -> float = 0.0000001
+
+pure func origin() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
+
+-- Home: inside the Solar System, out to the heliopause, 120 AU (1 ly = 63,241.077 AU; Voyager 1
+-- crossed it at 121.6 AU in 2012, Voyager 2 at 119 AU in 2018). The light cone puts Earth at the
+-- origin (Sol), but the voyage starts at Earth, 1 AU out: inside the Solar System Earth tracks the
+-- ship directly, as the Deep Space Network tracks the Voyagers, so the ship is in beam there, and a
+-- plan made at home is the plan Earth had before departure.
+export pure func homeRadiusLy() -> float = 120.0 / 63241.077
+export pure func atHome(p: Vec3) -> bool = norm(p) < homeRadiusLy()
+
+-- At a commit the ship sends its plan home: Earth hears it |from| later
+-- (at once for a commit from home).
+export pure func sendPlan(l: Link, planId: int, portId: string, from: Vec3, port: Vec3, sentT: float, sentTau: float) -> Link =
+  {l | messages: l.messages ++ [{ planId: planId, portId: portId, from: from, port: port, sentT: sentT, sentTau: sentTau,
+    heardT: if atHome(from) then sentT else sentT + norm(from) }]}
+
+-- The earliest emission time t_e (t - |p|, Sol-centred) of Earth light that carries a message's
+-- beam. For a plan heard at Sol this is heardT. A plan made at home leaves with the ship from Earth
+-- itself, up to |from| (8.3 light-minutes at 1 AU) off Sol: the light-cone time of that event is
+-- as early as sentT - |from|, the ship riding Earth's own light outward. Without this, a ship
+-- leaving Earth near c would read the light reaching it as older than its own plan for years.
+export pure func beamFrom(m: Message) -> float = if atHome(m.from) then m.sentT - norm(m.from) else m.heardT
+
+-- Earth's reply to a message, at the earliest: its beam, sent when Earth hears the plan, reaches the port.
+export pure func replyT(m: Message) -> float = m.heardT + norm(m.port)
+
+-- The newest message Earth had heard by time te, leaving out plan `skip`
+-- (-1 skips none). heardT is non-decreasing, so the last match is the newest.
+export pure func newestHeard(ms: [Message], te: float, skip: int) -> Option[Message] =
+  foldl(\acc m. if m.heardT <= te && m.planId != skip then Some(m) else acc, None, ms)
+
+pure func after(ms: [Message], m: Message) -> Option[Message] =
+  match ms { [] => None, x :: r => if x.planId == m.planId then (match r { [] => None, y :: _ => Some(y) }) else after(r, m) }
+
+pure func last(ms: [Message]) -> Option[Message] = foldl(\acc m. Some(m), None, ms)
+
+-- The newest message whose beam the Earth light emitted at te carries (beamFrom <= te).
+export pure func newestCarried(ms: [Message], te: float) -> Option[Message] =
+  foldl(\acc m. if beamFrom(m) <= te then Some(m) else acc, None, ms)
+
+-- In beam: the Earth light reaching p at t left at t_e = t - |p|. It carries
+-- the beam iff Earth was sending then and (1) the ship is at home (inside the
+-- Solar System), or (2) it is on the leg of the newest plan Earth had heard by
+-- t_e, committed or arrived, or (3) it is on that plan's ray from Sol.
+export pure func inBeam(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> bool =
+  l.sending && (atHome(p) || match newestCarried(l.messages, seenAt(t, p, origin())) {
+    None => false,
+    Some(m) => (match leg { Some(g) => g.flying && g.planId == m.planId, None => false }) || onBeamLine(m.port, p, beamTolRad())
+  })
+
+-- The beam Earth aims now, and whether it is stale: aimed at a port the
+-- ship has left, off the ray of the newest plan sent, until Earth hears the
+-- next message.
+export pure func aimAt(l: Link, t: float) -> Option[Message] = newestHeard(l.messages, t, 0 - 1)
+export pure func staleAt(l: Link, t: float) -> [Stale] =
+  match (aimAt(l, t), last(l.messages)) {
+    (Some(a), Some(n)) => if a.planId == n.planId || onBeamLine(a.port, n.port, beamTolRad()) then []
+      else (match after(l.messages, a) { Some(x) => [{ portId: a.portId, port: a.port, untilT: x.heardT }], None => [] }),
+    _ => []
+  }
+
+-- The wait at the port of a committed or arrived leg: covered when the
+-- port lies on the ray of the beam Earth was aiming at the commit (the plan
+-- the ship is leaving), not the one it aims at on arrival (by then it has
+-- usually heard the new plan, which would make every port look covered).
+-- A leg from home is covered: Earth has the plan before departure, and its beam follows the ship.
+export pure func coveredAt(l: Link, g: LinkLeg) -> bool =
+  atHome(g.from) || match newestHeard(l.messages, g.t0, g.planId) { Some(m) => onBeamLine(m.port, g.port, beamTolRad()), None => false }
+export pure func windowOf(l: Link, g: LinkLeg) -> Window =
+  { port: g.port, fromT: g.t0 + g.legT, waitYears: linkWindow(g.from, g.port, g.legT, coveredAt(l, g)) }
+
+-- The preview of a planned, uncommitted leg: the same wait the commit would
+-- give, and the stale beam it would create. A cost, like the commit
+-- dialog's Earth years: no state of Earth or the ship after the commit.
+export pure func previewOf(l: Link, g: LinkLeg) -> Preview {
+  let w = windowOf(l, {g | planId: 0 - 1});
+  let wouldStale = match newestHeard(l.messages, g.t0, 0 - 1) {
+    Some(m) => if onBeamLine(m.port, g.port, beamTolRad()) || atHome(g.from) then None
+      else Some({ portId: m.portId, port: m.port, untilT: g.t0 + norm(g.from) }),
+    None => None
+  };
+  { port: g.port, waitYears: w.waitYears, wouldStale: wouldStale }
+}
+
+-- The Earth rate for a ship at p moving along `heading` at rapidity phi
+-- (negative phi moves against the heading, in diag flight).
+export pure func rateOf(p: Vec3, heading: Vec3, phi: float) -> float =
+  if phi < 0.0 then earthRate(p, { x: 0.0 - heading.x, y: 0.0 - heading.y, z: 0.0 - heading.z }, absf(phi))
+  else earthRate(p, heading, phi)
+
+-- Every tick: while in beam, the newest light received is beamed light (the silence line's date).
+export pure func noteBeam(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> Link =
+  if inBeam(l, t, p, leg) then {l | lastBeamT: seenAt(t, p, origin()), lastInBeamAt: t} else l
+
+-- The reason the ship is out of beam (None in beam).
+export pure func outOf(l: Link, t: float, p: Vec3, leg: Option[LinkLeg]) -> Option[Out] =
+  if inBeam(l, t, p, leg) then None
+  else if !l.sending then Some({ reason: "silent", portId: "", dueT: 0.0, dueInYears: 0.0, progress: 0.0 })
+  else match last(l.messages) {
+    Some(n) => if beamFrom(n) > seenAt(t, p, origin())
+      then Some({ reason: "not_heard", portId: n.portId, dueT: replyT(n), dueInYears: if replyT(n) > t then replyT(n) - t else 0.0,
+        progress: progressOf(l.lastInBeamAt, t, replyT(n)) })
+      else Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0, progress: 0.0 }),
+    None => Some({ reason: "off_line", portId: "", dueT: 0.0, dueInYears: 0.0, progress: 0.0 })
+  }
+pure func progressOf(from: float, t: float, due: float) -> float =
+  if due <= from then 1.0 else { let f = (t - from) / (due - from); if f < 0.0 then 0.0 else if f > 1.0 then 1.0 else f }
+
+-- fromEarth: the ship's position relative to Earth now (ly; core.ail earthOf, from the ephemeris).
+-- The rate is Earth's Doppler factor, so it is measured from Earth itself: inside the Solar System
+-- the Sun is the wrong reference (a ship leaving Earth past the Sun would read Earth's history
+-- running fast). Beyond it the two differ by under 1 AU / r. The light cone and the beam stay
+-- Sol-centred (the design's geometry; home covers the difference).
+-- seed: the voyage's, for Earth's feed (sim/earth_feed.ail: the week of the newest light).
+export pure func earthView(l: Link, seed: int, t: float, p: Vec3, fromEarth: Vec3, heading: Vec3, phi: float, leg: Option[LinkLeg]) -> Earth {
+  let rate = rateOf(fromEarth, heading, phi);
+  let here = inBeam(l, t, p, leg);
+  { rate: rate, rateInverse: 1.0 / rate, newestLightT: seenAt(t, p, origin()), lightAgeYears: norm(p), atHome: atHome(p), inBeam: here, sending: l.sending,
+    lastBeamT: if here then seenAt(t, p, origin()) else l.lastBeamT, out: outOf(l, t, p, leg), feed: feedAt(seed, seenAt(t, p, origin()), []),
+    lastFeed: feedAt(seed, if here then seenAt(t, p, origin()) else l.lastBeamT, []),
+    beam: match aimAt(l, t) { Some(m) => Some({ portId: m.portId, port: m.port, heardT: m.heardT }), None => None },
+    stale: staleAt(l, t),
+    pending: filter(\m. m.heardT > t, l.messages),
+    window: match leg { Some(g) => if g.flying then Some(windowOf(l, g)) else None, None => None },
+    preview: match leg { Some(g) => if g.flying then None else Some(previewOf(l, g)), None => None },
+    messages: l.messages }
+}
