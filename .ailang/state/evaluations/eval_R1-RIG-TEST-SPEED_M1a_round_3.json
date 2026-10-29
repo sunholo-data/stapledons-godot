@@ -1,0 +1,14 @@
+{
+  "sprint_id": "R1-RIG-TEST-SPEED", "milestone": "M1a", "round": 3, "head": "86b96103",
+  "score": 88, "result": "PASS", "blocking_findings": [],
+  "root_cause_check": {
+    "red_on_0a8876ba": "git archive copy, `make rig-check-control` and `gmake rig-check-control`: both rc=2; suite-profile control submake-level and atomic-rows FAIL on both makes (gmake[1] Entering/Leaving directory lines and shifted MAKELEVEL from the outer make); 40 cases, 2 failures; caller-poison FAIL; 9 cases, 2 failures. Matches the rig run-2 log.",
+    "green_on_86b96103": "same commands: make rc=0 and gmake rc=0, rig-check control: 9 cases, 0 failures"
+  },
+  "production_unset_assessment": "Correct. A profiled run is a fresh top-level make with its own -j from --jobs, so inheriting MAKEFLAGS (jobserver fds, -w, -j) would warn about the jobserver, add Entering directory lines that corrupt gap/trace folding, and shift MAKELEVEL so the wrapper's level attribution (top-level recipes = level 1, sub-make = 2) would be off by the outer depth. SUITE_TOP_TARGET was already unset. Cost: variable overrides, -k and --no-print-directory from an outer make are dropped, so a caller invoking run from a recipe must pass them after `--`. Not an issue for the planned M1b use (run from the rig shell).",
+  "non_blocking_findings": [
+    "No guard for this class when run directly: with both unsets removed, `sh tools/test_suite_profile.sh` still passes 40/40 (the AC1 and AC4 commands cannot see it). Removing only the control's unset is caught solely when the control runs under make (2 failures, as in the RED), i.e. only via rig-check-control or make test.",
+    "The unset in `suite_profile.sh run` is unguarded even under make: with it removed and the control's unset kept, the control passes 40/40 because the control strips the variables first. A case that exports MAKELEVEL=1 MAKEFLAGS=w and asserts run's rows are still level 1 with no Entering directory lines would kill it.",
+    "Suggest adding to the acceptance commands a make-driven invocation (make rig-check-control and gmake rig-check-control), or a one-line fixture Makefile that runs the control under make."
+  ]
+}

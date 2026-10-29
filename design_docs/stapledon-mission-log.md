@@ -1230,3 +1230,101 @@ DECISIONS FOR MARK: D-126 (unchanged: the `rig/full` watchdog; A raise to 7,200 
 - **Next:** D-128 (default A): 7m-d on a quiet rig (GPU < 15 %, 1-min load < 5); otherwise L4 → K1.1a-a4 → a5 → L9 S0.3 → L3.
 
 DECISIONS FOR MARK: D-128 (new: position of row 7m-d, the docked-p99 measurement you asked for in D-127 B. A = next whenever the rig is quiet, otherwise L4; B = after L4. Recommendation A, default A.)
+
+## 56 — 2026-10-29 — L4 test-suite speed: design (2 quorum rounds) and plan `R1-RIG-TEST-SPEED`, M1a suite profiler built (PR #349) — BUILT, not landed: `rig/full` run 2 RED (the control failed under make), fixed `86b96103`, run 3 in flight at record time; independent Sonnet 66 FAIL → 90/100 PASS round 2; M1b/M2 parked on D-129, M3 on the #344/#346 `Makefile` hold [HARNESS]
+
+- **Pick:** D-128 is still OPEN, so its default A applied: 7m-d first if the rig is quiet, otherwise L4. The 7m-d predicate failed at pick: GPU `Device Utilization %` read 100, 100 and 99 on three samples 2 s apart at about 21:41Z, against a limit below 15, with 1-min load 2.82. So 7m-d was PARKED-ON-LANE and L4 was the pick (D-126 C: L4 ahead of Kerr a4).
+  - Neither L4 nor 7m-d moves an UNMET clause other than through 7m AC1, and 7m-d was not routable, so gate 2 rule (b) holds.
+  - Already-landed check on a fresh origin: no L4 work on main. The only prior material is `design_docs/planned/r2/ci-test-tiers.md`, which is Superseded and kept for its CI timing data.
+  - Open PRs at pick: #344 (R3-EARTH-LINK) and #346 (AILANG split clean-up), both attended. Both edit `Makefile`; #344 also edits `mk/m45.mk`, `mk/earth-link.mk` and `tools/import_keep.txt` (250 files, read with `gh api --paginate`). So `Makefile` was held and the design kept M1/M2 off it.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET, goal unmoved. 7m AC1 still waits on 7m-d (quiet rig), and P-land is Mark's. 5 ongoing.
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 directives since 2026-10-27T11:22:14Z (8 comments).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Inbox `mission-stapledon`: 1 unread, the fleet's `harness-resolved` reply for `pin-root:worktree-removed-mid-fire` (fix ailang#1999, `17ec65d6`). Row 7h-pin is now RESOLVED and the message was acknowledged.
+  - Not the first iteration after the Monday rotation, so no sweep.
+- **Gate 1:**
+  - Base `c2e70e15bd28955cd9aac01b67ec6b458862f681` at 2026-10-28T21:40:26Z; main = origin/main.
+  - All 14 skill files at the resolved symlink and in the pin match `origin/dev`.
+  - Open loop PRs: none. #344 and #346 are attended.
+- **Controller baseline (measured before design):** `gmake --trace test` serial in a fresh clone of `c2e70e15`, each line timestamped (`/tmp/stap56/profile.ts.log`, 14,613 lines).
+  - Result: **rc 0, 4,123 s (68.7 min)**, 1-min load 2.51 at start, about 7.3 mid-run, 4.51 at end.
+  - Top targets: `sim` 740 s, `solar-departure-test` 437, `free-nav-stop-test` 248, `moon-lifecycle-test` 201, `no-twitch-test` 177. The top 20 take 71.8 %.
+- **Design:** `design_docs/planned/r1/rig-test-speed.md` (Opus 5.5 via the Agent tool; 437 lines, 44 Verification Log rows, pillars all 0).
+  - **M1:** a make `SHELL` instrument plus the before/after report.
+  - **M2:** parallel lanes on the rig: setup serially, `gmake -j6 --output-sync` over the parallel-safe set with lane edges, then an exclusive serial phase.
+  - **M3:** declared edges, a stamped `import` and `sim` shards. It is held on `Makefile`.
+  - The design found and documented these hazards:
+    - `import` re-runs 5 times through sub-makes and rewrites `.godot/` caches;
+    - the replay state file `$(M45_STATE)` is shared by `replay`, `parity-m4` and `codex-unlocks`;
+    - 35 Godot targets do not reach `import`, and none of 58 AILANG targets reaches `deps`;
+    - two `home-*` checks write one `counts.txt`;
+    - wall-clock tests: `crew-perf` and `ship-demo-launch-test`.
+  - Side finding: `make test` leaves 5 untracked `*.translation` files. Filed as row 7u.
+- **Quorum (author `claude:claude-opus-5-5`, Claude seat benched):**
+  - **Round 1 BLOCKED.** kimi-k3, gemini-4-argon and glm-5.3 all rejected; gpt6-1-sol was absent (unreachable). The objections were: silent fallbacks; sub-make attribution under `-j`; an unverified sharding premise; a 3.81-vs-gmake baseline confound; and three challenged claims.
+  - The controller measured every premise:
+    - `ailang test --package . f.ail` is refused, while positional `ailang test a.ail b.ail` works (41 tests, rc 0);
+    - no make fast-path bypass of a `SHELL` wrapper for any of three names, on either make;
+    - glm's 67.8 % was arithmetic error (rows sum to 2,959 s = 71.8 %);
+    - V35's odd filename is literal.
+  - The designer revised once (`7174da12`).
+  - **Round 2 BLOCKED at N-1.** gemini passed; kimi and glm rejected (sampled load, n ≥ 3 baseline; V4/H5 consistency, `test` recipe lines, lane-edge reach, AC5 count); gpt6-1-sol was absent again.
+  - The controller measured glm's premises: `$(M45_STATE)` has an explicit rule declared by `codex-unlocks`; `test:` has 0 recipe lines (control: `sim` has 5). The reviewers' fixes were then applied under the narrow-refinement carve-out (`817f4ba6`), with no third round.
+- **Plan:** sprint `R1-RIG-TEST-SPEED` (codex gpt-6.1-sol; 268-line plan plus JSON).
+  - The controller split M1, because the guardrail stops at a design's Open questions and OQ2 (gmake on the rig) governs 1d.
+  - **M1a**, the instrument, runs on D-126 C plus D-88.
+  - **M1b** (rig wiring and baseline runs) and **M2** are blocked on the new **D-129**.
+  - **M3** is blocked on D-129 and the #344/#346 hold.
+- **Execution (codex gpt-6.1-sol, two runs, sandboxed; the controller committed):**
+  - **Round 1** (`6bf988fb`) added `tools/timed_recipe_shell.sh`, `tools/suite_profile.sh` and `tools/test_suite_profile.sh` (20 cases on every distinct GNU make on PATH; a loud degrade when `gmake` is absent, because release CI runs Linux and dev tags run on Mark's laptop), plus one `suite-profile` case in `tools/test_rig_check.sh`. RED first: 40 cases, 20 failures. GREEN: 40/0. Drills R and C killed. 31 supplemental mutants killed.
+  - **Controller fix** (in the same commit): outside the sandbox the control flaked once in 7. Debugging under load found a production defect: when the sampler was killed during `$(load1)`, it wrote a half row (`<epoch><TAB>`) that `report` would refuse. The fix writes only non-empty reads. Failures went from 1 in 25–40 to 0 in 80 runs under 16 busy loops.
+  - **Round 2** (`0a8876ba`) addressed the evaluator's findings. `overhead-200` now gates child CPU at ≤ 150 ms per line, plus a 1 s per line hang guard, and prints the wall time. The design's 50 ms wall bound failed 4 of 4 runs at 6 busy loops: wrapped wall was 115–206 ms per line under load against 34–82 idle, while CPU was 31–50. Also: report refusals for failed rc, jobs, closure, duplicate slot and `-j8`; empty closure hashes; system CPU; no half rows; the sleeper reaped.
+  - Controller gates outside the sandbox: AC1 3/3 at 40/0, and a full control run under load at 40/0; 8 of 8 loaded single-case runs passed; AC4 9/0; R and C killed; `sh -n` and `dash -n` pass; python-guard and uid-guard ok; no held file touched.
+- **Evaluation:** Sonnet via the Agent tool, foreground, in its own clone `.stap-iter56-eval`, with no controller numbers handed over.
+  - **Round 1: 66/100 FAIL.** Blocking finding: `overhead-200` is load-flaky. The controller reproduced it at 4 of 4 under 6 busy loops before acting. There were 8 survivors among 43 mutants.
+  - **Round 2: 90/100 PASS, zero blocking** (`eval_R1-RIG-TEST-SPEED_M1a_round_2.json`). 12 of 13 mutants were killed by the intended case; 1 was aborted (a 2 s sleep per call, which only the hang guard sees).
+  - Non-blocking findings: the 200 s hang guard is lax; the design text still says 50 ms (reconcile at landing); `out/sleeper.pid` is a test hook; Linux was not run for real.
+  - **Round 3 (delta review of the post-PASS fix `86b96103`): 88/100 PASS, zero blocking** (`eval_R1-RIG-TEST-SPEED_M1a_round_3.json`). The judge reproduced the RED on `0a8876ba` through `make` and `gmake rig-check-control` (rc 2) and the GREEN on `86b96103` (9 cases, 0 failures), and judged the unset in `suite_profile.sh run` correct for production (jobserver, `-w`, level attribution). Non-blocking: nothing guards that unset (removing it leaves the control 40/40). Carried into M1b: a case that exports `MAKELEVEL=1 MAKEFLAGS=w` and asserts level-1 rows with no "Entering directory" lines, and `make`/`gmake rig-check-control` added to the acceptance commands.
+- **Landing / Gate 3b:** PR #349. Fast tier green on `0a8876ba`. `rig/full` run 1 (`6bf988fb`) was stopped by the controller after the round-1 FAIL (an `error` status: "not a test verdict"). **Run 2 (`0a8876ba`) RED** after 55 min in `rig-check-control`: under `make test` the outer make's MAKELEVEL/MAKEFLAGS leaked into the fixture makes, so `submake-level` and `atomic-rows` failed on gmake (`gmake[1]: Entering directory`), and `caller-poison` failed as a knock-on (25 of 8 ok). Every earlier AC4 run had invoked the script with `sh`, never through make: plan, executor, evaluator and controller alike. Reproduced first-party as `make rig-check-control` rc 2. Fix `86b96103`: the control and `suite_profile.sh run` unset the make environment; `make` and `gmake rig-check-control` then gave 9 cases, 0 failures. **Run 3 (`86b96103`) was in flight at record time**, started 02:16Z. The same independent judge reviewed the fix in round 3: 88 PASS, zero blocking. **Not merged:** the next iteration reads run 3's `rig/full` status on `86b96103`, re-checks `git log HEAD..origin/main`, and merges on green plus the fast tier.
+- **Record:** charter (STATUS 56; STATUS 53 rotated to the archive; D-128 evidence; **D-129** OPEN; L4 row; 7m-d PARKED-ON-LANE; new row 7u; 7h-pin RESOLVED; CURRENT GOAL counter; iteration-56 process fix), this entry, the index, the dashboard, and the evaluations (rounds 1–3). The design, plan, sprint JSON and CHANGELOG ride in PR #349. The design text still says 50 ms per line in §1c and the risks table; reconcile it at landing (evaluator round 2, non-blocking).
+- **Routing evidence**
+
+  base=c2e70e15bd28955cd9aac01b67ec6b458862f681@2026-10-28T21:40:26Z. Fire `stapledon-1793223586-62134`.
+
+  Resolver output: designer `recipe claude:claude-opus-5-5 declared:provider-pin`; planner `agent-tool opus fail-closed:no-doc` without the doc and `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin` with it; executor `recipe codex:gpt-6.1-sol declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`.
+
+  Per the operator's standing request, the Agent tool was used where the hook allows it: the designer (`opus`, the same model as the pin) and the evaluator (`sonnet`). Provider-pinned roles ran through their own codex recipe. The codex probe gave rc 0. No role failed to spawn.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Designer Agent `opus` = `claude:claude-opus-5-5`: 278,554 tok first run; the agent reported 322,130 tok after the revision run. Quota bucket anthropic. One doc, one protocol-mandated revision. The round-2 fixes were applied by the controller under the carve-out.
+  - Planner `codex:gpt-6.1-sol` (103,236 tok; 8 min).
+  - Executor `codex:gpt-6.1-sol`: round 1 111,612 tok, round 2 90,769 tok.
+  - Evaluator Agent `sonnet`: round 1 87,702 tok, round 2 106,745 tok, round 3 114,014 tok.
+  - Judge independence is cross-vendor: the executor is OpenAI and the judge Anthropic, and the judge is a different model from the designer (Opus) and the controller.
+  - Quorum: round 1 $0.6134, round 2 $0.5447, so metered = $1.158 of the $5 cap. Rotation pointer unchanged: the resolver's pin chose the designer, not the rotation file, which still reads `codex:gpt-6.1-sol`.
+- **Ruled out:**
+  - 7m-d this fire (GPU 99–100 %).
+  - Editing `Makefile` or `mk/m45.mk` (held by #344/#346).
+  - Building M1b or M2 before D-129 (guardrail: stop at Open questions).
+  - A third quorum round.
+  - A wall-clock bound in `make test` for instrument overhead (it is load-dependent on a shared rig; the evaluator and controller measured it independently).
+  - Retrying the flaky case instead of fixing it.
+  - Using the `--trace` gap method as the permanent instrument (it cannot attribute work under `-j`).
+  - Pushing the evaluation JSONs to PR #349 (that would have moved the head `rig/full` was testing).
+  - The first `rig/full` run on `6bf988fb`: the controller stopped it after the round-1 FAIL and posted an `error` status saying "not a test verdict".
+- **Upstream:** none new. `ailang test` has no `--jobs`; the design files that as a DX request at M3, with per-file timings.
+- **Retro:**
+  - Frictions:
+    1. The controller's own load stress, and the evaluator's, ran while `rig/full` was running, adding load to the gate under test. Keep stress short, or run it before `rig/full`.
+    2. In zsh, `kill $pids` does not word-split, which left busy loops running once until `pkill`. Use a pid file and a loop.
+    3. The plan's control demanded both makes with "absence is a failure", which would have broken release CI on Linux and dev tags on a laptop without `gmake`. The controller amended it to a loud degrade.
+    4. The design's overhead bound was a performance budget phrased as a correctness gate.
+    5. **The control was never run the way `make test` runs it.** Every AC4 run, by the executor, the evaluator and the controller, invoked `sh tools/test_rig_check.sh` directly, so the make environment that `rig-check-control` passes down was never exercised, and `rig/full` found it after 55 min. This is rule 3k (run exactly what the product runs) aimed at a test harness.
+  - **Process fix** (charter, "How to use the loop", iteration 56 retro): a new or changed control that `make test` reaches through a target is verified THROUGH that target (`make <target>` and `gmake <target>`) by the executor, the controller and the evaluator, not only by invoking the script.
+  - Harness share: iterations 55 and 56 are merge-gate tooling directed by Mark (D-126 C), tagged `[HARNESS]`; no loop-harness work in 36–56.
+  - Last three landings: #345 moved no clause (directed tooling), #341 moved clause 4, #333 none. This iteration landed nothing yet. It worked the directed row (D-126 C) because the clause-4 row 7m-d was lane-parked, so no DRIFT.
+- **Next:** D-129 (Mark: OQ1–OQ4) → M1b (rig wiring and three gmake baselines) → M2. Meanwhile, per D-128 default A: 7m-d whenever the rig is quiet, then K1.1a-a4 → a5 → L9 S0.3 → L3.
+
+DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied this fire) and D-129 (new: L4's OQ1–OQ4. A = accept all four defaults; B = as A but a missing gmake falls back loudly to serial; C = instrument only, the rig stays on serial 3.81. Recommendation A. Default if unanswered: M1b/M2 stay parked.)
