@@ -486,5 +486,14 @@
     "native_publish_gates": "PASS all make publish-dev prerequisites: AI stub, starmap, audio, legacy capture/interior/Archive, planets, civic, voyage, identification, normal ship, title and guided departure",
     "merge_state": "PR346 merged to main. PR344/351/352 current work integrated in combined dev branch; full exact-head rig/golden and feature review gates remain pending.",
     "full_rig": "Queued for quiet Studio: load<3 andGPU<15 for3samples; current samples load4.74/GPU80 prevent a valid start."
+  },
+  "npc_character_followup": {
+    "decision": "D-139",
+    "status": "direction_recorded_pending_plan_and_visual_pilot",
+    "appearance": "Replace procedural 3D resident proxies with painted figures in the captain's comic style; appropriate still poses or restrained loops suffice for background NPCs.",
+    "crew_presence": "Named crew mingle among residents with established portrait identities preserved; decorative resident rows are not yet simulated crew entities.",
+    "next": "Plan a bounded character/identity slice and review captain, residents and named crew together in actual Bow/Astern views before full crowd replacement.",
+    "runtime_changed": false,
+    "implemented": false
   }
 }

@@ -144,3 +144,11 @@ Mark asks to go further: follow the comic aesthetic and long tendril architectur
 ## D-136 playable handoff
 
 Mark accepts the grown civic direction for hands-on review: enable the existing pilot layers and ambient activity in the normal ship entry, build a native Mac playtest, verify the bridge/lift/court/return path and reduced-motion behavior, and share the new immutable archive on the existing private gallery. The loading jump waits for the civic installation. Raw authoring studies remain opt-in so matched comparisons retain their before state. Bundle exact source assets/configs with hash closure checks. This authorizes playable integration of the reviewed composition, without certifying all S3/S5 observations, final performance or landing.
+
+## D-139 NPC appearance and crew in the crowd
+
+Mark's native playtest correction: all NPCs use the captain's painted comic character style. Replace the procedural 3D resident figures in `demos/commons_life_pilot.gd` with painted, foot-anchored figures using the captain's presentation as the reference. Background NPCs need only appropriate still poses or restrained loops; they do not need the captain's full animation set. The existing mesh people are temporary proxies, not an accepted character treatment. This carries D-7's portrait-derived figure direction into the Commons.
+
+Named crew mingle with the residents in the same visual treatment. Preserve each crew member's established portrait identity so their in-world figure and Crew console portrait read as the same person. A generic decorative resident must not silently become a named simulated crew member. Crew presence, identity binding and any interaction belong in the character follow-up; this ruling does not mark those systems implemented.
+
+Before replacing the full crowd, review a bounded painted-character pilot in actual Bow and Astern player views, with the captain, background residents and named crew together. Check foot anchors, seated contacts, floor/route clearance, occlusion and reduced motion using the existing civic playtest and capture guards. Plan the asset/identity slice explicitly before execution under the project's design → sprint → approval cycle. Current publication and S3/S5 evidence remain historical; D-139 is pending implementation and visual review.

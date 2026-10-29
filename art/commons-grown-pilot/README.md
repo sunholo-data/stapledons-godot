@@ -15,8 +15,10 @@ The new image adds:
 - Twenty-eight additional furnishings, six table practicals, curved painted
   lanes and four coloured courts across the formerly plain physical floor.
 - Forty-two civilian vignettes: meals, conversation, reading, market tending and
-  short strolls. These reuse the shared toon/ink treatment, with modest native
-  silhouettes instead of copies of the captain.
+  short strolls. The procedural 3D figures are temporary proxies. D-139 requires
+  painted characters in the captain's style, with simpler animation and named
+  crew mingled among the residents. Preserve the crew's established portrait
+  identities. This replacement has not yet been implemented or reviewed.
 
 `placements.json` is the exact composition; `furniture.json` is its extra kit
 layer. `commons_civic_pilot.gd` combines the authored assets, ground pigment and
