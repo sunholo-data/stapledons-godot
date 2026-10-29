@@ -1,7 +1,7 @@
 {
-  "title": "Bridge & Commons · playable civic review",
-  "revision": "Native 755cd4b1 · reviewed grown civic art installed",
-  "round": "D-136 native playtest",
+  "title": "Latest combined dev build · ready to test",
+  "revision": "v0.4.0-dev.37-living-bridge-148-g620e92ff",
+  "round": "D-137 combined dev channel",
   "frames": [
     {
       "group": "playtest",
@@ -2279,12 +2279,22 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "Playable Mac build now available below: the reviewed grown architecture, planting, furniture and ambient activity are installed in the normal New game route. Download, unzip and open Stapledons Voyage.app. Use WASD to walk, E at the lift landing, and Tab for help. Both devices need Tailscale. This is a playtest; remaining layout observations and finishing/performance work continue.",
+  "notice": "The combined build is now published to the usual --dev channel: grown bridge/Commons, the latest Earth-link station/feed/light-strip, crew portraits and current fixes. On the laptop run tools/install_review_build.sh --dev. The direct download below is the same archive. Remaining Earth-map work and full main-merge gates are still in progress.",
   "downloads": [
+    {
+      "source": "res://build/macos/Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
+      "file": "Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
+      "title": "LATEST combined dev · all current committed work · macOS",
+      "note": "Same verified archive as tools/install_review_build.sh --dev. Includes civic art/activity, latest Earth-link station/feed/light-strip, crew portraits, current main, AILANG cleanup and Kerr oracle work. This is the combined development test build; main PR merge gates and unfinished milestones remain tracked separately.",
+      "version": "v0.4.0-dev.37-living-bridge-148-g620e92ff",
+      "commit": "620e92fff02d5489a7bf6fe6881151caf68a4404",
+      "sha256": "dab215eff42d56f87bfe927b16adcb4f79e3f5048e3375ed2aba819afe6616b1",
+      "bytes": 459853252
+    },
     {
       "source": "res://build/macos/Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
       "file": "Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
-      "title": "Play grown Commons · macOS · NEW playable build",
+      "title": "Earlier civic-only playtest ·755cd4b1 ·reference",
       "note": "Contains the reviewed grown civic art and live activity. Unzip, open Stapledons Voyage.app, choose New game; E at the lift landing descends to Commons. WASD walks; Tab opens help. Bundled AILANG v0.54.18. Native fresh-settings startup, movement, live/reduced activity and lift round trip pass. Earlier S3 build below is retained as a reference.",
       "commit": "755cd4b11bc99648a74fefb81f9c3b89ed315ba1",
       "version": "v0.4.0-dev.37-living-bridge-99-g755cd4b1",
