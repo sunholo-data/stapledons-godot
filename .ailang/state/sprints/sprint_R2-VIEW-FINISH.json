@@ -435,5 +435,18 @@
     "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#playtest",
     "https_download": "PASS complete445933530-byte transfer over private8452route; SHA00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8 matches local archive and manifest",
     "independent_native_review": "art/commons-grown-pilot/playtest-review.md"
+  },
+  "combined_dev_review": {
+    "decision": "D-137",
+    "status": "integrating",
+    "requested": "All current committed work in private --dev channel for Mark testing",
+    "included_prs": [
+      344,
+      346,
+      351,
+      352
+    ],
+    "main_merge_346": "26697b7ac259490283fd2b51ce65c588fceb48d3",
+    "incomplete_scope": "Earth-link EL4/EL5 and finishing/S3/S5/performance remain open; inclusion in test build is not completion or merge certification."
   }
 }
