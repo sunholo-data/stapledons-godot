@@ -63,13 +63,20 @@ refused() {
 # A refused post (GitHub down, say) still reports on stdout and exits 1; GitHub keeps showing pending.
 refused failure-refused failure test 1 '^rig-check: FAIL: make test failed.*\.log\)$' 'rig-check: could not post the failure status'
 refused success-refused success none 1 '^rig-check: ok, 01234567 green' 'rig-check: could not post the success status'
+# Instrument fixtures are one case in this already-wired control.
+if sh tools/test_suite_profile.sh > "$T/suite-profile.log" 2>&1; then
+  echo 'rig-check control suite-profile: ok'
+else
+  cat "$T/suite-profile.log"
+  echo 'rig-check control suite-profile: FAIL (see fixture output)'; fails=$((fails + 1))
+fi
 # caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52).
-n=7
+n=8
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=8; nrc=0
+  n=9; nrc=0
   RIG_CHECK_NESTED=1 RIG_TEST_S=1234 RIG_GOLDEN_S=7 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 7 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 7 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 8 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 8 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0
