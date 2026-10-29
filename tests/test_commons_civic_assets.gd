@@ -28,30 +28,43 @@ func _run()->void:
  var files:Dictionary={manifest_path:FileAccess.get_file_as_bytes(manifest_path)}
  for path:String in manifest.files:files[path]=FileAccess.get_file_as_bytes(path)
  check("complete staged raw pack closes transitive configs/assets and all byte pins",_audit(files,"complete").is_empty())
- var roots:={"commons_lived_in_kit_v1.glb":["civic_bench","communal_table","notice_read_station"],"commons_backdrop_kit_v1.glb":["civic_arcade","curved_garden_parapet"],"commons_grown_kit_v1.glb":["tendril_arch","planted_island","rib_shade_canopy"]}
+ var roots:={"commons_lived_in_kit_v1.glb.bin":["civic_bench","communal_table","notice_read_station"],"commons_backdrop_kit_v1.glb.bin":["civic_arcade","curved_garden_parapet"],"commons_grown_kit_v1.glb.bin":["tendril_arch","planted_island","rib_shade_canopy"]}
  for name:String in roots:
   var scene:=AreaBundle.load_glb(Stage.BUNDLE_DIR.path_join(name));var ok:=scene!=null
   if scene!=null:
    for prop:String in roots[name]:ok=ok and scene.find_child(prop,true,false)!=null
    scene.free()
-  check("raw GLTF loader reads ignored staged "+name,ok)
- for name:String in ["trailing-vine-v1.png","cream.png","teal.png","ochre.png"]:
-  var image:=Image.load_from_file(Stage.BUNDLE_DIR.path_join(name))
-  check("raw Image loader reads ignored staged "+name,image!=null and not image.is_empty() and image.get_width()>100)
+  check("raw GLTF loader reads byte-staged "+name,ok)
+ for name:String in ["trailing-vine-v1.png.bin","cream.png.bin","teal.png.bin","ochre.png.bin"]:
+  var image:=Image.new();var status:=image.load_png_from_buffer(FileAccess.get_file_as_bytes(Stage.BUNDLE_DIR.path_join(name)))
+  check("PNG buffer loader reads byte-staged "+name,status==OK and not image.is_empty() and image.get_width()>100)
  for source:String in Stage.CONFIGS:
   var original:=_json(source);var staged:=_json(Stage.CONFIG_DIR.path_join(Stage.CONFIGS[source]));var ok:=true
   for key:String in ["placements","plants","practicals","residents","ground","trailing_vines"]:ok=ok and original.get(key)==staged.get(key)
   check("staging preserves world art/activity data "+Stage.CONFIGS[source],ok)
- for path:String in [Stage.CONFIG_DIR.path_join("backdrop.json"),Stage.BUNDLE_DIR.path_join("commons_grown_kit_v1.glb"),Stage.BUNDLE_DIR.path_join("trailing-vine-v1.png"),Stage.BUNDLE_DIR.path_join("cream.png")]:
+ for path:String in [Stage.CONFIG_DIR.path_join("backdrop.json"),Stage.BUNDLE_DIR.path_join("commons_grown_kit_v1.glb.bin"),Stage.BUNDLE_DIR.path_join("trailing-vine-v1.png.bin"),Stage.BUNDLE_DIR.path_join("cream.png.bin")]:
   var dropped:=files.duplicate();dropped.erase(path)
   check("pack rejects dropped transitive "+path.get_file(),not _audit(dropped,"drop_"+path.get_file()).is_empty())
- var corrupt:=files.duplicate();var glb:=Stage.BUNDLE_DIR.path_join("commons_grown_kit_v1.glb");var bytes:PackedByteArray=corrupt[glb].duplicate();bytes[100]=bytes[100]^1;corrupt[glb]=bytes
+ var corrupt:=files.duplicate();var glb:=Stage.BUNDLE_DIR.path_join("commons_grown_kit_v1.glb.bin");var bytes:PackedByteArray=corrupt[glb].duplicate();bytes[100]=bytes[100]^1;corrupt[glb]=bytes
  check("pack rejects changed raw GLB bytes",_audit(corrupt,"corrupt").any(func(e:String)->bool:return e.contains("byte pin mismatch")))
  var leaked:=files.duplicate();var root_path:=Stage.CONFIG_DIR.path_join("placements.json");var doc:=_json(root_path);doc.base_configs[0]="res://art/commons-lived-in-pilot/placements.json"
  var root_bytes:PackedByteArray=(JSON.stringify(doc,"  ",true)+"\n").to_utf8_buffer();leaked[root_path]=root_bytes
  var altered:=manifest.duplicate(true);var hash:=HashingContext.new();hash.start(HashingContext.HASH_SHA256);hash.update(root_bytes)
  altered.files[root_path].sha256=hash.finish().hex_encode();altered.files[root_path].bytes=root_bytes.size();leaked[manifest_path]=(JSON.stringify(altered,"  ",true)+"\n").to_utf8_buffer()
  check("closure rejects authoring path even with internally consistent hash",_audit(leaked,"leak").any(func(e:String)->bool:return e.contains("unstaged civic config")))
+ var migration_config:=TMP.path_join("migration-config");var migration_assets:=TMP.path_join("migration-assets")
+ DirAccess.make_dir_recursive_absolute(migration_config);DirAccess.make_dir_recursive_absolute(migration_assets)
+ _write(migration_config.path_join(".gdignore"),PackedByteArray());_write(migration_assets.path_join(".gdignore"),PackedByteArray())
+ _write(migration_assets.path_join("keep-unrelated.txt"),"untouched".to_utf8_buffer())
+ for source:String in Stage.ASSETS:
+  var old:=str(Stage.ASSETS[source]).trim_suffix(".bin")
+  _write(migration_assets.path_join(old),"stale".to_utf8_buffer());_write(migration_assets.path_join(old+".import"),"stale".to_utf8_buffer())
+ var migrated:=Stage.stage(migration_config,migration_assets)
+ check("staging migrates obsolete ignored raw layout",migrated.is_empty() and not FileAccess.file_exists(migration_config.path_join(".gdignore")) and not FileAccess.file_exists(migration_assets.path_join(".gdignore")))
+ var removed:=true
+ for source:String in Stage.ASSETS:
+  var old:=migration_assets.path_join(str(Stage.ASSETS[source]).trim_suffix(".bin"));removed=removed and not FileAccess.file_exists(old) and not FileAccess.file_exists(old+".import")
+ check("migration removes only known old raw files and sidecars",removed and FileAccess.get_file_as_string(migration_assets.path_join("keep-unrelated.txt"))=="untouched")
  var pins:=_json(Stage.PINS);pins.files["res://art/commons-grown-pilot/commons_grown_kit_v1.glb"]="0".repeat(64);var bad_pins:=TMP.path_join("bad-pins.json");_write(bad_pins,JSON.stringify(pins).to_utf8_buffer())
  var errors:=Stage.stage(TMP.path_join("bad-config"),TMP.path_join("bad-assets"),bad_pins)
  check("prebuild refuses mismatched reviewed source pin",Array(errors).any(func(e:String)->bool:return e.contains("source pin mismatch")))

@@ -13,7 +13,7 @@ const AUTO_EXT := {"gd": "gdc", "tscn": "scn", "gdshader": "", "gdshaderinc": ""
 ## D: concatenated or directory reads. Each row names the include entry that ships the bytes,
 ## the witnesses the game needs (project-relative, never all AUTO_EXT), and why.
 const DYNAMIC := [
-	{"prefix": "res://ship_commons_bundle/civic/", "filter": "ship_commons_bundle/*", "witnesses": ["ship_commons_bundle/civic/commons_grown_kit_v1.glb", "ship_commons_bundle/civic/trailing-vine-v1.png", "ship_commons_bundle/civic/cream.png"],
+	{"prefix": "res://ship_commons_bundle/civic/", "filter": "ship_commons_bundle/*", "witnesses": ["ship_commons_bundle/civic/commons_grown_kit_v1.glb.bin", "ship_commons_bundle/civic/trailing-vine-v1.png.bin", "ship_commons_bundle/civic/cream.png.bin"],
 		"reason": "D-136 raw GLB/Image reads staged by make commons-civic-stage; independent civic pack audit checks all eleven transitive files and hashes"},
 	{"prefix": "res://ai", "filter": "ai/*.ail", "witnesses": ["ai/adapters.ail", "ai/ailang.toml"],
 		"reason": "bridge/ai_bridge.gd:380 copies res://ai into the user cache (_unpack_ai); ai/*.ail and ai/ailang.toml ship"},

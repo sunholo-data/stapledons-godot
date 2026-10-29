@@ -3,7 +3,7 @@ extends RefCounted
 const CONFIG:="res://assets/levels/commons/civic/"
 const BUNDLE:="res://ship_commons_bundle/civic/"
 const CONFIG_NAMES:=["placements.json","lived-in.json","backdrop.json","furniture.json"]
-const ASSET_NAMES:=["commons_lived_in_kit_v1.glb","commons_backdrop_kit_v1.glb","commons_grown_kit_v1.glb","trailing-vine-v1.png","cream.png","teal.png","ochre.png"]
+const ASSET_NAMES:=["commons_lived_in_kit_v1.glb.bin","commons_backdrop_kit_v1.glb.bin","commons_grown_kit_v1.glb.bin","trailing-vine-v1.png.bin","cream.png.bin","teal.png.bin","ochre.png.bin"]
 static func _json(zip:ZIPReader,path:String)->Dictionary:
  var name:=path.trim_prefix("res://")
  if not zip.file_exists(name):return {}
@@ -33,7 +33,7 @@ static func audit(zip:ZIPReader)->Array[String]:
   seen[path]=true;var doc:=_json(zip,path)
   if doc.is_empty():errors.append("missing civic config: "+path);continue
   var glb:=str(doc.get("source_glb",""))
-  if not glb.begins_with(BUNDLE) or not ASSET_NAMES.has(glb.get_file()) or not glb.ends_with(".glb"):errors.append("unstaged civic GLB dependency: "+glb)
+  if not glb.begins_with(BUNDLE) or not ASSET_NAMES.has(glb.get_file()) or not glb.ends_with(".glb.bin"):errors.append("unstaged civic GLB dependency: "+glb)
   else:
    assets[glb]=true
    if str(doc.get("source_sha256",""))!=str(manifest.files.get(glb,{}).get("sha256","")):errors.append("config GLB hash mismatch: "+path)
@@ -41,12 +41,12 @@ static func audit(zip:ZIPReader)->Array[String]:
   for key:String in ["base_configs","extra_art"]:queue.append_array(doc.get(key,[]))
   if path==CONFIG+"placements.json":
    var vine:=str(doc.get("vine_texture",""))
-   if vine!=BUNDLE+"trailing-vine-v1.png":errors.append("unstaged civic vine dependency")
+   if vine!=BUNDLE+"trailing-vine-v1.png.bin":errors.append("unstaged civic vine dependency")
    else:assets[vine]=true
    if str(doc.get("vine_sha256",""))!=str(manifest.files.get(vine,{}).get("sha256","")):errors.append("civic vine hash mismatch")
    for kind:String in ["cream","teal","ochre"]:
     var png:=str(doc.get("ground_textures",{}).get(kind,""))
-    if png!=BUNDLE+kind+".png":errors.append("unstaged civic ground texture: "+kind)
+    if png!=BUNDLE+kind+".png.bin":errors.append("unstaged civic ground texture: "+kind)
     else:assets[png]=true
     if str(doc.get("ground_texture_sha256",{}).get(kind,""))!=str(manifest.files.get(png,{}).get("sha256","")):errors.append("civic ground texture hash mismatch: "+kind)
  if seen.size()!=4 or assets.size()!=7:errors.append("incomplete civic transitive file closure")

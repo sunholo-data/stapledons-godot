@@ -9,13 +9,13 @@ const CONFIGS:={
  "res://art/commons-backdrop-pilot/placements.json":"backdrop.json",
  "res://art/commons-grown-pilot/furniture.json":"furniture.json"}
 const ASSETS:={
- "res://art/commons-lived-in-pilot/commons_lived_in_kit_v1.glb":"commons_lived_in_kit_v1.glb",
- "res://art/commons-backdrop-pilot/commons_backdrop_kit_v1.glb":"commons_backdrop_kit_v1.glb",
- "res://art/commons-grown-pilot/commons_grown_kit_v1.glb":"commons_grown_kit_v1.glb",
- "res://art/commons-grown-pilot/trailing-vine-v1.png":"trailing-vine-v1.png",
- "res://art/ship-demo-v1/painted-bridge-v1/textures/cream.png":"cream.png",
- "res://art/ship-demo-v1/painted-bridge-v1/textures/teal.png":"teal.png",
- "res://art/ship-demo-v1/painted-bridge-v1/textures/ochre.png":"ochre.png"}
+ "res://art/commons-lived-in-pilot/commons_lived_in_kit_v1.glb":"commons_lived_in_kit_v1.glb.bin",
+ "res://art/commons-backdrop-pilot/commons_backdrop_kit_v1.glb":"commons_backdrop_kit_v1.glb.bin",
+ "res://art/commons-grown-pilot/commons_grown_kit_v1.glb":"commons_grown_kit_v1.glb.bin",
+ "res://art/commons-grown-pilot/trailing-vine-v1.png":"trailing-vine-v1.png.bin",
+ "res://art/ship-demo-v1/painted-bridge-v1/textures/cream.png":"cream.png.bin",
+ "res://art/ship-demo-v1/painted-bridge-v1/textures/teal.png":"teal.png.bin",
+ "res://art/ship-demo-v1/painted-bridge-v1/textures/ochre.png":"ochre.png.bin"}
 
 func _initialize()->void:
  var errors:=stage()
@@ -65,18 +65,23 @@ static func stage(config_dir:String=CONFIG_DIR,bundle_dir:String=BUNDLE_DIR,pins
   if bool(doc.get("grown_civic",false)):
    var vine:="res://art/commons-grown-pilot/trailing-vine-v1.png"
    if str(doc.get("vine_sha256",""))!=str(pins.files[vine]):errors.append("vine source pin mismatch")
-   doc.vine_texture=bundle_dir.path_join("trailing-vine-v1.png");doc.ground_textures={};doc.ground_texture_sha256={}
+   doc.vine_texture=bundle_dir.path_join("trailing-vine-v1.png.bin");doc.ground_textures={};doc.ground_texture_sha256={}
    for kind:String in ["cream","teal","ochre"]:
-    doc.ground_textures[kind]=bundle_dir.path_join(kind+".png")
+    doc.ground_textures[kind]=bundle_dir.path_join(kind+".png.bin")
     doc.ground_texture_sha256[kind]=pins.files["res://art/ship-demo-v1/painted-bridge-v1/textures/"+kind+".png"]
   var dest:=config_dir.path_join(CONFIGS[source]);var bytes:=_json(doc)
   output[dest]=bytes;manifest.files[dest]={"sha256":_sha(bytes),"bytes":bytes.size(),"source":source,"source_sha256":pins.files[source]}
  if not errors.is_empty():return errors
  for directory:String in [config_dir,bundle_dir]:
   if DirAccess.make_dir_recursive_absolute(directory)!=OK:return PackedStringArray(["cannot create "+directory])
-  var ignored:=FileAccess.open(directory.path_join(".gdignore"),FileAccess.WRITE)
-  if ignored==null:return PackedStringArray(["cannot mark raw staging directory "+directory])
-  ignored.close()
+  var marker:=directory.path_join(".gdignore")
+  if FileAccess.file_exists(marker) and DirAccess.remove_absolute(marker)!=OK:return PackedStringArray(["cannot remove obsolete staging marker "+marker])
+ # Migrate only this task's known old raw names and their importer sidecars.
+ # .bin avoids Godot import; .gdignore must not hide the entire directory from export.
+ for source:String in ASSETS:
+  var old:=bundle_dir.path_join(str(ASSETS[source]).trim_suffix(".bin"))
+  for stale:String in [old,old+".import"]:
+   if FileAccess.file_exists(stale) and DirAccess.remove_absolute(stale)!=OK:return PackedStringArray(["cannot remove obsolete staged file "+stale])
  for dest:String in output:
   var file:=FileAccess.open(dest,FileAccess.WRITE)
   if file==null:return PackedStringArray(["cannot write "+dest])
