@@ -31,7 +31,7 @@ func _stage() -> int:
 		printerr("preview: invalid config")
 		return 1
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
-	var manifest := {"title": data.title, "revision": data.revision, "round": data.round, "frames": []}
+	var manifest := {"title": data.title, "revision": data.revision, "round": data.round, "notice": data.get("notice", ""), "frames": []}
 	for frame: Dictionary in data.frames:
 		var source: String = frame.source
 		var name: String = frame.file
