@@ -43,14 +43,14 @@ process mode removes its collision objects from physics and would falsely report
 clearance. The independent negative control catches the real desk 5 cm deeper
 than the proposed foot point.
 
-`make bridge-operator-test`: 40 passed, zero failures. It checks actual WALK support, continuous 0.025 m
+`make bridge-operator-test`: 44 passed, zero failures. It checks actual WALK support, continuous 0.025 m
 stepping, the real Walk-to path ending at the corrected point, full-capsule
 clearance and the deeper-collision negative, and rendered feet equaling physical
 feet. It also checks original screen anchors, working/reduced-motion poses,
 reset on leaving, and that no proposed support mesh is loaded.
 The real E/open entry is also exercised from the former in-reach point: no
 teleport or distant contact pose, ordinary 1.3 m/s walking, WASD cancellation,
-and panel opening only after arrival at the corrected physical destination.
+Esc cancellation and panel opening only after arrival at the corrected physical destination.
 
 `tools/bridge_operator_review.gd` prepares matched actual Bow/Astern current and
 corrected frames, with 320px native crops enlarged to 640px to show both feet and

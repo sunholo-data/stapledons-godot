@@ -659,6 +659,9 @@ func set_confirm_mode(mode: String) -> void:
 
 ## Esc while a press-twice confirm is armed backs out of it (and nothing else).
 func escape() -> bool:
+	if not _open_on_arrival.is_empty():
+		cancel_walk()
+		return true
 	if focused == "navigation" and demo.journey_map != null and demo.journey_map.armed:
 		demo.journey_map.disarm()
 		return true

@@ -9,7 +9,7 @@
   "design_doc": "design_docs/planned/r2/levels.md",
   "sprint_plan": "design_docs/planned/r2/bridge-commons-finish-sprint.md",
   "parent_sprint": "R2-LEVELS",
-  "parent_approval": "D-103 remains approved; overlay plan not yet approved",
+  "parent_approval": "D-103 and attended overlay approval D-130",
   "features": [
     {
       "id": "VF0",
@@ -78,7 +78,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "D-132 installed: actual Voyage/Crew working points advance 0.775 m, bounded 15-degree foot-anchored work lean uses existing paintings; original furniture/screen housings preserved. 40 contact/clearance/pose/entry-path checks pass; and eight matched front/back engine captures staged over verified HTTPS. E/click now walks into place before opening the low console. V1/v2 extensions retired, never installed. Broader finishing and landing gates remain pending."
+      "notes": "D-132 installed: actual Voyage/Crew working points advance 0.775 m, bounded 15-degree foot-anchored work lean uses existing paintings; original furniture/screen housings preserved. 44 contact/clearance/pose/entry-path checks pass; eight matched front/back engine captures staged over verified HTTPS. E/click now walks into place before opening the low console. V1/v2 extensions retired, never installed. Broader finishing and landing gates remain pending."
     },
     {
       "id": "VFU",

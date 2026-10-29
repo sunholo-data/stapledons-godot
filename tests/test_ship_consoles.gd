@@ -554,7 +554,7 @@ func test_walk_to() -> void:
 	check("AC14a lower deck: the prompt names the lift", demo.active_level == 1 and hud.prompt.text.contains("Lift · E to the bridge"))
 	demo.avatar_pos += Vector3(4, 0, 0)
 	demo._process(0.016)
-	check("AC14a lower deck, away from the lift: decisions need the bridge", hud.prompt.text.contains("take the lift"))
+	check("VFU Commons idle prompt stays quiet; Tab retains the bridge return route", hud.prompt.text.is_empty() and hud.route_guide.text.to_lower().contains("lift"))
 	check("Walk to from the lower deck heads for the lift", c.walk_to("navigation") and c.walk_target == "lift")
 	demo.queue_free()
 	await process_frame
