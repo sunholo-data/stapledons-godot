@@ -1,14 +1,20 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-28, iteration 55.
+Updated 2026-10-29, iteration 56.
 
-- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Clause 4 waits on row 7m AC1, which stays open under D-127 B until the new row **7m-d** explains the docked p99, and on P-land (Mark). Goal unmoved this iteration.
-- **Landed:** D-126 C's A half (sprint R1-RIG-WATCHDOG, PR #345, merge `d63b47a4`).
-  - `tools/rig_check.sh` now defaults to a 7,200 s `make test` watchdog (it was 5,400 s).
-  - The rig-check control ignores a caller's `RIG_TEST_S`/`RIG_GOLDEN_S`, still honours an explicit override, and has a committed caller-poison case (8 cases).
-  - Independent Sonnet 95/100 PASS, zero blocking. `rig/full` green in **117 min** on run 2, past the old limit. Run 1 was red on a `ship-demo-launch` 90 s guard under heavy rig load; that target passed twice in isolation.
-- **Recorded rulings:** D-126 B (L4 ahead of Kerr a4) and D-127 B (rule kept; row 7m-d filed).
-- **Order:** 7m-d (quiet rig only) → L4 test-suite speed → K1.1a-a4 → a5 → L9 S0.3 → L3.
-- **Parked on Mark:** D-128, the position of 7m-d (default A: next on a quiet rig, else L4).
-- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire's routing: designer Opus 5.5 (Agent), planner kimi-k3 (pi, ollama cloud; codex over ration), executor Haiku 5.5 (Agent), evaluator Sonnet (Agent). Quorum $0.55 metered.
-- **Watch:** `rig/full` at 117 min under load is near the new ceiling (L4 is the remedy). The driver pin worktree vanished mid-fire (fleet ticket).
+- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Clause 4 waits on row 7m AC1, which waits on 7m-d (quiet rig only; this fire GPU 99–100 %), and on P-land (Mark). Goal unmoved.
+- **In flight:** L4 test-suite speed, PR #349 (`86b96103`), not merged.
+  - Design `rig-test-speed.md`; plan `R1-RIG-TEST-SPEED`. The controller's serial baseline: `make test` 4,123 s, `sim` 740 s.
+  - M1a, the suite profiler instrument: `tools/suite_profile.sh`, a make `SHELL` wrapper and a 20-case control. Judge Sonnet: 66 FAIL, then **90 PASS** in round 2, and 88 PASS in round 3 on the fix.
+  - `rig/full` run 2 was red because the control failed under make. It was fixed in `86b96103`, and run 3 was in flight at record time. **The next iteration merges on green.**
+- **Order:** land #349 → D-129 → M1b (rig wiring, three gmake baselines) → M2 (parallel lanes, goal ≤ 0.5× serial). Meanwhile 7m-d whenever the rig is quiet, then K1.1a-a4 → a5 → L9 S0.3 → L3.
+- **Parked on Mark:**
+  - D-128: the position of 7m-d. Default A is being applied.
+  - **D-129** (new): L4's OQ1–OQ4. These are a parallel `rig/full`, gmake on the rig, keeping the duplicate checks, and whether a missing gmake fails. Recommendation A, accepting all the defaults. If unanswered, M1b and M2 stay parked.
+- **Held:** M3 (`Makefile`, `mk/m45.mk`) waits until attended #344 and #346 merge or close.
+- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire's roles:
+  - designer Opus 5.5 (Agent);
+  - planner and executor codex gpt-6.1-sol;
+  - evaluator Sonnet (Agent).
+  Quorum $1.16 metered.
+- **Watch:** gpt6-1-sol was unreachable as a quorum seat in both rounds. The fleet resolved the driver-pin removal (ailang#1999).

@@ -1,0 +1,48 @@
+{
+  "sprint_id": "R1-RIG-TEST-SPEED",
+  "milestone": "M1a",
+  "round": 2,
+  "head": "0a8876ba",
+  "score": 90,
+  "result": "PASS",
+  "breakdown": {
+    "tests_pass": {"points": 19, "of": 20, "note": "AC1 40/40 x3 plus 2 under 12 busy loops; AC4 9/9; drills R and C killed rc0"},
+    "lint_clean": {"points": 10, "of": 10, "note": "sh -n x3 rc0; no held files or *.py touched"},
+    "acceptance_criteria": {"points": 28, "of": 30, "note": "all M1a acceptance commands green; every round-1 survivor now killed"},
+    "code_quality": {"points": 13, "of": 15, "note": "robust control design; sleeper.pid side file added to the production script as a test hook"},
+    "documentation": {"points": 13, "of": 15, "note": "CHANGELOG and plan row amended; deviation from 50 ms/line recorded"},
+    "design_fidelity": {"points": 7, "of": 10, "note": "overhead gate deliberately changed from 50 ms/line wall to 150 ms/line child CPU plus 1 s/line wall hang guard"}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "Overhead guard trade-off is sound on its merits. Measured child CPU is 29-39 ms/line idle and 46-50 ms/line under 12 busy loops on 16 cores (gate 150 ms: about 3-4x headroom). Wall is 34-82 ms/line idle-ish and 180-206 ms/line under stress, so the original wall gate of 50 ms/line would have failed in most of those runs. The guard still catches a real regression: a mutant adding 160 ms of CPU per wrapper call fails overhead-200 (and cpu-busy-sleep). It does not catch a wall-only slowdown below 1 s/line, for example a sleep in the wrapper; wall per line is printed but not gated. Acceptable for an instrument whose cost is the same on both sides of the comparison. The design doc (1c / risk table) still says 50 ms/line; only the plan row was amended, so the design text should be reconciled at landing.",
+    "The wall hang guard of 200 s is generous. A wrapper that sleeps 2 s per call (400 s total) is caught only after minutes and leaves orphaned runs if the control is killed; I had to clean those up by hand. Consider a lower guard or a timeout around the case.",
+    "suite_profile.sh now writes out/sleeper.pid purely so the control can observe the sleeper. It is harmless (inside --out), but it is a production file for a test hook.",
+    "overhead-200 still shows wall above the design's 50 ms/line on this loaded host even before stress (82 ms/line once); this is information only now.",
+    "Remaining survivors: none found among the round-1 list. Linux was not exercised for real; dash was simulated in round 1 and the later diff does not touch the portability code except a /proc/loadavg redirect in the load-sampler case."
+  ],
+  "verification": {
+    "AC1": "3 runs rc0, 40 cases 0 failures each, about 17-20 s",
+    "AC1_under_load": "12 busy loops, 2 runs: rc0, 40/40; overhead-200 cpu 46-50 ms/line, wall 181-206 ms/line; no flake in any case",
+    "AC4": "rc0, 9 cases 0 failures",
+    "AC12": "drillsp R killed (rc-passthrough) rc0; drillsp C killed (compare-missing) rc0",
+    "scope": "no Makefile, mk/*, rig_check.sh, import_keep, python files or *.py in the diff to main",
+    "busy_loops": "pids written to a file, killed in a loop, confirmed gone; a rig make test was untouched; no leftover temp dirs or orphans after the evaluation"
+  },
+  "mutation_table": [
+    {"mutant": "wrapper CPU user only", "rc": 1, "failed": "cpu-busy-sleep (was survivor in round 1: now killed)"},
+    {"mutant": "wrapper CPU system only", "rc": 1, "failed": "cpu-busy-sleep"},
+    {"mutant": "wrapper adds 160 ms CPU per call", "rc": 1, "failed": "cpu-busy-sleep overhead-200"},
+    {"mutant": "compare accepts empty closure hash", "rc": 1, "failed": "closure-mismatch (was survivor)"},
+    {"mutant": "report ignores failed rc", "rc": 1, "failed": "report-version (was survivor)"},
+    {"mutant": "report accepts any jobs (after side)", "rc": 1, "failed": "report-medians (was survivor)"},
+    {"mutant": "report accepts any jobs (before side)", "rc": 1, "failed": "report-medians"},
+    {"mutant": "report ignores closure mismatch", "rc": 1, "failed": "report-version (was survivor)"},
+    {"mutant": "report duplicate-slot refusal removed", "rc": 1, "failed": "report-load (was survivor)"},
+    {"mutant": "report does not require -j8", "rc": 1, "failed": "report-medians (was survivor)"},
+    {"mutant": "sampler does not kill its sleeper", "rc": 1, "failed": "sampler-cleanup (was survivor)"},
+    {"mutant": "empty load row written (two variants)", "rc": 1, "failed": "load-sampler (was survivor)"},
+    {"mutant": "wrapper sleeps 2 s per call", "rc": "n/a", "failed": "aborted by me after minutes; the 200 s wall guard is too lax to be a practical catch"}
+  ],
+  "mutation_summary": "13 mutants on scratch copies: 12 killed by the intended case, 1 aborted (slow wrapper). All 8 round-1 outright survivors, the user-only CPU survivor and the empty-hash survivor are now killed by named cases; none of the new kills was a flaky-case accident."
+}
