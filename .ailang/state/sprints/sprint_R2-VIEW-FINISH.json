@@ -438,7 +438,7 @@
   },
   "combined_dev_review": {
     "decision": "D-137",
-    "status": "integrating",
+    "status": "publishing",
     "requested": "All current committed work in private --dev channel for Mark testing",
     "included_prs": [
       344,
@@ -448,15 +448,14 @@
     ],
     "main_merge_346": "26697b7ac259490283fd2b51ce65c588fceb48d3",
     "incomplete_scope": "Earth-link EL4/EL5 and finishing/S3/S5/performance remain open; inclusion in test build is not completion or merge certification.",
-    "status": "publishing",
     "integrated_heads": {
-      "344": "afe78941ab4bc0ff74f556332dcffb55f81b6db0",
+      "344": "d6f2889a665d7cdb01fb0e39ba2a162af81e378e",
       "346": "4ed8ec3891719f2aa861d3931e14289ab15f13e7",
       "351": "758614bb5e99b82d6b6577006f9ed01c2179e063",
       "352": "2b47456b4ef43033607694e6c528911b8ab267db"
     },
     "functional_checks": {
-      "physics": 959,
+      "physics": 960,
       "ai_package": 53,
       "civic": 18,
       "ai_relay_groups": 7,
@@ -468,6 +467,7 @@
       "Legacy Archive smoke validates13 canonical IDs and10 exact sim unlock IDs; negative controls pass",
       "Guided-departure smoke waits for civic startup and a rendered Saturn frame, preserving its assertions"
     ],
-    "pre_repair_ci": "Combined fba84528 fast tier green; new diagnostic fixes rerun on final head"
+    "pre_repair_ci": "Combined fba84528 fast tier green; new diagnostic fixes rerun on final head",
+    "newest_earth_ui": "EL3b.5 exchange light-strip, station layout and review-capture tool included from newly pushed d6f2889a; feed42/0 and station42/0"
   }
 }
