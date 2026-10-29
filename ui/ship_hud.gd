@@ -65,12 +65,15 @@ var _medium_seen := ""
 var _medium_tick := -1
 var help := RichTextLabel.new()
 var walk_box := VBoxContainer.new()
+var walk_caption := Label.new()
+var route_guide := Label.new()
 var walk_buttons := {} # station -> Button
 var display_box := VBoxContainer.new() # the demo's instant display controls
 var dev_box := VBoxContainer.new() # developer launches only
 var _bindings: Array = []
 var _bindings_dirty := true
 var _last_view: Dictionary = {}
+var _level_context := {"id": "bridge", "name": "Bridge"}
 
 
 func setup(developer: bool) -> void:
@@ -164,6 +167,7 @@ func _build_prompt() -> void:
 	prompt.name = "Prompt"
 	prompt.add_theme_font_size_override("font_size", 15)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_shadow(prompt)
 	add_child(prompt)
 	hint.theme_type_variation = "HUDCard"
@@ -185,6 +189,7 @@ func _build_tab() -> void:
 	tab_panel.name = "TabPanel"
 	tab_panel.visible = false
 	tab_panel.theme_type_variation = "HUDCard"
+	tab_panel.focus_mode = Control.FOCUS_ALL
 	add_child(tab_panel)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -192,7 +197,11 @@ func _build_tab() -> void:
 	tab_box.add_theme_constant_override("separation", 6)
 	tab_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(tab_box)
-	tab_box.add_child(_caption(Label.new(), "Walk to (arrows and Enter)"))
+	tab_box.add_child(_caption(walk_caption, "Walk to (arrows and Enter)"))
+	route_guide.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	route_guide.theme_type_variation = "HUDHint"
+	route_guide.visible = false
+	tab_box.add_child(route_guide)
 	tab_box.add_child(walk_box)
 	for pair in WALK_TO:
 		var b := Button.new()
@@ -227,14 +236,46 @@ func _build_tab() -> void:
 	for rt: RichTextLabel in [details, help]:
 		rt.fit_content = true
 		rt.scroll_active = false
-		rt.custom_minimum_size.x = 400
+		rt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rt.add_theme_font_size_override("normal_font_size", 12)
 	tab_box.add_child(details)
 	tab_box.add_child(_caption(Label.new(), "Controls"))
-	help.text = ShipControls.help_text(dev)
+	help.text = ShipControls.help_text(dev, _level_context)
 	tab_box.add_child(help)
 	dev_box.visible = dev
 	tab_box.add_child(dev_box)
+
+
+## Runtime supplies presentation context only; no simulation fields or outcomes change here.
+func set_level_context(context: Dictionary) -> void:
+	if _level_context == context: return
+	_level_context = context.duplicate(true)
+	var bridge := str(context.get("id", "bridge")) == "bridge"
+	help.text = ShipControls.help_text(dev, context)
+	walk_caption.text = "Walk to (arrows and Enter)" if bridge else "Return to bridge"
+	route_guide.text = ShipControls.route_hint(context)
+	route_guide.visible = not bridge
+	var focused := get_viewport().gui_get_focus_owner()
+	for pair in WALK_TO:
+		var b: Button = walk_buttons[pair[0]]
+		b.visible = bridge or (pair[0] == "navigation" and context.get("can_walk_to_lift", true))
+		b.text = pair[1] if bridge else "Walk to lift"
+	var routes: Array = walk_buttons.values().filter(func(b: Button) -> bool: return b.visible)
+	for i in routes.size():
+		var b: Button = routes[i]
+		b.focus_neighbor_top = b.get_path_to(routes[(i - 1 + routes.size()) % routes.size()])
+		b.focus_neighbor_bottom = b.get_path_to(routes[(i + 1) % routes.size()])
+	if tab_panel.visible and focused != null and tab_panel.is_ancestor_of(focused) and not focused.is_visible_in_tree():
+		_focus_tab()
+	_layout()
+
+
+func _focus_tab() -> void:
+	for b: BaseButton in tab_box.find_children("*", "BaseButton", true, false):
+		if b.is_visible_in_tree() and not b.disabled and b.focus_mode != Control.FOCUS_NONE:
+			b.grab_focus()
+			return
+	tab_panel.grab_focus()
 
 
 func _binding_row(parent: Container, caption: String, field: String, fmt: String) -> DisplayBinding:
@@ -268,12 +309,28 @@ func _layout() -> void:
 		for b in c.body.find_children("*", "DisplayBinding", true, false):
 			if (b as Label).autowrap_mode != TextServer.AUTOWRAP_OFF:
 				(b as Label).custom_minimum_size.x = cw - 20.0
-	prompt.size = Vector2(w, 24)
-	prompt.position = Vector2(0, h - 48)
+	prompt.size = Vector2(w - 2.0 * MARGIN, 24.0)
+	prompt.position = Vector2(MARGIN, h - 24.0 - prompt.size.y)
+	hint_label.custom_minimum_size.x = minf(420.0, maxf(100.0, w - 2.0 * MARGIN - 120.0))
 	hint.reset_size()
-	hint.position = Vector2((w - hint.size.x) * 0.5, h - 64 - hint.size.y)
+	hint.position = Vector2((w - hint.size.x) * 0.5, prompt.position.y - 16.0 - hint.size.y)
 	tab_panel.position = Vector2(MARGIN, strip_bottom() + 8.0)
 	tab_panel.size = Vector2(minf(440.0, w * 0.45), maxf(120.0, h - tab_panel.position.y - 60.0))
+	if tab_panel.visible: _fit_tab_controls(tab_box, tab_panel.size.x - 40.0)
+
+
+## Keep the compact scrolling column readable at laptop UI zoom. Wrapping allows the
+## container to shrink; a hard 400px text minimum used to widen the panel at 640/768px.
+func _fit_tab_controls(n: Node, width: float) -> void:
+	if n is Button:
+		(n as Button).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		(n as Button).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	elif n is Label:
+		(n as Label).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		(n as Label).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	elif n is GridContainer:
+		(n as GridContainer).columns = 2 if width < 360.0 else 4
+	for child in n.get_children(): _fit_tab_controls(child, width)
 
 
 ## A card is at most a third of the width less a gutter, so the column stays right of
@@ -290,6 +347,10 @@ func toggle_tab() -> void:
 	tab_panel.visible = not tab_panel.visible
 	if tab_panel.visible:
 		_layout()
+		_focus_tab()
+	else:
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and tab_panel.is_ancestor_of(focused): focused.release_focus()
 
 
 # ------------------------------------------------------------------ cards
