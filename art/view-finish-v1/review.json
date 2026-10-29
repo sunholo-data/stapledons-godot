@@ -540,6 +540,54 @@
       "title": "Service gallery · Astern · stop",
       "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
       "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_bow_rest.png",
+      "file": "commons_clamp_court_underterrace_bow_rest.png",
+      "title": "Under the terrace · Bow · rest",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_astern_rest.png",
+      "file": "commons_clamp_court_underterrace_astern_rest.png",
+      "title": "Under the terrace · Astern · rest",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_bow_cruise.png",
+      "file": "commons_clamp_court_underterrace_bow_cruise.png",
+      "title": "Under the terrace · Bow · cruise",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_astern_cruise.png",
+      "file": "commons_clamp_court_underterrace_astern_cruise.png",
+      "title": "Under the terrace · Astern · cruise",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_bow_stop.png",
+      "file": "commons_clamp_court_underterrace_bow_stop.png",
+      "title": "Under the terrace · Bow · stop",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_astern_stop.png",
+      "file": "commons_clamp_court_underterrace_astern_stop.png",
+      "title": "Under the terrace · Astern · stop",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
     }
   ],
   "notice": "The captain now stands closer and leans onto the original Voyage/Crew consoles. These are matched front/back before-and-after engine captures. The earlier loops and desk leaves are retired and were never installed. Commons layout review follows separately."

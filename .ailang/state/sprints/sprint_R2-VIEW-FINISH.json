@@ -43,7 +43,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "Manifest cameras, configured lift and real stage runtime integrated. CPU physics949/0 and focused GPU six G-LVL cases pass, with paired same-pose sky subtraction to isolate pole from nearby captain hair. Whole GPU and pinned-runtime rig gates pending. Runtime floor-jump reviewer repro fixed and independently rechecked76/0."
+      "notes": "Manifest cameras, configured lift and real stage runtime integrated. CPU physics949/0; full released AILANGv0.54.18 GPU golden407/0, including six actual clamp/raised-eye cases and independent pole references opened. Six under-terrace Bow/Astern rest/cruise/real-stop frames activate clamp_share1.0. Runtime floor-jump reviewer repro fixed and independently rechecked76/0. Source cold hello measured89.21s under load vs30s budget; after completing compile, warm SimBridge9.025s succeeds. Canonical AILANG feedback sent; sequential source checks/native cold launch and rig/full remain pending."
     },
     {
       "id": "VF2",
@@ -61,7 +61,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "Five-stage production greybox, seven surfaces/four heights;42 actual Bow/Astern rest/cruise/guided-stop captures inspected in contact sheet and critical full frames.42 staged in private gallery as layout placeholders. Full court return and stair-ramp probe pass. Native playtest build and S3 attended layout approval pending; no detailed Commons art begun."
+      "notes": "Five-stage production greybox, seven surfaces/four heights;42 actual Bow/Astern rest/cruise/guided-stop captures inspected in contact sheet and critical full frames.42 staged in private gallery as layout placeholders. Full court return and stair-ramp probe pass. Native playtest build and S3 attended layout approval pending; no detailed Commons art begun. Independent visual review found and fixed service sky leak: opaque enclosure beyond actual camera eyes,576/576 service rays covered, runtime95/0, Commons eval and bridge regression pass. Full-resolution service pixel guard added; final GPU capture and native playtest pending, S3 approval remains open."
     },
     {
       "id": "VFB",
@@ -285,7 +285,15 @@
     "https_port": 8452,
     "session_id": 46822,
     "round": "natural captain contact on original desks",
-    "frames": 67,
+    "frames": 73,
     "verified": "HTTPS page and image content hash matched local staging"
+  },
+  "feedback": {
+    "skill": "ailang-feedback",
+    "ids": [
+      "inbox_1793269833301_40f65588",
+      "inbox_1793270071011_e062fae0"
+    ],
+    "topic": "Cold-source bootstrap89.21s, warm9.025s; no gameplay budget relaxed."
   }
 }
