@@ -17,7 +17,7 @@ done
 cp -p "$GAME/art/ship-commons-v1/ship_commons_master_v3.blend" "$DEST/scenes/"
 cp -p "$GAME/art/ship-commons-v1/paint-atlas-v1.png" "$GAME/art/deck-layout-v2/bow_a.json" "$GAME/art/deck-layout-v2/asset-pins.json" "$DEST/inputs/"
 cp -p "$STUDIO/blender.sh" "$DEST/"
-(cd "$STUDIO" && ./blender.sh --background --factory-startup --python-expr '
+(cd "$STUDIO" && ./blender.sh --background --factory-startup --python-exit-code 1 --python-expr '
 import bpy, sys, pathlib, hashlib, json
 out = pathlib.Path(sys.argv[sys.argv.index("--")+1])
 checks = []

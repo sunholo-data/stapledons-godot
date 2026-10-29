@@ -72,3 +72,11 @@ This affects the sky display, not physics or the matched furniture comparison.
 
 Source-only `.blend` snapshots should be kept under a directory containing
 `.gdignore` so Godot does not try to import recovered authoring masters.
+
+Final console rerun: `make ship-baseline ship-console-test` passed, 133 passed and
+0 failures after fetching the three pinned baseline files. The master also passed
+Blender `make inspect SCENE=stapledon_bridge_contact_pilot_v1` with no missing
+external files. Its inherited Cycles setting is CPU; no Blender render was run
+(the visual evidence is from the actual Godot player camera). Clean GLB reimport
+uses an empty Blender scene, with explicit nonzero assertion exit status.
+The clean additive GLB contains 8 mesh components, 2 materials and 3,776 triangles.
