@@ -53,7 +53,11 @@ func _stage() -> int:
 		if not _safe_name(name) or name.get_extension()!="zip" or not FileAccess.file_exists(source):
 			printerr("preview: missing or unsafe download ",source);return 1
 		var destination:=OUT.path_join(name)
-		if DirAccess.copy_absolute(ProjectSettings.globalize_path(source),ProjectSettings.globalize_path(destination))!=OK:
+		# Download names include their build commit. Keep an existing verified archive intact
+		# while refreshing image rounds, including any transfer already in progress.
+		if FileAccess.file_exists(destination) and FileAccess.get_sha256(destination)!=FileAccess.get_sha256(source):
+			printerr("preview: immutable download name has different bytes ",name);return 1
+		if not FileAccess.file_exists(destination) and DirAccess.copy_absolute(ProjectSettings.globalize_path(source),ProjectSettings.globalize_path(destination))!=OK:
 			printerr("preview: download copy failed ",source);return 1
 		var row:=item.duplicate();row.erase("source")
 		row.sha256=FileAccess.get_sha256(destination)

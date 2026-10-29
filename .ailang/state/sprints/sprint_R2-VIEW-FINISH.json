@@ -113,7 +113,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "D-133 authorizes one lived-in court/arcade pilot on the current layout: purposeful social/news/work clusters, existing grown/painted style and live lighting. Review-only kit/loader/captures in progress; no full-stage propagation or S5 acceptance. S3 manual checklist is not asserted complete."
+      "notes": "D-133 bounded pilot ready for visual feedback: eight Blender groups,32,224 unique/42,688 placed triangles, one painted material/atlas; seating/belongings, reading corner, storage/plants and visible task fixtures. Review-only loader31/0; actual floor/capsule/sampled return paths/end approaches/unchanged Commons thresholds44/0.48 matched actual player frames,0errors; pilot-installed six CPU/GPU pole cases pass (max0.103px, limit0.75), export/UID guards pass. Independent review finds no publication blocker; arcade-approach views have limited counter/cart interior coverage. Main game/layout/WALK/cameras/sim unchanged; earlier native download does not contain pilot. Editable v2 sources preserved locally, no upload. Await pilot appearance feedback before propagation; full S3 manual/S5/performance/final rig gates remain open."
     },
     {
       "id": "VF4",
@@ -288,9 +288,9 @@
     "port": 8984,
     "https_port": 8452,
     "session_id": 35173,
-    "round": "D-132 natural contact and Commons S3 playable layout",
-    "frames": 81,
-    "verified": "HTTPS page/image and native433MB ZIP downloaded with matching SHA256; only declared files served; repo traversal404"
+    "round": "D-133 lived-in Commons pilot",
+    "frames": 130,
+    "verified": "Tailnet route unchanged; fresh manifest130images/49pilot items and downloaded seating hero hash match. Native link explicitly labelled earlier S3 layout without pilot furniture."
   },
   "feedback": {
     "skill": "ailang-feedback",
@@ -310,8 +310,19 @@
   },
   "review_gate": {
     "stage": "art-pilot",
-    "status": "preparing_bounded_pilot",
+    "status": "awaiting_visual_feedback",
     "authorization": "D-133",
-    "next": "Review actual in-engine pilot before repeating the finish; manual S3 playtest observations remain open."
+    "package": "art/commons-lived-in-pilot/README.md",
+    "next": "Accept/refine this court art pilot before repeating its treatment; S3 manual playtest observations and S5/final landing remain open."
+  },
+  "pilot": {
+    "config": "art/commons-lived-in-pilot/placements.json",
+    "source_sha256": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+    "engine_frames": 48,
+    "capture_errors": 0,
+    "loader_checks": 31,
+    "placement_checks": 44,
+    "gpu_pole_cases": 6,
+    "installed_in_production": false
   }
 }

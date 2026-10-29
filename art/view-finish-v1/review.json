@@ -1,8 +1,449 @@
 {
-  "title": "Bridge & Commons · natural console contact",
-  "revision": "Runtime/assets f3e0b11c · D-132 natural contact · final transparency correction",
-  "round": "corrected operator placement",
+  "title": "Bridge & Commons · lived-in art pilot",
+  "revision": "Pilot dfc4142f · current layout and cameras retained",
+  "round": "D-133 bounded Commons art pilot",
   "frames": [
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_rest_before.png",
+      "file": "commons_pilot_seating_bow_rest_before.png",
+      "title": "Shared seating · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_rest_after.png",
+      "file": "commons_pilot_seating_bow_rest_after.png",
+      "title": "Shared seating · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_rest_before.png",
+      "file": "commons_pilot_seating_astern_rest_before.png",
+      "title": "Shared seating · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_rest_after.png",
+      "file": "commons_pilot_seating_astern_rest_after.png",
+      "title": "Shared seating · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_cruise_before.png",
+      "file": "commons_pilot_seating_bow_cruise_before.png",
+      "title": "Shared seating · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_cruise_after.png",
+      "file": "commons_pilot_seating_bow_cruise_after.png",
+      "title": "Shared seating · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_cruise_before.png",
+      "file": "commons_pilot_seating_astern_cruise_before.png",
+      "title": "Shared seating · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_cruise_after.png",
+      "file": "commons_pilot_seating_astern_cruise_after.png",
+      "title": "Shared seating · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_stop_before.png",
+      "file": "commons_pilot_seating_bow_stop_before.png",
+      "title": "Shared seating · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_stop_after.png",
+      "file": "commons_pilot_seating_bow_stop_after.png",
+      "title": "Shared seating · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_stop_before.png",
+      "file": "commons_pilot_seating_astern_stop_before.png",
+      "title": "Shared seating · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_stop_after.png",
+      "file": "commons_pilot_seating_astern_stop_after.png",
+      "title": "Shared seating · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_rest_before.png",
+      "file": "commons_pilot_court_bow_rest_before.png",
+      "title": "Court · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_rest_after.png",
+      "file": "commons_pilot_court_bow_rest_after.png",
+      "title": "Court · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_rest_before.png",
+      "file": "commons_pilot_court_astern_rest_before.png",
+      "title": "Court · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_rest_after.png",
+      "file": "commons_pilot_court_astern_rest_after.png",
+      "title": "Court · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_cruise_before.png",
+      "file": "commons_pilot_court_bow_cruise_before.png",
+      "title": "Court · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_cruise_after.png",
+      "file": "commons_pilot_court_bow_cruise_after.png",
+      "title": "Court · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_cruise_before.png",
+      "file": "commons_pilot_court_astern_cruise_before.png",
+      "title": "Court · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_cruise_after.png",
+      "file": "commons_pilot_court_astern_cruise_after.png",
+      "title": "Court · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_stop_before.png",
+      "file": "commons_pilot_court_bow_stop_before.png",
+      "title": "Court · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_stop_after.png",
+      "file": "commons_pilot_court_bow_stop_after.png",
+      "title": "Court · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_stop_before.png",
+      "file": "commons_pilot_court_astern_stop_before.png",
+      "title": "Court · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_stop_after.png",
+      "file": "commons_pilot_court_astern_stop_after.png",
+      "title": "Court · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_rest_before.png",
+      "file": "commons_pilot_underterrace_bow_rest_before.png",
+      "title": "Under the terrace · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_rest_after.png",
+      "file": "commons_pilot_underterrace_bow_rest_after.png",
+      "title": "Under the terrace · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_rest_before.png",
+      "file": "commons_pilot_underterrace_astern_rest_before.png",
+      "title": "Under the terrace · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_rest_after.png",
+      "file": "commons_pilot_underterrace_astern_rest_after.png",
+      "title": "Under the terrace · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_cruise_before.png",
+      "file": "commons_pilot_underterrace_bow_cruise_before.png",
+      "title": "Under the terrace · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_cruise_after.png",
+      "file": "commons_pilot_underterrace_bow_cruise_after.png",
+      "title": "Under the terrace · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_cruise_before.png",
+      "file": "commons_pilot_underterrace_astern_cruise_before.png",
+      "title": "Under the terrace · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_cruise_after.png",
+      "file": "commons_pilot_underterrace_astern_cruise_after.png",
+      "title": "Under the terrace · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_stop_before.png",
+      "file": "commons_pilot_underterrace_bow_stop_before.png",
+      "title": "Under the terrace · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_stop_after.png",
+      "file": "commons_pilot_underterrace_bow_stop_after.png",
+      "title": "Under the terrace · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_stop_before.png",
+      "file": "commons_pilot_underterrace_astern_stop_before.png",
+      "title": "Under the terrace · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_stop_after.png",
+      "file": "commons_pilot_underterrace_astern_stop_after.png",
+      "title": "Under the terrace · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_rest_before.png",
+      "file": "commons_pilot_arcade_edge_bow_rest_before.png",
+      "title": "Arcade approach · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_rest_after.png",
+      "file": "commons_pilot_arcade_edge_bow_rest_after.png",
+      "title": "Arcade approach · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_rest_before.png",
+      "file": "commons_pilot_arcade_edge_astern_rest_before.png",
+      "title": "Arcade approach · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_rest_after.png",
+      "file": "commons_pilot_arcade_edge_astern_rest_after.png",
+      "title": "Arcade approach · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_cruise_before.png",
+      "file": "commons_pilot_arcade_edge_bow_cruise_before.png",
+      "title": "Arcade approach · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_cruise_after.png",
+      "file": "commons_pilot_arcade_edge_bow_cruise_after.png",
+      "title": "Arcade approach · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_cruise_before.png",
+      "file": "commons_pilot_arcade_edge_astern_cruise_before.png",
+      "title": "Arcade approach · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_cruise_after.png",
+      "file": "commons_pilot_arcade_edge_astern_cruise_after.png",
+      "title": "Arcade approach · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_stop_before.png",
+      "file": "commons_pilot_arcade_edge_bow_stop_before.png",
+      "title": "Arcade approach · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_stop_after.png",
+      "file": "commons_pilot_arcade_edge_bow_stop_after.png",
+      "title": "Arcade approach · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_stop_before.png",
+      "file": "commons_pilot_arcade_edge_astern_stop_before.png",
+      "title": "Arcade approach · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_stop_after.png",
+      "file": "commons_pilot_arcade_edge_astern_stop_after.png",
+      "title": "Arcade approach · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://art/commons-lived-in-pilot/kit-hero-studio.png",
+      "file": "commons_pilot_kit_studio.png",
+      "title": "Furniture detail · Blender studio study",
+      "note": "Neutral authoring render for object detail and human scale. This is not a player-camera frame; approve in-game appearance using the matched views above. Existing bridge pigments; real game lighting is supplied at runtime.",
+      "label": "Asset detail · authoring camera",
+      "revision": "kit7b841838"
+    },
     {
       "group": "proposal",
       "source": "res://renders/view-finish/operator-placement/voyage_astern_current_detail.png",
@@ -670,14 +1111,14 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "The captain now stands closer and leans onto the original Voyage/Crew consoles. Matched front/back comparisons come first; earlier desk extensions are retired. The macOS playtest and Commons images are ready for layout review. Detailed Commons art waits for S3 layout acceptance.",
+  "notice": "New: a lived-in Commons court pilot, with shared seating, books/cups/cloth, a reading corner, storage, plants and task lamps. Compare the same player views before/after. This is one art pilot, awaiting feedback before repetition; upper routes and other stages remain greybox. The macOS download below is the earlier S3 layout build and does not include the pilot furniture.",
   "downloads": [
     {
       "source": "res://build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
       "file": "Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
-      "title": "macOS playtest · bridge and Commons layout",
+      "title": "macOS S3 layout playtest · earlier build without pilot furniture",
       "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
-      "note": "Unzip and open the app. This is an ad-hoc signed, unmerged developer preview. Cold native ship/title startup checked with fresh settings and bundled AILANGv0.54.18. Tab walks to bridge consoles, E uses the lift/ladder/hatch,7/9 select Bow/Astern. Commons surfaces and coloured find markers are greybox placeholders; review routes and views before detailed art."
+      "note": "Unzip and open the app. This is an ad-hoc signed, unmerged developer preview. Cold native ship/title startup checked with fresh settings and bundled AILANGv0.54.18. Tab walks to bridge consoles, E uses the lift/ladder/hatch,7/9 select Bow/Astern. Commons surfaces and coloured find markers are greybox placeholders; review routes and views before detailed art. The new lived-in art pilot is currently shown in the engine images above, not installed in this earlier download."
     }
   ]
 }

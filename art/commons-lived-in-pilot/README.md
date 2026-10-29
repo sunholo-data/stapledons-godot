@@ -39,3 +39,35 @@ plants use the existing painted-card/shadow conventions.
 The next gate is visual acceptance of this pilot before it is repeated across
 other stages. S5, performance, export and final independent/rig checks remain
 required for the full finishing sprint.
+
+## Review round 1
+
+Private laptop gallery: https://voights-mac-studio.tail97eda0.ts.net:8452/ . The
+first comparison is shared seating in Bow at rest. Forty-eight matched engine
+frames cover four supported points, Bow/Astern and rest/cruise/real guided stop.
+The same +2 EV display setting is retained in each pair; sky and lighting remain
+live. The neutral Blender hero is labelled as an authoring detail view.
+
+The kit has eight authored groups, 32,224 unique triangles, one pigment material
+and one embedded 1536×1024 atlas. Repeated bench/basket placements bring the new
+prop geometry to 42,688 triangles, plus existing painted foliage cards. The three
+local practicals coincide with physical reading/task fixtures. The existing
+layout, WALK, cameras and simulation are unchanged.
+
+Checks: review loader 31/0; actual placement, sampled capsule/return paths,
+route-end approaches and unchanged Commons thresholds 44/0; six independent
+CPU/pixel pole cases with the furniture installed pass (maximum 0.103 px,
+unchanged 0.75 px limit). Export-filter and UID guards pass. Independent review
+found no visual publication blocker; see `independent-review.md` for its scope.
+
+Arcade-approach frames remain in the court: piers and framing limit their
+evidence for the bay interior/counter/cart. They do not certify that interior's
+finished appearance. Upper magenta finds and unfinished structural shapes remain
+greybox. The native download on the page is still the earlier S3 layout build,
+without this review-only furniture.
+
+Editable v2 sources are preserved locally in
+`build/commons-lived-in-source/commons-lived-in-source-v2.tar.gz`, SHA256
+`311212706db908e0f60126f9b7fe77bbf8800fb680b0f823179ea8c30f7e3c81`.
+The original authoring workspace and v1 archive remain intact. This new source
+archive has not been uploaded.

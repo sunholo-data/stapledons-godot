@@ -1,6 +1,7 @@
 # R2-VIEW-FINISH: finish the bridge and first Commons views
 
 **Status:** Approved by Mark in this attended session, 2026-10-29: "proceed" (D-130). VF0 preserved and backed up; Commons runtime/layout, natural bridge contact and UI integrated in draft PR #351. Commons S3, art-pilot and S5 visual approvals remain pending.
+**Attended continuation D-133:** Mark likes the current direction and asks for more lived-in detail. One court/arcade art pilot is authorized on the current layout. This bounded visual study does not assert that every S3 manual playtest item is complete, and does not authorize repeating the finish before pilot review.
 **Request:** audit existing work, respect settled art decisions, propose concurrent sprints, and provide laptop asset previews before final visual approval.
 **Base audited:** `b07c9763` on `main`. Runtime: AILANG v0.54.18.
 **Design authority:** [R2-LEVELS](levels.md), [its approved sprint](levels-sprint.md), [Commons brief](../../levels/commons.md), [level lifecycle](../../levels/README.md), [approved bridge styling](../../implemented/r2/bridge-styling-pass.md), and [camera-forward](../../implemented/r2/camera-forward.md).
