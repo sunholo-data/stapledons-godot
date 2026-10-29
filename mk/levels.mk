@@ -18,6 +18,17 @@ level-runtime-test: import ## VF1: manifest camera sources, stage resolution and
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_level_runtime.gd > $(SCRATCH)/level-runtime-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-runtime)' $(SCRATCH)/level-runtime-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-runtime-test.log && grep -q '^level-runtime: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-runtime-test.log
 test: level-runtime-test
+.PHONY: commons-art-pilot-test commons-pilot-check commons-pilot-capture commons-pilot-golden
+commons-art-pilot-test: import ## D-133 review loader: real authored GLB, material/transform/collision guards and atomic negative controls
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_commons_art_pilot.gd > $(SCRATCH)/commons-art-pilot.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-art-pilot)' $(SCRATCH)/commons-art-pilot.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-art-pilot.log && grep -q '^commons-art-pilot: [0-9]* passed, 0 failures$$' $(SCRATCH)/commons-art-pilot.log
+test: commons-art-pilot-test
+commons-pilot-check: import ## Actual pilot pin, floor support, solid/captain/routes and unchanged Commons thresholds
+	@$(GODOT) --headless --path . --script tools/commons_pilot_validate.gd > $(SCRATCH)/commons-pilot-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-pilot-validate)' $(SCRATCH)/commons-pilot-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-pilot-check.log && grep -q '^commons-pilot-validate: [0-9]* passed, 0 failures$$' $(SCRATCH)/commons-pilot-check.log
+commons-pilot-capture: ## Matched real player-view before/after pilot, rest/cruise/real stop; inspect renders/view-finish/commons-lived-in-pilot
+	@$(GODOT_SIM) --path . --script tools/commons_pilot_review.gd > $(SCRATCH)/commons-pilot-capture.log 2>&1; rc=$$?; grep -E '^(commons-pilot-review|commons-pilot-shot)' $(SCRATCH)/commons-pilot-capture.log | tail -3; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-pilot-capture.log
+commons-pilot-golden: lens-assets m4-physics-probe ## Six existing CPU/pixel pole cases with the actual review furniture installed; no global golden-count change
+	@$(GODOT) --path . --script tools/commons_pilot_golden.gd > $(SCRATCH)/commons-pilot-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|commons-pilot-golden)' $(SCRATCH)/commons-pilot-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-pilot-golden.log && test "$$(grep -c '^ok    G-LVL-' $(SCRATCH)/commons-pilot-golden.log)" = 6 && grep -q '^commons-pilot-golden: 0 failures$$' $(SCRATCH)/commons-pilot-golden.log
 .PHONY: level-export-test
 level-export-test: import ## VF2: real pack JSON closure with missing manifest, greybox and lift negative controls
 	@mkdir -p $(SCRATCH)
