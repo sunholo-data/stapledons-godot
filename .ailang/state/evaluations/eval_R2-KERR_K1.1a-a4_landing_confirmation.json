@@ -1,0 +1,19 @@
+{
+ "sprint_id":"R2-KERR","milestone":"K1.1a-a4","review_kind":"landing gate-confirmation (merged-tree)",
+ "reviewed_head_sha":"2b47456b4ef43033607694e6c528911b8ab267db",
+ "merged_tree_base":"26697b7ac259490283fd2b51ce65c588fceb48d3",
+ "evaluator_model":"Claude Sonnet 5.5 (claude-sonnet-5-5)",
+ "evaluator_vendor_independence":"executor Claude Haiku 5.5, controller Claude Opus 5.5, evaluator Sonnet 5.5: same vendor, different model",
+ "checks":[
+  {"id":1,"what":"rig full-suite evidence","command":"read rig-check logs; gh api statuses/check-runs","rc":0,"key":"green log ends at import-keep-check with no make error; crewSkip 2.37 s vs budget 4.0 s (run1 5.08 s, run2 4.34 s both FAIL crew-perf on a loaded rig; unrelated to the 3 files); crewSkipUnheld 16.90 s vs 30; GitHub: rig/full success 19:24:52Z 'make test green on the Studio in 100 min (AILANG v0.54.18)' (earlier failures/pendings superseded); check-run 'fast tier' completed success"},
+  {"id":2,"what":"main moved","command":"git log 2b47456b..origin/main; git diff --name-only 2b47456b...origin/main","rc":0,"key":"6 commits (#346 split clean-up, mission records #353/#354); changed: Makefile, tools/python-allowlist.txt, tools/python_guard.sh, tools/check_star_names.py, tools/catalogue_probe.py, sim/tools/star_names*.ail, sim/ailang.toml, ui/crew_*.gd, physics/relativity.gd, tests/test_crew_console.gd, mission docs. None touches rk.json, kerr_ref.py or test_kerr_oracle.sh; shared surfaces (Makefile, allowlist, python_guard) re-verified in check 3"},
+  {"id":3,"what":"merged-tree gates","command":"git merge --no-ff (clean, no conflicts); sh tools/test_kerr_oracle.sh; make kerr-oracle; gmake kerr-oracle; make python-guard; make lint-precision; make uid-guard; git diff --check origin/main HEAD","rc":0,"key":"all rc=0: oracle-sh 0, make 0, gmake 0, python-guard 0 (19 allowlisted), lint-precision 0, uid-guard 0, diff --check 0; $TMPDIR entries 4823 before and after make kerr-oracle (no leak); tools/kerr_ref.py listed in allowlist line 29 role 'oracle'"},
+  {"id":4,"what":"diff scope","command":"git diff --stat origin/main...2b47456b","rc":0,"key":"only tests/fixtures/kerr/rk.json (+4), tools/kerr_ref.py (8), tools/test_kerr_oracle.sh (+61): 3 files, 66+/7-"}
+ ],
+ "findings":[
+  {"severity":"non-blocking","evidence":"The rig/full green run was on the PR's old base, not the merged tree; mitigated because main's changes are disjoint from the 3 files and all relevant gates pass on the merged tree."},
+  {"severity":"non-blocking","evidence":"run1/run2 crew-perf crewSkip flakiness (5.08/4.34 s vs 4.0 s budget) is load-sensitive and unrelated to this diff; green run 2.37 s."},
+  {"severity":"non-blocking","evidence":"GitHub status history lists older failure/pending rig/full entries; latest (19:24:52Z) is success."}
+ ],
+ "verdict":"MERGE-SAFE","score":93
+}

@@ -1,17 +1,23 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-29, iteration 57.
+Updated 2026-10-29, iteration 58.
 
-- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Clause 4 waits on row 7m AC1, which waits on 7m-d (quiet rig only; this fire GPU 99–100 %, load 16), and on P-land (Mark). Goal unmoved.
-- **Landed this fire:** L4 M1a, the suite profiler instrument (PR #349, merge `81e240f0`; `rig/full` 87 min; fast tier green on the merge).
-- **In flight:** Kerr K1.1a-a4, PR #352 (`2b47456b`): eight in-copy oracle mutation drills, plus RK-3 and RK-9. Judge Sonnet **90 PASS**, zero blocking.
-  - `rig/full` was red twice at `crew-perf`: 5.08 s at load 18–36, then 4.34 s at load ~5, against a 4.0 s budget. Main fails the same check in isolation. The same code read 1.6–2.2 s in every run until this morning.
-  - The merge is **PARKED-ON-LANE**. Resume: `rig/full` success on `2b47456b` from a run on a quiet rig (1-min load < 3), then merge.
-- **Order:** land #352 → 7m-d whenever the rig is quiet → D-129 → L4 M1b → M2 → K1.1a-a5 → L9 S0.3 → L3.
+- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on two things: 7m-d, which runs only on a quiet rig (this fire the GPU read 73–91 %, from an Ollama runner and Firefox), and P-land, which is Mark's. Goal unmoved.
+- **Landed this fire:** Kerr K1.1a-a4 (PR #352, merge `165c9f2f`). It adds eight oracle mutation drills, plus RK-3 and RK-9.
+  - `rig/full` run 3 was green in 100 min on a quiet rig, with `crewSkip` 2.37 s against its 4.0 s budget. Runs 1 and 2 had been red under load.
+  - The judges: Sonnet 90 PASS on the build, then Sonnet 93 MERGE-SAFE on the merged tree.
+  - The fast tier was green on the merge.
+- **In flight:** nothing. No loop PR is open.
+- **Order:** 7m-d (whenever the GPU is quiet) → K1.1a-a5 → L9 S0.3 → L3. D-129 then unlocks L4 M1b and M2.
+- **Held:** attended #344 (Earth-link) and #351 (bridge, Commons and Earth-link integration) hold `Makefile` and `bridge/sim_bridge.gd`. That blocks a5, S0.3, L3, 7u and 7v.
+  - While the holds last, the unheld loop rows are the clause-4 follow-ups 7k, 7l, 7n and 7i. Re-check their files against open PRs before picking one.
 - **Parked on Mark:**
-  - D-128: the position of 7m-d. Default A is being applied.
-  - D-129: L4's OQ1–OQ4. Recommendation A. If unanswered, M1b and M2 stay parked.
-- **Held:** `Makefile` (L4 M3, row 7v) waits until attended #344, #346 and #351 merge or close.
-- **New row:** 7v, the `crew-perf` wall-clock budgets on a shared rig. CPU time rises with wall time, so the fix is a bound calibrated in the same breath, not a CPU gate. Thresholds stay Mark's.
-- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire: executor Haiku 5.5 (Agent), evaluator Sonnet (Agent); no designer or planner. Codex was over its daily ration. Metered $0.00.
-- **Watch:** the Studio is heavily shared (ailang backlog builds plus the attended view-finish session, load ~30 on 16 cores). That parks both GPU benches and wall-clock gates.
+  - D-128: where 7m-d sits in the order. Default A is being applied.
+  - D-129: L4's OQ1–OQ4. The recommendation is A. If unanswered, M1b and M2 stay parked.
+- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h.
+  - This fire spawned only the evaluator, Sonnet via the Agent tool. Nothing was built.
+  - Codex was over its daily ration, so the planner would have gone to kimi-k3 and the executor to Haiku 5.5. Neither ran.
+  - Metered spend $0.00.
+- **Watch:**
+  - The quiet-rig predicate worked on its first use: 1-min load below 3 when the run starts.
+  - The GPU is still busy with non-mission work, so 7m-d has been parked four fires running.

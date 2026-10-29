@@ -1395,3 +1395,64 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied this fire) and D-
 - **Next:** **Re-run `rig/full` on #352 (`2b47456b`) on a quiet rig (1-min load < 3)**, then merge. 7m-d whenever the rig is quiet (D-128 default A). D-129 (Mark) → L4 M1b → M2. Then K1.1a-a5 (terminal wiring; fold in the a4 judge's harness-guard survivors) → L9 S0.3 → L3.
 
 DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 (L4's OQ1–OQ4; recommendation A; default: M1b/M2 stay parked). Both unchanged.
+
+## 58 — 2026-10-29 — Kerr K1.1a-a4 LANDED (PR #352, merge `165c9f2f`): `rig/full` run 3 green on `2b47456b` in 100 min on a quiet rig (`crewSkip` 2.37 s against 4.0 s, after 5.08 and 4.34 s under load in runs 1 and 2); independent Sonnet landing confirmation 93/100 MERGE-SAFE on the merged tree; fast tier green on the merge; 7m-d PARKED-ON-LANE again (GPU 73–91 %) [PRODUCT]
+
+- **Pick:** the STATUS 57 **Next**, verify-and-land PR #352 (K1.1a-a4, built and judged 90 PASS by iteration 57; merge parked on rig load). Resume predicate: `rig/full` success on `2b47456b` from a run started at 1-min load < 3.
+  - 7m-d predicate at pick (about 17:43Z): GPU `Device Utilization %` 91/79/73 (an Ollama `qwen3.8` runner and Firefox on the GPU), 1-min load 2.5. PARKED-ON-LANE again (fourth consecutive fire).
+  - Critical path, gate 2 rule (b): the only row on the UNMET clause 4 (7m AC1 via 7m-d) was not routable, so the pick stands.
+  - A second item (allowed after a bookkeeping pick) was not taken. Every next row in the order is held on files that attended PRs #344 and #351 edit: K1.1a-a5 and L3 need `Makefile`, and L9 S0.3 needs `bridge/sim_bridge.gd` and `Makefile`. Rows 7u and 7v also touch `Makefile`. Extra local work during `rig/full` would also add the load that turned runs 1 and 2 red.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Goal unmoved: K1.1a-a4 is R2 Kerr oracle hardening (test tooling), not an R1 clause.
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 directives since 2026-10-27T11:22:14Z (12 comments).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Inbox: no mission-stapledon directives.
+  - Not the first iteration after the Monday rotation, so no sweep.
+  - The main checkout (`MISSION_WORKDIR`) is on the attended branch `feat/bridge-commons-finish` (PR #351), clean. The loop did not touch it. Work ran in fresh sibling clones (`stapledons-godot-iter58-rec`, the judge's `.stap-iter58-eval`) and the rig's own clone.
+- **Gate 1:**
+  - Base `26697b7ac259490283fd2b51ce65c588fceb48d3` at 2026-10-29T17:43:20Z.
+  - All 14 skill files at the resolved symlink match `origin/dev`.
+  - Open PRs: #352 (this mission's, iteration 57). #344 and #351 are attended.
+  - #352's statuses: `rig/full` failure at 10:21Z and 11:25Z (runs 1 and 2); fast tier success.
+- **Landing #352 (K1.1a-a4):**
+  - `rig/full` run 3: `tools/rig_check.sh 352` (main's copy), launched detached at 17:44Z at 1-min load 2.53–3.21. Run 2's clone and log were kept as `….run2`.
+  - Green at 19:24Z in **100 min**. `crew-perf`: `crewSkip` 2.37 s (budget 4.0), `crewSkipUnheld` 16.90 s (ceiling 30). The 1-min load reached 4–15 during the run, from an ailang `make test` and other fleet jobs, without failing it.
+  - Main had moved since the PR's base: attended #346 changed `Makefile`, `tools/python-allowlist.txt` and `tools/python_guard.sh`, and #353/#354 were records. The iteration-30 process fix applied: the controller's `git merge-tree origin/main 2b47456b` was clean, and the judge test-merged and re-ran the row's gates on the merged tree (below).
+  - `gh pr merge 352 --merge --match-head-commit 2b47456b…` → merge `165c9f2ff0c82d449321f419508c9e2cc3f61003`. PR title and body scanned for closing keywords: 0, with the control firing.
+  - Gate 3b: fast tier on the merge **success** (run 40940247891; poll pinned to the full SHA, 30 min cap). Sprint `R2-KERR` K1.1a-a4 `passes` true, with evidence.
+- **Evaluation:** Sonnet 5.5 via the Agent tool (background, bounded artifact poll by the controller), in its own clone `.stap-iter58-eval`. It got no controller findings, only the checks to run. **93/100 MERGE-SAFE**, zero blocking (`eval_R2-KERR_K1.1a-a4_landing_confirmation.json`).
+  - It read all three rig logs and the GitHub statuses and check runs.
+  - It merged `2b47456b` onto `26697b7a` with no conflicts, then ran these on the merged tree, all rc 0: `sh tools/test_kerr_oracle.sh`, `make` and `gmake kerr-oracle`, `make python-guard` (19 allowlisted), `lint-precision`, `uid-guard` and `git diff --check`.
+  - `$TMPDIR` held 4,823 entries before and after a `make kerr-oracle`, so iteration 57's leak fix holds. The diff scope is exactly the 3 files (66+/7−).
+  - Non-blocking: the green `make test` ran on the PR's base, not the merged tree. This is mitigated by the disjoint files and the merged-tree gates.
+  - The controller re-checked two of its claims first-party: `kerr_ref.py` is allowlisted as `oracle` on line 29, and its clone's HEAD is its test merge `188515c6` onto `26697b7a`.
+- **Record:** charter (STATUS 58; STATUS 55 rotated to the archive; R2 row a4 LANDED; 7m-d re-measured; 7v gains the quiet-rig reading; CURRENT GOAL counter), this entry, the index, the dashboard, the sprint JSON (a4 `passes`, evidence, two evaluation rows) and the landing-confirmation evaluation.
+- **Routing evidence**
+
+  base=165c9f2ff0c82d449321f419508c9e2cc3f61003@2026-10-29T19:27:41Z
+
+  No designer, planner or executor ran: the work was built and judged in iteration 57. The only role spawned was the evaluator. Resolver/driver: evaluator `agent-tool sonnet` (`MISSION_EVALUATOR_PATH=agent-tool`). Driver note: codex was over its daily ration (probe rc 75), so the planner lane was `pi:ollama/kimi-k3:cloud` and the executor lane `claude:claude-haiku-5-5`, both unused.
+
+  The operator's standing request was met: the evaluator ran through the Agent tool as `sonnet`. No role failed to spawn.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Evaluator Agent `sonnet` (Sonnet 5.5): 42,957 tok, 9 tool uses, 1.4 min. Quota bucket anthropic.
+  - Judge independence: same vendor, different model (iteration 57's Haiku executor, Sonnet judge, Opus controller); `judge-independence: same-vendor-different-model`.
+  - Quorum: none (no new or revised doc). metered=$0.00.
+- **Ruled out:**
+  - 7m-d this fire: GPU 73–91 %.
+  - A second item during `rig/full`: K1.1a-a5, L9 S0.3, L3, 7u and 7v all need files held by attended #344/#351 (`Makefile`, `bridge/sim_bridge.gd`).
+  - Re-running `make test` on the merged tree: main's changes are disjoint from the PR's three files, and the row's own gates passed on the merged tree. The fast tier ran on the merge.
+  - Waiting for the load to stay under 3 for the whole run: the predicate is the load at launch (iteration 57's addendum), and the run passed with the load at 4–15 from other fleet jobs.
+- **Upstream:** none.
+- **Retro:**
+  - Frictions:
+    1. The whole ordered queue after 7m-d is held by two long-lived attended PRs (#344 since EL1, #351 the combined dev-testing branch), both editing `Makefile`. While they stay open the loop can only land in-flight work, measure 7m-d when the GPU is free, or take unordered clause-4 follow-ups. That is one row of headroom; the next fires risk idling.
+    2. The judge's verdict file appeared within 2 minutes, before its completion notification. The controller read it but acted only after the notification and a first-party re-check of two of its claims (rule 7 clause b: an artifact is a fact about the file, the notification about the work).
+  - **Process fix:** none needed in the charter. The quiet-rig predicate (1-min load < 3 at launch) worked on its first use.
+  - Harness share: iterations 55–58 are merge-gate and test tooling; no loop-harness work in 36–58.
+  - Last three landings: #352 none (R2 Kerr tooling), #349 none (directed L4 tooling), #345 none. Clause 4's only row (7m-d) was lane-parked in every one of those fires, so there is no routable critical-path row and no DRIFT.
+- **Next:** 7m-d whenever the GPU is quiet. When #344 or #351 releases `Makefile`: K1.1a-a5 (fold in the a4 judge's harness-guard survivors) → L9 S0.3 → L3. D-129 (Mark) → L4 M1b → M2. Until then, the unheld clause-4 follow-up rows (7k, 7l, 7n, 7i), after re-checking their files against open PRs.
+
+DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 (L4's OQ1–OQ4; recommendation A; default: M1b/M2 stay parked). Both unchanged.
