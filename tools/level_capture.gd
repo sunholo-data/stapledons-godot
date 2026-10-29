@@ -38,7 +38,7 @@ func _run() -> void:
 	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	root.content_scale_size = PX
 	demo = load("res://demos/ship_geometry_demo.tscn").instantiate()
-	demo.setup_options = {"size": PX, "sky_state": "rest"}
+	demo.setup_options = {"size": PX, "sky_state": "rest", "level_greybox": id=="commons" and str(doc.get("id",""))=="commons"}
 	root.add_child(demo)
 	await process_frame
 	if not demo.ready_ok:
@@ -49,8 +49,12 @@ func _run() -> void:
 	demo.journey_auto_tick = false
 	demo.ship_hud.visible = false
 	var walk: WalkArea = null
-	if not (doc.get("pieces", []) as Array).is_empty():
+	if demo.level_runtime!=null:
+		walk=demo.walk_lower
+	elif not (doc.get("pieces", []) as Array).is_empty():
+		if doc.get("base_walk")=="commons":ShipLevelRuntime.prepare_geometry(demo)
 		walk = LevelGreybox.build(doc, demo.geometry).walk
+		if doc.get("base_walk")=="commons":walk=WalkArea.merged([demo.walk_lower,walk])
 	for k in 4:
 		await physics_frame
 	var lm := LevelMetrics.new(demo, doc, walk)
@@ -66,14 +70,20 @@ func _run() -> void:
 					var under := str(v.get("kind", "walk")) == "walk" and not lm.hit(head, head + Vector3(0, float((v.get("ceiling_clamp", LevelMetrics.CLAMP) as Dictionary).get("probe_m", 8.0)), 0)).is_empty()
 					var name := "%s_%s_%s_%s" % [s.id, f.id, v.id, sky]
 					demo.consoles.cancel_walk()
-					demo.director.override()
+					if id=="commons" and demo.level_runtime!=null:
+						demo.active_level=1;demo.walk=demo.walk_lower
+						demo.director.release();demo.director.zoom_preset=false;demo.director.set_motion("reduced")
+						demo.director.deck_view=str(v.id);demo.director.mapping_view=str(v.id);demo.director.has_pose=false
+					else:demo.director.override()
 					demo.avatar_pos = c
 					demo.captain_yaw = -PI * 0.5
-					demo.camera_mode = "review"
+					demo.camera_mode = "player" if id=="commons" and demo.level_runtime!=null else "review"
 					for k in 20:
 						demo._process(1.0 / 60.0)
 					demo.avatar_pos = c
-					demo.camera.global_transform = LevelMetrics.pose(v, c, under)
+					if id=="commons" and demo.level_runtime!=null:
+						demo.director.advance(0.)
+					else:demo.camera.global_transform = LevelMetrics.pose(v, c, under)
 					demo._sync_observer()
 					for k in 6:
 						await process_frame

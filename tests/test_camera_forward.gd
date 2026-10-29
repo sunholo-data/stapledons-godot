@@ -486,7 +486,7 @@ func test_level_default(demo: Node) -> void:
 		demo._process(DT)
 		guard += 1
 	demo._process(DT)
-	check("level default commons", boarded and demo.active_level == 1 and dir.view_id == "z2_lower", "boarded %s level %d view %s" % [boarded, demo.active_level, dir.view_id])
+	check("level default commons", boarded and demo.active_level == 1 and dir.view_id == "bow", "boarded %s level %d view %s" % [boarded, demo.active_level, dir.view_id])
 	boarded = demo.lift.board()
 	guard = 0
 	while demo.lift.travelling() and guard < 2000:

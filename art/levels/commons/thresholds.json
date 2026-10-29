@@ -1,0 +1,10 @@
+{
+  "about": "D-103 approved B5 defaults, no threshold exceptions.",
+  "head_share_max": 0.02,
+  "pole_share_max": 0.02,
+  "near_bow_max": 0.05,
+  "near_astern_max": 0.1,
+  "body_both_share_max": 0.02,
+  "find_hops_max": 4,
+  "find_route_m_max": 80.0
+}

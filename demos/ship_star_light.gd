@@ -181,6 +181,10 @@ func apply_rig(rig: Dictionary) -> void:
 	key.visible = key.light_energy >= VISIBLE_EPS
 	key.shadow_enabled = shadows and not star_owns and not bridge
 	key.shadow_opacity = owner_opacity
+	for id: int in rig.get("level_lights",{}):
+		for lamp: OmniLight3D in rig.level_lights[id]:
+			lamp.light_energy=float(lamp.get_meta("base_energy",0.0))*maxf(KEY_FLOOR_SHARE,1.0-level)
+			lamp.visible=id==int(rig.get("active_level",0)) and rig.profile!="baseline"
 	# R2-DECK-LAYOUT §D5a (D-96): the spire, the bridge's own light, shares the key's dimming.
 	if rig.has("spire"):
 		var share := maxf(KEY_FLOOR_SHARE, 1.0 - level)

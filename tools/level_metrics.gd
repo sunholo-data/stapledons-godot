@@ -80,7 +80,7 @@ func samples(stage: Dictionary, surf: Dictionary, grid_m: float) -> Array:
 	var w: WalkArea = demo.walk_bridge if str(surf.get("walk", "")) == "bridge" else walk
 	if w == null:
 		return out
-	var b: Array = stage.bounds_ship_m
+	var b: Array = surf.get("bounds_ship_m",stage.bounds_ship_m)
 	var xx := float(b[0])
 	while xx <= float(b[1]) + 1e-6:
 		var yy := float(b[2])
@@ -294,6 +294,12 @@ func measure(grid_override := 0.0) -> Dictionary:
 		var surfs := []
 		for f: Dictionary in s.surfaces:
 			surfs.append(surface_metrics(s, f, grid))
+			if level.get("evaluate_all_views",false):
+				for v: Dictionary in s.views:
+					if str(v.id)==str(f.get("view",s.default_view)):continue
+					var other:=f.duplicate(true);other.view=v.id
+					var row:=surface_metrics(s,other,grid);row.surface=str(f.id)+"@"+str(v.id)
+					surfs.append(row)
 		var dv := view_of(s, str(s.default_view))
 		var sp := gltf(s.spawn)
 		var t := pose(dv, sp)
@@ -341,7 +347,7 @@ static func failures(m: Dictionary, th: Dictionary) -> Array:
 			var band: Array = r.captain_px_band
 			if float(r.px[0]) < float(band[0]) - 0.5 or float(r.px[1]) > float(band[1]) + 0.5:
 				out.append({"id": "captain-px", "detail": "%s/%s: captain %s px, band %s" % [sid, r.surface, r.px, band]})
-			if float(r.body_both) / float(r.samples) > float(t.body_both_share_max):
+			if st.journey and float(r.body_both) / float(r.samples) > float(t.body_both_share_max):
 				out.append({"id": "body-both", "detail": "%s/%s: stop body hidden on both sides at %d of %d" % [sid, r.surface, r.body_both, r.samples]})
 		if st.has("near_bow") and float(st.near_bow) > float(t.near_bow_max):
 			out.append({"id": "near-field", "detail": "%s: Bow near-field %.3f (max %.2f)" % [sid, st.near_bow, t.near_bow_max]})

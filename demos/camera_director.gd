@@ -126,7 +126,7 @@ static func load_views(path := VIEWS_PATH) -> Dictionary:
 	var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path)) if FileAccess.file_exists(index_path) else null
 	d["levels"] = {}
 	d["manifest_errors"] = []
-	if not index is Dictionary or index.get("schema") != "stapledons.level.index/1":
+	if not index is Dictionary or index.get("schema") != "stapledons.level.index/1" or not index.get("levels") is Dictionary or index.levels.is_empty():
 		d.manifest_errors.append("level manifest index missing or invalid")
 		return d
 	for id: String in index.get("levels", {}):
@@ -1008,7 +1008,7 @@ func advance(dt: float) -> void:
 func occluder_members() -> Array:
 	if demo == null or not demo.is_inside_tree():
 		return []
-	return demo.get_tree().get_nodes_in_group(OCCLUDER_GROUP).filter(func(n: Node) -> bool: return n is GeometryInstance3D)
+	return demo.get_tree().get_nodes_in_group(OCCLUDER_GROUP).filter(func(n: Node) -> bool: return n is GeometryInstance3D and n.is_visible_in_tree())
 
 
 func _member_aabb(m: Node) -> AABB:
@@ -1019,6 +1019,9 @@ func _member_aabb(m: Node) -> AABB:
 
 
 func _member_of(collider: Object) -> Node:
+	if collider is StaticBody3D:
+		for sibling: Node in collider.get_children():
+			if sibling is GeometryInstance3D and sibling.is_in_group(OCCLUDER_GROUP):return sibling
 	var n := collider as Node
 	while n != null:
 		if n.is_in_group(OCCLUDER_GROUP):
@@ -1059,6 +1062,7 @@ func _segment_members(a: Vector3, b: Vector3, members: Array) -> Dictionary:
 
 
 func _has_collision(m: Node) -> bool:
+	if m.get_parent() is StaticBody3D:return true
 	for c in m.get_children():
 		if c is StaticBody3D:
 			return true
@@ -1124,6 +1128,9 @@ func _update_occluders(active: bool, foot: Vector3, dt: float) -> void:
 ## AC-V10: the lift's arrival selects the level's default view (the bridge: Bow; a legacy level:
 ## its default zoom level).
 func _arrive() -> void:
+	if demo!=null:
+		area="lower" if demo.active_level==1 else "bridge"
+		_select_stage(demo.avatar_pos)
 	if walk_level():
 		deck_view = str(levels[level_name()].get("default", "bow"))
 		mapping_view = deck_view

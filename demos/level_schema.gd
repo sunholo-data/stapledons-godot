@@ -36,6 +36,13 @@ static func validate(m: Variant) -> Array[String]:
 		e.append("version must be a positive number")
 	if not _num(d.get("deck_z_m")):
 		e.append("deck_z_m missing")
+	var camera: Variant=d.get("camera",{})
+	if not camera is Dictionary:
+		e.append("camera must be an object")
+	else:
+		if camera.has("occluders") and (not camera.occluders is Array or not camera.occluders.all(func(x: Variant)->bool:return x is String and not x.is_empty())):
+			e.append("camera.occluders must be non-empty node names")
+		if camera.has("dressing") and not camera.dressing is Dictionary:e.append("camera.dressing must be an object")
 	var stages: Variant = d.get("stages")
 	var ids := {}
 	var surfaces := {}
@@ -81,6 +88,21 @@ static func validate(m: Variant) -> Array[String]:
 			for k: String in ["yaw_deg", "pitch_deg", "back_m", "rise_m"]:
 				if not _num(v.get(k)):
 					e.append("stage %s view %s: %s missing" % [sid, v.id, k])
+			if v.has("lateral_m") and (not _num(v.lateral_m) or not is_finite(float(v.lateral_m))):
+				e.append("stage %s view %s: lateral_m must be finite" % [sid,v.id])
+			if _num(v.get("back_m")) and float(v.back_m)<=0.:e.append("stage %s: back_m must be positive" % sid)
+			if _num(v.get("rise_m")) and float(v.rise_m)<.3:e.append("stage %s: rise_m must keep the eye above its floor" % sid)
+			if v.has("ceiling_clamp"):
+				var clamp: Variant=v.ceiling_clamp
+				if not clamp is Dictionary:e.append("stage %s: ceiling_clamp must be an object" % sid)
+				else:
+					for field: String in ["pitch_deg","back_m","rise_m","probe_m"]:
+						if not _num(clamp.get(field)):e.append("stage %s: ceiling_clamp.%s must be finite" % [sid,field])
+					if _num(clamp.get("back_m")) and float(clamp.back_m)<=0.:e.append("ceiling_clamp.back_m must be positive")
+					if _num(clamp.get("rise_m")) and float(clamp.rise_m)<.3:e.append("ceiling_clamp.rise_m must be above the floor")
+					if _num(clamp.get("probe_m")) and float(clamp.probe_m)<=0.:e.append("ceiling_clamp.probe_m must be positive")
+			for timing: String in ["ease_s","cue_ease_s"]:
+				if v.has(timing) and (not _num(v[timing]) or float(v[timing])<0.):e.append("stage %s: %s must be finite and non-negative" % [sid,timing])
 			var px: Variant = v.get("captain_px")
 			if not _vec(px, 2) or float(px[0]) < PX_MIN or float(px[1]) > PX_MAX or float(px[0]) >= float(px[1]):
 				e.append("stage %s view %s: captain_px must be [lo, hi] within %d-%d px" % [sid, v.id, PX_MIN, PX_MAX])
@@ -135,7 +157,7 @@ static func validate(m: Variant) -> Array[String]:
 
 
 static func _num(v: Variant) -> bool:
-	return v is float or v is int
+	return (v is float or v is int) and is_finite(float(v))
 
 
 static func _vec(v: Variant, n: int) -> bool:

@@ -53,6 +53,7 @@ var active_level := 0:
 	set(v):
 		active_level=v
 		if not lighting.is_empty():Lighting.set_level(lighting,v)
+		if level_runtime!=null:level_runtime.set_active(v==1)
 var label := Label.new() # retired (R1-SHIP-UI U1); never shown
 var hud: Control # the status strip (ShipHud.strip)
 var ship_hud: ShipHud
@@ -106,6 +107,7 @@ var sky_state := "rest"
 var sky_only := false
 var controls: Control # the Tab panel (ShipHud.tab_panel)
 var commons: Dictionary = {}
+var level_runtime: ShipLevelRuntime
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
@@ -185,6 +187,10 @@ func setup(opts := {}) -> bool:
 	if opts.get("commons",true):
 		commons=Commons.install(self)
 		if commons.is_empty():return false
+		if opts.get("level_greybox",true):
+			level_runtime=ShipLevelRuntime.install(self,str(director.levels.commons.manifest.layout_asset))
+			if level_runtime==null:return false
+			Lighting.install_level(lighting,1,level_runtime.layout,geometry)
 	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");avatar.effect="echo";captain_anim.use_gait(avatar.anim.get("clips",{}).get("walk",{}));avatar.position=avatar_pos
 	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
 	var ring_mesh:=TorusMesh.new();ring_mesh.inner_radius=.55;ring_mesh.outer_radius=.7;ring_mesh.rings=48;ring_mesh.ring_segments=6
@@ -398,7 +404,8 @@ func walk_motion(move: Vector2,delta: float) -> void:
 	if displacement.length()>1e-9:captain_yaw=atan2(displacement.z,displacement.x)
 	# Endpoint-only stepping can tunnel across the lift opening after a stall.
 	var steps:int=maxi(1,ceili(displacement.length()/maxf(.05,walk.radius*.5)))
-	for step in steps:avatar_pos=walk.step(avatar_pos,displacement/steps)
+	for step in steps:
+		avatar_pos=level_runtime.step(avatar_pos,displacement/steps) if active_level==1 and level_runtime!=null else walk.step(avatar_pos,displacement/steps)
 func set_lighting(profile:String)->void:
 	Lighting.apply(lighting,profile)
 func lighting_manifest()->Dictionary:
@@ -467,6 +474,7 @@ func _process(delta: float) -> void:
 	if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED:_mouse=get_viewport().get_visible_rect().size*.5
 	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
+	if level_runtime!=null:level_runtime.set_active(active_level==1 or (lift!=null and lift.travelling()))
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if dressing!=null:dressing.update(camera,director.view_id if not director.overridden else "",active_level) # R2-BRIDGE-STYLE S5: per-view dressing
 	if director.overridden:
@@ -541,7 +549,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_V:toggle_auto_view()
 			KEY_ENTER:dismiss_arrival()
 			KEY_K:
-				if black_hole!=null:bh_finish_approach()
+				if lift!=null and lift.travelling():lift.skip()
+				elif black_hole!=null:bh_finish_approach()
 				else:skip_stage()
 			KEY_P:toggle_tour_pause()
 			KEY_N:skip_dwell()
@@ -642,6 +651,7 @@ func toggle_camera_motion() -> void:
 func set_camera_motion(mode: String) -> void:
 	camera_motion=mode if mode in GameSettings.CAMERA_MOTIONS else "full"
 	director.set_motion(camera_motion)
+	if camera_motion=="reduced" and lift!=null and lift.travelling():lift.skip()
 	motion_button.text="Camera motion: "+("reduced (cuts)" if camera_motion=="reduced" else "full")
 ## R2-CAMERA C2: the ship is under way (committed, turning to depart, or at Sgr A*); the default
 ## view (R) is then Sky forward, so the forward sky is in frame.
@@ -698,6 +708,7 @@ func _escape_top() -> void:
 ## E: the console or the lift in reach and facing (the nearest wins; the prompt names it),
 ## or, at a console, step back.
 func use_nearest() -> bool:
+	if level_runtime!=null and level_runtime.transfer():return true
 	return consoles.press_e()
 ## Back to the title screen (main.tscn on a plain launch); _exit_tree stops the voyage's sim.
 func return_to_menu() -> void:
@@ -1189,6 +1200,18 @@ func view_tag_text() -> String:
 	elif camera_mode == "player" and camera.pullback > 0.01: t += " · third-person camera"
 	if active_level == 1: t += " · lower deck"
 	return t
+func walk_for_level(id: String) -> WalkArea:
+	return walk_bridge if id=="bridge" else (walk_lower if id=="commons" else null)
+
+func active_stage_id() -> String:
+	return str(director.stage_at("commons" if active_level==1 else "bridge",avatar_pos).get("id","")) if director!=null else ""
+func level_context() -> Dictionary:
+	var lower:=active_level==1
+	return {"id":"commons" if lower else "bridge","name":"Commons" if lower else "Bridge","stage":active_stage_id(),
+		"view":str(director.deck_view) if director!=null else "bow","legacy_views":false,
+		"can_walk_to_lift":not lower or absf(avatar_pos.y-57.0)<=WalkArea.STEP_M,
+		"route_hint":level_runtime.route_hint() if lower and level_runtime!=null else ""}
+
 func _update_hud(delta: float, details: String) -> void:
 	var view := hud_view()
 	ship_hud.details.text = details
@@ -1199,6 +1222,7 @@ func _update_hud(delta: float, details: String) -> void:
 	# While the crossing review is open the waiting line owns the bottom centre: no console prompt under it
 	# (#277 review: "Voyage console · E use" was drawn over "Press Enter to read on").
 	var prompt:String="" if crossing_review!=null and crossing_review.visible else consoles.prompt_text()
+	if prompt.is_empty() and active_level==1 and level_runtime!=null:prompt=level_runtime.route_hint()
 	if director!=null and not director.cue_prompt.is_empty(): # C2: a cue under reduced motion is a prompt (10 s)
 		prompt=director.cue_prompt+(" · "+prompt if not prompt.is_empty() else "")
 	ship_hud.set_prompt(prompt)
@@ -1398,6 +1422,14 @@ func toggle_confirm_mode() -> void:
 		var gs := GameSettings.new(); gs.dir = settings_dir; gs.load_settings(); gs.confirm_mode = confirm_mode; gs.save_settings()
 ## Tab "Walk to": walk to a station along the walk mesh (3.5 m/s; WASD takes over).
 func walk_to(station: String) -> bool:
+	if active_level==1 and level_runtime!=null:
+		if absf(avatar_pos.y-57.)>WalkArea.STEP_M:
+			note(level_runtime.route_hint());return false
+		var full_walk:=walk
+		walk=walk_lower.floor_view(57.)
+		var accepted: bool=consoles.walk_to(station)
+		walk=full_walk
+		return accepted
 	return consoles.walk_to(station)
 ## The bridge consoles (R1-SHIP-UI U3): stations from ship.glb, use points, prompt, panels.
 func _consoles_setup() -> void:

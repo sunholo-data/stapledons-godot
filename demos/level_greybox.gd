@@ -47,6 +47,7 @@ static func build(layout: Dictionary, parent: Node3D, agent_radius := 0.35) -> D
 		node.add_child(body)
 		var mi := MeshInstance3D.new()
 		mi.material_override = mats[role]
+		if pc.get("occluder",false):mi.add_to_group(CameraDirector.OCCLUDER_GROUP)
 		body.add_child(mi)
 		var cs := CollisionShape3D.new()
 		body.add_child(cs)

@@ -48,7 +48,10 @@ func load_stops(path: String) -> bool:
 	var cfg: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
 	if not cfg is Dictionary or cfg.get("schema") != "stapledons.lift/1":return false
 	var rows: Variant = cfg.get("stops")
-	if not rows is Array or rows.size()<2 or float(cfg.get("speed_mps",0))<=0 or float(cfg.get("transfer_seconds",0))<=0:return false
+	if not rows is Array or rows.size()<2:return false
+	for field: String in ["speed_mps","transfer_seconds"]:
+		var value: Variant=cfg.get(field)
+		if not (value is float or value is int) or not is_finite(float(value)) or float(value)<=0.:return false
 	var ids := {};var heights := {}
 	for i in rows.size():
 		var stop: Variant = rows[i]
@@ -72,6 +75,7 @@ func board(destination := "") -> bool:
 		for i in stops.size():
 			if str(stops[i].id)==destination:_to_level=i
 		if _to_level<0 or _to_level==_from_level:return false
+	if not demo.has_method("walk_for_level") or demo.walk_for_level(str(stops[_to_level].id))==null:return false
 	state="boarding";_phase="boarding";_time=0.;_start=demo.avatar_pos
 	gates[_from_level].visible=false;cabin_gate.visible=false
 	demo.camera_mode="player";demo.camera.pullback=0.
@@ -100,7 +104,7 @@ func advance(delta: float) -> void:
 			demo.avatar_pos=platform.position;demo.avatar.position=Vector3.ZERO
 			if t>=1.:
 				demo.active_level=_to_level
-				demo.walk=demo.walk_bridge if _to_level==0 else demo.walk_lower
+				demo.walk=demo.walk_for_level(str(stops[_to_level].id))
 				demo.avatar.reparent(demo.geometry,true)
 				gates[_to_level].visible=false;cabin_gate.visible=false
 				_phase="disembarking";state="boarding";_time=0.
@@ -113,6 +117,7 @@ func advance(delta: float) -> void:
 func skip() -> bool:
 	if not travelling():return false
 	advance(transfer_seconds*2.+ride_seconds()+.001)
+	demo.director._arrive();demo.director.has_pose=false;demo.director.advance(0.)
 	return not travelling()
 func reset() -> void:
 	if demo.avatar.get_parent()!=demo.geometry:demo.avatar.reparent(demo.geometry,true)
