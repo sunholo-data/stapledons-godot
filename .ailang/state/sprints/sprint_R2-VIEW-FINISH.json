@@ -111,9 +111,9 @@
         "make level-eval LEVEL=commons and make export-filter-audit pass; S5 stage captures inspected and accepted"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-29",
       "completed": null,
-      "notes": null
+      "notes": "D-133 authorizes one lived-in court/arcade pilot on the current layout: purposeful social/news/work clusters, existing grown/painted style and live lighting. Review-only kit/loader/captures in progress; no full-stage propagation or S5 acceptance. S3 manual checklist is not asserted complete."
     },
     {
       "id": "VF4",
@@ -277,6 +277,10 @@
     {
       "date": "2026-10-29",
       "event": "D-132: Mark finds v2 front view surprising and identifies captain placement/lean as likely cause. Withdraw furniture-extension approach; correct natural contact on original desks."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-133: Mark likes current direction, asks for a more lived-in ship. Bounded Commons court/arcade pilot authorized; preserve layout and pilot/S5 review gates."
     }
   ],
   "preview": {
@@ -305,9 +309,9 @@
     "cold_smoke": "ship and title pass, fresh HOME and no external runtime; shutdown RID/resource warnings remain"
   },
   "review_gate": {
-    "stage": "S3",
-    "status": "awaiting_attended_layout_review",
-    "source": "design_docs/planned/r2/bridge-commons-finish-sprint.md",
-    "next": "After acceptance: one actual Commons art pilot for approval, then repeat finish and S5 review."
+    "stage": "art-pilot",
+    "status": "preparing_bounded_pilot",
+    "authorization": "D-133",
+    "next": "Review actual in-engine pilot before repeating the finish; manual S3 playtest observations remain open."
   }
 }
