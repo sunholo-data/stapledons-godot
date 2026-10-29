@@ -489,11 +489,19 @@
   },
   "npc_character_followup": {
     "decision": "D-139",
-    "status": "direction_recorded_pending_plan_and_visual_pilot",
+    "status": "asset_pilot_ready_for_appearance_review",
+    "execution_authorization": "D-140, Mark attended 2026-10-29: approved, work on the features and start making NPC assets",
     "appearance": "Replace procedural 3D resident proxies with painted figures in the captain's comic style; appropriate still poses or restrained loops suffice for background NPCs.",
     "crew_presence": "Named crew mingle among residents with established portrait identities preserved; decorative resident rows are not yet simulated crew entities.",
-    "next": "Plan a bounded character/identity slice and review captain, residents and named crew together in actual Bow/Astern views before full crowd replacement.",
-    "runtime_changed": false,
+    "next": "Mark reviews the first painted appearance. Before production: calibrate per-pose seat contact and ground shadows, expand civilian variety, bind live crew presence/age and add any required painted gait frames.",
+    "normal_game_changed": false,
+    "asset_pilot_implemented": true,
+    "independent_review": {"report": ".ailang/state/evaluations/eval_R2-NPC-PAINTED-PILOT_round_1.json", "score": 92, "result": "PASS for the bounded asset/opt-in preview slice only", "blocking_defects": 0},
+    "milestones": {"NPC1_assets": true, "NPC2_opt_in_preview": true, "NPC3_appearance_approval": null},
+    "assets": {"identities": 5, "civilian_identities": 3, "crew_ids": ["medic", "engineer"], "poses": 25, "selected_source_pngs": 6, "preserved_initial_candidates": 1, "verbatim_prompts": 7, "catalog": "assets/characters/npcs/manifest.json", "provenance": "art/npc-painted-v1/provenance.json"},
+    "checks": {"npc_painted_assets": "5 identities,25 poses,0 failures", "npc_painted_pilot": "23 passed,0 failures", "export_filter_audit": "126 literals,0 failures", "uid_guard": "390 UIDs,ok", "reingest_byte_identical": true},
+    "captures": {"frames": 8, "errors": 0, "actual_residents": 42, "crew_instances": 2, "directory": "renders/npc-painted-v1", "views": "matching-scale lineup,all25 poses,actual unchanged player Bow/Astern at3court positions"},
+    "limitations": ["Opt-in appearance preview only; normal scene and published dev channel unchanged", "Static poses; no sliding or new walk cycles", "No certified per-seat butt/seat anchors or contact shadows", "Three civilian identities repeat; more variety remains", "Live crew availability,ageing and in-world interaction remain later work", "Full rig,golden,performance,S3/S5 and landing gates remain pending"],
     "implemented": false
   }
 }

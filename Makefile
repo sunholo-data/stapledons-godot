@@ -32,6 +32,7 @@ include mk/style.mk
 include mk/star-surfaces.mk
 include mk/levels.mk
 include mk/commons-civic.mk
+include mk/npc-painted.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import

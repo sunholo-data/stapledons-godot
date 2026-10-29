@@ -1,0 +1,86 @@
+{
+  "schema": "stapledons.npc.generation/1",
+  "date": "2026-10-29",
+  "tool": "OpenAI built-in image_gen.imagegen",
+  "model": "exact ID/version not exposed",
+  "seed": "not exposed",
+  "transparent_background": true,
+  "entries": [
+    {
+      "id": "grove",
+      "file": "sources/grove.png",
+      "prompt": "prompts/grove.txt",
+      "native_file": "exec-605f55f4-6f78-4ae1-904c-70835e69207d.png",
+      "references": [
+        "res://assets/characters/captain/avatar_captain_y0_front.png"
+      ],
+      "selected": true
+    },
+    {
+      "id": "reader",
+      "file": "sources/reader.png",
+      "prompt": "prompts/reader.txt",
+      "native_file": "exec-aeb43c72-daef-4f7f-ba37-75c8b2edc01f.png",
+      "references": [
+        "res://assets/characters/captain/avatar_captain_y0_front.png"
+      ],
+      "selected": true
+    },
+    {
+      "id": "gardener",
+      "file": "sources/gardener.png",
+      "prompt": "prompts/gardener.txt",
+      "native_file": "exec-fefd982f-2ac5-4340-adf5-67eab226a0d0.png",
+      "references": [
+        "res://assets/characters/captain/avatar_captain_y0_front.png"
+      ],
+      "selected": true
+    },
+    {
+      "id": "medic",
+      "file": "sources/medic.png",
+      "prompt": "prompts/medic.txt",
+      "native_file": "exec-f4e92b3d-d757-47dc-9ff4-03b0b6fc9fb3.png",
+      "references": [
+        "res://assets/characters/captain/avatar_captain_y0_front.png",
+        "res://data/crew/portraits/medic_neutral.png"
+      ],
+      "selected": true
+    },
+    {
+      "id": "engineer",
+      "file": "sources/engineer.png",
+      "prompt": "prompts/engineer.txt",
+      "native_file": "exec-3b7f6b7d-91c1-43d2-9dc1-935fec6c28f1.png",
+      "references": [
+        "res://assets/characters/captain/avatar_captain_y0_front.png",
+        "res://data/crew/portraits/engineer_neutral.png"
+      ],
+      "selected": true
+    },
+    {
+      "id": "seated_back_initial",
+      "file": "sources/seated_back_initial.png",
+      "prompt": "prompts/seated_back.txt",
+      "native_file": "exec-623cd765-113e-4c8d-a615-2de86b4626db.png",
+      "references": [
+        "sources/grove.png",
+        "sources/reader.png",
+        "sources/gardener.png",
+        "sources/medic.png",
+        "sources/engineer.png"
+      ],
+      "selected": false
+    },
+    {
+      "id": "seated_back",
+      "file": "sources/seated_back.png",
+      "prompt": "prompts/seated_back_cleanup.txt",
+      "native_file": "exec-c246267b-384a-4308-9c72-b39bcdfb2a4a.png",
+      "references": [
+        "sources/seated_back_initial.png"
+      ],
+      "selected": true
+    }
+  ]
+}

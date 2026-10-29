@@ -151,4 +151,16 @@ Mark's native playtest correction: all NPCs use the captain's painted comic char
 
 Named crew mingle with the residents in the same visual treatment. Preserve each crew member's established portrait identity so their in-world figure and Crew console portrait read as the same person. A generic decorative resident must not silently become a named simulated crew member. Crew presence, identity binding and any interaction belong in the character follow-up; this ruling does not mark those systems implemented.
 
-Before replacing the full crowd, review a bounded painted-character pilot in actual Bow and Astern player views, with the captain, background residents and named crew together. Check foot anchors, seated contacts, floor/route clearance, occlusion and reduced motion using the existing civic playtest and capture guards. Plan the asset/identity slice explicitly before execution under the project's design → sprint → approval cycle. Current publication and S3/S5 evidence remain historical; D-139 is pending implementation and visual review.
+Before replacing the full crowd, review a bounded painted-character pilot in actual Bow and Astern player views, with the captain, background residents and named crew together. Check foot anchors, seated contacts, floor/route clearance, occlusion and reduced motion using the existing civic playtest and capture guards. Plan the asset/identity slice explicitly before execution under the project's design → sprint → approval cycle. Current publication and S3/S5 evidence remain historical; D-139's first asset pilot is implemented below, with production replacement and visual approval pending.
+
+### Attended authorization: first painted NPC assets (2026-10-29)
+
+Mark: "yes approved and then work on these features - we can start making assets for the NPCs". The existing D-139 follow-up starts with this bounded asset/preview slice; this is execution authorization, with appearance review after the pilot.
+
+| Step | Deliverable | Verification |
+|---|---|---|
+| NPC1 | Three civilian identities and two portrait-derived crew identities (Medic, Chief Engineer); standing front/back/profile and seated front/back; raw generations and exact prompts preserved | `godot --headless --path . --script tools/npc_painted_assets.gd -- --ingest`; `godot --headless --path . --script tools/npc_painted_assets.gd`; alpha/scale/anchor/hash checks; generated sheets opened |
+| NPC2 | Opt-in Commons preview replaces the 42 mesh proxies with painted billboards; two existing crowd slots carry the Medic/Engineer identities once each; ordinary residents never reuse crew identities | `godot --headless --path . --script tests/test_painted_npc_pilot.gd`; `godot --path . --script tools/npc_painted_capture.gd`; actual Bow/Astern views and comparison sheet opened |
+| NPC3 | Mark reviews the asset pilot before a production crowd replacement or new animation tranche | Visual review; existing S3/S5 and final rig gates remain open |
+
+Static poses are sufficient for this first review. Do not slide unanimated walking figures around. The opt-in helper adds no colliders, simulation state, dialogue or invented crew schedules. Live crew availability, ageing and in-world conversation remain later integration work. No full landing/performance claim follows from asset/capture checks.

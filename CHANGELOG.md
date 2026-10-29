@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Painted NPC asset pilot (2026-10-29)
+
+- D-139/D-140: three painted civilian identities and portrait-derived Medic/Chief Engineer figures, with 25 standing/seated pose assets, preserved generation sources/prompts, deterministic Godot ingestion and alpha/height/foot-anchor/hash checks. An opt-in Commons capture mingles the two crew identities among the existing crowd without changing normal game setup. Appearance approval, per-seat contact calibration, live crew binding and production rollout remain pending.
+
 ### rig-test-speed (2026-10-29)
 
 #### Added

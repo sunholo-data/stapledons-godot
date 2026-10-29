@@ -1,0 +1,532 @@
+{
+  "canvas_px": [
+    192,
+    288
+  ],
+  "characters": [
+    {
+      "entity_id": "",
+      "front_x": -1.0,
+      "height_m": 1.68,
+      "id": "grove",
+      "name": "Grove resident",
+      "portrait": "",
+      "poses": {
+        "back": {
+          "file": "grove_back.png",
+          "height_px": 242,
+          "sha256": "1dab68a47d234ea655085c6fe17a8803ea1d2db17d6f73826e4e62c5a396f8eb",
+          "source_cell": 1,
+          "source_crop": [
+            228,
+            15,
+            209,
+            599
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/grove.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "09b93d0ae2abcf128fa6c8d278fc7443f3a6c7f1d757d5263ed9d91ae7e850db"
+        },
+        "front": {
+          "file": "grove_front.png",
+          "height_px": 242,
+          "sha256": "59c478cb3b436ed849bb725ad4c1be956af1c7c8d7972aeef98a80095b8946b7",
+          "source_cell": 0,
+          "source_crop": [
+            229,
+            17,
+            209,
+            598
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/grove.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "09b93d0ae2abcf128fa6c8d278fc7443f3a6c7f1d757d5263ed9d91ae7e850db"
+        },
+        "profile": {
+          "file": "grove_profile.png",
+          "height_px": 242,
+          "sha256": "230e6e618a27a8efafa657798880f9421d65c163d7eacfb2fbcc350e8c2bdba4",
+          "source_cell": 2,
+          "source_crop": [
+            258,
+            12,
+            134,
+            583
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/grove.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "09b93d0ae2abcf128fa6c8d278fc7443f3a6c7f1d757d5263ed9d91ae7e850db"
+        },
+        "seated_back": {
+          "file": "grove_seated_back.png",
+          "height_px": 181,
+          "sha256": "8b4d59dccd1421613ebb07067093b391930b3c194f0a0415981df7e1ef094141",
+          "source_cell": 0,
+          "source_crop": [
+            157,
+            18,
+            317,
+            479
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/seated_back.png",
+          "source_grid": [
+            3,
+            2
+          ],
+          "source_sha256": "8579d4def8eae4f2d2dd4e136fe504f9549a86c6caf2ccc6f831d31790105342"
+        },
+        "seated_front": {
+          "file": "grove_seated_front.png",
+          "height_px": 181,
+          "sha256": "fa92d562e92733a47d43709583a83b30606fb9324584d4ce2fb8965869219997",
+          "source_cell": 3,
+          "source_crop": [
+            133,
+            95,
+            304,
+            493
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/grove.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "09b93d0ae2abcf128fa6c8d278fc7443f3a6c7f1d757d5263ed9d91ae7e850db"
+        }
+      },
+      "source": "res://art/npc-painted-v1/sources/grove.png",
+      "source_sha256": "09b93d0ae2abcf128fa6c8d278fc7443f3a6c7f1d757d5263ed9d91ae7e850db",
+      "style_sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd"
+    },
+    {
+      "entity_id": "",
+      "front_x": -1.0,
+      "height_m": 1.7,
+      "id": "reader",
+      "name": "Older reader",
+      "portrait": "",
+      "poses": {
+        "back": {
+          "file": "reader_back.png",
+          "height_px": 245,
+          "sha256": "046b96af325dcfbaad9a6d6d1033af041e0593708802ca27501544f15635d2d0",
+          "source_cell": 1,
+          "source_crop": [
+            190,
+            34,
+            204,
+            590
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/reader.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "fc315913b212d99e0fc2b04db8dc146944a6b2f6052adaf5757f97149c220f1e"
+        },
+        "front": {
+          "file": "reader_front.png",
+          "height_px": 245,
+          "sha256": "cb03a18fd2e92e9d546c638799750c644b98198ecf716d9857d5c49511d719f1",
+          "source_cell": 0,
+          "source_crop": [
+            258,
+            33,
+            203,
+            594
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/reader.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "fc315913b212d99e0fc2b04db8dc146944a6b2f6052adaf5757f97149c220f1e"
+        },
+        "profile": {
+          "file": "reader_profile.png",
+          "height_px": 245,
+          "sha256": "848b2281b80de1f90c3705e3d889937d96c5f5a100025e29089fed6ff7ca7080",
+          "source_cell": 2,
+          "source_crop": [
+            293,
+            17,
+            133,
+            577
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/reader.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "fc315913b212d99e0fc2b04db8dc146944a6b2f6052adaf5757f97149c220f1e"
+        },
+        "seated_back": {
+          "file": "reader_seated_back.png",
+          "height_px": 184,
+          "sha256": "b7beff0e6ef7966376ff66d8c469e8158d7002cce312581bb85ba8a7d31b8613",
+          "source_cell": 1,
+          "source_crop": [
+            128,
+            23,
+            302,
+            473
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/seated_back.png",
+          "source_grid": [
+            3,
+            2
+          ],
+          "source_sha256": "8579d4def8eae4f2d2dd4e136fe504f9549a86c6caf2ccc6f831d31790105342"
+        },
+        "seated_front": {
+          "file": "reader_seated_front.png",
+          "height_px": 184,
+          "sha256": "9e6457a08d76327cae2469736483936ab4afb024509581ccb42a4dc1f7b5b1ee",
+          "source_cell": 3,
+          "source_crop": [
+            153,
+            94,
+            269,
+            504
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/reader.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "fc315913b212d99e0fc2b04db8dc146944a6b2f6052adaf5757f97149c220f1e"
+        }
+      },
+      "source": "res://art/npc-painted-v1/sources/reader.png",
+      "source_sha256": "fc315913b212d99e0fc2b04db8dc146944a6b2f6052adaf5757f97149c220f1e",
+      "style_sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd"
+    },
+    {
+      "entity_id": "",
+      "front_x": -1.0,
+      "height_m": 1.78,
+      "id": "gardener",
+      "name": "Gardener",
+      "portrait": "",
+      "poses": {
+        "back": {
+          "file": "gardener_back.png",
+          "height_px": 256,
+          "sha256": "ef1090c038d59b1c359779445735bc6647ccd19015667201e0c30b21732808b1",
+          "source_cell": 1,
+          "source_crop": [
+            197,
+            10,
+            202,
+            602
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/gardener.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "ea9508ac7b8fc4cf036543a02b9c559744c57c94860191b72dbe630a9fbc70b6"
+        },
+        "front": {
+          "file": "gardener_front.png",
+          "height_px": 256,
+          "sha256": "4bb8cc32898047bed2ddc47243d0cc629f3c4642a85cd86bab5b538dab8f00d4",
+          "source_cell": 0,
+          "source_crop": [
+            237,
+            10,
+            206,
+            604
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/gardener.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "ea9508ac7b8fc4cf036543a02b9c559744c57c94860191b72dbe630a9fbc70b6"
+        },
+        "profile": {
+          "file": "gardener_profile.png",
+          "height_px": 256,
+          "sha256": "3c79cd62fa1a3532b2a580e05c6d093ead15a93ccc61aef15961fd95f42ccfc5",
+          "source_cell": 2,
+          "source_crop": [
+            288,
+            10,
+            129,
+            595
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/gardener.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "ea9508ac7b8fc4cf036543a02b9c559744c57c94860191b72dbe630a9fbc70b6"
+        },
+        "seated_back": {
+          "file": "gardener_seated_back.png",
+          "height_px": 192,
+          "sha256": "b80508d7f93d7c05dbc3d3d65385f11214b403f9852f810d30ab08c6e0af10ce",
+          "source_cell": 2,
+          "source_crop": [
+            125,
+            22,
+            289,
+            480
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/seated_back.png",
+          "source_grid": [
+            3,
+            2
+          ],
+          "source_sha256": "8579d4def8eae4f2d2dd4e136fe504f9549a86c6caf2ccc6f831d31790105342"
+        },
+        "seated_front": {
+          "file": "gardener_seated_front.png",
+          "height_px": 192,
+          "sha256": "08cccbfe992136d29e605721ac268f8e578447314d694773cfabe3ad7036cb1a",
+          "source_cell": 3,
+          "source_crop": [
+            103,
+            106,
+            304,
+            496
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/gardener.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "ea9508ac7b8fc4cf036543a02b9c559744c57c94860191b72dbe630a9fbc70b6"
+        }
+      },
+      "source": "res://art/npc-painted-v1/sources/gardener.png",
+      "source_sha256": "ea9508ac7b8fc4cf036543a02b9c559744c57c94860191b72dbe630a9fbc70b6",
+      "style_sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd"
+    },
+    {
+      "entity_id": "medic",
+      "front_x": 1.0,
+      "height_m": 1.68,
+      "id": "medic",
+      "name": "Medic",
+      "portrait": "res://data/crew/portraits/medic_neutral.png",
+      "portrait_sha256": "2f07d34148d2925e7ad4d728feabdcf3add7cafcd880427af2a078c2b6e0ed6e",
+      "poses": {
+        "back": {
+          "file": "medic_back.png",
+          "height_px": 242,
+          "sha256": "3fd142440789a7fdd7b9093c7fe24a68a4f5c32ec843299f75b5b761973ac979",
+          "source_cell": 1,
+          "source_crop": [
+            195,
+            22,
+            205,
+            598
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/medic.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "0f9aa76d0c44711c4359e7d427d233dfc95a981a531d2195380ef42d061ac74d"
+        },
+        "front": {
+          "file": "medic_front.png",
+          "height_px": 242,
+          "sha256": "98c4745bafbe8286589af0b44835b8f06dd99fe7bef68e578b3bd76272fc5e78",
+          "source_cell": 0,
+          "source_crop": [
+            252,
+            17,
+            215,
+            605
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/medic.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "0f9aa76d0c44711c4359e7d427d233dfc95a981a531d2195380ef42d061ac74d"
+        },
+        "profile": {
+          "file": "medic_profile.png",
+          "height_px": 242,
+          "sha256": "803dc207c830a07eb390f214835712b656e8c16dae4869299a509d3205396099",
+          "source_cell": 2,
+          "source_crop": [
+            312,
+            7,
+            131,
+            595
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/medic.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "0f9aa76d0c44711c4359e7d427d233dfc95a981a531d2195380ef42d061ac74d"
+        },
+        "seated_back": {
+          "file": "medic_seated_back.png",
+          "height_px": 181,
+          "sha256": "2b001a0b813fa9231070c2500c5bbed58d94f034bfbdf093da80710dc68e1dac",
+          "source_cell": 3,
+          "source_crop": [
+            191,
+            13,
+            311,
+            467
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/seated_back.png",
+          "source_grid": [
+            3,
+            2
+          ],
+          "source_sha256": "8579d4def8eae4f2d2dd4e136fe504f9549a86c6caf2ccc6f831d31790105342"
+        },
+        "seated_front": {
+          "file": "medic_seated_front.png",
+          "height_px": 181,
+          "sha256": "1337561a653566158c4763a64454972aea46cd2183ff9dbb6c8f4719946e3526",
+          "source_cell": 3,
+          "source_crop": [
+            128,
+            78,
+            288,
+            521
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/medic.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "0f9aa76d0c44711c4359e7d427d233dfc95a981a531d2195380ef42d061ac74d"
+        }
+      },
+      "source": "res://art/npc-painted-v1/sources/medic.png",
+      "source_sha256": "0f9aa76d0c44711c4359e7d427d233dfc95a981a531d2195380ef42d061ac74d",
+      "style_sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd"
+    },
+    {
+      "entity_id": "engineer",
+      "front_x": 1.0,
+      "height_m": 1.72,
+      "id": "engineer",
+      "name": "Chief Engineer",
+      "portrait": "res://data/crew/portraits/engineer_neutral.png",
+      "portrait_sha256": "458b195238f962d7075423388544c6b93eed2989d25ea036e95dfa1efd169c0c",
+      "poses": {
+        "back": {
+          "file": "engineer_back.png",
+          "height_px": 248,
+          "sha256": "2efb2fcdd49d7e90f10e34e884819b212d85d02a83bea84f8e6349b5d7b4ccbb",
+          "source_cell": 1,
+          "source_crop": [
+            188,
+            33,
+            216,
+            592
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/engineer.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "cc19444710b7110d003213076eeea3d06d5bf9271eb3ad2896081939d20c4fd4"
+        },
+        "front": {
+          "file": "engineer_front.png",
+          "height_px": 248,
+          "sha256": "c37f7ae76c32c53871d09baf54f68bd940310ceb257a36ac6044b43c82da2a5a",
+          "source_cell": 0,
+          "source_crop": [
+            228,
+            27,
+            223,
+            598
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/engineer.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "cc19444710b7110d003213076eeea3d06d5bf9271eb3ad2896081939d20c4fd4"
+        },
+        "profile": {
+          "file": "engineer_profile.png",
+          "height_px": 248,
+          "sha256": "46e9261aec0328be0fe1e3267b2954213fa2c25c2dad76a909c6d50c4189d50f",
+          "source_cell": 2,
+          "source_crop": [
+            267,
+            9,
+            141,
+            582
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/engineer.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "cc19444710b7110d003213076eeea3d06d5bf9271eb3ad2896081939d20c4fd4"
+        },
+        "seated_back": {
+          "file": "engineer_seated_back.png",
+          "height_px": 186,
+          "sha256": "43cd5757bbf09700bef4d450d5960cc0bc383a3f7f33f6d7bf556a0e14e98a46",
+          "source_cell": 4,
+          "source_crop": [
+            148,
+            15,
+            311,
+            465
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/seated_back.png",
+          "source_grid": [
+            3,
+            2
+          ],
+          "source_sha256": "8579d4def8eae4f2d2dd4e136fe504f9549a86c6caf2ccc6f831d31790105342"
+        },
+        "seated_front": {
+          "file": "engineer_seated_front.png",
+          "height_px": 186,
+          "sha256": "046289d7e7bc0886b30b255c9eb8ec8493232f74e4c2a10cfdae5eac7a02802c",
+          "source_cell": 3,
+          "source_crop": [
+            136,
+            101,
+            291,
+            487
+          ],
+          "source_file": "res://art/npc-painted-v1/sources/engineer.png",
+          "source_grid": [
+            2,
+            2
+          ],
+          "source_sha256": "cc19444710b7110d003213076eeea3d06d5bf9271eb3ad2896081939d20c4fd4"
+        }
+      },
+      "source": "res://art/npc-painted-v1/sources/engineer.png",
+      "source_sha256": "cc19444710b7110d003213076eeea3d06d5bf9271eb3ad2896081939d20c4fd4",
+      "style_sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd"
+    }
+  ],
+  "foot_anchor_px": [
+    96,
+    272
+  ],
+  "px_per_m": 144.0,
+  "schema": "stapledons.npc.painted/1",
+  "status": "visual pilot; not approved for production"
+}

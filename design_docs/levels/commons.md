@@ -79,7 +79,8 @@ exact-head `rig/full`/fast CI remain landing gates.
 | 2026-10-29 | D-133 | Develop one bounded lived-in court/arcade pilot; no blanket S3/S5 acceptance inferred. |
 | 2026-10-29 | D-134 | Enrich the wider backdrop toward the ship edge, using the concept's architectural/landscape depth and existing physical design. Review before propagation. |
 | 2026-10-29 | D-135 | Go further with the comic aesthetic and long tendril architecture; make the still-bare deck a living, breathing civic level. The next review adds connected planted middle ground, patterned paths and ambient activity; S3/S5 remain open. |
-| 2026-10-29 | D-139 | NPCs share the captain's painted comic style, with simpler animation. Replace the procedural 3D resident proxies. Named crew mingle in the crowd and retain their established portrait identities. Character replacement and crew presence remain pending implementation and review. |
+| 2026-10-29 | D-139 | NPCs share the captain's painted comic style, with simpler animation. Replace the procedural 3D resident proxies. Named crew mingle in the crowd and retain their established portrait identities. The first five-identity/25-pose asset and opt-in Commons preview is ready (D-140); production replacement and appearance approval remain pending. |
+| 2026-10-29 | D-140 | Start the painted NPC assets and feature work. First preview: three civilian identities plus portrait-derived Medic and Chief Engineer among the 42 residents, static painted poses in actual Bow/Astern views. See `art/npc-painted-v1/README.md`; bench contact, ground shadows and live crew binding are follow-ups before production. |
 
 ## Change log
 | Version | Date | What changed |
