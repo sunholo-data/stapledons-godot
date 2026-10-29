@@ -324,5 +324,11 @@
     "placement_checks": 44,
     "gpu_pole_cases": 6,
     "installed_in_production": false
+  },
+  "macro_backdrop_review": {
+    "decision": "D-134",
+    "status": "in_progress",
+    "scope": "Layered architecture/planting across the wider physical Commons deck; review-only refinement of D-133. Existing WALK/cameras/bridge/spire/live sky retained.",
+    "production_propagation": false
   }
 }

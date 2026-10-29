@@ -9,13 +9,21 @@ func _run()->void:
  var built:bool=await helper._build(false)
  var installed:=false
  if built:
-  var pilot:Dictionary=load("res://demos/commons_art_pilot.gd").install(helper.demo,"res://art/commons-lived-in-pilot/placements.json")
-  installed=pilot.ok
-  if not installed:printerr("commons-pilot-golden: ",pilot.errors)
-  else:
-   var marker:CollisionObject3D=helper.demo.geometry.find_child("GB_find_notice_board",true,false)
-   marker.visible=false;marker.collision_layer=0;marker.collision_mask=0
-   await physics_frame;await physics_frame
+  var args:=OS.get_cmdline_user_args()
+  var at:=args.find("--config")
+  var path:=args[at+1] if at>=0 and at+1<args.size() else "res://art/commons-lived-in-pilot/placements.json"
+  var config:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(path))
+  var configs:Array=[str(config.base_config),path] if config.has("base_config") else [path]
+  installed=true
+  for source:String in configs:
+   var pilot:Dictionary=load("res://demos/commons_art_pilot.gd").install(helper.demo,source)
+   installed=installed and pilot.ok
+   if not pilot.ok:printerr("commons-pilot-golden: ",pilot.errors)
+   var doc:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(source))
+   for id:String in doc.get("replace_markers",[]):
+    var marker:CollisionObject3D=helper.demo.geometry.find_child(id,true,false)
+    marker.visible=false;marker.collision_layer=0;marker.collision_mask=0
+  await physics_frame;await physics_frame
  var failures:int=await helper._level_poses(built and installed)
  await helper._free_demo()
  print("commons-pilot-golden: %d failures"%failures)

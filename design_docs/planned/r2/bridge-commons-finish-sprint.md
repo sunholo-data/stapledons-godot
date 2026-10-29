@@ -121,7 +121,7 @@ No tests/full suite were run during this documentation-only audit. At implementa
 
 ## Scope, risks and approval boundaries
 
-**Included:** finished first playable bridge/Commons views, five-stage Commons brief where feasible, calm captain integration, local cues, lighting/material/foliage continuity, laptop UI clarity and a reviewed dev build. A finished view means coherent art, navigation and presentation; it does not imply the entire 75.9 m tier is populated.
+**Included:** finished first playable bridge/Commons views, five-stage Commons brief where feasible, calm captain integration, local cues, lighting/material/foliage continuity, laptop UI clarity and a reviewed dev build. A finished view means coherent art, navigation and presentation. D-134 expands the review pilot to the wider physical Commons backdrop: broken civic fronts, planted terraces, market canopies and low rim gardens toward the 75.9 m edge. Background architecture can occupy existing physical deck beyond WALK; this adds no new traversable area or population simulation. Keep foreground, middle distance and distant planted silhouettes visible together from actual player cameras, with intentional live-sky avenues. All vertices remain inside the conservative 95 m envelope; no visible dome or enlarged spire.
 
 **Deferred:** Garden and other tiers, a new bridge stern gallery/mast-ring layout, new population/crowd simulation, crew-work systems, Archive-presence choice and Earth-link behavior owned by #344. These can remain separate roadmap lanes. Reusing shipped ambience/animation is in scope; broad new sound/character production needs its own reviewed slice.
 
@@ -132,3 +132,7 @@ Mark approved execution through D-130. The remaining S3/S5 pauses come from [lev
 ## Registry reuse
 
 VF0/VF1/VF2/VFB/VFU/VF3/VF4: **none** for new package capability. This scope writes no `.ail`, adds no physics formulas, and reuses repo-native `LevelSchema`, `LevelGreybox`, `LevelMetrics`, `CameraDirector`, `StapledonStyle` and `StapledonTheme`. No package-like capability is proposed, so no registry search is needed for this overlay. Any newly discovered package/maths work triggers a registry audit and design adjustment before handoff.
+
+## D-134 macro backdrop review
+
+Mark found the furniture pilot pleasant but too sparse across the wider deck compared with the concept. The next bounded pilot compares furniture alone with real architectural/landscape depth using `art/commons-backdrop-pilot/placements.json`. Capture Bow/Astern at rest, cruise and real stop, including the under-terrace clamp and a valid bridge rim point. Validate actual physical floor support outside WALK, whole-vertex envelope, original head/pole metrics and existing routes. Production propagation and S5 remain pending.
