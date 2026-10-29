@@ -51,6 +51,8 @@ func _initialize() -> void:
 	var entries := zip.get_files()
 	for problem: String in preload("res://tests/level_export_audit.gd").audit(zip):
 		fail(problem)
+	for problem: String in preload("res://tests/commons_civic_export_audit.gd").audit(zip):
+		fail(problem)
 	zip.close()
 	var strict := OS.get_environment("STRICT") == "1"
 	var f: Dictionary = ExportAudit.read_filters()

@@ -36,3 +36,6 @@ audio_bundle/
 
 # The project brain is local (CLAUDE.md "Project brain"); never commit it.
 .ailang/state/brain.db*
+
+# Generated pinned civic playtest configs (make commons-civic-stage).
+assets/levels/commons/civic/
