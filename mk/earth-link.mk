@@ -43,3 +43,11 @@ feed-art-check: ## R3-EARTH-LINK EL3b: catalogue = events.json = SOURCES, and ev
 	[ -n "$$live" ] && [ "$$live" = "$$ai" ] || { echo "feed-art-check: FAIL: ai/prompt.ail feedStyle differs from data/feed/events.json live_style"; exit 1; }; \
 	echo "feed-art-check: ok ($$(echo "$$sim" | wc -l | tr -d ' ') events, $$(wc -l < $(SCRATCH)/feed-pins.txt | tr -d ' ') pictures)"
 test: feed-art-check
+
+# EL3b.5: the comms station at four moments of a real voyage (tools/comms_station_capture.gd), for
+# Mark's render review. Needs a GPU window; never in make test.
+.PHONY: capture-comms-station
+capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home, away, waiting and homeward from the real sim -> renders/comms_station/*.png (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --resolution 1280x720 --script tools/comms_station_capture.gd > $(SCRATCH)/comms-station-capture.log 2>&1; rc=$$?; grep -E '^comms-station-capture' $(SCRATCH)/comms-station-capture.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-station-capture.log && grep -q '^comms-station-capture: 4 frames, 0 failures$$' $(SCRATCH)/comms-station-capture.log || { echo "comms-station-capture: FAILED (log $(SCRATCH)/comms-station-capture.log)"; exit 1; }

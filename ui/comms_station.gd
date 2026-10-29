@@ -1,14 +1,16 @@
 class_name CommsStation
 extends VBoxContainer
 ## R3-EARTH-LINK EL3b (Mark 2026-10-28, "visual first, words last"): the comms station's panel.
-## Earth's feed is the centre, with the twin clocks beside it (and the crew's faces, EL3b.4). The
-## words (EL3's Listen pane and Exchange log, CommsPanel) are the last layer, behind Details.
+## Earth's feed is the centre, with the twin clocks and the crew's faces (EL3b.4) beside it, and the
+## exchange as light (EL3b.5, EarthStrip) under them. The words (EL3's Listen pane and Exchange
+## log, CommsPanel) are the last layer, behind Details.
 
 signal pane_requested(pane: String)
 
 var feed := EarthFeed.new()
 var clocks := EarthClocks.new()
 var crew := CrewFaces.new()
+var strip := EarthStrip.new()
 var side := VBoxContainer.new()
 var details := Button.new()
 var words_box := VBoxContainer.new()
@@ -36,6 +38,7 @@ func _init() -> void:
 	side.add_child(clocks)
 	side.add_child(crew)
 	top.add_child(side)
+	add_child(strip)
 	details.name = "CommsDetails"
 	details.text = str(EarthFeed.copy().words.details)
 	details.toggle_mode = true
@@ -73,6 +76,7 @@ func refresh(view: Dictionary) -> void:
 	feed.refresh(view)
 	clocks.refresh(view)
 	crew.refresh(view)
+	strip.refresh(view)
 	for p: String in pane_buttons:
 		(pane_buttons[p] as Button).set_pressed_no_signal(words.pane == p)
 	if words_box.visible:

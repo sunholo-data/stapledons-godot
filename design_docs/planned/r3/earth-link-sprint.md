@@ -149,6 +149,11 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2
   - the station layout, with EL3's words behind Details;
   - `make capture-earth-link` gains the station at the four moments.
   - **Pause point:** Mark's render review.
+  - **Done (2026-10-29):** `ui/earth_strip.gd` (EarthStrip) under the feed; the sim's messages carry
+    from_ly, port_ly and arrive_t (and arrive_year); `make capture-comms-station` renders home, away,
+    waiting and homeward from the real sim (seed 7) to `renders/comms_station/`. The station-only
+    capture stands in for the four moments until EL5's `capture-earth-link` adds the map. Review fixes:
+    the static lets the last week show through, the tags sit on a dark backing, the ring has a disc.
 - **Acceptance:**
   - design EL3b's table, each row a test or an audit;
   - `make comms-station-test`, `make display-audit-comms`, `make feed-art-check`;

@@ -86,7 +86,7 @@ func _run() -> void:
 	f.refresh(out)
 	f.advance(0.2)
 	check("out of beam: the last beamed week under static", f.static_rect.visible and f.static_rect.texture != null and f.shown_key == EarthFeed.source_of(out.earth.last_feed))
-	check("the ring fills by out.progress, its label bound (%s)" % f.ring.label.text, f.ring.visible and is_equal_approx(f.ring.fill, 0.36) and f.ring.label.text == "8.30 yr until Earth's voice")
+	check("the ring fills by out.progress, its label bound (%s)" % f.ring.label.text, f.ring.visible and is_equal_approx(f.ring.fill, 0.36) and f.ring.label.text == "8.30 yr\nuntil Earth's voice")
 	check("the caption: the last week that got through (%s)" % f.caption.text, f.caption.text == "market day · the last week that got through")
 	check("no signal (%s)" % f.signal_tag.text, f.signal_tag.text == "no signal" and not f.clock_tag.visible)
 	check("every number on the feed is a binding", DisplayBinding.audit(f).is_empty())
@@ -107,12 +107,50 @@ func _run() -> void:
 	check("the pilot's warm face (loving)", (st.crew.get_child(1).get_node("Feeling") as Label).text == "warm" and (st.crew.get_child(1).get_node("Face") as TextureRect).texture == CrewPage.face("pilot", "loving") and CrewPage.face_path("pilot", "loving").ends_with("pilot_loving.png"))
 	st.refresh(view({}))
 	check("no crew aboard: no faces", not st.crew.visible)
+	test_strip(st)
 	st.queue_free()
 	await test_live(root)
 	root.queue_free()
 	await process_frame
 	print("earth-feed: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
+
+
+## EL3b.5: the exchange as light. A plan from home (heard at once, Earth's reply ahead of the ship),
+## then a re-plan 4.37 ly out to a port 20 ly from home: its light home, Earth's reply out, the wait
+## at the port; the ship is in flight (now 12), so the second leg's end is still to come.
+func test_strip(st: CommsStation) -> void:
+	var ms := [
+		{"plan_id": 1, "port_id": "A", "from_ly": 0.00001, "port_ly": 4.37, "sent_t": 0.0, "heard_t": 0.0, "reply_t": 4.37, "arrive_t": 4.4},
+		{"plan_id": 2, "port_id": "B", "from_ly": 4.37, "port_ly": 20.0, "sent_t": 5.0, "heard_t": 9.37, "reply_t": 29.37, "arrive_t": 25.0}]
+	var v := view({"messages": ms, "newest_light_t": 2.0, "light_age_years": 10.0})
+	v.clock["t"] = 12.0
+	st.refresh(v)
+	var s := st.strip
+	var kinds := {}
+	for el: Dictionary in s.elements: kinds[el.kind] = int(kinds.get(el.kind, 0)) + 1
+	check("the station shows the strip under the feed", s.visible and s.get_parent() == st and s.get_index() == 1)
+	check("both legs (the one in flight through the ship now), the stop between them, one plan's light home (the first was heard at once), two replies, one wait, the newest light (%s)" % [kinds],
+		kinds == {"ship": 4, "plan": 1, "reply": 2, "wait": 1, "light": 1})
+	var fields := [0.00001, 4.37, 20.0, 0.0, 9.37, 29.37, 4.4, 5.0, 25.0, 12.0, 10.0, 2.0]
+	var bound := true
+	for el: Dictionary in s.elements:
+		for p: Vector2 in [el.a, el.b]:
+			bound = bound and fields.any(func(x: float) -> bool: return is_equal_approx(p.x, x)) and fields.any(func(y: float) -> bool: return is_equal_approx(p.y, y))
+	check("every endpoint is a sim field (sent, from, heard, reply, port, arrive, clock.t, the newest light)", bound)
+	var wait: Dictionary = s.elements.filter(func(el: Dictionary) -> bool: return el.kind == "wait")[0]
+	check("the wait: at the port from arrival until Earth's reply", is_equal_approx(wait.a.x, 25.0) and is_equal_approx(wait.b.x, 29.37) and is_equal_approx(wait.a.y, 20.0))
+	check("the strip spans the first plan to the last reply, home to the farthest port", is_equal_approx(s.span.position.x, 0.0) and is_equal_approx(s.span.end.x, 29.37) and is_equal_approx(s.span.size.y, 20.0))
+	s.size = Vector2(600, 116)
+	var px := s.at(s.now)
+	check("the ship now sits inside the strip (%s)" % px, px.x > 0.0 and px.x < 600.0 and px.y > 0.0 and px.y < 116.0)
+	check("a picture: no words or numbers on it", s.get_child_count() == 0 and DisplayBinding.audit(s).is_empty())
+	ms.append({"plan_id": 3, "from_ly": 20.0, "port_ly": 30.0, "sent_t": 26.0, "heard_t": 46.0, "reply_t": 76.0, "arrive_t": 40.0})
+	ms.append({"plan_id": 4, "from_ly": 30.0, "port_ly": 31.0, "sent_t": 41.0, "heard_t": 71.0, "reply_t": 102.0, "arrive_t": 42.0})
+	st.refresh(v)
+	check("only the newest %d plans" % EarthStrip.SHOWN, s.elements.filter(func(el: Dictionary) -> bool: return el.kind == "reply").size() == EarthStrip.SHOWN)
+	st.refresh(view({"messages": []}))
+	check("no plans sent yet: no strip", not s.visible)
 
 
 func test_live(root: Control) -> void:

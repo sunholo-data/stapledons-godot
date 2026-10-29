@@ -752,7 +752,7 @@ export pure func tick(w: World, input: TickInput) -> Ticked
 -- where the autopilot lands (arrivalPoint), so a later stop on its ray from Sol is on the beam.
 -- Every tick also notes the newest beamed light while in beam (the silence line's date).
 pure func flownOf(j: Journey) -> Option[Commitment] = match j { Committed(c) => Some(c), Arrived(c) => Some(c), _ => None }
-pure func sendOf(l: Link, c: Commitment, p: Params) -> Link = sendPlan(l, c.plan.id, c.plan.target.id, c.plan.from, arrivalPoint(p, c.plan), c.t0, c.tau0)
+pure func sendOf(l: Link, c: Commitment, p: Params) -> Link = sendPlan(l, c.plan.id, c.plan.target.id, c.plan.from, arrivalPoint(p, c.plan), c.t0, c.tau0, c.plan.trip.trip.galaxyTime)
 export pure func linkAfter(before: World, after: World) -> Link {
   let sent = match (flownOf(before.journey), flownOf(after.journey)) {
     (Some(b), Some(c)) => if b.plan.id == c.plan.id then after.link else sendOf(after.link, c, after.params),
