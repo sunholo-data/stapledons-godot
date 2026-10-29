@@ -1,0 +1,358 @@
+{
+  "schema": "stapledons.commons-grown.kit/1",
+  "status": "bounded connective grown-architecture pilot; review only; root owns world placement and production activation",
+  "frame": "metres; identity floor roots; Blender+Zup/+Yfront; glTF(x,z,-y)",
+  "asset": "commons_grown_kit_v1.glb",
+  "asset_bytes": 3358308,
+  "asset_sha256": "4a9d9340a8ec58be26361910dbc82a2dd598d47ece2d577c33b63402b12382d2",
+  "triangles": 26976,
+  "materials": 1,
+  "images": 1,
+  "texture_size_px": [
+    1536,
+    1024
+  ],
+  "texture_sha256": "ee6753e59aa3992b30c9ccde6f2c21fce1ef6d9a9cc02c44c1e862074b5f4e26",
+  "palette": [
+    "cream",
+    "teal",
+    "ochre",
+    "violet",
+    "coral",
+    "leaf"
+  ],
+  "texture_sources": [
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/cream.png",
+      "sha256": "d32429596eb837f5ee33dd19deb790566beff581648e2e1845a78342e803a4f0"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/teal.png",
+      "sha256": "9b1bb53aa9be942345ca60dde419cc4612dc2475bf5137259a27ebd337c513ac"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/ochre.png",
+      "sha256": "2074468e54dda721d944ec6a774ee004fafafd4958122c07d83e3e7fde522c85"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/violet.png",
+      "sha256": "d10f364697518fa28079d54d22a3f329efbda0364cb3fc9ae5e23dd2b2891622"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/coral.png",
+      "sha256": "4cd5aa278e0825b9cfcbd19a890f712adf997907d8ac96b393f797dd496edb16"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/leaf.png",
+      "sha256": "a4f0df524351b86d4b5316c7d997a2a1ed8737d2de7382a66e640303edab63a7"
+    }
+  ],
+  "surface": "Existing gouache pigments only, roughness0.82; no emission, sky, AO/light bake or camera projection. Real game toon/ink and lights remain live.",
+  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_commons_grown_pilot_v1.py",
+  "authoring_script_sha256": "305d2bb5b8bae23ec49830afe8d1a76f4fa495c91d118ef3bb76a866345f5508",
+  "master": "/Users/voightkampff/dev/blender/scenes/stapledon_commons_grown_pilot_v1.blend",
+  "master_sha256": "4f35013c2c8f63d2f9ed18b50522cda103661b86c2757815ad6470a6234308ac",
+  "props": [
+    {
+      "id": "tendril_arch",
+      "source_root": "tendril_arch",
+      "triangles": 8536,
+      "bounds_blender_m": {
+        "min": [
+          -8.449999809265137,
+          -0.8199999928474426,
+          0.0
+        ],
+        "max": [
+          8.00722599029541,
+          0.949999988079071,
+          10.007803916931152
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -8.449999809265137,
+          0.0,
+          -0.949999988079071
+        ],
+        "max": [
+          8.00722599029541,
+          10.007803916931152,
+          0.8199999928474426
+        ]
+      },
+      "solid_meshes": [
+        "tendril_arch__structure"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "planted_island",
+      "source_root": "planted_island",
+      "triangles": 5984,
+      "bounds_blender_m": {
+        "min": [
+          -6.0,
+          -1.4285162687301636,
+          0.0
+        ],
+        "max": [
+          6.0,
+          1.8426334857940674,
+          1.5383403301239014
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -6.0,
+          0.0,
+          -1.8426334857940674
+        ],
+        "max": [
+          6.0,
+          1.5383403301239014,
+          1.4285162687301636
+        ]
+      },
+      "solid_meshes": [
+        "planted_island__structure"
+      ],
+      "foliage_anchors": [
+        {
+          "name": "FOLIAGE_planted_island_0",
+          "local_blender_m": [
+            -4.92,
+            0.08893118061031771,
+            0.668330456007707
+          ],
+          "local_gltf_m": [
+            -4.92,
+            0.668330456007707,
+            -0.08893118061031771
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_1",
+          "local_blender_m": [
+            -3.84,
+            0.49489662071789364,
+            0.7694394039913511
+          ],
+          "local_gltf_m": [
+            -3.84,
+            0.7694394039913511,
+            -0.49489662071789364
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_2",
+          "local_blender_m": [
+            -2.76,
+            0.20200660584226773,
+            0.8317392375390628
+          ],
+          "local_gltf_m": [
+            -2.76,
+            0.8317392375390628,
+            -0.20200660584226773
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_3",
+          "local_blender_m": [
+            -1.6799999999999997,
+            0.4829885119659933,
+            0.8482580873940839
+          ],
+          "local_gltf_m": [
+            -1.6799999999999997,
+            0.8482580873940839,
+            -0.4829885119659933
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_4",
+          "local_blender_m": [
+            -0.5999999999999996,
+            -0.08037132349379127,
+            0.8228237845862792
+          ],
+          "local_gltf_m": [
+            -0.5999999999999996,
+            0.8228237845862792,
+            0.08037132349379127
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_5",
+          "local_blender_m": [
+            0.6000000000000005,
+            0.08037132349379118,
+            0.7610203857112897
+          ],
+          "local_gltf_m": [
+            0.6000000000000005,
+            0.7610203857112897,
+            -0.08037132349379118
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_6",
+          "local_blender_m": [
+            1.6799999999999997,
+            -0.48298851196599335,
+            0.6941554388389259
+          ],
+          "local_gltf_m": [
+            1.6799999999999997,
+            0.6941554388389259,
+            0.48298851196599335
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_7",
+          "local_blender_m": [
+            2.76,
+            -0.20200660584226773,
+            0.6333162972761671
+          ],
+          "local_gltf_m": [
+            2.76,
+            0.6333162972761671,
+            0.20200660584226773
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_8",
+          "local_blender_m": [
+            3.84,
+            -0.49489662071789386,
+            0.5884739934981473
+          ],
+          "local_gltf_m": [
+            3.84,
+            0.5884739934981473,
+            0.49489662071789386
+          ]
+        },
+        {
+          "name": "FOLIAGE_planted_island_9",
+          "local_blender_m": [
+            4.92,
+            -0.08893118061031763,
+            0.5611650970119076
+          ],
+          "local_gltf_m": [
+            4.92,
+            0.5611650970119076,
+            0.08893118061031763
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rib_shade_canopy",
+      "source_root": "rib_shade_canopy",
+      "triangles": 12456,
+      "bounds_blender_m": {
+        "min": [
+          -4.771850109100342,
+          -2.311685085296631,
+          0.0
+        ],
+        "max": [
+          4.771854400634766,
+          2.287750005722046,
+          4.516129016876221
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -4.771850109100342,
+          0.0,
+          -2.287750005722046
+        ],
+        "max": [
+          4.771854400634766,
+          4.516129016876221,
+          2.311685085296631
+        ]
+      },
+      "solid_meshes": [
+        "rib_shade_canopy__structure"
+      ],
+      "foliage_anchors": []
+    }
+  ],
+  "batching": {
+    "meshes_per_module": 2,
+    "same_atlas_material": true,
+    "original_parts": {
+      "tendril_arch": {
+        "structure": [
+          "tendril_arch__cream_east_root",
+          "tendril_arch__cream_west_root"
+        ],
+        "details": [
+          "tendril_arch__ochre_east_vein",
+          "tendril_arch__ochre_west_vein",
+          "tendril_arch__teal_east_split",
+          "tendril_arch__teal_west_split",
+          "tendril_arch__violet_east_split",
+          "tendril_arch__violet_west_split"
+        ]
+      },
+      "planted_island": {
+        "structure": [
+          "planted_island__continuous_planter_body",
+          "planted_island__continuous_seated_lip",
+          "planted_island__garden_back_sweep"
+        ],
+        "details": [
+          "planted_island__living_soil_bed",
+          "planted_island__violet_seat_edge"
+        ]
+      },
+      "rib_shade_canopy": {
+        "structure": [
+          "rib_shade_canopy__curved_leaf_shade",
+          "rib_shade_canopy__east_rooted_spine",
+          "rib_shade_canopy__west_rooted_spine"
+        ],
+        "details": [
+          "rib_shade_canopy__grown_cross_rib_0",
+          "rib_shade_canopy__grown_cross_rib_1",
+          "rib_shade_canopy__grown_cross_rib_2",
+          "rib_shade_canopy__grown_cross_rib_3",
+          "rib_shade_canopy__grown_cross_rib_4",
+          "rib_shade_canopy__grown_cross_rib_5",
+          "rib_shade_canopy__ochre_leaf_edge_0",
+          "rib_shade_canopy__ochre_leaf_edge_1"
+        ]
+      }
+    }
+  },
+  "concepts_inspected": [
+    "art/ship-tier-concepts-v1/commons.png",
+    "art/ship-layers-v1/ship_layers_concept_v1.png"
+  ],
+  "constraints": "No habitable core/dome/new major deck or bridge/spire changes. Commons floor57.025; root validates whole placed vertices/plant crowns inside95m, protected north sky corridorx10..39, and actual Bow/Astern views. Roots are physical, never camera-attached.",
+  "preview": "Neutral Metal studio diagnostic only; arranged copies are not world placement; plants supplied by consumer from existing painted foliage.",
+  "source_preservation": {
+    "status": "local recoverable archive only; no public upload/off-host backup claimed",
+    "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-grown-source/commons-grown-source-v1.tar.gz",
+    "bytes": 5589972,
+    "sha256": "9e5819a6e1fdd3333c325ff14fdd7f1c7ca4d3f980b37fce710c47e5d4bacba7"
+  },
+  "validation": {
+    "clean_import": "passed:3identityroots/6batchedmeshes/26976triangles/exactbounds/10soilanchors",
+    "physical_geometry": "15central arch-clearance rays +3canopy headroom rays pass;10soil anchors land within4cm of real soil surface; diagnostic checks do not certify world navigation",
+    "palette": "one UV layer per mesh; imported archdetails retain teal7080/violet7080/ochre912UVloops; nonblack1536x1024atlas;1referencedmaterial/1image",
+    "workspace_inspect": "passed; no missing external resources; master includes linked hero duplicates plus diagnostic floor",
+    "validator": "/Users/voightkampff/dev/blender/scripts/validate_stapledon_commons_grown_pilot_v1.py",
+    "validator_sha256": "abd42e8658c22d1536b14d4165908a08f43fc7d7803649009b6f9516d8338f1f",
+    "hero": "kit-hero-studio.png",
+    "hero_sha256": "ed57668beed898a071d1a347335e237a876e2520e8371b3a7a5be56dccccdbf2",
+    "hero_render": "Cycles Metal Apple M4 Max48samples; final corrected pigments and silhouettes visually inspected"
+  }
+}
