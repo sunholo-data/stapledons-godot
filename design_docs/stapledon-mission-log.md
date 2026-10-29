@@ -1328,3 +1328,66 @@ DECISIONS FOR MARK: D-128 (new: position of row 7m-d, the docked-p99 measurement
 - **Next:** D-129 (Mark: OQ1–OQ4) → M1b (rig wiring and three gmake baselines) → M2. Meanwhile, per D-128 default A: 7m-d whenever the rig is quiet, then K1.1a-a4 → a5 → L9 S0.3 → L3.
 
 DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied this fire) and D-129 (new: L4's OQ1–OQ4. A = accept all four defaults; B = as A but a missing gmake falls back loudly to serial; C = instrument only, the rig stays on serial 3.81. Recommendation A. Default if unanswered: M1b/M2 stay parked.)
+
+## 57 — 2026-10-29 — L4 M1a LANDED (PR #349, merge `81e240f0`; `rig/full` 87 min, fast tier green on the merge) and Kerr K1.1a-a4 BUILT (PR #352), merge PARKED-ON-LANE: `rig/full` red at `crew-perf` (5.08 s against its 4.0 s budget at rig load 18–36), and main fails the same check the same way under that load: eight in-copy mutation drills of the oracle (two survivors killed: Decimal precision 20, and NaN dying for the wrong reason), RK-3 and RK-9 added; independent Sonnet 90/100 PASS, zero blocking [HARNESS]
+
+- **Pick:** two items. (1) Land PR #349 (iteration 56's M1a), the STATUS 56 **Next**: `rig/full` run 3 was green on `86b96103` (87 min) and the fast tier green; `git log` from its base to main showed only iteration 56's record (#350, eight record files, none in the PR's file list). This is verify-and-land bookkeeping, so standing rule 1 allows a second item. (2) **K1.1a-a4**, next in the order after L4 (D-126 C; D-128 default A), because 7m-d failed its predicate again and L4's M1b/M2 are parked on D-129.
+  - 7m-d predicate at pick (about 09:28Z): GPU `Device Utilization %` 99/100/100, 1-min load 16.15. PARKED-ON-LANE again (third consecutive fire). A later read at 09:43Z, with this iteration's own `rig/full` running, gave GPU 84–87 % and load 18.6.
+  - Critical path, gate 2 rule (b): the only row on the UNMET clause 4 (7m AC1 via 7m-d) was not routable, so the pick stands.
+  - Held files: open PRs #344, #346 and #351 touch `Makefile` (and #346 `tools/python-allowlist.txt`); none touches the three Kerr oracle files, and a4 needed no `Makefile` change.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Goal unmoved: both landings are test tooling (L4 merge-gate speed, Kerr oracle for R2).
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 directives since 2026-10-27T11:22:14Z (10 comments).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Inbox: two driver controlplane notices for this fire (pinned source clone 26 behind; codex over its daily ration, so the planner went to kimi-k3 and the executor to Haiku 5.5). No mission-stapledon directives.
+  - Not the first iteration after the Monday rotation, so no sweep.
+  - The main checkout (`MISSION_WORKDIR`) is on the attended branch `feat/bridge-commons-finish` (PR #351) with uncommitted files. The loop did not touch it; all work ran in fresh sibling clones (`.stap-iter57-src`, `-eval`, `-rec`). Attended ledger rows D-130 (in #351) and D-131/D-132 (uncommitted, attended tree) are R2-VIEW-FINISH rulings; no loop action.
+- **Gate 1:**
+  - Base `b07c976356b58e3ca63e7b98f34fff9a0306e835` at 2026-10-29T09:30:09Z; main = origin/main.
+  - All 14 skill files at the resolved symlink match `origin/dev`.
+  - Main's check set: 1 check, fast tier success. Open loop PRs: #349 (this mission's, branch `mission/stapledon-iter56-l4`). #344, #346 and #351 are attended.
+- **Landing #349 (L4 M1a):** `gh pr merge 349 --merge --match-head-commit 86b96103…` → merge `81e240f042764c9f4562a2137c590e183d219a6d`. Gate 3b: fast tier on the merge **success** (poll pinned to the full SHA). Sprint `R1-RIG-TEST-SPEED` M1a `passes` true. The design's 50 ms text (§1c and the risks table) now states the shipped bound: child CPU ≤ 150 ms a line plus a 1 s a line wall hang guard, with the wall time printed (iteration 56 evaluator round 2, non-blocking).
+- **K1.1a-a4 execution (Haiku 5.5 via the Agent tool, foreground, in `.stap-iter57-src`; the controller committed):**
+  - `tools/test_kerr_oracle.sh`: `check` takes the root as an argument. After the real check passes, eight mutants of a COPY of `kerr_ref.py` run in a `mktemp -d` root: factor2, sqrt-branch, domain, nan, six-decimal, empty-fixture, wrong-unit, precision. Each must fail and its stderr must contain the named assertion label; a mutation that changes nothing exits 3 (instrument failure); `test "$n" -eq 8`.
+  - Measured first (RED): `precision` (Decimal precision 20) **survived**; `nan` was killed by an uncaught `decimal.InvalidOperation` traceback, the wrong reason. Fixes: `assert ref['getcontext']().prec == 60, 'Decimal60 precision'`, and the domain loop catches `(ValueError, ArithmeticError)` so the NaN mutant reaches the validation assertion. The other six were already killed by the right assertion.
+  - Owed by amendment `iter52-kerr-a3-landing`: **RK-3** (equatorial static limit 2 at s = 0.5, 0.9, 0.998) and **RK-9** (Ω_H at s = 0.9, design literal `0.31339450313662925`) are fixture rows, regenerated by the tool and asserted against the design table's literals (RED first: `missing record: ('RK-3', '0.5', 'static-limit')`). The unused `cos_theta` parameter of `static_limit` is dropped; it is now the constant 2 after spin validation.
+  - **Controller fix:** each drill re-set one `EXIT` trap, so only the last temp dir was removed and every run leaked 7 (`$TMPDIR` count 324 → 331). The drill now removes its own dir; three runs (`sh`, `make`, `gmake`) leaked 0.
+  - Controller gates outside any sandbox: `sh tools/test_kerr_oracle.sh`, `make kerr-oracle`, `gmake kerr-oracle`, `--check`, generated output `cmp` fixture, `make python-guard lint-precision`, `git diff --check`: all rc 0. Size 73 of the 120-line cap. Commit `2b47456b`.
+- **Evaluation:** Sonnet via the Agent tool, foreground, own clone `.stap-iter57-eval` at `2b47456b`, no controller findings handed over. **90/100 PASS, zero blocking** (`eval_R2-KERR_K1.1a-a4_round_1.json`). It re-derived RK-9 independently (Decimal precision 50: 0.31339450313662924709… → the design literal) and ran its own mutants: the precision assert, the drill count, the RK-3/RK-9 values and `static_limit`'s spin validation are killed. Non-blocking: the `cmp` no-op guard, the `grep` reason check and the per-drill cleanup survive their own removal (no test guards the harness's guards); `nan` depends on the `ArithmeticError` broadening and `six-decimal` on RK-10 being the first `DOC` key; `static_limit` as a constant weakens the oracle's independence for RK-3 and RK-18's static-limit row (an identity in s per the design, pinned by the `DOC` literals); the off-equator formula (design line 116) has no Python oracle until an anchor exists. The controller reproduced the cleanup survivor before the fix (the 7-dir leak).
+- **Landing / Gate 3b (K1.1a-a4):** PR #352, head `2b47456b`. Fast tier on the head: success. `rig/full` run 1, launched by the controller at 09:40Z (1-min load 5), was **RED** at 10:21Z (41 min) at `crew-perf`: `crewSkip: days 3652 holds 1, 5.08 s; budget 4.0 s`. Every earlier target passed. Controller triage (rule 3d, with main as the control arm, interleaved in the rig clone at 1-min load 30–36): the PR tree read 5.31, 5.25, 5.24 and 6.32 s; main `81e240f0` read 5.89 and 5.58 s. The load came from ailang backlog builds and the attended view-finish Godot tests and goldens. The PR changes only the three oracle files, which `crew-perf` cannot reach, so the red is the rig load, not the PR. **Merge PARKED-ON-LANE** (rig capacity, standing rule 8). Resume predicate: `rig/full` success on `2b47456b` from a re-run started when the 1-min load is below 8 (16 cores); then merge on the fast tier and set K1.1a-a4 `passes`. Not merged; sprint `passes` unchanged.
+- **Record:** charter (STATUS 57; STATUS 54 rotated to the archive; L4 row M1a LANDED; Kerr row a4; 7m-d re-measured; CURRENT GOAL counter; iteration-57 process fix), this entry, the index, the dashboard, the a4 evaluation, the L4 sprint JSON (M1a `passes` true), and the design's 50 ms reconciliation. New row **7v** (crew-perf wall budget under load).
+- **Routing evidence**
+
+  base=81e240f042764c9f4562a2137c590e183d219a6d@2026-10-29T10:25:11Z. (A first `record gate4` read `2b47456b…`: this record clone was cloned from the sprint clone, so its `origin/HEAD` named the sprint branch; fixed with `git remote set-head origin main` and re-recorded.)
+
+  Resolver output: executor `recipe claude:claude-haiku-5-5 declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`. No designer (the Kerr design and plan exist; D-116 A authorises the K1.1a children) and no planner (amendment iter49 already specifies a4). Driver note: codex over its daily ration (probe rc 75), so the planner lane was `pi:ollama/kimi-k3:cloud` (unused) and the executor `claude:claude-haiku-5-5`.
+
+  Per the operator's standing request, both roles ran through the Agent tool: the executor as `haiku` (the same model as its pin, as in iteration 55) and the evaluator as `sonnet`. No role failed to spawn.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Executor Agent `haiku` = `claude:claude-haiku-5-5`: 96,279 tok, 24 tool uses, 3.8 min. Quota bucket anthropic.
+  - Evaluator Agent `sonnet`: 45,894 tok, 2.3 min. Quota bucket anthropic.
+  - Judge independence: same vendor, different model (Haiku executor, Sonnet judge, Opus controller); `judge-independence: same-vendor-different-model`.
+  - Quorum: none (no new or revised doc). metered=$0.00.
+- **Ruled out:**
+  - 7m-d this fire (GPU 99–100 %, load 16).
+  - M1b and M2 before D-129 (guardrail: stop at Open questions); M3 (held on `Makefile` by #344/#346, and now #351).
+  - Waiting for an unrelated ailang `make test` before launching `rig/full`: the 1-min load was 5 at launch. It rose to 18–36 during the run.
+  - Re-running `rig/full` at once after the red: the load was 30 on 16 cores, and `crew-perf` failed on main too. A re-run would most likely repeat the red and add load under the attended session.
+  - Raising or re-measuring `crew-perf`'s 4.0 s budget in this PR: it is a perf threshold (D-82 lineage, Mark), and `Makefile` is held by #344, #346 and #351. Filed as row 7v.
+  - Setting the a4 sprint `passes` before `rig/full` is green (iteration 46 process fix).
+  - An off-equator `static_limit` anchor: the design gives no off-equator literal, and an anchor copied from oracle output is not an independent check.
+  - Folding the judge's harness-guard survivors into this PR: they are non-blocking, and a5 (terminal wiring) touches the same script.
+- **Upstream:** none.
+- **Retro:**
+  - Frictions:
+    1. The drill template's "cleanup trap right after `mktemp`" (iteration 35 process fix), applied inside a function that runs eight times, leaks every dir but the last, because each `trap … EXIT` replaces the previous one. Neither the executor's gates nor its report measured `$TMPDIR`; the controller found it by counting dirs before and after, and the judge independently re-measured it.
+    2. Sibling clones made from a local clone inherit that clone's `HEAD` as `origin/HEAD`, and `mission-base.sh` reads `origin/HEAD`: the record clone (cloned from the sprint clone) first recorded the sprint head `2b47456b` as the Gate-4 base, and the sprint clone (cloned from the main checkout) had `origin/HEAD` on the attended branch. Caught by reading the value; fixed with `git remote set-head origin main`.
+    3. The judge's own mutants found three harness guards (the `cmp` no-op guard, the `grep` reason check, the cleanup) that survive their own removal: a drill harness needs a control for its guards, not only for the mutants.
+  - **Process fix** (charter, "How to use the loop", iteration 57 retro): a drill that creates temp dirs in a loop removes each one before the next (one parent `mktemp -d` with a single trap is better), and the executor's gate list counts `$TMPDIR` entries before and after a run. A sibling clone made from a local clone runs `git remote set-head origin main` before any `mission-base.sh` read.
+  - Harness share: iterations 55–57 are merge-gate and test tooling; no loop-harness work in 36–57.
+  - Last three landings: #349 none (directed L4 tooling), #345 none, #341 clause 4. (#352 is not landed.) Clause 4's only row (7m-d) was lane-parked, so no DRIFT.
+- **Next:** **Re-run `rig/full` on #352 (`2b47456b`) when the 1-min load is below 8**, then merge. 7m-d whenever the rig is quiet (D-128 default A). D-129 (Mark) → L4 M1b → M2. Then K1.1a-a5 (terminal wiring; fold in the a4 judge's harness-guard survivors) → L9 S0.3 → L3.
+
+DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 (L4's OQ1–OQ4; recommendation A; default: M1b/M2 stay parked). Both unchanged.
