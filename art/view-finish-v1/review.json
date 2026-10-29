@@ -1,8 +1,35 @@
 {
-  "title": "Bridge & Commons · grown civic life",
-  "revision": "D-135 · grown4a9d9340 · config5de067ef",
-  "round": "D-135 comic/grown living Commons review",
+  "title": "Bridge & Commons · playable civic review",
+  "revision": "Native 755cd4b1 · reviewed grown civic art installed",
+  "round": "D-136 native playtest",
   "frames": [
+    {
+      "group": "playtest",
+      "source": "res://renders/view-finish/civic-playtest-native/bridge.png",
+      "file": "civic_native_755cd4b1_bridge.png",
+      "title": "Bridge · packaged playtest",
+      "note": "Captured from the exported Mac app with bundled assets/runtime and fresh settings. Real player camera and HUD; the reviewed art and ambient residents are installed.",
+      "label": "Native playable build · actual HUD",
+      "revision": "755cd4b1"
+    },
+    {
+      "group": "playtest",
+      "source": "res://renders/view-finish/civic-playtest-native/commons_bow.png",
+      "file": "civic_native_755cd4b1_commons_bow.png",
+      "title": "Commons · Bow · packaged playtest",
+      "note": "Captured from the exported Mac app with bundled assets/runtime and fresh settings. Real player camera and HUD; the reviewed art and ambient residents are installed.",
+      "label": "Native playable build · actual HUD",
+      "revision": "755cd4b1"
+    },
+    {
+      "group": "playtest",
+      "source": "res://renders/view-finish/civic-playtest-native/commons_astern.png",
+      "file": "civic_native_755cd4b1_commons_astern.png",
+      "title": "Commons · Astern · packaged playtest",
+      "note": "Captured from the exported Mac app with bundled assets/runtime and fresh settings. Real player camera and HUD; the reviewed art and ambient residents are installed.",
+      "label": "Native playable build · actual HUD",
+      "revision": "755cd4b1"
+    },
     {
       "group": "grown",
       "source": "res://art/ship-tier-concepts-v1/commons.png",
@@ -2252,8 +2279,18 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "New concept-led preview: sweeping rooted architecture, connected planted courts, trailing foliage and occupied market/dining spaces. Compare the reference with the moving study, then the matched before/after views. Review-only; the existing routes, ship proportions and live sky are retained. The native download is the earlier S3 build and does not contain these art pilots.",
+  "notice": "Playable Mac build now available below: the reviewed grown architecture, planting, furniture and ambient activity are installed in the normal New game route. Download, unzip and open Stapledons Voyage.app. Use WASD to walk, E at the lift landing, and Tab for help. Both devices need Tailscale. This is a playtest; remaining layout observations and finishing/performance work continue.",
   "downloads": [
+    {
+      "source": "res://build/macos/Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
+      "file": "Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
+      "title": "Play grown Commons · macOS · NEW playable build",
+      "note": "Contains the reviewed grown civic art and live activity. Unzip, open Stapledons Voyage.app, choose New game; E at the lift landing descends to Commons. WASD walks; Tab opens help. Bundled AILANG v0.54.18. Native fresh-settings startup, movement, live/reduced activity and lift round trip pass. Earlier S3 build below is retained as a reference.",
+      "commit": "755cd4b11bc99648a74fefb81f9c3b89ed315ba1",
+      "version": "v0.4.0-dev.37-living-bridge-99-g755cd4b1",
+      "sha256": "00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8",
+      "bytes": 445933530
+    },
     {
       "source": "res://build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
       "file": "Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",

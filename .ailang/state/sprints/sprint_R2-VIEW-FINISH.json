@@ -395,7 +395,7 @@
   },
   "playable_civic_review": {
     "decision": "D-136",
-    "status": "building_native_artifact",
+    "status": "ready_for_playtest",
     "scope": "Normal ship entry activates the reviewed art and ambient activity; native build on existing private Tailscale route. No full S3/S5/landing acceptance inferred.",
     "runtime_tests": {
       "passed": 18,
@@ -421,6 +421,19 @@
       "skips": 0,
       "failed": 0
     },
-    "packaging_correction": "Actual pack test caught ignored nested directories; switched to explicit nested includes and raw .glb.bin/.png.bin staging without .gdignore. Runtime loader now reads its own JSON and PNG buffers without excluded tool dependencies. No checks weakened."
+    "packaging_correction": "Actual pack test caught ignored nested directories; switched to explicit nested includes and raw .glb.bin/.png.bin staging without .gdignore. Runtime loader now reads its own JSON and PNG buffers without excluded tool dependencies. No checks weakened.",
+    "artifact": {
+      "file": "build/macos/Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
+      "sha256": "00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8",
+      "bytes": 445933530,
+      "source_commit": "755cd4b11bc99648a74fefb81f9c3b89ed315ba1",
+      "version": "v0.4.0-dev.37-living-bridge-99-g755cd4b1",
+      "ailang": "v0.54.18"
+    },
+    "native_smoke": "PASS fresh HOME/no external AILANG: packed art,42 residents, live/rest startup, movement, live/reduced motion and lift round trip. Plain launch title/build identity passes. Signature and ZIP integrity pass. Native HUD images opened.",
+    "uid_guard": "382 passed",
+    "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#playtest",
+    "https_download": "PASS complete445933530-byte transfer over private8452route; SHA00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8 matches local archive and manifest",
+    "independent_native_review": "art/commons-grown-pilot/playtest-review.md"
   }
 }
