@@ -43,7 +43,7 @@
       "passes": null,
       "started": "2026-10-29",
       "completed": null,
-      "notes": "Manifest camera migration integrated; CPU physics949/0 with independent stage refs. All prior GPU families green and raised G-LVL2 three cases pass; clamp G-LVL1 still blocked by legacy Commons geometry, awaiting actual stage adapter/valid specimen."
+      "notes": "Manifest cameras, configured lift and real stage runtime integrated. CPU physics949/0 and focused GPU six G-LVL cases pass, with paired same-pose sky subtraction to isolate pole from nearby captain hair. Whole GPU and pinned-runtime rig gates pending. Runtime floor-jump reviewer repro fixed and independently rechecked76/0."
     },
     {
       "id": "VF2",
@@ -59,9 +59,9 @@
         "Mark accepts S3 playable layout and ruling is recorded"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-29",
       "completed": null,
-      "notes": null
+      "notes": "Five-stage production greybox, seven surfaces/four heights;42 actual Bow/Astern rest/cruise/guided-stop captures inspected in contact sheet and critical full frames.42 staged in private gallery as layout placeholders. Full court return and stair-ramp probe pass. Native playtest build and S3 attended layout approval pending; no detailed Commons art begun."
     },
     {
       "id": "VFB",
@@ -285,7 +285,7 @@
     "https_port": 8452,
     "session_id": 46822,
     "round": "natural captain contact on original desks",
-    "frames": 32,
+    "frames": 67,
     "verified": "HTTPS page and image content hash matched local staging"
   }
 }

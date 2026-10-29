@@ -78,7 +78,8 @@ shutdown RID warnings remain. Tests preserve collision processing while frozen
 and reject a deeper body intersection; they also hold lean direction/angle and
 maximum head reach. No Blender models, textures or furniture pins changed.
 
-The guard's `-- --installed` mode requires the actual station working destination
-to equal the corrected physical point. The historical source study mode is for
-the pre-installation revision only. The earlier loops, desk leaves and custom
+The guard requires the actual station working destination to equal the corrected
+physical point by default (`-- --installed` is also accepted). The historical
+`-- --source-study` mode is for the pre-installation revision only.
+The earlier loops, desk leaves and custom
 study shader are historical review artifacts; none is loaded by gameplay.

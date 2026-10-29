@@ -158,62 +158,6 @@
       "label": "Baseline · player camera · 1280×720"
     },
     {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/mid_lift.png",
-      "file": "before_commons_mid_lift.png",
-      "title": "Lift · descent",
-      "note": "Existing lift diagnostic camera; not final fixed-view sign-off. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/arrival.png",
-      "file": "before_commons_arrival.png",
-      "title": "Commons · arrival",
-      "note": "Existing geometry and painted finish. Diagnostic standing-eye camera. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/courtyard.png",
-      "file": "before_commons_courtyard.png",
-      "title": "Commons · court",
-      "note": "Existing open civic plaza; not the proposed five-stage layout. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/arcade_inside.png",
-      "file": "before_commons_arcade_inside.png",
-      "title": "Commons · inside the arcade",
-      "note": "Current curved arcade kit and lighting, to be refined after layout acceptance. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/arcade_along.png",
-      "file": "before_commons_arcade_along.png",
-      "title": "Commons · along the arcade",
-      "note": "Current structure and material reference. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/reverse_to_bridge.png",
-      "file": "before_commons_reverse_to_bridge.png",
-      "title": "Commons · looking back",
-      "note": "Current relationship to the bridge above. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
-      "group": "commons",
-      "source": "res://renders/ship_commons/painted/planted_plaza.png",
-      "file": "before_commons_planted_plaza.png",
-      "title": "Commons · planted plaza",
-      "note": "Current foliage and furniture baseline. Diagnostic camera. Historical display aid: +2 EV; simulation/geometry unchanged.",
-      "label": "Baseline · diagnostic camera · 1280×720"
-    },
-    {
       "group": "ui",
       "source": "res://renders/ship_ui/strip_rest_1280x720.png",
       "file": "before_ui_strip_rest_1280x720.png",
@@ -260,6 +204,342 @@
       "title": "Commons landing UI · 2560x1440",
       "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
       "label": "Baseline · player camera · 2560x1440"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_bow_rest.png",
+      "file": "commons_s3_landing_landing_bow_rest.png",
+      "title": "Lift landing · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_bow_cruise.png",
+      "file": "commons_s3_landing_landing_bow_cruise.png",
+      "title": "Lift landing · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_bow_stop.png",
+      "file": "commons_s3_landing_landing_bow_stop.png",
+      "title": "Lift landing · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_astern_rest.png",
+      "file": "commons_s3_landing_landing_astern_rest.png",
+      "title": "Lift landing · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_astern_cruise.png",
+      "file": "commons_s3_landing_landing_astern_cruise.png",
+      "title": "Lift landing · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_astern_stop.png",
+      "file": "commons_s3_landing_landing_astern_stop.png",
+      "title": "Lift landing · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_bow_rest.png",
+      "file": "commons_s3_court_floor_bow_rest.png",
+      "title": "Civic court · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_bow_cruise.png",
+      "file": "commons_s3_court_floor_bow_cruise.png",
+      "title": "Civic court · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_bow_stop.png",
+      "file": "commons_s3_court_floor_bow_stop.png",
+      "title": "Civic court · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_astern_rest.png",
+      "file": "commons_s3_court_floor_astern_rest.png",
+      "title": "Civic court · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_astern_cruise.png",
+      "file": "commons_s3_court_floor_astern_cruise.png",
+      "title": "Civic court · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_astern_stop.png",
+      "file": "commons_s3_court_floor_astern_stop.png",
+      "title": "Civic court · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_bow_rest.png",
+      "file": "commons_s3_terrace_mezzanine_bow_rest.png",
+      "title": "Terrace · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_bow_cruise.png",
+      "file": "commons_s3_terrace_mezzanine_bow_cruise.png",
+      "title": "Terrace · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_bow_stop.png",
+      "file": "commons_s3_terrace_mezzanine_bow_stop.png",
+      "title": "Terrace · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_astern_rest.png",
+      "file": "commons_s3_terrace_mezzanine_astern_rest.png",
+      "title": "Terrace · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_astern_cruise.png",
+      "file": "commons_s3_terrace_mezzanine_astern_cruise.png",
+      "title": "Terrace · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_astern_stop.png",
+      "file": "commons_s3_terrace_mezzanine_astern_stop.png",
+      "title": "Terrace · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_bow_rest.png",
+      "file": "commons_s3_gantry_lift_gantry_bow_rest.png",
+      "title": "Lift gantry · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_bow_cruise.png",
+      "file": "commons_s3_gantry_lift_gantry_bow_cruise.png",
+      "title": "Lift gantry · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_bow_stop.png",
+      "file": "commons_s3_gantry_lift_gantry_bow_stop.png",
+      "title": "Lift gantry · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_astern_rest.png",
+      "file": "commons_s3_gantry_lift_gantry_astern_rest.png",
+      "title": "Lift gantry · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_astern_cruise.png",
+      "file": "commons_s3_gantry_lift_gantry_astern_cruise.png",
+      "title": "Lift gantry · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_astern_stop.png",
+      "file": "commons_s3_gantry_lift_gantry_astern_stop.png",
+      "title": "Lift gantry · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_bow_rest.png",
+      "file": "commons_s3_gantry_catwalk_bow_rest.png",
+      "title": "High catwalk · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_bow_cruise.png",
+      "file": "commons_s3_gantry_catwalk_bow_cruise.png",
+      "title": "High catwalk · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_bow_stop.png",
+      "file": "commons_s3_gantry_catwalk_bow_stop.png",
+      "title": "High catwalk · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_astern_rest.png",
+      "file": "commons_s3_gantry_catwalk_astern_rest.png",
+      "title": "High catwalk · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_astern_cruise.png",
+      "file": "commons_s3_gantry_catwalk_astern_cruise.png",
+      "title": "High catwalk · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_astern_stop.png",
+      "file": "commons_s3_gantry_catwalk_astern_stop.png",
+      "title": "High catwalk · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_bow_rest.png",
+      "file": "commons_s3_gantry_balcony_bow_rest.png",
+      "title": "Sky balcony · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_bow_cruise.png",
+      "file": "commons_s3_gantry_balcony_bow_cruise.png",
+      "title": "Sky balcony · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_bow_stop.png",
+      "file": "commons_s3_gantry_balcony_bow_stop.png",
+      "title": "Sky balcony · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_astern_rest.png",
+      "file": "commons_s3_gantry_balcony_astern_rest.png",
+      "title": "Sky balcony · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_astern_cruise.png",
+      "file": "commons_s3_gantry_balcony_astern_cruise.png",
+      "title": "Sky balcony · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_astern_stop.png",
+      "file": "commons_s3_gantry_balcony_astern_stop.png",
+      "title": "Sky balcony · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/service_service_gallery_bow_rest.png",
+      "file": "commons_s3_service_service_gallery_bow_rest.png",
+      "title": "Service gallery · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/service_service_gallery_bow_cruise.png",
+      "file": "commons_s3_service_service_gallery_bow_cruise.png",
+      "title": "Service gallery · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/service_service_gallery_bow_stop.png",
+      "file": "commons_s3_service_service_gallery_bow_stop.png",
+      "title": "Service gallery · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/service_service_gallery_astern_rest.png",
+      "file": "commons_s3_service_service_gallery_astern_rest.png",
+      "title": "Service gallery · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/service_service_gallery_astern_cruise.png",
+      "file": "commons_s3_service_service_gallery_astern_cruise.png",
+      "title": "Service gallery · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/service_service_gallery_astern_stop.png",
+      "file": "commons_s3_service_service_gallery_astern_stop.png",
+      "title": "Service gallery · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
     }
   ],
   "notice": "The captain now stands closer and leans onto the original Voyage/Crew consoles. These are matched front/back before-and-after engine captures. The earlier loops and desk leaves are retired and were never installed. Commons layout review follows separately."

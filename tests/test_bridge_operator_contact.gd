@@ -4,7 +4,7 @@ var passed:=0
 var failed:=0
 func _initialize() -> void:_run.call_deferred()
 func _run() -> void:
-	var installed := "--installed" in OS.get_cmdline_user_args()
+	var installed := "--source-study" not in OS.get_cmdline_user_args()
 	var doc: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://art/view-finish-v1/bridge-operator-contact.json"))
 	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options={"stars":false,"background":false,"sky_state":"rest","sound":false}
