@@ -7,7 +7,7 @@ fail() {
 }
 [ -f "$root/tools/kerr_ref.py" ] || fail "missing oracle tools/kerr_ref.py"
 check() {
-    python3 -I - "$root" <<'PY'
+    python3 -I - "$1" <<'PY'
 import copy, json, runpy, subprocess, sys, tempfile
 from pathlib import Path
 root = Path(sys.argv[1])
@@ -15,6 +15,7 @@ oracle = root / 'tools/kerr_ref.py'
 def run(*args):
     return subprocess.run([sys.executable, '-I', str(oracle), *map(str, args)], capture_output=True)
 ref = runpy.run_path(str(oracle))
+assert ref['getcontext']().prec == 60, 'Decimal60 precision'
 anchors = {'0': ('2', '0', '1'),
            '0.5': ('1.8660254037844386', '0.13397459621556135', '0.93301270189221932'),
            '0.9': ('1.4358898943540674', '0.56411010564593264', '0.71794494717703368'),
@@ -58,6 +59,8 @@ DOC = {('RK-10', '0.9', 'frame-drag-static-limit'): '0.16014234875444840',
        ('RK-18', '0.9', 'rs-km'): '29.532500761002495', ('RK-18', '0.9', 'static-limit-km'): '29.532500761002495',
        ('RK-18', '0.9', 'horizon-km'): '21.202709698863643', ('RK-18', '0.9', 'isco-pro-km'): '34.270740098515360',
        ('RK-18', '0.9', 'period-ms'): '1.3727616115380832', ('RK-18', '0.9', 'omega-h-rad-s'): '6362.7059001439946',
+       ('RK-3', '0.5', 'static-limit'): '2', ('RK-3', '0.9', 'static-limit'): '2', ('RK-3', '0.998', 'static-limit'): '2',
+       ('RK-9', '0.9', 'horizon-omega'): '0.31339450313662925',
        ('RK-Q1', '0', 'photon-pro'): '3', ('RK-Q1', '0', 'photon-retro'): '3', ('RK-Q1', '0', 'isco-pro'): '6',
        ('RK-Q1', '0', 'isco-retro'): '6', ('RK-Q1', '0', 'frame-drag'): '0', ('RK-Q1', '0', 'shadow'): '5.1961524227066319'}
 for key, anchor in DOC.items():
@@ -90,7 +93,7 @@ for spin in ('-0.1', '1', '1.1', 'NaN', 'Infinity', '-Infinity'):
                        ('horizon_omega', lambda s: ref['horizon_omega'](s)), ('static_limit', lambda s: ref['static_limit'](s))):
         try:
             call(spin)
-        except ValueError as error:
+        except (ValueError, ArithmeticError) as error:
             assert 'finite 0 <= spin < 1' in str(error), f'validation before sqrt: {name} {spin}'
         else:
             raise AssertionError(f'invalid spin accepted by {name}: {spin}')
@@ -126,5 +129,55 @@ with tempfile.TemporaryDirectory() as directory:
     rejected(json.dumps(data).encode(), 'duplicate composite identity')
 PY
 }
-check || fail "assertions failed"
-echo "kerr-oracle: RK-1/2, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-3, RK-9, RK-14..RK-17 deferred)"
+mutate() {
+    python3 -I - "$1" "$2" <<'PY'
+import sys
+name, path = sys.argv[1], sys.argv[2]
+old, new = {
+    'factor2': ('format(u / 2, ".17g"), "formula": formula}', 'format(u, ".17g"), "formula": formula}'),
+    'sqrt-branch': ('return 1 + delta, 1 - delta', 'return 1 - delta, 1 + delta'),
+    'domain': ('if not s.is_finite() or not 0 <= s < 1:', 'if not s.is_finite():'),
+    'nan': ('if not s.is_finite() or not 0 <= s < 1:', 'if not 0 <= s < 1:'),
+    'six-decimal': ('format(value, ".17g"),\n            "display": format(value, ".6f"), "package_R": None, "formula": formula}',
+                    'format(value, ".6f"),\n            "display": format(value, ".6f"), "package_R": None, "formula": formula}'),
+    'empty-fixture': ('if actual != expected:', 'if actual != expected and actual.get("records"):'),
+    'wrong-unit': ('if actual != expected:', 'if actual["records"] != expected["records"]:'),
+    'precision': ('getcontext().prec = 60', 'getcontext().prec = 20'),
+}[name]
+text = open(path).read()
+assert text.count(old) == 1, f'mutant {name}: old text not found exactly once'
+open(path, 'w').write(text.replace(old, new))
+PY
+}
+n=0
+drill() {
+    n=$((n + 1))
+    tmp=$(mktemp -d) || exit 1
+    trap 'rm -rf "$tmp"' EXIT
+    mkdir -p "$tmp/tools" "$tmp/tests/fixtures/kerr" || exit 1
+    cp "$root/tools/kerr_ref.py" "$tmp/tools/" || exit 1
+    cp "$root/tests/fixtures/kerr/rk.json" "$tmp/tests/fixtures/kerr/" || exit 1
+    mutate "$1" "$tmp/tools/kerr_ref.py" || exit 1
+    if cmp -s "$root/tools/kerr_ref.py" "$tmp/tools/kerr_ref.py"; then
+        echo "kerr-oracle drill $1: instrument failure, mutation changed nothing" >&2
+        exit 3
+    fi
+    if check "$tmp" 2>"$tmp/err"; then
+        echo "kerr-oracle drill $1: survived" >&2
+        exit 1
+    fi
+    grep -F -q -- "$2" "$tmp/err" || { echo "kerr-oracle drill $1: wrong reason" >&2; cat "$tmp/err" >&2; exit 1; }
+    echo "kerr-oracle drill $1: killed ($2)"
+    rm -rf "$tmp"
+}
+check "$root" || fail "assertions failed"
+drill factor2 'factor2 R=u/2' || exit 1
+drill sqrt-branch 'horizon branch/V31' || exit 1
+drill domain 'invalid spin accepted' || exit 1
+drill nan 'validation before sqrt: horizons NaN' || exit 1
+drill six-decimal "doc literal: ('RK-10'" || exit 1
+drill empty-fixture 'empty/schema accepted' || exit 1
+drill wrong-unit 'unit accepted' || exit 1
+drill precision 'Decimal60 precision' || exit 1
+test "$n" -eq 8 || fail "drill count is not 8"
+echo "kerr-oracle: RK-1/2/3/9, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-14..RK-17 deferred)"

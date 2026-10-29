@@ -86,9 +86,9 @@ def zamo_speed(spin):
     u = isco_radii(spin)[0]
     return (1 / (u ** Decimal("1.5") + s) - frame_drag(u, spin)) * (equator(u, s)[1].sqrt() / u) / zamo_lapse(u, spin)
 
-def static_limit(spin, cos_theta=0):
-    s = spin_value(spin)
-    return 1 + (1 - (s * Decimal(cos_theta)) ** 2).sqrt()
+def static_limit(spin):
+    spin_value(spin)
+    return Decimal(2)  # equatorial static limit u=2 = 1.0 r_s, identity in s (RK-3)
 
 def static_clock(u, spin):
     s = spin_value(spin)
@@ -135,6 +135,7 @@ def fixture():
             records.append({"id": f"RK-{number}", "spin": spin, "quantity": quantity,
                             "precise": format(u, ".17g"), "display": format(u, ".6f"),
                             "package_R": format(u / 2, ".17g"), "formula": f"u=1{sign}sqrt(1-spin^2)"})
+    records.extend(value_row("RK-3", spin, "static-limit", static_limit(spin), "equator u=2 = 1.0 r_s; identity in s") for spin in ("0.5", "0.9", "0.998"))
     for rid, spin in (("RK-4", "0.9"), ("RK-5", "0.998")):
         pro, retro = photon_orbits(spin)
         records.append(radius_row(rid, spin, "photon-pro", pro, PHOTON))
@@ -146,6 +147,7 @@ def fixture():
     records.append(clock_row("RK-8", "0.9", "clock-pro", orbit_clock("0.9", 1)))
     records.append(clock_row("RK-8", "0.9", "clock-retro", orbit_clock("0.9", -1)))
     records.append(clock_row("RK-8b", "0.998", "clock-pro", orbit_clock("0.998", 1)))
+    records.append(value_row("RK-9", "0.9", "horizon-omega", horizon_omega("0.9"), "Omega_H = s/(2 u_+), c^3/GM"))
     records.append(value_row("RK-10", "0.9", "frame-drag-static-limit", frame_drag(2, "0.9"), FRAME))
     records.append(value_row("RK-11", "0.9", "lapse-static-limit", zamo_lapse(2, "0.9"), LAPSE))
     records.extend(value_row("RK-12", spin, "zamo-speed-isco-pro", zamo_speed(spin), SPEED) for spin in ("0.5", "0.9"))
