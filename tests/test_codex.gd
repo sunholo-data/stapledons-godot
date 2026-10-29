@@ -128,6 +128,36 @@ func test_panel(es: Array) -> void:
 	cx.queue_free()
 
 
+func test_export_smoke_guard() -> void:
+	var expected: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(EXPECTED))
+	var unlocked: Array = expected.unlocks.map(func(row: Dictionary) -> String: return row.id)
+	ok("export smoke unlock IDs match the canonical minimum-path fixture", unlocked == InteriorSmoke.MINIMUM_UNLOCKS and expected.not_unlocked == InteriorSmoke.MINIMUM_LOCKED)
+	var cx: Codex = load("res://ui/archive/codex.tscn").instantiate()
+	root.add_child(cx)
+	cx.load_lore()
+	cx.show_world(world_with(unlocked))
+	var rows := cx.entry_rows()
+	ok("export smoke accepts the actual catalogue and exact sim unlocks", InteriorSmoke.codex_state_errors(rows, unlocked).is_empty())
+	var wrong_rows := rows.duplicate()
+	var first: String = wrong_rows.keys()[0]
+	var saved: Button = wrong_rows[first]
+	wrong_rows.erase(first)
+	wrong_rows["archive.impostor"] = saved
+	ok("export smoke rejects a substituted ID with unchanged row count", wrong_rows.size() == rows.size() and not InteriorSmoke.codex_state_errors(wrong_rows, unlocked).is_empty())
+	var wrong_unlocks := unlocked.duplicate()
+	wrong_unlocks[4] = "archive.tides"
+	ok("export smoke rejects wrong unlock identities with unchanged count", not InteriorSmoke.codex_state_errors(rows, wrong_unlocks).is_empty())
+	rows["archive.earths-voice"].disabled = true
+	ok("export smoke rejects an unlocked Earth entry disabled in the UI", not InteriorSmoke.codex_state_errors(rows, unlocked).is_empty())
+	rows["archive.earths-voice"].disabled = false
+	rows["archive.tides"].disabled = false
+	ok("export smoke rejects an entry enabled without the sim's permission", not InteriorSmoke.codex_state_errors(rows, unlocked).is_empty())
+	rows["archive.tides"].disabled = true
+	ok("export smoke accepts the restored exact state", InteriorSmoke.codex_state_errors(rows, unlocked).is_empty())
+	ok("export smoke rejects a missing sim unlock list", not InteriorSmoke.codex_state_errors(rows, null).is_empty())
+	cx.queue_free()
+
+
 func test_minimum_path() -> void:
 	var expected: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(EXPECTED))
 	var sim := SimBridge.new()
@@ -190,6 +220,7 @@ func _init() -> void:
 	test_markdown()
 	test_binding(es)
 	test_panel(es)
+	test_export_smoke_guard()
 	test_minimum_path()
 	ok("all checks ran", checks >= 38)
 	print("codex: %d passed, %d failures" % [checks - failures, failures])
