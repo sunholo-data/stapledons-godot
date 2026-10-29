@@ -1,0 +1,66 @@
+{
+  "schema": "stapledons.bridge-contact-pilot/2",
+  "status": "refined proposal; awaiting review; not installed in game",
+  "source_master_sha256": "45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3",
+  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_bridge_contact_pilot_v2.py",
+  "authoring_script_sha256": "5352425d51a8d4f93dadff9eaa1a4db1496228c3f894965e429bd6d94f118a6e",
+  "pilot_master": "/Users/voightkampff/dev/blender/scenes/stapledon_bridge_contact_pilot_v2.blend",
+  "pilot_master_sha256": "06a6841302b7c0cf3ab4f3100f2fc8ee39a0ab2c3de42aac192caba158c763c7",
+  "asset_sha256": "2eac03fa06aa38e541cd35672be1f4873568c8ac3738d84c05c7c5b9a4246812",
+  "asset_bytes": 37312,
+  "station_use_ship_m": {
+    "voyage": [
+      -7.829,
+      10.207
+    ],
+    "crew": [
+      8.479,
+      12.169
+    ]
+  },
+  "pad_centres_ship_m": {
+    "voyage": [
+      [
+        -8.279,
+        10.287,
+        83.005
+      ],
+      [
+        -7.379,
+        10.287,
+        83.005
+      ]
+    ],
+    "crew": [
+      [
+        8.029,
+        12.249,
+        83.005
+      ],
+      [
+        8.928999999999998,
+        12.249,
+        83.005
+      ]
+    ]
+  },
+  "pad_radii_m": [
+    0.075,
+    0.16,
+    0.025
+  ],
+  "unchanged_source_objects": 183,
+  "added_meshes": [
+    "VF_voyage_contact_leaf_-1",
+    "VF_voyage_contact_pad_-1",
+    "VF_voyage_contact_leaf_1",
+    "VF_voyage_contact_pad_1",
+    "VF_crew_contact_leaf_-1",
+    "VF_crew_contact_pad_-1",
+    "VF_crew_contact_leaf_1",
+    "VF_crew_contact_pad_1"
+  ],
+  "shape": "Broad solid low leaf cantilevers, original ochre hand targets. No thin upright or hollow controller hoop.",
+  "collision": "review-only visual; no production collision or WALK changes",
+  "limits": "Low consoles only; navigation and Archive contact unresolved; no runtime installation or final style approval."
+}
