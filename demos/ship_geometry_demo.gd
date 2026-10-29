@@ -37,6 +37,11 @@ var frame_check := FrameCheck.new()
 var audit_link:=LinkButton.new()
 var audit_local:=Button.new()
 var setup_options := {}
+## D-136: the reviewed civic treatment, enabled by normal player entry or explicit tests.
+var civic_art:Dictionary={}
+var civic_art_ready:=false
+var civic_art_errors:Array=[]
+var _civic_art_started:=false
 var camera: Camera3D = Camera.new()
 var sky := InteriorSky.new()
 var geometry_view := SubViewport.new()
@@ -141,6 +146,7 @@ func _ready() -> void:
 	frame_check.status_changed.connect(note)
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
+	if OS.get_cmdline_user_args().has("--civic-playtest-smoke"):_civic_playtest_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--ship-identification-smoke"):_identification_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--solar-departure-smoke"):_solar_departure_smoke.call_deferred()
 	if ready_ok and setup_options.get("scenario",scenario_arg(OS.get_cmdline_user_args()))==BlackHoleVisit.SCENARIO:start_black_hole.call_deferred()
@@ -158,6 +164,7 @@ func asset(file: String) -> String:
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
+	setup_options=opts.duplicate(true)
 	menu_return=opts.get("from_menu",false);asset_dir=str(opts.get("asset_dir",""))
 	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
@@ -241,7 +248,30 @@ func setup(opts := {}) -> bool:
 		sky_state="live";open_navigation();close_navigation()
 		if journey_map==null:sky_state="rest"
 	print("ship-demo-ready: OK")
+	if opts.get("civic_art",false) and not commons.is_empty():_install_civic_art.call_deferred()
 	return true
+
+func _install_civic_art()->void:
+	if _civic_art_started:return
+	_civic_art_started=true
+	# Static level collisions must reach the physics server before resident floor checks.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var path:=str(setup_options.get("civic_art_config","res://assets/levels/commons/civic/placements.json"))
+	if not setup_options.has("civic_art_config") and not FileAccess.file_exists(path):path="res://art/commons-grown-pilot/placements.json"
+	civic_art=load("res://demos/commons_civic_pilot.gd").install_world(self,path)
+	civic_art_ready=bool(civic_art.ok)
+	if not civic_art_ready:
+		civic_art_errors.assign(civic_art.errors)
+		push_error("Commons civic art failed: "+str(civic_art_errors))
+	else:print("commons-civic-playtest: ready, reviewed art and live activity installed")
+
+func await_civic_art()->bool:
+	if not setup_options.get("civic_art",false):return true
+	for frame in 180:
+		if civic_art_ready or not civic_art_errors.is_empty():break
+		await get_tree().physics_frame
+	return civic_art_ready
 func _draw_layer(texture: Texture2D, layer: int) -> void:
 	var canvas:=CanvasLayer.new();canvas.layer=layer;add_child(canvas)
 	var rect:=TextureRect.new();rect.texture=texture;rect.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
@@ -792,6 +822,8 @@ func _guides() -> void:
 
 func _export_smoke() -> void:
 	auto=false
+	if not await await_civic_art():
+		print("ship-demo-export-smoke: FAIL civic art");get_tree().quit(1);return
 	await get_tree().process_frame
 	var ok:=ready_ok and not avatar.stages.is_empty()
 	var manual_ev:float=sky.exposure.ev_dark()-brightness_stops
@@ -827,6 +859,56 @@ func _export_smoke() -> void:
 			print("ship-demo-smoke-stage arrival: ",ok," phase=",sky_world.ship.phase)
 	print("ship-demo-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
+
+func _civic_playtest_smoke()->void:
+	auto=false;journey_auto_tick=false
+	var ok:=await await_civic_art()
+	if not ok:print("civic-playtest-smoke: FAIL art load");get_tree().quit(1);return
+	# Let the normal entry finish its live-rest assertions before the diagnostic changes views.
+	await get_tree().physics_frame
+	ok=ok and str(civic_art.source_config)=="res://assets/levels/commons/civic/placements.json"
+	var life:Node=civic_art.node.find_child("CommonsLifePilot",true,false)
+	ok=ok and life!=null and life._people.size()==42
+	set_sky_state("rest")
+	await _civic_playtest_shot("bridge")
+	avatar_pos=Vector3(8,82,-4.8)
+	ok=ok and lift.board()
+	lift.advance(.81);lift.advance(5.);lift.advance(.81)
+	ok=ok and active_level==1 and lift.state=="lower_ready"
+	avatar_pos=Vector3(26,57.025,-4)
+	var before:=avatar_pos
+	walk_motion(Vector2(1,0),.2)
+	ok=ok and avatar_pos.distance_to(before)>.05 and absf(avatar_pos.y-57.025)<.04
+	avatar_pos=before;camera_mode="player";director.release();director.zoom_preset=false
+	for view:String in ["bow","astern"]:
+		director.deck_view=view;director.mapping_view=view;director.has_pose=false
+		director.advance(0.)
+		await _civic_playtest_shot("commons_"+view)
+	var elapsed:float=life.elapsed
+	set_camera_motion("full");life.advance(.25)
+	ok=ok and life.elapsed>elapsed
+	elapsed=life.elapsed;set_camera_motion("reduced");life.advance(.25)
+	ok=ok and life.elapsed==elapsed
+	set_camera_motion("full")
+	ok=ok and walk_to("navigation")
+	for step in 1200:
+		if consoles.walking.is_empty():break
+		consoles._advance_walk(.05)
+	ok=ok and avatar_pos.distance_to(Vector3(8,57,-4.8))<.1 and lift.board()
+	lift.advance(.81);lift.advance(5.);lift.advance(.81)
+	ok=ok and active_level==0 and lift.state=="bridge_ready"
+	print("civic-playtest-smoke: %s packed-art live-activity walk lift-roundtrip"%("OK" if ok else "FAIL"))
+	get_tree().quit(0 if ok else 1)
+
+func _civic_playtest_shot(name:String)->void:
+	var output:=""
+	for arg:String in OS.get_cmdline_user_args():
+		if arg.begins_with("--civic-capture="):output=arg.trim_prefix("--civic-capture=")
+	for frame in 6:await get_tree().process_frame
+	if output.is_empty() or DisplayServer.get_name()=="headless":return
+	await RenderingServer.frame_post_draw
+	DirAccess.make_dir_recursive_absolute(output)
+	get_viewport().get_texture().get_image().save_png(output.path_join(name+".png"))
 func _identification_smoke() -> void:
 	auto=false;journey_auto_tick=false
 	set_sky_state("rest");look_direction("forward")

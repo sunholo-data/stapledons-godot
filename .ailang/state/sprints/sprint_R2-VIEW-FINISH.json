@@ -354,7 +354,7 @@
   },
   "grown_civic_review": {
     "decision": "D-135",
-    "status": "ready_for_visual_review",
+    "status": "accepted_for_playtest",
     "scope": "Concept-faithful comic/grown architectural and inhabited middle-ground refinement. Tendril arches, planted islands, curved paving and ambient resident vignettes; no new gameplay/navigation/population model.",
     "production_propagation": false,
     "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#grown",
@@ -390,6 +390,32 @@
     },
     "independent_review": "art/commons-grown-pilot/independent-review.md",
     "visual_limit": "Materially addresses grown/comic inhabited middle ground; repeated ornamental arches, sparse Astern right edge and simplified civilian proxies remain visible. No completed-level acceptance or production propagation.",
-    "gallery_verification": "Private HTTPS image hash matches; isolated headless Chrome screenshot inspected;64 activity images load, playback advances and ends with replay control. Export audit110/0; UID378/0. Review-only helpers explicitly excluded from native export."
+    "gallery_verification": "Private HTTPS image hash matches; isolated headless Chrome screenshot inspected;64 activity images load, playback advances and ends with replay control. Export audit110/0; UID378/0. Review-only helpers explicitly excluded from native export.",
+    "accepted_by": "Mark, attended D-136: ok its good lets play it and see how it works"
+  },
+  "playable_civic_review": {
+    "decision": "D-136",
+    "status": "in_progress",
+    "scope": "Normal ship entry activates the reviewed art and ambient activity; native build on existing private Tailscale route. No full S3/S5/landing acceptance inferred.",
+    "status": "building_native_artifact",
+    "runtime_tests": {
+      "passed": 18,
+      "failed": 0
+    },
+    "asset_tests": {
+      "passed": 19,
+      "failed": 0
+    },
+    "lift_tests": {
+      "passed": 29,
+      "failed": 0
+    },
+    "loading_tests": {
+      "passed": 82,
+      "failed": 0
+    },
+    "source_smoke": "normal player startup, packed art, live/reduced activity, movement and lift round trip pass; HUD captures opened",
+    "export_audit": "118 literals,0 failures; raw transitive closure audit added",
+    "notes": "Normal ship/main entry enables civic art and loading jump awaits installation; raw art-review scene setup remains opt-in."
   }
 }

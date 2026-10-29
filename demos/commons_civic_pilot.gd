@@ -1,7 +1,45 @@
 extends RefCounted
-## D-135 review-only civic composition. Real floor paint, linked art and resident vignettes.
-## No production hook, navigation, simulation, sky or camera changes.
-static func install(demo:Node,path:String)->Dictionary:
+const CIVIC_BUNDLE_DIR:="res://ship_commons_bundle/civic/"
+## D-135/D-136 civic composition: shared by the visual study and attended playable build.
+## No navigation, simulation, sky or camera changes.
+static func install_world(demo:Node,path:String)->Dictionary:
+ var doc:=LevelEval.load_doc(path)
+ var bases:Array=[]
+ var errors:Array=[]
+ var main_source:=str(doc.get("source_glb",""))
+ if not main_source.begins_with("res://"):main_source=path.get_base_dir().path_join(main_source)
+ if doc.is_empty() or FileAccess.get_sha256(main_source)!=str(doc.get("source_sha256","")):
+  return {"ok":false,"errors":["civic main source pin mismatch: "+path]}
+ for base_path:String in doc.get("base_configs",[]):
+  var base_doc:=LevelEval.load_doc(base_path)
+  var source:=str(base_doc.get("source_glb",""))
+  if not source.begins_with("res://"):source=base_path.get_base_dir().path_join(source)
+  if base_doc.is_empty() or FileAccess.get_sha256(source)!=str(base_doc.get("source_sha256","")):
+   errors.append("civic base source pin mismatch: "+base_path);break
+  var base:Dictionary=load("res://demos/commons_art_pilot.gd").install(demo,base_path)
+  if not base.ok:errors.append_array(base.errors);break
+  bases.append(base)
+ var result:Dictionary=install(demo,path,false) if errors.is_empty() else {"ok":false,"errors":errors}
+ if not result.ok:
+  for base:Dictionary in bases:base.node.free()
+  return result
+ var world:=Node3D.new();world.name="CommonsCivicArt";demo.geometry.add_child(world)
+ result.node.reparent(world)
+ for i in bases.size():
+  var base:Dictionary=bases[i];base.node.reparent(world)
+  for key:String in ["colliders","plants","plant_shadows","practicals"]:result[key].append_array(base[key])
+  for name:String in base.placements:result.placements["base%d_"%i+name]=base.placements[name]
+  var base_doc:=LevelEval.load_doc(str(doc.base_configs[i]))
+  for id:String in base_doc.get("replace_markers",[]):
+   var marker:Node3D=demo.geometry.find_child(id,true,false)
+   if marker!=null:
+    marker.visible=false
+    if marker is CollisionObject3D:marker.collision_layer=0;marker.collision_mask=0
+ result.node=world
+ result.source_config=path
+ return result
+
+static func install(demo:Node,path:String,freeze_activity:bool=true)->Dictionary:
  var doc:=LevelEval.load_doc(path)
  var result:Dictionary=load("res://demos/commons_art_pilot.gd").install(demo,path)
  if not result.ok:return result
@@ -18,10 +56,12 @@ static func install(demo:Node,path:String)->Dictionary:
   for name:String in layer.placements:result.placements["district_"+name]=layer.placements[name]
  if result.errors.is_empty():
   var ground:=Node3D.new();ground.name="PaintedCivicGround";result.node.add_child(ground)
-  _ground(ground,doc.get("ground",{}))
+  var ground_doc:Dictionary=doc.get("ground",{}).duplicate(true)
+  ground_doc.textures=doc.get("ground_textures",{})
+  _ground(ground,ground_doc)
   _vines(demo,result,doc)
   if not doc.get("residents",[]).is_empty():
-   var life:Dictionary=load("res://demos/commons_life_pilot.gd").install(demo,doc.residents,true)
+   var life:Dictionary=load("res://demos/commons_life_pilot.gd").install(demo,doc.residents,freeze_activity)
    if life.ok:life.node.reparent(result.node)
    else:result.errors.append_array(life.errors)
  if not result.errors.is_empty():
@@ -31,7 +71,9 @@ static func install(demo:Node,path:String)->Dictionary:
 
 static func _vines(demo:Node,result:Dictionary,doc:Dictionary)->void:
  if doc.get("trailing_vines",[]).is_empty():return
- var path:="res://art/commons-grown-pilot/trailing-vine-v1.png"
+ var bundled:=CIVIC_BUNDLE_DIR+"trailing-vine-v1.png"
+ var fallback:=bundled if FileAccess.file_exists(bundled) else "res://art/commons-grown-pilot/trailing-vine-v1.png"
+ var path:=str(doc.get("vine_texture",fallback))
  if FileAccess.get_sha256(path)!=str(doc.get("vine_sha256","")):
   result.errors.append("trailing foliage source pin mismatch");return
  var painting:=Image.load_from_file(path)
@@ -50,9 +92,12 @@ static func _vines(demo:Node,result:Dictionary,doc:Dictionary)->void:
   card.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
   result.plants.append(card)
 
-static func _material(kind:String)->ShaderMaterial:
+static func _material(kind:String,textures:Dictionary)->ShaderMaterial:
  var src:=StandardMaterial3D.new()
- var image:=Image.load_from_file("res://art/ship-demo-v1/painted-bridge-v1/textures/%s.png"%kind)
+ var bundled:=CIVIC_BUNDLE_DIR+kind+".png"
+ var fallback:=bundled if FileAccess.file_exists(bundled) else "res://art/ship-demo-v1/painted-bridge-v1/textures/%s.png"%kind
+ var path:=str(textures.get(kind,fallback))
+ var image:=Image.load_from_file(path)
  if image!=null:image.generate_mipmaps();src.albedo_texture=ImageTexture.create_from_image(image)
  var paint:=StapledonStyle.toon_material(src)
  # Inlaid floor pigment has no raised silhouette: keep the ink shader at zero extrusion.
@@ -61,7 +106,8 @@ static func _material(kind:String)->ShaderMaterial:
  return paint
 
 static func _ground(host:Node3D,doc:Dictionary)->void:
- var cream:=_material("cream");var teal:=_material("teal");var ochre:=_material("ochre")
+ var textures:Dictionary=doc.get("textures",{})
+ var cream:=_material("cream",textures);var teal:=_material("teal",textures);var ochre:=_material("ochre",textures)
  _oval(host,"WarmContinuousCommons",Vector2.ZERO,Vector2(75.78,75.78),57.030,cream)
  for patch:Dictionary in doc.get("courts",[]):
   var at:=Vector2(float(patch.at[0]),float(patch.at[1]));var radius:=Vector2(float(patch.radius[0]),float(patch.radius[1]))
