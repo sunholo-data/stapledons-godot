@@ -520,7 +520,7 @@
     "full_rig": "61f78786 passed576simtests, strict/replay/GR/ISM and priorrepairs; failedcrossing101/1 becauseengineer_angryportrait nowexists. Controlledmissing-emotionfixture repair pending; unexecutedremainder beingdiagnosedwithmake-k before new mandatorycompletefreshclonegate. No fullpassclaimed.",
     "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
     "published_main_build": null,
-    "earth_integrated": "6bdbed04497d2eafeeb651036e0e9fbac77b404b",
+    "earth_integrated": "e424bf69aaeb2fc08f43a29d8ca7c93436b4a4f1",
     "backup_prefix": "backup/reconcile-20261030/",
     "backup_refs_verified": 19,
     "ignored_artifact_preservation": {
@@ -534,8 +534,8 @@
     },
     "plan_only_integrated": {
       "pr": 360,
-      "head": "759cde70a2c8ed894bf9057f9a5429f77bec544e",
-      "execution_approval": "awaiting_approval; filing proposal only"
+      "head": "661d551fcc172f541a68160d0fae2559da6aff04",
+      "status": "Approved in other attended session, external package AR0-AR8 recorded; pausedP2 listening, no game dependency/recipe adoption"
     },
     "scheduled_loop_hold": {
       "created_by_this_task": true,
@@ -576,7 +576,8 @@
       "input_repair": "30 passed,0 failures; production fixedviews plus explicit private legacy gesture fixture",
       "scene_audit_repair": "16 strictVM tests/0fallback; pure+FS controls; uniform scope controls; frozen2427line replay/83297783bytes identical; mutation controls detected",
       "replay_pins_changed": false
-    }
+    },
+    "late_reconciliation": "Preserve Earth landing docs and final audio-plan progress, retaining tested stronger M4/fallback/theme fixes. Additional executable changes limited to explicit shared themes in two review-capture helpers; all production and test code matches testedcad3a06c. Reuse of fullgate on newhead requires explicit Mark ruling or another complete exact-head run."
   },
   "npc_character_followup": {
     "decision": "D-139",

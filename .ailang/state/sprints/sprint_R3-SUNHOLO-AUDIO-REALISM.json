@@ -1,7 +1,10 @@
 {
   "sprint_id": "R3-SUNHOLO-AUDIO-REALISM",
-  "status": "awaiting_approval",
-  "approved": null,
+  "status": "paused_at_P2",
+  "approved": {
+    "by": "Mark (attended 2026-10-30)",
+    "how": "\"looks great go on audio and then lets preview the new sounds\": the plan and OQ1-OQ8 at their recommendations"
+  },
   "created": "2026-10-30",
   "design_doc": "design_docs/planned/r3/sunholo-audio-realism.md",
   "sprint_plan": "design_docs/planned/r3/sunholo-audio-realism-sprint.md",
@@ -227,10 +230,10 @@
         "the strict-VM probe result for scatterAdd, a record-carrying constructor and Leaf(Leaf) is recorded; any failure is reported with ailang messages (GCP store) and the design fallback chosen",
         "on BASE (after #344): make sound-synth-check prints '41 sounds regenerate byte for byte' (stop and report otherwise)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "Package feat/audio-0.6 (ailang-packages-audio06): compat.ail + compat_test.ail froze eight recipes covering every 0.5.0 field with their 0.5.0 PCM sha256 (commit 5ae8003e = AR0; the tree's code equals the published 0.5.0, diff -rq). Strict VM = interpreter on the pins. Probe on v0.54.18: scatterAdd (duplicate indices too), record-carrying constructors and Leaf(Leaf) all strict-VM clean, so no fallback needed. Game base (origin/feat/earth-link ea018c87, #344 not merged): sound-synth-check 41 sounds byte for byte. Upstream: a foldl that conses onto its accumulator is quadratic on the VM and the interpreter, reported as ailang#2029."
     },
     {
       "id": "AR1",
@@ -245,10 +248,10 @@
         "svfGain equals the measured gain on 20 seeded cases within 0.05 dB; LP + BP/Q + HP reconstructs the input to 1e-9; a fixed sweep equals svf bit for bit",
         "ailang check --package $PKG, ailang test --package $PKG and ailang pkg quality --no-run $PKG (no gates) pass"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "4c81bce: filter.ail (svfGain closed form, svf, svfSweep, bank, vowelBands/vowelMove/isVowel). 12 tests pass. Band-pass gains within 0.05 dB: 1 kHz Q 2 gives 0 / -10.014 / -10.056 dB; Q 0.7071 and 3 kHz Q 8 also checked; ten seeded cases over all four modes match svfGain. The identity (constant-peak band-pass) is LP + BP + HP = x to 1e-9."
     },
     {
       "id": "AR2",
@@ -262,10 +265,10 @@
         "RMS of pink and brown within 10% of 1/sqrt(3); same seed same samples, another seed different",
         "white and rampNoise outputs unchanged (existing pins pass); a 1 s pink loop's seam <= max step + 1"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "743d6cf: noise.pinkOf (Kellet, x0.34) and brownOf (one-pole 20 Hz, sqrt((2-a)/a)). Goertzel PSD slopes: white -0.05, pink -3.05, brown -6.01 dB/octave. RMS 1.065 and 1.058 of white's."
     },
     {
       "id": "AR3",
@@ -280,10 +283,10 @@
         "pluck tuned fundamental within 1 cent at 110, 440 and 1046.5 Hz; untuned within 0.5 cent of rate/(N+0.5); T60 within 10%",
         "the blocked pluck equals a per-sample Array-ring reference bit for bit"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "0ae52d1: osc.ail. The saw's harmonics are within 0.5 dB of 2/(pi k) and its alias at least 20 dB under a naive saw. The FM lines equal |J_k(1)| and |J_k(2)| within 0.002; the test uses fc 6 kHz with a 600 Hz modulator rather than the plan's 2.4 kHz / 600 Hz, so that no sideband folds at I = 2. The pluck is within 1 cent at 110, 440 and 1046.5 Hz, the blocked string equals the per-sample Array reference bit for bit, and T60 is within 10%. Blocks are computed with mapAccumL, so there is no recursion depth."
     },
     {
       "id": "AR4",
@@ -300,10 +303,10 @@
         "every loop rule of design §D7 has a named 'loop: ...' test",
         "renderSoundChecked refuses over-budget events and work before allocating samples"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "f55198d: recipe.finish (moved verbatim) plus beatAt, layerOfJson and recipeOfJson exports; sound.ail. The front end: Classic delegation, the 0.5.0 base parsed by recipeOfJson, a closed vocabulary with per-kind keys, validateSound, soundLoopErrors, and the checked API with SoundLimits. AC4 holds: the 8 pins pass through render, after the move, and through renderSound. 24 sound tests: vocabulary; a no-op 0.6 key equals the Classic sine bit for bit; one test per loop rule; clean seams on 0.6 loops; budgets. Fix found by the seam test: pink and brown loops run two periods."
     },
     {
       "id": "AR5",
@@ -317,10 +320,10 @@
         "a loop of events has analysis.seam <= max step + 1; scatter starts are in [0, n), keep min_gap, number exactly count, repeat for a seed",
         "non-overlapping events sum linearly (1e-9); a one-shot cuts and fades an event past its end; vary.cents moves sources, not filters"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "e81de6d: events_test, 10 tests. Exact wrap at n-100, cutting without wrap, the jittered-grid scatter (count, range, gap across the seam, seeds), fixed starts, linearity, variation bounds and cycle, a rain loop with a clean seam, one-shot cut and fade, vary.cents moving the source, per-event seeds. The events module itself landed with AR4 because sound imports it."
     },
     {
       "id": "AR6",
@@ -334,10 +337,10 @@
         "measured T60 (backward integration -5 to -35 dB) within 5% of t60 with damping off; wet 0 returns the input bit for bit",
         "a loop with space keeps a clean seam over 1 + ceil(t60/seconds) periods; more than 5 periods is refused"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "ec4b003: space_test, 7 tests. The comb impulse response is g^k (1e-15); comb and allpass equal per-sample references bit for bit; allpass energy is 1 (1e-9); combGain decays 60 dB in t60; the reverb's T60 is within 5% at 1.2 s; wet 0 returns the input; pre-delay is a shift. Not cut."
     },
     {
       "id": "AR7",
@@ -353,10 +356,10 @@
         "design AC5: every probe identical on --strict-bytecode and the interpreter; _smoke main prints OK:",
         "design AC8: timings.json within_budget true and suite_seconds <= 180"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-30",
+      "completed": "2026-10-30",
+      "notes": "b4e3fff: version 0.6.0, kind feature, CHANGELOG ## 0.6.0, AGENT.md 'Sounds (0.6.0)', README, ai_summary. Seven new _smoke probes, all identical on the strict VM and the interpreter (strict VM 0.09-0.63 s, interpreter 0.4-27.7 s). Gates: AC3 (iface of all 15 0.5.0 modules kept line for line, 154 lines), verify (16 verified, 0 counterexamples), pkg quality (no gates; 270 tests; smoke pass). The first quality run failed PUB015 without a reason, because the smoke main took too long on the interpreter; main now checks two compat pins. Evidence is in design_docs/implemented/audio-realism-0.6.0/ (timings.json). Over budget: pink at 1.51x white (budget 1.5x), and the evaluator suite at 302 s (budget 180 s); with --bytecode the suite runs in about 10 s. Not published."
     },
     {
       "id": "AR8",
@@ -372,9 +375,9 @@
         "design AC12: the review page at refs/sound/r3-realism/ lists 13 home_* rows, >= 11 changed; Mark's ruling recorded as a RESOLVED ledger row; no PR, rig run or make deps while the path pin is in place"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-30",
       "completed": null,
-      "notes": null
+      "notes": "Game branch feat/sunholo-audio-realism from origin/feat/earth-link, path pin, pushed (no PR, no rig). 2d4c7ef7 REVOICE: shells on parseSoundsAs/renderSound (review_main's Part renamed MixPart), synth_test 0.6 pin 33eb23cb (VM = interpreter); AC9: 41 sounds byte for byte with recipes unchanged. dd08f99f: 12 home_* re-voiced (pips kept); review takes in data/audio/review_takes.json rendered to build/sound_takes (home_family_tune_b, home_family_c, home_town_bells_c); sound-synth-check 41/41, AC10 only provenance outside home_*, sound-levels 44/0 (home_static first failed its band at -52.2 dBFS; crackle lowered), sound-levels-parity 0 differences, sound-check 49/0, sound-assets-check 18,104,524 of 20,000,000 bytes, sound-test 46/0, sound-stage-check 3.68 MB QOA. Strict-VM render of the 13: 58.4 s (budget 60; v2 22.05 s; first draft 63.7 s, thinned). Paused at P2: the review page is built by the coordinator from the WAVs; Mark's per-sound ruling not yet recorded."
     },
     {
       "id": "AR9",
@@ -411,5 +414,9 @@
       "notes": null
     }
   ],
-  "reviews": []
+  "reviews": [],
+  "progress_note": "AR0-AR7 done in ailang-packages feat/audio-0.6 (b4e3fff, pushed, not published, no PR); AR8 done up to the listening ruling on stapledons-godot feat/sunholo-audio-realism (dd08f99f, path pin, pushed, no PR). Next: Mark listens (P2), then AR9.",
+  "upstream_reports": [
+    "ailang#2029: foldl that conses onto its accumulator is quadratic (VM and interpreter), v0.54.18"
+  ]
 }
