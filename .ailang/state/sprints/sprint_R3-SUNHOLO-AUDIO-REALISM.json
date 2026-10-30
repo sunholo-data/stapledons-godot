@@ -393,10 +393,10 @@
         "the Receiver bus with its pitch shift is in SoundMix.BUSES and the layout test",
         "make earth-feed-test, ship-sound-test, sound-test, sound-check, sound-levels-parity green"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-30",
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-30",
+      "notes": "Receiver bus (into Instruments) with AudioEffectPitchShift, enabled only while correcting (SoundMix.set_receiver); home cues on it; EarthFeed.receiver_plan: rate = earth.rate exactly, Receiver clamps to 1/16..16 with correction 1/rate, True is uncorrected and silent outside 0.02..50; accents every every_s / D; the band pitch removed; the station button (SoundSetting) shows and switches the setting; SoundDirector.set_pitch unrounded (logged %.4f). earth-feed 57/0, sound 49/0, ship-sound 24/0, sound-levels-parity 0 differences, comms-station 42/0, display-audit-comms 0 failures, ui-theme-check ok, physics 971/0."
     },
     {
       "id": "AR9",

@@ -148,14 +148,15 @@ func set_param(param_name: String, value: float) -> void:
 
 ## R3-EARTH-LINK EL3b.7: a cue's pitch_scale, which moves its speed and pitch together as a Doppler
 ## shift does. It applies to the playing loop at once and to every later fire (on top of the row's
-## per-fire cents), and is logged in its own clock when it changes by 0.01 or more.
+## per-fire cents), and is logged in its own clock when it changes by more than 0.01 % (R3 audio
+## realism AR8b: the Earth rate unrounded, logged to four decimals).
 func set_pitch(id: String, value: float) -> void:
-	var v := snappedf(maxf(value, 0.01), 0.01)
-	if is_equal_approx(float(pitches.get(id, 1.0)), v):
+	var v := maxf(value, 1e-4)
+	if absf(v / float(pitches.get(id, 1.0)) - 1.0) < 1e-4:
 		return
 	pitches[id] = v
 	_pitch_seq += 1
-	cue_log.append("r%d %s %.2f" % [_pitch_seq, id, v])
+	cue_log.append("r%d %s %.4f" % [_pitch_seq, id, v])
 	if _loops.has(id):
 		_loops[id].pitch_scale = v
 

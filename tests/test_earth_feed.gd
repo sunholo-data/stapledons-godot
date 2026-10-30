@@ -119,8 +119,10 @@ func _run() -> void:
 
 
 ## EL3b.7: sound from home. The bed is the week's category (the sky's for the sky kind, babble in the
-## torrent, static out of beam), its pitch the band's at the RS-26..RS-29 rates; a new week's bed waits
-## for hold_s of the station's clock, a change of beam does not; accents come every every_s / pitch.
+## torrent, static out of beam); a new week's bed waits for hold_s of the station's clock, a change of
+## beam does not. AR8b (standing order 2026-10-30): the rates are the Earth rate D exactly at RS-26..RS-30;
+## Receiver (the default) plays at D within 1/16x..16x and corrects the frequency by 1/speed; True plays
+## speed and pitch x D and is silent outside hearing; accents come every every_s / D.
 func test_home_sound(root: Control) -> void:
 	var f := EarthFeed.new()
 	root.add_child(f)
@@ -130,13 +132,29 @@ func test_home_sound(root: Control) -> void:
 		w.event.category = cat
 		return w
 	f.refresh(view({"feed": week.call(1, "library", "family")}))
-	check("in beam at rest: the week's category bed at its true pitch (%s)" % [f.home_sound], f.home_sound.cue == "home_family" and is_equal_approx(f.home_sound.pitch, 1.0) and f.home_sound.accent == "home_family_tune")
-	var want := {7.0711e-4: 0.5, 0.070888: 0.7, 1.0: 1.0, 14.107: 1.5, 1414.2: 2.0}
+	check("in beam at rest: the week's category bed at real time, uncorrected (%s)" % [f.home_sound], f.home_sound.cue == "home_family" and is_equal_approx(f.home_sound.rate, 1.0) and is_equal_approx(f.home_sound.correct, 1.0) and f.home_sound.accent == "home_family_tune" and f.receiver)
+	# Receiver: [D, speed] at RS-28, RS-26, rest, RS-29, RS-30
+	var rx := {7.0711e-4: 0.0625, 0.070888: 0.070888, 1.0: 1.0, 14.107: 14.107, 1414.2: 16.0}
 	var ok := true
-	for d: float in want:
+	for d: float in rx:
 		f.refresh(view({"rate": d, "feed": week.call(1, "library", "family")}))
-		ok = ok and is_equal_approx(f.home_sound.pitch, want[d]) and is_equal_approx(f.home_sound.pitch, float(EarthFeed.band_for(d).pitch))
-	check("the pitch is the band's at the RS rates: 0.5 still, 0.7 slow, 1 real, 1.5 fast, 2 torrent", ok)
+		ok = ok and is_equal_approx(f.home_sound.rate, rx[d]) and is_equal_approx(f.home_sound.correct, 1.0 / rx[d]) and not f.home_sound.silent
+	check("Receiver: speed D exactly within 1/16x..16x (the receiver's real-time range), the frequency corrected by 1/speed", ok)
+	f.set_receiver(false)
+	ok = true
+	for d: float in [0.070888, 1.0, 14.107]:
+		f.refresh(view({"rate": d, "feed": week.call(1, "library", "family")}))
+		ok = ok and is_equal_approx(f.home_sound.rate, d) and is_equal_approx(f.home_sound.correct, 1.0) and not f.home_sound.silent
+	check("True: speed and pitch x D exactly (RS-26, rest, RS-29), uncorrected", ok)
+	f.refresh(view({"rate": 7.0711e-4, "feed": week.call(1, "library", "family")}))
+	var below: bool = f.home_sound.silent and f.home_sound.hearing == "below" and f.sound_button.text.contains("below hearing")
+	f.refresh(view({"rate": 1414.2, "feed": week.call(1, "library", "family")}))
+	check("True at the top speed: below hearing astern (RS-28), above it ahead (RS-30), and the station says so (%s)" % f.sound_button.text, below and f.home_sound.silent and f.home_sound.hearing == "above" and f.sound_button.text.contains("true sound") and DisplayBinding.audit(f).is_empty())
+	f.set_receiver(true)
+	check("back to Receiver: heard, corrected (%s)" % f.sound_button.text, not f.home_sound.silent and is_equal_approx(f.home_sound.rate, 16.0) and f.sound_button.text.contains("receiver"))
+	f.sound_button.pressed.emit()
+	check("the station's button switches the setting", not f.receiver)
+	f.set_receiver(true)
 	check("the torrent plays the babble once the hold is up, not yet (%s)" % f.home_sound.cue, f.home_sound.cue == "home_family")
 	f.advance(float(s.hold_s))
 	f.refresh(view({"rate": 1414.2, "feed": week.call(2, "library", "family")}))
@@ -150,15 +168,15 @@ func test_home_sound(root: Control) -> void:
 	f.refresh(view({"rate": 1.0, "feed": week.call(3, "library", "town")}))
 	check("after hold_s the town's bed and bells", f.home_sound.cue == "home_town" and f.home_sound.accent == "home_town_bells")
 	f.refresh(view({"in_beam": false, "last_feed": week.call(3, "library", "town")}))
-	check("out of beam: the static at once, at its own pitch (%s)" % [f.home_sound], f.home_sound.cue == "home_static" and is_equal_approx(f.home_sound.pitch, 1.0))
+	check("out of beam: the static at once, the receiver's own hiss with no Doppler (%s)" % [f.home_sound], f.home_sound.cue == "home_static" and is_equal_approx(f.home_sound.rate, 1.0) and is_equal_approx(f.home_sound.correct, 1.0))
 	f.refresh(view({"feed": week.call(4, "sky", "town")}))
 	check("back in beam at once; the sky kind plays the sky's bed (%s)" % f.home_sound.cue, f.home_sound.cue == "home_sky")
-	# accents: the first after first_s, then every every_s, both stretched by the pitch (slow: 0.7)
+	# accents: the first after first_s / D, then every every_s / D (home's own time at RS-26)
 	f.advance(float(s.hold_s))
 	f.refresh(view({"rate": 0.070888, "feed": week.call(5, "library", "town")}))
 	var seq := int(f.home_sound.accent_seq)
-	var first := float(s.first_s) / 0.7
-	var every := float(s.accents.home_town.every_s) / 0.7
+	var first := float(s.first_s) / 0.070888
+	var every := float(s.accents.home_town.every_s) / 0.070888
 	f.advance(first - 0.05)
 	var early := int(f.home_sound.accent_seq) == seq
 	f.advance(0.1)
@@ -166,7 +184,7 @@ func test_home_sound(root: Control) -> void:
 	f.advance(every - 0.1)
 	var held := int(f.home_sound.accent_seq) == seq + 1
 	f.advance(0.1)
-	check("slowed home: the first bell after first_s / 0.7, the next every_s / 0.7 later", early and one and held and int(f.home_sound.accent_seq) == seq + 2)
+	check("slowed home: the first bell after first_s / D = %.1f s, the next every_s / D = %.1f s later" % [first, every], early and one and held and int(f.home_sound.accent_seq) == seq + 2)
 	f.refresh({"clock": {"tau": 0.1}})
 	check("no Earth section: nothing plays", f.home_sound.cue == "")
 	f.queue_free()

@@ -1,14 +1,15 @@
 {
   "about": "R3-EARTH-LINK EL3b.3 (design r3/earth-link.md EL3b): how Earth's feed looks at each Earth rate. The band is chosen by earth.rate (D) alone: the first band whose min <= D (and D < max, when max is given). Nothing is computed from D: the feed's speed is the sim's earth.feed frame moving with the newest light, and the band only styles it. jumble 0..1: ghosts of the weeks that flicked past; drift: a near-still frame breathes slowly; tint: the Doppler shift as a stylized warm (receding) or cool (approaching) wash, an indicator and not a spectral render (gate 2 asserts the bands at RS-26..RS-29 in tests/test_physics.gd); whirl: Earth's clock hand blurs. Calibrated on the RS values: 7.0711e-4 (top speed, astern) still, 0.070888 (0.99c astern) slow, 1 real, 14.107 (0.99c ahead) fast, 1414.2 (top speed, ahead) torrent.",
   "bands": [
-    {"name": "still", "max": 0.01, "jumble": 0.0, "drift": true, "tint": "#F2967E", "tint_alpha": 0.24, "whirl": false, "pitch": 0.5, "sound": "category"},
-    {"name": "slow", "min": 0.01, "max": 0.5, "jumble": 0.0, "drift": true, "tint": "#F2967E", "tint_alpha": 0.14, "whirl": false, "pitch": 0.7, "sound": "category"},
-    {"name": "real", "min": 0.5, "max": 2.0, "jumble": 0.0, "drift": false, "tint": "", "tint_alpha": 0.0, "whirl": false, "pitch": 1.0, "sound": "category"},
-    {"name": "fast", "min": 2.0, "max": 50.0, "jumble": 0.45, "drift": false, "tint": "#7F9CFF", "tint_alpha": 0.14, "whirl": false, "pitch": 1.5, "sound": "category"},
-    {"name": "torrent", "min": 50.0, "jumble": 0.9, "drift": false, "tint": "#7F9CFF", "tint_alpha": 0.24, "whirl": true, "pitch": 2.0, "sound": "babble"}
+    {"name": "still", "max": 0.01, "jumble": 0.0, "drift": true, "tint": "#F2967E", "tint_alpha": 0.24, "whirl": false, "sound": "category"},
+    {"name": "slow", "min": 0.01, "max": 0.5, "jumble": 0.0, "drift": true, "tint": "#F2967E", "tint_alpha": 0.14, "whirl": false, "sound": "category"},
+    {"name": "real", "min": 0.5, "max": 2.0, "jumble": 0.0, "drift": false, "tint": "", "tint_alpha": 0.0, "whirl": false, "sound": "category"},
+    {"name": "fast", "min": 2.0, "max": 50.0, "jumble": 0.45, "drift": false, "tint": "#7F9CFF", "tint_alpha": 0.14, "whirl": false, "sound": "category"},
+    {"name": "torrent", "min": 50.0, "jumble": 0.9, "drift": false, "tint": "#7F9CFF", "tint_alpha": 0.24, "whirl": true, "sound": "babble"}
   ],
   "sound": {
-    "about": "R3-EARTH-LINK EL3b.7 (Mark 2026-10-30): sound from home at the comms receiver. The bed is the week's category (the sky kind plays the sky's), babble in a band whose sound is babble, static out of beam. The band's pitch is Godot's pitch_scale, which stretches time and pitch together as a Doppler shift does; compressed and not physical (at 0.99c astern D = 0.071, about 46 semitones down). A new bed replaces the playing one only after hold_s of the station's clock (a change of beam at once), so a fast feed does not chop. Accents come every every_s divided by the pitch, so slowed home is slower in time too; the first comes first_s (also divided) after the bed starts.",
+    "about": "R3-EARTH-LINK EL3b.7 (Mark 2026-10-30), made exact by R3 audio realism AR8b (standing order 2026-10-30: no compromises on the physics; a True setting and labelled Processed settings). Sound from home at the comms receiver. The bed is the week's category (the sky kind plays the sky's), babble in a band whose sound is babble, static out of beam. Its time rate is the Earth rate D (earth.rate) in every setting: the bed plays at speed D and the accents come every every_s / D (the first first_s / D after the bed starts). Receiver (the default): the ship's receiver corrects the frequency, as the DSN corrects the Voyagers' Doppler shift; a real-time receiver plays between receiver.min_rate and receiver.max_rate of real time (below it holds the moment, above the backlog grows). True: speed and pitch x D, uncorrected; outside receiver.audible nothing reaches the ear and the station says so. A new bed replaces the playing one only after hold_s of the station's clock (a change of beam at once).",
+    "receiver": {"min_rate": 0.0625, "max_rate": 16.0, "audible": [0.02, 50.0]},
     "hold_s": 6.0,
     "first_s": 2.5,
     "beds": {"family": "home_family", "home": "home_home", "town": "home_town", "world": "home_world", "science": "home_science", "sky": "home_sky", "babble": "home_babble", "static": "home_static"},
@@ -28,6 +29,10 @@
     "until_voice": "until Earth's voice",
     "ship": "ship",
     "earth": "Earth",
-    "details": "Details"
+    "details": "Details",
+    "receiver": "receiver",
+    "true_sound": "true sound",
+    "below_hearing": " · below hearing",
+    "above_hearing": " · above hearing"
   }
 }

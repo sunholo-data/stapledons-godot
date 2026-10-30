@@ -39,10 +39,16 @@ var _rng := RandomNumberGenerator.new()
 var relay: AiRelay = null
 var asked := {} # week -> true: each week is asked for once per session
 var visit_asks := 0
-## EL3b.7: what the receiver plays (data/ui/comms_feed.json "sound"; ShipSound follows it while the
-## station is open, the feed itself holds no audio): the bed's cue, its pitch from the band, and the
+## EL3b.7, made exact by R3 audio realism AR8b (standing order 2026-10-30): what the receiver plays
+## (data/ui/comms_feed.json "sound"; ShipSound follows it while the station is open, the feed itself
+## holds no audio): the bed's cue; rate, the stream's speed (pitch_scale); correct, the Receiver bus's
+## pitch factor (1 in True); silent, the True sound outside human hearing ("below" or "above"); the
 ## accent over it, with accent_seq counting every accent that is due.
-var home_sound := {"cue": "", "pitch": 1.0, "accent": "", "accent_seq": 0}
+var home_sound := {"cue": "", "rate": 1.0, "correct": 1.0, "silent": false, "hearing": "", "accent": "", "accent_seq": 0}
+## The station's setting: true = Receiver (the frequency corrected, the default), false = True.
+var receiver := true
+var sound_button := Button.new()
+var earth_rate := 1.0 ## earth.rate (D) of the last refresh
 var _sound_since := 0.0
 var _accent_due := 0.0
 
@@ -190,6 +196,49 @@ func _init() -> void:
 		tag.theme_type_variation = "HUDTag" # the theme's ink backing: readable over any picture or the static
 		add_child(tag)
 	caption.add_theme_font_size_override("font_size", 16)
+	# AR8b: the receiver's setting, both its indicator and its switch (True / Receiver).
+	sound_button.name = "SoundSetting"
+	sound_button.theme_type_variation = "HUDFlat"
+	sound_button.focus_mode = Control.FOCUS_NONE
+	sound_button.add_theme_font_size_override("font_size", 13)
+	sound_button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 8)
+	sound_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	sound_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	sound_button.pressed.connect(func() -> void: set_receiver(not receiver))
+	add_child(sound_button)
+	_sound_words()
+
+
+## AR8b: the station's setting (Receiver, the default, or True). The next refresh plays it.
+func set_receiver(on: bool) -> void:
+	receiver = on
+	if not str(home_sound.cue).is_empty():
+		_apply_rates(str(home_sound.cue))
+	_sound_words()
+
+
+## AR8b: how the receiver plays home at Earth rate d (data/ui/comms_feed.json sound.receiver). The time
+## rate is d in every setting. Receiver: the stream at speed d within the real-time range, its frequency
+## corrected by 1/speed. True: speed and pitch x d, nothing heard outside receiver.audible.
+static func receiver_plan(d: float, on: bool) -> Dictionary:
+	var r: Dictionary = copy().get("sound", {}).get("receiver", {})
+	if on:
+		var rate := clampf(d, float(r.get("min_rate", 0.0625)), float(r.get("max_rate", 16.0)))
+		return {"rate": rate, "correct": 1.0 / rate, "silent": false, "hearing": ""}
+	var aud: Array = r.get("audible", [0.02, 50.0])
+	var hearing := "below" if d < float(aud[0]) else "above" if d > float(aud[1]) else ""
+	return {"rate": d, "correct": 1.0, "silent": not hearing.is_empty(), "hearing": hearing}
+
+
+func _apply_rates(cue: String) -> void:
+	var d := 1.0 if cue == str(copy().get("sound", {}).get("beds", {}).get("static", "")) else earth_rate # the receiver's own hiss has no Doppler
+	home_sound.merge(receiver_plan(d, receiver), true)
+
+
+func _sound_words() -> void:
+	var w: Dictionary = copy().words
+	var h := str(home_sound.get("hearing", ""))
+	sound_button.text = "♪ " + str(w.receiver if receiver else w.true_sound) + (str(w.below_hearing) if h == "below" else str(w.above_hearing) if h == "above" else "")
 
 
 ## The frame's HUD view (ShipConsoles.refresh_view): the picture, the band, static and the tags.
@@ -202,7 +251,8 @@ func refresh(view: Dictionary) -> void:
 	visible = true
 	var w: Dictionary = copy().words
 	beam = e.get("in_beam") == true
-	band = band_for(float(e.get("rate", 1.0)))
+	earth_rate = float(e.get("rate", 1.0))
+	band = band_for(earth_rate)
 	var feed: Dictionary = e.get("feed", {}) if beam else e.get("last_feed", {})
 	var key := live_source(feed) if beam else ""
 	if key.is_empty():
@@ -245,7 +295,8 @@ func refresh(view: Dictionary) -> void:
 
 
 ## EL3b.7: the bed for this frame (the week's category, the sky's, babble or static), held for hold_s
-## of the station's clock before a new week's replaces it; the pitch is the band's. Chosen, never computed.
+## of the station's clock before a new week's replaces it. AR8b: its rates from earth.rate exactly
+## (receiver_plan); the first accent comes first_s / D after it starts. Chosen, never computed.
 func _choose_sound(feed: Dictionary) -> void:
 	var s: Dictionary = copy().get("sound", {})
 	var beds: Dictionary = s.get("beds", {})
@@ -255,12 +306,13 @@ func _choose_sound(feed: Dictionary) -> void:
 		var k := "babble" if str(band.get("sound", "")) == "babble" else "sky" if str(feed.get("kind", "")) == "sky" else str(feed.get("event", {}).get("category", ""))
 		want = str(beds.get(k, ""))
 	var cur := str(home_sound.cue)
-	home_sound.pitch = float(band.get("pitch", 1.0)) if beam else 1.0
 	if want != cur and (cur == "" or (cur == still) != (want == still) or now_s - _sound_since >= float(s.get("hold_s", 0.0))):
 		home_sound.cue = want
 		home_sound.accent = str(s.get("accents", {}).get(want, {}).get("cue", ""))
 		_sound_since = now_s
-		_accent_due = now_s + float(s.get("first_s", 0.0)) / maxf(float(home_sound.pitch), 0.01)
+		_accent_due = now_s + float(s.get("first_s", 0.0)) / maxf(earth_rate, 1e-12)
+	_apply_rates(str(home_sound.cue))
+	_sound_words()
 
 
 ## The fake-clock seam (ShipConsoles.advance): the drift of a near-still frame and the static.
@@ -276,11 +328,11 @@ func advance(dt: float) -> void:
 	if not beam and nf != _noise_frame:
 		_noise_frame = nf
 		static_rect.texture = noise_texture(nf)
-	# EL3b.7: an accent over the bed when it is due, its interval stretched by the pitch.
+	# EL3b.7 / AR8b: an accent over the bed when it is due, every every_s / D (home's own time at D).
 	var acc: Dictionary = copy().get("sound", {}).get("accents", {}).get(str(home_sound.cue), {})
 	if not acc.is_empty() and now_s >= _accent_due:
 		home_sound.accent_seq = int(home_sound.accent_seq) + 1
-		_accent_due = now_s + float(acc.get("every_s", 0.0)) / maxf(float(home_sound.pitch), 0.01)
+		_accent_due = now_s + float(acc.get("every_s", 0.0)) / maxf(earth_rate, 1e-12)
 	_place_ghosts()
 
 

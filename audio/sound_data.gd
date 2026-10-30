@@ -10,7 +10,7 @@ const PART_SCHEMA := "stapledons.audio.asset-part/1"
 const CUES_PATH := "res://data/audio/cues.json"
 const ASSETS_PATH := "res://data/audio/assets.json"
 ## Buses a cue may play on (Ship and Master are mixing buses, never a cue's own).
-const CUE_BUSES := ["Voice", "Ambience", "Effects", "Instruments", "UI", "Music"]
+const CUE_BUSES := ["Voice", "Ambience", "Effects", "Instruments", "Receiver", "UI", "Music"]
 const TRIGGER_KINDS := ["sim_event", "sim_state", "ui_signal", "game"]
 ## Continuous parameters a looping cue may follow (SoundDirector.set_param).
 const PARAMS := ["archive_degradation"]

@@ -9,6 +9,9 @@ extends RefCounted
 ##   │ ├ Ambience     room tone, the spire's hum, beds
 ##   │ ├ Effects      machines, the lift, the drive, footsteps
 ##   │ └ Instruments  the dust counter, navigation tones
+##   │   └ Receiver   the comms receiver's sound from home; a PitchShift, enabled only while the
+##   │                receiver corrects Earth's Doppler shift (R3 audio realism AR8b, standing order
+##   │                2026-10-30: the True setting leaves it off)
 ##   ├ UI        Compressor sidechained to Voice (lighter)
 ##   └ Music     sidechained to Voice; empty (OQ4, D-101)
 ##
@@ -21,6 +24,7 @@ const BUSES := [
 	{"name": "Ambience", "send": "Ship"},
 	{"name": "Effects", "send": "Ship"},
 	{"name": "Instruments", "send": "Ship"},
+	{"name": "Receiver", "send": "Instruments", "pitch_shift": true},
 	{"name": "UI", "send": "Master", "duck": {"threshold": -26.0, "ratio": 2.0, "attack_us": 5000.0, "release_ms": 200.0}},
 	{"name": "Music", "send": "Master", "duck": {"threshold": -30.0, "ratio": 4.0, "attack_us": 5000.0, "release_ms": 400.0}},
 ]
@@ -53,6 +57,9 @@ static func ensure_layout() -> void:
 			r.wet = 0.0 # S1: data/audio/rooms.json sets the level's room
 			r.dry = 1.0
 			AudioServer.add_bus_effect(i, r)
+		if spec.get("pitch_shift", false):
+			AudioServer.add_bus_effect(i, AudioEffectPitchShift.new())
+			AudioServer.set_bus_effect_enabled(i, 0, false) # off until the receiver corrects
 
 
 static func _master_effects() -> void:
@@ -98,7 +105,21 @@ static func is_layout_ok() -> Array[String]:
 			bad.append("%s has an unexpected compressor" % spec.name)
 		if spec.get("reverb", false) and _find_effect(i, "AudioEffectReverb") == null:
 			bad.append("%s has no reverb" % spec.name)
+		if spec.get("pitch_shift", false) and _find_effect(i, "AudioEffectPitchShift") == null:
+			bad.append("%s has no pitch shift" % spec.name)
 	return bad
+
+
+## R3 audio realism AR8b: the comms receiver's frequency correction, a pitch factor on the Receiver
+## bus (1 / the playback rate in the Receiver setting; 1 in the True setting, which leaves it off).
+static func set_receiver(correct: float) -> void:
+	var i := AudioServer.get_bus_index("Receiver")
+	var e := _find_effect(i, "AudioEffectPitchShift") as AudioEffectPitchShift if i >= 0 else null
+	if e == null:
+		return
+	var on := absf(correct - 1.0) > 1e-6
+	e.pitch_scale = clampf(correct, 1.0 / 16.0, 16.0) if on else 1.0
+	AudioServer.set_bus_effect_enabled(i, 0, on)
 
 
 static func _find_effect(bus: int, cls: String) -> AudioEffect:
