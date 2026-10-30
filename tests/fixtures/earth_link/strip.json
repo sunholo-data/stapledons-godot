@@ -1,0 +1,9 @@
+{
+  "about": "Independent analytic finite-cruise fixture, not a recorded sim replay. A=(40,0,0)ly, B=(40,30,0)ly; 30ly in30.25yr is subluminal. Plan sent t100, heard by Earth t140; reply reaches B t190. Arrive t130.25, wait59.75yr. Pixel literals use a600x116 strip with14x12 padding and emitted light t-r included in bounds; they are not produced by EarthStrip.at.",
+  "message": {"sent_t":100.0,"from_ly":40.0,"heard_t":140.0,"arrive_t":130.25,"port_ly":50.0,"reply_t":190.0},
+  "states": [
+    {"id":"committed","t":100.0,"distance":40.0,"light_t":60.0,"sent_px":[190.0,30.4],"heard_px":[366.0,104.0],"reply_px":[586.0,12.0],"now_px":[190.0,30.4]},
+    {"id":"in_flight","t":115.125,"distance":42.720018726587654,"light_t":72.40498127341235,"sent_px":[148.22635484507452,30.4],"heard_px":[342.79241935837473,104.0],"reply_px":[586.0,12.0],"now_px":[221.79664798916616,25.39516554307872]},
+    {"id":"waiting","t":150.0,"distance":50.0,"light_t":100.0,"sent_px":[14.0,30.4],"heard_px":[268.2222222222222,104.0],"reply_px":[586.0,12.0],"now_px":[331.77777777777777,12.0]}
+  ]
+}

@@ -729,8 +729,37 @@ func test_sky_meter() -> void:
 ## surfaces only as a distant "main.gd loads" failure, and Godot exits 0 on it.
 ## R3-EARTH-LINK EL3b.3 (gate 2): the comms feed's look is chosen by the Earth rate D alone
 ## (data/ui/comms_feed.json). At the spec's check values the stillness and the torrent land in
-## their bands: RS-27 7.0711e-4 still, RS-26 0.070888 slow, rest 1 real, RS-28 14.107 fast,
-## RS-29 1414.2 torrent; the tint is warm (receding) below 1 and cool (approaching) above.
+## their bands: RS-28 7.0711e-4 still, RS-26 0.070888 slow, rest 1 real, RS-29 14.107 fast,
+## RS-30 1414.2 torrent; the tint is warm (receding) below 1 and cool (approaching) above.
+func test_earth_observation() -> void:
+	var observe = load("res://physics/observe.gd")
+	check("Earth observation CPU mirror exists", 1.0 if observe != null else 0.0, 1.0, 0.0)
+	if observe == null: return
+	var a := [40.0, 0.0, 0.0]
+	for row: Array in [[26, .01, 1., .070888], [27, .001, 1., .022366], [28, .000001, 1., .00070711], [29, .01, -1., 14.107], [30, .000001, -1., 1414.2]]:
+		var omb: float = row[1]
+		var phi := .5 * log((2. - omb) / omb)
+		var rate: float = observe.earth_rate(a, [row[2], 0., 0.], phi)
+		var exact := sqrt(omb / (2. - omb)) if row[2] > 0. else sqrt((2. - omb) / omb)
+		check("RS-%d Earth rate matches closed form" % row[0], rate, exact, exact * 1e-12)
+		check("RS-%d printed check value" % row[0], rate, row[3], maxf(5e-9, absf(float(row[3])) * 4e-5))
+	check("Earth rate at rest at Sol", observe.earth_rate([0.,0.,0.], [0.,0.,0.], 0.), 1., 0.)
+	check("Earth rate leaving Sol is continuous", observe.earth_rate([0.,0.,0.], [1.,0.,0.], 3.), exp(-3.), 1e-15)
+	check("Earth rate near c does not cancel", observe.earth_rate(a, [1.,0.,0.], 40.), exp(-40.), exp(-40.) * 1e-12)
+	check("RS-31 signal catches 0.9c ship in ten days", observe.catch_up(1./365.25, .1) * 365.25, 10., 1e-12)
+	check("RS-32 top-speed catch-up years", observe.catch_up(1./365.25, 1e-6), 2737.9, .05)
+	check("RS-33 right-angle triangle excess", observe.triangle_excess(a, [40.,30.,0.]), 60., 1e-12)
+	check("RS-34 off-side port triangle excess", observe.triangle_excess(a, [0.,10.,0.]), 8.769, .001)
+	check("RS-35 far-side triangle excess", observe.triangle_excess(a, [-40.,0.,0.]), 0., 0.)
+	check("RS-36 beyond-port geometric excess is not wait", observe.triangle_excess(a, [60.,0.,0.]), 80., 0.)
+	check("RS-37 covered beam wait is zero", observe.link_window(a, [60.,0.,0.], 20., true), 0., 0.)
+	check("finite leg's actual wait differs from light-speed excess", observe.link_window(a, [40.,30.,0.], 30.25, false), 59.75, 0.)
+	check("seenAt uses the source-observer distance", observe.seen_at(100., [40.,30.,0.], [0.,0.,0.]), 50., 0.)
+	check("beam line at angular tolerance inside", 1. if observe.on_beam_line(a, [60.,60.*.5e-7,0.], 1e-7) else 0., 1., 0.)
+	check("beam line at angular tolerance outside", 1. if observe.on_beam_line(a, [60.,60.*2e-7,0.], 1e-7) else 0., 0., 0.)
+	check("beam ray excludes Sol and the far side", 1. if not observe.on_beam_line(a, [0.,0.,0.], 1e-7) and not observe.on_beam_line(a, [-40.,0.,0.], 1e-7) else 0., 1., 0.)
+
+
 func test_earth_feed_bands() -> void:
 	var want := [[0.00070711, "still"], [0.070888, "slow"], [1.0, "real"], [14.107, "fast"], [1414.2, "torrent"]]
 	for w: Array in want:
@@ -1549,6 +1578,7 @@ func _init() -> void:
 	test_sideways_darker()
 	test_angular_psf()
 	test_cmb()
+	test_earth_observation()
 	test_earth_feed_bands()
 	test_scripts_compile()
 	test_sky_meter()

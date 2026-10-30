@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Combined landing checks (2026-10-30)
+
+- Integrate current main and committed Earth-link audio for D-142. Add numeric light-cone/Doppler reference checks and GPU comparisons for the production Earth feed and exchange strip, mirroring the pinned Observe package. Preserve existing golden coverage and keep unfinished feature milestones explicit.
+
 ### Painted NPC asset pilot (2026-10-29)
 
 - D-139/D-140: three painted civilian identities and portrait-derived Medic/Chief Engineer figures, with 25 standing/seated pose assets, preserved generation sources/prompts, deterministic Godot ingestion and alpha/height/foot-anchor/hash checks. An opt-in Commons capture mingles the two crew identities among the existing crowd without changing normal game setup. Appearance approval, per-seat contact calibration, live crew binding and production rollout remain pending.

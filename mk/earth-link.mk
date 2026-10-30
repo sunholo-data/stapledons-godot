@@ -51,3 +51,10 @@ capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --resolution 1280x720 --script tools/comms_station_capture.gd > $(SCRATCH)/comms-station-capture.log 2>&1; rc=$$?; grep -E '^comms-station-capture' $(SCRATCH)/comms-station-capture.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-station-capture.log && grep -q '^comms-station-capture: 4 frames, 0 failures$$' $(SCRATCH)/comms-station-capture.log || { echo "comms-station-capture: FAILED (log $(SCRATCH)/comms-station-capture.log)"; exit 1; }
+
+# Gate2 for the existing feed/strip. A separate family preserves all407 existing main cases.
+.PHONY: earth-link-golden
+earth-link-golden:
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_link_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 11 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
+golden: earth-link-golden

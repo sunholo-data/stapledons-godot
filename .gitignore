@@ -6,6 +6,8 @@ sim/.ailang/
 sim/tools/.ailang/
 data/raw/
 runtime/
+/runtime
+.DS_Store
 build/
 __pycache__/
 *.pyc
@@ -39,3 +41,9 @@ audio_bundle/
 
 # Generated pinned civic playtest configs (make commons-civic-stage).
 assets/levels/commons/civic/
+
+# Godot mistakes these raw catalogue CSVs for translation sources during import.
+# They are generated importer output, not authored localisation assets.
+data/planets/trappist1_ps.*.translation
+data/starmap/truth/*.translation
+tests/fixtures/catalogue/*.translation
