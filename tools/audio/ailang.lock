@@ -1,6 +1,6 @@
 {
   "ailang_version": "v0.54.18",
-  "generated_at": "2026-10-30T18:53:47.961975Z",
+  "generated_at": "2026-10-30T20:38:48.641967Z",
   "generator": "ailang lock v0.54.18",
   "packages": [
     {
@@ -34,8 +34,7 @@
       ],
       "interface_hash": "sha256:3e00883e52b45993590b92de45758930e0a0b3b55347495a746f7291ccb23dfd",
       "name": "sunholo/audio",
-      "path": "../../../ailang-packages-audio06/packages/audio",
-      "source": "path",
+      "source": "registry",
       "version": "0.6.0"
     }
   ],
