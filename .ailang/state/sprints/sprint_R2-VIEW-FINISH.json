@@ -16,9 +16,7 @@
       "description": "Preserve Blender sources and publish current baseline",
       "estimated_loc": 100,
       "estimated_days": 0.75,
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "acceptance_criteria": [
         "Source hashes recorded and packed masters open without missing resources",
         "Current player-camera/HUD baseline inspected and dedicated private gallery verified"
@@ -140,71 +138,57 @@
     "target_loc_per_day": 160,
     "estimated_total_loc": 1950,
     "estimated_agent_days": 15.25,
-    "estimated_critical_path_days": "12–15 including contingency; excludes review/rig waits",
-    "note": "Provisional; original remaining LP1b–LP4 estimates anchor duration. Blender authoring ~600–1,000 additional LOC."
+    "estimated_critical_path_days": "12\u201315 including contingency; excludes review/rig waits",
+    "note": "Provisional; original remaining LP1b\u2013LP4 estimates anchor duration. Blender authoring ~600\u20131,000 additional LOC."
   },
   "registry_reuse": [
     {
       "milestone": "VF0",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF1",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF2",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VFB",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VFU",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF3",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     },
     {
       "milestone": "VF4",
       "package": "none",
       "action": "none",
-      "search_terms": [
-
-      ],
+      "search_terms": [],
       "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
     }
   ],
@@ -511,15 +495,21 @@
   },
   "integration_cleanup": {
     "decision": "D-142",
-    "status": "frozen_for_full_rig",
-    "scope": "Merge current PR344/351 including committed Earth-link audio, publish clean main-based dev build, reconcile Studio checkouts; no laptop SSH work requested",
+    "status": "completed",
+    "scope": "Merge PR344/351/360 including committed Earth-link audio, publish clean main-based dev build and reconcile Studio checkouts. Laptop Git/SSH excluded; no broader feature completion implied.",
     "main_integrated": "061e71aa8be9115d924399b124cfe28ac1fb8fdc",
     "audio_integrated": "67dc0842cf49ea1087879c6620819d0c087d27fa",
     "pre_gate_candidate": "22b7a4c",
     "gate_repair": "1023 physics checks pass. Separate production feed/strip/map family20/0 and owner beam/window family10/0 pass after reconciliation. Existing407 global goldens retained; combined global expected417 plus separate20. Real-sim and analytic fixture scopes explicit; negative controls and opened references retained.",
-    "full_rig": "61f78786 passed576simtests, strict/replay/GR/ISM and priorrepairs; failedcrossing101/1 becauseengineer_angryportrait nowexists. Controlledmissing-emotionfixture repair pending; unexecutedremainder beingdiagnosedwithmake-k before new mandatorycompletefreshclonegate. No fullpassclaimed.",
-    "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
-    "published_main_build": null,
+    "full_rig": "PASS at cad3a06c86d793c6105267686dd25d440294697a: complete fresh-clone test+golden, 98 minutes. Explicit attended D-143 reuses this result for 2ad80f5b: runtime and tests byte-identical; only metadata, two capture-helper theme assignments and one comment differ. All fourteen fresh capture checks pass. No complete exact-2ad rerun claimed.",
+    "cleanup": "Four inactive attended/vf-art/vf-runtime/vf-ui clones removed after empty status, stashes and local-only-commit checks; all19 backup refs verified remotely. Retained root and Earth-link checkouts clean on main; receipt-only final commit may follow the published source commit.",
+    "published_main_build": {
+      "version": "v0.4.0-dev.37-living-bridge-208-g2ad80f5b",
+      "zip": "macos/builds/StapledonsVoyage-v0.4.0-dev.37-living-bridge-208-g2ad80f5b-macos.zip",
+      "sha256": "c8daa88526e36c77a07a49a337ed2c3a5e7ec7c0022b148065ecb49ca95c7b52",
+      "commit": "2ad80f5b97d15784aab58d919b20797d026e9791",
+      "built": "2026-10-30T20:30:32Z"
+    },
     "earth_integrated": "e424bf69aaeb2fc08f43a29d8ca7c93436b4a4f1",
     "backup_prefix": "backup/reconcile-20261030/",
     "backup_refs_verified": 19,
@@ -541,7 +531,12 @@
       "created_by_this_task": true,
       "path": "~/.ailang/state/mission-stapledon.disabled",
       "originally_absent": true,
-      "restore_after": "merge, main build and cleanup; verify task marker before removing"
+      "restore_after": "merge, main build and cleanup; verify task marker before removing",
+      "restored": true,
+      "removed_after_exact_task_marker_check": true,
+      "original_enabled_state_restored": true,
+      "launchd_loaded": true,
+      "iteration_running_at_restore": false
     },
     "integration_repairs": [
       "Makefile total417 retains407 existing +10 owner Earthcases, alongside separate20 production display checks",
@@ -571,13 +566,46 @@
       "fixture": "Controlled neutral-only and sad+neutral PNG sets verify actual loader and fallback order; optional directory retains unchanged production default"
     },
     "remainder_preflight": {
-      "status": "running;2 failures found and repaired,remaining diagnostic continues",
+      "status": "completed; diagnosed input/scope failures repaired and included in successful cad3 full rig",
       "log": "/tmp/stapledon-remainder-preflight.log",
       "input_repair": "30 passed,0 failures; production fixedviews plus explicit private legacy gesture fixture",
       "scene_audit_repair": "16 strictVM tests/0fallback; pure+FS controls; uniform scope controls; frozen2427line replay/83297783bytes identical; mutation controls detected",
-      "replay_pins_changed": false
+      "replay_pins_changed": false,
+      "final_full_rig": "cad3a06c86d793c6105267686dd25d440294697a passed"
     },
-    "late_reconciliation": "Preserve Earth landing docs and final audio-plan progress, retaining tested stronger M4/fallback/theme fixes. Additional executable changes limited to explicit shared themes in two review-capture helpers; all production and test code matches testedcad3a06c. Reuse of fullgate on newhead requires explicit Mark ruling or another complete exact-head run."
+    "late_reconciliation": "Completed: final owner Earth e424bf69 and audio-plan661d551f histories preserved in main2ad80f5b. Mark explicitly approved D-143 full-result reuse; fresh exact-head fast CI passed before landing. Metadata/capture-only late delta independently reviewed.",
+    "merged_main_commit": "2ad80f5b97d15784aab58d919b20797d026e9791",
+    "completed_at": "2026-10-30",
+    "fast_ci": {
+      "head": "2ad80f5b97d15784aab58d919b20797d026e9791",
+      "run_id": 41121877044,
+      "result": "success",
+      "duration": "11m38s"
+    },
+    "merged_prs": [
+      344,
+      351,
+      360
+    ],
+    "open_prs_after_merge": 0,
+    "native_publication": {
+      "gates_log": "/tmp/stapledon-final-native-gates.log",
+      "result": "all required export/publish prerequisites passed before publication",
+      "strict_pack": "1498 checked,0 skips,0 failures",
+      "archive_bytes": 461609956,
+      "signature": "codesign --verify --deep --strict passed",
+      "cloud_full_download_sha256_verified": true,
+      "tailnet_full_download_sha256_verified": true,
+      "cloud_tailnet_bytes_identical": true,
+      "gallery_url": "https://voights-mac-studio.tail97eda0.ts.net:8452/",
+      "gallery_alias": "Stapledons-Voyage-main-2ad80f5b-macos.zip",
+      "laptop_install_observed": false
+    },
+    "evaluation": ".ailang/state/evaluations/eval_R2-COMBINED-LANDING_round_1.json",
+    "game_audio_scope": {
+      "game_package_pin": "0.5.0",
+      "external_audio_realism": "AR0-AR8 recorded; paused P2 listening; AR9 publication/AR10 game adoption remain pending"
+    }
   },
   "npc_character_followup": {
     "decision": "D-139",
