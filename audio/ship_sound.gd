@@ -121,21 +121,24 @@ func _process(_delta: float) -> void:
 func _follow_home(consoles: Variant) -> void:
 	var st: Variant = consoles.get("comms_station") if consoles != null and str(consoles.focused) == "comms" else null
 	var hs: Dictionary = st.feed.home_sound if st is CommsStation and st.is_inside_tree() and st.feed.visible else {}
-	var cue := str(hs.get("cue", ""))
-	var pitch := float(hs.get("pitch", 1.0))
+	# R3 audio realism AR8b: the stream at the feed's rate (D, or within the receiver's range), the
+	# Receiver bus's correction, and nothing at all when the True sound is outside human hearing.
+	var cue := "" if hs.get("silent", false) else str(hs.get("cue", ""))
+	var rate := float(hs.get("rate", 1.0))
+	SoundMix.set_receiver(float(hs.get("correct", 1.0)) if cue != "" else 1.0)
 	if cue != _home:
 		if _home != "":
 			sound.on_game("home_none")
 		_home = cue
 		_home_accents = int(hs.get("accent_seq", 0))
 		if cue != "":
-			sound.set_pitch(cue, pitch)
+			sound.set_pitch(cue, rate)
 			sound.on_game(cue)
 	elif cue != "":
-		sound.set_pitch(cue, pitch)
+		sound.set_pitch(cue, rate)
 		if int(hs.accent_seq) != _home_accents:
 			_home_accents = int(hs.accent_seq)
-			sound.set_pitch(str(hs.accent), pitch)
+			sound.set_pitch(str(hs.accent), rate)
 			sound.on_game(str(hs.accent))
 
 

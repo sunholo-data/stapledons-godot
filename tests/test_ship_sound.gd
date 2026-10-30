@@ -105,16 +105,30 @@ func _run() -> void:
 	ship.consoles.focused = "comms"
 	await frames()
 	var bed: Node = d.get_node_or_null("Loop_home_town")
-	check(bed is AudioStreamPlayer3D and bed.playing and is_equal_approx(bed.pitch_scale, 0.7) and (bed as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(5, 1, -7)), "the station open: the week's bed plays at the receiver, slowed to the band's pitch")
+	var rx := AudioServer.get_bus_index("Receiver")
+	var shift := SoundMix._find_effect(rx, "AudioEffectPitchShift") as AudioEffectPitchShift
+	check(bed is AudioStreamPlayer3D and bed.playing and is_equal_approx(bed.pitch_scale, 0.070888) and (bed as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(5, 1, -7)), "the station open: the week's bed plays at the receiver, slowed to the Earth rate D = 0.070888 exactly")
+	check(AudioServer.is_bus_effect_enabled(rx, 0) and is_equal_approx(shift.pitch_scale, 1.0 / 0.070888), "AR8b Receiver (the default): the frequency corrected by 1/D, so home is in slow motion at its true pitch")
 	ev.rate = 14.107
 	st.refresh({"earth": ev, "clock": {"t": 1.0, "tau": 0.5}})
 	await frames()
-	check(is_equal_approx(bed.pitch_scale, 1.5), "turning for home the bed speeds up (pitch 1.5)")
-	st.feed.advance(float(EarthFeed.copy().sound.first_s) / 0.7 + 0.01) # due from when the bed began (slow)
+	check(is_equal_approx(bed.pitch_scale, 14.107) and is_equal_approx(shift.pitch_scale, 1.0 / 14.107), "turning for home the bed runs 14.107x, corrected down to its true pitch")
+	st.feed.advance(float(EarthFeed.copy().sound.first_s) / 0.070888 + 0.01) # due first_s / D after the bed began (D = 0.070888)
 	await frames()
 	check(d.log_text().count(" home_town_bells v") == 1, "the town's bells sound once when due:\n" + d.log_text())
 	await frames()
 	check(d.log_text().count(" home_town_bells v") == 1, "and not again until the next is due")
+	st.feed.set_receiver(false)
+	await frames()
+	check(is_equal_approx(bed.pitch_scale, 14.107) and not AudioServer.is_bus_effect_enabled(rx, 0), "AR8b True: speed and pitch x D, uncorrected")
+	ev.rate = 1414.2
+	st.refresh({"earth": ev, "clock": {"t": 1.0, "tau": 0.5}})
+	await frames()
+	check(d.fading("home_town") or not bed.playing, "AR8b True at D = 1414: above human hearing, nothing plays")
+	st.feed.set_receiver(true)
+	ev.rate = 14.107
+	st.refresh({"earth": ev, "clock": {"t": 1.0, "tau": 0.5}})
+	await frames()
 	ship.consoles.focused = ""
 	await frames()
 	check(d.fading("home_town") or not bed.playing, "closing the station fades the bed out")

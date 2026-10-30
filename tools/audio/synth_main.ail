@@ -4,12 +4,14 @@ module stapledons/audio/synth_main
 -- bytes, sha256, frames, loop points, licence synth-own, provenance = this generator's sha256 and the
 -- recipe id). The FS write is evaluator-only on the strict VM (Phase 2E), so this shell runs on the
 -- plain VM; everything it computes comes from the strict-clean core.
--- The synthesis is the sunholo/audio package (R2-SUNHOLO-AUDIO); provenance names the package
+-- The synthesis is the sunholo/audio package (R2-SUNHOLO-AUDIO; since 0.6.0 its `sound` front end,
+-- R3-SUNHOLO-AUDIO-REALISM, which renders every 0.5.0 recipe through recipe.render unchanged); provenance names the package
 -- version and its locked content hash (from tools/audio/ailang.lock), not a source file.
 --   ailang run --quiet --bytecode --caps IO,FS --package-dir tools/audio --entry main --args-json \
 --     '{"recipes":"data/audio/recipes.json","out":"assets/audio/synth","part":"data/audio/assets_synth.json","lock":"tools/audio/ailang.lock"}' \
 --     tools/audio/synth_main.ail
-import pkg/sunholo/audio/recipe (Recipe, parseRecipesAs, render, frames)
+import pkg/sunholo/audio/recipe (Recipe, frames)
+import pkg/sunholo/audio/sound (Sound, parseSoundsAs, renderSound)
 import pkg/sunholo/audio/pcm (pcm16)
 import std/audio (wavFromPcm)
 import std/bytes (length as byteLength)
@@ -42,7 +44,8 @@ export pure func generatorOf(lockText: string) -> Result[Generator, string] = ma
   }
 }
 
-pure func row(r: Recipe, path: string, wav: bytes, g: Generator) -> Json {
+pure func row(s: Sound, path: string, wav: bytes, g: Generator) -> Json {
+  let r = s.base;
   let n = frames(r);
   jo([kv("id", js(r.id)), kv("path", js(path)), kv("bytes", jint(byteLength(wav))), kv("sha256", js(sha256Bytes(wav))),
     kv("rate", jint(r.rate)), kv("channels", jint(1)), kv("frames", jint(n)),
@@ -56,19 +59,20 @@ pure func partText(rows: [Json]) -> string {
   "${body}\n"
 }
 
-func writeOne(a: Args, g: Generator, r: Recipe) -> Result[Json, string] ! {FS, IO} {
-  let wav = wavFromPcm(pcm16(render(r)), r.rate, 1, 16);
+func writeOne(a: Args, g: Generator, s: Sound) -> Result[Json, string] ! {FS, IO} {
+  let r = s.base;
+  let wav = wavFromPcm(pcm16(renderSound(s)), r.rate, 1, 16);
   let path = "${a.out}/${r.id}.wav";
   match writeFileBytesResult(path, wav) {
     Err(e) => Err("${path}: ${e}"),
     Ok(_) => {
       println("sound-synth: ${r.id} ${intToStr(frames(r))} frames ${intToStr(byteLength(wav))} bytes");
-      Ok(row(r, path, wav, g))
+      Ok(row(s, path, wav, g))
     }
   }
 }
 
-func writeAll(a: Args, g: Generator, rs: [Recipe], acc: [Json]) -> Result[[Json], string] ! {FS, IO} =
+func writeAll(a: Args, g: Generator, rs: [Sound], acc: [Json]) -> Result[[Json], string] ! {FS, IO} =
   match rs {
     [] => Ok(acc),
     r :: more => match writeOne(a, g, r) { Err(e) => Err(e), Ok(j) => writeAll(a, g, more, acc ++ [j]) }
@@ -77,7 +81,7 @@ func writeAll(a: Args, g: Generator, rs: [Recipe], acc: [Json]) -> Result[[Json]
 export func main(a: Args) -> () ! {FS, IO} =
   match readFileResult(a.recipes) {
     Err(e) => println("sound-synth: FAIL reading ${a.recipes}: ${e}"),
-    Ok(text) => match parseRecipesAs("stapledons.audio.recipes/1", text) {
+    Ok(text) => match parseSoundsAs("stapledons.audio.recipes/1", text) {
       Err(e) => println("sound-synth: FAIL ${e}"),
       Ok(rs) => match readFileResult(a.lock) {
         Err(e) => println("sound-synth: FAIL reading ${a.lock}: ${e}"),

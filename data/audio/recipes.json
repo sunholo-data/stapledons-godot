@@ -1382,176 +1382,1702 @@
   },
   {
    "id": "home_family",
-   "about": "R3-EARTH-LINK EL3b.7: sound from home, family. A room of voices, low and warm, never words; the room's air under it. 5 s loop. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): steeper filters, a murmur rather than a hiss",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
-   "layers": [
-    {
-     "kind": "white",
-     "amp": 0.5,
-     "lowpass_hz": 1000.0,
-     "highpass_hz": 250.0,
-     "seed": 101,
-     "beat_hz": 1.4,
-     "beat_depth": 0.55,
-     "lowpass_poles": 3
-    },
-    {
-     "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 1600.0,
-     "highpass_hz": 450.0,
-     "seed": 102,
-     "beat_hz": 2.2,
-     "beat_depth": 0.6,
-     "lowpass_poles": 3
-    },
-    {
-     "kind": "white",
-     "amp": 0.35,
-     "lowpass_hz": 700.0,
-     "highpass_hz": 180.0,
-     "seed": 103,
-     "beat_hz": 0.6,
-     "beat_depth": 0.5,
-     "lowpass_poles": 3
-    },
-    {
-     "kind": "white",
-     "amp": 0.25,
-     "lowpass_hz": 160.0,
-     "seed": 104
-    }
-   ],
    "swell": {
     "rate": 0.2,
     "depth": 0.15
-   }
+   },
+   "about": "R3-EARTH-LINK EL3b.7: sound from home, family. A room of voices, low and warm, never words; the room's air under it. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): three talkers (a jittered glottal buzz through moving vowel formants, a syllable at a time, seeded), in a small room, over a quiet brown room tone",
+   "layers": [
+    {
+     "kind": "events",
+     "amp": 0.55,
+     "seed": 201,
+     "voices": [
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 13,
+      "spread": 0.95,
+      "min_gap_s": 0.12
+     },
+     "vary": {
+      "amp_db": 6,
+      "cents": 160
+     },
+     "lowpass_hz": 2600,
+     "highpass_hz": 150,
+     "space": {
+      "t60": 0.45,
+      "damp_hz": 2500,
+      "predelay_ms": 8,
+      "wet": 0.35
+     },
+     "about": "talker 1, a man"
+    },
+    {
+     "kind": "events",
+     "amp": 0.45,
+     "seed": 202,
+     "voices": [
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 11,
+      "spread": 0.95,
+      "min_gap_s": 0.12
+     },
+     "vary": {
+      "amp_db": 6,
+      "cents": 160
+     },
+     "lowpass_hz": 2800,
+     "highpass_hz": 150,
+     "space": {
+      "t60": 0.45,
+      "damp_hz": 2500,
+      "predelay_ms": 8,
+      "wet": 0.35
+     },
+     "about": "talker 2, a woman"
+    },
+    {
+     "kind": "events",
+     "amp": 0.3,
+     "seed": 203,
+     "voices": [
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.2,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 138.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.09000000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.06,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.06
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 8,
+      "spread": 0.95,
+      "min_gap_s": 0.12
+     },
+     "vary": {
+      "amp_db": 6,
+      "cents": 160
+     },
+     "lowpass_hz": 2200,
+     "highpass_hz": 150,
+     "space": {
+      "t60": 0.45,
+      "damp_hz": 2500,
+      "predelay_ms": 8,
+      "wet": 0.35
+     },
+     "about": "talker 3, further off"
+    },
+    {
+     "kind": "brown",
+     "amp": 0.12,
+     "lowpass_hz": 350,
+     "seed": 204,
+     "about": "the room's air"
+    }
+   ]
   },
   {
    "id": "home_home",
-   "about": "EL3b.7: home, the house and the valley. Wind in the leaves over a low garden air. 5 s loop. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): the leaves softer and darker",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
-   "layers": [
-    {
-     "kind": "white",
-     "amp": 0.14,
-     "lowpass_hz": 4000.0,
-     "highpass_hz": 1800.0,
-     "seed": 111,
-     "beat_hz": 0.4,
-     "beat_depth": 0.6,
-     "lowpass_poles": 2
-    },
-    {
-     "kind": "white",
-     "amp": 0.5,
-     "lowpass_hz": 350.0,
-     "seed": 112,
-     "beat_hz": 0.2,
-     "beat_depth": 0.4
-    },
-    {
-     "kind": "white",
-     "amp": 0.12,
-     "lowpass_hz": 2400.0,
-     "highpass_hz": 700.0,
-     "seed": 113,
-     "beat_hz": 0.6,
-     "beat_depth": 0.7,
-     "lowpass_poles": 3
-    }
-   ],
    "swell": {
     "rate": 0.2,
     "depth": 0.2
-   }
+   },
+   "about": "EL3b.7: home, the house and the valley. Wind in the leaves over a low garden air. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): brown garden air; two gusts (pink through a rising band, wrapping); leaves as scattered short pink rustles that breathe with the wind",
+   "layers": [
+    {
+     "kind": "brown",
+     "amp": 0.45,
+     "lowpass_hz": 450,
+     "lowpass_poles": 2,
+     "seed": 211,
+     "beat_hz": 0.2,
+     "beat_depth": 0.4,
+     "about": "garden air"
+    },
+    {
+     "kind": "events",
+     "amp": 0.35,
+     "seed": 212,
+     "about": "gusts",
+     "voices": [
+      {
+       "seconds": 2.2,
+       "fade_ms": 600,
+       "layers": [
+        {
+         "kind": "pink",
+         "amp": 0.5,
+         "bands": [
+          {
+           "hz": 700,
+           "hz_to": 1600,
+           "q": 0.9
+          }
+         ],
+         "env": {
+          "attack": 0.8,
+          "tau": 0.7
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.4,
+      2.9
+     ],
+     "vary": {
+      "amp_db": 3
+     }
+    },
+    {
+     "kind": "events",
+     "amp": 0.16,
+     "seed": 213,
+     "about": "leaves",
+     "voices": [
+      {
+       "seconds": 0.04,
+       "fade_ms": 10,
+       "layers": [
+        {
+         "kind": "pink",
+         "amp": 0.5,
+         "bands": [
+          {
+           "hz": 3800,
+           "q": 1.3
+          },
+          {
+           "hz": 6200,
+           "q": 1.6,
+           "gain": 0.6
+          }
+         ],
+         "env": {
+          "attack": 0.002,
+          "tau": 0.01
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 110,
+      "spread": 1.0
+     },
+     "vary": {
+      "amp_db": 12
+     },
+     "beat_hz": 0.4,
+     "beat_depth": 0.7
+    }
+   ]
   },
   {
    "id": "home_town",
-   "about": "EL3b.7: the town. A street's voices and feet, traffic far off, a little brightness in the air. 5 s loop. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): the high air dropped, steeper filters",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
+   "about": "EL3b.7: the town. A street's voices and feet, traffic far off, a little brightness in the air. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): two walkers' steps (fixed times, a soft heel through resonant bands), a car passing far off, far talkers in the street's echo, brown traffic rumble",
    "layers": [
     {
-     "kind": "white",
-     "amp": 0.4,
-     "lowpass_hz": 1100.0,
-     "highpass_hz": 220.0,
-     "seed": 121,
-     "beat_hz": 1.0,
-     "beat_depth": 0.4,
-     "lowpass_poles": 3
-    },
-    {
-     "kind": "white",
-     "amp": 0.5,
-     "lowpass_hz": 140.0,
-     "seed": 122,
+     "kind": "brown",
+     "amp": 0.35,
+     "lowpass_hz": 260,
+     "lowpass_poles": 2,
+     "seed": 221,
      "beat_hz": 0.2,
      "beat_depth": 0.3,
-     "lowpass_poles": 3
+     "about": "traffic far off"
+    },
+    {
+     "kind": "events",
+     "amp": 0.35,
+     "seed": 222,
+     "about": "a car passing far off",
+     "voices": [
+      {
+       "seconds": 3.2,
+       "fade_ms": 800,
+       "layers": [
+        {
+         "kind": "pink",
+         "amp": 0.5,
+         "bands": [
+          {
+           "hz": 280,
+           "hz_to": 520,
+           "q": 0.8
+          }
+         ],
+         "lowpass_hz": 1500,
+         "env": {
+          "attack": 1.4,
+          "tau": 0.8
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      1.2
+     ]
+    },
+    {
+     "kind": "events",
+     "amp": 0.45,
+     "seed": 223,
+     "about": "a walker, near",
+     "voices": [
+      {
+       "seconds": 0.12,
+       "fade_ms": 30,
+       "layers": [
+        {
+         "kind": "brown",
+         "amp": 0.6,
+         "bands": [
+          {
+           "hz": 170,
+           "q": 1.4
+          },
+          {
+           "hz": 1500,
+           "q": 2.0,
+           "gain": 0.25
+          }
+         ],
+         "env": {
+          "attack": 0.002,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "highpass_hz": 2500,
+         "env": {
+          "tau": 0.004
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.1,
+      0.65,
+      1.2,
+      1.75,
+      2.3,
+      2.85,
+      3.4,
+      3.95,
+      4.5
+     ],
+     "vary": {
+      "amp_db": 3
+     },
+     "lowpass_hz": 5000
+    },
+    {
+     "kind": "events",
+     "amp": 0.25,
+     "seed": 224,
+     "about": "a walker, further",
+     "voices": [
+      {
+       "seconds": 0.12,
+       "fade_ms": 30,
+       "layers": [
+        {
+         "kind": "brown",
+         "amp": 0.6,
+         "bands": [
+          {
+           "hz": 170,
+           "q": 1.4
+          },
+          {
+           "hz": 1500,
+           "q": 2.0,
+           "gain": 0.25
+          }
+         ],
+         "env": {
+          "attack": 0.002,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "highpass_hz": 2500,
+         "env": {
+          "tau": 0.004
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.3,
+      0.92,
+      1.54,
+      2.16,
+      2.78,
+      3.4,
+      4.02,
+      4.64
+     ],
+     "vary": {
+      "amp_db": 3
+     },
+     "lowpass_hz": 2500
+    },
+    {
+     "kind": "events",
+     "amp": 0.35,
+     "seed": 225,
+     "voices": [
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 112.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 128.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 196.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 215.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 150.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 34,
+      "spread": 1.0,
+      "min_gap_s": 0.0
+     },
+     "vary": {
+      "amp_db": 8,
+      "cents": 200
+     },
+     "lowpass_hz": 1900,
+     "highpass_hz": 180,
+     "space": {
+      "t60": 1.1,
+      "damp_hz": 2200,
+      "predelay_ms": 20,
+      "wet": 0.45
+     },
+     "about": "a crowd: syllables from 5 talkers picked by seed"
     }
    ]
   },
   {
    "id": "home_world",
-   "about": "EL3b.7: the world. A large crowd far off, rising and falling. 5 s loop. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): steeper filters",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
-   "layers": [
-    {
-     "kind": "white",
-     "amp": 0.4,
-     "lowpass_hz": 1500.0,
-     "highpass_hz": 300.0,
-     "seed": 131,
-     "beat_hz": 0.6,
-     "beat_depth": 0.5,
-     "lowpass_poles": 3
-    },
-    {
-     "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 2200.0,
-     "highpass_hz": 500.0,
-     "seed": 132,
-     "beat_hz": 1.4,
-     "beat_depth": 0.5,
-     "lowpass_poles": 3
-    },
-    {
-     "kind": "white",
-     "amp": 0.3,
-     "lowpass_hz": 900.0,
-     "highpass_hz": 200.0,
-     "seed": 133,
-     "beat_hz": 2.6,
-     "beat_depth": 0.45,
-     "lowpass_poles": 3
-    }
-   ],
    "swell": {
     "rate": 0.2,
     "depth": 0.3
-   }
+   },
+   "about": "EL3b.7: the world. A large crowd far off, rising and falling. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): a crowd of ten talkers' syllables, low-passed and far, in a big space, over a vowel-coloured pink wash",
+   "layers": [
+    {
+     "kind": "events",
+     "amp": 0.6,
+     "seed": 231,
+     "voices": [
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 108.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 118.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 126.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 140.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 155.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 190.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 220.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 232.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 170.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 80,
+      "spread": 1.0,
+      "min_gap_s": 0.0
+     },
+     "vary": {
+      "amp_db": 8,
+      "cents": 200
+     },
+     "lowpass_hz": 1500,
+     "highpass_hz": 180,
+     "space": {
+      "t60": 1.8,
+      "damp_hz": 1800,
+      "predelay_ms": 35,
+      "wet": 0.55
+     },
+     "about": "a crowd: syllables from 10 talkers picked by seed"
+    },
+    {
+     "kind": "pink",
+     "amp": 0.18,
+     "vowel": "o",
+     "lowpass_hz": 1300,
+     "seed": 232,
+     "beat_hz": 0.6,
+     "beat_depth": 0.4,
+     "about": "the crowd's wash"
+    }
+   ]
   },
   {
    "id": "home_science",
-   "about": "EL3b.7: science and space. A lab's carrier hum, a fan's hiss and one slowly pulsing instrument tone. 5 s loop; whole cycles. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): the fan barely there",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
+   "about": "EL3b.7: science and space. A lab's carrier hum, a fan and one slowly pulsing instrument tone. 5 s loop; whole cycles. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): the hum and the pulse kept; the fan is pink air with its blade-pass tone (7 blades at 20 rev/s: 140 and 280 Hz)",
    "layers": [
     {
      "kind": "sine",
@@ -1569,12 +3095,25 @@
      "amp": 0.05
     },
     {
-     "kind": "white",
-     "amp": 0.015,
-     "lowpass_hz": 5000.0,
-     "highpass_hz": 3000.0,
-     "seed": 141,
-     "lowpass_poles": 2
+     "kind": "pink",
+     "amp": 0.05,
+     "lowpass_hz": 3500,
+     "highpass_hz": 300,
+     "seed": 241,
+     "about": "the fan's air"
+    },
+    {
+     "kind": "sine",
+     "freq": 140.0,
+     "amp": 0.025,
+     "beat_hz": 0.2,
+     "beat_depth": 0.3,
+     "about": "blade-pass"
+    },
+    {
+     "kind": "sine",
+     "freq": 280.0,
+     "amp": 0.012
     },
     {
      "kind": "sine",
@@ -1587,475 +3126,1726 @@
   },
   {
    "id": "home_sky",
-   "about": "EL3b.7: the sky over home. Night air and crickets. 5 s loop; whole cycles. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): the high air dropped; night air and crickets only",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
+   "about": "EL3b.7: the sky over home. Night air and crickets. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): three crickets, each a chirp of 3-4 pulses of a 4-5 kHz tone at its own rate (Dolbear's law: about 20 C), outdoors, over brown night air",
    "layers": [
     {
-     "kind": "white",
-     "amp": 0.45,
-     "lowpass_hz": 300.0,
-     "seed": 151,
+     "kind": "brown",
+     "amp": 0.3,
+     "lowpass_hz": 260,
+     "seed": 251,
      "beat_hz": 0.2,
-     "beat_depth": 0.5
+     "beat_depth": 0.4,
+     "about": "night air"
     },
     {
-     "kind": "sine",
-     "freq": 4400.0,
+     "kind": "events",
+     "amp": 0.11,
+     "seed": 252,
+     "about": "cricket 1, every 0.5 s",
+     "voices": [
+      {
+       "seconds": 0.088,
+       "fade_ms": 5,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 4500.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.0,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.011
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4500.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.017,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.028
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4500.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.034,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.045
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4500.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.051,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.062
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.05,
+      0.55,
+      1.05,
+      1.55,
+      2.05,
+      2.55,
+      3.05,
+      3.55,
+      4.05,
+      4.55
+     ],
+     "vary": {
+      "amp_db": 2
+     },
+     "space": {
+      "t60": 0.3,
+      "damp_hz": 5000,
+      "wet": 0.15
+     }
+    },
+    {
+     "kind": "events",
+     "amp": 0.08,
+     "seed": 253,
+     "about": "cricket 2, 12 chirps in 5 s",
+     "voices": [
+      {
+       "seconds": 0.071,
+       "fade_ms": 5,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 4700.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.0,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.011
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4700.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.017,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.028
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4700.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.034,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.045
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.21,
+      0.627,
+      1.043,
+      1.46,
+      1.877,
+      2.293,
+      2.71,
+      3.127,
+      3.543,
+      3.96,
+      4.377,
+      4.793
+     ],
+     "vary": {
+      "amp_db": 2
+     }
+    },
+    {
+     "kind": "events",
      "amp": 0.05,
-     "beat_hz": 1.2,
-     "beat_depth": 0.95
-    },
-    {
-     "kind": "sine",
-     "freq": 4600.0,
-     "amp": 0.04,
-     "beat_hz": 1.6,
-     "beat_depth": 0.95
+     "seed": 254,
+     "about": "cricket 3, far",
+     "voices": [
+      {
+       "seconds": 0.1,
+       "fade_ms": 5,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 4200.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.0,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.013
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4200.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.02,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.033
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4200.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.04,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.053
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 4200.0,
+         "amp": 0.5,
+         "env": {
+          "delay": 0.06,
+          "attack": 0.002,
+          "tau": 0.006,
+          "stop": 0.073
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.37,
+      0.995,
+      1.62,
+      2.245,
+      2.87,
+      3.495,
+      4.12,
+      4.745
+     ],
+     "lowpass_hz": 3500
     }
    ]
   },
   {
    "id": "home_babble",
-   "about": "EL3b.7: the torrent. Weeks of home flicking past: a babble of voices and the twitter of tunes and bells. 5 s loop; whole cycles. v2 (Mark 2026-10-30, \"they all seem to include noise in background\"): steeper filters",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
+   "about": "EL3b.7: the torrent. Weeks of home flicking past: a babble of voices and the twitter of tunes and bells. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): dense short syllables from six talkers, scattered FM chime fragments and plucked notes",
    "layers": [
     {
-     "kind": "white",
-     "amp": 0.45,
-     "lowpass_hz": 2600.0,
-     "highpass_hz": 600.0,
-     "seed": 161,
-     "beat_hz": 3.4,
-     "beat_depth": 0.7,
-     "lowpass_poles": 2
+     "kind": "events",
+     "amp": 0.6,
+     "seed": 261,
+     "voices": [
+      {
+       "seconds": 0.12,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 115.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.054
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.036
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.12,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 130.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.054
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.036
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.12,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 200.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.054
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.036
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.12,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 220.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.054
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.036
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.12,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 160.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.054
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.036
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.12,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 240.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.054
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.036
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 70,
+      "spread": 1.0,
+      "min_gap_s": 0.0
+     },
+     "vary": {
+      "amp_db": 8,
+      "cents": 200
+     },
+     "lowpass_hz": 3000,
+     "highpass_hz": 180,
+     "space": {
+      "t60": 0.5,
+      "damp_hz": 3000,
+      "wet": 0.25
+     },
+     "about": "a crowd: syllables from 6 talkers picked by seed"
     },
     {
-     "kind": "white",
-     "amp": 0.35,
-     "lowpass_hz": 1800.0,
-     "highpass_hz": 350.0,
-     "seed": 162,
-     "beat_hz": 5.2,
-     "beat_depth": 0.7,
-     "lowpass_poles": 2
-    },
-    {
-     "kind": "white",
+     "kind": "events",
      "amp": 0.25,
-     "lowpass_hz": 3500.0,
-     "highpass_hz": 1200.0,
-     "seed": 163,
-     "beat_hz": 7.6,
-     "beat_depth": 0.8,
-     "lowpass_poles": 2
+     "seed": 262,
+     "about": "chime fragments",
+     "voices": [
+      {
+       "seconds": 0.5,
+       "fade_ms": 150,
+       "layers": [
+        {
+         "kind": "fm",
+         "freq": 880.0,
+         "ratio": 1.4,
+         "index": 4,
+         "index_to": 0,
+         "index_tau": 0.12,
+         "amp": 0.4,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.25
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.5,
+       "fade_ms": 150,
+       "layers": [
+        {
+         "kind": "fm",
+         "freq": 1320.0,
+         "ratio": 3.5,
+         "index": 4,
+         "index_to": 0,
+         "index_tau": 0.12,
+         "amp": 0.4,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.25
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.5,
+       "fade_ms": 150,
+       "layers": [
+        {
+         "kind": "fm",
+         "freq": 1046.5,
+         "ratio": 1.4,
+         "index": 4,
+         "index_to": 0,
+         "index_tau": 0.12,
+         "amp": 0.4,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.25
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 9
+     },
+     "vary": {
+      "amp_db": 6,
+      "cents": 300
+     }
     },
     {
-     "kind": "sine",
-     "freq": 1800.0,
-     "amp": 0.05,
-     "beat_hz": 6.2,
-     "beat_depth": 1.0
-    },
-    {
-     "kind": "sine",
-     "freq": 2400.0,
-     "amp": 0.04,
-     "beat_hz": 4.6,
-     "beat_depth": 1.0
+     "kind": "events",
+     "amp": 0.25,
+     "seed": 263,
+     "about": "tune fragments",
+     "voices": [
+      {
+       "seconds": 0.4,
+       "fade_ms": 120,
+       "layers": [
+        {
+         "kind": "pluck",
+         "freq": 523.25,
+         "t60": 0.8,
+         "bright": 0.6,
+         "amp": 0.5
+        }
+       ]
+      },
+      {
+       "seconds": 0.4,
+       "fade_ms": 120,
+       "layers": [
+        {
+         "kind": "pluck",
+         "freq": 659.25,
+         "t60": 0.8,
+         "bright": 0.6,
+         "amp": 0.5
+        }
+       ]
+      },
+      {
+       "seconds": 0.4,
+       "fade_ms": 120,
+       "layers": [
+        {
+         "kind": "pluck",
+         "freq": 783.99,
+         "t60": 0.8,
+         "bright": 0.6,
+         "amp": 0.5
+        }
+       ]
+      },
+      {
+       "seconds": 0.4,
+       "fade_ms": 120,
+       "layers": [
+        {
+         "kind": "pluck",
+         "freq": 587.33,
+         "t60": 0.8,
+         "bright": 0.6,
+         "amp": 0.5
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 11,
+      "min_gap_s": 0.1
+     },
+     "vary": {
+      "amp_db": 4
+     }
     }
    ]
   },
   {
    "id": "home_static",
-   "about": "EL3b.7: no signal. A faint receiver hiss, the sound of the static on the picture. 5 s loop.",
    "seconds": 5.0,
    "loop": true,
    "peak_db": -6.0,
-   "fade_ms": 20.0,
+   "about": "EL3b.7: no signal. A faint receiver hiss, the sound of the static on the picture. 5 s loop. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): pink receiver hiss in the receiver's band, a low brown rumble, scattered crackle (1-3 ms clicks, 12 dB of variation) under the hiss",
    "layers": [
     {
-     "kind": "white",
+     "kind": "pink",
      "amp": 0.5,
-     "lowpass_hz": 7000.0,
-     "highpass_hz": 1200.0,
-     "seed": 171,
+     "lowpass_hz": 6500,
+     "highpass_hz": 900,
+     "seed": 271,
      "beat_hz": 0.4,
-     "beat_depth": 0.25
+     "beat_depth": 0.2
     },
     {
-     "kind": "white",
-     "amp": 0.1,
-     "lowpass_hz": 900.0,
-     "highpass_hz": 300.0,
-     "seed": 172
+     "kind": "brown",
+     "amp": 0.08,
+     "lowpass_hz": 900,
+     "highpass_hz": 250,
+     "seed": 272
+    },
+    {
+     "kind": "events",
+     "amp": 0.12,
+     "seed": 273,
+     "about": "crackle",
+     "voices": [
+      {
+       "seconds": 0.003,
+       "fade_ms": 1,
+       "layers": [
+        {
+         "kind": "white",
+         "amp": 0.5,
+         "highpass_hz": 1500
+        }
+       ]
+      },
+      {
+       "seconds": 0.0015,
+       "fade_ms": 0.5,
+       "layers": [
+        {
+         "kind": "white",
+         "amp": 0.5,
+         "highpass_hz": 2500
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 45
+     },
+     "vary": {
+      "amp_db": 12
+     }
     }
    ]
   },
   {
    "id": "home_family_tune",
-   "about": "EL3b.7 accent: a few soft notes of a tune from the next room (G B D B A G), a music-box timbre. Calm, not jolly.",
    "seconds": 3.2,
    "loop": false,
    "peak_db": -3.0,
-   "fade_ms": 300.0,
+   "about": "EL3b.7 accent: a few soft notes of a tune from the next room (G B D B A G), a music box. Calm, not jolly. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): take A: struck steel tines (fundamental + cantilever-beam modes 6.27 and 17.55, a tiny click), heard through a wall in a small room",
    "layers": [
     {
-     "kind": "sine",
-     "freq": 392.0,
-     "amp": 0.3,
-     "env": {
-      "attack": 0.01,
-      "tau": 0.5
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 784.0,
-     "amp": 0.07,
-     "env": {
-      "attack": 0.005,
-      "tau": 0.25
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 493.88,
-     "amp": 0.28,
-     "env": {
-      "delay": 0.4,
-      "attack": 0.01,
-      "tau": 0.5
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 987.77,
-     "amp": 0.06,
-     "env": {
-      "delay": 0.4,
-      "attack": 0.005,
-      "tau": 0.25
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 587.33,
-     "amp": 0.26,
-     "env": {
-      "delay": 0.8,
-      "attack": 0.01,
-      "tau": 0.55
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 1174.66,
-     "amp": 0.05,
-     "env": {
-      "delay": 0.8,
-      "attack": 0.005,
-      "tau": 0.25
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 493.88,
-     "amp": 0.24,
-     "env": {
-      "delay": 1.3,
-      "attack": 0.01,
-      "tau": 0.5
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 440.0,
-     "amp": 0.24,
-     "env": {
-      "delay": 1.7,
-      "attack": 0.01,
-      "tau": 0.5
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 392.0,
-     "amp": 0.28,
-     "env": {
-      "delay": 2.1,
-      "attack": 0.01,
-      "tau": 0.8
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 784.0,
-     "amp": 0.06,
-     "env": {
-      "delay": 2.1,
-      "attack": 0.005,
-      "tau": 0.3
+     "kind": "events",
+     "amp": 0.8,
+     "seed": 281,
+     "voices": [
+      {
+       "seconds": 1.1,
+       "fade_ms": 200,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 392.0,
+         "amp": 0.3,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 2456.66,
+         "amp": 0.05,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.12
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 6879.6,
+         "amp": 0.012,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "white",
+         "amp": 0.03,
+         "env": {
+          "tau": 0.0015
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 1.1,
+       "fade_ms": 200,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 493.88,
+         "amp": 0.3,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 3095.15,
+         "amp": 0.05,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.12
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 8667.59,
+         "amp": 0.012,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "white",
+         "amp": 0.03,
+         "env": {
+          "tau": 0.0015
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 1.1,
+       "fade_ms": 200,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 587.33,
+         "amp": 0.3,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 3680.8,
+         "amp": 0.05,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.12
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 10307.64,
+         "amp": 0.012,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "white",
+         "amp": 0.03,
+         "env": {
+          "tau": 0.0015
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 1.1,
+       "fade_ms": 200,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 493.88,
+         "amp": 0.3,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 3095.15,
+         "amp": 0.05,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.12
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 8667.59,
+         "amp": 0.012,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "white",
+         "amp": 0.03,
+         "env": {
+          "tau": 0.0015
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 1.1,
+       "fade_ms": 200,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 440.0,
+         "amp": 0.3,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 2757.48,
+         "amp": 0.05,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.12
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 7722.0,
+         "amp": 0.012,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "white",
+         "amp": 0.03,
+         "env": {
+          "tau": 0.0015
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 1.1,
+       "fade_ms": 200,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 392.0,
+         "amp": 0.3,
+         "env": {
+          "attack": 0.002,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 2456.66,
+         "amp": 0.05,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.12
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 6879.6,
+         "amp": 0.012,
+         "env": {
+          "attack": 0.001,
+          "tau": 0.03
+         }
+        },
+        {
+         "kind": "white",
+         "amp": 0.03,
+         "env": {
+          "tau": 0.0015
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.0,
+      0.4,
+      0.8,
+      1.3,
+      1.7,
+      2.1
+     ],
+     "vary": {
+      "cycle": true
+     },
+     "lowpass_hz": 3500,
+     "space": {
+      "t60": 0.5,
+      "damp_hz": 2500,
+      "predelay_ms": 6,
+      "wet": 0.3
      }
     }
    ]
   },
   {
    "id": "home_home_birds",
-   "about": "EL3b.7 accent: birds in the garden, two short phrases of rising chirps.",
    "seconds": 1.8,
    "loop": false,
    "peak_db": -3.0,
-   "fade_ms": 150.0,
+   "about": "EL3b.7 accent: birds in the garden, two short phrases of rising chirps. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): the same phrases with a fast warble on each chirp, then a short descending trill, in open air",
    "layers": [
     {
-     "kind": "sine",
-     "freq": 2800.0,
-     "glide_to": 4200.0,
-     "glide_from_s": 0.0,
-     "glide_until_s": 0.07,
-     "amp": 0.3,
-     "env": {
-      "attack": 0.005,
-      "tau": 0.035
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 2900.0,
-     "glide_to": 4300.0,
-     "glide_from_s": 0.13,
-     "glide_until_s": 0.2,
-     "amp": 0.28,
-     "env": {
-      "delay": 0.13,
-      "attack": 0.005,
-      "tau": 0.035
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 3000.0,
-     "glide_to": 4500.0,
-     "glide_from_s": 0.26,
-     "glide_until_s": 0.34,
-     "amp": 0.3,
-     "env": {
-      "delay": 0.26,
-      "attack": 0.005,
-      "tau": 0.05
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 3600.0,
-     "glide_to": 2600.0,
-     "glide_from_s": 0.9,
-     "glide_until_s": 1.0,
-     "amp": 0.25,
-     "env": {
-      "delay": 0.9,
-      "attack": 0.005,
-      "tau": 0.04
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 3500.0,
-     "glide_to": 2500.0,
-     "glide_from_s": 1.05,
-     "glide_until_s": 1.15,
-     "amp": 0.22,
-     "env": {
-      "delay": 1.05,
-      "attack": 0.005,
-      "tau": 0.04
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 2700.0,
-     "glide_to": 4000.0,
-     "glide_from_s": 1.3,
-     "glide_until_s": 1.42,
-     "amp": 0.26,
-     "env": {
-      "delay": 1.3,
-      "attack": 0.005,
-      "tau": 0.06
+     "kind": "events",
+     "amp": 0.8,
+     "seed": 291,
+     "space": {
+      "t60": 0.25,
+      "damp_hz": 6000,
+      "wet": 0.1
+     },
+     "lowpass_hz": 8000,
+     "voices": [
+      {
+       "seconds": 0.09,
+       "fade_ms": 15,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 2800.0,
+         "glide_to": 4200.0,
+         "glide_until_s": 0.07,
+         "vib_hz": 55,
+         "vib_cents": 60,
+         "amp": 0.5,
+         "env": {
+          "attack": 0.004,
+          "tau": 0.035
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.09,
+       "fade_ms": 15,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 2900.0,
+         "glide_to": 4300.0,
+         "glide_until_s": 0.07,
+         "vib_hz": 55,
+         "vib_cents": 60,
+         "amp": 0.47,
+         "env": {
+          "attack": 0.004,
+          "tau": 0.035
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.11,
+       "fade_ms": 20,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 3000.0,
+         "glide_to": 4500.0,
+         "glide_until_s": 0.08,
+         "vib_hz": 55,
+         "vib_cents": 60,
+         "amp": 0.5,
+         "env": {
+          "attack": 0.004,
+          "tau": 0.05
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.05,
+       "fade_ms": 10,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 3700.0,
+         "glide_to": 3300.0,
+         "glide_until_s": 0.04,
+         "amp": 0.4,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.018
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.05,
+       "fade_ms": 10,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 3500.0,
+         "glide_to": 3100.0,
+         "glide_until_s": 0.04,
+         "amp": 0.38,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.018
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.05,
+       "fade_ms": 10,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 3300.0,
+         "glide_to": 2900.0,
+         "glide_until_s": 0.04,
+         "amp": 0.36,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.018
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.05,
+       "fade_ms": 10,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 3100.0,
+         "glide_to": 2700.0,
+         "glide_until_s": 0.04,
+         "amp": 0.34,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.018
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.12,
+       "fade_ms": 25,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 2700.0,
+         "glide_to": 4000.0,
+         "glide_until_s": 0.09,
+         "vib_hz": 48,
+         "vib_cents": 70,
+         "amp": 0.45,
+         "env": {
+          "attack": 0.004,
+          "tau": 0.06
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.0,
+      0.13,
+      0.26,
+      0.9,
+      0.96,
+      1.02,
+      1.08,
+      1.3
+     ],
+     "vary": {
+      "cycle": true
      }
     }
    ]
   },
   {
    "id": "home_town_bells",
-   "about": "EL3b.7 accent: church bells across the town, two strikes (bell partials: hum, prime, minor-third tierce, quint, nominal).",
    "seconds": 5.0,
    "loop": false,
    "peak_db": -3.0,
-   "fade_ms": 600.0,
+   "about": "EL3b.7 accent: church bells across the town, two strikes (bell partials: hum, prime, minor-third tierce, quint, nominal). v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): the same partials plus a Chowning FM strike (ratio 1.4, index 8 -> 0), far off: low-passed, with the square's long echo",
    "layers": [
     {
-     "kind": "sine",
-     "freq": 220.0,
-     "amp": 0.2,
-     "env": {
-      "attack": 0.004,
-      "tau": 2.4
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 440.0,
-     "amp": 0.25,
-     "env": {
-      "attack": 0.003,
-      "tau": 1.8
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 528.0,
-     "amp": 0.18,
-     "env": {
-      "attack": 0.003,
-      "tau": 1.5
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 660.0,
-     "amp": 0.1,
-     "env": {
-      "attack": 0.003,
-      "tau": 1.1
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 880.0,
-     "amp": 0.2,
-     "env": {
-      "attack": 0.002,
-      "tau": 0.9
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 1170.0,
-     "amp": 0.06,
-     "env": {
-      "attack": 0.002,
-      "tau": 0.5
-     }
-    },
-    {
-     "kind": "white",
-     "amp": 0.08,
-     "lowpass_hz": 3000.0,
-     "highpass_hz": 800.0,
-     "seed": 181,
-     "env": {
-      "tau": 0.01
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 185.0,
-     "amp": 0.18,
-     "env": {
-      "delay": 1.6,
-      "attack": 0.004,
-      "tau": 2.2
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 370.0,
-     "amp": 0.22,
-     "env": {
-      "delay": 1.6,
-      "attack": 0.003,
-      "tau": 1.7
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 444.0,
-     "amp": 0.16,
-     "env": {
-      "delay": 1.6,
-      "attack": 0.003,
-      "tau": 1.4
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 555.0,
-     "amp": 0.09,
-     "env": {
-      "delay": 1.6,
-      "attack": 0.003,
-      "tau": 1.0
-     }
-    },
-    {
-     "kind": "sine",
-     "freq": 740.0,
-     "amp": 0.18,
-     "env": {
-      "delay": 1.6,
-      "attack": 0.002,
-      "tau": 0.8
-     }
-    },
-    {
-     "kind": "white",
-     "amp": 0.07,
-     "lowpass_hz": 3000.0,
-     "highpass_hz": 800.0,
-     "seed": 182,
-     "env": {
-      "delay": 1.6,
-      "tau": 0.01
+     "kind": "events",
+     "amp": 0.8,
+     "seed": 301,
+     "lowpass_hz": 3500,
+     "space": {
+      "t60": 2.5,
+      "damp_hz": 2000,
+      "predelay_ms": 40,
+      "wet": 0.5
+     },
+     "voices": [
+      {
+       "seconds": 5.0,
+       "fade_ms": 400,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 220.0,
+         "amp": 0.2,
+         "env": {
+          "attack": 0.003,
+          "tau": 2.4
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 440.0,
+         "amp": 0.25,
+         "env": {
+          "attack": 0.003,
+          "tau": 1.8
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 528.0,
+         "amp": 0.18,
+         "env": {
+          "attack": 0.003,
+          "tau": 1.5
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 660.0,
+         "amp": 0.1,
+         "env": {
+          "attack": 0.003,
+          "tau": 1.1
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 880.0,
+         "amp": 0.2,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 1170.4,
+         "amp": 0.06,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.5
+         }
+        },
+        {
+         "kind": "fm",
+         "freq": 440.0,
+         "ratio": 1.4,
+         "index": 8,
+         "index_to": 0,
+         "index_tau": 0.6,
+         "amp": 0.18,
+         "env": {
+          "attack": 0.002,
+          "tau": 1.4
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.12,
+         "bands": [
+          {
+           "hz": 1760.0,
+           "q": 2
+          }
+         ],
+         "env": {
+          "tau": 0.012
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 3.4,
+       "fade_ms": 400,
+       "layers": [
+        {
+         "kind": "sine",
+         "freq": 185.0,
+         "amp": 0.18,
+         "env": {
+          "attack": 0.003,
+          "tau": 2.4
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 370.0,
+         "amp": 0.225,
+         "env": {
+          "attack": 0.003,
+          "tau": 1.8
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 444.0,
+         "amp": 0.162,
+         "env": {
+          "attack": 0.003,
+          "tau": 1.5
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 555.0,
+         "amp": 0.09,
+         "env": {
+          "attack": 0.003,
+          "tau": 1.1
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 740.0,
+         "amp": 0.18,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.9
+         }
+        },
+        {
+         "kind": "sine",
+         "freq": 984.2,
+         "amp": 0.054,
+         "env": {
+          "attack": 0.003,
+          "tau": 0.5
+         }
+        },
+        {
+         "kind": "fm",
+         "freq": 370.0,
+         "ratio": 1.4,
+         "index": 8,
+         "index_to": 0,
+         "index_tau": 0.6,
+         "amp": 0.162,
+         "env": {
+          "attack": 0.002,
+          "tau": 1.4
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.108,
+         "bands": [
+          {
+           "hz": 1480.0,
+           "q": 2
+          }
+         ],
+         "env": {
+          "tau": 0.012
+         }
+        }
+       ]
+      }
+     ],
+     "times": [
+      0.0,
+      1.6
+     ],
+     "vary": {
+      "cycle": true
      }
     }
    ]
   },
   {
    "id": "home_world_swell",
-   "about": "EL3b.7 accent: a crowd far off swells and settles (a march, a final, a treaty's square). Neither cheer nor jeer.",
    "seconds": 3.2,
    "loop": false,
    "peak_db": -3.0,
-   "fade_ms": 500.0,
+   "about": "EL3b.7 accent: a crowd far off swells and settles (a march, a final, a treaty's square). Neither cheer nor jeer. v3 (R3-SUNHOLO-AUDIO-REALISM, sunholo/audio 0.6.0): the home_world crowd under one swelling envelope, with its wash, far off",
    "layers": [
     {
-     "kind": "white",
+     "kind": "events",
      "amp": 0.6,
-     "lowpass_hz": 2000.0,
-     "highpass_hz": 300.0,
-     "seed": 191,
+     "seed": 311,
+     "voices": [
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 108.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 118.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 126.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 140.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 155.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "u",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 190.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "o",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 205.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "e",
+         "vowel_to": "i",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 220.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "a",
+         "vowel_to": "e",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 232.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "o",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      },
+      {
+       "seconds": 0.16,
+       "fade_ms": 40,
+       "layers": [
+        {
+         "kind": "saw",
+         "freq": 170.0,
+         "amp": 0.5,
+         "jitter_cents": 30,
+         "jitter_hz": 7,
+         "vowel": "i",
+         "vowel_to": "a",
+         "lowpass_hz": 3200,
+         "highpass_hz": 90,
+         "env": {
+          "attack": 0.03,
+          "tau": 0.07200000000000001
+         }
+        },
+        {
+         "kind": "pink",
+         "amp": 0.08,
+         "bands": [
+          {
+           "hz": 1300,
+           "q": 0.8
+          }
+         ],
+         "env": {
+          "attack": 0.02,
+          "tau": 0.048
+         }
+        }
+       ]
+      }
+     ],
+     "scatter": {
+      "count": 65,
+      "spread": 1.0,
+      "min_gap_s": 0.0
+     },
+     "vary": {
+      "amp_db": 8,
+      "cents": 200
+     },
+     "lowpass_hz": 1600,
+     "highpass_hz": 180,
+     "space": {
+      "t60": 1.6,
+      "damp_hz": 1800,
+      "predelay_ms": 35,
+      "wet": 0.5
+     },
+     "about": "a crowd: syllables from 10 talkers picked by seed",
      "env": {
       "attack": 1.0,
       "tau": 1.0
      }
     },
     {
-     "kind": "white",
-     "amp": 0.25,
-     "lowpass_hz": 3500.0,
-     "highpass_hz": 900.0,
-     "seed": 192,
+     "kind": "pink",
+     "amp": 0.3,
+     "vowel": "o",
+     "lowpass_hz": 1400,
+     "seed": 312,
      "env": {
-      "delay": 0.4,
-      "attack": 0.8,
-      "tau": 0.8
+      "attack": 1.0,
+      "tau": 0.9
      }
     }
    ]

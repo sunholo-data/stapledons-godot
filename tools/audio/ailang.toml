@@ -14,4 +14,4 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/audio" = "0.5.0" # R2-SUNHOLO-AUDIO (D-119, D-124): synthesis, PCM/WAV, mix, loudness measures
+"sunholo/audio" = "0.6.0" # R3-SUNHOLO-AUDIO-REALISM: closer-to-real synthesis (filter, pink/brown noise, FM, pluck, events in loops, reverb); every 0.5.0 sound byte-identical
