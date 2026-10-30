@@ -1,11 +1,11 @@
 {
   "ailang_version": "v0.54.18",
-  "generated_at": "2026-10-30T18:35:40.280452Z",
+  "generated_at": "2026-10-30T18:53:47.961975Z",
   "generator": "ailang lock v0.54.18",
   "packages": [
     {
       "ailang": ">=0.54.18",
-      "content_hash": "sha256:fd89d950a83bbdfbaf43644f1c7fbf54ebce50e5ae350cc101e835d5e1ed6dc9",
+      "content_hash": "sha256:591323414f78525deed00f944cccc832b5b663e84c0b32560938745b3b878607",
       "effects": [
         "IO"
       ],
