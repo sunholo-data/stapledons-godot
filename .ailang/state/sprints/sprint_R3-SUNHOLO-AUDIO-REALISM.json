@@ -1,7 +1,10 @@
 {
   "sprint_id": "R3-SUNHOLO-AUDIO-REALISM",
-  "status": "awaiting_approval",
-  "approved": null,
+  "status": "in_progress",
+  "approved": {
+    "by": "Mark (attended 2026-10-30)",
+    "how": "\"looks great go on audio and then lets preview the new sounds\": the plan and OQ1-OQ8 at their recommendations"
+  },
   "created": "2026-10-30",
   "design_doc": "design_docs/planned/r3/sunholo-audio-realism.md",
   "sprint_plan": "design_docs/planned/r3/sunholo-audio-realism-sprint.md",

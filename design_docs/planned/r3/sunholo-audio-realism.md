@@ -1,6 +1,6 @@
 # R3-SUNHOLO-AUDIO-REALISM: `sunholo/audio` 0.6.0, closer-to-real synthesis
 
-**Status:** Planned 2026-10-30, awaiting Mark's approval. Design and plan only: no package code, no publish.
+**Status:** Approved by Mark (attended 2026-10-30: "looks great go on audio and then lets preview the new sounds"); OQ1–OQ8 at their recommendations. Executing.
 **Release:** R3. **Milestone:** a tooling release under R3-EARTH-LINK EL3b.7 (the comms station's "sound from home") and R2-SOUND route A (AILANG synthesis).
 **Priority:** P2. It makes the 13 home sounds sound more like home. Every later synthesised sound (rain, voices, bells, the dome's echo) gets the same tools.
 **Origin:** Mark, 2026-10-30, after listening to the home beds (EL3b.7 v2): *"they are nice, not really realistic sounding but spooky and unique enough to include - but yeah if we can get closer to real sounding effects etc why not try it"*. He had already agreed that the package should gain tools beyond tones and noise.
