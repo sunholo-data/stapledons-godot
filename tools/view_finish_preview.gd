@@ -30,6 +30,18 @@ func _stage() -> int:
 	if not data is Dictionary:
 		printerr("preview: invalid config")
 		return 1
+	# Publication receipts are generated artifacts. Resolve the current native archive at
+	# staging time so publishing does not require another source commit/rebuild cycle.
+	var receipt_path: String = data.get("published_dev_receipt", "")
+	if not receipt_path.is_empty() and FileAccess.file_exists(receipt_path):
+		var receipt: Variant = JSON.parse_string(FileAccess.get_file_as_string(receipt_path))
+		if not receipt is Dictionary or not str(receipt.get("zip", "")).begins_with("macos/builds/"):
+			printerr("preview: invalid published dev receipt"); return 1
+		var archive_name := str(receipt.zip).get_file()
+		var archive_path := "res://build/macos/".path_join(archive_name)
+		if not _safe_name(archive_name) or archive_name.get_extension() != "zip" or FileAccess.get_sha256(archive_path) != str(receipt.get("sha256", "")):
+			printerr("preview: current dev archive missing or differs from receipt"); return 1
+		data.downloads.push_front({"source":archive_path,"file":archive_name,"title":"Current merged main dev · macOS","note":"Same verified archive as tools/install_review_build.sh --dev. Includes committed Earth-link audio and map beams, grown Commons and current fixes. Painted NPCs remain an opt-in art pilot.","commit":receipt.commit,"version":receipt.version})
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var manifest := {"title": data.title, "revision": data.revision, "round": data.round, "notice": data.get("notice", ""), "frames": [], "downloads": []}
 	for frame: Dictionary in data.frames:

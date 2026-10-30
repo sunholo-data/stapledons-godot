@@ -2315,13 +2315,13 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "New: painted NPCs in the captain's style, with the Medic and Chief Engineer among the residents. Select Painted NPCs, then open any image at full size. This is a static art preview; the native review downloads retained below predate the NPC pilot.",
+  "notice": "Painted NPCs in the captain’s style, including the Medic and Chief Engineer among residents, are an approved static art pilot. The normal game still uses its existing resident figures. Native archives are labelled separately below.",
   "downloads": [
     {
       "source": "res://build/macos/Stapledons-Voyage-combined-dev-99190243-macos.zip",
       "file": "Stapledons-Voyage-combined-dev-99190243-macos.zip",
-      "title": "Current published dev · faster walking · 99190243 · macOS",
-      "note": "Same archive as tools/install_review_build.sh --dev, verified 2026-10-30. Includes the shared 2.2 m/s walking pace, grown bridge/Commons, Earth-link station/feed/light-strip, portraits, AILANG cleanup and Kerr checks. Painted NPCs are still an art preview and are not installed in this build. Newer main-only test/diagnostic changes are not yet integrated.",
+      "title": "Earlier combined dev · 99190243 · macOS",
+      "note": "Historical pre-merge archive. Predates Earth-link audio/map beams and final merge coverage. Use Current merged main dev when present, or tools/install_review_build.sh --dev.",
       "version": "v0.4.0-dev.37-living-bridge-150-g99190243",
       "commit": "99190243af3cf3cc55f847c92e5328f9b8147349",
       "sha256": "076fc82ffdbac26b8753f8c3b03ceaf4cd13ff70d4ca5f60513fbe7fd4c39485",
@@ -2331,7 +2331,7 @@
       "source": "res://build/macos/Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
       "file": "Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
       "title": "Earlier combined dev · 620e92ff · before faster walking",
-      "note": "Historical combined archive, retained as a reference. It predates the 2.2 m/s walking update and is no longer the dev-channel target. Use the 99190243 download above or tools/install_review_build.sh --dev for the current published build.",
+      "note": "Historical combined archive, retained as a reference; predates faster walking. Use Current merged main dev or tools/install_review_build.sh --dev.",
       "version": "v0.4.0-dev.37-living-bridge-148-g620e92ff",
       "commit": "620e92fff02d5489a7bf6fe6881151caf68a4404",
       "sha256": "dab215eff42d56f87bfe927b16adcb4f79e3f5048e3375ed2aba819afe6616b1",
@@ -2354,5 +2354,6 @@
       "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
       "note": "Earlier S3 layout review build. None of the furniture, wider-backdrop or grown civic-life pilots shown here is installed in this download."
     }
-  ]
+  ],
+  "published_dev_receipt": "res://build/macos/current-dev.json"
 }
