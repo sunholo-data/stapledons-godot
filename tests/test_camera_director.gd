@@ -422,7 +422,9 @@ func test_sectors_and_walk(demo: Node) -> void:
 	var jump_deg := 0.0
 	var last: Transform3D = demo.camera.global_transform
 	var prev_pos: Vector3 = demo.avatar_pos
-	for i in 650: # 14 m of walking (D-115: the calm walk; 240 frames at the old 3.5 m/s)
+	# Keep the intended 14 m sector-crossing path at D-138's shared pace. A fixed
+	# frame count would run into the outer rim at faster paces and follow its curve.
+	for i in ceili(14.0 * 60.0 / ShipConsoles.WALK_SPEED_MPS):
 		demo.walk_motion(walk_key, 1.0 / 60.0)
 		demo._process(1.0 / 60.0)
 		var moved: Vector3 = demo.avatar_pos - prev_pos

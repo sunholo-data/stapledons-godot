@@ -1,7 +1,7 @@
 {
   "sprint_id": "R2-COMBINED-LANDING",
   "evaluation_round": 1,
-  "timestamp": "2026-10-30T16:23:10.842487+00:00",
+  "timestamp": "2026-10-30T16:35:42.484796+00:00",
   "evaluator": "independent npc_pilot_review agent; not the integration, audio or gate implementer",
   "status": "preliminary_code_review_complete_pending_exact_head_gates_and_publication",
   "result": "pending",
@@ -90,6 +90,18 @@
       "severity": "informational",
       "status": "plan_only_awaiting_user_approval",
       "evidence": "gh pr view360 confirms head759cde70a2c8ed894bf9057f9a5429f77bec544e and exactly4 changed files: planned design, planned sprint, sprint JSON and design index. Local diff has no runtime/package/audio-asset edits. Design states awaiting Marks approval, plan only/no publish; JSON status awaiting_approval, approved:null and milestones passes:null. Merging this proposal does not authorize execution or certify its detailed design. Actual head ancestry confirmed in22b7a4ca."
+    },
+    {
+      "id": "CAPTAIN-SPEED-REGRESSION-GATE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "narrow_test_repair_independently_reviewed",
+      "evidence": "Parent reports exact-head82aa7e165491f652db7386ab23321d479be87e2f rig/full stopped early at captain-anim: an old assertion still required1.3m/s. Independently inspected only2-line comment/assertion repair in tests/test_captain_anim.gd::_speed. D138 ledger explicitly supersedesD115 and approves shared2.2m/s for next dev playtest. Production ShipConsoles constant is2.2. Generic1.3 fixture velocities remain unchanged as valid animation samples. Targeted log records87passed,0failures. No production change or relaxed tolerance introduced. Failed82aa run is not a landing pass; new committed head requires fresh fullrig and exact-headfast."
+    },
+    {
+      "id": "CAMERA-SECTOR-PACE-FIXTURE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "targeted_camera_187_0_forward_35_0_pending_new_exact_head_rig",
+      "evidence": "Independent review of tests/test_camera_director.gd::test_sectors_and_walk found an explicitly intended14m clear path. Stale650frames at2.2m/s travelled23.833m and eventually followed the curved deck rim; the original targeted log reports186passed/1failure on held-world-direction. The repair uses ceil(14*60/WALK_SPEED_MPS),382frames at2.2=14.0067m. Existing displacement direction dot>.9, sector-switched, camera continuity<=.01m/.5deg and key-release checks are unchanged. Production geometry and movement are unchanged. Targeted camera rerun log independently confirms187passed/0failures. Targeted camera-forward35/0, basis guard0inline and3controls also pass, with wrapper exit0 reported by parent. No fullrig success inferred. The repair preserves the documented test geometry and acceptance thresholds and is suitable for commit and fresh exact-head gating."
     }
   ],
   "independently_reviewed_evidence": {
@@ -203,5 +215,24 @@
     "Final full-rig, CI, native publication and checkout actions belong to the parent; this evaluator inspects their precise receipts and does not rerun or mutate them.",
     "Complete this same report after the final gates/artifact evidence, as documentation bookkeeping, while preserving which exact code SHA was tested and built.",
     "PR360 is filed as an awaiting-approval proposal, with no audio0.6 package implementation, revoice, pin or publication included."
+  ],
+  "gate_attempts": [
+    {
+      "head": "82aa7e165491f652db7386ab23321d479be87e2f",
+      "gate": "rig/full",
+      "result": "failed_early",
+      "reported_by": "parent",
+      "cause": "Stale captain animation movement-speed assertion pinned1.3 rather than approvedD1382.2.",
+      "repair": "tests/test_captain_anim.gd::_speed expected literal and comment updated to2.2; targetedcaptain-anim87/0 log independently inspected.",
+      "replacement_full_rig": "pending_new_committed_head"
+    },
+    {
+      "head": "82aa7e165491f652db7386ab23321d479be87e2f plus uncommitted pace assertion repair",
+      "gate": "targeted camera-test and forward check",
+      "result": "original_camera_failed_186_passed_1_failed",
+      "evidence": "/tmp/stapledon-pace-camera-check.log",
+      "replacement_result": "camera-director187/0 and camera-forward35/0; basis guard0inline/3controls; final wrapperexit0 parent reported. Targeted log independently read. New-head fullrig/fast pending.",
+      "repair": "Only fixed travelled path duration, retaining explicit14m fixture geometry and unchanged acceptance thresholds."
+    }
   ]
 }

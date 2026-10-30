@@ -517,7 +517,7 @@
     "audio_integrated": "67dc0842cf49ea1087879c6620819d0c087d27fa",
     "pre_gate_candidate": "22b7a4c",
     "gate_repair": "1023 physics checks pass. Separate production feed/strip/map family20/0 and owner beam/window family10/0 pass after reconciliation. Existing407 global goldens retained; combined global expected417 plus separate20. Real-sim and analytic fixture scopes explicit; negative controls and opened references retained.",
-    "full_rig": "Final exact pushed candidate will run tools/rig_check.sh351--golden. Initialc3af16a8 run superseded during initial asset/audio checks after owner finalEL5 commit; no pass claimed.",
+    "full_rig": "82aa7e16 failed early: captain-animation assertion retained superseded1.3m/s D115. Corrected to approvedD1382.2m/s, captain-anim87/0 targeted pass. New exact-head tools/rig_check.sh351--golden required; no full pass claimed.",
     "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
     "published_main_build": null,
     "earth_integrated": "6bdbed04497d2eafeeb651036e0e9fbac77b404b",
@@ -540,6 +540,17 @@
       "path": "~/.ailang/state/mission-stapledon.disabled",
       "originally_absent": true,
       "restore_after": "merge, main build and cleanup; verify task marker before removing"
+    },
+    "integration_repairs": [
+      "Makefile total417 retains407 existing +10 owner Earthcases, alongside separate20 production display checks",
+      "Captain-animation shared pace contract follows approvedD1382.2m/s instead of supersededD1151.3m/s",
+      "Camera AC5 preserves14m intended path by deriving frame duration at shared pace; allsector/worlddirection/continuity assertions unchanged. Targetedcamera187/0."
+    ],
+    "pace_repair_checks": {
+      "captain_animation": "87 passed,0 failures",
+      "camera_director": "187 passed,0 failures",
+      "camera_forward": "35 passed,0 failures",
+      "basis_guard": "0 inline conversions,3 controls caught"
     }
   },
   "npc_character_followup": {

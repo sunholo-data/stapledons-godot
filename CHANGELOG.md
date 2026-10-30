@@ -5,6 +5,8 @@
 ### Combined landing checks (2026-10-30)
 
 - Integrate current main and committed Earth-link audio for D-142. Add numeric light-cone/Doppler reference checks and GPU comparisons for the production Earth feed and exchange strip, mirroring the pinned Observe package. Preserve existing golden coverage and keep unfinished feature milestones explicit.
+- The captain-animation speed assertion now enforces D-138's approved shared 2.2 m/s pace; it previously retained the superseded 1.3 m/s value.
+- The camera's sector-crossing fixture keeps its intended 14 m path at that pace, avoiding an unintended outer-rim collision from the old fixed frame count. Direction and continuity thresholds remain unchanged.
 
 ### Painted NPC asset pilot (2026-10-29)
 
