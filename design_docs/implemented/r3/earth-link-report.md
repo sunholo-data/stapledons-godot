@@ -12,6 +12,7 @@ Draft written at EL5; the design and plan move to `implemented/r3/` at landing, 
 - 2026-10-28, the EL3 panes: "the comms station is boring - this is the connection of the crew to home it should be a wash of images, text, emotions and feelings, and a good visual UI not lots of text". This became EL3b and the standing order "Visual First, Words Last".
 - 2026-10-28, EL3b: "yep good go ahead and we will start seeding the library ... yeah we can do the crew faces as well".
 - 2026-10-30, the EL3b.5 renders: "very nice". Audio (proposed after his question about the feed's media mix, "hmm we could also add snippets of audio"): "yes continue", which became EL3b.7.
+- 2026-10-30, the EL5 renders: "looks great".
 - 2026-10-30, the sound review: "wow im impresssed we generated this via ailang? they all seem to include noise in background is that intentional?", then v2 with less hiss; "they are nice, not really realistic sounding but spooky and unique enough to include - but yeah if we can get closer to real sounding effects etc whynot try it". The follow-up design is PR #360 (`sunholo/audio` 0.6.0, not in this sprint).
 
 ## What was built

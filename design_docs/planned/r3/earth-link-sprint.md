@@ -219,6 +219,7 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2
   `make capture-earth-link`: the five states from the real sim, 10 frames and a contact sheet, 0 failures
   (the 30 ly turn's wait 59.70 yr; the top speed 7.0711e-4). The report is drafted in
   `design_docs/implemented/r3/earth-link-report.md`.
+  **Mark opened the renders 2026-10-30:** "looks great" (https://claude.ai/artifact/5JjGWJ2kRDVBAdpJ4AAKUj).
 
 ## Validation (per milestone, focused)
 

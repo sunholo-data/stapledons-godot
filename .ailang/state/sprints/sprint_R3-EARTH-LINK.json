@@ -246,10 +246,10 @@
         "make golden G-EL-1 within 0.5 px at three fixture states",
         "make capture-earth-link: five renders, neither blank nor duplicated; Mark has opened them (recorded in the report)"
       ],
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": "Built 2026-10-30: physics/observe.gd + test_earth_link (RS-26..37, the sim earth.rate fixture via tools/earth_rate_fixture.gd), make physics 973/0; G-EL-1 tools/earth_link_golden.gd (9 cases <= 0.18 px + mutant), make golden 411/0 with planet-assets; make capture-earth-link 10 frames 0 failures; report drafted. Remaining: Mark opens the renders (pause point), then the evaluator, rig/full --golden, landing."
+      "completed": "2026-10-30",
+      "notes": "Built 2026-10-30: physics/observe.gd + test_earth_link (RS-26..37, the sim earth.rate fixture via tools/earth_rate_fixture.gd), make physics 973/0; G-EL-1 tools/earth_link_golden.gd (9 cases <= 0.18 px + mutant), make golden 411/0 with planet-assets; make capture-earth-link 10 frames 0 failures; report drafted. Mark opened the renders 2026-10-30 (\"looks great\"). Remaining: the evaluator, rig/full --golden, landing."
     }
   ],
   "reviews": [
