@@ -3,7 +3,9 @@ extends SceneTree
 ## the level's loops at the mast, footsteps from CA0's foot_down, console wake/sleep at the station,
 ## key presses, the lift's start/run/arrive riding with the platform, the bridge's room, Memory Health
 ## from the journey session, and the listener: a sound left on screen is left in the ears in Bow and
-## right when the view turns to Astern (captured through the real mixer, headless).
+## right when the view turns to Astern (captured through the real mixer, headless). R3-EARTH-LINK EL3b.7:
+## with the comms station open the feed's home bed plays at the receiver at the band's pitch, its accents fire
+## once each, and closing the station fades it out.
 ## Run: godot --headless --path . --script tests/test_ship_sound.gd
 const Mock := preload("res://tests/fixtures/sound/mock_ship.gd")
 var failed := 0
@@ -90,6 +92,32 @@ func _run() -> void:
 	ship.journey_sim = sim
 	await frames()
 	check(is_equal_approx(float(d.params.get("archive_degradation", -1.0)), 0.5), "the journey session's Memory Health 50 reaches the spire's layer (degradation 0.50)")
+
+	# R3-EARTH-LINK EL3b.7: sound from home while the comms station is open.
+	var st := CommsStation.new()
+	ship.add_child(st)
+	var wk := {"frame": 3, "kind": "library", "event": {"id": "town-market", "category": "town", "words": "market day"}, "pick": 0, "context": {}}
+	var ev := {"rate": 0.070888, "in_beam": true, "at_home": false, "light_age_years": 2.0, "newest_light_year": 0.3, "feed": wk, "last_feed": wk}
+	st.refresh({"earth": ev, "clock": {"t": 1.0, "tau": 0.5}})
+	ship.consoles.comms_station = st
+	await frames()
+	check(d.get_node_or_null("Loop_home_town") == null, "no home sound until the comms station is open")
+	ship.consoles.focused = "comms"
+	await frames()
+	var bed: Node = d.get_node_or_null("Loop_home_town")
+	check(bed is AudioStreamPlayer3D and bed.playing and is_equal_approx(bed.pitch_scale, 0.7) and (bed as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(5, 1, -7)), "the station open: the week's bed plays at the receiver, slowed to the band's pitch")
+	ev.rate = 14.107
+	st.refresh({"earth": ev, "clock": {"t": 1.0, "tau": 0.5}})
+	await frames()
+	check(is_equal_approx(bed.pitch_scale, 1.5), "turning for home the bed speeds up (pitch 1.5)")
+	st.feed.advance(float(EarthFeed.copy().sound.first_s) / 0.7 + 0.01) # due from when the bed began (slow)
+	await frames()
+	check(d.log_text().count(" home_town_bells v") == 1, "the town's bells sound once when due:\n" + d.log_text())
+	await frames()
+	check(d.log_text().count(" home_town_bells v") == 1, "and not again until the next is due")
+	ship.consoles.focused = ""
+	await frames()
+	check(d.fading("home_town") or not bed.playing, "closing the station fades the bed out")
 
 	# AC10: left on screen is left in the ears; turned to Astern it is on the right.
 	var cap := AudioEffectCapture.new()

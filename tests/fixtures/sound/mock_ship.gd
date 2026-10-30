@@ -19,7 +19,8 @@ class MockDirector:
 class MockConsoles:
 	signal used(station: String, action: String)
 	var focused := ""
-	var stations := {"navigation": {"use": Vector3(0, 0, -6), "meshes": [{"origin": Vector3(0, 1, -7)}]}}
+	var stations := {"navigation": {"use": Vector3(0, 0, -6), "meshes": [{"origin": Vector3(0, 1, -7)}]}, "comms": {"use": Vector3(5, 0, -6), "meshes": [{"origin": Vector3(5, 1, -7)}]}}
+	var comms_station: Node = null ## R3-EARTH-LINK EL3b.7: the real CommsStation, set by the test
 
 
 class MockLift:

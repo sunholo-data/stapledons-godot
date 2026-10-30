@@ -10,6 +10,7 @@ extends SceneTree
 ##   live     EL3b.6: a painted-live week asks the AI relay once (a few per visit, with the week's
 ##            event, scene and era, nothing from the ship) and shows the painting once it is in the
 ##            player's library; painted frames join the event's pictures (the library grows)
+##   sound    EL3b.7: the bed (category, sky, babble, static) and its pitch by band, the hold, the accents
 ## Time is the fake clock (advance(dt)); no wall-clock reads.
 
 var failures := 0
@@ -109,11 +110,66 @@ func _run() -> void:
 	check("no crew aboard: no faces", not st.crew.visible)
 	test_strip(st)
 	st.queue_free()
+	test_home_sound(root)
 	await test_live(root)
 	root.queue_free()
 	await process_frame
 	print("earth-feed: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
+
+
+## EL3b.7: sound from home. The bed is the week's category (the sky's for the sky kind, babble in the
+## torrent, static out of beam), its pitch the band's at the RS-26..RS-29 rates; a new week's bed waits
+## for hold_s of the station's clock, a change of beam does not; accents come every every_s / pitch.
+func test_home_sound(root: Control) -> void:
+	var f := EarthFeed.new()
+	root.add_child(f)
+	var s: Dictionary = EarthFeed.copy().sound
+	var week := func(frame: int, kind: String, cat: String) -> Dictionary:
+		var w := feed(frame, kind, "x", "x")
+		w.event.category = cat
+		return w
+	f.refresh(view({"feed": week.call(1, "library", "family")}))
+	check("in beam at rest: the week's category bed at its true pitch (%s)" % [f.home_sound], f.home_sound.cue == "home_family" and is_equal_approx(f.home_sound.pitch, 1.0) and f.home_sound.accent == "home_family_tune")
+	var want := {7.0711e-4: 0.5, 0.070888: 0.7, 1.0: 1.0, 14.107: 1.5, 1414.2: 2.0}
+	var ok := true
+	for d: float in want:
+		f.refresh(view({"rate": d, "feed": week.call(1, "library", "family")}))
+		ok = ok and is_equal_approx(f.home_sound.pitch, want[d]) and is_equal_approx(f.home_sound.pitch, float(EarthFeed.band_for(d).pitch))
+	check("the pitch is the band's at the RS rates: 0.5 still, 0.7 slow, 1 real, 1.5 fast, 2 torrent", ok)
+	check("the torrent plays the babble once the hold is up, not yet (%s)" % f.home_sound.cue, f.home_sound.cue == "home_family")
+	f.advance(float(s.hold_s))
+	f.refresh(view({"rate": 1414.2, "feed": week.call(2, "library", "family")}))
+	check("the torrent's bed is the babble (%s)" % f.home_sound.cue, f.home_sound.cue == "home_babble" and f.home_sound.accent == "")
+	f.refresh(view({"rate": 1.0, "feed": week.call(3, "library", "town")}))
+	check("a new week's bed waits for the hold (%s)" % f.home_sound.cue, f.home_sound.cue == "home_babble")
+	f.advance(float(s.hold_s) - 0.5)
+	f.refresh(view({"rate": 1.0, "feed": week.call(3, "library", "town")}))
+	check("still held just before hold_s", f.home_sound.cue == "home_babble")
+	f.advance(0.5)
+	f.refresh(view({"rate": 1.0, "feed": week.call(3, "library", "town")}))
+	check("after hold_s the town's bed and bells", f.home_sound.cue == "home_town" and f.home_sound.accent == "home_town_bells")
+	f.refresh(view({"in_beam": false, "last_feed": week.call(3, "library", "town")}))
+	check("out of beam: the static at once, at its own pitch (%s)" % [f.home_sound], f.home_sound.cue == "home_static" and is_equal_approx(f.home_sound.pitch, 1.0))
+	f.refresh(view({"feed": week.call(4, "sky", "town")}))
+	check("back in beam at once; the sky kind plays the sky's bed (%s)" % f.home_sound.cue, f.home_sound.cue == "home_sky")
+	# accents: the first after first_s, then every every_s, both stretched by the pitch (slow: 0.7)
+	f.advance(float(s.hold_s))
+	f.refresh(view({"rate": 0.070888, "feed": week.call(5, "library", "town")}))
+	var seq := int(f.home_sound.accent_seq)
+	var first := float(s.first_s) / 0.7
+	var every := float(s.accents.home_town.every_s) / 0.7
+	f.advance(first - 0.05)
+	var early := int(f.home_sound.accent_seq) == seq
+	f.advance(0.1)
+	var one := int(f.home_sound.accent_seq) == seq + 1
+	f.advance(every - 0.1)
+	var held := int(f.home_sound.accent_seq) == seq + 1
+	f.advance(0.1)
+	check("slowed home: the first bell after first_s / 0.7, the next every_s / 0.7 later", early and one and held and int(f.home_sound.accent_seq) == seq + 2)
+	f.refresh({"clock": {"tau": 0.1}})
+	check("no Earth section: nothing plays", f.home_sound.cue == "")
+	f.queue_free()
 
 
 ## EL3b.5: the exchange as light. A plan from home (heard at once, Earth's reply ahead of the ship),
