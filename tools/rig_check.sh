@@ -12,7 +12,7 @@
 # RIG_NO_STATUS=1 skips the status posts (a dry run on someone else's PR, say).
 set -eu
 REPO=sunholo-data/stapledons-godot
-TEST_S=${RIG_TEST_S:-5400}   # make test is ~50 min on the Studio
+TEST_S=${RIG_TEST_S:-7200}   # make test is 66-90 min on the Studio; D-126 C (Mark, 2026-10-28)
 GOLDEN_S=${RIG_GOLDEN_S:-1800}
 
 usage() { echo "usage: $0 <PR number | ref> [--golden]"; exit 2; }

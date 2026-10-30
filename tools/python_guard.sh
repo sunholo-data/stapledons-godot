@@ -15,9 +15,12 @@ printf '%s\n' "$entries" | while IFS="$(printf '\t')" read -r path role; do
   case " $roles " in *" $role "*) ;; *) echo "python-guard: $path has unknown role '$role'"; exit 1;; esac
   case "$path" in sim/*|sky/*|physics/*|bridge/*|ui/*|*.gd) echo "python-guard: $path is in a runtime directory"; exit 1;; esac
 done || fail=1
-for f in $(grep -o 'python3 [^ ;"]*\.py' Makefile | cut -d' ' -f2 | sort -u); do
-  role=$(printf '%s\n' "$entries" | awk -F'\t' -v p="$f" '$1 == p {print $2}')
-  case "$role" in oracle|harness|port) ;; *) echo "python-guard: Makefile runs $f (role '${role:-unlisted}'); only oracle, harness or port may run"; fail=1;; esac
+# Every recipe and script that can run a Python file: the Makefile, its mk/*.mk includes, tracked shell.
+for src in Makefile $(git ls-files 'mk/*.mk' '*.sh'); do
+  for f in $(grep -o 'python3 [^ ;"]*\.py' "$src" | cut -d' ' -f2 | sort -u); do
+    role=$(printf '%s\n' "$entries" | awk -F'\t' -v p="$f" '$1 == p {print $2}')
+    case "$role" in oracle|harness|port) ;; *) echo "python-guard: $src runs $f (role '${role:-unlisted}'); only oracle, harness or port may run"; fail=1;; esac
+  done
 done
 count=$(printf '%s\n' "$entries" | wc -l | tr -d ' ')
 ports=$(printf '%s\n' "$entries" | awk -F'\t' '$2 == "port"' | wc -l | tr -d ' ')

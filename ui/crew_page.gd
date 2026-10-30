@@ -14,7 +14,6 @@ extends RefCounted
 const CAST_DIR := "res://data/ai/cast"
 const PORTRAIT_DIR := "res://data/crew/portraits"
 const SCENARIO := "res://data/crew/scenario.json"
-const STRAINED := 70.0 ## the pack's overextended threshold (scenario.json overextended.threshold)
 ## The faces to try for an emotion, in order (D-7's eight emotions; the trial set has neutral for
 ## every role and all eight for the medic).
 const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "angry": ["angry", "sad", "neutral"],
@@ -36,6 +35,7 @@ static var _face_cache: Dictionary = {} ## portrait path -> Texture2D (or null w
 static var _roles: Dictionary = {}
 static var _work: Dictionary = {}
 static var _resources: Dictionary = {}
+static var _strained := 70.0
 static var _loaded := false
 
 
@@ -63,6 +63,16 @@ static func _load() -> void:
 				_work[str(w.get("id", ""))] = w
 		for r in pack.get("resources", []):
 			_resources[str(r.get("id", ""))] = str(r.get("name", r.get("id", ""))).split(" (")[0]
+		var over = pack.get("overextended")
+		if over is Dictionary and over.has("threshold"):
+			_strained = float(over["threshold"])
+
+
+## The pack's overextended threshold (scenario.json overextended.threshold): an indicator at or
+## above it shows as strained.
+static func strained() -> float:
+	_load()
+	return _strained
 
 
 ## The cast's role name ("The Medic"), or the id.

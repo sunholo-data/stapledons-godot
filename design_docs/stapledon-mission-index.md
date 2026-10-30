@@ -12,7 +12,13 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
-| 54 | 2026-10-28 | row 7m AC1, the quiet-rig bench for M4.6pR3, MEASURED and PARKED on D-127: live-transit p99 15.22–16.48 ms in 6 of 6 quiet runs (loop 3 and independent Sonnet 3, 80 PASS), DR1 red;... |
+| 60 | 2026-10-30 | Row 7n(b) LANDED (PR #358, merge `dc458f9c`): the ISM map layer's repeated-connect survivor MG is killed by a named FAIL, host-null (MN) is recorded ... |
+| 59 | 2026-10-30 | Row 7l (b)–(d) LANDED (PR #356, merge `e2927840`): the capture driver's drill survivors CA, CB and CC are killed by named FAILs, the M4.6rR3 report ... |
+| 58 | 2026-10-29 | Kerr K1.1a-a4 LANDED (PR #352, merge `165c9f2f`): `rig/full` run 3 green on `2b47456b` in 100 min on a quiet rig (`crewSkip` 2.37 s against 4.0 s, ... |
+| 57 | 2026-10-29 | L4 M1a LANDED (PR #349, merge `81e240f0`; `rig/full` 87 min, fast tier green on the merge) and Kerr K1.1a-a4 BUILT (PR #352), merge PARKED-ON-LANE:... |
+| 56 | 2026-10-29 | L4 test-suite speed: design (2 quorum rounds) and plan `R1-RIG-TEST-SPEED`, M1a suite profiler built (PR #349) — BUILT, not landed: `rig/full` run ... |
+| 55 | 2026-10-28 | D-126 C's A half LANDED (PR #345, merge `d63b47a4`): `rig/full` watchdog default 7,200 s and a hermetic rig-check control (8 cases, committed calle... |
+| 54 | 2026-10-28 | row 7m AC1, the quiet-rig bench for M4.6pR3, MEASURED and PARKED on D-127: live-transit p99 15.22–16.48 ms in 6 of 6 quiet runs (loop 3, independen... |
 | 53 | 2026-10-27 | row 7i(c), the M4 AC5 scene-session golden, LANDED (PR #341, merge `fc9e2187`): AI=stub session committed and pinned, arm64 golden recorded with VM... |
 | 52 | 2026-10-27 | iteration 52, K1.1a-a3 Kerr oracle RK-10..13, RK-18 and RK-Q1 LANDED (PR #333, merge `f97d5ef1`), built by orphan iteration 51 and verified and lan... |
 | 51 | 2026-10-26 | [PRODUCT] Unrecorded orphan: built K1.1a-a3 (PR #333, `7e94beff`, Sonnet 92 PASS round 1); killed when the rig crashed (reboot 17:05) during its rig/full re-run; recovered record and landing in iteration 52. |

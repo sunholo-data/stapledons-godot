@@ -1,24 +1,24 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-28, iteration 54.
+Updated 2026-10-30, iteration 60.
 
-- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Clause 4 waits on row 7m AC1 (now measured, parked on D-127) and P-land (Mark). Goal unmoved this iteration.
-- **Measured (not landed):** row 7m AC1, the quiet-rig bench for M4.6pR3 (the hidden-map redraw fix, on main since 2026-10-19).
-  - The rig was idle at the fire (GPU 0 % on three samples, 1-min load 1.5), so 7m was the critical-path pick ahead of Kerr a4.
-  - `make bench SCENE=bridge` on main `854003c8`: live-transit p99 15.22 / 15.43 / 15.99 ms (loop) and 15.82 / 16.48 / 15.89 ms (judge), 3,209–3,257 frames. AC1–AC3 hold in 6 of 6 quiet runs.
-  - DR1 (fix reverted) misses at p99 34.3 / 34.0 ms; DR4 stays green; DR2/DR3 turn `map-ism-test` red; AC4 19 passed.
-  - **Why it is parked:** the approved sprint plan says a docked-control p99 above 16.7 ms invalidates a run, and the docked control read 17.6–19.3 ms in 9 of 9 runs.
-- **Judge:** a fresh Sonnet in its own clone re-ran the benches and drills and scored 80/100 PASS. It set the docked-control rule aside as a flawed criterion. The controller confirmed that the plan states it as a validity rule, so changing it goes to Mark.
-- **Gates:** no code changed. Measured with AILANG v0.54.18 and Godot 4.7.2 on the M4 Max (Metal, 2560×1440, medium tier, vsync off).
-- **Next:** D-127 first. Then, per Mark's 2026-10-20 order: K1.1a-a4 → a5 (RK-3/RK-9 owed) → L9 S0.3 → L4 (suite speed) → L3.
-- **Open decisions:**
-  - D-126 (`rig/full` watchdog): A raise it to 7,200 s, B move L4 up, C both, D neither. Recommendation C; default D.
-  - D-127 (7m docked-control rule): A drop it and record AC1 met, B keep it and investigate the docked p99, C use a longer docked control. Recommendation A; default no change.
-- **Capacity/ownership parks:** none new. Attended PRs #339 (docs) and #340 (R3 Earth link plan) are open; neither overlaps the loop's files.
-- **Lanes:**
-  - controller: Opus;
-  - evaluator: Sonnet via the Agent tool;
-  - designer, planner and executor: not spawned, because the doc, the plan and the fix already existed and the work was a GPU measurement.
-
-  Metered spend: $0.
-- **Harness share:** 0/20 over iterations 35–54. Of the last three landings, #341 moved clause 4, while #333 and #327 (Kerr R2) moved none. This iteration landed no code and worked the clause-4 row.
+- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on two things: 7m-d, which runs only on a quiet rig, and P-land, which is Mark's. At pick the GPU read 99–100 % from Firefox; 40 minutes later it read 0 %. Goal unmoved.
+- **Landed this fire:** row 7n(b) (PR #358, merge `dc458f9c`), test hygiene on the M4.6pR3 ISM map layer.
+  - MG, a repeated `visibility_changed` connect, is not harmless. Godot logs an error on every hidden redraw, one a tick in transit. The test now catches it with an `OS.add_logger` capture, a sentinel that proves the capture is live, and three named checks (19 → 22).
+  - The `host != null` check is recorded as equivalent in use. No behaviour or pixel change.
+  - `rig/full` was green in 67 min. The judge, Sonnet in its own clone, gave 93 PASS with zero blocking findings.
+- **New:** row 7n(f). The judge found two survivors in the new capture: an early logger removal, and a match string the two filters share. About 6 LOC.
+- **In flight:** nothing. No loop PR is open.
+- **Order:** 7m-d (re-sample the GPU first; re-measure the premise) → K1.1a-a5 → L9 S0.3 → L3. D-129 then unlocks L4 M1b and M2.
+- **Held:** attended #344 (Earth-link) and #351 (bridge, Commons and Earth-link integration) hold `Makefile`, `bridge/sim_bridge.gd`, `demos/*`, most of `ui/*`, `tests/m4_playthrough_ship.gd` and the bridge and Commons levels. That blocks a5, S0.3, L3, 7l(a), 7u, 7v, 7w's publish, 7i(e)/(f) and L10.
+  - The unheld loop rows left are 7n(f), 7n(a) and 7i(h). 7k(e) is a design-repo spec row that needs Mark's routing. Re-check files against open PRs before picking one.
+- **Parked on Mark:**
+  - D-128: where 7m-d sits in the order. Default A is being applied.
+  - D-129: L4's OQ1–OQ4. The recommendation is A. If unanswered, M1b and M2 stay parked.
+- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h.
+  - The designer was Opus, the executor Haiku and the judge Sonnet, all through the Agent tool. The planner was kimi-k3 through pi.
+  - Codex was over its daily ration.
+  - Metered spend $0.75, all of it on the two quorum rounds.
+- **Watch:**
+  - 7m-d has been lane-parked at pick six fires running. This fire the GPU went quiet after the pick, so the next fire may route it.
+  - The docked bench control read p99 13.3–13.6 ms at iteration 59, under GPU load. At iteration 54 it read 17.6–19.3 ms on a quiet rig. 7m-d's premise may have moved with the tree.

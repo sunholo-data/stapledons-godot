@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### rig-test-speed (2026-10-29)
+
+#### Added
+
+- **Suite profiling instruments and fixture controls** (R1-RIG-TEST-SPEED M1a). Per-recipe wall/CPU timing, nested-target attribution, load sampling, coverage comparisons and reproducible reports are available through `tools/suite_profile.sh`. The existing rig-check control now runs the profiler's 20 cases on each distinct GNU make; suite execution and rig policy are unchanged.
+
+### rig-watchdog (2026-10-28)
+
+#### Changed
+
+- **`rig/full` allows 120 minutes** (R1-RIG-WATCHDOG, D-126 C). `tools/rig_check.sh` now defaults to a 7,200 s `make test` watchdog (it was 5,400 s, and a 90-minute run had reached it). The rig-check control ignores a caller's `RIG_TEST_S`, so raising the watchdog by hand no longer turns the run red, and a new case checks that an explicit override still takes effect.
+
 ## v0.4.0-dev.37-living-bridge (2026-10-26)
 
 ### sunholo-audio (2026-10-26)
