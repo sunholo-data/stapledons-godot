@@ -2,6 +2,19 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-29 — ITERATION 57: L4 M1a LANDED (PR #349, merge `81e240f0`; `rig/full` 87 min, fast tier green on the merge); Kerr K1.1a-a4 BUILT (PR #352: eight in-copy oracle mutation drills, two survivors killed, RK-3 and RK-9 added; independent Sonnet 90 PASS, zero blocking), merge PARKED-ON-LANE: `rig/full` red at `crew-perf` 5.08 s against 4.0 s at rig load 18–36, and main fails it the same way; 7m-d PARKED-ON-LANE again; clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, which is PARKED-ON-LANE (predicate GPU < 15 % and 1-min load < 5; this fire GPU 99/100/100 and load 16.15 at about 09:28Z). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, so L4, and L4's M1b/M2 wait on D-129, so K1.1a-a4.
+- **Done**:
+  - **#349 merged** (`81e240f0`) on `rig/full` run 3 green (87 min) and the fast tier; the merge's fast tier is green. L4 M1a `passes` true. The design's 50 ms text now states the shipped bound (child CPU ≤ 150 ms a line plus a 1 s a line wall hang guard).
+  - **K1.1a-a4** (executor Haiku 5.5 via the Agent tool). `test_kerr_oracle.sh` runs eight mutants of a copy of the oracle: factor2, sqrt-branch, domain, nan, six-decimal, empty-fixture, wrong-unit, precision. Each must fail for its named reason, and a no-op mutation exits 3. Two mutants were measured surviving and are now killed: precision 20 (new Decimal60 guard), and NaN, which had died on a traceback. RK-3 and RK-9 were added, and `cos_theta` was dropped. The controller fixed a 7-dir temp leak. Size 73/120. Judge Sonnet in its own clone: **90/100 PASS**, zero blocking (`eval_R2-KERR_K1.1a-a4_round_1.json`).
+  - **#352 `rig/full`** went RED at `crew-perf` (`crewSkip … 5.08 s; budget 4.0 s`). In isolation at load 30–36, main `81e240f0` read 5.89 and 5.58 s, and the PR tree read 5.24–6.32 s. The cause is rig load, not the PR. The merge is PARKED-ON-LANE; row 7v was filed.
+  - **Addendum (after the report):** at 1-min load 5.8 the predicate looked met, so the controller re-ran `rig/full` (run 2, 10:38Z). It was red again at `crew-perf`, 4.34 s at a load of about 5. Main failed it in isolation too, at 4.94 and 5.13 s. Rig logs show `crewSkip` at 1.6–2.2 s on every run from 10-27 to 04:43 today on the same code, so the machine is slower under sharing, with CPU time rising alongside wall time. The resume predicate is now `rig/full` success on `2b47456b` from a run on a quiet rig (1-min load < 3, as for #349's run 3). Row 7v was corrected: a calibrated bound, not a CPU gate.
+- **Next**:
+  - **Re-run `rig/full` on #352 (`2b47456b`) on a quiet rig (1-min load < 3)**, then merge on the fast tier and set a4 `passes`. Run 2 at load ~5 was red too (`crew-perf` 4.34 s).
+  - 7m-d whenever the rig is quiet. D-129 (Mark) → M1b → M2. Then K1.1a-a5 (fold in the a4 judge's harness-guard survivors) → L9 S0.3 → L3.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
 ## STATUS 2026-10-29 — ITERATION 56: L4 test-suite speed designed (two quorum rounds, carve-out) and planned (`R1-RIG-TEST-SPEED`); M1a, the suite profiler instrument, built, not yet landed: `rig/full` run 2 was RED because the control failed when run through make; fixed in `86b96103`, and run 3 was in flight at record time (PR #349); independent Sonnet 66 FAIL, then 90 PASS in round 2, zero blocking; M1b/M2 parked on D-129 (L4's OQ1–OQ4), M3 on the #344/#346 `Makefile` hold; 7m-d PARKED-ON-LANE (GPU 99–100 %); clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d. 7m-d is PARKED-ON-LANE: predicate GPU < 15 % and 1-min load < 5; this fire read GPU `Device Utilization %` 100/100/99 and load 2.8 at about 21:41Z. P-land is Mark's. 5 ongoing. Because D-128 is still OPEN, its default A applied: 7m-d if quiet, else L4. So L4 was the pick.

@@ -1,0 +1,185 @@
+{
+ "sprint_id": "R1-M4-JOURNEY",
+ "feature": "M4.6pR3_7nb_ISM_LAYER_SURVIVORS",
+ "round": 1,
+ "commit": "7821c395",
+ "evaluator": "claude sonnet (Agent tool), own clone at 7821c395",
+ "score": 93,
+ "verdict": "PASS",
+ "pass": true,
+ "disposition": "AC1-AC11 pass first-hand; AC12 (rig/full) pending. MG, MS, ML killed and MN recorded equivalent through make and gmake. Non-blocking: logger-removal position is unguarded and the two message predicates share one literal.",
+ "criterion_scores": {
+  "correctness_acceptance": 38,
+  "mutation_testing_quality": 22,
+  "scope_discipline": 15,
+  "code_quality_docs": 10,
+  "evidence_honesty": 8
+ },
+ "criterion_max": {
+  "correctness_acceptance": 40,
+  "mutation_testing_quality": 25,
+  "scope_discipline": 15,
+  "code_quality_docs": 10,
+  "evidence_honesty": 10
+ },
+ "criteria_checked": [
+  {
+   "id": "AC1",
+   "command": "deadline 120 make map-ism-test; grep counts",
+   "observed": "make: rc=0,1,1,0; gmake: rc=0,1,1,0",
+   "pass": true
+  },
+  {
+   "id": "AC2",
+   "command": "same with gmake",
+   "observed": "rc=0,1,1,0",
+   "pass": true
+  },
+  {
+   "id": "AC3",
+   "command": "drill $PWD MG",
+   "observed": "make rc 2; measured signature; exit=0",
+   "pass": true
+  },
+  {
+   "id": "AC4",
+   "command": "drill $PWD MS",
+   "observed": "make rc 2; measured signature; exit=0",
+   "pass": true
+  },
+  {
+   "id": "AC5",
+   "command": "drill $PWD MN",
+   "observed": "make rc 0; measured signature; exit=0",
+   "pass": true
+  },
+  {
+   "id": "AC5b",
+   "command": "drill $PWD ML",
+   "observed": "make rc 2; measured signature; exit=0",
+   "pass": true
+  },
+  {
+   "id": "AC6",
+   "command": "four drills with gmake",
+   "observed": "MG 2, MS 2, MN 0, ML 2; measured signature x4; exit=0 x4",
+   "pass": true
+  },
+  {
+   "id": "AC7",
+   "command": "hash restore; tmp count; find stapledon-7nb.*",
+   "observed": "restored=0; tmp 5025 -> 5025; 0",
+   "pass": true
+  },
+  {
+   "id": "AC8",
+   "command": "non-comment/comment diff of ui/ism_layer.gd",
+   "observed": "0, 2",
+   "pass": true
+  },
+  {
+   "id": "AC9",
+   "command": "grep -cE logger/MS-comment/filter patterns",
+   "observed": "5",
+   "pass": true
+  },
+  {
+   "id": "AC10",
+   "command": "make uid-guard lint-precision; git diff --check",
+   "observed": "uid-guard ok (352), lint-precision ok, gates-ok",
+   "pass": true
+  },
+  {
+   "id": "AC11",
+   "command": "name-only allowlist diff; PR 344 and 351 file overlap",
+   "observed": "0; 0; 0 (diff = sprint JSON, changelog, 2 design docs, test, layer)",
+   "pass": true
+  },
+  {
+   "id": "AC12",
+   "command": "rig/full",
+   "observed": "pending (running on the rig)",
+   "pass": null
+  }
+ ],
+ "first_hand_claims": [
+  "Duplicate connect logs once per hidden redraw: MG plus 5 extra awaited hidden queue_redraw calls gave 6 'already connected' ERROR lines (1 from the test's own redraw), plus 1 sentinel, 7 ERROR lines total.",
+  "Fixed tree: the sentinel is the only ERROR/SCRIPT ERROR/WARNING line (AC1 third count 0, second count 1), on make and gmake.",
+  "ui/ism_layer.gd: 0 non-comment changed lines, 2 comment lines; no new script, so no .uid needed; PRs 344 and 351 touch neither file."
+ ],
+ "drills": [
+  {
+   "id": "E1",
+   "mutation": "invert ERROR_TYPE_WARNING filter",
+   "result": "KILLED (capture-is-live FAIL)"
+  },
+  {
+   "id": "E2",
+   "mutation": "drop errors.lines.clear() after sentinel",
+   "result": "KILLED ('no other error' FAIL shows 7nb-sentinel)"
+  },
+  {
+   "id": "E3",
+   "mutation": "move OS.remove_logger before the hidden phases",
+   "result": "SURVIVES on fixed tree (rc 0, 22/0) and with MG (rc 0, 22/0): no check pins the logger window. Real but unlikely edit"
+  },
+  {
+   "id": "E4",
+   "mutation": "change only the refused match string",
+   "result": "SURVIVES alone; with MG also rc 0 because 'other' shares the string and excludes the real message. Inconsistent edit; a consistent drift of both is KILLED by 'other' (rc 2, 21/1)"
+  },
+  {
+   "id": "E5",
+   "mutation": "capture_live := true",
+   "result": "SURVIVES on fixed tree (expected); with MG still KILLED by refused check. A dead logger plus a regression would be caught only by the (now dead) checks, which is the ML scenario and is covered by the sentinel itself"
+  },
+  {
+   "id": "E6",
+   "mutation": "swap refused/other predicates",
+   "result": "SURVIVES on fixed tree (equivalent there); with MG KILLED (2 FAILs)"
+  },
+  {
+   "id": "E7",
+   "mutation": "delete one await after the hide redraw",
+   "result": "SURVIVES on fixed tree (equivalent); with MG KILLED"
+  },
+  {
+   "id": "E8",
+   "mutation": "delete the explicit queue_redraw after window.hide()",
+   "result": "SURVIVES on fixed tree (equivalent); with MG KILLED (window starts hidden and redraws)"
+  },
+  {
+   "id": "E9",
+   "mutation": "other check made vacuously true",
+   "result": "SURVIVES on fixed tree; with MG KILLED by refused check. 'other' is redundant for MG, its own job (noise) was measured in design V22/V24"
+  },
+  {
+   "id": "E10",
+   "mutation": "sentinel push_error -> push_warning",
+   "result": "KILLED (capture-is-live FAIL)"
+  }
+ ],
+ "findings": [
+  {
+   "id": 1,
+   "blocking": false,
+   "text": "OS.remove_logger position is not asserted (E3). Moving it before the hidden phases passes with and without MG."
+  },
+  {
+   "id": 2,
+   "blocking": false,
+   "text": "'refused' and 'other' use the same message literal, so editing only one hides the error from both (E4). A consistent drift is caught."
+  },
+  {
+   "id": 3,
+   "blocking": false,
+   "text": "The 'other' check is redundant for MG (E9); its value is the noise case only."
+  },
+  {
+   "id": 4,
+   "blocking": false,
+   "text": "AC12 rig/full not yet observed; score assumes green."
+  }
+ ],
+ "tmp_hygiene": "TMPDIR entries 5025 before and 5025 after; no stapledon-7nb.* or scratch dirs left"
+}
