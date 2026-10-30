@@ -1,0 +1,415 @@
+{
+  "sprint_id": "R3-SUNHOLO-AUDIO-REALISM",
+  "status": "awaiting_approval",
+  "approved": null,
+  "created": "2026-10-30",
+  "design_doc": "design_docs/planned/r3/sunholo-audio-realism.md",
+  "sprint_plan": "design_docs/planned/r3/sunholo-audio-realism-sprint.md",
+  "branch": "feat/sunholo-audio-realism (game, execution, from the main containing #344) + feat/audio-0.6 (sunholo-data/ailang-packages, fresh clone ~/dev/sunholo-data/ailang-packages-audio06); this plan on design/sunholo-audio-realism",
+  "origin": "Mark, 2026-10-30, after the EL3b.7 home beds: \"they are nice, not really realistic sounding but spooky and unique enough to include - but yeah if we can get closer to real sounding effects etc why not try it\"; he had agreed the package should gain tools beyond tones and noise (plan only, stop for approval)",
+  "ailang_version": "v0.54.18",
+  "ailang_prompt_version": "v0.16.7",
+  "external_dependencies": [
+    "PR #344 (R3-EARTH-LINK, feat/earth-link) merged before AR8: it carries EL3b.7's 13 home_* recipes",
+    "sunholo/audio 0.5.0 (published; ailang-packages PRs #154, #167) as the compat baseline",
+    "Mark's standing approval to publish sunholo/* packages (never crew_lab); publish at AR9 only, after P2"
+  ],
+  "baseline": {
+    "measured": "2026-10-30, Studio (Apple M4 Max), AILANG v0.54.18, sunholo/audio 0.5.0 from the registry cache, strict VM, throwaway probe package (not committed)",
+    "home_set": {
+      "recipes": 13,
+      "audio_seconds": 59.0,
+      "strict_vm_seconds": 22.05,
+      "per_audio_second": 0.37
+    },
+    "home_science": {
+      "audio_seconds": 5.0,
+      "layers": 5,
+      "strict_vm_seconds": 1.66,
+      "interpreter_seconds": 74.65
+    },
+    "home_family": {
+      "audio_seconds": 5.0,
+      "layers": 4,
+      "strict_vm_seconds": 2.6
+    },
+    "home_town_bells": {
+      "audio_seconds": 5.0,
+      "layers": 13,
+      "strict_vm_seconds": 3.42
+    },
+    "spire_drift": {
+      "audio_seconds": 32.0,
+      "layers": 10,
+      "strict_vm_seconds": 20.38
+    },
+    "per_layer_second_ms": "50-65",
+    "interpreter_vs_vm": 45,
+    "package_suite": {
+      "tests": 198,
+      "seconds": 68
+    },
+    "quality": "no gates; interface v2, 154 signatures; kind breaking (0.5.0)",
+    "wav_bytes_in_git": 18104524,
+    "wav_budget_bytes": 20000000,
+    "wav_sha256_match": "every probed WAV equals data/audio/assets_synth.json on feat/earth-link 67dc0842"
+  },
+  "registry_reuse": [
+    {
+      "milestone": "AR0",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "ailang pkg search audio|synth|dsp|filter|reverb|noise|fm (2026-10-30): only sunholo/audio 0.5.0 synthesises (gemini_live and explainer are speech I/O); 0.6.0 extends it; compat pins against the published 0.5.0"
+    },
+    {
+      "milestone": "AR1",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "new filter module (state-variable filter, formant banks); no registry package has a resonant filter"
+    },
+    {
+      "milestone": "AR2",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "pink and brown noise added to the existing noise module, reusing white(i, seed)"
+    },
+    {
+      "milestone": "AR3",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "new osc module (polyBLEP saw, FM, Karplus-Strong); reuses recipe.phaseAt and the vibrato"
+    },
+    {
+      "milestone": "AR4",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "new sound front end delegating Classic layers to recipe.layerSamples and recipe.render unchanged"
+    },
+    {
+      "milestone": "AR5",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "new events module; reuses std/array scatterAdd and analysis.seam"
+    },
+    {
+      "milestone": "AR6",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "new space module (Schroeder/Moorer); the clip-based delay module is not a recipe stage, so it is not reused"
+    },
+    {
+      "milestone": "AR7",
+      "package": "sunholo/audio",
+      "action": "contribute",
+      "reason": "docs, smoke probes, evidence and release metadata of 0.6.0"
+    },
+    {
+      "milestone": "AR8",
+      "package": "sunholo/audio",
+      "action": "depend",
+      "reason": "the game pins the unpublished 0.6.0 by path for the byte gate and the re-voice"
+    },
+    {
+      "milestone": "AR9",
+      "package": "sunholo/audio",
+      "action": "depend",
+      "reason": "publish, then the game pins the registry 0.6.0"
+    },
+    {
+      "milestone": "AR10",
+      "package": "none",
+      "action": "none",
+      "reason": "evaluation and landing; no capability"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 285,
+    "estimated_total_loc": 2720,
+    "estimated_days": 9.5,
+    "note": "package 2,230 (code 1,230 + tests 750 + prose 250), game 490 (60 code + 350 recipe data + 80); the recent attended rate is about 300 LOC/day (R2-SUNHOLO-AUDIO 1,500 in 5 days), lowered for new DSP with closed-form checks; the P2 listen is not counted"
+  },
+  "critical_path": [
+    "AR0",
+    "AR1",
+    "AR3",
+    "AR4",
+    "AR5",
+    "AR7",
+    "AR8",
+    "AR9",
+    "AR10"
+  ],
+  "parallel": [
+    [
+      "AR1",
+      "AR2"
+    ],
+    [
+      "AR5",
+      "AR6"
+    ]
+  ],
+  "pause_points": [
+    {
+      "id": "P1",
+      "after": "plan",
+      "mark_decides": "approve the plan and OQ1-OQ8 (new ledger row, attended)"
+    },
+    {
+      "id": "P2",
+      "after": "AR8",
+      "mark_decides": "per home_* sound: keep v3, keep v2, or rework; OQ3 receiver colour and OQ5 music box vs harp, from the review page (gs://stapledons-voyage-assets/refs/sound/r3-realism/); nothing is published before the ruling is in the ledger"
+    },
+    {
+      "id": "P3",
+      "after": "any AC4 or AC9 failure",
+      "mark_decides": "an existing sound's bytes changed: stop and report, never re-pin"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "All six tools, or fewer? Reverb (AR6) is the optional one",
+      "recommendation": "all six, AR6 the cut line",
+      "answer": null
+    },
+    {
+      "id": "OQ2",
+      "q": "How voice-like may the murmur get?",
+      "recommendation": "formants and syllables, never words; talkers at a distance (sound §D3, D-101)",
+      "answer": null
+    },
+    {
+      "id": "OQ3",
+      "q": "A receiver colour (250 Hz-5 kHz, a touch of drive) on the home sounds?",
+      "recommendation": "a third take on home_family and home_town_bells; decide by ear",
+      "answer": null
+    },
+    {
+      "id": "OQ4",
+      "q": "CC0 field recordings (route B) for some home sounds instead of synthesis?",
+      "recommendation": "no; synthesis now, route B stays for foley",
+      "answer": null
+    },
+    {
+      "id": "OQ5",
+      "q": "Family tune: music box (struck comb) or plucked harp?",
+      "recommendation": "render both, pick by ear; music box first",
+      "answer": null
+    },
+    {
+      "id": "OQ6",
+      "q": "Keep 5 s beds (1.9 MB of git budget left)?",
+      "recommendation": "keep 5 s, sparse varied events; revisit after hearing v3",
+      "answer": null
+    },
+    {
+      "id": "OQ7",
+      "q": "Additive feature release or a breaking one that grows Layer?",
+      "recommendation": "additive, kind = feature; 0.5.0 types untouched, interface checked",
+      "answer": null
+    },
+    {
+      "id": "OQ8",
+      "q": "Re-voice the bridge sounds too?",
+      "recommendation": "not now; they are approved by ear (D-108, D-112, D-124)",
+      "answer": null
+    }
+  ],
+  "features": [
+    {
+      "id": "AR0",
+      "description": "Baseline: feat/audio-0.6 in a fresh ailang-packages clone; compat_test.ail pins (reference recipes + 8 short recipes covering every 0.5.0 field) rendered by the published 0.5.0 and frozen; strict-VM probe of scatterAdd, record-carrying constructors and Leaf(Leaf); timing baseline re-run; game base prints 41 sounds",
+      "estimated_loc": 90,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "ailang test --package $PKG passes with compat_test.ail on 0.5.0 code; the pins' commit hash is recorded here as AR0",
+        "the strict-VM probe result for scatterAdd, a record-carrying constructor and Leaf(Leaf) is recorded; any failure is reported with ailang messages (GCP store) and the design fallback chosen",
+        "on BASE (after #344): make sound-synth-check prints '41 sounds regenerate byte for byte' (stop and report otherwise)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR1",
+      "description": "filter module: SvfMode, Band, svfGain (closed form), svf, svfSweep, bank, vowelBands (Peterson and Barney F1-F3); tests red first",
+      "estimated_loc": 270,
+      "dependencies": [
+        "AR0"
+      ],
+      "acceptance_criteria": [
+        "band-pass 1 kHz Q 2: 0.00 dB +-0.02 at 1 kHz, -10.014 / -10.056 dB +-0.05 at 500 Hz / 2 kHz",
+        "band-pass 1 kHz Q 0.7071: -3.282 / -3.307 dB +-0.05; 3 kHz Q 8: -21.753 / -22.182 dB +-0.05",
+        "svfGain equals the measured gain on 20 seeded cases within 0.05 dB; LP + BP/Q + HP reconstructs the input to 1e-9; a fixed sweep equals svf bit for bit",
+        "ailang check --package $PKG, ailang test --package $PKG and ailang pkg quality --no-run $PKG (no gates) pass"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR2",
+      "description": "noise: pinkOf (Kellet refined) and brownOf (onePole 20 Hz, closed-form RMS scale); Goertzel PSD-slope test",
+      "estimated_loc": 120,
+      "dependencies": [
+        "AR0"
+      ],
+      "acceptance_criteria": [
+        "PSD slope over 93.75-3000 Hz (24 Hann segments of 4096): white 0, pink -3.01, brown -6.02 dB/octave, each +-0.5",
+        "RMS of pink and brown within 10% of 1/sqrt(3); same seed same samples, another seed different",
+        "white and rampNoise outputs unchanged (existing pins pass); a 1 s pink loop's seam <= max step + 1"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR3",
+      "description": "osc module: sawSamples (polyBLEP, glide, vibrato, seeded jitter), fmIndexAt/fmSamples (2-op phase modulation), pluckPeriod/pluckSamples (Karplus-Strong, blocked delay line, allpass tuning)",
+      "estimated_loc": 390,
+      "dependencies": [
+        "AR1"
+      ],
+      "acceptance_criteria": [
+        "saw 1 kHz harmonics 1-5 within 0.5 dB of 2/(pi k); the 1.6 kHz alias of a 3.1 kHz saw >= 20 dB below a naive saw",
+        "FM fc 2400, ratio 0.25, constant index: lines k = 0..3 equal |J_k(1)| and |J_k(2)| within 0.002; index 0 equals a sine to 1e-12",
+        "pluck tuned fundamental within 1 cent at 110, 440 and 1046.5 Hz; untuned within 0.5 cent of rate/(N+0.5); T60 within 10%",
+        "the blocked pluck equals a per-sample Array-ring reference bit for bit"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR4",
+      "description": "sound front end: recipe.finish (verbatim move), Sound/Part/Leaf/Extra/SoundLimits, parseSoundsAs/parseSounds/parseSoundsChecked, validateSound, soundLoopErrors, soundFrames, classicOnly, renderSound (Classic delegation), renderSoundChecked",
+      "estimated_loc": 590,
+      "dependencies": [
+        "AR1",
+        "AR2",
+        "AR3"
+      ],
+      "acceptance_criteria": [
+        "the AR0 compat pins and the reference loop pin pass before and after recipe.finish, through render and renderSound",
+        "parseRecipes refuses every 0.6 key and names parseSounds; parseSounds accepts them; an unknown key is still refused",
+        "every loop rule of design §D7 has a named 'loop: ...' test",
+        "renderSoundChecked refuses over-budget events and work before allocating samples"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR5",
+      "description": "events module (scatterStarts jittered grid, fixedStarts, place with wrap, variation) and the events layer in sound (one-shot voices, depth 1)",
+      "estimated_loc": 230,
+      "dependencies": [
+        "AR4"
+      ],
+      "acceptance_criteria": [
+        "an event starting at n - 100 puts its first 100 samples at the end and the rest at the start, exactly",
+        "a loop of events has analysis.seam <= max step + 1; scatter starts are in [0, n), keep min_gap, number exactly count, repeat for a seed",
+        "non-overlapping events sum linearly (1e-9); a one-shot cuts and fades an event past its end; vary.cents moves sources, not filters"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR6",
+      "description": "space module (Schroeder 4 combs + 2 allpasses with Moorer damping, pre-delay, wet) and the layer space stage; cut line to 0.7.0 if the sprint passes day 7 first",
+      "estimated_loc": 200,
+      "dependencies": [
+        "AR4"
+      ],
+      "acceptance_criteria": [
+        "a comb's impulse response is g^k at multiples of d exactly; each allpass's impulse-response energy is 1 within 1e-9",
+        "measured T60 (backward integration -5 to -35 dB) within 5% of t60 with damping off; wet 0 returns the input bit for bit",
+        "a loop with space keeps a clean seam over 1 + ceil(t60/seconds) periods; more than 5 periods is refused"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR7",
+      "description": "package finish without publishing: _smoke probes (filter, colour, osc, events, space, sound, compat), AGENT.md 0.6 section, README, CHANGELOG ## 0.6.0, ai_summary, version 0.6.0, kind feature, evidence design_docs/implemented/audio-realism-0.6.0/ (timings.json, quality.json)",
+      "estimated_loc": 340,
+      "dependencies": [
+        "AR5",
+        "AR6"
+      ],
+      "acceptance_criteria": [
+        "design AC1: check, verify (0 refuted) and pkg quality with no gates",
+        "design AC3: comm -23 of ailang iface -compact (0.5.0 vs 0.6.0) is empty for all 15 modules; version 0.6.0, kind feature, ## 0.6.0 in CHANGELOG",
+        "design AC5: every probe identical on --strict-bytecode and the interpreter; _smoke main prints OK:",
+        "design AC8: timings.json within_budget true and suite_seconds <= 180"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR8",
+      "description": "game on the path pin: synth_main/review_main/synth_test on the sound API (commit REVOICE), the 41-sound byte gate, then the 13 home_* re-voiced (design §D8), sound-levels, review page with the v2 A/B published; pause P2",
+      "estimated_loc": 450,
+      "dependencies": [
+        "AR7"
+      ],
+      "acceptance_criteria": [
+        "design AC9 at REVOICE: make sound-synth-check prints '41 sounds regenerate byte for byte'; synth_test strict VM = interpreter on both pins",
+        "design AC11: make sound-levels and make sound-levels-parity pass with the re-voiced cues",
+        "the re-voiced home set renders in <= 60 s on the strict VM (recorded)",
+        "design AC12: the review page at refs/sound/r3-realism/ lists 13 home_* rows, >= 11 changed; Mark's ruling recorded as a RESOLVED ledger row; no PR, rig run or make deps while the path pin is in place"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR9",
+      "description": "after P2: tool or recipe fixes, publish 0.6.0 (standing approval), registry pin, ailang lock, make deps, regenerate, game PR, rig run",
+      "estimated_loc": 40,
+      "dependencies": [
+        "AR8"
+      ],
+      "acceptance_criteria": [
+        "design AC13: ailang pkg search audio lists sunholo/audio@0.6.0; tools/audio/ailang.lock pins it from the registry; make deps clean",
+        "design AC10: outside home_* only provenance changed in data/audio/assets_synth.json; every generator is sunholo/audio@0.6.0",
+        "design AC14: no sim, audio/ or Python allowlist change; make python-guard and make sound-assets-check pass",
+        "design AC15: tools/rig_check.sh <PR> posts a green rig/full; the GitHub fast tier is green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AR10",
+      "description": "independent evaluation (a different model from the executor) and landing: docs to implemented/r3, report, changelog fragment, README index row, earth-link EL3b.7 note",
+      "estimated_loc": 0,
+      "dependencies": [
+        "AR9"
+      ],
+      "acceptance_criteria": [
+        ".ailang/state/evaluations/eval_R3-SUNHOLO-AUDIO-REALISM_round_1.json scores >= 70",
+        "design_docs/implemented/r3/sunholo-audio-realism.md, -sprint.md and -report.md exist; changelogs/unreleased/<date>-sunholo-audio-realism.md opens with '### '"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "reviews": []
+}
