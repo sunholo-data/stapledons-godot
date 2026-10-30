@@ -3,6 +3,8 @@
 **Direction:** D-139. **Execution authorization:** D-140, attended 2026-10-29.
 **State:** assets and opt-in static preview ready for appearance review. Normal game setup and the published dev channel do not install this pilot.
 
+**Private art gallery:** [Painted NPCs](https://voights-mac-studio.tail97eda0.ts.net:8452/#npcs), with lineup, all poses and the Commons Bow/Astern views. Both devices need Tailscale. On 2026-10-30, the actual Serve hostname/route, HTTPS page/manifest and all four downloaded image hashes were verified from the Studio; the browser gallery was also opened and inspected. Laptop viewing is not inferred from those server-side checks.
+
 Three civilian identities (grove resident, older reader, gardener) and two named crew identities (Medic, Chief Engineer) share the captain's hand-painted comic treatment. The crew figures derive from the exact portraits currently used on the Crew console. Each identity has five poses: standing front/back/profile and seated front/back. This is departure-age art, without new dialogue, expressions, ageing or walk cycles.
 
 ## Files and reproduction

@@ -1,8 +1,44 @@
 {
-  "title": "Latest combined dev build · ready to test",
-  "revision": "v0.4.0-dev.37-living-bridge-148-g620e92ff",
-  "round": "D-137 combined dev channel",
+  "title": "Bridge, Commons & painted characters",
+  "revision": "NPC art d3149fb2 · native archives labelled below",
+  "round": "D-139 / D-140 painted NPC appearance review",
   "frames": [
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/lineup.png",
+      "file": "npc_painted_d3149fb2_lineup.png",
+      "title": "Captain and Commons cast · matching scale",
+      "note": "Three civilian identities plus the Medic and Chief Engineer, painted in the captain's style. The crew keep their existing portrait identities. This first set is ready for appearance feedback.",
+      "label": "Painted character pilot · five identities",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/poses.png",
+      "file": "npc_painted_d3149fb2_poses.png",
+      "title": "All 25 poses · standing and seated",
+      "note": "Front, back, side, seated front and seated back for each identity. Open the image at full size to inspect the faces and clothing. Background figures use simple still poses in this pilot.",
+      "label": "Painted character pilot · complete pose sheet",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/court_bow_-12.png",
+      "file": "npc_painted_d3149fb2_commons_bow.png",
+      "title": "Commons · Bow · crew among the crowd",
+      "note": "Actual player camera: the captain meets the Medic and Chief Engineer among painted residents. Preview only; bench contact, grounding shadows and wider civilian variety remain to refine. Space is hidden for this character inspection.",
+      "label": "Engine capture · opt-in character preview",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/court_astern_-12.png",
+      "file": "npc_painted_d3149fb2_commons_astern.png",
+      "title": "Commons · Astern · captain, crew and residents",
+      "note": "The same gathering in the opposite player view. These painted figures are not installed in the downloadable native builds yet; this page is the first art review.",
+      "label": "Engine capture · opt-in character preview",
+      "revision": "d3149fb2"
+    },
     {
       "group": "playtest",
       "source": "res://renders/view-finish/civic-playtest-native/bridge.png",
@@ -2279,7 +2315,7 @@
       "revision": "f3e0b11c"
     }
   ],
-  "notice": "The combined build is now published to the usual --dev channel: grown bridge/Commons, the latest Earth-link station/feed/light-strip, crew portraits and current fixes. On the laptop run tools/install_review_build.sh --dev. The direct download below is the same archive. Remaining Earth-map work and full main-merge gates are still in progress.",
+  "notice": "New: painted NPCs in the captain's style, with the Medic and Chief Engineer among the residents. Select Painted NPCs, then open any image at full size. This is a static art preview; the native review downloads retained below predate the NPC pilot.",
   "downloads": [
     {
       "source": "res://build/macos/Stapledons-Voyage-combined-dev-620e92ff-macos.zip",

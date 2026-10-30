@@ -496,6 +496,7 @@
     "next": "Mark reviews the first painted appearance. Before production: calibrate per-pose seat contact and ground shadows, expand civilian variety, bind live crew presence/age and add any required painted gait frames.",
     "normal_game_changed": false,
     "asset_pilot_implemented": true,
+    "private_preview": {"url": "https://voights-mac-studio.tail97eda0.ts.net:8452/#npcs", "date": "2026-10-30", "images": 4, "verification": "Actual Tailscale Self.DNSName and existing Serve8452->loopback8984 checked; HTTPS page/manifest and all4 image byte comparisons pass; isolated browser screenshot inspected. Studio-side evidence only; laptop view not yet confirmed."},
     "independent_review": {"report": ".ailang/state/evaluations/eval_R2-NPC-PAINTED-PILOT_round_1.json", "score": 92, "result": "PASS for the bounded asset/opt-in preview slice only", "blocking_defects": 0},
     "milestones": {"NPC1_assets": true, "NPC2_opt_in_preview": true, "NPC3_appearance_approval": null},
     "assets": {"identities": 5, "civilian_identities": 3, "crew_ids": ["medic", "engineer"], "poses": 25, "selected_source_pngs": 6, "preserved_initial_candidates": 1, "verbatim_prompts": 7, "catalog": "assets/characters/npcs/manifest.json", "provenance": "art/npc-painted-v1/provenance.json"},
