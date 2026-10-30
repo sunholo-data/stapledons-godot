@@ -145,7 +145,7 @@ export pure func vowelBands(v: string) -> [Band]   -- "a" "e" "i" "o" "u": F1-F3
 | band-pass, 1 kHz, Q 0.7071, ±1 octave | −3.282 dB / −3.307 dB | ±0.05 dB |
 | band-pass, 3 kHz, Q 8, ±1 octave | −21.753 dB / −22.182 dB | ±0.05 dB |
 | `svfGain` against the measured gain, 20 random (hz, q, f) from a seeded generator | equal | ±0.05 dB |
-| low-pass + band-pass·(1/Q) + high-pass reconstructs the input (the SVF identity) | equal | 1e-9 |
+| low-pass + band-pass + high-pass reconstructs the input (the SVF identity; the band-pass is the constant-peak form) | equal | 1e-9 |
 | a fixed sweep (`hz_to` = `hz`) equals `svf` | bit-identical | exact |
 | `vowelBands("a")` | three bands at 730, 1090, 2440 Hz | exact |
 
@@ -186,7 +186,7 @@ export pure func fmSamples(v: FmVoice, n: int, rate: int) -> [float]
 
 **JSON:** `"kind": "fm"`, `"freq"` (the carrier), `"ratio"` (modulator = ratio × freq), `"index"`, `"index_to"` (default `index`), `"index_tau"` (default 0), plus the 0.5.0 `amp`, `env`, `beat_*`, filters, and the 0.6 extras.
 
-**Check values** (AR3): with a constant index each sideband `fc + k·r·fc` has amplitude |J_k(I)| (the Bessel function, computed in the test by its series). fc = 2,400 Hz, r = 0.25 (sidebands every 600 Hz, none folding below 0 for |k| ≤ 3), a 1 s window, so each line falls on a whole number of cycles:
+**Check values** (AR3): with a constant index each sideband `fc + k·r·fc` has amplitude |J_k(I)| (the Bessel function, computed in the test by its series). As built, fc = 6,000 Hz and r = 0.1 (sidebands every 600 Hz). The planned fc 2,400 Hz, r 0.25 failed at I = 2, because J_5 folds through 0 Hz onto the k = −3 line. A 1 s window puts each line on a whole number of cycles:
 
 | I | k = 0 | ±1 | ±2 | ±3 | Tolerance |
 |---|---|---|---|---|---|
@@ -393,7 +393,7 @@ for m in dsp noise recipe pcm mix analysis reference safety clip edit clip_pcm l
   [ -z "$gone" ] || { echo "$m: $gone"; exit 1; }; done
 grep -q '^version = "0.6.0"' $PKG/ailang.toml && grep -q '^kind = "feature"' $PKG/ailang.toml && grep -q '^## 0.6.0' $PKG/CHANGELOG.md
 # AC4: the pins were not edited after AR0, and they pass (inside AC2; the probe repeats them on the strict VM)
-git -C $PKG diff --quiet $AR0 -- compat_test.ail
+git -C $PKG diff --quiet $AR0 -- compat.ail   # as built: the frozen recipes and pins live in compat.ail (exported), compat_test.ail checks them
 cd $PKG && ailang run --quiet --relax-modules --bytecode --strict-bytecode --entry compatProbe --args-json 0 _smoke.ail | grep -q '^compat-ok '; cd -
 # AC5
 cd $PKG && for p in renderProbe wavProbe levelProbe filterProbe colourProbe oscProbe eventsProbe spaceProbe soundProbe compatProbe; do
