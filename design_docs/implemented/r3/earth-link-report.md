@@ -40,7 +40,7 @@ Renders: `make capture-earth-link` writes `renders/earth_link/` (ten frames and 
 ## Found along the way
 
 - **The export dropped the feed library.** `data/feed/SOURCES` and the raw WebP pictures were not in `include_filter`; `make export-filter-audit` caught it on this branch (fixed in 6ce9dcc5).
-- **`make golden` counts 400 locally, 401 on the rig.** The textured Jupiter case (G-M5-4) skips without `make planet-assets`; the 401 pin assumes the textures. Not a regression; noted so the next local run does not chase it.
+- **Historical pre-integration golden counts: 400 locally, 401 on the rig.** The textured Jupiter case (G-M5-4) skips without `make planet-assets`; the 401 pin assumes the textures. Not a regression; noted so the next local run does not chase it.
 - **Godot's import writes stray `.translation` files** next to the planet and truth CSVs on every import in a side clone (follow-up).
 
 ## Evaluation findings (90/100, round 1)
@@ -51,9 +51,13 @@ Renders: `make capture-earth-link` writes `renders/earth_link/` (ten frames and 
 - **Low, AC11 rests on the review.** The contact sheet is `renders/earth_link/contact_sheet.png` and the reviewed page is linked above; `rig/full` with `--golden` runs on the merged head.
 - **Low, the branch was behind main.** `origin/main` merged in (one conflict, the sim's export list, both sides kept), so the rig tests the merged tree.
 
+## Combined landing verification
+
+The combined integration at `cad3a06c86d793c6105267686dd25d440294697a` passed the full fresh-clone `make test` plus `make golden` gate in 98 minutes and fast CI. Its global GPU family contains 417 checks plus a separate 20-case production Earth-display family. The original 90/100 evaluation above refers to its own earlier source snapshot. Final delivery evidence belongs to the combined landing evaluation and publication receipt.
+
 ## Follow-ups
 
-- `sunholo/audio` 0.6.0, closer-to-real synthesis (PR #360, awaiting Mark's approval).
+- `sunholo/audio` 0.6.0, closer-to-real synthesis (PR #360; approved in the attended session, AR0–AR8 recorded, paused at P2 listening review; package publication/game adoption remain pending).
 - AI-voiced news lines from home (D-101: no generated sound yet).
 - The home beacon (R2-SOUND S2) can now follow `earth.rate` and `earth.in_beam`.
 - `crew_core` reacting to news from home (a package change).
