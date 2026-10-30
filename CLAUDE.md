@@ -42,6 +42,8 @@ PR head in a fresh clone and posts the `rig/full` commit status. GitHub CI runs 
 clean-Linux tier, `make ci-fast` (lock, policy lints, strict VM, parity, replay golden, crew parity).
 A PR merges on a green `rig/full` plus a green fast tier; main is not branch-protected.
 
+**GitHub access (Mark, 2026-10-30).** Use the `gh` CLI, not the GitHub app connector.
+
 ## Development cycle: design doc → sprint plan → execute → evaluate
 
 1. **Design doc.** Write it in `design_docs/planned/<release>/<id>.md`, using the

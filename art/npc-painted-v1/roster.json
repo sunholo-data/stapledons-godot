@@ -1,6 +1,6 @@
 {
   "schema": "stapledons.npc.sources/1",
-  "status": "visual pilot; appearance approval pending",
+  "status": "first appearance approved D-141; production integration pending",
   "generator": "OpenAI built-in image_gen; exact model and seed not exposed",
   "style_reference": "res://assets/characters/captain/avatar_captain_y0_front.png",
   "canvas_px": [192, 288],

@@ -2318,10 +2318,20 @@
   "notice": "New: painted NPCs in the captain's style, with the Medic and Chief Engineer among the residents. Select Painted NPCs, then open any image at full size. This is a static art preview; the native review downloads retained below predate the NPC pilot.",
   "downloads": [
     {
+      "source": "res://build/macos/Stapledons-Voyage-combined-dev-99190243-macos.zip",
+      "file": "Stapledons-Voyage-combined-dev-99190243-macos.zip",
+      "title": "Current published dev · faster walking · 99190243 · macOS",
+      "note": "Same archive as tools/install_review_build.sh --dev, verified 2026-10-30. Includes the shared 2.2 m/s walking pace, grown bridge/Commons, Earth-link station/feed/light-strip, portraits, AILANG cleanup and Kerr checks. Painted NPCs are still an art preview and are not installed in this build. Newer main-only test/diagnostic changes are not yet integrated.",
+      "version": "v0.4.0-dev.37-living-bridge-150-g99190243",
+      "commit": "99190243af3cf3cc55f847c92e5328f9b8147349",
+      "sha256": "076fc82ffdbac26b8753f8c3b03ceaf4cd13ff70d4ca5f60513fbe7fd4c39485",
+      "bytes": 459853895
+    },
+    {
       "source": "res://build/macos/Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
       "file": "Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
-      "title": "LATEST combined dev · all current committed work · macOS",
-      "note": "Same verified archive as tools/install_review_build.sh --dev. Includes civic art/activity, latest Earth-link station/feed/light-strip, crew portraits, current main, AILANG cleanup and Kerr oracle work. This is the combined development test build; main PR merge gates and unfinished milestones remain tracked separately.",
+      "title": "Earlier combined dev · 620e92ff · before faster walking",
+      "note": "Historical combined archive, retained as a reference. It predates the 2.2 m/s walking update and is no longer the dev-channel target. Use the 99190243 download above or tools/install_review_build.sh --dev for the current published build.",
       "version": "v0.4.0-dev.37-living-bridge-148-g620e92ff",
       "commit": "620e92fff02d5489a7bf6fe6881151caf68a4404",
       "sha256": "dab215eff42d56f87bfe927b16adcb4f79e3f5048e3375ed2aba819afe6616b1",

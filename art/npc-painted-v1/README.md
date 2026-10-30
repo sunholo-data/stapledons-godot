@@ -1,7 +1,7 @@
 # Painted Commons characters: first asset pilot
 
 **Direction:** D-139. **Execution authorization:** D-140, attended 2026-10-29.
-**State:** assets and opt-in static preview ready for appearance review. Normal game setup and the published dev channel do not install this pilot.
+**State:** first appearance approved by Mark on 2026-10-30 (D-141: "yeah cool they look good"). Production integration remains pending; normal game setup and the published dev channel do not install this pilot.
 
 **Private art gallery:** [Painted NPCs](https://voights-mac-studio.tail97eda0.ts.net:8452/#npcs), with lineup, all poses and the Commons Bow/Astern views. Both devices need Tailscale. On 2026-10-30, the actual Serve hostname/route, HTTPS page/manifest and all four downloaded image hashes were verified from the Studio; the browser gallery was also opened and inspected. Laptop viewing is not inferred from those server-side checks.
 
@@ -31,11 +31,11 @@ The opt-in `demos/painted_npc_pilot.gd` replaces the 42 proxy figures only in th
 
 The lineup and all pose/Commons frames were opened. The new figures share the captain's palette family, cloth texture and ink treatment; crew hair/scarf/workwear remain recognisable from the console portraits. All 25 images pass the mechanical asset checks, and the opt-in helper passes its identity/floor/pose and rejection tests. Capture manifests record the actual resident count, crew IDs and image hashes. Space/stars are disabled in these stationary character-inspection captures; no sky, physics, camera rules or layout were changed.
 
-Independent review: **92/100 PASS** for NPC1/NPC2 only, with no blocking defects. The evaluator independently ran the asset/behavior checks and inspected all eight images. Report: `../../.ailang/state/evaluations/eval_R2-NPC-PAINTED-PILOT_round_1.json`. This does not provide Mark's appearance approval or production/landing certification.
+Independent review: **92/100 PASS** for NPC1/NPC2 only, with no blocking defects. The evaluator independently ran the asset/behavior checks and inspected all eight images. Report: `../../.ailang/state/evaluations/eval_R2-NPC-PAINTED-PILOT_round_1.json`. That report predates Mark's D-141 appearance approval and does not certify production/landing.
 
 Before production replacement:
 
-- Mark reviews this first character appearance. Three background identities repeat across 40 civilian slots; more variation is needed for the full crowd.
+- The first appearance is accepted (D-141). Three background identities repeat across 40 civilian slots; more variation is needed for the full crowd.
 - Calibrate a **seat anchor per painted pose** against each bench's actual seat height. Feet are aligned, but `seat_height_m` currently selects a seated image only; butt/seat contact is not certified. Full seated side views are also absent.
 - Add a contact-shadow treatment consistent with the captain. This first Sprite3D pilot has no ground shadows and can read as cutouts against sunlit paving.
 - Add painted gait frames before a resident moves. This preview keeps the figures still, including the former short-stroll rows, and introduces no decorative bob under reduced motion.
