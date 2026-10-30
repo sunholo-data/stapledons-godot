@@ -59,3 +59,9 @@ earth-beams-test: import ## R3-EARTH-LINK EL4: Earth's beams on the map (heard, 
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_earth_beams.gd > $(SCRATCH)/earth-beams.log 2>&1; rc=$$?; grep -E '^(FAIL|earth-beams)' $(SCRATCH)/earth-beams.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-beams.log && grep -q '^earth-beams: [0-9]* passed, 0 failures$$' $(SCRATCH)/earth-beams.log
 ui: earth-beams-test
+
+# EL5 (gate 2): the real sim's earth.rate at 0.99c astern and ahead, the fixture tests/test_physics.gd
+# asserts against RS-26 and RS-29. Authoring: regenerate and review the diff.
+.PHONY: earth-rate-fixture
+earth-rate-fixture: import
+	@$(GODOT_SIM) --headless --path . --script tools/earth_rate_fixture.gd 2>&1 | grep -E '^earth-rate-fixture'
