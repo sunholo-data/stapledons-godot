@@ -4,8 +4,8 @@
 **Priority:** P2 (follow-up backlog). Test and code-comment only.
 **Implements:** [charter](../../stapledon-mission.md) row 7n (b); the follow-up of [m4-6pr3-live-transit-frame-cost.md](m4-6pr3-live-transit-frame-cost.md) and its evaluation [`eval_R1-M4-JOURNEY_M4.6pR3_round_1.json`](../../../.ailang/state/evaluations/eval_R1-M4-JOURNEY_M4.6pR3_round_1.json) (drills M3, M4 and M5; non-blocking findings 2 and 3). The [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) is untouched. Rows 7n (a), (c), (d) and (e) are out of scope.
 **Depends on:** D-88 A (test hygiene inside an approved sprint needs no stop); Godot 4.7.2 (`OS.add_logger`, V8, V21). No package, sim, protocol, scene, shader or player-visible change. Headless only: no GPU window needed.
-**Estimated LOC:** about **21**: `tests/test_ism_layer.gd` +17, `ui/ism_layer.gd` +2 comment lines, one 2-line changelog fragment.
-**Evidence:** the Verification log below, run first-hand at `b2e6c110` (origin/main) in this clone (round 1: V1–V20; round 2, after the design quorum: V21–V29), with every mutant run in an APFS copy of it (`cp -cR`), never in the clone itself.
+**Estimated LOC:** about **24**: `tests/test_ism_layer.gd` +20, `ui/ism_layer.gd` +2 comment lines, one 2-line changelog fragment.
+**Evidence:** the Verification log below, run first-hand at `b2e6c110` (origin/main) in this clone (round 1: V1–V20; round 2, after the design quorum: V21–V29; round 3, the controller's carve-out application of the round-2 fixes: V30–V34), with every mutant run in an APFS copy of it (`cp -cR`), never in the clone itself.
 
 ## Game vision alignment
 
@@ -78,19 +78,27 @@ Directly before `# A CanvasLayer keeps its overlay visible-in-tree…` (line 91)
 ```gdscript
 	var errors := ErrorLog.new()
 	OS.add_logger(errors)
+	push_error("7nb-sentinel")
+	var capture_live := errors.lines.any(func(l: String) -> bool: return l.contains("7nb-sentinel"))
+	errors.lines.clear()
 ```
+
+The three sentinel lines are the positive control (quorum round 2, oc-kimi-k3's proposed fix, applied verbatim). Without them, both new checks pass whenever the logger receives nothing. If capture ever goes dead (a Godot bump, a headless flag change, errors moving to a thread the logger misses), the suite would read green while MG became unkillable again. The sentinel proves the capture path is live on every run. `errors.lines.clear()` then drops it, so it matches neither filter (V31). It prints one expected `ERROR: 7nb-sentinel` console line and no `SCRIPT ERROR` (V31).
 
 Directly before the closing `print("ism-layer: …")` (line 133):
 
 ```gdscript
 	OS.remove_logger(errors)
+	check("M4.6pR3 error capture is live (7n-b)", capture_live, "")
 	var refused := errors.lines.filter(func(l: String) -> bool: return l.contains("'visibility_changed' is already connected"))
 	check("M4.6pR3 hidden redraws: no refused repeated visibility_changed connect (7n-b)", refused.is_empty(), str(refused.slice(0, 1)))
 	var other := errors.lines.filter(func(l: String) -> bool: return not l.contains("'visibility_changed' is already connected"))
 	check("M4.6pR3 hidden-window section logs no other engine or script error", other.is_empty(), str(other.slice(0, 1)))
 ```
 
-**Kill.** Under MG, the hide-again draw (a hidden draw after the connection is made) logs exactly one refused connect. The run reads `20 passed, 1 failures`. The one FAIL is `M4.6pR3 hidden redraws: no refused repeated visibility_changed connect (7n-b) ["Signal \'visibility_changed\' is already connected to given callable \'Control::queue_redraw\' in that object."]`, and make rc is 2 (V22, V26). The fixed tree reads `21 passed, 0 failures` (V25).
+**Kill.** Under MG, the hide-again draw (a hidden draw after the connection is made) logs exactly one refused connect. The run reads `21 passed, 1 failures`. The one FAIL is, copied byte for byte from the V32 drill log: `M4.6pR3 hidden redraws: no refused repeated visibility_changed connect (7n-b) ["Signal \'visibility_changed\' is already connected to given callable \'Control::queue_redraw\' in that object."]`, and make rc is 2 (V22, V26, V32). The fixed tree reads `22 passed, 0 failures` (V31).
+
+No other `Logger` subclass or `OS.add_logger` caller exists in `tests/`, `runtime/` or `tools/` (V30); `ErrorLog` extends the engine's `Logger` directly.
 
 **Why two checks: the predicates compared (round 2, V22–V24).** Three predicates were compared through `make map-ism-test`. U and T were run; N is read from T's per-check lines (V23). Each was run against the fixed tree, the three mutants and three injected faults placed right after `OS.add_logger(errors)`. The faults were an unrelated `push_error`, a `push_warning`, and a refused connect on a different signal (`tree_entered`).
 
@@ -106,7 +114,7 @@ Directly before the closing `print("ism-layer: …")` (line 133):
 
 U misattributes host noise, including a mere warning, to MG. N is precise but drops the broad guard. T keeps both. It kills MG under a name that says exactly what happened, and it still fails on any other error raised during the hidden-window phases, under a separate name whose detail prints the message. **Warnings are skipped.** A Godot bump can add deprecation warnings, and failing an ISM test on one would be noise. MG's message is an error (`error_type` 0), so skipping warnings costs no kill.
 
-The log window covers only the M4.6pR3 section (lines 91–133), not start-up. On this rig the whole pristine log has 0 `ERROR` and 0 `WARNING` lines (V3, V25). `map-ism-test` runs only in `make test` on the macOS Studio rig, not in `ci-fast` (V20), so a Linux renderer cannot reach it today.
+The log window covers only the M4.6pR3 section (lines 91–133), not start-up. On this rig the whole pristine log has 0 `ERROR` and 0 `WARNING` lines (V3, V25). `map-ism-test` runs only in `make test` on the macOS Studio rig, not in `ci-fast` (V20), so a Linux renderer cannot reach it today. (The U/N/T counts above are round-2 measurements, before the sentinel check was added; with it every T count gains one pass: fixed 22/0, MG 21/1, MS 20/2, MN 22/0, V31–V32.)
 
 ### (2) MN: RECORD AS EQUIVALENT
 
@@ -124,7 +132,7 @@ Making the case meaningful would need a behaviour change: `if host == null: retu
 	# caller is GalaxyMap._draw_overlay); `host != null` is defensive, equivalent in use (7n-b).
 ```
 
-The drill's MN mutant expects **rc 0 and `21 passed, 0 failures`** on the fixed tree. That is the recorded-equivalent signature. If MN ever fails, the equivalence premise has changed, so re-open this row.
+The drill's MN mutant expects **rc 0 and `22 passed, 0 failures`** on the fixed tree. That is the recorded-equivalent signature. If MN ever fails, the equivalence premise has changed, so re-open this row.
 
 ### (3) MS: already KILLED; the structural assertions are the right guard
 
@@ -165,10 +173,11 @@ deadline() { # deadline SECONDS CMD...: CMD's rc; 124 on expiry (TERM to its pro
     my $t = time + 5; select(undef, undef, undef, 0.2) while kill(0, -$pid) && time < $t;
     kill "KILL", -$pid; exit 124;' "$@" < /dev/null
 }
-drill() (  # drill ROOT MUTANT [MAKE]: exit 0 measured signature, 1 wrong signature, 2 usage, 3 mutation not applied, 4 INFRASTRUCTURE
+drill() (  # drill ROOT MUTANT(MG|MS|MN|ML) [MAKE]: exit 0 measured signature, 1 wrong signature, 2 usage, 3 mutation not applied, 4 INFRASTRUCTURE
   set -eu
-  ROOT=${1:?explicit checkout ROOT required}; mutant=${2:?MG, MN or MS}; MK=${3:-make}
+  ROOT=${1:?explicit checkout ROOT required}; mutant=${2:?MG, MS, MN or ML}; MK=${3:-make}
   cd "$ROOT" || exit 2; ROOT=$(pwd -P); F=ui/ism_layer.gd
+  case "$mutant" in ML) F=tests/test_ism_layer.gd ;; esac
   test -f "$F" || exit 2
   T=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7nb.XXXXXX") || exit 2
   trap 'if test -f "$T/orig.gd"; then cp "$T/orig.gd" "$ROOT/$F"; fi; rm -rf "$T"' EXIT
@@ -176,13 +185,15 @@ drill() (  # drill ROOT MUTANT [MAKE]: exit 0 measured signature, 1 wrong signat
   cp "$F" "$T/orig.gd" || exit 2
   case "$mutant" in
     MG) perl -0 -i -pe 's/\t\tif not host\.visibility_changed\.is_connected\(overlay\.queue_redraw\):\n\t\t\thost\.visibility_changed\.connect\(overlay\.queue_redraw\)\n/\t\thost.visibility_changed.connect(overlay.queue_redraw)\n/' "$F" || exit 1
-        want_rc=2; summary='^ism-layer: 20 passed, 1 failures$'
+        want_rc=2; summary='^ism-layer: 21 passed, 1 failures$'
         fails='^  FAIL  M4\.6pR3 hidden redraws: no refused repeated visibility_changed connect \(7n-b\) \["Signal .*visibility_changed.* is already connected .*"\]$'; nfail=1 ;;
     MS) perl -0 -i -pe 's/\t\tif not host\.visibility_changed\.is_connected\(overlay\.queue_redraw\):\n\t\t\thost\.visibility_changed\.connect\(overlay\.queue_redraw\)\n//' "$F" || exit 1
-        want_rc=2; summary='^ism-layer: 19 passed, 2 failures$'
+        want_rc=2; summary='^ism-layer: 20 passed, 2 failures$'
         fails='^  FAIL  M4\.6pR3 (hidden-window: no media drawn|hide/show cycle: one redraw connection)'; nfail=2 ;;
     MN) perl -i -pe 's/^\tif host != null and not host\.visible:$/\tif not host.visible:/' "$F" || exit 1
-        want_rc=0; summary='^ism-layer: 21 passed, 0 failures$'; fails='^  FAIL'; nfail=0 ;;
+        want_rc=0; summary='^ism-layer: 22 passed, 0 failures$'; fails='^  FAIL'; nfail=0 ;;
+    ML) perl -i -ne 'print unless /^\tOS\.add_logger\(errors\)$/' "$F" || exit 1
+        want_rc=2; summary='^ism-layer: 21 passed, 1 failures$'; fails='^  FAIL  M4\.6pR3 error capture is live \(7n-b\)'; nfail=1 ;;
     *) exit 2 ;;
   esac
   if cmp -s "$T/orig.gd" "$F"; then echo "drill: mutation did not change $F"; exit 3; fi
@@ -215,22 +226,23 @@ Run from the implementation root after the edit. **The edits stay uncommitted du
 
 | # | Criterion and command | Expected output |
 |---|---|---|
-| AC1 | `deadline 120 make map-ism-test; echo rc=$?; L=.godot/tmp/map-ism-test.log; grep -c '^ism-layer: 21 passed, 0 failures$' $L; grep -cE 'SCRIPT ERROR\|^ERROR\|^WARNING' $L` | `rc=0`, `1`, `0` |
-| AC2 | AC1 with `gmake` in place of `make` | `rc=0`, `1`, `0` |
-| AC3 | `pre=$(git hash-object ui/ism_layer.gd); n0=$(ls "$TMPDIR" \| wc -l); drill "$PWD" MG; echo exit=$?` | `drill MG (make): make rc 2`, `drill MG (make): measured signature`, `exit=0` (MG killed: 20 passed, 1 failure, the FAIL named "no refused repeated visibility_changed connect" with the refusal as its detail) |
-| AC4 | `drill "$PWD" MS; echo exit=$?` | `drill MS (make): make rc 2`, `drill MS (make): measured signature`, `exit=0` (still killed: 2 FAILs, 19 passed) |
-| AC5 | `drill "$PWD" MN; echo exit=$?` | `drill MN (make): make rc 0`, `drill MN (make): measured signature`, `exit=0` (recorded equivalent: 21/0) |
-| AC6 | `for m in MG MS MN; do drill "$PWD" $m gmake; echo exit=$?; done` | three `measured signature` lines (`gmake`), make rc `2`, `2`, `0`, and `exit=0` three times |
-| AC7 | In the same shell as AC3, after AC6: `test "$pre" = "$(git hash-object ui/ism_layer.gd)"; echo restored=$?; echo "tmp $n0 -> $(ls "$TMPDIR" \| wc -l)"; find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'stapledon-7nb.*' \| wc -l` | `restored=0` (the trap restored the edited file byte for byte); `tmp N -> N`; `0` (no drill temp dir is left). On a busy rig another process may change the count; the `find` is the decisive check, so record both numbers in the sprint JSON |
+| AC1 | `deadline 120 make map-ism-test; echo rc=$?; L=.godot/tmp/map-ism-test.log; grep -c '^ism-layer: 22 passed, 0 failures$' $L; grep -c '^ERROR: 7nb-sentinel$' $L; grep -E 'SCRIPT ERROR\|^ERROR\|^WARNING' $L \| grep -cv 7nb-sentinel` | `rc=0`, `1`, `1` (the expected sentinel line), `0` |
+| AC2 | AC1 with `gmake` in place of `make` | `rc=0`, `1`, `1`, `0` |
+| AC3 | `pre=$(git hash-object ui/ism_layer.gd); n0=$(ls "$TMPDIR" \| wc -l); drill "$PWD" MG; echo exit=$?` | `drill MG (make): make rc 2`, `drill MG (make): measured signature`, `exit=0` (MG killed: `ism-layer: 21 passed, 1 failures` and the one FAIL, literally from the V32 log: `  FAIL  M4.6pR3 hidden redraws: no refused repeated visibility_changed connect (7n-b) ["Signal \'visibility_changed\' is already connected to given callable \'Control::queue_redraw\' in that object."]`) |
+| AC4 | `drill "$PWD" MS; echo exit=$?` | `drill MS (make): make rc 2`, `drill MS (make): measured signature`, `exit=0` (still killed: 2 FAILs, 20 passed) |
+| AC5 | `drill "$PWD" MN; echo exit=$?` | `drill MN (make): make rc 0`, `drill MN (make): measured signature`, `exit=0` (recorded equivalent: 22/0) |
+| AC5b | `drill "$PWD" ML; echo exit=$?` | `drill ML (make): make rc 2`, `drill ML (make): measured signature`, `exit=0` (dead capture killed by the sentinel: `  FAIL  M4.6pR3 error capture is live (7n-b)`, 21 passed) |
+| AC6 | `for m in MG MS MN ML; do drill "$PWD" $m gmake; echo exit=$?; done` | four `measured signature` lines (`gmake`), make rc `2`, `2`, `0`, `2`, and `exit=0` four times |
+| AC7 | In the same shell as AC3 (whose `pre` then also hashes the test, which ML mutates: `pre=$(git hash-object ui/ism_layer.gd tests/test_ism_layer.gd \| tr '\n' ' ')`), after AC6: `test "$pre" = "$(git hash-object ui/ism_layer.gd tests/test_ism_layer.gd \| tr '\n' ' ')"; echo restored=$?; echo "tmp $n0 -> $(ls "$TMPDIR" \| wc -l)"; find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'stapledon-7nb.*' \| wc -l` | `restored=0` (the trap restored the edited file byte for byte); `tmp N -> N`; `0` (no drill temp dir is left). On a busy rig another process may change the count; the `find` is the decisive check, so record both numbers in the sprint JSON |
 | AC8 | `D=$(git diff -U0 origin/main -- ui/ism_layer.gd); echo "$D" \| grep -E '^[-+][^-+]' \| grep -cvE '^\+[[:space:]]*#'; echo "$D" \| grep -cE '^\+[[:space:]]*#'` | `0` (no code line changed), `2` |
 | AC9 | `grep -cE 'OS\.add_logger\(errors\)\|OS\.remove_logger\(errors\)\|passes with the connect deleted\|is already connected"\)' tests/test_ism_layer.gd` | `5` (install, remove, the MS comment, and the two filters) |
 | AC10 | `make uid-guard lint-precision AILANG=$PWD/runtime/bin/ailang && git diff --check origin/main && echo gates-ok` | `gates-ok` (no new script, so no new `.uid`) |
-| AC11 | `git diff --name-only origin/main \| grep -cvxE 'ui/ism_layer\.gd\|tests/test_ism_layer\.gd\|changelogs/unreleased/2026-10-30-7nb-ism-layer-survivors\.md\|design_docs/planned/r1/m4-7nb-ism-layer-survivors(-sprint)?\.md\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json'` (with untracked files added: `git add -N` on the fragment first); then for both PRs `gh api --paginate repos/sunholo-data/stapledons-godot/pulls/$p/files --jq '.[].filename' \| grep -cxE 'ui/ism_layer\.gd\|tests/test_ism_layer\.gd'` (p = 344, 351) | `0`; then `0` and `0` |
+| AC11 | `git diff --name-only origin/main \| grep -cvxE 'ui/ism_layer\.gd\|tests/test_ism_layer\.gd\|changelogs/unreleased/2026-10-30-7nb-ism-layer-survivors\.md\|design_docs/planned/r1/m4-7nb-ism-layer-survivors(-sprint)?\.md\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json'` (with untracked row files added by name: `git add -N changelogs/unreleased/2026-10-30-7nb-ism-layer-survivors.md design_docs/planned/r1/m4-7nb-ism-layer-survivors.md` first; never `git add -N .`, which would also mark the 5 untracked `*.translation` files); then for both PRs `gh api --paginate repos/sunholo-data/stapledons-godot/pulls/$p/files --jq '.[].filename' \| grep -cxE 'ui/ism_layer\.gd\|tests/test_ism_layer\.gd'` (p = 344, 351) | `0`; then `0` and `0` |
 | AC12 | `make test` on the rig (`tools/rig_check.sh <PR>`), after the commit and PR: the definition of done | `rig/full` green |
 
 ## Sub-milestones and estimates
 
-One step, about 21 LOC, headless, under an hour. (1) RED: MG survives on the unedited tree. (2) Make the test edit and add both comments, plus the fragment. (3) Run AC1–AC11 on the **uncommitted** tree; none needs a commit (V27). (4) Commit the three files by name (`git add tests/test_ism_layer.gd ui/ism_layer.gd changelogs/unreleased/2026-10-30-7nb-ism-layer-survivors.md`, never the untracked `*.translation` files, V1), then open the PR and run `rig/full` (AC12).
+One step, about 24 LOC, headless, under an hour. (1) RED: MG survives on the unedited tree. (2) Make the test edit and add both comments, plus the fragment. (3) Run AC1–AC11 on the **uncommitted** tree; none needs a commit (V27). (4) Commit the three files by name (`git add tests/test_ism_layer.gd ui/ism_layer.gd changelogs/unreleased/2026-10-30-7nb-ism-layer-survivors.md`, never the untracked `*.translation` files, V1), then open the PR and run `rig/full` (AC12).
 
 ## Risks and mitigations
 
@@ -247,7 +259,7 @@ None. D-88 A covers this row: test hygiene inside an approved sprint, with no pi
 
 | File | Change |
 |---|---|
-| `tests/test_ism_layer.gd` | `ErrorLog` (`extends Logger`, skipping warnings), installed around the M4.6pR3 section, and two new checks (the refused `visibility_changed` connect; any other error); one comment before the shown-window case. 19 → 21 checks. |
+| `tests/test_ism_layer.gd` | `ErrorLog` (`extends Logger`, skipping warnings), installed around the M4.6pR3 section, a `7nb-sentinel` positive control, and three new checks (capture is live; the refused `visibility_changed` connect; any other error); one comment before the shown-window case. 19 → 22 checks. |
 | `ui/ism_layer.gd` | Two comment lines above `var host := overlay.get_window()`. No code change. |
 | `changelogs/unreleased/2026-10-30-7nb-ism-layer-survivors.md` | The fragment from Design. |
 | `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json` | A dated row-7n(b) note: RED, AC1–AC7 outputs. |
@@ -289,9 +301,15 @@ Run on 2026-10-30 at `b2e6c110` with Godot 4.7.2. "Scratch" is an APFS copy of t
 | V27 | The revised AC7 works on the uncommitted tree; the round-1 form did not | in scratch with both edits uncommitted (`git status --short`: ` M tests/test_ism_layer.gd`, ` M ui/ism_layer.gd`): `pre=$(git hash-object …)` before AC3, the AC7 line after AC6; then the round-1 gate `git diff --quiet HEAD -- ui/ism_layer.gd` | `restored=0`; `tmp 5025 -> 5025` (counting the scratch dir); `0`. The round-1 gate gives rc **1** on the same tree, so its `&&` skipped the `find` (objection 1 reproduced) |
 | V28 | A run that leaves no log is INFRASTRUCTURE, not a doc bug | `drill "$PWD" MN "$S/mkstub"`, where the stub is `#!/bin/sh` / `exit 0` (rc 0, writes nothing) | `drill MN (…/mkstub): make rc 0`, `drill MN: INFRASTRUCTURE no log`, exit `4` |
 | V29 | Revised gates and size | `make uid-guard lint-precision SCRATCH=… AILANG=$PWD/runtime/bin/ailang`; `git diff --check`; `git diff --numstat`; the AC8 and AC9 commands | `uid-guard: ok (352 .uid files)`, `lint-precision: ok …`; diff-check clean; `17 0 tests/test_ism_layer.gd`, `2 0 ui/ism_layer.gd`; AC8 `0`, `2`; AC9 `5` |
+| V30 | No existing logger machinery to reuse (round 3, glm's proposed fix) | `git grep -nE 'extends Logger\|OS\.(add\|remove)_logger' -- tests/ runtime/ tools/ mk/`; control `git grep -nE 'extends SceneTree' -- tests/test_ism_layer.gd` | rc 1, no matches; the control matches `tests/test_ism_layer.gd:1`. Conclusion: no helper to extend, so the inline `ErrorLog` stands |
+| V31 | The sentinel version passes, is captured, cleared and matches neither filter (round 3, controller) | the Design edits plus the sentinel applied in an APFS scratch copy at `0e3cae1c`; `make map-ism-test SCRATCH=…` and the same with `gmake` | both rc 0, `ism-layer: 22 passed, 0 failures`; 0 `SCRIPT ERROR`; exactly 1 `^ERROR` line, `ERROR: 7nb-sentinel` (with its `push_error` backtrace); 0 non-sentinel `SCRIPT ERROR`, `ERROR` or `WARNING` lines |
+| V32 | The drills with the sentinel give the designed signatures, including a dead-capture mutant ML (round 3, controller) | the Drills function as written in this doc, `drill "$S/p" MG\|MS\|MN\|ML`, with `make` and then `gmake` | MG rc 2 `21 passed, 1 failures`, FAIL `  FAIL  M4.6pR3 hidden redraws: no refused repeated visibility_changed connect (7n-b) ["Signal \'visibility_changed\' is already connected to given callable \'Control::queue_redraw\' in that object."]`; MS rc 2 `20 passed, 2 failures` (the two structural FAILs); MN rc 0 `22 passed, 0 failures`; ML (delete `OS.add_logger(errors)`) rc 2 `21 passed, 1 failures`, FAIL `  FAIL  M4.6pR3 error capture is live (7n-b)`, the MG checks passing vacuously as kimi predicted. Eight runs, `measured signature`, exit 0 each |
+| V33 | The drills restore both files and leave no temp dir | AC7's hash form over `ui/ism_layer.gd tests/test_ism_layer.gd` before and after the eight V32 runs; `ls "$TMPDIR" \| wc -l`; `find … -name 'stapledon-7nb.*'` | `restored=0`; `tmp 5024 -> 5024`; `0` |
+| V34 | Gemini's AC11 note | `git status --porcelain` in the clone | 5 untracked `*.translation` files from the import, plus this doc's untracked siblings only if present; AC11 now adds the row files by name |
 
 ## Review history
 
 - **Round 1** (quorum 2026-10-30T11:49:19Z): BLOCKED. gemini-4-argon PASS. Its note was to keep the 5 untracked `*.translation` files out of the commit; that is now explicit in sub-milestone (4).
   - oc-glm-5-3 REJECT: AC7's `git diff --quiet HEAD` cannot pass with the edits uncommitted, and the doc ran the ACs before any commit. Fixed: AC7 now compares `git hash-object` before AC3 and after AC6, prints the `$TMPDIR` counts, and runs the `find` ungated. The AC preamble says the run is uncommitted, and the commit is sub-milestone (4) (V27). Its secondary flags were also taken: a missing log is now drill exit 4 (V28), and the `-sprint.md` that AC11 admits is listed in Files.
   - oc-kimi-k3 REJECT: the single all-errors predicate was broader than MG's signature, warnings were unmeasured, and host noise would be reported under MG's name. Fixed after measurement: warnings arrive as type 1 and are skipped (V21). The three predicates were compared through the target (V22–V24). The chosen design has two checks, a narrow `'visibility_changed' is already connected` check named for MG and a separately named "no other engine or script error" check that prints the message. A planted error and a planted refused connect on another signal both fail the second check, not the MG check. Expected counts move from 20 to 21 checks (MG 20/1, MS 19/2, MN 21/0), and AC9 from `3` to `5`. Scope is the same three files, about 21 lines.
+- **Round 2** (quorum 2026-10-30T11:57:06Z, same seats): BLOCKED. gemini-4-argon PASS, note: AC11's `git add -N` must name the files (applied verbatim). oc-glm-5-3 PASS, note: survey for existing logger machinery (V30, none; sentence added in Design (1)) and quote the MG FAIL line literally (AC3 and the Kill paragraph now carry the V32 line). oc-kimi-k3 REJECT: the MG kill is a purely negative assertion, so a dead capture path would leave the suite green while MG became unkillable. Fixed with kimi's proposed `7nb-sentinel` positive control, applied verbatim, and a new drill mutant ML that proves it (V31–V33). Counts move from 21 to 22 checks (MG 21/1, MS 20/2, MN 22/0, ML 21/1). AC1/AC2 expect the one sentinel console line, and AC9 stays `5`. These round-2 fixes were applied by the controller under the narrow-refinement carve-out: every objection carried a concrete reviewer-written fix, none disputed the direction, and there was no third designer run and no third quorum round.
