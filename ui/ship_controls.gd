@@ -100,17 +100,51 @@ static func row(key: String) -> Dictionary:
 	return {}
 
 
-## Help text grouped as §F (developer rows only when `dev`).
-static func help_text(dev: bool) -> String:
+## VFU: controls stay the same; the help describes the current level's camera and routes.
+## Empty context retains the bridge contract for existing callers and developer tooling.
+static func help_text(dev: bool, context: Dictionary = {}) -> String:
 	var lines := PackedStringArray()
 	for g: String in GROUP_ORDER:
 		if g == "Developer" and not dev:
 			continue
 		var items := PackedStringArray()
 		for r: Dictionary in KEYS + POINTER:
-			if r.group == g and not str(r.help).is_empty():
-				items.append(r.help)
+			var text := _level_help(r, dev, context)
+			if r.group == g and not text.is_empty():
+				items.append(text)
 		if not items.is_empty():
 			lines.append("%s: %s" % [g, " · ".join(items)])
-	lines.append("Decisions: at the bridge consoles (navigation station, Voyage console, Archive terminal). Tab · Walk to.")
+	if str(context.get("id", "bridge")) == "bridge":
+		lines.append("Decisions: at the bridge consoles (navigation station, Voyage console, Archive terminal). Tab · Walk to.")
+	else:
+		lines.insert(0, str(context.get("name", "Commons")) + ": " + route_hint(context))
+		lines.append("Decisions: at the bridge consoles. " + ("Tab · Walk to lift." if context.get("can_walk_to_lift", true) else "Return to the court, then take the lift."))
 	return "\n".join(lines)
+
+
+static func route_hint(context: Dictionary) -> String:
+	var text := str(context.get("route_hint", ""))
+	return text if not text.is_empty() else "Take the lift to the bridge · E at the landing."
+
+
+static func _level_help(r: Dictionary, dev: bool, context: Dictionary) -> String:
+	var bridge := str(context.get("id", "bridge")) == "bridge"
+	var legacy := bool(context.get("legacy_views", false))
+	var key := str(r.get("key", ""))
+	if key == "KEY_8" and not dev: return ""
+	if key in ["KEY_1", "KEY_2", "KEY_3", "KEY_EQUAL", "KEY_MINUS"]:
+		if legacy:
+			return "1 2 3 views: Close, Deck, Whole level" if key == "KEY_1" else ("= / - view in or out" if key == "KEY_EQUAL" else "")
+		return str(r.help) if dev else ""
+	if not bridge:
+		if key in ["KEY_7", "KEY_9"] and legacy: return ""
+		if key == "KEY_R": return "R back to this level's default view"
+		if key == "KEY_E": return "E use the lift, ladder or hatch in reach (the prompt names it)"
+		if key == "KEY_7": return "7 Bow view: ahead through this stage"
+		if key == "KEY_9": return "9 Astern view: back through this stage"
+		if str(r.get("input", "")) == "click a console": return ""
+	var pointer := str(r.get("input", ""))
+	if not legacy:
+		if pointer == "scroll / pinch": return ""
+		if pointer == "controller": return "controller: left stick walks, A use, B back"
+	return str(r.help)

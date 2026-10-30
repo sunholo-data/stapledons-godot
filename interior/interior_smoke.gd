@@ -11,6 +11,13 @@ extends RefCounted
 const DT := 1.0 / 20.0
 const ALPHA_CEN_A := "CNS5:3627"
 
+## Canonical Alpha Cen 0.99c minimum-path order (tests/expected_unlocks.json). Kept here because
+## production export smoke cannot depend on excluded tests/. The live sim must return these IDs.
+const MINIMUM_UNLOCKS := ["archive.bubble", "archive.one-g", "archive.nothing-crosses",
+	"archive.two-clocks", "archive.earths-voice", "archive.photon-drive", "archive.ism-glow",
+	"archive.starbow", "archive.weather-between-the-stars", "archive.following-light"]
+const MINIMUM_LOCKED := ["archive.cmb-forward", "archive.tides", "archive.shadow-ring"]
+
 var fails := PackedStringArray()
 
 
@@ -76,10 +83,32 @@ func run(main: Node, it: Interior, map: GalaxyMap, sim: SimBridge) -> int:
 	_check_sky(it, sim)
 	it.open_archive("log")
 	need(it.archive.visible and it.archive_text.text.contains("Legacy log"), "the Archive opens on the legacy log")
-	it.open_archive("codex") # The real flight also unlocks the ISM Archive entry, and Earth's voice and following light (R3-EARTH-LINK).
-	var open_rows: int = it.codex.entry_rows().values().filter(func(b: Button) -> bool: return not b.disabled).size()
-	need(it.codex.panel.visible and not it.archive.visible and it.codex.entry_rows().size() == 13 and open_rows == 10, "the codex tab shows thirteen entries (%d), %d open from the sim's archive.unlocked" % [it.codex.entry_rows().size(), open_rows])
+	it.open_archive("codex") # The real flight also unlocks the ISM Archive entry.
+	need(it.codex.panel.visible and not it.archive.visible, "the codex tab replaces the legacy log")
+	var codex_errors := codex_state_errors(it.codex.entry_rows(), GalaxyMap.field_value(sim.world, "consequence.archive.unlocked"))
+	for error: String in codex_errors: need(false, error)
+	if codex_errors.is_empty():
+		print("m4-smoke: codex %d catalogue IDs, %d exact sim-unlocked minimum-path IDs" % [it.codex.entry_rows().size(), MINIMUM_UNLOCKS.size()])
 	return _done(sim)
+
+
+## Compare identities and each enabled state, not just catalogue/open row counts. The manifest-
+## checked lore owns the complete catalogue; the simulation alone owns the route's unlock list.
+static func codex_state_errors(rows: Dictionary, sim_unlocked: Variant) -> PackedStringArray:
+	var errors := PackedStringArray()
+	var lore := LoreLoader.load_entries()
+	var ids: Array = lore.entries.map(func(entry: Dictionary) -> String: return entry.id)
+	if not lore.errors.is_empty() or ids != MINIMUM_UNLOCKS + MINIMUM_LOCKED or rows.keys() != ids:
+		errors.append("codex rows must match every manifest-validated catalogue ID in order")
+	if not sim_unlocked is Array or sim_unlocked != MINIMUM_UNLOCKS:
+		errors.append("sim archive.unlocked must match the exact Alpha Cen minimum-path IDs")
+		return errors
+	for id: String in ids:
+		if not rows.has(id): continue
+		var button := rows[id] as Button
+		if button == null or button.disabled == sim_unlocked.has(id):
+			errors.append("codex enabled state differs from sim archive.unlocked: " + id)
+	return errors
 
 
 ## The interior's sky follows the sim: heading, beta and the camera = cam x ship_basis.

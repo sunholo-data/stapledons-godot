@@ -1,0 +1,17 @@
+{
+  "schema": "stapledons.commons-civic.sources/1",
+  "about": "User-approved appearance packaged for playtest; pins cover exact source configs and raw asset bytes. Refresh deliberately after reviewed source changes.",
+  "files": {
+    "res://art/commons-lived-in-pilot/placements.json": "88079c7c7dc40cf8e2ecae451db921adbe02a9b3eee5594cfb3d549b1124da7c",
+    "res://art/commons-backdrop-pilot/placements.json": "ac8dc7a8d63dd7d46773d2c07294f9d6c75ebd2e7231d46843ba3756686b6c17",
+    "res://art/commons-grown-pilot/placements.json": "5de067efd6c42e54fc374071c202b8de667155cf9c3cae9fdde4dc0d8a220897",
+    "res://art/commons-grown-pilot/furniture.json": "2923bf74e868182d2ef0b359fb181aa6335630f4c9d3495aa502c8defb0c8e2b",
+    "res://art/commons-lived-in-pilot/commons_lived_in_kit_v1.glb": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+    "res://art/commons-backdrop-pilot/commons_backdrop_kit_v1.glb": "33eb1f6057004afba4deba9a8673082e1862e9699a2255b49632761287e0776a",
+    "res://art/commons-grown-pilot/commons_grown_kit_v1.glb": "4a9d9340a8ec58be26361910dbc82a2dd598d47ece2d577c33b63402b12382d2",
+    "res://art/commons-grown-pilot/trailing-vine-v1.png": "5428cbf826d8bf5332c23940af4fc50d25ba8f38cbbc793fba9e1db42971bb3d",
+    "res://art/ship-demo-v1/painted-bridge-v1/textures/cream.png": "d32429596eb837f5ee33dd19deb790566beff581648e2e1845a78342e803a4f0",
+    "res://art/ship-demo-v1/painted-bridge-v1/textures/teal.png": "9b1bb53aa9be942345ca60dde419cc4612dc2475bf5137259a27ebd337c513ac",
+    "res://art/ship-demo-v1/painted-bridge-v1/textures/ochre.png": "2074468e54dda721d944ec6a774ee004fafafd4958122c07d83e3e7fde522c85"
+  }
+}

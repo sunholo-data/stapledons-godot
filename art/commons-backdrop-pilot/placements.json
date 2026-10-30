@@ -1,0 +1,2405 @@
+{
+  "about": "D-134 macro architectural backdrop refinement. Before=furniture pilot; after=that pilot plus layered real architecture/planting. Current WALK, cameras, bridge/spire and live sky unchanged. Remote background is not newly traversable.",
+  "base_config": "res://art/commons-lived-in-pilot/placements.json",
+  "source_glb": "commons_backdrop_kit_v1.glb",
+  "source_sha256": "33eb1f6057004afba4deba9a8673082e1862e9699a2255b49632761287e0776a",
+  "bounds": {
+    "min": [
+      -76,
+      -76,
+      56.9
+    ],
+    "max": [
+      76,
+      76,
+      69
+    ]
+  },
+  "placements": [
+    {
+      "name": "nw_civic",
+      "prop": "civic_alcove",
+      "ship_m": [
+        -24,
+        29,
+        57.025
+      ],
+      "yaw_deg": -116.5651,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "west_civic",
+      "prop": "civic_alcove",
+      "ship_m": [
+        -18,
+        43,
+        57.025
+      ],
+      "yaw_deg": -131.5526,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "ne_civic",
+      "prop": "civic_arcade",
+      "ship_m": [
+        61,
+        15,
+        57.025
+      ],
+      "yaw_deg": 107.4472,
+      "solid_meshes": [
+        "civic_arcade__structure"
+      ]
+    },
+    {
+      "name": "sw_civic",
+      "prop": "civic_arcade",
+      "ship_m": [
+        -2,
+        -48,
+        57.025
+      ],
+      "yaw_deg": -28.3008,
+      "solid_meshes": [
+        "civic_arcade__structure"
+      ]
+    },
+    {
+      "name": "southwest_civic",
+      "prop": "civic_arcade",
+      "ship_m": [
+        -19,
+        -43,
+        57.025
+      ],
+      "yaw_deg": -43.7546,
+      "solid_meshes": [
+        "civic_arcade__structure"
+      ]
+    },
+    {
+      "name": "se_civic",
+      "prop": "civic_arcade",
+      "ship_m": [
+        47,
+        -25,
+        57.025
+      ],
+      "yaw_deg": 35.9097,
+      "solid_meshes": [
+        "civic_arcade__structure"
+      ]
+    },
+    {
+      "name": "nw_alcove",
+      "prop": "civic_alcove",
+      "ship_m": [
+        -32,
+        43,
+        57.025
+      ],
+      "yaw_deg": -123.9174,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "ne_alcove",
+      "prop": "civic_alcove",
+      "ship_m": [
+        43,
+        41,
+        57.025
+      ],
+      "yaw_deg": 155.3231,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "west_alcove",
+      "prop": "civic_alcove",
+      "ship_m": [
+        -39,
+        30,
+        57.025
+      ],
+      "yaw_deg": -111.8014,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "sw_alcove",
+      "prop": "civic_alcove",
+      "ship_m": [
+        -14,
+        -54,
+        57.025
+      ],
+      "yaw_deg": -34.5923,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "se_alcove",
+      "prop": "civic_alcove",
+      "ship_m": [
+        43,
+        -40,
+        57.025
+      ],
+      "yaw_deg": 21.1247,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "southwest_alcove",
+      "prop": "civic_alcove",
+      "ship_m": [
+        -32,
+        -38,
+        57.025
+      ],
+      "yaw_deg": -54.0903,
+      "solid_meshes": [
+        "civic_alcove__structure"
+      ]
+    },
+    {
+      "name": "nw_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        -25,
+        60,
+        57.025
+      ],
+      "yaw_deg": -137.6754,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "west_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        -42,
+        50,
+        57.025
+      ],
+      "yaw_deg": -124.0772,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "ne_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        58,
+        30,
+        57.025
+      ],
+      "yaw_deg": 129.0939,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "east_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        65,
+        5,
+        57.025
+      ],
+      "yaw_deg": 91.4688,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "sw_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        -26,
+        -60,
+        57.025
+      ],
+      "yaw_deg": -39.0939,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "southwest_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        -43,
+        -49,
+        57.025
+      ],
+      "yaw_deg": -52.4716,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "se_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        58,
+        -30,
+        57.025
+      ],
+      "yaw_deg": 43.2643,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "east_south_market",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        64,
+        -12,
+        57.025
+      ],
+      "yaw_deg": 67.1663,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_0",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        49.851,
+        49.851,
+        57.025
+      ],
+      "yaw_deg": 152.5172,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_2",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -6.1445,
+        70.2317,
+        57.025
+      ],
+      "yaw_deg": -154.1111,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_3",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -29.7946,
+        63.8947,
+        57.025
+      ],
+      "yaw_deg": -137.0297,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_4",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -49.851,
+        49.851,
+        57.025
+      ],
+      "yaw_deg": -121.1524,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_5",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -63.8947,
+        29.7946,
+        57.025
+      ],
+      "yaw_deg": -106.0104,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_6",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        49.851,
+        -49.851,
+        57.025
+      ],
+      "yaw_deg": 23.8889,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_8",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -6.1445,
+        -70.2317,
+        57.025
+      ],
+      "yaw_deg": -23.414,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_9",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -29.7946,
+        -63.8947,
+        57.025
+      ],
+      "yaw_deg": -39.4127,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_10",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -49.851,
+        -49.851,
+        57.025
+      ],
+      "yaw_deg": -54.6269,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_11",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        -63.8947,
+        -29.7946,
+        57.025
+      ],
+      "yaw_deg": -69.397,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_12",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        70.2317,
+        6.1445,
+        57.025
+      ],
+      "yaw_deg": 92.7757,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "rim_garden_13",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        68.0978,
+        -18.2467,
+        57.025
+      ],
+      "yaw_deg": 62.1457,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "mid_nw_shade",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        0,
+        27,
+        57.025
+      ],
+      "yaw_deg": -131.4965,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "mid_sw_shade",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        4,
+        -27,
+        57.025
+      ],
+      "yaw_deg": -35.3625,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "mid_ne_shade",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        44,
+        19,
+        57.025
+      ],
+      "yaw_deg": 129.8056,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "mid_se_shade",
+      "prop": "low_market_canopy",
+      "ship_m": [
+        45,
+        -14,
+        57.025
+      ],
+      "yaw_deg": 46.5482,
+      "solid_meshes": [
+        "low_market_canopy__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_0",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        7,
+        25,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_1",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        13,
+        24,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_2",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        19,
+        25,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_3",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        31,
+        32,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_4",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        37,
+        31,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_5",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        43,
+        32,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_6",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        1,
+        44,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_7",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        7,
+        43,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_8",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        13,
+        44,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_9",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        36,
+        49,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_10",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        42,
+        48,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_north_11",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        48,
+        49,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_0",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        7,
+        -25,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_1",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        13,
+        -24,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_2",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        19,
+        -25,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_3",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        31,
+        -32,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_4",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        37,
+        -31,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_5",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        43,
+        -32,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_6",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        1,
+        -44,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_7",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        7,
+        -43,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_8",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        13,
+        -44,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_9",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        36,
+        -49,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_10",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        42,
+        -48,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    },
+    {
+      "name": "promenade_south_11",
+      "prop": "curved_garden_parapet",
+      "ship_m": [
+        48,
+        -49,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "curved_garden_parapet__structure"
+      ]
+    }
+  ],
+  "plants": [
+    {
+      "name": "ne_civic_plant_0",
+      "kind": "shrub",
+      "placement": "ne_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "ne_civic_plant_1",
+      "kind": "shrub",
+      "placement": "ne_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "ne_civic_plant_2",
+      "kind": "shrub",
+      "placement": "ne_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "sw_civic_plant_0",
+      "kind": "shrub",
+      "placement": "sw_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "sw_civic_plant_1",
+      "kind": "shrub",
+      "placement": "sw_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "sw_civic_plant_2",
+      "kind": "shrub",
+      "placement": "sw_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "southwest_civic_plant_0",
+      "kind": "shrub",
+      "placement": "southwest_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "southwest_civic_plant_1",
+      "kind": "shrub",
+      "placement": "southwest_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "southwest_civic_plant_2",
+      "kind": "shrub",
+      "placement": "southwest_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "se_civic_plant_0",
+      "kind": "shrub",
+      "placement": "se_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "se_civic_plant_1",
+      "kind": "shrub",
+      "placement": "se_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "se_civic_plant_2",
+      "kind": "shrub",
+      "placement": "se_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "nw_alcove_plant_0",
+      "kind": "shrub",
+      "placement": "nw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "nw_alcove_plant_1",
+      "kind": "shrub",
+      "placement": "nw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "ne_alcove_plant_0",
+      "kind": "shrub",
+      "placement": "ne_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "ne_alcove_plant_1",
+      "kind": "shrub",
+      "placement": "ne_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "west_alcove_plant_0",
+      "kind": "shrub",
+      "placement": "west_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "west_alcove_plant_1",
+      "kind": "shrub",
+      "placement": "west_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "sw_alcove_plant_0",
+      "kind": "shrub",
+      "placement": "sw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "sw_alcove_plant_1",
+      "kind": "shrub",
+      "placement": "sw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "se_alcove_plant_0",
+      "kind": "shrub",
+      "placement": "se_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "se_alcove_plant_1",
+      "kind": "shrub",
+      "placement": "se_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "southwest_alcove_plant_0",
+      "kind": "shrub",
+      "placement": "southwest_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.35,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "southwest_alcove_plant_1",
+      "kind": "shrub",
+      "placement": "southwest_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_0_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_0",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_0_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_0",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_0_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_0",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_2_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_2",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_2_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_2",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_2_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_2",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_3_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_3",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_3_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_3",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_3_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_3",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_4_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_4",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_4_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_4",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_4_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_4",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_5_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_5",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_5_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_5",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_5_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_5",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_6_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_6",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_6_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_6",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_6_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_6",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_8_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_8",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_8_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_8",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_8_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_8",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_9_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_9",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_9_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_9",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_9_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_9",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_10_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_10",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_10_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_10",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_10_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_10",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_11_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_11",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_11_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_11",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_11_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_11",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_12_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_12",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_12_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_12",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_12_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_12",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_13_plant_0",
+      "kind": "shrub",
+      "placement": "rim_garden_13",
+      "anchor": "FOLIAGE_curved_garden_0",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_13_plant_1",
+      "kind": "shrub",
+      "placement": "rim_garden_13",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "rim_garden_13_plant_2",
+      "kind": "shrub",
+      "placement": "rim_garden_13",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.75,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "civic_frond_0",
+      "kind": "frond",
+      "root": [
+        3,
+        24,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 0,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_1",
+      "kind": "frond",
+      "root": [
+        2,
+        -24,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 37,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_2",
+      "kind": "frond",
+      "root": [
+        42,
+        23,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 74,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_3",
+      "kind": "frond",
+      "root": [
+        44,
+        -19,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 111,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_4",
+      "kind": "frond",
+      "root": [
+        -10,
+        39,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 148,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_5",
+      "kind": "frond",
+      "root": [
+        -10,
+        -38,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 5,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_6",
+      "kind": "frond",
+      "root": [
+        53,
+        20,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 42,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "civic_frond_7",
+      "kind": "frond",
+      "root": [
+        53,
+        -20,
+        57.05
+      ],
+      "height": 2.4,
+      "yaw_deg": 79,
+      "tint": [
+        0.92,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "promenade_north_0_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_0",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_0_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_0",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_1_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_1",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_1_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_1",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_2_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_2",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_2_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_2",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_3_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_3",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_3_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_3",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_4_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_4",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_4_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_4",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_5_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_5",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_5_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_5",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_6_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_6",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_6_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_6",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_7_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_7",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_7_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_7",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_8_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_8",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_8_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_8",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_9_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_9",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_9_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_9",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_10_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_10",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_10_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_10",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_11_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_north_11",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_north_11_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_north_11",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_0_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_0",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_0_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_0",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_1_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_1",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_1_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_1",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_2_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_2",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_2_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_2",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_3_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_3",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_3_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_3",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_4_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_4",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_4_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_4",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_5_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_5",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_5_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_5",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_6_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_6",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_6_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_6",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_7_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_7",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_7_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_7",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_8_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_8",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_8_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_8",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_9_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_9",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_9_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_9",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_10_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_10",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_10_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_10",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_11_plant_1",
+      "kind": "shrub",
+      "placement": "promenade_south_11",
+      "anchor": "FOLIAGE_curved_garden_1",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "promenade_south_11_plant_2",
+      "kind": "shrub",
+      "placement": "promenade_south_11",
+      "anchor": "FOLIAGE_curved_garden_2",
+      "height": 0.65,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "nw_civic_roof_0",
+      "kind": "shrub",
+      "placement": "nw_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "nw_civic_roof_1",
+      "kind": "shrub",
+      "placement": "nw_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "west_civic_roof_0",
+      "kind": "shrub",
+      "placement": "west_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    },
+    {
+      "name": "west_civic_roof_1",
+      "kind": "shrub",
+      "placement": "west_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 1.05,
+      "tint": [
+        0.94,
+        1,
+        0.94
+      ]
+    }
+  ],
+  "practicals": [
+    {
+      "name": "nw_civic_lamp",
+      "ship_m": [
+        0,
+        48,
+        59.225
+      ],
+      "range_m": 7.5,
+      "energy": 1.6,
+      "tint": [
+        1,
+        0.8,
+        0.58
+      ]
+    },
+    {
+      "name": "west_civic_lamp",
+      "ship_m": [
+        -18,
+        43,
+        59.225
+      ],
+      "range_m": 7.5,
+      "energy": 1.6,
+      "tint": [
+        1,
+        0.8,
+        0.58
+      ]
+    },
+    {
+      "name": "ne_civic_lamp",
+      "ship_m": [
+        46,
+        28,
+        59.225
+      ],
+      "range_m": 7.5,
+      "energy": 1.6,
+      "tint": [
+        1,
+        0.8,
+        0.58
+      ]
+    },
+    {
+      "name": "sw_civic_lamp",
+      "ship_m": [
+        -2,
+        -48,
+        59.225
+      ],
+      "range_m": 7.5,
+      "energy": 1.6,
+      "tint": [
+        1,
+        0.8,
+        0.58
+      ]
+    },
+    {
+      "name": "southwest_civic_lamp",
+      "ship_m": [
+        -19,
+        -43,
+        59.225
+      ],
+      "range_m": 7.5,
+      "energy": 1.6,
+      "tint": [
+        1,
+        0.8,
+        0.58
+      ]
+    },
+    {
+      "name": "se_civic_lamp",
+      "ship_m": [
+        47,
+        -25,
+        59.225
+      ],
+      "range_m": 7.5,
+      "energy": 1.6,
+      "tint": [
+        1,
+        0.8,
+        0.58
+      ]
+    }
+  ],
+  "replace_markers": [
+
+  ],
+  "review_points": [
+    {
+      "id": "court",
+      "ship_m": [
+        26,
+        4,
+        57.025
+      ]
+    },
+    {
+      "id": "arcade_edge",
+      "ship_m": [
+        35,
+        12,
+        57.025
+      ]
+    },
+    {
+      "id": "underterrace",
+      "ship_m": [
+        34,
+        6,
+        57.025
+      ],
+      "clamped": true
+    },
+    {
+      "id": "bridge_rim",
+      "level": "bridge",
+      "ship_m": [
+        17,
+        5,
+        82
+      ]
+    }
+  ]
+}

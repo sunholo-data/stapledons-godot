@@ -59,7 +59,8 @@ func load_dir(dir: String) -> bool:
 	offset = Vector2(-anchor_px.x, anchor_px.y - canvas_px.y) # Sprite3D local y is up: rect bottom at offset.y
 	billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	shaded = false
-	alpha_cut = SpriteBase3D.ALPHA_CUT_OPAQUE_PREPASS
+	# Keep the opaque ship behind soft painted edges; an opaque prepass would mask its colour/alpha.
+	alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
 	texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	stage = stages[0]
 	_show()
@@ -187,6 +188,18 @@ var _fx: ShaderMaterial
 var _canvas := {} # "file|flip" -> the frame on the full cell canvas
 
 
+## D-132: use the original low desk from its real working point; no sprite-origin offset.
+## A static held posture remains under reduced motion; decorative start/stop lean stays separate.
+static func work_lean_for(o: Dictionary) -> float:
+	var clip := str(o.get("clip", ""))
+	if clip not in ["use_low", "leave_low"]: return 0.0
+	var elapsed := float(o.get("clip_t", 0.0))
+	if not is_finite(elapsed) or elapsed < 0.0: return 0.0
+	if bool(o.get("reduced", false)): return 15.0 if clip == "use_low" else 0.0
+	var reach := smoothstep(0.0, CaptainAnim.LEAVE_S, elapsed)
+	return 15.0 * (reach if clip == "use_low" else 1.0 - reach)
+
+
 func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: float) -> void:
 	var c: Dictionary = anim.get("clips", {}).get(clip, {})
 	# Every painted frame goes through the material (CA2: the start and stop lean); the effect itself runs
@@ -208,6 +221,8 @@ func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: 
 	var sd: Vector2 = o.get("screen_dir", Vector2(0, 1))
 	_fx.set_shader_parameter("mode", EFFECTS.find(effect) if active else 0)
 	_fx.set_shader_parameter("lean_tan", tan(deg_to_rad(float(o.get("lean_deg", 0.0)))) * sd.x)
+	_fx.set_shader_parameter("work_lean_deg", work_lean_for(o))
+	_fx.set_shader_parameter("work_direction", Vector3.FORWARD)
 	_fx.set_shader_parameter("cur_tex", cur)
 	_fx.set_shader_parameter("prev_tex", _canvas_tex(prev, prev_flip, s))
 	_fx.set_shader_parameter("t", clampf(1.0 - since_ms / EFFECT_MS, 0.0, 1.0) if speed > 0.0 else 0.0)
@@ -222,6 +237,7 @@ func _effect(o: Dictionary, clip: String, frames: Array, i: int, flip: bool, s: 
 	shown["effect"] = effect if active else "none"
 	shown["effect_t"] = _fx.get_shader_parameter("t")
 	shown["lean_tan"] = _fx.get_shader_parameter("lean_tan")
+	shown["work_lean_deg"] = _fx.get_shader_parameter("work_lean_deg")
 
 
 func _canvas_tex(e: Dictionary, flip: bool, s: float) -> Texture2D:

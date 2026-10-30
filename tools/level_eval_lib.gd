@@ -30,7 +30,7 @@ static func score(root: Window, doc: Dictionary, grid_override := 0.0) -> Dictio
 	if not errs.is_empty():
 		return {"metrics": {}, "errors": errs}
 	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
-	demo.setup_options = {"size": Vector2i(LevelMetrics.PX), "sky_state": "rest"}
+	demo.setup_options = {"size": Vector2i(LevelMetrics.PX), "sky_state": "rest", "level_greybox": false}
 	root.add_child(demo)
 	await root.get_tree().process_frame
 	if not demo.ready_ok:
@@ -40,7 +40,9 @@ static func score(root: Window, doc: Dictionary, grid_override := 0.0) -> Dictio
 	demo.journey_auto_tick = false
 	var walk: WalkArea = null
 	if not (doc.get("pieces", []) as Array).is_empty():
+		if doc.get("base_walk")=="commons":ShipLevelRuntime.prepare_geometry(demo)
 		walk = LevelGreybox.build(doc, demo.geometry).walk
+		if doc.get("base_walk")=="commons":walk=WalkArea.merged([demo.walk_lower,walk])
 	for k in 3:
 		await root.get_tree().process_frame
 		await root.get_tree().physics_frame

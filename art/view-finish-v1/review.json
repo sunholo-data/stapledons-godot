@@ -1,0 +1,2359 @@
+{
+  "title": "Bridge, Commons & painted characters",
+  "revision": "NPC art d3149fb2 · native archives labelled below",
+  "round": "D-139 / D-140 painted NPC appearance review",
+  "frames": [
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/lineup.png",
+      "file": "npc_painted_d3149fb2_lineup.png",
+      "title": "Captain and Commons cast · matching scale",
+      "note": "Three civilian identities plus the Medic and Chief Engineer, painted in the captain's style. The crew keep their existing portrait identities. This first set is ready for appearance feedback.",
+      "label": "Painted character pilot · five identities",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/poses.png",
+      "file": "npc_painted_d3149fb2_poses.png",
+      "title": "All 25 poses · standing and seated",
+      "note": "Front, back, side, seated front and seated back for each identity. Open the image at full size to inspect the faces and clothing. Background figures use simple still poses in this pilot.",
+      "label": "Painted character pilot · complete pose sheet",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/court_bow_-12.png",
+      "file": "npc_painted_d3149fb2_commons_bow.png",
+      "title": "Commons · Bow · crew among the crowd",
+      "note": "Actual player camera: the captain meets the Medic and Chief Engineer among painted residents. Preview only; bench contact, grounding shadows and wider civilian variety remain to refine. Space is hidden for this character inspection.",
+      "label": "Engine capture · opt-in character preview",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "npcs",
+      "source": "res://art/npc-painted-v1/review/court_astern_-12.png",
+      "file": "npc_painted_d3149fb2_commons_astern.png",
+      "title": "Commons · Astern · captain, crew and residents",
+      "note": "The same gathering in the opposite player view. These painted figures are not installed in the downloadable native builds yet; this page is the first art review.",
+      "label": "Engine capture · opt-in character preview",
+      "revision": "d3149fb2"
+    },
+    {
+      "group": "playtest",
+      "source": "res://renders/view-finish/civic-playtest-native/bridge.png",
+      "file": "civic_native_755cd4b1_bridge.png",
+      "title": "Bridge · packaged playtest",
+      "note": "Captured from the exported Mac app with bundled assets/runtime and fresh settings. Real player camera and HUD; the reviewed art and ambient residents are installed.",
+      "label": "Native playable build · actual HUD",
+      "revision": "755cd4b1"
+    },
+    {
+      "group": "playtest",
+      "source": "res://renders/view-finish/civic-playtest-native/commons_bow.png",
+      "file": "civic_native_755cd4b1_commons_bow.png",
+      "title": "Commons · Bow · packaged playtest",
+      "note": "Captured from the exported Mac app with bundled assets/runtime and fresh settings. Real player camera and HUD; the reviewed art and ambient residents are installed.",
+      "label": "Native playable build · actual HUD",
+      "revision": "755cd4b1"
+    },
+    {
+      "group": "playtest",
+      "source": "res://renders/view-finish/civic-playtest-native/commons_astern.png",
+      "file": "civic_native_755cd4b1_commons_astern.png",
+      "title": "Commons · Astern · packaged playtest",
+      "note": "Captured from the exported Mac app with bundled assets/runtime and fresh settings. Real player camera and HUD; the reviewed art and ambient residents are installed.",
+      "label": "Native playable build · actual HUD",
+      "revision": "755cd4b1"
+    },
+    {
+      "group": "grown",
+      "source": "res://art/ship-tier-concepts-v1/commons.png",
+      "file": "grown_commons_concept_reference.png",
+      "title": "Commons · comic style and civic life reference",
+      "note": "Illustrated style and density reference. The measured ship remains the dimensional authority; gameplay uses its established spire, decks and invisible boundary.",
+      "label": "Concept illustration · reference, not gameplay",
+      "revision": "Approved art-direction reference,2026-10-04"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-motion/frame_000.png",
+      "file": "grown_life_frame_000.png",
+      "sequence": [
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_000.png",
+          "file": "grown_life_frame_000.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_001.png",
+          "file": "grown_life_frame_001.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_002.png",
+          "file": "grown_life_frame_002.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_003.png",
+          "file": "grown_life_frame_003.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_004.png",
+          "file": "grown_life_frame_004.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_005.png",
+          "file": "grown_life_frame_005.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_006.png",
+          "file": "grown_life_frame_006.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_007.png",
+          "file": "grown_life_frame_007.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_008.png",
+          "file": "grown_life_frame_008.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_009.png",
+          "file": "grown_life_frame_009.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_010.png",
+          "file": "grown_life_frame_010.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_011.png",
+          "file": "grown_life_frame_011.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_012.png",
+          "file": "grown_life_frame_012.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_013.png",
+          "file": "grown_life_frame_013.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_014.png",
+          "file": "grown_life_frame_014.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_015.png",
+          "file": "grown_life_frame_015.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_016.png",
+          "file": "grown_life_frame_016.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_017.png",
+          "file": "grown_life_frame_017.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_018.png",
+          "file": "grown_life_frame_018.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_019.png",
+          "file": "grown_life_frame_019.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_020.png",
+          "file": "grown_life_frame_020.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_021.png",
+          "file": "grown_life_frame_021.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_022.png",
+          "file": "grown_life_frame_022.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_023.png",
+          "file": "grown_life_frame_023.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_024.png",
+          "file": "grown_life_frame_024.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_025.png",
+          "file": "grown_life_frame_025.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_026.png",
+          "file": "grown_life_frame_026.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_027.png",
+          "file": "grown_life_frame_027.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_028.png",
+          "file": "grown_life_frame_028.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_029.png",
+          "file": "grown_life_frame_029.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_030.png",
+          "file": "grown_life_frame_030.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_031.png",
+          "file": "grown_life_frame_031.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_032.png",
+          "file": "grown_life_frame_032.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_033.png",
+          "file": "grown_life_frame_033.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_034.png",
+          "file": "grown_life_frame_034.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_035.png",
+          "file": "grown_life_frame_035.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_036.png",
+          "file": "grown_life_frame_036.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_037.png",
+          "file": "grown_life_frame_037.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_038.png",
+          "file": "grown_life_frame_038.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_039.png",
+          "file": "grown_life_frame_039.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_040.png",
+          "file": "grown_life_frame_040.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_041.png",
+          "file": "grown_life_frame_041.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_042.png",
+          "file": "grown_life_frame_042.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_043.png",
+          "file": "grown_life_frame_043.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_044.png",
+          "file": "grown_life_frame_044.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_045.png",
+          "file": "grown_life_frame_045.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_046.png",
+          "file": "grown_life_frame_046.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_047.png",
+          "file": "grown_life_frame_047.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_048.png",
+          "file": "grown_life_frame_048.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_049.png",
+          "file": "grown_life_frame_049.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_050.png",
+          "file": "grown_life_frame_050.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_051.png",
+          "file": "grown_life_frame_051.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_052.png",
+          "file": "grown_life_frame_052.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_053.png",
+          "file": "grown_life_frame_053.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_054.png",
+          "file": "grown_life_frame_054.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_055.png",
+          "file": "grown_life_frame_055.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_056.png",
+          "file": "grown_life_frame_056.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_057.png",
+          "file": "grown_life_frame_057.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_058.png",
+          "file": "grown_life_frame_058.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_059.png",
+          "file": "grown_life_frame_059.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_060.png",
+          "file": "grown_life_frame_060.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_061.png",
+          "file": "grown_life_frame_061.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_062.png",
+          "file": "grown_life_frame_062.png"
+        },
+        {
+          "source": "res://renders/view-finish/commons-grown-motion/frame_063.png",
+          "file": "grown_life_frame_063.png"
+        }
+      ],
+      "fps": 8,
+      "title": "Grown Commons · moving activity study",
+      "note": "People share meals, read, tend the market and stroll between the planted courts. Play the eight-second study from the fixed Court Astern player view. These are ambient review vignettes.",
+      "label": "Engine preview · moving civic life",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_rest_before.png",
+      "file": "commons_grown_court_bow_rest_before.png",
+      "title": "Court · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_rest_after.png",
+      "file": "commons_grown_court_bow_rest_after.png",
+      "title": "Court · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_rest_before.png",
+      "file": "commons_grown_court_astern_rest_before.png",
+      "title": "Court · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_rest_after.png",
+      "file": "commons_grown_court_astern_rest_after.png",
+      "title": "Court · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_cruise_before.png",
+      "file": "commons_grown_court_bow_cruise_before.png",
+      "title": "Court · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_cruise_after.png",
+      "file": "commons_grown_court_bow_cruise_after.png",
+      "title": "Court · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_cruise_before.png",
+      "file": "commons_grown_court_astern_cruise_before.png",
+      "title": "Court · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_cruise_after.png",
+      "file": "commons_grown_court_astern_cruise_after.png",
+      "title": "Court · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_stop_before.png",
+      "file": "commons_grown_court_bow_stop_before.png",
+      "title": "Court · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_bow_stop_after.png",
+      "file": "commons_grown_court_bow_stop_after.png",
+      "title": "Court · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_stop_before.png",
+      "file": "commons_grown_court_astern_stop_before.png",
+      "title": "Court · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/court_astern_stop_after.png",
+      "file": "commons_grown_court_astern_stop_after.png",
+      "title": "Court · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_rest_before.png",
+      "file": "commons_grown_underterrace_bow_rest_before.png",
+      "title": "Under terrace · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_rest_after.png",
+      "file": "commons_grown_underterrace_bow_rest_after.png",
+      "title": "Under terrace · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_rest_before.png",
+      "file": "commons_grown_underterrace_astern_rest_before.png",
+      "title": "Under terrace · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_rest_after.png",
+      "file": "commons_grown_underterrace_astern_rest_after.png",
+      "title": "Under terrace · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_cruise_before.png",
+      "file": "commons_grown_underterrace_bow_cruise_before.png",
+      "title": "Under terrace · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_cruise_after.png",
+      "file": "commons_grown_underterrace_bow_cruise_after.png",
+      "title": "Under terrace · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_cruise_before.png",
+      "file": "commons_grown_underterrace_astern_cruise_before.png",
+      "title": "Under terrace · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_cruise_after.png",
+      "file": "commons_grown_underterrace_astern_cruise_after.png",
+      "title": "Under terrace · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_stop_before.png",
+      "file": "commons_grown_underterrace_bow_stop_before.png",
+      "title": "Under terrace · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_bow_stop_after.png",
+      "file": "commons_grown_underterrace_bow_stop_after.png",
+      "title": "Under terrace · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_stop_before.png",
+      "file": "commons_grown_underterrace_astern_stop_before.png",
+      "title": "Under terrace · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/underterrace_astern_stop_after.png",
+      "file": "commons_grown_underterrace_astern_stop_after.png",
+      "title": "Under terrace · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_rest_before.png",
+      "file": "commons_grown_arcade_edge_bow_rest_before.png",
+      "title": "Arcade approach · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_rest_after.png",
+      "file": "commons_grown_arcade_edge_bow_rest_after.png",
+      "title": "Arcade approach · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_rest_before.png",
+      "file": "commons_grown_arcade_edge_astern_rest_before.png",
+      "title": "Arcade approach · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_rest_after.png",
+      "file": "commons_grown_arcade_edge_astern_rest_after.png",
+      "title": "Arcade approach · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_cruise_before.png",
+      "file": "commons_grown_arcade_edge_bow_cruise_before.png",
+      "title": "Arcade approach · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_cruise_after.png",
+      "file": "commons_grown_arcade_edge_bow_cruise_after.png",
+      "title": "Arcade approach · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_cruise_before.png",
+      "file": "commons_grown_arcade_edge_astern_cruise_before.png",
+      "title": "Arcade approach · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_cruise_after.png",
+      "file": "commons_grown_arcade_edge_astern_cruise_after.png",
+      "title": "Arcade approach · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_stop_before.png",
+      "file": "commons_grown_arcade_edge_bow_stop_before.png",
+      "title": "Arcade approach · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_bow_stop_after.png",
+      "file": "commons_grown_arcade_edge_bow_stop_after.png",
+      "title": "Arcade approach · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_stop_before.png",
+      "file": "commons_grown_arcade_edge_astern_stop_before.png",
+      "title": "Arcade approach · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/arcade_edge_astern_stop_after.png",
+      "file": "commons_grown_arcade_edge_astern_stop_after.png",
+      "title": "Arcade approach · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_rest_before.png",
+      "file": "commons_grown_bridge_rim_bow_rest_before.png",
+      "title": "Bridge rim · Bow · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_rest_after.png",
+      "file": "commons_grown_bridge_rim_bow_rest_after.png",
+      "title": "Bridge rim · Bow · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_rest_before.png",
+      "file": "commons_grown_bridge_rim_astern_rest_before.png",
+      "title": "Bridge rim · Astern · rest · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_rest_after.png",
+      "file": "commons_grown_bridge_rim_astern_rest_after.png",
+      "title": "Bridge rim · Astern · rest · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_cruise_before.png",
+      "file": "commons_grown_bridge_rim_bow_cruise_before.png",
+      "title": "Bridge rim · Bow · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_cruise_after.png",
+      "file": "commons_grown_bridge_rim_bow_cruise_after.png",
+      "title": "Bridge rim · Bow · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_cruise_before.png",
+      "file": "commons_grown_bridge_rim_astern_cruise_before.png",
+      "title": "Bridge rim · Astern · cruise · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_cruise_after.png",
+      "file": "commons_grown_bridge_rim_astern_cruise_after.png",
+      "title": "Bridge rim · Astern · cruise · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_stop_before.png",
+      "file": "commons_grown_bridge_rim_bow_stop_before.png",
+      "title": "Bridge rim · Bow · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_bow_stop_after.png",
+      "file": "commons_grown_bridge_rim_bow_stop_after.png",
+      "title": "Bridge rim · Bow · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_stop_before.png",
+      "file": "commons_grown_bridge_rim_astern_stop_before.png",
+      "title": "Bridge rim · Astern · stop · before",
+      "note": "Previous wider civic backdrop and furniture, kept for a matched comparison. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "Before · previous backdrop",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "grown",
+      "source": "res://renders/view-finish/commons-grown-pilot/bridge_rim_astern_stop_after.png",
+      "file": "commons_grown_bridge_rim_astern_stop_after.png",
+      "title": "Bridge rim · Astern · stop · after",
+      "note": "Long rooted tendrils, ribbed shades, substantial planted islands, hanging vines, curved painted paving and everyday civic activity. Same actual player camera and live sky;1280×720,HUD off,+2 EV display setting.",
+      "label": "After · grown living Commons",
+      "revision": "D-135 · grown4a9d9340 · config5de067ef"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_rest_before.png",
+      "file": "commons_backdrop_court_bow_rest_before.png",
+      "title": "Court · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_rest_after.png",
+      "file": "commons_backdrop_court_bow_rest_after.png",
+      "title": "Court · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_rest_before.png",
+      "file": "commons_backdrop_court_astern_rest_before.png",
+      "title": "Court · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_rest_after.png",
+      "file": "commons_backdrop_court_astern_rest_after.png",
+      "title": "Court · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_cruise_before.png",
+      "file": "commons_backdrop_court_bow_cruise_before.png",
+      "title": "Court · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_cruise_after.png",
+      "file": "commons_backdrop_court_bow_cruise_after.png",
+      "title": "Court · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_cruise_before.png",
+      "file": "commons_backdrop_court_astern_cruise_before.png",
+      "title": "Court · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_cruise_after.png",
+      "file": "commons_backdrop_court_astern_cruise_after.png",
+      "title": "Court · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_stop_before.png",
+      "file": "commons_backdrop_court_bow_stop_before.png",
+      "title": "Court · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_bow_stop_after.png",
+      "file": "commons_backdrop_court_bow_stop_after.png",
+      "title": "Court · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_stop_before.png",
+      "file": "commons_backdrop_court_astern_stop_before.png",
+      "title": "Court · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/court_astern_stop_after.png",
+      "file": "commons_backdrop_court_astern_stop_after.png",
+      "title": "Court · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_rest_before.png",
+      "file": "commons_backdrop_underterrace_bow_rest_before.png",
+      "title": "Under terrace · actual clamp · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_rest_after.png",
+      "file": "commons_backdrop_underterrace_bow_rest_after.png",
+      "title": "Under terrace · actual clamp · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_rest_before.png",
+      "file": "commons_backdrop_underterrace_astern_rest_before.png",
+      "title": "Under terrace · actual clamp · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_rest_after.png",
+      "file": "commons_backdrop_underterrace_astern_rest_after.png",
+      "title": "Under terrace · actual clamp · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_cruise_before.png",
+      "file": "commons_backdrop_underterrace_bow_cruise_before.png",
+      "title": "Under terrace · actual clamp · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_cruise_after.png",
+      "file": "commons_backdrop_underterrace_bow_cruise_after.png",
+      "title": "Under terrace · actual clamp · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_cruise_before.png",
+      "file": "commons_backdrop_underterrace_astern_cruise_before.png",
+      "title": "Under terrace · actual clamp · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_cruise_after.png",
+      "file": "commons_backdrop_underterrace_astern_cruise_after.png",
+      "title": "Under terrace · actual clamp · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_stop_before.png",
+      "file": "commons_backdrop_underterrace_bow_stop_before.png",
+      "title": "Under terrace · actual clamp · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_bow_stop_after.png",
+      "file": "commons_backdrop_underterrace_bow_stop_after.png",
+      "title": "Under terrace · actual clamp · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_stop_before.png",
+      "file": "commons_backdrop_underterrace_astern_stop_before.png",
+      "title": "Under terrace · actual clamp · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/underterrace_astern_stop_after.png",
+      "file": "commons_backdrop_underterrace_astern_stop_after.png",
+      "title": "Under terrace · actual clamp · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_rest_before.png",
+      "file": "commons_backdrop_arcade_edge_bow_rest_before.png",
+      "title": "Arcade approach · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_rest_after.png",
+      "file": "commons_backdrop_arcade_edge_bow_rest_after.png",
+      "title": "Arcade approach · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_rest_before.png",
+      "file": "commons_backdrop_arcade_edge_astern_rest_before.png",
+      "title": "Arcade approach · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_rest_after.png",
+      "file": "commons_backdrop_arcade_edge_astern_rest_after.png",
+      "title": "Arcade approach · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_cruise_before.png",
+      "file": "commons_backdrop_arcade_edge_bow_cruise_before.png",
+      "title": "Arcade approach · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_cruise_after.png",
+      "file": "commons_backdrop_arcade_edge_bow_cruise_after.png",
+      "title": "Arcade approach · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_cruise_before.png",
+      "file": "commons_backdrop_arcade_edge_astern_cruise_before.png",
+      "title": "Arcade approach · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_cruise_after.png",
+      "file": "commons_backdrop_arcade_edge_astern_cruise_after.png",
+      "title": "Arcade approach · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_stop_before.png",
+      "file": "commons_backdrop_arcade_edge_bow_stop_before.png",
+      "title": "Arcade approach · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_bow_stop_after.png",
+      "file": "commons_backdrop_arcade_edge_bow_stop_after.png",
+      "title": "Arcade approach · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_stop_before.png",
+      "file": "commons_backdrop_arcade_edge_astern_stop_before.png",
+      "title": "Arcade approach · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/arcade_edge_astern_stop_after.png",
+      "file": "commons_backdrop_arcade_edge_astern_stop_after.png",
+      "title": "Arcade approach · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_rest_before.png",
+      "file": "commons_backdrop_bridge_rim_bow_rest_before.png",
+      "title": "Bridge rim · look toward Commons · Bow · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_rest_after.png",
+      "file": "commons_backdrop_bridge_rim_bow_rest_after.png",
+      "title": "Bridge rim · look toward Commons · Bow · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_rest_before.png",
+      "file": "commons_backdrop_bridge_rim_astern_rest_before.png",
+      "title": "Bridge rim · look toward Commons · Astern · rest · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_rest_after.png",
+      "file": "commons_backdrop_bridge_rim_astern_rest_after.png",
+      "title": "Bridge rim · look toward Commons · Astern · rest · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_cruise_before.png",
+      "file": "commons_backdrop_bridge_rim_bow_cruise_before.png",
+      "title": "Bridge rim · look toward Commons · Bow · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_cruise_after.png",
+      "file": "commons_backdrop_bridge_rim_bow_cruise_after.png",
+      "title": "Bridge rim · look toward Commons · Bow · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_cruise_before.png",
+      "file": "commons_backdrop_bridge_rim_astern_cruise_before.png",
+      "title": "Bridge rim · look toward Commons · Astern · cruise · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_cruise_after.png",
+      "file": "commons_backdrop_bridge_rim_astern_cruise_after.png",
+      "title": "Bridge rim · look toward Commons · Astern · cruise · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_stop_before.png",
+      "file": "commons_backdrop_bridge_rim_bow_stop_before.png",
+      "title": "Bridge rim · look toward Commons · Bow · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_bow_stop_after.png",
+      "file": "commons_backdrop_bridge_rim_bow_stop_after.png",
+      "title": "Bridge rim · look toward Commons · Bow · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_stop_before.png",
+      "file": "commons_backdrop_bridge_rim_astern_stop_before.png",
+      "title": "Bridge rim · look toward Commons · Astern · stop · before",
+      "note": "Furniture pilot retained; wider architectural backdrop off. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "Before · furniture only",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "macro",
+      "source": "res://renders/view-finish/commons-backdrop-pilot/bridge_rim_astern_stop_after.png",
+      "file": "commons_backdrop_bridge_rim_astern_stop_after.png",
+      "title": "Bridge rim · look toward Commons · Astern · stop · after",
+      "note": "Real civic fronts, planted roofs, market shades and low rim gardens. Openings retain the live sky; distant background is not newly traversable. Matched actual player camera,1280×720, HUD off,+2 EV display setting. Stop uses the actual guided journey.",
+      "label": "After · wider backdrop proposal",
+      "revision": "D-134 · kit33eb1f60 · configac8dc7a8"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_rest_before.png",
+      "file": "commons_pilot_seating_bow_rest_before.png",
+      "title": "Shared seating · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_rest_after.png",
+      "file": "commons_pilot_seating_bow_rest_after.png",
+      "title": "Shared seating · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_rest_before.png",
+      "file": "commons_pilot_seating_astern_rest_before.png",
+      "title": "Shared seating · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_rest_after.png",
+      "file": "commons_pilot_seating_astern_rest_after.png",
+      "title": "Shared seating · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_cruise_before.png",
+      "file": "commons_pilot_seating_bow_cruise_before.png",
+      "title": "Shared seating · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_cruise_after.png",
+      "file": "commons_pilot_seating_bow_cruise_after.png",
+      "title": "Shared seating · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_cruise_before.png",
+      "file": "commons_pilot_seating_astern_cruise_before.png",
+      "title": "Shared seating · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_cruise_after.png",
+      "file": "commons_pilot_seating_astern_cruise_after.png",
+      "title": "Shared seating · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_stop_before.png",
+      "file": "commons_pilot_seating_bow_stop_before.png",
+      "title": "Shared seating · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_bow_stop_after.png",
+      "file": "commons_pilot_seating_bow_stop_after.png",
+      "title": "Shared seating · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_stop_before.png",
+      "file": "commons_pilot_seating_astern_stop_before.png",
+      "title": "Shared seating · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/seating_astern_stop_after.png",
+      "file": "commons_pilot_seating_astern_stop_after.png",
+      "title": "Shared seating · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_rest_before.png",
+      "file": "commons_pilot_court_bow_rest_before.png",
+      "title": "Court · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_rest_after.png",
+      "file": "commons_pilot_court_bow_rest_after.png",
+      "title": "Court · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_rest_before.png",
+      "file": "commons_pilot_court_astern_rest_before.png",
+      "title": "Court · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_rest_after.png",
+      "file": "commons_pilot_court_astern_rest_after.png",
+      "title": "Court · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_cruise_before.png",
+      "file": "commons_pilot_court_bow_cruise_before.png",
+      "title": "Court · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_cruise_after.png",
+      "file": "commons_pilot_court_bow_cruise_after.png",
+      "title": "Court · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_cruise_before.png",
+      "file": "commons_pilot_court_astern_cruise_before.png",
+      "title": "Court · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_cruise_after.png",
+      "file": "commons_pilot_court_astern_cruise_after.png",
+      "title": "Court · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_stop_before.png",
+      "file": "commons_pilot_court_bow_stop_before.png",
+      "title": "Court · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_bow_stop_after.png",
+      "file": "commons_pilot_court_bow_stop_after.png",
+      "title": "Court · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_stop_before.png",
+      "file": "commons_pilot_court_astern_stop_before.png",
+      "title": "Court · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/court_astern_stop_after.png",
+      "file": "commons_pilot_court_astern_stop_after.png",
+      "title": "Court · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_rest_before.png",
+      "file": "commons_pilot_underterrace_bow_rest_before.png",
+      "title": "Under the terrace · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_rest_after.png",
+      "file": "commons_pilot_underterrace_bow_rest_after.png",
+      "title": "Under the terrace · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_rest_before.png",
+      "file": "commons_pilot_underterrace_astern_rest_before.png",
+      "title": "Under the terrace · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_rest_after.png",
+      "file": "commons_pilot_underterrace_astern_rest_after.png",
+      "title": "Under the terrace · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_cruise_before.png",
+      "file": "commons_pilot_underterrace_bow_cruise_before.png",
+      "title": "Under the terrace · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_cruise_after.png",
+      "file": "commons_pilot_underterrace_bow_cruise_after.png",
+      "title": "Under the terrace · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_cruise_before.png",
+      "file": "commons_pilot_underterrace_astern_cruise_before.png",
+      "title": "Under the terrace · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_cruise_after.png",
+      "file": "commons_pilot_underterrace_astern_cruise_after.png",
+      "title": "Under the terrace · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_stop_before.png",
+      "file": "commons_pilot_underterrace_bow_stop_before.png",
+      "title": "Under the terrace · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_bow_stop_after.png",
+      "file": "commons_pilot_underterrace_bow_stop_after.png",
+      "title": "Under the terrace · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_stop_before.png",
+      "file": "commons_pilot_underterrace_astern_stop_before.png",
+      "title": "Under the terrace · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/underterrace_astern_stop_after.png",
+      "file": "commons_pilot_underterrace_astern_stop_after.png",
+      "title": "Under the terrace · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_rest_before.png",
+      "file": "commons_pilot_arcade_edge_bow_rest_before.png",
+      "title": "Arcade approach · Bow · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_rest_after.png",
+      "file": "commons_pilot_arcade_edge_bow_rest_after.png",
+      "title": "Arcade approach · Bow · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_rest_before.png",
+      "file": "commons_pilot_arcade_edge_astern_rest_before.png",
+      "title": "Arcade approach · Astern · rest · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_rest_after.png",
+      "file": "commons_pilot_arcade_edge_astern_rest_after.png",
+      "title": "Arcade approach · Astern · rest · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_cruise_before.png",
+      "file": "commons_pilot_arcade_edge_bow_cruise_before.png",
+      "title": "Arcade approach · Bow · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_cruise_after.png",
+      "file": "commons_pilot_arcade_edge_bow_cruise_after.png",
+      "title": "Arcade approach · Bow · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_cruise_before.png",
+      "file": "commons_pilot_arcade_edge_astern_cruise_before.png",
+      "title": "Arcade approach · Astern · cruise · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_cruise_after.png",
+      "file": "commons_pilot_arcade_edge_astern_cruise_after.png",
+      "title": "Arcade approach · Astern · cruise · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_stop_before.png",
+      "file": "commons_pilot_arcade_edge_bow_stop_before.png",
+      "title": "Arcade approach · Bow · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_bow_stop_after.png",
+      "file": "commons_pilot_arcade_edge_bow_stop_after.png",
+      "title": "Arcade approach · Bow · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_stop_before.png",
+      "file": "commons_pilot_arcade_edge_astern_stop_before.png",
+      "title": "Arcade approach · Astern · stop · before",
+      "note": "Same current layout with pilot off; greybox notice marker restored. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Current layout · pilot off",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://renders/view-finish/commons-lived-in-pilot/arcade_edge_astern_stop_after.png",
+      "file": "commons_pilot_arcade_edge_astern_stop_after.png",
+      "title": "Arcade approach · Astern · stop · after",
+      "note": "Review-only lived-in pilot: grown shared furniture, belongings, grounded plants and visible local task lights. Upper coloured markers and architecture remain greybox. Actual matched player camera,1280×720, HUD off,+2 EV display setting; sky and lighting remain live. This is the court’s arcade approach; piers/framing limit assessment of the counter/cart inside the bay.",
+      "label": "Lived-in pilot · visual review pending",
+      "revision": "dfc4142f · kit7b841838 · config88079c7c"
+    },
+    {
+      "group": "pilot",
+      "source": "res://art/commons-lived-in-pilot/kit-hero-studio.png",
+      "file": "commons_pilot_kit_studio.png",
+      "title": "Furniture detail · Blender studio study",
+      "note": "Neutral authoring render for object detail and human scale. This is not a player-camera frame; approve in-game appearance using the matched views above. Existing bridge pigments; real game lighting is supplied at runtime.",
+      "label": "Asset detail · authoring camera",
+      "revision": "kit7b841838"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/voyage_astern_current_detail.png",
+      "file": "operator_voyage_astern_current_detail.png",
+      "title": "Voyage · front · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/voyage_astern_corrected_detail.png",
+      "file": "operator_voyage_astern_corrected_detail.png",
+      "title": "Voyage · front · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/voyage_bow_current_detail.png",
+      "file": "operator_voyage_bow_current_detail.png",
+      "title": "Voyage · back · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/voyage_bow_corrected_detail.png",
+      "file": "operator_voyage_bow_corrected_detail.png",
+      "title": "Voyage · back · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/crew_astern_current_detail.png",
+      "file": "operator_crew_astern_current_detail.png",
+      "title": "Crew · front · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/crew_astern_corrected_detail.png",
+      "file": "operator_crew_astern_corrected_detail.png",
+      "title": "Crew · front · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/crew_bow_current_detail.png",
+      "file": "operator_crew_bow_current_detail.png",
+      "title": "Crew · back · before",
+      "note": "Matched previous foot position and flat work pose, reconstructed for comparison. Original console.",
+      "label": "Before · previous gap",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "proposal",
+      "source": "res://renders/view-finish/operator-placement/crew_bow_corrected_detail.png",
+      "file": "operator_crew_bow_corrected_detail.png",
+      "title": "Crew · back · corrected",
+      "note": "Installed correction: real working point 0.775 m closer, gentle foot-anchored lean, original console. Actual player camera; detail crop enlarged 2×; frozen rest, no HUD, +2 EV sky display aid.",
+      "label": "Corrected · installed in sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/bridge_help_1280x720.png",
+      "file": "ui_proposal_bridge_help_1280x720.png",
+      "title": "Bridge help · normal UI scale",
+      "note": "Level-aware controls, immediate keyboard focus and wrapped labels. Actual engine frame at 1280×720.",
+      "label": "UI proposal · integrated branch · visual review pending",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/bridge_help_1280x720_ui1p5.png",
+      "file": "ui_proposal_bridge_help_1280x720_ui1p5.png",
+      "title": "Bridge help · enlarged UI scale",
+      "note": "UI scale 1.5 on a 1280×720 window (853×480 logical canvas). The controls remain within a scrollable panel; lower rows are reached by scrolling.",
+      "label": "UI proposal · integrated branch · visual review pending",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_deep.png",
+      "file": "before_bridge_bow_deep.png",
+      "title": "Bridge · Bow at rest",
+      "note": "Current approved bridge, spire-lit in deep space.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_cruise.png",
+      "file": "before_bridge_bow_cruise.png",
+      "title": "Bridge · 0.99c",
+      "note": "Same deck composition with the live relativistic sky.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_star.png",
+      "file": "before_bridge_bow_star.png",
+      "title": "Bridge · nearby star",
+      "note": "Live star/spire light handover.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/astern_deep.png",
+      "file": "before_bridge_astern_deep.png",
+      "title": "Bridge · Astern",
+      "note": "Current mast, chair and lift composition.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/zoom_navigation.png",
+      "file": "before_bridge_zoom_navigation.png",
+      "title": "Helm · console close-up",
+      "note": "Baseline furnishing and screen relationship.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/zoom_voyage.png",
+      "file": "before_bridge_zoom_voyage.png",
+      "title": "Voyage · console close-up",
+      "note": "Baseline furnishing before the contact/readability proposal.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/zoom_crew.png",
+      "file": "before_bridge_zoom_crew.png",
+      "title": "Crew · console close-up",
+      "note": "Existing console shell; Crew feature work remains separately owned.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_deep_hud.png",
+      "file": "before_bridge_bow_deep_hud.png",
+      "title": "Bridge · HUD at rest",
+      "note": "Current strip, help and prompt treatment.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "bridge",
+      "source": "res://renders/style/view-finish-before/bow_cruise_hud.png",
+      "file": "before_bridge_bow_cruise_hud.png",
+      "title": "Bridge · HUD in cruise",
+      "note": "Current ship/home clocks and journey presentation.",
+      "label": "Baseline · player camera · 1280×720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/strip_rest_1280x720.png",
+      "file": "before_ui_strip_rest_1280x720.png",
+      "title": "Status strip · 1280x720",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 1280x720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/prompt_navigation_1280x720.png",
+      "file": "before_ui_prompt_navigation_1280x720.png",
+      "title": "Navigation prompt · 1280x720",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 1280x720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_deck_1280x720.png",
+      "file": "before_ui_lower_deck_1280x720.png",
+      "title": "Commons landing UI · 1280x720",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 1280x720"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/strip_rest_2560x1440.png",
+      "file": "before_ui_strip_rest_2560x1440.png",
+      "title": "Status strip · 2560x1440",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 2560x1440"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/prompt_navigation_2560x1440.png",
+      "file": "before_ui_prompt_navigation_2560x1440.png",
+      "title": "Navigation prompt · 2560x1440",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 2560x1440"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_deck_2560x1440.png",
+      "file": "before_ui_lower_deck_2560x1440.png",
+      "title": "Commons landing UI · 2560x1440",
+      "note": "Current player UI baseline before VFU. The Commons landing still uses the legacy camera.",
+      "label": "Baseline · player camera · 2560x1440"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_bow_rest.png",
+      "file": "commons_s3_landing_landing_bow_rest.png",
+      "title": "Lift landing · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_bow_cruise.png",
+      "file": "commons_s3_landing_landing_bow_cruise.png",
+      "title": "Lift landing · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_bow_stop.png",
+      "file": "commons_s3_landing_landing_bow_stop.png",
+      "title": "Lift landing · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_astern_rest.png",
+      "file": "commons_s3_landing_landing_astern_rest.png",
+      "title": "Lift landing · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_astern_cruise.png",
+      "file": "commons_s3_landing_landing_astern_cruise.png",
+      "title": "Lift landing · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/landing_landing_astern_stop.png",
+      "file": "commons_s3_landing_landing_astern_stop.png",
+      "title": "Lift landing · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_bow_rest.png",
+      "file": "commons_s3_court_floor_bow_rest.png",
+      "title": "Civic court · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_bow_cruise.png",
+      "file": "commons_s3_court_floor_bow_cruise.png",
+      "title": "Civic court · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_bow_stop.png",
+      "file": "commons_s3_court_floor_bow_stop.png",
+      "title": "Civic court · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_astern_rest.png",
+      "file": "commons_s3_court_floor_astern_rest.png",
+      "title": "Civic court · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_astern_cruise.png",
+      "file": "commons_s3_court_floor_astern_cruise.png",
+      "title": "Civic court · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/court_floor_astern_stop.png",
+      "file": "commons_s3_court_floor_astern_stop.png",
+      "title": "Civic court · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_bow_rest.png",
+      "file": "commons_s3_terrace_mezzanine_bow_rest.png",
+      "title": "Terrace · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_bow_cruise.png",
+      "file": "commons_s3_terrace_mezzanine_bow_cruise.png",
+      "title": "Terrace · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_bow_stop.png",
+      "file": "commons_s3_terrace_mezzanine_bow_stop.png",
+      "title": "Terrace · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_astern_rest.png",
+      "file": "commons_s3_terrace_mezzanine_astern_rest.png",
+      "title": "Terrace · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_astern_cruise.png",
+      "file": "commons_s3_terrace_mezzanine_astern_cruise.png",
+      "title": "Terrace · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/terrace_mezzanine_astern_stop.png",
+      "file": "commons_s3_terrace_mezzanine_astern_stop.png",
+      "title": "Terrace · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_bow_rest.png",
+      "file": "commons_s3_gantry_lift_gantry_bow_rest.png",
+      "title": "Lift gantry · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_bow_cruise.png",
+      "file": "commons_s3_gantry_lift_gantry_bow_cruise.png",
+      "title": "Lift gantry · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_bow_stop.png",
+      "file": "commons_s3_gantry_lift_gantry_bow_stop.png",
+      "title": "Lift gantry · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_astern_rest.png",
+      "file": "commons_s3_gantry_lift_gantry_astern_rest.png",
+      "title": "Lift gantry · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_astern_cruise.png",
+      "file": "commons_s3_gantry_lift_gantry_astern_cruise.png",
+      "title": "Lift gantry · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_lift_gantry_astern_stop.png",
+      "file": "commons_s3_gantry_lift_gantry_astern_stop.png",
+      "title": "Lift gantry · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_bow_rest.png",
+      "file": "commons_s3_gantry_catwalk_bow_rest.png",
+      "title": "High catwalk · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_bow_cruise.png",
+      "file": "commons_s3_gantry_catwalk_bow_cruise.png",
+      "title": "High catwalk · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_bow_stop.png",
+      "file": "commons_s3_gantry_catwalk_bow_stop.png",
+      "title": "High catwalk · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_astern_rest.png",
+      "file": "commons_s3_gantry_catwalk_astern_rest.png",
+      "title": "High catwalk · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_astern_cruise.png",
+      "file": "commons_s3_gantry_catwalk_astern_cruise.png",
+      "title": "High catwalk · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_catwalk_astern_stop.png",
+      "file": "commons_s3_gantry_catwalk_astern_stop.png",
+      "title": "High catwalk · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_bow_rest.png",
+      "file": "commons_s3_gantry_balcony_bow_rest.png",
+      "title": "Sky balcony · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_bow_cruise.png",
+      "file": "commons_s3_gantry_balcony_bow_cruise.png",
+      "title": "Sky balcony · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_bow_stop.png",
+      "file": "commons_s3_gantry_balcony_bow_stop.png",
+      "title": "Sky balcony · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_astern_rest.png",
+      "file": "commons_s3_gantry_balcony_astern_rest.png",
+      "title": "Sky balcony · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_astern_cruise.png",
+      "file": "commons_s3_gantry_balcony_astern_cruise.png",
+      "title": "Sky balcony · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3/gantry_balcony_astern_stop.png",
+      "file": "commons_s3_gantry_balcony_astern_stop.png",
+      "title": "Sky balcony · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_bow_rest.png",
+      "file": "commons_s3_service_service_gallery_bow_rest.png",
+      "title": "Service gallery · Bow · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_bow_cruise.png",
+      "file": "commons_s3_service_service_gallery_bow_cruise.png",
+      "title": "Service gallery · Bow · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_bow_stop.png",
+      "file": "commons_s3_service_service_gallery_bow_stop.png",
+      "title": "Service gallery · Bow · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_astern_rest.png",
+      "file": "commons_s3_service_service_gallery_astern_rest.png",
+      "title": "Service gallery · Astern · rest",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_astern_cruise.png",
+      "file": "commons_s3_service_service_gallery_astern_cruise.png",
+      "title": "Service gallery · Astern · cruise",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-service-final/service_service_gallery_astern_stop.png",
+      "file": "commons_s3_service_service_gallery_astern_stop.png",
+      "title": "Service gallery · Astern · stop",
+      "note": "S3 greybox layout: actual player camera and runtime fading. Plain surfaces and pink find markers are placeholders. Review routes, height changes and sightlines; detailed art follows accepted layout. Native playtest build is being prepared. Final six-frame enclosure check: zero sky pixels, captain retained.",
+      "label": "Commons S3 · layout only · not final art"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_bow_rest.png",
+      "file": "commons_clamp_court_underterrace_bow_rest.png",
+      "title": "Under the terrace · Bow · rest",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_astern_rest.png",
+      "file": "commons_clamp_court_underterrace_astern_rest.png",
+      "title": "Under the terrace · Astern · rest",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_bow_cruise.png",
+      "file": "commons_clamp_court_underterrace_bow_cruise.png",
+      "title": "Under the terrace · Bow · cruise",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_astern_cruise.png",
+      "file": "commons_clamp_court_underterrace_astern_cruise.png",
+      "title": "Under the terrace · Astern · cruise",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_bow_stop.png",
+      "file": "commons_clamp_court_underterrace_bow_stop.png",
+      "title": "Under the terrace · Bow · stop",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "commons",
+      "source": "res://renders/levels/commons/s3-clamp/court_underterrace_astern_stop.png",
+      "file": "commons_clamp_court_underterrace_astern_stop.png",
+      "title": "Under the terrace · Astern · stop",
+      "note": "Actual player camera at foot (34,57,-6), runtime ceiling clamp fully engaged (share1.0). Layout placeholders; low framing preserves the captain under the roof. Released AILANGv0.54.18; stop uses the real guided-stop state.",
+      "label": "Commons S3 · real ceiling clamp · layout only"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_help_1280x720.png",
+      "file": "review_ui_lower_help_1280x720.png",
+      "title": "Lower help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/lower_help_1280x720_ui1p5.png",
+      "file": "review_ui_lower_help_1280x720_ui1p5.png",
+      "title": "Lower help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_court_help_1280x720.png",
+      "file": "review_ui_commons_court_help_1280x720.png",
+      "title": "Commons court help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_court_help_1280x720_ui1p5.png",
+      "file": "review_ui_commons_court_help_1280x720_ui1p5.png",
+      "title": "Commons court help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_gantry_help_1280x720.png",
+      "file": "review_ui_commons_gantry_help_1280x720.png",
+      "title": "Commons gantry help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_gantry_help_1280x720_ui1p5.png",
+      "file": "review_ui_commons_gantry_help_1280x720_ui1p5.png",
+      "title": "Commons gantry help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_service_help_1280x720.png",
+      "file": "review_ui_commons_service_help_1280x720.png",
+      "title": "Commons service help · normal UI",
+      "note": "Actual engine frame at1280×720; UI scale1.0. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    },
+    {
+      "group": "ui",
+      "source": "res://renders/ship_ui/commons_service_help_1280x720_ui1p5.png",
+      "file": "review_ui_commons_service_help_1280x720_ui1p5.png",
+      "title": "Commons service help · enlarged UI",
+      "note": "Actual engine frame at1280×720; UI scale1.5. Level-aware routes/help, with no impossible walk-to action from upper or service stages.",
+      "label": "UI review · current sprint branch",
+      "revision": "f3e0b11c"
+    }
+  ],
+  "notice": "Painted NPCs in the captain’s style, including the Medic and Chief Engineer among residents, are an approved static art pilot. The normal game still uses its existing resident figures. Native archives are labelled separately below.",
+  "downloads": [
+    {
+      "source": "res://build/macos/Stapledons-Voyage-combined-dev-99190243-macos.zip",
+      "file": "Stapledons-Voyage-combined-dev-99190243-macos.zip",
+      "title": "Earlier combined dev · 99190243 · macOS",
+      "note": "Historical pre-merge archive. Predates Earth-link audio/map beams and final merge coverage. Use Current merged main dev when present, or tools/install_review_build.sh --dev.",
+      "version": "v0.4.0-dev.37-living-bridge-150-g99190243",
+      "commit": "99190243af3cf3cc55f847c92e5328f9b8147349",
+      "sha256": "076fc82ffdbac26b8753f8c3b03ceaf4cd13ff70d4ca5f60513fbe7fd4c39485",
+      "bytes": 459853895
+    },
+    {
+      "source": "res://build/macos/Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
+      "file": "Stapledons-Voyage-combined-dev-620e92ff-macos.zip",
+      "title": "Earlier combined dev · 620e92ff · before faster walking",
+      "note": "Historical combined archive, retained as a reference; predates faster walking. Use Current merged main dev or tools/install_review_build.sh --dev.",
+      "version": "v0.4.0-dev.37-living-bridge-148-g620e92ff",
+      "commit": "620e92fff02d5489a7bf6fe6881151caf68a4404",
+      "sha256": "dab215eff42d56f87bfe927b16adcb4f79e3f5048e3375ed2aba819afe6616b1",
+      "bytes": 459853252
+    },
+    {
+      "source": "res://build/macos/Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
+      "file": "Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
+      "title": "Earlier civic-only playtest ·755cd4b1 ·reference",
+      "note": "Contains the reviewed grown civic art and live activity. Unzip, open Stapledons Voyage.app, choose New game; E at the lift landing descends to Commons. WASD walks; Tab opens help. Bundled AILANG v0.54.18. Native fresh-settings startup, movement, live/reduced activity and lift round trip pass. Earlier S3 build below is retained as a reference.",
+      "commit": "755cd4b11bc99648a74fefb81f9c3b89ed315ba1",
+      "version": "v0.4.0-dev.37-living-bridge-99-g755cd4b1",
+      "sha256": "00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8",
+      "bytes": 445933530
+    },
+    {
+      "source": "res://build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
+      "file": "Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
+      "title": "macOS S3 layout playtest · earlier build without pilot furniture",
+      "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
+      "note": "Earlier S3 layout review build. None of the furniture, wider-backdrop or grown civic-life pilots shown here is installed in this download."
+    }
+  ],
+  "published_dev_receipt": "res://build/macos/current-dev.json"
+}

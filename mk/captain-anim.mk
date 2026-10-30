@@ -5,6 +5,11 @@ captain-anim-test: import ## AC1, AC2: CaptainAnim on scripted inputs (8-sector 
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_captain_anim.gd > $(SCRATCH)/captain-anim-test.log 2>&1; rc=$$?; grep -E '^(FAIL|captain-anim)' $(SCRATCH)/captain-anim-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/captain-anim-test.log && grep -q '^captain-anim: [0-9]* passed, 0 failures$$' $(SCRATCH)/captain-anim-test.log
 test: captain-anim-test
+.PHONY: bridge-operator-test
+bridge-operator-test: import ## D-132: actual original-desk working points, capsule/route clearance, foot anchor and work-pose reset
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_bridge_operator_contact.gd -- --installed > $(SCRATCH)/bridge-operator-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|bridge-operator-contact)' $(SCRATCH)/bridge-operator-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bridge-operator-test.log && grep -q '^bridge-operator-contact: [0-9]* passed, 0 failures$$' $(SCRATCH)/bridge-operator-test.log
+test: bridge-operator-test
 .PHONY: captain-frames-check captain-frames-ingest captain-anim-capture
 captain-frames-check: import ## AC4, AC5: every painted frame against its guide (silhouette IoU) and the stage-0 stills (palette dE), scale consistency, cell geometry, disk and GPU budgets; then the seeded defects (recoloured, wrong pose, wrong scale) must fail
 	@mkdir -p $(SCRATCH)

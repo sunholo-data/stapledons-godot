@@ -13,6 +13,12 @@ const AUTO_EXT := {"gd": "gdc", "tscn": "scn", "gdshader": "", "gdshaderinc": ""
 ## D: concatenated or directory reads. Each row names the include entry that ships the bytes,
 ## the witnesses the game needs (project-relative, never all AUTO_EXT), and why.
 const DYNAMIC := [
+	{"prefix": "res://data/feed/SOURCES", "filter": "data/feed/*", "witnesses": ["data/feed/SOURCES"],
+		"reason": "EarthFeed reads the committed feed picture provenance/pins to build its raw library; combined attended dev-test integration"},
+	{"prefix": "res://data/feed/pictures/", "filter": "data/feed/*", "witnesses": ["data/feed/pictures/family-baby_v0.webp"],
+		"reason": "EarthFeed builds raw WEBP paths from SOURCES; importer=keep and data/feed/* preserve the committed library bytes"},
+	{"prefix": "res://ship_commons_bundle/civic/", "filter": "ship_commons_bundle/*", "witnesses": ["ship_commons_bundle/civic/commons_grown_kit_v1.glb.bin", "ship_commons_bundle/civic/trailing-vine-v1.png.bin", "ship_commons_bundle/civic/cream.png.bin"],
+		"reason": "D-136 raw GLB/Image reads staged by make commons-civic-stage; independent civic pack audit checks all eleven transitive files and hashes"},
 	{"prefix": "res://ai", "filter": "ai/*.ail", "witnesses": ["ai/adapters.ail", "ai/ailang.toml"],
 		"reason": "bridge/ai_bridge.gd:380 copies res://ai into the user cache (_unpack_ai); ai/*.ail and ai/ailang.toml ship"},
 	{"prefix": "res://ai_core", "filter": "ai_core/*", "witnesses": ["ai_core/index.ndjson"],
@@ -72,6 +78,12 @@ const DYNAMIC := [
 ## X: dev-only paths. They must not ship, and a fallback must ship. exact: the literal must equal
 ## the path; otherwise the path is a prefix. The root row is the bare "res://" (never read as a file).
 const DEV_ONLY := [
+	{"path": "res://art/commons-grown-pilot/placements.json", "exact": true, "fallback": "res://assets/levels/commons/civic/placements.json",
+		"reason": "D-136 source-play fallback; make commons-civic-stage rewrites the pinned reviewed graph into the exported civic config"},
+	{"path": "res://art/commons-grown-pilot/trailing-vine-v1.png", "exact": true, "fallback": "res://assets/levels/commons/civic/placements.json",
+		"reason": "Source-only fallback; staged config vine_texture points to the byte-pinned raw civic bundle PNG"},
+	{"path": "res://art/ship-demo-v1/painted-bridge-v1/textures/%s.png", "exact": true, "fallback": "res://assets/levels/commons/civic/placements.json",
+		"reason": "Source-only fallback; staged ground_textures names the three byte-pinned raw civic pigment PNGs"},
 	{"path": "res://tools/", "exact": false, "fallback": "",
 		"reason": "main.gd dev routes (--golden, --bench, --*-capture, site movie); tools/* is excluded on purpose (V13)"},
 	{"path": "res://data/raw/background/", "exact": false, "fallback": "res://sky_bundle/",

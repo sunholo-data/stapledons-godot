@@ -1,0 +1,587 @@
+{
+  "schema": "stapledons.view-finish.sources/1",
+  "blender_version": "5.2.1 LTS",
+  "status": "local snapshot; remote archive publication pending",
+  "masters": [
+    {
+      "master": "stapledon_bridge_props_v4.blend",
+      "objects": 183,
+      "meshes": 72,
+      "images": [
+        {
+          "name": "archive_set_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/archive_set_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache coral",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/coral.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache cream",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/cream.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache floor_ash",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/floor_ash.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache glow",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/glow.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache leaf",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/leaf.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache mint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/mint.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache ochre",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/ochre.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache spire",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/spire.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache teal",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/teal.png",
+          "missing": false
+        },
+        {
+          "name": "Bridge gouache violet",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            627,
+            627
+          ],
+          "filepath": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/violet.png",
+          "missing": false
+        },
+        {
+          "name": "bridge_floor_top82_q0_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q0_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "bridge_floor_top82_q1_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q1_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "bridge_floor_top82_q2_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q2_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "bridge_floor_top82_q3_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/bridge_floor_top82_q3_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "captain_chair_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/captain_chair_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "console_navigation_0_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/console_navigation_0_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "console_navigation_1_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/console_navigation_1_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "console_navigation_2_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/console_navigation_2_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "deck_floor_fill_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/deck_floor_fill_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "desks_set_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/desks_set_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "floor_set_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/floor_set_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "lift_set_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/lift_set_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "lifthead_set_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/lifthead_set_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "rail_set_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            2048,
+            2048
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/rail_set_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "spire_needle_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/spire_needle_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "v2_chair_detail_00_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/v2_chair_detail_00_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "v2_nav_detail_00_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/v2_nav_detail_00_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "v2_nav_detail_01_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/v2_nav_detail_01_paint.webp",
+          "missing": false
+        },
+        {
+          "name": "v2_nav_detail_02_paint",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1024,
+            1024
+          ],
+          "filepath": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/v4/run/v2_nav_detail_02_paint.webp",
+          "missing": false
+        }
+      ],
+      "libraries": [],
+      "texts": [
+        {
+          "name": "bridge_floor_restore_generator_v2.py",
+          "path": "extracted/stapledon_bridge_props_v4/bridge_floor_restore_generator_v2.py",
+          "sha256": "b60d9aa00d70776e2f6e8cbbf1253fe24ce2a34e8928a6b128963bea77c44fe3"
+        },
+        {
+          "name": "bridge_mesh_paint_generator.py",
+          "path": "extracted/stapledon_bridge_props_v4/bridge_mesh_paint_generator.py",
+          "sha256": "16af1aeabffa13cfceac5dd72b4f96d22d38b5feb08411b1099ff513ecdcffb0"
+        },
+        {
+          "name": "generator.py",
+          "path": "extracted/stapledon_bridge_props_v4/generator.py",
+          "sha256": "4945f655181fb4a43752a0a083b366f5d1d8eb0e43d3c0b55d8eab8b407f0770"
+        },
+        {
+          "name": "READ ME \u2014 measured alternatives",
+          "path": "extracted/stapledon_bridge_props_v4/READ ME \u2014 measured alternatives",
+          "sha256": "1dff17d3bc66136a0bd0f0d0ab41e664907ec79f9f4f2599d3bb94dc75db326d"
+        },
+        {
+          "name": "ship_demo_generator.py",
+          "path": "extracted/stapledon_bridge_props_v4/ship_demo_generator.py",
+          "sha256": "f2cba0ca9b23795a7791d804ab715edb9634aa8bbdd8ac699c2fe10d57a0081a"
+        },
+        {
+          "name": "stapledon_bridge_props_v4.py",
+          "path": "extracted/stapledon_bridge_props_v4/stapledon_bridge_props_v4.py",
+          "sha256": "adb35d921b5a2382451f2f0396e7ab9aaa85b46a5b6060570fb05e93361fdf6f"
+        },
+        {
+          "name": "stapledon_deck_layout_v2.py",
+          "path": "extracted/stapledon_bridge_props_v4/stapledon_deck_layout_v2.py",
+          "sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470"
+        }
+      ],
+      "missing_resources": 0
+    },
+    {
+      "master": "ship_commons_master_v3.blend",
+      "objects": 535,
+      "meshes": 408,
+      "images": [
+        {
+          "name": "paint-atlas-v1.png",
+          "packed": true,
+          "source": "FILE",
+          "size": [
+            1254,
+            1254
+          ],
+          "filepath": "/private/tmp/stapledon-ship-demo/art/ship-commons-v1/paint-atlas-v1.png",
+          "missing": false
+        }
+      ],
+      "libraries": [],
+      "texts": [
+        {
+          "name": "commons_generator.py",
+          "path": "extracted/ship_commons_master_v3/commons_generator.py",
+          "sha256": "e3e6aaa51b8604b4d9fb32c2e67a045eeb6639a35cc8992e011a3212a0ff7b5a"
+        },
+        {
+          "name": "commons_paint_generator.py",
+          "path": "extracted/ship_commons_master_v3/commons_paint_generator.py",
+          "sha256": "64e8c982bd4771e6ef369f601919892b3079b645d9daf6bdd2832225f533632d"
+        },
+        {
+          "name": "commons_v3_expanded_generator.py",
+          "path": "extracted/ship_commons_master_v3/commons_v3_expanded_generator.py",
+          "sha256": "265e102223a97e85955fa7e847b5ca23d8643f882e1696f307bc6030d0f1500a"
+        },
+        {
+          "name": "generator.py",
+          "path": "extracted/ship_commons_master_v3/generator.py",
+          "sha256": "4945f655181fb4a43752a0a083b366f5d1d8eb0e43d3c0b55d8eab8b407f0770"
+        },
+        {
+          "name": "READ ME \u2014 measured alternatives",
+          "path": "extracted/ship_commons_master_v3/READ ME \u2014 measured alternatives",
+          "sha256": "1dff17d3bc66136a0bd0f0d0ab41e664907ec79f9f4f2599d3bb94dc75db326d"
+        },
+        {
+          "name": "ship_demo_generator.py",
+          "path": "extracted/ship_commons_master_v3/ship_demo_generator.py",
+          "sha256": "f2cba0ca9b23795a7791d804ab715edb9634aa8bbdd8ac699c2fe10d57a0081a"
+        }
+      ],
+      "missing_resources": 0
+    }
+  ],
+  "files": [
+    {
+      "path": "blender.sh",
+      "bytes": 508,
+      "sha256": "a72e748bf85036b626f4675bf7b4b3320d924ef4ecf4ce8ecb16bbd05b33d826"
+    },
+    {
+      "path": "extracted/ship_commons_master_v3/READ ME \u2014 measured alternatives",
+      "bytes": 1179,
+      "sha256": "1dff17d3bc66136a0bd0f0d0ab41e664907ec79f9f4f2599d3bb94dc75db326d"
+    },
+    {
+      "path": "extracted/ship_commons_master_v3/commons_generator.py",
+      "bytes": 9352,
+      "sha256": "e3e6aaa51b8604b4d9fb32c2e67a045eeb6639a35cc8992e011a3212a0ff7b5a"
+    },
+    {
+      "path": "extracted/ship_commons_master_v3/commons_paint_generator.py",
+      "bytes": 6810,
+      "sha256": "64e8c982bd4771e6ef369f601919892b3079b645d9daf6bdd2832225f533632d"
+    },
+    {
+      "path": "extracted/ship_commons_master_v3/commons_v3_expanded_generator.py",
+      "bytes": 20130,
+      "sha256": "265e102223a97e85955fa7e847b5ca23d8643f882e1696f307bc6030d0f1500a"
+    },
+    {
+      "path": "extracted/ship_commons_master_v3/generator.py",
+      "bytes": 8203,
+      "sha256": "4945f655181fb4a43752a0a083b366f5d1d8eb0e43d3c0b55d8eab8b407f0770"
+    },
+    {
+      "path": "extracted/ship_commons_master_v3/ship_demo_generator.py",
+      "bytes": 7312,
+      "sha256": "f2cba0ca9b23795a7791d804ab715edb9634aa8bbdd8ac699c2fe10d57a0081a"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/READ ME \u2014 measured alternatives",
+      "bytes": 1179,
+      "sha256": "1dff17d3bc66136a0bd0f0d0ab41e664907ec79f9f4f2599d3bb94dc75db326d"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/bridge_floor_restore_generator_v2.py",
+      "bytes": 6683,
+      "sha256": "b60d9aa00d70776e2f6e8cbbf1253fe24ce2a34e8928a6b128963bea77c44fe3"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/bridge_mesh_paint_generator.py",
+      "bytes": 8865,
+      "sha256": "16af1aeabffa13cfceac5dd72b4f96d22d38b5feb08411b1099ff513ecdcffb0"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/generator.py",
+      "bytes": 8203,
+      "sha256": "4945f655181fb4a43752a0a083b366f5d1d8eb0e43d3c0b55d8eab8b407f0770"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/ship_demo_generator.py",
+      "bytes": 7312,
+      "sha256": "f2cba0ca9b23795a7791d804ab715edb9634aa8bbdd8ac699c2fe10d57a0081a"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/stapledon_bridge_props_v4.py",
+      "bytes": 59781,
+      "sha256": "adb35d921b5a2382451f2f0396e7ab9aaa85b46a5b6060570fb05e93361fdf6f"
+    },
+    {
+      "path": "extracted/stapledon_bridge_props_v4/stapledon_deck_layout_v2.py",
+      "bytes": 8966,
+      "sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470"
+    },
+    {
+      "path": "inputs/asset-pins.json",
+      "bytes": 12179,
+      "sha256": "c270aa75cc042dd8593e69aa6413e93e05ba4e11be3a0bd80a3217b7d6fd10ec"
+    },
+    {
+      "path": "inputs/bow_a.json",
+      "bytes": 3215,
+      "sha256": "d1a6ed9a493bf6304eb1442677cae1961bc697bd1328d7f1b3af722ff27b0a5a"
+    },
+    {
+      "path": "inputs/paint-atlas-v1.png",
+      "bytes": 2407302,
+      "sha256": "af83b52e12ab0bccec502e46e5601e2e0afc96ba8b0a8bc84d5acb3d9508ebc2"
+    },
+    {
+      "path": "scenes/ship_commons_master_v3.blend",
+      "bytes": 5453073,
+      "sha256": "c6cf2f7e84c3b499795ca06dcaa6d3258a51f6ca0bcbbb438ec1dc8037e92ccf"
+    },
+    {
+      "path": "scenes/stapledon_bridge_deck_layout_a_v2.blend",
+      "bytes": 8276198,
+      "sha256": "590ef7c4b8e66784d918d48d78b2ac4455fdd122508164034a3d2928d709eb13"
+    },
+    {
+      "path": "scenes/stapledon_bridge_mesh_grounded_v2.blend",
+      "bytes": 7994672,
+      "sha256": "d1189dd8da752b971c31a19254a39794c8d3a89b67fbe34bd0c392d3e15dd9b5"
+    },
+    {
+      "path": "scenes/stapledon_bridge_props_v4.blend",
+      "bytes": 11017077,
+      "sha256": "45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3"
+    },
+    {
+      "path": "scripts/configure.py",
+      "bytes": 830,
+      "sha256": "c655fd29d2b746216a241b2914def8f1ce18e8b068fc59c68f1a72519b25afb2"
+    },
+    {
+      "path": "scripts/stapledon_bridge_floor_restore_v2.py",
+      "bytes": 6683,
+      "sha256": "b60d9aa00d70776e2f6e8cbbf1253fe24ce2a34e8928a6b128963bea77c44fe3"
+    },
+    {
+      "path": "scripts/stapledon_bridge_mesh_paint_render.py",
+      "bytes": 579,
+      "sha256": "70999c7676dbe7145c29bbaf1cff5c086edafd73c634297334eaf35c318d211f"
+    },
+    {
+      "path": "scripts/stapledon_bridge_mesh_paint_v1.py",
+      "bytes": 8865,
+      "sha256": "16af1aeabffa13cfceac5dd72b4f96d22d38b5feb08411b1099ff513ecdcffb0"
+    },
+    {
+      "path": "scripts/stapledon_bridge_props_v1.py",
+      "bytes": 14026,
+      "sha256": "08034cc13cc3cef1cb9e71410a77d17f898811e81bddf531803043e88494d55d"
+    },
+    {
+      "path": "scripts/stapledon_bridge_props_v2.py",
+      "bytes": 19827,
+      "sha256": "93e7f59bb1ff6b8dd6edf423cd2c17951c1c3fc85fe07f905e604099c38c472f"
+    },
+    {
+      "path": "scripts/stapledon_bridge_props_v3.py",
+      "bytes": 40843,
+      "sha256": "0d6819be68c962c9c18e3991537aa32ca1572f1af439462c4cc98f1dfdc9010d"
+    },
+    {
+      "path": "scripts/stapledon_bridge_props_v4.py",
+      "bytes": 59781,
+      "sha256": "adb35d921b5a2382451f2f0396e7ab9aaa85b46a5b6060570fb05e93361fdf6f"
+    },
+    {
+      "path": "scripts/stapledon_deck_layout_v2.py",
+      "bytes": 8966,
+      "sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470"
+    }
+  ]
+}

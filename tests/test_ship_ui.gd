@@ -28,6 +28,11 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	await test_level_help_and_layout()
+	if failures:
+		print("ship-ui: %d passed, %d failures" % [passes, failures])
+		quit(1)
+		return
 	await test_mouse_look()
 	await test_ism_hud()
 	await test_ism_body_pick_guard()
@@ -42,6 +47,61 @@ func _run() -> void:
 	await test_final_leg_look()
 	print("ship-ui: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
+
+
+## VFU: help describes this deck's actual controls; Tab offers a usable return route,
+## and increased laptop UI zoom must not push its controls/text outside their panel.
+func test_level_help_and_layout() -> void:
+	var host := Control.new()
+	host.size = Vector2(1280, 720)
+	root.add_child(host)
+	var hud := ShipHud.new()
+	host.add_child(hud)
+	hud.setup(false)
+	check("VFU bridge player help omits reserved and developer camera presets", not hud.help.text.contains("reserved") and not hud.help.text.contains("developer views"))
+	hud.toggle_tab()
+	await process_frame
+	check("VFU opening Tab focuses the first usable route", hud.walk_buttons.navigation.has_focus())
+	check("VFU level context is a public HUD contract", hud.has_method("set_level_context"))
+	if hud.has_method("set_level_context"):
+		hud.walk_buttons.archive.grab_focus()
+		hud.call("set_level_context", {"id": "commons", "name": "Commons", "stage": "court", "view": "Bow", "route_hint": "Lift to the bridge · E at the landing", "legacy_views": false})
+		check("VFU Commons help names the level and return guidance", hud.help.text.contains("Commons") and hud.help.text.contains("lift") and hud.help.text.contains("bridge"))
+		check("VFU fixed Commons help keeps Bow/Astern and omits legacy zoom", not hud.help.text.contains("1 2 3") and hud.help.text.contains("7 Bow") and hud.help.text.contains("9 Astern") and not hud.help.text.contains("click a console"))
+		var nav: Button = hud.walk_buttons.navigation
+		check("VFU Commons offers one lift route instead of bridge station destinations", nav.visible and nav.text.contains("lift") and not hud.walk_buttons.voyage.visible and not hud.walk_buttons.archive.visible)
+		check("VFU changing decks keeps focus on the remaining usable route", nav.has_focus())
+		var got := []
+		hud.walk_to_requested.connect(func(id: String) -> void: got.append(id))
+		nav.pressed.emit()
+		check("VFU lift route uses the existing lower-deck walk action", got == ["navigation"])
+		hud.call("set_level_context", {"id": "commons", "name": "Commons", "stage": "gantry", "can_walk_to_lift": false, "route_hint": "Return via the terrace ladder"})
+		check("VFU raised stages give transfer guidance without offering an impossible lift walk", not nav.visible and hud.route_guide.text.contains("ladder") and not hud.help.text.contains("Walk to lift"))
+		check("VFU raised-stage Tab keeps focus on a visible control", root.gui_get_focus_owner() != null and root.gui_get_focus_owner().is_visible_in_tree())
+		hud.call("set_level_context", {"id": "commons", "name": "Commons", "legacy_views": true})
+		check("VFU legacy Commons help honestly names the current three views", hud.help.text.contains("1 2 3") and hud.help.text.contains("Whole level"))
+		hud.call("set_level_context", {"id": "bridge", "name": "Bridge"})
+		check("VFU bridge restores its station routes and Bow/Astern help", hud.walk_buttons.voyage.visible and hud.walk_buttons.archive.visible and hud.walk_buttons.navigation.text == "Navigation station" and hud.help.text.contains("7 Bow") and hud.help.text.contains("9 Astern"))
+	for sz: Vector2 in [Vector2(1280, 720), Vector2(960, 540), Vector2(768, 432), Vector2(640, 360)]:
+		host.size = sz
+		hud.size = sz
+		hud.show_hint("Walk to a console to make a decision. Take the lift to explore the Commons below the bridge.")
+		await process_frame
+		await process_frame
+		hud._layout()
+		await process_frame
+		var canvas := Rect2(Vector2.ZERO, sz)
+		check("VFU Tab panel fits laptop canvas %s" % sz, canvas.encloses(hud.tab_panel.get_rect()))
+		check("VFU Tab respects the compact column width at %s" % sz, hud.tab_panel.size.x <= minf(440.0, sz.x * 0.45) + 1.0)
+		var content_width := hud.tab_panel.size.x - hud.tab_panel.get_theme_stylebox("panel").get_minimum_size().x
+		check("VFU help text fits its scroll content at %s" % sz, hud.help.size.x <= content_width + 1.0)
+		check("VFU onboarding hint fits laptop canvas %s" % sz, canvas.encloses(hud.hint.get_rect()))
+		hud.set_prompt("Lift · E to the bridge")
+		check("VFU action prompt is clear of the hint at %s" % sz, not hud.prompt.get_rect().intersects(hud.hint.get_rect()))
+	hud.toggle_tab()
+	check("VFU closing Tab releases its route focus", not hud.walk_buttons.navigation.has_focus())
+	host.queue_free()
+	await process_frame
 
 
 func ism_view(medium := "LIC", density := 0.2474) -> Dictionary:
@@ -173,7 +233,7 @@ func test_control_table() -> void:
 	# R2-CAMERA-FORWARD views in the help (D-93): each bridge walk view's prompt key ("Bow · 7",
 	# "Astern · 9", views.json) names that view in its help row; R returns to the level's default;
 	# 8 is reserved; 1-3 and = / - are the developer presets; no row describes the old sky looks.
-	var vd: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/camera/views.json"))
+	var vd: Dictionary = CameraDirector.load_views()
 	var bridge: Dictionary = vd.levels.bridge
 	var named := []
 	for v: Dictionary in bridge.views:
@@ -306,6 +366,7 @@ func test_strip_and_cards() -> void:
 	var demo: Node = await new_demo({"live_start": true, "sky_state": "rest"})
 	test_archive_label_identity(demo)
 	var hud: ShipHud = demo.ship_hud
+	await test_live_laptop_controls(hud)
 	check("HUD built, the button column retired", hud != null and demo.hud == hud.strip and not demo.has_method("hud_text"))
 	strip_ok(demo, "rest")
 	check("rest: no cards", hud.cards.is_empty())
@@ -460,8 +521,43 @@ func test_strip_and_cards() -> void:
 	demo._process(0.016)
 	strip_ok(demo, "lower deck")
 	check("lower deck: the prompt says decisions need the bridge", demo.active_level == 1 and (hud.prompt.text.contains("bridge")))
+	check("VFU live lower deck supplies Commons help context", hud._level_context.get("id") == "commons")
+	var court: Variant = demo.walk_lower.closest_walkable(Vector3(26, 57, -4), 4.0)
+	check("VFU idle prompt specimen is reachable away from the lift", court is Vector3)
+	if court is Vector3:
+		demo.avatar_pos = court
+		demo.consoles.cancel_walk()
+		demo._process(0.016)
+		check("VFU Commons idle view keeps the bottom prompt quiet", hud.prompt.text.is_empty())
+		check("VFU Commons return guidance remains in help", hud.help.text.contains("Commons") and hud.help.text.contains("lift"))
 	demo.queue_free()
 	await process_frame
+
+
+## The real ship adds buttons/grids after HUD setup; their minimum sizes must obey
+## the same responsive bounds as help text, including a doubled 1280px laptop UI.
+func test_live_laptop_controls(hud: ShipHud) -> void:
+	var before := hud.size
+	hud.toggle_tab()
+	for sz: Vector2 in [Vector2(1280, 720), Vector2(960, 540), Vector2(640, 360)]:
+		hud.size = sz
+		hud._layout()
+		await process_frame
+		await process_frame
+		hud._layout()
+		await process_frame
+		check("VFU live Tab column fits at %s" % sz, hud.tab_panel.size.x <= minf(440.0, sz.x * 0.45) + 1.0)
+		var outside := []
+		var bounds := hud.tab_panel.get_global_rect()
+		for c: Control in hud.tab_box.find_children("*", "Control", true, false):
+			if c.is_visible_in_tree() and (c is BaseButton or c is Label or c is RichTextLabel):
+				var rect := c.get_global_rect()
+				if rect.position.x < bounds.position.x or rect.end.x > bounds.end.x: outside.append(c.name)
+		check("VFU live Tab text/actions fit horizontally at %s (%s)" % [sz, outside], outside.is_empty())
+	hud.toggle_tab()
+	hud.size = before
+	hud._layout()
+	await process_frame # the star inspector observes that Tab has closed before its tests resume
 
 
 func test_dev_gating() -> void:

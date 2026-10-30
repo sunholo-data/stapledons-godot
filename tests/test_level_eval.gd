@@ -78,6 +78,13 @@ func test_positive() -> void:
 	check("positive control: the clamp keeps the captain in band on the court (%s px)" % [fl.px], float(fl.px[1]) <= 82.5)
 	var f := ids(LevelMetrics.failures(m, {}))
 	check("positive control fails exactly body-both, captain-px, head, near-field, pole-ray (%s)" % [f], f == ["body-both", "captain-px", "head", "near-field", "pole-ray"])
+	var no_sky:=m.duplicate(true)
+	for sid: String in no_sky.stages:
+		no_sky.stages[sid].journey=false
+	check("enclosed non-journey stages do not require stop-body sky",not ids(LevelMetrics.failures(no_sky,{})).has("body-both"))
+	var blocked:=m.duplicate(true)
+	for row: Dictionary in blocked.stages.court.surfaces:row.body_both=row.samples
+	check("blocked stop body still fails a journey stage",ids(LevelMetrics.failures(blocked,{})).has("body-both"))
 	var reach: Dictionary = m.routes.finds
 	check("finds reachable: notice board 1 hop, telescope 4 hops (%s, %s)" % [reach.notice_board.hops, reach.telescope.hops], reach.notice_board.hops == 1 and reach.telescope.hops == 4)
 

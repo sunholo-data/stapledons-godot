@@ -50,6 +50,13 @@ func _run() -> void:
 			check("repeat board",lift.board())
 			lift.advance(.81);lift.advance(11.01);lift.advance(.81)
 		check("repeat stable bridge endpoint",lift.state=="bridge_ready" and demo.avatar_pos.distance_to(Vector3(8,82,-4.8))<.01 and demo.avatar.get_parent()==demo.geometry and lift.gates[0].visible and lift.gates[1].visible)
+	check("data-driven 6 m/s ride lasts 25/6 seconds",absf(lift.ride_seconds()-25./6.)<.00001)
+	check("skip test boards",lift.board())
+	check("explicit skip reaches safe lower endpoint",lift.skip() and lift.state=="lower_ready" and demo.avatar_pos.distance_to(Vector3(8,57,-4.8))<.01)
+	check("unknown stop refused without starting a ride",not lift.board("missing") and not lift.travelling())
+	demo.set_camera_motion("reduced")
+	check("reduced motion cuts the entire ride",lift.board() and not lift.travelling() and demo.avatar_pos.distance_to(Vector3(8,82,-4.8))<.01)
+	demo.set_camera_motion("full")
 	demo.avatar_pos=Vector3(18,82,9)
 	check("cannot board remotely",not lift.board())
 	demo.queue_free();await process_frame

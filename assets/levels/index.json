@@ -1,0 +1,7 @@
+{
+  "schema": "stapledons.level.index/1",
+  "levels": {
+    "bridge": "res://assets/levels/bridge/manifest.json",
+    "commons": "res://assets/levels/commons/manifest.json"
+  }
+}

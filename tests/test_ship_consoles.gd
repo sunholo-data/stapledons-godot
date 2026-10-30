@@ -532,7 +532,7 @@ func test_walk_to() -> void:
 			break
 		demo._process(0.05)
 		walked += 0.05
-	check("AC14a the captain arrives at its use point at 3.5 m/s (%.1f s)" % walked, demo.avatar_pos.distance_to(c.stations.voyage.use) < 0.05 and walked >= from.distance_to(c.stations.voyage.use) / ShipConsoles.WALK_SPEED_MPS - 0.1)
+	check("AC14a the captain arrives at its use point at the shared walk pace (%.1f s)" % walked, demo.avatar_pos.distance_to(c.stations.voyage.use) < 0.05 and walked >= from.distance_to(c.stations.voyage.use) / ShipConsoles.WALK_SPEED_MPS - 0.1)
 	check("AC14a and faces it: the prompt says E use", hud.prompt.text == "Voyage console · E use")
 	for id in ["navigation", "archive", "comms"]:
 		c.walk_to(id)
@@ -554,7 +554,7 @@ func test_walk_to() -> void:
 	check("AC14a lower deck: the prompt names the lift", demo.active_level == 1 and hud.prompt.text.contains("Lift · E to the bridge"))
 	demo.avatar_pos += Vector3(4, 0, 0)
 	demo._process(0.016)
-	check("AC14a lower deck, away from the lift: decisions need the bridge", hud.prompt.text.contains("take the lift"))
+	check("VFU Commons idle prompt stays quiet; Tab retains the bridge return route", hud.prompt.text.is_empty() and hud.route_guide.text.to_lower().contains("lift"))
 	check("Walk to from the lower deck heads for the lift", c.walk_to("navigation") and c.walk_target == "lift")
 	demo.queue_free()
 	await process_frame

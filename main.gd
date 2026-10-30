@@ -101,9 +101,12 @@ func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void
 	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	if live_start:demo.setup_options={"live_start":true,"sky_state":"rest"}
 	elif guided:demo.setup_options={"sky_state":"rest"}
+	demo.setup_options["civic_art"]=true
 	demo.setup_options.merge(extra,true)
 	get_tree().root.add_child(demo)
 	get_tree().current_scene=demo
+	if not await demo.await_civic_art():
+		push_error("current ship: civic art could not load");get_tree().quit(1);return
 	if live_start:
 		var ok:bool=demo.ready_ok and demo.journey_map!=null and demo.sky_state=="live" and demo.sky.beta==0. and demo.director.level==2 and not demo.director.overridden # R2-CAMERA: the Z2 Deck view
 		print("current-ship-startup: %s live-rest deck-view single-navigation" % ("OK" if ok else "FAIL"))
@@ -159,9 +162,9 @@ func _route_now(route: String) -> void:
 		"ship":
 			if not extra.has("seed"):
 				extra["seed"] = new_game_seed() # D-68: New game is a new voyage, a fresh seed
-			_start_current_ship(true, extra)
+			await _start_current_ship(true, extra)
 		"guided":
-			_start_current_ship(false, extra, true)
+			await _start_current_ship(false, extra, true)
 		"map":
 			title.get_parent().queue_free()
 			title = null

@@ -1,0 +1,54 @@
+{
+  "schema": "stapledons.bridge-operator-contact/1",
+  "status": "placement correction for review; original furniture only; not installed in runtime",
+  "reason": "Original operator feet are two metres stern of the console centre; the held palms float above empty space. Correct the actual working/Walk-to point, not the furniture.",
+  "advance_bow_m": 0.775,
+  "capsule": {
+    "radius_m": 0.35,
+    "height_m": 1.8,
+    "centre_above_foot_m": 0.91
+  },
+  "measured_safe_limit_m": 0.8,
+  "first_collision_advance_m": 0.825,
+  "walk_only_limits_m": {
+    "voyage": 0.925,
+    "crew": 0.975
+  },
+  "stations": {
+    "voyage": {
+      "original_use_ship_m": [
+        -7.829,
+        10.207
+      ],
+      "corrected_use_ship_m": [
+        -7.829,
+        10.982
+      ]
+    },
+    "crew": {
+      "original_use_ship_m": [
+        8.479,
+        12.169
+      ],
+      "corrected_use_ship_m": [
+        8.479,
+        12.944
+      ]
+    }
+  },
+  "furniture": "Unchanged shipped console_decision_0/1; no support extensions loaded",
+  "avatar_render_offset_m": [
+    0,
+    0,
+    0
+  ],
+  "pose": "Accepted use_low front/back textures unchanged, with a bounded 15-degree world-bow work lean about the physical foot anchor. No whole-sprite translation.",
+  "remaining": "Parent to review/apply actual operator targets and bounded held-pose material to runtime. Navigation and Archive remain outside this slice.",
+  "work_lean_deg": 15.0,
+  "work_direction_gltf": [
+    0,
+    0,
+    -1
+  ],
+  "max_head_reach_m": 0.455
+}

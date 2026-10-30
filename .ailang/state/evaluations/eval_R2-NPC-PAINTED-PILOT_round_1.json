@@ -1,0 +1,141 @@
+{
+  "sprint_id": "R2-NPC-PAINTED-PILOT",
+  "parent_sprint": "R2-VIEW-FINISH",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-29T21:11:00Z",
+  "evaluator": "independent npc_pilot_review agent; not the asset/code generator",
+  "design_doc": "design_docs/planned/r2/bridge-commons-finish-sprint.md#d-139-npc-appearance-and-crew-in-the-crowd",
+  "sprint_plan": "design_docs/planned/r2/bridge-commons-finish-sprint.md#attended-authorization-first-painted-npc-assets-2026-10-29",
+  "review_scope": "NPC1 assets and NPC2 opt-in static Commons preview only; NPC3 appearance approval, production installation and the parent sprint's landing gates are excluded and remain pending",
+  "reviewed_base_commit": "87ead8db619478f6ff66cc07a7fc3fdb2a0f4912",
+  "reviewed_state": "uncommitted working tree during the attended D-140 asset slice",
+  "total_score": 92,
+  "pass_threshold": 70,
+  "result": "pass",
+  "verdict_scope": "PASS for the bounded first painted asset and opt-in preview slice; not a release, merge, S3/S5 or complete-parent-sprint approval",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 5,
+    "acceptance_criteria": 30,
+    "code_quality": 12,
+    "documentation": 15,
+    "design_fidelity": 10
+  },
+  "scoring_notes": {
+    "tests_pass": "The parent explicitly scoped this review to targeted asset and pilot checks. Both were independently run and pass. make test, CI and the rig were deliberately not run, and no full gate result is inferred.",
+    "lint_clean": "git diff --check passes and the new scripts compile/run without SCRIPT ERROR or Parse Error. The initial raw-image-loading warnings were removed by decoding PNG bytes directly; both targeted Makefile checks were independently re-run after this I/O fix. Five lint points are withheld because only bounded compile/whitespace checks were performed, not a full repository lint or exported-app verification.",
+    "code_quality": "Small isolated scripts and deterministic identity selection. Three points withheld for the long install routine and the intentionally partial pilot catalog validation/seat-placement model; those must not be represented as a production-ready NPC system.",
+    "acceptance_criteria": "All bounded NPC1/NPC2 deliverables are present and witnessed. NPC3 is correctly pending Mark's visual review, rather than silently marked passed.",
+    "documentation": "The final README, exact prompts, generation provenance, preserved initial and selected source PNGs, catalog hashes, reproduction targets, changelog, Commons brief and sprint follow-up state agree with the pilot scope and limitations."
+  },
+  "hard_fails": [],
+  "automated_checks": {
+    "gate_source": "local",
+    "gate_scope": "targeted only",
+    "asset_command": "make npc-painted-assets-check (also independently run directly before the final PNG-byte I/O refinement)",
+    "asset_result": "painted-npc-assets: 5 identities, 25 poses, 0 failures",
+    "pilot_command": "make npc-painted-test (also independently run directly before the final PNG-byte I/O refinement)",
+    "pilot_result": "painted-npc-pilot: 23 passed, 0 failures",
+    "tests_pass": true,
+    "script_errors": 0,
+    "whitespace_command": "git diff --check",
+    "whitespace_result": "pass",
+    "full_make_test_run": false,
+    "full_rig_run": false,
+    "ci_verified": false,
+    "native_export_verified": false,
+    "gpu_capture_run_by_evaluator": false,
+    "captured_images_opened_by_evaluator": 8,
+    "catalog_sha256": "7d0d23a1f53339aa18a63df80e9a304691c00781724d7543975d864c0cc23284",
+    "capture_manifest_sha256": "8b23a1ecb8592d03d71a8b6b08b49c8186820c0533dfbdb338b0b572c1209089",
+    "input_hashes": {
+      "demos/painted_npc_pilot.gd": "f250a92c5cbbdcd35c5002761d970c7e67aa833176bca464c3de1b235111552d",
+      "tools/npc_painted_assets.gd": "8366c076b97bcd1a126998f314a696777bd7cd5fd0d159ccd78f1233f276fc69",
+      "tools/npc_painted_capture.gd": "a36ac9a29e9fb12691880625ee57d28e1e82d02f49230f16b4ce1cca88b91c51",
+      "tests/test_painted_npc_pilot.gd": "b21989a67afe96428cb5c4ac8e4b96545ce6621f62b04f5be1141deb5cc7e12c"
+    }
+  },
+  "acceptance_criteria": [
+    {
+      "feature_id": "NPC1",
+      "criterion": "Three civilian identities plus portrait-derived Medic and Chief Engineer; five poses each; raw sources and exact prompts preserved",
+      "met": true,
+      "evidence": "Five catalog identities each contain front/back/profile/seated_front/seated_back; asset check independently validates 25 decoded PNGs, alpha borders, heights, foot anchors and hash closure. Seven raw candidates and seven prompts are preserved with the six selected source inputs identified in provenance.json."
+    },
+    {
+      "feature_id": "NPC1",
+      "criterion": "Painted style matches the captain while named crew retain portrait identity",
+      "met": true,
+      "evidence": "Opened matching-scale lineup and all 25 poses; compared to captain stage-zero front and current Medic/Engineer neutral portraits. The Medic retains dark tied-back curls, face, cream wrap and teal/rust scarf; the Engineer retains short silver/copper hair, broad face and olive workwear with tan straps. Fine painted contours, cloth texture and restrained colour planes read consistently with the captain."
+    },
+    {
+      "feature_id": "NPC2",
+      "criterion": "Opt-in Commons preview replaces 42 mesh proxy figures with painted sprites, with the Medic/Engineer once each among ordinary residents",
+      "met": true,
+      "evidence": "review.json records 42 residents and crew_ids medic/engineer; capture hides the old CommonsLifePilot after successful sprite installation. Independent behavior test checks count preservation, two unique crew, civilians without crew IDs, original portrait references, real floor support and no new mesh parts/colliders. Normal scene has no call to the new helper."
+    },
+    {
+      "feature_id": "NPC2",
+      "criterion": "Actual unchanged Bow/Astern views and matching-scale comparison are captured and inspected",
+      "met": true,
+      "evidence": "Opened lineup.png, poses.png and all six court Bow/Astern images at foot.z -4/-8/-12. The -12 pair shows captain and both crew fully in frame at comparable player scale. Final review.json contains eight frames and no errors and pins the asset catalog hash."
+    },
+    {
+      "feature_id": "NPC2",
+      "criterion": "Simple static presentation does not slide figures or invent crew schedules, simulation state or interactions",
+      "met": true,
+      "evidence": "Helper only selects paintings from fixed floor positions and camera-relative facing; process(delta) does not translate them. Targeted tests check stationary positions, deterministic civilian identity assignment, front/back/seated selection and atomic refusal of invalid placement or crew requests."
+    },
+    {
+      "feature_id": "NPC3",
+      "criterion": "Mark accepts appearance before full production crowd replacement",
+      "met": false,
+      "excluded_from_current_score": true,
+      "evidence": "The milestone and documentation correctly retain this human review as pending. The new helper is opt-in and normal game setup/published dev build are unchanged."
+    }
+  ],
+  "visual_findings": [
+    {
+      "severity": "medium",
+      "blocking_for_this_pilot": false,
+      "file": "demos/painted_npc_pilot.gd",
+      "issue": "Seat height currently selects a seated painting; there is no measured per-pose butt/seat anchor and seated images use a fixed 75% standing-height convention.",
+      "next_action": "Calibrate front/back seated contact against each actual bench/seat before production rollout. Full seated side views remain absent. The README and progress JSON now state this explicitly."
+    },
+    {
+      "severity": "medium",
+      "blocking_for_this_pilot": false,
+      "file": "demos/painted_npc_pilot.gd",
+      "issue": "NPC contact shadows are absent, while the captain has a grounded shadow. In the court views the new figures can read more as cutouts against sunlit paving.",
+      "next_action": "Add a compatible contact-shadow treatment in the next approved refinement before production replacement; retain this as an appearance-review observation rather than a false seat/floor certification."
+    },
+    {
+      "severity": "low",
+      "blocking_for_this_pilot": false,
+      "file": "art/npc-painted-v1/roster.json",
+      "issue": "Three civilian identities repeat across forty ordinary slots.",
+      "next_action": "Expand clothing/age/body/face variety after Mark accepts the first style pilot. Do not describe these five identities as the full crowd cast."
+    }
+  ],
+  "documentation_check": {
+    "changelog_updated": true,
+    "reproduction_targets_present": true,
+    "readme_present": true,
+    "verbatim_prompts_preserved": 7,
+    "source_candidates_preserved": 7,
+    "source_provenance_present": true,
+    "portable_review_images_preserved": 4,
+    "sprint_followup_status": "asset_pilot_ready_for_appearance_review",
+    "normal_game_change_claim": false,
+    "full_feature_completion_claim": false
+  },
+  "limitations": [
+    "This report passes only the first asset and opt-in static preview slice, not the whole D-139 feature or parent sprint.",
+    "Mark's appearance approval remains pending.",
+    "Seat contacts, contact shadows, expanded crowd variety, gait frames, live crew presence/availability/ageing and in-world interaction remain follow-up work.",
+    "The evaluator did not regenerate images, run import/GPU capture, publish, commit, run make test, run the rig or verify a native export.",
+    "The character inspection captures intentionally disable space/stars; they are not SR/GR, sky or performance evidence.",
+    "Full rig/full, fast CI, golden, performance and S3/S5 landing gates remain required for the eventual production implementation."
+  ],
+  "notes": "No blocking defect found in the scoped first painted-character pilot. The opt-in design and explicit pending review prevent an asset prototype from being mistaken for a finished live NPC system."
+}

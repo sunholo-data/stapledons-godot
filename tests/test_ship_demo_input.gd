@@ -5,7 +5,9 @@ extends SceneTree
 ## horizontal scroll is ignored; lift travel and the benchmark block. The developer free camera
 ## (F8, command-line launches only) keeps today's look and dolly, and its asserts run there.
 ## R2-CAMERA-FORWARD OQ4 (D-93): on the bridge a player has no zoom levels (the Bow view, one framing);
-## the zoom gestures below run in the Commons, which keeps its R2-CAMERA levels (a legacy level).
+## Production Commons now also uses fixed stage views. The legacy gesture accumulation checks run
+## on a private legacy camera configuration and level_greybox=false geometry, after checking both
+## production decks. Production manifests are never changed by this fixture.
 var failures:=0
 var passes:=0
 func check(label: String, ok: bool) -> void:
@@ -43,7 +45,19 @@ func _run() -> void:
 		var e:=InputEventKey.new();e.physical_keycode=k;e.pressed=true;demo._unhandled_input(e)
 	advance(demo,.1)
 	check("OQ4 menu launch, bridge: the wheel, scroll, pinch and 1/3/=/- never zoom (Bow, one framing)",dir.walk_active() and not dir.zoom_preset and dir.view_id=="bow" and demo.camera.global_transform.is_equal_approx(pose))
-	# The Commons (legacy) keeps the zoom levels: the gesture rules below run there.
+	# The production Commons follows its stage views, like the bridge.
+	demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=demo.walk_lower.closest_walkable(Vector3(26,57,-10),6.)
+	advance(demo,.5)
+	var commons_view:String=dir.view_id
+	check("production Commons uses a fixed walk view",dir.walk_active() and not dir.zoom_preset)
+	demo._unhandled_input(gw);advance(demo,.4);demo._unhandled_input(gp);advance(demo,.6);demo._unhandled_input(gm);advance(demo,.4)
+	check("production Commons wheel, scroll and pinch preserve the stage view",dir.walk_active() and not dir.zoom_preset and dir.view_id==commons_view and dir.level==2)
+	demo.queue_free();await process_frame
+	# Keep the original legacy wheel/trackpad/pinch contract on its explicit compatibility kit.
+	demo=await new_demo({"from_menu":true,"level_greybox":false,"settings_dir":"user://test_ship_demo_input"})
+	dir=demo.director
+	dir.levels=dir.levels.duplicate(true)
+	dir.levels["commons"]={"legacy":true,"default":"z2_lower"}
 	demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=demo.walk_lower.closest_walkable(Vector3(26,57,-10),6.)
 	advance(demo,.5)
 	check("the Commons: Z2 Deck (its legacy level view)",dir.level==2 and dir.view_id=="z2_lower")

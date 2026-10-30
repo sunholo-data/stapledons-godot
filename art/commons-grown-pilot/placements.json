@@ -1,0 +1,2444 @@
+{
+  "about": "D-135 comic/grown inhabited Commons preview. Before=previous wider backdrop+furniture. After=connected planted civic middle ground, long rooted tendrils, painted paving and ambient resident vignettes. No new WALK/sim/ship/camera changes.",
+  "grown_civic": true,
+  "base_configs": [
+    "res://art/commons-lived-in-pilot/placements.json",
+    "res://art/commons-backdrop-pilot/placements.json"
+  ],
+  "extra_art": [
+    "res://art/commons-grown-pilot/furniture.json"
+  ],
+  "source_glb": "commons_grown_kit_v1.glb",
+  "source_sha256": "4a9d9340a8ec58be26361910dbc82a2dd598d47ece2d577c33b63402b12382d2",
+  "bounds": {
+    "min": [
+      -76,
+      -76,
+      56.9
+    ],
+    "max": [
+      76,
+      76,
+      70
+    ]
+  },
+  "placements": [
+    {
+      "name": "north_grove_tendrils",
+      "prop": "tendril_arch",
+      "ship_m": [
+        -8,
+        30,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "tendril_arch__structure"
+      ]
+    },
+    {
+      "name": "south_grove_tendrils",
+      "prop": "tendril_arch",
+      "ship_m": [
+        12,
+        -25,
+        57.025
+      ],
+      "yaw_deg": -12,
+      "solid_meshes": [
+        "tendril_arch__structure"
+      ]
+    },
+    {
+      "name": "south_court_tendrils",
+      "prop": "tendril_arch",
+      "ship_m": [
+        41,
+        -28,
+        57.025
+      ],
+      "yaw_deg": 15,
+      "solid_meshes": [
+        "tendril_arch__structure"
+      ]
+    },
+    {
+      "name": "arcade_tendrils",
+      "prop": "tendril_arch",
+      "ship_m": [
+        57,
+        5,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "tendril_arch__structure"
+      ]
+    },
+    {
+      "name": "north_grove",
+      "prop": "planted_island",
+      "ship_m": [
+        13,
+        25,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "north_garden_back",
+      "prop": "planted_island",
+      "ship_m": [
+        12,
+        34,
+        57.025
+      ],
+      "yaw_deg": -10,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "south_grove",
+      "prop": "planted_island",
+      "ship_m": [
+        14,
+        -16,
+        57.025
+      ],
+      "yaw_deg": -10,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "south_garden_back",
+      "prop": "planted_island",
+      "ship_m": [
+        16,
+        -30,
+        57.025
+      ],
+      "yaw_deg": 15,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "south_court",
+      "prop": "planted_island",
+      "ship_m": [
+        40,
+        -18,
+        57.025
+      ],
+      "yaw_deg": 5,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "south_court_back",
+      "prop": "planted_island",
+      "ship_m": [
+        42,
+        -32,
+        57.025
+      ],
+      "yaw_deg": -15,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "arcade_garden",
+      "prop": "planted_island",
+      "ship_m": [
+        55,
+        4,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "avenue_garden",
+      "prop": "planted_island",
+      "ship_m": [
+        31,
+        30,
+        57.025
+      ],
+      "yaw_deg": -15,
+      "solid_meshes": [
+        "planted_island__structure"
+      ]
+    },
+    {
+      "name": "north_dining_shade",
+      "prop": "rib_shade_canopy",
+      "ship_m": [
+        13,
+        22,
+        57.025
+      ],
+      "yaw_deg": 5,
+      "solid_meshes": [
+        "rib_shade_canopy__structure"
+      ]
+    },
+    {
+      "name": "south_dining_shade",
+      "prop": "rib_shade_canopy",
+      "ship_m": [
+        14,
+        -22,
+        57.025
+      ],
+      "yaw_deg": -8,
+      "solid_meshes": [
+        "rib_shade_canopy__structure"
+      ]
+    },
+    {
+      "name": "south_court_shade",
+      "prop": "rib_shade_canopy",
+      "ship_m": [
+        40,
+        -24,
+        57.025
+      ],
+      "yaw_deg": 10,
+      "solid_meshes": [
+        "rib_shade_canopy__structure"
+      ]
+    },
+    {
+      "name": "east_market_shade",
+      "prop": "rib_shade_canopy",
+      "ship_m": [
+        53,
+        8,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "rib_shade_canopy__structure"
+      ]
+    }
+  ],
+  "plants": [
+    {
+      "name": "north_grove_growth_0",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 1.8,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_1",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 2.15,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_2",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 1.6,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_3",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 2.35,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_4",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 1.9,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_5",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 1.8,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_6",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 2.15,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_7",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 1.6,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_8",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 2.35,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_grove_growth_9",
+      "kind": "shrub",
+      "placement": "north_grove",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 1.9,
+      "yaw_deg": 31.7595,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_0",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 1.8,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_1",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 2.15,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_2",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 1.6,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_3",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 2.35,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_4",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 1.9,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_5",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 1.8,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_6",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 2.15,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_7",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 1.6,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_8",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 2.35,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "north_garden_back_growth_9",
+      "kind": "shrub",
+      "placement": "north_garden_back",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 1.9,
+      "yaw_deg": 25.0169,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_0",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_1",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_2",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_3",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_4",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_5",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_6",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_7",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_8",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_grove_growth_9",
+      "kind": "shrub",
+      "placement": "south_grove",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 0.7,
+      "yaw_deg": 149.0362,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_0",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 1.8,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_1",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 2.15,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_2",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 1.6,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_3",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 2.35,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_4",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 1.9,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_5",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 1.8,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_6",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 2.15,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_7",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 1.6,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_8",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 2.35,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_garden_back_growth_9",
+      "kind": "shrub",
+      "placement": "south_garden_back",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 1.9,
+      "yaw_deg": 163.6105,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_0",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_1",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_2",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_3",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_4",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_5",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_6",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_7",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_8",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_growth_9",
+      "kind": "shrub",
+      "placement": "south_court",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 0.7,
+      "yaw_deg": -147.5288,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_0",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 1.8,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_1",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 2.15,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_2",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 1.6,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_3",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 2.35,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_4",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 1.9,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_5",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 1.8,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_6",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 2.15,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_7",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 1.6,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_8",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 2.35,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "south_court_back_growth_9",
+      "kind": "shrub",
+      "placement": "south_court_back",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 1.9,
+      "yaw_deg": -156.0375,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_0",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 1.8,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_1",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 2.15,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_2",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 1.6,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_3",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 2.35,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_4",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 1.9,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_5",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 1.8,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_6",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 2.15,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_7",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 1.6,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_8",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 2.35,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "arcade_garden_growth_9",
+      "kind": "shrub",
+      "placement": "arcade_garden",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 1.9,
+      "yaw_deg": -90.0,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_0",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_0",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_1",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_1",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_2",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_2",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_3",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_3",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_4",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_4",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_5",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_5",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_6",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_6",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_7",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_7",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.91,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_8",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_8",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.96,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "avenue_garden_growth_9",
+      "kind": "shrub",
+      "placement": "avenue_garden",
+      "anchor": "FOLIAGE_planted_island_9",
+      "height": 0.65,
+      "yaw_deg": -10.8855,
+      "tint": [
+        0.86,
+        1,
+        0.92
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_0",
+      "kind": "frond",
+      "root": [
+        5,
+        26,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": 43.6678,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_1",
+      "kind": "frond",
+      "root": [
+        21,
+        31,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": 10.4915,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_2",
+      "kind": "frond",
+      "root": [
+        6,
+        -20,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": 140.1944,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_3",
+      "kind": "frond",
+      "root": [
+        23,
+        -31,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": 175.1009,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_4",
+      "kind": "frond",
+      "root": [
+        34,
+        -31,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": -167.125,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_5",
+      "kind": "frond",
+      "root": [
+        48,
+        -17,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": -133.6678,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_6",
+      "kind": "frond",
+      "root": [
+        59,
+        12,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": -76.373,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    },
+    {
+      "name": "civic_canopy_frond_7",
+      "kind": "frond",
+      "root": [
+        58,
+        -3,
+        57.05
+      ],
+      "height": 3.5,
+      "yaw_deg": -102.3391,
+      "tint": [
+        0.91,
+        1,
+        0.93
+      ]
+    }
+  ],
+  "practicals": [
+
+  ],
+  "replace_markers": [
+
+  ],
+  "review_points": [
+    {
+      "id": "court",
+      "ship_m": [
+        26,
+        4,
+        57.025
+      ]
+    },
+    {
+      "id": "arcade_edge",
+      "ship_m": [
+        35,
+        12,
+        57.025
+      ]
+    },
+    {
+      "id": "underterrace",
+      "ship_m": [
+        34,
+        6,
+        57.025
+      ],
+      "clamped": true
+    },
+    {
+      "id": "bridge_rim",
+      "level": "bridge",
+      "ship_m": [
+        17,
+        5,
+        82
+      ]
+    }
+  ],
+  "residents": [
+    {
+      "name": "diner_0",
+      "ship_m": [
+        12,
+        20.74,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.71,
+        0.84,
+        0.76
+      ]
+    },
+    {
+      "name": "meal_companion_0",
+      "ship_m": [
+        13.7,
+        22.8,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 210,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_1",
+      "ship_m": [
+        17,
+        27.74,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.83,
+        0.63,
+        0.43
+      ]
+    },
+    {
+      "name": "meal_companion_1",
+      "ship_m": [
+        18.7,
+        29.8,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 225,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_2",
+      "ship_m": [
+        13,
+        -22.26,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.73,
+        0.56,
+        0.68
+      ]
+    },
+    {
+      "name": "meal_companion_2",
+      "ship_m": [
+        14.7,
+        -20.2,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 240,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_3",
+      "ship_m": [
+        18,
+        -26.26,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.85,
+        0.78,
+        0.6
+      ]
+    },
+    {
+      "name": "meal_companion_3",
+      "ship_m": [
+        19.7,
+        -24.2,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 210,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_4",
+      "ship_m": [
+        37,
+        -21.26,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.71,
+        0.84,
+        0.76
+      ]
+    },
+    {
+      "name": "meal_companion_4",
+      "ship_m": [
+        38.7,
+        -19.2,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 225,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_5",
+      "ship_m": [
+        43,
+        -26.26,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.83,
+        0.63,
+        0.43
+      ]
+    },
+    {
+      "name": "meal_companion_5",
+      "ship_m": [
+        44.7,
+        -24.2,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 240,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_6",
+      "ship_m": [
+        52,
+        3.74,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.73,
+        0.56,
+        0.68
+      ]
+    },
+    {
+      "name": "meal_companion_6",
+      "ship_m": [
+        53.7,
+        5.8,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 210,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "diner_7",
+      "ship_m": [
+        52,
+        8.74,
+        57.025
+      ],
+      "activity": "dining",
+      "seat_height_m": 0.48,
+      "facing": 0,
+      "tint": [
+        0.85,
+        0.78,
+        0.6
+      ]
+    },
+    {
+      "name": "meal_companion_7",
+      "ship_m": [
+        53.7,
+        10.8,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 225,
+      "tint": [
+        0.73,
+        0.63,
+        0.67
+      ]
+    },
+    {
+      "name": "market_steward_0",
+      "ship_m": [
+        8,
+        27.25,
+        57.025
+      ],
+      "activity": "market",
+      "facing": 0,
+      "tint": [
+        0.51,
+        0.7,
+        0.66
+      ]
+    },
+    {
+      "name": "market_reader_0",
+      "ship_m": [
+        8.4,
+        29.1,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 180,
+      "tint": [
+        0.86,
+        0.68,
+        0.57
+      ]
+    },
+    {
+      "name": "market_steward_1",
+      "ship_m": [
+        21,
+        -27.75,
+        57.025
+      ],
+      "activity": "market",
+      "facing": 0,
+      "tint": [
+        0.51,
+        0.7,
+        0.66
+      ]
+    },
+    {
+      "name": "market_reader_1",
+      "ship_m": [
+        21.4,
+        -25.9,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 180,
+      "tint": [
+        0.86,
+        0.68,
+        0.57
+      ]
+    },
+    {
+      "name": "market_steward_2",
+      "ship_m": [
+        46,
+        -18.75,
+        57.025
+      ],
+      "activity": "market",
+      "facing": 0,
+      "tint": [
+        0.51,
+        0.7,
+        0.66
+      ]
+    },
+    {
+      "name": "market_reader_2",
+      "ship_m": [
+        46.4,
+        -16.9,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 180,
+      "tint": [
+        0.86,
+        0.68,
+        0.57
+      ]
+    },
+    {
+      "name": "market_steward_3",
+      "ship_m": [
+        56,
+        -0.75,
+        57.025
+      ],
+      "activity": "market",
+      "facing": 0,
+      "tint": [
+        0.51,
+        0.7,
+        0.66
+      ]
+    },
+    {
+      "name": "market_reader_3",
+      "ship_m": [
+        56.4,
+        1.1,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 180,
+      "tint": [
+        0.86,
+        0.68,
+        0.57
+      ]
+    },
+    {
+      "name": "district_reader_0",
+      "ship_m": [
+        20,
+        23.9,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 180,
+      "tint": [
+        0.67,
+        0.62,
+        0.76
+      ]
+    },
+    {
+      "name": "district_reader_1",
+      "ship_m": [
+        9,
+        -15.1,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 210,
+      "tint": [
+        0.67,
+        0.62,
+        0.76
+      ]
+    },
+    {
+      "name": "district_reader_2",
+      "ship_m": [
+        47,
+        -28.1,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 240,
+      "tint": [
+        0.67,
+        0.62,
+        0.76
+      ]
+    },
+    {
+      "name": "district_reader_3",
+      "ship_m": [
+        56,
+        12.9,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 270,
+      "tint": [
+        0.67,
+        0.62,
+        0.76
+      ]
+    },
+    {
+      "name": "promenade_walker_0",
+      "ship_m": [
+        24,
+        25,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 5,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_1",
+      "ship_m": [
+        27,
+        -13,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 185,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_2",
+      "ship_m": [
+        32,
+        -29,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 5,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_3",
+      "ship_m": [
+        46,
+        23,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 185,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_4",
+      "ship_m": [
+        57,
+        -5,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 5,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_5",
+      "ship_m": [
+        6,
+        34,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 185,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_6",
+      "ship_m": [
+        35,
+        -15,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 5,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "promenade_walker_7",
+      "ship_m": [
+        18,
+        38,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 185,
+      "walk_m": 1.2,
+      "tint": [
+        0.83,
+        0.75,
+        0.58
+      ]
+    },
+    {
+      "name": "court_reading",
+      "ship_m": [
+        16.5,
+        9.95,
+        57.025
+      ],
+      "activity": "reading",
+      "facing": 180,
+      "tint": [
+        0.77,
+        0.66,
+        0.57
+      ]
+    },
+    {
+      "name": "court_conversation_a",
+      "ship_m": [
+        22,
+        12,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 90,
+      "tint": [
+        0.77,
+        0.66,
+        0.57
+      ]
+    },
+    {
+      "name": "court_conversation_b",
+      "ship_m": [
+        23.2,
+        12.4,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 270,
+      "tint": [
+        0.77,
+        0.66,
+        0.57
+      ]
+    },
+    {
+      "name": "court_walker",
+      "ship_m": [
+        24,
+        1,
+        57.025
+      ],
+      "activity": "walk",
+      "facing": 20,
+      "tint": [
+        0.77,
+        0.66,
+        0.57
+      ]
+    },
+    {
+      "name": "social_lane_a",
+      "ship_m": [
+        23,
+        -12,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 110,
+      "tint": [
+        0.77,
+        0.66,
+        0.57
+      ]
+    },
+    {
+      "name": "social_lane_b",
+      "ship_m": [
+        24.2,
+        -13,
+        57.025
+      ],
+      "activity": "conversation",
+      "facing": 290,
+      "tint": [
+        0.77,
+        0.66,
+        0.57
+      ]
+    }
+  ],
+  "ground": {
+    "courts": [
+      {
+        "name": "north_grove",
+        "at": [
+          14,
+          27
+        ],
+        "radius": [
+          10,
+          9
+        ]
+      },
+      {
+        "name": "southern_conversation",
+        "at": [
+          15,
+          -23
+        ],
+        "radius": [
+          11,
+          11
+        ]
+      },
+      {
+        "name": "southern_market",
+        "at": [
+          40,
+          -24
+        ],
+        "radius": [
+          11,
+          12
+        ]
+      },
+      {
+        "name": "arcade_garden",
+        "at": [
+          52,
+          7
+        ],
+        "radius": [
+          8,
+          12
+        ]
+      }
+    ],
+    "paths": [
+      {
+        "name": "commons_avenue",
+        "width": 5.2,
+        "points": [
+          [
+            25,
+            -64
+          ],
+          [
+            29,
+            -43
+          ],
+          [
+            27,
+            -24
+          ],
+          [
+            24,
+            -10
+          ],
+          [
+            26,
+            4
+          ],
+          [
+            26,
+            18
+          ],
+          [
+            29,
+            35
+          ],
+          [
+            25,
+            54
+          ],
+          [
+            28,
+            66
+          ]
+        ]
+      },
+      {
+        "name": "north_civic_lane",
+        "width": 3.4,
+        "points": [
+          [
+            -10,
+            33
+          ],
+          [
+            3,
+            30
+          ],
+          [
+            16,
+            27
+          ],
+          [
+            29,
+            23
+          ],
+          [
+            42,
+            25
+          ],
+          [
+            55,
+            30
+          ]
+        ]
+      },
+      {
+        "name": "south_social_lane",
+        "width": 3.6,
+        "points": [
+          [
+            -8,
+            -30
+          ],
+          [
+            6,
+            -27
+          ],
+          [
+            19,
+            -21
+          ],
+          [
+            30,
+            -19
+          ],
+          [
+            43,
+            -23
+          ],
+          [
+            58,
+            -33
+          ]
+        ]
+      },
+      {
+        "name": "east_arcade_walk",
+        "width": 3.2,
+        "points": [
+          [
+            42,
+            -35
+          ],
+          [
+            47,
+            -18
+          ],
+          [
+            51,
+            -2
+          ],
+          [
+            50,
+            16
+          ],
+          [
+            43,
+            32
+          ]
+        ]
+      }
+    ]
+  },
+  "vine_sha256": "5428cbf826d8bf5332c23940af4fc50d25ba8f38cbbc793fba9e1db42971bb3d",
+  "trailing_vines": [
+    {
+      "name": "trailing_nw_civic_0",
+      "placement": "nw_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_nw_civic_1",
+      "placement": "nw_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_west_civic_0",
+      "placement": "west_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_west_civic_1",
+      "placement": "west_civic",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_ne_civic_0",
+      "placement": "ne_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_ne_civic_1",
+      "placement": "ne_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_ne_civic_2",
+      "placement": "ne_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_sw_civic_0",
+      "placement": "sw_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_sw_civic_1",
+      "placement": "sw_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_sw_civic_2",
+      "placement": "sw_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_southwest_civic_0",
+      "placement": "southwest_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_southwest_civic_1",
+      "placement": "southwest_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_southwest_civic_2",
+      "placement": "southwest_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_se_civic_0",
+      "placement": "se_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_se_civic_1",
+      "placement": "se_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_se_civic_2",
+      "placement": "se_civic",
+      "anchor": "FOLIAGE_civic_arcade_terrace_bed_2",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_nw_alcove_0",
+      "placement": "nw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_nw_alcove_1",
+      "placement": "nw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_ne_alcove_0",
+      "placement": "ne_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_ne_alcove_1",
+      "placement": "ne_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_west_alcove_0",
+      "placement": "west_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_west_alcove_1",
+      "placement": "west_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_sw_alcove_0",
+      "placement": "sw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_sw_alcove_1",
+      "placement": "sw_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_se_alcove_0",
+      "placement": "se_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_se_alcove_1",
+      "placement": "se_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_southwest_alcove_0",
+      "placement": "southwest_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_0",
+      "height": 2.8
+    },
+    {
+      "name": "trailing_southwest_alcove_1",
+      "placement": "southwest_alcove",
+      "anchor": "FOLIAGE_civic_alcove_alcove_roof_garden_1",
+      "height": 2.8
+    }
+  ]
+}

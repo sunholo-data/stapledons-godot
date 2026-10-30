@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Combined landing checks (2026-10-30)
+
+- Integrate current main and committed Earth-link audio for D-142. Add numeric light-cone/Doppler reference checks and GPU comparisons for the production Earth feed and exchange strip, mirroring the pinned Observe package. Preserve existing golden coverage and keep unfinished feature milestones explicit.
+- The captain-animation speed assertion now enforces D-138's approved shared 2.2 m/s pace; it previously retained the superseded 1.3 m/s value.
+- The camera's sector-crossing fixture keeps its intended 14 m path at that pace, avoiding an unintended outer-rim collision from the old fixed frame count. Direction and continuity thresholds remain unchanged.
+- Earth feed captions and beam labels use shared theme variations, with their existing backgrounds and semantic colours retained and covered by the theme contrast gate.
+- Portrait fallback tests use a controlled missing-emotion set, so adding the Engineer's angry portrait no longer invalidates the neutral-fallback regression case.
+- Input regressions cover the production Commons fixed views and preserve the retired zoom gestures on an explicit private legacy fixture.
+- Scene Archive audits select the frozen or current exact unlock set from the complete imported catalogue witness, with crossed-scope and malformed-witness controls. Recorded replay bytes and pins remain unchanged.
+
+### Painted NPC asset pilot (2026-10-29)
+
+- D-139/D-140: three painted civilian identities and portrait-derived Medic/Chief Engineer figures, with 25 standing/seated pose assets, preserved generation sources/prompts, deterministic Godot ingestion and alpha/height/foot-anchor/hash checks. An opt-in Commons capture mingles the two crew identities among the existing crowd without changing normal game setup. Mark approved the appearance in D-141; per-seat contact calibration, live crew binding and production rollout remain pending.
+
 ### rig-test-speed (2026-10-29)
 
 #### Added

@@ -13,6 +13,53 @@ level-test: import ## AC2/AC3: stapledons.level/1 schema cases, LevelGreybox (bo
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_levels.gd > $(SCRATCH)/level-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-test)' $(SCRATCH)/level-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-test.log && grep -q '^level-test: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-test.log
 test: level-test
+.PHONY: level-runtime-test
+level-runtime-test: import ## VF1: manifest camera sources, stage resolution and shared fixed-height/clamp poses
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_level_runtime.gd > $(SCRATCH)/level-runtime-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-runtime)' $(SCRATCH)/level-runtime-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-runtime-test.log && grep -q '^level-runtime: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-runtime-test.log
+test: level-runtime-test
+.PHONY: commons-art-pilot-test commons-pilot-check commons-pilot-capture commons-pilot-golden
+.PHONY: commons-backdrop-check commons-backdrop-capture commons-backdrop-golden
+.PHONY: commons-life-pilot-test commons-grown-check commons-grown-capture commons-grown-golden commons-grown-motion
+test: commons-life-pilot-test
+commons-life-pilot-test: ## Resident clock, reduced motion, hidden pause and physical floor controls
+	@$(GODOT_SIM) --headless --path . --script tests/test_commons_life_pilot.gd > $(SCRATCH)/commons-life-pilot.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-life-pilot)' $(SCRATCH)/commons-life-pilot.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-life-pilot.log
+commons-grown-check: ## Connected civic art layers, original geometry/sightline thresholds and routes
+	@$(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd -- --config res://art/commons-grown-pilot/placements.json > $(SCRATCH)/commons-grown-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-backdrop)' $(SCRATCH)/commons-grown-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-check.log
+commons-grown-capture: ## Matched real player views of the grown living Commons candidate
+	@$(GODOT_SIM) --path . --script tools/commons_pilot_review.gd -- --config res://art/commons-grown-pilot/placements.json --out res://renders/view-finish/commons-grown-pilot > $(SCRATCH)/commons-grown-capture.log 2>&1; rc=$$?; grep '^commons-pilot-review:' $(SCRATCH)/commons-grown-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-capture.log
+commons-grown-golden: lens-assets m4-physics-probe ## Existing CPU/pixel pole references with every grown civic layer present
+	@$(GODOT) --path . --script tools/commons_pilot_golden.gd -- --config res://art/commons-grown-pilot/placements.json > $(SCRATCH)/commons-grown-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|commons-pilot-golden)' $(SCRATCH)/commons-grown-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-golden.log && test "$$(grep -c '^ok    G-LVL-' $(SCRATCH)/commons-grown-golden.log)" = 6
+commons-grown-motion: ## Eight-second actual Court Astern resident activity study for the gallery
+	@$(GODOT_SIM) --path . --script tools/commons_civic_motion.gd > $(SCRATCH)/commons-grown-motion.log 2>&1; rc=$$?; grep '^commons-civic-motion:' $(SCRATCH)/commons-grown-motion.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-grown-motion.log
+commons-backdrop-check: ## Whole-vertex envelope, actual floor, original sightline thresholds and routes
+	@$(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd > $(SCRATCH)/commons-backdrop-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-backdrop)' $(SCRATCH)/commons-backdrop-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-check.log
+commons-backdrop-capture: ## Matched actual player views; furniture remains present in both variants
+	@$(GODOT_SIM) --path . --script tools/commons_pilot_review.gd -- --config res://art/commons-backdrop-pilot/placements.json --out res://renders/view-finish/commons-backdrop-pilot > $(SCRATCH)/commons-backdrop-capture.log 2>&1; rc=$$?; grep '^commons-pilot-review:' $(SCRATCH)/commons-backdrop-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-capture.log
+commons-backdrop-golden: lens-assets m4-physics-probe ## Existing six pole cases with furniture and macro backdrop installed
+	@$(GODOT) --path . --script tools/commons_pilot_golden.gd -- --config res://art/commons-backdrop-pilot/placements.json > $(SCRATCH)/commons-backdrop-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|commons-pilot-golden)' $(SCRATCH)/commons-backdrop-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-backdrop-golden.log && test "$$(grep -c '^ok    G-LVL-' $(SCRATCH)/commons-backdrop-golden.log)" = 6
+commons-art-pilot-test: import ## D-133 review loader: real authored GLB, material/transform/collision guards and atomic negative controls
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_commons_art_pilot.gd > $(SCRATCH)/commons-art-pilot.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-art-pilot)' $(SCRATCH)/commons-art-pilot.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-art-pilot.log && grep -q '^commons-art-pilot: [0-9]* passed, 0 failures$$' $(SCRATCH)/commons-art-pilot.log
+test: commons-art-pilot-test
+commons-pilot-check: import ## Actual pilot pin, floor support, solid/captain/routes and unchanged Commons thresholds
+	@$(GODOT) --headless --path . --script tools/commons_pilot_validate.gd > $(SCRATCH)/commons-pilot-check.log 2>&1; rc=$$?; grep -E '^(FAIL|commons-pilot-validate)' $(SCRATCH)/commons-pilot-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-pilot-check.log && grep -q '^commons-pilot-validate: [0-9]* passed, 0 failures$$' $(SCRATCH)/commons-pilot-check.log
+commons-pilot-capture: ## Matched real player-view before/after pilot, rest/cruise/real stop; inspect renders/view-finish/commons-lived-in-pilot
+	@$(GODOT_SIM) --path . --script tools/commons_pilot_review.gd > $(SCRATCH)/commons-pilot-capture.log 2>&1; rc=$$?; grep -E '^(commons-pilot-review|commons-pilot-shot)' $(SCRATCH)/commons-pilot-capture.log | tail -3; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-pilot-capture.log
+commons-pilot-golden: lens-assets m4-physics-probe ## Six existing CPU/pixel pole cases with the actual review furniture installed; no global golden-count change
+	@$(GODOT) --path . --script tools/commons_pilot_golden.gd > $(SCRATCH)/commons-pilot-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|commons-pilot-golden)' $(SCRATCH)/commons-pilot-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/commons-pilot-golden.log && test "$$(grep -c '^ok    G-LVL-' $(SCRATCH)/commons-pilot-golden.log)" = 6 && grep -q '^commons-pilot-golden: 0 failures$$' $(SCRATCH)/commons-pilot-golden.log
+.PHONY: level-export-test
+level-export-test: import ## VF2: real pack JSON closure with missing manifest, greybox and lift negative controls
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_level_export.gd > $(SCRATCH)/level-export-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-export)' $(SCRATCH)/level-export-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-export-test.log && grep -q '^level-export: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-export-test.log
+test: level-export-test
+.PHONY: level-golden-test level-stage
+level-golden-test: import ## VF1: paired no-star baseline cannot mistake the nearby captain for a pole marker
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_level_golden.gd > $(SCRATCH)/level-golden-test.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|level-golden)' $(SCRATCH)/level-golden-test.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/level-golden-test.log && grep -q '^level-golden: [0-9]* passed, 0 failures$$' $(SCRATCH)/level-golden-test.log
+test: level-golden-test
+level-stage: import ## Explicit authoring command: reproducibly cook LEVEL's layout and manifest; tests only verify their pins
+	@$(GODOT) --headless --path . --script tools/level_stage.gd -- --level $(LEVEL)
 LEVEL ?= bridge
 .PHONY: level-eval level-eval-test
 level-eval: import ## AC8 (S2): a level against its thresholds (prints "level-eval: <id> ok"); LEVEL=<id>, LAYOUT=<json> scores a candidate (search only)

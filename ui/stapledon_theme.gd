@@ -85,6 +85,22 @@ static func build() -> Theme:
 	t.set_color("font_color", "HUDOverlay", Color("#FBEFD8"))
 	t.set_color("font_outline_color", "HUDOverlay", Color(INK, 0.85))
 	t.set_constant("outline_size", "HUDOverlay", 6)
+	# The feed's corner/caption chips: the same overlay face/outline over a translucent ink fill.
+	t.set_type_variation("HUDEarthFeed", "HUDOverlay")
+	t.set_color("font_color", "HUDEarthFeed", t.get_color("font_color", "HUDOverlay"))
+	var feed_chip := StyleBoxFlat.new()
+	feed_chip.bg_color = Color(INK, 0.62)
+	feed_chip.set_corner_radius_all(4)
+	feed_chip.set_content_margin_all(4)
+	feed_chip.content_margin_left = 8
+	feed_chip.content_margin_right = 8
+	t.set_stylebox("normal", "HUDEarthFeed", feed_chip)
+	# Functional beam colours stay in the map's data palette; the builder owns label styling.
+	var earth_colors: Dictionary = NewsCopy.load_json("res://data/ui/earth_beams.json").colors
+	for kind: String in earth_colors:
+		var ty := earth_beam_variant(kind)
+		t.set_type_variation(ty, "Label")
+		t.set_color("font_color", ty, Color(str(earth_colors[kind])))
 	for ty: String in ["Label"] + LABELS.map(func(v: Array) -> String: return v[0]):
 		t.set_color("font_shadow_color", ty, Color(INK, 0.9))
 		t.set_constant("shadow_offset_x", ty, 1)
@@ -102,17 +118,6 @@ static func build() -> Theme:
 		t.set_color("font_focus_color", ty, CREAM if ty != "HUDSelected" else TEAL_LIGHT)
 		t.set_color("font_pressed_color", ty, OCHRE_LIGHT)
 		t.set_color("font_disabled_color", ty, DIM)
-	# A tag over a picture (the comms feed's live tag, Earth clock and caption): cream on a small ink backing,
-	# readable over any picture or the static (R3-EARTH-LINK EL3b.5).
-	t.set_type_variation("HUDTag", "Label")
-	var tag := StyleBoxFlat.new()
-	tag.bg_color = Color(INK, 0.62)
-	tag.set_corner_radius_all(4)
-	tag.set_content_margin_all(4)
-	tag.content_margin_left = 8
-	tag.content_margin_right = 8
-	t.set_stylebox("normal", "HUDTag", tag)
-	t.set_color("font_color", "HUDTag", CREAM)
 	# The title menu: a faint panel, the chosen entry a dense one with the focus ring.
 	t.set_type_variation("HUDMenu", "Button")
 	t.set_stylebox("normal", "HUDMenu", _panel(0.5))
@@ -168,7 +173,14 @@ static func text_pairs() -> Array:
 		for ty: String in ["HUDButton", "HUDSelected", "HUDFlat", "HUDMenu"]:
 			for c: String in ["font_color", "font_hover_color"]:
 				out.append({"type": ty, "color": c, "panel_type": panel, "panel_slot": "panel"})
+	out.append({"type": "HUDEarthFeed", "color": "font_color", "panel_type": "HUDEarthFeed", "panel_slot": "normal"})
+	for kind: String in NewsCopy.load_json("res://data/ui/earth_beams.json").colors:
+		out.append({"type": earth_beam_variant(kind), "color": "font_color", "panel_type": "HUDPanel", "panel_slot": "panel"})
 	return out
+
+
+static func earth_beam_variant(kind: String, open := false) -> String:
+	return "HUDEarthBeam_" + (("window_open" if open else "window_wait") if kind == "window" else kind)
 
 
 static var _files := {}

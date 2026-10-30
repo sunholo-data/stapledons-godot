@@ -188,12 +188,12 @@ func _init() -> void:
 	add_child(ring)
 	for t: Array in [[signal_tag, Control.PRESET_TOP_LEFT], [clock_tag, Control.PRESET_TOP_RIGHT], [caption, Control.PRESET_BOTTOM_LEFT]]:
 		var tag: ComposedBinding = t[0]
-		tag.theme_type_variation = "HUDOverlay"
+		tag.theme = StapledonTheme.theme() # the feed can also be hosted in its own viewport
+		tag.theme_type_variation = "HUDEarthFeed"
 		tag.add_theme_font_size_override("font_size", 14)
 		tag.set_anchors_and_offsets_preset(t[1], Control.PRESET_MODE_MINSIZE, 10)
 		tag.grow_horizontal = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_TOP_RIGHT else Control.GROW_DIRECTION_END
 		tag.grow_vertical = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_BOTTOM_LEFT else Control.GROW_DIRECTION_END
-		tag.theme_type_variation = "HUDTag" # the theme's ink backing: readable over any picture or the static
 		add_child(tag)
 	caption.add_theme_font_size_override("font_size", 16)
 	# AR8b: the receiver's setting, both its indicator and its switch (True / Receiver).

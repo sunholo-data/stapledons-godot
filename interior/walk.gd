@@ -32,6 +32,28 @@ static func from_scene(root: Node3D, agent_radius: float) -> WalkArea:
 	return w
 
 
+static func merged(areas: Array) -> WalkArea:
+	var result := WalkArea.new()
+	for area: WalkArea in areas:
+		if area==null:continue
+		result.radius=area.radius
+		result._tris.append_array(area._tris)
+		result.spawns.merge(area.spawns,true)
+		result.interactables.merge(area.interactables,true)
+	result._index()
+	return result
+
+
+## A planar route request must never snap to a terrace above the caller's floor.
+func floor_view(height_m: float) -> WalkArea:
+	var out:=WalkArea.new();out.radius=radius
+	for triangle in range(0,_tris.size(),3):
+		if absf(_tris[triangle].y-height_m)<=STEP_M and absf(_tris[triangle+1].y-height_m)<=STEP_M and absf(_tris[triangle+2].y-height_m)<=STEP_M:
+			out._tris.append_array(_tris.slice(triangle,triangle+3))
+	out._index()
+	return out
+
+
 func triangle_count() -> int:
 	return _tris.size() / 3
 

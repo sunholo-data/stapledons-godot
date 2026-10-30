@@ -1,0 +1,16 @@
+{
+  "schema": "stapledons.npc.sources/1",
+  "status": "first appearance approved D-141; production integration pending",
+  "generator": "OpenAI built-in image_gen; exact model and seed not exposed",
+  "style_reference": "res://assets/characters/captain/avatar_captain_y0_front.png",
+  "canvas_px": [192, 288],
+  "foot_anchor_px": [96, 272],
+  "px_per_m": 144,
+  "characters": [
+    {"id": "grove", "name": "Grove resident", "height_m": 1.68, "entity_id": "", "portrait": "", "front_x": -1},
+    {"id": "reader", "name": "Older reader", "height_m": 1.70, "entity_id": "", "portrait": "", "front_x": -1},
+    {"id": "gardener", "name": "Gardener", "height_m": 1.78, "entity_id": "", "portrait": "", "front_x": -1},
+    {"id": "medic", "name": "Medic", "height_m": 1.68, "entity_id": "medic", "portrait": "res://data/crew/portraits/medic_neutral.png", "front_x": 1},
+    {"id": "engineer", "name": "Chief Engineer", "height_m": 1.72, "entity_id": "engineer", "portrait": "res://data/crew/portraits/engineer_neutral.png", "front_x": 1}
+  ]
+}

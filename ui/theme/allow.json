@@ -10,11 +10,5 @@
     "res://ui/crew_console.gd": "D-80 crew palette: the crew board's panels, stance bars and buttons are drawn in CrewPalette so the identity colours stay separable (crew-console-test AC6-AC12); it sits inside the console's HUDSheet panel and takes the theme's typefaces.",
     "res://ui/crew_palette.gd": "The crew palette itself (constants, no overrides)."
   },
-  "lines": [
-    {
-      "file": "res://ui/earth_beams.gd",
-      "contains": "lab.add_theme_color_override(\"font_color\", colour(el))",
-      "reason": "R3-EARTH-LINK EL4: Earth's beams on the galaxy map are a physics overlay (OQ5): each label takes its element's colour from data/ui/earth_beams.json (beam ochre, plan teal, stale lavender, the wait coral or green), so the label reads as part of its line; the map overlay has no panel behind it."
-    }
-  ]
+  "lines": []
 }

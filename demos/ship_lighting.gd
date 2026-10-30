@@ -67,6 +67,9 @@ static func apply(rig:Dictionary,profile:String)->void:
 ## keys the deck; every other level keeps the broad key as before (their own passes follow).
 static func set_level(rig:Dictionary,level:int)->void:
 	rig.bridge=level==0
+	rig["active_level"]=level
+	for id: int in rig.get("level_lights",{}):
+		for lamp: OmniLight3D in rig.level_lights[id]:lamp.visible=id==level and rig.profile!="baseline"
 	_ambient(rig)
 	if rig.has("star"):rig.star.apply_rig(rig)
 ## The ambient: the readability floor. On the bridge, with the broad key retired, it is raised so the
@@ -86,3 +89,23 @@ static func manifest(rig:Dictionary)->Dictionary:
 	var tint:Color=practical.light_color
 	var star:Dictionary=rig.star.manifest() if rig.has("star") else {}
 	return {"profile":rig.profile,"source":"ship-fixed internal lighting (ambient, cool fill, broad key, practical); the simulation star light is star_light","star_light":star,"key_base_energy":rig.get("key_base",rig.key.light_energy),"ambient_energy":rig.environment.ambient_light_energy,"key_energy":rig.key.light_energy,"fill_energy":rig.fill.light_energy,"key_shadows":rig.key.shadow_enabled,"key_rotation_deg":[rotation.x,rotation.y,rotation.z],"shadow_distance_m":rig.key.directional_shadow_max_distance,"shadow_bias":rig.key.shadow_bias,"shadow_normal_bias":rig.key.shadow_normal_bias,"recipe_sha256":FileAccess.get_sha256("res://demos/ship_lighting.gd"),"spire":{"position_m":[rig.spire.position.x,rig.spire.position.y,rig.spire.position.z],"range_m":rig.spire.omni_range,"base_energy":rig.get("spire_base",0.),"energy":rig.spire.light_energy,"colour":[SPIRE_COLOUR.r,SPIRE_COLOUR.g,SPIRE_COLOUR.b],"shadow_enabled":rig.spire.shadow_enabled,"shadow_opacity":rig.spire.shadow_opacity,"source":"R2-DECK-LAYOUT D-96: the bridge's own light on the mast; shares the broad key's dimming. R2-BRIDGE-STYLE S1: on the bridge it is the key (the broad key retired there) and holds the shadow until the star takes it"},"bridge":rig.get("bridge",false),"broad_key":"retired on the bridge (energy 0; R2-BRIDGE-STYLE S1, D-100); the lower decks keep it","practical":{"position_m":[position.x,position.y,position.z],"colour":[tint.r,tint.g,tint.b],"range_m":practical.spot_range,"angle_deg":practical.spot_angle,"energy":practical.light_energy,"visible":practical.visible,"shadow_enabled":practical.shadow_enabled}}
+
+## Commons S1 practicals and a ceiling-bounded spire segment, driven only on their active level.
+static func install_level(rig: Dictionary, level: int, doc: Dictionary, host: Node3D) -> void:
+	var nodes := []
+	var lights: Dictionary=doc.get("lights",{})
+	var spec: Dictionary=lights.get("spire",{})
+	if spec.has("height_m"):
+		var spire:=OmniLight3D.new();spire.name="CommonsSpireSegment"
+		spire.position=Vector3(0,float(spec.height_m),0)
+		spire.omni_range=minf(float(spec.get("range_m",12)),float(spec.get("ceiling_m",81))-spire.position.y)
+		spire.light_color=SPIRE_COLOUR;spire.light_energy=float(spec.get("energy",3));spire.shadow_enabled=false
+		spire.set_meta("base_energy",spire.light_energy);host.add_child(spire);nodes.append(spire)
+	for specp: Dictionary in lights.get("practicals",[]):
+		var lamp:=OmniLight3D.new();lamp.name="CommonsPractical_"+str(specp.id)
+		lamp.position=ShipFrame.gltf_from_structure(specp.at);lamp.omni_range=float(specp.get("range_m",5))
+		lamp.light_color=SPIRE_COLOUR;lamp.light_energy=float(specp.get("energy",1));lamp.shadow_enabled=false
+		lamp.set_meta("base_energy",lamp.light_energy);host.add_child(lamp);nodes.append(lamp)
+	if not rig.has("level_lights"):rig["level_lights"]={}
+	rig.level_lights[level]=nodes
+	for lamp: OmniLight3D in nodes:lamp.visible=false

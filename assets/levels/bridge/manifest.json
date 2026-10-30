@@ -2,31 +2,226 @@
   "schema": "stapledons.level/1",
   "id": "bridge",
   "version": 1,
-  "about": "R2-LEVELS LP0 (design_docs/planned/r2/levels.md §A7, ledger D-103): the bridge as a one-stage level, as data. The game still reads the bridge's views from data/camera/views.json until LP1b; this manifest is what the level evaluator and levels-regress measure, so the bridge has a regression baseline from day one. Ship frame (x, y = the bow, z = up), metres; view yaw in ShipCamera's convention (270 = the bow). The deck's walk is the shipped walk_bridge.glb (surfaces[].walk).",
+  "about": "R2-LEVELS LP1b: authoritative bridge stage camera, occluders and dressing. Metadata migration only; approved geometry and camera values preserved.",
   "deck_z_m": 82.0,
-  "roof": {"z_m": null, "radius_m": null},
+  "roof": {
+    "z_m": null,
+    "radius_m": null
+  },
   "source": "export",
-  "assets": {"visual": "res://assets/ship_demo/ship.glb", "walk": "res://assets/ship_demo/walk_bridge.glb", "props": "res://assets/ship_demo/bridge_props.glb"},
+  "assets": {
+    "visual": "res://assets/ship_demo/ship.glb",
+    "walk": "res://assets/ship_demo/walk_bridge.glb",
+    "props": "res://assets/ship_demo/bridge_props.glb"
+  },
   "stages": [
     {
       "id": "deck",
-      "bounds_ship_m": [-22, 22, -22, 22],
-      "surfaces": [{"id": "deck", "z_m": 82.0, "walk": "bridge"}],
-      "spawn": [0.0, 13.0, 82.0],
+      "bounds_ship_m": [
+        -22,
+        22,
+        -22,
+        22
+      ],
+      "surfaces": [
+        {
+          "id": "deck",
+          "z_m": 82.0,
+          "walk": "bridge"
+        }
+      ],
+      "spawn": [
+        0.0,
+        13.0,
+        82.0
+      ],
       "default_view": "bow",
       "journey": true,
       "ambience": "bridge",
       "views": [
-        {"id": "bow", "kind": "walk", "yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "captain_px": [60, 82]},
-        {"id": "astern", "kind": "walk", "yaw_deg": 90.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5, "captain_px": [60, 82]}
+        {
+          "id": "bow",
+          "kind": "walk",
+          "name": "Bow",
+          "anchor": "captain",
+          "yaw_deg": 270.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "height_m": 1.6,
+          "dead_zone": [
+            0.24,
+            0.2
+          ],
+          "ease_s": 1.2,
+          "cue_ease_s": 1.5,
+          "billboard": "upright",
+          "prompt": "Bow \u00b7 7",
+          "captain_px": [
+            60,
+            82
+          ]
+        },
+        {
+          "id": "astern",
+          "kind": "walk",
+          "name": "Astern",
+          "anchor": "captain",
+          "yaw_deg": 90.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "height_m": 1.6,
+          "dead_zone": [
+            0.24,
+            0.2
+          ],
+          "ease_s": 1.2,
+          "cue_ease_s": 1.5,
+          "billboard": "upright",
+          "prompt": "Astern \u00b7 9",
+          "captain_px": [
+            60,
+            82
+          ]
+        }
       ],
-      "exits": [{"to": "lift", "at": [8, 8], "width_m": 4}]
+      "exits": [
+        {
+          "to": "lift",
+          "at": [
+            8,
+            8
+          ],
+          "width_m": 4
+        }
+      ]
     }
   ],
-  "routes": [{"id": "lift_bridge", "kind": "lift", "from": "deck/deck", "to": "lift"}],
+  "routes": [
+    {
+      "id": "lift_bridge",
+      "kind": "lift",
+      "from": "deck/deck",
+      "to": "lift"
+    }
+  ],
   "finds": [],
   "set_pieces": [],
-  "lights": {"spire": {"note": "the bridge's own rig (R2-BRIDGE-STYLE); not driven from this manifest"}},
-  "layers": {"foliage": []},
-  "lift_stop": {"z_m": 82.0, "landing_stage": "deck"}
+  "lights": {
+    "spire": {
+      "note": "the bridge's own rig (R2-BRIDGE-STYLE); not driven from this manifest"
+    }
+  },
+  "layers": {
+    "foliage": []
+  },
+  "lift_stop": {
+    "z_m": 82.0,
+    "landing_stage": "deck"
+  },
+  "camera": {
+    "default": "bow",
+    "occluders": [
+      "spire",
+      "shrine_ribs",
+      "archive_terminal",
+      "archive_detail",
+      "rim_frond",
+      "lift"
+    ],
+    "dressing": {
+      "about": "R2-BRIDGE-STYLE S5 (ShipDressing): below_rail = grown canopy silhouettes standing on the Commons deck (57 m) past the bridge's edge, inside the bubble, shown on the bridge only. (The camera-attached foreground cards were removed on Mark's review of #322.)",
+      "below_rail": [
+        {
+          "kind": "canopy",
+          "pos_m": [
+            27.5,
+            57.0,
+            0.0
+          ],
+          "radius_m": 3.2,
+          "height_m": 5.5,
+          "colour": "#6E968F"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            21.07,
+            57.0,
+            17.68
+          ],
+          "radius_m": 2.6,
+          "height_m": 4.2,
+          "colour": "#7A8F6E"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            4.78,
+            57.0,
+            27.08
+          ],
+          "radius_m": 3.6,
+          "height_m": 6.4,
+          "colour": "#6A8C95"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            -13.75,
+            57.0,
+            23.82
+          ],
+          "radius_m": 2.8,
+          "height_m": 4.8,
+          "colour": "#8A9070"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            -25.84,
+            57.0,
+            -9.41
+          ],
+          "radius_m": 3.2,
+          "height_m": 5.5,
+          "colour": "#6E968F"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            -13.75,
+            57.0,
+            -23.82
+          ],
+          "radius_m": 2.6,
+          "height_m": 4.2,
+          "colour": "#7A8F6E"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            4.78,
+            57.0,
+            -27.08
+          ],
+          "radius_m": 3.6,
+          "height_m": 6.4,
+          "colour": "#6A8C95"
+        },
+        {
+          "kind": "canopy",
+          "pos_m": [
+            21.07,
+            57.0,
+            -17.68
+          ],
+          "radius_m": 2.8,
+          "height_m": 4.8,
+          "colour": "#8A9070"
+        }
+      ]
+    }
+  }
 }

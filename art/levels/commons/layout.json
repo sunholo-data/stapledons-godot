@@ -1,0 +1,952 @@
+{
+  "schema": "stapledons.level/1",
+  "id": "commons",
+  "version": 1,
+  "about": "R2-LEVELS Commons S1 playable greybox, VF2. Reuses the painted court and arcade. Layout review pending (S3); greybox is not approved finished art.",
+  "deck_z_m": 57.0,
+  "roof": {
+    "z_m": null,
+    "radius_m": null
+  },
+  "grid_m": 0.5,
+  "stages": [
+    {
+      "id": "landing",
+      "bounds_ship_m": [
+        4,
+        14,
+        0,
+        12
+      ],
+      "surfaces": [
+        {
+          "id": "landing",
+          "z_m": 57.0,
+          "at": [
+            8,
+            4.8,
+            57
+          ]
+        }
+      ],
+      "spawn": [
+        8,
+        4.8,
+        57
+      ],
+      "default_view": "bow",
+      "journey": true,
+      "ambience": "commons_landing",
+      "views": [
+        {
+          "id": "bow",
+          "kind": "walk",
+          "yaw_deg": 270.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Bow",
+          "lateral_m": 6
+        },
+        {
+          "id": "astern",
+          "kind": "walk",
+          "yaw_deg": 90.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Astern",
+          "lateral_m": -6
+        }
+      ],
+      "exits": [
+        {
+          "to": "court",
+          "at": [
+            14,
+            5
+          ],
+          "width_m": 4
+        }
+      ]
+    },
+    {
+      "id": "court",
+      "bounds_ship_m": [
+        14,
+        36,
+        -10,
+        20
+      ],
+      "surfaces": [
+        {
+          "id": "floor",
+          "z_m": 57.0,
+          "at": [
+            25,
+            5,
+            57
+          ]
+        }
+      ],
+      "spawn": [
+        25,
+        5,
+        57
+      ],
+      "default_view": "bow",
+      "journey": true,
+      "ambience": "commons_court",
+      "views": [
+        {
+          "id": "bow",
+          "kind": "walk",
+          "yaw_deg": 270.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Bow"
+        },
+        {
+          "id": "astern",
+          "kind": "walk",
+          "yaw_deg": 90.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Astern"
+        }
+      ],
+      "exits": []
+    },
+    {
+      "id": "terrace",
+      "bounds_ship_m": [
+        30,
+        38,
+        0,
+        16
+      ],
+      "surfaces": [
+        {
+          "id": "mezzanine",
+          "z_m": 61.0,
+          "at": [
+            34,
+            8,
+            61.0
+          ]
+        }
+      ],
+      "spawn": [
+        34,
+        6,
+        61.0
+      ],
+      "default_view": "bow",
+      "journey": true,
+      "ambience": "commons_terrace",
+      "views": [
+        {
+          "id": "bow",
+          "kind": "walk",
+          "yaw_deg": 270.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Bow"
+        },
+        {
+          "id": "astern",
+          "kind": "walk",
+          "yaw_deg": 90.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Astern"
+        }
+      ],
+      "exits": []
+    },
+    {
+      "id": "gantry",
+      "bounds_ship_m": [
+        8,
+        44,
+        10,
+        18
+      ],
+      "surfaces": [
+        {
+          "id": "catwalk",
+          "z_m": 66.0,
+          "at": [
+            26,
+            12,
+            66
+          ],
+          "bounds_ship_m": [
+            8,
+            40,
+            10,
+            14
+          ]
+        },
+        {
+          "id": "balcony",
+          "z_m": 66.0,
+          "at": [
+            42,
+            14,
+            66
+          ],
+          "bounds_ship_m": [
+            40,
+            44,
+            10,
+            18
+          ]
+        },
+        {
+          "id": "lift_gantry",
+          "z_m": 66.0,
+          "at": [
+            9,
+            11.2,
+            66
+          ],
+          "bounds_ship_m": [
+            8,
+            11,
+            10,
+            13
+          ]
+        }
+      ],
+      "spawn": [
+        26,
+        12,
+        66
+      ],
+      "default_view": "bow",
+      "journey": true,
+      "ambience": "commons_gantry",
+      "views": [
+        {
+          "id": "bow",
+          "kind": "walk",
+          "yaw_deg": 270.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Bow"
+        },
+        {
+          "id": "astern",
+          "kind": "walk",
+          "yaw_deg": 90.0,
+          "pitch_deg": -8.0,
+          "back_m": 9.0,
+          "rise_m": 5.5,
+          "captain_px": [
+            45,
+            82
+          ],
+          "name": "Astern"
+        }
+      ],
+      "exits": []
+    },
+    {
+      "id": "service",
+      "bounds_ship_m": [
+        18,
+        34,
+        -4,
+        10
+      ],
+      "surfaces": [
+        {
+          "id": "service_gallery",
+          "z_m": 52.75,
+          "at": [
+            26,
+            3,
+            52.75
+          ]
+        }
+      ],
+      "spawn": [
+        26,
+        3,
+        52.75
+      ],
+      "default_view": "bow",
+      "journey": false,
+      "ambience": "commons_service",
+      "views": [
+        {
+          "id": "bow",
+          "name": "Bow",
+          "kind": "enclosed",
+          "yaw_deg": 270.0,
+          "pitch_deg": -3.0,
+          "back_m": 9.5,
+          "rise_m": 2.0,
+          "captain_px": [
+            45,
+            82
+          ]
+        },
+        {
+          "id": "astern",
+          "name": "Astern",
+          "kind": "enclosed",
+          "yaw_deg": 90.0,
+          "pitch_deg": -3.0,
+          "back_m": 9.5,
+          "rise_m": 2.0,
+          "captain_px": [
+            45,
+            82
+          ]
+        }
+      ],
+      "exits": []
+    }
+  ],
+  "routes": [
+    {
+      "id": "lift_landing",
+      "kind": "lift",
+      "from": "landing/landing",
+      "to": "lift"
+    },
+    {
+      "id": "stairs_terrace",
+      "kind": "stairs",
+      "from": "court/floor",
+      "to": "terrace/mezzanine",
+      "from_at": [
+        24,
+        -1,
+        57.025
+      ],
+      "to_at": [
+        32,
+        1,
+        61.0
+      ]
+    },
+    {
+      "id": "ladder_gantry",
+      "kind": "ladder",
+      "from": "terrace/mezzanine",
+      "to": "gantry/catwalk",
+      "from_at": [
+        36.5,
+        11.6,
+        61.0
+      ],
+      "to_at": [
+        36.5,
+        11.6,
+        66.0
+      ],
+      "clip": "climb_ladder"
+    },
+    {
+      "id": "walk_balcony",
+      "kind": "gantry",
+      "from": "gantry/catwalk",
+      "to": "gantry/balcony"
+    },
+    {
+      "id": "hatch_service",
+      "kind": "hatch",
+      "from": "court/floor",
+      "to": "service/service_gallery",
+      "from_at": [
+        20,
+        6,
+        57
+      ],
+      "to_at": [
+        20,
+        6,
+        52.75
+      ],
+      "clip": "crouch"
+    },
+    {
+      "id": "walk_lift_gantry",
+      "kind": "gantry",
+      "from": "gantry/catwalk",
+      "to": "gantry/lift_gantry"
+    },
+    {
+      "id": "court_landing",
+      "kind": "exit",
+      "from": "landing/landing",
+      "to": "court/floor",
+      "from_at": [
+        13.5,
+        5,
+        57
+      ],
+      "to_at": [
+        15,
+        5,
+        57.025
+      ]
+    },
+    {
+      "id": "gantry_return",
+      "kind": "ladder",
+      "from": "gantry/lift_gantry",
+      "to": "landing/landing",
+      "from_at": [
+        9.2,
+        11.1,
+        66
+      ],
+      "to_at": [
+        11,
+        10,
+        57
+      ],
+      "clip": "climb_ladder"
+    }
+  ],
+  "finds": [
+    {
+      "id": "notice_board",
+      "stage": "court",
+      "surface": "floor",
+      "at": [
+        16.5,
+        9,
+        58.5
+      ],
+      "cue": "reading lamp at the port alcove"
+    },
+    {
+      "id": "terrace_bench",
+      "stage": "terrace",
+      "surface": "mezzanine",
+      "at": [
+        35,
+        12.5,
+        61.45
+      ],
+      "cue": "a crew member sits there"
+    },
+    {
+      "id": "telescope",
+      "stage": "gantry",
+      "surface": "balcony",
+      "at": [
+        42.7,
+        14,
+        66.9
+      ],
+      "cue": "a glint at the rail"
+    },
+    {
+      "id": "service_panel",
+      "stage": "service",
+      "surface": "service_gallery",
+      "at": [
+        30,
+        8,
+        53.5
+      ],
+      "cue": "a hum and a light under the hatch grille"
+    }
+  ],
+  "set_pieces": [
+    {
+      "id": "balcony_stop",
+      "stage": "gantry",
+      "at": [
+        42,
+        14,
+        66
+      ],
+      "view": "bow",
+      "when": "stop"
+    },
+    {
+      "id": "gantry_cruise",
+      "stage": "gantry",
+      "at": [
+        26,
+        12,
+        66
+      ],
+      "view": "bow",
+      "when": "cruise"
+    },
+    {
+      "id": "lift_descent",
+      "stage": "landing",
+      "at": [
+        8,
+        4.8,
+        57
+      ],
+      "view": "bow",
+      "when": "arrival"
+    }
+  ],
+  "lights": {
+    "spire": {
+      "height_m": 69.0,
+      "range_m": 12.0,
+      "ceiling_m": 81.0,
+      "energy": 3.0
+    },
+    "practicals": [
+      {
+        "id": "notice",
+        "at": [
+          16.5,
+          9,
+          60
+        ],
+        "range_m": 5,
+        "energy": 1.0
+      },
+      {
+        "id": "gantry",
+        "at": [
+          35,
+          12,
+          68
+        ],
+        "range_m": 7,
+        "energy": 1.0
+      },
+      {
+        "id": "service",
+        "at": [
+          26,
+          3,
+          55.7
+        ],
+        "range_m": 10.0,
+        "energy": 1.3,
+        "stage": "service"
+      }
+    ]
+  },
+  "layers": {
+    "foliage": []
+  },
+  "pieces": [
+    {
+      "name": "terrace",
+      "role": "surface",
+      "shape": "arc",
+      "center_xy": [
+        30,
+        8
+      ],
+      "r": [
+        0,
+        8
+      ],
+      "deg": [
+        -90,
+        90
+      ],
+      "top_z": 61.0,
+      "thickness": 0.25,
+      "occluder": true
+    },
+    {
+      "name": "stairs_terrace",
+      "role": "surface",
+      "shape": "ramp",
+      "from": [
+        24,
+        -1,
+        57.025
+      ],
+      "to": [
+        32,
+        1,
+        61.0
+      ],
+      "width": 2.0,
+      "thickness": 0.2,
+      "occluder": true
+    },
+    {
+      "name": "gantry",
+      "role": "surface",
+      "shape": "arc",
+      "center_xy": [
+        26,
+        -140
+      ],
+      "r": [
+        151,
+        153
+      ],
+      "deg": [
+        84.5,
+        96.8
+      ],
+      "top_z": 66.0,
+      "thickness": 0.2,
+      "occluder": true
+    },
+    {
+      "name": "balcony",
+      "role": "surface",
+      "shape": "arc",
+      "center_xy": [
+        40,
+        14
+      ],
+      "r": [
+        0,
+        4
+      ],
+      "deg": [
+        -90,
+        90
+      ],
+      "top_z": 66.0,
+      "thickness": 0.2,
+      "occluder": true
+    },
+    {
+      "name": "service_gallery",
+      "role": "surface",
+      "shape": "box",
+      "center": [
+        26,
+        3,
+        52.6
+      ],
+      "size": [
+        16,
+        14,
+        0.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "ladder_gantry",
+      "role": "route",
+      "shape": "box",
+      "center": [
+        36.5,
+        11.6,
+        63.5
+      ],
+      "size": [
+        0.45,
+        0.1,
+        4.5
+      ],
+      "occluder": true
+    },
+    {
+      "name": "return_ladder",
+      "role": "route",
+      "shape": "box",
+      "center": [
+        10,
+        11,
+        61.5
+      ],
+      "size": [
+        0.45,
+        0.1,
+        8.5
+      ],
+      "occluder": true
+    },
+    {
+      "name": "hatch",
+      "role": "route",
+      "shape": "box",
+      "center": [
+        20,
+        6,
+        57.05
+      ],
+      "size": [
+        1.2,
+        1.2,
+        0.04
+      ],
+      "occluder": true
+    },
+    {
+      "name": "notice_board",
+      "role": "find",
+      "shape": "box",
+      "center": [
+        16.5,
+        9,
+        58.5
+      ],
+      "size": [
+        0.15,
+        1.6,
+        1.2
+      ],
+      "occluder": true
+    },
+    {
+      "name": "telescope",
+      "role": "find",
+      "shape": "box",
+      "center": [
+        42.7,
+        14,
+        66.9
+      ],
+      "size": [
+        0.4,
+        0.4,
+        1.3
+      ],
+      "occluder": true
+    },
+    {
+      "name": "terrace_bench",
+      "role": "find",
+      "shape": "box",
+      "center": [
+        35,
+        12.5,
+        61.45
+      ],
+      "size": [
+        1.6,
+        0.6,
+        0.8
+      ],
+      "occluder": true
+    },
+    {
+      "name": "service_panel",
+      "role": "find",
+      "shape": "box",
+      "center": [
+        30,
+        8,
+        53.5
+      ],
+      "size": [
+        0.8,
+        0.2,
+        1.4
+      ],
+      "occluder": true
+    },
+    {
+      "name": "service_pipe",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        26,
+        -3.5,
+        55
+      ],
+      "size": [
+        16,
+        0.5,
+        0.5
+      ],
+      "occluder": true
+    },
+    {
+      "name": "service_shell_port",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        17.25,
+        3,
+        54.65
+      ],
+      "size": [
+        0.5,
+        36,
+        4.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_starboard",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        34.75,
+        3,
+        54.65
+      ],
+      "size": [
+        0.5,
+        36,
+        4.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_stern",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        26,
+        -14.75,
+        54.65
+      ],
+      "size": [
+        18,
+        0.5,
+        4.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_bow",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        26,
+        20.75,
+        54.65
+      ],
+      "size": [
+        18,
+        0.5,
+        4.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_ceiling",
+      "role": "roof",
+      "shape": "box",
+      "center": [
+        26,
+        3,
+        56.65
+      ],
+      "size": [
+        18,
+        36,
+        0.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_floor_stern",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        26,
+        -9.5,
+        52.6
+      ],
+      "size": [
+        18,
+        11,
+        0.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_floor_bow",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        26,
+        15.5,
+        52.6
+      ],
+      "size": [
+        18,
+        11,
+        0.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_floor_port",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        17.5,
+        3,
+        52.6
+      ],
+      "size": [
+        1,
+        14,
+        0.3
+      ],
+      "occluder": false
+    },
+    {
+      "name": "service_shell_floor_starboard",
+      "role": "structure",
+      "shape": "box",
+      "center": [
+        34.5,
+        3,
+        52.6
+      ],
+      "size": [
+        1,
+        14,
+        0.3
+      ],
+      "occluder": false
+    }
+  ],
+  "base_walk": "commons",
+  "camera": {
+    "default": "bow",
+    "occluders": []
+  },
+  "lift_stop": {
+    "z_m": 57.0,
+    "landing_stage": "landing"
+  },
+  "evaluate_all_views": true
+}

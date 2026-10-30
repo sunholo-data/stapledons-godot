@@ -1,0 +1,587 @@
+{
+  "about": "R2-LEVELS Commons S1 playable greybox, VF2. Reuses the painted court and arcade. Layout review pending (S3); greybox is not approved finished art.",
+  "base_walk": "commons",
+  "camera": {
+    "default": "bow",
+    "occluders": []
+  },
+  "deck_z_m": 57.0,
+  "evaluate_all_views": true,
+  "finds": [
+    {
+      "at": [
+        16.5,
+        9.0,
+        58.5
+      ],
+      "cue": "reading lamp at the port alcove",
+      "id": "notice_board",
+      "stage": "court",
+      "surface": "floor"
+    },
+    {
+      "at": [
+        35.0,
+        12.5,
+        61.45
+      ],
+      "cue": "a crew member sits there",
+      "id": "terrace_bench",
+      "stage": "terrace",
+      "surface": "mezzanine"
+    },
+    {
+      "at": [
+        42.7,
+        14.0,
+        66.9
+      ],
+      "cue": "a glint at the rail",
+      "id": "telescope",
+      "stage": "gantry",
+      "surface": "balcony"
+    },
+    {
+      "at": [
+        30.0,
+        8.0,
+        53.5
+      ],
+      "cue": "a hum and a light under the hatch grille",
+      "id": "service_panel",
+      "stage": "service",
+      "surface": "service_gallery"
+    }
+  ],
+  "grid_m": 0.5,
+  "id": "commons",
+  "layers": {
+    "foliage": []
+  },
+  "layout_asset": "res://assets/levels/commons/greybox.json",
+  "layout_sha256": "f85919276a0777bbd90df849f114ec3df786c6902fa7c6685e690b4e6d0c4f3b",
+  "lift_stop": {
+    "landing_stage": "landing",
+    "z_m": 57.0
+  },
+  "lights": {
+    "practicals": [
+      {
+        "at": [
+          16.5,
+          9.0,
+          60.0
+        ],
+        "energy": 1.0,
+        "id": "notice",
+        "range_m": 5.0
+      },
+      {
+        "at": [
+          35.0,
+          12.0,
+          68.0
+        ],
+        "energy": 1.0,
+        "id": "gantry",
+        "range_m": 7.0
+      },
+      {
+        "at": [
+          26.0,
+          3.0,
+          55.7
+        ],
+        "energy": 1.3,
+        "id": "service",
+        "range_m": 10.0,
+        "stage": "service"
+      }
+    ],
+    "spire": {
+      "ceiling_m": 81.0,
+      "energy": 3.0,
+      "height_m": 69.0,
+      "range_m": 12.0
+    }
+  },
+  "roof": {
+    "radius_m": null,
+    "z_m": null
+  },
+  "routes": [
+    {
+      "from": "landing/landing",
+      "id": "lift_landing",
+      "kind": "lift",
+      "to": "lift"
+    },
+    {
+      "from": "court/floor",
+      "from_at": [
+        24.0,
+        -1.0,
+        57.025
+      ],
+      "id": "stairs_terrace",
+      "kind": "stairs",
+      "to": "terrace/mezzanine",
+      "to_at": [
+        32.0,
+        1.0,
+        61.0
+      ]
+    },
+    {
+      "clip": "climb_ladder",
+      "from": "terrace/mezzanine",
+      "from_at": [
+        36.5,
+        11.6,
+        61.0
+      ],
+      "id": "ladder_gantry",
+      "kind": "ladder",
+      "to": "gantry/catwalk",
+      "to_at": [
+        36.5,
+        11.6,
+        66.0
+      ]
+    },
+    {
+      "from": "gantry/catwalk",
+      "id": "walk_balcony",
+      "kind": "gantry",
+      "to": "gantry/balcony"
+    },
+    {
+      "clip": "crouch",
+      "from": "court/floor",
+      "from_at": [
+        20.0,
+        6.0,
+        57.0
+      ],
+      "id": "hatch_service",
+      "kind": "hatch",
+      "to": "service/service_gallery",
+      "to_at": [
+        20.0,
+        6.0,
+        52.75
+      ]
+    },
+    {
+      "from": "gantry/catwalk",
+      "id": "walk_lift_gantry",
+      "kind": "gantry",
+      "to": "gantry/lift_gantry"
+    },
+    {
+      "from": "landing/landing",
+      "from_at": [
+        13.5,
+        5.0,
+        57.0
+      ],
+      "id": "court_landing",
+      "kind": "exit",
+      "to": "court/floor",
+      "to_at": [
+        15.0,
+        5.0,
+        57.025
+      ]
+    },
+    {
+      "clip": "climb_ladder",
+      "from": "gantry/lift_gantry",
+      "from_at": [
+        9.2,
+        11.1,
+        66.0
+      ],
+      "id": "gantry_return",
+      "kind": "ladder",
+      "to": "landing/landing",
+      "to_at": [
+        11.0,
+        10.0,
+        57.0
+      ]
+    }
+  ],
+  "schema": "stapledons.level/1",
+  "set_pieces": [
+    {
+      "at": [
+        42.0,
+        14.0,
+        66.0
+      ],
+      "id": "balcony_stop",
+      "stage": "gantry",
+      "view": "bow",
+      "when": "stop"
+    },
+    {
+      "at": [
+        26.0,
+        12.0,
+        66.0
+      ],
+      "id": "gantry_cruise",
+      "stage": "gantry",
+      "view": "bow",
+      "when": "cruise"
+    },
+    {
+      "at": [
+        8.0,
+        4.8,
+        57.0
+      ],
+      "id": "lift_descent",
+      "stage": "landing",
+      "view": "bow",
+      "when": "arrival"
+    }
+  ],
+  "source": "greybox",
+  "stages": [
+    {
+      "ambience": "commons_landing",
+      "bounds_ship_m": [
+        4.0,
+        14.0,
+        0.0,
+        12.0
+      ],
+      "default_view": "bow",
+      "exits": [
+        {
+          "at": [
+            14.0,
+            5.0
+          ],
+          "to": "court",
+          "width_m": 4.0
+        }
+      ],
+      "id": "landing",
+      "journey": true,
+      "spawn": [
+        8.0,
+        4.8,
+        57.0
+      ],
+      "surfaces": [
+        {
+          "at": [
+            8.0,
+            4.8,
+            57.0
+          ],
+          "id": "landing",
+          "z_m": 57.0
+        }
+      ],
+      "views": [
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "bow",
+          "kind": "walk",
+          "lateral_m": 6.0,
+          "name": "Bow",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 270.0
+        },
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "astern",
+          "kind": "walk",
+          "lateral_m": -6.0,
+          "name": "Astern",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 90.0
+        }
+      ]
+    },
+    {
+      "ambience": "commons_court",
+      "bounds_ship_m": [
+        14.0,
+        36.0,
+        -10.0,
+        20.0
+      ],
+      "default_view": "bow",
+      "exits": [],
+      "id": "court",
+      "journey": true,
+      "spawn": [
+        25.0,
+        5.0,
+        57.0
+      ],
+      "surfaces": [
+        {
+          "at": [
+            25.0,
+            5.0,
+            57.0
+          ],
+          "id": "floor",
+          "z_m": 57.0
+        }
+      ],
+      "views": [
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "bow",
+          "kind": "walk",
+          "name": "Bow",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 270.0
+        },
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "astern",
+          "kind": "walk",
+          "name": "Astern",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 90.0
+        }
+      ]
+    },
+    {
+      "ambience": "commons_terrace",
+      "bounds_ship_m": [
+        30.0,
+        38.0,
+        0.0,
+        16.0
+      ],
+      "default_view": "bow",
+      "exits": [],
+      "id": "terrace",
+      "journey": true,
+      "spawn": [
+        34.0,
+        6.0,
+        61.0
+      ],
+      "surfaces": [
+        {
+          "at": [
+            34.0,
+            8.0,
+            61.0
+          ],
+          "id": "mezzanine",
+          "z_m": 61.0
+        }
+      ],
+      "views": [
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "bow",
+          "kind": "walk",
+          "name": "Bow",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 270.0
+        },
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "astern",
+          "kind": "walk",
+          "name": "Astern",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 90.0
+        }
+      ]
+    },
+    {
+      "ambience": "commons_gantry",
+      "bounds_ship_m": [
+        8.0,
+        44.0,
+        10.0,
+        18.0
+      ],
+      "default_view": "bow",
+      "exits": [],
+      "id": "gantry",
+      "journey": true,
+      "spawn": [
+        26.0,
+        12.0,
+        66.0
+      ],
+      "surfaces": [
+        {
+          "at": [
+            26.0,
+            12.0,
+            66.0
+          ],
+          "bounds_ship_m": [
+            8.0,
+            40.0,
+            10.0,
+            14.0
+          ],
+          "id": "catwalk",
+          "z_m": 66.0
+        },
+        {
+          "at": [
+            42.0,
+            14.0,
+            66.0
+          ],
+          "bounds_ship_m": [
+            40.0,
+            44.0,
+            10.0,
+            18.0
+          ],
+          "id": "balcony",
+          "z_m": 66.0
+        },
+        {
+          "at": [
+            9.0,
+            11.2,
+            66.0
+          ],
+          "bounds_ship_m": [
+            8.0,
+            11.0,
+            10.0,
+            13.0
+          ],
+          "id": "lift_gantry",
+          "z_m": 66.0
+        }
+      ],
+      "views": [
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "bow",
+          "kind": "walk",
+          "name": "Bow",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 270.0
+        },
+        {
+          "back_m": 9.0,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "astern",
+          "kind": "walk",
+          "name": "Astern",
+          "pitch_deg": -8.0,
+          "rise_m": 5.5,
+          "yaw_deg": 90.0
+        }
+      ]
+    },
+    {
+      "ambience": "commons_service",
+      "bounds_ship_m": [
+        18.0,
+        34.0,
+        -4.0,
+        10.0
+      ],
+      "default_view": "bow",
+      "exits": [],
+      "id": "service",
+      "journey": false,
+      "spawn": [
+        26.0,
+        3.0,
+        52.75
+      ],
+      "surfaces": [
+        {
+          "at": [
+            26.0,
+            3.0,
+            52.75
+          ],
+          "id": "service_gallery",
+          "z_m": 52.75
+        }
+      ],
+      "views": [
+        {
+          "back_m": 9.5,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "bow",
+          "kind": "enclosed",
+          "name": "Bow",
+          "pitch_deg": -3.0,
+          "rise_m": 2.0,
+          "yaw_deg": 270.0
+        },
+        {
+          "back_m": 9.5,
+          "captain_px": [
+            45.0,
+            82.0
+          ],
+          "id": "astern",
+          "kind": "enclosed",
+          "name": "Astern",
+          "pitch_deg": -3.0,
+          "rise_m": 2.0,
+          "yaw_deg": 90.0
+        }
+      ]
+    }
+  ],
+  "version": 1.0
+}

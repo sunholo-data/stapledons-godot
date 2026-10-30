@@ -731,6 +731,35 @@ func test_sky_meter() -> void:
 ## (data/ui/comms_feed.json). At the spec's check values the stillness and the torrent land in
 ## their bands: RS-28 7.0711e-4 still, RS-26 0.070888 slow, rest 1 real, RS-29 14.107 fast,
 ## RS-30 1414.2 torrent; the tint is warm (receding) below 1 and cool (approaching) above.
+func test_earth_observation() -> void:
+	var observe = load("res://physics/observe.gd")
+	check("Earth observation CPU mirror exists", 1.0 if observe != null else 0.0, 1.0, 0.0)
+	if observe == null: return
+	var a := [40.0, 0.0, 0.0]
+	for row: Array in [[26, .01, 1., .070888], [27, .001, 1., .022366], [28, .000001, 1., .00070711], [29, .01, -1., 14.107], [30, .000001, -1., 1414.2]]:
+		var omb: float = row[1]
+		var phi := .5 * log((2. - omb) / omb)
+		var rate: float = observe.earth_rate(a, [row[2], 0., 0.], phi)
+		var exact := sqrt(omb / (2. - omb)) if row[2] > 0. else sqrt((2. - omb) / omb)
+		check("RS-%d Earth rate matches closed form" % row[0], rate, exact, exact * 1e-12)
+		check("RS-%d printed check value" % row[0], rate, row[3], maxf(5e-9, absf(float(row[3])) * 4e-5))
+	check("Earth rate at rest at Sol", observe.earth_rate([0.,0.,0.], [0.,0.,0.], 0.), 1., 0.)
+	check("Earth rate leaving Sol is continuous", observe.earth_rate([0.,0.,0.], [1.,0.,0.], 3.), exp(-3.), 1e-15)
+	check("Earth rate near c does not cancel", observe.earth_rate(a, [1.,0.,0.], 40.), exp(-40.), exp(-40.) * 1e-12)
+	check("RS-31 signal catches 0.9c ship in ten days", observe.catch_up(1./365.25, .1) * 365.25, 10., 1e-12)
+	check("RS-32 top-speed catch-up years", observe.catch_up(1./365.25, 1e-6), 2737.9, .05)
+	check("RS-33 right-angle triangle excess", observe.triangle_excess(a, [40.,30.,0.]), 60., 1e-12)
+	check("RS-34 off-side port triangle excess", observe.triangle_excess(a, [0.,10.,0.]), 8.769, .001)
+	check("RS-35 far-side triangle excess", observe.triangle_excess(a, [-40.,0.,0.]), 0., 0.)
+	check("RS-36 beyond-port geometric excess is not wait", observe.triangle_excess(a, [60.,0.,0.]), 80., 0.)
+	check("RS-37 covered beam wait is zero", observe.link_window(a, [60.,0.,0.], 20., true), 0., 0.)
+	check("finite leg's actual wait differs from light-speed excess", observe.link_window(a, [40.,30.,0.], 30.25, false), 59.75, 0.)
+	check("seenAt uses the source-observer distance", observe.seen_at(100., [40.,30.,0.], [0.,0.,0.]), 50., 0.)
+	check("beam line at angular tolerance inside", 1. if observe.on_beam_line(a, [60.,60.*.5e-7,0.], 1e-7) else 0., 1., 0.)
+	check("beam line at angular tolerance outside", 1. if observe.on_beam_line(a, [60.,60.*2e-7,0.], 1e-7) else 0., 0., 0.)
+	check("beam ray excludes Sol and the far side", 1. if not observe.on_beam_line(a, [0.,0.,0.], 1e-7) and not observe.on_beam_line(a, [-40.,0.,0.], 1e-7) else 0., 1., 0.)
+
+
 func test_earth_feed_bands() -> void:
 	var want := [[0.00070711, "still"], [0.070888, "slow"], [1.0, "real"], [14.107, "fast"], [1414.2, "torrent"]]
 	for w: Array in want:
@@ -1580,6 +1609,7 @@ func _initialize() -> void:
 	test_view_velocity_angle(vp)
 	test_camera_views_invariance(vp)
 	test_camera_views_sky_points(vp)
+	test_level_stage_physics(vp)
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -1598,6 +1628,7 @@ func _init() -> void:
 	test_sideways_darker()
 	test_angular_psf()
 	test_cmb()
+	test_earth_observation()
 	test_earth_feed_bands()
 	test_earth_link()
 	test_scripts_compile()
@@ -1788,6 +1819,47 @@ func test_camera_views_invariance(vp: SubViewport) -> void:
 
 static func _ship_cam(pose: Transform3D, size: Vector2) -> Dictionary:
 	return {"position_m": ShipCamera.ship_vector(pose.origin), "forward": ShipCamera.ship_vector(-pose.basis.z), "up": ShipCamera.ship_vector(pose.basis.y), "fov_vertical_deg": 78.0, "resolution": [size.x, size.y]}
+
+
+## R2-LEVELS C6: independent literal screen/slab references for the new clamp and raised eyes.
+## RS-1/RS-2 still hold at both translated eyes; a slab is geometry, never a painted sky band.
+func test_level_stage_physics(vp: SubViewport) -> void:
+	var cam := Camera3D.new()
+	cam.fov = 78.0
+	vp.add_child(cam)
+	var size := Vector2(vp.size)
+	var view := {"yaw_deg": 270.0, "pitch_deg": -8.0, "back_m": 9.0, "rise_m": 5.5}
+	var director := CameraDirector.new()
+	for row: Array in [["clamp", 57.0, true, 59.2, 9.5, 336.7014416579001, 34.6856940993],
+		["raised", 66.0, false, 71.5, 9.0, 297.5207482256235, 17.0377677956]]:
+		var pose := director.stage_pose(view, Vector3(0, row[1], 0), row[2])
+		cam.global_transform = pose
+		check("level %s eye height (independent metres)" % row[0], pose.origin.y, row[3], 1e-5)
+		check("level %s eye stern offset (metres)" % row[0], pose.origin.z, row[4], 1e-5)
+		var pole := pose.origin + Vector3.FORWARD * 1000.0
+		var pixel := cam.unproject_position(pole)
+		check("level %s pole horizontal centre" % row[0], pixel.x, size.x * 0.5, 1e-3)
+		check("level %s pole independent 78-degree pinhole reference" % row[0], pixel.y, float(row[5]) * size.y / 720.0, 1e-3)
+		var cpu := _ship_cam(pose, size)
+		var eye: Array = cpu.position_m
+		var projected := AreaBundle.project(cpu, [eye[0], eye[1], float(eye[2]) + 1000.0])
+		check("level %s CPU/Godot pole projection" % row[0], Vector2(projected[0], projected[1]).distance_to(pixel), 0.0, 1e-3)
+		for rs: Array in [[0.9, 25.842, "RS-1"], [0.5, 60.0, "RS-2"]]:
+			var apparent := Relativity.aberrate(Vector3.RIGHT, Vector3.FORWARD, rs[0])
+			check("level %s %s transverse-source angle" % [row[0], rs[2]], angle_deg(apparent, Vector3.FORWARD), rs[1], 2e-3)
+			var p := cam.unproject_position(pose.origin + apparent * 1e7)
+			check("level %s %s camera ray recovers apparent source" % [row[0], rs[2]], cam.project_ray_normal(p).distance_to(apparent), 0.0, 1e-6)
+		# Independent finite slab: roof at81m, radius22m. Test both sides of its edge, not only a model formula.
+		var edge := Vector3(0, 81, -22)
+		var ray := cam.project_ray_normal(cam.unproject_position(edge))
+		var elevation := rad_to_deg(atan2(ray.y, sqrt(ray.x * ray.x + ray.z * ray.z)))
+		check("level %s roof-band edge against literal slab reference (degrees)" % row[0], elevation, row[6], 0.001)
+		for side: float in [-0.5, 0.5]:
+			var theta := deg_to_rad(float(row[6]) + side)
+			var hit: Variant = Plane(Vector3.UP, 81.0).intersects_ray(pose.origin, Vector3(0, sin(theta), -cos(theta)))
+			var inside := hit is Vector3 and Vector2(hit.x, hit.z).length() <= 22.0
+			check("level %s ray %.1fdeg from edge hits slab iff above band" % [row[0], side], 1.0 if inside else 0.0, 1.0 if side > 0 else 0.0, 0.0)
+	cam.queue_free()
 
 
 ## R2-CAMERA AC11, not a translation tautology: at every views.json eye and at a captain's eye

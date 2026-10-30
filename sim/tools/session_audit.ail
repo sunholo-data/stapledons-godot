@@ -123,7 +123,28 @@ pure func directory(path: string) -> string {
   if dir == "" then "." else dir
 }
 export func sceneTime(path: string) -> string ! {FS} = timeReport(concat([readFile(concat([directory(path), "/states.ndjson"])), "\n", readFile(concat([directory(path), "/events.ndjson"]))]))
-export func sceneCodex(path: string) -> string ! {FS} = codexReport(concat([readFile(path), "\n", readFile(concat([directory(path), "/states.ndjson"]))]), readFile("tests/expected_unlocks.json"))
+pure func parsed(text: string) -> Json = match decode(text) { Ok(j) => j, Err(_) => JNull }
+pure func archiveSignature(rows: [Json], hintKey: string) -> [(string, string)] = map(\r. (str(r, "id"), str(r, hintKey)), rows)
+-- The input's complete imported Archive is the scope witness, never the observed unlocks.
+-- Frozen 2.15 scene: 11 imported entries/8 minimum-path unlocks; current: 13/10.
+-- Reject missing, duplicate, reordered, mixed or unknown witnesses; codexReport still checks
+-- every exact unlock ID/order, first appearance and independently inferred/imported hint.
+export pure func sceneCodexReport(session: string, states: string, frozen: string, current: string) -> string {
+  let old = parsed(frozen);
+  let now = parsed(current);
+  let oldArchive = array(field(old, "archive"));
+  let locked = filter(\r. member(str(r, "id"), strings(field(now, "not_unlocked"))), oldArchive);
+  let oldSignature = archiveSignature(oldArchive, "unlock");
+  let currentSignature = archiveSignature(array(field(now, "unlocks")), "hint") ++ archiveSignature(locked, "unlock");
+  let games = filter(\j. str(j, "type") == "new_game", lines(session));
+  let witness = foldl(\_ j. archiveSignature(array(field(j, "archive")), "unlock"), [], games);
+  let expected = if length(games) != 1 then "{}"
+    else if length(oldSignature) > 0 && witness == oldSignature then frozen
+    else if length(currentSignature) > 0 && witness == currentSignature then current
+    else "{}";
+  codexReport(concat([session, "\n", states]), expected)
+}
+export func sceneCodex(path: string) -> string ! {FS} = sceneCodexReport(readFile(path), readFile(concat([directory(path), "/states.ndjson"])), readFile("tests/expected_unlocks.scene-2.15.json"), readFile("tests/expected_unlocks.json"))
 -- Current protocol sessions include the weather entry; legacy uniform replays do not.
 export func codexUnlocksLegacy(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.legacy-2.7.json"))
 export func codexUnlocks(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.json"))

@@ -1,0 +1,654 @@
+{
+  "sprint_id": "R2-VIEW-FINISH",
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark, attended: proceed (D-130)",
+  "approved_on": "2026-10-29",
+  "created": "2026-10-29",
+  "base_commit": "b07c9763",
+  "design_doc": "design_docs/planned/r2/levels.md",
+  "sprint_plan": "design_docs/planned/r2/bridge-commons-finish-sprint.md",
+  "parent_sprint": "R2-LEVELS",
+  "parent_approval": "D-103 and attended overlay approval D-130",
+  "features": [
+    {
+      "id": "VF0",
+      "description": "Preserve Blender sources and publish current baseline",
+      "estimated_loc": 100,
+      "estimated_days": 0.75,
+      "dependencies": [
+
+      ],
+      "acceptance_criteria": [
+        "Source hashes recorded and packed masters open without missing resources",
+        "Current player-camera/HUD baseline inspected and dedicated private gallery verified"
+      ],
+      "passes": true,
+      "started": "2026-10-29",
+      "completed": "2026-10-29",
+      "notes": "Sources recovered; zero missing resources; exact public archive approved, uploaded and download-hash verified. Bridge18, Commons diagnostic9 and focusedUI6 baseline frames captured; 22 baseline gallery images plus contact/UI proposals staged over verified Tailnet HTTPS."
+    },
+    {
+      "id": "VF1",
+      "description": "Resume LP1b: Commons camera, lift and light integration",
+      "estimated_loc": 650,
+      "estimated_days": 3,
+      "dependencies": [
+        "VF0"
+      ],
+      "acceptance_criteria": [
+        "make camera-test camera-forward-test level-test ship-demo-lift-test ship-star-light-test ship-console-test deck-layout-eval physics pass",
+        "Required G-LVL GPU/CPU golden cases and opened pose references"
+      ],
+      "passes": null,
+      "started": "2026-10-29",
+      "completed": null,
+      "notes": "Manifest cameras, configured lift and real stage runtime integrated. CPU physics949/0; full released AILANGv0.54.18 GPU golden407/0, including six actual clamp/raised-eye cases and independent pole references opened. Six under-terrace Bow/Astern rest/cruise/real-stop frames activate clamp_share1.0. Runtime floor-jump reviewer repro fixed and independently rechecked76/0. Source cold hello measured89.21s under load vs30s budget; after completing compile, warm SimBridge9.025s succeeds. Canonical AILANG feedback sent; Sequential affected source checks pass; cold native ship/title startup passes. Exact-head rig/full remains the final landing gate."
+    },
+    {
+      "id": "VF2",
+      "description": "Resume LP2: production Commons greybox and S3 review",
+      "estimated_loc": 300,
+      "estimated_days": 2.5,
+      "dependencies": [
+        "VF1"
+      ],
+      "acceptance_criteria": [
+        "make level-eval LEVEL=commons and make levels-regress pass",
+        "make level-capture LEVEL=commons TAG=s3 inspected; routes/captain/pole sightlines checked",
+        "Mark accepts S3 playable layout and ruling is recorded"
+      ],
+      "passes": null,
+      "started": "2026-10-29",
+      "completed": null,
+      "notes": "S3 review ready, approval pending: seven surfaces/four heights reachable; current full42 representative frames plus6 actual clamp frames and6 final service frames pass. Service enclosure and captain alpha prepass fixed without weakening no-sky guard; zero uncovered pixels in all6 service views. Native f3e0b11c cold ship/title smoke and signedZIP integrity/HTTPS hash pass. Independent contact44/runtime95 checks pass. D-133/D-134 subsequently authorize the bounded art pilot while manual S3 acceptance remains pending."
+    },
+    {
+      "id": "VFB",
+      "description": "Bounded bridge contact and asset finish",
+      "estimated_loc": 150,
+      "estimated_days": 1.5,
+      "dependencies": [
+        "VF0"
+      ],
+      "acceptance_criteria": [
+        "make deck-assets-check deck-layout-eval style-test dressing-test ship-console-test pass",
+        "Console facing/contact frames and actual player-camera finish inspected; approved layout preserved"
+      ],
+      "passes": null,
+      "started": "2026-10-29",
+      "completed": null,
+      "notes": "D-132 installed: actual Voyage/Crew working points advance 0.775 m, bounded 15-degree foot-anchored work lean uses existing paintings; original furniture/screen housings preserved. 44 contact/clearance/pose/entry-path checks pass; eight matched front/back engine captures staged over verified HTTPS. E/click now walks into place before opening the low console. V1/v2 extensions retired, never installed. Broader finishing and landing gates remain pending. Final front/back captures use f3e0b11c, inspected; independent contact44/0, consoles133/0, shader golden407/0 pass. Further appearance feedback remains welcome; no support meshes installed."
+    },
+    {
+      "id": "VFU",
+      "description": "UI polish for bridge and Commons at laptop scale",
+      "estimated_loc": 250,
+      "estimated_days": 2,
+      "dependencies": [
+        "VF0"
+      ],
+      "acceptance_criteria": [
+        "make ui-theme-check ship-ui-test ship-console-test no-twitch-test crew-console-test pass",
+        "make ship-ui-window-check and expanded ship-ui-capture verified at tested resolutions and laptop scaling"
+      ],
+      "passes": null,
+      "started": "2026-10-29",
+      "completed": null,
+      "notes": "Integrated deck-aware help and quiet Commons idle prompt; UI288/0, consoles133/0, no-twitch41/0, theme/export/UID guards pass on prepared released18. Ten actual normal/enlarged UI frames inspected; real embedded-helm click/select/commit window check passes. Actual laptop playtest still part of S3 review; final full-suite/performance/landing gates pending."
+    },
+    {
+      "id": "VF3",
+      "description": "Resume LP3: Commons art pilot then approved dressing",
+      "estimated_loc": 250,
+      "estimated_days": 4,
+      "dependencies": [
+        "VF2"
+      ],
+      "acceptance_criteria": [
+        "S3 acceptance recorded before detailed production; art pilot accepted before propagation",
+        "Add and pass level-assets-check and foliage-check with negative controls; repeated exports match hashes",
+        "make level-eval LEVEL=commons and make export-filter-audit pass; S5 stage captures inspected and accepted"
+      ],
+      "passes": null,
+      "started": "2026-10-29",
+      "completed": null,
+      "notes": "D-133 bounded pilot ready for visual feedback: eight Blender groups,32,224 unique/42,688 placed triangles, one painted material/atlas; seating/belongings, reading corner, storage/plants and visible task fixtures. Review-only loader31/0; actual floor/capsule/sampled return paths/end approaches/unchanged Commons thresholds44/0.48 matched actual player frames,0errors; pilot-installed six CPU/GPU pole cases pass (max0.103px, limit0.75), export/UID guards pass. Independent review finds no publication blocker; arcade-approach views have limited counter/cart interior coverage. Main game/layout/WALK/cameras/sim unchanged; earlier native download does not contain pilot. Editable v2 sources preserved locally, no upload. Await pilot appearance feedback before propagation; full S3 manual/S5/performance/final rig gates remain open."
+    },
+    {
+      "id": "VF4",
+      "description": "Integrate, independently evaluate and deliver dev build",
+      "estimated_loc": 250,
+      "estimated_days": 1.5,
+      "dependencies": [
+        "VFB",
+        "VFU",
+        "VF3"
+      ],
+      "acceptance_criteria": [
+        "make levels-regress; final-head rig/full with golden and fast CI green; make export-smoke passes",
+        "Quiet bridge and Commons benchmarks meet approved p99 and D-127 docked validity",
+        "Independent evaluator scores at least 70; final reviewed gallery and dev build delivered"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 160,
+    "estimated_total_loc": 1950,
+    "estimated_agent_days": 15.25,
+    "estimated_critical_path_days": "12–15 including contingency; excludes review/rig waits",
+    "note": "Provisional; original remaining LP1b–LP4 estimates anchor duration. Blender authoring ~600–1,000 additional LOC."
+  },
+  "registry_reuse": [
+    {
+      "milestone": "VF0",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF1",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF2",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VFB",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VFU",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF3",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    },
+    {
+      "milestone": "VF4",
+      "package": "none",
+      "action": "none",
+      "search_terms": [
+
+      ],
+      "reason": "No new package-like capability or .ail/maths work; repo-native Godot/Blender presentation and existing tooling only."
+    }
+  ],
+  "approval_gates": [
+    {
+      "id": "plan",
+      "source": "Mark attended request 2026-10-29 and CLAUDE.md development cycle",
+      "status": "approved",
+      "blocks": [
+        "VF0",
+        "VF1",
+        "VF2",
+        "VFB",
+        "VFU",
+        "VF3",
+        "VF4"
+      ]
+    },
+    {
+      "id": "S3",
+      "source": "design_docs/planned/r2/levels-sprint.md Pause points",
+      "status": "pending",
+      "blocks": [
+        "VF3 detailed production"
+      ]
+    },
+    {
+      "id": "art_pilot",
+      "source": "R2-VIEW-FINISH proposed preview sequence",
+      "status": "pending",
+      "blocks": [
+        "VF3 finish propagation"
+      ]
+    },
+    {
+      "id": "S5",
+      "source": "design_docs/planned/r2/levels-sprint.md Pause points",
+      "status": "pending",
+      "blocks": [
+        "VF4 landing"
+      ]
+    }
+  ],
+  "related_prs": [
+    344,
+    346,
+    349
+  ],
+  "constraints": [
+    "Use gh, not GitHub connector",
+    "Max three workers plus coordinator; independent evaluation after executor work",
+    "One owner for camera/scene/lift/light and shared export wiring",
+    "Serialize GPU work; preserve D-127 docked validity and coordinate 7m-d owner",
+    "Do not reset or clean Blender workspace",
+    "Tailscale preview serves dedicated staged exports only; actual hostname/routes checked at hosting time"
+  ],
+  "history": [
+    {
+      "date": "2026-10-29",
+      "event": "Audit and draft only; no implementation, captures, hosting or sprint dispatch performed."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "Mark approved the proposed scope and sequence: proceed. VF0 started; later visual gates remain pending."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-131 contact study review: refine shape before installing. Art lane preparing v2; Commons/runtime and UI continue."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-132: Mark finds v2 front view surprising and identifies captain placement/lean as likely cause. Withdraw furniture-extension approach; correct natural contact on original desks."
+    },
+    {
+      "date": "2026-10-29",
+      "event": "D-133: Mark likes current direction, asks for a more lived-in ship. Bounded Commons court/arcade pilot authorized; preserve layout and pilot/S5 review gates."
+    }
+  ],
+  "preview": {
+    "url": "https://voights-mac-studio.tail97eda0.ts.net:8452/",
+    "port": 8984,
+    "https_port": 8452,
+    "session_id": 35173,
+    "round": "D-133 lived-in Commons pilot",
+    "frames": 130,
+    "verified": "Tailnet route unchanged; fresh manifest130images/49pilot items and downloaded seating hero hash match. Native link explicitly labelled earlier S3 layout without pilot furniture."
+  },
+  "feedback": {
+    "skill": "ailang-feedback",
+    "ids": [
+      "inbox_1793269833301_40f65588",
+      "inbox_1793270071011_e062fae0"
+    ],
+    "topic": "Cold-source bootstrap89.21s, warm9.025s; no gameplay budget relaxed."
+  },
+  "native_preview": {
+    "commit": "f3e0b11cdf29d1897d4e0cd066bbc52f8f308ea1",
+    "zip": "build/macos/Stapledons-Voyage-view-finish-f3e0b11c-macos.zip",
+    "sha256": "85fa3f641329a9197aaee8b2c7581f14e2f7e8167daa1efb32d74558e1d57263",
+    "bytes": 432961751,
+    "runtime": "v0.54.18",
+    "cold_smoke": "ship and title pass, fresh HOME and no external runtime; shutdown RID/resource warnings remain"
+  },
+  "review_gate": {
+    "stage": "art-pilot",
+    "status": "awaiting_visual_feedback",
+    "authorization": "D-133",
+    "package": "art/commons-lived-in-pilot/README.md",
+    "next": "Accept/refine this court art pilot before repeating its treatment; S3 manual playtest observations and S5/final landing remain open."
+  },
+  "pilot": {
+    "config": "art/commons-lived-in-pilot/placements.json",
+    "source_sha256": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+    "engine_frames": 48,
+    "capture_errors": 0,
+    "loader_checks": 31,
+    "placement_checks": 44,
+    "gpu_pole_cases": 6,
+    "installed_in_production": false
+  },
+  "macro_backdrop_review": {
+    "decision": "D-134",
+    "status": "ready_for_visual_review",
+    "scope": "Layered architecture/planting across the wider physical Commons deck; review-only refinement of D-133. Existing WALK/cameras/bridge/spire/live sky retained.",
+    "production_propagation": false,
+    "modules": 60,
+    "planted_anchors_and_cards": 120,
+    "practicals": 6,
+    "source_sha256": "33eb1f6057004afba4deba9a8673082e1862e9699a2255b49632761287e0776a",
+    "config_sha256": "ac8dc7a8d63dd7d46773d2c07294f9d6c75ebd2e7231d46843ba3756686b6c17",
+    "captures": 48,
+    "capture_errors": 0,
+    "geometry_routes_sightlines": {
+      "passed": 166,
+      "failed": 0
+    },
+    "notes": "Connected low planted arcs at two depths, civic fronts/alcoves and market shades. Original body-both thresholds exposed opposing fronts; lowered/repositioned NW and NE groups until all unchanged thresholds passed. No new WALK/camera/production activation. Local Blender source archive preserved; no upload.",
+    "gpu_pole_cases": {
+      "passed": 6,
+      "failed": 0,
+      "max_error_px": 0.103,
+      "limit_px": 0.75
+    },
+    "independent_review": "art/commons-backdrop-pilot/independent-review.md",
+    "visual_limit": "Ready for density/layout feedback; concept richness only partly resolved. Astern retains broad pale floor and distant repetition. Connected middle-distance planting/paving remains follow-up.",
+    "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#macro"
+  },
+  "grown_civic_review": {
+    "decision": "D-135",
+    "status": "accepted_for_playtest",
+    "scope": "Concept-faithful comic/grown architectural and inhabited middle-ground refinement. Tendril arches, planted islands, curved paving and ambient resident vignettes; no new gameplay/navigation/population model.",
+    "production_propagation": false,
+    "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#grown",
+    "source_sha256": "4a9d9340a8ec58be26361910dbc82a2dd598d47ece2d577c33b63402b12382d2",
+    "config_sha256": "5de067efd6c42e54fc374071c202b8de667155cf9c3cae9fdde4dc0d8a220897",
+    "source_archive_sha256": "9e5819a6e1fdd3333c325ff14fdd7f1c7ca4d3f980b37fce710c47e5d4bacba7",
+    "grown_modules": 16,
+    "new_plants": 88,
+    "hanging_vines": 28,
+    "extra_furnishings": 28,
+    "ambient_residents": 42,
+    "captures": 48,
+    "capture_errors": 0,
+    "moving_study": {
+      "frames": 64,
+      "fps": 8,
+      "duration_seconds": 8,
+      "actual_camera": "Court Astern,960x540"
+    },
+    "geometry_routes_sightlines": {
+      "passed": 110,
+      "failed": 0
+    },
+    "activity_tests": {
+      "passed": 20,
+      "failed": 0
+    },
+    "gpu_pole_cases": {
+      "passed": 6,
+      "failed": 0,
+      "max_error_px": 0.103,
+      "limit_px": 0.75
+    },
+    "independent_review": "art/commons-grown-pilot/independent-review.md",
+    "visual_limit": "Materially addresses grown/comic inhabited middle ground; repeated ornamental arches, sparse Astern right edge and simplified civilian proxies remain visible. No completed-level acceptance or production propagation.",
+    "gallery_verification": "Private HTTPS image hash matches; isolated headless Chrome screenshot inspected;64 activity images load, playback advances and ends with replay control. Export audit110/0; UID378/0. Review-only helpers explicitly excluded from native export.",
+    "accepted_by": "Mark, attended D-136: ok its good lets play it and see how it works"
+  },
+  "playable_civic_review": {
+    "decision": "D-136",
+    "status": "ready_for_playtest",
+    "scope": "Normal ship entry activates the reviewed art and ambient activity; native build on existing private Tailscale route. No full S3/S5/landing acceptance inferred.",
+    "runtime_tests": {
+      "passed": 18,
+      "failed": 0
+    },
+    "asset_tests": {
+      "passed": 21,
+      "failed": 0
+    },
+    "lift_tests": {
+      "passed": 29,
+      "failed": 0
+    },
+    "loading_tests": {
+      "passed": 82,
+      "failed": 0
+    },
+    "source_smoke": "normal player startup, packed art, live/reduced activity, movement and lift round trip pass; HUD captures opened",
+    "export_audit": "118 literals,0 failures; raw transitive closure audit added",
+    "notes": "Normal ship/main entry enables civic art and loading jump awaits installation; raw art-review scene setup remains opt-in.",
+    "export_pack": {
+      "checked": 1308,
+      "skips": 0,
+      "failed": 0
+    },
+    "packaging_correction": "Actual pack test caught ignored nested directories; switched to explicit nested includes and raw .glb.bin/.png.bin staging without .gdignore. Runtime loader now reads its own JSON and PNG buffers without excluded tool dependencies. No checks weakened.",
+    "artifact": {
+      "file": "build/macos/Stapledons-Voyage-civic-playtest-755cd4b1-macos.zip",
+      "sha256": "00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8",
+      "bytes": 445933530,
+      "source_commit": "755cd4b11bc99648a74fefb81f9c3b89ed315ba1",
+      "version": "v0.4.0-dev.37-living-bridge-99-g755cd4b1",
+      "ailang": "v0.54.18"
+    },
+    "native_smoke": "PASS fresh HOME/no external AILANG: packed art,42 residents, live/rest startup, movement, live/reduced motion and lift round trip. Plain launch title/build identity passes. Signature and ZIP integrity pass. Native HUD images opened.",
+    "uid_guard": "382 passed",
+    "preview": "https://voights-mac-studio.tail97eda0.ts.net:8452/#playtest",
+    "https_download": "PASS complete445933530-byte transfer over private8452route; SHA00d473c0692100d5761325ddd5610c7dda47b1a6685bba05c336cbf03ad678a8 matches local archive and manifest",
+    "independent_native_review": "art/commons-grown-pilot/playtest-review.md"
+  },
+  "combined_dev_review": {
+    "decision": "D-137",
+    "status": "published_for_testing",
+    "requested": "All current committed work in private --dev channel for Mark testing",
+    "included_prs": [
+      344,
+      346,
+      351,
+      352
+    ],
+    "main_merge_346": "26697b7ac259490283fd2b51ce65c588fceb48d3",
+    "incomplete_scope": "Earth-link EL4/EL5 and finishing/S3/S5/performance remain open; inclusion in test build is not completion or merge certification.",
+    "integrated_heads": {
+      "344": "d6f2889a665d7cdb01fb0e39ba2a162af81e378e",
+      "346": "4ed8ec3891719f2aa861d3931e14289ab15f13e7",
+      "351": "758614bb5e99b82d6b6577006f9ed01c2179e063",
+      "352": "2b47456b4ef43033607694e6c528911b8ab267db"
+    },
+    "functional_checks": {
+      "physics": 960,
+      "ai_package": 53,
+      "civic": 18,
+      "ai_relay_groups": 7,
+      "ai_settings_groups": 10
+    },
+    "integration_repairs": [
+      "Merged sim package exports preserve both star-name and Earth modules",
+      "Earth feed raw art export included and witnessed",
+      "Legacy Archive smoke validates13 canonical IDs and10 exact sim unlock IDs; negative controls pass",
+      "Guided-departure smoke waits for civic startup and a rendered Saturn frame, preserving its assertions"
+    ],
+    "pre_repair_ci": "Combined fba84528 fast tier green; new diagnostic fixes rerun on final head",
+    "newest_earth_ui": "EL3b.5 exchange light-strip, station layout and review-capture tool included from newly pushed d6f2889a; feed42/0 and station42/0",
+    "published": {
+      "version": "v0.4.0-dev.37-living-bridge-150-g99190243",
+      "zip": "macos/builds/StapledonsVoyage-v0.4.0-dev.37-living-bridge-150-g99190243-macos.zip",
+      "sha256": "076fc82ffdbac26b8753f8c3b03ceaf4cd13ff70d4ca5f60513fbe7fd4c39485",
+      "commit": "99190243af3cf3cc55f847c92e5328f9b8147349",
+      "built": "2026-10-29T20:19:14Z"
+    },
+    "cloud_archive_verified": true,
+    "export_pack": {
+      "checked": 1421,
+      "skips": 0,
+      "failures": 0
+    },
+    "native_publish_gates": "PASS all make publish-dev prerequisites: AI stub, starmap, audio, legacy capture/interior/Archive, planets, civic, voyage, identification, normal ship, title and guided departure",
+    "merge_state": "Audited with gh 2026-10-30: PR346 and352 merged; PR344 and351 remain open drafts. Audited351 head c5c3413d has green fast CI and no rig/full status. Published99190243 contains current Earth-link head d6f2889a, shared2.2m/s walking, civic art, cleanup and Kerr changes. New main-only capture/bench/ISM test improvements from356/358 are not integrated into this branch/build.",
+    "full_rig": "No rig/full status exists on audited351 head c5c3413d. Full exact-final-head rig/golden and feature review/production performance remain landing gates. This audit does not establish a running rig job.",
+    "last_sync_audit": {
+      "date": "2026-10-30",
+      "tool": "gh CLI; private dev manifest read with gcloud",
+      "main": "061e71aa8be9115d924399b124cfe28ac1fb8fdc",
+      "integration_audited_head": "c5c3413dccd135c5c0b04e07837e641fd9005538",
+      "open_draft_prs": [
+        344,
+        351
+      ],
+      "merged": [
+        346,
+        352,
+        356,
+        358
+      ],
+      "published_build": "99190243af3cf3cc55f847c92e5328f9b8147349",
+      "current_earth_head_in_published_build": true,
+      "painted_npcs_in_published_build": false,
+      "new_main_changes_in_published_build": false,
+      "main_only_runtime_diff": "ui/ism_layer.gd comments only; remaining new main code is tests/capture/bench tooling",
+      "gallery_download_was_stale": "620e92ff; corrected to the existing99190243 archive, preserving historical downloads",
+      "installed_laptop_copy_observed": false
+    }
+  },
+  "integration_cleanup": {
+    "decision": "D-142",
+    "status": "frozen_for_full_rig",
+    "scope": "Merge current PR344/351 including committed Earth-link audio, publish clean main-based dev build, reconcile Studio checkouts; no laptop SSH work requested",
+    "main_integrated": "061e71aa8be9115d924399b124cfe28ac1fb8fdc",
+    "audio_integrated": "67dc0842cf49ea1087879c6620819d0c087d27fa",
+    "pre_gate_candidate": "22b7a4c",
+    "gate_repair": "1023 physics checks pass. Separate production feed/strip/map family20/0 and owner beam/window family10/0 pass after reconciliation. Existing407 global goldens retained; combined global expected417 plus separate20. Real-sim and analytic fixture scopes explicit; negative controls and opened references retained.",
+    "full_rig": "61f78786 passed576simtests, strict/replay/GR/ISM and priorrepairs; failedcrossing101/1 becauseengineer_angryportrait nowexists. Controlledmissing-emotionfixture repair pending; unexecutedremainder beingdiagnosedwithmake-k before new mandatorycompletefreshclonegate. No fullpassclaimed.",
+    "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
+    "published_main_build": null,
+    "earth_integrated": "e424bf69aaeb2fc08f43a29d8ca7c93436b4a4f1",
+    "backup_prefix": "backup/reconcile-20261030/",
+    "backup_refs_verified": 19,
+    "ignored_artifact_preservation": {
+      "directory": "build/checkout-preservation-20261030",
+      "inventory_sha256": "dc338985ae956655ea32e11d2573ed31a5e06792c9e4f9670bf0affd031bc974",
+      "files": 819,
+      "bytes": 1132579800,
+      "verified_against_source": true,
+      "source_map": "build/checkout-preservation-20261030/source-map.json",
+      "independently_verified": true
+    },
+    "plan_only_integrated": {
+      "pr": 360,
+      "head": "661d551fcc172f541a68160d0fae2559da6aff04",
+      "status": "Approved in other attended session, external package AR0-AR8 recorded; pausedP2 listening, no game dependency/recipe adoption"
+    },
+    "scheduled_loop_hold": {
+      "created_by_this_task": true,
+      "path": "~/.ailang/state/mission-stapledon.disabled",
+      "originally_absent": true,
+      "restore_after": "merge, main build and cleanup; verify task marker before removing"
+    },
+    "integration_repairs": [
+      "Makefile total417 retains407 existing +10 owner Earthcases, alongside separate20 production display checks",
+      "Captain-animation shared pace contract follows approvedD1382.2m/s instead of supersededD1151.3m/s",
+      "Camera AC5 preserves14m intended path by deriving frame duration at shared pace; allsector/worlddirection/continuity assertions unchanged. Targetedcamera187/0.",
+      "Earth feed caption style and semantic beam label colors centralized in shared theme; contrast coverage extends57to65pairs without allowlist changes.",
+      "Portrait fallback regression uses controlled PNG set, independent of expanding shipped emotion art; default production portrait directory and fallback ordering retained."
+    ],
+    "pace_repair_checks": {
+      "captain_animation": "87 passed,0 failures",
+      "camera_director": "187 passed,0 failures",
+      "camera_forward": "35 passed,0 failures",
+      "basis_guard": "0 inline conversions,3 controls caught"
+    },
+    "theme_repair_checks": {
+      "strict_theme": "0 leftovers,65 contrast pairs,negative controls pass",
+      "feed": "53 passed,0 failures",
+      "beams": "29 passed,0 failures",
+      "comms": "42 passed,0 failures",
+      "gpu": "20 display cases plus10 beam reports pass",
+      "appearance": "Themed parent feed/preview/offray/reused-preview images byte-identical; previously unthemed standalone viewports now receive shared typography explicitly"
+    },
+    "portrait_repair_checks": {
+      "crossing_review": "103 passed,0 failures",
+      "crew_console": "0 failures",
+      "crew_hold": "0 failures",
+      "fixture": "Controlled neutral-only and sad+neutral PNG sets verify actual loader and fallback order; optional directory retains unchanged production default"
+    },
+    "remainder_preflight": {
+      "status": "running;2 failures found and repaired,remaining diagnostic continues",
+      "log": "/tmp/stapledon-remainder-preflight.log",
+      "input_repair": "30 passed,0 failures; production fixedviews plus explicit private legacy gesture fixture",
+      "scene_audit_repair": "16 strictVM tests/0fallback; pure+FS controls; uniform scope controls; frozen2427line replay/83297783bytes identical; mutation controls detected",
+      "replay_pins_changed": false
+    },
+    "late_reconciliation": "Preserve Earth landing docs and final audio-plan progress, retaining tested stronger M4/fallback/theme fixes. Additional executable changes limited to explicit shared themes in two review-capture helpers; all production and test code matches testedcad3a06c. Reuse of fullgate on newhead requires explicit Mark ruling or another complete exact-head run."
+  },
+  "npc_character_followup": {
+    "decision": "D-139",
+    "status": "appearance_approved_pending_production_integration",
+    "execution_authorization": "D-140, Mark attended 2026-10-29: approved, work on the features and start making NPC assets",
+    "appearance": "Replace procedural 3D resident proxies with painted figures in the captain's comic style; appropriate still poses or restrained loops suffice for background NPCs.",
+    "crew_presence": "Named crew mingle among residents with established portrait identities preserved; decorative resident rows are not yet simulated crew entities.",
+    "next": "First appearance accepted D-141. Before production: calibrate per-pose seat contact and ground shadows, expand civilian variety, bind live crew presence/age and add any required painted gait frames.",
+    "normal_game_changed": false,
+    "asset_pilot_implemented": true,
+    "private_preview": {
+      "url": "https://voights-mac-studio.tail97eda0.ts.net:8452/#npcs",
+      "date": "2026-10-30",
+      "images": 4,
+      "verification": "Actual Tailscale Self.DNSName and existing Serve8452->loopback8984 checked; HTTPS page/manifest and all4 image byte comparisons pass; isolated browser screenshot inspected. Studio-side evidence only; laptop view not yet confirmed."
+    },
+    "independent_review": {
+      "report": ".ailang/state/evaluations/eval_R2-NPC-PAINTED-PILOT_round_1.json",
+      "score": 92,
+      "result": "PASS for the bounded asset/opt-in preview slice only",
+      "blocking_defects": 0
+    },
+    "milestones": {
+      "NPC1_assets": true,
+      "NPC2_opt_in_preview": true,
+      "NPC3_appearance_approval": true
+    },
+    "appearance_approval": {
+      "decision": "D-141",
+      "date": "2026-10-30",
+      "by": "Mark, attended",
+      "quote": "yeah cool they look good",
+      "scope": "First five-identity/25-pose appearance pilot; not complete production integration or full level approval"
+    },
+    "assets": {
+      "identities": 5,
+      "civilian_identities": 3,
+      "crew_ids": [
+        "medic",
+        "engineer"
+      ],
+      "poses": 25,
+      "selected_source_pngs": 6,
+      "preserved_initial_candidates": 1,
+      "verbatim_prompts": 7,
+      "catalog": "assets/characters/npcs/manifest.json",
+      "provenance": "art/npc-painted-v1/provenance.json"
+    },
+    "checks": {
+      "npc_painted_assets": "5 identities,25 poses,0 failures",
+      "npc_painted_pilot": "23 passed,0 failures",
+      "export_filter_audit": "126 literals,0 failures",
+      "uid_guard": "390 UIDs,ok",
+      "reingest_byte_identical": true
+    },
+    "captures": {
+      "frames": 8,
+      "errors": 0,
+      "actual_residents": 42,
+      "crew_instances": 2,
+      "directory": "renders/npc-painted-v1",
+      "views": "matching-scale lineup,all25 poses,actual unchanged player Bow/Astern at3court positions"
+    },
+    "limitations": [
+      "Opt-in appearance preview only; normal scene and published dev channel unchanged",
+      "Static poses; no sliding or new walk cycles",
+      "No certified per-seat butt/seat anchors or contact shadows",
+      "Three civilian identities repeat; more variety remains",
+      "Live crew availability,ageing and in-world interaction remain later work",
+      "Full rig,golden,performance,S3/S5 and landing gates remain pending"
+    ],
+    "implemented": false
+  }
+}

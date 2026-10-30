@@ -252,9 +252,9 @@ func _gait_from_clip() -> void:
 	check("use_gait: an empty clip keeps the default cycle", b.cycle_m == CaptainAnim.DEFAULT_CYCLE_M)
 
 
-## D-115: one calm walking speed for WASD and walk-to.
+## D-138 supersedes D-115: one shared 2.2 m/s pace for WASD and walk-to.
 func _speed() -> void:
-	check("the captain walks calmly: 1.3 m/s (D-115)", is_equal_approx(ShipConsoles.WALK_SPEED_MPS, 1.3))
+	check("the captain walks at the approved 2.2 m/s pace (D-138)", is_equal_approx(ShipConsoles.WALK_SPEED_MPS, 2.2))
 	check("the default cycle is the painted walk's (1.4857 m)", is_equal_approx(CaptainAnim.DEFAULT_CYCLE_M, 1.4857))
 
 

@@ -1,0 +1,553 @@
+{
+  "about": "D-135 connected civic occupation: shared dining, reading, market/storage. Review-only, all original navigation retained.",
+  "source_glb": "res://art/commons-lived-in-pilot/commons_lived_in_kit_v1.glb",
+  "source_sha256": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+  "bounds": {
+    "min": [
+      -76,
+      -76,
+      56.9
+    ],
+    "max": [
+      76,
+      76,
+      69
+    ]
+  },
+  "placements": [
+    {
+      "name": "meal_table_0",
+      "prop": "communal_table",
+      "ship_m": [
+        12,
+        22,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_0",
+      "prop": "civic_bench",
+      "ship_m": [
+        12,
+        21.1,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_1",
+      "prop": "communal_table",
+      "ship_m": [
+        17,
+        29,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_1",
+      "prop": "civic_bench",
+      "ship_m": [
+        17,
+        28.1,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_2",
+      "prop": "communal_table",
+      "ship_m": [
+        13,
+        -21,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_2",
+      "prop": "civic_bench",
+      "ship_m": [
+        13,
+        -21.9,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_3",
+      "prop": "communal_table",
+      "ship_m": [
+        18,
+        -25,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_3",
+      "prop": "civic_bench",
+      "ship_m": [
+        18,
+        -25.9,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_4",
+      "prop": "communal_table",
+      "ship_m": [
+        37,
+        -20,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_4",
+      "prop": "civic_bench",
+      "ship_m": [
+        37,
+        -20.9,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_5",
+      "prop": "communal_table",
+      "ship_m": [
+        43,
+        -25,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_5",
+      "prop": "civic_bench",
+      "ship_m": [
+        43,
+        -25.9,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_6",
+      "prop": "communal_table",
+      "ship_m": [
+        52,
+        5,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_6",
+      "prop": "civic_bench",
+      "ship_m": [
+        52,
+        4.1,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "meal_table_7",
+      "prop": "communal_table",
+      "ship_m": [
+        52,
+        10,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "meal_bench_7",
+      "prop": "civic_bench",
+      "ship_m": [
+        52,
+        9.1,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "market_counter_0",
+      "prop": "arcade_counter",
+      "ship_m": [
+        8,
+        28,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "arcade_counter__counter_top",
+        "arcade_counter__counter_leg_neg1",
+        "arcade_counter__counter_leg_1",
+        "arcade_counter__under_shelf"
+      ]
+    },
+    {
+      "name": "market_storage_0",
+      "prop": "storage_baskets",
+      "ship_m": [
+        9.7,
+        27.8,
+        57.025
+      ],
+      "yaw_deg": 10,
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ]
+    },
+    {
+      "name": "market_counter_1",
+      "prop": "arcade_counter",
+      "ship_m": [
+        21,
+        -27,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "arcade_counter__counter_top",
+        "arcade_counter__counter_leg_neg1",
+        "arcade_counter__counter_leg_1",
+        "arcade_counter__under_shelf"
+      ]
+    },
+    {
+      "name": "market_storage_1",
+      "prop": "storage_baskets",
+      "ship_m": [
+        22.7,
+        -27.2,
+        57.025
+      ],
+      "yaw_deg": 10,
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ]
+    },
+    {
+      "name": "market_counter_2",
+      "prop": "arcade_counter",
+      "ship_m": [
+        46,
+        -18,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "arcade_counter__counter_top",
+        "arcade_counter__counter_leg_neg1",
+        "arcade_counter__counter_leg_1",
+        "arcade_counter__under_shelf"
+      ]
+    },
+    {
+      "name": "market_storage_2",
+      "prop": "storage_baskets",
+      "ship_m": [
+        47.7,
+        -18.2,
+        57.025
+      ],
+      "yaw_deg": 10,
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ]
+    },
+    {
+      "name": "market_counter_3",
+      "prop": "arcade_counter",
+      "ship_m": [
+        56,
+        0,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "arcade_counter__counter_top",
+        "arcade_counter__counter_leg_neg1",
+        "arcade_counter__counter_leg_1",
+        "arcade_counter__under_shelf"
+      ]
+    },
+    {
+      "name": "market_storage_3",
+      "prop": "storage_baskets",
+      "ship_m": [
+        57.7,
+        -0.2,
+        57.025
+      ],
+      "yaw_deg": 10,
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ]
+    },
+    {
+      "name": "reading_post_0",
+      "prop": "notice_read_station",
+      "ship_m": [
+        20,
+        23,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "notice_read_station__grown_pedestal",
+        "notice_read_station__reading_surface",
+        "notice_read_station__notice_arch"
+      ]
+    },
+    {
+      "name": "reading_post_1",
+      "prop": "notice_read_station",
+      "ship_m": [
+        9,
+        -16,
+        57.025
+      ],
+      "yaw_deg": 30,
+      "solid_meshes": [
+        "notice_read_station__grown_pedestal",
+        "notice_read_station__reading_surface",
+        "notice_read_station__notice_arch"
+      ]
+    },
+    {
+      "name": "reading_post_2",
+      "prop": "notice_read_station",
+      "ship_m": [
+        47,
+        -29,
+        57.025
+      ],
+      "yaw_deg": 60,
+      "solid_meshes": [
+        "notice_read_station__grown_pedestal",
+        "notice_read_station__reading_surface",
+        "notice_read_station__notice_arch"
+      ]
+    },
+    {
+      "name": "reading_post_3",
+      "prop": "notice_read_station",
+      "ship_m": [
+        56,
+        12,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "notice_read_station__grown_pedestal",
+        "notice_read_station__reading_surface",
+        "notice_read_station__notice_arch"
+      ]
+    }
+  ],
+  "plants": [
+
+  ],
+  "practicals": [
+    {
+      "name": "district_table_lamp_0",
+      "ship_m": [
+        12.65,
+        22,
+        58.195
+      ],
+      "range_m": 5.5,
+      "energy": 1.1,
+      "tint": [
+        1,
+        0.81,
+        0.58
+      ]
+    },
+    {
+      "name": "district_table_lamp_1",
+      "ship_m": [
+        17.65,
+        29,
+        58.195
+      ],
+      "range_m": 5.5,
+      "energy": 1.1,
+      "tint": [
+        1,
+        0.81,
+        0.58
+      ]
+    },
+    {
+      "name": "district_table_lamp_2",
+      "ship_m": [
+        13.65,
+        -21,
+        58.195
+      ],
+      "range_m": 5.5,
+      "energy": 1.1,
+      "tint": [
+        1,
+        0.81,
+        0.58
+      ]
+    },
+    {
+      "name": "district_table_lamp_3",
+      "ship_m": [
+        18.65,
+        -25,
+        58.195
+      ],
+      "range_m": 5.5,
+      "energy": 1.1,
+      "tint": [
+        1,
+        0.81,
+        0.58
+      ]
+    },
+    {
+      "name": "district_table_lamp_4",
+      "ship_m": [
+        37.65,
+        -20,
+        58.195
+      ],
+      "range_m": 5.5,
+      "energy": 1.1,
+      "tint": [
+        1,
+        0.81,
+        0.58
+      ]
+    },
+    {
+      "name": "district_table_lamp_5",
+      "ship_m": [
+        43.65,
+        -25,
+        58.195
+      ],
+      "range_m": 5.5,
+      "energy": 1.1,
+      "tint": [
+        1,
+        0.81,
+        0.58
+      ]
+    }
+  ],
+  "replace_markers": [
+
+  ]
+}

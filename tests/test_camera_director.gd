@@ -44,7 +44,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	test_schema()
-	var demo: Node = await new_demo({"size": Vector2i(1280, 720)})
+	# Retain the retired developer-preset compatibility sweeps on their original kit.
+	# Actual Commons fixed-view/multiheight coverage is tests/test_level_runtime.gd + level-eval.
+	var demo: Node = await new_demo({"size": Vector2i(1280, 720), "level_greybox": false})
 	await test_sweep(demo)
 	test_bow_sweep(demo)
 	test_spawn_occlusion(demo)
@@ -111,7 +113,7 @@ func test_schema() -> void:
 	none.views[0].distance_m = 0.0
 	check("AC1 mutant: a level view at distance 0 (first person) is refused", not CameraDirector.validate(none).is_empty())
 	# R2-CAMERA-FORWARD AC-V9: views.json v2 (level-keyed walk views) and its negative controls.
-	check("schema v2", str(d.schema) == "stapledons.camera.views/2" and CameraDirector.validate_levels(d).is_empty() and str(d.levels.bridge.default) == "bow" and bool(d.levels.commons.legacy))
+	check("schema v3 manifest camera", str(d.schema) == "stapledons.camera.views/3" and CameraDirector.validate_levels(d).is_empty() and str(d.levels.bridge.default) == "bow" and not bool(d.levels.commons.get("legacy",false)))
 	var controls := {
 		"no default": func(x: Dictionary) -> void: x.levels.bridge.erase("default"),
 		"foreign default": func(x: Dictionary) -> void: x.levels.bridge.default = "z2",
@@ -420,7 +422,9 @@ func test_sectors_and_walk(demo: Node) -> void:
 	var jump_deg := 0.0
 	var last: Transform3D = demo.camera.global_transform
 	var prev_pos: Vector3 = demo.avatar_pos
-	for i in 650: # 14 m of walking (D-115: the calm walk; 240 frames at the old 3.5 m/s)
+	# Keep the intended 14 m sector-crossing path at D-138's shared pace. A fixed
+	# frame count would run into the outer rim at faster paces and follow its curve.
+	for i in ceili(14.0 * 60.0 / ShipConsoles.WALK_SPEED_MPS):
 		demo.walk_motion(walk_key, 1.0 / 60.0)
 		demo._process(1.0 / 60.0)
 		var moved: Vector3 = demo.avatar_pos - prev_pos

@@ -1,0 +1,421 @@
+{
+  "schema": "stapledons.commons-lived-in.kit/1",
+  "revision": 2,
+  "fixture_centres_blender_m": {
+    "communal_table": [
+      0.65,
+      0,
+      1.17
+    ],
+    "notice_read_station": [
+      0,
+      0.3,
+      1.6
+    ],
+    "arcade_counter": [
+      0,
+      0.2,
+      1.22
+    ]
+  },
+  "status": "bounded art pilot; review only; no layout or navigation changes",
+  "frame": "metres; each named prop root identity at local floor centre; Blender+Z up,+Y front; glTF(x,z,-y)",
+  "asset": "commons_lived_in_kit_v1.glb",
+  "asset_bytes": 3662360,
+  "asset_sha256": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+  "triangles": 32224,
+  "materials": 1,
+  "images": 1,
+  "texture_size_px": [
+    1536,
+    1024
+  ],
+  "texture_sha256": "ee6753e59aa3992b30c9ccde6f2c21fce1ef6d9a9cc02c44c1e862074b5f4e26",
+  "palette": [
+    "cream",
+    "teal",
+    "ochre",
+    "violet",
+    "coral",
+    "leaf"
+  ],
+  "texture_sources": [
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/cream.png",
+      "sha256": "d32429596eb837f5ee33dd19deb790566beff581648e2e1845a78342e803a4f0"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/teal.png",
+      "sha256": "9b1bb53aa9be942345ca60dde419cc4612dc2475bf5137259a27ebd337c513ac"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/ochre.png",
+      "sha256": "2074468e54dda721d944ec6a774ee004fafafd4958122c07d83e3e7fde522c85"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/violet.png",
+      "sha256": "d10f364697518fa28079d54d22a3f329efbda0364cb3fc9ae5e23dd2b2891622"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/coral.png",
+      "sha256": "4cd5aa278e0825b9cfcbd19a890f712adf997907d8ac96b393f797dd496edb16"
+    },
+    {
+      "file": "art/ship-demo-v1/painted-bridge-v1/textures/leaf.png",
+      "sha256": "a4f0df524351b86d4b5316c7d997a2a1ed8737d2de7382a66e640303edab63a7"
+    }
+  ],
+  "surface": "Existing pigment only, roughness0.82. No emission, sky, AO/light bake or camera projection. Game lights and toon/ink remain live.",
+  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_commons_lived_in_pilot_v2.py",
+  "authoring_script_sha256": "c478cddd81650c39cfc9e67cdc9c81039d014b3039126f6c638e72e087644133",
+  "master": "/Users/voightkampff/dev/blender/scenes/stapledon_commons_lived_in_pilot_v2.blend",
+  "master_sha256": "646f385d1e483d33c44fdf531752b3b5d434856393c3ed5cb788555dfc345c24",
+  "props": [
+    {
+      "id": "civic_bench",
+      "source_root": "civic_bench",
+      "triangles": 3256,
+      "bounds_blender_m": {
+        "min": [
+          -1.6256682872772217,
+          -0.7174999713897705,
+          0.0
+        ],
+        "max": [
+          1.6256682872772217,
+          0.6362778544425964,
+          1.0099999904632568
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -1.6256682872772217,
+          0.0,
+          -0.6362778544425964
+        ],
+        "max": [
+          1.6256682872772217,
+          1.0099999904632568,
+          0.7174999713897705
+        ]
+      },
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "communal_table",
+      "source_root": "communal_table",
+      "triangles": 5128,
+      "bounds_blender_m": {
+        "min": [
+          -0.949999988079071,
+          -0.550000011920929,
+          0.0
+        ],
+        "max": [
+          0.949999988079071,
+          0.550000011920929,
+          1.321707010269165
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -0.949999988079071,
+          0.0,
+          -0.550000011920929
+        ],
+        "max": [
+          0.949999988079071,
+          1.321707010269165,
+          0.550000011920929
+        ]
+      },
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "storage_baskets",
+      "source_root": "storage_baskets",
+      "triangles": 7208,
+      "bounds_blender_m": {
+        "min": [
+          -0.635200023651123,
+          -0.23479999601840973,
+          0.0
+        ],
+        "max": [
+          0.6053735613822937,
+          0.23479999601840973,
+          0.49747759103775024
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -0.635200023651123,
+          0.0,
+          -0.23479999601840973
+        ],
+        "max": [
+          0.6053735613822937,
+          0.49747759103775024,
+          0.23479999601840973
+        ]
+      },
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "notice_read_station",
+      "source_root": "notice_read_station",
+      "triangles": 4848,
+      "bounds_blender_m": {
+        "min": [
+          -0.5799999833106995,
+          -0.3700000047683716,
+          0.0
+        ],
+        "max": [
+          0.5799999833106995,
+          0.5,
+          1.9000000953674316
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -0.5799999833106995,
+          0.0,
+          -0.5
+        ],
+        "max": [
+          0.5799999833106995,
+          1.9000000953674316,
+          0.3700000047683716
+        ]
+      },
+      "solid_meshes": [
+        "notice_read_station__grown_pedestal",
+        "notice_read_station__reading_surface",
+        "notice_read_station__notice_arch"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "maintenance_cart",
+      "source_root": "maintenance_cart",
+      "triangles": 3824,
+      "bounds_blender_m": {
+        "min": [
+          -0.5149999856948853,
+          -0.48499956727027893,
+          0.005000002682209015
+        ],
+        "max": [
+          0.5149999856948853,
+          0.3400000035762787,
+          1.119070053100586
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -0.5149999856948853,
+          0.005000002682209015,
+          -0.3400000035762787
+        ],
+        "max": [
+          0.5149999856948853,
+          1.119070053100586,
+          0.48499956727027893
+        ]
+      },
+      "solid_meshes": [
+        "maintenance_cart__cart_body",
+        "maintenance_cart__tool_tray",
+        "maintenance_cart__wheel_0_0",
+        "maintenance_cart__wheel_0_1",
+        "maintenance_cart__wheel_1_0",
+        "maintenance_cart__wheel_1_1",
+        "maintenance_cart__handle_stem_neg1",
+        "maintenance_cart__handle_stem_1"
+      ],
+      "foliage_anchors": []
+    },
+    {
+      "id": "planter_large",
+      "source_root": "planter_large",
+      "triangles": 1632,
+      "bounds_blender_m": {
+        "min": [
+          -0.4300000071525574,
+          -0.4300000071525574,
+          0.0
+        ],
+        "max": [
+          0.4300000071525574,
+          0.4300000071525574,
+          0.6627846360206604
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -0.4300000071525574,
+          0.0,
+          -0.4300000071525574
+        ],
+        "max": [
+          0.4300000071525574,
+          0.6627846360206604,
+          0.4300000071525574
+        ]
+      },
+      "solid_meshes": [
+        "planter_large__bowl"
+      ],
+      "foliage_anchors": [
+        {
+          "name": "FOLIAGE_planter_large_soil",
+          "local_blender_m": [
+            0,
+            0,
+            0.616
+          ],
+          "local_gltf_m": [
+            0,
+            0.616,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "planter_small",
+      "source_root": "planter_small",
+      "triangles": 1632,
+      "bounds_blender_m": {
+        "min": [
+          -0.2565000057220459,
+          -0.2565000057220459,
+          0.0
+        ],
+        "max": [
+          0.2562946677207947,
+          0.2565000057220459,
+          0.3427846133708954
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -0.2565000057220459,
+          0.0,
+          -0.2565000057220459
+        ],
+        "max": [
+          0.2562946677207947,
+          0.3427846133708954,
+          0.2565000057220459
+        ]
+      },
+      "solid_meshes": [
+        "planter_small__bowl"
+      ],
+      "foliage_anchors": [
+        {
+          "name": "FOLIAGE_planter_small_soil",
+          "local_blender_m": [
+            0,
+            0,
+            0.29600000000000004
+          ],
+          "local_gltf_m": [
+            0,
+            0.29600000000000004,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arcade_counter",
+      "source_root": "arcade_counter",
+      "triangles": 4696,
+      "bounds_blender_m": {
+        "min": [
+          -1.100000023841858,
+          -0.46000000834465027,
+          0.0
+        ],
+        "max": [
+          1.100000023841858,
+          0.46000000834465027,
+          1.3720581531524658
+        ]
+      },
+      "bounds_gltf_m": {
+        "min": [
+          -1.100000023841858,
+          0.0,
+          -0.46000000834465027
+        ],
+        "max": [
+          1.100000023841858,
+          1.3720581531524658,
+          0.46000000834465027
+        ]
+      },
+      "solid_meshes": [
+        "arcade_counter__counter_top",
+        "arcade_counter__counter_leg_neg1",
+        "arcade_counter__counter_leg_1",
+        "arcade_counter__under_shelf"
+      ],
+      "foliage_anchors": []
+    }
+  ],
+  "preview": "Blender neutral studio diagnostic only; authoritative pilot review uses the actual game camera after independent placement.",
+  "limits": "No text/content functionality, crowd simulation, new comms console, inaccessible terrace or full-level propagation; painted foliage supplied by consumer from D106 assets.",
+  "source_preservation": {
+    "status": "local recoverable archives only; no publication or off-host backup claimed",
+    "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/commons-lived-in-source-v2.tar.gz",
+    "bytes": 5509716,
+    "sha256": "311212706db908e0f60126f9b7fe77bbf8800fb680b0f823179ea8c30f7e3c81",
+    "previous_archive": {
+      "status": "local recoverable archive only; no publication or off-host backup claimed",
+      "path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/commons-lived-in-source-v1.tar.gz",
+      "bytes": 5475404,
+      "sha256": "2e566c6ee55e8de97670c353d0594388e74c58f64e38f4a46e0d466a5776514e",
+      "contents": [
+        "scripts/stapledon_commons_lived_in_pilot_v1.py",
+        "scenes/stapledon_commons_lived_in_pilot_v1.blend",
+        "textures/commons_pigment_atlas_v1.png"
+      ]
+    },
+    "previous_assets": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-vf-art/build/commons-lived-in-source/pre-fixtures-v1",
+    "contents": [
+      "scripts/stapledon_commons_lived_in_pilot_v2.py",
+      "scenes/stapledon_commons_lived_in_pilot_v2.blend",
+      "textures/commons_pigment_atlas_v1.png"
+    ]
+  },
+  "validation": {
+    "workspace_inspect": "passed; no missing external resources; source scene contains the hidden export kit plus linked studio duplicates",
+    "clean_glb_reimport": "passed; eight identity roots; all per-root counts retained; original structural solid_meshes lists unchanged; soil anchors retained; nonblack1536x1024atlas",
+    "glb_referenced_materials": 1,
+    "glb_embedded_images": 1,
+    "hero": "kit-hero-studio.png",
+    "hero_sha256": "2d5cc30f087fe1b3ad46d6d17db0ff4055414fe04dbea41a7aaecde145b53687",
+    "hero_render": "Cycles Metal Apple M4 Max;48samples; neutral-studio diagnostic only; visually inspected"
+  },
+  "fixture_contract": "Opaque painted physical fixtures only; cream bulbs are not emissive. Consumer owns live lights. Bulb centres given in Blender metres; convert to glTF(x,z,-y). Tiny fixtures add no collider meshes."
+}

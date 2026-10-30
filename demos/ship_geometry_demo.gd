@@ -23,7 +23,7 @@ var _tour_view_from:=Vector2.ZERO
 var _tour_view_to:=Vector2.ZERO
 var _tour_view_elapsed:=0.
 var _tour_view_active:=false
-const WALK_SPEED_MPS := ShipConsoles.WALK_SPEED_MPS # one speed for WASD and walk-to (D-115: a calm 1.3 m/s)
+const WALK_SPEED_MPS := ShipConsoles.WALK_SPEED_MPS # one pace for WASD and Walk to (D-138)
 ## D-92 (camera-forward.md §D1.5): the developer free camera's first-person turn at a departure
 ## (level, toward the bow) and at a stop (level, toward the body 30 deg off the bow, kinematic +X
 ## = glTF -X): Vector2(tilt deg, yaw rad, ShipCamera's convention).
@@ -37,6 +37,11 @@ var frame_check := FrameCheck.new()
 var audit_link:=LinkButton.new()
 var audit_local:=Button.new()
 var setup_options := {}
+## D-136: the reviewed civic treatment, enabled by normal player entry or explicit tests.
+var civic_art:Dictionary={}
+var civic_art_ready:=false
+var civic_art_errors:Array=[]
+var _civic_art_started:=false
 var camera: Camera3D = Camera.new()
 var sky := InteriorSky.new()
 var geometry_view := SubViewport.new()
@@ -53,6 +58,7 @@ var active_level := 0:
 	set(v):
 		active_level=v
 		if not lighting.is_empty():Lighting.set_level(lighting,v)
+		if level_runtime!=null:level_runtime.set_active(v==1)
 var label := Label.new() # retired (R1-SHIP-UI U1); never shown
 var hud: Control # the status strip (ShipHud.strip)
 var ship_hud: ShipHud
@@ -106,6 +112,7 @@ var sky_state := "rest"
 var sky_only := false
 var controls: Control # the Tab panel (ShipHud.tab_panel)
 var commons: Dictionary = {}
+var level_runtime: ShipLevelRuntime
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
@@ -139,6 +146,7 @@ func _ready() -> void:
 	frame_check.status_changed.connect(note)
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
+	if OS.get_cmdline_user_args().has("--civic-playtest-smoke"):_civic_playtest_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--ship-identification-smoke"):_identification_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--solar-departure-smoke"):_solar_departure_smoke.call_deferred()
 	if ready_ok and setup_options.get("scenario",scenario_arg(OS.get_cmdline_user_args()))==BlackHoleVisit.SCENARIO:start_black_hole.call_deferred()
@@ -156,6 +164,7 @@ func asset(file: String) -> String:
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
+	setup_options=opts.duplicate(true)
 	menu_return=opts.get("from_menu",false);asset_dir=str(opts.get("asset_dir",""))
 	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
@@ -185,6 +194,10 @@ func setup(opts := {}) -> bool:
 	if opts.get("commons",true):
 		commons=Commons.install(self)
 		if commons.is_empty():return false
+		if opts.get("level_greybox",true):
+			level_runtime=ShipLevelRuntime.install(self,str(director.levels.commons.manifest.layout_asset))
+			if level_runtime==null:return false
+			Lighting.install_level(lighting,1,level_runtime.layout,geometry)
 	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.load_anim("res://assets/characters/captain");avatar.effect="echo";captain_anim.use_gait(avatar.anim.get("clips",{}).get("walk",{}));avatar.position=avatar_pos
 	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
 	var ring_mesh:=TorusMesh.new();ring_mesh.inner_radius=.55;ring_mesh.outer_radius=.7;ring_mesh.rings=48;ring_mesh.ring_segments=6
@@ -235,7 +248,30 @@ func setup(opts := {}) -> bool:
 		sky_state="live";open_navigation();close_navigation()
 		if journey_map==null:sky_state="rest"
 	print("ship-demo-ready: OK")
+	if opts.get("civic_art",false) and not commons.is_empty():_install_civic_art.call_deferred()
 	return true
+
+func _install_civic_art()->void:
+	if _civic_art_started:return
+	_civic_art_started=true
+	# Static level collisions must reach the physics server before resident floor checks.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var path:=str(setup_options.get("civic_art_config","res://assets/levels/commons/civic/placements.json"))
+	if not setup_options.has("civic_art_config") and not FileAccess.file_exists(path):path="res://art/commons-grown-pilot/placements.json"
+	civic_art=load("res://demos/commons_civic_pilot.gd").install_world(self,path)
+	civic_art_ready=bool(civic_art.ok)
+	if not civic_art_ready:
+		civic_art_errors.assign(civic_art.errors)
+		push_error("Commons civic art failed: "+str(civic_art_errors))
+	else:print("commons-civic-playtest: ready, reviewed art and live activity installed")
+
+func await_civic_art()->bool:
+	if not setup_options.get("civic_art",false):return true
+	for frame in 180:
+		if civic_art_ready or not civic_art_errors.is_empty():break
+		await get_tree().physics_frame
+	return civic_art_ready
 func _draw_layer(texture: Texture2D, layer: int) -> void:
 	var canvas:=CanvasLayer.new();canvas.layer=layer;add_child(canvas)
 	var rect:=TextureRect.new();rect.texture=texture;rect.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
@@ -398,7 +434,8 @@ func walk_motion(move: Vector2,delta: float) -> void:
 	if displacement.length()>1e-9:captain_yaw=atan2(displacement.z,displacement.x)
 	# Endpoint-only stepping can tunnel across the lift opening after a stall.
 	var steps:int=maxi(1,ceili(displacement.length()/maxf(.05,walk.radius*.5)))
-	for step in steps:avatar_pos=walk.step(avatar_pos,displacement/steps)
+	for step in steps:
+		avatar_pos=level_runtime.step(avatar_pos,displacement/steps) if active_level==1 and level_runtime!=null else walk.step(avatar_pos,displacement/steps)
 func set_lighting(profile:String)->void:
 	Lighting.apply(lighting,profile)
 func lighting_manifest()->Dictionary:
@@ -467,6 +504,7 @@ func _process(delta: float) -> void:
 	if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED:_mouse=get_viewport().get_visible_rect().size*.5
 	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
+	if level_runtime!=null:level_runtime.set_active(active_level==1 or (lift!=null and lift.travelling()))
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if dressing!=null:dressing.update(camera,director.view_id if not director.overridden else "",active_level) # R2-BRIDGE-STYLE S5: per-view dressing
 	if director.overridden:
@@ -541,7 +579,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_V:toggle_auto_view()
 			KEY_ENTER:dismiss_arrival()
 			KEY_K:
-				if black_hole!=null:bh_finish_approach()
+				if lift!=null and lift.travelling():lift.skip()
+				elif black_hole!=null:bh_finish_approach()
 				else:skip_stage()
 			KEY_P:toggle_tour_pause()
 			KEY_N:skip_dwell()
@@ -642,6 +681,7 @@ func toggle_camera_motion() -> void:
 func set_camera_motion(mode: String) -> void:
 	camera_motion=mode if mode in GameSettings.CAMERA_MOTIONS else "full"
 	director.set_motion(camera_motion)
+	if camera_motion=="reduced" and lift!=null and lift.travelling():lift.skip()
 	motion_button.text="Camera motion: "+("reduced (cuts)" if camera_motion=="reduced" else "full")
 ## R2-CAMERA C2: the ship is under way (committed, turning to depart, or at Sgr A*); the default
 ## view (R) is then Sky forward, so the forward sky is in frame.
@@ -698,6 +738,7 @@ func _escape_top() -> void:
 ## E: the console or the lift in reach and facing (the nearest wins; the prompt names it),
 ## or, at a console, step back.
 func use_nearest() -> bool:
+	if level_runtime!=null and level_runtime.transfer():return true
 	return consoles.press_e()
 ## Back to the title screen (main.tscn on a plain launch); _exit_tree stops the voyage's sim.
 func return_to_menu() -> void:
@@ -781,6 +822,8 @@ func _guides() -> void:
 
 func _export_smoke() -> void:
 	auto=false
+	if not await await_civic_art():
+		print("ship-demo-export-smoke: FAIL civic art");get_tree().quit(1);return
 	await get_tree().process_frame
 	var ok:=ready_ok and not avatar.stages.is_empty()
 	var manual_ev:float=sky.exposure.ev_dark()-brightness_stops
@@ -816,6 +859,56 @@ func _export_smoke() -> void:
 			print("ship-demo-smoke-stage arrival: ",ok," phase=",sky_world.ship.phase)
 	print("ship-demo-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
+
+func _civic_playtest_smoke()->void:
+	auto=false;journey_auto_tick=false
+	var ok:=await await_civic_art()
+	if not ok:print("civic-playtest-smoke: FAIL art load");get_tree().quit(1);return
+	# Let the normal entry finish its live-rest assertions before the diagnostic changes views.
+	await get_tree().physics_frame
+	ok=ok and str(civic_art.source_config)=="res://assets/levels/commons/civic/placements.json"
+	var life:Node=civic_art.node.find_child("CommonsLifePilot",true,false)
+	ok=ok and life!=null and life._people.size()==42
+	set_sky_state("rest")
+	await _civic_playtest_shot("bridge")
+	avatar_pos=Vector3(8,82,-4.8)
+	ok=ok and lift.board()
+	lift.advance(.81);lift.advance(5.);lift.advance(.81)
+	ok=ok and active_level==1 and lift.state=="lower_ready"
+	avatar_pos=Vector3(26,57.025,-4)
+	var before:=avatar_pos
+	walk_motion(Vector2(1,0),.2)
+	ok=ok and avatar_pos.distance_to(before)>.05 and absf(avatar_pos.y-57.025)<.04
+	avatar_pos=before;camera_mode="player";director.release();director.zoom_preset=false
+	for view:String in ["bow","astern"]:
+		director.deck_view=view;director.mapping_view=view;director.has_pose=false
+		director.advance(0.)
+		await _civic_playtest_shot("commons_"+view)
+	var elapsed:float=life.elapsed
+	set_camera_motion("full");life.advance(.25)
+	ok=ok and life.elapsed>elapsed
+	elapsed=life.elapsed;set_camera_motion("reduced");life.advance(.25)
+	ok=ok and life.elapsed==elapsed
+	set_camera_motion("full")
+	ok=ok and walk_to("navigation")
+	for step in 1200:
+		if consoles.walking.is_empty():break
+		consoles._advance_walk(.05)
+	ok=ok and avatar_pos.distance_to(Vector3(8,57,-4.8))<.1 and lift.board()
+	lift.advance(.81);lift.advance(5.);lift.advance(.81)
+	ok=ok and active_level==0 and lift.state=="bridge_ready"
+	print("civic-playtest-smoke: %s packed-art live-activity walk lift-roundtrip"%("OK" if ok else "FAIL"))
+	get_tree().quit(0 if ok else 1)
+
+func _civic_playtest_shot(name:String)->void:
+	var output:=""
+	for arg:String in OS.get_cmdline_user_args():
+		if arg.begins_with("--civic-capture="):output=arg.trim_prefix("--civic-capture=")
+	for frame in 6:await get_tree().process_frame
+	if output.is_empty() or DisplayServer.get_name()=="headless":return
+	await RenderingServer.frame_post_draw
+	DirAccess.make_dir_recursive_absolute(output)
+	get_viewport().get_texture().get_image().save_png(output.path_join(name+".png"))
 func _identification_smoke() -> void:
 	auto=false;journey_auto_tick=false
 	set_sky_state("rest");look_direction("forward")
@@ -1189,8 +1282,21 @@ func view_tag_text() -> String:
 	elif camera_mode == "player" and camera.pullback > 0.01: t += " · third-person camera"
 	if active_level == 1: t += " · lower deck"
 	return t
+func walk_for_level(id: String) -> WalkArea:
+	return walk_bridge if id=="bridge" else (walk_lower if id=="commons" else null)
+
+func active_stage_id() -> String:
+	return str(director.stage_at("commons" if active_level==1 else "bridge",avatar_pos).get("id","")) if director!=null else ""
+func level_context() -> Dictionary:
+	var lower:=active_level==1
+	return {"id":"commons" if lower else "bridge","name":"Commons" if lower else "Bridge","stage":active_stage_id(),
+		"view":str(director.deck_view) if director!=null else "bow","legacy_views":false,
+		"can_walk_to_lift":not lower or absf(avatar_pos.y-57.0)<=WalkArea.STEP_M,
+		"route_hint":level_runtime.route_hint() if lower and level_runtime!=null else ""}
+
 func _update_hud(delta: float, details: String) -> void:
 	var view := hud_view()
+	ship_hud.set_level_context(level_context())
 	ship_hud.details.text = details
 	ship_hud.set_view_tag(view_tag_text())
 	_update_cards(view)
@@ -1199,6 +1305,7 @@ func _update_hud(delta: float, details: String) -> void:
 	# While the crossing review is open the waiting line owns the bottom centre: no console prompt under it
 	# (#277 review: "Voyage console · E use" was drawn over "Press Enter to read on").
 	var prompt:String="" if crossing_review!=null and crossing_review.visible else consoles.prompt_text()
+	if prompt.is_empty() and active_level==1 and level_runtime!=null:prompt=level_runtime.route_hint()
 	if director!=null and not director.cue_prompt.is_empty(): # C2: a cue under reduced motion is a prompt (10 s)
 		prompt=director.cue_prompt+(" · "+prompt if not prompt.is_empty() else "")
 	ship_hud.set_prompt(prompt)
@@ -1397,8 +1504,16 @@ func toggle_confirm_mode() -> void:
 	confirm_button.text = "Confirm decisions: " + ("press twice" if confirm_mode == "twice" else "hold")
 	if menu_return:
 		var gs := GameSettings.new(); gs.dir = settings_dir; gs.load_settings(); gs.confirm_mode = confirm_mode; gs.save_settings()
-## Tab "Walk to": walk to a station along the walk mesh (3.5 m/s; WASD takes over).
+## Tab "Walk to": walk to a station along the walk mesh at the shared pace; WASD takes over.
 func walk_to(station: String) -> bool:
+	if active_level==1 and level_runtime!=null:
+		if absf(avatar_pos.y-57.)>WalkArea.STEP_M:
+			note(level_runtime.route_hint());return false
+		var full_walk:=walk
+		walk=walk_lower.floor_view(57.)
+		var accepted: bool=consoles.walk_to(station)
+		walk=full_walk
+		return accepted
 	return consoles.walk_to(station)
 ## The bridge consoles (R1-SHIP-UI U3): stations from ship.glb, use points, prompt, panels.
 func _consoles_setup() -> void:
@@ -1529,17 +1644,23 @@ func journey_label() -> String:
 
 func _solar_departure_smoke()->void:
 	auto=false;journey_auto_tick=false
+	if not await await_civic_art():
+		print("solar-departure-smoke: FAIL civic art");get_tree().quit(1);return
 	var ok:=start_solar_departure()
+	print("solar-departure-smoke-stage start: ",ok," ",caption)
 	if ok:
 		ok=solar_tour.advance() and journey_tick() and live_journey
+		print("solar-departure-smoke-stage commit: ",ok," ",solar_tour.failed)
 		var before:Dictionary=journey_sim.world.duplicate(true)
 		ok=not start_solar_departure() and journey_sim.world==before and ok
 		open_chart()
 		ok=not solar_tour.paused and journey_map.mode=="chart" and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
 		close_navigation()
 		for tick in 20:ok=journey_tick() and ok
-		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
+		# drawn_points belongs to the renderer; let the committed world reach a drawn frame first.
 		for frame in 12:await get_tree().process_frame
+		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
+		print("solar-departure-smoke-stage rendered: ",ok," saturn=",sky.system_view.drawn_points.has("saturn")," phase=",sky_world.ship.phase)
 	print("solar-departure-smoke: %s" %("OK" if ok else "FAIL"))
 	var tree:=get_tree()
 	solar_tour=null

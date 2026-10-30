@@ -1,0 +1,317 @@
+{
+  "about": "D-133 one review-only lived-in court/arcade pilot. Real ship metres; existing floor/routes and camera retained. Bounds include transparent-card foot padding, not lowered furniture.",
+  "source_glb": "commons_lived_in_kit_v1.glb",
+  "source_sha256": "7b841838dfab86c6c0f96ab0bb10c26842ce51440bae843b12cdb6c3eb9e2935",
+  "bounds": {
+    "min": [
+      14,
+      -10,
+      56.9
+    ],
+    "max": [
+      50,
+      20,
+      60.5
+    ]
+  },
+  "placements": [
+    {
+      "name": "news_corner",
+      "prop": "notice_read_station",
+      "ship_m": [
+        16.5,
+        9,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "notice_read_station__grown_pedestal",
+        "notice_read_station__reading_surface",
+        "notice_read_station__notice_arch"
+      ]
+    },
+    {
+      "name": "north_bench",
+      "prop": "civic_bench",
+      "ship_m": [
+        28,
+        16,
+        57.025
+      ],
+      "yaw_deg": 180,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "south_bench",
+      "prop": "civic_bench",
+      "ship_m": [
+        28.7,
+        12,
+        57.025
+      ],
+      "yaw_deg": 10,
+      "solid_meshes": [
+        "civic_bench__seat",
+        "civic_bench__grown_back",
+        "civic_bench__root_leg_0",
+        "civic_bench__root_leg_1",
+        "civic_bench__root_leg_2",
+        "civic_bench__root_leg_3"
+      ]
+    },
+    {
+      "name": "shared_table",
+      "prop": "communal_table",
+      "ship_m": [
+        28,
+        14.4,
+        57.025
+      ],
+      "yaw_deg": -8,
+      "solid_meshes": [
+        "communal_table__table_top",
+        "communal_table__grown_trunk"
+      ]
+    },
+    {
+      "name": "daily_storage",
+      "prop": "storage_baskets",
+      "ship_m": [
+        31.9,
+        14.4,
+        57.025
+      ],
+      "yaw_deg": -10,
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ]
+    },
+    {
+      "name": "social_planter",
+      "prop": "planter_large",
+      "ship_m": [
+        31.4,
+        13,
+        57.025
+      ],
+      "yaw_deg": 0,
+      "solid_meshes": [
+        "planter_large__bowl"
+      ]
+    },
+    {
+      "name": "small_planter",
+      "prop": "planter_small",
+      "ship_m": [
+        30,
+        13.2,
+        57.025
+      ],
+      "yaw_deg": 20,
+      "solid_meshes": [
+        "planter_small__bowl"
+      ]
+    },
+    {
+      "name": "arcade_counter",
+      "prop": "arcade_counter",
+      "ship_m": [
+        44.8,
+        8.3,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "arcade_counter__counter_top",
+        "arcade_counter__counter_leg_neg1",
+        "arcade_counter__counter_leg_1",
+        "arcade_counter__under_shelf"
+      ]
+    },
+    {
+      "name": "work_cart",
+      "prop": "maintenance_cart",
+      "ship_m": [
+        47,
+        6.4,
+        57.025
+      ],
+      "yaw_deg": -20,
+      "solid_meshes": [
+        "maintenance_cart__cart_body",
+        "maintenance_cart__tool_tray",
+        "maintenance_cart__wheel_0_0",
+        "maintenance_cart__wheel_0_1",
+        "maintenance_cart__wheel_1_0",
+        "maintenance_cart__wheel_1_1",
+        "maintenance_cart__handle_stem_neg1",
+        "maintenance_cart__handle_stem_1"
+      ]
+    },
+    {
+      "name": "bay_storage",
+      "prop": "storage_baskets",
+      "ship_m": [
+        47.9,
+        13.3,
+        57.025
+      ],
+      "yaw_deg": 90,
+      "solid_meshes": [
+        "storage_baskets__basket_body_0",
+        "storage_baskets__basket_body_1"
+      ]
+    }
+  ],
+  "plants": [
+    {
+      "name": "social_shrub",
+      "kind": "shrub",
+      "placement": "social_planter",
+      "anchor": "FOLIAGE_planter_large_soil",
+      "height": 1.0,
+      "tint": [
+        0.95,
+        1,
+        0.95
+      ]
+    },
+    {
+      "name": "small_flowering_shrub",
+      "kind": "shrub",
+      "placement": "small_planter",
+      "anchor": "FOLIAGE_planter_small_soil",
+      "height": 0.7,
+      "tint": [
+        1,
+        0.9,
+        0.96
+      ]
+    },
+    {
+      "name": "court_frond",
+      "kind": "frond",
+      "root": [
+        24,
+        13.2,
+        57.05
+      ],
+      "height": 1.95,
+      "yaw_deg": -15,
+      "tint": [
+        0.94,
+        1,
+        0.96
+      ]
+    },
+    {
+      "name": "bay_grown_plant",
+      "kind": "grown_planter",
+      "root": [
+        45.8,
+        12.9,
+        57.05
+      ],
+      "height": 1.65,
+      "yaw_deg": 20,
+      "tint": [
+        1,
+        0.95,
+        1
+      ]
+    }
+  ],
+  "practicals": [
+    {
+      "name": "reading_lamp",
+      "ship_m": [
+        16.5,
+        8.7,
+        58.625
+      ],
+      "range_m": 4.0,
+      "energy": 0.55,
+      "tint": [
+        1,
+        0.78,
+        0.54
+      ]
+    },
+    {
+      "name": "bay_task_lamp",
+      "ship_m": [
+        44.6,
+        8.3,
+        58.245
+      ],
+      "range_m": 3.8,
+      "energy": 0.45,
+      "tint": [
+        1,
+        0.82,
+        0.6
+      ]
+    },
+    {
+      "name": "shared_table_lamp",
+      "ship_m": [
+        28.6437,
+        14.3095,
+        58.195
+      ],
+      "range_m": 4.3,
+      "energy": 0.85,
+      "tint": [
+        1,
+        0.82,
+        0.6
+      ]
+    }
+  ],
+  "replace_markers": [
+    "GB_find_notice_board"
+  ],
+  "review_points": [
+    {
+      "id": "court",
+      "ship_m": [
+        26,
+        4,
+        57.025
+      ]
+    },
+    {
+      "id": "seating",
+      "ship_m": [
+        25.5,
+        8,
+        57.025
+      ]
+    },
+    {
+      "id": "arcade_edge",
+      "ship_m": [
+        35,
+        12,
+        57.025
+      ]
+    },
+    {
+      "id": "underterrace",
+      "ship_m": [
+        34,
+        6,
+        57.025
+      ],
+      "clamped": true
+    }
+  ]
+}

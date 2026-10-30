@@ -9,7 +9,10 @@
 // Billboard as BaseMaterial3D's: fixed Y in the upright walk views, full otherwise. Every painted frame is
 // drawn through this material (mode 0 = no effect), so a start or stop can lean (lean_tan, CA2).
 shader_type spatial;
-render_mode unshaded, cull_disabled, depth_prepass_alpha, shadows_disabled;
+// Draw after opaque ship geometry. An alpha depth prepass would suppress the enclosing wall
+// behind near-opaque painted texels, leaving fractional viewport alpha that leaks the live sky.
+// Ordinary alpha blending keeps the painted edge and echo while retaining opaque coverage behind it.
+render_mode unshaded, cull_disabled, shadows_disabled;
 
 uniform sampler2D cur_tex : source_color, filter_linear_mipmap;
 uniform sampler2D prev_tex : source_color, filter_linear_mipmap;
@@ -21,6 +24,8 @@ uniform float px = 0.0052;      // one cell pixel in uv (1/192)
 uniform float step_px = 16.0;   // one painted frame's travel on the canvas, cell px (the deck's 0.124 m)
 uniform vec3 ink = vec3(0.259, 0.208, 0.333); // #423555
 uniform bool fixed_y = true;
+uniform float work_lean_deg = 0.0; // D-132: held work posture, anchored at actual feet
+uniform vec3 work_direction = vec3(0.0, 0.0, -1.0);
 uniform float lean_tan = 0.0; // the procedural lean of a start or stop: the quad sheared about the feet (screen x)
 
 void vertex() {
@@ -29,7 +34,9 @@ void vertex() {
 		vec3 up = vec3(0.0, 1.0, 0.0);
 		vec3 right = normalize(cross(up, INV_VIEW_MATRIX[2].xyz));
 		vec3 fwd = normalize(cross(right, up));
-		MODELVIEW_MATRIX = VIEW_MATRIX * mat4(vec4(right * length(MODEL_MATRIX[0].xyz), 0.0), vec4(up * length(MODEL_MATRIX[1].xyz), 0.0), vec4(fwd * length(MODEL_MATRIX[2].xyz), 0.0), MODEL_MATRIX[3]);
+		float work_angle = radians(clamp(work_lean_deg, 0.0, 15.0));
+		vec3 working_up = up * cos(work_angle) + normalize(work_direction) * sin(work_angle);
+		MODELVIEW_MATRIX = VIEW_MATRIX * mat4(vec4(right * length(MODEL_MATRIX[0].xyz), 0.0), vec4(working_up * length(MODEL_MATRIX[1].xyz), 0.0), vec4(fwd * length(MODEL_MATRIX[2].xyz), 0.0), MODEL_MATRIX[3]);
 	} else {
 		MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0] * length(MODEL_MATRIX[0].xyz), INV_VIEW_MATRIX[1] * length(MODEL_MATRIX[1].xyz), INV_VIEW_MATRIX[2] * length(MODEL_MATRIX[2].xyz), MODEL_MATRIX[3]);
 	}

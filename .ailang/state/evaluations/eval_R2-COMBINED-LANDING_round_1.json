@@ -1,0 +1,300 @@
+{
+  "sprint_id": "R2-COMBINED-LANDING",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-30T17:53:04.637732+00:00",
+  "evaluator": "independent npc_pilot_review agent; not the integration, audio or gate implementer",
+  "status": "preliminary_code_review_complete_pending_exact_head_gates_and_publication",
+  "result": "pending",
+  "total_score": null,
+  "pass_threshold": 70,
+  "final_landing_pass": false,
+  "review_scope": "Land the implemented combined bridge/Commons, shared walking pace, Earth-link comms/feed/audio/map work, preserved main improvements and accepted painted NPC assets. Do not declare the full finishing, Earth-link or NPC runtime sprints complete. Publish a clean main-based laptop development build and reconcile only the relevant Studio checkouts, with no laptop SSH. File PR360 audio-realism proposal only; no package/runtime execution or plan approval is implied.",
+  "design_docs": [
+    "design_docs/planned/r2/bridge-commons-finish-sprint.md",
+    "design_docs/planned/r3/earth-link.md",
+    "design_docs/planned/r3/earth-link-sprint.md"
+  ],
+  "reviewed_snapshot": {
+    "head_sha_at_preliminary_review": "995ef0f6106c9c00dd35e66d6b4d1369c2a82403",
+    "latest_independently_reviewed_head": "22b7a4cae062fba4a6f8f3246e71e1140909665f",
+    "later_integrated_earth_head": "6bdbed04497d2eafeeb651036e0e9fbac77b404b",
+    "main_baseline": "061e71aa",
+    "earth_link_head_in_snapshot": "6bdbed04497d2eafeeb651036e0e9fbac77b404b",
+    "earth_link_head_is_ancestor_of_snapshot": true,
+    "final_candidate_sha": null,
+    "final_main_sha": null,
+    "published_build_commit": null,
+    "snapshot_note": "Final owner EL5 is integrated through merge894a8619; proposal PR360 through22b7a4ca. All three actual heads independently confirmed ancestors. Parent reports Earth sibling clean after push. Freeze the final committed candidate before restarting rig/full: the superseded c3af run was stopped early and cannot certify this candidate. Reconfirm remote PR heads immediately before merge.",
+    "audio_design_head_in_snapshot": "759cde70a2c8ed894bf9057f9a5429f77bec544e",
+    "audio_design_head_is_ancestor_of_snapshot": true,
+    "main_baseline_is_ancestor_of_snapshot": true
+  },
+  "findings": [
+    {
+      "id": "EARTH-MAP-GPU-GATE",
+      "severity": "resolved_before_final_freeze",
+      "status": "resolved_pending_exact_head_gate_reexecution",
+      "file": "ui/earth_beams.gd",
+      "evidence": "The newly included ffbf6729 map overlay introduces physical light-front/ray/window geometry. Existing tests/test_earth_beams.gd checks fields and compares projection to Camera3D.unproject_position on the same inputs; it does not inspect actual rendered pixels against an independent reference. The completed strip/feed golden family does not render EarthBeams.draw_on.",
+      "resolution": "Reviewed commit1ea2b346's extension in renamed tools/earth_display_golden.gd. Frozen genuine protocol2.16 seed7 snapshots record home, uncommitted preview and off-ray stale/pending/window/silence states, with target/rapidity/tick recipe and source hashes. Independent scalar projection uses D28 world=(-gy,gz,-gx) and an explicit perspective camera formula rather than production project/unproject functions. Actual EarthBeams.draw_on GPU readback tests production fronts, line centres and ring centres/radii <=0.5px; a real3px overlay displacement rejects. Poisoning every non-preview earth field leaves the preview GPU image identical and read=[preview]. All three map geometry reference PNGs were independently opened. The enforced standalone family now reports20 passed,0 failed and preserves the407 existing main cases.",
+      "beams_fixture_sha256": "58d2164a69fb04d21fce5ec3aee20293f7b6b0d3d59f70bbc1141b754b180b63",
+      "reviewed_helper_sha256": "d36c9c4e6a16e88832f1fdac7346d479f1627d366002c772187df0b8dfffe97d",
+      "observed_cpu_projection_max_error_px": 3.0517578125e-05,
+      "observed_gpu_map_max_error_px": 0.15739107131958,
+      "reference_limit": "Earlier three isolated production-geometry references are supplemented by ten whole-map/station real-sim captures and contact sheet from the owner checkout, independently opened at final EL5 review. Dense ship/port/beam labels can overlap in the homeward map; this is a usability follow-up, not missing physical geometry coverage. No native final-build interaction claim is made."
+    },
+    {
+      "id": "EARTH-STRIP-FEED-PHYSICS",
+      "severity": "resolved_before_this_preliminary_report",
+      "status": "resolved_pending_exact_head_gate_reexecution",
+      "evidence": "Initially no Earth-specific GPU golden existed and the rate-band comments misnumbered RS rows. The reviewed CPU EarthObserve mirror now follows pinned sunholo/observe 0.1.0 and the stable relativity gammaOnePlusBetaCos branch, using scalar float64 coordinates. Numeric test_physics checks cover actual RS26 through RS37, source-observer light time, near-c cancellation and beam-angle/ray guards. New standalone GPU family covers three analytic production EarthStrip states and six EarthFeed indicator washes, with actual3px-shift and missing-tint controls. Evidence records 11 passed,0 failed; all nine reference PNGs were independently opened.",
+      "reference_scope": "Analytic finite-cruise fixture, explicitly not a recorded sim replay. Feed washes are stylized indicators, not spectral image synthesis.",
+      "fixture_sha256": "d5c392245036eb2b40138f01a584b7107cae18546593db447b9a9dda20d4adba",
+      "observed_gpu_marker_error_px": [
+        0.130769729614258,
+        0.112160474061966,
+        0.08221435546875
+      ],
+      "observed_cpu_endpoint_max_error_px": 3.814697265625e-06,
+      "observed_feed_composite_max_channel_error": 0.00141176581382751,
+      "numeric_cpu_result_reported_by_implementer": "989 passed,0 failed; must be witnessed again by the final clean-head rig"
+    },
+    {
+      "id": "INCOMING-EL5-MIRROR-OVERLAP",
+      "severity": "resolved_before_final_freeze",
+      "status": "resolved_pending_exact_head_gates",
+      "evidence": "Reviewed final owner6bdbed04 merged894a8619 and proposal merge22b7a4ca. Observe API and UID remain reconciled. Owner tools/earth_link_golden.gd is a RefCounted helper included in main._run_golden plus dedicated --golden-el; it adds nine GPU marker/ring centroids across three camera states and an offset-reference negative. Float64 pinhole projection is independent of Camera3D.unproject_position, while SkyFrame.to_world64 is shared; the separate20-case helper independently checks the world-axis convention and real-sim production primitives, including an actual3px geometry mutation. markers_only defaultsfalse and only the test enables it. The normal draw path only changes silence-label offset. Current Makefile preserves existing407 families, enforces417 total and10 G-EL-1 lines, and retains the enforced standalone20 prerequisite. Parent reports integrated golden-el10/0, max0.176px, and standalone20/0. These are parent-run evidence, not evaluator-executed gates."
+    },
+    {
+      "id": "COMMONS-REFERENCE-COVERAGE",
+      "severity": "informational",
+      "status": "existing_coverage_present_final_gate_pending",
+      "evidence": "Existing test_physics checks assert literal clamp/raised eye, pole and slab references plus RS1/RS2. tools/m4_ship_golden.gd includes paired-baseline G-LVL1/G-LVL2 production-eye cases. The independently opened clamp and service contact sheets show the captain retained; the service references remain enclosed. Existing civic runtime/export review found no concrete code/packaging blocker, but its older native archive is not evidence for the new candidate."
+    },
+    {
+      "id": "NPC-ASSET-SCOPE",
+      "severity": "informational",
+      "status": "accepted_art_runtime_followup_retained",
+      "evidence": "D141 accepts the first five-identity/25-pose appearance. The independent pilot review scored92/100 with no bounded-pilot blocker. Assets and opt-in preview may land; normal game still does not install painted NPCs. Seat anchors, contact shadows, civilian variety, gait frames, live crew availability/ageing and in-world interaction remain explicit follow-up. This landing must not mark them implemented."
+    },
+    {
+      "id": "FINAL-EL5-CAPTURES",
+      "severity": "informational",
+      "status": "reviewed_no_code_freeze_blocker",
+      "evidence": "Read tools/earth_link_capture.gd: real SimBridge protocol2.16 seed7 voyages generate outbound0.99c, top speed, right-angle replan, stale off-ray and homeward0.99c. State checks assert rate, preview wait, stale/window conditions; distinct/nonblank frames and DisplayBinding audits are enforced. Opened all10 map/station frames and contact sheet. Reference ports A/B and far waypoint are deliberately chosen analytic targets driven through the real sim; owner golden states are handcrafted renderer fixtures, not claimed replay snapshots. Capture frames are not a fresh final exported-app smoke.",
+      "golden_helper_sha256": "057f5fc594d933351080f44d07d4ceecf3efd1ff433eb1a29264c0520329e0ff",
+      "capture_helper_sha256": "f80d0f58a0e45772d7002a3ade99b405003cb3f89c683c2cf5b18067d44509a4"
+    },
+    {
+      "id": "PR360-FILED-PROPOSAL",
+      "severity": "informational",
+      "status": "plan_only_awaiting_user_approval",
+      "evidence": "gh pr view360 confirms head759cde70a2c8ed894bf9057f9a5429f77bec544e and exactly4 changed files: planned design, planned sprint, sprint JSON and design index. Local diff has no runtime/package/audio-asset edits. Design states awaiting Marks approval, plan only/no publish; JSON status awaiting_approval, approved:null and milestones passes:null. Merging this proposal does not authorize execution or certify its detailed design. Actual head ancestry confirmed in22b7a4ca."
+    },
+    {
+      "id": "CAPTAIN-SPEED-REGRESSION-GATE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "narrow_test_repair_independently_reviewed",
+      "evidence": "Parent reports exact-head82aa7e165491f652db7386ab23321d479be87e2f rig/full stopped early at captain-anim: an old assertion still required1.3m/s. Independently inspected only2-line comment/assertion repair in tests/test_captain_anim.gd::_speed. D138 ledger explicitly supersedesD115 and approves shared2.2m/s for next dev playtest. Production ShipConsoles constant is2.2. Generic1.3 fixture velocities remain unchanged as valid animation samples. Targeted log records87passed,0failures. No production change or relaxed tolerance introduced. Failed82aa run is not a landing pass; new committed head requires fresh fullrig and exact-headfast."
+    },
+    {
+      "id": "CAMERA-SECTOR-PACE-FIXTURE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "targeted_camera_187_0_forward_35_0_pending_new_exact_head_rig",
+      "evidence": "Independent review of tests/test_camera_director.gd::test_sectors_and_walk found an explicitly intended14m clear path. Stale650frames at2.2m/s travelled23.833m and eventually followed the curved deck rim; the original targeted log reports186passed/1failure on held-world-direction. The repair uses ceil(14*60/WALK_SPEED_MPS),382frames at2.2=14.0067m. Existing displacement direction dot>.9, sector-switched, camera continuity<=.01m/.5deg and key-release checks are unchanged. Production geometry and movement are unchanged. Targeted camera rerun log independently confirms187passed/0failures. Targeted camera-forward35/0, basis guard0inline and3controls also pass, with wrapper exit0 reported by parent. No fullrig success inferred. The repair preserves the documented test geometry and acceptance thresholds and is suitable for commit and fresh exact-head gating."
+    },
+    {
+      "id": "EARTH-THEME-STRICT-GATE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "shared_theme_repair_independently_reviewed_targeted_green",
+      "evidence": "Independent read of finald039e6bac6c3829383de4234a9c74aec5dc85a4d rig log confirms style-test22/0 then ui-theme-check strict FAIL with2leftovers: EarthFeed StyleBoxFlat.new for HUDtag backdrop and EarthBeams add_theme_color_override for bound labels. Existing57contrast pairs passed but do not cover these new styles. Parent assigned earth_gate_fix to move genuine styles into StapledonTheme variants and add text/panel contrast pairs, preserving colors/background; no allowlist or lint waiver. Independent final repair review and targeted pixel/contrast evidence pending. This head cannot land; a new committed exacthead must restart fullrig and passfast.",
+      "resolution": "Reviewed production changes confined to ui/stapledon_theme.gd, ui/earth_feed.gd and ui/earth_beams.gd. Shared HUDEarthFeed variation inherits HUDOverlay and preserves exact ink alpha0.62, radius4, verticalmargin4/horizontal8. Seven beam variants read unchanged JSON palette; kind/open/wait variation is reassigned on each binding so reusedlabels do not retain old colors. Explicit sharedtheme fixes formerlyunthemed rawSubviewports; intended production themedparent visuals are byte-identical. All57contrastpairs retained plus1feednormal and7beam pairs; noallowlist/lintwaiver. Independently read strict0leftovers/65pairs and seedednegativecontrols, feed53/0, beams29/0, station42/0. Parent/implementer report final standaloneGPU20/0 and owner10/0(max0.176px). Independent fullrig still pending on newcommittedhead.",
+      "pixel_comparison": "Independently checked frozenoriginalscripts equalHEAD except removedclass_name declaration; read comparison harness, opened all6before/afterframes, verified PNGbyteidentity for feed573b0cf4dbc6df6bfb23e7b7b15e807a0a18635c7a430981e7bfad8e486be49e, preview7759146cbf845c45d7f62819b36a016ce7169a262ea1bcba67034946c0d8b0e1, offrayba58e0fd79ae07307ccf0f53085e2cefcd3ad452c30d766f94d47ce0366874db. Preview repeated after offray confirms reusedlabel appearance.",
+      "limitations": "Contrastpairs measure text on theme panels/night/cream, while realmap labels overlaystars; densemap label collision remains earlier usabilityfollowup. Explicit sharedfont means older rawunthemed captures are not asserted byte-identical. Fresh voyage/context and exported-app smoke pending."
+    },
+    {
+      "id": "CROSSING-PORTRAIT-FALLBACK-FIXTURE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "controlled_fallback_chain_independently_reviewed_targeted_green",
+      "evidence": "Parent reports exacthead61f787863cc6880044fa41a0d1b90abd879f7d09 fullrig reaches crossing-review101/1 aftersim/replay/strict/GR/ISM gates. Existing test_crossing_review.gd160 asserts engineer angry resolvesneutral, assuming angry andsad assets absent; expanded Earthportrait library now suppliesangry. Repair assigned controlled missing-emotion fixtures plus optional portraitdirectory argument defaulting production path. Must retain actual angry\u2192sad\u2192neutral chain coverage; an unknown-emotion-only check would not certify thatchain. Independent repair review and new committedhead fullrig/fast still pending. NoPASS.",
+      "resolution": "Independently reviewed only ui/crew_page.gd and tests/test_crossing_review.gd repair. Optionalportrait_dir defaults to unchanged productionPORTRAIT_DIR; emotionfallback list and path-keyed texturecache logic unchanged. Cleared controlleduser fixture writes neutral-only fixture_role and separate fixture_chain with distinctsad+neutraldecodedcolors, both angryabsent. First verifies angry\u2192missing sad\u2192neutral, second verifies sadprecedenceoverneutral; exactchosenpaths and actualCaptainAvatar.make_texture decodedpixels checked. Distinctroles avoid relying on cachemissmutation. This retains actual angry fallbackchain coverage rather than unknownemotiondefault alone. Independently read crossing-review103passed/0failures, crew-console0failures andcrew-hold0failures logs. Newcommittedhead fullrig+fast still required; failedearlier61 remainsfailed."
+    },
+    {
+      "id": "COMMONS-INPUT-LEGACY-FIXTURE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "production_and_explicit_private_legacy_fixtures_30_0",
+      "evidence": "Remainder preflight found stale ship-demo-input assumes playerCommons Z1/Z3 zoom though productionCommons nowmanifestfixedwalkcamera. Independent review supports checking actualproductionfixed/nozoom first and retaining alloldgestureassertions on explicitcompatibilityfixture. Initial repair log shows21passed/9failures: productionchecks pass, but level_greybox:false alone onlyskips runtimegeometry, not manifestCameraDirector levels. load_views stillimports Commonsnonlegacy, and _zoom_allowed blocksmenuzoom. Parent advised fixturemust explicitly select privatelegacyconfig in addition; production runtimecomment update is documentationonly. Targetedrerun/finalrepairreview pending; noPASS.",
+      "resolution": "Finalrepair deepduplicates dir.levels and explicitlysets commons={legacy:true,default:z2_lower} on compatibilityonly level_greybox:false demo. Actualproduction bridge+Commons fixed/nozoom checks runfirst. Alloldwheel/scroll accumulation/inertialtail/pinch/F8/gesture assertions unchanged. Independentlyread finaltargeted30passed/0failures. Production camera change only corrects explanatorycomment; manifests nevermutated. Suitablefornewhead fullrig/fast; noPASS inferred."
+    },
+    {
+      "id": "SCENE-CODEX-EXPECTED-SCOPE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "targeted_audit_codex_replay_green_independently_reviewed",
+      "evidence": "Reviewed sim/tools/session_audit.ail/test and new tests/expected_unlocks.scene-2.15.json. sceneCodexReport selectsfrozen11importedarchive/8unlock orcurrent13/10 expectation ONLY by exactordered(ID,unlockhint) signature ofsoleinputnew_game.archive, neverobservedunlocks. Unknown/missing/duplicate/mixed/reorderedwitness rejects viaemptyexpectedand codexReportnonemptyguard. codexReportitself unchanged: exactIDs/order, firstappearance andindependentlyinferred/imported triggerchecks retained. Legacyuniform2.7/currentexpectations unchanged. Independentlyverified newfrozenarchive matches11rows ofsole pinnedscene input exactly, inputbytesunchanged. Read16namedtests runstrictVM/0fallback inclvalidboth/crossscopeIDs/wronghint/reorder/unknown/missing/duplicatecontrols. FS mirrorcheck+actualpinnedinput checkpresent. Final make session-audit-test codex-unlocks replay-scene exit0 reported by implementer. Independentlyread log: realfrozen2427lines/83,297,783bytesidentical replay, inputonebyte andgoldenonebitcontrols detected, exact8legacyunlockIDs/hintsPASS. Scope selection dependson completeinputarchive IDs/hints only; observedunlocks remain evidencejudged byunchangedcodexReport. Bothpure/FSsession-audit-ok andstrictVM16/16reported/observed. Existingreplayinput/golden/currentexpectationpins unchanged. Finalnewheadfullrig+fastpending."
+    }
+  ],
+  "independently_reviewed_evidence": {
+    "rules": "CLAUDE.md, including exact-head rig/full+fast requirements and physics gate2; current GitHub access preference is gh CLI",
+    "latest_main_merge": "Auto-clean staged integration of main diagnostic/ISM changes was inspected; git diff --cached --check was clean at that point. The new capture tolerance/layout and ISM logger/connection guards have existing independent evaluations on main.",
+    "earth_link_ancestry": "At22b7a4ca, independent merge-base checks succeed for main061e71aa, Earth6bdbed04 and audio-proposal759cde70. Full actual remote ancestry retained.",
+    "source_review": [
+      "ui/earth_strip.gd",
+      "ui/earth_feed.gd",
+      "ui/earth_beams.gd at ffbf6729",
+      "ui/galaxy_map.gd EL4 delta",
+      "tests/test_earth_feed.gd",
+      "tests/test_comms_station.gd",
+      "tests/test_earth_beams.gd at ffbf6729",
+      "physics/observe.gd",
+      "tests/test_physics.gd Earth checks",
+      "tools/earth_display_golden.gd (renamed from the initial tools/earth_link_golden.gd)",
+      "tests/fixtures/earth_link/strip.json",
+      "tests/fixtures/earth_link/beams.json",
+      "mk/earth-link.mk golden and UI dependencies",
+      "sim/earth_link_test.ail and pinned observe/lightcone + relativity/optics implementations",
+      "main.gd final EL5 dispatch and golden hook",
+      "tools/earth_link_golden.gd final owner helper",
+      "tools/earth_link_capture.gd",
+      "ui/earth_beams.gd final markers_only/default and label delta",
+      "Makefile final417 plus named-family guards",
+      "PR360 gh metadata and local plan-only status/diff",
+      "ui/stapledon_theme.gd shared Earth styles and65contrastpairs",
+      "ui/earth_feed.gd and ui/earth_beams.gd sharedtheme repair",
+      "ui/crew_page.gd optional portraitdirectory default seam",
+      "tests/test_crossing_review.gd controlledmissing angry\u2192sad\u2192neutral chain withdecodedPNGchecks",
+      "tests/test_ship_demo_input.gd productionfixedstage +privatelegacycamera fixture",
+      "demos/camera_director.gd commentonly",
+      "sim/tools/session_audit.ail sceneCodexReport exactimportedarchive scopewitness",
+      "sim/tools/session_audit_test.ail strictVMscopecontrols andFS mirror",
+      "tests/expected_unlocks.scene-2.15.json exactpinnedscenearchive"
+    ],
+    "opened_references": [
+      "Earth-link sibling renders/comms_station/home.png",
+      "Earth-link sibling renders/comms_station/away.png",
+      "Earth-link sibling renders/comms_station/waiting.png",
+      "Earth-link sibling renders/comms_station/homeward.png",
+      "renders/levels/commons/s3-clamp/contact_sheet.png",
+      "renders/levels/commons/s3-service-final/contact_sheet.png",
+      "renders/earth_link_golden/strip_committed.png",
+      "renders/earth_link_golden/strip_in_flight.png",
+      "renders/earth_link_golden/strip_waiting.png",
+      "renders/earth_link_golden/feed_rs26.png",
+      "renders/earth_link_golden/feed_rs27.png",
+      "renders/earth_link_golden/feed_rs28.png",
+      "renders/earth_link_golden/feed_rest.png",
+      "renders/earth_link_golden/feed_rs29.png",
+      "renders/earth_link_golden/feed_rs30.png",
+      "renders/earth_link_golden/beams_home.png",
+      "renders/earth_link_golden/beams_preview.png",
+      "renders/earth_link_golden/beams_offray.png",
+      "../stapledons-godot-earth-link/renders/earth_link/a_outbound_map.png",
+      "../stapledons-godot-earth-link/renders/earth_link/a_outbound_station.png",
+      "../stapledons-godot-earth-link/renders/earth_link/b_top_map.png",
+      "../stapledons-godot-earth-link/renders/earth_link/b_top_station.png",
+      "../stapledons-godot-earth-link/renders/earth_link/c_replan_map.png",
+      "../stapledons-godot-earth-link/renders/earth_link/c_replan_station.png",
+      "../stapledons-godot-earth-link/renders/earth_link/d_stale_map.png",
+      "../stapledons-godot-earth-link/renders/earth_link/d_stale_station.png",
+      "../stapledons-godot-earth-link/renders/earth_link/e_home_map.png",
+      "../stapledons-godot-earth-link/renders/earth_link/e_home_station.png",
+      "../stapledons-godot-earth-link/renders/earth_link/contact_sheet.png",
+      "renders/earth_theme/before_feed.png",
+      "renders/earth_theme/before_preview.png",
+      "renders/earth_theme/before_offray.png",
+      "renders/earth_theme/after_feed.png",
+      "renders/earth_theme/after_preview.png",
+      "renders/earth_theme/after_offray.png"
+    ],
+    "evaluator_full_suite_run": false,
+    "evaluator_gpu_jobs_run": false,
+    "evaluator_source_mutation": false,
+    "evaluator_git_or_publication_mutation": false
+  },
+  "required_final_receipts": [
+    {
+      "criterion": "Stable final candidate and actual latest Earth-link ancestry",
+      "status": "pending",
+      "evidence": null
+    },
+    {
+      "criterion": "Independent review of map coverage and current mirror/API reconciliation",
+      "status": "met_for_22b7a4ca_code_review",
+      "evidence": "Final owner helper and capture code reviewed; all10 whole-map/station references plus contact sheet opened. Parent integrated native10/0 and20/0; full exact-head gates still pending."
+    },
+    {
+      "criterion": "Exact-final-PR-head fast tier succeeds",
+      "status": "pending",
+      "evidence": null
+    },
+    {
+      "criterion": "Exact-final-PR-head rig/full succeeds including make golden with417 main cases (407 preserved +10 owner EL5) and enforced standalone20 Earth display cases",
+      "status": "pending",
+      "evidence": null
+    },
+    {
+      "criterion": "Merge implemented work without dropping PR344 ancestry and leave full sprint/follow-up claims accurate",
+      "status": "pending",
+      "evidence": null
+    },
+    {
+      "criterion": "Fresh clean-main-based publish-dev run: strict export pack zero skips/failures, all native prerequisites and civic packed-art/activity/walk/lift smoke",
+      "status": "pending",
+      "evidence": null
+    },
+    {
+      "criterion": "Latest manifest version/commit/hash matches fresh app/ZIP; downloaded archive checksum verified",
+      "status": "pending",
+      "evidence": null
+    },
+    {
+      "criterion": "Relevant Studio checkout cleanup inventory and remote backup SHA receipts preserve uncommitted/unpushed/stashed work; no laptop SSH",
+      "status": "pending",
+      "evidence": null
+    }
+  ],
+  "scope_limits": [
+    "No final score, PASS or merge authorization is issued by this preliminary report.",
+    "A green old build, old fast tier or earlier rig status cannot certify the moving final candidate.",
+    "The bounded implemented landing unit can be evaluated without falsely completing the wider Commons finishing, Earth-link or NPC runtime sprints.",
+    "Final full-rig, CI, native publication and checkout actions belong to the parent; this evaluator inspects their precise receipts and does not rerun or mutate them.",
+    "Complete this same report after the final gates/artifact evidence, as documentation bookkeeping, while preserving which exact code SHA was tested and built.",
+    "PR360 is filed as an awaiting-approval proposal, with no audio0.6 package implementation, revoice, pin or publication included."
+  ],
+  "gate_attempts": [
+    {
+      "head": "82aa7e165491f652db7386ab23321d479be87e2f",
+      "gate": "rig/full",
+      "result": "failed_early",
+      "reported_by": "parent",
+      "cause": "Stale captain animation movement-speed assertion pinned1.3 rather than approvedD1382.2.",
+      "repair": "tests/test_captain_anim.gd::_speed expected literal and comment updated to2.2; targetedcaptain-anim87/0 log independently inspected.",
+      "replacement_full_rig": "pending_new_committed_head"
+    },
+    {
+      "head": "82aa7e165491f652db7386ab23321d479be87e2f plus uncommitted pace assertion repair",
+      "gate": "targeted camera-test and forward check",
+      "result": "original_camera_failed_186_passed_1_failed",
+      "evidence": "/tmp/stapledon-pace-camera-check.log",
+      "replacement_result": "camera-director187/0 and camera-forward35/0; basis guard0inline/3controls; final wrapperexit0 parent reported. Targeted log independently read. New-head fullrig/fast pending.",
+      "repair": "Only fixed travelled path duration, retaining explicit14m fixture geometry and unchanged acceptance thresholds."
+    },
+    {
+      "head": "d039e6bac6c3829383de4234a9c74aec5dc85a4d",
+      "gate": "rig/full",
+      "result": "failed_at_ui_theme_check",
+      "evidence": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/rig-check/d039e6bac6c3829383de4234a9c74aec5dc85a4d.log independently read",
+      "checks_before_failure": "Pace checks passed; parent reports contact44/0, frames, chair12/0, style22/0; style22/0 independently observed in log tail.",
+      "cause": "2uncentralized EarthFeed/EarthBeams theme styles rejected by strict gate",
+      "replacement_full_rig": "pending real shared-theme repair, independent review, commit and new exacthead run"
+    },
+    {
+      "head": "61f787863cc6880044fa41a0d1b90abd879f7d09",
+      "gate": "rig/full",
+      "result": "failed_at_crossing_review_101_passed_1_failed",
+      "cause": "Stale asset-absence fixture assumes engineer_angry absent despite new portrait library",
+      "checks_before_failure": "Parent reports repairedpace/style/theme65,dressing,levels plus576sim/replay/strict/GR/ISM passed.",
+      "replacement_full_rig": "pending controlled fallbackfixture repair, independent review and newcommittedhead",
+      "targeted_repair_result": "crossing-review103/0, crew-console0failures,crew-hold0failures independentlyread; newexacthead fullrigpending"
+    }
+  ]
+}
