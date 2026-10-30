@@ -22,7 +22,7 @@ const ENTRIES := [
 	["ship", "New game", "A new voyage: the painted 3D ship at rest in the Solar System. Walk the decks, open navigation (M) and fly anywhere."], # D-68: starting over lives here, out of world, never at a ship console
 	["guided", "Guided voyage", "Board and start the guided tour: Earth, the outer planets, alpha Centauri, TRAPPIST-1, Aldebaran, in real time."],
 	["map", "Galaxy map", "The 3D map of the nearby catalogued stars; plan and commit a journey."],
-	["settings", "Settings", "Ship view (Realistic / Auto), how decisions confirm, and text-only AI."],
+	["settings", "Settings", "Ship view (Realistic / Auto), how decisions confirm, camera motion, and live AI keys."],
 	["credits", "Credits", "Data, imagery, papers and software behind the game."],
 	["quit", "Quit", "Close the game."],
 ]
@@ -50,6 +50,9 @@ var confirm_option := OptionButton.new() # R1-SHIP-UI §C4: hold or press twice
 var motion_option := OptionButton.new() # R2-CAMERA D6: full or reduced camera motion
 var text_only_box := CheckBox.new()
 var settings_status := Label.new()
+var ai_button := Button.new() # the live AI keys panel (AI.9), from Settings
+var ai_panel: PanelContainer = null
+var ai_settings := AiSettings.new()
 var credits_body := Label.new()
 var credits_scroll := ScrollContainer.new()
 var _drift := 0.0
@@ -61,6 +64,8 @@ func _init(opts := {}) -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	settings.dir = opts.get("settings_dir", "user://")
 	settings.load_settings()
+	ai_settings.dir = settings.dir
+	ai_settings.load_settings()
 
 
 func _ready() -> void:
@@ -212,7 +217,34 @@ func open_panel(p: Control) -> void:
 		first.grab_focus.call_deferred()
 
 
+## AI.9 from the title screen: the live AI panel (keys, opt-in, text-only, ceiling) over the saved
+## AiSettings; the next voyage's AiSession starts from what is saved here.
+func open_ai_keys() -> void:
+	ai_settings.load_settings() # settings.cfg is shared (text-only lives there too): start from what is saved
+	if ai_panel == null:
+		ai_panel = load(AiIndicator.PANEL).instantiate()
+		ai_panel.settings = ai_settings
+		ai_panel.theme_type_variation = "HUDSheet"
+		ai_panel.closed.connect(_ai_keys_closed)
+		add_child(ai_panel)
+	ai_panel.visible = true
+	ai_panel.refresh()
+	var first: Control = ai_panel.find_child("LineEdit", true, false)
+	if first == null:
+		first = ai_panel.close_button
+	first.grab_focus.call_deferred()
+
+
+## The AI panel saved to the shared settings.cfg: Settings shows its text-only choice too.
+func _ai_keys_closed() -> void:
+	settings.load_settings()
+	text_only_box.set_pressed_no_signal(settings.text_only)
+	ai_button.grab_focus.call_deferred()
+
+
 func close_panels() -> void:
+	if ai_panel != null:
+		ai_panel.visible = false
 	var was := "settings" if settings_panel.visible else ("credits" if credits_panel.visible else "")
 	settings_panel.visible = false
 	credits_panel.visible = false
@@ -231,7 +263,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed:
 		return
-	if not k.echo and k.keycode == KEY_ESCAPE and panel_open():
+	if not k.echo and k.keycode == KEY_ESCAPE and ai_panel != null and ai_panel.visible:
+		ai_panel.close() # one level back: the AI panel, then Settings
+		get_viewport().set_input_as_handled()
+	elif not k.echo and k.keycode == KEY_ESCAPE and panel_open():
 		close_panels()
 		get_viewport().set_input_as_handled()
 	elif credits_panel.visible and k.keycode in SCROLL_KEYS: # keyboard scrolling of the credits
@@ -250,7 +285,7 @@ func _back_button() -> Button:
 
 func _build_settings() -> void:
 	settings_panel.theme_type_variation = "HUDSheet"
-	settings_panel.position = Vector2(64, 150)
+	settings_panel.position = Vector2(64, 138)
 	settings_panel.custom_minimum_size = Vector2(470, 0)
 	settings_panel.visible = false
 	add_child(settings_panel)
@@ -289,15 +324,25 @@ func _build_settings() -> void:
 	motion_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mrow.add_child(motion_option)
 	box.add_child(mrow)
-	text_only_box.text = "Text-only AI (no voices or new portraits)"
+	text_only_box.text = "Text-only AI"
 	text_only_box.button_pressed = settings.text_only
 	text_only_box.toggled.connect(set_text_only)
-	box.add_child(text_only_box)
-	var ai_note := _label("Live AI is off unless you add your own key (the AI button, top right of the galaxy map). Text-only applies there too.", 12, "HUDHint")
+	var airow := HBoxContainer.new() # text-only and the live AI keys side by side (the panel fits a 720p screen)
+	airow.add_theme_constant_override("separation", 12)
+	airow.add_child(text_only_box)
+	box.add_child(airow)
+	ai_button.name = "AiKeys"
+	ai_button.text = "Live AI keys…"
+	ai_button.add_theme_font_size_override("font_size", 15)
+	ai_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	ai_button.pressed.connect(open_ai_keys)
+	airow.add_child(ai_button)
+	var ai_note := _label("Live AI is off until you add your own key (here, or AI keys aboard).", 12, "HUDHint")
 	ai_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ai_note.custom_minimum_size = Vector2(430, 0)
 	box.add_child(ai_note)
 	settings_status.add_theme_font_size_override("font_size", 12)
+	settings_status.visible = false # shown once there is something to say (keeps Back on a 720p screen)
 	settings_status.theme_type_variation = "HUDOk"
 	box.add_child(settings_status)
 	box.add_child(_back_button())
@@ -326,6 +371,7 @@ func set_text_only(on: bool) -> void:
 
 func _save() -> void:
 	var ok := settings.save_settings()
+	settings_status.visible = true
 	settings_status.text = ("Saved: view %s, text-only %s" % [settings.view_label(), "on" if settings.text_only else "off"]) if ok else "Could not save settings"
 	settings_status.theme_type_variation = "HUDOk" if ok else "HUDWarn"
 
