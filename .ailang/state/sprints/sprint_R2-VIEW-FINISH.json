@@ -511,15 +511,25 @@
   },
   "integration_cleanup": {
     "decision": "D-142",
-    "status": "integrating_and_closing_gate_coverage",
+    "status": "final_candidate_preparation",
     "scope": "Merge current PR344/351 including committed Earth-link audio, publish clean main-based dev build, reconcile Studio checkouts; no laptop SSH work requested",
     "main_integrated": "061e71aa8be9115d924399b124cfe28ac1fb8fdc",
     "audio_integrated": "67dc0842cf49ea1087879c6620819d0c087d27fa",
-    "pre_gate_candidate": "71a7662c",
-    "gate_repair": "Complete: 989 physics checks and 11 actual Earth feed/strip GPU checks pass; nine reference images independently opened. Observe mirror matches pinned package; existing 407 golden cases preserved.",
+    "pre_gate_candidate": "601d2e12",
+    "gate_repair": "Reconciled owner Observe mirror with both CPU check sets: 1023 physics checks pass; 20 production feed/strip/map GPU checks pass. Real sim map fixture and independent scalar/pixel oracles include preview isolation and displacement controls; all references opened. Exact final-head full rig/golden still pending.",
     "full_rig": "not_started_waiting_final_candidate",
-    "cleanup": "19 remote backup refs verified for 15 local-only branch tips and four stashes. Verified stashes dropped locally; inactive clones retained until landing. Active Earth checkout preserved.",
-    "published_main_build": null
+    "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
+    "published_main_build": null,
+    "earth_integrated": "21756ce7a5515f1990c65ec2d250f8f4c59cf21a",
+    "backup_prefix": "backup/reconcile-20261030/",
+    "backup_refs_verified": 19,
+    "ignored_artifact_preservation": {
+      "directory": "build/checkout-preservation-20261030",
+      "inventory_sha256": "dc338985ae956655ea32e11d2573ed31a5e06792c9e4f9670bf0affd031bc974",
+      "files": 819,
+      "bytes": 1132579800,
+      "verified_against_source": true
+    }
   },
   "npc_character_followup": {
     "decision": "D-139",
