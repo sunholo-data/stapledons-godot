@@ -8,6 +8,8 @@ extends Node
 ##   lift.state (edges)                          -> lift start, run (riding with the platform), arrive;
 ##   active_level (edges)                        -> the level's loops and its room (data/audio/rooms.json);
 ##   journey_sim's world (each step)             -> the Archive's Memory Health (D-113) for the spire;
+##   consoles.comms_station.feed.home_sound      -> sound from home while the comms station is open
+##                                                  (R3-EARTH-LINK EL3b.7: the bed, its pitch, the accents);
 ##   the captain and the active view's yaw       -> the listener (§D4, OQ7: left on screen is left in the ears).
 ## Sources resolve to world positions: "mast" (the SpireLight on the mast), "captain", "station" (the
 ## station in focus, or the last one), "lift" (the platform).
@@ -24,6 +26,8 @@ var _focused := ""
 var _last_station := ""
 var _lift_moving := false
 var _sim: Object = null ## the journey session (a SimBridge)
+var _home := "" ## EL3b.7: the home bed playing at the comms station
+var _home_accents := 0
 
 
 func attach(d: Node) -> ShipSound:
@@ -92,6 +96,7 @@ func _process(_delta: float) -> void:
 			elif _focused != "":
 				sound.on_ui("console_sleep")
 			_focused = f
+	_follow_home(consoles)
 	# The lift: start, run with the platform, arrive.
 	var lift: Variant = demo.get("lift")
 	if lift != null:
@@ -108,6 +113,30 @@ func _process(_delta: float) -> void:
 		if not _sim.stepped.is_connected(_on_stepped):
 			_sim.stepped.connect(_on_stepped)
 		_on_stepped([])
+
+
+## R3-EARTH-LINK EL3b.7: while the comms station is open and its feed shows, the receiver plays the
+## feed's home_sound: a new bed fades the old one out (home_none) and starts at the band's pitch, the
+## pitch follows the band, and each new accent fires once. Closing the station stops it.
+func _follow_home(consoles: Variant) -> void:
+	var st: Variant = consoles.get("comms_station") if consoles != null and str(consoles.focused) == "comms" else null
+	var hs: Dictionary = st.feed.home_sound if st is CommsStation and st.is_inside_tree() and st.feed.visible else {}
+	var cue := str(hs.get("cue", ""))
+	var pitch := float(hs.get("pitch", 1.0))
+	if cue != _home:
+		if _home != "":
+			sound.on_game("home_none")
+		_home = cue
+		_home_accents = int(hs.get("accent_seq", 0))
+		if cue != "":
+			sound.set_pitch(cue, pitch)
+			sound.on_game(cue)
+	elif cue != "":
+		sound.set_pitch(cue, pitch)
+		if int(hs.accent_seq) != _home_accents:
+			_home_accents = int(hs.accent_seq)
+			sound.set_pitch(str(hs.accent), pitch)
+			sound.on_game(str(hs.accent))
 
 
 ## The listener faces where the active camera faces, flattened to the deck: what is left on screen is

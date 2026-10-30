@@ -154,6 +154,27 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2
     waiting and homeward from the real sim (seed 7) to `renders/comms_station/`. The station-only
     capture stands in for the four moments until EL5's `capture-earth-link` adds the map. Review fixes:
     the static lets the last week show through, the tags sit on a dark backing, the ring has a disc.
+    Mark approved the renders on 2026-10-30 ("very nice").
+- **EL3b.7 Sound from home** (about 200 LOC plus 8 synthesised beds; Mark 2026-10-30):
+  - `data/audio/recipes.json`: `home_family`, `home_home`, `home_town`, `home_world`, `home_science`,
+    `home_sky`, `home_babble` (the torrent) and `home_static` (out of beam), as seamless 6 s loops (route A,
+    `synth-own`, `make sound-synth`); `data/audio/cues.json` rows on the Instruments bus at the station,
+    triggered by the game state of the same name and stopped by `home_none`;
+  - `data/ui/comms_feed.json`: each band gains `pitch` (still 0.5, slow 0.7, real 1, fast 1.5, torrent 2)
+    and `sound` (`category`, or `babble` in the torrent), plus `sound_hold_s`;
+  - `ui/earth_feed.gd`: `home_sound = {cue, pitch}` from the band, the category and the beam; a new bed
+    replaces the playing one only after `sound_hold_s` of the station's clock, so a fast feed doesn't chop.
+    The UI holds no audio;
+  - `audio/sound_director.gd`: `set_pitch(id, pitch)` on a loop (logged in the game clock), and a short
+    fade on `stop` for rows with `fade_out_ms`;
+  - `audio/ship_sound.gd`: while the comms station is open it follows `feed.home_sound`, and stops the bed
+    when the station closes.
+  - **Tests:**
+    - `tests/test_earth_feed.gd`: the bed and pitch at the RS-26..RS-29 rates; static out of beam; babble in the torrent; the sky kind's bed; the hold;
+    - `tests/test_sound.gd`: `set_pitch` applied and logged; a pitched loop restarts at its pitch; the fade on stop;
+    - `tests/test_ship_sound.gd`: the bed starts with the comms station and stops when it closes;
+    - `make sound-test sound-assets-check sound-synth-check sound-levels sound-check` green, with every new row in its band.
+  - **Pause point:** Mark listens (the beds at each band's pitch, on a review page).
 - **Acceptance:**
   - design EL3b's table, each row a test or an audit;
   - `make comms-station-test`, `make display-audit-comms`, `make feed-art-check`;

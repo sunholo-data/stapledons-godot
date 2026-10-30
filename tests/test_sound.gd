@@ -120,6 +120,33 @@ func session(d: SoundDirector) -> void:
 	d.on_game("level_none")
 
 
+## R3-EARTH-LINK EL3b.7: the shipped home beds through an audible director: a bed starts at the pitch
+## set before it, set_pitch moves the playing loop and is logged once per change, every bed fades out
+## on home_none rather than cutting, and a bed fired again while fading starts over at its level.
+func test_home_pitch() -> void:
+	var d := SoundDirector.new()
+	get_root().add_child(d)
+	d.setup()
+	d.set_pitch("home_town", 0.7)
+	d.on_game("home_town")
+	var p: Node = d.get_node_or_null("Loop_home_town")
+	check(p is AudioStreamPlayer and p.playing and is_equal_approx(p.pitch_scale, 0.7) and p.bus == &"Instruments", "EL3b.7: a home bed starts at its band's pitch on the Instruments bus")
+	d.set_pitch("home_town", 1.5)
+	d.set_pitch("home_town", 1.5)
+	check(is_equal_approx(p.pitch_scale, 1.5) and d.log_text().contains("r1 home_town 0.70") and d.log_text().contains("r2 home_town 1.50") and not d.log_text().contains("r3 "), "EL3b.7: set_pitch moves the playing loop and logs each change once:\n" + d.log_text())
+	var beds := ["home_family", "home_home", "home_town", "home_world", "home_science", "home_sky", "home_babble", "home_static"]
+	check(beds.all(func(b: String) -> bool: return d.cues.has(b) and d.cues[b].get("loop", false) and d.cues[b].trigger.get("stop_on", "") == "home_none" and float(d.cues[b].get("fade_out_ms", 0.0)) > 0.0), "EL3b.7: every home bed is a loop that fades out on home_none")
+	d.on_game("home_none")
+	await process_frame
+	check(p.playing and d.fading("home_town"), "EL3b.7: home_none fades the bed out instead of cutting it")
+	d.on_game("home_town")
+	check(p.playing and not d.fading("home_town") and is_equal_approx(p.volume_db, float(d.cues.home_town.volume_db)), "EL3b.7: fired again while fading, it starts over at its level")
+	d.on_game("home_none")
+	await create_timer(float(d.cues.home_town.fade_out_ms) / 1000.0 + 0.2).timeout
+	check(not p.playing and not d.fading("home_town"), "EL3b.7: after the fade it has stopped")
+	d.queue_free()
+
+
 func _run() -> void:
 	var root := fresh("tables")
 	var rows := [tone(root, "a"), tone(root, "b")]
@@ -280,6 +307,7 @@ func _run() -> void:
 	check(hum != null and hum.loop_mode == AudioStreamWAV.LOOP_FORWARD and hum.loop_end == 384000 and hum.mix_rate == 48000, "spire_hum loads as a 48 kHz loop of 384,000 frames (8 s)")
 	check(SoundDirector.bundle_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.res", "the export reads the staged QOA bundle (audio_bundle/<kind>/<file>.res)")
 	shipped.free()
+	await test_home_pitch()
 
 	# The bus layout (§D2).
 	SoundMix.ensure_layout()

@@ -543,6 +543,316 @@
    "when": "The platform reaches its level.",
    "listen_for": "A soft clunk and a single low bell, restrained like the commit chord.",
    "source": "lift"
+  },
+  {
+   "id": "home_family",
+   "trigger": {
+    "kind": "game",
+    "name": "home_family",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_family"
+   ],
+   "bus": "Instruments",
+   "volume_db": -16,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, family. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: family",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "A warm room of voices, never words: you can't make out what anyone says, only that they are there.",
+   "band": [
+    -40,
+    -32
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_home",
+   "trigger": {
+    "kind": "game",
+    "name": "home_home",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_home"
+   ],
+   "bus": "Instruments",
+   "volume_db": -17,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, the house and the valley. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: the house and the valley",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "Wind in leaves over a soft garden air. Outdoors, quiet.",
+   "band": [
+    -40,
+    -32
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_town",
+   "trigger": {
+    "kind": "game",
+    "name": "home_town",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_town"
+   ],
+   "bus": "Instruments",
+   "volume_db": -17,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, the town. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: the town",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "A street: voices and feet, traffic far off. Busy but distant.",
+   "band": [
+    -40,
+    -32
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_world",
+   "trigger": {
+    "kind": "game",
+    "name": "home_world",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_world"
+   ],
+   "bus": "Instruments",
+   "volume_db": -16,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, the world. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: the world",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "A big crowd far away, rising and falling. Neither happy nor angry.",
+   "band": [
+    -40,
+    -32
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_science",
+   "trigger": {
+    "kind": "game",
+    "name": "home_science",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_science"
+   ],
+   "bus": "Instruments",
+   "volume_db": -25,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, science and space. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: science and space",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "A lab: a low carrier, a fan, one slow pulsing tone. Calm machines.",
+   "band": [
+    -41,
+    -33
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_sky",
+   "trigger": {
+    "kind": "game",
+    "name": "home_sky",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_sky"
+   ],
+   "bus": "Instruments",
+   "volume_db": -18.5,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, the sky over home. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: the sky over home",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "Night air and crickets.",
+   "band": [
+    -40,
+    -32
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_babble",
+   "trigger": {
+    "kind": "game",
+    "name": "home_babble",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_babble"
+   ],
+   "bus": "Instruments",
+   "volume_db": -16,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, the torrent of weeks. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: the torrent of weeks",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "Home racing past: a babble with tunes and bells twittering through it. It should feel like too much to follow.",
+   "band": [
+    -39,
+    -31
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_static",
+   "trigger": {
+    "kind": "game",
+    "name": "home_static",
+    "stop_on": "home_none"
+   },
+   "streams": [
+    "home_static"
+   ],
+   "bus": "Instruments",
+   "volume_db": -28,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "R3-EARTH-LINK EL3b.7: sound from home at the comms receiver, no signal. Its pitch_scale follows the Earth rate's band (data/ui/comms_feed.json): slowed and deepened flying away, sped up and raised turning for home. Compressed, not physical.",
+   "loop": true,
+   "fade_out_ms": 300,
+   "name": "Home: no signal",
+   "when": "The comms station is open and Earth's feed shows this kind of week.",
+   "listen_for": "A faint receiver hiss. Lower than any bed; the silence of being out of Earth's beam.",
+   "band": [
+    -48,
+    -40
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_family_tune",
+   "trigger": {
+    "kind": "game",
+    "name": "home_family_tune"
+   },
+   "streams": [
+    "home_family_tune"
+   ],
+   "bus": "Instruments",
+   "volume_db": -20.5,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "EL3b.7 accent over the bed: a tune from the next room. Repeats at the band's interval stretched by its pitch, so slowed home is slower in time too.",
+   "name": "Home accent: a tune from the next room",
+   "when": "Now and then over its bed, while the comms station is open.",
+   "listen_for": "Six soft music-box notes, calm and a little wistful, not jolly.",
+   "band": [
+    -37,
+    -29
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_home_birds",
+   "trigger": {
+    "kind": "game",
+    "name": "home_home_birds"
+   },
+   "streams": [
+    "home_home_birds"
+   ],
+   "bus": "Instruments",
+   "volume_db": -18.5,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "EL3b.7 accent over the bed: birds in the garden. Repeats at the band's interval stretched by its pitch, so slowed home is slower in time too.",
+   "name": "Home accent: birds in the garden",
+   "when": "Now and then over its bed, while the comms station is open.",
+   "listen_for": "Two short phrases of chirps.",
+   "band": [
+    -37,
+    -29
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_town_bells",
+   "trigger": {
+    "kind": "game",
+    "name": "home_town_bells"
+   },
+   "streams": [
+    "home_town_bells"
+   ],
+   "bus": "Instruments",
+   "volume_db": -17,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "EL3b.7 accent over the bed: the town's bells. Repeats at the band's interval stretched by its pitch, so slowed home is slower in time too.",
+   "name": "Home accent: the town's bells",
+   "when": "Now and then over its bed, while the comms station is open.",
+   "listen_for": "Two bell strikes across the roofs, the second lower.",
+   "band": [
+    -37,
+    -29
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_world_swell",
+   "trigger": {
+    "kind": "game",
+    "name": "home_world_swell"
+   },
+   "streams": [
+    "home_world_swell"
+   ],
+   "bus": "Instruments",
+   "volume_db": -14.5,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "EL3b.7 accent over the bed: the crowd swells. Repeats at the band's interval stretched by its pitch, so slowed home is slower in time too.",
+   "name": "Home accent: the crowd swells",
+   "when": "Now and then over its bed, while the comms station is open.",
+   "listen_for": "The far crowd rises and settles: an event, not a reaction to you.",
+   "band": [
+    -37,
+    -29
+   ],
+   "source": "station"
+  },
+  {
+   "id": "home_science_pips",
+   "trigger": {
+    "kind": "game",
+    "name": "home_science_pips"
+   },
+   "streams": [
+    "home_science_pips"
+   ],
+   "bus": "Instruments",
+   "volume_db": -19.5,
+   "visual": "ui/earth_feed.gd::home_sound",
+   "about": "EL3b.7 accent over the bed: a time signal. Repeats at the band's interval stretched by its pitch, so slowed home is slower in time too.",
+   "name": "Home accent: a time signal",
+   "when": "Now and then over its bed, while the comms station is open.",
+   "listen_for": "Five short pips and a long one, like the radio before the news or a launch. Slowed, they are seconds apart; sped up, a quick patter.",
+   "band": [
+    -37,
+    -29
+   ],
+   "source": "station"
   }
  ]
 }

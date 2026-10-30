@@ -54,6 +54,10 @@ var _next3d := 0
 const PLAYERS_3D := 10
 var params := {} ## parameter name -> 0..1 (archive_degradation)
 var _param_seq := 0
+## R3-EARTH-LINK EL3b.7: cue id -> pitch_scale (the comms receiver at the Earth rate's band).
+var pitches := {}
+var _pitch_seq := 0
+var _fades := {} ## cue id -> the Tween fading its loop out (rows with fade_out_ms)
 
 
 ## Loads and validates the tables; returns the errors (also kept in `errors`). With errors the
@@ -142,6 +146,20 @@ func set_param(param_name: String, value: float) -> void:
 			_loops[id].volume_db = float(c.get("volume_db", 0.0)) + param_offset(c)
 
 
+## R3-EARTH-LINK EL3b.7: a cue's pitch_scale, which moves its speed and pitch together as a Doppler
+## shift does. It applies to the playing loop at once and to every later fire (on top of the row's
+## per-fire cents), and is logged in its own clock when it changes by 0.01 or more.
+func set_pitch(id: String, value: float) -> void:
+	var v := snappedf(maxf(value, 0.01), 0.01)
+	if is_equal_approx(float(pitches.get(id, 1.0)), v):
+		return
+	pitches[id] = v
+	_pitch_seq += 1
+	cue_log.append("r%d %s %.2f" % [_pitch_seq, id, v])
+	if _loops.has(id):
+		_loops[id].pitch_scale = v
+
+
 ## The dB offset a row's param curve gives at the parameter's current value (0 without a param).
 func param_offset(c: Dictionary) -> float:
 	var pc: Variant = c.get("param", null)
@@ -210,12 +228,36 @@ func fire(id: String, key: String, clock: int) -> void:
 	if cue_log.size() > LOG_MAX:
 		cue_log.remove_at(0)
 	if audible:
-		_play(c, str(streams[variant]), pow(2.0, cents / 1200.0), vol)
+		_play(c, str(streams[variant]), pow(2.0, cents / 1200.0) * float(pitches.get(id, 1.0)), vol)
 
 
+## Stops a loop; a row with fade_out_ms fades it out first (EL3b.7: a bed changing never clicks).
 func stop(id: String) -> void:
-	if _loops.has(id):
-		_loops[id].stop()
+	if not _loops.has(id):
+		return
+	var p: Node = _loops[id]
+	var ms := float(cues.get(id, {}).get("fade_out_ms", 0.0))
+	_kill_fade(id)
+	if ms <= 0.0 or not p.playing or not is_inside_tree():
+		p.stop()
+		return
+	var tw := create_tween()
+	tw.tween_property(p, "volume_db", -60.0, ms / 1000.0)
+	tw.tween_callback(p.stop)
+	_fades[id] = tw
+
+
+## Whether a loop is fading out (stopped, but its tail still sounding).
+func fading(id: String) -> bool:
+	return _fades.has(id) and (_fades[id] as Tween).is_valid() and (_fades[id] as Tween).is_running()
+
+
+func _kill_fade(id: String) -> void:
+	if _fades.has(id):
+		var tw: Tween = _fades[id]
+		if tw.is_valid():
+			tw.kill()
+		_fades.erase(id)
 
 
 func log_text() -> String:
@@ -264,7 +306,9 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 			add_child(p)
 			_loops[c.id] = p
 		p = _loops[c.id]
-		if p.playing:
+		if fading(c.id): # fired again while fading out: it starts over at its level
+			_kill_fade(c.id)
+		elif p.playing:
 			return
 	elif spatial:
 		while _pool3d.size() < PLAYERS_3D:
