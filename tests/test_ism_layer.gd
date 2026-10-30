@@ -12,6 +12,14 @@ const RADII := [[1.0, 0.0, 0.0, 6.3207963920158114], [0.0, 1.0, 0.0, 4.245406215
 var failures := 0
 var passes := 0
 
+## 7n(b): engine and script errors raised while installed (OS.add_logger); warnings are skipped.
+## A second visibility_changed.connect to the same callable is refused (the count stays 1) but logs one.
+class ErrorLog extends Logger:
+	var lines: Array[String] = []
+	func _log_error(_function: String, _file: String, _line: int, code: String, rationale: String, _editor_notify: bool, error_type: int, _script_backtraces: Array[ScriptBacktrace]) -> void:
+		if error_type != ERROR_TYPE_WARNING:
+			lines.append(rationale if rationale != "" else code)
+
 
 func check(name: String, ok: bool, detail := "") -> void:
 	if ok:
@@ -88,6 +96,11 @@ func _init() -> void:
 	for cl: Dictionary in clouds:
 		every = every and drawn.has(cl.name)
 	check("AC16: every medium in ism.json is drawn (%d)" % drawn.size(), every and drawn.size() == 15)
+	var errors := ErrorLog.new()
+	OS.add_logger(errors)
+	push_error("7nb-sentinel")
+	var capture_live := errors.lines.any(func(l: String) -> bool: return l.contains("7nb-sentinel"))
+	errors.lines.clear()
 	# A CanvasLayer keeps its overlay visible-in-tree even when its host window is hidden.
 	root.gui_embed_subwindows = true
 	var window := Window.new()
@@ -111,6 +124,8 @@ func _init() -> void:
 	check("M4.6pR3 hidden-window: no media drawn, overlay still visible-in-tree, redraw-on-show connected",
 		layer.last_drawn.size() == 0 and overlay.is_visible_in_tree() and not window.visible
 		and window.visibility_changed.is_connected(overlay.queue_redraw))
+	# Godot redraws a shown window's canvas by itself: this case passes with the connect deleted
+	# (7n-b). The is_connected and connection-count assertions are what guard the connection.
 	window.show()
 	await process_frame
 	await process_frame
@@ -130,5 +145,11 @@ func _init() -> void:
 	await process_frame
 	check("M4.6pR3 hide/show cycle: one redraw connection, hidden draws 0 again",
 		hidden_again and redraw_connections == 1 and layer.last_drawn.size() == 15 and layer.last_drawn.has("LIC"))
+	OS.remove_logger(errors)
+	check("M4.6pR3 error capture is live (7n-b)", capture_live, "")
+	var refused := errors.lines.filter(func(l: String) -> bool: return l.contains("'visibility_changed' is already connected"))
+	check("M4.6pR3 hidden redraws: no refused repeated visibility_changed connect (7n-b)", refused.is_empty(), str(refused.slice(0, 1)))
+	var other := errors.lines.filter(func(l: String) -> bool: return not l.contains("'visibility_changed' is already connected"))
+	check("M4.6pR3 hidden-window section logs no other engine or script error", other.is_empty(), str(other.slice(0, 1)))
 	print("ism-layer: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures > 0 else 0)

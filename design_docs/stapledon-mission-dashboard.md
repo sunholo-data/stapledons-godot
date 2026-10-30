@@ -1,17 +1,24 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-29, iteration 57.
+Updated 2026-10-30, iteration 60.
 
-- **Bar:** Clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Clause 4 waits on row 7m AC1, which waits on 7m-d (quiet rig only; this fire GPU 99–100 %, load 16), and on P-land (Mark). Goal unmoved.
-- **Landed this fire:** L4 M1a, the suite profiler instrument (PR #349, merge `81e240f0`; `rig/full` 87 min; fast tier green on the merge).
-- **In flight:** Kerr K1.1a-a4, PR #352 (`2b47456b`): eight in-copy oracle mutation drills, plus RK-3 and RK-9. Judge Sonnet **90 PASS**, zero blocking.
-  - `rig/full` was red twice at `crew-perf`: 5.08 s at load 18–36, then 4.34 s at load ~5, against a 4.0 s budget. Main fails the same check in isolation. The same code read 1.6–2.2 s in every run until this morning.
-  - The merge is **PARKED-ON-LANE**. Resume: `rig/full` success on `2b47456b` from a run on a quiet rig (1-min load < 3), then merge.
-- **Order:** land #352 → 7m-d whenever the rig is quiet → D-129 → L4 M1b → M2 → K1.1a-a5 → L9 S0.3 → L3.
+- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on two things: 7m-d, which runs only on a quiet rig, and P-land, which is Mark's. At pick the GPU read 99–100 % from Firefox; 40 minutes later it read 0 %. Goal unmoved.
+- **Landed this fire:** row 7n(b) (PR #358, merge `dc458f9c`), test hygiene on the M4.6pR3 ISM map layer.
+  - MG, a repeated `visibility_changed` connect, is not harmless. Godot logs an error on every hidden redraw, one a tick in transit. The test now catches it with an `OS.add_logger` capture, a sentinel that proves the capture is live, and three named checks (19 → 22).
+  - The `host != null` check is recorded as equivalent in use. No behaviour or pixel change.
+  - `rig/full` was green in 67 min. The judge, Sonnet in its own clone, gave 93 PASS with zero blocking findings.
+- **New:** row 7n(f). The judge found two survivors in the new capture: an early logger removal, and a match string the two filters share. About 6 LOC.
+- **In flight:** nothing. No loop PR is open.
+- **Order:** 7m-d (re-sample the GPU first; re-measure the premise) → K1.1a-a5 → L9 S0.3 → L3. D-129 then unlocks L4 M1b and M2.
+- **Held:** attended #344 (Earth-link) and #351 (bridge, Commons and Earth-link integration) hold `Makefile`, `bridge/sim_bridge.gd`, `demos/*`, most of `ui/*`, `tests/m4_playthrough_ship.gd` and the bridge and Commons levels. That blocks a5, S0.3, L3, 7l(a), 7u, 7v, 7w's publish, 7i(e)/(f) and L10.
+  - The unheld loop rows left are 7n(f), 7n(a) and 7i(h). 7k(e) is a design-repo spec row that needs Mark's routing. Re-check files against open PRs before picking one.
 - **Parked on Mark:**
-  - D-128: the position of 7m-d. Default A is being applied.
-  - D-129: L4's OQ1–OQ4. Recommendation A. If unanswered, M1b and M2 stay parked.
-- **Held:** `Makefile` (L4 M3, row 7v) waits until attended #344, #346 and #351 merge or close.
-- **New row:** 7v, the `crew-perf` wall-clock budgets on a shared rig. CPU time rises with wall time, so the fix is a bound calibrated in the same breath, not a CPU gate. Thresholds stay Mark's.
-- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire: executor Haiku 5.5 (Agent), evaluator Sonnet (Agent); no designer or planner. Codex was over its daily ration. Metered $0.00.
-- **Watch:** the Studio is heavily shared (ailang backlog builds plus the attended view-finish session, load ~30 on 16 cores). That parks both GPU benches and wall-clock gates.
+  - D-128: where 7m-d sits in the order. Default A is being applied.
+  - D-129: L4's OQ1–OQ4. The recommendation is A. If unanswered, M1b and M2 stay parked.
+- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h.
+  - The designer was Opus, the executor Haiku and the judge Sonnet, all through the Agent tool. The planner was kimi-k3 through pi.
+  - Codex was over its daily ration.
+  - Metered spend $0.75, all of it on the two quorum rounds.
+- **Watch:**
+  - 7m-d has been lane-parked at pick six fires running. This fire the GPU went quiet after the pick, so the next fire may route it.
+  - The docked bench control read p99 13.3–13.6 ms at iteration 59, under GPU load. At iteration 54 it read 17.6–19.3 ms on a quiet rig. 7m-d's premise may have moved with the tree.
