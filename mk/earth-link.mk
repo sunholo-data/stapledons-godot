@@ -51,3 +51,11 @@ capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --resolution 1280x720 --script tools/comms_station_capture.gd > $(SCRATCH)/comms-station-capture.log 2>&1; rc=$$?; grep -E '^comms-station-capture' $(SCRATCH)/comms-station-capture.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-station-capture.log && grep -q '^comms-station-capture: 4 frames, 0 failures$$' $(SCRATCH)/comms-station-capture.log || { echo "comms-station-capture: FAILED (log $(SCRATCH)/comms-station-capture.log)"; exit 1; }
+
+# EL4: Earth's beams on the galaxy map (tests/test_earth_beams.gd): every element from its earth.*
+# field, the plan preview alone while planning (AC12), the projection, the real sim at 2.16 and below.
+.PHONY: earth-beams-test
+earth-beams-test: import ## R3-EARTH-LINK EL4: Earth's beams on the map (heard, pending, stale, window, silence, preview; AC12)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_earth_beams.gd > $(SCRATCH)/earth-beams.log 2>&1; rc=$$?; grep -E '^(FAIL|earth-beams)' $(SCRATCH)/earth-beams.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-beams.log && grep -q '^earth-beams: [0-9]* passed, 0 failures$$' $(SCRATCH)/earth-beams.log
+ui: earth-beams-test

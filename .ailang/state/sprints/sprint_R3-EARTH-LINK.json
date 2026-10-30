@@ -228,10 +228,10 @@
         "tests/test_earth_beams.gd green in make ui: each element drawn from its earth.* field at fixture states; nothing below 2.16",
         "while a plan is uncommitted the map reads only earth.preview (AC12)"
       ],
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": "Start here: ui/earth_beams.gd after ui/ism_layer.gd; read earth.beam/pending/stale/window/preview (port_id and *_year fields are on the wire since EL3); the window may need port_id and a reach year for its label."
+      "completed": "2026-10-30",
+      "notes": "ui/earth_beams.gd (EarthBeams): heard beam (with its light-front), pending plans (dashed, front and the way still to go), stale beams (faded; a beam aimed at a left port drawn once as stale), the window ring (open or the wait), the silence ring, and while planning only earth.preview (AC12, read-tracked). Labels are ComposedBinding children (data/ui/earth_beams.json). GalaxyMap: the layer on _overlay, refreshed with _last_view, drawn after the ISM layer; the Earth's beams toggle and legend (display control). tests/test_earth_beams.gd via make earth-beams-test (in make ui): 29/0 incl. the real sim at 2.16 and 2.15. Real-sim look (seed 7) fixed label overlaps, the doubled beam/stale line, the homeward pending line and the silence ring."
     },
     {
       "id": "EL5",
