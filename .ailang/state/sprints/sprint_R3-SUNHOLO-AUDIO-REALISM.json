@@ -1,6 +1,6 @@
 {
   "sprint_id": "R3-SUNHOLO-AUDIO-REALISM",
-  "status": "paused_at_P2",
+  "status": "in_progress",
   "approved": {
     "by": "Mark (attended 2026-10-30)",
     "how": "\"looks great go on audio and then lets preview the new sounds\": the plan and OQ1-OQ8 at their recommendations"
@@ -380,6 +380,25 @@
       "notes": "Game branch feat/sunholo-audio-realism from origin/feat/earth-link, path pin, pushed (no PR, no rig). 2d4c7ef7 REVOICE: shells on parseSoundsAs/renderSound (review_main's Part renamed MixPart), synth_test 0.6 pin 33eb23cb (VM = interpreter); AC9: 41 sounds byte for byte with recipes unchanged. dd08f99f: 12 home_* re-voiced (pips kept); review takes in data/audio/review_takes.json rendered to build/sound_takes (home_family_tune_b, home_family_c, home_town_bells_c); sound-synth-check 41/41, AC10 only provenance outside home_*, sound-levels 44/0 (home_static first failed its band at -52.2 dBFS; crackle lowered), sound-levels-parity 0 differences, sound-check 49/0, sound-assets-check 18,104,524 of 20,000,000 bytes, sound-test 46/0, sound-stage-check 3.68 MB QOA. Strict-VM render of the 13: 58.4 s (budget 60; v2 22.05 s; first draft 63.7 s, thinned). Paused at P2: the review page is built by the coordinator from the WAVs; Mark's per-sound ruling not yet recorded."
     },
     {
+      "id": "AR8b",
+      "description": "The station's True and Receiver settings (standing order 2026-10-30): the time rate exact at D in every setting; Receiver corrects the frequency (a Receiver bus with a pitch shift at 1/rate, 1/16x..16x); True plays pitch and speed x D, silent outside hearing; a toggle on the station; the band's compressed pitch removed",
+      "estimated_loc": 200,
+      "dependencies": [
+        "AR8"
+      ],
+      "acceptance_criteria": [
+        "home_sound.rate is earth.rate at RS-26..RS-30 (exact), clamped to the receiver range in Receiver mode, with correction 1/rate",
+        "True mode is silent outside hearing (D < 0.02 or > 50) and the station shows it",
+        "accents every every_s / D",
+        "the Receiver bus with its pitch shift is in SoundMix.BUSES and the layout test",
+        "make earth-feed-test, ship-sound-test, sound-test, sound-check, sound-levels-parity green"
+      ],
+      "passes": null,
+      "started": "2026-10-30",
+      "completed": null,
+      "notes": null
+    },
+    {
       "id": "AR9",
       "description": "after P2: tool or recipe fixes, publish 0.6.0 (standing approval), registry pin, ailang lock, make deps, regenerate, game PR, rig run",
       "estimated_loc": 40,
@@ -418,5 +437,10 @@
   "progress_note": "AR0-AR7 done in ailang-packages feat/audio-0.6 (b4e3fff, pushed, not published, no PR); AR8 done up to the listening ruling on stapledons-godot feat/sunholo-audio-realism (dd08f99f, path pin, pushed, no PR). Next: Mark listens (P2), then AR9.",
   "upstream_reports": [
     "ailang#2029: foldl that conses onto its accumulator is quadratic (VM and interpreter), v0.54.18"
-  ]
+  ],
+  "ruling_p2": {
+    "by": "Mark (attended 2026-10-30)",
+    "how": "\"yeah these sound good - lets merge it in to the game\", \"v3\"",
+    "decision": "v3 for all twelve re-voiced sounds, pips unchanged; family tune take A (music box); receiver colour not adopted"
+  }
 }

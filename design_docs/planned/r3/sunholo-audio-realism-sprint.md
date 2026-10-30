@@ -75,6 +75,16 @@ Package milestones run in `$PKG` = `~/dev/sunholo-data/ailang-packages-audio06/p
 - Re-voice the 13 `home_*` recipes as design §D8 lays out, two takes for `home_family_tune` (OQ5) and, if OQ3 is approved, a receiver-colour third take on two sounds. The page lists cues from `cues.json`, so an extra take is not a new id. It is a second page rendered from a scratch commit where those recipes carry take B (`STAGE=r3-realism-b`), never merged. The cue table does not change. Then `make sound-synth`, `make sound-levels`, `make sound-levels-parity`, and `make sound-review STAGE=r3-realism V1_REF=$REVOICE PUBLISH=1` (public bucket, standing approval).
 - Time the re-voiced set on the strict VM (≤ 60 s, design §D9) and record it.
 - **Pause P2:** send Mark the review page URL. Ask him to rule per sound (keep v3, keep v2, rework) and on OQ3/OQ5. Record the ruling with `mission_answer.sh` in a fresh clone (memory: ledger edit safety). **Stop** until it is recorded.
+  - **Ruled 2026-10-30 (Mark, attended):** "yeah these sound good - lets merge it in to the game", then "v3": **v3 for all twelve re-voiced sounds**, `home_science_pips` unchanged; the family tune is take A (the music box, OQ5); the receiver colour (OQ3) is not adopted (no ruling for it: the plain v3). Preview: https://claude.ai/artifact/ANRG4SeogdoN7tkgDPLsD7.
+
+### AR8b: the station's True and Receiver settings (standing order 2026-10-30, ~200 LOC)
+
+Mark, attended 2026-10-30: "so like the exposure visuals, we can have a true setting, and processed settngs. this is a general principle for ths game - no compromises on the physcis, if we can help it" (stapledons-design #46). EL3b.7 squeezed the Earth rate's 46 semitones into six. It is replaced:
+- **The time rate is exact in every setting:** the bed plays at speed D (`earth.rate`) and the accents come every `every_s / D` (the first after `first_s / D`). The band's compressed `pitch` is removed.
+- **Receiver (the default):** the ship's receiver corrects the frequency, as the DSN corrects the Voyagers' Doppler shift: a new `Receiver` bus (into Instruments) with `AudioEffectPitchShift` at 1/rate, enabled only while it corrects. A real-time receiver plays between 1/16× and 16× (`receiver.min_rate`, `max_rate` in data): below, it holds the moment; above, the backlog grows.
+- **True:** speed and pitch × D, uncorrected; where the result is outside human hearing (`receiver.audible`: D < 0.02 or > 50) nothing plays and the station says so (a tag, no digits).
+- A toggle on the station (True / Receiver), and the home cues on the `Receiver` bus.
+- **Tests:** the rate is earth.rate at RS-26..RS-30; the receiver's clamp and its correction; True's silence outside hearing; the accent interval at D; ShipSound sets the bus correction and plays nothing when silent; the bus layout carries the Receiver bus and its pitch shift.
 
 ### AR9: publish, pin, PR (~40 LOC, 0.5 day)
 - If the ruling needs a tool change: back to AR7's gates on the package, then AR8's regeneration. If it only needs recipe changes: regenerate. The chosen take goes into `recipes.json`; the take-B scratch commit is deleted.
