@@ -1,11 +1,14 @@
 module stapledons/sim/tools/session_audit_test
 -- Fixtures are mirrored as literal bytes for strict VM tests because FS is
 -- evaluator-only in v0.52.0. auditTests verifies every mirror against its file.
-import ./session_audit (timeReport, codexReport)
+import ./session_audit (timeReport, codexReport, sceneCodexReport)
 import ./session_refusals (refusalReport)
 import std/fs (readFile)
-import std/string (contains, concat)
-import std/list (foldl)
+import std/string (contains, concat, replace)
+import std/json (Json, decode, get, getString, asArray, encode, JObject, JArray, JString, JNull)
+import std/option (Some, None)
+import std/result (Ok, Err)
+import std/list (foldl, map, filter)
 -- By hand: 2*1200*.05 + 2*1.5 + 200*60/200 + 0 = 183 s (visits are bounds, not charges).
 -- Each leg = 60 s. Includes two 1.5 s commit holds.
 pure func fixture(name: string) -> string =
@@ -26,6 +29,34 @@ pure func fixture(name: string) -> string =
   else if name == "right_hint" then "{\"v\":2,\"type\":\"new_game\",\"seed\":0,\"scenario\":\"sol\",\"diag\":false,\"archive\":[{\"id\":\"archive.two-clocks\",\"unlock\":\"first_commit\"}]}\n{\"v\":2,\"type\":\"state\",\"status\":\"ok\",\"changes\":{\"consequence\":{\"archive\":{\"unlocked\":[\"archive.bubble\",\"archive.one-g\",\"archive.nothing-crosses\"]}}}}\n{\"v\":2,\"type\":\"state\",\"status\":\"ok\",\"changes\":{\"journey\":{\"state\":\"committed\"},\"consequence\":{\"archive\":{\"unlocked\":[\"archive.bubble\",\"archive.one-g\",\"archive.nothing-crosses\",\"archive.two-clocks\",\"archive.earths-voice\"]}}}}\n{\"v\":2,\"type\":\"state\",\"status\":\"ok\",\"changes\":{\"ship\":{\"phase\":\"boosting\",\"beta\":0.2},\"consequence\":{\"archive\":{\"unlocked\":[\"archive.bubble\",\"archive.one-g\",\"archive.nothing-crosses\",\"archive.two-clocks\",\"archive.earths-voice\",\"archive.photon-drive\"]}}}}\n{\"v\":2,\"type\":\"state\",\"status\":\"ok\",\"changes\":{\"ship\":{\"phase\":\"cruising\",\"beta\":0.99},\"consequence\":{\"archive\":{\"unlocked\":[\"archive.bubble\",\"archive.one-g\",\"archive.nothing-crosses\",\"archive.two-clocks\",\"archive.earths-voice\",\"archive.photon-drive\",\"archive.ism-glow\",\"archive.starbow\",\"archive.weather-between-the-stars\",\"archive.following-light\"]}}}}\n"
   else ""
 pure func expected() -> string = "{\n  \"comment\": \"M4.7 AC16 input: the Archive entries the minimum path unlocks, in the order the sim fires them (sprint R1-M4-JOURNEY M4.7; the design repo owns the list, lore/archive/README.md). Scenario: Sol to alpha Cen A at the 0.99c default (gamma 7.0888), commit, boost, cruise, brake, arrive. cmb-forward needs gamma >= 275 and tides and shadow-ring need a black hole, so none of them unlock.\",\n  \"scenario\": \"alpha_cen_0.99c\",\n  \"unlocks\": [\n    {\n      \"id\": \"archive.bubble\",\n      \"hint\": \"always\"\n    },\n    {\n      \"id\": \"archive.one-g\",\n      \"hint\": \"always\"\n    },\n    {\n      \"id\": \"archive.nothing-crosses\",\n      \"hint\": \"always\"\n    },\n    {\n      \"id\": \"archive.two-clocks\",\n      \"hint\": \"first_commit\"\n    },\n    {\n      \"id\": \"archive.earths-voice\",\n      \"hint\": \"first_commit\"\n    },\n    {\n      \"id\": \"archive.photon-drive\",\n      \"hint\": \"first_boost\"\n    },\n    {\n      \"id\": \"archive.ism-glow\",\n      \"hint\": \"cruise_above_0.9c\"\n    },\n    {\n      \"id\": \"archive.starbow\",\n      \"hint\": \"cruise_above_0.9c\"\n    },\n    {\n      \"id\": \"archive.weather-between-the-stars\",\n      \"hint\": \"cruise_above_0.9c\"\n    },\n    {\n      \"id\": \"archive.following-light\",\n      \"hint\": \"cruise_above_0.9c\"\n    }\n  ],\n  \"not_unlocked\": [\n    \"archive.cmb-forward\",\n    \"archive.tides\",\n    \"archive.shadow-ring\"\n  ]\n}\n"
+-- Exact frozen scene expectation, mirrored for strict VM (FS check below pins the mirror).
+pure func frozenSceneExpected() -> string = "{\"comment\":\"Frozen protocol2.15 scene expectation. Imported archive witness copied from the pinned m4_scene_session.ndjson; unlocks are the minimum-path triggers, in exact imported order. This is distinct from the protocol2.7 uniform replay and current Earth-link lore.\",\"unlocks\":[{\"id\":\"archive.bubble\",\"hint\":\"always\"},{\"id\":\"archive.one-g\",\"hint\":\"always\"},{\"id\":\"archive.nothing-crosses\",\"hint\":\"always\"},{\"id\":\"archive.two-clocks\",\"hint\":\"first_commit\"},{\"id\":\"archive.photon-drive\",\"hint\":\"first_boost\"},{\"id\":\"archive.ism-glow\",\"hint\":\"cruise_above_0.9c\"},{\"id\":\"archive.starbow\",\"hint\":\"cruise_above_0.9c\"},{\"id\":\"archive.weather-between-the-stars\",\"hint\":\"cruise_above_0.9c\"}],\"archive\":[{\"id\":\"archive.bubble\",\"unlock\":\"always\"},{\"id\":\"archive.one-g\",\"unlock\":\"always\"},{\"id\":\"archive.nothing-crosses\",\"unlock\":\"always\"},{\"id\":\"archive.two-clocks\",\"unlock\":\"first_commit\"},{\"id\":\"archive.photon-drive\",\"unlock\":\"first_boost\"},{\"id\":\"archive.ism-glow\",\"unlock\":\"cruise_above_0.9c\"},{\"id\":\"archive.starbow\",\"unlock\":\"cruise_above_0.9c\"},{\"id\":\"archive.weather-between-the-stars\",\"unlock\":\"cruise_above_0.9c\"},{\"id\":\"archive.cmb-forward\",\"unlock\":\"cruise_above_gamma_275\"},{\"id\":\"archive.tides\",\"unlock\":\"first_black_hole\"},{\"id\":\"archive.shadow-ring\",\"unlock\":\"first_black_hole\"}]}\n"
+pure func jfield(j: Json, k: string) -> Json = match get(j, k) { Some(x) => x, None => JNull }
+pure func jstring(j: Json, k: string) -> string = match getString(j, k) { Some(x) => x, None => "" }
+pure func jrows(j: Json) -> [Json] = match asArray(j) { Some(xs) => xs, None => [] }
+pure func json(text: string) -> Json = match decode(text) { Ok(j) => j, Err(_) => JNull }
+pure func sceneSession(current: bool) -> string {
+  let old = jrows(jfield(json(frozenSceneExpected()), "archive"));
+  let locked = filter(\r. jstring(r, "id") == "archive.cmb-forward" || jstring(r, "id") == "archive.tides" || jstring(r, "id") == "archive.shadow-ring", old);
+  let rows = if current then map(\r. JObject([{key: "id", value: JString(jstring(r, "id"))}, {key: "unlock", value: JString(jstring(r, "hint"))}]), jrows(jfield(json(expected()), "unlocks"))) ++ locked else old;
+  encode(JObject([{key: "type", value: JString("new_game")}, {key: "archive", value: JArray(rows)}]))
+}
+pure func frozenSceneStates() -> string = replace(replace(fixture("codex"), ",\"archive.earths-voice\"", ""), ",\"archive.following-light\"", "")
+pure func sceneVerdict(session: string, states: string, result: string) -> bool =
+  contains(sceneCodexReport(session, states, frozenSceneExpected(), expected()), concat(["codex-unlocks=", result]))
+pure func checkSceneScopes() -> bool {
+  let old = sceneSession(false);
+  let now = sceneSession(true);
+  let oldStates = frozenSceneStates();
+  let currentStates = fixture("codex");
+  sceneVerdict(old, oldStates, "PASS") && sceneVerdict(now, currentStates, "PASS") &&
+  sceneVerdict(old, currentStates, "FAIL") && sceneVerdict(now, oldStates, "FAIL") &&
+  sceneVerdict(replace(old, "archive.starbow", "archive.foreign"), oldStates, "FAIL") &&
+  sceneVerdict(replace(now, "first_commit", "first_boost"), currentStates, "FAIL") &&
+  sceneVerdict(replace(replace(replace(old, "archive.bubble", "archive.tmp"), "archive.one-g", "archive.bubble"), "archive.tmp", "archive.one-g"), oldStates, "FAIL") &&
+  sceneVerdict("", oldStates, "FAIL") && sceneVerdict(concat([old, "\n", old]), oldStates, "FAIL")
+}
+test "scene scope requires exact imported witness; cross-scope IDs, order, hints and absent/duplicate witnesses fail" { checkSceneScopes() }
 pure func checkWalk() -> bool = contains(timeReport(fixture("walk_valid")), "total_seconds=162.1\n") && contains(timeReport(fixture("walk_valid")), "playthrough-time=PASS") && contains(timeReport(fixture("walk_ceiling")), "playthrough-time=FAIL") && contains(timeReport(fixture("walk_over_limit")), "limit_360=FAIL")
 test "walk distance charged; ceiling and total controls fail" { checkWalk() }
 pure func checkProxy() -> bool = contains(timeReport(fixture("proxy")), "total_seconds=183\n") && contains(timeReport(fixture("proxy")), "playthrough-time=PASS")
@@ -47,10 +78,11 @@ test "codex unlocked list that shrinks fails (prefix check)" { checkCodex("shrin
 test "codex archive table with a wrong unlock hint fails (table check)" { checkCodex("wrong_hint", "FAIL") }
 test "codex archive table with the right unlock hint passes" { checkCodex("right_hint", "PASS") }
 test "codex unlock with no inferable trigger fails even when the expectation has no hint (holds check)" { checkHintless() }
-export pure func auditPure(_: int) -> string = if checkCodex("simultaneous", "PASS") && checkCodex("late_hint", "FAIL") && checkWalk() && checkProxy() && checkLimit() && checkBand() && checkCodex("swapped", "FAIL") && checkCodex("missing", "FAIL") && checkCodex("codex", "PASS") && checkCodex("early", "FAIL") && checkCodex("shrink", "FAIL") && checkCodex("wrong_hint", "FAIL") && checkCodex("right_hint", "PASS") && checkHintless() then "session-audit-ok" else "session-audit-FAIL"
+export pure func auditPure(_: int) -> string = if checkSceneScopes() && checkCodex("simultaneous", "PASS") && checkCodex("late_hint", "FAIL") && checkWalk() && checkProxy() && checkLimit() && checkBand() && checkCodex("swapped", "FAIL") && checkCodex("missing", "FAIL") && checkCodex("codex", "PASS") && checkCodex("early", "FAIL") && checkCodex("shrink", "FAIL") && checkCodex("wrong_hint", "FAIL") && checkCodex("right_hint", "PASS") && checkHintless() then "session-audit-ok" else "session-audit-FAIL"
 export func auditTests(_: int) -> string ! {FS} {
   let same = foldl(\ok n. ok && readFile(concat(["tests/fixtures/session_audit/", n, ".ndjson"])) == fixture(n), true, ["simultaneous", "late_hint", "walk_valid", "walk_ceiling", "walk_over_limit", "proxy", "over_limit", "bad_leg", "codex", "swapped", "missing", "early", "shrink", "wrong_hint", "right_hint"]);
-  if same && readFile("tests/expected_unlocks.json") == expected() then auditPure(0) else "session-audit-fixture-FAIL"
+  let sceneSame = readFile("tests/expected_unlocks.scene-2.15.json") == frozenSceneExpected() && sceneVerdict(readFile("tests/replays/scene/m4_scene_session.ndjson"), frozenSceneStates(), "PASS");
+  if same && sceneSame && readFile("tests/expected_unlocks.json") == expected() then auditPure(0) else "session-audit-fixture-FAIL"
 }
 pure func adversarialText() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":2}}\n{\"v\":2,\"type\":\"new_game\",\"seed\":0,\"scenario\":\"sol\",\"diag\":false}\n{\"v\":2,\"type\":\"input\",\"tick\":1,\"dtau\":0,\"intents\":[{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"alpha Cen\",\"pos\":{\"x\":0,\"y\":0,\"z\":-4.37}},\"cruise_phi\":2.6466524123622457}]}\n{\"v\":2,\"type\":\"input\",\"tick\":2,\"dtau\":0,\"intents\":[{\"k\":\"commit\",\"plan_id\":1}]}\n{\"v\":2,\"type\":\"input\",\"tick\":3,\"dtau\":0.000001,\"intents\":[]}\n{\"v\":2,\"type\":\"input\",\"tick\":4,\"dtau\":0,\"intents\":[{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"alpha Cen\",\"pos\":{\"x\":0,\"y\":0,\"z\":-4.37}},\"cruise_phi\":2.6466524123622457}]}\n{\"v\":2,\"type\":\"input\",\"tick\":5,\"dtau\":0,\"intents\":[{\"k\":\"cancel\"}]}\n{\"v\":2,\"type\":\"input\",\"tick\":6,\"dtau\":0,\"intents\":[{\"k\":\"commit\",\"plan_id\":1}]}\n"
 test "moving committed re-plan cancel commit refuse with unchanged state" { contains(refusalReport(adversarialText(), 1), "state-unchanged=PASS") }

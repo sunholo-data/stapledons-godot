@@ -1,7 +1,7 @@
 {
   "sprint_id": "R2-COMBINED-LANDING",
   "evaluation_round": 1,
-  "timestamp": "2026-10-30T17:36:06.987075+00:00",
+  "timestamp": "2026-10-30T17:53:04.637732+00:00",
   "evaluator": "independent npc_pilot_review agent; not the integration, audio or gate implementer",
   "status": "preliminary_code_review_complete_pending_exact_head_gates_and_publication",
   "result": "pending",
@@ -118,6 +118,19 @@
       "status": "controlled_fallback_chain_independently_reviewed_targeted_green",
       "evidence": "Parent reports exacthead61f787863cc6880044fa41a0d1b90abd879f7d09 fullrig reaches crossing-review101/1 aftersim/replay/strict/GR/ISM gates. Existing test_crossing_review.gd160 asserts engineer angry resolvesneutral, assuming angry andsad assets absent; expanded Earthportrait library now suppliesangry. Repair assigned controlled missing-emotion fixtures plus optional portraitdirectory argument defaulting production path. Must retain actual angry\u2192sad\u2192neutral chain coverage; an unknown-emotion-only check would not certify thatchain. Independent repair review and new committedhead fullrig/fast still pending. NoPASS.",
       "resolution": "Independently reviewed only ui/crew_page.gd and tests/test_crossing_review.gd repair. Optionalportrait_dir defaults to unchanged productionPORTRAIT_DIR; emotionfallback list and path-keyed texturecache logic unchanged. Cleared controlleduser fixture writes neutral-only fixture_role and separate fixture_chain with distinctsad+neutraldecodedcolors, both angryabsent. First verifies angry\u2192missing sad\u2192neutral, second verifies sadprecedenceoverneutral; exactchosenpaths and actualCaptainAvatar.make_texture decodedpixels checked. Distinctroles avoid relying on cachemissmutation. This retains actual angry fallbackchain coverage rather than unknownemotiondefault alone. Independently read crossing-review103passed/0failures, crew-console0failures andcrew-hold0failures logs. Newcommittedhead fullrig+fast still required; failedearlier61 remainsfailed."
+    },
+    {
+      "id": "COMMONS-INPUT-LEGACY-FIXTURE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "production_and_explicit_private_legacy_fixtures_30_0",
+      "evidence": "Remainder preflight found stale ship-demo-input assumes playerCommons Z1/Z3 zoom though productionCommons nowmanifestfixedwalkcamera. Independent review supports checking actualproductionfixed/nozoom first and retaining alloldgestureassertions on explicitcompatibilityfixture. Initial repair log shows21passed/9failures: productionchecks pass, but level_greybox:false alone onlyskips runtimegeometry, not manifestCameraDirector levels. load_views stillimports Commonsnonlegacy, and _zoom_allowed blocksmenuzoom. Parent advised fixturemust explicitly select privatelegacyconfig in addition; production runtimecomment update is documentationonly. Targetedrerun/finalrepairreview pending; noPASS.",
+      "resolution": "Finalrepair deepduplicates dir.levels and explicitlysets commons={legacy:true,default:z2_lower} on compatibilityonly level_greybox:false demo. Actualproduction bridge+Commons fixed/nozoom checks runfirst. Alloldwheel/scroll accumulation/inertialtail/pinch/F8/gesture assertions unchanged. Independentlyread finaltargeted30passed/0failures. Production camera change only corrects explanatorycomment; manifests nevermutated. Suitablefornewhead fullrig/fast; noPASS inferred."
+    },
+    {
+      "id": "SCENE-CODEX-EXPECTED-SCOPE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "targeted_audit_codex_replay_green_independently_reviewed",
+      "evidence": "Reviewed sim/tools/session_audit.ail/test and new tests/expected_unlocks.scene-2.15.json. sceneCodexReport selectsfrozen11importedarchive/8unlock orcurrent13/10 expectation ONLY by exactordered(ID,unlockhint) signature ofsoleinputnew_game.archive, neverobservedunlocks. Unknown/missing/duplicate/mixed/reorderedwitness rejects viaemptyexpectedand codexReportnonemptyguard. codexReportitself unchanged: exactIDs/order, firstappearance andindependentlyinferred/imported triggerchecks retained. Legacyuniform2.7/currentexpectations unchanged. Independentlyverified newfrozenarchive matches11rows ofsole pinnedscene input exactly, inputbytesunchanged. Read16namedtests runstrictVM/0fallback inclvalidboth/crossscopeIDs/wronghint/reorder/unknown/missing/duplicatecontrols. FS mirrorcheck+actualpinnedinput checkpresent. Final make session-audit-test codex-unlocks replay-scene exit0 reported by implementer. Independentlyread log: realfrozen2427lines/83,297,783bytesidentical replay, inputonebyte andgoldenonebitcontrols detected, exact8legacyunlockIDs/hintsPASS. Scope selection dependson completeinputarchive IDs/hints only; observedunlocks remain evidencejudged byunchangedcodexReport. Bothpure/FSsession-audit-ok andstrictVM16/16reported/observed. Existingreplayinput/golden/currentexpectationpins unchanged. Finalnewheadfullrig+fastpending."
     }
   ],
   "independently_reviewed_evidence": {
@@ -148,7 +161,12 @@
       "ui/stapledon_theme.gd shared Earth styles and65contrastpairs",
       "ui/earth_feed.gd and ui/earth_beams.gd sharedtheme repair",
       "ui/crew_page.gd optional portraitdirectory default seam",
-      "tests/test_crossing_review.gd controlledmissing angry\u2192sad\u2192neutral chain withdecodedPNGchecks"
+      "tests/test_crossing_review.gd controlledmissing angry\u2192sad\u2192neutral chain withdecodedPNGchecks",
+      "tests/test_ship_demo_input.gd productionfixedstage +privatelegacycamera fixture",
+      "demos/camera_director.gd commentonly",
+      "sim/tools/session_audit.ail sceneCodexReport exactimportedarchive scopewitness",
+      "sim/tools/session_audit_test.ail strictVMscopecontrols andFS mirror",
+      "tests/expected_unlocks.scene-2.15.json exactpinnedscenearchive"
     ],
     "opened_references": [
       "Earth-link sibling renders/comms_station/home.png",

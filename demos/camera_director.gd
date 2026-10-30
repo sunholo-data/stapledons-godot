@@ -670,7 +670,7 @@ func locked() -> bool:
 
 
 ## OQ4 (D-93): on a walk level the zoom levels are developer presets (command-line launches); a
-## player has one framing per view there. The Commons (legacy) keeps its Z1-Z3 for players.
+## player has one framing per view there. Explicit legacy compatibility levels keep Z1-Z3.
 func _zoom_allowed() -> bool:
 	if not walk_level():
 		return true

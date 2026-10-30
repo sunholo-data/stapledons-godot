@@ -569,6 +569,13 @@
       "crew_console": "0 failures",
       "crew_hold": "0 failures",
       "fixture": "Controlled neutral-only and sad+neutral PNG sets verify actual loader and fallback order; optional directory retains unchanged production default"
+    },
+    "remainder_preflight": {
+      "status": "running;2 failures found and repaired,remaining diagnostic continues",
+      "log": "/tmp/stapledon-remainder-preflight.log",
+      "input_repair": "30 passed,0 failures; production fixedviews plus explicit private legacy gesture fixture",
+      "scene_audit_repair": "16 strictVM tests/0fallback; pure+FS controls; uniform scope controls; frozen2427line replay/83297783bytes identical; mutation controls detected",
+      "replay_pins_changed": false
     }
   },
   "npc_character_followup": {

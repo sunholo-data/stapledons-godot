@@ -9,6 +9,8 @@
 - The camera's sector-crossing fixture keeps its intended 14 m path at that pace, avoiding an unintended outer-rim collision from the old fixed frame count. Direction and continuity thresholds remain unchanged.
 - Earth feed captions and beam labels use shared theme variations, with their existing backgrounds and semantic colours retained and covered by the theme contrast gate.
 - Portrait fallback tests use a controlled missing-emotion set, so adding the Engineer's angry portrait no longer invalidates the neutral-fallback regression case.
+- Input regressions cover the production Commons fixed views and preserve the retired zoom gestures on an explicit private legacy fixture.
+- Scene Archive audits select the frozen or current exact unlock set from the complete imported catalogue witness, with crossed-scope and malformed-witness controls. Recorded replay bytes and pins remain unchanged.
 
 ### Painted NPC asset pilot (2026-10-29)
 
