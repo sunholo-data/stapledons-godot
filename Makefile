@@ -544,7 +544,7 @@ golden: lens-assets m4-physics-probe ## GPU shader vs CPU reference star positio
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-ISM-5 surface wall observer' $(SCRATCH)/golden.log)" = 3 && grep -q '^ok    G-ISM-5 integrated radiance' $(SCRATCH)/golden.log && grep -q '^ok    G-ISM-5 surface dim overlaps' $(SCRATCH)/golden.log && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc or named case count changed: expected all existing families plus 3 G-LVL-1 clamp and 3 G-LVL-2 raised reports, 407 ok lines total; see $(SCRATCH)/golden.log)"; exit 1; }
+	  { echo "golden: FAILED (exit $$rc or named case count changed: expected all existing families plus 3 G-LVL-1 clamp, 3 G-LVL-2 raised and 10 G-EL-1 reports, 417 ok lines total; see $(SCRATCH)/golden.log)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.

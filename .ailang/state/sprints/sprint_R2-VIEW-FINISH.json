@@ -511,16 +511,16 @@
   },
   "integration_cleanup": {
     "decision": "D-142",
-    "status": "final_candidate_preparation",
+    "status": "frozen_for_full_rig",
     "scope": "Merge current PR344/351 including committed Earth-link audio, publish clean main-based dev build, reconcile Studio checkouts; no laptop SSH work requested",
     "main_integrated": "061e71aa8be9115d924399b124cfe28ac1fb8fdc",
     "audio_integrated": "67dc0842cf49ea1087879c6620819d0c087d27fa",
-    "pre_gate_candidate": "601d2e12",
-    "gate_repair": "Reconciled owner Observe mirror with both CPU check sets: 1023 physics checks pass; 20 production feed/strip/map GPU checks pass. Real sim map fixture and independent scalar/pixel oracles include preview isolation and displacement controls; all references opened. Exact final-head full rig/golden still pending.",
-    "full_rig": "not_started_waiting_final_candidate",
+    "pre_gate_candidate": "22b7a4c",
+    "gate_repair": "1023 physics checks pass. Separate production feed/strip/map family20/0 and owner beam/window family10/0 pass after reconciliation. Existing407 global goldens retained; combined global expected417 plus separate20. Real-sim and analytic fixture scopes explicit; negative controls and opened references retained.",
+    "full_rig": "Final exact pushed candidate will run tools/rig_check.sh351--golden. Initialc3af16a8 run superseded during initial asset/audio checks after owner finalEL5 commit; no pass claimed.",
     "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
     "published_main_build": null,
-    "earth_integrated": "21756ce7a5515f1990c65ec2d250f8f4c59cf21a",
+    "earth_integrated": "6bdbed04497d2eafeeb651036e0e9fbac77b404b",
     "backup_prefix": "backup/reconcile-20261030/",
     "backup_refs_verified": 19,
     "ignored_artifact_preservation": {
@@ -529,6 +529,17 @@
       "files": 819,
       "bytes": 1132579800,
       "verified_against_source": true
+    },
+    "plan_only_integrated": {
+      "pr": 360,
+      "head": "759cde70a2c8ed894bf9057f9a5429f77bec544e",
+      "execution_approval": "awaiting_approval; filing proposal only"
+    },
+    "scheduled_loop_hold": {
+      "created_by_this_task": true,
+      "path": "~/.ailang/state/mission-stapledon.disabled",
+      "originally_absent": true,
+      "restore_after": "merge, main build and cleanup; verify task marker before removing"
     }
   },
   "npc_character_followup": {
