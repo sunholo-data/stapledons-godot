@@ -772,6 +772,56 @@ func test_earth_feed_bands() -> void:
 	check("EL3b the torrent whirls Earth's clock, the still band does not", 1.0 if EarthFeed.band_for(1414.2).whirl and not EarthFeed.band_for(0.00070711).whirl else 0.0, 1.0, 0.0)
 
 
+## R3-EARTH-LINK EL5 (gate 2): the spec's RS-26..RS-37 against physics/observe.gd (the mirror of
+## sunholo/observe 0.1.0) and the closed forms, and the real sim's earth.rate at 0.99c from the
+## fixture tools/earth_rate_fixture.gd records. 1 - beta comes from the rapidity, never 1 - b.
+func test_earth_link() -> void:
+	var out := [1.0, 0.0, 0.0]
+	var rs := [["RS-26", 0.99, 0.070888, false], ["RS-27", 0.999, 0.022366, false], ["RS-28", 0.999999, 7.0711e-4, false],
+		["RS-29", 0.99, 14.107, true], ["RS-30", 0.999999, 1414.2, true]]
+	for r: Array in rs:
+		var phi := Relativity.rapidity_of_beta(float(r[1]))
+		var ahead: bool = r[3]
+		var pos: Array = [-10.0, 0.0, 0.0] if ahead else [10.0, 0.0, 0.0] # flying home, or flying away
+		var d := Observe.earth_rate(pos, out, phi)
+		check("%s Earth rate at beta %s = e^%sphi (closed form)" % [r[0], r[1], "+" if ahead else "-"], d / (exp(phi) if ahead else exp(-phi)), 1.0, 1e-12)
+		check("%s Earth rate at beta %s = %s (printed)" % [r[0], r[1], r[2]], d, float(r[2]), float(r[2]) * 5e-5)
+	check("Earth rate at rest is 1", Observe.earth_rate([10.0, 0.0, 0.0], out, 0.0), 1.0, 1e-15)
+	var phi99 := Relativity.rapidity_of_beta(0.99)
+	check("Earth rate leaving Sol (at Sol, Sol is astern) is e^-phi", Observe.earth_rate([0.0, 0.0, 0.0], out, phi99) / exp(-phi99), 1.0, 1e-12)
+	var day := 1.0 / 365.25
+	check("RS-31 catch-up of a signal sent 1 day after a 0.9c departure = 10 days", Observe.catch_up(day, Relativity.one_minus_beta_of_rapidity(Relativity.rapidity_of_beta(0.9))) / day, 10.0, 1e-9)
+	check("RS-32 catch-up at beta 0.999999 = 1e6 days = 2,737.9 yr", Observe.catch_up(day, Relativity.one_minus_beta_of_rapidity(Relativity.rapidity_of_beta(0.999999))), 2737.9, 0.05)
+	var a := [40.0, 0.0, 0.0]
+	check("RS-33 triangle excess, a 30 ly right-angle turn 40 ly out = 60 ly", Observe.triangle_excess(a, [40.0, 30.0, 0.0]), 60.0, 1e-12)
+	check("RS-34 triangle excess to a star 10 ly from Sol at right angles = 50 - sqrt(1700)", Observe.triangle_excess(a, [0.0, 10.0, 0.0]), 50.0 - sqrt(1700.0), 1e-12)
+	check("RS-34 printed 8.769 ly", Observe.triangle_excess(a, [0.0, 10.0, 0.0]), 8.769, 5e-4)
+	check("RS-35 triangle excess for B on the far side of Sol = 0", Observe.triangle_excess(a, [-40.0, 0.0, 0.0]), 0.0, 1e-12)
+	check("RS-36 triangle excess for B beyond A on Sol's ray = 80 ly (not the wait)", Observe.triangle_excess(a, [60.0, 0.0, 0.0]), 80.0, 1e-12)
+	var tol := 1e-7
+	var beyond := [60.0, 0.0, 0.0]
+	var between := [20.0, 0.0, 0.0]
+	check("RS-37 a port beyond the heard port is on its beam's ray", 1.0 if Observe.on_beam_line(a, beyond, tol) else 0.0, 1.0, 0.0)
+	check("RS-37 a port between Sol and the heard port is on it", 1.0 if Observe.on_beam_line(a, between, tol) else 0.0, 1.0, 0.0)
+	check("RS-37 the far side of Sol is not", 1.0 if Observe.on_beam_line(a, [-40.0, 0.0, 0.0], tol) else 0.0, 0.0, 0.0)
+	check("RS-37 the wait at a covered port beyond = 0 yr", Observe.link_window(a, beyond, 20.0, Observe.on_beam_line(a, beyond, tol)), 0.0, 0.0)
+	check("RS-37 the wait at a covered port between = 0 yr", Observe.link_window(a, between, 20.0, Observe.on_beam_line(a, between, tol)), 0.0, 0.0)
+	check("RS-33 the wait at the uncovered turn (leg time |AB|) = 60 yr", Observe.link_window(a, [40.0, 30.0, 0.0], 30.0, false), 60.0, 1e-12)
+	var acen := [3.094521, -3.015404, -0.051608]
+	check("seenAt: Alpha Centauri's light at t = 4.4 yr left it at t - |acen|", Observe.seen_at(4.4, [0.0, 0.0, 0.0], acen), 4.4 - Observe.norm(acen), 1e-15)
+	# the real sim's earth.rate (fixture): Sol astern leaving Earth, ahead flying home, at 0.99c
+	var fx: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/earth/earth_rates.json"))
+	var rows: Array = fx.get("rows", []) if fx is Dictionary else []
+	check("the fixture has the sim's two cruising moments", float(rows.size()), 2.0, 0.0)
+	for row: Dictionary in rows:
+		var phi := float(row.cruise_phi)
+		var ahead: bool = row.label == "ahead"
+		# astern: the voyage starts at Earth, 1 AU from Sol, so Sol is not exactly astern (2.6e-7 relative)
+		check("sim earth.rate %s at 0.99c = e^%sphi (RS-%s)" % [row.label, "+" if ahead else "-", "29" if ahead else "26"], float(row.rate) / (exp(phi) if ahead else exp(-phi)), 1.0, 1e-9 if ahead else 1e-6)
+		check("sim earth.rate %s printed (%s)" % [row.label, "14.107" if ahead else "0.070888"], float(row.rate), 14.107 if ahead else 0.070888, 5e-4 if ahead else 5e-6)
+		check("sim rate_inverse x rate = 1 (%s)" % row.label, float(row.rate) * float(row.rate_inverse), 1.0, 1e-12)
+
+
 func test_scripts_compile() -> void:
 	print("Game scripts compile (load + can_instantiate)")
 	for dir in ["res://bridge", "res://interior", "res://sky", "res://ui", "res://ui/conversation", "res://ui/settings", "res://physics"]:
@@ -1580,6 +1630,7 @@ func _init() -> void:
 	test_cmb()
 	test_earth_observation()
 	test_earth_feed_bands()
+	test_earth_link()
 	test_scripts_compile()
 	test_sky_meter()
 	test_forward_glow()
