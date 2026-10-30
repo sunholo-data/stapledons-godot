@@ -1,4 +1,4 @@
-# R3-EARTH-LINK (design_docs/planned/r3/earth-link.md): Earth's link, the comms station.
+# R3-EARTH-LINK (design_docs/implemented/r3/earth-link.md): Earth's link, the comms station.
 
 # EL3 (K1): the comms station on the spare console: the console, both panes, the rate bands and the
 # out-of-beam reasons (tests/test_comms_station.gd). In make ui.

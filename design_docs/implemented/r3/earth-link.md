@@ -1,6 +1,6 @@
 # R3-EARTH-LINK: Earth's signal, the live Earth rate, the comms station and Earth's beams
 
-**Status:** Planned 2026-10-27; approved by Mark 2026-10-28 (OQ1–OQ5 as recommended). In progress.
+**Status:** Implemented 2026-10-30 (PR #344). Planned 2026-10-27; approved by Mark 2026-10-28 (OQ1–OQ5 as recommended). Report: [earth-link-report.md](earth-link-report.md); evaluation 90/100 PASS.
 **Release:** R3 (Signals and Contact), the roadmap's first step: milestones **S1**, **K1** and **F6**.
 **Priority:** P1. It makes home the ship's anchor from the first leg, and every later R3 track (evidence, finder, contact) builds on its light cone.
 **Origin:** Mark, attended 2026-10-27: "it will be crazy to receive updates from earth at different rates according to distance and speed traveling towards or away"; "it's only straight lines - so as soon as we change course the signal will be lost unless we say where we are going"; "we could then have a map graphic showing which direction earth is sending its signals as far as we know, and where they will point, I guess an important anchor for the ship." R3 approved the same day (stapledons-design #42).

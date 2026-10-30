@@ -1,10 +1,10 @@
-# R3-EARTH-LINK report (draft)
+# R3-EARTH-LINK report
 
-**Sprint:** R3-EARTH-LINK, Earth's signal, the live Earth rate, the comms station and Earth's beams (R3 S1, K1, F6). Design: [earth-link.md](../../planned/r3/earth-link.md). Plan: [earth-link-sprint.md](../../planned/r3/earth-link-sprint.md). PR #344.
+**Sprint:** R3-EARTH-LINK, Earth's signal, the live Earth rate, the comms station and Earth's beams (R3 S1, K1, F6). Design: [earth-link.md](earth-link.md). Plan: [earth-link-sprint.md](earth-link-sprint.md). PR #344.
 **Dates:** plan approved 2026-10-28 (PR #340), built 2026-10-28 to 2026-10-30.
-**Evaluation:** pending (an independent evaluator on a different model, then `rig/full` with `--golden`).
+**Evaluation:** 90/100 PASS, round 1, by an independent evaluator on a different model (Sonnet; `.ailang/state/evaluations/eval_R3-EARTH-LINK_round_1.json`); no blocking findings. Its findings are addressed below.
 
-Draft written at EL5; the design and plan move to `implemented/r3/` at landing, and this report is finished then.
+Renders: `make capture-earth-link` writes `renders/earth_link/` (ten frames and `contact_sheet.png`); the reviewed set is the review page https://claude.ai/artifact/5JjGWJ2kRDVBAdpJ4AAKUj.
 
 ## Mark's reviews (attended)
 
@@ -42,6 +42,14 @@ Draft written at EL5; the design and plan move to `implemented/r3/` at landing, 
 - **The export dropped the feed library.** `data/feed/SOURCES` and the raw WebP pictures were not in `include_filter`; `make export-filter-audit` caught it on this branch (fixed in 6ce9dcc5).
 - **`make golden` counts 400 locally, 401 on the rig.** The textured Jupiter case (G-M5-4) skips without `make planet-assets`; the 401 pin assumes the textures. Not a regression; noted so the next local run does not chase it.
 - **Godot's import writes stray `.translation` files** next to the planet and truth CSVs on every import in a side clone (follow-up).
+
+## Evaluation findings (90/100, round 1)
+
+- **Medium, the sprint JSON left EL3b open.** Closed: EL3b `passes` true with its sub-steps, the sprint `completed`, the evaluation recorded.
+- **Medium, no changelog entry.** Added: `changelogs/unreleased/2026-10-30-earth-link.md` (this repo files fragments; `CHANGELOG.md` is folded from them at a tag).
+- **Low, the design and plan still in `planned/`.** Moved to `implemented/r3/` with their status lines, links and the README index row.
+- **Low, AC11 rests on the review.** The contact sheet is `renders/earth_link/contact_sheet.png` and the reviewed page is linked above; `rig/full` with `--golden` runs on the merged head.
+- **Low, the branch was behind main.** `origin/main` merged in (one conflict, the sim's export list, both sides kept), so the rig tests the merged tree.
 
 ## Follow-ups
 

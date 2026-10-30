@@ -1,14 +1,14 @@
 {
   "sprint_id": "R3-EARTH-LINK",
-  "status": "in_progress",
+  "status": "completed",
   "approved": {
     "by": "Mark (attended 2026-10-28)",
     "how": "\"please merge in the plan\": plan PR #340 merged with OQ1-OQ5 at their recommendations",
     "at": "2026-10-28T08:22:37Z"
   },
   "created": "2026-10-27",
-  "design_doc": "design_docs/planned/r3/earth-link.md",
-  "sprint_plan": "design_docs/planned/r3/earth-link-sprint.md",
+  "design_doc": "design_docs/implemented/r3/earth-link.md",
+  "sprint_plan": "design_docs/implemented/r3/earth-link-sprint.md",
   "branch": "feat/earth-link (game, attended clone) + feat/observe (fresh sunholo-data/ailang-packages clone); this plan on design/r3-earth-link",
   "origin": "Mark, attended 2026-10-27: 'yes lets get all the decisions up to date and then start building' after approving R3 (stapledons-design #42); roadmap order-of-work step 1 (S1, K1, F6)",
   "github_issues": [],
@@ -212,10 +212,10 @@
         "Live frames (EL3b.6): on each look the AI lane paints at most N new weeks from earth.feed.context (the week's Earth event and the era by homeTier16(t_e); no ship telemetry: news from home, outside the bubble; the bubble's consequences enter as Earth's own news only for weeks with t_e >= since_t), with the player keys under the spend ceiling; cache replays revisits; AI off, no key or failure shows the library frame at once (stub-image tests)",
         "The mix (Mark: variety, spread the cost): each week has a kind (painted live, library, news card, home snapshot, sky over home) drawn by the sim from data/feed/mix.json; shares match over many weeks, painted live the minority; only painted-live weeks spend"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-28T14:23:20Z",
-      "completed": null,
-      "notes": "Approved by Mark 2026-10-28 (attended): go ahead; seed the library now, it builds up over playthroughs and shared asset packs (painted-live frames join the library by content hash + feed key + provenance); crew emotion portraits for every member in scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v4). Executing in the full clone stapledons-godot-earth-link (the attended clone is in use by another session). Progress 2026-10-28: EL3b.1 done (13166ba1, 334b64d0: earth.feed, last_feed, out.progress; earthFeedVm in make strict); EL3b.2 seed done (f08cc00a: 48 pictures, masters in gs://stapledons-voyage-assets/feed/, make feed-art-check); EL3b.3 done (26f5c303: CommsStation, EarthFeed, EarthClocks; earth-feed-test 20/0, comms-station-test 42/0, display-audit-comms new=0, physics 937/0). Next: EL3b.4 crew faces (29 emotion portraits generating), EL3b.6 live frames, EL3b.5 light strip and renders. Progress 2: EL3b.4 done (56851a7b: 28 emotion portraits, every member has all eight; 6506e04b: earth.crew home feelings, work strain first; presentation only. Follow-up: crew_core itself reacting to news from home is a package change, not here); EL3b.6 done (6506e04b: feed AI kind, feedPrompt, live frames per look, library grows via AiCache.entries_for); 4815e84d import-keep for feed pictures and portraits. EL3b.5 built 2026-10-29 (EarthStrip under the feed; messages carry from_ly, port_ly, arrive_t; make capture-comms-station renders home/away/waiting/homeward from the real sim). Renders approved by Mark 2026-10-30 (\"very nice\"). EL3b.7 sound from home added and built 2026-10-30 (Mark: \"yes continue\"): 8 synthesised beds and 5 accents (data/audio), pitch per Earth-rate band (data/ui/comms_feed.json), EarthFeed.home_sound, SoundDirector.set_pitch and fade_out_ms, ShipSound follows the open comms station. Remaining: Mark listens (pause point)."
+      "completed": "2026-10-30",
+      "notes": "Approved by Mark 2026-10-28 (attended): go ahead; seed the library now, it builds up over playthroughs and shared asset packs (painted-live frames join the library by content hash + feed key + provenance); crew emotion portraits for every member in scope. Visual concept: https://claude.ai/artifact/EPLHuNZGskXjeeq9ngdtTQ (v4). Executing in the full clone stapledons-godot-earth-link (the attended clone is in use by another session). Progress 2026-10-28: EL3b.1 done (13166ba1, 334b64d0: earth.feed, last_feed, out.progress; earthFeedVm in make strict); EL3b.2 seed done (f08cc00a: 48 pictures, masters in gs://stapledons-voyage-assets/feed/, make feed-art-check); EL3b.3 done (26f5c303: CommsStation, EarthFeed, EarthClocks; earth-feed-test 20/0, comms-station-test 42/0, display-audit-comms new=0, physics 937/0). Next: EL3b.4 crew faces (29 emotion portraits generating), EL3b.6 live frames, EL3b.5 light strip and renders. Progress 2: EL3b.4 done (56851a7b: 28 emotion portraits, every member has all eight; 6506e04b: earth.crew home feelings, work strain first; presentation only. Follow-up: crew_core itself reacting to news from home is a package change, not here); EL3b.6 done (6506e04b: feed AI kind, feedPrompt, live frames per look, library grows via AiCache.entries_for); 4815e84d import-keep for feed pictures and portraits. EL3b.5 built 2026-10-29 (EarthStrip under the feed; messages carry from_ly, port_ly, arrive_t; make capture-comms-station renders home/away/waiting/homeward from the real sim). Renders approved by Mark 2026-10-30 (\"very nice\"). EL3b.7 sound from home added and built 2026-10-30 (Mark: \"yes continue\"): 8 synthesised beds and 5 accents (data/audio), pitch per Earth-rate band (data/ui/comms_feed.json), EarthFeed.home_sound, SoundDirector.set_pitch and fade_out_ms, ShipSound follows the open comms station. Remaining: Mark listens (pause point). Completed 2026-10-30: EL3b.3 (the visual station: feed, tint, static, ring, twin clocks), EL3b.4 (the crew at the console, portraits for every member), EL3b.5 (the exchange as light, layout, make capture-comms-station; renders approved \"very nice\"), EL3b.6 (live frames per look), EL3b.7 (sound from home: 8 beds and 5 accents, pitch by the Earth rate band; v2 less hiss). The feed library ships in the export (6ce9dcc5); the tags use the theme's HUDTag (000f01b6)."
     },
     {
       "id": "EL4",
@@ -273,5 +273,12 @@
       "addressed": "covered = onBeamLine(prevPort, B) with prevPort the newest message heard at commit time (not the plan aimed at arrival); case 2 requires a committed or arrived leg; onBeamLine uses atan2 angle form with angTol; sprint syntax-gate row RS-31..37"
     }
   ],
-  "pr_gate": "tools/rig_check.sh <PR> --golden green (rig/full) and the GitHub fast tier green (AC13)"
+  "pr_gate": "tools/rig_check.sh <PR> --golden green (rig/full) and the GitHub fast tier green (AC13)",
+  "evaluation": {
+    "round": 1,
+    "score": 90,
+    "verdict": "PASS",
+    "by": "independent evaluator (Sonnet)",
+    "path": ".ailang/state/evaluations/eval_R3-EARTH-LINK_round_1.json"
+  }
 }

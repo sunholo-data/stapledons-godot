@@ -1,0 +1,14 @@
+{
+ "sprint_id": "R3-EARTH-LINK", "round": 1, "score": 90, "result": "pass", "pr": 344, "head": "8287db75",
+ "breakdown": {"tests_pass": 18, "lint_clean": 10, "acceptance_criteria": 27, "code_quality": 12, "documentation": 11, "design_fidelity": 10, "conditional": 2},
+ "gates_verified": {"make sim": "pass", "make strict": "pass (earthLinkVm, earthFeedVm VM = interpreter)", "make parity": "pass", "make replay": "pass (11 cases identical, session10k)", "make physics": "pass (sim earth.rate 14.10673598 ahead)", "earth-feed-test": "53/0", "comms-station-test": "42/0", "earth-beams-test": "29/0", "uid-guard": "ok", "golden/capture": "not re-run; executor claims 411/0 and 10 frames/0, Mark approved renders", "rig/full": "pending (AC13)"},
+ "findings": [
+  {"severity": "medium", "file": ".ailang/state/sprints/sprint_R3-EARTH-LINK.json (EL3b entry)", "issue": "EL3b has passes null and completed null, sprint status is in_progress, and its notes stop at 2026-10-28 EL3b.1-.2 progress although EL3b.3..EL3b.7 shipped.", "suggestion": "Set EL3b passes true with completed timestamp and notes for .3-.7; set status completed at landing."},
+  {"severity": "medium", "file": "CHANGELOG.md", "issue": "No changelog entry for R3-EARTH-LINK (protocol 2.16, observe 0.1.0 pin, comms station, Earth's beams, sound).", "suggestion": "Add an entry before landing, listing the new make targets and the 2.16 earth key."},
+  {"severity": "low", "file": "design_docs/planned/r3/earth-link.md:3", "issue": "Status still Planned/In progress; design, plan not yet moved to implemented/r3 (report already is). Report says Evaluation: pending.", "suggestion": "At landing move the doc and sprint plan together, set status Implemented, fill evaluation line."},
+  {"severity": "low", "file": "mk/earth-link.mk:71-74", "issue": "make golden G-EL-1 pin (count 10) and the 401 pin differ locally without planet-assets; capture-earth-link is not in make test, so AC11 rests on Mark's recorded review only.", "suggestion": "Run rig_check.sh 344 --golden and attach contact sheet path in the report."},
+  {"severity": "low", "file": "tools/earth_link_capture.gd", "issue": "Branch is 31 commits on a base behind main (7e0e6860 vs origin/main 061e71aa), so diff stat shows large unrelated deletions.", "suggestion": "Rebase or merge main before rig_check so the rig tests the merged tree."},
+  {"severity": "info", "file": "sim/earth_link_test.ail:1-60", "issue": "Tests assert closed forms (e^-phi, sqrt(omb/(2-omb)), RS values) not module output; not tautological. D-21 holds: clocks and rate bind through earth.* fields.", "suggestion": "None."}
+ ],
+ "notes": "No hard fails. AC13 (rig/full with --golden) still to be confirmed. Stray .translation files from import were deleted; clone clean."
+}
