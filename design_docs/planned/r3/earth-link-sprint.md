@@ -191,6 +191,14 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2
   - nothing is drawn below 2.16;
   - while a plan is uncommitted, the map reads only `earth.preview` and no other `earth.*` field (design AC12).
 - **Acceptance:** design AC12, and the tests green in `make ui`.
+- **Done (2026-10-30):** `ui/earth_beams.gd` (EarthBeams), a layer over the map's overlay with its
+  labels as ComposedBinding children (copy and colours in `data/ui/earth_beams.json`); the "Earth's beams"
+  toggle and legend on the map's filter row, on by default. Looked at on the real sim (seed 7: planning
+  the off-ray leg, out of beam on it, homeward), which brought: labels under the map's own port labels; a
+  beam still aimed at a port the ship left drawn once, faded, as that stale beam; a plan in flight home
+  also draws its way still to go (front to Sol), since a plan home has its port at Sol; the silence ring
+  dashed and coral, apart from the scale rings. `make earth-beams-test` 29/0 (fixtures, AC12, projection,
+  the real sim at 2.16 and 2.15).
 
 ### EL5. Gate 2 and landing prep, about 100 LOC
 

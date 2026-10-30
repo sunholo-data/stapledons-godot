@@ -186,6 +186,9 @@ var show_hint := true
 var hint := Label.new()
 var credits := Credits.new() # M5.2a: attribution panel (C)
 var ism_layer := IsmLayer.new() # R1-ISM-DUST I6: the medium layer (D), a display control
+var earth_beams := EarthBeams.new() # R3-EARTH-LINK EL4: Earth's beams (F6), on by default
+var earth_toggle := CheckButton.new()
+var earth_legend := Label.new()
 
 var _points := MultiMeshInstance3D.new()
 var _overlay := Control.new()
@@ -236,6 +239,7 @@ func _build() -> void:
 	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.draw.connect(_draw_overlay)
 	layer.add_child(_overlay)
+	_overlay.add_child(earth_beams) # its labels sit on the overlay, under the panel
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	panel.offset_left = -PANEL_WIDTH
@@ -312,7 +316,21 @@ func _build() -> void:
 	ism_shading.toggled.connect(func(on:bool)->void:ism_layer.show_surfaces=on;_overlay.queue_redraw())
 	medium_controls.add_child(ism_shading)
 	medium_controls.add_child(ism_toggle); medium_controls.add_child(local_ism_button);medium_controls.add_child(ism_depth_guides)
+	var bw: Dictionary = EarthBeams.copy().words
+	earth_toggle.name = "EarthBeamsToggle"
+	earth_toggle.text = str(bw.toggle)
+	earth_toggle.tooltip_text = str(bw.tooltip)
+	earth_toggle.button_pressed = earth_beams.visible
+	earth_toggle.toggled.connect(set_earth_beams_visible)
+	medium_controls.add_child(earth_toggle)
 	details.add_child(medium_controls)
+	earth_legend.text = str(bw.legend)
+	earth_legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	earth_legend.custom_minimum_size.x = PANEL_WIDTH - 40
+	earth_legend.add_theme_font_size_override("font_size", 12)
+	earth_legend.theme_type_variation = "HUDHint"
+	earth_legend.visible = earth_beams.visible
+	details.add_child(earth_legend)
 	ism_legend.text = "False-colour density · sky outlines from near Sol · approximate depths · light years"
 	ism_legend.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	ism_legend.custom_minimum_size.x=PANEL_WIDTH-40
@@ -1088,6 +1106,7 @@ func refresh() -> void:
 				binding.bind(drows[i / 2].field, drows[i / 2].fmt)
 				binding.record_context = true
 				binding.update_from(_last_view)
+	earth_beams.refresh(_last_view)
 	_overlay.queue_redraw()
 
 
@@ -1165,6 +1184,14 @@ func fit_journey() -> void:
 	if not points.is_empty():_frame_points(points)
 
 ## Display controls share one state; neither mode nor framing sends a plan.
+## R3-EARTH-LINK EL4: Earth's beams layer, a display control (no intent, like the medium layer).
+func set_earth_beams_visible(on: bool) -> void:
+	earth_beams.visible = on
+	earth_toggle.set_pressed_no_signal(on)
+	earth_legend.visible = on
+	_overlay.queue_redraw()
+
+
 func set_ism_visible(on: bool) -> void:
 	ism_layer.visible = on
 	ism_toggle.set_pressed_no_signal(on)
@@ -1405,6 +1432,7 @@ func _draw_overlay() -> void:
 	var route := route_points()
 	var plan_media: Variant = field_value(sim.world, "journey.plan.media") if sim != null else null
 	ism_layer.draw(_overlay, camera, func(v: Vector3) -> Vector3: return Starfield.galactic_to_world(v), IsmLayer.route_pieces(Starfield.world_to_galactic(route[0]), Starfield.world_to_galactic(route[1]), plan_media) if route.size() == 2 and plan_media is Array else [])
+	earth_beams.draw_on(_overlay, camera, func(v: Vector3) -> Vector3: return Starfield.galactic_to_world(v))
 	if route.size()==2 and not camera.is_position_behind(route[0]) and not camera.is_position_behind(route[1]):
 		_overlay.draw_dashed_line(camera.unproject_position(route[0]),camera.unproject_position(route[1]),Color(0.5,0.85,1.,.7),1.5,6.)
 		_overlay.draw_string(font,camera.unproject_position(route[0])+Vector2(8,16),departure_label(),HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.65,.8,1.))

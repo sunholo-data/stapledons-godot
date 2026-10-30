@@ -265,10 +265,10 @@ A new 2D overlay layer `ui/earth_beams.gd`. It follows `ui/ism_layer.gd`'s patte
 | Element | Drawn as | From |
 |---|---|---|
 | Heard beam | a solid line from Sol through its port and beyond (the beam covers the line), with Earth's light-front marked along it at t − heard_t | `earth.beam` |
-| Plan in flight to Earth | a dashed line Sol → port, plus the message's light-front crawling back towards Sol, labelled with its arrival year | `earth.pending` |
-| Stale beam | a fading line to a port the ship left, labelled "aimed at empty space until 2,467" | `earth.stale` |
+| Plan in flight to Earth | a dashed line Sol → port, plus the message's light-front crawling back towards Sol with its way still to go (front to Sol), labelled with its arrival ("→ Earth +22.59 yr"). As built (EL4): a plan home has its port at Sol, so the way home is the line that shows | `earth.pending` (the front's line from `earth.messages` `from`) |
+| Stale beam | a fading line to a port the ship left, labelled "empty until Earth +8.69 yr". While Earth's current beam is itself aimed at a left port, it is drawn once, as that stale beam | `earth.stale` |
 | Link window | a bar at the port: green when Earth's light arrives before the ship, otherwise "wait n years to hear Earth" | `earth.window` |
-| Silence | the last received light-front, labelled with its age | `earth.newest_light_*` |
+| Silence | out of beam, the last beamed light's front around Sol (radius clock.t − last_beam_t, dashed, apart from the scale rings), and at the ship "silent since Earth +17.5 days" (the date, a field, rather than an age Godot would have to compute) | `earth.last_beam_t`, `earth.last_beam_year` |
 | Plan preview | with a destination selected and not yet committed, the dashed line plus that port's `wait_years` and the stale beam the commit would make, all from the sim (no arithmetic in GDScript) | `earth.preview` |
 
 A legend toggle sits on the map's existing filter row, on by default. The colours are from the map palette.

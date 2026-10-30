@@ -1,0 +1,26 @@
+{
+  "about": "R3-EARTH-LINK EL4 (F6, design r3/earth-link.md EL4): Earth's beams on the galaxy map. A line is a list of parts: a string is copy, a [field, format] pair is one earth.* sim field, formatted and nothing more (D-21; the comms formats). {i} is the element's index in its earth.* list. Colours are the map palette's. far: a beam's ray is drawn on past its port to this multiple of the port's distance (the beam covers the whole ray beyond).",
+  "far": 1.6,
+  "colors": {
+    "beam": "#E0B066",
+    "pending": "#8FD3D0",
+    "stale": "#A99FBD",
+    "window_open": "#66E08F",
+    "window_wait": "#F2967E",
+    "silence": "#F2967E",
+    "preview": "#8FD3D0"
+  },
+  "lines": {
+    "pending": ["→ Earth ", ["earth.pending.{i}.heard_year", "comms_clock"]],
+    "stale": ["empty until Earth ", ["earth.stale.{i}.until_year", "comms_clock"]],
+    "window_wait": ["wait ", ["earth.window.wait_years", "comms_years"]],
+    "silence": ["silent since Earth ", ["earth.last_beam_year", "comms_clock"]],
+    "preview_wait": ["wait ", ["earth.preview.wait_years", "comms_years"]],
+    "preview_stale": ["empty until Earth ", ["earth.preview.would_stale.until_year", "comms_clock"]]
+  },
+  "words": {
+    "toggle": "Earth's beams",
+    "tooltip": "Where Earth is aiming its signal: the beam to the plan it has heard (solid), your plans still on their way home (dashed), beams left aimed at ports the ship has gone from (faded), and the wait at the port for Earth's light.",
+    "legend": "Earth's beams: solid, heard and aimed · dashed, your plan on its way home · faded, aimed at empty space · ring, the wait at the port for Earth's light"
+  }
+}
