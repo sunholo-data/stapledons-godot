@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 60 | 2026-10-30 | Row 7n(b) LANDED (PR #358, merge `dc458f9c`): the ISM map layer's repeated-connect survivor MG is killed by a named FAIL, host-null (MN) is recorded ... |
 | 59 | 2026-10-30 | Row 7l (b)–(d) LANDED (PR #356, merge `e2927840`): the capture driver's drill survivors CA, CB and CC are killed by named FAILs, the M4.6rR3 report ... |
 | 58 | 2026-10-29 | Kerr K1.1a-a4 LANDED (PR #352, merge `165c9f2f`): `rig/full` run 3 green on `2b47456b` in 100 min on a quiet rig (`crewSkip` 2.37 s against 4.0 s, ... |
 | 57 | 2026-10-29 | L4 M1a LANDED (PR #349, merge `81e240f0`; `rig/full` 87 min, fast tier green on the merge) and Kerr K1.1a-a4 BUILT (PR #352), merge PARKED-ON-LANE:... |
