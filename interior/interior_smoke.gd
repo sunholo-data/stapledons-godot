@@ -76,9 +76,9 @@ func run(main: Node, it: Interior, map: GalaxyMap, sim: SimBridge) -> int:
 	_check_sky(it, sim)
 	it.open_archive("log")
 	need(it.archive.visible and it.archive_text.text.contains("Legacy log"), "the Archive opens on the legacy log")
-	it.open_archive("codex") # The real flight also unlocks the ISM Archive entry.
+	it.open_archive("codex") # The real flight also unlocks the ISM Archive entry, and Earth's voice and following light (R3-EARTH-LINK).
 	var open_rows: int = it.codex.entry_rows().values().filter(func(b: Button) -> bool: return not b.disabled).size()
-	need(it.codex.panel.visible and not it.archive.visible and it.codex.entry_rows().size() == 11 and open_rows == 8, "the codex tab shows eleven entries, %d open from the sim's archive.unlocked" % open_rows)
+	need(it.codex.panel.visible and not it.archive.visible and it.codex.entry_rows().size() == 13 and open_rows == 10, "the codex tab shows thirteen entries (%d), %d open from the sim's archive.unlocked" % [it.codex.entry_rows().size(), open_rows])
 	return _done(sim)
 
 
