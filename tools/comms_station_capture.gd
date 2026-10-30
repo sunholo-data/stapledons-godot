@@ -78,6 +78,7 @@ func _run() -> void:
 	var bg := ColorRect.new()
 	bg.color = StapledonTheme.INK
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	StapledonTheme.install(root) # the game's window theme, as main and the ship demo set it
 	root.add_child(bg)
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)

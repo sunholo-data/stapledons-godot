@@ -187,13 +187,7 @@ func _init() -> void:
 		tag.set_anchors_and_offsets_preset(t[1], Control.PRESET_MODE_MINSIZE, 10)
 		tag.grow_horizontal = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_TOP_RIGHT else Control.GROW_DIRECTION_END
 		tag.grow_vertical = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_BOTTOM_LEFT else Control.GROW_DIRECTION_END
-		var back := StyleBoxFlat.new() # readable over any picture or the static
-		back.bg_color = Color(StapledonTheme.INK, 0.62)
-		back.set_corner_radius_all(4)
-		back.set_content_margin_all(4)
-		back.content_margin_left = 8
-		back.content_margin_right = 8
-		tag.add_theme_stylebox_override("normal", back)
+		tag.theme_type_variation = "HUDTag" # the theme's ink backing: readable over any picture or the static
 		add_child(tag)
 	caption.add_theme_font_size_override("font_size", 16)
 

@@ -102,6 +102,17 @@ static func build() -> Theme:
 		t.set_color("font_focus_color", ty, CREAM if ty != "HUDSelected" else TEAL_LIGHT)
 		t.set_color("font_pressed_color", ty, OCHRE_LIGHT)
 		t.set_color("font_disabled_color", ty, DIM)
+	# A tag over a picture (the comms feed's live tag, Earth clock and caption): cream on a small ink backing,
+	# readable over any picture or the static (R3-EARTH-LINK EL3b.5).
+	t.set_type_variation("HUDTag", "Label")
+	var tag := StyleBoxFlat.new()
+	tag.bg_color = Color(INK, 0.62)
+	tag.set_corner_radius_all(4)
+	tag.set_content_margin_all(4)
+	tag.content_margin_left = 8
+	tag.content_margin_right = 8
+	t.set_stylebox("normal", "HUDTag", tag)
+	t.set_color("font_color", "HUDTag", CREAM)
 	# The title menu: a faint panel, the chosen entry a dense one with the focus ring.
 	t.set_type_variation("HUDMenu", "Button")
 	t.set_stylebox("normal", "HUDMenu", _panel(0.5))
