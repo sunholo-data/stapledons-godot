@@ -1509,7 +1509,7 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
     2. Two instrument faults in the controller's waits: a pi probe without `< /dev/null` hung on stdin, and a completion grep for `^rc=` matched an earlier step's `rc=0`. Both were caught by reading the artifact; both are the skill's known stale-or-self-matching artifact class.
     3. The round-2 quorum objections were about the doc's own rigour (unbounded acceptance runs, unanchored line numbers), not the design; the carve-out resolved them without a third round.
   - **Process fix:** none needed in the charter. The executor-directive rule from iteration 29 (derive file bans from current holds) held: the ban list came from the paginated files API this fire.
-  - Harness share: no loop-harness work in 36–59.
+  - Harness share: 3 of the last 20 log entries are tagged [HARNESS] (55, 56, 57: the D-126 C-directed rig watchdog and suite-profiler tooling, ruled by Mark, not loop-harness repairs); 15 %, under the one-third alarm.
   - Last three landings: #356 none (clause-4 hygiene, S1 evidence), #352 none (R2 Kerr tooling), #349 none (L4 tooling). Clause 4's only row (7m-d) was lane-parked in all three fires, so no routable critical-path row and no DRIFT.
 - **Next:** 7m-d whenever the GPU is quiet (and re-measure its premise: the docked control read 13.3–13.6 ms in this fire's loaded runs). When #344 or #351 releases `Makefile`: K1.1a-a5 → L9 S0.3 → L3, then 7l(a) and 7w's republish. D-129 (Mark) → L4 M1b → M2. Until then, the unheld clause-4 follow-ups (7k(e) design-repo spec row, 7n(a)/(b), 7i(e)/(f)/(h)), after re-checking their files against open PRs.
 
