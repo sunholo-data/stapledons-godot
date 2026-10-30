@@ -132,6 +132,7 @@ func _bind(view: Dictionary) -> void:
 			continue
 		if k >= _labels.size():
 			var l := ComposedBinding.new()
+			l.theme = StapledonTheme.theme() # map overlays may live in a separate viewport
 			l.add_theme_font_size_override("font_size", 12)
 			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(l)
@@ -142,7 +143,7 @@ func _bind(view: Dictionary) -> void:
 		lab.compose(parts)
 		lab.record_context = true # the map's own view, as its other bindings (display audit)
 		lab.update_from(view)
-		lab.add_theme_color_override("font_color", colour(el))
+		lab.theme_type_variation = StapledonTheme.earth_beam_variant(str(el.kind), el.get("open", false))
 		lab.visible = true
 		el["label_node"] = lab
 		k += 1

@@ -517,7 +517,7 @@
     "audio_integrated": "67dc0842cf49ea1087879c6620819d0c087d27fa",
     "pre_gate_candidate": "22b7a4c",
     "gate_repair": "1023 physics checks pass. Separate production feed/strip/map family20/0 and owner beam/window family10/0 pass after reconciliation. Existing407 global goldens retained; combined global expected417 plus separate20. Real-sim and analytic fixture scopes explicit; negative controls and opened references retained.",
-    "full_rig": "82aa7e16 failed early: captain-animation assertion retained superseded1.3m/s D115. Corrected to approvedD1382.2m/s, captain-anim87/0 targeted pass. New exact-head tools/rig_check.sh351--golden required; no full pass claimed.",
+    "full_rig": "d039e6ba theme failure repaired with shared variants; targeted strict/CPU/GPU checks allpass. New exact pushed head must run tools/rig_check.sh351--golden; earlier failed/superseded heads are not passes.",
     "cleanup": "Four inactive Studio clones now have clean status, no stashes and no local-only commits after fetching explicit backup refs. Ignored source masters/builds/renders preserved separately and byte-verified. Clones retained until PR landing; active Earth checkout not modified.",
     "published_main_build": null,
     "earth_integrated": "6bdbed04497d2eafeeb651036e0e9fbac77b404b",
@@ -528,7 +528,9 @@
       "inventory_sha256": "dc338985ae956655ea32e11d2573ed31a5e06792c9e4f9670bf0affd031bc974",
       "files": 819,
       "bytes": 1132579800,
-      "verified_against_source": true
+      "verified_against_source": true,
+      "source_map": "build/checkout-preservation-20261030/source-map.json",
+      "independently_verified": true
     },
     "plan_only_integrated": {
       "pr": 360,
@@ -544,13 +546,22 @@
     "integration_repairs": [
       "Makefile total417 retains407 existing +10 owner Earthcases, alongside separate20 production display checks",
       "Captain-animation shared pace contract follows approvedD1382.2m/s instead of supersededD1151.3m/s",
-      "Camera AC5 preserves14m intended path by deriving frame duration at shared pace; allsector/worlddirection/continuity assertions unchanged. Targetedcamera187/0."
+      "Camera AC5 preserves14m intended path by deriving frame duration at shared pace; allsector/worlddirection/continuity assertions unchanged. Targetedcamera187/0.",
+      "Earth feed caption style and semantic beam label colors centralized in shared theme; contrast coverage extends57to65pairs without allowlist changes."
     ],
     "pace_repair_checks": {
       "captain_animation": "87 passed,0 failures",
       "camera_director": "187 passed,0 failures",
       "camera_forward": "35 passed,0 failures",
       "basis_guard": "0 inline conversions,3 controls caught"
+    },
+    "theme_repair_checks": {
+      "strict_theme": "0 leftovers,65 contrast pairs,negative controls pass",
+      "feed": "53 passed,0 failures",
+      "beams": "29 passed,0 failures",
+      "comms": "42 passed,0 failures",
+      "gpu": "20 display cases plus10 beam reports pass",
+      "appearance": "Themed parent feed/preview/offray/reused-preview images byte-identical; previously unthemed standalone viewports now receive shared typography explicitly"
     }
   },
   "npc_character_followup": {

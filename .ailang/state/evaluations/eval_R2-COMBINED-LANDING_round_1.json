@@ -1,7 +1,7 @@
 {
   "sprint_id": "R2-COMBINED-LANDING",
   "evaluation_round": 1,
-  "timestamp": "2026-10-30T16:35:42.484796+00:00",
+  "timestamp": "2026-10-30T16:49:34.349509+00:00",
   "evaluator": "independent npc_pilot_review agent; not the integration, audio or gate implementer",
   "status": "preliminary_code_review_complete_pending_exact_head_gates_and_publication",
   "result": "pending",
@@ -102,6 +102,15 @@
       "severity": "resolved_pending_new_exact_head_rig",
       "status": "targeted_camera_187_0_forward_35_0_pending_new_exact_head_rig",
       "evidence": "Independent review of tests/test_camera_director.gd::test_sectors_and_walk found an explicitly intended14m clear path. Stale650frames at2.2m/s travelled23.833m and eventually followed the curved deck rim; the original targeted log reports186passed/1failure on held-world-direction. The repair uses ceil(14*60/WALK_SPEED_MPS),382frames at2.2=14.0067m. Existing displacement direction dot>.9, sector-switched, camera continuity<=.01m/.5deg and key-release checks are unchanged. Production geometry and movement are unchanged. Targeted camera rerun log independently confirms187passed/0failures. Targeted camera-forward35/0, basis guard0inline and3controls also pass, with wrapper exit0 reported by parent. No fullrig success inferred. The repair preserves the documented test geometry and acceptance thresholds and is suitable for commit and fresh exact-head gating."
+    },
+    {
+      "id": "EARTH-THEME-STRICT-GATE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "shared_theme_repair_independently_reviewed_targeted_green",
+      "evidence": "Independent read of finald039e6bac6c3829383de4234a9c74aec5dc85a4d rig log confirms style-test22/0 then ui-theme-check strict FAIL with2leftovers: EarthFeed StyleBoxFlat.new for HUDtag backdrop and EarthBeams add_theme_color_override for bound labels. Existing57contrast pairs passed but do not cover these new styles. Parent assigned earth_gate_fix to move genuine styles into StapledonTheme variants and add text/panel contrast pairs, preserving colors/background; no allowlist or lint waiver. Independent final repair review and targeted pixel/contrast evidence pending. This head cannot land; a new committed exacthead must restart fullrig and passfast.",
+      "resolution": "Reviewed production changes confined to ui/stapledon_theme.gd, ui/earth_feed.gd and ui/earth_beams.gd. Shared HUDEarthFeed variation inherits HUDOverlay and preserves exact ink alpha0.62, radius4, verticalmargin4/horizontal8. Seven beam variants read unchanged JSON palette; kind/open/wait variation is reassigned on each binding so reusedlabels do not retain old colors. Explicit sharedtheme fixes formerlyunthemed rawSubviewports; intended production themedparent visuals are byte-identical. All57contrastpairs retained plus1feednormal and7beam pairs; noallowlist/lintwaiver. Independently read strict0leftovers/65pairs and seedednegativecontrols, feed53/0, beams29/0, station42/0. Parent/implementer report final standaloneGPU20/0 and owner10/0(max0.176px). Independent fullrig still pending on newcommittedhead.",
+      "pixel_comparison": "Independently checked frozenoriginalscripts equalHEAD except removedclass_name declaration; read comparison harness, opened all6before/afterframes, verified PNGbyteidentity for feed573b0cf4dbc6df6bfb23e7b7b15e807a0a18635c7a430981e7bfad8e486be49e, preview7759146cbf845c45d7f62819b36a016ce7169a262ea1bcba67034946c0d8b0e1, offrayba58e0fd79ae07307ccf0f53085e2cefcd3ad452c30d766f94d47ce0366874db. Preview repeated after offray confirms reusedlabel appearance.",
+      "limitations": "Contrastpairs measure text on theme panels/night/cream, while realmap labels overlaystars; densemap label collision remains earlier usabilityfollowup. Explicit sharedfont means older rawunthemed captures are not asserted byte-identical. Fresh voyage/context and exported-app smoke pending."
     }
   ],
   "independently_reviewed_evidence": {
@@ -128,7 +137,9 @@
       "tools/earth_link_capture.gd",
       "ui/earth_beams.gd final markers_only/default and label delta",
       "Makefile final417 plus named-family guards",
-      "PR360 gh metadata and local plan-only status/diff"
+      "PR360 gh metadata and local plan-only status/diff",
+      "ui/stapledon_theme.gd shared Earth styles and65contrastpairs",
+      "ui/earth_feed.gd and ui/earth_beams.gd sharedtheme repair"
     ],
     "opened_references": [
       "Earth-link sibling renders/comms_station/home.png",
@@ -159,7 +170,13 @@
       "../stapledons-godot-earth-link/renders/earth_link/d_stale_station.png",
       "../stapledons-godot-earth-link/renders/earth_link/e_home_map.png",
       "../stapledons-godot-earth-link/renders/earth_link/e_home_station.png",
-      "../stapledons-godot-earth-link/renders/earth_link/contact_sheet.png"
+      "../stapledons-godot-earth-link/renders/earth_link/contact_sheet.png",
+      "renders/earth_theme/before_feed.png",
+      "renders/earth_theme/before_preview.png",
+      "renders/earth_theme/before_offray.png",
+      "renders/earth_theme/after_feed.png",
+      "renders/earth_theme/after_preview.png",
+      "renders/earth_theme/after_offray.png"
     ],
     "evaluator_full_suite_run": false,
     "evaluator_gpu_jobs_run": false,
@@ -233,6 +250,15 @@
       "evidence": "/tmp/stapledon-pace-camera-check.log",
       "replacement_result": "camera-director187/0 and camera-forward35/0; basis guard0inline/3controls; final wrapperexit0 parent reported. Targeted log independently read. New-head fullrig/fast pending.",
       "repair": "Only fixed travelled path duration, retaining explicit14m fixture geometry and unchanged acceptance thresholds."
+    },
+    {
+      "head": "d039e6bac6c3829383de4234a9c74aec5dc85a4d",
+      "gate": "rig/full",
+      "result": "failed_at_ui_theme_check",
+      "evidence": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/rig-check/d039e6bac6c3829383de4234a9c74aec5dc85a4d.log independently read",
+      "checks_before_failure": "Pace checks passed; parent reports contact44/0, frames, chair12/0, style22/0; style22/0 independently observed in log tail.",
+      "cause": "2uncentralized EarthFeed/EarthBeams theme styles rejected by strict gate",
+      "replacement_full_rig": "pending real shared-theme repair, independent review, commit and new exacthead run"
     }
   ]
 }
