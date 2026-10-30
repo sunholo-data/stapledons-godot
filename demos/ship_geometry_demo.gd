@@ -141,6 +141,8 @@ var solar_tour: RefCounted
 var menu_return := false
 var settings_dir := "user://" # where the title screen keeps settings.cfg (tests redirect it)
 var menu_button := Button.new()
+var ai_keys_button := Button.new() ## AI.9: the live AI keys panel, beside Main menu (Mark 2026-10-30: "in game I can't find it")
+var ai_keys_panel: PanelContainer = null ## the panel when no AiSession runs yet (the voyage's session has its own)
 func _ready() -> void:
 	add_child(frame_check)
 	frame_check.status_changed.connect(note)
@@ -294,6 +296,9 @@ func _hud() -> void:
 	menu_button.text="Main menu [Esc]";menu_button.visible=menu_return;menu_button.focus_mode=Control.FOCUS_NONE
 	menu_button.add_theme_font_size_override("font_size",12)
 	menu_button.pressed.connect(return_to_menu);ship_hud.corner.add_child(menu_button)
+	ai_keys_button.name="AiKeys";ai_keys_button.text="AI keys";ai_keys_button.visible=menu_return;ai_keys_button.focus_mode=Control.FOCUS_NONE
+	ai_keys_button.add_theme_font_size_override("font_size",12)
+	ai_keys_button.pressed.connect(open_ai_keys);ship_hud.corner.add_child(ai_keys_button)
 	var display:=ship_hud.display_box
 	view_button.pressed.connect(toggle_auto_view);display.add_child(view_button)
 	var brightness_row:=GridContainer.new();brightness_row.columns=4;display.add_child(brightness_row)
@@ -727,6 +732,7 @@ func escape() -> void:
 	_sync_pointer()
 func _escape_top() -> void:
 	if consoles.escape():return
+	if ai_keys_open():close_ai_keys();return
 	if codex!=null and codex.panel.visible:codex.close()
 	elif ship_hud.tab_panel.visible:ship_hud.toggle_tab()
 	elif star_identification!=null and star_identification.card.visible:star_identification.close_card()
@@ -1756,7 +1762,7 @@ func panel_open() -> bool:
 	return benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
 ## Pointer belongs to an open interactive surface (clicks reach consoles and panels through it).
 func pointer_required() -> bool:
-	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+	return ai_keys_open() or camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
 ## R2-CAMERA D7: only the developer free camera captures the mouse, and only when no panel needs
 ## it; a player's pointer is always visible.
 func wants_capture() -> bool:
@@ -1836,3 +1842,28 @@ func _look_up_cue() -> String:
 	_was_under_way = under
 	_was_starbow = starbow
 	return cue
+## AI.9 aboard: the live AI panel (keys, opt-in, text-only, ceiling). The voyage's AiSession owns
+## it once the AI has started (its indicator's panel, so every change reconfigures the service at
+## once); before that, a panel over the saved AiSettings that the session will start from.
+func open_ai_keys() -> void:
+	if ai_session!=null and ai_session.indicator!=null:
+		ai_session.indicator.toggle_panel()
+	else:
+		if ai_keys_panel==null:
+			ai_keys_panel=load(AiIndicator.PANEL).instantiate()
+			var s:=AiSettings.new();s.dir=str(setup_options.get("settings_dir","user://"));s.load_settings()
+			ai_keys_panel.settings=s
+			ai_keys_panel.theme_type_variation="HUDSheet"
+			ai_keys_panel.closed.connect(_sync_pointer)
+			var layer:=CanvasLayer.new();layer.layer=12;add_child(layer);layer.add_child(ai_keys_panel)
+		else:
+			ai_keys_panel.visible=not ai_keys_panel.visible
+		ai_keys_panel.settings.load_settings() # settings.cfg is shared with the title's settings: start from what is saved
+		ai_keys_panel.refresh()
+	_sync_pointer()
+func ai_keys_open() -> bool:
+	if ai_session!=null and ai_session.indicator!=null and ai_session.indicator.panel!=null and ai_session.indicator.panel.visible:return true
+	return ai_keys_panel!=null and ai_keys_panel.visible
+func close_ai_keys() -> void:
+	if ai_session!=null and ai_session.indicator!=null and ai_session.indicator.panel!=null:ai_session.indicator.panel.close()
+	if ai_keys_panel!=null:ai_keys_panel.close()

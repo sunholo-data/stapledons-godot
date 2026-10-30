@@ -3,14 +3,22 @@ extends PanelContainer
 ## AiSettings: the opt-in tick, one key field per provider (pasted keys are
 ## saved 0600; an env key is shown as such and never displayed), the kinds
 ## each key enables, the per-kind price estimate, the one session ceiling and
-## text-only. Every change goes through AiSession.settings_changed().
+## text-only. In a running game every change goes through
+## AiSession.settings_changed(). Without a session (the title screen's
+## Settings, or aboard before the voyage's AI starts) it edits the saved
+## AiSettings directly, and the next session starts from them.
+
+signal closed
 
 var session: AiSession
+## The settings to edit when there is no session (set by the opener).
+var settings: AiSettings
 var opt_in := CheckBox.new()
 var text_only := CheckBox.new()
 var ceiling := SpinBox.new()
 var info := Label.new()
 var key_rows := {}
+var close_button := Button.new()
 
 
 func _ready() -> void:
@@ -32,11 +40,12 @@ func _ready() -> void:
 		save.text = "Save key"
 		save.pressed.connect(func(): _save_key(p, edit))
 		var status := Label.new()
-		row.add_child(status)
+		edit.custom_minimum_size.x = 300
+		box.add_child(status) # the provider and where its key comes from, then the field: the field gets the width
 		row.add_child(edit)
 		row.add_child(save)
 		box.add_child(row)
-		key_rows[p] = {"edit": edit, "status": status}
+		key_rows[p] = {"edit": edit, "status": status, "save": save}
 	opt_in.text = "Use live AI (needs a key)"
 	opt_in.toggled.connect(_on_opt_in)
 	box.add_child(opt_in)
@@ -55,13 +64,28 @@ func _ready() -> void:
 	box.add_child(crow)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(info)
+	close_button.name = "Close"
+	close_button.text = "Close"
+	close_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	close_button.pressed.connect(close)
+	box.add_child(close_button)
 	refresh()
 
 
+## The settings this panel edits: the session's when there is one, else the opener's.
+func current() -> AiSettings:
+	return session.settings if session != null else settings
+
+
+func close() -> void:
+	visible = false
+	closed.emit()
+
+
 func refresh() -> void:
-	if session == null or not is_node_ready():
+	var s := current()
+	if s == null or not is_node_ready():
 		return
-	var s := session.settings
 	opt_in.set_pressed_no_signal(s.opt_in)
 	opt_in.disabled = s.keys_present().is_empty()
 	text_only.set_pressed_no_signal(s.effective_text_only())
@@ -78,28 +102,31 @@ func refresh() -> void:
 
 
 func _save_key(p: String, edit: LineEdit) -> void:
-	session.settings.save_key(p, edit.text)
+	current().save_key(p, edit.text)
 	edit.text = ""
 	_changed()
 
 
 func _changed() -> void:
-	session.settings_changed()
-	if session.indicator != null:
-		session.indicator.refresh()
+	if session != null:
+		session.settings_changed()
+		if session.indicator != null:
+			session.indicator.refresh()
+	elif settings != null:
+		settings.save_settings()
 	refresh()
 
 
 func _on_opt_in(on: bool) -> void:
-	session.settings.opt_in = on
+	current().opt_in = on
 	_changed()
 
 
 func _on_text_only(on: bool) -> void:
-	session.settings.text_only = on
+	current().text_only = on
 	_changed()
 
 
 func _on_ceiling(v: float) -> void:
-	session.settings.set_ceiling(v)
+	current().set_ceiling(v)
 	_changed()
