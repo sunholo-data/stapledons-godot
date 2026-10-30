@@ -1,0 +1,312 @@
+{
+  "provenance": {
+    "observe_sha256": "e7f071e71954453f90d7225412307ff19ab978d94a33e4987f3e380927088f68",
+    "recipe": {
+      "alpha_ticks": 31,
+      "crew": "consent",
+      "first_target": {
+        "id": "CNS5:3627",
+        "index": 1,
+        "pos": {
+          "x": 3.094521,
+          "y": -3.015404,
+          "z": -0.051608
+        }
+      },
+      "offray_ticks": 5,
+      "phi": 2.64665241236225,
+      "scenario": "free_nav",
+      "second_target": {
+        "id": "CNS5:1676",
+        "index": 2,
+        "pos": {
+          "x": -5.770603,
+          "y": -6.237832,
+          "z": -1.328845
+        }
+      },
+      "seed": 7,
+      "step": 0.02
+    },
+    "sim_core_sha256": "2792da6532f88b8b05d89024534e9b545c2ba62a4cdd7af39c8fadaf60c2211f",
+    "source": "Frozen projection inputs from real SimBridge protocol2.16 on2026-10-30; filtered to clock/journey/ship/earth fields consumed by EarthBeams. Replay seed7 free_nav consent, plan+commit first target, alpha_ticks empty step sends (home captured after first); plan second target and capture preview, commit and offray_ticks empty step sends. No fabricated earth fields."
+  },
+  "states": [
+    {
+      "id": "home",
+      "view": {
+        "tick": 3,
+        "clock": {
+          "t": 0.141761072605748
+        },
+        "journey": {
+          "state": "committed"
+        },
+        "ship": {
+          "pos": {
+            "x": 0.100491694079798,
+            "y": -0.097939603725919,
+            "z": -0.00167381823902157
+          }
+        },
+        "earth": {
+          "beam": {
+            "heard_t": 0.0,
+            "heard_year": 0.0,
+            "port": {
+              "x": 3.094521,
+              "y": -3.015404,
+              "z": -0.051608
+            },
+            "port_id": "CNS5:3627"
+          },
+          "pending": [],
+          "stale": [],
+          "window": {
+            "from_t": 4.36469763764461,
+            "port": {
+              "x": 3.094521,
+              "y": -3.015404,
+              "z": -0.051608
+            },
+            "wait_years": 0.0
+          },
+          "messages": [
+            {
+              "arrive_t": 4.36469763764461,
+              "arrive_year": 4.36469763764461,
+              "from": {
+                "x": -0.00001504021318736,
+                "y": -0.00000308109210279,
+                "z": 0.00000242505240666
+              },
+              "from_ly": 0.00001554290900836,
+              "heard_t": 0.0,
+              "heard_year": 0.0,
+              "plan_id": 1.0,
+              "port": {
+                "x": 3.094521,
+                "y": -3.015404,
+                "z": -0.051608
+              },
+              "port_id": "CNS5:3627",
+              "port_ly": 4.32103979249451,
+              "reply_t": 4.32103979249451,
+              "reply_year": 4.32103979249451,
+              "sent_t": 0.0,
+              "sent_tau": 0.0,
+              "sent_year": 0.0
+            }
+          ],
+          "in_beam": true,
+          "last_beam_t": 0.0014273695101806,
+          "last_beam_year": 0.0014273695101806,
+          "preview": null
+        }
+      }
+    },
+    {
+      "id": "preview",
+      "view": {
+        "tick": 34,
+        "clock": {
+          "t": 4.36897698606024
+        },
+        "journey": {
+          "state": "planned"
+        },
+        "ship": {
+          "pos": {
+            "x": 3.094521,
+            "y": -3.015404,
+            "z": -0.051608
+          }
+        },
+        "earth": {
+          "beam": {
+            "heard_t": 0.0,
+            "heard_year": 0.0,
+            "port": {
+              "x": 3.094521,
+              "y": -3.015404,
+              "z": -0.051608
+            },
+            "port_id": "CNS5:3627"
+          },
+          "pending": [],
+          "stale": [],
+          "window": null,
+          "messages": [
+            {
+              "arrive_t": 4.36469763764461,
+              "arrive_year": 4.36469763764461,
+              "from": {
+                "x": -0.00001504021318736,
+                "y": -0.00000308109210279,
+                "z": 0.00000242505240666
+              },
+              "from_ly": 0.00001554290900836,
+              "heard_t": 0.0,
+              "heard_year": 0.0,
+              "plan_id": 1.0,
+              "port": {
+                "x": 3.094521,
+                "y": -3.015404,
+                "z": -0.051608
+              },
+              "port_id": "CNS5:3627",
+              "port_ly": 4.32103979249451,
+              "reply_t": 4.32103979249451,
+              "reply_year": 4.32103979249451,
+              "sent_t": 0.0,
+              "sent_tau": 0.0,
+              "sent_year": 0.0
+            }
+          ],
+          "in_beam": true,
+          "last_beam_t": 0.0479371935657289,
+          "last_beam_year": 0.0479371935657289,
+          "preview": {
+            "port": {
+              "x": -5.770603,
+              "y": -6.237832,
+              "z": -1.328845
+            },
+            "wait_years": 3.30712499180228,
+            "would_stale": {
+              "port": {
+                "x": 3.094521,
+                "y": -3.015404,
+                "z": -0.051608
+              },
+              "port_id": "CNS5:3627",
+              "until_t": 8.69001677855475,
+              "until_year": 8.69001677855475
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "offray",
+      "view": {
+        "tick": 40,
+        "clock": {
+          "t": 5.07784302267265
+        },
+        "journey": {
+          "state": "committed"
+        },
+        "ship": {
+          "pos": {
+            "x": 2.44093086041183,
+            "y": -3.25298072947754,
+            "z": -0.145773576151803
+          }
+        },
+        "earth": {
+          "beam": {
+            "heard_t": 0.0,
+            "heard_year": 0.0,
+            "port": {
+              "x": 3.094521,
+              "y": -3.015404,
+              "z": -0.051608
+            },
+            "port_id": "CNS5:3627"
+          },
+          "pending": [
+            {
+              "heard_t": 8.69001677855475,
+              "heard_year": 8.69001677855475,
+              "port": {
+                "x": -5.770603,
+                "y": -6.237832,
+                "z": -1.328845
+              },
+              "port_id": "CNS5:1676",
+              "sent_t": 4.36897698606024
+            }
+          ],
+          "stale": [
+            {
+              "port": {
+                "x": 3.094521,
+                "y": -3.015404,
+                "z": -0.051608
+              },
+              "port_id": "CNS5:3627",
+              "until_t": 8.69001677855475,
+              "until_year": 8.69001677855475
+            }
+          ],
+          "window": {
+            "from_t": 13.9838356929675,
+            "port": {
+              "x": -5.770603,
+              "y": -6.237832,
+              "z": -1.328845
+            },
+            "wait_years": 3.30712499180228
+          },
+          "messages": [
+            {
+              "arrive_t": 4.36469763764461,
+              "arrive_year": 4.36469763764461,
+              "from": {
+                "x": -0.00001504021318736,
+                "y": -0.00000308109210279,
+                "z": 0.00000242505240666
+              },
+              "from_ly": 0.00001554290900836,
+              "heard_t": 0.0,
+              "heard_year": 0.0,
+              "plan_id": 1.0,
+              "port": {
+                "x": 3.094521,
+                "y": -3.015404,
+                "z": -0.051608
+              },
+              "port_id": "CNS5:3627",
+              "port_ly": 4.32103979249451,
+              "reply_t": 4.32103979249451,
+              "reply_year": 4.32103979249451,
+              "sent_t": 0.0,
+              "sent_tau": 0.0,
+              "sent_year": 0.0
+            },
+            {
+              "arrive_t": 13.9838356929675,
+              "arrive_year": 13.9838356929675,
+              "from": {
+                "x": 3.094521,
+                "y": -3.015404,
+                "z": -0.051608
+              },
+              "from_ly": 4.32103979249451,
+              "heard_t": 8.69001677855475,
+              "heard_year": 8.69001677855475,
+              "plan_id": 2.0,
+              "port": {
+                "x": -5.770603,
+                "y": -6.237832,
+                "z": -1.328845
+              },
+              "port_id": "CNS5:1676",
+              "port_ly": 8.60094390621506,
+              "reply_t": 17.2909606847698,
+              "reply_year": 17.2909606847698,
+              "sent_t": 4.36897698606024,
+              "sent_tau": 0.62,
+              "sent_year": 4.36897698606024
+            }
+          ],
+          "in_beam": false,
+          "last_beam_t": 0.0479371935657289,
+          "last_beam_year": 0.0479371935657289,
+          "preview": null
+        }
+      }
+    }
+  ]
+}
