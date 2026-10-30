@@ -259,6 +259,8 @@ func draw(overlay: Control, camera: Camera3D, to_world: Callable, route: Array =
 	# M4.6pR3: a map in a hidden window (the bridge keeps the navigation window hidden in
 	# transit) draws nothing. Each tick's refresh() queues this, and its 905 projected faces
 	# cost ~24 ms of main-thread time a tick. Showing the window redraws it.
+	# get_window() is null only outside the tree, where the draw signal never fires (the one
+	# caller is GalaxyMap._draw_overlay); `host != null` is defensive, equivalent in use (7n-b).
 	var host := overlay.get_window()
 	if host != null and not host.visible:
 		if not host.visibility_changed.is_connected(overlay.queue_redraw):
