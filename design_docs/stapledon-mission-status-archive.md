@@ -2,6 +2,24 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-29 — ITERATION 56: L4 test-suite speed designed (two quorum rounds, carve-out) and planned (`R1-RIG-TEST-SPEED`); M1a, the suite profiler instrument, built, not yet landed: `rig/full` run 2 was RED because the control failed when run through make; fixed in `86b96103`, and run 3 was in flight at record time (PR #349); independent Sonnet 66 FAIL, then 90 PASS in round 2, zero blocking; M1b/M2 parked on D-129 (L4's OQ1–OQ4), M3 on the #344/#346 `Makefile` hold; 7m-d PARKED-ON-LANE (GPU 99–100 %); clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d. 7m-d is PARKED-ON-LANE: predicate GPU < 15 % and 1-min load < 5; this fire read GPU `Device Utilization %` 100/100/99 and load 2.8 at about 21:41Z. P-land is Mark's. 5 ongoing. Because D-128 is still OPEN, its default A applied: 7m-d if quiet, else L4. So L4 was the pick.
+- **Done**:
+  - Controller baseline: serial `gmake --trace test` on `c2e70e15`, rc 0, **4,123 s**; `sim` 740 s is the longest target.
+  - Design `rig-test-speed.md` (Opus 5.5 via the Agent tool). M1 is the instrument and report, M2 parallel lanes, M3 edges and shards (held). It found 15 parallel hazards.
+  - Quorum round 1 BLOCKED (3 rejects); the controller measured every premise and the designer revised. Round 2: gemini passed, kimi and glm rejected with concrete fixes, which were applied under the carve-out after the controller measured V43/V44. gpt6-1-sol was unreachable in both rounds.
+  - Plan by codex gpt-6.1-sol. The controller split M1 into M1a (instrument) and M1b (rig wiring, which OQ2 governs).
+  - Executor codex gpt-6.1-sol: `tools/timed_recipe_shell.sh`, `tools/suite_profile.sh` and `tools/test_suite_profile.sh` (20 cases on each GNU make found), plus one `test_rig_check.sh` case.
+  - The controller fixed a sampler half-row defect that a flake exposed under load.
+  - Judge Sonnet: round 1 **66 FAIL**, blocking on `overhead-200`, a wall bound that flaked under load. The controller reproduced it 4 of 4 times. In round 2 the bound became a CPU gate plus a hang guard, and 8 survivor mutants were killed: **90 PASS**, zero blocking. Round 3 reviewed the post-PASS make-environment fix: **88 PASS**, zero blocking.
+  - **Landing**: PR #349 at head `86b96103`. The fast tier is green. `rig/full` run 1 was stopped by the controller after the FAIL. Run 2 (`0a8876ba`) was RED: under `make test` the fixture makes inherited MAKELEVEL/MAKEFLAGS from the outer make, and every earlier AC4 run had used `sh` rather than make. Run 3 (`86b96103`) was in flight at record time. The next iteration reads run 3, then merges.
+- **Next**:
+  - **Land PR #349 first:** read `rig/full` run 3 on `86b96103`, re-check `git log HEAD..origin/main`, and merge on green plus the fast tier. Reconcile the design's 50 ms text at landing.
+  - **D-129** (Mark) → M1b → M2.
+  - Meanwhile, 7m-d whenever the rig is quiet, then K1.1a-a4 → a5 → L9 S0.3 → L3.
+  - 2 OPEN decisions (D-128, D-129).
+
 ## STATUS 2026-10-28 — ITERATION 55: D-126 C's A half LANDED (PR #345, merge `d63b47a4`): the `rig/full` watchdog default is 7,200 s and the rig-check control is hermetic against a caller's `RIG_TEST_S` (8 cases, committed caller-poison guard); independent Sonnet 95 PASS, zero blocking; `rig/full` green in 117 min on run 2 (run 1 red on a `ship-demo-launch` load flake), so this landing needed the raise; D-126 B and D-127 B recorded (row 7m-d filed, position D-128); clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 open by D-127 B (rule kept), now waiting on the new row **7m-d** (why the docked control's p99 is above 16.7 ms on a quiet rig; routable only when the rig is quiet), and P-land (Mark); 5 ongoing. The pick was Mark's attended ruling D-126 C (a directive outranks the queue); 7m-d had no position, so **D-128** proposes it (default A: 7m-d next on a quiet rig, else L4).
