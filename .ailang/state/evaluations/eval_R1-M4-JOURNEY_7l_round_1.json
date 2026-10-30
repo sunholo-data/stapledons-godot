@@ -1,0 +1,49 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "feature": "M4.6rR3_7l_CAPTURE_FOLLOWUPS",
+  "round": 1,
+  "commit": "f3bbd36d",
+  "evaluator": "claude sonnet (Agent tool)",
+  "score": 92,
+  "verdict": "PASS",
+  "disposition": "Items (b), (c), (d) meet AC1-AC11 first-hand; drills CA, CB, CC, DB1 are killed through make; item (a) stays deferred (Makefile held). Non-blocking: a few weakly-covered or redundant checks survive mutation (listed).",
+  "criteria_checked": [
+    {"id":"AC1","command":"deadline 900 make capture-m4 (after make import on the fresh clone)","observed":"rc=0, 14 ok frames, 1 OK, 0 FAIL; run twice, both green","pass":true},
+    {"id":"AC2","command":"drill $PWD CA","observed":"make rc 2, killed, exit 0","pass":true},
+    {"id":"AC3","command":"drill $PWD CB","observed":"make rc 2, killed, exit 0","pass":true},
+    {"id":"AC4","command":"drill $PWD CC","observed":"make rc 2, killed, exit 0","pass":true},
+    {"id":"AC5","command":"drill $PWD DB1","observed":"make rc 2, killed, exit 0","pass":true},
+    {"id":"AC6","command":"git diff --quiet HEAD -- tools/...; find TMPDIR stapledon-7l.*","observed":"rc 0 and 0","pass":true},
+    {"id":"AC7","command":"git diff -U0 origin/main -- tools/m4_ship_bench.gd greps","observed":"5, 0, 3","pass":true},
+    {"id":"AC8","command":"deadline 300 make bench SCENE=bridge","observed":"rc 2; one verdict line 'verdict MISS exit 2: 2843 frames of 300 needed, p99 16.848 ms against 16.7 ms, 0 structural failures'; footer 'FAILED (exit 2:' count 1; pairing 2 MISS 2 valid (load-dependent)","pass":true},
+    {"id":"AC9","command":"grep -cF reproducibility sentence","observed":"1","pass":true},
+    {"id":"AC10","command":"make uid-guard lint-precision python-guard ai-live-guard; git diff --check origin/main","observed":"gates-ok, make rc 0","pass":true},
+    {"id":"AC11","command":"name-only diff vs origin/main","observed":"6 0","pass":true}
+  ],
+  "drills": [
+    {"id":"CA","mutation":"drop dismiss_arrival (planned drill)","result":"killed"},
+    {"id":"CB","mutation":"sheet row always 0 (planned drill)","result":"killed (14 cell FAILs)"},
+    {"id":"CC","mutation":"CRUISE_BETA_TOL := 1.0 (planned drill)","result":"killed"},
+    {"id":"DB1","mutation":"BENCH_S := 0.0 (planned drill)","result":"killed"},
+    {"id":"M2","mutation":"_near '<' -> '<='","result":"SURVIVES (make rc 0): equivalent for the tested values, boundary untested"},
+    {"id":"M3","mutation":"drop _near(plan.cruise_beta, 0.99) clause","result":"SURVIVES (rc 0): only fails if the plan's cruise beta changed, which no capture input does"},
+    {"id":"M4","mutation":"_sheet canvas width GAP*6 -> GAP*5","result":"KILLED by sheet size check (FAIL contact sheet size 2270x366)"},
+    {"id":"M5","mutation":"cells.size() == 14 -> >= 1","result":"SURVIVES (rc 0): redundant with shot count == 14 plus the per-cell compare"},
+    {"id":"M9","mutation":"delete positive-control has_card(arrival) check","result":"SURVIVES (rc 0): expected, a deleted check cannot fail itself; it only guards CA from vacuity"},
+    {"id":"M6","mutation":"bench VERDICTS order -> [ok, MISS, invalid] with BENCH_S 0","result":"KILLED by DB1 signature: line reads 'verdict MISS exit 1' vs expected 'invalid exit 1' (rc 2; the drill regex would fail, exit 1)"},
+    {"id":"M7","mutation":"remove the n/a branch with BENCH_S 0","result":"CAUGHT BUT MISCLASSIFIED: SCRIPT ERROR on missing p99_ms, the bench hangs, make rc 124 after 300 s; DB1 would report exit 4 INFRASTRUCTURE rather than killed"},
+    {"id":"M8","mutation":"JSON verdict expression -> VERDICTS[0]","result":"SURVIVES (real bench rc 0, JSON would say ok even when not); nothing reads it, as the design states"}
+  ],
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "A fresh clone needs 'make import' before capture-m4 (class_name cache); the first AC1 run failed with 'Identifier Starfield not declared'. The design's AC list omits this. make import also leaves untracked data/**/*.translation files (5), which I removed.",
+    "M7: when the n/a branch is lost, the bench script errors and does not quit; DB1 would then exit 4 (INFRASTRUCTURE timeout) rather than 1. Still non-green, but classed as rig failure.",
+    "Surviving mutants M2, M3, M5, M9, M8 are equivalent, redundant or by design; the _near self-test pins only two points.",
+    "Bench prints 'bench-bridge: OK' immediately beside 'verdict MISS exit 2' (pre-existing OK line, not touched by the diff); mildly confusing but all existing counted patterns still match once.",
+    "Report claims verified: second capture gives byte-equal worlds.sha256 and 15 of 15 differing PNG hashes; this tree's worlds differ from the public set in 14 of 14 and PNGs 0 of 15 match. The 'docked frames also differ' claim holds."
+  ],
+  "commands_run": [
+    "make import", "make capture-m4 (x2)", "drill CA/CB/CC/DB1", "make bench SCENE=bridge", "AC6-AC11 commands",
+    "mutation runs M2-M9 through make with SCRATCH redirected and cmp proof of apply/restore", "make uid-guard lint-precision python-guard ai-live-guard", "git diff --check origin/main"
+  ]
+}
