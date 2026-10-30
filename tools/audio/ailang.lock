@@ -1,11 +1,11 @@
 {
   "ailang_version": "v0.54.18",
-  "generated_at": "2026-10-26T09:05:38.547127Z",
+  "generated_at": "2026-10-30T18:35:40.280452Z",
   "generator": "ailang lock v0.54.18",
   "packages": [
     {
       "ailang": ">=0.54.18",
-      "content_hash": "sha256:aa623c7a14365f6281c55313d9e21e1e2048409ee3b63da20bdf08828feec7a8",
+      "content_hash": "sha256:fd89d950a83bbdfbaf43644f1c7fbf54ebce50e5ae350cc101e835d5e1ed6dc9",
       "effects": [
         "IO"
       ],
@@ -15,21 +15,28 @@
         "sunholo/audio/block",
         "sunholo/audio/clip",
         "sunholo/audio/clip_pcm",
+        "sunholo/audio/compat",
         "sunholo/audio/delay",
         "sunholo/audio/dsp",
         "sunholo/audio/edit",
+        "sunholo/audio/events",
+        "sunholo/audio/filter",
         "sunholo/audio/levels",
         "sunholo/audio/mix",
         "sunholo/audio/noise",
+        "sunholo/audio/osc",
         "sunholo/audio/pcm",
         "sunholo/audio/recipe",
         "sunholo/audio/reference",
-        "sunholo/audio/safety"
+        "sunholo/audio/safety",
+        "sunholo/audio/sound",
+        "sunholo/audio/space"
       ],
-      "interface_hash": "sha256:887f483dd5d75ba03983e37e5a08cd7d421e5135cfbb86c65218dbb63cd5d205",
+      "interface_hash": "sha256:3e00883e52b45993590b92de45758930e0a0b3b55347495a746f7291ccb23dfd",
       "name": "sunholo/audio",
-      "source": "registry",
-      "version": "0.5.0"
+      "path": "../../../ailang-packages-audio06/packages/audio",
+      "source": "path",
+      "version": "0.6.0"
     }
   ],
   "schema": "ailang.lock/v1",

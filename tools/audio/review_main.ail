@@ -7,7 +7,8 @@ module stapledons/audio/review_main
 -- and sums them. A second plan over the previous recipes renders the <id>_v1 files for A/B listening.
 --   ailang run --quiet --bytecode --caps IO,FS --package-dir tools/audio --entry main --args-json '<plan>' \
 --     tools/audio/review_main.ail
-import pkg/sunholo/audio/recipe (Recipe, parseRecipesAs, render, defaultRate)
+import pkg/sunholo/audio/recipe (defaultRate)
+import pkg/sunholo/audio/sound (Sound, parseSoundsAs, renderSound)
 import pkg/sunholo/audio/pcm (pcm16)
 import pkg/sunholo/audio/mix (tile)
 import pkg/sunholo/audio/dsp (dbToGain)
@@ -22,20 +23,20 @@ import std/io (println)
 import std/string (intToStr)
 
 export type Item = {id: string, file: string, gain_db: float}
-export type Part = {recipe: string, gain_db: float, at: [float]}
-export type Mix = {id: string, seconds: float, parts: [Part]}
+export type MixPart = {recipe: string, gain_db: float, at: [float]}
+export type Mix = {id: string, seconds: float, parts: [MixPart]}
 export type Plan = {recipes: string, out: string, items: [Item], mixes: [Mix]}
 
 pure func gain(db: float) -> float = dbToGain(db)
 
-pure func find(rs: [Recipe], id: string) -> Option[Recipe] = head(filter(\r. r.id == id, rs))
+pure func find(rs: [Sound], id: string) -> Option[Sound] = head(filter(\r. r.base.id == id, rs))
 
 -- A recipe over n samples (sunholo/audio mix.tile): a loop tiles from 0; a one-shot plays once at
 -- each start in `at` (seconds; empty = at 0) and is silent elsewhere (a later start cuts an earlier
 -- one short, like one voice). The package takes the greatest start at or before each sample; the
 -- review plans list starts in ascending order, where that equals the old last-matching rule.
-pure func tiled(r: Recipe, g: float, n: int, at: [float]) -> Array[float] =
-  fromList(tile(render(r), r.loop, g, n, map(\s. floatToInt(round(s * 48000.0)), at)))
+pure func tiled(r: Sound, g: float, n: int, at: [float]) -> Array[float] =
+  fromList(tile(renderSound(r), r.base.loop, g, n, map(\s. floatToInt(round(s * 48000.0)), at)))
 
 func writeSound(out: string, id: string, xs: [float]) -> Result[(), string] ! {FS, IO} {
   let pcm = pcm16(xs);
@@ -51,19 +52,19 @@ func writeSound(out: string, id: string, xs: [float]) -> Result[(), string] ! {F
   }
 }
 
-func items(p: Plan, rs: [Recipe], is: [Item]) -> Result[(), string] ! {FS, IO} =
+func items(p: Plan, rs: [Sound], is: [Item]) -> Result[(), string] ! {FS, IO} =
   match is {
     [] => Ok(()),
     it :: more => match find(rs, it.id) {
       None => Err("${it.id}: no such recipe"),
-      Some(r) => match writeSound(p.out, it.file, toList(scale(gain(it.gain_db), fromList(render(r))))) {
+      Some(r) => match writeSound(p.out, it.file, toList(scale(gain(it.gain_db), fromList(renderSound(r))))) {
         Err(e) => Err(e),
         Ok(_) => items(p, rs, more)
       }
     }
   }
 
-func mixes(p: Plan, rs: [Recipe], ms: [Mix]) -> Result[(), string] ! {FS, IO} =
+func mixes(p: Plan, rs: [Sound], ms: [Mix]) -> Result[(), string] ! {FS, IO} =
   match ms {
     [] => Ok(()),
     m :: more => {
@@ -81,7 +82,7 @@ func mixes(p: Plan, rs: [Recipe], ms: [Mix]) -> Result[(), string] ! {FS, IO} =
 export func main(p: Plan) -> () ! {FS, IO} =
   match readFileResult(p.recipes) {
     Err(e) => println("sound-review: FAIL reading ${p.recipes}: ${e}"),
-    Ok(text) => match parseRecipesAs("stapledons.audio.recipes/1", text) {
+    Ok(text) => match parseSoundsAs("stapledons.audio.recipes/1", text) {
       Err(e) => println("sound-review: FAIL ${e}"),
       Ok(rs) => match items(p, rs, p.items) {
         Err(e) => println("sound-review: FAIL ${e}"),

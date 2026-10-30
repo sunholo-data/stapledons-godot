@@ -14,4 +14,4 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/audio" = "0.5.0" # R2-SUNHOLO-AUDIO (D-119, D-124): synthesis, PCM/WAV, mix, loudness measures
+"sunholo/audio" = { path = "/Users/voightkampff/dev/sunholo-data/ailang-packages-audio06/packages/audio" } # PATH PIN (R3-SUNHOLO-AUDIO-REALISM AR8, local only; AR9 pins the registry 0.6.0). Was "0.5.0" (D-119, D-124)
