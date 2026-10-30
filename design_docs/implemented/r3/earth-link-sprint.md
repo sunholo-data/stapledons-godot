@@ -1,7 +1,7 @@
 # Sprint R3-EARTH-LINK: plan
 
 **Design:** [earth-link.md](earth-link.md) (R3 S1, K1, F6).
-**Status:** Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Executing: EL0 ✅, EL1 ✅ (published 2026-10-28), EL2 ✅, EL3 ✅ (words layer); EL3b (the visual station) approved 2026-10-28, executing; EL4 after.
+**Status:** Completed 2026-10-30 (PR #344): EL0–EL5, EL3b.1–.7. Approved by Mark (attended 2026-10-28: plan PR #340 merged, OQ1–OQ5 at their recommendations). Evaluation 90/100 PASS (`.ailang/state/evaluations/eval_R3-EARTH-LINK_round_1.json`). Report: [earth-link-report.md](earth-link-report.md).
 **Progress file:** `.ailang/state/sprints/sprint_R3-EARTH-LINK.json`
 **Branches:**
 - this plan: `design/r3-earth-link`;
@@ -219,6 +219,7 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2
   `make capture-earth-link`: the five states from the real sim, 10 frames and a contact sheet, 0 failures
   (the 30 ly turn's wait 59.70 yr; the top speed 7.0711e-4). The report is drafted in
   `design_docs/implemented/r3/earth-link-report.md`.
+  **Mark opened the renders 2026-10-30:** "looks great" (https://claude.ai/artifact/5JjGWJ2kRDVBAdpJ4AAKUj).
 
 ## Validation (per milestone, focused)
 

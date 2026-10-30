@@ -121,6 +121,7 @@ func _run() -> void:
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 24)
 	vp_station.add_child(margin)
+	margin.theme = StapledonTheme.theme() # the game's window theme (a SubViewport does not inherit it)
 	station = CommsStation.new()
 	margin.add_child(station)
 
