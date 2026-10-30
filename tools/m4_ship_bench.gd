@@ -4,6 +4,7 @@ const SIZE := Vector2i(2560, 1440)
 const BENCH_S := 30.0
 const P99_TARGET_MS := 16.7
 const MIN_FRAMES := 300   # 10 fps over 30 s; the spike measured 821
+const VERDICTS := ["ok", "invalid", "MISS"] # indexed by the exit code
 const DECK := [30.0, 0.47]
 const Summary := preload("res://demos/ship_demo_benchmark.gd")
 var demo: Node
@@ -34,7 +35,7 @@ func _run() -> void:
 	demo.auto = false
 	demo.journey_auto_tick = false
 	if not _check(demo.ready_ok, "demo not ready"):
-		quit(1)
+		_stop(1, "demo not ready")
 		return
 	_check(demo.sky.has_background, "no sky panorama: make sky-assets")
 	_check(demo.sky.starfield.count >= 60000, "fewer than 60000 stars")
@@ -64,7 +65,7 @@ func _run() -> void:
 	var control := Summary.summarize(docked)
 	print("bench-bridge: docked control 300 frames p50 %.2f p95 %.2f p99 %.2f ms (no journey ticks; not gated)" % [control.p50_ms, control.p95_ms, control.p99_ms])
 	if not await _commit():
-		_stop(1)
+		_stop(1, "departure not committed")
 		return
 	for i in 30:
 		await process_frame
@@ -135,12 +136,12 @@ func _run() -> void:
 			"committed_start": committed, "target_p99_ms": P99_TARGET_MS, "minimum_frames": MIN_FRAMES,
 			"frame_times_ms": times, "phases": phases, "phase_counts": counts, "sim_wait_ms": waits,
 			"sky_gpu_ms": sky_gpu, "ship_gpu_ms": ship_gpu, "docked_control": control, "timing": timing,
-			"structural_failures": failures, "verdict": "MISS" if miss else "ok"}) + "\n")
+			"structural_failures": failures, "verdict": VERDICTS[1 if failures else (2 if miss else 0)]}) + "\n")
 		_check(file.get_error() == OK, "store bench-bridge.json")
 		file.close()
 	if failures == 0:
 		print("bench-bridge: OK")
-	_stop(1 if failures else (2 if miss else 0))
+	_stop(1 if failures else (2 if miss else 0), "%d frames of %d needed, p99 %s ms against %.1f ms, %d structural failures" % [times.size(), MIN_FRAMES, "n/a" if times.is_empty() else "%.3f" % timing.p99_ms, P99_TARGET_MS, failures])
 
 
 func _pose() -> void:
@@ -171,7 +172,8 @@ func _check(ok: bool, what: String) -> bool:
 	return ok
 
 
-func _stop(code: int) -> void:
+func _stop(code: int, detail: String) -> void:
 	if demo != null and demo.journey_sim != null:
 		demo.journey_sim.stop()
+	print("bench-bridge: verdict %s exit %d: %s" % [VERDICTS[code], code, detail])
 	quit(code)

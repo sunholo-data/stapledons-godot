@@ -12,6 +12,7 @@ const STATES := [
 ]
 const THUMB := Vector2i(320, 180)
 const GAP := 6
+const CRUISE_BETA_TOL := 1e-12 # sim cruise beta is plan.cruise_beta + 2 ulp (0.9900000000000004)
 var demo: Node
 var failures := 0
 var shots: Array[String] = []
@@ -25,6 +26,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	started = Time.get_ticks_msec()
+	_check(_near(0.9900000000000004, 0.99), "cruise beta tolerance rejects 0.99 + 2 ulp")
+	_check(not _near(0.99 + 1e-9, 0.99), "cruise beta tolerance accepts 0.99 + 1e-9")
 	_check(DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT)) == OK, "create output directory")
 	for name in DirAccess.get_files_at(OUT):
 		if name.ends_with(".png") or name in ["manifest.json", "m4_manifest.sha256", "worlds.sha256"]:
@@ -59,7 +62,9 @@ func _run() -> void:
 		await _leg(true)
 		if _arrived():
 			await _views(6, "arrived_acen")
+			_check(demo.ship_hud.has_card("arrival"), "arrival card not shown at arrived_acen")
 			demo.dismiss_arrival()
+			_check(not demo.ship_hud.has_card("arrival"), "arrival card still up after dismiss")
 			if await _helm():
 				if _use("open") and _use("home") and _step() and _use("commit"):
 					await _leg(false)
@@ -68,6 +73,7 @@ func _run() -> void:
 	_check(shots.size() == 14, "shot count %d (want 14)" % shots.size())
 	_duplicates()
 	_sheet()
+	_sheet_layout()
 	_manifest()
 	_finish()
 
@@ -153,7 +159,7 @@ func _views(n: int, state: String) -> void:
 			_check(ship.phase == "boosting" and beta >= 0.9 and beta < 0.91, state + " values")
 		"cruise_099":
 			# The sim's cruise beta is 0.9900000000000004 (2 ulp), so compare with a tolerance.
-			_check(ship.phase == "cruising" and absf(beta - 0.99) < 1e-12 and glow > 0.0 and demo.sky_state == "live", state + " values")
+			_check(ship.phase == "cruising" and _near(beta, float(world.journey.plan.cruise_beta)) and _near(float(world.journey.plan.cruise_beta), 0.99) and glow > 0.0 and demo.sky_state == "live", state + " values")
 		"brake_b05":
 			_check(ship.phase == "braking" and beta > 0.49 and beta <= 0.5, state + " values")
 	await _shot(n, state, "deck", DECK, world)
@@ -216,6 +222,29 @@ func _sheet() -> void:
 	_check(sheet.save_png(OUT + "/contact_sheet.png") == OK, "save contact sheet")
 
 
+func _sheet_layout() -> void:
+	# Reload the saved sheet and check each cell against its own frame, with the cell taken from the file name.
+	var sheet := Image.load_from_file(ProjectSettings.globalize_path(OUT + "/contact_sheet.png"))
+	if not _check(sheet != null and not sheet.is_empty(), "reload contact sheet"):
+		return
+	if not _check(sheet.get_size() == Vector2i(2276, 366), "contact sheet size %dx%d (want 2276x366)" % [sheet.get_width(), sheet.get_height()]):
+		return
+	var cells := {}
+	for path in shots:
+		var name := path.get_file()
+		var col := int(name.substr(0, 2)) - 1
+		var row := 1 if name.ends_with("_forward.png") else 0
+		cells[col * 2 + row] = true
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if not _check(img != null, "contact sheet reload " + name):
+			continue
+		img.convert(Image.FORMAT_RGB8)
+		img.resize(THUMB.x, THUMB.y, Image.INTERPOLATE_LANCZOS)
+		var cell := sheet.get_region(Rect2i(Vector2i(col * (THUMB.x + GAP), row * (THUMB.y + GAP)), THUMB))
+		_check(cell.get_data() == img.get_data(), "contact sheet cell %s at col %d row %d differs" % [name, col, row])
+	_check(cells.size() == 14, "contact sheet cells %d (want 14 distinct)" % cells.size())
+
+
 func _manifest() -> void:
 	var pngs := PackedStringArray()
 	var names := Array(DirAccess.get_files_at(OUT))
@@ -240,6 +269,10 @@ func _write(name: String, contents: String) -> void:
 		file.store_string(contents)
 		_check(file.get_error() == OK, "store " + name)
 		file.close()
+
+
+func _near(a: float, b: float) -> bool:
+	return absf(a - b) < CRUISE_BETA_TOL
 
 
 func _check(ok: bool, what: String) -> bool:

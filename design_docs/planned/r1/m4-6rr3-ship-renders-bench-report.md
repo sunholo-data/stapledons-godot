@@ -6,6 +6,8 @@
 
 Base URL: `https://storage.googleapis.com/stapledons-voyage-assets/refs/m4_ship_s1/`. It holds 18 files: 15 PNGs, `manifest.json`, `m4_manifest.sha256` and `worlds.sha256`. AC6 fetched all 18 and found every one byte-equal to the local set.
 
+**Reproducibility (row 7l, iteration 59).** Only the worlds are reproducible, not the pixels: a second `make capture-m4` on the same tree gives a byte-equal `worlds.sha256`, but the PNG hashes differ between runs (12 of 15 in the iteration-36 evaluation, which traced dust-impact flashes and HUD card fades; 15 of 15 at `e94ed9b7`, where even the docked frames differ, cause not traced). The AC5 table below describes one run, the published set. At `e94ed9b7` a fresh capture matches the public set in none of its 14 world hashes and none of its 15 PNG hashes, so S1 review should use a fresh capture.
+
 ## AC5: each PNG, opened and looked at
 
 Captain eye at the helm, seed 424242, medium tier (60,883 stars), 1600×900, HUD visible. The deck view is tilt 30°, yaw 0.47; the forward view is tilt 89.99°, the travel pole.
