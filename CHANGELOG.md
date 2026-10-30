@@ -8,6 +8,7 @@
 - The captain-animation speed assertion now enforces D-138's approved shared 2.2 m/s pace; it previously retained the superseded 1.3 m/s value.
 - The camera's sector-crossing fixture keeps its intended 14 m path at that pace, avoiding an unintended outer-rim collision from the old fixed frame count. Direction and continuity thresholds remain unchanged.
 - Earth feed captions and beam labels use shared theme variations, with their existing backgrounds and semantic colours retained and covered by the theme contrast gate.
+- Portrait fallback tests use a controlled missing-emotion set, so adding the Engineer's angry portrait no longer invalidates the neutral-fallback regression case.
 
 ### Painted NPC asset pilot (2026-10-29)
 

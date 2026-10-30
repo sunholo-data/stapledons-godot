@@ -1,7 +1,7 @@
 {
   "sprint_id": "R2-COMBINED-LANDING",
   "evaluation_round": 1,
-  "timestamp": "2026-10-30T16:49:34.349509+00:00",
+  "timestamp": "2026-10-30T17:36:06.987075+00:00",
   "evaluator": "independent npc_pilot_review agent; not the integration, audio or gate implementer",
   "status": "preliminary_code_review_complete_pending_exact_head_gates_and_publication",
   "result": "pending",
@@ -111,6 +111,13 @@
       "resolution": "Reviewed production changes confined to ui/stapledon_theme.gd, ui/earth_feed.gd and ui/earth_beams.gd. Shared HUDEarthFeed variation inherits HUDOverlay and preserves exact ink alpha0.62, radius4, verticalmargin4/horizontal8. Seven beam variants read unchanged JSON palette; kind/open/wait variation is reassigned on each binding so reusedlabels do not retain old colors. Explicit sharedtheme fixes formerlyunthemed rawSubviewports; intended production themedparent visuals are byte-identical. All57contrastpairs retained plus1feednormal and7beam pairs; noallowlist/lintwaiver. Independently read strict0leftovers/65pairs and seedednegativecontrols, feed53/0, beams29/0, station42/0. Parent/implementer report final standaloneGPU20/0 and owner10/0(max0.176px). Independent fullrig still pending on newcommittedhead.",
       "pixel_comparison": "Independently checked frozenoriginalscripts equalHEAD except removedclass_name declaration; read comparison harness, opened all6before/afterframes, verified PNGbyteidentity for feed573b0cf4dbc6df6bfb23e7b7b15e807a0a18635c7a430981e7bfad8e486be49e, preview7759146cbf845c45d7f62819b36a016ce7169a262ea1bcba67034946c0d8b0e1, offrayba58e0fd79ae07307ccf0f53085e2cefcd3ad452c30d766f94d47ce0366874db. Preview repeated after offray confirms reusedlabel appearance.",
       "limitations": "Contrastpairs measure text on theme panels/night/cream, while realmap labels overlaystars; densemap label collision remains earlier usabilityfollowup. Explicit sharedfont means older rawunthemed captures are not asserted byte-identical. Fresh voyage/context and exported-app smoke pending."
+    },
+    {
+      "id": "CROSSING-PORTRAIT-FALLBACK-FIXTURE",
+      "severity": "resolved_pending_new_exact_head_rig",
+      "status": "controlled_fallback_chain_independently_reviewed_targeted_green",
+      "evidence": "Parent reports exacthead61f787863cc6880044fa41a0d1b90abd879f7d09 fullrig reaches crossing-review101/1 aftersim/replay/strict/GR/ISM gates. Existing test_crossing_review.gd160 asserts engineer angry resolvesneutral, assuming angry andsad assets absent; expanded Earthportrait library now suppliesangry. Repair assigned controlled missing-emotion fixtures plus optional portraitdirectory argument defaulting production path. Must retain actual angry\u2192sad\u2192neutral chain coverage; an unknown-emotion-only check would not certify thatchain. Independent repair review and new committedhead fullrig/fast still pending. NoPASS.",
+      "resolution": "Independently reviewed only ui/crew_page.gd and tests/test_crossing_review.gd repair. Optionalportrait_dir defaults to unchanged productionPORTRAIT_DIR; emotionfallback list and path-keyed texturecache logic unchanged. Cleared controlleduser fixture writes neutral-only fixture_role and separate fixture_chain with distinctsad+neutraldecodedcolors, both angryabsent. First verifies angry\u2192missing sad\u2192neutral, second verifies sadprecedenceoverneutral; exactchosenpaths and actualCaptainAvatar.make_texture decodedpixels checked. Distinctroles avoid relying on cachemissmutation. This retains actual angry fallbackchain coverage rather than unknownemotiondefault alone. Independently read crossing-review103passed/0failures, crew-console0failures andcrew-hold0failures logs. Newcommittedhead fullrig+fast still required; failedearlier61 remainsfailed."
     }
   ],
   "independently_reviewed_evidence": {
@@ -139,7 +146,9 @@
       "Makefile final417 plus named-family guards",
       "PR360 gh metadata and local plan-only status/diff",
       "ui/stapledon_theme.gd shared Earth styles and65contrastpairs",
-      "ui/earth_feed.gd and ui/earth_beams.gd sharedtheme repair"
+      "ui/earth_feed.gd and ui/earth_beams.gd sharedtheme repair",
+      "ui/crew_page.gd optional portraitdirectory default seam",
+      "tests/test_crossing_review.gd controlledmissing angry\u2192sad\u2192neutral chain withdecodedPNGchecks"
     ],
     "opened_references": [
       "Earth-link sibling renders/comms_station/home.png",
@@ -259,6 +268,15 @@
       "checks_before_failure": "Pace checks passed; parent reports contact44/0, frames, chair12/0, style22/0; style22/0 independently observed in log tail.",
       "cause": "2uncentralized EarthFeed/EarthBeams theme styles rejected by strict gate",
       "replacement_full_rig": "pending real shared-theme repair, independent review, commit and new exacthead run"
+    },
+    {
+      "head": "61f787863cc6880044fa41a0d1b90abd879f7d09",
+      "gate": "rig/full",
+      "result": "failed_at_crossing_review_101_passed_1_failed",
+      "cause": "Stale asset-absence fixture assumes engineer_angry absent despite new portrait library",
+      "checks_before_failure": "Parent reports repairedpace/style/theme65,dressing,levels plus576sim/replay/strict/GR/ISM passed.",
+      "replacement_full_rig": "pending controlled fallbackfixture repair, independent review and newcommittedhead",
+      "targeted_repair_result": "crossing-review103/0, crew-console0failures,crew-hold0failures independentlyread; newexacthead fullrigpending"
     }
   ]
 }

@@ -222,9 +222,9 @@ static func intent_actor(intent: Dictionary, crew: Dictionary) -> String:
 
 ## The portrait file for a role and emotion: the first in the emotion's fallback list that loads
 ## ("" when the role has no face yet). One cache, so a face is one texture wherever it is shown.
-static func face_path(id: String, emotion: String) -> String:
+static func face_path(id: String, emotion: String, portrait_dir: String = PORTRAIT_DIR) -> String:
 	for e in FALLBACK.get(emotion, ["neutral"]):
-		var path := PORTRAIT_DIR.path_join("%s_%s.png" % [id, e])
+		var path := portrait_dir.path_join("%s_%s.png" % [id, e])
 		if not _face_cache.has(path):
 			_face_cache[path] = CaptainAvatar.make_texture(path) # imported when the editor has seen it, else the raw PNG
 		if _face_cache[path] != null:

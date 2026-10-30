@@ -157,7 +157,36 @@ func _run() -> void:
 	r.go(want.find("moment_%d" % k))
 	var face2: TextureRect = page_face(r)
 	check("mutating a moment's emotion changes the face (%s -> %s)" % [d.crew.moments[k].emotion, v2.cruise.digest.crew.moments[k].emotion], face2.texture == CrewPage.face("medic", str(v2.cruise.digest.crew.moments[k].emotion)) and face2.texture != before_face)
-	check("a role without the emotion shows its fallback face", CrewPage.face_path("engineer", "angry").ends_with("engineer_neutral.png"))
+	# Control which emotions exist: new shipped portraits must not invalidate the missing-face case.
+	var portrait_dir := "user://crossing_review_portrait_fallback"
+	DirAccess.make_dir_recursive_absolute(portrait_dir)
+	for file: String in DirAccess.get_files_at(portrait_dir):
+		DirAccess.remove_absolute(portrait_dir.path_join(file))
+	var neutral := Image.create_empty(8, 8, false, Image.FORMAT_RGBA8)
+	neutral.fill(Color("#8FD3D0"))
+	var neutral_path := portrait_dir.path_join("fixture_role_neutral.png")
+	var saved := neutral.save_png(neutral_path)
+	var fallback := CrewPage.face_path("fixture_role", "angry", portrait_dir)
+	var fallback_texture := CaptainAvatar.make_texture(fallback) if fallback != "" else null
+	check("a controlled missing emotion loads the neutral fallback PNG", saved == OK
+		and not FileAccess.file_exists(portrait_dir.path_join("fixture_role_angry.png"))
+		and not FileAccess.file_exists(portrait_dir.path_join("fixture_role_sad.png"))
+		and fallback == neutral_path and fallback_texture != null
+		and fallback_texture.get_image().get_pixel(0, 0) == neutral.get_pixel(0, 0))
+	# A different role avoids cached misses and proves sad takes precedence over neutral.
+	var chain_neutral_path := portrait_dir.path_join("fixture_chain_neutral.png")
+	var chain_saved := neutral.save_png(chain_neutral_path)
+	var sad := Image.create_empty(8, 8, false, Image.FORMAT_RGBA8)
+	sad.fill(Color("#F2967E"))
+	var sad_path := portrait_dir.path_join("fixture_chain_sad.png")
+	var sad_saved := sad.save_png(sad_path)
+	var chain_fallback := CrewPage.face_path("fixture_chain", "angry", portrait_dir)
+	var chain_texture := CaptainAvatar.make_texture(chain_fallback) if chain_fallback != "" else null
+	check("a controlled missing angry portrait loads sad before neutral", chain_saved == OK and sad_saved == OK
+		and not FileAccess.file_exists(portrait_dir.path_join("fixture_chain_angry.png"))
+		and chain_fallback == sad_path and chain_texture != null
+		and chain_texture.get_image().get_pixel(0, 0) == sad.get_pixel(0, 0)
+		and sad.get_pixel(0, 0) != neutral.get_pixel(0, 0))
 	# The aboard page: a face per member at their end-of-crossing emotion.
 	r.go(want.find("aboard"))
 	var row_ok := true
