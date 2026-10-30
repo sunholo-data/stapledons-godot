@@ -123,6 +123,57 @@ func session(d: SoundDirector) -> void:
 ## R3-EARTH-LINK EL3b.7: the shipped home beds through an audible director: a bed starts at the pitch
 ## set before it, set_pitch moves the playing loop and is logged once per change, every bed fades out
 ## on home_none rather than cutting, and a bed fired again while fading starts over at its level.
+## R3 audio realism AR8b, measured (evaluation round 1, finding 4): a 1 kHz tone through the real
+## Receiver bus, captured from the mixer (headless) and its frequency read by zero crossings. The stream
+## plays at speed D (pitch_scale); Receiver corrects by 1/D on the bus and hands back 1 kHz; True leaves
+## it at D x 1 kHz. At D = 0.5, 2 and 16 (the receiver's 16x edge), within 3 %.
+func test_receiver_measured() -> void:
+	SoundMix.ensure_layout()
+	var n := 48000
+	var tone := AudioStreamWAV.new()
+	tone.format = AudioStreamWAV.FORMAT_16_BITS
+	tone.mix_rate = 48000
+	var b := PackedByteArray()
+	b.resize(n * 2)
+	for i in n:
+		b.encode_s16(i * 2, int(12000.0 * sin(TAU * 1000.0 * i / 48000.0)))
+	tone.data = b
+	tone.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	tone.loop_end = n
+	var cap := AudioEffectCapture.new()
+	cap.buffer_length = 1.0
+	AudioServer.add_bus_effect(0, cap, 0)
+	var p := AudioStreamPlayer.new()
+	p.stream = tone
+	p.bus = &"Receiver"
+	get_root().add_child(p)
+	var rate := AudioServer.get_mix_rate()
+	var ok := true
+	var seen := []
+	for d: float in [0.5, 2.0, 16.0]:
+		for receiver: bool in [true, false]:
+			p.pitch_scale = d
+			SoundMix.set_receiver(1.0 / d if receiver else 1.0)
+			p.play()
+			await create_timer(0.35).timeout # the shifter's FFT fills
+			cap.clear_buffer()
+			await create_timer(0.4).timeout
+			var buf := cap.get_buffer(cap.get_frames_available())
+			p.stop()
+			var crossings := 0
+			for i in range(1, buf.size()):
+				if (buf[i - 1].x < 0.0) != (buf[i].x < 0.0):
+					crossings += 1
+			var hz := crossings * 0.5 * rate / maxf(buf.size(), 1.0)
+			var want := 1000.0 if receiver else 1000.0 * d
+			seen.append("D %s %s %.0f Hz (want %.0f)" % [d, "receiver" if receiver else "true", hz, want])
+			ok = ok and buf.size() > 0 and absf(hz / want - 1.0) <= 0.03
+	SoundMix.set_receiver(1.0)
+	p.queue_free()
+	AudioServer.remove_bus_effect(0, 0)
+	check(ok, "AR8b measured through the mixer: Receiver hands back 1 kHz at D = 0.5, 2 and 16; True plays D x 1 kHz (%s)" % ", ".join(seen))
+
+
 func test_home_pitch() -> void:
 	var d := SoundDirector.new()
 	get_root().add_child(d)
@@ -316,6 +367,7 @@ func _run() -> void:
 	check(SoundDirector.bundle_path("assets/audio/synth/nope.wav") == "res://audio_bundle/synth/nope.res", "the export reads the staged QOA bundle (audio_bundle/<kind>/<file>.res)")
 	shipped.free()
 	await test_home_pitch()
+	await test_receiver_measured()
 
 	# The bus layout (§D2).
 	SoundMix.ensure_layout()
