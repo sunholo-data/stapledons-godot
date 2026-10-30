@@ -202,7 +202,7 @@ func _ready() -> void:
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke") or args.has("glow-eps-sheet") or args.has("ism-capture")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("golden-el") or args.has("capture-m5") or args.has("planet-smoke") or args.has("glow-eps-sheet") or args.has("ism-capture")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Explicit --interior keeps the original painted reference/capture mode;
 	# --map and --voyage remain dedicated developer modes.
@@ -225,6 +225,10 @@ func _ready() -> void:
 		return
 	if args.has("planet-smoke"): # exported builds: the bundled planet textures load and draw (planets/planet_smoke.gd)
 		get_tree().quit(await load("res://planets/planet_smoke.gd").new().run(self, args["planet-smoke"]))
+		return
+	if args.has("golden-el"): # R3-EARTH-LINK G-EL-1 alone (tools/earth_link_golden.gd)
+		var el: GDScript = load("res://tools/earth_link_golden.gd")
+		get_tree().quit(await el.new().run(self) if el != null and el.can_instantiate() else 2)
 		return
 	if args.has("golden-ss"): # R2-STAR-SURFACES goldens alone (tools/star_surface_golden.gd)
 		var ss: GDScript = load("res://tools/star_surface_golden.gd")
@@ -961,6 +965,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/star_surface_golden.gd").new().run(self) # R2-STAR-SURFACES: G-SS-1..5
 	failures += await load("res://tools/gr_golden.gd").new().run(self) # M3.5: GR1-GR9
 	failures += await load("res://tools/m4_ship_golden.gd").new().run(self) # M4.6gR3: G-M4-S2..S4
+	failures += await load("res://tools/earth_link_golden.gd").new().run(self) # R3-EARTH-LINK: G-EL-1
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 

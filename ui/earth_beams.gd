@@ -28,6 +28,9 @@ var elements: Array = []
 ## The earth.* keys the last refresh read (AC12: only "preview" while a plan is uncommitted).
 var read: Array[String] = []
 var silence_radius := 0.0
+## EL5 G-EL-1: draw only the light-front markers and the window rings (no lines, no labels), so the
+## golden measures each marker's rendered centroid alone.
+var markers_only := false
 var _labels: Array[ComposedBinding] = []
 
 
@@ -184,6 +187,12 @@ func draw_on(overlay: Control, camera: Camera3D, to_world: Callable) -> int:
 	for r: Dictionary in rows:
 		var el: Dictionary = r.el
 		var c := colour(el)
+		if markers_only:
+			if el.kind == "window":
+				overlay.draw_arc(r.a, 15.0, 0.0, TAU, 40, Color(c, 0.9), 2.5, true)
+			if r.front != null:
+				overlay.draw_circle(r.front, FRONT_PX, c)
+			continue
 		match str(el.kind):
 			"beam":
 				if el.get("left", false):
@@ -209,7 +218,7 @@ func draw_on(overlay: Control, camera: Camera3D, to_world: Callable) -> int:
 		var lab: Variant = el.get("label_node")
 		if lab is ComposedBinding and r.at != null:
 			# under the map's own port labels ("Current position", "Departure", the selected star's name)
-			var off := Vector2(10, 4) if el.kind in ["pending", "silence"] else Vector2(12, 24)
+			var off := Vector2(10, 4) if el.kind == "pending" else Vector2(10, 22) if el.kind == "silence" else Vector2(12, 24)
 			(lab as ComposedBinding).position = (r.at as Vector2) + off
 	return rows.size()
 

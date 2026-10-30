@@ -212,6 +212,13 @@ Design EL3b. Visual concept: the mock-up artifact, version 4. Approved by Mark 2
   - design AC10 and AC11;
   - `make physics` asserts RS-26..RS-37;
   - **pause: Mark opens the renders** (a review page artifact) before merge.
+- **Done (2026-10-30), except the review:** `physics/observe.gd` and `test_earth_link` (RS-26..RS-37 and the sim's
+  earth.rate fixture, `make earth-rate-fixture`): `make physics` 973/0. G-EL-1 (`tools/earth_link_golden.gd`,
+  `--golden-el` alone): 9 cases within 0.18 px plus a mutant; `make golden` 411 ok lines, 0 failures (the
+  pin assumes `make planet-assets`; without it G-M5-4 textured Jupiter skips and the count is one short).
+  `make capture-earth-link`: the five states from the real sim, 10 frames and a contact sheet, 0 failures
+  (the 30 ly turn's wait 59.70 yr; the top speed 7.0711e-4). The report is drafted in
+  `design_docs/implemented/r3/earth-link-report.md`.
 
 ## Validation (per milestone, focused)
 

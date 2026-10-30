@@ -65,3 +65,10 @@ ui: earth-beams-test
 .PHONY: earth-rate-fixture
 earth-rate-fixture: import
 	@$(GODOT_SIM) --headless --path . --script tools/earth_rate_fixture.gd 2>&1 | grep -E '^earth-rate-fixture'
+
+# EL5 (AC11): the comms station and the galaxy map at the design's five states from the real sim
+# (renders/earth_link/, contact_sheet.png). GPU window; not in make test. Open every frame.
+.PHONY: capture-earth-link
+capture-earth-link: import
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/earth_link_capture.gd > $(SCRATCH)/earth-link-capture.log 2>&1; rc=$$?; grep -E '^earth-link-capture' $(SCRATCH)/earth-link-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-capture.log && grep -q '^earth-link-capture: 10 frames, 0 failures$$' $(SCRATCH)/earth-link-capture.log
