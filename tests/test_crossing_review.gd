@@ -157,7 +157,9 @@ func _run() -> void:
 	r.go(want.find("moment_%d" % k))
 	var face2: TextureRect = page_face(r)
 	check("mutating a moment's emotion changes the face (%s -> %s)" % [d.crew.moments[k].emotion, v2.cruise.digest.crew.moments[k].emotion], face2.texture == CrewPage.face("medic", str(v2.cruise.digest.crew.moments[k].emotion)) and face2.texture != before_face)
-	check("a role without the emotion shows its fallback face", CrewPage.face_path("engineer", "angry").ends_with("engineer_neutral.png"))
+	# R3-EARTH-LINK EL3b.4 drew every member at all eight emotions, so the fallback is for an emotion outside the set.
+	check("an emotion without a portrait shows the fallback face", CrewPage.face_path("engineer", "weary").ends_with("engineer_neutral.png"))
+	check("every member has their own face at each emotion (EL3b.4)", ["medic", "pilot", "engineer", "analyst", "counselor"].all(func(m: String) -> bool: return CrewPage.face_path(m, "angry").ends_with(m + "_angry.png")))
 	# The aboard page: a face per member at their end-of-crossing emotion.
 	r.go(want.find("aboard"))
 	var row_ok := true
