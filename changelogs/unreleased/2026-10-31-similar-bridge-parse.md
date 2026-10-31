@@ -1,0 +1,2 @@
+### Added
+- **Similar bridge parse** (R2-SIMILAR-S0 S0.3, protocol 2.14). The bridge keeps the `similar` section of each new game exactly as the sim sent it (`SimBridge.similar`, `parse_similar()`), for 2.14 and later. Ticks keep it, a new game clears it, and below 2.14 it stays empty; no GDScript reads or rounds a distance. Checked on the real sim at 2.14, 2.15 and 2.16, with a guard against production vector reads in `make similar-test`.

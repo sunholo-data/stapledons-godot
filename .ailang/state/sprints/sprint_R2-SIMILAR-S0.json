@@ -37,9 +37,7 @@
     "semantic-memory S0: similar worlds",
     "charter row L9 sim half"
   ],
-  "external_dependencies": [
-
-  ],
+  "external_dependencies": [],
   "registry_reuse": [
     {
       "package": "sunholo/celestial@0.5.0",
@@ -299,9 +297,7 @@
       "gate": 2,
       "applicability": "N/A",
       "reason": "No SR/GR visual, rendering or applicable relativity-spec section; design excludes physics visual gate. Existing physics tests remain in make test.",
-      "commands": [
-
-      ],
+      "commands": [],
       "golden_and_render_review_required": false
     },
     {
@@ -390,9 +386,7 @@
       "estimated_documentation_loc": 0,
       "estimated_days": 1.0,
       "schedule": "Day 1",
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "files": [
         "sim/data/similar.ail",
         "sim/similar.ail",
@@ -752,9 +746,9 @@
     },
     {
       "id": "S0.3",
-      "title": "bridge parse (similar 14; game 15)",
+      "title": "bridge parse (similar 14; game sessions at 14, 15 and 16)",
       "status": "pending",
-      "description": "Red real-sim deep-equality/lifetime/below-minor tests at 14 and 15 first. Add SIMILAR_MINOR := 14 beside existing constants, stored similar and parse_similar preserving the dictionary and unknown fields. Retain across ticks; clear on new session; empty below 14. Keep ARCHIVE_MINOR := 15, default want_minor and main.gd unchanged. Extend similar-test with production vector-read guards and the current ARCHIVE_MINOR game-request assertion; validate scratch-copy negative controls. No display or GDScript similarity maths.",
+      "description": "iter62 amendment: RED first — real-sim deep-equality tests at minors 14, 15 and 16 (16 is what the shipped game per main.gd:304 actually negotiates), lifetime at 14, unknown-key preservation, below-minor 13, and inline-fake reset and malformed (bad_response) tests, all written and run before the bridge change (at base they fail to parse: no similar/SIMILAR_MINOR/parse_similar). Bridge: SIMILAR_MINOR := 14 between SURFACE_MINOR (:57) and ARCHIVE_MINOR (:61) with a ## comment; var similar: Dictionary = {} documented; similar = {} in the new_game reset run (:287-290); _take_similar joins the new_game bad_response chain (:291) — absent key true, non-Dictionary false, Dictionary stored via parse_similar; parse_similar returns the section as sent (deep copy, unknown keys preserved, {} for a non-Dictionary). _finish untouched. Keep ARCHIVE_MINOR := 15, default want_minor, and main.gd byte-identical at its merge-base asking EARTH_MINOR (16). Extend the Makefile similar-test recipe with one zsh block: production vector-read guard over root *.gd, bridge/, ui/, demos/, sky/, interior/, physics/ (tests/ and tools/ never named), positive control probe requiring exactly 4 hits (includes a vector2 decoy), and main.gd guards (has SimBridge.EARTH_MINOR; no SIMILAR_MINOR). Gate line: git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd (the frozen adf34a67 base is 7 commits stale). Exactly four added real-sim sessions (14, 15, 16, 13; ~15 s each over the 78 s baseline); T3's two ticks ride the 14 session; fakes run through launch_override python3 -c inside tests/test_sim_bridge.gd — tests/fixtures/fake_sim.py untouched. Diff cap 120 lines (bridge 30, tests 70, Makefile 20). Nine mutation drills M1-M9 after GREEN; each test row names its killing drill. No display, rendering or GDScript similarity maths.",
       "estimated_loc": 80,
       "estimated_documentation_loc": 0,
       "estimated_days": 0.5,
@@ -765,13 +759,14 @@
       "files": [
         "bridge/sim_bridge.gd",
         "tests/test_sim_bridge.gd",
-        "Makefile"
+        "Makefile",
+        "changelogs/unreleased/<date>-similar-bridge-parse.md"
       ],
       "acceptance_criteria": [
-        "AC11: real sim at 14 and 15 yields raw similar dictionaries deep-equal to stored and parsed values, including unknown keys; survives ticks, resets between sessions, empty below 14.",
-        "AC11: SIMILAR_MINOR := 14 beside existing constants; ARCHIVE_MINOR := 15 and default want_minor retained; main.gd byte-identical and continues asking for ARCHIVE_MINOR.",
-        "AC11: shipped GDScript vector reads fail for double/single quotes, get and dot access; scratch-copy negative controls rejected.",
-        "AC1-AC10 and shared bridge consumers stay green; no display, rendering or GDScript similarity maths."
+        "AC11: real sim at minors 14, 15 and 16 yields raw similar sections deep-equal to stored and parse_similar values (== and JSON.stringify), unknown keys preserved; similar survives two ticks unchanged; a second new_game without the section clears it; empty at minor 13.",
+        "AC11: SIMILAR_MINOR := 14 beside SURFACE_MINOR and ARCHIVE_MINOR; ARCHIVE_MINOR := 15 and the default want_minor retained; _finish untouched; malformed (non-Dictionary) similar at new_game is bad_response like _take_gr.",
+        "AC11: main.gd byte-identical to its merge-base and still asking EARTH_MINOR (16); shipped GDScript vector reads fail for [\"vector\"], ['vector'], .get(\"vector\") and .vector over root *.gd, bridge/, ui/, demos/, sky/, interior/, physics/ (tests/ and tools/ excluded); the in-recipe probe requires exactly 4 hits (four forbidden forms; the vector2 decoy does not hit).",
+        "AC1-AC10 and shared bridge consumers stay green; no display, rendering or GDScript similarity maths; a changelogs/unreleased fragment (### Added) records the bridge parse."
       ],
       "acceptance_ids_first_passing": [
         "AC11"
@@ -788,28 +783,40 @@
       ],
       "test_plan": [
         {
-          "test": "real-sim deep equality (AC11)",
-          "file": "tests/test_sim_bridge.gd, bridge/sim_bridge.gd",
-          "asserts": "Entire raw similar dictionary equals stored and parse_similar results at 14 and 15; unknown key preserved",
-          "kills_which_mutation": "Parser drops a world/field or recomputes/rounds distance"
+          "test": "T1 real-sim deep equality at 14, 15, 16 (AC11)",
+          "file": "tests/test_sim_bridge.gd test_similar_real; bridge/sim_bridge.gd",
+          "asserts": "Fresh bridge per minor (SIMILAR_MINOR 14, ARCHIVE_MINOR 15, EARTH_MINOR 16): hello_reply proto minor equals the request; new_game(7, sol) ok; raw = state[\"changes\"][\"similar\"] nonempty; similar == raw; SimBridge.parse_similar(raw) == raw; JSON.stringify(similar) == JSON.stringify(raw)",
+          "kills_which_mutation": "Parser drops a key (M1); rounds or recomputes a distance (M2); stored field read from world instead of changes (M3)"
         },
         {
-          "test": "lifetime and old minor (AC11)",
-          "file": "tests/test_sim_bridge.gd",
-          "asserts": "Retained across ticks; cleared on new session; empty below 14",
-          "kills_which_mutation": "Tick clears ranking; stale previous-game ranking leaks"
+          "test": "T2 unknown-key preservation (AC11)",
+          "file": "tests/test_sim_bridge.gd test_similar_parse_unknown_keys",
+          "asserts": "Pure parse, no session: literal section plus an extra surprise key and a nested unknown field round-trips through parse_similar (== with the extended literal); mutating the result does not touch the source (deep copy)",
+          "kills_which_mutation": "Whitelisting known fields (M4); shallow copies"
         },
         {
-          "test": "production-source guards (AC11)",
-          "file": "Makefile similar-test, shipped .gd files",
-          "asserts": "Production vector reads fail; main keeps ARCHIVE_MINOR (15); negative controls are rejected",
-          "kills_which_mutation": "GDScript reading \"vector\"; single-quote/get/dot bypass; main asks for SIMILAR_MINOR"
+          "test": "T3 lifetime (AC11)",
+          "file": "tests/test_sim_bridge.gd (rides T1's minor-14 session)",
+          "asserts": "After two ticks (send([], 0.1) twice; tick-2 state[\"changes\"] has no similar key), JSON.stringify(similar) equals the capture taken before the ticks",
+          "kills_which_mutation": "_finish clearing or re-reading the ranking (M5)"
         },
         {
-          "test": "shared bridge regression (AC8, AC9, AC11)",
-          "file": "tests/test_sim_bridge.gd, existing real-sim callers",
-          "asserts": "Old minor real-sim tests and frozen sessions remain green",
-          "kills_which_mutation": "Changing default want_minor; parse changes corrupt existing state"
+          "test": "T4 fresh session clears / below minor (AC11)",
+          "file": "tests/test_sim_bridge.gd test_similar_below_and_reset",
+          "asserts": "(a) Fresh real-sim bridge at want_minor 13: new_game ok, similar == {}, no similar in changes. (b) Inline fake at 2.14: new_game #1 carries a minimal similar dict (stored nonempty), new_game #2 omits it and similar == {}",
+          "kills_which_mutation": "Missing reset in new_game leaking the previous ranking (M6); a take that ignores whether the section exists (4a)"
+        },
+        {
+          "test": "T5 malformed section is bad_response (AC11)",
+          "file": "tests/test_sim_bridge.gd test_similar_malformed (inline launch_override python3 -c; fake_sim.py unchanged)",
+          "asserts": "Hello advertises 2.14, new_game's changes.similar is the string \"broken\": new_game returns false, last_error == \"bad_response\", similar == {}",
+          "kills_which_mutation": "_take_similar accepting a non-Dictionary (M7, change its return false to return true)"
+        },
+        {
+          "test": "T6 production-source guards (AC11)",
+          "file": "Makefile similar-test (one appended zsh block)",
+          "asserts": "Probe .godot/tmp/similar/vector_guard_probe.gd with [\"vector\"], ['vector'], .get(\"vector\"), .vector plus a .vector2 decoy gives exactly 4 git grep --no-index hits; the same ERE gives 0 hits over root *.gd, bridge/, ui/, demos/, sky/, interior/, physics/; main.gd contains SimBridge.EARTH_MINOR and no SIMILAR_MINOR; merge-base diff on main.gd empty (gate list)",
+          "kills_which_mutation": "Any production [\"vector\"]/['vector']/.get(\"vector\")/.vector read; a broken pattern passing vacuously (M8); main opting into SIMILAR_MINOR or losing EARTH_MINOR (M9)"
         }
       ],
       "gate_commands": [
@@ -822,12 +829,12 @@
         "make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang",
         "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang",
         "AILANG_BIN=\"$PWD/runtime/bin/ailang\" godot --headless --path . --script tests/test_sim_bridge.gd",
-        "git diff --exit-code adf34a677f5919a86f09cd640a3fa0a3493f6d3d -- main.gd",
+        "git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd",
         "make stellar-protocol-test sound-archive-test AILANG=runtime/bin/ailang",
         "make ci-fast AILANG=runtime/bin/ailang",
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 46 planner",
+      "gate_owner": "controller under D-85 approval; no runtime gates run by the iteration 62 planner; the frozen-base main.gd gate (adf34a67) is replaced by the merge-base gate per the iter62 amendment",
       "passes": false,
       "started": null,
       "completed": null,
@@ -912,9 +919,7 @@
       "actual_loc": null
     }
   ],
-  "evaluations": [
-
-  ],
+  "evaluations": [],
   "planning_validation": {
     "json_command": "jq -e . .ailang/state/sprints/sprint_R2-SIMILAR-S0.json",
     "expected_output_files": [
@@ -946,9 +951,7 @@
       "sim/archive_health_test.ail:42 helloLine(14) expected minor 13 -> 14 only",
       "sim/gr_test.ail:143 helloLine(14) expected minor 13 -> 14 only"
     ],
-    "existing_fixtures_to_change": [
-
-    ],
+    "existing_fixtures_to_change": [],
     "recording_evidence": "Tracked tests NDJSON: hello rows 41, minors 0,1,2,3,4,6,7,8, >=14 count 0; fixtures 8 positive controls, replays 28. record_path writes requests only at bridge/sim_bridge.gd:435-440.",
     "s01_minor_dependency": false
   },
@@ -1207,6 +1210,23 @@
       ],
       "semantics_scope_wire_shape_ac_ids_loc_unchanged": true,
       "measurement_forced_coverage": "Pristine 2.15 bytes, second fixture pair, two reserved-minor assertions, current main/lock baseline and celestial metadata.",
+      "event": "amendment"
+    },
+    {
+      "iteration": 62,
+      "date": "2026-10-31",
+      "base_commit": "530cdece0b6643d8fea702de225d44710b34f12f",
+      "changes": [
+        "F1 (main.gd stale): R3-EARTH-LINK moved the shipped game to protocol 2.16 after the plan was written (bridge/sim_bridge.gd:66 const EARTH_MINOR := 16; main.gd:304 sim.want_minor = SimBridge.EARTH_MINOR; 7 commits between adf34a67 and origin/main touch main.gd). The frozen-base gate `git diff --exit-code adf34a677f5919a86f09cd640a3fa0a3493f6d3d -- main.gd` fails at base; replaced in the S0.3 gate list by `git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd`. Every 'main keeps/asks ARCHIVE_MINOR (15)' in the S0.3 section and S0.3 feature now reads EARTH_MINOR (16); source guards assert main.gd keeps SimBridge.EARTH_MINOR and never names SIMILAR_MINOR.",
+        "F2 (sim emits similar at 2.16): sim/protocol.ail:164 similarFull gates on s.minor >= similarMinor() = 14 and :193 sessionMinor maps want 16 to 16; measured new_game changes at want 2.16 carry similar (tick 1 does not; similarFull only enters the new_game encoder, protocol.ail:955). Real-sim deep-equality/lifetime coverage is minors 14, 15 and 16; the below-minor case is 13.",
+        "F3 (exact bridge rules pinned): const SIMILAR_MINOR := 14 between SURFACE_MINOR (:57) and ARCHIVE_MINOR (:61) with a ## comment; var similar: Dictionary = {} reset in new_game (:287-290); _take_similar in the new_game bad_response chain (:291): absent key true, non-Dictionary false (bad_response, mirroring _take_gr), Dictionary stored via parse_similar; parse_similar returns the section as sent (deep copy, unknown keys preserved, {} for non-Dictionary). _finish (:374-) untouched; no rounding or recomputation of distances anywhere in GDScript.",
+        "F4 (wall budget): baseline bridge test at this base is 78 s (98 asserts, 0 failures). Exactly four added real-sim sessions (14, 15, 16, 13) at ~15 s each; T3's two ticks ride the 14 session; reset/malformed coverage uses inline fakes (launch_override python3 -c inside tests/test_sim_bridge.gd; tests/fixtures/fake_sim.py untouched).",
+        "F5 (guard hardened): git grep ERE has no \\b word boundary (`git grep -cE '\\bvar\\b' -- main.gd` -> rc 1 despite var everywhere), so the plan's `\\.vector\\b` would have been a vacuous control. Pattern: (\\[[\"']vector[\"']\\]|\\.get\\( *[\"']vector[\"']\\)|\\.vector([^A-Za-z0-9_]|$)). Verified at base running the exact recipe line through the sh -> zsh -eu -c layers extracted from the plan: 4 probe hits (a vector2 decoy does not hit), rc 1 on the production scan. Positive control is in the similar-test recipe itself; pathspecs are root *.gd plus bridge/, ui/, demos/, sky/, interior/, physics/ (directories confirmed by git ls-files; tests/ and tools/ excluded by omission).",
+        "RED first: T1-T5 are written and run before the bridge change and fail at base (Godot parse errors naming similar/SIMILAR_MINOR/parse_similar; T1/T3/T4 minimally because the field does not exist). After GREEN, nine mutation drills M1-M9 each name the exact one-line scratch edit and the check it must fail; every drill is reverted so the final diff is only the intended change.",
+        "S0.3 touches exactly bridge/sim_bridge.gd, tests/test_sim_bridge.gd, Makefile (similar-test recipe) and a changelogs/unreleased fragment. main.gd and sim/** stay untouched. Total diff cap 120 lines (bridge 30, tests 70, Makefile 20)."
+      ],
+      "semantics_scope_wire_shape_ac_ids_loc_unchanged": true,
+      "measurement_forced_coverage": "Game's request is EARTH_MINOR (16); real-sim coverage 14/15/16 plus below-minor 13; guard positive control verified at base; four added real-sim sessions.",
       "event": "amendment"
     }
   ],
