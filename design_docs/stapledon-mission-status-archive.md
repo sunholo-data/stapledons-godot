@@ -2,6 +2,20 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-29 — ITERATION 58: Kerr K1.1a-a4 LANDED (PR #352, merge `165c9f2f`): `rig/full` run 3 green on `2b47456b` in 100 min on a quiet rig (`crewSkip` 2.37 s against 4.0 s; runs 1 and 2 were red at 5.08 and 4.34 s under load); independent Sonnet landing confirmation 93 MERGE-SAFE on the merged tree; fast tier green on the merge; 7m-d PARKED-ON-LANE again (GPU 73–91 %); clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE (predicate GPU < 15 % and 1-min load < 5; this fire GPU `Device Utilization %` 91/79/73 at about 17:43Z with an Ollama runner and Firefox on the GPU, 1-min load 2.5). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, so the STATUS 57 Next, landing #352.
+- **Done**:
+  - `rig/full` run 3 on `2b47456b`, started 17:44Z at 1-min load 2.5–3.2 (run 2's clone and log kept as `….run2`): **green in 100 min**; `crewSkip` 2.37 s, `crewSkipUnheld` 16.90 s. Load rose to 4–15 during the run (other fleet jobs) without failing it.
+  - Main had moved since the PR's base (attended #346 changed `Makefile`, `tools/python-allowlist.txt` and `tools/python_guard.sh`), so the iteration-30 process fix applied: the controller's `git merge-tree` was clean, and the judge test-merged onto `26697b7a` and re-ran the row's gates on the merged tree.
+  - Judge Sonnet 5.5 via the Agent tool, own clone, no controller findings handed over: **93/100 MERGE-SAFE** (`eval_R2-KERR_K1.1a-a4_landing_confirmation.json`). On the merged tree `sh tools/test_kerr_oracle.sh`, `make` and `gmake kerr-oracle`, `make python-guard`, `lint-precision`, `uid-guard` and `git diff --check` were all rc 0; `$TMPDIR` held 4,823 entries before and after (no leak); `kerr_ref.py` stays allowlisted as `oracle`.
+  - Merged with `--match-head-commit`: merge `165c9f2f`. Fast tier on the merge: success (run 40940247891). Sprint `R2-KERR` K1.1a-a4 `passes` true.
+- **Next**:
+  - 7m-d whenever the rig is quiet (GPU < 15 % and load < 5 on three samples).
+  - **K1.1a-a5** (terminal wiring; fold in the a4 judge's harness-guard survivors) needs `Makefile`, which attended #344 and #351 hold; L9 S0.3 (`bridge/sim_bridge.gd`, `Makefile`) and L3 are held the same way. D-129 (Mark) → L4 M1b → M2.
+  - While those holds last, the only unheld loop rows are the clause-4 follow-ups (7k, 7l, 7n, 7i): re-check their files against open PRs at pick.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
 ## STATUS 2026-10-29 — ITERATION 57: L4 M1a LANDED (PR #349, merge `81e240f0`; `rig/full` 87 min, fast tier green on the merge); Kerr K1.1a-a4 BUILT (PR #352: eight in-copy oracle mutation drills, two survivors killed, RK-3 and RK-9 added; independent Sonnet 90 PASS, zero blocking), merge PARKED-ON-LANE: `rig/full` red at `crew-perf` 5.08 s against 4.0 s at rig load 18–36, and main fails it the same way; 7m-d PARKED-ON-LANE again; clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, which is PARKED-ON-LANE (predicate GPU < 15 % and 1-min load < 5; this fire GPU 99/100/100 and load 16.15 at about 09:28Z). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, so L4, and L4's M1b/M2 wait on D-129, so K1.1a-a4.

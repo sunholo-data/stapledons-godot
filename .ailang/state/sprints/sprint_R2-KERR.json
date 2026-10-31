@@ -1486,17 +1486,27 @@
       "depends_on": [
         "K1.1a-a4"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
+      "passes": true,
+      "started": "2026-10-31",
+      "completed": "2026-10-31",
+      "actual_loc": 44,
       "mutation_drill": true,
       "design_blocks": [
         "DI-01"
       ],
       "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "evidence": {
+        "plan_commit": "c1c5ee07",
+        "commit": "5a23df3c7935cfdb62131c9a9f21c72b2567b443",
+        "pr": 364,
+        "merge": "644cff0987ed32d477df2235c4e4de276d65b7eb",
+        "rig_full": "run 2 success on 5a23df3c (120 min, 4 s inside the watchdog, crewSkip 2.05 s); run 1 stopped at the controller harness 2-h cap with ~30 log lines left, every target that ran passed",
+        "fast_ci": "pass on head; 41176183145 success on the merge",
+        "evaluation": ".ailang/state/evaluations/eval_R2-KERR_K1.1a-a5_round_1.json (86 PASS, zero blocking)",
+        "controller_correction": "guard (c) counts a private parent dir, not the shared $TMPDIR"
+      }
     },
     {
       "id": "K1.1a-b",

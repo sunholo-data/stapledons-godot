@@ -1573,3 +1573,67 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
 - **Next:** 7m-d first: the GPU read 0 % at 12:14Z this fire, so the predicate may hold at the next pick; re-measure the premise (docked control 13.3–13.6 ms in iteration 59's loaded runs). When #344 or #351 releases `Makefile`: K1.1a-a5 → L9 S0.3 → L3, then 7l(a) and 7w. D-129 (Mark) → L4 M1b → M2. Meanwhile the unheld follow-ups: 7n(f) (pin the logger window; one shared literal), 7n(a), 7i(h), after re-checking files against open PRs.
 
 DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 (L4's OQ1–OQ4; recommendation A; default: M1b/M2 stay parked). Both unchanged.
+
+## 61 — 2026-10-31 — Kerr K1.1a-a5 LANDED (PR #364, merge `644cff09`): the Kerr oracle's terminal child pins the fixture's schema, unit and source and its exact 40-record set, so paired oracle+fixture drift through the documented regenerate path now fails, and the harness's own guards gain self-tests; `rig/full` run 2 green on `5a23df3c` in 120 min, 4 s inside its watchdog (run 1 was stopped at the controller's 2-hour background cap under rig load, about 30 lines from the end); independent Sonnet 86/100 PASS, zero blocking; 7m-d PARKED-ON-LANE again (GPU 80–83 %) [PRODUCT]
+
+- **Pick:** K1.1a-a5. The STATUS 60 **Next** put 7m-d first and then "when #344 or #351 releases `Makefile`: K1.1a-a5 → L9 S0.3 → L3". Both attended PRs merged at 2026-10-30T20:29Z and no PR was open at pick, so the hold is released.
+  - 7m-d predicate at pick (about 02:00Z): GPU `Device Utilization %` 80/80/83, 1-min load 9.6–10.4, from the pinned `ailang`, Firefox, Ollama and `ailang-worldd` tests. PARKED-ON-LANE (seventh consecutive fire).
+  - Critical path, gate 2 rule (b): the only row on the UNMET clause 4 (7m AC1 via 7m-d) was not routable, so the attended order applies (D-126 C, D-128 default A): L4 is parked on D-129 and K1.1a-a4 is landed, so a5 is next.
+  - Not already landed: sprint `R2-KERR` K1.1a-a5 `passes` false; `git log origin/main --grep a5` shows only plan commits; no open PR and no orphan clone. The 20:48Z fire was skipped by the kill switch (attended landing), not killed.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Goal unmoved: a5 closes the R2 Kerr oracle (K1.1a-a), which moves no R1 clause.
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 directives since 2026-10-27T11:22:14Z (16 comments, all the loop's own).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Inbox: no mission-stapledon directives or cross-mission requests. Not the first iteration after the Monday rotation, so no sweep.
+  - The main checkout was clean on `main`, 13 behind; fast-forwarded (no local commits). All work ran in sibling clones `.stap-iter61-src`, `-eval` and `-rec`.
+- **Gate 1:**
+  - Base `d88dc6c95dc0236abd86603eacb6df5f342510b0` at 2026-10-31T01:49:28Z; main = origin/main.
+  - All 14 skill files match `origin/dev` at both the resolved symlink and the driver pin.
+  - Main's check set: 1 check, fast tier success. Open PRs: none.
+  - Attended work since iteration 60 (a sample of the 100+ commits): Earth-link EL1–EL5 (#344), the bridge/Commons/Earth-link combined landing and painted-NPC pilot (#351), sunholo/audio 0.6.0 realism (#361, #363), live AI keys in Settings (#362). D-130–D-142 are attended rulings; no loop action.
+- **Plan (planner `pi:ollama/kimi-k3:cloud`, `mission_pi_run.sh`, verdict ok, 335 s, 24 tool executions):** "Amendment iter61: K1.1a-a5 execution detail" in `kerr-black-holes-sprint.md` (+73) and the a5 object in `sprint_R2-KERR.json` (every other feature identical under `jq -S`). Commit `c1c5ee07`. The controller first measured the gap and handed it over as facts: a drifted `unit` string, regenerated into the fixture, passed the full shell (rc 0), and no assertion pinned the exact record set.
+  - **Controller correction to the plan:** its guard (c) compared a count of the shared `$TMPDIR`, which other rig jobs write to, so it would flake inside `rig/full`. The executor was told to use one private parent dir that must be empty at the end.
+- **Build (executor Haiku 5.5 via the Agent tool, foreground, `.stap-iter61-src`; the controller committed `5a23df3c`):** `tools/test_kerr_oracle.sh` +39/−3 and a 2-line changelog fragment: 44 of the 100-line cap.
+  - The documented regenerate → full shell → `--check` (compare-only) path, as a header comment.
+  - Literal pins for schema, unit and source; the exact id set {RK-1..13, RK-8b, RK-18, RK-Q1} (RK-14..17 deferred and absent); 40 records with 40 unique keys.
+  - Three regen drills (unit-drift, extra-record, deferred-id), 11 in total.
+  - Guard self-tests: a no-op mutant must make `drill` exit 3 (guard a); a mislabelled drill must fail the wrong-reason `grep` (guard b); drill dirs live under one private `mktemp -d` parent with one EXIT trap, which must be empty at the end (guard c).
+  - Executor deviations, all measured: drill dirs use an explicit `$parent/drill.XXXXXX` template; the guard probes run before the main drills so their cleanup glob cannot hide a main-drill leak (the R6 proof exposed this); BSD sed has no `,+3d`.
+  - RED at base: R1 (unit drift + regen), R2 (extra record) and R3 (deferred RK-14) all rc 0. After: rc 1 with `metadata literal drift: unit`, `completeness: 40 records, unique keys` and `completeness: exact id set`. Guard proofs R4/R5/R6 (one guard deleted from a temp copy, `cmp` proof): rc 1 with `guard a`/`guard b`/`guard c`.
+  - **Controller re-run, outside any sandbox:** `sh`, `make` and `gmake kerr-oracle` rc 0 (11 drills killed); `--check` rc 0; `make python-guard lint-precision uid-guard` rc 0; `git diff --check` rc 0; R1, R5 and R6 reproduced first-party with their labels.
+- **Evaluation:** Sonnet 5.5 via the Agent tool, foreground, own clone `.stap-iter61-eval` at `5a23df3c`, no candidate findings handed over. **86/100 PASS, zero blocking** (`eval_R2-KERR_K1.1a-a5_round_1.json`).
+  - Its own diff-anchored mutants: the unit pin, the id-set assert, the drill count and all three guards are killed. Guard (c) did not flake with a noise writer on the shared `$TMPDIR` or with two parallel runs. INT, TERM and HUP aborts left no temp dirs.
+  - Survivors: the schema and source pins have no drill of their own (real, minor; the controller reproduced the schema one, rc 0); the parent EXIT trap leaks one empty dir per run if deleted (real, minor); the `regen` argument is equivalent, because the pins read the oracle's live stdout before the fixture compare; `== len(rows)` and `export TMPDIR` are equivalent; the guard assertions themselves are not asserted (meta).
+  - Note: the unit and source literals are reviewed copies of the oracle's constants. The design gives no literal for them.
+- **Landing / Gate 3b:** PR #364, head `5a23df3c`. Fast tier on the head: pass. `rig/full` launched at 02:10Z (1-min load 5.9; it rose to 22 during the run): run 1 was stopped at 04:10:51Z by the controller's own 2-hour background-task cap, which equals the rig's 7,200 s watchdog, so `rig/full` stayed `pending` and no rc was written. It was not a hang: `free-nav-recovery.log` was written 26 s before the stop, `guided-finale` had passed, and about 30 log lines (1–2 targets) remained. Every target that ran passed, `crewSkip` 3.12 s and `kerr-oracle` included. Main's `rig/full` runs that evening took 71–74 min; this one ran at 1-min load 9–25 (an Ollama `llama-server` at about 300 % CPU, Firefox, other missions' `ailang`), with GPU 60–100 %. Run 1's clone and log are kept as `….run1`. Run 2 was launched detached (`nohup`, rc marker, bounded artifact polls) at 04:20:00Z at load 5.5: **green, `make test green on the Studio in 120 min`** at 06:19:56Z (`crewSkip` 2.05 s; load 4–25 during the run). Main had not moved since the base (`git log 5a23df3c..origin/main` empty; PR CLEAN), so no test-merge was needed. Merged with `--match-head-commit`: merge `644cff0987ed32d477df2235c4e4de276d65b7eb`. Fast tier on the merge: **success** (run 41176183145, poll pinned to the full SHA). Sprint `R2-KERR` K1.1a-a5 `passes` true; K1.1a-a (a1–a5) is complete.
+- **Record:** charter (STATUS 61; STATUS 58 rotated to the archive; Kerr row a5; CURRENT GOAL counter), this entry, the index, the dashboard, the a5 evaluation, sprint `R2-KERR` (a5 `passes` true, evidence).
+- **Routing evidence**
+
+  base=644cff0987ed32d477df2235c4e4de276d65b7eb@2026-10-31T06:30:30Z.
+
+  Resolver output: designer `recipe claude:claude-opus-5-5 declared:provider-pin` (not spawned: no new or revised doc; the Kerr design is approved, D-107 A and D-116 A); planner `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin` (`derive-planner-lane.sh` agreed); executor `recipe claude:claude-haiku-5-5 declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`. Driver note: `lanes degraded: ; planner: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to pi:ollama/kimi-k3:cloud; executor: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to claude:claude-haiku-5-5`.
+
+  The operator's standing request was met. The planner ran through its pi recipe; the executor (`haiku`, the same model as its `claude:` pin) and the evaluator (`sonnet`) ran through the Agent tool. The designer was not needed (no doc to write). No role failed to spawn.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Planner `pi:ollama/kimi-k3:cloud`: 76,823 in / 43,299 out / 738,429 cache-read tok, 335 s. Ollama cloud, $0.
+  - Executor Agent `haiku` = `claude:claude-haiku-5-5`: 102,549 tok, 25 tool uses, 5.9 min. Quota bucket anthropic.
+  - Evaluator Agent `sonnet`: 63,942 tok, 12 tool uses, 4.4 min. Quota bucket anthropic.
+  - Judge independence: different vendor from the planner (Moonshot), and the same vendor but a different model from the executor (Haiku executor, Sonnet judge, Opus controller); `judge-independence: same-vendor-different-model`.
+  - Quorum: none (no new or revised doc). metered=$0.00.
+- **Ruled out:**
+  - 7m-d this fire (GPU 80–83 %, load 10).
+  - L4 M1b/M2 before D-129 (guardrail: stop at Open questions).
+  - The plan's global `$TMPDIR` count for guard (c): it is shared with every rig job (the evaluator measured 5979 → 5980 → 5979 from other processes).
+  - Fixing the judge's two minor survivors in this PR: it would need a second rig run for non-blocking findings. Filed as backlog.
+  - A designer pass: a5 is a named child of an approved plan (D-116 A), and the plan amendment was enough.
+- **Upstream:** none.
+- **Retro:**
+  - Frictions:
+    1. The planner's guard (c) counted a shared, concurrently written directory. That is the iteration-57 `$TMPDIR` lesson applied to the wrong scope: counting before and after is right for a one-off measurement, but wrong as a permanent assertion inside `make test`.
+    2. On macOS, `mktemp -d` with no template ignores an exported `TMPDIR` (found by the executor; the controller reproduced it: both probes landed in the per-user `/var/folders/…/T`), so a scoped `TMPDIR` alone would have made guard (c) vacuous. Its R6 proof (delete the per-drill cleanup, expect a failure) caught this, which is exactly what a guard proof is for.
+    3. The controller launched `rig/full` as a harness background task, whose cap (7,200,000 ms) equals the rig watchdog (7,200 s). Under load the run took 120 min, so the harness stopped it first: `rig/full` was left `pending` with no rc and no failure posted, and about 2 hours were lost. Run 2, detached with an rc marker, finished 4 s inside the watchdog.
+    4. `rig/full` at 120 min under fleet load (main: 71–74 min the same evening) has no headroom left under its watchdog. That is L4's problem statement, and it is parked on D-129.
+  - Process fix: a permanent in-suite resource check counts a private directory the suite owns, never a shared one (charter, process fixes). And `tools/rig_check.sh` runs detached (`nohup`, an rc marker, bounded polls of the marker), never as a harness background task, because the harness cap equals the rig watchdog.
+- **Next:** 7m-d when the GPU is quiet (re-measure its premise first) → L9 S0.3 → L3, then 7l(a) and 7w. D-129 (Mark) → L4 M1b → M2. Backlog: drills for the schema and source pins, and assert the private parent's EXIT trap (a5 judge).
