@@ -1435,31 +1435,48 @@
       "test_file": "tools/test_kerr_oracle.sh",
       "tests": [
         {
-          "test": "completeness audit",
+          "test": "metadata literal pins (F4 closed)",
           "file": "tools/test_kerr_oracle.sh",
-          "asserts": "RK-1..13, RK-8b, RK-18, RK-Q1 all present with units/source/formula metadata; RK-14..17 absent (deferred)",
-          "kills_which_mutation": "dropped record silently passes"
+          "asserts": "check() pins schema/unit/source as literals, independent of fixture-bytes==stdout: paired oracle+fixture drift through the documented regenerate path fails loudly with 'metadata literal drift: schema|unit|source'",
+          "kills_which_mutation": "unit-drift mutant + fixture regeneration (F4 verbatim: 'RK-18 SI (km, ms, rad/s)' -> 'RK-18 SI (m, s, rad/s)'): rc 0 at base d88dc6c9, rc 1 with the named label after"
+        },
+        {
+          "test": "RK completeness audit (F5 closed)",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "exact record id set RK-1..RK-13, RK-8b, RK-18, RK-Q1 from literals (RK-14..17 absent, deferred) and exactly 40 records with unique (id, spin, quantity) keys",
+          "kills_which_mutation": "extra-record mutant (41st record reusing id RK-18) and deferred-id mutant (emits RK-14), each with fixture regeneration: rc 0 at base, rc 1 with 'completeness: 40 records, unique keys' / 'completeness: exact id set' after"
+        },
+        {
+          "test": "harness guard self-tests (F7 a/b/c)",
+          "file": "tools/test_kerr_oracle.sh",
+          "asserts": "no-op mutant makes drill exit 3 (cmp -s instrument guard); a mislabeled drill exits 1 (grep -F -q wrong-reason check); $TMPDIR entry count before==after (per-drill rm -rf cleanup). Deleting each guard from a temp copy of the shell makes it fail with label guard a/b/c",
+          "kills_which_mutation": "deleted cmp -s no-op guard, deleted grep -F -q wrong-reason check, deleted per-drill rm -rf cleanup (at base all three survive their own removal)"
         }
       ],
-      "implementation": "Document regenerate-fixture -> full-shell metadata-drift path (--check is compare-only); fixture completeness audit RK-1..13 plus RK-8b, RK-18 and RK-Q1; changelog fragment; final gate pass. Terminal dependency node for K1.0, K1.1a-b and the critical path.",
+      "implementation": "56 of 100-line budget (tools/test_kerr_oracle.sh +38 plus two modified lines; changelog fragment +16; Makefile, tests/fixtures/kerr/rk.json and tools/kerr_ref.py unchanged). (1) Header comment block in the shell documenting the canonical path: edit oracle; python3 -I tools/kerr_ref.py > tests/fixtures/kerr/rk.json; sh tools/test_kerr_oracle.sh; --check is compare-only against live output, so paired drift must be caught here. (2) Three literal metadata pins in check() with labels 'metadata literal drift: schema|unit|source'. (3) Completeness audit from literals: exact id set RK-1..RK-13, RK-8b, RK-18, RK-Q1, RK-14..17 absent, 40 records with unique composite keys. (4) drill() gains an optional regen argument and mutate() three entries: unit-drift, extra-record, deferred-id (drill count 8 -> 11). (5) Harness guard self-tests: no-op drill must exit 3, mislabeled factor2 drill must exit 1, $TMPDIR count before==after, labels guard a/b/c. (6) Changelog fragment changelogs/unreleased/YYYY-MM-DD-kerr-a5-terminal-wiring.md per changelogs/unreleased/README.md (CHANGELOG.md is folded by tools/changelog_fold.sh at tag time; the files entry above denotes this fragment). Terminal dependency node for K1.0, K1.1a-b and the critical path.",
       "acceptance": [
         {
           "id": "AC-K3-slice",
           "commands": [
             "sh tools/test_kerr_oracle.sh",
             "make kerr-oracle AILANG=runtime/bin/ailang",
+            "gmake kerr-oracle AILANG=runtime/bin/ailang",
             "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
-            "make python-guard lint-precision AILANG=runtime/bin/ailang",
-            "git diff --check"
+            "make python-guard lint-precision uid-guard AILANG=runtime/bin/ailang",
+            "git diff --check",
+            "t=$(mktemp -d) && mkdir -p \"$t/tools\" \"$t/tests/fixtures/kerr\" && cp tools/test_kerr_oracle.sh tools/kerr_ref.py \"$t/tools/\" && cp tests/fixtures/kerr/rk.json \"$t/tests/fixtures/kerr/\" && python3 -I -c 'import sys; p=sys.argv[1]+\"/tools/kerr_ref.py\"; s=open(p).read(); old=\"RK-18 SI (km, ms, rad/s)\"; assert s.count(old)==1; open(p,\"w\").write(s.replace(old,\"RK-18 SI (m, s, rad/s)\"))' \"$t\" && python3 -I \"$t/tools/kerr_ref.py\" > \"$t/tests/fixtures/kerr/rk.json\"; sh \"$t/tools/test_kerr_oracle.sh\"; rc=$?; rm -rf \"$t\"; test \"$rc\" -ne 0",
+            "t=$(mktemp -d) && mkdir -p \"$t/tools\" \"$t/tests/fixtures/kerr\" && cp tools/test_kerr_oracle.sh tools/kerr_ref.py \"$t/tools/\" && cp tests/fixtures/kerr/rk.json \"$t/tests/fixtures/kerr/\" && python3 -I - \"$t\" <<'PY'\nimport sys\np = sys.argv[1] + '/tools/kerr_ref.py'\ns = open(p).read()\nold = '(\"omega-h-rad-s\", horizon_omega(spin) * C ** 3 / gm))'\nassert s.count(old) == 1\nopen(p, 'w').write(s.replace(old, '(\"omega-h-rad-s\", horizon_omega(spin) * C ** 3 / gm), (\"lens-preview\", km))'))\nPY\npython3 -I \"$t/tools/kerr_ref.py\" > \"$t/tests/fixtures/kerr/rk.json\"; sh \"$t/tools/test_kerr_oracle.sh\"; rc=$?; rm -rf \"$t\"; test \"$rc\" -ne 0",
+            "b=$(ls -A \"${TMPDIR:-/tmp}\" | wc -l); sh tools/test_kerr_oracle.sh >/dev/null 2>&1; a=$(ls -A \"${TMPDIR:-/tmp}\" | wc -l); test \"$a\" -eq \"$b\""
           ],
-          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification."
+          "scope": "Slice-level gates; full AC closes only at the parent endpoint and controller verification. Expected: the six core gates exit 0; the two temp-tree reproductions of F4 (metadata drift) and F5 (extra record), each through the documented regenerate path, exit non-zero with stderr labels 'metadata literal drift: unit' and 'completeness: 40 records, unique keys' (deferred-id variant: 'completeness: exact id set'); the final command proves $TMPDIR stability. F7 guard-deletion proofs (temp copy of the shell minus one guard) fail with labels guard a/b/c per the iter61 amendment."
         }
       ],
       "gates": [
         "sh tools/test_kerr_oracle.sh",
         "make kerr-oracle AILANG=runtime/bin/ailang",
+        "gmake kerr-oracle AILANG=runtime/bin/ailang",
         "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
-        "make python-guard lint-precision AILANG=runtime/bin/ailang",
+        "make python-guard lint-precision uid-guard AILANG=runtime/bin/ailang",
         "git diff --check"
       ],
       "controller_gates": [

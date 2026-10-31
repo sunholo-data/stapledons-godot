@@ -1,0 +1,2 @@
+### Fixed
+- **Kerr oracle audit closes two gaps** (R2-KERR K1.1a-a5). The fixture's schema, unit and source are pinned as reviewed literals, so paired oracle and fixture drift through the regenerate path now fails. The record set is pinned too: exactly 40 records with unique keys, ids RK-1..RK-13, RK-8b, RK-18 and RK-Q1 (RK-14..RK-17 deferred). The harness gains three drills and guard self-tests, and its temp dirs are cleaned under one private parent.
