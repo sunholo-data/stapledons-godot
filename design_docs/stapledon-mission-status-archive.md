@@ -2,6 +2,20 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-30 — ITERATION 59: row 7l (b)–(d) LANDED (PR #356, merge `e2927840`): the S1 capture driver's drill survivors CA, CB and CC are killed by named FAILs, the M4.6rR3 report says only the worlds are reproducible, and the ship bench prints one verdict line; `rig/full` green in 88 min (`crewSkip` 2.06 s); independent Sonnet 92 PASS, zero blocking; quorum 2 rounds BLOCKED, round-2 fixes applied under the carve-out; new row 7w (the public S1 set no longer matches a fresh capture); 7m-d PARKED-ON-LANE (GPU 77–92 %); clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE (predicate GPU < 15 % and 1-min load < 5; this fire GPU `Device Utilization %` 77/92/78 at about 01:55Z with Firefox and an Ollama runner, load 4.5–4.8). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable; every ordered row after it is held by attended #344/#351, so an unheld clause-4 follow-up, row 7l (b)–(d).
+- **Done**:
+  - Design `m4-7l-capture-followups.md` (Opus 5.5, Agent tool), 33 verification rows; (a) deferred while `Makefile` is held. Quorum (`gpt6-1-sol`, `gemini-4-argon`, `oc-glm-5-3`): round 1 BLOCKED (no drill deadline; DB1 line predicted; FAIL count off by one), the controller measured all three and the designer revised; round 2 BLOCKED (AC1/AC8 unbounded; line anchors unmeasured), applied by the controller under the narrow-refinement carve-out with V29–V33 measured. Metered $0.42.
+  - Plan by kimi-k3 (pi). RED: the CA and CB mutants survived on the unedited tree. Build by Haiku 5.5 (`f3bbd36d`, four files). Controller GPU acceptance: drills CA, CB, CC, DB1 all killed; AC1 rc 0 with 14 frames; AC8 `2 MISS 2` under load.
+  - Judge Sonnet 5.5 in its own clone: **92/100 PASS**, zero blocking (`eval_R1-M4-JOURNEY_7l_round_1.json`); 9 diff-anchored mutants, 2 killed, 1 caught as INFRASTRUCTURE (a SCRIPT ERROR hang), 5 equivalent or by design.
+  - `rig/full` on `4b203b55`, launched at 03:39Z at 1-min load 2.66: green in 88 min. Main had not moved; merged with `--match-head-commit`: `e2927840`. Fast tier on the merge: success (run 41006795124).
+- **Next**:
+  - 7m-d whenever the GPU is quiet; re-measure its premise first (the docked control read 13.3–13.6 ms in this fire's loaded bench runs, against 17.6–19.3 ms quiet at iteration 54).
+  - When #344 or #351 releases `Makefile`: K1.1a-a5 → L9 S0.3 → L3, then 7l(a) and 7w. D-129 (Mark) → L4 M1b → M2.
+  - Meanwhile the unheld clause-4 follow-ups: 7k(e), 7n(a)/(b), 7i(e)/(f)/(h); re-check files against open PRs at pick.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
 ## STATUS 2026-10-29 — ITERATION 58: Kerr K1.1a-a4 LANDED (PR #352, merge `165c9f2f`): `rig/full` run 3 green on `2b47456b` in 100 min on a quiet rig (`crewSkip` 2.37 s against 4.0 s; runs 1 and 2 were red at 5.08 and 4.34 s under load); independent Sonnet landing confirmation 93 MERGE-SAFE on the merged tree; fast tier green on the merge; 7m-d PARKED-ON-LANE again (GPU 73–91 %); clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE (predicate GPU < 15 % and 1-min load < 5; this fire GPU `Device Utilization %` 91/79/73 at about 17:43Z with an Ollama runner and Firefox on the GPU, 1-min load 2.5). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, so the STATUS 57 Next, landing #352.

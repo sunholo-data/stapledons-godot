@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 62 | 2026-10-31 | L9 semantic-memory S0.3 LANDED (PR #366, merge `ca1e04d0`): the bridge keeps the sim's `similar` section exactly as sent (`SimBridge.SIMILAR_MINOR ... |
 | 61 | 2026-10-31 | Kerr K1.1a-a5 LANDED (PR #364, merge `644cff09`): the Kerr oracle's terminal child pins the fixture's schema, unit and source and its exact 40-reco... |
 | 60 | 2026-10-30 | Row 7n(b) LANDED (PR #358, merge `dc458f9c`): the ISM map layer's repeated-connect survivor MG is killed by a named FAIL, host-null (MN) is recorde... |
 | 59 | 2026-10-30 | Row 7l (b)–(d) LANDED (PR #356, merge `e2927840`): the capture driver's drill survivors CA, CB and CC are killed by named FAILs, the M4.6rR3 report... |

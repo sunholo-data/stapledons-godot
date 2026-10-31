@@ -253,7 +253,7 @@ make ci-fast AILANG=runtime/bin/ailang
 PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang
 ```
 
-## S0.3: bridge parse (pending; Day 3 morning, 80 LOC)
+## S0.3: bridge parse (done iteration 62, PR #366; Day 3 morning, 80 LOC)
 
 Red tests first in `tests/test_sim_bridge.gd`: negotiate 2.14 and 2.15 with the real pinned sim, obtain raw new_game JSON, parse/store the entire similar dictionary and assert deep equality. Check a later tick retains it, a fresh session clears stale state, and below 14 it remains empty. The test may compare whole dictionaries; it must not introduce a production GDScript consumer of vector components.
 

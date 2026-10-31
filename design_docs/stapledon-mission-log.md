@@ -1637,3 +1637,71 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
     4. `rig/full` at 120 min under fleet load (main: 71–74 min the same evening) has no headroom left under its watchdog. That is L4's problem statement, and it is parked on D-129.
   - Process fix: a permanent in-suite resource check counts a private directory the suite owns, never a shared one (charter, process fixes). And `tools/rig_check.sh` runs detached (`nohup`, an rc marker, bounded polls of the marker), never as a harness background task, because the harness cap equals the rig watchdog.
 - **Next:** 7m-d when the GPU is quiet (re-measure its premise first) → L9 S0.3 → L3, then 7l(a) and 7w. D-129 (Mark) → L4 M1b → M2. Backlog: drills for the schema and source pins, and assert the private parent's EXIT trap (a5 judge).
+
+## 62 — 2026-10-31 — L9 semantic-memory S0.3 LANDED (PR #366, merge `ca1e04d0`): the bridge keeps the sim's `similar` section exactly as sent (`SimBridge.SIMILAR_MINOR := 14`, `similar`, `parse_similar()`), checked on the real sim at 2.14, 2.15 and 2.16; the S0.3 plan was stale after protocol 2.16 and was amended first; `rig/full` green on `e151c903` in 106 min; independent Sonnet 90/100 PASS, zero blocking; new row 7x (a Godot `--script` test whose script fails to parse exits 0); 7m-d PARKED-ON-LANE again (GPU 100 %) [PRODUCT]
+
+- **Pick:** L9 S0.3. STATUS 61's **Next**: 7m-d first when the GPU is quiet, "then L9 S0.3 → L3, then 7l(a) and 7w".
+  - 7m-d predicate at pick (about 12:47–12:55Z): GPU `Device Utilization %` 100/100 then 100/100/100, 1-min load 3.4–3.6 (Firefox `plugin-container` 49 % CPU, a Python process). PARKED-ON-LANE, the eighth consecutive fire.
+  - Critical path, gate 2 rule (b): the only row on UNMET clause 4 (7m AC1 via 7m-d) was not routable, so the attended order applies (D-126 C, D-128 default A): L4 parked on D-129, Kerr a5 landed, so L9 S0.3.
+  - Not already landed: sprint `R2-SIMILAR-S0` S0.3 `pending`; no `SIMILAR_MINOR` in `bridge/sim_bridge.gd`; `git log origin/main --grep S0.3` shows only plan commit `8674925d`. No open PR in the repo at all (so no file holds) and no orphan clone.
+  - Quorum at pick: reviewed (`semantic-memory-s0-2026-10-19T07-47-14Z`, `…07-57-31Z` in the export dir), and the plan was approved by Mark (D-85 A). Nothing re-quorumed.
+- **Premise check (controller, before the planner):** the S0.3 plan predates protocol 2.16 (R3-EARTH-LINK).
+  - `main.gd:304` now sets `sim.want_minor=SimBridge.EARTH_MINOR`, not ARCHIVE_MINOR. Seven commits touch `main.gd` since the plan's frozen base `adf34a67`, so its gate `git diff --exit-code adf34a67… -- main.gd` failed at base.
+  - The sim emits `similar` at 2.16 too: a strict-VM session (hello 2.16, new_game seed 7 sol) gives new_game change keys `… system, similar, archive, earth`, and the tick-1 changes carry no `similar` (13 s).
+  - Baseline bridge test at `530cdece`: rc 0, 98 `ok`, 0 failures, 78 s.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Goal unmoved: S0.3 is R2 semantic memory, headless, and moves no R1 clause.
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 directives since 2026-10-27T11:22:14Z (17 comments, all the loop's own).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2).
+  - Inbox: two fleet `harness-resolved` replies to `mission-stapledon` (`pi:provider-error:no-retry`, fix `52e8958f`; `gate0:session-protocol-deadlock:agent-policy-unset`, fix `9ac96e78`). No queue row carries either signature (`grep` of the charter: 0), so nothing to unpark; both acknowledged. Not the first iteration after the Monday rotation, so no sweep.
+  - The main checkout was clean on `main` = origin/main. All work ran in sibling clones `.stap-iter62-src`, `-eval` and `-rec`.
+- **Gate 1:**
+  - Base `530cdece0b6643d8fea702de225d44710b34f12f` at 2026-10-31T12:47:05Z; main = origin/main.
+  - All 14 skill files match `origin/dev` at the resolved symlink (the driver pin and the symlink target are both on `origin/dev`).
+  - Main's check set: 1 check, fast tier success. Open PRs: none.
+- **Plan (planner `pi:ollama/kimi-k3:cloud`, `mission_pi_run.sh`, verdict ok, 701 s, 83 tool executions):** "Amendment iter62: S0.3 execution detail" in `semantic-memory-s0-sprint.md` (+107/−4) and the S0.3 object in `sprint_R2-SIMILAR-S0.json` (S0.1, S0.2, Landing and every other key identical under `jq -S`). Commit `9cecc94b`.
+  - The stale `main.gd` gate becomes a merge-base diff, and "main keeps ARCHIVE_MINOR" becomes EARTH_MINOR (16).
+  - Real-sim tests cover 14, 15 and 16; bridge rules 1–5 (a non-dictionary section is `bad_response`, as for `gr`); six test rows, nine drills (M1–M9), a 120-line cap.
+  - It found that `git grep -E` has no `\b` (the old wording's `\.vector\b` would have been vacuous) and wrote the guard with an in-recipe positive control. The controller reproduced it: `git grep -cE '\bvar\b' -- main.gd` rc 1 against 275 for `var` and 275 for `-P '\bvar\b'`.
+- **Build (executor Haiku 5.5 via the Agent tool, foreground, `.stap-iter62-src`; the controller committed `e151c903`):** `bridge/sim_bridge.gd` +21/−2, `tests/test_sim_bridge.gd` +70, `Makefile` +11 (`similar-test` only), a 2-line changelog fragment: 104 of the 120-line cap.
+  - RED at base: the new tests reference `SimBridge.SIMILAR_MINOR`, `similar` and `parse_similar`, so the script fails to parse (first line `Parse Error: Cannot find member "SIMILAR_MINOR" in base "SimBridge"`), 0 `ok`, no summary. **The run still exits 0** (see row 7x).
+  - GREEN: rc 0, 107 `ok` (98 + 9), "sim bridge: 0 failures", 79 s. `make similar-test` rc 0 (probe 4 hits).
+  - Drills M1–M9 all killed with named failures, plus a supplement for the guard's second `main.gd` branch.
+  - Executor deviations: T2 folded into `test_similar_real` (the amendment's sanctioned fallback, to fit 70 lines); a ternary `parse_similar`; one authoring slip in its first M1 edit (a non-compiling `:=` on a Variant hung Godot; killed and redone).
+  - Controller edit: the `ARCHIVE_MINOR` comment's stale "Minor 14 is held for R2-SIMILAR-S0 S0.2" now says "Minor 14 is SIMILAR_MINOR".
+- **Evaluation:** Sonnet 5.5 via the Agent tool, foreground, own clone `.stap-iter62-eval` at `e151c903`, no controller findings handed over. **90/100 PASS, zero blocking** (`eval_R2-SIMILAR-S0_S0.3_round_1.json`).
+  - It re-ran the bridge test (107 `ok`, 0 failures), `make similar-test`, the merge-base diff of `main.gd` and `sim/`, and `uid-guard python-guard lint-precision`: all rc 0.
+  - 20 of its own mutants: 13 killed; `SIMILAR_MINOR := 15`, storing `changes["similar"]` without `parse_similar`, rejecting an empty `{}` and injecting `.get("vector", 0)` / `.has("vector")` survived; one equivalent pathspec, one type-invalid.
+  - The controller reproduced the guard hole: the pattern matches `c.get("vector")` (control) and misses `c.get("vector", 0)` and `c.has("vector")`.
+  - It also found that a GDScript runtime error inside a test body logs `SCRIPT ERROR` while the run still reports 0 failures (folded into row 7x).
+- **Landing / Gate 3b:** PR #366, head `e151c903`. Fast tier on the head: success. `rig/full` launched detached (`nohup`, rc marker, bounded polls) at 13:28Z, 1-min load 6.6–11: green in 106 min (`rig-check: ok, e151c903 green (make test, 106 min)`; status `rig/full` success, AILANG v0.54.18; 1-min load 4.3–11 during the run). Main had not moved; merged with `--match-head-commit`: `ca1e04d0`. Fast tier on the merge: success (run 41213997354).
+- **Record:** charter (STATUS 62; STATUS 59 rotated to the archive; L9 row S0.3; new row 7x; backlog line; CURRENT GOAL counter), this entry, the index, the dashboard, the S0.3 evaluation, sprint `R2-SIMILAR-S0` (S0.3 `passes` true, evidence).
+- **Routing evidence**
+
+  base=530cdece0b6643d8fea702de225d44710b34f12f@2026-10-31T12:47:05Z.
+
+  Resolver output: designer not run (no new or revised doc; S0 design approved, D-85 A); planner `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin` (`derive-planner-lane.sh` agreed); executor `recipe claude:claude-haiku-5-5 declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`. Driver note: `planner: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to pi:ollama/kimi-k3:cloud; executor: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to claude:claude-haiku-5-5`.
+
+  The operator's standing request was met. The planner ran through its pi recipe (probe rc 0 first); the executor (`haiku`, the same model as its `claude:` pin) and the evaluator (`sonnet`) ran through the Agent tool, both foreground. No designer was needed. No role failed to spawn.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Planner `pi:ollama/kimi-k3:cloud`: 115,344 in / 74,238 out / 4,885,675 cache-read tok, 75 turns, 701 s. Ollama cloud, $0.
+  - Executor Agent `haiku` = `claude:claude-haiku-5-5`: 121,678 tok, 79 tool uses, 20.9 min. Quota bucket anthropic.
+  - Evaluator Agent `sonnet`: 70,763 tok, 24 tool uses, 10.8 min. Quota bucket anthropic.
+  - Judge independence: different vendor from the planner (Moonshot), same vendor but a different model from the executor (Haiku executor, Sonnet judge, Opus controller); `judge-independence: same-vendor-different-model`.
+  - Quorum: none (no new or revised doc). metered=$0.00.
+- **Ruled out:**
+  - 7m-d this fire (GPU 100 %).
+  - L4 M1b/M2 before D-129 (guardrail: stop at Open questions).
+  - A designer pass: S0.3 is a milestone of an approved plan (D-85 A); a planner amendment fixed the stale premise.
+  - Fixing the judge's survivors in this PR: a second `rig/full` (70–120 min under load) for non-blocking findings. They go to the S0 Landing milestone, which runs the full gates anyway.
+  - Fixing row 7x here: it is pre-existing, touches `make sim` (and likely other `--script` gates), and is outside S0.3's four files.
+- **Upstream:** none. (Godot's `--script` exit code on a parse error is engine behaviour, not AILANG.)
+- **Retro:**
+  - Frictions:
+    1. An approved plan went stale under an attended landing (protocol 2.16, R3-EARTH-LINK): its pinned `main.gd` gate and "main keeps ARCHIVE_MINOR" were both false at base. The controller's premise check caught it before the planner ran; iterations 39 and 46 met the same class (minor renumbering).
+    2. Godot exits 0 when a `--script` fails to parse (measured: control `quit(3)` → rc 3; a missing-member parse error → rc 0). `make sim` (Makefile:355) runs `tests/test_sim_bridge.gd` on rc alone, so a test file that stops parsing passes `make test`. The executor's RED run was exactly this: rc 0 with no assert run. Row 7x.
+    3. A non-compiling drill edit in the bridge hangs Godot instead of failing (executor M1), the same class as row 7l's SCRIPT ERROR hang.
+  - Process fix: a gate that runs a Godot `--script` test passes on its summary line (`<name>: 0 failures`, or a counted `ok` total), never on rc alone; a RED run is read the same way (charter, process fixes).
+- **Next:** 7m-d when the GPU is quiet (re-measure its premise first) → L9 S0 Landing (fold in the S0.3 judge's survivors) → L3, then 7l(a), 7w and 7x. D-129 (Mark) → L4 M1b → M2.

@@ -1,0 +1,67 @@
+{
+ "sprint": "R2-SIMILAR-S0",
+ "milestone": "S0.3",
+ "round": 1,
+ "commit": "e151c903",
+ "evaluator_model": "claude-sonnet-5-5",
+ "score": 90,
+ "pass": true,
+ "score_breakdown": {"tests_pass": 19, "lint_clean": 10, "acceptance_criteria": 27, "code_quality": 12, "documentation": 13, "design_fidelity": 9},
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Guard hole: the vector-read pattern only matches [\"vector\"], .get(\"vector\") with a closing paren, and .vector. Verified by injecting into the tree and running the recipe block: physics/blackbody.gd with d.get(\"vector\", 0) exits 0 (not caught) and sky/background.gd with d.has(\"vector\") exits 0. The positive control only proves the pattern matches its own four forms. .get(key, default) is the dominant idiom in this repo (the bridge itself uses .get(\"proto\", {})), so the AC11 'no shipped .gd reads vector' claim is weaker than stated. The plan fixed this exact pattern, so it is a plan gap rather than an executor deviation.",
+  "SIMILAR_MINOR's value is not pinned. Setting it to 15 (mutation G) leaves every test green: the real-sim loop iterates [SIMILAR_MINOR, ARCHIVE_MINOR, EARTH_MINOR] and checks only that the negotiated minor equals the request, so the 2.14 case and the 2.14 tick test silently become a second 2.15 run, and the fake's hello still advertises 14. Suggest assert_bool(SimBridge.SIMILAR_MINOR == 14) or literal 14.",
+  "Amendment rule 4 says the bad_response condition is the typeof check and an empty {} is valid. No test sends an empty Dictionary, so a _take_similar that rejects {} (mutation Q) survives. The sim never sends {} at 14+, so risk is low.",
+  "_take_similar's store path is not tested for aliasing. Replacing parse_similar(changes[\"similar\"]) with a bare changes[\"similar\"] (mutation H) survives: deep copy is asserted only on parse_similar called directly. In production this would make bridge.similar alias state[\"changes\"][\"similar\"].",
+  "Harness limitation (seen in mutation N): a GDScript runtime error inside a test body (SCRIPT ERROR in parse_similar for a non-Dictionary return) does not fail the run, because Godot returns a default value and the 'ran to completion' check still sees true. It was a type-invalid mutation, but it shows the runner exit code can be 0 while the log contains SCRIPT ERROR.",
+  "The Makefile pathspec '*.gd' (git pathspec * crosses /) already covers tests/ and every subdirectory, so the six other pathspecs are redundant. Dropping '*.gd' is EQUIVALENT today. An injected d[\"vector\"] in tests/test_sim_bridge.gd fails the guard, contrary to the amendment's 'tests/ never named'. Harmless and stricter now, but a future test that mentions the key in a fixture would trip it.",
+  "The sprint JSON still has S0.3 status 'pending' (no completed timestamp, notes or passes). This is controller bookkeeping at landing. The sprint status is in_progress.",
+  "Plan T2 is folded into test_similar_real, which the amendment allows. The unknown-key and deep-copy checks run on a literal, not on a real-sim section. The 2.13 below-minor case uses SURFACE_MINOR (13) on the real sim as specified.",
+  "Not run (by instruction): make test. The rig/full status is separate. Local full-suite regression of other SimBridge callers is therefore covered only by test_sim_bridge.gd (107 ok, 98 base + 9 new, 0 failures)."
+ ],
+ "criteria": {
+  "AC11_stored_as_sent_real_sim": {"points": "9/10", "evidence": "Real-sim new_game at 14, 15 and 16 (hello minor equals request): bridge.similar == raw, parse_similar(raw) == raw, JSON.stringify equal. Two ticks at 14 leave it unchanged and the tick changes carry none. 13 session gives empty similar and no section."},
+  "rules_1_5": {"points": "10/10", "evidence": "Rule 1 const SIMILAR_MINOR := 14 sits between SURFACE and ARCHIVE with a ## comment. Rule 2 var similar: Dictionary = {} with a ## comment, reset in new_game before the take chain. Rule 3 parse_similar is static, returns v.duplicate(true) for a Dictionary and {} otherwise, with no whitelist, rounding or recomputation (the GDScript never touches d or any field). Rule 4 _take_similar is absent -> true, non-Dictionary -> false (bad_response), Dictionary -> stored. Rule 5 _finish untouched. git diff --exit-code 530cdece -- main.gd sim/ gives rc 0. Diff sizes: bridge 21+2 (cap 30), tests 70 (cap 70), Makefile 11 (cap 20)."},
+  "no_vector_read_and_main_gd": {"points": "8/10", "evidence": "Guard fires on main.gd naming SIMILAR_MINOR, on bridge/ui/tests injections of [\"vector\"]/.vector. Misses .get(\"vector\", default) and .has(\"vector\") (finding 1)."}
+ },
+ "automated_checks": {
+  "bridge_test": "AILANG_BIN=$PWD/runtime/bin/ailang godot --headless --path . --script tests/test_sim_bridge.gd: rc=0, 'sim bridge: 0 failures', 107 '^  ok' lines (base 98, +9)",
+  "similar_test": "make similar-test AILANG=runtime/bin/ailang: rc=0 (oracle ok for 214 and 215 fixtures, guard block green)",
+  "main_sim_diff": "git diff --exit-code 530cdece -- main.gd sim/: rc=0",
+  "guards": "make uid-guard python-guard lint-precision AILANG=runtime/bin/ailang: rc=0 (401 .uid, 19 allowlisted, positive control 6 lines)",
+  "not_run": "make test (rig/full)"
+ },
+ "mutation_results": [
+  {"id": "A", "mutation": "parse_similar erases 'worlds' (plan M1)", "command": "/tmp/s62_mut.sh: perl-edit bridge/sim_bridge.gd, run the three new tests via a scratch copy of test_sim_bridge.gd, git checkout", "result": "KILLED (5 failures: 14/15/16 exact-store, unknown-keys)"},
+  {"id": "B", "mutation": "_take_similar non-Dictionary branch returns true (M7)", "command": "same", "result": "KILLED (bad_response test)"},
+  {"id": "C", "mutation": "delete the similar = {} reset in new_game (M6)", "command": "same", "result": "KILLED (fake second new_game clears)"},
+  {"id": "D", "mutation": "parse_similar duplicate(true) -> duplicate() (shallow)", "command": "same", "result": "KILLED (deep-copy assert)"},
+  {"id": "G", "mutation": "SIMILAR_MINOR := 15", "command": "same", "result": "SURVIVED (finding 2)"},
+  {"id": "H", "mutation": "_take_similar stores changes[\"similar\"] without parse_similar", "command": "same", "result": "SURVIVED (finding 4)"},
+  {"id": "M2", "mutation": "overwrite near[0].d with 1.0 after the store", "command": "same", "result": "KILLED (14/15/16 stringify)"},
+  {"id": "M3", "mutation": "store from world.get('similar') instead of changes", "command": "same", "result": "KILLED (4 failures)"},
+  {"id": "M5", "mutation": "similar = {} at top of _finish", "command": "same", "result": "KILLED (survives-two-ticks assert)"},
+  {"id": "N", "mutation": "parse_similar returns v for a non-Dictionary", "command": "same", "result": "SURVIVED, but the mutation is type-invalid: Godot logs SCRIPT ERROR and the run still exits 0 with 0 failures (finding 5). Not a realistic regression."},
+  {"id": "O", "mutation": "remove 'or not _take_similar' from the new_game chain", "command": "same", "result": "KILLED (5 failures)"},
+  {"id": "P", "mutation": "absent 'similar' key returns false", "command": "same", "result": "KILLED (13 session and fake second game)"},
+  {"id": "Q", "mutation": "_take_similar rejects an empty Dictionary", "command": "same", "result": "SURVIVED (finding 3)"},
+  {"id": "M8", "mutation": "drop the .get( ) alternative from the guard pattern", "command": "make -f /tmp/s62_g_M8_dropget.mk g (verbatim copy of the recipe block, perl-edited)", "result": "KILLED (probe 3 != 4)"},
+  {"id": "M9", "mutation": "main.gd guard greps SimBridge.NOPE", "command": "same style", "result": "KILLED (main.gd lost EARTH_MINOR)"},
+  {"id": "K1", "mutation": "probe expectation 4 -> 5", "command": "same style", "result": "KILLED (fails closed)"},
+  {"id": "K2", "mutation": "drop the '*.gd' pathspec", "command": "same style", "result": "EQUIVALENT today (no violations present; remaining pathspecs cover the dirs, and nothing else lives at root except main.gd)"},
+  {"id": "K3", "mutation": "main.gd 'SIMILAR_MINOR' grep changed to SIMILAR_MINORX", "command": "same style", "result": "SURVIVED when main.gd is clean (expected); with the real guard, appending 'var q = SimBridge.SIMILAR_MINOR' to main.gd exits 2 (KILLED)"},
+  {"id": "I1", "mutation": "inject d[\"vector\"] in bridge/sim_bridge.gd, d.vector in ui/ai_indicator.gd, d[\"vector\"] in tests/test_sim_bridge.gd", "command": "append line, make -f /tmp/s62_guard.mk g, restore", "result": "KILLED (all rc 2)"},
+  {"id": "I2", "mutation": "inject d.get(\"vector\", 0) in physics/blackbody.gd; d.has(\"vector\") in sky/background.gd", "command": "same", "result": "SURVIVED (rc 0, finding 1)"}
+ ],
+ "commands_run": [
+  "godot --headless --path . --import",
+  "AILANG_BIN=$PWD/runtime/bin/ailang godot --headless --path . --script tests/test_sim_bridge.gd > /tmp/s62_eval_bridge.log",
+  "make similar-test AILANG=runtime/bin/ailang",
+  "git diff --exit-code 530cdece -- main.gd sim/",
+  "make uid-guard python-guard lint-precision AILANG=runtime/bin/ailang",
+  "/tmp/s62_mut.sh (mutations A-Q), make -f /tmp/s62_guard.mk g (guard drills)"
+ ],
+ "changelog_check": "changelogs/unreleased/2026-10-31-similar-bridge-parse.md (the amendment's path; the executor used it correctly). Accurate: stored as sent, ticks keep it, a new game clears it, empty below 2.14, checked on the real sim at 2.14/2.15/2.16, guard in make similar-test. Slight overstatement: 'no GDScript reads a distance' is guarded only for the three vector-read forms.",
+ "regression_assessment": "main.gd, sim/ unchanged. The shipped 2.16 sessions now parse and deep-copy a ~4.4 KB section once per new_game (plus world's existing duplicate); a malformed similar would now make new_game fail with bad_response, but the sim always sends a Dictionary. Other bridge consumers are untouched (new field only). tree left clean (git status empty).",
+ "summary": "S0.3 meets AC11 and bridge rules 1-5 exactly. The tests are mostly discriminating (9 of 13 bridge mutations killed, including every plan mutation M1-M7 equivalent). Survivors are an unpinned SIMILAR_MINOR value, no empty-dict or store-aliasing check, and a guard pattern that misses .get(\"vector\", default) and .has(\"vector\"). No blocking findings."
+}
