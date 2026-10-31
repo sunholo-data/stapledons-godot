@@ -1,0 +1,192 @@
+{
+  "sprint": "R2-KERR",
+  "feature": "K1.1a-a5",
+  "round": 1,
+  "evaluator_model": "claude-sonnet-5-5",
+  "head": "5a23df3c7935cfdb62131c9a9f21c72b2567b443",
+  "score": 86,
+  "verdict": "PASS",
+  "rubric": {
+    "acceptance_commands_reproduced": 28,
+    "mutation_strength": 22,
+    "spec_fidelity_and_literals": 18,
+    "process_rules_make_gmake_capture_controls": 10,
+    "scope_loc_changelog_json": 8
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "Schema and source literal pins have no drill: deleting either assert survives (only unit-drift has a drill). The pins do work (oracle schema/source drift mutants are killed by the live pin).",
+    "The 'regen' third drill argument is decorative: the new pins and completeness asserts read live oracle stdout and fire before the fixture comparison, so the drills pass identically without the regen hook. The plan's claim that paired fixture drift is simulated is not what is proved.",
+    "Pinned unit/source strings equal the oracle's own UNIT/SOURCE constants; the design doc does not define them, so 'reviewed literal' means copied from the oracle at this head.",
+    "EXIT trap on the private parent is untested (M16 survives, leaks an empty tmp dir per run). SIGKILL would leak the parent; INT/TERM/HUP leak nothing (measured).",
+    "Guard c deviates from the plan (global TMPDIR count) to a private parent; this is an improvement and cannot flake under concurrency (2 parallel runs + noise writer passed). The plan's acceptance 10 (global count) is itself racy on a busy host and was off by one in my environment from other processes.",
+    "Drill-line deletion is killed only by the count, not by a label; extra drill lines in the plan table said R1-R3 reproduce at base rc0 - not re-measured at base, only on head.",
+    "Line budget: 42 shell + 2 changelog lines of the 100-line cap; plan text says changelog 16 lines, actual 2."
+  ],
+  "mutation_results": [
+    {
+      "name": "M1",
+      "change": "delete schema pin",
+      "killed": false,
+      "label": "real gap (minor)",
+      "notes": "pin works (schema-drift+regen oracle mutant rc1) but no drill covers it; removal of the pin survives"
+    },
+    {
+      "name": "M2",
+      "change": "unit pin -> 'assert 1 or'",
+      "killed": true,
+      "label": "killed by drill unit-drift",
+      "notes": ""
+    },
+    {
+      "name": "M3",
+      "change": "delete source pin",
+      "killed": false,
+      "label": "real gap (minor)",
+      "notes": "same as M1; source-drift oracle mutant is killed by the live pin"
+    },
+    {
+      "name": "M4/M4b/M6b",
+      "change": "id-set add RK-14 / drop RK-13 / count 39",
+      "killed": true,
+      "label": "killed by base check",
+      "notes": ""
+    },
+    {
+      "name": "M5",
+      "change": "delete id-set assert",
+      "killed": true,
+      "label": "killed by drill deferred-id (wrong reason label)",
+      "notes": ""
+    },
+    {
+      "name": "M6/M6c",
+      "change": "drop '== len(rows)' uniqueness",
+      "killed": false,
+      "label": "equivalent in practice",
+      "notes": "dup-key oracle mutant (record replaced by duplicate) is killed by earlier precise17 assert; the 41-record cases are caught by ==40"
+    },
+    {
+      "name": "M7/M15",
+      "change": "remove regen hook / regen arg",
+      "killed": false,
+      "label": "equivalent (decorative hook)",
+      "notes": "pins and completeness read live oracle stdout before the fixture compare, so the regen step never changes the outcome; the 'paired drift' simulation is not what the drills prove"
+    },
+    {
+      "name": "M8",
+      "change": "guard a assert weakened to [ 1 ]",
+      "killed": false,
+      "label": "meta (equivalent)",
+      "notes": "guard self-test assertion itself is unasserted; expected"
+    },
+    {
+      "name": "M8b",
+      "change": "delete cmp -s block",
+      "killed": true,
+      "label": "killed 'guard a'",
+      "notes": ""
+    },
+    {
+      "name": "M9",
+      "change": "delete grep -F -q line",
+      "killed": true,
+      "label": "killed 'guard b'",
+      "notes": ""
+    },
+    {
+      "name": "M9b",
+      "change": "guard b assert weakened",
+      "killed": false,
+      "label": "meta (equivalent)",
+      "notes": ""
+    },
+    {
+      "name": "M10",
+      "change": "delete per-drill rm -rf",
+      "killed": true,
+      "label": "killed 'guard c'",
+      "notes": ""
+    },
+    {
+      "name": "M10b",
+      "change": "guard c assert weakened",
+      "killed": false,
+      "label": "meta (equivalent)",
+      "notes": ""
+    },
+    {
+      "name": "M11",
+      "change": "drill count 11->10",
+      "killed": true,
+      "label": "killed",
+      "notes": ""
+    },
+    {
+      "name": "M12-14",
+      "change": "delete each new drill line",
+      "killed": true,
+      "label": "killed by count 11 (drill count, not the label)",
+      "notes": "a drill replaced by another keeps count; minor"
+    },
+    {
+      "name": "M16",
+      "change": "delete EXIT trap on parent",
+      "killed": false,
+      "label": "real gap (minor)",
+      "notes": "one empty tmp.* dir leaks per run; no test; guard c counts only the parent's contents"
+    },
+    {
+      "name": "M17",
+      "change": "remove export TMPDIR",
+      "killed": false,
+      "label": "equivalent",
+      "notes": "drill mktemp uses explicit path"
+    },
+    {
+      "name": "M18",
+      "change": "remove probe subshell trap",
+      "killed": true,
+      "label": "killed 'guard c' (probes leak otherwise)",
+      "notes": ""
+    }
+  ],
+  "commands_run": [
+    {
+      "cmd": "sh tools/test_kerr_oracle.sh",
+      "rc": 0
+    },
+    {
+      "cmd": "make kerr-oracle AILANG=runtime/bin/ailang",
+      "rc": 0
+    },
+    {
+      "cmd": "gmake kerr-oracle AILANG=runtime/bin/ailang",
+      "rc": 0
+    },
+    {
+      "cmd": "python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json",
+      "rc": 0
+    },
+    {
+      "cmd": "make python-guard lint-precision uid-guard",
+      "rc": 0
+    },
+    {
+      "cmd": "git diff --check d88dc6c9..HEAD",
+      "rc": 0
+    },
+    {
+      "cmd": "concurrent x2 runs + TMPDIR noise writer",
+      "rc": 0
+    },
+    {
+      "cmd": "abort INT/TERM/HUP: no kerr tmp leftovers",
+      "rc": 0
+    },
+    {
+      "cmd": "oracle mutants schema-drift/source-drift/dup-key with regen",
+      "rc": 1
+    }
+  ]
+}
