@@ -1,4 +1,11 @@
 #!/bin/sh
+# Kerr RK oracle audit. The documented path for changing the fixture:
+#   1. edit tools/kerr_ref.py (the oracle), never tests/fixtures/kerr/rk.json by hand
+#   2. python3 -I tools/kerr_ref.py > tests/fixtures/kerr/rk.json        (regenerate from the oracle)
+#   3. sh tools/test_kerr_oracle.sh                                       (full audit: literal pins, completeness, drills)
+#   4. python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json   (compare only: fixture vs live output, no review)
+#   5. git diff tests/fixtures/kerr/rk.json                               (human review of the regenerated data)
+# Step 4 cannot see paired oracle+fixture drift; step 3 pins the schema/unit/source literals and the record set.
 set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd) || exit 1
 fail() {
@@ -6,6 +13,11 @@ fail() {
     exit 1
 }
 [ -f "$root/tools/kerr_ref.py" ] || fail "missing oracle tools/kerr_ref.py"
+# One private parent for every drill tmp dir, so the guard-c count is not shared with other jobs.
+parent=$(mktemp -d) || exit 1
+trap 'rm -rf "$parent"' EXIT
+TMPDIR=$parent
+export TMPDIR
 check() {
     python3 -I - "$1" <<'PY'
 import copy, json, runpy, subprocess, sys, tempfile
@@ -23,6 +35,10 @@ anchors = {'0': ('2', '0', '1'),
 generated = run()
 assert generated.returncode == 0, 'stdout generation failed'
 data = json.loads(generated.stdout)
+# Literal metadata pins: reviewed values, never copied from the oracle output.
+assert data['schema'] == 'kerr-rk-seed-v1', 'metadata literal drift: schema'
+assert data['unit'] == 'radii GM/c^2 (package R=u/2 in r_s); clocks dimensionless; frequencies c^3/GM; speeds in c; RK-18 SI (km, ms, rad/s)', 'metadata literal drift: unit'
+assert data['source'] == 'BPT72 ApJ178,347 §II; Bardeen 1970/1973; design_docs/planned/r2/kerr-black-holes.md V31, V34, V40', 'metadata literal drift: source'
 for spin, (outer, inner, radius) in anchors.items():
     values = ref['horizons'](spin)
     assert tuple(format(v, '.17g') for v in values) == (outer, inner), f'horizon branch/V31: {spin}'
@@ -39,6 +55,9 @@ NEW = {('RK-4', '0.9', 'photon-pro'): '1.5578546274233828', ('RK-4', '0.9', 'pho
        ('RK-8', '0.9', 'clock-pro'): '0.37086794439864592', ('RK-8', '0.9', 'clock-retro'): '0.79319251811829484',
        ('RK-8b', '0.998', 'clock-pro'): '0.092670308365368573'}
 rows = {(r['id'], r['spin'], r['quantity']): r for r in data['records']}
+# Completeness: the reviewed id set (RK-14..RK-17 deferred, absent) and exactly 40 records with unique keys.
+assert {r['id'] for r in data['records']} == {'RK-1', 'RK-2', 'RK-3', 'RK-4', 'RK-5', 'RK-6', 'RK-7', 'RK-8', 'RK-9', 'RK-10', 'RK-11', 'RK-12', 'RK-13', 'RK-8b', 'RK-18', 'RK-Q1'}, 'completeness: exact id set'
+assert len(data['records']) == 40 == len(rows), 'completeness: 40 records, unique keys'
 assert len(NEW) == 11 and all(key in rows for key in NEW), 'identity: missing RK-4..RK-8b record'
 for key, anchor in NEW.items():
     assert Decimal(rows[key]['precise']) == Decimal(anchor), f'precise17 anchor: {key}'
@@ -143,6 +162,10 @@ old, new = {
     'empty-fixture': ('if actual != expected:', 'if actual != expected and actual.get("records"):'),
     'wrong-unit': ('if actual != expected:', 'if actual["records"] != expected["records"]:'),
     'precision': ('getcontext().prec = 60', 'getcontext().prec = 20'),
+    'unit-drift': ('RK-18 SI (km, ms, rad/s)', 'RK-18 SI (m, s, rad/s)'),
+    'extra-record': ('("omega-h-rad-s", horizon_omega(spin) * C ** 3 / gm))', '("omega-h-rad-s", horizon_omega(spin) * C ** 3 / gm), ("lens-preview", km))'),
+    'deferred-id': ('    return {"schema": "kerr-rk-seed-v1"', '    records.append(value_row("RK-14", "0.998", "lens-tide", horizons("0.9")[0], "deferred"))\n    return {"schema": "kerr-rk-seed-v1"'),
+    'no-op': ('if not s.is_finite() or not 0 <= s < 1:', 'if not s.is_finite() or not 0 <= s < 1:'),
 }[name]
 text = open(path).read()
 assert text.count(old) == 1, f'mutant {name}: old text not found exactly once'
@@ -152,8 +175,7 @@ PY
 n=0
 drill() {
     n=$((n + 1))
-    tmp=$(mktemp -d) || exit 1
-    trap 'rm -rf "$tmp"' EXIT
+    tmp=$(mktemp -d "$parent/drill.XXXXXX") || exit 1
     mkdir -p "$tmp/tools" "$tmp/tests/fixtures/kerr" || exit 1
     cp "$root/tools/kerr_ref.py" "$tmp/tools/" || exit 1
     cp "$root/tests/fixtures/kerr/rk.json" "$tmp/tests/fixtures/kerr/" || exit 1
@@ -161,6 +183,9 @@ drill() {
     if cmp -s "$root/tools/kerr_ref.py" "$tmp/tools/kerr_ref.py"; then
         echo "kerr-oracle drill $1: instrument failure, mutation changed nothing" >&2
         exit 3
+    fi
+    if [ "${3:-}" = "regen" ]; then
+        python3 -I "$tmp/tools/kerr_ref.py" > "$tmp/tests/fixtures/kerr/rk.json" || exit 1
     fi
     if check "$tmp" 2>"$tmp/err"; then
         echo "kerr-oracle drill $1: survived" >&2
@@ -171,6 +196,12 @@ drill() {
     rm -rf "$tmp"
 }
 check "$root" || fail "assertions failed"
+# Harness guard self-tests run first, in subshells: a drill exit cannot end the suite, and the
+# subshell trap removes only drill.* leftovers, which at this point are the probes' own.
+rc=0; ( trap 'rm -rf "$parent"/drill.*' EXIT; drill no-op 'instrument failure' ) 2>/dev/null || rc=$?
+[ "$rc" -eq 3 ] || fail "guard a: no-op drill rc $rc, want 3"
+rc=0; ( trap 'rm -rf "$parent"/drill.*' EXIT; drill factor2 'deliberately-never-matching-label' ) 2>/dev/null || rc=$?
+[ "$rc" -eq 1 ] || fail "guard b: mislabeled drill rc $rc, want 1"
 drill factor2 'factor2 R=u/2' || exit 1
 drill sqrt-branch 'horizon branch/V31' || exit 1
 drill domain 'invalid spin accepted' || exit 1
@@ -179,5 +210,10 @@ drill six-decimal "doc literal: ('RK-10'" || exit 1
 drill empty-fixture 'empty/schema accepted' || exit 1
 drill wrong-unit 'unit accepted' || exit 1
 drill precision 'Decimal60 precision' || exit 1
-test "$n" -eq 8 || fail "drill count is not 8"
+drill unit-drift 'metadata literal drift: unit' regen || exit 1
+drill extra-record 'completeness: 40 records, unique keys' regen || exit 1
+drill deferred-id 'completeness: exact id set' regen || exit 1
+test "$n" -eq 11 || fail "drill count is not 11"
+left=$(ls -A "$parent" | wc -l | tr -d ' ')
+[ "$left" -eq 0 ] || fail "guard c: $left drill dirs left in $parent"
 echo "kerr-oracle: RK-1/2/3/9, RK-4..RK-8b, RK-10..RK-13, RK-18, RK-Q1 assertions satisfied (RK-14..RK-17 deferred)"
