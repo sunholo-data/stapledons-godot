@@ -257,15 +257,15 @@ PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang
 
 Red tests first in `tests/test_sim_bridge.gd`: negotiate 2.14 and 2.15 with the real pinned sim, obtain raw new_game JSON, parse/store the entire similar dictionary and assert deep equality. Check a later tick retains it, a fresh session clears stale state, and below 14 it remains empty. The test may compare whole dictionaries; it must not introduce a production GDScript consumer of vector components.
 
-Add `SimBridge.SIMILAR_MINOR := 14`, stored `similar`, and `parse_similar()` returning the dictionary as sent, preserving unknown fields. Preserve the existing protocol error/parse conventions and reset behaviour. Add the constant beside the existing constants. Keep `ARCHIVE_MINOR := 15` and the default `want_minor`. Keep `main.gd` byte-identical and asking for `ARCHIVE_MINOR`. No rendering or similarity math in GDScript.
+Add `SimBridge.SIMILAR_MINOR := 14`, stored `similar`, and `parse_similar()` returning the dictionary as sent, preserving unknown fields. Preserve the existing protocol error/parse conventions and reset behaviour. Add the constant beside the existing constants. Keep `ARCHIVE_MINOR := 15` and the default `want_minor`. Keep `main.gd` byte-identical and asking for `EARTH_MINOR` (16). No rendering or similarity math in GDScript.
 
-Extend `similar-test` with a fail-closed `git grep` guard over shipped `.gd` paths: root scripts and bridge/ui/demos/sky/interior/physics scripts; exclude tests/tools from production-consumer scans. Reject literal vector reads using either quote style (`["vector"]`, `['vector']`, `.get(...)`) and dot access `.vector`; reject similar-minor opt-in in `main.gd`, and assert its ARCHIVE_MINOR request remains. The executor must validate the guard against a scratch-copy negative control without changing shipped sources. Inspect alias or dynamic-key access during review, since grep alone cannot establish semantic purity.
+Extend `similar-test` with a fail-closed `git grep` guard over shipped `.gd` paths: root scripts and bridge/ui/demos/sky/interior/physics scripts; exclude tests/tools from production-consumer scans. Reject literal vector reads using either quote style (`["vector"]`, `['vector']`, `.get(...)`) and dot access `.vector`; reject similar-minor opt-in in `main.gd`, and assert its EARTH_MINOR (16) request remains. The executor must validate the guard against a scratch-copy negative control without changing shipped sources. Inspect alias or dynamic-key access during review, since grep alone cannot establish semantic purity.
 
 | test | file | asserts | kills which mutation |
 |---|---|---|---|
 | real-sim deep equality (AC11) | `tests/test_sim_bridge.gd`, `bridge/sim_bridge.gd` | Entire raw similar dictionary equals stored and parse_similar results at 14 and 15; unknown key preserved | Parser drops a world/field or recomputes/rounds distance |
 | lifetime and old minor (AC11) | `tests/test_sim_bridge.gd` | Retained across ticks; cleared on new session; empty below 14 | Tick clears ranking; stale previous-game ranking leaks |
-| production-source guards (AC11) | `Makefile` similar-test, shipped `.gd` files | Production vector reads fail; main keeps ARCHIVE_MINOR (15); negative controls are rejected | GDScript reading "vector"; single-quote/get/dot bypass; main asks for SIMILAR_MINOR |
+| production-source guards (AC11) | `Makefile` similar-test, shipped `.gd` files | Production vector reads fail; main keeps EARTH_MINOR (16); negative controls are rejected | GDScript reading "vector"; single-quote/get/dot bypass; main asks for SIMILAR_MINOR |
 | shared bridge regression (AC8, AC9, AC11) | `tests/test_sim_bridge.gd`, existing real-sim callers | Old minor real-sim tests and frozen sessions remain green | Changing default want_minor; parse changes corrupt existing state |
 
 Acceptance: AC11 becomes passing; AC1–AC10 stay green. Direct bridge command is `AILANG_BIN="$PWD/runtime/bin/ailang" godot --headless --path . --script tests/test_sim_bridge.gd`; `make sim AILANG=runtime/bin/ailang` runs it with the pinned child runtime, package check/tests and BH HUD regression.
@@ -282,11 +282,110 @@ make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1
 make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang
 make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang
 AILANG_BIN="$PWD/runtime/bin/ailang" godot --headless --path . --script tests/test_sim_bridge.gd
-git diff --exit-code adf34a677f5919a86f09cd640a3fa0a3493f6d3d -- main.gd
+git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd
 make stellar-protocol-test sound-archive-test AILANG=runtime/bin/ailang
 make ci-fast AILANG=runtime/bin/ailang
 PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang
 ```
+
+## Amendment iter62: S0.3 execution detail
+
+Controller-measured, read-only, at base `530cdece0b6643d8fea702de225d44710b34f12f` (origin/main, 2026-10-31). Execution detail only: the design direction, semantics, scope, wire shape, AC ids and milestone LOC budgets are unchanged; S0.1 and S0.2 stay as completed and no production code is written here. Where they conflict, this amendment supersedes the iteration-46 blockquote's "the game's request stays `ARCHIVE_MINOR` (15)" and S0.3's "at 14 and 15" scope wording; the rest of the plan stands.
+
+**Why.** (F1) R3-EARTH-LINK landed protocol 2.16 after this plan was written: `bridge/sim_bridge.gd:66` now defines `const EARTH_MINOR := 16` and `main.gd:304` sets `sim.want_minor = SimBridge.EARTH_MINOR`. Seven commits touch `main.gd` between the plan's frozen base and origin/main (`git log --oneline adf34a677f5919a86f09cd640a3fa0a3493f6d3d..origin/main -- main.gd | wc -l` = 7), so the old gate `git diff --exit-code adf34a67… -- main.gd` fails at base without any S0.3 change. The replacement gates equality with the current base — `git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd` — plus the source guards in T6 (main.gd keeps `SimBridge.EARTH_MINOR`, never names `SIMILAR_MINOR`). (F2) The sim emits `similar` at 2.16 too: `sim/protocol.ail:164` gates `similarFull` on `s.minor >= similarMinor()` (= 14) and `:193` `sessionMinor` maps want 16 to 16; the controller measured a 2.16 new_game whose `changes` keys are clock, ship, journey, ledger, rng, params, ai, consequence, system, similar, archive, earth, while the tick-1 state has no `similar` (`similarFull` appears only in the new_game encoder, protocol.ail:955). The shipped game plays at the one minor the old plan never tested, so the real-sim checks below cover 14, 15 and 16, with 13 as the below-minor case.
+
+### Files and anchors (the executor touches exactly these)
+
+- `bridge/sim_bridge.gd` (≤ 30 diff lines): insert `const SIMILAR_MINOR := 14` with a `##` doc comment between `SURFACE_MINOR` (:57) and the `ARCHIVE_MINOR` comment block (:58-60); add `var similar: Dictionary = {}` with a `##` comment beside `var crew` (:132); add `similar = {}` to the `new_game` reset run (:287-290) and extend the `_take_*` chain (:291); add `parse_similar` and `_take_similar` immediately after `_take_gr` (:669-677).
+- `tests/test_sim_bridge.gd` (≤ 70 diff lines): new tests T1-T5, an inline-fake helper and one embedded python program, registered in the `tests` array in `_init` (:484). Do not edit `tests/fixtures/fake_sim.py`: T4b/T5 inject their crafted replies inline via `launch_override = {"bin": "python3", "args": ["-c", PY_SIMILAR, "<mode>"]}` (pattern: `fake()` at :18), keeping the file list at four. The inline python is a harness (fake_sim.py's role), not a tracked `.py`, so `make python-guard` sees nothing new.
+- `Makefile` (≤ 20 diff lines): `similar-test` recipe only (:54-92) — append one zsh block with the production-source guard, its in-recipe positive control and the two main.gd guards. Keep zsh and the existing `\`/`'\''` escaping style.
+- `changelogs/unreleased/<date>-similar-bridge-parse.md`: one new fragment with an `### Added` section, per `changelogs/unreleased/README.md` (recent example: `2026-10-30-earth-link.md`).
+- Nothing else. `main.gd`, `sim/**`, `tests/fixtures/**` and `CHANGELOG.md` (release-folded by `tools/changelog_fold.sh`) stay untouched.
+
+### Exact bridge rules (F3, settled — the executor applies these as written)
+
+1. `const SIMILAR_MINOR := 14` between `SURFACE_MINOR` and `ARCHIVE_MINOR`, `##` comment in the same style as the neighbouring entries (`## Protocol 2.14 (R2-SIMILAR-S0 S0.2): \`similar\` … on new_game only …`).
+2. `var similar: Dictionary = {}`, with a `##` comment; `{}` before any ≥2.14 new_game, after a below-14 new_game, and between new_games.
+3. `static func parse_similar(v: Variant) -> Dictionary`: a non-Dictionary returns `{}`; otherwise `v.duplicate(true)` — the dictionary as sent, deep copy, unknown keys preserved. No rounding, recomputation or whitelisting of any distance or field anywhere in GDScript.
+4. `func _take_similar(changes: Dictionary) -> bool`, mirroring `_take_gr`'s malformed rule: absent `similar` key → `true`; non-Dictionary → `false` (so `new_game` goes to `_fail("bad_response")`, exactly as `_take_gr` does for `gr`); a Dictionary → `similar = parse_similar(changes["similar"])`, `true`. The bad_response condition is the `typeof` check, not emptiness: an empty `{}` is a valid Dictionary (the sim never sends one at ≥14).
+5. `_finish` (:374-) is untouched. Ticks never carry `similar` at any minor (protocol), so the stored field is purely new_game-scoped; `world` keeps its existing unknown-section copy, changed by nothing in this milestone.
+
+### Test table
+
+| test | file | asserts | kills which mutation |
+|---|---|---|---|
+| T1 real-sim deep equality at 14, 15, 16 (AC11) | `tests/test_sim_bridge.gd`, `test_similar_real` | For each of `SIMILAR_MINOR`, `ARCHIVE_MINOR`, `EARTH_MINOR`: fresh bridge with `want_minor` set; `new_game(7, "sol")` ok; negotiated `hello_reply["proto"]["minor"]` equals the request; raw := `state["changes"]["similar"]` is a nonempty Dictionary; `similar == raw`, `SimBridge.parse_similar(raw) == raw`, `JSON.stringify(similar) == JSON.stringify(raw)` | Parser drops a key (M1); rounds or recomputes a distance (M2); reads the stored field from `world` instead of `changes` (M3 — at take time `world` still holds the previous game, so the first new_game catches it) |
+| T2 unknown-key preservation (AC11) | `tests/test_sim_bridge.gd`, `test_similar_parse_unknown_keys` | Pure parse, no session: a literal section plus an extra `"surprise"` key (and a nested unknown field) survives `parse_similar` (`==` identity with the extended literal), and mutating the result does not touch the source (deep copy) | Whitelisting known fields (M4); shallow copies |
+| T3 lifetime (AC11) | `tests/test_sim_bridge.gd`, rides T1's minor-14 session | After two ticks (`send([], 0.1)` twice; the second tick's `state["changes"]` has no `similar` key), `JSON.stringify(similar)` equals the capture taken before the ticks | `_finish` clearing or re-reading the ranking (M5) |
+| T4 fresh session clears (AC11) | `tests/test_sim_bridge.gd`, `test_similar_below_and_reset` | (a) Real sim, a fresh bridge at `want_minor = 13`: `new_game` ok and `similar == {}` (`state["changes"]` has no `similar`). (b) Inline fake, hello advertises `{major: 2, minor: 14}`: new_game #1 carries a minimal `similar` dict → stored nonempty; new_game #2 omits it → `similar == {}` | Stale previous-game ranking leaking through a missing reset in `new_game` (M6); a take that ignores whether the section exists (4a) |
+| T5 malformed section → bad_response (AC11) | `tests/test_sim_bridge.gd`, `test_similar_malformed` | Inline fake, hello 2.14, new_game whose `changes.similar` is the string `"broken"`: `new_game` returns false, `last_error == "bad_response"`, `similar == {}` | `_take_similar` accepting a non-Dictionary (M7) |
+| T6 production-source guards (AC11) | `Makefile` `similar-test` | Positive control in the recipe: probe `.godot/tmp/similar/vector_guard_probe.gd` with the four forbidden forms (plus a `.vector2` decoy that must not hit) yields exactly 4 matches; the same pattern over root `*.gd`, `bridge/`, `ui/`, `demos/`, `sky/`, `interior/`, `physics/` yields 0 (rc 1); `git grep -q "SimBridge.EARTH_MINOR" -- main.gd` hits; `SIMILAR_MINOR` never appears in `main.gd`; merge-base diff on `main.gd` empty (gate list) | Any production `["vector"]` / `['vector']` / `.get("vector")` / `.vector` read (guard scan); a broken pattern passing vacuously (M8); main opting into SIMILAR_MINOR or losing EARTH_MINOR (M9) |
+
+Guard pattern (POSIX ERE — git grep has no `\b` word boundary: iter62 measured `git grep -cE '\bvar\b' -- main.gd` → rc 1 despite `var` everywhere, so the old wording's `\.vector\b` would have been a vacuous control. F5's positive control exists precisely to catch this class of failure):
+
+```
+(\[["']vector["']\]|\.get\( *["']vector["']\)|\.vector([^A-Za-z0-9_]|$))
+```
+
+Verified at base with this exact pattern: 4 hits on the five-line probe, rc 1 on all seven production pathspecs (directories confirmed by `git ls-files | cut -d/ -f1 | sort -u`; tests/ and tools/ are excluded by not being named). The probe is untracked scratch under gitignored `.godot/`, so the control uses `git grep --no-index`. The planner ran the recipe below through the real sh → `zsh -eu -c` layers before landing it: hand-typed variants missing the class-opener `[` or the trailing `\]` made the probe count 2 instead of 4 and the guard failed closed — the positive control is load-bearing, keep it.
+
+Recipe block to append to `similar-test` (verbatim, zsh, existing escaping style):
+
+```make
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; mkdir -p "$$out"; \
+	  probe="$$out/vector_guard_probe.gd"; \
+	  q="'\''"; \
+	  pat="(\[[\"'\'']vector[\"'\'']\]|\.get\( *[\"'\'']vector[\"'\'']\)|\.vector([^A-Za-z0-9_]|\$$))"; \
+	  printf "var a = changes[\"vector\"]\nvar b = changes[$${q}vector$${q}]\nvar c = world.get(\"vector\")\nvar d = s.similar.vector\nvar e = s.a.vector2\n" > "$$probe"; \
+	  hits=$$(git grep --no-index -E "$$pat" -- "$$probe" | wc -l | tr -d " "); \
+	  if [[ "$$hits" != 4 ]]; then echo "similar-test guard: probe $$hits != 4, pattern broken" >&2; exit 1; fi; \
+	  if git grep -nE "$$pat" -- '\''*.gd'\'' '\''bridge/*.gd'\'' '\''ui/*.gd'\'' '\''demos/*.gd'\'' '\''sky/*.gd'\'' '\''interior/*.gd'\'' '\''physics/*.gd'\''; then echo "similar-test guard: production vector read" >&2; exit 1; fi; \
+	  git grep -q "SimBridge.EARTH_MINOR" -- main.gd || { echo "similar-test guard: main.gd lost EARTH_MINOR" >&2; exit 1; }; \
+	  if git grep -q "SIMILAR_MINOR" -- main.gd; then echo "similar-test guard: main.gd asks SIMILAR_MINOR" >&2; exit 1; fi'
+```
+
+### RED first
+
+Write T1-T5 and the Makefile guard against the unedited bridge and run `AILANG_BIN="$PWD/runtime/bin/ailang" godot --headless --path . --script tests/test_sim_bridge.gd` before touching `bridge/sim_bridge.gd`. Expected RED signature: the file references `SimBridge.SIMILAR_MINOR`, `s.similar` and `SimBridge.parse_similar`, none of which exist at base, so the run exits nonzero with Godot parse errors naming them and none of the previously-green 98 asserts execute. Rows T1/T2/T3/T4/T5 are all red at base — T1/T3/T4 minimally because `similar` is not a declared field. Record the parse-error line and exit code in the sprint report. Only then make the bridge edit; the new rows and the prior 98 asserts go green together. T6's production scan and positive control are green at base by design (they guard against regression, not a missing feature).
+
+### Mutation drills (after GREEN; executor runs each once and records the failing check name in the sprint report)
+
+Each drill is a scratch edit on the green tree: apply, run the named check, note the failing assert, revert. After the last drill `git diff` is empty except the intended S0.3 change.
+
+- M1 (parser drops a key): change `parse_similar`'s `return v.duplicate(true)` to `var d := v.duplicate(true); d.erase("worlds"); return d`. Expect T1 FAIL (`similar deep-equal`, all three minors).
+- M2 (rounds a distance): in `_take_similar`, add `similar["worlds"][0]["near"][0]["d"] = 1.0` after the assign. Expect T1 FAIL (stringify mismatch).
+- M3 (reads from `world`): in `_take_similar`, change the assign line to `similar = world.get("similar", {})`. Expect T1 FAIL (first new_game stores `{}` vs the nonempty raw section).
+- M4 (whitelists fields): change `parse_similar`'s return to `return {"model": v.get("model"), "k": v.get("k"), "worlds": v.get("worlds")}`. Expect T2 FAIL; T1 also fails.
+- M5 (tick clears): add `similar = {}` at the top of `_finish`. Expect T3 FAIL.
+- M6 (missing reset): delete the `similar = {}` reset line in `new_game`. Expect T4b FAIL (second new_game keeps the old ranking).
+- M7 (malformed accepted): in `_take_similar`, change the non-Dictionary branch's `return false` to `return true`. Expect T5 FAIL (`new_game` reports ok).
+- M8 (weakened guard): in the new recipe, delete the `\.get\( *…\)` alternative from `pat`. Expect the recipe FAIL (probe count 3, not 4).
+- M9 (main drift): `sed -i '' 's/SimBridge.EARTH_MINOR/SimBridge.SIMILAR_MINOR/' main.gd`. Expect the Makefile main.gd guard FAIL and `git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd` FAIL; revert with `git checkout -- main.gd`.
+
+### Per-milestone gate list (controller, D-85 approved; iter62 replaces only the stale frozen-base main.gd line)
+
+```sh
+make deps AILANG=runtime/bin/ailang
+make lore-import CHECK=1 D=../stapledons-design AILANG=runtime/bin/ailang
+runtime/bin/ailang check --package sim
+(cd sim && ../runtime/bin/ailang test --package .)
+git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail
+make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang
+make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang
+make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang
+AILANG_BIN="$PWD/runtime/bin/ailang" godot --headless --path . --script tests/test_sim_bridge.gd
+git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd
+make stellar-protocol-test sound-archive-test AILANG=runtime/bin/ailang
+make ci-fast AILANG=runtime/bin/ailang
+PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang
+```
+
+The Landing section's own gate list carries the same stale frozen-base check inside a multi-file pathspec (`adf34a67… -- sim/ailang.lock main.gd tests/replays …`); at landing the controller applies the same merge-base replacement for its `main.gd` component. S0.2's executed gate list is historical and is not amended.
+
+### Size cap and wall budget
+
+Total executor diff ≤ 120 lines: bridge ≤ 30 (planned ≈ 27), tests ≤ 70 (planned ≈ 66-70), Makefile ≤ 20 (planned ≈ 12), changelog ≈ 4. Nothing needs dropping. If the tests overrun 70 lines, fold T2's two unknown-key asserts into `test_similar_real` (apply `parse_similar` to a copy of the raw section with an injected key) and say so in the report; do not cut a real-sim session or a drill. Wall clock (F4): baseline bridge test 78 s (98 asserts, 0 failures at base); exactly four new real-sim sessions — 14 (which also runs T3's two ticks), 15, 16 and 13 — at ≈ 15 s each, ≈ +60-70 s, so expect ≤ ~150 s; the inline fakes are python and add ~0 s. Acceptance stays: AC11 passes; AC1-AC10 stay green.
 
 ## Landing (pending; Day 3 afternoon, documentation only)
 
