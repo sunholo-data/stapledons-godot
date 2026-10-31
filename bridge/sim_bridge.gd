@@ -55,9 +55,12 @@ const HOME_TIERS_MINOR := 12
 ## `surface` (its limb-darkening law, convection cells, spots at the emission time, provenance), which
 ## SystemView draws through StarSurface. The game's sessions ask for 2.16 (EARTH_MINOR), which includes it.
 const SURFACE_MINOR := 13
+## Protocol 2.14 (R2-SIMILAR-S0 S0.2): `similar` on new_game only, stored as sent by parse_similar(). Asked for
+## by setting `want_minor = SIMILAR_MINOR`; a tick never carries it.
+const SIMILAR_MINOR := 14
 ## Protocol 2.15 (ledger D-113): `archive` {memory_health}, the Archive's hidden Memory Health (0..100;
 ## sim/archive_health.ail), in full states and whenever it changes. Not shown to the player; the sound
-## director's spire degradation layer follows it. Minor 14 is held for R2-SIMILAR-S0 S0.2.
+## director's spire degradation layer follows it. Minor 14 is SIMILAR_MINOR (R2-SIMILAR-S0).
 const ARCHIVE_MINOR := 15
 ## Protocol 2.16 (R3-EARTH-LINK, design r3/earth-link.md): `earth`, Earth's link (the Earth rate, the
 ## newest Earth light and its age, in_beam, Earth's beams, stale beams, plans in flight, the link window
@@ -130,6 +133,8 @@ var plan_nav: Dictionary = {}
 var gr: Dictionary = {}
 ## 2.9: the crew section (empty when no crew are aboard). See sim/protocol_crew.ail crewView.
 var crew: Dictionary = {}
+## 2.14: the `similar` section of the last new_game, as sent; {} below 2.14 and between games.
+var similar: Dictionary = {}
 var _line_bytes := PackedByteArray()
 ## R1-SHIP-UI record seam (record only; nothing sent changes): with record_sent on, every
 ## send() appends {tick, source, intents} to sent_log. `source` says who originated the
@@ -288,7 +293,8 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 	plan_nav = {}
 	gr = {}
 	crew = {}
-	if not _take_system(state["changes"]) or not _take_gr(state["changes"]) or not _take_crew(state["changes"]):
+	similar = {}
+	if not _take_system(state["changes"]) or not _take_gr(state["changes"]) or not _take_crew(state["changes"]) or not _take_similar(state["changes"]):
 		return _fail("bad_response")
 	world = state["changes"].duplicate(true)
 	world["tick"] = 0
@@ -673,6 +679,19 @@ func _take_gr(changes: Dictionary) -> bool:
 	if parsed.is_empty():
 		return false
 	gr = parsed
+	return true
+
+## The `similar` section (2.14) as sent, deep-copied; {} unless it is a Dictionary. Nothing in it is
+## read, rounded or recomputed here: the ranking is the sim's.
+static func parse_similar(v: Variant) -> Dictionary:
+	return v.duplicate(true) if typeof(v) == TYPE_DICTIONARY else {}
+
+func _take_similar(changes: Dictionary) -> bool:
+	if not changes.has("similar"):
+		return true
+	if typeof(changes["similar"]) != TYPE_DICTIONARY:
+		return false
+	similar = parse_similar(changes["similar"])
 	return true
 
 ## R2-CREW C6: queue intents for the next tick (after the caller's own, before the relay's).

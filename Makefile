@@ -87,6 +87,17 @@ similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = fr
 	  sed '\''1s/"minor":14/"minor":13/'\'' "$$out/stripped-214.ndjson" > "$$out/stripped-214-as-213.ndjson"; \
 	  cmp "$$out/stripped-214-as-213.ndjson" tests/fixtures/protocol_213_pristine.expected.ndjson; \
 	  cmp "$$out/stripped-215.ndjson" tests/fixtures/protocol_215_pristine.expected.ndjson'
+	@zsh -eu -c '\
+	  out=.godot/tmp/similar; mkdir -p "$$out"; \
+	  probe="$$out/vector_guard_probe.gd"; \
+	  q="'\''"; \
+	  pat="(\[[\"'\'']vector[\"'\'']\]|\.get\( *[\"'\'']vector[\"'\'']\)|\.vector([^A-Za-z0-9_]|\$$))"; \
+	  printf "var a = changes[\"vector\"]\nvar b = changes[$${q}vector$${q}]\nvar c = world.get(\"vector\")\nvar d = s.similar.vector\nvar e = s.a.vector2\n" > "$$probe"; \
+	  hits=$$(git grep --no-index -E "$$pat" -- "$$probe" | wc -l | tr -d " "); \
+	  if [[ "$$hits" != 4 ]]; then echo "similar-test guard: probe $$hits != 4, pattern broken" >&2; exit 1; fi; \
+	  if git grep -nE "$$pat" -- '\''*.gd'\'' '\''bridge/*.gd'\'' '\''ui/*.gd'\'' '\''demos/*.gd'\'' '\''sky/*.gd'\'' '\''interior/*.gd'\'' '\''physics/*.gd'\''; then echo "similar-test guard: production vector read" >&2; exit 1; fi; \
+	  git grep -q "SimBridge.EARTH_MINOR" -- main.gd || { echo "similar-test guard: main.gd lost EARTH_MINOR" >&2; exit 1; }; \
+	  if git grep -q "SIMILAR_MINOR" -- main.gd; then echo "similar-test guard: main.gd asks SIMILAR_MINOR" >&2; exit 1; fi'
 
 # Recording is separate from test. Validate both candidates before accepting either.
 similar-record:    ## Record new S0 sessions after ranking tests and independent oracles

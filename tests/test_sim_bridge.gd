@@ -472,6 +472,73 @@ func test_gr_live() -> bool:
 	return true
 
 
+## Inline 2.14 stand-in (S0.3): mode "two" sends `similar` on the first new_game only; "broken" a string.
+const PY_SIMILAR := """
+import json, sys
+mode, games = sys.argv[1], 0
+def out(m): print(json.dumps(m, separators=(",", ":")), flush=True)
+for raw in sys.stdin:
+	msg = json.loads(raw)
+	if msg["type"] == "hello":
+		out({"v": 2, "type": "hello", "proto": {"major": 2, "minor": 14}, "sim": "fake", "relativity": "0", "rng": "none-0"})
+	elif msg["type"] == "new_game":
+		games += 1
+		ch = {}
+		if mode == "broken": ch["similar"] = "broken"
+		elif games == 1: ch["similar"] = {"model": "fake", "worlds": [{"name": "w", "near": [{"d": 0.5}]}]}
+		out({"v": 2, "type": "state", "tick": 0, "status": "ok", "changes": ch, "events": [], "refused": [], "full": True})
+"""
+
+func fake_similar(mode: String) -> SimBridge:
+	var s := SimBridge.new()
+	s.want_minor = SimBridge.SIMILAR_MINOR
+	s.launch_override = {"bin": "python3", "args": PackedStringArray(["-c", PY_SIMILAR, mode])}
+	return s
+
+## AC11 (S0.3): the `similar` section at 2.14, 2.15 and 2.16 is stored exactly as sent; 2.14 survives ticks.
+func test_similar_real() -> bool:
+	for m in [SimBridge.SIMILAR_MINOR, SimBridge.ARCHIVE_MINOR, SimBridge.EARTH_MINOR]:
+		var s := SimBridge.new()
+		s.want_minor = m
+		var ok: bool = s.start() and s.hello_reply.get("proto", {}).get("minor") == float(m) and s.new_game(7, "sol")
+		var raw: Variant = s.state.get("changes", {}).get("similar")
+		ok = ok and typeof(raw) == TYPE_DICTIONARY and not raw.is_empty()
+		assert_bool("similar at 2.%d: sent, stored and parsed exactly (%s)" % [m, s.last_error], ok and s.similar == raw \
+			and SimBridge.parse_similar(raw) == raw and JSON.stringify(s.similar) == JSON.stringify(raw))
+		if ok and m == SimBridge.SIMILAR_MINOR:
+			var before := JSON.stringify(s.similar)
+			ok = s.send([], 0.1) and s.send([], 0.1)
+			assert_bool("similar at 2.14 survives two ticks; the tick's changes carry none", ok and not s.state["changes"].has("similar") and JSON.stringify(s.similar) == before)
+		s.stop()
+	var lit := {"worlds": [{"near": [{"d": 0.5}]}], "surprise": {"n": [1, 2]}}
+	var got := SimBridge.parse_similar(lit)
+	assert_bool("parse_similar keeps unknown keys as sent; non-dictionaries give {}", got == lit and SimBridge.parse_similar("x").is_empty())
+	got["surprise"]["n"].append(9)
+	got["worlds"][0]["near"][0]["d"] = 0.0
+	assert_bool("parse_similar deep-copies: the source is untouched", lit["surprise"]["n"] == [1, 2] and lit["worlds"][0]["near"][0]["d"] == 0.5)
+	return true
+
+func test_similar_below_and_reset() -> bool:
+	var b := SimBridge.new()
+	b.want_minor = SimBridge.SURFACE_MINOR
+	var ok: bool = b.start() and b.new_game(7, "sol")
+	assert_bool("2.13 session: no similar section, stored similar empty (%s)" % b.last_error, ok and b.similar.is_empty() and not b.state.get("changes", {}).has("similar"))
+	b.stop()
+	var f := fake_similar("two")
+	ok = f.start() and f.new_game(7, "sol") and not f.similar.is_empty()
+	ok = ok and f.new_game(7, "sol") and f.similar.is_empty()
+	assert_bool("2.14 fake: the second new game (no section) clears the first game's ranking", ok)
+	f.stop()
+	return true
+
+func test_similar_malformed() -> bool:
+	var f := fake_similar("broken")
+	var ok := f.start() and not f.new_game(7, "sol") and f.last_error == "bad_response" and f.similar.is_empty()
+	assert_bool("new_game with changes.similar = \"broken\" is bad_response; similar stays empty (%s)" % f.last_error, ok)
+	f.stop()
+	return true
+
+
 func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(scratch)
 	var probe := SimBridge.new()
@@ -504,6 +571,9 @@ func _init() -> void:
 		test_nav_plan_live,
 		test_nav_fixture,
 		test_gr_live,
+		test_similar_real,
+		test_similar_below_and_reset,
+		test_similar_malformed,
 	]
 	for t in tests:
 		# a GDScript runtime error aborts the function and returns null: count it
