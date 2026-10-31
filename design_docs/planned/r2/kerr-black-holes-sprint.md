@@ -1972,3 +1972,76 @@ git diff --check
 Baseline expected RED: pristine primary file absent gives shell rc127; after writing the shell first with the oracle absent, its missing-oracle assertion must give rc1. The oracle invocation is file-not-found before implementation. Test-first RED → implement → mutation drills (a1 set: factor-2, sqrt domain, NaN, six-decimal literal, empty fixture, wrong-unit) → independent evaluator (generator ≠ judge). Line counts enforced by the outer controller. rc0 alone is not review.
 
 Transport verification: active JSON contains 34 unique feature IDs; active LOC 4210 = parent total = velocity total; DAG acyclic; all passes false/null; five new children are at most 150 total physical lines each. The original K1.1a-a object remains in `superseded_features`. The historical/full-sprint approval status is retained; D-116 is the execution authority for this named headless scope. No implementation or independent evaluation is claimed by these planning checks.
+
+## Amendment iter61: K1.1a-a5 execution detail
+
+**Status:** execution detail for the already-authorised terminal child only (D-116 A: headless K1.1a children, oracle only, stop before publish). Planner: mission iter61, branch `mission/stapledon-iter61-kerr-a5`, base `d88dc6c9`. Controller facts F1–F9 re-checked below against the measured tree. No new human input; mechanical close-out of the iter49 row.
+
+**Scope (iter49 row, cap 100 TOTAL physical added/modified lines):** terminal wiring — documented regenerate→full-shell metadata-drift path (`--check` compare-only), RK-1..13 including RK-8b, plus RK-18 and RK-Q1 completeness audit, changelog fragment.
+
+**Gap (F4/F5, re-verified):** the documented regen writes the fixture from stdout (`python3 -I tools/kerr_ref.py > tests/fixtures/kerr/rk.json`); fixture and `--check` then agree by construction. The shell pins record *values* but never pins schema/unit/source literals (paired drift survives, rc 0) and never pins the exact record set (an extra or deferred record passes). `--check` is a compare, not a review.
+
+### Test-first matrix (RED on unedited tree → assertion → mutation killed)
+
+Shared temp-tree harness — the script locates its root from `$0`, so a copied tree runs standalone:
+
+```sh
+t=$(mktemp -d) && mkdir -p "$t/tools" "$t/tests/fixtures/kerr"
+cp tools/test_kerr_oracle.sh tools/kerr_ref.py "$t/tools/"
+cp tests/fixtures/kerr/rk.json "$t/tests/fixtures/kerr/"
+# <apply patch to $t>, then regenerate and audit:
+python3 -I "$t/tools/kerr_ref.py" > "$t/tests/fixtures/kerr/rk.json"
+sh "$t/tools/test_kerr_oracle.sh"; rc=$?; rm -rf "$t"; echo "rc=$rc"
+```
+
+| # | patch (then regen as above) | rc at base | rc after a5 | label grep |
+|---|---|---|---|---|
+| R1 | unit literal `'RK-18 SI (km, ms, rad/s)'` → `'RK-18 SI (m, s, rad/s)'` (F4 verbatim) | 0 | 1 | `metadata literal drift: unit` |
+| R2 | si_rows gains `, ("lens-preview", km)` (extra record, existing id) | 0 | 1 | `completeness: 40 records, unique keys` |
+| R3 | append `records.append(value_row("RK-14", "0.998", "lens-tide", horizons("0.9")[0], "deferred"))` | 0 | 1 | `completeness: exact id set` |
+| R4 | (post-impl only) delete the `cmp -s` no-op block from the shell | n/a | 1 | `guard a` |
+| R5 | (post-impl only) delete the `grep -F -q` line from the shell | n/a | 1 | `guard b` |
+| R6 | (post-impl only) delete the per-drill `rm -rf "$tmp"` line (anchored `^    rm`) | n/a | 1 | `guard c` |
+
+R1–R3 RED are reproduced at base with the harness above (all rc 0 today). R4–R6 are the F7 harness guards: each proof deletes one guard from a temp copy of the *shell* and the self-tests below must fail with the guard's label; at base the suite has no self-tests, so the guards currently survive their own removal. Sed deletions: a) `/cmp -s "\$root\/tools\/kerr_ref.py"/,+3d`; b) `/^    grep -F -q -- "\$2"/d`; c) `/^    rm -rf "\$tmp"$/d` (the trap line is single-quoted, indented differently).
+
+### Implementation sketch (executor)
+
+In `tools/test_kerr_oracle.sh` only (Makefile, `tools/kerr_ref.py`, `tests/fixtures/kerr/rk.json` unchanged — F3/F6 mean no record or target work remains):
+
+1. Header comment block (the *documented* path, canonical copy): edit `tools/kerr_ref.py`; `python3 -I tools/kerr_ref.py > tests/fixtures/kerr/rk.json`; `sh tools/test_kerr_oracle.sh` (full audit); `python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json` is compare-only against live output; `git diff tests/fixtures/kerr/rk.json` for human review.
+2. In `check()`, after `data = json.loads(generated.stdout)`: three literal pins — `assert data['schema'] == 'kerr-rk-seed-v1'`, `data['unit'] == <exact UNIT literal>`, `data['source'] == <exact SOURCE literal>`, labels `metadata literal drift: {schema,unit,source}`.
+3. In `check()`, after `rows` is built: `IDS = {RK-1..RK-13, RK-8b, RK-18, RK-Q1}` as one literal set; `assert {r['id'] for r in data['records']} == IDS, 'completeness: exact id set'`; `assert len(data['records']) == 40 == len(rows), 'completeness: 40 records, unique keys'`.
+4. `mutate()` gains three entries: `unit-drift` (R1 pair), `extra-record` (R2 pair), `deferred-id` (R3 pair). `drill()` gains an optional third argument: `if [ "${3:-}" = "regen" ]; then python3 -I "$tmp/tools/kerr_ref.py" > "$tmp/tests/fixtures/kerr/rk.json" || exit 1; fi` placed after the cmp guard, before `check "$tmp"`.
+5. New drills after the existing eight: `drill unit-drift 'metadata literal drift: unit' regen`, `drill extra-record 'completeness: 40 records, unique keys' regen`, `drill deferred-id 'completeness: exact id set' regen`; bump `test "$n" -eq 11`.
+6. Guard self-tests (subshell probes so drill's `exit` cannot kill the suite; F8: no `!`, everything `||`-guarded):
+   `rc=0; ( drill no-op 'instrument failure' ) || rc=$?; [ "$rc" -eq 3 ] || fail "guard a: no-op drill rc $rc, want 3"` (mutate entry `no-op`: old==new=`if not s.is_finite() or not 0 <= s < 1:`, so cmp finds no change);
+   `rc=0; ( drill factor2 'deliberately-never-matching-label' ) || rc=$?; [ "$rc" -eq 1 ] || fail "guard b: mislabeled drill rc $rc, want 1"`;
+   `tmp_before` captured after `check "$root"`, `tmp_after=$(ls -A "${TMPDIR:-/tmp}" | wc -l | tr -d ' ')` at the end, `=` compared, else `fail "guard c: TMPDIR $tmp_before -> $tmp_after"`. Subshells' own EXIT traps keep probes leak-free; the count check runs before the suite's final EXIT trap fires.
+7. Changelog fragment `changelogs/unreleased/YYYY-MM-DD-kerr-a5-terminal-wiring.md` (date = execution day, e.g. 2026-10-31 if landed same day) with `### Fixed`: metadata-drift gap closed with literal pins + regen drills; completeness audit; harness guard self-tests. Per `changelogs/unreleased/README.md` a fragment is the only mechanism; `CHANGELOG.md` is written by `tools/changelog_fold.sh` at tag time and is never hand-edited — the JSON `files` entry `CHANGELOG.md` reads as this fragment (iter49 cap row wording: "changelog").
+
+### Line budget (sums to 56 of 100)
+
+| file | adds | modifies (gross) | notes |
+|---|---|---|---|
+| tools/test_kerr_oracle.sh | 38 | 2×2 | comment block 11, pins 3, audit 3, mutate entries 4, regen hook 3, tmp_before 1, drills 3, probes+guard-c 10; `n` line and final echo each modified |
+| changelogs/unreleased/YYYY-MM-DD-kerr-a5-terminal-wiring.md | 16 | 0 | fragment |
+| Makefile | 0 | 0 | `test: kerr-oracle` already wired (F6) |
+| tests/fixtures/kerr/rk.json | 0 | 0 | 40 records already complete (F3) |
+| tools/kerr_ref.py | 0 | 0 | allowed only if needed; not needed |
+
+### Acceptance (each runnable; expected rc/label)
+
+1. `sh tools/test_kerr_oracle.sh` → rc 0, ~7 s, 11 drills `killed`, guard self-tests silent-pass.
+2. `make kerr-oracle AILANG=runtime/bin/ailang` → rc 0 (through the target, F8).
+3. `gmake kerr-oracle AILANG=runtime/bin/ailang` → rc 0 (GNU make, F8).
+4. `python3 -I tools/kerr_ref.py --check tests/fixtures/kerr/rk.json` → rc 0, no output.
+5. `make python-guard lint-precision uid-guard AILANG=runtime/bin/ailang` → rc 0.
+6. `git diff --check` → rc 0 on the execution diff.
+7. F4 repro (R1 harness, unit drift + regen) → rc != 0, stderr `metadata literal drift: unit` (was rc 0 at base).
+8. F5 repros (R2/R3 harness + regen) → rc != 0 with `completeness: 40 records, unique keys` and `completeness: exact id set` (were rc 0 at base).
+9. F7 proofs: temp-copy shell minus the cmp block / minus the grep line / minus the per-drill rm → rc != 0 with `guard a` / `guard b` / `guard c`.
+10. `b=$(ls -A "${TMPDIR:-/tmp}" | wc -l); sh tools/test_kerr_oracle.sh >/dev/null 2>&1; a=$(ls -A "${TMPDIR:-/tmp}" | wc -l); [ "$a" -eq "$b" ]` → rc 0 (F1 holds).
+11. `jq -e . .ailang/state/sprints/sprint_R2-KERR.json` and the every-other-byte check `diff <(git show HEAD:.ailang/state/sprints/sprint_R2-KERR.json | jq -S 'del(.features[] | select(.id=="K1.1a-a5"))') <(jq -S 'del(.features[] | select(.id=="K1.1a-a5"))' .ailang/state/sprints/sprint_R2-KERR.json)` → empty diff.
+
+Controller gates (unchanged): `make ci-fast AILANG=runtime/bin/ailang`, `PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang`. Independent evaluator (generator ≠ judge) after execution; `passes` stays false until then. rc 0 alone is not review.
