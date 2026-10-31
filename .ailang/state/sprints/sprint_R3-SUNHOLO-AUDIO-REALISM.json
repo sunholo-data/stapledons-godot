@@ -1,13 +1,13 @@
 {
   "sprint_id": "R3-SUNHOLO-AUDIO-REALISM",
-  "status": "in_progress",
+  "status": "completed",
   "approved": {
     "by": "Mark (attended 2026-10-30)",
     "how": "\"looks great go on audio and then lets preview the new sounds\": the plan and OQ1-OQ8 at their recommendations"
   },
   "created": "2026-10-30",
-  "design_doc": "design_docs/planned/r3/sunholo-audio-realism.md",
-  "sprint_plan": "design_docs/planned/r3/sunholo-audio-realism-sprint.md",
+  "design_doc": "design_docs/implemented/r3/sunholo-audio-realism.md",
+  "sprint_plan": "design_docs/implemented/r3/sunholo-audio-realism-sprint.md",
   "branch": "feat/sunholo-audio-realism (game, execution, from the main containing #344) + feat/audio-0.6 (sunholo-data/ailang-packages, fresh clone ~/dev/sunholo-data/ailang-packages-audio06); this plan on design/sunholo-audio-realism",
   "origin": "Mark, 2026-10-30, after the EL3b.7 home beds: \"they are nice, not really realistic sounding but spooky and unique enough to include - but yeah if we can get closer to real sounding effects etc why not try it\"; he had agreed the package should gain tools beyond tones and noise (plan only, stop for approval)",
   "ailang_version": "v0.54.18",
@@ -374,9 +374,9 @@
         "the re-voiced home set renders in <= 60 s on the strict VM (recorded)",
         "design AC12: the review page at refs/sound/r3-realism/ lists 13 home_* rows, >= 11 changed; Mark's ruling recorded as a RESOLVED ledger row; no PR, rig run or make deps while the path pin is in place"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-30",
-      "completed": null,
+      "completed": "2026-10-30",
       "notes": "Game branch feat/sunholo-audio-realism from origin/feat/earth-link, path pin, pushed (no PR, no rig). 2d4c7ef7 REVOICE: shells on parseSoundsAs/renderSound (review_main's Part renamed MixPart), synth_test 0.6 pin 33eb23cb (VM = interpreter); AC9: 41 sounds byte for byte with recipes unchanged. dd08f99f: 12 home_* re-voiced (pips kept); review takes in data/audio/review_takes.json rendered to build/sound_takes (home_family_tune_b, home_family_c, home_town_bells_c); sound-synth-check 41/41, AC10 only provenance outside home_*, sound-levels 44/0 (home_static first failed its band at -52.2 dBFS; crackle lowered), sound-levels-parity 0 differences, sound-check 49/0, sound-assets-check 18,104,524 of 20,000,000 bytes, sound-test 46/0, sound-stage-check 3.68 MB QOA. Strict-VM render of the 13: 58.4 s (budget 60; v2 22.05 s; first draft 63.7 s, thinned). Paused at P2: the review page is built by the coordinator from the WAVs; Mark's per-sound ruling not yet recorded."
     },
     {
@@ -411,10 +411,10 @@
         "design AC14: no sim, audio/ or Python allowlist change; make python-guard and make sound-assets-check pass",
         "design AC15: tools/rig_check.sh <PR> posts a green rig/full; the GitHub fast tier is green"
       ],
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-30",
+      "notes": "Mark published sunholo/audio 0.6.0 (and 0.6.1, a smoke-only fix: the package CI's 30 s smoke limit, PUB015); package PR sunholo-data/ailang-packages#172 merged after CI passed; the game pins the registry 0.6.0 (tools/audio, relocked; make deps ok; 41 sounds byte for byte, the manifest unchanged); game PR #361 green on the rig (make test, 74 min) and the fast tier, merged as 56a532a4."
     },
     {
       "id": "AR10",
@@ -427,14 +427,14 @@
         ".ailang/state/evaluations/eval_R3-SUNHOLO-AUDIO-REALISM_round_1.json scores >= 70",
         "design_docs/implemented/r3/sunholo-audio-realism.md, -sprint.md and -report.md exist; changelogs/unreleased/<date>-sunholo-audio-realism.md opens with '### '"
       ],
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-30",
+      "notes": "Evaluation 83/100 PASS (Sonnet). Findings addressed: the Receiver correction measured through the mixer (test_receiver_measured: 1000/1000/1011 Hz Receiver, 499/2000/15998 Hz True at D = 0.5/2/16); AC12 and AC14 amended; the sprint JSON closed; landing (docs to implemented/r3, the report, the changelog fragment, the README row, the EL3b.7 row marked superseded)."
     }
   ],
   "reviews": [],
-  "progress_note": "AR0-AR7 done in ailang-packages feat/audio-0.6 (b4e3fff, pushed, not published, no PR); AR8 done up to the listening ruling on stapledons-godot feat/sunholo-audio-realism (dd08f99f, path pin, pushed, no PR). Next: Mark listens (P2), then AR9.",
+  "progress_note": "Completed 2026-10-30: PR #361 merged (rig/full 74 min), package PR #172 merged, 0.6.0 and 0.6.1 published; evaluation 83/100 PASS; landing done.",
   "upstream_reports": [
     "ailang#2029: foldl that conses onto its accumulator is quadratic (VM and interpreter), v0.54.18"
   ],
@@ -442,5 +442,12 @@
     "by": "Mark (attended 2026-10-30)",
     "how": "\"yeah these sound good - lets merge it in to the game\", \"v3\"",
     "decision": "v3 for all twelve re-voiced sounds, pips unchanged; family tune take A (music box); receiver colour not adopted"
+  },
+  "evaluation": {
+    "round": 1,
+    "score": 83,
+    "verdict": "PASS",
+    "by": "independent evaluator (Sonnet)",
+    "path": ".ailang/state/evaluations/eval_R3-SUNHOLO-AUDIO-REALISM_round_1.json"
   }
 }
