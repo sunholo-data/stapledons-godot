@@ -747,7 +747,7 @@
     {
       "id": "S0.3",
       "title": "bridge parse (similar 14; game sessions at 14, 15 and 16)",
-      "status": "pending",
+      "status": "done",
       "description": "iter62 amendment: RED first — real-sim deep-equality tests at minors 14, 15 and 16 (16 is what the shipped game per main.gd:304 actually negotiates), lifetime at 14, unknown-key preservation, below-minor 13, and inline-fake reset and malformed (bad_response) tests, all written and run before the bridge change (at base they fail to parse: no similar/SIMILAR_MINOR/parse_similar). Bridge: SIMILAR_MINOR := 14 between SURFACE_MINOR (:57) and ARCHIVE_MINOR (:61) with a ## comment; var similar: Dictionary = {} documented; similar = {} in the new_game reset run (:287-290); _take_similar joins the new_game bad_response chain (:291) — absent key true, non-Dictionary false, Dictionary stored via parse_similar; parse_similar returns the section as sent (deep copy, unknown keys preserved, {} for a non-Dictionary). _finish untouched. Keep ARCHIVE_MINOR := 15, default want_minor, and main.gd byte-identical at its merge-base asking EARTH_MINOR (16). Extend the Makefile similar-test recipe with one zsh block: production vector-read guard over root *.gd, bridge/, ui/, demos/, sky/, interior/, physics/ (tests/ and tools/ never named), positive control probe requiring exactly 4 hits (includes a vector2 decoy), and main.gd guards (has SimBridge.EARTH_MINOR; no SIMILAR_MINOR). Gate line: git diff --exit-code $(git merge-base origin/main HEAD) -- main.gd (the frozen adf34a67 base is 7 commits stale). Exactly four added real-sim sessions (14, 15, 16, 13; ~15 s each over the 78 s baseline); T3's two ticks ride the 14 session; fakes run through launch_override python3 -c inside tests/test_sim_bridge.gd — tests/fixtures/fake_sim.py untouched. Diff cap 120 lines (bridge 30, tests 70, Makefile 20). Nine mutation drills M1-M9 after GREEN; each test row names its killing drill. No display, rendering or GDScript similarity maths.",
       "estimated_loc": 80,
       "estimated_documentation_loc": 0,
@@ -835,10 +835,37 @@
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
       "gate_owner": "controller under D-85 approval; no runtime gates run by the iteration 62 planner; the frozen-base main.gd gate (adf34a67) is replaced by the merge-base gate per the iter62 amendment",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null
+      "passes": true,
+      "started": "2026-10-31",
+      "completed": "2026-10-31",
+      "actual_loc": {
+        "production": 21,
+        "tests": 70,
+        "makefile": 11,
+        "changelog": 2
+      },
+      "evidence": {
+        "iteration": 62,
+        "pr": 366,
+        "build_commit": "e151c903c5f4d3b27a3fbda99091c0055aa0eacd",
+        "plan_commit": "9cecc94b",
+        "merge": "ca1e04d0be1bc6502fe84abc28ad9f9c39cb55dd",
+        "red": "new tests fail to parse at base (Cannot find member SIMILAR_MINOR); Godot exits 0 on the parse error, so RED is read from the log (0 ok, no summary), see queue row 7x",
+        "green": "tests/test_sim_bridge.gd rc 0, 107 ok (base 98), sim bridge: 0 failures, 79 s; make similar-test rc 0 (probe 4 hits)",
+        "drills": "M1-M9 all killed with named failures (executor), plus the second main.gd guard branch",
+        "rig_full": "rig-check: ok, e151c903 green (make test, 106 min), AILANG v0.54.18",
+        "fast_tier": {
+          "head": "success",
+          "merge": "success (run 41213997354)"
+        },
+        "evaluation": ".ailang/state/evaluations/eval_R2-SIMILAR-S0_S0.3_round_1.json (Sonnet 5.5, 90/100 PASS, 0 blocking)",
+        "owed_at_landing": [
+          "guard misses .get(\"vector\", default) and .has(\"vector\")",
+          "SIMILAR_MINOR := 15 survives: pin the negotiated minor 14",
+          "empty {} similar section untested",
+          "storing changes[\"similar\"] without parse_similar (aliasing) untested"
+        ]
+      }
     },
     {
       "id": "Landing",
@@ -919,7 +946,18 @@
       "actual_loc": null
     }
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "milestone": "S0.3",
+      "round": 1,
+      "evaluator": "claude-sonnet-5-5 (Agent tool)",
+      "score": 90,
+      "pass": true,
+      "blocking": 0,
+      "path": ".ailang/state/evaluations/eval_R2-SIMILAR-S0_S0.3_round_1.json",
+      "date": "2026-10-31"
+    }
+  ],
   "planning_validation": {
     "json_command": "jq -e . .ailang/state/sprints/sprint_R2-SIMILAR-S0.json",
     "expected_output_files": [
