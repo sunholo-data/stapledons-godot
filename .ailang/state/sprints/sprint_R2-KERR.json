@@ -2385,7 +2385,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Full quality completed on v0.56.0: compile58, tests730/730, smokePASS; PUB006 blocks publication (spurious tidalRadialOrbit counterexample caused by float / emitted as integer div),4 verifier errors. Minimal repro and canonical inbox_1793649570012_28ca24e0 retained. Scoped package eval89PASS. No publish-ready line until upstream fix and clean quality/dry-run. No workaround."
+      "notes": "Full quality (exit2) and publish --dry-run (exit1) completed on v0.56.0: compile58, tests730/730, smokePASS; PUB006 blocks publication (spurious tidalRadialOrbit counterexample caused by float / emitted as integer div),4 verifier errors. Minimal repro and canonical inbox_1793649570012_28ca24e0 retained. Scoped package eval89PASS. Both attest730/730 tests and smokePASS but refuse PUB006. No publish-ready line until upstream fix and clean quality/dry-run. No workaround."
     },
     {
       "id": "K1.4-a",
