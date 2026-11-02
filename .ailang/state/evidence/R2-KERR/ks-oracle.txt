@@ -1,0 +1,1 @@
+kerr-ks-oracle: 140 escaping rays,0 failures,max 3.8005284e-09 rad; capture unresolved by this oracle

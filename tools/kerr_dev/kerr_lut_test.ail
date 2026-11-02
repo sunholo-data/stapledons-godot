@@ -1,0 +1,16 @@
+module stapledons/sim/tools/kerr_lut_test
+import std/result (Ok,Err)
+import pkg/sunholo/relativity/hyper (absf)
+import ./kerr_lut (nChi,nRows,nCols,rowRadius,rowChi,boundary,coefficients)
+test "approved table layout has exact radius endpoints and periodic chi" {
+  nChi()==96 && nRows()==64 && nCols()==1536 && rowRadius(0)==2.0 && rowRadius(63)==1000000.0 && rowChi(96)==rowChi(0)
+}
+test "zero-spin fitted log coefficient is one and twist is zero" {
+  match coefficients(6.0,0.0,0.7,1.0e-8) {Err(_)=>false,Ok(c)=>absf(c.par-1.0)<1.0e-4 && c.twist==0.0}
+}
+test "nonzero-spin twist coefficient is measured independently" {
+  match coefficients(6.0,0.9,0.7,1.0e-8) {Err(_)=>false,Ok(c)=>c.twist < -0.001 && c.par>0.0}
+}
+test "zero spin boundary is a Synge angle in radians" {
+  match boundary(6.0,0.0,0.0) {Err(_)=>false,Ok(a)=>absf(a-0.7853981633974483)<1.0e-12}
+}

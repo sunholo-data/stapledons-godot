@@ -1,0 +1,29 @@
+{
+  "sprint_id": "R2-KERR",
+  "scope": "package K1.1a/K1.1b maths + axis/compact/regular-action-angle solver (af2a767); not GPU sprint, not publication",
+  "round": 1,
+  "evaluator": "claude-sonnet-5-5",
+  "candidate_commit": "af2a76785d3ee406950be74d5b0e7ddfbe4ad7f3",
+  "score": 89,
+  "verdict": "PASS",
+  "publication_ready": false,
+  "publication_conditions": ["pkg quality log /private/tmp/kerr-quality-final056.txt was empty at evaluation", "exact-head axis-compact sweeps and mutation scripts not yet confirmed", "dry-run pending"],
+  "breakdown": {"radial_chart":14,"sphere_pole_sky_phase":18,"conditioning_refinement":14,"zero_spin_capture":9,"frame_tides":9,"tests_gates":13,"evidence_honesty":9,"docs_api":3},
+  "blockers": [],
+  "nonblockers": [
+    "SkyTrace.phi is the far-sphere azimuth, differs from sky azimuth by up to ~1e-2 within ~0.01 of the pole; undocumented",
+    "axis-compact logs count non-Err only (not accuracy) and predate af2a767 final change; axis-sweep logs contain the four old failures",
+    "rt=0 fallback for inward ray is unreachable but should be an explicit Err",
+    "legacy BL Carter exports not near-axis-safe (documented)",
+    "280/49/12 oracle fixtures use the repo oracle sharing the sphere chart; independent KS check supplements",
+    "scipy/numpy not installed here, repo oracle not runnable"
+  ],
+  "independent_evidence": {
+    "ks_oracle_rays": 160, "compared_escaping": 140, "worst_sky_err": 3.8e-9,
+    "captured_agreement": "10/12 oracle; other 2 verified captured via R(u)>0 on (r+,u), oracle artefact",
+    "nearcritical_rays": 30, "step_independence": "0.02/0.005/0.0025 agree ~1e-10", "oracle_limited_err": 2.0e-5,
+    "package_logs": {"check": "58 files passed", "tests": "729 passed 0 failed 0 skipped, 22.3s"}
+  },
+  "limitations": ["did not rerun mutations or full pkg quality", "tides not re-derived", "oracle is RK4 + finite differences, valid for escaping rays only"],
+  "report_path": ".ailang/state/evaluations/eval_R2-KERR_package_compact_round_1.json"
+}

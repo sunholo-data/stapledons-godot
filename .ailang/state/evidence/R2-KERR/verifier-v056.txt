@@ -1,0 +1,40 @@
+
+→ Verifying contracts in kerr.ail
+  Solver: Z3 version 4.16.0 - 64 bit
+  Scope: verifier reported verified under the encoded model; encoded model: float=Real, int=Int; runtime equivalence not_established (not an IEEE/machine-arithmetic proof); absent recursion depth is not an inductive proof; runtime contracts not_measured
+
+  ⚠ SKIPPED photonOrbitPro
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED horizonInnerR
+    Reason: SMT declaration closure could not resolve a required sort (cannot encode function body: unresolvable SMT declaration types: calls user function "spinRoot" that is not SMT-encodable in this context) [unsupported_encoding]
+    Hint: The function uses a type shape whose required SMT sorts cannot be declared
+  ⚠ SKIPPED horizonR
+    Reason: SMT declaration closure could not resolve a required sort (cannot encode function body: unresolvable SMT declaration types: calls user function "spinRoot" that is not SMT-encodable in this context) [unsupported_encoding]
+    Hint: The function uses a type shape whose required SMT sorts cannot be declared
+  ⚠ SKIPPED orbitOmegaKerr
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED horizonOmega
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED photonOrbitRet
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED orbitClockRateKerr
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED frameDragOmega
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED iscoPro
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED staticClockRateKerr
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED metricDelta
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED orbitLocalSpeedKerr
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED staticLimitR
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED iscoRet
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ⚠ SKIPPED zamoClockRate
+    Reason: no ensures clause (nothing to verify) [missing_postcondition]
+  ○ NO CONTRACTS [2mvalidSpin[0m
+
+  16 exported functions: 15 skipped, 1 without contracts

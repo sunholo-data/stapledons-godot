@@ -1,0 +1,49 @@
+-- R2-KERR K1.2 development layout; the consumer pin stays published-only.
+-- This module only arranges package physics on the approved table grid.
+module stapledons/sim/tools/kerr_lut
+import std/math (sin,cos,exp,log,intToFloat)
+import std/result (Result,Ok,Err)
+import pkg/sunholo/relativity/kerr_frame (sourceConstants)
+import pkg/sunholo/relativity/kerr_geodesic (classifyCapture,Captured,Escaped,Critical,InvalidRay)
+import pkg/sunholo/relativity/kerr_trace (traceLens,lensAngles)
+import pkg/sunholo/relativity/hyper (tanh)
+export pure func nChi()->int=96
+export pure func nRows()->int=64
+export pure func nCols()->int=1536
+export pure func rowRadius(j:int)->float =
+  if j<=0 then 2.0 else if j>=63 then 1000000.0 else 1.0+exp(log(999999.0)*intToFloat(j)/63.0)
+export pure func rowChi(k:int)->float=6.283185307179586*intToFloat(k%96)/96.0
+pure func bisect(u:float,s:float,chi:float,lo:float,hi:float,n:int)->Result[float,string] =
+  if n==0 then Ok((lo+hi)/2.0) else {
+    let psi=(lo+hi)/2.0;
+    let c=sourceConstants(u,s,{x:0.0-cos(psi),y:sin(psi)*sin(chi),z:sin(psi)*cos(chi)});
+    match classifyCapture(u,c.lambda,c.eta,s,false) {
+      Captured=>bisect(u,s,chi,psi,hi,n-1),Escaped=>bisect(u,s,chi,lo,psi,n-1),
+      Critical=>Ok(psi),InvalidRay=>Err("boundary_invalid_ray")
+    }
+  }
+export pure func boundary(u:float,s:float,chi:float)->Result[float,string]
+  requires {u>=4.0 && u<=2000000.0 && s>=0.0 && s<=0.998}
+{bisect(u,s,chi,0.0,1.5707963267948966,80)}
+export type Coeff={boundary:float,par:float,twist:float}
+export type Sample={par:float,twist:float}
+export pure func raw(u:float,s:float,psi:float,chi:float,h:float)->Result[Sample,string] =
+  match traceLens(u,s,{x:0.0-cos(psi),y:sin(psi)*sin(chi),z:sin(psi)*cos(chi)},h) {
+    Err(m)=>Err(m),Ok(v)=>{let a=lensAngles(v,psi);Ok({par:a.bend,twist:a.twist})}
+  }
+export pure func coefficients(u:float,s:float,chi:float,cutoff:float)->Result[Coeff,string] =
+  match boundary(u,s,chi) {Err(m)=>Err(m),Ok(b)=>
+    match raw(u,s,b*(1.0+cutoff),chi,0.0025) {Err(m)=>Err(m),Ok(a)=>
+      match raw(u,s,b*(1.0+cutoff*10.0),chi,0.0025) {Err(m)=>Err(m),Ok(z)=>{
+        let dl=log(tanh(cutoff*10.0))-log(tanh(cutoff));
+        Ok({boundary:b,par:(a.par-z.par)/dl,twist:(a.twist-z.twist)/dl})
+      }}
+    }
+  }
+export pure func regular(u:float,s:float,chi:float,c:Coeff,x:float,h:float)->Result[Sample,string] {
+  let p=c.boundary*(1.0+exp(x));let psi=if p>3.141592653589793 then 3.141592653589793 else p;
+  let ll=log(tanh((psi-c.boundary)/c.boundary));
+  match raw(u,s,psi,chi,h) {Err(m)=>Err(m),Ok(a)=>Ok({par:a.par+c.par*ll,twist:a.twist+c.twist*ll})}
+}
+export pure func fitProbe(i:int)->{boundary:Result[float,string],fit:Result[Coeff,string]} =
+  {boundary:boundary(6.0,0.9,0.7),fit:coefficients(6.0,0.9,0.7,if i==0 then 1.0e-8 else 1.0e-7)}

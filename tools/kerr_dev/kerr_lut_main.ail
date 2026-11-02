@@ -1,0 +1,57 @@
+-- Development preflight: JSON doubles, not a production/pinned table asset.
+module stapledons/sim/tools/kerr_lut_main
+import std/result (Result,Ok,Err)
+import std/fs (writeFile)
+import std/json (encode,jo,ja,jnum,js,kv)
+import std/list (map,range)
+import std/math (exp,log,intToFloat,sin,cos)
+import pkg/sunholo/relativity/kerr_trace (traceLens,lensAngles)
+import ./kerr_lut (Coeff,rowRadius,rowChi,boundary,coefficients,regular)
+pure func nodes(i:int,s:float,acc:[float])->Result[[float],string] =
+  if i<0 then Ok(acc) else match boundary(2.0*rowRadius(i/96),s,rowChi(i%96)) {
+    Err(msg)=>Err(msg),Ok(b)=>nodes(i-1,s,b::acc)
+  }
+type Study={u:float,s:float,chi:float,n:int,out:string,revision:string}
+pure func rowValues(i:int,a:Study,c:Coeff,acc:[float])->Result[[float],string] =
+  if i<0 then Ok(acc) else {
+    let x=log(1.0e-8)+(log((3.141592653589793-c.boundary)/c.boundary)-log(1.0e-8))*intToFloat(i)/intToFloat(a.n-1);
+    match regular(a.u,a.s,a.chi,c,x,0.005) {Err(m)=>Err(m),Ok(v)=>rowValues(i-1,a,c,v.par::v.twist::acc)}
+  }
+pure func rowProbes(i:int,a:Study,c:Coeff,acc:[float])->Result[[float],string] =
+  if i<0 then Ok(acc) else {
+    let x=log(1.0e-8)+(log((3.141592653589793-c.boundary)/c.boundary)-log(1.0e-8))*(intToFloat(i)+0.5)/intToFloat(a.n-1);
+    let psi=c.boundary*(1.0+exp(x));
+    match traceLens(a.u,a.s,{x:0.0-cos(psi),y:sin(psi)*sin(a.chi),z:sin(psi)*cos(a.chi)},0.0025) {
+      Err(m)=>Err(m),Ok(r)=>rowProbes(i-1,a,c,psi::r.ray.sky.x::r.ray.sky.y::r.ray.sky.z::acc)
+    }
+  }
+export func rowStudy(a:Study)->Result[(),string] ! {FS} =
+  match coefficients(a.u,a.s,a.chi,1.0e-8) {Err(m)=>Err(m),Ok(c)=>
+    match rowValues(a.n-1,a,c,[]) {Err(m)=>Err(m),Ok(v)=>match rowProbes(a.n-2,a,c,[]) {Err(m)=>Err(m),Ok(p)=>{
+      writeFile(a.out,encode(jo([kv("schema",js("kerr-row-preflight-v1")),kv("revision",js(a.revision)),
+        kv("u",jnum(a.u)),kv("spin",jnum(a.s)),kv("chi",jnum(a.chi)),kv("columns",jnum(intToFloat(a.n))),
+        kv("boundary",jnum(c.boundary)),kv("a_par",jnum(c.par)),kv("a_twist",jnum(c.twist)),
+        kv("values",ja(map(jnum,v))),kv("probes",ja(map(jnum,p)))])));
+      Ok(())
+    }}}
+  }
+pure func probes(i:int,acc:[float])->Result[[float],string] =
+  if i<0 then Ok(acc) else {
+    let r=1.0+exp(log(999999.0)*(intToFloat(i/96)+0.5)/63.0);
+    let chi=6.283185307179586*(intToFloat(i%96)+0.5)/96.0;
+    match boundary(2.0*r,0.9,chi) {Err(msg)=>Err(msg),Ok(b)=>probes(i-1,r::chi::b::acc)}
+  }
+pure func goldenProbes(i:int,acc:[float])->Result[[float],string] =
+  if i<0 then Ok(acc) else {
+    let r=if i/96==0 then 3.0 else if i/96==1 then 5.0 else 10.0;
+    let chi=6.283185307179586*(intToFloat(i%96)+0.5)/96.0;
+    match boundary(2.0*r,0.9,chi) {Err(msg)=>Err(msg),Ok(b)=>goldenProbes(i-1,r::chi::b::acc)}
+  }
+export func mesh(path:string)->Result[(),string] ! {FS} =
+  match nodes(6143,0.9,[]) {
+    Err(msg)=>Err(msg),Ok(a)=>match probes(6047,[]) {Err(msg)=>Err(msg),Ok(p)=>match goldenProbes(287,[]) {Err(msg)=>Err(msg),Ok(g)=>{
+      writeFile(path,encode(jo([kv("schema",js("kerr-boundary-preflight-v1")),kv("spin",jnum(0.9)),
+        kv("rows",ja(map(\i. jnum(rowRadius(i)),range(0,64)))),kv("angles",ja(map(jnum,a))),kv("probes",ja(map(jnum,p))),kv("golden_probes",ja(map(jnum,g)))])));
+      Ok(())
+    }}}
+  }
