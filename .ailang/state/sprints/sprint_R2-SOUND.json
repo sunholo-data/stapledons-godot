@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-SOUND",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended)",
   "approved_on": "2026-10-20",
@@ -56,6 +56,11 @@
       "date": "2026-11-02",
       "event": "started",
       "note": "S2_VOYAGE started (D-144: attended parallel agents; Claude C, branch feat/r2-sound-s2). Scope per the brief: plan select, the commit hold and seal, the drive, the dust counter, arrival and the home beacon, made exact by the standing order of 2026-10-30 (no compromises on the physics; True and labelled Processed settings): the k = 0.25 compressed pitch is removed; the beacon runs at the sim's earth.rate with the comms station's True / Receiver machinery (EarthFeed.receiver_plan, data/ui/comms_feed.json sound.receiver)."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "paused_for_review",
+      "note": "S2 built (PR #375, draft) and its listening review published to refs/sound_s2; paused for Mark's listen."
     }
   ],
   "implements": [
@@ -65,7 +70,10 @@
     "stapledons-design vision/design-decisions.md 2026-09-28 (D-7, D-8: voices, text-only)"
   ],
   "github_issues": [],
-  "related_prs": [],
+  "related_prs": [
+    "#375 (S2, draft)",
+    "stapledons-design#52 (S2 canon, draft)"
+  ],
   "external_dependencies": [
     {
       "what": "The bridge as built by R2-DECK-LAYOUT DL1-DL3 (station use points, lift, mast, spire light)",
@@ -238,7 +246,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Built 2026-11-02 on feat/r2-sound-s2 (PR #375, draft). ShipSound follows journey_sim.stepped (events, plan_select state edge, on_dust) and the holds (ShipConsoles.confirm_held_s, GalaxyMap.hold_s); HomeBeacon (audio/home_beacon.gd) plays the beacon at earth.rate unrounded via EarthFeed.receiver_plan with the station's setting; Receiver correction split between a carrier bank (25/100/400/1600/6400 Hz) and a Beacon bus residual within x2, because Godot's pitch shift mis-tunes large corrections (314 Hz for 400 Hz at D = 0.0709, measured). New sounds: plan_select, home_beacon + 4 banks (sunholo/audio 0.6.0). Director: set_pitch applies every value, own_player, stops, dust dead-time reset on a new game, one dust start per frame. Local gates green: sound-test 79, ship-sound-test 40, sound-voyage-test 10 (real-sim golden, two processes), sound-check 55, sound-levels 50, levels-parity 0 diffs, assets 19.1/20 MB, stage 3.9/6 MB, synth-check 47 byte for byte. Listening review https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/index.html. Paused for Mark's listen; not landed. S2b (deferred): stop_turn signal, brake_notice, crew_hold, medium_change, interlude_bed, bh_enter."
     },
     {
       "id": "S3_LANDING",
