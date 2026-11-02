@@ -1,11 +1,11 @@
 # Sprint R3-WORLDS: plan
 
 **Design:** [worlds.md](worlds.md) (R3 W1 and W2).
-**Status:** Proposed 2026-11-02, **waiting for Mark's approval**; nothing executes before it. OQ1–OQ9 are open; OQ1 (presets) and OQ5 (the baseline's transcription choices) gate W1.4 and W1.0 respectively.
+**Status:** Approved by Mark, 2026-11-02 (D-144); executing. Every recommendation in OQ1–OQ9 is ruled accepted. Package publishes and visible landings remain attended.
 **Progress file:** `.ailang/state/sprints/sprint_R3-WORLDS.json`
 **Branches:**
 - this plan: `design/r3-worlds`;
-- execution: `feat/worlds-w1` (W1.0–W1.4) and `feat/worlds-w2` (W2.0–W2.5) in the game, each from a fresh full clone `../stapledons-godot-<topic>` (no worktrees);
+- execution: `design/r3-worlds`, continuing draft PR #371 in this fresh full clone;
 - the packages: `feat/celestial-habitability` and `feat/worlds` in a fresh `sunholo-data/ailang-packages` clone at origin/main;
 - the design repo: `feat/life-and-worlds` (W1.0, W1.4's recorded offsets, W2.5's Archive entries), a fresh clone; never the main checkout.
 

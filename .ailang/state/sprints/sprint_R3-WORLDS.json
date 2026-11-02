@@ -13,7 +13,7 @@
   "ailang": {
     "pin": "v0.54.18",
     "binary": "runtime/bin/ailang",
-    "prompt_version_loaded": "v0.16.7"
+    "prompt_version_loaded": "v0.16.7 (read in this execution session, pinned binary v0.54.18)"
   },
   "external_dependencies": [
     "stapledons-design physics/life-and-worlds.md (W1.0) merged",
@@ -213,9 +213,9 @@
       ],
       "routing": "attended (canon); loop may draft",
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Draft registry PR https://github.com/sunholo-data/stapledons-design/pull/50 (41 LW rows); primary PDFs checked; M=0.75 empirical attribution unverified and explicitly labelled. Lore import/value/check with one-digit LW mutant pass. Registry not merged; final canon review remains attended."
     },
     {
       "id": "W1.1",
@@ -231,7 +231,7 @@
       ],
       "routing": "loop to publish; publish attended",
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "notes": null
     },
@@ -250,7 +250,7 @@
       ],
       "routing": "loop to publish; publish attended",
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "notes": null
     },
@@ -270,9 +270,9 @@
       ],
       "routing": "loop",
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Independent keyed RNG complete: 10000 UTF-8 hashes/keyed draws/top53 match Python oracle on strict VM and interpreter; existing streams unchanged. Calibration pending worlds publication and S2 photon budgets."
     },
     {
       "id": "W1.4",
@@ -292,7 +292,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Not run: registry exposes only sunholo/observe 0.1.0, not required S2 0.2.0; celestial0.6/worlds0.1 await attended publication. No preset offsets/results or slice seed invented."
     },
     {
       "id": "W2.0",
@@ -308,7 +308,7 @@
       ],
       "routing": "loop",
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "notes": null
     },
