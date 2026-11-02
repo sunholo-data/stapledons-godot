@@ -1,0 +1,40 @@
+
+→ Verifying contracts in float_div_verify_repro.ail
+  Solver: Z3 version 4.16.0 - 64 bit
+  Scope: verifier reported verified under the encoded model; encoded model: float=Real, int=Int; runtime equivalence not_established (not an IEEE/machine-arithmetic proof); absent recursion depth is not an inductive proof; runtime contracts not_measured
+
+  ✗ VIOLATION tide
+    Counterexample:
+      result: Real = (let ((a!1 (= (>= 1.0 (to_real 0)) (>= (* (* 2.0 $p_r) $p_r $p_r) (to_real 0)))
+      $p_r: Real = (/ 7.0 4.0)
+    SMT-LIB:
+      ; Verification of tide
+      (set-logic ALL)
+      (declare-const $p_r Real)
+      (define-const result Real (let (($tmp1 (* 2.0 $p_r))) (let (($tmp2 (* $tmp1 $p_r))) (let (($tmp3 (* $tmp2 $p_r))) (let (($tmp4 (let (($ail_n 1.0) ($ail_d $tmp3)) (ite (= (>= $ail_n 0) (>= $ail_d 0)) (div (abs $ail_n) (abs $ail_d)) (- (div (abs $ail_n) (abs $ail_d))))))) (let (($tmp5 (* 2.0 $p_r))) (let (($tmp6 (- $tmp5 3.0))) (let (($tmp7 (let (($ail_n 3.0) ($ail_d $tmp6)) (ite (= (>= $ail_n 0) (>= $ail_d 0)) (div (abs $ail_n) (abs $ail_d)) (- (div (abs $ail_n) (abs $ail_d))))))) (let (($tmp8 (+ 2.0 $tmp7))) (* $tmp4 $tmp8))))))))))
+      (assert (> $p_r 1.5))
+      (assert (not (> result 0.0)))
+      (check-sat)
+      (get-model)
+
+  ! ERROR reciprocal
+    Z3 error (exit exit status 1): (error "line 5 column 166: invalid constant definition, sort mismatch")
+(error "line 8 column 16: unknown constant result")
+sat
+(
+  (define-fun $p_x () Real
+    1.0)
+)
+    SMT-LIB:
+      ; Verification of reciprocal
+      (set-logic ALL)
+      (declare-const $p_x Real)
+      (define-const result Real (let (($ail_n 1.0) ($ail_d $p_x)) (ite (= (>= $ail_n 0) (>= $ail_d 0)) (div (abs $ail_n) (abs $ail_d)) (- (div (abs $ail_n) (abs $ail_d))))))
+      (assert (> $p_x 0.0))
+      (assert (not (> result 0.0)))
+      (check-sat)
+      (get-model)
+
+  ○ NO CONTRACTS [2mmain[0m
+
+  3 exported functions: 1 violations, 1 errors, 1 without contracts

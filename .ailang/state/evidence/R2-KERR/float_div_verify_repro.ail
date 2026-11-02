@@ -1,0 +1,11 @@
+module float_div_verify_repro
+import std/io (println)
+export pure func reciprocal(x:float)->float
+  requires {x>0.0}
+  ensures {result>0.0}
+{1.0/x}
+export pure func tide(r:float)->float
+  requires {r>1.5}
+  ensures {result>0.0}
+{(1.0/(2.0*r*r*r))*(2.0+3.0/(2.0*r-3.0))}
+export func main()->() ! {IO} = println(show(tide(1.75)))

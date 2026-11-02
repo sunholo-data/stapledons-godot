@@ -75,8 +75,30 @@ domain-filter skips remain disclosed. Formatter round-trip of the regression
 test blocks passes and preserves/runs the tests. Strict VM/interpreter digest
 bytes remain exactly **560.5017148517253** (independent reference within1e-9).
 
-Full quality, smoke, dry-run and independent review results will be appended
-after completion; no unfinished/canceled invocation is a passing gate.
+Full `pkg quality .` completed: **58 files compiled;730 tests passed,0 failed,
+0 skipped; smoke passed;232/232 exports pure; interfacev2 87df39056919…,
+273 signatures; effects maxIO; release/docs valid.** It nevertheless FAILS
+**PUB006**, due to the pre-existing Schwarzschild `tidalRadialOrbit` being
+spuriously refuted:5/133 encoded-model proofs,1 refutation,123 skipped
+(including4 verifier errors),99 uncontracted. `package-verify-v056.json`
+records every reason. The emitted SMT uses integer `div` for FLOAT `/`.
+Minimal `float_div_verify_repro.ail` reproduces both a sort mismatch and the
+false tide counterexample r=7/4. VM/interpreter both compute the positive
+0.7463556851311953. No contract/math/verifier workaround was applied.
+Canonical GCP report: **inbox_1793649570012_28ca24e0**, via ailang-feedback.
+The package is **not publish-ready** until upstream fixes this gate.
+
+Independent Claude Sonnet5.5 evaluation: **89/100 PASS**, scoped numerical/code
+verdict, publication conditional. A separate Cartesian Kerr-Schild Hamiltonian
+oracle compared **140 escaping rays**, maximum error **3.8005284e-9 rad**;
+30 near-critical rays agree across steps.02/.005/.0025 to about1e-10.
+The oracle source, inputs/package outputs and replay harness are retained in
+tools/kerr_ks_ref.py, tests/fixtures/kerr/ks_evaluation.json and
+tools/test_kerr_ks_oracle.sh. Its near-horizon/time-limit states are unresolved,
+not capture evidence. The banked replay also passed140/140.
+Evaluation N1/N4 were documented in package AGENT.md; N2 is closed by the
+exact-head final sweep logs here and31 mutation kills. N3's unreachable
+inward no-root fallback is a disclosed defensive follow-up, not a gate bypass.
 
 ## Table preflight: original layout FAILS, no production pins
 
@@ -102,8 +124,11 @@ independently refined package rays. It FAILS the1.2e-4 rad budget:
   exceeds the near-critical first-column separation.
 
 The original F32 boundary plus1536-column scheme is therefore not bake-ready.
-Per K1.2's failure rule, do not pin assets or claim a GPU Kerr sky. A doubled
-row is being measured to distinguish column resolution from boundary precision.
+The doubled3072-column row has **2.2551281e-4 rad** maximum with the exact
+boundary (3,071 refined probes), still above budget. F32 boundary encoding
+causes118 false captures and3.029260rad maximum. The fourfold error reduction
+confirms a separate interpolation/resolution problem; doubling does not cure
+boundary precision. Per K1.2's failure rule, do not pin assets or claim a GPU sky.
 Recommend reviewing a hi/lo boundary representation and the antipode phase
 chart/interpolation before full generation. No cutoff narrowing, dropped
 probe, failure-as-capture, or Schwarzschild substitute is accepted.
