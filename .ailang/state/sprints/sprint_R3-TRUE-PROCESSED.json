@@ -1,0 +1,185 @@
+{
+  "sprint_id": "R3-TRUE-PROCESSED",
+  "status": "in_progress",
+  "approved": "D-144 (Mark, attended 2026-11-02): attended parallel agent Claude D; visual landing stops for Mark",
+  "created": "2026-11-02",
+  "design_doc": "design_docs/planned/r3/true-processed-fixes.md",
+  "sprint_plan": "design_docs/planned/r3/true-processed-fixes-sprint.md",
+  "branch": "feat/true-processed-fixes",
+  "origin": "main 6d92d2cb",
+  "ailang_version": "v0.54.18",
+  "ailang_prompt_version": "n/a (no .ail change)",
+  "external_dependencies": [],
+  "baseline": {
+    "capture-comms-station": "OK, 4 frames",
+    "ship-star-light-capture": "16 frames then capture-arrival-failed: CNS5:3627 (make Error 1), pre-existing on main"
+  },
+  "registry_reuse": [
+    {
+      "milestone": "TP0",
+      "package": "none",
+      "action": "none",
+      "reason": "docs"
+    },
+    {
+      "milestone": "TP1",
+      "package": "none",
+      "action": "none",
+      "reason": "removal of a stylised tint; no formula"
+    },
+    {
+      "milestone": "TP2",
+      "package": "none",
+      "action": "none",
+      "reason": "rendering calibration and exposure rule over existing package mirrors (Doppler, point flux ratio, aberration, blackbody, sim e_v_lux)"
+    },
+    {
+      "milestone": "TP3",
+      "package": "none",
+      "action": "none",
+      "reason": "UI wiring"
+    },
+    {
+      "milestone": "TP4",
+      "package": "none",
+      "action": "none",
+      "reason": "tests and a spec row"
+    },
+    {
+      "milestone": "TP5",
+      "package": "none",
+      "action": "none",
+      "reason": "captures"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 650,
+    "estimated_total_loc": 650,
+    "estimated_days": 1
+  },
+  "critical_path": [
+    "TP0",
+    "TP2",
+    "TP3",
+    "TP5"
+  ],
+  "parallel": [
+    [
+      "TP1",
+      "TP2"
+    ]
+  ],
+  "pause_points": [
+    "After TP5: Mark's render review (refs/true_processed_v1); PR stays draft"
+  ],
+  "questions_for_mark": [
+    "OQ1 feed True: A decoded (built, recommended) or B frame-as-light (Archive illustration only)",
+    "OQ2 lamp calibration 80 lx on the bridge (recommended) vs 300 lx",
+    "OQ3 one eye for deck and sky in True (follow-up recommended)",
+    "OQ4 star light on the V toggle (recommended) vs its own toggle"
+  ],
+  "features": [
+    {
+      "id": "TP0",
+      "description": "Design doc, sprint plan, JSON; before renders (feed 4, star light 16); feed option mock-ups A/B/before at seven D from a scratch spike",
+      "estimated_loc": 0,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "design doc and plan exist",
+        "before renders and mock-ups saved and opened"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TP1",
+      "description": "Feed: tint removed from comms_feed.json, EarthFeed and tests; about rewritten; earth-link Doppler tint row superseded",
+      "estimated_loc": 120,
+      "dependencies": [
+        "TP0"
+      ],
+      "acceptance_criteria": [
+        "make earth-feed-test comms-station-test physics green",
+        "no band carries tint/tint_alpha; picture unmodulated in beam at RS-26..RS-30 D values"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TP2",
+      "description": "Star light True (linear lux, lamps at base, eye meter f(y), exposure E_ship/E_meter, share, bounce) and Processed (today's numbers exactly)",
+      "estimated_loc": 330,
+      "dependencies": [
+        "TP0"
+      ],
+      "acceptance_criteria": [
+        "make ship-star-light-test green with the new True section",
+        "every pre-existing assertion passes in Processed"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TP3",
+      "description": "Setting follows the V view toggle (Realistic=True, Auto=Processed), labels, bh-hud",
+      "estimated_loc": 60,
+      "dependencies": [
+        "TP2"
+      ],
+      "acceptance_criteria": [
+        "make ship-star-light-test bh-hud-test green",
+        "toggle sets mode both ways in the real demo"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TP4",
+      "description": "Gate 2: True deck illuminance vs spec point ratio (RS-3/RS-4) and inverse square in test_physics.gd; RS-Q5 design draft PR",
+      "estimated_loc": 60,
+      "dependencies": [
+        "TP1",
+        "TP2"
+      ],
+      "acceptance_criteria": [
+        "make physics green",
+        "design-repo draft PR URL recorded"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TP5",
+      "description": "Captures in both modes, after renders, review set uploaded, changelog, draft PR, rig/full",
+      "estimated_loc": 80,
+      "dependencies": [
+        "TP1",
+        "TP2",
+        "TP3",
+        "TP4"
+      ],
+      "acceptance_criteria": [
+        "gsutil ls refs/true_processed_v1 lists the set",
+        "rig/full status posted"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "reviews": [],
+  "progress_note": "",
+  "upstream_reports": [],
+  "evaluation": null
+}
