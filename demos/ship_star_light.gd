@@ -254,40 +254,16 @@ func apply_rig(rig: Dictionary) -> void:
 	if light == null: return
 	var shadows: bool = rig.get("shadows", true)
 	var on := energy >= VISIBLE_EPS
-	# level: the star's share (it hands the shadow over); lamps: the ship lamps' scale. Processed: the
-	# compressed share and the controller's dimming to its floor. True: the physical share of the
-	# direct light, the lamps at their own level, and the eye model's exposure (R3-TRUE-PROCESSED D2.3)
-	# applied as one gain on all scene radiance this rig drives (star, lamps, the spire lamp's glow, fill,
-	# practical, ambient); the painted captain, screens and markers stay display-referred (labelled).
-	var level := energy / ENERGY_MAX
-	var lamps := maxf(KEY_FLOOR_SHARE, 1.0 - level)
-	var env: Environment = rig.get("environment")
-	var amb_e := float(rig.get("ambient_energy", env.ambient_light_energy if env != null else 0.0))
-	var amb_c: Color = rig.get("ambient_colour", env.ambient_light_color if env != null else Color.WHITE)
-	exposure = 1.0
-	if mode == "true":
-		var e_ship := ship_lux(rig)
-		ship_lux_last = e_ship
-		var lux := energy * LUX_PER_ENERGY if on else 0.0
-		level = share_of(e_ship, lux)
-		lamps = 1.0
-		exposure = deck_exposure(e_ship, lux, interior_dir.y)
-		var bounce := BOUNCE * lux * meter_weight(interior_dir.y) / LUX_PER_ENERGY
-		if bounce > 0.0:
-			# The bounce in the star's colour at unit luminance (B1), mixed with the ship's own ambient.
-			var bc := colour / luminance(colour) if luminance(colour) > 0.0 else Vector3.ONE
-			var mix := Vector3(amb_c.r, amb_c.g, amb_c.b) * amb_e + bc * bounce
-			var peak := maxf(mix.x, maxf(mix.y, mix.z))
-			amb_c = Color(mix.x / peak, mix.y / peak, mix.z / peak)
-			amb_e = peak
-	var gain := exposure if mode == "true" else 1.0
-	lamps *= gain
-	var per_y := 1.0 / luminance(colour) if mode == "true" and luminance(colour) > 0.0 else 1.0 # B1: lux -> photometric light exactly
-	light.light_energy = energy * gain * per_y if on else 0.0
+	var bal := _balance(rig, on)
+	var level: float = bal.level
+	var lamps: float = bal.lamps
+	var gain: float = bal.gain
+	light.light_energy = energy * gain * float(bal.per_y) if on else 0.0
 	light.visible = on
+	var env: Environment = rig.get("environment")
 	if env != null:
-		env.ambient_light_energy = amb_e * gain
-		env.ambient_light_color = amb_c
+		env.ambient_light_energy = float(bal.amb_e) * gain
+		env.ambient_light_color = bal.amb_c
 	var fill: DirectionalLight3D = rig.get("fill")
 	if fill != null: fill.light_energy = float(rig.get("fill_base", fill.light_energy)) * gain
 	var practical: Light3D = rig.get("practical")
@@ -300,6 +276,45 @@ func apply_rig(rig: Dictionary) -> void:
 	var b := Basis.looking_at(-interior_dir, up) # the light shines along -Z: from the star
 	if light.is_inside_tree(): light.global_basis = b
 	else: light.basis = b
+	_apply_lamps(rig, lamps, level, star_owns, shadows)
+
+
+## The balance of the star and the ship's own light. level: the star's share (it hands the shadow
+## over); lamps: the ship lamps' scale; gain: the exposure on all scene radiance the rig drives; per_y:
+## the star light's 1 / Y(colour). Processed: the compressed share, the controller's dimming to its floor,
+## gain 1. True (R3-TRUE-PROCESSED D2.3): the physical share of the direct light, the lamps at their own
+## level, the eye model's exposure as the gain (star, lamps, the spire lamp's glow, fill, practical,
+## ambient), the star's bounce in the ambient; the painted captain, screens and markers stay
+## display-referred (labelled Processed).
+func _balance(rig: Dictionary, on: bool) -> Dictionary:
+	var env: Environment = rig.get("environment")
+	var out := {"level": energy / ENERGY_MAX, "lamps": maxf(KEY_FLOOR_SHARE, 1.0 - energy / ENERGY_MAX), "gain": 1.0, "per_y": 1.0,
+		"amb_e": float(rig.get("ambient_energy", env.ambient_light_energy if env != null else 0.0)),
+		"amb_c": rig.get("ambient_colour", env.ambient_light_color if env != null else Color.WHITE)}
+	exposure = 1.0
+	if mode != "true": return out
+	var e_ship := ship_lux(rig)
+	ship_lux_last = e_ship
+	var lux := energy * LUX_PER_ENERGY if on else 0.0
+	exposure = deck_exposure(e_ship, lux, interior_dir.y)
+	var y := luminance(colour)
+	out.level = share_of(e_ship, lux)
+	out.lamps = exposure
+	out.gain = exposure
+	out.per_y = 1.0 / y if y > 0.0 else 1.0 # B1: lux -> photometric light exactly
+	var bounce := BOUNCE * lux * meter_weight(interior_dir.y) / LUX_PER_ENERGY
+	if bounce > 0.0:
+		# The bounce in the star's colour at unit luminance (B1), mixed with the ship's own ambient.
+		var c: Color = out.amb_c
+		var mix := Vector3(c.r, c.g, c.b) * float(out.amb_e) + (colour / y if y > 0.0 else Vector3.ONE) * bounce
+		var peak := maxf(mix.x, maxf(mix.y, mix.z))
+		out.amb_c = Color(mix.x / peak, mix.y / peak, mix.z / peak)
+		out.amb_e = peak
+	return out
+
+
+## The ship's lamps at their scale, and the shadow handover between the star, the key and the spire.
+func _apply_lamps(rig: Dictionary, lamps: float, level: float, star_owns: bool, shadows: bool) -> void:
 	var key: DirectionalLight3D = rig.key
 	var base: float = rig.get("key_base", key.light_energy)
 	# R2-BRIDGE-STYLE S1 (D-100): on the bridge the broad key is retired and the spire is the key.
@@ -314,22 +329,21 @@ func apply_rig(rig: Dictionary) -> void:
 			lamp.light_energy=float(lamp.get_meta("base_energy",0.0))*lamps
 			lamp.visible=id==int(rig.get("active_level",0)) and rig.profile!="baseline"
 	# R2-DECK-LAYOUT §D5a (D-96): the spire, the bridge's own light, shares the key's dimming.
-	if rig.has("spire"):
-		var share := lamps
-		var spire: OmniLight3D = rig.spire
-		spire.light_energy = float(rig.get("spire_base", 0.0)) * share
-		spire.visible = spire.light_energy >= VISIBLE_EPS
-		# The spire holds the shadow on the bridge until the star takes it (the key's ramp): exactly
-		# one of spire and star has a shadow map; the mast, which holds the light, never casts its shadow.
-		spire.shadow_enabled = bridge and shadows and not star_owns and spire.visible
-		spire.shadow_opacity = owner_opacity
-		var mast_cast := GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if bridge and not star_owns else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-		for m: GeometryInstance3D in rig.get("mast", []):
-			if is_instance_valid(m): m.cast_shadow = mast_cast
-		var lamp: MeshInstance3D = rig.get("spire_lamp")
-		if lamp != null:
-			# True: the lamp's glow is scene radiance, under the same eye exposure as everything lit (eval B2).
-			(lamp.material_override as StandardMaterial3D).emission_energy_multiplier = float(rig.get("spire_lamp_base", 0.0)) * share
+	if not rig.has("spire"): return
+	var spire: OmniLight3D = rig.spire
+	spire.light_energy = float(rig.get("spire_base", 0.0)) * lamps
+	spire.visible = spire.light_energy >= VISIBLE_EPS
+	# The spire holds the shadow on the bridge until the star takes it (the key's ramp): exactly
+	# one of spire and star has a shadow map; the mast, which holds the light, never casts its shadow.
+	spire.shadow_enabled = bridge and shadows and not star_owns and spire.visible
+	spire.shadow_opacity = owner_opacity
+	var mast_cast := GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if bridge and not star_owns else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	for m: GeometryInstance3D in rig.get("mast", []):
+		if is_instance_valid(m): m.cast_shadow = mast_cast
+	var lamp: MeshInstance3D = rig.get("spire_lamp")
+	if lamp != null:
+		# True: the lamp's glow is scene radiance, under the same exposure gain as everything lit (eval B2).
+		(lamp.material_override as StandardMaterial3D).emission_energy_multiplier = float(rig.get("spire_lamp_base", 0.0)) * lamps
 
 
 func manifest() -> Dictionary:

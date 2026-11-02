@@ -1176,6 +1176,12 @@ ship-star-light-capture:
 ship-star-light-bench:
 	@$(GODOT) --path . --script tools/ship_star_light_bench.gd > $(SCRATCH)/ship-star-light-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-bench.log; test $$rc = 0 && grep -q '^ship-star-light-bench: OK$$' $(SCRATCH)/ship-star-light-bench.log
 ship-demo-ci: ship-star-light-test
+# R3-TRUE-PROCESSED (eval B3, gate 2): the True star light on the GPU vs the CPU (absolute, equal light at any
+# temperature, RS-3/RS-4 Doppler, the exposure gain) with two negative controls. Needs a GPU window; in make golden.
+.PHONY: true-light-golden
+true-light-golden: import
+	@$(GODOT) --path . --script tools/true_light_golden.gd > $(SCRATCH)/true-light-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|true-light-golden)' $(SCRATCH)/true-light-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/true-light-golden.log && test "$$(grep -c '^ok    G-TL-' $(SCRATCH)/true-light-golden.log)" = 10 && grep -q '^true-light-golden: 10 passed, 0 failures$$' $(SCRATCH)/true-light-golden.log
+golden: true-light-golden
 .PHONY: trappist1-test
 trappist1-test:    ## TRAPPIST-1 planets (trappist1-planets-sprint.md): snapshot pin, sim checks strict VM = interpreter, and the Python orbit/transcription oracle
 	@mkdir -p $(SCRATCH)

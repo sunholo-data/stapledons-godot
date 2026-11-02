@@ -175,17 +175,42 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Captures in both settings (32 star-light frames; the capture stops at the alpha Cen arrival as on main), comms after frames 4/4 ok; review set uploaded to gs://stapledons-voyage-assets/refs/true_processed_v1/ (feed before/after/options, star before/after, sheets); draft PR #374; rig/full started on the head carrying this note. Passes after rig/full and Mark's render review."
+      "notes": "Round 1: renders uploaded, draft PR #374, rig/full green on 10b9f1bf (74 min), fast tier pass. Codex evaluation 74 FAIL (blocking B1-B6). Round 2 fixes: B1 luminance-true True light; B2 the spire glow under the gain, captain/screens/markers labelled display-referred; B3 production emitter flux tests at RS-3/RS-4 (D^2 mutation drilled: both suites fail) and GPU golden make true-light-golden (10 ok, two negatives); B4 exposure classified presentation (no package); B5 HUD numbers removed; view button says True/Processed; TRAPPIST-1/Aldebaran at planned stops. Round-2 renders under refs/true_processed_v1/r2/. Passes after rig/full on the new head and Mark's render review (B6)."
     }
   ],
   "reviews": [
     {
+      "kind": "evaluation",
+      "round": 1,
+      "evaluator": "codex gpt-6.1-sol",
+      "score": 74,
+      "pass": false,
+      "blocking": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6"
+      ],
+      "addressed_round_2": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5"
+      ],
+      "open": [
+        "B6 Mark's visual approval"
+      ]
+    },
+    {
       "kind": "render_review",
       "set": "https://storage.googleapis.com/stapledons-voyage-assets/refs/true_processed_v1/",
-      "status": "pending Mark"
+      "status": "pending Mark; tp_lux = 80 lx chosen 2026-11-02"
     }
   ],
-  "progress_note": "TP0-TP4 done; TP5 renders uploaded, draft PR #374, rig/full running. Stops for Mark's render review (visual landing) and OQ1-OQ4.",
+  "progress_note": "TP0-TP4 done; round-2 fixes for the evaluation's B1-B5 committed; awaiting rig/full (queued by the orchestrator) and Mark's render review (B6, OQ1, OQ3, OQ4, OQ5, BOUNCE).",
   "upstream_reports": [],
   "evaluation": null
 }
