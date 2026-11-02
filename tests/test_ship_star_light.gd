@@ -43,6 +43,8 @@ func body(world: Dictionary, id: String) -> Dictionary:
 
 func vec_of(a: PackedFloat64Array) -> Vector3: return Vector3(a[0], a[1], a[2])
 
+func cdist(c: Color, v: Vector3) -> float: return Vector3(c.r, c.g, c.b).distance_to(v)
+
 ## Galactic rel_km for a world (SkyFrame) direction at distance d.
 func rel_at(world_dir: Vector3, d_km: float) -> Dictionary:
 	var g := SkyFrame.to_galactic64([world_dir.x, world_dir.y, world_dir.z])
@@ -409,6 +411,69 @@ func _run() -> void:
 		Lighting.set_level(rig, 1); sky.apply(at_rest); star.update(rig, sky, 0.0, true)
 	Lighting.apply(rig, "moody"); star.update(rig, sky, 0.0, true)
 
+	# --- 11. R3-TRUE-PROCESSED: True is physical (design r3/true-processed-fixes.md D2.3). The star's
+	# energy is linear in the seen illuminance, the ship's lamps keep their own, the deck is exposed for
+	# the eye adapted to it, the star's bounce fills the shadows; Processed is everything above.
+	check("a bare StarLight is Processed (today's numbers)", StarLight.new().mode == "processed")
+	check("True energy is linear: the Sun at 1 AU, 1.27e5 lx -> 1.27e4", is_equal_approx(StarLight.true_energy(1.27e5), 1.27e4) and StarLight.LUX_PER_ENERGY == 10.0)
+	check("True energy follows the inverse square: 1 AU / 5.2 AU = 27.04", is_equal_approx(StarLight.true_energy(1.27e5) / StarLight.true_energy(1.27e5 / (5.2 * 5.2)), 27.04))
+	check("True energy is zero for none, negative or NaN", StarLight.true_energy(0.0) == 0.0 and StarLight.true_energy(-3.0) == 0.0 and StarLight.true_energy(NAN) == 0.0)
+	check("the eye meter's weight: 1 overhead, 1/2 level, 0.225 at y -0.1, 0 below -0.2", is_equal_approx(StarLight.meter_weight(1.0), 1.0) and is_equal_approx(StarLight.meter_weight(0.0), 0.5) and is_equal_approx(StarLight.meter_weight(-0.1), 0.225) and StarLight.meter_weight(-0.3) == 0.0 and StarLight.meter_weight(-1.0) == 0.0)
+	check("the meter is continuous across the deck plane", absf(StarLight.meter_weight(1e-6) - StarLight.meter_weight(-1e-6)) < 1e-5)
+	check("deck exposure, the Sun overhead at 1 AU, spire-lit bridge (80 lx): 1/1588.5", is_equal_approx(StarLight.deck_exposure(80.0, 1.27e5, 1.0), 80.0 / 127080.0))
+	check("deck exposure, the Sun level with the deck at 1 AU: about 1/795", absf(1.0 / StarLight.deck_exposure(80.0, 1.27e5, 0.0) - 794.75) < 1e-6)
+	check("deck exposure is 1 with no star, and never above 1", StarLight.deck_exposure(80.0, 0.0, 1.0) == 1.0 and StarLight.deck_exposure(80.0, 5.0, -0.5) == 1.0)
+	check("the share of the direct light: 1.27e5 lx against 80 lx = 0.99937", absf(StarLight.share_of(80.0, 1.27e5) - 127000.0 / 127080.0) < 1e-12)
+	# D2.4's table: star : lamps at the bridge's 80 lx (independent of direction at rest, D = 1).
+	for row: Array in [[1.0, 1587.5], [5.2, 58.71], [9.6, 17.22], [30.0, 1.764]]:
+		var e_au := 1.27e5 / (float(row[0]) * float(row[0]))
+		check("D2.4: at %s AU the Sun is %s x the bridge's lamps" % [row[0], row[1]], absf(e_au / 80.0 / float(row[1]) - 1.0) < 2e-3)
+	if has_levels:
+		var env: Environment = rig.environment
+		Lighting.set_level(rig, 0)
+		star.set_mode("true")
+		check("set_mode switches the setting", star.mode == "true")
+		sky.apply(at_rest); star.update(rig, sky, 0.0, true)
+		var e_seen: float = star.target.seen_lux
+		var e_ship := StarLight.ship_lux(rig)
+		var y := star.interior_dir.y
+		check("bridge lamps in physical units: the spire's base lights the deck at 80 lx", is_equal_approx(e_ship, 80.0) and is_equal_approx(rig.spire_base, 8.0))
+		check("True, at Earth: the star's energy is E / 10 exactly (%.1f)" % star.light.light_energy, is_equal_approx(star.light.light_energy, e_seen / 10.0) and e_seen > 1.0e5)
+		check("True, at Earth: the spire keeps its base (lamps do not dim), its lamp glows at base", is_equal_approx(rig.spire.light_energy, rig.spire_base) and is_equal_approx((rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier, rig.spire_lamp_base))
+		check("True, at Earth: the deck exposure is E_ship / (E_ship + E f(y)) (1/%.0f)" % (1.0 / env.tonemap_exposure), is_equal_approx(env.tonemap_exposure, e_ship / (e_ship + e_seen * StarLight.meter_weight(y))) and env.tonemap_exposure < 0.01)
+		check("True, at Earth: the star owns the only shadow map, the spire none", star.light.shadow_enabled and not rig.spire.shadow_enabled and is_equal_approx(star.light.shadow_opacity, 1.0) and not key.shadow_enabled)
+		var bounce := StarLight.BOUNCE * e_seen * StarLight.meter_weight(y) / StarLight.LUX_PER_ENERGY
+		check("True, at Earth: the star's bounce adds to the ship's ambient (%.1f + %.1f)" % [rig.ambient_energy, bounce], is_equal_approx(env.ambient_light_energy, rig.ambient_energy + bounce) and bounce > 0.0)
+		var sunc: Vector3 = star.colour
+		check("True, at Earth: the ambient leans toward the star's colour", env.ambient_light_color.r > rig.ambient_colour.r and cdist(env.ambient_light_color, sunc) < cdist(rig.ambient_colour, sunc))
+		check("True: the manifest and HUD say true and physical", star.manifest().mode == "true" and str(star.manifest().brightness).begins_with("True, physical") and star.hud_line().contains("true light") and star.hud_line().contains("eye adapted"))
+		# The controlled-distance sweep: 1 AU out to interstellar, monotonic and finite, one shadow owner.
+		var sweep := at_rest.duplicate(true)
+		var prev_e := INF; var prev_x := 0.0; var mono := true; var finite := true; var owners := true
+		for au: float in [1.0, 2.0, 5.2, 9.6, 19.2, 30.0, 100.0, 1000.0, 1.0e5]:
+			body(sweep, "sun").e_v_lux = 1.27e5 / (au * au)
+			sky.apply(sweep); star.update(rig, sky, 0.0, true)
+			var en: float = star.light.light_energy
+			if en > prev_e + 1e-9 or env.tonemap_exposure < prev_x - 1e-12: mono = false
+			if not is_finite(en) or not is_finite(env.tonemap_exposure) or env.tonemap_exposure <= 0.0 or env.tonemap_exposure > 1.0: finite = false
+			if int(star.light.shadow_enabled) + int(rig.spire.shadow_enabled) + int(key.shadow_enabled) != 1: owners = false
+			prev_e = en; prev_x = env.tonemap_exposure
+		check("True sweep 1 AU to 1e5 AU: energy falls and exposure rises monotonically, all finite", mono and finite)
+		check("True sweep: exactly one shadow map (star or spire) at every distance", owners)
+		check("True sweep: at 1e5 AU the deck is the spire's (exposure > 0.99)", env.tonemap_exposure > 0.99)
+		var red := at_rest.duplicate(true)
+		body(red, "sun").teff_k = 2566.0
+		sky.apply(red); star.update(rig, sky, 0.0, true)
+		check("True: a red dwarf's light at the same illuminance has the same energy, a redder colour", is_equal_approx(star.light.light_energy, e_seen / 10.0) and star.colour.z < sunc.z)
+		sky.apply(dark); star.update(rig, sky, 0.0, true)
+		check("True, interstellar: no star light, exposure 1, the ambient the ship's own, the spire at base with the shadow", star.light.light_energy == 0.0 and env.tonemap_exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour and is_equal_approx(rig.spire.light_energy, rig.spire_base) and rig.spire.shadow_enabled)
+		Lighting.set_level(rig, 1); sky.apply(at_rest); star.update(rig, sky, 0.0, true)
+		check("True, lower decks: the broad key keeps its base (15 lx) beside the Sun", is_equal_approx(key.light_energy, rig.key_base) and is_equal_approx(StarLight.ship_lux(rig), 15.0))
+		star.set_mode("processed")
+		sky.apply(at_rest); star.update(rig, sky, 0.0, true)
+		check("back to Processed: today's full compressed light, the key at its floor, exposure 1, the ship's ambient", is_equal_approx(star.light.light_energy, StarLight.ENERGY_MAX) and is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and env.tonemap_exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour)
+		check("Processed: the HUD names the ship's controller", star.hud_line().contains("Processed") and star.manifest().mode == "processed")
+
 	# --- 10. Integration: the playable demo carries the star light.
 	if FileAccess.file_exists("res://assets/ship_demo/ship.glb") or FileAccess.file_exists("res://ship_demo_bundle/ship.glb.bin"):
 		var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
@@ -426,6 +491,12 @@ func _run() -> void:
 		check("demo: arriving on the lower deck restores the broad key (active_level 1)", not rig2.bridge and rig2.key.light_energy > 0.0)
 		demo.active_level = 0
 		check("demo: back on the bridge the key is retired again", rig2.bridge and rig2.key.light_energy == 0.0)
+		# R3-TRUE-PROCESSED (D2.6): the star light follows the view, Realistic -> True, Auto -> Processed.
+		check("demo: a developer launch is Realistic, and the star light True", not demo.sky.system_view.body_fader and rig2.star.mode == "true")
+		demo.set_auto_view(true)
+		check("demo: Auto -> Processed, named on the view button", rig2.star.mode == "processed" and demo.view_button.text.contains("follow the star") and rig2.environment.tonemap_exposure == 1.0)
+		demo.set_auto_view(false)
+		check("demo: Realistic -> True, named on the view button", rig2.star.mode == "true" and demo.view_button.text.contains("true starlight"))
 		demo.queue_free(); await process_frame
 	else:
 		check("ship demo assets present (make ship-demo-assets)", false)

@@ -10,12 +10,20 @@ extends RefCounted
 ##   colour     physical hue: the renderer's blackbody lookup at T x D (Blackbody.lut_rgb),
 ##              D the package Doppler factor at the apparent angle (Planets.doppler_seen64,
 ##              sim gamma and 1 - beta). Normalised to a unit max channel.
-##   brightness NOT physical: the seen illuminance (sim e_v_lux x pointFluxRatio(T, D),
-##              the SkyMeter.seen_point expression, x any eclipse transmission) mapped
-##              logarithmically from LUX_FLOOR (no light) to LUX_FULL (ENERGY_MAX). Real
-##              sunlight is ~10^5 brighter than a ship interior lamp; a display cannot
-##              show that range, so decades become equal steps.
-## The ship-fixed "InternalBroadKey" dims as the star light's share rises, down to a 25%
+##   brightness two settings (R3-TRUE-PROCESSED, design_docs/planned/r3/true-processed-fixes.md;
+##              stapledons-design standing order 2026-10-30, after D-38/D-55). E is the seen
+##              illuminance (sim e_v_lux x pointFluxRatio(T, D), the SkyMeter.seen_point
+##              expression, x any eclipse transmission).
+##     True       (the Realistic view) physical: energy = E / LUX_PER_ENERGY, linear; the ship's
+##                lamps keep their own illuminance; the deck is exposed for the eye adapted to it,
+##                tonemap_exposure = E_ship / (E_ship + E f(y)) (Exposure's EYE rule on the deck);
+##                the star's bounce off the deck is a labelled ambient term (no GI here).
+##     Processed  (the Auto view) the ship's light controller: its lamps follow the star's
+##                direction and colour at a level compressed to fit, log10 between LUX_FLOOR
+##                (no light) and LUX_FULL (ENERGY_MAX), and keep the ship's own lamps at a
+##                readable floor. Real sunlight is ~10^5 brighter than a ship lamp; decades
+##                become equal steps. Today's numbers exactly (R1-SHIP-STAR-LIGHT).
+## Processed: the ship-fixed "InternalBroadKey" dims as the star light's share rises, down to a 25%
 ## readability floor (KEY_FLOOR_SHARE), and hands its shadows to the star; the moody
 ## ambient, fill and practicals stay the base and interstellar space is unchanged. The spire light
 ## (SpireLight, R2-DECK-LAYOUT §D5a, D-96) shares the key's dimming: the bridge's own light when no
@@ -36,6 +44,16 @@ const SHADOW_HANDOVER := 0.2
 const SWITCH_RATIO := 1.5 # a new star must be this much brighter to take over
 const TAU_S := 0.5 # s, easing time constant of energy, colour and direction
 const VISIBLE_EPS := 1e-3 # energy below which a light is switched off (invisible change)
+## True (R3-TRUE-PROCESSED D2.2): the ship's lamps in physical units. One unit of Godot light energy
+## at normal incidence is LUX_PER_ENERGY lx, so the spire at its base (8, D-100) lights the bridge
+## deck at 80 lx, a dim evening room, and the lower decks' broad key (1.5) at 15 lx.
+const LUX_PER_ENERGY := 10.0
+## True (D2.3): the star's light off the deck fills the shadows, as an ambient term (no global
+## illumination here): BOUNCE x E f(y), a deck of albedo ~0.3 seen over half the sky. Labelled.
+const BOUNCE := 0.1
+## True (D2.3): the eye's meter cuts the star off as it sinks this far (in ŝ.up) below the deck plane.
+const BELOW_DECK_CUT := 0.2
+const MODES := ["true", "processed"]
 
 var light: DirectionalLight3D
 var source_id := "" # the dominant star's sim id ("" = none)
@@ -45,6 +63,11 @@ var interior_dir := Vector3.UP # the same direction in ship-interior (glTF metre
 var energy := 0.0 # eased light energy
 var colour := Vector3.ONE # eased linear colour
 var _primed := false
+## R3-TRUE-PROCESSED: "processed" (today's compressed balance, the default of a bare StarLight) or
+## "true" (physical). The ship demo sets it from the view: Realistic -> true, Auto -> processed.
+var mode := "processed"
+var exposure := 1.0 # True: the deck's tonemap_exposure (1 in Processed)
+var ship_lux_last := 80.0 # True: E_ship of the last apply (lx), for the HUD
 
 
 ## Compressed brightness share in [0, 1]: log10 between LUX_FLOOR and LUX_FULL.
@@ -55,6 +78,51 @@ static func level_of(lux: float) -> float:
 
 static func energy_of(lux: float) -> float:
 	return ENERGY_MAX * level_of(lux)
+
+
+## True: the light energy of a seen illuminance, linear (0 for none, negative or NaN).
+static func true_energy(lux: float) -> float:
+	return lux / LUX_PER_ENERGY if lux > 0.0 else 0.0
+
+
+## True: the eye meter's weight of a star at y = ŝ.up (interior axes): the mean illuminance on the
+## surfaces facing the upper hemisphere, the deck and the walls (1 overhead, 1/2 level with the deck),
+## cut off as the star sinks BELOW_DECK_CUT below the deck plane and the deck blocks it.
+static func meter_weight(y: float) -> float:
+	y = clampf(y, -1.0, 1.0)
+	var w := 0.5 * (1.0 + y)
+	return w if y >= 0.0 else w * maxf(0.0, 1.0 + y / BELOW_DECK_CUT)
+
+
+## True: the deck's own lamp illuminance (lx): the spire's base on the bridge, the broad key's below
+## (or the ambient floor where a profile has no lamp, so the meter never divides by zero).
+static func ship_lux(rig: Dictionary) -> float:
+	var bridge: bool = rig.get("bridge", false) and rig.has("spire")
+	var lamp := float(rig.get("spire_base", 0.0)) if bridge else float(rig.get("key_base", 0.0))
+	return LUX_PER_ENERGY * maxf(lamp, float(rig.get("ambient_energy", rig.get("ambient_base", 0.22))))
+
+
+## True: the eye adapted to the deck, Exposure's EYE rule (adapt only toward less sensitivity than
+## the lamp-lit deck): E_ship / (E_ship + E f(y)), 1 with no star.
+static func deck_exposure(e_ship: float, lux: float, y: float) -> float:
+	return e_ship / (e_ship + maxf(lux, 0.0) * meter_weight(y))
+
+
+## True: the star's share of the direct light at normal incidence (it decides the shadow owner).
+static func share_of(e_ship: float, lux: float) -> float:
+	return maxf(lux, 0.0) / (maxf(lux, 0.0) + e_ship)
+
+
+func set_mode(m: String) -> void:
+	assert(m in MODES)
+	if m == mode: return
+	mode = m
+	# The eased energy is in the other setting's units: snap to the new setting's goal.
+	energy = goal_energy(target.get("seen_lux", 0.0)) if not target.is_empty() else 0.0
+
+
+func goal_energy(lux: float) -> float:
+	return true_energy(lux) if mode == "true" else energy_of(lux)
 
 
 ## Linear sRGB, unit max channel: the shaders' blackbody lookup at the seen temperature.
@@ -139,16 +207,16 @@ func update(rig: Dictionary, sky: InteriorSky, delta: float, snap := false) -> v
 	var pick := best
 	if not current.is_empty() and not best.is_empty() and best.seen_lux < current.seen_lux * SWITCH_RATIO: pick = current
 	target = pick
-	var goal_energy := energy_of(pick.seen_lux) if not pick.is_empty() else 0.0
+	var goal := goal_energy(pick.seen_lux) if not pick.is_empty() else 0.0
 	if not pick.is_empty(): source_id = pick.id
 	elif snap or energy < VISIBLE_EPS: source_id = ""
 	var k := 1.0 if snap or not _primed else 1.0 - exp(-maxf(delta, 0.0) / TAU_S)
-	energy = lerpf(energy, goal_energy, k)
-	if snap and goal_energy == 0.0: energy = 0.0
+	energy = lerpf(energy, goal, k)
+	if snap and goal == 0.0: energy = 0.0
 	if not pick.is_empty():
-		var goal := Vector3(pick.dir[0], pick.dir[1], pick.dir[2]).normalized()
-		if dir_world.length_squared() < 0.5 or k >= 1.0 or energy < VISIBLE_EPS: dir_world = goal
-		else: dir_world = dir_world.slerp(goal, k).normalized()
+		var goal_dir := Vector3(pick.dir[0], pick.dir[1], pick.dir[2]).normalized()
+		if dir_world.length_squared() < 0.5 or k >= 1.0 or energy < VISIBLE_EPS: dir_world = goal_dir
+		else: dir_world = dir_world.slerp(goal_dir, k).normalized()
 		colour = colour.lerp(pick.colour, k) if _primed and not snap else pick.colour
 	_primed = true
 	if not sky.basis.is_empty() and dir_world.length_squared() > 0.5:
@@ -163,7 +231,30 @@ func apply_rig(rig: Dictionary) -> void:
 	var on := energy >= VISIBLE_EPS
 	light.light_energy = energy if on else 0.0
 	light.visible = on
+	# level: the star's share (it hands the shadow over); lamps: the ship lamps' scale. Processed: the
+	# compressed share and the controller's dimming to its floor. True: the physical share of the
+	# direct light, the lamps at their own level, the deck exposed for the eye (R3-TRUE-PROCESSED).
 	var level := energy / ENERGY_MAX
+	var lamps := maxf(KEY_FLOOR_SHARE, 1.0 - level)
+	var env: Environment = rig.get("environment")
+	var amb_e := float(rig.get("ambient_energy", env.ambient_light_energy if env != null else 0.0))
+	var amb_c: Color = rig.get("ambient_colour", env.ambient_light_color if env != null else Color.WHITE)
+	exposure = 1.0
+	if mode == "true":
+		var e_ship := ship_lux(rig)
+		ship_lux_last = e_ship
+		var lux := energy * LUX_PER_ENERGY if on else 0.0
+		level = share_of(e_ship, lux)
+		lamps = 1.0
+		exposure = deck_exposure(e_ship, lux, interior_dir.y)
+		var bounce := BOUNCE * lux * meter_weight(interior_dir.y) / LUX_PER_ENERGY
+		if bounce > 0.0:
+			amb_c = (amb_c * amb_e + Color(colour.x, colour.y, colour.z) * bounce) / (amb_e + bounce)
+			amb_e += bounce
+	if env != null:
+		env.tonemap_exposure = exposure
+		env.ambient_light_energy = amb_e
+		env.ambient_light_color = amb_c
 	var star_owns := on and level >= SHADOW_HANDOVER
 	light.shadow_enabled = shadows and star_owns
 	light.shadow_opacity = clampf((level - SHADOW_HANDOVER) / SHADOW_HANDOVER, 0.0, 1.0)
@@ -177,17 +268,17 @@ func apply_rig(rig: Dictionary) -> void:
 	# R2-BRIDGE-STYLE S1 (D-100): on the bridge the broad key is retired and the spire is the key.
 	var bridge: bool = rig.get("bridge", false) and rig.has("spire")
 	var owner_opacity := clampf(1.0 - level / SHADOW_HANDOVER, 0.0, 1.0)
-	key.light_energy = 0.0 if bridge else base * maxf(KEY_FLOOR_SHARE, 1.0 - level)
+	key.light_energy = 0.0 if bridge else base * lamps
 	key.visible = key.light_energy >= VISIBLE_EPS
 	key.shadow_enabled = shadows and not star_owns and not bridge
 	key.shadow_opacity = owner_opacity
 	for id: int in rig.get("level_lights",{}):
 		for lamp: OmniLight3D in rig.level_lights[id]:
-			lamp.light_energy=float(lamp.get_meta("base_energy",0.0))*maxf(KEY_FLOOR_SHARE,1.0-level)
+			lamp.light_energy=float(lamp.get_meta("base_energy",0.0))*lamps
 			lamp.visible=id==int(rig.get("active_level",0)) and rig.profile!="baseline"
 	# R2-DECK-LAYOUT §D5a (D-96): the spire, the bridge's own light, shares the key's dimming.
 	if rig.has("spire"):
-		var share := maxf(KEY_FLOOR_SHARE, 1.0 - level)
+		var share := lamps
 		var spire: OmniLight3D = rig.spire
 		spire.light_energy = float(rig.get("spire_base", 0.0)) * share
 		spire.visible = spire.light_energy >= VISIBLE_EPS
@@ -209,16 +300,21 @@ func manifest() -> Dictionary:
 		"energy": light.light_energy if light != null else 0.0, "shadows": light.shadow_enabled if light != null else false, "interior_direction": [d.x, d.y, d.z], "colour_linear": [colour.x, colour.y, colour.z],
 		"direction": "physical: the star's aberrated apparent direction, the sky renderer's disc centre, in ship axes",
 		"colour": "physical hue: blackbody at Teff x Doppler factor (the renderer's lookup), unit max channel",
-		"brightness": "log-compressed, not physical: energy = %.1f x log10(E / %s lx) / log10(%s / %s), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission)" % [ENERGY_MAX, LUX_FLOOR, LUX_FULL, LUX_FLOOR],
-		"broad_key": "ship-fixed key dimmed by the star light's share down to a %d%% readability floor (ship light, not physical; no shadows while the star owns them); ambient, fill and practicals unchanged; retired on the bridge, where the spire takes this rule and the shadow (R2-BRIDGE-STYLE S1)" % roundi(100.0 * KEY_FLOOR_SHARE),
+		"mode": mode, "exposure": exposure,
+		"brightness": ("True, physical: energy = E / %s lx (linear), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission); the ship's lamps at their own level (%s lx per unit of energy); the deck exposed for the eye adapted to it, tonemap_exposure = E_ship / (E_ship + E f(y)) = %s; the star's bounce off the deck an ambient term (%s x E f(y), no GI)" % [LUX_PER_ENERGY, LUX_PER_ENERGY, exposure, BOUNCE]) if mode == "true"
+			else ("Processed, the ship's light controller: log-compressed, not physical: energy = %.1f x log10(E / %s lx) / log10(%s / %s), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission)" % [ENERGY_MAX, LUX_FLOOR, LUX_FULL, LUX_FLOOR]),
+		"broad_key": ("the ship's lamps keep their own illuminance in True (no dimming, no floor); the broad key retired on the bridge, where the spire keys the deck" if mode == "true"
+			else "ship-fixed key dimmed by the star light's share down to a %d%% readability floor (Processed: the ship's light controller; no shadows while the star owns them); ambient, fill and practicals unchanged; retired on the bridge, where the spire takes this rule and the shadow (R2-BRIDGE-STYLE S1)" % roundi(100.0 * KEY_FLOOR_SHARE)),
 		"easing_s": TAU_S, "switch_ratio": SWITCH_RATIO}
 
 
 func hud_line() -> String:
 	if source_id == "" or energy < VISIBLE_EPS:
-		return "Starlight on ship: none above %s lx · ship lights only" % _sci(LUX_FLOOR)
+		return "Starlight on ship: none above %s lx · ship lights only" % _sci(LUX_FLOOR if mode == "processed" else VISIBLE_EPS * LUX_PER_ENERGY)
 	var lux: float = target.get("seen_lux", 0.0)
-	return "Starlight on ship: %s · %s lx at the ship → %d%% light (brightness log-compressed, %s–%s lx; direction and colour physical)" % [target.get("name", source_id), _sci(lux), roundi(100.0 * energy / ENERGY_MAX), _sci(LUX_FLOOR), _sci(LUX_FULL)]
+	if mode == "true":
+		return "Starlight on ship: %s · %s lx at the ship, true light (%s× the ship's lamps) · the eye adapted to 1/%s of the lamp-lit deck (direction, colour and brightness physical)" % [target.get("name", source_id), _sci(lux), _sci(lux / ship_lux_last), String.num(1.0 / exposure, 1)]
+	return "Starlight on ship: %s · %s lx at the ship → %d%% light (Processed: the ship's lamps follow the star, brightness log-compressed %s–%s lx; direction and colour physical)" % [target.get("name", source_id), _sci(lux), roundi(100.0 * energy / ENERGY_MAX), _sci(LUX_FLOOR), _sci(LUX_FULL)]
 
 
 static func _sci(x: float) -> String:

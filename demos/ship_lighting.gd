@@ -48,6 +48,7 @@ static func apply(rig:Dictionary,profile:String)->void:
 	var fill:DirectionalLight3D=rig.fill
 	var baseline:=profile=="baseline"
 	env.ambient_light_color=Color(.65,.70,.78) if baseline else Color(.31,.37,.51)
+	rig.ambient_colour=env.ambient_light_color # R3-TRUE-PROCESSED: the star's bounce mixes into it (True) and restores it (Processed)
 	rig.ambient_base=.65 if baseline else .22
 	key.light_color=Color.WHITE if baseline else Color(1.,.82,.65)
 	key.light_energy=1.3 if baseline else 1.5
@@ -77,6 +78,7 @@ static func set_level(rig:Dictionary,level:int)->void:
 static func _ambient(rig:Dictionary)->void:
 	var env:Environment=rig.environment
 	env.ambient_light_energy=float(rig.get("ambient_base",.22))*(BRIDGE_AMBIENT_GAIN if rig.get("bridge",false) and rig.profile!="baseline" else 1.)
+	rig.ambient_energy=env.ambient_light_energy # R3-TRUE-PROCESSED: the ship's own bounce, before the star's
 ## The mast's meshes (manifest style.spire_nodes): the spire light sits on its axis, inside it, so
 ## the mast must not cast the spire's shadow; it casts the star's as before.
 static func set_mast(rig:Dictionary,nodes:Array)->void:
