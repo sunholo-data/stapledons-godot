@@ -18,10 +18,16 @@ APP := build/macos/Stapledons Voyage.app
 
 all: test
 
-.PHONY: kerr-oracle
+.PHONY: kerr-oracle kerr-shadow-oracle kerr-capture-oracle kerr-curvature-oracle
 test: kerr-oracle
-kerr-oracle:
+kerr-oracle: kerr-shadow-oracle kerr-capture-oracle kerr-curvature-oracle
 	sh tools/test_kerr_oracle.sh
+kerr-shadow-oracle:
+	sh tools/test_kerr_shadow_oracle.sh "$(CURDIR)"
+kerr-capture-oracle:
+	sh tools/test_kerr_capture_oracle.sh "$(CURDIR)"
+kerr-curvature-oracle:
+	sh tools/test_kerr_curvature_oracle.sh "$(CURDIR)"
 
 include mk/constellations.mk
 include mk/home-tiers.mk
