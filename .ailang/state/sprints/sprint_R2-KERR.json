@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-KERR",
-  "status": "awaiting_approval",
+  "status": "in_progress",
   "created": "2026-10-21",
   "mission_iteration": 43,
   "design_doc": "design_docs/planned/r2/kerr-black-holes.md",
@@ -287,7 +287,7 @@
     {
       "repo": "../stapledons-design",
       "path": "physics/relativity-spec.md",
-      "scope": "K1.0 separate PR \u00a73b/\u00a74/\u00a77 merged before any visuals"
+      "scope": "K1.0 separate PR §3b/§4/§7 merged before any visuals"
     },
     {
       "repo": "game",
@@ -750,7 +750,7 @@
       "when": "K1.0 design-repo PR, before any K1.5/K1.6 visual merges",
       "stop": true,
       "requires": [
-        "Separate ../stapledons-design/physics/relativity-spec.md \u00a73b/\u00a74/\u00a77 PR merged.",
+        "Separate ../stapledons-design/physics/relativity-spec.md §3b/§4/§7 PR merged.",
         "Record reviewed merged SHA and RK/source provenance."
       ],
       "release_evidence": "Mark's spec disposition and merged design commit; grep presence alone is insufficient merge evidence."
@@ -940,7 +940,7 @@
   "risks": [
     "Unresolved design inconsistencies alter frames, domains and ACs; affected executor slices stop until reviewed disposition, with no implicit approval from this plan.",
     "Measured Kerr strong-field coefficient may not regularise both channels; retain source/row metadata, test accuracy with refinement, and review raw4096-column fallback rather than blessing finiteness alone.",
-    "18\u201325 CPU-hours/table set is the design estimate, not a new measurement. Benchmark a bounded shard first; full generation manual/controller only. Re-measure1024-column/48-azimuth/F16 fallbacks against every accuracy probe.",
+    "18–25 CPU-hours/table set is the design estimate, not a new measurement. Benchmark a bounded shard first; full generation manual/controller only. Re-measure1024-column/48-azimuth/F16 fallbacks against every accuracy probe.",
     "Static and ZAMO frames differ for spin>0; independent nonzero-spin hover/orbit frequency and direction checks must precede GPU mirrors.",
     "Near-extremal cancellation and unsupported asset spins: cap tables at.998, use reviewed oneMinusS API/factored delta, refuse to display mismatched assets without substituting a different hole.",
     "Signed alpha, handedness and sky basis can mirror the prograde pinch; RK endpoints, finite-r ratio, twist markers and source mutations must all constrain the sense.",
@@ -1093,8 +1093,8 @@
         {
           "test": "registry completeness",
           "file": "../stapledons-design/physics/relativity-spec.md",
-          "asserts": "\u00a73b/\u00a74/\u00a77 contain RK-1..18 and RK-Q1, units, finite-r/infinity separation and approved DI corrections",
-          "kills_which_mutation": "Deleted RK-14 sign or missing \u00a74 GPU requirement"
+          "asserts": "§3b/§4/§7 contain RK-1..18 and RK-Q1, units, finite-r/infinity separation and approved DI corrections",
+          "kills_which_mutation": "Deleted RK-14 sign or missing §4 GPU requirement"
         }
       ],
       "implementation": "Write ~150 documentation lines in a separate design-repo PR. Resolve mathematical DI rows through review; attach oracle generation source/command provenance, without claiming unavailable tide digits. No game implementation. Draft may start after P0; final merge also waits for K1.1a-a's precise oracle provenance. This does not block closed-form package work.",
@@ -1121,7 +1121,7 @@
         "K1.1a-a5"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "estimated_doc_loc": 150,
@@ -1134,7 +1134,8 @@
           "repo": "design"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Spec draft ready: sunholo-data/stapledons-design#49, 6ee54cacb820937df28c860ed89842985ba1d285. Not merged; passes remains false."
     },
     {
       "id": "K1.1a-a1",
@@ -1203,7 +1204,7 @@
       "design_blocks": [
         "DI-01"
       ],
-      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "registry_reuse": "none — independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
       "merge_pause_points": [],
       "notes": " Iteration49: RK-1/2-only seed; PR325 merge72bac6489e53646a666c747e70fd360166082e55; full rig/full exactd235f6c0 and fast CI40173640151 green; mergeCI40180931545 green; independent MiniMax M3 95 PASS. RK-3/9 and parent remain open. GPU/render N/A; no publish/spec approval."
@@ -1265,7 +1266,7 @@
       "design_blocks": [
         "DI-01"
       ],
-      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "registry_reuse": "none — independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
       "merge_pause_points": [],
       "evidence": {
@@ -1335,7 +1336,7 @@
       "design_blocks": [
         "DI-01"
       ],
-      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "registry_reuse": "none — independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
       "merge_pause_points": [],
       "evidence": {
@@ -1371,7 +1372,7 @@
           "kills_which_mutation": "silent metadata acceptance (verified wrong-unit defect)"
         }
       ],
-      "implementation": "In an isolated copy (never the iter48 orphan, never main): drills factor-2 (r_s vs u), sqrt branch/domain, NaN accepted, six-decimal literal reuse, empty fixture, wrong unit \u2014 each observed RED then restored GREEN. Permanent negative tests added to the shell for every drill.",
+      "implementation": "In an isolated copy (never the iter48 orphan, never main): drills factor-2 (r_s vs u), sqrt branch/domain, NaN accepted, six-decimal literal reuse, empty fixture, wrong unit — each observed RED then restored GREEN. Permanent negative tests added to the shell for every drill.",
       "acceptance": [
         {
           "id": "AC-K3-slice",
@@ -1405,7 +1406,7 @@
       "design_blocks": [
         "DI-01"
       ],
-      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "registry_reuse": "none — independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
       "merge_pause_points": [],
       "evidence": {
@@ -1494,7 +1495,7 @@
       "design_blocks": [
         "DI-01"
       ],
-      "registry_reuse": "none \u2014 independent second-language oracle must not reuse the implementation under test",
+      "registry_reuse": "none — independent second-language oracle must not reuse the implementation under test",
       "approval_fence": "D116 scoped authorization already covers K1.1a children (headless maths/oracle package only, stop before publish); all other parents/P0/Mark spec/publish fences remain. An independent evaluator (generator != judge) is still mandatory after execution.",
       "merge_pause_points": [],
       "evidence": {
@@ -1555,9 +1556,9 @@
       "depends_on": [
         "K1.1a-a5"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -1581,7 +1582,8 @@
           "repo": "sunholo-data/ailang-packages"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
     },
     {
       "id": "K1.1a-c",
@@ -1629,9 +1631,9 @@
       "depends_on": [
         "K1.1a-b"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "file_details": [
@@ -1646,7 +1648,8 @@
           "repo": "sunholo-data/ailang-packages"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
     },
     {
       "id": "K1.1a-d",
@@ -1694,9 +1697,9 @@
       "depends_on": [
         "K1.1a-c"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "file_details": [
@@ -1711,7 +1714,8 @@
           "repo": "sunholo-data/ailang-packages"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
     },
     {
       "id": "K1.1a-e",
@@ -1754,9 +1758,9 @@
       "depends_on": [
         "K1.1a-d"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -1775,7 +1779,8 @@
           "repo": "sunholo-data/ailang-packages"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
     },
     {
       "id": "K1.1b-a",
@@ -1837,9 +1842,9 @@
       "depends_on": [
         "K1.1a-e"
       ],
-      "passes": false,
-      "started": null,
-      "completed": null,
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -1877,7 +1882,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
     },
     {
       "id": "K1.1b-b",
@@ -4426,7 +4432,7 @@
     {
       "premise": "Spec and canon",
       "command": "git -C ../stapledons-design rev-parse HEAD\nrg -n -i 'kerr|schwarzschild' ../stapledons-design/physics/relativity-spec.md\nsed -n '14p' ../stapledons-design/vision/premise-and-loop.md",
-      "output": "864a4e4598e40ed33a76aef6fbd06eabfcc29e86\n63:## 3. General relativity (Schwarzschild; the black-hole feature)\n- **You come back.** The ship emerges violently from the ergosphere of a spinning black hole: the same rogue black hole that is heading for the Solar System. The crew's memories are erased and the ship's AI is confused. You stabilise the tumbling ship amid full SR and GR distortion. Then the ship is **thrown clear, towards Earth**. A Penrose-process slingshot out of the ergosphere is the physics-adjacent reading; *why* the throw points home is part of the spire mystery (\u00a74). You coast in past Saturn and reach Earth.",
+      "output": "864a4e4598e40ed33a76aef6fbd06eabfcc29e86\n63:## 3. General relativity (Schwarzschild; the black-hole feature)\n- **You come back.** The ship emerges violently from the ergosphere of a spinning black hole: the same rogue black hole that is heading for the Solar System. The crew's memories are erased and the ship's AI is confused. You stabilise the tumbling ship amid full SR and GR distortion. Then the ship is **thrown clear, towards Earth**. A Penrose-process slingshot out of the ergosphere is the physics-adjacent reading; *why* the throw points home is part of the spire mystery (§4). You coast in past Saturn and reach Earth.",
       "exit_code": 0
     },
     {
@@ -4444,7 +4450,7 @@
     {
       "premise": "Offline package reuse",
       "command": "rg -n 'version =|sunholo/relativity/(geodesic|schwarzschild)' /Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0/ailang.toml\nrg -n 'Kerr|Schwarzschild module' /Users/voightkampff/.ailang/cache/registry/sunholo/relativity/0.12.0/AGENT.md",
-      "output": "3:version = \"0.12.0\"\n20:  \"sunholo/relativity/schwarzschild\",\n22:  \"sunholo/relativity/geodesic\",\n29:- Rotating (Kerr) black holes.\n49:- **Schwarzschild module:** radii in units of r_s = 2GM/c\u00b2 (the horizon is at",
+      "output": "3:version = \"0.12.0\"\n20:  \"sunholo/relativity/schwarzschild\",\n22:  \"sunholo/relativity/geodesic\",\n29:- Rotating (Kerr) black holes.\n49:- **Schwarzschild module:** radii in units of r_s = 2GM/c² (the horizon is at",
       "exit_code": 0
     },
     {
@@ -4498,7 +4504,7 @@
     {
       "premise": "Claimed releases/minors are inherited controller evidence",
       "command": "sed -n '268p' design_docs/planned/r2/kerr-black-holes.md\nsed -n '284p' design_docs/planned/r2/kerr-black-holes.md",
-      "output": "| V13 | Minor 13 is claimed in flight | `grep -n \"2.13\\|minor 13\" .ailang/state/sprints/sprint_R2-SIMILAR-S0.json; gh pr view 302 --json number,title,state` | the similar-worlds S0 sprint plans protocol 2.13 (\"Negotiated 2.13\u2026\"); `gh` failed: `tls: failed to verify certificate` (sandboxed); **controller re-check outside the sandbox (2026-10-21):** `gh pr diff 302 | grep \"surfaceMinor() -> int\"` prints `+export pure func surfaceMinor() -> int = 13` (attended R2-STAR-SURFACES, open, paused for Mark's playtest), so both claims on minor 13 are real |\n| V29 | `sunholo/relativity` 0.13.0 is already taken (controller, outside the sandbox) | `git -C ~/dev/sunholo-data/ailang-packages show origin/main:packages/relativity/ailang.toml \\| grep -m1 version; ailang pkg versions sunholo/relativity \\| grep latest` | source `version = \"0.13.0\"` (ailang-packages #126, `7682890`: float64 domain bounds for seven generated properties, `hyper.sinh` saturation fix); registry latest `v0.12.0`. So 0.13.0 is unpublished but claimed; Kerr plans 0.14.0 unless the two ship together |",
+      "output": "| V13 | Minor 13 is claimed in flight | `grep -n \"2.13\\|minor 13\" .ailang/state/sprints/sprint_R2-SIMILAR-S0.json; gh pr view 302 --json number,title,state` | the similar-worlds S0 sprint plans protocol 2.13 (\"Negotiated 2.13…\"); `gh` failed: `tls: failed to verify certificate` (sandboxed); **controller re-check outside the sandbox (2026-10-21):** `gh pr diff 302 | grep \"surfaceMinor() -> int\"` prints `+export pure func surfaceMinor() -> int = 13` (attended R2-STAR-SURFACES, open, paused for Mark's playtest), so both claims on minor 13 are real |\n| V29 | `sunholo/relativity` 0.13.0 is already taken (controller, outside the sandbox) | `git -C ~/dev/sunholo-data/ailang-packages show origin/main:packages/relativity/ailang.toml \\| grep -m1 version; ailang pkg versions sunholo/relativity \\| grep latest` | source `version = \"0.13.0\"` (ailang-packages #126, `7682890`: float64 domain bounds for seven generated properties, `hyper.sinh` saturation fix); registry latest `v0.12.0`. So 0.13.0 is unpublished but claimed; Kerr plans 0.14.0 unless the two ship together |",
       "exit_code": 0
     },
     {
@@ -4519,7 +4525,7 @@
     {
       "id": "iter49-kerr11aa-resplit",
       "author": "openrouter/moonshotai/kimi-k3 (fallback pinned sprint-planner; ollama/kimi-k3:cloud probe failed HTTP 429; inherited codex:gpt-6.1-sol audit attempt hit the 600 s cap, elapsed 605 s, graceful rc0, no artifact)",
-      "kind": "planner proposal \u2014 no execution approved",
+      "kind": "planner proposal — no execution approved",
       "report": ".ailang/state/planning/stapledon-iter49-planner.md",
       "summary": "K1.1a-a re-split into K1.1a-a1..a5 (each <=150 total physical lines, oracle-only, registry_reuse none); original K1.1a-a moved from active features to superseded_features (double count removed); active features 34, active LOC 4210 (=3710-150+650; with K1.0 spec 4360); dependents re-pointed to terminal child K1.1a-a5; parent K1.1a estimated_loc 1150; approved spin domain finite 0<=s<1 (reject negative, s=1, >1, NaN/Inf BEFORE any sqrt; no signed/extremal expansion); RK labels corrected (RK-4/5 photon pro/retro, RK-6/7 ISCO pro/retro, RK-8 and RK-8b orbit clocks, RK-9 horizon omega in a1, RK-10 drag/RK-11 lapse/RK-12 speed/RK-13 static clock in a3); D116 scoped authorization already covers K1.1a children -- all other parents/P0/Mark spec/publish fences remain; global approved:false/awaiting_approval unchanged for the unscheduled rest.",
       "passes_changed": false
@@ -4531,5 +4537,7 @@
       "summary": "K1.1a-a3 landed without RK-3 (static limit record, the constant 2 at the equator) and RK-9 (dimensionless horizon angular velocity record), because both would exceed its 140-line cap (150 with them). Both records are owed before K1.1a-a5's completeness audit, which requires RK-1..13: fold them into K1.1a-a4 if its cap allows, otherwise into a5. Carried with them from the a3 evals: an off-equator static_limit anchor or drop of the unused cos_theta parameter (round 1 N1, round 2 NB1), and a guard on the Decimal precision (round 2 V10: precision 20 survives, reproduced by the controller).",
       "passes_changed": true
     }
-  ]
+  ],
+  "last_session": "2026-11-02",
+  "last_checkpoint": "K1.1a scalar endpoint and K1.1b-a shadow implemented; no visuals/publish"
 }

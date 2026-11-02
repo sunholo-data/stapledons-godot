@@ -1,0 +1,7 @@
+module verify_sqrt_repro
+import std/math (sqrt)
+pure func root(s: float) -> float = sqrt((1.0-s)*(1.0+s))
+export pure func horizon(s: float) -> float
+  requires { s >= 0.0 && s < 1.0 }
+  ensures { result >= 0.5 && result <= 1.0 }
+{ (1.0+root(s))/2.0 }

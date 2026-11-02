@@ -127,6 +127,47 @@ def clock_row(rid, spin, quantity, value):
     return {"id": rid, "spin": spin, "quantity": quantity, "precise": format(value, ".17g"),
             "display": format(value, ".6f"), "package_R": None, "formula": CLOCK}
 
+# Bardeen 1973 critical curve; oracle photon endpoints use polynomial roots,
+# independently of the package's trigonometric photon-orbit formula.
+def shadow_constants(u, s):
+    lam = -(u**3 - 3*u*u + s*s*u + s*s)/(s*(u-1))
+    eta = 4*u*u*(u*u-2*u+s*s)/(u-1)**2 - (lam-s)**2
+    return lam, eta
+
+def shadow_fixture():
+    records = []
+    formula = 'Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units'
+    for spin in ('0.9', '0.998'):
+        s = spin_value(spin)
+        lo, hi = photon_orbits(spin)
+        for name, value in (('alpha-min', -shadow_constants(lo,s)[0]), ('alpha-max', -shadow_constants(hi,s)[0])):
+            records.append(value_row('RK-14',spin,name,value,formula))
+        count = 200000
+        total = Decimal(0)
+        for j in range(count):
+            u = lo+(hi-lo)*j/(count-1)
+            lam, eta = shadow_constants(u,s)
+            total += (lam*lam+eta).sqrt()
+        records.append(value_row('RK-16',spin,'uniform-u-mean-N200000',total/count,'equal weights 1/N, both exact endpoints, N=200000; '+formula))
+    records.append(value_row('RK-15','0.9','beta-max',3*Decimal(3).sqrt(),formula))
+    s = Decimal('0.9')
+    lo, hi = photon_orbits('0.9')
+    def b2(u):
+        lam, eta = shadow_constants(u,s)
+        return eta+s*s/2-lam*lam
+    vl, vr = root(b2,lo,3), root(b2,3,hi)
+    a,b = vl,vr
+    for _ in range(230):
+        l,r = a+(b-a)/3,b-(b-a)/3
+        if b2(l)<b2(r): a=l
+        else: b=r
+    mid = (a+b)/2
+    for name,value in (('alpha-min',-shadow_constants(vl,s)[0]*Decimal(2).sqrt()),
+                       ('alpha-max',-shadow_constants(vr,s)[0]*Decimal(2).sqrt()),
+                       ('beta-max',b2(mid).sqrt()),('u-left',vl),('u-right',vr),('u-top',mid)):
+        records.append(value_row('RK-17','0.9',name,value,formula))
+    return {'schema':'kerr-shadow-oracle-v1','source':SOURCE,'unit':'GM/c^2; observer at infinity', 'records':records}
+
 def fixture():
     records = []
     for spin in ("0", "0.5", "0.9", "0.998"):
@@ -166,6 +207,9 @@ def unique_keys(pairs):
     return result
 
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "--shadow":
+        print(json.dumps(shadow_fixture(), indent=2))
+        return
     expected = fixture()
     if len(sys.argv) == 1:
         print("{")

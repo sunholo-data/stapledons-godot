@@ -2045,3 +2045,25 @@ In `tools/test_kerr_oracle.sh` only (Makefile, `tools/kerr_ref.py`, `tests/fixtu
 11. `jq -e . .ailang/state/sprints/sprint_R2-KERR.json` and the every-other-byte check `diff <(git show HEAD:.ailang/state/sprints/sprint_R2-KERR.json | jq -S 'del(.features[] | select(.id=="K1.1a-a5"))') <(jq -S 'del(.features[] | select(.id=="K1.1a-a5"))' .ailang/state/sprints/sprint_R2-KERR.json)` → empty diff.
 
 Controller gates (unchanged): `make ci-fast AILANG=runtime/bin/ailang`, `PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang`. Independent evaluator (generator ≠ judge) after execution; `passes` stays false until then. rc 0 alone is not review.
+
+## Attended execution amendment 2026-11-02 (D-144)
+
+Codex A executes on `feat/r2-kerr`, game draft #373, package draft
+sunholo-data/ailang-packages#173, normative design draft
+sunholo-data/stapledons-design#49. The attended brief authorizes the draft spec
+before visuals; no merge or publication is authorized. No GPU sky or demo gate
+has passed. The oracle fixture children already on main remain passed.
+
+K1.1b-a is executed in two bounded commits: independent Decimal60 shadow oracle
+and companion fixture/audit (source/tool budget 140), then canonical shadow
+module/native tests (source/tool budget 140). The generated JSON is evidence,
+not hand-edited source. K1.1b-a remains the aggregate acceptance item, only
+passing once both portions and mutations pass. This mechanical split changes
+neither physics nor acceptance. The larger Carter slice must likewise be split
+before code exceeds 150 lines; no turning, chart or frequency gate may be omitted.
+
+AILANG prompt version loaded: **v0.16.7**, runtime **v0.54.18**. Scalar evidence
+and exact commands are in `.ailang/state/evidence/R2-KERR/attended-2026-11-02.md`.
+The verifier's helper-sqrt encoding error is reported upstream; float contracts
+are not claimed as IEEE proofs. `pkg quality --no-run` still reports **no gates**;
+this is not attested test/smoke execution or publication readiness.
