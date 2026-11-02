@@ -1,5 +1,5 @@
 module stapledons/sim/tools/exoplanets_test
-import ./exoplanets (csvRows, build, curatedPlanets, parseRegistry)
+import ./exoplanets (csvRows, build, curatedPlanets, parseRegistry, fieldsEqual, planetsEqual, catalogueDigest, archivePlanet)
 import std/list (length, filter, any)
 import std/option (Some, None)
 import std/json (decode)
@@ -24,11 +24,22 @@ test "NASA equilibrium temperature and insolation retain values with model prove
   _ => false
  }
 }
+test "field equality checks complete metadata beyond show truncation" {
+ let a = {value:1.0,prov:"measured",note:"A long common prefix deliberately exceeds a human display budget before reaching the distinguishing metadata value: left; another long common suffix",cite:"ref"};
+ let b = {a | note:"A long common prefix deliberately exceeds a human display budget before reaching the distinguishing metadata value: right; another long common suffix"};
+ fieldsEqual([("radius",a)],[ ("radius",a)]) && not fieldsEqual([("radius",a)],[ ("radius",b)])
+}
+test "whole catalogue equality and full JSON digest detect a middle-record mutation" {
+ let p = archivePlanet("Test b","Test","","unmatched",10.0,[("radius_earth",1.0)],"reference","Mass","M4 V","");
+ let changed = {p | massKind:"Msini"};
+ planetsEqual([p,p,p],[p,p,p]) && not planetsEqual([p,p,p],[p,changed,p])
+ && catalogueDigest([p,p,p]) != catalogueDigest([p,changed,p])
+}
 pure func curated() -> bool {
  let ps=curatedPlanets([]);
  let ac=filter(\b. b.kind == "planet", bodies());
- allOf(\b. length(filter(\p. p.id == b.id && show(p.fields) == show(b.fields), ps)) == 1,ac) &&
- allOf(\b. length(filter(\p. p.id == b.id && show(p.fields) == show(b.fields), ps)) == 1,trappistPlanets())
+ allOf(\b. length(filter(\p. p.id == b.id && fieldsEqual(p.fields,b.fields), ps)) == 1,ac) &&
+ allOf(\b. length(filter(\p. p.id == b.id && fieldsEqual(p.fields,b.fields), ps)) == 1,trappistPlanets())
 }
 test "curated alpha Cen and TRAPPIST-1 rows kept field-for-field" { curated() }
 

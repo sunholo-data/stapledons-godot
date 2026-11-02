@@ -51,6 +51,12 @@ in the source string; it does not alter any curated Field.
 
 Commands: `tools/exoplanets.sh fetch|build|check`. `check` regenerates to a
 scratch directory and compares JSON, AILANG and difference report byte for byte.
+
+`make exoplanets-check` also runs the independent read-only Python oracle
+(`tools/exoplanets_ref.py`) to compare every raw scalar with JSON by IEEE-754
+binary64 bits. The AILANG compiled-table witness compares every record scalar
+and provenance string explicitly and hashes full JSON; human `show()` output
+is truncated and is never used for whole-data equality or digests.
 The generator writes the source module from parsed float64 values with
 round-trip formatting, split into chunks; the simulation can import it without
 runtime file I/O. Tests cover CSV quoting, exact float64 values, minimum mass,

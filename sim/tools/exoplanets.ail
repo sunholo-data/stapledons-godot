@@ -21,6 +21,25 @@ export type Planet = {id: string, name: string, host: string, hostId: string, ar
  inRegistry: bool, matchMethod: string, distancePc: float, status: string,
  massKind: string, hostSpectralType: string, fields: [(string, Field)], archiveFields: [(string, Field)], reference: string, source: string}
 
+-- show() is a bounded human display, never an equality oracle or data digest.
+-- Compare every scalar and provenance string without a display/length limit.
+export pure func fieldsEqual(a: [(string,Field)], b: [(string,Field)]) -> bool =
+ match (a,b) {
+  ([],[]) => true,
+  ((ka,fa)::ar,(kb,fb)::br) => ka == kb && fa.value == fb.value && fa.prov == fb.prov && fa.note == fb.note && fa.cite == fb.cite && fieldsEqual(ar,br),
+  _ => false
+ }
+pure func planetEqual(a: Planet,b: Planet) -> bool =
+ a.id == b.id && a.name == b.name && a.host == b.host && a.hostId == b.hostId && a.archiveHostId == b.archiveHostId
+ && a.inRegistry == b.inRegistry && a.matchMethod == b.matchMethod && a.distancePc == b.distancePc
+ && a.status == b.status && a.massKind == b.massKind && a.hostSpectralType == b.hostSpectralType
+ && a.reference == b.reference && a.source == b.source && fieldsEqual(a.fields,b.fields) && fieldsEqual(a.archiveFields,b.archiveFields)
+export pure func planetsEqual(a: [Planet],b: [Planet]) -> bool = match (a,b) {
+ ([],[]) => true,
+ (pa::ar,pb::br) => planetEqual(pa,pb) && planetsEqual(ar,br),
+ _ => false
+}
+
 pure func cell(s: string) -> string = if startsWith(s,"\"") && length(s) >= 2 then replace(substring(s,1,length(s)-1),"\"\"","\"") else s
 pure func lineCells(s: string, i: int, start: int, quoted: bool, acc: [string]) -> [string] =
  if i >= length(s) then acc ++ [cell(substring(s,start,length(s)))]
@@ -78,6 +97,9 @@ export pure func parseRegistry(text: string) -> [Host] = match decode(text) {Err
 pure func fieldJson(x: (string,Field)) -> Json = match x {(key,v) => jo([kv("key",js(key)),kv("value",jnum(v.value)),kv("provenance",js(v.prov)),kv("note",js(v.note)),kv("citation",js(v.cite))])}
 pure func jsonPlanet(p: Planet) -> Json = jo([kv("id",js(p.id)),kv("name",js(p.name)),kv("host",js(p.host)),kv("hostId",js(p.hostId)),kv("archiveHostId",js(p.archiveHostId)),kv("inRegistry",jb(p.inRegistry)),kv("matchMethod",js(p.matchMethod)),kv("distancePc",jnum(p.distancePc)),kv("status",js(p.status)),kv("source",js(p.source)),kv("massKind",js(p.massKind)),kv("hostSpectralType",js(p.hostSpectralType)),kv("reference",js(p.reference)),kv("fields",ja(map(fieldJson,p.fields))),kv("archiveFields",ja(map(fieldJson,p.archiveFields)))])
 pure func jsonText(ps: [Planet], rawSha: string, registrySha: string) -> string = "${encode(jo([kv("version",js("exoplanets-2026.11")),kv("source",js("NASA Exoplanet Archive ps; default_flag=1 and sy_dist<=100; curated systems win")),kv("snapshotSha256",js(rawSha)),kv("registrySha256",js(registrySha)),kv("planetCount",jint(size(ps))),kv("planets",ja(map(jsonPlanet,ps)))]))}\n"
+-- Full JSON encoding has no human-display truncation. Blank input hashes keep
+-- the digest about the complete ordered catalogue values and provenance.
+export pure func catalogueDigest(ps: [Planet]) -> string = sha256Hex(jsonText(ps,"",""))
 -- Emit AILANG values from the same parsed floats, using show's round-trip
 -- representation; strings use JSON escaping (a subset of AILANG string escapes).
 pure func q(s: string) -> string = replace(encode(js(s)),concat(["$","{"]),concat(["\\","$","{"]))

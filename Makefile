@@ -523,6 +523,7 @@ exoplanets: starmap-assets ## W2.0: regenerate measured planets from the pinned 
 
 exoplanets-check: starmap-assets ## W2.0: byte-identical regeneration and compiled-data/curated source witness
 	@AILANG=$(AILANG) sh tools/exoplanets.sh check
+	@python3 tools/exoplanets_ref.py
 	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
 	  --args-json '{"input":"data/raw/exoplanets_ps_100pc_20261102.csv","registry":"data/starmap/stars.json"}' sim/tools/exoplanets_verify.ail
 
