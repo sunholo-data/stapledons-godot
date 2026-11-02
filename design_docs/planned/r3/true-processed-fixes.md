@@ -90,7 +90,7 @@ A waveform's frequencies are times, so playing it at rate D shifts its pitch: th
 - **Bounce (labelled, D2.4):** the star's light off the deck fills the shadows: ambient += `BOUNCE` × E × f(y) / `LUX_PER_ENERGY`, in the star's colour, with `BOUNCE = 0.1` (a deck of albedo about 0.3 seen over half the sky). Without it sunlit shadows would be black, which is the renderer's lack of global illumination, not physics.
 - Eased as today (energy, colour, direction, TAU_S 0.5 s); the exposure follows the eased values. The Tab HUD line names the setting and the exemptions but shows no renderer-derived ratio or exposure numbers (evaluation B5, D-21); they stay in the manifest as diagnostics. The seen-illuminance number (lx) on the line predates this sprint.
 
-**D2.4 What the numbers show** (True, the Sun straight overhead, `LUX_PER_ENERGY` 10, bridge):
+**D2.4 What the numbers show** (True, the Sun straight overhead, `LUX_PER_ENERGY` 15.0185 lx per photometric unit, the spire 80 lx, bridge):
 
 | Where | E (lx) | Star : lamps | Eye's adaptation x | What you see |
 |---|---|---|---|---|
