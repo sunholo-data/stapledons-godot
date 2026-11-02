@@ -1705,3 +1705,70 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
     3. A non-compiling drill edit in the bridge hangs Godot instead of failing (executor M1), the same class as row 7l's SCRIPT ERROR hang.
   - Process fix: a gate that runs a Godot `--script` test passes on its summary line (`<name>: 0 failures`, or a counted `ok` total), never on rc alone; a RED run is read the same way (charter, process fixes).
 - **Next:** 7m-d when the GPU is quiet (re-measure its premise first) → L9 S0 Landing (fold in the S0.3 judge's survivors) → L3, then 7l(a), 7w and 7x. D-129 (Mark) → L4 M1b → M2.
+
+## 63 — 2026-11-02 — L9 semantic-memory S0 Landing LANDED (PR #368, merge `e7806004`): the S0.3 judge's survivors are folded in (the vector guard catches `.get("vector", d)` and `.has("vector")`; `SIMILAR_MINOR` pinned to 14; an empty `{}` accepted; the stored section is its own copy), the design, plan and report move to `implemented/r2`, and stapledons-design#47 records S0 as implemented; sprint R2-SIMILAR-S0 complete; `rig/full` green on `094b5b7c` in 101 min; independent Sonnet 92/100 PASS, zero blocking; 7m-d PARKED-ON-LANE (a person was using the Studio over Screen Sharing), with the 100 Hz docked cadence measured [PRODUCT]
+
+- **Pick:** L9 S0 Landing. STATUS 62's **Next**: 7m-d first when the GPU is quiet, then L9 S0 Landing.
+  - 7m-d at pick: GPU 0/0/0 throughout; the 1-min load fell from 157.97 (a console login burst at 07:56Z: `mediaanalysisd`, `deleted_helper`, `du`, plus the fleet loop's `grep -rl`) to 4.31 at 08:05Z, so the numeric predicate held. The controller set up a fresh bench clone (`.stap-iter63-src`: `make runtime deps sky-assets lens-assets import`) and ran the premise twice on `05e33920`. The third run died mid-run (about 08:07Z) with no verdict line. `ioreg -c IOHIDSystem` then read HID idle 0 s, with two `ScreenSharingSubscriber` processes: a person was using the Studio. Later reads put the last console input at about 08:08Z. A bench window intrudes on that person and its timings are not quiet-rig readings, so 7m-d is PARKED-ON-LANE and its predicate gains a console clause (row 7m-d).
+  - Critical path, gate 2 rule (b): the only row on UNMET clause 4 (7m AC1 via 7m-d) was not routable for a measured reason (above), so the attended order applies (D-126 C, D-128 default A): L4 is parked on D-129, Kerr a5 and S0.3 have landed, so L9 S0 Landing.
+  - Not already landed: sprint `R2-SIMILAR-S0` Landing `pending`; the design doc still in `planned/r2`; no open PR in the repo; no orphan clone.
+  - Quorum at pick: reviewed (`semantic-memory-s0-2026-10-19T07-47-14Z`, `…07-57-31Z`; `mc_quorum_gate2` rc 0); the plan is Mark-approved (D-85 A). Nothing re-quorumed.
+- **7m-d premise readings (controller, not counted: Screen Sharing active):** `make bench SCENE=bridge` on `05e33920`, Apple M4 Max, Metal, 2560×1440 viewport (window 2560×1288), medium tier, vsync off.
+  - Run 1 (load 3.80): docked control p50 10.00, p95 11.40, p99 15.35 ms (mean 10.04); live transit 9,963 frames, p50 2.43, p99 8.59 ms.
+  - Run 2 (load 4.33): docked p50 9.99, p95 11.01, p99 11.61 ms (mean 10.00); live transit 2,974 frames, p50 9.99, p99 13.97 ms.
+  - The display is 2560×1440 at 100.00 Hz (`system_profiler SPDisplaysDataType`). The docked frames sit on the 10 ms refresh period even with vsync off, and live transit ran uncapped in run 1 and capped in run 2. At iteration 54, transit read about 3,250 frames in 30 s, which is also capped. Hypothesis for 7m-d, unmeasured on a quiet rig: a docked p99 above 16.7 ms over 300 frames is about 3 frames that slipped one refresh (≈ 20 ms), so the docked control measures display pacing as much as render cost.
+- **Progress:** clauses 1/2/3 MET; 4 UNMET; 5 ongoing. Goal unmoved: S0 is R2 semantic memory, headless, and moves no R1 clause.
+- **Gate 0:**
+  - Armed; gh `sunholo-voight-kampff`; billing CLEAN.
+  - Bookkeeping issue #329 (prev #274). `mission_directives.sh`: 0 directives since 2026-10-27T11:22:14Z (18 comments, all the loop's own; legacy watermark, not upgraded because nothing was marked).
+  - Self-notices rc 0 (control 4:5, watermarks 2/2). Inbox: nothing addressed to `mission-stapledon` or `stapledon`.
+  - First iteration after the Monday 07:00 boundary, so the weekly sweep ran: 0 orphans of 1 enumerated open issue (#329 itself; negative control fired). The thread rotates at Gate 5.
+  - The main checkout was clean on `main` = origin/main. All work ran in sibling clones `.stap-iter63-src`, `-eval`, `-rec` and `-design`.
+- **Gate 1:**
+  - Base `05e339204e88649851527b9da6b5f45be0bb44a7` at 2026-11-02T07:57:52Z; main = origin/main.
+  - All 28 skill-file copies (resolved symlink and driver pin, 14 each) match `origin/dev`.
+  - Main's check set: 1 check, fast tier success. Open PRs: none.
+- **Plan (planner `pi:ollama/kimi-k3:cloud`, `mission_pi_run.sh`, verdict ok, 585 s, 118 tool executions):** "Amendment iter63: Landing execution detail" in `semantic-memory-s0-sprint.md` (+122) and the Landing object in `sprint_R2-SIMILAR-S0.json` (S0.1–S0.3 and the top level identical under `jq -S`). Commit `0a0cb121`.
+  - Survivors S1–S4 with a test-plan table (each row names its mutation) and five drills.
+  - The widened guard pattern, with the exact Makefile escaping run through `make` → `zsh -eu -c` in a scratch makefile.
+  - It found that the stale frozen-base gate fails on `sim/ailang.lock`, `main.gd` and `tests/replays` (only the protocol-2.7 fixture is unchanged), not just `main.gd` as iteration 62 had said. It replaced the gate with L-A (each S0 merge against its first parent) and L-B (the landing diff against the merge-base). The controller re-ran L-A on `ddc5582d`, `db54e525` and `ca1e04d0` (rc 0 each), the widened pattern over every tracked `*.gd` (rc 1, no hits) and the Jupiter row from the fixture.
+- **Build (executor Haiku 5.5 via the Agent tool, foreground, `.stap-iter63-src`; the controller committed `094b5b7c`):** `Makefile` 3 lines (pattern, probe 5 → 7 lines, expected count 4 → 6), `tests/test_sim_bridge.gd` +23 (T8 literal 14, T9 `{}`, T10 own copy), the two docs moved to `implemented/r2` (13 operative lines of stale minor references fixed in the design doc), `semantic-memory-s0-report.md` (87 lines), the README row, the changelog fragment.
+  - GREEN: `sim bridge: 0 failures`, 110 `ok` (107 + 3). `make similar-test` rc 0; `make sim` 577 passed; `uid-guard python-guard lint-precision` rc 0; the protected paths unchanged against the merge-base.
+  - Drills, each with its named failure: D-S2 (`SIMILAR_MINOR := 15`), D-S3 (reject `{}`), D-S4 (bare assignment), D-S1a (inject both forms into production files), D-S1b (drop the `.has` alternative).
+  - Executor deviations: an `evidence` object added to the Landing feature (none existed); its first T10 used `var ok :=` on a Variant, which failed to parse with rc 0 (row 7x), caught in the log and fixed.
+  - Controller re-ran the bridge test (110 ok, 0 failures) and D-S4 (`FAIL stored similar is its own copy…`, reverted byte-identical).
+- **Evaluation:** Sonnet 5.5 via the Agent tool, foreground, own clone `.stap-iter63-eval` at `094b5b7c`, no controller findings handed over. **92/100 PASS, zero blocking** (`eval_R2-SIMILAR-S0_Landing_round_1.json`).
+  - It re-derived the ranking digest, both session fixture hashes and their inputs, the Jupiter ranking, the Earth–TRAPPIST-1 e distance and the three earlier scores (93/93/90). It found no broken links.
+  - 24 of its own mutants: 15 killed, 4 survived, 1 equivalent, 0 hangs. Survivors: the guard misses `.get(&"vector")` and a bare `get("vector")` (controller reproduced: both unmatched, while `d.get( "vector")` and `d.has("vector")` match); the probe has no whitespace variants; T9's last clause is redundant. All in the backlog line.
+  - Its first bridge run in the fresh clone failed to parse (no class cache) until `godot --headless --path . --import`; the controller's process fix (2).
+- **Landing / Gate 3b:** PR #368, head `094b5b7c`. Fast tier on the head: success. `rig/full` launched detached (`nohup`, rc marker, bounded polls) at 08:43Z, 1-min load 3.2–10: green in 101 min (`rig-check: ok, 094b5b7c green (make test, 101 min)`; status `rig/full` success, AILANG v0.54.18). Main had not moved; merged with `--match-head-commit`: `e7806004`. Fast tier on the merge: success (run 41428664689).
+  - Design repo: stapledons-design#47 (`features/next/semantic-memory.md`: S0 implemented, the Jupiter row Saturn 0.75, Uranus 1.95, Neptune 2.27; `roadmap/r2-voyage-life.md`: S0 landed), opened before the game merge and merged after it (`a4da3956`). No canon or lore text.
+- **Record:** charter (STATUS 63; STATUS 60 rotated to the archive; the L9 row; row 7m-d with the amended predicate and the premise readings; a process fix; a backlog line; the CURRENT GOAL counter), this entry, the index, the dashboard, the Landing evaluation, sprint `R2-SIMILAR-S0` (Landing `passes` true; sprint `done`).
+- **Routing evidence**
+
+  base=05e339204e88649851527b9da6b5f45be0bb44a7@2026-11-02T07:57:52Z.
+
+  Resolver output: designer `recipe claude:claude-opus-5-5 declared:provider-pin` (not run: no new or revised doc; S0 design approved, D-85 A); planner `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin` (`derive-planner-lane.sh` agreed); executor `recipe claude:claude-haiku-5-5 declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`. Driver note: `planner: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to pi:ollama/kimi-k3:cloud; executor: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to claude:claude-haiku-5-5`.
+
+  The operator's standing request was met. The planner ran through its pi recipe (probe rc 0 first); the executor (`haiku`, the same model as its `claude:` pin) and the evaluator (`sonnet`) ran through the Agent tool, both foreground. No designer was needed. No role failed to spawn.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Planner `pi:ollama/kimi-k3:cloud`: 125,150 in / 54,493 out / 5,849,431 cache-read tok, 92 turns, 585 s. Ollama cloud, $0.
+  - Executor Agent `haiku` = `claude:claude-haiku-5-5`: 111,556 tok, 50 tool uses, 19.8 min. Quota bucket anthropic.
+  - Evaluator Agent `sonnet`: 79,390 tok, 21 tool uses, 31.2 min. Quota bucket anthropic.
+  - Judge independence: different vendor from the planner (Moonshot), same vendor but a different model from the executor (Haiku executor, Sonnet judge, Opus controller); `judge-independence: same-vendor-different-model`.
+  - Quorum: none (no new or revised doc). metered=$0.00.
+- **Ruled out:**
+  - Counted 7m-d runs this fire: a person on the console (HID idle 0 s, Screen Sharing), and the third run died mid-run.
+  - Taking 7m-d after the person left (HID idle 1,670 s at 08:36Z): one item per iteration, and the Landing build was already under way.
+  - L4 M1b/M2 before D-129 (guardrail: stop at Open questions).
+  - Fixing the judge's survivors in this PR: a second `rig/full` (about 100 min) for non-blocking findings. They go to the backlog line.
+  - Fixing row 7x here: pre-existing, outside the Landing's files.
+- **Upstream:** none. (Godot's display pacing and its `--script` exit code are engine behaviour, not AILANG.)
+- **Retro:**
+  - Frictions:
+    1. The quiet-rig predicate (GPU < 15 %, load < 5) read quiet while a person was using the Studio over Screen Sharing. A bench window then intrudes on them, and the run is not a quiet-rig reading: the third premise run died within about a minute of their last input.
+    2. The evaluator's fresh clone gave Parse Errors on the bridge test until Godot built its class cache (`--import`), with rc 0, so a fresh clone can read as a broken build (row 7x's class).
+    3. The executor's first T10 failed to parse with rc 0 (`var ok :=` on a Variant), the third row-7x instance in two iterations; the summary-line rule (iteration 62's process fix) caught it.
+  - Process fix: the quiet-rig predicate also requires nobody on the console (HIDIdleTime over 600 s), and an evaluator's fresh clone runs `make import` before any Godot `--script` test (charter, process fixes).
+- **Next:** 7m-d when the rig is quiet and nobody is on the console (start from the 100 Hz hypothesis: a longer docked window, a histogram, per-frame process time against the refresh period) → L3, then 7l(a), 7w and 7x. D-129 (Mark) → L4 M1b → M2. Backlog: the guard's StringName, bare-`get` and whitespace gaps; the moved design doc's stale status lines.
