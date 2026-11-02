@@ -39,7 +39,7 @@ static func install(host:Node3D)->Dictionary:
 	lamp.mesh=band;lamp.position=spire.position;lamp.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var glow:=StandardMaterial3D.new();glow.albedo_color=SPIRE_COLOUR;glow.emission_enabled=true;glow.emission=SPIRE_COLOUR
 	lamp.material_override=glow;host.add_child(lamp)
-	var rig:={"environment":env,"key":key,"fill":fill,"practical":practical,"spire":spire,"spire_lamp":lamp,"profile":"","bridge":true,"mast":[]}
+	var rig:={"environment":env,"key":key,"fill":fill,"practical":practical,"practical_base":practical.light_energy,"spire":spire,"spire_lamp":lamp,"profile":"","bridge":true,"mast":[]}
 	apply(rig,"moody")
 	return rig
 static func apply(rig:Dictionary,profile:String)->void:
@@ -59,6 +59,7 @@ static func apply(rig:Dictionary,profile:String)->void:
 	(rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier=rig.spire_lamp_base
 	fill.light_color=Color.WHITE if baseline else Color(.45,.59,.82)
 	fill.light_energy=.65 if baseline else .14
+	rig.fill_base=fill.light_energy # R3-TRUE-PROCESSED: True scales it by the eye's adaptation
 	fill.shadow_enabled=false
 	rig.practical.visible=not baseline
 	rig.profile=profile

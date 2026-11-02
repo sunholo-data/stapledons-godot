@@ -85,14 +85,14 @@ A waveform's frequencies are times, so playing it at rate D shifts its pitch: th
 **D2.3 True.**
 - Star energy = E / `LUX_PER_ENERGY` (linear: 1.27 × 10⁴ at 1 AU, 470 at Jupiter, 14 at Neptune).
 - The lamps keep their base energies (no dimming, no floor: lamps do not dim because the Sun is up).
-- The eye's meter: E_meter = E_ship + E × f(y), y = ŝ·up, f(y) = (1 + y) / 2 for y ≥ 0 (the mean illuminance on surfaces facing the upper hemisphere, the deck and the walls: 1 overhead, 1/2 level with the deck, where the guided tour puts the Sun) and f(y) = (1 + y)/2 × max(0, 1 + y / 0.2) below the deck plane (cut off as the star sinks 11.5° below the rim and the deck blocks it). The deck's exposure is `tonemap_exposure` = E_ship / E_meter ≤ 1 on the interior's own environment: in deep space it is 1 (today's look), at 1 AU with the Sun level with the deck about 1/795. This is `Exposure`'s EYE rule (light-adapt only when the scene asks for less sensitivity) on the deck.
+- The eye's meter: E_meter = E_ship + E × f(y), y = ŝ·up, f(y) = (1 + y) / 2 for y ≥ 0 (the mean illuminance on surfaces facing the upper hemisphere, the deck and the walls: 1 overhead, 1/2 level with the deck, where the guided tour puts the Sun) and f(y) = (1 + y)/2 × max(0, 1 + y / 0.2) below the deck plane (cut off as the star sinks 11.5° below the rim and the deck blocks it). The eye's adaptation is x = E_ship / E_meter ≤ 1: in deep space 1 (today's look), at 1 AU with the Sun level with the deck about 1/795. This is `Exposure`'s EYE rule (light-adapt only when the scene asks for less sensitivity) on the deck. It is applied as a gain on every interior light (star, lamps, fill, practical, ambient), not as `tonemap_exposure`, so the display-referred surfaces keep their level: the painted captain (an unshaded billboard, which a tonemap exposure turned black in the first trial render), the screens and the spire lamp's glow. Ratios between lights are the physical ones; only emitters are not re-exposed (part of open question 3).
 - Shadow ownership by the star's share of the direct light, E / (E + E_ship), on the existing handover ramp (exactly one shadow map).
 - **Bounce (labelled, D2.4):** the star's light off the deck fills the shadows: ambient += `BOUNCE` × E × f(y) / `LUX_PER_ENERGY`, in the star's colour, with `BOUNCE = 0.1` (a deck of albedo about 0.3 seen over half the sky). Without it sunlit shadows would be black, which is the renderer's lack of global illumination, not physics.
 - Eased as today (energy, colour, direction, TAU_S 0.5 s); the exposure follows the eased values.
 
 **D2.4 What the numbers show** (True, the Sun straight overhead, `LUX_PER_ENERGY` 10, bridge):
 
-| Where | E (lx) | Star : lamps | Deck exposure | What you see |
+| Where | E (lx) | Star : lamps | Eye's adaptation x | What you see |
 |---|---|---|---|---|
 | Earth, 1 AU | 1.27 × 10⁵ | 1,588 : 1 | 1/1,589 | daylight; the spire's glow and the lamps vanish; hard shadows with bounce |
 | Jupiter, 5.2 AU | 4.70 × 10³ | 59 : 1 | 1/60 | sunlit; the lamps a faint warmth in the shadows |
@@ -110,7 +110,7 @@ A waveform's frequencies are times, so playing it at rate D shifts its pitch: th
 |---|---|---|
 | AC1 | No band in `comms_feed.json` carries a colour; `EarthFeed` has no tint node; in beam the picture is unmodulated at D = 7.0711e-4, 0.070888, 1, 14.107, 1414.2 | `make earth-feed-test` and `make physics` (`test_earth_feed_bands`) |
 | AC2 | The bands' time behaviour is unchanged: the names at RS-26..RS-30, jumble, drift, whirl, the babble | `make earth-feed-test comms-station-test` |
-| AC3 | True star energy = E / 10 exactly at 1 AU, Jupiter and Neptune distances; lamps at base; exposure = E_ship / E_meter; share = E / (E + E_ship); bounce as D2.3 | `make ship-star-light-test` |
+| AC3 | True star energy = E / 10 × x, lamps at base × x (so star : lamps = E / E_ship exactly), x = E_ship / E_meter, the tonemap untouched; share = E / (E + E_ship); bounce as D2.3; a 1 AU to 10⁵ AU sweep monotonic and finite with one shadow owner | `make ship-star-light-test` |
 | AC4 | Processed reproduces today's energies, key floor and exposure 1 (every pre-existing assertion of `tests/test_ship_star_light.gd` passes unchanged in Processed) | `make ship-star-light-test` |
 | AC5 | The view toggle sets the mode both ways in the real demo; the button and HUD line name it | `make ship-star-light-test` (demo section), `make bh-hud-test` |
 | AC6 | Gate 2: True deck illuminance from the spec's point-source ratio at RS-3/RS-4 (the Sun ahead and astern at 0.9c) and the inverse square, asserted in `tests/test_physics.gd` | `make physics` |

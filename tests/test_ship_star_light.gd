@@ -438,12 +438,15 @@ func _run() -> void:
 		var e_ship := StarLight.ship_lux(rig)
 		var y := star.interior_dir.y
 		check("bridge lamps in physical units: the spire's base lights the deck at 80 lx", is_equal_approx(e_ship, 80.0) and is_equal_approx(rig.spire_base, 8.0))
-		check("True, at Earth: the star's energy is E / 10 exactly (%.1f)" % star.light.light_energy, is_equal_approx(star.light.light_energy, e_seen / 10.0) and e_seen > 1.0e5)
-		check("True, at Earth: the spire keeps its base (lamps do not dim), its lamp glows at base", is_equal_approx(rig.spire.light_energy, rig.spire_base) and is_equal_approx((rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier, rig.spire_lamp_base))
-		check("True, at Earth: the deck exposure is E_ship / (E_ship + E f(y)) (1/%.0f)" % (1.0 / env.tonemap_exposure), is_equal_approx(env.tonemap_exposure, e_ship / (e_ship + e_seen * StarLight.meter_weight(y))) and env.tonemap_exposure < 0.01)
+		var x := e_ship / (e_ship + e_seen * StarLight.meter_weight(y))
+		check("True, at Earth: the eye's adaptation is E_ship / (E_ship + E f(y)) (1/%.0f)" % (1.0 / star.exposure), is_equal_approx(star.exposure, x) and x < 0.01)
+		check("True, at Earth: the star's energy is E / 10 x the adaptation (%.2f)" % star.light.light_energy, is_equal_approx(star.light.light_energy, e_seen / 10.0 * x) and e_seen > 1.0e5)
+		check("True, at Earth: the star : spire ratio is the physical E / 80 lx (lamps do not dim)", is_equal_approx(star.light.light_energy / rig.spire.light_energy, e_seen / e_ship) and is_equal_approx(rig.spire.light_energy, rig.spire_base * x))
+		check("True: the adaptation is a light gain, the tonemap untouched; the spire lamp's glow (display-referred) at base", env.tonemap_exposure == 1.0 and is_equal_approx((rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier, rig.spire_lamp_base))
+		check("True, at Earth: the fill and the practical share the gain", is_equal_approx(rig.fill.light_energy, rig.fill_base * x) and is_equal_approx(rig.practical.light_energy, rig.practical_base * x))
 		check("True, at Earth: the star owns the only shadow map, the spire none", star.light.shadow_enabled and not rig.spire.shadow_enabled and is_equal_approx(star.light.shadow_opacity, 1.0) and not key.shadow_enabled)
 		var bounce := StarLight.BOUNCE * e_seen * StarLight.meter_weight(y) / StarLight.LUX_PER_ENERGY
-		check("True, at Earth: the star's bounce adds to the ship's ambient (%.1f + %.1f)" % [rig.ambient_energy, bounce], is_equal_approx(env.ambient_light_energy, rig.ambient_energy + bounce) and bounce > 0.0)
+		check("True, at Earth: the star's bounce adds to the ship's ambient, both under the gain (%.2f + %.1f)" % [rig.ambient_energy, bounce], is_equal_approx(env.ambient_light_energy, (rig.ambient_energy + bounce) * x) and bounce > 0.0)
 		var sunc: Vector3 = star.colour
 		check("True, at Earth: the ambient leans toward the star's colour", env.ambient_light_color.r > rig.ambient_colour.r and cdist(env.ambient_light_color, sunc) < cdist(rig.ambient_colour, sunc))
 		check("True: the manifest and HUD say true and physical", star.manifest().mode == "true" and str(star.manifest().brightness).begins_with("True, physical") and star.hud_line().contains("true light") and star.hud_line().contains("eye adapted"))
@@ -454,24 +457,24 @@ func _run() -> void:
 			body(sweep, "sun").e_v_lux = 1.27e5 / (au * au)
 			sky.apply(sweep); star.update(rig, sky, 0.0, true)
 			var en: float = star.light.light_energy
-			if en > prev_e + 1e-9 or env.tonemap_exposure < prev_x - 1e-12: mono = false
-			if not is_finite(en) or not is_finite(env.tonemap_exposure) or env.tonemap_exposure <= 0.0 or env.tonemap_exposure > 1.0: finite = false
+			if en > prev_e + 1e-9 or star.exposure < prev_x - 1e-12: mono = false
+			if not is_finite(en) or not is_finite(star.exposure) or star.exposure <= 0.0 or star.exposure > 1.0: finite = false
 			if int(star.light.shadow_enabled) + int(rig.spire.shadow_enabled) + int(key.shadow_enabled) != 1: owners = false
-			prev_e = en; prev_x = env.tonemap_exposure
+			prev_e = en; prev_x = star.exposure
 		check("True sweep 1 AU to 1e5 AU: energy falls and exposure rises monotonically, all finite", mono and finite)
 		check("True sweep: exactly one shadow map (star or spire) at every distance", owners)
-		check("True sweep: at 1e5 AU the deck is the spire's (exposure > 0.99)", env.tonemap_exposure > 0.99)
+		check("True sweep: at 1e5 AU the deck is the spire's (adaptation > 0.99)", star.exposure > 0.99)
 		var red := at_rest.duplicate(true)
 		body(red, "sun").teff_k = 2566.0
 		sky.apply(red); star.update(rig, sky, 0.0, true)
-		check("True: a red dwarf's light at the same illuminance has the same energy, a redder colour", is_equal_approx(star.light.light_energy, e_seen / 10.0) and star.colour.z < sunc.z)
+		check("True: a red dwarf's light at the same illuminance has the same energy, a redder colour", is_equal_approx(star.light.light_energy, e_seen / 10.0 * star.exposure) and star.colour.z < sunc.z)
 		sky.apply(dark); star.update(rig, sky, 0.0, true)
-		check("True, interstellar: no star light, exposure 1, the ambient the ship's own, the spire at base with the shadow", star.light.light_energy == 0.0 and env.tonemap_exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour and is_equal_approx(rig.spire.light_energy, rig.spire_base) and rig.spire.shadow_enabled)
+		check("True, interstellar: no star light, adaptation 1, the ambient the ship's own, the spire at base with the shadow", star.light.light_energy == 0.0 and star.exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour and is_equal_approx(rig.spire.light_energy, rig.spire_base) and rig.spire.shadow_enabled)
 		Lighting.set_level(rig, 1); sky.apply(at_rest); star.update(rig, sky, 0.0, true)
-		check("True, lower decks: the broad key keeps its base (15 lx) beside the Sun", is_equal_approx(key.light_energy, rig.key_base) and is_equal_approx(StarLight.ship_lux(rig), 15.0))
+		check("True, lower decks: the broad key keeps its own 15 lx beside the Sun (star : key = E / 15 lx)", is_equal_approx(key.light_energy, rig.key_base * star.exposure) and is_equal_approx(StarLight.ship_lux(rig), 15.0) and is_equal_approx(star.light.light_energy / key.light_energy, star.target.seen_lux / 15.0))
 		star.set_mode("processed")
 		sky.apply(at_rest); star.update(rig, sky, 0.0, true)
-		check("back to Processed: today's full compressed light, the key at its floor, exposure 1, the ship's ambient", is_equal_approx(star.light.light_energy, StarLight.ENERGY_MAX) and is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and env.tonemap_exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour)
+		check("back to Processed: today's full compressed light, the key at its floor, exposure 1, the ship's ambient", is_equal_approx(star.light.light_energy, StarLight.ENERGY_MAX) and is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and star.exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour and is_equal_approx(rig.fill.light_energy, rig.fill_base))
 		check("Processed: the HUD names the ship's controller", star.hud_line().contains("Processed") and star.manifest().mode == "processed")
 
 	# --- 10. Integration: the playable demo carries the star light.
@@ -494,7 +497,7 @@ func _run() -> void:
 		# R3-TRUE-PROCESSED (D2.6): the star light follows the view, Realistic -> True, Auto -> Processed.
 		check("demo: a developer launch is Realistic, and the star light True", not demo.sky.system_view.body_fader and rig2.star.mode == "true")
 		demo.set_auto_view(true)
-		check("demo: Auto -> Processed, named on the view button", rig2.star.mode == "processed" and demo.view_button.text.contains("follow the star") and rig2.environment.tonemap_exposure == 1.0)
+		check("demo: Auto -> Processed, named on the view button", rig2.star.mode == "processed" and demo.view_button.text.contains("follow the star") and rig2.star.exposure == 1.0)
 		demo.set_auto_view(false)
 		check("demo: Realistic -> True, named on the view button", rig2.star.mode == "true" and demo.view_button.text.contains("true starlight"))
 		demo.queue_free(); await process_frame
