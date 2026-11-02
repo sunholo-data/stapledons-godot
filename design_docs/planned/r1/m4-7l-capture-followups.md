@@ -4,8 +4,8 @@
 **Priority:** P2 (follow-up backlog). Test, tooling and report text only.
 **Implements:** [charter](../../stapledon-mission.md) row 7l (a), (b), (c) and (d): (b)–(d) in the body below (landed), (a) in the iteration-64 Addendum; the follow-up of [m4-6rr3-ship-renders-bench.md](m4-6rr3-ship-renders-bench.md) and its evaluation [`eval_R1-M4-JOURNEY_M4.6rR3_round_1.json`](../../../.ailang/state/evaluations/eval_R1-M4-JOURNEY_M4.6rR3_round_1.json) (drills CA, CB, CC; non-blocking findings 1, 2 and 4). The [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) stays untouched. **(a) was deferred on hold at iteration 59 and is now in scope:** the two PRs that held `Makefile` (#344, #351) merged on 2026-10-30, and no open PR touches the `capture-m4-publish` recipe (Addendum, A-V2).
 **Depends on:** D-88 A (test hygiene inside an approved sprint needs no stop); AILANG v0.54.18 (`runtime/bin`), Godot 4.7.2, the GPU window. No package, sim, protocol, scene, shader or player-visible change; no pixel of any render changes.
-**Estimated LOC:** about **50** for (b)–(d): `tools/m4_ship_capture.gd` ~38 (CA 2, CC 8, CB 26, the sheet call 1), `tools/m4_ship_bench.gd` ~10, the M4.6rR3 report 1 paragraph. **(a):** `Makefile` +14/−8 (the fix proper is ~10 of those), plus a new 75-line `tools/test_m4_publish.sh`; the drills stay in this doc.
-**Evidence:** the Verification log below, run first-hand at `e94ed9b7` (origin/main) for (b)–(d); the Addendum's own log (A-V1…A-V16), run first-hand at `6d92d2cb` for (a).
+**Estimated LOC:** about **50** for (b)–(d): `tools/m4_ship_capture.gd` ~38 (CA 2, CC 8, CB 26, the sheet call 1), `tools/m4_ship_bench.gd` ~10, the M4.6rR3 report 1 paragraph. **(a):** `Makefile` +14/−8 (the fix proper is ~10 of those), plus a new 95-line `tools/test_m4_publish.sh`; the drills stay in this doc.
+**Evidence:** the Verification log below, run first-hand at `e94ed9b7` (origin/main) for (b)–(d); the Addendum's own log (A-V1…A-V20; A-V17–A-V20 added in quorum round 1), run first-hand at `6d92d2cb` for (a).
 
 ## Game vision alignment
 
@@ -302,7 +302,7 @@ capture-m4-publish-test: ## row 7l(a): the publish checks all 18 files before it
 
 **The test: `capture-m4-publish-test`, a new `tools/test_m4_publish.sh`.**
 - **Where it joins `make test`:** as its own `test: capture-m4-publish-test` line beside the recipe, not inside the line-52 list. Fifteen `test:` lines in `Makefile` already do this (22, 126 … 1437, A-V7), and #371 and #373 add theirs the same way. Every PR that edits line 52 would conflict with an insertion there.
-- **Order in the merged list:** GNU make appends it after `export-filter-audit` and before `ship-demo-ci` (position 109 of 122 in the prototype, A-V11). It has no prerequisites, needs no GPU, runtime or assets, and runs in about 1 s, so nothing depends on its position. `ci-fast` is unchanged (the rig runs `make test`).
+- **Order in the merged list:** GNU make appends it after `export-filter-audit` and before `ship-demo-ci` (position 109 of 122 in the prototype, A-V11). It has no prerequisites, needs no GPU, runtime or assets, and runs in 1–2 s, so nothing depends on its position. `ci-fast` is unchanged: `rig/full` runs `make test` (A-V17).
 - **The script, exactly:**
 
 ```sh
@@ -321,6 +321,23 @@ T=$(mktemp -d "${TMPDIR:-/tmp}/m4-publish-test.XXXXXX") || exit 1
 trap 'rm -rf "$T"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM HUP
+# Every make runs under the 7l drills' deadline (doc body), plus one line: a TERM, INT or HUP to this
+# script's group is forwarded as KILL to the child's own group, which the outer signal cannot reach.
+# 124 is INFRASTRUCTURE, never a case result.
+deadline() { # deadline SECONDS CMD...: CMD's rc; 124 on expiry (TERM to its process group, KILL 5 s later)
+  perl -e '
+    my $s = shift; my $pid = fork; exit 125 unless defined $pid;
+    if ($pid == 0) { setpgrp(0, 0); exec @ARGV; exit 127 }
+    setpgrp($pid, $pid); my $hit = 0;
+    $SIG{$_} = sub { kill "KILL", -$pid; exit 124 } for qw(TERM INT HUP);
+    $SIG{ALRM} = sub { kill(($hit++ ? "KILL" : "TERM"), -$pid); alarm 5 };
+    alarm $s; waitpid($pid, 0); my $rc = $?; alarm 0;
+    exit($rc & 127 ? 128 + ($rc & 127) : $rc >> 8) unless $hit;
+    my $t = time + 5; select(undef, undef, undef, 0.2) while kill(0, -$pid) && time < $t;
+    kill "KILL", -$pid; exit 124;' "$@" < /dev/null
+}
+PROBE_S=10 MAKE_S=20
+infra() { echo "capture-m4-publish-test: INFRASTRUCTURE timeout after $1 s: $2"; exit 124; }
 mkdir "$T/bin" "$T/fx" || exit 1
 cat > "$T/bin/gcloud" <<STUB || exit 1
 #!/bin/sh
@@ -333,7 +350,9 @@ if [ "$(PATH=$NP command -v gcloud)" != "$T/bin/gcloud" ]; then echo "capture-m4
 makes=; versions=; nm=0
 for candidate in make gmake; do
   path=$(command -v "$candidate" 2>/dev/null) || continue
-  version=$("$path" --version 2>/dev/null | sed -n '1p')
+  prc=0; deadline "$PROBE_S" "$path" --version > "$T/version" 2>/dev/null || prc=$?
+  if [ "$prc" = 124 ]; then infra "$PROBE_S" "$path --version"; fi
+  version=$(sed -n '1p' "$T/version")
   case "$version" in 'GNU Make '*) ;; *) continue ;; esac
   if printf '%s\n' "$versions" | grep -Fqx "$version"; then continue; fi
   makes="$makes $path"; versions="${versions}${version}
@@ -350,9 +369,9 @@ fixture() {
   for f in "$T"/fx/0*.png; do printf '%064d  %s\n' 0 "${f##*/}"; done > "$T/fx/worlds.sha256" &&
   printf '{"frames": []}\n' > "$T/fx/manifest.json"
 }
-fails=0
+fails=0; i=0
 for M in $makes; do
-  version=$("$M" --version | sed -n '1p')
+  i=$((i + 1)); version=$(printf '%s' "$versions" | sed -n "${i}p")
   for c in complete worlds-missing worlds-empty worlds-short manifest-missing png-missing hash-mismatch; do
     fixture || { echo "capture-m4-publish-test: FAIL fixture"; exit 1; }
     case "$c" in
@@ -364,7 +383,8 @@ for M in $makes; do
       hash-mismatch) printf 'png 05_brake_b05_dexk\n' > "$T/fx/05_brake_b05_deck.png" ;;
     esac || { echo "capture-m4-publish-test: FAIL fixture $c"; exit 1; }
     : > "$T/log" || exit 1
-    rc=0; PATH=$NP "$M" -s -C "$ROOT" capture-m4-publish M4_PUBLISH_DIR="$T/fx" > "$T/out" 2>&1 || rc=$?
+    rc=0; deadline "$MAKE_S" env PATH="$NP" "$M" -s -C "$ROOT" capture-m4-publish M4_PUBLISH_DIR="$T/fx" > "$T/out" 2>&1 || rc=$?
+    if [ "$rc" = 124 ]; then sed 's/^/  | /' "$T/out"; infra "$MAKE_S" "make for case $c ($version)"; fi
     n=$(wc -l < "$T/log" | tr -d ' ')
     good=$(awk -F'|' -v fx="$T/fx/" -v b="$B" 'NF == 6 && $1 == "storage" && $2 == "cp" && $3 == "--cache-control=public, max-age=300" && index($4, fx) == 1 && index($5, b) == 1 && $6 == "" && substr($4, length(fx) + 1) == substr($5, length(b) + 1) {k++} END {print k + 0}' "$T/log")
     uniq=$(cut -d'|' -f5 "$T/log" | sort -u | grep -c .)
@@ -388,6 +408,10 @@ echo "capture-m4-publish-test: OK (7 cases on $nm makes:$(printf '%s' "$versions
 - **Positive control (`complete`):** rc 0, exactly 18 log lines, all 18 well-formed, 18 distinct destinations, and one `uploaded 18 files`. A line is well-formed when it reads `storage|cp|--cache-control=public, max-age=300|<fixture>/<name>|gs://stapledons-voyage-assets/refs/m4_ship_s1/<name>|` with the same `<name>` on both sides. The count proves the capture is live (the iteration-60 process fix). The prefix proves `M4_PUBLISH_DIR` was honoured. The destination proves the public path is unchanged.
 - **Kill cases:** `worlds-missing`, `worlds-empty`, `worlds-short` (13 lines), `manifest-missing`, `png-missing` and `hash-mismatch`. Each must give rc ≠ 0, **zero** log lines, exactly one `FAILED before any upload:` line, and no `uploaded 18 files`. The `FAILED before any upload` signature stops a kill case passing vacuously when the failure comes from somewhere else, such as a `gcloud` not found (rc 127, also 0 uploads).
 - **Output:** each case prints `ok <case> (<make version>)` or a `FAIL` line with rc, uploads, well-formed count and pre-check count, followed by the recipe's own output. The last line is `OK (7 cases on N makes: …)` or `FAILED (k of 7N cases)` with exit 1.
+- **Bounded (quorum round 1, iteration 64).** Every make the script starts runs under the body's `deadline` (the perl wrapper from the (b)–(d) Drills section), copied in verbatim. A version probe gets `PROBE_S=10` and a fixture make gets `MAKE_S=20`, against a normal run of about 0.1 s per make. On expiry the wrapper sends TERM to the make's own process group, then KILL 5 s later, and returns **124**. The script then prints one `capture-m4-publish-test: INFRASTRUCTURE timeout after <S> s: <what>` line and exits 124 at once. So a timeout is never counted as a case: not as `ok`, not as an expected rejection, and no later case runs. `make` then exits 2, and the INFRASTRUCTURE line, not the rc, tells it apart from a FAIL.
+  - **The worst case is finite:** 2 × 10 + 14 × 20 = 300 s if every make sits just under its limit, and about 25 s for one stalled make (A-V18).
+  - **One added line, for nesting.** The wrapper puts each fixture make in its *own* process group, so a signal to the script's group cannot reach it. A-V20 measured this: when an outer deadline fired first, the script and the inner wrapper died, but the fixture make and its TERM-ignoring child stayed alive. The script's copy therefore adds one line to the wrapper: on TERM, INT or HUP it sends KILL to the child's group and exits 124. With that line, the same run leaves nothing behind (A-V20). The doc body's own `deadline` is unchanged.
+  - **Not configurable from the environment.** The limits are constants in the script, so an inherited variable cannot shorten them (the iteration-45 `RIG_TEST_S` lesson).
 
 **RED, measured.** On a tree that has only the variable (the old recipe with `renders/m4` replaced by the variable), the script reports 12 of 14 cases FAILED. The upload counts are 17, 17, 18 (rc 0), 15, 0 and 0, with 0 pre-check lines; `complete` passes on both makes (A-V13). The executor records this as the RED run before writing the fix.
 
@@ -400,15 +424,20 @@ Drills run on a **private copy** (`Makefile`, `mk/`, the script), never on the c
 - make's rc captured and asserted;
 - counts asserted with `test`, never only printed;
 - no `!`, and `|| exit 1` on every check;
-- `TMPDIR` pointed at a private `$P/tmp`. Its entry count is asserted to be 0 before and after each make. This is the `$TMPDIR`-independent leftover check, and it also proves the script's own `mktemp` honours the template.
+- `TMPDIR` pointed at a private `$P/tmp`, passed through `env` so the script really inherits it. Its entry count is asserted to be 0 before and after each make. This is the `$TMPDIR`-independent leftover check, and it also proves the script's own `mktemp` honours the template. After each make the drill also asserts that no process whose command line contains `$P/` survives, and no `sleep 617` (the stall mutant's child) either;
+- each outer make bounded by the body's `deadline` at `DRILL_S` (default 400 s). That is above the script's own worst case of 300 s, so the inner deadlines always fire first;
+- **exit 4, INFRASTRUCTURE**, when the outer wrapper returns 124, when make's rc is neither 0 nor 2, or when the output holds a script INFRASTRUCTURE line (for every mutant except `stall`). It is never a kill or an expected outcome: re-run the drill.
+
+Define the body's `deadline` first; the drill calls it.
 
 ```sh
-drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation not applied
+drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation not applied, 4 INFRASTRUCTURE
   set -eu
-  ROOT=${1:?explicit checkout ROOT required}; mutant=${2:?inloop, noupload, deadcapture or nopositive}
+  ROOT=${1:?explicit checkout ROOT required}; mutant=${2:?inloop, noupload, deadcapture, nopositive or stall}
   cd "$ROOT" || exit 2; ROOT=$(pwd -P)
   test -f Makefile || exit 2; test -f tools/test_m4_publish.sh || exit 2
-  case "$mutant" in inloop|noupload|deadcapture|nopositive) ;; *) exit 2 ;; esac
+  case "$mutant" in inloop|noupload|deadcapture|nopositive|stall) ;; *) exit 2 ;; esac
+  S=${DRILL_S:-400}  # above the script's own worst case (2 probes x 10 s + 14 makes x 20 s), so the inner deadlines fire first
   P=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7la.XXXXXX") || exit 2
   trap 'rm -rf "$P"' EXIT
   trap 'exit 130' INT; trap 'exit 143' TERM HUP
@@ -426,6 +455,8 @@ drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation 
       perl -i -pe '$n += s/^\t  n=0; for f; do gcloud storage cp /\t  n=0; for f; do true storage cp /; END { exit($n == 1 ? 0 : 3) }' "$MK" || exit 3 ;;
     deadcapture)  # the fake gcloud logs nowhere
       perl -i -pe '$n += s{>> "\$T/log"}{>> /dev/null}g; END { exit($n == 2 ? 0 : 3) }' "$TS" || exit 3 ;;
+    stall)  # the recipe hangs in a child that ignores TERM
+      perl -i -pe '$n += s/^\t\@set -eu; d=/\t\@sh -c \x27trap "" TERM; exec sleep 617\x27; set -eu; d=/; END { exit($n == 1 ? 0 : 3) }' "$MK" || exit 3 ;;
   esac
   if test "$mutant" = nopositive; then  # and the positive control loses its upload count
     perl -i -pe '$n += s/test "\$rc" = 0 && test "\$n" = 18 && test "\$good" = 18 && test "\$uniq" = 18 && /test "\$rc" = 0 && /; END { exit($n == 1 ? 0 : 3) }' "$TS" || exit 3
@@ -439,12 +470,31 @@ drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation 
   for outer in make gmake; do
     M=$(command -v "$outer" 2>/dev/null) || { echo "drill $mutant: $outer absent, skipped"; continue; }
     test "$(ls -A "$P/tmp" | wc -l)" -eq 0 || exit 1                    # private leftovers before
+    t0=$(date +%s)
     set +e
-    TMPDIR=$P/tmp "$M" -C "$P/w" capture-m4-publish-test > "$P/out" 2>&1
+    deadline "$S" env TMPDIR="$P/tmp" "$M" -C "$P/w" capture-m4-publish-test > "$P/out" 2>&1
     rc=$?
     set -e
+    t1=$(date +%s)
     test "$(ls -A "$P/tmp" | wc -l)" -eq 0 || exit 1                    # and after: the test's trap ran
-    echo "drill $mutant via $outer: make rc $rc"
+    test "$(pgrep -f "$P/" | wc -l | tr -d ' ')" -eq 0 || exit 1        # no make or script of this drill is left
+    test "$(pgrep -fx 'sleep 617' | wc -l | tr -d ' ')" -eq 0 || exit 1 # nor the stall mutant's TERM-ignoring child
+    echo "drill $mutant via $outer: make rc $rc in $((t1 - t0)) s"
+    case "$rc" in
+      0|2) ;;
+      124) echo "drill $mutant: INFRASTRUCTURE timeout after $S s"; exit 4 ;;
+      *) echo "drill $mutant: INFRASTRUCTURE rc $rc"; exit 4 ;;
+    esac
+    I=$(grep -c '^capture-m4-publish-test: INFRASTRUCTURE timeout after ' "$P/out" || :)
+    if test "$mutant" = stall; then  # the expected outcome IS the INFRASTRUCTURE classification, bounded
+      test "$rc" -eq 2 || exit 1
+      test "$I" -eq 1 || exit 1
+      test "$(grep -c '^capture-m4-publish-test: INFRASTRUCTURE timeout after 20 s: make for case complete ' "$P/out")" -eq 1 || exit 1
+      test "$(grep -cE '^capture-m4-publish-test: (ok|FAIL|OK)' "$P/out")" -eq 0 || exit 1   # a timeout is never a case result
+      test "$((t1 - t0))" -le 40 || exit 1
+      ran=$((ran + 1)); continue
+    fi
+    if test "$I" -ne 0; then echo "drill $mutant: INFRASTRUCTURE (inner make timed out)"; exit 4; fi
     N=$(grep -c '^capture-m4-publish-test: ok complete ' "$P/out" || :)
     case "$mutant" in
       inloop)
@@ -482,30 +532,44 @@ drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation 
 | `noupload` | Recipe `gcloud storage cp` → `true storage cp` (it still prints `uploaded 18 files`) | make rc 2; exactly N FAILs, all `complete … rc 0, uploads 0`; 6N `ok` kill cases |
 | `deadcapture` | The fake `gcloud` writes to `/dev/null` instead of the log | the same as `noupload`: only the positive control sees it |
 | `nopositive` | `noupload`, plus the positive control loses its counts (`n`, `good`, `uniq` = 18) | **predicted survivor:** make rc 0, 0 FAILs. It proves that the count, not the recipe's own `uploaded 18 files` claim, is what kills `noupload` and `deadcapture`. A make rc 2 here means the doc is wrong (drill exit 1). |
+| `stall` | The recipe first runs `sh -c 'trap "" TERM; exec sleep 617'`: a hung make whose child ignores TERM | **the INFRASTRUCTURE classification, bounded:** make rc 2 within 40 s; exactly one `INFRASTRUCTURE timeout after 20 s: make for case complete …` line; no `ok`, `FAIL` or `OK` line (a timeout is never a case result); no drill process or `sleep 617` left; `$P/tmp` empty. Drill exit 0 means the classification held. |
 
-Measured on a prototype of exactly this design in a scratch copy: every drill reaches its expected outcome under `/bin/sh`, `bash` and `zsh`, via both outer makes. The drill reports a survivor (exit 1) when run against a test whose positive count is gone. It refuses an inapplicable mutation (exit 3) and a tree without the script (exit 2), and leaves 0 temp directories (A-V14).
+Measured on a prototype of exactly this design in a scratch copy (A-V14, A-V18):
+- Every drill reaches its expected outcome via both outer makes: under `/bin/sh` and `bash` for all five, and under `zsh` for all but `stall`, which ran under `/bin/sh`. `stall` took 25 s per outer make, and the others 2–9 s each.
+- The drill reports a survivor (exit 1) when run against a test whose positive count is gone.
+- It refuses an inapplicable mutation (exit 3) and a tree without the script (exit 2).
+- It leaves 0 temp directories and 0 processes behind.
 
 ### Acceptance criteria
 
-Run from the implementation root on the executor's committed tree. Define `drill` from the Drills section first. Every AC is headless.
+Run from the implementation root on the executor's committed tree. Define the body's `deadline` and this section's `drill` first. Every AC is headless.
+
+**Timeouts are INFRASTRUCTURE, never a result.** A wrapper status of 124, or a `capture-m4-publish-test: INFRASTRUCTURE` line in the output, means a rig failure: re-run. Drill exit 4 is the same. None of them is a pass, an expected rejection or a kill. A drill exit 1 on the fixed tree halts the row as a doc bug.
 
 | # | Criterion and command | Expected output |
 |---|---|---|
-| AC-a1 | `make -s capture-m4-publish-test; echo rc=$?` | 14 `ok` lines (7 cases × 2 makes on the rig), last line `capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`, `rc=0` |
-| AC-a2 | `gmake -s capture-m4-publish-test > .godot/tmp/7la-g.out; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-g.out` | `rc=0`, `14` (the same through gmake) |
+| AC-a1 | `deadline 400 make -s capture-m4-publish-test > .godot/tmp/7la-m.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-m.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7la-m.out; tail -1 .godot/tmp/7la-m.out` | `rc=0`, `14` (7 cases × 2 makes on the rig), `0`, `capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`. `rc=124`, or an INFRASTRUCTURE count of 1, is a rig failure: re-run |
+| AC-a2 | `deadline 400 gmake -s capture-m4-publish-test > .godot/tmp/7la-g.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-g.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7la-g.out` | `rc=0`, `14`, `0` (the same through gmake, with the same INFRASTRUCTURE rule) |
 | AC-a3 | `for m in make gmake; do $m -pnq test 2>/dev/null \| grep '^test:' \| tr ' ' '\n' \| grep -cx capture-m4-publish-test; done; grep -c '^test: capture-m4-publish-test$' Makefile` | `1`, `1`, `1` (`make test` reaches it with either make, from its own line) |
-| AC-a4 | `for m in inloop noupload deadcapture; do drill "$PWD" $m; echo "exit=$?"; done` | for each: `drill <m> via make: make rc 2`, `drill <m> via gmake: make rc 2`, `drill <m>: expected outcome on 2 outer makes`, `exit=0` |
-| AC-a5 | `drill "$PWD" nopositive; echo "exit=$?"` | `make rc 0` via both, `expected outcome on 2 outer makes`, `exit=0` (the predicted survivor) |
+| AC-a4 | `for m in inloop noupload deadcapture; do drill "$PWD" $m; echo "exit=$?"; done` | for each: `drill <m> via make: make rc 2 in <s> s`, `drill <m> via gmake: make rc 2 in <s> s`, `drill <m>: expected outcome on 2 outer makes`, `exit=0`. `exit=4` (`INFRASTRUCTURE`) is a rig failure: re-run, never a kill |
+| AC-a5 | `drill "$PWD" nopositive; echo "exit=$?"; drill "$PWD" stall; echo "exit=$?"` | `nopositive`: `make rc 0` via both, `expected outcome on 2 outer makes`, `exit=0` (the predicted survivor). `stall`: `make rc 2 in <s> s` via both, with each `<s>` ≤ 40 (measured 25), `expected outcome on 2 outer makes`, `exit=0`. That proves a hung make with a TERM-ignoring child is bounded, classed INFRASTRUCTURE rather than as a case result, and leaves no process or temp dir. An `exit=4` from `nopositive`, or from the outer wrapper during `stall`, is a rig failure: re-run |
 | AC-a6 | `git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh; echo $?; find "${TMPDIR:-/tmp}" -maxdepth 1 \( -name 'stapledon-7la.*' -o -name 'm4-publish-test.*' \) \| wc -l` | `0` and `0` (drills never touched the checkout; no temp dirs left) |
 | AC-a7 | `grep -cF -- '--cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}"' Makefile; grep -c '^M4_PUBLISH_DIR := renders/m4$' Makefile` | `1`, `1` (public path and cache-control byte-identical; default source unchanged) |
 | AC-a8 | `awk '/^capture-m4-publish:/,/^\.PHONY: capture-m4-publish/' Makefile \| awk '/gcloud storage cp/ {g=NR} /test -s/ && !t {t=NR} /shasum -a 256 -c/ {s=NR} /worlds\.sha256" \| tr/ {w=NR} END {print (t<g && s<g && w<g) ? "pre-checks-first" : "ORDER-BAD"}'` | `pre-checks-first` |
 | AC-a9 | `grep -c '^NP=\$T/bin:/usr/bin:/bin$' tools/test_m4_publish.sh; grep -c 'is not first on PATH' tools/test_m4_publish.sh` | `1`, `1` (real `gcloud` unreachable, guarded) |
 | AC-a10 | `make uid-guard python-guard && git diff --check origin/main && echo gates-ok` | `gates-ok` (a `.sh` needs no `.uid`; no Python) |
 | AC-a11 | `git diff --name-only origin/main \| grep -cvxE 'Makefile\|tools/test_m4_publish\.sh\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json\|design_docs/planned/r1/m4-7l-capture-followups\.md'; git diff --name-only origin/main \| grep -cxE 'Makefile\|tools/test_m4_publish\.sh'` | `0` (no file outside the four), `2` (control: both code files changed) |
-| AC-a12 | `rig/full` on the PR head (`tools/rig_check.sh <PR>`, launched detached per the iteration-61 fix) | status `success`; its log contains `capture-m4-publish-test: OK` |
+| AC-a12 | `rig/full` on the PR head (`tools/rig_check.sh <PR>`, launched detached per the iteration-61 fix). `rig_check.sh` runs `make test` and writes its log to `${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/<sha>}.log` (A-V17), so afterwards run `grep -c '^capture-m4-publish-test: OK (7 cases on 2 makes' "${TMPDIR:-/tmp}/rig-check/<full head sha>.log"` | status `success`; `1` |
+| AC-a13 | Probe bound: `Q=$(mktemp -d "${TMPDIR:-/tmp}/stap-7la-q.XXXXXX"); mkdir "$Q/bin" "$Q/tmp"; printf '#!/bin/sh\ntrap "" TERM\nexec sleep 618\n' > "$Q/bin/gmake"; chmod +x "$Q/bin/gmake"; s=$(date +%s); deadline 400 env PATH="$Q/bin:$PATH" TMPDIR="$Q/tmp" make -s capture-m4-publish-test > "$Q/out" 2>&1; echo "rc=$? $(( $(date +%s) - s ))s"; grep -c 'INFRASTRUCTURE timeout after 10 s: .*/gmake --version' "$Q/out"; pgrep -fx 'sleep 618' \| wc -l; ls -A "$Q/tmp" \| wc -l; rm -rf "$Q"` | `rc=2` in ≤ 25 s (measured 15), `1`, `0`, `0` (a hung version probe is bounded, classed INFRASTRUCTURE, and leaves no process or temp dir) |
 
 ### Risks and mitigations
 
+- **Executor pre-flight, before splicing (quorum round 1).** Run each of these, and halt the row for re-measurement on any drift:
+  - re-run `gh pr list --state open`;
+  - for each open PR, `gh pr diff <n> --name-only`, and `gh pr diff <n> --allow-escape-sequences | grep -c 'capture-m4-publish\|renders/m4'`, which must be `0`;
+  - `grep -nF 'capture-m4-publish:' Makefile`, which must still find the A-V3 block: the target line, the pre-loop checks, the loop with `test -s "$$f"` and the `.PHONY: capture-m4-publish` line, matching the text this design replaces.
+
+  A new or updated PR that touches the recipe, `renders/m4`, or the region around it re-opens A-V2/A-V3. So does a recipe that no longer matches. Do not splice over it.
 - **Line numbers move.** #373 adds 6 lines above line 330 if it merges first. The executor replaces the recipe by its text (the block from `capture-m4-publish:` to `.PHONY: capture-m4-publish`), and the drills anchor on recipe text, not numbers.
 - **A Linux runner.** The script uses only `/usr/bin:/bin` tools (`shasum`, `sort`, `cut`, `awk`, `sed`, `wc`). It is not in `ci-fast`, so a Linux runner never runs it. Adding it there is a later, separate decision.
 - **The fixture is not a real capture.** The recipe never reads PNG contents, only presence, counts and hashes, so synthetic bytes exercise every check it makes.
@@ -516,11 +580,11 @@ Run from the implementation root on the executor's committed tree. Define `drill
 | File | Change |
 |---|---|
 | `Makefile` | The `capture-m4-publish` recipe replaced by the block above: `M4_PUBLISH_DIR`, `test: capture-m4-publish-test`, the pre-checks, the new target, the `.PHONY` line (+14/−8). |
-| `tools/test_m4_publish.sh` | New, 75 lines, as above. |
+| `tools/test_m4_publish.sh` | New, 95 lines, as above. |
 | `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json` | A dated row-7l(a) note: RED counts, AC-a1–a6 outputs, drill results. |
 | `design_docs/planned/r1/m4-7l-capture-followups.md` | This addendum. |
 
-**Estimate:** about 10 LOC of fix (the row's figure) inside a +14/−8 `Makefile` hunk, plus the 75-line test. The four drills (71 lines) live in this doc. They run in about 10 s in total: the test takes about 1 s per outer make.
+**Estimate:** about 10 LOC of fix (the row's figure) inside a +14/−8 `Makefile` hunk, plus the 95-line test (its `deadline` copy and timeout handling are 20 of those). The five drills (93 lines) live in this doc. The four mutant drills take about 15 s in total and `stall` about 50 s; the test takes 1–2 s per outer make.
 
 ### Open questions
 
@@ -528,7 +592,7 @@ None. This is test hygiene inside the D-66-approved sprint, with every pillar at
 
 ### Addendum verification log
 
-Run in `/Users/voightkampff/dev/sunholo-data/.stap-iter64-src` at `6d92d2cb` on 2026-11-02 (16:4x–17:0xZ). All fixture runs used a fake `gcloud` with the real one off `PATH`; nothing was uploaded. The scratch scripts are under the clone's ignored `.godot/tmp/`.
+Run in `/Users/voightkampff/dev/sunholo-data/.stap-iter64-src` at `6d92d2cb` on 2026-11-02 (16:4x–17:0xZ; A-V10, A-V14 and A-V17–A-V20 after quorum round 1, about 17:10–17:25Z). All fixture runs used a fake `gcloud` with the real one off `PATH`; nothing was uploaded. The scratch scripts are under the clone's ignored `.godot/tmp/`.
 
 | # | Claim | Command | Result |
 |---|---|---|---|
@@ -541,15 +605,28 @@ Run in `/Users/voightkampff/dev/sunholo-data/.stap-iter64-src` at `6d92d2cb` on 
 | A-V7 | The `test:` lines | `grep -n '^test:' Makefile`; `gmake -pnq test \| grep '^test:' \| wc -w`; `make -pnq test \| … \| grep -cx capture-m4-publish-test` | 15 `test:` lines: 22, **52** (the long list), 126, 131, 147, 152, 156, 165, 169, 211, 214, 254, 1091, 1141, 1437; merged list 121 words; the new target `0` |
 | A-V8 | What `capture-m4` asserts for worlds | `sed -n 327p Makefile`; `sed -n 245,262p tools/m4_ship_capture.gd` | `wc -l < renders/m4/worlds.sha256` = 14; the driver writes one `<world_sha256>  <frame file>` line per frame (14) |
 | A-V9 | No existing variable to reuse | `grep -n M4_PUBLISH_DIR Makefile mk/*.mk \| wc -l`; `grep -c renders/m4 Makefile` | `0`; `9` (lines 322–335; `capture-m4` keeps its own) |
-| A-V10 | The designed recipe and test pass | the Design block spliced over lines 330–338 of a scratch copy (with `mk/` and the script); `make -C <copy> capture-m4-publish-test` and `gmake …`; then `make -s -j2 … M4_PUBLISH_DIR=/nonexistent AILANG=x` | rc 0 via both; 14 `ok`; `OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`; about 1 s. With `-j2` and the outer overrides: still OK (flags unset). `diff`: +14/−8 |
+| A-V10 | The designed recipe and test pass (re-measured after quorum round 1, with the bounded script) | the Design block spliced over lines 330–338 of a scratch copy (with `mk/` and the script); `make -C <copy> capture-m4-publish-test` and `gmake …`; then `make -s -j2 … M4_PUBLISH_DIR=/nonexistent AILANG=x` | rc 0 via both; 14 `ok`; 0 INFRASTRUCTURE; `OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`; 1–2 s. AC-a1 as written (under `deadline 400`): `rc=0`, `14`, `0`, the OK line. With `-j2` and the outer overrides: still OK (flags unset). `diff`: +14/−8 |
 | A-V11 | The placement reaches `make test` | `make -pnq test` and `gmake -pnq test` in the copy, the `test:` line split | `1` and `1`; 122 words; position 109, after `export-filter-audit` (108) and before `ship-demo-ci` (119) |
 | A-V12 | `:=` semantics | `M4_PUBLISH_DIR=/envpath make -n -C <copy> capture-m4-publish` (and gmake); `make -n … M4_PUBLISH_DIR=/cli` | env: `d='renders/m4'` with both makes; command line: `d='/cli'` |
 | A-V13 | RED on a tree with only the variable | the old recipe with `renders/m4` → the variable, plus the target; `make -s -C <copy> capture-m4-publish-test` | `FAILED (12 of 14 cases)`: worlds-missing 2/17, worlds-empty 2/17, worlds-short 0/18, manifest-missing 2/15, png-missing 2/0, hash-mismatch 2/0, all with `pre-check lines 0`; `complete` ok on both makes |
-| A-V14 | The drills behave as specified | `bash -n` and `sh -n` on the function; then under `/bin/sh`, `/bin/bash` and `/bin/zsh`: the four drills on the prototype; `noupload` on a copy whose test lost its positive count; `inloop` on the RED copy; the HEAD clone; mutant `XX`; then `find "$TMPDIR" -maxdepth 1` for both prefixes | syntax ok. inloop / noupload / deadcapture / nopositive each `exit 0`, with make rc 2/2/2/0 via both outer makes; weakened copy: `noupload` exit **1** (survivor detected); RED copy: `inloop` exit **3**; HEAD (no script): exit 2; `XX`: exit 2; 0 + 0 temp dirs |
+| A-V14 | The drills behave as specified (re-measured after quorum round 1: five drills, bounded) | `bash -n` and `sh -n` on the function; then under `/bin/sh`, `/bin/bash` and `/bin/zsh`: the four drills on the prototype; `noupload` on a copy whose test lost its positive count; `inloop` on the RED copy; the HEAD clone; mutant `XX`; then `find "$TMPDIR" -maxdepth 1` for both prefixes | syntax ok. inloop / noupload / deadcapture / nopositive / stall each `exit 0`, with make rc 2/2/2/0/2 via both outer makes (`stall` under `/bin/sh` and `bash`, 50 s; the other four under all three shells, 2–9 s each); weakened copy: `noupload` exit **1** (survivor detected); RED copy: `inloop` exit **3**; HEAD (no script): exit 2; `XX`: exit 2; 0 + 0 temp dirs |
 | A-V15 | No `.uid` or Python gate applies | `sed -n 5p tools/uid_guard.sh` | `git ls-files '*.gd' '*.gdshader' '*.gdshaderinc'` only: a `.sh` needs no `.uid` |
 | A-V16 | Public path and cache-control anchors | `grep -cF -- '--cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}"'` on `Makefile` and on the copy | `1` and `1` (byte-identical through the fix) |
+| A-V17 | What `rig/full` runs, and where its log goes (quorum round 1) | `grep -nE 'make (-[a-z]+ )?(test\|ci-fast)\|rig/full\|^dir=\|^log=' tools/rig_check.sh`; `grep -nE 'make ci-fast\|make test' .github/workflows/ci.yml` | `tools/rig_check.sh:72`: `perl -e 'alarm shift; exec @ARGV' "$TEST_S" make test >> "$log" 2>&1` (posts the `rig/full` context, l.36); `dir=${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/$sha}` (l.30), `log="$dir.log"` (l.31). GitHub `ci.yml` runs `make ci-fast` (l.59–61; full `make test` only under `workflow_call`). So `rig/full` reaches `capture-m4-publish-test` through `make test`, and AC-a12 keeps its log assertion |
+| A-V18 | A stalled fixture make with a TERM-ignoring child is bounded and leaves nothing (quorum round 1) | the prototype copy with the recipe's first line prefixed by `sh -c 'trap "" TERM; exec sleep 617';`; `TMPDIR=$Q/tmp make -s -C <copy> capture-m4-publish-test` in the background; at 3 s and after exit, `pgrep -fx 'sleep 617'`, `pgrep -f 'M4_PUBLISH_DIR='` and `ls -A $Q/tmp`; then `drill <copy> stall` | at 3 s (control): `sleep 617` 1, fixture-make processes 3, private temp entries 1. After: rc 2 in **25 s** (20 s TERM to the group; the child ignores it; KILL after the 5 s grace); 0 / 0 / 0. Output: exactly 1 `INFRASTRUCTURE timeout after 20 s: make for case complete (GNU Make 3.81)`, 0 `ok`/`FAIL`/`OK` lines, and make's own `Error 124`. `drill stall`: make rc 2 in 26 s and 25 s, exit 0 |
+| A-V19 | A hung version probe is bounded (quorum round 1) | AC-a13 as written, in the prototype copy: a fake `gmake` first on `PATH` that ignores TERM and runs `sleep 618` | `rc=2` in 15 s (10 s plus the 5 s grace); 1 `INFRASTRUCTURE timeout after 10 s: $Q/bin/gmake --version`; 0 `sleep 618` left; 0 private temp entries |
+| A-V20 | The body's `deadline` does not reach nested groups; one forwarding line fixes it (quorum round 1) | `DRILL_S=5 drill <copy> stall`, so the outer deadline fires while the inner fixture make is still alive; first with the script's `deadline` exactly as in the body, then with the forwarding line; `pgrep` for `sleep 617` and for the drill's `$P` paths afterwards | Body's copy unchanged: drill **exit 1** in 6 s; its leftover check fired; the fixture `make -C …/stapledon-7la.*/w capture-m4-publish …`, its recipe shell and `sleep 617` were still running (killed by hand). With the forwarding line: `make rc 124 in 5 s`, `INFRASTRUCTURE timeout after 5 s`, drill **exit 4**; 0 `sleep 617`, 0 drill processes, 0 temp dirs. Normal runs are unchanged (A-V10) |
 
 ## Quorum log
 
 - **Round 1** (2026-10-30T02:11:22Z): BLOCKED. gemini-4-argon PASS, with a non-blocking note on the CB fallback. gpt6-1-sol REJECT on the drill harness: GPU make ran without a deadline, so a hang would leave the mutation installed. oc-glm-5-3 REJECT on two points: DB1's expected verdict line was predicted, not measured; and the drill's total-FAIL count missed `_finish`'s bare summary line. The controller measured each premise first-party. Changes in this revision: the perl `deadline` wrapper (process-group TERM, then KILL, exit 124 → drill exit 4 INFRASTRUCTURE), proven by V24 and V28; DB1 and AC5 pinned to the measured path (V25), with the `n/a` p99 field defined; per-check FAILs counted with a trailing space plus exactly one bare summary (V27); the frame order recorded (V26); the CB fallback now records its byte-difference count. Scope, held files and everything else are unchanged.
 - **Round 2** (2026-10-30T02:25:01Z): BLOCKED. gemini-4-argon PASS. gpt6-1-sol REJECT on the acceptance runs: AC1 and AC8 called GPU make outside the deadline wrapper. oc-glm-5-3 REJECT on unverified anchors: the line-32 early-stop gate that AC4's 0 frames depends on, `demo.ship_hud` resolution, the capture log's `SCRATCH` location and two line anchors. Surfaces: acceptance-run bounding; Verification-log anchors. Neither disputes the design direction and both carried a concrete `proposed_fix`, so the controller applied the reviewers' fixes under the narrow-refinement carve-out (gate 2) instead of a third designer run: AC1 wrapped in `deadline "${DRILL_S:-900}"`, AC8 in `deadline "${BENCH_S_LIMIT:-300}"`, status 124 classified as INFRASTRUCTURE, a drill exit 1 on the fixed tree declared a doc bug, and V29–V33 measured first-party (V29: the gate is l.32–34, before the demo load at l.36; V33: bounded AC1 rc 0 in 116 s, and rc 124 in 5 s with no capture process left). Nothing else changed. Routed to the planner without a third quorum round.
+- **Round 1 (iteration 64, addendum 7l(a))** (2026-11-02T17:06:27Z): BLOCKED. Seated: gemini-4-argon PASS; gpt6-1-sol REJECT; oc-kimi-k3 REJECT (reserve, seated for an unreachable oc-glm-5-3). Neither reject disputes the direction. Designer revision pass 1 changed only what the two objections asked:
+  - **gpt6-1-sol: the script and drills ran makes with no deadline.**
+    - Every make is now bounded. The script reuses the body's perl `deadline` verbatim: version probes get 10 s, each fixture make 20 s, and the worst case is 300 s. Each outer drill make runs under the same wrapper at `DRILL_S` = 400 s.
+    - Status 124 prints one `INFRASTRUCTURE` line and stops the script. It is never counted as a case. A drill exits 4 for it, never as a kill.
+    - Measuring showed the wrapper does not reach nested groups (A-V20: the outer firing first left the fixture make and a TERM-ignoring child alive). The script's copy therefore adds one line that forwards TERM, INT or HUP as KILL to the child's group. The body's `deadline` is unchanged.
+    - New `stall` drill and AC-a13 (the probe). A-V18 and A-V19 show a stalled make with a TERM-ignoring child, and a stalled probe, return in 25 s and 15 s with status 2 and an INFRASTRUCTURE line, no process left and no private temp dir.
+    - AC-a1, AC-a2, AC-a4 and AC-a5 now assert these semantics. A-V10 and A-V14 were re-measured.
+  - **oc-kimi-k3 (a): AC-a12 assumed `rig/full` runs `make test`.** Measured as A-V17: `tools/rig_check.sh:72` runs `make test` and logs to `${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/<sha>}.log`. AC-a12 is kept, with the log path and an exact grep.
+  - **oc-kimi-k3 (b): no executor pre-flight.** Added to Risks: before splicing, re-run `gh pr list --state open`, each PR's `--name-only` diff and a grep of its diff for `capture-m4-publish\|renders/m4`, and `grep -nF 'capture-m4-publish:' Makefile` against the A-V3 block. Any drift halts the row for re-measurement.
