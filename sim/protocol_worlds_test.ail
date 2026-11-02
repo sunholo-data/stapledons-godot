@@ -1,0 +1,24 @@
+module stapledons/sim/protocol_worlds_test
+import ./protocol_worlds (encodeWorlds)
+import ./worlds_registry (CatalogueRow)
+import ./tools/exoplanets (curatedPlanets)
+import std/string (contains)
+export pure func alphaRow() -> CatalogueRow = {id:"CNS5:3627",pos:{x:3.094521,y:-3.015404,z:-0.051608},v:-0.01,teff:5795.0,flags:8}
+pure func projection() -> bool {
+ let row=alphaRow();let ps=curatedPlanets([]);
+ let remote=encodeWorlds(4,{x:0.0,y:0.0,z:0.0},row.id,[row],ps,[],true);
+ let local=encodeWorlds(4,row.pos,row.id,[row],ps,[],false);
+ contains(remote,"acen-a-b") && contains(remote,"\"hosts\"") && contains(remote,"\"system\":[]")
+ && contains(local,"acen-a-b") && not contains(local,"\"hosts\"")
+ && not contains(remote,"history") && not contains(remote,"luck") && not contains(remote,"preset")
+}
+test "AC17 target includes measured planets, system is proximity-only, hosts/meta full-state-only" {projection()}
+pure func synthetic() -> bool {
+ let row={alphaRow() | id:"synthetic-only"};
+ let remote=encodeWorlds(41,{x:0.0,y:0.0,z:0.0},row.id,[],[],[row],true);
+ let local=encodeWorlds(41,row.pos,row.id,[],[],[row],false);
+ contains(remote,"\"target\":[]") && not contains(remote,"synth:")
+ && contains(local,"synth:") && not contains(local,"history") && not contains(local,"biosphere")
+}
+test "AC17 synthesised planets only appear within 0.1ly, physical fields only" {synthetic()}
+export pure func protocolWorldsVm() -> string = if projection() && synthetic() then "protocol-worlds-ok" else "PROTOCOL-WORLDS-FAIL"

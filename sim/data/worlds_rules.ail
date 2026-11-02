@@ -1,0 +1,10 @@
+module stapledons/sim/data/worlds_rules
+-- D-144 OQ6 and W2.1: explicit conservative survey/design assumptions.
+-- These are fixed across presets. They never respond to the hidden dial.
+export pure func rvSurveyLimitMs() -> float = 3.0
+export pure func rvSurveyBrightV() -> float = 8.0
+export pure func rvSurveyRadiusPc() -> float = 25.0
+export pure func minimumHillSpacing() -> float = 10.0
+-- Used only when the archive has no published Teq. Cited as assumed, not a
+-- measurement or a surface-temperature/greenhouse model.
+export pure func assumedBondAlbedo() -> float = 0.3

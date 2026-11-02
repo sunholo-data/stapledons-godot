@@ -67,6 +67,8 @@ const ARCHIVE_MINOR := 15
 ## and a planned leg's preview; sim/earth_link.ail), in full states and whenever it changes. The comms
 ## station reads it (EL3), and the game's sessions (the ship, the map, the loading jump's prefetch) ask for it.
 const EARTH_MINOR := 16
+## Protocol 2.17 (R3-WORLDS): catalogue hosts and public physical planet fields.
+const WORLDS_MINOR := 17
 const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]

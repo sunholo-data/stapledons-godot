@@ -10,8 +10,30 @@
 - the design repo: `feat/life-and-worlds` (W1.0, W1.4's recorded offsets, W2.5's Archive entries), a fresh clone; never the main checkout.
 
 **AILANG:**
-- Pin v0.54.18: every gate runs with `AILANG=runtime/bin/ailang` (`make runtime` first).
-- AILANG prompt version loaded: **v0.16.7** (`runtime/bin/ailang prompt`, 2026-11-02).
+- Pin v0.56.0 (released `e1ef997`): runtime bump PR #377 merged into this branch,
+  `make runtime` staged the released binary; merge main after #377 lands there.
+- AILANG prompt version loaded on continuation: **v0.16.11**.
+- Until worlds 0.1.0 is published, ignored local-package overlays run the new
+  gates (`tools/worlds_dev.sh`, `tools/worlds_ailang.sh`); no sibling directory
+  is committed as a game dependency pin. The normal production gates follow
+  attended publication and the registry pin.
+
+## Execution checkpoint, 2026-11-02 continuation
+
+- W1.1 and W2.0 are verified: celestial 0.6.0 is published/pinned, and the complete
+  VM catalogue witness passes on v0.56.0 with its original full-data digest.
+- W1.3, W2.1–W2.3 are implemented and validated locally. The pure calibration,
+  keyed population, census, protocol and leak fixtures have targeted native,
+  strict-VM/interpreter and independent-oracle evidence in the execution report.
+- W1.4 remains open: S2 photon budgets are unavailable. Only explicitly labelled
+  ideal-detector development measurements exist; presets and slice seed are not final.
+- W2.4 has four uploaded Godot mock-ups awaiting Mark. No production UI or
+  Archive landing is approved or claimed. W2.5 remains draft-only.
+- The smoke probe fixed the development seed count at four (32 binding-strategy
+  rows in 18.60 seconds); the final photon-budget/256-seed budget is unmeasured.
+- See `worlds-execution-report.md` and `data/worlds/` for full evidence, remaining
+  publication/instrument prerequisites and measured budget failures. Sprint is
+  still in progress; no definition-of-done waiver is implied.
 
 ## Summary
 

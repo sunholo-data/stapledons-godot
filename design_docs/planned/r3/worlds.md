@@ -284,6 +284,19 @@ For each system, from its catalogue row alone:
 3. **Habitability.** Rocky (0.5–1.5 R⊕, or m sin i 0.1–5 M⊕) inside the conservative zone: Habitable; around an M dwarf: HabitabilityDebated (decision 3); a measured observational limit wins over every seed (e.g. JWST's no-thick-atmosphere results for TRAPPIST-1 b and c, Greene et al. 2023 and Zieba et al. 2023, both outside the zone anyway).
 4. **History.** `historyOf(applyDial(baseline(), dial), habitable, us)` with `us` from `keyed(seed, worlds, systemKey ⊕ planetSlot, n)`. Measured planets get histories too: their physics is measured and fixed across runs; their life is the run's variation (premise §6), labelled so (OQ7).
 
+Implementation input adjustment for Mark's review (2026-11-02): navigation has
+V and Teff but no K-band photometry for the specified Mann relation. The local
+implementation uses an explicitly inferred, selected 18-knot Teff/Msun subset
+of [Pecaut–Mamajek's 2022.04.16 dwarf sequence](https://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt).
+It preserves measured masses, excludes non-dwarfs from that inference, and
+documents a maximum 6.34% interpolation difference from omitted table knots.
+The synthetic radius-to-mass likelihood is an explicitly adopted finite-grid
+approximation using [Chen–Kipping's median coefficients](https://arxiv.org/pdf/1603.08614),
+not a Forecaster posterior or a measurement. Both models live in worlds 0.1.0,
+with independent reference checks. Relative Kepler orbits compose celestial's
+stellar and planetary GM; measured orbits are untouched. These input/model
+qualifications remain visible in the cited provenance and await landing review.
+
 **Keyed by (seed, preset), stable when the play area grows:**
 - Every draw is a function of (seed, system id, planet slot, draw index). No draw depends on any other star, so adding stars (L3's 100 pc set, synthetic cells later) changes nothing that already exists (AC11).
 - **Common random numbers across presets:** the preset moves thresholds, never the uniforms. With the same seed, a world living under Lonely lives under every kinder preset, with the same onset; presets nest (AC12). The census compares presets with far less noise.
@@ -297,6 +310,15 @@ A headless tool, never on the wire: populate every system of a registry for a se
 - `make census` runs the 25 pc registry in `make test`; `make census-large` runs GCNS 100 pc on the rig (≤ 15 min).
 - It also checks nesting (AC12), growth stability (AC11), the survey veto (AC15), the habitability labels (AC14) and that every measured planet survived (AC9).
 
+Implementation notes (2026-11-02): census `biospheres` explicitly counts inhabited
+backgrounds, and `mindsWindow` counts technological-epoch overlap with [0,16000].
+The statistical rows use an exact biological marginal; deterministically sterile
+SAG13 extras are still included in complete first-seed planet counts and digests.
+The GCNS input is exported through the existing float64 catalogue/truth pipeline,
+rather than reconstructed from the float32 sky-tier binary. Exact host identity
+indexes preserve original observation order. Positional-only unmatched hosts
+remain a stated L3 cross-match limitation.
+
 ### W2.3. The wire: protocol 2.17, the `worlds` section
 
 | Where | Field | Content |
@@ -307,6 +329,18 @@ A headless tool, never on the wire: populate every system of a registry for a se
 | | `worlds.system` | the system the ship is in (within 0.1 ly, the `catBodies` rule): all its planets, synthesised ones included, with the same fields: in a system, a 10 m telescope sees every planet (OQ8) |
 
 **Never on the wire:** the dial, the preset's offsets, the luck number, any history, any planet state, any census count, and any field computed from them. The ship learns states only through S3's instruments (D-68).
+
+Implementation note (2026-11-02): 2.17 also carries
+`system.worlds_planet_ids`, a directory matching `worlds.system` exactly.
+The legacy renderer intentionally has no modelled discs for the inferred
+alpha-Centauri planets; the directory joins their public records without
+inventing an appearance. It is absent below 2.17. The physical encoder accepts
+no preset or biological-state input. The leak fixture exposes a canonical
+catalogue target and an actual local synthesized system before its idle/draw tail.
+
+The W2.4 mock-ups use package-computed HZ edges in an explicitly offline
+review-data format. A production band/validity-field contract remains for the
+attended W2.4 implementation; those edge fields are not silently added to 2.17.
 
 Checks:
 - **The dial-blind wire (AC16):** a 10k-tick replay at 2.17 with the same seed under all four presets gives byte-identical streams. Nothing on the wire can carry the luck number if nothing on the wire depends on it.

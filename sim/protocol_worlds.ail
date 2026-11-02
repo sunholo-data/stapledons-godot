@@ -1,0 +1,49 @@
+module stapledons/sim/protocol_worlds
+-- Protocol2.17 public physical projection. No history, dial, preset, census or
+-- detector input is accepted here. Seeds can change synthetic geometry only.
+import ./worlds_registry (CatalogueRow)
+import ./worlds_catalogue (rowOf)
+import ./worlds_model (Planet, PMeasured, PCandidate, PSynthesised, NotHabitable, Habitable, HabitabilityDebated, physicalSystem, knownPlanets)
+import ./tools/exoplanets (Planet as ObservedPlanet)
+import pkg/sunholo/celestial/kepler (Vec3, norm, sub)
+import std/option (Option, Some, None)
+import std/list (map, filter, flatMap, foldl, length, any)
+import std/json (Json, jo, kv, ja, js, jnum, jint, jb, jn, encode)
+import std/string (startsWith, substring, length as textLength)
+
+pure func number(x:Option[float]) -> Json = match x {None=>jn(),Some(v)=>jnum(v)}
+pure func planetView(p:Planet) -> Json = jo([
+ kv("id",js(p.id)),kv("name",js(p.name)),kv("prov",js(match p.prov {PMeasured=>"measured",PCandidate=>"candidate",PSynthesised=>"synthesised"})),kv("cite",js(p.cite)),
+ kv("a_au",number(p.aAu)),kv("period_d",number(p.periodD)),kv("radius_earth",number(p.radiusEarth)),kv("mass_earth",number(p.massEarth)),kv("minimum_mass",jb(p.minimumMass)),
+ kv("teq_k",number(p.teqK)),kv("insolation",number(p.insolation)),kv("hab",js(match p.hab {NotHabitable=>"not_habitable",Habitable=>"habitable",HabitabilityDebated=>"habitability_debated"}))])
+pure func system(seed:int,r:CatalogueRow,ps:[ObservedPlanet]) -> [Planet] =
+ (physicalSystem(seed,rowOf(r.id,r.pos,r.v,r.teff,r.flags,ps),ps)).planets
+pure func canonical(id:string,ps:[ObservedPlanet]) -> string =
+ if id=="acen-a" then "CNS5:3627" else if id=="acen-b" then "HIP 71681" else if id=="proxima" then "Gaia DR3 5853498713190525696"
+ else if id=="trappist-1" then "Gaia DR3 2635476908753563008"
+ else if startsWith(id,"cat:") then substring(id,4,textLength(id))
+ else match filter(\p. p.id==id,ps) {p::_=>p.hostId,[]=>id}
+pure func uniqueRows(rs:[CatalogueRow]) -> [CatalogueRow] = foldl(\acc r.
+ if any(\old. old.id==r.id,acc) then acc else acc++[r],[],rs)
+pure func hostView(seed:int,r:CatalogueRow,ps:[ObservedPlanet]) -> Json {
+ let planets=system(seed,r,ps);
+ jo([kv("star_id",js(r.id)),kv("planets",jint(length(planets))),kv("hz",jint(length(filter(\p. p.hab!=NotHabitable,planets)))),kv("debated",jb(any(\p. p.hab==HabitabilityDebated,planets)))])
+}
+-- Cross-section directory only. A catalogue planet need not have a modelled
+-- disc in the legacy body renderer; this never invents an appearance for it.
+export pure func visiblePlanetIds(seed:int,shipPos:Vec3,hosts:[CatalogueRow],ps:[ObservedPlanet],visitedRows:[CatalogueRow]) -> [string] {
+ let rows=hosts++filter(\r. not any(\h. h.id==r.id,hosts),uniqueRows(visitedRows));
+ flatMap(\r. map(\p. p.id,system(seed,r,ps)),filter(\r. norm(sub(r.pos,shipPos))<0.1,rows))
+}
+export pure func encodeWorlds(seed:int,shipPos:Vec3,targetId:string,hosts:[CatalogueRow],ps:[ObservedPlanet],visitedRows:[CatalogueRow],full:bool) -> string {
+ -- Generated host identities are unique. Deduplicate only the short visited
+ -- tail; folding over the whole host catalogue would be quadratic per tick.
+ let rows=hosts++filter(\r. not any(\h. h.id==r.id,hosts),uniqueRows(visitedRows));
+ let target=canonical(targetId,ps);
+ let targetRows=filter(\r. r.id==target,rows);
+ let local=filter(\r. norm(sub(r.pos,shipPos))<0.1,rows);
+ let fields=[kv("target",ja(flatMap(\r. map(planetView,filter(\p. p.prov!=PSynthesised,system(seed,r,ps))),targetRows))),
+ kv("system",ja(flatMap(\r. map(planetView,system(seed,r,ps)),local)))];
+ encode(jo((if full then [kv("meta",jo([kv("model",js("worlds-1")),kv("baseline",js("baseline-2026.11")),kv("data",js("exoplanets-2026.11"))])),
+ kv("hosts",ja(map(\r. hostView(seed,r,ps),hosts)))] else [])++fields))
+}
