@@ -357,7 +357,11 @@ func toggle_auto_view() -> void:
 		var gs:=GameSettings.new();gs.dir=settings_dir;gs.load_settings();gs.auto_view=sky.system_view.body_fader;gs.save_settings()
 func set_auto_view(on: bool) -> void:
 	sky.system_view.body_fader=on
-	view_button.text="View: Auto, bodies faded to fit [V]" if on else "View: Realistic, one exposure [V]"
+	# R3-TRUE-PROCESSED (D2.6): the star light follows the view: Realistic shows the true starlight,
+	# Auto the ship's light controller (Processed, its lamps following the star, compressed to fit).
+	star_light.set_mode("processed" if on else "true")
+	if lighting.has("star"):star_light.apply_rig(lighting)
+	view_button.text="View: Auto, bodies faded to fit, ship lamps follow the star [V]" if on else "View: Realistic, one exposure, true starlight [V]"
 	sky.update_exposure()
 func brightness_label() -> String:
 	var manual:String="Manual sky exposure EV %.2f · %s"%[sky.exposure.fixed_ev,"calibrated reference" if brightness_stops==0 else ("%d stops dimmer · display aid"%(-brightness_stops) if brightness_stops<0 else "%d× display aid"%int(pow(2.,brightness_stops)))]
