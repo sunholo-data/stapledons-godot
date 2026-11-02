@@ -1,13 +1,15 @@
 {
   "sprint_id": "R3-WORLDS",
-  "status": "proposed",
-  "approved": null,
+  "status": "in_progress",
+  "approved": "2026-11-02; Mark, D-144: every OQ1–OQ9 recommendation accepted",
   "created": "2026-11-02",
   "design_doc": "design_docs/planned/r3/worlds.md",
   "sprint_plan": "design_docs/planned/r3/worlds-sprint.md",
-  "branch": "plan on design/r3-worlds; execution feat/worlds-w1 and feat/worlds-w2 (fresh full clones), packages feat/celestial-habitability and feat/worlds (fresh ailang-packages clone), design repo feat/life-and-worlds (fresh clone)",
+  "branch": "design/r3-worlds (draft PR #371); fresh design and package clones",
   "origin": "R3 roadmap order-of-work step 2 (W1 then W2); Mark attended 2026-10-06 and 2026-10-27 (life-and-intelligence-parameters decisions 1-4)",
-  "github_issues": [],
+  "github_issues": [
+
+  ],
   "ailang": {
     "pin": "v0.54.18",
     "binary": "runtime/bin/ailang",
@@ -145,55 +147,55 @@
       "id": "OQ1",
       "q": "Preset names and targets: keep Lonely Universe, Scattered Few, Stapledon's Voyage, Teeming Galaxy; Lonely = the baseline median (luck 0); Scattered and Teeming bands as in design W1.4",
       "recommendation": "yes to all four; Lonely is the baseline itself; the default keeps decision 1's bands",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ2",
       "q": "Which reference strategies must hit the targets (the roadmap says every one, counted inside the doom window)",
       "recommendation": "the cautious explorer and mid-range wanderer bind; pilgrim and waiter reported, floor of one living contact",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ3",
       "q": "The slice's technological world within ~50 ly (about 1 seed in 200 under a uniform dial): (a) chosen seed, (b) neighbourhood profile, (c) the AI's steering of variations",
       "recommendation": "(a) now, (c) proposed for W3; (b) only if the calibration needs it",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ4",
       "q": "Detection before S3: run S2 beside W1 so W1.4 uses photon budgets, or provisional literal reaches and recalibrate at S3",
       "recommendation": "S2 beside W1; W1.4 after S2; S3 re-runs the calibration",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ5",
       "q": "Baseline transcription: f_l (Sandberg's abiogenesis model or a log-uniform range); L range (canon 1e2-1e8 or Sandberg 1e2-1e10); the dial moves only f_l, f_i, f_c, L",
       "recommendation": "Sandberg's model as published; keep the canon L range and record Sandberg's; yes, only those four",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ6",
       "q": "Synthesised planets in measured systems below survey limits",
       "recommendation": "no in this version; elsewhere the RV veto (3 m/s, FGK V < 8 within 25 pc)",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ7",
       "q": "Seeded histories (possible life) on real zone planets (Proxima b, TRAPPIST-1 e/f/g), physics fixed, measured constraints win",
       "recommendation": "yes",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ8",
       "q": "Before S3 the ship lists a system's synthesised planets only when in it; ending shares 0.75/0.15/0.10 and remnant persistence 1e3-1e7 yr as design parameters",
       "recommendation": "yes, as proposed",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     },
     {
       "id": "OQ9",
       "q": "Calibrate at the Standard Earth clock (16,000 yr) and report Gentle/Hard; no Custom preset until New Game+",
       "recommendation": "yes",
-      "answer": null
+      "answer": "ruled: recommendation accepted (D-144, 2026-11-02)"
     }
   ],
   "features": [
@@ -201,7 +203,9 @@
       "id": "W1.0",
       "description": "Baseline registry: stapledons-design physics/life-and-worlds.md (cited factor table, reference cases, LW-n check values); lore check reads the LW registry",
       "estimated_loc": 60,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "design AC1: git grep -c '^| LW-' physics/life-and-worlds.md >= 20 on design main",
         "make lore-values lists the LW rows; a mutant LW value fails make lore-check",
@@ -294,7 +298,9 @@
       "id": "W2.0",
       "description": "Measured exoplanets <= 100 pc: NASA archive ps snapshot (shell download, sha pin, public bucket), AILANG pipeline sim/tools/exoplanets.ail (cross-match by Gaia DR3 id else 1 arcsec; curated alpha Cen and TRAPPIST-1 win), generated sim/data/exoplanets.ail and data/planets/exoplanets.json, make exoplanets / exoplanets-check",
       "estimated_loc": 400,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "design AC9 (data half): every snapshot planet whose host is in the registry is in the table with bit-equal values",
         "alpha Cen and TRAPPIST-1 rows equal data/acen.ail and data/trappist1.ail",
@@ -401,7 +407,9 @@
       "notes": null
     }
   ],
-  "reviews": [],
+  "reviews": [
+
+  ],
   "pr_gate": "rig/full green (tools/rig_check.sh <PR>) plus the fast tier; W2.4 renders reviewed by Mark",
   "evaluation": null
 }
