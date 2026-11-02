@@ -4,9 +4,12 @@ extends Control
 ## Earth's feed at the comms station, the crew's window home. It shows what the sim says and never
 ## chooses: the picture is earth.feed's (the week of the newest light, its event, kind and pick),
 ## the playback speed is that frame moving with t_e (so it is the Earth rate D, times the game's
-## pacing), the look is the band data/ui/comms_feed.json picks by earth.rate, and out of beam the
+## pacing), the pacing look is the band data/ui/comms_feed.json picks by earth.rate, and out of beam the
 ## frame of the last beamed light (earth.last_feed) freezes under static while the ring fills by
 ## earth.out.progress. Every number on it is a binding. Time comes from advance(dt) only.
+## R3-TRUE-PROCESSED (standing order 2026-10-30): the picture is drawn exactly as decoded, with no
+## colour wash at any D. The feed is data on Earth's laser link: the Doppler shift moves its time
+## rate (the bands, exact) and its carrier, never the colours Earth encoded (RS-Q5).
 
 const FEED := "res://data/ui/comms_feed.json"
 const EVENTS := "res://data/feed/events.json"
@@ -22,7 +25,6 @@ static var _scenes: Dictionary = {} # event id -> its scene paragraph (data/feed
 
 var picture := TextureRect.new()
 var ghosts: Array[TextureRect] = []
-var tint := ColorRect.new()
 var static_rect := TextureRect.new()
 var ring := FeedRing.new()
 var signal_tag := ComposedBinding.new()
@@ -178,9 +180,6 @@ func _init() -> void:
 		g.visible = false
 		ghosts.append(g)
 		add_child(g)
-	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(tint)
 	static_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	static_rect.modulate = Color(1, 1, 1, 0.6) # the last week shows through, dimmed
 	add_child(static_rect)
@@ -265,10 +264,6 @@ func refresh(view: Dictionary) -> void:
 			history.resize(mini(history.size(), ghosts.size()))
 		picture.texture = tex
 	picture.self_modulate = Color(1, 1, 1) if beam else Color(0.45, 0.45, 0.5)
-	var tint_hex := str(band.get("tint", ""))
-	tint.visible = beam and not tint_hex.is_empty()
-	if tint.visible:
-		tint.color = Color(Color(tint_hex), float(band.get("tint_alpha", 0.0)))
 	static_rect.visible = not beam
 	var out: Variant = e.get("out")
 	ring.visible = not beam and out is Dictionary and str(out.get("reason", "")) == "not_heard"

@@ -765,11 +765,22 @@ func test_earth_feed_bands() -> void:
 	for w: Array in want:
 		var b: Dictionary = EarthFeed.band_for(float(w[0]))
 		check("EL3b feed band at D = %s is %s" % [w[0], w[1]], 1.0 if str(b.get("name", "")) == w[1] else 0.0, 1.0, 0.0)
-	var warm := Color(str(EarthFeed.band_for(0.070888).tint))
-	var cool := Color(str(EarthFeed.band_for(14.107).tint))
-	check("EL3b receding tint is warm (red over blue)", 1.0 if warm.r > warm.b else 0.0, 1.0, 0.0)
-	check("EL3b approaching tint is cool (blue over red)", 1.0 if cool.b > cool.r else 0.0, 1.0, 0.0)
 	check("EL3b the torrent whirls Earth's clock, the still band does not", 1.0 if EarthFeed.band_for(1414.2).whirl and not EarthFeed.band_for(0.00070711).whirl else 0.0, 1.0, 0.0)
+	# R3-TRUE-PROCESSED (RS-Q5, standing order 2026-10-30): a frame decoded from Earth's link keeps
+	# its colours at every D; the shift is in the playback rate (RS-26..RS-30) and the carrier
+	# (lambda / D), never in the pixels. No band carries a colour, and the picture is drawn unmodulated.
+	var coloured := 0
+	for b: Dictionary in EarthFeed.copy().bands:
+		if b.has("tint") or b.has("tint_alpha"): coloured += 1
+	check("RS-Q5 no feed band carries a colour wash", coloured, 0.0, 0.0)
+	var f := EarthFeed.new()
+	for w: Array in want:
+		f.refresh({"earth": {"in_beam": true, "rate": float(w[0]), "at_home": false, "feed": {"frame": 3, "kind": "sky", "event": {"id": "", "words": ""}}}})
+		var wash := 0.0
+		for c: Node in f.get_children():
+			if c is ColorRect and (c as ColorRect).visible: wash += (c as ColorRect).color.a
+		check("RS-Q5 the decoded picture at D = %s is drawn as sent (no wash, unmodulated)" % w[0], wash + (0.0 if f.picture.self_modulate == Color(1, 1, 1) else 1.0), 0.0, 0.0)
+	f.free()
 
 
 ## R3-EARTH-LINK EL5 (gate 2): the spec's RS-26..RS-37 against physics/observe.gd (the mirror of

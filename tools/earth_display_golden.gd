@@ -172,10 +172,10 @@ func _feed_cases() -> void:
 	var vp := viewport(Vector2i(320,180)); var feed := EarthFeed.new(); feed.size=vp.size; vp.add_child(feed)
 	var neutral := Image.create_empty(320,180,false,Image.FORMAT_RGBA8); neutral.fill(Color(64./255.,64./255.,64./255.))
 	var neutral_texture := ImageTexture.create_from_image(neutral)
-	# Independent documented wash constants. These intentionally do not read tint.color,
-	# band.tint or band.tint_alpha, so a styling mutation cannot bless its own output.
-	var cases := [["RS26",.01,1.,"F2967E",.14],["RS27",.001,1.,"F2967E",.14],["RS28",.000001,1.,"F2967E",.24],["rest",1.,1.,"F2967E",0.],["RS29",.01,-1.,"7F9CFF",.14],["RS30",.000001,-1.,"7F9CFF",.24]]
-	var expected := Color.BLACK
+	# R3-TRUE-PROCESSED (RS-Q5, standing order 2026-10-30): the decoded picture keeps its colours at
+	# every D, so the GPU must show the neutral frame unchanged at each RS rate (no wash, no modulation).
+	var cases := [["RS26",.01,1.],["RS27",.001,1.],["RS28",.000001,1.],["rest",1.,1.],["RS29",.01,-1.],["RS30",.000001,-1.]]
+	var expected := Color(64./255.,64./255.,64./255.)
 	for row: Array in cases:
 		var omb: float=row[1]; var phi:=.5*log((2.-omb)/omb)
 		var rate: float=Observe.earth_rate([40.,0.,0.],[row[2],0.,0.],phi)
@@ -184,15 +184,15 @@ func _feed_cases() -> void:
 		feed.picture.texture=neutral_texture; feed.history.clear()
 		for ghost: TextureRect in feed.ghosts: ghost.hide()
 		for label: Control in [feed.signal_tag,feed.clock_tag,feed.caption]: label.hide()
-		var tint := Color(str(row[3])); var alpha: float=row[4]
-		expected=Color(64./255.,64./255.,64./255.).lerp(tint,alpha)
 		var image:=await grab(vp); var got:=image.get_pixel(160,90)
 		var error:=maxf(absf(got.r-expected.r),maxf(absf(got.g-expected.g),absf(got.b-expected.b)))
-		check("G-EL-2 feed %s GPU indicator wash matches CPU composite"%row[0],error<=2./255.,{"rate":rate,"error":error,"expected":[expected.r,expected.g,expected.b],"got":[got.r,got.g,got.b]})
+		check("G-EL-2 feed %s GPU shows the decoded frame unchanged (no wash)"%row[0],error<=2./255.,{"rate":rate,"error":error,"expected":[expected.r,expected.g,expected.b],"got":[got.r,got.g,got.b]})
 		image.save_png(OUT.path_join("feed_%s.png"%str(row[0]).to_lower()))
-	feed.tint.hide()
-	var missing: Color=(await grab(vp)).get_pixel(160,90)
-	check("G-EL-N2 missing production tint is rejected",maxf(absf(missing.r-expected.r),maxf(absf(missing.g-expected.g),absf(missing.b-expected.b)))>2./255.)
+	# Negative control: the old stylised wash (#7F9CFF at 0.24) seeded over the picture must fail the same detector.
+	var seeded := ColorRect.new(); seeded.color=Color(Color("7F9CFF"),.24); seeded.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); feed.add_child(seeded)
+	var washed: Color=(await grab(vp)).get_pixel(160,90)
+	check("G-EL-N2 a seeded colour wash is rejected",maxf(absf(washed.r-expected.r),maxf(absf(washed.g-expected.g),absf(washed.b-expected.b)))>2./255.)
+	seeded.queue_free()
 	vp.queue_free(); await process_frame
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT)
