@@ -127,9 +127,23 @@ GET_FIELD: index 4 exceeds field count 2 (in pkg/stapledons/sim/tools/exoplanets
 make: *** [exoplanets-check] Error 1
 ```
 
-The refreshed full-data verification compares every record scalar and provenance string explicitly and hashes untruncated JSON; its final digest is recorded below. The VM fails. Cause is
-unconfirmed, although the stack names the imported generator's `main`. The
-production gate retains the failing VM witness, with no entry rename/fallback.
+The corrected full-data witness passes on the interpreter. It compares every
+record scalar and provenance string explicitly and hashes untruncated JSON;
+its final digest is printed above. The VM fails. Cause is unconfirmed, although
+the stack names the imported generator's `main`. The production gate retains
+the failing VM witness, with no entry rename/fallback.
+
+The initial witness compared human `show()` displays, which truncate composite
+values. That claim was retracted and the verifier replaced with complete
+record/field comparisons plus full JSON hashing. Mutation tests cover long
+metadata and middle-record changes. An independent read-only Python test
+oracle (listed in `tools/python-allowlist.txt`) also passes:
+
+```text
+exoplanets independent oracle: 1590 snapshot planets, 18722 nonmissing scalars bit-identical (IEEE754 binary64); missingness and derived provenance correct
+```
+
+Python does not generate any catalogue or pipeline output.
 
 ## Data and references
 
