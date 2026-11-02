@@ -361,7 +361,7 @@ func set_auto_view(on: bool) -> void:
 	# Auto the ship's light controller (Processed, its lamps following the star, compressed to fit).
 	star_light.set_mode("processed" if on else "true")
 	if lighting.has("star"):star_light.apply_rig(lighting)
-	view_button.text="View: Auto, bodies faded to fit, ship lamps follow the star [V]" if on else "View: Realistic, one exposure, true starlight [V]"
+	view_button.text="View: Auto (Processed): bodies faded to fit, ship lamps follow the star [V]" if on else "View: Realistic (True): one exposure, true starlight [V]"
 	sky.update_exposure()
 func brightness_label() -> String:
 	var manual:String="Manual sky exposure EV %.2f · %s"%[sky.exposure.fixed_ev,"calibrated reference" if brightness_stops==0 else ("%d stops dimmer · display aid"%(-brightness_stops) if brightness_stops<0 else "%d× display aid"%int(pow(2.,brightness_stops)))]

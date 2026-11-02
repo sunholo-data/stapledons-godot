@@ -14,11 +14,15 @@ extends RefCounted
 ##              stapledons-design standing order 2026-10-30, after D-38/D-55). E is the seen
 ##              illuminance (sim e_v_lux x pointFluxRatio(T, D), the SkyMeter.seen_point
 ##              expression, x any eclipse transmission).
-##     True       (the Realistic view) physical: energy = E / LUX_PER_ENERGY, linear; the ship's
-##                lamps keep their own illuminance; the deck is exposed for the eye adapted to it,
-##                E_ship / (E_ship + E f(y)) (Exposure's EYE rule on the deck), applied as a gain on
-##                the interior's lights so display-referred surfaces keep their level;
-##                the star's bounce off the deck is a labelled ambient term (no GI here).
+##     True       (the Realistic view). Physical: the light's photometric output is E / LUX_PER_ENERGY
+##                at any colour (energy x Y(colour) = E / 10, eval B1), linear; the ship's lamps keep
+##                their own illuminance (the spire 80 lx, Mark 2026-11-02), so star : lamps = E / E_ship.
+##                Presentation, not a physical claim (eval B4): the exposure, an eye model on the deck
+##                (meter f(y), adaptation E_ship / (E_ship + E f(y)), Exposure's EYE rule), applied as
+##                one gain on all scene radiance this rig drives (star, lamps, the spire lamp's glow,
+##                fill, practical, ambient). Display-referred in every setting, so Processed in True
+##                (eval B2): the captain's painted figure (unlit art), the console screens and the
+##                markers keep their display level. The star's bounce is a labelled ambient (no GI).
 ##     Processed  (the Auto view) the ship's light controller: its lamps follow the star's
 ##                direction and colour at a level compressed to fit, log10 between LUX_FLOOR
 ##                (no light) and LUX_FULL (ENERGY_MAX), and keep the ship's own lamps at a
@@ -127,6 +131,26 @@ func goal_energy(lux: float) -> float:
 
 
 ## Linear sRGB, unit max channel: the shaders' blackbody lookup at the seen temperature.
+## The illuminance a star delivers at the ship (lx): the sim's rest-frame e_v_lux times the spec's
+## point-source ratio (Y(D T) / Y(T)) / D^2 (relativity-spec §2, the package's pointFluxRatio, via the
+## shaders' blackbody LUT as SkyMeter.seen_point). The renderer's eclipse transmission multiplies it.
+static func seen_lux(e_v: float, teff: float, doppler: float) -> float:
+	return e_v * pow(10.0, Blackbody.lut_log10_y(teff * doppler) - Blackbody.lut_log10_y(teff)) / (doppler * doppler)
+
+
+## CIE Y of a linear-sRGB colour (Rec. 709 weights): the light's photometric share per unit energy.
+static func luminance(c: Vector3) -> float:
+	return 0.2126729 * c.x + 0.7151522 * c.y + 0.0721750 * c.z
+
+
+## True (R3-TRUE-PROCESSED, eval B1): the light for an illuminance and colour, so that the light's
+## photometric output is exactly E / LUX_PER_ENERGY whatever the colour: the colour keeps a unit max
+## channel (Processed's), and the energy carries 1 / Y(colour).
+static func true_light_energy(lux: float, colour: Vector3) -> float:
+	var y := luminance(colour)
+	return true_energy(lux) / y if y > 0.0 else 0.0
+
+
 static func colour_of(teff: float, doppler: float) -> Vector3:
 	var c := Blackbody.lut_rgb(teff * doppler)
 	var m := maxf(c.x, maxf(c.y, c.z))
@@ -176,7 +200,7 @@ static func emitters(sky: InteriorSky) -> Array:
 		if sv.relativistic_enabled and sv.velocity_beta > 0.0:
 			doppler = Planets.doppler_seen64(dir, h, sv.velocity_beta, sv.velocity_gamma, sv.velocity_omb)
 		# pointFluxRatio(T, D), as SkyMeter.seen_point, with the sim's exact 1 - beta.
-		var seen: float = b.e_v_lux * pow(10.0, Blackbody.lut_log10_y(teff * doppler) - Blackbody.lut_log10_y(teff)) / (doppler * doppler)
+		var seen := seen_lux(b.e_v_lux, teff, doppler)
 		# Eclipses and rings: the renderer's own occlusion along the apparent ray, the star
 		# itself skipped and only bodies nearer than it counted.
 		var transmission: float = sv.transmission_toward(dir, b.id, dist) if not sv.rendered_bodies.is_empty() else 1.0
@@ -232,9 +256,9 @@ func apply_rig(rig: Dictionary) -> void:
 	var on := energy >= VISIBLE_EPS
 	# level: the star's share (it hands the shadow over); lamps: the ship lamps' scale. Processed: the
 	# compressed share and the controller's dimming to its floor. True: the physical share of the
-	# direct light, the lamps at their own level, and the eye's adaptation (R3-TRUE-PROCESSED D2.3)
-	# applied as a gain on every light of the interior (star, lamps, fill, practical, ambient), so
-	# display-referred surfaces (the painted captain, screens, the spire lamp's glow) keep their level.
+	# direct light, the lamps at their own level, and the eye model's exposure (R3-TRUE-PROCESSED D2.3)
+	# applied as one gain on all scene radiance this rig drives (star, lamps, the spire lamp's glow, fill,
+	# practical, ambient); the painted captain, screens and markers stay display-referred (labelled).
 	var level := energy / ENERGY_MAX
 	var lamps := maxf(KEY_FLOOR_SHARE, 1.0 - level)
 	var env: Environment = rig.get("environment")
@@ -250,11 +274,16 @@ func apply_rig(rig: Dictionary) -> void:
 		exposure = deck_exposure(e_ship, lux, interior_dir.y)
 		var bounce := BOUNCE * lux * meter_weight(interior_dir.y) / LUX_PER_ENERGY
 		if bounce > 0.0:
-			amb_c = (amb_c * amb_e + Color(colour.x, colour.y, colour.z) * bounce) / (amb_e + bounce)
-			amb_e += bounce
+			# The bounce in the star's colour at unit luminance (B1), mixed with the ship's own ambient.
+			var bc := colour / luminance(colour) if luminance(colour) > 0.0 else Vector3.ONE
+			var mix := Vector3(amb_c.r, amb_c.g, amb_c.b) * amb_e + bc * bounce
+			var peak := maxf(mix.x, maxf(mix.y, mix.z))
+			amb_c = Color(mix.x / peak, mix.y / peak, mix.z / peak)
+			amb_e = peak
 	var gain := exposure if mode == "true" else 1.0
 	lamps *= gain
-	light.light_energy = energy * gain if on else 0.0
+	var per_y := 1.0 / luminance(colour) if mode == "true" and luminance(colour) > 0.0 else 1.0 # B1: lux -> photometric light exactly
+	light.light_energy = energy * gain * per_y if on else 0.0
 	light.visible = on
 	if env != null:
 		env.ambient_light_energy = amb_e * gain
@@ -299,7 +328,8 @@ func apply_rig(rig: Dictionary) -> void:
 			if is_instance_valid(m): m.cast_shadow = mast_cast
 		var lamp: MeshInstance3D = rig.get("spire_lamp")
 		if lamp != null:
-			(lamp.material_override as StandardMaterial3D).emission_energy_multiplier = float(rig.get("spire_lamp_base", 0.0)) * (1.0 if mode == "true" else share)
+			# True: the lamp's glow is scene radiance, under the same eye exposure as everything lit (eval B2).
+			(lamp.material_override as StandardMaterial3D).emission_energy_multiplier = float(rig.get("spire_lamp_base", 0.0)) * share
 
 
 func manifest() -> Dictionary:
@@ -309,7 +339,9 @@ func manifest() -> Dictionary:
 		"direction": "physical: the star's aberrated apparent direction, the sky renderer's disc centre, in ship axes",
 		"colour": "physical hue: blackbody at Teff x Doppler factor (the renderer's lookup), unit max channel",
 		"mode": mode, "exposure": exposure,
-		"brightness": ("True, physical: energy = E / %s lx (linear), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission); the ship's lamps at their own level (%s lx per unit of energy); the deck exposed for the eye adapted to it, a gain E_ship / (E_ship + E f(y)) = %s on every interior light (display-referred surfaces keep their level); the star's bounce off the deck an ambient term (%s x E f(y), no GI)" % [LUX_PER_ENERGY, LUX_PER_ENERGY, exposure, BOUNCE]) if mode == "true"
+		"exposure_model": "presentation, not a physical claim: an eye model on the deck, gain = E_ship / (E_ship + E f(y)), f(y) = (1 + y) / 2 above the deck plane, cut off %s below it; one gain on all scene radiance the rig drives (star, lamps, the spire lamp's glow, fill, practical, ambient); the star's bounce an ambient term, %s x E f(y) (no GI)" % [BELOW_DECK_CUT, BOUNCE] if mode == "true" else "none (exposure 1)",
+		"display_referred": "Processed in every setting: the captain's painted figure (unlit art), the console screens and the markers keep their display level; they are not re-exposed",
+		"brightness": ("True: physical illuminance: energy x Y(colour) = E / %s lx (linear, any colour), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission); the ship's lamps at their own level (%s lx per unit of energy), so star : lamps = E / E_ship" % [LUX_PER_ENERGY, LUX_PER_ENERGY]) if mode == "true"
 			else ("Processed, the ship's light controller: log-compressed, not physical: energy = %.1f x log10(E / %s lx) / log10(%s / %s), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission)" % [ENERGY_MAX, LUX_FLOOR, LUX_FULL, LUX_FLOOR]),
 		"broad_key": ("the ship's lamps keep their own illuminance in True (no dimming, no floor); the broad key retired on the bridge, where the spire keys the deck" if mode == "true"
 			else "ship-fixed key dimmed by the star light's share down to a %d%% readability floor (Processed: the ship's light controller; no shadows while the star owns them); ambient, fill and practicals unchanged; retired on the bridge, where the spire takes this rule and the shadow (R2-BRIDGE-STYLE S1)" % roundi(100.0 * KEY_FLOOR_SHARE)),
@@ -321,7 +353,7 @@ func hud_line() -> String:
 		return "Starlight on ship: none above %s lx · ship lights only" % _sci(LUX_FLOOR if mode == "processed" else VISIBLE_EPS * LUX_PER_ENERGY)
 	var lux: float = target.get("seen_lux", 0.0)
 	if mode == "true":
-		return "Starlight on ship: %s · %s lx at the ship, true light (%s× the ship's lamps) · the eye adapted to 1/%s of the lamp-lit deck (direction, colour and brightness physical)" % [target.get("name", source_id), _sci(lux), _sci(lux / ship_lux_last), String.num(1.0 / exposure, 1)]
+		return "Starlight on ship: %s · %s lx at the ship · True: brightness, direction and colour physical; exposure an eye model on the deck; the captain, screens and markers display-referred (Processed)" % [target.get("name", source_id), _sci(lux)]
 	return "Starlight on ship: %s · %s lx at the ship → %d%% light (Processed: the ship's lamps follow the star, brightness log-compressed %s–%s lx; direction and colour physical)" % [target.get("name", source_id), _sci(lux), roundi(100.0 * energy / ENERGY_MAX), _sci(LUX_FLOOR), _sci(LUX_FULL)]
 
 
