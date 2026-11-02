@@ -1,0 +1,221 @@
+{
+ "sprint_id": "R3-COMMS-V2",
+ "status": "awaiting_approval",
+ "approved": null,
+ "created": "2026-11-02",
+ "design_doc": "design_docs/planned/r3/comms-station-v2.md",
+ "sprint_plan": "design_docs/planned/r3/comms-station-v2-sprint.md",
+ "branch": "this plan on design/comms-station-v2; execution on feat/comms-station-v2 in a fresh full clone at origin/main after #374, #375, #377 land",
+ "origin": "Mark, attended 2026-11-02: feed history wall, move the comms console closer, a live spectrogram of the signal from home on the bridge ('the spectrograph is cool on its own - maybe we can have that read out on the bridge somewhere')",
+ "mockups": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html",
+ "github_issues": [],
+ "ailang": {
+  "pin": "main's pin at CV0 (v0.54.18 today; v0.56.0 if #377 lands)",
+  "binary": "runtime/bin/ailang",
+  "prompt_version_loaded": "v0.16.7",
+  "note": "reload ailang prompt at CV0 if the pin moved"
+ },
+ "external_dependencies": [
+  "PR #374 merged (ui/earth_feed.gd, data/ui/comms_feed.json)",
+  "PR #375 merged (audio/*, data/audio/*, exact home beacon, code-built buses)",
+  "PR #377 merged (AILANG bump)",
+  "free protocol minor 2.17 (checked at CV1)",
+  "Mark's approval of the mock-ups and OQ1-OQ7"
+ ],
+ "registry_reuse": [
+  {
+   "milestone": "CV1",
+   "package": "sunholo/observe",
+   "action": "depend",
+   "reason": "lightcone.seenAt already gives the newest light; the log is bookkeeping over frameOf and inBeam"
+  },
+  {
+   "milestone": "CV1",
+   "package": "sunholo/relativity",
+   "action": "none",
+   "reason": "no new formula; the Earth rate is already a sim field"
+  },
+  {
+   "milestone": "CV3",
+   "package": "sunholo/audio",
+   "action": "none",
+   "reason": "the waterfall listens via Godot's AudioEffectSpectrumAnalyzer on silent taps; nothing synthesised; ailang pkg search spectrogram|waterfall|spectrum found nothing applicable (2026-11-02)"
+  },
+  {
+   "milestone": "CV2",
+   "package": "-",
+   "action": "none",
+   "reason": "Godot UI"
+  },
+  {
+   "milestone": "CV4",
+   "package": "-",
+   "action": "none",
+   "reason": "layout data and Blender exports"
+  },
+  {
+   "milestone": "CV5",
+   "package": "-",
+   "action": "none",
+   "reason": "Archive lore, spec rows, captures"
+  }
+ ],
+ "velocity": {
+  "target_loc_per_day": 300,
+  "estimated_total_loc": 1450,
+  "estimated_days": 5,
+  "basis": "R3-EARTH-LINK about 1,350 LOC in about 4.5 attended days; plus rig/full runs and Mark's review"
+ },
+ "critical_path": "CV0 -> CV1 -> CV2 -> CV5; CV3 and CV4 parallel with CV1-CV2",
+ "pause_points": [
+  "before anything: Mark approves the mock-ups and OQ1-OQ7",
+  "after CV4: the moved console's captures",
+  "after CV5: review captures and a dev build"
+ ],
+ "questions_for_mark": [
+  {
+   "id": "OQ1",
+   "question": "Where the comms console goes",
+   "recommendation": "Spot A, ship (-11.0, 8.0) (glTF (-11.0, -8.0)), port wing beside the Voyage console: 9.9 m walk from the chair (17.1 today), faces the bow, zoom frames the starbow; B (-5.6, 7.0) is 5.8 m but puts a desk on the open stage"
+  },
+  {
+   "id": "OQ2",
+   "question": "The wall's axis",
+   "recommendation": "ship time (the spacing is the Earth-rate history)"
+  },
+  {
+   "id": "OQ3",
+   "question": "Out-of-beam light",
+   "recommendation": "show it as static on the film"
+  },
+  {
+   "id": "OQ4",
+   "question": "What the waterfall hears",
+   "recommendation": "the whole signal from home (bed + carrier); the bracket measured on the carrier alone"
+  },
+  {
+   "id": "OQ5",
+   "question": "The carrier beyond hearing",
+   "recommendation": "True only for now (dark band + 'above hearing' arrow); a labelled Processed wideband view later, own design"
+  },
+  {
+   "id": "OQ6",
+   "question": "The bridge readout",
+   "recommendation": "the comms desk's own idle screen shows the live waterfall; no Voyage-console strip"
+  },
+  {
+   "id": "OQ7",
+   "question": "Stamp precision",
+   "recommendation": "one record per ship day (bounded log)"
+  }
+ ],
+ "features": [
+  {
+   "id": "CV0",
+   "description": "Rebase after #374/#375/#377; baseline captures of today's station and console; deck-layout-eval bridge ok with comms faces_bow false",
+   "estimated_loc": 0,
+   "dependencies": [],
+   "acceptance_criteria": [
+    "#374, #375, #377 merged; fresh clone at origin/main",
+    "make deck-layout-eval prints bridge ok; make comms-station-test sound-voyage-test green",
+    "make capture-comms-station and make deck-layout-capture TAG=cv0 frames opened; numbers recorded in notes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "CV1",
+   "description": "Received-light log in sim/earth_link.ail (Arrival per ship day, noteLight), protocol 2.17 earth_log / earth_log_tail / earth_weeks intent, bridge storage, strict and parity entries, replay case earth_log_voyage",
+   "estimated_loc": 380,
+   "dependencies": [
+    "CV0"
+   ],
+   "acceptance_criteria": [
+    "AC1: ailang test --package sim and ailang check --package sim green with the log checks and mutants",
+    "AC2: make comms-log-test (nothing from the future; earth_weeks clipped) on VM and interpreter",
+    "AC3: make strict parity replay green; every pre-2.17 golden unchanged; the new 2.17 case byte-identical",
+    "AC4: earth_log only at minor >= 17 outside a black hole's scenario; make replay-compat green"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "CV2",
+   "description": "EarthHistory filmstrip (pictures, slits, stacks, static, Earth/ship stamps as bindings, Earth-time line, hover, zoom, tap-a-stack), rays on EarthStrip, CommsStation v2 layout",
+   "estimated_loc": 430,
+   "dependencies": [
+    "CV1"
+   ],
+   "acceptance_criteria": [
+    "AC5: make comms-station-test with the new coverage checks green",
+    "make display-audit-comms: new = 0, failures = 0 on the extended playthrough",
+    "the wall opens no AI request; make ui-theme-check uid-guard green"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "CV3",
+   "description": "Waterfall: Antenna and Carrier silent taps (sound_mix.gd), CommsWaterfall (log bands, magma, Receiver line at waterfall.carrier_hz, bracket to the measured carrier with x earth.rate, off-scale arrow from the plan's hearing), the comms desk idle screen; headless analyser spike first",
+   "estimated_loc": 300,
+   "dependencies": [
+    "CV0"
+   ],
+   "acceptance_criteria": [
+    "AC6: make comms-waterfall-test: measured peak within 1 % of 400*D at D 0.070888, 1, 14.107; dark with 'above hearing' at D 60 and 1414.2; source guard passes",
+    "make sound-voyage-test sound-levels ui-theme-check uid-guard green; taps never above -60 dBFS at Master"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "CV4",
+   "description": "Console move to the approved spot: bow_a.json amended, walk baked, Blender deck-layout v2 + props v4 regenerated, manifest use_m/screen_ship_m, evaluator to five stations (comms in ZOOM_STATIONS, active_stations 5, seeded faces-the-rim defect)",
+   "estimated_loc": 120,
+   "dependencies": [
+    "CV0"
+   ],
+   "acceptance_criteria": [
+    "AC7: make deck-layout-eval deck-layout-eval-test green with five stations",
+    "AC8: make levels-regress deck-assets-check comms-walk-test green (chair -> comms <= 10.5 m for A); camera tests and export-filter-audit green",
+    "identity layout reproduces today's GLBs byte for byte before the move",
+    "make deck-layout-capture TAG=cv4 frames opened and uploaded to refs/comms_v2/cv4/"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "CV5",
+   "description": "archive.earths-carrier and its spec rows (design repo first), make capture-comms-v2 review frames, changelog fragment, Mark's review, cross-family evaluation, rig/full, landing",
+   "estimated_loc": 220,
+   "dependencies": [
+    "CV2",
+    "CV3",
+    "CV4"
+   ],
+   "acceptance_criteria": [
+    "AC9: tests/test_physics.gd asserts the four carrier check values; make lore-values codex-test green",
+    "AC10: make capture-comms-v2 frames opened and uploaded; URLs in the report",
+    "AC11: make ui-theme-check python-guard uid-guard green; tools/rig_check.sh <PR> --golden posts rig/full green",
+    "sprint-evaluator (other family) >= 70/100 in .ailang/state/evaluations/eval_R3-COMMS-V2_round_1.json"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  }
+ ],
+ "reviews": [],
+ "pr_gate": "rig/full green plus the GitHub fast tier; Mark's visual approval after CV4 and CV5",
+ "evaluation": null
+}
