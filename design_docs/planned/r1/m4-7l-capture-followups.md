@@ -1,11 +1,11 @@
 # S1 capture and ship-bench follow-ups: three drill survivors, a reproducibility note, a bench verdict line (row 7l)
 
-**Status:** Planned (mission iteration 59, designer, 2026-10-30). **Release:** r1. **Milestone:** M4.6rR3 follow-ups, charter queue row **7l** (clause 4 hygiene) inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66).
+**Status:** (b)–(d) landed (iteration 59, PR #356, merge `e2927840`). **(a) planned: addendum, mission iteration 64, designer, 2026-11-02** (see [Addendum](#addendum-iteration-64-row-7la-an-atomic-capture-m4-publish)). **Release:** r1. **Milestone:** M4.6rR3 follow-ups, charter queue row **7l** (clause 4 hygiene) inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66).
 **Priority:** P2 (follow-up backlog). Test, tooling and report text only.
-**Implements:** [charter](../../stapledon-mission.md) row 7l (b), (c) and (d); the follow-up of [m4-6rr3-ship-renders-bench.md](m4-6rr3-ship-renders-bench.md) and its evaluation [`eval_R1-M4-JOURNEY_M4.6rR3_round_1.json`](../../../.ailang/state/evaluations/eval_R1-M4-JOURNEY_M4.6rR3_round_1.json) (drills CA, CB, CC; non-blocking findings 1, 2 and 4). The [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) stays untouched. **(a) is deferred on hold** (see Problem).
+**Implements:** [charter](../../stapledon-mission.md) row 7l (a), (b), (c) and (d): (b)–(d) in the body below (landed), (a) in the iteration-64 Addendum; the follow-up of [m4-6rr3-ship-renders-bench.md](m4-6rr3-ship-renders-bench.md) and its evaluation [`eval_R1-M4-JOURNEY_M4.6rR3_round_1.json`](../../../.ailang/state/evaluations/eval_R1-M4-JOURNEY_M4.6rR3_round_1.json) (drills CA, CB, CC; non-blocking findings 1, 2 and 4). The [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) stays untouched. **(a) was deferred on hold at iteration 59 and is now in scope:** the two PRs that held `Makefile` (#344, #351) merged on 2026-10-30, and no open PR touches the `capture-m4-publish` recipe (Addendum, A-V2).
 **Depends on:** D-88 A (test hygiene inside an approved sprint needs no stop); AILANG v0.54.18 (`runtime/bin`), Godot 4.7.2, the GPU window. No package, sim, protocol, scene, shader or player-visible change; no pixel of any render changes.
-**Estimated LOC:** about **50**: `tools/m4_ship_capture.gd` ~38 (CA 2, CC 8, CB 26, the sheet call 1), `tools/m4_ship_bench.gd` ~10, the M4.6rR3 report 1 paragraph.
-**Evidence:** the Verification log below, run first-hand in this clone at `e94ed9b7` (origin/main).
+**Estimated LOC:** about **50** for (b)–(d): `tools/m4_ship_capture.gd` ~38 (CA 2, CC 8, CB 26, the sheet call 1), `tools/m4_ship_bench.gd` ~10, the M4.6rR3 report 1 paragraph. **(a):** `Makefile` +14/−8 (the fix proper is ~10 of those), plus a new 75-line `tools/test_m4_publish.sh`; the drills stay in this doc.
+**Evidence:** the Verification log below, run first-hand at `e94ed9b7` (origin/main) for (b)–(d); the Addendum's own log (A-V1…A-V16), run first-hand at `6d92d2cb` for (a).
 
 ## Game vision alignment
 
@@ -21,12 +21,13 @@ Scored against [core pillars](https://github.com/sunholo-data/stapledons-design/
 | We Are Not Built For This | 0 | 0 | No crew or consequence change. |
 | Hard sci-fi authenticity (spec) | 0 | 0 | The cruise β is checked against the sim's own `journey.plan.cruise_beta` with a proven-tight tolerance; a stricter ratchet over the same S1 evidence, no new physics. |
 | **Net** | | **0** | **Go under D-88 A:** test hygiene inside the D-66-approved sprint; no pillar is negative. |
+| **Addendum (a), iteration 64** | 0 | 0 | Every pillar 0: a maintainer-only upload recipe checks its 18 files before uploading, plus a headless test. No player-visible, physics, sim or render change. **Go under D-88 A**, no stop. |
 
 ## Problem
 
 Each premise was measured at `e94ed9b7`; the V-numbers are rows of the Verification log.
 
-- **(a) The publish is not atomic.** `capture-m4-publish` runs `test -s "$f"` inside the upload loop (`Makefile:323`, V5), so a missing `worlds.sha256` fails after 17 uploads (evaluator drill P4). **Out of scope: deferred on hold.** The root `Makefile` is held by both open attended PRs, #344 and #351 (V2). Re-file (a) unchanged when neither holds `Makefile`. This doc designs no edit to it.
+- **(a) The publish is not atomic.** `capture-m4-publish` runs `test -s "$f"` inside the upload loop (`Makefile:323`, V5), so a missing `worlds.sha256` fails after 17 uploads (evaluator drill P4). *Iteration 59:* out of scope, deferred on hold, because both open attended PRs #344 and #351 held the root `Makefile` (V2). *Iteration 64:* **in scope.** Both PRs merged on 2026-10-30. The open PRs today (#371, #373, #374, #375) touch neither the recipe nor the `test:` line it would join (A-V2). The defect is re-measured at `6d92d2cb` (A-V5: 17 uploads, and also 15 with `manifest.json` missing, and a 13-line `worlds.sha256` published with rc 0). The design is in the Addendum.
 - **(b) Three drill survivors in `tools/m4_ship_capture.gd`** (V9). **CA:** deleting `\t\t\tdemo.dismiss_arrival()` (line 62) stays green; nothing in the driver reads the HUD (V6). **CC:** the cruise check `absf(beta - 0.99) < 1e-12` (line 156) passes at tolerance 1.0. It compares against a literal, and nothing tests the tolerance (V8). **CB:** `var row := 0 if frame.view == "deck" else 1` (line 214) can be pinned to 0 because the sheet is saved and never read back (V7).
 - **(c) Only the worlds are reproducible.** Two captures on the same tree give a byte-equal `worlds.sha256` and **15 of 15** different PNG hashes (V14; the evaluator saw 12 of 15 at iteration 36). The report still says the public set is "byte-equal to the local set" and has no reproducibility caveat (V16). The public set also no longer matches a fresh capture at all: 14 of 14 world hashes and 15 of 15 PNG hashes differ (V15).
 - **(d) The bench verdict is not printed.** The driver exits 1 for an invalid run and 2 for a MISS (V17), but the recipe turns every failure into `exit 1`, so make returns 2 either way (V18). Only the footer's `exit $rc` tells the two apart. The JSON `verdict` field says `MISS` or `ok` even when the run is invalid (line 138, V17).
@@ -36,7 +37,7 @@ Each premise was measured at `e94ed9b7`; the V-numbers are rows of the Verificat
 ## Goals and non-goals
 
 **Goals.** Kill CA, CB and CC, each with an exact named FAIL through `make capture-m4`. Make the report honest about reproducibility. Give the bench one greppable verdict line, with unchanged exit codes and p99.
-**Non-goals.** No edit to `Makefile`, `mk/*`, `demos/*`, `ui/*`, `tools/m4_ship_golden.gd`, `tools/ship_ui_capture.gd` or `tests/display_audit.gd`. No pinning of dust flashes or card fades: that changes pixels and needs Mark's S1 render sign-off. No republish of the public set. No change to the bench's exit codes, its p99 computation or its existing lines, which row 7m-d depends on.
+**Non-goals.** For (b)–(d), as landed in iteration 59 (the Addendum's (a) is the one exception: it edits only the `capture-m4-publish` recipe in `Makefile` and adds its test): no edit to `Makefile`, `mk/*`, `demos/*`, `ui/*`, `tools/m4_ship_golden.gd`, `tools/ship_ui_capture.gd` or `tests/display_audit.gd`. No pinning of dust flashes or card fades: that changes pixels and needs Mark's S1 render sign-off. No republish of the public set. No change to the bench's exit codes, its p99 computation or its existing lines, which row 7m-d depends on.
 
 ## Design
 
@@ -192,7 +193,7 @@ Run from the implementation root. `export PATH="$PWD/runtime/bin:$PATH" A="AILAN
 
 ## Open questions
 
-None. D-88 A covers this row: test hygiene inside an approved sprint, with no pillar below 0. (a) is deferred by measurement (`Makefile` held), not by choice. (c) takes the report path because pinning changes pixels.
+None. D-88 A covers this row: test hygiene inside an approved sprint, with no pillar below 0. (a) was deferred by measurement (`Makefile` held), not by choice; the iteration-64 Addendum takes it up and adds no open question. (c) takes the report path because pinning changes pixels.
 
 ## Files
 
@@ -243,6 +244,310 @@ Run in this clone at `e94ed9b7` on 2026-10-30, with AILANG v0.54.18 (`make runti
 | V31 | The capture log lands under `SCRATCH` (controller, carve-out) | `grep -n '^SCRATCH' Makefile`; `sed -n 310p Makefile` | `9:SCRATCH := .godot/tmp`; the `capture-m4` recipe writes `> $(SCRATCH)/capture-m4.log`, so the drills' `SCRATCH="$T/s"` puts the log at `$T/s/capture-m4.log` and the default is `.godot/tmp/capture-m4.log` |
 | V32 | Line anchors (controller, carve-out) | `sed -n '1270p' demos/ship_geometry_demo.gd`; `sed -n '7p' design_docs/planned/r1/m4-6rr3-ship-renders-bench-report.md` | `ship_hud.hide_card("arrival")` (under `elif state == "committed":`); l.7 is the "Base URL … It holds 18 files" public-set paragraph |
 | V33 | The clean-tree acceptance run is bounded and recovers (controller, carve-out) | `deadline` extracted from this doc with `awk`; `deadline 900 make capture-m4 AILANG=$PWD/runtime/bin/ailang`; then `deadline 5 make capture-m4 …`; `pgrep -fl m4_ship_capture` after, with `pgrep -fl claude` as the positive control | 900 s: rc `0` in 116 s, `14` ok frames, `1` OK. 5 s: rc `124` in 5 s; 0 `m4_ship_capture` processes afterwards (control: 1 match). The killed run leaves `renders/m4/` partly cleared; a bounded AC1 rebuilds it |
+
+## Addendum (iteration 64): row 7l(a), an atomic `capture-m4-publish`
+
+Mission iteration 64, designer, 2026-11-02, at `6d92d2cb` (origin/main). The A-numbers are rows of the Addendum verification log at the end of this section. Everything above this section is the iteration-59 design of (b)–(d), kept unchanged as history.
+
+### Why now
+
+Iteration 59 deferred (a) only because #344 and #351 held `Makefile`. Both merged on 2026-10-30T20:29:24Z. Of today's open PRs, #371 touches `Makefile` in one hunk at line 505 (`rng-ref`, `rng-keyed`, exoplanets) and #373 in one hunk at lines 18–28 (the Kerr oracles). #374 touches neither `Makefile` nor `mk/`, and #375 (opened 16:50Z, after the brief) touches only `mk/sound.mk`. None of the four diffs mentions `capture-m4-publish` or `renders/m4` (A-V2). Row 7w (republish the S1 set) needs this recipe, so the fix also makes 7w's later upload safe.
+
+### Problem, re-measured at `6d92d2cb`
+
+The recipe is at `Makefile:330–338` (A-V3). Lines 331–334 check the PNG count, the manifest line count, its uniqueness and `shasum -c`. The presence check `test -s "$$f"` runs only inside the upload loop, at line 336 (A-V4; it was line 323 at `e94ed9b7`). The loop uploads in glob order: 15 PNGs, `manifest.json`, `m4_manifest.sha256`, `worlds.sha256`. Run through both makes against fixtures in a throwaway copy, with a fake `gcloud` and the real one off `PATH` (A-V5):
+
+| Fixture | make rc | uploads logged | Verdict |
+|---|---:|---:|---|
+| complete | 0 | 18 | correct |
+| `worlds.sha256` missing | 2 | **17** | the row's defect |
+| `worlds.sha256` empty | 2 | **17** | the same |
+| `manifest.json` missing | 2 | **15** | the same defect, one file earlier |
+| `worlds.sha256` with 13 lines | **0** | **18** | a set that `capture-m4` rejects is published |
+| one PNG missing | 2 | 0 | already caught before the loop (count) |
+| one PNG's bytes changed | 2 | 0 | already caught before the loop (`shasum -c`) |
+
+GNU Make 3.81 and 4.4.1 give identical numbers.
+
+### Design
+
+**The fix.** Collect the 18 paths once into the positional parameters. Check every one is present and non-empty, then run the count, uniqueness, `worlds.sha256` line-count and `shasum` checks, all before the first `gcloud`. Upload from the same list. The bucket path and `--cache-control` stay byte-identical (AC7). Replace `Makefile` lines 330–338 (anchor on the text, not the numbers: #373 adds 6 lines above it if it merges first) with exactly:
+
+```make
+M4_PUBLISH_DIR := renders/m4
+test: capture-m4-publish-test
+capture-m4-publish: ## maintainers (gcloud): check all 18 files of the 3D-ship S1 set, then upload them to the public refs/m4_ship_s1 bucket path
+	@set -eu; d='$(M4_PUBLISH_DIR)'; set -- "$$d"/*.png "$$d/manifest.json" "$$d/m4_manifest.sha256" "$$d/worlds.sha256"; \
+	  for f; do test -s "$$f" || { echo "capture-m4-publish: FAILED before any upload: $$f missing or empty"; exit 1; }; done; \
+	  test $$# = 18 && test "$$(ls "$$d"/*.png | wc -l | tr -d ' ')" = 15 && \
+	  test "$$(wc -l < "$$d/m4_manifest.sha256" | tr -d ' ')" = 15 && \
+	  test "$$(cut -d' ' -f1 "$$d/m4_manifest.sha256" | sort -u | wc -l | tr -d ' ')" = 15 && \
+	  test "$$(wc -l < "$$d/worlds.sha256" | tr -d ' ')" = 14 && \
+	  (cd "$$d" && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4-publish: FAILED before any upload: a count or m4_manifest.sha256 check"; exit 1; }; \
+	  n=0; for f; do gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
+	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
+capture-m4-publish-test: ## row 7l(a): the publish checks all 18 files before its first upload (private fixture, fake gcloud, every GNU make on PATH; never uploads)
+	@sh tools/test_m4_publish.sh "$(CURDIR)"
+.PHONY: capture-m4-publish capture-m4-publish-test
+```
+
+- **Order and named failures.** A missing or empty file fails first, with its name (`FAILED before any upload: <path> missing or empty`). Any count or hash failure prints one `FAILED before any upload: a count or m4_manifest.sha256 check`. The checks after the presence loop are chained with `&&` into one `||`, as in `capture-m4` (line 324), so that one `||` does not disable `set -e` for anything else. The upload loop no longer checks anything: every file it reaches has passed. `test $$# = 18` also catches a 16th PNG before upload.
+- **The `worlds.sha256` line count is pre-checked (14). Decision: yes.** `capture-m4` asserts exactly 14 lines (line 327, A-V8), and the capture driver writes one line per frame (`tools/m4_ship_capture.gd:256–260`). Without the count, a truncated 13-line file is published with rc 0 (A-V5). The publish should never upload a set that its own producer's gate would reject. It costs one line. It is not hashed: its hashes are of sim worlds, not of files in the directory, so `shasum -c` cannot apply.
+- **Not in scope:** a `gcloud` failure in the middle of the loop can still leave a partial upload. The row asks for local checks before the first upload. Real transactional publishing (stage, then copy) is a different design and is not needed for 18 small files that a re-run overwrites.
+
+**How the test reaches the recipe without `renders/m4`: a `Makefile` variable.** Decision: `M4_PUBLISH_DIR := renders/m4`, used only by this recipe. The default keeps maintainer behaviour byte-identical, and the test passes `M4_PUBLISH_DIR=<fixture>` on the command line.
+- **Why not run make in a throwaway copy?** A copy would have to carry `Makefile` plus all 18 `mk/*.mk` includes (lines 26–35, 1022–1027, 1250–1251). The test would then exercise a copy of the recipe, not the checkout's, and that copy goes stale if an include changes. The drills below do use a copy, because they must mutate the file, and a mutation in the checkout must never outlive a killed drill.
+- **Why `:=` and not `?=`?** A command-line assignment overrides `:=`, so the test works. An exported environment variable does not (A-V12). A stray `M4_PUBLISH_DIR` in a maintainer's shell can therefore never redirect a public upload.
+- **Why not `M4_RENDERS`?** `capture-m4` cannot honour it: the Godot driver fixes its output to `res://renders/m4`. The name says which recipe reads it.
+
+**The test: `capture-m4-publish-test`, a new `tools/test_m4_publish.sh`.**
+- **Where it joins `make test`:** as its own `test: capture-m4-publish-test` line beside the recipe, not inside the line-52 list. Fifteen `test:` lines in `Makefile` already do this (22, 126 … 1437, A-V7), and #371 and #373 add theirs the same way. Every PR that edits line 52 would conflict with an insertion there.
+- **Order in the merged list:** GNU make appends it after `export-filter-audit` and before `ship-demo-ci` (position 109 of 122 in the prototype, A-V11). It has no prerequisites, needs no GPU, runtime or assets, and runs in about 1 s, so nothing depends on its position. `ci-fast` is unchanged (the rig runs `make test`).
+- **The script, exactly:**
+
+```sh
+#!/bin/sh
+# Row 7l(a): capture-m4-publish checks all 18 files before its first upload.
+# Runs the real recipe through every distinct GNU make on PATH against a private fixture
+# (M4_PUBLISH_DIR=...), with a fake gcloud that only logs. PATH is narrowed to the fake plus
+# /usr/bin:/bin, so no real gcloud is reachable and nothing is ever uploaded.
+set -u
+# Under `make test` the outer make's flags would reach the fixture makes (iteration 56).
+unset MAKELEVEL MAKEFLAGS MFLAGS MAKEOVERRIDES GNUMAKEFLAGS MAKE_TERMOUT MAKE_TERMERR
+ROOT=${1:?usage: test_m4_publish.sh ROOT}
+cd "$ROOT" || exit 1
+ROOT=$(pwd -P)
+T=$(mktemp -d "${TMPDIR:-/tmp}/m4-publish-test.XXXXXX") || exit 1
+trap 'rm -rf "$T"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM HUP
+mkdir "$T/bin" "$T/fx" || exit 1
+cat > "$T/bin/gcloud" <<STUB || exit 1
+#!/bin/sh
+for a in "\$@"; do printf '%s|' "\$a"; done >> "$T/log"; printf '\n' >> "$T/log"
+STUB
+chmod +x "$T/bin/gcloud" || exit 1
+NP=$T/bin:/usr/bin:/bin
+B=gs://stapledons-voyage-assets/refs/m4_ship_s1/
+if [ "$(PATH=$NP command -v gcloud)" != "$T/bin/gcloud" ]; then echo "capture-m4-publish-test: FAIL the fake gcloud is not first on PATH"; exit 1; fi
+makes=; versions=; nm=0
+for candidate in make gmake; do
+  path=$(command -v "$candidate" 2>/dev/null) || continue
+  version=$("$path" --version 2>/dev/null | sed -n '1p')
+  case "$version" in 'GNU Make '*) ;; *) continue ;; esac
+  if printf '%s\n' "$versions" | grep -Fqx "$version"; then continue; fi
+  makes="$makes $path"; versions="${versions}${version}
+"; nm=$((nm + 1))
+done
+if [ "$nm" = 0 ]; then echo "capture-m4-publish-test: FAIL no GNU make on PATH"; exit 1; fi
+fixture() {
+  rm -rf "$T/fx" && mkdir "$T/fx" || return 1
+  for s in 01_docked 02_boost_b05 03_boost_b09 04_cruise_099 05_brake_b05 06_arrived_acen 07_arrived_home; do
+    for v in deck forward; do printf 'png %s_%s\n' "$s" "$v" > "$T/fx/${s}_$v.png" || return 1; done
+  done
+  printf 'png contact_sheet\n' > "$T/fx/contact_sheet.png" &&
+  (cd "$T/fx" && shasum -a 256 ./*.png | sed 's|  \./|  |' > m4_manifest.sha256) &&
+  for f in "$T"/fx/0*.png; do printf '%064d  %s\n' 0 "${f##*/}"; done > "$T/fx/worlds.sha256" &&
+  printf '{"frames": []}\n' > "$T/fx/manifest.json"
+}
+fails=0
+for M in $makes; do
+  version=$("$M" --version | sed -n '1p')
+  for c in complete worlds-missing worlds-empty worlds-short manifest-missing png-missing hash-mismatch; do
+    fixture || { echo "capture-m4-publish-test: FAIL fixture"; exit 1; }
+    case "$c" in
+      worlds-missing) rm "$T/fx/worlds.sha256" ;;
+      worlds-empty) : > "$T/fx/worlds.sha256" ;;
+      worlds-short) sed '$d' "$T/fx/worlds.sha256" > "$T/w13" && mv "$T/w13" "$T/fx/worlds.sha256" ;;
+      manifest-missing) rm "$T/fx/manifest.json" ;;
+      png-missing) rm "$T/fx/05_brake_b05_deck.png" ;;
+      hash-mismatch) printf 'png 05_brake_b05_dexk\n' > "$T/fx/05_brake_b05_deck.png" ;;
+    esac || { echo "capture-m4-publish-test: FAIL fixture $c"; exit 1; }
+    : > "$T/log" || exit 1
+    rc=0; PATH=$NP "$M" -s -C "$ROOT" capture-m4-publish M4_PUBLISH_DIR="$T/fx" > "$T/out" 2>&1 || rc=$?
+    n=$(wc -l < "$T/log" | tr -d ' ')
+    good=$(awk -F'|' -v fx="$T/fx/" -v b="$B" 'NF == 6 && $1 == "storage" && $2 == "cp" && $3 == "--cache-control=public, max-age=300" && index($4, fx) == 1 && index($5, b) == 1 && $6 == "" && substr($4, length(fx) + 1) == substr($5, length(b) + 1) {k++} END {print k + 0}' "$T/log")
+    uniq=$(cut -d'|' -f5 "$T/log" | sort -u | grep -c .)
+    pre=$(grep -c '^capture-m4-publish: FAILED before any upload: ' "$T/out")
+    said=$(grep -c '^capture-m4-publish: uploaded 18 files$' "$T/out")
+    ok=0
+    case "$c" in
+      complete) test "$rc" = 0 && test "$n" = 18 && test "$good" = 18 && test "$uniq" = 18 && test "$said" = 1 && ok=1 ;;
+      *) test "$rc" != 0 && test "$n" = 0 && test "$pre" = 1 && test "$said" = 0 && ok=1 ;;
+    esac
+    if [ "$ok" = 1 ]; then echo "capture-m4-publish-test: ok $c ($version)"
+    else fails=$((fails + 1)); echo "capture-m4-publish-test: FAIL $c ($version): rc $rc, uploads $n, well-formed $good, pre-check lines $pre"; sed 's/^/  | /' "$T/out"; fi
+  done
+done
+if [ "$fails" != 0 ]; then echo "capture-m4-publish-test: FAILED ($fails of $((7 * nm)) cases)"; exit 1; fi
+echo "capture-m4-publish-test: OK (7 cases on $nm makes:$(printf '%s' "$versions" | tr '\n' ',' | sed 's/,$//; s/,/, /g; s/^/ /'))"
+```
+
+- **No real upload, in three layers.** (1) A fake `gcloud` that only appends its arguments, `|`-separated, to a private log. (2) `PATH` for the fixture makes narrowed to the fake plus `/usr/bin:/bin`, so the real `/opt/homebrew/bin/gcloud` (A-V6) cannot be reached at all. (3) A guard: the test exits 1 before any make unless `command -v gcloud`, under that `PATH`, is the fake.
+- **Which makes:** the distinct GNU makes found on the caller's `PATH` before narrowing, by absolute path. On the rig that is `/usr/bin/make` 3.81 and `/opt/homebrew/bin/gmake` 4.4.1, so the recipe runs through both (A-V6). It unsets the outer make's flags first, the iteration-56 lesson.
+- **Positive control (`complete`):** rc 0, exactly 18 log lines, all 18 well-formed, 18 distinct destinations, and one `uploaded 18 files`. A line is well-formed when it reads `storage|cp|--cache-control=public, max-age=300|<fixture>/<name>|gs://stapledons-voyage-assets/refs/m4_ship_s1/<name>|` with the same `<name>` on both sides. The count proves the capture is live (the iteration-60 process fix). The prefix proves `M4_PUBLISH_DIR` was honoured. The destination proves the public path is unchanged.
+- **Kill cases:** `worlds-missing`, `worlds-empty`, `worlds-short` (13 lines), `manifest-missing`, `png-missing` and `hash-mismatch`. Each must give rc ≠ 0, **zero** log lines, exactly one `FAILED before any upload:` line, and no `uploaded 18 files`. The `FAILED before any upload` signature stops a kill case passing vacuously when the failure comes from somewhere else, such as a `gcloud` not found (rc 127, also 0 uploads).
+- **Output:** each case prints `ok <case> (<make version>)` or a `FAIL` line with rc, uploads, well-formed count and pre-check count, followed by the recipe's own output. The last line is `OK (7 cases on N makes: …)` or `FAILED (k of 7N cases)` with exit 1.
+
+**RED, measured.** On a tree that has only the variable (the old recipe with `renders/m4` replaced by the variable), the script reports 12 of 14 cases FAILED. The upload counts are 17, 17, 18 (rc 0), 15, 0 and 0, with 0 pre-check lines; `complete` passes on both makes (A-V13). The executor records this as the RED run before writing the fix.
+
+### Drills
+
+Drills run on a **private copy** (`Makefile`, `mk/`, the script), never on the checkout. A killed drill therefore cannot leave a mutated `Makefile` behind, and parallel agents can drill one clone. Each drill goes **through `make capture-m4-publish-test` and `gmake capture-m4-publish-test`** in that copy, so the script runs with the outer make's `MAKELEVEL`/`MAKEFLAGS` set, which is how `make test` runs it. The shape follows the charter process fixes:
+- an explicit ROOT;
+- one parent `mktemp -d` with an explicit template, and the cleanup trap right after it;
+- each mutation applied by `perl` with a substitution count (exit 3 if it is not exactly what was meant), then a `cmp` proof that the file changed (else exit 3);
+- make's rc captured and asserted;
+- counts asserted with `test`, never only printed;
+- no `!`, and `|| exit 1` on every check;
+- `TMPDIR` pointed at a private `$P/tmp`. Its entry count is asserted to be 0 before and after each make. This is the `$TMPDIR`-independent leftover check, and it also proves the script's own `mktemp` honours the template.
+
+```sh
+drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation not applied
+  set -eu
+  ROOT=${1:?explicit checkout ROOT required}; mutant=${2:?inloop, noupload, deadcapture or nopositive}
+  cd "$ROOT" || exit 2; ROOT=$(pwd -P)
+  test -f Makefile || exit 2; test -f tools/test_m4_publish.sh || exit 2
+  case "$mutant" in inloop|noupload|deadcapture|nopositive) ;; *) exit 2 ;; esac
+  P=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7la.XXXXXX") || exit 2
+  trap 'rm -rf "$P"' EXIT
+  trap 'exit 130' INT; trap 'exit 143' TERM HUP
+  mkdir "$P/w" "$P/w/tools" "$P/tmp" || exit 2
+  cp Makefile "$P/w/Makefile" || exit 2; cp -R mk "$P/w/mk" || exit 2
+  cp tools/test_m4_publish.sh "$P/w/tools/test_m4_publish.sh" || exit 2
+  MK=$P/w/Makefile; TS=$P/w/tools/test_m4_publish.sh
+  case "$mutant" in
+    inloop)  # restore the old shape: no pre-check loop, no worlds count, test -s back inside the upload loop
+      perl -i -ne 'if (/^\t  for f; do test -s "\$\$f" \|\| \{ echo "capture-m4-publish: FAILED before any upload: \$\$f missing or empty"; exit 1; \}; done; \\$/) { $a++; next }
+        if (/^\t  test "\$\$\(wc -l < "\$\$d\/worlds\.sha256" \| tr -d . .\)" = 14 && \\$/) { $b++; next }
+        $c++ if s/^\t  n=0; for f; do gcloud /\t  n=0; for f; do test -s "\$\$f"; gcloud /; print;
+        END { exit(($a == 1 && $b == 1 && $c == 1) ? 0 : 3) }' "$MK" || exit 3 ;;
+    noupload|nopositive)  # the recipe still says "uploaded 18 files" but uploads nothing
+      perl -i -pe '$n += s/^\t  n=0; for f; do gcloud storage cp /\t  n=0; for f; do true storage cp /; END { exit($n == 1 ? 0 : 3) }' "$MK" || exit 3 ;;
+    deadcapture)  # the fake gcloud logs nowhere
+      perl -i -pe '$n += s{>> "\$T/log"}{>> /dev/null}g; END { exit($n == 2 ? 0 : 3) }' "$TS" || exit 3 ;;
+  esac
+  if test "$mutant" = nopositive; then  # and the positive control loses its upload count
+    perl -i -pe '$n += s/test "\$rc" = 0 && test "\$n" = 18 && test "\$good" = 18 && test "\$uniq" = 18 && /test "\$rc" = 0 && /; END { exit($n == 1 ? 0 : 3) }' "$TS" || exit 3
+  fi
+  F=$MK; O=Makefile; if test "$mutant" = deadcapture; then F=$TS; O=tools/test_m4_publish.sh; fi
+  if cmp -s "$ROOT/$O" "$F"; then echo "drill: mutation did not change $O"; exit 3; fi
+  if test "$mutant" = nopositive; then
+    if cmp -s "$ROOT/tools/test_m4_publish.sh" "$TS"; then echo "drill: mutation did not change the test"; exit 3; fi
+  fi
+  ran=0
+  for outer in make gmake; do
+    M=$(command -v "$outer" 2>/dev/null) || { echo "drill $mutant: $outer absent, skipped"; continue; }
+    test "$(ls -A "$P/tmp" | wc -l)" -eq 0 || exit 1                    # private leftovers before
+    set +e
+    TMPDIR=$P/tmp "$M" -C "$P/w" capture-m4-publish-test > "$P/out" 2>&1
+    rc=$?
+    set -e
+    test "$(ls -A "$P/tmp" | wc -l)" -eq 0 || exit 1                    # and after: the test's trap ran
+    echo "drill $mutant via $outer: make rc $rc"
+    N=$(grep -c '^capture-m4-publish-test: ok complete ' "$P/out" || :)
+    case "$mutant" in
+      inloop)
+        test "$rc" -eq 2 || exit 1
+        test "$N" -ge 1 || exit 1                                           # positive control still green
+        test "$(grep -c '^capture-m4-publish-test: FAIL ' "$P/out")" -eq $((4 * N)) || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL worlds-missing (.*): rc 2, uploads 17, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL worlds-empty (.*): rc 2, uploads 17, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL worlds-short (.*): rc 0, uploads 18, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL manifest-missing (.*): rc 2, uploads 15, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok png-missing ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok hash-mismatch ' "$P/out")" -eq "$N" || exit 1 ;;
+      noupload|deadcapture)
+        test "$rc" -eq 2 || exit 1
+        test "$N" -eq 0 || exit 1
+        K=$(grep -c '^capture-m4-publish-test: FAIL complete (.*): rc 0, uploads 0, ' "$P/out" || :)
+        test "$K" -ge 1 || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL ' "$P/out")" -eq "$K" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok ' "$P/out")" -eq $((6 * K)) || exit 1 ;;
+      nopositive)  # predicted SURVIVOR: without the count, nothing sees that no file was uploaded
+        test "$rc" -eq 0 || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL ' "$P/out")" -eq 0 || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok complete ' "$P/out")" -ge 1 || exit 1 ;;
+    esac
+    ran=$((ran + 1))
+  done
+  test "$ran" -ge 1 || exit 1
+  echo "drill $mutant: expected outcome on $ran outer makes"
+)
+```
+
+| Drill | Mutation | Expected, per outer make (N = inner makes, 2 on the rig) |
+|---|---|---|
+| `inloop` | Restore the old shape: drop the pre-check loop and the `worlds.sha256` count, and put `test -s "$$f";` back inside the upload loop | make rc 2; `ok complete` N; exactly 4N FAILs: `worlds-missing` and `worlds-empty` with `uploads 17`, `manifest-missing` with `uploads 15`, `worlds-short` with `rc 0, uploads 18`; `png-missing` and `hash-mismatch` still `ok` (the old pre-loop checks caught those) |
+| `noupload` | Recipe `gcloud storage cp` → `true storage cp` (it still prints `uploaded 18 files`) | make rc 2; exactly N FAILs, all `complete … rc 0, uploads 0`; 6N `ok` kill cases |
+| `deadcapture` | The fake `gcloud` writes to `/dev/null` instead of the log | the same as `noupload`: only the positive control sees it |
+| `nopositive` | `noupload`, plus the positive control loses its counts (`n`, `good`, `uniq` = 18) | **predicted survivor:** make rc 0, 0 FAILs. It proves that the count, not the recipe's own `uploaded 18 files` claim, is what kills `noupload` and `deadcapture`. A make rc 2 here means the doc is wrong (drill exit 1). |
+
+Measured on a prototype of exactly this design in a scratch copy: every drill reaches its expected outcome under `/bin/sh`, `bash` and `zsh`, via both outer makes. The drill reports a survivor (exit 1) when run against a test whose positive count is gone. It refuses an inapplicable mutation (exit 3) and a tree without the script (exit 2), and leaves 0 temp directories (A-V14).
+
+### Acceptance criteria
+
+Run from the implementation root on the executor's committed tree. Define `drill` from the Drills section first. Every AC is headless.
+
+| # | Criterion and command | Expected output |
+|---|---|---|
+| AC-a1 | `make -s capture-m4-publish-test; echo rc=$?` | 14 `ok` lines (7 cases × 2 makes on the rig), last line `capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`, `rc=0` |
+| AC-a2 | `gmake -s capture-m4-publish-test > .godot/tmp/7la-g.out; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-g.out` | `rc=0`, `14` (the same through gmake) |
+| AC-a3 | `for m in make gmake; do $m -pnq test 2>/dev/null \| grep '^test:' \| tr ' ' '\n' \| grep -cx capture-m4-publish-test; done; grep -c '^test: capture-m4-publish-test$' Makefile` | `1`, `1`, `1` (`make test` reaches it with either make, from its own line) |
+| AC-a4 | `for m in inloop noupload deadcapture; do drill "$PWD" $m; echo "exit=$?"; done` | for each: `drill <m> via make: make rc 2`, `drill <m> via gmake: make rc 2`, `drill <m>: expected outcome on 2 outer makes`, `exit=0` |
+| AC-a5 | `drill "$PWD" nopositive; echo "exit=$?"` | `make rc 0` via both, `expected outcome on 2 outer makes`, `exit=0` (the predicted survivor) |
+| AC-a6 | `git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh; echo $?; find "${TMPDIR:-/tmp}" -maxdepth 1 \( -name 'stapledon-7la.*' -o -name 'm4-publish-test.*' \) \| wc -l` | `0` and `0` (drills never touched the checkout; no temp dirs left) |
+| AC-a7 | `grep -cF -- '--cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}"' Makefile; grep -c '^M4_PUBLISH_DIR := renders/m4$' Makefile` | `1`, `1` (public path and cache-control byte-identical; default source unchanged) |
+| AC-a8 | `awk '/^capture-m4-publish:/,/^\.PHONY: capture-m4-publish/' Makefile \| awk '/gcloud storage cp/ {g=NR} /test -s/ && !t {t=NR} /shasum -a 256 -c/ {s=NR} /worlds\.sha256" \| tr/ {w=NR} END {print (t<g && s<g && w<g) ? "pre-checks-first" : "ORDER-BAD"}'` | `pre-checks-first` |
+| AC-a9 | `grep -c '^NP=\$T/bin:/usr/bin:/bin$' tools/test_m4_publish.sh; grep -c 'is not first on PATH' tools/test_m4_publish.sh` | `1`, `1` (real `gcloud` unreachable, guarded) |
+| AC-a10 | `make uid-guard python-guard && git diff --check origin/main && echo gates-ok` | `gates-ok` (a `.sh` needs no `.uid`; no Python) |
+| AC-a11 | `git diff --name-only origin/main \| grep -cvxE 'Makefile\|tools/test_m4_publish\.sh\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json\|design_docs/planned/r1/m4-7l-capture-followups\.md'; git diff --name-only origin/main \| grep -cxE 'Makefile\|tools/test_m4_publish\.sh'` | `0` (no file outside the four), `2` (control: both code files changed) |
+| AC-a12 | `rig/full` on the PR head (`tools/rig_check.sh <PR>`, launched detached per the iteration-61 fix) | status `success`; its log contains `capture-m4-publish-test: OK` |
+
+### Risks and mitigations
+
+- **Line numbers move.** #373 adds 6 lines above line 330 if it merges first. The executor replaces the recipe by its text (the block from `capture-m4-publish:` to `.PHONY: capture-m4-publish`), and the drills anchor on recipe text, not numbers.
+- **A Linux runner.** The script uses only `/usr/bin:/bin` tools (`shasum`, `sort`, `cut`, `awk`, `sed`, `wc`). It is not in `ci-fast`, so a Linux runner never runs it. Adding it there is a later, separate decision.
+- **The fixture is not a real capture.** The recipe never reads PNG contents, only presence, counts and hashes, so synthetic bytes exercise every check it makes.
+- **A future gcloud flag change** would show up as a `complete` FAIL (`well-formed` < 18) and would need editing in both the recipe and the test. That is intended.
+
+### Files
+
+| File | Change |
+|---|---|
+| `Makefile` | The `capture-m4-publish` recipe replaced by the block above: `M4_PUBLISH_DIR`, `test: capture-m4-publish-test`, the pre-checks, the new target, the `.PHONY` line (+14/−8). |
+| `tools/test_m4_publish.sh` | New, 75 lines, as above. |
+| `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json` | A dated row-7l(a) note: RED counts, AC-a1–a6 outputs, drill results. |
+| `design_docs/planned/r1/m4-7l-capture-followups.md` | This addendum. |
+
+**Estimate:** about 10 LOC of fix (the row's figure) inside a +14/−8 `Makefile` hunk, plus the 75-line test. The four drills (71 lines) live in this doc. They run in about 10 s in total: the test takes about 1 s per outer make.
+
+### Open questions
+
+None. This is test hygiene inside the D-66-approved sprint, with every pillar at 0 (D-88 A). The `worlds.sha256` count, the variable and the test placement are engineering choices, justified above.
+
+### Addendum verification log
+
+Run in `/Users/voightkampff/dev/sunholo-data/.stap-iter64-src` at `6d92d2cb` on 2026-11-02 (16:4x–17:0xZ). All fixture runs used a fake `gcloud` with the real one off `PATH`; nothing was uploaded. The scratch scripts are under the clone's ignored `.godot/tmp/`.
+
+| # | Claim | Command | Result |
+|---|---|---|---|
+| A-V1 | Clone at origin/main, clean, on the iteration branch | `git log --oneline -1; git status --short; git branch --show-current` | `6d92d2cb Merge pull request #372…`; empty; `mission/stapledon-iter64-7la` |
+| A-V2 | The hold has lifted | `gh pr view 344/351 --json state,mergedAt`; `gh pr list --state open`; per PR, `gh pr diff <n> --name-only` and the `@@` lines of the `Makefile` hunk; `grep -c 'capture-m4-publish\|renders/m4'` over each diff | #344 and #351 `MERGED 2026-10-30T20:29:24Z`. Open: #371 (33 files; `Makefile` one hunk `@@ -505,9 +505,31 @@`), #373 (18 files; one hunk `@@ -18,10 +18,16 @@`, head `1f8bf103`, re-checked after a 17:00Z push, which also needs `--allow-escape-sequences`), #374 (16 files, no `Makefile` or `mk/`), #375 (29 files, `mk/sound.mk` only; created 16:50:41Z). `capture-m4-publish\|renders/m4` matches: 0 in each |
+| A-V3 | The recipe at HEAD | `sed -n 330,338p Makefile` | 330 target; 331–334 PNG count 15, manifest lines 15, unique 15, `shasum -c`; 335–336 the loop; 337 `test $$n = 18` and echo; 338 `.PHONY: capture-m4-publish` |
+| A-V4 | The presence check exists only in the loop | `grep -n 'test -s "\$\$f"' Makefile` | line 336 only (it was 323 at `e94ed9b7`, V5) |
+| A-V5 | The defect, demonstrated | `.godot/tmp/v_head.sh "$PWD"`: copies `Makefile` and `mk/` into a `mktemp -d` template dir, builds the 18-file fixture in `renders/m4` there, then runs `PATH=$T/bin:/usr/bin:/bin make -s -C <copy> capture-m4-publish` per case with `/usr/bin/make` and `/opt/homebrew/bin/gmake` | `gcloud` resolves to `$T/bin/gcloud`. Both makes: complete rc 0 / 18; worlds-missing 2 / **17**; worlds-empty 2 / **17**; manifest-missing 2 / **15**; png-missing 2 / 0; hash-mismatch 2 / 0; worlds-short **0 / 18**. Each logged line well-formed (the same count). 0 temp dirs left |
+| A-V6 | Makes and gcloud on the rig | `ls /opt/homebrew/bin/gmake; gmake --version; /usr/bin/make --version; command -v gcloud` | `/opt/homebrew/bin/gmake` is GNU Make 4.4.1; `/usr/bin/make` is GNU Make 3.81; the real `gcloud` is `/opt/homebrew/bin/gcloud` |
+| A-V7 | The `test:` lines | `grep -n '^test:' Makefile`; `gmake -pnq test \| grep '^test:' \| wc -w`; `make -pnq test \| … \| grep -cx capture-m4-publish-test` | 15 `test:` lines: 22, **52** (the long list), 126, 131, 147, 152, 156, 165, 169, 211, 214, 254, 1091, 1141, 1437; merged list 121 words; the new target `0` |
+| A-V8 | What `capture-m4` asserts for worlds | `sed -n 327p Makefile`; `sed -n 245,262p tools/m4_ship_capture.gd` | `wc -l < renders/m4/worlds.sha256` = 14; the driver writes one `<world_sha256>  <frame file>` line per frame (14) |
+| A-V9 | No existing variable to reuse | `grep -n M4_PUBLISH_DIR Makefile mk/*.mk \| wc -l`; `grep -c renders/m4 Makefile` | `0`; `9` (lines 322–335; `capture-m4` keeps its own) |
+| A-V10 | The designed recipe and test pass | the Design block spliced over lines 330–338 of a scratch copy (with `mk/` and the script); `make -C <copy> capture-m4-publish-test` and `gmake …`; then `make -s -j2 … M4_PUBLISH_DIR=/nonexistent AILANG=x` | rc 0 via both; 14 `ok`; `OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`; about 1 s. With `-j2` and the outer overrides: still OK (flags unset). `diff`: +14/−8 |
+| A-V11 | The placement reaches `make test` | `make -pnq test` and `gmake -pnq test` in the copy, the `test:` line split | `1` and `1`; 122 words; position 109, after `export-filter-audit` (108) and before `ship-demo-ci` (119) |
+| A-V12 | `:=` semantics | `M4_PUBLISH_DIR=/envpath make -n -C <copy> capture-m4-publish` (and gmake); `make -n … M4_PUBLISH_DIR=/cli` | env: `d='renders/m4'` with both makes; command line: `d='/cli'` |
+| A-V13 | RED on a tree with only the variable | the old recipe with `renders/m4` → the variable, plus the target; `make -s -C <copy> capture-m4-publish-test` | `FAILED (12 of 14 cases)`: worlds-missing 2/17, worlds-empty 2/17, worlds-short 0/18, manifest-missing 2/15, png-missing 2/0, hash-mismatch 2/0, all with `pre-check lines 0`; `complete` ok on both makes |
+| A-V14 | The drills behave as specified | `bash -n` and `sh -n` on the function; then under `/bin/sh`, `/bin/bash` and `/bin/zsh`: the four drills on the prototype; `noupload` on a copy whose test lost its positive count; `inloop` on the RED copy; the HEAD clone; mutant `XX`; then `find "$TMPDIR" -maxdepth 1` for both prefixes | syntax ok. inloop / noupload / deadcapture / nopositive each `exit 0`, with make rc 2/2/2/0 via both outer makes; weakened copy: `noupload` exit **1** (survivor detected); RED copy: `inloop` exit **3**; HEAD (no script): exit 2; `XX`: exit 2; 0 + 0 temp dirs |
+| A-V15 | No `.uid` or Python gate applies | `sed -n 5p tools/uid_guard.sh` | `git ls-files '*.gd' '*.gdshader' '*.gdshaderinc'` only: a `.sh` needs no `.uid` |
+| A-V16 | Public path and cache-control anchors | `grep -cF -- '--cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}"'` on `Makefile` and on the copy | `1` and `1` (byte-identical through the fix) |
 
 ## Quorum log
 
