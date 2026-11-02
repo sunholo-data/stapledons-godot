@@ -2067,3 +2067,14 @@ and exact commands are in `.ailang/state/evidence/R2-KERR/attended-2026-11-02.md
 The verifier's helper-sqrt encoding error is reported upstream; float contracts
 are not claimed as IEEE proofs. `pkg quality --no-run` still reports **no gates**;
 this is not attested test/smoke execution or publication readiness.
+
+K1.1b-c is split before implementation into c1 observer projection/transport
+(150 source/test/tool lines), c2 full four-coordinate Carter derivatives and
+RK4 step (150), c3 radial/polar root events and regular axis chart (150), c4
+independent oracle/probe/convergence closure (150). These are implementation
+commits under the existing aggregate feature, never partial acceptance of the
+solver. Every c2–c4 gate must pass before tables or mirrors. K1.1b-d similarly
+separates independent metric-derivative oracle source (150), its domain/fixture
+audit (150), and full-Weyl package projection/tests (150), preserving DI-10.
+The original 150-line solver/tides estimates were insufficient for the explicitly
+required root/chart/full-tensor checks; no physics requirement is removed.

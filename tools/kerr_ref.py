@@ -168,6 +168,25 @@ def shadow_fixture():
         records.append(value_row('RK-17','0.9',name,value,formula))
     return {'schema':'kerr-shadow-oracle-v1','source':SOURCE,'unit':'GM/c^2; observer at infinity', 'records':records}
 
+# Independent capture audit: derivative root by Decimal bisection, not acos.
+def capture_oracle(u, lam, eta, spin, outward):
+    u,l,e,s=Decimal(str(u)),Decimal(str(lam)),Decimal(str(eta)),spin_value(str(spin))
+    if not all(x.is_finite() for x in (u,l,e)) or e<0 or u<=horizons(s)[0]:
+        return 'invalid'
+    a,b=s*s-l*l-e,2*(e+(l-s)**2)
+    potential=lambda r:r**4+a*r*r+b*r-s*s*e
+    derivative=lambda r:4*r**3+2*a*r+b
+    if potential(u)<-Decimal('1e-40'): return 'invalid'
+    free='escaped' if outward else 'captured'
+    if a>=0: return free
+    t=(-a/6).sqrt()
+    if derivative(t)>=0: return free
+    m=root(derivative,t,2*t)
+    if m<=horizons(s)[0]: return free
+    if potential(m)>Decimal('1e-40'): return free
+    if potential(m)<-Decimal('1e-40'): return 'escaped' if u>m else 'captured'
+    return ('escaped' if outward else 'critical') if u>m else ('critical' if outward else 'captured')
+
 def fixture():
     records = []
     for spin in ("0", "0.5", "0.9", "0.998"):
