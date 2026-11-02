@@ -1842,9 +1842,9 @@
       "depends_on": [
         "K1.1a-e"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -1883,7 +1883,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Implemented/tested RK14–17 shadow:5/5 strict VM plus3 mutants; Decimal60 oracle/fixture in game. Held by K1.1a-e dependency; aggregate not passed."
+      "notes": "RK14-17 shadow curve/sampling complete:5native tests,3mutationkills,independent Decimal60 fixture. Scoped package evaluation Claude Sonnet5.5 PASS89,0blockers; independently chart-free KS oracle140escaping rays max3.8e-9. Package publication remains blocked by upstream v0.56.0 float/div SMT encoding (PUB006); no spec/visual merge acceptance implied."
     },
     {
       "id": "K1.1b-b",
@@ -1944,9 +1944,9 @@
       "depends_on": [
         "K1.1b-a"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "file_details": [
@@ -1977,7 +1977,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Implemented/tested analytic capture:4/4 strict VM,2 mutants,9 independent Decimal topology probes. Held by upstream dependency; not passed."
+      "notes": "Analytic capture complete:4native tests,2mutationkills,9independent Decimal root-topology probes. Scoped package evaluation Claude Sonnet5.5 PASS89,0blockers; independently chart-free KS oracle140escaping rays max3.8e-9. Package publication remains blocked by upstream v0.56.0 float/div SMT encoding (PUB006); no spec/visual merge acceptance implied."
     },
     {
       "id": "K1.1b-c",
@@ -2052,9 +2052,9 @@
         "K1.1b-b",
         "K1.0"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -2089,7 +2089,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Regular sphere/pole phase + compact radial root chart/Cash-Karp5(4), regular action/node phases, binary64 refinement regression. Native49 ordinary/12 nearcritical/280 independent near-axis escaping literals pass;400ray sweep347escape53capture0fail,5880dense5376escape504capture0fail. Full quality and independent review pending; see continuation evidence."
+      "notes": "Regular sphere/pole chart,compact radial chart,Cash-Karp5(4),regular action/node phases and binary64 refinement complete.49ordinary/12nearcritical/280independent-axis escaping pins pass;400+5880exact-head sweeps have0solver failures. Scoped package evaluation Claude Sonnet5.5 PASS89,0blockers; independently chart-free KS oracle140escaping rays max3.8e-9. Package publication remains blocked by upstream v0.56.0 float/div SMT encoding (PUB006); no spec/visual merge acceptance implied."
     },
     {
       "id": "K1.1b-d",
@@ -2151,9 +2151,9 @@
       "depends_on": [
         "K1.1b-c"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -2192,7 +2192,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Full Weyl/bivector projection implemented;80/80 metric-derived tensor cases and3 exact-reduction tests pass,3 mutants killed. Independent Decimal60 oracle preceded implementation. Held by c and independent evaluation; not passed."
+      "notes": "Full equatorial Weyl/tetrad projection complete:80metric-derived tensors+zero-spin tests,3mutationkills. Scoped package evaluation Claude Sonnet5.5 PASS89,0blockers; independently chart-free KS oracle140escaping rays max3.8e-9. Package publication remains blocked by upstream v0.56.0 float/div SMT encoding (PUB006); no spec/visual merge acceptance implied."
     },
     {
       "id": "K1.1b-e",
@@ -2255,9 +2255,9 @@
       "depends_on": [
         "K1.1b-d"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
+      "completed": "2026-11-02",
       "actual_loc": null,
       "mutation_drill": true,
       "closure": "K1.1b complete; independent evaluation PASS required before publishing.",
@@ -2306,7 +2306,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Digest(16) VM/interpreter byte-identical560.5017148517253, independent within1e-9. Native suite extends to730 tests; full default-engine quality/dry-run and independent review pending. No publication."
+      "notes": "Digest16 VM/interpreter byte-identical560.5017148517253 and independent within1e-9;730VM tests and31mutations pass. Scoped package evaluation Claude Sonnet5.5 PASS89,0blockers; independently chart-free KS oracle140escaping rays max3.8e-9. Package publication remains blocked by upstream v0.56.0 float/div SMT encoding (PUB006); no spec/visual merge acceptance implied."
     },
     {
       "id": "K1.1p",
@@ -2385,7 +2385,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "0.14.0 candidate on package PR173, head65bcaa8 (productionaf2a767). Full quality/dry-run and independent review running; publication remains Mark only. Never replace sim registry pin with a local path."
+      "notes": "Full quality completed on v0.56.0: compile58, tests730/730, smokePASS; PUB006 blocks publication (spurious tidalRadialOrbit counterexample caused by float / emitted as integer div),4 verifier errors. Minimal repro and canonical inbox_1793649570012_28ca24e0 retained. Scoped package eval89PASS. No publish-ready line until upstream fix and clean quality/dry-run. No workaround."
     },
     {
       "id": "K1.4-a",
@@ -2590,7 +2590,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Development pure rows and capture grid under tools/kerr_dev, isolated local package context. First1536-column F32 row FAILS1.2e-4rad: exact boundary max9.0074e-4 near antipode; F32 boundary causes59falsecaptures and2.937606rad max.96x64 boundary interpolation measured separately. STOP before pins; doubled-row/precision review pending."
+      "notes": "Development pure rows and capture grid under tools/kerr_dev, isolated local package context. First1536-column F32 row FAILS1.2e-4rad: exact boundary max9.0074e-4 near antipode; F32 boundary causes59falsecaptures and2.937606rad max.96x64 boundary interpolation measured separately. STOP before pins; doubled-row/precision review pending. Doubled3072 row still FAILS2.2551e-4rad exact-boundary,118 falsecaptures with F32 boundary. Review boundary precision and antipode interpolation before pins; no domain/cutoff narrowing."
     },
     {
       "id": "K1.2-b",
@@ -4555,5 +4555,5 @@
     }
   ],
   "last_session": "2026-11-02",
-  "last_checkpoint": "v0.56.0; regular/compact solver passes400+5880rays; full package gates pending;1536/F32 table preflight fails, no pins or visuals"
+  "last_checkpoint": "Numerical package eval89PASS;730tests and400+5880ray sweeps green; full quality PUB006 blocked by upstream float/div SMT bug; table1536/3072 preflight FAIL, no assets or GPU"
 }
