@@ -1,6 +1,6 @@
 {
  "schema": "stapledons.audio.cues/1",
- "about": "R2-SOUND (design_docs/planned/r2/sound.md \u00a7D1): one row per cue. volume_db sets the level; bands (RMS dBFS over the active span, at default settings) are what make sound-check holds each bus to; a row's own band overrides its bus's.",
+ "about": "R2-SOUND (design_docs/planned/r2/sound.md §D1): one row per cue. volume_db sets the level; bands (RMS dBFS over the active span, at default settings) are what make sound-check holds each bus to; a row's own band overrides its bus's.",
  "bands": {
   "Ambience": [
    -38,
@@ -257,8 +257,9 @@
   {
    "id": "commit_hold",
    "trigger": {
-    "kind": "ui_signal",
-    "name": "commit_hold"
+    "kind": "game",
+    "name": "commit_hold",
+    "stop_on": "commit_release"
    },
    "streams": [
     "commit_hold"
@@ -266,10 +267,12 @@
    "bus": "Effects",
    "volume_db": -17.0,
    "visual": "ambient: the hold-to-confirm ring fills on screen",
-   "about": "Holding to commit; stops on release (S2).",
+   "about": "Holding to commit (S2): starts with the hold (the Voyage console or the map's commit dialog); its tone rises over exactly the 1.5 s hold, so its pitch is the hold's progress; a release before the end fades it out in 80 ms.",
    "name": "Holding to commit",
    "when": "While you hold the commit key (1.5 s).",
-   "listen_for": "A tone rising with the hold; in game it stops if you let go."
+   "listen_for": "A tone rising with the hold; in game it stops if you let go.",
+   "own_player": true,
+   "fade_out_ms": 80
   },
   {
    "id": "commit_seal",
@@ -306,7 +309,9 @@
    "about": "Boost: lower and richer, beating partials and an opening noise band; no rumble (the teacup rule) (v2, D-108).",
    "name": "Drive: boost",
    "when": "The ship starts boosting toward cruise speed.",
-   "listen_for": "Lower and thicker than v1: several voices beating slowly and air opening up as the ship accelerates. Nothing below 200 Hz, nothing you would feel."
+   "listen_for": "Lower and thicker than v1: several voices beating slowly and air opening up as the ship accelerates. Nothing below 200 Hz, nothing you would feel.",
+   "own_player": true,
+   "fade_out_ms": 800
   },
   {
    "id": "drive_silent",
@@ -326,7 +331,10 @@
    "about": "Cruise: the drive settles low and falls silent (v2, D-108).",
    "name": "Drive: falls silent",
    "when": "The boost ends and the ship coasts.",
-   "listen_for": "The drive settling down and closing off until only the hum and the room are left."
+   "listen_for": "The drive settling down and closing off until only the hum and the room are left.",
+   "stops": [
+    "drive_boost"
+   ]
   },
   {
    "id": "drive_brake",
@@ -346,7 +354,12 @@
    "about": "Brake: falling, rougher than the boost (v2, D-108).",
    "name": "Drive: brake",
    "when": "The ship starts braking.",
-   "listen_for": "The boost's mirror, falling, and rougher: voices rubbing, faster beats, more air and a little grit."
+   "listen_for": "The boost's mirror, falling, and rougher: voices rubbing, faster beats, more air and a little grit.",
+   "own_player": true,
+   "fade_out_ms": 800,
+   "stops": [
+    "drive_boost"
+   ]
   },
   {
    "id": "stop_turn",
@@ -377,10 +390,11 @@
    "bus": "Instruments",
    "volume_db": -10.0,
    "visual": "ambient: each tick matches a flash on the dome (interior/dust_flash.gd)",
-   "about": "The dust counter; one tick per drawn grain, dead time in impact ship time (S2).",
+   "about": "The dust counter at the helm (S2): one tick per bright grain the sim draws (ship.ism.impacts), Geiger-style dead time 25 ms in impact ship time (clock.tau + t_s), at most 8 per sim tick (the rest are logged as a count), each at its own t_s in the tick's real-time window.",
    "name": "Dust counter tick",
    "when": "Each dust grain that flashes on the dome (the counter at the helm).",
-   "listen_for": "One dry tick; imagine it faster at speed in a warm cloud, sparse in the hot bubble, like a Geiger counter."
+   "listen_for": "One dry tick; imagine it faster at speed in a warm cloud, sparse in the hot bubble, like a Geiger counter.",
+   "source": "helm"
   },
   {
    "id": "arrived",
@@ -397,7 +411,10 @@
    "about": "Arrival: an understated suspended chord (v2, D-108).",
    "name": "Arrival chime",
    "when": "The ship arrives at its destination.",
-   "listen_for": "Understated and suspended, in commit_seal's mood: it tells you that you've arrived without celebrating."
+   "listen_for": "Understated and suspended, in commit_seal's mood: it tells you that you've arrived without celebrating.",
+   "stops": [
+    "drive_brake"
+   ]
   },
   {
    "id": "archive_ready",
@@ -853,6 +870,148 @@
     -29
    ],
    "source": "station"
+  },
+  {
+   "id": "plan_select",
+   "trigger": {
+    "kind": "sim_state",
+    "path": "journey.plan.target.id"
+   },
+   "streams": [
+    "plan_select"
+   ],
+   "bus": "UI",
+   "volume_db": -12,
+   "visual": "ui/galaxy_map.gd::target_name",
+   "about": "S2: the sim has plotted a new destination (journey.plan.target.id changes): the navigation computer's soft tick and falling third. Keyed to the sim's plan, so a star, Sol or a body sounds and a refused plan does not; a speed change on the same target is silent.",
+   "name": "A course is plotted",
+   "when": "The sim accepts a plan to a new destination (a star, Sol or a body).",
+   "listen_for": "A soft low tick and a falling minor third, dry. It should sound like a computer acknowledging a plot, quieter and lighter than the commit."
+  },
+  {
+   "id": "home_beacon",
+   "trigger": {
+    "kind": "game",
+    "name": "home_beacon",
+    "stop_on": "home_beacon_off"
+   },
+   "streams": [
+    "home_beacon"
+   ],
+   "bus": "Beacon",
+   "volume_db": -18,
+   "loop": true,
+   "fade_out_ms": 1500,
+   "source": "helm",
+   "band": [
+    -40,
+    -30
+   ],
+   "visual": "ui/earth_feed.gd::receiver_plan",
+   "about": "S2 (sound.md §D6, standing order 2026-10-30): Earth's carrier at the helm while the ship is in a beam aimed at its plan (earth.in_beam) and away from home. Its time rate is the sim's Earth rate D exactly (pitch_scale = D: its pips, Earth's seconds, come D times a ship second). True plays this 400 Hz carrier at D, uncorrected, and is silent outside receiver.audible; Receiver (the comms station's default setting) corrects the frequency to 400 Hz on the Beacon bus, from the bank row nearest D (home_beacon_c25 .. _c6400). No compression.",
+   "name": "The home beacon",
+   "when": "In transit and at stops, while Earth's beam reaches the ship.",
+   "listen_for": "A quiet 400 Hz carrier with a pip each Earth second (a longer one every fourth). Outbound at 0.99c (D = 0.0709) the pips come 14 s apart; heading home 14 a second. In True the carrier itself falls to 28 Hz or rises to 5.6 kHz."
+  },
+  {
+   "id": "home_beacon_c25",
+   "trigger": {
+    "kind": "game",
+    "name": "home_beacon_c25",
+    "stop_on": "home_beacon_off"
+   },
+   "streams": [
+    "home_beacon_c25"
+   ],
+   "bus": "Beacon",
+   "volume_db": -18,
+   "loop": true,
+   "fade_out_ms": 1500,
+   "source": "helm",
+   "band": [
+    -40,
+    -30
+   ],
+   "visual": "ui/earth_feed.gd::receiver_plan",
+   "about": "S2: the home beacon's Receiver bank for D in [8, 16] (a 25 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
+   "name": "The home beacon (Receiver, [8, 16])",
+   "when": "In transit and at stops, while Earth's beam reaches the ship.",
+   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
+  },
+  {
+   "id": "home_beacon_c100",
+   "trigger": {
+    "kind": "game",
+    "name": "home_beacon_c100",
+    "stop_on": "home_beacon_off"
+   },
+   "streams": [
+    "home_beacon_c100"
+   ],
+   "bus": "Beacon",
+   "volume_db": -18,
+   "loop": true,
+   "fade_out_ms": 1500,
+   "source": "helm",
+   "band": [
+    -40,
+    -30
+   ],
+   "visual": "ui/earth_feed.gd::receiver_plan",
+   "about": "S2: the home beacon's Receiver bank for D in [2, 8) (a 100 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
+   "name": "The home beacon (Receiver, [2, 8))",
+   "when": "In transit and at stops, while Earth's beam reaches the ship.",
+   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
+  },
+  {
+   "id": "home_beacon_c1600",
+   "trigger": {
+    "kind": "game",
+    "name": "home_beacon_c1600",
+    "stop_on": "home_beacon_off"
+   },
+   "streams": [
+    "home_beacon_c1600"
+   ],
+   "bus": "Beacon",
+   "volume_db": -18,
+   "loop": true,
+   "fade_out_ms": 1500,
+   "source": "helm",
+   "band": [
+    -40,
+    -30
+   ],
+   "visual": "ui/earth_feed.gd::receiver_plan",
+   "about": "S2: the home beacon's Receiver bank for D in [1/8, 1/2) (a 1600 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
+   "name": "The home beacon (Receiver, [1/8, 1/2))",
+   "when": "In transit and at stops, while Earth's beam reaches the ship.",
+   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
+  },
+  {
+   "id": "home_beacon_c6400",
+   "trigger": {
+    "kind": "game",
+    "name": "home_beacon_c6400",
+    "stop_on": "home_beacon_off"
+   },
+   "streams": [
+    "home_beacon_c6400"
+   ],
+   "bus": "Beacon",
+   "volume_db": -18,
+   "loop": true,
+   "fade_out_ms": 1500,
+   "source": "helm",
+   "band": [
+    -40,
+    -30
+   ],
+   "visual": "ui/earth_feed.gd::receiver_plan",
+   "about": "S2: the home beacon's Receiver bank for D in [1/16, 1/8) (a 6400 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
+   "name": "The home beacon (Receiver, [1/16, 1/8))",
+   "when": "In transit and at stops, while Earth's beam reaches the ship.",
+   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
   }
  ]
 }

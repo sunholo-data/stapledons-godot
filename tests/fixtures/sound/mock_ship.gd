@@ -8,6 +8,7 @@ var director := MockDirector.new()
 var consoles := MockConsoles.new()
 var lift := MockLift.new()
 var journey_sim: Variant = null
+var journey_map: Variant = null ## R2-SOUND S2: a MockMap (the commit dialog's hold)
 
 
 class MockDirector:
@@ -21,6 +22,14 @@ class MockConsoles:
 	var focused := ""
 	var stations := {"navigation": {"use": Vector3(0, 0, -6), "meshes": [{"origin": Vector3(0, 1, -7)}]}, "comms": {"use": Vector3(5, 0, -6), "meshes": [{"origin": Vector3(5, 1, -7)}]}}
 	var comms_station: Node = null ## R3-EARTH-LINK EL3b.7: the real CommsStation, set by the test
+	var held := 0.0 ## R2-SOUND S2: a console confirm's held seconds
+
+	func confirm_held_s() -> float:
+		return held
+
+
+class MockMap:
+	var hold_s := 0.0 ## R2-SOUND S2: the commit dialog's hold
 
 
 class MockLift:

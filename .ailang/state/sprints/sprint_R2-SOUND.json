@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-SOUND",
-  "status": "paused_for_review",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark (attended)",
   "approved_on": "2026-10-20",
@@ -51,6 +51,11 @@
       "date": "2026-10-26",
       "event": "rework",
       "note": "D-123 (Mark on footsteps v3): 'footsteps still sound aggressive - I figure players will hear this a lot so it has to be pleasant-ish to listen to not banging in the skull!' Footsteps v4, a new approach: felt more than heard, under the bed. Three-pole low-passed white noise (energy centred near 190 Hz, most of it 120-300 Hz), a soft body, a barely-there brush on three variants; 30-40 ms rounded attacks, 85-105 ms decay constants, 0.55 s, no transient. In game at -30 dB: peak -33 dBFS (6 dB under the hum's -27), gated RMS -45.9; 13.6 dB under the bed in 120-300 Hz and in 2-5 kHz. The director gains volume_jitter_db (1.5) and alternate_db (-1.5, every other foot), and its pitch and level now come from a mixed hash (the raw string hash moved so little per fire that a walk got nearly one pitch). Review folder offers a 6 dB quieter walk as a level option. Paused for Mark's listen."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "started",
+      "note": "S2_VOYAGE started (D-144: attended parallel agents; Claude C, branch feat/r2-sound-s2). Scope per the brief: plan select, the commit hold and seal, the drive, the dust counter, arrival and the home beacon, made exact by the standing order of 2026-10-30 (no compromises on the physics; True and labelled Processed settings): the k = 0.25 compressed pitch is removed; the beacon runs at the sim's earth.rate with the comms station's True / Receiver machinery (EarthFeed.receiver_plan, data/ui/comms_feed.json sound.receiver)."
     }
   ],
   "implements": [
@@ -216,21 +221,22 @@
     },
     {
       "id": "S2_VOYAGE",
-      "description": "The voyage (design section D6): plan select, commit hold and seal, drive boost/silent/brake, stop turn, arrival, brake notice, hold limit, crew hold, the dust counter (25 ms dead time) from ship.ism.impacts, medium changes, the interlude bed under the Archive's voice, bh_enter, and the home beacon if OQ6 is accepted. Adds the tour's attitude_hold_changed(on) signal for stop_turn. Home beacon pitch is asserted against physics/planets.gd doppler_seen64 (mirror of sunholo/relativity 0.7 optics) at the package probe values; no new formula (gate 2).",
+      "description": "The voyage (design section D6). This stage (D-144 brief): plan select (the sim plotting a new destination), the commit hold (console or map hold, stopped on release) and seal (the sim's committed), drive boost/silent/brake, the dust counter (25 ms dead time in impact ship time, at most 8 per tick) from ship.ism.impacts, arrival, and the home beacon, exact (standing order 2026-10-30): the sim's earth.rate unrounded, in Earth's beam and away from home, True and Receiver as at the comms station (EarthFeed.receiver_plan), Receiver corrected on its own Beacon bus with a carrier bank so Godot's pitch shift stays within a factor of 2. Deferred to S2b: stop_turn's tour signal, brake_notice, crew_hold, medium_change, the interlude bed, bh_enter.",
       "estimated_loc": 420,
       "dependencies": [
         "S1_BRIDGE"
       ],
       "acceptance_criteria": [
-        "make sound-test: the voyage cue log equals tests/fixtures/sound/cue_log_voyage.txt byte for byte in two separate Godot processes (AC2)",
-        "make sound-test: committed -> commit_seal only on the sim's acceptance; phase to boosting/cruising/braking -> drive cues; arrived, hold_limit, crew_hold, bh_enter; dust ticks honour the dead time (AC4)",
-        "make sound-test: home beacon pitch at beta 0, 0.9, 0.99 (Sol astern and ahead) matches 12*k*log2(D) from the package mirror to 0.01 semitone, if OQ6 (AC15)",
-        "make export-filter-audit ship-demo-export-smoke green, the smoke asserting the exported pack loads the cue table and logs one cue; make export-pack-check on the rig: zip growth <= 6 MB (AC13)",
+        "make sound-voyage-test: a real voyage (ui/transit_harness.gd on the sim at 2.16) gives a cue log equal to tests/fixtures/sound/cue_log_voyage.txt byte for byte, in two separate Godot processes (AC2)",
+        "make sound-test ship-sound-test sound-voyage-test: committed -> commit_seal only on the sim's acceptance; phase to boosting/cruising/braking -> drive cues; arrived; plan_select on a new plotted target; commit_hold on a held confirm, stopped on release; dust ticks honour the 25 ms dead time and the 8-per-tick cap (AC4)",
+        "make sound-test ship-sound-test sound-voyage-test: the home beacon is exact: its rate is the sim's earth.rate unrounded at every step of a real voyage; on only in Earth's beam and away from home; its plan is EarthFeed.receiver_plan at the receiver's edges; measured through the mixer, 400 Hz in Receiver and 400 D Hz in True within 3 %, pips every 1/D s; True silent outside audible (AC15, amended 2026-11-02)",
+        "make sound-check sound-levels sound-levels-parity sound-assets-check sound-stage-check sound-synth-check green with the new sounds in their bands (AC6-AC8)",
+        "make export-filter-audit ship-demo-export-smoke green; make export-pack-check on the rig: zip growth <= 6 MB (AC13)",
         "full make test green on the rig (AC16)",
-        "dev build and make sound-review STAGE=s2 published for Mark"
+        "listening review (make sound-voyage-review) published to gs://stapledons-voyage-assets/refs/sound_s2/ for Mark; a dev build after his listen"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "notes": null
     },

@@ -1,0 +1,370 @@
+p1 archive_degradation 0.00
+t4.s plan_select v0 +0c -12.0dB
+t8.0 commit_seal v0 +0c -8.0dB
+t9.0 drive_boost v0 +0c -12.0dB
+t31.d0 dust_tick v0 +0c -10.0dB
+t34.d0 dust_tick v0 +0c -10.0dB
+t40.d0 dust_tick v0 +0c -10.0dB
+t49.d0 dust_tick v0 +0c -10.0dB
+t50.d0 dust_tick v0 +0c -10.0dB
+t51.d0 dust_tick v0 +0c -10.0dB
+t55.d0 dust_tick v0 +0c -10.0dB
+t56.d0 dust_tick v0 +0c -10.0dB
+t57.d0 dust_tick v0 +0c -10.0dB
+t59.d0 dust_tick v0 +0c -10.0dB
+t60.d0 dust_tick v0 +0c -10.0dB
+t61.d0 dust_tick v0 +0c -10.0dB
+t61.d1 dust_tick v0 +0c -10.0dB
+t62.d0 dust_tick v0 +0c -10.0dB
+t62.d1 dust_tick v0 +0c -10.0dB
+t63.d0 dust_tick v0 +0c -10.0dB
+t63.d1 dust_tick v0 +0c -10.0dB
+t64.d0 dust_tick v0 +0c -10.0dB
+t66.d0 dust_tick v0 +0c -10.0dB
+t66.d1 dust_tick v0 +0c -10.0dB
+t67.d0 dust_tick v0 +0c -10.0dB
+t67.d1 dust_tick v0 +0c -10.0dB
+t68.0 drive_silent v0 +0c -9.5dB
+t68.d0 dust_tick v0 +0c -10.0dB
+t69.d0 dust_tick v0 +0c -10.0dB
+t69.d1 dust_tick v0 +0c -10.0dB
+r1 home_beacon_c6400 0.0709
+g1 home_beacon_c6400 v0 +0c -18.0dB
+t70.d0 dust_tick v0 +0c -10.0dB
+r2 home_beacon_c6400 0.0709
+t71.d0 dust_tick v0 +0c -10.0dB
+t71.d1 dust_tick v0 +0c -10.0dB
+t72.d0 dust_tick v0 +0c -10.0dB
+r3 home_beacon_c6400 0.0709
+t73.d0 dust_tick v0 +0c -10.0dB
+t74.d0 dust_tick v0 +0c -10.0dB
+t74.d1 dust_tick v0 +0c -10.0dB
+t76.d0 dust_tick v0 +0c -10.0dB
+t77.d0 dust_tick v0 +0c -10.0dB
+t77.d1 dust_tick v0 +0c -10.0dB
+t78.d0 dust_tick v0 +0c -10.0dB
+t78.d1 dust_tick v0 +0c -10.0dB
+t79.d0 dust_tick v0 +0c -10.0dB
+t80.d0 dust_tick v0 +0c -10.0dB
+t80.d1 dust_tick v0 +0c -10.0dB
+t81.d0 dust_tick v0 +0c -10.0dB
+t81.d1 dust_tick v0 +0c -10.0dB
+t82.d0 dust_tick v0 +0c -10.0dB
+t82.d1 dust_tick v0 +0c -10.0dB
+t83.d0 dust_tick v0 +0c -10.0dB
+t83.d1 dust_tick v0 +0c -10.0dB
+t84.d0 dust_tick v0 +0c -10.0dB
+t84.d1 dust_tick v0 +0c -10.0dB
+t86.d0 dust_tick v0 +0c -10.0dB
+t87.d0 dust_tick v0 +0c -10.0dB
+t88.d0 dust_tick v0 +0c -10.0dB
+t89.d0 dust_tick v0 +0c -10.0dB
+t90.d0 dust_tick v0 +0c -10.0dB
+t90.d1 dust_tick v0 +0c -10.0dB
+t91.d0 dust_tick v0 +0c -10.0dB
+t92.d0 dust_tick v0 +0c -10.0dB
+t92.d1 dust_tick v0 +0c -10.0dB
+t94.d0 dust_tick v0 +0c -10.0dB
+t94.d1 dust_tick v0 +0c -10.0dB
+t95.d0 dust_tick v0 +0c -10.0dB
+t95.d1 dust_tick v0 +0c -10.0dB
+t96.d0 dust_tick v0 +0c -10.0dB
+t96.d1 dust_tick v0 +0c -10.0dB
+t97.d0 dust_tick v0 +0c -10.0dB
+t97.d1 dust_tick v0 +0c -10.0dB
+t98.d0 dust_tick v0 +0c -10.0dB
+t99.d0 dust_tick v0 +0c -10.0dB
+t100.d0 dust_tick v0 +0c -10.0dB
+t101.d0 dust_tick v0 +0c -10.0dB
+t101.d1 dust_tick v0 +0c -10.0dB
+t102.d0 dust_tick v0 +0c -10.0dB
+t103.d0 dust_tick v0 +0c -10.0dB
+t103.d1 dust_tick v0 +0c -10.0dB
+t104.d0 dust_tick v0 +0c -10.0dB
+t104.d1 dust_tick v0 +0c -10.0dB
+t105.d0 dust_tick v0 +0c -10.0dB
+t106.d0 dust_tick v0 +0c -10.0dB
+t106.d1 dust_tick v0 +0c -10.0dB
+t107.d0 dust_tick v0 +0c -10.0dB
+t108.d0 dust_tick v0 +0c -10.0dB
+t109.d0 dust_tick v0 +0c -10.0dB
+t110.d0 dust_tick v0 +0c -10.0dB
+t111.d0 dust_tick v0 +0c -10.0dB
+t111.d1 dust_tick v0 +0c -10.0dB
+t112.d0 dust_tick v0 +0c -10.0dB
+t112.d1 dust_tick v0 +0c -10.0dB
+t113.d0 dust_tick v0 +0c -10.0dB
+t113.d1 dust_tick v0 +0c -10.0dB
+t114.d0 dust_tick v0 +0c -10.0dB
+t116.d0 dust_tick v0 +0c -10.0dB
+t116.d1 dust_tick v0 +0c -10.0dB
+t117.d0 dust_tick v0 +0c -10.0dB
+t118.d0 dust_tick v0 +0c -10.0dB
+t119.d0 dust_tick v0 +0c -10.0dB
+t120.d0 dust_tick v0 +0c -10.0dB
+t121.d0 dust_tick v0 +0c -10.0dB
+t123.d0 dust_tick v0 +0c -10.0dB
+t124.d0 dust_tick v0 +0c -10.0dB
+t125.d0 dust_tick v0 +0c -10.0dB
+t125.d1 dust_tick v0 +0c -10.0dB
+t126.d0 dust_tick v0 +0c -10.0dB
+t127.d0 dust_tick v0 +0c -10.0dB
+t128.d0 dust_tick v0 +0c -10.0dB
+t128.d1 dust_tick v0 +0c -10.0dB
+t129.d0 dust_tick v0 +0c -10.0dB
+t129.d1 dust_tick v0 +0c -10.0dB
+t130.d0 dust_tick v0 +0c -10.0dB
+t131.d0 dust_tick v0 +0c -10.0dB
+t131.d1 dust_tick v0 +0c -10.0dB
+t133.d0 dust_tick v0 +0c -10.0dB
+t134.d0 dust_tick v0 +0c -10.0dB
+t134.d1 dust_tick v0 +0c -10.0dB
+t135.d0 dust_tick v0 +0c -10.0dB
+t135.d1 dust_tick v0 +0c -10.0dB
+t136.d0 dust_tick v0 +0c -10.0dB
+t136.d1 dust_tick v0 +0c -10.0dB
+t137.d0 dust_tick v0 +0c -10.0dB
+t137.d1 dust_tick v0 +0c -10.0dB
+t138.d0 dust_tick v0 +0c -10.0dB
+t139.d0 dust_tick v0 +0c -10.0dB
+t139.d1 dust_tick v0 +0c -10.0dB
+t140.d0 dust_tick v0 +0c -10.0dB
+t141.d0 dust_tick v0 +0c -10.0dB
+t142.d0 dust_tick v0 +0c -10.0dB
+t142.d1 dust_tick v0 +0c -10.0dB
+t143.d0 dust_tick v0 +0c -10.0dB
+t143.d1 dust_tick v0 +0c -10.0dB
+t144.d0 dust_tick v0 +0c -10.0dB
+t144.d1 dust_tick v0 +0c -10.0dB
+t145.d0 dust_tick v0 +0c -10.0dB
+t146.d0 dust_tick v0 +0c -10.0dB
+t147.d0 dust_tick v0 +0c -10.0dB
+t148.d0 dust_tick v0 +0c -10.0dB
+t149.d0 dust_tick v0 +0c -10.0dB
+t149.d1 dust_tick v0 +0c -10.0dB
+t150.d0 dust_tick v0 +0c -10.0dB
+t150.d1 dust_tick v0 +0c -10.0dB
+t151.d0 dust_tick v0 +0c -10.0dB
+t152.d0 dust_tick v0 +0c -10.0dB
+t152.d1 dust_tick v0 +0c -10.0dB
+t153.d0 dust_tick v0 +0c -10.0dB
+t153.d1 dust_tick v0 +0c -10.0dB
+t154.d0 dust_tick v0 +0c -10.0dB
+t155.d0 dust_tick v0 +0c -10.0dB
+t156.d0 dust_tick v0 +0c -10.0dB
+t157.d0 dust_tick v0 +0c -10.0dB
+t158.d0 dust_tick v0 +0c -10.0dB
+t160.d0 dust_tick v0 +0c -10.0dB
+t161.d0 dust_tick v0 +0c -10.0dB
+t162.d0 dust_tick v0 +0c -10.0dB
+t163.d0 dust_tick v0 +0c -10.0dB
+t163.d1 dust_tick v0 +0c -10.0dB
+t164.d0 dust_tick v0 +0c -10.0dB
+t165.d0 dust_tick v0 +0c -10.0dB
+t166.d0 dust_tick v0 +0c -10.0dB
+t167.d0 dust_tick v0 +0c -10.0dB
+t168.d0 dust_tick v0 +0c -10.0dB
+t168.d1 dust_tick v0 +0c -10.0dB
+t169.d0 dust_tick v0 +0c -10.0dB
+t169.d1 dust_tick v0 +0c -10.0dB
+t170.d0 dust_tick v0 +0c -10.0dB
+t171.d0 dust_tick v0 +0c -10.0dB
+t172.d0 dust_tick v0 +0c -10.0dB
+t172.d1 dust_tick v0 +0c -10.0dB
+t173.d0 dust_tick v0 +0c -10.0dB
+t173.d1 dust_tick v0 +0c -10.0dB
+t174.d0 dust_tick v0 +0c -10.0dB
+t174.d1 dust_tick v0 +0c -10.0dB
+t175.d0 dust_tick v0 +0c -10.0dB
+t176.d0 dust_tick v0 +0c -10.0dB
+t176.d1 dust_tick v0 +0c -10.0dB
+t177.d0 dust_tick v0 +0c -10.0dB
+t177.d1 dust_tick v0 +0c -10.0dB
+t178.d0 dust_tick v0 +0c -10.0dB
+t178.d1 dust_tick v0 +0c -10.0dB
+t179.d0 dust_tick v0 +0c -10.0dB
+t179.d1 dust_tick v0 +0c -10.0dB
+t180.d0 dust_tick v0 +0c -10.0dB
+t181.d0 dust_tick v0 +0c -10.0dB
+t181.d1 dust_tick v0 +0c -10.0dB
+t182.d0 dust_tick v0 +0c -10.0dB
+t183.d0 dust_tick v0 +0c -10.0dB
+t184.d0 dust_tick v0 +0c -10.0dB
+t185.d0 dust_tick v0 +0c -10.0dB
+t186.d0 dust_tick v0 +0c -10.0dB
+t186.d1 dust_tick v0 +0c -10.0dB
+t187.d0 dust_tick v0 +0c -10.0dB
+t188.d0 dust_tick v0 +0c -10.0dB
+t188.d1 dust_tick v0 +0c -10.0dB
+t189.d0 dust_tick v0 +0c -10.0dB
+t189.d1 dust_tick v0 +0c -10.0dB
+t190.d0 dust_tick v0 +0c -10.0dB
+t191.d0 dust_tick v0 +0c -10.0dB
+t191.d1 dust_tick v0 +0c -10.0dB
+t192.d0 dust_tick v0 +0c -10.0dB
+t193.d0 dust_tick v0 +0c -10.0dB
+t194.d0 dust_tick v0 +0c -10.0dB
+t195.d0 dust_tick v0 +0c -10.0dB
+t196.d0 dust_tick v0 +0c -10.0dB
+t196.d1 dust_tick v0 +0c -10.0dB
+t197.d0 dust_tick v0 +0c -10.0dB
+t198.d0 dust_tick v0 +0c -10.0dB
+t198.d1 dust_tick v0 +0c -10.0dB
+t199.d0 dust_tick v0 +0c -10.0dB
+t200.d0 dust_tick v0 +0c -10.0dB
+t200.d1 dust_tick v0 +0c -10.0dB
+t201.d0 dust_tick v0 +0c -10.0dB
+t202.d0 dust_tick v0 +0c -10.0dB
+t203.d0 dust_tick v0 +0c -10.0dB
+t204.d0 dust_tick v0 +0c -10.0dB
+t205.d0 dust_tick v0 +0c -10.0dB
+t206.d0 dust_tick v0 +0c -10.0dB
+t207.d0 dust_tick v0 +0c -10.0dB
+t208.d0 dust_tick v0 +0c -10.0dB
+t208.d1 dust_tick v0 +0c -10.0dB
+t209.d0 dust_tick v0 +0c -10.0dB
+t209.d1 dust_tick v0 +0c -10.0dB
+t210.d0 dust_tick v0 +0c -10.0dB
+t210.d1 dust_tick v0 +0c -10.0dB
+t211.d0 dust_tick v0 +0c -10.0dB
+t212.d0 dust_tick v0 +0c -10.0dB
+t213.d0 dust_tick v0 +0c -10.0dB
+t213.d1 dust_tick v0 +0c -10.0dB
+t214.d0 dust_tick v0 +0c -10.0dB
+t214.d1 dust_tick v0 +0c -10.0dB
+t215.d0 dust_tick v0 +0c -10.0dB
+t216.d0 dust_tick v0 +0c -10.0dB
+t217.d0 dust_tick v0 +0c -10.0dB
+t218.d0 dust_tick v0 +0c -10.0dB
+t219.d0 dust_tick v0 +0c -10.0dB
+t220.d0 dust_tick v0 +0c -10.0dB
+t222.d0 dust_tick v0 +0c -10.0dB
+t223.d0 dust_tick v0 +0c -10.0dB
+t224.d0 dust_tick v0 +0c -10.0dB
+t225.d0 dust_tick v0 +0c -10.0dB
+t226.d0 dust_tick v0 +0c -10.0dB
+t227.d0 dust_tick v0 +0c -10.0dB
+t228.d0 dust_tick v0 +0c -10.0dB
+t229.d0 dust_tick v0 +0c -10.0dB
+t230.d0 dust_tick v0 +0c -10.0dB
+t230.d1 dust_tick v0 +0c -10.0dB
+t231.d0 dust_tick v0 +0c -10.0dB
+t231.d1 dust_tick v0 +0c -10.0dB
+t232.d0 dust_tick v0 +0c -10.0dB
+t232.d1 dust_tick v0 +0c -10.0dB
+t233.d0 dust_tick v0 +0c -10.0dB
+t234.d0 dust_tick v0 +0c -10.0dB
+t235.d0 dust_tick v0 +0c -10.0dB
+t235.d1 dust_tick v0 +0c -10.0dB
+t236.d0 dust_tick v0 +0c -10.0dB
+t237.d0 dust_tick v0 +0c -10.0dB
+t238.d0 dust_tick v0 +0c -10.0dB
+t238.d1 dust_tick v0 +0c -10.0dB
+t239.d0 dust_tick v0 +0c -10.0dB
+t239.d1 dust_tick v0 +0c -10.0dB
+t240.d0 dust_tick v0 +0c -10.0dB
+t242.d0 dust_tick v0 +0c -10.0dB
+t243.d0 dust_tick v0 +0c -10.0dB
+t244.d0 dust_tick v0 +0c -10.0dB
+t244.d1 dust_tick v0 +0c -10.0dB
+t245.d0 dust_tick v0 +0c -10.0dB
+t246.d0 dust_tick v0 +0c -10.0dB
+t247.d0 dust_tick v0 +0c -10.0dB
+t248.d0 dust_tick v0 +0c -10.0dB
+t249.d0 dust_tick v0 +0c -10.0dB
+t249.d1 dust_tick v0 +0c -10.0dB
+t250.d0 dust_tick v0 +0c -10.0dB
+t250.d1 dust_tick v0 +0c -10.0dB
+t251.d0 dust_tick v0 +0c -10.0dB
+t252.d0 dust_tick v0 +0c -10.0dB
+t253.d0 dust_tick v0 +0c -10.0dB
+t254.d0 dust_tick v0 +0c -10.0dB
+t255.d0 dust_tick v0 +0c -10.0dB
+t256.d0 dust_tick v0 +0c -10.0dB
+t256.d1 dust_tick v0 +0c -10.0dB
+t257.d0 dust_tick v0 +0c -10.0dB
+t257.d1 dust_tick v0 +0c -10.0dB
+t258.d0 dust_tick v0 +0c -10.0dB
+t258.d1 dust_tick v0 +0c -10.0dB
+t259.d0 dust_tick v0 +0c -10.0dB
+t260.d0 dust_tick v0 +0c -10.0dB
+t260.d1 dust_tick v0 +0c -10.0dB
+t261.d0 dust_tick v0 +0c -10.0dB
+t261.d1 dust_tick v0 +0c -10.0dB
+t262.d0 dust_tick v0 +0c -10.0dB
+t263.d0 dust_tick v0 +0c -10.0dB
+t264.d0 dust_tick v0 +0c -10.0dB
+t265.d0 dust_tick v0 +0c -10.0dB
+t266.d0 dust_tick v0 +0c -10.0dB
+t267.d0 dust_tick v0 +0c -10.0dB
+t278.d0 dust_tick v0 +0c -10.0dB
+t285.d0 dust_tick v0 +0c -10.0dB
+t309.d0 dust_tick v0 +0c -10.0dB
+t321.d0 dust_tick v0 +0c -10.0dB
+t326.d0 dust_tick v0 +0c -10.0dB
+t343.d0 dust_tick v0 +0c -10.0dB
+t347.d0 dust_tick v0 +0c -10.0dB
+t364.0 drive_brake v0 +0c -12.0dB
+r4 home_beacon_c6400 0.0741
+r5 home_beacon_c6400 0.0774
+r6 home_beacon_c6400 0.0809
+r7 home_beacon_c6400 0.0846
+r8 home_beacon_c6400 0.0884
+r9 home_beacon_c6400 0.0924
+r10 home_beacon_c6400 0.0965
+r11 home_beacon_c6400 0.1009
+r12 home_beacon_c6400 0.1054
+r13 home_beacon_c6400 0.1102
+r14 home_beacon_c6400 0.1152
+r15 home_beacon_c6400 0.1204
+r16 home_beacon_c6400 0.1258
+r17 home_beacon_c1600 0.1315
+g2 home_beacon_c1600 v0 +0c -18.0dB
+r18 home_beacon_c1600 0.1374
+r19 home_beacon_c1600 0.1436
+r20 home_beacon_c1600 0.1501
+r21 home_beacon_c1600 0.1568
+r22 home_beacon_c1600 0.1639
+r23 home_beacon_c1600 0.1713
+r24 home_beacon_c1600 0.1790
+r25 home_beacon_c1600 0.1871
+r26 home_beacon_c1600 0.1955
+r27 home_beacon_c1600 0.2043
+r28 home_beacon_c1600 0.2136
+r29 home_beacon_c1600 0.2232
+r30 home_beacon_c1600 0.2332
+r31 home_beacon_c1600 0.2438
+r32 home_beacon_c1600 0.2548
+r33 home_beacon_c1600 0.2662
+r34 home_beacon_c1600 0.2783
+r35 home_beacon_c1600 0.2908
+r36 home_beacon_c1600 0.3039
+r37 home_beacon_c1600 0.3176
+r38 home_beacon_c1600 0.3319
+r39 home_beacon_c1600 0.3469
+r40 home_beacon_c1600 0.3626
+r41 home_beacon_c1600 0.3789
+r42 home_beacon_c1600 0.3960
+r43 home_beacon_c1600 0.4139
+r44 home_beacon_c1600 0.4325
+r45 home_beacon_c1600 0.4520
+r46 home_beacon_c1600 0.4724
+r47 home_beacon_c1600 0.4937
+r48 home_beacon_c1600 0.5160
+r49 home_beacon 0.5393
+g3 home_beacon v0 +0c -18.0dB
+r50 home_beacon 0.5636
+r51 home_beacon 0.5890
+r52 home_beacon 0.6156
+r53 home_beacon 0.6433
+r54 home_beacon 0.6723
+r55 home_beacon 0.7027
+r56 home_beacon 0.7343
+r57 home_beacon 0.7675
+r58 home_beacon 0.8021
+r59 home_beacon 0.8382
+r60 home_beacon 0.8760
+r61 home_beacon 0.9156
+r62 home_beacon 0.9568
+t424.1 arrived v0 +0c -12.0dB
+r63 home_beacon 1.0000

@@ -133,6 +133,90 @@ func _run() -> void:
 	await frames()
 	check(d.fading("home_town") or not bed.playing, "closing the station fades the bed out")
 
+	# R2-SOUND S2 (§D6): the voyage through the journey session and the consoles.
+	var vs: Variant = Mock.MockSim.new()
+	vs.world = {"tick": 20, "clock": {"tau": 0.5}, "journey": {"plan": null}, "ship": {"ism": {"impacts": []}}}
+	ship.journey_sim = vs
+	await frames()
+	vs.world.journey = {"plan": {"target": {"id": "CNS5:3627"}, "cruise_phi": 2.6}}
+	vs.world.tick = 21
+	vs.stepped.emit([])
+	vs.world.journey = {"plan": {"target": {"id": "CNS5:3627"}, "cruise_phi": 3.0}}
+	vs.world.tick = 22
+	vs.stepped.emit([])
+	check(count(d.log_text(), "plan_select") == 1 and d.log_text().contains("t21.s plan_select"), "S2: the sim plotting a new destination plays plan_select once; a speed change to the same target does not")
+	ship.consoles.held = 0.4
+	await frames()
+	var hold: Node = d.get_node_or_null("Loop_commit_hold")
+	check(hold is AudioStreamPlayer and hold.playing and count(d.log_text(), "commit_hold") == 1, "S2: holding a console's confirm plays commit_hold")
+	ship.consoles.held = 0.0
+	await frames()
+	check(d.fading("commit_hold"), "S2: releasing it early fades commit_hold out")
+	var map: Variant = Mock.MockMap.new()
+	ship.journey_map = map
+	map.hold_s = 0.5
+	await frames()
+	check(count(d.log_text(), "commit_hold") == 2 and hold.playing and not d.fading("commit_hold"), "S2: the map's commit dialog hold plays it again, from the start")
+	map.hold_s = 1.45
+	await frames()
+	map.hold_s = 0.0 # the frame that commits clears the hold
+	await frames()
+	check(hold.playing and not d.fading("commit_hold"), "S2: a hold that completes lets commit_hold finish into the seal (not cut)")
+	vs.world.tick = 30
+	vs.stepped.emit([{"k": "committed", "plan_id": 1}])
+	vs.world.tick = 31
+	vs.stepped.emit([{"k": "phase", "from": "at_rest", "to": "boosting"}])
+	check(d.log_text().contains("t30.0 commit_seal") and d.log_text().contains("t31.0 drive_boost") and count(d.log_text(), "commit_seal") == 1, "S2 AC4: the sim's committed seals the commit and its phase starts the drive, in the sim's clock")
+	vs.world.ship.ism.impacts = [{"t_s": 0.01}, {"t_s": 0.02}, {"t_s": 0.04}]
+	vs.world.tick = 32
+	vs.stepped.emit([])
+	check(d.log_text().contains("t32.d0 dust_tick") and d.log_text().contains("t32.d1 dust_tick") and not d.log_text().contains("t32.d2"), "S2: two of three grains count (one is 10 ms after the first, in the dead time)")
+	await create_timer(0.1).timeout
+	var at_helm := false
+	for q: Node in d.get_children():
+		if q is AudioStreamPlayer3D and q.stream == d.stream("dust_tick"):
+			at_helm = at_helm or (q as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(0, 1, -7))
+	check(at_helm and ss.position_of("helm").is_equal_approx(Vector3(0, 1, -7)), "S2: the counter ticks at the helm (the navigation station), after each grain's t_s")
+
+	# S2: the home beacon at the helm, at the sim's Earth rate D exactly, with the station's setting.
+	var bx := AudioServer.get_bus_index("Beacon")
+	var bshift := SoundMix._find_effect(bx, "AudioEffectPitchShift") as AudioEffectPitchShift
+	vs.world.earth = {"rate": 0.070888125, "in_beam": true, "at_home": true}
+	await frames()
+	check(d.get_node_or_null("Loop_home_beacon_c6400") == null and d.get_node_or_null("Loop_home_beacon") == null, "S2: at home (the boost out of Sol) the beacon is silent: the link is live")
+	vs.world.earth.at_home = false
+	await frames()
+	var b6: Node = d.get_node_or_null("Loop_home_beacon_c6400")
+	check(b6 is AudioStreamPlayer3D and b6.playing and absf(b6.pitch_scale / 0.070888125 - 1.0) < 1e-6 and b6.bus == &"Beacon" and (b6 as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(0, 1, -7)), "S2 Receiver: in Earth's beam, outbound at D = 0.070888125, the beacon plays at the helm at D exactly (the 6400 Hz bank, on the Beacon bus; the player keeps pitch_scale in float32, within 1e-6)")
+	check(AudioServer.is_bus_effect_enabled(bx, 0) and is_equal_approx(bshift.pitch_scale, 1.0 / (16.0 * 0.070888125)), "S2 Receiver: the Beacon bus corrects the rest, 1/(16 D) = %.4f, to the carrier's 400 Hz" % bshift.pitch_scale)
+	ship.consoles.focused = "comms"
+	st.feed.set_receiver(true)
+	ev.rate = 0.070888125
+	st.refresh({"earth": ev, "clock": {"t": 1.0, "tau": 0.5}})
+	await frames()
+	var rx2 := AudioServer.get_bus_index("Receiver")
+	var rshift := SoundMix._find_effect(rx2, "AudioEffectPitchShift") as AudioEffectPitchShift
+	check(is_equal_approx(rshift.pitch_scale, 1.0 / 0.070888125) and is_equal_approx(bshift.pitch_scale, 1.0 / (16.0 * 0.070888125)) and b6.playing, "S2: with the comms station open too, its bed is corrected on the Receiver bus (1/D) and the beacon on its own (1/(16 D)): neither moves the other")
+	st.feed.set_receiver(false)
+	await frames()
+	var b1: Node = d.get_node_or_null("Loop_home_beacon")
+	check(b1 != null and b1.playing and absf(b1.pitch_scale / 0.070888125 - 1.0) < 1e-6 and not b6.playing and not AudioServer.is_bus_effect_enabled(bx, 0), "S2 True (the station's setting): the 400 Hz carrier at D, uncorrected (heard at 28.4 Hz); the bank hands over at once")
+	vs.world.earth.rate = 60.0
+	await frames()
+	check(d.fading("home_beacon") or not b1.playing, "S2 True at D = 60: above human hearing, the beacon falls silent")
+	st.feed.set_receiver(true)
+	ship.consoles.focused = ""
+	vs.world.earth.rate = 14.107
+	await frames()
+	var b25: Node = d.get_node_or_null("Loop_home_beacon_c25")
+	check(b25 != null and b25.playing and absf(b25.pitch_scale / 14.107 - 1.0) < 1e-6 and is_equal_approx(bshift.pitch_scale, 1.0 / (0.0625 * 14.107)), "S2 Receiver homebound at D = 14.107: the 25 Hz bank at D, corrected by %.4f" % bshift.pitch_scale)
+	vs.world.earth.in_beam = false
+	await frames()
+	check(d.fading("home_beacon_c25") and not AudioServer.is_bus_effect_enabled(bx, 0), "S2: out of Earth's beam (off-plan, or Earth silent) the beacon fades out")
+	ship.journey_sim = null
+	for id: String in d.cues: # silence the S2 tails (the beacon's 1.5 s fade) before the pan is measured
+		d.stop(id, true)
+
 	# AC10: left on screen is left in the ears; turned to Astern it is on the right.
 	var cap := AudioEffectCapture.new()
 	cap.buffer_length = 1.0

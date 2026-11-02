@@ -12,6 +12,8 @@ extends RefCounted
 ##   │   └ Receiver   the comms receiver's sound from home; a PitchShift, enabled only while the
 ##   │                receiver corrects Earth's Doppler shift (R3 audio realism AR8b, standing order
 ##   │                2026-10-30: the True setting leaves it off)
+##   │   └ Beacon     the home beacon at the helm (R2-SOUND S2): the same correction as the Receiver,
+##   │                for the beacon's own bank (HomeBeacon), so the two never share one shift
 ##   ├ UI        Compressor sidechained to Voice (lighter)
 ##   └ Music     sidechained to Voice; empty (OQ4, D-101)
 ##
@@ -25,6 +27,7 @@ const BUSES := [
 	{"name": "Effects", "send": "Ship"},
 	{"name": "Instruments", "send": "Ship"},
 	{"name": "Receiver", "send": "Instruments", "pitch_shift": true},
+	{"name": "Beacon", "send": "Instruments", "pitch_shift": true},
 	{"name": "UI", "send": "Master", "duck": {"threshold": -26.0, "ratio": 2.0, "attack_us": 5000.0, "release_ms": 200.0}},
 	{"name": "Music", "send": "Master", "duck": {"threshold": -30.0, "ratio": 4.0, "attack_us": 5000.0, "release_ms": 400.0}},
 ]
@@ -113,7 +116,12 @@ static func is_layout_ok() -> Array[String]:
 ## R3 audio realism AR8b: the comms receiver's frequency correction, a pitch factor on the Receiver
 ## bus (1 / the playback rate in the Receiver setting; 1 in the True setting, which leaves it off).
 static func set_receiver(correct: float) -> void:
-	var i := AudioServer.get_bus_index("Receiver")
+	set_shift("Receiver", correct)
+
+
+## A receiver bus's frequency correction (Receiver, Beacon): a pitch factor, off at 1.
+static func set_shift(bus: String, correct: float) -> void:
+	var i := AudioServer.get_bus_index(bus)
 	var e := _find_effect(i, "AudioEffectPitchShift") as AudioEffectPitchShift if i >= 0 else null
 	if e == null:
 		return

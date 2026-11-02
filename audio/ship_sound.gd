@@ -8,11 +8,18 @@ extends Node
 ##   lift.state (edges)                          -> lift start, run (riding with the platform), arrive;
 ##   active_level (edges)                        -> the level's loops and its room (data/audio/rooms.json);
 ##   journey_sim's world (each step)             -> the Archive's Memory Health (D-113) for the spire;
+##   journey_sim.stepped (S2, §D6)               -> the sim's events (committed -> commit_seal, phase ->
+##                                                  the drive, arrived, hold_limit), the plotted target
+##                                                  (plan_select), the drawn dust grains (dust_tick);
+##   consoles.confirm_held_s / journey_map.hold_s -> commit_hold while a commit is held, stopped on release;
+##   journey_sim's world.earth                    -> the home beacon at the helm, at the Earth rate D
+##                                                  exactly, with the comms station's True / Receiver
+##                                                  setting (HomeBeacon; standing order 2026-10-30);
 ##   consoles.comms_station.feed.home_sound      -> sound from home while the comms station is open
 ##                                                  (R3-EARTH-LINK EL3b.7: the bed, its pitch, the accents);
 ##   the captain and the active view's yaw       -> the listener (§D4, OQ7: left on screen is left in the ears).
 ## Sources resolve to world positions: "mast" (the SpireLight on the mast), "captain", "station" (the
-## station in focus, or the last one), "lift" (the platform).
+## station in focus, or the last one), "lift" (the platform), "helm" (the navigation station).
 
 const ROOMS_PATH := "res://data/audio/rooms.json"
 const HEAD_M := 1.6
@@ -28,6 +35,8 @@ var _lift_moving := false
 var _sim: Object = null ## the journey session (a SimBridge)
 var _home := "" ## EL3b.7: the home bed playing at the comms station
 var _home_accents := 0
+var beacon := HomeBeacon.new() ## S2: Earth's carrier at the helm
+var _held := 0.0 ## S2: the commit hold's seconds last frame (the console's or the map's)
 
 
 func attach(d: Node) -> ShipSound:
@@ -61,9 +70,14 @@ func _on_used(_station: String, _action: String) -> void:
 	sound.on_ui("console_key")
 
 
-func _on_stepped(_events: Array) -> void:
+## S2: one accepted step of the journey session: its events, then the world's state edges (the plotted
+## target, the medium), then the grains it drew. All in the sim's own clocks (§D1).
+func _on_stepped(events: Array) -> void:
 	if _sim != null:
-		sound.on_sim_world(int(_sim.world.get("tick", 0)), _sim.world)
+		var tick := int(_sim.world.get("tick", 0))
+		sound.on_sim_step(tick, events)
+		sound.on_sim_world(tick, _sim.world)
+		sound.on_dust(tick, _sim.world)
 
 
 func _process(_delta: float) -> void:
@@ -96,7 +110,8 @@ func _process(_delta: float) -> void:
 			elif _focused != "":
 				sound.on_ui("console_sleep")
 			_focused = f
-	_follow_home(consoles)
+	var home_correct := _follow_home(consoles)
+	_follow_hold(consoles)
 	# The lift: start, run with the platform, arrive.
 	var lift: Variant = demo.get("lift")
 	if lift != null:
@@ -112,20 +127,25 @@ func _process(_delta: float) -> void:
 		_sim = sim
 		if not _sim.stepped.is_connected(_on_stepped):
 			_sim.stepped.connect(_on_stepped)
-		_on_stepped([])
+		sound.on_sim_world(int(_sim.world.get("tick", 0)), _sim.world) # the state as it is (no events, no grains)
+	# The station's sound from home on the Receiver bus; S2: the home beacon at the helm on its own Beacon
+	# bus (its correction is split with its bank, so it never shares the station's shift), with the
+	# station's True / Receiver setting.
+	SoundMix.set_receiver(home_correct)
+	var w: Dictionary = _sim.world if _sim != null and is_instance_valid(_sim) and _sim.world is Dictionary else {}
+	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(sound, w, receiver_setting(consoles)))
 
 
 ## R3-EARTH-LINK EL3b.7: while the comms station is open and its feed shows, the receiver plays the
 ## feed's home_sound: a new bed fades the old one out (home_none) and starts at the band's pitch, the
 ## pitch follows the band, and each new accent fires once. Closing the station stops it.
-func _follow_home(consoles: Variant) -> void:
+func _follow_home(consoles: Variant) -> float:
 	var st: Variant = consoles.get("comms_station") if consoles != null and str(consoles.focused) == "comms" else null
 	var hs: Dictionary = st.feed.home_sound if st is CommsStation and st.is_inside_tree() and st.feed.visible else {}
 	# R3 audio realism AR8b: the stream at the feed's rate (D, or within the receiver's range), the
 	# Receiver bus's correction, and nothing at all when the True sound is outside human hearing.
 	var cue := "" if hs.get("silent", false) else str(hs.get("cue", ""))
 	var rate := float(hs.get("rate", 1.0))
-	SoundMix.set_receiver(float(hs.get("correct", 1.0)) if cue != "" else 1.0)
 	if cue != _home:
 		if _home != "":
 			sound.on_game("home_none")
@@ -140,6 +160,38 @@ func _follow_home(consoles: Variant) -> void:
 			_home_accents = int(hs.accent_seq)
 			sound.set_pitch(str(hs.accent), rate)
 			sound.on_game(str(hs.accent))
+	return float(hs.get("correct", 1.0)) if cue != "" else 1.0
+
+
+## The comms station's True / Receiver setting (EarthFeed.receiver), which the helm's receiver shares; the
+## default (Receiver) until the station has been built.
+func receiver_setting(consoles: Variant) -> bool:
+	var st: Variant = consoles.get("comms_station") if consoles != null else null
+	return st.feed.receiver if st is CommsStation else true
+
+
+## S2 (§D6): commit_hold sounds while an irreversible confirm is held (the Voyage and navigation consoles'
+## hold, ShipConsoles.confirm_held_s, or the map's commit dialog, GalaxyMap.hold_s). Its tone rises over
+## exactly the 1.5 s hold, so what is heard is the hold's progress; a release before the end stops it
+## (commit_release fades it out), and the hold that completes lets it finish into commit_seal, which the
+## sim's `committed` fires.
+func _follow_hold(consoles: Variant) -> void:
+	var held := 0.0
+	if consoles != null and consoles.has_method("confirm_held_s"):
+		held = float(consoles.confirm_held_s())
+	var map: Variant = demo.get("journey_map")
+	if map != null and is_instance_valid(map) and map.get("hold_s") != null:
+		held = maxf(held, float(map.hold_s))
+	if held > 0.0 and _held <= 0.0:
+		sound.on_game("commit_hold")
+	elif held <= 0.0 and _held > 0.0 and _held < hold_s() - GalaxyMap.MAX_HOLD_DT: # within one frame's most of the end, the hold completed
+		sound.on_game("commit_release")
+	_held = held
+
+
+## The hold's length: ShipConsoles.HOLD_S and GalaxyMap.HOLD_S are both 1.5 s (D-12), the commit_hold tone's.
+static func hold_s() -> float:
+	return GalaxyMap.HOLD_S
 
 
 ## The listener faces where the active camera faces, flattened to the deck: what is left on screen is
@@ -170,6 +222,12 @@ func position_of(source: String) -> Vector3:
 			if consoles != null and consoles.stations.has(id):
 				var meshes: Array = consoles.stations[id].meshes
 				return meshes[0].origin if not meshes.is_empty() else consoles.stations[id].use
+			return position_of("captain")
+		"helm":
+			var consoles: Variant = demo.get("consoles")
+			if consoles != null and consoles.stations.has("navigation"):
+				var meshes: Array = consoles.stations.navigation.meshes
+				return meshes[0].origin if not meshes.is_empty() else consoles.stations.navigation.use
 			return position_of("captain")
 		"lift":
 			var lift: Variant = demo.get("lift")

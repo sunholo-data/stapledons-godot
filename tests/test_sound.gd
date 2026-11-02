@@ -174,6 +174,184 @@ func test_receiver_measured() -> void:
 	check(ok, "AR8b measured through the mixer: Receiver hands back 1 kHz at D = 0.5, 2 and 16; True plays D x 1 kHz (%s)" % ", ".join(seen))
 
 
+## R2-SOUND S2 (§D1, §D6): the dust counter on a real director. Grains at their own ship time
+## (clock.tau years + t_s), in t_s order whatever order the sim lists them; a grain within 25 ms of the
+## last counted one is in the dead time; the dead time carries across ticks in ship time; at most 8 counts
+## sound per tick and the rest are logged as one count line.
+func test_dust() -> void:
+	var d := SoundDirector.new()
+	d.audible = false
+	d.setup()
+	var w := {"clock": {"tau": 1.0}, "ship": {"ism": {"impacts": [{"t_s": 0.03}, {"t_s": 0.0}, {"t_s": 0.01}, {"t_s": 0.054}, {"t_s": 0.056}]}}}
+	var n := d.on_dust(7, w)
+	var log := d.log_text()
+	check(n == 3 and log.count(" dust_tick v") == 3 and log.contains("t7.d0 dust_tick") and log.contains("t7.d2 dust_tick") and not log.contains("t7.d3"), "S2 AC4: grains at 0, 10, 30, 54, 56 ms count at 0, 30 and 56 ms (10 ms and 54 ms fall in the 25 ms dead time; listed out of order, counted in time order):\n" + log)
+	var tau_s := 1.0 + 0.06 / SoundDirector.YEAR_S # the next tick starts 60 ms of ship time later: 4 ms after the last count
+	n = d.on_dust(8, {"clock": {"tau": tau_s}, "ship": {"ism": {"impacts": [{"t_s": 0.0}, {"t_s": 0.03}]}}})
+	check(n == 1 and d.log_text().contains("t8.d0 dust_tick") and not d.log_text().contains("t8.d1"), "S2: the dead time runs on in ship time across ticks (a grain 4 ms after the last count is dead; the next, 34 ms after, counts)")
+	var many: Array = []
+	for i in 12:
+		many.append({"t_s": 0.03 * i})
+	n = d.on_dust(9, {"clock": {"tau": 2.0}, "ship": {"ism": {"impacts": many}}})
+	check(n == 12 and d.log_text().count(" dust_tick v") == 3 + 1 + 8 and d.log_text().contains("t9.dx dust_tick ×4"), "S2: twelve counts in one tick: eight sound, four are logged as a count (t9.dx dust_tick ×4)")
+	check(d.on_dust(10, {"ship": {}}) == 0 and d.on_dust(11, {}) == 0, "S2: a world without impacts counts nothing")
+	n = d.on_dust(1, {"clock": {"tau": 0.001}, "ship": {"ism": {"impacts": [{"t_s": 0.0}]}}})
+	check(n == 1, "S2: a new game (the ship's clock back near 0) counts again: the dead time is not carried into it")
+	d.free()
+
+
+## S2: commit_hold has its own player (own_player), so a release can stop it: it fades out, and a new hold
+## starts it over from the beginning; its tone lasts exactly the 1.5 s hold, so its pitch is the progress.
+func test_commit_hold() -> void:
+	var d := SoundDirector.new()
+	get_root().add_child(d)
+	d.setup()
+	var row: Dictionary = d.cues.commit_hold
+	check(row.trigger.kind == "game" and row.trigger.name == "commit_hold" and row.trigger.stop_on == "commit_release" and row.get("own_player", false), "S2: commit_hold starts on the hold and stops on commit_release, on its own player")
+	check(int(d.assets.commit_hold.frames) == int(GalaxyMap.HOLD_S * 48000.0) and is_equal_approx(ShipConsoles.HOLD_S, GalaxyMap.HOLD_S), "S2: the tone lasts exactly the hold (%d frames = %.1f s, the map's and the consoles' HOLD_S)" % [int(d.assets.commit_hold.frames), GalaxyMap.HOLD_S])
+	d.on_game("commit_hold")
+	var p: Node = d.get_node_or_null("Loop_commit_hold")
+	check(p is AudioStreamPlayer and p.playing, "S2: holding plays commit_hold")
+	await create_timer(0.3).timeout
+	d.on_game("commit_release")
+	await process_frame
+	check(d.fading("commit_hold"), "S2: a release fades it out (no click)")
+	await create_timer(0.2).timeout
+	check(not p.playing, "S2: and it has stopped after the 80 ms fade")
+	d.on_game("commit_hold")
+	check(p.playing and p.get_playback_position() < 0.1, "S2: a new hold starts it over from the beginning")
+	d.fire("drive_boost", "t1.0", 1)
+	var boost: Node = d.get_node_or_null("Loop_drive_boost")
+	d.fire("drive_silent", "t2.0", 2)
+	await process_frame
+	check(boost != null and d.fading("drive_boost"), "S2: the phase turning to cruising fades the boost out under drive_silent (stops), so the drive never boosts and coasts at once")
+	var bad_stop := [{"id": "x", "trigger": {"kind": "game", "name": "x"}, "streams": ["ui_click"], "bus": "UI", "visual": "ambient: test", "about": "test", "stops": ["ui_click"]}, {"id": "ui_click", "trigger": {"kind": "game", "name": "y"}, "streams": ["ui_click"], "bus": "UI", "visual": "ambient: test", "about": "test"}]
+	check(SoundData.check_cues({"schema": SoundData.CUES_SCHEMA, "cues": bad_stop}, d.assets).size() == 1, "S2: a cue may stop only a loop or an own_player cue (negative control)")
+	d.queue_free()
+
+
+## S2 (§D6, standing order 2026-10-30): the beacon's plan is the comms station's receiver plan at the sim's
+## Earth rate, unrounded: in beam and away from home only; Receiver clamps the stream's rate to the
+## receiver's real-time range and corrects by 1/rate; True plays at D and is off outside the audible band.
+func test_beacon_plan() -> void:
+	var rx: Dictionary = EarthFeed.copy().sound.receiver
+	var e := func(rate: float, in_beam := true, at_home := false) -> Dictionary: return {"earth": {"rate": rate, "in_beam": in_beam, "at_home": at_home}}
+	var p: Dictionary = HomeBeacon.plan_for(e.call(0.070888125), true)
+	check(p.on and p.d == 0.070888125 and p.rate == 0.070888125 and is_equal_approx(p.correct, 1.0 / 0.070888125), "S2 Receiver at D = 0.070888125 (outbound at 0.99c): the stream at D exactly, corrected by 1/D")
+	p = HomeBeacon.plan_for(e.call(0.070888125), false)
+	check(p.on and p.rate == 0.070888125 and p.correct == 1.0, "S2 True at D = 0.070888125: speed and pitch x D, uncorrected (the 400 Hz carrier at 28.4 Hz)")
+	p = HomeBeacon.plan_for(e.call(0.03), true)
+	check(p.on and p.rate == float(rx.min_rate) and is_equal_approx(p.correct, 1.0 / float(rx.min_rate)), "S2 Receiver below its real-time range: the rate held at min_rate %s (the receiver's stated limit)" % rx.min_rate)
+	p = HomeBeacon.plan_for(e.call(30.0), true)
+	check(p.on and p.rate == float(rx.max_rate), "S2 Receiver above it: the rate held at max_rate %s" % rx.max_rate)
+	var aud: Array = rx.audible
+	check(HomeBeacon.plan_for(e.call(float(aud[0])), false).on and not HomeBeacon.plan_for(e.call(float(aud[0]) * 0.999), false).on and HomeBeacon.plan_for(e.call(float(aud[1])), false).on and not HomeBeacon.plan_for(e.call(float(aud[1]) * 1.001), false).on, "S2 True: on inside receiver.audible [%s, %s], silent just outside it" % [aud[0], aud[1]])
+	check(HomeBeacon.plan_for(e.call(float(aud[0]) * 0.5), false).hearing == "below" and HomeBeacon.plan_for(e.call(float(aud[1]) * 2.0), false).hearing == "above", "S2 True: below and above hearing are named (the station's words)")
+	check(float(aud[0]) * HomeBeacon.CARRIER_HZ <= 20.0 and float(aud[1]) * HomeBeacon.CARRIER_HZ >= 20000.0 and float(aud[1]) * HomeBeacon.CARRIER_HZ < 0.5 * 44100.0, "S2: the 400 Hz carrier spans human hearing (20 Hz..20 kHz) inside the audible band and stays below the mixer's Nyquist at its top (%.0f Hz)" % (float(aud[1]) * HomeBeacon.CARRIER_HZ))
+	check(not HomeBeacon.plan_for(e.call(0.5, false), true).on and not HomeBeacon.plan_for(e.call(1.0, true, true), true).on and not HomeBeacon.plan_for({}, true).on and not HomeBeacon.plan_for({"earth": {"in_beam": true}}, true).on, "S2: out of Earth's beam, at home, or with no Earth link, the beacon is off")
+	var grid_ok := true
+	var worst := 1.0
+	for i in 121:
+		var r := pow(2.0, -4.0 + 8.0 * i / 120.0) # 1/16 .. 16
+		var sb := HomeBeacon.bank_for(r, true)
+		var res := 1.0 / (sb * r)
+		worst = maxf(worst, maxf(res, 1.0 / res))
+		grid_ok = grid_ok and HomeBeacon.BANKS.has(sb) and HomeBeacon.bank_for(r, false) == 1.0
+	check(grid_ok and worst <= 2.0 + 1e-9, "S2 Receiver banks: over the whole real-time range 1/16..16 the bus's residual correction stays within a factor of 2 (worst %.3f); True always plays the 400 Hz carrier" % worst)
+	check(HomeBeacon.bank_for(0.070888, true) == 16.0 and HomeBeacon.bank_for(14.107, true) == 0.0625 and HomeBeacon.bank_for(1.0, true) == 1.0 and HomeBeacon.bank_for(0.13, true, 16.0) == 16.0 and HomeBeacon.bank_for(0.2, true, 16.0) == 4.0, "S2: outbound at 0.99c the 6400 Hz bank, homebound the 25 Hz bank, at rest the carrier itself; a bank holds within 10 % past its edge, then hands over")
+	var d := SoundDirector.new()
+	d.audible = false
+	d.setup()
+	var b := HomeBeacon.new()
+	var c := b.follow(d, e.call(0.070888125), true)
+	check(is_equal_approx(c, 1.0 / (16.0 * 0.070888125)) and b.cue == "home_beacon_c6400", "S2 Receiver at D = 0.070888125: the 6400 Hz bank at D (454 Hz), the Beacon bus correcting by 1/(16 D) = %.4f to 400 Hz" % c)
+	b.follow(d, e.call(0.0708881), true)
+	c = b.follow(d, e.call(14.107), false)
+	check(c == 1.0 and b.cue == "home_beacon", "S2 True at D = 14.107: the 400 Hz carrier at D, no correction")
+	b.follow(d, e.call(60.0), false)
+	b.follow(d, e.call(14.107), false)
+	var want := "r1 home_beacon_c6400 0.0709\ng1 home_beacon_c6400 v0 +0c -18.0dB\nr2 home_beacon 14.1070\ng2 home_beacon v0 +0c -18.0dB\ng4 home_beacon v0 +0c -18.0dB\n"
+	check(d.log_text() == want, "S2: the beacon starts at its rate (set before it plays), changes bank with the setting, stops above hearing (g3) and starts again inside it:\n" + d.log_text())
+	check(float(d.pitches.home_beacon) == 14.107 and float(d.pitches.home_beacon_c6400) == 0.0708881, "S2: the beacon plays at the latest Earth rate unrounded (0.0708881, a change of 3.5e-7 that the log does not show; 14.107)")
+	d.free()
+
+
+## S2, measured (as test_receiver_measured): the shipped home_beacon loops through the real Beacon bus,
+## captured from the mixer. The carrier's frequency from zero crossings is 400 Hz in Receiver and 400 D Hz
+## in True, within 3 %, at D = 0.5, 2, 14.107 (homebound at 0.99c) and 0.070888 (outbound at 0.99c, True:
+## 28.4 Hz). The pips (Earth's seconds) come every 1/D s of mixer time in both settings: at D = 2, 0.5 s.
+func test_beacon_measured() -> void:
+	SoundMix.ensure_layout()
+	var d := SoundDirector.new()
+	get_root().add_child(d)
+	d.setup()
+	var cap := AudioEffectCapture.new()
+	cap.buffer_length = 3.0
+	AudioServer.add_bus_effect(0, cap, 0)
+	var rate := AudioServer.get_mix_rate()
+	var b := HomeBeacon.new()
+	var ok := true
+	var seen := []
+	var pip_ok := true
+	var pips := []
+	for dd: float in [0.5, 2.0, 14.107, 0.070888]:
+		for receiver: bool in [true, false]:
+			SoundMix.set_shift(HomeBeacon.BUS, b.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, receiver))
+			var p: AudioStreamPlayer = d.get_node_or_null("Loop_" + b.cue)
+			await create_timer(0.35).timeout # the shifter's FFT fills
+			cap.clear_buffer()
+			var span := 2.2 if dd == 2.0 else 1.2
+			await create_timer(span).timeout
+			var buf := cap.get_buffer(cap.get_frames_available())
+			var crossings := 0
+			for i in range(1, buf.size()):
+				if (buf[i - 1].x < 0.0) != (buf[i].x < 0.0):
+					crossings += 1
+			var hz := crossings * 0.5 * rate / maxf(buf.size(), 1.0)
+			var want := HomeBeacon.CARRIER_HZ * (1.0 if receiver else dd)
+			seen.append("D %s %s %.1f Hz (want %.1f)" % [dd, "receiver" if receiver else "true", hz, want])
+			ok = ok and p != null and p.playing and buf.size() > 0 and absf(hz / want - 1.0) <= 0.03
+			if dd == 2.0:
+				var onsets := _onsets(buf, rate)
+				var gaps := []
+				for i in range(1, onsets.size()):
+					gaps.append(onsets[i] - onsets[i - 1])
+				var mean := 0.0
+				for g: float in gaps:
+					mean += g / maxf(gaps.size(), 1.0)
+				pips.append("%s %d pips, mean gap %.3f s" % ["receiver" if receiver else "true", onsets.size(), mean])
+				pip_ok = pip_ok and gaps.size() >= 3 and absf(mean - 0.5) <= 0.02
+			var was := b.cue
+			b.follow(d, {}, receiver) # off between settings, so each starts afresh
+			d.stop(was, true)
+			await process_frame
+	SoundMix.set_shift(HomeBeacon.BUS, 1.0)
+	AudioServer.remove_bus_effect(0, 0)
+	check(ok, "S2 measured through the mixer: the beacon's carrier is 400 Hz in Receiver and 400 D Hz in True (%s)" % ", ".join(seen))
+	check(pip_ok, "S2 measured: the time rate is D in both settings: at D = 2 Earth's pips come every 0.5 s of mixer time (%s)" % ", ".join(pips))
+	d.queue_free()
+
+
+## Pip onsets (seconds) in a capture: 5 ms RMS windows rising through half the capture's loudest window,
+## at least 0.15 s apart.
+func _onsets(buf: PackedVector2Array, rate: float) -> Array:
+	var w := int(rate * 0.005)
+	var env := []
+	var top := 0.0
+	for i in range(0, buf.size() - w, w):
+		var s := 0.0
+		for j in w:
+			s += buf[i + j].x * buf[i + j].x
+		env.append(sqrt(s / w))
+		top = maxf(top, env.back())
+	var out := []
+	for i in range(1, env.size()):
+		var t := float(i * w) / rate
+		if env[i] >= 0.5 * top and env[i - 1] < 0.5 * top and (out.is_empty() or t - out.back() > 0.15):
+			out.append(t)
+	return out
+
+
 func test_home_pitch() -> void:
 	var d := SoundDirector.new()
 	get_root().add_child(d)
@@ -368,6 +546,10 @@ func _run() -> void:
 	shipped.free()
 	await test_home_pitch()
 	await test_receiver_measured()
+	test_dust()
+	await test_commit_hold()
+	test_beacon_plan()
+	await test_beacon_measured()
 
 	# The bus layout (§D2).
 	SoundMix.ensure_layout()

@@ -11,7 +11,8 @@ extends Node
 ##   sim cues      "t<tick>.<event index>", cooldown in sim ticks;
 ##   UI cues       "u<input sequence>", cooldown in inputs;
 ##   footsteps     "w<step index>", one step per whole STEP_MM of an integer millimetre accumulator;
-##   game states   "g<game sequence>".
+##   game states   "g<game sequence>";
+##   dust ticks    "t<tick>.d<index>", dead time in impact ship time (S2, on_dust).
 ## Variant and pitch come from a hash of (cue id, the cue's fire count), not an RNG (§D1).
 
 const LOG_MAX := 4096
@@ -23,6 +24,11 @@ const LOG_MAX := 4096
 const ARCHIVE_HEALTH_PATH := "archive.memory_health"
 const STEP_MM := 700
 const PLAYERS_2D := 12
+## S2 (§D1, §D6): the dust counter's Geiger-style dead time, in impact ship time (clock.tau + t_s), and
+## the most ticks one sim tick may sound (the rest are logged as a count and not played).
+const DUST_DEAD_S := 0.025
+const DUST_MAX_PER_TICK := 8
+const YEAR_S := 31557600.0 ## the Julian year, seconds (clock.tau is in years)
 
 var cues := {} ## id -> row
 var assets := {} ## id -> manifest row
@@ -57,7 +63,10 @@ var _param_seq := 0
 ## R3-EARTH-LINK EL3b.7: cue id -> pitch_scale (the comms receiver at the Earth rate's band).
 var pitches := {}
 var _pitch_seq := 0
+var _pitch_logged := {} ## cue id -> the pitch last written to the log
 var _fades := {} ## cue id -> the Tween fading its loop out (rows with fade_out_ms)
+var _dust_last := -INF ## ship seconds of the last counted grain (the dead time runs from it)
+var _delayed: Array = [] ## [seconds left, row, asset id, pitch, volume]: fires that sound later (dust at its t_s)
 
 
 ## Loads and validates the tables; returns the errors (also kept in `errors`). With errors the
@@ -109,6 +118,45 @@ func on_sim_world(tick: int, world: Dictionary) -> void:
 			fire(id, "t%d.s" % tick, tick)
 
 
+## S2 (§D6): the dust counter. Each bright grain the sim drew this tick (ship.ism.impacts, as
+## interior/dust_flash.gd reads them) is one count at its own ship time, clock.tau (years) + t_s; a grain
+## within DUST_DEAD_S of the last counted one falls in the counter's dead time and is not counted. At most
+## DUST_MAX_PER_TICK counts sound per tick, each at its t_s in the tick's real-time window (the flash's
+## own moment); the rest are logged as one line "t<tick>.dx dust_tick ×<n>". Returns the counts.
+func on_dust(tick: int, world: Dictionary) -> int:
+	var ship: Variant = world.get("ship")
+	var ism: Variant = ship.get("ism") if ship is Dictionary else null
+	if not ism is Dictionary or not ism.get("impacts") is Array:
+		return 0
+	var t0 := float(world.get("clock", {}).get("tau", 0.0)) * YEAR_S if world.get("clock") is Dictionary else 0.0
+	var order: Array = []
+	for i in (ism.impacts as Array).size():
+		var e: Variant = ism.impacts[i]
+		if e is Dictionary and (e.get("t_s") is float or e.get("t_s") is int):
+			order.append([float(e.t_s), i])
+	order.sort() # by t_s, then index: the counter sees them in time order
+	var counted := 0
+	var over := 0
+	for o: Array in order:
+		var t := t0 + float(o[0])
+		if t < _dust_last - DUST_DEAD_S: # the ship's clock went back: a new session (a new game), not a dead time
+			_dust_last = -INF
+		if t - _dust_last < DUST_DEAD_S:
+			continue
+		_dust_last = t
+		counted += 1
+		if counted > DUST_MAX_PER_TICK:
+			over += 1
+			continue
+		for id: String in cues:
+			var tr: Dictionary = cues[id].trigger
+			if tr.kind == "game" and tr.name == "dust_impact":
+				fire(id, "t%d.d%d" % [tick, counted - 1], tick, float(o[0]))
+	if over > 0:
+		cue_log.append("t%d.dx dust_tick ×%d" % [tick, over])
+	return counted
+
+
 ## An interface signal by name (consoles, the map, the HUD): one input in the UI clock.
 func on_ui(signal_name: String) -> void:
 	_input_seq += 1
@@ -150,15 +198,18 @@ func set_param(param_name: String, value: float) -> void:
 ## shift does. It applies to the playing loop at once and to every later fire (on top of the row's
 ## per-fire cents), and is logged in its own clock when it changes by more than 0.01 % (R3 audio
 ## realism AR8b: the Earth rate unrounded, logged to four decimals).
+## R2-SOUND S2: the value always applies (the home beacon follows D exactly); only the log waits for a
+## change of 0.01 % from the last logged value, so the log stays short while D drifts in cruise.
 func set_pitch(id: String, value: float) -> void:
 	var v := maxf(value, 1e-4)
-	if absf(v / float(pitches.get(id, 1.0)) - 1.0) < 1e-4:
-		return
 	pitches[id] = v
-	_pitch_seq += 1
-	cue_log.append("r%d %s %.4f" % [_pitch_seq, id, v])
 	if _loops.has(id):
 		_loops[id].pitch_scale = v
+	if absf(v / float(_pitch_logged.get(id, 1.0)) - 1.0) < 1e-4:
+		return
+	_pitch_logged[id] = v
+	_pitch_seq += 1
+	cue_log.append("r%d %s %.4f" % [_pitch_seq, id, v])
 
 
 ## The dB offset a row's param curve gives at the parameter's current value (0 without a param).
@@ -200,11 +251,14 @@ func steps() -> int:
 	return _steps
 
 
-## Fires one cue: picks its variant and pitch from (id, fire count), logs it, and plays it when audible.
-func fire(id: String, key: String, clock: int) -> void:
+## Fires one cue: picks its variant and pitch from (id, fire count), logs it, and plays it when audible
+## (after delay_s seconds of real time when given: a dust grain at its t_s).
+func fire(id: String, key: String, clock: int, delay_s := 0.0) -> void:
 	if not cues.has(id):
 		return
 	var c: Dictionary = cues[id]
+	for other: Variant in c.get("stops", []): # S2: the drive cannot boost and coast at once
+		stop(str(other))
 	var n: int = _fires.get(id, 0)
 	_fires[id] = n + 1
 	_last[id] = clock
@@ -228,16 +282,19 @@ func fire(id: String, key: String, clock: int) -> void:
 	cue_log.append("%s %s v%d %+dc %.1fdB" % [key, id, variant, cents, vol])
 	if cue_log.size() > LOG_MAX:
 		cue_log.remove_at(0)
-	if audible:
+	if audible and delay_s > 0.0:
+		_delayed.append([delay_s, c, str(streams[variant]), pow(2.0, cents / 1200.0) * float(pitches.get(id, 1.0)), vol])
+	elif audible:
 		_play(c, str(streams[variant]), pow(2.0, cents / 1200.0) * float(pitches.get(id, 1.0)), vol)
 
 
-## Stops a loop; a row with fade_out_ms fades it out first (EL3b.7: a bed changing never clicks).
-func stop(id: String) -> void:
+## Stops a loop; a row with fade_out_ms fades it out first (EL3b.7: a bed changing never clicks), unless
+## now (S2: the beacon handing over to another bank on the same corrected bus).
+func stop(id: String, now := false) -> void:
 	if not _loops.has(id):
 		return
 	var p: Node = _loops[id]
-	var ms := float(cues.get(id, {}).get("fade_out_ms", 0.0))
+	var ms := 0.0 if now else float(cues.get(id, {}).get("fade_out_ms", 0.0))
 	_kill_fade(id)
 	if ms <= 0.0 or not p.playing or not is_inside_tree():
 		p.stop()
@@ -246,6 +303,19 @@ func stop(id: String) -> void:
 	tw.tween_property(p, "volume_db", -60.0, ms / 1000.0)
 	tw.tween_callback(p.stop)
 	_fades[id] = tw
+
+
+## A playing loop's position in seconds, or -1 (S2: a beacon bank takes over where the last one was).
+func loop_position(id: String) -> float:
+	var p: Node = _loops.get(id)
+	return p.get_playback_position() if p != null and p.playing and not fading(id) else -1.0
+
+
+## Moves a playing loop to a position (seconds).
+func seek(id: String, seconds: float) -> void:
+	var p: Node = _loops.get(id)
+	if p != null and p.playing:
+		p.seek(seconds)
 
 
 ## Whether a loop is fading out (stopped, but its tail still sounding).
@@ -300,7 +370,8 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 	var src := str(c.get("source", "ui"))
 	var spatial := src != "ui" and src != "" and position_of.is_valid()
 	var p: Node
-	if c.get("loop", false):
+	var own: bool = c.get("own_player", false)
+	if c.get("loop", false) or own: # S2: an own_player one-shot (commit_hold) has its own player, so it can be stopped
 		if not _loops.has(c.id):
 			p = _player3d() if spatial else AudioStreamPlayer.new()
 			p.name = "Loop_" + str(c.id)
@@ -309,7 +380,7 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 		p = _loops[c.id]
 		if fading(c.id): # fired again while fading out: it starts over at its level
 			_kill_fade(c.id)
-		elif p.playing:
+		elif p.playing and not own:
 			return
 	elif spatial:
 		while _pool3d.size() < PLAYERS_3D:
@@ -344,8 +415,21 @@ func _player3d() -> AudioStreamPlayer3D:
 	return q
 
 
-## Spatial loops follow their source (the lift's motor rides with the platform).
-func _process(_delta: float) -> void:
+## Delayed fires sound when due; spatial loops follow their source (the lift's motor rides with the platform).
+func _process(delta: float) -> void:
+	if not _delayed.is_empty():
+		# At most one due fire of a cue per frame: a frame longer than the counter's dead time must not
+		# stack two ticks into one louder click (the later one waits a frame).
+		var keep: Array = []
+		var played := {}
+		for f: Array in _delayed:
+			f[0] -= delta
+			if f[0] <= 0.0 and not played.has(f[1].id):
+				played[f[1].id] = true
+				_play(f[1], f[2], f[3], f[4])
+			else:
+				keep.append(f)
+		_delayed = keep
 	if not position_of.is_valid():
 		return
 	for id: String in _loops:

@@ -10,7 +10,7 @@ const PART_SCHEMA := "stapledons.audio.asset-part/1"
 const CUES_PATH := "res://data/audio/cues.json"
 const ASSETS_PATH := "res://data/audio/assets.json"
 ## Buses a cue may play on (Ship and Master are mixing buses, never a cue's own).
-const CUE_BUSES := ["Voice", "Ambience", "Effects", "Instruments", "Receiver", "UI", "Music"]
+const CUE_BUSES := ["Voice", "Ambience", "Effects", "Instruments", "Receiver", "Beacon", "UI", "Music"]
 const TRIGGER_KINDS := ["sim_event", "sim_state", "ui_signal", "game"]
 ## Continuous parameters a looping cue may follow (SoundDirector.set_param).
 const PARAMS := ["archive_degradation"]
@@ -182,6 +182,17 @@ static func check_cues(table: Variant, assets: Dictionary, root := "res://", che
 				bad.append("%s: param needs a known name (%s) and two or more [value, dB] points in rising order" % [id, ", ".join(PARAMS)])
 			elif not c.get("loop", false):
 				bad.append("%s: only a loop can follow a param" % id)
+		var stops: Variant = c.get("stops", [])
+		if not stops is Array:
+			bad.append("%s: stops must be a list of cue ids" % id)
+		else:
+			for o: Variant in stops:
+				var row: Variant = null
+				for c2: Variant in table.cues:
+					if c2 is Dictionary and str(c2.get("id", "")) == str(o):
+						row = c2
+				if not row is Dictionary or not (row.get("loop", false) or row.get("own_player", false)):
+					bad.append("%s: stops %s, which is not a loop or an own_player cue of this table" % [id, o])
 		var vis := str(c.get("visual", ""))
 		if kind in ["sim_event", "sim_state"] and check_refs:
 			var ref := vis.split("::")
