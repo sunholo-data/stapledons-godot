@@ -15,7 +15,7 @@ extends RefCounted
 ##              illuminance (sim e_v_lux x pointFluxRatio(T, D), the SkyMeter.seen_point
 ##              expression, x any eclipse transmission).
 ##     True       (the Realistic view). Physical: the light's photometric output is E / LUX_PER_ENERGY
-##                at any colour (energy x Y(colour) = E / 10, eval B1), linear; the ship's lamps keep
+##                at any colour (energy x Y(colour) = E / LUX_PER_ENERGY, eval B1/B7), linear; the ship's lamps keep
 ##                their own illuminance (the spire 80 lx, Mark 2026-11-02), so star : lamps = E / E_ship.
 ##                Presentation, not a physical claim (eval B4): the exposure, an eye model on the deck
 ##                (meter f(y), adaptation E_ship / (E_ship + E f(y)), Exposure's EYE rule), applied as
@@ -319,12 +319,23 @@ func _balance(rig: Dictionary, on: bool) -> Dictionary:
 	var bounce := BOUNCE * lux * meter_weight(interior_dir.y) / LUX_PER_ENERGY
 	if bounce > 0.0:
 		# The bounce in the star's colour at unit luminance (B1), mixed with the ship's own ambient.
-		var c: Color = out.amb_c
-		var mix := Vector3(c.r, c.g, c.b) * float(out.amb_e) + (colour / y if y > 0.0 else Vector3.ONE) * bounce
-		var peak := maxf(mix.x, maxf(mix.y, mix.z))
-		out.amb_c = Color(mix.x / peak, mix.y / peak, mix.z / peak)
-		out.amb_e = peak
+		var am := ambient_mix(out.amb_c, float(out.amb_e), colour, bounce)
+		out.amb_c = am[0]
+		out.amb_e = am[1]
 	return out
+
+
+## True (eval B8): the ship's ambient (an sRGB Environment colour x energy) plus the star's bounce
+## (photometric energy in the star's colour), mixed as linear radiance, normalised to a unit max
+## channel and encoded back to sRGB for the Environment. Returns [sRGB colour, energy]; the linear
+## luminance Y(colour) x energy is the ship's ambient Y plus the bounce exactly.
+static func ambient_mix(ship_srgb: Color, ship_e: float, star_colour: Vector3, bounce: float) -> Array:
+	var y := luminance(star_colour)
+	var lin := ship_srgb.srgb_to_linear()
+	var mix := Vector3(lin.r, lin.g, lin.b) * ship_e + (star_colour / y if y > 0.0 else Vector3.ONE) * bounce
+	var peak := maxf(mix.x, maxf(mix.y, mix.z))
+	if not (peak > 0.0): return [ship_srgb, ship_e]
+	return [Color(mix.x / peak, mix.y / peak, mix.z / peak).linear_to_srgb(), peak]
 
 
 ## The ship's lamps at their scale, and the shadow handover between the star, the key and the spire.

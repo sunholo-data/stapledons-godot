@@ -11,8 +11,13 @@ extends SceneTree
 ##   G-TL-4  the exposure gain scales the deck linearly (x = 1/795, the Sun level with the deck at 1 AU)
 ##   G-TL-N1 negative: the old unit-max-channel energy at 2566 K fails G-TL-2's detector
 ##   G-TL-N2 negative: a D^2-for-1/D^2 mutant at RS-3 fails G-TL-3's detector
-##   G-TL-5  eval B7: an 80 lx True star (Mark's lamp level) and the production spire (SPIRE_BASE, SPIRE_COLOUR)
-##           light the same deck equally, within 1%
+##   G-TL-5  eval B7: an 80 lx True star (Mark's lamp level) and the production spire's energy and colour
+##           (SPIRE_BASE, SPIRE_COLOUR) light the same deck equally, within 1%. The spire is an OmniLight3D;
+##           here its energy and colour drive a directional surrogate at normal incidence (the photometric
+##           calibration is per unit of energy x Y(colour); the omni's range window is geometry, not calibration)
+##   G-TL-6  eval B8: ambient only: the production ambient_mix (the ship's sRGB ambient + the star's bounce at
+##           2566, 5772 and 11544 K) lights the deck with Y = ship ambient Y + bounce, within 1%
+##   G-TL-N4 negative: the round-2 mix (linear radiance assigned as sRGB, unencoded) fails G-TL-6's detector
 ##   G-TL-N3 negative: the round-2 calibration (10 lx per unit energy, the spire's colour taken as Y = 1)
 ##           fails G-TL-5's detector
 ## Run: make true-light-golden (needs a GPU window; in make golden).
@@ -21,6 +26,7 @@ const Lighting := preload("res://demos/ship_lighting.gd")
 const OUT := "res://renders/true_light_golden"
 var vp: SubViewport
 var light: DirectionalLight3D
+var env: Environment
 var passed := 0
 var failed := 0
 
@@ -42,7 +48,7 @@ func setup() -> void:
 	vp.use_hdr_2d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(vp)
-	var env := Environment.new()
+	env = Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color.BLACK
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
@@ -84,6 +90,16 @@ func deck_y(e_v: float, teff: float, d: float, x: float, incidence_deg: float, e
 	light.light_color = Color(c.x, c.y, c.z).linear_to_srgb()
 	light.light_energy = (StarLight.true_light_energy(lux, c) * x) if energy_override < 0.0 else energy_override
 	light.rotation_degrees = Vector3(-90.0 + incidence_deg, 0, 0)
+	for f in 3: await process_frame
+	await RenderingServer.frame_post_draw
+	var p := vp.get_texture().get_image().get_pixel(32, 32)
+	return StarLight.luminance(Vector3(p.r, p.g, p.b))
+
+
+## The deck's linear luminance under an ambient colour (sRGB, as the Environment takes it) and energy only.
+func ambient_y(c: Color, e: float) -> float:
+	env.ambient_light_color = c
+	env.ambient_light_energy = e
 	for f in 3: await process_frame
 	await RenderingServer.frame_post_draw
 	var p := vp.get_texture().get_image().get_pixel(32, 32)
@@ -142,6 +158,26 @@ func _run() -> void:
 	var c80: Vector3 = StarLight.colour_of(Planets.T_SUN, 1.0)
 	var y_r2: float = await deck_y(80.0, Planets.T_SUN, 1.0, 0.05, 0.0, 80.0 / 10.0 / StarLight.luminance(c80) * 0.05)
 	check("G-TL-N3 negative: the round-2 calibration (10 lx per energy, spire Y taken as 1) fails G-TL-5's detector", absf(y_r2 / y_spire - 1.0) >= 0.01, "Y ratio %.4f (must be off by >= 1%%)" % (y_r2 / y_spire))
+	# G-TL-6 (eval B8): ambient only (the light off): the production mix of the ship's ambient and the bounce.
+	light.visible = false
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	var ship_c := Color(.31, .37, .51) # ship_lighting.gd's moody ambient colour (sRGB)
+	var ship_e := 0.3
+	var ship_l := ship_c.srgb_to_linear()
+	var ship_y := StarLight.luminance(Vector3(ship_l.r, ship_l.g, ship_l.b)) * ship_e
+	var bounce := 0.25
+	for tk: float in [2566.0, 5772.0, 11544.0]:
+		var am: Array = StarLight.ambient_mix(ship_c, ship_e, StarLight.colour_of(tk, 1.0), bounce)
+		var ya: float = await ambient_y(am[0], am[1])
+		check("G-TL-6 ambient: the ship's ambient + the %.0f K star's bounce light the deck as ship Y + bounce (eval B8)" % tk, absf(ya / (ship_y + bounce) - 1.0) < 0.01, "GPU Y %.5f, CPU %.5f (ratio %.4f, limit 1%%)" % [ya, ship_y + bounce, ya / (ship_y + bounce)])
+	# G-TL-N4: the round-2 mix, linear radiance assigned to the sRGB Environment colour unencoded.
+	var sc: Vector3 = StarLight.colour_of(2566.0, 1.0)
+	var bad := Vector3(ship_c.r, ship_c.g, ship_c.b) * ship_e + sc / StarLight.luminance(sc) * bounce
+	var bpk := maxf(bad.x, maxf(bad.y, bad.z))
+	var yb: float = await ambient_y(Color(bad.x / bpk, bad.y / bpk, bad.z / bpk), bpk)
+	check("G-TL-N4 negative: the round-2 ambient mix (unencoded) fails G-TL-6's detector", absf(yb / (ship_y + bounce) - 1.0) >= 0.01, "Y ratio %.4f (must be off by >= 1%%)" % (yb / (ship_y + bounce)))
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
+	light.visible = true
 	vp.get_texture().get_image().save_png(OUT + "/last.png")
 	print("true-light-golden: %d passed, %d failures" % [passed, failed])
 	quit(1 if failed else 0)

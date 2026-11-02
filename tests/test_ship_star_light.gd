@@ -487,11 +487,24 @@ func _run() -> void:
 		check("True, at Earth: the star owns the only shadow map, the spire none", star.light.shadow_enabled and not rig.spire.shadow_enabled and is_equal_approx(star.light.shadow_opacity, 1.0) and not key.shadow_enabled)
 		var bounce := StarLight.BOUNCE * e_seen * StarLight.meter_weight(y) / StarLight.LUX_PER_ENERGY
 		# The ambient's luminance (colour x energy) is the ship's own plus the bounce at unit luminance, under the gain.
-		var amb_y: float = StarLight.luminance(Vector3(env.ambient_light_color.r, env.ambient_light_color.g, env.ambient_light_color.b)) * env.ambient_light_energy
-		var want_y: float = (StarLight.luminance(Vector3(rig.ambient_colour.r, rig.ambient_colour.g, rig.ambient_colour.b)) * rig.ambient_energy + bounce) * x
+		# Linear luminance of the Environment's sRGB ambient colour x energy (eval B8: decode before measuring).
+		var amb_lin: Color = env.ambient_light_color.srgb_to_linear()
+		var ship_lin: Color = (rig.ambient_colour as Color).srgb_to_linear()
+		var amb_y: float = StarLight.luminance(Vector3(amb_lin.r, amb_lin.g, amb_lin.b)) * env.ambient_light_energy
+		var want_y: float = (StarLight.luminance(Vector3(ship_lin.r, ship_lin.g, ship_lin.b)) * rig.ambient_energy + bounce) * x
 		check("True, at Earth: the star's bounce (Y %.1f) adds to the ship's ambient, both under the gain" % bounce, absf(amb_y / want_y - 1.0) < 1e-4 and bounce > 0.0)
 		var sunc: Vector3 = star.colour
-		check("True, at Earth: the ambient leans toward the star's colour", env.ambient_light_color.r > rig.ambient_colour.r and cdist(env.ambient_light_color, sunc) < cdist(rig.ambient_colour, sunc))
+		check("True, at Earth: the ambient leans toward the star's colour (compared in linear)", env.ambient_light_color.r > rig.ambient_colour.r and cdist(env.ambient_light_color.srgb_to_linear(), sunc) < cdist((rig.ambient_colour as Color).srgb_to_linear(), sunc))
+		# B8: ambient_mix keeps photometry: Y(decoded colour) x energy = ship Y + bounce, at any star colour.
+		var mix_ok := true
+		for tk: float in [2566.0, 5772.0, 11544.0]:
+			var sc: Vector3 = StarLight.colour_of(tk, 1.0)
+			var am: Array = StarLight.ambient_mix(Color(.31, .37, .51), 0.32, sc, 0.8)
+			var l: Color = (am[0] as Color).srgb_to_linear()
+			var sl := Color(.31, .37, .51).srgb_to_linear()
+			var want := StarLight.luminance(Vector3(sl.r, sl.g, sl.b)) * 0.32 + 0.8
+			if absf(StarLight.luminance(Vector3(l.r, l.g, l.b)) * float(am[1]) / want - 1.0) > 1e-5: mix_ok = false
+		check("B8: the ambient mix keeps linear luminance (ship ambient + bounce) at 2566, 5772 and 11544 K", mix_ok)
 		check("True: the manifest says the illuminance is physical, the exposure presentation, and lists what is display-referred", star.manifest().mode == "true" and str(star.manifest().brightness).begins_with("True: physical illuminance") and str(star.manifest().exposure_model).begins_with("presentation, not a physical claim") and str(star.manifest().display_referred).contains("captain"))
 		check("True: the HUD names the setting and the display-referred exemptions, with no renderer-derived ratio or exposure numbers (eval B5)", star.hud_line().contains("True:") and star.hud_line().contains("display-referred (Processed)") and not star.hud_line().contains("lamps") and not star.hud_line().contains("adapted to 1/"))
 		# The controlled-distance sweep: 1 AU out to interstellar, monotonic and finite, one shadow owner.
