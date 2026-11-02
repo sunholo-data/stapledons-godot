@@ -11,7 +11,7 @@ the continuation; the game pins that published version.
 
 | Repository | Branch / clone | Draft PR | Pushed checkpoint |
 |---|---|---|---|
-| Game | `design/r3-worlds`, `stapledons-godot-worlds` | [#371](https://github.com/sunholo-data/stapledons-godot/pull/371) | implementation/report commit follows `57e62d2b`; exact final head in handoff |
+| Game | `design/r3-worlds`, `stapledons-godot-worlds` | [#371](https://github.com/sunholo-data/stapledons-godot/pull/371) | `1f7444cb` implementation/evidence; this documentation handoff follows |
 | Packages | `feat/worlds-habitability`, `ailang-packages-worlds` | [#174](https://github.com/sunholo-data/ailang-packages/pull/174) | `4d6367a` |
 | Design | `feat/life-and-worlds`, `stapledons-design-worlds` | [#50](https://github.com/sunholo-data/stapledons-design/pull/50) | `c876de1` |
 
@@ -198,6 +198,8 @@ remaining 21 are outside this registry or unmatched, not silently counted.
 
 Full report SHA256:
 `fdb4dcdd391e40b435c1fc057f9d2a051c85105d9f982231c3c52fade3e4ecf0`.
+Both full census JSON artifacts and timing/identity evidence are pinned under
+`data/worlds/`; all three `DEVELOPMENT.SHA256` entries verify.
 This successful large run uses correct relative GM and both exact host indexes.
 The final source additionally prepares immutable history keys/eligibility once:
 15 census tests and 128-seed exact-uniform comparisons pass, while the full
