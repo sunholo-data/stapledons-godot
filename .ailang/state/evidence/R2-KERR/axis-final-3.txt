@@ -1,0 +1,24 @@
+{s: 0.5, stats: {captured: 48, check...ailed: 0, rays: 168}, u: 4.0}
+{s: 0.5, stats: {captured: 72, check...ailed: 0, rays: 336}, u: 6.0}
+{s: 0.5, stats: {captured: 72, check...ailed: 0, rays: 504}, u: 20.0}
+{s: 0.5, stats: {captured: 72, check...ailed: 0, rays: 672}, u: 200.0}
+{s: 0.5, stats: {captured: 72, check...ailed: 0, rays: 840}, u: 2000000.0}
+{captured: 72, checksum: -35.37403882655309, critical: 0, escaped: 768, failed: 0, rays: 840}
+        8.50 real         9.17 user         0.12 sys
+           154648576  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                9095  page reclaims
+                 582  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                2337  signals received
+                 245  voluntary context switches
+               11554  involuntary context switches
+        141974361238  instructions retired
+         34767318644  cycles elapsed
+           120455936  peak memory footprint

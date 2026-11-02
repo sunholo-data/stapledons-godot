@@ -1,0 +1,37 @@
+-- Development/domain regression sweep, not a production table generator.
+module kerr_axis_sweep
+import std/math (sqrt,intToFloat,pow)
+import std/io (println)
+import std/result (Ok,Err)
+import pkg/sunholo/relativity/kerr_trace (traceSky)
+type Stats={rays:int,escaped:int,captured:int,critical:int,failed:int,checksum:float}
+func rays(j:int,u:float,s:float,a:Stats)->Stats ! {IO} =
+  if j==168 then a else {
+    let nr=intToFloat(j%7-3)*0.3;
+    let ep=if (j/7)%6==0 then 0.0 else pow(10.0,0.0-intToFloat(19-3*((j/7)%6)));
+    let nz=if (j/42)%2==0 then ep else 0.0-ep;
+    let nt=sqrt(1.0-nr*nr-nz*nz)*(if j/84==0 then 1.0 else -1.0);
+    let next=match traceSky(u,s,{x:nr,y:nt,z:nz},0.005) {
+      Ok(r)=>{a | rays:a.rays+1,escaped:a.escaped+1,checksum:a.checksum+r.sky.x+2.0*r.sky.y+3.0*r.sky.z},
+      Err(c)=>{
+        if c!="captured" && c!="critical" then println("FAIL u=${show(u)} s=${show(s)} nr=${show(nr)} nt=${show(nt)} nz=${show(nz)} error=${c}") else ();
+        {a | rays:a.rays+1,captured:a.captured+(if c=="captured" then 1 else 0),critical:a.critical+(if c=="critical" then 1 else 0),
+          failed:a.failed+(if c=="captured" || c=="critical" then 0 else 1)}
+      }
+    };
+    rays(j+1,u,s,next)
+  }
+func radii(i:int,s:float,a:Stats)->Stats ! {IO} =
+  if i==5 then a else {
+    let u=if i==0 then 4.0 else if i==1 then 6.0 else if i==2 then 20.0 else if i==3 then 200.0 else 2000000.0;
+    let b=rays(0,u,s,a);
+    println(show({s:s,u:u,stats:b}));radii(i+1,s,b)
+  }
+export func band(i:int)->Stats ! {IO}
+  requires {i>=0 && i<7}
+{
+  let s=if i==0 then 0.0 else if i==1 then 0.1 else if i==2 then 0.25 else if i==3 then 0.5 else if i==4 then 0.75 else if i==5 then 0.9 else 0.998;
+  radii(0,s,{rays:0,escaped:0,captured:0,critical:0,failed:0,checksum:0.0})
+}
+export func farBand(s:float)->Stats ! {IO} =
+  rays(0,2000000.0,s,{rays:0,escaped:0,captured:0,critical:0,failed:0,checksum:0.0})

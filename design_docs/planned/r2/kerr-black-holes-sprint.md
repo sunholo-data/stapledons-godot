@@ -15,6 +15,25 @@ Deliver release 1: package-first Kerr closed forms, analytic capture and Carter 
 
 **Duration:** 25 planned working days, two controller/evaluator validation days and six contingency days = 33 working days, excluding approval, registry, GPU availability and human-review waits. This iteration-49 estimate uses 4,210 active LOC at the existing 170 LOC/day assumption; the original 22+2+6=30 estimate remains historical. Each oracle child retains its individual physical-line cap; a larger aggregate estimate does not waive a cap.
 
+## Attended continuation checkpoint (2026-11-02, Codex A)
+
+Mark's continuing prompt authorizes the regular chart and downstream work,
+under D-144. Runtime v0.56.0 is staged after merging the #377 bump branch.
+The Carter slice was re-split into sphere/pole phase, independent near-axis
+matrix, compact radial turning chart, adaptive 5(4), regular action phases and
+binary64 refinement; the old150-LOC slice was not silently declared sufficient.
+Package PR #173 records the bounded changes. Evidence:
+`.ailang/state/evidence/R2-KERR/continuation-2026-11-02.md`.
+
+Numerical sweeps now pass400 rays and5,880 near-axis rays with zero failures;
+full quality/dry-run and cross-family evaluation remain independent gates.
+K1.2 preflight of the original1536-column/F32-boundary format FAILS: even with
+the exact boundary the row's error is9.01e-4rad; boundary F32 rounding causes
+false captures. Follow the specified stop before production pins and review
+boundary precision and antipode interpolation/resolution. No GPU sky or MP4
+is claimed. The58-check scalar/frame CPU mirror is preparation, not K1.3
+closure. The original acceptance criteria and publication/visual fences stand.
+
 ## Authority, sources and baseline
 
 Applied the explicitly requested [sprint-planner skill](/Users/voightkampff/.claude/skills/sprint-planner/SKILL.md), its registry reuse gate and plan template. Followed CLAUDE.md, the complete approved-for-planning Kerr design, the semantic-memory S0 plan/JSON and the implemented M3 sprint. This artifact grants no new execution, publication or merge authority.

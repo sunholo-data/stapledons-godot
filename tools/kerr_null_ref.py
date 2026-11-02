@@ -100,7 +100,29 @@ def nearcritical():
             rows.append(dict(s=s,u=u,critical_u=orbit,epsilon=eps,n=n,sky=b['sky'],refinement=error))
     return rows
 
+def nearaxis():
+    """Near-pole accuracy probes; both hemispheres and azimuth senses."""
+    rows=[]
+    for s in [0.,.1,.25,.5,.75,.9,.998]:
+     for u in [4.,6.,2e6]:
+      for nr in [-.6,.6]:
+       for hemisphere in [-1,1]:
+        for sense in [-1,1]:
+         for ep in [1e-14,1e-6]:
+            n=(nr,hemisphere*math.sqrt(.64-ep*ep),sense*ep)
+            a=trace(u,s,n,rtol=2e-12,far=max(1e5,u*1000))
+            if a['status']=='escaped':
+                b=trace(u,s,n,rtol=2e-13,far=max(1e6,u*10000))
+                a['refinement']=angle(a['sky'],b['sky'])
+                assert a['refinement']<1e-8,a
+                assert max(a[k] for k in ['radial','angular','sphere','null'])<1e-8,a
+                a['sky']=b['sky']
+            a.update(s=s,u=u,n=n);rows.append(a)
+    return rows
+
 if __name__=='__main__':
+    if len(sys.argv)>1 and sys.argv[1]=="--nearaxis":
+        print(json.dumps(nearaxis(),indent=2)); sys.exit(0)
     if len(sys.argv)>1 and sys.argv[1]=="--nearcritical":
         print(json.dumps(nearcritical(),indent=2)); sys.exit(0)
     rows=[]

@@ -7,16 +7,16 @@
   "sprint_plan": "design_docs/planned/r2/kerr-black-holes-sprint.md",
   "base_commit": "bc1f111134d2abac7cbfd9ca7bb2239da6382f04",
   "approval": {
-    "status": "awaiting",
+    "status": "approved",
     "by": "Mark",
-    "note": "D116 scoped authorization covers the K1.1a children only; global approved:false/awaiting_approval remains for the unscheduled rest."
+    "note": "D-144 and continuing attended Codex A prompt authorize execution. Package publication and visual landing still stop for Mark; historical planning/quorum records are retained below."
   },
-  "approved": false,
+  "approved": true,
   "runtime": {
     "path": "runtime/bin/ailang",
-    "version": "v0.54.14",
-    "commit": "e1ef33fa52b16c3fc3ad15edd60103d2f4ba808e",
-    "prompt_version_loaded": "v0.16.7",
+    "version": "v0.56.0",
+    "commit": "e1ef997298bd96f27a3cf28e7997e766b73270be",
+    "prompt_version_loaded": "v0.16.11",
     "prompt_loaded": true
   },
   "implements": [
@@ -1758,7 +1758,7 @@
       "depends_on": [
         "K1.1a-d"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
@@ -1780,7 +1780,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Numerical audit passes; required verify kerr.ail exits1 with2 helper-sqrt SMT errors (reported inbox_1793635085996_40da838d). Gate unresolved; no proof claimed. Full candidate438/438 VM tests."
+      "notes": "v0.56.0 verify kerr.ail exits0:15 skipped (including unsupported helper/sqrt encoding),1 uncontracted,0 verifier errors; no machine/IEEE proof claimed. Numerical audits pass; inline2 passed/17 skipped. Prior invalid-SMT leaks fixed without downstream workarounds."
     },
     {
       "id": "K1.1b-a",
@@ -2089,7 +2089,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Implemented frame transport, complete Carter RK4/events/adaptive trace.49/49 ordinary and12/12 near-critical rays pass.400-ray development sweep347escaped/53captured/0errors after far-root scaling fix. Arbitrary near-axis n_phi1e-14 returns solver_steps: regular chart/pole phase unresolved. Remains false. Package draft173 head8662584; evidence R2-KERR/attended-2026-11-02.md."
+      "notes": "Regular sphere/pole phase + compact radial root chart/Cash-Karp5(4), regular action/node phases, binary64 refinement regression. Native49 ordinary/12 nearcritical/280 independent near-axis escaping literals pass;400ray sweep347escape53capture0fail,5880dense5376escape504capture0fail. Full quality and independent review pending; see continuation evidence."
     },
     {
       "id": "K1.1b-d",
@@ -2306,7 +2306,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Digest n16 VM/interpreter byte-identical560.5017148517253; independent oracle560.50171485172541 within1e-9. Full bytecode suite438/438 zero fallback;53files checked. Oracle/domain/evaluation closure remains held by near-axis and verifier findings; not passed."
+      "notes": "Digest(16) VM/interpreter byte-identical560.5017148517253, independent within1e-9. Native suite extends to730 tests; full default-engine quality/dry-run and independent review pending. No publication."
     },
     {
       "id": "K1.1p",
@@ -2385,7 +2385,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Prepared0.14.0 feature candidate, AGENT/CHANGELOG/exports. quality --no-run: no gates, tests/smoke not attested by that invocation. Full quality run canceled on new edge failures; no dry-run/publish/evaluation pass. NOT PUBLISH-READY; no sim pin changed."
+      "notes": "0.14.0 candidate on package PR173, head65bcaa8 (productionaf2a767). Full quality/dry-run and independent review running; publication remains Mark only. Never replace sim registry pin with a local path."
     },
     {
       "id": "K1.4-a",
@@ -2564,7 +2564,7 @@
         "K1.0"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -2589,7 +2589,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Development pure rows and capture grid under tools/kerr_dev, isolated local package context. First1536-column F32 row FAILS1.2e-4rad: exact boundary max9.0074e-4 near antipode; F32 boundary causes59falsecaptures and2.937606rad max.96x64 boundary interpolation measured separately. STOP before pins; doubled-row/precision review pending."
     },
     {
       "id": "K1.2-b",
@@ -2894,7 +2895,7 @@
         "K1.0"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -2915,7 +2916,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Partial preparation: float64 Kerr scalar/frame mirror;40 RK seed+5 invalid-spin+13V33 checks pass. Asset identity loader pending the K1.2 format decision; not an aggregate milestone pass."
     },
     {
       "id": "K1.3-b",
@@ -2976,7 +2978,7 @@
         "K1.1b-c"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -3010,7 +3012,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Single pure-boost/frame/frequency mirror and regular phase reconstruction prepared; table interpolation/10000probes still pending. No table accuracy claim."
     },
     {
       "id": "K1.3-c",
@@ -3069,7 +3072,7 @@
         "K1.3-b"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -3095,7 +3098,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "58 scalar/frame assertions delegated through tests/test_physics.gd; make physics1082passed0failed. RK14-17/table/zero-spin asset evidence remains pending."
     },
     {
       "id": "K1.3-d",
@@ -3575,7 +3579,8 @@
       "merge_pause_points": [
         "Pspec",
         "Prender5"
-      ]
+      ],
+      "notes": "Held: K1.2 preflight fails accuracy/precision. No GPU shader/golden/render/MP4 acceptance claimed."
     },
     {
       "id": "K1.5-b",
@@ -4541,8 +4546,14 @@
       "kind": "bookkeeping: record assignment, no scope or approval change",
       "summary": "K1.1a-a3 landed without RK-3 (static limit record, the constant 2 at the equator) and RK-9 (dimensionless horizon angular velocity record), because both would exceed its 140-line cap (150 with them). Both records are owed before K1.1a-a5's completeness audit, which requires RK-1..13: fold them into K1.1a-a4 if its cap allows, otherwise into a5. Carried with them from the a3 evals: an off-equator static_limit anchor or drop of the unused cos_theta parameter (round 1 N1, round 2 NB1), and a guard on the Decimal precision (round 2 V10: precision 20 survives, reproduced by the controller).",
       "passes_changed": true
+    },
+    {
+      "id": "attended-20261102-regular-charts",
+      "author": "Codex A, explicit continuing Mark prompt",
+      "kind": "Execution re-split for required near-axis/domain closure",
+      "summary": "The validated solver exceeds the original150LOC Carter slice. Track sphere/pole chart+analytic invariants,280-ray oracle matrix,compact radial chart,embedded5(4),regular action/node phases and binary64 refinement as separate reviewable changes (package1b93c1f,6fd54ef,af2a767,65bcaa8). This records the explicit attended continuation scope; it does not claim the old LOC budget was met or waive package/spec/visual gates. K1.2original-format failure remains a stop before pins."
     }
   ],
   "last_session": "2026-11-02",
-  "last_checkpoint": "Headless package candidate tested; near-axis/verifier/evaluation gates held; no publication or visuals"
+  "last_checkpoint": "v0.56.0; regular/compact solver passes400+5880rays; full package gates pending;1536/F32 table preflight fails, no pins or visuals"
 }
