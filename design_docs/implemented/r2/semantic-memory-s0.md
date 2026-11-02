@@ -52,14 +52,14 @@ The feature doc's S0 ranking exists only as a spike in session notes. The sim ha
 - **Where bodies are emitted:** `finiteSystemOf` (`sim/protocol.ail:423`, not `core.ail`) is Sol's system (`systemAt`: the Sun, 8 planets, 12 moons) ++ `alphaBodies` (`acen-a`, `acen-b`) ++ `destinationBodies` (`aldebaran`, `trappist-1`) ++ `trappistBodies`, which is **empty unless the ship is within 0.1 ly of TRAPPIST-1** (`nearTrappist`, `sim/trappist1.ail:106,108`).
 - **α Centauri** (`sim/data/acen.ail`): A and B have `luminosity_sun`; Proxima b, d and c, and α Cen A b, are rows with minimum masses or model radii, and **none is emitted as a body** (`alphaBodies` returns the two stars only). `[measured: grep alphaBodies sim/alpha_centauri.ail]`
 - **No package has an insolation function.** `sunholo/celestial` 0.4.0 `reflect.starIlluminanceAt(e1AU, rAU) = e1AU / rAU²` is the point-source inverse square; `relativity` 0.12.0 `photometry` has `luminositySunFromV`. `[measured: grep -n 'func' over ~/.ailang/cache/registry/sunholo/{celestial/0.4.0,relativity/0.12.0}]`
-- **Protocol:** the newest minor is 2.12 (`homeTiersMinor()`); the `system` section is re-sent on every tick in which the clock or the ship moved (`withSystem`). Every replay log in `tests/replays/` asks for minor ≤ 2. `[measured: grep '"want"' tests/replays/*.ndjson → minors 0, 1, 2]`
+- **Protocol:** the minor at S0 planning was 2.12 (`homeTiersMinor()`; the newest minor is now 2.16, `earthMinor()`); the `system` section is re-sent on every tick in which the clock or the ship moved (`withSystem`). Every replay log in `tests/replays/` asks for minor ≤ 2. `[measured: grep '"want"' tests/replays/*.ndjson → minors 0, 1, 2]`
 
 ## Goals and non-goals
 
 **Goals**
 1. A pure module ranks every confirmed planet in the sim's data catalogue (Sol's 8, TRAPPIST-1's 7: 15 worlds, whether or not the ship is near enough for `system` to carry them) by Euclidean distance over the feature vector, ties broken by name, the k nearest kept.
 2. The weights, k and the corpus rule live in data with citations and a finiteness test.
-3. The sim emits the ranking and the per-world insolation once per game (protocol 2.13); GDScript only parses it.
+3. The sim emits the ranking and the per-world insolation once per game (protocol 2.14); GDScript only parses it.
 4. Strict VM = interpreter = a recorded fixture; old streams keep their bytes.
 
 **Non-goals**
@@ -90,22 +90,22 @@ The feature doc's S0 ranking exists only as a spike in session notes. The sim ha
 
 **Core placement: `sim/core.ail` gains no lines.** The mandate is the feature doc's architecture text (quoted in the Verification Log): S0 lives on the sim's pure side ("Pure features and distances, so it passes `--strict-bytecode` and parity … it never embeds"), as opposed to the AI service or Godot. The charter's "emitted by `sim/core.ail` as world fields" is read the same way, because the sim's existing world fields are already emitted outside `core.ail`: the `system` section and `finiteSystemOf` live in `sim/protocol.ail` (lines 423–436). If the log row "Protocol sessions on the strict VM" confirms that session emission already runs under `--strict-bytecode`, emitting `similar` from `protocol.ail` inherits that coverage and the smaller option genuinely satisfies the mandate. If it does not, the precedent argument is withdrawn: S0.2's 2.13 fixture then establishes the first strict-VM session coverage as new infrastructure, the justification to Mark is restated as "S0 adds no non-strict code and expands the strict surface rather than relying on it", and `make similar-test`'s session half (AC8) becomes a required hard gate instead of a parity-with-precedent check. **Measured (controller, round 2): it does.** The frozen 2.7 session through `sim/ship.ail` runs with `--bytecode --strict-bytecode` at rc 0, byte-identical to the VM, the interpreter and the frozen expected fixture, so the first branch holds; AC8 stays a hard gate in `make test` regardless. `sim/similar.ail` stays a pure module with its own strict-parity target (`make similar-test`, entry `similarVm`, strict VM vs interpreter, `cmp`). `protocol.ail`'s new_game path imports `similarWorlds()` directly, as it already imports `trappist1` and `destination_stars`, and the 2.13 session fixture covers determinism end to end on both engines. `make strict` keeps its entry set. A guard, `git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail`, makes "core untouched" a checked invariant for this sprint (AC6, run by the evaluator). If Mark reads L9 as requiring a literal re-export through `core.ail`, that becomes a separately approved core expansion of two lines (a re-export and a `similarText` strict entry).
 
-### S0.2: emission (protocol 2.13)
+### S0.2: emission (protocol 2.14)
 
-- `similarMinor() = 13`; `helloFor` and `sessionMinor` gain the first branch, before home tiers; requests above 13 negotiate 13; the hello's relativity pin is `relativityPin()` as at 2.12.
-- **A top-level `similar` section in the new_game reply only**, at minor ≥ 13, in every scenario. Not `system.similar` (the charter's example): the ranking corpus is catalogue-fixed, while `finiteSystemOf` membership varies with the ship's position (TRAPPIST-1's planets join only within 0.1 ly, `nearTrappist`, measured row), so a ranking nested in `system` would either list worlds the section does not carry or change with position; a position-independent section belongs beside it, not inside it. Secondary note (measured row "`withSystem` resend"): `system` is re-sent on every tick in which the clock, the ship's position or the epoch changed, so nesting would also repeat 15 rankings per moving tick. Without the section a 2.13 stream equals 2.12's but for the hello's minor.
+- `similarMinor() = surfaceMinor() + 1` (= 14); `helloFor` and `sessionMinor` gain its branch; the hello's relativity pin is `relativityPin()` as at 2.12.
+- **A top-level `similar` section in the new_game reply only**, at minor ≥ 14, in every scenario. Not `system.similar` (the charter's example): the ranking corpus is catalogue-fixed, while `finiteSystemOf` membership varies with the ship's position (TRAPPIST-1's planets join only within 0.1 ly, `nearTrappist`, measured row), so a ranking nested in `system` would either list worlds the section does not carry or change with position; a position-independent section belongs beside it, not inside it. Secondary note (measured row "`withSystem` resend"): `system` is re-sent on every tick in which the clock, the ship's position or the epoch changed, so nesting would also repeat 15 rankings per moving tick. Without the section a 2.14 stream equals the 2.13 stream's but for the hello's minor.
 - Shape: `{"model": "s0-v1", "k": 3, "features": [{"key","divisor","cite"}…], "excluded": [ids], "worlds": [{"id","name","s_earth","vector":[3],"near":[{"id","d"}…]}…]}`. Ids are the ids `system.bodies` uses when the body is present (TRAPPIST-1's only near TRAPPIST-1), so Godot joins without a lookup table. `s_earth` is there so a later HUD shows insolation without computing it.
 
 ### S0.3: the bridge parses it (headless, no display)
 
-`bridge/sim_bridge.gd`: `const SIMILAR_MINOR := 13`, and `similar` stored from the new_game reply with `parse_similar()` returning the dictionary as sent. **`main.gd` keeps asking for `HOME_TIERS_MINOR`**, so the game's stream and everything a player sees are unchanged; switching it is the attended display follow-up's first line. A headless test drives the real sim at 2.13 and checks the parse; a `git grep` guard in `make similar-test` fails if any shipped `.gd` reads `"vector"`, so the distance is never recomputed in GDScript.
+`bridge/sim_bridge.gd`: `const SIMILAR_MINOR := 14`, and `similar` stored from the new_game reply with `parse_similar()` returning the dictionary as sent. **`main.gd` keeps asking for `HOME_TIERS_MINOR`**, so the game's stream and everything a player sees are unchanged; switching it is the attended display follow-up's first line. A headless test drives the real sim at 2.14, 2.15 and 2.16 and checks the parse; a `git grep` guard in `make similar-test` fails if any shipped `.gd` reads `"vector"`, so the distance is never recomputed in GDScript.
 
 ### Fixtures and determinism
 
 - **Rankings** (asserted in `sim/similar_test.ail`, values from the spike on the pinned v0.54.14, byte-identical to the earlier v0.54.15-dirty run; see the Verification Log): Earth → TRAPPIST-1 e (0.26387), Venus (0.33514), TRAPPIST-1 d (0.39916); TRAPPIST-1 e → Earth, TRAPPIST-1 f, TRAPPIST-1 d; Jupiter → Saturn, Uranus, Neptune; Uranus ↔ Neptune mutual first.
 - **Inherited vs measured:** the feature doc gives "Jupiter → Saturn, Neptune" `[inherited from semantic-memory.md]`; the measured second is Uranus (1.9542), with Neptune third (2.2691) `[measured: spike, below]`. The tests assert the measured order, and the landing corrects the feature doc's table.
 - **Ties by name:** a synthetic corpus in the test (two worlds with identical inputs, "B" and "A", and a query) must rank "A" first in both input orders.
-- **Byte identity:** `tests/fixtures/protocol_213_similar.{input,expected}.ndjson` (hello at 13, new_game sol, one tick), run through `sim/ship.ail` on the VM and the interpreter and compared with `cmp`, the `mk/ism.mk` compat pattern. The expected file is recorded by `make similar-record` (a reviewed diff, never in `make test`). The first recording is accepted only after the AILANG rankings and the Python oracle both pass on it.
+- **Byte identity:** `tests/fixtures/protocol_214_similar.{input,expected}.ndjson` (hello at 14, new_game sol, one tick), run through `sim/ship.ail` on the VM and the interpreter and compared with `cmp`, the `mk/ism.mk` compat pattern. The expected file is recorded by `make similar-record` (a reviewed diff, never in `make test`). The first recording is accepted only after the AILANG rankings and the Python oracle both pass on it.
 - **Replays:** every log asks minor ≤ 2, so no replay golden changes. `make replay` must pass with `git diff --exit-code tests/replays` clean; a changed golden is a defect, not a re-record.
 - **Oracle:** `tools/similar_oracle.py` (role `oracle` in `tools/python-allowlist.txt`) recomputes, in a second language, the vectors of Earth, Venus, TRAPPIST-1 d and e from the cited numbers typed in, and every distance and order from the fixture's `vector`s, to 1e-12.
 
@@ -119,11 +119,11 @@ The feature doc's S0 ranking exists only as a spike in session notes. The sim ha
 | AC4 | Corpus = the 15 confirmed planets; names unique; ids equal the Sol planet ids of `finiteSystemOf` at rest at Sol and the TRAPPIST-1 planet ids of `finiteSystemOf` at the TRAPPIST-1 stop | same, test "corpus" |
 | AC5 | Strict VM = interpreter for the ranking, digest printed | `make similar-test` (`--entry similarVm`, `cmp`), in `make test` |
 | AC6 | The core is untouched and stays strict | `git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail` (an evaluator check on the sprint branch, not in `make test`, where it would block every later core change); `make strict` passes unmodified |
-| AC7 | 2.13 hello and session: `similar` only in the new_game reply at ≥ 13, never on a tick and absent at <=12; a 2.12 session's bytes are unchanged | `cd sim && ailang test --package .` (`protocol_test.ail` additions) |
-| AC8 | 2.13 session bytes: VM = interpreter = expected fixture; the 2.7 compat fixture still passes | `make similar-test` and `make ism-compat` |
+| AC7 | 2.14 hello and session: `similar` only in the new_game reply at ≥ 14, never on a tick and absent at <=13; a 2.13 session's bytes are unchanged | `cd sim && ailang test --package .` (`protocol_test.ail` additions) |
+| AC8 | 2.14 session bytes: VM = interpreter = expected fixture; the 2.7 compat fixture still passes | `make similar-test` and `make ism-compat` |
 | AC9 | Replays unchanged | `make replay && make parity && git diff --exit-code tests/replays` |
-| AC10 | Second-language oracle agrees to 1e-12 | `python3 tools/similar_oracle.py tests/fixtures/protocol_213_similar.expected.ndjson` (inside `make similar-test`); `make python-guard` |
-| AC11 | The bridge stores the section exactly as sent (deep-equal to the raw JSON) from the real sim at 2.13; no shipped `.gd` reads `"vector"` (the distance's only input); `main.gd` still asks for `HOME_TIERS_MINOR` | `godot --headless --path . --script tests/test_sim_bridge.gd` (in `make sim`); the `git grep` guards in `make similar-test` |
+| AC10 | Second-language oracle agrees to 1e-12 | `python3 tools/similar_oracle.py tests/fixtures/protocol_214_similar.expected.ndjson` (inside `make similar-test`); `make python-guard` |
+| AC11 | The bridge stores the section exactly as sent (deep-equal to the raw JSON) from the real sim at 2.14; no shipped `.gd` reads `"vector"` (the distance's only input); `main.gd` still asks for `HOME_TIERS_MINOR` | `godot --headless --path . --script tests/test_sim_bridge.gd` (in `make sim`); the `git grep` guards in `make similar-test` |
 | AC12 | Everything green on the pinned runtime | `PATH=$PWD/runtime/bin:$PATH make test` |
 
 ## Sub-milestones and estimates
@@ -131,7 +131,7 @@ The feature doc's S0 ranking exists only as a spike in session notes. The sim ha
 | Milestone | LOC | Depends on | Files |
 |---|---|---|---|
 | **S0.1** data and ranking | ~220 | — | new `sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; `sim/ailang.toml` (exports); `Makefile` (`similar-test` with the strict-parity half, in `test`; the core guard is AC6, evaluator-run, not in `test`) |
-| **S0.2** emission | ~140 | S0.1 | `sim/protocol.ail` (2.13, section), `sim/protocol_test.ail`; new `tests/fixtures/protocol_213_similar.{input,expected}.ndjson`, `tools/similar_oracle.py`; `tools/python-allowlist.txt`; `Makefile` (`similar-test` session half, `similar-record`). **Not** `sim/core.ail` |
+| **S0.2** emission | ~140 | S0.1 | `sim/protocol.ail` (2.14, section), `sim/protocol_test.ail`; new `tests/fixtures/protocol_214_similar.{input,expected}.ndjson`, `tools/similar_oracle.py`; `tools/python-allowlist.txt`; `Makefile` (`similar-test` session half, `similar-record`). **Not** `sim/core.ail` |
 | **S0.3** bridge parse | ~80 | S0.2 | `bridge/sim_bridge.gd`, `tests/test_sim_bridge.gd` |
 | **Landing** | docs | S0.3 | `CHANGELOG.md`; this doc → `design_docs/implemented/r2/` with a report; `design_docs/README.md` index; design repo `features/next/semantic-memory.md` (S0 status, Jupiter row) and `roadmap/r2-voyage-life.md` (through a design-repo PR) |
 
@@ -186,7 +186,7 @@ Runtime/spike results below are historical iteration 38 evidence, not rerun duri
 
 ## Deliverables
 
-`sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; protocol 2.13 with the `similar` section; the 2.13 fixture and its record target; `tools/similar_oracle.py`; `make similar-test` in `make test` (`make strict` keeps its entry set); the bridge parse and its headless test; on landing, the report, the changelog entry and the design-repo status.
+`sim/data/similar.ail`, `sim/similar.ail`, `sim/similar_test.ail`; protocol 2.14 with the `similar` section; the 2.14 fixture and its record target; `tools/similar_oracle.py`; `make similar-test` in `make test` (`make strict` keeps its entry set); the bridge parse and its headless test; on landing, the report, the changelog entry and the design-repo status.
 
 ## Quorum log
 

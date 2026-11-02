@@ -485,6 +485,7 @@ for raw in sys.stdin:
 		games += 1
 		ch = {}
 		if mode == "broken": ch["similar"] = "broken"
+		elif mode == "empty": ch["similar"] = {}
 		elif games == 1: ch["similar"] = {"model": "fake", "worlds": [{"name": "w", "near": [{"d": 0.5}]}]}
 		out({"v": 2, "type": "state", "tick": 0, "status": "ok", "changes": ch, "events": [], "refused": [], "full": True})
 """
@@ -497,6 +498,7 @@ func fake_similar(mode: String) -> SimBridge:
 
 ## AC11 (S0.3): the `similar` section at 2.14, 2.15 and 2.16 is stored exactly as sent; 2.14 survives ticks.
 func test_similar_real() -> bool:
+	assert_bool("SIMILAR_MINOR is the literal 14 (not merely equal to the request)", SimBridge.SIMILAR_MINOR == 14)
 	for m in [SimBridge.SIMILAR_MINOR, SimBridge.ARCHIVE_MINOR, SimBridge.EARTH_MINOR]:
 		var s := SimBridge.new()
 		s.want_minor = m
@@ -538,6 +540,25 @@ func test_similar_malformed() -> bool:
 	f.stop()
 	return true
 
+## S3: an empty Dictionary is a valid section: sent, accepted and stored as {}.
+func test_similar_empty_section() -> bool:
+	var e := fake_similar("empty")
+	var ok := e.start() and e.new_game(7, "sol")
+	ok = ok and e.state["changes"].has("similar") and e.state["changes"]["similar"] == {} and e.similar == {}
+	assert_bool("2.14 empty similar {} is sent, accepted and stored as {} (%s)" % e.last_error, ok)
+	e.stop()
+	return true
+
+## S4: the store is a deep copy of what was sent; a bare assignment would follow the wire source.
+func test_similar_store_is_own_copy() -> bool:
+	var f := fake_similar("two")
+	var ok: bool = f.start() and f.new_game(7, "sol") and f.similar["worlds"][0]["near"][0]["d"] == 0.5
+	f.state["changes"]["similar"]["worlds"][0]["near"][0]["d"] = 9.0
+	ok = ok and f.similar["worlds"][0]["near"][0]["d"] == 0.5
+	assert_bool("stored similar is its own copy: a write to the wire source does not reach it (%s)" % f.last_error, ok)
+	f.stop()
+	return true
+
 
 func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(scratch)
@@ -574,6 +595,8 @@ func _init() -> void:
 		test_similar_real,
 		test_similar_below_and_reset,
 		test_similar_malformed,
+		test_similar_empty_section,
+		test_similar_store_is_own_copy,
 	]
 	for t in tests:
 		# a GDScript runtime error aborts the function and returns null: count it

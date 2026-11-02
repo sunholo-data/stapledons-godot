@@ -31,7 +31,7 @@ Semantics, scope, acceptance criteria and LOC estimates were unchanged in iterat
 - Preserve S0.1's completed progress and all other feature progress. Keep semantics, scope, wire shape, AC ids and LOC/day estimates. The extra 2.15 fixture and frozen expectation are compatibility coverage forced by #314, within S0.2's existing budget. Do not change the completed ranking implementation or digest. Its current recipe checks 15 nonempty rows and 16 newline characters; the old printer-format discussion is historical.
 - Edit only this plan and its sprint JSON. Leave the design doc unchanged and report its stale references to the controller. Record exact read-only evidence below. Runtime baseline results and pristine byte captures remain the controller's responsibility; none was run here.
 
-**Design doc:** [design_docs/planned/r2/semantic-memory-s0.md](semantic-memory-s0.md), minor references inspected without editing at base `adf34a677f5919a86f09cd640a3fa0a3493f6d3d`.
+**Design doc:** [design_docs/implemented/r2/semantic-memory-s0.md](semantic-memory-s0.md), minor references inspected without editing at base `adf34a677f5919a86f09cd640a3fa0a3493f6d3d`.
 **Sprint JSON:** [.ailang/state/sprints/sprint_R2-SIMILAR-S0.json](../../../.ailang/state/sprints/sprint_R2-SIMILAR-S0.json).
 **Status:** approved (D-85 RESOLVED A, Mark, attended 2026-10-19; PR #272); mechanically amended 2026-10-22, mission iteration 46, charter row L9.
 **Approval:** D-85 RESOLVED A: Mark approved this plan in an attended session on 2026-10-19, including top-level `similar` emission from `sim/protocol.ail` with `sim/core.ail` untouched. Plan PR #272 merged as `514d35a`. This mechanical amendment requires no new approval.

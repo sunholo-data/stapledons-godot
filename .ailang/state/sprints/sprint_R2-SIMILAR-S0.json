@@ -22,8 +22,8 @@
   "mission_iteration": 46,
   "base_commit": "adf34a677f5919a86f09cd640a3fa0a3493f6d3d",
   "base_state": "Pristine origin/main at adf34a67 before iteration 46 plan amendment; S0.1 complete.",
-  "design_doc": "design_docs/planned/r2/semantic-memory-s0.md",
-  "sprint_plan": "design_docs/planned/r2/semantic-memory-s0-sprint.md",
+  "design_doc": "design_docs/implemented/r2/semantic-memory-s0.md",
+  "sprint_plan": "design_docs/implemented/r2/semantic-memory-s0-sprint.md",
   "protocol_minor": 14,
   "runtime": {
     "version": "v0.54.14",
@@ -1015,6 +1015,41 @@
           "row 7x: Godot --script can exit 0 on parse error/SCRIPT ERROR (chartered separately; drills and gates read the summary line and ok count, never rc alone)",
           "redundant Makefile pathspecs ('*.gd' crosses '/', equivalent today; kept, stricter)"
         ]
+      },
+      "evidence": {
+        "iteration": 63,
+        "date": "2026-11-02",
+        "base": "05e339204e88649851527b9da6b5f45be0bb44a7",
+        "head_branch": "mission/stapledon-iter63-similar-landing",
+        "test_guard": {
+          "makefile_probe_hits": "6 (was 4)",
+          "pattern_widened": true,
+          "bridge_test": "sim bridge: 0 failures, 110 ok (107 + 3 new: T8, T9, T10)",
+          "similar_test_rc": 0,
+          "rank_digest": "4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b"
+        },
+        "drills": {
+          "D-S2": "FAIL SIMILAR_MINOR is the literal 14 (not merely equal to the request)",
+          "D-S3": "FAIL 2.14 empty similar {} is sent, accepted and stored as {} (bad_response)",
+          "D-S4": "FAIL stored similar is its own copy: a write to the wire source does not reach it",
+          "D-S1a": "similar-test guard: production vector read",
+          "D-S1b": "similar-test guard: probe 5 != 6, pattern broken",
+          "all_reverted": true
+        },
+        "gates": {
+          "make sim": "exit 0; 577 passed, 0 failed; sim bridge: 0 failures; bh-hud 64 passed",
+          "make uid-guard python-guard lint-precision": "ok",
+          "L-A": "rc 0 for ddc5582d, db54e525, ca1e04d0 over sim/ailang.lock main.gd tests/replays protocol_27 fixture",
+          "L-B": "rc 0 (empty landing diff)",
+          "protected_paths_diff": "rc 0 (sim/core.ail sim/ailang.lock main.gd tests/replays bridge/sim_bridge.gd)"
+        },
+        "evaluations": {
+          "S0.1": 93,
+          "S0.2": 93,
+          "S0.3": 90
+        },
+        "report": "design_docs/implemented/r2/semantic-memory-s0-report.md",
+        "ci_and_rig": "recorded in the mission log, iteration 63"
       }
     }
   ],
