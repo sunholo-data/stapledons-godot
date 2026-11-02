@@ -251,6 +251,13 @@ extract:           ## data/raw/{cns5,table1c}.dat -> data/raw/{cns5,gcns}.csv (A
 	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
 	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail
 
+kerr-physics-test: ## R2-KERR scalar CPU mirror: all RK seed rows, invalid spins; fail closed on parse errors
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_kerr_physics.gd > $(SCRATCH)/kerr-physics.txt 2>&1; rc=$$?; cat $(SCRATCH)/kerr-physics.txt; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/kerr-physics.txt && grep -qE '^kerr-physics: [0-9]+ passed, 0 failures$$' $(SCRATCH)/kerr-physics.txt
+
+.PHONY: kerr-physics-test
+
 physics: lens-assets ## CPU physics reference (incl. the Schwarzschild mirror on the pinned lens tables) vs known values; fails unless the run prints its '<n> passed, 0 failed' summary (a script that fails to parse exits 0 without one)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_physics.gd > $(SCRATCH)/physics.txt 2>&1; rc=$$?; cat $(SCRATCH)/physics.txt; \

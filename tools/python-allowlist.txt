@@ -30,3 +30,4 @@ tools/kerr_ref.py	oracle
 tools/kerr_curvature_ref.py	oracle
 tools/kerr_null_ref.py	oracle
 tools/kerr_digest_ref.py	oracle
+tools/kerr_ks_ref.py	oracle

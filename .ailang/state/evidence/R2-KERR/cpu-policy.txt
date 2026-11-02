@@ -1,0 +1,6 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+kerr-physics: 58 passed, 0 failures
+python-guard: ok (23 allowlisted, 0 awaiting AILANG port)
+lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)
+uid-guard: ok (405 .uid files)

@@ -1639,6 +1639,10 @@ func _init() -> void:
 	_m5_photometry()
 	_star_surface_photometry()
 	test_schwarzschild()
+	# Kerr (spec §3b): package-first scalar RK anchors; tables remain separate.
+	var kerr_spec: Dictionary = preload("res://tests/test_kerr_physics.gd").spec_checks()
+	passes += kerr_spec.passes
+	failures += kerr_spec.failures
 	test_rapidity()
 	test_blackbody_table()
 
