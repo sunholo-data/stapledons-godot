@@ -88,10 +88,10 @@
         "design doc and plan exist",
         "before renders and mock-ups saved and opened"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
+      "notes": "Design doc, plan and JSON (bb8cb586). Before renders: comms 4 frames OK; star light 16 frames then capture-arrival-failed CNS5:3627 (make Error 1), pre-existing on main. Feed option mock-ups (BEFORE / A decoded / B frame-as-light, true D^4 and eye re-exposed) at D = 0.070888, 0.5, 0.8, 1, 1.25, 2, 14.107 from a scratch spike; B keeps 0 of the visible light at 0.99c either way, 0.36 at 0.8 and 0.35 at 1.25 by colour."
     },
     {
       "id": "TP1",
@@ -104,10 +104,10 @@
         "make earth-feed-test comms-station-test physics green",
         "no band carries tint/tint_alpha; picture unmodulated in beam at RS-26..RS-30 D values"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
+      "notes": "35748f15: comms_feed.json bands without tint; EarthFeed has no tint ColorRect; test_earth_feed (59 ok), test_physics RS-Q5 rows at RS-26..30; GPU golden G-EL-2 now 'decoded frame unchanged' with a seeded wash negative (earth-link-golden 20 passed, 0 failures); earth-link.md Doppler tint row superseded. comms-station 42 ok."
     },
     {
       "id": "TP2",
@@ -120,10 +120,10 @@
         "make ship-star-light-test green with the new True section",
         "every pre-existing assertion passes in Processed"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
+      "notes": "44415ca2 + the gain commit: StarLight.mode (processed default), LUX_PER_ENERGY 10, BOUNCE 0.1, meter_weight f(y), deck_exposure, share_of, ship_lux; True applies the eye's adaptation as a gain on every interior light (a tonemap exposure blacked out the unshaded captain in the first trial render). ship-star-light 113 passed, 0 failures (all pre-existing assertions unchanged in Processed)."
     },
     {
       "id": "TP3",
@@ -136,10 +136,10 @@
         "make ship-star-light-test bh-hud-test green",
         "toggle sets mode both ways in the real demo"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
+      "notes": "834f4dac: set_auto_view sets the mode (Realistic true, Auto processed); view button names it; demo checks in test_ship_star_light; bh-hud 64 passed; style-test 22 passed."
     },
     {
       "id": "TP4",
@@ -153,10 +153,10 @@
         "make physics green",
         "design-repo draft PR URL recorded"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
+      "notes": "test_physics test_true_star_light: RS-3/RS-4 LUT seen ratio = package pointFluxRatio (1.000025, 0.999917), linear to the deck, inverse square, 1587.5 x lamps; make physics 1034 passed, 0 failed. Design draft PR stapledons-design#51 (RS-Q5 + Archive entry The Colours of Home)."
     },
     {
       "id": "TP5",
@@ -179,7 +179,7 @@
     }
   ],
   "reviews": [],
-  "progress_note": "",
+  "progress_note": "TP0-TP4 done; TP5 (captures, review upload, draft PR, rig/full) in progress.",
   "upstream_reports": [],
   "evaluation": null
 }
