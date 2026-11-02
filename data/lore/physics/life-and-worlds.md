@@ -14,11 +14,11 @@ A future measurement changes the version, never a running universe.
 
 | Factor | Adopted baseline / prior | Evidence and precise location | Status; dial |
 |---|---|---|---|
-| Local density rho0 | 0.079 pc^-3 | [Gaia Collaboration, Smart et al. 2021](https://arxiv.org/abs/2012.02061), abstract and §7: 331,312 GCNS entries within 100 pc; dividing by 4 pi 100^3/3 gives 0.0790963. §5.2 luminosity-function analysis and §7 instead give a completeness-corrected main-sequence density 0.081 ± 0.003 pc^-3 | Adopted raw-count approximation, not the paper's corrected density; fixed |
+| Local density rho0 | 0.079 pc^-3 | [Gaia Collaboration, Smart et al. 2021](https://arxiv.org/abs/2012.02061), abstract and §6: 331,312 selected GCNS entries with nonzero probability of being within 100 pc (estimated 9% contamination from beyond the boundary); dividing by 4 pi 100^3/3 gives 0.0790963. §5.2/Fig. 16 luminosity-function analysis and §6 instead give a completeness-corrected main-sequence density 0.081 ± 0.003 pc^-3 | Adopted raw-count approximation, not the paper's corrected density; fixed |
 | Disc scale height H | 300 pc | [Jurić et al. 2008](https://faculty.washington.edu/ivezic/Publications/tomographyI.pdf), Table 10, p. 901, bias-corrected H1; their Eq. 21–24 define the two-disc/halo model | Verified; use only the local thin-disc vertical exponential, no radial gradient; fixed |
-| Type shares FGK / M / other | 0.20 / 0.75 / 0.05 | [Reylé et al. 2021](https://arxiv.org/abs/2104.14972), Table 3, p. 5, reports F=8, G=18, K=38, M=249, A=4, D=20 plus L/T/Y and unknown types. §3.4/Fig. 2 discuss spectral completeness; abstract's ~61% uses stars AND brown dwarfs | **Unverified as an empirical 0.75 M fraction for the model's denominator.** Keep the approved nominal approximation explicitly as adopted, not measured to two figures. FGK 0.20 is the existing reference assumption. Not dialled |
-| Galactic mass formation rate | 1.65 ± 0.19 solar masses/yr | [Licquia & Newman 2015](https://doi.org/10.1088/0004-637X/806/1/96), abstract, §4.1 posterior; Kroupa IMF | Verified; mass/yr, NOT stars/yr. Archive context only, not an extra count-model multiplier |
-| Planet abundance | at least order unity planets/star | [Cassan et al. 2012](https://www.nature.com/articles/nature10684), p. 168, integration of Eq. 1 over 0.5–10 AU and 5 Earth masses–10 Jupiter masses: 1.6 (+0.72, -0.89) planets/star | Verified domain-limited mean; not a probability f_p >= 1; occurrence below already includes planet abundance |
+| Type shares FGK / M / other | 0.20 / 0.75 / 0.05 | [Reylé et al. 2021](https://arxiv.org/abs/2104.14972), Table 3, p. 5, reports F=8, G=18, K=38, M=249, A=4, D=20 plus L/T/Y and unknown types. §3.5/Fig. 2 discuss spectral completeness; abstract's ~61% uses stars AND brown dwarfs | **Unverified as an empirical 0.75 M fraction for the model's denominator.** Keep the approved nominal approximation explicitly as adopted, not measured to two figures. FGK 0.20 is the existing reference assumption. Not dialled |
+| Galactic mass formation rate | 1.65 ± 0.19 solar masses/yr | [Licquia & Newman 2015](https://doi.org/10.1088/0004-637X/806/1/96), abstract, Table 1 and §3.3 posterior; Kroupa IMF | Verified; mass/yr, NOT stars/yr. Archive context only, not an extra count-model multiplier |
+| Planet abundance | at least order unity planets/star | [Cassan et al. 2012](https://www.nature.com/articles/nature10684), [primary preprint](https://arxiv.org/pdf/1202.0903), final results paragraph (PDF p. 4), integrating the fitted mass function over 0.5–10 AU and 5 Earth masses–10 Jupiter masses: 1.6 (+0.72, -0.89) planets/star | Verified domain-limited mean; not a probability f_p >= 1; occurrence below already includes planet abundance |
 | etaEarth(FGK) | fixed adopted 0.4 planets/star | [Bryson et al. 2021](https://arxiv.org/abs/2010.14812), Table 5, model 1, conservative HZ, 0.5–1.5 Earth radii, 4800–6300 K: lower/upper extrapolation medians 0.37 (+0.48,-0.21) to 0.60 (+0.90,-0.36) | Verified; 0.37–0.60 is a bracket of model medians, NOT a uniform prior or confidence interval; 0.4 adopted; fixed |
 | etaEarth(M) | fixed adopted 0.16 planets/star | [Dressing & Charbonneau 2015](https://arxiv.org/abs/1501.01623), §7.3, Table 8, p. 19: 1–1.5 Earth radii, moist/maximum greenhouse column, 15.82% (+16.60,-6.54); abstract rounds to 0.16 (+0.17,-0.07) | Verified; the cited inner edge is **moist** greenhouse (2013 prescription), not the 2014 runaway edge; adopted occurrence approximation; habitability debated; fixed |
 | fLife | X=log10(lambda Vt) ~ Normal(0,50^2); f=1-exp(-10^X); median 0.632120558828558 | [Sandberg, Drexler & Ord 2018](https://arxiv.org/html/1806.02404), §3.1.1 (PDF p. 9), Table 1 life entry refers to that model | Verified rate prior; paper's evolutionarily competent life mapped here to biosphere probability as an explicit game assumption; dial life |
@@ -57,7 +57,10 @@ warming. Circular geometric transit probability (neglect planet radius) is Rstar
 Radial velocity K=(2 pi G/P)^(1/3) m sin(i)/(Mstar+m)^(2/3)/sqrt(1-e²), SI.
 Mutual Hill radius is ((m1+m2)/(3 Mstar))^(1/3) (a1+a2)/2; separation in Hill
 radii is (a2-a1)/RH ([Chambers et al. 1996](https://doi.org/10.1006/icar.1996.0019),
-§2). No stability guarantee is inferred from a single separation test.
+original §2 locator **unverified** because the full text was inaccessible).
+The formula is verified against [Carrera, Davies & Johansen 2016](https://academic.oup.com/mnras/article/463/3/3226/2646619),
+Eqs. 1–2. No stability guarantee is inferred from a single separation test.
+
 Constants for check cases: AU=149597870700 m, nominal Rsun=695700000 m,
 G=6.67430e-11 SI, solar mass=1.98847e30 kg, Earth mass=5.9722e24 kg,
 year=365.25 days, day=86400 s. The RV cases below use these constants,
@@ -79,7 +82,14 @@ edges. Count the epoch overlap once, not once per endpoint.
 The two tables in the life feature are computed from **ref-2026-10-06**:
 FGK=0.20, etaFGK=0.4, M off, fLife=0.3, fMinds*fTech=0.005, L=10000 yr,
 Twin=5e9 yr. They are not tables of baseline-prior medians. Existing rounded
-cells remain historical reference arithmetic. Optimistic uses fLife=1,
+cells remain historical reference arithmetic. Three historical cells disagree
+with strict rounding of the formula: 1000-ly everTech=803.838985686 (prints
+804, not 805); 10000-ly everTech=164765.267127 (prints 1.6e5, not 1.7e5;
+the old value double-rounds biospheres first); 5000-ly overlap over 24000 yr
+is 0.264501263335 (prints 0.26, not 0.27). Package tests use the derived
+values and report these transcription discrepancies; they do not tune the
+density to reproduce inconsistent rounding.
+ Optimistic uses fLife=1,
 fMinds=0.1, fTech=0.1, L=1e6 yr. Pessimistic uses fLife=fMinds=0.001,
 fTech=0.1 (reconstruction: omitted in the old text), L=1000 yr.
 
@@ -170,6 +180,6 @@ seed after the default preset is calibrated. Use S2 photon budgets, never a
 literal detection radius. Presets remain named only on the ordinary wire;
 the Archive reveals their luck later.
 
-**Unverified:** the nominal M=0.75 fraction's empirical attribution to Reylé.
+**Unverified:** the nominal M=0.75 fraction's empirical attribution to Reylé; the original Chambers section locator (the formula itself has the verified alternate primary citation above).
 No calibrated loudness distribution, preset offset, encounter count or slice
 seed is established by W1.0. Archive prose remains a draft for Mark.

@@ -505,8 +505,16 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	in=$$($(AILANG) run --quiet --package-dir sim --entry digestScripted --args-json 3 sim/crew_script.ail); \
 	echo "strict digestScripted: $$vm"; [ "$$vm" = "$$in" ] && echo "$$vm" | grep -qE '^"?crossing chunks [0-9]+ holds 1 turn 391 digest [0-9a-f]{64}"?$$' || { echo "strict digestScripted: FAIL (VM != interpreter: $$in)"; exit 1; }
 
-rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
+rng-ref:           ## AC11/W1.3: existing streams plus 10k UTF-8 keyed hashes, draws and exact unit53 vs independent oracle
 	AILANG=$(AILANG) python3 tools/rng_ref.py --check
+
+.PHONY: rng-keyed
+strict parity: rng-keyed
+rng-keyed:         ## W1.3: keyed hashes and 10k unit53 bounds, strict VM = interpreter
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry rngKeyedVm --args-json 0 sim/rng_test.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry rngKeyedVm --args-json 0 sim/rng_test.ail); \
+	test "$$vm" = "keyed-rng-ok" && test "$$vm" = "$$in" || { echo "rng-keyed: FAIL: VM $$vm | interpreter $$in"; exit 1; }; \
+	echo "rng-keyed: keyed-rng-ok (10000 uniforms, strict VM = interpreter)"
 
 geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 geodesics, tides and hover (design V9-V16) passes --check, and its digests equal the values the package pins
 	python3 tools/geodesic_ref.py --check
