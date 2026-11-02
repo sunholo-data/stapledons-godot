@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 64 | 2026-11-02 | Row 7l(a) BUILT and judged, landing PARKED-ON-LANE (PR #376 waits only on `rig/full`): `capture-m4-publish` checks all 18 files, their counts (includi... |
 | 63 | 2026-11-02 | L9 semantic-memory S0 Landing LANDED (PR #368, merge `e7806004`): the S0.3 judge's survivors are folded in (the vector guard catches `.get("vector", d)`... |
 | 62 | 2026-10-31 | L9 semantic-memory S0.3 LANDED (PR #366, merge `ca1e04d0`): the bridge keeps the sim's `similar` section exactly as sent (`SimBridge.SIMILAR_MINOR ... |
 | 61 | 2026-10-31 | Kerr K1.1a-a5 LANDED (PR #364, merge `644cff09`): the Kerr oracle's terminal child pins the fixture's schema, unit and source and its exact 40-reco... |
