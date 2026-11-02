@@ -1,0 +1,21 @@
+godot --headless --path . --import
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+
+
+ERROR: Cannot create file 'res://data/starmap/truth/positions. distance 1/plx everywhere; where CNS5 evaluated a star's EDR3 solution its adopted value stands (EDR3 zero.translation'.
+   at: save (core/io/resource_format_binary.cpp:2117)
+ERROR: Cannot open file 'res://data/starmap/truth/positions. distance 1/plx everywhere; where CNS5 evaluated a star's EDR3 solution its adopted value stands (EDR3 zero.translation'.
+   at: set_uid (core/io/resource_format_binary.cpp:2349)
+ERROR: Cannot create file 'res://data/starmap/truth/positions. or Hipparcos vL07 / Gaia DR2 where CNS5 rejected EDR3); a CNS5 star without a Gaia id that GCNS identifies takes EDR3 when plx/e >= 10 and RUWE < 1.4; companions at their system's distance; disagreement over max(3 sigma.translation'.
+   at: save (core/io/resource_format_binary.cpp:2117)
+ERROR: Cannot open file 'res://data/starmap/truth/positions. or Hipparcos vL07 / Gaia DR2 where CNS5 rejected EDR3); a CNS5 star without a Gaia id that GCNS identifies takes EDR3 when plx/e >= 10 and RUWE < 1.4; companions at their system's distance; disagreement over max(3 sigma.translation'.
+   at: set_uid (core/io/resource_format_binary.cpp:2349)
+ERROR: Condition "f.is_null()" is true. Continuing.
+   at: get_multiple_md5 (core/io/file_access.cpp:967)
+ERROR: Condition "f.is_null()" is true. Continuing.
+   at: get_multiple_md5 (core/io/file_access.cpp:967)
+
+
+
+no-twitch: 41 passed, 0 failures
