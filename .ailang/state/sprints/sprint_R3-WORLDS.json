@@ -421,6 +421,6 @@
     "targeted": "strict/parity/replay11cases/rng10000oracle/world-hosts/lore/python-guard/uid/ui-theme and AC16 eightstreams pass; final exact lines in execution report",
     "exoplanets_vm": "PASS v0.56.0;1599planets18722scalars complete witness,unchangeddigest",
     "rig_full": "not run; production worlds dependency unpublished, no rig/full or sprint-complete claim",
-    "fast_tier": "checkpoint57e62d2b green; final implementation head requires attendedworldspublish/pin before normalCI can pass"
+    "fast_tier": "FAIL on fcb55e05 (26s): stellar-protocol-test cannot load pkg/sunholo/worlds/occurrence because sunholo/worlds absent from production lock. Run41524032759. Requires attended worlds publication+pin; subsequent edits documentation/progress only. No gate bypass. Initial57e62d2b fast tier green does not certify implementation."
   }
 }

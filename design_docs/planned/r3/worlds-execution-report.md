@@ -29,6 +29,12 @@ pending attended worlds publication and its game pin. Initial checkpoint
 `57e62d2b` passed the fast tier; that result does not certify this final code.
 Independent cross-family evaluation is pending. No `rig/full` was started.
 
+Fast CI on documentation head `fcb55e05` failed in 26 s, before numerical
+validation: `stellar-protocol-test` cannot resolve `pkg/sunholo/worlds/occurrence`
+because worlds is absent from the production lock. [Failed run](https://github.com/sunholo-data/stapledons-godot/actions/runs/41524032759).
+This confirms the publication/pin blocker; the final follow-up edits only this
+handoff evidence and sprint progress. No gate was bypassed or local pin added.
+
 ## 2. Milestones and measured gates
 
 | ID | Implemented in the drafts | Remaining acceptance |
