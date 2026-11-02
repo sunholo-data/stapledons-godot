@@ -5028,15 +5028,15 @@
    ]
   },
   {
-   "id": "home_beacon_c25",
-   "about": "S2: the home beacon's Receiver bank for D in [8, 16]: the same keying on a 25 Hz carrier (D/16 of the true one), so at D the receiver's residual correction stays within a factor of 2 (Godot's FFT pitch shift is exact there; a 14x shift of a low tone is not, measured).",
+   "id": "home_beacon_env",
+   "about": "S2: the home beacon's keying envelope for the Receiver setting, carried on a 12 kHz sine phase-locked to the 48 kHz sample grid (four samples a cycle: 0, +e, 0, -e), so sample 4k+1 is exactly the envelope e(t) of home_beacon (same layers, same normalisation). HomeBeacon reads it and plays the Receiver beacon as a heterodyne receiver hears it: e(rate t) x sin(2 pi 400 t).",
    "seconds": 2.0,
    "loop": true,
    "peak_db": -3,
    "layers": [
     {
      "kind": "sine",
-     "freq": 25.0,
+     "freq": 12000.0,
      "amp": 0.07
     },
     {
@@ -5050,7 +5050,7 @@
        "layers": [
         {
          "kind": "sine",
-         "freq": 25.0,
+         "freq": 12000.0,
          "amp": 0.5,
          "env": {
           "attack": 0.02,
@@ -5065,181 +5065,7 @@
        "layers": [
         {
          "kind": "sine",
-         "freq": 25.0,
-         "amp": 0.42,
-         "env": {
-          "attack": 0.02,
-          "tau": 0.07
-         }
-        }
-       ]
-      }
-     ],
-     "times": [
-      0.25,
-      1.25
-     ],
-     "vary": {
-      "cycle": true
-     }
-    }
-   ]
-  },
-  {
-   "id": "home_beacon_c100",
-   "about": "S2: the home beacon's Receiver bank for D in [2, 8): the same keying on a 100 Hz carrier.",
-   "seconds": 2.0,
-   "loop": true,
-   "peak_db": -3,
-   "layers": [
-    {
-     "kind": "sine",
-     "freq": 100.0,
-     "amp": 0.07
-    },
-    {
-     "kind": "events",
-     "amp": 1.0,
-     "seed": 401,
-     "voices": [
-      {
-       "seconds": 0.9,
-       "fade_ms": 40,
-       "layers": [
-        {
-         "kind": "sine",
-         "freq": 100.0,
-         "amp": 0.5,
-         "env": {
-          "attack": 0.02,
-          "tau": 0.22
-         }
-        }
-       ]
-      },
-      {
-       "seconds": 0.5,
-       "fade_ms": 40,
-       "layers": [
-        {
-         "kind": "sine",
-         "freq": 100.0,
-         "amp": 0.42,
-         "env": {
-          "attack": 0.02,
-          "tau": 0.07
-         }
-        }
-       ]
-      }
-     ],
-     "times": [
-      0.25,
-      1.25
-     ],
-     "vary": {
-      "cycle": true
-     }
-    }
-   ]
-  },
-  {
-   "id": "home_beacon_c1600",
-   "about": "S2: the home beacon's Receiver bank for D in [1/8, 1/2): the same keying on a 1600 Hz carrier.",
-   "seconds": 2.0,
-   "loop": true,
-   "peak_db": -3,
-   "layers": [
-    {
-     "kind": "sine",
-     "freq": 1600.0,
-     "amp": 0.07
-    },
-    {
-     "kind": "events",
-     "amp": 1.0,
-     "seed": 401,
-     "voices": [
-      {
-       "seconds": 0.9,
-       "fade_ms": 40,
-       "layers": [
-        {
-         "kind": "sine",
-         "freq": 1600.0,
-         "amp": 0.5,
-         "env": {
-          "attack": 0.02,
-          "tau": 0.22
-         }
-        }
-       ]
-      },
-      {
-       "seconds": 0.5,
-       "fade_ms": 40,
-       "layers": [
-        {
-         "kind": "sine",
-         "freq": 1600.0,
-         "amp": 0.42,
-         "env": {
-          "attack": 0.02,
-          "tau": 0.07
-         }
-        }
-       ]
-      }
-     ],
-     "times": [
-      0.25,
-      1.25
-     ],
-     "vary": {
-      "cycle": true
-     }
-    }
-   ]
-  },
-  {
-   "id": "home_beacon_c6400",
-   "about": "S2: the home beacon's Receiver bank for D in [1/16, 1/8) (outbound at 0.99c, D = 0.0709): the same keying on a 6400 Hz carrier, which D brings to 454 Hz before the receiver corrects it to 400 Hz.",
-   "seconds": 2.0,
-   "loop": true,
-   "peak_db": -3,
-   "layers": [
-    {
-     "kind": "sine",
-     "freq": 6400.0,
-     "amp": 0.07
-    },
-    {
-     "kind": "events",
-     "amp": 1.0,
-     "seed": 401,
-     "voices": [
-      {
-       "seconds": 0.9,
-       "fade_ms": 40,
-       "layers": [
-        {
-         "kind": "sine",
-         "freq": 6400.0,
-         "amp": 0.5,
-         "env": {
-          "attack": 0.02,
-          "tau": 0.22
-         }
-        }
-       ]
-      },
-      {
-       "seconds": 0.5,
-       "fade_ms": 40,
-       "layers": [
-        {
-         "kind": "sine",
-         "freq": 6400.0,
+         "freq": 12000.0,
          "amp": 0.42,
          "env": {
           "attack": 0.02,

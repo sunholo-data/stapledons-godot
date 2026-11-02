@@ -6,37 +6,43 @@ extends RefCounted
 ##
 ## It plays while the ship is inside a beam Earth aimed at its plan (earth.in_beam) and away from home
 ## (earth.at_home false: at home the link is live and needs no beacon). Its time rate is the sim's Earth
-## rate D (earth.rate, unrounded), through the comms station's own machinery: EarthFeed.receiver_plan(D,
+## rate D (earth.rate, unrounded), through the comms station's own plan: EarthFeed.receiver_plan(D,
 ## receiver) reads data/ui/comms_feed.json sound.receiver, and the setting is the station's
 ## (EarthFeed.receiver: Receiver, the default, or True).
-##   True:     the 400 Hz carrier (home_beacon) at speed and pitch x D, uncorrected: heard at 400 D Hz, its
-##             pips D times a ship second; outside receiver.audible nothing reaches the ear and nothing plays.
-##   Receiver: the stream at the plan's rate (D within the receiver's real-time range), its frequency
-##             corrected back to 400 Hz on the Beacon bus. Godot's FFT pitch shift is exact only within
-##             about a factor of 2 (measured: a 14x upward shift of a 28 Hz tone gives 314 Hz, not 400), so
-##             the correction is split: a bank row whose carrier is 400 s Hz with the same keying (s in
-##             BANKS, nearest 1/rate) is played at the rate, and the bus corrects the rest, 1/(s rate),
-##             which stays within [1/2, 2]. A bank change takes over at the same loop position, so Earth's
-##             pips keep their time.
+##   True:     home_beacon, a 400 Hz carrier keyed once per Earth second, at speed and pitch x D (Godot
+##             resamples it: heard at 400 D Hz, its pips D times a ship second), uncorrected; outside
+##             receiver.audible nothing reaches the ear and nothing plays.
+##   Receiver: what a heterodyne receiver hands the crew: Earth's keying at the plan's rate (D within the
+##             receiver's real-time range) on the carrier's true frequency, e(rate t) x sin(2 pi 400 t),
+##             generated sample by sample (home_beacon_rx, a generator row) from the envelope table
+##             home_beacon_env (the same keying, rendered by sunholo/audio on a 12 kHz carrier locked to
+##             the sample grid, so sample 4k+1 is the envelope). No FFT pitch shift: Godot's smears pips
+##             shorter than its window and mis-tunes large corrections (measured: 314 Hz for 400 Hz
+##             corrected 14x up; 8 to 16 of 21 pips survive at D = 14.1 whatever its FFT size).
+## The envelope's position (Earth seconds into the 2 s loop) is kept here, so a change of setting picks
+## up where the other left off and Earth's pips keep their time.
 ## Presentation only: nothing here reaches the sim, and no number is shown (the station shows D).
 
 const CUE := "home_beacon"
+const RX := "home_beacon_rx"
 const OFF := "home_beacon_off"
-const BUS := "Beacon"
+const ENV := "home_beacon_env"
 ## The carrier's frequency in its own frame (data/audio/recipes.json home_beacon).
 const CARRIER_HZ := 400.0
-## Receiver banks: carrier factor s -> cue (data/audio/recipes.json: the same keying on a 400 s Hz carrier).
-const BANKS := {0.0625: "home_beacon_c25", 0.25: "home_beacon_c100", 1.0: "home_beacon", 4.0: "home_beacon_c1600", 16.0: "home_beacon_c6400"}
-## A bank changes only when another is nearer by this factor (no chatter while D hovers at an edge).
-const HYSTERESIS := 1.1
+const LOOP_S := 2.0
+const ENV_RATE := 12000.0 ## envelope samples per second (sample 4k+1 of the 48 kHz table)
 
 var on := false
-var cue := "" ## the bank row playing
+var cue := "" ## the row playing: CUE (True) or RX (Receiver)
 var plan := {}
+var env := PackedFloat32Array() ## the keying envelope, 0..1 of full scale, ENV_RATE samples a second
+var _sound: SoundDirector = null
+var _pos := 0.0 ## Earth seconds into the loop (Receiver)
+var _phase := 0.0 ## the carrier's phase, radians (Receiver)
+var _rate := 1.0 ## the envelope's rate (Receiver)
 
 
-## What the helm's receiver does for this world: {on, d, rate, correct, silent, hearing} (receiver_plan's
-## fields, correct being the whole correction 1/rate in Receiver).
+## What the helm's receiver does for this world: {on, d, rate, correct, silent, hearing} (receiver_plan's).
 static func plan_for(world: Dictionary, receiver: bool) -> Dictionary:
 	var e: Variant = world.get("earth")
 	if not e is Dictionary or e.get("in_beam") != true or e.get("at_home") == true or not (e.get("rate") is float or e.get("rate") is int) or float(e.rate) <= 0.0:
@@ -48,49 +54,91 @@ static func plan_for(world: Dictionary, receiver: bool) -> Dictionary:
 	return p
 
 
-## The bank for a playback rate in a setting: True always plays the 400 Hz carrier; Receiver the s nearest
-## 1/rate (ties to the lower s), keeping `current` unless another is nearer by HYSTERESIS.
-static func bank_for(rate: float, receiver: bool, current := -1.0) -> float:
-	if not receiver:
-		return 1.0
-	var best := -1.0
-	for s: float in BANKS:
-		if best < 0.0 or absf(log(s * rate)) < absf(log(best * rate)) - 1e-12:
-			best = s
-	if current > 0.0 and BANKS.has(current) and absf(log(current * rate)) <= absf(log(best * rate)) + log(HYSTERESIS):
-		return current
-	return best
+## The envelope table from home_beacon_env (16-bit PCM: in the export it is staged uncompressed).
+static func envelope_of(s: AudioStreamWAV) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	if s == null or s.format != AudioStreamWAV.FORMAT_16_BITS:
+		return out
+	var b := s.data
+	out.resize(b.size() / 8)
+	for k in out.size():
+		out[k] = absf(b.decode_s16((4 * k + 1) * 2) / 32768.0)
+	return out
 
 
-static func bank_of(id: String) -> float:
-	for s: float in BANKS:
-		if BANKS[s] == id:
-			return s
-	return -1.0
+## The envelope at t Earth seconds (wrapped to the loop), linear between table samples.
+func envelope_at(t: float) -> float:
+	if env.is_empty():
+		return 0.0
+	var x := fposmod(t, LOOP_S) * ENV_RATE
+	var k := int(x)
+	return lerpf(env[k % env.size()], env[(k + 1) % env.size()], x - k)
 
 
-## Follows a world: starts the carrier (its rate set before it starts), moves its rate, hands over to
-## another bank at the same position, or stops (home_beacon_off fades it out). Returns the Beacon bus's
-## correction (1 while off, and in True).
-func follow(sound: SoundDirector, world: Dictionary, receiver: bool) -> float:
+## Fills the Receiver's generator: the envelope at the rate, on the 400 Hz carrier.
+func _fill(pb: Object, frames: int) -> void: # an AudioStreamGeneratorPlayback (or anything with push_buffer)
+	var buf := PackedVector2Array()
+	buf.resize(frames)
+	var dt := 1.0 / SoundDirector.GEN_RATE
+	var w := TAU * CARRIER_HZ * dt
+	var n := env.size()
+	if n == 0:
+		pb.push_buffer(buf)
+		return
+	var step := _rate * dt * ENV_RATE # table samples per output sample
+	var x := fposmod(_pos, LOOP_S) * ENV_RATE
+	var span := float(n)
+	for i in frames:
+		var k := int(x)
+		var e := env[k] + (env[(k + 1) % n] - env[k]) * (x - k)
+		var v := e * sin(_phase)
+		buf[i] = Vector2(v, v)
+		_phase += w
+		if _phase >= TAU:
+			_phase -= TAU
+		x += step
+		if x >= span:
+			x -= span
+	_pos = x / ENV_RATE
+	pb.push_buffer(buf)
+
+
+func _attach(sound: SoundDirector) -> void:
+	if _sound == sound:
+		return
+	_sound = sound
+	env = envelope_of(sound.stream(ENV))
+	sound.generators[RX] = _fill
+
+
+## Follows a world: starts the setting's row (its rate set before it starts), moves its rate, hands over
+## between True and Receiver at the same loop position, or stops (home_beacon_off fades it out). Neither
+## setting uses a bus pitch shift.
+func follow(sound: SoundDirector, world: Dictionary, receiver: bool) -> void:
+	_attach(sound)
 	plan = plan_for(world, receiver)
 	if not plan.on:
 		if on:
 			sound.on_game(OFF)
 		on = false
 		cue = ""
-		return 1.0
+		return
+	var want := RX if receiver else CUE
 	var rate := float(plan.rate)
-	var s := bank_for(rate, receiver, bank_of(cue))
-	var want: String = BANKS[s]
 	sound.set_pitch(want, rate)
+	_rate = rate
 	if want != cue:
-		var pos := sound.loop_position(cue) if cue != "" else -1.0
+		var pos := -1.0
+		if cue == CUE:
+			pos = sound.loop_position(CUE)
+		elif cue == RX:
+			pos = _pos
 		if cue != "":
 			sound.stop(cue, true)
-		sound.on_game(want)
 		if pos >= 0.0:
-			sound.seek(want, pos)
+			_pos = pos
+		sound.on_game(want)
+		if want == CUE and pos >= 0.0:
+			sound.seek(CUE, pos)
 		cue = want
 	on = true
-	return float(plan.correct) / s

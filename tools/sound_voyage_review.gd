@@ -3,8 +3,8 @@ extends SceneTree
 ## rendered through the real buses (headless mixer, captured after the Master limiter) and measured.
 ## Writes to --out:
 ##   cue_<id>.wav                 each new or rewired cue alone at its in-game level;
-##   beacon_<setting>_D<d>.wav    the home beacon alone at the sim's Earth rates (outbound and homebound at
-##                                0.99c, 0.5, 2, at rest), in True and in Receiver;
+##   beacon_<setting>_D<d>.wav    the home beacon alone (dry) at the sim's Earth rates (outbound and homebound
+##                                at 0.99c, 0.5, 2, at rest), in True and in Receiver;
 ##   voyage_montage.wav           ~70 s: the real sim's scripted flight to Alpha Cen A (ui/transit_harness.gd,
 ##                                protocol 2.16) replayed at its own 20 Hz tick rate under the bridge's beds:
 ##                                plan, the 1.5 s commit hold, the seal, boost, the dust counter on the sim's
@@ -104,8 +104,8 @@ func freq(a := 0.0, b := INF) -> float:
 	return c * 0.5 * rate / maxf(i1 - i0, 1.0)
 
 
-## Pip onsets (s): RMS windows of 5 ms (or two periods of the heard carrier, if longer) rising through half
-## the loudest window, at least min_gap apart.
+## Pip onsets (s): RMS windows of 5 ms (or two periods of the heard carrier, if longer) rising through 0.3 of
+## the loudest window (early in each pip's 20 ms attack, long or short), at least min_gap apart.
 func onsets(heard_hz: float, min_gap: float) -> Array:
 	var w := int(rate * maxf(0.005, 2.0 / maxf(heard_hz, 1.0)))
 	var env := []
@@ -119,15 +119,18 @@ func onsets(heard_hz: float, min_gap: float) -> Array:
 	var o := []
 	for i in range(1, env.size()):
 		var t := float(i * w) / rate
-		if env[i] >= 0.5 * top and env[i - 1] < 0.5 * top and (o.is_empty() or t - o.back() > min_gap):
+		if env[i] >= 0.3 * top and env[i - 1] < 0.3 * top and (o.is_empty() or t - o.back() > min_gap):
 			o.append(t)
 	return o
 
 
+## The mean pip gap over an even number of gaps (first and last onset of the same kind: the beacon alternates
+## a long and a short pip, whose half-level crossings sit a little apart).
 func mean_gap(o: Array) -> Variant:
 	if o.size() < 2:
 		return null
-	return snappedf((float(o.back()) - float(o[0])) / (o.size() - 1), 0.0001)
+	var last := o.size() - 1 if (o.size() - 1) % 2 == 0 or o.size() == 2 else o.size() - 2
+	return snappedf((float(o[last]) - float(o[0])) / last, 0.0001)
 
 
 ## The real sim's scripted flight, recorded tick by tick: [{tick, events, world}] (deep copies).
@@ -152,7 +155,7 @@ func step(t: Dictionary, receiver: bool) -> void:
 	d.on_sim_step(t.tick, t.events)
 	d.on_sim_world(t.tick, t.world)
 	d.on_dust(t.tick, t.world)
-	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, t.world, receiver))
+	beacon.follow(d, t.world, receiver)
 
 
 func mark(label: String) -> void:
@@ -220,12 +223,14 @@ func _run() -> void:
 		await pump(float(d.assets[d.cues[id].streams[0]].frames) / 48000.0 + 1.5)
 		finish("cue_" + id)
 
-	# The beacon alone at the sim's rates, in both settings.
+	# The beacon alone at the sim's rates, in both settings: dry (no room), so the pips are measured without
+	# the dome's reverb tail crossing the detector's threshold; the montage has the room.
+	SoundMix.set_room({})
 	for dd: float in [0.070888, 0.5, 1.0, 2.0, 14.107]:
 		for receiver: bool in [true, false]:
 			await begin()
-			SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, receiver))
-			var bank := beacon.cue
+			beacon.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, receiver)
+			var bank := beacon.cue # the row: home_beacon (True) or home_beacon_rx (Receiver)
 			await pump(0.4) # the shifter fills
 			await begin()
 			await pump(30.0 if dd < 0.2 else 6.0) # outbound the pips are 14.1 s apart: two in 30 s
@@ -235,16 +240,17 @@ func _run() -> void:
 			finish("beacon_%s_D%s" % ["receiver" if receiver else "true", str(dd)], {"d": dd, "setting": "Receiver" if receiver else "True", "bank": bank,
 				"carrier_hz": snappedf(hz, 0.1), "want_hz": snappedf(want, 0.1), "carrier_error_pct": snappedf(100.0 * (hz / want - 1.0), 0.01),
 				"pips": o.size(), "pip_gap_s": mean_gap(o), "want_gap_s": snappedf(1.0 / dd, 0.0001)})
-			SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, {}, receiver))
+			beacon.follow(d, {}, receiver)
 			d.stop(bank, true)
 	# True outside hearing: nothing plays (after a second for the last tails to die away).
 	await pump(1.0)
 	await begin()
-	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, {"earth": {"rate": 60.0, "in_beam": true, "at_home": false}}, false))
+	beacon.follow(d, {"earth": {"rate": 60.0, "in_beam": true, "at_home": false}}, false)
 	await pump(2.0)
 	finish("beacon_true_D60_silent", {"d": 60.0, "setting": "True", "on": beacon.on, "hearing": beacon.plan.get("hearing", "")})
 
-	# The montage.
+	# The montage, under the bridge's room.
+	SoundMix.set_room(rooms.levels["0"])
 	var ticks := record()
 	if ticks.is_empty():
 		quit(1)
@@ -257,12 +263,12 @@ func _run() -> void:
 	await voyage(ticks, false, "True")
 	var home := {"earth": {"rate": 14.107, "in_beam": true, "at_home": false}}
 	mark("turning for home at 0.99c, D = 14.107, Receiver: 400 Hz, 14 pips a second")
-	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, home, true))
+	beacon.follow(d, home, true)
 	await pump(6.0)
 	mark("the same in True: the carrier at 5.6 kHz")
-	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, home, false))
+	beacon.follow(d, home, false)
 	await pump(6.0)
-	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(d, {}, false))
+	beacon.follow(d, {}, false)
 	d.on_game("level_none")
 	await pump(2.0)
 	finish("voyage_montage", {"cue_lines": d.cue_log.size()})

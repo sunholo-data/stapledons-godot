@@ -83,19 +83,17 @@ func _run() -> void:
 		if log[i].contains(" home_beacon"):
 			first_beacon = i
 			break
-	check(first_beacon > lines_with(log, "drive_silent")[0] and log[first_beacon].contains("home_beacon_c6400"), "AC15: the beacon starts once the ship has left home (cruise, earth.at_home false), in Earth's beam, on the 6400 Hz bank: %s" % (log[first_beacon] if first_beacon >= 0 else "none"))
+	check(first_beacon > lines_with(log, "drive_silent")[0] and log[first_beacon].contains("home_beacon_rx"), "AC15: the beacon starts once the ship has left home (cruise, earth.at_home false), in Earth's beam, in the Receiver setting (generated at 400 Hz): %s" % (log[first_beacon] if first_beacon >= 0 else "none"))
 	var exact := not rates.is_empty()
 	for r: Array in rates:
 		exact = exact and r[2] == r[1] # the director's rate is the sim's earth.rate, unrounded
 	check(exact, "AC15: on each of %d beacon steps its rate is the sim's earth.rate exactly (from %.6f to %.6f)" % [rates.size(), rates[0][1] if exact else 0.0, rates[-1][1] if exact else 0.0])
-	var banks := []
+	var fires := 0
 	for l in log:
-		for s: float in HomeBeacon.BANKS:
-			var id: String = HomeBeacon.BANKS[s]
-			if l.contains(" " + id + " v") and (banks.is_empty() or banks[-1] != id):
-				banks.append(id)
-	check(banks == ["home_beacon_c6400", "home_beacon_c1600", "home_beacon"], "AC15: braking into Alpha Cen A, D rises from 0.0709 to 1 and the receiver hands the beacon from the 6400 Hz bank to the 1600 Hz one to the carrier itself (%s)" % ", ".join(banks))
-	check(rates[-1][1] == 1.0 and text.contains(" home_beacon 1.0000\n"), "AC15: at the stop Earth's rate is 1 and the beacon is at its true pitch")
+		if l.contains(" home_beacon"):
+			fires += 1 if l.contains(" v0 ") else 0
+	check(fires == 1 and not text.contains(" home_beacon v0"), "AC15: braking into Alpha Cen A, D rises from 0.0709 to 1 and the Receiver beacon follows it on one generated row, with no hand-over (%d starts)" % fires)
+	check(rates[-1][1] == 1.0 and text.contains(" home_beacon_rx 1.0000\n"), "AC15: at the stop Earth's rate is 1 and the beacon is at its true pitch")
 	var ticks := 0
 	for l in log:
 		if l.contains(" dust_tick v"):

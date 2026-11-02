@@ -61,6 +61,11 @@
       "date": "2026-11-02",
       "event": "paused_for_review",
       "note": "S2 built (PR #375, draft) and its listening review published to refs/sound_s2; paused for Mark's listen."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "rework",
+      "note": "Coordinator review: Receiver pip gap 0.0948 s vs 0.0709 at D = 14.107. Cause: the FFT pitch shift merges 5 ms pips (not the detector: True through the same detector was exact). Fixed by generating the Receiver beacon (heterodyne: envelope at D on a 400 Hz carrier) instead of shifting; the carrier banks and the Beacon bus are removed. New test: Receiver pip spacing within 1 % across D 0.0709-14.1, as True, and no pip lost. Review re-rendered and re-uploaded."
     }
   ],
   "implements": [
@@ -246,7 +251,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Built 2026-11-02 on feat/r2-sound-s2 (PR #375, draft). ShipSound follows journey_sim.stepped (events, plan_select state edge, on_dust) and the holds (ShipConsoles.confirm_held_s, GalaxyMap.hold_s); HomeBeacon (audio/home_beacon.gd) plays the beacon at earth.rate unrounded via EarthFeed.receiver_plan with the station's setting; Receiver correction split between a carrier bank (25/100/400/1600/6400 Hz) and a Beacon bus residual within x2, because Godot's pitch shift mis-tunes large corrections (314 Hz for 400 Hz at D = 0.0709, measured). New sounds: plan_select, home_beacon + 4 banks (sunholo/audio 0.6.0). Director: set_pitch applies every value, own_player, stops, dust dead-time reset on a new game, one dust start per frame. Local gates green: sound-test 79, ship-sound-test 40, sound-voyage-test 10 (real-sim golden, two processes), sound-check 55, sound-levels 50, levels-parity 0 diffs, assets 19.1/20 MB, stage 3.9/6 MB, synth-check 47 byte for byte. Listening review https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/index.html. Paused for Mark's listen; not landed. S2b (deferred): stop_turn signal, brake_notice, crew_hold, medium_change, interlude_bed, bh_enter."
+      "notes": "Built 2026-11-02 on feat/r2-sound-s2 (PR #375, draft). ShipSound follows journey_sim.stepped (events, plan_select state edge, on_dust) and the holds (ShipConsoles.confirm_held_s, GalaxyMap.hold_s); HomeBeacon (audio/home_beacon.gd) plays the beacon at earth.rate unrounded via EarthFeed.receiver_plan with the station's setting; Receiver generated sample by sample as a heterodyne receiver hears it (Earth's keying at D on the true 400 Hz carrier, from the AILANG-rendered envelope table home_beacon_env), because Godot's FFT pitch shift mis-tunes large corrections (314 Hz for 400 Hz at D = 0.0709) and merges short pips (8-16 of 21 survive at D = 14.1 for FFT sizes 256-2048; the first review render measured a 0.0948 s gap for 0.0709). Revision 2 after the coordinator's measurement review: Receiver pips 1/D apart within 1 % at D 0.0709-14.1, as True, with as many pips as True. New sounds: plan_select, home_beacon, home_beacon_env (sunholo/audio 0.6.0). Director: set_pitch applies every value, own_player, stops, dust dead-time reset on a new game, one dust start per frame. Local gates green: sound-test 79, ship-sound-test 40, sound-voyage-test 10 (real-sim golden, two processes), sound-check 55, sound-levels 50, levels-parity 0 diffs, assets 19.1/20 MB, stage 3.9/6 MB, synth-check 47 byte for byte. Listening review https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/index.html. Paused for Mark's listen; not landed. S2b (deferred): stop_turn signal, brake_notice, crew_hold, medium_change, interlude_bed, bh_enter."
     },
     {
       "id": "S3_LANDING",

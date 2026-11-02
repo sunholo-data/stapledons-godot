@@ -65,6 +65,11 @@ var pitches := {}
 var _pitch_seq := 0
 var _pitch_logged := {} ## cue id -> the pitch last written to the log
 var _fades := {} ## cue id -> the Tween fading its loop out (rows with fade_out_ms)
+## S2: a `generator` row plays an AudioStreamGenerator on its own player; its samples come from the
+## Callable registered here, called as fill(playback, frames) whenever the buffer has room (HomeBeacon's
+## Receiver). Its pitch is in the samples, so set_pitch only records and logs it.
+var generators := {}
+const GEN_RATE := 48000.0
 var _dust_last := -INF ## ship seconds of the last counted grain (the dead time runs from it)
 var _delayed: Array = [] ## [seconds left, row, asset id, pitch, volume]: fires that sound later (dust at its t_s)
 
@@ -203,7 +208,7 @@ func set_param(param_name: String, value: float) -> void:
 func set_pitch(id: String, value: float) -> void:
 	var v := maxf(value, 1e-4)
 	pitches[id] = v
-	if _loops.has(id):
+	if _loops.has(id) and not cues.get(id, {}).get("generator", false):
 		_loops[id].pitch_scale = v
 	if absf(v / float(_pitch_logged.get(id, 1.0)) - 1.0) < 1e-4:
 		return
@@ -289,7 +294,7 @@ func fire(id: String, key: String, clock: int, delay_s := 0.0) -> void:
 
 
 ## Stops a loop; a row with fade_out_ms fades it out first (EL3b.7: a bed changing never clicks), unless
-## now (S2: the beacon handing over to another bank on the same corrected bus).
+## now (S2: the beacon handing over between its True and Receiver rows).
 func stop(id: String, now := false) -> void:
 	if not _loops.has(id):
 		return
@@ -305,7 +310,7 @@ func stop(id: String, now := false) -> void:
 	_fades[id] = tw
 
 
-## A playing loop's position in seconds, or -1 (S2: a beacon bank takes over where the last one was).
+## A playing loop's position in seconds, or -1 (S2: the beacon's other setting takes over where it was).
 func loop_position(id: String) -> float:
 	var p: Node = _loops.get(id)
 	return p.get_playback_position() if p != null and p.playing and not fading(id) else -1.0
@@ -400,10 +405,20 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 		(p as AudioStreamPlayer3D).global_position = position_of.call(src)
 		p.set_meta("source", src)
 	p.bus = StringName(c.bus)
-	p.stream = s
-	p.pitch_scale = pitch
+	var gen: bool = c.get("generator", false)
+	if gen:
+		if not p.stream is AudioStreamGenerator:
+			var g := AudioStreamGenerator.new()
+			g.mix_rate = GEN_RATE
+			g.buffer_length = 0.25
+			p.stream = g
+	else:
+		p.stream = s
+	p.pitch_scale = 1.0 if gen else pitch
 	p.volume_db = vol
 	p.play()
+	if gen:
+		_fill(c.id)
 
 
 func _player3d() -> AudioStreamPlayer3D:
@@ -430,12 +445,24 @@ func _process(delta: float) -> void:
 			else:
 				keep.append(f)
 		_delayed = keep
+	for id: String in generators:
+		_fill(id)
 	if not position_of.is_valid():
 		return
 	for id: String in _loops:
 		var p: Node = _loops[id]
 		if p is AudioStreamPlayer3D and p.playing and p.has_meta("source"):
 			(p as AudioStreamPlayer3D).global_position = position_of.call(str(p.get_meta("source")))
+
+
+func _fill(id: String) -> void:
+	var p: Node = _loops.get(id)
+	if p == null or not p.playing or not generators.has(id) or not p.stream is AudioStreamGenerator:
+		return
+	var pb := p.get_stream_playback() as AudioStreamGeneratorPlayback
+	var n := pb.get_frames_available() if pb != null else 0
+	if n > 0:
+		(generators[id] as Callable).call(pb, n)
 
 
 func _cooled(id: String, clock: int) -> bool:

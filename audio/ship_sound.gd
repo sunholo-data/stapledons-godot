@@ -128,12 +128,11 @@ func _process(_delta: float) -> void:
 		if not _sim.stepped.is_connected(_on_stepped):
 			_sim.stepped.connect(_on_stepped)
 		sound.on_sim_world(int(_sim.world.get("tick", 0)), _sim.world) # the state as it is (no events, no grains)
-	# The station's sound from home on the Receiver bus; S2: the home beacon at the helm on its own Beacon
-	# bus (its correction is split with its bank, so it never shares the station's shift), with the
-	# station's True / Receiver setting.
+	# The station's sound from home on the Receiver bus; S2: the home beacon at the helm with the station's
+	# True / Receiver setting (its Receiver is generated at the true carrier, no bus shift: HomeBeacon).
 	SoundMix.set_receiver(home_correct)
 	var w: Dictionary = _sim.world if _sim != null and is_instance_valid(_sim) and _sim.world is Dictionary else {}
-	SoundMix.set_shift(HomeBeacon.BUS, beacon.follow(sound, w, receiver_setting(consoles)))
+	beacon.follow(sound, w, receiver_setting(consoles))
 
 
 ## R3-EARTH-LINK EL3b.7: while the comms station is open and its feed shows, the receiver plays the

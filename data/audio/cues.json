@@ -898,7 +898,7 @@
    "streams": [
     "home_beacon"
    ],
-   "bus": "Beacon",
+   "bus": "Instruments",
    "volume_db": -18,
    "loop": true,
    "fade_out_ms": 1500,
@@ -908,22 +908,22 @@
     -30
    ],
    "visual": "ui/earth_feed.gd::receiver_plan",
-   "about": "S2 (sound.md §D6, standing order 2026-10-30): Earth's carrier at the helm while the ship is in a beam aimed at its plan (earth.in_beam) and away from home. Its time rate is the sim's Earth rate D exactly (pitch_scale = D: its pips, Earth's seconds, come D times a ship second). True plays this 400 Hz carrier at D, uncorrected, and is silent outside receiver.audible; Receiver (the comms station's default setting) corrects the frequency to 400 Hz on the Beacon bus, from the bank row nearest D (home_beacon_c25 .. _c6400). No compression.",
+   "about": "S2 (sound.md §D6, standing order 2026-10-30): Earth's carrier at the helm in the True setting, while the ship is in a beam aimed at its plan (earth.in_beam) and away from home: this 400 Hz keyed carrier at pitch_scale = D (the sim's earth.rate, unrounded), uncorrected, silent outside receiver.audible. Its pips are Earth's seconds, D a ship second. No compression.",
    "name": "The home beacon",
    "when": "In transit and at stops, while Earth's beam reaches the ship.",
    "listen_for": "A quiet 400 Hz carrier with a pip each Earth second (a longer one every fourth). Outbound at 0.99c (D = 0.0709) the pips come 14 s apart; heading home 14 a second. In True the carrier itself falls to 28 Hz or rises to 5.6 kHz."
   },
   {
-   "id": "home_beacon_c25",
+   "id": "home_beacon_rx",
    "trigger": {
     "kind": "game",
-    "name": "home_beacon_c25",
+    "name": "home_beacon_rx",
     "stop_on": "home_beacon_off"
    },
    "streams": [
-    "home_beacon_c25"
+    "home_beacon_env"
    ],
-   "bus": "Beacon",
+   "bus": "Instruments",
    "volume_db": -18,
    "loop": true,
    "fade_out_ms": 1500,
@@ -933,85 +933,11 @@
     -30
    ],
    "visual": "ui/earth_feed.gd::receiver_plan",
-   "about": "S2: the home beacon's Receiver bank for D in [8, 16] (a 25 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
-   "name": "The home beacon (Receiver, [8, 16])",
+   "about": "S2: the beacon in the Receiver setting (the comms station's default, labelled Processed), heard as a heterodyne receiver hears it: Earth's keying at the plan's rate (D within the receiver's real-time range) on the carrier's true 400 Hz, e(rate t) x sin(2 pi 400 t). HomeBeacon generates it from home_beacon_env (the same envelope) instead of correcting with an FFT pitch shift, which smears short pips and mis-tunes large corrections (measured). The row logs and sets the level; its stream is the envelope, measured for loudness (its RMS is the generated sound's). Its loudness row (make sound-check, sound-levels) measures home_beacon_env, which reads about 3 dB above the generated sound (the -60 dBFS gate drops the 12 kHz carrier's zero samples); make sound-voyage-review measures the generated sound itself.",
+   "name": "The home beacon (Receiver)",
    "when": "In transit and at stops, while Earth's beam reaches the ship.",
-   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
-  },
-  {
-   "id": "home_beacon_c100",
-   "trigger": {
-    "kind": "game",
-    "name": "home_beacon_c100",
-    "stop_on": "home_beacon_off"
-   },
-   "streams": [
-    "home_beacon_c100"
-   ],
-   "bus": "Beacon",
-   "volume_db": -18,
-   "loop": true,
-   "fade_out_ms": 1500,
-   "source": "helm",
-   "band": [
-    -40,
-    -30
-   ],
-   "visual": "ui/earth_feed.gd::receiver_plan",
-   "about": "S2: the home beacon's Receiver bank for D in [2, 8) (a 100 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
-   "name": "The home beacon (Receiver, [2, 8))",
-   "when": "In transit and at stops, while Earth's beam reaches the ship.",
-   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
-  },
-  {
-   "id": "home_beacon_c1600",
-   "trigger": {
-    "kind": "game",
-    "name": "home_beacon_c1600",
-    "stop_on": "home_beacon_off"
-   },
-   "streams": [
-    "home_beacon_c1600"
-   ],
-   "bus": "Beacon",
-   "volume_db": -18,
-   "loop": true,
-   "fade_out_ms": 1500,
-   "source": "helm",
-   "band": [
-    -40,
-    -30
-   ],
-   "visual": "ui/earth_feed.gd::receiver_plan",
-   "about": "S2: the home beacon's Receiver bank for D in [1/8, 1/2) (a 1600 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
-   "name": "The home beacon (Receiver, [1/8, 1/2))",
-   "when": "In transit and at stops, while Earth's beam reaches the ship.",
-   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
-  },
-  {
-   "id": "home_beacon_c6400",
-   "trigger": {
-    "kind": "game",
-    "name": "home_beacon_c6400",
-    "stop_on": "home_beacon_off"
-   },
-   "streams": [
-    "home_beacon_c6400"
-   ],
-   "bus": "Beacon",
-   "volume_db": -18,
-   "loop": true,
-   "fade_out_ms": 1500,
-   "source": "helm",
-   "band": [
-    -40,
-    -30
-   ],
-   "visual": "ui/earth_feed.gd::receiver_plan",
-   "about": "S2: the home beacon's Receiver bank for D in [1/16, 1/8) (a 6400 Hz carrier with the same keying; HomeBeacon plays it at D and the Beacon bus corrects the rest, within a factor of 2).",
-   "name": "The home beacon (Receiver, [1/16, 1/8))",
-   "when": "In transit and at stops, while Earth's beam reaches the ship.",
-   "listen_for": "As home_beacon: heard only through the receiver's correction, at 400 Hz."
+   "listen_for": "A quiet 400 Hz carrier with a pip each Earth second: 14 s apart outbound at 0.99c, 14 a second homebound, always at 400 Hz.",
+   "generator": true
   }
  ]
 }

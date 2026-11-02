@@ -28,14 +28,14 @@ t68.0 drive_silent v0 +0c -9.5dB
 t68.d0 dust_tick v0 +0c -10.0dB
 t69.d0 dust_tick v0 +0c -10.0dB
 t69.d1 dust_tick v0 +0c -10.0dB
-r1 home_beacon_c6400 0.0709
-g1 home_beacon_c6400 v0 +0c -18.0dB
+r1 home_beacon_rx 0.0709
+g1 home_beacon_rx v0 +0c -18.0dB
 t70.d0 dust_tick v0 +0c -10.0dB
-r2 home_beacon_c6400 0.0709
+r2 home_beacon_rx 0.0709
 t71.d0 dust_tick v0 +0c -10.0dB
 t71.d1 dust_tick v0 +0c -10.0dB
 t72.d0 dust_tick v0 +0c -10.0dB
-r3 home_beacon_c6400 0.0709
+r3 home_beacon_rx 0.0709
 t73.d0 dust_tick v0 +0c -10.0dB
 t74.d0 dust_tick v0 +0c -10.0dB
 t74.d1 dust_tick v0 +0c -10.0dB
@@ -305,66 +305,64 @@ t326.d0 dust_tick v0 +0c -10.0dB
 t343.d0 dust_tick v0 +0c -10.0dB
 t347.d0 dust_tick v0 +0c -10.0dB
 t364.0 drive_brake v0 +0c -12.0dB
-r4 home_beacon_c6400 0.0741
-r5 home_beacon_c6400 0.0774
-r6 home_beacon_c6400 0.0809
-r7 home_beacon_c6400 0.0846
-r8 home_beacon_c6400 0.0884
-r9 home_beacon_c6400 0.0924
-r10 home_beacon_c6400 0.0965
-r11 home_beacon_c6400 0.1009
-r12 home_beacon_c6400 0.1054
-r13 home_beacon_c6400 0.1102
-r14 home_beacon_c6400 0.1152
-r15 home_beacon_c6400 0.1204
-r16 home_beacon_c6400 0.1258
-r17 home_beacon_c1600 0.1315
-g2 home_beacon_c1600 v0 +0c -18.0dB
-r18 home_beacon_c1600 0.1374
-r19 home_beacon_c1600 0.1436
-r20 home_beacon_c1600 0.1501
-r21 home_beacon_c1600 0.1568
-r22 home_beacon_c1600 0.1639
-r23 home_beacon_c1600 0.1713
-r24 home_beacon_c1600 0.1790
-r25 home_beacon_c1600 0.1871
-r26 home_beacon_c1600 0.1955
-r27 home_beacon_c1600 0.2043
-r28 home_beacon_c1600 0.2136
-r29 home_beacon_c1600 0.2232
-r30 home_beacon_c1600 0.2332
-r31 home_beacon_c1600 0.2438
-r32 home_beacon_c1600 0.2548
-r33 home_beacon_c1600 0.2662
-r34 home_beacon_c1600 0.2783
-r35 home_beacon_c1600 0.2908
-r36 home_beacon_c1600 0.3039
-r37 home_beacon_c1600 0.3176
-r38 home_beacon_c1600 0.3319
-r39 home_beacon_c1600 0.3469
-r40 home_beacon_c1600 0.3626
-r41 home_beacon_c1600 0.3789
-r42 home_beacon_c1600 0.3960
-r43 home_beacon_c1600 0.4139
-r44 home_beacon_c1600 0.4325
-r45 home_beacon_c1600 0.4520
-r46 home_beacon_c1600 0.4724
-r47 home_beacon_c1600 0.4937
-r48 home_beacon_c1600 0.5160
-r49 home_beacon 0.5393
-g3 home_beacon v0 +0c -18.0dB
-r50 home_beacon 0.5636
-r51 home_beacon 0.5890
-r52 home_beacon 0.6156
-r53 home_beacon 0.6433
-r54 home_beacon 0.6723
-r55 home_beacon 0.7027
-r56 home_beacon 0.7343
-r57 home_beacon 0.7675
-r58 home_beacon 0.8021
-r59 home_beacon 0.8382
-r60 home_beacon 0.8760
-r61 home_beacon 0.9156
-r62 home_beacon 0.9568
+r4 home_beacon_rx 0.0741
+r5 home_beacon_rx 0.0774
+r6 home_beacon_rx 0.0809
+r7 home_beacon_rx 0.0846
+r8 home_beacon_rx 0.0884
+r9 home_beacon_rx 0.0924
+r10 home_beacon_rx 0.0965
+r11 home_beacon_rx 0.1009
+r12 home_beacon_rx 0.1054
+r13 home_beacon_rx 0.1102
+r14 home_beacon_rx 0.1152
+r15 home_beacon_rx 0.1204
+r16 home_beacon_rx 0.1258
+r17 home_beacon_rx 0.1315
+r18 home_beacon_rx 0.1374
+r19 home_beacon_rx 0.1436
+r20 home_beacon_rx 0.1501
+r21 home_beacon_rx 0.1568
+r22 home_beacon_rx 0.1639
+r23 home_beacon_rx 0.1713
+r24 home_beacon_rx 0.1790
+r25 home_beacon_rx 0.1871
+r26 home_beacon_rx 0.1955
+r27 home_beacon_rx 0.2043
+r28 home_beacon_rx 0.2136
+r29 home_beacon_rx 0.2232
+r30 home_beacon_rx 0.2332
+r31 home_beacon_rx 0.2438
+r32 home_beacon_rx 0.2548
+r33 home_beacon_rx 0.2662
+r34 home_beacon_rx 0.2783
+r35 home_beacon_rx 0.2908
+r36 home_beacon_rx 0.3039
+r37 home_beacon_rx 0.3176
+r38 home_beacon_rx 0.3319
+r39 home_beacon_rx 0.3469
+r40 home_beacon_rx 0.3626
+r41 home_beacon_rx 0.3789
+r42 home_beacon_rx 0.3960
+r43 home_beacon_rx 0.4139
+r44 home_beacon_rx 0.4325
+r45 home_beacon_rx 0.4520
+r46 home_beacon_rx 0.4724
+r47 home_beacon_rx 0.4937
+r48 home_beacon_rx 0.5160
+r49 home_beacon_rx 0.5393
+r50 home_beacon_rx 0.5636
+r51 home_beacon_rx 0.5890
+r52 home_beacon_rx 0.6156
+r53 home_beacon_rx 0.6433
+r54 home_beacon_rx 0.6723
+r55 home_beacon_rx 0.7027
+r56 home_beacon_rx 0.7343
+r57 home_beacon_rx 0.7675
+r58 home_beacon_rx 0.8021
+r59 home_beacon_rx 0.8382
+r60 home_beacon_rx 0.8760
+r61 home_beacon_rx 0.9156
+r62 home_beacon_rx 0.9568
 t424.1 arrived v0 +0c -12.0dB
-r63 home_beacon 1.0000
+r63 home_beacon_rx 1.0000

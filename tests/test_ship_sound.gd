@@ -179,16 +179,13 @@ func _run() -> void:
 	check(at_helm and ss.position_of("helm").is_equal_approx(Vector3(0, 1, -7)), "S2: the counter ticks at the helm (the navigation station), after each grain's t_s")
 
 	# S2: the home beacon at the helm, at the sim's Earth rate D exactly, with the station's setting.
-	var bx := AudioServer.get_bus_index("Beacon")
-	var bshift := SoundMix._find_effect(bx, "AudioEffectPitchShift") as AudioEffectPitchShift
 	vs.world.earth = {"rate": 0.070888125, "in_beam": true, "at_home": true}
 	await frames()
-	check(d.get_node_or_null("Loop_home_beacon_c6400") == null and d.get_node_or_null("Loop_home_beacon") == null, "S2: at home (the boost out of Sol) the beacon is silent: the link is live")
+	check(d.get_node_or_null("Loop_home_beacon_rx") == null and d.get_node_or_null("Loop_home_beacon") == null, "S2: at home (the boost out of Sol) the beacon is silent: the link is live")
 	vs.world.earth.at_home = false
 	await frames()
-	var b6: Node = d.get_node_or_null("Loop_home_beacon_c6400")
-	check(b6 is AudioStreamPlayer3D and b6.playing and absf(b6.pitch_scale / 0.070888125 - 1.0) < 1e-6 and b6.bus == &"Beacon" and (b6 as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(0, 1, -7)), "S2 Receiver: in Earth's beam, outbound at D = 0.070888125, the beacon plays at the helm at D exactly (the 6400 Hz bank, on the Beacon bus; the player keeps pitch_scale in float32, within 1e-6)")
-	check(AudioServer.is_bus_effect_enabled(bx, 0) and is_equal_approx(bshift.pitch_scale, 1.0 / (16.0 * 0.070888125)), "S2 Receiver: the Beacon bus corrects the rest, 1/(16 D) = %.4f, to the carrier's 400 Hz" % bshift.pitch_scale)
+	var brx: Node = d.get_node_or_null("Loop_home_beacon_rx")
+	check(brx is AudioStreamPlayer3D and brx.playing and brx.stream is AudioStreamGenerator and brx.pitch_scale == 1.0 and ss.beacon._rate == 0.070888125 and brx.bus == &"Instruments" and (brx as AudioStreamPlayer3D).global_position.is_equal_approx(Vector3(0, 1, -7)), "S2 Receiver: in Earth's beam, outbound at D = 0.070888125, the beacon plays at the helm, generated at the true 400 Hz with Earth's keying at D exactly")
 	ship.consoles.focused = "comms"
 	st.feed.set_receiver(true)
 	ev.rate = 0.070888125
@@ -196,11 +193,14 @@ func _run() -> void:
 	await frames()
 	var rx2 := AudioServer.get_bus_index("Receiver")
 	var rshift := SoundMix._find_effect(rx2, "AudioEffectPitchShift") as AudioEffectPitchShift
-	check(is_equal_approx(rshift.pitch_scale, 1.0 / 0.070888125) and is_equal_approx(bshift.pitch_scale, 1.0 / (16.0 * 0.070888125)) and b6.playing, "S2: with the comms station open too, its bed is corrected on the Receiver bus (1/D) and the beacon on its own (1/(16 D)): neither moves the other")
+	check(is_equal_approx(rshift.pitch_scale, 1.0 / 0.070888125) and brx.playing and brx.bus != &"Receiver", "S2: with the comms station open too, its bed is corrected on the Receiver bus (1/D) while the beacon, off that bus, needs no shift")
+	await create_timer(0.2).timeout
+	var pos_rx: float = ss.beacon._pos
 	st.feed.set_receiver(false)
 	await frames()
 	var b1: Node = d.get_node_or_null("Loop_home_beacon")
-	check(b1 != null and b1.playing and absf(b1.pitch_scale / 0.070888125 - 1.0) < 1e-6 and not b6.playing and not AudioServer.is_bus_effect_enabled(bx, 0), "S2 True (the station's setting): the 400 Hz carrier at D, uncorrected (heard at 28.4 Hz); the bank hands over at once")
+	check(b1 != null and b1.playing and absf(b1.pitch_scale / 0.070888125 - 1.0) < 1e-6 and not brx.playing, "S2 True (the station's setting): the 400 Hz carrier at D, uncorrected (heard at 28.4 Hz; pitch_scale in float32 within 1e-6); the Receiver stops at once")
+	check(absf(b1.get_playback_position() - pos_rx) < 0.05, "S2: True takes over at the Receiver's place in Earth's clock (%.3f s vs %.3f s into the loop)" % [b1.get_playback_position(), pos_rx])
 	vs.world.earth.rate = 60.0
 	await frames()
 	check(d.fading("home_beacon") or not b1.playing, "S2 True at D = 60: above human hearing, the beacon falls silent")
@@ -208,11 +208,10 @@ func _run() -> void:
 	ship.consoles.focused = ""
 	vs.world.earth.rate = 14.107
 	await frames()
-	var b25: Node = d.get_node_or_null("Loop_home_beacon_c25")
-	check(b25 != null and b25.playing and absf(b25.pitch_scale / 14.107 - 1.0) < 1e-6 and is_equal_approx(bshift.pitch_scale, 1.0 / (0.0625 * 14.107)), "S2 Receiver homebound at D = 14.107: the 25 Hz bank at D, corrected by %.4f" % bshift.pitch_scale)
+	check(brx.playing and ss.beacon._rate == 14.107 and ss.beacon.cue == "home_beacon_rx", "S2 Receiver homebound at D = 14.107: Earth's keying at 14.107, still at 400 Hz")
 	vs.world.earth.in_beam = false
 	await frames()
-	check(d.fading("home_beacon_c25") and not AudioServer.is_bus_effect_enabled(bx, 0), "S2: out of Earth's beam (off-plan, or Earth silent) the beacon fades out")
+	check(d.fading("home_beacon_rx"), "S2: out of Earth's beam (off-plan, or Earth silent) the beacon fades out")
 	ship.journey_sim = null
 	for id: String in d.cues: # silence the S2 tails (the beacon's 1.5 s fade) before the pan is measured
 		d.stop(id, true)

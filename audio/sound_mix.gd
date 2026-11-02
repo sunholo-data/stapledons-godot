@@ -12,8 +12,6 @@ extends RefCounted
 ##   │   └ Receiver   the comms receiver's sound from home; a PitchShift, enabled only while the
 ##   │                receiver corrects Earth's Doppler shift (R3 audio realism AR8b, standing order
 ##   │                2026-10-30: the True setting leaves it off)
-##   │   └ Beacon     the home beacon at the helm (R2-SOUND S2): the same correction as the Receiver,
-##   │                for the beacon's own bank (HomeBeacon), so the two never share one shift
 ##   ├ UI        Compressor sidechained to Voice (lighter)
 ##   └ Music     sidechained to Voice; empty (OQ4, D-101)
 ##
@@ -27,7 +25,6 @@ const BUSES := [
 	{"name": "Effects", "send": "Ship"},
 	{"name": "Instruments", "send": "Ship"},
 	{"name": "Receiver", "send": "Instruments", "pitch_shift": true},
-	{"name": "Beacon", "send": "Instruments", "pitch_shift": true},
 	{"name": "UI", "send": "Master", "duck": {"threshold": -26.0, "ratio": 2.0, "attack_us": 5000.0, "release_ms": 200.0}},
 	{"name": "Music", "send": "Master", "duck": {"threshold": -30.0, "ratio": 4.0, "attack_us": 5000.0, "release_ms": 400.0}},
 ]
