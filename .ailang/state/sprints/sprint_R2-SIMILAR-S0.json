@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-SIMILAR-S0",
-  "status": "in_progress",
+  "status": "done",
   "approved": true,
   "approval": {
     "required": true,
@@ -870,7 +870,7 @@
     {
       "id": "Landing",
       "title": "evaluate and land (+ fold in the S0.3 judge survivors, iteration 63)",
-      "status": "pending",
+      "status": "done",
       "description": "Controller lands the test/guard fold-in of the four S0.3-evaluation survivors (guard widened for .get(\"vector\", default) and .has(\"vector\"); SimBridge.SIMILAR_MINOR literal-14 pin; empty {} section accepted; store anti-aliasing row) as <=80 changed lines across tests/test_sim_bridge.gd and Makefile with named-mutation drills reverted byte-identical, obtains full local/CI evidence, then moves design and plan to design_docs/implemented/r2/, updates JSON links, writes report/index/changelog and opens the design-repo status/Jupiter-order PR (Saturn, Uranus, Neptune measured). The stale frozen-base gate line is replaced by per-S0-merge evidence (L-A) plus a landing merge-base diff (L-B). Park the visible follow-up for attended review; report the Earth-order uncertainty. No git action is performed by the planner.",
       "estimated_loc": 25,
       "estimated_documentation_loc": 80,
@@ -981,10 +981,14 @@
         "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
       "gate_owner": "controller under D-85 approval; the iteration-63 planner ran only the read-only base gates recorded in the amendment gate log",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "actual_loc": null,
+      "passes": true,
+      "started": "2026-11-02",
+      "completed": "2026-11-02",
+      "actual_loc": {
+        "makefile": 3,
+        "tests": 23,
+        "documentation": 119
+      },
       "amendment_iter63": {
         "date": "2026-11-02",
         "base_commit": "05e339204e88649851527b9da6b5f45be0bb44a7",
@@ -1049,7 +1053,17 @@
           "S0.3": 90
         },
         "report": "design_docs/implemented/r2/semantic-memory-s0-report.md",
-        "ci_and_rig": "recorded in the mission log, iteration 63"
+        "ci_and_rig": "recorded in the mission log, iteration 63",
+        "landing": {
+          "pr": 368,
+          "head": "094b5b7c558150bf56dea492aa4453e4823e2cc1",
+          "merge": "e7806004ff162edf72e29f31de049fceace765b5",
+          "rig_full": "green, make test 101 min, AILANG v0.54.18 (rig-check: ok, 094b5b7c green)",
+          "fast_tier_head": "success",
+          "evaluation": ".ailang/state/evaluations/eval_R2-SIMILAR-S0_Landing_round_1.json (Sonnet 5.5, 92/100 PASS, 0 blocking)",
+          "design_repo": "sunholo-data/stapledons-design#47 merged a4da3956",
+          "plan": "0a0cb121 (Amendment iter63, planner kimi-k3 via pi)"
+        }
       }
     }
   ],
@@ -1491,5 +1505,6 @@
       "observed": "design_docs/stapledon-mission.md:199 is D-85 RESOLVED, answer A, Mark attended 2026-10-19: approve as written (top-level similar, protocol emission, core untouched), execute S0.1–S0.3; PR #272 named.",
       "exit_code": 0
     }
-  ]
+  ],
+  "completed": "2026-11-02"
 }

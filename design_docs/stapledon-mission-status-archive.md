@@ -2,6 +2,20 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-30 — ITERATION 60: row 7n(b) LANDED (PR #358, merge `dc458f9c`): the ISM map layer's repeated-connect survivor MG is killed by a named FAIL, host-null is recorded as equivalent in use, and a `7nb-sentinel` positive control kills a dead logger; `rig/full` green in 67 min; independent Sonnet 93 PASS, zero blocking; quorum 2 rounds BLOCKED, round-2 fixes applied under the carve-out; new item 7n(f); 7m-d PARKED-ON-LANE at pick (GPU 99–100 %), quiet 40 min later; clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE at pick (predicate GPU < 15 % and 1-min load < 5; GPU `Device Utilization %` 99/100/100/100 at about 11:35Z, Firefox, load 2.4–3.3). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable; every ordered row after it is held by attended #344/#351, so an unheld clause-4 follow-up, row 7n(b).
+- **Done**:
+  - Design `m4-7nb-ism-layer-survivors.md` (Opus 5.5, Agent tool), 34 verification rows. MG (connect on every call) is not equivalent: Godot refuses the duplicate but logs an error per hidden redraw, one a tick in transit. MN is equivalent (`get_window()` is null only out of the tree, where `draw` never fires). MS was already killed. Quorum (`gemini-4-argon`, `oc-glm-5-3`, `oc-kimi-k3`): round 1 BLOCKED (AC7 needed a commit; the one zero-errors predicate misattributed noise), and the designer revised to two named checks; round 2 BLOCKED (no positive control), applied by the controller under the carve-out with V30–V34 measured. Metered $0.75.
+  - Plan by kimi-k3 (pi). RED: MG survived on the unedited tree (19/0, one unchecked error). Build by Haiku 5.5 (`7821c395`): `ErrorLog` over the hidden-window section, a sentinel, three checks, 19 → 22; two comment lines in `ui/ism_layer.gd`. The controller re-ran AC1–AC11: drills MG, MS and ML killed, MN equivalent, under make and gmake.
+  - Judge Sonnet 5.5 in its own clone: **93/100 PASS**, zero blocking (`eval_R1-M4-JOURNEY_7nb_round_1.json`); 10 mutants, with E3 (logger removed early) and E4 (one shared literal) surviving → 7n(f). The controller re-checked E3 + MG first-party: 22/0.
+  - `rig/full` on `7821c395`, launched at 12:15Z: green in 67 min (`crewSkip` 1.61 s). Main had not moved; merged with `--match-head-commit`: `dc458f9c`. Fast tier on the merge: success (run 41062674441).
+- **Next**:
+  - 7m-d first: GPU 0/0/0/0 at 12:14Z this fire, so the predicate may hold at the next pick. Re-measure its premise first (the docked control read 13.3–13.6 ms in iteration 59's loaded runs, against 17.6–19.3 ms quiet at iteration 54).
+  - When #344 or #351 releases `Makefile`: K1.1a-a5 → L9 S0.3 → L3, then 7l(a) and 7w. D-129 (Mark) → L4 M1b → M2.
+  - Meanwhile the unheld follow-ups: 7n(f), 7n(a), 7i(h); re-check files against open PRs at pick.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
 ## STATUS 2026-10-30 — ITERATION 59: row 7l (b)–(d) LANDED (PR #356, merge `e2927840`): the S1 capture driver's drill survivors CA, CB and CC are killed by named FAILs, the M4.6rR3 report says only the worlds are reproducible, and the ship bench prints one verdict line; `rig/full` green in 88 min (`crewSkip` 2.06 s); independent Sonnet 92 PASS, zero blocking; quorum 2 rounds BLOCKED, round-2 fixes applied under the carve-out; new row 7w (the public S1 set no longer matches a fresh capture); 7m-d PARKED-ON-LANE (GPU 77–92 %); clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE (predicate GPU < 15 % and 1-min load < 5; this fire GPU `Device Utilization %` 77/92/78 at about 01:55Z with Firefox and an Ollama runner, load 4.5–4.8). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable; every ordered row after it is held by attended #344/#351, so an unheld clause-4 follow-up, row 7l (b)–(d).
