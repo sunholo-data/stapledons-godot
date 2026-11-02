@@ -47,7 +47,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 # the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast
 # tier: the checks a clean Linux box adds (fresh deps and lock, the x86_64 replay golden, strict VM,
 # VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
-ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check capture-m4-publish-test ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
 
 test: python-guard uid-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test star-names area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
@@ -327,15 +327,21 @@ capture-m4: sky-assets lens-assets ## M4.6rR3 S1 set aboard the 3D ship (GPU win
 	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/worlds.sha256 | tr -d ' ')" = 14 && \
 	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4: FAILED (log $(SCRATCH)/capture-m4.log)"; exit 1; }
 
-capture-m4-publish: ## maintainers (gcloud): verify and upload the 18-file 3D-ship S1 set to the public refs/m4_ship_s1 bucket path
-	@set -eu; test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15; \
-	  test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15; \
-	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15; \
-	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null); \
-	  n=0; for f in renders/m4/*.png renders/m4/manifest.json renders/m4/m4_manifest.sha256 renders/m4/worlds.sha256; do \
-	    test -s "$$f"; gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
+M4_PUBLISH_DIR := renders/m4
+test: capture-m4-publish-test
+capture-m4-publish: ## maintainers (gcloud): check all 18 files of the 3D-ship S1 set, then upload them to the public refs/m4_ship_s1 bucket path
+	@set -eu; d='$(M4_PUBLISH_DIR)'; set -- "$$d"/*.png "$$d/manifest.json" "$$d/m4_manifest.sha256" "$$d/worlds.sha256"; \
+	  for f; do test -s "$$f" || { echo "capture-m4-publish: FAILED before any upload: $$f missing or empty"; exit 1; }; done; \
+	  test $$# = 18 && test "$$(ls "$$d"/*.png | wc -l | tr -d ' ')" = 15 && \
+	  test "$$(wc -l < "$$d/m4_manifest.sha256" | tr -d ' ')" = 15 && \
+	  test "$$(cut -d' ' -f1 "$$d/m4_manifest.sha256" | sort -u | wc -l | tr -d ' ')" = 15 && \
+	  test "$$(wc -l < "$$d/worlds.sha256" | tr -d ' ')" = 14 && \
+	  (cd "$$d" && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4-publish: FAILED before any upload: a count or m4_manifest.sha256 check"; exit 1; }; \
+	  n=0; for f; do gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
 	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
-.PHONY: capture-m4-publish
+capture-m4-publish-test: ## row 7l(a): the publish checks all 18 files before its first upload (private fixture, fake gcloud, every GNU make on PATH; never uploads)
+	@sh tools/test_m4_publish.sh "$(CURDIR)"
+.PHONY: capture-m4-publish capture-m4-publish-test
 
 glow-eps-sheet:    ## D-29 follow-up: interior + forward sky at 0.99c..cap for each candidate eps through the eye exposure -> renders/glow/eps_compare.{png,jpg} + glow_eps_sheet.json (needs a GPU window)
 	$(GODOT_SIM) --path . -- --glow-eps-sheet=renders/glow
