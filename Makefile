@@ -516,6 +516,19 @@ rng-keyed:         ## W1.3: keyed hashes and 10k unit53 bounds, strict VM = inte
 	test "$$vm" = "keyed-rng-ok" && test "$$vm" = "$$in" || { echo "rng-keyed: FAIL: VM $$vm | interpreter $$in"; exit 1; }; \
 	echo "rng-keyed: keyed-rng-ok (10000 uniforms, strict VM = interpreter)"
 
+.PHONY: exoplanets exoplanets-check exoplanets-test
+test: exoplanets-check
+exoplanets: starmap-assets ## W2.0: regenerate measured planets from the pinned NASA ps snapshot
+	@AILANG=$(AILANG) sh tools/exoplanets.sh build
+
+exoplanets-check: starmap-assets ## W2.0: byte-identical regeneration and compiled-data/curated source witness
+	@AILANG=$(AILANG) sh tools/exoplanets.sh check
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+	  --args-json '{"input":"data/raw/exoplanets_ps_100pc_20261102.csv","registry":"data/starmap/stars.json"}' sim/tools/exoplanets_verify.ail
+
+exoplanets-test: ## W2.0: CSV, provenance, matching and curated-source native tests
+	@$(AILANG) test sim/tools/exoplanets_test.ail
+
 geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 geodesics, tides and hover (design V9-V16) passes --check, and its digests equal the values the package pins
 	python3 tools/geodesic_ref.py --check
 	@smoke=runtime/cache/registry/sunholo/relativity/$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml)/_smoke.ail; \
