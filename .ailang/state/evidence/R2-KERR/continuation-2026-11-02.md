@@ -79,8 +79,8 @@ Full `pkg quality .` completed: **58 files compiled;730 tests passed,0 failed,
 0 skipped; smoke passed;232/232 exports pure; interfacev2 87df39056919…,
 273 signatures; effects maxIO; release/docs valid.** It nevertheless FAILS
 **PUB006**, due to the pre-existing Schwarzschild `tidalRadialOrbit` being
-spuriously refuted:5/133 encoded-model proofs,1 refutation,123 skipped
-(including4 verifier errors),99 uncontracted. `package-verify-v056.json`
+spuriously refuted:5/133 encoded-model proofs,1 refutation,123 skipped,
+4 verifier errors,99 uncontracted. `package-verify-v056.json`
 records every reason. The emitted SMT uses integer `div` for FLOAT `/`.
 Minimal `float_div_verify_repro.ail` reproduces both a sort mismatch and the
 false tide counterexample r=7/4. VM/interpreter both compute the positive
