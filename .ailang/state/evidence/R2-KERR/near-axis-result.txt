@@ -1,0 +1,12 @@
+Command (run from evidence/R2-KERR/bench, A = absolute game runtime/bin/ailang,
+PKG = ../ailang-packages-kerr/packages/relativity):
+$A run --quiet --bytecode --strict-bytecode --package-dir "$PKG" --entry probe --args-json 1e-14 kerr_edges.ail
+Observed: Err(solver_steps)
+Independent DOP853 oracle: escaped; finite-far phi 2.8420527856877618;
+sky (-0.8393869039609891, 0.2592296703620943, 0.47773382072315684).
+This is a failed ray, never capture. K1.1b-c remains false. Run the named
+regression with `ailang test --strict-bytecode` and the same --package-dir
+context via a package-owned test copy when fixing it. The pure probe command
+above is the tested reproduction (test CLI has no --package-dir flag).
+At n_phi=1e-6, the production trace escapes: phi2.8420538582412442,
+sky(-.8393863769129806,.25922852151494213,.4777353701434266),5221steps,2turns.

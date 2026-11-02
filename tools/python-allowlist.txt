@@ -27,3 +27,6 @@ tools/ism_dust_ref.py	oracle
 tools/ism_bright_ref.py	oracle
 tools/similar_oracle.py	oracle
 tools/kerr_ref.py	oracle
+tools/kerr_curvature_ref.py	oracle
+tools/kerr_null_ref.py	oracle
+tools/kerr_digest_ref.py	oracle

@@ -1,0 +1,11 @@
+R2-KERR v0.56.0 final native package check (supersedes the historical438-test log).
+Package numerical sourceaf2a767, tests65bcaa8. Command from package root:
+$A test --bytecode --package .
+
+→ bytecode: 730 named-test bodies ran on the VM, 0 fell back to the evaluator; inline tests and properties run on the evaluator
+730 tests: 730 passed, 0 failed, 0 skipped (12.761671005s)
+
+The historical full438-test output is retained at immutable game commit
+1f8bf103dd4c:.ailang/state/evidence/R2-KERR/package-test-bytecode.txt.
+Full current test bodies and independent fixtures are committed in package PR173;
+quality-v056.txt separately records730 interpreter-attested tests and smoke.

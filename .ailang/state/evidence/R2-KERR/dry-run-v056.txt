@@ -1,0 +1,20 @@
+Publishing sunholo/relativity@0.14.0...
+→ quality sunholo/relativity@0.14.0 (experimental)
+  compile:   ✓ 58 files
+  contracts: ✗ 5/133 verified, 1 refuted, 99 uncontracted exports (0.7s)
+  proof scope: verifier reported verified under the encoded model; encoded model: float=Real, int=Int; runtime equivalence not_established (not an IEEE/machine-arithmetic proof); absent recursion depth is not an inductive proof; runtime contracts not_measured
+    function reasons: counterexample=1, missing_postcondition=72, uncontracted=99, unsupported_encoding=51, verifier_error=4
+  interface: ✓ v2 87df39056919… (273 signatures)
+  effects:   max [IO]  rank_max IO  ceiling_declared true
+  release:   kind feature  changelog_section true
+  docs:      AGENT.md true  ai_summary true
+  style:     232 exported funcs, 232 pure (100%)
+  tests:     [attested] 33 files, 730 passed, 0 failed, 0 skipped
+  smoke:     [attested] present true passed true
+
+  ✗ PUB006 1 contract(s) refuted by Z3
+  · PUB016 123 contract(s) skipped by the verifier — not proved; `ailang verify --package .` lists the reason per function
+  ⚠ PUB011 99 exported function(s) carry no contract
+
+✗ 1 gate(s) — publish would be refused
+Error: publish blocked by 1 quality gate(s) — see PUB codes above (ailang pkg quality --json . for the report)

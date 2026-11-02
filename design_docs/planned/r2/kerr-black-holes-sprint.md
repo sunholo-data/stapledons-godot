@@ -2,7 +2,7 @@
 
 **Design doc:** [kerr-black-holes.md](kerr-black-holes.md), read in full, including Quorum log and Verification log.
 **Sprint id:** `R2-KERR`.
-**Status:** `awaiting_approval` for the full sprint; D-116 A already authorizes the named headless K1.1a scope (including its oracle children), stopping before publish. Other P0/spec/render/publish fences remain.
+**Status:** `in_progress` under attended D-144 (2026-11-02). Historical pause text below is retained; the attended brief authorizes execution and a draft spec PR, while package publication, full physics gates and visual review remain held.
 **Mission iteration:** 43; charter row R2, plan only.
 **Base commit:** `bc1f111134d2abac7cbfd9ca7bb2239da6382f04` (`git rev-parse HEAD`).
 **Runtime:** `runtime/bin/ailang`, AILANG v0.54.14, commit `e1ef33fa52b16c3fc3ad15edd60103d2f4ba808e`.
@@ -14,6 +14,25 @@ Deliver release 1: package-first Kerr closed forms, analytic capture and Carter 
 **Budget:** 4,210 active LOC across the design's nine parent milestones and 34 active executor slices, plus about 150 K1.0 spec lines (4,360 including spec). The original 3,710/30 estimate is historical; iteration 49 replaces the original 150-line oracle leaf with five children totaling 650, preserving the old object in `superseded_features`. Code/test/tool estimates include supporting glue, fixtures and release/landing records; binaries and reference PNGs are excluded. Each mutation-bearing slice is at most 150 LOC total, so also below the 150-code-LOC threshold. Every other implementation slice is below 250 LOC. This conservatively enforces both limits without hiding a large tool/oracle in the test column.
 
 **Duration:** 25 planned working days, two controller/evaluator validation days and six contingency days = 33 working days, excluding approval, registry, GPU availability and human-review waits. This iteration-49 estimate uses 4,210 active LOC at the existing 170 LOC/day assumption; the original 22+2+6=30 estimate remains historical. Each oracle child retains its individual physical-line cap; a larger aggregate estimate does not waive a cap.
+
+## Attended continuation checkpoint (2026-11-02, Codex A)
+
+Mark's continuing prompt authorizes the regular chart and downstream work,
+under D-144. Runtime v0.56.0 is staged after merging the #377 bump branch.
+The Carter slice was re-split into sphere/pole phase, independent near-axis
+matrix, compact radial turning chart, adaptive 5(4), regular action phases and
+binary64 refinement; the old150-LOC slice was not silently declared sufficient.
+Package PR #173 records the bounded changes. Evidence:
+`.ailang/state/evidence/R2-KERR/continuation-2026-11-02.md`.
+
+Numerical sweeps now pass400 rays and5,880 near-axis rays with zero failures;
+full quality/dry-run and cross-family evaluation remain independent gates.
+K1.2 preflight of the original1536-column/F32-boundary format FAILS: even with
+the exact boundary the row's error is9.01e-4rad; boundary F32 rounding causes
+false captures. Follow the specified stop before production pins and review
+boundary precision and antipode interpolation/resolution. No GPU sky or MP4
+is claimed. The58-check scalar/frame CPU mirror is preparation, not K1.3
+closure. The original acceptance criteria and publication/visual fences stand.
 
 ## Authority, sources and baseline
 
@@ -2045,3 +2064,55 @@ In `tools/test_kerr_oracle.sh` only (Makefile, `tools/kerr_ref.py`, `tests/fixtu
 11. `jq -e . .ailang/state/sprints/sprint_R2-KERR.json` and the every-other-byte check `diff <(git show HEAD:.ailang/state/sprints/sprint_R2-KERR.json | jq -S 'del(.features[] | select(.id=="K1.1a-a5"))') <(jq -S 'del(.features[] | select(.id=="K1.1a-a5"))' .ailang/state/sprints/sprint_R2-KERR.json)` → empty diff.
 
 Controller gates (unchanged): `make ci-fast AILANG=runtime/bin/ailang`, `PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang`. Independent evaluator (generator ≠ judge) after execution; `passes` stays false until then. rc 0 alone is not review.
+
+## Attended execution amendment 2026-11-02 (D-144)
+
+Codex A executes on `feat/r2-kerr`, game draft #373, package draft
+sunholo-data/ailang-packages#173, normative design draft
+sunholo-data/stapledons-design#49. The attended brief authorizes the draft spec
+before visuals; no merge or publication is authorized. No GPU sky or demo gate
+has passed. The oracle fixture children already on main remain passed.
+
+K1.1b-a is executed in two bounded commits: independent Decimal60 shadow oracle
+and companion fixture/audit (source/tool budget 140), then canonical shadow
+module/native tests (source/tool budget 140). The generated JSON is evidence,
+not hand-edited source. K1.1b-a remains the aggregate acceptance item, only
+passing once both portions and mutations pass. This mechanical split changes
+neither physics nor acceptance. The larger Carter slice must likewise be split
+before code exceeds 150 lines; no turning, chart or frequency gate may be omitted.
+
+AILANG prompt version loaded: **v0.16.7**, runtime **v0.54.18**. Scalar evidence
+and exact commands are in `.ailang/state/evidence/R2-KERR/attended-2026-11-02.md`.
+The verifier's helper-sqrt encoding error is reported upstream; float contracts
+are not claimed as IEEE proofs. `pkg quality --no-run` still reports **no gates**;
+this is not attested test/smoke execution or publication readiness.
+
+K1.1b-c is split before implementation into c1 observer projection/transport
+(150 source/test/tool lines), c2 full four-coordinate Carter derivatives and
+RK4 step (150), c3 radial/polar root events and regular axis chart (150), c4
+independent oracle/probe/convergence closure (150). These are implementation
+commits under the existing aggregate feature, never partial acceptance of the
+solver. Every c2–c4 gate must pass before tables or mirrors. K1.1b-d similarly
+separates independent metric-derivative oracle source (150), its domain/fixture
+audit (150), and full-Weyl package projection/tests (150), preserving DI-10.
+The original 150-line solver/tides estimates were insufficient for the explicitly
+required root/chart/full-tensor checks; no physics requirement is removed.
+
+K1.1b-b canonical capture uses the depressed cubic R' to identify the sole
+positive outer radial minimum for eta>=0, then classifies R's allowed intervals
+and double-root boundary. This is analytic root topology, not step termination.
+It explicitly refuses negative eta, which cannot arise from the supported
+finite equatorial observer; RK-17 remains an infinity critical-curve math test.
+The root-event c3 commit is further split into c3a stable radial/polar roots and
+local event/departure primitives (150), then c3b adaptive trace and unwrapped
+axis sky recovery (150). The solver aggregate is still false until c4 oracle
+and refinement closure; a passed derivative kernel is not a ray-map result.
+
+Final attended checkpoint: package draft #173 at `8662584`, **438/438** bytecode
+tests (zero fallback),53 files checked; spec draft #49 at `5df8b383`. The
+400-ray sweep is now347 escaped/53 captured/0 failed after the far-radius root
+fix. An arbitrary near-axis ray still returns `solver_steps`, so K1.1b-c and
+dependent gates remain false. K1.1a-e also retains its nonzero verifier result
+(two helper-sqrt encoding errors). Neither package publication nor any Kerr
+visual is ready. Full evidence and reproduction are in
+`.ailang/state/evidence/R2-KERR/attended-2026-11-02.md`.

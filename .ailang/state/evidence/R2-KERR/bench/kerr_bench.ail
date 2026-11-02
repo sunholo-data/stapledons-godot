@@ -1,0 +1,36 @@
+-- Bounded development benchmark, NOT a LUT generator or an acceptance pass.
+module kerr_bench
+import std/math (sin,cos,intToFloat)
+import std/result (Ok,Err)
+import pkg/sunholo/relativity/kerr_trace (traceSky)
+export type Stats={rays:int,escaped:int,captured:int,critical:int,failed:int,checksum:float}
+pure func sweep(i:int,n:int,a:Stats)->Stats =
+  if i==n then a else {
+    let r=if i%5==0 then 2.0 else if i%5==1 then 3.0 else if i%5==2 then 10.0 else if i%5==3 then 100.0 else 1000000.0;
+    let psi=3.141592653589793*(intToFloat((i/5)%20)+0.5)/20.0;
+    let chi=1.5707963267948966*intToFloat((i/100)%4);
+    let result=traceSky(2.0*r,0.9,{x:0.0-cos(psi),y:sin(psi)*sin(chi),z:sin(psi)*cos(chi)},0.005);
+    let next=match result {
+      Ok(ray)=>{rays:i+1,escaped:a.escaped+1,captured:a.captured,critical:a.critical,failed:a.failed,checksum:a.checksum+ray.sky.x+2.0*ray.sky.y+3.0*ray.sky.z},
+      Err(c)=>{rays:i+1,escaped:a.escaped,captured:a.captured+(if c=="captured" then 1 else 0),
+        critical:a.critical+(if c=="critical" then 1 else 0),failed:a.failed+(if c=="captured" || c=="critical" then 0 else 1),checksum:a.checksum}
+    };
+    sweep(i+1,n,next)
+  }
+export pure func benchmark(n:int)->Stats
+  requires { n>0 && n<=400 }
+{ sweep(0,n,{rays:0,escaped:0,captured:0,critical:0,failed:0,checksum:0.0}) }
+export type Failure={index:int,r:float,psi:float,chi:float,error:string}
+pure func diagnoseSweep(i:int,n:int,acc:[Failure])->[Failure]=
+  if i==n then acc else {
+    let r=if i%5==0 then 2.0 else if i%5==1 then 3.0 else if i%5==2 then 10.0 else if i%5==3 then 100.0 else 1000000.0;
+    let psi=3.141592653589793*(intToFloat((i/5)%20)+0.5)/20.0;
+    let chi=1.5707963267948966*intToFloat((i/100)%4);
+    match traceSky(2.0*r,0.9,{x:0.0-cos(psi),y:sin(psi)*sin(chi),z:sin(psi)*cos(chi)},0.005) {
+      Ok(_)=>diagnoseSweep(i+1,n,acc),
+      Err(c)=>diagnoseSweep(i+1,n,if c=="captured" || c=="critical" then acc else {index:i,r:r,psi:psi,chi:chi,error:c}::acc)
+    }
+  }
+export pure func diagnose(n:int)->[Failure]
+  requires { n>0 && n<=400 }
+{ diagnoseSweep(0,n,[]) }

@@ -1,0 +1,15 @@
+module kerr_edges
+import std/math (sqrt)
+import std/result (Result)
+import pkg/sunholo/relativity/kerr_trace (traceSky,SkyTrace)
+import pkg/sunholo/relativity/hyper (absf)
+import std/result (Ok,Err)
+export pure func probe(ep:float)->Result[SkyTrace,string] =
+  traceSky(6.0,0.9,{x:-0.6,y:sqrt(0.64-ep*ep),z:ep},0.005)
+-- This regression is intentionally RED until the regular angular chart is fixed.
+test "near-axis escaping ray preserves the polar-turn azimuth phase" {
+  match probe(1.0e-14) {
+    Err(_)=>false,
+    Ok(r)=>absf(r.phi-2.8420527856877618)<1.2e-4
+  }
+}

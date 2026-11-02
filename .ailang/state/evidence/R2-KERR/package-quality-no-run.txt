@@ -1,0 +1,19 @@
+→ quality sunholo/relativity@0.14.0 (experimental)
+  compile:   ✓ 53 files
+  contracts: ✓ 4/129 verified, 0 refuted, 94 uncontracted exports (0.5s)
+  proof scope: verifier reported verified under the encoded model; encoded model: float=Real, int=Int; runtime equivalence not_established (not an IEEE/machine-arithmetic proof); absent recursion depth is not an inductive proof; runtime contracts not_measured
+    function reasons: missing_postcondition=68, uncontracted=94, unsupported_encoding=35, verifier_error=22
+  interface: ✓ v2 aff92bc11fed… (260 signatures)
+  effects:   max [IO]  rank_max IO  ceiling_declared true
+  release:   kind feature  changelog_section true
+  docs:      AGENT.md true  ai_summary true
+  style:     223 exported funcs, 223 pure (100%)
+  tests:     [attested] 29 files, 0 passed, 0 failed, 0 skipped — not run (--no-run)
+  smoke:     [attested] present true, not run (--no-run)
+
+  · PUB016 103 contract(s) skipped by the verifier — not proved; `ailang verify --package .` lists the reason per function
+  ⚠ PUB011 94 exported function(s) carry no contract
+  · PUB015 _smoke.ail present but not run (--no-run)
+  · PUB012 29 test file(s) present but not run (not run (--no-run))
+
+✓ no gates

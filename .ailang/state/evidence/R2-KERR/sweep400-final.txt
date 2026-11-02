@@ -1,0 +1,19 @@
+{captured: 53, checksum: 9.667368447086702, critical: 0, escaped: 347, failed: 0, rays: 400}
+        3.37 real         3.77 user         0.06 sys
+           138395648  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                8094  page reclaims
+                 583  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                1309  signals received
+                 306  voluntary context switches
+                6389  involuntary context switches
+         60673330634  instructions retired
+         14798355219  cycles elapsed
+           103596872  peak memory footprint

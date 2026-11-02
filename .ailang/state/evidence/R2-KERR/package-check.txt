@@ -1,0 +1,88 @@
+→ Checking package sunholo/relativity (23 exported modules)...
+
+  ✓ _smoke.ail
+  ✓ approach_test.ail
+  ✓ blackbody.ail
+  ✓ blackbody_photometry.ail
+  ✓ blackbody_photometry_table.ail
+  ✓ blackbody_photometry_test.ail
+  ✓ cross_module_test.ail
+  ✓ domain_bounds_test.ail
+  ✓ dust.ail
+  ✓ dust_test.ail
+  ✓ geodesic.ail
+  ✓ geodesic_test.ail
+  ✓ glow_spectrum_test.ail
+  ✓ hyper.ail
+  ✓ journey.ail
+  ✓ journey_plan_test.ail
+  ✓ kerr.ail
+  ✓ kerr_capture_test.ail
+  ✓ kerr_carter.ail
+  ✓ kerr_carter_test.ail
+  ✓ kerr_digest.ail
+  ✓ kerr_digest_test.ail
+  ✓ kerr_domain_test.ail
+  ✓ kerr_events.ail
+  ✓ kerr_events_test.ail
+  ✓ kerr_frame.ail
+  ✓ kerr_frame_test.ail
+  ✓ kerr_geodesic.ail
+  ✓ kerr_nearcritical_test.ail
+  ✓ kerr_radial.ail
+  ✓ kerr_radial_test.ail
+  ✓ kerr_shadow.ail
+  ✓ kerr_shadow_test.ail
+  ✓ kerr_test.ail
+  ✓ kerr_tides.ail
+  ✓ kerr_tides_matrix_test.ail
+  ✓ kerr_tides_test.ail
+  ✓ kerr_trace.ail
+  ✓ kerr_trace_matrix_test.ail
+  ✓ kerr_trace_test.ail
+  ✓ kinematics.ail
+  ✓ medium.ail
+  ✓ medium_column_test.ail
+  ✓ medium_test.ail
+  ✓ optics.ail
+  ✓ optics_test.ail
+  ✓ photometry.ail
+  ✓ photometry_sky_test.ail
+  ✓ photometry_table.ail
+  ✓ photometry_test.ail
+  ✓ relativity_test.ail
+  ✓ schwarzschild.ail
+  ✓ schwarzschild_ext_test.ail
+
+  ! module "sunholo/relativity/dust_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_tides_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_trace_matrix_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/medium_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_frame_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/photometry_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/approach_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/cross_module_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/glow_spectrum_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_events_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_radial_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_tides_matrix_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/relativity_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/schwarzschild_ext_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/_smoke" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/blackbody_photometry_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/journey_plan_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_shadow_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_domain_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_nearcritical_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_trace_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/medium_column_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/domain_bounds_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/geodesic_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_capture_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_carter_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/optics_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/kerr_digest_test" compiled but not listed in [exports].modules
+  ! module "sunholo/relativity/photometry_sky_test" compiled but not listed in [exports].modules
+
+✓ 53 files checked, all passed!

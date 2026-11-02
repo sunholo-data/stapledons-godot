@@ -10,7 +10,7 @@ SCRATCH := .godot/tmp
 # sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
 GEODESIC_LENS_DIGEST := 8.612720147193743
 GEODESIC_SCHW_DIGEST := 92833.6848137945
-AILANG_RELEASE ?= v0.54.18
+AILANG_RELEASE ?= v0.56.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
@@ -18,10 +18,16 @@ APP := build/macos/Stapledons Voyage.app
 
 all: test
 
-.PHONY: kerr-oracle
+.PHONY: kerr-oracle kerr-shadow-oracle kerr-capture-oracle kerr-curvature-oracle
 test: kerr-oracle
-kerr-oracle:
+kerr-oracle: kerr-shadow-oracle kerr-capture-oracle kerr-curvature-oracle
 	sh tools/test_kerr_oracle.sh
+kerr-shadow-oracle:
+	sh tools/test_kerr_shadow_oracle.sh "$(CURDIR)"
+kerr-capture-oracle:
+	sh tools/test_kerr_capture_oracle.sh "$(CURDIR)"
+kerr-curvature-oracle:
+	sh tools/test_kerr_curvature_oracle.sh "$(CURDIR)"
 
 include mk/constellations.mk
 include mk/home-tiers.mk
@@ -225,8 +231,8 @@ star-names:        ## D-17 names.json vs stars.json (sim/tools/star_names.ail): 
 	@$(AILANG) run --quiet --package-dir sim --entry starNamesVm --args-json 0 sim/tools/star_names_test.ail > $(SCRATCH)/star-names/test-interp.txt
 	@cmp $(SCRATCH)/star-names/test-vm.txt $(SCRATCH)/star-names/test-interp.txt && test "$$(cat $(SCRATCH)/star-names/test-vm.txt)" = "star-names-ok" || { cat $(SCRATCH)/star-names/test-vm.txt; exit 1; }
 	@# readFile is evaluator-only on the VM, so the FS shell runs --bytecode (not strict), as lore-check does
-	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry starNames --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/vm.txt || { cat $(SCRATCH)/star-names/vm.txt; exit 1; }
-	@$(AILANG) run --quiet --caps IO,FS --package-dir sim --entry starNames --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/interp.txt
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/vm.txt || { cat $(SCRATCH)/star-names/vm.txt; exit 1; }
+	@$(AILANG) run --quiet --caps IO,FS --package-dir sim --entry main --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/interp.txt
 	@python3 tools/check_star_names.py > $(SCRATCH)/star-names/oracle.txt
 	@cmp $(SCRATCH)/star-names/vm.txt $(SCRATCH)/star-names/interp.txt && cmp $(SCRATCH)/star-names/vm.txt $(SCRATCH)/star-names/oracle.txt
 	@echo "star-names: $$(cat $(SCRATCH)/star-names/test-vm.txt); $$(tail -1 $(SCRATCH)/star-names/vm.txt) (VM = interpreter = Python oracle)"

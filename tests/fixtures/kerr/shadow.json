@@ -1,0 +1,124 @@
+{
+  "schema": "kerr-shadow-oracle-v1",
+  "source": "BPT72 ApJ178,347 \u00a7II; Bardeen 1970/1973; design_docs/planned/r2/kerr-black-holes.md V31, V34, V40",
+  "unit": "GM/c^2; observer at infinity",
+  "records": [
+    {
+      "id": "RK-14",
+      "spin": "0.9",
+      "quantity": "alpha-min",
+      "precise": "-2.8444214034761693",
+      "display": "-2.844421",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-14",
+      "spin": "0.9",
+      "quantity": "alpha-max",
+      "precise": "6.8323192304466666",
+      "display": "6.832319",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-16",
+      "spin": "0.9",
+      "quantity": "uniform-u-mean-N200000",
+      "precise": "5.0437368945142949",
+      "display": "5.043737",
+      "package_R": null,
+      "formula": "equal weights 1/N, both exact endpoints, N=200000; Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-14",
+      "spin": "0.998",
+      "quantity": "alpha-min",
+      "precise": "-2.1108877945528310",
+      "display": "-2.110888",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-14",
+      "spin": "0.998",
+      "quantity": "alpha-max",
+      "precise": "6.9966662713999613",
+      "display": "6.996666",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-16",
+      "spin": "0.998",
+      "quantity": "uniform-u-mean-N200000",
+      "precise": "4.8770013845209779",
+      "display": "4.877001",
+      "package_R": null,
+      "formula": "equal weights 1/N, both exact endpoints, N=200000; Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-15",
+      "spin": "0.9",
+      "quantity": "beta-max",
+      "precise": "5.1961524227066319",
+      "display": "5.196152",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-17",
+      "spin": "0.9",
+      "quantity": "alpha-min",
+      "precise": "-3.4170599872799702",
+      "display": "-3.417060",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-17",
+      "spin": "0.9",
+      "quantity": "alpha-max",
+      "precise": "6.2964531467076725",
+      "display": "6.296453",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-17",
+      "spin": "0.9",
+      "quantity": "beta-max",
+      "precise": "5.0696345295581239",
+      "display": "5.069635",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-17",
+      "spin": "0.9",
+      "quantity": "u-left",
+      "precise": "1.7314008858689569",
+      "display": "1.731401",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-17",
+      "spin": "0.9",
+      "quantity": "u-right",
+      "precise": "3.5194963858229091",
+      "display": "3.519496",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    },
+    {
+      "id": "RK-17",
+      "spin": "0.9",
+      "quantity": "u-top",
+      "precise": "2.8040576874557806",
+      "display": "2.804058",
+      "package_R": null,
+      "formula": "Bardeen1973 R=Rprime=0, alpha=-lambda/sin(theta), beta^2=eta+s^2cos^2(theta)-lambda^2cot^2(theta); infinity, M units"
+    }
+  ]
+}
