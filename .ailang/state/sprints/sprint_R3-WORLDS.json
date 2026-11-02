@@ -7,13 +7,11 @@
   "sprint_plan": "design_docs/planned/r3/worlds-sprint.md",
   "branch": "design/r3-worlds (draft PR #371); fresh design and package clones",
   "origin": "R3 roadmap order-of-work step 2 (W1 then W2); Mark attended 2026-10-06 and 2026-10-27 (life-and-intelligence-parameters decisions 1-4)",
-  "github_issues": [
-
-  ],
+  "github_issues": [],
   "ailang": {
-    "pin": "v0.54.18",
+    "pin": "v0.56.0",
     "binary": "runtime/bin/ailang",
-    "prompt_version_loaded": "v0.16.7 (read in this execution session, pinned binary v0.54.18)"
+    "prompt_version_loaded": "v0.16.11 (released runtime e1ef997, 2026-11-02 continuation)"
   },
   "external_dependencies": [
     "stapledons-design physics/life-and-worlds.md (W1.0) merged",
@@ -203,9 +201,7 @@
       "id": "W1.0",
       "description": "Baseline registry: stapledons-design physics/life-and-worlds.md (cited factor table, reference cases, LW-n check values); lore check reads the LW registry",
       "estimated_loc": 60,
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "acceptance_criteria": [
         "design AC1: git grep -c '^| LW-' physics/life-and-worlds.md >= 20 on design main",
         "make lore-values lists the LW rows; a mutant LW value fails make lore-check",
@@ -230,10 +226,10 @@
         "sim/ailang.toml pins sunholo/celestial@0.6.0; lock updated"
       ],
       "routing": "loop to publish; publish attended",
-      "passes": null,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
-      "notes": "Package implementation in draft ailang-packages PR174, celestial0.6.0: check22files,156/156 native tests,12012 numerical values strict VM=interpreter with runtime contracts, full quality no gates. Tighter LW printed rounding tests14/14. No publish or game pin. Await attended celestial publish; SMT emitter bug inbox_1793635195781_38382f1d."
+      "completed": "2026-11-02",
+      "notes": "Celestial0.6.0 published by Mark, game registry pin/lock updated. Valid-domain package156/156 tests and fullquality no gates. PR174 private64-row batches reduce coldcheckRSS296-302MB to100-106MB; all508LDrows+1400samples byte-identical. New v056 VM invalid-requires enforcement regression reported separately; not claimed as contract validation."
     },
     {
       "id": "W1.2",
@@ -298,19 +294,17 @@
       "id": "W2.0",
       "description": "Measured exoplanets <= 100 pc: NASA archive ps snapshot (shell download, sha pin, public bucket), AILANG pipeline sim/tools/exoplanets.ail (cross-match by Gaia DR3 id else 1 arcsec; curated alpha Cen and TRAPPIST-1 win), generated sim/data/exoplanets.ail and data/planets/exoplanets.json, make exoplanets / exoplanets-check",
       "estimated_loc": 400,
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "acceptance_criteria": [
         "design AC9 (data half): every snapshot planet whose host is in the registry is in the table with bit-equal values",
         "alpha Cen and TRAPPIST-1 rows equal data/acen.ail and data/trappist1.ail",
         "host, planet and inside-25-pc counts recorded in notes"
       ],
       "routing": "loop",
-      "passes": false,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
-      "notes": "Draft implementation: actual NASA ps default <=100pc snapshot sha ce6345482ca387dd6a8fca73d909d25b78c3ce24eea5efab1afdbda279ea335b, public bucket;1590 planets/1077 hosts; output1599 planets incl2candidates/1079 hosts;412 planets on241 registry hosts. 5/5 initial native tests interpreter/strict VM;8/8 final strict-VM tests including inferred irradiation/blackbody provenance; regeneration byte-identical. Initial show-based witness retracted (show truncates composites); complete fieldsEqual/planetsEqual and full JSON digest replace it, with metadata/middle-record mutation tests. Corrected interpreter witness PASS all1599planets/18722scalars and curated provenance; full JSON digest116e7d91897fef17cb8e44e91742ceffc97286fbbb52a4e7a357d5fb56d1c8f1. Independent Python test oracle confirms18722 CSV/JSON scalars bit-for-bit, missingness and derived provenance; all data generation remains AILANG. Correction reported inbox_1793637149423_28d159fb. VM witness FAIL GET_FIELD index4 exceeds fieldcount2; reported AILANG#2052 inbox_1793635994881_582a4a2b. make exoplanets-check retains failing VM witness; no workaround. Milestone not passed."
+      "completed": "2026-11-02",
+      "notes": "v056 fixes2052: VM complete1599planet/18722scalar witness now passes, digest116e7d91897fef17cb8e44e91742ceffc97286fbbb52a4e7a357d5fb56d1c8f1 unchanged. Compact canonical JSON compiled representation preserves every field/provenance and rawscalar oracle; purestrictVM digest0.91s358MB vs interpreter1.33s556MB. FullFSwitness7.92s403MB. Auxiliary241hostrowfacts match navigation exactly."
     },
     {
       "id": "W2.1",
