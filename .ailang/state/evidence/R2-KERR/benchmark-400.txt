@@ -1,0 +1,1 @@
+{captured: 53, checksum: 19.12066799893693, critical: 0, escaped: 328, failed: 19, rays: 400}
