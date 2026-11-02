@@ -1,0 +1,60 @@
+ok a destination without photometry is never pinned (nothing to draw)
+ok clear() drops pins
+replacement per frame: 0.001 ms at 3,000 rows, 0.002 ms at 300,000
+ok unchanged replacements cost does not scale with the star count
+destination-pin: 0 failures
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+ERROR: 2 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ok base interlude consumes nothing and is done
+ok below 2.10: first frame consumes exactly the remaining cruise
+ok later frames consume nothing
+ok with no reader (a headless host) the crossing is done at the braking boundary
+ok with a reader, 600 s at the boundary leave the review open
+ok Brake (finish) ends it once the cruise was consumed
+ok Brake cannot end a crossing that has not consumed the cruise
+ok never consumes a negative amount
+ok advance() never returns more than next_stop_years (nor the cruise left)
+ok a 0.574-year crossing is six check-ins and the braking stop (7 frames, ["check_in", "check_in", "check_in", "check_in", "check_in", "check_in", "braking"], left 0.0)
+ok after the braking stop it consumes nothing (no reader: done at the boundary)
+ok the cruise left caps a longer stop and ends the crossing
+ok Brake cannot end a crossing that has not reached braking
+ok the Crossing… line follows the sim's stop kind: Crossing… the crew's monthly check-in.
+ok mutating stop_kind changes the Crossing… line
+ok the bridge checks the 2.10 cruise section
+ok I2: the cruise section may carry the digest, alone on the arrival tick
+ok speed_c formats the plan's exact 1 - beta
+ok tier_line fills the sim's line with the sim's whole years
+ok mutating years_at_home changes the tier line
+ok a tier line with no %s is shown as the sim wrote it
+ok counts in words (no digits in crew text)
+ok a whole-number segment indexes a sim array
+ok speed text from exact 1 - beta
+ok non-decade speeds print six decimals
+ok HUD: at rest
+ok HUD: 0.99c line
+ok HUD: exact nines at γ 707
+ok HUD: durations
+ok HUD: distance units (1.000 AU, 999.2 AU, 120.5 ly)
+ok HUD: distances line from fields: To jupiter 2.000 AU · from last stop 5.000 AU · from Earth 5.000 AU
+ok HUD: committed leg uses catalogue names
+ok HUD: stopped shows at/from-last-stop/from-Earth: At Alpha Centauri A 1000 AU · from Sirius A 4.000 AU · from Earth 5.000 AU
+ok HUD: a leg that left Earth says from Earth once
+ok HUD: a finite star standing for the target gives the distance and its name: At Alpha Centauri A 2.000 AU · from Earth 5.000 AU
+ok HUD: no plan shows only the distance from Earth
+cruise-interlude: 0 failures
+ship-ui: 288 passed, 0 failures
+path navigation 2.2 m
+path voyage 10.2 m
+path archive 18.4 m
+path crew 8.5 m
+path comms 20.9 m
+ship-consoles: 135 passed, 0 failures
+FAIL NT4 setup: the crossing stopped for a hold (failed)
+FAIL NT4 setup: the crossing reached its review (failed)
+no-twitch: 33 passed, 2 failures
+make: *** [no-twitch-test] Error 1
