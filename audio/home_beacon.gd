@@ -135,8 +135,8 @@ func follow(sound: SoundDirector, world: Dictionary, receiver: bool) -> void:
 		var pos := -1.0
 		if cue == CUE:
 			pos = sound.loop_position(CUE)
-		elif cue == RX:
-			pos = _pos
+		elif cue == RX: # the audible place in Earth's clock: the write cursor less what is still buffered
+			pos = fposmod(_pos - sound.generator_lag_s(RX) * _rate, LOOP_S)
 		if cue != "":
 			sound.stop(cue, true)
 		if pos >= 0.0:

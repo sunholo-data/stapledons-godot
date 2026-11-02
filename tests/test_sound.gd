@@ -368,6 +368,27 @@ func test_beacon_measured() -> void:
 	d.queue_free()
 
 
+## S2: Receiver -> True hands over at the Receiver's audible place in Earth's clock (the generator's write
+## cursor less its buffered frames), not at the write cursor, which runs a buffer ahead (0.5 Earth s at D = 2).
+func test_beacon_handover() -> void:
+	var d := SoundDirector.new()
+	get_root().add_child(d)
+	d.setup()
+	var b := HomeBeacon.new()
+	var w := {"earth": {"rate": 2.0, "in_beam": true, "at_home": false}}
+	b.follow(d, w, true)
+	var t0 := Time.get_ticks_usec()
+	await create_timer(0.15).timeout
+	var heard := 2.0 * (Time.get_ticks_usec() - t0) / 1e6 # Earth seconds heard since the Receiver started
+	var cursor := b._pos
+	b.follow(d, w, false)
+	var pos := d.loop_position("home_beacon")
+	check(absf(pos - heard) < 0.12 and cursor - heard > 0.3, "S2: Receiver -> True at D = 2 takes over where the Receiver was heard (True at %.3f Earth s, heard %.3f; the write cursor was at %.3f)" % [pos, heard, cursor])
+	d.stop("home_beacon", true)
+	d.queue_free()
+	await process_frame
+
+
 ## Stands in for an AudioStreamGeneratorPlayback: keeps what HomeBeacon pushes.
 class _Collect:
 	extends RefCounted
@@ -611,6 +632,7 @@ func _run() -> void:
 	await test_commit_hold()
 	test_beacon_plan()
 	await test_beacon_measured()
+	await test_beacon_handover()
 
 	# The bus layout (§D2).
 	SoundMix.ensure_layout()
@@ -629,5 +651,10 @@ func _run() -> void:
 		n.queue_free()
 	for i in 3:
 		await process_frame
+	for id in Node.get_orphan_node_ids(): # the log-only directors made with SoundDirector.new() outside the tree
+		var o := instance_from_id(id)
+		if o != null:
+			o.free()
+	await create_timer(0.5).timeout # the mixer releases stopped playbacks on its next mixes (the Dummy driver mixes in 93 ms blocks)
 	print("sound: %d passed, %d failures" % [passed, failed])
 	quit(1 if failed > 0 else 0)
