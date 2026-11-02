@@ -783,6 +783,25 @@ func test_earth_feed_bands() -> void:
 	f.free()
 
 
+## R3-TRUE-PROCESSED (gate 2; design r3/true-processed-fixes.md D2): the ship's star light in True is
+## linear in the seen illuminance, so the spec's point-source brightness (Y(D T)/Y(T))/D^2 at RS-3
+## and RS-4 (the Sun ahead and astern at 0.9c) and the inverse square reach the deck unchanged; the
+## seen illuminance the star light uses (the LUT expression of ship_star_light.gd emitters) is the
+## package's pointFluxRatio. Processed (the ship's controller) compresses, and says so.
+func test_true_star_light() -> void:
+	var star_light = load("res://demos/ship_star_light.gd")
+	var t := 5772.0
+	for row: Array in [["RS-3", 4.3589], ["RS-4", 0.22942]]:
+		var d: float = row[1]
+		var r := Relativity.point_flux_ratio(t, d)
+		var lut := pow(10.0, Blackbody.lut_log10_y(t * d) - Blackbody.lut_log10_y(t)) / (d * d)
+		check("%s the star light's seen-illuminance ratio is the package pointFluxRatio(5772 K, %s)" % [row[0], d], lut / r, 1.0, 5e-3)
+		check("%s True deck light scales by exactly that ratio" % row[0], star_light.true_energy(1.27e5 * r) / star_light.true_energy(1.27e5), r, r * 1e-12)
+	check("True deck light follows the inverse square (the Sun at 5.2 AU vs 1 AU)", star_light.true_energy(1.27e5 / 27.04) / star_light.true_energy(1.27e5), 1.0 / 27.04, 1e-15)
+	check("True: the Sun at 1 AU (1.27e5 lx, checkSysSunLux) is 1,587.5 x the bridge's 80 lx lamps", star_light.true_energy(1.27e5) / 8.0, 1587.5, 1e-9)
+	check("Processed is compressed: one decade of light is one fifth of its range", star_light.energy_of(1.0e4) / star_light.ENERGY_MAX, 0.8, 1e-12)
+
+
 ## R3-EARTH-LINK EL5 (gate 2): the spec's RS-26..RS-37 against physics/observe.gd (the mirror of
 ## sunholo/observe 0.1.0) and the closed forms, and the real sim's earth.rate at 0.99c from the
 ## fixture tools/earth_rate_fixture.gd records. 1 - beta comes from the rapidity, never 1 - b.
@@ -1641,6 +1660,7 @@ func _init() -> void:
 	test_cmb()
 	test_earth_observation()
 	test_earth_feed_bands()
+	test_true_star_light()
 	test_earth_link()
 	test_scripts_compile()
 	test_sky_meter()
