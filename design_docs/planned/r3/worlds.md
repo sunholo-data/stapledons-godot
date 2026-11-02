@@ -1,6 +1,6 @@
 # R3-WORLDS: the dial and a populated galaxy (R3 W1 and W2)
 
-**Status:** Proposed 2026-11-02 (design only; nothing implemented, published or merged). OQ1–OQ9 wait on Mark.
+**Status:** Proposed 2026-11-02 in draft PR #371 (design only; nothing implemented, published or merged). OQ1–OQ9 wait on Mark.
 **Release:** R3 (Signals and Contact), track W: milestones **W1** (the baseline table, the dial as offsets, the calibration Monte Carlo) and **W2** (world population with seeded histories; measured planets kept and labelled). Order-of-work step 2, on the critical path to the First Contact slice.
 **Priority:** P1. Every later R3 track reads what W2 puts in the galaxy: S3's instruments observe it, F1–F5 rank it, C5 advances it, V1 paints it.
 **Origin:** Mark, attended 2026-10-06 ("we are going to weight anthropic values such as density of life and intelligence etc. so will need to see how much we need to vary those from expected 'normal' Drake values to have an interesting game experience") and 2026-10-27 ("we are consciously going to tip the scales to have interesting games … but we will have pure physics for other things"; "at least 5 living contacts - we are in a very rich loaded part of anthropic luck").
