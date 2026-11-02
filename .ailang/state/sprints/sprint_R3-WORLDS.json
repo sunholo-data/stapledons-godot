@@ -215,7 +215,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Draft registry PR https://github.com/sunholo-data/stapledons-design/pull/50 (41 LW rows); primary PDFs checked; M=0.75 empirical attribution unverified and explicitly labelled. Lore import/value/check with one-digit LW mutant pass. Registry not merged; final canon review remains attended."
+      "notes": "Implemented registry/lore path, draft design PR50 at c876de1. 41 LW rows, cited primary sources; M=0.75 empirical attribution and original Chambers section locator explicitly unverified (formula verified via alternate primary Eqs1-2). Three historical rounding cells corrected. lore-test/check/import pass including LW one-digit mutant. Design registry awaits merge/review, so acceptance on design main remains open."
     },
     {
       "id": "W1.1",
@@ -233,7 +233,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Package implementation in draft ailang-packages PR174, celestial0.6.0: check22files,156/156 native tests,12012 numerical values strict VM=interpreter with runtime contracts, full quality no gates. Tighter LW printed rounding tests14/14. No publish or game pin. Await attended celestial publish; SMT emitter bug inbox_1793635195781_38382f1d."
     },
     {
       "id": "W1.2",
@@ -249,10 +249,10 @@
         "ailang pkg quality no gates; worlds_test.ail in make sim repeats the tables through the pin"
       ],
       "routing": "loop to publish; publish attended",
-      "passes": null,
+      "passes": false,
       "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Package implementation in draft PR174, worlds0.1.0: check11files,20/20 native tests including100 generated property cases and10k history/histogram vectors; direct smoke strict VM=interpreter with runtime contracts. Full quality BLOCKED PUB015 staged smoke: celestial0.6.0 not published. No-run inventory no gates is not full validation. Publish celestial, regenerate worlds lock, rerun full quality before worlds publish. Formatter corrected repro inbox_1793635675993_104d08ec."
     },
     {
       "id": "W1.3",
@@ -272,7 +272,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Independent keyed RNG complete: 10000 UTF-8 hashes/keyed draws/top53 match Python oracle on strict VM and interpreter; existing streams unchanged. Calibration pending worlds publication and S2 photon budgets."
+      "notes": "Keyed RNG portion implemented:10000 distinct UTF-8 FNV hashes/keyed SplitMix64 draws/exact unit53 values match independent Python oracle strict VM/interpreter; rng-keyed included in strict/parity;7/7 native tests;11 historical replays (including10k ticks) identical. Calibration core, strategies and budget probe not implemented: stop dependent thread at required package publication boundary."
     },
     {
       "id": "W1.4",
@@ -292,7 +292,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "Not run: registry exposes only sunholo/observe 0.1.0, not required S2 0.2.0; celestial0.6/worlds0.1 await attended publication. No preset offsets/results or slice seed invented."
+      "notes": "NOT RUN. Requires published celestial0.6/worlds0.1 and S2 observe0.2 photon budgets (registry search lists observe0.1; direct versions query timed out). No calibrated preset offsets, encounter counts or chosen slice seed. All four preset result rows remain unmeasured; retain approved target bands."
     },
     {
       "id": "W2.0",
@@ -307,10 +307,10 @@
         "host, planet and inside-25-pc counts recorded in notes"
       ],
       "routing": "loop",
-      "passes": null,
+      "passes": false,
       "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Draft implementation: actual NASA ps default <=100pc snapshot sha ce6345482ca387dd6a8fca73d909d25b78c3ce24eea5efab1afdbda279ea335b, public bucket;1590 planets/1077 hosts; output1599 planets incl2candidates/1079 hosts;412 planets on241 registry hosts. 5/5 initial native tests interpreter/strict VM;8/8 final strict-VM tests including inferred irradiation/blackbody provenance; regeneration byte-identical. Initial show-based witness retracted (show truncates composites); complete fieldsEqual/planetsEqual and full JSON digest replace it, with metadata/middle-record mutation tests. Corrected interpreter witness PASS all1599planets/18722scalars and curated provenance; full JSON digest116e7d91897fef17cb8e44e91742ceffc97286fbbb52a4e7a357d5fb56d1c8f1. Independent Python test oracle confirms18722 CSV/JSON scalars bit-for-bit, missingness and derived provenance; all data generation remains AILANG. Correction reported inbox_1793637149423_28d159fb. VM witness FAIL GET_FIELD index4 exceeds fieldcount2; reported AILANG#2052 inbox_1793635994881_582a4a2b. make exoplanets-check retains failing VM witness; no workaround. Milestone not passed."
     },
     {
       "id": "W2.1",
@@ -330,7 +330,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Not started; waits for package publication. No downstream workaround or unpublished game dependency pin."
     },
     {
       "id": "W2.2",
@@ -350,7 +350,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Not started; population/calibration dependencies pending."
     },
     {
       "id": "W2.3",
@@ -369,7 +369,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Not started; population pending. AC16 four-preset10k leak check not run. Existing11replays remain identical; that is not AC16. Protocol2.17 not claimed or reserved."
     },
     {
       "id": "W2.4",
@@ -386,7 +386,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Not reached; no UI implementation or mock-up renders produced."
     },
     {
       "id": "W2.5",
@@ -402,14 +402,29 @@
       ],
       "routing": "attended (lore)",
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Three Archive entries drafted for Mark in design PR50 under lore/drafts/r3-worlds (excluded from live import); proposed hints not registered. Not landed or marked complete."
     }
   ],
   "reviews": [
-
+    {
+      "kind": "execution_checkpoint",
+      "date": "2026-11-02",
+      "report": "design_docs/planned/r3/worlds-execution-report.md",
+      "independent_evaluation": "pending; generator is not judge",
+      "package_pr": "https://github.com/sunholo-data/ailang-packages/pull/174",
+      "design_pr": "https://github.com/sunholo-data/stapledons-design/pull/50"
+    }
   ],
   "pr_gate": "rig/full green (tools/rig_check.sh <PR>) plus the fast tier; W2.4 renders reviewed by Mark",
-  "evaluation": null
+  "evaluation": null,
+  "validation": {
+    "sim_check": "139 files checked, all passed",
+    "sim_native": "586 tests passed,0failed,0skipped (before final oracle refinements); final exoplanets strict-native8/8",
+    "targeted": "strict/parity/replay11cases incl10k/lore-test/check/import/python-guard20allowlisted/uid-guard401 PASS",
+    "exoplanets_vm": "FAIL AILANG#2052; no workaround",
+    "rig_full": "not run: targeted VM gate already red; package-dependent sprint incomplete",
+    "fast_tier": "pending on final pushed PR head; not claimed green"
+  }
 }
