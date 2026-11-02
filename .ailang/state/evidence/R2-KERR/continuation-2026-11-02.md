@@ -86,7 +86,10 @@ Minimal `float_div_verify_repro.ail` reproduces both a sort mismatch and the
 false tide counterexample r=7/4. VM/interpreter both compute the positive
 0.7463556851311953. No contract/math/verifier workaround was applied.
 Canonical GCP report: **inbox_1793649570012_28ca24e0**, via ailang-feedback.
-The package is **not publish-ready** until upstream fixes this gate.
+The full `publish --dry-run` also completed, exits1, and refuses the same
+PUB006 after730/730 tests and smoke PASS. `pkg quality` exits2. No tarball
+publication/remote-validator acceptance is claimed. The package is **not
+publish-ready** until upstream fixes this gate; no ailang-publish line is issued.
 
 Independent Claude Sonnet5.5 evaluation: **89/100 PASS**, scoped numerical/code
 verdict, publication conditional. A separate Cartesian Kerr-Schild Hamiltonian
@@ -140,3 +143,8 @@ anchors delegated through tests/test_physics.gd: **1082 passed,0 failed**.
 Table loading/interpolation, remaining RK14–17 CPU anchors and GPU milestones
 remain open. No GPU sky, reference sky renders, MP4, upload or aboard demo is
 claimed from these headless measurements.
+
+Local `make ci-fast` exited0 on v0.56.0 (strict VM, parity,11 byte-identical
+replays,6 crew recordings and lore hash checks). `make python-guard uid-guard`
+reports23 allowlisted Python oracles/harnesses and405 tracked UIDs on the
+stacked CPU/preflight branch. No rig/full run or merge is claimed.
