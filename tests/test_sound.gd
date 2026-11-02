@@ -308,15 +308,16 @@ func test_beacon_measured() -> void:
 			ok = ok and p != null and p.playing and buf.size() > 0 and absf(hz / want - 1.0) <= 0.01
 			if dd >= 0.5:
 				var g := _pip_gap(buf, rate, want, 1.0 / dd)
-				pips.append("%s D %s: %d pips, gap %.4f s (want %.4f)" % ["receiver" if receiver else "true", dd, g[0], g[1], 1.0 / dd])
+				pips.append("%s D %s: %d pips of %d due, gap %.4f s (want %.4f)" % ["receiver" if receiver else "true", dd, g[0], int(floor(buf.size() / rate * dd)), g[1], 1.0 / dd])
 				pip_ok = pip_ok and g[0] >= 3 and absf(g[1] * dd - 1.0) <= 0.01
-				counts[[dd, receiver]] = g[0]
+				var due := int(floor(buf.size() / rate * dd)) # Earth seconds in this capture (its length varies with load)
+				counts[[dd, receiver]] = [g[0], due]
 			var was := b.cue
 			b.follow(d, {}, receiver) # off between settings, so each starts afresh
 			d.stop(was, true)
 			await process_frame
-	for dd: float in [0.5, 2.0, 5.0, 14.107]:
-		pip_ok = pip_ok and absi(int(counts.get([dd, true], -9)) - int(counts.get([dd, false], 9))) <= 1 # Receiver loses no pip that True keeps
+	for k: Array in counts: # no pip lost in either setting: every Earth second in the capture has its pip (one may straddle an edge)
+		pip_ok = pip_ok and int(counts[k][0]) >= int(counts[k][1]) - 1
 	AudioServer.remove_bus_effect(0, 0)
 	check(ok, "S2 measured through the mixer: the beacon's carrier is 400 Hz in Receiver and 400 D Hz in True, within 1 %% (%s)" % ", ".join(seen))
 	check(pip_ok, "S2 measured: the time rate is D in both settings: Earth's pips every 1/D s within 1 %%, Receiver as sharp as True (%s)" % "; ".join(pips))
