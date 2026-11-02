@@ -1,0 +1,2 @@
+### Added
+- **Similar worlds, landed** (R2-SIMILAR-S0, protocol 2.14). The sim sends a `similar` section in each new game (2.14 and later): the nearest worlds to every world by distance in the catalogue's typed vector, 15 rankings, computed in AILANG and checked against a Python oracle to 1e-12. The bridge stores it exactly as sent; no GDScript reads a distance. Shipped in #305, #323 and #366; this landing adds the tests that pin the minor, the empty section and the stored copy, and a wider production guard against vector reads.

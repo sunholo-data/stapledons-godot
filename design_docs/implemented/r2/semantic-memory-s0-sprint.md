@@ -31,7 +31,7 @@ Semantics, scope, acceptance criteria and LOC estimates were unchanged in iterat
 - Preserve S0.1's completed progress and all other feature progress. Keep semantics, scope, wire shape, AC ids and LOC/day estimates. The extra 2.15 fixture and frozen expectation are compatibility coverage forced by #314, within S0.2's existing budget. Do not change the completed ranking implementation or digest. Its current recipe checks 15 nonempty rows and 16 newline characters; the old printer-format discussion is historical.
 - Edit only this plan and its sprint JSON. Leave the design doc unchanged and report its stale references to the controller. Record exact read-only evidence below. Runtime baseline results and pristine byte captures remain the controller's responsibility; none was run here.
 
-**Design doc:** [design_docs/planned/r2/semantic-memory-s0.md](semantic-memory-s0.md), minor references inspected without editing at base `adf34a677f5919a86f09cd640a3fa0a3493f6d3d`.
+**Design doc:** [design_docs/implemented/r2/semantic-memory-s0.md](semantic-memory-s0.md), minor references inspected without editing at base `adf34a677f5919a86f09cd640a3fa0a3493f6d3d`.
 **Sprint JSON:** [.ailang/state/sprints/sprint_R2-SIMILAR-S0.json](../../../.ailang/state/sprints/sprint_R2-SIMILAR-S0.json).
 **Status:** approved (D-85 RESOLVED A, Mark, attended 2026-10-19; PR #272); mechanically amended 2026-10-22, mission iteration 46, charter row L9.
 **Approval:** D-85 RESOLVED A: Mark approved this plan in an attended session on 2026-10-19, including top-level `similar` emission from `sim/protocol.ail` with `sim/core.ail` untouched. Plan PR #272 merged as `514d35a`. This mechanical amendment requires no new approval.
@@ -508,3 +508,125 @@ No unresolved planning choice remains. Runtime baselines and pristine 2.13/2.15 
 ## Approval recorded
 
 D-85 RESOLVED A (Mark, attended 2026-10-19), plan PR #272 merged as `514d35a`. S0.1 is complete. S0.2, S0.3 and Landing remain pending. The controller may continue the approved plan after establishing the current pristine baseline. This amendment performed no implementation or git writes.
+
+## Amendment iter63: Landing execution detail
+
+Planner-measured, read-only, at base `05e339204e88649851527b9da6b5f45be0bb44a7` (origin/main, mission iteration 63, 2026-11-02), pinned runtime AILANG v0.54.18. Execution detail only: the design direction, semantics, wire shape, AC ids and milestone budgets are unchanged; S0.1-S0.3 stay done, Landing stays pending and this amendment writes no production code and performs no git write. Where they conflict it supersedes the Landing section's "documentation only" heading wording, its stale frozen-base gate line, and the v0.54.14 runtime mention in AC12 evidence. Mark's iteration-62 Next (charter row L9: "L9 S0 Landing (fold in the S0.3 judge's survivors)") adds a small test/guard part to Landing; everything else stands. No new approval: amendments to an approved plan stay execution detail (iterations 42, 46, 62 precedent).
+
+**Fold-in source.** `.ailang/state/evaluations/eval_R2-SIMILAR-S0_S0.3_round_1.json` (Sonnet 5.5, 90/100 PASS, 0 blocking; commit `e151c903`). Survivors folded in here: **S1** the production vector-read guard misses `.get("vector", <default>)` and `.has("vector")` (finding 1; mutation I2 survived; controller-reproduced at 05e33920: a probe of `d.get("vector", 0)`, `d.has("vector")`, `world.get("vector")` scores 1 hit, only the last); **S2** `SimBridge.SIMILAR_MINOR`'s value is unpinned (mutation G: `:= 15` stays green, because the real-sim loop iterates the constants and only checks negotiated == requested, and the fake advertises 14 either way); **S3** no test sends an empty Dictionary `similar: {}` (mutation Q survived; amendment rule 4 says `{}` is a valid Dictionary); **S4** the `_take_similar` store path is untested for aliasing (mutation H: storing bare `changes["similar"]` survives).
+
+### Test/guard part (executor; small; ≤ 80 changed lines across `tests/test_sim_bridge.gd` and `Makefile`; planned ≈ 25)
+
+#### Files and anchors (the executor touches exactly these)
+
+- `Makefile` `similar-test` third zsh block (:90-100), ~3 changed lines: the `pat=` line, the probe `printf` line (5 -> 7 probe lines), the expected hit count (4 -> 6). The two `main.gd` guard lines are unchanged.
+- `tests/test_sim_bridge.gd` (≤ 30 diff lines): `PY_SIMILAR` gains an `elif mode == "empty"` branch (+2, before the `games == 1` branch, :487-488); T8's pin at the top of `test_similar_real` (+2, :499); new rows `test_similar_empty_section` and `test_similar_store_is_own_copy` (+~8 each) plus two registrations in the `tests` array (:550-577). Both fake sessions ride the existing `fake_similar()` launcher (:492): inline python, no fixture files, ~0 s.
+- Nothing else. `bridge/sim_bridge.gd`, `main.gd`, `sim/**`, `tests/fixtures/**` and `tests/replays/**` are not edited by Landing; drills are reverted scratch edits.
+
+#### S1: widened guard pattern and probe
+
+New `pat` (POSIX ERE; `git grep -E` has no `\b`, iteration-62 finding; `.get` needs no close-paren so `.get("vector", <default>)` is caught; `.has` tolerates trailing space before `)`):
+
+```
+(\[["']vector["']\]|\.get\( *["']vector["']|\.has\( *["']vector["'] *\)|\.vector([^A-Za-z0-9_]|$))
+```
+
+Measured at base with `git grep -nE "$pat" -- '*.gd' 'bridge/*.gd' 'ui/*.gd' 'demos/*.gd' 'sky/*.gd' 'interior/*.gd' 'physics/*.gd'`: rc 1, zero hits at HEAD (also zero over every tracked `*.gd`, so no test file trips it). Probe check: the six positive forms below score exactly 6 while the decoys `s.a.vector2`, `d.get("vectorized")` and `d.has("vector2")` score 0. Recipe lines to land (replace `pat=`, `printf` and the expected-count line; the unchanged `hits=` line is shown for context; existing escaping style — this exact escaping was run through the real `make` -> `zsh -eu -c` layers by the planner via a scratch makefile, rc 0):
+
+```make
+	  pat="(\[[\"'\'']vector[\"'\'']\]|\.get\( *[\"'\'']vector[\"'\'']|\.has\( *[\"'\'']vector[\"'\''] *\)|\.vector([^A-Za-z0-9_]|\$$))"; \
+	  printf "var a = changes[\"vector\"]\nvar b = changes[$${q}vector$${q}]\nvar c = world.get(\"vector\")\nvar d = s.similar.vector\nvar f = d.get(\"vector\", 0)\nvar g = d.has(\"vector\")\nvar e = s.a.vector2\n" > "$$probe"; \
+	  hits=$$(git grep --no-index -E "$$pat" -- "$$probe" | wc -l | tr -d " "); \
+	  if [[ "$$hits" != 6 ]]; then echo "similar-test guard: probe $$hits != 6, pattern broken" >&2; exit 1; fi; \
+```
+
+#### Test rows (test | file | asserts | kills which mutation)
+
+| test | file | asserts | kills which mutation |
+|---|---|---|---|
+| T7 widened vector guard (S1) | `Makefile` `similar-test` | probe carries `.get("vector", 0)` and `.has("vector")` (6 positives; the `.vector2` decoy stays negative) and the recipe expects exactly 6; the seven production pathspecs stay at 0 hits | evaluation mutation I2 (both survivor forms injected into `physics/blackbody.gd`/`sky/background.gd` now fail the guard) |
+| T8 `SIMILAR_MINOR` is the literal 14 (S2) | `tests/test_sim_bridge.gd`, top of `test_similar_real` | `SimBridge.SIMILAR_MINOR == 14` (literal constant, not equal-to-request) | mutation G (`SIMILAR_MINOR := 15` silently re-ran the 2.14 session as a second 2.15) |
+| T9 empty section accepted (S3) | `tests/test_sim_bridge.gd`, `PY_SIMILAR` mode `"empty"` + `test_similar_empty_section` | fake hello 2.14 sends exactly `{}`; `new_game` returns true, `state["changes"]["similar"] == {}` (sent, proved) and `similar == {}` (accepted and stored as `{}`) | mutation Q (`_take_similar` rejecting an empty Dictionary) |
+| T10 stored copy, no aliasing (S4) | `tests/test_sim_bridge.gd`, `test_similar_store_is_own_copy` | after a fake new_game with a `similar` dict, mutate the wire source (`s.state["changes"]["similar"]["worlds"][0]["near"][0]["d"] = 9.0`); the stored `similar` keeps 0.5 — a deep copy of what was sent | mutation H (`_take_similar` storing bare `changes["similar"]`, aliasing the reply dictionary) |
+
+**GREEN signature, not RED.** Unlike iter62, every new row is green at base by construction: the S0.3 code is already correct; the judge found missing tests, not bugs. T7 is likewise a guard upgrade with 0 production hits at base. Each row's discriminating power is proven exactly once by its drill, and the sprint report records the green run plus every drill's named failure. Wall clock: +2 inline-fake sessions over the measured base (rc 0, `sim bridge: 0 failures`, 107 ok, 79 s class), no new real-sim session.
+
+#### Drills (executor: apply the mutation -> run the named check -> note the named failure -> revert -> tree byte-identical)
+
+- D-S2 (kills-check for G): `perl -pi -e 's/SIMILAR_MINOR := 14/SIMILAR_MINOR := 15/' bridge/sim_bridge.gd`; run the bridge test; expect FAIL naming the literal-14 assert (the 2.14 session then negotiates 15); `git checkout -- bridge/sim_bridge.gd`.
+- D-S3 (Q): in `_take_similar`, reject empty dictionaries (insert a `.is_empty()` -> `return false` before the assign); run the bridge test; expect T9 FAIL ("{} accepted" assert); revert. Row 7x applies to every drill: a Godot `SCRIPT ERROR` still exits 0, so read the summary line `sim bridge: N failures` and the `ok` count, never rc alone.
+- D-S4 (H): change the assign to `similar = changes["similar"]`; run the bridge test; expect T10 FAIL (stored `d` follows the mutation to 9.0); revert.
+- D-S1a (I2 re-aimed): append `var q = d.get("vector", 0)` to `physics/blackbody.gd` and `var r = d.has("vector")` to `sky/background.gd`; run `make similar-test AILANG=runtime/bin/ailang`; expect FAIL "similar-test guard: production vector read" naming both files; revert both.
+- D-S1b (M8 family): drop the `\.has\( *…*\)` alternative from `pat`; run `make similar-test`; expect FAIL "probe 5 != 6, pattern broken"; revert.
+- After the last drill, `git status --porcelain` is empty except the intended Landing diff. The planner pre-ran the widened recipe, D-S1a and D-S1b at base (gate log below).
+
+### Replacement gates for the stale frozen-base line
+
+The Landing gate list's `git diff --exit-code adf34a677f5919a86f09cd640a3fa0a3493f6d3d -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson` fails at base, and not only on `main.gd` (the iter62 wording covered just that component). Measured per component at 05e33920: `sim/ailang.lock` rc 1 (v0.54.18 pin 2026-10-28 plus `sunholo/observe` 0.1.0, R3-EARTH-LINK EL1 `7c748556`), `main.gd` rc 1 (7 commits: protocol 2.16, R3-EARTH-LINK), `tests/replays` rc 1 (`tests/replays/scene/m4_scene_session.*` added 2026-10-27); only `tests/fixtures/protocol_27_inferred.expected.ndjson` is unchanged (rc 0). Replace the whole line with two gates:
+
+```sh
+# L-A (whole-sprint evidence; the three S0 merge commits are immutable history):
+for m in ddc5582d db54e525 ca1e04d0; do
+  git diff --exit-code "$m^1" "$m" -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson
+done
+# L-B (the landing change itself adds nothing to those paths):
+git diff --exit-code $(git merge-base origin/main HEAD) -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson
+```
+
+The definition-of-done gate-3 row (`adf34a67… -- sim/ailang.lock`; `adf34a67… -- sim/ailang.toml` must show exports only) gets the same substitution: L-A proves the sprint left pins alone, and the landing-diff check is `git diff --exit-code $(git merge-base origin/main HEAD) -- sim/ailang.lock` plus `git diff $(git merge-base origin/main HEAD) -- sim/ailang.toml` (expected empty; the landing diff touches neither). AC9's "no replay changes" keeps its executed per-milestone evidence (S0.2's `git diff --exit-code tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson`, controller-green) plus L-A; live replay byte-equality stays covered by `make replay` in gate 1.
+
+### Per-milestone gate list (controller, D-85 approved; iter63 supersedes only the frozen-base line and adds the bridge row)
+
+```sh
+make deps AILANG=runtime/bin/ailang
+make lore-import CHECK=1 D=../stapledons-design AILANG=runtime/bin/ailang
+runtime/bin/ailang check --package sim
+(cd sim && ../runtime/bin/ailang test --package .)
+make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang
+make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang
+make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang
+python3 tools/similar_oracle.py tests/fixtures/protocol_214_similar.expected.ndjson
+python3 tools/similar_oracle.py tests/fixtures/protocol_215_similar.expected.ndjson
+git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail
+for m in ddc5582d db54e525 ca1e04d0; do git diff --exit-code "$m^1" "$m" -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson; done
+git diff --exit-code $(git merge-base origin/main HEAD) -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson
+AILANG_BIN="$PWD/runtime/bin/ailang" godot --headless --path . --script tests/test_sim_bridge.gd
+make stellar-protocol-test sound-archive-test AILANG=runtime/bin/ailang
+make ci-fast AILANG=runtime/bin/ailang
+PATH="$PWD/runtime/bin:$PATH" make test AILANG=runtime/bin/ailang
+```
+
+### Documentation part (controller-executed, planned precisely)
+
+1. Move `design_docs/planned/r2/semantic-memory-s0.md` and `semantic-memory-s0-sprint.md` to `design_docs/implemented/r2/` (`git mv`). That directory's convention is `<id>.md` / `<id>-sprint.md` / `<id>-report.md` (e.g. the sunholo-audio trio); no renaming needed. In the moved sprint doc update its own `**Design doc:**` prose path (:34) to the implemented path; the relative link `(semantic-memory-s0.md)` resolves unchanged.
+2. Update live references. Measured `git grep -n 'planned/r2/semantic-memory-s0'` hits at base: edit `design_docs/README.md:66` (move the row to the implemented set: `**Implemented**` with sprint/report links and the PR/eval evidence below) and `.ailang/state/sprints/sprint_R2-SIMILAR-S0.json:25-26` (`design_doc`, `sprint_plan` -> implemented paths, in this same landing change). Leave the historical records alone — they are evidence or history, not links: `.ailang/state/evaluations/eval_R2-SIMILAR-S0_plan_round_1.json`, `.ailang/state/sprints/sprint_R2-KERR.json` (recorded command output), `design_docs/planned/r2/kerr-black-holes-sprint.md:1490-1496` (verification log), `design_docs/stapledon-mission-log.md:480`, `design_docs/stapledon-mission-status-archive.md:141`, `design_docs/stapledon-mission.md:223,446`, `website/src/data/decisions.json:1076`. Also fix the design doc's 18 stale minor references noted at iteration 46 if still present (read its blockquotes: renumber history stays as history; the operative text must name minor 14 / protocol 2.14).
+3. Write `design_docs/implemented/r2/semantic-memory-s0-report.md` in the existing report shape (`design_docs/implemented/r2/sunholo-audio-report.md`: **Landed** header, **Design**/**Sprint** relative links, What shipped, Measurements table, Notes). It must carry: PR/merge evidence (#305 `ddc5582d`, #323 `db54e525`, #366 `ca1e04d0`, plus the landing PR) and rig/full + fast-tier results per milestone; protocol behaviour — `similar` emitted only in new_game at every negotiated minor >= 14 (2.14, 2.15 and 2.16 measured live), immediately before `archive` and after `cruise`, absent at <= 13 and on every tick, pristine 2.13/2.15 byte equality proven by the strip-similar cmp; bridge behaviour — stored exactly as sent, deep-copied, `{}` below 14 and between games, non-Dictionary is `bad_response`, ticks never re-read it; hashes — ranking digest `4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b` (15 rows/16 lines), session fixture hashes 2.14 `56eee0543d763ba8b1d2bd9151e523c872f482aae7c2fd817e3b4d4cd2d8adee` and 2.15 `a64e963401f56888d56ccaaf5514124a8c0e44af3be760c6e356b9a65ef7cdf6` with inputs `06cd35307f97794052889d94ba44b17738c8abacdc374b1cf840d82a37721daf`/`56a7ebf7f3a841609e3ee946cb6516f38cde55843ef589b392cf058ca84fbbb3` (strict VM = ordinary VM = interpreter = fixture, repeat identical; oracle ok, 15 typed vectors, 210 directed distances, 1e-12, both minors); the three independent evaluations with scores S0.1 93, S0.2 93, S0.3 90 and their paths; the Earth-order uncertainty (TRAPPIST-1 e's a carries ±0.0025 AU ≈ 8.5 %: at ±1σ the Earth-e distance spans ~0.1965-0.33488 against Venus's 0.33514, so second place is data-dependent; central values give e first at 0.26386705430076196 — never imply habitability confidence); the measured Jupiter ranking `saturn 0.7474063181999366, uranus 1.9541812432684686, neptune 2.269140246394372`; the S1-S4 fold-in rows and drill results from this amendment; L-A as "no package change" proof (celestial 0.5.0 and relativity 0.12.0 pins untouched by S0); and the parked visible/display follow-up for attended work.
+4. Changelog per convention (`changelogs/unreleased/README.md`): one new fragment `changelogs/unreleased/<landing-date>-similar-s0-landing.md` with an `### Added` section in the two-line style of `changelogs/unreleased/2026-10-31-similar-bridge-parse.md` (iteration 62's fragment, landed at S0.3). Never edit `CHANGELOG.md` directly — `tools/changelog_fold.sh` folds fragments at tag time.
+5. Design-repo PR (controller only; this clone does not touch `../stapledons-design`): `features/next/semantic-memory.md` — mark S0 implemented in stapledons-godot at protocol 2.14 (sprint R2-SIMILAR-S0, PRs #305/#323/#366 + landing PR; link `design_docs/implemented/r2/semantic-memory-s0.md`) and correct the measured table row `| Jupiter | Saturn, Neptune |` to `| Jupiter | Saturn, Uranus, Neptune |`; the measured numbers were read from the shipped fixture with `grep -o '"name":"Jupiter"[^}]*"near":\[[^]]*\]' tests/fixtures/protocol_215_similar.expected.ndjson` (saturn 0.7474063181999366, uranus 1.9541812432684686, neptune 2.269140246394372). `roadmap/r2-voyage-life.md:32` — annotate the semantic-memory row: S0 shipped (protocol 2.14, similar worlds in the sim); S1+ (recall/misremembering) remain design-side.
+6. Keep the display follow-up explicitly parked for attended review; state it in the report and the README row.
+
+### Out of scope (evaluator findings deliberately not folded in)
+
+- Row 7x (evaluation finding 5): a Godot `--script` test that fails to parse or hits `SCRIPT ERROR` can still exit 0. Chartered separately (STATUS row 7x); Landing inherits only the reading rule (summary line + ok count, never rc alone) for its drills and gates.
+- The redundant Makefile pathspecs (evaluation finding 6): under git pathspecs `'*.gd'` already crosses `/`, so the six directory pathspecs are equivalent today (`*.gd` covers tests too, which is stricter than the iter62 wording implied). Keep them: they document the production dirs and fail closed if the root glob is ever narrowed.
+
+### Gate log (planner-run at base 05e33920, this machine)
+
+| command | result |
+|---|---|
+| `make similar-test AILANG=runtime/bin/ailang` | rc 0; rank digest `4f1a16d7…`; oracle ok for both fixtures; session sha `56eee054…`/`a64e9634…`; guard block green (probe 4 hits at pre-widening HEAD) |
+| widened `pat` probe check via `git grep --no-index -nE` (6 positives + `.vector2`/`.get("vectorized")`/`.has("vector2")` decoys) | exactly the 6 positives; 0 decoy hits |
+| `git grep -nE "$pat" -- '*.gd' 'bridge/*.gd' 'ui/*.gd' 'demos/*.gd' 'sky/*.gd' 'interior/*.gd' 'physics/*.gd'` | rc 1, 0 hits at HEAD (also 0 over all tracked `*.gd`) |
+| verbatim escaped recipe via a scratch makefile through `make` -> `zsh -eu -c` | rc 0 |
+| D-S1a on the widened recipe (inject `.get("vector", 0)`/`d.has("vector")` into `physics/blackbody.gd`/`sky/background.gd`; then `.has("vector" )`/`.get("vector", [])` into `ui/ai_indicator.gd`) | FAIL "similar-test guard: production vector read" both rounds; reverted; `git status --porcelain` empty |
+| D-S1b (drop the `\.has` alternative) | FAIL "probe 5 != 6, pattern broken" |
+| stale frozen-base line, per component | `sim/ailang.lock` rc 1, `main.gd` rc 1, `tests/replays` rc 1, `tests/fixtures/protocol_27_inferred.expected.ndjson` rc 0 |
+| L-A per-merge `git diff --exit-code "$m^1" "$m"` for `ddc5582d`, `db54e525`, `ca1e04d0` over the four frozen paths | rc 0 for all three |
+| L-B `git diff --exit-code $(git merge-base origin/main HEAD) -- <four paths>` | rc 0 (trivial at base: HEAD == origin/main; meaningful on the landing PR head) |
+| `AILANG_BIN="$PWD/runtime/bin/ailang" godot --headless --path . --script tests/test_sim_bridge.gd` | rc 0, `sim bridge: 0 failures`, 107 `ok` lines, no `SCRIPT ERROR` |
+| `runtime/bin/ailang --version` | AILANG v0.54.18 — so AC12's "on v0.54.14" evidence wording is stale; read it as the pinned runtime |
+| `shasum -a 256` of both 2.14/2.15 fixture pairs | expected/inputs as quoted above |
+
+Not run by the planner: `make test` (rig/full), `make ci-fast`, the GPU/golden gates, `make deps`/`lore-import` (controller environment), and every recording target. Contradiction found against the iteration-62 wording and reported, not worked around: the stale frozen-base line fails on three of four components (lock, main.gd, replays), not just `main.gd`; replacements L-A/L-B cover all four.
+
+This amendment performed no implementation and no git writes; the executor and the controller run the parts above.

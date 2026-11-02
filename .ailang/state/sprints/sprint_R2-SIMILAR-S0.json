@@ -22,8 +22,8 @@
   "mission_iteration": 46,
   "base_commit": "adf34a677f5919a86f09cd640a3fa0a3493f6d3d",
   "base_state": "Pristine origin/main at adf34a67 before iteration 46 plan amendment; S0.1 complete.",
-  "design_doc": "design_docs/planned/r2/semantic-memory-s0.md",
-  "sprint_plan": "design_docs/planned/r2/semantic-memory-s0-sprint.md",
+  "design_doc": "design_docs/implemented/r2/semantic-memory-s0.md",
+  "sprint_plan": "design_docs/implemented/r2/semantic-memory-s0-sprint.md",
   "protocol_minor": 14,
   "runtime": {
     "version": "v0.54.14",
@@ -869,11 +869,11 @@
     },
     {
       "id": "Landing",
-      "title": "evaluate and land",
+      "title": "evaluate and land (+ fold in the S0.3 judge survivors, iteration 63)",
       "status": "pending",
-      "description": "Controller obtains full local/CI evidence, independent different-agent/model sprint evaluation >=70/100 and resolved findings, then moves design and plan, updates JSON links, writes report/index/changelog and opens the design-repo status/Jupiter-order PR. Park visible follow-up for attended review; report the Earth-order uncertainty. No controller git action is performed by planner.",
-      "estimated_loc": 0,
-      "estimated_documentation_loc": 60,
+      "description": "Controller lands the test/guard fold-in of the four S0.3-evaluation survivors (guard widened for .get(\"vector\", default) and .has(\"vector\"); SimBridge.SIMILAR_MINOR literal-14 pin; empty {} section accepted; store anti-aliasing row) as <=80 changed lines across tests/test_sim_bridge.gd and Makefile with named-mutation drills reverted byte-identical, obtains full local/CI evidence, then moves design and plan to design_docs/implemented/r2/, updates JSON links, writes report/index/changelog and opens the design-repo status/Jupiter-order PR (Saturn, Uranus, Neptune measured). The stale frozen-base gate line is replaced by per-S0-merge evidence (L-A) plus a landing merge-base diff (L-B). Park the visible follow-up for attended review; report the Earth-order uncertainty. No git action is performed by the planner.",
+      "estimated_loc": 25,
+      "estimated_documentation_loc": 80,
       "estimated_days": 0.5,
       "schedule": "Day 3 afternoon",
       "dependencies": [
@@ -889,13 +889,16 @@
         ".ailang/state/sprints/sprint_R2-SIMILAR-S0.json",
         ".ailang/state/evaluations/",
         "design-repo:features/next/semantic-memory.md",
-        "design-repo:roadmap/r2-voyage-life.md"
+        "design-repo:roadmap/r2-voyage-life.md",
+        "Makefile",
+        "tests/test_sim_bridge.gd"
       ],
       "acceptance_criteria": [
-        "AC12 and all AC1-AC11 command evidence green outside sandbox: full Studio rig (rig/full) and GitHub ci-fast on v0.54.14.",
+        "AC12 and all AC1-AC11 command evidence green outside sandbox: full Studio rig (rig/full) and GitHub ci-fast on the pinned runtime (v0.54.18 at landing; the v0.54.14 mention is historical).",
         "All CLAUDE.md definition-of-done gates recorded, physics visual gate N/A with reason, no package change and core purity checked.",
         "Independent evaluator differs from executor, score >=70/100, actionable findings resolved with evidence in .ailang/state/evaluations/.",
-        "Implemented docs and report/index/changelog agree on protocol 2.14; design-repo PR updates S0 and measured Jupiter -> Saturn, Uranus, Neptune; visible work remains parked."
+        "Implemented docs and report/index/changelog agree on protocol 2.14; design-repo PR updates S0 and measured Jupiter -> Saturn, Uranus, Neptune; visible work remains parked.",
+        "Iteration-63 survivor fold-in lands: T7 widened vector guard catches .get(\"vector\", default) and .has(\"vector\") with a 6-hit in-recipe probe and zero production hits; T8 pins SimBridge.SIMILAR_MINOR == 14; T9 accepts and stores an empty {} similar section; T10 proves the stored similar aliases nothing (mutating the wire dictionary leaves the stored copy unchanged). Drills D-S1a/D-S1b/D-S2/D-S3/D-S4 each fail with the named check and are reverted byte-identical."
       ],
       "acceptance_ids_first_passing": [
         "AC12"
@@ -933,17 +936,121 @@
           "file": "implemented doc/report, index, changelog, design-repo PR",
           "asserts": "Paths resolve, 2.14 named, Jupiter corrected, S0 completed without claiming display",
           "kills_which_mutation": "Incorrect Jupiter second; broken links; reporting visible UI as shipped"
+        },
+        {
+          "test": "T7 widened vector guard (S1 fold-in)",
+          "file": "Makefile similar-test",
+          "asserts": "Probe gains .get(\"vector\", 0) and .has(\"vector\") (6 positives; the .vector2 decoy stays negative), recipe expects exactly 6; the seven production pathspecs keep 0 hits at HEAD",
+          "kills_which_mutation": "Evaluation mutation I2: injected d.get(\"vector\", 0)/d.has(\"vector\") in physics/sky now fail the guard"
+        },
+        {
+          "test": "T8 SIMILAR_MINOR literal 14 (S2 fold-in)",
+          "file": "tests/test_sim_bridge.gd, test_similar_real",
+          "asserts": "SimBridge.SIMILAR_MINOR == 14 (literal constant, not equal-to-request)",
+          "kills_which_mutation": "Mutation G (SIMILAR_MINOR := 15 silently re-ran the 2.14 session as a second 2.15)"
+        },
+        {
+          "test": "T9 empty section accepted (S3 fold-in)",
+          "file": "tests/test_sim_bridge.gd, PY_SIMILAR mode \"empty\" + test_similar_empty_section",
+          "asserts": "Fake hello 2.14 sends exactly {}; new_game returns true, state[\"changes\"][\"similar\"] == {} (sent, proved), similar == {} (accepted, stored as {})",
+          "kills_which_mutation": "Mutation Q (_take_similar rejecting an empty Dictionary)"
+        },
+        {
+          "test": "T10 stored copy, no aliasing (S4 fold-in)",
+          "file": "tests/test_sim_bridge.gd, test_similar_store_is_own_copy",
+          "asserts": "Mutate the wire source after the take (state[\"changes\"][\"similar\"] near[0].d = 9.0); stored similar keeps 0.5, a deep copy as sent",
+          "kills_which_mutation": "Mutation H (_take_similar storing bare changes[\"similar\"], aliasing the reply dictionary)"
         }
       ],
       "gate_commands": [
-        "# Sprint R2-SIMILAR-S0: similar worlds in the sim",
-        "> **Protocol allocation (iteration 46, 2026-10-22):** minor 13 is surface (#302), minor 14 is similar (`similarMinor() = surfaceMinor() + 1`, S0.2), and minor 15 is archive (#314, D-113). S0.2 inserts negotiation for 14 between archive and surface. Requests for 15 or above still negotiate 15. Emit `similar` on new_game at both 14 and 15. Freeze pristine 2.13 bytes and pristine 2.15 bytes before editing production. The latter may gain only the new_game `similar` section. The game's request stays `ARCHIVE_MINOR` (15). S0.1 is complete and has no minor dependency."
+        "make deps AILANG=runtime/bin/ailang",
+        "make lore-import CHECK=1 D=../stapledons-design AILANG=runtime/bin/ailang",
+        "runtime/bin/ailang check --package sim",
+        "(cd sim && ../runtime/bin/ailang test --package .)",
+        "make python-guard lint-precision sim ui replay parity-v2 parity strict trappist1-test parity-m4 session-audit-test parity-gr ism-compat ism-determinism similar-test AILANG=runtime/bin/ailang",
+        "make crew-sync-check crew-faces-check crew-bridge-test crew-events-check crew-console-test crew-hold-test crossing-review-test crew-perf crew-parity export-filter-audit ship-demo-ci loading-jump-test AILANG=runtime/bin/ailang",
+        "make ai-test ai-live-guard m5-test navigation-usability-test guided-highlights-strict ism-bright-oracle bubble-surface-test ism-surfaces-test home-tiers-vm home-art-check home-site-check deck-layout-eval-test deck-assets-check AILANG=runtime/bin/ailang",
+        "python3 tools/similar_oracle.py tests/fixtures/protocol_214_similar.expected.ndjson",
+        "python3 tools/similar_oracle.py tests/fixtures/protocol_215_similar.expected.ndjson",
+        "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/core.ail",
+        "for m in ddc5582d db54e525 ca1e04d0; do git diff --exit-code \"$m^1\" \"$m\" -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson; done",
+        "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson",
+        "AILANG_BIN=\"$PWD/runtime/bin/ailang\" godot --headless --path . --script tests/test_sim_bridge.gd",
+        "make stellar-protocol-test sound-archive-test AILANG=runtime/bin/ailang",
+        "make ci-fast AILANG=runtime/bin/ailang",
+        "PATH=\"$PWD/runtime/bin:$PATH\" make test AILANG=runtime/bin/ailang"
       ],
-      "gate_owner": "controller under D-85 approval; no runtime gates run by iteration 42 planner",
+      "gate_owner": "controller under D-85 approval; the iteration-63 planner ran only the read-only base gates recorded in the amendment gate log",
       "passes": false,
       "started": null,
       "completed": null,
-      "actual_loc": null
+      "actual_loc": null,
+      "amendment_iter63": {
+        "date": "2026-11-02",
+        "base_commit": "05e339204e88649851527b9da6b5f45be0bb44a7",
+        "trigger": "Charter Next (iteration 62): L9 S0 Landing (fold in the S0.3 judge's survivors)",
+        "source_evaluation": ".ailang/state/evaluations/eval_R2-SIMILAR-S0_S0.3_round_1.json (Sonnet 5.5, 90/100, 0 blocking)",
+        "survivors_folded": {
+          "S1_guard_get_default_has": "Makefile similar-test pat widened (.get without close-paren, new space-tolerant .has alternative), probe 4 -> 6 hits, production pathspecs verified 0 hits at 05e33920 with git grep -nE",
+          "S2_pin_similar_minor": "assert SimBridge.SIMILAR_MINOR == 14 (literal)",
+          "S3_empty_section": "PY_SIMILAR mode \"empty\"; new_game true; state sent {} and stored {}",
+          "S4_store_aliasing": "mutate the wire dictionary after the take; the stored copy is unchanged"
+        },
+        "red_signature": "none: production is already correct; each new row is green at base and proven once by its drill (D-S1a, D-S1b, D-S2, D-S3, D-S4), reverted byte-identical",
+        "loc_cap": "test/guard part <= 80 changed lines across tests/test_sim_bridge.gd and Makefile (planned ~25)",
+        "frozen_base_line_replacement": {
+          "stale_line": "git diff --exit-code adf34a677f5919a86f09cd640a3fa0a3493f6d3d -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson",
+          "base_measurement": "fails on 3 of 4 components at 05e33920: sim/ailang.lock (v0.54.18 pin + sunholo/observe 0.1.0), main.gd (7 commits, protocol 2.16), tests/replays (m4_scene_session added); only tests/fixtures/protocol_27_inferred.expected.ndjson unchanged",
+          "L_A": "for m in ddc5582d db54e525 ca1e04d0; do git diff --exit-code \"$m^1\" \"$m\" -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson; done  # rc 0 at base for all three S0 merges",
+          "L_B": "git diff --exit-code $(git merge-base origin/main HEAD) -- sim/ailang.lock main.gd tests/replays tests/fixtures/protocol_27_inferred.expected.ndjson  # rc 0 at base (trivial)"
+        },
+        "planner_gates_run_at_base": {
+          "make similar-test AILANG=runtime/bin/ailang": "rc 0; ranking digest 4f1a16d7...; oracle ok for both fixtures",
+          "bridge test": "AILANG_BIN=$PWD/runtime/bin/ailang godot --headless --path . --script tests/test_sim_bridge.gd: rc 0, 'sim bridge: 0 failures', 107 ok, no SCRIPT ERROR",
+          "widened_pattern_vs_production": "git grep -nE <pat> over the seven pathspecs: rc 1, zero hits at HEAD; probe 6 hits, decoys (.vector2, vectorized, vector2-key) 0",
+          "escaped_recipe_end_to_end": "scratch makefile through make -> zsh -eu -c: rc 0; injection drills fail closed; drop-.has drill: probe 5 != 6"
+        },
+        "documentation_part": "controller: git mv both docs to design_docs/implemented/r2/; update design_docs/README.md row and this JSON's design_doc/sprint_plan paths; write design_docs/implemented/r2/semantic-memory-s0-report.md (protocol 2.14/2.15/2.16 behaviour, fixture and digest hashes 4f1a16d7.../56eee054.../a64e9634..., strict/parity cmp evidence, evaluations 93/93/90, Earth-order uncertainty, Jupiter correction, fold-in drills, parked display follow-up); changelog fragment per changelogs/unreleased/README.md; design-repo PR updates features/next/semantic-memory.md S0 status and the Jupiter row to Saturn, Uranus, Neptune (measured 0.7474063181999366, 1.9541812432684686, 2.269140246394372 from tests/fixtures/protocol_215_similar.expected.ndjson) and annotates roadmap/r2-voyage-life.md",
+        "out_of_scope": [
+          "row 7x: Godot --script can exit 0 on parse error/SCRIPT ERROR (chartered separately; drills and gates read the summary line and ok count, never rc alone)",
+          "redundant Makefile pathspecs ('*.gd' crosses '/', equivalent today; kept, stricter)"
+        ]
+      },
+      "evidence": {
+        "iteration": 63,
+        "date": "2026-11-02",
+        "base": "05e339204e88649851527b9da6b5f45be0bb44a7",
+        "head_branch": "mission/stapledon-iter63-similar-landing",
+        "test_guard": {
+          "makefile_probe_hits": "6 (was 4)",
+          "pattern_widened": true,
+          "bridge_test": "sim bridge: 0 failures, 110 ok (107 + 3 new: T8, T9, T10)",
+          "similar_test_rc": 0,
+          "rank_digest": "4f1a16d747b77949fd7b8750b7912dd9b8972b1598999fd76618d26eefa5b08b"
+        },
+        "drills": {
+          "D-S2": "FAIL SIMILAR_MINOR is the literal 14 (not merely equal to the request)",
+          "D-S3": "FAIL 2.14 empty similar {} is sent, accepted and stored as {} (bad_response)",
+          "D-S4": "FAIL stored similar is its own copy: a write to the wire source does not reach it",
+          "D-S1a": "similar-test guard: production vector read",
+          "D-S1b": "similar-test guard: probe 5 != 6, pattern broken",
+          "all_reverted": true
+        },
+        "gates": {
+          "make sim": "exit 0; 577 passed, 0 failed; sim bridge: 0 failures; bh-hud 64 passed",
+          "make uid-guard python-guard lint-precision": "ok",
+          "L-A": "rc 0 for ddc5582d, db54e525, ca1e04d0 over sim/ailang.lock main.gd tests/replays protocol_27 fixture",
+          "L-B": "rc 0 (empty landing diff)",
+          "protected_paths_diff": "rc 0 (sim/core.ail sim/ailang.lock main.gd tests/replays bridge/sim_bridge.gd)"
+        },
+        "evaluations": {
+          "S0.1": 93,
+          "S0.2": 93,
+          "S0.3": 90
+        },
+        "report": "design_docs/implemented/r2/semantic-memory-s0-report.md",
+        "ci_and_rig": "recorded in the mission log, iteration 63"
+      }
     }
   ],
   "evaluations": [
