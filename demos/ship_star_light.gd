@@ -49,10 +49,16 @@ const SHADOW_HANDOVER := 0.2
 const SWITCH_RATIO := 1.5 # a new star must be this much brighter to take over
 const TAU_S := 0.5 # s, easing time constant of energy, colour and direction
 const VISIBLE_EPS := 1e-3 # energy below which a light is switched off (invisible change)
-## True (R3-TRUE-PROCESSED D2.2): the ship's lamps in physical units. One unit of Godot light energy
-## at normal incidence is LUX_PER_ENERGY lx, so the spire at its base (8, D-100) lights the bridge
-## deck at 80 lx, a dim evening room, and the lower decks' broad key (1.5) at 15 lx.
-const LUX_PER_ENERGY := 10.0
+## True (R3-TRUE-PROCESSED D2.2): the ship's lamps in physical units. Mark (review page, 2026-11-02):
+## the spire at its base lights the bridge deck at 80 lx, photometric (a dim evening room). A light's
+## photometric output is energy x Y(linear colour) (eval B1/B7), so one unit of photometric energy at
+## normal incidence is LUX_PER_ENERGY = 80 / (SPIRE_BASE 8 x Y(SPIRE_COLOUR)) lx; the GPU golden
+## G-TL-1 measures a unit of photometric energy as a unit of deck luminance. The lower decks' broad key
+## (1.5, warm) is then 15.7 lx. Every ship lamp and the star share this one calibration.
+const SHIP_LAMP_LUX := 80.0
+const SPIRE_BASE_ENERGY := 8.0 # ship_lighting.gd SPIRE_BASE (tests assert they agree)
+const SPIRE_Y := 0.6658434495 # Y of ship_lighting.gd SPIRE_COLOUR (1, .80, .58) sRGB, linear (tests assert it)
+const LUX_PER_ENERGY := SHIP_LAMP_LUX / (SPIRE_BASE_ENERGY * SPIRE_Y)
 ## True (D2.3): the star's light off the deck fills the shadows, as an ambient term (no global
 ## illumination here): BOUNCE x E f(y), a deck of albedo ~0.3 seen over half the sky. Labelled.
 const BOUNCE := 0.1
@@ -101,10 +107,18 @@ static func meter_weight(y: float) -> float:
 
 ## True: the deck's own lamp illuminance (lx): the spire's base on the bridge, the broad key's below
 ## (or the ambient floor where a profile has no lamp, so the meter never divides by zero).
+## Photometric: energy x Y(colour) of the lamp that keys the deck (eval B7), so the spire at its base
+## is SHIP_LAMP_LUX exactly.
 static func ship_lux(rig: Dictionary) -> float:
 	var bridge: bool = rig.get("bridge", false) and rig.has("spire")
 	var lamp := float(rig.get("spire_base", 0.0)) if bridge else float(rig.get("key_base", 0.0))
-	return LUX_PER_ENERGY * maxf(lamp, float(rig.get("ambient_energy", rig.get("ambient_base", 0.22))))
+	var c: Color = Color.WHITE
+	var l: Light3D = rig.get("spire") if bridge else rig.get("key")
+	if l != null: c = l.light_color.srgb_to_linear()
+	var lamp_y := lamp * luminance(Vector3(c.r, c.g, c.b))
+	var amb: Color = (rig.get("ambient_colour", Color.WHITE) as Color).srgb_to_linear()
+	var amb_y := float(rig.get("ambient_energy", rig.get("ambient_base", 0.22))) * luminance(Vector3(amb.r, amb.g, amb.b))
+	return LUX_PER_ENERGY * maxf(lamp_y, amb_y)
 
 
 ## True: the eye adapted to the deck, Exposure's EYE rule (adapt only toward less sensitivity than

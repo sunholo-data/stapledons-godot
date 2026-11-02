@@ -123,7 +123,7 @@
       "passes": true,
       "started": "2026-11-02",
       "completed": "2026-11-02",
-      "notes": "44415ca2 + the gain commit: StarLight.mode (processed default), LUX_PER_ENERGY 10, BOUNCE 0.1, meter_weight f(y), deck_exposure, share_of, ship_lux; True applies the eye's adaptation as a gain on every interior light (a tonemap exposure blacked out the unshaded captain in the first trial render). ship-star-light 113 passed, 0 failures (all pre-existing assertions unchanged in Processed)."
+      "notes": "44415ca2 + the gain commit: StarLight.mode (processed default), LUX_PER_ENERGY 10, BOUNCE 0.1, meter_weight f(y), deck_exposure, share_of, ship_lux; True applies the eye's adaptation as a gain on every interior light (a tonemap exposure blacked out the unshaded captain in the first trial render). ship-star-light 113 passed in round 1, 122 in round 2, 128 in round 3 (all pre-existing assertions unchanged in Processed)."
     },
     {
       "id": "TP3",
@@ -156,7 +156,7 @@
       "passes": true,
       "started": "2026-11-02",
       "completed": "2026-11-02",
-      "notes": "test_physics test_true_star_light: RS-3/RS-4 LUT seen ratio = package pointFluxRatio (1.000025, 0.999917), linear to the deck, inverse square, 1587.5 x lamps; make physics 1034 passed, 0 failed. Design draft PR stapledons-design#51 (RS-Q5 + Archive entry The Colours of Home)."
+      "notes": "test_physics test_true_star_light: RS-3/RS-4 LUT seen ratio = package pointFluxRatio (1.000025, 0.999917), linear to the deck, inverse square, 1587.5 x lamps; make physics 1034 passed in round 1, 1037 in rounds 2 and 3. Design draft PR stapledons-design#51 (RS-Q5 + Archive entry The Colours of Home)."
     },
     {
       "id": "TP5",
@@ -175,7 +175,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Round 1: renders uploaded, draft PR #374, rig/full green on 10b9f1bf (74 min), fast tier pass. Codex evaluation 74 FAIL (blocking B1-B6). Round 2 fixes: B1 luminance-true True light; B2 the spire glow under the gain, captain/screens/markers labelled display-referred; B3 production emitter flux tests at RS-3/RS-4 (D^2 mutation drilled: both suites fail) and GPU golden make true-light-golden (10 ok, two negatives); B4 exposure classified presentation (no package); B5 HUD numbers removed; view button says True/Processed; TRAPPIST-1/Aldebaran at planned stops. Round-2 renders under refs/true_processed_v1/r2/. Passes after rig/full on the new head and Mark's render review (B6)."
+      "notes": "Round 1: renders uploaded, draft PR #374, rig/full green on 10b9f1bf (74 min), fast tier pass. Codex evaluation 74 FAIL (blocking B1-B6). Round 2 fixes: B1 luminance-true True light; B2 the spire glow under the gain, captain/screens/markers labelled display-referred; B3 production emitter flux tests at RS-3/RS-4 (D^2 mutation drilled: both suites fail) and GPU golden make true-light-golden (10 ok, two negatives); B4 exposure classified presentation (no package); B5 HUD numbers removed; view button says True/Processed; TRAPPIST-1/Aldebaran at planned stops. Round-2 renders under refs/true_processed_v1/r2/. Passes after rig/full on the new head and Mark's render review (B6). Round 3 (re-evaluation 87, new blocker B7): the lamps are photometric too: LUX_PER_ENERGY = 80 / (8 x Y(spire colour)) = 15.0185; star : spire at 127,000 lx measured 1587.5000; an 80 lx star equals the spire (test 1e-5, GPU G-TL-5 ratio 0.9997, negative G-TL-N3 1.50); true-light-golden 12 passed."
     }
   ],
   "reviews": [
@@ -202,6 +202,22 @@
       ],
       "open": [
         "B6 Mark's visual approval"
+      ]
+    },
+    {
+      "kind": "evaluation",
+      "round": 2,
+      "evaluator": "codex gpt-6.1-sol",
+      "score": 87,
+      "blocking": [
+        "B7"
+      ],
+      "accepted_disputes": [
+        "B4",
+        "B5"
+      ],
+      "addressed_round_3": [
+        "B7"
       ]
     },
     {

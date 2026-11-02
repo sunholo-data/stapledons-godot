@@ -798,11 +798,11 @@ func test_true_star_light() -> void:
 		check("%s the star light's production seen-illuminance ratio is the package pointFluxRatio(5772 K, %s)" % [row[0], d], seen / r, 1.0, 5e-3)
 		check("%s True deck light scales by exactly that ratio" % row[0], star_light.true_energy(1.27e5 * r) / star_light.true_energy(1.27e5), r, r * 1e-12)
 	check("True deck light follows the inverse square (the Sun at 5.2 AU vs 1 AU)", star_light.true_energy(1.27e5 / 27.04) / star_light.true_energy(1.27e5), 1.0 / 27.04, 1e-15)
-	check("True: the Sun at 1 AU (1.27e5 lx, checkSysSunLux) is 1,587.5 x the bridge's 80 lx lamps", star_light.true_energy(1.27e5) / 8.0, 1587.5, 1e-9)
-	# B1: the True light's photometric output is E / 10 at any colour (energy x Y(colour)).
+	check("True: the Sun at 1 AU (1.27e5 lx, checkSysSunLux) is 1,587.5 x the bridge's 80 lx spire, photometric (eval B7)", star_light.true_energy(1.27e5) / (star_light.SPIRE_BASE_ENERGY * star_light.SPIRE_Y), 1587.5, 1e-6)
+	# B1: the True light's photometric output is E / LUX_PER_ENERGY at any colour (energy x Y(colour)).
 	for tk: float in [2566.0, 5772.0, 5772.0 * 4.3589]:
 		var c: Vector3 = star_light.colour_of(tk, 1.0)
-		check("True light output at %.0f K is E / 10 per unit luminance (eval B1)" % tk, star_light.true_light_energy(1.27e5, c) * star_light.luminance(c), 1.27e4, 1e-8)
+		check("True light output at %.0f K is E / LUX_PER_ENERGY per unit luminance (eval B1)" % tk, star_light.true_light_energy(1.27e5, c) * star_light.luminance(c), 1.27e5 / star_light.LUX_PER_ENERGY, 1e-8)
 	check("Processed is compressed: one decade of light is one fifth of its range", star_light.energy_of(1.0e4) / star_light.ENERGY_MAX, 0.8, 1e-12)
 
 

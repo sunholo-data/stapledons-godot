@@ -11,8 +11,13 @@ extends SceneTree
 ##   G-TL-4  the exposure gain scales the deck linearly (x = 1/795, the Sun level with the deck at 1 AU)
 ##   G-TL-N1 negative: the old unit-max-channel energy at 2566 K fails G-TL-2's detector
 ##   G-TL-N2 negative: a D^2-for-1/D^2 mutant at RS-3 fails G-TL-3's detector
+##   G-TL-5  eval B7: an 80 lx True star (Mark's lamp level) and the production spire (SPIRE_BASE, SPIRE_COLOUR)
+##           light the same deck equally, within 1%
+##   G-TL-N3 negative: the round-2 calibration (10 lx per unit energy, the spire's colour taken as Y = 1)
+##           fails G-TL-5's detector
 ## Run: make true-light-golden (needs a GPU window; in make golden).
 const StarLight := preload("res://demos/ship_star_light.gd")
+const Lighting := preload("res://demos/ship_lighting.gd")
 const OUT := "res://renders/true_light_golden"
 var vp: SubViewport
 var light: DirectionalLight3D
@@ -124,6 +129,19 @@ func _run() -> void:
 	var g := StarLight.deck_exposure(80.0, e_v, 0.0)
 	var y_raw: float = await deck_y(e_v, Planets.T_SUN, 1.0, g, 0.0)
 	check("G-TL-4 the exposure gain scales the deck linearly (gain 1/%.1f)" % (1.0 / g), absf(y_raw / (e_v / lpe * g) - 1.0) < 0.02, "GPU Y %.4f vs CPU %.4f" % [y_raw, e_v / lpe * g])
+	# G-TL-5 (eval B7): the production spire's light and an 80 lx True star on the same deck.
+	light.light_color = Lighting.SPIRE_COLOUR
+	light.light_energy = Lighting.SPIRE_BASE * 0.05
+	light.rotation_degrees = Vector3(-90, 0, 0)
+	for f in 3: await process_frame
+	await RenderingServer.frame_post_draw
+	var ps := vp.get_texture().get_image().get_pixel(32, 32)
+	var y_spire := StarLight.luminance(Vector3(ps.r, ps.g, ps.b))
+	var y_80: float = await deck_y(80.0, Planets.T_SUN, 1.0, 0.05, 0.0)
+	check("G-TL-5 an 80 lx True star and the production spire light the deck equally (eval B7)", absf(y_80 / y_spire - 1.0) < 0.01, "Y star %.5f, spire %.5f (ratio %.4f, limit 1%%)" % [y_80, y_spire, y_80 / y_spire])
+	var c80: Vector3 = StarLight.colour_of(Planets.T_SUN, 1.0)
+	var y_r2: float = await deck_y(80.0, Planets.T_SUN, 1.0, 0.05, 0.0, 80.0 / 10.0 / StarLight.luminance(c80) * 0.05)
+	check("G-TL-N3 negative: the round-2 calibration (10 lx per energy, spire Y taken as 1) fails G-TL-5's detector", absf(y_r2 / y_spire - 1.0) >= 0.01, "Y ratio %.4f (must be off by >= 1%%)" % (y_r2 / y_spire))
 	vp.get_texture().get_image().save_png(OUT + "/last.png")
 	print("true-light-golden: %d passed, %d failures" % [passed, failed])
 	quit(1 if failed else 0)

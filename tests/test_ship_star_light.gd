@@ -437,7 +437,10 @@ func _run() -> void:
 	# energy is linear in the seen illuminance, the ship's lamps keep their own, the deck is exposed for
 	# the eye adapted to it, the star's bounce fills the shadows; Processed is everything above.
 	check("a bare StarLight is Processed (today's numbers)", StarLight.new().mode == "processed")
-	check("True energy is linear: the Sun at 1 AU, 1.27e5 lx -> 1.27e4", is_equal_approx(StarLight.true_energy(1.27e5), 1.27e4) and StarLight.LUX_PER_ENERGY == 10.0)
+	var spire_lin := Lighting.SPIRE_COLOUR.srgb_to_linear()
+	check("the calibration is photometric (eval B7): SPIRE_Y is Y(SPIRE_COLOUR) linear and SPIRE_BASE_ENERGY the rig's", absf(StarLight.SPIRE_Y - StarLight.luminance(Vector3(spire_lin.r, spire_lin.g, spire_lin.b))) < 1e-7 and StarLight.SPIRE_BASE_ENERGY == Lighting.SPIRE_BASE)
+	check("LUX_PER_ENERGY = 80 lx / (8 x Y(spire)) = 15.0185 lx per photometric unit (Mark's 80 lx)", absf(StarLight.LUX_PER_ENERGY - 80.0 / (8.0 * StarLight.SPIRE_Y)) < 1e-12 and absf(StarLight.LUX_PER_ENERGY - 15.0185452867) < 1e-6)
+	check("True energy is linear: the Sun at 1 AU, 1.27e5 lx -> 1.27e5 / 15.0185 photometric", is_equal_approx(StarLight.true_energy(1.27e5), 1.27e5 / StarLight.LUX_PER_ENERGY))
 	check("True energy follows the inverse square: 1 AU / 5.2 AU = 27.04", is_equal_approx(StarLight.true_energy(1.27e5) / StarLight.true_energy(1.27e5 / (5.2 * 5.2)), 27.04))
 	check("True energy is zero for none, negative or NaN", StarLight.true_energy(0.0) == 0.0 and StarLight.true_energy(-3.0) == 0.0 and StarLight.true_energy(NAN) == 0.0)
 	check("the eye meter's weight: 1 overhead, 1/2 level, 0.225 at y -0.1, 0 below -0.2", is_equal_approx(StarLight.meter_weight(1.0), 1.0) and is_equal_approx(StarLight.meter_weight(0.0), 0.5) and is_equal_approx(StarLight.meter_weight(-0.1), 0.225) and StarLight.meter_weight(-0.3) == 0.0 and StarLight.meter_weight(-1.0) == 0.0)
@@ -459,12 +462,26 @@ func _run() -> void:
 		var e_seen: float = star.target.seen_lux
 		var e_ship := StarLight.ship_lux(rig)
 		var y := star.interior_dir.y
-		check("bridge lamps in physical units: the spire's base lights the deck at 80 lx", is_equal_approx(e_ship, 80.0) and is_equal_approx(rig.spire_base, 8.0))
+		check("bridge lamps in physical units: the spire's base lights the deck at 80 lx photometric (energy x Y(colour), eval B7)", absf(e_ship - 80.0) < 1e-4 and is_equal_approx(rig.spire_base, 8.0))
 		var x := e_ship / (e_ship + e_seen * StarLight.meter_weight(y))
 		check("True, at Earth: the eye's adaptation is E_ship / (E_ship + E f(y)) (1/%.0f)" % (1.0 / star.exposure), is_equal_approx(star.exposure, x) and x < 0.01)
 		var y_star := light_y(star.light)
-		check("True, at Earth: the star light's photometric output is E / 10 x the adaptation (%.3f)" % y_star, absf(y_star / (e_seen / 10.0 * x) - 1.0) < 1e-5 and e_seen > 1.0e5)
-		check("True, at Earth: star : spire is the physical E / 80 lx (lamps do not dim)", absf(y_star / rig.spire.light_energy / (e_seen / e_ship) - 1.0) < 1e-5 and is_equal_approx(rig.spire.light_energy, rig.spire_base * x))
+		check("True, at Earth: the star light's photometric output is E / LUX_PER_ENERGY x the adaptation (%.3f)" % y_star, absf(y_star / (e_seen / StarLight.LUX_PER_ENERGY * x) - 1.0) < 1e-5 and e_seen > 1.0e5)
+		var ratio_sp := y_star / light_y(rig.spire)
+		print("  measured star : spire photometric at %.0f lx = %.2f (E / 80 lx = %.2f)" % [e_seen, ratio_sp, e_seen / 80.0])
+		check("True, at Earth: star : spire photometric is E / 80 lx (eval B7; lamps do not dim)", absf(ratio_sp / (e_seen / 80.0) - 1.0) < 1e-5 and is_equal_approx(rig.spire.light_energy, rig.spire_base * x))
+		# B7: an 80 lx True star and the production spire give equal photometric light, at any star colour.
+		var eighty := at_rest.duplicate(true)
+		for tk: float in [2566.0, 5772.0, 11544.0]:
+			body(eighty, "sun").e_v_lux = 80.0; body(eighty, "sun").teff_k = tk
+			sky.apply(eighty); star.update(rig, sky, 0.0, true)
+			check("B7: an 80 lx %.0f K star and the spire give equal photometric light (%.6f)" % [tk, light_y(star.light) / light_y(rig.spire)], absf(light_y(star.light) / light_y(rig.spire) - 1.0) < 1e-5)
+		body(eighty, "sun").e_v_lux = 127000.0; body(eighty, "sun").teff_k = Planets.T_SUN
+		sky.apply(eighty); star.update(rig, sky, 0.0, true)
+		var r127 := light_y(star.light) / light_y(rig.spire)
+		print("  measured star : spire photometric at 127000 lx = %.4f" % r127)
+		check("B7: at 127,000 lx the Sun is 1,587.5 x the spire, photometric (%.4f)" % r127, absf(r127 / 1587.5 - 1.0) < 1e-5)
+		sky.apply(at_rest); star.update(rig, sky, 0.0, true)
 		check("True: the exposure is one gain, the tonemap untouched; the spire lamp's glow is under it too (eval B2)", env.tonemap_exposure == 1.0 and is_equal_approx((rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier, rig.spire_lamp_base * x))
 		check("True, at Earth: the fill and the practical share the gain", is_equal_approx(rig.fill.light_energy, rig.fill_base * x) and is_equal_approx(rig.practical.light_energy, rig.practical_base * x))
 		check("True, at Earth: the star owns the only shadow map, the spire none", star.light.shadow_enabled and not rig.spire.shadow_enabled and is_equal_approx(star.light.shadow_opacity, 1.0) and not key.shadow_enabled)
@@ -508,13 +525,13 @@ func _run() -> void:
 			sb.rel_km = rel_at(sun_dir_w, stop_au * SystemView.AU_KM)
 			sky.apply(at_stop); star.update(rig, sky, 0.0, true)
 			var ok_flux: bool = star.target.get("id", "") == "sun" and absf(float(star.target.seen_lux) / e_stop - 1.0) < 1e-9
-			var ok_light := absf(light_y(star.light) / (e_stop / 10.0 * star.exposure) - 1.0) < 1e-5 and is_finite(star.exposure) and star.exposure > 0.0 and star.exposure <= 1.0
+			var ok_light := absf(light_y(star.light) / (e_stop / StarLight.LUX_PER_ENERGY * star.exposure) - 1.0) < 1e-5 and is_finite(star.exposure) and star.exposure > 0.0 and star.exposure <= 1.0
 			print("  %s at its stop (%.4f AU): E = %s lx, %s x the bridge's 80 lx lamps, adaptation 1/%.1f" % [st[0], stop_au, String.num_scientific(e_stop), String.num(e_stop / e_ship, 1), 1.0 / star.exposure])
-			check("%s at its planned stop: the star light carries the sim-path illuminance and its photometric output is E / 10 x the adaptation" % st[0], ok_flux and ok_light)
+			check("%s at its planned stop: the star light carries the sim-path illuminance and its photometric output is E / LUX_PER_ENERGY x the adaptation" % st[0], ok_flux and ok_light)
 		var red := at_rest.duplicate(true)
 		body(red, "sun").teff_k = 2566.0
 		sky.apply(red); star.update(rig, sky, 0.0, true)
-		check("True: a red dwarf's light at the same illuminance has the same photometric output, a redder colour (eval B1)", absf(light_y(star.light) / (e_seen / 10.0 * star.exposure) - 1.0) < 1e-5 and star.colour.z < sunc.z)
+		check("True: a red dwarf's light at the same illuminance has the same photometric output, a redder colour (eval B1)", absf(light_y(star.light) / (e_seen / StarLight.LUX_PER_ENERGY * star.exposure) - 1.0) < 1e-5 and star.colour.z < sunc.z)
 		# B1: equal lux, equal light, at any temperature or Doppler colour (the old unit-max colour gave
 		# 2566 K only 55.6% of the Sun's Y). Same direction, so the same adaptation.
 		var ys := []
@@ -528,7 +545,8 @@ func _run() -> void:
 		sky.apply(dark); star.update(rig, sky, 0.0, true)
 		check("True, interstellar: no star light, adaptation 1, the ambient the ship's own, the spire at base with the shadow", star.light.light_energy == 0.0 and star.exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour and is_equal_approx(rig.spire.light_energy, rig.spire_base) and rig.spire.shadow_enabled)
 		Lighting.set_level(rig, 1); sky.apply(at_rest); star.update(rig, sky, 0.0, true)
-		check("True, lower decks: the broad key keeps its own 15 lx beside the Sun (star : key = E / 15 lx)", is_equal_approx(key.light_energy, rig.key_base * star.exposure) and is_equal_approx(StarLight.ship_lux(rig), 15.0) and absf(light_y(star.light) / key.light_energy / (star.target.seen_lux / 15.0) - 1.0) < 1e-5)
+		var e_key := StarLight.ship_lux(rig)
+		check("True, lower decks: the broad key keeps its own %.2f lx beside the Sun (star : key = E / E_key photometric)" % e_key, is_equal_approx(key.light_energy, rig.key_base * star.exposure) and absf(e_key - 15.70) < 0.01 and absf(light_y(star.light) / light_y(key) / (star.target.seen_lux / e_key) - 1.0) < 1e-5)
 		star.set_mode("processed")
 		sky.apply(at_rest); star.update(rig, sky, 0.0, true)
 		check("back to Processed: today's full compressed light, the key at its floor, exposure 1, the ship's ambient", is_equal_approx(star.light.light_energy, StarLight.ENERGY_MAX) and is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and star.exposure == 1.0 and is_equal_approx(env.ambient_light_energy, rig.ambient_energy) and env.ambient_light_color == rig.ambient_colour and is_equal_approx(rig.fill.light_energy, rig.fill_base))
