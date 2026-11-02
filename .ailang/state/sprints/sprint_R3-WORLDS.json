@@ -1,0 +1,407 @@
+{
+  "sprint_id": "R3-WORLDS",
+  "status": "proposed",
+  "approved": null,
+  "created": "2026-11-02",
+  "design_doc": "design_docs/planned/r3/worlds.md",
+  "sprint_plan": "design_docs/planned/r3/worlds-sprint.md",
+  "branch": "plan on design/r3-worlds; execution feat/worlds-w1 and feat/worlds-w2 (fresh full clones), packages feat/celestial-habitability and feat/worlds (fresh ailang-packages clone), design repo feat/life-and-worlds (fresh clone)",
+  "origin": "R3 roadmap order-of-work step 2 (W1 then W2); Mark attended 2026-10-06 and 2026-10-27 (life-and-intelligence-parameters decisions 1-4)",
+  "github_issues": [],
+  "ailang": {
+    "pin": "v0.54.18",
+    "binary": "runtime/bin/ailang",
+    "prompt_version_loaded": "v0.16.7"
+  },
+  "external_dependencies": [
+    "stapledons-design physics/life-and-worlds.md (W1.0) merged",
+    "sunholo/celestial 0.6.0 and sunholo/worlds 0.1.0 published (attended ailang-publish)",
+    "sunholo/observe 0.2.0 (R3 S2) pinned before W1.4, per OQ4",
+    "free protocol minor (2.17 expected; checked at execution)",
+    "NASA Exoplanet Archive ps snapshot <= 100 pc (download)"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "W1.1",
+      "package": "sunholo/celestial",
+      "action": "contribute",
+      "reason": "ailang pkg search habitable|'habitable zone'|exoplanet (2026-11-02): none; HZ, Teq, RV amplitude, transit probability and Hill spacing are planetary physics, celestial's scope; stays dependency-free"
+    },
+    {
+      "milestone": "W1.2",
+      "package": "sunholo/worlds",
+      "action": "contribute",
+      "reason": "ailang pkg search drake|occurrence|population|'monte carlo'|worlds|astrobiology (2026-11-02): none; the baseline, dial, disc counts and history sampler are reusable science (gate 3); takes uniforms, owns no RNG"
+    },
+    {
+      "milestone": "W1.2",
+      "package": "sunholo/celestial",
+      "action": "depend",
+      "reason": "0.5.0 ism Poisson draw from two uniforms; 0.6.0 habitability"
+    },
+    {
+      "milestone": "W1.3",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "0.12.0 journey.planBurnCoastBurn for leg times; photometry for luminosity from V"
+    },
+    {
+      "milestone": "W1.3",
+      "package": "sunholo/observe",
+      "action": "depend",
+      "reason": "0.1.0 lightcone.seenAt; 0.2.0 (S2) photon budgets for the detection model"
+    },
+    {
+      "milestone": "W1.3",
+      "package": "none",
+      "action": "none",
+      "reason": "keyed hashing extends sim/rng.ail (SplitMix64 and its oracle live there); sunholo/auth's SHA-256 does not fit"
+    },
+    {
+      "milestone": "W1.4",
+      "package": "none",
+      "action": "none",
+      "reason": "calibration run and game data"
+    },
+    {
+      "milestone": "W2.0",
+      "package": "none",
+      "action": "none",
+      "reason": "game data pipeline in AILANG"
+    },
+    {
+      "milestone": "W2.1",
+      "package": "sunholo/worlds",
+      "action": "depend",
+      "reason": "historyOf, occurrence, dial"
+    },
+    {
+      "milestone": "W2.2",
+      "package": "none",
+      "action": "none",
+      "reason": "sim census tool"
+    },
+    {
+      "milestone": "W2.3",
+      "package": "none",
+      "action": "none",
+      "reason": "protocol"
+    },
+    {
+      "milestone": "W2.4",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI"
+    },
+    {
+      "milestone": "W2.5",
+      "package": "none",
+      "action": "none",
+      "reason": "lore and landing"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 4500,
+    "estimated_days": 15,
+    "basis": "attended rate about 300 counted LOC/day (R3-EARTH-LINK 300, R3-SUNHOLO-AUDIO-REALISM 285); the loop's recent rate is about 150/day (R2-SIMILAR-S0 147), so the loop share (about 4,000 LOC) is about 4 weeks; plus rig/full runs and two rulings"
+  },
+  "critical_path": [
+    "W1.0",
+    "W1.1",
+    "W1.2",
+    "W1.3",
+    "W1.4",
+    "W2.2"
+  ],
+  "pause_points": [
+    {
+      "after": "plan",
+      "mark_decides": "approve the plan; rule OQ1-OQ9 (OQ5 needed for W1.0)"
+    },
+    {
+      "after": "W1.0",
+      "mark_decides": "review the transcribed baseline (canon)"
+    },
+    {
+      "after": "W1.1 and W1.2 package gates",
+      "mark_decides": "attended ailang-publish"
+    },
+    {
+      "after": "W1.4",
+      "mark_decides": "rule the presets from the calibration table (OQ1, OQ2)"
+    },
+    {
+      "after": "W2.3, only if the free minor is not 2.17 or a pre-2.17 golden moves",
+      "mark_decides": "stop and report"
+    },
+    {
+      "after": "W2.4",
+      "mark_decides": "mock-up before copy; renders before merge"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "OQ1",
+      "q": "Preset names and targets: keep Lonely Universe, Scattered Few, Stapledon's Voyage, Teeming Galaxy; Lonely = the baseline median (luck 0); Scattered and Teeming bands as in design W1.4",
+      "recommendation": "yes to all four; Lonely is the baseline itself; the default keeps decision 1's bands",
+      "answer": null
+    },
+    {
+      "id": "OQ2",
+      "q": "Which reference strategies must hit the targets (the roadmap says every one, counted inside the doom window)",
+      "recommendation": "the cautious explorer and mid-range wanderer bind; pilgrim and waiter reported, floor of one living contact",
+      "answer": null
+    },
+    {
+      "id": "OQ3",
+      "q": "The slice's technological world within ~50 ly (about 1 seed in 200 under a uniform dial): (a) chosen seed, (b) neighbourhood profile, (c) the AI's steering of variations",
+      "recommendation": "(a) now, (c) proposed for W3; (b) only if the calibration needs it",
+      "answer": null
+    },
+    {
+      "id": "OQ4",
+      "q": "Detection before S3: run S2 beside W1 so W1.4 uses photon budgets, or provisional literal reaches and recalibrate at S3",
+      "recommendation": "S2 beside W1; W1.4 after S2; S3 re-runs the calibration",
+      "answer": null
+    },
+    {
+      "id": "OQ5",
+      "q": "Baseline transcription: f_l (Sandberg's abiogenesis model or a log-uniform range); L range (canon 1e2-1e8 or Sandberg 1e2-1e10); the dial moves only f_l, f_i, f_c, L",
+      "recommendation": "Sandberg's model as published; keep the canon L range and record Sandberg's; yes, only those four",
+      "answer": null
+    },
+    {
+      "id": "OQ6",
+      "q": "Synthesised planets in measured systems below survey limits",
+      "recommendation": "no in this version; elsewhere the RV veto (3 m/s, FGK V < 8 within 25 pc)",
+      "answer": null
+    },
+    {
+      "id": "OQ7",
+      "q": "Seeded histories (possible life) on real zone planets (Proxima b, TRAPPIST-1 e/f/g), physics fixed, measured constraints win",
+      "recommendation": "yes",
+      "answer": null
+    },
+    {
+      "id": "OQ8",
+      "q": "Before S3 the ship lists a system's synthesised planets only when in it; ending shares 0.75/0.15/0.10 and remnant persistence 1e3-1e7 yr as design parameters",
+      "recommendation": "yes, as proposed",
+      "answer": null
+    },
+    {
+      "id": "OQ9",
+      "q": "Calibrate at the Standard Earth clock (16,000 yr) and report Gentle/Hard; no Custom preset until New Game+",
+      "recommendation": "yes",
+      "answer": null
+    }
+  ],
+  "features": [
+    {
+      "id": "W1.0",
+      "description": "Baseline registry: stapledons-design physics/life-and-worlds.md (cited factor table, reference cases, LW-n check values); lore check reads the LW registry",
+      "estimated_loc": 60,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "design AC1: git grep -c '^| LW-' physics/life-and-worlds.md >= 20 on design main",
+        "make lore-values lists the LW rows; a mutant LW value fails make lore-check",
+        "every 'verify' value in design W1.0 confirmed or replaced from its source; OQ5 choices recorded"
+      ],
+      "routing": "attended (canon); loop may draft",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W1.1",
+      "description": "sunholo/celestial 0.6.0 habitability module: hzFluxes (Kopparapu 2014), hzDistanceAu, insolationEarth, equilibriumK, rvSemiAmplitude, transitProbability, mutualHillSpacing; tests, CHANGELOG, [release] kind; attended publish; sim pin",
+      "estimated_loc": 240,
+      "dependencies": [
+        "W1.0"
+      ],
+      "acceptance_criteria": [
+        "design AC2: ailang test && ailang pkg quality (no gates) in the ailang-packages clone",
+        "LW rows: Earth Teq 255 K at A 0.3, Jupiter K 12.5 m/s, Earth K 0.0895 m/s, transit 0.0047, the Sun's conservative zone",
+        "sim/ailang.toml pins sunholo/celestial@0.6.0; lock updated"
+      ],
+      "routing": "loop to publish; publish attended",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W1.2",
+      "description": "sunholo/worlds 0.1.0 (new): baseline, dial (offsets in dex, clamps, luckDex), disc (closed-form N(R), Drake counts, radius quantile), occurrence (eta-Earth, SAG13), history (PlanetState, historyOf from uniforms, stateAt, epochs); depends on celestial 0.6.0; attended publish; sim pin",
+      "estimated_loc": 800,
+      "dependencies": [
+        "W1.1"
+      ],
+      "acceptance_criteria": [
+        "design AC3: every cell of life-and-intelligence-parameters' two tables at printed figures from ref-2026-10-06; optimistic 1.07 / 220 and pessimistic 1.07e-8 lines",
+        "N(R) 9.92e5, 6.70e6, 1.04e8, 3.24e8, 1.37e9 at 500, 1000, 3000, 5000, 10000 ly",
+        "history property tests over 1e4 uniform vectors",
+        "ailang pkg quality no gates; worlds_test.ail in make sim repeats the tables through the pin"
+      ],
+      "routing": "loop to publish; publish attended",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W1.3",
+      "description": "Calibration in the sim: rng.ail idHash/keyed/unit53 (+ rng_ref.py oracle), data/presets.ail, data/detect.ail, calibrate.ail (thinned marked Poisson process, four reference strategies, encounter rules), tools/calibrate_main.ail, make calib-smoke / calibrate / calibVm; budget probe first",
+      "estimated_loc": 950,
+      "dependencies": [
+        "W1.2"
+      ],
+      "acceptance_criteria": [
+        "budget probe recorded in notes; calib-smoke <= 60 s on the Studio VM",
+        "design AC4: realised counts vs closed-form Lambda, |z| < 4 for 1 <= Lambda <= 1e4",
+        "design AC5: calibVm VM == interpreter; reruns byte-identical; make rng-ref covers idHash and keyed on 1e4 cases",
+        "strategies read detected candidates only (a truth-reading mutant fails)",
+        "design AC8 once observe 0.2 is pinned: a literal reach fails"
+      ],
+      "routing": "loop",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W1.4",
+      "description": "Choose the presets: grid search (0.25 dex over life, minds+tech, lifetime) on the rig, pinned data/worlds/calibration.json + SHA256SUMS, presets.ail filled, a table for Mark; after the ruling, offsets/luck and decision 4's one figure written into the design repo from the output",
+      "estimated_loc": 150,
+      "dependencies": [
+        "W1.3",
+        "S2 (sunholo/observe 0.2.0, per OQ4)"
+      ],
+      "acceptance_criteria": [
+        "design AC6: each preset's medians inside its bands for every binding strategy (OQ2), offsets and luck recorded",
+        "design AC7: make calibrate <= 30 min on the rig",
+        "make calib-smoke recomputes every 16th pinned row byte for byte",
+        "Mark's preset ruling recorded"
+      ],
+      "routing": "loop runs; Mark rules",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W2.0",
+      "description": "Measured exoplanets <= 100 pc: NASA archive ps snapshot (shell download, sha pin, public bucket), AILANG pipeline sim/tools/exoplanets.ail (cross-match by Gaia DR3 id else 1 arcsec; curated alpha Cen and TRAPPIST-1 win), generated sim/data/exoplanets.ail and data/planets/exoplanets.json, make exoplanets / exoplanets-check",
+      "estimated_loc": 400,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "design AC9 (data half): every snapshot planet whose host is in the registry is in the table with bit-equal values",
+        "alpha Cen and TRAPPIST-1 rows equal data/acen.ail and data/trappist1.ail",
+        "host, planet and inside-25-pc counts recorded in notes"
+      ],
+      "routing": "loop",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W2.1",
+      "description": "World population sim/worlds.ail: star class and habitable zone from the catalogue row, measured planets kept, synthesised planets (eta-Earth slot + SAG13, Hill spacing, survey veto), habitability labels (M dwarf: habitability debated), histories from keyed uniforms; worldsVm",
+      "estimated_loc": 700,
+      "dependencies": [
+        "W1.2",
+        "W2.0"
+      ],
+      "acceptance_criteria": [
+        "design AC9, AC14, AC15",
+        "a measured constraint forbids a biosphere in every seed",
+        "a shuffled registry gives identical systems",
+        "worldsVm in make strict and make parity"
+      ],
+      "routing": "loop",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W2.2",
+      "description": "Census sim/census.ail + tools/census_main.ail: make census (25 pc, in make test), make census-large (GCNS 100 pc, rig, <= 15 min)",
+      "estimated_loc": 400,
+      "dependencies": [
+        "W2.1",
+        "W1.3"
+      ],
+      "acceptance_criteria": [
+        "design AC10: census digest identical on rerun and VM vs interpreter (500-system subset)",
+        "design AC11: sub-registry census equals the matching rows; appended synthetic rows change nothing",
+        "design AC12: presets nest with the same onsets",
+        "design AC13: realised counts vs W1 expectation for the same star list, |z| < 4 over 64 seeds"
+      ],
+      "routing": "loop",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W2.3",
+      "description": "Protocol 2.17 worlds section (meta, hosts once on new_game; target measured planets; system planets within 0.1 ly), new_game preset, World preset/dataVersion, bridge WORLDS_MINOR := 17, make worlds-leak",
+      "estimated_loc": 400,
+      "dependencies": [
+        "W2.1"
+      ],
+      "acceptance_criteria": [
+        "design AC16: 10k-tick replays at 2.17 under the four presets with one seed are byte-identical; protocol_worlds.ail imports nothing from dial or history",
+        "design AC16b: streams below 2.17 equal today's goldens (make replay)",
+        "design AC17: target measured only; system synthesised only within 0.1 ly; hosts exactly the registry's measured hosts",
+        "free minor checked at execution and recorded"
+      ],
+      "routing": "loop",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W2.4",
+      "description": "Map host layer ui/planet_hosts.gd and the system card (mock-up artifact first), filter toggle on by default, tests/test_planet_hosts.gd, make display-audit-worlds, make capture-worlds",
+      "estimated_loc": 350,
+      "dependencies": [
+        "W2.3"
+      ],
+      "acceptance_criteria": [
+        "mock-up reviewed by Mark before copy",
+        "design AC18: every digit binds to a worlds.* field; renders exist, not blank or duplicated; Mark has looked at them"
+      ],
+      "routing": "attended (visible)",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "W2.5",
+      "description": "Archive entries drake-factors, habitable-zone, red-dwarf-worlds (design repo lore, LW checks, new unlock hints), report, landing (doc to implemented/r3, roadmap W1 and W2 done, changelog)",
+      "estimated_loc": 50,
+      "dependencies": [
+        "W2.4",
+        "W1.0"
+      ],
+      "acceptance_criteria": [
+        "design AC19: make lore-check passes with the LW registry and the new hints",
+        "design AC20: tools/rig_check.sh <PR> green (rig/full) and the fast tier green"
+      ],
+      "routing": "attended (lore)",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "reviews": [],
+  "pr_gate": "rig/full green (tools/rig_check.sh <PR>) plus the fast tier; W2.4 renders reviewed by Mark",
+  "evaluation": null
+}
