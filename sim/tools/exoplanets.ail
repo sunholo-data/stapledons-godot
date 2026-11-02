@@ -33,6 +33,8 @@ pure func at(row: [string], n: int) -> string = nth_or(row,n,"")
 pure func f(v: float, key: string, reference: string) -> Field = {value:v,prov:"measured",note:"NASA ps default parameter; ${key}",cite:reference}
 pure func observed(v: float, key: string, ref: string, massKind: string) -> Field = if key == "best_mass_earth" then
  {value:v,prov:if massKind == "M-R relationship" then "inferred" else "measured",note:"NASA ps best mass provenance: ${massKind}",cite:ref}
+ else if key == "equilibrium_k" || key == "insolation_earth" then
+ {value:v,prov:"inferred",note:"NASA ps published irradiation/blackbody model parameter; not a measured surface climate; ${key}",cite:ref}
  else f(v,key,ref)
 
 pure func fields(row: [string]) -> [(string, Field)] {

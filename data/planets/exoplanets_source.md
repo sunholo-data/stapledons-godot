@@ -35,7 +35,10 @@ provenance and publication reference. It never guesses a radius or promotes a
 minimum mass. Each non-missing numeric scalar becomes a Field; unknown scalars
 are omitted. `host_log_luminosity_sun` is the archive's logarithm, not linear
 luminosity. Best mass carries its `Mass`, `Msini` or `M-R relationship` label;
-the last is `inferred`. Bulk appearance is unknown, rather than measured.
+the last is `inferred`. Equilibrium temperature and insolation carry `inferred`
+provenance: the NASA column definitions describe the former as a blackbody
+model quantity. They are retained exactly as published, not promoted to a
+measured surface climate. Bulk appearance is unknown, rather than measured.
 
 The output contains **1599 planets (including 2 curated candidates), 1079
 hosts**, and **412 planets on 241 registry hosts**. The 11 alpha Cen/TRAPPIST-1

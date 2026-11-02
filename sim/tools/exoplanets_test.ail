@@ -17,6 +17,13 @@ pure func measured() -> bool {
 }
 test "Gaia match preserves full float64 values and Msini label" { measured() }
 test "all unmatched planets retained for catalogue growth" { match build("${base()}${fixture()}", [], false) {[p] => not p.inRegistry && p.hostId == "" && p.matchMethod == "unmatched", _ => false} }
+test "NASA equilibrium temperature and insolation retain values with model provenance" {
+ let row = "Test b,Test,,0,0,10,12,0.1,,1.2,,,,,1.5,255,,,,,,,reference\n";
+ match build("${base()}${row}", [], false) {
+  [p] => length(filter(\x. match x {(k,v) => (k == "equilibrium_k" || k == "insolation_earth") && v.prov == "inferred"}, p.fields)) == 2,
+  _ => false
+ }
+}
 pure func curated() -> bool {
  let ps=curatedPlanets([]);
  let ac=filter(\b. b.kind == "planet", bodies());
