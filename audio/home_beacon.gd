@@ -12,8 +12,9 @@ extends RefCounted
 ##   True:     home_beacon, a 400 Hz carrier keyed once per Earth second, at speed and pitch x D (Godot
 ##             resamples it: heard at 400 D Hz, its pips D times a ship second), uncorrected; outside
 ##             receiver.audible nothing reaches the ear and nothing plays.
-##   Receiver: what a heterodyne receiver hands the crew: Earth's keying at the plan's rate (D within the
-##             receiver's real-time range) on the carrier's true frequency, e(rate t) x sin(2 pi 400 t),
+##   Receiver: what a heterodyne receiver hands the crew: Earth's keying at D (unrounded, at every D: the
+##             station's real-time range is for its recorded feed, not a live carrier) on the carrier's true
+##             frequency, e(D t) x sin(2 pi 400 t),
 ##             generated sample by sample (home_beacon_rx, a generator row) from the envelope table
 ##             home_beacon_env (the same keying, rendered by sunholo/audio on a 12 kHz carrier locked to
 ##             the sample grid, so sample 4k+1 is the envelope). No FFT pitch shift: Godot's smears pips
@@ -124,7 +125,10 @@ func follow(sound: SoundDirector, world: Dictionary, receiver: bool) -> void:
 		cue = ""
 		return
 	var want := RX if receiver else CUE
-	var rate := float(plan.rate)
+	# Earth's clock is exact in both settings at every D: the beacon keys at the sim's D unrounded. The
+	# receiver plan's real-time range (min_rate..max_rate) limits the station's playback of a recorded feed;
+	# a live carrier has no backlog to hold, so the Receiver corrects only the frequency.
+	var rate := float(plan.d)
 	sound.set_pitch(want, rate)
 	_rate = rate
 	if want != cue:

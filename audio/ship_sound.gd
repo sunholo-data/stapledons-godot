@@ -78,6 +78,9 @@ func _on_stepped(events: Array) -> void:
 		sound.on_sim_step(tick, events)
 		sound.on_sim_world(tick, _sim.world)
 		sound.on_dust(tick, _sim.world)
+		# S2: the beacon follows every accepted step (several can land in one frame); _process follows the
+		# station's setting between steps.
+		beacon.follow(sound, _sim.world, receiver_setting(demo.get("consoles")))
 
 
 func _process(_delta: float) -> void:

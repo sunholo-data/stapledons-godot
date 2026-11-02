@@ -104,23 +104,33 @@ func freq(a := 0.0, b := INF) -> float:
 	return c * 0.5 * rate / maxf(i1 - i0, 1.0)
 
 
-## Pip onsets (s): RMS windows of 5 ms (or two periods of the heard carrier, if longer) rising through 0.3 of
-## the loudest window (early in each pip's 20 ms attack, long or short), at least min_gap apart.
-func onsets(heard_hz: float, min_gap: float) -> Array:
-	var w := int(rate * maxf(0.005, 2.0 / maxf(heard_hz, 1.0)))
+## Pip onsets (s), blind to the expected gap (as tests/test_sound.gd _pip_gap): RMS windows of two periods
+## of the heard carrier (or 2 ms); the floor is the quietest tenth; a pip starts where the level rises through
+## 30 % of the way from the floor to the loudest window, re-armed below 15 %.
+func onsets(heard_hz: float, _min_gap := 0.0) -> Array:
+	var w := int(rate * maxf(0.002, 2.0 / maxf(heard_hz, 1.0)))
 	var env := []
-	var top := 0.0
 	for i in range(0, _buf.size() - w, w):
 		var s := 0.0
 		for j in w:
 			s += _buf[i + j].x * _buf[i + j].x
 		env.append(sqrt(s / w))
-		top = maxf(top, env.back())
 	var o := []
-	for i in range(1, env.size()):
-		var t := float(i * w) / rate
-		if env[i] >= 0.3 * top and env[i - 1] < 0.3 * top and (o.is_empty() or t - o.back() > min_gap):
-			o.append(t)
+	if env.size() < 10:
+		return o
+	var sorted := env.duplicate()
+	sorted.sort()
+	var floor_v: float = sorted[sorted.size() / 10]
+	var top: float = sorted.back()
+	var hi := floor_v + 0.3 * (top - floor_v)
+	var lo := floor_v + 0.15 * (top - floor_v)
+	var armed := false
+	for i in env.size():
+		if armed and env[i] >= hi:
+			o.append(float(i * w) / rate)
+			armed = false
+		elif env[i] < lo:
+			armed = true
 	return o
 
 
@@ -226,14 +236,14 @@ func _run() -> void:
 	# The beacon alone at the sim's rates, in both settings: dry (no room), so the pips are measured without
 	# the dome's reverb tail crossing the detector's threshold; the montage has the room.
 	SoundMix.set_room({})
-	for dd: float in [0.070888, 0.5, 1.0, 2.0, 14.107]:
+	for dd: float in [0.03, 0.070888, 0.5, 1.0, 2.0, 14.107, 30.0]: # 0.03 and 30: beyond the station's real-time range
 		for receiver: bool in [true, false]:
 			await begin()
 			beacon.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, receiver)
 			var bank := beacon.cue # the row: home_beacon (True) or home_beacon_rx (Receiver)
 			await pump(0.4) # the shifter fills
 			await begin()
-			await pump(30.0 if dd < 0.2 else 6.0) # outbound the pips are 14.1 s apart: two in 30 s
+			await pump(2.1 / dd + 0.5 if dd < 0.2 else 6.0) # slow pips (14.1 s at 0.0709, 33.3 s at 0.03): two in the clip
 			var hz := freq()
 			var want := HomeBeacon.CARRIER_HZ * (1.0 if receiver else dd)
 			var o := onsets(want, 0.5 / dd)

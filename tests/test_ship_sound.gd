@@ -209,6 +209,13 @@ func _run() -> void:
 	vs.world.earth.rate = 14.107
 	await frames()
 	check(brx.playing and ss.beacon._rate == 14.107 and ss.beacon.cue == "home_beacon_rx", "S2 Receiver homebound at D = 14.107: Earth's keying at 14.107, still at 400 Hz")
+	var before := d.log_text().count(" home_beacon_rx ")
+	for r: float in [0.5, 0.75, 2.0]: # three accepted steps inside one frame (the game can batch journey ticks)
+		vs.world.earth.rate = r
+		vs.world.tick += 1
+		vs.stepped.emit([])
+	var tail := d.log_text()
+	check(tail.count(" home_beacon_rx ") - before == 3 and tail.contains(" home_beacon_rx 0.5000\n") and tail.contains(" home_beacon_rx 0.7500\n") and tail.contains(" home_beacon_rx 2.0000\n"), "S2: the beacon follows every accepted step, not just the frame's last (D 0.5, 0.75 and 2 batched in one frame: three rate lines)")
 	vs.world.earth.in_beam = false
 	await frames()
 	check(d.fading("home_beacon_rx"), "S2: out of Earth's beam (off-plan, or Earth silent) the beacon fades out")

@@ -241,9 +241,18 @@ func test_beacon_plan() -> void:
 	p = HomeBeacon.plan_for(e.call(0.070888125), false)
 	check(p.on and p.rate == 0.070888125 and p.correct == 1.0, "S2 True at D = 0.070888125: speed and pitch x D, uncorrected (the 400 Hz carrier at 28.4 Hz)")
 	p = HomeBeacon.plan_for(e.call(0.03), true)
-	check(p.on and p.rate == float(rx.min_rate) and is_equal_approx(p.correct, 1.0 / float(rx.min_rate)), "S2 Receiver below its real-time range: the rate held at min_rate %s (the receiver's stated limit)" % rx.min_rate)
+	check(p.on and p.d == 0.03 and p.rate == float(rx.min_rate), "S2: the station's plan holds a recorded feed at min_rate %s below its real-time range; the beacon's plan keeps D (0.03) for its live carrier" % rx.min_rate)
 	p = HomeBeacon.plan_for(e.call(30.0), true)
-	check(p.on and p.rate == float(rx.max_rate), "S2 Receiver above it: the rate held at max_rate %s" % rx.max_rate)
+	check(p.on and p.d == 30.0 and p.rate == float(rx.max_rate), "S2: above it the station's plan holds max_rate %s; the beacon's plan keeps D (30)" % rx.max_rate)
+	var kb := HomeBeacon.new()
+	var kd := SoundDirector.new()
+	kd.audible = false
+	kd.setup()
+	kb.follow(kd, e.call(0.03), true)
+	var k1 := kb._rate
+	kb.follow(kd, e.call(30.0), true)
+	check(k1 == 0.03 and kb._rate == 30.0 and float(kd.pitches.home_beacon_rx) == 30.0, "S2 Receiver keys at D unrounded beyond the station's range (0.03 and 30), correcting only the frequency")
+	kd.free()
 	var aud: Array = rx.audible
 	check(HomeBeacon.plan_for(e.call(float(aud[0])), false).on and not HomeBeacon.plan_for(e.call(float(aud[0]) * 0.999), false).on and HomeBeacon.plan_for(e.call(float(aud[1])), false).on and not HomeBeacon.plan_for(e.call(float(aud[1]) * 1.001), false).on, "S2 True: on inside receiver.audible [%s, %s], silent just outside it" % [aud[0], aud[1]])
 	check(HomeBeacon.plan_for(e.call(float(aud[0]) * 0.5), false).hearing == "below" and HomeBeacon.plan_for(e.call(float(aud[1]) * 2.0), false).hearing == "above", "S2 True: below and above hearing are named (the station's words)")
@@ -289,7 +298,7 @@ func test_beacon_measured() -> void:
 	var pip_ok := true
 	var pips := []
 	var counts := {}
-	for dd: float in [0.070888, 0.5, 2.0, 5.0, 14.107]:
+	for dd: float in [0.070888, 0.5, 2.0, 5.0, 14.107, 30.0]: # 30: beyond the station's 16x real-time range
 		for receiver: bool in [true, false]:
 			b.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, receiver)
 			var p: Node = d.get_node_or_null("Loop_" + b.cue)
@@ -307,7 +316,7 @@ func test_beacon_measured() -> void:
 			seen.append("D %s %s %.1f Hz (want %.1f)" % [dd, "receiver" if receiver else "true", hz, want])
 			ok = ok and p != null and p.playing and buf.size() > 0 and absf(hz / want - 1.0) <= 0.01
 			if dd >= 0.5:
-				var g := _pip_gap(buf, rate, want, 1.0 / dd)
+				var g := _pip_gap(buf, rate, want)
 				pips.append("%s D %s: %d pips of %d due, gap %.4f s (want %.4f)" % ["receiver" if receiver else "true", dd, g[0], int(floor(buf.size() / rate * dd)), g[1], 1.0 / dd])
 				pip_ok = pip_ok and g[0] >= 3 and absf(g[1] * dd - 1.0) <= 0.01
 				var due := int(floor(buf.size() / rate * dd)) # Earth seconds in this capture (its length varies with load)
@@ -320,15 +329,40 @@ func test_beacon_measured() -> void:
 		pip_ok = pip_ok and int(counts[k][0]) >= int(counts[k][1]) - 1
 	AudioServer.remove_bus_effect(0, 0)
 	check(ok, "S2 measured through the mixer: the beacon's carrier is 400 Hz in Receiver and 400 D Hz in True, within 1 %% (%s)" % ", ".join(seen))
-	check(pip_ok, "S2 measured: the time rate is D in both settings: Earth's pips every 1/D s within 1 %%, Receiver as sharp as True (%s)" % "; ".join(pips))
-	# Outbound at 0.99c: 30 s of the Receiver's own samples (no mixer wait) hold two pips 14.1 s apart.
+	check(pip_ok, "S2 measured: the time rate is D in both settings at every D, beyond the receiver's real-time range too: Earth's pips every 1/D s within 1 %%, none lost (%s)" % "; ".join(pips))
+	# Below the real-time range and outbound at 0.99c, on the Receiver's own sample clock (no mixer wait):
+	# D = 0.03 (pips 33.3 s apart, where the station's clamp would give 16 s) and D = 0.070888 (14.1 s).
 	var slow := HomeBeacon.new()
-	slow.follow(d, {"earth": {"rate": 0.070888, "in_beam": true, "at_home": false}}, true)
-	var pb := _Collect.new()
-	slow._pos = 0.0
-	slow._fill(pb, int(30.0 * SoundDirector.GEN_RATE))
-	var g2 := _pip_gap(pb.frames, SoundDirector.GEN_RATE, 400.0, 1.0 / 0.070888)
-	check(g2[0] == 2 and absf(g2[1] * 0.070888 - 1.0) <= 0.01, "S2 Receiver outbound at D = 0.070888: Earth's pips %.3f s apart (want %.3f) at 400 Hz" % [g2[1], 1.0 / 0.070888])
+	var slow_ok := true
+	var slow_seen := []
+	for dd: float in [0.03, 0.070888]:
+		slow.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, true)
+		var pb := _Collect.new()
+		slow._pos = 0.0
+		slow._fill(pb, int((2.1 / dd + 0.5) * SoundDirector.GEN_RATE))
+		var g2 := _pip_gap(pb.frames, SoundDirector.GEN_RATE, 400.0)
+		slow_seen.append("D %s: %d pips %.3f s apart (want %.3f)" % [dd, g2[0], g2[1], 1.0 / dd])
+		slow_ok = slow_ok and slow._rate == dd and g2[0] >= 2 and absf(g2[1] * dd - 1.0) <= 0.01
+	check(slow_ok, "S2 Receiver keys at D below the station's real-time range too (%s)" % ", ".join(slow_seen))
+	# Negative control: the same generator keyed at 2.01 x D must not pass as D (the detector does not know
+	# the expected gap), while keyed at D it does.
+	var neg_ok := true
+	var neg_seen := []
+	for dd: float in [0.5, 2.0]:
+		for factor: float in [1.0, 2.01]:
+			var gb := HomeBeacon.new()
+			gb.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, true)
+			gb._rate = dd * factor
+			gb._pos = 0.0
+			var pc := _Collect.new()
+			gb._fill(pc, int(6.0 / dd * SoundDirector.GEN_RATE))
+			var g3 := _pip_gap(pc.frames, SoundDirector.GEN_RATE, 400.0)
+			var passes: bool = g3[0] >= 3 and absf(g3[1] * dd - 1.0) <= 0.01
+			neg_seen.append("D %s keyed x%s: gap %.4f s, %s" % [dd, factor, g3[1], "passes" if passes else "fails"])
+			neg_ok = neg_ok and passes == (factor == 1.0)
+			gb.follow(d, {}, true)
+	d.stop("home_beacon_rx", true)
+	check(neg_ok, "S2 negative control: keying at 2.01 x D fails the pip check, keying at D passes (%s)" % "; ".join(neg_seen))
 	slow.follow(d, {}, true)
 	d.stop("home_beacon_rx", true)
 	d.queue_free()
@@ -344,27 +378,38 @@ class _Collect:
 		return true
 
 
-## [pip count, mean gap s] with RMS windows of two carrier periods (or 2 ms) rising through 0.3 of the
-## loudest window, at least half the expected gap apart; the mean spans an even number of gaps (the beacon
-## alternates a long and a short pip, whose crossings sit a little apart).
-func _pip_gap(buf: PackedVector2Array, rate: float, heard_hz: float, want_gap: float) -> Array:
+## [pip count, mean gap s], blind to the expected gap: RMS windows of two carrier periods (or 2 ms); the
+## floor is the quietest tenth of the windows; a pip starts where the level rises through 30 % of the way
+## from the floor to the loudest window (a short pip at high D reaches about 40 % in these windows), and the
+## detector re-arms only after the level falls below 15 %.
+## The mean spans an even number of gaps (the beacon alternates a long and a short pip).
+func _pip_gap(buf: PackedVector2Array, rate: float, heard_hz: float) -> Array:
 	var w := int(rate * maxf(0.002, 2.0 / maxf(heard_hz, 1.0)))
 	var env := []
-	var top := 0.0
 	for i in range(0, buf.size() - w, w):
 		var s := 0.0
 		for j in w:
 			s += buf[i + j].x * buf[i + j].x
 		env.append(sqrt(s / w))
-		top = maxf(top, env.back())
+	if env.size() < 10:
+		return [0, 0.0]
+	var sorted := env.duplicate()
+	sorted.sort()
+	var floor_v: float = sorted[sorted.size() / 10]
+	var top: float = sorted.back()
+	var hi := floor_v + 0.3 * (top - floor_v)
+	var lo := floor_v + 0.15 * (top - floor_v)
 	var o := []
-	for i in range(1, env.size()):
-		var t := float(i * w) / rate
-		if env[i] >= 0.3 * top and env[i - 1] < 0.3 * top and (o.is_empty() or t - o.back() > 0.5 * want_gap):
-			o.append(t)
+	var armed := false
+	for i in env.size():
+		if armed and env[i] >= hi:
+			o.append(float(i * w) / rate)
+			armed = false
+		elif env[i] < lo:
+			armed = true
 	if o.size() < 2:
 		return [o.size(), 0.0]
-	var last := o.size() - 1 if (o.size() - 1) % 2 == 0 or o.size() == 2 else o.size() - 2 # an even number of gaps: long and short pips alternate
+	var last := o.size() - 1 if (o.size() - 1) % 2 == 0 or o.size() == 2 else o.size() - 2
 	return [o.size(), (o[last] - o[0]) / last]
 
 
@@ -580,5 +625,9 @@ func _run() -> void:
 		var f := FileAccess.open(args["log-out"], FileAccess.WRITE)
 		f.store_string(got)
 		f.close()
+	for n in get_root().get_children(): # finish deferred frees (the beacon's generator playback) before quitting
+		n.queue_free()
+	for i in 3:
+		await process_frame
 	print("sound: %d passed, %d failures" % [passed, failed])
 	quit(1 if failed > 0 else 0)

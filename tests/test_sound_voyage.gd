@@ -1,13 +1,15 @@
 extends SceneTree
 ## R2-SOUND S2 (design_docs/planned/r2/sound.md §D6, §D9; AC2, AC4, AC15): a real voyage's cue log. The
 ## scripted flight of ui/transit_harness.gd (dock, plan Alpha Cen A, commit, boost, cruise, brake, arrive)
-## on the real sim at protocol 2.16, with a SoundDirector and the home beacon following every accepted step
-## exactly as ShipSound does (events, state edges, the drawn grains, Earth's rate). The log must equal
+## on the real sim at protocol 2.16, heard through ShipSound itself (on a stand-in ship, tests/fixtures/sound/
+## mock_ship.gd): every accepted step's events, state edges, drawn grains and Earth's rate, with many steps
+## inside one frame as in the game. The log must equal
 ## tests/fixtures/sound/cue_log_voyage.txt byte for byte (make sound-voyage-test also runs it in two
 ## separate processes and compares them).
 ## Run: AILANG_BIN=$(command -v ailang) godot --headless --path . --script tests/test_sound_voyage.gd
 ##        [-- --log-out=<file>] [-- --write]   (--write re-records the fixture; review its diff)
 const FIXTURE := "res://tests/fixtures/sound/cue_log_voyage.txt"
+const MockShip := preload("res://tests/fixtures/sound/mock_ship.gd")
 var failed := 0
 var passed := 0
 
@@ -45,20 +47,24 @@ func _run() -> void:
 		check(false, "the sim starts at 2.16 (%s)" % sim.last_error)
 		quit(1)
 		return
-	var d := SoundDirector.new()
+	# The live path: ShipSound on a stand-in ship whose journey session is the real sim, exactly as the game
+	# attaches it. The harness flies synchronously, so many accepted steps land inside one frame.
+	var ship: Node3D = MockShip.new()
+	root.add_child(ship)
+	var ss := ShipSound.new().attach(ship)
+	ship.add_child(ss)
+	await process_frame
+	await process_frame
+	var d: SoundDirector = ss.sound
 	d.audible = false
-	check(d.setup().is_empty(), "the shipped sound tables validate")
-	var beacon := HomeBeacon.new()
+	check(d.errors.is_empty(), "the shipped sound tables validate")
+	ship.journey_sim = sim
+	await process_frame # ShipSound connects to the session's stepped signal
+	var beacon: HomeBeacon = ss.beacon
 	var rates := []
-	sim.stepped.connect(func(events: Array) -> void:
-		var tick := int(sim.world.get("tick", 0))
-		d.on_sim_step(tick, events)
-		d.on_sim_world(tick, sim.world)
-		d.on_dust(tick, sim.world)
-		beacon.follow(d, sim.world, true)
+	sim.stepped.connect(func(_events: Array) -> void: # after ShipSound's own handler (connection order)
 		if beacon.on:
-			rates.append([tick, float(sim.world.earth.rate), float(d.pitches.get(beacon.cue, -1.0))]))
-	d.on_sim_world(int(sim.world.get("tick", 0)), sim.world)
+			rates.append([int(sim.world.get("tick", 0)), float(sim.world.earth.rate), float(d.pitches.get(beacon.cue, -1.0))]))
 	var h := TransitHarness.new()
 	root.add_child(h)
 	h.attach(sim)

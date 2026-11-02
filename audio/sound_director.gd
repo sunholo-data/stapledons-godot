@@ -433,14 +433,13 @@ func _player3d() -> AudioStreamPlayer3D:
 ## Delayed fires sound when due; spatial loops follow their source (the lift's motor rides with the platform).
 func _process(delta: float) -> void:
 	if not _delayed.is_empty():
-		# At most one due fire of a cue per frame: a frame longer than the counter's dead time must not
-		# stack two ticks into one louder click (the later one waits a frame).
+		# Each fire starts on the first frame at or after its own time (dust at its t_s), so the counter's
+		# spacing follows ship time, not the frame rate: an onset is late by under one frame and the lateness
+		# never accumulates (an earlier one-start-per-frame cap stretched the counter at low frame rates).
 		var keep: Array = []
-		var played := {}
 		for f: Array in _delayed:
 			f[0] -= delta
-			if f[0] <= 0.0 and not played.has(f[1].id):
-				played[f[1].id] = true
+			if f[0] <= 0.0:
 				_play(f[1], f[2], f[3], f[4])
 			else:
 				keep.append(f)
@@ -453,6 +452,16 @@ func _process(delta: float) -> void:
 		var p: Node = _loops[id]
 		if p is AudioStreamPlayer3D and p.playing and p.has_meta("source"):
 			(p as AudioStreamPlayer3D).global_position = position_of.call(str(p.get_meta("source")))
+
+
+## Leaving the tree stops every own player first (a generator player freed while playing keeps its
+## AudioStreamGeneratorPlayback alive past exit).
+func _exit_tree() -> void:
+	for id: String in _loops:
+		var p: Node = _loops[id]
+		if is_instance_valid(p):
+			p.stop()
+	generators.clear()
 
 
 func _fill(id: String) -> void:
