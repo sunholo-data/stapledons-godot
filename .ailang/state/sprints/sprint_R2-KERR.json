@@ -1135,7 +1135,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Spec draft ready: sunholo-data/stapledons-design#49, 6ee54cacb820937df28c860ed89842985ba1d285. Not merged; passes remains false."
+      "notes": "Review-ready draft sunholo-data/stapledons-design#49, pushed5df8b3836c4491179476b9d3bc321da275e8cdd7. Spec not merged, passes=false."
     },
     {
       "id": "K1.1a-a1",
@@ -1758,9 +1758,9 @@
       "depends_on": [
         "K1.1a-d"
       ],
-      "passes": true,
+      "passes": false,
       "started": "2026-11-02",
-      "completed": "2026-11-02",
+      "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -1780,7 +1780,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
+      "notes": "Numerical audit passes; required verify kerr.ail exits1 with2 helper-sqrt SMT errors (reported inbox_1793635085996_40da838d). Gate unresolved; no proof claimed. Full candidate438/438 VM tests."
     },
     {
       "id": "K1.1b-a",
@@ -1842,9 +1842,9 @@
       "depends_on": [
         "K1.1a-e"
       ],
-      "passes": true,
+      "passes": false,
       "started": "2026-11-02",
-      "completed": "2026-11-02",
+      "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
       "design_blocks": [
@@ -1883,7 +1883,7 @@
         }
       ],
       "merge_pause_points": [],
-      "notes": "Attended Codex A, package PR #173 (cca390c); see evidence/ R2-KERR/attended-2026-11-02.md. Scalar strict VM 13/13 +9 killed mutants; shadow strict VM 5/5 +3 killed mutants; scalar endpoint package check 31 files and full test 267/267. Verifier 13 skips/2 helper-sqrt errors/1 uncontracted; no IEEE proof claimed, reported inbox_1793635085996_40da838d; preliminary quality no gates. Not published/evaluated."
+      "notes": "Implemented/tested RK14–17 shadow:5/5 strict VM plus3 mutants; Decimal60 oracle/fixture in game. Held by K1.1a-e dependency; aggregate not passed."
     },
     {
       "id": "K1.1b-b",
@@ -1945,7 +1945,7 @@
         "K1.1b-a"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -1976,7 +1976,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Implemented/tested analytic capture:4/4 strict VM,2 mutants,9 independent Decimal topology probes. Held by upstream dependency; not passed."
     },
     {
       "id": "K1.1b-c",
@@ -2052,7 +2053,7 @@
         "K1.0"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -2087,7 +2088,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Implemented frame transport, complete Carter RK4/events/adaptive trace.49/49 ordinary and12/12 near-critical rays pass.400-ray development sweep347escaped/53captured/0errors after far-root scaling fix. Arbitrary near-axis n_phi1e-14 returns solver_steps: regular chart/pole phase unresolved. Remains false. Package draft173 head8662584; evidence R2-KERR/attended-2026-11-02.md."
     },
     {
       "id": "K1.1b-d",
@@ -2150,7 +2152,7 @@
         "K1.1b-c"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -2189,7 +2191,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Full Weyl/bivector projection implemented;80/80 metric-derived tensor cases and3 exact-reduction tests pass,3 mutants killed. Independent Decimal60 oracle preceded implementation. Held by c and independent evaluation; not passed."
     },
     {
       "id": "K1.1b-e",
@@ -2253,7 +2256,7 @@
         "K1.1b-d"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": true,
@@ -2302,7 +2305,8 @@
           "repo": "game"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Digest n16 VM/interpreter byte-identical560.5017148517253; independent oracle560.50171485172541 within1e-9. Full bytecode suite438/438 zero fallback;53files checked. Oracle/domain/evaluation closure remains held by near-axis and verifier findings; not passed."
     },
     {
       "id": "K1.1p",
@@ -2355,7 +2359,7 @@
         "Ppublish"
       ],
       "passes": false,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
       "actual_loc": null,
       "mutation_drill": false,
@@ -2380,7 +2384,8 @@
           "repo": "sunholo-data/ailang-packages"
         }
       ],
-      "merge_pause_points": []
+      "merge_pause_points": [],
+      "notes": "Prepared0.14.0 feature candidate, AGENT/CHANGELOG/exports. quality --no-run: no gates, tests/smoke not attested by that invocation. Full quality run canceled on new edge failures; no dry-run/publish/evaluation pass. NOT PUBLISH-READY; no sim pin changed."
     },
     {
       "id": "K1.4-a",
@@ -4539,5 +4544,5 @@
     }
   ],
   "last_session": "2026-11-02",
-  "last_checkpoint": "K1.1a scalar endpoint and K1.1b-a shadow implemented; no visuals/publish"
+  "last_checkpoint": "Headless package candidate tested; near-axis/verifier/evaluation gates held; no publication or visuals"
 }

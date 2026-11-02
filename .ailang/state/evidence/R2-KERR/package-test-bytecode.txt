@@ -1,0 +1,899 @@
+→ Package sunholo/relativity
+  24 source modules, 29 test files
+
+→ bytecode: 438 named-test bodies ran on the VM, 0 fell back to the evaluator; inline tests and properties run on the evaluator
+
+[1mTest Results[0m
+Module: sunholo/relativity
+
+[1mTests:[0m
+  [32m✓[0m timed leg Sun -> Jupiter (4.4 AU, 30 s boost, 60 s cruise): phi 4.0807 (0.99943c) (4.511375ms)
+      at [2mapproach_test.ail:37:1[0m
+  [32m✓[0m timed leg Earth -> Sun (0.99 AU): phi 2.5167 (676.541µs)
+      at [2mapproach_test.ail:40:1[0m
+  [32m✓[0m timed leg Jupiter -> Callisto (0.0126 AU): phi 0.0698 (0.07c) (603.75µs)
+      at [2mapproach_test.ail:43:1[0m
+  [32m✓[0m timed approach (Jupiter 4 deg across, 25 s): phi 0.4981 (0.46c) (1.376292ms)
+      at [2mapproach_test.ail:46:1[0m
+  [32m✓[0m solvers return 0 for non-positive or NaN distance and time (425.167µs)
+      at [2mapproach_test.ail:54:1[0m
+  [32m✓[0m Jupiter plan: segments, 141.15 s aboard, galaxy time match the oracle (1.323709ms)
+      at [2mapproach_test.ail:64:1[0m
+  [32m✓[0m position, time and rapidity are continuous at the brake and approach boundaries (1.346292ms)
+      at [2mapproach_test.ail:78:1[0m
+  [32m✓[0m the approach ends exactly at the distance, at rest, at galaxy time (1.891208ms)
+      at [2mapproach_test.ail:85:1[0m
+  [32m✓[0m position never decreases over 2000 samples (8.386666ms)
+      at [2mapproach_test.ail:93:1[0m
+  [32m✓[0m inApproach marks [tau3, tauTotal); phaseAt still says Decelerating there (1.388625ms)
+      at [2mapproach_test.ail:100:1[0m
+  [32m✓[0m without a usable approach the profile is planBurnCoastBurn bit for bit (4.515458ms)
+      at [2mapproach_test.ail:115:1[0m
+  [32m✓[0m an approach at the same acceleration reproduces the symmetric trip (1.885292ms)
+      at [2mapproach_test.ail:122:1[0m
+  [32m✓[0m segments that do not fit fall back to planBurnCoastBurn (fellBack) (1.354375ms)
+      at [2mapproach_test.ail:128:1[0m
+  [32m✓[0m zero points (4.595959ms)
+      at [2mblackbody_photometry_test.ail:17:1[0m
+  [32m✓[0m forward BP-RP (1.036709ms)
+      at [2mblackbody_photometry_test.ail:26:1[0m
+  [32m✓[0m forward G-V (949.25µs)
+      at [2mblackbody_photometry_test.ail:35:1[0m
+  [32m✓[0m every table node equals the forward model (16.026041ms)
+      at [2mblackbody_photometry_test.ail:49:1[0m
+  [32m✓[0m nodes finite and monotone; forward colour decreasing (27.97075ms)
+      at [2mblackbody_photometry_test.ail:62:1[0m
+  [32m✓[0m table round trip within 6e-4 relative (29.03275ms)
+      at [2mblackbody_photometry_test.ail:72:1[0m
+  [32m✓[0m exact inversion (161.296ms)
+      at [2mblackbody_photometry_test.ail:88:1[0m
+  [32m✓[0m pinned table outputs (583.333µs)
+      at [2mblackbody_photometry_test.ail:99:1[0m
+  [32m✓[0m within literature band (1.287291ms)
+      at [2mblackbody_photometry_test.ail:114:1[0m
+  [32m✓[0m clamps, non-finite input, invertibility (457.625µs)
+      at [2mblackbody_photometry_test.ail:121:1[0m
+  [32m✓[0m V from G and G-V clamps (389.875µs)
+      at [2mblackbody_photometry_test.ail:128:1[0m
+  [32m✓[0m range guarantee (8.534584ms)
+      at [2mblackbody_photometry_test.ail:137:1[0m
+  [32m✓[0m photometry and blackbody_photometry imported together (ailang#1461) (10.304125ms)
+      at [2mcross_module_test.ail:16:1[0m
+  [32m✓[0m expm1 at its domain edges: 0 exactly, -709 -> -1 exactly, finite at 700 (3.376208ms)
+      at [2mdomain_bounds_test.ail:32:1[0m
+  [32m✓[0m sinh is e^a/2 to the last bit from 351 to its +Inf saturation at ~709.8 (was Inf/NaN past 355) (810.5µs)
+      at [2mdomain_bounds_test.ail:45:1[0m
+  [32m✓[0m cosh saturates like exp; tanh is +-1 from |u| = 20 to the float edge (3.5215ms)
+      at [2mdomain_bounds_test.ail:57:1[0m
+  [32m✓[0m sinhc: 1 at 0, finite and >= 1 at the +-700 domain edge (704.417µs)
+      at [2mdomain_bounds_test.ail:67:1[0m
+  [32m✓[0m betaOf/gammaOf/oneMinusBeta at the +-700 rapidity edge (500.792µs)
+      at [2mdomain_bounds_test.ail:76:1[0m
+  [32m✓[0m a zero-length accelerate/coast step is the identity, at rest and at the +-700 edge (483.584µs)
+      at [2mdomain_bounds_test.ail:87:1[0m
+  [32m✓[0m accelerate across +-350 with mid 0: x unchanged exactly, t = sinhc(350) ~ e^350/700 (438.917µs)
+      at [2mdomain_bounds_test.ail:98:1[0m
+  [32m✓[0m doppler of unit directions: 1 at rest; e^phi ahead and e^-phi astern at the 700 edge (434.875µs)
+      at [2mdomain_bounds_test.ail:116:1[0m
+  [32m✓[0m dopplerApparent of unit directions: 1 at rest; 1/e^phi astern at the 700 edge, finite at the pole (421.75µs)
+      at [2mdomain_bounds_test.ail:126:1[0m
+  [32m✓[0m cmbSeenTemperature pair: 2.725 K at rest; T_CMB e^phi / e^-phi at the 700 edge (2.45375ms)
+      at [2mdomain_bounds_test.ail:138:1[0m
+  [32m✓[0m grainKinetic: 1 um grain 2.011e4 J at 0.999c, 6.646e5 J at 0.999999c (HB-124, HB-125) (2.927375ms)
+      at [2mdust_test.ail:32:1[0m
+  [32m✓[0m the test rapidities are 0.999c and 0.999999c (387.583µs)
+      at [2mdust_test.ail:36:1[0m
+  [32m✓[0m sweptCount is the same at three speeds and equals grainRate x ship time (frame-independent count) (375.625µs)
+      at [2mdust_test.ail:48:1[0m
+  [32m✓[0m LIC impacts of >= 1 um grains: 1,842 per ship second at 0.999c (HB-126) (706.458µs)
+      at [2mdust_test.ail:52:1[0m
+  [32m✓[0m afterglow of a 5 um grain at 0.999c, r_s 0.5 m, tau 0.2 s: 4,393 K, 1.056e-3 W/m^2, 0.0225 cd/m^2 at t = 0 (HB-139..141) (4.212708ms)
+      at [2mdust_test.ail:59:1[0m
+  [32m✓[0m afterglow light integrated over time and spot is eps f_in KE (1e-6, the midpoint rule's error) (112.148709ms)
+      at [2mdust_test.ail:75:1[0m
+  [32m✓[0m E(0) tau pi r_s^2 = eps f_in KE exactly (1e-12); E and T decay as e^(-t/tau), e^(-t/4 tau) (540.667µs)
+      at [2mdust_test.ail:86:1[0m
+  [32m✓[0m afterglow: NaN gives NaN; before the impact (t < 0) and for no energy it is 0 (396.416µs)
+      at [2mdust_test.ail:98:1[0m
+  [32m✓[0m visibleRadius against the glow and dark sky at the pole: 1.38 um (hot, 0.999c) .. none bright (LIC, 0.999999c) (HB-142..149) (623.074083ms)
+      at [2mdust_test.ail:116:1[0m
+  [32m✓[0m the background the oracle used is medium.glowLuminanceAt at the pole plus the 23.5 mag/arcsec^2 dark sky (2.891042ms)
+      at [2mdust_test.ail:121:1[0m
+  [32m✓[0m carlsonRF: R_F(0,1,2) = 1.3110287771461 (Carlson 1995), R_F(x,x,x) = 1/sqrt x, R_F(0.5,1,0) = K(1/sqrt2) (6.2935ms)
+      at [2mgeodesic_test.ail:30:1[0m
+  [32m✓[0m carlsonRF: NaN in gives NaN out after the fixed iteration cap (no tolerance loop) (1.60175ms)
+      at [2mgeodesic_test.ail:37:1[0m
+  [32m✓[0m binetStep: h = 0 is the identity; a small step follows u'' = -u + 1.5 u^2 (1.199916ms)
+      at [2mgeodesic_test.ail:44:1[0m
+  [32m✓[0m check41 alpha(100) = 0.0202999662395031 (1e-12; Decimal truth to 1e-15); integrator h = 0.001 within 1e-11 (5.576125ms)
+      at [2mgeodesic_test.ail:52:1[0m
+  [32m✓[0m check42 AC-8 alpha(1000) = 0.00200295058718769; |alpha/(2/b) - 1| = 0.14753 % <= 1 % (1.037458ms)
+      at [2mgeodesic_test.ail:59:1[0m
+  [32m✓[0m check43 AC-8 |alpha(100)/(2/b + 15 pi/16b^2) - 1| <= 3e-4 (2.68e-4); 2/b alone is 1.5 % low (733.625µs)
+      at [2mgeodesic_test.ail:64:1[0m
+  [32m✓[0m check44 near-critical b = b_c(1 + eps), eps = 1e-4, 1e-6, 1e-8: exact to 1e-9, 1e-9, 3e-9 of the 50-digit truth; within 4e-4, 6e-6, 1e-7 of -ln eps + bbar (2.51625ms)
+      at [2mgeodesic_test.ail:86:1[0m
+  [32m✓[0m check45 escapeAzimuth vs escapeAzimuthExact at (10, 0.5), (3, 1), (5, 2), (10, 0.26): 1e-9 at h = 0.001, 1e-5 at h = 0.005 (23.661416ms)
+      at [2mgeodesic_test.ail:100:1[0m
+  [32m✓[0m lensDeflection = dphi - (pi - psi), integrator and exact (5.684125ms)
+      at [2mgeodesic_test.ail:105:1[0m
+  [32m✓[0m check46 Einstein angle at r = 10, 5, 3, 100, 1000: 29.828318, 44.874561, 61.888756, 8.520443, 2.604361 deg (1e-7 rad) (14.746541ms)
+      at [2mgeodesic_test.ail:116:1[0m
+  [32m✓[0m check47 r = 10, beta = 20 deg: images at 39.837659 / 23.543122 deg, mu 1.118821 / 0.276451 (5.364ms)
+      at [2mgeodesic_test.ail:124:1[0m
+  [32m✓[0m check47 r = 1000, beta = 1 deg: images at 3.144407 / 2.160969 deg, mu 1.847367 / 0.856138 (6.179458ms)
+      at [2mgeodesic_test.ail:132:1[0m
+  [32m✓[0m check48 ingoing b < b_c is captured; outgoing at r = 3 escapes (1.037583ms)
+      at [2mgeodesic_test.ail:142:1[0m
+  [32m✓[0m check48 200-ray sweep across the shadow edge (r = 2, 3, 10, 100): the integrator's verdict = the analytic rule (155.406958ms)
+      at [2mgeodesic_test.ail:151:1[0m
+  [32m✓[0m check50 lensRegular finite at psi - alpha_sh = 1e-8 alpha_sh and at psi = pi - 1e-12, r = 2, 3, 10, 1e6 (23.921125ms)
+      at [2mgeodesic_test.ail:166:1[0m
+  [32m✓[0m inverseRow (2048 forward samples): 65 outputs on F in [-pi, pi], psi strictly increasing, slope > 0, finite, round trip within 2e-4 rad at r = 3, 10, 1000 (359.490958ms)
+      at [2mgeodesic_test.ail:192:1[0m
+  [32m✓[0m inverseRow: the F = 0 sample is the Einstein angle (r = 10, 1e-5 rad at 4096 samples) (289.820375ms)
+      at [2mgeodesic_test.ail:201:1[0m
+  [32m✓[0m the forward row starts at psi - alpha_sh = 1e-8 alpha_sh (1.450709ms)
+      at [2mgeodesic_test.ail:204:1[0m
+  [32m✓[0m hyper.tanh is +-1 for huge arguments (0.10.0 fix: NaN beyond |u| ~ 355 before); lensRegular needs it at r = 1e6 (758.625µs)
+      at [2mgeodesic_test.ail:207:1[0m
+  [32m✓[0m integrator step near the shadow edge: 1.3e-6 rad at h 0.005, 8e-8 at h 0.0025 (eps 1e-6, r 1000), h^4 (14.766959ms)
+      at [2mgeodesic_test.ail:223:1[0m
+  [32m✓[0m stefanBoltzmannSI = 5.670374419e-8 (CODATA 2018; oracle's exact-SI value to 1e-10) (9.58225ms)
+      at [2mglow_spectrum_test.ail:48:1[0m
+  [32m✓[0m luminousEfficacy at 290 to 14,114 K against the oracle (1e-12) (11.957084ms)
+      at [2mglow_spectrum_test.ail:61:1[0m
+  [32m✓[0m luminousEfficacy peaks near 6,600 K at about 95 lm/W (CIE blackbody maximum) (9.55775ms)
+      at [2mglow_spectrum_test.ail:69:1[0m
+  [32m✓[0m luminousEfficacy x sigma T^4 / pi = photopicRadiance (definition) (3.706292ms)
+      at [2mglow_spectrum_test.ail:76:1[0m
+  [32m✓[0m luminousEfficacy: 0 at T <= 0, NaN, +Inf and below the visible underflow; finite at absurd T (9.341ms)
+      at [2mglow_spectrum_test.ail:87:1[0m
+  [32m✓[0m glowTemperatureAt at 0.5c, 0.99c, 0.999c and the cap, 0 to 90 deg (oracle, 1e-12) (1.424584ms)
+      at [2mglow_spectrum_test.ail:105:1[0m
+  [32m✓[0m canon HB-95..98: glow pole 290 K at 0.5c, 1,358 K at 0.99c, 2,482 K at 0.999c, 14,114 K at the cap (816.083µs)
+      at [2mglow_spectrum_test.ail:113:1[0m
+  [32m✓[0m sigma T^4 = K cos theta (eps cancels); emittance = eps fIn sigma T^4; T = T_pole cos^1/4 (806.292µs)
+      at [2mglow_spectrum_test.ail:127:1[0m
+  [32m✓[0m glowTemperatureAt: 0 at rest, equator, aft and phi < 0; cos clamped; rises with speed (1.322083ms)
+      at [2mglow_spectrum_test.ail:138:1[0m
+  [32m✓[0m glowTemperatureAt: NaN cos theta or phi gives NaN (819.083µs)
+      at [2mglow_spectrum_test.ail:146:1[0m
+  [32m✓[0m glowRadianceAt = glowEmittanceAt / pi (Lambertian wall); 0.99c and cap poles (oracle) (702.166µs)
+      at [2mglow_spectrum_test.ail:157:1[0m
+  [32m✓[0m glowEfficacyAt: 0.0233 lm/W at the 0.99c pole, 43.7 at the cap (HB-100, 101; oracle); 0 at rest, aft, NaN (9.511917ms)
+      at [2mglow_spectrum_test.ail:171:1[0m
+  [32m✓[0m glowLuminanceAt at eps 1e-11 (D-29): 0.99c, 0.999c, cap, 0.5c (oracle, 1e-12); = radiance x efficacy (15.441291ms)
+      at [2mglow_spectrum_test.ail:185:1[0m
+  [32m✓[0m canon HB-102..110: the 0.99c pole is 1.65e-4 of the 23.5 mag/arcsec^2 dark sky, the cap pole 3.61e3 (8.530833ms)
+      at [2mglow_spectrum_test.ail:199:1[0m
+  [32m✓[0m glowLuminanceAt: NaN propagates; 0 at rest, aft, on the equator, eps 0; linear in eps (4.824375ms)
+      at [2mglow_spectrum_test.ail:211:1[0m
+  [32m✓[0m canon HB-108: the pole luminance crosses the dark sky at gamma 24.7; HB-99: Draper point at gamma 2.89 (3.776959ms)
+      at [2mglow_spectrum_test.ail:220:1[0m
+  [32m✓[0m glow T, radiance, luminance (so efficacy) finite, >= 0 and <= the pole over 26 x 11 points of [0, phiCap] x [-1, 1] (188.594708ms)
+      at [2mglow_spectrum_test.ail:242:1[0m
+  [32m✓[0m acosh1p(1e-10) keeps full precision (acosh(1 + u) would not) (3.682291ms)
+      at [2mjourney_plan_test.ail:47:1[0m
+  [32m✓[0m acosh1p(u) = acosh(1 + u) where 1 + u is exact enough (813.625µs)
+      at [2mjourney_plan_test.ail:51:1[0m
+  [32m✓[0m rapidityOfOneMinusBeta(1e-6) = 7.254328619262047, gamma 707.106957963309 (row 3) (1.362333ms)
+      at [2mjourney_plan_test.ail:56:1[0m
+  [32m✓[0m rapidityOfOneMinusBeta agrees with atanh away from c, both signs (1.638875ms)
+      at [2mjourney_plan_test.ail:61:1[0m
+  [32m✓[0m row 1: alpha Cen cruise 0.9c, 2.1165 ship-yr / 4.8556 yr (858.5µs)
+      at [2mjourney_plan_test.ail:72:1[0m
+  [32m✓[0m row 2: alpha Cen cruise 0.99c (slice default), 0.6227 ship-yr / 4.414 yr (1.266291ms)
+      at [2mjourney_plan_test.ail:82:1[0m
+  [32m✓[0m row 3: alpha Cen at the cap 1-beta = 1e-6, 2.263 ship-days / 4.370 yr (857.708µs)
+      at [2mjourney_plan_test.ail:92:1[0m
+  [32m✓[0m row 4: 0.001 ly at the cap falls back to flip-and-burn, phi 6.6544 (1.230292ms)
+      at [2mjourney_plan_test.ail:101:1[0m
+  [32m✓[0m row 5: alpha Cen 0.99c with a = phi/(600 s) (836.542µs)
+      at [2mjourney_plan_test.ail:108:1[0m
+  [32m✓[0m row 6: alpha Cen flip at 1 g, 3.5824 ship-yr / 6.0025 yr / 0.95166c (1.193375ms)
+      at [2mjourney_plan_test.ail:117:1[0m
+  [32m✓[0m row 7: Gl 559 catalogue position, flip at 1 g (817.041µs)
+      at [2mjourney_plan_test.ail:124:1[0m
+  [32m✓[0m row 8: 100 ly at 1 g, cruise 0.99c (1.13025ms)
+      at [2mjourney_plan_test.ail:132:1[0m
+  [32m✓[0m row 9: 1000 ly at 1 g cannot reach gamma 707.1, falls back (767.959µs)
+      at [2mjourney_plan_test.ail:140:1[0m
+  [32m✓[0m short flip (a d / 2 = 5e-10) keeps its digits (acosh1p) (1.067042ms)
+      at [2mjourney_plan_test.ail:147:1[0m
+  [32m✓[0m flipAndBurn and burnCoastBurn are the plans' trips (one formula) (1.007458ms)
+      at [2mjourney_plan_test.ail:155:1[0m
+  [32m✓[0m canon HB-16..22, HB-25..29 (trip side) to printed digits (1.11175ms)
+      at [2mjourney_plan_test.ail:175:1[0m
+  [32m✓[0m canon HB-23, HB-24: felt 1 g takes 2.56 / 7.03 ship-yr (897.792µs)
+      at [2mjourney_plan_test.ail:184:1[0m
+  [32m✓[0m canon HB-30, HB-33, HB-34: example boost 10 min, 26.5 galaxy-min, 2.77 AU (1.106583ms)
+      at [2mjourney_plan_test.ail:195:1[0m
+  [32m✓[0m motionAt(p, tauTotal): phi = 0, x = d, t = galaxyTime (cruise, cap, flip, fallback) (774.708µs)
+      at [2mjourney_plan_test.ail:210:1[0m
+  [32m✓[0m motionAt clamps proper time to [0, tauTotal] (1.017916ms)
+      at [2mjourney_plan_test.ail:220:1[0m
+  [32m✓[0m t, x and phi continuous across each phase boundary, equal to the reference (909.292µs)
+      at [2mjourney_plan_test.ail:252:1[0m
+  [32m✓[0m phaseAt is left-closed at every boundary (cruise) (1.122666ms)
+      at [2mjourney_plan_test.ail:268:1[0m
+  [32m✓[0m phaseAt on a flip trip goes straight from Accelerating to Decelerating (1.014584ms)
+      at [2mjourney_plan_test.ail:276:1[0m
+  [32m✓[0m NaN proper time is treated as the start of the trip (1.091917ms)
+      at [2mjourney_plan_test.ail:286:1[0m
+  [32m✓[0m mid-cruise: beta 0.99 and halfway along the coast (877.125µs)
+      at [2mjourney_plan_test.ail:295:1[0m
+  [32m✓[0m low-speed cruise phi = 1e-6 keeps dBurn to 1e-12 (no cosh - 1) (1.146125ms)
+      at [2mjourney_plan_test.ail:304:1[0m
+  [32m✓[0m Schwarzschild analytic boundary, returning outer interval, both directions (3.76725ms)
+      at [2mkerr_capture_test.ail:5:1[0m
+  [32m✓[0m outward branch in inner allowed interval encounters a root and returns to horizon (345.75µs)
+      at [2mkerr_capture_test.ail:11:1[0m
+  [32m✓[0m nonzero spin double radial roots, inward grazing vs outward escape (518.583µs)
+      at [2mkerr_capture_test.ail:16:1[0m
+  [32m✓[0m axial/equatorial radial rays and domain validation before comparisons (250.125µs)
+      at [2mkerr_capture_test.ail:23:1[0m
+  [32m✓[0m Carter all four Mino coordinates, independent BPT72 evaluation (5.367416ms)
+      at [2mkerr_carter_test.ail:6:1[0m
+  [32m✓[0m past-directed RK4 moves time backwards and updates unwrapped phi (284.125µs)
+      at [2mkerr_carter_test.ail:13:1[0m
+  [32m✓[0m forbidden potentials refused, lambda-zero axis chart finite (178.291µs)
+      at [2mkerr_carter_test.ail:19:1[0m
+  [32m✓[0m metric recovers Killing energy, lambda, Carter eta and null norm (171.709µs)
+      at [2mkerr_carter_test.ail:25:1[0m
+  [32m✓[0m Kerr scalar/frame/curvature/ray digest n1 against independent oracle (134.550333ms)
+      at [2mkerr_digest_test.ail:4:1[0m
+  [32m✓[0m Kerr digest n16 against independent Decimal/metric/DOP853 oracle (2.12717s)
+      at [2mkerr_digest_test.ail:7:1[0m
+  [32m✓[0m far-domain simple-root departure is representable in binary64 (375.146375ms)
+      at [2mkerr_domain_test.ail:11:1[0m
+  [32m✓[0m outer radial root brackets accessible return, root residual small (6.846667ms)
+      at [2mkerr_events_test.ail:6:1[0m
+  [32m✓[0m polar root stable for near-axis and exact axis; forbidden angular region (229.875µs)
+      at [2mkerr_events_test.ail:12:1[0m
+  [32m✓[0m root event lands then flips just radial sign, departure leaves root (176.583µs)
+      at [2mkerr_events_test.ail:17:1[0m
+  [32m✓[0m simple root landing preserves theta, flips once and departs into allowed interval (777.875µs)
+      at [2mkerr_events_test.ail:24:1[0m
+  [32m✓[0m V33 ZAMO projection: signs, Killing energy and frame metric (3.445375ms)
+      at [2mkerr_frame_test.ail:6:1[0m
+  [32m✓[0m V33 hover/pro/retro ray dependent shifts (224.75µs)
+      at [2mkerr_frame_test.ail:11:1[0m
+  [32m✓[0m V33 noncollinear radial approach: one pure boost and inverse roundtrip (167.834µs)
+      at [2mkerr_frame_test.ail:16:1[0m
+  [32m✓[0m hover frequency is independent of the chosen incoming ray, zero spin reduces (168.25µs)
+      at [2mkerr_frame_test.ail:22:1[0m
+  [32m✓[0m near-critical 0 s0.9 u_ph1.5578546274233829 epsilon1.0e-05 (909.798625ms)
+      at [2mkerr_nearcritical_test.ail:7:1[0m
+  [32m✓[0m near-critical 1 s0.9 u_ph1.5578546274233829 epsilon1.0e-08 (1.434999875s)
+      at [2mkerr_nearcritical_test.ail:8:1[0m
+  [32m✓[0m near-critical 2 s0.9 u_ph3.0 epsilon1.0e-05 (797.480333ms)
+      at [2mkerr_nearcritical_test.ail:9:1[0m
+  [32m✓[0m near-critical 3 s0.9 u_ph3.0 epsilon1.0e-08 (1.291390708s)
+      at [2mkerr_nearcritical_test.ail:10:1[0m
+  [32m✓[0m near-critical 4 s0.9 u_ph3.910267939103037 epsilon1.0e-05 (529.78475ms)
+      at [2mkerr_nearcritical_test.ail:11:1[0m
+  [32m✓[0m near-critical 5 s0.9 u_ph3.910267939103037 epsilon1.0e-08 (736.947667ms)
+      at [2mkerr_nearcritical_test.ail:12:1[0m
+  [32m✓[0m near-critical 6 s0.998 u_ph1.0739092576799516 epsilon1.0e-05 (2.626411583s)
+      at [2mkerr_nearcritical_test.ail:13:1[0m
+  [32m✓[0m near-critical 7 s0.998 u_ph1.0739092576799516 epsilon1.0e-08 (7.13869675s)
+      at [2mkerr_nearcritical_test.ail:14:1[0m
+  [32m✓[0m near-critical 8 s0.998 u_ph3.0 epsilon1.0e-05 (804.377334ms)
+      at [2mkerr_nearcritical_test.ail:15:1[0m
+  [32m✓[0m near-critical 9 s0.998 u_ph3.0 epsilon1.0e-08 (1.267287292s)
+      at [2mkerr_nearcritical_test.ail:16:1[0m
+  [32m✓[0m near-critical 10 s0.998 u_ph3.998221892847946 epsilon1.0e-05 (497.874042ms)
+      at [2mkerr_nearcritical_test.ail:17:1[0m
+  [32m✓[0m near-critical 11 s0.998 u_ph3.998221892847946 epsilon1.0e-08 (699.029541ms)
+      at [2mkerr_nearcritical_test.ail:18:1[0m
+  [32m✓[0m Decimal80 represented-input radial potential near double roots (570.333µs)
+      at [2mkerr_radial_test.ail:5:1[0m
+  [32m✓[0m RK-14 endpoints: alpha=-lambda, prograde is negative, beta-square tends to zero (3.478125ms)
+      at [2mkerr_shadow_test.ail:7:1[0m
+  [32m✓[0m RK-15 equatorial top: eta(3)=27 and lambda(3)=-2s (216.458µs)
+      at [2mkerr_shadow_test.ail:13:1[0m
+  [32m✓[0m RK-16 equal-u discrete mean, N200000, exact endpoints included (324.158541ms)
+      at [2mkerr_shadow_test.ail:17:1[0m
+  [32m✓[0m RK-Q1 nonsingular zero-spin circle at multiple azimuths (611.708µs)
+      at [2mkerr_shadow_test.ail:21:1[0m
+  [32m✓[0m RK-17 visible 45 degree arc endpoints/top (math only) (452.833µs)
+      at [2mkerr_shadow_test.ail:26:1[0m
+  [32m✓[0m RK-1/2 horizons in r_s, all oracle spins (4.102375ms)
+      at [2mkerr_test.ail:12:1[0m
+  [32m✓[0m RK-3/9/10/11 equatorial static limit, horizon frequency, ZAMO frame (323.083µs)
+      at [2mkerr_test.ail:17:1[0m
+  [32m✓[0m RK-13/Q1 exact zero-spin dispatch and equatorial operation order (268.875µs)
+      at [2mkerr_test.ail:22:1[0m
+  [32m✓[0m RK-4/5 handed photon radii, units r_s (253.792µs)
+      at [2mkerr_test.ail:30:1[0m
+  [32m✓[0m RK-6/7 ISCO handedness, stable at r=3 only prograde at s=.9 (259.5µs)
+      at [2mkerr_test.ail:34:1[0m
+  [32m✓[0m RK-Q1 exact nonrotating orbit radii (246.916µs)
+      at [2mkerr_test.ail:39:1[0m
+  [32m✓[0m RK-8/8b/12 ISCO clock and ZAMO local velocity (263.375µs)
+      at [2mkerr_test.ail:43:1[0m
+  [32m✓[0m orbit handedness includes retrograde velocity sign (251µs)
+      at [2mkerr_test.ail:50:1[0m
+  [32m✓[0m RK-Q1 orbit clock, velocity and coordinate frequency dispatch exactly (244.958µs)
+      at [2mkerr_test.ail:54:1[0m
+  [32m✓[0m RK-18 IAU nominal solar mass: prograde ISCO period milliseconds (237.792µs)
+      at [2mkerr_test.ail:59:1[0m
+  [32m✓[0m spin validation rejects nonfinite, negative and extremal inputs (249.5µs)
+      at [2mkerr_test.ail:62:1[0m
+  [32m✓[0m small-spin ISCO retains the linear splitting instead of sqrt roundoff (248.708µs)
+      at [2mkerr_test.ail:66:1[0m
+  [32m✓[0m factored Delta near the .998 horizon and finite near extremality (544.583µs)
+      at [2mkerr_test.ail:70:1[0m
+  [32m✓[0m metric tensor 0 s0 u4 zamo (5.533292ms)
+      at [2mkerr_tides_matrix_test.ail:11:1[0m
+  [32m✓[0m metric tensor 1 s0 u4 hover (1.251292ms)
+      at [2mkerr_tides_matrix_test.ail:12:1[0m
+  [32m✓[0m metric tensor 2 s0 u4 pro (695.833µs)
+      at [2mkerr_tides_matrix_test.ail:13:1[0m
+  [32m✓[0m metric tensor 3 s0 u4 retro (568.542µs)
+      at [2mkerr_tides_matrix_test.ail:14:1[0m
+  [32m✓[0m metric tensor 4 s0 u4 radial (564.709µs)
+      at [2mkerr_tides_matrix_test.ail:15:1[0m
+  [32m✓[0m metric tensor 5 s0 u6 zamo (539.458µs)
+      at [2mkerr_tides_matrix_test.ail:16:1[0m
+  [32m✓[0m metric tensor 6 s0 u6 hover (548.125µs)
+      at [2mkerr_tides_matrix_test.ail:17:1[0m
+  [32m✓[0m metric tensor 7 s0 u6 pro (981.625µs)
+      at [2mkerr_tides_matrix_test.ail:18:1[0m
+  [32m✓[0m metric tensor 8 s0 u6 retro (935.667µs)
+      at [2mkerr_tides_matrix_test.ail:19:1[0m
+  [32m✓[0m metric tensor 9 s0 u6 radial (613.208µs)
+      at [2mkerr_tides_matrix_test.ail:20:1[0m
+  [32m✓[0m metric tensor 10 s0 u20 zamo (592.958µs)
+      at [2mkerr_tides_matrix_test.ail:21:1[0m
+  [32m✓[0m metric tensor 11 s0 u20 hover (568.333µs)
+      at [2mkerr_tides_matrix_test.ail:22:1[0m
+  [32m✓[0m metric tensor 12 s0 u20 pro (572.958µs)
+      at [2mkerr_tides_matrix_test.ail:23:1[0m
+  [32m✓[0m metric tensor 13 s0 u20 retro (972.458µs)
+      at [2mkerr_tides_matrix_test.ail:24:1[0m
+  [32m✓[0m metric tensor 14 s0 u20 radial (782.25µs)
+      at [2mkerr_tides_matrix_test.ail:25:1[0m
+  [32m✓[0m metric tensor 15 s0 u2000000 zamo (579.834µs)
+      at [2mkerr_tides_matrix_test.ail:26:1[0m
+  [32m✓[0m metric tensor 16 s0 u2000000 hover (546.5µs)
+      at [2mkerr_tides_matrix_test.ail:27:1[0m
+  [32m✓[0m metric tensor 17 s0 u2000000 pro (538.25µs)
+      at [2mkerr_tides_matrix_test.ail:28:1[0m
+  [32m✓[0m metric tensor 18 s0 u2000000 retro (536.542µs)
+      at [2mkerr_tides_matrix_test.ail:29:1[0m
+  [32m✓[0m metric tensor 19 s0 u2000000 radial (960.792µs)
+      at [2mkerr_tides_matrix_test.ail:30:1[0m
+  [32m✓[0m metric tensor 20 s0.5 u4 zamo (889.75µs)
+      at [2mkerr_tides_matrix_test.ail:31:1[0m
+  [32m✓[0m metric tensor 21 s0.5 u4 hover (565.708µs)
+      at [2mkerr_tides_matrix_test.ail:32:1[0m
+  [32m✓[0m metric tensor 22 s0.5 u4 pro (554.75µs)
+      at [2mkerr_tides_matrix_test.ail:33:1[0m
+  [32m✓[0m metric tensor 23 s0.5 u4 retro (529.709µs)
+      at [2mkerr_tides_matrix_test.ail:34:1[0m
+  [32m✓[0m metric tensor 24 s0.5 u4 radial (543.792µs)
+      at [2mkerr_tides_matrix_test.ail:35:1[0m
+  [32m✓[0m metric tensor 25 s0.5 u6 zamo (1.113042ms)
+      at [2mkerr_tides_matrix_test.ail:36:1[0m
+  [32m✓[0m metric tensor 26 s0.5 u6 hover (675.709µs)
+      at [2mkerr_tides_matrix_test.ail:37:1[0m
+  [32m✓[0m metric tensor 27 s0.5 u6 pro (571.5µs)
+      at [2mkerr_tides_matrix_test.ail:38:1[0m
+  [32m✓[0m metric tensor 28 s0.5 u6 retro (533.459µs)
+      at [2mkerr_tides_matrix_test.ail:39:1[0m
+  [32m✓[0m metric tensor 29 s0.5 u6 radial (528.125µs)
+      at [2mkerr_tides_matrix_test.ail:40:1[0m
+  [32m✓[0m metric tensor 30 s0.5 u20 zamo (544.084µs)
+      at [2mkerr_tides_matrix_test.ail:41:1[0m
+  [32m✓[0m metric tensor 31 s0.5 u20 hover (4.392875ms)
+      at [2mkerr_tides_matrix_test.ail:42:1[0m
+  [32m✓[0m metric tensor 32 s0.5 u20 pro (658.208µs)
+      at [2mkerr_tides_matrix_test.ail:43:1[0m
+  [32m✓[0m metric tensor 33 s0.5 u20 retro (556.917µs)
+      at [2mkerr_tides_matrix_test.ail:44:1[0m
+  [32m✓[0m metric tensor 34 s0.5 u20 radial (539.916µs)
+      at [2mkerr_tides_matrix_test.ail:45:1[0m
+  [32m✓[0m metric tensor 35 s0.5 u2000000 zamo (548.917µs)
+      at [2mkerr_tides_matrix_test.ail:46:1[0m
+  [32m✓[0m metric tensor 36 s0.5 u2000000 hover (560µs)
+      at [2mkerr_tides_matrix_test.ail:47:1[0m
+  [32m✓[0m metric tensor 37 s0.5 u2000000 pro (1.385375ms)
+      at [2mkerr_tides_matrix_test.ail:48:1[0m
+  [32m✓[0m metric tensor 38 s0.5 u2000000 retro (705.292µs)
+      at [2mkerr_tides_matrix_test.ail:49:1[0m
+  [32m✓[0m metric tensor 39 s0.5 u2000000 radial (633.375µs)
+      at [2mkerr_tides_matrix_test.ail:50:1[0m
+  [32m✓[0m metric tensor 40 s0.9 u4 zamo (597.917µs)
+      at [2mkerr_tides_matrix_test.ail:51:1[0m
+  [32m✓[0m metric tensor 41 s0.9 u4 hover (599.667µs)
+      at [2mkerr_tides_matrix_test.ail:52:1[0m
+  [32m✓[0m metric tensor 42 s0.9 u4 pro (1.0265ms)
+      at [2mkerr_tides_matrix_test.ail:53:1[0m
+  [32m✓[0m metric tensor 43 s0.9 u4 retro (978.333µs)
+      at [2mkerr_tides_matrix_test.ail:54:1[0m
+  [32m✓[0m metric tensor 44 s0.9 u4 radial (590.583µs)
+      at [2mkerr_tides_matrix_test.ail:55:1[0m
+  [32m✓[0m metric tensor 45 s0.9 u6 zamo (613.542µs)
+      at [2mkerr_tides_matrix_test.ail:56:1[0m
+  [32m✓[0m metric tensor 46 s0.9 u6 hover (549.25µs)
+      at [2mkerr_tides_matrix_test.ail:57:1[0m
+  [32m✓[0m metric tensor 47 s0.9 u6 pro (553.208µs)
+      at [2mkerr_tides_matrix_test.ail:58:1[0m
+  [32m✓[0m metric tensor 48 s0.9 u6 retro (986.166µs)
+      at [2mkerr_tides_matrix_test.ail:59:1[0m
+  [32m✓[0m metric tensor 49 s0.9 u6 radial (848.416µs)
+      at [2mkerr_tides_matrix_test.ail:60:1[0m
+  [32m✓[0m metric tensor 50 s0.9 u20 zamo (675.541µs)
+      at [2mkerr_tides_matrix_test.ail:61:1[0m
+  [32m✓[0m metric tensor 51 s0.9 u20 hover (614µs)
+      at [2mkerr_tides_matrix_test.ail:62:1[0m
+  [32m✓[0m metric tensor 52 s0.9 u20 pro (617µs)
+      at [2mkerr_tides_matrix_test.ail:63:1[0m
+  [32m✓[0m metric tensor 53 s0.9 u20 retro (812.5µs)
+      at [2mkerr_tides_matrix_test.ail:64:1[0m
+  [32m✓[0m metric tensor 54 s0.9 u20 radial (1.076375ms)
+      at [2mkerr_tides_matrix_test.ail:65:1[0m
+  [32m✓[0m metric tensor 55 s0.9 u2000000 zamo (899.542µs)
+      at [2mkerr_tides_matrix_test.ail:66:1[0m
+  [32m✓[0m metric tensor 56 s0.9 u2000000 hover (623.25µs)
+      at [2mkerr_tides_matrix_test.ail:67:1[0m
+  [32m✓[0m metric tensor 57 s0.9 u2000000 pro (636.75µs)
+      at [2mkerr_tides_matrix_test.ail:68:1[0m
+  [32m✓[0m metric tensor 58 s0.9 u2000000 retro (780.834µs)
+      at [2mkerr_tides_matrix_test.ail:69:1[0m
+  [32m✓[0m metric tensor 59 s0.9 u2000000 radial (642.5µs)
+      at [2mkerr_tides_matrix_test.ail:70:1[0m
+  [32m✓[0m metric tensor 60 s0.998 u4 zamo (996.583µs)
+      at [2mkerr_tides_matrix_test.ail:71:1[0m
+  [32m✓[0m metric tensor 61 s0.998 u4 hover (992.459µs)
+      at [2mkerr_tides_matrix_test.ail:72:1[0m
+  [32m✓[0m metric tensor 62 s0.998 u4 pro (659.75µs)
+      at [2mkerr_tides_matrix_test.ail:73:1[0m
+  [32m✓[0m metric tensor 63 s0.998 u4 retro (626.625µs)
+      at [2mkerr_tides_matrix_test.ail:74:1[0m
+  [32m✓[0m metric tensor 64 s0.998 u4 radial (629.375µs)
+      at [2mkerr_tides_matrix_test.ail:75:1[0m
+  [32m✓[0m metric tensor 65 s0.998 u6 zamo (621.292µs)
+      at [2mkerr_tides_matrix_test.ail:76:1[0m
+  [32m✓[0m metric tensor 66 s0.998 u6 hover (981.458µs)
+      at [2mkerr_tides_matrix_test.ail:77:1[0m
+  [32m✓[0m metric tensor 67 s0.998 u6 pro (1.049709ms)
+      at [2mkerr_tides_matrix_test.ail:78:1[0m
+  [32m✓[0m metric tensor 68 s0.998 u6 retro (748.875µs)
+      at [2mkerr_tides_matrix_test.ail:79:1[0m
+  [32m✓[0m metric tensor 69 s0.998 u6 radial (844.416µs)
+      at [2mkerr_tides_matrix_test.ail:80:1[0m
+  [32m✓[0m metric tensor 70 s0.998 u20 zamo (617.042µs)
+      at [2mkerr_tides_matrix_test.ail:81:1[0m
+  [32m✓[0m metric tensor 71 s0.998 u20 hover (594.959µs)
+      at [2mkerr_tides_matrix_test.ail:82:1[0m
+  [32m✓[0m metric tensor 72 s0.998 u20 pro (1.117375ms)
+      at [2mkerr_tides_matrix_test.ail:83:1[0m
+  [32m✓[0m metric tensor 73 s0.998 u20 retro (823.084µs)
+      at [2mkerr_tides_matrix_test.ail:84:1[0m
+  [32m✓[0m metric tensor 74 s0.998 u20 radial (610.458µs)
+      at [2mkerr_tides_matrix_test.ail:85:1[0m
+  [32m✓[0m metric tensor 75 s0.998 u2000000 zamo (568.5µs)
+      at [2mkerr_tides_matrix_test.ail:86:1[0m
+  [32m✓[0m metric tensor 76 s0.998 u2000000 hover (589.5µs)
+      at [2mkerr_tides_matrix_test.ail:87:1[0m
+  [32m✓[0m metric tensor 77 s0.998 u2000000 pro (608.959µs)
+      at [2mkerr_tides_matrix_test.ail:88:1[0m
+  [32m✓[0m metric tensor 78 s0.998 u2000000 retro (1.157959ms)
+      at [2mkerr_tides_matrix_test.ail:89:1[0m
+  [32m✓[0m metric tensor 79 s0.998 u2000000 radial (685.917µs)
+      at [2mkerr_tides_matrix_test.ail:90:1[0m
+  [32m✓[0m DI-10 metric-curvature literals: hover and both orbit senses, c²/r_s² (5.434958ms)
+      at [2mkerr_tides_test.ail:7:1[0m
+  [32m✓[0m radial motion projects full Weyl, not principal eigenvalues (254.541µs)
+      at [2mkerr_tides_test.ail:12:1[0m
+  [32m✓[0m exact legacy zero-spin tide semantics: transverse is along motion in orbit (161.792µs)
+      at [2mkerr_tides_test.ail:16:1[0m
+  [32m✓[0m independent Kerr matrix 0 s0.0 u4.0 psi1.2 chi0.7 (480.078709ms)
+      at [2mkerr_trace_matrix_test.ail:11:1[0m
+  [32m✓[0m independent Kerr matrix 1 s0.0 u4.0 psi1.2 chi1.5707963267948966 (410.756ms)
+      at [2mkerr_trace_matrix_test.ail:12:1[0m
+  [32m✓[0m independent Kerr matrix 2 s0.0 u4.0 psi1.8 chi2.4 (175.389375ms)
+      at [2mkerr_trace_matrix_test.ail:13:1[0m
+  [32m✓[0m independent Kerr matrix 3 s0.0 u4.0 psi2.7 chi5.2 (128.474917ms)
+      at [2mkerr_trace_matrix_test.ail:14:1[0m
+  [32m✓[0m independent Kerr matrix 4 s0.0 u6.0 psi0.9 chi0.0 (387.297167ms)
+      at [2mkerr_trace_matrix_test.ail:15:1[0m
+  [32m✓[0m independent Kerr matrix 5 s0.0 u6.0 psi0.9 chi3.141592653589793 (384.498209ms)
+      at [2mkerr_trace_matrix_test.ail:16:1[0m
+  [32m✓[0m independent Kerr matrix 6 s0.0 u6.0 psi1.2 chi0.7 (401.906791ms)
+      at [2mkerr_trace_matrix_test.ail:17:1[0m
+  [32m✓[0m independent Kerr matrix 7 s0.0 u6.0 psi1.2 chi1.5707963267948966 (367.147667ms)
+      at [2mkerr_trace_matrix_test.ail:18:1[0m
+  [32m✓[0m independent Kerr matrix 8 s0.0 u6.0 psi1.8 chi2.4 (147.283416ms)
+      at [2mkerr_trace_matrix_test.ail:19:1[0m
+  [32m✓[0m independent Kerr matrix 9 s0.0 u6.0 psi2.7 chi5.2 (121.702125ms)
+      at [2mkerr_trace_matrix_test.ail:20:1[0m
+  [32m✓[0m independent Kerr matrix 10 s0.0 u20.0 psi0.4 chi0.0 (403.231417ms)
+      at [2mkerr_trace_matrix_test.ail:21:1[0m
+  [32m✓[0m independent Kerr matrix 11 s0.0 u20.0 psi0.9 chi0.0 (349.272791ms)
+      at [2mkerr_trace_matrix_test.ail:22:1[0m
+  [32m✓[0m independent Kerr matrix 12 s0.0 u20.0 psi0.9 chi3.141592653589793 (347.0855ms)
+      at [2mkerr_trace_matrix_test.ail:23:1[0m
+  [32m✓[0m independent Kerr matrix 13 s0.0 u20.0 psi1.2 chi0.7 (375.220292ms)
+      at [2mkerr_trace_matrix_test.ail:24:1[0m
+  [32m✓[0m independent Kerr matrix 14 s0.0 u20.0 psi1.2 chi1.5707963267948966 (346.991459ms)
+      at [2mkerr_trace_matrix_test.ail:25:1[0m
+  [32m✓[0m independent Kerr matrix 15 s0.0 u20.0 psi1.8 chi2.4 (116.130417ms)
+      at [2mkerr_trace_matrix_test.ail:26:1[0m
+  [32m✓[0m independent Kerr matrix 16 s0.0 u20.0 psi2.7 chi5.2 (108.226583ms)
+      at [2mkerr_trace_matrix_test.ail:27:1[0m
+  [32m✓[0m independent Kerr matrix 17 s0.9 u4.0 psi0.9 chi3.141592653589793 (384.061916ms)
+      at [2mkerr_trace_matrix_test.ail:28:1[0m
+  [32m✓[0m independent Kerr matrix 18 s0.9 u4.0 psi1.2 chi1.5707963267948966 (395.638292ms)
+      at [2mkerr_trace_matrix_test.ail:29:1[0m
+  [32m✓[0m independent Kerr matrix 19 s0.9 u4.0 psi1.8 chi2.4 (160.2915ms)
+      at [2mkerr_trace_matrix_test.ail:30:1[0m
+  [32m✓[0m independent Kerr matrix 20 s0.9 u4.0 psi2.7 chi5.2 (127.806708ms)
+      at [2mkerr_trace_matrix_test.ail:31:1[0m
+  [32m✓[0m independent Kerr matrix 21 s0.9 u6.0 psi0.9 chi3.141592653589793 (375.583708ms)
+      at [2mkerr_trace_matrix_test.ail:32:1[0m
+  [32m✓[0m independent Kerr matrix 22 s0.9 u6.0 psi1.2 chi0.7 (419.204083ms)
+      at [2mkerr_trace_matrix_test.ail:33:1[0m
+  [32m✓[0m independent Kerr matrix 23 s0.9 u6.0 psi1.2 chi1.5707963267948966 (372.18ms)
+      at [2mkerr_trace_matrix_test.ail:34:1[0m
+  [32m✓[0m independent Kerr matrix 24 s0.9 u6.0 psi1.8 chi2.4 (141.23075ms)
+      at [2mkerr_trace_matrix_test.ail:35:1[0m
+  [32m✓[0m independent Kerr matrix 25 s0.9 u6.0 psi2.7 chi5.2 (123.13625ms)
+      at [2mkerr_trace_matrix_test.ail:36:1[0m
+  [32m✓[0m independent Kerr matrix 26 s0.9 u20.0 psi0.4 chi0.0 (383.927417ms)
+      at [2mkerr_trace_matrix_test.ail:37:1[0m
+  [32m✓[0m independent Kerr matrix 27 s0.9 u20.0 psi0.9 chi0.0 (350.007083ms)
+      at [2mkerr_trace_matrix_test.ail:38:1[0m
+  [32m✓[0m independent Kerr matrix 28 s0.9 u20.0 psi0.9 chi3.141592653589793 (348.042791ms)
+      at [2mkerr_trace_matrix_test.ail:39:1[0m
+  [32m✓[0m independent Kerr matrix 29 s0.9 u20.0 psi1.2 chi0.7 (362.644666ms)
+      at [2mkerr_trace_matrix_test.ail:40:1[0m
+  [32m✓[0m independent Kerr matrix 30 s0.9 u20.0 psi1.2 chi1.5707963267948966 (337.673916ms)
+      at [2mkerr_trace_matrix_test.ail:41:1[0m
+  [32m✓[0m independent Kerr matrix 31 s0.9 u20.0 psi1.8 chi2.4 (115.102041ms)
+      at [2mkerr_trace_matrix_test.ail:42:1[0m
+  [32m✓[0m independent Kerr matrix 32 s0.9 u20.0 psi2.7 chi5.2 (108.266375ms)
+      at [2mkerr_trace_matrix_test.ail:43:1[0m
+  [32m✓[0m independent Kerr matrix 33 s0.998 u4.0 psi0.9 chi3.141592653589793 (385.426ms)
+      at [2mkerr_trace_matrix_test.ail:44:1[0m
+  [32m✓[0m independent Kerr matrix 34 s0.998 u4.0 psi1.2 chi1.5707963267948966 (389.137583ms)
+      at [2mkerr_trace_matrix_test.ail:45:1[0m
+  [32m✓[0m independent Kerr matrix 35 s0.998 u4.0 psi1.8 chi2.4 (165.235083ms)
+      at [2mkerr_trace_matrix_test.ail:46:1[0m
+  [32m✓[0m independent Kerr matrix 36 s0.998 u4.0 psi2.7 chi5.2 (128.211459ms)
+      at [2mkerr_trace_matrix_test.ail:47:1[0m
+  [32m✓[0m independent Kerr matrix 37 s0.998 u6.0 psi0.9 chi3.141592653589793 (454.725833ms)
+      at [2mkerr_trace_matrix_test.ail:48:1[0m
+  [32m✓[0m independent Kerr matrix 38 s0.998 u6.0 psi1.2 chi0.7 (428.699125ms)
+      at [2mkerr_trace_matrix_test.ail:49:1[0m
+  [32m✓[0m independent Kerr matrix 39 s0.998 u6.0 psi1.2 chi1.5707963267948966 (367.534291ms)
+      at [2mkerr_trace_matrix_test.ail:50:1[0m
+  [32m✓[0m independent Kerr matrix 40 s0.998 u6.0 psi1.8 chi2.4 (144.147041ms)
+      at [2mkerr_trace_matrix_test.ail:51:1[0m
+  [32m✓[0m independent Kerr matrix 41 s0.998 u6.0 psi2.7 chi5.2 (141.893625ms)
+      at [2mkerr_trace_matrix_test.ail:52:1[0m
+  [32m✓[0m independent Kerr matrix 42 s0.998 u20.0 psi0.4 chi0.0 (393.411ms)
+      at [2mkerr_trace_matrix_test.ail:53:1[0m
+  [32m✓[0m independent Kerr matrix 43 s0.998 u20.0 psi0.9 chi0.0 (352.811666ms)
+      at [2mkerr_trace_matrix_test.ail:54:1[0m
+  [32m✓[0m independent Kerr matrix 44 s0.998 u20.0 psi0.9 chi3.141592653589793 (350.390625ms)
+      at [2mkerr_trace_matrix_test.ail:55:1[0m
+  [32m✓[0m independent Kerr matrix 45 s0.998 u20.0 psi1.2 chi0.7 (375.22125ms)
+      at [2mkerr_trace_matrix_test.ail:56:1[0m
+  [32m✓[0m independent Kerr matrix 46 s0.998 u20.0 psi1.2 chi1.5707963267948966 (349.156792ms)
+      at [2mkerr_trace_matrix_test.ail:57:1[0m
+  [32m✓[0m independent Kerr matrix 47 s0.998 u20.0 psi1.8 chi2.4 (116.194083ms)
+      at [2mkerr_trace_matrix_test.ail:58:1[0m
+  [32m✓[0m independent Kerr matrix 48 s0.998 u20.0 psi2.7 chi5.2 (110.59225ms)
+      at [2mkerr_trace_matrix_test.ail:59:1[0m
+  [32m✓[0m independent escaping Schwarzschild ray with radial and polar returns (483.541875ms)
+      at [2mkerr_trace_test.ail:13:1[0m
+  [32m✓[0m analytic captured ray never becomes a timeout classification (314.375µs)
+      at [2mkerr_trace_test.ail:16:1[0m
+  [32m✓[0m massEquivalentDensity: 0.247 cm^-3, 1.4, 0.0051 -> 3.4706e5 m^-3; the warm clouds' IS-25 (2.453334ms)
+      at [2mmedium_column_test.ail:28:1[0m
+  [32m✓[0m columnDragEnergy(n d) == cruiseDragEnergy(n, d) at 0.5c .. 0.999999c (1e-12, AC2) (371.417µs)
+      at [2mmedium_column_test.ail:35:1[0m
+  [32m✓[0m tripEnergyColumn equals tripEnergy for a uniform medium (1e-12, AC2) (320.583µs)
+      at [2mmedium_column_test.ail:46:1[0m
+  [32m✓[0m driveHoldMaxPhi: hot gas, warm clouds, n 4,200 cm^-3, guided drive (oracle, 1e-12) (590.5µs)
+      at [2mmedium_column_test.ail:58:1[0m
+  [32m✓[0m HB-130, HB-131, HB-135, HB-137: gamma_hold 16,858 / 2,117 / 13,387 / 19.28 at their printed digits (619.542µs)
+      at [2mmedium_column_test.ail:66:1[0m
+  [32m✓[0m brakeHoldsAgainstDrag is true 1e-9 below driveHoldMaxPhi and false 1e-9 above (AC10) (344.791µs)
+      at [2mmedium_column_test.ail:74:1[0m
+  [32m✓[0m NaN in gives NaN out (277.208µs)
+      at [2mmedium_column_test.ail:87:1[0m
+  [32m✓[0m driveHoldMaxPhi in a vacuum is +Inf; with no drive it is 0 (263.333µs)
+      at [2mmedium_column_test.ail:94:1[0m
+  [32m✓[0m constants: c, m_p c^2 = 1.50328e-10 J, ly, Julian year, AU, T_CMB (HB-5), 1 g = 9.80665 m/s^2 (6.103708ms)
+      at [2mmedium_test.ail:49:1[0m
+  [32m✓[0m readouts at 0.9c: boost 1.323e17 J, drag 4.031e16 J, total 3.049e17 J (3.393 kg) (1.682458ms)
+      at [2mmedium_test.ail:71:1[0m
+  [32m✓[0m readouts at 0.99c: boost 2.379e17 J, drag 1.370e17 J, total 6.128e17 J (6.818 kg) (1.40625ms)
+      at [2mmedium_test.ail:77:1[0m
+  [32m✓[0m readouts at the cap: boost 6.520e17 J, drag 1.380e19 J, total 1.510e19 J (168.06 kg) (2.197083ms)
+      at [2mmedium_test.ail:83:1[0m
+  [32m✓[0m canon HB-35..37: photon-drive energy 2.379e17 / 6.520e17 J/kg, ratio 2.741 (1.914625ms)
+      at [2mmedium_test.ail:92:1[0m
+  [32m✓[0m canon HB-38..43: ISM load scale (1.350625ms)
+      at [2mmedium_test.ail:102:1[0m
+  [32m✓[0m canon HB-44..46: kinetic-energy flux if thermalised (1.665375ms)
+      at [2mmedium_test.ail:109:1[0m
+  [32m✓[0m canon HB-47..50: drag force on the specular sphere (flat mirror would be 2x) (1.791709ms)
+      at [2mmedium_test.ail:117:1[0m
+  [32m✓[0m canon HB-51..56: ship-frame drag energy over the full d (1.750416ms)
+      at [2mmedium_test.ail:127:1[0m
+  [32m✓[0m canon HB-61: largest eps for a 1 W/m^2 inward glow at 0.999999c is 3.6e-9 (1.319417ms)
+      at [2mmedium_test.ail:132:1[0m
+  [32m✓[0m canon HB-62, HB-63: forward CMB 38.44 K at 0.99c, 3,853.7 K at the cap (2.231458ms)
+      at [2mmedium_test.ail:139:1[0m
+  [32m✓[0m canon HB-31, HB-32: example boost acceleration 1.32e6 m/s^2 = 1.35e5 g (1.746542ms)
+      at [2mmedium_test.ail:147:1[0m
+  [32m✓[0m tripEnergy drag is over dCoast, not d (ledger closes at arrival) (1.5205ms)
+      at [2mmedium_test.ail:158:1[0m
+  [32m✓[0m fallen-back trip: no cruise drag, boost at the rapidity reached (1.305291ms)
+      at [2mmedium_test.ail:166:1[0m
+  [32m✓[0m brakeHoldsAgainstDrag: m_eff a >= F; threshold 0.0321 kg at the cap; NaN is false (1.829667ms)
+      at [2mmedium_test.ail:177:1[0m
+  [32m✓[0m every medium function finite over 10^4 points of [0, phiCap] (197.585083ms)
+      at [2mmedium_test.ail:210:1[0m
+  [32m✓[0m glowEmittanceAt at 0.99c: pole 9.62878e-5 W/m^2 (design AC8, G-M4-4); 45, 80, 90, 120 deg (oracle) (2.582084ms)
+      at [2mmedium_test.ail:234:1[0m
+  [32m✓[0m glowEmittanceAt at the cap: pole 1.12508 W/m^2 (G-M4-4); 45, 80, 90, 120 deg (oracle) (2.271375ms)
+      at [2mmedium_test.ail:239:1[0m
+  [32m✓[0m glowEmittanceAt at 0.5c: 45, 80, 90, 120 deg (oracle) (1.920834ms)
+      at [2mmedium_test.ail:244:1[0m
+  [32m✓[0m glowEmittanceAt(..., 1) == 4 x glowInwardFlux at 0.5c, 0.9c, 0.99c, the cap and other eps, fIn (1.1145ms)
+      at [2mmedium_test.ail:254:1[0m
+  [32m✓[0m sphere mean of glowEmittanceAt over cos theta == glowInwardFlux (0.5c, 0.99c, cap) (22.228625ms)
+      at [2mmedium_test.ail:280:1[0m
+  [32m✓[0m sphere mean: the aft hemisphere adds 0, the forward hemisphere all of glowInwardFlux (8.171334ms)
+      at [2mmedium_test.ail:282:1[0m
+  [32m✓[0m glowEmittanceAt: 0 at rest, on the equator and aft, eps 0; cos clamped to [0, 1]; falls off from the pole (2.031708ms)
+      at [2mmedium_test.ail:297:1[0m
+  [32m✓[0m glowEmittanceAt: NaN cos theta or phi gives NaN, never a silent 0 or pole (1.558709ms)
+      at [2mmedium_test.ail:307:1[0m
+  [32m✓[0m glowEmittanceAt finite, >= 0 and <= the pole over 201 x 41 points of [0, phiCap] x [-1, 1] (31.428208ms)
+      at [2mmedium_test.ail:321:1[0m
+  [32m✓[0m hoverPower(1, 0.1254) = 0.1254 c to 1e-15 (the start hold above Earth); |g|; zero (2.197416ms)
+      at [2mmedium_test.ail:342:1[0m
+  [32m✓[0m hoverPower is linear in m_eff and in |g| (1.810125ms)
+      at [2mmedium_test.ail:349:1[0m
+  [32m✓[0m HB-88 / HB-90: Sgr A* hover at 3 r_s, 4.82e5 m/s^2 and 1.44e14 W per kg of m_eff (1.511042ms)
+      at [2mmedium_test.ail:359:1[0m
+  [32m✓[0m RS-24/25: beta 0.9, theta 90, alpha 5: centre 25.928, radius 2.184 deg; aberrated centre 25.842 is not the centre (4.536167ms)
+      at [2moptics_test.ail:50:1[0m
+  [32m✓[0m RS-26/27: beta 0.99, theta 90, alpha 5: centre 8.140, radius 0.707 deg (628.458µs)
+      at [2moptics_test.ail:60:1[0m
+  [32m✓[0m RS-28/29: beta 0.9, theta 150, alpha 5: centre 82.021, radius 9.940 deg (magnified astern) (564.291µs)
+      at [2moptics_test.ail:68:1[0m
+  [32m✓[0m the M5 design's printed oracle digits (25.928/2.184, 8.140/0.707, 82.021/9.940) (716.959µs)
+      at [2moptics_test.ail:83:1[0m
+  [32m✓[0m D at the apparent centre: 2.2871 (0.9c, 90), 7.0623 (0.99c), 0.4981 (0.9c, 150) (957µs)
+      at [2moptics_test.ail:99:1[0m
+  [32m✓[0m the cap, 1 - beta = 1e-6, theta 90, alpha 5: centre 0.08134, radius 0.007089 deg (605.208µs)
+      at [2moptics_test.ail:113:1[0m
+  [32m✓[0m beta 0.5, theta 30, alpha 10: centre 17.680, radius 6.055 deg (475.125µs)
+      at [2moptics_test.ail:118:1[0m
+  [32m✓[0m a disc on the axis stays on it: radius 1.148 deg ahead, 21.551 deg astern (beta 0.9, alpha 5) (458.708µs)
+      at [2moptics_test.ail:129:1[0m
+  [32m✓[0m a disc over the pole keeps the pole inside its image (694.666µs)
+      at [2moptics_test.ail:139:1[0m
+  [32m✓[0m phi = 0 is the identity to 1e-15 rad (917.125µs)
+      at [2moptics_test.ail:154:1[0m
+  [32m✓[0m angleSeen is cosSeen's angle: cos(angleSeen) = cosSeen to 1e-13 (541.417µs)
+      at [2moptics_test.ail:167:1[0m
+  [32m✓[0m apparentDisc finite, radius > 0, centre in [0, pi] over phi in [0, cap] (201 steps x 8 discs) (4.442417ms)
+      at [2moptics_test.ail:191:1[0m
+  [32m✓[0m B-V temperatures of four literature dwarfs within 5 percent (20.269417ms)
+      at [2mphotometry_sky_test.ail:34:1[0m
+  [32m✓[0m Proxima within 6 percent at both catalogue B-V colours (B-V saturates for late M) (1.83525ms)
+      at [2mphotometry_sky_test.ail:54:1[0m
+  [32m✓[0m B-V interpolation hits nodes and the reference interior values (2.2575ms)
+      at [2mphotometry_sky_test.ail:64:1[0m
+  [32m✓[0m B-V clamps at both ends, NaN to the cool end, and reports range (987.666µs)
+      at [2mphotometry_sky_test.ail:75:1[0m
+  [32m✓[0m B-V temperature falls strictly across the whole table (354.563375ms)
+      at [2mphotometry_sky_test.ail:85:1[0m
+  [32m✓[0m surface brightness to cd/m^2 and back (1.982834ms)
+      at [2mphotometry_sky_test.ail:96:1[0m
+  [32m✓[0m photopic radiance matches the independent Simpson oracle to 1e-6 (6.177ms)
+      at [2mphotometry_sky_test.ail:107:1[0m
+  [32m✓[0m photopic radiance agrees with the CIE 1931 table and the platinum-point candela (7.453417ms)
+      at [2mphotometry_sky_test.ail:119:1[0m
+  [32m✓[0m photopic radiance is 0 at the CMB's 2.725 K, at T <= 0 and for NaN (6.246875ms)
+      at [2mphotometry_sky_test.ail:130:1[0m
+  [32m✓[0m forward CMB at the cap and at 0.99c (HB-62, HB-63) (1.47225ms)
+      at [2mphotometry_sky_test.ail:147:1[0m
+  [32m✓[0m CMB gamma T0 at rest-frame 90 deg, T0/gamma seen at 90 deg, half at 1/gamma rad (HB-68) (1.250917ms)
+      at [2mphotometry_sky_test.ail:156:1[0m
+  [32m✓[0m Crumey dark cut-off: flat at zeta below 1e-5 cd/m^2, NaN counts as dark (1.385834ms)
+      at [2mphotometry_sky_test.ail:172:1[0m
+  [32m✓[0m Crumey scotopic branch (Eq. 53) at 2e-4 to 0.0708 cd/m^2 (1.309916ms)
+      at [2mphotometry_sky_test.ail:184:1[0m
+  [32m✓[0m Crumey photopic branch (Eq. 33) above 0.0708 cd/m^2 (1.443291ms)
+      at [2mphotometry_sky_test.ail:194:1[0m
+  [32m✓[0m Crumey transition: split at 0.0708 cd/m^2 inclusive, branches meet within 0.11 percent (948.792µs)
+      at [2mphotometry_sky_test.ail:211:1[0m
+  [32m✓[0m Crumey threshold is non-monotone on 0.022-0.108 cd/m^2 (peak 0.02184, 22 percent dip), monotone outside (1.300791ms)
+      at [2mphotometry_sky_test.ail:230:1[0m
+  [32m✓[0m Crumey naked-eye limit m0 6.93, 6.18 at F = 2 (1.170542ms)
+      at [2mphotometry_sky_test.ail:239:1[0m
+  [32m✓[0m every new function is finite and non-negative on a 10,000-point sweep (552.010708ms)
+      at [2mphotometry_sky_test.ail:269:1[0m
+  [32m✓[0m photopic radiance is finite and non-negative from 1e-3 K to 1e6 K (242.676833ms)
+      at [2mphotometry_sky_test.ail:275:1[0m
+  [32m✓[0m photopic radiance is finite at absurd temperatures: Rayleigh-Jeans, then clamped at the Planck temperature (18.691959ms)
+      at [2mphotometry_sky_test.ail:297:1[0m
+  [32m✓[0m blackbody functions are finite from 1e6 K to 1e308 K, rising to the clamp, and at +Inf (87.4705ms)
+      at [2mphotometry_sky_test.ail:311:1[0m
+  [32m✓[0m five literature stellar temperatures within 5 percent (7.102ms)
+      at [2mphotometry_test.ail:22:1[0m
+  [32m✓[0m interpolation hits G2V and M4V nodes (592.458µs)
+      at [2mphotometry_test.ail:28:1[0m
+  [32m✓[0m temperature falls throughout the colour range (28.990667ms)
+      at [2mphotometry_test.ail:38:1[0m
+  [32m✓[0m out-of-range colours clamp and report range (543.208µs)
+      at [2mphotometry_test.ail:46:1[0m
+  [32m✓[0m Mamajek G-V agrees with Riello over 0.4 to 3.0 within 0.11 mag (3.483333ms)
+      at [2mphotometry_test.ail:60:1[0m
+  [32m✓[0m F-K G-V agrees with Riello within 0.05 mag (1.050417ms)
+      at [2mphotometry_test.ail:62:1[0m
+  [32m✓[0m magnitude, illuminance, and V conversion conventions (462.959µs)
+      at [2mphotometry_test.ail:69:1[0m
+  [32m✓[0m BC_V: Pecaut & Mamajek nodes, linear between, clamped ends, NaN to the hot end (611.834µs)
+      at [2mphotometry_test.ail:87:1[0m
+  [32m✓[0m luminosity and radius definitions: M_bol,sun 4.74, 5 mag = 100x, R = sqrt(L) (5772/T)^2 (1.056333ms)
+      at [2mphotometry_test.ail:98:1[0m
+  [32m✓[0m inferred radii: the Sun, alpha Cen A/B within 3 percent; Aldebaran, Arcturus within 6 percent (674.833µs)
+      at [2mphotometry_test.ail:112:1[0m
+  [32m✓[0m inferred radii: Barnard's Star within 2 percent, TRAPPIST-1 12 percent, Proxima 35 percent (the M-dwarf limit) (543.125µs)
+      at [2mphotometry_test.ail:125:1[0m
+  [32m✓[0m the radius checks kill M_bol,sun 4.83, a sign-flipped BC and a T^4 radius (527.416µs)
+      at [2mphotometry_test.ail:137:1[0m
+  [32m✓[0m expm1 keeps full precision for tiny arguments (4.285708ms)
+      at [2mrelativity_test.ail:43:1[0m
+  [32m✓[0m log1p keeps full precision for tiny arguments (652.041µs)
+      at [2mrelativity_test.ail:48:1[0m
+  [32m✓[0m tanh(atanh(0.999999)) round-trips (1.092375ms)
+      at [2mrelativity_test.ail:53:1[0m
+  [32m✓[0m cosh^2 - sinh^2 = 1 (951.666µs)
+      at [2mrelativity_test.ail:58:1[0m
+  [32m✓[0m acosh inverts cosh (597.542µs)
+      at [2mrelativity_test.ail:63:1[0m
+  [32m✓[0m 1 g in c per Julian year (1.020625ms)
+      at [2mrelativity_test.ail:70:1[0m
+  [32m✓[0m gamma at 0.9c = 1/sqrt(0.19) (1.346708ms)
+      at [2mrelativity_test.ail:75:1[0m
+  [32m✓[0m 1 - beta stays exact where beta rounds to 1 (phi = 20) (776.083µs)
+      at [2mrelativity_test.ail:80:1[0m
+  [32m✓[0m 1 ship-year at 1 g: beta = tanh(g) (2.024458ms)
+      at [2mrelativity_test.ail:89:1[0m
+  [32m✓[0m stepping is exact: 100 small steps equal 1 big step (1.099958ms)
+      at [2mrelativity_test.ail:97:1[0m
+  [32m✓[0m 1 ship-year at 1 g: galaxy time = sinh(g)/g, distance = (cosh(g)-1)/g (685.542µs)
+      at [2mrelativity_test.ail:103:1[0m
+  [32m✓[0m symmetric burn returns to rest (2.505459ms)
+      at [2mrelativity_test.ail:110:1[0m
+  [32m✓[0m coasting at rest: galaxy clock runs 1:1 (979.375µs)
+      at [2mrelativity_test.ail:116:1[0m
+  [32m✓[0m Sol to alpha Centauri (4.37 ly), flip-and-burn at 1 g (786.292µs)
+      at [2mrelativity_test.ail:126:1[0m
+  [32m✓[0m burn-coast-burn to 0.5c over 10 ly at 1 g (1.325584ms)
+      at [2mrelativity_test.ail:132:1[0m
+  [32m✓[0m short trip that cannot reach cruise speed falls back to flip-and-burn (1.269292ms)
+      at [2mrelativity_test.ail:138:1[0m
+  [32m✓[0m coast 10 ly at 0.6c: 16.667 galaxy-yr, 13.333 ship-yr (746.333µs)
+      at [2mrelativity_test.ail:144:1[0m
+  [32m✓[0m a source at 90 deg appears at acos(0.9) = 25.842 deg at 0.9c (1.019458ms)
+      at [2mrelativity_test.ail:151:1[0m
+  [32m✓[0m a source at 90 deg appears at 60 deg at 0.5c (977.666µs)
+      at [2mrelativity_test.ail:156:1[0m
+  [32m✓[0m sources dead ahead and dead astern do not move (1.049334ms)
+      at [2mrelativity_test.ail:162:1[0m
+  [32m✓[0m aberrated direction is a unit vector (1.632958ms)
+      at [2mrelativity_test.ail:167:1[0m
+  [32m✓[0m deaberrate inverts aberrate (1.057541ms)
+      at [2mrelativity_test.ail:174:1[0m
+  [32m✓[0m scalar form: cos theta' = (cos theta + b)/(1 + b cos theta) at 120 deg, 0.8c (774.958µs)
+      at [2mrelativity_test.ail:179:1[0m
+  [32m✓[0m Doppler ahead / astern / transverse at 0.9c (1.570959ms)
+      at [2mrelativity_test.ail:187:1[0m
+  [32m✓[0m a source that APPEARS at 90 deg is redshifted by 1/gamma (1.037291ms)
+      at [2mrelativity_test.ail:192:1[0m
+  [32m✓[0m apparent-frame and rest-frame Doppler agree (818.917µs)
+      at [2mrelativity_test.ail:199:1[0m
+  [32m✓[0m Doppler astern at gamma ~ 1e8 is positive and exact (e^-phi) (1.49ms)
+      at [2mrelativity_test.ail:204:1[0m
+  [32m✓[0m 2856 K matches CIE illuminant A chromaticity (0.4476, 0.4074) (2.421709ms)
+      at [2mrelativity_test.ail:212:1[0m
+  [32m✓[0m 6500 K lies on the Planckian locus at (0.3135, 0.3236) (3.085875ms)
+      at [2mrelativity_test.ail:218:1[0m
+  [32m✓[0m 3000 K is orange and 20000 K is blue (3.252292ms)
+      at [2mrelativity_test.ail:225:1[0m
+  [32m✓[0m cool sources do not underflow: 300 K luminance is positive (3.407166ms)
+      at [2mrelativity_test.ail:230:1[0m
+  [32m✓[0m D = 1 leaves a star's flux unchanged (3.266584ms)
+      at [2mrelativity_test.ail:235:1[0m
+  [32m✓[0m a red dwarf ahead at 0.9c brightens by more than D^2 (3.955125ms)
+      at [2mrelativity_test.ail:240:1[0m
+  [32m✓[0m a Sun-like star astern at 0.9c fades by more than 100x (3.577041ms)
+      at [2mrelativity_test.ail:245:1[0m
+  [32m✓[0m critical impact parameter is 3 sqrt(3)/2 (1.270208ms)
+      at [2mrelativity_test.ail:252:1[0m
+  [32m✓[0m shadow seen from r = 3 r_s is exactly pi/4 (667.416µs)
+      at [2mrelativity_test.ail:257:1[0m
+  [32m✓[0m shadow from r = 10 r_s (1.393917ms)
+      at [2mrelativity_test.ail:262:1[0m
+  [32m✓[0m inside the photon sphere the shadow covers more than half the sky (675.917µs)
+      at [2mrelativity_test.ail:267:1[0m
+  [32m✓[0m weak-field deflection 2 r_s / b (592.375µs)
+      at [2mrelativity_test.ail:272:1[0m
+  [32m✓[0m static observer at 4 r_s sees starlight blueshifted by 2/sqrt(3) (1.143709ms)
+      at [2mrelativity_test.ail:277:1[0m
+  [32m✓[0m check49 static clock at 10, 5, 3 r_s (1e-15) (4.219375ms)
+      at [2mschwarzschild_ext_test.ail:33:1[0m
+  [32m✓[0m check49 circular-orbit local speed at 10, 5, 3 r_s (1e-15) (592.917µs)
+      at [2mschwarzschild_ext_test.ail:39:1[0m
+  [32m✓[0m check49 circular-orbit clock at 10, 5, 3 r_s (1e-15) (545.333µs)
+      at [2mschwarzschild_ext_test.ail:45:1[0m
+  [32m✓[0m check49 movingClockRate(r, orbit speed) = circularOrbitClockRate(r) (1e-15) (1.251125ms)
+      at [2mschwarzschild_ext_test.ail:49:1[0m
+  [32m✓[0m movingClockRate: at rest it is the static clock; far away it is 1/gamma (670.583µs)
+      at [2mschwarzschild_ext_test.ail:52:1[0m
+  [32m✓[0m orbitalAngularVelocity: Kepler sqrt(1/(2 r^3)) in c/r_s (568.792µs)
+      at [2mschwarzschild_ext_test.ail:57:1[0m
+  [32m✓[0m radialCoordinateRate: dr/dt = beta (1 - 1/r), 0 at the horizon (524.166µs)
+      at [2mschwarzschild_ext_test.ail:60:1[0m
+  [32m✓[0m impactFromStaticAngle: the shadow edge at 3 r_s has b = b_c (854.208µs)
+      at [2mschwarzschild_ext_test.ail:67:1[0m
+  [32m✓[0m turningRadius: r^3 - b^2 r + b^2 = 0; 1.5 at the critical impact (853µs)
+      at [2mschwarzschild_ext_test.ail:72:1[0m
+  [32m✓[0m weakDeflection2(100) = 2/b + 15 pi/(16 b^2) (574.333µs)
+      at [2mschwarzschild_ext_test.ail:75:1[0m
+  [32m✓[0m weakDeflectionFinite: (1 + cos psi)/b; 0 looking straight away (540.041µs)
+      at [2mschwarzschild_ext_test.ail:80:1[0m
+  [32m✓[0m strongDeflectionBbar = ln(216(7 - 4 sqrt 3)) - pi = -0.400230039755 (Bozza 2002) (873.333µs)
+      at [2mschwarzschild_ext_test.ail:83:1[0m
+  [32m✓[0m rsPerSolarMassMetres = 2 GM_sun / c^2 (IAU 2015 nominal) (818.625µs)
+      at [2mschwarzschild_ext_test.ail:88:1[0m
+  [32m✓[0m check51 tidal eigenvalues: radial 1/r^3, transverse half, orbit/static = 1.5 at 3 r_s (600.708µs)
+      at [2mschwarzschild_ext_test.ail:94:1[0m
+  [32m✓[0m check51 HB-72..74 Gaia BH1 (9.62 Msun) tide at 10, 5, 3 r_s: 1.135e6, 9.084e6, 4.205e7 g (566.292µs)
+      at [2mschwarzschild_ext_test.ail:99:1[0m
+  [32m✓[0m check51 HB-78..80 1000 Msun tide at 10, 5, 3 r_s: 105.1, 840.6, 3892 g (894.791µs)
+      at [2mschwarzschild_ext_test.ail:104:1[0m
+  [32m✓[0m check51 HB-84..86 Sgr A* (4.297e6 Msun) tide at 10, 5, 3 r_s: 5.691e-6, 4.553e-5, 2.108e-4 g (813.083µs)
+      at [2mschwarzschild_ext_test.ail:109:1[0m
+  [32m✓[0m check51 orbit tide at 3 r_s: Sgr A* 3.162e-4 g, Gaia BH1 6.31e7 g (559µs)
+      at [2mschwarzschild_ext_test.ail:115:1[0m
+  [32m✓[0m check52 HB-75/76/81 tide = 0.1 g at 2247.6 r_s (63,900 km) for Gaia BH1, 102 r_s for 1000 Msun (547.084µs)
+      at [2mschwarzschild_ext_test.ail:125:1[0m
+  [32m✓[0m check52 HB-87 0.1 g at 3 r_s needs M >= 1.9728e5 Msun (941.459µs)
+      at [2mschwarzschild_ext_test.ail:131:1[0m
+  [32m✓[0m hoverAcceleration = 1/(2 r^2 sqrt(1 - 1/r)) in c^2/r_s (829.708µs)
+      at [2mschwarzschild_ext_test.ail:136:1[0m
+  [32m✓[0m check53 HB-88/89 Sgr A* hover at 10, 5, 3 r_s: 3.7327e4, 1.5837e5, 4.8189e5 m/s^2 (4.91e4 g) (554.708µs)
+      at [2mschwarzschild_ext_test.ail:142:1[0m
+  [32m✓[0m check53 HB-90 Sgr A* hover power per kg of m_eff: 1.1190e13, 4.7477e13, 1.4447e14 W/kg (531.75µs)
+      at [2mschwarzschild_ext_test.ail:147:1[0m
+  [32m✓[0m isco: 3 r_s, circular speed exactly 0.5, clock rate sqrt(1/2) (872.042µs)
+      at [2mschwarzschild_ext_test.ail:153:1[0m
+
+──────────────────────────────────────────────────
+[32m✓[0m [1mAll tests passed![0m
+
+438 tests: 438 passed, 0 failed, 0 skipped (40.547939823s)
+  [32m✓ Passed:[0m 438
+  [31m✗ Failed:[0m 0
+
+[1mSeed:[0m
+  mode: derived
+  master seed: 0
+  derivation: ailang-property-seed-v1
+  replay: ailang test --seed 0 --package .
+

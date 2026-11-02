@@ -2,7 +2,7 @@
 
 **Design doc:** [kerr-black-holes.md](kerr-black-holes.md), read in full, including Quorum log and Verification log.
 **Sprint id:** `R2-KERR`.
-**Status:** `awaiting_approval` for the full sprint; D-116 A already authorizes the named headless K1.1a scope (including its oracle children), stopping before publish. Other P0/spec/render/publish fences remain.
+**Status:** `in_progress` under attended D-144 (2026-11-02). Historical pause text below is retained; the attended brief authorizes execution and a draft spec PR, while package publication, full physics gates and visual review remain held.
 **Mission iteration:** 43; charter row R2, plan only.
 **Base commit:** `bc1f111134d2abac7cbfd9ca7bb2239da6382f04` (`git rev-parse HEAD`).
 **Runtime:** `runtime/bin/ailang`, AILANG v0.54.14, commit `e1ef33fa52b16c3fc3ad15edd60103d2f4ba808e`.
@@ -2078,3 +2078,22 @@ separates independent metric-derivative oracle source (150), its domain/fixture
 audit (150), and full-Weyl package projection/tests (150), preserving DI-10.
 The original 150-line solver/tides estimates were insufficient for the explicitly
 required root/chart/full-tensor checks; no physics requirement is removed.
+
+K1.1b-b canonical capture uses the depressed cubic R' to identify the sole
+positive outer radial minimum for eta>=0, then classifies R's allowed intervals
+and double-root boundary. This is analytic root topology, not step termination.
+It explicitly refuses negative eta, which cannot arise from the supported
+finite equatorial observer; RK-17 remains an infinity critical-curve math test.
+The root-event c3 commit is further split into c3a stable radial/polar roots and
+local event/departure primitives (150), then c3b adaptive trace and unwrapped
+axis sky recovery (150). The solver aggregate is still false until c4 oracle
+and refinement closure; a passed derivative kernel is not a ray-map result.
+
+Final attended checkpoint: package draft #173 at `8662584`, **438/438** bytecode
+tests (zero fallback),53 files checked; spec draft #49 at `5df8b383`. The
+400-ray sweep is now347 escaped/53 captured/0 failed after the far-radius root
+fix. An arbitrary near-axis ray still returns `solver_steps`, so K1.1b-c and
+dependent gates remain false. K1.1a-e also retains its nonzero verifier result
+(two helper-sqrt encoding errors). Neither package publication nor any Kerr
+visual is ready. Full evidence and reproduction are in
+`.ailang/state/evidence/R2-KERR/attended-2026-11-02.md`.

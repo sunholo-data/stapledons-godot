@@ -1,0 +1,17 @@
+
+→ Verifying contracts in verify_sqrt_repro.ail
+  Solver: Z3 version 4.16.0 - 64 bit
+  Scope: verifier reported verified under the encoded model; encoded model: float=Real, int=Int; runtime equivalence not_established (not an IEEE/machine-arithmetic proof); absent recursion depth is not an inductive proof; runtime contracts not_measured
+
+  ! ERROR horizon
+    Z3 error (exit exit status 1): (error "line 4 column 121: unknown constant sqrt (Real) ")
+(error "line 6 column 49: unknown constant root (Real) ")
+(error "line 9 column 30: unknown constant result")
+sat
+(
+  (define-fun $p_s () Real
+    0.0)
+)
+
+  1 exported functions: 1 errors
+
