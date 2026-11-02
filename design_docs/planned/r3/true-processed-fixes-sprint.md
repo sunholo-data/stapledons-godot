@@ -39,7 +39,7 @@
 
 ### TP5: renders, PR, rig (~80 LOC)
 - `tools/ship_star_light_capture.gd` shoots each pose in True and Processed (`_true`, `_processed` suffixes); the comms capture re-run (after); every frame opened; the review set uploaded to `refs/true_processed_v1/`; changelog fragment; draft PR; `tools/rig_check.sh <PR> --golden` when no other rig check runs.
-- **Acceptance:** `gsutil ls` lists the set; `rig/full` posted.
+- **Acceptance:** `gsutil ls` lists the set; `rig/full` posted. **Renders uploaded** (`refs/true_processed_v1/`), draft PR #374; `rig/full` run on its head; waits for Mark's render review.
 
 ## Validation (targeted, never the full suite locally)
 

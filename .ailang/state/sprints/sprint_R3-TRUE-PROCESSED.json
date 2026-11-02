@@ -1,6 +1,6 @@
 {
   "sprint_id": "R3-TRUE-PROCESSED",
-  "status": "in_progress",
+  "status": "awaiting_render_review",
   "approved": "D-144 (Mark, attended 2026-11-02): attended parallel agent Claude D; visual landing stops for Mark",
   "created": "2026-11-02",
   "design_doc": "design_docs/planned/r3/true-processed-fixes.md",
@@ -173,13 +173,19 @@
         "rig/full status posted"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Captures in both settings (32 star-light frames; the capture stops at the alpha Cen arrival as on main), comms after frames 4/4 ok; review set uploaded to gs://stapledons-voyage-assets/refs/true_processed_v1/ (feed before/after/options, star before/after, sheets); draft PR #374; rig/full started on the head carrying this note. Passes after rig/full and Mark's render review."
     }
   ],
-  "reviews": [],
-  "progress_note": "TP0-TP4 done; TP5 (captures, review upload, draft PR, rig/full) in progress.",
+  "reviews": [
+    {
+      "kind": "render_review",
+      "set": "https://storage.googleapis.com/stapledons-voyage-assets/refs/true_processed_v1/",
+      "status": "pending Mark"
+    }
+  ],
+  "progress_note": "TP0-TP4 done; TP5 renders uploaded, draft PR #374, rig/full running. Stops for Mark's render review (visual landing) and OQ1-OQ4.",
   "upstream_reports": [],
   "evaluation": null
 }
