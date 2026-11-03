@@ -68,36 +68,36 @@ Edits, anchored on text, not line numbers:
    ```
 2. In `_run`, directly after the two cruise-tolerance self-test lines (before the output-directory check):
    ```gdscript
-   	await process_frame
-   	var step := root.get_process_delta_time()
-   	_check(step == 1.0 / CAPTURE_FPS, "process delta %s s is not 1/%d s: run it as make capture-m4 (godot --fixed-fps %d)" % [str(step), CAPTURE_FPS, CAPTURE_FPS])
+       await process_frame
+       var step := root.get_process_delta_time()
+       _check(step == 1.0 / CAPTURE_FPS, "process delta %s s is not 1/%d s: run it as make capture-m4 (godot --fixed-fps %d)" % [str(step), CAPTURE_FPS, CAPTURE_FPS])
    ```
    The existing gate `if failures: _finish(); return` (now just below the stale-file cleanup) stops the run before the demo loads, so a refused run renders **0 frames**. Measured with the guard compiled in (V23): without the flag Godot exits **1** in 2 s, printing `FAIL process delta 0.142168 s is not 1/60 s: …`; with `--fixed-fps 30` it also exits 1, printing `0.025 s`. As with today's CC self-test, the stale-file cleanup still runs first, so a refused run leaves `renders/m4/` empty.
 3. `_helm`: replace the wall-clock loop with
    ```gdscript
-   	var wall := Time.get_ticks_msec() + 300000
-   	var frames := 0
-   	while frames < WALK_FRAMES_MAX and Time.get_ticks_msec() < wall:
-   		if demo.consoles.walking.is_empty():
-   			print("capture-m4: walk %d frames" % frames)
-   			return true
-   		frames += 1
-   		await process_frame
-   	return _check(false, "walk to navigation exceeded %d frames or 300 s" % WALK_FRAMES_MAX)
+       var wall := Time.get_ticks_msec() + 300000
+       var frames := 0
+       while frames < WALK_FRAMES_MAX and Time.get_ticks_msec() < wall:
+           if demo.consoles.walking.is_empty():
+               print("capture-m4: walk %d frames" % frames)
+               return true
+           frames += 1
+           await process_frame
+       return _check(false, "walk to navigation exceeded %d frames or 300 s" % WALK_FRAMES_MAX)
    ```
    Update the comment above it: the walk is bounded in fixed frames.
 4. `_views`, dolly wait: the same shape (`frames < WALK_FRAMES_MAX and` the 300 s wall guard). The failure text `console dolly did not finish` is unchanged.
 5. `_views`, after the docked settle block, add
    ```gdscript
-   	elif state.begins_with("arrived"):
-   		for i in ARRIVED_SETTLE_FRAMES:
-   			await process_frame
-   		_check(_card_alpha("arrival") == 1.0, "arrival card alpha %s at %s (want 1, after %d frames)" % [str(_card_alpha("arrival")), state, ARRIVED_SETTLE_FRAMES])
+       elif state.begins_with("arrived"):
+           for i in ARRIVED_SETTLE_FRAMES:
+               await process_frame
+           _check(_card_alpha("arrival") == 1.0, "arrival card alpha %s at %s (want 1, after %d frames)" % [str(_card_alpha("arrival")), state, ARRIVED_SETTLE_FRAMES])
    ```
    and a helper beside `_near`:
    ```gdscript
    func _card_alpha(id: String) -> float:
-   	return float(demo.ship_hud.cards[id].panel.modulate.a) if demo.ship_hud.cards.has(id) else -1.0
+       return float(demo.ship_hud.cards[id].panel.modulate.a) if demo.ship_hud.cards.has(id) else -1.0
    ```
    `cards` is the HUD's public dictionary (`ui/ship_hud.gd:52`). The fade-in is a linear clamp, `clampf((now_s - c.born) / FADE_IN_S, 0.0, 1.0)` at `:491` with `FADE_IN_S := 0.4` (`:26`), so exactly `1.0` is reachable and the strict `== 1.0` is sound (V21). Measured with these lines compiled in (V22): the alpha is already `1.0` at frame 24 and at frame 30 for both arrived states; the run printed 14 frames, `capture-m4: OK`, rc 0. Nothing in `ui/` is edited.
 
@@ -377,7 +377,7 @@ cdrill() (  # exit 0 expected outcome, 1 unexpected, 2 usage, 3 mutation not app
 | `nofixed` | run the driver without `--fixed-fps` (what the recipe was before W2) | Godot rc 1 (measured, V23: `FAIL process delta 0.142168 s is not 1/60 s: …`, 2 s); exactly 1 `FAIL process delta … is not 1/60 s`; 0 frames |
 | `fps30` | `--fixed-fps 30` | the same, rc 1 (measured, V23: `0.025 s`): the guard checks the step, not just the flag's presence |
 | `nosettle` | `ARRIVED_SETTLE_FRAMES` 30 → 0 | rc 1; exactly 1 `FAIL arrival card alpha … at arrived_acen (want 1, after 0 frames)`, and 1 or 2 alpha FAILs in all (arrived_home's card also looked faint in the no-settle run, V9; the executor records the count); 14 frames |
-| **predicted survivor** `shot6to7` | the per-shot wait 6 → 7 frames | **survives every in-script check**: still reproducible, just different pixels. It is caught only by comparing against a published reference: the post-landing step C3 re-captures and `cmp`s against the dated set's `m4_manifest.sha256`. Recorded, not run. |
+| **predicted survivor** `shot6to7` | the per-shot wait 6 → 7 frames | **survives every in-script check**: still reproducible, just different pixels. No check in this row catches it: C3 compares two fresh captures with each other, so it survives there too. A later re-capture compared against the dated published set would catch it. Recorded, not run. |
 
 Run order: the capture drills first, then AC4 last, so `renders/m4/` ends as a good set (a refused run empties it, see W1.2).
 
@@ -420,7 +420,7 @@ Run from the implementation root on the executor's committed tree: `export PATH=
 | AC1 | `deadline 400 make -s capture-m4-publish-test > .godot/tmp/7w-m.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7w-m.out; tail -1 .godot/tmp/7w-m.out` | `rc=0`, `26`, `capture-m4-publish-test: OK (13 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)` (prototype: V26) |
 | AC2 | the same through `gmake` (`.godot/tmp/7w-g.out`) | `rc=0`, `26`, the same footer |
 | AC3 | `for m in flat nodate nols lsany envdate nogen inloop noupload deadcapture nopositive stall; do drill "$PWD" $m; echo "exit=$?"; done` | every line `exit=0`, each with `expected outcome on 2 outer makes` and the per-make ok/FAIL counts of the Publish drills table (all ten measured on the prototype, V27; `stall` as in 7l(a)) |
-| AC4 | Reproducibility: `S=$(mktemp -d /tmp/stap-7w-ac4.XXXXXX); deadline 900 make capture-m4 $A > $S/1.out 2>&1; echo rc1=$?; cp -R renders/m4 $S/a; deadline 900 make capture-m4 $A > $S/2.out 2>&1; echo rc2=$?; cmp $S/a/m4_manifest.sha256 renders/m4/m4_manifest.sha256 && echo png-15-of-15; cmp $S/a/worlds.sha256 renders/m4/worlds.sha256 && echo worlds-14-of-14; grep -c '^capture-m4: walk [0-9]* frames$' .godot/tmp/capture-m4.log; sysctl -n vm.loadavg` | `rc1=0`, `rc2=0`, `png-15-of-15`, `worlds-14-of-14`, `1`; the load is recorded beside it |
+| AC4 | Reproducibility: `S=$(mktemp -d /tmp/stap-7w-ac4.XXXXXX); deadline 900 make capture-m4 $A > $S/1.out 2>&1; echo rc1=$?; cp -R renders/m4 $S/a; deadline 900 make capture-m4 $A > $S/2.out 2>&1; echo rc2=$?; cmp $S/a/m4_manifest.sha256 renders/m4/m4_manifest.sha256 && echo png-15-of-15; cmp $S/a/worlds.sha256 renders/m4/worlds.sha256 && echo worlds-14-of-14; grep -c '^capture-m4: walk [0-9]* frames$' .godot/tmp/capture-m4.log; sysctl -n vm.loadavg` | `rc1=0`, `rc2=0`, `png-15-of-15`, `worlds-14-of-14`, `2` (V28: `walk 61 frames`, then `walk 2 frames` at home); the load is recorded beside it |
 | AC5 | `for m in nofixed fps30 nosettle; do cdrill "$PWD" $m; echo "exit=$?"; done` (before AC4's final run, or re-run `make capture-m4` after) | `cdrill <m>: godot rc 1`, `cdrill <m>: expected outcome`, `exit=0` for each |
 | AC6 | Visual: open `renders/m4/contact_sheet.png` and the two `06_arrived_acen_*.png` | the arrival card is fully opaque in both arrived columns (as in V17); every frame lit, not blank; recorded in the sprint JSON as opened |
 | AC7 | `grep -c -- '--path . --fixed-fps 60 --script tools/m4_ship_capture.gd' Makefile; grep -cF 'refs/m4_ship_s1/$${f##*/}' Makefile; grep -c '^M4_PUBLISH_DATE :=$' Makefile; grep -cF 'refs/m4_ship_s1/$$day/' Makefile; grep -cF -- 'gcloud storage cp --if-generation-match=0 --cache-control="public, max-age=300" "$$f" "$$dest$${f##*/}"' Makefile; R=$(awk '/^capture-m4-publish:/,/^\.PHONY: capture-m4-publish/' Makefile); echo "$R" \| grep -c 'gcloud storage cp'; echo "$R" \| grep -c 'gcloud storage cp --if-generation-match=0 '` | `1`, `0` (no flat upload left), `1`, `1`, `1`, `1`, `1` (the recipe's only copy is create-only) |
@@ -548,3 +548,5 @@ Round 2 (artifact `m4-7w-s1-republish-2026-11-03T11-05-50Z.json`) was **BLOCKED 
 | V30 | The deadline mechanism exists and has the semantics sol asks for | `sed -n 16,32p tools/test_m4_publish.sh` | `deadline SECONDS CMD...: CMD's rc; 124 on expiry (TERM to its process group, KILL 5 s later)`; TERM/INT/HUP forwarded as KILL to the child's group |
 
 **AC deltas.** AC1/AC2: `OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)` (30 `ok` lines on the rig, 15 on Linux). AC3 gains `nodeadline` and `nomsg` (killed). AC5's `nosettle` expectation is V29's (exactly 2 alpha FAILs, alpha 0.125, 14 frames, rc 1). AC7 also greps for `tools/deadline.sh` and `M4_PUBLISH_S` in the recipe, and the timed-out line. AC9's allowlist gains `tools/deadline.sh` (and `tools/m4_publish_upload.sh` if the planner uses it). **LOC**: about +35 over round 1's ~100.
+
+**Planner errata (iteration 66, codex gpt-6.1-sol, applied by the controller).** (1) AC4 expects **2** walk lines per run (V28), not 1: fixed in the AC table. (2) AC9's allowlist also admits `design_docs/planned/r1/m4-7w-s1-republish-sprint.md`, `tools/deadline.sh` and, if used, `tools/m4_publish_upload.sh`. (3) AC11's `git diff --check origin/main` was red at plan time because of 17 space-before-tab lines in this doc's GDScript blocks; those blocks are now indented with spaces only (`git diff --check` prints nothing). **The GDScript in `tools/m4_ship_capture.gd` keeps tab indentation**, as the file does today. (4) The `shot6to7` survivor's note said C3 compares against the dated set; C3 compares two fresh captures, so the note now says no check in this row catches it.
