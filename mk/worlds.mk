@@ -9,8 +9,8 @@ worlds-test:
 	@$(AILANG) test --strict-bytecode $(WORLDS_PACKAGE)/worlds_test.ail $(WORLDS_PACKAGE)/protocol_worlds_test.ail $(WORLDS_PACKAGE)/census_test.ail $(WORLDS_PACKAGE)/calibrate_test.ail $(WORLDS_PACKAGE)/calibrate_search_test.ail
 worlds-parity:
 	@for spec in 'worlds_test worldsVm worlds-ok' 'protocol_worlds_test protocolWorldsVm protocol-worlds-ok' 'census_test censusVm census-ok'; do \
-	  set -- $$spec; vm=$$($(WORLDS_RUN) --strict-bytecode --entry $$2 sim/$$1.ail); \
-	  interp=$$($(WORLDS_RUN) --entry $$2 sim/$$1.ail); \
+	  set -- $$spec; vm=$$(env -u AI_LIVE $(WORLDS_RUN) --strict-bytecode --entry $$2 sim/$$1.ail); \
+	  interp=$$(env -u AI_LIVE $(WORLDS_RUN) --entry $$2 sim/$$1.ail); \
 	  test "$$vm" = "$$3" && test "$$vm" = "$$interp" || { echo "worlds-parity: FAIL $$1: $$vm | $$interp"; exit 1; }; \
 	  echo "worlds-parity: $$2 $$vm (strict VM = interpreter)"; done
 	@mkdir -p $(SCRATCH)/worlds
