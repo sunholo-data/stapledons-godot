@@ -94,13 +94,13 @@ planet-textures-check: planet-assets ## every declared texture's disc-integrated
 
 golden-m5:         ## M5 GPU goldens alone (needs a GPU window): G-M5-4 Jupiter photometry, G-M5-6 point/disc handoff
 	@mkdir -p $(SCRATCH)
-	@perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
+	@perl -e 'alarm 900; exec @ARGV' $(GODOT) $(AUDIO_OFF) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
 	  test $$rc = 0 && grep -q '^ok    G-M5-4 Jupiter at opposition (uniform p_V' $(SCRATCH)/golden-m5.log && \
 	  grep -q '^ok    G-M5-6 point/disc handoff' $(SCRATCH)/golden-m5.log && grep -q '^m5 golden: 0 failures$$' $(SCRATCH)/golden-m5.log || \
 	  { echo "golden-m5: FAILED (exit $$rc, or a G-M5-4 / G-M5-6 line is missing)"; exit 1; }
 
 capture-m5a:       ## M5.2a reference renders (needs a GPU window) -> renders/m5/m5.2a/: nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet
-	perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --capture-m5=renders/m5/m5.2a
+	perl -e 'alarm 900; exec @ARGV' $(GODOT) $(AUDIO_OFF) --path . -- --capture-m5=renders/m5/m5.2a
 
 # ------------------------------------------------------------ planet textures in exported builds
 # assets/planets is .gdignore'd, so Godot's export skips it (the sky_bundle / areas_bundle
@@ -142,5 +142,5 @@ alpha-centauri-source-test:
 alpha-centauri-test: import alpha-centauri-source-test
 	@$(GODOT_SIM) --headless --path . --script tests/test_alpha_centauri.gd > $(SCRATCH)/alpha-centauri.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri.log && grep -q '^alpha-centauri: [0-9]* passed, 0 failures$$' $(SCRATCH)/alpha-centauri.log
 alpha-centauri-golden:
-	@$(GODOT_SIM) --path . --script tools/alpha_centauri_golden.gd > $(SCRATCH)/alpha-centauri-golden.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri-golden.log && grep -q '^alpha-centauri-golden: 10 cases, 0 failures$$' $(SCRATCH)/alpha-centauri-golden.log
+	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/alpha_centauri_golden.gd > $(SCRATCH)/alpha-centauri-golden.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri-golden.log && grep -q '^alpha-centauri-golden: 10 cases, 0 failures$$' $(SCRATCH)/alpha-centauri-golden.log
 m5-test: alpha-centauri-test

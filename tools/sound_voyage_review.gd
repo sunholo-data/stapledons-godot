@@ -16,7 +16,7 @@ extends SceneTree
 ##   timeline.json                the montage's sections and their start times.
 ## The montage's sources play in 2D (no ship scene): the mix and the levels are the game's.
 ## Run: AILANG_BIN=$(command -v ailang) godot --display-driver headless --audio-driver CoreAudio --path . \
-##        --script tools/sound_voyage_review.gd -- --out=<dir>   (macOS; the device output is kept at -80 dB)
+##        --script tools/sound_voyage_review.gd -- --out=<dir>   (macOS; the Master bus is muted at the device)
 
 var out := ""
 var rate := 44100.0
@@ -211,10 +211,9 @@ func _run() -> void:
 	AudioServer.add_bus_effect(0, cap, AudioServer.get_bus_effect_count(0)) # after the limiter: what is heard
 	# Rendered on the real CoreAudio driver (512-frame mix blocks, as in the game): the headless Dummy driver
 	# mixes in 4,096-frame blocks, and every sound asked for within one block starts at its start, so dust
-	# ticks 25 ms apart stack (+6 dB, measured). The device is kept silent after the capture.
-	var quiet := AudioEffectAmplify.new()
-	quiet.volume_db = -80.0
-	AudioServer.add_bus_effect(0, quiet, AudioServer.get_bus_effect_count(0))
+	# ticks 25 ms apart stack (+6 dB, measured). Nothing reaches the speakers: the Master bus is muted at the
+	# device, and its capture effect still records the full mix (a muted bus runs its effects, measured).
+	AudioServer.set_bus_mute(0, true)
 	print("sound-voyage-review: driver mix rate %.0f Hz" % AudioServer.get_mix_rate())
 	d = SoundDirector.new()
 	root.add_child(d)
