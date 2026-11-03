@@ -1,0 +1,46 @@
+{
+  "sprint_id": "R3-TRUE-PROCESSED-b",
+  "status": "awaiting_render_review",
+  "approved": "Mark, 2026-11-03 (orchestrator relay): a Processed Doppler indicator, off the decoded picture, Receiver only, labelled",
+  "created": "2026-11-03",
+  "design_doc": "design_docs/planned/r3/true-processed-fixes.md (D3)",
+  "branch": "feat/doppler-indicator",
+  "origin": "main 68796623",
+  "ailang_version": "v0.56.1",
+  "ailang_prompt_version": "n/a (no .ail change)",
+  "registry_reuse": [
+    {
+      "milestone": "DI1",
+      "package": "none",
+      "action": "none",
+      "reason": "an indicator of the sim's earth.rate; lambda/D and a CMF lookup of the game's existing Blackbody mirror; no physical claim beyond D"
+    }
+  ],
+  "velocity": {
+    "estimated_total_loc": 260,
+    "estimated_days": 0.5
+  },
+  "features": [
+    {
+      "id": "DI1",
+      "description": "Processed Doppler indicator on the feed's bezel: line at 555 nm / D, spectral colour clamped to [400, 650] nm, strength |ln D| / ln 1414.2; Receiver only, labelled 'Doppler xD · shown' (bound to earth.rate); True a plain bezel; picture inset, untouched",
+      "estimated_loc": 260,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make earth-feed-test green with the indicator checks (Receiver shows it, True does not, picture untouched)",
+        "make physics green with the RS-26..RS-30 indicator rows",
+        "make earth-link-golden 23 passed (G-EL-2b bezel at RS-26/RS-29 Receiver, ink in True)",
+        "make capture-doppler-indicator 10 frames; sheets uploaded to refs/true_processed_v1/doppler/"
+      ],
+      "passes": null,
+      "started": "2026-11-03",
+      "completed": null,
+      "notes": "earth-feed 66 passed; physics 1054 passed; earth-link-golden 23 passed; comms-station 42 passed; capture 10 frames OK. Passes after rig/full and Mark's render review."
+    }
+  ],
+  "questions_for_mark": [
+    "Strength at 0.99c is 0.365 of the top-speed colour (|ln D| / ln 1414.2): subtle but visible; a steeper curve would be a different documented mapping"
+  ],
+  "reviews": [],
+  "evaluation": null
+}

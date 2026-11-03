@@ -85,6 +85,25 @@ func _run() -> void:
 	check("real time: no wash, no ghosts", unwashed(f) and not f.ghosts[0].visible)
 	check("the feed has no tint layer at all", not ("tint" in f) and f.find_children("*", "ColorRect", false, false).is_empty())
 
+	# R3-TRUE-PROCESSED-b (Mark 2026-11-03): the Doppler indicator, Processed only, on the screen's bezel and
+	# never on the picture. Receiver (Processed, the default) shows it, labelled; True shows a plain bezel.
+	f.set_receiver(true)
+	f.refresh(view({"rate": 14.107, "feed": feed(43, "library", "town-market", "market day", 5)}))
+	var ind: Dictionary = EarthFeed.doppler_indicator(14.107)
+	check("Processed, closing on Earth (D 14.107): the bezel shows the indicator, blue (%s)" % f.bezel.colour, f.bezel.visible and f.bezel.shown and f.bezel.colour.b > f.bezel.colour.r and is_equal_approx(f.bezel.strength, float(ind.strength)))
+	check("Processed: the indicator is labelled, its number bound to earth.rate (%s)" % f.doppler_tag.text, f.doppler_tag.visible and f.doppler_tag.text.begins_with("Doppler ×") and f.doppler_tag.text.ends_with(" · shown") and f.doppler_tag.text.contains("14"))
+	check("Processed: the picture itself is untouched and lies inside the bezel", unwashed(f) and f.picture.offset_left >= EarthFeed.bezel_px() and f.picture.offset_right <= -EarthFeed.bezel_px())
+	f.refresh(view({"rate": 0.070888, "feed": feed(44, "library", "town-market", "market day", 6)}))
+	check("Processed, leaving Earth (D 0.070888): the bezel is red, as strong as 1/D", f.bezel.shown and f.bezel.colour.r > f.bezel.colour.b and is_equal_approx(f.bezel.strength, float(ind.strength)))
+	f.refresh(view({"rate": 1.0}))
+	check("Processed at rest (D 1): no indicator strength (the label still says x1)", f.bezel.strength == 0.0 and f.doppler_tag.visible)
+	f.set_receiver(false)
+	f.refresh(view({"rate": 14.107, "feed": feed(45, "library", "town-market", "market day", 5)}))
+	check("True: no indicator, no label, a plain bezel; the picture as decoded", not f.bezel.shown and not f.doppler_tag.visible and unwashed(f))
+	f.set_receiver(true)
+	f.refresh(view({"rate": 14.107}))
+	check("toggling back to Receiver shows the indicator again", f.bezel.shown and f.doppler_tag.visible)
+
 	# out of beam
 	var out := view({"in_beam": false, "last_feed": feed(2, "library", "town-market", "market day", 3), "feed": feed(400, "library", "town-market", "market day", 7),
 		"out": {"reason": "not_heard", "port_id": "CNS5:1676", "due_t": 17.29, "due_year": 17.29, "due_in_years": 8.3, "progress": 0.36}})

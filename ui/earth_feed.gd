@@ -27,6 +27,9 @@ var picture := TextureRect.new()
 var ghosts: Array[TextureRect] = []
 var static_rect := TextureRect.new()
 var ring := FeedRing.new()
+## R3-TRUE-PROCESSED-b: the screen's bezel, which carries the Processed Doppler indicator (never the picture).
+var bezel := DopplerBezel.new()
+var doppler_tag := ComposedBinding.new()
 var signal_tag := ComposedBinding.new()
 var clock_tag := ComposedBinding.new()
 var caption := ComposedBinding.new()
@@ -165,15 +168,17 @@ func _init() -> void:
 	name = "EarthFeed"
 	clip_contents = true
 	custom_minimum_size = Vector2(320, 180)
+	bezel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(bezel)
 	for r: TextureRect in [picture, static_rect]:
-		r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_inset(r)
 		r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(picture)
 	for i in 2:
 		var g := TextureRect.new()
-		g.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_inset(g)
 		g.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		g.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		g.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -195,6 +200,15 @@ func _init() -> void:
 		tag.grow_vertical = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_BOTTOM_LEFT else Control.GROW_DIRECTION_END
 		add_child(tag)
 	caption.add_theme_font_size_override("font_size", 16)
+	# R3-TRUE-PROCESSED-b: the indicator's label, top centre, its number bound to earth.rate.
+	doppler_tag.name = "DopplerTag"
+	doppler_tag.theme = StapledonTheme.theme()
+	doppler_tag.theme_type_variation = "HUDEarthFeed"
+	doppler_tag.add_theme_font_size_override("font_size", 13)
+	doppler_tag.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 10)
+	doppler_tag.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	doppler_tag.visible = false
+	add_child(doppler_tag)
 	# AR8b: the receiver's setting, both its indicator and its switch (True / Receiver).
 	sound_button.name = "SoundSetting"
 	sound_button.theme_type_variation = "HUDFlat"
@@ -209,11 +223,65 @@ func _init() -> void:
 
 
 ## AR8b: the station's setting (Receiver, the default, or True). The next refresh plays it.
+## R3-TRUE-PROCESSED-b: it also shows (Receiver) or hides (True) the Doppler indicator at once.
 func set_receiver(on: bool) -> void:
 	receiver = on
 	if not str(home_sound.cue).is_empty():
 		_apply_rates(str(home_sound.cue))
 	_sound_words()
+	_doppler_show()
+
+
+## A picture layer inset by the bezel, so the indicator never lies over the decoded picture.
+func _inset(r: TextureRect) -> void:
+	r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var b := float(bezel_px())
+	r.offset_left = b; r.offset_top = b; r.offset_right = -b; r.offset_bottom = -b
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+static func bezel_px() -> int:
+	return int(copy().get("doppler", {}).get("bezel_px", 6))
+
+
+## R3-TRUE-PROCESSED-b: the Processed Doppler indicator for Earth rate d (data/ui/comms_feed.json
+## "doppler"). A reference line at lambda_ref_nm is seen at lambda_ref_nm / d; the bezel shows the
+## spectral colour of that wavelength, clamped to the visible_nm ends once the line leaves the eye's
+## band; strength |ln d| / ln(d_max). Returns lambda_nm, shown_nm, strength and colour (sRGB, unit max).
+static func doppler_indicator(d: float) -> Dictionary:
+	var c: Dictionary = copy().get("doppler", {})
+	var vis: Array = c.get("visible_nm", [400.0, 700.0])
+	var lam := float(c.get("lambda_ref_nm", 555.0)) / maxf(d, 1e-300)
+	var shown := clampf(lam, float(vis[0]), float(vis[1]))
+	var strength := clampf(absf(log(maxf(d, 1e-300))) / log(float(c.get("d_max", 1414.2))), 0.0, 1.0)
+	return {"lambda_nm": lam, "shown_nm": shown, "strength": strength, "colour": spectral_colour(shown)}
+
+
+## The colour of a monochromatic line (CIE 1931 2-degree observer, Blackbody.cmf) in sRGB. Every pure
+## spectral colour lies outside the sRGB gamut; for an indicator the hue matters, so the negative channels
+## are clipped to zero (desaturating toward white turned 700 nm orange), then a unit max channel.
+static func spectral_colour(lambda_nm: float) -> Color:
+	var xyz := Blackbody.cmf(lambda_nm)
+	if xyz.y <= 0.0 and xyz.x <= 0.0 and xyz.z <= 0.0:
+		return Color(0, 0, 0)
+	var rgb := Blackbody.xyz_to_linear_srgb(xyz.x, xyz.y, xyz.z)
+	rgb = Vector3(maxf(rgb.x, 0.0), maxf(rgb.y, 0.0), maxf(rgb.z, 0.0))
+	var top := maxf(rgb.x, maxf(rgb.y, rgb.z))
+	if top <= 0.0:
+		return Color(0, 0, 0)
+	return Color(rgb.x / top, rgb.y / top, rgb.z / top).linear_to_srgb()
+
+
+## Show the indicator in Receiver (Processed) and in beam, from the last refresh's earth.rate.
+func _doppler_show() -> void:
+	var ind := doppler_indicator(earth_rate)
+	bezel.shown = receiver and beam
+	bezel.colour = ind.colour
+	bezel.strength = float(ind.strength) if bezel.shown else 0.0
+	bezel.queue_redraw()
+	doppler_tag.visible = bezel.shown
 
 
 ## AR8b: how the receiver plays home at Earth rate d (data/ui/comms_feed.json sound.receiver). The time
@@ -265,6 +333,10 @@ func refresh(view: Dictionary) -> void:
 		picture.texture = tex
 	picture.self_modulate = Color(1, 1, 1) if beam else Color(0.45, 0.45, 0.5)
 	static_rect.visible = not beam
+	var wd: Dictionary = copy().words
+	doppler_tag.compose([str(wd.get("doppler", "Doppler ×")), ["earth.rate", "sci"], str(wd.get("doppler_shown", " · shown"))])
+	doppler_tag.update_from(view)
+	_doppler_show()
 	var out: Variant = e.get("out")
 	ring.visible = not beam and out is Dictionary and str(out.get("reason", "")) == "not_heard"
 	ring.fill = float(out.get("progress", 0.0)) if out is Dictionary else 0.0
@@ -430,3 +502,22 @@ class FeedRing extends Control:
 		draw_arc(c, 62.0, 0.0, TAU, 96, Color(0.94, 0.89, 0.78, 0.3), 9.0, true)
 		if fill > 0.0:
 			draw_arc(c, 62.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(fill, 0.0, 1.0), 96, StapledonTheme.CORAL, 9.0, true)
+
+
+## R3-TRUE-PROCESSED-b: the feed screen's bezel. Plain ink in True; in Receiver (Processed) it glows in
+## the Doppler indicator's colour at its strength. It only ever draws in the margin around the picture.
+class DopplerBezel extends Control:
+	var shown := false
+	var colour := Color(1, 1, 1)
+	var strength := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var b := float(EarthFeed.bezel_px())
+		var r := Rect2(Vector2.ZERO, size)
+		var ink := Color(StapledonTheme.INK, 1.0)
+		var c := ink.lerp(colour, strength) if shown else ink
+		for edge: Rect2 in [Rect2(0, 0, r.size.x, b), Rect2(0, r.size.y - b, r.size.x, b), Rect2(0, b, b, r.size.y - 2.0 * b), Rect2(r.size.x - b, b, b, r.size.y - 2.0 * b)]:
+			draw_rect(edge, c)

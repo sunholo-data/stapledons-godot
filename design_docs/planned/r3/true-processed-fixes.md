@@ -104,6 +104,16 @@ A waveform's frequencies are times, so playing it at rate D shifts its pitch: th
 
 **D2.6 The setting.** `StarLight.mode` is `"true"` or `"processed"`, default `"processed"` for a bare StarLight (every existing direct test keeps its numbers). `ship_geometry_demo.set_auto_view(on)` sets it: Realistic → True, Auto → Processed, so D-55's player default (Auto) keeps today's look and developer/test launches (Realistic) show True. The visible label is the view tag ("REALISTIC" / "AUTO"), the Tab view button ("View: Realistic (True): one exposure, true starlight [V]" / "View: Auto (Processed): bodies faded to fit, ship lamps follow the star [V]"), and the star-light HUD line.
 
+### D3. R3-TRUE-PROCESSED-b: the Doppler indicator (Processed, follow-up)
+
+**Mark, 2026-11-03** (after approving #374 with option A): *"I like that the blue tint appears when we blueshift... we always want the 'real' view available, and then a visible auto adjustment, but that auto adjustment is indicative of what is happening."* So the cue returns as a Processed instrument indicator, never on the picture.
+
+- **Where:** the feed screen's bezel, a `bezel_px` (6 px) frame around the picture; every picture layer is inset by it, so the indicator never lies over a decoded pixel (RS-Q5 stands).
+- **When:** only in the station's Receiver (Processed) setting, in beam, labelled at the top centre "Doppler ×D · shown", the number bound to `earth.rate`. True shows a plain ink bezel and no label. The station's one setting (AR8b's True/Receiver button) switches sound and indicator together.
+- **Mapping (data, `comms_feed.json` "doppler"; not hand-tuned):** a reference line at `lambda_ref_nm` 555 nm (the photopic peak) is seen at λ = 555 / D. The bezel takes the spectral colour of λ: the game's CIE 1931 fit (`Blackbody.cmf`), its out-of-gamut colour clipped to sRGB so the hue holds, unit max channel; clamped to the `visible_nm` ends [400, 650] once the line leaves the eye's band (the fit's far-red tail drifts orange beyond 650 nm). Strength |ln D| / ln(`d_max` 1414.2, RS-30): 0 at rest, 0.365 at 0.99c either way (RS-26, RS-29), 0.524 at 0.999c (RS-27), 1 at the top speed (RS-28, RS-30); D and 1/D are equally strong. The bezel is ink lerped to the colour by the strength.
+- **Gate 2:** `test_physics.gd` asserts λ = 555 / D and the strength at RS-26..RS-30 and rest, the red and violet ends and an in-band hue; `test_earth_feed.gd` asserts Receiver shows it (blue closing, red leaving, labelled, the picture untouched and inside the bezel) and True does not; GPU golden G-EL-2b (`make earth-link-golden`, now 23) checks the bezel pixel against the CPU composite at RS-26 and RS-29 in Receiver, plain ink in True, the picture unchanged in all three.
+- **Renders:** `make capture-doppler-indicator` (10 frames: RS-28, RS-26, rest, RS-29, RS-30 × Receiver/True), sheets in `refs/true_processed_v1/doppler/`.
+
 ## Acceptance criteria
 
 | # | Criterion | Command |

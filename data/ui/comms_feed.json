@@ -7,6 +7,13 @@
     {"name": "fast", "min": 2.0, "max": 50.0, "jumble": 0.45, "drift": false, "whirl": false, "sound": "category"},
     {"name": "torrent", "min": 50.0, "jumble": 0.9, "drift": false, "whirl": true, "sound": "babble"}
   ],
+  "doppler": {
+    "about": "R3-TRUE-PROCESSED-b (Mark 2026-11-03: \"I like that the blue tint appears when we blueshift... we always want the 'real' view available, and then a visible auto adjustment, but that auto adjustment is indicative of what is happening\"). A Processed indicator of the Earth rate D (earth.rate), never on the decoded picture (RS-Q5): the feed screen's bezel takes the colour of a reference line shifted by D, lambda = lambda_ref_nm / D, drawn as the spectral colour of that wavelength (CIE 1931 2-degree observer, Blackbody.cmf; the out-of-gamut spectral colour clipped to the sRGB gamut so the hue holds; clamped to the visible_nm ends once the line leaves the eye's band; the red end is taken at 650 nm because the game's CMF fit, Wyman, Sloan and Shirley 2013, drifts orange in its far-red tail: at 700 nm it gives x/y 1.32 against the tabulated 2.78), with strength |ln D| / ln(d_max), so 0 at rest and 1 at the top speed (d_max = RS-30, 1414.2; D and 1/D are equally strong). Shown only in the station's Receiver (Processed) setting, labelled; the True setting shows a plain bezel. Nothing is hand-tuned: change lambda_ref_nm, visible_nm or d_max here and the tests follow.",
+    "lambda_ref_nm": 555.0,
+    "visible_nm": [400.0, 650.0],
+    "d_max": 1414.2,
+    "bezel_px": 6
+  },
   "sound": {
     "about": "R3-EARTH-LINK EL3b.7 (Mark 2026-10-30), made exact by R3 audio realism AR8b (standing order 2026-10-30: no compromises on the physics; a True setting and labelled Processed settings). Sound from home at the comms receiver. The bed is the week's category (the sky kind plays the sky's), babble in a band whose sound is babble, static out of beam. Its time rate is the Earth rate D (earth.rate) in every setting: the bed plays at speed D and the accents come every every_s / D (the first first_s / D after the bed starts). Receiver (the default): the ship's receiver corrects the frequency, as the DSN corrects the Voyagers' Doppler shift; a real-time receiver plays between receiver.min_rate and receiver.max_rate of real time (below it holds the moment, above the backlog grows). True: speed and pitch x D, uncorrected; outside receiver.audible nothing reaches the ear and the station says so. A new bed replaces the playing one only after hold_s of the station's clock (a change of beam at once).",
     "receiver": {"min_rate": 0.0625, "max_rate": 16.0, "audible": [0.02, 50.0]},
@@ -33,6 +40,8 @@
     "receiver": "receiver",
     "true_sound": "true sound",
     "below_hearing": " · below hearing",
-    "above_hearing": " · above hearing"
+    "above_hearing": " · above hearing",
+    "doppler": "Doppler ×",
+    "doppler_shown": " · shown"
   }
 }

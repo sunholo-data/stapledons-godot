@@ -188,6 +188,25 @@ func _feed_cases() -> void:
 		var error:=maxf(absf(got.r-expected.r),maxf(absf(got.g-expected.g),absf(got.b-expected.b)))
 		check("G-EL-2 feed %s GPU shows the decoded frame unchanged (no wash)"%row[0],error<=2./255.,{"rate":rate,"error":error,"expected":[expected.r,expected.g,expected.b],"got":[got.r,got.g,got.b]})
 		image.save_png(OUT.path_join("feed_%s.png"%str(row[0]).to_lower()))
+	# R3-TRUE-PROCESSED-b: the Processed Doppler indicator on the bezel (pixel 2,90), never on the picture:
+	# the GPU bezel matches the CPU composite ink.lerp(spectral colour of lambda_ref / D, strength) at RS-26
+	# and RS-29 in Receiver, and plain ink in True.
+	for row: Array in [["RS26",.01,1.,true],["RS29",.01,-1.,true],["RS29 True",.01,-1.,false]]:
+		var omb2: float=row[1]; var phi2:=.5*log((2.-omb2)/omb2)
+		var rate2: float=Observe.earth_rate([40.,0.,0.],[row[2],0.,0.],phi2)
+		feed.set_receiver(bool(row[3]))
+		feed.refresh({"earth":{"rate":rate2,"in_beam":true,"at_home":false,"newest_light_year":0.,"light_age_years":40.,"feed":{"frame":0,"kind":"sky","event":{"id":"","category":"sky","words":""},"pick":0}}})
+		feed.picture.texture=neutral_texture
+		for label: Control in [feed.signal_tag,feed.clock_tag,feed.caption,feed.doppler_tag]: label.hide()
+		var ind: Dictionary=EarthFeed.doppler_indicator(rate2)
+		var ink:=Color(StapledonTheme.INK,1.)
+		var want: Color=ink.lerp(ind.colour,float(ind.strength)) if bool(row[3]) else ink
+		var img2:=await grab(vp); var b2:=img2.get_pixel(2,90); var c2:=img2.get_pixel(160,90)
+		var be:=maxf(absf(b2.r-want.r),maxf(absf(b2.g-want.g),absf(b2.b-want.b)))
+		var ce:=maxf(absf(c2.r-expected.r),maxf(absf(c2.g-expected.g),absf(c2.b-expected.b)))
+		check("G-EL-2b feed %s bezel is the %s and the picture stays as decoded"%[row[0],"Doppler indicator" if bool(row[3]) else "plain ink (True)"],be<=2./255. and ce<=2./255.,{"rate":rate2,"bezel_error":be,"picture_error":ce,"want":[want.r,want.g,want.b],"got":[b2.r,b2.g,b2.b]})
+		img2.save_png(OUT.path_join("feed_bezel_%s.png"%str(row[0]).to_lower().replace(" ","_")))
+	feed.set_receiver(true)
 	# Negative control: the old stylised wash (#7F9CFF at 0.24) seeded over the picture must fail the same detector.
 	var seeded := ColorRect.new(); seeded.color=Color(Color("7F9CFF"),.24); seeded.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); feed.add_child(seeded)
 	var washed: Color=(await grab(vp)).get_pixel(160,90)

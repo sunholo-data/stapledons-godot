@@ -56,7 +56,7 @@ capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home
 .PHONY: earth-link-golden
 earth-link-golden:
 	@mkdir -p $(SCRATCH)
-	@$(GODOT) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_display_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 20 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
+	@$(GODOT) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_display_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 23 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
 golden: earth-link-golden
 # EL4: Earth's beams on the galaxy map (tests/test_earth_beams.gd): every element from its earth.*
 # field, the plan preview alone while planning (AC12), the projection, the real sim at 2.16 and below.
@@ -78,3 +78,11 @@ earth-rate-fixture: import
 capture-earth-link: import
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/earth_link_capture.gd > $(SCRATCH)/earth-link-capture.log 2>&1; rc=$$?; grep -E '^earth-link-capture' $(SCRATCH)/earth-link-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-capture.log && grep -q '^earth-link-capture: 10 frames, 0 failures$$' $(SCRATCH)/earth-link-capture.log
+
+# R3-TRUE-PROCESSED-b: review frames of the Processed Doppler indicator (the feed's bezel) at RS-26..RS-30 and rest,
+# Receiver and True -> renders/doppler_indicator/*.png (GPU window; open every frame).
+.PHONY: capture-doppler-indicator
+capture-doppler-indicator: import
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . --script tools/doppler_indicator_capture.gd > $(SCRATCH)/doppler-indicator-capture.log 2>&1; rc=$$?; grep '^doppler-indicator-capture' $(SCRATCH)/doppler-indicator-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/doppler-indicator-capture.log && grep -q '^doppler-indicator-capture: 10 frames OK$$' $(SCRATCH)/doppler-indicator-capture.log
+
