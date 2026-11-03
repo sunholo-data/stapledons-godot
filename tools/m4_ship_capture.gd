@@ -13,6 +13,9 @@ const STATES := [
 const THUMB := Vector2i(320, 180)
 const GAP := 6
 const CRUISE_BETA_TOL := 1e-12 # sim cruise beta is plan.cruise_beta + 2 ulp (0.9900000000000004)
+const CAPTURE_FPS := 60 # make capture-m4 runs Godot with --fixed-fps 60 (row 7w): every delta is exactly 1/60 s
+const ARRIVED_SETTLE_FRAMES := 30 # 0.5 s at rest before the arrived shots: past the HUD's 0.4 s card fade-in
+const WALK_FRAMES_MAX := 122 # 2 x the measured 61-frame walk at --fixed-fps 60 (V28); 300 s of wall time is the hang guard
 var demo: Node
 var failures := 0
 var shots: Array[String] = []
@@ -28,6 +31,9 @@ func _run() -> void:
 	started = Time.get_ticks_msec()
 	_check(_near(0.9900000000000004, 0.99), "cruise beta tolerance rejects 0.99 + 2 ulp")
 	_check(not _near(0.99 + 1e-9, 0.99), "cruise beta tolerance accepts 0.99 + 1e-9")
+	await process_frame
+	var step := root.get_process_delta_time()
+	_check(step == 1.0 / CAPTURE_FPS, "process delta %s s is not 1/%d s: run it as make capture-m4 (godot --fixed-fps %d)" % [str(step), CAPTURE_FPS, CAPTURE_FPS])
 	_check(DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT)) == OK, "create output directory")
 	for name in DirAccess.get_files_at(OUT):
 		if name.ends_with(".png") or name in ["manifest.json", "m4_manifest.sha256", "worlds.sha256"]:
@@ -81,14 +87,16 @@ func _run() -> void:
 func _helm() -> bool:
 	if not _check(demo.consoles.walk_to("navigation"), "walk to navigation"):
 		return false
-	# Walking is real-time (WALK_SPEED_MPS per frame delta; 19.6 m is ~15 s at 1.3 m/s), so bound it in wall time:
-	# 600 frames at a fast frame rate were too short for the walk on the rig.
-	var deadline := Time.get_ticks_msec() + 30000
-	while Time.get_ticks_msec() < deadline:
+	# Walking is bounded in fixed frames; the wall clock remains a hang guard.
+	var wall := Time.get_ticks_msec() + 300000
+	var frames := 0
+	while frames < WALK_FRAMES_MAX and Time.get_ticks_msec() < wall:
 		if demo.consoles.walking.is_empty():
+			print("capture-m4: walk %d frames" % frames)
 			return true
+		frames += 1
 		await process_frame
-	return _check(false, "walk to navigation exceeded 30 s")
+	return _check(false, "walk to navigation exceeded %d frames or 300 s" % WALK_FRAMES_MAX)
 
 
 func _use(action: String, arg: Variant = null) -> bool:
@@ -133,8 +141,10 @@ func _leg(outbound: bool) -> void:
 
 func _views(n: int, state: String) -> void:
 	# A departure leaves the console through its own camera dolly.
-	var deadline := Time.get_ticks_msec() + 30000
-	while demo.consoles.dolly_active() and Time.get_ticks_msec() < deadline:
+	var wall := Time.get_ticks_msec() + 300000
+	var frames := 0
+	while demo.consoles.dolly_active() and frames < WALK_FRAMES_MAX and Time.get_ticks_msec() < wall:
+		frames += 1
 		await process_frame
 	_check(not demo.consoles.dolly_active(), "console dolly did not finish")
 	if state == "docked":
@@ -144,6 +154,10 @@ func _views(n: int, state: String) -> void:
 		demo._sync_observer()
 		for i in 60:
 			await process_frame
+	elif state.begins_with("arrived"):
+		for i in ARRIVED_SETTLE_FRAMES:
+			await process_frame
+		_check(_card_alpha("arrival") == 1.0, "arrival card alpha %s at %s (want 1, after %d frames)" % [str(_card_alpha("arrival")), state, ARRIVED_SETTLE_FRAMES])
 	var world: Dictionary = demo.journey_sim.world.duplicate(true)
 	var ship: Dictionary = world.ship
 	var beta: float = ship.beta
@@ -269,6 +283,10 @@ func _write(name: String, contents: String) -> void:
 		file.store_string(contents)
 		_check(file.get_error() == OK, "store " + name)
 		file.close()
+
+
+func _card_alpha(id: String) -> float:
+	return float(demo.ship_hud.cards[id].panel.modulate.a) if demo.ship_hud.cards.has(id) else -1.0
 
 
 func _near(a: float, b: float) -> bool:

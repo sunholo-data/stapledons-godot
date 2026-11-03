@@ -8,6 +8,8 @@ Base URL: `https://storage.googleapis.com/stapledons-voyage-assets/refs/m4_ship_
 
 **Reproducibility (row 7l, iteration 59).** Only the worlds are reproducible, not the pixels: a second `make capture-m4` on the same tree gives a byte-equal `worlds.sha256`, but the PNG hashes differ between runs (12 of 15 in the iteration-36 evaluation, which traced dust-impact flashes and HUD card fades; 15 of 15 at `e94ed9b7`, where even the docked frames differ, cause not traced). The AC5 table below describes one run, the published set. At `e94ed9b7` a fresh capture matches the public set in none of its 14 world hashes and none of its 15 PNG hashes, so S1 review should use a fresh capture.
 
+**Reproducible since row 7w (iteration 66).** `make capture-m4` now runs Godot with `--fixed-fps 60`, so the dust flashes, card fades and the near star's light all advance exactly 1/60 s per frame instead of by wall time; two captures on one tree give byte-equal PNGs on the rig (15 of 15). The docked frames had differed because the docked shot landed partway through the Sun's light easing in. The arrived frames now wait 0.5 s so the arrival card has finished fading in. The set at the flat `refs/m4_ship_s1/` path is the one reviewed on 2026-10-16 and stays unchanged; the re-capture is published to a dated `refs/m4_ship_s1/<YYYY-MM-DD>/` path for Mark's S1 review.
+
 ## AC5: each PNG, opened and looked at
 
 Captain eye at the helm, seed 424242, medium tier (60,883 stars), 1600×900, HUD visible. The deck view is tilt 30°, yaw 0.47; the forward view is tilt 89.99°, the travel pole.
