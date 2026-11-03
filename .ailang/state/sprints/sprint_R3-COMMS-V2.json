@@ -6,8 +6,11 @@
  "design_doc": "design_docs/planned/r3/comms-station-v2.md",
  "sprint_plan": "design_docs/planned/r3/comms-station-v2-sprint.md",
  "branch": "this plan on design/comms-station-v2; execution on feat/comms-station-v2 in a fresh full clone at origin/main after #374, #375, #377 land",
- "origin": "Mark, attended 2026-11-02: feed history wall, move the comms console closer, a live spectrogram of the signal from home on the bridge ('the spectrograph is cool on its own - maybe we can have that read out on the bridge somewhere')",
- "mockups": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html",
+ "origin": "Mark, attended 2026-11-02: feed history wall, move the comms console closer, a live spectrogram of the signal from home on the bridge ('the spectrograph is cool on its own - maybe we can have that read out on the bridge somewhere') | Revision 2 (Mark 2026-11-03): the signal as an ambient bridge monitor ('a scanner or TV monitor screen ... more like a mission control center, and when we go to the console we get the detail view'); clicking a history-wall image shows the relative positions of Earth, the ship and the signal",
+ "mockups": {
+  "r1": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html",
+  "r2": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/index.html"
+ },
  "github_issues": [],
  "ailang": {
   "pin": "main's pin at CV0 (v0.54.18 today; v0.56.0 if #377 lands)",
@@ -20,7 +23,7 @@
   "PR #375 merged (audio/*, data/audio/*, exact home beacon, code-built buses)",
   "PR #377 merged (AILANG bump)",
   "free protocol minor 2.17 (checked at CV1)",
-  "Mark's approval of the mock-ups and OQ1-OQ7"
+  "Mark's approval of the mock-ups (r1, r2) and OQ1-OQ5, OQ7-OQ12"
  ],
  "registry_reuse": [
   {
@@ -58,25 +61,31 @@
    "package": "-",
    "action": "none",
    "reason": "Archive lore, spec rows, captures"
+  },
+  {
+   "milestone": "CV6",
+   "package": "-",
+   "action": "none",
+   "reason": "Godot furniture and UI faces; Blender prop"
   }
  ],
  "velocity": {
   "target_loc_per_day": 300,
-  "estimated_total_loc": 1450,
-  "estimated_days": 5,
-  "basis": "R3-EARTH-LINK about 1,350 LOC in about 4.5 attended days; plus rig/full runs and Mark's review"
+  "estimated_total_loc": 2150,
+  "estimated_days": 7.5,
+  "basis": "R3-EARTH-LINK about 1,350 LOC in about 4.5 attended days; plus the Blender prop, rig/full runs and two reviews by Mark"
  },
- "critical_path": "CV0 -> CV1 -> CV2 -> CV5; CV3 and CV4 parallel with CV1-CV2",
+ "critical_path": "CV0 -> CV1 -> CV2 -> CV5; CV3 and CV4 in parallel; CV6 after CV3 and CV4",
  "pause_points": [
-  "before anything: Mark approves the mock-ups and OQ1-OQ7",
-  "after CV4: the moved console's captures",
+  "before anything: Mark approves the mock-ups and the open questions",
+  "after CV4 and CV6: the moved console and the monitor wall",
   "after CV5: review captures and a dev build"
  ],
  "questions_for_mark": [
   {
    "id": "OQ1",
    "question": "Where the comms console goes",
-   "recommendation": "Spot A, ship (-11.0, 8.0) (glTF (-11.0, -8.0)), port wing beside the Voyage console: 9.9 m walk from the chair (17.1 today), faces the bow, zoom frames the starbow; B (-5.6, 7.0) is 5.8 m but puts a desk on the open stage"
+   "recommendation": "Spot A, ship (-11.0, 8.0): 9.9 m from the chair, faces the bow, under the wall's clocks and signal screens; B (-5.6, 7.0) 5.8 m but a desk on the open stage; C leave it (the monitors carry the glance, but it faces the rim)"
   },
   {
    "id": "OQ2",
@@ -91,7 +100,7 @@
   {
    "id": "OQ4",
    "question": "What the waterfall hears",
-   "recommendation": "the whole signal from home (bed + carrier); the bracket measured on the carrier alone"
+   "recommendation": "the whole signal (True beacon + the week's bed) on the silent tap whenever in beam and on screen; the bracket measured on the carrier alone"
   },
   {
    "id": "OQ5",
@@ -99,14 +108,34 @@
    "recommendation": "True only for now (dark band + 'above hearing' arrow); a labelled Processed wideband view later, own design"
   },
   {
-   "id": "OQ6",
-   "question": "The bridge readout",
-   "recommendation": "the comms desk's own idle screen shows the live waterfall; no Voyage-console strip"
-  },
-  {
    "id": "OQ7",
    "question": "Stamp precision",
    "recommendation": "one record per ship day (bounded log)"
+  },
+  {
+   "id": "OQ8",
+   "question": "Which ambient screens",
+   "recommendation": "four: signal from home, Earth vs ship clocks, course, crew; fold the beam strip into the signal screen and the console; dust/ISM and the exposure meter later"
+  },
+  {
+   "id": "OQ9",
+   "question": "Where the screens go",
+   "recommendation": "wall R: the bow rail at r 21.1 m outside the walk, bearings -48/-30/+30/+48, 4.0 x 2.25 m, camera occluders; every evaluator metric unchanged (W and F failed as tried)"
+  },
+  {
+   "id": "OQ10",
+   "question": "A stern repeater for the Astern view",
+   "recommendation": "not in this sprint; the deck-layout-after-camera pass"
+  },
+  {
+   "id": "OQ11",
+   "question": "The screens' look",
+   "recommendation": "Blender-authored grown frames (D-104) in CV4's generator run"
+  },
+  {
+   "id": "OQ12",
+   "question": "Remaining ship time on the course screen",
+   "recommendation": "add the sim field journey.ship_years_left (D-21: no computing it in Godot)"
   }
  ],
  "features": [
@@ -127,16 +156,16 @@
   },
   {
    "id": "CV1",
-   "description": "Received-light log in sim/earth_link.ail (Arrival per ship day, noteLight), protocol 2.17 earth_log / earth_log_tail / earth_weeks intent, bridge storage, strict and parity entries, replay case earth_log_voyage",
-   "estimated_loc": 380,
+   "description": "Received-frame log in sim/earth_link.ail with the send and arrival events (Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sent{t},shipAtSent}), noteLight, protocol 2.17 earth_log / earth_log_tail / earth_weeks, journey.ship_years_left if OQ12, bridge storage, strict and parity entries, replay case earth_log_voyage",
+   "estimated_loc": 440,
    "dependencies": [
     "CV0"
    ],
    "acceptance_criteria": [
     "AC1: ailang test --package sim and ailang check --package sim green with the log checks and mutants",
-    "AC2: make comms-log-test (nothing from the future; earth_weeks clipped) on VM and interpreter",
-    "AC3: make strict parity replay green; every pre-2.17 golden unchanged; the new 2.17 case byte-identical",
-    "AC4: earth_log only at minor >= 17 outside a black hole's scenario; make replay-compat green"
+    "AC2: make comms-log-test (nothing from the future; earth_weeks clipped)",
+    "AC3: make comms-log-test: sent.t = arrived.t - arrived.ly to 1e-12; ship_at_sent is the newest record with arrived.t <= sent.t; arrived.rate = earth.rate at that tick",
+    "AC4: make strict parity replay replay-compat green; pre-2.17 goldens unchanged; the 2.17 case byte-identical"
    ],
    "passes": null,
    "started": null,
@@ -145,15 +174,15 @@
   },
   {
    "id": "CV2",
-   "description": "EarthHistory filmstrip (pictures, slits, stacks, static, Earth/ship stamps as bindings, Earth-time line, hover, zoom, tap-a-stack), rays on EarthStrip, CommsStation v2 layout",
-   "estimated_loc": 430,
+   "description": "EarthHistory filmstrip, the frame diagram (EarthStrip in frame mode: send event, light at 45 degrees on equal axes, arrival, ship then, track, x D; plus the plan inset in the galaxy map's glyphs), the console's detail-view layout",
+   "estimated_loc": 580,
    "dependencies": [
     "CV1"
    ],
    "acceptance_criteria": [
-    "AC5: make comms-station-test with the new coverage checks green",
-    "make display-audit-comms: new = 0, failures = 0 on the extended playthrough",
-    "the wall opens no AI request; make ui-theme-check uid-guard green"
+    "AC5: make comms-station-test display-audit-comms green (every week represented, static spans exact, every digit bound)",
+    "AC6: diagram points equal record fields; light slope 1 in diagram units; the inset never draws earth.beam; deselect returns the strip",
+    "make ui-theme-check uid-guard green"
    ],
    "passes": null,
    "started": null,
@@ -162,7 +191,7 @@
   },
   {
    "id": "CV3",
-   "description": "Waterfall: Antenna and Carrier silent taps (sound_mix.gd), CommsWaterfall (log bands, magma, Receiver line at waterfall.carrier_hz, bracket to the measured carrier with x earth.rate, off-scale arrow from the plan's hearing), the comms desk idle screen; headless analyser spike first",
+   "description": "Waterfall: Antenna (True beacon + week's bed) and Carrier (True beacon) silent taps, CommsWaterfall detail view and its bold monitor face, receiver line, bracket to the measured carrier, off-scale arrow; headless analyser spike first",
    "estimated_loc": 300,
    "dependencies": [
     "CV0"
@@ -178,16 +207,34 @@
   },
   {
    "id": "CV4",
-   "description": "Console move to the approved spot: bow_a.json amended, walk baked, Blender deck-layout v2 + props v4 regenerated, manifest use_m/screen_ship_m, evaluator to five stations (comms in ZOOM_STATIONS, active_stations 5, seeded faces-the-rim defect)",
+   "description": "Console move to the approved spot (A by default) in the same Blender generator run that places the CV6 monitors; manifest, evaluator to five stations",
    "estimated_loc": 120,
    "dependencies": [
     "CV0"
    ],
    "acceptance_criteria": [
-    "AC7: make deck-layout-eval deck-layout-eval-test green with five stations",
-    "AC8: make levels-regress deck-assets-check comms-walk-test green (chair -> comms <= 10.5 m for A); camera tests and export-filter-audit green",
+    "AC9: make deck-layout-eval deck-layout-eval-test deck-assets-check levels-regress comms-walk-test green (five stations face the bow; chair -> comms <= 10.5 m for A)",
     "identity layout reproduces today's GLBs byte for byte before the move",
-    "make deck-layout-capture TAG=cv4 frames opened and uploaded to refs/comms_v2/cv4/"
+    "make camera-test export-filter-audit green"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "CV6",
+   "description": "The monitor wall: Blender bridge_monitor prop (grown frame, 4.0 x 2.25 m) with monitor_{clocks,signal,course,crew} at bearings -48/-30/+30/+48 on the bow rail (r 21.1 m); BridgeMonitor (SubViewport face, visibility-gated refresh); four faces (signal, clocks, course, crew); manifest monitors section and 'monitor' camera occluders; evaluator readability metric",
+   "estimated_loc": 480,
+   "dependencies": [
+    "CV3",
+    "CV4"
+   ],
+   "acceptance_criteria": [
+    "AC8: make bridge-monitors-test green (every face number bound, refresh only when visible, faces follow recorded worlds)",
+    "AC8: make deck-layout-eval deck-layout-eval-test: each monitor Bow-readable share >= 0.25; the signal readable from spawn, chair, comms, voyage; a seeded on-walk monitor fails; all other metrics unchanged",
+    "AC10: make bench SCENE=bridge p99 < 16.7 ms at 2560x1440 on a quiet rig",
+    "make capture-comms-v2 STAGE=wall frames opened and uploaded to refs/comms_v2/cv6/"
    ],
    "passes": null,
    "started": null,
@@ -197,17 +244,18 @@
   {
    "id": "CV5",
    "description": "archive.earths-carrier and its spec rows (design repo first), make capture-comms-v2 review frames, changelog fragment, Mark's review, cross-family evaluation, rig/full, landing",
-   "estimated_loc": 220,
+   "estimated_loc": 230,
    "dependencies": [
     "CV2",
     "CV3",
-    "CV4"
+    "CV4",
+    "CV6"
    ],
    "acceptance_criteria": [
-    "AC9: tests/test_physics.gd asserts the four carrier check values; make lore-values codex-test green",
-    "AC10: make capture-comms-v2 frames opened and uploaded; URLs in the report",
-    "AC11: make ui-theme-check python-guard uid-guard green; tools/rig_check.sh <PR> --golden posts rig/full green",
-    "sprint-evaluator (other family) >= 70/100 in .ailang/state/evaluations/eval_R3-COMMS-V2_round_1.json"
+    "AC11: tests/test_physics.gd asserts the four carrier check values; make lore-values codex-test green",
+    "AC12: make capture-comms-v2 frames opened and uploaded; URLs in the report",
+    "AC13: make ui-theme-check python-guard uid-guard green; tools/rig_check.sh <PR> --golden posts rig/full green",
+    "sprint-evaluator (other family) >= 70/100"
    ],
    "passes": null,
    "started": null,
@@ -217,5 +265,19 @@
  ],
  "reviews": [],
  "pr_gate": "rig/full green plus the GitHub fast tier; Mark's visual approval after CV4 and CV5",
- "evaluation": null
+ "evaluation": null,
+ "revision": 2,
+ "revised": "2026-11-03",
+ "settled": [
+  {
+   "id": "OQ6 (cv2_where)",
+   "ruling": "an ambient bridge monitor (the signal screen of the monitor wall) plus the console's detail view",
+   "by": "Mark, 2026-11-03"
+  },
+  {
+   "id": "frame diagram",
+   "ruling": "selecting a week on the history wall shows its light-cone diagram from the received-frame record",
+   "by": "Mark, 2026-11-03"
+  }
+ ]
 }
