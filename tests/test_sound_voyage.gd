@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-SOUND S2 (design_docs/planned/r2/sound.md §D6, §D9; AC2, AC4, AC15): a real voyage's cue log. The
+## R2-SOUND S2 (design_docs/implemented/r2/sound.md §D6, §D9; AC2, AC4, AC15): a real voyage's cue log. The
 ## scripted flight of ui/transit_harness.gd (dock, plan Alpha Cen A, commit, boost, cruise, brake, arrive)
 ## on the real sim at protocol 2.16, heard through ShipSound itself (on a stand-in ship, tests/fixtures/sound/
 ## mock_ship.gd): every accepted step's events, state edges, drawn grains and Earth's rate, with many steps

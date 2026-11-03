@@ -1,10 +1,10 @@
 {
   "sprint_id": "R3-TRUE-PROCESSED",
-  "status": "awaiting_render_review",
+  "status": "completed",
   "approved": "D-144 (Mark, attended 2026-11-02): attended parallel agent Claude D; visual landing stops for Mark",
   "created": "2026-11-02",
-  "design_doc": "design_docs/planned/r3/true-processed-fixes.md",
-  "sprint_plan": "design_docs/planned/r3/true-processed-fixes-sprint.md",
+  "design_doc": "design_docs/implemented/r3/true-processed-fixes.md",
+  "sprint_plan": "design_docs/implemented/r3/true-processed-fixes-sprint.md",
   "branch": "feat/true-processed-fixes",
   "origin": "main 6d92d2cb",
   "ailang_version": "v0.54.18",
@@ -172,10 +172,10 @@
         "gsutil ls refs/true_processed_v1 lists the set",
         "rig/full status posted"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
-      "notes": "Round 1: renders uploaded, draft PR #374, rig/full green on 10b9f1bf (74 min), fast tier pass. Codex evaluation 74 FAIL (blocking B1-B6). Round 2 fixes: B1 luminance-true True light; B2 the spire glow under the gain, captain/screens/markers labelled display-referred; B3 production emitter flux tests at RS-3/RS-4 (D^2 mutation drilled: both suites fail) and GPU golden make true-light-golden (10 ok, two negatives); B4 exposure classified presentation (no package); B5 HUD numbers removed; view button says True/Processed; TRAPPIST-1/Aldebaran at planned stops. Round-2 renders under refs/true_processed_v1/r2/. Passes after rig/full on the new head and Mark's render review (B6). Round 3 (re-evaluation 87, new blocker B7): the lamps are photometric too: LUX_PER_ENERGY = 80 / (8 x Y(spire colour)) = 15.0185; star : spire at 127,000 lx measured 1587.5000; an 80 lx star equals the spire (test 1e-5, GPU G-TL-5 ratio 0.9997, negative G-TL-N3 1.50); true-light-golden 12 passed. Round 4 (re-check 91, B8): the ambient bounce mixed in linear and encoded to sRGB (ambient_mix); GPU G-TL-6 ratios 0.9997/0.9999/0.9996 at 2566/5772/11544 K, negative G-TL-N4 0.80; true-light-golden 16 passed."
+      "completed": "2026-11-03",
+      "notes": "Round 1: renders uploaded, draft PR #374, rig/full green on 10b9f1bf (74 min), fast tier pass. Codex evaluation 74 FAIL (blocking B1-B6). Round 2 fixes: B1 luminance-true True light; B2 the spire glow under the gain, captain/screens/markers labelled display-referred; B3 production emitter flux tests at RS-3/RS-4 (D^2 mutation drilled: both suites fail) and GPU golden make true-light-golden (10 ok, two negatives); B4 exposure classified presentation (no package); B5 HUD numbers removed; view button says True/Processed; TRAPPIST-1/Aldebaran at planned stops. Round-2 renders under refs/true_processed_v1/r2/. Passes after rig/full on the new head and Mark's render review (B6). Round 3 (re-evaluation 87, new blocker B7): the lamps are photometric too: LUX_PER_ENERGY = 80 / (8 x Y(spire colour)) = 15.0185; star : spire at 127,000 lx measured 1587.5000; an 80 lx star equals the spire (test 1e-5, GPU G-TL-5 ratio 0.9997, negative G-TL-N3 1.50); true-light-golden 12 passed. Round 4 (re-check 91, B8): the ambient bounce mixed in linear and encoded to sRGB (ambient_mix); GPU G-TL-6 ratios 0.9997/0.9999/0.9996 at 2566/5772/11544 K, negative G-TL-N4 0.80; true-light-golden 16 passed. Landed: PR #374 merged 2026-11-03 (68796623) after Codex 97 PASS, rig/full + golden + fast tier green, Mark's render approval and rulings."
     }
   ],
   "reviews": [
@@ -238,10 +238,21 @@
     {
       "kind": "render_review",
       "set": "https://storage.googleapis.com/stapledons-voyage-assets/refs/true_processed_v1/",
-      "status": "pending Mark; tp_lux = 80 lx chosen 2026-11-02"
+      "status": "approved by Mark 2026-11-03"
+    },
+    {
+      "kind": "evaluation",
+      "round": 4,
+      "evaluator": "codex gpt-6.1-sol",
+      "score": 97,
+      "pass": true
     }
   ],
-  "progress_note": "TP0-TP4 done; round-2 fixes for the evaluation's B1-B5 committed; awaiting rig/full (queued by the orchestrator) and Mark's render review (B6, OQ1, OQ3, OQ4, OQ5, BOUNCE).",
+  "progress_note": "Completed 2026-11-03: PR #374 merged (68796623). Follow-up R3-TRUE-PROCESSED-b (Doppler indicator) in its own sprint.",
   "upstream_reports": [],
-  "evaluation": null
+  "evaluation": {
+    "final_score": 97,
+    "pass": true,
+    "evaluator": "codex gpt-6.1-sol"
+  }
 }

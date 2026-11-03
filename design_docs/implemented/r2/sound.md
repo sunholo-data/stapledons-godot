@@ -1,6 +1,6 @@
 # R2-SOUND: the ship's sound, heard from inside
 
-**Status:** S0a and S0b landed (#298); reworked after Mark's first listen (D-108, §D11) and approved at the second (D-112) with the room 6 dB lower and the export compressed (QOA). Approved by Mark on 2026-10-20 (ledger D-101), every recommendation: "approve the sound but we will eventually allow for ai generated sound just not yet I guess". S0a, S0b (#298) and S1 (#319) landed. **S2 (the voyage) built 2026-11-02** on `feat/r2-sound-s2` (D-144, attended parallel run), the home beacon made exact by the standing order of 2026-10-30 (§D6); paused for Mark's listen. Proposed 2026-10-20 (D-98). A throwaway spike de-risked the pipeline (§Evidence).
+**Status:** **Implemented** 2026-11-03. S0a and S0b landed (#298), reworked after Mark's first listen (D-108, §D11) and approved at the second (D-112); S1 (the bridge) landed (#319); S2 (the voyage, with the exact home beacon) landed in #375 (merge `ddc4795e`, 2026-11-03) after Mark's listen ("the sounds are awesome") and a cross-family evaluation (Codex: 64 FAIL at `2aa509dd`, 91 PASS at `acb85bc7`), `rig/full` and the fast tier green. Approved by Mark on 2026-10-20 (ledger D-101), every recommendation; S2 run attended under D-144. Open items (not built): [report](sound-report.md) §Open items. Proposed 2026-10-20 (D-98).
 **Release:** R2. **Milestone:** the first sound in the game: the bridge, the voyage's moments and the interface, mixed and tested headless.
 **Priority:** P1 for R2. Mark, after playing the bow-facing bridge (ledger D-98, 2026-10-20): *"it looks really great. obviously we need animation on the captain a bit and sound effects and the level design but such good potential"*.
 
@@ -12,7 +12,7 @@
 - [features/future/bubble-constraint.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/bubble-constraint.md) "Audio": *"Muffled external sounds (everything is mediated)"*, *"Signal reception sounds"*. [features/future/bubble-ship-layout.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/bubble-ship-layout.md): *"Ambient soundscapes per location"*.
 - [vision/design-decisions.md](https://github.com/sunholo-data/stapledons-design/blob/main/vision/design-decisions.md) 2026-09-28 (D-7, D-8): every crew line is spoken in a per-character voice, no live real-time voice, text-only always available. This plan mixes those voices; it does not generate any.
 - [decisions/0001-engine-and-architecture.md](https://github.com/sunholo-data/stapledons-design/blob/main/decisions/0001-engine-and-architecture.md): audio runs in Godot; the sim stays pure.
-- This repo: ledger D-91 to D-98 (fixed views, the bow, the spire light D-96, the bridge accepted D-97/D-98); [camera-forward.md](../../implemented/r2/camera-forward.md) (Bow, Astern, console zoom); [deck-layout.md](deck-layout.md) (the stations, the lift, the spire light).
+- This repo: ledger D-91 to D-98 (fixed views, the bow, the spire light D-96, the bridge accepted D-97/D-98); [camera-forward.md](camera-forward.md) (Bow, Astern, console zoom); [deck-layout.md](../../planned/r2/deck-layout.md) (the stations, the lift, the spire light).
 
 **Depends on:**
 - The bridge as built by R2-DECK-LAYOUT (DL1–DL3: station use points, the lift, the spire light). Sound sources attach to those nodes by name.

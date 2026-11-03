@@ -10,7 +10,7 @@ extends RefCounted
 ##   colour     physical hue: the renderer's blackbody lookup at T x D (Blackbody.lut_rgb),
 ##              D the package Doppler factor at the apparent angle (Planets.doppler_seen64,
 ##              sim gamma and 1 - beta). Normalised to a unit max channel.
-##   brightness two settings (R3-TRUE-PROCESSED, design_docs/planned/r3/true-processed-fixes.md;
+##   brightness two settings (R3-TRUE-PROCESSED, design_docs/implemented/r3/true-processed-fixes.md;
 ##              stapledons-design standing order 2026-10-30, after D-38/D-55). E is the seen
 ##              illuminance (sim e_v_lux x pointFluxRatio(T, D), the SkyMeter.seen_point
 ##              expression, x any eclipse transmission).

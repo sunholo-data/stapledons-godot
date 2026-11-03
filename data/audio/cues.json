@@ -1,6 +1,6 @@
 {
  "schema": "stapledons.audio.cues/1",
- "about": "R2-SOUND (design_docs/planned/r2/sound.md §D1): one row per cue. volume_db sets the level; bands (RMS dBFS over the active span, at default settings) are what make sound-check holds each bus to; a row's own band overrides its bus's.",
+ "about": "R2-SOUND (design_docs/implemented/r2/sound.md §D1): one row per cue. volume_db sets the level; bands (RMS dBFS over the active span, at default settings) are what make sound-check holds each bus to; a row's own band overrides its bus's.",
  "bands": {
   "Ambience": [
    -38,
