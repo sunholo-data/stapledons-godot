@@ -31,7 +31,7 @@
 
 **Estimated LOC:** about 4,500 (the milestone table), of which about 1,050 are package code and tests.
 
-**AILANG:** pinned v0.54.18 (`runtime/bin/ailang`); prompt loaded: **v0.16.7** (`runtime/bin/ailang prompt`, 2026-11-02). The signatures below follow it.
+**AILANG:** pinned v0.56.1 (`runtime/bin/ailang`); teaching prompt **v0.16.11** loaded again on 2026-11-03. Main, CI, bundled runtime and the game lock use v0.56.1; v0.56.0 was skipped (ailang#2061). The signatures below follow that prompt.
 
 ## Game vision alignment
 

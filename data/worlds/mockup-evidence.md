@@ -1,3 +1,36 @@
+# Revised W2.4 mock-ups — 2026-11-03
+
+Mark approved the visual direction ("the galaxy mockups look great"). These
+revisions fix the evaluator's specific presentation defects; production UI,
+rendering-field bindings and final visual landing remain open.
+
+All four new 1600×1000 Godot viewport captures were opened and inspected.
+Teq now uses blue/ochre/coral, reserving green for rocky-HZ rings and the
+inferred band. The 11.77 R⊕ α Cen candidate has a neutral fill and ochre
+dashes, never the eligibility green. At 81 ly Sol, τ Ceti, TRAPPIST-1 and
+α Cen/Proxima have separated leader labels outside the dense central map;
+no catalogue coordinates were moved. Explanatory paragraphs were removed
+from legends/strips; provenance, fitted/inferred qualifiers, assumed albedo,
+HZ temperature clamp, radius scale and log-axis qualifiers remain visible.
+
+| Capture | Public reference | SHA256 |
+|---|---|---|
+| 25-ly map | [map_25ly.png](https://storage.googleapis.com/stapledons-voyage-assets/refs/worlds_v1/20261103T085540Z/map_25ly.png) | `ad5602f22fbe33f65b6c7829b324047f8633e6f8234d995467e2cc3355566a17` |
+| 81-ly map | [map_81ly.png](https://storage.googleapis.com/stapledons-voyage-assets/refs/worlds_v1/20261103T085540Z/map_81ly.png) | `b99c359e7153a9f457fae79313e2b9f03b763a610428576ed451af41051d94a8` |
+| TRAPPIST strip | [trappist1_strip.png](https://storage.googleapis.com/stapledons-voyage-assets/refs/worlds_v1/20261103T085540Z/trappist1_strip.png) | `f5793972a60901f15b638a2f1caf19220c4740ad1b032ed8ddb27f74ce4867a3` |
+| α Cen strip | [alpha_cen_a_strip.png](https://storage.googleapis.com/stapledons-voyage-assets/refs/worlds_v1/20261103T085540Z/alpha_cen_a_strip.png) | `314ca705c4108fbb662d4fe3b3e495eaced790be75666bd3807b752d5feec7b3` |
+
+[SHA256SUMS](https://storage.googleapis.com/stapledons-voyage-assets/refs/worlds_v1/20261103T085540Z/SHA256SUMS).
+All five objects were fetched anonymously over HTTPS and compared byte for
+byte against the inspected local files. The timestamped prefix is new.
+Reproduction uses the normal game registry pin and AILANG v0.56.1, with no
+overlay: `ailang run --quiet --strict-bytecode --caps IO --package-dir sim
+--entry main sim/tools/worlds_mock_data.ail` then the existing Godot capture
+command with `--out=res://renders/worlds_v1/20261103-review`.
+The old evidence below is the previous checkpoint, superseded visually.
+
+---
+
 # W2.4 review mock-ups — 2026-11-02
 
 **Awaiting Mark. These are mock-up artefacts, not a landed UI or an approval.**

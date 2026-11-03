@@ -6,19 +6,38 @@
 **Branches:**
 - this plan: `design/r3-worlds`;
 - execution: `design/r3-worlds`, continuing draft PR #371 in this fresh full clone;
-- the packages: `feat/celestial-habitability` and `feat/worlds` in a fresh `sunholo-data/ailang-packages` clone at origin/main;
+- the packages: `feat/worlds-habitability` in a fresh `sunholo-data/ailang-packages` clone at origin/main;
 - the design repo: `feat/life-and-worlds` (W1.0, W1.4's recorded offsets, W2.5's Archive entries), a fresh clone; never the main checkout.
 
 **AILANG:**
-- Pin v0.56.0 (released `e1ef997`): runtime bump PR #377 merged into this branch,
-  `make runtime` staged the released binary; merge main after #377 lands there.
+- Pin **v0.56.1** (`05c860a`): origin/main merged after PR #377; `make runtime`
+  installed the release. v0.56.0 was skipped because of ailang#2061.
 - AILANG prompt version loaded on continuation: **v0.16.11**.
-- Until worlds 0.1.0 is published, ignored local-package overlays run the new
-  gates (`tools/worlds_dev.sh`, `tools/worlds_ailang.sh`); no sibling directory
-  is committed as a game dependency pin. The normal production gates follow
-  attended publication and the registry pin.
+- Worlds 0.1.0 is published from package commit `3978759`; the game pins registry
+  content `7425165…`. Normal gates now use that pin. Celestial remains registry
+  0.6.0 (`1f06086…`); 0.6.1 is a separate unpublished performance patch.
+  The package clone's worlds manifest and lock remain unchanged.
 
-## Execution checkpoint, 2026-11-02 continuation
+## Evaluation corrections, 2026-11-03
+
+- The independent Claude evaluation scored 77/100: checkpoint PASS, not ready
+  to land. It is recorded under `.ailang/state/evaluations/`.
+- B1: celestial's memory split is versioned 0.6.1 with kind fix and a perf
+  changelog; both package qualities pass on v0.56.1. No worlds 0.1.0 files,
+  manifest or lock changed; celestial 0.6.1 is an attended publish handoff.
+- B2/N1–N4: direct M-dwarf and counterfactual-HZ TRAPPIST veto assertions,
+  whole-registry census label/RV audit with bad-label/bad-RV controls,
+  honest synthetic Earth-twin citations on the wire, cited atmosphere rows,
+  radius-before-msini classification, and unknown-preset rejection regression.
+- N6: all three Archive drafts now lead with LW-bound numbers and use exactly
+  the W2.5 event mapping. No selection/loop hint remains. Drafts stay inactive.
+- W2.4: Mark approved the direction. Revised captures were opened and uploaded
+  under `refs/worlds_v1/20261103T085540Z/`; Teq is non-green and 81-ly labels
+  are separated. Production UI/copy and its display contract remain pending.
+- Final presets, S2 photon calibration, slice seed, production UI/Archive,
+  design-main registry acceptance and orchestrator-owned rig/full remain open.
+
+## Historical checkpoint, 2026-11-02 continuation
 
 - W1.1 and W2.0 are verified: celestial 0.6.0 is published/pinned, and the complete
   VM catalogue witness passes on v0.56.0 with its original full-data digest.

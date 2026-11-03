@@ -1,0 +1,4 @@
+worlds-leak vm/stapledon: 10000 accepted ticks; 1514071 bytes; sha256 4cea2b9282c7c0091b05dc185d308a4a796d9f8a302cc98d6bde4ec2d17f5ba5
+worlds-leak vm/scattered: 10000 accepted ticks; 1514071 bytes; sha256 4cea2b9282c7c0091b05dc185d308a4a796d9f8a302cc98d6bde4ec2d17f5ba5
+worlds-leak vm/lonely: 10000 accepted ticks; 1514071 bytes; sha256 4cea2b9282c7c0091b05dc185d308a4a796d9f8a302cc98d6bde4ec2d17f5ba5
+worlds-leak vm/teeming: 10000 accepted ticks; 1514071 bytes; sha256 4cea2b9282c7c0091b05dc185d308a4a796d9f8a302cc98d6bde4ec2d17f5ba5

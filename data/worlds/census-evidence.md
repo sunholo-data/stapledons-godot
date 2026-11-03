@@ -1,3 +1,32 @@
+# Evaluation correction census — 2026-11-03, AILANG v0.56.1
+
+The 25-pc development report has been regenerated against the normal registry
+worlds 0.1.0 / celestial 0.6.0 pins. `DEVELOPMENT.SHA256` pins the new report.
+Counts and moments remain unchanged; per-system digests change because the
+synthetic-HZ assumption and atmosphere-rule citations are now accurate.
+
+```text
+census: 5685 systems; 64 seeds/preset; moments=true; labels/RV=true; nested=true; growthStable=true
+```
+
+For each preset, the first-seed complete population audit checks all 11,576
+planets, including 589 M-dwarf rocky-HZ cases and 1,278 synthesised planets
+around surveyed FGK hosts. Label violations = 0; RV violations = 0.
+The RV audit evaluates celestial's edge-on circular amplitude directly and
+asserts <=3 m/s, independently of the generator's acceptance predicate.
+The moment test spans 64 seeds; the complete physical audit is explicitly
+for the first seed and all four preset variants. Targeted tests additionally
+exercise 128 seeds for M-dwarf HZ labels/atmosphere vetoes and 32 seeds for
+population audits. Controls with a bad M-dwarf label and a synthetic giant
+exceeding the RV limit both fail the audit as intended.
+
+The historical 100-pc report below has not been regenerated in this correction
+run. Its older digests and lack of the new audit fields do not certify the
+current head. No census-large, full rig suite or final calibration claim is
+made. Both census sizes now execute the same new label/RV audit when queued.
+
+---
+
 # Census evidence — v0.56.0, 2026-11-02
 
 These are internal population checks against the four **provisional** dials,

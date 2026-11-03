@@ -1,3 +1,156 @@
+# R3-WORLDS evaluation corrections — Codex B, 2026-11-03
+
+**Requested corrections implemented; sprint remains in progress.** Claude's
+cross-family evaluation is recorded verbatim at
+`.ailang/state/evaluations/eval_R3-WORLDS_round_1.json`: 77/100, checkpoint PASS,
+not ready to land. This is the generator's correction report, not a new score.
+No `tools/rig_check.sh`, full `make test`, package publication or PR merge was
+performed. Only the explicitly requested merge **into the game branch** ran.
+
+## Current commits and dependencies
+
+| Repository | Draft PR / branch | Correction commits |
+|---|---|---|
+| Game | [#371](https://github.com/sunholo-data/stapledons-godot/pull/371), `design/r3-worlds` | `e57eab13` origin/main merge; `a8f3d027` published worlds pin; `8c0a516f` corrections; documentation handoff follows |
+| Packages | [#174](https://github.com/sunholo-data/ailang-packages/pull/174), `feat/worlds-habitability` | `fd2b6ea` celestial 0.6.1 and both v0.56.1 quality reports |
+| Design | [#50](https://github.com/sunholo-data/stapledons-design/pull/50), `feat/life-and-worlds` | `eea0566`, `b26265c` W2.5 restoration and numeric bindings |
+
+`make runtime` installed released **v0.56.1**, `05c860a`; prompt **v0.16.11**
+was reloaded before AILANG edits. Main, CI and runtime now agree. v0.56.0 was
+skipped because of ailang#2061. Runtime staging was repeated after the game pin.
+All correction gates use normal registry dependencies, with no local overlay:
+worlds 0.1.0 content `7425165215985ccf5def68e99108b60a1aad0335651d182b2df292a016545a02`,
+celestial 0.6.0 content `1f060862c67d3ba68f519102ad2aee2634ce43adb04e0c1b72375f84ad68d4c6`.
+The package clone's worlds directory, manifest and lock are unchanged from
+published commit `3978759`. There is no worlds 0.1.1 change in this run.
+
+## Corrections and scope
+
+- **B1 / W1.1:** celestial's existing limb-darkening memory split is now 0.6.1,
+  release kind fix, with a perf CHANGELOG: cold-check RSS 296–302 MB → 100–106 MB
+  in the prior measurements, same API/order/results. Both qualities were run
+  with v0.56.1. The game and worlds remain on published celestial 0.6.0.
+- **B2 / AC14–15 / W2.1–2.2:** direct measured and synthetic M-dwarf HZ labels;
+  TRAPPIST-1 b deliberately placed in an otherwise eligible HZ asserts
+  NotHabitable and Sterile over 128 seeds × four actual presets plus a saturated
+  dial. Whole-registry census labels and direct RV <=3 m/s are gate conditions,
+  with bad-label and bad-RV controls. The first-seed physical population is
+  audited for all four presets; 64 seeds test biological moments. See
+  `data/worlds/census-evidence.md` for exact scope and counts.
+- **N1:** HZ Earth twins retain their assumed 1 R⊕ / 1 M⊕ values with an honest,
+  slot-specific `cite` on protocol 2.17. They no longer claim Chen–Kipping masses.
+  Other synthetic masses now explicitly name the approximate adopted likelihood
+  and prior. No measured scalar or RNG stream changed.
+- **N2–N4:** atmosphere vetoes moved to cited data rows and are labelled adopted
+  biosphere rules, distinguishing atmospheric model exclusions from proof of
+  zero atmosphere. A measured radius now decides rocky eligibility before the
+  minimum-mass fallback. `new_game` already rejected unknown/non-string preset
+  IDs; a regression now covers that behavior.
+- **N6 / W2.5:** the drafts use first_planet_host / first_hz_planet /
+  first_debated_planet, lead with LW-bound numbers and contain no selection,
+  loop or unusual-universe hint. The baseline estimate computes to
+  0.05356088273972087 within 1000 ly, rounded to 0.05 (LW-42). R★ is explicitly
+  a mass-formation rate; planet abundance is a mean, not another multiplier.
+  The actual event hints and drafts stay inactive. Numerical checking used
+  temporary copies with unlock=always, with zero allowances; no gate bypass
+  was committed and no production Archive acceptance is claimed.
+- **W2.4 / N11:** Mark approved the direction. All four revised Godot frames
+  were opened and inspected, uploaded to a new timestamped folder, then fetched
+  anonymously over HTTPS and compared byte for byte. Teq uses non-green colours;
+  the α Cen giant stays neutral/ochre; 81-ly labels have separate leader lines;
+  prose is trimmed while scientific qualifiers remain. Current URLs/hashes:
+  `data/worlds/mockup-evidence.md`.
+- **Documentation:** stale toolchain and package branch metadata corrected;
+  45 LW rows imported from design head b26265c. The planned doc and sprint
+  remain in progress. The original report below is historical evidence.
+
+## v0.56.1 validation
+
+Package quality (full reports also in package `evidence/worlds/`):
+
+```text
+celestial0.6.1: compile22; contracts2/42 verified,0refuted,90uncontracted;
+  37skipped/notproved; interfacev2; effectsmax/rankIO; kindfix/changelogtrue;
+  AGENT/ai_summarytrue;132/132pure;156passed,0failed,0skipped;smokepassed;no gates
+worlds0.1.0: compile16; contracts0/12 verified,0refuted,13uncontracted;
+  12skipped/notproved; interfacev2; effectsmax/rankIO; kindfeature/changelogtrue;
+  AGENT/ai_summarytrue;25/25pure;34passed,0failed,0skipped;smokepassed;no gates
+```
+
+These are experimental packages. The verifier's Real/Int model is not an
+IEEE/machine-arithmetic proof; runtime contract rejection is not established
+by these quality reports. No unsupported contract is represented as proved.
+
+```text
+✓ 161 files checked, all passed!
+48 tests: 48 passed, 0 failed, 0 skipped (strict bytecode worlds-test)
+10 tests: 10 passed, 0 failed, 0 skipped (final all-preset/saturated-veto test rerun)
+census: 5685 systems; 64 seeds/preset; moments=true; labels/RV=true; nested=true; growthStable=true
+worlds-parity: worldsVm worlds-ok (strict VM = interpreter)
+worlds-parity: protocolWorldsVm protocol-worlds-ok (strict VM = interpreter)
+worlds-parity: censusVm census-ok (strict VM = interpreter)
+worlds-parity: calibVm 2 development seeds byte-identical
+strict digestScripted: crossing chunks15 holds1 turn391 (VM = interpreter)
+replay: 11 cases, all identical
+exoplanets-check: JSON, AILANG module and curated differences byte-identical
+exoplanets independent oracle: 1590 snapshot planets,18722 nonmissing scalars bit-identical
+exoplanets-verify: 1599 generated planets,18722 archive scalars equal regeneration
+world-hosts-check: measured host facts byte-identical (241 hosts)
+calib-smoke-development: 32 rows; strict core; photon_budget=false; sha256 238415dabbfeec89c61d4e0e7d0a27023a508af6797c79082b2aedfe58fee2e0
+lore-check: 3 drafts, every check id resolved, every number bound,0allowed (numeric-only temporary unlock copies)
+python-guard: ok (21 allowlisted,0awaiting AILANG port)
+uid-guard: ok (406 .uid files)
+ui-theme-check: ok (65 contrast pairs; negative controls reject)
+```
+
+Live lore also passes with its two pre-existing photon-drive unit allowances;
+`lore-import-check` matches all 18 files to design b26265c. Godot's existing
+raw-theme-image warnings and CSV importer errors appear in editor import;
+no mock-up script error occurred and the requested theme gate exits 0.
+
+`make sim` passed its 161-file package check, then its broad native phase was
+interrupted at the observed Studio one-minute load of 196.29. There is no
+complete `make sim` pass claim; the final targeted suites above are green.
+`worlds-leak` completed all four VM/preset streams: 10,000 accepted ticks,
+1,514,071 bytes each, identical SHA256
+`4cea2b9282c7c0091b05dc185d308a4a796d9f8a302cc98d6bde4ec2d17f5ba5`.
+The four interpreter streams were interrupted at the same load; a full
+eight-stream pass on this head remains for the queued gate. The earlier
+checkpoint's eight-stream result does not certify the changed citations.
+Fast CI is queued/running on the pushed corrections. Final CI status is
+linked in the final response/PR; no full rig suite was started. Both extra
+local broad gates were stopped to leave the overloaded Studio to the
+orchestrator, rather than being counted as successes or assertion failures.
+
+## Publish handoff, questions and remaining acceptance
+
+Only celestial 0.6.1 is newly ready for Mark:
+
+```sh
+! cd ~/dev/sunholo-data/ailang-packages-worlds/packages/celestial && ailang-publish
+```
+
+After publication, a separate follow-up may pin the game to celestial 0.6.1
+for the compile-memory benefit. Do not re-lock the published worlds release
+in this run. No worlds publish is requested.
+
+No new canon choice is needed for these corrections: keep the approved W2.5
+no-reveal entries; any future W4 reveal is separate work. Remaining decisions
+are the already-scoped S2 photon calibration, final preset/ruling and slice seed,
+the production W2.4 HZ rendering contract/UI and live W2.5 hint mapping. Keep
+those and design-main/rig/full/fast-tier acceptance open. No final preset,
+calibrated detector or slice seed is claimed. N8's map-JSON asset migration,
+N9's rig runtime budget and N10's final every-sixteenth pinned-row replay are
+left for their appropriate asset/calibration work, rather than restructuring
+published data or claiming a nonexistent final calibration.
+
+AILANG bug: GCP `user` inbox `inbox_1793696205326_b0ed7201` reports v0.56.1's
+formatter AST change with nested interpolations. The minimal source type-checks
+and `ailang fmt` fails closed with exit2, leaving source untouched. Repro is in
+`.ailang/state/evidence/R3-WORLDS/20261103/formatter-repro.txt`. No VM workaround.
+
+---
+
 # R3-WORLDS continuation report — Codex B, 2026-11-02
 
 **In progress; no landing or complete-sprint claim.** Mark's D-144 approval and

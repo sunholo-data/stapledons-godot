@@ -7,18 +7,20 @@
   "sprint_plan": "design_docs/planned/r3/worlds-sprint.md",
   "branch": "design/r3-worlds (draft PR #371); fresh design and package clones",
   "origin": "R3 roadmap order-of-work step 2 (W1 then W2); Mark attended 2026-10-06 and 2026-10-27 (life-and-intelligence-parameters decisions 1-4)",
-  "github_issues": [],
+  "github_issues": [
+
+  ],
   "ailang": {
-    "pin": "v0.56.0",
+    "pin": "v0.56.1",
     "binary": "runtime/bin/ailang",
-    "prompt_version_loaded": "v0.16.11 (released runtime e1ef997, 2026-11-02 continuation)"
+    "prompt_version_loaded": "v0.16.11 (released runtime 05c860a; reloaded 2026-11-03 before edits)"
   },
   "external_dependencies": [
-    "Design PR50 registry merge/review; 41 LW rows implemented",
-    "Celestial0.6.0 published and pinned; worlds0.1.0 full quality passes, attended publish and game registry pin pending",
-    "S2 sunholo/observe0.2.0 photon budgets before final W1.4; registry still observe0.1.0",
-    "Protocol2.17 checked free and implemented; no older golden changed",
-    "Mark W2.4 mock-up review before UI/copy; independent cross-family evaluation and production landing gates"
+    "Design draft PR50 registry/main acceptance; 45 LW rows, Archive drafts inactive",
+    "Worlds0.1.0 published at3978759 and registry-pinned by game a8f3d027; celestial0.6.0 stays pinned; separate celestial0.6.1 awaits Mark publication",
+    "S2 sunholo/observe0.2.0 photon budgets before final W1.4; still observe0.1.0",
+    "Final presets ruling, slice-seed search, production W2.4 UI/HZ rendering contract and W2.5 hint wiring",
+    "Orchestrator owns rig/full; cross-family correction re-evaluation and final fast tier still required"
   ],
   "registry_reuse": [
     {
@@ -201,7 +203,9 @@
       "id": "W1.0",
       "description": "Baseline registry: stapledons-design physics/life-and-worlds.md (cited factor table, reference cases, LW-n check values); lore check reads the LW registry",
       "estimated_loc": 60,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "design AC1: git grep -c '^| LW-' physics/life-and-worlds.md >= 20 on design main",
         "make lore-values lists the LW rows; a mutant LW value fails make lore-check",
@@ -211,7 +215,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Implemented registry/lore path, draft design PR50 at c876de1. 41 LW rows, cited primary sources; M=0.75 empirical attribution and original Chambers section locator explicitly unverified (formula verified via alternate primary Eqs1-2). Three historical rounding cells corrected. lore-test/check/import pass including LW one-digit mutant. Design registry awaits merge/review, so acceptance on design main remains open."
+      "notes": "Implemented registry/lore path, draft design PR50 at c876de1. 41 LW rows, cited primary sources; M=0.75 empirical attribution and original Chambers section locator explicitly unverified (formula verified via alternate primary Eqs1-2). Three historical rounding cells corrected. lore-test/check/import pass including LW one-digit mutant. Design registry awaits merge/review, so acceptance on design main remains open. Correction2026-11-03:45LW rows; W2.5 baseline0.05 within1000ly computed0.05356088273972087; units checked; design headb26265c imported. Main acceptance still open."
     },
     {
       "id": "W1.1",
@@ -229,7 +233,7 @@
       "passes": true,
       "started": "2026-11-02",
       "completed": "2026-11-02",
-      "notes": "Celestial0.6.0 published by Mark, game registry pin/lock updated. Valid-domain package156/156 tests and fullquality no gates. PR174 private64-row batches reduce coldcheckRSS296-302MB to100-106MB; all508LDrows+1400samples byte-identical. New v056 VM invalid-requires enforcement regression reported separately; not claimed as contract validation."
+      "notes": "Celestial0.6.0 published by Mark, game registry pin/lock updated. Valid-domain package156/156 tests and fullquality no gates. PR174 private64-row batches reduce coldcheckRSS296-302MB to100-106MB; all508LDrows+1400samples byte-identical. New v056 VM invalid-requires enforcement regression reported separately; not claimed as contract validation. Correction2026-11-03: memory split now celestial0.6.1 kindfix, perfCHANGELOG; v0561 quality156passed/nogates; ready atfd2b6ea, not published. Game/worlds retain registry0.6.0."
     },
     {
       "id": "W1.2",
@@ -245,10 +249,10 @@
         "ailang pkg quality no gates; worlds_test.ail in make sim repeats the tables through the pin"
       ],
       "routing": "loop to publish; publish attended",
-      "passes": null,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
-      "notes": "Implemented in draft PR174 head4d6367a: 16files check,34/34 native,32named strictVM bodies0fallback plus2property suites, full quality no gates including staged smoke now celestial published. 25/25 exports pure;0/12contracts verified,0refuted,13uncontracted; strict proof PUB011 remains. Adds explicit approximate dwarf mass/synthetic-radius inference and package-owned epoch statistics. Await attended worlds0.1.0 publish; no unpublished or local path pin committed."
+      "completed": "2026-11-03",
+      "notes": "Implemented in draft PR174 head4d6367a: 16files check,34/34 native,32named strictVM bodies0fallback plus2property suites, full quality no gates including staged smoke now celestial published. 25/25 exports pure;0/12contracts verified,0refuted,13uncontracted; strict proof PUB011 remains. Adds explicit approximate dwarf mass/synthetic-radius inference and package-owned epoch statistics. Await attended worlds0.1.0 publish; no unpublished or local path pin committed. Superseding checkpoint: published0.1.0 from3978759 (hash7425165), gamepin a8f3d027. v0561 quality34/34,nogates. No worlds package file/manifest/lock changed in correction run."
     },
     {
       "id": "W1.3",
@@ -294,7 +298,9 @@
       "id": "W2.0",
       "description": "Measured exoplanets <= 100 pc: NASA archive ps snapshot (shell download, sha pin, public bucket), AILANG pipeline sim/tools/exoplanets.ail (cross-match by Gaia DR3 id else 1 arcsec; curated alpha Cen and TRAPPIST-1 win), generated sim/data/exoplanets.ail and data/planets/exoplanets.json, make exoplanets / exoplanets-check",
       "estimated_loc": 400,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "design AC9 (data half): every snapshot planet whose host is in the registry is in the table with bit-equal values",
         "alpha Cen and TRAPPIST-1 rows equal data/acen.ail and data/trappist1.ail",
@@ -324,7 +330,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Implemented local package development: measured records preserved verbatim; candidate provenance; HZ/rocky labels and M-dwarf debate; keyed etaEarth+SAG13 synth, Hill spacing>=10 and RV veto; no extras for measured hosts. Relative Kepler includes stellar+planet GM, no dwarf mass fit for WD/giants. 6/6 strictVM tests and worldsVm parity; actual500system full digest matches engines. Main manifest cannot resolve worlds until attended publication/pin."
+      "notes": "Implemented local package development: measured records preserved verbatim; candidate provenance; HZ/rocky labels and M-dwarf debate; keyed etaEarth+SAG13 synth, Hill spacing>=10 and RV veto; no extras for measured hosts. Relative Kepler includes stellar+planet GM, no dwarf mass fit for WD/giants. 6/6 strictVM tests and worldsVm parity; actual500system full digest matches engines. Main manifest cannot resolve worlds until attended publication/pin. Correction: AC14 direct labels for measured/synthetic M-HZ and TRAPPIST1b counterfactualHZ;128seeds xbaseline/Teeming assert NotHabitable+Sterile. N1assumedEarth radius/mass cited on2.17; N2citedrulesdata;N3radiusprecedence regression;normal registry tests48/48 and worldsVm parity."
     },
     {
       "id": "W2.2",
@@ -344,7 +350,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Internal census implemented against local packages/provisional dials. 25pc:5685 systems,seed0 11576 planets(410 measured,2 candidate,11164 synthetic),401 habitable+589 debated;64-seed max|z|2.24968. Full report repeated byte-identically SHA39482d0def4b3cb7108eeefff40c4c3882d0106294db2fa069ebd44bc6517851;actual500-system VM/interpreter digest9bd52bed5602d215925ded0726c84da91f2e1e550572044682cb2e6c0fe8c88e. Large:331311 float64 GCNS rows,64seeds x4;707231 first-seed planets,1578 matched snapshot planets,21 outside/uncrossmatched;max|z|2.16641,nesting/growth pass;862.43s/900 full-target budget before final exact draw plans. Final draw plans15/15 strict-VM tests,7cases x128seeds equal existing uniforms;post-preparation25pc JSON unchanged in14.76s. Reports and exact caveats tracked under data/worlds/census-evidence.md and DEVELOPMENT.SHA256. No final preset, slice seed or detector calibration claim; publication/pins and rig/full remain external landing gates."
+      "notes": "Internal census implemented against local packages/provisional dials. 25pc:5685 systems,seed0 11576 planets(410 measured,2 candidate,11164 synthetic),401 habitable+589 debated;64-seed max|z|2.24968. Full report repeated byte-identically SHA39482d0def4b3cb7108eeefff40c4c3882d0106294db2fa069ebd44bc6517851;actual500-system VM/interpreter digest9bd52bed5602d215925ded0726c84da91f2e1e550572044682cb2e6c0fe8c88e. Large:331311 float64 GCNS rows,64seeds x4;707231 first-seed planets,1578 matched snapshot planets,21 outside/uncrossmatched;max|z|2.16641,nesting/growth pass;862.43s/900 full-target budget before final exact draw plans. Final draw plans15/15 strict-VM tests,7cases x128seeds equal existing uniforms;post-preparation25pc JSON unchanged in14.76s. Reports and exact caveats tracked under data/worlds/census-evidence.md and DEVELOPMENT.SHA256. No final preset, slice seed or detector calibration claim; publication/pins and rig/full remain external landing gates. Correction: normal registry census5685rows x64seed biologicalmoments; allfour firstseed physicalpopulations audited11576planets each,589M-HZ,1278surveysynth,0label/0RVviolations. Direct RV<=3m/s;badlabel/badRVcontrols. New25pcJSON/pin;historical100pcJSON notrerun."
     },
     {
       "id": "W2.3",
@@ -363,7 +369,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Protocol2.17 implemented; free minor checked against main and KerrPR373 (max16). Public physical DTO accepts no dial/history/preset, measured-onlytarget, synthsystem only<0.1ly,241host directory fullstateonly. World stores preset/dataVersion; bridge onlynewconstant (still negotiates16). system.worlds_planet_ids joins physical planets without invented discs. AC16:4presets x2engines each10000acceptedticks,1513789bytes identical SHA62e594d9d64f591dee54df63b2733471607ef3720145d73d3ba540c0473ff4e1 (347.4s),schema/import+field-read audit pass,positive measured target/synthsystem coverage. Fixture6travel thenidleclock/galaxydraws;11historical replays unchanged. Localoverlay only untilworldspublish."
+      "notes": "Protocol2.17 implemented; free minor checked against main and KerrPR373 (max16). Public physical DTO accepts no dial/history/preset, measured-onlytarget, synthsystem only<0.1ly,241host directory fullstateonly. World stores preset/dataVersion; bridge onlynewconstant (still negotiates16). system.worlds_planet_ids joins physical planets without invented discs. AC16:4presets x2engines each10000acceptedticks,1513789bytes identical SHA62e594d9d64f591dee54df63b2733471607ef3720145d73d3ba540c0473ff4e1 (347.4s),schema/import+field-read audit pass,positive measured target/synthsystem coverage. Fixture6travel thenidleclock/galaxydraws;11historical replays unchanged. Localoverlay only untilworldspublish. Correction: normalregistry pin and v0561; wire Earthtwin assumption regression; existing unknown-preset rejection tested; citations change wire digest but legacygoldens remain checked."
     },
     {
       "id": "W2.4",
@@ -380,7 +386,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Review mock-ups produced/opened/uploaded only:4actualGodot4.7.2 viewport PNG1600x1000 dated public refs/worlds_v1/20261102T200654Z; repeatcaptures andanonymousHTTPS bytes exact.25lymap38hosts82planets;81ly241hosts412planets;TRAPPIST1 andalphaCenA strips explicitmeasurement/inference/candidate/HZclamp. See data/worlds/mockup-evidence.md. No productionUI/copy; numericalHZedges are offline metadata requiring reviewedABI. Mark review pending."
+      "notes": "Review mock-ups produced/opened/uploaded only:4actualGodot4.7.2 viewport PNG1600x1000 dated public refs/worlds_v1/20261102T200654Z; repeatcaptures andanonymousHTTPS bytes exact.25lymap38hosts82planets;81ly241hosts412planets;TRAPPIST1 andalphaCenA strips explicitmeasurement/inference/candidate/HZclamp. See data/worlds/mockup-evidence.md. No productionUI/copy; numericalHZedges are offline metadata requiring reviewedABI. Mark review pending. Markapproveddirection;2026-11-03captures opened/uploaded refs/worlds_v1/20261103T085540Z, allHTTPSbytesexact. Teqnon-green, candidateochre/neutral,81lyleaderlabelsseparated,copytrimmed. No productionUIlandingclaimed."
     },
     {
       "id": "W2.5",
@@ -398,7 +404,7 @@
       "passes": null,
       "started": "2026-11-02",
       "completed": null,
-      "notes": "Archive3drafts remain in designPR50, excludedfromliveimport; proposed hints notregistered. Executionreport/changelog/progress updated. IndependentClaudejudge, packagepin,fasttier andrig/full onfinalhead,Markmock/preset/sourceadjustmentreview andlanding remain pending. Design doc staysplanned; no roadmapcomplete claim."
+      "notes": "Archive3drafts remain in designPR50, excludedfromliveimport; proposed hints notregistered. Executionreport/changelog/progress updated. IndependentClaudejudge, packagepin,fasttier andrig/full onfinalhead,Markmock/preset/sourceadjustmentreview andlanding remain pending. Design doc staysplanned; no roadmapcomplete claim. Correction: designb26265c restores W2.5 unlocks, removes selection/loop text; all3drafts numericalbindingpass with temporary always-unlock copies (no allowances); actual hints remaininactive. CheckpointClaude77PASS recorded; stillplanned/inprogress."
     }
   ],
   "reviews": [
@@ -409,18 +415,37 @@
       "independent_evaluation": "pending; generator is not judge",
       "package_pr": "https://github.com/sunholo-data/ailang-packages/pull/174",
       "design_pr": "https://github.com/sunholo-data/stapledons-design/pull/50"
+    },
+    {
+      "kind": "evaluation_corrections",
+      "date": "2026-11-03",
+      "evaluator_report": ".ailang/state/evaluations/eval_R3-WORLDS_round_1.json",
+      "package_head": "fd2b6ea",
+      "design_head": "b26265c",
+      "mockups": "refs/worlds_v1/20261103T085540Z/",
+      "status": "await correction re-evaluation and external landing gates"
     }
   ],
   "pr_gate": "rig/full green (tools/rig_check.sh <PR>) plus the fast tier; W2.4 renders reviewed by Mark",
-  "evaluation": null,
+  "evaluation": {
+    "round": 1,
+    "score": 77,
+    "result": "PASS as checkpoint; not landing-ready",
+    "evaluator": "Claude (cross-family)",
+    "report": ".ailang/state/evaluations/eval_R3-WORLDS_round_1.json",
+    "corrections": "2026-11-03; user-requested follow-up, not a new evaluation"
+  },
   "validation": {
-    "runtime": "released v0.56.0 e1ef997; merged origin/chore/ailang-0.56.0, make runtime; #377 still open at final preflight",
-    "local_overlay": "ignored sibling-package overlay only; committed pins published celestial0.6.0, no local path or unpublished worlds pin",
-    "sim_check": "161 files checked, all passed",
-    "sim_native": "628 tests:625passed,3stale newest-minor assertions failed; corrected16->17, targeted rerun recorded in execution report; no claim full make sim green",
-    "targeted": "strict/parity/replay11cases/rng10000oracle/world-hosts/lore/python-guard/uid/ui-theme and AC16 eightstreams pass; final exact lines in execution report",
+    "runtime": "v0.56.1 05c860a; merge origin/main e57eab13; make runtime before/after worlds game pin",
+    "local_overlay": "not used for correction gates; game registry worlds0.1.0 and celestial0.6.0; package worldsmanifest/lock untouched",
+    "sim_check": "161 files checked, all passed on v0.56.1",
+    "sim_native": "make sim package check161 passed; broad native phase interrupted under Studio 1-min load196 (2026-11-03 09:08Z); no full make sim pass claimed. Final targeted48/48 plus stronger label10/10 pass.",
+    "targeted": "48/48 strictVM native; new census labels/RV=true; worldsVm/protocolWorldsVm/censusVm/calibVm parity; catalogue1599/18722 unchanged; lore45LW and3draft numericbindings pass",
     "exoplanets_vm": "PASS v0.56.0;1599planets18722scalars complete witness,unchangeddigest",
-    "rig_full": "not run; production worlds dependency unpublished, no rig/full or sprint-complete claim",
-    "fast_tier": "FAIL on fcb55e05 (26s): stellar-protocol-test cannot load pkg/sunholo/worlds/occurrence because sunholo/worlds absent from production lock. Run41524032759. Requires attended worlds publication+pin; subsequent edits documentation/progress only. No gate bypass. Initial57e62d2b fast tier green does not certify implementation."
+    "rig_full": "not run; user forbids rig_check; orchestrator queues it",
+    "fast_tier": "pending on final corrections/documentation head; prior pin-only run in progress when pushed8c0a516f",
+    "ailang_bug": "inbox_1793696205326_b0ed7201, GCP user: v0.56.1 fmt nested-interpolation AST round-trip failure, minimal checked repro in evidence",
+    "worlds_leak": "Four VM/preset 10000-tick streams byte-identical,1514071bytes SHA4cea2b9282c7c0091b05dc185d308a4a796d9f8a302cc98d6bde4ec2d17f5ba5; four interpreter streams interrupted under load196; full8-stream pass not claimed.",
+    "calib_smoke": "32rows development; strictcore;photon_budget=false;SHA238415dabbfeec89c61d4e0e7d0a27023a508af6797c79082b2aedfe58fee2e0"
   }
 }

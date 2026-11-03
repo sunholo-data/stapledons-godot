@@ -1,0 +1,41 @@
+→ Running tests in sim/worlds_test.ail
+→ bytecode: 10 named-test bodies ran on the VM, 0 fell back to the evaluator; inline tests and properties run on the evaluator
+
+[1mTest Results[0m
+Module: All Tests
+
+[1mTests:[0m
+  [32m✓[0m W2.5 baseline median gives about 0.05 civilisations alive within 1000 ly (100.483708ms)
+      at [2msim/worlds_test.ail:27:1[0m
+  [32m✓[0m AC9 measured hosts keep every original scalar, provenance and missingness, no extras (815.75µs)
+      at [2msim/worlds_test.ail:38:1[0m
+  [32m✓[0m AC10/11 keyed population reruns identically and synthesized planets are local-only (3.349291ms)
+      at [2msim/worlds_test.ail:46:1[0m
+  [32m✓[0m AC15 strict RV survey veto applies only FGK V<8 within 25pc (350.375µs)
+      at [2msim/worlds_test.ail:52:1[0m
+  [32m✓[0m AC14 other stellar classes cannot get a biosphere under any dial (1.376ms)
+      at [2msim/worlds_test.ail:57:1[0m
+  [32m✓[0m AC14 measured and synthetic M-dwarf rocky HZ planets are HabitabilityDebated (203.407375ms)
+      at [2msim/worlds_test.ail:72:1[0m
+  [32m✓[0m AC14 TRAPPIST-1 b constraint asserts NotHabitable and Sterile across 128 seeds, all four presets and a saturated dial (112.314916ms)
+      at [2msim/worlds_test.ail:90:1[0m
+  [32m✓[0m measured radius decides rocky classification before minimum-mass fallback (715.042µs)
+      at [2msim/worlds_test.ail:92:1[0m
+  [32m✓[0m dwarf mass relation is never used as a white-dwarf or giant mass estimate (743.958µs)
+      at [2msim/worlds_test.ail:104:1[0m
+  [32m✓[0m synthetic relative Kepler orbits include stellar and planetary GM (3.734625ms)
+      at [2msim/worlds_test.ail:116:1[0m
+
+──────────────────────────────────────────────────
+[32m✓[0m [1mAll tests passed![0m
+
+10 tests: 10 passed, 0 failed, 0 skipped (427.29104ms)
+  [32m✓ Passed:[0m 10
+  [31m✗ Failed:[0m 0
+
+[1mSeed:[0m
+  mode: derived
+  master seed: 0
+  derivation: ailang-property-seed-v1
+  replay: ailang test --seed 0 sim/worlds_test.ail
+

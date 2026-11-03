@@ -1,0 +1,118 @@
+→ Running tests in sim/worlds_test.ail, sim/protocol_worlds_test.ail, sim/census_test.ail, sim/calibrate_test.ail, sim/calibrate_search_test.ail
+→ bytecode: 48 named-test bodies ran on the VM, 0 fell back to the evaluator; inline tests and properties run on the evaluator
+
+[1mTest Results[0m
+Module: All Tests
+
+[1mTests:[0m
+  [32m✓[0m W2.5 baseline median gives about 0.05 civilisations alive within 1000 ly (187.882125ms)
+      at [2msim/worlds_test.ail:26:1[0m
+  [32m✓[0m AC9 measured hosts keep every original scalar, provenance and missingness, no extras (1.293834ms)
+      at [2msim/worlds_test.ail:37:1[0m
+  [32m✓[0m AC10/11 keyed population reruns identically and synthesized planets are local-only (6.260542ms)
+      at [2msim/worlds_test.ail:45:1[0m
+  [32m✓[0m AC15 strict RV survey veto applies only FGK V<8 within 25pc (420.083µs)
+      at [2msim/worlds_test.ail:51:1[0m
+  [32m✓[0m AC14 other stellar classes cannot get a biosphere under any dial (1.345917ms)
+      at [2msim/worlds_test.ail:56:1[0m
+  [32m✓[0m AC14 measured and synthetic M-dwarf rocky HZ planets are HabitabilityDebated (623.174417ms)
+      at [2msim/worlds_test.ail:71:1[0m
+  [32m✓[0m AC14 TRAPPIST-1 b constraint asserts NotHabitable and Sterile across 128 seeds and baseline/Teeming dials (61.589167ms)
+      at [2msim/worlds_test.ail:88:1[0m
+  [32m✓[0m measured radius decides rocky classification before minimum-mass fallback (486.416µs)
+      at [2msim/worlds_test.ail:90:1[0m
+  [32m✓[0m dwarf mass relation is never used as a white-dwarf or giant mass estimate (411.208µs)
+      at [2msim/worlds_test.ail:102:1[0m
+  [32m✓[0m synthetic relative Kepler orbits include stellar and planetary GM (1.511125ms)
+      at [2msim/worlds_test.ail:114:1[0m
+  [32m✓[0m AC17 target includes measured planets, system is proximity-only, hosts/meta full-state-only (326.443208ms)
+      at [2msim/protocol_worlds_test.ail:16:1[0m
+  [32m✓[0m AC17 synthesised planets only appear within 0.1ly, physical fields only (3.856125ms)
+      at [2msim/protocol_worlds_test.ail:24:1[0m
+  [32m✓[0m 2.17 local HZ planets disclose Earth-twin radius/mass assumptions in their citation (1.124833ms)
+      at [2msim/protocol_worlds_test.ail:30:1[0m
+  [32m✓[0m W2.2 totals count all systems, labels and immutable biosphere backgrounds (330.011708ms)
+      at [2msim/census_test.ail:30:1[0m
+  [32m✓[0m AC10/11 sorted census is byte stable; appended rows and shuffled traversal preserve each system (1.079804s)
+      at [2msim/census_test.ail:36:1[0m
+  [32m✓[0m growth validation rejects an ambiguous duplicate identity instead of silently taking the last row (2.402625ms)
+      at [2msim/census_test.ail:37:1[0m
+  [32m✓[0m AC12 common random ranks nest life and technological histories across kinder dials (563.502958ms)
+      at [2msim/census_test.ail:41:1[0m
+  [32m✓[0m AC9 measured-host census keeps exact known population and no synthesized additions (945.333µs)
+      at [2msim/census_test.ail:49:1[0m
+  [32m✓[0m AC14/15 census audit rejects wrong M-dwarf labels and a synthetic RV-limit violation (350.528416ms)
+      at [2msim/census_test.ail:65:1[0m
+  [32m✓[0m AC13 same star list: 64 keyed universes agree with all four analytic moments within 4 sigma (1m7.461738917s)
+      at [2msim/census_test.ail:73:1[0m
+  [32m✓[0m analytic onset and remnant probabilities clip exactly at both finite-window edges (770.125µs)
+      at [2msim/census_test.ail:84:1[0m
+  [32m✓[0m census JSON parser preserves full scalars, labels, long metadata, missingness and curated/archive differences (862.375µs)
+      at [2msim/census_test.ail:100:1[0m
+  [32m✓[0m census JSON parser rejects missing source fields and count mismatches without defaults (1.156625ms)
+      at [2msim/census_test.ail:107:1[0m
+  [32m✓[0m census parser's complete metadata witness kills a middle-record long-reference mutation (6.234708ms)
+      at [2msim/census_test.ail:114:1[0m
+  [32m✓[0m exact biological marginal matches independent complete population runs across presets (900.886541ms)
+      at [2msim/census_test.ail:128:1[0m
+  [32m✓[0m catalogue growth recognizes unmatched snapshot Gaia identities before synthesizing a measured host (885.084µs)
+      at [2msim/census_test.ail:136:1[0m
+  [32m✓[0m nesting checks every physical field and complete citation before comparing hidden histories (768.708µs)
+      at [2msim/census_test.ail:138:1[0m
+  [32m✓[0m catalogue host index preserves the first measured value and archive-identity fallback (1.040292ms)
+      at [2msim/census_test.ail:149:1[0m
+  [32m✓[0m prepared history plans preserve every uniform across seeds, RV vetoes and measured constraints (168.073ms)
+      at [2msim/census_test.ail:173:1[0m
+  [32m✓[0m retarded observations use emission epoch, never arrival truth (11.317041ms)
+      at [2msim/calibrate_test.ail:18:1[0m
+  [32m✓[0m an unconfigured or dark detector creates no candidates (714.167µs)
+      at [2msim/calibrate_test.ail:25:1[0m
+  [32m✓[0m policies receive candidate data only; technology wins over a nearer biosphere (802.416µs)
+      at [2msim/calibrate_test.ail:31:1[0m
+  [32m✓[0m no detector gives an explicitly unfinished 100-year voyage and no encounter claims (568.709µs)
+      at [2msim/calibrate_test.ail:36:1[0m
+  [32m✓[0m exact small-Poisson superposition has its analytic intensity within four standard errors (124.745416ms)
+      at [2msim/calibrate_test.ail:42:1[0m
+  [32m✓[0m exponential-disc positions stay in the requested sphere (19.981167ms)
+      at [2msim/calibrate_test.ail:47:1[0m
+  [32m✓[0m baseline and provisional preset rows replay exactly (1.012542ms)
+      at [2msim/calibrate_test.ail:48:1[0m
+  [32m✓[0m AC4: analytic intensities 1 through 10000 match 128 independent realisations (1.993827208s)
+      at [2msim/calibrate_test.ail:61:1[0m
+  [32m✓[0m the thinned history envelope covers far-side retarded observations and epoch-window boundaries (1.31375ms)
+      at [2msim/calibrate_test.ail:65:1[0m
+  [32m✓[0m local cells replay independently of query ordering (3.214542ms)
+      at [2msim/calibrate_test.ail:71:1[0m
+  [32m✓[0m adding outer shells preserves every inner world's position and technological onset (4.065541ms)
+      at [2msim/calibrate_test.ail:78:1[0m
+  [32m✓[0m the realised marked process agrees with the same closed-form disc Lambda (98.321ms)
+      at [2msim/calibrate_test.ail:86:1[0m
+  [32m✓[0m arriving before the technological ending counts one biosphere visit and one living contact (674.542µs)
+      at [2msim/calibrate_test.ail:94:1[0m
+  [32m✓[0m arrival exactly at endT is a remnant and still an active biosphere, never a living contact (749.042µs)
+      at [2msim/calibrate_test.ail:99:1[0m
+  [32m✓[0m remnant light can reveal life; ecocide and post-biological transcendence do not imply it (356.5µs)
+      at [2msim/calibrate_test.ail:105:1[0m
+  [32m✓[0m 20000 positions match the analytic disc radial CDF and north/south symmetry (1.115884417s)
+      at [2msim/calibrate_test.ail:117:1[0m
+  [32m✓[0m grid uses quarter-dex offsets and the shared minds/technology direction (56.206166ms)
+      at [2msim/calibrate_search_test.ail:8:1[0m
+  [32m✓[0m both binding strategies must meet every encounter band (398.5µs)
+      at [2msim/calibrate_search_test.ail:12:1[0m
+  [32m✓[0m the default's five-contact floor has no invented upper acceptance bound (198.208µs)
+      at [2msim/calibrate_search_test.ail:20:1[0m
+
+──────────────────────────────────────────────────
+[32m✓[0m [1mAll tests passed![0m
+
+48 tests: 48 passed, 0 failed, 0 skipped (1m15.519761289s)
+  [32m✓ Passed:[0m 48
+  [31m✗ Failed:[0m 0
+
+[1mSeed:[0m
+  mode: derived
+  master seed: 0
+  derivation: ailang-property-seed-v1
+  replay: ailang test --seed 0 sim/worlds_test.ail sim/protocol_worlds_test.ail sim/census_test.ail sim/calibrate_test.ail sim/calibrate_search_test.ail
+
+census: 5685 systems; 64 seeds/preset; moments=true; labels/RV=true; nested=true; growthStable=true; report=.godot/tmp/worlds/census.json
