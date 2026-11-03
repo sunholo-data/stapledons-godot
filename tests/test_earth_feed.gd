@@ -72,14 +72,18 @@ func _run() -> void:
 	f.refresh(sv)
 	check("a sky week says so (%s)" % f.caption.text, f.caption.text == "the sky over home" and f.shown_key == "sky:17")
 
-	# bands: ghosts of the flicked-past weeks only when D is fast; the tint warm or cool
+	# bands: ghosts of the flicked-past weeks only when D is fast. R3-TRUE-PROCESSED (standing order
+	# 2026-10-30): no colour wash at any D. A frame decoded from Earth's link keeps the colours Earth
+	# encoded; the shift is in the time rate (and the carrier), never in the picture (RS-Q5).
 	f.refresh(view({"rate": 14.107, "feed": feed(40, "library", "town-market", "market day", 5)}))
 	f.refresh(view({"rate": 14.107, "feed": feed(41, "sky", "town-market", "market day")}))
-	check("fast: ghosts of the weeks that flicked past", f.ghosts[0].visible and f.tint.visible and f.tint.color.b > f.tint.color.r)
+	check("fast: ghosts of the weeks that flicked past", f.ghosts[0].visible)
+	check("fast: the picture as decoded, no wash", unwashed(f))
 	f.refresh(view({"rate": 0.070888, "feed": feed(42, "library", "town-market", "market day", 6)}))
-	check("slow: no ghosts, a warm wash", not f.ghosts[0].visible and f.tint.visible and f.tint.color.r > f.tint.color.b)
+	check("slow: no ghosts, the picture as decoded, no wash", not f.ghosts[0].visible and unwashed(f))
 	f.refresh(view({"rate": 1.0}))
-	check("real time: no tint, no ghosts", not f.tint.visible and not f.ghosts[0].visible)
+	check("real time: no wash, no ghosts", unwashed(f) and not f.ghosts[0].visible)
+	check("the feed has no tint layer at all", not ("tint" in f) and f.find_children("*", "ColorRect", false, false).is_empty())
 
 	# out of beam
 	var out := view({"in_beam": false, "last_feed": feed(2, "library", "town-market", "market day", 3), "feed": feed(400, "library", "town-market", "market day", 7),
@@ -289,3 +293,13 @@ func test_live(root: Control) -> void:
 	DirAccess.remove_absolute(dir)
 	g.queue_free()
 	await process_frame
+
+
+## R3-TRUE-PROCESSED: the picture is drawn exactly as decoded: no wash over it, no modulation.
+func unwashed(f: EarthFeed) -> bool:
+	if f.picture.self_modulate != Color(1, 1, 1) or f.picture.modulate != Color(1, 1, 1) or f.modulate != Color(1, 1, 1):
+		return false
+	for c: Node in f.get_children():
+		if c is ColorRect and (c as ColorRect).visible and (c as ColorRect).color.a > 0.0:
+			return false
+	return true
