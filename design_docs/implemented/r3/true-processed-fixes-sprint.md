@@ -1,6 +1,6 @@
 # Sprint R3-TRUE-PROCESSED: the feed's colour and the ship's star light made exact
 
-**Design doc:** [true-processed-fixes.md](true-processed-fixes.md). **Sprint JSON:** `.ailang/state/sprints/sprint_R3-TRUE-PROCESSED.json`.
+**Design doc:** [true-processed-fixes.md](true-processed-fixes.md). **Landed** 2026-11-03 in PR #374 (merge `68796623`). **Sprint JSON:** `.ailang/state/sprints/sprint_R3-TRUE-PROCESSED.json`.
 **Branch:** `feat/true-processed-fixes` (clone `~/dev/sunholo-data/stapledons-godot-true-processed`, from main `6d92d2cb`).
 **Approval:** ledger D-144 (Mark, attended 2026-11-02) approves executing this work as an attended parallel agent; the visual landing stops for Mark's render review, the PR stays a draft.
 **Duration:** one working session (about 6 hours). **Risk:** medium (a visible change in developer launches; goldens see only the sky).
