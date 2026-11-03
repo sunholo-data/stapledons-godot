@@ -16,6 +16,12 @@ const FAMILIES := ["spire", "lift", "shrine", "archive_terminal", "archive_detai
 const BODY_OFF_DEG := 30.0
 const CAPTAIN_M := 1.754 # the captain sprite's real height (F1, D-94)
 const ZOOM_STATIONS := ["navigation", "voyage", "crew", "comms"] # R3-COMMS-V2 CV4: comms faces the bow under its screen
+## R3-COMMS-V2 CV6 (design §D5, AC8): a monitor is readable from a pose when its face centre is in frame,
+## the face turns to the camera (cos >= MONITOR_COS), it is >= MONITOR_PX tall at 720p, and 2 of 3 probe
+## rays to its face are clear after fades. The signal screen must read from these named places.
+const MONITOR_PX := 40.0
+const MONITOR_COS := 0.3
+const SIGNAL_PLACES := ["spawn", "chair", "comms", "voyage"]
 
 var demo: Node
 var dl: DeckLayout
@@ -180,7 +186,90 @@ func metrics() -> Dictionary:
 			st[id]["zoom_pole_px"] = [snappedf(pole.x, 1), snappedf(pole.y, 1)]
 			st[id]["zoom_pole_in_frame"] = (not is_nan(pole.x)) and Rect2(Vector2.ZERO, PX).has_point(pole)
 	m["stations"] = st
+	m["monitors"] = monitor_metrics(pts)
 	return m
+
+
+## The ambient monitors (demo.monitors; none on a deck without them): each one's Bow and Astern readable
+## share over every walk sample with its mean height when readable, whether it stands on the walk, and
+## its reading from the named places in the Bow view.
+func monitor_metrics(pts: PackedVector3Array) -> Dictionary:
+	var mons: Variant = demo.get("monitors")
+	var out := {}
+	if not mons is Array or (mons as Array).is_empty():
+		return out
+	var dir: CameraDirector = demo.director
+	var places := {"spawn": dl.spawn(), "chair": chair_foot()}
+	for sid: String in ["comms", "voyage"]:
+		var u: Variant = use_point(sid)
+		if u is Vector3:
+			places[sid] = u
+	for mon: Node3D in mons:
+		var r := {}
+		for vid: String in ["bow", "astern"]:
+			var v := view(vid)
+			var ok := 0
+			var px_sum := 0.0
+			for p: Vector3 in pts:
+				var s := monitor_score(dir.walk_pose(v, p), p, mon)
+				if s.readable:
+					ok += 1
+					px_sum += float(s.px)
+			r[vid] = {"readable_share": snappedf(float(ok) / maxf(pts.size(), 1), 0.001), "mean_px": snappedf(px_sum / maxf(ok, 1), 0.1)}
+		var at := {}
+		for k: String in places:
+			var s := monitor_score(dir.walk_pose(view("bow"), places[k]), places[k], mon)
+			at[k] = {"readable": s.readable, "px": snappedf(float(s.px), 0.1), "why": s.why}
+		r["at_bow"] = at
+		var b := mon.global_transform.basis
+		var c := mon.global_transform.origin
+		var w := BridgeMonitor.FACE_M.x * 0.5
+		r["on_walk"] = [c, c + b.x.normalized() * w, c - b.x.normalized() * w].any(func(q: Vector3) -> bool: return demo.walk_bridge.is_walkable(Vector3(q.x, 82.0, q.z)))
+		out[str(mon.get("id"))] = r
+	return out
+
+
+func chair_foot() -> Vector3:
+	var chair := demo.geometry.find_child("captain_chair", true, false) as MeshInstance3D
+	if chair == null:
+		return dl.spawn()
+	var cbox: AABB = chair.global_transform * chair.mesh.get_aabb()
+	return demo.walk_bridge.closest_walkable(Vector3(cbox.get_center().x, 82.0, cbox.end.z + 0.6), 2.0)
+
+
+## One monitor from one pose (see MONITOR_PX): {readable, px, why}.
+func monitor_score(pose: Transform3D, foot: Vector3, mon: Node3D) -> Dictionary:
+	var b := mon.global_transform.basis
+	var c := mon.global_transform.origin
+	var n := b.z.normalized()
+	var fw := BridgeMonitor.FACE_M.x
+	var fh := BridgeMonitor.FACE_M.y
+	if n.dot((pose.origin - c).normalized()) < MONITOR_COS:
+		return {"readable": false, "px": 0.0, "why": "edge-on or behind"}
+	var top := CameraDirector.screen_point(pose, c + b.y.normalized() * fh * 0.5, PX)
+	var bot := CameraDirector.screen_point(pose, c - b.y.normalized() * fh * 0.5, PX)
+	var mid := CameraDirector.screen_point(pose, c, PX)
+	if is_nan(mid.x) or is_nan(top.x) or is_nan(bot.x) or not Rect2(Vector2.ZERO, PX).has_point(mid):
+		return {"readable": false, "px": 0.0, "why": "out of frame"}
+	var hpx := top.distance_to(bot)
+	if hpx < MONITOR_PX:
+		return {"readable": false, "px": hpx, "why": "too small"}
+	var fading: Array = demo.director.occluders_for(pose, foot)
+	var clear := 0
+	for off: Vector2 in [Vector2.ZERO, Vector2(-0.35, 0.3), Vector2(0.35, -0.3)]:
+		var q := c + b.x.normalized() * off.x * fw + b.y.normalized() * off.y * fh + n * 0.06
+		var h := hit(pose.origin, q)
+		if h.is_empty():
+			clear += 1
+			continue
+		var col: Node = h.collider
+		for f: Node in fading:
+			if col == f or col.get_parent() == f or f.is_ancestor_of(col):
+				clear += 1
+				break
+	if clear < 2:
+		return {"readable": false, "px": hpx, "why": "blocked"}
+	return {"readable": true, "px": hpx, "why": ""}
 
 
 ## The console zoom: the game's focus_pose on a shipped export; with an in-engine layout, the same
@@ -273,6 +362,24 @@ static func failures(m: Dictionary, t: Dictionary) -> PackedStringArray:
 	var cpx := float(sp.captain_px)
 	if cpx < float(t.captain_px[0]) or cpx > float(t.captain_px[1]):
 		out.append("captain-px: the captain is %.1f px tall in the Bow view at 720p (band %s)" % [cpx, t.captain_px])
+	out.append_array(monitor_failures(m.get("monitors", {}), t))
+	return out
+
+
+## R3-COMMS-V2 CV6 (AC8): the ambient monitors' failures, on a deck that has them (none otherwise).
+static func monitor_failures(mons: Dictionary, t: Dictionary) -> PackedStringArray:
+	var out := PackedStringArray()
+	if not mons.is_empty():
+		var low := mons.keys().filter(func(k: String) -> bool: return float(mons[k].bow.readable_share) < float(t.monitor_readable_min))
+		if not low.is_empty():
+			out.append("monitor-readable: monitors under a %.2f Bow readable share: %s" % [t.monitor_readable_min, low.map(func(k: String) -> String: return "%s %.3f" % [k, mons[k].bow.readable_share])])
+		var walk := mons.keys().filter(func(k: String) -> bool: return mons[k].on_walk)
+		if not walk.is_empty():
+			out.append("monitor-walk: monitors standing on the walk: %s" % [walk])
+		if mons.has("signal"):
+			var miss := SIGNAL_PLACES.filter(func(k: String) -> bool: return not mons.signal.at_bow.get(k, {}).get("readable", false))
+			if not miss.is_empty():
+				out.append("monitor-signal: the signal screen does not read (>= %d px) from %s" % [int(MONITOR_PX), miss])
 	return out
 
 
@@ -286,4 +393,8 @@ static func summary(m: Dictionary) -> PackedStringArray:
 	out.append("spawn %s open %.2f m then %s; near Bow %.3f Astern %.3f (lift %.3f); captain %.1f px; body %s" % [m.spawn.at_gltf, m.spawn.open_ahead_m, m.spawn.first_hit, m.spawn.near_bow.share, m.spawn.near_astern.share, m.spawn.near_astern.lift, m.spawn.captain_px, m.spawn.body_clear_port_stbd])
 	for id: String in st:
 		out.append("station %s use %s faces_bow %s clear %s fades %s body %s zoom_pole %s" % [id, st[id].use_gltf, st[id].faces_bow, st[id].clear, st[id].fades, st[id].body_clear_port_stbd, st[id].get("zoom_pole_in_frame", "-")])
+	var mons: Dictionary = m.get("monitors", {})
+	for id: String in mons:
+		out.append("monitor %s bow %.3f (%.1f px) astern %.3f on_walk %s from %s" % [id, mons[id].bow.readable_share, mons[id].bow.mean_px, mons[id].astern.readable_share, mons[id].on_walk,
+			(mons[id].at_bow as Dictionary).keys().map(func(k: String) -> String: return "%s %s" % [k, ("%.0f px" % mons[id].at_bow[k].px) if mons[id].at_bow[k].readable else mons[id].at_bow[k].why])])
 	return out

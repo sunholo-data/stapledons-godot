@@ -53,6 +53,11 @@ capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-station-capture.log && grep -q '^comms-station-capture: 4 frames, 0 failures$$' $(SCRATCH)/comms-station-capture.log || { echo "comms-station-capture: FAILED (log $(SCRATCH)/comms-station-capture.log)"; exit 1; }
 
 # Gate2 for the shipped feed/strip and map beams. Preserves all407 existing main cases.
+.PHONY: comms-golden
+comms-golden: ## R3-COMMS-V2 G-CV (gate 2): the waterfall's trace, line and bracket and the frame diagram's events drawn by the GPU against CPU values (GPU window)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --log-file $(SCRATCH)/comms-golden-engine.log --script tools/comms_golden.gd > $(SCRATCH)/comms-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|comms-golden)' $(SCRATCH)/comms-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-golden.log && grep -q '^comms-golden: 17 passed, 0 failures$$' $(SCRATCH)/comms-golden.log
+golden: comms-golden
 .PHONY: earth-link-golden
 earth-link-golden:
 	@mkdir -p $(SCRATCH)
@@ -120,6 +125,12 @@ test: comms-waterfall-test
 # anchors facing the deck, camera occluders, every number on every face a binding on the real sim at
 # 2.17, faces following the world, rendering gated to on-screen (tests/test_bridge_monitors.gd).
 .PHONY: bridge-monitors-test
+.PHONY: monitor-rail-test
+monitor-rail-test: import ## R3-COMMS-V2 (Mark 2026-11-03): no monitor frame, stalk or face crosses the bow rail or any other bridge prop; a monitor pushed into the rail is caught
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_monitor_rail.gd > $(SCRATCH)/monitor-rail.log 2>&1; rc=$$?; grep -E '^(FAIL|monitor-rail)' $(SCRATCH)/monitor-rail.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/monitor-rail.log && grep -q '^monitor-rail: [0-9]* passed, 0 failures$$' $(SCRATCH)/monitor-rail.log
+test: monitor-rail-test
+
 bridge-monitors-test: import ## R3-COMMS-V2 CV6: the ambient bridge monitors (anchors, occluders, bound faces, gated rendering)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_bridge_monitors.gd > $(SCRATCH)/bridge-monitors.log 2>&1; rc=$$?; grep -E '^(FAIL|bridge-monitors)' $(SCRATCH)/bridge-monitors.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bridge-monitors.log && grep -q '^bridge-monitors: [0-9]* passed, 0 failures$$' $(SCRATCH)/bridge-monitors.log
@@ -131,3 +142,4 @@ test: bridge-monitors-test
 COMMS_TAG ?= mid
 capture-comms-v2: import ## R3-COMMS-V2: the bridge, monitors and comms station on the live sim -> renders/comms_v2/$(COMMS_TAG)/*.png (GPU window; open every frame)
 	@$(GODOT_SIM) --path . --script tools/comms_v2_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG) 2>&1 | grep -E '^(shot|comms-v2-capture)'
+	@$(GODOT_SIM) --path . --script tools/comms_station_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG) 2>&1 | grep -E '^comms-station-capture'

@@ -29,9 +29,15 @@ var now := Vector2.ZERO # (clock.t, earth.light_age_years): the ship now
 var span := Rect2() # (t, ly) shown
 var recs: Array = [] # earth_log.records (2.17), oldest first
 var frame := -1 # the selected record (frame mode), -1 for the strip
+var week := -1 # D1.3: a week inside the record (a row of earth_weeks.weeks), -1 for its newest
 var view: Dictionary = {}
 var tags: Array[ComposedBinding] = [] # frame mode: Earth date sent, ship date arrived, x D
 var inset := FrameInset.new()
+## The frame diagram's layers (all in play). The GPU golden (tools/comms_golden.gd, make golden) draws one
+## at a time to find each event's rendered position: AXIS Earth's line, TRACK the ship, RAY the light,
+## EVENTS the send and arrival dots, THEN the ship when Earth sent it, LABELS the tags and the inset.
+enum { L_AXIS = 1, L_TRACK = 2, L_RAY = 4, L_EVENTS = 8, L_THEN = 16, L_LABELS = 32, L_BACK = 64 }
+var layers := 127
 
 
 func _init() -> void:
@@ -68,6 +74,7 @@ const FRAME_HEIGHT := 132.0
 var strip_height := -1.0
 func set_frame(i: int) -> void:
 	frame = i if i >= 0 and i < recs.size() else -1
+	week = -1
 	if strip_height < 0.0:
 		strip_height = custom_minimum_size.y
 	custom_minimum_size.y = FRAME_HEIGHT if frame >= 0 else strip_height
@@ -133,7 +140,8 @@ const WIDTHS := {"ship": 3.0, "plan": 1.5, "reply": 2.0, "wait": 7.0, "light": 1
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(StapledonTheme.INK, 0.85))
+	if layers & L_BACK:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(StapledonTheme.INK, 0.85))
 	if frame >= 0:
 		_draw_frame()
 		return
@@ -210,35 +218,40 @@ func _draw_frame() -> void:
 	var plot: Rect2 = box.plot
 	var font := get_theme_default_font()
 	var w: Dictionary = EarthFeed.copy().words
-	draw_line(Vector2(plot.position.x, plot.end.y), Vector2(plot.end.x, plot.end.y), StapledonTheme.OCHRE_LIGHT, 3.0, true)
-	draw_string(font, Vector2(plot.end.x - 44.0, plot.end.y - 6.0), str(w.earth), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.OCHRE_LIGHT)
+	if layers & L_AXIS:
+		draw_line(Vector2(plot.position.x, plot.end.y), Vector2(plot.end.x, plot.end.y), StapledonTheme.OCHRE_LIGHT, 3.0, true)
+		draw_string(font, Vector2(plot.end.x - 44.0, plot.end.y - 6.0), str(w.earth), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.OCHRE_LIGHT)
 	var pts := PackedVector2Array()
 	for q: Dictionary in recs:
 		var qa: Dictionary = q.get("arrived", {})
 		var p := eq(box, Vector2(float(qa.get("t", 0.0)), float(qa.get("ly", 0.0))))
 		if float(qa.get("t", 0.0)) <= float(arr.get("t", 0.0)) and float(qa.get("t", 0.0)) >= float(box.t0):
 			pts.append(p)
-	if pts.size() > 1:
+	if pts.size() > 1 and layers & L_TRACK:
 		draw_polyline(pts, StapledonTheme.TEAL_LIGHT, 5.0, true)
 	var sent := eq(box, Vector2(float(r.get("sent", {}).get("t", 0.0)), 0.0))
 	var hit := eq(box, Vector2(float(arr.get("t", 0.0)), float(arr.get("ly", 0.0))))
-	draw_line(sent, hit, StapledonTheme.CREAM, 2.0, true)
-	draw_string(font, (sent + hit) * 0.5 + Vector2(8, 4), str(w.get("light", "light")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.CREAM)
+	if layers & L_RAY:
+		draw_line(sent, hit, StapledonTheme.CREAM, 2.0, true)
+	if layers & L_LABELS:
+		draw_string(font, (sent + hit) * 0.5 + Vector2(8, 4), str(w.get("light", "light")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.CREAM)
 	var then: Variant = r.get("ship_at_sent")
-	if then is Dictionary:
+	if then is Dictionary and layers & L_THEN:
 		var tp := eq(box, Vector2(float(then.get("t", 0.0)), float(then.get("ly", 0.0))))
 		draw_dashed_line(sent, tp, Color(StapledonTheme.CREAM, 0.35), 1.0, 4.0)
 		draw_arc(tp, 6.0, 0.0, TAU, 24, StapledonTheme.TEAL_LIGHT, 2.0, true)
-		draw_string(font, tp + Vector2(10, 4), str(w.get("ship_then", "ship then")), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(StapledonTheme.TEAL_LIGHT, 0.85))
-	draw_circle(sent, 6.0, StapledonTheme.OCHRE_LIGHT)
-	draw_circle(hit, 7.0, StapledonTheme.TEAL_LIGHT)
+		if layers & L_LABELS:
+			draw_string(font, tp + Vector2(10, 4), str(w.get("ship_then", "ship then")), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(StapledonTheme.TEAL_LIGHT, 0.85))
+	if layers & L_EVENTS:
+		draw_circle(sent, 6.0, StapledonTheme.OCHRE_LIGHT)
+		draw_circle(hit, 7.0, StapledonTheme.TEAL_LIGHT)
 
 
 ## Frame mode's numbers, each a binding on the record's fields, beside its event.
 func _place_tags() -> void:
-	inset.visible = frame >= 0
+	inset.visible = frame >= 0 and layers & L_LABELS != 0
 	for t in tags:
-		t.visible = frame >= 0
+		t.visible = frame >= 0 and layers & L_LABELS != 0
 	if frame < 0 or size.x <= 0.0:
 		return
 	if tags.is_empty(): # made on first use, so no binding is ever without a field (the display audit)
@@ -255,7 +268,11 @@ func _place_tags() -> void:
 	var box := _frame_box()
 	var w: Dictionary = EarthFeed.copy().words
 	var base := "earth_log.records.%d." % frame
-	tags[0].compose([str(w.get("sent", "sent")) + " ", [base + "earth_from_year", "comms_clock"]])
+	# the record's ray (its weeks arrived within one ship day), labelled with the selected week's own date
+	var date := base + "earth_year"
+	if not EarthFeed.week_row(view, r, week).is_empty():
+		date = "earth_weeks.weeks.%d.earth_year" % week
+	tags[0].compose([str(w.get("sent", "sent")) + " ", [date, "comms_clock"]])
 	tags[1].compose([str(w.get("arrived", "arrived")) + " ", [base + "arrived.tau", "comms_clock"]])
 	tags[2].compose(["×", [base + "arrived.rate", "sci"]])
 	for t in tags:

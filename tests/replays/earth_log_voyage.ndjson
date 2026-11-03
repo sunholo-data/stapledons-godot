@@ -42,3 +42,4 @@
 {"v":2,"type":"input","tick":40,"dtau":0.02,"intents":[]}
 {"v":2,"type":"input","tick":41,"dtau":0.02,"intents":[]}
 {"v":2,"type":"input","tick":42,"dtau":0.02,"intents":[]}
+{"v":2,"type":"input","tick":43,"dtau":0,"intents":[{"k":"earth_weeks","from":0,"to":100000}]}

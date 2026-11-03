@@ -9,7 +9,7 @@ extends Control
 ##                painted frames already in the AI cache, the sky); in full where there is room, a slit
 ##                where records crowd, with offset frames behind it when it holds several weeks
 ##   static       the ship-time span of unbeamed records
-##   stamps       ComposedBindings: earth_log.records.<i>.earth_from_year (ochre) and .arrived.tau
+##   stamps       ComposedBindings: earth_log.records.<i>.earth_year (ochre: the shown week's own date) and .arrived.tau
 ##                (teal), both comms_clock; no counts, no totals
 ##   line         the Earth time received (earth_to_year) against ship time: its slope is the rate
 ## Selecting a picture emits week_selected(i) (the console's frame diagram); selecting it again, or
@@ -142,7 +142,7 @@ func _draw() -> void:
 			draw_rect(rect, StapledonTheme.CORAL if k == selected else Color(StapledonTheme.CREAM, 0.5), false, 3.0 if k == selected else 1.0)
 			_full.append([k, cx])
 			if stamp + 1 < STAMP_POOL:
-				_place_stamp(_stamp(stamp), k, "earth_from_year", cx, band.end.y + 2.0, "HUDCaption")
+				_place_stamp(_stamp(stamp), k, "earth_year", cx, band.end.y + 2.0, "HUDCaption")
 				_place_stamp(_stamp(stamp + 1), k, "arrived.tau", cx, band.end.y + 14.0, "HUDAccent")
 				stamp += 2
 			last_full = cx

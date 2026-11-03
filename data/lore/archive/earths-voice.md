@@ -25,3 +25,5 @@ out, thirty light-years across, and the light's path through home is 60 ly
 longer than your own. You wait that many years at the new port before Earth's
 voice finds you again. Until then, Earth keeps speaking toward the place you
 left.
+
+Every picture from home is a ray of light that left Earth and caught you.

@@ -8,6 +8,9 @@ extends SceneTree
 ##   zoom_*       the comms and crew console zooms (the game's focus pose), the screen above the desk
 ##   station_*    the comms station's detail view (feed, waterfall, history wall, light strip) under way
 ##   plan         top down, bow up
+##   rail_*       close-ups of the bow rail at the signal and course monitors (Mark 2026-11-03: the rail
+##                must never pass through a screen): from the rim walk beside each, eye height, looking
+##                along the rail under the screen to its stalk
 ## Writes renders/comms_v2/<tag>/*.png. Run: make capture-comms-v2 (open every frame).
 
 const PX := Vector2i(1280, 720)
@@ -46,6 +49,8 @@ func _run() -> void:
 	await shot_at("at_rest_bow_chair", "bow", chair())
 	await shot_at("at_rest_bow_comms", "bow", demo.consoles.stations.comms.use)
 	await plan()
+	await rail_closeup("rail_signal", -30.0, -1.0)
+	await rail_closeup("rail_course", 24.0, 1.0)
 	# commit at the helm, then fly into the cruise
 	var c: ShipConsoles = demo.consoles
 	c.go_to("navigation")
@@ -132,6 +137,23 @@ func station() -> void:
 		h.select(1)
 	c.escape()
 	step(6.0)
+
+
+## A close-up of the rail under monitor `bearing` (degrees, + starboard): the eye on the rim walk 7 deg to
+## one side (`side` -1 port, +1 starboard) at 1.5 m, looking at the rail's top under the screen's centre.
+func rail_closeup(name: String, bearing: float, side: float) -> void:
+	var at := func(b: float, r: float, h: float) -> Vector3: return Vector3(r * sin(deg_to_rad(b)), 82.0 + h, -r * cos(deg_to_rad(b)))
+	var cam := Camera3D.new()
+	demo.camera.get_parent().add_child(cam)
+	cam.fov = 60.0
+	var eye: Vector3 = at.call(bearing + side * 7.0, 20.2, 1.5)
+	var look: Vector3 = at.call(bearing, 21.2, 1.25)
+	cam.global_transform = Transform3D(Basis.looking_at(look - eye, Vector3.UP), eye)
+	cam.current = true
+	await save(name)
+	cam.current = false
+	demo.camera.current = true
+	cam.queue_free()
 
 
 func plan() -> void:

@@ -5,8 +5,10 @@ extends Node3D
 ## stand are a prop (Blender, bridge_monitors.glb, `monitor_<id>`); this node is its live face: a 16:9
 ## quad, 4.0 x 2.25 m, on the prop's screen anchor (the manifest's monitors.<id>.screen_ship_m and its
 ## facing), showing a BridgeScreens face rendered into a SubViewport.
-##   - the face renders only while the quad is on screen (VisibleOnScreenNotifier3D), the signal face
-##     every frame (its waterfall scrolls), the others at most REFRESH_HZ;
+##   - the face works only while the quad is on screen (VisibleOnScreenNotifier3D): off screen nothing
+##     refreshes or renders and the signal face's waterfall stops measuring and releases its audio taps;
+##     on screen the signal face refreshes at SIGNAL_HZ (one waterfall column each), the others at
+##     REFRESH_HZ;
 ##   - the quad is unshaded and casts no shadow (a screen gives light, it does not take it);
 ##   - the quad and the frame are camera occluders (family "monitor"): they fade when they would hide
 ##     the captain, like the rim fronds.
@@ -14,6 +16,7 @@ extends Node3D
 
 const FACE_M := Vector2(4.0, 2.25)
 const REFRESH_HZ := 10.0
+const SIGNAL_HZ := 30.0
 
 var id := ""
 var kind := ""
@@ -21,7 +24,12 @@ var face: Control = null
 var viewport := SubViewport.new()
 var quad := MeshInstance3D.new()
 var notifier := VisibleOnScreenNotifier3D.new()
-var on_screen := false
+var on_screen := false:
+	set(v):
+		if v != on_screen and face != null:
+			face.set_live(v)
+		on_screen = v
+var refreshes := 0 ## face refreshes (tests count them)
 var _since := 1e9
 var _view: Dictionary = {}
 var _receiver := true
@@ -54,6 +62,8 @@ func setup(monitor_id: String, k: String, centre: Vector3, toward: Vector3) -> v
 	notifier.aabb = AABB(Vector3(-FACE_M.x * 0.5, -FACE_M.y * 0.5, -0.05), Vector3(FACE_M.x, FACE_M.y, 0.1))
 	notifier.screen_entered.connect(func() -> void: on_screen = true)
 	notifier.screen_exited.connect(func() -> void: on_screen = false)
+	if Engine.is_editor_hint() and face != null:
+		face.set_live(true)
 	add_child(notifier)
 	var away := centre - Vector3(toward.x, centre.y, toward.z)
 	transform = Transform3D(Basis.looking_at(away, Vector3.UP), centre) # the quad's +Z faces the deck
@@ -71,9 +81,12 @@ func _process(dt: float) -> void:
 	if face == null or not (on_screen or Engine.is_editor_hint()):
 		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
-	if kind == "signal" or _since >= 1.0 / REFRESH_HZ:
-		_since = 0.0
+	var period := 1.0 / (SIGNAL_HZ if kind == "signal" else REFRESH_HZ)
+	if _since >= period - 1e-6:
+		_since = minf(_since - period, period) # keeps the rate, never bursts after a stall
+		refreshes += 1
 		face.refresh(_view, _receiver, _bed)
+		face.step()
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 

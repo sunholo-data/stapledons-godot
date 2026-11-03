@@ -8,7 +8,7 @@ extends Control
 ## plan EarthFeed.receiver_plan(D, false) gives. Over it:
 ##   - the Receiver's line at the carrier's rest frequency (data/ui/comms_feed.json waterfall.carrier_hz),
 ##     solid in the Receiver setting (what is heard), dashed in True (where a receiver would put it);
-##   - a bracket from the measured True carrier (the Carrier tap's peak, interpolated across bins) to the
+##   - a bracket from the measured True carrier (the Carrier tap's peak bin, refined by a Hann-window estimator) to the
 ##     line, with x earth.rate (a binding): the gap is the Doppler shift;
 ##   - outside hearing (the plan's `hearing`, receiver.audible) True plays nothing: the band goes dark
 ##     and an arrow at the edge says "above hearing" / "below hearing".
@@ -25,6 +25,16 @@ const BEACON := "home_beacon"
 const PEAK_FLOOR := 1e-3
 
 var bold := false
+## R3-COMMS-V2 (Codex review): a waterfall that is not live does no work at all: no columns, no
+## measurement, and it releases the shared taps. The bridge monitor turns it off while its screen is off
+## screen; `self_step` false means its owner calls step() (the monitor, at its 30 Hz).
+var live := true
+var self_step := true
+var steps := 0 ## columns drawn (tests count them)
+## The layers drawn (all in play). The GPU golden (tools/comms_golden.gd, make golden) draws one at a time
+## to find the trace, the Receiver's line and the bracket where the GPU put them.
+enum { L_PICTURE = 1, L_TRACE = 2, L_LINE = 4, L_BRACKET = 8, L_LABELS = 16 }
+var layers := 31
 var receiver := true
 var in_beam := false
 var rate := 1.0
@@ -32,7 +42,7 @@ var hearing := "" ## the True plan's: "", "above" or "below"
 var peak_hz := 0.0 ## the Carrier tap's measured peak (0 when nothing is there)
 ## CV5 legibility (Mark's mid-point note): the measured carrier's own trace, one point per column, drawn
 ## bright over the True picture so a carrier near the floor of hearing (28 Hz at x 0.07) still reads from
-## across the bridge. It is the measurement itself, not a model: no point where the tap is silent.
+## across the bridge. Each point is that frame's measurement, nothing held: no point where the tap is silent.
 var _trace := PackedFloat32Array()
 var view: Dictionary = {}
 var rate_tag: ComposedBinding = null
@@ -45,6 +55,7 @@ static var _bed: AudioStreamPlayer = null
 static var _beacon: AudioStreamPlayer = null
 static var _carrier: AudioStreamPlayer = null
 static var _bed_cue := ""
+static var _users := {} ## instance ids of the waterfalls that want the taps playing
 var _ramp: Gradient
 
 
@@ -66,6 +77,31 @@ func _init() -> void:
 func _ready() -> void:
 	SoundMix.ensure_layout()
 	_players()
+
+
+func _exit_tree() -> void:
+	_release()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+		_release()
+
+
+## Live or not: off, no columns, no measurement, and this waterfall stops wanting the taps.
+func set_live(on: bool) -> void:
+	live = on
+	set_process(on and self_step)
+	if not on:
+		_release()
+
+
+## This waterfall no longer wants the taps; they stop once no waterfall does.
+func _release() -> void:
+	_users.erase(get_instance_id())
+	if _users.is_empty() and _bed != null and is_instance_valid(_bed):
+		for p: AudioStreamPlayer in [_bed, _beacon, _carrier]:
+			p.stop()
 
 
 ## The shared tap players, made once under the tree's root (they outlive any one waterfall).
@@ -144,11 +180,14 @@ func refresh(v: Dictionary, rx: bool, bed_cue := "") -> void:
 ## The taps follow the True plan: playing at speed and pitch x D in beam and on screen, else stopped.
 func _follow(plan: Dictionary, bed_cue: String) -> void:
 	_players()
-	var on := in_beam and is_visible_in_tree() and hearing.is_empty()
+	var on := live and in_beam and is_visible_in_tree() and hearing.is_empty()
 	if not on:
-		for p: AudioStreamPlayer in [_bed, _beacon, _carrier]:
-			p.stop()
+		_users.erase(get_instance_id())
+		if _users.is_empty():
+			for p: AudioStreamPlayer in [_bed, _beacon, _carrier]:
+				p.stop()
 		return
+	_users[get_instance_id()] = true
 	var d := float(plan.get("rate", 1.0))
 	if _beacon.stream == null:
 		_beacon.stream = stream_of(BEACON)
@@ -165,64 +204,95 @@ func _follow(plan: Dictionary, bed_cue: String) -> void:
 			p.play()
 
 
-## The measured True carrier: the Carrier tap's strongest band, refined by a parabola over its
-## neighbours (a measurement technique; 0 when the tap is silent).
+## The analyser's bins: Godot's FFT_SIZE_4096 keeps 4096 magnitudes over 0 .. mix rate / 2 (5.38 Hz at
+## 44.1 kHz), Hann-windowed.
+const TAP_BINS := 4096.0
+const COARSE := 48
+
+
+static func bin_hz() -> float:
+	return AudioServer.get_mix_rate() * 0.5 / TAP_BINS
+
+
+## One analyser bin's magnitude (a range that maps to that bin alone).
+static func bin_mag(inst: AudioEffectSpectrumAnalyzerInstance, k: int) -> float:
+	var f := (float(k) + 0.5) * bin_hz()
+	return inst.get_magnitude_for_frequency_range(f, f).length()
+
+
+## A pure tone's frequency from its peak bin and the larger neighbour, for a Hann window (Grandke's
+## two-point estimator: with r = the neighbour / the peak, the tone sits (2r - 1) / (r + 1) bins toward
+## that neighbour). Exact for one tone; measured on the tap within 0.13 % from 20 Hz to 16 kHz.
+static func hann_peak(k: int, left: float, mid: float, right: float) -> float:
+	if mid <= 0.0:
+		return 0.0
+	var toward := 1.0 if right >= left else -1.0
+	var r := maxf(left, right) / mid
+	return (float(k) + toward * clampf((2.0 * r - 1.0) / (r + 1.0), 0.0, 1.0)) * bin_hz()
+
+
+## The measured True carrier: the Carrier tap's strongest bin over hearing (a coarse pass of range maxima,
+## then the bins of the best range), refined by hann_peak. 0 when the tap is silent: between Earth's pips
+## the keyed carrier is off, and that column has no measurement.
 func measure_peak() -> float:
 	var inst := SoundMix.tap("Carrier")
 	if inst == null or _carrier == null or not _carrier.playing:
 		return 0.0
-	var best := -1
-	var mags := PackedFloat32Array()
-	var steps := 600
-	for k in steps:
-		var f := F0 * pow(F1 / F0, float(k) / steps)
-		var g := F0 * pow(F1 / F0, float(k + 1) / steps)
-		mags.append(inst.get_magnitude_for_frequency_range(f, g).length())
-		if best < 0 or mags[k] > mags[best]:
+	var bw := bin_hz()
+	var k0 := maxi(int(F0 / bw), 1)
+	var k1 := mini(int(F1 / bw), int(TAP_BINS) - 2)
+	var span := ceili(float(k1 - k0 + 1) / COARSE)
+	var lo := k0
+	var top := -1.0
+	for c in COARSE:
+		var a := k0 + c * span
+		if a > k1:
+			break
+		var b := mini(a + span - 1, k1)
+		var m := inst.get_magnitude_for_frequency_range((a + 0.5) * bw, (b + 0.5) * bw).length()
+		if m > top:
+			top = m
+			lo = a
+	var best := lo
+	for k in range(lo, mini(lo + span, k1 + 1)):
+		if bin_mag(inst, k) > bin_mag(inst, best):
 			best = k
-	if best < 0 or mags[best] < PEAK_FLOOR: # between Earth's pips the keyed carrier is silent: no point
+	var mid := bin_mag(inst, best)
+	if mid < PEAK_FLOOR:
 		return 0.0
-	var off := 0.0
-	if best > 0 and best < steps - 1:
-		var a := mags[best - 1]
-		var b := mags[best]
-		var c := mags[best + 1]
-		var den := a - 2.0 * b + c
-		off = 0.5 * (a - c) / den if absf(den) > 1e-12 else 0.0
-	return F0 * pow(F1 / F0, (float(best) + 0.5 + clampf(off, -0.5, 0.5)) / steps)
+	return hann_peak(best, bin_mag(inst, best - 1), mid, bin_mag(inst, best + 1))
 
 
-## The trace's point: the median of the last five measured peaks (a receiver's tracking filter; it drops
-## the keying clicks' leakage, never invents a point: no carrier in the last five, no point).
-var _recent := PackedFloat32Array()
-func _median_peak() -> float:
-	_recent.append(peak_hz)
-	if _recent.size() > 5:
-		_recent.remove_at(0)
-	var on := Array(_recent).filter(func(h: float) -> bool: return h > 0.0)
-	if on.size() < 3:
-		return 0.0
-	on.sort()
-	return on[on.size() / 2]
-
-
-## One column per frame from the Antenna tap.
-func _process(_dt: float) -> void:
-	if not is_visible_in_tree():
-		return
-	var inst := SoundMix.tap("Antenna")
-	_img.blit_rect(_img, Rect2i(1, 0, _cols - 1, BANDS), Vector2i(0, 0))
-	for b in BANDS:
-		var f := F0 * pow(F1 / F0, float(b) / BANDS)
-		var g := F0 * pow(F1 / F0, float(b + 1) / BANDS)
-		var m := inst.get_magnitude_for_frequency_range(f, g).length() if inst != null and in_beam else 0.0
-		var db := linear_to_db(maxf(m, 1e-7))
-		_img.set_pixel(_cols - 1, BANDS - 1 - b, _ramp.sample(clampf((db + 80.0) / 70.0, 0.0, 1.0)))
-	_tex.update(_img)
-	peak_hz = measure_peak()
+## The trace's newest column: this frame's measurement, or no point (0) when there is none. Nothing is
+## held from earlier columns.
+func push_trace(hz: float) -> void:
 	for i in range(_cols - 1):
 		_trace[i] = _trace[i + 1]
-	_trace[_cols - 1] = _median_peak() if in_beam else 0.0
+	_trace[_cols - 1] = hz if hz > 0.0 else 0.0
+
+
+func _process(_dt: float) -> void:
+	if self_step:
+		step()
+
+
+## One column from the Antenna tap (every frame on the station; at the monitor's 30 Hz on the bridge).
+func step() -> void:
+	if not live or not is_visible_in_tree():
+		return
+	steps += 1
+	var inst := SoundMix.tap("Antenna")
+	_img.blit_rect(_img, Rect2i(1, 0, _cols - 1, BANDS), Vector2i(0, 0))
+	for band in BANDS:
+		var f := F0 * pow(F1 / F0, float(band) / BANDS)
+		var g := F0 * pow(F1 / F0, float(band + 1) / BANDS)
+		var m := inst.get_magnitude_for_frequency_range(f, g).length() if inst != null and in_beam else 0.0
+		var db := linear_to_db(maxf(m, 1e-7))
+		var row := BANDS - band - 1 # frequency rises up the image
+		_img.set_pixel(_cols - 1, row, _ramp.sample(clampf((db + 80.0) / 70.0, 0.0, 1.0)))
+	_tex.update(_img)
+	peak_hz = measure_peak() if in_beam else 0.0
+	push_trace(peak_hz)
 	queue_redraw()
 
 
@@ -234,9 +304,21 @@ func _draw() -> void:
 	var z := 2.6 if bold else 1.0
 	var r := Rect2(Vector2(26.0 * z, 4.0), size - Vector2(30.0 * z, 8.0))
 	draw_rect(Rect2(Vector2.ZERO, size), StapledonTheme.INK)
+	var font := get_theme_default_font()
+	if rate_tag != null:
+		rate_tag.visible = in_beam and layers & L_LABELS != 0
+	if layers & L_PICTURE:
+		_draw_picture(r, z, font)
+	if not in_beam:
+		return
+	if layers & L_TRACE:
+		_draw_trace(r, z)
+	_draw_marks(r, z, font)
+
+
+func _draw_picture(r: Rect2, z: float, font: Font) -> void:
 	draw_texture_rect(_tex, r, false)
 	draw_rect(r, Color(StapledonTheme.VIOLET, 0.9), false, 1.0)
-	var font := get_theme_default_font()
 	for g: Array in [[100.0, "100"], [1000.0, "1k"], [10000.0, "10k"]]: # axis constants (Hz)
 		var y := yf(g[0], r)
 		draw_line(Vector2(r.position.x, y), Vector2(r.end.x, y), Color(StapledonTheme.CREAM, 0.12), 1.0)
@@ -245,11 +327,10 @@ func _draw() -> void:
 	if not bold:
 		var tag := ("♪ " + str(w.receiver if receiver else w.true_sound)) if in_beam else str(w.no_signal)
 		draw_string(font, r.position + Vector2(6, 14), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(StapledonTheme.CREAM, 0.85))
-	if rate_tag != null:
-		rate_tag.visible = in_beam
-	if not in_beam:
-		return
-	# the measured carrier's trace (bright cream, a halo under it), right to left with the picture
+
+
+## The measured carrier's trace (bright cream, a halo under it), right to left with the picture.
+func _draw_trace(r: Rect2, z: float) -> void:
 	var seg := PackedVector2Array()
 	for i in _cols:
 		var hz := _trace[i]
@@ -264,9 +345,16 @@ func _draw() -> void:
 	if seg.size() > 1:
 		draw_polyline(seg, Color(StapledonTheme.CORAL, 0.45), 6.0 * z, true)
 		draw_polyline(seg, StapledonTheme.CREAM, 2.0 * z, true)
+
+
+## The Receiver's line and the bracket from the measured carrier to it, with x D.
+func _draw_marks(r: Rect2, z: float, font: Font) -> void:
+	var w: Dictionary = EarthFeed.copy().words
 	var yr := yf(carrier_hz(), r)
 	var teal := StapledonTheme.TEAL_LIGHT
-	if receiver:
+	if not layers & L_LINE:
+		pass
+	elif receiver:
 		draw_line(Vector2(r.position.x, yr), Vector2(r.end.x, yr), Color(teal, 0.9), 1.5 * z)
 	else:
 		draw_dashed_line(Vector2(r.position.x, yr), Vector2(r.end.x, yr), Color(teal, 0.7), 1.0 * z, 5.0 * z)
@@ -282,7 +370,7 @@ func _draw() -> void:
 		edge = str(w.below_hearing).trim_prefix(" · ")
 	elif peak_hz > 0.0:
 		yt = yf(clampf(peak_hz, F0, F1), r)
-	if absf(yt - yr) > 3.0:
+	if absf(yt - yr) > 3.0 and layers & L_BRACKET:
 		draw_line(Vector2(x, yt), Vector2(x, yr), Color(coral, 0.9), 2.0 * z)
 		draw_line(Vector2(x - 5.0 * z, yr), Vector2(x + 5.0 * z, yr), Color(teal, 0.95), 2.0 * z)
 		var up := yt < yr
@@ -291,5 +379,5 @@ func _draw() -> void:
 	if rate_tag != null:
 		rate_tag.size = rate_tag.get_minimum_size()
 		rate_tag.position = Vector2(x - rate_tag.size.x - 8.0 * z, (yt + yr) * 0.5 - rate_tag.size.y * 0.5)
-	if not edge.is_empty():
+	if not edge.is_empty() and layers & L_LABELS:
 		draw_string(font, Vector2(r.end.x - 150.0 * z, yt + (12.0 * z if hearing == "above" else -4.0 * z)), edge, HORIZONTAL_ALIGNMENT_RIGHT, int(136 * z), int(10 * z), Color(coral, 0.95))

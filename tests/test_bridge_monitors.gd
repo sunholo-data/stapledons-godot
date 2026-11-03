@@ -6,7 +6,10 @@ extends SceneTree
 ##   bound    on the real sim at 2.17 (seed 7: outbound at 0.99c, then off Earth's beam), every number
 ##            on every face is a binding (the display audit finds nothing unbound) and the faces follow
 ##            the world (Earth or no signal; the target; the crew's feelings)
-##   gated    a face renders only while its screen is on screen
+##   gated    a face renders only while its screen is on screen; off screen the signal face does no
+##            work (no refresh, no waterfall column, its taps stopped); on screen it refreshes at 30 Hz,
+##            the clocks at 10 Hz
+##   bed      the ambient bed comes from the frame's sim fields (EarthFeed.bed_of), no station needed
 ## The test compares the faces with sim fields; it computes nothing the game would show.
 
 const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
@@ -97,6 +100,38 @@ func _run() -> void:
 	m.on_screen = true
 	m._process(0.2)
 	check("gated: on screen, the face renders", m.viewport.render_target_update_mode == SubViewport.UPDATE_ONCE)
+	# the signal monitor off screen does no work (Codex review): no refresh, no column, no tap
+	var sm: BridgeMonitor = mons[1]
+	sm.set_process(false)
+	var wf: CommsWaterfall = (sm.face as BridgeScreens.SignalFace).wf
+	sm.refresh(out, false, EarthFeed.bed_of(out)) # in beam, True: the taps would play
+	sm.on_screen = true
+	for i in 30:
+		sm._process(1.0 / 120.0)
+		await process_frame
+	check("gated: on screen in beam, the signal plays its taps (carrier playing %s)" % wf._carrier.playing, wf._carrier.playing)
+	sm.on_screen = false
+	var r0 := sm.refreshes
+	var s0 := wf.steps
+	for i in 120:
+		sm._process(1.0 / 120.0)
+		await process_frame
+	check("gated: off screen, 120 frames: %d refreshes, %d waterfall columns, carrier playing %s" % [sm.refreshes - r0, wf.steps - s0, wf._carrier.playing], sm.refreshes == r0 and wf.steps == s0 and not wf._carrier.playing and not wf._bed.playing and not wf.is_processing())
+	sm.on_screen = true
+	r0 = sm.refreshes
+	s0 = wf.steps
+	for i in 240: # two seconds at 120 frames a second
+		sm._process(1.0 / 120.0)
+	check("gated: on screen at 120 fps for 2 s the signal face refreshes at 30 Hz (%d refreshes, %d columns; want 60, plus one on coming into view)" % [sm.refreshes - r0, wf.steps - s0], sm.refreshes - r0 == 61 and wf.steps - s0 == 61)
+	var cm: BridgeMonitor = mons[0]
+	cm.set_process(false)
+	cm.on_screen = true
+	r0 = cm.refreshes
+	for i in 240:
+		cm._process(1.0 / 120.0)
+	check("gated: the clocks face refreshes at 10 Hz (%d in 2 s; want 20)" % (cm.refreshes - r0), cm.refreshes - r0 == 20)
+	sm.on_screen = false
+	check("bed: the ambient bed comes from the frame alone (outbound in beam: %s)" % EarthFeed.bed_of(out), not EarthFeed.bed_of(out).is_empty() and EarthFeed.bed_of(off) == str(EarthFeed.copy().sound.beds.static))
 	print("bridge-monitors: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 

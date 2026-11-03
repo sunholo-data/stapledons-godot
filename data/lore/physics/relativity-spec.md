@@ -202,7 +202,7 @@ dimensionless.
 | RS-43 | Earth's tone heard straight ahead (heading home) at 0.99c: 400 Hz × √((1 + β)/(1 − β)) (RS-29) | 5,642.7 | Hz |
 | RS-44 | Earth's tone heard straight astern at the top speed, β = 0.999999 (RS-28) | 0.28284 | Hz |
 | RS-45 | Earth's tone heard straight ahead at the top speed (RS-30) | 5.6569 × 10⁵ | Hz |
-| RS-46 | Lower edge of human hearing (the comms receiver's audible band) | 20 | Hz |
+| RS-46 | Lower edge of human hearing, and of the comms receiver's audible band: the beacon's True setting is silent below it, D < 0.05 at the 400 Hz carrier (Mark, 2026-11-03, "sure 20hz"; 8–20 Hz is infrasound, felt rather than heard at the beacon's level) | 20 | Hz |
 | RS-47 | Upper edge of human hearing | 20,000 | Hz |
 
 Qualitative checks (not numbers, so not in the registry):

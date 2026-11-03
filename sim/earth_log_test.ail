@@ -18,6 +18,7 @@ import std/option (Option, Some, None)
 import std/list (length, foldl, reverse)
 import std/string (concat, join, contains, intToStr)
 import std/math (intToFloat)
+import std/json (encode, jnum)
 
 pure func lgAll(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
 pure func allOf(p: a -> bool, xs: [a]) -> bool = foldl(\acc x. acc && p(x), true, xs)
@@ -156,6 +157,24 @@ pure func helloLine(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\"
 pure func gameLine() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false}"
 pure func tickLine(t: int, dtau: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[]}"])
 pure func feedLines(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func weeksLine(t: int, a: int, b: int) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":0,\"intents\":[{\"k\":\"earth_weeks\",\"from\":", intToStr(a), ",\"to\":", intToStr(b), "}]}"])
+pure func row(i: int) -> string = concat(["{\"frame\":", intToStr(i), ",\"earth_year\":"])
+-- D1.3: after a year at rest (weeks 0..52 arrived), earth_weeks answers on its tick with the beamed,
+-- arrived weeks, oldest first, at most 52, each with its own Earth date; 2.16 refuses the intent.
+pure func checkWireWeeks() -> bool {
+  let s17 = serve(feedLines(newSession(), [helloLine(earthLogMinor()), gameLine()]), tickLine(1, "1")).session;
+  let s16 = serve(feedLines(newSession(), [helloLine(earthMinor()), gameLine()]), tickLine(1, "1")).session;
+  let few = serve(s17, weeksLine(2, 3, 5)).reply;
+  let all = serve(s17, weeksLine(2, 0, 100000)).reply;
+  let none = serve(s17, tickLine(2, "0")).reply;
+  let week = feedBinYears();
+  lgAll([contains(few, concat(["\"earth_weeks\":{\"from\":3,\"to\":5,\"weeks\":[", row(3)])), contains(few, row(5)), !contains(few, row(6)), !contains(few, row(2)),
+    -- each week's own Earth date: epoch 0 + frame x week
+    contains(few, concat([row(4), encode(jnum(4.0 * week))])),
+    contains(all, row(0)), contains(all, row(51)), !contains(all, row(52)), frameOf(1.0) >= 52,
+    !contains(none, "earth_weeks"), contains(serve(s16, weeksLine(2, 0, 5)).reply, "bad_intent")])
+}
+test "D1.3: earth_weeks answers on its tick, clipped to arrived beamed weeks and 52 rows; 2.16 refuses it" { checkWireWeeks() }
 pure func checkWire17() -> bool {
   let s17 = feedLines(newSession(), [helloLine(earthLogMinor()), gameLine()]);
   let s16 = feedLines(newSession(), [helloLine(earthMinor()), gameLine()]);
@@ -181,5 +200,5 @@ pure func checkWire17() -> bool {
 test "AC4: the 2.17 earth_log in full states, its tail when the open record changes, the course section; 2.16 never sees them" { checkWire17() }
 
 export pure func earthLogVm(n: int) -> string =
-  if checkDeparture() && checkMerge() && checkSplit() && checkNoNewWeek() && checkBound() && checkShipAt() && checkFlight() && checkYearsLeft() && checkWeeks() && checkWire17()
+  if checkDeparture() && checkMerge() && checkSplit() && checkNoNewWeek() && checkBound() && checkShipAt() && checkFlight() && checkYearsLeft() && checkWeeks() && checkWire17() && checkWireWeeks()
   then "earth-log-ok" else "earth-log-BAD"

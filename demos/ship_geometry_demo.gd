@@ -1544,7 +1544,9 @@ func walk_to(station: String) -> bool:
 func _refresh_monitors(view: Dictionary) -> void:
 	var cs: CommsStation = consoles.comms_station if consoles != null else null
 	var rx: bool = cs.feed.receiver if cs != null else true
-	var bed: String = str(cs.feed.home_sound.get("cue", "")) if cs != null else ""
+	# The bed from the frame's sim fields, from the start and after the station closes; while the station
+	# is open its held bed leads (the taps are shared, so the two never fight).
+	var bed: String = str(cs.feed.home_sound.get("cue", "")) if cs != null and cs.is_visible_in_tree() else EarthFeed.bed_of(view)
 	for m: BridgeMonitor in monitors:
 		m.refresh(view, rx, bed)
 ## The bridge consoles (R1-SHIP-UI U3): stations from ship.glb, use points, prompt, panels.

@@ -243,10 +243,11 @@
     "AC10: make bench SCENE=bridge p99 < 16.7 ms at 2560x1440 on a quiet rig",
     "make capture-comms-v2 STAGE=wall frames opened and uploaded to refs/comms_v2/cv6/"
    ],
-   "passes": true,
+   "passes": false,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "Blender stapledon_bridge_monitors_v1.py -> bridge_monitors.glb (grown frames + stands, 2,696 tris, 2 materials, anchors from the manifest), installed via manifest assets.monitors, inked and lit live, occluders (level manifest 'monitor'). interior/bridge_monitor.gd (BridgeMonitor: SubViewport face, visibility-gated, signal face every frame, others <= 10 Hz) + ui/bridge_screens.gd (signal, clocks, course, crew faces, theme variations, bindings). make bridge-monitors-test 13 passed. Open: OQ12 journey.ship_years_left not added yet (the course face shows the Earth year at arrival and gamma); bench at CV5's rig run."
+   "notes": "Blender stapledon_bridge_monitors_v1.py -> bridge_monitors.glb (grown frames + stands, 2,696 tris, 2 materials, anchors from the manifest), installed via manifest assets.monitors, inked and lit live, occluders (level manifest 'monitor'). interior/bridge_monitor.gd (BridgeMonitor: SubViewport face, visibility-gated, signal face every frame, others <= 10 Hz) + ui/bridge_screens.gd (signal, clocks, course, crew faces, theme variations, bindings). make bridge-monitors-test 13 passed. Open: OQ12 journey.ship_years_left not added yet (the course face shows the Earth year at arrival and gamma); bench at CV5's rig run.",
+   "evaluation": "pending: Codex round 1 scored 62/100 (FAIL, 9 blockers) at b789a741; every blocker addressed on this branch (design doc 'Execution notes'), awaiting round 2"
   },
   {
    "id": "CV5",
@@ -264,17 +265,24 @@
     "AC13: make ui-theme-check python-guard uid-guard green; tools/rig_check.sh <PR> --golden posts rig/full green",
     "sprint-evaluator (other family) >= 70/100"
    ],
-   "passes": true,
+   "passes": false,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "Mid-point accepted (Mark 'continue'). Waterfall legibility: a bright trace of the measured carrier (Carrier tap peak, median of 5, gaps between keyed pips) over the True picture; log axis already 20 Hz-20 kHz. OQ12: protocol 2.17 `course` {ship_years_left} (core shipYearsLeft; earth_log_test checkYearsLeft + wire), shown on the course face (bridge-monitors 14 passed). Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, README rows for earths-carrier and the missing colours-of-home); vendored via make lore-import (design sha a4046551); tests/test_physics.gd test_earths_carrier (1050 passed); codex-test 53 passed (15 entries); expected_unlocks + interior_smoke + session-audit mirrors refreshed (session-audit-test 16 passed, codex-unlocks PASS, m4-smoke OK 15/12, replay-scene PASS, lore-check, lore-test, lore-import-check, in-world-voice-check ok). The course monitor moved +30 -> +24 deg: at +30 it covered the forward pole of the physics golden's fixed captain eye (G-M4-S3); bridge_monitors.glb regenerated (master v1b published). make golden: 0 failures (the constellation golden flaked once under host load, then 33/33). Final captures refs/comms_v2/final/. Bench: MISS under host load 24-31 with and without monitors (p99 34.1 vs 31.6 ms, p50 9.96 vs 9.90) - needs a quiet machine. Deferred: the earth_weeks wire intent (a new core Intent; beamedWeeks exists and is tested). Evaluation: by Codex (orchestrator). Landing: after the evaluation and Mark."
+   "notes": "Mid-point accepted (Mark 'continue'). Waterfall legibility: a bright trace of the measured carrier (Carrier tap peak, median of 5, gaps between keyed pips) over the True picture; log axis already 20 Hz-20 kHz. OQ12: protocol 2.17 `course` {ship_years_left} (core shipYearsLeft; earth_log_test checkYearsLeft + wire), shown on the course face (bridge-monitors 14 passed). Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, README rows for earths-carrier and the missing colours-of-home); vendored via make lore-import (design sha a4046551); tests/test_physics.gd test_earths_carrier (1050 passed); codex-test 53 passed (15 entries); expected_unlocks + interior_smoke + session-audit mirrors refreshed (session-audit-test 16 passed, codex-unlocks PASS, m4-smoke OK 15/12, replay-scene PASS, lore-check, lore-test, lore-import-check, in-world-voice-check ok). The course monitor moved +30 -> +24 deg: at +30 it covered the forward pole of the physics golden's fixed captain eye (G-M4-S3); bridge_monitors.glb regenerated (master v1b published). make golden: 0 failures (the constellation golden flaked once under host load, then 33/33). Final captures refs/comms_v2/final/. Bench: MISS under host load 24-31 with and without monitors (p99 34.1 vs 31.6 ms, p50 9.96 vs 9.90) - needs a quiet machine. Deferred: the earth_weeks wire intent (a new core Intent; beamedWeeks exists and is tested). Evaluation: by Codex (orchestrator). Landing: after the evaluation and Mark. | Round-1 fixes: lint row index; visibility gating (set_live; 30/10 Hz; taps released); bed_of from sim fields; trace = current measurement only; Hann two-point estimator (28.355 Hz within 0.012 %, test at 1 %); hearing floor 20 Hz (Mark 'sure 20hz', audible [0.05, 50], RS-46 + sound.md in design#55); earth_weeks intent end to end (core IEarthWeeks, codec, 2.16 refusal, replay re-recorded, stack row UI); monitor readability in DeckBowMetrics + negative controls; GPU golden G-CV (17 lines); rail fix (screens above the rail on a stalk inside it, monitors v2, make monitor-rail-test with control); faces at three moments + frame diagrams captured (refs/comms_v2/final/); earths-voice line added (design#55).",
+   "evaluation": "pending: Codex round 1 scored 62/100 (FAIL, 9 blockers) at b789a741; every blocker addressed on this branch (design doc 'Execution notes'), awaiting round 2"
   }
  ],
  "reviews": [],
  "pr_gate": "rig/full green plus the GitHub fast tier; Mark's visual approval after CV4 and CV5",
  "evaluation": {
   "by": "Codex (cross-family), run by the orchestrator",
-  "status": "pending"
+  "round_1": {
+   "score": 62,
+   "pass": false,
+   "head": "b789a741",
+   "file": "scratchpad eval-379.json"
+  },
+  "status": "round 2 pending"
  },
  "revision": 3,
  "revised": "2026-11-03",

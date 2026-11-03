@@ -6,6 +6,9 @@ extends VBoxContainer
 ## log, CommsPanel) are the last layer, behind Details.
 
 signal pane_requested(pane: String)
+## R3-COMMS-V2 D1.3: a stack's weeks wanted (Earth feed frames from..to); the console asks the sim
+## (the read-only `earth_weeks` intent) and the answer arrives in the view as earth_weeks.
+signal weeks_requested(from: int, to: int)
 
 var feed := EarthFeed.new()
 var clocks := EarthClocks.new()
@@ -13,6 +16,7 @@ var crew := CrewFaces.new()
 var strip := EarthStrip.new()
 var history := EarthHistory.new() ## R3-COMMS-V2 CV2: every week received, along ship time
 var waterfall := CommsWaterfall.new() ## R3-COMMS-V2 CV3: the signal from home, True, with the Receiver's line
+var stack := StackWeeks.new() ## R3-COMMS-V2 D1.3: the weeks inside a selected stack, each selectable
 var side := VBoxContainer.new()
 var details := Button.new()
 var words_box := VBoxContainer.new()
@@ -49,6 +53,9 @@ func _init() -> void:
 	history.feed = feed
 	history.week_selected.connect(_on_week)
 	add_child(history)
+	stack.feed = feed
+	stack.week_picked.connect(_on_stack_week)
+	add_child(stack)
 	add_child(strip)
 	details.name = "CommsDetails"
 	details.text = str(EarthFeed.copy().words.details)
@@ -91,6 +98,7 @@ func refresh(view: Dictionary) -> void:
 	if strip.frame >= 0:
 		crew.visible = false # a week's light-cone diagram takes the faces' row while it is open
 	history.refresh(view)
+	stack.refresh(view)
 	strip.refresh(view)
 	for p: String in pane_buttons:
 		(pane_buttons[p] as Button).set_pressed_no_signal(words.pane == p)
@@ -106,11 +114,126 @@ func advance(dt: float) -> void:
 ## to its light-cone diagram (frame mode); -1 returns both to the live feed and the strip.
 func _on_week(i: int) -> void:
 	feed.pinned = i
+	feed.pinned_week = -1
 	strip.set_frame(i)
+	var rec: Dictionary = history.records[i] if i >= 0 and i < history.records.size() else {}
+	var a := int(rec.get("from_frame", 0))
+	var b := int(rec.get("to_frame", 0))
+	if i >= 0 and b > a: # a stack: ask the sim for its newest weeks (at most 52, D1.3)
+		stack.open(i, rec)
+		weeks_requested.emit(maxi(a, b - (StackWeeks.CAP - 1)), b)
+	else:
+		stack.close()
 	if i >= 0:
 		crew.visible = false
 	if i < 0:
 		feed.shown_key = "" # the live week again on the next refresh
+
+
+## D1.3: a week inside the stack chosen: the feed shows it with its own Earth date, the diagram labels it.
+func _on_stack_week(j: int) -> void:
+	feed.pinned_week = j
+	feed.shown_key = ""
+	strip.week = j
+	strip._place_tags()
+	strip.queue_redraw()
+
+
+## R3-COMMS-V2 D1.3: the weeks of a selected stack, a row of small pictures from the sim's earth_weeks
+## answer (each row's own feed and Earth date); selecting one emits week_picked(j). The selected one
+## carries its Earth date stamp (a binding). Nothing here is computed: the sim chose and dated the weeks.
+class StackWeeks extends Control:
+	signal week_picked(j: int)
+	const CAP := 52
+	const THUMB := Vector2(38, 22)
+	var feed: EarthFeed = null
+	var record := -1
+	var rec: Dictionary = {}
+	var rows: Array = []
+	var picked := -1
+	var view: Dictionary = {}
+	var stamp: ComposedBinding = null
+
+	func _init() -> void:
+		name = "StackWeeks"
+		visible = false
+		custom_minimum_size = Vector2(0, 40)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func open(i: int, r: Dictionary) -> void:
+		record = i
+		rec = r
+		picked = -1
+		rows = []
+		visible = true
+		queue_redraw()
+
+	func close() -> void:
+		record = -1
+		rec = {}
+		rows = []
+		picked = -1
+		visible = false
+
+	func refresh(v: Dictionary) -> void:
+		view = v
+		rows = []
+		if record < 0:
+			return
+		var ew: Variant = v.get("earth_weeks")
+		if ew is Dictionary and int(ew.get("to", -1)) == int(rec.get("to_frame", -2)) and ew.get("weeks") is Array:
+			rows = ew.weeks
+		if picked >= rows.size():
+			picked = -1
+		_place_stamp()
+		queue_redraw()
+
+	func _cell(j: int) -> Rect2:
+		var step := minf(THUMB.x + 3.0, (size.x - 8.0) / maxf(rows.size(), 1.0))
+		return Rect2(Vector2(4.0 + j * step, 2.0), Vector2(minf(THUMB.x, step - 1.0), THUMB.y))
+
+	func _draw() -> void:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.035, 0.03, 0.06))
+		for j in rows.size():
+			var c := _cell(j)
+			var r: Dictionary = rows[j]
+			var t: Texture2D = feed.texture_of(feed.picked_source(r)) if feed != null else EarthFeed.sky_texture(int(r.get("frame", 0)))
+			if t != null:
+				draw_texture_rect(t, c, false)
+			draw_rect(c, StapledonTheme.CORAL if j == picked else Color(StapledonTheme.CREAM, 0.4), false, 2.0 if j == picked else 1.0)
+
+	func _place_stamp() -> void:
+		if picked < 0:
+			if stamp != null:
+				stamp.visible = false
+			return
+		if stamp == null: # made on first use: never a binding without a field
+			stamp = ComposedBinding.new()
+			stamp.theme = StapledonTheme.theme()
+			stamp.theme_type_variation = "HUDCaption"
+			stamp.add_theme_font_size_override("font_size", 10)
+			stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(stamp)
+		stamp.compose([["earth_weeks.weeks.%d.earth_year" % picked, "comms_clock"]])
+		stamp.update_from(view)
+		stamp.size = stamp.get_minimum_size()
+		var c := _cell(picked)
+		stamp.position = Vector2(clampf(c.get_center().x - stamp.size.x * 0.5, 0.0, maxf(size.x - stamp.size.x, 0.0)), c.end.y + 1.0)
+		stamp.visible = true
+
+	func pick(j: int) -> void:
+		picked = j if j >= 0 and j < rows.size() else -1
+		_place_stamp()
+		queue_redraw()
+		week_picked.emit(picked)
+
+	func _gui_input(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			for j in rows.size():
+				if _cell(j).grow(1.0).has_point(e.position):
+					pick(j)
+					accept_event()
+					return
 
 
 ## EL3b.4: the crew around the console, each at their home feeling (earth.crew: the sim's

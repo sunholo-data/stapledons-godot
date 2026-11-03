@@ -42,7 +42,7 @@ import std/list (map)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import ./earth_link (Earth, Message, Stale, Window, Preview, Beam, Out, replyT)
 import ./earth_feed (Feed, Influence, homeFeeling, feedAt, feedBinYears)
-import ./earth_log (ELog, Arrival, ShipAt, records)
+import ./earth_log (ELog, Arrival, ShipAt, records, beamedWeeks)
 import std/math (intToFloat)
 
 pure func vec(v: Vec3) -> Json = jo([kv("x", jnum(v.x)), kv("y", jnum(v.y)), kv("z", jnum(v.z))])
@@ -101,6 +101,8 @@ export pure func encodeEarth(e: Earth, epoch: float, seed: int, faces: [(string,
 --   from_frame, to_frame, beamed, day         the weeks (Earth's feed frames) that arrived, in beam or
 --                                              not, in ship day `day`
 --   earth_from_year, earth_to_year             epoch + from_frame x week, epoch + (to_frame + 1) x week
+--   earth_year                                 epoch + to_frame x week: the newest week's own Earth date (the
+--                                              week whose feed the record carries)
 --   sent {t, year}                             the light-cone event: t = arrived.t - arrived.ly
 --   arrived {t, year, tau, p, ly, rate}        the ship at the tick the weeks arrived, with the Earth rate
 --   ship_at_sent {t, tau, p, ly} | null        the ship's logged state when Earth sent that light
@@ -110,7 +112,7 @@ pure func shipAtJ(o: Option[ShipAt]) -> Json =
   match o { Some(x) => jo([kv("t", jnum(x.t)), kv("tau", jnum(x.tau)), kv("p", vec(x.p)), kv("ly", jnum(x.ly))]), None => JNull }
 pure func arrival(r: Arrival, epoch: float, seed: int) -> Json =
   jo([kv("from_frame", jint(r.fromFrame)), kv("to_frame", jint(r.toFrame)), kv("beamed", JBool(r.beamed)), kv("day", jint(r.day)),
-    kv("earth_from_year", jnum(epoch + wk(r.fromFrame))), kv("earth_to_year", jnum(epoch + wk(r.toFrame + 1))),
+    kv("earth_from_year", jnum(epoch + wk(r.fromFrame))), kv("earth_to_year", jnum(epoch + wk(r.toFrame + 1))), kv("earth_year", jnum(epoch + wk(r.toFrame))),
     kv("sent", jo([kv("t", jnum(r.sentT)), kv("year", jnum(epoch + r.sentT))])),
     kv("arrived", jo([kv("t", jnum(r.arrived.t)), kv("year", jnum(epoch + r.arrived.t)), kv("tau", jnum(r.arrived.tau)), kv("p", vec(r.arrived.p)),
       kv("ly", jnum(r.arrived.ly)), kv("rate", jnum(r.arrived.rate))])),
@@ -120,5 +122,16 @@ export pure func encodeEarthLog(g: ELog, epoch: float, seed: int) -> string =
   encode(jo([kv("week_years", jnum(feedBinYears())), kv("records", ja(map(\r. arrival(r, epoch, seed), records(g))))]))
 export pure func encodeEarthLogTail(g: ELog, epoch: float, seed: int) -> string =
   encode(ja(match g.open { Some(o) => [arrival(o, epoch, seed)], None => [] }))
+-- D1.3 `earth_weeks` (the answer to the read-only intent): {from, to, weeks: [{frame, earth_year, kind,
+-- event, pick}]}, the beamed weeks in [from, to] that have arrived (beamedWeeks), oldest first, at most
+-- weeksCap(); each week's feed is the one its record would carry (feedAt at the week).
+export pure func weeksCap() -> int = 52
+pure func weekRow(seed: int, epoch: float, i: int) -> Json {
+  let fd = feedAt(seed, wk(i), []);
+  jo([kv("frame", jint(i)), kv("earth_year", jnum(epoch + wk(i))), kv("kind", js(fd.kind)),
+    kv("event", jo([kv("id", js(fd.event.id)), kv("category", js(fd.event.category)), kv("words", js(fd.event.words))])), kv("pick", jint(fd.pick))])
+}
+export pure func encodeEarthWeeks(g: ELog, a: int, b: int, epoch: float, seed: int) -> string =
+  encode(jo([kv("from", jint(a)), kv("to", jint(b)), kv("weeks", ja(map(\i. weekRow(seed, epoch, i), beamedWeeks(g, a, b, weeksCap()))))]))
 export pure func openKey(g: ELog) -> string =
   match g.open { Some(o) => encode(arrival(o, 0.0, 0)), None => "" }

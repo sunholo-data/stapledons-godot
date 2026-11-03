@@ -48,6 +48,14 @@ class Face extends Control:
 	func refresh(_view: Dictionary, _receiver: bool, _bed: String) -> void:
 		pass
 
+	## Off screen a face does no work (the signal face also releases the audio taps).
+	func set_live(_on: bool) -> void:
+		pass
+
+	## One frame of a moving face (the signal's waterfall column).
+	func step() -> void:
+		pass
+
 
 class SignalFace extends Face:
 	var wf := CommsWaterfall.new()
@@ -58,6 +66,8 @@ class SignalFace extends Face:
 	func _init() -> void:
 		super._init()
 		wf.bold = true
+		wf.self_step = false # the monitor steps it at its refresh rate
+		wf.live = false # until its screen is on screen
 		wf.position = Vector2(20, 70)
 		wf.size = Vector2(920, 400)
 		add_child(wf)
@@ -77,6 +87,12 @@ class SignalFace extends Face:
 		age.visible = e is Dictionary
 		wf.refresh(view, receiver, bed)
 		queue_redraw()
+
+	func set_live(on: bool) -> void:
+		wf.set_live(on)
+
+	func step() -> void:
+		wf.step()
 
 	func _draw() -> void:
 		super._draw()

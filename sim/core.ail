@@ -109,6 +109,11 @@ export type Intent =
   | IWarp(float)
   | IGrApproach(GrApproachReq) | IGrHover | IGrOrbit | IGrRing
   | ICrew(CrewCmd)
+  | IEarthWeeks(WeeksReq)
+-- R3-COMMS-V2 D1.3 (protocol 2.17): `earth_weeks`, a read-only query for a stack's weeks (Earth's feed
+-- frames from..to); it changes nothing in the world, and the session answers it from the received-frame
+-- log (sim/earth_log.ail beamedWeeks: beamed, arrived weeks only, D-68).
+export type WeeksReq = { from: int, to: int }
 -- M3.4b (protocol 2.6): the GR intents; sim/gr.ail holds their rules.
 export type GrApproachReq = { toR: float, betaLocal: float }
 export type Refusal = { i: int, reason: string }
@@ -261,7 +266,9 @@ pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) ->
     IGrOrbit => refuseIntent(a, "not_in_gr"),
     IGrRing => refuseIntent(a, "not_in_gr"),
     -- R2-CREW: crew intents are applied in tick() before the ship's (sim/crew.ail); never refused for a commitment
-    ICrew(_) => a
+    ICrew(_) => a,
+    -- R3-COMMS-V2: a read-only query of the log; never refused, nothing changes
+    IEarthWeeks(_) => a
   }
 
 -- AI intents (sim/ai.ail): the step's ai state, its `ai` stream counter,
@@ -451,7 +458,9 @@ pure func applyFlat(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
     IGrOrbit => refuseIntent(a, "not_in_gr"),
     IGrRing => refuseIntent(a, "not_in_gr"),
     -- R2-CREW: crew intents are applied in tick() before the ship's (sim/crew.ail); never refused for a commitment
-    ICrew(_) => a
+    ICrew(_) => a,
+    -- R3-COMMS-V2: a read-only query of the log; never refused, nothing changes
+    IEarthWeeks(_) => a
   }
 -- Draw (diag, M2.4): the stream's next value; its counter advances and
 -- the value is reported in a `draw` event.
