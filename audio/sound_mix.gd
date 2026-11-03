@@ -113,7 +113,12 @@ static func is_layout_ok() -> Array[String]:
 ## R3 audio realism AR8b: the comms receiver's frequency correction, a pitch factor on the Receiver
 ## bus (1 / the playback rate in the Receiver setting; 1 in the True setting, which leaves it off).
 static func set_receiver(correct: float) -> void:
-	var i := AudioServer.get_bus_index("Receiver")
+	set_shift("Receiver", correct)
+
+
+## A receiver bus's frequency correction (Receiver, Beacon): a pitch factor, off at 1.
+static func set_shift(bus: String, correct: float) -> void:
+	var i := AudioServer.get_bus_index(bus)
 	var e := _find_effect(i, "AudioEffectPitchShift") as AudioEffectPitchShift if i >= 0 else null
 	if e == null:
 		return
