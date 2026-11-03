@@ -152,3 +152,352 @@ Every claim above was checked first-hand in this clone. No GPU make, `make bench
 Not re-verifiable at planner time (GPU or artifact facts; taken on the design's first-party evidence and re-measured by the controller during execution): V9's SURVIVED outcomes, V10 timing, V11's screenshot, V13's sheet pixels and the 2276×366 size, V14/V15's manifest comparisons, V25's DB1 path, V26's frame order, V28/V33. `renders/m4/` is absent in this fresh clone, so V26's on-disk order check is the controller's to repeat after a capture.
 
 Planner performed no implementation edit, no git write, no approval request; the only writes are this addendum and the one appended feature.
+
+
+## Amendment iter64: row 7l(a)
+
+Mission iteration 64, planner, 2026-11-02. This amendment supersedes the iteration-59 plan's Makefile prohibition and deferred-(a) wording **only for row 7l(a)**. Everything above remains the landed (b)–(d) history (PR #356); CA/CB/CC/DB1, GPU captures and benches are not re-planned or re-run. Authority: the design's iteration-64 Addendum, including both iteration-64 Quorum rounds, AC-a14, A-V21/A-V22 and V34/V35; D-66 approved sprint and D-88 A test hygiene. There are no human-decision gates and no new approval request. The mission controller owns the next role, PR, rig/full, fast tier, merge and independent evaluation. This planner edits and commits only the two planning artifacts and does not push or dispatch another agent.
+
+One cohesive feature: `M4.6rR3_7la_ATOMIC_PUBLISH`, `passes: false`. Goal: reject any locally incomplete or invalid 18-file set before the first upload, from the same positional list later uploaded; retain the destination and cache-control bytes. Remote upload failure remains outside this row's atomicity guarantee. Example/fixture coverage is the seven synthetic cases in the single new shell test; no separate example file or drill script. Registry reuse: **none**; shell/Make orchestration of an existing recipe, no package-like capability and no registry search needed. No AILANG code, Python code, runtime/pin change or new `.uid`.
+
+Estimate: 110 added physical lines: the exact designed test is **95** lines, and the designed Makefile splice plus the round-2 `ci-fast` edit measures **+15/−9** using a generated in-memory diff (+14/−8 for the recipe/test block, plus one changed prerequisite line). Plan/state documentation is additional. One executor session, about 30–60 minutes including RED, focused checks and bounded drills; no whole-suite velocity estimate is useful for this small shell change. Rig/full is a separate controller stage.
+
+### Reality check at HEAD (first-hand)
+
+Measured at `d1cf07f71e0dfcdb6f3af48521e1bc9748a4dd10` on `mission/stapledon-iter64-7la`; local `origin/main` is `6d92d2cb96f4f7324b618da99297caeb666decf0`. Three design commits (`fc00624b`, `8b640806`, `d1cf07f7`) follow it. Initial `git status --short` was empty; `git diff --name-only origin/main` listed only the design doc. The recipe and test anchors have **not drifted** from A-V3/A-V7. `tools/test_m4_publish.sh` does **not** exist (neither tracked nor on disk); neither the new target nor `M4_PUBLISH_DIR` exists.
+
+`nl -ba Makefile | sed -n '330,338p'` measured this exact base recipe (line numbers are evidence; splice by text):
+
+```make
+330: capture-m4-publish: ## maintainers (gcloud): verify and upload the 18-file 3D-ship S1 set to the public refs/m4_ship_s1 bucket path
+331: 	@set -eu; test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15; \
+332: 	  test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15; \
+333: 	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15; \
+334: 	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null); \
+335: 	  n=0; for f in renders/m4/*.png renders/m4/manifest.json renders/m4/m4_manifest.sha256 renders/m4/worlds.sha256; do \
+336: 	    test -s "$$f"; gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
+337: 	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
+338: .PHONY: capture-m4-publish
+```
+
+`rg -n '^(ci-fast:|test:)' Makefile` measured the following (all 15 `test:` lines, including the complete long list):
+
+```text
+22:test: kerr-oracle
+50:ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+52:test: python-guard uid-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test star-names area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
+126:test: crew-sync-check
+131:test: crew-faces-check
+147:test: crew-bridge-test
+152:test: crew-events-check
+156:test: crew-console-test
+165:test: crew-hold-test
+169:test: crossing-review-test
+211:test: crew-perf
+214:test: crew-parity
+254:test: export-filter-audit
+1091:test: ship-demo-ci
+1141:test: loading-jump-test
+1437:test: import-keep-check
+```
+
+`/usr/bin/make` is GNU Make 3.81; `/opt/homebrew/bin/gmake` is GNU Make 4.4.1. The narrowed-path dependency audit from A-V22 was repeated: `perl shasum make mktemp sed awk grep sort cut wc tr ls rm mkdir mv chmod cat` all resolve under `/usr/bin:/bin`. This is macOS evidence only. Source re-checks confirm A-V21: `.github/workflows/ci.yml:7–12` defaults `workflow_call.full` to true, :21 uses `ubuntu-latest`, :61 runs `make ci-fast`, :65 runs the full suite; `release.yml:21` calls that workflow for plain release tags. V34/V35 remain source-pinned at `Makefile:569` (`$(SCRATCH)/bench-bridge.log`) and `tools/m4_ship_bench.gd:132` (literal `res://.godot/tmp/bench-bridge.json`). No bench was run, and neither is relevant to executing (a).
+
+**PR ownership finding — UNINFORMATIVE UNDER SANDBOX.** `gh pr list --state open` returned rc 1, `error connecting to api.github.com`. For each last-known PR **371, 373, 374, 375**, both `gh pr diff <n> --name-only` and `gh pr diff <n> --allow-escape-sequences` returned the same rc 1. Therefore the current open PR set, whether any touches the recipe or `ci-fast:`, and current Makefile hunks cannot be certified here. A-V2's older #371 hunk `@@ -505,9 +505,31 @@` and #373 hunk `@@ -18,10 +18,16 @@` are design history, not this planner's measurements. Do not infer that the hold remains lifted. No GitHub app/browser fallback was used.
+
+Controller/executor preflight must repeat **before any implementation edit**:
+
+```sh
+gh pr list --state open
+# For every PR number returned, not just the four historical numbers:
+gh pr diff <n> --name-only
+gh pr diff <n> --allow-escape-sequences
+```
+
+Read every Makefile patch hunk (`diff --git a/Makefile b/Makefile` through the next file header), including its `@@` range and context; record which hunks touch `capture-m4-publish`, `renders/m4`, its surrounding block or `ci-fast:`. Search each full diff for `capture-m4-publish|renders/m4|^[-+]ci-fast:` and inspect adjacent context. Zero matches alone is insufficient if a hunk overlaps the recipe by position. Record a genuine zero as such only after `gh` succeeds. Any overlapping or changed PR, recipe drift, or unavailable `gh` is a STOP for controller re-measurement; never splice through unknown ownership. Refresh/rebase is controller-owned; re-run anchors and base guards after any rebase.
+
+### Base gates and RED findings (planner-run)
+
+Every executable base check below was run before editing the planning files. The new target is expected RED; `uid-guard`, `python-guard` and whitespace checks **must** be green at base. A sandbox verdict provides no evidence for sockets/GPU; this row needs neither, nor Godot. All fixture makes ran under a fake-only gcloud PATH. No real `gcloud`, capture, upload, whole `make test`, `make ci-fast`, rig job or background process was started.
+
+| Gate | Measured base result and disposition |
+|---|---|
+| AC-a1/a2, target existence | With the body's `deadline 400`, `make -s capture-m4-publish-test` and `gmake -s capture-m4-publish-test` each return **2**, `No rule to make target ...`. Expected RED, not an implementation verdict. |
+| New test on the unfixed recipe | Private copy of base `Makefile` + all `mk/` includes; add only the variable, replace literal `renders/m4` within that old recipe with `$(M4_PUBLISH_DIR)`, and wire the exact 95-line designed script/target. No validation fix. `deadline 400 make -s -C <copy> capture-m4-publish-test` returns **2**, script rc 1, `FAILED (12 of 14 cases)`, `ok complete` twice. **FINDING / expected RED**, table below. Both GNU versions actually exercise every case. |
+| AC-a3 | `make -pnq test` and `gmake -pnq test` membership counts **0, 0**; standalone `test:` line count **0**. Expected RED until wiring. Query only; no suite execution. |
+| AC-a4/a5 | All five exact addendum `drill "$PWD" <mutant>` calls return **2** at base: script absent. Unavailable pre-GREEN, neither kills nor survivors. Extracted functions and script pass `sh -n` and `bash -n` individually. |
+| AC-a6 | `git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh` rc **0**; bounded temp-prefix search count **0**. Green at base; repeat on the controller's committed implementation tree. |
+| AC-a7 | Unchanged public-path/cache-control count **1**; default variable count **0**. Default is expected RED until added. |
+| AC-a8 | Exact source-order awk prints **ORDER-BAD**. **FINDING / expected RED**: presence check is on the upload line, no worlds-count pre-check. |
+| AC-a9 | Both greps error rc **2**, script absent. Expected unavailable until script added. |
+| AC-a10 | `make uid-guard python-guard && git diff --check origin/main && echo gates-ok`: rc **0**, `uid-guard: ok (401 .uid files)`, `python-guard: ok (19 allowlisted, 0 awaiting AILANG port)`, `gates-ok`. Separate `git diff --check` also rc **0**, no output. These must stay green; no workaround permitted for base guard failures. |
+| AC-a11 | Original design allowlist prints **0** outside files, **0** changed code files at base (only design differs from origin/main). The code control must become 2 after implementation. The plan omission is D1 below. |
+| AC-a12 | No implementation PR/head or rig/full record yet: controller-only, not runnable at planning time. Source route and actual log assignment were read, not executed. |
+| AC-a13 | Probe setup, body's deadline and make call attempted at base: rc **2** in **0 s**, missing target, timeout signature count **0**, private tmp entry count **1** (`xcrun_db`). Expected timeout cannot be tested before target exists; the temp entry independently exposes D2 below. Probe stub never executed. |
+| AC-a14 | Source membership count **0**, expected RED until added. Linux job/log unavailable without implementation PR and network; **UNINFORMATIVE UNDER SANDBOX**, no Linux pass claimed. |
+| Process assertions for drills/probe | `pgrep -fx 'sleep 617'`, `pgrep -fx 'sleep 618'` and a direct private-path query error `sysmond service not found; Cannot get process list`, rc **3**. A downstream `wc -l` prints 0 but is **UNINFORMATIVE UNDER SANDBOX**, never proof of no process. Re-run outside sandbox. |
+
+The RED run's exact measurements per **each** GNU version (3.81 and 4.4.1); every failure had `pre-check lines 0`:
+
+| Case | Recipe rc | Fake uploads / well-formed lines | Test |
+|---|---:|---:|---|
+| complete | 0 | 18 / 18 | ok |
+| worlds-missing | 2 | 17 / 17 | FAIL |
+| worlds-empty | 2 | 17 / 17 | FAIL |
+| worlds-short | 0 | 18 / 18 | FAIL |
+| manifest-missing | 2 | 15 / 15 | FAIL |
+| png-missing | 2 | 0 / 0 | FAIL (missing named pre-check signature) |
+| hash-mismatch | 2 | 0 / 0 | FAIL (missing named pre-check signature) |
+
+### Design defects found by the planner
+
+**D1 — AC-a11 cannot pass after the required sprint amendment.** Its four-file allowlist omits `design_docs/planned/r1/m4-7l-capture-followups-sprint.md`. At base its outside-file count is 0; after this required edit the exact original command prints **1**, naming that plan as the sole excluded file. A planning commit does not remove it from `git diff origin/main`. Proposed minimal fix: add only `design_docs/planned/r1/m4-7l-capture-followups-sprint\.md` to that regex; preserve the independent code-file count of **2**. The gate table and feature below explicitly carry this **proposed D1 correction**, pending controller disposition; the original design is not edited. Until ratified, AC-a11 is blocked by a design defect, not passed by ignoring the file.
+
+**D2 — zero-private-temp assertions encounter Apple's make shim cache.** On this host, a fresh private `TMPDIR` followed solely by `env TMPDIR="$Q/tmp" /usr/bin/make --version` returns rc 0 and creates **`xcrun_db`**. AC-a13 at base likewise leaves that one entry despite never running the new script. The addendum drill's after-make zero-entry check would fail for the same reason. This is a measured host artifact, not a test-script leak and not evidence to waive cleanup. Proposed minimal fix: on macOS, resolve `/usr/bin/xcrun --find make` once **before** private-temp runs, prepend its directory to PATH, and keep all zero-entry assertions. Here it resolves `/Library/Developer/CommandLineTools/usr/bin/make`; running that executable with fresh private TMPDIR prints **GNU Make 3.81** and leaves **0** entries. Controller must ratify and repeat the actual drills/probe on the unsandboxed host before adopting this preflight. Linux needs no Apple adjustment. No test/recipe redesign or zero-entry suppression is proposed.
+
+The process-list error and GitHub access failure above are sandbox limitations, not product defects. The existing `pgrep | wc -l` shape can mask a process-list failure; the mandatory process preflight below prevents treating that output as evidence. No other design command defect was established. In particular, +15/−9 rather than +14/−8 is explained by the required round-2 `ci-fast` line edit, not scope growth.
+
+### Ordered tasks — RED before GREEN
+
+1. **Preflight and disposition (controller, then executor).** Resolve D1/D2, obtain successful fresh PR ownership evidence including `ci-fast:`, check recipe against the numbered base block, confirm script absent, and run `make uid-guard python-guard`, `git diff --check origin/main`, `git diff --check`. Any base guard RED is a FINDING and STOP, not a workaround. Confirm functional `pgrep` outside the sandbox before running any cleanup assertions. There are no assets/runtime prerequisites to fetch.
+2. **RED first (executor; about 10 minutes).** Create only `tools/test_m4_publish.sh` verbatim from the Addendum's 95-line test block. In `Makefile` add the fixed-default `M4_PUBLISH_DIR := renders/m4`, use that variable inside the **otherwise unchanged old recipe**, and add the standalone `test: capture-m4-publish-test`, target invoking `@sh tools/test_m4_publish.sh "$(CURDIR)"` and `.PHONY` membership. This is test injection, not the pre-check fix. Run the single script through `deadline 400 make -s capture-m4-publish-test`, then through `gmake`, capturing rc immediately and complete logs. Require the measured RED signature above: complete green on both inner makes, the four partial/truncated cases FAIL with 17/17/18/15 fake uploads, 12/14 total FAIL because the old PNG/hash checks also lack named failures. Never accept just missing-target RED. Record it in this new feature's notes. No direct maintainer publish call.
+3. **GREEN (executor; about 10 minutes).** Replace the old recipe by the exact Addendum Design block (avoid duplicating wiring from step 2). Set the 18 paths once; presence/non-empty loop first; chained path/PNG/manifest/unique/worlds14/hash checks second; upload loop from that same positional list last. Preserve bucket/cache bytes; keep `:=`. Add `capture-m4-publish-test` exactly once to `ci-fast:` at the measured line 50, immediately before its `##` comment. Do not modify the line-52 list or other recipes. Re-run AC-a1/a2: 14 ok, no FAIL or INFRASTRUCTURE, one final OK, rc 0. Do not weaken signatures to get GREEN.
+4. **Targeted validation and sensitivity (executor; about 10–30 minutes).** Run AC-a3/a7/a8/a9/a10 and source part of AC-a14; run all five hardened drills in the order `inloop`, `noupload`, `deadcapture`, `nopositive`, `stall`, each through both outer makes; run hardened AC-a13; check AC-a6 against a committed implementation tree (controller commits first) and ratified AC-a11. Run only this shell test and these focused gates, never the whole `make test`, `make ci-fast`, Godot, GPU or network upload. A sandbox-blocked process check is UNINFORMATIVE UNDER SANDBOX: hand it to the controller, leave passes false.
+5. **Close-out (executor/controller).** Executor appends dated RED/GREEN, make versions, every AC verdict and drill timing to this new feature's notes and preserves other objects. The controller commits implementation by explicit filenames, re-runs gates outside sandbox, opens the PR, runs AC-a12 and the CI-log half of AC-a14, and obtains independent evaluation (generator ≠ judge). Only controller sets `passes: true` after rig/full and required evidence are green. This planner stops after its two-file planning commit; no automatic executor dispatch or push.
+
+### Drill setup and invocations
+
+Use a fresh `/bin/sh` so the historical (b)–(d) `drill` function is not accidentally called. The following are the body's unchanged `deadline` and **only the Addendum's** 93-line drill; copied verbatim. The script's separate deadline includes its TERM/INT/HUP forwarding line (A-V20); do not replace that script wrapper with the body's shorter one. Limits stay 10 s probe / 20 s fixture / 400 s outer, no environment-configurable shortening and no background jobs.
+
+Process preflight: capture `pgrep -fx 'stapledon-7la-process-probe-no-match'` to a temporary log and capture rc immediately; only rc 1 (no matches, working process service) permits process assertions. Rc 3 here means STOP and **UNINFORMATIVE UNDER SANDBOX**. If D2 is ratified on macOS, first resolve the real make and prepend its directory to PATH; record both make versions again. Do not silently ignore `xcrun_db`.
+
+```sh
+deadline() { # deadline SECONDS CMD...: CMD's rc; 124 on expiry (TERM to its process group, KILL 5 s later)
+  perl -e '
+    my $s = shift; my $pid = fork; exit 125 unless defined $pid;
+    if ($pid == 0) { setpgrp(0, 0); exec @ARGV; exit 127 }
+    setpgrp($pid, $pid); my $hit = 0;
+    $SIG{ALRM} = sub { kill(($hit++ ? "KILL" : "TERM"), -$pid); alarm 5 };
+    alarm $s; waitpid($pid, 0); my $rc = $?; alarm 0;
+    exit($rc & 127 ? 128 + ($rc & 127) : $rc >> 8) unless $hit;
+    my $t = time + 5; select(undef, undef, undef, 0.2) while kill(0, -$pid) && time < $t;
+    kill "KILL", -$pid; exit 124;' "$@" < /dev/null
+}
+drill() (  # exit 0 expected outcome, 1 unexpected outcome, 2 usage, 3 mutation not applied, 4 INFRASTRUCTURE
+  set -eu
+  ROOT=${1:?explicit checkout ROOT required}; mutant=${2:?inloop, noupload, deadcapture, nopositive or stall}
+  cd "$ROOT" || exit 2; ROOT=$(pwd -P)
+  test -f Makefile || exit 2; test -f tools/test_m4_publish.sh || exit 2
+  case "$mutant" in inloop|noupload|deadcapture|nopositive|stall) ;; *) exit 2 ;; esac
+  S=${DRILL_S:-400}  # above the script's own worst case (2 probes x 10 s + 14 makes x 20 s), so the inner deadlines fire first
+  P=$(mktemp -d "${TMPDIR:-/tmp}/stapledon-7la.XXXXXX") || exit 2
+  trap 'rm -rf "$P"' EXIT
+  trap 'exit 130' INT; trap 'exit 143' TERM HUP
+  mkdir "$P/w" "$P/w/tools" "$P/tmp" || exit 2
+  cp Makefile "$P/w/Makefile" || exit 2; cp -R mk "$P/w/mk" || exit 2
+  cp tools/test_m4_publish.sh "$P/w/tools/test_m4_publish.sh" || exit 2
+  MK=$P/w/Makefile; TS=$P/w/tools/test_m4_publish.sh
+  case "$mutant" in
+    inloop)  # restore the old shape: no pre-check loop, no worlds count, test -s back inside the upload loop
+      perl -i -ne 'if (/^\t  for f; do test -s "\$\$f" \|\| \{ echo "capture-m4-publish: FAILED before any upload: \$\$f missing or empty"; exit 1; \}; done; \\$/) { $a++; next }
+        if (/^\t  test "\$\$\(wc -l < "\$\$d\/worlds\.sha256" \| tr -d . .\)" = 14 && \\$/) { $b++; next }
+        $c++ if s/^\t  n=0; for f; do gcloud /\t  n=0; for f; do test -s "\$\$f"; gcloud /; print;
+        END { exit(($a == 1 && $b == 1 && $c == 1) ? 0 : 3) }' "$MK" || exit 3 ;;
+    noupload|nopositive)  # the recipe still says "uploaded 18 files" but uploads nothing
+      perl -i -pe '$n += s/^\t  n=0; for f; do gcloud storage cp /\t  n=0; for f; do true storage cp /; END { exit($n == 1 ? 0 : 3) }' "$MK" || exit 3 ;;
+    deadcapture)  # the fake gcloud logs nowhere
+      perl -i -pe '$n += s{>> "\$T/log"}{>> /dev/null}g; END { exit($n == 2 ? 0 : 3) }' "$TS" || exit 3 ;;
+    stall)  # the recipe hangs in a child that ignores TERM
+      perl -i -pe '$n += s/^\t\@set -eu; d=/\t\@sh -c \x27trap "" TERM; exec sleep 617\x27; set -eu; d=/; END { exit($n == 1 ? 0 : 3) }' "$MK" || exit 3 ;;
+  esac
+  if test "$mutant" = nopositive; then  # and the positive control loses its upload count
+    perl -i -pe '$n += s/test "\$rc" = 0 && test "\$n" = 18 && test "\$good" = 18 && test "\$uniq" = 18 && /test "\$rc" = 0 && /; END { exit($n == 1 ? 0 : 3) }' "$TS" || exit 3
+  fi
+  F=$MK; O=Makefile; if test "$mutant" = deadcapture; then F=$TS; O=tools/test_m4_publish.sh; fi
+  if cmp -s "$ROOT/$O" "$F"; then echo "drill: mutation did not change $O"; exit 3; fi
+  if test "$mutant" = nopositive; then
+    if cmp -s "$ROOT/tools/test_m4_publish.sh" "$TS"; then echo "drill: mutation did not change the test"; exit 3; fi
+  fi
+  ran=0
+  for outer in make gmake; do
+    M=$(command -v "$outer" 2>/dev/null) || { echo "drill $mutant: $outer absent, skipped"; continue; }
+    test "$(ls -A "$P/tmp" | wc -l)" -eq 0 || exit 1                    # private leftovers before
+    t0=$(date +%s)
+    set +e
+    deadline "$S" env TMPDIR="$P/tmp" "$M" -C "$P/w" capture-m4-publish-test > "$P/out" 2>&1
+    rc=$?
+    set -e
+    t1=$(date +%s)
+    test "$(ls -A "$P/tmp" | wc -l)" -eq 0 || exit 1                    # and after: the test's trap ran
+    test "$(pgrep -f "$P/" | wc -l | tr -d ' ')" -eq 0 || exit 1        # no make or script of this drill is left
+    test "$(pgrep -fx 'sleep 617' | wc -l | tr -d ' ')" -eq 0 || exit 1 # nor the stall mutant's TERM-ignoring child
+    echo "drill $mutant via $outer: make rc $rc in $((t1 - t0)) s"
+    case "$rc" in
+      0|2) ;;
+      124) echo "drill $mutant: INFRASTRUCTURE timeout after $S s"; exit 4 ;;
+      *) echo "drill $mutant: INFRASTRUCTURE rc $rc"; exit 4 ;;
+    esac
+    I=$(grep -c '^capture-m4-publish-test: INFRASTRUCTURE timeout after ' "$P/out" || :)
+    if test "$mutant" = stall; then  # the expected outcome IS the INFRASTRUCTURE classification, bounded
+      test "$rc" -eq 2 || exit 1
+      test "$I" -eq 1 || exit 1
+      test "$(grep -c '^capture-m4-publish-test: INFRASTRUCTURE timeout after 20 s: make for case complete ' "$P/out")" -eq 1 || exit 1
+      test "$(grep -cE '^capture-m4-publish-test: (ok|FAIL|OK)' "$P/out")" -eq 0 || exit 1   # a timeout is never a case result
+      test "$((t1 - t0))" -le 40 || exit 1
+      ran=$((ran + 1)); continue
+    fi
+    if test "$I" -ne 0; then echo "drill $mutant: INFRASTRUCTURE (inner make timed out)"; exit 4; fi
+    N=$(grep -c '^capture-m4-publish-test: ok complete ' "$P/out" || :)
+    case "$mutant" in
+      inloop)
+        test "$rc" -eq 2 || exit 1
+        test "$N" -ge 1 || exit 1                                           # positive control still green
+        test "$(grep -c '^capture-m4-publish-test: FAIL ' "$P/out")" -eq $((4 * N)) || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL worlds-missing (.*): rc 2, uploads 17, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL worlds-empty (.*): rc 2, uploads 17, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL worlds-short (.*): rc 0, uploads 18, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL manifest-missing (.*): rc 2, uploads 15, ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok png-missing ' "$P/out")" -eq "$N" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok hash-mismatch ' "$P/out")" -eq "$N" || exit 1 ;;
+      noupload|deadcapture)
+        test "$rc" -eq 2 || exit 1
+        test "$N" -eq 0 || exit 1
+        K=$(grep -c '^capture-m4-publish-test: FAIL complete (.*): rc 0, uploads 0, ' "$P/out" || :)
+        test "$K" -ge 1 || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL ' "$P/out")" -eq "$K" || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok ' "$P/out")" -eq $((6 * K)) || exit 1 ;;
+      nopositive)  # predicted SURVIVOR: without the count, nothing sees that no file was uploaded
+        test "$rc" -eq 0 || exit 1
+        test "$(grep -c '^capture-m4-publish-test: FAIL ' "$P/out")" -eq 0 || exit 1
+        test "$(grep -c '^capture-m4-publish-test: ok complete ' "$P/out")" -ge 1 || exit 1 ;;
+    esac
+    ran=$((ran + 1))
+  done
+  test "$ran" -ge 1 || exit 1
+  echo "drill $mutant: expected outcome on $ran outer makes"
+)
+```
+
+After the preflights, on the fixed tree:
+
+```sh
+for m in inloop noupload deadcapture; do
+  drill "$PWD" "$m"; rc=$?; echo "exit=$rc"; test "$rc" -eq 0 || exit "$rc"
+done
+drill "$PWD" nopositive; rc=$?; echo "exit=$rc"; test "$rc" -eq 0 || exit "$rc"
+drill "$PWD" stall; rc=$?; echo "exit=$rc"; test "$rc" -eq 0 || exit "$rc"
+```
+
+Each drill must report **2 outer makes**, not merely an exit 0 after silently skipping gmake on the rig. `inloop` must give 4N FAILs with complete still green; `noupload` and `deadcapture` only N complete-case FAILs and 6N ok; `nopositive` is the deliberate survivor with rc 0, not a kill; `stall` expects exactly one inner INFRASTRUCTURE line and no case verdict, rc 2 per make within 40 s. Exit 1 is a doc/test mismatch: STOP. Exit 2 is setup/usage failure, 3 means mutation not applied, 4 means infrastructure; none is a kill. Never classify outer deadline rc 124 as expected for stall.
+
+The copied drill provides explicit ROOT, one parent template mktemp + immediate cleanup/signal traps, private Makefile/mk/script copy, exact substitution counts and cmp proof, captured/asserted rc, asserted counts, inherited private TMPDIR empty before and after, process absence, and both outer make paths. It never mutates the checkout. No drill script is committed. Retain every assertion; pgrep failures cannot be converted into zeroes.
+
+AC-a13 uses this hardened equivalent of the design's probe command (same injected hang and expected bounds; immediate traps, explicit ROOT, asserted counts and process-query status):
+
+```sh
+probe_7la() (
+  set -u
+  ROOT=${1:?explicit checkout ROOT required}
+  cd "$ROOT" || exit 2
+  ROOT=$(pwd -P)
+  Q=$(mktemp -d "${TMPDIR:-/tmp}/stap-7la-q.XXXXXX") || exit 2
+  trap 'rm -rf "$Q"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM HUP
+  mkdir "$Q/bin" "$Q/tmp" || exit 2
+  printf '#!/bin/sh\ntrap "" TERM\nexec sleep 618\n' > "$Q/bin/gmake" || exit 2
+  chmod +x "$Q/bin/gmake" || exit 2
+  test "$(ls -A "$Q/tmp" | wc -l)" -eq 0 || exit 1
+  s=$(date +%s)
+  rc=0
+  deadline 400 env PATH="$Q/bin:$PATH" TMPDIR="$Q/tmp" make -s capture-m4-publish-test > "$Q/out" 2>&1 || rc=$?
+  elapsed=$(($(date +%s) - s))
+  echo "rc=$rc ${elapsed}s"
+  case "$rc" in 124) echo 'probe: INFRASTRUCTURE outer deadline'; exit 4 ;; esac
+  test "$rc" -eq 2 || exit 1
+  test "$elapsed" -le 25 || exit 1
+  test "$(grep -c 'INFRASTRUCTURE timeout after 10 s: .*/gmake --version' "$Q/out")" -eq 1 || exit 1
+  test "$(grep -c '^capture-m4-publish-test: INFRASTRUCTURE' "$Q/out")" -eq 1 || exit 1
+  test "$(grep -cE '^capture-m4-publish-test: (ok|FAIL|OK)' "$Q/out")" -eq 0 || exit 1
+  prc=0; pgrep -fx 'sleep 618' > "$Q/pids" 2> "$Q/ps.err" || prc=$?
+  case "$prc" in 0|1) ;; *) cat "$Q/ps.err"; echo 'UNINFORMATIVE UNDER SANDBOX: process query'; exit 4 ;; esac
+  test "$(wc -l < "$Q/pids")" -eq 0 || exit 1
+  prc=0; pgrep -f "$Q/" > "$Q/pids" 2> "$Q/ps.err" || prc=$?
+  case "$prc" in 0|1) ;; *) cat "$Q/ps.err"; echo 'UNINFORMATIVE UNDER SANDBOX: process query'; exit 4 ;; esac
+  test "$(wc -l < "$Q/pids")" -eq 0 || exit 1
+  test "$(ls -A "$Q/tmp" | wc -l)" -eq 0 || exit 1
+  echo 'probe: timeout-signature=1 processes=0 tmp=0'
+)
+```
+
+### Exact acceptance gates (AC-a1 through AC-a14)
+
+Run from the implementation root; `mkdir -p .godot/tmp` for log redirections. Define the functions above first. Capture each command's substantive rc immediately; grep count 0 itself returns rc 1 and is not evidence that a make failed. All expected values below are **fixed-tree** values, separate from base findings. On the rig require the two measured GNU versions. AC-a12 and AC-a14 CI evidence are controller-only. AC-a6 requires the controller's committed implementation tree: before that commit compare saved hashes across drills instead, then repeat the literal HEAD gate afterwards. No pass is inferred from a query or a missing target.
+
+Status 124 / unexpected INFRASTRUCTURE / drill exit 4: infrastructure, STOP and controller re-run; never test evidence. The only expected injected INFRASTRUCTURE paths are the inner stall and version-probe bounds, which must also satisfy timing and cleanup. AC-a11 below is explicitly the D1 proposed correction, requiring controller disposition. AC-a13 uses the hardened wrapper above; it must report the same signature, bound and cleanup as the design command.
+
+| ID | Command | Expected |
+|---|---|---|
+| AC-a1 | `deadline 400 make -s capture-m4-publish-test > .godot/tmp/7la-m.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-m.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7la-m.out; tail -1 .godot/tmp/7la-m.out` | `rc=0`, `14` (7 cases × 2 makes on the rig), `0`, `capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`. `rc=124`, or an INFRASTRUCTURE count of 1, is a rig failure: re-run |
+| AC-a2 | `deadline 400 gmake -s capture-m4-publish-test > .godot/tmp/7la-g.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-g.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7la-g.out` | `rc=0`, `14`, `0` (the same through gmake, with the same INFRASTRUCTURE rule) |
+| AC-a3 | `for m in make gmake; do $m -pnq test 2>/dev/null \| grep '^test:' \| tr ' ' '\n' \| grep -cx capture-m4-publish-test; done; grep -c '^test: capture-m4-publish-test$' Makefile` | `1`, `1`, `1` (`make test` reaches it with either make, from its own line) |
+| AC-a4 | `for m in inloop noupload deadcapture; do drill "$PWD" $m; echo "exit=$?"; done` | for each: `drill <m> via make: make rc 2 in <s> s`, `drill <m> via gmake: make rc 2 in <s> s`, `drill <m>: expected outcome on 2 outer makes`, `exit=0`. `exit=4` (`INFRASTRUCTURE`) is a rig failure: re-run, never a kill |
+| AC-a5 | `drill "$PWD" nopositive; echo "exit=$?"; drill "$PWD" stall; echo "exit=$?"` | `nopositive`: `make rc 0` via both, `expected outcome on 2 outer makes`, `exit=0` (the predicted survivor). `stall`: `make rc 2 in <s> s` via both, with each `<s>` ≤ 40 (measured 25), `expected outcome on 2 outer makes`, `exit=0`. That proves a hung make with a TERM-ignoring child is bounded, classed INFRASTRUCTURE rather than as a case result, and leaves no process or temp dir. An `exit=4` from `nopositive`, or from the outer wrapper during `stall`, is a rig failure: re-run |
+| AC-a6 | `git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh; echo $?; find "${TMPDIR:-/tmp}" -maxdepth 1 \( -name 'stapledon-7la.*' -o -name 'm4-publish-test.*' \) \| wc -l` | `0` and `0` (drills never touched the checkout; no temp dirs left) |
+| AC-a7 | `grep -cF -- '--cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}"' Makefile; grep -c '^M4_PUBLISH_DIR := renders/m4$' Makefile` | `1`, `1` (public path and cache-control byte-identical; default source unchanged) |
+| AC-a8 | `awk '/^capture-m4-publish:/,/^\.PHONY: capture-m4-publish/' Makefile \| awk '/gcloud storage cp/ {g=NR} /test -s/ && !t {t=NR} /shasum -a 256 -c/ {s=NR} /worlds\.sha256" \| tr/ {w=NR} END {print (t<g && s<g && w<g) ? "pre-checks-first" : "ORDER-BAD"}'` | `pre-checks-first` |
+| AC-a9 | `grep -c '^NP=\$T/bin:/usr/bin:/bin$' tools/test_m4_publish.sh; grep -c 'is not first on PATH' tools/test_m4_publish.sh` | `1`, `1` (real `gcloud` unreachable, guarded) |
+| AC-a10 | `make uid-guard python-guard && git diff --check origin/main && echo gates-ok` | `gates-ok` (a `.sh` needs no `.uid`; no Python) |
+| AC-a11 | `git diff --name-only origin/main \| grep -cvxE 'Makefile\|tools/test_m4_publish\.sh\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json\|design_docs/planned/r1/m4-7l-capture-followups\.md\|design_docs/planned/r1/m4-7l-capture-followups-sprint\.md'; git diff --name-only origin/main \| grep -cxE 'Makefile\|tools/test_m4_publish\.sh'` | `0` outside files; `2` changed code files. Proposed correction D1: five allowed paths, including the required sprint plan; controller must ratify. |
+| AC-a12 | `rig/full` on the PR head (`tools/rig_check.sh <PR>`, launched detached per the iteration-61 fix). `rig_check.sh` runs `make test` and writes its log to `${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/<sha>}.log` (A-V17), so afterwards run `grep -c '^capture-m4-publish-test: OK (7 cases on 2 makes' "${TMPDIR:-/tmp}/rig-check/<full head sha>.log"` | status `success`; `1` |
+| AC-a13 | `probe_7la "$PWD"; rc=$?; echo "exit=$rc"; test "$rc" -eq 0` (function above; hardened equivalent of AC-a13) | `rc=2` within 25 s; `probe: timeout-signature=1 processes=0 tmp=0`; `exit=0`. One 10 s probe INFRASTRUCTURE line, zero case verdicts, zero remaining processes/temp entries. Outer timeout is infrastructure failure, never accepted. |
+| AC-a14 | Linux run (quorum round 2): `grep -cE '^ci-fast:.* capture-m4-publish-test( \|$)' Makefile`; then, on the PR's fast-tier run, `gh run view <run> --log \| grep -E 'capture-m4-publish-test: (OK\|FAIL\|INFRASTRUCTURE)'` | `1`; the fast-tier job is `success` and its log carries `capture-m4-publish-test: OK (7 cases on 1 makes: GNU Make 4.<n>)`, with 0 `FAIL` and 0 `INFRASTRUCTURE` lines. |
+
+
+For AC-a12 the controller launches `tools/rig_check.sh <PR>` detached according to the mission's iteration-61 procedure **after this bounded planner/executor run ends**; that later controller-owned job is the full-suite stage. Use the actual `dir=${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/$sha}` and `log="$dir.log"` values if RIG_DIR is overridden; default is `<tmp>/rig-check/<full sha>.log`. Require rig/full success on the exact PR head and the OK count of 1, not an older head's status. Executor does not launch this job or run the whole suite.
+
+For AC-a14 source grep must print 1. The controller records PR head SHA, fast-tier run ID, successful `gh run view <run> --log` retrieval, one Linux OK with seven cases on one GNU Make 4.x, and zero FAIL/INFRASTRUCTURE lines from that test. A failed `gh` pipeline is not a zero-match result. Linux timeout behavior is not claimed here. Any other Linux make inventory must be measured and reported for controller disposition rather than relabelled as the specified runner evidence.
+
+### Files allowed / do not touch
+
+Planner writes only this sprint plan and `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json` (one appended feature); existing feature objects and all other state remain canonical-byte-identical under `jq -S`. Keep `passes: false`.
+
+Executor code scope: **`Makefile`** (the publish block and single `ci-fast:` prerequisite addition only) and **`tools/test_m4_publish.sh`** (one new shell test, no `.uid`). Bookkeeping: only this new feature's notes in the sprint JSON. The branch's five-path allowlist after planning/implementation is the two code files, sprint JSON, existing design addendum, and this sprint plan; the planner's D1 correction adds the fifth path to AC-a11. Do not edit the design doc while resolving defects; controller disposition is explicit in notes/plan.
+
+Do not touch `mk/*`, other Makefile recipes/test prerequisites, `sim/*`, any `.ail`/`.py`, packages, pins/locks/runtime, `.github/workflows/*`, `demos/*`, `ui/*`, scenes/shaders, capture/bench drivers, historical (b)–(d) report or feature, render assets/public set, normative physics/design canon, or generated `.translation` files. No republish and no call to a real gcloud. No changelog fragment is in the design's bounded allowlist. If one becomes required, STOP for controller scope disposition instead of silently widening it.
+
+### Pause points and handoff
+
+- **Before implementation:** STOP and report `BLOCKED: PR ownership unverified` until fresh gh reads succeed; STOP on any recipe/ci-fast overlap or anchor drift for controller re-measurement. The historical PR list is not a substitute.
+- **Design defect disposition:** STOP dependent work until the controller records D1's allowlist correction and D2's host-preflight decision. These are engineering/design dispositions within the existing grant, not reopened human decisions.
+- **RED:** STOP if the new script fails for environment reasons, if complete is not green, or if the measured partial-upload failures are not reproduced. Keep the evidence; do not implement a fix over an unproven test.
+- **GREEN/drills:** STOP on any unmutated FAIL, wrong mutant signature, unapplied mutation, unexpected survivor, timeout or process-query failure. Label sandbox-blocked checks `UNINFORMATIVE UNDER SANDBOX`; preserve passes false and transfer only those checks to the controller. Re-run relevant gates after an actual correction; do not broaden into GPU or full-suite work.
+- **After focused execution:** executor stops with code and dated evidence; controller commits implementation, repeats AC-a6 on that committed tree, runs rig/full and Linux fast tier on the PR head, and arranges independent evaluation. Only controller can mark passes true after rig/full. No human pause is added under D-88 A.
+
+Planner validation: run `git diff --check`, the exact D1 original/corrected allowlist comparison, and the requested `jq -S` preservation comparison against planning HEAD, then stage **only these two planning files** and commit `plan(7l-a): sprint amendment and feature object` with the specified co-author trailer. If the sandbox refuses the commit, leave these edits uncommitted and report the refusal; no escalation or push.
+
+### Planning artifact checks (measured before commit)
+
+The required canonical comparison returned **cmp rc 0**: all 21 existing features and every other top-level value are unchanged; feature count is now 22. Exact comparison (HEAD is the planning base at this point):
+
+```sh
+(
+  S=.ailang/state/sprints/sprint_R1-M4-JOURNEY.json
+  Q=$(mktemp -d "${TMPDIR:-/tmp}/iter64-state-check.XXXXXX") || exit 2
+  trap 'rm -rf "$Q"' EXIT
+  git show "HEAD:$S" | jq -S 'del(.features[] | select(.id=="M4.6rR3_7la_ATOMIC_PUBLISH"))' > "$Q/before" || exit 1
+  jq -S 'del(.features[] | select(.id=="M4.6rR3_7la_ATOMIC_PUBLISH"))' "$S" > "$Q/after" || exit 1
+  cmp "$Q/before" "$Q/after" || exit 1
+  echo existing-state-identical
+)
+```
+
+Expected and observed: `existing-state-identical`, rc 0. `git diff --check` is clean. Original AC-a11 outside-file count after these edits is **1**, the sprint plan; proposed D1 regex gives **0**; changed-code count remains **0** until execution (must become 2). Every extracted shell block containing runnable code passes `sh -n` and `bash -n`; the literal numbered-placeholder PR snippets are instructions, not scripts to execute verbatim. The new test still does not exist in the checkout, and `git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh` still returns 0. Only the sprint plan and sprint JSON are edited. No fixed-tree test result, GPU/socket check, process-cleanup verdict, current PR hold verdict or CI/rig success is claimed by this planning commit.
+
+Commit attempt: `git add` of exactly the two planning paths was refused with rc 128: `Unable to create .../.git/index.lock: Operation not permitted`. The requested commit therefore was not created; both artifacts remain **uncommitted** for the controller. No escalation or push was attempted.
+
+### Controller dispositions (iteration 64, 2026-11-02)
+
+- **D1 ACCEPTED.** AC-a11's allowlist regex gains `design_docs/planned/r1/m4-7l-capture-followups-sprint\.md`; the code-file control count stays `2`. The gate table and feature object already carry it.
+- **D2 NOT ADOPTED: a sandbox artifact, not a host defect.** Re-measured by the controller outside the sandbox: `env TMPDIR=$Q/ /usr/bin/make --version` and the same for `/opt/homebrew/bin/gmake` each leave **0** entries in a fresh private `$Q`. The `xcrun_db` entry appears only inside the codex sandbox (its xcrun cache path is not writable there, so xcrun falls back to `TMPDIR`). So no `xcrun --find make` preflight is added and the design is unchanged. Zero-entry assertions (drill private-temp counts, AC-a6, AC-a13) are judged on the controller's and evaluator's out-of-sandbox runs; inside the sandbox the executor labels them `UNINFORMATIVE UNDER SANDBOX` when `xcrun_db` is the only entry.
+- **PR ownership** (the planner's `gh` was blocked by the sandbox): measured by the controller and the designer at 17:00–18:45Z: open PRs #371 (`Makefile` hunk at ~505), #373 (hunk at 18–28), #374 (no `Makefile`), #375 (`mk/sound.mk` only). None touches the recipe, the `ci-fast:` line or the `test:` region. The executor re-checks at splice time per the Risks pre-flight.

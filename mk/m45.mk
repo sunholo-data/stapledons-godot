@@ -21,11 +21,11 @@ scene-session-fixture: ## Record the real stub playthrough input; CHECK=1 compar
 replay-scene-record: ## Explicit arm64 record, retaining the VM/interpreter proof and producer status
 	@mkdir -p $(M45_SCENE_WORK)
 	@test "$$(uname -m)" = arm64 || { echo 'scene record: arm64 required'; exit 1; }
-	@set -e; env -u AI_LIVE $(AILANG) --version > $(M45_SCENE_WORK)/version.log; grep -qx 'AILANG v0.56.0' $(M45_SCENE_WORK)/version.log
+	@set -e; env -u AI_LIVE $(AILANG) --version > $(M45_SCENE_WORK)/version.log; grep -qx 'AILANG v0.56.1' $(M45_SCENE_WORK)/version.log
 	@env -u AI_LIVE AILANG=$(AILANG) python3 tools/replay.py --record $(M45_SCENE).ndjson > $(M45_SCENE_WORK)/record.log 2>&1; rc=$$?; \
 	if [ $$rc -ne 0 ]; then cat $(M45_SCENE_WORK)/record.log; exit $$rc; fi; \
 	set -e; grep -E '^(replay:|recorded )' $(M45_SCENE_WORK)/record.log > $(M45_SCENE_WORK)/record.txt; \
-	test "$$(wc -l < $(M45_SCENE_WORK)/record.txt | tr -d ' ')" -eq 2; grep -Eq '^replay: AILANG v0\.56\.0, arm64 ' $(M45_SCENE_WORK)/record.txt; \
+	test "$$(wc -l < $(M45_SCENE_WORK)/record.txt | tr -d ' ')" -eq 2; grep -Eq '^replay: AILANG v0\.56\.1, arm64 ' $(M45_SCENE_WORK)/record.txt; \
 	grep -Eq '^recorded $(M45_SCENE)\.state\.arm64\.sha256 \([0-9]+ replies, [0-9]+ bytes, sha256 [0-9a-f]{64}, VM [0-9.]+ s, interpreter [0-9.]+ s\)$$' $(M45_SCENE_WORK)/record.txt; \
 	tee $(M45_SCENE).record.txt < $(M45_SCENE_WORK)/record.txt
 

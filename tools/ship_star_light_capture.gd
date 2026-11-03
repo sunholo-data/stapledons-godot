@@ -1,6 +1,7 @@
 extends SceneTree
 ## R1-SHIP-STAR-LIGHT renders: the guided solar departure (real sim, fast ticks as in
 ## tools/solar_departure_capture.gd), the ship lit by the star the player sees.
+## R3-TRUE-PROCESSED: each pose in True (Realistic) and Processed (Auto).
 ## Poses per stop: the tour's own bridge view, a bridge overlook looking down-light
 ## (where the shadows fall), and the Commons arcade. Writes renders/ship_star_light/.
 var captures := []
@@ -17,15 +18,21 @@ func settle() -> void:
 	for frame in 10: await process_frame
 	await RenderingServer.frame_post_draw
 
+## R3-TRUE-PROCESSED: every pose twice, as the player sees each setting: Realistic (the True star
+## light) as <name>_true.png, Auto (Processed, the ship's lamps following the star) as <name>_processed.png.
 func shot(name: String) -> void:
 	var card_visible: bool = demo.crossing_review.visible
 	demo.crossing_review.visible = false # the crossing review would cover the deck
-	await settle()
-	root.get_texture().get_image().save_png(OUT + "/" + name + ".png")
+	for auto: bool in [false, true]:
+		demo.set_auto_view(auto)
+		await settle()
+		var stem := name + ("_processed" if auto else "_true")
+		root.get_texture().get_image().save_png(OUT + "/" + stem + ".png")
+		var w: Dictionary = demo.journey_sim.world
+		captures.append({"name": stem, "setting": demo.star_light.mode, "phase": w.ship.phase, "beta": w.ship.beta, "gamma": w.ship.gamma, "epoch_jd": w.system.jd, "eye_m": [demo.camera.position.x, demo.camera.position.y, demo.camera.position.z], "tilt_deg": demo.camera.tilt, "yaw_rad": demo.camera.yaw, "attitude": Array(demo.camera.attitude_basis), "lighting": demo.lighting_manifest()})
+		print("capture ", stem, " · ", demo.star_light.hud_line(), " · interior dir ", demo.star_light.interior_dir, " · key ", demo.lighting.key.light_energy, " · exposure ", demo.lighting.environment.tonemap_exposure)
+	demo.set_auto_view(false)
 	demo.crossing_review.visible = card_visible
-	var w: Dictionary = demo.journey_sim.world
-	captures.append({"name": name, "phase": w.ship.phase, "beta": w.ship.beta, "gamma": w.ship.gamma, "epoch_jd": w.system.jd, "eye_m": [demo.camera.position.x, demo.camera.position.y, demo.camera.position.z], "tilt_deg": demo.camera.tilt, "yaw_rad": demo.camera.yaw, "attitude": Array(demo.camera.attitude_basis), "lighting": demo.lighting_manifest()})
-	print("capture ", name, " · ", demo.star_light.hud_line(), " · interior dir ", demo.star_light.interior_dir, " · key ", demo.lighting.key.light_energy)
 
 ## The tour's view, then an overlook down-light, then the Commons; the bridge eye is restored.
 func poses(stem: String, which := ["bridge", "overlook", "commons"]) -> void:
@@ -109,7 +116,7 @@ func _run() -> void:
 		if id == "saturn": await poses("03_saturn_arrival", ["overlook"])
 		if failed: break
 	var file := FileAccess.open(OUT + "/capture-manifest.json", FileAccess.WRITE)
-	file.store_string(JSON.stringify({"captures": captures, "itinerary": itinerary, "note": "Guided solar departure, real sim, fast capture ticks (normal play is 20 Hz). Ship lit by the star the player sees: direction and colour physical, brightness log-compressed (see lighting.star_light). No GR."}, "  "))
+	file.store_string(JSON.stringify({"captures": captures, "itinerary": itinerary, "note": "Guided solar departure, real sim, fast capture ticks (normal play is 20 Hz). Ship lit by the star the player sees, each pose in both settings (R3-TRUE-PROCESSED): _true (Realistic view: physical brightness, the deck exposed for the adapted eye) and _processed (Auto view: the ship's lamps follow the star, brightness log-compressed); direction and colour physical in both (see lighting.star_light). No GR."}, "  "))
 	print("ship-star-light-capture-images: %d" % captures.size())
 	print("ship-star-light-capture: %s" % ("FAIL" if failed else "OK"))
 	demo.queue_free(); await process_frame; quit(1 if failed else 0)

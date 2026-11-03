@@ -1,6 +1,6 @@
 # R2-SOUND (design_docs/planned/r2/sound.md): the cue table, the mix, the synthesised sounds and
 # their checks. Every check here runs headless (the Dummy audio driver still mixes; design §Evidence).
-.PHONY: sound-test sound-assets-check sound-synth sound-synth-check sound-levels sound-levels-parity sound-check sound-review sound-stage sound-stage-check sound-export-smoke ship-sound-test sound-archive-test
+.PHONY: sound-voyage-test sound-voyage-review sound-test sound-assets-check sound-synth sound-synth-check sound-levels sound-levels-parity sound-check sound-review sound-stage sound-stage-check sound-export-smoke ship-sound-test sound-archive-test
 
 # AC1-AC5, AC8 (rules), §D2 layout: validators with negative controls, the clocks, deterministic
 # variation; then the same scripted session in two separate processes must give the same cue log (AC2).
@@ -117,3 +117,25 @@ test: ship-sound-test
 sound-archive-test: import
 	@$(GODOT_SIM) --headless --path . --script tests/test_sound_archive.gd > $(SCRATCH)/sound-archive.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-archive)' $(SCRATCH)/sound-archive.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound-archive.log && grep -q '^sound-archive: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound-archive.log
 test: sound-archive-test
+
+# R2-SOUND S2 (§D6, §D9; AC2, AC4, AC15): a real voyage's cue log (the transit harness's scripted flight on the
+# sim at 2.16: plan, commit, the drive, the dust counter, arrival, the home beacon at the sim's Earth rate),
+# equal to tests/fixtures/sound/cue_log_voyage.txt and byte-identical in two separate processes.
+sound-voyage-test: import
+	@mkdir -p $(SCRATCH)/sound
+	@$(GODOT_SIM) --headless --path . --script tests/test_sound_voyage.gd -- --log-out=$(CURDIR)/$(SCRATCH)/sound/voyage1.txt > $(SCRATCH)/sound/voyage.log 2>&1; rc=$$?; grep -E '^(FAIL|sound-voyage)' $(SCRATCH)/sound/voyage.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sound/voyage.log && grep -q '^sound-voyage: [0-9]* passed, 0 failures$$' $(SCRATCH)/sound/voyage.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_sound_voyage.gd -- --log-out=$(CURDIR)/$(SCRATCH)/sound/voyage2.txt > $(SCRATCH)/sound/voyage2.log 2>&1
+	@test -s $(SCRATCH)/sound/voyage1.txt && cmp $(SCRATCH)/sound/voyage1.txt $(SCRATCH)/sound/voyage2.txt && echo "sound-voyage-test: the voyage's cue log equals the golden and is byte-identical in two processes ($$(wc -l < $(SCRATCH)/sound/voyage1.txt | tr -d ' ') lines)"
+test: sound-voyage-test
+
+# S2 listening review: each new cue, the home beacon at the sim's Earth rates in True and Receiver (measured:
+# the carrier's frequency, the pips' gap, peaks, clipping) and a ~70 s montage of the real sim's flight to
+# Alpha Cen A, rendered through the real buses on the CoreAudio driver, output kept silent (macOS;
+# tools/sound_voyage_review.gd). PUBLISH=1 uploads the WAVs,
+# Ogg Opus copies (ffmpeg, review only) and measure.json to gs://stapledons-voyage-assets/refs/sound_s2/.
+SOUND_S2_OUT ?= $(CURDIR)/build/sound_s2
+sound-voyage-review: import
+	@rm -rf $(SOUND_S2_OUT); mkdir -p $(SOUND_S2_OUT)
+	@$(GODOT_SIM) --display-driver headless --audio-driver CoreAudio --path . --script tools/sound_voyage_review.gd -- --out=$(SOUND_S2_OUT) 2>&1 | grep -E '^sound-voyage-review: [0-9]+ files|FAIL'
+	@for w in $(SOUND_S2_OUT)/*.wav; do ffmpeg -loglevel error -y -i "$$w" -c:a libopus -b:a 96k "$${w%.wav}.ogg"; done
+	@if [ "$(PUBLISH)" = 1 ]; then gcloud storage cp --cache-control=no-cache $(SOUND_S2_OUT)/* gs://stapledons-voyage-assets/refs/sound_s2/ && echo "sound-voyage-review: published https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/"; fi

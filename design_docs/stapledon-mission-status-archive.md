@@ -2,6 +2,34 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-31 — ITERATION 62: L9 semantic-memory S0.3 LANDED (PR #366, merge `ca1e04d0`): the bridge keeps the sim's `similar` section exactly as sent (`SIMILAR_MINOR := 14`, `similar`, `parse_similar()`), checked on the real sim at 2.14, 2.15 and 2.16; the stale S0.3 plan (protocol 2.16) was amended first; `rig/full` green in 106 min; independent Sonnet 90 PASS, zero blocking; new row 7x (Godot `--script` exits 0 on a parse error); 7m-d PARKED-ON-LANE (GPU 100 %); clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE at pick (predicate GPU < 15 % and 1-min load < 5; GPU `Device Utilization %` 100/100 then 100/100/100 at about 12:47–12:55Z, load 3.4–3.6). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, L4 is parked on D-129, Kerr a5 landed, so the order's next row, L9 S0.3.
+- **Done**:
+  - Premise check first: the S0.3 plan predates protocol 2.16. `main.gd` asks for EARTH_MINOR, so the plan's frozen-base `main.gd` gate failed at base; the sim emits `similar` at 2.16 too (measured).
+  - Plan by kimi-k3 (pi): "Amendment iter62" in `semantic-memory-s0-sprint.md` and the S0.3 object (`9cecc94b`): a merge-base `main.gd` gate, minors 14/15/16, bridge rules 1–5, six test rows, nine drills, and a guard with an in-recipe positive control (`git grep -E` has no `\b`; controller reproduced).
+  - Build by Haiku 5.5 (`e151c903`, 104 of 120 lines): bridge +21/−2, tests +70, `similar-test` +11, a changelog fragment. RED at base (parse error, but rc 0; row 7x); GREEN 98 → 107 ok, 0 failures; drills M1–M9 killed.
+  - Judge Sonnet 5.5 in its own clone: **90/100 PASS**, zero blocking (`eval_R2-SIMILAR-S0_S0.3_round_1.json`). Survivors owed at S0 Landing: the guard misses `.get("vector", default)` and `.has("vector")` (controller reproduced); `SIMILAR_MINOR := 15`; an empty `{}`; aliasing.
+  - `rig/full` on `e151c903`, launched detached at 13:28Z: green in 106 min (`rig-check: ok, e151c903 green (make test, 106 min)`; status `rig/full` success, AILANG v0.54.18; 1-min load 4.3–11 during the run). Main had not moved; merged with `--match-head-commit`: `ca1e04d0`. Fast tier on the merge: success (run 41213997354).
+- **Next**:
+  - 7m-d first when the GPU is quiet; re-measure its premise first.
+  - Then L9 S0 Landing (fold in the S0.3 judge's survivors) → L3, then 7l(a), 7w and 7x. D-129 (Mark) → L4 M1b → M2.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
+## STATUS 2026-10-31 — ITERATION 61: Kerr K1.1a-a5 LANDED (PR #364, merge `644cff09`): the Kerr oracle's terminal child pins the fixture's schema, unit and source and its exact 40-record set, so paired oracle+fixture drift through the regenerate path now fails, and the harness's own guards gain self-tests; K1.1a-a (a1–a5) complete; `rig/full` run 2 green in 120 min, 4 s inside its watchdog (run 1 stopped at the controller's 2-hour harness cap under load); independent Sonnet 86 PASS, zero blocking; 7m-d PARKED-ON-LANE (GPU 80–83 %); clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE at pick (predicate GPU < 15 % and 1-min load < 5; GPU `Device Utilization %` 80/80/83 at about 02:00Z, load 9.6–10.4). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, L4 is parked on D-129, and attended #344/#351 merged at 2026-10-30T20:29Z (the `Makefile` hold is released), so the order's next row, K1.1a-a5.
+- **Done**:
+  - Plan by kimi-k3 (pi): "Amendment iter61" in `kerr-black-holes-sprint.md` and the a5 sprint object (`c1c5ee07`). Controller facts first: a drifted `unit`, regenerated into the fixture, passed the full shell (rc 0), and nothing pinned the record set. Controller correction: guard (c) counts a private parent dir, not the shared `$TMPDIR`.
+  - Build by Haiku 5.5 (`5a23df3c`, 44 of 100 lines): literal pins, an exact 16-id/40-record completeness audit, three regen drills (11 in total), and guard self-tests (no-op exit 3, wrong-reason grep, private-parent cleanup). RED at base for R1–R3 (rc 0); after, each fails with its label; the controller re-ran every gate under `sh`, `make` and `gmake`, and the R1/R5/R6 proofs.
+  - Judge Sonnet 5.5 in its own clone: **86/100 PASS**, zero blocking (`eval_R2-KERR_K1.1a-a5_round_1.json`). Minor survivors: the schema and source pins have no drill (controller reproduced); a deleted parent EXIT trap leaks one empty dir.
+  - `rig/full`: run 1 stopped by the controller's 2-hour harness cap (= the 7,200 s watchdog) about 30 lines from the end, not a hang; run 2, detached, green in 120 min. Main had not moved; merged with `--match-head-commit`: `644cff09`. Fast tier on the merge: success (run 41176183145).
+- **Next**:
+  - 7m-d first when the GPU is quiet; re-measure its premise first.
+  - Then L9 S0.3 → L3, then 7l(a) and 7w (the `Makefile` hold is released; re-check files against open PRs at pick). D-129 (Mark) → L4 M1b → M2.
+  - `rig/full` took 120 min under fleet load (main 71–74 min the same evening): no headroom under its watchdog. L4 is the fix and waits on D-129.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
 ## STATUS 2026-10-30 — ITERATION 60: row 7n(b) LANDED (PR #358, merge `dc458f9c`): the ISM map layer's repeated-connect survivor MG is killed by a named FAIL, host-null is recorded as equivalent in use, and a `7nb-sentinel` positive control kills a dead logger; `rig/full` green in 67 min; independent Sonnet 93 PASS, zero blocking; quorum 2 rounds BLOCKED, round-2 fixes applied under the carve-out; new item 7n(f); 7m-d PARKED-ON-LANE at pick (GPU 99–100 %), quiet 40 min later; clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE at pick (predicate GPU < 15 % and 1-min load < 5; GPU `Device Utilization %` 99/100/100/100 at about 11:35Z, Firefox, load 2.4–3.3). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable; every ordered row after it is held by attended #344/#351, so an unheld clause-4 follow-up, row 7n(b).

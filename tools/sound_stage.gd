@@ -3,6 +3,8 @@ extends SceneTree
 ## AudioStreamWAV resource (load_from_buffer with the importer's compress/mode 2), loop points set from
 ## the manifest, saved as <out>/<kind>/<file>.res. --check also reloads each, compares it with its
 ## source (QOA format, length to the frame, loop points) and holds the bundle to its export budget.
+## R2-SOUND S2: a generator row's stream (home_beacon_env, the beacon's envelope table, read as samples
+## by HomeBeacon) stages as 16-bit PCM, since QOA data cannot be read back as samples.
 ## Run: godot --headless --path . --script tools/sound_stage.gd -- --out=<dir> [--check] [--budget=<bytes>]
 
 
@@ -16,12 +18,18 @@ func _initialize() -> void:
 	var m := SoundData.load_assets()
 	var bad: Array[String] = []
 	var total := 0
+	var pcm := {}
+	var table: Variant = SoundData.read_json(SoundData.CUES_PATH)
+	for c: Dictionary in (table.cues if table is Dictionary else []):
+		if c.get("generator", false):
+			for sid: Variant in c.streams:
+				pcm[str(sid)] = true
 	for id: String in m.assets:
 		var r: Dictionary = m.assets[id]
 		var rel := str(r.path)
 		var dst := out.path_join(rel.trim_prefix("assets/audio/").get_basename() + ".res")
 		DirAccess.make_dir_recursive_absolute(dst.get_base_dir())
-		var s := AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes("res://" + rel), {"compress/mode": 2})
+		var s := AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes("res://" + rel), {"compress/mode": 0 if pcm.has(id) else 2})
 		if r.get("loop", null) is Dictionary:
 			s.loop_mode = AudioStreamWAV.LOOP_FORWARD
 			s.loop_begin = int(r.loop.begin)
@@ -34,8 +42,8 @@ func _initialize() -> void:
 		if args.has("check"):
 			var back: AudioStreamWAV = ResourceLoader.load(dst, "", ResourceLoader.CACHE_MODE_IGNORE)
 			var want_len := float(r.frames) / 48000.0
-			if back == null or back.format != AudioStreamWAV.FORMAT_QOA:
-				bad.append("%s: the staged resource is not QOA" % id)
+			if back == null or back.format != (AudioStreamWAV.FORMAT_16_BITS if pcm.has(id) else AudioStreamWAV.FORMAT_QOA):
+				bad.append("%s: the staged resource is not %s" % [id, "16-bit PCM" if pcm.has(id) else "QOA"])
 			elif absf(back.get_length() - want_len) > 1.0 / 48000.0:
 				bad.append("%s: staged length %.6f s, source %.6f s" % [id, back.get_length(), want_len])
 			elif r.get("loop", null) is Dictionary and (back.loop_mode != AudioStreamWAV.LOOP_FORWARD or back.loop_end != int(r.loop.end)):
