@@ -1,0 +1,8 @@
+# Windowed godot invocations allowed to keep the speakers (tools/audio_silent_guard.sh).
+# One per line: <target or script path><TAB><reason>. Everything else that opens a window runs with
+# --audio-driver Dummy ($(AUDIO_OFF)), so captures, goldens, benches and reviews never play out loud.
+run	the game itself, played by a person
+voyage	the game started on the guided voyage, played by a person
+run-bh	the game started at Sgr A*, played by a person
+run-ship-demo	the ship demo, played by a person
+sound-voyage-review	needs real 512-frame mixing (CoreAudio); tools/sound_voyage_review.gd mutes the Master bus at the device and records from a capture before it

@@ -20,4 +20,4 @@ test: deck-assets-check
 TAG ?= capture
 deck-layout-capture: import ## AC11 (GPU window): the shipped bridge's plan, Bow at rest / 0.99c / first stop, Astern, a walk, the console zooms -> renders/deck_layout/$(TAG)/ (+ contact sheet, probe.json). Open every frame
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --path . --script tools/deck_bow_probe.gd -- --layouts=res://art/deck-layout-v2/shipped.json --capture --out=res://renders/deck_layout/$(TAG) > $(SCRATCH)/deck-layout-capture-$(TAG).log 2>&1; rc=$$?; grep -E '^(FAIL|shot|deck-bow-probe)' $(SCRATCH)/deck-layout-capture-$(TAG).log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/deck-layout-capture-$(TAG).log
+	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/deck_bow_probe.gd -- --layouts=res://art/deck-layout-v2/shipped.json --capture --out=res://renders/deck_layout/$(TAG) > $(SCRATCH)/deck-layout-capture-$(TAG).log 2>&1; rc=$$?; grep -E '^(FAIL|shot|deck-bow-probe)' $(SCRATCH)/deck-layout-capture-$(TAG).log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/deck-layout-capture-$(TAG).log
