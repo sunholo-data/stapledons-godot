@@ -9,7 +9,7 @@ Updated 2026-11-03, iteration 66.
   - Judge: Sonnet in its own clone, 92 PASS with zero blocking findings. Fast tier green.
   - `rig/full` is red at `sound-test` S2 (2 failures). The failure is inherited: main `68796623` and attended #385 fail the same way at load 7. This is row 7z, attended R2-SOUND.
 - **Rig:** shared with attended D-144 agents. Main's `rig/full` is currently red at `sound-test` S2, so no PR can land until 7z clears.
-- **In flight (loop):** PR #387 waits on 7z. Resume predicate: `make sound-test` green on origin/main → `tools/rig_check.sh 387` → merge → publish the dated S1 set → park for Mark's S1 render review.
+- **In flight (loop):** PR #387 waits on 7z. Resume predicate: `make sound-test` green on origin/main (still red after #386, 12:41Z; merge main into #387 first: #386 edits the same `capture-m4` line) → `tools/rig_check.sh 387` → merge → publish the dated S1 set → park for Mark's S1 render review.
 - **Order:** land #387 → 7m-d (quiet rig; start from the 100 Hz hypothesis) → 7x. D-129 then unlocks L4 M1b and M2.
 - **Backlog (non-blocking):**
   - 7y: NT4 is intermittent; `ReviewDrive.reach` cannot say why it failed.
