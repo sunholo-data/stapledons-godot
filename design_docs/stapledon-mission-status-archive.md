@@ -2,6 +2,20 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-31 — ITERATION 62: L9 semantic-memory S0.3 LANDED (PR #366, merge `ca1e04d0`): the bridge keeps the sim's `similar` section exactly as sent (`SIMILAR_MINOR := 14`, `similar`, `parse_similar()`), checked on the real sim at 2.14, 2.15 and 2.16; the stale S0.3 plan (protocol 2.16) was amended first; `rig/full` green in 106 min; independent Sonnet 90 PASS, zero blocking; new row 7x (Godot `--script` exits 0 on a parse error); 7m-d PARKED-ON-LANE (GPU 100 %); clause 4 unmoved
+
+- **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE at pick (predicate GPU < 15 % and 1-min load < 5; GPU `Device Utilization %` 100/100 then 100/100/100 at about 12:47–12:55Z, load 3.4–3.6). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, L4 is parked on D-129, Kerr a5 landed, so the order's next row, L9 S0.3.
+- **Done**:
+  - Premise check first: the S0.3 plan predates protocol 2.16. `main.gd` asks for EARTH_MINOR, so the plan's frozen-base `main.gd` gate failed at base; the sim emits `similar` at 2.16 too (measured).
+  - Plan by kimi-k3 (pi): "Amendment iter62" in `semantic-memory-s0-sprint.md` and the S0.3 object (`9cecc94b`): a merge-base `main.gd` gate, minors 14/15/16, bridge rules 1–5, six test rows, nine drills, and a guard with an in-recipe positive control (`git grep -E` has no `\b`; controller reproduced).
+  - Build by Haiku 5.5 (`e151c903`, 104 of 120 lines): bridge +21/−2, tests +70, `similar-test` +11, a changelog fragment. RED at base (parse error, but rc 0; row 7x); GREEN 98 → 107 ok, 0 failures; drills M1–M9 killed.
+  - Judge Sonnet 5.5 in its own clone: **90/100 PASS**, zero blocking (`eval_R2-SIMILAR-S0_S0.3_round_1.json`). Survivors owed at S0 Landing: the guard misses `.get("vector", default)` and `.has("vector")` (controller reproduced); `SIMILAR_MINOR := 15`; an empty `{}`; aliasing.
+  - `rig/full` on `e151c903`, launched detached at 13:28Z: green in 106 min (`rig-check: ok, e151c903 green (make test, 106 min)`; status `rig/full` success, AILANG v0.54.18; 1-min load 4.3–11 during the run). Main had not moved; merged with `--match-head-commit`: `ca1e04d0`. Fast tier on the merge: success (run 41213997354).
+- **Next**:
+  - 7m-d first when the GPU is quiet; re-measure its premise first.
+  - Then L9 S0 Landing (fold in the S0.3 judge's survivors) → L3, then 7l(a), 7w and 7x. D-129 (Mark) → L4 M1b → M2.
+  - 2 OPEN decisions (D-128, D-129), unchanged.
+
 ## STATUS 2026-10-31 — ITERATION 61: Kerr K1.1a-a5 LANDED (PR #364, merge `644cff09`): the Kerr oracle's terminal child pins the fixture's schema, unit and source and its exact 40-record set, so paired oracle+fixture drift through the regenerate path now fails, and the harness's own guards gain self-tests; K1.1a-a (a1–a5) complete; `rig/full` run 2 green in 120 min, 4 s inside its watchdog (run 1 stopped at the controller's 2-hour harness cap under load); independent Sonnet 86 PASS, zero blocking; 7m-d PARKED-ON-LANE (GPU 80–83 %); clause 4 unmoved
 
 - **Clause map**: 1 MET; 2 MET; 3 MET; 4 UNMET → row 7m AC1 waits on 7m-d, PARKED-ON-LANE at pick (predicate GPU < 15 % and 1-min load < 5; GPU `Device Utilization %` 80/80/83 at about 02:00Z, load 9.6–10.4). P-land is Mark's. 5 ongoing. D-128 default A: 7m-d was not routable, L4 is parked on D-129, and attended #344/#351 merged at 2026-10-30T20:29Z (the `Makefile` hold is released), so the order's next row, K1.1a-a5.
