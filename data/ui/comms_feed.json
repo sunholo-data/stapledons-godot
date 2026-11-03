@@ -7,6 +7,13 @@
     {"name": "fast", "min": 2.0, "max": 50.0, "jumble": 0.45, "drift": false, "whirl": false, "sound": "category"},
     {"name": "torrent", "min": 50.0, "jumble": 0.9, "drift": false, "whirl": true, "sound": "babble"}
   ],
+  "doppler": {
+    "about": "R3-TRUE-PROCESSED-b (Mark 2026-11-03: \"I like that the blue tint appears when we blueshift... we always want the 'real' view available, and then a visible auto adjustment, but that auto adjustment is indicative of what is happening\"; then \"perhaps it can bleed in from the edge?\"). A Processed instrument overlay of the Earth rate D (earth.rate; Mark then: \"it should be a gradient all the way to the edge\"): one continuous gradient over the picture's outer margin, opacity = strength x (1 - smoothstep(t)), t the depth from the screen's edge over vignette_frac (10%) of the screen's short side, so full at the very edge and zero at the inner end, with no border, band or line; the picture runs to the edge in both settings; above the picture and its ghosts, labelled \"Doppler ×D · shown\". The colour is that of a reference line shifted by D, lambda = lambda_ref_nm / D, drawn as the spectral colour of that wavelength (CIE 1931 2-degree observer, Blackbody.cmf; the out-of-gamut spectral colour clipped to the sRGB gamut so the hue holds), clamped to visible_nm, the indicator's limits (400 and 650 nm: the game's CMF fit, Wyman, Sloan and Shirley 2013, drifts orange in its far-red tail, x/y 1.32 at 700 nm against the tabulated 2.78; not the end of human vision); strength |ln D| / ln(d_max), 0 at rest and 1 at the top speed (d_max = RS-30, 1414.2; D and 1/D equally strong). Shown only in the station's Receiver (Processed) setting; True shows the decoded picture to the edge, untouched (RS-Q5: the decoded picture is never altered in True; in Processed a labelled edge overlay sits above it). Nothing is hand-tuned: change lambda_ref_nm, visible_nm, d_max or vignette_frac here and the tests follow.",
+    "lambda_ref_nm": 555.0,
+    "visible_nm": [400.0, 650.0],
+    "d_max": 1414.2,
+    "vignette_frac": 0.10
+  },
   "sound": {
     "about": "R3-EARTH-LINK EL3b.7 (Mark 2026-10-30), made exact by R3 audio realism AR8b (standing order 2026-10-30: no compromises on the physics; a True setting and labelled Processed settings). Sound from home at the comms receiver. The bed is the week's category (the sky kind plays the sky's), babble in a band whose sound is babble, static out of beam. Its time rate is the Earth rate D (earth.rate) in every setting: the bed plays at speed D and the accents come every every_s / D (the first first_s / D after the bed starts). Receiver (the default): the ship's receiver corrects the frequency, as the DSN corrects the Voyagers' Doppler shift; a real-time receiver plays between receiver.min_rate and receiver.max_rate of real time (below it holds the moment, above the backlog grows). True: speed and pitch x D, uncorrected; outside receiver.audible nothing reaches the ear and the station says so. receiver.audible is human hearing at the 400 Hz carrier, 20 Hz to 20 kHz: D 0.05 to 50 (Mark 2026-11-03, \"sure 20hz\": below 20 Hz is infrasound, felt rather than heard at the beacon's level; RS-46, RS-47). A new bed replaces the playing one only after hold_s of the station's clock (a change of beam at once).",
     "receiver": {"min_rate": 0.0625, "max_rate": 16.0, "audible": [0.05, 50.0]},
@@ -43,6 +50,8 @@
     "arrived": "arrived",
     "light": "light",
     "ship_then": "ship then",
-    "to_go": "to go"
+    "to_go": "to go",
+    "doppler": "Doppler ×",
+    "doppler_shown": " · shown"
   }
 }

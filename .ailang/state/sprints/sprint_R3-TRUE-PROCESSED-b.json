@@ -1,0 +1,62 @@
+{
+  "sprint_id": "R3-TRUE-PROCESSED-b",
+  "status": "awaiting_render_review",
+  "approved": "Mark, 2026-11-03 (orchestrator relay): a Processed Doppler indicator, a labelled edge gradient over the picture's outer margin in Receiver only; True never alters the decoded picture",
+  "created": "2026-11-03",
+  "design_doc": "design_docs/planned/r3/true-processed-fixes.md (D3)",
+  "branch": "feat/doppler-indicator",
+  "origin": "main 68796623",
+  "ailang_version": "v0.56.1",
+  "ailang_prompt_version": "n/a (no .ail change)",
+  "registry_reuse": [
+    {
+      "milestone": "DI1",
+      "package": "none",
+      "action": "none",
+      "reason": "an indicator of the sim's earth.rate; lambda/D and a CMF lookup of the game's existing Blackbody mirror; no physical claim beyond D"
+    }
+  ],
+  "velocity": {
+    "estimated_total_loc": 260,
+    "estimated_days": 0.5
+  },
+  "features": [
+    {
+      "id": "DI1",
+      "description": "Processed Doppler indicator: one continuous gradient from the screen's edge (opacity strength x (1 - smoothstep(t)) over 10% of the short side, no border), colour of a 555 nm line at 555 / D clamped to [400, 650] nm, strength |ln D| / ln 1414.2; Receiver only, labelled 'Doppler xD · shown' (bound to earth.rate); True: the picture to the edge, untouched; picture layers in a clipping screen filling the feed",
+      "estimated_loc": 260,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make earth-feed-test green (Receiver: gradient full at the edge, zero inside, monotonic, label; True none; no bezel; the picture clipped after drift and jumble)",
+        "make physics green with the RS-26..RS-30 indicator rows",
+        "make earth-link-golden 25 passed (G-EL-2b gradient at four depths and centre vs an independent expected colour, monotonic, static and advanced; True edge = picture)",
+        "make capture-doppler-indicator 10 frames; sheets in refs/true_processed_v1/doppler/r3/"
+      ],
+      "passes": null,
+      "started": "2026-11-03",
+      "completed": null,
+      "notes": "Round 1 d70cf3b3: Codex 65 FAIL (B1 animation defeats the inset, B2 label over the picture). Round 2: picture, ghosts and static in a fixed clipping Screen; Mark's bleed-in overlay above them; the label an instrument label over the overlay; G-EL-2b with an independent expected colour and advanced cases (clip drill fails RS-26 advanced); fallback visible range [400, 650]. earth-feed 71 passed; physics 1054 passed; earth-link-golden 25 passed; comms-station 42 passed; capture 10 frames OK. Round 3 (Mark: \"I still see the border, it should be a gradient all the way to the edge\"): the bezel and inset removed in both settings; one smoothstep gradient from the edge; tests and golden rewritten (gradient-below-picture drill fails the four Receiver cases); earth-feed 73 passed; earth-link-golden 25 passed."
+    }
+  ],
+  "questions_for_mark": [
+    "Strength at 0.99c is 0.365 of the top-speed colour (|ln D| / ln 1414.2): subtle but visible; a steeper curve would be a different documented mapping"
+  ],
+  "reviews": [
+    {
+      "kind": "evaluation",
+      "round": 1,
+      "evaluator": "codex gpt-6.1-sol",
+      "score": 65,
+      "pass": false,
+      "blocking": [
+        "B1",
+        "B2"
+      ],
+      "addressed_round_2": [
+        "B1",
+        "B2"
+      ]
+    }
+  ],
+  "evaluation": null
+}

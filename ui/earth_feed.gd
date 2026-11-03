@@ -27,6 +27,12 @@ var picture := TextureRect.new()
 var ghosts: Array[TextureRect] = []
 var static_rect := TextureRect.new()
 var ring := FeedRing.new()
+## The screen: a fixed, clipping control over the whole feed, holding the picture, its ghosts, the static
+## and (Processed only) the Doppler edge gradient above them; nothing animated leaves it (eval #384 B1).
+## Mark, 2026-11-03: no border; the picture runs to the edge in both settings.
+var screen := Control.new()
+var vignette := DopplerVignette.new()
+var doppler_tag := ComposedBinding.new()
 var signal_tag := ComposedBinding.new()
 var clock_tag := ComposedBinding.new()
 var caption := ComposedBinding.new()
@@ -170,24 +176,26 @@ func _init() -> void:
 	name = "EarthFeed"
 	clip_contents = true
 	custom_minimum_size = Vector2(320, 180)
+	screen.name = "Screen"
+	screen.clip_contents = true
+	screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(screen)
 	for r: TextureRect in [picture, static_rect]:
-		r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(picture)
+		_fill(r)
+	screen.add_child(picture)
 	for i in 2:
 		var g := TextureRect.new()
-		g.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		g.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		g.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		g.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fill(g)
 		g.visible = false
 		ghosts.append(g)
-		add_child(g)
+		screen.add_child(g)
 	static_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	static_rect.modulate = Color(1, 1, 1, 0.6) # the last week shows through, dimmed
-	add_child(static_rect)
+	screen.add_child(static_rect)
+	# R3-TRUE-PROCESSED-b: the Doppler edge overlay, above the picture and its ghosts (Processed only).
+	vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	screen.add_child(vignette)
 	ring.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	add_child(ring)
 	for t: Array in [[signal_tag, Control.PRESET_TOP_LEFT], [clock_tag, Control.PRESET_TOP_RIGHT], [caption, Control.PRESET_BOTTOM_LEFT]]:
@@ -200,6 +208,15 @@ func _init() -> void:
 		tag.grow_vertical = Control.GROW_DIRECTION_BEGIN if t[1] == Control.PRESET_BOTTOM_LEFT else Control.GROW_DIRECTION_END
 		add_child(tag)
 	caption.add_theme_font_size_override("font_size", 16)
+	# R3-TRUE-PROCESSED-b: the indicator's label, top centre, its number bound to earth.rate.
+	doppler_tag.name = "DopplerTag"
+	doppler_tag.theme = StapledonTheme.theme()
+	doppler_tag.theme_type_variation = "HUDEarthFeed"
+	doppler_tag.add_theme_font_size_override("font_size", 13)
+	doppler_tag.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 10)
+	doppler_tag.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	doppler_tag.visible = false
+	add_child(doppler_tag)
 	# AR8b: the receiver's setting, both its indicator and its switch (True / Receiver).
 	sound_button.name = "SoundSetting"
 	sound_button.theme_type_variation = "HUDFlat"
@@ -214,11 +231,61 @@ func _init() -> void:
 
 
 ## AR8b: the station's setting (Receiver, the default, or True). The next refresh plays it.
+## R3-TRUE-PROCESSED-b: it also shows (Receiver) or hides (True) the Doppler indicator at once.
 func set_receiver(on: bool) -> void:
 	receiver = on
 	if not str(home_sound.cue).is_empty():
 		_apply_rates(str(home_sound.cue))
 	_sound_words()
+	_doppler_show()
+
+
+## A picture layer filling the clipping screen.
+func _fill(r: TextureRect) -> void:
+	r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+
+
+## R3-TRUE-PROCESSED-b: the Processed Doppler indicator for Earth rate d (data/ui/comms_feed.json
+## "doppler"). A reference line at lambda_ref_nm is seen at lambda_ref_nm / d; the edge gradient
+## shows the spectral colour of that wavelength, clamped to visible_nm (the indicator's limits,
+## 400 and 650 nm; not the ends of human vision) once the line leaves them; strength |ln d| / ln(d_max). Returns lambda_nm, shown_nm, strength and colour (sRGB, unit max).
+static func doppler_indicator(d: float) -> Dictionary:
+	var c: Dictionary = copy().get("doppler", {})
+	var vis: Array = c.get("visible_nm", [400.0, 650.0])
+	var lam := float(c.get("lambda_ref_nm", 555.0)) / maxf(d, 1e-300)
+	var shown := clampf(lam, float(vis[0]), float(vis[1]))
+	var strength := clampf(absf(log(maxf(d, 1e-300))) / log(float(c.get("d_max", 1414.2))), 0.0, 1.0)
+	return {"lambda_nm": lam, "shown_nm": shown, "strength": strength, "colour": spectral_colour(shown)}
+
+
+## The colour of a monochromatic line (CIE 1931 2-degree observer, Blackbody.cmf) in sRGB. Every pure
+## spectral colour lies outside the sRGB gamut; for an indicator the hue matters, so the negative channels
+## are clipped to zero (desaturating toward white turned 700 nm orange), then a unit max channel.
+static func spectral_colour(lambda_nm: float) -> Color:
+	var xyz := Blackbody.cmf(lambda_nm)
+	if xyz.y <= 0.0 and xyz.x <= 0.0 and xyz.z <= 0.0:
+		return Color(0, 0, 0)
+	var rgb := Blackbody.xyz_to_linear_srgb(xyz.x, xyz.y, xyz.z)
+	rgb = Vector3(maxf(rgb.x, 0.0), maxf(rgb.y, 0.0), maxf(rgb.z, 0.0))
+	var top := maxf(rgb.x, maxf(rgb.y, rgb.z))
+	if top <= 0.0:
+		return Color(0, 0, 0)
+	return Color(rgb.x / top, rgb.y / top, rgb.z / top).linear_to_srgb()
+
+
+## Show the indicator in Receiver (Processed) and in beam, from the last refresh's earth.rate.
+func _doppler_show() -> void:
+	var ind := doppler_indicator(earth_rate)
+	vignette.shown = receiver and beam
+	vignette.colour = ind.colour
+	vignette.strength = float(ind.strength) if vignette.shown else 0.0
+	vignette.queue_redraw()
+	doppler_tag.visible = vignette.shown
 
 
 ## AR8b: how the receiver plays home at Earth rate d (data/ui/comms_feed.json sound.receiver). The time
@@ -270,6 +337,10 @@ func refresh(view: Dictionary) -> void:
 		picture.texture = tex
 	picture.self_modulate = Color(1, 1, 1) if beam else Color(0.45, 0.45, 0.5)
 	static_rect.visible = not beam
+	var wd: Dictionary = copy().words
+	doppler_tag.compose([str(wd.get("doppler", "Doppler ×")), ["earth.rate", "sci"], str(wd.get("doppler_shown", " · shown"))])
+	doppler_tag.update_from(view)
+	_doppler_show()
 	var out: Variant = e.get("out")
 	ring.visible = not beam and out is Dictionary and str(out.get("reason", "")) == "not_heard"
 	ring.fill = float(out.get("progress", 0.0)) if out is Dictionary else 0.0
@@ -381,7 +452,7 @@ func advance(dt: float) -> void:
 	if band.get("drift", false) and beam:
 		var s := 1.0 + 0.03 * (0.5 + 0.5 * sin(now_s * TAU / 40.0))
 		picture.scale = Vector2(s, s)
-		picture.pivot_offset = size * 0.5
+		picture.pivot_offset = picture.size * 0.5 # inside the clipping screen: the drift never leaves it
 	else:
 		picture.scale = Vector2.ONE
 	var nf := int(now_s * 14.0)
@@ -495,3 +566,50 @@ class FeedRing extends Control:
 		draw_arc(c, 62.0, 0.0, TAU, 96, Color(0.94, 0.89, 0.78, 0.3), 9.0, true)
 		if fill > 0.0:
 			draw_arc(c, 62.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(fill, 0.0, 1.0), 96, StapledonTheme.CORAL, 9.0, true)
+
+
+## R3-TRUE-PROCESSED-b (Mark 2026-11-03: "perhaps it can bleed in from the edge?", then "it should be a
+## gradient all the way to the edge"): the Doppler indicator as one continuous instrument overlay, Processed
+## only. Opacity strength x (1 - smoothstep(t)), t the depth from the screen's edge over vignette_frac of the
+## short side: the full strength at the very edge, zero (with zero slope) at the inner end, no band or line.
+## Drawn as BANDS concentric rings with per-vertex alpha (piecewise linear between the profile's samples),
+## above the picture and its ghosts, inside the clipping screen; True draws nothing.
+class DopplerVignette extends Control:
+	const BANDS := 8
+	var shown := false
+	var colour := Color(1, 1, 1)
+	var strength := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func width() -> float:
+		return float(EarthFeed.copy().get("doppler", {}).get("vignette_frac", 0.10)) * minf(size.x, size.y)
+
+	## The profile at depth t in [0, 1] of the gradient: 1 - smoothstep(t).
+	static func profile(t: float) -> float:
+		var u := clampf(t, 0.0, 1.0)
+		return 1.0 - u * u * (3.0 - 2.0 * u)
+
+	## The opacity the overlay draws at depth px from the edge (what the GPU interpolates).
+	func opacity_at(px: float) -> float:
+		var w := width()
+		if not shown or w <= 0.0 or px >= w: return 0.0
+		var x := clampf(px / w, 0.0, 1.0) * BANDS
+		var k := mini(int(x), BANDS - 1)
+		return strength * lerpf(profile(float(k) / BANDS), profile(float(k + 1) / BANDS), x - k)
+
+	func _draw() -> void:
+		if not shown or strength <= 0.0:
+			return
+		var w := width()
+		for k in BANDS:
+			var d0 := w * k / BANDS
+			var d1 := w * (k + 1) / BANDS
+			var a0 := Color(colour, strength * profile(float(k) / BANDS))
+			var a1 := Color(colour, strength * profile(float(k + 1) / BANDS))
+			var o := [Vector2(d0, d0), Vector2(size.x - d0, d0), Vector2(size.x - d0, size.y - d0), Vector2(d0, size.y - d0)]
+			var n := [Vector2(d1, d1), Vector2(size.x - d1, d1), Vector2(size.x - d1, size.y - d1), Vector2(d1, size.y - d1)]
+			for e in 4:
+				var e2 := (e + 1) % 4
+				draw_polygon(PackedVector2Array([o[e], o[e2], n[e2], n[e]]), PackedColorArray([a0, a0, a1, a1]))
