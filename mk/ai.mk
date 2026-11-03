@@ -563,7 +563,7 @@ ai-style-frame: import ai-core-assets ai-core-bundle   ## AI.10a/b (GPU window):
 	  echo "ai-style-frame: stub rehearsal re-recorded == $(REHEARSAL); library $$lib"; \
 	fi; \
 	test -n "$$lib" || { echo "ai-style-frame: FRAME_LIB=<library dir> is needed for $(LOG)"; exit 2; }; echo "lib=$$lib" > $(AI_SF)/lib.txt; \
-	$(GODOT_SIM) --path . --resolution 1280x720 --fixed-fps 30 --write-movie "$(CURDIR)/$(SF_OUT)/frame.avi" res://ui/conversation/conversation.tscn -- \
+	$(GODOT_SIM) $(AUDIO_OFF) --path . --resolution 1280x720 --fixed-fps 30 --write-movie "$(CURDIR)/$(SF_OUT)/frame.avi" res://ui/conversation/conversation.tscn -- \
 	  --conversation=medic --log="$(abspath $(LOG))" --library="$$lib" --core=res://ai_core --out="$(CURDIR)/$(SF_OUT)" > $(AI_SF)/frame.out 2>&1 || { tail -20 $(AI_SF)/frame.out; exit 1; }
 	@lib=$$(sed -n 's/^lib=//p' $(AI_SF)/lib.txt); $(AI_CORE_RUN) --entry main --args-json "{\"dir\":\"$$lib\"}" ai/tools/playback_verify.ail
 	@test -s $(SF_OUT)/contact_sheet.png && test -s $(SF_OUT)/line.ogg && test -s $(SF_OUT)/frame.avi && test -s $(SF_OUT)/timeline.json

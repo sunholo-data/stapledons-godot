@@ -49,14 +49,14 @@ test: feed-art-check
 .PHONY: capture-comms-station
 capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home, away, waiting and homeward from the real sim -> renders/comms_station/*.png (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --path . --resolution 1280x720 --script tools/comms_station_capture.gd > $(SCRATCH)/comms-station-capture.log 2>&1; rc=$$?; grep -E '^comms-station-capture' $(SCRATCH)/comms-station-capture.log; \
+	@$(GODOT_SIM) $(AUDIO_OFF) --path . --resolution 1280x720 --script tools/comms_station_capture.gd > $(SCRATCH)/comms-station-capture.log 2>&1; rc=$$?; grep -E '^comms-station-capture' $(SCRATCH)/comms-station-capture.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-station-capture.log && grep -q '^comms-station-capture: 4 frames, 0 failures$$' $(SCRATCH)/comms-station-capture.log || { echo "comms-station-capture: FAILED (log $(SCRATCH)/comms-station-capture.log)"; exit 1; }
 
 # Gate2 for the shipped feed/strip and map beams. Preserves all407 existing main cases.
 .PHONY: earth-link-golden
 earth-link-golden:
 	@mkdir -p $(SCRATCH)
-	@$(GODOT) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_display_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 20 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
+	@$(GODOT) $(AUDIO_OFF) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_display_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 20 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
 golden: earth-link-golden
 # EL4: Earth's beams on the galaxy map (tests/test_earth_beams.gd): every element from its earth.*
 # field, the plan preview alone while planning (AC12), the projection, the real sim at 2.16 and below.
@@ -77,4 +77,4 @@ earth-rate-fixture: import
 .PHONY: capture-earth-link
 capture-earth-link: import
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --path . --script tools/earth_link_capture.gd > $(SCRATCH)/earth-link-capture.log 2>&1; rc=$$?; grep -E '^earth-link-capture' $(SCRATCH)/earth-link-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-capture.log && grep -q '^earth-link-capture: 10 frames, 0 failures$$' $(SCRATCH)/earth-link-capture.log
+	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/earth_link_capture.gd > $(SCRATCH)/earth-link-capture.log 2>&1; rc=$$?; grep -E '^earth-link-capture' $(SCRATCH)/earth-link-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-capture.log && grep -q '^earth-link-capture: 10 frames, 0 failures$$' $(SCRATCH)/earth-link-capture.log
