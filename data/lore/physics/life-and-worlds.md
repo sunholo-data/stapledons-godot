@@ -170,6 +170,19 @@ uncertain astronomical measurement. HZ checks use Teff=5780 K, L=1.
 | LW-39 | Canon lifetime lower bound | 100 | yr |
 | LW-40 | Canon lifetime upper bound | 100000000 | yr |
 | LW-41 | Sandberg lifetime upper bound (comparison only) | 10000000000 | yr |
+| LW-42 | Baseline-median alive within 1000 ly (M dwarfs included) | 0.05 | civilisations |
+| LW-43 | Baseline reach for LW-42 | 1000 | ly |
+| LW-44 | Galactic mass formation rate (not a stars/yr rate) | 1.65 | M☉/yr |
+| LW-45 | Microlensing mean abundance in the cited mass/orbit domain | 1.6 | planets/star |
+
+LW-42 is distinct from the historical reference parameters of LW-28. With
+`sunholo/worlds` 0.1.0, `applyDial(baseline(), zeroDial())`, the adopted disc,
+and occurrence `0.20*0.4 + 0.75*0.16`, `aliveWithin` gives
+0.05356088273972087 civilisations at 1000 ly, rounded here to one significant
+figure. This is an expectation under adopted medians, not a posterior mean or
+a measurement. The game regression `worlds_test.baselineReachVm` computes it.
+LW-44 and LW-45 transcribe the cited evidence and domain in §1; neither is
+an additional multiplier in the local count model.
 
 ## 5. Attended decisions and remaining evidence
 

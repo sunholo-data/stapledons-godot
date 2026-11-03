@@ -5,7 +5,10 @@ module stapledons/sim/census
 -- [0, voyageWindowYr]. Instrument detections are calibration's separate concern.
 import ./worlds_model (StarRow, Planet, System, PMeasured, PCandidate, PSynthesised,
  Habitable, HabitabilityDebated, NotHabitable, systemFrom, habOf, slotEligible, systemDigest, historyUniforms,
- HistoryDrawPlan, FixedHistories, prepareHistoryDrawPlan, historyUniformsFromPlan)
+ HistoryDrawPlan, FixedHistories, prepareHistoryDrawPlan, historyUniformsFromPlan, atmosphereVeto, surveyApplies)
+import pkg/sunholo/worlds/occurrence (MDwarf, Other)
+import pkg/sunholo/celestial/habitability (hzFluxes,rvSemiAmplitude)
+import ./data/worlds_rules (rvSurveyLimitMs)
 import ./tools/exoplanets (Planet as ObservedPlanet, catalogueDigest)
 import pkg/sunholo/worlds/baseline (baseline)
 import pkg/sunholo/worlds/dial (Dial, Params, applyDial, zeroDial)
@@ -69,6 +72,49 @@ export pure func populate(seed:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet]) ->
  map(\r. systemFrom(seed,d,r,observedFor(idx,r.id)),sortBy(\a b. compare(a.id,b.id),rows))
 }
 export pure func censusFor(seed:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> Counts = countSystems(populate(seed,d,rows,ps))
+
+-- AC14/15 audit every planet of the complete registry population, independently
+-- of count moments. Counts expose exercised cases so an empty fixture cannot
+-- masquerade as a label or RV check. RV uses the same conservative edge-on,
+-- circular assumption as generation; measured planets are never RV-vetoed.
+export type PopulationAudit = {planets:int,mDwarfHz:int,surveySynthesised:int,labelViolations:int,rvViolations:int}
+pure func mDwarfRocky(s:System,p:Planet) -> bool {
+ let rocky=match p.radiusEarth {
+  Some(r)=>r>=0.5 && r<=1.5,
+  None=>p.minimumMass && match p.massEarth {Some(m)=>m>=0.1 && m<=5.0,None=>false}
+ };
+ s.starClass==MDwarf && rocky
+}
+pure func planetLabelValid(row:StarRow,s:System,p:Planet) -> bool {
+ let constrained=match p.observed {Some(o)=>atmosphereVeto(o),None=>false};
+ let flux=if row.teff>0.0 then hzFluxes(row.teff) else hzFluxes(2600.0);
+ let inZone=match p.insolation {Some(ins)=>ins>=flux.maximum && ins<=flux.runaway,None=>false};
+ if constrained || s.starClass==Other then p.hab==NotHabitable && p.history.biosphere==Sterile
+ else if mDwarfRocky(s,p) && inZone then p.hab==HabitabilityDebated
+ else s.starClass!=MDwarf || p.hab!=Habitable
+}
+export pure func auditPopulation(rows:[StarRow],systems:[System]) -> PopulationAudit {
+ let idx=fromList(map(\r. (r.id,r),rows));
+ foldl(\total s. match lookup(idx,s.starId) {
+  None=>{total | labelViolations:total.labelViolations+1},
+  Some(row)=>foldl(\a p. {
+   let surveyed=p.prov==PSynthesised && surveyApplies(row);
+   let rvValid=if not surveyed then true else match (p.massEarth,p.periodD) {
+    (Some(m),Some(days))=>rvSemiAmplitude(days,m,row.mSun,1.0,0.0)<=rvSurveyLimitMs(),_=>false
+   };
+   let flux=hzFluxes(if row.teff>0.0 then row.teff else 2600.0);
+   let inZone=match p.insolation {Some(ins)=>ins>=flux.maximum && ins<=flux.runaway,None=>false};
+   {planets:a.planets+1,mDwarfHz:a.mDwarfHz+one(mDwarfRocky(s,p) && inZone),
+    surveySynthesised:a.surveySynthesised+one(surveyed),
+    labelViolations:a.labelViolations+one(not planetLabelValid(row,s,p)),rvViolations:a.rvViolations+one(not rvValid)}
+  },total,s.planets)
+ },{planets:0,mDwarfHz:0,surveySynthesised:0,labelViolations:0,rvViolations:0},systems)
+}
+export pure func populationAuditPasses(a:PopulationAudit) -> bool = a.labelViolations==0 && a.rvViolations==0
+export pure func populationAuditJson(a:PopulationAudit) -> Json = jo([
+ kv("planetsChecked",jint(a.planets)),kv("mDwarfRockyHzChecked",jint(a.mDwarfHz)),
+ kv("surveySynthesisedChecked",jint(a.surveySynthesised)),kv("labelViolations",jint(a.labelViolations)),
+ kv("rvViolations",jint(a.rvViolations))])
 
 -- Reusable epoch mathematics lives in sunholo/worlds; the census composes
 -- those per-world probabilities with this registry's immutable eligibility.

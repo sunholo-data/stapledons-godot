@@ -158,12 +158,16 @@ class MockSheet extends Node2D:
 		# Sol marks the reference origin. No invented worlds or planet layers.
 		draw_circle(map_centre, 4, T.CREAM)
 		draw_arc(map_centre, 9, 0, TAU, 32, T.CREAM, 1.2, true)
-		_line(map_centre + Vector2(-24, 34), "Sol", 22, T.CREAM, true)
-		_callout("Gaia DR3 5853498713190525696", Vector2(86, 54), "α Cen A / Proxima")
 		if range_ly > 40:
-			_callout("Gaia DR3 2635476908753563008", Vector2(48, 40), "TRAPPIST-1")
-			_callout("Gaia DR3 2452378776434477184", Vector2(-126, -35), "τ Ceti")
+			# Keep labels outside the dense inner catalogue; only leader lines
+			# move. Star coordinates and ring positions remain the true XY projection.
+			_label_at(map_centre, Vector2(950, 840), "Sol", 11)
+			_callout_at("Gaia DR3 5853498713190525696", Vector2(950, 770), "α Cen A / Proxima")
+			_callout_at("Gaia DR3 2635476908753563008", Vector2(950, 280), "TRAPPIST-1")
+			_callout_at("Gaia DR3 2452378776434477184", Vector2(90, 440), "τ Ceti")
 		else:
+			_line(map_centre + Vector2(-24, 34), "Sol", 22, T.CREAM, true)
+			_callout("Gaia DR3 5853498713190525696", Vector2(86, 54), "α Cen A / Proxima")
 			_callout("Gaia DR3 4472832130942575872", Vector2(50, -30), "Barnard's Star")
 		# Scale is in the projected plane; exact 3D distances remain catalogue facts.
 		var scale_ly := 5.0 if range_ly < 30 else 20.0
@@ -174,7 +178,7 @@ class MockSheet extends Node2D:
 		_line(Vector2(110, 893), "%d ly" % int(scale_ly), 17, T.DIM)
 		_map_legend(visible.size(), planet_count, stars_visible)
 		_rule(913)
-		_line(Vector2(60, 940), "Catalogue positions; known planets. Green: rocky HZ match. HZ clamps outside 2600–7200 K; ? = M-dwarf debate. No life claim.", 16, T.DIM)
+		_line(Vector2(60, 940), "XY · HZ inferred · Teff clamped outside 2600–7200 K", 16, T.DIM)
 
 	func _debated(h: Dictionary) -> bool:
 		for p: Dictionary in h.planets:
@@ -192,29 +196,33 @@ class MockSheet extends Node2D:
 		draw_string_outline(display, end + Vector2(4, 0), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 5, T.NIGHT)
 		_line(end + Vector2(4, 0), title, 20, T.CREAM, true)
 
+	func _callout_at(id: String, label: Vector2, title: String) -> void:
+		var h := _host(id)
+		if not h.is_empty() and float(h.distance_ly) <= range_ly:
+			_label_at(_project(float(h.x), float(h.y)), label, title, 21)
+
+	func _label_at(p: Vector2, label: Vector2, title: String, clearance: float) -> void:
+		var size := display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20)
+		var box := Rect2(label + Vector2(-6, -24), size + Vector2(12, 32))
+		var end := Vector2(box.position.x if label.x > p.x else box.end.x, label.y - 7)
+		draw_line(p + p.direction_to(end) * clearance, end, Color(T.CREAM, 0.45), 1, true)
+		draw_rect(box, T.NIGHT)
+		_line(label, title, 20, T.CREAM, true)
+
 	func _map_legend(hosts: int, planets: int, stars: int) -> void:
 		var x := 1120.0
 		draw_line(Vector2(x - 35, 197), Vector2(x - 35, 863), Color(T.CREAM, 0.15), 1, true)
-		_line(Vector2(x, 215), "What we know", 29, T.CREAM, true)
+		_line(Vector2(x, 215), "Measured", 29, T.CREAM, true)
 		_line(Vector2(x, 252), "%d host systems in view" % hosts, 21, T.OCHRE_LIGHT)
 		_line(Vector2(x, 283), "%d known planets / %d stars" % [planets, stars], 18, T.DIM)
 		_planet_ring(Vector2(x + 11, 334), 10, {"hab": "not_habitable", "prov": "measured"})
-		_line(Vector2(x + 37, 342), "Measured planet", 20)
+		_line(Vector2(x + 37, 342), "measured", 20)
 		_planet_ring(Vector2(x + 11, 382), 10, {"hab": "not_habitable", "prov": "candidate"})
 		_line(Vector2(x + 37, 390), "Candidate", 20)
 		_planet_ring(Vector2(x + 11, 430), 10, {"hab": "habitable", "prov": "measured"})
-		_line(Vector2(x + 37, 438), "Rocky, conservative zone", 19, T.MINT)
+		_line(Vector2(x + 37, 438), "habitable zone", 19, T.MINT)
 		_line(Vector2(x + 2, 486), "?", 24, T.MINT, false, true)
 		_line(Vector2(x + 37, 484), "Habitability debated", 19, T.MINT)
-		_rule(523, x, 1525)
-		_line(Vector2(x, 561), "241 known hosts", 27, T.CREAM, true)
-		_line(Vector2(x, 593), "in the current 25 pc registry", 19, T.DIM)
-		_line(Vector2(x, 649), "A ring for each known planet.", 18)
-		_line(Vector2(x, 680), "No ring means no catalogue claim.", 17, T.DIM)
-		_line(Vector2(x, 739), "NASA PS · 2 November 2026", 18, T.OCHRE_LIGHT)
-		_line(Vector2(x, 770), "Curated α Cen and TRAPPIST-1", 17, T.DIM)
-		_line(Vector2(x, 798), "values are retained.", 17, T.DIM)
-		_line(Vector2(x, 855), "XY flattens height above the plane.", 17, T.DIM)
 
 	func _axis_x(value: float, lo: float, hi: float) -> float:
 		return 190.0 + log(value / lo) / log(hi / lo) * 1250.0
@@ -223,7 +231,9 @@ class MockSheet extends Node2D:
 		if p.teq_k == null:
 			return T.DIM
 		var v := clampf((float(p.teq_k) - 170.0) / 260.0, 0.0, 1.0)
-		return T.TEAL_LIGHT.lerp(T.MINT, v * 2.0) if v < 0.5 else T.MINT.lerp(T.CORAL, (v - 0.5) * 2.0)
+		# Temperature has its own non-green scale. Mint is reserved for rocky
+		# HZ eligibility; a temperate giant must never acquire that meaning.
+		return Color("859bc1").lerp(T.OCHRE_LIGHT, v * 2.0) if v < 0.5 else T.OCHRE_LIGHT.lerp(T.CORAL, (v - 0.5) * 2.0)
 
 	func _strip(id: String) -> void:
 		var h := _host(id)
@@ -235,8 +245,7 @@ class MockSheet extends Node2D:
 		_line(Vector2(1230, 80), "System strip", 26, T.CREAM, true)
 		_line(Vector2(1230, 116), "Catalogue + inferred zone", 18, T.DIM)
 		_rule(152)
-		_line(Vector2(60, 205), "Orbits and irradiation", 28, T.CREAM, true)
-		_line(Vector2(60, 240), "Measured or fitted orbits; the green band is an irradiation model.", 21, T.DIM)
+		_line(Vector2(60, 205), "measured" if trappist else "candidate", 28, T.CREAM, true)
 		var lo := 0.008 if trappist else 0.2
 		var hi := 0.085 if trappist else 4.0
 		var y := 440.0
@@ -245,7 +254,7 @@ class MockSheet extends Node2D:
 		draw_rect(Rect2(inner, y - 77, outer - inner, 154), Color(T.MINT, 0.14))
 		draw_line(Vector2(inner, y - 77), Vector2(inner, y + 77), Color(T.MINT, 0.65), 1.5, true)
 		draw_line(Vector2(outer, y - 77), Vector2(outer, y + 77), Color(T.MINT, 0.65), 1.5, true)
-		_centre(Vector2((inner + outer) / 2.0, 300), "Inferred conservative zone", 23, T.MINT, true)
+		_centre(Vector2((inner + outer) / 2.0, 300), "habitable zone · inferred", 23, T.MINT, true)
 		_centre(Vector2((inner + outer) / 2.0, 328), "%.5f–%.5f AU" % [zone.inner_au, zone.outer_au] if trappist else "%.2f–%.2f AU" % [zone.inner_au, zone.outer_au], 18, T.MINT)
 		draw_line(Vector2(130, y), Vector2(1460, y), Color(T.CREAM, 0.27), 1.5, true)
 		draw_circle(Vector2(115, y), 45, Color(T.OCHRE_LIGHT, 0.12))
@@ -264,14 +273,12 @@ class MockSheet extends Node2D:
 		_line(Vector2(60, 730), "AU (log)", 18, T.DIM)
 		_rule(762)
 		if trappist:
-			_line(Vector2(60, 803), "e, f, g: rocky planets in the zone · habitability debated around this M dwarf.", 23, T.MINT)
-			_line(Vector2(60, 841), "HZ model clamped: stellar Teff %.0f K, model edge %.0f K. Atmospheres are not established." % [zone.teff_actual, zone.teff_used], 19, T.CORAL)
-			_line(Vector2(60, 881), "Radii measured (Agol et al. 2021). Teq and colour inferred; Bond albedo 0.3 assumed.", 18, T.DIM)
+			_line(Vector2(60, 803), "e · f · g   ?   habitability debated", 23, T.MINT)
+			_line(Vector2(60, 841), "Teff %.0f → %.0f K · HZ clamped" % [zone.teff_actual, zone.teff_used], 19, T.CORAL)
 		else:
-			_line(Vector2(60, 803), "α Cen A b remains a candidate. The displayed orbit and radius are model-dependent fits.", 23, T.OCHRE_LIGHT)
-			_line(Vector2(60, 841), "1.66 AU is one orbit family; 11.77 R⊕ is inferred from photometry and atmosphere models.", 19, T.DIM)
-			_line(Vector2(60, 881), "Beichman et al. 2025; curated catalogue. Teq and colour inferred; Bond albedo 0.3 assumed. No life claim.", 18, T.DIM)
-		_line(Vector2(60, 920), "Kopparapu et al. 2014 conservative zone. Planet sizes are relative within this strip; star symbol is off scale.", 16, T.DIM)
+			_line(Vector2(60, 803), "candidate · inferred radius · fitted orbit", 23, T.OCHRE_LIGHT)
+		_line(Vector2(60, 881), "Teq + colour inferred · Bond albedo 0.3 assumed", 18, T.DIM)
+		_line(Vector2(60, 920), "R⊕ proportional · star off scale", 16, T.DIM)
 
 	func _draw_planet(p: Dictionary, trappist: bool, y: float, lo: float, hi: float) -> void:
 		if p.a_au == null:

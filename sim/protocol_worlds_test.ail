@@ -3,6 +3,7 @@ import ./protocol_worlds (encodeWorlds)
 import ./worlds_registry (CatalogueRow)
 import ./tools/exoplanets (curatedPlanets)
 import std/string (contains)
+import std/list (any,range)
 export pure func alphaRow() -> CatalogueRow = {id:"CNS5:3627",pos:{x:3.094521,y:-3.015404,z:-0.051608},v:-0.01,teff:5795.0,flags:8}
 pure func projection() -> bool {
  let row=alphaRow();let ps=curatedPlanets([]);
@@ -21,4 +22,10 @@ pure func synthetic() -> bool {
  && contains(local,"synth:") && not contains(local,"history") && not contains(local,"biosphere")
 }
 test "AC17 synthesised planets only appear within 0.1ly, physical fields only" {synthetic()}
-export pure func protocolWorldsVm() -> string = if projection() && synthetic() then "protocol-worlds-ok" else "PROTOCOL-WORLDS-FAIL"
+pure func assumptionOnWire() -> bool {
+ let row={alphaRow() | id:"synthetic-assumption",v:15.0};
+ any(\seed. contains(encodeWorlds(seed,row.pos,row.id,[],[],[row],false),
+  "radius and mass assumed Earth-like (1 R_Earth, 1 M_Earth), not measured or sampled from Chen-Kipping"),range(0,64))
+}
+test "2.17 local HZ planets disclose Earth-twin radius/mass assumptions in their citation" {assumptionOnWire()}
+export pure func protocolWorldsVm() -> string = if projection() && synthetic() && assumptionOnWire() then "protocol-worlds-ok" else "PROTOCOL-WORLDS-FAIL"

@@ -7,7 +7,7 @@ import stapledons/sim/tools/truth (parseTruth,index,applyGcns)
 import stapledons/sim/tools/bright_main (readLinks)
 import stapledons/sim/tools/starmap (starJson,mapId)
 import stapledons/sim/exoplanets_snapshot (snapshotFromJson)
-import stapledons/sim/census (censusFor,censusDigest,countsJson,statisticsFor,statisticsJson,statisticsAcross,populate,withHistoryParams,countSystems,digestSystems,systemsNestedAcross,nestedAcross,growthStable,observedIdentity)
+import stapledons/sim/census (censusFor,censusDigest,countsJson,statisticsFor,statisticsJson,statisticsAcross,populate,withHistoryParams,countSystems,digestSystems,systemsNestedAcross,nestedAcross,growthStable,observedIdentity,auditPopulation,populationAuditPasses,populationAuditJson)
 import stapledons/sim/worlds_catalogue (rowsFromJsonWith)
 import stapledons/sim/tools/exoplanets (Planet as ObservedPlanet, catalogueDigest)
 import stapledons/sim/data/presets (allPresets,presetOf)
@@ -45,11 +45,14 @@ export func main(a:{registry:string,output:string,seed:int,seeds:int}) -> () ! {
  let pairs=zipWith(\stats systems. {statistics:stats,systems:systems},statsAll,variants);
  let reports=zipWith(\p pair. {
   let stats=pair.statistics;
-  {passes:stats.passes,json:jo([kv("preset",js(p.id)),kv("calibrated",jb(p.calibrated)),kv("statistics",statisticsJson(stats)),
+  let audit=auditPopulation(rows,pair.systems);
+  {passes:stats.passes,auditPasses:populationAuditPasses(audit),json:jo([kv("preset",js(p.id)),kv("calibrated",jb(p.calibrated)),kv("statistics",statisticsJson(stats)),
+   kv("populationAudit",populationAuditJson(audit)),
    kv("firstSeedCounts",countsJson(countSystems(pair.systems))),
    kv("firstSeedDigest",js(digestSystems(pair.systems,known)))])}
  },presets,pairs);
  let moments=allOf(\r. r.passes,reports);
+ let populationValid=allOf(\r. r.auditPasses,reports);
  let entries=map(\r. r.json,reports);
  let nested=systemsNestedAcross(variants);
  let stable=growthStable(a.seed,zeroDial(),take(1000,rows),rows,known);
@@ -58,12 +61,12 @@ export func main(a:{registry:string,output:string,seed:int,seeds:int}) -> () ! {
  kv("measuredPlanetsMatchedByIdentity",jint(matched)),kv("measuredPlanetsOutsideRegistryOrUncrossmatched",jint(length(known)-matched)),
  kv("identityMatching",js("navigation hostId, else archive Gaia DR3; positional-only farther hosts require re-crossmatch before complete L3 claims")),
  kv("measuredJsonSha256",js(sha256Hex(source))),kv("registrySha256",js(sha256Hex(raw))),kv("systems",jint(length(rows))),
- kv("firstSeed",jint(a.seed)),kv("seeds",jint(a.seeds)),kv("withinFourSigma",jb(moments)),kv("nested",jb(nested)),kv("growthStable",jb(stable)),
+ kv("firstSeed",jint(a.seed)),kv("seeds",jint(a.seeds)),kv("withinFourSigma",jb(moments)),kv("populationValid",jb(populationValid)),kv("nested",jb(nested)),kv("growthStable",jb(stable)),
  kv("biospheresDefinition",js("immutable inhabited backgrounds; mindsWindow is technological-epoch overlap with [0,16000]")),
  kv("presets",ja(entries))]));
  writeFile(a.output,"${out}\n");
- println("census: ${length(rows)} systems; ${a.seeds} seeds/preset; moments=${moments}; nested=${nested}; growthStable=${stable}; report=${a.output}");
- if moments && nested && stable then () else exit(1)
+ println("census: ${length(rows)} systems; ${a.seeds} seeds/preset; moments=${moments}; labels/RV=${populationValid}; nested=${nested}; growthStable=${stable}; report=${a.output}");
+ if moments && populationValid && nested && stable then () else exit(1)
  }
  }
  }

@@ -8,3 +8,12 @@ export pure func minimumHillSpacing() -> float = 10.0
 -- Used only when the archive has no published Teq. Cited as assumed, not a
 -- measurement or a surface-temperature/greenhouse model.
 export pure func assumedBondAlbedo() -> float = 0.3
+
+-- Adopted model vetoes from measured atmosphere constraints, rather than
+-- a claim that every possible thin atmosphere has been excluded. Immutable
+-- across seeds/dials. The counterfactual-HZ tests ensure these rules win.
+export type AtmosphereConstraint = {id:string,name:string,cite:string}
+export pure func atmosphereConstraints() -> [AtmosphereConstraint] = [
+ {id:"trappist-1b",name:"TRAPPIST-1 b",cite:"Greene et al. 2023, Nature 618, 39–42, thermal emission: no substantial atmosphere; adopted biosphere veto"},
+ {id:"trappist-1c",name:"TRAPPIST-1 c",cite:"Zieba et al. 2023, Nature 620, 746–749, thermal emission: excludes a thick CO2 atmosphere; adopted biosphere veto"}
+]

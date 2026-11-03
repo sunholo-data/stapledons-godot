@@ -1,17 +1,17 @@
 module stapledons/sim/census_test
 -- W2.2: expectations are independent closed forms, keyed universes use no
 -- census traversal state. AILANG teaching prompt v0.16.11 loaded 2026-11-02.
-import ./census (Counts, zeroCounts, countSystems, expectedFor, censusFor, censusDigest, growthStable, nestedAcross, statisticsFor, historyProbabilities, countsJson, statisticsJson, statisticsAcross, systemsNestedAcross)
-import ./worlds_model (StarRow, systemFrom,eligibleHistoryUniforms,prepareHistoryDrawPlan,historyUniformsFromPlan)
+import ./census (Counts, zeroCounts, countSystems, expectedFor, censusFor, censusDigest, growthStable, nestedAcross, statisticsFor, historyProbabilities, countsJson, statisticsJson, statisticsAcross, systemsNestedAcross, auditPopulation, populationAuditPasses)
+import ./worlds_model (StarRow, systemFrom,eligibleHistoryUniforms,prepareHistoryDrawPlan,historyUniformsFromPlan,Habitable,NotHabitable,PSynthesised)
 import ./worlds_catalogue (rowsFromJsonWith,rowOf)
 import ./tools/exoplanets (Planet as ObservedPlanet,archivePlanet,fieldsEqual,planetsEqual,catalogueDigest)
 import ./exoplanets_snapshot (snapshotFromJson)
 import std/string (replace)
-import std/option (Some)
+import std/option (Some, None)
 import ./data/presets (allPresets)
 import pkg/sunholo/worlds/occurrence (FGK,MDwarf,Other)
 import pkg/sunholo/worlds/dial (Dial, zeroDial)
-import std/list (map, reverse, length, foldl)
+import std/list (map, reverse, length, foldl, range)
 import std/json (encode,ja,jo,kv,js)
 import std/math (intToFloat, sqrt, abs_Float as abs)
 import pkg/sunholo/worlds/baseline (baseline)
@@ -47,7 +47,23 @@ pure func measuredCheck() -> bool {
  && (expectedFor(maxDial(),[row],[p])).biospheres==1.0
 }
 test "AC9 measured-host census keeps exact known population and no synthesized additions" {measuredCheck()}
-export pure func censusVm() -> string = if countCheck() && growthCheck() && nestingCheck() && measuredCheck() then "census-ok" else "CENSUS-FAIL"
+
+pure func populationAuditCheck() -> bool {
+ let base={id:"audit",pos:{x:12.0,y:0.0,z:0.0},v:2.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let red={base | id:"audit-red",starClass:MDwarf,teff:3100.0,lSun:0.005,rSun:0.2,mSun:0.2};
+ let hz=archivePlanet("HZ b","HZ",red.id,"fixture",4.0,[("radius_earth",1.0),("insolation_earth",0.7)],"fixture","Mass","M V",red.id);
+ let valid=systemFrom(9,maxDial(),red,[hz]);
+ let audit=auditPopulation([red],[valid]);
+ let badLabel={valid | planets:map(\p. {p | hab:Habitable},valid.planets)};
+ let badRv={valid | starId:base.id,starClass:FGK,planets:map(\p. {p | prov:PSynthesised,observed:None,massEarth:Some(100.0),periodD:Some(300.0)},valid.planets)};
+ audit.mDwarfHz==1 && audit.planets==1 && populationAuditPasses(audit)
+ && (auditPopulation([red],[badLabel])).labelViolations==1
+ && (auditPopulation([base],[badRv])).rvViolations==1
+ && foldl(\ok seed. ok && populationAuditPasses(auditPopulation([base,red],
+  [systemFrom(seed,maxDial(),base,[]),systemFrom(seed,maxDial(),red,[])])),true,range(0,32))
+}
+test "AC14/15 census audit rejects wrong M-dwarf labels and a synthetic RV-limit violation" {populationAuditCheck()}
+export pure func censusVm() -> string = if countCheck() && growthCheck() && nestingCheck() && measuredCheck() && populationAuditCheck() then "census-ok" else "CENSUS-FAIL"
 
 pure func stat64() -> bool {
  let registry=rows(64);

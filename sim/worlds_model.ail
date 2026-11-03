@@ -13,7 +13,7 @@ import pkg/sunholo/celestial/gravity (gmSunNominal, gmEarthNominal)
 import pkg/sunholo/celestial/ephemeris (auKm)
 import ./tools/exoplanets (Planet as ObservedPlanet, catalogueDigest)
 import ./rng (idHash, keyed, unit53)
-import ./data/worlds_rules (rvSurveyLimitMs, rvSurveyBrightV, rvSurveyRadiusPc, minimumHillSpacing, assumedBondAlbedo)
+import ./data/worlds_rules (rvSurveyLimitMs, rvSurveyBrightV, rvSurveyRadiusPc, minimumHillSpacing, assumedBondAlbedo, atmosphereConstraints)
 import std/option (Option, Some, None)
 import std/list (map, filter, any)
 import std/math (pow, abs_Float)
@@ -46,14 +46,17 @@ export pure func valueOf(p:ObservedPlanet,key:string) -> Option[float] = match f
 pure func first(a:Option[float],b:Option[float]) -> Option[float] = match a {Some(_)=>a,None=>b}
 pure func inRange(v:Option[float],lo:float,hi:float) -> bool = match v {Some(x)=>x>=lo && x<=hi,None=>false}
 export pure func atmosphereVeto(p:ObservedPlanet) -> bool =
- p.id=="trappist-1b" || p.id=="trappist-1c" || p.name=="TRAPPIST-1 b" || p.name=="TRAPPIST-1 c"
+ any(\rule. rule.id==p.id || rule.name==p.name,atmosphereConstraints())
 -- Greene2023 and Zieba2023 limits are immutable observational constraints.
 -- No seed or dial enters this predicate.
 export pure func habOf(row:StarRow,p:ObservedPlanet) -> Habitability {
  let a=valueOf(p,"a_au");
  let irradiance=first(valueOf(p,"insolation_earth"),match a {Some(x)=>if x>0.0 && row.lSun>0.0 then Some(insolationEarth(row.lSun,x)) else None,None=>None});
  let zone=if row.teff>0.0 then {let hz=hzFluxes(row.teff); inRange(irradiance,hz.maximum,hz.runaway)} else false;
- let rocky=inRange(valueOf(p,"radius_earth"),0.5,1.5) || inRange(valueOf(p,"msini_earth"),0.1,5.0);
+ let rocky=match valueOf(p,"radius_earth") {
+  Some(radius)=>radius>=0.5 && radius<=1.5,
+  None=>inRange(valueOf(p,"msini_earth"),0.1,5.0)
+ };
  if atmosphereVeto(p) || row.starClass==Other || not rocky || not zone then NotHabitable
  else if row.starClass==MDwarf then HabitabilityDebated else Habitable
 }
@@ -73,7 +76,7 @@ pure func hzQualifier(row:StarRow) -> string = if row.teff<=0.0 then "; HZ: stel
  if flux.extrapolated then "; HZ: Kopparapu temperature ${show(row.teff)} K clamped to ${show(flux.teffUsed)} K; outside the calibrated temperature range" else ""
 }
 pure func measuredCitation(o:ObservedPlanet,row:StarRow) -> string =
- "${o.reference}; ${join("; ",map(\x. match x {(k,f)=>"${k}: ${f.prov}, ${f.note} [${f.cite}]"},o.fields))}; computed irradiation/Teq use cited stellar inputs and Bond albedo0.3 when absent from archive${hzQualifier(row)}"
+ "${o.reference}; ${join("; ",map(\x. match x {(k,f)=>"${k}: ${f.prov}, ${f.note} [${f.cite}]"},o.fields))}; computed irradiation/Teq use cited stellar inputs and Bond albedo0.3 when absent from archive${hzQualifier(row)}${join("",map(\rule. "; ${rule.cite}",filter(\rule. rule.id==o.id || rule.name==o.name,atmosphereConstraints())))}"
 
 pure func observedPlanet(seed:int,p:Params,row:StarRow,o:ObservedPlanet) -> Planet {
  let a=valueOf(o,"a_au");
@@ -88,7 +91,7 @@ pure func observedPlanet(seed:int,p:Params,row:StarRow,o:ObservedPlanet) -> Plan
 }
 pure func synthetic(seed:int,p:Params,row:StarRow,slot:string,a:float,periodD:float,radius:float,mass:float,hab:Habitability) -> Planet =
  {id:"synth:${row.id}:${slot}",name:"${row.id} ${slot}",slot:slot,prov:PSynthesised,
- cite:"synthesised (seed); SAG13; LW conservative HZ; masses: adopted Chen-Kipping median likelihood/log-mass prior; Bond albedo 0.3 assumed${hzQualifier(row)}",
+ cite:"synthesised (seed); ${if slot=="hz" then "eta-Earth conservative HZ slot; radius and mass assumed Earth-like (1 R_Earth, 1 M_Earth), not measured or sampled from Chen-Kipping" else "SAG13 G-dwarf occurrence applied as a synthesis assumption; mass inferred from Chen-Kipping coefficient medians with adopted linear-radius likelihood and 128-cell log-mass prior, not the Forecaster posterior"}; Bond albedo 0.3 assumed${hzQualifier(row)}",
  aAu:Some(a),periodD:Some(periodD),radiusEarth:Some(radius),massEarth:Some(mass),minimumMass:false,
  teqK:Some(equilibriumK(row.teff,row.rSun,a,assumedBondAlbedo())),insolation:Some(insolationEarth(row.lSun,a)),hab:hab,
  history:historyOf(p,hab!=NotHabitable,historyUniforms(seed,row.id,slot)),observed:None}
