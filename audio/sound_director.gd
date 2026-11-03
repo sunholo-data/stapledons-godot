@@ -69,7 +69,9 @@ var _fades := {} ## cue id -> the Tween fading its loop out (rows with fade_out_
 ## Callable registered here, called as fill(playback, frames) whenever the buffer has room (HomeBeacon's
 ## Receiver). Its pitch is in the samples, so set_pitch only records and logs it.
 var generators := {}
-var _gen_cap := {} ## generator row id -> its ring buffer's size in frames (the largest room seen: an empty buffer)
+## generator row id -> its ring buffer's room when empty, in frames: read at play(), before anything is pushed
+## (a new playback starts empty), so later stalls or underruns cannot skew it.
+var _gen_cap := {}
 const GEN_RATE := 48000.0
 var _dust_last := -INF ## ship seconds of the last counted grain (the dead time runs from it)
 var _delayed: Array = [] ## [seconds left, row, asset id, pitch, volume]: fires that sound later (dust at its t_s)
@@ -419,6 +421,8 @@ func _play(c: Dictionary, asset_id: String, pitch: float, vol: float) -> void:
 	p.volume_db = vol
 	p.play()
 	if gen:
+		var gpb := p.get_stream_playback() as AudioStreamGeneratorPlayback
+		_gen_cap[c.id] = gpb.get_frames_available() if gpb != null else 0
 		_fill(c.id)
 
 
@@ -471,12 +475,13 @@ func _fill(id: String) -> void:
 		return
 	var pb := p.get_stream_playback() as AudioStreamGeneratorPlayback
 	var n := pb.get_frames_available() if pb != null else 0
-	_gen_cap[id] = maxi(int(_gen_cap.get(id, 0)), n)
 	if n > 0:
 		(generators[id] as Callable).call(pb, n)
 
 
-## Seconds of a generator row's samples written but not yet heard (its buffered frames); 0 when idle.
+## Seconds of a generator row's samples written but not yet read by the mixer (its buffered frames); 0 when
+## idle. Measured at the mixer's read head, like a sampled stream's get_playback_position, so a handover
+## between the two lines up whatever the output latency or a frame stall.
 func generator_lag_s(id: String) -> float:
 	var p: Node = _loops.get(id)
 	if p == null or not p.playing or not p.stream is AudioStreamGenerator:
