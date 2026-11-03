@@ -1,0 +1,662 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:54)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:55)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:60)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:111)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:112)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:113)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:114)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:111)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:112)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:113)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:114)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:111)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:112)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:113)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:114)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:123)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:125)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:125)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] install (res://ui/stapledon_theme.gd:154)
+         [4] setup (res://demos/ship_geometry_demo.gd:173)
+         [5] _ready (res://demos/ship_geometry_demo.gd:149)
+         [6] new_demo (res://tests/test_no_twitch.gd:58)
+         [7] sweep_state (res://tests/test_no_twitch.gd:143)
+         [8] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/foliage/frond.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] card_texture (res://interior/stapledon_style.gd:81)
+         [1] build (res://demos/ship_dressing.gd:26)
+         [2] setup (res://demos/ship_geometry_demo.gd:187)
+         [3] _ready (res://demos/ship_geometry_demo.gd:149)
+         [4] new_demo (res://tests/test_no_twitch.gd:58)
+         [5] sweep_state (res://tests/test_no_twitch.gd:143)
+         [6] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/foliage/shrub.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] card_texture (res://interior/stapledon_style.gd:81)
+         [1] build (res://demos/ship_dressing.gd:26)
+         [2] setup (res://demos/ship_geometry_demo.gd:187)
+         [3] _ready (res://demos/ship_geometry_demo.gd:149)
+         [4] new_demo (res://tests/test_no_twitch.gd:58)
+         [5] sweep_state (res://tests/test_no_twitch.gd:143)
+         [6] _run (res://tests/test_no_twitch.gd:42)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/foliage/grown_planter.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] card_texture (res://interior/stapledon_style.gd:81)
+         [1] build (res://demos/ship_dressing.gd:26)
+         [2] setup (res://demos/ship_geometry_demo.gd:187)
+         [3] _ready (res://demos/ship_geometry_demo.gd:149)
+         [4] new_demo (res://tests/test_no_twitch.gd:58)
+         [5] sweep_state (res://tests/test_no_twitch.gd:143)
+         [6] _run (res://tests/test_no_twitch.gd:42)
+ship-demo-ready: OK
+ok NT1 at rest: 24 HUD buttons pressed
+ok NT1 at rest: no player decision intent from any key, click, gesture or HUD button []
+ok NT1 at rest: every tour intent is the itinerary's own next leg
+ok NT1 at rest: no session started or dropped
+ok NT1 at rest: journey state and plan unchanged (planned)
+ship-demo-ready: OK
+ok NT1 in transit: 23 HUD buttons pressed
+ok NT1 in transit: no player decision intent from any key, click, gesture or HUD button []
+ok NT1 in transit: every tour intent is the itinerary's own next leg
+ok NT1 in transit: no session started or dropped
+ok NT1 in transit: journey state and plan unchanged (committed)
+ship-demo-ready: OK
+WARNING: pin_destination: CNS5:3627 is not at its navigation position in the sky stack; pinning it
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] pin_destination (res://sky/starfield.gd:190)
+         [1] pin_destinations (res://demos/solar_departure.gd:65)
+         [2] start_solar_departure (res://demos/ship_geometry_demo.gd:1074)
+         [3] _act (res://demos/ship_consoles.gd:345)
+         [4] use (res://demos/ship_consoles.gd:294)
+         [5] enter (res://tests/test_no_twitch.gd:89)
+         [6] sweep_state (res://tests/test_no_twitch.gd:144)
+         [7] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: pin_destination: Gaia DR3 2635476908753563008 is not at its navigation position in the sky stack; pinning it
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] pin_destination (res://sky/starfield.gd:190)
+         [1] pin_destinations (res://demos/solar_departure.gd:65)
+         [2] start_solar_departure (res://demos/ship_geometry_demo.gd:1074)
+         [3] _act (res://demos/ship_consoles.gd:345)
+         [4] use (res://demos/ship_consoles.gd:294)
+         [5] enter (res://tests/test_no_twitch.gd:89)
+         [6] sweep_state (res://tests/test_no_twitch.gd:144)
+         [7] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: pin_destination: CNS5:1142 is not at its navigation position in the sky stack; pinning it
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] pin_destination (res://sky/starfield.gd:190)
+         [1] pin_destinations (res://demos/solar_departure.gd:65)
+         [2] start_solar_departure (res://demos/ship_geometry_demo.gd:1074)
+         [3] _act (res://demos/ship_consoles.gd:345)
+         [4] use (res://demos/ship_consoles.gd:294)
+         [5] enter (res://tests/test_no_twitch.gd:89)
+         [6] sweep_state (res://tests/test_no_twitch.gd:144)
+         [7] new_demo (res://tests/test_no_twitch.gd:63)
+ok NT1 guided voyage: 24 HUD buttons pressed
+ok NT1 guided voyage: no player decision intent from any key, click, gesture or HUD button []
+ok NT1 guided voyage: every tour intent is the itinerary's own next leg
+ok NT1 guided voyage: no session started or dropped
+ship-demo-ready: OK
+ok NT1 Sgr A*: 23 HUD buttons pressed
+ok NT1 Sgr A*: no player decision intent from any key, click, gesture or HUD button []
+ok NT1 Sgr A*: every tour intent is the itinerary's own next leg
+ok NT1 Sgr A*: no session started or dropped
+ship-demo-ready: OK
+ok NT3 the live game has the crew aboard (R2-CREW C4)
+ok NT3 a crew hold is open
+ok NT3 the Voyage console says the hold needs you at the Crew console
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crew_console.gd:440)
+         [4] _row (res://ui/crew_console.gd:786)
+         [5] _board (res://ui/crew_console.gd:681)
+         [6] _build (res://ui/crew_console.gd:382)
+         [7] show_crew (res://ui/crew_console.gd:81)
+         [8] _crew_section (res://demos/ship_consoles.gd:1153)
+         [9] _crew_panel (res://demos/ship_consoles.gd:1130)
+         [10] _refresh_panel (res://demos/ship_consoles.gd:1063)
+         [11] _open_panel (res://demos/ship_consoles.gd:921)
+         [12] focus (res://demos/ship_consoles.gd:447)
+         [13] use (res://demos/ship_consoles.gd:288)
+         [14] sweep_crew (res://tests/test_no_twitch.gd:233)
+         [15] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crew_console.gd:440)
+         [4] _row (res://ui/crew_console.gd:786)
+         [5] _board (res://ui/crew_console.gd:681)
+         [6] _build (res://ui/crew_console.gd:382)
+         [7] show_crew (res://ui/crew_console.gd:81)
+         [8] _crew_section (res://demos/ship_consoles.gd:1153)
+         [9] _crew_panel (res://demos/ship_consoles.gd:1130)
+         [10] _refresh_panel (res://demos/ship_consoles.gd:1063)
+         [11] _open_panel (res://demos/ship_consoles.gd:921)
+         [12] focus (res://demos/ship_consoles.gd:447)
+         [13] use (res://demos/ship_consoles.gd:288)
+         [14] sweep_crew (res://tests/test_no_twitch.gd:233)
+         [15] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crew_console.gd:440)
+         [4] _row (res://ui/crew_console.gd:786)
+         [5] _board (res://ui/crew_console.gd:681)
+         [6] _build (res://ui/crew_console.gd:382)
+         [7] show_crew (res://ui/crew_console.gd:81)
+         [8] _crew_section (res://demos/ship_consoles.gd:1153)
+         [9] _crew_panel (res://demos/ship_consoles.gd:1130)
+         [10] _refresh_panel (res://demos/ship_consoles.gd:1063)
+         [11] _open_panel (res://demos/ship_consoles.gd:921)
+         [12] focus (res://demos/ship_consoles.gd:447)
+         [13] use (res://demos/ship_consoles.gd:288)
+         [14] sweep_crew (res://tests/test_no_twitch.gd:233)
+         [15] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/analyst_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crew_console.gd:440)
+         [4] _row (res://ui/crew_console.gd:786)
+         [5] _board (res://ui/crew_console.gd:681)
+         [6] _build (res://ui/crew_console.gd:382)
+         [7] show_crew (res://ui/crew_console.gd:81)
+         [8] _crew_section (res://demos/ship_consoles.gd:1153)
+         [9] _crew_panel (res://demos/ship_consoles.gd:1130)
+         [10] _refresh_panel (res://demos/ship_consoles.gd:1063)
+         [11] _open_panel (res://demos/ship_consoles.gd:921)
+         [12] focus (res://demos/ship_consoles.gd:447)
+         [13] use (res://demos/ship_consoles.gd:288)
+         [14] sweep_crew (res://tests/test_no_twitch.gd:233)
+         [15] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/pilot_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crew_console.gd:440)
+         [4] _row (res://ui/crew_console.gd:786)
+         [5] _board (res://ui/crew_console.gd:681)
+         [6] _build (res://ui/crew_console.gd:382)
+         [7] show_crew (res://ui/crew_console.gd:81)
+         [8] _crew_section (res://demos/ship_consoles.gd:1153)
+         [9] _crew_panel (res://demos/ship_consoles.gd:1130)
+         [10] _refresh_panel (res://demos/ship_consoles.gd:1063)
+         [11] _open_panel (res://demos/ship_consoles.gd:921)
+         [12] focus (res://demos/ship_consoles.gd:447)
+         [13] use (res://demos/ship_consoles.gd:288)
+         [14] sweep_crew (res://tests/test_no_twitch.gd:233)
+         [15] new_demo (res://tests/test_no_twitch.gd:63)
+ok NT3 the Crew console shows the held row
+ok NT3 39 Crew console buttons pressed once each, on the board and in every call
+ok NT3 no crew decision on one press, the offer included []
+ok NT5 600 s later the Crew console and the held call are still open
+ok NT5 nothing was decided on the timer
+ship-demo-ready: OK
+ok NT2 setup: the commit dialog is open at the helm
+ok NT2 600 s later: the dialog, the helm and the plan are unchanged
+ok NT2 the sim kept its host tick (2400 ticks)
+ok NT2 nothing was decided on the timer
+ok NT2 an armed press-twice confirm and its panel survive 600 s; nothing starts
+ok NT2 an open panel with an unpressed hold survives 600 s; nothing starts
+ship-demo-ready: OK
+WARNING: pin_destination: CNS5:3627 is not at its navigation position in the sky stack; pinning it
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] pin_destination (res://sky/starfield.gd:190)
+         [1] pin_destinations (res://demos/solar_departure.gd:65)
+         [2] start_solar_departure (res://demos/ship_geometry_demo.gd:1074)
+         [3] _act (res://demos/ship_consoles.gd:345)
+         [4] use (res://demos/ship_consoles.gd:294)
+         [5] begin (res://tests/review_drive.gd:17)
+         [6] test_review_no_deadlines (res://tests/test_no_twitch.gd:322)
+         [7] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: pin_destination: Gaia DR3 2635476908753563008 is not at its navigation position in the sky stack; pinning it
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] pin_destination (res://sky/starfield.gd:190)
+         [1] pin_destinations (res://demos/solar_departure.gd:65)
+         [2] start_solar_departure (res://demos/ship_geometry_demo.gd:1074)
+         [3] _act (res://demos/ship_consoles.gd:345)
+         [4] use (res://demos/ship_consoles.gd:294)
+         [5] begin (res://tests/review_drive.gd:17)
+         [6] test_review_no_deadlines (res://tests/test_no_twitch.gd:322)
+         [7] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: pin_destination: CNS5:1142 is not at its navigation position in the sky stack; pinning it
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] pin_destination (res://sky/starfield.gd:190)
+         [1] pin_destinations (res://demos/solar_departure.gd:65)
+         [2] start_solar_departure (res://demos/ship_geometry_demo.gd:1074)
+         [3] _act (res://demos/ship_consoles.gd:345)
+         [4] use (res://demos/ship_consoles.gd:294)
+         [5] begin (res://tests/review_drive.gd:17)
+         [6] test_review_no_deadlines (res://tests/test_no_twitch.gd:322)
+         [7] new_demo (res://tests/test_no_twitch.gd:63)
+ok NT4 setup: the guided voyage begins at the Voyage console
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/interlude/home/tier0_v0.webp'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] home_texture (res://ui/crossing_review.gd:190)
+         [2] home_texture_for (res://ui/crossing_review.gd:181)
+         [3] _home (res://ui/crossing_review.gd:461)
+         [4] _page (res://ui/crossing_review.gd:413)
+         [5] _build (res://ui/crossing_review.gd:353)
+         [6] show_review (res://ui/crossing_review.gd:207)
+         [7] _show_interlude (res://demos/ship_geometry_demo.gd:1157)
+         [8] skip_stage (res://demos/ship_geometry_demo.gd:1174)
+         [9] frame (res://tests/review_drive.gd:52)
+         [10] reach (res://tests/review_drive.gd:62)
+         [11] test_review_no_deadlines (res://tests/test_no_twitch.gd:324)
+         [12] new_demo (res://tests/test_no_twitch.gd:63)
+ok NT4 setup: the crossing stopped for a hold (held)
+ok NT4 the Hold page survives 600 s; ship time waits (hold)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crossing_review.gd:666)
+         [4] _hold (res://ui/crossing_review.gd:608)
+         [5] _page (res://ui/crossing_review.gd:411)
+         [6] _build (res://ui/crossing_review.gd:353)
+         [7] show_review (res://ui/crossing_review.gd:207)
+         [8] _show_interlude (res://demos/ship_geometry_demo.gd:1157)
+         [9] skip_stage (res://demos/ship_geometry_demo.gd:1174)
+         [10] frame (res://tests/review_drive.gd:52)
+         [11] reach (res://tests/review_drive.gd:62)
+         [12] test_review_no_deadlines (res://tests/test_no_twitch.gd:332)
+         [13] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/interlude/home/tier1_v0.webp'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] home_texture (res://ui/crossing_review.gd:190)
+         [2] home_texture_for (res://ui/crossing_review.gd:181)
+         [3] _home (res://ui/crossing_review.gd:461)
+         [4] _page (res://ui/crossing_review.gd:413)
+         [5] _build (res://ui/crossing_review.gd:353)
+         [6] show_review (res://ui/crossing_review.gd:207)
+         [7] _show_interlude (res://demos/ship_geometry_demo.gd:1157)
+         [8] skip_stage (res://demos/ship_geometry_demo.gd:1174)
+         [9] frame (res://tests/review_drive.gd:52)
+         [10] reach (res://tests/review_drive.gd:62)
+         [11] test_review_no_deadlines (res://tests/test_no_twitch.gd:332)
+         [12] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_fearful.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crossing_review.gd:666)
+         [4] _aboard (res://ui/crossing_review.gd:518)
+         [5] _page (res://ui/crossing_review.gd:414)
+         [6] _build (res://ui/crossing_review.gd:353)
+         [7] show_review (res://ui/crossing_review.gd:207)
+         [8] _show_interlude (res://demos/ship_geometry_demo.gd:1157)
+         [9] skip_stage (res://demos/ship_geometry_demo.gd:1174)
+         [10] frame (res://tests/review_drive.gd:52)
+         [11] reach (res://tests/review_drive.gd:62)
+         [12] test_review_no_deadlines (res://tests/test_no_twitch.gd:332)
+         [13] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/interlude/home/tier2_v0.webp'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] home_texture (res://ui/crossing_review.gd:190)
+         [2] home_texture_for (res://ui/crossing_review.gd:181)
+         [3] _home (res://ui/crossing_review.gd:461)
+         [4] _page (res://ui/crossing_review.gd:413)
+         [5] _build (res://ui/crossing_review.gd:353)
+         [6] show_review (res://ui/crossing_review.gd:207)
+         [7] _show_interlude (res://demos/ship_geometry_demo.gd:1157)
+         [8] skip_stage (res://demos/ship_geometry_demo.gd:1174)
+         [9] frame (res://tests/review_drive.gd:52)
+         [10] reach (res://tests/review_drive.gd:62)
+         [11] test_review_no_deadlines (res://tests/test_no_twitch.gd:332)
+         [12] new_demo (res://tests/test_no_twitch.gd:63)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_angry.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] _face (res://ui/crossing_review.gd:666)
+         [4] _aboard (res://ui/crossing_review.gd:518)
+         [5] _page (res://ui/crossing_review.gd:414)
+         [6] _build (res://ui/crossing_review.gd:353)
+         [7] show_review (res://ui/crossing_review.gd:207)
+         [8] _show_interlude (res://demos/ship_geometry_demo.gd:1157)
+         [9] skip_stage (res://demos/ship_geometry_demo.gd:1174)
+         [10] frame (res://tests/review_drive.gd:52)
+         [11] reach (res://tests/review_drive.gd:62)
+         [12] test_review_no_deadlines (res://tests/test_no_twitch.gd:332)
+         [13] new_demo (res://tests/test_no_twitch.gd:63)
+ok NT4 setup: the crossing reached its review (crossed)
+ok NT4 no Braking notice while the review waits at the braking boundary (phase braking)
+ok NT4 every page of the review survives 600 s of fake time (12 pages) []
+ok NT4 ship time waits at the braking boundary while the review is read
+ok NT4 the last page's Brake ends the review and the leg brakes
+ok NT4 the Braking notice shows once the player has braked
+no-twitch: 41 passed, 0 failures
+ERROR: Lambda capture at index 0 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+WARNING: 39 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneDummy21GeometryInstanceDummyE
+   at: ~PagedAllocator (./core/templates/paged_allocator.h:170)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: 258 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 7 RID allocations of type 'N13RendererDummy15MaterialStorage13DummyMaterialE' were leaked at exit.
+ERROR: 1 RID allocations of type 'N13RendererDummy15MaterialStorage11DummyShaderE' were leaked at exit.
+ERROR: 21 RID allocations of type 'N13RendererDummy9DummyMeshE' were leaked at exit.
+ERROR: 16 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.
+ERROR: 21 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.
+ERROR: 71 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
