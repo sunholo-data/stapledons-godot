@@ -51,6 +51,31 @@
       "date": "2026-10-26",
       "event": "rework",
       "note": "D-123 (Mark on footsteps v3): 'footsteps still sound aggressive - I figure players will hear this a lot so it has to be pleasant-ish to listen to not banging in the skull!' Footsteps v4, a new approach: felt more than heard, under the bed. Three-pole low-passed white noise (energy centred near 190 Hz, most of it 120-300 Hz), a soft body, a barely-there brush on three variants; 30-40 ms rounded attacks, 85-105 ms decay constants, 0.55 s, no transient. In game at -30 dB: peak -33 dBFS (6 dB under the hum's -27), gated RMS -45.9; 13.6 dB under the bed in 120-300 Hz and in 2-5 kHz. The director gains volume_jitter_db (1.5) and alternate_db (-1.5, every other foot), and its pitch and level now come from a mixed hash (the raw string hash moved so little per fire that a walk got nearly one pitch). Review folder offers a 6 dB quieter walk as a level option. Paused for Mark's listen."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "started",
+      "note": "S2_VOYAGE started (D-144: attended parallel agents; Claude C, branch feat/r2-sound-s2). Scope per the brief: plan select, the commit hold and seal, the drive, the dust counter, arrival and the home beacon, made exact by the standing order of 2026-10-30 (no compromises on the physics; True and labelled Processed settings): the k = 0.25 compressed pitch is removed; the beacon runs at the sim's earth.rate with the comms station's True / Receiver machinery (EarthFeed.receiver_plan, data/ui/comms_feed.json sound.receiver)."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "paused_for_review",
+      "note": "S2 built (PR #375, draft) and its listening review published to refs/sound_s2; paused for Mark's listen."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "rework",
+      "note": "Coordinator review: Receiver pip gap 0.0948 s vs 0.0709 at D = 14.107. Cause: the FFT pitch shift merges 5 ms pips (not the detector: True through the same detector was exact). Fixed by generating the Receiver beacon (heterodyne: envelope at D on a 400 Hz carrier) instead of shifting; the carrier banks and the Beacon bus are removed. New test: Receiver pip spacing within 1 % across D 0.0709-14.1, as True, and no pip lost. Review re-rendered and re-uploaded."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "rework",
+      "note": "Codex evaluation of #375 at 2aa509dd: 64/100 FAIL (scratchpad eval-375.json). Blocking fixed: Receiver keying unclamped (D 0.03 and 30 now measured), the beacon follows every accepted step in live play, and the voyage golden exercises ShipSound. Non-blocking fixed: blind pip detector + negative control, dust one-per-frame cap removed, playback leak, stale sprint text."
+    },
+    {
+      "date": "2026-11-02",
+      "event": "rework",
+      "note": "Re-evaluation of #375 at acb85bc7: 91/100 PASS. Cheap non-blocking fixes: audible-position handover, test teardown leaks, stale wording."
     }
   ],
   "implements": [
@@ -60,7 +85,10 @@
     "stapledons-design vision/design-decisions.md 2026-09-28 (D-7, D-8: voices, text-only)"
   ],
   "github_issues": [],
-  "related_prs": [],
+  "related_prs": [
+    "#375 (S2, draft)",
+    "stapledons-design#52 (S2 canon, draft)"
+  ],
   "external_dependencies": [
     {
       "what": "The bridge as built by R2-DECK-LAYOUT DL1-DL3 (station use points, lift, mast, spire light)",
@@ -216,23 +244,24 @@
     },
     {
       "id": "S2_VOYAGE",
-      "description": "The voyage (design section D6): plan select, commit hold and seal, drive boost/silent/brake, stop turn, arrival, brake notice, hold limit, crew hold, the dust counter (25 ms dead time) from ship.ism.impacts, medium changes, the interlude bed under the Archive's voice, bh_enter, and the home beacon if OQ6 is accepted. Adds the tour's attitude_hold_changed(on) signal for stop_turn. Home beacon pitch is asserted against physics/planets.gd doppler_seen64 (mirror of sunholo/relativity 0.7 optics) at the package probe values; no new formula (gate 2).",
+      "description": "The voyage (design section D6). This stage (D-144 brief): plan select (the sim plotting a new destination), the commit hold (console or map hold, stopped on release) and seal (the sim's committed), drive boost/silent/brake, the dust counter (25 ms dead time in impact ship time, at most 8 per tick) from ship.ism.impacts, arrival, and the home beacon, exact (standing order 2026-10-30): the sim's earth.rate unrounded, in Earth's beam and away from home, True (the 400 Hz carrier resampled by D) and Receiver (generated as a heterodyne receiver hears it: Earth's keying at D on the true 400 Hz carrier), with the comms station's setting; no FFT pitch shift. Deferred to S2b: stop_turn's tour signal, brake_notice, crew_hold, medium_change, the interlude bed, bh_enter.",
       "estimated_loc": 420,
       "dependencies": [
         "S1_BRIDGE"
       ],
       "acceptance_criteria": [
-        "make sound-test: the voyage cue log equals tests/fixtures/sound/cue_log_voyage.txt byte for byte in two separate Godot processes (AC2)",
-        "make sound-test: committed -> commit_seal only on the sim's acceptance; phase to boosting/cruising/braking -> drive cues; arrived, hold_limit, crew_hold, bh_enter; dust ticks honour the dead time (AC4)",
-        "make sound-test: home beacon pitch at beta 0, 0.9, 0.99 (Sol astern and ahead) matches 12*k*log2(D) from the package mirror to 0.01 semitone, if OQ6 (AC15)",
-        "make export-filter-audit ship-demo-export-smoke green, the smoke asserting the exported pack loads the cue table and logs one cue; make export-pack-check on the rig: zip growth <= 6 MB (AC13)",
+        "make sound-voyage-test: a real voyage (ui/transit_harness.gd on the sim at 2.16) gives a cue log equal to tests/fixtures/sound/cue_log_voyage.txt byte for byte, in two separate Godot processes (AC2)",
+        "make sound-test ship-sound-test sound-voyage-test: committed -> commit_seal only on the sim's acceptance; phase to boosting/cruising/braking -> drive cues; arrived; plan_select on a new plotted target; commit_hold on a held confirm, stopped on release; dust ticks honour the 25 ms dead time and the 8-per-tick cap (AC4)",
+        "make sound-test ship-sound-test sound-voyage-test: the home beacon is exact: its rate is the sim's earth.rate unrounded at every step of a real voyage; on only in Earth's beam and away from home; its plan is EarthFeed.receiver_plan at the receiver's edges; measured through the mixer, 400 Hz in Receiver and 400 D Hz in True within 1 %, pips every 1/D s within 1 % in both settings at D 0.03-30 (beyond the station's real-time range), none lost, with a 2.01 x D negative control; True silent outside audible (AC15, amended 2026-11-02)",
+        "make sound-check sound-levels sound-levels-parity sound-assets-check sound-stage-check sound-synth-check green with the new sounds in their bands (AC6-AC8)",
+        "make export-filter-audit ship-demo-export-smoke green; make export-pack-check on the rig: zip growth <= 6 MB (AC13)",
         "full make test green on the rig (AC16)",
-        "dev build and make sound-review STAGE=s2 published for Mark"
+        "listening review (make sound-voyage-review) published to gs://stapledons-voyage-assets/refs/sound_s2/ for Mark; a dev build after his listen"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-11-02",
       "completed": null,
-      "notes": null
+      "notes": "Built 2026-11-02 on feat/r2-sound-s2 (PR #375, draft). ShipSound follows journey_sim.stepped (events, plan_select state edge, on_dust) and the holds (ShipConsoles.confirm_held_s, GalaxyMap.hold_s); HomeBeacon (audio/home_beacon.gd) plays the beacon at earth.rate unrounded via EarthFeed.receiver_plan with the station's setting; Receiver generated sample by sample as a heterodyne receiver hears it (Earth's keying at D on the true 400 Hz carrier, from the AILANG-rendered envelope table home_beacon_env), because Godot's FFT pitch shift mis-tunes large corrections (314 Hz for 400 Hz at D = 0.0709) and merges short pips (8-16 of 21 survive at D = 14.1 for FFT sizes 256-2048; the first review render measured a 0.0948 s gap for 0.0709). Revision 2 after the coordinator's measurement review: Receiver pips 1/D apart within 1 % at D 0.0709-14.1, as True. Revision 3 after the Codex evaluation (64/100 FAIL at 2aa509dd): Receiver keys at D unrounded at every D (it was the station's clamped rate), ShipSound follows the beacon per accepted step (the golden now runs through ShipSound), the pip detector is blind to the expected gap with a 2.01 x D negative control, dust starts each at its own time (no one-per-frame cap), the generator playback leak at teardown fixed. New sounds: plan_select, home_beacon, home_beacon_env (sunholo/audio 0.6.0). Director: set_pitch applies every value, own_player, stops, dust dead-time reset on a new game, each dust tick started at its own time. Local gates green at the last push: sound-test 82, ship-sound-test 41, sound-voyage-test 10 (real-sim golden through ShipSound, 372 lines, two processes), sound-check 52, sound-levels 47, levels-parity 0 diffs, assets 18.5/20 MB, stage 3.9/6 MB, synth-check 44 byte for byte. Listening review https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/index.html. Paused for Mark's listen; not landed. S2b (deferred): stop_turn signal, brake_notice, crew_hold, medium_change, interlude_bed, bh_enter. Revision 4 after the re-evaluation (91/100 PASS at acb85bc7): Receiver -> True hands over at the generator's audible position (write cursor less buffered frames), test teardown frees orphans and waits for the mixer (0 leaked playbacks), stale wording fixed."
     },
     {
       "id": "S3_LANDING",

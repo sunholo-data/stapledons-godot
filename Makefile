@@ -10,7 +10,7 @@ SCRATCH := .godot/tmp
 # sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
 GEODESIC_LENS_DIGEST := 8.612720147193743
 GEODESIC_SCHW_DIGEST := 92833.6848137945
-AILANG_RELEASE ?= v0.54.18
+AILANG_RELEASE ?= v0.56.1
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
@@ -47,7 +47,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 # the whole of make test, plus make golden for visual changes, on the Studio). GitHub keeps this fast
 # tier: the checks a clean Linux box adds (fresh deps and lock, the x86_64 replay golden, strict VM,
 # VM == interpreter parity, crew parity, policy lints). No GPU, no sky textures, no Godot.
-ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
+ci-fast: deps python-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check capture-m4-publish-test ## GitHub fast tier (clean Linux): lock, policy lints, strict VM, parity, replay golden, crew parity, lore manifest
 
 test: python-guard uid-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict similar-test rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test star-names area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
@@ -225,8 +225,8 @@ star-names:        ## D-17 names.json vs stars.json (sim/tools/star_names.ail): 
 	@$(AILANG) run --quiet --package-dir sim --entry starNamesVm --args-json 0 sim/tools/star_names_test.ail > $(SCRATCH)/star-names/test-interp.txt
 	@cmp $(SCRATCH)/star-names/test-vm.txt $(SCRATCH)/star-names/test-interp.txt && test "$$(cat $(SCRATCH)/star-names/test-vm.txt)" = "star-names-ok" || { cat $(SCRATCH)/star-names/test-vm.txt; exit 1; }
 	@# readFile is evaluator-only on the VM, so the FS shell runs --bytecode (not strict), as lore-check does
-	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry starNames --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/vm.txt || { cat $(SCRATCH)/star-names/vm.txt; exit 1; }
-	@$(AILANG) run --quiet --caps IO,FS --package-dir sim --entry starNames --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/interp.txt
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/vm.txt || { cat $(SCRATCH)/star-names/vm.txt; exit 1; }
+	@$(AILANG) run --quiet --caps IO,FS --package-dir sim --entry main --args-json '$(STAR_NAMES_ARGS)' sim/tools/star_names.ail > $(SCRATCH)/star-names/interp.txt
 	@python3 tools/check_star_names.py > $(SCRATCH)/star-names/oracle.txt
 	@cmp $(SCRATCH)/star-names/vm.txt $(SCRATCH)/star-names/interp.txt && cmp $(SCRATCH)/star-names/vm.txt $(SCRATCH)/star-names/oracle.txt
 	@echo "star-names: $$(cat $(SCRATCH)/star-names/test-vm.txt); $$(tail -1 $(SCRATCH)/star-names/vm.txt) (VM = interpreter = Python oracle)"
@@ -327,15 +327,21 @@ capture-m4: sky-assets lens-assets ## M4.6rR3 S1 set aboard the 3D ship (GPU win
 	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/worlds.sha256 | tr -d ' ')" = 14 && \
 	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4: FAILED (log $(SCRATCH)/capture-m4.log)"; exit 1; }
 
-capture-m4-publish: ## maintainers (gcloud): verify and upload the 18-file 3D-ship S1 set to the public refs/m4_ship_s1 bucket path
-	@set -eu; test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15; \
-	  test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15; \
-	  test "$$(cut -d' ' -f1 renders/m4/m4_manifest.sha256 | sort -u | wc -l | tr -d ' ')" = 15; \
-	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null); \
-	  n=0; for f in renders/m4/*.png renders/m4/manifest.json renders/m4/m4_manifest.sha256 renders/m4/worlds.sha256; do \
-	    test -s "$$f"; gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
+M4_PUBLISH_DIR := renders/m4
+test: capture-m4-publish-test
+capture-m4-publish: ## maintainers (gcloud): check all 18 files of the 3D-ship S1 set, then upload them to the public refs/m4_ship_s1 bucket path
+	@set -eu; d='$(M4_PUBLISH_DIR)'; set -- "$$d"/*.png "$$d/manifest.json" "$$d/m4_manifest.sha256" "$$d/worlds.sha256"; \
+	  for f; do test -s "$$f" || { echo "capture-m4-publish: FAILED before any upload: $$f missing or empty"; exit 1; }; done; \
+	  test $$# = 18 && test "$$(ls "$$d"/*.png | wc -l | tr -d ' ')" = 15 && \
+	  test "$$(wc -l < "$$d/m4_manifest.sha256" | tr -d ' ')" = 15 && \
+	  test "$$(cut -d' ' -f1 "$$d/m4_manifest.sha256" | sort -u | wc -l | tr -d ' ')" = 15 && \
+	  test "$$(wc -l < "$$d/worlds.sha256" | tr -d ' ')" = 14 && \
+	  (cd "$$d" && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4-publish: FAILED before any upload: a count or m4_manifest.sha256 check"; exit 1; }; \
+	  n=0; for f; do gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
 	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
-.PHONY: capture-m4-publish
+capture-m4-publish-test: ## row 7l(a): the publish checks all 18 files before its first upload (private fixture, fake gcloud, every GNU make on PATH; never uploads)
+	@sh tools/test_m4_publish.sh "$(CURDIR)"
+.PHONY: capture-m4-publish capture-m4-publish-test
 
 glow-eps-sheet:    ## D-29 follow-up: interior + forward sky at 0.99c..cap for each candidate eps through the eye exposure -> renders/glow/eps_compare.{png,jpg} + glow_eps_sheet.json (needs a GPU window)
 	$(GODOT_SIM) --path . -- --glow-eps-sheet=renders/glow
@@ -1176,6 +1182,12 @@ ship-star-light-capture:
 ship-star-light-bench:
 	@$(GODOT) --path . --script tools/ship_star_light_bench.gd > $(SCRATCH)/ship-star-light-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-bench.log; test $$rc = 0 && grep -q '^ship-star-light-bench: OK$$' $(SCRATCH)/ship-star-light-bench.log
 ship-demo-ci: ship-star-light-test
+# R3-TRUE-PROCESSED (eval B3, gate 2): the True star light on the GPU vs the CPU (absolute, equal light at any
+# temperature, RS-3/RS-4 Doppler, the exposure gain, an 80 lx star = the spire, the ambient bounce) with four negative controls. Needs a GPU window; in make golden.
+.PHONY: true-light-golden
+true-light-golden: import
+	@$(GODOT) --path . --script tools/true_light_golden.gd > $(SCRATCH)/true-light-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|true-light-golden)' $(SCRATCH)/true-light-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/true-light-golden.log && test "$$(grep -c '^ok    G-TL-' $(SCRATCH)/true-light-golden.log)" = 16 && grep -q '^true-light-golden: 16 passed, 0 failures$$' $(SCRATCH)/true-light-golden.log
+golden: true-light-golden
 .PHONY: trappist1-test
 trappist1-test:    ## TRAPPIST-1 planets (trappist1-planets-sprint.md): snapshot pin, sim checks strict VM = interpreter, and the Python orbit/transcription oracle
 	@mkdir -p $(SCRATCH)

@@ -916,6 +916,99 @@
         "pass": true,
         "blocking": 0
       }
+    },
+    {
+      "id": "M4.6rR3_7la_ATOMIC_PUBLISH",
+      "description": "Check the complete 18-file S1 set before any publish upload; a fake-gcloud shell test joins test and ci-fast.",
+      "depends_on": [],
+      "estimated_loc": 110,
+      "files": [
+        "Makefile",
+        "tools/test_m4_publish.sh",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+        "design_docs/planned/r1/m4-7l-capture-followups-sprint.md"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-a1",
+          "command": "deadline 400 make -s capture-m4-publish-test > .godot/tmp/7la-m.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-m.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7la-m.out; tail -1 .godot/tmp/7la-m.out",
+          "expected": "`rc=0`, `14` (7 cases × 2 makes on the rig), `0`, `capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)`. `rc=124`, or an INFRASTRUCTURE count of 1, is a rig failure: re-run"
+        },
+        {
+          "id": "AC-a2",
+          "command": "deadline 400 gmake -s capture-m4-publish-test > .godot/tmp/7la-g.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7la-g.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7la-g.out",
+          "expected": "`rc=0`, `14`, `0` (the same through gmake, with the same INFRASTRUCTURE rule)"
+        },
+        {
+          "id": "AC-a3",
+          "command": "for m in make gmake; do $m -pnq test 2>/dev/null | grep '^test:' | tr ' ' '\\n' | grep -cx capture-m4-publish-test; done; grep -c '^test: capture-m4-publish-test$' Makefile",
+          "expected": "`1`, `1`, `1` (`make test` reaches it with either make, from its own line)"
+        },
+        {
+          "id": "AC-a4",
+          "command": "for m in inloop noupload deadcapture; do drill \"$PWD\" $m; echo \"exit=$?\"; done",
+          "expected": "for each: `drill <m> via make: make rc 2 in <s> s`, `drill <m> via gmake: make rc 2 in <s> s`, `drill <m>: expected outcome on 2 outer makes`, `exit=0`. `exit=4` (`INFRASTRUCTURE`) is a rig failure: re-run, never a kill"
+        },
+        {
+          "id": "AC-a5",
+          "command": "drill \"$PWD\" nopositive; echo \"exit=$?\"; drill \"$PWD\" stall; echo \"exit=$?\"",
+          "expected": "`nopositive`: `make rc 0` via both, `expected outcome on 2 outer makes`, `exit=0` (the predicted survivor). `stall`: `make rc 2 in <s> s` via both, with each `<s>` ≤ 40 (measured 25), `expected outcome on 2 outer makes`, `exit=0`. That proves a hung make with a TERM-ignoring child is bounded, classed INFRASTRUCTURE rather than as a case result, and leaves no process or temp dir. An `exit=4` from `nopositive`, or from the outer wrapper during `stall`, is a rig failure: re-run"
+        },
+        {
+          "id": "AC-a6",
+          "command": "git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh; echo $?; find \"${TMPDIR:-/tmp}\" -maxdepth 1 \\( -name 'stapledon-7la.*' -o -name 'm4-publish-test.*' \\) | wc -l",
+          "expected": "`0` and `0` (drills never touched the checkout; no temp dirs left)"
+        },
+        {
+          "id": "AC-a7",
+          "command": "grep -cF -- '--cache-control=\"public, max-age=300\" \"$$f\" \"gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}\"' Makefile; grep -c '^M4_PUBLISH_DIR := renders/m4$' Makefile",
+          "expected": "`1`, `1` (public path and cache-control byte-identical; default source unchanged)"
+        },
+        {
+          "id": "AC-a8",
+          "command": "awk '/^capture-m4-publish:/,/^\\.PHONY: capture-m4-publish/' Makefile | awk '/gcloud storage cp/ {g=NR} /test -s/ && !t {t=NR} /shasum -a 256 -c/ {s=NR} /worlds\\.sha256\" \\| tr/ {w=NR} END {print (t<g && s<g && w<g) ? \"pre-checks-first\" : \"ORDER-BAD\"}'",
+          "expected": "`pre-checks-first`"
+        },
+        {
+          "id": "AC-a9",
+          "command": "grep -c '^NP=\\$T/bin:/usr/bin:/bin$' tools/test_m4_publish.sh; grep -c 'is not first on PATH' tools/test_m4_publish.sh",
+          "expected": "`1`, `1` (real `gcloud` unreachable, guarded)"
+        },
+        {
+          "id": "AC-a10",
+          "command": "make uid-guard python-guard && git diff --check origin/main && echo gates-ok",
+          "expected": "`gates-ok` (a `.sh` needs no `.uid`; no Python)"
+        },
+        {
+          "id": "AC-a11",
+          "command": "git diff --name-only origin/main | grep -cvxE 'Makefile|tools/test_m4_publish\\.sh|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json|design_docs/planned/r1/m4-7l-capture-followups\\.md|design_docs/planned/r1/m4-7l-capture-followups-sprint\\.md'; git diff --name-only origin/main | grep -cxE 'Makefile|tools/test_m4_publish\\.sh'",
+          "expected": "`0` outside files; `2` changed code files. Proposed correction D1: five allowed paths, including the required sprint plan; controller must ratify."
+        },
+        {
+          "id": "AC-a12",
+          "command": "Controller: launch tools/rig_check.sh <PR> detached under the mission iteration-61 procedure, require rig/full success on the PR head; then grep -c '^capture-m4-publish-test: OK (7 cases on 2 makes' \"${TMPDIR:-/tmp}/rig-check/<full head sha>.log\" (use actual \"$dir.log\" if RIG_DIR is overridden).",
+          "expected": "status `success`; `1`"
+        },
+        {
+          "id": "AC-a13",
+          "command": "probe_7la \"$PWD\"; rc=$?; echo \"exit=$rc\"; test \"$rc\" -eq 0",
+          "expected": "`rc=2` within 25 s; `probe: timeout-signature=1 processes=0 tmp=0`; `exit=0`. One 10 s probe INFRASTRUCTURE line, zero case verdicts, zero remaining processes/temp entries. Outer timeout is infrastructure failure, never accepted."
+        },
+        {
+          "id": "AC-a14",
+          "command": "grep -cE '^ci-fast:.* capture-m4-publish-test( |$)' Makefile; then controller verifies fast-tier run success and executes gh run view <run> --log | grep -E 'capture-m4-publish-test: (OK|FAIL|INFRASTRUCTURE)'",
+          "expected": "`1`; the fast-tier job is `success` and its log carries `capture-m4-publish-test: OK (7 cases on 1 makes: GNU Make 4.<n>)`, with 0 `FAIL` and 0 `INFRASTRUCTURE` lines."
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7l-capture-followups.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7l-capture-followups-sprint.md",
+      "passes": true,
+      "registry_reuse": {
+        "action": "none",
+        "package": null,
+        "reason": "Existing recipe plus shell/Make fixture harness; no package-like capability or new AILANG."
+      },
+      "notes": "Iteration 64 planner at d1cf07f71e0dfcdb6f3af48521e1bc9748a4dd10, 2026-11-02. Planning only; implementation untouched. Base guards green: uid-guard 401, python-guard 19/0, git diff --check origin/main and working tree clean. Exact designed 95-line script on a private variable-only copy of the OLD recipe: outer make rc 2; complete ok on GNU Make 3.81 and 4.4.1, FAILED (12 of 14 cases), each version worlds-missing 2/17, worlds-empty 2/17, worlds-short 0/18, manifest-missing 2/15, png-missing 2/0, hash-mismatch 2/0; all FAIL cases pre-check lines 0. AC-a1/a2 missing target rc2 at base; a3 counts0/0/0; a4/a5 usage2 absent script; a6 0/0; a7 1/0; a8 ORDER-BAD; a9 absent script; a11 0 outside/0 code before planning; a13 rc2 in0s missing target, signature0, private tmp1 xcrun_db; a14 membership0, Linux pending. Expected REDs are findings, never worked around. gh pr list --state open plus names/full diffs for last-known 371/373/374/375 blocked: UNINFORMATIVE UNDER SANDBOX, current PR and ci-fast ownership unknown, controller must refresh before implementation. Process service pgrep rc3 Cannot get process list: zeroes downstream are UNINFORMATIVE UNDER SANDBOX. D1 design defect: AC-a11 excludes required sprint plan; acceptance gate explicitly carries proposed five-path correction, controller ratification required. D2 host defect: /usr/bin/make --version creates xcrun_db in fresh TMPDIR; proposed controller-ratified macOS preflight resolve xcrun --find make and prepend real make directory. Measured resolved /Library/Developer/CommandLineTools/usr/bin/make GNU3.81 leaves0 entries. No fixed-tree/drill cleanup pass claimed. AC-a12 rig/full and AC-a14 successful Linux CI log are controller-only after implementation commit/PR; no full suite, Godot, GPU, upload or background process run here. passes remains false; only controller sets it after rig/full and required evidence. See amendment for all commands, hardened drills/probe, base findings and STOP points.\n\n2026-11-02 executor at 6f19e179, branch mission/stapledon-iter64-7la. Base deadline-400 guards rc0: uid-guard: ok (401 .uid files); python-guard: ok (19 allowlisted, 0 awaiting AILANG port). git diff --check origin/main rc0; git diff --check rc0. Controller's PR ownership/dispositions accepted per executor handoff. Versions via bounded probes: GNU Make 3.81 and GNU Make 4.4.1. RED before fix: exact 95-line addendum test (including TERM/INT/HUP forwarding) plus variable-only OLD recipe/wiring. Both deadline-400 outer make and gmake rc2, each summary capture-m4-publish-test: FAILED (12 of 14 cases), 2 complete ok, 12 FAIL, 0 INFRASTRUCTURE. Per each inner GNU version: worlds-missing rc2/uploads17/well-formed17; worlds-empty 2/17/17; worlds-short 0/18/18; manifest-missing 2/15/15; png-missing 2/0/0; hash-mismatch 2/0/0. Every FAIL pre-check lines0. No real gcloud called; fake-only PATH unchanged.\n\n2026-11-02 executor GREEN and handoff (sandbox; no final host verdict claimed). Exact addendum Design block installed, ci-fast gains capture-m4-publish-test once before its comment; cache-control/bucket bytes identical. New test byte-identical to the final 95-line design block, sh -n rc0. Both outer make and gmake under deadline400 rc0, each 14 ok / 0 FAIL / 0 INFRASTRUCTURE and final line capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1).\nAC-a1 PASS local: make rc0, ok14, INFRASTRUCTURE0, exact OK above. AC-a2 PASS local: gmake rc0, ok14, INFRASTRUCTURE0, same exact OK. AC-a3 PASS local: bounded -pnq queries counts1/1, standalone test line1. AC-a7 PASS local: unchanged cache/bucket bytes count1, default variable count1. AC-a8 PASS local: pre-checks-first. AC-a9 PASS local: fake-only NP count1, PATH guard count1. AC-a10 PASS local: bounded guards uid401, python19/0; git diff --check origin/main rc0; gates-ok. AC-a14 source PASS local count1; Linux CI evidence controller-only, not run, UNINFORMATIVE UNDER SANDBOX for full gate. AC-a12 controller-only rig/full not run; no claim, UNINFORMATIVE UNDER SANDBOX for full gate.\nRequired process preflight pgrep -fx stapledon-7la-process-probe-no-match rc3: sysmon request failed with error: sysmond service not found; pgrep: Cannot get process list. Following plan STOP, no five-drill cleanup assertions executed or converted to zeroes. AC-a4 and AC-a5 UNINFORMATIVE UNDER SANDBOX. Each addendum drill inloop, noupload, deadcapture, nopositive, stall: BLOCKED BEFORE EXECUTION for BOTH outer make and gmake by preflight rc3; timing N/A (never started); no kill, survivor, timeout-classification or cleanup verdict claimed. Exact unmodified 93-line addendum drill extracted for fresh /bin/sh; controller must run all five through both outer makes outside sandbox. No D2 preflight, PATH substitution, assertion removal or process-query workaround adopted.\nAC-a13 hardened plan probe executed in fresh /bin/sh with deadline400. Printed rc=2 15s; timeout-signature/timing/no-case-verdict assertions passed before process query. Probe then printed sysmon request failed with error: sysmond service not found; pgrep: Cannot get process list; UNINFORMATIVE UNDER SANDBOX: process query; probe exit4, wall15s. Cleanup/process/private-temp final verdict UNINFORMATIVE UNDER SANDBOX, never pass. Probe trap removed its scratch. AC-a6 UNINFORMATIVE UNDER SANDBOX for committed-HEAD gate: literal git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh rc1 because implementation intentionally uncommitted (commit forbidden); bounded prefix temp-directory count0. Controller must commit then repeat. Code hashes saved across remaining checks; no checkout mutation by drills because none ran.\nAC-a11 literal ratified D1 gate outputs outside0/code1: git diff omits the untracked test and changelog. Complete working-tree path accounting including untracked files gives outside0/code2 under the explicitly authorized four-file executor scope; no staging/index write attempted. Literal committed-tree gate UNINFORMATIVE UNDER SANDBOX until controller adds/commits files. Added explicitly authorized changelogs/unreleased/2026-11-02-capture-m4-publish-atomic.md (2 lines), styled after two existing fragments; controller must extend AC-a11 allowlist for this path before final gate.\nDeviations: no code/design deviation. Validation incomplete only where sandbox process preflight or mandatory uncommitted state prevents final evidence; controller-only rig/full and Linux CI deferred as instructed. Changelog is the user's explicit scope extension. No full make test, ci-fast execution, Godot, GPU, network command, real gcloud, commit, upload, background job or forbidden-file edit. passes remains false. Existing feature objects and all non-notes state must compare identical under jq -S to executor base.\n\nFinal executor verification 2026-11-02: exact full Makefile comparison against saved base with only the designed splice and ci-fast addition PASS; test byte-for-byte design comparison PASS. jq -S comparison deleting ONLY target feature notes: cmp rc0 (all other feature fields, every other feature object and all top-level state identical to executor base). Saved code hashes unchanged cmp rc0; git diff --check origin/main rc0. Complete git-status accounting: 4 files, outside authorized executor scope0, code2. Diff line counts vs HEAD: Makefile +15/-9; sprint JSON +1/-1; new test +95; new authorized changelog +2. No final host gate or completed sprint claim. Iteration 65 landing (2026-11-03): main (AILANG v0.56.1) merged into the branch (c871984c, stable patch-id unchanged); rig/full green on c871984c in 96 min (capture-m4-publish-test OK, 7 cases on 2 makes); landing eval Sonnet 88 PASS, zero blocking (eval_R1-M4-JOURNEY_7la_landing_round_1.json); merged as 812625ed."
     }
   ],
   "findings": [

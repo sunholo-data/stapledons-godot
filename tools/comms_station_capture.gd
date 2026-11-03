@@ -3,10 +3,11 @@ extends SceneTree
 ## real sim at protocol 2.16 (seed 7, a consent crew aboard), laid out at the project's logical
 ## 960 x 540 and captured at 1280 x 720:
 ##   home     just committed at Sol for Alpha Centauri: live, in beam, real time, one plan on the strip
-##   away     cruising out at 0.99c: home slows (the warm, near-still feed), Earth's hand crawls
+##   away     cruising out at 0.99c: home slows (the near-still feed), Earth's hand crawls
 ##   waiting  arrived, re-planned for CNS5:1676 off Alpha Centauri's ray and flying: out of beam, the
 ##            last week under static, the ring, the strip's plan light home and the wait at the port
-##   homeward on the way home from CNS5:1676 at 0.99c: the blue, jumbled torrent of weeks
+##   homeward on the way home from CNS5:1676 at 0.99c: the jumbled torrent of weeks (in their own
+##            colours: R3-TRUE-PROCESSED removed the stylised Doppler wash, RS-Q5)
 ## Each frame asserts the station is on screen, the frame is not blank, no two frames are alike,
 ## and every number on the station is a binding (DisplayBinding.audit).
 ## Run:  make capture-comms-station  (needs a GPU window; open every frame)

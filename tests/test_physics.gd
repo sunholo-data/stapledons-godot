@@ -765,11 +765,45 @@ func test_earth_feed_bands() -> void:
 	for w: Array in want:
 		var b: Dictionary = EarthFeed.band_for(float(w[0]))
 		check("EL3b feed band at D = %s is %s" % [w[0], w[1]], 1.0 if str(b.get("name", "")) == w[1] else 0.0, 1.0, 0.0)
-	var warm := Color(str(EarthFeed.band_for(0.070888).tint))
-	var cool := Color(str(EarthFeed.band_for(14.107).tint))
-	check("EL3b receding tint is warm (red over blue)", 1.0 if warm.r > warm.b else 0.0, 1.0, 0.0)
-	check("EL3b approaching tint is cool (blue over red)", 1.0 if cool.b > cool.r else 0.0, 1.0, 0.0)
 	check("EL3b the torrent whirls Earth's clock, the still band does not", 1.0 if EarthFeed.band_for(1414.2).whirl and not EarthFeed.band_for(0.00070711).whirl else 0.0, 1.0, 0.0)
+	# R3-TRUE-PROCESSED (RS-Q5, standing order 2026-10-30): a frame decoded from Earth's link keeps
+	# its colours at every D; the shift is in the playback rate (RS-26..RS-30) and the carrier
+	# (lambda / D), never in the pixels. No band carries a colour, and the picture is drawn unmodulated.
+	var coloured := 0
+	for b: Dictionary in EarthFeed.copy().bands:
+		if b.has("tint") or b.has("tint_alpha"): coloured += 1
+	check("RS-Q5 no feed band carries a colour wash", coloured, 0.0, 0.0)
+	var f := EarthFeed.new()
+	for w: Array in want:
+		f.refresh({"earth": {"in_beam": true, "rate": float(w[0]), "at_home": false, "feed": {"frame": 3, "kind": "sky", "event": {"id": "", "words": ""}}}})
+		var wash := 0.0
+		for c: Node in f.get_children():
+			if c is ColorRect and (c as ColorRect).visible: wash += (c as ColorRect).color.a
+		check("RS-Q5 the decoded picture at D = %s is drawn as sent (no wash, unmodulated)" % w[0], wash + (0.0 if f.picture.self_modulate == Color(1, 1, 1) else 1.0), 0.0, 0.0)
+	f.free()
+
+
+## R3-TRUE-PROCESSED (gate 2; design r3/true-processed-fixes.md D2): the ship's star light in True is
+## linear in the seen illuminance, so the spec's point-source brightness (Y(D T)/Y(T))/D^2 at RS-3
+## and RS-4 (the Sun ahead and astern at 0.9c) and the inverse square reach the deck unchanged; the
+## seen illuminance the star light uses (the LUT expression of ship_star_light.gd emitters) is the
+## package's pointFluxRatio. Processed (the ship's controller) compresses, and says so.
+func test_true_star_light() -> void:
+	var star_light = load("res://demos/ship_star_light.gd")
+	var t := 5772.0
+	for row: Array in [["RS-3", 4.3589], ["RS-4", 0.22942]]:
+		var d: float = row[1]
+		var r := Relativity.point_flux_ratio(t, d)
+		var seen: float = star_light.seen_lux(1.27e5, t, d) / 1.27e5 # the production emitters' expression (eval B3)
+		check("%s the star light's production seen-illuminance ratio is the package pointFluxRatio(5772 K, %s)" % [row[0], d], seen / r, 1.0, 5e-3)
+		check("%s True deck light scales by exactly that ratio" % row[0], star_light.true_energy(1.27e5 * r) / star_light.true_energy(1.27e5), r, r * 1e-12)
+	check("True deck light follows the inverse square (the Sun at 5.2 AU vs 1 AU)", star_light.true_energy(1.27e5 / 27.04) / star_light.true_energy(1.27e5), 1.0 / 27.04, 1e-15)
+	check("True: the Sun at 1 AU (1.27e5 lx, checkSysSunLux) is 1,587.5 x the bridge's 80 lx spire, photometric (eval B7)", star_light.true_energy(1.27e5) / (star_light.SPIRE_BASE_ENERGY * star_light.SPIRE_Y), 1587.5, 1e-6)
+	# B1: the True light's photometric output is E / LUX_PER_ENERGY at any colour (energy x Y(colour)).
+	for tk: float in [2566.0, 5772.0, 5772.0 * 4.3589]:
+		var c: Vector3 = star_light.colour_of(tk, 1.0)
+		check("True light output at %.0f K is E / LUX_PER_ENERGY per unit luminance (eval B1)" % tk, star_light.true_light_energy(1.27e5, c) * star_light.luminance(c), 1.27e5 / star_light.LUX_PER_ENERGY, 1e-8)
+	check("Processed is compressed: one decade of light is one fifth of its range", star_light.energy_of(1.0e4) / star_light.ENERGY_MAX, 0.8, 1e-12)
 
 
 ## R3-EARTH-LINK EL5 (gate 2): the spec's RS-26..RS-37 against physics/observe.gd (the mirror of
@@ -1630,6 +1664,7 @@ func _init() -> void:
 	test_cmb()
 	test_earth_observation()
 	test_earth_feed_bands()
+	test_true_star_light()
 	test_earth_link()
 	test_scripts_compile()
 	test_sky_meter()

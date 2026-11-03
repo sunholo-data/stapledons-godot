@@ -39,7 +39,7 @@ static func install(host:Node3D)->Dictionary:
 	lamp.mesh=band;lamp.position=spire.position;lamp.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var glow:=StandardMaterial3D.new();glow.albedo_color=SPIRE_COLOUR;glow.emission_enabled=true;glow.emission=SPIRE_COLOUR
 	lamp.material_override=glow;host.add_child(lamp)
-	var rig:={"environment":env,"key":key,"fill":fill,"practical":practical,"spire":spire,"spire_lamp":lamp,"profile":"","bridge":true,"mast":[]}
+	var rig:={"environment":env,"key":key,"fill":fill,"practical":practical,"practical_base":practical.light_energy,"spire":spire,"spire_lamp":lamp,"profile":"","bridge":true,"mast":[]}
 	apply(rig,"moody")
 	return rig
 static func apply(rig:Dictionary,profile:String)->void:
@@ -48,6 +48,7 @@ static func apply(rig:Dictionary,profile:String)->void:
 	var fill:DirectionalLight3D=rig.fill
 	var baseline:=profile=="baseline"
 	env.ambient_light_color=Color(.65,.70,.78) if baseline else Color(.31,.37,.51)
+	rig.ambient_colour=env.ambient_light_color # R3-TRUE-PROCESSED: the star's bounce mixes into it (True) and restores it (Processed)
 	rig.ambient_base=.65 if baseline else .22
 	key.light_color=Color.WHITE if baseline else Color(1.,.82,.65)
 	key.light_energy=1.3 if baseline else 1.5
@@ -58,6 +59,7 @@ static func apply(rig:Dictionary,profile:String)->void:
 	(rig.spire_lamp.material_override as StandardMaterial3D).emission_energy_multiplier=rig.spire_lamp_base
 	fill.light_color=Color.WHITE if baseline else Color(.45,.59,.82)
 	fill.light_energy=.65 if baseline else .14
+	rig.fill_base=fill.light_energy # R3-TRUE-PROCESSED: True scales it by the eye's adaptation
 	fill.shadow_enabled=false
 	rig.practical.visible=not baseline
 	rig.profile=profile
@@ -77,6 +79,7 @@ static func set_level(rig:Dictionary,level:int)->void:
 static func _ambient(rig:Dictionary)->void:
 	var env:Environment=rig.environment
 	env.ambient_light_energy=float(rig.get("ambient_base",.22))*(BRIDGE_AMBIENT_GAIN if rig.get("bridge",false) and rig.profile!="baseline" else 1.)
+	rig.ambient_energy=env.ambient_light_energy # R3-TRUE-PROCESSED: the ship's own bounce, before the star's
 ## The mast's meshes (manifest style.spire_nodes): the spire light sits on its axis, inside it, so
 ## the mast must not cast the spire's shadow; it casts the star's as before.
 static func set_mast(rig:Dictionary,nodes:Array)->void:

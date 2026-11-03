@@ -1,0 +1,37 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "M4.6rR3_7la_ATOMIC_PUBLISH (row 7l(a), PR #376, head c871984c)",
+  "round": 1,
+  "evaluator_model": "claude-sonnet-5-5",
+  "score": 88,
+  "pass": true,
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "Mutants M7 (drop the 15-unique-hashes check), M8 (drop the m4_manifest.sha256 15-line count) and M5/M6 (drop either the 15-png count or the $#=18 count) survive the test. M5 and M6 are largely redundant with each other, so each is close to an equivalent mutant. M7 and M8 are real, minor gaps: the fixture has no duplicate-hash case and no 14- or 16-line manifest case. shasum -c and the 18-path list still cover most of the risk.",
+    "No fixture case for an empty (zero-byte) png or an empty manifest.json. The M11 mutant that removed test -s was still killed, but only through the worlds-empty case.",
+    "test: capture-m4-publish-test is added as a separate rule line, not on the test: prerequisite line. It is equivalent for make, and make -n confirms it, but a later edit to the long test: line will not show it."
+  ],
+  "mutants": [
+    {"id": "M1", "description": "delete the worlds.sha256 = 14 line count check", "result": "killed (3 fails, rc 2)"},
+    {"id": "M2", "description": "replace shasum -c with true", "result": "killed (3 fails)"},
+    {"id": "M3", "description": "drop the pre-loop test -s existence check over all 18 files", "result": "killed (3 fails)"},
+    {"id": "M4", "description": "drop worlds.sha256 from the path list", "result": "killed (5 fails)"},
+    {"id": "M5", "description": "drop the 15-png count", "result": "SURVIVED (redundant with test $#=18 and the fixed 3 extras)"},
+    {"id": "M6", "description": "drop test $# = 18", "result": "SURVIVED (redundant with the 15-png count)"},
+    {"id": "M7", "description": "drop the 15 unique hashes check in m4_manifest.sha256", "result": "SURVIVED (no duplicate-hash case)"},
+    {"id": "M8", "description": "drop the m4_manifest.sha256 = 15 line count", "result": "SURVIVED"},
+    {"id": "M9", "description": "move the count and shasum checks after the first upload", "result": "killed (19 fails)"},
+    {"id": "M10", "description": "fake gcloud logs nothing", "result": "killed (3 fails)"},
+    {"id": "M11", "description": "remove test -s from the existence loop", "result": "killed (5 fails)"}
+  ],
+  "commands_run": [
+    "git clone + checkout c871984c",
+    "git diff 6d92d2cb 7cb5d07a | git patch-id --stable vs git diff fc5c09f2 c871984c: both 202caf71f9a2b042c9c7c6c80c5a9a4a319b96cd (identical)",
+    "git diff 6d92d2cb fc5c09f2 --stat and -- Makefile mk/m45.mk: only AILANG_RELEASE, star-names --entry main, replay record version strings; no overlap with publish recipe, test or test:/ci-fast: lines",
+    "make capture-m4-publish-test (OK, 7 cases x GNU Make 3.81, 1.7 s); gmake capture-m4-publish-test (OK, 7 cases x 4.4.1 + 3.81, 1.8 s)",
+    "make -n test / make -n ci-fast / gmake -n test: each runs tools/test_m4_publish.sh exactly once",
+    "11 mutants via /tmp/mut65.sh and /tmp/mut65b.sh, with git checkout restoring the tree; git status --porcelain empty afterwards",
+    "real capture-m4-publish with a recording fake gcloud first on PATH: a fixture missing manifest.json, and the default renders/m4 with no pngs; both exit 2 with FAILED before any upload and no gcloud log written"
+  ],
+  "verdict_summary": "The merge of main does not change the PR's patch: the stable patch-id is identical before and after. Main's changes (AILANG v0.56.1, star-names entry, replay version strings) do not touch the publish recipe, the test, or the test:/ci-fast: lines. capture-m4-publish-test passes on both GNU Make 3.81 and 4.4.1 in under 2 s. It is a prerequisite of both make test and make ci-fast. The real recipe makes zero gcloud calls when any file is missing. The test killed 7 of 11 of my mutants, including the key ones: moving the check after the upload, dropping the shasum check, dropping the worlds check or file, and a no-op fake gcloud. The survivors are redundant or minor count checks. Mergeable."
+}
