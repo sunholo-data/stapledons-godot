@@ -1,10 +1,10 @@
 extends SceneTree
-## R3-COMMS-V2 CV1 (design r3/comms-station-v2.md §D1.2, AC2, AC4): the bridge keeps the 2.17
+## R3-COMMS-V2 CV1 (design r3/comms-station-v2.md §D1.2, AC2, AC4): the bridge keeps the 2.18
 ## received-frame log. make comms-log-bridge-test (in make test).
 ##   tail    take_earth_log_tail files a tick's open record by from_frame: the same from_frame
 ##           replaces the newest record, a new one is appended, and nothing is filed without a
 ##           full-state log (synthetic dictionaries)
-##   voyage  the real sim at 2.17 (seed 7): Sol to Alpha Cen A at 0.99c, a wait, the start of the
+##   voyage  the real sim at 2.18 (seed 7): Sol to Alpha Cen A at 0.99c, a wait, the start of the
 ##           off-ray leg. At every tick the stored records run contiguously from week 0, the newest
 ##           ends at earth.feed.frame, no record arrived after the ship's clock, and each send event is
 ##           on the light cone (sent.t = arrived.t - arrived.ly, the sim's fields)
@@ -91,7 +91,7 @@ func test_voyage() -> void:
 	sim = SimBridge.new()
 	sim.want_minor = SimBridge.EARTH_LOG_MINOR
 	var ok := sim.start() and sim.new_game(7, "free_nav", false, {}, "", "")
-	check("voyage: a 2.17 session starts with the log (week 0)", ok and log_fault() == "")
+	check("voyage: a 2.18 session starts with the log (week 0)", ok and log_fault() == "")
 	ok = ok and fly(ALPHA)
 	var fault := ""
 	var ticks := 0

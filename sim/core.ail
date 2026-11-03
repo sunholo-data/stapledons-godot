@@ -110,7 +110,7 @@ export type Intent =
   | IGrApproach(GrApproachReq) | IGrHover | IGrOrbit | IGrRing
   | ICrew(CrewCmd)
   | IEarthWeeks(WeeksReq)
--- R3-COMMS-V2 D1.3 (protocol 2.17): `earth_weeks`, a read-only query for a stack's weeks (Earth's feed
+-- R3-COMMS-V2 D1.3 (protocol 2.18): `earth_weeks`, a read-only query for a stack's weeks (Earth's feed
 -- frames from..to); it changes nothing in the world, and the session answers it from the received-frame
 -- log (sim/earth_log.ail beamedWeeks: beamed, arrived weeks only, D-68).
 export type WeeksReq = { from: int, to: int }
@@ -168,7 +168,7 @@ export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0
 -- cruiseDigest: the crossing review's digest (R2-INTERLUDE I2, sim/cruise_digest.ail; digestAfter).
 -- link: the plans sent home and Earth's hearing of them (R3-EARTH-LINK, sim/earth_link.ail; linkAfter).
 -- elog: the received-frame log (R3-COMMS-V2, sim/earth_log.ail; logAfter): every Earth week that has reached the ship.
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState], cruiseDigest: Option[Digest], link: Link, elog: ELog }
+export type World = { tick: int, seed: int, preset: string, dataVersion: string, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState], cruiseDigest: Option[Digest], link: Link, elog: ELog }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -195,7 +195,7 @@ export type Commitment = { plan: Plan, tau0: float, t0: float, el: float }
 export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment)
 
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
-  { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
+  { tick: 0, seed: seed, preset: "stapledon", dataVersion: "exoplanets-2026.11", params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
     rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None, cruiseDigest: None, link: emptyLink(), elog: emptyLog() }
 
@@ -937,7 +937,7 @@ pure func remainingOf(w: World) -> {distance: float, earth: float, phase: float}
     _ => { distance: 0.0, earth: 0.0, phase: 0.0 }
   }
 -- R3-COMMS-V2 CV5 (OQ12): the ship time left on the committed leg (ship years: the trip's proper time
--- less what has elapsed), 0 when not flying; the course monitor's field (protocol 2.17 `course`).
+-- less what has elapsed), 0 when not flying; the course monitor's field (protocol 2.18 `course`).
 export pure func shipYearsLeft(w: World) -> float =
   match w.journey { Committed(c) => nonNeg(c.plan.trip.tauTotal - c.el), _ => 0.0 }
 pure func progressOf(w: World) -> float =

@@ -1,6 +1,6 @@
 extends SceneTree
 ## R3-COMMS-V2 CV2 (design r3/comms-station-v2.md §D1.4, §D1.6, AC5, AC6): the history wall and the
-## frame diagram at the comms station, on the real sim at 2.17 (seed 7: Sol to Alpha Cen A at 0.99c, a
+## frame diagram at the comms station, on the real sim at 2.18 (seed 7: Sol to Alpha Cen A at 0.99c, a
 ## wait, the off-ray leg out of beam). make comms-history-test (in make ui).
 ##   wall     the wall holds exactly the sim's records; x follows arrived.tau (monotone) and nothing is
 ##            placed after the ship's clock; static only where records came unbeamed; every stamp a

@@ -95,7 +95,7 @@ export pure func encodeEarth(e: Earth, epoch: float, seed: int, faces: [(string,
     kv("beam", beam(e.beam, epoch)), kv("stale", ja(map(\s. stale(s, epoch), e.stale))), kv("pending", ja(map(\m. pending(m, epoch), e.pending))),
     kv("window", window(e.window)), kv("preview", preview(e.preview, epoch)), kv("messages", ja(map(\m. message(m, epoch), e.messages)))]))
 
--- Protocol 2.17 (R3-COMMS-V2 CV1, design r3/comms-station-v2.md §D1.2): the received-frame log.
+-- Protocol 2.18 (R3-COMMS-V2 CV1, design r3/comms-station-v2.md §D1.2; 2.17 is R3-WORLDS): the received-frame log.
 -- Full states carry every record (`earth_log`); a tick that changed the open record carries it alone
 -- (`earth_log_tail`), and the bridge keeps records by from_frame. A record:
 --   from_frame, to_frame, beamed, day         the weeks (Earth's feed frames) that arrived, in beam or

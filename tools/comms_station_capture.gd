@@ -9,7 +9,7 @@ extends SceneTree
 ##   homeward from CNS5:1676 once Earth's beam reached it, home at 0.99c in the beam: the jumbled
 ##            torrent of weeks (in their own colours: R3-TRUE-PROCESSED removed the stylised Doppler wash,
 ##            RS-Q5)
-## R3-COMMS-V2 (design r3/comms-station-v2.md AC12), at 2.17:
+## R3-COMMS-V2 (design r3/comms-station-v2.md AC12), at 2.18:
 ##   faces_<moment>        the bridge monitors' four faces (clocks, signal, course, crew; 2 x 2) at home,
 ##                         away and homeward, each face as the monitor renders it
 ##   frame_outbound        an outbound week selected on the history wall: its light-cone diagram

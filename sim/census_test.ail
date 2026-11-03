@@ -1,0 +1,181 @@
+module stapledons/sim/census_test
+-- W2.2: expectations are independent closed forms, keyed universes use no
+-- census traversal state. AILANG teaching prompt v0.16.11 loaded 2026-11-02.
+import ./census (Counts, zeroCounts, countSystems, expectedFor, censusFor, censusDigest, growthStable, nestedAcross, statisticsFor, historyProbabilities, countsJson, statisticsJson, statisticsAcross, systemsNestedAcross, auditPopulation, populationAuditPasses)
+import ./worlds_model (StarRow, systemFrom,eligibleHistoryUniforms,prepareHistoryDrawPlan,historyUniformsFromPlan,Habitable,NotHabitable,PSynthesised)
+import ./worlds_catalogue (rowsFromJsonWith,rowOf)
+import ./tools/exoplanets (Planet as ObservedPlanet,archivePlanet,fieldsEqual,planetsEqual,catalogueDigest)
+import ./exoplanets_snapshot (snapshotFromJson)
+import std/string (replace)
+import std/option (Some, None)
+import ./data/presets (allPresets)
+import pkg/sunholo/worlds/occurrence (FGK,MDwarf,Other)
+import pkg/sunholo/worlds/dial (Dial, zeroDial)
+import std/list (map, reverse, length, foldl, range)
+import std/json (encode,ja,jo,kv,js)
+import std/math (intToFloat, sqrt, abs_Float as abs)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (applyDial)
+
+pure func rows(n:int) -> [StarRow] = if n<=0 then [] else
+ {id:"census-fixture-${n}",pos:{x:90.0,y:0.0,z:0.0},v:12.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0}::rows(n-1)
+pure func maxDial() -> Dial = {life:1.0,minds:2.0,tech:1.0,lifetime:3.0}
+pure func countCheck() -> bool {
+ let r=rows(16);
+ let c=censusFor(13,maxDial(),r,[]);
+ c.systems==16 && c.planets==c.measured+c.candidates+c.synthesised
+ && c.habitable+c.debated<=c.planets && c.biospheres<=c.habitable+c.debated
+ && c.technological<=c.biospheres && c.remnants<=c.biospheres
+}
+test "W2.2 totals count all systems, labels and immutable biosphere backgrounds" {countCheck()}
+pure func growthCheck() -> bool {
+ let r=rows(32);
+ growthStable(7,maxDial(),r,rows(34),[]) && encode(countsJson(censusFor(7,maxDial(),r,[])))==encode(countsJson(censusFor(7,maxDial(),reverse(r),[])))
+ && censusDigest(7,maxDial(),r,[])==censusDigest(7,maxDial(),reverse(r),[])
+}
+test "AC10/11 sorted census is byte stable; appended rows and shuffled traversal preserve each system" {growthCheck()}
+test "growth validation rejects an ambiguous duplicate identity instead of silently taking the last row" {
+ not growthStable(7,maxDial(),rows(2),rows(3)++rows(1),[])
+}
+pure func nestingCheck() -> bool = nestedAcross(11,[zeroDial(),{zeroDial() | life:0.5,minds:0.5,tech:0.5,lifetime:1.0},maxDial()],rows(48),[])
+test "AC12 common random ranks nest life and technological histories across kinder dials" {nestingCheck()}
+pure func measuredCheck() -> bool {
+ let row={id:"known",pos:{x:90.0,y:0.0,z:0.0},v:12.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let p=archivePlanet("Known b","Known","known","gaia-dr3",20.0,[("a_au",1.0),("radius_earth",1.0),("period_d",365.25)],"census-source","Mass","G2 V","known");
+ let c=censusFor(29,maxDial(),[row],[p]);
+ c.systems==1 && c.planets==1 && c.measured==1 && c.synthesised==0 && c.habitable==1
+ && (expectedFor(maxDial(),[row],[p])).biospheres==1.0
+}
+test "AC9 measured-host census keeps exact known population and no synthesized additions" {measuredCheck()}
+
+pure func populationAuditCheck() -> bool {
+ let base={id:"audit",pos:{x:12.0,y:0.0,z:0.0},v:2.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let red={base | id:"audit-red",starClass:MDwarf,teff:3100.0,lSun:0.005,rSun:0.2,mSun:0.2};
+ let hz=archivePlanet("HZ b","HZ",red.id,"fixture",4.0,[("radius_earth",1.0),("insolation_earth",0.7)],"fixture","Mass","M V",red.id);
+ let valid=systemFrom(9,maxDial(),red,[hz]);
+ let audit=auditPopulation([red],[valid]);
+ let badLabel={valid | planets:map(\p. {p | hab:Habitable},valid.planets)};
+ let badRv={valid | starId:base.id,starClass:FGK,planets:map(\p. {p | prov:PSynthesised,observed:None,massEarth:Some(100.0),periodD:Some(300.0)},valid.planets)};
+ audit.mDwarfHz==1 && audit.planets==1 && populationAuditPasses(audit)
+ && (auditPopulation([red],[badLabel])).labelViolations==1
+ && (auditPopulation([base],[badRv])).rvViolations==1
+ && foldl(\ok seed. ok && populationAuditPasses(auditPopulation([base,red],
+  [systemFrom(seed,maxDial(),base,[]),systemFrom(seed,maxDial(),red,[])])),true,range(0,32))
+}
+test "AC14/15 census audit rejects wrong M-dwarf labels and a synthetic RV-limit violation" {populationAuditCheck()}
+export pure func censusVm() -> string = if countCheck() && growthCheck() && nestingCheck() && measuredCheck() && populationAuditCheck() then "census-ok" else "CENSUS-FAIL"
+
+pure func stat64() -> bool {
+ let registry=rows(64);
+ let ds=map(\p. p.dial,allPresets())++[maxDial()];
+ foldl(\ok d. ok && (statisticsFor(0,64,d,registry,[])).passes,true,ds)
+}
+test "AC13 same star list: 64 keyed universes agree with all four analytic moments within 4 sigma" {stat64()}
+
+pure func edgeProbabilities() -> bool {
+ let base=applyDial(baseline(),zeroDial());
+ let p={base | fLife:0.5,fMinds:0.4,fTech:0.5,lifetimeYr:4.0,windowYr:10.0,remnantLoYr:1.0,remnantHiYr:2.0};
+ let q=historyProbabilities(p,3.0);
+ let saturated=historyProbabilities({p | lifetimeYr:20.0},100.0);
+ abs(q.life-0.5)<1e-14 && abs(q.tech-0.04)<1e-14 && abs(q.mindsWindow-0.07)<1e-14
+ && abs(q.remnant-0.0075)<1e-14 && abs(saturated.tech-0.05)<1e-14
+ && saturated.remnant==0.0 && abs(saturated.mindsWindow-0.1)<1e-14
+}
+test "analytic onset and remnant probabilities clip exactly at both finite-window edges" {edgeProbabilities()}
+export pure func censusStatisticsVm() -> string = if stat64() && edgeProbabilities() then "census-statistics-ok" else "CENSUS-STATISTICS-FAIL"
+
+export pure func censusStatisticsEvidence() -> string = encode(ja(map(\p.
+ jo([kv("preset",js(p.id)),kv("statistics",statisticsJson(statisticsFor(0,64,p.dial,rows(64),[])))]),allPresets())))
+
+-- Raw fixture is independent of the production encoder, including a missing
+-- mass, long metadata and archiveFields that differ from curated fields.
+pure func rawPlanet() -> string = "{\"id\":\"fixture\",\"name\":\"Fixture b\",\"host\":\"Fixture\",\"hostId\":\"known\",\"archiveHostId\":\"archive\",\"inRegistry\":true,\"matchMethod\":\"curated\",\"distancePc\":12.345678901234567,\"status\":\"candidate\",\"source\":\"curated full metadata\",\"massKind\":\"Msini\",\"hostSpectralType\":\"M4 V\",\"reference\":\"Long reference prefix. Its length deliberately exceeds show's human-display cutoff before the distinct trailing phrase: original ending\",\"fields\":[{\"key\":\"radius_earth\",\"value\":1.1234567890123457,\"provenance\":\"measured\",\"note\":\"long retained measurement note\",\"citation\":\"field source\"}],\"archiveFields\":[{\"key\":\"radius_earth\",\"value\":1.5,\"provenance\":\"measured\",\"note\":\"archive measurement\",\"citation\":\"archive source\"}]}"
+pure func rawSnapshot() -> string = "{\"version\":\"fixture\",\"snapshotSha256\":\"sha\",\"registrySha256\":\"reg\",\"planetCount\":3,\"planets\":[${rawPlanet()},${rawPlanet()},${rawPlanet()}]}"
+pure func parserCheck() -> bool = match snapshotFromJson(rawSnapshot()) {
+ None=>false,Some(s)=>length(s.planets)==3 && match s.planets {
+ p::_=>p.massKind=="Msini" && p.status=="candidate" && p.distancePc==12.345678901234567
+ && fieldsEqual(p.fields,[("radius_earth",{value:1.1234567890123457,prov:"measured",note:"long retained measurement note",cite:"field source"})])
+ && fieldsEqual(p.archiveFields,[("radius_earth",{value:1.5,prov:"measured",note:"archive measurement",cite:"archive source"})]),_=>false}
+}
+test "census JSON parser preserves full scalars, labels, long metadata, missingness and curated/archive differences" {parserCheck()}
+pure func rejectsMissing() -> bool =
+ not hasSnapshot(replace(rawSnapshot(),"\"massKind\":\"Msini\",",""))
+ && not hasSnapshot(replace(rawSnapshot(),"\"distancePc\":12.345678901234567,",""))
+ && not hasSnapshot(replace(rawSnapshot(),"\"provenance\":\"measured\",",""))
+ && not hasSnapshot(replace(rawSnapshot(),"\"planetCount\":3","\"planetCount\":4"))
+pure func hasSnapshot(text:string) -> bool = match snapshotFromJson(text) {None=>false,Some(_)=>true}
+test "census JSON parser rejects missing source fields and count mismatches without defaults" {rejectsMissing()}
+pure func middleMutant() -> bool {
+ let changed=replace(rawPlanet(),"original ending","mutated ending");
+ let mutant="{\"version\":\"fixture\",\"snapshotSha256\":\"sha\",\"registrySha256\":\"reg\",\"planetCount\":3,\"planets\":[${rawPlanet()},${changed},${rawPlanet()}]}";
+ match (snapshotFromJson(rawSnapshot()),snapshotFromJson(mutant)) {
+ (Some(a),Some(b))=>not planetsEqual(a.planets,b.planets) && catalogueDigest(a.planets)!=catalogueDigest(b.planets),_=>false}
+}
+test "census parser's complete metadata witness kills a middle-record long-reference mutation" {middleMutant()}
+export pure func censusParserVm() -> string = if parserCheck() && rejectsMissing() && middleMutant() then "census-parser-ok" else "CENSUS-PARSER-FAIL"
+
+pure func acrossCheck() -> bool {
+ let ds=[zeroDial(),maxDial()];
+ let base={id:"known",pos:{x:12.0,y:0.0,z:0.0},v:2.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let known=archivePlanet("Known b","Known",base.id,"gaia-dr3",4.0,[("a_au",1.0),("radius_earth",1.0),("period_d",365.25)],"source","Mass","G2 V",base.id);
+ let r=rows(8)++[base,{base | id:"bright-survey"},{base | id:"contrived-veto",mSun:1e-6},
+  {base | id:"red-dwarf",starClass:MDwarf,teff:3100.0,lSun:0.005,rSun:0.2,mSun:0.2},
+  {base | id:"other",starClass:Other,mSun:0.0}];
+ let batched=statisticsAcross(19,16,ds,r,[known]);
+ let independent=map(\d. statisticsFor(19,16,d,r,[known]),ds);
+ encode(ja(map(statisticsJson,batched)))==encode(ja(map(statisticsJson,independent)))
+}
+test "exact biological marginal matches independent complete population runs across presets" {acrossCheck()}
+
+pure func distantMeasured() -> bool {
+ let row={id:"Gaia DR3 new-host",pos:{x:120.0,y:0.0,z:0.0},v:12.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let p=archivePlanet("Distant b","Distant","","unmatched",35.0,[("a_au",1.0),("radius_earth",1.0),("period_d",365.25)],"source","Mass","G2 V",row.id);
+ let c=censusFor(29,maxDial(),[row],[p]);
+ c.measured==1 && c.planets==1 && c.synthesised==0 && (expectedFor(maxDial(),[row],[p])).biospheres==1.0
+}
+test "catalogue growth recognizes unmatched snapshot Gaia identities before synthesizing a measured host" {distantMeasured()}
+
+test "nesting checks every physical field and complete citation before comparing hidden histories" {
+ let row={id:"known",pos:{x:12.0,y:0.0,z:0.0},v:2.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let p=archivePlanet("Known b","Known",row.id,"gaia-dr3",4.0,[("a_au",1.0),("radius_earth",1.0),("period_d",365.25)],"A long full citation whose identical prefix deliberately exceeds a human display budget before the distinguishing ending: original","Mass","G2 V",row.id);
+ let s=systemFrom(1,zeroDial(),row,[p]);
+ match s.planets {
+ [planet]=>not systemsNestedAcross([[s],[{s | planets:[{planet | insolation:Some(999.0)}]}]])
+  && not systemsNestedAcross([[s],[{s | planets:[{planet | cite:replace(planet.cite,"original","mutated")}]}]])
+  && systemsNestedAcross([[s],[s]]),_=>false
+ }
+}
+
+test "catalogue host index preserves the first measured value and archive-identity fallback" {
+ let p=archivePlanet("Known b","Known","known","gaia-dr3",4.0,[("host_teff_k",5777.0),("host_mass_sun",1.0),("host_radius_sun",1.0),("host_log_luminosity_sun",0.0)],"first source","Mass","G2 V","known");
+ let q=archivePlanet("Known c","Known","known","gaia-dr3",4.0,[("host_teff_k",6000.0),("host_mass_sun",1.2)],"later source","Mass","G2 V","known");
+ let distant={p | id:"distant",hostId:"",archiveHostId:"new"};
+ let observations=[p,q,distant];
+ let text="{\"stars\":[{\"id\":\"known\",\"x\":10,\"y\":0,\"z\":0,\"vmag\":5,\"teff\":4500,\"flags\":0},{\"id\":\"new\",\"x\":20,\"y\":0,\"z\":0,\"vmag\":6,\"teff\":4500,\"flags\":0}]}";
+ match rowsFromJsonWith(text,observations) {
+ [a,b]=>{
+  let direct=rowOf("known",{x:10.0,y:0.0,z:0.0},5.0,4500.0,0,observations);
+  a.id==direct.id && a.teff==direct.teff && a.v==direct.v && a.starClass==direct.starClass
+  && a.pos.x==direct.pos.x && a.pos.y==direct.pos.y && a.pos.z==direct.pos.z
+  && a.lSun==direct.lSun && a.rSun==direct.rSun && a.mSun==direct.mSun
+  && a.teff==5777.0 && a.mSun==1.0 && b.id=="new" && b.teff==5777.0 && b.mSun==1.0
+ },_=>false
+ }
+}
+
+pure func preparedEqual(seed:int,remaining:int,row:StarRow,observations:[ObservedPlanet]) -> bool =
+ if remaining==0 then true else {
+ let p=applyDial(baseline(),zeroDial());
+ let plan=prepareHistoryDrawPlan(row,observations);
+ historyUniformsFromPlan(seed,p,plan)==eligibleHistoryUniforms(seed,p,row,observations)
+ && preparedEqual(seed+1,remaining-1,row,observations)
+ }
+test "prepared history plans preserve every uniform across seeds, RV vetoes and measured constraints" {
+ let base={id:"prepared",pos:{x:12.0,y:0.0,z:0.0},v:2.0,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0};
+ let measured=archivePlanet("Known b","Known",base.id,"gaia-dr3",4.0,[("a_au",1.0),("radius_earth",1.0)],"source","Mass","G2 V",base.id);
+ let vetoed={measured | id:"trappist-1b"};
+ preparedEqual(-5,128,base,[]) && preparedEqual(-5,128,{base | id:"outside",pos:{x:120.0,y:0.0,z:0.0}},[])
+ && preparedEqual(-5,128,{base | id:"M-dwarf",starClass:MDwarf,teff:3100.0,lSun:0.005,rSun:0.2,mSun:0.2},[])
+ && preparedEqual(-5,128,{base | id:"RV-veto",mSun:1e-6},[]) && preparedEqual(-5,128,{base | starClass:Other,mSun:0.0},[])
+ && preparedEqual(-5,128,base,[measured]) && preparedEqual(-5,128,base,[vetoed])
+}

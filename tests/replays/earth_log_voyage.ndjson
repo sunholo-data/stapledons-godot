@@ -1,4 +1,4 @@
-{"v":2,"type":"hello","want":{"major":2,"minor":17}}
+{"v":2,"type":"hello","want":{"major":2,"minor":18}}
 {"v":2,"type":"new_game","seed":7,"scenario":"sol","diag":false}
 {"v":2,"type":"input","tick":1,"dtau":0,"intents":[{"k":"plan","target":{"index":1,"id":"CNS5:3627","pos":{"x":3.094521,"y":-3.015404,"z":-0.051608}},"cruise_phi":2.6466524123622457}]}
 {"v":2,"type":"input","tick":2,"dtau":0,"intents":[{"k":"commit","plan_id":1}]}

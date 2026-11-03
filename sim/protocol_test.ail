@@ -711,11 +711,19 @@ pure func similarBeforeArchive(line: string) -> bool = match split(line, ",\"sim
     [raw, _] => match decode(raw) { Ok(j) => j == similarJson(line), Err(_) => false }, _ => false
   }, _ => false
 }
-test "S0.2 negotiation 13->13 14->14 15->15 16->16 17/99->17 (R3-EARTH-LINK, R3-COMMS-V2) and pin" {
-  map(helloMinor, [13, 14, 15, 16, 17, 99]) == [13, 14, 15, 16, 17, 17]
-  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 17, 99]) == [13, 14, 15, 16, 17, 17]
+test "S0.2 negotiation preserves 13..18 and caps 99 at 18 (R3-WORLDS 2.17, R3-COMMS-V2 2.18) and pin" {
+  map(helloMinor, [13, 14, 15, 16, 17, 18, 99]) == [13, 14, 15, 16, 17, 18, 18]
+  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 17, 18, 99]) == [13, 14, 15, 16, 17, 18, 18]
   && all(\m. (helloFor(m)).relativity == "0.12.0", [13, 14, 15, 16, 99])
   && relativityPin() == "0.12.0"
+}
+test "2.17 unknown or non-string preset is bad_game; omission keeps the default" {
+ let session=(serve(newSession(),helloWant(17))).session;
+ let prefix="\"seed\":1,\"scenario\":\"sol\",\"diag\":true";
+ let unknown=serve(session,newGame("${prefix},\"preset\":\"typo\""));
+ let wrongType=serve(session,newGame("${prefix},\"preset\":3"));
+ contains(unknown.reply,"bad_game") && contains(wrongType.reply,"bad_game")
+ && not contains((serve(session,newGame(prefix))).reply,"bad_game")
 }
 test "S0.2 sol shape ids and new_game-only at 14 and 15" { similarLife(14, "sol") && similarLife(15, "sol") }
 test "S0.2 solar_departure shape ids and new_game-only at 14 and 15" { similarLife(14, "solar_departure") && similarLife(15, "solar_departure") }

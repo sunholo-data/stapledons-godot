@@ -25,7 +25,7 @@
  },
  "external_dependencies": [
   "#374, #375, #377 merged into main and merged into this branch (2026-11-03)",
-  "free protocol minor 2.17 (checked at CV1)"
+  "free protocol minor 2.18 (checked at CV1)"
  ],
  "registry_reuse": [
   {
@@ -162,7 +162,7 @@
   },
   {
    "id": "CV1",
-   "description": "Received-frame log in sim/earth_link.ail with the send and arrival events (Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sent{t},shipAtSent}), noteLight, protocol 2.17 earth_log / earth_log_tail / earth_weeks, journey.ship_years_left if OQ12, bridge storage, strict and parity entries, replay case earth_log_voyage",
+   "description": "Received-frame log in sim/earth_link.ail with the send and arrival events (Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sent{t},shipAtSent}), noteLight, protocol 2.18 earth_log / earth_log_tail / earth_weeks, journey.ship_years_left if OQ12, bridge storage, strict and parity entries, replay case earth_log_voyage",
    "estimated_loc": 440,
    "dependencies": [
     "CV0"
@@ -171,12 +171,12 @@
     "AC1: ailang test --package sim and ailang check --package sim green with the log checks and mutants",
     "AC2: make comms-log-test (nothing from the future; earth_weeks clipped)",
     "AC3: make comms-log-test: sent.t = arrived.t - arrived.ly to 1e-12; ship_at_sent is the newest record with arrived.t <= sent.t; arrived.rate = earth.rate at that tick",
-    "AC4: make strict parity replay replay-compat green; pre-2.17 goldens unchanged; the 2.17 case byte-identical"
+    "AC4: make strict parity replay replay-compat green; pre-2.18 goldens unchanged; the 2.18 case byte-identical"
    ],
    "passes": true,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "sim/earth_log.ail (new module, pure): Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sentT,shipAtSent}, ELog {log closed newest first, open record, lastFrame, track one ShipAt per ship day}; World.elog updated every tick in core.ail logAfter (the rate is earth_link.rateOf, as earthOf). Protocol 2.17 (earthLogMinor = surfaceMinor()+4): earth_log in full states (withLog logs week 0 at new_game), earth_log_tail when the open record changed (openKey). earth_weeks is served as beamedWeeks() in the module (clipped to arrived beamed weeks, cap); the wire intent is deferred to CV2's stack view (not needed by the mid-point UI). Bridge: EARTH_LOG_MINOR 17, take_earth_log_tail files by from_frame. Tests: sim/earth_log_test.ail 9 tests (departure, merge, split, no-new-week, 3-ship-year bound at 1414/yr, ship-at-send vs a reference walk, a real 120-tick flight's invariants every tick, earth_weeks clipping, the 2.17 wire); earthLogVm strict VM = interpreter; tests/test_earth_log_bridge.gd 9 passed; replay case earth_log_voyage (44 replies, sha256 golden arm64 = x86_64 per CLAUDE.md's identical-goldens note); four tests that pinned the newest minor at 16 moved to 17. Gates: ailang check --package sim ok; ailang test --package sim 586 (583 + the 3 minor-pin fixes, re-run 0 failed); make strict parity replay; replay-compat ok (4 compared, nothing moved)."
+   "notes": "sim/earth_log.ail (new module, pure): Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sentT,shipAtSent}, ELog {log closed newest first, open record, lastFrame, track one ShipAt per ship day}; World.elog updated every tick in core.ail logAfter (the rate is earth_link.rateOf, as earthOf). Protocol 2.18 (earthLogMinor = surfaceMinor()+4): earth_log in full states (withLog logs week 0 at new_game), earth_log_tail when the open record changed (openKey). earth_weeks is served as beamedWeeks() in the module (clipped to arrived beamed weeks, cap); the wire intent is deferred to CV2's stack view (not needed by the mid-point UI). Bridge: EARTH_LOG_MINOR 17, take_earth_log_tail files by from_frame. Tests: sim/earth_log_test.ail 9 tests (departure, merge, split, no-new-week, 3-ship-year bound at 1414/yr, ship-at-send vs a reference walk, a real 120-tick flight's invariants every tick, earth_weeks clipping, the 2.18 wire); earthLogVm strict VM = interpreter; tests/test_earth_log_bridge.gd 9 passed; replay case earth_log_voyage (44 replies, sha256 golden arm64 = x86_64 per CLAUDE.md's identical-goldens note); four tests that pinned the newest minor at 16 moved to 17. Gates: ailang check --package sim ok; ailang test --package sim 586 (583 + the 3 minor-pin fixes, re-run 0 failed); make strict parity replay; replay-compat ok (4 compared, nothing moved)."
   },
   {
    "id": "CV2",
@@ -193,7 +193,7 @@
    "passes": true,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "ui/earth_history.gd (EarthHistory: film along arrived.tau, pictures in full / slits / stacks, static over unbeamed spans, stamps as ComposedBindings on earth_log.records.<i>.earth_from_year (HUDCaption) and .arrived.tau (HUDAccent), Earth-time line, select/zoom/Escape); ui/earth_strip.gd: rays per beamed record and frame mode (send event, light at 45 deg on equal axes, arrival, ship then, track, x D; plan inset FrameInset in the map's glyphs; never earth.beam); EarthFeed.pinned shows the selected week (no ghosts); CommsStation v2 layout (smaller dials, waterfall, one row of faces, the wall, the strip; the faces row yields to an open diagram). Sessions ask 2.17 (demo, main, loading jump). make comms-history-test 17 passed; comms-station-test 42 passed; display audit via DisplayBinding.audit in the tests (no unbound digit)."
+   "notes": "ui/earth_history.gd (EarthHistory: film along arrived.tau, pictures in full / slits / stacks, static over unbeamed spans, stamps as ComposedBindings on earth_log.records.<i>.earth_from_year (HUDCaption) and .arrived.tau (HUDAccent), Earth-time line, select/zoom/Escape); ui/earth_strip.gd: rays per beamed record and frame mode (send event, light at 45 deg on equal axes, arrival, ship then, track, x D; plan inset FrameInset in the map's glyphs; never earth.beam); EarthFeed.pinned shows the selected week (no ghosts); CommsStation v2 layout (smaller dials, waterfall, one row of faces, the wall, the strip; the faces row yields to an open diagram). Sessions ask 2.18 (demo, main, loading jump). make comms-history-test 17 passed; comms-station-test 42 passed; display audit via DisplayBinding.audit in the tests (no unbound digit)."
   },
   {
    "id": "CV3",
@@ -268,7 +268,7 @@
    "passes": false,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "Mid-point accepted (Mark 'continue'). OQ12: protocol 2.17 `course` {ship_years_left} on the course face. Waterfall legibility: a bright trace of each frame's measured carrier over the True picture (no hold; no point between keyed pips); log axis 20 Hz-20 kHz. Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, the 20 Hz hearing floor in RS-46 and sound.md per Mark 'sure 20hz', the earths-voice frame-diagram line, README rows), vendored at 270f958; test_physics asserts RS-41..47; codex 15 entries / 12 unlocks with every mirror refreshed. Deviation: earths-carrier unlocks at first_boost (sim-side), not at the first visible shifted monitor. Codex round 1 (62) fixes: lint row index; off-screen monitors do no work (30/10 Hz, taps released); ambient bed from sim fields; Hann estimator, AC7 at 1 %; receiver.audible [0.05, 50]; earth_weeks intent end to end with the stack row (paged 52 at a time after round 2); monitor readability in the evaluator with negative controls; GPU golden G-CV (make comms-golden, 17 lines); screens raised above the bow rail on a stalk inside it (monitors v2, make monitor-rail-test with a control); faces at three moments, frame diagrams and rail close-ups in refs/comms_v2/final/. make golden 0 failures. Bench: MISS under host load with and without monitors (p99 34.1 vs 31.6 ms) - needs a quiet machine. Codex round 2: 88/100 PASS at cc6dc7c8 with one blocker (stack paging), fixed.",
+   "notes": "Mid-point accepted (Mark 'continue'). OQ12: protocol 2.18 `course` {ship_years_left} on the course face. Waterfall legibility: a bright trace of each frame's measured carrier over the True picture (no hold; no point between keyed pips); log axis 20 Hz-20 kHz. Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, the 20 Hz hearing floor in RS-46 and sound.md per Mark 'sure 20hz', the earths-voice frame-diagram line, README rows), vendored at 270f958; test_physics asserts RS-41..47; codex 15 entries / 12 unlocks with every mirror refreshed. Deviation: earths-carrier unlocks at first_boost (sim-side), not at the first visible shifted monitor. Codex round 1 (62) fixes: lint row index; off-screen monitors do no work (30/10 Hz, taps released); ambient bed from sim fields; Hann estimator, AC7 at 1 %; receiver.audible [0.05, 50]; earth_weeks intent end to end with the stack row (paged 52 at a time after round 2); monitor readability in the evaluator with negative controls; GPU golden G-CV (make comms-golden, 17 lines); screens raised above the bow rail on a stalk inside it (monitors v2, make monitor-rail-test with a control); faces at three moments, frame diagrams and rail close-ups in refs/comms_v2/final/. make golden 0 failures. Bench: MISS under host load with and without monitors (p99 34.1 vs 31.6 ms) - needs a quiet machine. Codex round 2: 88/100 PASS at cc6dc7c8 with one blocker (stack paging), fixed.",
    "evaluation": "pending: Codex round 1 scored 62/100 (FAIL, 9 blockers) at b789a741; every blocker addressed on this branch (design doc 'Execution notes'), awaiting round 2"
   }
  ],
@@ -288,6 +288,10 @@
    "pass": true,
    "head": "cc6dc7c8",
    "blocker": "stacks longer than 52 weeks: older weeks unreachable (fixed: paging)"
+  },
+  "round_3": {
+   "score": 96,
+   "pass": true
   }
  },
  "revision": 3,
@@ -308,5 +312,6 @@
    "ruling": "Voyage under Earth's clock (-48), comms under the signal (-30), crew under the crew faces (+48), desks at r 18.6 facing their screens; the helm stays central beside the course screen",
    "by": "Mark, 2026-11-03"
   }
- ]
+ ],
+ "protocol_note": "R3-WORLDS (#371) took 2.17 first; comms v2 is protocol 2.18"
 }

@@ -67,11 +67,14 @@ const ARCHIVE_MINOR := 15
 ## and a planned leg's preview; sim/earth_link.ail), in full states and whenever it changes. The comms
 ## station reads it (EL3), and the game's sessions (the ship, the map, the loading jump's prefetch) ask for it.
 const EARTH_MINOR := 16
-## Protocol 2.17 (R3-COMMS-V2 CV1, design r3/comms-station-v2.md §D1.2): `earth_log`, the received-frame
+## Protocol 2.17 (R3-WORLDS): catalogue hosts and public physical planet fields.
+const WORLDS_MINOR := 17
+## Protocol 2.18 (R3-COMMS-V2 CV1, design r3/comms-station-v2.md §D1.2): `earth_log`, the received-frame
 ## log (every Earth week that has reached the ship: one record per ship day, with its send and arrival
 ## events and the newest week's feed), in full states; a tick that changed the open record carries it
 ## alone as `earth_log_tail`, which take_earth_log_tail() files by from_frame. Storage only, no arithmetic.
-const EARTH_LOG_MINOR := 17
+## Also `course` {ship_years_left} and the read-only `earth_weeks` intent.
+const EARTH_LOG_MINOR := 18
 const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
@@ -799,7 +802,7 @@ func _cleanup() -> void:
 	_game = false
 
 
-## 2.17: file a tick's earth_log_tail into world.earth_log.records by from_frame: the open record
+## 2.18: file a tick's earth_log_tail into world.earth_log.records by from_frame: the open record
 ## replaces the newest when it has the same from_frame, otherwise it is appended (records stay
 ## oldest first). A tail is never applied to a world without a full-state log.
 static func take_earth_log_tail(w: Dictionary, tail: Variant) -> void:

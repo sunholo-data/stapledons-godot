@@ -23,7 +23,7 @@
 | Goal | The comms station keeps every week of Earth's signal it receives, as a filmstrip with sim-field stamps and static where out of beam. Selecting any week explains it as light: where Earth sent it, its path at c, and where it reached the ship. The bridge gains a front wall of four ambient monitors: the signal from home (a True waterfall with the Receiver's line), Earth's clock against the ship's, the course, and the crew. The comms console moves beside the Voyage console, facing the bow |
 | Milestones | CV0–CV6 (7 milestones), about 2,250 LOC, plus regenerated bridge GLBs and one new Blender prop |
 | Duration | About 7.5 to 8.5 attended days at the recent R3 rate (about 300 counted LOC a day), plus the rig's `rig/full` runs (66–77 min each) and two reviews by Mark |
-| Risk | Medium. The main risks are the protocol minor (2.17), whether the spectrum analyser works headless (a CV3 spike comes first), a single Blender generator run that both moves the console and adds the monitor prop, and four live viewports (gated by the bench) |
+| Risk | Medium. The main risks are the protocol minor (2.18), whether the spectrum analyser works headless (a CV3 spike comes first), a single Blender generator run that both moves the console and adds the monitor prop, and four live viewports (gated by the bench) |
 | Critical path | CV0 → CV1 → CV2 → CV5. CV3 and CV4 run alongside, and CV6 needs both CV3 and CV4 |
 
 ## Registry reuse (planner step 0, re-checked 2026-11-03)
@@ -48,7 +48,7 @@ None of these is a showcase or demo module.
 | Module | Contracts | Effects | Inline tests |
 |---|---|---|---|
 | `sim/earth_link` | skip: the sim's pure modules use `_test.ail` checks and strict-VM entries, not contracts (as `earth_link.ail` already does) | **include:** pure, `! {}`; I/O stays in `sim/ship.ail` (gate 4) | skip: `earth_link_test.ail` and `earthLogVm` cover it |
-| `sim/protocol_earth` | skip: it is a codec, tested by goldens | **include:** pure | skip: `protocol_test.ail` and a 2.17 replay case cover it |
+| `sim/protocol_earth` | skip: it is a codec, tested by goldens | **include:** pure | skip: `protocol_test.ail` and a 2.18 replay case cover it |
 
 ## Milestones
 
@@ -64,7 +64,7 @@ None of these is a showcase or demo module.
   - `make comms-station-test sound-voyage-test` passes.
 - **Acceptance:** each check above is green, and its numbers are recorded in the sprint JSON.
 
-### CV1. Received-frame log and protocol 2.17 (about 440 LOC) ✅
+### CV1. Received-frame log and protocol 2.18 (about 440 LOC) ✅
 
 The sim logs every received frame, together with its send and arrival events.
 
@@ -76,7 +76,7 @@ The sim logs every received frame, together with its send and arrival events.
 - `sim/core.ail`: `linkAfter` passes tau and the tick's Earth rate.
 - `sim/protocol_earth.ail`: `encodeEarthLog`, `encodeEarthLogTail`, `encodeEarthWeeks`, using the record from design §D1.2.
 - `sim/protocol.ail`:
-  - `earthLogMinor()` (2.17), plus `helloFor` and `sessionMinor`;
+  - `earthLogMinor()` (2.18), plus `helloFor` and `sessionMinor`;
   - `earth_log` in full states, and `earth_log_tail` when it changes;
   - a read-only `earth_weeks` intent, clipped to arrived beamed weeks and at most 52 rows.
 - The journey section: `journey.ship_years_left`, if OQ12 is accepted.
@@ -84,7 +84,7 @@ The sim logs every received frame, together with its send and arrival events.
 - Makefile: `strict` and `parity` entries for `earthLogVm`.
 - `mk/earth-link.mk`: `comms-log-test`.
 
-**First step:** add the fields, then run `make replay`. Stop if any golden recorded before 2.17 moves.
+**First step:** add the fields, then run `make replay`. Stop if any golden recorded before 2.18 moves.
 
 **Tests (written first):**
 - Week 0 is logged at departure.

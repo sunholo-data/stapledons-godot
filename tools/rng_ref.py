@@ -61,6 +61,28 @@ def top53(v):
     return v >> 11
 
 
+def id_hash(text):
+    """FNV-1a 64 over UTF-8 bytes, independent of AILANG string iteration."""
+    h = 0xCBF29CE484222325
+    for byte in text.encode("utf-8"):
+        h = ((h ^ byte) * 0x100000001B3) & MASK
+    return h
+
+
+def keyed(seed, domain, system, n):
+    return splitmix64(mix64(mix64(seed) ^ domain) ^ system, n)
+
+
+def keyed_dump(seed):
+    result = []
+    for i in range(10000):
+        name = f"system-{i}" if i % 7 else f"α-Cen-🌍-{i}"
+        h = id_hash(name)
+        v = keyed(seed, 0x574F524C4453, h, i % 19)
+        result.append(f"{signed(h)} {signed(v)} {top53(v)} {top53(v)}")
+    return result
+
+
 def signed(v):
     return v - (1 << 64) if v >= 1 << 63 else v
 
@@ -138,6 +160,13 @@ def check():
             else:
                 bad = next((i for i, (a, b) in enumerate(zip(got, want)) if a != b), min(len(got), len(want)))
                 print(f"sim {where} seed {seed}: MISMATCH at line {bad} ({len(got)} vs {len(want)} lines)")
+    for strict in (True, False):
+        got = run_sim("rngKeyedDump", 7, strict)
+        want = keyed_dump(7)
+        good = got == want
+        ok &= good
+        where = "strict VM" if strict else "interpreter"
+        print(f"keyed RNG {where}: 10000 UTF-8 hashes, keyed values and top53 {'identical to oracle' if good else 'MISMATCH'}")
     print("rng_ref: ok" if ok else "rng_ref: FAIL")
     return 0 if ok else 1
 

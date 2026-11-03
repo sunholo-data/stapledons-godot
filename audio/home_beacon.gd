@@ -1,6 +1,6 @@
 class_name HomeBeacon
 extends RefCounted
-## R2-SOUND S2 (design_docs/planned/r2/sound.md §D6, amended 2026-10-27 and 2026-11-02): Earth's carrier at
+## R2-SOUND S2 (design_docs/implemented/r2/sound.md §D6, amended 2026-10-27 and 2026-11-02): Earth's carrier at
 ## the helm, made exact by the standing order of 2026-10-30 (stapledons-design vision/design-decisions.md:
 ## no compromises on the physics; an exact True setting and labelled Processed settings).
 ##
@@ -41,6 +41,9 @@ var _sound: SoundDirector = null
 var _pos := 0.0 ## Earth seconds into the loop (Receiver)
 var _phase := 0.0 ## the carrier's phase, radians (Receiver)
 var _rate := 1.0 ## the envelope's rate (Receiver)
+var pushed := 0 ## frames pushed to the Receiver's generator since it last started
+var start_pos := 0.0 ## the envelope position (Earth s) when the Receiver last started
+var handover_pos := -1.0 ## where the last change of setting took over (Earth s into the loop)
 
 
 ## What the helm's receiver does for this world: {on, d, rate, correct, silent, hearing} (receiver_plan's).
@@ -84,6 +87,7 @@ func _fill(pb: Object, frames: int) -> void: # an AudioStreamGeneratorPlayback (
 	var w := TAU * CARRIER_HZ * dt
 	var n := env.size()
 	if n == 0:
+		pushed += frames
 		pb.push_buffer(buf)
 		return
 	var step := _rate * dt * ENV_RATE # table samples per output sample
@@ -101,6 +105,7 @@ func _fill(pb: Object, frames: int) -> void: # an AudioStreamGeneratorPlayback (
 		if x >= span:
 			x -= span
 	_pos = x / ENV_RATE
+	pushed += frames
 	pb.push_buffer(buf)
 
 
@@ -141,6 +146,10 @@ func follow(sound: SoundDirector, world: Dictionary, receiver: bool) -> void:
 			sound.stop(cue, true)
 		if pos >= 0.0:
 			_pos = pos
+		handover_pos = pos
+		if want == RX:
+			pushed = 0
+			start_pos = _pos
 		sound.on_game(want)
 		if want == CUE and pos >= 0.0:
 			sound.seek(CUE, pos)

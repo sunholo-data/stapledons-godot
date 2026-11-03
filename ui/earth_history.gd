@@ -14,7 +14,7 @@ extends Control
 ##   line         the Earth time received (earth_to_year) against ship time: its slope is the rate
 ## Selecting a picture emits week_selected(i) (the console's frame diagram); selecting it again, or
 ## Escape, deselects (-1). The wheel zooms the ship-time axis about the pointer. Every value is a sim
-## field of the 2.17 log (earth_log); the wall places and never computes. It opens no AI request.
+## field of the 2.18 log (earth_log); the wall places and never computes. It opens no AI request.
 
 signal week_selected(index: int)
 
@@ -62,7 +62,7 @@ func _stamp(k: int) -> ComposedBinding:
 	return _stamps[k]
 
 
-## The frame's world (2.17): the log's records and the ship's clock now. Nothing from the future can
+## The frame's world (2.18): the log's records and the ship's clock now. Nothing from the future can
 ## be here: the sim logs only light that has arrived (D-68).
 func refresh(v: Dictionary) -> void:
 	view = v

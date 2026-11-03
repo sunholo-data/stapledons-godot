@@ -9,7 +9,7 @@ extends Control
 ## arrive_t; clock.t, earth.light_age_years, earth.newest_light_t): Godot only places them. No
 ## numbers or sentences are drawn, only the word "Earth" on its line; it is a picture (standing order
 ## "Visual First, Words Last").
-## R3-COMMS-V2 CV2 (design r3/comms-station-v2.md §D1.4, §D1.6): with the 2.17 log, each beamed record is
+## R3-COMMS-V2 CV2 (design r3/comms-station-v2.md §D1.4, §D1.6): with the 2.18 log, each beamed record is
 ## also a ray of Earth's light, from Earth's line at sent.t to the ship at (arrived.t, arrived.ly): lone
 ## rays outbound, a faint fan homeward. Frame mode (set_frame(i), the history wall's selection) turns
 ## the strip into that week's light-cone diagram on equal axes (one year = one light-year, so light runs
@@ -27,7 +27,7 @@ const PAD := Vector2(14, 12)
 var elements: Array = []
 var now := Vector2.ZERO # (clock.t, earth.light_age_years): the ship now
 var span := Rect2() # (t, ly) shown
-var recs: Array = [] # earth_log.records (2.17), oldest first
+var recs: Array = [] # earth_log.records (2.18), oldest first
 var frame := -1 # the selected record (frame mode), -1 for the strip
 var week := -1 # D1.3: a week inside the record (a row of earth_weeks.weeks), -1 for its newest
 var view: Dictionary = {}

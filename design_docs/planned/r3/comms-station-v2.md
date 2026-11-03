@@ -76,7 +76,7 @@ Scored with the `game-vision-designer` skill (feature-validation mode, against `
 
 **Goals**
 - G1. **Every received week,** oldest to newest, on the station's filmstrip, stamped with its Earth date and its ship arrival date (sim fields), with static where out of beam and spacing in ship time.
-- G2. **The frame diagram.** Selecting a week shows where Earth was when it sent it, the light's path at c, where the ship was when it arrived and where it was when Earth sent it, the ship's track, and D at arrival. Every value comes from the received-frame record (protocol 2.17).
+- G2. **The frame diagram.** Selecting a week shows where Earth was when it sent it, the light's path at c, where the ship was when it arrived and where it was when Earth sent it, the ship's track, and D at arrival. Every value comes from the received-frame record (protocol 2.18).
 - G3. **Ambient bridge monitors:** a new class of furniture, readable from the walk and the fixed views with no interaction.
   - The first is the **signal from home** (the waterfall, True, with the Receiver's 400 Hz line and the ×D bracket).
   - Three more (§D4) make the bridge read as mission control.
@@ -127,7 +127,7 @@ Link    = { ..., log: [Arrival] (newest first), lastFrame: int }   -- emptyLink:
 
 **Determinism:** the log is a pure fold over the ticks, byte-identical on the VM and the interpreter.
 
-**D1.2 Protocol 2.17.** `earth_log` goes in full states (oldest first) and `earth_log_tail` on ticks where the newest record changed. Both are sent at minor ≥ 17 only, and never inside a black hole's scenario. The bridge stores records by `from_frame`. A record:
+**D1.2 Protocol 2.18.** `earth_log` goes in full states (oldest first) and `earth_log_tail` on ticks where the newest record changed. Both are sent at minor ≥ 17 only, and never inside a black hole's scenario. The bridge stores records by `from_frame`. A record:
 
 ```
 {from_frame, to_frame, beamed,
@@ -355,7 +355,7 @@ This is revision 1's §D3. Its home is now the signal monitor, with the detail v
 | AC1 | The log: one record per ship day, merged by `beamed` and `day`; contiguous frames; the bound on a 30-ship-year synthetic voyage; departure week 0; mutants killed | `ailang test --package sim` and `ailang check --package sim` |
 | AC2 | Nothing from the future: every record's `to_frame ≤ frameOf(newest_light_t)`, `arrived.tau ≤ clock.tau`; `earth_weeks` clipped | `make comms-log-test` (new; VM and interpreter) |
 | AC3 | The diagram's events are exact: `sent.t = arrived.t − arrived.ly` to 1e-12; `ship_at_sent.t ≤ sent.t` and it is the newest such record; `arrived.rate` equals that tick's `earth.rate` | `make comms-log-test` |
-| AC4 | Pure and deterministic: strict VM; VM = interpreter on a 2.17 voyage; the new replay case byte-identical; every 2.16 golden unchanged | `make strict parity replay replay-compat` |
+| AC4 | Pure and deterministic: strict VM; VM = interpreter on a 2.18 voyage; the new replay case byte-identical; every 2.16 golden unchanged | `make strict parity replay replay-compat` |
 | AC5 | The filmstrip covers every received week; static over unbeamed spans; every digit bound to `earth_log` | `make comms-station-test display-audit-comms` |
 | AC6 | The frame diagram draws only record fields (send, light, arrival, ship then, track, ×D); light at 45° (equal axes); selecting and deselecting returns the strip | `make comms-station-test` (new diagram checks, binding audit) |
 | AC7 | The waterfall: measured peak within 1 % of 400·D at D 0.070888, 1, 14.107; dark with "above hearing" at D 60 and 1414.2; source guard | `make comms-waterfall-test` (new) |
@@ -371,7 +371,7 @@ This is revision 1's §D3. Its home is now the signal monitor, with the detail v
 | ID | What | LOC | Depends on | Order |
 |---|---|---|---|---|
 | CV0 | Rebase after #374, #375, #377; baseline captures | 0 | the three PRs | first |
-| CV1 | Sim: the log with send and arrival events, `noteLight`, protocol 2.17 `earth_log`, `earth_log_tail`, `earth_weeks`; `journey.ship_years_left` if OQ12; tests, strict, parity, replay | 440 | CV0 | 1 |
+| CV1 | Sim: the log with send and arrival events, `noteLight`, protocol 2.18 `earth_log`, `earth_log_tail`, `earth_weeks`; `journey.ship_years_left` if OQ12; tests, strict, parity, replay | 440 | CV0 | 1 |
 | CV2 | Bridge storage; the filmstrip; the frame diagram (the strip in frame mode, plus the plan inset); the station layout | 580 | CV1 | 2 |
 | CV3 | The waterfall: the `Antenna` and `Carrier` taps, `ui/comms_waterfall.gd` (detail) and its bold face for the monitor | 300 | CV0 (#375) | parallel |
 | CV4 | The consoles under the screens: three desks and a bench in the layout, walk bake, one Blender run with the CV6 monitor props, manifest points, evaluator to five stations | 220 + GLBs | CV0 | parallel |
@@ -417,6 +417,8 @@ New questions found while executing go here.
 
 ## Execution notes (CV5 and the Codex reviews, 2026-11-03)
 
+- **Protocol 2.18.** R3-WORLDS (#371) merged first and took 2.17 (population and census), so the comms log, `course` and `earth_weeks` moved to **2.18** (`earthLogMinor() = worldsMinor() + 1`). A 2.17 session sees neither the log nor the course section and refuses `earth_weeks`; `earth_log_voyage` was re-recorded for the new hello. Codex round 3: 96 PASS.
+
 - **Codex round 2: 88/100, pass**, with one blocker: weeks older than a long stack's newest 52 could not be reached. Fixed by paging (below); `make comms-history-test` opens the oldest week of a 53-week stack.
 
 - **Mid-point accepted** (Mark, "continue"): OQ12 in CV5, the watch bench kept, the diagram taking the faces' row, the x86 golden copy.
@@ -427,7 +429,7 @@ New questions found while executing go here.
   - **The trace shows only current measurements.** Each column holds that frame's measurement or nothing; the median hold is gone.
   - **AC7 at 1 %, not one bin.** The analyser is Hann-windowed, with 4,096 bins over 0 to mix/2 (5.38 Hz at 44.1 kHz). A coarse pass finds the peak bin, then Grandke's two-point Hann estimator refines it: δ = (2r − 1)/(r + 1) toward the larger neighbour. Measured on the tap over 20 measurements each: 20 Hz within 0.028 %, 28.355 Hz within 0.012 %, 400 Hz within 0.005 %, 5,642.8 Hz within 0.005 %. The test's tolerance is now 1 % alone.
   - **The hearing floor is 20 Hz** (Mark, 2026-11-03: "sure 20hz"). `receiver.audible` is [0.05, 50], human hearing at the 400 Hz carrier, so the beacon's True setting is silent below D = 0.05 (8–20 Hz is infrasound, felt rather than heard at the beacon's level). RS-46 and `features/next/sound.md` say so in stapledons-design#55; the waterfall test checks 0.03 below and 0.05 at the floor; `test_sound` asserts the band is exactly 20 Hz to 20 kHz.
-  - **Weeks inside a stack (D1.3) are built.** The read-only `earth_weeks` intent (core `IEarthWeeks`, an arm in every exhaustive match, the codec both ways, refused below 2.17) is answered on its tick with at most 52 beamed, arrived weeks, each `{frame, earth_year, kind, event, pick}`. Selecting a stack asks for its newest 52 weeks; a stack longer than that pages, with arrows at either end asking for the 52 before or after, and the row shows an answer only when it is for the range it asked for (Codex round 2). The station's stack row lets each week be picked; the feed, the row's stamp and the diagram's send label then carry that week's own Earth date. Records gained `earth_year`, the newest week's own date, which the wall's stamps now show. Tests: `earth_log_test` (wire, clipping, 2.16 refusal), `protocol_test` (codec round trip), `test_earth_history` (homebound stacks through the real sim), replay case `earth_log_voyage` (re-recorded with an `earth_weeks` tick).
+  - **Weeks inside a stack (D1.3) are built.** The read-only `earth_weeks` intent (core `IEarthWeeks`, an arm in every exhaustive match, the codec both ways, refused below 2.18) is answered on its tick with at most 52 beamed, arrived weeks, each `{frame, earth_year, kind, event, pick}`. Selecting a stack asks for its newest 52 weeks; a stack longer than that pages, with arrows at either end asking for the 52 before or after, and the row shows an answer only when it is for the range it asked for (Codex round 2). The station's stack row lets each week be picked; the feed, the row's stamp and the diagram's send label then carry that week's own Earth date. Records gained `earth_year`, the newest week's own date, which the wall's stamps now show. Tests: `earth_log_test` (wire, clipping, 2.16 refusal), `protocol_test` (codec round trip), `test_earth_history` (homebound stacks through the real sim), replay case `earth_log_voyage` (re-recorded with an `earth_weeks` tick).
   - **Monitor readability is in the evaluator.** `DeckBowMetrics.monitor_metrics` adds the Bow and Astern readable shares (in frame, facing, ≥ 40 px at 720p, 2 of 3 rays clear after fades), the named places, and whether a monitor stands on the walk. Thresholds: each monitor ≥ 0.25 (`monitor_readable_min`); the signal screen reads from the spawn, the chair, comms and Voyage; no monitor stands on the walk. The shipped deck: clocks 0.284, signal 0.342, course 0.349, crew 0.291. Negative controls in `make deck-layout-eval-test`: the signal monitor moved onto the walk fails `monitor-walk`, and turned to the stern it fails `monitor-readable` and `monitor-signal`.
   - **GPU golden G-CV** (`make comms-golden`, in `make golden`, 17 lines): the waterfall's trace, Receiver line, bracket foot and tip at D 0.070888 and 14.107, against the CPU rows (trace within 0.05 px; measured within 0.02 % of 400 × D); the frame diagram's send and arrival dots, the ship-when-sent ring and the ray (slope −1.0000, through the CPU send event), outbound and homebound, against the CPU light cone (t = arrived.t − arrived.ly) within 0.12 px.
   - **Captures:** `make capture-comms-v2` now also runs the station capture. It produces the four faces at three moments (`faces_home`, `faces_away`, `faces_homeward`), the frame diagram outbound and homebound, and a week inside a homebound stack (`frame_homebound_week`).
@@ -439,7 +441,7 @@ New questions found while executing go here.
 - **Recorded deviations:**
   - (1) `archive.earths-carrier` unlocks at `first_boost`, not "the first time the signal monitor is on screen at D ≠ 1" (§D7). Unlocks are sim events, and the sim cannot see a monitor's visibility. `first_boost` is when D first leaves 1, so the entry is there by the time the screen shows a shift.
   - (2) `archive.earths-voice`'s frame-diagram line was missing at the first evaluation. It is now in #55 and vendored.
-- **OQ12:** `course.ship_years_left` (protocol 2.17 `course` section, core `shipYearsLeft`) is on the course screen.
+- **OQ12:** `course.ship_years_left` (protocol 2.18 `course` section, core `shipYearsLeft`) is on the course screen.
 - **Archive:** `archive.earths-carrier` and spec rows RS-41..RS-47 are in stapledons-design#55. The game vendors that branch (`make lore-import`), and `tests/test_physics.gd` asserts all seven rows. The import also brought in `archive.colours-of-home`, design #51's entry, which was on design main but not yet vendored here; its missing README row is fixed in #55. The codex, the minimum-path unlocks and the session-audit mirrors now list 15 entries and 12 unlocks.
 - **Bench:** `make bench SCENE=bridge` measured MISS under host load 24–31 (other agents' jobs). An A/B run without the monitors also missed: p99 31.6 ms without against 34.1 ms with, p50 9.90 against 9.96 ms. The absolute gate needs a quiet machine. The review's gating fix lowers the off-screen cost further.
 

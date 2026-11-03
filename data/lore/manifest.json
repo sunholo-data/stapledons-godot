@@ -20,6 +20,7 @@
     {"path": "archive/weather-between-the-stars.md", "sha256": "0003ef25115a03a9180f8bab2c817b9e588ebb6c05dfa039eb102925209098d2"},
     {"path": "physics/higgs-bubble.md", "sha256": "bc159ee7ea5cb46c553ae0da7e7ef5418ff1988743b4263cd443eaf56c3a8361"},
     {"path": "physics/ism-structure.md", "sha256": "c048834d304a758abd03f9004b8a99f5f5dead37d847d86951db2e86c6a80ca7"},
+    {"path": "physics/life-and-worlds.md", "sha256": "4581b65c0b0163fea926dc57b62d43efb16b264fe7f9a6d91f1a9bd52b80c314"},
     {"path": "physics/relativity-spec.md", "sha256": "fadf8fc331e69dc8b61d2506a52146aeebc7ee79395118f1c82e50ff8917813b"}
   ]
 }

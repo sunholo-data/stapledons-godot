@@ -1,0 +1,23 @@
+module stapledons/sim/calibrate_search_test
+import ./calibrate_search (grid,assessRows)
+import ./calibrate (Row)
+import pkg/sunholo/worlds/dial (zeroDial)
+import std/list (length)
+pure func row(strategy:string,detected:int,visited:int,remnants:int,signals:int,contacts:int) -> Row =
+ {seed:0,preset:"stapledon",strategy:strategy,detector:"test",photonBudget:false,detected:detected,visited:visited,remnants:remnants,signals:signals,contacts:contacts,shipYears:100.0,earthYears:16000.0,lightWindowYr:15000.0,luckDex:0.0}
+test "grid uses quarter-dex offsets and the shared minds/technology direction" {
+ let ds=grid(-1,1,0,1,0,1);
+ length(ds)==12 && (match ds {d::_=>d.life== -0.25 && d.minds==0.0 && d.tech==0.0,_=>false})
+}
+test "both binding strategies must meet every encounter band" {
+ let good=row("cautious",60,7,4,7,6);
+ let good2={good|strategy:"wanderer"};
+ (assessRows("stapledon",zeroDial(),[good,good2])).fits
+ && not (assessRows("stapledon",zeroDial(),[good,{good2|contacts:4}])).fits
+ && not (assessRows("stapledon",zeroDial(),[good,{good2|remnants:0}])).fits
+ && not (assessRows("stapledon",zeroDial(),[])).fits
+}
+test "the default's five-contact floor has no invented upper acceptance bound" {
+ let a=row("cautious",60,7,4,7,20);
+ (assessRows("stapledon",zeroDial(),[a,{a|strategy:"wanderer"}])).fits
+}

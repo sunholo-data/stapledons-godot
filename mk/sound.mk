@@ -1,4 +1,4 @@
-# R2-SOUND (design_docs/planned/r2/sound.md): the cue table, the mix, the synthesised sounds and
+# R2-SOUND (design_docs/implemented/r2/sound.md): the cue table, the mix, the synthesised sounds and
 # their checks. Every check here runs headless (the Dummy audio driver still mixes; design §Evidence).
 .PHONY: sound-voyage-test sound-voyage-review sound-test sound-assets-check sound-synth sound-synth-check sound-levels sound-levels-parity sound-check sound-review sound-stage sound-stage-check sound-export-smoke ship-sound-test sound-archive-test
 

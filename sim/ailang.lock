@@ -1,11 +1,11 @@
 {
-  "ailang_version": "v0.54.18",
-  "generated_at": "2026-10-28T08:51:51.504193Z",
-  "generator": "ailang lock v0.54.18",
+  "ailang_version": "v0.56.1",
+  "generated_at": "2026-11-03T08:47:20.593615Z",
+  "generator": "ailang lock v0.56.1",
   "packages": [
     {
       "ailang": ">=0.52.0",
-      "content_hash": "sha256:d94c27d37dee500e0422a23ad354cee898c9f5291b0f26e78755f874c3464370",
+      "content_hash": "sha256:1f060862c67d3ba68f519102ad2aee2634ce43adb04e0c1b72375f84ad68d4c6",
       "effects": [
         "IO"
       ],
@@ -13,6 +13,7 @@
         "sunholo/celestial/ephemeris",
         "sunholo/celestial/frames",
         "sunholo/celestial/gravity",
+        "sunholo/celestial/habitability",
         "sunholo/celestial/ism",
         "sunholo/celestial/kepler",
         "sunholo/celestial/lighttime",
@@ -21,10 +22,10 @@
         "sunholo/celestial/stellar",
         "sunholo/celestial/stellar_ld"
       ],
-      "interface_hash": "sha256:c43d276cf17f7f58c0fe23d5bbb9611fce9470060954465caada06a991e8160e",
+      "interface_hash": "sha256:6c390e178f02c4fd8bfe6bca43998e7394525982d50bef855bdce6249d2bc863",
       "name": "sunholo/celestial",
       "source": "registry",
-      "version": "0.5.0"
+      "version": "0.6.0"
     },
     {
       "ailang": ">=0.52.0",
@@ -141,6 +142,26 @@
       "name": "sunholo/social_dynamics",
       "source": "registry",
       "version": "0.4.0"
+    },
+    {
+      "ailang": ">=0.56.1",
+      "content_hash": "sha256:7425165215985ccf5def68e99108b60a1aad0335651d182b2df292a016545a02",
+      "effects": [
+        "IO"
+      ],
+      "exports": [
+        "sunholo/worlds/baseline",
+        "sunholo/worlds/dial",
+        "sunholo/worlds/disc",
+        "sunholo/worlds/epoch_statistics",
+        "sunholo/worlds/history",
+        "sunholo/worlds/occurrence",
+        "sunholo/worlds/planet_model"
+      ],
+      "interface_hash": "sha256:897fa144481330593f5cae539430e4cf8a8f28fca73d3b7d2c17529a0042d501",
+      "name": "sunholo/worlds",
+      "source": "registry",
+      "version": "0.1.0"
     }
   ],
   "schema": "ailang.lock/v1",

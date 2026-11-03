@@ -8,7 +8,7 @@ extends SceneTree
 ##            line     the Receiver's line within 0.5 px of the CPU row of 400 Hz
 ##            tick     the bracket's foot (the teal tick) within 0.5 px of the same row
 ##            tip      the bracket's arrow tip within 1.0 px of the CPU row of the measured carrier
-##   G-CV-2 the frame diagram for an outbound week and a homebound week of the real sim at 2.17 (seed 7:
+##   G-CV-2 the frame diagram for an outbound week and a homebound week of the real sim at 2.18 (seed 7:
 ##          out to Alpha Cen A, home along Earth's beam):
 ##            sent     the send dot's centroid within 0.5 px of the CPU light-cone event, t = arrived.t -
 ##                     arrived.ly (float64 from the record's arrival), on Earth's line

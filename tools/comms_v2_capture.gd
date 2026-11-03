@@ -1,6 +1,6 @@
 extends SceneTree
 ## R3-COMMS-V2 review captures (design r3/comms-station-v2.md AC12; GPU window): the bridge with the
-## consoles under the screens and the monitor wall, on the live sim at 2.17 (the ship demo's own session:
+## consoles under the screens and the monitor wall, on the live sim at 2.18 (the ship demo's own session:
 ## seed, crew and Earth link as in play), so every monitor shows real fields.
 ##   at_rest_*    at Sol before departure: Bow from the spawn, from the chair, from the comms desk
 ##   cruise_*     under way at 0.99c to Alpha Cen A (Earth's rate about 0.07): Bow from the spawn, the

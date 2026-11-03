@@ -1,0 +1,45 @@
+module stapledons/sim/tools/worlds_mock_data
+-- W2.4 review artefacts only. Public physical DTOs and catalogue astronomy.
+-- No population parameters or biological state is read or emitted here.
+-- Offline HZ edges are an explicitly labelled renderer proposal, not protocol2.17.
+import stapledons/sim/data/exoplanets (planets)
+import stapledons/sim/data/world_hosts (knownHostRows)
+import stapledons/sim/worlds_registry (CatalogueRow)
+import stapledons/sim/worlds_catalogue (rowOf)
+import stapledons/sim/protocol_worlds (encodeWorlds)
+import stapledons/sim/tools/exoplanets (Planet as ObservedPlanet)
+import pkg/sunholo/celestial/habitability (hzFluxes,hzDistanceAu)
+import pkg/sunholo/celestial/kepler (norm)
+import std/list (map,filter,length)
+import std/json (Json,decode,encode,jo,kv,ja,js,jnum,jint,jb,jn,getArray)
+import std/option (Some,None,getOrElse)
+import std/result (Ok,Err)
+import std/io (println)
+
+pure func origin() -> {x:float,y:float,z:float} = {x:0.0,y:0.0,z:0.0}
+pure func observedFor(r:CatalogueRow,ps:[ObservedPlanet]) -> [ObservedPlanet] = filter(\p. p.hostId==r.id,ps)
+pure func valueAnnotation(p:ObservedPlanet,key:string) -> Json = match filter(\x. match x {(k,f)=>k==key},p.fields) {
+ (_,f)::_=>jo([kv("provenance",js(f.prov)),kv("note",js(f.note)),kv("citation",js(f.cite))]),
+ []=>if key=="equilibrium_k" then jo([kv("provenance",js("inferred")),kv("note",js("derived when absent from archive; Teq uses assumed Bond albedo0.3"))])
+ else jo([kv("provenance",js("missing")),kv("note",js("not present in the pinned catalogue; no value is invented"))])
+}
+pure func qualifiers(p:ObservedPlanet) -> Json = jo([kv("id",js(p.id)),kv("radius",valueAnnotation(p,"radius_earth")),kv("a",valueAnnotation(p,"a_au")),kv("teq",valueAnnotation(p,"equilibrium_k"))])
+pure func host(r:CatalogueRow,all:[ObservedPlanet]) -> Json {
+ let ps=observedFor(r,all);
+ let star=rowOf(r.id,r.pos,r.v,r.teff,r.flags,ps);
+ let public=match decode(encodeWorlds(0,origin(),r.id,[r],ps,[],false)) {Ok(j)=>getOrElse(getArray(j,"target"),[]),Err(_)=>[]};
+ let zone=if star.teff<=0.0 || star.lSun<=0.0 then jn() else {
+  let flux=hzFluxes(star.teff);
+  jo([kv("inner_au",jnum(hzDistanceAu(star.lSun,flux.runaway))),kv("outer_au",jnum(hzDistanceAu(star.lSun,flux.maximum))),
+  kv("teff_actual",jnum(star.teff)),kv("teff_used",jnum(flux.teffUsed)),kv("clamped",jb(flux.extrapolated)),kv("source",js("Kopparapu2014 Table1; stellar luminosity from public catalogue/curated inputs"))])
+ };
+ jo([kv("id",js(r.id)),kv("name",js(match ps {p::_=>p.host,[]=>r.id})),kv("spectral_type",js(match ps {p::_=>p.hostSpectralType,[]=>""})),
+ kv("x",jnum(r.pos.x)),kv("y",jnum(r.pos.y)),kv("z",jnum(r.pos.z)),kv("distance_ly",jnum(norm(r.pos))),
+ kv("planets",ja(public)),kv("qualifiers",ja(map(qualifiers,ps))),kv("offline_inferred_zone",zone)])
+}
+export func main() -> () ! {IO} {
+ let ps=planets();let hosts=knownHostRows();
+ println(encode(jo([kv("status",js("W2.4 review mock-up only; no runtime UI change")),kv("projection",js("Galactic XY; sphere-selected by true 3D catalogue distance")),
+ kv("source",js("NASA PS snapshot2026-11-02; curated alphaCen/TRAPPIST1 retained; registry stars.json")),kv("known_host_count",jint(length(hosts))),
+ kv("abi_followup",js("protocol2.17 has no numerical HZ edge fields; offline inferred edges here are a W2.4 rendering-contract proposal only")),kv("hosts",ja(map(\r. host(r,ps),hosts)))])))
+}

@@ -1,0 +1,67 @@
+module stapledons/sim/worlds_catalogue
+-- Registry adapter. Dwarf masses are explicitly inferred from the adopted
+-- Pecaut-Mamajek2022.04.16 sequence (not a Mann K-band measurement).
+-- Known white dwarfs, missing photometry, early/brown dwarfs and giant stars
+-- stay Other: absence of classification data never invents a habitable slot.
+import ./worlds_model (StarRow, valueOf)
+import ./tools/exoplanets (Planet as ObservedPlanet)
+import ./data/acen (bodies)
+import ./data/stars (destinationStars)
+import ./inferred_stars (inferStar)
+import pkg/sunholo/worlds/planet_model (dwarfInTable, dwarfMassSun)
+import pkg/sunholo/worlds/occurrence (StarClass, FGK, MDwarf, Other)
+import pkg/sunholo/celestial/kepler (Vec3)
+import pkg/sunholo/celestial/gravity (radiusSunNominal)
+import std/math (pow, floatToInt)
+import std/option (Option, Some, None, getOrElse)
+import std/list (map, filter, flatMap, foldl)
+import std/map (empty, insert, lookup)
+import std/string (contains)
+import std/json (decode, getArray, getString, getNumber)
+import std/result (Ok, Err)
+
+pure func scalar(fields:[(string,{value:float,prov:string,note:string,cite:string})],key:string,fallback:float) -> float =
+ match filter(\x. match x {(k,_)=>k==key},fields) {(_,f)::_=>f.value,[]=>fallback}
+pure func archiveValue(ps:[ObservedPlanet],key:string,fallback:float) -> float = match ps {
+ []=>fallback, p::rest=>match valueOf(p,key) {Some(x)=>x,None=>archiveValue(rest,key,fallback)}
+}
+pure func curated(id:string,row:StarRow) -> StarRow {
+ let bs=filter(\b. b.id==(if id=="CNS5:3627" then "acen-a" else if id=="HIP 71681" then "acen-b" else if id=="Gaia DR3 5853498713190525696" then "proxima" else ""),bodies());
+ let ds=filter(\s. s.catalogueId==id,destinationStars());
+ match bs {b::_=>{row | teff:scalar(b.fields,"teff_k",row.teff),mSun:scalar(b.fields,"mass_sun",row.mSun),rSun:scalar(b.fields,"radius_sun",row.rSun),lSun:scalar(b.fields,"luminosity_sun",row.lSun)},[]=>match ds {
+ s::_=>{row | teff:scalar(s.fields,"teff_k",row.teff),mSun:scalar(s.fields,"mass_sun",row.mSun),rSun:scalar(s.fields,"radius_sun",row.rSun),lSun:scalar(s.fields,"luminosity_sun",row.lSun),starClass:if scalar(s.fields,"giant",0.0)>0.0 then Other else row.starClass},[]=>row}}
+}
+export pure func rowOf(id:string,pos:Vec3,v:float,teff:float,flags:int,observations:[ObservedPlanet]) -> StarRow {
+ let observed=filter(\p. p.hostId==id || (p.hostId=="" && p.archiveHostId==id),observations);
+ let temp=archiveValue(observed,"host_teff_k",teff);
+ let inferred=if (flags&1)!=0 then None else inferStar(id,id,pos,v,temp);
+ let lum=archiveValue(observed,"host_log_luminosity_sun",-999.0);
+ let l=if lum> -100.0 then pow(10.0,lum) else match inferred {Some(s)=>s.lSun,None=>0.0};
+ let r=archiveValue(observed,"host_radius_sun",match inferred {Some(s)=>s.radiusKm/radiusSunNominal(),None=>0.0});
+ let nonDwarf=(flags&1)!=0 || (flags&2)!=0 || not dwarfInTable(temp) || r>2.5 || (match observed {p::_=>contains(p.hostSpectralType,"III") || contains(p.hostSpectralType,"IV"),[]=>false});
+ -- A dwarf-sequence mass is invalid for giants/white dwarfs. Preserve an
+ -- actual archive mass; otherwise leave mass unknown and synthesize nothing.
+ let m=archiveValue(observed,"host_mass_sun",if not nonDwarf then dwarfMassSun(temp) else 0.0);
+ let cls=if nonDwarf then Other else if temp<3900.0 then MDwarf else FGK;
+ let base=curated(id,{id:id,pos:pos,v:v,teff:temp,starClass:cls,lSun:l,rSun:r,mSun:m});
+ -- Curated late-M values may be cooler than Kopparapu's 2600K validity edge;
+ -- celestial.hzFluxes reports that clamp. They remain debated, not sterile.
+ if (flags&1)!=0 || base.starClass==Other then base else {base | starClass:if base.teff<3900.0 then MDwarf else FGK}
+}
+-- Preserve the source order inside each host: archiveValue deliberately uses
+-- the first available measured stellar value. Index once instead of filtering
+-- the entire snapshot independently for every GCNS star.
+pure func hostIndex(observations:[ObservedPlanet]) -> Map[string,[ObservedPlanet]] =
+ foldl(\hosts p. {
+  let key=if p.hostId!="" then p.hostId else p.archiveHostId;
+  insert(hosts,key,getOrElse(lookup(hosts,key),[])++[p])
+ },empty(),observations)
+export pure func rowsFromJsonWith(text:string,observations:[ObservedPlanet]) -> [StarRow] {
+ let hosts=hostIndex(observations);
+ match decode(text) {
+ Err(_)=>[],Ok(j)=>match getArray(j,"stars") {None=>[],Some(xs)=>flatMap(\x.
+ match (getString(x,"id"),getNumber(x,"x"),getNumber(x,"y"),getNumber(x,"z"),getNumber(x,"vmag"),getNumber(x,"teff")) {
+ (Some(id),Some(px),Some(py),Some(pz),Some(v),Some(t))=>[rowOf(id,{x:px,y:py,z:pz},v,t,floatToInt(getOrElse(getNumber(x,"flags"),0.0)),getOrElse(lookup(hosts,id),[]))],_=>[]},xs)}
+ }
+}
+export pure func rowsFromJson(text:string) -> [StarRow] = rowsFromJsonWith(text,[])

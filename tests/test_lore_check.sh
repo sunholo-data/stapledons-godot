@@ -21,6 +21,8 @@ expect "an unknown unlock hint fails" 1 "unknown unlock hint 'start'" $F/unknown
 expect "an unresolvable checks id fails" 1 "check id 'HB-99999' does not resolve" $F/unresolved_id.md
 expect "a number whose row is not in checks fails" 1 "number '1.37 × 10¹⁷ J' binds to none" $F/unlisted_check.md
 expect "a number with the wrong unit fails" 1 "number '23.3 kg' binds to none" $F/wrong_unit.md
+expect "LW cited HZ value passes" 0 "" $F/worlds_hz.md
+expect "LW one-digit drift fails" 1 "1.108 S⊕" $F/worlds_hz_drifted.md
 # drifted.md differs from its twin by exactly one character (the last digit of one number)
 n=$(cmp -l data/lore/archive/ism-glow.md $F/drifted.md | wc -l | tr -d ' ')
 if [ "$n" = 1 ]; then echo "  ok    drifted.md differs from the real entry in exactly one byte"; else echo "  FAIL  drifted.md differs in $n bytes"; fails=$((fails+1)); fi

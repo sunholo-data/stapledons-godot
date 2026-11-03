@@ -3,7 +3,7 @@ module stapledons/sim/earth_log_test
 -- R3-COMMS-V2 CV1 (design r3/comms-station-v2.md §D1, AC1–AC4): the received-frame log.
 -- Synthetic ticks drive noteLight directly (the merge, the split, the bound). A real flight through
 -- core.tick checks the invariants at every tick: contiguous weeks, nothing from the future, the send
--- event on the light cone, the ship-at-send lookup, the Earth rate at arrival. The 2.17 wire is
+-- event on the light cone, the ship-at-send lookup, the Earth rate at arrival. The 2.18 wire is
 -- checked through protocol.serve. Expected values are closed forms or brute-force reference walks,
 -- never this module's own output.
 import ./core (World, Intent, IPlan, ICommit, Target, defaultParams, newWorld, tick, position, earthOf, shipYearsLeft, tauTotalOf)
@@ -152,7 +152,7 @@ pure func checkWeeks() -> bool {
 }
 test "earth_weeks: only arrived, beamed weeks, at most cap" { checkWeeks() }
 
--- ------------------------------------------------------------ the 2.17 wire (AC4)
+-- ------------------------------------------------------------ the 2.18 wire (AC4)
 pure func helloLine(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
 pure func gameLine() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false}"
 pure func tickLine(t: int, dtau: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[]}"])
@@ -164,6 +164,7 @@ pure func row(i: int) -> string = concat(["{\"frame\":", intToStr(i), ",\"earth_
 pure func checkWireWeeks() -> bool {
   let s17 = serve(feedLines(newSession(), [helloLine(earthLogMinor()), gameLine()]), tickLine(1, "1")).session;
   let s16 = serve(feedLines(newSession(), [helloLine(earthMinor()), gameLine()]), tickLine(1, "1")).session;
+  let s17w = serve(feedLines(newSession(), [helloLine(17), gameLine()]), tickLine(1, "1")).session;
   let few = serve(s17, weeksLine(2, 3, 5)).reply;
   let all = serve(s17, weeksLine(2, 0, 100000)).reply;
   let none = serve(s17, tickLine(2, "0")).reply;
@@ -172,9 +173,9 @@ pure func checkWireWeeks() -> bool {
     -- each week's own Earth date: epoch 0 + frame x week
     contains(few, concat([row(4), encode(jnum(4.0 * week))])),
     contains(all, row(0)), contains(all, row(51)), !contains(all, row(52)), frameOf(1.0) >= 52,
-    !contains(none, "earth_weeks"), contains(serve(s16, weeksLine(2, 0, 5)).reply, "bad_intent")])
+    !contains(none, "earth_weeks"), contains(serve(s16, weeksLine(2, 0, 5)).reply, "bad_intent"), contains(serve(s17w, weeksLine(2, 0, 5)).reply, "bad_intent")])
 }
-test "D1.3: earth_weeks answers on its tick, clipped to arrived beamed weeks and 52 rows; 2.16 refuses it" { checkWireWeeks() }
+test "D1.3: earth_weeks answers on its tick, clipped to arrived beamed weeks and 52 rows; 2.17 and 2.16 refuse it" { checkWireWeeks() }
 pure func checkWire17() -> bool {
   let s17 = feedLines(newSession(), [helloLine(earthLogMinor()), gameLine()]);
   let s16 = feedLines(newSession(), [helloLine(earthMinor()), gameLine()]);
@@ -183,9 +184,12 @@ pure func checkWire17() -> bool {
   let year17 = serve(s17, tickLine(1, "1")).reply;
   let year16 = serve(s16, tickLine(1, "1")).reply;
   let idle17 = serve(s17, tickLine(1, "0")).reply;
-  lgAll([earthLogMinor() == 17, contains(serve(newSession(), helloLine(earthLogMinor())).reply, "\"minor\":17"),
-    contains(serve(newSession(), helloLine(99)).reply, "\"minor\":17"), contains(serve(newSession(), helloLine(earthMinor())).reply, "\"minor\":16"),
-    -- 2.17 full state: the log with week 0, beamed, arrived at departure, and its feed
+  let gw = serve(feedLines(newSession(), [helloLine(17)]), gameLine()).reply;
+  lgAll([earthLogMinor() == 18, contains(serve(newSession(), helloLine(earthLogMinor())).reply, "\"minor\":18"),
+    contains(serve(newSession(), helloLine(99)).reply, "\"minor\":18"), contains(serve(newSession(), helloLine(17)).reply, "\"minor\":17"),
+    -- 2.17 is R3-WORLDS: it never sees the log or the course section
+    !contains(gw, "earth_log"), !contains(gw, "\"course\""), contains(serve(newSession(), helloLine(earthMinor())).reply, "\"minor\":16"),
+    -- 2.18 full state: the log with week 0, beamed, arrived at departure, and its feed
     contains(g17, "\"earth_log\":{\"week_years\":"), contains(g17, "\"records\":[{\"from_frame\":0,\"to_frame\":0,\"beamed\":true,\"day\":0,"),
     contains(g17, "\"ship_at_sent\":"), contains(g17, "\"feed\":{\"frame\":0,"),
     -- a year at rest brings new weeks: the open record alone, on the tick
@@ -194,10 +198,10 @@ pure func checkWire17() -> bool {
     !contains(idle17, "\"earth_log_tail\""),
     -- 2.16 never sees the log
     !contains(g16, "earth_log"), !contains(year16, "earth_log"),
-    -- CV5 (OQ12): the course section at 2.17 only, 0 ship years left when not flying
+    -- CV5 (OQ12): the course section at 2.18 only, 0 ship years left when not flying
     contains(g17, "\"course\":{\"ship_years_left\":0}"), !contains(g16, "\"course\"")])
 }
-test "AC4: the 2.17 earth_log in full states, its tail when the open record changes, the course section; 2.16 never sees them" { checkWire17() }
+test "AC4: the 2.18 earth_log in full states, its tail when the open record changes, the course section; 2.17 and 2.16 never see them" { checkWire17() }
 
 export pure func earthLogVm(n: int) -> string =
   if checkDeparture() && checkMerge() && checkSplit() && checkNoNewWeek() && checkBound() && checkShipAt() && checkFlight() && checkYearsLeft() && checkWeeks() && checkWire17() && checkWireWeeks()

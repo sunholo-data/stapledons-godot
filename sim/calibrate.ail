@@ -1,0 +1,184 @@
+module stapledons/sim/calibrate
+-- R3-WORLDS W1.3. Pure, keyed Monte Carlo and detected-only policies.
+-- Count draws sum Poisson components <30: celestial's large-mean Gaussian
+-- approximation is deliberately not used. The process is exact up to float64
+-- inverse-CDF arithmetic. No sample truncation or hidden catalogue is used.
+import ./rng (keyed,unit53,idHash)
+import ./data/presets (Preset)
+import ./data/detect (Detect)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Params,applyDial,luckDex)
+import pkg/sunholo/worlds/disc (starsWithin)
+import pkg/sunholo/worlds/history (History,PlanetState,Sterile,Microbial,Complex,PreTech,Technological,Remnant,historyOf,stateAt)
+import pkg/sunholo/celestial/kepler (Vec3,norm,sub)
+import pkg/sunholo/celestial/ism (poissonDraw)
+import pkg/sunholo/observe/lightcone (seenAt)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn)
+import pkg/sunholo/relativity/hyper (acosh1p)
+import pkg/sunholo/relativity/kinematics (standardGravity)
+import std/option (Option,Some,None)
+import std/math (sqrt,pow,exp,sin,cos,abs_Float,intToFloat,floatToInt,floor)
+import std/list (map,filter,foldl,length,any,flatMap)
+import std/json (Json,encode,jo,kv,js,jnum,jint,jb,ja)
+
+export type ModelWorld = {id:string,pos:Vec3,history:()->History ! {},loudness:float}
+-- Deliberately no history, dial, future arrival state or hidden-world pointer.
+export type Candidate = {id:string,pos:Vec3,bioStrength:float,signalStrength:float}
+export type Strategy = {id:string,rangeLy:float,phi:float,stayYr:float}
+export type Row = {seed:int,preset:string,strategy:string,detector:string,photonBudget:bool,detected:int,visited:int,remnants:int,signals:int,contacts:int,shipYears:float,earthYears:float,lightWindowYr:float,luckDex:float}
+export pure func origin() -> Vec3 = {x:0.0,y:0.0,z:0.0}
+export pure func cautious() -> Strategy = {id:"cautious",rangeLy:1000.0,phi:acosh1p(21.0),stayYr:5.0}
+export pure func wanderer() -> Strategy = {id:"wanderer",rangeLy:3000.0,phi:acosh1p(706.0),stayYr:10.0}
+export pure func pilgrim() -> Strategy = {id:"pilgrim",rangeLy:5000.0,phi:acosh1p(706.0),stayYr:5.0}
+export pure func waiter() -> Strategy = {id:"waiter",rangeLy:3000.0,phi:acosh1p(706.0),stayYr:100.0}
+export pure func strategies() -> [Strategy] = [cautious(),wanderer(),pilgrim(),waiter()]
+pure func rnd(seed:int,key:int,n:int) -> float = unit53(keyed(seed,0x5743414c4942,key,n))
+pure func minf(a:float,b:float) -> float = if a<b then a else b
+pure func maxf(a:float,b:float) -> float = if a>b then a else b
+pure func eta() -> float = 0.20*0.4+0.75*0.16 -- W1.0 fixed type mix and eta, LW-3..6
+pure func disc() -> {rho0Pc3:float,scaleHeightPc:float} = {rho0Pc3:0.079,scaleHeightPc:300.0}
+-- Uniform technological onset window intersects the complete observation and
+-- trace envelope. This is an overcomplete marked process; stateAt does the
+-- exact ending/trace rejection when observed or visited.
+export pure func onsetLo(p:Params,r:float) -> float = maxf(-p.windowYr/2.0,-2.0*r-p.remnantHiYr-p.lifetimeYr)
+export pure func onsetHi(p:Params,doom:float) -> float = minf(p.windowYr/2.0,doom)
+export pure func techLambda(p:Params,r:float,doom:float) -> float =
+ starsWithin(disc(),r)*eta()*p.fLife*p.fMinds*p.fTech*maxf(0.0,onsetHi(p,doom)-onsetLo(p,5000.0))/p.windowYr
+pure func poissonParts(seed:int,key:int,left:float,n:int,total:int) -> int =
+ if left<=0.0 then total else {
+  let part=minf(left,20.0);
+  poissonParts(seed,key,left-part,n+1,total+poissonDraw(part,rnd(seed,key,2*n),rnd(seed,key,2*n+1)))
+ }
+export pure func poissonCount(seed:int,key:int,mean:float) -> int = poissonParts(seed,key,mean,0,0)
+-- Rejection from a uniform sphere by exp(-|z|/h), the same adopted vertical
+-- density integrated by worlds/disc. Conditional sampling avoids an isotropic
+-- angular distribution being wrongly attached to the nonuniform radial CDF.
+pure func positionTrial(seed:int,key:int,rMin:float,rMax:float,n:int) -> Vec3 {
+ let r=pow(rMin*rMin*rMin+rnd(seed,key,n)*(rMax*rMax*rMax-rMin*rMin*rMin),1.0/3.0);
+ let mu=2.0*rnd(seed,key,n+1)-1.0;
+ let phi=6.283185307179586*rnd(seed,key,n+2);
+ let z=r*mu;
+ if rnd(seed,key,n+3)<exp(-abs_Float(z)/(300.0*3.26156)) then
+ {x:r*sqrt(1.0-mu*mu)*cos(phi),y:r*sqrt(1.0-mu*mu)*sin(phi),z:z}
+ else positionTrial(seed,key,rMin,rMax,n+4)
+}
+export pure func samplePosition(seed:int,key:int,rMax:float) -> Vec3 = positionTrial(seed,key,0.0,rMax,1000)
+pure func conditionalTechHistory(seed:int,key:int,p:Params,r:float,doom:float) -> History {
+ let onset=onsetLo(p,r)+(onsetHi(p,doom)-onsetLo(p,r))*rnd(seed,key,4);
+ let us=[0.0,p.fMinds*rnd(seed,key,1),rnd(seed,key,2),p.fTech*rnd(seed,key,3),onset/p.windowYr+0.5,rnd(seed,key,5),rnd(seed,key,6),rnd(seed,key,7)];
+ historyOf(p,true,us)
+}
+-- Fixed 100-ly shells share keys and the full 5000-ly temporal envelope
+-- across strategies: growing the range leaves every interior world unchanged.
+pure func techWorld(seed:int,shell:int,n:int,p:Params,lo:float,hi:float,doom:float) -> ModelWorld {
+ let id="tech:${show(shell)}:${show(n)}";
+ let key=idHash(id);
+ {id:id,pos:positionTrial(seed,key,lo,hi,1000),history:\unit. conditionalTechHistory(seed,key,p,5000.0,doom),loudness:rnd(seed,key,8)}
+}
+pure func techBuild(seed:int,shell:int,n:int,count:int,p:Params,lo:float,hi:float,doom:float,acc:[ModelWorld]) -> [ModelWorld] =
+ if n==count then acc else techBuild(seed,shell,n+1,count,p,lo,hi,doom,techWorld(seed,shell,n,p,lo,hi,doom)::acc)
+pure func techShells(seed:int,shell:int,r:float,p:Params,doom:float,acc:[ModelWorld]) -> [ModelWorld] =
+ if intToFloat(shell)*100.0>=r then acc else {
+ let lo=intToFloat(shell)*100.0;
+ let hi=lo+100.0;
+ let mean=techLambda(p,hi,doom)-techLambda(p,lo,doom);
+ let ws=techBuild(seed,shell,0,poissonCount(seed,idHash("tech-count:${show(shell)}"),mean),p,lo,hi,doom,[]);
+ techShells(seed,shell+1,r,p,doom,filter(\w. norm(w.pos)<=r,ws)++acc)
+}
+export pure func techWorlds(seed:int,p:Params,r:float,doom:float) -> [ModelWorld] = techShells(seed,0,r,p,doom,[])
+
+-- Biospheres are lazy in 10-ly cubes. Draw the rho0 upper process, then reject
+-- by vertical density and by the technological envelope already sampled.
+-- Stable integer cell ids mean revisiting a region regenerates identical worlds.
+pure func eligibleTech(h:History,p:Params,r:float,doom:float) -> bool = match h.mind {
+ None=>false,Some(m)=>m.techT>=onsetLo(p,5000.0) && m.techT<onsetHi(p,doom)
+}
+pure func localPlanet(seed:int,cell:string,n:int,x:int,y:int,z:int,p:Params,r:float,doom:float) -> [ModelWorld] {
+ let key=idHash("cell:${cell}:${show(n)}");
+ let pos={x:(intToFloat(x)+rnd(seed,key,20))*10.0,y:(intToFloat(y)+rnd(seed,key,21))*10.0,z:(intToFloat(z)+rnd(seed,key,22))*10.0};
+ let h=historyOf(p,true,[0.0,rnd(seed,key,1),rnd(seed,key,2),rnd(seed,key,3),rnd(seed,key,4),rnd(seed,key,5),rnd(seed,key,6),rnd(seed,key,7)]);
+ if norm(pos)>r || rnd(seed,key,23)>=exp(-abs_Float(pos.z)/(300.0*3.26156)) || eligibleTech(h,p,r,doom) then []
+ else [{id:"cell:${cell}:${show(n)}",pos:pos,history:\unit. h,loudness:rnd(seed,key,8)}]
+}
+pure func localBuild(seed:int,cell:string,n:int,count:int,x:int,y:int,z:int,p:Params,r:float,doom:float,acc:[ModelWorld]) -> [ModelWorld] =
+ if n==count then acc else localBuild(seed,cell,n+1,count,x,y,z,p,r,doom,localPlanet(seed,cell,n,x,y,z,p,r,doom)++acc)
+pure func cellWorlds(seed:int,x:int,y:int,z:int,p:Params,r:float,doom:float) -> [ModelWorld] {
+ let cell="${show(x)},${show(y)},${show(z)}";
+ let mean=0.079*pow(10.0/3.26156,3.0)*eta()*p.fLife;
+ localBuild(seed,cell,0,poissonCount(seed,idHash("cell-count:${cell}"),mean),x,y,z,p,r,doom,[])
+}
+pure func integers(lo:int,hi:int) -> [int] = if lo>hi then [] else lo::integers(lo+1,hi)
+export pure func localWorlds(seed:int,p:Params,r:float,doom:float,obs:Vec3,support:float) -> [ModelWorld] =
+ if support<=0.0 then [] else {
+ let xs=integers(floatToInt(floor((obs.x-support)/10.0)),floatToInt(floor((obs.x+support)/10.0)));
+ let ys=integers(floatToInt(floor((obs.y-support)/10.0)),floatToInt(floor((obs.y+support)/10.0)));
+ let zs=integers(floatToInt(floor((obs.z-support)/10.0)),floatToInt(floor((obs.z+support)/10.0)));
+ flatMap(\x. flatMap(\y. flatMap(\z. cellWorlds(seed,x,y,z,p,r,doom),zs),ys),xs)
+ }
+-- Collapse retains the background biosphere. Ecocide destroys it; the
+-- post-biological Transcended label has no assumed detectable biosphere.
+pure func biosphere(s:PlanetState) -> bool = s==Microbial || s==Complex || s==PreTech || s==Technological || s==Remnant
+export pure func observeWorld(d:Detect,w:ModelWorld,obs:Vec3,t:float) -> Candidate {
+ let distance=norm(sub(w.pos,obs));
+ let state=if distance>d.supportLy then Sterile else stateAt(w.history(()),seenAt(t,obs,w.pos));
+ {id:w.id,pos:w.pos,bioStrength:if biosphere(state) then d.response("biosphere",distance,w.loudness) else 0.0,
+ signalStrength:if state==Technological then d.response("technology",distance,w.loudness) else 0.0}
+}
+pure func containsId(ids:[string],id:string) -> bool = any(\i. i==id,ids)
+pure func allowed(s:Strategy,c:Candidate) -> bool =
+ norm(c.pos)<=s.rangeLy && (s.id!="pilgrim" || (c.pos.x>0.0 && c.pos.x>=0.9659258262890683*norm(c.pos)))
+pure func cost(s:Strategy,obs:Vec3,c:Candidate) -> float =
+ if s.id=="wanderer" && c.signalStrength<=0.0 then -c.bioStrength
+ else if s.id=="waiter" then -norm(sub(c.pos,obs))
+ else (planBurnCoastBurn(norm(sub(c.pos,obs)),standardGravity(),s.phi)).trip.galaxyTime
+pure func eligible(s:Strategy,obs:Vec3,c:Candidate,visited:[string]) -> bool =
+ not containsId(visited,c.id) && allowed(s,c) && (c.signalStrength>0.0 || (c.bioStrength>0.0 && (s.id!="wanderer" || norm(sub(c.pos,obs))<=500.0)))
+pure func better(s:Strategy,obs:Vec3,a:Candidate,b:Candidate) -> bool =
+ if (a.signalStrength>0.0)!=(b.signalStrength>0.0) then a.signalStrength>0.0 else cost(s,obs,a)<cost(s,obs,b)
+export pure func chooseCandidate(s:Strategy,obs:Vec3,cs:[Candidate],visited:[string]) -> Option[Candidate] =
+ foldl(\best c. if not eligible(s,obs,c,visited) then best else match best {None=>Some(c),Some(b)=>if better(s,obs,c,b) then Some(c) else best},None,cs)
+pure func mergeOne(cs:[Candidate],c:Candidate) -> [Candidate] = match cs {
+ []=>[c],a::rest=>if a.id==c.id then {a|bioStrength:maxf(a.bioStrength,c.bioStrength),signalStrength:maxf(a.signalStrength,c.signalStrength)}::rest else a::mergeOne(rest,c)
+}
+pure func learn(cs:[Candidate],new:[Candidate]) -> [Candidate] = foldl(\acc c. if c.bioStrength>0.0 || c.signalStrength>0.0 then mergeOne(acc,c) else acc,cs,new)
+export type Progress = {pos:Vec3,t:float,tau:float,known:[Candidate],visited:[string],bioVisited:int,remnants:int,contacts:int}
+pure func initial() -> Progress = {pos:origin(),t:0.0,tau:0.0,known:[],visited:[],bioVisited:0,remnants:0,contacts:0}
+pure func actualState(ws:[ModelWorld],id:string,t:float) -> PlanetState = match ws {
+ []=>Sterile,w::rest=>if w.id==id then stateAt(w.history(()),t) else actualState(rest,id,t)
+}
+pure func voyage(seed:int,p:Params,s:Strategy,doom:float,d:Detect,tech:[ModelWorld],q:Progress) -> Progress =
+ if q.tau>=100.0 || q.t>=doom then q else {
+  let local=localWorlds(seed,p,s.rangeLy,doom,q.pos,d.supportLy);
+  let ws=tech++local;
+  let known=learn(q.known,map(\w. observeWorld(d,w,q.pos,q.t),ws));
+  match chooseCandidate(s,q.pos,known,q.visited) {
+   None=>{q|known:known,t:q.t+minf(100.0-q.tau,doom-q.t),tau:q.tau+minf(100.0-q.tau,doom-q.t)},
+   Some(c)=>{
+    let trip=planBurnCoastBurn(norm(sub(c.pos,q.pos)),standardGravity(),s.phi);
+    if q.tau+trip.trip.shipTime>100.0 || q.t+trip.trip.galaxyTime>doom then {q|known:known}
+    else {
+     let t=q.t+trip.trip.galaxyTime;
+     let arrival=tech++localWorlds(seed,p,s.rangeLy,doom,c.pos,0.000000001);
+     let state=actualState(arrival,c.id,t);
+     let stay=minf(s.stayYr,minf(100.0-q.tau-trip.trip.shipTime,doom-t));
+     voyage(seed,p,s,doom,d,tech,{pos:c.pos,t:t+stay,tau:q.tau+trip.trip.shipTime+stay,known:known,visited:c.id::q.visited,
+       bioVisited:q.bioVisited+(if biosphere(state) then 1 else 0),remnants:q.remnants+(if state==Remnant then 1 else 0),contacts:q.contacts+(if state==Technological then 1 else 0)})
+    }
+   }
+  }
+ }
+export pure func runVoyage(seed:int,preset:string,luck:float,p:Params,s:Strategy,doom:float,d:Detect,ws:[ModelWorld]) -> Row {
+ let q=voyage(seed,p,s,doom,d,ws,initial());
+ {seed:seed,preset:preset,strategy:s.id,detector:d.id,photonBudget:d.photonBudget,
+ detected:length(filter(\c. c.bioStrength>0.0,q.known)),visited:q.bioVisited,remnants:q.remnants,
+ signals:length(filter(\c. c.signalStrength>0.0,q.known)),contacts:q.contacts,shipYears:q.tau,earthYears:q.t,lightWindowYr:q.t-norm(q.pos),luckDex:luck}
+}
+export pure func simulate(seed:int,ps:Preset,s:Strategy,doom:float,d:Detect) -> Row {
+ let p=applyDial(baseline(),ps.dial);
+ runVoyage(seed,ps.id,luckDex(baseline(),ps.dial),p,s,doom,d,if d.supportLy<=0.0 then [] else techWorlds(seed,p,s.rangeLy,doom))
+}
+export pure func rowValue(r:Row) -> Json = jo([
+ kv("seed",jint(r.seed)),kv("preset",js(r.preset)),kv("strategy",js(r.strategy)),kv("detector",js(r.detector)),kv("photon_budget",jb(r.photonBudget)),
+ kv("detected",jint(r.detected)),kv("visited",jint(r.visited)),kv("remnants",jint(r.remnants)),kv("signals",jint(r.signals)),kv("contacts",jint(r.contacts)),
+ kv("ship_years",jnum(r.shipYears)),kv("earth_years",jnum(r.earthYears)),kv("light_window_years",jnum(r.lightWindowYr)),kv("luck_dex",jnum(r.luckDex))])
+export pure func rowJson(r:Row) -> string = encode(rowValue(r))

@@ -3,7 +3,7 @@ extends SceneTree
 ## make bridge-monitors-test (headless).
 ##   build    the manifest's four monitors (clocks, signal, course, crew) at their anchors on the bow
 ##            rail, each face turned to the deck, each screen a camera occluder (it fades like a frond)
-##   bound    on the real sim at 2.17 (seed 7: outbound at 0.99c, then off Earth's beam), every number
+##   bound    on the real sim at 2.18 (seed 7: outbound at 0.99c, then off Earth's beam), every number
 ##            on every face is a binding (the display audit finds nothing unbound) and the faces follow
 ##            the world (Earth or no signal; the target; the crew's feelings)
 ##   gated    a face renders only while its screen is on screen; off screen the signal face does no
