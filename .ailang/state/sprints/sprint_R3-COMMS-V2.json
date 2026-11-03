@@ -1,29 +1,31 @@
 {
  "sprint_id": "R3-COMMS-V2",
- "status": "awaiting_approval",
- "approved": null,
+ "status": "executing",
+ "approved": {
+  "by": "Mark (via the orchestrator, attended 2026-11-03)",
+  "how": "revision 2 'looks awesome', every open question at its recommendation; ruling: 'can we move the consoles to be underneath the screens? yes will need model updates I guess' (revision 3)",
+  "at": "2026-11-03"
+ },
  "created": "2026-11-02",
  "design_doc": "design_docs/planned/r3/comms-station-v2.md",
  "sprint_plan": "design_docs/planned/r3/comms-station-v2-sprint.md",
- "branch": "this plan on design/comms-station-v2; execution on feat/comms-station-v2 in a fresh full clone at origin/main after #374, #375, #377 land",
+ "branch": "design/comms-station-v2 (plan and execution, PR #379; Mark's go-ahead 2026-11-03), full clone stapledons-godot-comms-v2",
  "origin": "Mark, attended 2026-11-02: feed history wall, move the comms console closer, a live spectrogram of the signal from home on the bridge ('the spectrograph is cool on its own - maybe we can have that read out on the bridge somewhere') | Revision 2 (Mark 2026-11-03): the signal as an ambient bridge monitor ('a scanner or TV monitor screen ... more like a mission control center, and when we go to the console we get the detail view'); clicking a history-wall image shows the relative positions of Earth, the ship and the signal",
  "mockups": {
   "r1": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html",
-  "r2": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/index.html"
+  "r2": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/index.html",
+  "r3": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/index.html"
  },
  "github_issues": [],
  "ailang": {
-  "pin": "main's pin at CV0 (v0.54.18 today; v0.56.0 if #377 lands)",
+  "pin": "v0.56.1",
   "binary": "runtime/bin/ailang",
-  "prompt_version_loaded": "v0.16.7",
-  "note": "reload ailang prompt at CV0 if the pin moved"
+  "prompt_version_loaded": null,
+  "note": "recorded at CV1"
  },
  "external_dependencies": [
-  "PR #374 merged (ui/earth_feed.gd, data/ui/comms_feed.json)",
-  "PR #375 merged (audio/*, data/audio/*, exact home beacon, code-built buses)",
-  "PR #377 merged (AILANG bump)",
-  "free protocol minor 2.17 (checked at CV1)",
-  "Mark's approval of the mock-ups (r1, r2) and OQ1-OQ5, OQ7-OQ12"
+  "#374, #375, #377 merged into main and merged into this branch (2026-11-03)",
+  "free protocol minor 2.17 (checked at CV1)"
  ],
  "registry_reuse": [
   {
@@ -71,77 +73,81 @@
  ],
  "velocity": {
   "target_loc_per_day": 300,
-  "estimated_total_loc": 2150,
-  "estimated_days": 7.5,
+  "estimated_total_loc": 2250,
+  "estimated_days": 8,
   "basis": "R3-EARTH-LINK about 1,350 LOC in about 4.5 attended days; plus the Blender prop, rig/full runs and two reviews by Mark"
  },
  "critical_path": "CV0 -> CV1 -> CV2 -> CV5; CV3 and CV4 in parallel; CV6 after CV3 and CV4",
  "pause_points": [
-  "before anything: Mark approves the mock-ups and the open questions",
-  "after CV4 and CV6: the moved console and the monitor wall",
+  "after CV4 and CV6 (mid-point): the consoles under the screens and the monitor wall, renders",
   "after CV5: review captures and a dev build"
  ],
  "questions_for_mark": [
   {
-   "id": "OQ1",
-   "question": "Where the comms console goes",
-   "recommendation": "Spot A, ship (-11.0, 8.0): 9.9 m from the chair, faces the bow, under the wall's clocks and signal screens; B (-5.6, 7.0) 5.8 m but a desk on the open stage; C leave it (the monitors carry the glance, but it faces the rim)"
-  },
-  {
    "id": "OQ2",
    "question": "The wall's axis",
-   "recommendation": "ship time (the spacing is the Earth-rate history)"
+   "recommendation": "ship time (the spacing is the Earth-rate history)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ3",
    "question": "Out-of-beam light",
-   "recommendation": "show it as static on the film"
+   "recommendation": "show it as static on the film",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ4",
    "question": "What the waterfall hears",
-   "recommendation": "the whole signal (True beacon + the week's bed) on the silent tap whenever in beam and on screen; the bracket measured on the carrier alone"
+   "recommendation": "the whole signal (True beacon + the week's bed) on the silent tap whenever in beam and on screen; the bracket measured on the carrier alone",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ5",
    "question": "The carrier beyond hearing",
-   "recommendation": "True only for now (dark band + 'above hearing' arrow); a labelled Processed wideband view later, own design"
+   "recommendation": "True only for now (dark band + 'above hearing' arrow); a labelled Processed wideband view later, own design",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ7",
    "question": "Stamp precision",
-   "recommendation": "one record per ship day (bounded log)"
+   "recommendation": "one record per ship day (bounded log)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ8",
    "question": "Which ambient screens",
-   "recommendation": "four: signal from home, Earth vs ship clocks, course, crew; fold the beam strip into the signal screen and the console; dust/ISM and the exposure meter later"
+   "recommendation": "four: signal from home, Earth vs ship clocks, course, crew; fold the beam strip into the signal screen and the console; dust/ISM and the exposure meter later",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ9",
    "question": "Where the screens go",
-   "recommendation": "wall R: the bow rail at r 21.1 m outside the walk, bearings -48/-30/+30/+48, 4.0 x 2.25 m, camera occluders; every evaluator metric unchanged (W and F failed as tried)"
+   "recommendation": "wall R: the bow rail at r 21.1 m outside the walk, bearings -48/-30/+30/+48, 4.0 x 2.25 m, camera occluders; every evaluator metric unchanged (W and F failed as tried)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ10",
    "question": "A stern repeater for the Astern view",
-   "recommendation": "not in this sprint; the deck-layout-after-camera pass"
+   "recommendation": "not in this sprint; the deck-layout-after-camera pass",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ11",
    "question": "The screens' look",
-   "recommendation": "Blender-authored grown frames (D-104) in CV4's generator run"
+   "recommendation": "Blender-authored grown frames (D-104) in CV4's generator run",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   },
   {
    "id": "OQ12",
    "question": "Remaining ship time on the course screen",
-   "recommendation": "add the sim field journey.ship_years_left (D-21: no computing it in Godot)"
+   "recommendation": "add the sim field journey.ship_years_left (D-21: no computing it in Godot)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
   }
  ],
  "features": [
   {
    "id": "CV0",
-   "description": "Rebase after #374/#375/#377; baseline captures of today's station and console; deck-layout-eval bridge ok with comms faces_bow false",
+   "description": "Merge origin/main (AILANG v0.56.1, #374, #375, #377), make runtime; baselines",
    "estimated_loc": 0,
    "dependencies": [],
    "acceptance_criteria": [
@@ -207,15 +213,16 @@
   },
   {
    "id": "CV4",
-   "description": "Console move to the approved spot (A by default) in the same Blender generator run that places the CV6 monitors; manifest, evaluator to five stations",
-   "estimated_loc": 120,
+   "description": "The consoles under the screens (Mark's ruling): Voyage -48, comms -30, crew +48 at r 18.6 facing their screens, the port watch bench moved; walk bake; one Blender run (deck layout v2 + props v4) that also places the CV6 monitor props; manifest use/screen points; evaluator to five stations",
+   "estimated_loc": 220,
    "dependencies": [
     "CV0"
    ],
    "acceptance_criteria": [
-    "AC9: make deck-layout-eval deck-layout-eval-test deck-assets-check levels-regress comms-walk-test green (five stations face the bow; chair -> comms <= 10.5 m for A)",
+    "AC9: make deck-layout-eval deck-layout-eval-test green: five stations face the bow and are clear, every other metric equal to the shipped bridge",
+    "make comms-walk-test: chair -> comms <= 9.0 m, every operator point walkable and reachable, rim walk port to starboard <= 42 m",
     "identity layout reproduces today's GLBs byte for byte before the move",
-    "make camera-test export-filter-audit green"
+    "make deck-assets-check levels-regress camera-test export-filter-audit green (baseline re-pinned with a stated reason if moved)"
    ],
    "passes": null,
    "started": null,
@@ -266,7 +273,7 @@
  "reviews": [],
  "pr_gate": "rig/full green plus the GitHub fast tier; Mark's visual approval after CV4 and CV5",
  "evaluation": null,
- "revision": 2,
+ "revision": 3,
  "revised": "2026-11-03",
  "settled": [
   {
@@ -277,6 +284,11 @@
   {
    "id": "frame diagram",
    "ruling": "selecting a week on the history wall shows its light-cone diagram from the received-frame record",
+   "by": "Mark, 2026-11-03"
+  },
+  {
+   "id": "consoles under the screens",
+   "ruling": "Voyage under Earth's clock (-48), comms under the signal (-30), crew under the crew faces (+48), desks at r 18.6 facing their screens; the helm stays central beside the course screen",
    "by": "Mark, 2026-11-03"
   }
  ]

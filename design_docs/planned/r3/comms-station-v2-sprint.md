@@ -2,31 +2,25 @@
 
 **Design:** [comms-station-v2.md](comms-station-v2.md) covers the history wall, the frame diagram, moving the comms console closer, the waterfall, and the bridge's monitor wall.
 
-**Status: awaiting Mark.** This is revision 2, 2026-11-03. Mark has settled two points:
-- The signal from home is an ambient bridge monitor, and the console keeps the detail view.
-- Clicking a week on the history wall shows that week's light-cone diagram.
-
-Nothing executes until both of these happen:
-- Mark approves the mock-ups ([r2](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/index.html), [r1](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html)) and rules on OQ1–OQ5 and OQ7–OQ12. This plan is written against the design doc's recommendations, which serve as the defaults.
-- PRs #374, #375 and #377 land.
+**Status: approved, executing.** Mark approved revision 2 on 2026-11-03 ("looks awesome"), with every open question at its recommendation, and added one ruling: the consoles stand underneath the screens (revision 3, design §D2). Main is merged in (AILANG v0.56.1, with #374, #375 and #377 landed), so CV0's wait is over. Execution runs on this branch, `design/comms-station-v2`, under PR #379.
 
 **Progress file:** `.ailang/state/sprints/sprint_R3-COMMS-V2.json`
 
 **Branches:**
 - This plan lives on `design/comms-station-v2`.
-- Execution happens on `feat/comms-station-v2`, in a fresh full clone at origin/main once the three PRs have landed. No worktree.
+- Execution happens on the same branch (Mark's go-ahead, 2026-11-03), in the full clone `../stapledons-godot-comms-v2`, never a worktree.
 
 **AILANG:**
-- Use main's pin at CV0: v0.54.18 today, or v0.56.0 if #377 lands first. Set `AILANG=runtime/bin/ailang`.
-- Prompt version loaded: v0.16.7 (2026-11-02). Reload it at CV0 if the pin has moved.
+- Pin v0.56.1 (main). Run `make runtime`, then `AILANG=runtime/bin/ailang`.
+- Prompt version loaded: recorded in the sprint JSON at CV1.
 
 ## Summary
 
 | | |
 |---|---|
 | Goal | The comms station keeps every week of Earth's signal it receives, as a filmstrip with sim-field stamps and static where out of beam. Selecting any week explains it as light: where Earth sent it, its path at c, and where it reached the ship. The bridge gains a front wall of four ambient monitors: the signal from home (a True waterfall with the Receiver's line), Earth's clock against the ship's, the course, and the crew. The comms console moves beside the Voyage console, facing the bow |
-| Milestones | CV0–CV6 (7 milestones), about 2,150 LOC, plus regenerated bridge GLBs and one new Blender prop |
-| Duration | About 7 to 8 attended days at the recent R3 rate (about 300 counted LOC a day), plus the rig's `rig/full` runs (66–77 min each) and two reviews by Mark |
+| Milestones | CV0–CV6 (7 milestones), about 2,250 LOC, plus regenerated bridge GLBs and one new Blender prop |
+| Duration | About 7.5 to 8.5 attended days at the recent R3 rate (about 300 counted LOC a day), plus the rig's `rig/full` runs (66–77 min each) and two reviews by Mark |
 | Risk | Medium. The main risks are the protocol minor (2.17), whether the spectrum analyser works headless (a CV3 spike comes first), a single Blender generator run that both moves the console and adds the monitor prop, and four live viewports (gated by the bench) |
 | Critical path | CV0 → CV1 → CV2 → CV5. CV3 and CV4 run alongside, and CV6 needs both CV3 and CV4 |
 
@@ -181,21 +175,34 @@ The sim logs every received frame, together with its send and arrival events.
 
 **Acceptance:** design AC7.
 
-### CV4. Move the comms console (about 120 LOC, plus GLBs)
+### CV4. The consoles under the screens (about 220 LOC, plus GLBs)
 
-Revision 1's steps hold. The default layout is spot A: ship (−11.0, 8.0), yaw −90, use point (−11.0, 6.775).
+Mark's ruling (design §D2): each console stands under its screen at radius 18.6 m, turned so its operator faces the screen. The helm stays central. Every number below was measured in revision 3.
+
+**Layout** (`art/deck-layout-v2/bow_a.json`, with the ruling in its `about`):
+
+| Console | Bearing | Desk (ship m) | Yaw | Operator point (ship m) |
+|---|---|---|---|---|
+| Voyage, `console_decision_0` | −48° | (−13.822, 12.446) | −42° | (−12.912, 11.626) |
+| Comms, `console_decision_2` | −30° | (−9.300, 16.108) | −60° | (−8.687, 15.047) |
+| Crew, `console_decision_1` | +48° | (13.822, 12.446) | −138° | (12.912, 11.626) |
+
+The port watch bench (`v2_bench_detail_*`) moves 2 m sternward along the rail, or is dropped.
 
 **Steps:**
-1. Before the move, check that the identity layout reproduces today's GLBs byte for byte.
-2. Run the Blender generators: `stapledon_deck_layout_v2.py`, then `stapledon_bridge_props_v4.py`. The same run also places the CV6 monitor instances, so the bridge is regenerated once.
-3. Update the manifest's `stations.comms`.
-4. Extend the evaluator to five stations: `ZOOM_STATIONS` gains comms, `active_stations` becomes 5, and a seeded "faces the rim" defect is added.
-5. Add `make comms-walk-test`.
+1. **Identity check first:** the identity layout must reproduce today's `ship.glb`, `bridge_props.glb` and `walk_bridge.glb` byte for byte.
+2. **Walk:** run `tools/deck_walk_bake.gd`. The desks' collision comes from their walk holes, and the props keep their colliders.
+3. **Blender, one run for CV4 and CV6:** `stapledon_deck_layout_v2.py`, then `stapledon_bridge_props_v4.py` on its master. The same run places the `bridge_monitor` prop instances. Export the three GLBs, take the sidecar's `INTERACT_<station>_use` points and monitor anchors, and put the masters in the public bucket by sha256.
+4. **Manifest:** update `stations.{voyage, crew, comms}.use_m` and `screen_ship_m` (re-derive the D-132 points), then repin `budgets.json` and `asset-pins.json`.
+5. **Camera:** nothing changes in `data/camera/views.json` or the level's views. The console zooms are derived from the moved meshes, and `camera-test` re-derives its walk counts (any count that moves is stated in the commit).
+6. **Evaluator:**
+   - `ZOOM_STATIONS` gains comms, and `active_stations` becomes 5;
+   - a seeded "faces the rim" defect and a seeded desk on the operator path must both fail;
+   - `make comms-walk-test` checks that chair → comms is at most 9.0 m, that every operator point is walkable and reachable, and that the rim walk from port to starboard is at most 42 m.
 
 **Gates:**
-- `make deck-layout-eval deck-layout-eval-test deck-assets-check levels-regress comms-walk-test`;
-- `make camera-test`;
-- `make export-filter-audit`.
+- `make deck-layout-eval deck-layout-eval-test deck-assets-check levels-regress comms-walk-test camera-test export-filter-audit`;
+- re-pin the bridge level baseline, with its reason in `design_docs/levels/bridge.md`, if `levels-regress` moves.
 
 **Acceptance:** design AC9.
 
@@ -277,23 +284,7 @@ Revision 1's steps hold. The default layout is spot A: ship (−11.0, 8.0), yaw 
 
 ## Questions for Mark
 
-These are the design doc's open questions, each with its recommendation:
-
-| Question | Recommendation |
-|---|---|
-| OQ1, comms console spot | Spot A |
-| OQ2, filmstrip axis | Ship time |
-| OQ3, out-of-beam spans | Static |
-| OQ4, what the waterfall shows | The whole signal, on the silent tap |
-| OQ5, signals beyond hearing | True only |
-| OQ7, log granularity | One record per ship day |
-| OQ8, which screens | Four: signal, clocks, course, crew |
-| OQ9, where the screens go | Wall R, on the bow rail |
-| OQ10, stern repeater | Not in this sprint |
-| OQ11, monitor frames | Grown frames authored in Blender |
-| OQ12, remaining ship time | Add the sim field `journey.ship_years_left` |
-
-Already settled: where the signal from home appears (the old OQ6) and the frame diagram.
+All answered on 2026-11-03: every recommendation was approved, plus the ruling that the consoles go under the screens. Questions found during execution are added here and in the design doc.
 
 ## Validation (focused; never the full suite in the executor)
 

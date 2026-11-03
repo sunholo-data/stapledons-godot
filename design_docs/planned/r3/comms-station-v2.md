@@ -1,9 +1,10 @@
 # R3-COMMS-V2: the comms station v2 and the bridge as mission control
 
-**Status:** Revision 2, 2026-11-03, **awaiting Mark** (approve the mock-ups first, then the open questions). Design and mock-ups only; nothing is built. Execution waits for Mark's approval and for open PRs #374 (R3-TRUE-PROCESSED: `ui/earth_feed.gd`, `data/ui/comms_feed.json`), #375 (R2-SOUND S2: `audio/*`, `data/audio/*`, the exact home beacon) and #377 (AILANG v0.56.0) to land, because the sub-milestones edit files those PRs hold.
+**Status:** **Approved by Mark, 2026-11-03; executing** (revision 3). Mark reviewed revision 2 ("looks awesome") and approved it with every open question at its recommendation. He made one change: "can we move the consoles to be underneath the screens? yes will need model updates I guess." Revision 3 records that ruling (§D2). Execution starts with CV1 on this branch, now merged with main (AILANG v0.56.1, #374, #375 and #377 landed). It pauses for Mark at the mid-point review (CV4 + CV6, the bridge renders) and at the end.
 
 **Revision history:**
 - **Revision 1 (2026-11-02)** proposed the feed history, the console move and a waterfall at the station.
+- **Revision 3 (2026-11-03): approved.** Mark approved revision 2 and its open questions at their recommendations, and ruled: **the consoles stand underneath the screens** (§D2).
 - **Revision 2 (2026-11-03)** follows two rulings by Mark on that draft (PR #379):
   - **Where the signal shows (the old OQ6, "cv2_where"), answered.** "the spectrum band I thought we could see as a display in the bridge itself, without needing to go to a console - its a readout on the controls we can see as we walk about - a new console perhaps that functions as a 'scanner' or TV monitor screen. We could do with more of those around to build up the bridge to be more like a mission control center, and when we go to the console we get the detail view." This revision adds **ambient bridge monitors** (§D3), a **mission-control set** of them (§D4) and their **placement** (§D5). The console keeps the detail view.
   - **The history wall, settled.** Mark likes it ("it's educational"). Clicking a picture shows the relative positions of Earth, the ship and the signal: the **frame diagram** (§D1.6). The received-frame record gains the send and arrival events it needs.
@@ -14,6 +15,7 @@
 **Origin:** Mark, attended 2026-11-02 and 2026-11-03 (above).
 
 **Mock-ups (the main deliverable; Mark approves these before anything is built):** throwaway renders from the real game and the real sim (protocol 2.16, seed 7). Their scripts lived in the scratch directory and are not committed.
+- **Revision 3 (the consoles under the screens):** <https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/index.html>, 13 images.
 - **Revision 2:** <https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/index.html>, 23 images: the monitor wall, the screen faces, the frame diagram, and the alternatives scored.
 - **Revision 1:** <https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html>, 33 images: the station layout, the history wall, the waterfall rates, the console spots.
 
@@ -43,7 +45,7 @@
   - the Blender generators in `~/dev/blender/scripts`;
   - the camera occluder list in `assets/levels/bridge/manifest.json`.
 
-**Estimated LOC:** about 2,150. Sim and protocol 440, the history wall and the frame diagram 580, the waterfall 300, the monitors and their four faces 480, the console move 120 (plus regenerated GLBs and one new Blender prop), tests and captures 230. Revision 1 was 1,450.
+**Estimated LOC:** about 2,250. Sim and protocol 440; the history wall and the frame diagram 580; the waterfall 300; the monitors and their four faces 480; the consoles under the screens 220 (three desks, a bench, the walk, the manifest points, the evaluator; plus regenerated GLBs and one new Blender prop); tests and captures 230. Revision 1 was 1,450 and revision 2 was 2,150.
 
 ## Game vision alignment
 
@@ -79,7 +81,7 @@ Scored with the `game-vision-designer` skill (feature-validation mode, against `
   - The first is the **signal from home** (the waterfall, True, with the Receiver's 400 Hz line and the ×D bracket).
   - Three more (§D4) make the bridge read as mission control.
 - G4. **Placement measured.** Each monitor's readability is scored over every walk sample through the real Bow and Astern poses. Every bow-evaluator threshold holds.
-- G5. **The comms console moved** to face the bow beside the Voyage console (spot A, OQ1). The monitors reconcile with it: the signal screen is visible from the chair, so the console is for detail.
+- G5. **The consoles under the screens** (Mark's ruling, §D2): Voyage, comms and crew stand at the bow rail under their screens, facing them; the helm stays central. Every evaluator metric holds.
 - G6. **Nothing from the future, determinism and purity** (the log is pure, strict VM, VM = interpreter, byte-identical replays).
 
 **Non-goals**
@@ -170,22 +172,64 @@ Every number on the wall and in the diagram is one of these fields (D-21). Godot
 - Its plan inset uses the map's glyphs (Sol in ochre, the ship in teal), so the two read as one language.
 - **The light strip** (EarthStrip) is already the station's spacetime picture of plans and replies. The frame diagram is the strip **in frame mode**: selecting a week turns the strip to that week's events, and deselecting returns it. It is one spacetime view, not a third diagram.
 
-### D2. The comms console, moved closer
+### D2. The consoles under the screens (Mark's ruling, revision 3)
 
-Revision 1's analysis stands. Eight spots were scored in-engine; every bridge metric held at every spot. The table and pictures are in [revision 1](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/console_plan_compare.png) and [`console_probe.json`](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/console_probe.json).
+**Ruling (Mark, 2026-11-03):** "can we move the consoles to be underneath the screens? yes will need model updates I guess." It supersedes revision 1's spot A/B question (the old OQ1).
 
-| Spot | Ship m | Chair → comms walked | Faces bow | Zoom frames the pole |
-|---|---|---|---|---|
-| Today | (−13.2, −3.0) | 17.1 m | no (faces the rim) | no |
-| **A (recommended)** | (−11.0, 8.0) | 9.9 m | yes | yes |
-| B | (−5.6, 7.0) | 5.8 m | yes | yes |
+**The layout.** Each console stands on the bow rail walkway under its screen, at radius 18.6 m, turned so its operator faces the screen and the rail. The operator stands 1.225 m inboard of the desk. The desk's yaw is −90° − bearing (the layout's yaw is counter-clockwise about +Z).
 
-**Reconciled with the monitors.** With the signal on the front wall, the captain no longer walks to comms to see the signal, only for the detail. The move still matters:
-- The station faces the rim today and misses the forward sky.
-- At spot A it sits under the wall's port pair (clocks and signal). From the comms operator's place both are readable (59 px and 48 px tall at 720p, §D5).
-- That makes the port wing the "Earth" corner: Voyage console, comms desk, Earth's clock and Earth's signal.
+| Console | Screen above it | Bearing | Desk (ship m) | Yaw | Operator point (ship m) | Today |
+|---|---|---|---|---|---|---|
+| Voyage (`console_decision_0`) | Earth's clock | −48° | (−13.822, 12.446) | −42° | (−12.912, 11.626) | (−7.829, 12.207), yaw −90 |
+| Comms (`console_decision_2`) | signal from home | −30° | (−9.300, 16.108) | −60° | (−8.687, 15.047) | (−13.2, −3.0), yaw 0 |
+| Crew (`console_decision_1`) | crew faces | +48° | (13.822, 12.446) | −138° | (12.912, 11.626) | (8.479, 14.169), yaw −90 |
+| Helm (`console_navigation_0..2`) | course (+30°, beside it) | −16 / 0 / +16° at 17.5 m | unchanged | unchanged | (0, 15) | unchanged |
 
-OQ1 keeps A as the recommendation and adds C (leave it where it is) as an option the monitors make viable. The build steps are those of revision 1, CV4.
+- **The helm stays central** to keep the pole and starbow on its line (D-94). The course screen at +30° sits beside its starboard pod, so the helm serves it.
+- **The port wing is home:** the Voyage console under Earth's clock and comms under Earth's signal.
+- **The starboard wing is the ship:** the course screen by the helm, and the crew console under the crew's faces.
+
+**Measured** in-engine on the shipped deck: the three desks moved together with the four monitors of wall R as camera occluders, scored through the real Bow and Astern poses over all 4,783 walk samples ([`consoles_probe.json`](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/consoles_probe.json)).
+- **Every evaluator metric equals the shipped bridge:**
+  - Bow fades 479, Bow head blocks 0, pole ray 0;
+  - stop body 8 on both sides;
+  - Astern head blocks 1;
+  - spawn near field 0.015 (Bow) and 0.074 (Astern);
+  - spawn open 3.50 m.
+- **All five stations face the bow,** are clear in the Bow view with no fades, and keep the stop body clear. The Voyage, crew and comms zooms frame the forward pole.
+- **Operator points:** every operator point is walkable and reachable on the game's router. Walking distances:
+
+  | Station | From the chair | From the spawn |
+  |---|---|---|
+  | comms | 8.4 m (today 17.1 m) | 9.9 m |
+  | Voyage | 11.4 m (today 5.8 m) | 15.2 m |
+  | crew | 16.4 m (today 12.1 m) | 13.6 m |
+  | helm | 6.8 m | 2.2 m |
+
+- **The rim walk stays open.** The port quarter to the starboard quarter along the rail is 39.4 m on the router. The stretch behind the port desks is 14.6 m against a 13.9 m arc.
+- **Monitor readability is unchanged** by the desks (the desk tops pass under the faces): signal 0.34, course 0.35, clocks 0.28, crew 0.28 Bow-readable share.
+- A desk at radius 19.3 m measured the same but walks about 0.5 m longer, so the plan uses 18.6 m.
+
+**What it looks like:**
+- From the spawn ([0.99c](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/bow_cruise_spawn.png), [rest](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/bow_rest_spawn.png)): the wall with a desk under each port screen and the crew desk at the starboard edge.
+- At the [comms desk](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/console_comms.png) and the [crew desk](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/console_crew.png), the operator's zoom frames the screen right above the desk, with the starbow beside it.
+- The rest: [chair](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/bow_cruise_chair.png), [comms operator](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/bow_cruise_comms.png), [Voyage operator](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/bow_cruise_voyage.png), [crew operator](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/bow_cruise_crew.png), [Astern](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/astern_cruise_spawn.png), [from above](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/review.png), [plan](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/plan.png).
+
+**Costs, seen in the renders:**
+- The Voyage console is further from the chair than today (11.4 m against 5.8 m).
+- The port watch bench now stands between the Voyage and comms desks. CV4 moves it 2 m sternward along the rail (it is a movable group, `v2_bench_detail_*`) or drops it.
+
+**Build (CV4, "consoles under the screens"):**
+1. **Layout.** `art/deck-layout-v2/bow_a.json` gains the three desks above, with their `use_m` and the ruling in its `about`. The watch bench moves as noted.
+2. **Walk.** Bake the walk with `tools/deck_walk_bake.gd`. The desks' collision comes from their walk holes, as for every moved group.
+3. **Blender.** One generator run moves the desks and places the four monitor props: `stapledon_deck_layout_v2.py`, then `stapledon_bridge_props_v4.py` on its master. It re-exports `ship.glb`, `bridge_props.glb` and `walk_bridge.glb`, and the sidecar carries the `INTERACT_<station>_use` points and the monitor anchors. Before the move, the identity layout must reproduce today's exports byte for byte.
+4. **Runtime and pins.**
+   - Manifest: `stations.{voyage, crew, comms}.use_m` and `screen_ship_m` (the D-132 working points are re-derived).
+   - Repin `budgets.json` and `asset-pins.json`.
+5. **Camera and evaluator.**
+   - `data/camera/views.json` and the bridge level manifest are unchanged. The Bow and Astern views need nothing new, and the console zooms are derived from the moved meshes.
+   - The evaluator counts five active stations (`ZOOM_STATIONS` gains comms) and gets a seeded "faces the rim" defect.
+6. **Validation:** `make deck-layout-eval deck-layout-eval-test deck-assets-check levels-regress comms-walk-test camera-test`, re-pinning the bridge baseline with the reason stated if `levels-regress` moves.
 
 ### D3. Ambient bridge monitors: a new class of furniture
 
@@ -238,7 +282,7 @@ Each candidate was weighed on three things: what it adds at a glance; whether ev
 
 That is the front wall of a mission control room. The bow rail is the stage front (deck-layout §D0), with the consoles in rows facing it.
 
-**Three layouts scored** in-engine on the shipped deck (comms at spot A):
+**Three layouts scored** in-engine on the shipped deck (revision 2, with comms at spot A; revision 3 re-scored wall R with the consoles under it, §D2, and every number held):
 - **Readability:** each monitor scored over all 4,774 walk samples through the real Bow and Astern poses. Readable means in frame, facing the camera (cos ≥ 0.3), at least 40 px tall at 720p, and 2 of 3 probe rays to its face clear (a node the director fades counts as clear).
 - **Bridge metrics:** the bow evaluator re-run with the monitors' colliders in the world.
 - Data: [`monitors_probe.json`](https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/monitors_probe.json) (wall R).
@@ -316,7 +360,7 @@ This is revision 1's §D3. Its home is now the signal monitor, with the detail v
 | AC6 | The frame diagram draws only record fields (send, light, arrival, ship then, track, ×D); light at 45° (equal axes); selecting and deselecting returns the strip | `make comms-station-test` (new diagram checks, binding audit) |
 | AC7 | The waterfall: measured peak within 1 % of 400·D at D 0.070888, 1, 14.107; dark with "above hearing" at D 60 and 1414.2; source guard | `make comms-waterfall-test` (new) |
 | AC8 | The monitors: four faces, every number bound (audit), visibility-gated refresh; wall R's readability ≥ the thresholds; the evaluator unchanged otherwise; a seeded on-walk monitor fails | `make bridge-monitors-test deck-layout-eval deck-layout-eval-test` |
-| AC9 | The console at the approved spot: five stations face the bow; chair → comms ≤ 10.5 m (A) | `make deck-layout-eval comms-walk-test levels-regress deck-assets-check` |
+| AC9 | The consoles under the screens (§D2): five stations face the bow and are clear; every operator point walkable and reachable; chair → comms ≤ 9.0 m; the rim walk port to starboard ≤ 42 m; every other evaluator metric unchanged | `make deck-layout-eval deck-layout-eval-test comms-walk-test levels-regress deck-assets-check camera-test` |
 | AC10 | Performance: the bridge with four live monitors | `make bench SCENE=bridge` (p99 < 16.7 ms at 2560 × 1440 on a quiet rig) |
 | AC11 | Archive check values asserted | `godot --headless --path . --script tests/test_physics.gd`, `make lore-values codex-test` |
 | AC12 | Review renders from the real sim (the wall from the walk and the fixed views, the faces at three moments, the frame diagram outbound and homebound, the console at its spot), opened and uploaded | `make capture-comms-v2` (GPU window) |
@@ -330,11 +374,11 @@ This is revision 1's §D3. Its home is now the signal monitor, with the detail v
 | CV1 | Sim: the log with send and arrival events, `noteLight`, protocol 2.17 `earth_log`, `earth_log_tail`, `earth_weeks`; `journey.ship_years_left` if OQ12; tests, strict, parity, replay | 440 | CV0 | 1 |
 | CV2 | Bridge storage; the filmstrip; the frame diagram (the strip in frame mode, plus the plan inset); the station layout | 580 | CV1 | 2 |
 | CV3 | The waterfall: the `Antenna` and `Carrier` taps, `ui/comms_waterfall.gd` (detail) and its bold face for the monitor | 300 | CV0 (#375) | parallel |
-| CV4 | Console move (layout, walk bake, Blender, manifest, evaluator to five stations) | 120 + GLBs | CV0, OQ1 | parallel |
-| CV6 | The monitor wall: the Blender `bridge_monitor` prop in CV4's generator run, the manifest `monitors`, `BridgeMonitor`, four faces, `monitor` occluders, the readability metric, bench | 480 + prop | CV3, CV4, OQ8–OQ11 | 3 |
+| CV4 | The consoles under the screens: three desks and a bench in the layout, walk bake, one Blender run with the CV6 monitor props, manifest points, evaluator to five stations | 220 + GLBs | CV0 | parallel |
+| CV6 | The monitor wall: the Blender `bridge_monitor` prop in CV4's generator run, the manifest `monitors`, `BridgeMonitor`, four faces, `monitor` occluders, the readability metric, bench | 480 + prop | CV3, CV4 | 3 |
 | CV5 | Archive and spec rows; review captures; **pause for Mark**; evaluation by the other family; rig; landing | 230 | all | last |
 
-**Duration:** about 7 to 8 attended days at about 300 counted LOC a day, plus the Blender prop, the rig's `rig/full` and Mark's reviews (after CV4+CV6, after CV5). Revision 1 was 5 days.
+**Duration:** about 7.5 to 8.5 attended days at about 300 counted LOC a day, plus the Blender prop, the rig's `rig/full` and Mark's reviews (after CV4+CV6, after CV5). Revision 1 was 5 days.
 
 ## Risks and mitigations
 
@@ -351,23 +395,25 @@ This is revision 1's §D3. Its home is now the signal monitor, with the detail v
 
 ## Open questions for Mark
 
-Settled in revision 2: **where the signal shows** (the old OQ6, "cv2_where": an ambient monitor plus the console's detail) and **the history-wall click diagram** (§D1.6). Every other question is open, each with its recommendation.
+**All answered (Mark, 2026-11-03):** he approved the revision 2 page, which listed every question, at its recommendation, and added one ruling.
+- **The consoles stand under the screens** (§D2). This supersedes the old OQ1 (spot A/B/C).
+- **Where the signal shows** (the old OQ6, "cv2_where"): an ambient monitor, plus the console's detail view.
+- **The frame diagram** (§D1.6).
 
-1. **OQ1, where the comms console goes.**
-   - A, the port wing beside the Voyage console (9.9 m from the chair, faces the bow, under the wall's clocks and signal).
-   - B, inboard at the chair's shoulder (5.8 m, puts a desk on the open stage).
-   - C, leave it where it is (the monitors now carry the glance, but it still faces the rim).
-   - **Recommend A.**
-2. **OQ2, the wall's axis.** **Recommend ship time** (the spacing is the Earth-rate history). The alternative is Earth time.
-3. **OQ3, out-of-beam light.** **Recommend static on the film.**
-4. **OQ4, what the waterfall hears.** **Recommend the whole signal** (the True beacon and the week's bed) on the silent tap whenever in beam and on screen, with the bracket measured on the carrier alone.
-5. **OQ5, the carrier beyond hearing.** **Recommend True only** (dark band and arrow). A labelled Processed wideband view can come later as its own design.
-6. **OQ7, record precision.** **Recommend one record per ship day** (the bound; the stamps' precision; `ship_at_sent` at that resolution).
-7. **OQ8, the screen set (new).** **Recommend the four:** signal, Earth vs ship clocks, course, crew. The strip folds into the signal screen and the console. Dust and exposure come later.
-8. **OQ9, placement (new).** **Recommend wall R** on the bow rail outside the walk. W (a port-wing triptych) and F (on the rim walk) both failed the evaluator as tried.
-9. **OQ10, a stern repeater (new).** One screen at the stern rail repeating the signal for the Astern view (Earth is astern when flying out). **Recommend not in this sprint;** it belongs to the deck-layout-after-camera pass.
-10. **OQ11, the screens' look (new).** **Recommend Blender-authored grown frames** (D-104) in the same generator run as the console move. Plain boxes are used only in the dev-build review before art.
-11. **OQ12, remaining ship time on the course screen (new).** **Recommend adding `journey.ship_years_left` to the sim** (one field). Otherwise the screen shows only the Earth year at arrival and γ, as in the mock-up; computing it in Godot would break D-21.
+| Question | Approved answer |
+|---|---|
+| OQ2 | The wall's axis is ship time |
+| OQ3 | Out-of-beam light shows as static |
+| OQ4 | The waterfall shows the whole signal (the True beacon and the week's bed) on the silent tap, with the bracket on the carrier |
+| OQ5 | True only beyond hearing |
+| OQ7 | One record per ship day |
+| OQ8 | Four screens: signal, Earth vs ship clocks, course, crew |
+| OQ9 | Wall R on the bow rail |
+| OQ10 | No stern repeater in this sprint |
+| OQ11 | Blender grown frames |
+| OQ12 | Add `journey.ship_years_left` to the sim |
+
+New questions found while executing go here.
 
 ## Deliverables
 
