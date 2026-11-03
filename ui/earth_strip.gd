@@ -233,7 +233,7 @@ func _draw_frame() -> void:
 	var hit := eq(box, Vector2(float(arr.get("t", 0.0)), float(arr.get("ly", 0.0))))
 	if layers & L_RAY:
 		draw_line(sent, hit, StapledonTheme.CREAM, 2.0, true)
-	if layers & L_LABELS:
+	if layers & L_LABELS and sent.distance_to(hit) >= 140.0: # on a short ray the word would sit on the send tag; the ray speaks for itself
 		draw_string(font, (sent + hit) * 0.5 + Vector2(8, 4), str(w.get("light", "light")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.CREAM)
 	var then: Variant = r.get("ship_at_sent")
 	if then is Dictionary and layers & L_THEN:

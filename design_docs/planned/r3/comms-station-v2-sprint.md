@@ -2,7 +2,7 @@
 
 **Design:** [comms-station-v2.md](comms-station-v2.md) covers the history wall, the frame diagram, moving the comms console closer, the waterfall, and the bridge's monitor wall.
 
-**Status: CV0–CV6 built (2026-11-03). Codex round 1 scored 62/100 (9 blockers); every blocker is addressed (design doc, Execution notes), and round 2 is pending. CV5 and CV6 stay pending until it passes.** The mid-point was accepted ("continue"). Landing (moving the docs to implemented/, the README row, the roadmap) follows the evaluation. Progress and gate results are in the sprint JSON.
+**Status: CV0–CV6 built (2026-11-03). Codex round 1 scored 62/100; round 2 passed at 88/100 with one blocker (paging stacks longer than 52 weeks), now fixed. Landing follows Mark's look.** The mid-point was accepted ("continue"). Landing (moving the docs to implemented/, the README row, the roadmap) follows the evaluation. Progress and gate results are in the sprint JSON.
 
 **Approved, executing.** Mark approved revision 2 on 2026-11-03 ("looks awesome"), with every open question at its recommendation, and added one ruling: the consoles stand underneath the screens (revision 3, design §D2). Main is merged in (AILANG v0.56.1, with #374, #375 and #377 landed), so CV0's wait is over. Execution runs on this branch, `design/comms-station-v2`, under PR #379.
 

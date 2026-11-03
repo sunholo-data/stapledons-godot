@@ -209,7 +209,7 @@
    "passes": true,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "Spike: AudioEffectSpectrumAnalyzer on a -80 dB bus reads magnitudes headless (Dummy 44.1 kHz: 1 kHz tone 0.2565, 5 kHz 0.000003) and windowed (CoreAudio). audio/sound_mix.gd BUSES gain Antenna and Carrier silent taps (analyser, -80 dB, checked by is_layout_ok). ui/comms_waterfall.gd: True picture from the Antenna tap (week's bed + carrier at speed and pitch x D, EarthFeed.receiver_plan(D,false)); Receiver line at waterfall.carrier_hz (data); bracket from the Carrier tap's measured peak; above/below hearing from the plan; shared tap players across the station and the monitor. make comms-waterfall-test 13 passed: measured 26.98 Hz vs 28.36 (bin 10.8 Hz), 399.05 vs 400, 5664.1 vs 5642.8 (0.4 %)."
+   "notes": "Spike: AudioEffectSpectrumAnalyzer on a -80 dB bus reads magnitudes headless (Dummy 44.1 kHz: 1 kHz tone 0.2565, 5 kHz 0.000003) and windowed (CoreAudio). audio/sound_mix.gd BUSES gain Antenna and Carrier silent taps (analyser, -80 dB, checked by is_layout_ok). ui/comms_waterfall.gd: True picture from the Antenna tap (week's bed + carrier at speed and pitch x D, EarthFeed.receiver_plan(D,false)); Receiver line at waterfall.carrier_hz (data); bracket from the Carrier tap's measured peak; above/below hearing from the plan; shared tap players across the station and the monitor. Measured carrier (after Codex round 1): peak bin refined by a Hann two-point estimator, within 0.028 % at 20 Hz, 0.012 % at 28.355 Hz, 0.005 % at 400 Hz and 5,642.8 Hz; make comms-waterfall-test (18 passed) asserts 1 % (AC7)."
   },
   {
    "id": "CV4",
@@ -268,7 +268,7 @@
    "passes": false,
    "started": "2026-11-03",
    "completed": "2026-11-03",
-   "notes": "Mid-point accepted (Mark 'continue'). Waterfall legibility: a bright trace of the measured carrier (Carrier tap peak, median of 5, gaps between keyed pips) over the True picture; log axis already 20 Hz-20 kHz. OQ12: protocol 2.17 `course` {ship_years_left} (core shipYearsLeft; earth_log_test checkYearsLeft + wire), shown on the course face (bridge-monitors 14 passed). Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, README rows for earths-carrier and the missing colours-of-home); vendored via make lore-import (design sha a4046551); tests/test_physics.gd test_earths_carrier (1050 passed); codex-test 53 passed (15 entries); expected_unlocks + interior_smoke + session-audit mirrors refreshed (session-audit-test 16 passed, codex-unlocks PASS, m4-smoke OK 15/12, replay-scene PASS, lore-check, lore-test, lore-import-check, in-world-voice-check ok). The course monitor moved +30 -> +24 deg: at +30 it covered the forward pole of the physics golden's fixed captain eye (G-M4-S3); bridge_monitors.glb regenerated (master v1b published). make golden: 0 failures (the constellation golden flaked once under host load, then 33/33). Final captures refs/comms_v2/final/. Bench: MISS under host load 24-31 with and without monitors (p99 34.1 vs 31.6 ms, p50 9.96 vs 9.90) - needs a quiet machine. Deferred: the earth_weeks wire intent (a new core Intent; beamedWeeks exists and is tested). Evaluation: by Codex (orchestrator). Landing: after the evaluation and Mark. | Round-1 fixes: lint row index; visibility gating (set_live; 30/10 Hz; taps released); bed_of from sim fields; trace = current measurement only; Hann two-point estimator (28.355 Hz within 0.012 %, test at 1 %); hearing floor 20 Hz (Mark 'sure 20hz', audible [0.05, 50], RS-46 + sound.md in design#55); earth_weeks intent end to end (core IEarthWeeks, codec, 2.16 refusal, replay re-recorded, stack row UI); monitor readability in DeckBowMetrics + negative controls; GPU golden G-CV (17 lines); rail fix (screens above the rail on a stalk inside it, monitors v2, make monitor-rail-test with control); faces at three moments + frame diagrams captured (refs/comms_v2/final/); earths-voice line added (design#55).",
+   "notes": "Mid-point accepted (Mark 'continue'). OQ12: protocol 2.17 `course` {ship_years_left} on the course face. Waterfall legibility: a bright trace of each frame's measured carrier over the True picture (no hold; no point between keyed pips); log axis 20 Hz-20 kHz. Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, the 20 Hz hearing floor in RS-46 and sound.md per Mark 'sure 20hz', the earths-voice frame-diagram line, README rows), vendored at 270f958; test_physics asserts RS-41..47; codex 15 entries / 12 unlocks with every mirror refreshed. Deviation: earths-carrier unlocks at first_boost (sim-side), not at the first visible shifted monitor. Codex round 1 (62) fixes: lint row index; off-screen monitors do no work (30/10 Hz, taps released); ambient bed from sim fields; Hann estimator, AC7 at 1 %; receiver.audible [0.05, 50]; earth_weeks intent end to end with the stack row (paged 52 at a time after round 2); monitor readability in the evaluator with negative controls; GPU golden G-CV (make comms-golden, 17 lines); screens raised above the bow rail on a stalk inside it (monitors v2, make monitor-rail-test with a control); faces at three moments, frame diagrams and rail close-ups in refs/comms_v2/final/. make golden 0 failures. Bench: MISS under host load with and without monitors (p99 34.1 vs 31.6 ms) - needs a quiet machine. Codex round 2: 88/100 PASS at cc6dc7c8 with one blocker (stack paging), fixed.",
    "evaluation": "pending: Codex round 1 scored 62/100 (FAIL, 9 blockers) at b789a741; every blocker addressed on this branch (design doc 'Execution notes'), awaiting round 2"
   }
  ],
@@ -282,7 +282,13 @@
    "head": "b789a741",
    "file": "scratchpad eval-379.json"
   },
-  "status": "round 2 pending"
+  "status": "round 2 passed; paging blocker fixed; landing after Mark",
+  "round_2": {
+   "score": 88,
+   "pass": true,
+   "head": "cc6dc7c8",
+   "blocker": "stacks longer than 52 weeks: older weeks unreachable (fixed: paging)"
+  }
  },
  "revision": 3,
  "revised": "2026-11-03",

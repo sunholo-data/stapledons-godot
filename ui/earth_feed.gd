@@ -328,13 +328,13 @@ func _show_pinned(view: Dictionary) -> void:
 	caption.update_from(view)
 
 
-## Row j of the sim's earth_weeks answer, when that answer is for record `rec`'s weeks (D1.3); else {}.
+## Row j of the sim's earth_weeks answer, when that answer is a page of record `rec`'s weeks (D1.3); else {}.
 static func week_row(view: Dictionary, rec: Dictionary, j: int) -> Dictionary:
 	var ew: Variant = view.get("earth_weeks")
 	if j < 0 or not ew is Dictionary or not (ew as Dictionary).get("weeks") is Array:
 		return {}
 	var rows: Array = ew.weeks
-	if j >= rows.size() or int(ew.get("to", -1)) != int(rec.get("to_frame", -2)) or int(ew.get("from", -1)) < int(rec.get("from_frame", 0)):
+	if j >= rows.size() or int(ew.get("to", -1)) > int(rec.get("to_frame", -2)) or int(ew.get("from", -1)) < int(rec.get("from_frame", 0)):
 		return {}
 	return rows[j]
 

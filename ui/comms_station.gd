@@ -55,6 +55,7 @@ func _init() -> void:
 	add_child(history)
 	stack.feed = feed
 	stack.week_picked.connect(_on_stack_week)
+	stack.page_requested.connect(func(a: int, b: int) -> void: weeks_requested.emit(a, b))
 	add_child(stack)
 	add_child(strip)
 	details.name = "CommsDetails"
@@ -119,9 +120,8 @@ func _on_week(i: int) -> void:
 	var rec: Dictionary = history.records[i] if i >= 0 and i < history.records.size() else {}
 	var a := int(rec.get("from_frame", 0))
 	var b := int(rec.get("to_frame", 0))
-	if i >= 0 and b > a: # a stack: ask the sim for its newest weeks (at most 52, D1.3)
+	if i >= 0 and b > a: # a stack: ask the sim for its newest page of weeks (at most 52, D1.3)
 		stack.open(i, rec)
-		weeks_requested.emit(maxi(a, b - (StackWeeks.CAP - 1)), b)
 	else:
 		stack.close()
 	if i >= 0:
@@ -142,10 +142,16 @@ func _on_stack_week(j: int) -> void:
 ## R3-COMMS-V2 D1.3: the weeks of a selected stack, a row of small pictures from the sim's earth_weeks
 ## answer (each row's own feed and Earth date); selecting one emits week_picked(j). The selected one
 ## carries its Earth date stamp (a binding). Nothing here is computed: the sim chose and dated the weeks.
+## A stack of more than 52 weeks pages: it opens on its newest 52, and the arrows at either end ask the
+## sim (page_requested) for the 52 before or after, so every week of every stack can be opened. An
+## answer is shown only when it is for the range this row asked for.
 class StackWeeks extends Control:
 	signal week_picked(j: int)
+	signal page_requested(from: int, to: int)
 	const CAP := 52
 	const THUMB := Vector2(38, 22)
+	const ARROW := 18.0
+	var want := Vector2i(-1, -1) ## the page asked for: from..to (Earth feed frames)
 	var feed: EarthFeed = null
 	var record := -1
 	var rec: Dictionary = {}
@@ -163,17 +169,43 @@ class StackWeeks extends Control:
 	func open(i: int, r: Dictionary) -> void:
 		record = i
 		rec = r
-		picked = -1
-		rows = []
 		visible = true
-		queue_redraw()
+		var b := int(r.get("to_frame", 0))
+		ask(maxi(int(r.get("from_frame", 0)), b - (CAP - 1)), b)
 
 	func close() -> void:
 		record = -1
 		rec = {}
 		rows = []
 		picked = -1
+		want = Vector2i(-1, -1)
 		visible = false
+
+	## Ask the sim for weeks a..b (at most CAP) of this stack; the row empties until the answer comes.
+	func ask(a: int, b: int) -> void:
+		want = Vector2i(a, b)
+		rows = []
+		if picked >= 0:
+			picked = -1
+			week_picked.emit(-1)
+		_place_stamp()
+		queue_redraw()
+		page_requested.emit(a, b)
+
+	func has_earlier() -> bool:
+		return record >= 0 and want.x > int(rec.get("from_frame", 0))
+
+	func has_later() -> bool:
+		return record >= 0 and want.y < int(rec.get("to_frame", 0))
+
+	## The page before (-1) or after (+1) the one shown.
+	func page(dir: int) -> void:
+		if dir < 0 and has_earlier():
+			var b := want.x - 1
+			ask(maxi(int(rec.get("from_frame", 0)), b - (CAP - 1)), b)
+		elif dir > 0 and has_later():
+			var a := want.y + 1
+			ask(a, mini(int(rec.get("to_frame", 0)), a + (CAP - 1)))
 
 	func refresh(v: Dictionary) -> void:
 		view = v
@@ -181,7 +213,7 @@ class StackWeeks extends Control:
 		if record < 0:
 			return
 		var ew: Variant = v.get("earth_weeks")
-		if ew is Dictionary and int(ew.get("to", -1)) == int(rec.get("to_frame", -2)) and ew.get("weeks") is Array:
+		if ew is Dictionary and int(ew.get("from", -1)) == want.x and int(ew.get("to", -1)) == want.y and ew.get("weeks") is Array:
 			rows = ew.weeks
 		if picked >= rows.size():
 			picked = -1
@@ -189,11 +221,19 @@ class StackWeeks extends Control:
 		queue_redraw()
 
 	func _cell(j: int) -> Rect2:
-		var step := minf(THUMB.x + 3.0, (size.x - 8.0) / maxf(rows.size(), 1.0))
-		return Rect2(Vector2(4.0 + j * step, 2.0), Vector2(minf(THUMB.x, step - 1.0), THUMB.y))
+		var step := minf(THUMB.x + 3.0, (size.x - 8.0 - 2.0 * ARROW) / maxf(rows.size(), 1.0))
+		return Rect2(Vector2(ARROW + 4.0 + j * step, 2.0), Vector2(minf(THUMB.x, step - 1.0), THUMB.y))
+
+	func _arrow(dir: int) -> Rect2:
+		return Rect2(Vector2(0.0 if dir < 0 else size.x - ARROW, 2.0), Vector2(ARROW, THUMB.y))
 
 	func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.035, 0.03, 0.06))
+		for dir: int in [-1, 1]:
+			if (has_earlier() if dir < 0 else has_later()):
+				var r := _arrow(dir)
+				var c := r.get_center()
+				draw_colored_polygon(PackedVector2Array([c + Vector2(5.0 * dir, 0.0), c + Vector2(-4.0 * dir, -7.0), c + Vector2(-4.0 * dir, 7.0)]), StapledonTheme.TEAL_LIGHT)
 		for j in rows.size():
 			var c := _cell(j)
 			var r: Dictionary = rows[j]
@@ -229,6 +269,11 @@ class StackWeeks extends Control:
 
 	func _gui_input(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			for dir: int in [-1, 1]:
+				if _arrow(dir).has_point(e.position) and (has_earlier() if dir < 0 else has_later()):
+					page(dir)
+					accept_event()
+					return
 			for j in rows.size():
 				if _cell(j).grow(1.0).has_point(e.position):
 					pick(j)

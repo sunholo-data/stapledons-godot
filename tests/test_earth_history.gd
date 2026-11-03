@@ -13,6 +13,7 @@ extends SceneTree
 ##            sim for its weeks (earth_weeks, at most 52, the newest); the sim's answer lists only beamed,
 ##            arrived weeks, each dated epoch + frame x week; each week is selectable, and the feed, the
 ##            stack's stamp and the diagram's send label then carry that week's own Earth date (bindings)
+##            a stack of more than 52 weeks pages through the same request: its oldest week opens too
 ##   stamps   a picture's Earth stamp is its own week's date (earth_year), not the stack's first week's
 ##   guards   the wall never opens an AI request; the frame inset never reads Earth's current beam
 ## The test compares sim fields with what is placed; it computes nothing the game would show.
@@ -187,3 +188,50 @@ func stacks(station: CommsStation) -> void:
 	check("stacks: the feed shows that week's words", station.feed.caption.text == str(rows[j].event.words))
 	var bad := DisplayBinding.audit(station)
 	check("stacks: every number a binding (%s)" % [bad.map(func(n: Node) -> String: return n.text)], bad.is_empty())
+	await long_stack(station)
+
+
+## A stack of more than 52 weeks pages (Codex round 2): the newest 52 first, then the page before it holds
+## the oldest week, which opens with its own date. The weeks are the sim's answers to the row's requests;
+## the stack is the homebound record widened to 53 weeks (more than one answer can hold).
+func long_stack(station: CommsStation) -> void:
+	var asked := []
+	station.weeks_requested.connect(func(a: int, b: int) -> void: asked.append([a, b]))
+	var recs: Array = sim.world.earth_log.records
+	var k := -1
+	for i in range(recs.size() - 1, -1, -1):
+		if recs[i].beamed == true:
+			k = i
+			break
+	var b := int(recs[k].to_frame)
+	var a := b - 52 # 53 weeks
+	var widen := func() -> Dictionary:
+		var v: Dictionary = sim.world.duplicate(true)
+		v.earth_log.records[k].from_frame = a
+		return v
+	var ok := sim.send([{"k": "earth_weeks", "from": a, "to": b - 1}], 0.0)
+	check("long stack: the sim holds weeks %d..%d beamed and arrived (%d of 52)" % [a, b - 1, (sim.world.earth_weeks.weeks as Array).size()], ok and (sim.world.earth_weeks.weeks as Array).size() == 52)
+	station.refresh(widen.call())
+	asked.clear()
+	station.history.select(-1)
+	station.history.select(k)
+	check("long stack: it opens on the newest 52 weeks %s (asked %s), with an earlier page" % [[b - 51, b], asked], asked == [[b - 51, b]] and station.stack.has_earlier() and not station.stack.has_later())
+	sim.send([{"k": "earth_weeks", "from": b - 51, "to": b}], 0.0)
+	station.refresh(widen.call())
+	check("long stack: the newest page shows 52 weeks, %d not among them" % a, station.stack.rows.size() == 52 and int(station.stack.rows[0].frame) == b - 51)
+	asked.clear()
+	station.stack.page(-1)
+	check("long stack: the earlier page asks for week %d alone (asked %s)" % [a, asked], asked == [[a, a]])
+	station.refresh(widen.call()) # the old answer is not for this page
+	check("long stack: an answer for another range is not shown", station.stack.rows.is_empty())
+	sim.send([{"k": "earth_weeks", "from": a, "to": a}], 0.0)
+	var v: Dictionary = widen.call()
+	station.refresh(v)
+	station.stack.pick(0)
+	station.refresh(v)
+	await process_frame
+	check("long stack: the oldest week %d opens with its own Earth date (%s)" % [a, station.feed.signal_tag.field], station.stack.rows.size() == 1 and int(station.stack.rows[0].frame) == a and station.feed.pinned_week == 0 and station.feed.signal_tag.field == "earth_weeks.weeks.0.earth_year" and station.strip.tags[0].field == "earth_weeks.weeks.0.earth_year")
+	check("long stack: from the oldest page, a later page and no earlier one", station.stack.has_later() and not station.stack.has_earlier())
+	asked.clear()
+	station.stack.page(1)
+	check("long stack: the later page asks for the newest 52 again (asked %s), and the pick is released" % [asked], asked == [[b - 51, b]] and station.feed.pinned_week == -1)
