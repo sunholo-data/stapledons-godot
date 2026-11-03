@@ -188,14 +188,18 @@ func _feed_cases() -> void:
 		var error:=maxf(absf(got.r-expected.r),maxf(absf(got.g-expected.g),absf(got.b-expected.b)))
 		check("G-EL-2 feed %s GPU shows the decoded frame unchanged (no wash)"%row[0],error<=2./255.,{"rate":rate,"error":error,"expected":[expected.r,expected.g,expected.b],"got":[got.r,got.g,got.b]})
 		image.save_png(OUT.path_join("feed_%s.png"%str(row[0]).to_lower()))
-	# R3-TRUE-PROCESSED-b: the Processed Doppler indicator, the bezel (pixel 2,90) and the edge overlay
-	# bleeding in from it (pixel 7,90, 1.5 px into the screen), against an expected colour computed here,
-	# independently of EarthFeed's helpers: lambda = 555 / D clamped to [400, 650] nm, the CIE fit to linear
-	# sRGB (own matrix), negative channels clipped, unit max, sRGB-encoded; strength |ln D| / ln 1414.2;
-	# the 2D canvas blends in sRGB. Receiver at RS-26 and RS-29, then each advanced (the drift, the jumbled
-	# ghosts) so nothing animated reaches the bezel or covers the overlay; True: plain ink, no overlay.
-	var ink:=Color(StapledonTheme.INK,1.)
+	# R3-TRUE-PROCESSED-b: the Processed Doppler indicator, one gradient from the screen's edge inward (Mark:
+	# "a gradient all the way to the edge"), read at depths 0.5, 4.5, 9.5 and 14.5 px on row 90 and at the
+	# picture centre, against an expected colour computed here, independently of EarthFeed's helpers:
+	# lambda = 555 / D clamped to [400, 650] nm, the CIE fit to linear sRGB (own matrix), negative channels
+	# clipped, unit max, sRGB-encoded; strength |ln D| / ln 1414.2; opacity strength x (1 - smoothstep(t)) over
+	# 10% of the short side, sampled at 8 bands and linear between (as drawn); the 2D canvas blends in sRGB.
+	# Receiver at RS-26 and RS-29, both again advanced (the drift, the jumbled ghosts), and True (the edge pixel
+	# is the picture). The readings must also fall monotonically toward the picture.
 	var neutral_c:=Color(64./255.,64./255.,64./255.)
+	var prof:=func(t: float) -> float:
+		var u:=clampf(t,0.,1.)
+		return 1.-u*u*(3.-2.*u)
 	for row: Array in [["RS26",.01,1.,true,0.0],["RS29",.01,-1.,true,0.0],["RS29 True",.01,-1.,false,0.0],["RS26 advanced",.01,1.,true,10.0],["RS29 advanced",.01,-1.,true,0.3]]:
 		var omb2: float=row[1]; var phi2:=.5*log((2.-omb2)/omb2)
 		var rate2: float=Observe.earth_rate([40.,0.,0.],[row[2],0.,0.],phi2)
@@ -205,8 +209,9 @@ func _feed_cases() -> void:
 		feed.refresh({"earth":{"rate":rate2,"in_beam":true,"at_home":false,"newest_light_year":0.,"light_age_years":40.,"feed":rec2}})
 		feed.picture.texture=neutral_texture
 		feed.history.clear()
-		if float(row[4])>0.0: feed.history.append_array([neutral_texture,neutral_texture])
-		if float(row[4])>0.0: feed.advance(float(row[4]))
+		if float(row[4])>0.0:
+			feed.history.append_array([neutral_texture,neutral_texture])
+			feed.advance(float(row[4]))
 		else:
 			for ghost: TextureRect in feed.ghosts: ghost.hide()
 		for label: Control in [feed.signal_tag,feed.clock_tag,feed.caption,feed.doppler_tag]: label.hide()
@@ -217,14 +222,23 @@ func _feed_cases() -> void:
 		var enc:=func(v: float) -> float: return v*12.92 if v<=0.0031308 else 1.055*pow(v,1./2.4)-0.055
 		var col:=Color(enc.call(lin.x),enc.call(lin.y),enc.call(lin.z))
 		var strength:=clampf(absf(log(rate2))/log(1414.2),0.,1.)
-		var want_b: Color=ink.lerp(col,strength) if receiver else ink
-		var w_px:=0.10*minf(vp.size.x-12.,vp.size.y-12.)
-		var want_v: Color=neutral_c.lerp(col,strength*(1.-1.5/w_px)) if receiver else neutral_c
-		var img2:=await grab(vp); var b2:=img2.get_pixel(2,90); var v2:=img2.get_pixel(7,90); var c2:=img2.get_pixel(160,90)
+		var w_px:=0.10*minf(float(vp.size.x),float(vp.size.y))
+		var img2:=await grab(vp)
 		var err:=func(p: Color, q: Color) -> float: return maxf(absf(p.r-q.r),maxf(absf(p.g-q.g),absf(p.b-q.b)))
-		var be: float=err.call(b2,want_b); var ve: float=err.call(v2,want_v); var ce: float=err.call(c2,neutral_c)
-		check("G-EL-2b feed %s: bezel %s, edge overlay %s, picture centre as decoded"%[row[0],"indicator" if receiver else "ink","fading in" if receiver else "absent"],be<=2./255. and ve<=3./255. and ce<=2./255.,{"rate":rate2,"bezel_error":be,"overlay_error":ve,"picture_error":ce,"want_bezel":[want_b.r,want_b.g,want_b.b],"got_bezel":[b2.r,b2.g,b2.b],"want_overlay":[want_v.r,want_v.g,want_v.b],"got_overlay":[v2.r,v2.g,v2.b]})
-		img2.save_png(OUT.path_join("feed_bezel_%s.png"%str(row[0]).to_lower().replace(" ","_")))
+		var worst:=0.0; var mono:=true; var prev:=INF; var got:=[]
+		for depth: float in [0.5,4.5,9.5,14.5]:
+			var x:=clampf(depth/w_px,0.,1.)*8.; var k:=mini(int(x),7)
+			var op:float=strength*lerpf(prof.call(k/8.),prof.call((k+1)/8.),x-k) if receiver else 0.0
+			var want: Color=neutral_c.lerp(col,op)
+			var px:=img2.get_pixel(int(depth),90)
+			worst=maxf(worst,err.call(px,want))
+			var dist: float=err.call(px,neutral_c)
+			if dist>prev+1.5/255.: mono=false
+			prev=dist; got.append([px.r,px.g,px.b])
+		var ce: float=err.call(img2.get_pixel(160,90),neutral_c)
+		var edge_ok: bool=worst<=3./255. if receiver else err.call(img2.get_pixel(0,90),neutral_c)<=2./255.
+		check("G-EL-2b feed %s: %s, picture centre as decoded"%[row[0],"edge gradient full at the edge, falling monotonically inward" if receiver else "edge pixel is the picture (no gradient)"],edge_ok and mono and ce<=2./255.,{"rate":rate2,"worst_error":worst,"picture_error":ce,"strength":strength,"got":got})
+		img2.save_png(OUT.path_join("feed_gradient_%s.png"%str(row[0]).to_lower().replace(" ","_")))
 	feed.set_receiver(true)
 	# Negative control: the old stylised wash (#7F9CFF at 0.24) seeded over the picture must fail the same detector.
 	var seeded := ColorRect.new(); seeded.color=Color(Color("7F9CFF"),.24); seeded.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); feed.add_child(seeded)

@@ -1,5 +1,5 @@
 extends SceneTree
-## R3-TRUE-PROCESSED-b review frames: Earth's feed with the Processed Doppler indicator on its bezel, at
+## R3-TRUE-PROCESSED-b review frames: Earth's feed with the Processed Doppler indicator, its edge gradient, at
 ## the Earth rates RS-26 (0.070888, 0.99c away), rest (1), RS-29 (14.107, 0.99c home) and the top speed
 ## either way (RS-28 7.0711e-4, RS-30 1414.2), each in Receiver (Processed: the indicator, labelled) and
 ## True (no indicator). The picture is the same library week in every frame (it is never tinted).
