@@ -1,27 +1,36 @@
 # Stapledon mission dashboard
 
-Updated 2026-11-03, iteration 66.
+Updated 2026-11-03, iteration 67.
 
-- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on 7m-d, which runs only on a quiet rig (GPU < 15 %, 1-min load < 5, nobody on the console), and on P-land, which is Mark's. At pick the GPU read 0 % but the 1-min load was 52 (AILANG release builds).
-- **Built this fire, landing parked:** row 7w, PR #387 (`b6f84021`).
-  - `make capture-m4` runs at a fixed 60 fps step, so the S1 set is byte-reproducible. Two captures gave 15 of 15 PNG and 14 of 14 world hashes equal; before, 0 of 15 PNGs matched. The drift came from wall-clock fades, dust flashes and the star light's easing.
-  - `capture-m4-publish` needs `M4_PUBLISH_DATE=YYYY-MM-DD`. It uploads only to a new `refs/m4_ship_s1/<date>/` path, create-only, under a 600 s deadline. The reviewed flat set cannot be touched. The test has 15 cases.
-  - Judge: Sonnet in its own clone, 92 PASS with zero blocking findings. Fast tier green.
-  - `rig/full` is red at `sound-test` S2 (2 failures). The failure is inherited: main `68796623` and attended #385 fail the same way at load 7. This is row 7z, attended R2-SOUND.
-- **Rig:** shared with attended D-144 agents. Main's `rig/full` is currently red at `sound-test` S2, so no PR can land until 7z clears.
-- **In flight (loop):** PR #387 waits on 7z. Resume predicate: `make sound-test` green on origin/main (still red after #386, 12:41Z; merge main into #387 first: #386 edits the same `capture-m4` line) → `tools/rig_check.sh 387` → merge → publish the dated S1 set → park for Mark's S1 render review.
-- **Order:** land #387 → 7m-d (quiet rig; start from the 100 Hz hypothesis) → 7x. D-129 then unlocks L4 M1b and M2.
+- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on 7m-d, and on P-land, which is Mark's.
+- **Measured this fire: row 7m-d, PROVISIONAL.** It explains why the docked bridge's p99 (17–19 ms) sits above 16.7 ms on a quiet rig.
+  - The tail is not warm-up, not a redraw, and not GPU render cost (about 2 ms per frame). 243 of 245 slow frames spend their time inside the engine's draw step.
+  - An empty window with no game reads p99 15.9–16.3 ms on the Studio, which has no physical display. With all game `_process` off, the docked p99 is 15.2–16.1.
+  - No game-side defect was found and no product fix is proposed. Doc: `design_docs/planned/r1/m4-7md-docked-p99-attribution.md` (PR `mission/stapledon-iter67-7md`).
+  - It is PROVISIONAL because no counted run had the new remote-session check (`quiet2.sh`). AC S1 is four probe runs, about 3 minutes, on a quiet rig. The one session-checked docked control read 17.81, but Ollama took the GPU mid-run, so it counts as evidence only.
+  - Judge: Sonnet, 80 and then 78 PASS, zero blocking. The quorum blocked twice; its fixes were applied (a fail-closed R1, a stale-file drill).
+- **Merge rule changed (Mark, 2026-11-03, #389):** PRs land on the fast tier, the targeted gates, a cross-family judge and, for visual or audible work, Mark's dev-build OK. `make test` runs nightly on main. `rig/full` and row 7z no longer block PR #387.
+- **Order:**
+  1. Land #387 (S1 republish tooling): merge main into it (the `capture-m4` line conflict with #386), compare patch-ids, fast tier, the targeted gates, merge, then publish the dated S1 set and park for Mark's review.
+  2. 7m-d S1 when `quiet2.sh` holds, then OQ1–OQ5 go to Mark as one decision.
+  3. 7x. Then D-129 (Mark) unlocks L4 M1b and M2.
+- **Options waiting on S1 (not asked yet):**
+  - OQ1: status quo.
+  - OQ2: attach a display for counted runs.
+  - OQ3: a product trim of the docked frame's work. The best case is p99 15.2–16.1, so it may still fail.
+  - OQ4: record the empty-window floor in each bench run.
+  - OQ5: a relative gate. None of these loosens 16.7 ms.
+- **Rig:** shared. Ollama local-model evals hold the GPU for long stretches (20:28–21:20 and from 21:26 today), and attended D-144 agents run builds.
 - **Backlog (non-blocking):**
-  - 7y: NT4 is intermittent; `ReviewDrive.reach` cannot say why it failed.
-  - 7w judge survivors: no non-digit date case, no 403 fixture containing "matched", and the cosmetic `printf '%s\n'` quoting inside `sh -c`.
-  - S0: the guard misses `.get(&"vector")`, a bare `get("vector")` and whitespace variants.
-  - Kerr: drills for the schema and source pins. 7n(f), 7n(a), 7i(h).
+  - The hidden navigation map still redraws about 600 times per 30 s of transit; the cost is unmeasured.
+  - 7y: NT4 is intermittent.
+  - The 7w judge's survivors.
+  - S0 guard variants.
+  - Kerr drills.
 - **Parked on Mark:**
-  - D-128: where 7m-d sits in the order. Default A is being applied.
-  - D-129: L4's OQ1–OQ4. The recommendation is A. If unanswered, M1b and M2 stay parked.
-  - After #387 lands: the S1 render review of the republished dated set (the loop will post the link).
-- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire: designer Opus (Agent tool), planner and executor codex gpt-6.1-sol, judge Sonnet (Agent tool). Metered spend $0.78 (two quorum rounds).
-- **Attended in parallel (D-144, do not touch):** R2-KERR (#373, #380), R3-WORLDS (#371), R3-TRUE-PROCESSED (#383, #384), R2-SOUND (#382, #385), comms station v2 (#379). Unread for the Worlds agent: the celestial@0.6.0 validator memory fix ships with the next AILANG release.
-- **Watch:**
-  - 7m-d has been lane-parked at pick twelve fires running.
-  - `sound-test` S2: three trees fail identically after a green run on one of them, which suggests a change in rig state.
+  - D-128: where 7m-d sits in the order. Default A is applied.
+  - D-129: L4's OQ1–OQ4. The recommendation is A.
+  - After #387 lands: the S1 render review.
+- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire: designer Opus and judge Sonnet, both through the Agent tool. No planner or executor ran, because no code was designed. Metered spend $0.60 (two quorum rounds).
+- **Attended in parallel (D-144, do not touch):** R2-KERR (#373, #380), R3-TRUE-PROCESSED (#384), comms station v2 (#379).
+- **Watch:** quiet windows are short. 7m-d's S1 needs about 3 quiet minutes, with nobody on the console.
