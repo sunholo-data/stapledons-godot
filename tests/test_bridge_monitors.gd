@@ -78,6 +78,7 @@ func _run() -> void:
 	check("follow: outbound, the signal face reads Earth (in beam)", out.earth.in_beam == true and sig.tag.text == EarthFeed.format("feed_signal", true))
 	var course: BridgeScreens.CourseFace = mons[2].face
 	check("follow: the course face names the target", course.target.text == str(out.journey.plan.target.id))
+	check("follow: the course face shows the ship time left, bound to course.ship_years_left (OQ12)", course.left.visible and course.left.field == "course.ship_years_left" and float(out.course.ship_years_left) > 0.0)
 	var crew: BridgeScreens.CrewFace = mons[3].face
 	check("follow: the crew face shows each member's feeling", crew.faces.get_child_count() == (out.earth.crew as Array).size())
 	n_arrive(ok)

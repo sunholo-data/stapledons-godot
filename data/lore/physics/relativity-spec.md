@@ -197,6 +197,13 @@ dimensionless.
 | RS-38 | Swing of Earth's aim (degrees per year) following a ship that crosses its sky at right angles at 0.99c, 40 ly out: β/r | 1.418 | deg |
 | RS-39 | The fastest swing Earth's aim ever needs (degrees per day) for a ship at the top speed, 40 ly out: βγ/r, when the ship recedes at cos α = β off the line of sight | 2.773 | deg |
 | RS-40 | The same fastest swing (degrees per day) for a ship at the top speed 1 ly from Sol | 110.9 | deg |
+| RS-41 | Rest frequency of Earth's beacon tone (the carrier the comms receiver puts back; stapledons-godot data/audio/recipes.json home_beacon) | 400 | Hz |
+| RS-42 | Earth's tone heard straight astern at 0.99c, uncorrected: 400 Hz × the Earth rate √((1 − β)/(1 + β)) (RS-26) | 28.355 | Hz |
+| RS-43 | Earth's tone heard straight ahead (heading home) at 0.99c: 400 Hz × √((1 + β)/(1 − β)) (RS-29) | 5,642.7 | Hz |
+| RS-44 | Earth's tone heard straight astern at the top speed, β = 0.999999 (RS-28) | 0.28284 | Hz |
+| RS-45 | Earth's tone heard straight ahead at the top speed (RS-30) | 5.6569 × 10⁵ | Hz |
+| RS-46 | Lower edge of human hearing (the comms receiver's audible band) | 20 | Hz |
+| RS-47 | Upper edge of human hearing | 20,000 | Hz |
 
 Qualitative checks (not numbers, so not in the registry):
 - **RS-Q1:** straight ahead and straight behind are unchanged by aberration,
@@ -206,3 +213,9 @@ Qualitative checks (not numbers, so not in the registry):
 - **RS-Q3:** photon-ring images converge on b_c.
 - **RS-Q4:** an Einstein ring appears for any source behind the hole, at the
   predicted angle.
+- **RS-Q5 (proposed, game R3-TRUE-PROCESSED):** a picture decoded from
+  Earth's link (data on an optical carrier, signals-and-instruments §3.1)
+  keeps the colours Earth encoded at every Earth rate D. The Doppler shift
+  is in the playback rate (D, RS-26 to RS-30) and the carrier's wavelength
+  (1/D), never in the decoded pixels. A colour shift by D is physical only
+  for light seen directly (the spectrum rows of §2), not for a broadcast.

@@ -499,7 +499,7 @@
     "about": "CA2 (OQ9): the captain's chair seat point, ship metres (x, -z), as art/deck-layout-v2/bow_a.json layout A places it; the captain sits facing the bow"
   },
   "monitors": {
-    "about": "R3-COMMS-V2 CV6 (design r3/comms-station-v2.md §D3-§D5, wall R, approved 2026-11-03): the bridge's ambient monitors on the bow rail, outside the walk (r 21.1 m), each face 4.0 x 2.25 m with its bottom 1.0 m above the deck, turned toward the deck at ship (0, 6). screen_ship_m is the face's centre (ship metres, Blender +Z up); the frame and stand are the bridge_monitor prop at the same anchors. Port is home (Earth's clock, the signal from home), starboard the ship (the course, the crew). BridgeMonitor reads this.",
+    "about": "R3-COMMS-V2 CV6 (design r3/comms-station-v2.md §D3-§D5, wall R, approved 2026-11-03): the bridge's ambient monitors on the bow rail, outside the walk (r 21.1 m), each face 4.0 x 2.25 m with its bottom 1.0 m above the deck, turned toward the deck at ship (0, 6). screen_ship_m is the face's centre (ship metres, Blender +Z up); the frame and stand are the bridge_monitor prop at the same anchors. Port is home (Earth's clock, the signal from home), starboard the ship (the course, the crew). The course screen sits at +24 deg, not the mirror of the signal's -30 deg, so it stays off the forward-pole line of the physics golden's fixed captain eye (G-M4-S3, ship (11, 4.8)). BridgeMonitor reads this.",
     "clocks": {
       "face": "clocks",
       "bearing_deg": -48.0,
@@ -514,8 +514,8 @@
     },
     "course": {
       "face": "course",
-      "bearing_deg": 30.0,
-      "screen_ship_m": [10.55, 18.273, 84.125],
+      "bearing_deg": 24.0,
+      "screen_ship_m": [8.582, 19.276, 84.125],
       "toward_ship_m": [0.0, 6.0]
     },
     "crew": {

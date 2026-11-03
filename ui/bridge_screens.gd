@@ -117,14 +117,16 @@ class CourseFace extends Face:
 	var target := BridgeScreens.label(40, "HUDLabel")
 	var arrive := BridgeScreens.label(32, "HUDCaption")
 	var gamma := BridgeScreens.label(32, "HUDLabel")
+	var left := BridgeScreens.label(32, "HUDAccent") ## CV5 (OQ12): the ship time left on the leg (course.ship_years_left)
 	var view: Dictionary = {}
 
 	func _init() -> void:
 		super._init()
 		target.position = Vector2(650, 140)
 		arrive.position = Vector2(650, 210)
-		gamma.position = Vector2(650, 270)
-		for b in [target, arrive, gamma]:
+		gamma.position = Vector2(650, 330)
+		left.position = Vector2(650, 270)
+		for b in [target, arrive, gamma, left]:
 			add_child(b)
 
 	func refresh(v: Dictionary, _receiver: bool, _bed: String) -> void:
@@ -133,9 +135,11 @@ class CourseFace extends Face:
 		target.compose([["journey.plan.target.id", "text"]])
 		arrive.compose([str(EarthFeed.copy().words.earth) + " ", ["journey.plan.arrive_year", "comms_clock"]])
 		gamma.compose(["γ ", ["ship.gamma", "%.2f"]])
-		for b in [target, arrive, gamma]:
+		left.compose([str(EarthFeed.copy().words.ship) + " ", ["course.ship_years_left", "comms_years"], " " + str(EarthFeed.copy().words.get("to_go", "to go"))])
+		for b in [target, arrive, gamma, left]:
 			b.update_from(v)
 			b.visible = plan is Dictionary
+		left.visible = left.visible and str(GalaxyMap.field_value(v, "journey.state")) == "committed"
 		queue_redraw()
 
 	func _draw() -> void:

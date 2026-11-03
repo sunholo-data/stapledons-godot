@@ -183,9 +183,9 @@ Every number on the wall and in the diagram is one of these fields (D-21). Godot
 | Voyage (`console_decision_0`) | Earth's clock | −48° | (−13.822, 12.446) | −42° | (−12.912, 11.626) | (−7.829, 12.207), yaw −90 |
 | Comms (`console_decision_2`) | signal from home | −30° | (−9.300, 16.108) | −60° | (−8.687, 15.047) | (−13.2, −3.0), yaw 0 |
 | Crew (`console_decision_1`) | crew faces | +48° | (13.822, 12.446) | −138° | (12.912, 11.626) | (8.479, 14.169), yaw −90 |
-| Helm (`console_navigation_0..2`) | course (+30°, beside it) | −16 / 0 / +16° at 17.5 m | unchanged | unchanged | (0, 15) | unchanged |
+| Helm (`console_navigation_0..2`) | course (+24°, beside it; +30° until CV5) | −16 / 0 / +16° at 17.5 m | unchanged | unchanged | (0, 15) | unchanged |
 
-- **The helm stays central** to keep the pole and starbow on its line (D-94). The course screen at +30° sits beside its starboard pod, so the helm serves it.
+- **The helm stays central** to keep the pole and starbow on its line (D-94). The course screen at +24° sits beside its starboard pod, so the helm serves it. (CV5 moved it from +30°: at +30° it stood on the forward-pole line of the physics golden's fixed captain eye, G-M4-S3 at ship (11, 4.8), and covered the pole; at +24° `make golden` is green and its Bow readability is unchanged, 0.346.)
 - **The port wing is home:** the Voyage console under Earth's clock and comms under Earth's signal.
 - **The starboard wing is the ship:** the course screen by the helm, and the crew console under the crew's faces.
 
@@ -414,6 +414,15 @@ This is revision 1's §D3. Its home is now the signal monitor, with the detail v
 | OQ12 | Add `journey.ship_years_left` to the sim |
 
 New questions found while executing go here.
+
+## Execution notes (CV5, 2026-11-03)
+
+- **Mid-point accepted** (Mark, "continue"): OQ12 in CV5, the watch bench kept, the diagram taking the faces' row, the x86 golden copy.
+- **Waterfall legibility** (Mark's note: dark from the chair at ×0.07). The picture stays True. The measured carrier is drawn as a bright trace: the Carrier tap's peak, median of the last five measurements (a receiver's tracking filter), with no point while the keyed carrier is silent. The log-frequency axis (20 Hz to 20 kHz) was already in place. At 28 Hz the analyser's bins (10.8 Hz at 4096 points, Godot's largest) make the trace step by about a bin; that is the measurement's real resolution, shown as is.
+- **OQ12:** `course.ship_years_left` (protocol 2.17 `course` section, core `shipYearsLeft`) is on the course screen.
+- **Archive:** `archive.earths-carrier` and spec rows RS-41..RS-47 are in stapledons-design#55. The game vendors that branch (`make lore-import`), and `tests/test_physics.gd` asserts all seven rows. The import also brought in `archive.colours-of-home`, design #51's entry, which was on design main but not yet vendored here; its missing README row is fixed in #55. The codex, the minimum-path unlocks and the session-audit mirrors now list 15 entries and 12 unlocks.
+- **Deferred:** the `earth_weeks` wire intent. Adding it means a new core `Intent` constructor and touches every exhaustive match and the replay-compat codec. The wall's stacks show each record's newest week, so the intent is not needed for anything shipped here. `beamedWeeks` exists and is tested.
+- **Bench:** `make bench SCENE=bridge` measured MISS under host load 24–31 (other agents' jobs). An A/B run without the monitors also missed: p99 31.6 ms without against 34.1 ms with, p50 9.90 against 9.96 ms. The absolute gate needs a quiet machine.
 
 ## Deliverables
 

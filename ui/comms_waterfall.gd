@@ -20,6 +20,9 @@ const F0 := 20.0
 const F1 := 20000.0
 const BANDS := 96
 const BEACON := "home_beacon"
+## The carrier tap's floor for a measured peak (linear magnitude; a keyed pip reads about 0.1, the gaps
+## between pips read under 1e-4).
+const PEAK_FLOOR := 1e-3
 
 var bold := false
 var receiver := true
@@ -27,6 +30,10 @@ var in_beam := false
 var rate := 1.0
 var hearing := "" ## the True plan's: "", "above" or "below"
 var peak_hz := 0.0 ## the Carrier tap's measured peak (0 when nothing is there)
+## CV5 legibility (Mark's mid-point note): the measured carrier's own trace, one point per column, drawn
+## bright over the True picture so a carrier near the floor of hearing (28 Hz at x 0.07) still reads from
+## across the bridge. It is the measurement itself, not a model: no point where the tap is silent.
+var _trace := PackedFloat32Array()
 var view: Dictionary = {}
 var rate_tag: ComposedBinding = null
 var _img: Image
@@ -49,6 +56,8 @@ func _init() -> void:
 	_ramp = Gradient.new() # the sound agent's review look: deep violet, red, cream (magma-like)
 	_ramp.offsets = PackedFloat32Array([0.0, 0.25, 0.55, 0.8, 1.0])
 	_ramp.colors = PackedColorArray([Color("#05030c"), Color("#2b1270"), Color("#b33a5b"), Color("#f08a5d"), Color("#fcf2c2")])
+	_trace.resize(_cols)
+	_trace.fill(0.0)
 	_img = Image.create(_cols, BANDS, false, Image.FORMAT_RGB8)
 	_img.fill(_ramp.sample(0.0))
 	_tex = ImageTexture.create_from_image(_img)
@@ -171,7 +180,7 @@ func measure_peak() -> float:
 		mags.append(inst.get_magnitude_for_frequency_range(f, g).length())
 		if best < 0 or mags[k] > mags[best]:
 			best = k
-	if best < 0 or mags[best] < 1e-5:
+	if best < 0 or mags[best] < PEAK_FLOOR: # between Earth's pips the keyed carrier is silent: no point
 		return 0.0
 	var off := 0.0
 	if best > 0 and best < steps - 1:
@@ -181,6 +190,20 @@ func measure_peak() -> float:
 		var den := a - 2.0 * b + c
 		off = 0.5 * (a - c) / den if absf(den) > 1e-12 else 0.0
 	return F0 * pow(F1 / F0, (float(best) + 0.5 + clampf(off, -0.5, 0.5)) / steps)
+
+
+## The trace's point: the median of the last five measured peaks (a receiver's tracking filter; it drops
+## the keying clicks' leakage, never invents a point: no carrier in the last five, no point).
+var _recent := PackedFloat32Array()
+func _median_peak() -> float:
+	_recent.append(peak_hz)
+	if _recent.size() > 5:
+		_recent.remove_at(0)
+	var on := Array(_recent).filter(func(h: float) -> bool: return h > 0.0)
+	if on.size() < 3:
+		return 0.0
+	on.sort()
+	return on[on.size() / 2]
 
 
 ## One column per frame from the Antenna tap.
@@ -197,6 +220,9 @@ func _process(_dt: float) -> void:
 		_img.set_pixel(_cols - 1, BANDS - 1 - b, _ramp.sample(clampf((db + 80.0) / 70.0, 0.0, 1.0)))
 	_tex.update(_img)
 	peak_hz = measure_peak()
+	for i in range(_cols - 1):
+		_trace[i] = _trace[i + 1]
+	_trace[_cols - 1] = _median_peak() if in_beam else 0.0
 	queue_redraw()
 
 
@@ -223,6 +249,21 @@ func _draw() -> void:
 		rate_tag.visible = in_beam
 	if not in_beam:
 		return
+	# the measured carrier's trace (bright cream, a halo under it), right to left with the picture
+	var seg := PackedVector2Array()
+	for i in _cols:
+		var hz := _trace[i]
+		if hz > 0.0:
+			seg.append(Vector2(r.position.x + (i + 0.5) / _cols * r.size.x, yf(clampf(hz, F0, F1), r)))
+		elif seg.size() > 1:
+			draw_polyline(seg, Color(StapledonTheme.CORAL, 0.45), 6.0 * z, true)
+			draw_polyline(seg, StapledonTheme.CREAM, 2.0 * z, true)
+			seg = PackedVector2Array()
+		else:
+			seg = PackedVector2Array()
+	if seg.size() > 1:
+		draw_polyline(seg, Color(StapledonTheme.CORAL, 0.45), 6.0 * z, true)
+		draw_polyline(seg, StapledonTheme.CREAM, 2.0 * z, true)
 	var yr := yf(carrier_hz(), r)
 	var teal := StapledonTheme.TEAL_LIGHT
 	if receiver:

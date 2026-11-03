@@ -6,7 +6,7 @@ module stapledons/sim/earth_log_test
 -- event on the light cone, the ship-at-send lookup, the Earth rate at arrival. The 2.17 wire is
 -- checked through protocol.serve. Expected values are closed forms or brute-force reference walks,
 -- never this module's own output.
-import ./core (World, Intent, IPlan, ICommit, Target, defaultParams, newWorld, tick, position, earthOf)
+import ./core (World, Intent, IPlan, ICommit, Target, defaultParams, newWorld, tick, position, earthOf, shipYearsLeft, tauTotalOf)
 import ./earth_link (Link, emptyLink)
 import ./earth_log (ELog, Arrival, ShipAt, emptyLog, noteLight, records, recordCount, shipAt, dayOf, beamedWeeks)
 import ./earth_feed (frameOf, feedBinYears)
@@ -130,6 +130,14 @@ pure func okAt(w: World) -> bool {
 pure func fly(w: World, n: int, ok: bool) -> bool =
   if n <= 0 || !ok then ok else { let nx = run(w, 0.01, []); fly(nx, n - 1, okAt(nx)) }
 pure func checkFlight() -> bool = fly(launched(), 120, true)
+-- CV5 (OQ12): ship years left on the committed leg = the trip's proper time less what has elapsed.
+pure func checkYearsLeft() -> bool {
+  let c = launched();
+  let total = tauTotalOf(c);
+  let mid = run(c, total / 2.0, []);
+  lgAll([absf(shipYearsLeft(c) - total) <= 0.000000001, absf(shipYearsLeft(mid) - total / 2.0) <= 0.000001, shipYearsLeft(newWorld(7, false, defaultParams())) == 0.0])
+}
+test "OQ12: ship years left on the committed leg" { checkYearsLeft() }
 test "a real flight: contiguous weeks, nothing from the future, the send event on the light cone, the rate at arrival" { checkFlight() }
 
 -- ------------------------------------------------------------ earth_weeks (D-68)
@@ -166,10 +174,12 @@ pure func checkWire17() -> bool {
     -- nothing new on an idle tick: no tail
     !contains(idle17, "\"earth_log_tail\""),
     -- 2.16 never sees the log
-    !contains(g16, "earth_log"), !contains(year16, "earth_log")])
+    !contains(g16, "earth_log"), !contains(year16, "earth_log"),
+    -- CV5 (OQ12): the course section at 2.17 only, 0 ship years left when not flying
+    contains(g17, "\"course\":{\"ship_years_left\":0}"), !contains(g16, "\"course\"")])
 }
-test "AC4: the 2.17 earth_log in full states, its tail when the open record changes; 2.16 never sees it" { checkWire17() }
+test "AC4: the 2.17 earth_log in full states, its tail when the open record changes, the course section; 2.16 never sees them" { checkWire17() }
 
 export pure func earthLogVm(n: int) -> string =
-  if checkDeparture() && checkMerge() && checkSplit() && checkNoNewWeek() && checkBound() && checkShipAt() && checkFlight() && checkWeeks() && checkWire17()
+  if checkDeparture() && checkMerge() && checkSplit() && checkNoNewWeek() && checkBound() && checkShipAt() && checkFlight() && checkYearsLeft() && checkWeeks() && checkWire17()
   then "earth-log-ok" else "earth-log-BAD"

@@ -88,7 +88,9 @@ func chair() -> Vector3:
 
 
 func save(name: String) -> void:
-	for k in 6:
+	# real time, so the receiver's taps mix and the waterfalls fill (audio runs on the wall clock)
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 3000:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s.png" % [out, name]))

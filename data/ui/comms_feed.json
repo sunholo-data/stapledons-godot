@@ -42,6 +42,7 @@
     "sent": "sent",
     "arrived": "arrived",
     "light": "light",
-    "ship_then": "ship then"
+    "ship_then": "ship then",
+    "to_go": "to go"
   }
 }

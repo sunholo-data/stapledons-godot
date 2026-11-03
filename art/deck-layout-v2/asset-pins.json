@@ -34,8 +34,8 @@
       "sha256": "ff90afeffa35db8aa4027638a91b8d102e184695cc4d5e4a6b32e3d063919635"
     },
     "assets/ship_demo/bridge_monitors.glb": {
-      "bytes": 47440,
-      "sha256": "e3204643d72ae88d20f8de9519e9baaf42b70e452f21ff6602c8bda7f9403c6b"
+      "bytes": 47428,
+      "sha256": "acafd6a8fdf4a15074d38a0a8a044dab5ab3ae4985d8a525626a2933b4780360"
     }
   },
   "masters": {
@@ -74,10 +74,10 @@
       "sha256": "4a0a6c3b779c170d87bcbc769950ba79754dcd847e73805fbb7f1a02014b0dcf",
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/4a0a6c3b779c170d87bcbc769950ba79754dcd847e73805fbb7f1a02014b0dcf.blend"
     },
-    "stapledon_bridge_monitors_v1.blend": {
-      "bytes": 106698,
-      "sha256": "a322761300bafaf551cf470caa66c0c1ea4f3eca236416dbfb15da58c392a9b0",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/a322761300bafaf551cf470caa66c0c1ea4f3eca236416dbfb15da58c392a9b0.blend"
+    "stapledon_bridge_monitors_v1b.blend": {
+      "bytes": 106765,
+      "sha256": "26f0981468a8c0498e95c4b5cab84975bdab8769ee000e850611b29de91442fc",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/26f0981468a8c0498e95c4b5cab84975bdab8769ee000e850611b29de91442fc.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
@@ -392,7 +392,8 @@
     "monitors": {
       "authoring_script": "~/dev/blender/scripts/stapledon_bridge_monitors_v1.py (packed in the master; anchors from assets/ship_demo/manifest.json monitors)",
       "authoring_script_sha256": "ea0bb6c9e06c75e4253109c587f02d3ecd495012f1ed698731d1c77620276611",
-      "master": "stapledon_bridge_monitors_v1.blend"
+      "master": "stapledon_bridge_monitors_v1b.blend",
+      "note": "CV5: the course screen moved from +30 to +24 deg so the physics golden's fixed captain eye (G-M4-S3) keeps its forward pole clear; same script, re-run on the manifest's anchors"
     },
     "determinism": "before the move, props v4 on the pinned DL1 master reproduced the shipped bridge_props.glb (86d2e858), ship.glb (c8a55cd0) and lift_head.glb (ff90afef) byte for byte (2026-11-03); lift_head.glb is unchanged by the move"
   }

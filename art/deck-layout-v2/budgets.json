@@ -15,8 +15,8 @@
       "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213"
     },
     "assets/ship_demo/manifest.json": {
-      "bytes": 12394,
-      "sha256": "ad6cd155658d0eb1ac0d70587c6022abeedf0b6a656e8b45f401366a6f719911"
+      "bytes": 12576,
+      "sha256": "3c2d333fbef2cc15c215f67a158ec66f48c6b0cff2586f7c0ed91d06625abd1d"
     },
     "assets/ship_commons/walk.glb": {
       "bytes": 373208,
@@ -47,8 +47,8 @@
       "sha256": "ff90afeffa35db8aa4027638a91b8d102e184695cc4d5e4a6b32e3d063919635"
     },
     "assets/ship_demo/bridge_monitors.glb": {
-      "bytes": 47440,
-      "sha256": "e3204643d72ae88d20f8de9519e9baaf42b70e452f21ff6602c8bda7f9403c6b"
+      "bytes": 47428,
+      "sha256": "acafd6a8fdf4a15074d38a0a8a044dab5ab3ae4985d8a525626a2933b4780360"
     }
   },
   "glb": {

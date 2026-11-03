@@ -2,7 +2,7 @@
 
 **Design:** [comms-station-v2.md](comms-station-v2.md) covers the history wall, the frame diagram, moving the comms console closer, the waterfall, and the bridge's monitor wall.
 
-**Status: paused for Mark's mid-point review (2026-11-03).** CV0–CV4 and CV6 ✅ on this branch; CV5 (Archive, final captures, evaluation, landing) remains. Progress and gate results are in the sprint JSON.
+**Status: CV0–CV6 built (2026-11-03); awaiting the Codex evaluation and Mark's final look.** The mid-point was accepted ("continue"). Landing (moving the docs to implemented/, the README row, the roadmap) follows the evaluation. Progress and gate results are in the sprint JSON.
 
 **Approved, executing.** Mark approved revision 2 on 2026-11-03 ("looks awesome"), with every open question at its recommendation, and added one ruling: the consoles stand underneath the screens (revision 3, design §D2). Main is merged in (AILANG v0.56.1, with #374, #375 and #377 landed), so CV0's wait is over. Execution runs on this branch, `design/comms-station-v2`, under PR #379.
 
@@ -251,7 +251,7 @@ The port watch bench (`v2_bench_detail_*`) moves 2 m sternward along the rail, o
 
 **Acceptance:** design AC8 and AC10.
 
-### CV5. Archive, review, evaluation and landing (about 230 LOC)
+### CV5. Archive, review, evaluation and landing (about 230 LOC) ✅ (evaluation and landing pending)
 
 1. **Design repo first:**
    - rows in `relativity-spec.md` for 400 × RS-26, RS-28, RS-29 and RS-30;

@@ -14,7 +14,7 @@ const ALPHA_CEN_A := "CNS5:3627"
 ## Canonical Alpha Cen 0.99c minimum-path order (tests/expected_unlocks.json). Kept here because
 ## production export smoke cannot depend on excluded tests/. The live sim must return these IDs.
 const MINIMUM_UNLOCKS := ["archive.bubble", "archive.one-g", "archive.nothing-crosses",
-	"archive.two-clocks", "archive.earths-voice", "archive.photon-drive", "archive.ism-glow",
+	"archive.two-clocks", "archive.earths-voice", "archive.colours-of-home", "archive.photon-drive", "archive.earths-carrier", "archive.ism-glow",
 	"archive.starbow", "archive.weather-between-the-stars", "archive.following-light"]
 const MINIMUM_LOCKED := ["archive.cmb-forward", "archive.tides", "archive.shadow-ring"]
 

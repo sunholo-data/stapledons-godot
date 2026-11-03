@@ -927,6 +927,10 @@ pure func remainingOf(w: World) -> {distance: float, earth: float, phase: float}
     },
     _ => { distance: 0.0, earth: 0.0, phase: 0.0 }
   }
+-- R3-COMMS-V2 CV5 (OQ12): the ship time left on the committed leg (ship years: the trip's proper time
+-- less what has elapsed), 0 when not flying; the course monitor's field (protocol 2.17 `course`).
+export pure func shipYearsLeft(w: World) -> float =
+  match w.journey { Committed(c) => nonNeg(c.plan.trip.tauTotal - c.el), _ => 0.0 }
 pure func progressOf(w: World) -> float =
   match w.journey {
     Committed(c) => {
