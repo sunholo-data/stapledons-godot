@@ -1,15 +1,15 @@
 {
   "sprint_id": "R2-SOUND",
-  "status": "paused_for_review",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark (attended)",
   "approved_on": "2026-10-20",
   "created": "2026-10-20",
   "replanned": null,
   "started": "2026-10-20",
-  "completed": null,
-  "design_doc": "design_docs/planned/r2/sound.md",
-  "sprint_plan": "design_docs/planned/r2/sound-sprint.md",
+  "completed": "2026-11-03",
+  "design_doc": "design_docs/implemented/r2/sound.md",
+  "sprint_plan": "design_docs/implemented/r2/sound-sprint.md",
   "branch": "feat/sound",
   "history": [
     {
@@ -76,6 +76,11 @@
       "date": "2026-11-02",
       "event": "rework",
       "note": "Re-evaluation of #375 at acb85bc7: 91/100 PASS. Cheap non-blocking fixes: audible-position handover, test teardown leaks, stale wording."
+    },
+    {
+      "date": "2026-11-03",
+      "event": "completed",
+      "note": "S2 merged (#375, ddc4795e) after Mark's listen; landing PR moves the docs to implemented/r2 and records the open items."
     }
   ],
   "implements": [
@@ -87,7 +92,9 @@
   "github_issues": [],
   "related_prs": [
     "#375 (S2, draft)",
-    "stapledons-design#52 (S2 canon, draft)"
+    "stapledons-design#52 (S2 canon, draft)",
+    "#375 merged (ddc4795e)",
+    "stapledons-design#52 merged"
   ],
   "external_dependencies": [
     {
@@ -258,10 +265,10 @@
         "full make test green on the rig (AC16)",
         "listening review (make sound-voyage-review) published to gs://stapledons-voyage-assets/refs/sound_s2/ for Mark; a dev build after his listen"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-02",
-      "completed": null,
-      "notes": "Built 2026-11-02 on feat/r2-sound-s2 (PR #375, draft). ShipSound follows journey_sim.stepped (events, plan_select state edge, on_dust) and the holds (ShipConsoles.confirm_held_s, GalaxyMap.hold_s); HomeBeacon (audio/home_beacon.gd) plays the beacon at earth.rate unrounded via EarthFeed.receiver_plan with the station's setting; Receiver generated sample by sample as a heterodyne receiver hears it (Earth's keying at D on the true 400 Hz carrier, from the AILANG-rendered envelope table home_beacon_env), because Godot's FFT pitch shift mis-tunes large corrections (314 Hz for 400 Hz at D = 0.0709) and merges short pips (8-16 of 21 survive at D = 14.1 for FFT sizes 256-2048; the first review render measured a 0.0948 s gap for 0.0709). Revision 2 after the coordinator's measurement review: Receiver pips 1/D apart within 1 % at D 0.0709-14.1, as True. Revision 3 after the Codex evaluation (64/100 FAIL at 2aa509dd): Receiver keys at D unrounded at every D (it was the station's clamped rate), ShipSound follows the beacon per accepted step (the golden now runs through ShipSound), the pip detector is blind to the expected gap with a 2.01 x D negative control, dust starts each at its own time (no one-per-frame cap), the generator playback leak at teardown fixed. New sounds: plan_select, home_beacon, home_beacon_env (sunholo/audio 0.6.0). Director: set_pitch applies every value, own_player, stops, dust dead-time reset on a new game, each dust tick started at its own time. Local gates green at the last push: sound-test 82, ship-sound-test 41, sound-voyage-test 10 (real-sim golden through ShipSound, 372 lines, two processes), sound-check 52, sound-levels 47, levels-parity 0 diffs, assets 18.5/20 MB, stage 3.9/6 MB, synth-check 44 byte for byte. Listening review https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/index.html. Paused for Mark's listen; not landed. S2b (deferred): stop_turn signal, brake_notice, crew_hold, medium_change, interlude_bed, bh_enter. Revision 4 after the re-evaluation (91/100 PASS at acb85bc7): Receiver -> True hands over at the generator's audible position (write cursor less buffered frames), test teardown frees orphans and waits for the mixer (0 leaked playbacks), stale wording fixed."
+      "completed": "2026-11-03",
+      "notes": "Built 2026-11-02 on feat/r2-sound-s2 (PR #375, draft). ShipSound follows journey_sim.stepped (events, plan_select state edge, on_dust) and the holds (ShipConsoles.confirm_held_s, GalaxyMap.hold_s); HomeBeacon (audio/home_beacon.gd) plays the beacon at earth.rate unrounded via EarthFeed.receiver_plan with the station's setting; Receiver generated sample by sample as a heterodyne receiver hears it (Earth's keying at D on the true 400 Hz carrier, from the AILANG-rendered envelope table home_beacon_env), because Godot's FFT pitch shift mis-tunes large corrections (314 Hz for 400 Hz at D = 0.0709) and merges short pips (8-16 of 21 survive at D = 14.1 for FFT sizes 256-2048; the first review render measured a 0.0948 s gap for 0.0709). Revision 2 after the coordinator's measurement review: Receiver pips 1/D apart within 1 % at D 0.0709-14.1, as True. Revision 3 after the Codex evaluation (64/100 FAIL at 2aa509dd): Receiver keys at D unrounded at every D (it was the station's clamped rate), ShipSound follows the beacon per accepted step (the golden now runs through ShipSound), the pip detector is blind to the expected gap with a 2.01 x D negative control, dust starts each at its own time (no one-per-frame cap), the generator playback leak at teardown fixed. New sounds: plan_select, home_beacon, home_beacon_env (sunholo/audio 0.6.0). Director: set_pitch applies every value, own_player, stops, dust dead-time reset on a new game, each dust tick started at its own time. Local gates green at the last push: sound-test 82, ship-sound-test 41, sound-voyage-test 10 (real-sim golden through ShipSound, 372 lines, two processes), sound-check 52, sound-levels 47, levels-parity 0 diffs, assets 18.5/20 MB, stage 3.9/6 MB, synth-check 44 byte for byte. Listening review https://storage.googleapis.com/stapledons-voyage-assets/refs/sound_s2/index.html. Paused for Mark's listen; not landed. S2b (deferred): stop_turn signal, brake_notice, crew_hold, medium_change, interlude_bed, bh_enter. Revision 4 after the re-evaluation (91/100 PASS at acb85bc7): Receiver -> True hands over at the generator's audible position (write cursor less buffered frames), test teardown frees orphans and waits for the mixer (0 leaked playbacks), stale wording fixed. Landed: #375 merged 2026-11-03 (ddc4795e) after Mark's listen (\"the sounds are awesome\"); rig/full and fast tier green; Codex evaluation 91/100 PASS (eval-375b)."
     },
     {
       "id": "S3_LANDING",
@@ -274,10 +281,10 @@
         ".ailang/state/evaluations/eval_R2-SOUND_round_1.json scores >= 70 with no blocking finding",
         "design doc moved to design_docs/implemented/r2/sound.md and indexed; changelog fragment present"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-03",
+      "completed": "2026-11-03",
+      "notes": "Landing PR: design doc, sprint plan and report in design_docs/implemented/r2/; README row; design repo roadmap and the known-compromises line. Evaluation was the cross-family Codex review of #375 (64 FAIL, then 91 PASS)."
     }
   ],
   "velocity": {
@@ -358,6 +365,21 @@
     {
       "id": "audio-budget",
       "what": "WAVs at 11.4 MB of the 12 MB git budget; zip growth over 6 MB: import assets/audio with QOA or render long loops at 24 kHz, before S1"
+    },
+    {
+      "id": "SOUND-RECEIVER-BEDS",
+      "status": "open",
+      "text": "The comms station's home sounds still correct Receiver pitch with Godot's AudioEffectPitchShift (AR8b): measured 314 Hz for a 400 Hz tone at D = 0.07 and 0.2, and short sounds smear at high D. Generate them as the beacon now is (envelope or stream at D, carrier/content at true pitch) or otherwise make Receiver exact; Mark's call."
+    },
+    {
+      "id": "SOUND-S2B",
+      "status": "open",
+      "text": "S2b cues not built: stop_turn (needs the tour's attitude_hold_changed signal), brake_notice, crew_hold, medium_change, interlude_bed, bh_enter."
+    },
+    {
+      "id": "SOUND-DUST-GENERATOR",
+      "status": "open",
+      "text": "Dust ticks start on the first frame at or after their own time (late by under one frame, never accumulating). Sample-accurate starts need a generator voice with ~0.1 s buffer, which would trail the dome's flashes; an option for Mark."
     }
   ]
 }

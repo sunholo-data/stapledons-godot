@@ -1,6 +1,6 @@
 class_name HomeBeacon
 extends RefCounted
-## R2-SOUND S2 (design_docs/planned/r2/sound.md §D6, amended 2026-10-27 and 2026-11-02): Earth's carrier at
+## R2-SOUND S2 (design_docs/implemented/r2/sound.md §D6, amended 2026-10-27 and 2026-11-02): Earth's carrier at
 ## the helm, made exact by the standing order of 2026-10-30 (stapledons-design vision/design-decisions.md:
 ## no compromises on the physics; an exact True setting and labelled Processed settings).
 ##
