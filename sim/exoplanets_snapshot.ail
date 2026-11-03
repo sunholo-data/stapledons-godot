@@ -1,0 +1,50 @@
+module stapledons/sim/exoplanets_snapshot
+-- Pure, lossless reader for the W2.0 generated snapshot JSON. No census,
+-- population or FS imports; generated-data representations can use it too.
+import ./tools/exoplanets (Planet as ObservedPlanet, archivePlanet)
+import std/json (Json,get,decode,getString,getNumber,getBool,getArray)
+import std/list (length,any)
+import std/option (Option,Some,None,getOrElse)
+import std/result (Ok,Err)
+import std/math (intToFloat)
+pure func allOf[a](f:a -> bool,xs:[a]) -> bool = not any(\x. not f(x),xs)
+pure func string(j:Json,key:string) -> string = getOrElse(getString(j,key),"")
+pure func traverse[a](f:Json -> Option[a],xs:[Json]) -> Option[[a]] = match xs {
+ []=>Some([]),x::rest=>match (f(x),traverse(f,rest)) {(Some(y),Some(ys))=>Some(y::ys),_=>None}
+}
+pure func field(j:Json) -> Option[(string,{value:float,prov:string,note:string,cite:string})] =
+ match (getString(j,"key"),getNumber(j,"value"),getString(j,"provenance"),getString(j,"note"),getString(j,"citation")) {
+ (Some(key),Some(v),Some(prov),Some(note),Some(cite))=>Some((key,{value:v,prov:prov,note:note,cite:cite})),_=>None
+}
+pure func planet(j:Json) -> Option[ObservedPlanet] =
+ if not allOf(\key. getString(j,key)!=None,["id","name","host","hostId","archiveHostId","matchMethod","status","source","massKind","hostSpectralType","reference"]) then None else
+ match (getNumber(j,"distancePc"),getBool(j,"inRegistry"),getArray(j,"fields"),getArray(j,"archiveFields")) {
+ (Some(dist),Some(inRegistry),Some(fs),Some(afs))=>match (traverse(field,fs),traverse(field,afs)) {
+ (Some(fields),Some(archiveFields))=>Some({id:string(j,"id"),name:string(j,"name"),host:string(j,"host"),hostId:string(j,"hostId"),
+ archiveHostId:string(j,"archiveHostId"),inRegistry:inRegistry,matchMethod:string(j,"matchMethod"),distancePc:dist,
+ status:string(j,"status"),massKind:string(j,"massKind"),hostSpectralType:string(j,"hostSpectralType"),fields:fields,
+ archiveFields:archiveFields,reference:string(j,"reference"),source:string(j,"source")}),_=>None},_=>None
+}
+export type Snapshot = {version:string,sha256:string,registrySha256:string,planets:[ObservedPlanet]}
+export pure func snapshotFromJson(text:string) -> Option[Snapshot] = match decode(text) {
+ Err(_)=>None,Ok(j)=>match (getString(j,"version"),getString(j,"snapshotSha256"),getString(j,"registrySha256"),getNumber(j,"planetCount"),getArray(j,"planets")) {
+ (Some(version),Some(sha),Some(reg),Some(count),Some(xs))=>match traverse(planet,xs) {
+ Some(ps)=>if count!=intToFloat(length(ps)) then None else Some({version:version,sha256:sha,registrySha256:reg,planets:ps}),None=>None},_=>None}
+}
+
+export pure func parsePlanets(text:string) -> Option[[ObservedPlanet]] = match snapshotFromJson(text) {None=>None,Some(s)=>Some(s.planets)}
+
+-- Compact compiled representation. Archive provenance is reconstructed by the
+-- SAME public constructor as W2.0; curated overrides retain full field records.
+-- The full-data witness checks it against the raw snapshot, field-for-field.
+pure func archiveField(j:Json) -> Option[(string,float)] = match (getString(j,"key"),getNumber(j,"value")) {
+ (Some(k),Some(v))=>Some((k,v)),_=>None
+}
+pure func compactPlanet(j:Json) -> Option[ObservedPlanet] = match get(j,"curated") {
+ Some(c)=>planet(c),None=>if not allOf(\key. getString(j,key)!=None,["name","host","hostId","matchMethod","reference","massKind","hostSpectralType","archiveHostId"]) then None else
+ match (getNumber(j,"distancePc"),getArray(j,"values")) {
+ (Some(dist),Some(vs))=>match traverse(archiveField,vs) {None=>None,Some(fs)=>Some(archivePlanet(string(j,"name"),string(j,"host"),string(j,"hostId"),string(j,"matchMethod"),dist,fs,string(j,"reference"),string(j,"massKind"),string(j,"hostSpectralType"),string(j,"archiveHostId")))},_=>None}
+}
+export pure func compiledPlanets(text:string) -> Option[[ObservedPlanet]] = match decode(text) {
+ Err(_)=>None,Ok(j)=>match getArray(j,"planets") {None=>None,Some(xs)=>traverse(compactPlanet,xs)}
+}

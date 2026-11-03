@@ -46,6 +46,11 @@ import ./stellar_surface (Surface, Spot, surfaceOf, lightAgeOf, loggInferred, lo
 import ./data/stellar_activity (activityOf)
 import pkg/sunholo/celestial/stellar (solarLogg)
 import ./similar (Ranked, Neighbour, similarWorlds, excluded)
+import ./protocol_worlds (encodeWorlds, visiblePlanetIds)
+import ./worlds_registry (CatalogueRow)
+import ./data/world_hosts (knownHostRows)
+import ./tools/exoplanets (Planet as ObservedWorldPlanet)
+import ./data/exoplanets (planets as measuredWorldPlanets)
 import ./data/similar (Feature, similarModel, neighbours, features)
 
 export type Override = { name: string, value: float }
@@ -80,7 +85,8 @@ export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= earthMinor() then {helloMsg() | minor: earthMinor(), relativity: relativityPin()}
+  if want >= worldsMinor() then {helloMsg() | minor: worldsMinor(), relativity: relativityPin()}
+  else if want >= earthMinor() then {helloMsg() | minor: earthMinor(), relativity: relativityPin()}
   else if want >= archiveMinor() then {helloMsg() | minor: archiveMinor(), relativity: relativityPin()}
   else if want >= similarMinor() then {helloMsg() | minor: similarMinor(), relativity: relativityPin()}
   else if want >= surfaceMinor() then {helloMsg() | minor: surfaceMinor(), relativity: relativityPin()}
@@ -190,7 +196,8 @@ pure func earthFull(s: Session, w: World) -> [string] = if s.minor >= earthMinor
 pure func withEarth(s: Session, before: World, after: World, x: Extras) -> Extras =
   if s.minor < earthMinor() || after.gr.active then x
   else { let a = earthSection(after); if !before.gr.active && earthSection(before) == a then x else {x | tail: x.tail ++ [a]} }
-pure func sessionMinor(want: int) -> int = if want >= earthMinor() then earthMinor() else if want >= archiveMinor() then archiveMinor() else if want >= similarMinor() then similarMinor() else if want >= surfaceMinor() then surfaceMinor() else if want >= homeTiersMinor() then homeTiersMinor() else if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+export pure func worldsMinor() -> int = earthMinor() + 1
+pure func sessionMinor(want: int) -> int = if want >= worldsMinor() then worldsMinor() else if want >= earthMinor() then earthMinor() else if want >= archiveMinor() then archiveMinor() else if want >= similarMinor() then similarMinor() else if want >= surfaceMinor() then surfaceMinor() else if want >= homeTiersMinor() then homeTiersMinor() else if want >= consoleMinor() then consoleMinor() else if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -517,7 +524,7 @@ export pure func finiteSystemOf(w:World)->SystemView {
 -- No system section at a black hole (M3.4b): Sol's bodies are 27,000 ly away.
 pure func systemFull(s: Session, w: World) -> [string] =
   if w.gr.active then []
-  else if s.minor >= stopsMinor() then [f("system", encodeSystemStopsAt(w, s.minor >= surfaceMinor()))]
+  else if s.minor >= stopsMinor() then [f("system", systemWorldsDirectory(s,w,encodeSystemStopsAt(w, s.minor >= surfaceMinor())))]
   else if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]
   else if s.minor >= systemMinor() then [f("system", encodeSystem(systemOf(w)))] else []
 -- Sent on a tick only when it can have changed: the clock (jd) or the ship's position moved.
@@ -841,10 +848,10 @@ export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
 -- (including a new_game that fails scenario validation) change nothing;
 -- refused intents are listed and the tick proceeds.
 -- minor: the negotiated protocol minor (2 turns on the consequence section and ship.ism).
-export type Session = { hello: bool, minor: int, game: Option[World] }
+export type Session = { hello: bool, minor: int, game: Option[World], worldsPlanets: [ObservedWorldPlanet], worldsHosts: [CatalogueRow] }
 export type Served = { session: Session, reply: string }
 
-export pure func newSession() -> Session = { hello: false, minor: 0, game: None }
+export pure func newSession() -> Session = { hello: false, minor: 0, game: None, worldsPlanets: [], worldsHosts: [] }
 pure func clockOf(p: Params, s: Ship) -> Clock = { tau: s.motion.tau, t: s.motion.t, year: p.epoch + s.motion.t, age: p.startAge + s.motion.tau }
 pure func shipOf(s: Ship) -> ShipView {
   let phi = s.motion.phi;
@@ -917,25 +924,64 @@ pure func bhParam(os: [Override], k: string, d: float) -> float = match os { [] 
 pure func sgrAStart() -> float = 1000000.0
 pure func hasIsmModel(os: [Override]) -> bool = match os { [] => false, o :: r => o.name == "ism_model" || hasIsmModel(r) }
 
+-- Only the preset id is stored. Neither it nor any population parameter is
+-- passed to the physical projection. Dataset decoding happens once per2.17
+-- session, avoiding repeated parsing or repeated hidden population histories.
+pure func worldsPreset(line:string) -> string = match decode(line) {Ok(j)=>match getString(j,"preset") {Some(p)=>p,None=>"stapledon"},Err(_)=>"stapledon"}
+pure func validWorldsPreset(line:string) -> bool = match decode(line) {Err(_)=>false,Ok(j)=>
+ if not has(j,"preset") then true else match getString(j,"preset") {None=>false,Some(p)=>p=="lonely" || p=="scattered" || p=="stapledon" || p=="teeming"}}
+pure func worldsTarget(w:World) -> string = match (journeyView(w)).plan {None=>"",Some(p)=>p.target.id}
+pure func worldsVisited(w:World) -> [CatalogueRow] = map(\c. {id:c.id,pos:c.pos,v:c.v,teff:c.teff,flags:0},w.catStars)
+pure func worldsSection(s:Session,w:World,full:bool) -> string = encodeWorlds(w.seed,position(w.ship),worldsTarget(w),s.worldsHosts,s.worldsPlanets,worldsVisited(w),full)
+pure func systemWorldsDirectory(s:Session,w:World,value:string) -> string =
+ if s.minor<worldsMinor() then value else withField(value,f("worlds_planet_ids",arr(map(q,visiblePlanetIds(w.seed,position(w.ship),s.worldsHosts,s.worldsPlanets,worldsVisited(w))))))
+pure func worldsFull(s:Session,w:World) -> [string] = if s.minor>=worldsMinor() && not w.gr.active then [f("worlds",worldsSection(s,w,true))] else []
+pure func withWorlds(s:Session,before:World,after:World,x:Extras) -> Extras =
+ if s.minor<worldsMinor() || after.gr.active then x
+ else if worldsTarget(before)==worldsTarget(after) && before.lastPlanId==after.lastPlanId && worldsVisible(s,before)==worldsVisible(s,after) then x
+ else {let a=worldsSection(s,after,false);if worldsSection(s,before,false)==a then x else {x | tail:x.tail++[f("worlds",a)]}}
+pure func worldsNear(a:Vec3,b:Vec3) -> bool =
+ absf(a.x-b.x)<0.1 && absf(a.y-b.y)<0.1 && absf(a.z-b.z)<0.1 && norm({x:a.x-b.x,y:a.y-b.y,z:a.z-b.z})<0.1
+pure func worldsVisible(s:Session,w:World) -> [string] {
+ let here=position(w.ship);
+ map(\r. r.id,filterWorldRows(s.worldsHosts,here)) ++ worldsNearbyCats(w.catStars,here)
+}
+pure func filterWorldRows(rs:[CatalogueRow],here:Vec3) -> [CatalogueRow] = match rs {[]=>[],r::rest=>if worldsNear(r.pos,here) then r::filterWorldRows(rest,here) else filterWorldRows(rest,here)}
+pure func worldsNearbyCats(cs:[CatStar],here:Vec3) -> [string] = match cs {[]=>[],c::rest=>if worldsNear(c.pos,here) then c.id::worldsNearbyCats(rest,here) else worldsNearbyCats(rest,here)}
+
+
+pure func tickExtras(s:Session,w:World,next:World) -> Extras {
+ let xd=withDeparture(s,w,next,cqExtras(s.minor,w,next));
+ let xs=withSystem(s,w,next,xd);
+ let xg=withGr(s,w,next,xs);
+ let xc=withCrewSection(s,w,next,xg);
+ let xr=withCruise(s,w,next,xc);
+ let xa=withArchiveHealth(s,w,next,xr);
+ let xe=withEarth(s,w,next,xa);
+ let xw=withWorlds(s,w,next,xe);
+ xw
+}
+
 export pure func serve(s: Session, line: string) -> Served =
   match decodeInput(line) {
     Err(c) => malformed(s, c),
     Ok(m) => match m {
-      GHello(h) => { session: {s | hello: true, minor: sessionMinor(h.minor)}, reply: encodeHello(helloFor(h.minor)) },
+      GHello(h) => { session: {s | hello: true, minor: sessionMinor(h.minor), worldsPlanets: if sessionMinor(h.minor)>=worldsMinor() then (match s.worldsPlanets {[]=>measuredWorldPlanets(),ps=>ps}) else s.worldsPlanets, worldsHosts: if sessionMinor(h.minor)>=worldsMinor() then (match s.worldsHosts {[]=>knownHostRows(),rs=>rs}) else s.worldsHosts}, reply: encodeHello(helloFor(h.minor)) },
       GQuit => { session: s, reply: "" },
       GNewGame(g) => if !s.hello then malformed(s, "no_hello") else if g.scenario == "solar_departure" && s.minor < departureMinor() then malformed(s, "bad_game")
         else if g.scenario == "free_nav" && s.minor < stopsMinor() then malformed(s, "bad_game")
         else if g.scenario == "sgr_a" && s.minor < grMinor() then malformed(s, "bad_game")
         else if g.scenario != "sgr_a" && hasBh(g.params) then malformed(s, "bad_params")
         else if s.minor < ismMinor() && hasIsmModel(g.params) then malformed(s, "bad_params")
-        else if s.minor < crewMinor() && g.crew != None then malformed(s, "bad_game") else {
+        else if s.minor < crewMinor() && g.crew != None then malformed(s, "bad_game")
+        else if s.minor >= worldsMinor() && not validWorldsPreset(line) then malformed(s, "bad_game") else {
         let p = applyAll(if s.minor >= ismMinor() && g.scenario != "sgr_a" then {defaultParams() | ismModel: 1.0} else defaultParams(), flatParams(g.params));
         match scenarioError(p) {
           Some(c) => malformed(s, c),
           None => match (if s.minor >= 2 then archiveRows(line) else Ok([])) {
             Err(c) => malformed(s, c),
             Ok(rows) => {
-              let initial = newWorld(g.seed, g.diag, p);
+              let initial = {newWorld(g.seed, g.diag, p) | preset: if s.minor >= worldsMinor() then worldsPreset(line) else "stapledon"};
               match (if g.scenario == "solar_departure" then solarInitialize(initial)
                      -- Explicit playable start; legacy sol and its recordings retain
                      -- the origin convention. Reuse the checked Earth initializer.
@@ -952,7 +998,7 @@ export pure func serve(s: Session, line: string) -> Served =
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
                 events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ cruiseFull(s, w) ++ similarFull(s) ++ archiveFull(s, w) ++ earthFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ cruiseFull(s, w) ++ similarFull(s) ++ archiveFull(s, w) ++ earthFull(s, w) ++ worldsFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
               }
               }
             }
@@ -971,7 +1017,8 @@ export pure func serve(s: Session, line: string) -> Served =
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withEarth(s, w, next, withArchiveHealth(s, w, next, withCruise(s, w, next, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next))))))))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, tickExtras(s,w,next)) else encodeState(state) }
+
         }
       }
     }

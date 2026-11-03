@@ -1,0 +1,109 @@
+module stapledons/sim/tools/census_main
+-- W2.2 FS shell only. Its JSON is internal evidence; never sent by ship.ail.
+-- Read the verified generated JSON rather than recompiling 1,599 planet
+-- literals for an offline census. This parser preserves every scalar/string.
+import stapledons/sim/tools/catalogue (transform)
+import stapledons/sim/tools/truth (parseTruth,index,applyGcns)
+import stapledons/sim/tools/bright_main (readLinks)
+import stapledons/sim/tools/starmap (starJson,mapId)
+import stapledons/sim/exoplanets_snapshot (snapshotFromJson)
+import stapledons/sim/census (censusFor,censusDigest,countsJson,statisticsFor,statisticsJson,statisticsAcross,populate,withHistoryParams,countSystems,digestSystems,systemsNestedAcross,nestedAcross,growthStable,observedIdentity,auditPopulation,populationAuditPasses,populationAuditJson)
+import stapledons/sim/worlds_catalogue (rowsFromJsonWith)
+import stapledons/sim/tools/exoplanets (Planet as ObservedPlanet, catalogueDigest)
+import stapledons/sim/data/presets (allPresets,presetOf)
+import pkg/sunholo/worlds/baseline (baselineVersion,baseline)
+import pkg/sunholo/worlds/dial (applyDial,zeroDial)
+import std/fs (readFile,writeFile)
+import std/json (Json,decode,jo,kv,ja,js,jb,jint,encode,getString,getNumber,getBool,getArray)
+import std/list (map,length,take,any,zipWith,filter)
+import std/map (fromList,member)
+import std/option (Option,Some,None,getOrElse)
+import std/result (Ok,Err)
+import std/io (println,exit)
+import std/math (intToFloat)
+import std/crypto (sha256Hex)
+
+pure func allOf[a](f:a -> bool,xs:[a]) -> bool = not any(\x. not f(x),xs)
+export func main(a:{registry:string,output:string,seed:int,seeds:int}) -> () ! {FS,IO} {
+ let raw=readFile(a.registry);
+ let source=readFile("data/planets/exoplanets.json");
+ match snapshotFromJson(source) {
+ None=>{println("census: FAIL malformed measured-planet JSON");exit(1)},
+ Some(snapshot)=>{
+ let known=snapshot.planets;
+ let rows=rowsFromJsonWith(raw,known);
+ let presets=allPresets();
+ let rowIds=fromList(map(\r. (r.id,true),rows));
+ let matched=length(filter(\p. member(rowIds,observedIdentity(p)),known));
+ if length(rows)==0 || a.seeds<1 then {println("census: FAIL empty registry or invalid seed count");exit(1)} else {
+ let statsAll=statisticsAcross(a.seed,a.seeds,map(\p. p.dial,presets),rows,known);
+ let physical=populate(a.seed,zeroDial(),rows,known);
+ let variants=map(\p. {
+  let params=applyDial(baseline(),p.dial);
+  map(\s. withHistoryParams(a.seed,params,s),physical)
+ },presets);
+ let pairs=zipWith(\stats systems. {statistics:stats,systems:systems},statsAll,variants);
+ let reports=zipWith(\p pair. {
+  let stats=pair.statistics;
+  let audit=auditPopulation(rows,pair.systems);
+  {passes:stats.passes,auditPasses:populationAuditPasses(audit),json:jo([kv("preset",js(p.id)),kv("calibrated",jb(p.calibrated)),kv("statistics",statisticsJson(stats)),
+   kv("populationAudit",populationAuditJson(audit)),
+   kv("firstSeedCounts",countsJson(countSystems(pair.systems))),
+   kv("firstSeedDigest",js(digestSystems(pair.systems,known)))])}
+ },presets,pairs);
+ let moments=allOf(\r. r.passes,reports);
+ let populationValid=allOf(\r. r.auditPasses,reports);
+ let entries=map(\r. r.json,reports);
+ let nested=systemsNestedAcross(variants);
+ let stable=growthStable(a.seed,zeroDial(),take(1000,rows),rows,known);
+ let out=encode(jo([kv("baseline",js(baselineVersion())),kv("dataVersion",js(snapshot.version)),
+ kv("snapshotSha256",js(snapshot.sha256)),kv("measuredCatalogueDigest",js(catalogueDigest(known))),
+ kv("measuredPlanetsMatchedByIdentity",jint(matched)),kv("measuredPlanetsOutsideRegistryOrUncrossmatched",jint(length(known)-matched)),
+ kv("identityMatching",js("navigation hostId, else archive Gaia DR3; positional-only farther hosts require re-crossmatch before complete L3 claims")),
+ kv("measuredJsonSha256",js(sha256Hex(source))),kv("registrySha256",js(sha256Hex(raw))),kv("systems",jint(length(rows))),
+ kv("firstSeed",jint(a.seed)),kv("seeds",jint(a.seeds)),kv("withinFourSigma",jb(moments)),kv("populationValid",jb(populationValid)),kv("nested",jb(nested)),kv("growthStable",jb(stable)),
+ kv("biospheresDefinition",js("immutable inhabited backgrounds; mindsWindow is technological-epoch overlap with [0,16000]")),
+ kv("presets",ja(entries))]));
+ writeFile(a.output,"${out}\n");
+ println("census: ${length(rows)} systems; ${a.seeds} seeds/preset; moments=${moments}; labels/RV=${populationValid}; nested=${nested}; growthStable=${stable}; report=${a.output}");
+ if moments && populationValid && nested && stable then () else exit(1)
+ }
+ }
+ }
+}
+
+export func snapshotWitness(path:string) -> () ! {FS,IO} = match snapshotFromJson(readFile(path)) {
+ None=>{println("census snapshot: FAIL malformed snapshot");exit(1)},
+ Some(s)=>{let digest=catalogueDigest(s.planets);
+ println("census snapshot: ${length(s.planets)} complete planets; digest=${digest}");
+ if length(s.planets)==1599 && s.sha256=="ce6345482ca387dd6a8fca73d909d25b78c3ce24eea5efab1afdbda279ea335b"
+ && digest=="116e7d91897fef17cb8e44e91742ceffc97286fbbb52a4e7a357d5fb56d1c8f1" then () else exit(1)}
+}
+
+-- GCNS's shipped sky sidecar contains identities only; the binary positions
+-- are float32. The census uses the pinned CSV and the same truth/companion
+-- transformation as bright_main.gcnsMain, retaining binary64 coordinates.
+export func largeInputMain(a:{csv:string,truth:string,companions:string,output:string}) -> () ! {FS,IO} {
+ let csv=readFile(a.csv);let truth=readFile(a.truth);let companions=readFile(a.companions);
+ match (transform(csv),parseTruth(truth),readLinks(companions)) {
+ (Ok(parsed),Ok(tr),Ok(links))=>{
+  let rows=map(\r. {r | id:mapId(r.id)},applyGcns(parsed.rows,index(tr),links));
+  let text=encode(jo([kv("source",js("GCNS 100pc; same truth/companion rules as shipped large sky tier; binary64 CSV coordinates")),
+   kv("csvSha256",js(sha256Hex(csv))),kv("truthSha256",js(sha256Hex(truth))),kv("companionsSha256",js(sha256Hex(companions))),
+   kv("count",jint(length(rows))),kv("stars",ja(map(starJson,rows)))]));
+  writeFile(a.output,"${text}\n");println("census-large-input: ${length(rows)} binary64 GCNS rows -> ${a.output}")
+ },_=>{println("census-large-input: FAIL invalid CSV, truth or companion input");exit(1)}
+ }
+}
+
+-- Pure 500-system witness: shell/CLI supplies complete source strings as
+-- JSON arguments, so every population/hash operation runs under strict VM.
+export pure func paritySubset(a:{registry:string,snapshot:string,seed:int}) -> string =
+ match snapshotFromJson(a.snapshot) {
+ None=>"CENSUS-PARITY-FAIL invalid snapshot",
+ Some(s)=>{
+  let rows=take(500,rowsFromJsonWith(a.registry,s.planets));
+  if length(rows)!=500 then "CENSUS-PARITY-FAIL registry has fewer than500 rows" else
+  censusDigest(a.seed,(presetOf("stapledon")).dial,rows,s.planets)
+ }
+}

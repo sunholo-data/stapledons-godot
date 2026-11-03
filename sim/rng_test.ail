@@ -4,9 +4,10 @@ module stapledons/sim/rng_test
 -- expected value comes from tools/rng_ref.py (Python, exact mod-2^64
 -- integers); values are two's-complement Int as AILANG prints them.
 import ./rng (Rng, Stream, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, Drew, rngId, mix64, shr, splitmix64, streamKey, value, top53,
-  allStreams, streamId, streamName, streamOf, zeroRng, counter, draw)
+  idHash, keyed, unit53, allStreams, streamId, streamName, streamOf, zeroRng, counter, draw)
 import std/option (Option, Some, None)
 import std/string (join, intToStr)
+import std/math (floatToInt)
 
 pure func allTrue(xs: [bool]) -> bool = match xs { [] => true, x :: r => x && allTrue(r) }
 pure func map(g: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => g(x) :: map(g, r) }
@@ -107,3 +108,36 @@ test "M2.4 SplitMix64 published vectors (seed 0, 1234567)" { checkSplitMixKnown(
 test "AC11 checkRngVectors: per-stream reference vectors bit for bit" { checkRngVectors() }
 test "AC11 checkStreamsIndependent" { checkStreamsIndependent() }
 test "M2.4 stream ids fixed, names round trip" { checkStreamNames() }
+
+-- W1.3: every distinct UTF-8 id/output is checked against the independent oracle.
+pure func keyedName(i: int) -> string =
+  if i % 7 == 0 then "α-Cen-🌍-${i}" else "system-${i}"
+pure func keyedLine(seed: int, i: int) -> string {
+  let h = idHash(keyedName(i));
+  let v = keyed(seed, 0x574f524c4453, h, i % 19);
+  "${h} ${v} ${top53(v)} ${floatToInt(unit53(v) * 9007199254740992.0)}"
+}
+pure func keyedBlock(seed: int, i: int, end: int) -> [string] =
+  if i >= end then [] else keyedLine(seed, i) :: keyedBlock(seed, i + 1, end)
+pure func keyedBlocks(seed: int, i: int) -> [string] =
+  if i >= 10000 then [] else keyedBlock(seed, i, i + 100) ++ keyedBlocks(seed, i + 100)
+export pure func rngKeyedDump(seed: int) -> string = join("\n", keyedBlocks(seed, 0))
+pure func unitBounds(i: int, n: int) -> bool =
+  if i >= n then true else {
+    let v = keyed(7, 0x574f524c4453, idHash(keyedName(i)), i % 19);
+    unit53(v) >= 0.0 && unit53(v) < 1.0 && unitBounds(i + 1, n)
+  }
+pure func checkKeyed() -> bool {
+  idHash("") == 0xcbf29ce484222325 && idHash("hello") == 0xa430d84680aabd0b
+  && keyed(7, 1, idHash("alpha"), 0) != keyed(7, 2, idHash("alpha"), 0)
+  && keyed(7, 1, idHash("alpha"), 0) != keyed(7, 1, idHash("beta"), 0)
+  && keyed(7, 1, idHash("alpha"), 0) != keyed(7, 1, idHash("alpha"), 1)
+}
+test "W1.3 FNV-1a published ASCII vectors and independent keys" { checkKeyed() }
+test "W1.3 unit53 exact endpoints and 10000 keyed bounds" {
+  unit53(0) == 0.0 && unit53(-1) == 0.9999999999999999 && unitBounds(0, 10000)
+}
+
+export pure func rngKeyedVm(_: int) -> string =
+  if checkKeyed() && unit53(0) == 0.0 && unit53(-1) == 0.9999999999999999 && unitBounds(0, 10000)
+  then "keyed-rng-ok" else "keyed-rng-BAD"

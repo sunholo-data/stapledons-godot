@@ -17,6 +17,9 @@ module stapledons/sim/rng
 -- the interpreter (probed at M2.4 start). `>>` is arithmetic, so the
 -- logical shift SplitMix64 needs is `shr` below.
 import std/option (Option, Some, None)
+import std/bytes (fromString, toInts)
+import std/list (foldl)
+import std/math (intToFloat)
 
 export pure func rngId() -> string = "splitmix64-1"
 
@@ -65,6 +68,18 @@ export pure func streamKey(seed: int, s: Stream) -> int = mix64(mix64(seed) ^ st
 export pure func value(seed: int, s: Stream, n: int) -> int = splitmix64(streamKey(seed, s), n)
 -- The top 53 bits, in [0, 2^53): exact as a JSON number (the `draw` event).
 export pure func top53(v: int) -> int = shr(v, 11)
+
+-- W1.3: random access without touching the World's named streams or counters.
+-- Stable IDs are FNV-1a over bytes, never Unicode code points or catalogue order.
+export pure func idHash(s: string) -> int =
+  foldl(\h b. (h ^ b) * 0x100000001b3, 0xcbf29ce484222325, toInts(fromString(s)))
+
+-- n is a draw index within a stable key; callers keep their domain constants fixed.
+export pure func keyed(seed: int, domain: int, key: int, n: int) -> int =
+  splitmix64(mix64(mix64(seed) ^ domain) ^ key, n)
+
+-- Exactly representable numerator/denominator; neither endpoint rounds up to 1.
+export pure func unit53(v: int) -> float = intToFloat(top53(v)) / 9007199254740992.0
 
 -- Draw the next value of stream s: the value at its counter, counter + 1.
 export type Drew = { rng: Rng, n: int, value: int }

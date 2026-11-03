@@ -1,0 +1,43 @@
+module stapledons/sim/calibrate_search
+-- Quarter-dex search over life, shared minds/technology, and lifetime.
+-- This code makes no telescope assumption: callers must provide a Detect.
+-- A failed band remains a conflict, never a modified target or forced preset.
+import ./calibrate (Row,cautious,wanderer,simulate)
+import ./data/detect (Detect)
+import pkg/sunholo/worlds/dial (Dial)
+import std/list (map,flatMap,filter,foldl,length,sortBy,nth_or)
+import std/math (intToFloat,floatToInt,floor)
+
+export type Score = {dial:Dial,fits:bool,loss:float,conflicts:[string]}
+export type Band = {key:string,lo:float,hi:float,upper:bool}
+pure func ints(lo:int,hi:int) -> [int] = if lo>hi then [] else lo::ints(lo+1,hi)
+export pure func grid(lifeLo:int,lifeHi:int,mindsLo:int,mindsHi:int,timeLo:int,timeHi:int) -> [Dial] =
+ flatMap(\life. flatMap(\minds. map(\time. {life:intToFloat(life)/4.0,minds:intToFloat(minds)/4.0,tech:intToFloat(minds)/4.0,lifetime:intToFloat(time)/4.0},ints(timeLo,timeHi)),ints(mindsLo,mindsHi)),ints(lifeLo,lifeHi))
+pure func band(key:string,lo:float,hi:float) -> Band = {key:key,lo:lo,hi:hi,upper:true}
+export pure func targetBands(id:string) -> [Band] =
+ if id=="scattered" then [band("detected",20.0,40.0),band("visited",3.0,6.0),band("remnants",1.0,3.0),band("signals",1.0,3.0),band("contacts",1.0,2.0)]
+ else if id=="teeming" then [band("detected",80.0,160.0),band("visited",8.0,12.0),band("remnants",6.0,12.0),band("signals",15.0,30.0),band("contacts",8.0,12.0)]
+ else [band("detected",40.0,80.0),band("visited",5.0,10.0),band("remnants",3.0,6.0),band("signals",5.0,10.0),{key:"contacts",lo:5.0,hi:8.0,upper:false}]
+pure func count(r:Row,key:string) -> int = if key=="detected" then r.detected else if key=="visited" then r.visited else if key=="remnants" then r.remnants else if key=="signals" then r.signals else r.contacts
+pure func med(rows:[Row],key:string) -> float {
+ let xs=sortBy(\a b. if a<b then -1 else if a>b then 1 else 0,map(\r. count(r,key),rows));
+ intToFloat(nth_or(xs,floatToInt(floor(intToFloat(length(xs)-1)/2.0)),0))
+}
+pure func oneBand(s:Score,rows:[Row],strategy:string,b:Band) -> Score {
+ let value=med(rows,b.key);
+ let fits=length(rows)>0 && value>=b.lo && (not b.upper || value<=b.hi);
+ let delta=(value-(b.lo+b.hi)/2.0)/(b.hi-b.lo);
+ {s|fits:s.fits && fits,loss:s.loss+delta*delta,conflicts:if fits then s.conflicts else s.conflicts++["${strategy}:${b.key}"]}
+}
+export pure func assessRows(id:string,d:Dial,rows:[Row]) -> Score =
+ foldl(\score strategy. {let selected=filter(\r. r.strategy==strategy,rows);
+ foldl(\s b. oneBand(s,selected,strategy,b),score,targetBands(id))},
+ {dial:d,fits:true,loss:0.0,conflicts:[]},["cautious","wanderer"])
+export pure func assess(id:string,d:Dial,seeds:int,doom:float,detect:Detect) -> Score {
+ let preset={id:id,name:id,dial:d,calibrated:false};
+ let rows=flatMap(\strategy. map(\seed. simulate(seed,preset,strategy,doom,detect),ints(0,seeds-1)),[cautious(),wanderer()]);
+ assessRows(id,d,rows)
+}
+export pure func searchGrid(id:string,ds:[Dial],seeds:int,doom:float,detect:Detect) -> [Score] =
+ sortBy(\a b. if a.fits!=b.fits then (if a.fits then -1 else 1) else if a.loss<b.loss then -1 else if a.loss>b.loss then 1 else 0,
+ map(\d. assess(id,d,seeds,doom,detect),ds))

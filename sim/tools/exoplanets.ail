@@ -1,0 +1,138 @@
+module stapledons/sim/tools/exoplanets
+-- R3-WORLDS W2.0. NASA PS default rows <=100pc, preserving missingness,
+-- archive floats and citations. No planet physics or radius/mass inference.
+-- The archive delivers one record per physical line. Quoted commas and quotes
+-- follow CSV rules; embedded newlines are not part of this pinned projection.
+import std/string (substring, length, split, join, trim, replace, startsWith, concat, compare, stringToFloat)
+import std/list (map, filter, flatMap, foldl, sortBy, nth_or, length as size, any)
+import std/option (Option, Some, None, getOrElse)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, encode, getArray, getString, getNumber, jo, kv, js, jnum, jint, jb, ja)
+import std/math (sqrt, PI)
+import std/crypto (sha256Hex)
+import std/fs (readFile, writeFile)
+import std/io (println, exit)
+import pkg/sunholo/celestial/frames (equatorialToGalactic, unitFromAngles)
+import stapledons/sim/data/acen (Field, bodies)
+import stapledons/sim/data/trappist1 (trappistPlanets)
+
+export type Host = {id: string, x: float, y: float, z: float}
+export type Planet = {id: string, name: string, host: string, hostId: string, archiveHostId: string,
+ inRegistry: bool, matchMethod: string, distancePc: float, status: string,
+ massKind: string, hostSpectralType: string, fields: [(string, Field)], archiveFields: [(string, Field)], reference: string, source: string}
+
+-- show() is a bounded human display, never an equality oracle or data digest.
+-- Compare every scalar and provenance string without a display/length limit.
+export pure func fieldsEqual(a: [(string,Field)], b: [(string,Field)]) -> bool =
+ match (a,b) {
+  ([],[]) => true,
+  ((ka,fa)::ar,(kb,fb)::br) => ka == kb && fa.value == fb.value && fa.prov == fb.prov && fa.note == fb.note && fa.cite == fb.cite && fieldsEqual(ar,br),
+  _ => false
+ }
+pure func planetEqual(a: Planet,b: Planet) -> bool =
+ a.id == b.id && a.name == b.name && a.host == b.host && a.hostId == b.hostId && a.archiveHostId == b.archiveHostId
+ && a.inRegistry == b.inRegistry && a.matchMethod == b.matchMethod && a.distancePc == b.distancePc
+ && a.status == b.status && a.massKind == b.massKind && a.hostSpectralType == b.hostSpectralType
+ && a.reference == b.reference && a.source == b.source && fieldsEqual(a.fields,b.fields) && fieldsEqual(a.archiveFields,b.archiveFields)
+export pure func planetsEqual(a: [Planet],b: [Planet]) -> bool = match (a,b) {
+ ([],[]) => true,
+ (pa::ar,pb::br) => planetEqual(pa,pb) && planetsEqual(ar,br),
+ _ => false
+}
+
+pure func cell(s: string) -> string = if startsWith(s,"\"") && length(s) >= 2 then replace(substring(s,1,length(s)-1),"\"\"","\"") else s
+pure func lineCells(s: string, i: int, start: int, quoted: bool, acc: [string]) -> [string] =
+ if i >= length(s) then acc ++ [cell(substring(s,start,length(s)))]
+ else {let c=substring(s,i,i+1);
+ if c == "\"" then lineCells(s,i+1,start,not quoted,acc)
+ else if c == "," && not quoted then lineCells(s,i+1,i+1,false,acc ++ [cell(substring(s,start,i))])
+ else lineCells(s,i+1,start,quoted,acc)}
+export pure func csvRows(text: string) -> [[string]] = map(\l. lineCells(replace(l,"\r",""),0,0,false,[]),filter(\l. trim(l) != "",split(text,"\n")))
+pure func at(row: [string], n: int) -> string = nth_or(row,n,"")
+pure func f(v: float, key: string, reference: string) -> Field = {value:v,prov:"measured",note:"NASA ps default parameter; ${key}",cite:reference}
+pure func observed(v: float, key: string, ref: string, massKind: string) -> Field = if key == "best_mass_earth" then
+ {value:v,prov:if massKind == "M-R relationship" then "inferred" else "measured",note:"NASA ps best mass provenance: ${massKind}",cite:ref}
+ else if key == "equilibrium_k" || key == "insolation_earth" then
+ {value:v,prov:"inferred",note:"NASA ps published irradiation/blackbody model parameter; not a measured surface climate; ${key}",cite:ref}
+ else f(v,key,ref)
+
+pure func fields(row: [string]) -> [(string, Field)] {
+ let cols=[("ra_deg",3),("dec_deg",4),("distance_pc",5),("period_d",6),("a_au",7),("e",8),("radius_earth",9),("mass_earth",10),("msini_earth",11),("best_mass_earth",12),("insolation_earth",14),("equilibrium_k",15),("incl_deg",16),("host_teff_k",17),("host_radius_sun",18),("host_mass_sun",19),("host_log_luminosity_sun",20)];
+ flatMap(\c. match c {(key,i) => match stringToFloat(at(row,i)) {Some(v) => [(key,observed(v,key,at(row,22),at(row,13)))], None => []}},cols)
+}
+-- Stable exact Gaia identity takes precedence over position. Positional matches
+-- are unique within 1 arcsec on the unit sphere, using celestial's frame map.
+-- The archive and stellar positions must be epoch-compatible; no distance match
+-- or display name is used to guess an identity.
+pure func posMatch(row: [string], hosts: [Host]) -> [Host] = match (stringToFloat(at(row,3)),stringToFloat(at(row,4))) {
+ (Some(ra),Some(dec)) => {let u=equatorialToGalactic(unitFromAngles(ra*PI()/180.0,dec*PI()/180.0));
+ filter(\h. {let d=sqrt(h.x*h.x+h.y*h.y+h.z*h.z); if d <= 0.0 then false else {let dx=h.x/d-u.x;let dy=h.y/d-u.y;let dz=h.z/d-u.z; dx*dx+dy*dy+dz*dz <= 2.3504430539e-11}},hosts)}, _ => []}
+pure func matchHost(row: [string], hosts: [Host]) -> (string,string) = {
+ let exact=filter(\h. h.id == at(row,2) && at(row,2) != "",hosts);
+ match exact {[h] => (h.id,"gaia-dr3"), [] => match posMatch(row,hosts) {[h] => (h.id,"position-1arcsec"), [] => ("","unmatched"), _ => ("","ambiguous-position")}, _ => ("","ambiguous-gaia")}
+}
+pure func parsePlanet(row: [string], hosts: [Host]) -> Planet = match matchHost(row,hosts) {(hid,method) =>
+ {id:"nasa-ps:${at(row,0)}",name:at(row,0),host:at(row,1),hostId:hid,archiveHostId:at(row,2),inRegistry:hid != "",matchMethod:method,distancePc:getOrElse(stringToFloat(at(row,5)),0.0),status:"confirmed",massKind:at(row,13),hostSpectralType:at(row,21),fields:fields(row),archiveFields:fields(row),reference:at(row,22),source:"NASA ps default snapshot 2026-11-02"}}
+pure func curatedHost(host: string) -> bool = host == "Proxima Cen" || host == "alf Cen A" || host == "alf Cen B" || host == "TRAPPIST-1"
+pure func hostId(host: string) -> string = if host == "proxima" then "Gaia DR3 5853498713190525696" else if host == "acen-a" then "CNS5:3627" else if host == "acen-b" then "HIP 71681" else "Gaia DR3 2635476908753563008"
+pure func archiveFor(id: string, archive: [Planet]) -> [Planet] = filter(\p.
+ if id == "proxima-b" then p.name == "Proxima Cen b" else if id == "proxima-d" then p.name == "Proxima Cen d" else if startsWith(id,"trappist-1") then p.name == "TRAPPIST-1 ${substring(id,length(id)-1,length(id))}" else false,archive)
+pure func archiveFieldsFor(id: string, archive: [Planet]) -> [(string,Field)] = match archiveFor(id,archive) {[p] => p.archiveFields, _ => []}
+export pure func curatedPlanets(archive: [Planet]) -> [Planet] =
+ map(\b. {id:b.id,name:b.name,host:b.host,hostId:hostId(b.host),archiveHostId:hostId(b.host),inRegistry:true,matchMethod:"curated",distancePc:0.0,status:b.status,massKind:"curated; see individual fields",hostSpectralType:"",fields:b.fields,archiveFields:archiveFieldsFor(b.id,archive),reference:"sim/data/acen.ail; curated citations on each field",source:"curated alpha Centauri"},filter(\b. b.kind == "planet",bodies())) ++
+ map(\p. {id:p.id,name:p.name,host:"trappist-1",hostId:hostId("trappist-1"),archiveHostId:hostId("trappist-1"),inRegistry:true,matchMethod:"curated",distancePc:0.0,status:"confirmed",massKind:"Mass",hostSpectralType:"M8 V",fields:p.fields,archiveFields:archiveFieldsFor(p.id,archive),reference:"sim/data/trappist1.ail; curated citations on each field",source:"curated TRAPPIST-1"},trappistPlanets())
+pure func withRegistry(p: Planet, hosts: [Host]) -> Planet = match filter(\h. h.id == p.hostId,hosts) {
+ [h] => {p | inRegistry:true,distancePc:sqrt(h.x*h.x+h.y*h.y+h.z*h.z)/3.261563777,source:"${p.source}; distance from navigation catalogue"},
+ _ => {p | inRegistry:false,distancePc:0.0,source:"${p.source}; no navigation-catalogue distance"}}
+
+pure func headerValid(rows: [[string]]) -> bool = match rows {h :: _ => join(",",h) == "pl_name,hostname,gaia_dr3_id,ra,dec,sy_dist,pl_orbper,pl_orbsmax,pl_orbeccen,pl_rade,pl_masse,pl_msinie,pl_bmasse,pl_bmassprov,pl_insol,pl_eqt,pl_orbincl,st_teff,st_rad,st_mass,st_lum,st_spectype,pl_refname", _ => false}
+
+export pure func build(csv: string, hosts: [Host], curated: bool) -> [Planet] = match csvRows(csv) {
+ [] => [], _ :: rows => if not headerValid(csvRows(csv)) then [] else {let raw=map(\r. parsePlanet(r,hosts),filter(\r. at(r,0) != "" && size(r) == 23,rows));
+ let ps=if curated then filter(\p. not curatedHost(p.host),raw) ++ map(\p. withRegistry(p,hosts),curatedPlanets(raw)) else raw;
+ sortBy(\a b. compare(a.id,b.id),ps)}
+}
+export pure func parseRegistry(text: string) -> [Host] = match decode(text) {Err(_) => [], Ok(j) =>
+ match getArray(j,"stars") {None => [], Some(xs) => flatMap(\r. match (getString(r,"id"),getNumber(r,"x"),getNumber(r,"y"),getNumber(r,"z")) {(Some(id),Some(x),Some(y),Some(z)) => [{id:id,x:x,y:y,z:z}],_ => []},xs)}}
+pure func fieldJson(x: (string,Field)) -> Json = match x {(key,v) => jo([kv("key",js(key)),kv("value",jnum(v.value)),kv("provenance",js(v.prov)),kv("note",js(v.note)),kv("citation",js(v.cite))])}
+pure func jsonPlanet(p: Planet) -> Json = jo([kv("id",js(p.id)),kv("name",js(p.name)),kv("host",js(p.host)),kv("hostId",js(p.hostId)),kv("archiveHostId",js(p.archiveHostId)),kv("inRegistry",jb(p.inRegistry)),kv("matchMethod",js(p.matchMethod)),kv("distancePc",jnum(p.distancePc)),kv("status",js(p.status)),kv("source",js(p.source)),kv("massKind",js(p.massKind)),kv("hostSpectralType",js(p.hostSpectralType)),kv("reference",js(p.reference)),kv("fields",ja(map(fieldJson,p.fields))),kv("archiveFields",ja(map(fieldJson,p.archiveFields)))])
+pure func jsonText(ps: [Planet], rawSha: string, registrySha: string) -> string = "${encode(jo([kv("version",js("exoplanets-2026.11")),kv("source",js("NASA Exoplanet Archive ps; default_flag=1 and sy_dist<=100; curated systems win")),kv("snapshotSha256",js(rawSha)),kv("registrySha256",js(registrySha)),kv("planetCount",jint(size(ps))),kv("planets",ja(map(jsonPlanet,ps)))]))}\n"
+-- Full JSON encoding has no human-display truncation. Blank input hashes keep
+-- the digest about the complete ordered catalogue values and provenance.
+export pure func catalogueDigest(ps: [Planet]) -> string = sha256Hex(jsonText(ps,"",""))
+-- Emit AILANG values from the same parsed floats, using show's round-trip
+-- representation; strings use JSON escaping (a subset of AILANG string escapes).
+pure func q(s: string) -> string = replace(encode(js(s)),concat(["$","{"]),concat(["\\","$","{"]))
+export pure func archivePlanet(name: string, host: string, hid: string, method: string, dist: float, values: [(string,float)], ref: string, massKind: string, spectral: string, archiveId: string) -> Planet {
+ let fs=map(\v. match v {(k,x) => (k,observed(x,k,ref,massKind))},values);
+ {id:"nasa-ps:${name}",name:name,host:host,hostId:hid,archiveHostId:archiveId,inRegistry:hid != "",matchMethod:method,distancePc:dist,status:"confirmed",massKind:massKind,hostSpectralType:spectral,fields:fs,archiveFields:fs,reference:ref,source:"NASA ps default snapshot 2026-11-02"}
+}
+
+pure func compiledRow(p:Planet) -> Json = if p.matchMethod=="curated" then jo([kv("curated",jsonPlanet(p))]) else
+ jo([kv("name",js(p.name)),kv("host",js(p.host)),kv("hostId",js(p.hostId)),kv("matchMethod",js(p.matchMethod)),kv("distancePc",jnum(p.distancePc)),
+ kv("reference",js(p.reference)),kv("massKind",js(p.massKind)),kv("hostSpectralType",js(p.hostSpectralType)),kv("archiveHostId",js(p.archiveHostId)),
+ kv("values",ja(map(\x. match x {(k,f)=>jo([kv("key",js(k)),kv("value",jnum(f.value))])},p.fields)))])
+pure func compiledText(ps:[Planet]) -> string = encode(jo([kv("planets",ja(map(compiledRow,ps)))]))
+
+-- A single canonical JSON constant avoids typechecking thousands of repeated
+-- record/list literals at every cold sidecar launch. Decoding is pure and
+-- preserves full round-trip floats/provenance; exoplanets_verify checks every
+-- scalar against regeneration on both engines. The public data API is unchanged.
+pure func sourceText(ps: [Planet], rawSha: string, registrySha: string) -> string =
+ "module stapledons/sim/data/exoplanets\n-- Generated by sim/tools/exoplanets.ail; never edit. NASA ps 2026-11-02.\n-- Canonical JSON representation; pure decoding, every scalar/provenance retained.\n-- Input SHA256 ${rawSha}; curated fields override archiveFields.\nimport stapledons/sim/tools/exoplanets (Planet)\nimport stapledons/sim/exoplanets_snapshot (compiledPlanets)\nimport std/option (Some, None)\nexport pure func dataVersion() -> string = \"exoplanets-2026.11\"\nexport pure func snapshotSha256() -> string = ${q(rawSha)}\nexport pure func planets() -> [Planet] = match compiledPlanets(${q(compiledText(ps))}) {Some(ps)=>ps,None=>[]}\n"
+-- Every original non-missing archive scalar remains in archiveFields, including
+-- for curated systems. Report exactly which curated values differ.
+pure func differences(ps: [Planet]) -> [string] = flatMap(\p. if p.matchMethod != "curated" then [] else flatMap(\x. match x {(key,original) => flatMap(\y. match y {(k,current) => if k == key && current.value != original.value then ["${p.id} ${key}: archive=${original.value}; curated=${current.value}"] else []},p.fields)},p.archiveFields),ps)
+pure func hostsCount(ps: [Planet]) -> int = size(unique(map(\p. p.host,ps)))
+pure func unique(xs: [string]) -> [string] = foldl(\a x. if size(filter(\y. x == y,a)) == 0 then a ++ [x] else a,[],xs)
+export func main(a: {input: string, registry: string, output: string, moduleOut: string, differences: string}) -> () ! {FS,IO} {
+ let raw=readFile(a.input);let reg=readFile(a.registry);let hosts=parseRegistry(reg);let rows=csvRows(raw);
+ if size(hosts) == 0 || size(rows) < 2 || not headerValid(rows) || not allOf(\r. size(r) == 23,rows) then {println("exoplanets: FAILED input shape or registry");exit(1)} else {
+ let ps=build(raw,hosts,true);let rs=sha256Hex(raw);
+ writeFile(a.output,jsonText(ps,rs,sha256Hex(reg)));
+ writeFile(a.moduleOut,sourceText(ps,rs,sha256Hex(reg)));
+ writeFile(a.differences,"Curated wins; archive values retained in archiveFields.\n${join("\n",differences(ps))}\n");
+ println("exoplanets: ${size(rows)-1} snapshot planets; ${hostsCount(build(raw,hosts,false))} snapshot hosts; ${size(ps)} output planets (${size(filter(\p. p.status == "candidate",ps))} candidates); ${hostsCount(ps)} output hosts; ${size(filter(\p. p.inRegistry,ps))} planets in registry; ${hostsCount(filter(\p. p.inRegistry,ps))} matched hosts; ${size(filter(\p. p.distancePc <= 25.0,build(raw,hosts,false)))} archive planets <=25pc; ${size(differences(ps))} curated value differences; sha256=${rs}")
+ }
+}
+pure func allOf[a](f: a -> bool, xs: [a]) -> bool = not any(\x. not f(x), xs)
