@@ -23,24 +23,40 @@
   "features": [
     {
       "id": "DI1",
-      "description": "Processed Doppler indicator on the feed's bezel: line at 555 nm / D, spectral colour clamped to [400, 650] nm, strength |ln D| / ln 1414.2; Receiver only, labelled 'Doppler xD · shown' (bound to earth.rate); True a plain bezel; picture inset, untouched",
+      "description": "Processed Doppler indicator: the feed's bezel plus a soft edge overlay bleeding in (10% of the short side, opacity = strength), colour of a 555 nm line at 555 / D clamped to [400, 650] nm, strength |ln D| / ln 1414.2; Receiver only, labelled 'Doppler xD · shown' (bound to earth.rate); True untouched; picture layers in a fixed clipping screen",
       "estimated_loc": 260,
       "dependencies": [],
       "acceptance_criteria": [
-        "make earth-feed-test green with the indicator checks (Receiver shows it, True does not, picture untouched)",
+        "make earth-feed-test green (Receiver shows bezel, overlay, label; True none; the picture clipped inside the bezel after drift and jumble)",
         "make physics green with the RS-26..RS-30 indicator rows",
-        "make earth-link-golden 23 passed (G-EL-2b bezel at RS-26/RS-29 Receiver, ink in True)",
-        "make capture-doppler-indicator 10 frames; sheets uploaded to refs/true_processed_v1/doppler/"
+        "make earth-link-golden 25 passed (G-EL-2b bezel, overlay pixel and centre vs an independent expected colour, static and advanced, True)",
+        "make capture-doppler-indicator 10 frames; sheets in refs/true_processed_v1/doppler/r2/"
       ],
       "passes": null,
       "started": "2026-11-03",
       "completed": null,
-      "notes": "earth-feed 66 passed; physics 1054 passed; earth-link-golden 23 passed; comms-station 42 passed; capture 10 frames OK. Passes after rig/full and Mark's render review."
+      "notes": "Round 1 d70cf3b3: Codex 65 FAIL (B1 animation defeats the inset, B2 label over the picture). Round 2: picture, ghosts and static in a fixed clipping Screen; Mark's bleed-in overlay above them; the label an instrument label over the overlay; G-EL-2b with an independent expected colour and advanced cases (clip drill fails RS-26 advanced); fallback visible range [400, 650]. earth-feed 71 passed; physics 1054 passed; earth-link-golden 25 passed; comms-station 42 passed; capture 10 frames OK."
     }
   ],
   "questions_for_mark": [
     "Strength at 0.99c is 0.365 of the top-speed colour (|ln D| / ln 1414.2): subtle but visible; a steeper curve would be a different documented mapping"
   ],
-  "reviews": [],
+  "reviews": [
+    {
+      "kind": "evaluation",
+      "round": 1,
+      "evaluator": "codex gpt-6.1-sol",
+      "score": 65,
+      "pass": false,
+      "blocking": [
+        "B1",
+        "B2"
+      ],
+      "addressed_round_2": [
+        "B1",
+        "B2"
+      ]
+    }
+  ],
   "evaluation": null
 }

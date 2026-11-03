@@ -29,6 +29,10 @@ var static_rect := TextureRect.new()
 var ring := FeedRing.new()
 ## R3-TRUE-PROCESSED-b: the screen's bezel, which carries the Processed Doppler indicator (never the picture).
 var bezel := DopplerBezel.new()
+## The screen: a fixed, clipping control inset by the bezel, holding the picture, its ghosts, the static
+## and (Processed only) the Doppler edge overlay. Nothing animated can reach the bezel (eval #384 B1).
+var screen := Control.new()
+var vignette := DopplerVignette.new()
 var doppler_tag := ComposedBinding.new()
 var signal_tag := ComposedBinding.new()
 var clock_tag := ComposedBinding.new()
@@ -170,24 +174,28 @@ func _init() -> void:
 	custom_minimum_size = Vector2(320, 180)
 	bezel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bezel)
+	screen.name = "Screen"
+	screen.clip_contents = true
+	screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var b := float(bezel_px())
+	screen.offset_left = b; screen.offset_top = b; screen.offset_right = -b; screen.offset_bottom = -b
+	add_child(screen)
 	for r: TextureRect in [picture, static_rect]:
-		_inset(r)
-		r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(picture)
+		_fill(r)
+	screen.add_child(picture)
 	for i in 2:
 		var g := TextureRect.new()
-		_inset(g)
-		g.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		g.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		g.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fill(g)
 		g.visible = false
 		ghosts.append(g)
-		add_child(g)
+		screen.add_child(g)
 	static_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	static_rect.modulate = Color(1, 1, 1, 0.6) # the last week shows through, dimmed
-	add_child(static_rect)
+	screen.add_child(static_rect)
+	# R3-TRUE-PROCESSED-b: the Doppler edge overlay, above the picture and its ghosts (Processed only).
+	vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	screen.add_child(vignette)
 	ring.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	add_child(ring)
 	for t: Array in [[signal_tag, Control.PRESET_TOP_LEFT], [clock_tag, Control.PRESET_TOP_RIGHT], [caption, Control.PRESET_BOTTOM_LEFT]]:
@@ -232,11 +240,9 @@ func set_receiver(on: bool) -> void:
 	_doppler_show()
 
 
-## A picture layer inset by the bezel, so the indicator never lies over the decoded picture.
-func _inset(r: TextureRect) -> void:
+## A picture layer filling the clipping screen (inside the bezel).
+func _fill(r: TextureRect) -> void:
 	r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var b := float(bezel_px())
-	r.offset_left = b; r.offset_top = b; r.offset_right = -b; r.offset_bottom = -b
 	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -247,12 +253,12 @@ static func bezel_px() -> int:
 
 
 ## R3-TRUE-PROCESSED-b: the Processed Doppler indicator for Earth rate d (data/ui/comms_feed.json
-## "doppler"). A reference line at lambda_ref_nm is seen at lambda_ref_nm / d; the bezel shows the
-## spectral colour of that wavelength, clamped to the visible_nm ends once the line leaves the eye's
-## band; strength |ln d| / ln(d_max). Returns lambda_nm, shown_nm, strength and colour (sRGB, unit max).
+## "doppler"). A reference line at lambda_ref_nm is seen at lambda_ref_nm / d; the bezel and the edge
+## overlay show the spectral colour of that wavelength, clamped to visible_nm (the indicator's limits,
+## 400 and 650 nm; not the ends of human vision) once the line leaves them; strength |ln d| / ln(d_max). Returns lambda_nm, shown_nm, strength and colour (sRGB, unit max).
 static func doppler_indicator(d: float) -> Dictionary:
 	var c: Dictionary = copy().get("doppler", {})
-	var vis: Array = c.get("visible_nm", [400.0, 700.0])
+	var vis: Array = c.get("visible_nm", [400.0, 650.0])
 	var lam := float(c.get("lambda_ref_nm", 555.0)) / maxf(d, 1e-300)
 	var shown := clampf(lam, float(vis[0]), float(vis[1]))
 	var strength := clampf(absf(log(maxf(d, 1e-300))) / log(float(c.get("d_max", 1414.2))), 0.0, 1.0)
@@ -281,6 +287,10 @@ func _doppler_show() -> void:
 	bezel.colour = ind.colour
 	bezel.strength = float(ind.strength) if bezel.shown else 0.0
 	bezel.queue_redraw()
+	vignette.shown = bezel.shown
+	vignette.colour = bezel.colour
+	vignette.strength = bezel.strength
+	vignette.queue_redraw()
 	doppler_tag.visible = bezel.shown
 
 
@@ -388,7 +398,7 @@ func advance(dt: float) -> void:
 	if band.get("drift", false) and beam:
 		var s := 1.0 + 0.03 * (0.5 + 0.5 * sin(now_s * TAU / 40.0))
 		picture.scale = Vector2(s, s)
-		picture.pivot_offset = size * 0.5
+		picture.pivot_offset = picture.size * 0.5 # inside the clipping screen: the drift never reaches the bezel
 	else:
 		picture.scale = Vector2.ONE
 	var nf := int(now_s * 14.0)
@@ -521,3 +531,31 @@ class DopplerBezel extends Control:
 		var c := ink.lerp(colour, strength) if shown else ink
 		for edge: Rect2 in [Rect2(0, 0, r.size.x, b), Rect2(0, r.size.y - b, r.size.x, b), Rect2(0, b, b, r.size.y - 2.0 * b), Rect2(r.size.x - b, b, b, r.size.y - 2.0 * b)]:
 			draw_rect(edge, c)
+
+
+## R3-TRUE-PROCESSED-b (Mark 2026-11-03: "perhaps it can bleed in from the edge?"): the Doppler indicator
+## as an instrument overlay on the screen's edge, Processed only. A linear fade from the screen's edge,
+## opacity = the indicator's strength, to nothing at vignette_frac of the screen's short side. It draws
+## above the picture and its ghosts, inside the clipping screen; True draws nothing.
+class DopplerVignette extends Control:
+	var shown := false
+	var colour := Color(1, 1, 1)
+	var strength := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func width() -> float:
+		return float(EarthFeed.copy().get("doppler", {}).get("vignette_frac", 0.10)) * minf(size.x, size.y)
+
+	func _draw() -> void:
+		if not shown or strength <= 0.0:
+			return
+		var w := width()
+		var a := Color(colour, strength)
+		var z := Color(colour, 0.0)
+		var o := [Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)]
+		var n := [Vector2(w, w), Vector2(size.x - w, w), Vector2(size.x - w, size.y - w), Vector2(w, size.y - w)]
+		for k in 4:
+			var k2 := (k + 1) % 4
+			draw_polygon(PackedVector2Array([o[k], o[k2], n[k2], n[k]]), PackedColorArray([a, a, z, z]))

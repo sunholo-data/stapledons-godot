@@ -56,7 +56,7 @@ capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home
 .PHONY: earth-link-golden
 earth-link-golden:
 	@mkdir -p $(SCRATCH)
-	@$(GODOT) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_display_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 23 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
+	@$(GODOT) --path . --log-file $(SCRATCH)/earth-link-golden-engine.log --script tools/earth_display_golden.gd > $(SCRATCH)/earth-link-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|earth-link-golden)' $(SCRATCH)/earth-link-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-golden.log && grep -q '^earth-link-golden: 25 passed, 0 failures$$' $(SCRATCH)/earth-link-golden.log
 golden: earth-link-golden
 # EL4: Earth's beams on the galaxy map (tests/test_earth_beams.gd): every element from its earth.*
 # field, the plan preview alone while planning (AC12), the projection, the real sim at 2.16 and below.
