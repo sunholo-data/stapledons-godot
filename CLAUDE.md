@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.54.18** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.56.1** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -188,13 +188,20 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.18 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+- **Workarounds, re-checked on v0.56.1 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+  - Fixed and removed on v0.56.0: the VM's `--entry main` ran an imported module's `main` (ailang#2052 class,
+    88bf23f89); `sim/tools/star_names.ail` is `main` again (control: v0.54.18 still runs `extract.main`). Also
+    fixed upstream in v0.56.0, nothing in-tree: the verifier's float/`sqrt` SMT leaks (the Kerr contracts), the
+    formatter's test-block lets, and the registry validator's memory cap (#2057, server side).
+  - Skip v0.56.0, use v0.56.1: v0.56.0's open-vs-closed effect-row check (#1958 M2) rejected the nested `! {FS}`
+    callbacks in `ai/service.ail` (ailang#2061, 13-line repro); v0.56.1 reverted it (511cb476e). Re-probe
+    `ailang check --package ai` if M2 returns.
   - Open (ailang#1827 fixed in v0.54.10, performance): with crew_core 0.5.0 the busy no-hold crew skip
     measures about 11 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
     accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
   - Kept on purpose: `ailang check --package` beside `ailang test --package`. Since v0.54.13 the
     test runner type-checks every module and exits 1 on a compile error, but only `check` enforces
-    STRICT_FALLBACK_001 (an unannotated empty `Ok`; re-checked on v0.54.18: `test` passes, `check` fails).
+    STRICT_FALLBACK_001 (an unannotated empty `Ok`; last confirmed on v0.54.18: `test` passes, `check` fails; not re-probed on v0.56.0, kept regardless).
   - Process, not a bug: run `ailang lock` after `ailang install`; on a clean machine `ailang lock`
     also fills the package cache (`make deps`).
   - Language rule since v0.52.0: an explicitly imported name may not also be defined at module
