@@ -1,7 +1,7 @@
 {
   "sprint_id": "R3-TRUE-PROCESSED-b",
   "status": "awaiting_render_review",
-  "approved": "Mark, 2026-11-03 (orchestrator relay): a Processed Doppler indicator, off the decoded picture, Receiver only, labelled",
+  "approved": "Mark, 2026-11-03 (orchestrator relay): a Processed Doppler indicator, a labelled edge gradient over the picture's outer margin in Receiver only; True never alters the decoded picture",
   "created": "2026-11-03",
   "design_doc": "design_docs/planned/r3/true-processed-fixes.md (D3)",
   "branch": "feat/doppler-indicator",
