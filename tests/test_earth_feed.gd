@@ -248,7 +248,8 @@ func test_strip(st: CommsStation) -> void:
 	var s := st.strip
 	var kinds := {}
 	for el: Dictionary in s.elements: kinds[el.kind] = int(kinds.get(el.kind, 0)) + 1
-	check("the station shows the strip under the feed", s.visible and s.get_parent() == st and s.get_index() == 1)
+	# R3-COMMS-V2: the history wall (and a stack's weeks) now sit between the feed and the strip
+	check("the station shows the strip under the feed and the history wall", s.visible and s.get_parent() == st and s.get_index() > st.history.get_index() and st.history.get_index() > 0)
 	check("both legs (the one in flight through the ship now), the stop between them, one plan's light home (the first was heard at once), two replies, one wait, the newest light (%s)" % [kinds],
 		kinds == {"ship": 4, "plan": 1, "reply": 2, "wait": 1, "light": 1})
 	var fields := [0.00001, 4.37, 20.0, 0.0, 9.37, 29.37, 4.4, 5.0, 25.0, 12.0, 10.0, 2.0]
@@ -263,7 +264,8 @@ func test_strip(st: CommsStation) -> void:
 	s.size = Vector2(600, 116)
 	var px := s.at(s.now)
 	check("the ship now sits inside the strip (%s)" % px, px.x > 0.0 and px.x < 600.0 and px.y > 0.0 and px.y < 116.0)
-	check("a picture: no words or numbers on it", s.get_child_count() == 0 and DisplayBinding.audit(s).is_empty())
+	# R3-COMMS-V2: the strip's frame-mode tags and inset exist only for a selected week; none shows here
+	check("a picture: no words or numbers on it", s.frame < 0 and s.get_children().all(func(c: Node) -> bool: return not (c as CanvasItem).visible) and DisplayBinding.audit(s).is_empty())
 	ms.append({"plan_id": 3, "from_ly": 20.0, "port_ly": 30.0, "sent_t": 26.0, "heard_t": 46.0, "reply_t": 76.0, "arrive_t": 40.0})
 	ms.append({"plan_id": 4, "from_ly": 30.0, "port_ly": 31.0, "sent_t": 41.0, "heard_t": 71.0, "reply_t": 102.0, "arrive_t": 42.0})
 	st.refresh(v)
