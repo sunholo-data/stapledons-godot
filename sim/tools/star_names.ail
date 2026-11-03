@@ -182,9 +182,9 @@ export pure func report(namesText: string, starsText: string) -> ([string], bool
     }
   }
 
--- Named starNames, not main: on the VM (v0.54.18) `--entry main` in a module that imports ./extract
--- runs extract.main instead (reported to ailang core 2026-10-28, inbox_1793198009538_c8a573c2); rename back once fixed.
-export func starNames(a: {names: string, stars: string}) -> () ! {IO, FS} =
+-- The entry is main again: v0.54.18's VM ran extract.main for `--entry main` here (ailang#2052 class,
+-- inbox_1793198009538_c8a573c2); fixed in v0.56.0 (88bf23f89, VM entry resolution).
+export func main(a: {names: string, stars: string}) -> () ! {IO, FS} =
   match report(readFile(a.names), readFile(a.stars)) {
     (ls, ok) => { println(join("\n", ls)); if ok then () else exit(1) }
   }
