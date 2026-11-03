@@ -480,6 +480,10 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry earthLinkVm --args-json 0 sim/earth_link_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry earthLinkVm --args-json 0 sim/earth_link_test.ail); \
 	echo "strict earthLinkVm (R3-EARTH-LINK): VM $$got | interpreter $$interp"; [ "$$got" = "earth-link-ok" ] && [ "$$interp" = "earth-link-ok" ]
+	@# earthLogVm (R3-COMMS-V2 CV1): the received-frame log (merge, split, bound, the send event, ship at send, the 2.17 wire); strict VM = interpreter
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry earthLogVm --args-json 0 sim/earth_log_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry earthLogVm --args-json 0 sim/earth_log_test.ail); \
+	echo "strict earthLogVm (R3-COMMS-V2): VM $$got | interpreter $$interp"; [ "$$got" = "earth-log-ok" ] && [ "$$interp" = "earth-log-ok" ]
 	@# earthFeedVm (R3-EARTH-LINK EL3b.1): Earth's feed (the week of the newest light, the era, the mix, influences by the light cone, stillness and torrent); strict VM = interpreter
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry earthFeedVm --args-json 0 sim/earth_feed_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry earthFeedVm --args-json 0 sim/earth_feed_test.ail); \

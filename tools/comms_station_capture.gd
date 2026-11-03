@@ -89,7 +89,7 @@ func _run() -> void:
 	station = CommsStation.new()
 	margin.add_child(station)
 	sim = SimBridge.new()
-	sim.want_minor = SimBridge.EARTH_MINOR
+	sim.want_minor = SimBridge.EARTH_LOG_MINOR
 	var ok := sim.start() and sim.new_game(7, "free_nav", false, {}, "", "consent")
 	ok = ok and fly(ALPHA)
 	if ok: await shoot("home")
@@ -106,6 +106,10 @@ func _run() -> void:
 	ok = ok and fly(SOL)
 	ok = ok and until(mid_leg)
 	if ok: await shoot("homeward")
+	# R3-COMMS-V2 CV2: a week selected on the history wall (an outbound one, then a homeward one): the feed
+	# shows it, the light strip turns to its light-cone diagram
+	if ok: await shoot_week("homeward_week_outbound", 1)
+	if ok: await shoot_week("homeward_week_homeward", (sim.world.earth_log.records as Array).size() - 4)
 	if not ok:
 		fail("the voyage stopped: %s %s %s" % [sim.last_error, sim.last_refused, journey().get("state", "")])
 	sim.stop()
@@ -140,6 +144,30 @@ func shoot(label: String) -> void:
 		(e.get("messages", []) as Array).map(func(m: Dictionary) -> Array: return [m.port_id, snappedf(m.sent_t, 0.01), snappedf(m.arrive_t, 0.01), snappedf(m.heard_t, 0.01), snappedf(m.reply_t, 0.01), snappedf(m.port_ly, 0.01)])])
 	print("comms-station-capture: ok frame %s rate %s in_beam %s at_home %s messages %d out %s -> %s" % [label, e.get("rate"), e.get("in_beam"),
 		e.get("at_home"), (e.get("messages", []) as Array).size(), (e.get("out") as Dictionary).get("reason") if e.get("out") is Dictionary else "-", path])
+
+
+func shoot_week(label: String, k: int) -> void:
+	var view := sim.world.duplicate(true)
+	station.refresh(view)
+	station.history.select(k)
+	station.refresh(view)
+	await shoot_view(label, view)
+	station.history.select(k)
+
+
+func shoot_view(label: String, view: Dictionary) -> void:
+	for i in 4:
+		station.advance(1.0 / 30.0)
+		await process_frame
+	await RenderingServer.frame_post_draw
+	var img := root.get_texture().get_image()
+	var path := "%s/%s.png" % [OUT, label]
+	img.save_png(ProjectSettings.globalize_path(path))
+	var unbound := DisplayBinding.audit(station)
+	if not unbound.is_empty():
+		fail("%s has unbound numbers %s" % [label, unbound])
+	frames += 1
+	print("comms-station-capture: ok frame %s -> %s" % [label, path])
 
 
 ## The luminance spread over a coarse grid: a blank frame has none.

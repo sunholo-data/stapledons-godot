@@ -11,6 +11,8 @@ var feed := EarthFeed.new()
 var clocks := EarthClocks.new()
 var crew := CrewFaces.new()
 var strip := EarthStrip.new()
+var history := EarthHistory.new() ## R3-COMMS-V2 CV2: every week received, along ship time
+var waterfall := CommsWaterfall.new() ## R3-COMMS-V2 CV3: the signal from home, True, with the Receiver's line
 var side := VBoxContainer.new()
 var details := Button.new()
 var words_box := VBoxContainer.new()
@@ -20,7 +22,7 @@ var pane_buttons := {}
 
 func _init() -> void:
 	name = "CommsStation"
-	add_theme_constant_override("separation", 10)
+	add_theme_constant_override("separation", 8)
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 14)
 	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -28,16 +30,25 @@ func _init() -> void:
 	var frame := AspectRatioContainer.new()
 	frame.ratio = 16.0 / 9.0
 	frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	frame.size_flags_stretch_ratio = 2.2
+	frame.size_flags_stretch_ratio = 1.6 # R3-COMMS-V2: room for the waterfall beside, the wall below
 	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	frame.add_child(feed)
 	top.add_child(frame)
 	side.name = "Side"
-	side.add_theme_constant_override("separation", 12)
+	side.add_theme_constant_override("separation", 6)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	clocks.ship_dial.custom_minimum_size = Vector2(64, 64) # R3-COMMS-V2 layout: smaller dials, the faces in a row
+	clocks.earth_dial.custom_minimum_size = Vector2(64, 64)
+	crew.columns = 5
+	crew.face_px = 42.0
+	strip.custom_minimum_size = Vector2(0, 84)
 	side.add_child(clocks)
+	side.add_child(waterfall)
 	side.add_child(crew)
 	top.add_child(side)
+	history.feed = feed
+	history.week_selected.connect(_on_week)
+	add_child(history)
 	add_child(strip)
 	details.name = "CommsDetails"
 	details.text = str(EarthFeed.copy().words.details)
@@ -75,7 +86,11 @@ func show_words(pane: String) -> void:
 func refresh(view: Dictionary) -> void:
 	feed.refresh(view)
 	clocks.refresh(view)
+	waterfall.refresh(view, feed.receiver, str(feed.home_sound.get("cue", "")))
 	crew.refresh(view)
+	if strip.frame >= 0:
+		crew.visible = false # a week's light-cone diagram takes the faces' row while it is open
+	history.refresh(view)
 	strip.refresh(view)
 	for p: String in pane_buttons:
 		(pane_buttons[p] as Button).set_pressed_no_signal(words.pane == p)
@@ -87,10 +102,22 @@ func advance(dt: float) -> void:
 	feed.advance(dt)
 
 
+## R3-COMMS-V2 CV2: a week selected on the history wall: the feed shows it, and the light strip turns
+## to its light-cone diagram (frame mode); -1 returns both to the live feed and the strip.
+func _on_week(i: int) -> void:
+	feed.pinned = i
+	strip.set_frame(i)
+	if i >= 0:
+		crew.visible = false
+	if i < 0:
+		feed.shown_key = "" # the live week again on the next refresh
+
+
 ## EL3b.4: the crew around the console, each at their home feeling (earth.crew: the sim's
 ## homeFeeling, work strain first), with their name and the feeling in a word. All bindings.
 class CrewFaces extends GridContainer:
 	const FACE := 64.0
+	var face_px := FACE ## the station's compact row (R3-COMMS-V2) sets it smaller
 
 	func _init() -> void:
 		name = "CrewFaces"
@@ -107,7 +134,7 @@ class CrewFaces extends GridContainer:
 			box.alignment = BoxContainer.ALIGNMENT_CENTER
 			var face := TextureRect.new()
 			face.name = "Face"
-			face.custom_minimum_size = Vector2(FACE, FACE)
+			face.custom_minimum_size = Vector2(face_px, face_px)
 			face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 			box.add_child(face)

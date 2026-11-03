@@ -18,7 +18,8 @@
     "walk_bridge": "walk_bridge.glb",
     "walk_lower": "walk_lower.glb",
     "props": "bridge_props.glb",
-    "lift": "lift_head.glb"
+    "lift": "lift_head.glb",
+    "monitors": "bridge_monitors.glb"
   },
   "lift_route": {
     "clear": true,
@@ -162,17 +163,24 @@
       ]
     },
     "voyage": {
-      "screen_ship_m": [-7.8289999961853, 11.3394985198975, 82.8538513183594],
+      "screen_ship_m": [-13.049, 11.75, 82.854],
       "use_m": [
-        -7.829,
-        10.982
+        -12.912,
+        11.626
       ]
     },
     "crew": {
-      "screen_ship_m": [8.47900009155273, 13.3014984130859, 82.8538513183594],
+      "screen_ship_m": [13.049, 11.75, 82.854],
       "use_m": [
-        8.479,
-        12.944
+        12.912,
+        11.626
+      ]
+    },
+    "comms": {
+      "screen_ship_m": [-8.78, 15.207, 82.854],
+      "use_m": [
+        -8.687,
+        15.047
       ]
     }
   },
@@ -180,7 +188,7 @@
     "layout": "art/deck-layout-v2/bow_a.json",
     "generator": "~/dev/blender/scripts/stapledon_deck_layout_v2.py",
     "walk": "tools/deck_walk_bake.gd (DeckLayout.build_walk on the pinned grounded v2 walk)",
-    "points": "SPAWN_captain and INTERACT_<station>_use empties in the original master, ship metres; D-132 revises Voyage/Crew working points in bow_a.json and this manifest. Original screen housings keep their independent screen_ship_m anchors."
+    "points": "SPAWN_captain and INTERACT_<station>_use empties in the original master, ship metres; D-132 revises Voyage/Crew working points in bow_a.json and this manifest. Original screen housings keep their independent screen_ship_m anchors. R3-COMMS-V2 CV4 (Mark 2026-11-03, the consoles under the screens): Voyage, crew and comms at the bow rail (r 18.6 m) under their monitors, each operator 1.225 m inboard facing the screen (bow_a.json use_m); each screen_ship_m is the generator's housing (stapledon_bridge_props_v5.py report: the bezel on the operator's face, 82.854 m)."
   },
   "style": {
     "about": "R2-BRIDGE-STYLE (D-100): the ship.glb meshes on the bridge level that take the toon material and the ink outline (every bridge_props.glb mesh takes them too), and the mast meshes that hold the spire light (non-casters for its shadow). Listed by hand from the DL3 export until ST3's v3 generator writes this list. shaped: the bridge_props.glb props rebuilt as grown forms by the D-104 shape language (stapledon_bridge_props_v3.py reshape()); make style-test holds each to a straight-edge share <= 0.10 (AC12); ST3 and ST5 add the rest. foliage: the rim fronds' roots and inward facings (v4 generator), drawn as painted cards (D-106, ShipDressing).",
@@ -489,5 +497,32 @@
     ],
     "yaw_deg": 0.0,
     "about": "CA2 (OQ9): the captain's chair seat point, ship metres (x, -z), as art/deck-layout-v2/bow_a.json layout A places it; the captain sits facing the bow"
+  },
+  "monitors": {
+    "about": "R3-COMMS-V2 CV6 (design r3/comms-station-v2.md §D3-§D5, wall R, approved 2026-11-03): the bridge's ambient monitors on the bow rail, outside the walk (r 21.1 m), each face 4.0 x 2.25 m with its bottom 1.0 m above the deck, turned toward the deck at ship (0, 6). screen_ship_m is the face's centre (ship metres, Blender +Z up); the frame and stand are the bridge_monitor prop at the same anchors. Port is home (Earth's clock, the signal from home), starboard the ship (the course, the crew). BridgeMonitor reads this.",
+    "clocks": {
+      "face": "clocks",
+      "bearing_deg": -48.0,
+      "screen_ship_m": [-15.68, 14.119, 84.125],
+      "toward_ship_m": [0.0, 6.0]
+    },
+    "signal": {
+      "face": "signal",
+      "bearing_deg": -30.0,
+      "screen_ship_m": [-10.55, 18.273, 84.125],
+      "toward_ship_m": [0.0, 6.0]
+    },
+    "course": {
+      "face": "course",
+      "bearing_deg": 30.0,
+      "screen_ship_m": [10.55, 18.273, 84.125],
+      "toward_ship_m": [0.0, 6.0]
+    },
+    "crew": {
+      "face": "crew",
+      "bearing_deg": 48.0,
+      "screen_ship_m": [15.68, 14.119, 84.125],
+      "toward_ship_m": [0.0, 6.0]
+    }
   }
 }

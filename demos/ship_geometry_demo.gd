@@ -106,6 +106,7 @@ var _walk_nodes: Array[Node3D] = []
 var lift: Node3D = null
 var guides := MeshInstance3D.new()
 var manifest: Dictionary = {}
+var monitors: Array[BridgeMonitor] = [] ## R3-COMMS-V2 CV6: the ambient bridge monitors
 var sky_states: Dictionary = {}
 var sky_world: Dictionary = {}
 var sky_state := "rest"
@@ -179,6 +180,7 @@ func setup(opts := {}) -> bool:
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
 	_install_props()
+	_install_monitor_frames()
 	_style_bridge(visual)
 	geometry_view.add_child(camera);camera.current=true
 	CameraDirector.ensure_actions();director=CameraDirector.new(self)
@@ -778,6 +780,7 @@ func _mark_occluders(visual: Node) -> void:
 	var names: Array=director.data.get("levels",{}).get("bridge",{}).get("occluders",[])
 	var stack: Array=[visual]
 	if props_visual!=null:stack.append(props_visual) # R2-DECK-LAYOUT DL3: the dressed shrine, terminal and fronds
+	if monitor_frames!=null:stack.append(monitor_frames) # R3-COMMS-V2 CV6: the monitors fade like the fronds
 	while not stack.is_empty():
 		var n:Node=stack.pop_back()
 		if n is MeshInstance3D and names.any(func(w:String)->bool:return w!="lift" and String(n.name).to_lower().contains(w)):n.add_to_group(CameraDirector.OCCLUDER_GROUP)
@@ -802,6 +805,17 @@ func _install_props() -> void:
 	if props_visual==null:push_error("ship demo missing "+file);return
 	props_visual.name="BridgeProps";geometry.add_child(props_visual);_collision(props_visual)
 	StapledonStyle.apply([props_visual]) # R2-BRIDGE-STYLE S2: the toon material, the ink as its next_pass
+## R3-COMMS-V2 CV6: the ambient monitors' frames and stands (manifest assets.monitors, the Blender
+## bridge_monitor prop, grown, D-104), lit live and inked like the props; their live faces are
+## BridgeMonitor's (the manifest's monitors). The level's occluder list ("monitor") fades them.
+var monitor_frames: Node3D
+func _install_monitor_frames() -> void:
+	var file: String=manifest.get("assets",{}).get("monitors","")
+	if file=="":return
+	monitor_frames=AreaBundle.load_glb(asset(file))
+	if monitor_frames==null:push_error("ship demo missing "+file);return
+	monitor_frames.name="BridgeMonitors";geometry.add_child(monitor_frames);_collision(monitor_frames)
+	StapledonStyle.apply([monitor_frames])
 ## R2-BRIDGE-STYLE S2: the ship.glb meshes on the bridge level (manifest style.bridge_nodes) take the
 ## same toon material and ink as the props; the lower decks keep their look until their own passes.
 func _style_bridge(visual: Node) -> void:
@@ -1008,7 +1022,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.EARTH_MINOR # R3-EARTH-LINK: 2.16 (Earth's link, the comms station); D-113: 2.15 (the Archive's Memory Health for the spire's sound); R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.EARTH_LOG_MINOR # R3-COMMS-V2: 2.17 (the received-frame log, the history wall); R3-EARTH-LINK: 2.16 (Earth's link, the comms station); D-113: 2.15 (the Archive's Memory Health for the spire's sound); R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -1322,6 +1336,7 @@ func _update_hud(delta: float, details: String) -> void:
 	ship_hud.advance(delta)
 	ship_hud.update(view)
 	consoles.refresh_view(view) # R3-EARTH-LINK EL3: the comms panes from this frame's view
+	_refresh_monitors(view)
 ## A new sim session (navigation, the guided voyage, Sgr A*): its cards start clean, and
 ## what it opens with (its own world's unlocks, phase, journey state) is not news.
 func _reset_hud_session() -> void:
@@ -1525,9 +1540,22 @@ func walk_to(station: String) -> bool:
 		walk=full_walk
 		return accepted
 	return consoles.walk_to(station)
+## R3-COMMS-V2 CV6: the monitors follow this frame's view and the comms station's setting.
+func _refresh_monitors(view: Dictionary) -> void:
+	var cs: CommsStation = consoles.comms_station if consoles != null else null
+	var rx: bool = cs.feed.receiver if cs != null else true
+	var bed: String = str(cs.feed.home_sound.get("cue", "")) if cs != null else ""
+	for m: BridgeMonitor in monitors:
+		m.refresh(view, rx, bed)
 ## The bridge consoles (R1-SHIP-UI U3): stations from ship.glb, use points, prompt, panels.
 func _consoles_setup() -> void:
 	consoles = ShipConsoles.new(); add_child(consoles); consoles.setup(self)
+	# R3-COMMS-V2 CV6: the bridge's ambient monitors (the manifest's monitors, wall R on the bow rail)
+	var mons: Variant = manifest.get("monitors", {})
+	if mons is Dictionary:
+		var spec: Dictionary = (mons as Dictionary).duplicate()
+		spec.erase("about")
+		monitors = BridgeMonitor.build(geometry, spec)
 	consoles.used.connect(func(_s:String,_a:String)->void:ship_hud.hint.visible=false)
 ## The dwell label (§A3): when the view rests 0.5 s, name the star or body at the screen
 ## centre (the I card's own pick, read only) with its distance and "I · details".

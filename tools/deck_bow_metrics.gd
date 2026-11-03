@@ -12,10 +12,10 @@ extends RefCounted
 ## focus_pose. Failure names are the §D4 IDs.
 
 const PX := Vector2(1280, 720)
-const FAMILIES := ["spire", "lift", "shrine", "archive_terminal", "archive_detail", "frond"]
+const FAMILIES := ["spire", "lift", "shrine", "archive_terminal", "archive_detail", "frond", "monitor"] # R3-COMMS-V2 CV6: the ambient monitors fade too
 const BODY_OFF_DEG := 30.0
 const CAPTAIN_M := 1.754 # the captain sprite's real height (F1, D-94)
-const ZOOM_STATIONS := ["navigation", "voyage", "crew"]
+const ZOOM_STATIONS := ["navigation", "voyage", "crew", "comms"] # R3-COMMS-V2 CV4: comms faces the bow under its screen
 
 var demo: Node
 var dl: DeckLayout

@@ -78,3 +78,56 @@ earth-rate-fixture: import
 capture-earth-link: import
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/earth_link_capture.gd > $(SCRATCH)/earth-link-capture.log 2>&1; rc=$$?; grep -E '^earth-link-capture' $(SCRATCH)/earth-link-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-capture.log && grep -q '^earth-link-capture: 10 frames, 0 failures$$' $(SCRATCH)/earth-link-capture.log
+
+# R3-COMMS-V2 CV1 (design_docs/planned/r3/comms-station-v2.md AC1-AC4): the received-frame log.
+# The log's tests (sim/earth_log_test.ail: the merge, the split, the bound, a real flight's
+# invariants every tick, earth_weeks clipping, the 2.17 wire), then earthLogVm on the strict VM and
+# the interpreter (they must agree). In make test.
+.PHONY: comms-log-test
+comms-log-test: ## R3-COMMS-V2 CV1: the received-frame log (nothing from the future, the send event exact, VM = interpreter)
+	@cd sim && $(AILANG) test earth_log_test.ail > ../$(SCRATCH)/comms-log-test.log 2>&1; rc=$$?; cd ..; grep -E 'tests:' $(SCRATCH)/comms-log-test.log; test $$rc = 0
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry earthLogVm --args-json 0 sim/earth_log_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry earthLogVm --args-json 0 sim/earth_log_test.ail); \
+	echo "comms-log-test: VM $$got | interpreter $$interp"; [ "$$got" = "earth-log-ok" ] && [ "$$interp" = "earth-log-ok" ]
+test: comms-log-test
+
+# R3-COMMS-V2 CV1: the bridge keeps the 2.17 log (tail filing by from_frame; a real voyage's stored
+# log contiguous, ending at the feed's frame, on the light cone at every tick). In make test.
+.PHONY: comms-log-bridge-test
+comms-log-bridge-test: import ## R3-COMMS-V2 CV1: the bridge's earth_log storage against the real sim at 2.17
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_earth_log_bridge.gd > $(SCRATCH)/comms-log-bridge.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-log-bridge)' $(SCRATCH)/comms-log-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-log-bridge.log && grep -q '^comms-log-bridge: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-log-bridge.log
+test: comms-log-bridge-test
+
+# R3-COMMS-V2 CV2 (AC5, AC6): the history wall and the frame diagram on the real sim at 2.17
+# (tests/test_earth_history.gd). In make ui.
+.PHONY: comms-history-test
+comms-history-test: import ## R3-COMMS-V2 CV2: the history wall (every week, along ship time) and the frame diagram (light at 45 degrees, bindings)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_earth_history.gd > $(SCRATCH)/comms-history.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-history)' $(SCRATCH)/comms-history.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-history.log && grep -q '^comms-history: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-history.log
+ui: comms-history-test
+
+# R3-COMMS-V2 CV3 (AC7): the waterfall of the signal from home: the measured True carrier at 400 x D,
+# above/below hearing, the Receiver's line, silent analysis taps, the no-rate-times-frequency guard
+# (tests/test_comms_waterfall.gd; headless, the Dummy driver mixes). In make test.
+.PHONY: comms-waterfall-test
+comms-waterfall-test: import ## R3-COMMS-V2 CV3: the waterfall (True carrier measured at 400 x D; hearing edges; silent taps)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_comms_waterfall.gd > $(SCRATCH)/comms-waterfall.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-waterfall)' $(SCRATCH)/comms-waterfall.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-waterfall.log && grep -q '^comms-waterfall: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-waterfall.log
+test: comms-waterfall-test
+
+# R3-COMMS-V2 CV6 (AC8): the bridge's ambient monitors from the manifest (wall R): built at their
+# anchors facing the deck, camera occluders, every number on every face a binding on the real sim at
+# 2.17, faces following the world, rendering gated to on-screen (tests/test_bridge_monitors.gd).
+.PHONY: bridge-monitors-test
+bridge-monitors-test: import ## R3-COMMS-V2 CV6: the ambient bridge monitors (anchors, occluders, bound faces, gated rendering)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_bridge_monitors.gd > $(SCRATCH)/bridge-monitors.log 2>&1; rc=$$?; grep -E '^(FAIL|bridge-monitors)' $(SCRATCH)/bridge-monitors.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bridge-monitors.log && grep -q '^bridge-monitors: [0-9]* passed, 0 failures$$' $(SCRATCH)/bridge-monitors.log
+test: bridge-monitors-test
+
+# R3-COMMS-V2 review captures (AC12; GPU window): the bridge with the consoles under the screens and the
+# monitor wall on the live 2.17 session, the console zooms and the station's detail view.
+.PHONY: capture-comms-v2
+COMMS_TAG ?= mid
+capture-comms-v2: import ## R3-COMMS-V2: the bridge, monitors and comms station on the live sim -> renders/comms_v2/$(COMMS_TAG)/*.png (GPU window; open every frame)
+	@$(GODOT_SIM) --path . --script tools/comms_v2_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG) 2>&1 | grep -E '^(shot|comms-v2-capture)'

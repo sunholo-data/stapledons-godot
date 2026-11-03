@@ -17,7 +17,8 @@ import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndB
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag, columnDragEnergy, tripEnergyColumn, driveHoldMaxPhi)
 import ./ism (Medium, Seg, Thresh, DustTick, DustCfg, MediaRow, Impact, mediumAt, profile, window, columnEff, peakMedium, mediaRows, holdMaxPhi, hotMedium, uniformMedium, defaultDustCfg, dustTick, dustKey, dustWithTotal, tripBright, noDust, lutArray, grainsSwept, visibleAlong)
 import ./tripphase (tripPhaseIndex)
-import ./earth_link (Link, LinkLeg, Earth, emptyLink, sendPlan, noteBeam, earthView)
+import ./earth_link (Link, LinkLeg, Earth, emptyLink, sendPlan, noteBeam, earthView, rateOf)
+import ./earth_log (ELog, emptyLog, noteLight)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
 import ./celestial (defaultEpochJd, solSystem, lyKm, bodyAt, jdAt)
@@ -161,7 +162,8 @@ export type DustState = { last: DustTick, legExpected: float, legGrains: float, 
 export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), crossed: [], legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
 -- cruiseDigest: the crossing review's digest (R2-INTERLUDE I2, sim/cruise_digest.ail; digestAfter).
 -- link: the plans sent home and Earth's hearing of them (R3-EARTH-LINK, sim/earth_link.ail; linkAfter).
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState], cruiseDigest: Option[Digest], link: Link }
+-- elog: the received-frame log (R3-COMMS-V2, sim/earth_log.ail; logAfter): every Earth week that has reached the ship.
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState], cruiseDigest: Option[Digest], link: Link, elog: ELog }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -190,7 +192,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None, cruiseDigest: None, link: emptyLink() }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None, cruiseDigest: None, link: emptyLink(), elog: emptyLog() }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -737,10 +739,11 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   -- R2-INTERLUDE I2: the cruise digest folds the tick (sim/cruise_digest.ail; digestAfter).
   let ct = { turnBefore: match w1.crew { Some(c) => c.turn, None => 0 }, answered: cl.noted, log: [], holds: [], captain: accepted(coreCmds(crewCmds(input.intents, 0)), ci0.refused) };
   match o.crew {
-    None => { world: { o | cruiseDigest: digestAfter(w, o, ct), link: linkAfter(w, o) }, refused: r.refused, events: r.events },
+    None => { let lk = linkAfter(w, o); { world: { o | cruiseDigest: digestAfter(w, o, ct), link: lk, elog: logAfter(o, lk) }, refused: r.refused, events: r.events } },
     Some(cr) => {
       let a = autoStep(cr, o.seed, o.rng, input.dtau, nearStar);
-      let wa = { o | crew: Some(a.stepped.crew), rng: a.stepped.rng, link: linkAfter(w, o) };
+      let lk = linkAfter(w, o);
+      let wa = { o | crew: Some(a.stepped.crew), rng: a.stepped.rng, link: lk, elog: logAfter(o, lk) };
       { world: { wa | cruiseDigest: digestAfter(w, wa, { ct | log: a.log, holds: a.holds }) }, refused: r.refused,
         events: r.events ++ map(\h. { event("crew_hold") | crewHold: Some(h) }, a.holds) }
     }
@@ -761,6 +764,16 @@ export pure func linkAfter(before: World, after: World) -> Link {
   };
   noteBeam(sent, after.ship.motion.t, position(after.ship), legOf(after))
 }
+-- R3-COMMS-V2 CV1 (sim/earth_log.ail): every tick logs the Earth weeks that reached the ship, with the
+-- arrival (the ship's t, tau, position and the Earth rate, as earthOf computes it) and the send event.
+pure func logAfter(after: World, l: Link) -> ELog {
+  let p = position(after.ship);
+  let e = earthLyAt(after.params, after.ship.motion.t);
+  let rate = rateOf({ x: p.x - e.x, y: p.y - e.y, z: p.z - e.z }, after.ship.heading, after.ship.motion.phi);
+  noteLight(after.elog, l, after.ship.motion.t, after.ship.motion.tau, p, rate, legOf(after))
+}
+-- A new game's world logs the light already aboard (week 0 at departure) before its first tick.
+export pure func withLog(w: World) -> World = {w | elog: logAfter(w, w.link)}
 -- The journey's current leg for the Earth link: committed or arrived (flying), or a planned leg
 -- from here now (the preview's); None when idle.
 export pure func legOf(w: World) -> Option[LinkLeg] =

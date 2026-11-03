@@ -21,3 +21,11 @@ TAG ?= capture
 deck-layout-capture: import ## AC11 (GPU window): the shipped bridge's plan, Bow at rest / 0.99c / first stop, Astern, a walk, the console zooms -> renders/deck_layout/$(TAG)/ (+ contact sheet, probe.json). Open every frame
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/deck_bow_probe.gd -- --layouts=res://art/deck-layout-v2/shipped.json --capture --out=res://renders/deck_layout/$(TAG) > $(SCRATCH)/deck-layout-capture-$(TAG).log 2>&1; rc=$$?; grep -E '^(FAIL|shot|deck-bow-probe)' $(SCRATCH)/deck-layout-capture-$(TAG).log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/deck-layout-capture-$(TAG).log
+
+# R3-COMMS-V2 CV4 (AC9): the consoles under the screens, walked with the game's router on the shipped
+# bridge (tests/test_comms_walk.gd). In make test.
+.PHONY: comms-walk-test
+comms-walk-test: import ## R3-COMMS-V2 CV4: every operator point reachable, chair to comms <= 9 m, the rim walk open, the idle screens at their housings
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_comms_walk.gd > $(SCRATCH)/comms-walk.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-walk|ok)' $(SCRATCH)/comms-walk.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-walk.log && grep -q '^comms-walk: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-walk.log
+test: comms-walk-test

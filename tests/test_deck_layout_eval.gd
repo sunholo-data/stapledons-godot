@@ -43,6 +43,7 @@ func _run() -> void:
 	await test_negative("a_spawn_box", "spawn-open")
 	await test_negative("a_pole_box", "pole-ray")
 	await test_negative("a_station_shadow", "station-body")
+	await test_negative("a_comms_faces_rim", "faces-bow") # R3-COMMS-V2 CV4
 	await test_props()
 	check("a layout with fixture boxes is refused outside a test", not DeckLayout.validate(DeckLayout.load_layout(FIX + "a_pole_box.json")).is_empty())
 	print("deck-layout-eval-test: %d passed, %d failures" % [passes, failures])

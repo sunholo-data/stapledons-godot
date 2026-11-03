@@ -1,7 +1,7 @@
 {
   "change_log": "design_docs/levels/bridge.md",
   "document": "res://assets/levels/bridge/manifest.json",
-  "document_sha256": "acb2de374850ce2baa55cf916e646ca39ef3bb5bad0ef9011247f3d155c1fd68",
+  "document_sha256": "8e7212faf0326de4ae7efe06ca6fa98633265c604deae740016ed5c4b2387924",
   "fingerprint": {
     "finds_seen": {},
     "routes": {
@@ -28,7 +28,7 @@
               76.9,
               76.9
             ],
-            "samples": 4771
+            "samples": 4778
           }
         }
       }

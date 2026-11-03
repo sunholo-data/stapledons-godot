@@ -21,6 +21,11 @@
       "home_science": {"cue": "home_science_pips", "every_s": 16.0}
     }
   },
+  "waterfall": {
+    "about": "R3-COMMS-V2 CV3 (design r3/comms-station-v2.md §D6): the signal from home as a waterfall, always True (the silent Antenna tap: the week's bed and Earth's carrier at speed and pitch x D). carrier_hz is the carrier's rest frequency (data/audio/recipes.json home_beacon), where the Receiver puts it back: the waterfall's teal line. Constants of the receiver, never multiplied by the rate.",
+    "carrier_hz": 400.0,
+    "bands": 96
+  },
   "words": {
     "live": "live",
     "no_signal": "no signal",
@@ -33,6 +38,10 @@
     "receiver": "receiver",
     "true_sound": "true sound",
     "below_hearing": " · below hearing",
-    "above_hearing": " · above hearing"
+    "above_hearing": " · above hearing",
+    "sent": "sent",
+    "arrived": "arrived",
+    "light": "light",
+    "ship_then": "ship then"
   }
 }

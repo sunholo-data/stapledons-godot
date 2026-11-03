@@ -1,6 +1,6 @@
 {
  "sprint_id": "R3-COMMS-V2",
- "status": "executing",
+ "status": "paused_for_review",
  "approved": {
   "by": "Mark (via the orchestrator, attended 2026-11-03)",
   "how": "revision 2 'looks awesome', every open question at its recommendation; ruling: 'can we move the consoles to be underneath the screens? yes will need model updates I guess' (revision 3)",
@@ -20,8 +20,8 @@
  "ailang": {
   "pin": "v0.56.1",
   "binary": "runtime/bin/ailang",
-  "prompt_version_loaded": null,
-  "note": "recorded at CV1"
+  "prompt_version_loaded": "v0.16.11",
+  "note": "ailang prompt loaded 2026-11-03 on v0.56.1 (prompt v0.16.11)"
  },
  "external_dependencies": [
   "#374, #375, #377 merged into main and merged into this branch (2026-11-03)",
@@ -79,7 +79,7 @@
  },
  "critical_path": "CV0 -> CV1 -> CV2 -> CV5; CV3 and CV4 in parallel; CV6 after CV3 and CV4",
  "pause_points": [
-  "after CV4 and CV6 (mid-point): the consoles under the screens and the monitor wall, renders",
+  "mid-point (now): CV4 + CV6 renders for Mark",
   "after CV5: review captures and a dev build"
  ],
  "questions_for_mark": [
@@ -155,10 +155,10 @@
     "make deck-layout-eval prints bridge ok; make comms-station-test sound-voyage-test green",
     "make capture-comms-station and make deck-layout-capture TAG=cv0 frames opened; numbers recorded in notes"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "origin/main merged (AILANG v0.56.1, #374, #375, #377); make runtime staged v0.56.1. Baseline: deck-layout-eval bridge ok (comms faces_bow false at (-13.2,-3.0)); comms-station-test, sound-voyage-test green."
   },
   {
    "id": "CV1",
@@ -173,10 +173,10 @@
     "AC3: make comms-log-test: sent.t = arrived.t - arrived.ly to 1e-12; ship_at_sent is the newest record with arrived.t <= sent.t; arrived.rate = earth.rate at that tick",
     "AC4: make strict parity replay replay-compat green; pre-2.17 goldens unchanged; the 2.17 case byte-identical"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "sim/earth_log.ail (new module, pure): Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sentT,shipAtSent}, ELog {log closed newest first, open record, lastFrame, track one ShipAt per ship day}; World.elog updated every tick in core.ail logAfter (the rate is earth_link.rateOf, as earthOf). Protocol 2.17 (earthLogMinor = surfaceMinor()+4): earth_log in full states (withLog logs week 0 at new_game), earth_log_tail when the open record changed (openKey). earth_weeks is served as beamedWeeks() in the module (clipped to arrived beamed weeks, cap); the wire intent is deferred to CV2's stack view (not needed by the mid-point UI). Bridge: EARTH_LOG_MINOR 17, take_earth_log_tail files by from_frame. Tests: sim/earth_log_test.ail 9 tests (departure, merge, split, no-new-week, 3-ship-year bound at 1414/yr, ship-at-send vs a reference walk, a real 120-tick flight's invariants every tick, earth_weeks clipping, the 2.17 wire); earthLogVm strict VM = interpreter; tests/test_earth_log_bridge.gd 9 passed; replay case earth_log_voyage (44 replies, sha256 golden arm64 = x86_64 per CLAUDE.md's identical-goldens note); four tests that pinned the newest minor at 16 moved to 17. Gates: ailang check --package sim ok; ailang test --package sim 586 (583 + the 3 minor-pin fixes, re-run 0 failed); make strict parity replay; replay-compat ok (4 compared, nothing moved)."
   },
   {
    "id": "CV2",
@@ -190,10 +190,10 @@
     "AC6: diagram points equal record fields; light slope 1 in diagram units; the inset never draws earth.beam; deselect returns the strip",
     "make ui-theme-check uid-guard green"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "ui/earth_history.gd (EarthHistory: film along arrived.tau, pictures in full / slits / stacks, static over unbeamed spans, stamps as ComposedBindings on earth_log.records.<i>.earth_from_year (HUDCaption) and .arrived.tau (HUDAccent), Earth-time line, select/zoom/Escape); ui/earth_strip.gd: rays per beamed record and frame mode (send event, light at 45 deg on equal axes, arrival, ship then, track, x D; plan inset FrameInset in the map's glyphs; never earth.beam); EarthFeed.pinned shows the selected week (no ghosts); CommsStation v2 layout (smaller dials, waterfall, one row of faces, the wall, the strip; the faces row yields to an open diagram). Sessions ask 2.17 (demo, main, loading jump). make comms-history-test 17 passed; comms-station-test 42 passed; display audit via DisplayBinding.audit in the tests (no unbound digit)."
   },
   {
    "id": "CV3",
@@ -206,10 +206,10 @@
     "AC6: make comms-waterfall-test: measured peak within 1 % of 400*D at D 0.070888, 1, 14.107; dark with 'above hearing' at D 60 and 1414.2; source guard passes",
     "make sound-voyage-test sound-levels ui-theme-check uid-guard green; taps never above -60 dBFS at Master"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Spike: AudioEffectSpectrumAnalyzer on a -80 dB bus reads magnitudes headless (Dummy 44.1 kHz: 1 kHz tone 0.2565, 5 kHz 0.000003) and windowed (CoreAudio). audio/sound_mix.gd BUSES gain Antenna and Carrier silent taps (analyser, -80 dB, checked by is_layout_ok). ui/comms_waterfall.gd: True picture from the Antenna tap (week's bed + carrier at speed and pitch x D, EarthFeed.receiver_plan(D,false)); Receiver line at waterfall.carrier_hz (data); bracket from the Carrier tap's measured peak; above/below hearing from the plan; shared tap players across the station and the monitor. make comms-waterfall-test 13 passed: measured 26.98 Hz vs 28.36 (bin 10.8 Hz), 399.05 vs 400, 5664.1 vs 5642.8 (0.4 %)."
   },
   {
    "id": "CV4",
@@ -224,10 +224,10 @@
     "identity layout reproduces today's GLBs byte for byte before the move",
     "make deck-assets-check levels-regress camera-test export-filter-audit green (baseline re-pinned with a stated reason if moved)"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Mark's ruling (consoles under the screens): bow_a.json Voyage (-48 deg), comms (-30), crew (+48) at r 18.6 facing their screens, conduits 00/01/02 re-aimed, bench kept (measured clear). Pipeline: identity first (props v4 on the pinned DL1 master reproduced bridge_props/ship/lift_head byte for byte); walk bake 16,639 tris; stapledon_deck_layout_v2.py -> master stapledon_bridge_deck_layout_a_v3.blend (160 unmoved objects identical); new stapledon_bridge_props_v5.py (v4 + live desks' bezels read from bow_a.json, comms live) -> bridge_props.glb 179,000 tris (cap 180k), ship.glb, lift_head.glb unchanged; masters published by sha256 to gs://stapledons-voyage-assets/ship/. Manifest stations use_m and screen_ship_m (the generator's housings). Evaluator: ZOOM_STATIONS + comms, active_stations 5, 'monitor' family; negative a_comms_faces_rim. Gates: deck-layout-eval bridge ok (bow fades 493 incl. monitors 14, head 0/1, pole 0, body both 8, near 0.016/0.074, five stations face the bow, zoom pole 4/4); deck-layout-eval-test 23 passed; deck-assets-check ok (12 pins); comms-walk-test 11 passed (chair->comms 8.5 m, rim 39.5 m); levels-regress re-pinned (samples 4771->4778, change-log row) and ok; camera-test 187, camera-forward-test 35, ship-console-test 136, style-test 22, dressing-test 10, export-filter-audit 0 failures."
   },
   {
    "id": "CV6",
@@ -243,10 +243,10 @@
     "AC10: make bench SCENE=bridge p99 < 16.7 ms at 2560x1440 on a quiet rig",
     "make capture-comms-v2 STAGE=wall frames opened and uploaded to refs/comms_v2/cv6/"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Blender stapledon_bridge_monitors_v1.py -> bridge_monitors.glb (grown frames + stands, 2,696 tris, 2 materials, anchors from the manifest), installed via manifest assets.monitors, inked and lit live, occluders (level manifest 'monitor'). interior/bridge_monitor.gd (BridgeMonitor: SubViewport face, visibility-gated, signal face every frame, others <= 10 Hz) + ui/bridge_screens.gd (signal, clocks, course, crew faces, theme variations, bindings). make bridge-monitors-test 13 passed. Open: OQ12 journey.ship_years_left not added yet (the course face shows the Earth year at arrival and gamma); bench at CV5's rig run."
   },
   {
    "id": "CV5",

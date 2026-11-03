@@ -51,6 +51,9 @@ var home_sound := {"cue": "", "rate": 1.0, "correct": 1.0, "silent": false, "hea
 var receiver := true
 var sound_button := Button.new()
 var earth_rate := 1.0 ## earth.rate (D) of the last refresh
+## R3-COMMS-V2 CV2: a week selected on the history wall (earth_log.records index), shown large in place of
+## the live week until released (-1: the live feed). Its caption and stamps are bindings on the record.
+var pinned := -1
 var _sound_since := 0.0
 var _accent_due := 0.0
 
@@ -286,7 +289,33 @@ func refresh(view: Dictionary) -> void:
 	caption.update_from(view)
 	caption.add_theme_font_size_override("font_size", 20 if beam and str(feed.get("kind", "")) == "card" else 16)
 	_choose_sound(feed)
+	_show_pinned(view)
 	_place_ghosts()
+
+
+## R3-COMMS-V2 CV2: the selected week in place of the live one: its picture (picked_source of the
+## record's feed, the same rule as the live week), its words, its Earth date and its ship arrival date.
+func _show_pinned(view: Dictionary) -> void:
+	var recs: Variant = GalaxyMap.field_value(view, "earth_log.records")
+	if pinned < 0 or not recs is Array or pinned >= (recs as Array).size():
+		return
+	var rec: Dictionary = recs[pinned]
+	var key := picked_source(rec.get("feed", {}))
+	if key != shown_key:
+		shown_key = key
+		picture.texture = texture_of(key)
+	picture.self_modulate = Color(1, 1, 1)
+	static_rect.visible = false
+	ring.visible = false
+	var base := "earth_log.records.%d." % pinned
+	var w: Dictionary = copy().words
+	signal_tag.compose([str(w.earth) + " ", [base + "earth_from_year", "comms_clock"]])
+	signal_tag.update_from(view)
+	clock_tag.visible = true
+	clock_tag.compose([str(w.ship) + " ", [base + "arrived.tau", "comms_clock"]])
+	clock_tag.update_from(view)
+	caption.compose([[base + "feed.event.words", "text"]])
+	caption.update_from(view)
 
 
 ## EL3b.7: the bed for this frame (the week's category, the sky's, babble or static), held for hold_s
@@ -332,7 +361,7 @@ func advance(dt: float) -> void:
 
 
 func _place_ghosts() -> void:
-	var j := float(band.get("jumble", 0.0)) if beam else 0.0
+	var j := float(band.get("jumble", 0.0)) if beam and pinned < 0 else 0.0 # a selected week shows alone
 	_rng.seed = hash([shown_key, int(now_s * 10.0)])
 	for i in ghosts.size():
 		var g := ghosts[i]

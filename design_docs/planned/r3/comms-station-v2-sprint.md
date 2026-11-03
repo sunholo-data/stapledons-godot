@@ -2,7 +2,9 @@
 
 **Design:** [comms-station-v2.md](comms-station-v2.md) covers the history wall, the frame diagram, moving the comms console closer, the waterfall, and the bridge's monitor wall.
 
-**Status: approved, executing.** Mark approved revision 2 on 2026-11-03 ("looks awesome"), with every open question at its recommendation, and added one ruling: the consoles stand underneath the screens (revision 3, design §D2). Main is merged in (AILANG v0.56.1, with #374, #375 and #377 landed), so CV0's wait is over. Execution runs on this branch, `design/comms-station-v2`, under PR #379.
+**Status: paused for Mark's mid-point review (2026-11-03).** CV0–CV4 and CV6 ✅ on this branch; CV5 (Archive, final captures, evaluation, landing) remains. Progress and gate results are in the sprint JSON.
+
+**Approved, executing.** Mark approved revision 2 on 2026-11-03 ("looks awesome"), with every open question at its recommendation, and added one ruling: the consoles stand underneath the screens (revision 3, design §D2). Main is merged in (AILANG v0.56.1, with #374, #375 and #377 landed), so CV0's wait is over. Execution runs on this branch, `design/comms-station-v2`, under PR #379.
 
 **Progress file:** `.ailang/state/sprints/sprint_R3-COMMS-V2.json`
 
@@ -50,7 +52,7 @@ None of these is a showcase or demo module.
 
 ## Milestones
 
-### CV0. Rebase and baseline (about 0 LOC)
+### CV0. Rebase and baseline (about 0 LOC) ✅
 
 - **When:** after #374, #375 and #377 merge.
 - **Setup:** make a fresh clone, then fetch the runtime and assets and run the import.
@@ -62,7 +64,7 @@ None of these is a showcase or demo module.
   - `make comms-station-test sound-voyage-test` passes.
 - **Acceptance:** each check above is green, and its numbers are recorded in the sprint JSON.
 
-### CV1. Received-frame log and protocol 2.17 (about 440 LOC)
+### CV1. Received-frame log and protocol 2.17 (about 440 LOC) ✅
 
 The sim logs every received frame, together with its send and arrival events.
 
@@ -108,7 +110,7 @@ The sim logs every received frame, together with its send and arrival events.
 
 **Acceptance:** design AC1–AC4.
 
-### CV2. Filmstrip, frame diagram and station layout (about 580 LOC)
+### CV2. Filmstrip, frame diagram and station layout (about 580 LOC) ✅
 
 **Files:**
 - `ui/earth_history.gd` + `.uid`. The filmstrip:
@@ -150,7 +152,7 @@ The sim logs every received frame, together with its send and arrival events.
 
 **Acceptance:** design AC5 and AC6.
 
-### CV3. The waterfall (about 300 LOC)
+### CV3. The waterfall (about 300 LOC) ✅
 
 **Spike first** (at most one hour, in scratch): does the analyser return magnitudes headless, on a bus at −80 dB? Test it along #375's mixer measurement path, and record the answer in the sprint JSON.
 
@@ -175,7 +177,7 @@ The sim logs every received frame, together with its send and arrival events.
 
 **Acceptance:** design AC7.
 
-### CV4. The consoles under the screens (about 220 LOC, plus GLBs)
+### CV4. The consoles under the screens (about 220 LOC, plus GLBs) ✅
 
 Mark's ruling (design §D2): each console stands under its screen at radius 18.6 m, turned so its operator faces the screen. The helm stays central. Every number below was measured in revision 3.
 
@@ -206,7 +208,7 @@ The port watch bench (`v2_bench_detail_*`) moves 2 m sternward along the rail, o
 
 **Acceptance:** design AC9.
 
-### CV6. The monitor wall (about 480 LOC, plus one Blender prop)
+### CV6. The monitor wall (about 480 LOC, plus one Blender prop) ✅
 
 **Blender:**
 - The prop `bridge_monitor`: a grown frame and stand (D-104), with a 4.0 × 2.25 m face whose bottom edge sits 1.0 m above the deck.
