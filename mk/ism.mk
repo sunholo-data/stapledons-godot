@@ -50,7 +50,7 @@ map-ism-test:      ## AC16: the galaxy map's medium layer draws every medium in 
 ism-capture:       ## AC18: renders/ism/ (flight frames per medium and speed, flash close-up, afterglow / eps / sensitivity sheets, map views, contact sheet; needs a GPU window)
 	@mkdir -p $(ISM_TMP) renders/ism
 	$(ISM_RUN) --bytecode --strict-bytecode --entry main sim/tools/ism_sensitivity.ail > $(ISM_TMP)/sensitivity.json
-	$(GODOT_SIM) --path . -- --ism-capture=renders/ism
+	$(GODOT_SIM) $(AUDIO_OFF) --path . -- --ism-capture=renders/ism
 
 ism-lore-drafts: lore-values  ## AC21: the Archive drafts for Mark (design_docs/planned/r1/ism-archive-drafts) cite registered ids only (HB-, RS-, IS-) and every number binds
 	@$(MAKE) --no-print-directory lore-check LORE=design_docs/planned/r1/ism-archive-drafts AILANG=$(AILANG)
