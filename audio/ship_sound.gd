@@ -1,6 +1,6 @@
 class_name ShipSound
 extends Node
-## R2-SOUND S1 (design_docs/planned/r2/sound.md §D4, §D5): the bridge's sound, attached to the ship
+## R2-SOUND S1 (design_docs/implemented/r2/sound.md §D4, §D5): the bridge's sound, attached to the ship
 ## demo from outside. It reads what the ship already exposes and touches none of its internals, so the
 ## bridge styling work can move props freely:
 ##   captain_event (CA0's foot_down)             -> footsteps at the captain;

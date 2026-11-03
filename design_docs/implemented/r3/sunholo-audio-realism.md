@@ -6,7 +6,7 @@
 **Origin:** Mark, 2026-10-30, after listening to the home beds (EL3b.7 v2): *"they are nice, not really realistic sounding but spooky and unique enough to include - but yeah if we can get closer to real sounding effects etc why not try it"*. He had already agreed that the package should gain tools beyond tones and noise.
 
 **Implements:**
-- This repo: [earth-link.md](earth-link.md) row "Sound from home" (EL3b.7: a room of voices and a tune, wind and birds, bells over a street, a crowd far off, a lab's pips, night air and crickets, the torrent's babble, the static); [sound.md](../../planned/r2/sound.md) §D3 (the canon: diegetic, instruments may sonify, no judgement), §D7 (no stingers), §D8 (route A synthesis, `synth-own`; route C generated sound stays off, D-101), §D9 (`make sound-synth-check`).
+- This repo: [earth-link.md](earth-link.md) row "Sound from home" (EL3b.7: a room of voices and a tune, wind and birds, bells over a street, a crowd far off, a lab's pips, night air and crickets, the torrent's babble, the static); [sound.md](../r2/sound.md) §D3 (the canon: diegetic, instruments may sonify, no judgement), §D7 (no stingers), §D8 (route A synthesis, `synth-own`; route C generated sound stays off, D-101), §D9 (`make sound-synth-check`).
 - The package process of [sunholo-audio.md](../../implemented/r2/sunholo-audio.md) (R2-SUNHOLO-AUDIO, D-119, D-124): pure exports, strict VM = interpreter, the render-stability contract, a path pin before publishing, the game's byte gate.
 - Design repo: no change. Sound is not physics: no physics-spec row, and CLAUDE.md gate 2 does not bind. The acoustic models used here are textbook (§D1 to §D6 cite them).
 

@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-SOUND (design_docs/planned/r2/sound.md) AC1-AC5, AC8 (rows), AC10 (later), the bus layout:
+## R2-SOUND (design_docs/implemented/r2/sound.md) AC1-AC5, AC8 (rows), AC10 (later), the bus layout:
 ## the cue table and manifest validators with their negative controls, the sim/UI/walk clocks,
 ## deterministic variants, the visual-counterpart and no-judgement rules, the D-101 generated-sound
 ## gate, and the bus layout (§D2).

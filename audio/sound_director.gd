@@ -1,6 +1,6 @@
 class_name SoundDirector
 extends Node
-## R2-SOUND §D1 (design_docs/planned/r2/sound.md): plays the cue table's sounds for game events.
+## R2-SOUND §D1 (design_docs/implemented/r2/sound.md): plays the cue table's sounds for game events.
 ##
 ## It listens and never speaks: sim events arrive through on_sim_step (wired to SimBridge.stepped),
 ## interface signals through on_ui, the captain's walk through walked, game states through on_game.
