@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 68 | 2026-11-04 | Row 7w LANDED (PR #387, merge `59fd8293`) and the S1 set PUBLISHED to `refs/m4_ship_s1/2026-11-04/`, parked for Mark's render review: main merged... |
 | 67 | 2026-11-03 | Row 7m-d MEASURED, PROVISIONAL and parked on S1: on a quiet rig the docked control's p99 tail is not warm-up and not a redraw, 243 of 245 slow frames ... |
 | 66 | 2026-11-03 | Row 7w BUILT and judged (PR #387): `make capture-m4` runs at `--fixed-fps 60` and is byte-reproducible (two captures: 15 of 15 PNG and 14 of 14 world ... |
 | 65 | 2026-11-03 | Row 7l(a) LANDED (PR #376, merge `812625ed`): `capture-m4-publish` checks all 18 files, their counts and `shasum -c` before its first upload, and `... |

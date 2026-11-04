@@ -1,0 +1,16 @@
+{"sprint":"R1-M4-JOURNEY","feature":"M4.6rR3_7w_S1_REPUBLISH","round":1,"kind":"landing","evaluator":"claude-sonnet-5.5 (iteration 68)","head":"13ab7a3937f7cb36e229f61c6287c0e17bec86b2","score":91,"verdict":"PASS",
+"merge_review":{"parents":"b6f84021 + da0d8ad4","diff_vs_origin_main":"8 files (Makefile, tools/deadline.sh, tools/m4_ship_capture.gd, tools/test_m4_publish.sh, sprint JSON, 2 design docs, bench report), identical file set to the judged build",
+ "conflict":"Makefile capture-m4 recipe: resolved line carries both main's $(AUDIO_OFF) and the branch's --fixed-fps 60; publish targets untouched by main; nothing lost from either side (git diff b6f84021 HEAD -- Makefile shows only main's AUDIO_OFF/mk/worlds.mk/audio-silent-guard additions)",
+ "main_interaction":"audio-silent-guard (new on main) passes: 79 windowed invocations, 5 allowlisted, negative control ok; capture-m4 uses AUDIO_OFF; publish recipe runs no godot"},
+"ac_results":{
+"AC_publish_test":"sh tools/test_m4_publish.sh: OK (15 cases on 2 makes: GNU Make 3.81, 4.4.1), rc 0",
+"AC_capture_determinism":"two make capture-m4 runs on merged head: both 'capture-m4: OK' (14 renders, 129.6 s and 115.1 s); m4_manifest.sha256 (15 lines) and worlds.sha256 (14 lines) cmp byte-equal",
+"AC_audio_guard":"make audio-silent-guard: ok",
+"not_run":"make ci-fast / full make test / make golden (GitHub fast tier and nightly rig; no shader or physics change); capture-m4-publish real upload (forbidden)"},
+"mutants":[
+{"name":"drop --if-generation-match=0","result":"killed"},
+{"name":"timeout rc 124 -> 99","result":"killed"},
+{"name":"ls-error check (matched-no-objects case) accept any","result":"killed"},
+{"name":"date pattern -> *","result":"killed"},
+{"name":"ls rc==0 nonempty branch -> false","result":"survived, equivalent in effect: nonempty output then fails the next 'cannot prove empty' guard, still before any upload; only the message differs"}],
+"findings":{"blocking":[],"non_blocking":["Nonempty-destination test case does not pin which of the two guards fires (mutant survived); defence in depth makes it harmless.","Full make test / golden not run locally; relies on fast tier plus nightly."]}}

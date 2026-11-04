@@ -1089,7 +1089,7 @@
       ],
       "design_doc": "design_docs/planned/r1/m4-7w-s1-republish.md",
       "sprint_plan": "design_docs/planned/r1/m4-7w-s1-republish-sprint.md",
-      "passes": false,
+      "passes": true,
       "registry_reuse": {
         "action": "none",
         "package": null,
