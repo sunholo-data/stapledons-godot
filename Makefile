@@ -1076,6 +1076,7 @@ include mk/m5.mk
 include mk/m45.mk
 include mk/ism.mk
 include mk/navigation-usability.mk
+include mk/script-gates.mk
 
 # Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
 run-ship-demo:
