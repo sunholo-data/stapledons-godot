@@ -1451,7 +1451,7 @@
       ],
       "passes": false,
       "status": "planned",
-      "notes": ""
+      "notes": "M1: Added D4 six cases first. Measured RED: five new cases fail on the original helper; make rc 2, plus pre-existing orphan visibility failure. Untouched base test also reports FAIL 1 of 12: pgrep cannot read process list (sysmon service unavailable, rc 3), so complete selftest/mutant footers are UNINFORMATIVE UNDER SANDBOX; no test weakened. Inserted exact per-count probe. New/helper cases and dash evidence recorded in .godot/tmp/snap/M1/RESULT.txt; full 18/18 and mutant footer checks require controller rerun outside sandbox."
     }
   ],
   "findings": [
