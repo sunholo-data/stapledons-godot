@@ -1,0 +1,5 @@
+extends SceneTree
+# row 7x drill: runs, exits 0, prints no summary line
+func _init() -> void:
+	print("  ok    one check")
+	quit(0)

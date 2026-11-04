@@ -1,0 +1,6 @@
+extends SceneTree
+# row 7x drill: a parse error; Godot 4.7 still exits 0
+func _init() -> void:
+	var a: int = undefined_name_7x
+	print("drill: 1 passed, 0 failures")
+	quit(0)

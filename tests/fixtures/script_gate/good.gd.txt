@@ -1,0 +1,6 @@
+extends SceneTree
+# row 7x drill (copied to .godot/tmp/script-gate/good.gd): the positive control
+func _init() -> void:
+	print("  ok    one check")
+	print("drill: 1 passed, 0 failures")
+	quit(0)

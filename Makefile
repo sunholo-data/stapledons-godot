@@ -291,7 +291,7 @@ validate-areas:    ## M4.0 AC13/AC14: area bundle(s) valid: V17 schema, alpha 0 
 	$(GODOT) --headless --path . --script tools/validate_area.gd -- $(BUNDLE)
 
 area-test:         ## M4.0 bundle loader + validate-areas positive controls (each check must fail on a bundle broken its way)
-	$(GODOT) --headless --path . --script tests/test_area_bundle.gd
+	@$(SCRIPT_GATE) area-test $(SCRATCH)/area-test.log 600 '^[1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_area_bundle.gd
 
 m4-smoke:          ## M4.2 AC14 smoke half (headless, real sim): on each BUNDLE the captain walks to the nav console, it opens the map, alpha Cen A is committed, the sky follows the cruise to the arrival; walking sends no intents
 	@mkdir -p $(SCRATCH)
@@ -373,8 +373,16 @@ sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematic
 	@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
-	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
+	@$(MAKE) --no-print-directory sim-bridge AILANG=$(AILANG) GODOT=$(GODOT)
 	@$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)
+
+# make sim's Godot step (row 7x): passes only on its counted summary line, no SCRIPT ERROR, inside 900 s.
+# SIM_BRIDGE_SCRIPT and SIM_BRIDGE_LOG are the drill's hooks (tools/test_script_gate.sh --godot feeds it a
+# parse-error fixture and its own log, so a concurrent real run is never clobbered).
+SIM_BRIDGE_SCRIPT ?= tests/test_sim_bridge.gd
+SIM_BRIDGE_LOG ?= $(SCRATCH)/sim-bridge.log
+sim-bridge:        ## make sim's NDJSON bridge test alone, through $(SCRIPT_GATE)
+	@$(SCRIPT_GATE) sim-bridge $(SIM_BRIDGE_LOG) 900 '^sim bridge: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script $(SIM_BRIDGE_SCRIPT)
 
 bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"] (sentinels), the navigation entry and --scenario=sgr_a, the scripted Sgr A* demo, codex unlocks, no-star key, GR off elsewhere (headless, real sim)
 	@mkdir -p $(SCRATCH)
@@ -383,7 +391,7 @@ bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"
 	@! grep -rnE "sqrt\(1(\.0)? *- *1(\.0)? */ *r" demos ui sky bridge interior && echo "bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior"
 
 ui:                ## galaxy map + plan panel against the real sim (headless, fake 800x600 viewport; AC15 part)
-	$(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
+	@$(SCRIPT_GATE) ui $(SCRATCH)/ui.log 600 '^galaxy map: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
 
 map-capture:       ## galaxy map PNGs + panel dump (alpha Cen A at 0.9c / cap / 0.99c) to renders/ (needs a GPU window; AC17 map part)
 	$(GODOT_SIM) $(AUDIO_OFF) --path . -- --map-capture=renders --map-commit
@@ -832,7 +840,7 @@ bright-audit:      ## M1.5b AC11 render gate (GPU window): make capture writes r
 	@$(GODOT) --headless --path . --script tools/bright_star_audit.gd -- renders/bright_audit
 
 test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
-	$(GODOT) --headless --path . --script tests/test_bright_audit.gd
+	@$(SCRIPT_GATE) test-bright-audit $(SCRATCH)/test-bright-audit.log 600 '^test_bright_audit: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_bright_audit.gd
 
 bright-test:      ## M1.2d bright tier + CNS5 fill (sim/tools/bright.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -860,7 +868,7 @@ catalogue-stats:  ## M1.2c AC2/AC3: count, excluded, M-dwarf share, defaulted-ph
 	@$(GODOT) --headless --path . --script tools/catalogue_stats.gd -- $(if $(filter command line environment,$(origin TIER)),--tier $(TIER))
 
 star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, endianness), every refusal, stats breaches, committed tiers
-	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
+	@$(SCRIPT_GATE) star-catalogue-test $(SCRATCH)/star-catalogue-test.log 600 '^test_star_catalogue: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_star_catalogue.gd
 
 VERIFY_OUT := $(SCRATCH)/verify
 catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, the star-truth table, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
@@ -1076,6 +1084,7 @@ include mk/m5.mk
 include mk/m45.mk
 include mk/ism.mk
 include mk/navigation-usability.mk
+include mk/script-gates.mk
 
 # Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
 run-ship-demo:
