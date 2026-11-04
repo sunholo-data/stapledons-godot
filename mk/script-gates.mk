@@ -7,8 +7,8 @@ SG_FIX ?= tests/fixtures/script_gate
 SCRIPT_GATE = sh $(SG_TOOLS)/script_gate.sh
 # Rows of tools/script-gate-baseline.txt: the --script invocations not yet through $(SCRIPT_GATE). A migration
 # deletes its rows and lowers this pin with them; script-gate-lint fails on any mismatch, so it never rises
-# unseen. 237 at the 7x snapshot (78f390c0), 232 after this sprint's five gates.
-SCRIPT_GATE_BASELINE_ROWS := 232
+# unseen. 237 at the 7x snapshot (78f390c0), 232 after its five gates, 204 after B2a (28 rows in nine mk files).
+SCRIPT_GATE_BASELINE_ROWS := 204
 SG_LINT = SCRIPT_GATE_BASELINE_ROWS=$(SCRIPT_GATE_BASELINE_ROWS) sh $(SG_TOOLS)/script_gate_lint.sh
 # Outer deadline for the self-tests (round-2 amendment A2): the same process-group supervisor as tools/script_gate.sh,
 # so a broken helper cannot hang make test. Usage: $(SG_SUP) SECS command...

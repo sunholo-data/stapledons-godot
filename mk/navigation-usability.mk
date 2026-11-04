@@ -1,6 +1,6 @@
 .PHONY: navigation-usability-test guided-highlights-strict
 navigation-usability-test: import
-	@$(GODOT_SIM) --headless --path . --script tests/test_navigation_usability.gd > $(SCRATCH)/navigation-usability.log 2>&1; rc=$$?; cat $(SCRATCH)/navigation-usability.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/navigation-usability.log && grep -q '^navigation-usability: [1-9][0-9]* checks 0 failures$$' $(SCRATCH)/navigation-usability.log
+	@$(SCRIPT_GATE) navigation-usability-test $(SCRATCH)/navigation-usability.log 600 '^navigation-usability: [1-9][0-9]* checks 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_navigation_usability.gd
 
 guided-highlights-strict:
 	@mkdir -p $(SCRATCH)
