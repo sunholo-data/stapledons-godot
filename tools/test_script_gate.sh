@@ -41,13 +41,16 @@ case_ stub-unanchored 2 10 'SUMMARY_ERE must start with ^' sh "$gate" stub-u "$t
 case_ stub-notimeout 2 10 'TIMEOUT_S must be at least 1' sh "$gate" stub-t "$tmp/s10.log" 0 "$S" -- true
 # A2: a command that ignores SIGALRM and TERM is still stopped at the deadline (group KILL after the TERM grace)
 case_ stub-ignore-alrm 1 6 'timeout after 2 s' sh "$gate" stub-ignore-alrm "$tmp/s11.log" 2 "$S" -- sh -c 'trap "" ALRM TERM; exec sleep 30'
-# A2: a child left behind by the command is killed with its group; the control proves pgrep can see a sleep
-case_ stub-orphan-child 1 6 'timeout after 2 s' sh "$gate" stub-orphan "$tmp/s12.log" 2 "$S" -- sh -c 'sleep 977 & sleep 30'
-sleep 978 & ctl=$!
+# A2: a child left behind by the command is killed with its group; the control proves pgrep can see a sleep.
+# The sleep durations are per run (from this shell's pid), so two drills running at once (make -j) never see
+# each other's orphans. The orphan's output goes to /dev/null, so it cannot hold the case's pipe.
+o=$((700000 + $$ % 100000)) c=$((700000 + $$ % 100000 + 1))
+case_ stub-orphan-child 1 6 'timeout after 2 s' sh "$gate" stub-orphan "$tmp/s12.log" 2 "$S" -- sh -c "sleep $o >/dev/null 2>&1 & sleep 30"
+sleep "$c" & ctl=$!
 sleep 1
-if ! pgrep -f 'sleep 978' > /dev/null 2>&1; then echo "test-script-gate: FAIL stub-orphan-child: control (sleep 978) not visible to pgrep"; bad=$((bad + 1)); fi
-kill "$ctl" 2>/dev/null; pkill -f 'sleep 978' 2>/dev/null; wait "$ctl" 2>/dev/null
-if pgrep -f 'sleep 977' > /dev/null 2>&1; then echo "test-script-gate: FAIL stub-orphan-child: a sleep 977 survived the group kill"; pkill -f 'sleep 977' 2>/dev/null; bad=$((bad + 1)); fi
+if ! pgrep -f "^sleep $c\$" > /dev/null 2>&1; then echo "test-script-gate: FAIL stub-orphan-child: control (sleep $c) not visible to pgrep"; bad=$((bad + 1)); fi
+kill "$ctl" 2>/dev/null; pkill -f "^sleep $c\$" 2>/dev/null; wait "$ctl" 2>/dev/null
+if pgrep -f "^sleep $o\$" > /dev/null 2>&1; then echo "test-script-gate: FAIL stub-orphan-child: a sleep $o survived the group kill"; pkill -f "^sleep $o\$" 2>/dev/null; bad=$((bad + 1)); fi
 stub=$n
 if [ "${1:-}" = --godot ]; then
   G=${GODOT:-godot}
