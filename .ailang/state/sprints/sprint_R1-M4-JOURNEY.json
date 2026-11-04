@@ -1451,7 +1451,7 @@
       ],
       "passes": false,
       "status": "planned",
-      "notes": "M1: Added D4 six cases first. Measured RED: five new cases fail on the original helper; make rc 2, plus pre-existing orphan visibility failure. Untouched base test also reports FAIL 1 of 12: pgrep cannot read process list (sysmon service unavailable, rc 3), so complete selftest/mutant footers are UNINFORMATIVE UNDER SANDBOX; no test weakened. Inserted exact per-count probe. New/helper cases and dash evidence recorded in .godot/tmp/snap/M1/RESULT.txt; full 18/18 and mutant footer checks require controller rerun outside sandbox."
+      "notes": "M1: Added D4 six cases first. Measured RED: five new cases fail on the original helper; make rc 2, plus pre-existing orphan visibility failure. Untouched base test also reports FAIL 1 of 12: pgrep cannot read process list (sysmon service unavailable, rc 3), so complete selftest/mutant footers are UNINFORMATIVE UNDER SANDBOX; no test weakened. Inserted exact per-count probe. New/helper cases and dash evidence recorded in .godot/tmp/snap/M1/RESULT.txt; full 18/18 and mutant footer checks require controller rerun outside sandbox.\nM2: Exact gate-after fixture added first: make script-gate-lint RED rc=2 (negative control flagged wrong rows). Updated control 2\u21923 and required grep: GREEN rc=0, interim lint 237/5/232. AC6 measured 7 rows, gate-after ungated, 3 unguarded; AC7 mutant 2. Evidence .godot/tmp/snap/M2/RESULT.txt."
     }
   ],
   "findings": [

@@ -27,7 +27,7 @@ script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_G
 	    SCRIPT_GATE_ALL_MAKEFILES="$(SG_FIX)/lint_negative.mk.txt tools/stray.mk" sh $(SG_TOOLS)/script_gate_lint.sh > $(SCRATCH)/script-gate/lint-negative.log 2>&1; then \
 	    echo "script-gate-lint: FAIL the negative control passed"; exit 1; fi; \
 	  L=$(SCRATCH)/script-gate/lint-negative.log; \
-	  test "$$(grep -c '^script-gate-lint: unguarded' $$L)" = 2 && grep -q 'not on the baseline: bare-new tests/y.gd$$' $$L && grep -q 'not on the baseline: mixed tests/m2.gd$$' $$L \
+	  test "$$(grep -c '^script-gate-lint: unguarded' $$L)" = 3 && grep -q 'not on the baseline: gate-after tests/after.gd$$' $$L && grep -q 'not on the baseline: bare-new tests/y.gd$$' $$L && grep -q 'not on the baseline: mixed tests/m2.gd$$' $$L \
 	  && test "$$(grep -c '^script-gate-lint: stale' $$L)" = 1 && grep -q 'SCRIPT_GATE_BASELINE_ROWS: stale tests/gone.gd$$' $$L \
 	  && test "$$(grep -c '^script-gate-lint: include outside' $$L)" = 3 && grep -q ' tools/outside.mk$$' $$L && grep -qF ' $$(EXTRA).mk' $$L && grep -q ' \.\./stray.mk$$' $$L \
 	  && test "$$(grep -c '^script-gate-lint: makefile not scanned: tools/stray.mk ' $$L)" = 1 \
