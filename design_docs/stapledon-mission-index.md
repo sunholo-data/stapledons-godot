@@ -12,9 +12,10 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
-| 68 | 2026-11-04 | Row 7w LANDED (PR #387, merge `59fd8293`) and the S1 set PUBLISHED to `refs/m4_ship_s1/2026-11-04/`, parked for Mark's render review: main merged... |
-| 67 | 2026-11-03 | Row 7m-d MEASURED, PROVISIONAL and parked on S1: on a quiet rig the docked control's p99 tail is not warm-up and not a redraw, 243 of 245 slow frames ... |
-| 66 | 2026-11-03 | Row 7w BUILT and judged (PR #387): `make capture-m4` runs at `--fixed-fps 60` and is byte-reproducible (two captures: 15 of 15 PNG and 14 of 14 world ... |
+| 69 | 2026-11-04 | Row 7x LANDED (PR #393, merge `49eb35d9`): one pass predicate for Godot `--script` gates, `$(SCRIPT_GATE)` (rc, no `SCRIPT ERROR`, counted summary,... |
+| 68 | 2026-11-04 | Row 7w LANDED (PR #387, merge `59fd8293`) and the S1 set PUBLISHED to `refs/m4_ship_s1/2026-11-04/`, parked for Mark's render review: main merged i... |
+| 67 | 2026-11-03 | Row 7m-d MEASURED, PROVISIONAL and parked on S1: on a quiet rig the docked control's p99 tail is not warm-up and not a redraw, 243 of 245 slow fram... |
+| 66 | 2026-11-03 | Row 7w BUILT and judged (PR #387): `make capture-m4` runs at `--fixed-fps 60` and is byte-reproducible (two captures: 15 of 15 PNG and 14 of 14 wor... |
 | 65 | 2026-11-03 | Row 7l(a) LANDED (PR #376, merge `812625ed`): `capture-m4-publish` checks all 18 files, their counts and `shasum -c` before its first upload, and `... |
 | 64 | 2026-11-02 | Row 7l(a) BUILT and judged, landing PARKED-ON-LANE (PR #376 waits only on `rig/full`): `capture-m4-publish` checks all 18 files, their counts (incl... |
 | 63 | 2026-11-02 | L9 semantic-memory S0 Landing LANDED (PR #368, merge `e7806004`): the S0.3 judge's survivors are folded in (the vector guard catches `.get("vector"... |
