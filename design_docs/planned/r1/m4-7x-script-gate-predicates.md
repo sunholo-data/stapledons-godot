@@ -478,6 +478,8 @@ The fixture covers: a gated line that must not be flagged; a continuation-joined
 
 ### W5. Migrations in this sprint: `make sim` first, then four gates
 
+> **Note (controller, landing):** in the diff blocks below, tabs inside the indent are shown as four spaces and blank context lines as empty lines, so the doc passes `git diff --check`. The blocks are a record, not a patch to re-apply; the landed `Makefile` and test files are authoritative.
+
 These are all in `make test`, all in `Makefile` regions no open PR touches, and all were bare at base (V8). Timeouts are at least 9× the measured time under a rig load of about 6 (V9, V10), and 900 s matches `star-surface-test`'s alarm.
 
 | Order | Target (line at base) | New recipe line (exact) | Base run (V9, V10, V26) | After (V19, V30, V32) |
@@ -515,58 +517,58 @@ index ebc8be37..2e4a7b75 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -291,7 +291,7 @@ validate-areas:    ## M4.0 AC13/AC14: area bundle(s) valid: V17 schema, alpha 0
- 	$(GODOT) --headless --path . --script tools/validate_area.gd -- $(BUNDLE)
- 
+     $(GODOT) --headless --path . --script tools/validate_area.gd -- $(BUNDLE)
+
  area-test:         ## M4.0 bundle loader + validate-areas positive controls (each check must fail on a bundle broken its way)
--	$(GODOT) --headless --path . --script tests/test_area_bundle.gd
-+	@$(SCRIPT_GATE) area-test $(SCRATCH)/area-test.log 600 '^[1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_area_bundle.gd
- 
+-    $(GODOT) --headless --path . --script tests/test_area_bundle.gd
++    @$(SCRIPT_GATE) area-test $(SCRATCH)/area-test.log 600 '^[1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_area_bundle.gd
+
  m4-smoke:          ## M4.2 AC14 smoke half (headless, real sim): on each BUNDLE the captain walks to the nav console, it opens the map, alpha Cen A is committed, the sky follows the cruise to the arrival; walking sends no intents
- 	@mkdir -p $(SCRATCH)
+     @mkdir -p $(SCRATCH)
 @@ -373,9 +373,17 @@ sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematic
- 	@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
- 	$(AILANG) check --package sim
- 	cd sim && $(AILANG) test --package .
--	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
-+	@$(MAKE) --no-print-directory sim-bridge AILANG=$(AILANG) GODOT=$(GODOT)
- 	@$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)
- 
+     @# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
+     $(AILANG) check --package sim
+     cd sim && $(AILANG) test --package .
+-    $(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
++    @$(MAKE) --no-print-directory sim-bridge AILANG=$(AILANG) GODOT=$(GODOT)
+     @$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)
+
 +# make sim's Godot step (row 7x): passes only on its counted summary line, no SCRIPT ERROR, inside 900 s.
 +# SIM_BRIDGE_SCRIPT and SIM_BRIDGE_LOG are the drill's hooks (tools/test_script_gate.sh --godot feeds it a
 +# parse-error fixture and its own log, so a concurrent real run is never clobbered).
 +SIM_BRIDGE_SCRIPT ?= tests/test_sim_bridge.gd
 +SIM_BRIDGE_LOG ?= $(SCRATCH)/sim-bridge.log
 +sim-bridge:        ## make sim's NDJSON bridge test alone, through $(SCRIPT_GATE)
-+	@$(SCRIPT_GATE) sim-bridge $(SIM_BRIDGE_LOG) 900 '^sim bridge: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script $(SIM_BRIDGE_SCRIPT)
++    @$(SCRIPT_GATE) sim-bridge $(SIM_BRIDGE_LOG) 900 '^sim bridge: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script $(SIM_BRIDGE_SCRIPT)
 +
  bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"] (sentinels), the navigation entry and --scenario=sgr_a, the scripted Sgr A* demo, codex unlocks, no-star key, GR off elsewhere (headless, real sim)
- 	@mkdir -p $(SCRATCH)
- 	@$(GODOT_SIM) --headless --path . --script tests/test_bh_hud.gd > $(SCRATCH)/bh-hud.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/bh-hud.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+     @mkdir -p $(SCRATCH)
+     @$(GODOT_SIM) --headless --path . --script tests/test_bh_hud.gd > $(SCRATCH)/bh-hud.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/bh-hud.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
 @@ -383,7 +391,7 @@ bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"
- 	@! grep -rnE "sqrt\(1(\.0)? *- *1(\.0)? */ *r" demos ui sky bridge interior && echo "bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior"
- 
+     @! grep -rnE "sqrt\(1(\.0)? *- *1(\.0)? */ *r" demos ui sky bridge interior && echo "bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior"
+
  ui:                ## galaxy map + plan panel against the real sim (headless, fake 800x600 viewport; AC15 part)
--	$(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
-+	@$(SCRIPT_GATE) ui $(SCRATCH)/ui.log 600 '^galaxy map: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
- 
+-    $(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
++    @$(SCRIPT_GATE) ui $(SCRATCH)/ui.log 600 '^galaxy map: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
+
  map-capture:       ## galaxy map PNGs + panel dump (alpha Cen A at 0.9c / cap / 0.99c) to renders/ (needs a GPU window; AC17 map part)
- 	$(GODOT_SIM) $(AUDIO_OFF) --path . -- --map-capture=renders --map-commit
+     $(GODOT_SIM) $(AUDIO_OFF) --path . -- --map-capture=renders --map-commit
 @@ -832,7 +840,7 @@ bright-audit:      ## M1.5b AC11 render gate (GPU window): make capture writes r
- 	@$(GODOT) --headless --path . --script tools/bright_star_audit.gd -- renders/bright_audit
- 
+     @$(GODOT) --headless --path . --script tools/bright_star_audit.gd -- renders/bright_audit
+
  test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
--	$(GODOT) --headless --path . --script tests/test_bright_audit.gd
-+	@$(SCRIPT_GATE) test-bright-audit $(SCRATCH)/test-bright-audit.log 600 '^test_bright_audit: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_bright_audit.gd
- 
+-    $(GODOT) --headless --path . --script tests/test_bright_audit.gd
++    @$(SCRIPT_GATE) test-bright-audit $(SCRATCH)/test-bright-audit.log 600 '^test_bright_audit: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_bright_audit.gd
+
  bright-test:      ## M1.2d bright tier + CNS5 fill (sim/tools/bright.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
- 	@mkdir -p $(SCRATCH)
+     @mkdir -p $(SCRATCH)
 @@ -860,7 +868,7 @@ catalogue-stats:  ## M1.2c AC2/AC3: count, excluded, M-dwarf share, defaulted-ph
- 	@$(GODOT) --headless --path . --script tools/catalogue_stats.gd -- $(if $(filter command line environment,$(origin TIER)),--tier $(TIER))
- 
+     @$(GODOT) --headless --path . --script tools/catalogue_stats.gd -- $(if $(filter command line environment,$(origin TIER)),--tier $(TIER))
+
  star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, endianness), every refusal, stats breaches, committed tiers
--	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
-+	@$(SCRIPT_GATE) star-catalogue-test $(SCRATCH)/star-catalogue-test.log 600 '^test_star_catalogue: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_star_catalogue.gd
- 
+-    $(GODOT) --headless --path . --script tests/test_star_catalogue.gd
++    @$(SCRIPT_GATE) star-catalogue-test $(SCRATCH)/star-catalogue-test.log 600 '^test_star_catalogue: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_star_catalogue.gd
+
  VERIFY_OUT := $(SCRATCH)/verify
  catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, the star-truth table, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
 @@ -1076,6 +1084,7 @@ include mk/m5.mk
@@ -574,7 +576,7 @@ index ebc8be37..2e4a7b75 100644
  include mk/ism.mk
  include mk/navigation-usability.mk
 +include mk/script-gates.mk
- 
+
  # Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
  run-ship-demo:
 ```
@@ -588,61 +590,61 @@ index bcd61b5d..e8c7ce38 100644
 +++ b/tests/test_galaxy_map.gd
 @@ -41,11 +41,13 @@ const ALPHA_CEN_099 := {
  }
- 
+
  var failures := 0
 +var passes := 0
  var acen_a := -1 # catalogue indices, looked up by id once the catalogue loads
  var acen_b := -1
- 
+
  func ok(name: String, cond: bool) -> void:
--	if not cond: failures += 1
-+	if cond: passes += 1
-+	else: failures += 1
- 	print("  %s  %s" % ["ok  " if cond else "FAIL", name])
- 
+-    if not cond: failures += 1
++    if cond: passes += 1
++    else: failures += 1
+     print("  %s  %s" % ["ok  " if cond else "FAIL", name])
+
  ## Floats from IEEE-754 bits (the GDScript tokenizer misreads some literals).
 @@ -653,5 +655,5 @@ func _initialize() -> void:
- 		if t.call() != true:
- 			ok("%s ran to completion" % t.get_method(), false)
- 	map.sim.stop()
--	print("galaxy map: %d failures" % failures)
-+	print("galaxy map: %d passed, %d failures" % [passes, failures])
- 	quit(1 if failures > 0 else 0)
+         if t.call() != true:
+             ok("%s ran to completion" % t.get_method(), false)
+     map.sim.stop()
+-    print("galaxy map: %d failures" % failures)
++    print("galaxy map: %d passed, %d failures" % [passes, failures])
+     quit(1 if failures > 0 else 0)
 diff --git a/tests/test_sim_bridge.gd b/tests/test_sim_bridge.gd
 index 2d9e65fa..dccb0a64 100644
 --- a/tests/test_sim_bridge.gd
 +++ b/tests/test_sim_bridge.gd
 @@ -9,10 +9,12 @@ const A := 1.032295275553596 # 1 g in c/yr, sunholo/relativity standardGravity()
  const MAX_INT := 9007199254740991 # 2^53 - 1
- 
+
  var failures := 0
 +var passes := 0
  var scratch := ProjectSettings.globalize_path("res://.godot/tmp")
- 
+
  func assert_bool(name: String, ok: bool) -> void:
--	if not ok: failures += 1
-+	if ok: passes += 1
-+	else: failures += 1
- 	print("  %s  %s" % ["ok  " if ok else "FAIL", name])
- 
+-    if not ok: failures += 1
++    if ok: passes += 1
++    else: failures += 1
+     print("  %s  %s" % ["ok  " if ok else "FAIL", name])
+
  func fake(mode: String, dump: String = "") -> SimBridge:
 @@ -58,7 +60,8 @@ func diag_sim(record: String = "") -> SimBridge:
- 
+
  func check(name: String, got: float, want: float, tol: float) -> void:
- 	var ok := absf(got - want) <= tol * maxf(1.0, absf(want))
--	if not ok: failures += 1
-+	if ok: passes += 1
-+	else: failures += 1
- 	print("  %s  %-44s got %.12f want %.12f" % ["ok  " if ok else "FAIL", name, got, want])
- 
- 
+     var ok := absf(got - want) <= tol * maxf(1.0, absf(want))
+-    if not ok: failures += 1
++    if ok: passes += 1
++    else: failures += 1
+     print("  %s  %-44s got %.12f want %.12f" % ["ok  " if ok else "FAIL", name, got, want])
+
+
 @@ -602,5 +605,5 @@ func _init() -> void:
- 		# a GDScript runtime error aborts the function and returns null: count it
- 		if t.call() != true:
- 			assert_bool("%s ran to completion" % t.get_method(), false)
--	print("sim bridge: %d failures" % failures)
-+	print("sim bridge: %d passed, %d failures" % [passes, failures])
- 	quit(1 if failures > 0 else 0)
+         # a GDScript runtime error aborts the function and returns null: count it
+         if t.call() != true:
+             assert_bool("%s ran to completion" % t.get_method(), false)
+-    print("sim bridge: %d failures" % failures)
++    print("sim bridge: %d passed, %d failures" % [passes, failures])
+     quit(1 if failures > 0 else 0)
 ```
 
 The drill gets its own log path because of something seen while prototyping. A drill run and a concurrent real `sim-bridge` run wrote the same log, and the real run then failed on the drill's content (V22).
