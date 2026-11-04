@@ -325,7 +325,7 @@ m4-physics-probe:  ## M4.6 check values: cruise (gammaOf, coastAt, planBurnCoast
 	diff $(SCRATCH)/m4-physics-probe.txt $(SCRATCH)/m4-physics-probe-vm.txt && cat $(SCRATCH)/m4-physics-probe.txt
 
 capture-m4: sky-assets lens-assets ## M4.6rR3 S1 set aboard the 3D ship (GPU window): captain eye at the helm; docked, boost 0.5/0.9, cruise 0.99 with the glow, brake 0.5, arrived alpha Cen, arrived home; deck + forward views + contact sheet -> renders/m4/ (manifest.json, m4_manifest.sha256, worlds.sha256). The interior set: godot --path . -- --interior-capture=DIR
-	@mkdir -p $(SCRATCH); $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/m4_ship_capture.gd > $(SCRATCH)/capture-m4.log 2>&1; rc=$$?; grep '^capture-m4' $(SCRATCH)/capture-m4.log; \
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) $(AUDIO_OFF) --path . --fixed-fps 60 --script tools/m4_ship_capture.gd > $(SCRATCH)/capture-m4.log 2>&1; rc=$$?; grep '^capture-m4' $(SCRATCH)/capture-m4.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-m4.log && test "$$(grep -c '^capture-m4: OK$$' $(SCRATCH)/capture-m4.log)" = 1 && ! grep -q '^capture-m4: FAIL' $(SCRATCH)/capture-m4.log && \
 	  test "$$(grep -c '^capture-m4: ok frame' $(SCRATCH)/capture-m4.log)" = 14 && \
 	  test "$$(ls renders/m4/*.png | wc -l | tr -d ' ')" = 15 && test "$$(wc -l < renders/m4/m4_manifest.sha256 | tr -d ' ')" = 15 && \
@@ -333,18 +333,28 @@ capture-m4: sky-assets lens-assets ## M4.6rR3 S1 set aboard the 3D ship (GPU win
 	  (cd renders/m4 && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4: FAILED (log $(SCRATCH)/capture-m4.log)"; exit 1; }
 
 M4_PUBLISH_DIR := renders/m4
+M4_PUBLISH_DATE :=
+M4_PUBLISH_S ?= 600
 test: capture-m4-publish-test
-capture-m4-publish: ## maintainers (gcloud): check all 18 files of the 3D-ship S1 set, then upload them to the public refs/m4_ship_s1 bucket path
-	@set -eu; d='$(M4_PUBLISH_DIR)'; set -- "$$d"/*.png "$$d/manifest.json" "$$d/m4_manifest.sha256" "$$d/worlds.sha256"; \
+capture-m4-publish: ## maintainers (gcloud): check the date and all 18 files of the 3D-ship S1 set, then create them (create-only) under a NEW dated path refs/m4_ship_s1/<date>/ (M4_PUBLISH_DATE=YYYY-MM-DD required; never the reviewed flat set)
+	@set -eu; d='$(M4_PUBLISH_DIR)'; day='$(M4_PUBLISH_DATE)'; \
+	  case "$$day" in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;; *) echo "capture-m4-publish: FAILED before any upload: M4_PUBLISH_DATE=YYYY-MM-DD is required on the command line (got '$$day')"; exit 1 ;; esac; \
+	  dest="gs://stapledons-voyage-assets/refs/m4_ship_s1/$$day/"; \
+	  set -- "$$d"/*.png "$$d/manifest.json" "$$d/m4_manifest.sha256" "$$d/worlds.sha256"; \
 	  for f; do test -s "$$f" || { echo "capture-m4-publish: FAILED before any upload: $$f missing or empty"; exit 1; }; done; \
 	  test $$# = 18 && test "$$(ls "$$d"/*.png | wc -l | tr -d ' ')" = 15 && \
 	  test "$$(wc -l < "$$d/m4_manifest.sha256" | tr -d ' ')" = 15 && \
 	  test "$$(cut -d' ' -f1 "$$d/m4_manifest.sha256" | sort -u | wc -l | tr -d ' ')" = 15 && \
 	  test "$$(wc -l < "$$d/worlds.sha256" | tr -d ' ')" = 14 && \
 	  (cd "$$d" && shasum -a 256 -c m4_manifest.sha256 > /dev/null) || { echo "capture-m4-publish: FAILED before any upload: a count or m4_manifest.sha256 check"; exit 1; }; \
-	  n=0; for f; do gcloud storage cp --cache-control="public, max-age=300" "$$f" "gs://stapledons-voyage-assets/refs/m4_ship_s1/$${f##*/}" > /dev/null; n=$$((n+1)); done; \
-	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files"
-capture-m4-publish-test: ## row 7l(a): the publish checks all 18 files before its first upload (private fixture, fake gcloud, every GNU make on PATH; never uploads)
+	  prc=0; sh tools/deadline.sh $(M4_PUBLISH_S) sh -c 'set -eu; dest=$$1; shift; \
+	  lrc=0; out=$$(gcloud storage ls "$$dest" 2>&1) || lrc=$$?; \
+	  if test $$lrc = 0; then echo "capture-m4-publish: FAILED before any upload: $$dest already holds $$(printf '%s\n' "$$out" | grep -c .) objects"; exit 1; fi; \
+	  case "$$out" in *"One or more URLs matched no objects"*) ;; *) echo "capture-m4-publish: FAILED before any upload: cannot prove $$dest is empty (gcloud storage ls exit $$lrc)"; exit 1 ;; esac; \
+	  n=0; for f; do gcloud storage cp --if-generation-match=0 --cache-control="public, max-age=300" "$$f" "$$dest$${f##*/}" > /dev/null || { echo "capture-m4-publish: FAILED after $$n uploads: $${f##*/} not created at $$dest (create-only precondition or gcloud error); this dated set is now partial"; exit 1; }; n=$$((n+1)); done; \
+	  test $$n = 18; echo "capture-m4-publish: uploaded 18 files to $$dest"' sh "$$dest" "$$@" || prc=$$?; \
+	  if test $$prc = 124; then echo "capture-m4-publish: publication timed out; destination may be partial; inspect before retry; do not announce"; exit 1; fi; exit $$prc
+capture-m4-publish-test: ## rows 7l(a), 7w: the publish checks its date, all 18 files and an empty dated destination before its first upload, and only creates objects (private fixture, fake gcloud, every GNU make on PATH; never uploads)
 	@sh tools/test_m4_publish.sh "$(CURDIR)"
 .PHONY: capture-m4-publish capture-m4-publish-test
 
