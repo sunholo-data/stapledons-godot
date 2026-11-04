@@ -373,8 +373,16 @@ sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematic
 	@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
-	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
+	@$(MAKE) --no-print-directory sim-bridge AILANG=$(AILANG) GODOT=$(GODOT)
 	@$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)
+
+# make sim's Godot step (row 7x): passes only on its counted summary line, no SCRIPT ERROR, inside 900 s.
+# SIM_BRIDGE_SCRIPT and SIM_BRIDGE_LOG are the drill's hooks (tools/test_script_gate.sh --godot feeds it a
+# parse-error fixture and its own log, so a concurrent real run is never clobbered).
+SIM_BRIDGE_SCRIPT ?= tests/test_sim_bridge.gd
+SIM_BRIDGE_LOG ?= $(SCRATCH)/sim-bridge.log
+sim-bridge:        ## make sim's NDJSON bridge test alone, through $(SCRIPT_GATE)
+	@$(SCRIPT_GATE) sim-bridge $(SIM_BRIDGE_LOG) 900 '^sim bridge: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script $(SIM_BRIDGE_SCRIPT)
 
 bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"] (sentinels), the navigation entry and --scenario=sgr_a, the scripted Sgr A* demo, codex unlocks, no-star key, GR off elsewhere (headless, real sim)
 	@mkdir -p $(SCRATCH)

@@ -194,7 +194,6 @@ ship-star-light-test	tests/test_ship_star_light.gd	rc,-,sum,-
 ship-ui-capture	tools/ship_ui_capture.gd	rc,se,sum,-
 ship-ui-test	tests/test_ship_ui.gd	rc,se,sum,-
 ship-ui-window-check	tools/ship_ui_window_check.gd	rc,se,sum,-
-sim	tests/test_sim_bridge.gd	-,-,-,-
 sim-bootstrap-test	tests/test_sim_bootstrap.gd	rc,-,sum,-
 sim-pipeline-test	tests/test_sim_pipeline.gd	rc,se,sum,-
 sky-model	tools/sky_colours.gd	-,-,-,-
