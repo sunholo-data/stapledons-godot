@@ -45,11 +45,14 @@ func _run() -> void:
 	if FileAccess.file_exists(ALLOW):
 		allow = JSON.parse_string(FileAccess.get_file_as_string(ALLOW))
 	var total := 0
+	var scanned := 0
+	var pair_count := 0
 	var per_file := {}
 	for root_path: String in scan:
 		for f: String in _gd_files(root_path):
 			if f == builder or f in allow.get("files", []):
 				continue
+			scanned += 1
 			var lines := FileAccess.get_file_as_string(f).split("\n")
 			for i in lines.size():
 				var line: String = lines[i]
@@ -84,6 +87,7 @@ func _run() -> void:
 		var b: GDScript = load(builder)
 		var theme: Theme = b.build()
 		var pairs: Array = b.text_pairs()
+		pair_count = pairs.size()
 		if pairs.is_empty(): fail("the theme declares no text/panel pairs")
 		for pr: Dictionary in pairs:
 			var fg: Color = theme.get_color(pr.color, pr.type)
@@ -96,7 +100,7 @@ func _run() -> void:
 				if cr < WCAG_MIN:
 					fail("contrast %.2f:1 < %.1f for %s.%s on %s over %s" % [cr, WCAG_MIN, pr.type, pr.color, pr.panel_type, ground.to_html(false)])
 		print("ui-theme-check: contrast checked for %d text/panel pairs over night and cream" % pairs.size())
-	print("ui-theme-check: %s" % ("FAIL" if fails else "ok"))
+	print("ui-theme-check: FAIL" if fails else "ui-theme-check: ok (%d files, %d text/panel pairs)" % [scanned, pair_count])
 	quit(1 if fails else 0)
 
 

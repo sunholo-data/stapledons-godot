@@ -35,6 +35,23 @@ se=$(grep -c 'SCRIPT ERROR' "$log")
 [ "$se" -eq 0 ] || why="$why; $se SCRIPT ERROR line(s) (Godot exits 0 on a parse error)"
 line=$(grep -E -- "$summary" "$log" | tail -n 1)
 [ -n "$line" ] || why="$why; no summary line matching $summary (rc $rc with no summary is a load failure, not a result)"
+# Zero probe (row 7x B2, judge survivor 2; per count after B2 quorum r1): a positive gate (WANT_RC 0) passes only on
+# a summary with a nonzero standalone number, and only when SUMMARY_ERE refuses each variant of the line with ONE
+# such number zeroed, so neither a loose ERE (^.) nor one loose count beside a bound one ([0-9]* pairs) passes.
+# Numbers already 0 (0 failures) are not probed. Negative controls (WANT_RC > 0) are exempt.
+if [ -n "$line" ] && [ "$want" -eq 0 ]; then
+  n=$(printf '%s\n' "$line" | grep -oE '[0-9]+' | grep -c .)
+  k=1 counted=0
+  while [ "$k" -le "$n" ]; do
+    v=$(printf '%s\n' "$line" | sed -E "s/(^|[^A-Za-z0-9_.-])[0-9]+/\\10/$k")
+    if [ "$v" != "$line" ]; then
+      counted=1
+      if printf '%s\n' "$v" | grep -qE -- "$summary"; then why="$why; SUMMARY_ERE also matches '$v' (count $k zeroed; bind it: [1-9][0-9]*)"; break; fi
+    fi
+    k=$((k + 1))
+  done
+  [ "$counted" = 1 ] || why="$why; summary '$line' carries no nonzero count (print one, e.g. N passed, 0 failures)"
+fi
 if [ -n "$why" ]; then
   grep -v -E '^[[:space:]]*ok[[:space:]]' "$log" | tail -n 40
   echo "script-gate: $name FAIL$why (log $log)"

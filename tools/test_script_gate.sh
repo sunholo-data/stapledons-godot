@@ -39,6 +39,13 @@ case_ stub-want1 0 10 'script-gate: stub-want1 ok: v: FAIL (rc 1' sh "$gate" stu
 case_ stub-env 0 10 'stub-env ok: AB=7x' sh "$gate" stub-env "$tmp/s8.log" 5 '^AB=7x$' -- AB=7x sh -c 'echo "AB=$AB"'
 case_ stub-unanchored 2 10 'SUMMARY_ERE must start with ^' sh "$gate" stub-u "$tmp/s9.log" 5 'drill' -- true
 case_ stub-notimeout 2 10 'TIMEOUT_S must be at least 1' sh "$gate" stub-t "$tmp/s10.log" 0 "$S" -- true
+# B2 zero probe (judge survivor 2): a loose ERE, a [0-9]* count (alone or beside a bound one) and an uncounted summary fail
+case_ stub-loose 1 10 'SUMMARY_ERE also matches' sh "$gate" stub-loose "$tmp/s13.log" 5 '^.' -- sh -c 'echo "x: 0 passed, 5 failures"'
+case_ stub-weakcount 1 10 'SUMMARY_ERE also matches' sh "$gate" stub-weak "$tmp/s14.log" 5 '^drill: [0-9]* passed, 0 failures$' -- sh -c 'echo "drill: 3 passed, 0 failures"'
+case_ stub-uncounted 1 10 'carries no nonzero count' sh "$gate" stub-unc "$tmp/s15.log" 5 '^v: ok$' -- sh -c 'echo "v: ok"'
+case_ stub-namedigit 1 10 'carries no nonzero count' sh "$gate" stub-nd "$tmp/s16.log" 5 '^m4-smoke: [0-9]* passed$' -- sh -c 'echo "m4-smoke: 0 passed"'
+case_ stub-twocount 1 10 'count 2 zeroed' sh "$gate" stub-two "$tmp/s17.log" 5 '^t: [1-9][0-9]* files, [0-9]* pairs$' -- sh -c 'echo "t: 3 files, 4 pairs"'
+case_ stub-twobound 0 10 'stub-twobound ok: t: 3 files, 4 pairs' sh "$gate" stub-twobound "$tmp/s18.log" 5 '^t: [1-9][0-9]* files, [1-9][0-9]* pairs$' -- sh -c 'echo "t: 3 files, 4 pairs"'
 # A2: a command that ignores SIGALRM and TERM is still stopped at the deadline (group KILL after the TERM grace)
 case_ stub-ignore-alrm 1 6 'timeout after 2 s' sh "$gate" stub-ignore-alrm "$tmp/s11.log" 2 "$S" -- sh -c 'trap "" ALRM TERM; exec sleep 30'
 # A2: a child left behind by the command is killed with its group; the control proves pgrep can see a sleep.
