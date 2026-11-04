@@ -38,14 +38,14 @@ render() {
         rm -rf "$OUT/frames/$c"
         case "$c" in
             black_hole_orbit|saturn_arrival|ism_transit)
-                AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --path . --script tools/recent_feature_movies.gd -- \
+                AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --audio-driver Dummy --path . --script tools/recent_feature_movies.gd -- \
                     --clip="$c" --out="$PWD/$OUT/frames/$c"
                 jq -e '.width == 1280 and .height == 720 and .fps == 30 and .preview == false and .saved_frames == .source_frames and .source_frames == .seconds * .fps' \
                     "$OUT/frames/$c/manifest.json" >/dev/null
                 ;;
             *)
                 if [ "$c" = map ]; then set -- --map --movie=map; else set -- --movie="$c"; fi
-                AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --path . -- "$@" --movie-out="$PWD/$OUT/frames/$c"
+                AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --audio-driver Dummy --path . -- "$@" --movie-out="$PWD/$OUT/frames/$c"
                 ;;
         esac
         n=$(for frame in "$OUT/frames/$c"/f*.png; do [ ! -f "$frame" ] || echo "$frame"; done | wc -l | tr -d ' ')

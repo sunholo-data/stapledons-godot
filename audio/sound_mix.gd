@@ -1,6 +1,6 @@
 class_name SoundMix
 extends RefCounted
-## R2-SOUND §D2 (design_docs/planned/r2/sound.md): the bus layout, built in code from BUSES so one
+## R2-SOUND §D2 (design_docs/implemented/r2/sound.md): the bus layout, built in code from BUSES so one
 ## table is the source of truth (the tests compare AudioServer with it), and the volume settings.
 ##
 ##   Master      HardLimiter ceiling −1 dB (the safety net; headroom is measured before it)

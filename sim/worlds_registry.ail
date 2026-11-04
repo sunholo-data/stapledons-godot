@@ -1,0 +1,14 @@
+module stapledons/sim/worlds_registry
+-- Public catalogue identity/photometry only. No seed, dial or population.
+import pkg/sunholo/celestial/kepler (Vec3)
+import std/json (decode, getArray, getString, getNumber)
+import std/option (Some, None, getOrElse)
+import std/result (Ok, Err)
+import std/list (flatMap)
+import std/math (floatToInt)
+export type CatalogueRow = {id:string,pos:Vec3,v:float,teff:float,flags:int}
+export pure func catalogueRows(text:string) -> [CatalogueRow] = match decode(text) {
+ Err(_)=>[],Ok(j)=>match getArray(j,"stars") {None=>[],Some(xs)=>flatMap(\x.
+ match (getString(x,"id"),getNumber(x,"x"),getNumber(x,"y"),getNumber(x,"z"),getNumber(x,"vmag"),getNumber(x,"teff")) {
+ (Some(id),Some(px),Some(py),Some(pz),Some(v),Some(t))=>[{id:id,pos:{x:px,y:py,z:pz},v:v,teff:t,flags:floatToInt(getOrElse(getNumber(x,"flags"),0.0))}],_=>[]},xs)}
+}

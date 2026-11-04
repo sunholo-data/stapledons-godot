@@ -1,0 +1,8 @@
+lore-import: 18 files from sunholo-data/stapledons-design at b26265c9fadf79c86cd1a9698231d971a61ff3b5 -> data/lore/manifest.json
+lore-values: 149 HB rows, 40 RS rows, 36 IS rows, 45 LW rows, 17 package values, 3 m4 values -> data/lore/check_values.json; every package value equals its HB row at printed s.f.; m4:glow_eps <= HB-61
+lore-check: 13 entries, every unlock a known hint, every check id resolved, every number bound but 2 allowed (270 registry rows)
+  allowed: archive.photon-drive '2.379 × 10¹⁷ J': HB-35 is 2.379 × 10¹⁷ J/kg (per kilogram of effective mass); the prose drops "per kilogram", so the unit J does not equal J/kg. Canon fix: write "joules" per kilogram with a J/kg row (as HB-53/HB-54 split J and kg), or give the figure its own J row.
+  allowed: archive.photon-drive '6.520 × 10¹⁷ J': The same for HB-36 (6.520 × 10¹⁷ J/kg).
+lore-import: 18 files in data/lore hash-equal the manifest
+lore-import: 18 files in .godot/tmp/lore-design-44480 hash-equal the manifest
+lore-import: cross-repo: ../stapledons-design-worlds at b26265c equals the vendored copy

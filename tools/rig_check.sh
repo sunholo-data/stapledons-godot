@@ -1,8 +1,9 @@
 #!/bin/sh
 # rig_check.sh: the full suite on the Studio, posted to GitHub as the rig/full commit status.
-# Rig-first merges (Mark, 2026-10-19): GitHub runs the fast clean-Linux tier (make ci-fast);
-# a PR merges on a green rig/full, which is the whole of make test (plus make golden for
-# visual changes, which needs a GPU window) on the PR's exact head.
+# Since 2026-11-03 (Mark) it runs nightly on main (tools/rig_nightly.sh) rather than per PR: a PR
+# merges on the fast tier, its targeted gates, the cross-family evaluation and Mark's OK on a dev
+# build. Run it by hand on a PR only when a change is risky enough to want the whole suite first
+# (make test, plus make golden for visual changes, which needs a GPU window).
 #
 #   tools/rig_check.sh <PR number | ref> [--golden]
 #
@@ -49,6 +50,9 @@ fail() {
 }
 
 rm -rf "$dir"; mkdir -p "$(dirname "$dir")"
+# The clone goes when the run ends, pass or fail; the log ($dir.log) stays. 41 kept clones once
+# filled 40 GB (2026-11-03). RIG_KEEP=1 keeps it for debugging.
+[ "${RIG_KEEP:-0}" = 1 ] || trap 'cd / && rm -rf "$dir"' EXIT
 git clone --quiet "https://github.com/$REPO.git" "$dir" || fail "clone failed"
 cd "$dir"
 git fetch --quiet origin "$sha" && git checkout --quiet --detach "$sha" || fail "checkout of $short failed"

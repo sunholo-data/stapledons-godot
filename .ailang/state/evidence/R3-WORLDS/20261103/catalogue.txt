@@ -1,0 +1,12 @@
+  have     data/starmap/stars_large.bin
+  have     data/starmap/stars_large.json
+  ok       data/starmap/stars_large.bin
+  ok       data/starmap/stars_large.json
+starmap-assets: tiers match data/starmap/SHA256SUMS
+data/raw/exoplanets_ps_100pc_20261102.csv: OK
+exoplanets: 1590 snapshot planets; 1077 snapshot hosts; 1599 output planets (2 candidates); 1079 output hosts; 412 planets in registry; 241 matched hosts; 412 archive planets <=25pc; 0 curated value differences; sha256=ce6345482ca387dd6a8fca73d909d25b78c3ce24eea5efab1afdbda279ea335b
+exoplanets-check: JSON, AILANG module and curated differences byte-identical
+exoplanets independent oracle: 1590 snapshot planets, 18722 nonmissing scalars bit-identical (IEEE754 binary64); missingness and derived provenance correct
+exoplanets-verify: 1599 generated planets and 18722 nonmissing archive scalars equal regeneration field-for-field; curated alpha Cen and TRAPPIST-1 equal source modules; full JSON digest 116e7d91897fef17cb8e44e91742ceffc97286fbbb52a4e7a357d5fb56d1c8f1
+world-hosts: 241 measured hosts; exact navigation positions/photometry/flags
+world-hosts-check: measured host facts byte-identical

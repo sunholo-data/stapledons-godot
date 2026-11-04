@@ -21,13 +21,16 @@ files_json() { # dir -> JSON array of the files under dir (relative), manifest.j
   (cd "$1" && find archive physics -type f | sort) | awk 'BEGIN{printf "["} {printf "%s\"%s\"", (NR>1?",":""), $0} END{printf "]"}'
 }
 
-# The design-repo files that make up the lore: lore/archive/*.md -> archive/, plus three physics docs.
+# The design-repo files that make up the lore: lore/archive/*.md -> archive/, plus physics registries.
 list_at() { # sha -> "<design path> <vendored path>" lines
   git -C "$D" ls-tree -r --name-only "$1" -- lore/archive | grep '\.md$' | sed 's#^lore/archive/\(.*\)$#lore/archive/\1 archive/\1#'
   echo "physics/higgs-bubble.md physics/higgs-bubble.md"
   echo "physics/relativity-spec.md physics/relativity-spec.md"
   echo "physics/ism-structure.md physics/ism-structure.md"
-  echo "physics/ism-structure.md physics/ism-structure.md"
+  # Older pinned revisions predate W1.0; keep cross-repo checks valid at those revisions.
+  if git -C "$D" cat-file -e "$1:physics/life-and-worlds.md" 2>/dev/null; then
+    echo "physics/life-and-worlds.md physics/life-and-worlds.md"
+  fi
 }
 export_at() { # sha dest-dir
   list_at "$1" | while read -r src dst; do

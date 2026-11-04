@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-SOUND AC6 (design_docs/planned/r2/sound.md §D2, §D9): make sound-check.
+## R2-SOUND AC6 (design_docs/implemented/r2/sound.md §D2, §D9): make sound-check.
 ##   - every cue's level at default settings, from its own samples × its volume_db (the buses add no
 ##     gain at default: the compressors are idle without a voice and the reverb is dry), against its
 ##     band (RMS over the active span, samples above −60 dBFS; a loop's RMS over exactly one loop)

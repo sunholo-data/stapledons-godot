@@ -1,0 +1,1 @@
+calib-smoke-development: 32 rows; strict core; photon_budget=false; sha256 238415dabbfeec89c61d4e0e7d0a27023a508af6797c79082b2aedfe58fee2e0

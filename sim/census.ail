@@ -1,0 +1,267 @@
+module stapledons/sim/census
+-- R3-WORLDS W2.2. Internal, pure census; never imported by a wire encoder.
+-- "biospheres" counts immutable inhabited backgrounds, including lineages
+-- that have since ended. "mindsWindow" counts technological epochs overlapping
+-- [0, voyageWindowYr]. Instrument detections are calibration's separate concern.
+import ./worlds_model (StarRow, Planet, System, PMeasured, PCandidate, PSynthesised,
+ Habitable, HabitabilityDebated, NotHabitable, systemFrom, habOf, slotEligible, systemDigest, historyUniforms,
+ HistoryDrawPlan, FixedHistories, prepareHistoryDrawPlan, historyUniformsFromPlan, atmosphereVeto, surveyApplies)
+import pkg/sunholo/worlds/occurrence (MDwarf, Other)
+import pkg/sunholo/celestial/habitability (hzFluxes,rvSemiAmplitude)
+import ./data/worlds_rules (rvSurveyLimitMs)
+import ./tools/exoplanets (Planet as ObservedPlanet, catalogueDigest)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Dial, Params, applyDial, zeroDial)
+import pkg/sunholo/worlds/history (History, Sterile, Technological, Remnant, stateAt, historyOf)
+import pkg/sunholo/worlds/epoch_statistics (Probabilities, historyProbabilities as epochProbabilities)
+import pkg/sunholo/worlds/occurrence (etaEarth)
+import std/option (Option, Some, None, getOrElse)
+import std/list (foldl, map, filter, sortBy, length, any, zipWith, flatMap, drop)
+import std/map (fromList, lookup, member)
+import std/string (compare)
+import std/math (sqrt, intToFloat, abs_Float as abs)
+import std/json (Json, jo, kv, ja, js, jnum, jint, jb, encode)
+import std/crypto (sha256Hex)
+
+pure func allOf[a](f:a -> bool,xs:[a]) -> bool = not any(\x. not f(x),xs)
+
+export type Counts = {systems:int,planets:int,biospheres:int,mindsWindow:int,technological:int,remnants:int,
+ measured:int,candidates:int,synthesised:int,habitable:int,debated:int} deriving (Eq)
+export type Expectation = {biospheres:float,mindsWindow:float,technological:float,remnants:float,
+ varianceBio:float,varianceMinds:float,varianceTech:float,varianceRemnants:float}
+export pure func zeroCounts() -> Counts = {systems:0,planets:0,biospheres:0,mindsWindow:0,technological:0,remnants:0,
+ measured:0,candidates:0,synthesised:0,habitable:0,debated:0}
+export pure func zeroExpectation() -> Expectation = {biospheres:0.0,mindsWindow:0.0,technological:0.0,remnants:0.0,
+ varianceBio:0.0,varianceMinds:0.0,varianceTech:0.0,varianceRemnants:0.0}
+export pure func addCounts(a:Counts,b:Counts) -> Counts = {systems:a.systems+b.systems,planets:a.planets+b.planets,
+ biospheres:a.biospheres+b.biospheres,mindsWindow:a.mindsWindow+b.mindsWindow,technological:a.technological+b.technological,
+ remnants:a.remnants+b.remnants,measured:a.measured+b.measured,candidates:a.candidates+b.candidates,
+ synthesised:a.synthesised+b.synthesised,habitable:a.habitable+b.habitable,debated:a.debated+b.debated}
+export pure func addExpectation(a:Expectation,b:Expectation) -> Expectation = {
+ biospheres:a.biospheres+b.biospheres,mindsWindow:a.mindsWindow+b.mindsWindow,
+ technological:a.technological+b.technological,remnants:a.remnants+b.remnants,
+ varianceBio:a.varianceBio+b.varianceBio,varianceMinds:a.varianceMinds+b.varianceMinds,
+ varianceTech:a.varianceTech+b.varianceTech,varianceRemnants:a.varianceRemnants+b.varianceRemnants}
+pure func one(b:bool) -> int = if b then 1 else 0
+pure func countPlanet(p:Planet,window:float) -> Counts {
+ let s=stateAt(p.history,0.0);
+ {systems:0,planets:1,biospheres:one(p.history.biosphere!=Sterile),
+ mindsWindow:one(match p.history.mind {None=>false,Some(m)=>m.techT<=window && m.endT>0.0}),
+ technological:one(s==Technological),remnants:one(s==Remnant),
+ measured:one(p.prov==PMeasured),candidates:one(p.prov==PCandidate),synthesised:one(p.prov==PSynthesised),
+ habitable:one(p.hab==Habitable),debated:one(p.hab==HabitabilityDebated)}
+}
+export pure func countSystemsAt(ss:[System],window:float) -> Counts = foldl(\a s.
+ foldl(\c p. addCounts(c,countPlanet(p,window)),{a | systems:a.systems+1},s.planets),zeroCounts(),ss)
+export pure func countSystems(ss:[System]) -> Counts = countSystemsAt(ss,16000.0)
+
+-- Sort/group once, then O(1) host lookup for every registry row. Empty host
+-- identities are unmatched archive rows; they must never make a measured host.
+export pure func observedIdentity(p:ObservedPlanet) -> string = if p.hostId!="" then p.hostId else p.archiveHostId
+
+pure func groups(ps:[ObservedPlanet],key:string,acc:[ObservedPlanet]) -> [(string,[ObservedPlanet])] = match ps {
+ []=>if key=="" then [] else [(key,acc)],
+ p::rest=>if observedIdentity(p)==key then groups(rest,key,p::acc)
+  else (if key=="" then [] else [(key,acc)]) ++ groups(rest,observedIdentity(p),[p])
+}
+export pure func observedIndex(ps:[ObservedPlanet]) -> Map[string,[ObservedPlanet]] =
+ fromList(groups(sortBy(\a b. compare(observedIdentity(a),observedIdentity(b)),filter(\p. observedIdentity(p)!="",ps)),"",[]))
+export pure func observedFor(idx:Map[string,[ObservedPlanet]],id:string) -> [ObservedPlanet] = getOrElse(lookup(idx,id),[])
+export pure func populate(seed:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> [System] {
+ let idx=observedIndex(ps);
+ map(\r. systemFrom(seed,d,r,observedFor(idx,r.id)),sortBy(\a b. compare(a.id,b.id),rows))
+}
+export pure func censusFor(seed:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> Counts = countSystems(populate(seed,d,rows,ps))
+
+-- AC14/15 audit every planet of the complete registry population, independently
+-- of count moments. Counts expose exercised cases so an empty fixture cannot
+-- masquerade as a label or RV check. RV uses the same conservative edge-on,
+-- circular assumption as generation; measured planets are never RV-vetoed.
+export type PopulationAudit = {planets:int,mDwarfHz:int,surveySynthesised:int,labelViolations:int,rvViolations:int}
+pure func mDwarfRocky(s:System,p:Planet) -> bool {
+ let rocky=match p.radiusEarth {
+  Some(r)=>r>=0.5 && r<=1.5,
+  None=>p.minimumMass && match p.massEarth {Some(m)=>m>=0.1 && m<=5.0,None=>false}
+ };
+ s.starClass==MDwarf && rocky
+}
+pure func planetLabelValid(row:StarRow,s:System,p:Planet) -> bool {
+ let constrained=match p.observed {Some(o)=>atmosphereVeto(o),None=>false};
+ let flux=if row.teff>0.0 then hzFluxes(row.teff) else hzFluxes(2600.0);
+ let inZone=match p.insolation {Some(ins)=>ins>=flux.maximum && ins<=flux.runaway,None=>false};
+ if constrained || s.starClass==Other then p.hab==NotHabitable && p.history.biosphere==Sterile
+ else if mDwarfRocky(s,p) && inZone then p.hab==HabitabilityDebated
+ else s.starClass!=MDwarf || p.hab!=Habitable
+}
+export pure func auditPopulation(rows:[StarRow],systems:[System]) -> PopulationAudit {
+ let idx=fromList(map(\r. (r.id,r),rows));
+ foldl(\total s. match lookup(idx,s.starId) {
+  None=>{total | labelViolations:total.labelViolations+1},
+  Some(row)=>foldl(\a p. {
+   let surveyed=p.prov==PSynthesised && surveyApplies(row);
+   let rvValid=if not surveyed then true else match (p.massEarth,p.periodD) {
+    (Some(m),Some(days))=>rvSemiAmplitude(days,m,row.mSun,1.0,0.0)<=rvSurveyLimitMs(),_=>false
+   };
+   let flux=hzFluxes(if row.teff>0.0 then row.teff else 2600.0);
+   let inZone=match p.insolation {Some(ins)=>ins>=flux.maximum && ins<=flux.runaway,None=>false};
+   {planets:a.planets+1,mDwarfHz:a.mDwarfHz+one(mDwarfRocky(s,p) && inZone),
+    surveySynthesised:a.surveySynthesised+one(surveyed),
+    labelViolations:a.labelViolations+one(not planetLabelValid(row,s,p)),rvViolations:a.rvViolations+one(not rvValid)}
+  },total,s.planets)
+ },{planets:0,mDwarfHz:0,surveySynthesised:0,labelViolations:0,rvViolations:0},systems)
+}
+export pure func populationAuditPasses(a:PopulationAudit) -> bool = a.labelViolations==0 && a.rvViolations==0
+export pure func populationAuditJson(a:PopulationAudit) -> Json = jo([
+ kv("planetsChecked",jint(a.planets)),kv("mDwarfRockyHzChecked",jint(a.mDwarfHz)),
+ kv("surveySynthesisedChecked",jint(a.surveySynthesised)),kv("labelViolations",jint(a.labelViolations)),
+ kv("rvViolations",jint(a.rvViolations))])
+
+-- Reusable epoch mathematics lives in sunholo/worlds; the census composes
+-- those per-world probabilities with this registry's immutable eligibility.
+export pure func historyProbabilities(p:Params,window:float) -> Probabilities = epochProbabilities(p,window)
+pure func oneExpected(occurrence:float,p:Params,window:float) -> Expectation {
+ let f=historyProbabilities(p,window);
+ let bio=occurrence*f.life;let mind=occurrence*f.mindsWindow;
+ let tech=occurrence*f.tech;let rem=occurrence*f.remnant;
+ {biospheres:bio,mindsWindow:mind,technological:tech,remnants:rem,
+ varianceBio:bio*(1.0-bio),varianceMinds:mind*(1.0-mind),varianceTech:tech*(1.0-tech),varianceRemnants:rem*(1.0-rem)}
+}
+export pure func expectedForAt(d:Dial,rows:[StarRow],ps:[ObservedPlanet],window:float) -> Expectation {
+ let p=applyDial(baseline(),d);let idx=observedIndex(ps);
+ foldl(\a r. {
+  let known=observedFor(idx,r.id);
+  let e=if length(known)==0 then oneExpected(if slotEligible(r) then etaEarth(r.starClass) else 0.0,p,window)
+   else foldl(\b k. if habOf(r,k)==NotHabitable then b else addExpectation(b,oneExpected(1.0,p,window)),zeroExpectation(),known);
+  addExpectation(a,e)
+ },zeroExpectation(),rows)
+}
+export pure func expectedFor(d:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> Expectation = expectedForAt(d,rows,ps,16000.0)
+export pure func zScore(realised:int,mean:float,variance:float) -> float =
+ if variance>0.0 then (intToFloat(realised)-mean)/sqrt(variance)
+ else if intToFloat(realised)==mean then 0.0 else 1e100
+export type MomentCounts = {biospheres:int,mindsWindow:int,technological:int,remnants:int}
+export pure func momentCounts(c:Counts) -> MomentCounts = {biospheres:c.biospheres,mindsWindow:c.mindsWindow,technological:c.technological,remnants:c.remnants}
+export pure func momentsPass(c:MomentCounts,e:Expectation) -> bool =
+ abs(zScore(c.biospheres,e.biospheres,e.varianceBio))<4.0
+ && abs(zScore(c.mindsWindow,e.mindsWindow,e.varianceMinds))<4.0
+ && abs(zScore(c.technological,e.technological,e.varianceTech))<4.0
+ && abs(zScore(c.remnants,e.remnants,e.varianceRemnants))<4.0
+
+-- Full, untruncated internal digest. Observed original metadata is bound via
+-- catalogueDigest; this projection also binds every generated scalar/history.
+pure func number(x:Option[float]) -> Json = match x {None=>js("missing"),Some(v)=>jnum(v)}
+pure func physical(p:Planet) -> Json = jo([kv("id",js(p.id)),kv("name",js(p.name)),kv("slot",js(p.slot)),
+ kv("provenance",js(show(p.prov))),kv("hab",js(show(p.hab))),kv("cite",js(p.cite)),
+ kv("a",number(p.aAu)),kv("period",number(p.periodD)),kv("radius",number(p.radiusEarth)),kv("mass",number(p.massEarth)),
+ kv("minimumMass",jb(p.minimumMass)),kv("teq",number(p.teqK)),kv("insolation",number(p.insolation))])
+pure func historyJson(h:History) -> Json = jo([kv("biosphere",js(show(h.biosphere))),kv("mind",match h.mind {
+ None=>js("none"),Some(m)=>jo([kv("preTechT",jnum(m.preTechT)),kv("techT",jnum(m.techT)),kv("endT",jnum(m.endT)),
+ kv("ending",js(show(m.ending))),kv("tracesUntilT",jnum(m.tracesUntilT))])})])
+pure func planetJson(p:Planet) -> Json = jo([kv("physical",physical(p)),kv("history",historyJson(p.history))])
+export pure func digestSystems(ss:[System],ps:[ObservedPlanet]) -> string =
+ sha256Hex(encode(jo([kv("observations",js(catalogueDigest(ps))),kv("systems",ja(map(\s.
+ jo([kv("id",js(s.starId)),kv("class",js(show(s.starClass))),kv("planets",ja(map(planetJson,s.planets)))]),ss)))])))
+
+export pure func censusDigest(seed:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> string = digestSystems(populate(seed,d,rows,ps),ps)
+
+-- Only shared rows are compared. New rows cannot change earlier universes;
+-- traversing in a different order cannot change a keyed history or geometry.
+export pure func growthStable(seed:int,d:Dial,small:[StarRow],large:[StarRow],ps:[ObservedPlanet]) -> bool {
+ let idx=observedIndex(ps);
+ let rowsById=fromList(map(\r. (r.id,r),large));
+ let ids=sortBy(compare,map(\r. r.id,large));
+ let repeated=fromList(flatMap(\pair. match pair {(a,b)=>if a==b then [(a,true)] else []},zipWith(\a b. (a,b),ids,drop(1,ids))));
+ allOf(\r. if member(repeated,r.id) then false else match lookup(rowsById,r.id) {
+ Some(same)=>systemDigest(systemFrom(seed,d,r,observedFor(idx,r.id)))==systemDigest(systemFrom(seed,d,same,observedFor(idx,same.id))),None=>false},small)
+}
+pure func historyNests(a:History,b:History) -> bool =
+ (a.biosphere==Sterile || b.biosphere!=Sterile) && match a.mind {
+ None=>true,Some(m)=>match b.mind {None=>false,Some(n)=>n.techT==m.techT && n.preTechT==m.preTechT && n.endT>=m.endT}}
+-- Compare every public scalar/string directly. Re-encoding both full planets
+-- for every pair of presets made the large census spend time allocating JSON
+-- merely to compare the same immutable geometry. Metadata remains untruncated.
+pure func samePhysical(a:Planet,b:Planet) -> bool =
+ a.id==b.id && a.name==b.name && a.slot==b.slot && a.prov==b.prov && a.hab==b.hab && a.cite==b.cite
+ && a.aAu==b.aAu && a.periodD==b.periodD && a.radiusEarth==b.radiusEarth && a.massEarth==b.massEarth
+ && a.minimumMass==b.minimumMass && a.teqK==b.teqK && a.insolation==b.insolation
+pure func systemNests(a:System,b:System) -> bool =
+ a.starId==b.starId && length(a.planets)==length(b.planets) && allOf(\p. match filter(\q. q.id==p.id,b.planets) {
+ [q]=>samePhysical(p,q) && historyNests(p.history,q.history),_=>false},a.planets)
+pure func pairNests(seed:int,a:Dial,b:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> bool {
+ let idx=observedIndex(ps);
+ allOf(\r. systemNests(systemFrom(seed,a,r,observedFor(idx,r.id)),systemFrom(seed,b,r,observedFor(idx,r.id))),rows)
+}
+export pure func nestedAcross(seed:int,ds:[Dial],rows:[StarRow],ps:[ObservedPlanet]) -> bool = match ds {
+ a::b::rest=>pairNests(seed,a,b,rows,ps) && nestedAcross(seed,b::rest,rows,ps),_=>true
+}
+
+export pure func countsJson(c:Counts) -> Json = jo([kv("systems",jint(c.systems)),kv("planets",jint(c.planets)),
+ kv("biospheres",jint(c.biospheres)),kv("mindsWindow",jint(c.mindsWindow)),kv("technological",jint(c.technological)),
+ kv("remnants",jint(c.remnants)),kv("measured",jint(c.measured)),kv("candidates",jint(c.candidates)),
+ kv("synthesised",jint(c.synthesised)),kv("habitable",jint(c.habitable)),kv("debated",jint(c.debated))])
+export pure func expectationJson(e:Expectation) -> Json = jo([kv("biospheres",jnum(e.biospheres)),
+ kv("mindsWindow",jnum(e.mindsWindow)),kv("technological",jnum(e.technological)),kv("remnants",jnum(e.remnants)),
+ kv("varianceBio",jnum(e.varianceBio)),kv("varianceMinds",jnum(e.varianceMinds)),kv("varianceTech",jnum(e.varianceTech)),kv("varianceRemnants",jnum(e.varianceRemnants))])
+
+export type Statistics = {firstSeed:int,seeds:int,counts:MomentCounts,expected:Expectation,passes:bool}
+pure func sumSeeds(seed:int,remaining:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet],total:Counts) -> Counts =
+ if remaining<=0 then total else sumSeeds(seed+1,remaining-1,d,rows,ps,addCounts(total,censusFor(seed,d,rows,ps)))
+pure func scaleExpectation(e:Expectation,k:float) -> Expectation = {
+ biospheres:e.biospheres*k,mindsWindow:e.mindsWindow*k,technological:e.technological*k,remnants:e.remnants*k,
+ varianceBio:e.varianceBio*k,varianceMinds:e.varianceMinds*k,varianceTech:e.varianceTech*k,varianceRemnants:e.varianceRemnants*k}
+export pure func statisticsFor(firstSeed:int,seeds:int,d:Dial,rows:[StarRow],ps:[ObservedPlanet]) -> Statistics {
+ let counts=momentCounts(sumSeeds(firstSeed,seeds,d,rows,ps,zeroCounts()));
+ let expected=scaleExpectation(expectedFor(d,rows,ps),intToFloat(seeds));
+ {firstSeed:firstSeed,seeds:seeds,counts:counts,expected:expected,passes:seeds>0 && momentsPass(counts,expected)}
+}
+export pure func statisticsJson(s:Statistics) -> Json = jo([kv("firstSeed",jint(s.firstSeed)),kv("seeds",jint(s.seeds)),
+ kv("method",js("exact biological marginal; synthesized non-HZ SAG13 slots are deterministically sterile")),kv("counts",momentCountsJson(s.counts)),kv("expected",expectationJson(s.expected)),kv("withinFourSigma",jb(s.passes)),
+ kv("z",jo([kv("biospheres",jnum(zScore(s.counts.biospheres,s.expected.biospheres,s.expected.varianceBio))),
+ kv("mindsWindow",jnum(zScore(s.counts.mindsWindow,s.expected.mindsWindow,s.expected.varianceMinds))),
+ kv("technological",jnum(zScore(s.counts.technological,s.expected.technological,s.expected.varianceTech))),
+ kv("remnants",jnum(zScore(s.counts.remnants,s.expected.remnants,s.expected.varianceRemnants)))]))])
+
+-- Eligibility and the keyed uniforms are independent of the dial. Sample
+-- the exact biological marginal once per seed, then reuse its uniforms.
+-- Independent complete-system statisticsFor runs verify this optimisation.
+export pure func withHistoryParams(seed:int,p:Params,s:System) -> System =
+ {s | planets:map(\planet. if planet.hab==NotHabitable then planet
+  else {planet | history:historyOf(p,true,historyUniforms(seed,s.starId,planet.slot))},s.planets)}
+pure func sumAcross(seed:int,remaining:int,zeroParams:Params,psets:[Params],plans:[HistoryDrawPlan],totals:[MomentCounts]) -> [MomentCounts] =
+ if remaining<=0 then totals else {
+  let samples=flatMap(\plan. historyUniformsFromPlan(seed,zeroParams,plan),plans);
+  let next=zipWith(\p total. addMoments(total,countHistories(p,samples)),psets,totals);
+  sumAcross(seed+1,remaining-1,zeroParams,psets,plans,next)
+ }
+export pure func statisticsAcross(firstSeed:int,seeds:int,ds:[Dial],rows:[StarRow],ps:[ObservedPlanet]) -> [Statistics] {
+ let params=map(\d. applyDial(baseline(),d),ds);
+ let zeroParams=applyDial(baseline(),zeroDial());
+ let idx=observedIndex(ps);
+ let plans=flatMap(\r. match prepareHistoryDrawPlan(r,observedFor(idx,r.id)) {
+  FixedHistories([])=>[],plan=>[plan]
+ },sortBy(\a b. compare(a.id,b.id),rows));
+ let totals=sumAcross(firstSeed,seeds,zeroParams,params,plans,map(\d. zeroMoments(),ds));
+ zipWith(\d total. {
+  let counts=total;
+  let expected=scaleExpectation(expectedFor(d,rows,ps),intToFloat(seeds));
+  {firstSeed:firstSeed,seeds:seeds,counts:counts,expected:expected,passes:seeds>0 && momentsPass(counts,expected)}
+ },ds,totals)
+}
+
+export pure func systemsNestedAcross(variants:[[System]]) -> bool = match variants {
+ a::b::rest=>length(a)==length(b) && allOf(\x. x,zipWith(systemNests,a,b)) && systemsNestedAcross(b::rest),_=>true
+}
+
+export pure func momentCountsJson(c:MomentCounts) -> Json = jo([kv("biospheres",jint(c.biospheres)),
+ kv("mindsWindow",jint(c.mindsWindow)),kv("technological",jint(c.technological)),kv("remnants",jint(c.remnants))])
+
+pure func zeroMoments() -> MomentCounts = {biospheres:0,mindsWindow:0,technological:0,remnants:0}
+pure func addMoments(a:MomentCounts,b:MomentCounts) -> MomentCounts =
+ {biospheres:a.biospheres+b.biospheres,mindsWindow:a.mindsWindow+b.mindsWindow,
+ technological:a.technological+b.technological,remnants:a.remnants+b.remnants}
+pure func countHistories(p:Params,samples:[[float]]) -> MomentCounts = foldl(\total us. {
+ let h=historyOf(p,true,us);let state=stateAt(h,0.0);
+ addMoments(total,{biospheres:one(h.biosphere!=Sterile),
+ mindsWindow:one(match h.mind {None=>false,Some(m)=>m.techT<=16000.0 && m.endT>0.0}),
+ technological:one(state==Technological),remnants:one(state==Remnant)})
+},zeroMoments(),samples)

@@ -5,7 +5,19 @@ edition = "1"
 description = "Stapledon's Voyage simulation (runs as a Godot sidecar over NDJSON stdio)."
 
 [exports]
-modules = ["stapledons/sim/data/similar", "stapledons/sim/similar", "stapledons/sim/similar_test",
+modules = [
+  "stapledons/sim/worlds", "stapledons/sim/worlds_model", "stapledons/sim/worlds_catalogue", "stapledons/sim/worlds_test",
+  "stapledons/sim/census", "stapledons/sim/census_test", "stapledons/sim/tools/census_main",
+  "stapledons/sim/protocol_worlds", "stapledons/sim/protocol_worlds_test",
+  "stapledons/sim/calibrate", "stapledons/sim/calibrate_test", "stapledons/sim/calibrate_search", "stapledons/sim/calibrate_search_test",
+  "stapledons/sim/data/presets", "stapledons/sim/data/detect", "stapledons/sim/data/worlds_rules", "stapledons/sim/tools/calibrate_main", "stapledons/sim/tools/worlds_mock_data",
+  "stapledons/sim/exoplanets_snapshot",
+  "stapledons/sim/worlds_registry", "stapledons/sim/data/world_hosts", "stapledons/sim/tools/world_hosts_main",
+  "stapledons/sim/tools/exoplanets",
+  "stapledons/sim/tools/exoplanets_test",
+  "stapledons/sim/tools/exoplanets_verify",
+  "stapledons/sim/data/exoplanets",
+  "stapledons/sim/data/similar", "stapledons/sim/similar", "stapledons/sim/similar_test",
   "stapledons/sim/alpha_centauri",
   "stapledons/sim/destination_stars", "stapledons/sim/trappist1", "stapledons/sim/solar_departure", "stapledons/sim/core", "stapledons/sim/protocol", "stapledons/sim/ship", "stapledons/sim/tripphase", "stapledons/sim/rng", "stapledons/sim/markers", "stapledons/sim/ai", "stapledons/sim/consequence", "stapledons/sim/celestial", "stapledons/sim/navigation", "stapledons/sim/stops", "stapledons/sim/inferred_stars", "stapledons/sim/sync_orbit", "stapledons/sim/data/sol", "stapledons/sim/data/acen", "stapledons/sim/data/stars", "stapledons/sim/data/trappist1", "stapledons/sim/tools/catalogue_probe", "stapledons/sim/tools/catalogue", "stapledons/sim/tools/catalogue_bytes", "stapledons/sim/tools/sky_model", "stapledons/sim/tools/sky_model_test", "stapledons/sim/tools/catalogue_main", "stapledons/sim/tools/extract", "stapledons/sim/tools/extract_test", "stapledons/sim/tools/destar", "stapledons/sim/tools/destar_test", "stapledons/sim/tools/bright", "stapledons/sim/tools/bright_main", "stapledons/sim/tools/bright_test", "stapledons/sim/tools/starmap", "stapledons/sim/tools/starmap_test", "stapledons/sim/tools/companions", "stapledons/sim/tools/companions_test", "stapledons/sim/tools/lore", "stapledons/sim/tools/lore_test", "stapledons/sim/tools/lore_import", "stapledons/sim/tools/lore_check", "stapledons/sim/tools/lore_values", "stapledons/sim/tools/lore_values_test", "stapledons/sim/tools/lore_check_test", "stapledons/sim/tools/truth", "stapledons/sim/tools/truth_test", "stapledons/sim/tools/star_names", "stapledons/sim/tools/star_names_test", "stapledons/sim/tools/session_audit", "stapledons/sim/tools/session_audit_test", "stapledons/sim/tools/session_refusals", "stapledons/sim/tools/lens_lut", "stapledons/sim/tools/lens_lut_main", "stapledons/sim/gr", "stapledons/sim/gr_test", "stapledons/sim/ism", "stapledons/sim/data/ism", "stapledons/sim/tools/ism_build", "stapledons/sim/tools/ism_sensitivity", "stapledons/sim/tools/crew_pack", "stapledons/sim/tools/crew_pack_check", "stapledons/sim/data/crew_pack", "stapledons/sim/crew", "stapledons/sim/crew_script", "stapledons/sim/tools/crew_parity", "stapledons/sim/protocol_crew", "stapledons/sim/crew_resources", "stapledons/sim/crew_events", "stapledons/sim/data/crew_ship", "stapledons/sim/crew_names", "stapledons/sim/data/crew_names", "stapledons/sim/data/crew_faces", "stapledons/sim/crew_names_test", "stapledons/sim/crew_ai_test", "stapledons/sim/crew_auto", "stapledons/sim/crew_hold_test", "stapledons/sim/cruise_digest", "stapledons/sim/cruise_digest_test", "stapledons/sim/home_tiers", "stapledons/sim/stellar_surface", "stapledons/sim/data/stellar_activity", "stapledons/sim/stellar_surface_test", "stapledons/sim/tools/stellar_probe", "stapledons/sim/home_tiers_test", "stapledons/sim/data/home_variants", "stapledons/sim/protocol_interlude", "stapledons/sim/tools/crew_perf", "stapledons/sim/archive_health", "stapledons/sim/archive_health_test", "stapledons/sim/earth_link", "stapledons/sim/earth_link_test", "stapledons/sim/protocol_earth", "stapledons/sim/earth_feed", "stapledons/sim/earth_feed_test", "stapledons/sim/data/feed_events"]
 
@@ -16,7 +28,8 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/celestial" = "0.5.0" # R2-STAR-SURFACES: stellar, stellar_ld (ledger D-105)
+"sunholo/worlds" = "0.1.0"
+"sunholo/celestial" = "0.6.0" # W1.1: published habitability; prior stellar API/results retained
 "sunholo/relativity" = "0.12.0"
 "sunholo/observe" = "0.1.0" # R3-EARTH-LINK EL1: lightcone (light cone, catch-up, link windows, beam rays, the Earth rate)
 "sunholo/crew_core" = "0.6.0" # 0.6.0: stand-downs (R2-CREW-CONSOLE-V2 V8); 0.5.0: resource units as data (units.ail; the game keeps its table here): ailang-packages #146

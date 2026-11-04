@@ -1,0 +1,21 @@
+module stapledons/sim/tools/exoplanets_verify
+-- W2.0 real-snapshot acceptance: generated data exactly matches the AILANG
+-- regeneration and all curated fields, including provenance, remain unchanged.
+import ./exoplanets (build, parseRegistry, planetsEqual, fieldsEqual, catalogueDigest)
+import stapledons/sim/data/exoplanets (planets, snapshotSha256)
+import std/fs (readFile)
+import std/io (println, exit)
+import std/crypto (sha256Hex)
+import std/list (filter, length, foldl)
+import stapledons/sim/data/acen (bodies)
+import stapledons/sim/data/trappist1 (trappistPlanets)
+
+export func main(a: {input: string, registry: string}) -> () ! {FS,IO} {
+ let raw=readFile(a.input);let hosts=parseRegistry(readFile(a.registry));
+ let expected=build(raw,hosts,true);let actual=planets();
+ let scalarCount=foldl(\count p. count+length(p.archiveFields),0,actual);
+ let curatedOk=length(filter(\b. length(filter(\p. p.id == b.id && fieldsEqual(p.fields,b.fields),actual)) != 1,filter(\b. b.kind == "planet",bodies()))) == 0 &&
+ length(filter(\b. length(filter(\p. p.id == b.id && fieldsEqual(p.fields,b.fields),actual)) != 1,trappistPlanets())) == 0;
+ if snapshotSha256() != sha256Hex(raw) || not planetsEqual(expected,actual) || not curatedOk then {println("exoplanets-verify: FAILED snapshot, generated values or curated fields");exit(1)} else
+ println("exoplanets-verify: ${length(actual)} generated planets and ${scalarCount} nonmissing archive scalars equal regeneration field-for-field; curated alpha Cen and TRAPPIST-1 equal source modules; full JSON digest ${catalogueDigest(actual)}")
+}

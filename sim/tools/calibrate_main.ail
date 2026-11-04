@@ -1,0 +1,75 @@
+module stapledons/sim/tools/calibrate_main
+-- FS/IO shell; all simulation and policy decisions remain in calibrate.ail.
+-- Development diagnostics intentionally have a different filename and status
+-- from the photon-budget calibration required to finalise W1.4 presets.
+import stapledons/sim/calibrate (Row,Strategy,cautious,wanderer,pilgrim,waiter,simulate,rowValue,rowJson,strategies)
+import stapledons/sim/calibrate_search (grid,searchGrid)
+import stapledons/sim/data/presets (Preset,allPresets,presetOf)
+import stapledons/sim/data/detect (idealDetector,configuredDetector)
+import pkg/sunholo/worlds/baseline (baselineVersion)
+import std/list (map,flatMap,filter,sortBy,length,nth_or)
+import std/math (intToFloat,floatToInt,floor)
+import std/json (Json,jo,kv,js,jnum,jint,jb,ja,encode)
+import std/string (concat)
+import std/crypto (sha256Hex)
+import std/fs (readFile,writeFile)
+import std/io (println,exit)
+import std/option (Some,None)
+
+pure func integerRange(n:int,k:int) -> [int] = if n>=k then [] else n::integerRange(n+1,k)
+pure func strategyOf(id:string) -> Strategy = if id=="wanderer" then wanderer() else if id=="pilgrim" then pilgrim() else if id=="waiter" then waiter() else cautious()
+export func probe(a:{seed:int,preset:string,strategy:string,supportLy:float,doom:float}) -> () ! {IO} {
+ println(rowJson(simulate(a.seed,presetOf(a.preset),strategyOf(a.strategy),a.doom,idealDetector(a.supportLy))))
+}
+pure func count(r:Row,key:string) -> int = if key=="detected" then r.detected else if key=="visited" then r.visited else if key=="remnants" then r.remnants else if key=="signals" then r.signals else r.contacts
+pure func quantile(xs:[int],u:float) -> int = nth_or(xs,floatToInt(floor(u*intToFloat(length(xs)-1))),0)
+pure func summary(rs:[Row],ps:Preset,s:Strategy) -> Json {
+ let rows=filter(\r. r.preset==ps.id && r.strategy==s.id,rs);
+ jo([kv("preset",js(ps.id)),kv("strategy",js(s.id)),kv("final_preset",jb(ps.calibrated)),kv("seeds",jint(length(rows))),
+ kv("counts",jo(map(\key. {let xs=sortBy(\a b. if a<b then -1 else if a>b then 1 else 0,map(\r. count(r,key),rows));
+ kv(key,jo([kv("p10",jint(quantile(xs,0.1))),kv("median",jint(quantile(xs,0.5))),kv("p90",jint(quantile(xs,0.9)))]))},["detected","visited","remnants","signals","contacts"])))])
+}
+func inputDigest(worldsRoot:string,celestialRoot:string) -> string ! {FS} = sha256Hex(concat([
+ readFile("sim/tools/calibrate_main.ail"),readFile("sim/calibrate.ail"),readFile("sim/calibrate_search.ail"),readFile("sim/rng.ail"),readFile("sim/data/presets.ail"),readFile("sim/data/detect.ail"),
+ readFile("${worldsRoot}/occurrence.ail"),readFile("${worldsRoot}/baseline.ail"),readFile("${worldsRoot}/dial.ail"),readFile("${worldsRoot}/disc.ail"),readFile("${worldsRoot}/history.ail"),
+ readFile("${celestialRoot}/ism.ail"),"observe0.1.0/lightcone;relativity0.12.0/journey;AILANG0.56.0"]))
+pure func matrixValue(a:{seeds:int,supportLy:float,doom:float},digest:string,profiles:[Strategy]) -> Json {
+ let rows=flatMap(\p. flatMap(\s. map(\seed. simulate(seed,p,s,a.doom,idealDetector(a.supportLy)),integerRange(0,a.seeds)),profiles),allPresets());
+ jo([kv("status",js("development-only; ideal detector; S2 photon budgets missing; presets uncalibrated")),kv("baseline",js(baselineVersion())),
+ kv("ailang",js("0.56.0")),kv("local_packages",jb(true)),kv("photon_budget",jb(false)),kv("support_ly",jnum(a.supportLy)),kv("doom_years",jnum(a.doom)),
+ kv("strategies",ja(map(\s. js(s.id),profiles))),kv("packages",jo([kv("celestial",js("0.6.0-local")),kv("worlds",js("0.1.0-local")),kv("observe",js("0.1.0")),kv("relativity",js("0.12.0"))])),kv("input_sha256",js(digest)),kv("rows",ja(map(rowValue,rows))),kv("summaries",ja(flatMap(\p. map(\s. summary(rows,p,s),profiles),allPresets())))])
+}
+export pure func developmentValue(a:{seeds:int,supportLy:float,doom:float},digest:string) -> Json = matrixValue(a,digest,strategies())
+export func emitBinding(a:{seeds:int,supportLy:float,doom:float,inputDigest:string}) -> () ! {IO} {
+ if a.seeds<1 || a.supportLy<=0.0 || a.supportLy>100.0 || a.doom<=0.0 then {println("invalid development dimensions");exit(1)} else
+ println(encode(matrixValue({seeds:a.seeds,supportLy:a.supportLy,doom:a.doom},a.inputDigest,[cautious(),wanderer()])))
+}
+export func digest(a:{worldsRoot:string,celestialRoot:string}) -> () ! {IO,FS} {
+ println(inputDigest(a.worldsRoot,a.celestialRoot))
+}
+export func emit(a:{seeds:int,supportLy:float,doom:float,inputDigest:string}) -> () ! {IO} {
+ println(encode(developmentValue({seeds:a.seeds,supportLy:a.supportLy,doom:a.doom},a.inputDigest)))
+}
+export func development(a:{seeds:int,supportLy:float,doom:float,output:string,worldsRoot:string,celestialRoot:string}) -> () ! {IO,FS} {
+ if a.seeds<1 || a.supportLy<=0.0 || a.supportLy>100.0 || a.doom<=0.0 then {println("invalid development dimensions (1+ seeds, 0<support<=100ly, doom>0)");exit(1)} else {
+ let digest=inputDigest(a.worldsRoot,a.celestialRoot);
+ let result=developmentValue({seeds:a.seeds,supportLy:a.supportLy,doom:a.doom},digest);
+ writeFile(a.output,"${encode(result)}\n");println("calibration-development: ${show(a.seeds*16)} rows, input ${digest}, ${a.output}; photon_budget=false; no final preset or slice-seed claim")
+ }
+}
+-- The production entry refuses to manufacture a calibrated result without S2.
+export func main() -> () ! {IO} = match configuredDetector() {
+ None=>{println("calibrate: BLOCKED: sunholo/observe 0.2.0 photon-budget backend is not available; run development for labelled ideal-detector diagnostics");exit(1)},
+ Some(d)=>{println("calibrate: backend ${d.id} requires an attended preset ruling after the grid search");exit(1)}
+}
+
+export func smoke(a:{seeds:int,supportLy:float}) -> () ! {IO} {
+ let rows=flatMap(\p. flatMap(\s. map(\seed. simulate(seed,p,s,16000.0,idealDetector(a.supportLy)),integerRange(0,a.seeds)),[cautious(),wanderer()]),allPresets());
+ println("calib-smoke-development: ${show(length(rows))} rows; strict core; photon_budget=false; sha256 ${sha256Hex(encode(ja(map(rowValue,rows))))}")
+}
+export func searchDevelopment(a:{preset:string,seeds:int,supportLy:float,doom:float,lifeLo:int,lifeHi:int,mindsLo:int,mindsHi:int,timeLo:int,timeHi:int}) -> () ! {IO} {
+ let ds=grid(a.lifeLo,a.lifeHi,a.mindsLo,a.mindsHi,a.timeLo,a.timeHi);
+ let scores=searchGrid(a.preset,ds,a.seeds,a.doom,idealDetector(a.supportLy));
+ println(encode(jo([kv("status",js("development grid only; ideal detector; no final preset claim")),kv("preset",js(a.preset)),kv("photon_budget",jb(false)),
+ kv("scores",ja(map(\s. jo([kv("life",jnum(s.dial.life)),kv("minds",jnum(s.dial.minds)),kv("tech",jnum(s.dial.tech)),kv("lifetime",jnum(s.dial.lifetime)),kv("fits",jb(s.fits)),kv("loss",jnum(s.loss)),kv("conflicts",ja(map(js,s.conflicts)))]),scores)))])))
+}

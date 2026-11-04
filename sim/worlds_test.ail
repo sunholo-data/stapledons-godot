@@ -1,0 +1,116 @@
+module stapledons/sim/worlds_test
+import ./worlds_model (StarRow, Planet, System, Habitable, HabitabilityDebated, NotHabitable, PMeasured, PCandidate, PSynthesised, systemFrom, knownPlanets, historyUniforms, surveyVeto, systemKey, systemDigest)
+import ./worlds_catalogue (rowOf)
+import ./tools/exoplanets (curatedPlanets as planets)
+import ./tools/exoplanets (planetsEqual, archivePlanet)
+import pkg/sunholo/worlds/occurrence (FGK, MDwarf, Other)
+import pkg/sunholo/worlds/dial (zeroDial)
+import pkg/sunholo/worlds/history (stateAt, Sterile)
+import std/list (length, filter, any, map, range, flatMap)
+import std/option (None, Some)
+import pkg/sunholo/celestial/gravity (gmSunNominal, gmEarthNominal)
+import pkg/sunholo/celestial/kepler (period)
+import std/math (abs_Float)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (applyDial)
+import pkg/sunholo/worlds/disc (aliveWithin)
+import ./data/presets (allPresets)
+
+pure func all[a](f:a -> bool,xs:[a]) -> bool = not any(\x. not f(x),xs)
+-- W2.5's Archive estimate is the adopted baseline with M-dwarf occurrence,
+-- distinct from LW-28's historical reference parameters.
+export pure func baselineReachVm() -> float {
+ let p=applyDial(baseline(),zeroDial());
+ let occurrence=0.20*0.4+0.75*0.16;
+ aliveWithin({rho0Pc3:0.079,scaleHeightPc:300.0},1000.0,occurrence*p.fLife*p.fMinds*p.fTech,p)
+}
+test "W2.5 baseline median gives about 0.05 civilisations alive within 1000 ly" {
+ abs_Float(baselineReachVm()-0.05)<0.005
+}
+export pure func solarRow() -> StarRow = {id:"test-sun",pos:{x:10.0,y:0.0,z:0.0},v:2.2,teff:5780.0,starClass:FGK,lSun:1.0,rSun:1.0,mSun:1.0}
+pure func measured() -> bool {
+ let row={solarRow() | id:"Gaia DR3 5853498713190525696",teff:2992.0,starClass:MDwarf,lSun:0.00155,rSun:0.1542,mSun:0.1221};
+ let originals=filter(\p. p.hostId==row.id,planets([]));
+ let s=systemFrom(88,zeroDial(),row,originals);
+ length(s.planets)==3 && all(\p. match p.observed {Some(o)=>planetsEqual([o],filter(\x. x.id==p.id,originals)),None=>false},s.planets)
+ && length(knownPlanets(s,false))==3 && length(filter(\p. p.prov==PSynthesised,s.planets))==0
+}
+test "AC9 measured hosts keep every original scalar, provenance and missingness, no extras" {measured()}
+pure func stable() -> bool {
+ let row=solarRow();
+ let s=systemFrom(41,zeroDial(),row,[]);
+ systemDigest(s)==systemDigest(systemFrom(41,zeroDial(),row,[])) && systemKey(row.id)==systemKey(row.id)
+ && historyUniforms(41,row.id,"hz")==historyUniforms(41,row.id,"hz")
+ && length(knownPlanets(s,false))==0 && length(knownPlanets(s,true))==length(s.planets)
+}
+test "AC10/11 keyed population reruns identically and synthesized planets are local-only" {stable()}
+pure func veto() -> bool = surveyVeto(solarRow(),100.0,300.0,1.0,0.0)
+ && not surveyVeto({solarRow() | v:8.0},100.0,300.0,1.0,0.0)
+ && not surveyVeto({solarRow() | starClass:MDwarf},100.0,300.0,1.0,0.0)
+ && not surveyVeto({solarRow() | pos:{x:100.0,y:0.0,z:0.0}},100.0,300.0,1.0,0.0)
+ && not surveyVeto(solarRow(),1.0,365.25,1.0,0.0)
+test "AC15 strict RV survey veto applies only FGK V<8 within 25pc" {veto()}
+pure func noLife() -> bool {
+ let others=systemFrom(13,{zeroDial() | life:5.0,minds:5.0,tech:5.0}, {solarRow() | starClass:Other},[]);
+ all(\p. p.hab==NotHabitable && stateAt(p.history,0.0)==Sterile,others.planets)
+}
+test "AC14 other stellar classes cannot get a biosphere under any dial" {noLife()}
+export pure func worldsVm() -> string =
+ if measured() && stable() && veto() && noLife() && redDwarfLabels() && measuredVetoLabels() then "worlds-ok" else "WORLD-FAIL"
+
+pure func redDwarfRow() -> StarRow =
+ {solarRow() | id:"red-dwarf-HZ",teff:3100.0,starClass:MDwarf,lSun:0.005,rSun:0.2,mSun:0.2}
+pure func redDwarfLabels() -> bool {
+ let row=redDwarfRow();
+ let known=archivePlanet("HZ b","HZ",row.id,"fixture",4.0,
+  [("insolation_earth",0.7),("radius_earth",1.0)],"HZ test fixture","Mass","M V",row.id);
+ let measuredPlanets=(systemFrom(41,zeroDial(),row,[known])).planets;
+ let hzPlanets=filter(\p. p.slot=="hz",flatMap(\seed. (systemFrom(seed,zeroDial(),row,[])).planets,range(0,128)));
+ length(hzPlanets)>0 && all(\p. p.hab==HabitabilityDebated,hzPlanets)
+ && length(measuredPlanets)==1 && all(\p. p.hab==HabitabilityDebated,measuredPlanets)
+}
+test "AC14 measured and synthetic M-dwarf rocky HZ planets are HabitabilityDebated" {redDwarfLabels()}
+
+pure func measuredVetoLabels() -> bool {
+ let row=redDwarfRow();
+ -- Deliberately place the constrained planet IN the HZ. Its real hot orbit
+ -- must not make a removed atmosphere veto pass this regression by accident.
+ let p=archivePlanet("TRAPPIST-1 b","TRAPPIST-1",row.id,"fixture",4.0,
+  [("insolation_earth",0.7),("radius_earth",1.0)],"constraint fixture","Mass","M V",row.id);
+ let constrained={p | id:"trappist-1b"};
+ let dials=map(\preset. preset.dial,allPresets())
+  ++[{zeroDial() | life:5.0,minds:5.0,tech:5.0,lifetime:3.0}];
+ all(\seed. all(\dial. {
+  let ps=(systemFrom(seed,dial,row,[constrained])).planets;
+  length(ps)==1 && all(\planet. planet.hab==NotHabitable && planet.history.biosphere==Sterile
+   && stateAt(planet.history,-1e9)==Sterile && stateAt(planet.history,0.0)==Sterile
+   && stateAt(planet.history,1e9)==Sterile,ps)
+ },dials),range(0,128))
+}
+test "AC14 TRAPPIST-1 b constraint asserts NotHabitable and Sterile across 128 seeds, all four presets and a saturated dial" {measuredVetoLabels()}
+
+test "measured radius decides rocky classification before minimum-mass fallback" {
+ let row=solarRow();
+ let p=archivePlanet("Large b","Large",row.id,"fixture",4.0,
+  [("insolation_earth",1.0),("radius_earth",1.6),("msini_earth",4.84)],"fixture","Msini","G V",row.id);
+ all(\planet. planet.hab==NotHabitable,(systemFrom(1,zeroDial(),row,[p])).planets)
+}
+
+pure func excludedInference() -> bool {
+ let wd=rowOf("white-dwarf-fixture",{x:5.0,y:0.0,z:0.0},0.7,5780.0,1,[]);
+ let giant=rowOf("giant-fixture",{x:50.0,y:0.0,z:0.0},-5.0,4000.0,0,[]);
+ wd.starClass==Other && wd.mSun==0.0 && giant.starClass==Other && giant.mSun==0.0
+}
+test "dwarf mass relation is never used as a white-dwarf or giant mass estimate" {excludedInference()}
+
+pure func relativeKepler() -> bool {
+ let row={solarRow() | id:"two-body-fixture",v:15.0,teff:3000.0,starClass:MDwarf,lSun:0.005,rSun:0.2,mSun:0.1};
+ let s=systemFrom(41,zeroDial(),row,[]);
+ length(s.planets)>0 && all(\p. match (p.aAu,p.periodD,p.massEarth) {
+ (Some(a),Some(days),Some(m))=>{
+  let au=149597870.7;
+  let gm=(gmSunNominal()*0.1+gmEarthNominal()*m)*86400.0*86400.0/(au*au*au);
+  abs_Float(period(gm,a)-days)<1e-10*days
+ },_=>false},s.planets)
+}
+test "synthetic relative Kepler orbits include stellar and planetary GM" {relativeKepler()}

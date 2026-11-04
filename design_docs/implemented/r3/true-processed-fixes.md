@@ -1,6 +1,6 @@
 # R3-TRUE-PROCESSED: the feed's colour and the ship's star light made exact
 
-**Status:** Planned 2026-11-02, executing (attended parallel agent "Claude D", ledger D-144: "the True/Processed physics fixes (feed tint, ship star light) run now"). Visual landing stops for Mark's render review.
+**Status:** Implemented 2026-11-03 (PR #374, merge `68796623`; `rig/full` with `make golden` and the fast tier green; Codex evaluations 74 FAIL, 87, 91, then 97 PASS). Mark approved the renders and ruled the open questions: the feed's True is option A (the picture as decoded); the star light lands on the V toggle (Realistic True, Auto Processed); the lamps at 80 lx photometric; BOUNCE 0.1; one eye for deck and sky (OQ3) and a lit captain (OQ5) are follow-ups, the display-referred exemptions stay labelled. Follow-up R3-TRUE-PROCESSED-b, the Processed Doppler indicator, is a separate PR.
 **Release:** R3. **Milestone:** the standing order of 2026-10-30 applied to the two compromises it names that are already built (the sound's was AR8b; the home beacon is R2-SOUND's).
 **Priority:** P1. Both compromises are on screen today, and both teach the wrong thing.
 
@@ -147,7 +147,7 @@ A waveform's frequencies are times, so playing it at rate D shifts its pitch: th
 
 ## Deliverables
 
-- `design_docs/planned/r3/true-processed-fixes.md` (this doc), `-sprint.md`, `.ailang/state/sprints/sprint_R3-TRUE-PROCESSED.json`.
+- `design_docs/implemented/r3/true-processed-fixes.md` (this doc), `-sprint.md`, `.ailang/state/sprints/sprint_R3-TRUE-PROCESSED.json`.
 - `data/ui/comms_feed.json`, `ui/earth_feed.gd`, `tests/test_earth_feed.gd`, `tests/test_physics.gd`.
 - `demos/ship_star_light.gd`, `demos/ship_lighting.gd`, `demos/ship_geometry_demo.gd`, `tests/test_ship_star_light.gd`, `tests/test_bh_hud.gd`, `tools/ship_star_light_capture.gd`.
 - `changelogs/unreleased/2026-11-02-true-processed.md`.

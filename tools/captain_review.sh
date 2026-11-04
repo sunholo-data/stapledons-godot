@@ -9,7 +9,7 @@ mkdir -p "$OUT"
 OUT=$(cd "$OUT" && pwd)
 GODOT=${GODOT:-godot}
 command -v img2webp >/dev/null || { echo "captain-review: FAIL img2webp missing (brew install webp)"; exit 1; }
-perl -e 'alarm 900; exec @ARGV' "$GODOT" --path . --resolution 1280x720 --script tools/captain_review.gd -- --out="$OUT" > "$OUT/capture.log" 2>&1 || { grep -E '^(FAIL|captain-review)' "$OUT/capture.log"; exit 1; }
+perl -e 'alarm 900; exec @ARGV' "$GODOT" --audio-driver Dummy --path . --resolution 1280x720 --script tools/captain_review.gd -- --out="$OUT" > "$OUT/capture.log" 2>&1 || { grep -E '^(FAIL|captain-review)' "$OUT/capture.log"; exit 1; }
 grep -E '^(clip|moonwalk|captain-review)' "$OUT/capture.log"
 mkdir -p "$OUT/cells" "$OUT/anim"
 jq -r ".anim.clips[].stages[][][] | .file" assets/characters/captain/manifest.json | sort -u | while read -r f; do
@@ -49,7 +49,7 @@ if [ -d "$PREV/clips/${PREV_CLIP}_back" ]; then
   done
 fi
 # D-118: feet on the floor before/after the settle, and the between-frame effect options (GPU window).
-perl -e 'alarm 2400; exec @ARGV' "$GODOT" --path . --resolution 1280x720 --script tools/captain_fx_review.gd -- --out="$OUT" > "$OUT/fx.log" 2>&1 || { grep -E '^(FAIL|captain-fx)' "$OUT/fx.log"; exit 1; }
+perl -e 'alarm 2400; exec @ARGV' "$GODOT" --audio-driver Dummy --path . --resolution 1280x720 --script tools/captain_fx_review.gd -- --out="$OUT" > "$OUT/fx.log" 2>&1 || { grep -E '^(FAIL|captain-fx)' "$OUT/fx.log"; exit 1; }
 grep -E '^(feet after|captain-fx)' "$OUT/fx.log"
 for d in "$OUT"/feet/*; do
   n=$(basename "$d")
@@ -67,7 +67,7 @@ done
 # CA2: the held poses as the game plays them (stations, chair, look-up, start/stop, lift), the 3x views, the
 # painted clips forward and reversed, all at game speed (60 fps sequences; the painted previews at the clip fps).
 if [ "${CA2:-1}" = 1 ]; then
-  perl -e 'alarm 2400; exec @ARGV' "$GODOT" --path . --resolution 1280x720 --script tools/captain_ca2_review.gd -- --out="$OUT" > "$OUT/ca2.log" 2>&1 || { grep -E '^(FAIL|captain-ca2)' "$OUT/ca2.log"; exit 1; }
+  perl -e 'alarm 2400; exec @ARGV' "$GODOT" --audio-driver Dummy --path . --resolution 1280x720 --script tools/captain_ca2_review.gd -- --out="$OUT" > "$OUT/ca2.log" 2>&1 || { grep -E '^(FAIL|captain-ca2)' "$OUT/ca2.log"; exit 1; }
   grep -E '^(seq|captain-ca2)' "$OUT/ca2.log"
   perl -e 'alarm 900; exec @ARGV' "$GODOT" --headless --path . --script tools/captain_ca2_sheet.gd -- --out="$OUT" > "$OUT/ca2_sheet.log" 2>&1 || { tail -3 "$OUT/ca2_sheet.log"; exit 1; }
   for d in "$OUT"/seq/*; do

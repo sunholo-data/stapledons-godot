@@ -1,0 +1,200 @@
+module stapledons/sim/worlds_model
+-- R3-WORLDS W2.1. Lazy, immutable system population. Every draw is keyed by
+-- (seed, stable host id, stable slot, draw index), never catalogue traversal.
+-- Stellar estimates are explicit inputs; measured rows are retained verbatim.
+import pkg/sunholo/worlds/occurrence (StarClass, FGK, MDwarf, Other, etaEarth, sag13Expected, sag13Sample, planetCount)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Dial, Params, applyDial, zeroDial)
+import pkg/sunholo/worlds/history (History, historyOf)
+import pkg/sunholo/worlds/planet_model (massForRadius)
+import pkg/sunholo/celestial/habitability (hzFluxes, hzDistanceAu, insolationEarth, equilibriumK, rvSemiAmplitude, mutualHillSpacing)
+import pkg/sunholo/celestial/kepler (Vec3, norm, period, semiMajorAxisFromPeriod)
+import pkg/sunholo/celestial/gravity (gmSunNominal, gmEarthNominal)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import ./tools/exoplanets (Planet as ObservedPlanet, catalogueDigest)
+import ./rng (idHash, keyed, unit53)
+import ./data/worlds_rules (rvSurveyLimitMs, rvSurveyBrightV, rvSurveyRadiusPc, minimumHillSpacing, assumedBondAlbedo, atmosphereConstraints)
+import std/option (Option, Some, None)
+import std/list (map, filter, any)
+import std/math (pow, abs_Float)
+import std/string (join)
+import std/json (Json, encode, jo, kv, ja, js, jnum, jb, jn)
+import std/crypto (sha256Hex)
+
+pure func all[a](f:a -> bool,xs:[a]) -> bool = not any(\x. not f(x),xs)
+
+export type Provenance = PMeasured | PCandidate | PSynthesised deriving (Eq)
+export type Habitability = NotHabitable | Habitable | HabitabilityDebated deriving (Eq)
+export type StarRow = {id:string,pos:Vec3,v:float,teff:float,starClass:StarClass,lSun:float,rSun:float,mSun:float}
+export type Planet = {id:string,name:string,slot:string,prov:Provenance,cite:string,
+ aAu:Option[float],periodD:Option[float],radiusEarth:Option[float],massEarth:Option[float],minimumMass:bool,
+ teqK:Option[float],insolation:Option[float],hab:Habitability,history:History,observed:Option[ObservedPlanet]}
+export type System = {starId:string,starClass:StarClass,planets:[Planet]}
+export pure func modelVersion() -> string = "worlds-1"
+export pure func systemKey(id:string) -> int = idHash(id)
+pure func uniform(seed:int,host:string,slot:string,n:int) -> float =
+ unit53(keyed(seed,0x776f726c6473,idHash(host)^idHash(slot),n))
+export pure func historyUniforms(seed:int,host:string,slot:string) -> [float] {
+ let key=idHash(host)^idHash(slot);
+ historyUniformsFromKey(seed,key)
+}
+export pure func historyUniformsFromKey(seed:int,key:int) -> [float] =
+ map(\n. unit53(keyed(seed,0x776f726c6473,key,n+100)),[0,1,2,3,4,5,6,7])
+export pure func valueOf(p:ObservedPlanet,key:string) -> Option[float] = match filter(\x. match x {(k,_)=>k==key},p.fields) {
+ [(_,f)]=>Some(f.value), _=>None
+}
+pure func first(a:Option[float],b:Option[float]) -> Option[float] = match a {Some(_)=>a,None=>b}
+pure func inRange(v:Option[float],lo:float,hi:float) -> bool = match v {Some(x)=>x>=lo && x<=hi,None=>false}
+export pure func atmosphereVeto(p:ObservedPlanet) -> bool =
+ any(\rule. rule.id==p.id || rule.name==p.name,atmosphereConstraints())
+-- Greene2023 and Zieba2023 limits are immutable observational constraints.
+-- No seed or dial enters this predicate.
+export pure func habOf(row:StarRow,p:ObservedPlanet) -> Habitability {
+ let a=valueOf(p,"a_au");
+ let irradiance=first(valueOf(p,"insolation_earth"),match a {Some(x)=>if x>0.0 && row.lSun>0.0 then Some(insolationEarth(row.lSun,x)) else None,None=>None});
+ let zone=if row.teff>0.0 then {let hz=hzFluxes(row.teff); inRange(irradiance,hz.maximum,hz.runaway)} else false;
+ let rocky=match valueOf(p,"radius_earth") {
+  Some(radius)=>radius>=0.5 && radius<=1.5,
+  None=>inRange(valueOf(p,"msini_earth"),0.1,5.0)
+ };
+ if atmosphereVeto(p) || row.starClass==Other || not rocky || not zone then NotHabitable
+ else if row.starClass==MDwarf then HabitabilityDebated else Habitable
+}
+export pure func slotEligible(row:StarRow) -> bool = row.starClass!=Other && row.lSun>0.0 && row.lSun<1e12
+ && row.rSun>0.0 && row.rSun<1e9 && row.mSun>0.0 && row.mSun<1e9 && row.teff>0.0 && row.teff<1e9
+ && row.lSun-row.lSun==0.0 && row.rSun-row.rSun==0.0 && row.mSun-row.mSun==0.0
+export pure func surveyApplies(row:StarRow) -> bool =
+ row.starClass==FGK && row.v<rvSurveyBrightV() && norm(row.pos)<rvSurveyRadiusPc()*3.261563777
+export pure func surveyVeto(row:StarRow,massEarth:float,periodD:float,sinI:float,e:float) -> bool =
+ surveyApplies(row) && rvSemiAmplitude(periodD,massEarth,row.mSun,sinI,e)>rvSurveyLimitMs()
+-- Relative two-body elements use the combined nominal GM. The Kepler maths
+-- stays in celestial; this is composition of its cited stellar/planet units.
+pure func gmAuDay(row:StarRow,mPlanetEarth:float) -> float =
+ (gmSunNominal()*row.mSun+gmEarthNominal()*mPlanetEarth)*86400.0*86400.0/(auKm()*auKm()*auKm())
+pure func hzQualifier(row:StarRow) -> string = if row.teff<=0.0 then "; HZ: stellar temperature unavailable" else {
+ let flux=hzFluxes(row.teff);
+ if flux.extrapolated then "; HZ: Kopparapu temperature ${show(row.teff)} K clamped to ${show(flux.teffUsed)} K; outside the calibrated temperature range" else ""
+}
+pure func measuredCitation(o:ObservedPlanet,row:StarRow) -> string =
+ "${o.reference}; ${join("; ",map(\x. match x {(k,f)=>"${k}: ${f.prov}, ${f.note} [${f.cite}]"},o.fields))}; computed irradiation/Teq use cited stellar inputs and Bond albedo0.3 when absent from archive${hzQualifier(row)}${join("",map(\rule. "; ${rule.cite}",filter(\rule. rule.id==o.id || rule.name==o.name,atmosphereConstraints())))}"
+
+pure func observedPlanet(seed:int,p:Params,row:StarRow,o:ObservedPlanet) -> Planet {
+ let a=valueOf(o,"a_au");
+ let mass=first(valueOf(o,"mass_earth"),first(valueOf(o,"msini_earth"),valueOf(o,"best_mass_earth")));
+ let ins=first(valueOf(o,"insolation_earth"),match a {Some(x)=>if x>0.0 && row.lSun>0.0 then Some(insolationEarth(row.lSun,x)) else None,None=>None});
+ let teq=first(valueOf(o,"equilibrium_k"),match a {Some(x)=>if x>0.0 && row.rSun>0.0 && row.teff>0.0 then Some(equilibriumK(row.teff,row.rSun,x,assumedBondAlbedo())) else None,None=>None});
+ let hab=habOf(row,o);
+ {id:o.id,name:o.name,slot:o.id,prov:if o.status=="candidate" then PCandidate else PMeasured,cite:measuredCitation(o,row),
+ aAu:a,periodD:valueOf(o,"period_d"),radiusEarth:valueOf(o,"radius_earth"),massEarth:mass,
+ minimumMass:valueOf(o,"mass_earth")==None && valueOf(o,"msini_earth")!=None,
+ teqK:teq,insolation:ins,hab:hab,history:historyOf(p,hab!=NotHabitable,historyUniforms(seed,row.id,o.id)),observed:Some(o)}
+}
+pure func synthetic(seed:int,p:Params,row:StarRow,slot:string,a:float,periodD:float,radius:float,mass:float,hab:Habitability) -> Planet =
+ {id:"synth:${row.id}:${slot}",name:"${row.id} ${slot}",slot:slot,prov:PSynthesised,
+ cite:"synthesised (seed); ${if slot=="hz" then "eta-Earth conservative HZ slot; radius and mass assumed Earth-like (1 R_Earth, 1 M_Earth), not measured or sampled from Chen-Kipping" else "SAG13 G-dwarf occurrence applied as a synthesis assumption; mass inferred from Chen-Kipping coefficient medians with adopted linear-radius likelihood and 128-cell log-mass prior, not the Forecaster posterior"}; Bond albedo 0.3 assumed${hzQualifier(row)}",
+ aAu:Some(a),periodD:Some(periodD),radiusEarth:Some(radius),massEarth:Some(mass),minimumMass:false,
+ teqK:Some(equilibriumK(row.teff,row.rSun,a,assumedBondAlbedo())),insolation:Some(insolationEarth(row.lSun,a)),hab:hab,
+ history:historyOf(p,hab!=NotHabitable,historyUniforms(seed,row.id,slot)),observed:None}
+pure func hzPlanet(seed:int,p:Params,row:StarRow) -> [Planet] =
+ if not slotEligible(row) || uniform(seed,row.id,"hz",0)>=etaEarth(row.starClass) then [] else {
+ let hz=hzFluxes(row.teff);
+ let lo=hzDistanceAu(row.lSun,hz.runaway);
+ let hi=hzDistanceAu(row.lSun,hz.maximum);
+ let a=lo*pow(hi/lo,uniform(seed,row.id,"hz",1));
+ let days=period(gmAuDay(row,1.0),a);
+ if surveyVeto(row,1.0,days,1.0,0.0) then [] else
+ [synthetic(seed,p,row,"hz",a,days,1.0,1.0,if row.starClass==MDwarf then HabitabilityDebated else Habitable)]
+}
+pure func separated(a:Planet,b:Planet,row:StarRow) -> bool = match (a.aAu,a.massEarth,b.aAu,b.massEarth) {
+ (Some(aa),Some(am),Some(ba),Some(bm))=>if aa==ba then false else
+ if aa<ba then mutualHillSpacing(aa,am,ba,bm,row.mSun)>=minimumHillSpacing() else mutualHillSpacing(ba,bm,aa,am,row.mSun)>=minimumHillSpacing(),
+ _=>false
+}
+pure func extras(seed:int,p:Params,row:StarRow,n:int,total:int,accepted:[Planet]) -> [Planet] =
+ if n>=total then accepted else {
+ let slot="sag13-${n}";
+ let sample=sag13Sample(uniform(seed,row.id,slot,0),uniform(seed,row.id,slot,1));
+ match sample {(radius,days)=>{
+ let mass=massForRadius(radius,uniform(seed,row.id,slot,2));
+ let a=semiMajorAxisFromPeriod(gmAuDay(row,mass),days);
+ let hz=hzFluxes(row.teff);
+ let ins=insolationEarth(row.lSun,a);
+ -- The eta-Earth slot owns rocky planets in the conservative HZ. SAG13
+ -- is sampled elsewhere, avoiding a second independent eta-Earth draw.
+ let duplicatesHz=radius>=0.5 && radius<=1.5 && ins>=hz.maximum && ins<=hz.runaway;
+ let candidate=synthetic(seed,p,row,slot,a,days,radius,mass,NotHabitable);
+ let keep=not duplicatesHz && not surveyVeto(row,mass,days,1.0,0.0) && all(\x. separated(candidate,x,row),accepted);
+ extras(seed,p,row,n+1,total,if keep then accepted++[candidate] else accepted)
+ }}
+}
+export pure func systemFrom(seed:int,dial:Dial,row:StarRow,observations:[ObservedPlanet]) -> System {
+ let p=applyDial(baseline(),dial);
+ let measured=filter(\o. o.hostId==row.id || (o.hostId=="" && o.archiveHostId==row.id),observations);
+ {starId:row.id,starClass:row.starClass,planets:match measured {[]=>if row.lSun>0.0 && row.rSun>0.0 && row.mSun>0.0 && row.teff>0.0 && row.lSun-row.lSun==0.0 then {
+ let count=planetCount(sag13Expected(0.5,16.0,0.5,640.0),uniform(seed,row.id,"count",0),uniform(seed,row.id,"count",1));
+ extras(seed,p,row,0,count,hzPlanet(seed,p,row))} else [],_=>map(\o. observedPlanet(seed,p,row,o),measured)}}
+}
+export pure func knownPlanets(s:System,inSystem:bool) -> [Planet] =
+ if inSystem then s.planets else filter(\p. p.prov!=PSynthesised,s.planets)
+
+-- Full machine encoding for determinism/growth checks. show(record) truncates
+-- large values; it must never stand in for a complete equality witness.
+export pure func planetDigestJson(p:Planet) -> string {
+ let mind=match p.history.mind {None=>jn(),Some(m)=>jo([kv("pre",jnum(m.preTechT)),kv("tech",jnum(m.techT)),kv("end",jnum(m.endT)),kv("ending",js(show(m.ending))),kv("traces",jnum(m.tracesUntilT))])};
+ encode(jo([kv("id",js(p.id)),kv("name",js(p.name)),kv("slot",js(p.slot)),kv("prov",js(show(p.prov))),kv("cite",js(p.cite)),
+ kv("a",optionalNumber(p.aAu)),kv("period",optionalNumber(p.periodD)),kv("radius",optionalNumber(p.radiusEarth)),kv("mass",optionalNumber(p.massEarth)),kv("minimum",jb(p.minimumMass)),
+ kv("teq",optionalNumber(p.teqK)),kv("ins",optionalNumber(p.insolation)),kv("hab",js(show(p.hab))),kv("bio",js(show(p.history.biosphere))),kv("mind",mind),
+ kv("observed",js(match p.observed {None=>"",Some(o)=>catalogueDigest([o])}))]))
+}
+pure func optionalNumber(x:Option[float]) -> Json = match x {None=>jn(),Some(v)=>jnum(v)}
+export pure func systemDigest(s:System) -> string = sha256Hex(encode(jo([kv("star",js(s.starId)),kv("class",js(show(s.starClass))),kv("planets",ja(map(\p. js(planetDigestJson(p)),s.planets)))])))
+
+-- Public physics projection does not need the run's population parameters.
+-- Protocol callers cannot accidentally read a preset while listing planets.
+export pure func physicalSystem(seed:int,row:StarRow,observations:[ObservedPlanet]) -> System = systemFrom(seed,zeroDial(),row,observations)
+
+-- Exact biological marginal for statistical census seeds: extras are sterile
+-- by construction. Full census counts/digests still use complete systemFrom.
+export pure func historyOnlySystemFrom(seed:int,dial:Dial,row:StarRow,observations:[ObservedPlanet]) -> System {
+ let p=applyDial(baseline(),dial);
+ historyOnlySystemWithParams(seed,p,row,observations)
+}
+-- The caller may reuse the same immutable Params across a large registry;
+-- its scientific values and the keyed draws are identical to the dial API.
+export pure func historyOnlySystemWithParams(seed:int,p:Params,row:StarRow,observations:[ObservedPlanet]) -> System {
+ let measured=filter(\o. o.hostId==row.id || (o.hostId=="" && o.archiveHostId==row.id),observations);
+ {starId:row.id,starClass:row.starClass,planets:match measured {[]=>hzPlanet(seed,p,row),_=>map(\o. observedPlanet(seed,p,row,o),measured)}}
+}
+
+-- Exact inputs to the biological marginal, without allocating sterile or
+-- public planet geometry. Keyed draws have no state to advance: unused orbit
+-- draws need not be evaluated. Bright surveyed FGK hosts retain the complete
+-- existing HZ/RV acceptance path; measured eligibility always uses habOf.
+export pure func eligibleHistoryUniforms(seed:int,p:Params,row:StarRow,observations:[ObservedPlanet]) -> [[float]] {
+ let measured=filter(\o. o.hostId==row.id || (o.hostId=="" && o.archiveHostId==row.id),observations);
+ match measured {
+  []=>if not slotEligible(row) || uniform(seed,row.id,"hz",0)>=etaEarth(row.starClass) then []
+   else if not surveyApplies(row) then [historyUniforms(seed,row.id,"hz")]
+   else map(\planet. historyUniforms(seed,row.id,planet.slot),hzPlanet(seed,p,row)),
+  _=>map(\o. historyUniforms(seed,row.id,o.id),filter(\o. habOf(row,o)!=NotHabitable,measured))
+ }
+}
+
+-- A census varies seeds and dials, not measured eligibility or stable slot
+-- identities. Prepare those immutable facts once; retain the original sampler
+-- for the seed-dependent RV-survey acceptance path.
+export type HistoryDrawPlan = FixedHistories([int]) | ChanceHistory(int,float) | SurveyHistory(StarRow)
+export pure func prepareHistoryDrawPlan(row:StarRow,observations:[ObservedPlanet]) -> HistoryDrawPlan {
+ let measured=filter(\o. o.hostId==row.id || (o.hostId=="" && o.archiveHostId==row.id),observations);
+ match measured {
+  []=>if not slotEligible(row) then FixedHistories([])
+   else if surveyApplies(row) then SurveyHistory(row)
+   else ChanceHistory(idHash(row.id)^idHash("hz"),etaEarth(row.starClass)),
+  _=>FixedHistories(map(\o. idHash(row.id)^idHash(o.id),filter(\o. habOf(row,o)!=NotHabitable,measured)))
+ }
+}
+export pure func historyUniformsFromPlan(seed:int,p:Params,plan:HistoryDrawPlan) -> [[float]] = match plan {
+ FixedHistories(keys)=>map(\key. historyUniformsFromKey(seed,key),keys),
+ ChanceHistory(key,eta)=>if unit53(keyed(seed,0x776f726c6473,key,0))<eta then [historyUniformsFromKey(seed,key)] else [],
+ SurveyHistory(row)=>eligibleHistoryUniforms(seed,p,row,[])
+}

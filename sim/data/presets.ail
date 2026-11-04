@@ -1,0 +1,17 @@
+module stapledons/sim/data/presets
+-- D-144 names. Only Lonely is a final zero-offset baseline. Other offsets
+-- are explicit DEVELOPMENT GRID CANDIDATES, not calibrated gameplay presets.
+-- Never put these parameters, their status, or luckDex on the protocol wire.
+import pkg/sunholo/worlds/dial (Dial,zeroDial)
+export type Preset = {id:string,name:string,dial:Dial,calibrated:bool}
+export pure func allPresets() -> [Preset] = [
+ {id:"lonely",name:"Lonely Universe",dial:zeroDial(),calibrated:true},
+ {id:"scattered",name:"Scattered Few",dial:{life:0.0,minds:0.75,tech:0.75,lifetime:0.25},calibrated:false},
+ {id:"stapledon",name:"Stapledon's Voyage",dial:{life:0.0,minds:1.25,tech:1.25,lifetime:0.25},calibrated:false},
+ {id:"teeming",name:"Teeming Galaxy",dial:{life:0.25,minds:1.5,tech:1.5,lifetime:0.5},calibrated:false}
+]
+pure func findPreset(id:string,ps:[Preset]) -> Preset = match ps {
+ []=>{id:"stapledon",name:"Stapledon's Voyage",dial:{life:0.0,minds:1.25,tech:1.25,lifetime:0.25},calibrated:false},
+ p::rest=>if p.id==id then p else findPreset(id,rest)
+}
+export pure func presetOf(id:string) -> Preset = findPreset(id,allPresets())

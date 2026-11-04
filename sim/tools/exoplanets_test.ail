@@ -1,0 +1,53 @@
+module stapledons/sim/tools/exoplanets_test
+import ./exoplanets (csvRows, build, curatedPlanets, parseRegistry, fieldsEqual, planetsEqual, catalogueDigest, archivePlanet)
+import std/list (length, filter, any)
+import std/option (Some, None)
+import std/json (decode)
+import std/result (Ok, Err)
+import stapledons/sim/data/acen (bodies)
+import stapledons/sim/data/trappist1 (trappistPlanets)
+
+pure func quoted() -> bool = csvRows("a,b,c\n\"x,y\",\"q\"\"r\",\n") == [["a","b","c"],["x,y","q\"r",""]]
+test "RFC4180 quoted commas, escaped quotes, trailing empty cells" { quoted() }
+pure func base() -> string = "pl_name,hostname,gaia_dr3_id,ra,dec,sy_dist,pl_orbper,pl_orbsmax,pl_orbeccen,pl_rade,pl_masse,pl_msinie,pl_bmasse,pl_bmassprov,pl_insol,pl_eqt,pl_orbincl,st_teff,st_rad,st_mass,st_lum,st_spectype,pl_refname\n"
+pure func fixture() -> string = "\"Test b\",\"Test\",\"Gaia DR3 123\",0,0,10,11.123456789012345,0.1,,1.2,,3,3,\"Msini\",,,,,,,,\"M4 V\",\"<a>Author, 2026</a>\"\n"
+pure func measured() -> bool {
+ let ps = build("${base()}${fixture()}", [{id:"Gaia DR3 123",x:1.0,y:0.0,z:0.0}], false);
+ match ps { [p] => p.hostId == "Gaia DR3 123" && p.inRegistry && p.matchMethod == "gaia-dr3" && p.status == "confirmed" && allOf(\kv. match kv {(k,f) => if k == "period_d" then f.value == 11.123456789012345 else if k == "msini_earth" then f.value == 3.0 else true}, p.fields), _ => false }
+}
+test "Gaia match preserves full float64 values and Msini label" { measured() }
+test "all unmatched planets retained for catalogue growth" { match build("${base()}${fixture()}", [], false) {[p] => not p.inRegistry && p.hostId == "" && p.matchMethod == "unmatched", _ => false} }
+test "NASA equilibrium temperature and insolation retain values with model provenance" {
+ let row = "Test b,Test,,0,0,10,12,0.1,,1.2,,,,,1.5,255,,,,,,,reference\n";
+ match build("${base()}${row}", [], false) {
+  [p] => length(filter(\x. match x {(k,v) => (k == "equilibrium_k" || k == "insolation_earth") && v.prov == "inferred"}, p.fields)) == 2,
+  _ => false
+ }
+}
+test "field equality checks complete metadata beyond show truncation" {
+ let a = {value:1.0,prov:"measured",note:"A long common prefix deliberately exceeds a human display budget before reaching the distinguishing metadata value: left; another long common suffix",cite:"ref"};
+ let b = {a | note:"A long common prefix deliberately exceeds a human display budget before reaching the distinguishing metadata value: right; another long common suffix"};
+ fieldsEqual([("radius",a)],[ ("radius",a)]) && not fieldsEqual([("radius",a)],[ ("radius",b)])
+}
+test "whole catalogue equality and full JSON digest detect a middle-record mutation" {
+ let p = archivePlanet("Test b","Test","","unmatched",10.0,[("radius_earth",1.0)],"reference","Mass","M4 V","");
+ let changed = {p | massKind:"Msini"};
+ planetsEqual([p,p,p],[p,p,p]) && not planetsEqual([p,p,p],[p,changed,p])
+ && catalogueDigest([p,p,p]) != catalogueDigest([p,changed,p])
+}
+pure func curated() -> bool {
+ let ps=curatedPlanets([]);
+ let ac=filter(\b. b.kind == "planet", bodies());
+ allOf(\b. length(filter(\p. p.id == b.id && fieldsEqual(p.fields,b.fields), ps)) == 1,ac) &&
+ allOf(\b. length(filter(\p. p.id == b.id && fieldsEqual(p.fields,b.fields), ps)) == 1,trappistPlanets())
+}
+test "curated alpha Cen and TRAPPIST-1 rows kept field-for-field" { curated() }
+
+pure func allOf[a](f: a -> bool, xs: [a]) -> bool = not any(\x. not f(x), xs)
+
+pure func positionMatch() -> bool {
+ let row="\"Nearby b\",\"Nearby\",\"\",0,0,10,3,0.1,,,,,,,,,,,,,,,\"ref\"\n";
+ let ps=build("${base()}${row}",[{id:"CNS5:1",x:0.0-0.0548755604,y:0.4941094279,z:0.0-0.8676661490}],false);
+ match ps {[p] => p.hostId == "CNS5:1" && p.matchMethod == "position-1arcsec", _ => false}
+}
+test "unique position fallback is restricted to one arcsecond" { positionMatch() }
