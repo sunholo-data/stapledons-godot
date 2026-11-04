@@ -1,14 +1,26 @@
 # Row 7x batch B2: the nine `mk` files through `$(SCRIPT_GATE)`, and the two judge survivors
 
-**Status:** Planned, mission iteration 70, designer, 2026-11-04. **Release:** r1. **Milestone:** charter queue row **7x**, follow-up batch **B2** (W6 of the landed 7x design), inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66).
+**Status:** Planned, mission iteration 70, designer, 2026-11-04; **revision 1** after quorum round 1 (see [Quorum round 1 response](#quorum-round-1-response-revision-1)). **Release:** r1. **Milestone:** charter queue row **7x**, follow-up batch **B2** (W6 of the landed 7x design), inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66).
 **Priority:** P2 (follow-up backlog, [LOOP]). Test and build hygiene only.
 **Implements:** [charter](../../stapledon-mission.md) row 7x (its "Remaining" clause: batches B2–B8 and the two iteration-69 judge survivors), and batch B2 of [m4-7x-script-gate-predicates.md](m4-7x-script-gate-predicates.md) §W6. No design-repo feature or [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) section changes: no formula, sim, protocol, shader, scene or player-visible change.
 **Depends on:** the landed 7x helper, lint and baseline (PR #393, merge `49eb35d9`); D-88 A (test or audit hygiene inside an approved sprint, no pillar below 0, does not stop); Godot 4.7.2, AILANG v0.56.1 (`runtime/bin`).
-**Estimated LOC:** about **105 hand-written lines changed** (+60/−45, excluding the baseline), plus **28 deleted baseline rows**. Per file in [Estimated LOC per file](#estimated-loc-per-file).
+**Estimated LOC:** about **116 hand-written lines changed** (+71/−45, excluding the baseline), plus **28 deleted baseline rows**. Per file in [Estimated LOC per file](#estimated-loc-per-file).
 
 **Evidence:** the [Verification log](#verification-log), run first-hand in `/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter70` at `9e4d8231` on 2026-11-04, about 21:20–21:50 local (Godot 4.7.2, AILANG v0.56.1 from the clone's `runtime/bin`, 1-min load 2.1–7.4). The whole B2a change set was applied to the working clone's tracked files, run end to end, captured, and then restored with `git checkout -- mk tools tests`. `git status --porcelain` was empty afterwards (V12). Scratch went to `/tmp/iter70_designer/` and the ignored `.godot/tmp/`.
 
 **The split, in one line.** **B2a: 28 rows**, every one measured green at base and again through its migrated `$(SCRIPT_GATE)` line. **B2b: 14 rows**: 11 need a GPU window, 2 are authoring tools that write tracked assets, and 1 is a performance bench that was red at base on a loaded host. The pin `SCRIPT_GATE_BASELINE_ROWS` goes from **232 to 204**.
+
+## Quorum round 1 response (revision 1)
+
+Round 1 (artifact `m4-7x-b2-script-gates-2026-11-04T20-55-04Z.json`) was **BLOCKED, 2 of 3**: oc-glm-5-3 and oc-kimi-k3 rejected; gemini-4-argon passed with an observation. Revision 1 makes these changes and keeps everything else:
+
+| # | Seat and objection | Change in this revision | Evidence |
+|---|---|---|---|
+| 1 | oc-glm-5-3 (REJECT): D1 drops `@mkdir -p $(SCRATCH)` in `mk/ism.mk`, and `star-surface-test` writes the nested `$(SCRATCH)/star-surfaces/test.log`, on the unverified claim that the helper creates the log's directory. V7 could not show it, because `.godot/tmp/` already existed. | D1 cites `tools/script_gate.sh:26` (`mkdir -p "$(dirname "$log")"`). New acceptance criterion AC16 runs `dust-flash-test`, `map-ism-test` and `star-surface-test` with `SCRATCH` pointed at a directory that does not exist. `SCRATCH := .godot/tmp` (`Makefile:13`) is overridable on the command line. | V17 (the controller's probe, re-run here: `a/b/` absent before, `c.log` created, rc 0; control rc 0); V18 (AC16 as written: `absent`, three `ok` lines, rc 0, `$F/s/star-surfaces/test.log` created) |
+| 2 | oc-kimi-k3 (REJECT): the 14 B2b rows carried proposed regexes, pinned literal counts read from source and unrun summary edits, in the same normative table as the 28 measured rows, although V6 shows that counts depend on the rig's data. | **B2b leaves the normative design.** D2 now holds only the 28 B2a rows. D7 records each B2b row with only target, file:line, script, today's predicate, the source print format (labelled "source, not run") and its blocker, and states that B2b's own sprint designs and measures its invocations, counts and edits. Goal 7 now reads "record B2b's blockers". OQ3 and OQ4 became one handed-on question with no default. No acceptance criterion and no LOC line depends on B2b: AC1–AC16 name only B2a targets, the 7x gates and the helper, lint and fixtures, and the LOC table counts only the measured diff. | D2, D7, Goals, Open questions; grep for B2b proposals: none left in D2/AC/LOC |
+| 3 | gemini-4-argon (PASS, observation): an all-at-once zero probe misses a loose count beside a bound one. | **Option (a): probe per count.** Each nonzero standalone number is zeroed alone, and `SUMMARY_ERE` must refuse every variant. Numbers already 0 are not probed. New stub cases `stub-twocount` (must fail) and `stub-twobound` (must pass). Taken because every gate measured green under it: all 28 B2a rows and the 5 landed 7x gates, with no timing or decimal line among their summaries. | V19 (18 of 18 stub cases; the revision-0 all-at-once helper fails exactly `stub-twocount`; the landed helper fails 5; dash; shellcheck); V20 (every B2a and 7x gate ok under the per-count helper; drill 24 cases) |
+
+The B2a count stays **28** and the pin stays **204**.
 
 ## Game vision alignment
 
@@ -64,7 +76,7 @@ The V-numbers are rows of the [Verification log](#verification-log).
 4. **Close survivor S1 in the lint's negative control:** one fixture row, with the control's expected count going from 2 to 3.
 5. **Fix `constellation-test`'s prerequisite:** add `starmap-assets` (Problem 6).
 6. **Delete the 28 baseline rows and set the pin from 232 to 204.**
-7. **Design B2b's 14 rows** (invocations and the summary edits they need) and state what blocks each one.
+7. **Record B2b's 14 rows and their blockers** (D7). B2b's own sprint designs and measures their invocations, counts and summary edits.
 
 **Non-goals.**
 - No edit to `mk/sound.mk`, `Makefile`, `mk/m45.mk`, `mk/deck-layout.mk` or `mk/earth-link.mk`.
@@ -86,43 +98,32 @@ Each migrated row's recipe line or lines become one line:
 - **LOG** is the row's existing log path, so nothing that reads it moves.
 - **DEADLINE** is 600 s by default. It is 900 s for `star-surface-test`, which keeps its own `alarm 900`, and 1,800 s for `moon-lifecycle-test`, which measured 215 s and 220 s (V5, V7). Every other B2a row measured 0–24 s at base (`navigation-usability-test` 24 s, 5 s when migrated), so 600 s is at least 25× the measurement. 1,800 s is 8.2× and 900 s is 28×. The 7x gate `sim-bridge` runs at 7.6× (119 s of 900 s).
 - **The Godot command is unchanged.** It keeps `$(GODOT)` or `$(GODOT_SIM)`, `--log-file`, `--quit-after 1200` and its user arguments. The three `AILANG_BIN="$$(command -v $(AILANG))" perl -e 'alarm 120; exec @ARGV' $(GODOT)` prefixes become `$(GODOT_SIM)`, which expands to the same `AILANG_BIN=… $(GODOT)` (`Makefile:6`, V3). The helper's process-group deadline replaces the alarm.
-- **Dropped:** the `> LOG 2>&1; rc=$$?; cat|grep …; test … && grep -q …` tails. The helper writes LOG and checks rc, `SCRIPT ERROR` and the summary. In `dust-flash-test` and `map-ism-test`, the now-redundant `@mkdir -p $(SCRATCH)` also goes, because the helper creates the log's directory.
+- **Dropped:** the `> LOG 2>&1; rc=$$?; cat|grep …; test … && grep -q …` tails. The helper writes LOG and checks rc, `SCRIPT ERROR` and the summary. In `dust-flash-test` and `map-ism-test`, the now-redundant `@mkdir -p $(SCRATCH)` also goes, because the helper creates the log's directory (`tools/script_gate.sh:26`, `mkdir -p "$(dirname "$log")"`; V17), including a nested one such as `$(SCRATCH)/star-surfaces/` (AC16 runs both targets with `SCRATCH` pointed at a directory that does not exist; V18).
 - **Regexes:** every `[0-9]*` count becomes `[1-9][0-9]*`. Exact pinned literals stay (`5 identities, 25 poses`; `4 configs, 3 raw GLBs, 4 raw PNGs`).
 - **Behaviour change, deliberate (as in 7x W5).** A pass prints one `script-gate: NAME ok: <summary> (rc, no SCRIPT ERROR, s of DEADLINE s)` line instead of the full log, or the `ok`/`FAIL` lines. A failure prints the log's non-`ok` lines and every reason. The full log stays at LOG.
 
-### D2. The per-gate table: all 42 B2 rows
+### D2. The per-gate table: the 28 B2a rows (normative)
 
-Line numbers are at `9e4d8231` (V2). **Today** is the inventory flag set: `rc` rc checked, `se` a `SCRIPT ERROR` check, `sum` a summary grep, `to` a timeout; `-` means absent (7x W2's heuristic). **Base** is `make <target>` at base: the make rc, the wall time, and the last summary line read from the row's own log (V5, V6). **After** is the migrated line's own output (V7). A row of the form "1 (`foo`)" means the row's script needs the summary edit in D3.
+This table holds only the 28 rows measured end to end (revision 1, objection 2). The 14 B2b rows are recorded in D7, without proposals.
+Line numbers are at `9e4d8231` (V2). **Today** is the inventory flag set: `rc` rc checked, `se` a `SCRIPT ERROR` check, `sum` a summary grep, `to` a timeout; `-` means absent (7x W2's heuristic). **Base** is `make <target>` at base: the make rc, the wall time, and the last summary line read from the row's own log (V5, V6). **After** is the migrated line's own output (V7). **yes (D3)** in the Summary edit column means the row's script gets the summary edit in D3.
 
 | # | Target (file:line) | Script | Today | Base: rc, s, summary line (measured) | Proposed: NAME, DEADLINE, WANT_RC, SUMMARY_ERE | Summary edit | Batch |
 |---:|---|---|---|---|---|---|---|
-| 1 | `ism-bench` (`mk/ism.mk:36`) | `tools/ism_service_bench.gd` | rc,-,sum,- (+ `jq .passes`) | rc 2, 203 s; `ism-service-bench: {"boost":{"delta_median_ms":0.7206…` (JSON); `passes: false` | `ism-bench`, 1800, 0, `'^ism-service-bench: OK \([1-9][0-9]* plan pairs, [1-9][0-9]* tick pairs\)$$'`, then `&& jq -e '.passes == true' …` kept | yes: add `print("ism-service-bench: %s (%d plan pairs, %d tick pairs)" % ["OK" if report.passes else "FAIL", plan_delta.size(), tick_delta.size()])` after the JSON line | **B2b** (red at base under load) |
 | 2 | `dust-flash-test` (`mk/ism.mk:42`) | `tests/test_dust_flash.gd` | rc,-,sum,- | rc 0, 1 s; `dust-flash: 29 passed, 0 failures` | `dust-flash-test`, 600, 0, `'^dust-flash: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 | 3 | `map-ism-test` (`mk/ism.mk:47`) | `tests/test_ism_layer.gd` | rc,-,sum,- | rc 0, 0 s; `ism-layer: 22 passed, 0 failures` | `map-ism-test`, 600, 0, `'^ism-layer: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 | 4 | `bubble-surface-test` (`mk/ism.mk:76`) | `tests/test_bubble_surface.gd` | rc,-,sum,- | rc 0, 1 s; `bubble-surface: 16 checks 0 failures` | `bubble-surface-test`, 600, 0, `'^bubble-surface: [1-9][0-9]* checks 0 failures$$'` | no | B2a |
 | 5 | `ism-surfaces-test` (`mk/ism.mk:82`) | `tests/test_ism_surfaces.gd` | rc,-,sum,- | rc 0, 0 s; `ism-surfaces: 18 checks 0 failures` | `ism-surfaces-test`, 600, 0, `'^ism-surfaces: [1-9][0-9]* checks 0 failures$$'` | no | B2a |
 | 6 | `planet-presentation-test` (`mk/planet-presentation.mk:4`) | `tests/test_planet_presentation.gd` | rc,se,sum,to | rc 0, 6 s; `planet-presentation: 806 checks 0 failures` | `planet-presentation-test`, 600, 0, `'^planet-presentation: [1-9][0-9]* checks 0 failures$$'` (`$(GODOT_SIM)`) | no | B2a |
 | 7 | `moon-lifecycle-test` (`:6`) | `tests/test_moon_lifecycle.gd` | rc,-,sum,- | rc 0, 215 s; `moon-lifecycle: 71 checks 0 failures` | `moon-lifecycle-test`, 1800, 0, `'^moon-lifecycle: [1-9][0-9]* checks 0 failures$$'` | no | B2a |
-| 8 | `planet-transition-golden` (`:8`) | `tools/planet_transition_golden.gd` | rc,-,sum,- (windowed) | not run (GPU window); source prints `planet-transition-golden: %d failures;86 samples max flux error …` (86 is a literal) | `planet-transition-golden`, 1800, 0, `'^planet-transition-golden: 0 failures; [1-9][0-9]* samples '` | yes: print `samples.size()` in place of the literal 86 (`"%d failures; %d samples max flux error …"`) | **B2b** |
-| 9 | `planet-bounds-golden` (`:10`) | `tools/planet_bounds_golden.gd` | rc,-,sum,- (windowed) | not run; source prints `planet-bounds-golden: %d failures` | `planet-bounds-golden`, 1800, 0, `'^planet-bounds-golden: [1-9][0-9]* checks, 0 failures$$'` | yes: count the checks (`N checks, 0 failures`) | **B2b** |
 | 10 | `planet-cpu-bench` (`:12`) | `tools/planet_cpu_bench.gd` | -,-,-,- (bare) | rc 0, 2 s; no summary line (JSON only; 0 `SCRIPT ERROR`) | `planet-cpu-bench`, 600, 0, `'^planet-cpu-bench: [1-9][0-9]* rows, renders/perf/planet_cpu.json$$'` | **yes** (D3) | B2a |
-| 11 | `glow-planet-golden` (`:17`) | `tools/glow_planet_golden.gd` | rc,se,sum,- (windowed) | not run; source prints `glow-planet-golden: %d failures` | `glow-planet-golden`, 1800, 0, `'^glow-planet-golden: [1-9][0-9]* passed, 0 failures$$'` | yes: count in `check()` (line 7) | **B2b** |
 | 12 | `exposure-frames-test` (`:21`) | `tests/test_exposure_frames.gd` | rc,se,sum,to | rc 0, 8 s; `exposure-frames: 1364 checks 0 failures` | `exposure-frames-test`, 600, 0, `'^exposure-frames: [1-9][0-9]* checks 0 failures$$'` (`$(GODOT_SIM)`) | no | B2a |
-| 13 | `exposure-frame-capture` (`:23`) | `tools/exposure_frame_capture.gd` | rc,se,sum,- (windowed) | not run; source prints `exposure-frame-capture: %d failures` | `exposure-frame-capture`, 1800, 0, `'^exposure-frame-capture: [1-9][0-9]* frames, 0 failures$$'` | yes: count the frames written | **B2b** |
 | 14 | `manual-exposure-test` (`:28`) | `tests/test_manual_exposure.gd` | rc,se,sum,to | rc 0, 17 s; `manual-exposure: 291 checks 0 failures` | `manual-exposure-test`, 600, 0, `'^manual-exposure: [1-9][0-9]* checks 0 failures$$'` (`$(GODOT_SIM)`) | no | B2a |
 | 15 | `exposure-cpu-bench` (`:33`) | `tools/exposure_cpu_bench.gd` | -,-,-,- (bare) | rc 0, 4 s; `exposure-cpu-bench: OK` (uncounted) | `exposure-cpu-bench`, 600, 0, `'^exposure-cpu-bench: OK [1-9][0-9]* profiles, renders/perf/exposure_cpu.json$$'` | **yes** (D3) | B2a |
 | 16 | `star-surface-test` (`mk/star-surfaces.mk:20`) | `tests/test_star_surface.gd` | rc,se,sum,to | rc 0, 29 s; `star-surface: OK (0 failures)` (uncounted) | `star-surface-test`, 900, 0, `'^star-surface: OK \([1-9][0-9]* passed, 0 failures\)$$'` | **yes** (D3) | B2a |
-| 17 | `star-surface-bench` (`:29`) | `tools/star_surface_bench.gd` | rc,-,sum,- (Vulkan) | not run (GPU bench); source prints `star-surface-bench: sky GPU p50 off %.3f ms, on %.3f ms, delta %+.3f ms (limit +%.2f): OK` | `star-surface-bench`, 1800, 0, `'^star-surface-bench: sky GPU p50 .*: OK \([1-9][0-9]* frames\)$$'` | yes: append the sampled frame count (the zero probe refuses a timing line with no count) | **B2b** |
-| 18 | `star-surface-capture` (`:35`) | `tools/star_surface_capture.gd` | rc,se,sum,- (windowed) | not run; source prints `star-surface-capture: OK %d frames` | `star-surface-capture`, 1800, 0, `'^star-surface-capture: OK [1-9][0-9]* frames$$'` | no | **B2b** |
 | 19 | `navigation-usability-test` (`mk/navigation-usability.mk:3`) | `tests/test_navigation_usability.gd` | rc,se,sum,- | rc 0, 24 s; `navigation-usability: 17 checks 0 failures` | `navigation-usability-test`, 600, 0, `'^navigation-usability: [1-9][0-9]* checks 0 failures$$'` | no | B2a |
 | 20 | `constellation-test` (`mk/constellations.mk:4`) | `tests/test_constellations.gd` | rc,se,sum,- | **rc 2**, 5 s; `constellations: 34 passed, 1 failures` (no large tier); after `make starmap-assets`: rc 0, 5 s, `constellations: 35 passed, 0 failures` | `constellation-test`, 600, 0, `'^constellations: [1-9][0-9]* passed, 0 failures$$'`; prerequisites `import starmap-assets` | no | B2a |
-| 21 | `constellation-golden` (`:6`) | `tools/constellation_capture.gd` (`-- golden`) | rc,se,sum,- (windowed) | not run; source prints `constellation golden: %d cases, %d failures` | `constellation-golden`, 1800, 0, `'^constellation golden: 33 cases, 0 failures$$'`, then `&& test "$$(grep -c '^ok    G-CONST' $(SCRATCH)/constellation-golden.log)" = 33` kept | no | **B2b** |
-| 22 | `constellation-capture` (`:8`) | `tools/constellation_capture.gd` (`-- capture`) | rc,se,sum,- (windowed) | not run; `constellation capture: %d images, %d failures` | `constellation-capture`, 1800, 0, `'^constellation capture: 32 images, 0 failures$$'` | no | **B2b** |
-| 23 | `constellation-bench` (`:10`) | `tools/constellation_capture.gd` (`-- bench`) | rc,se,sum,- (windowed) | not run; `constellation bench: %d pairs, %d failures` | `constellation-bench`, 1800, 0, `'^constellation bench: 2 pairs, 0 failures$$'` | no | **B2b** |
-| 24 | `npc-painted-ingest` (`mk/npc-painted.mk:4`) | `tools/npc_painted_assets.gd -- --ingest` | -,-,-,- (bare) | not run: writes the tracked `assets/characters/npcs/*.png` and `manifest.json`. The ingest also runs `_check()` and prints the same `painted-npc-assets: 5 identities, 25 poses, %d failures` | `npc-painted-ingest`, 1800, 0, `'^painted-npc-assets: 5 identities, 25 poses, 0 failures$$'` | no | **B2b** (authoring tool) |
 | 25 | `npc-painted-assets-check` (`:7`) | `tools/npc_painted_assets.gd` | rc,se,sum,- | rc 0, 1 s; `painted-npc-assets: 5 identities, 25 poses, 0 failures` | `npc-painted-assets-check`, 600, 0, `'^painted-npc-assets: 5 identities, 25 poses, 0 failures$$'` | no (literal counts: Open question 2) | B2a |
 | 26 | `npc-painted-test` (`:10`) | `tests/test_painted_npc_pilot.gd` | rc,se,sum,- | rc 0, 0 s; `painted-npc-pilot: 23 passed, 0 failures` | `npc-painted-test`, 600, 0, `'^painted-npc-pilot: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
-| 27 | `npc-painted-capture` (`:13`) | `tools/npc_painted_capture.gd` | rc,se,sum,- (windowed) | not run; `painted-npc-capture: %d frames, %d failures` | `npc-painted-capture`, 1800, 0, `'^painted-npc-capture: 8 frames, 0 failures$$'` | no | **B2b** |
 | 28 | `commons-civic-stage` (`mk/commons-civic.mk:4`) | `tools/commons_civic_stage.gd` | rc,-,sum,- | rc 0, 3 s; `commons-civic-stage: 4 configs, 3 raw GLBs, 4 raw PNGs, 0 failures` (writes the ignored `ship_commons_bundle/`) | `commons-civic-stage`, 600, 0, `'^commons-civic-stage: 4 configs, 3 raw GLBs, 4 raw PNGs, 0 failures$$'` | no (literal counts: Open question 2) | B2a |
 | 29 | `commons-civic-assets-check` (`:7`) | `tests/test_commons_civic_assets.gd` | rc,-,sum,- | rc 0, 6 s; `commons-civic-assets: 21 passed, 0 failures` | `commons-civic-assets-check`, 600, 0, `'^commons-civic-assets: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 | 30 | `commons-civic-playtest-test` (`:11`) | `tests/test_commons_civic_playtest.gd` | rc,se,sum,- | rc 0, 9 s; `commons-civic-playtest: 18 passed, 0 failures` | `commons-civic-playtest-test`, 600, 0, `'^commons-civic-playtest: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
@@ -130,16 +131,14 @@ Line numbers are at `9e4d8231` (V2). **Today** is the inventory flag set: `rc` r
 | 32 | `bridge-operator-test` (`:11`) | `tests/test_bridge_operator_contact.gd -- --installed` | rc,se,sum,- | rc 0, 5 s; `bridge-operator-contact: 44 passed, 0 failures` | `bridge-operator-test`, 600, 0, `'^bridge-operator-contact: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 | 33 | `captain-frames-check` (`:16`) | `tools/captain_frames.gd -- --json …` | rc,-,sum,- | rc 0, 8 s (both runs); `captain-frames: ok` (uncounted) | `captain-frames-check`, 600, 0, `'^captain-frames: ok \([1-9][0-9]* frames\)$$'` | **yes** (D3) | B2a |
 | 34 | `captain-frames-check` (`:17`) | `tools/captain_frames.gd -- --selftest` | rc,-,sum,- | (same target) `captain-frames: selftest ok` (uncounted) | `captain-frames-selftest`, 600, 0, `'^captain-frames: selftest ok \([1-9][0-9]* frames\)$$'` | **yes** (D3) | B2a |
-| 35 | `captain-frames-ingest` (`:20`) | `tools/captain_frames.gd -- --ingest $(RAW) --guides $(GUIDES)` | -,-,-,- (bare) | not run: needs `RAW=` and `GUIDES=`, and writes `assets/characters/captain/anim/y0/*.webp` and the manifest (tracked). Its final line becomes `captain-frames: ok (N frames)` with D3 | `captain-frames-ingest`, 1800, 0, `'^captain-frames: ok \([1-9][0-9]* frames\)$$'` | (D3 covers it) | **B2b** (authoring tool) |
 | 36 | `captain-chair-test` (`:26`) | `tests/test_captain_chair.gd` | rc,se,sum,- | rc 0, 4 s; `captain-chair: 12 passed, 0 failures` | `captain-chair-test`, 600, 0, `'^captain-chair: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 | 37 | `style-test` (`mk/style.mk:6`) | `tests/test_style.gd` | rc,se,sum,- | rc 0, 5 s; `style-test: 22 passed, 0 failures` | `style-test`, 600, 0, `'^style-test: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 | 38 | `ui-theme-check` (`:10`) | `tools/ui_theme_check.gd -- --strict` | rc,se,sum,- | rc 0, 4 s (all three runs); `ui-theme-check: ok` (uncounted; the earlier line is `ui-theme-check: contrast checked for 65 text/panel pairs over night and cream`) | `ui-theme-check`, 600, 0, `'^ui-theme-check: ok \([1-9][0-9]* files, [1-9][0-9]* text/panel pairs\)$$'` | **yes** (D3) | B2a |
 | 39 | `ui-theme-check` (`:11`) | `… -- --strict --scan=res://tests/fixtures/ui_theme/seeded_override.gd` | rc,-,sum,- (wants rc 1) | (same target) `FAIL 1 hard-coded panel styles or colour overrides outside the theme (--strict)`, 0 `SCRIPT ERROR` | `ui-theme-neg-override`, 600, **1**, `'^FAIL 1 hard-coded panel styles'` | no (negative control: the zero probe exempts it) | B2a |
 | 40 | `ui-theme-check` (`:12`) | `… -- --theme-builder=res://tests/fixtures/ui_theme/low_contrast_theme.gd` | rc,-,sum,- (wants rc 1) | (same target) `FAIL contrast 1.33:1 < 4.5 for HUDLabel.font_color on HUDPanel over efe3c8`, 0 `SCRIPT ERROR` | `ui-theme-neg-contrast`, 600, **1**, `'^FAIL contrast'` | no (negative control) | B2a |
-| 41 | `style-capture` (`:17`) | `tools/style_capture.gd -- --tag=$(TAG)` | rc,se,-,- (windowed; **no summary check**) | not run (GPU window; needs `TAG=`); source prints `style-capture: %d frames, %d failures` | `style-capture`, 1800, 0, `'^style-capture: [1-9][0-9]* frames, 0 failures$$'` | no | **B2b** |
 | 42 | `dressing-test` (`:21`) | `tests/test_dressing.gd` | rc,se,sum,- | rc 0, 6 s; `dressing-test: 10 passed, 0 failures` | `dressing-test`, 600, 0, `'^dressing-test: [1-9][0-9]* passed, 0 failures$$'` | no | B2a |
 
-**Counts:** 28 rows in B2a (rows 2–7, 10, 12, 14–16, 19, 20, 25, 26, 28–34, 36–40, 42) and 14 in B2b (rows 1, 8, 9, 11, 13, 17, 18, 21–24, 27, 35, 41). The total is 42.
+**Counts:** 28 rows in B2a, in this table (row numbers 2–7, 10, 12, 14–16, 19, 20, 25, 26, 28–34, 36–40, 42). The other 14 numbers (1, 8, 9, 11, 13, 17, 18, 21–24, 27, 35, 41) are the B2b rows of D7. The numbering runs over all 42 B2 rows in file order, so the two tables together cover the batch.
 
 **The exact B2a recipe lines** (from the measured working tree, V7; recipe tabs shown as four spaces). Each replaces the row's Godot line and its check tail at the line given. The two multi-line removals are noted.
 
@@ -248,52 +247,76 @@ Measured counts, each against an independent reading of the same run (V8):
 
 No other tracked file reads any of the five old lines (V16).
 
-### D4. Survivor S2: the zero probe in `tools/script_gate.sh`
+### D4. Survivor S2: the per-count zero probe in `tools/script_gate.sh`
 
-**Rule.** A positive gate (`WANT_RC` 0) passes only if both hold:
+**Rule (revision 1: per count, objection 3).** A positive gate (`WANT_RC` 0) passes only if both hold:
 - its matched summary line carries at least one nonzero standalone number;
-- `SUMMARY_ERE` does **not** match the same line with every standalone number zeroed.
+- for **each** nonzero standalone number, `SUMMARY_ERE` does **not** match the line with **just that number** zeroed.
 
-"Standalone" means a digit run that starts the line or follows a character outside `[A-Za-z0-9_.-]`. So target names such as `m4-smoke`, versions such as `v4.7` and hex such as `efe3c8` are never zeroed. Negative controls (`WANT_RC` > 0) are exempt, because their summary is a failure line by design.
+Numbers that are already 0 (`0 failures`) are not probed, so `0 failures` stays legal. "Standalone" means a digit run that starts the line or follows a character outside `[A-Za-z0-9_.-]`. So target names such as `m4-smoke`, versions such as `v4.7` and hex such as `efe3c8` are never zeroed. Negative controls (`WANT_RC` > 0) are exempt, because their summary is a failure line by design.
+
+**Why per count, not all at once.** Round 0 zeroed every number at once. On a two-count summary such as `t: 3 files, 4 pairs` with the ERE `^t: [1-9][0-9]* files, [0-9]* pairs$`, the bound `files` count alone refuses the all-zero line, so the loose `pairs` count was never tested against zero (gemini-4-argon's observation). Zeroing one count per variant tests each count. Measured: the round-0 helper passes that case (`FAIL stub-twocount: exit 0`), and the per-count helper fails it with `SUMMARY_ERE also matches 't: 3 files, 0 pairs' (count 2 zeroed; …)` (V19). Every B2a row and every 7x gate re-ran green under it (V20), so option (a) was taken.
 
 What it refuses:
 - `^.` on `x: 0 passed, 5 failures`;
 - `[0-9]* passed` on `drill: 3 passed, 0 failures`;
+- `[0-9]* pairs` beside a bound `[1-9][0-9]* files`;
 - an uncounted `^v: ok$`;
 - `^m4-smoke: [0-9]* passed$` on `m4-smoke: 0 passed`.
 
 What it accepts:
-- `[1-9][0-9]* passed`;
-- an exact pinned count such as `33 cases`, which the zeroed `0 cases` does not match;
-- `^AB=7x$` (zeroed `AB=0x`).
+- `[1-9][0-9]*` on every count;
+- an exact pinned count such as `5 identities, 25 poses`: zeroing either one gives a line the ERE does not match;
+- `^AB=7x$` (variant `AB=0x`).
+
+The measured edit (tabs shown as four spaces; V19):
 
 ```diff
 --- a/tools/script_gate.sh
 +++ b/tools/script_gate.sh
-@@ -35,6 +35,14 @@ se=$(grep -c 'SCRIPT ERROR' "$log")
+@@ -35,6 +35,23 @@ se=$(grep -c 'SCRIPT ERROR' "$log")
+ [ "$se" -eq 0 ] || why="$why; $se SCRIPT ERROR line(s) (Godot exits 0 on a parse error)"
  line=$(grep -E -- "$summary" "$log" | tail -n 1)
  [ -n "$line" ] || why="$why; no summary line matching $summary (rc $rc with no summary is a load failure, not a result)"
-+# Zero probe (row 7x B2, judge survivor 2): a positive gate (WANT_RC 0) passes only on a summary that carries
-+# a nonzero standalone number, and only when SUMMARY_ERE refuses the same line with every such number zeroed,
-+# so a loose ERE (^. or [0-9]* passed) cannot pass a failing or empty run. Negative controls (WANT_RC > 0) are exempt.
++# Zero probe (row 7x B2, judge survivor 2; per count after B2 quorum r1): a positive gate (WANT_RC 0) passes only on
++# a summary with a nonzero standalone number, and only when SUMMARY_ERE refuses each variant of the line with ONE
++# such number zeroed, so neither a loose ERE (^.) nor one loose count beside a bound one ([0-9]* pairs) passes.
++# Numbers already 0 (0 failures) are not probed. Negative controls (WANT_RC > 0) are exempt.
 +if [ -n "$line" ] && [ "$want" -eq 0 ]; then
-+  zero=$(printf '%s\n' "$line" | sed -E 's/(^|[^A-Za-z0-9_.-])[0-9]+/\10/g')
-+  if [ "$zero" = "$line" ]; then why="$why; summary '$line' carries no nonzero count (print one, e.g. N passed, 0 failures)"
-+  elif printf '%s\n' "$zero" | grep -qE -- "$summary"; then why="$why; SUMMARY_ERE also matches the zeroed line '$zero' (bind the count: [1-9][0-9]*)"; fi
++  n=$(printf '%s\n' "$line" | grep -oE '[0-9]+' | grep -c .)
++  k=1 counted=0
++  while [ "$k" -le "$n" ]; do
++    v=$(printf '%s\n' "$line" | sed -E "s/(^|[^A-Za-z0-9_.-])[0-9]+/\\10/$k")
++    if [ "$v" != "$line" ]; then
++      counted=1
++      if printf '%s\n' "$v" | grep -qE -- "$summary"; then why="$why; SUMMARY_ERE also matches '$v' (count $k zeroed; bind it: [1-9][0-9]*)"; break; fi
++    fi
++    k=$((k + 1))
++  done
++  [ "$counted" = 1 ] || why="$why; summary '$line' carries no nonzero count (print one, e.g. N passed, 0 failures)"
 +fi
  if [ -n "$why" ]; then
+   grep -v -E '^[[:space:]]*ok[[:space:]]' "$log" | tail -n 40
+   echo "script-gate: $name FAIL$why (log $log)"
 --- a/tools/test_script_gate.sh
 +++ b/tools/test_script_gate.sh
-@@ -39,6 +39,11 @@
+@@ -39,6 +39,13 @@ case_ stub-want1 0 10 'script-gate: stub-want1 ok: v: FAIL (rc 1' sh "$gate" stu
+ case_ stub-env 0 10 'stub-env ok: AB=7x' sh "$gate" stub-env "$tmp/s8.log" 5 '^AB=7x$' -- AB=7x sh -c 'echo "AB=$AB"'
+ case_ stub-unanchored 2 10 'SUMMARY_ERE must start with ^' sh "$gate" stub-u "$tmp/s9.log" 5 'drill' -- true
  case_ stub-notimeout 2 10 'TIMEOUT_S must be at least 1' sh "$gate" stub-t "$tmp/s10.log" 0 "$S" -- true
-+# B2 zero probe (judge survivor 2): a loose ERE, a [0-9]* count and an uncounted summary all fail; a negative control is exempt
-+case_ stub-loose 1 10 'SUMMARY_ERE also matches the zeroed line' sh "$gate" stub-loose "$tmp/s13.log" 5 '^.' -- sh -c 'echo "x: 0 passed, 5 failures"'
-+case_ stub-weakcount 1 10 'SUMMARY_ERE also matches the zeroed line' sh "$gate" stub-weak "$tmp/s14.log" 5 '^drill: [0-9]* passed, 0 failures$' -- sh -c 'echo "drill: 3 passed, 0 failures"'
++# B2 zero probe (judge survivor 2): a loose ERE, a [0-9]* count (alone or beside a bound one) and an uncounted summary fail
++case_ stub-loose 1 10 'SUMMARY_ERE also matches' sh "$gate" stub-loose "$tmp/s13.log" 5 '^.' -- sh -c 'echo "x: 0 passed, 5 failures"'
++case_ stub-weakcount 1 10 'SUMMARY_ERE also matches' sh "$gate" stub-weak "$tmp/s14.log" 5 '^drill: [0-9]* passed, 0 failures$' -- sh -c 'echo "drill: 3 passed, 0 failures"'
 +case_ stub-uncounted 1 10 'carries no nonzero count' sh "$gate" stub-unc "$tmp/s15.log" 5 '^v: ok$' -- sh -c 'echo "v: ok"'
 +case_ stub-namedigit 1 10 'carries no nonzero count' sh "$gate" stub-nd "$tmp/s16.log" 5 '^m4-smoke: [0-9]* passed$' -- sh -c 'echo "m4-smoke: 0 passed"'
++case_ stub-twocount 1 10 'count 2 zeroed' sh "$gate" stub-two "$tmp/s17.log" 5 '^t: [1-9][0-9]* files, [0-9]* pairs$' -- sh -c 'echo "t: 3 files, 4 pairs"'
++case_ stub-twobound 0 10 'stub-twobound ok: t: 3 files, 4 pairs' sh "$gate" stub-twobound "$tmp/s18.log" 5 '^t: [1-9][0-9]* files, [1-9][0-9]* pairs$' -- sh -c 'echo "t: 3 files, 4 pairs"'
+ # A2: a command that ignores SIGALRM and TERM is still stopped at the deadline (group KILL after the TERM grace)
+ case_ stub-ignore-alrm 1 6 'timeout after 2 s' sh "$gate" stub-ignore-alrm "$tmp/s11.log" 2 "$S" -- sh -c 'trap "" ALRM TERM; exec sleep 30'
+ # A2: a child left behind by the command is killed with its group; the control proves pgrep can see a sleep.
 ```
 
-The existing `stub-want1` (WANT_RC 1, `^v: FAIL$`) and `stub-env` (`^AB=7x$`) cases still pass. They are the exemption's and the name-digit rule's positive controls (V10). The probe also keeps every existing gate green: the five 7x gates re-ran ok under it (`sim-bridge` 110, `ui` 205, `area-test` 80, `test-bright-audit` 16, `star-catalogue-test` 40; V7b), and the 16 stub plus 6 Godot drill cases pass (`test-script-gate: ok (22 cases: 16 stub, 6 Godot)`, V7). `shellcheck -s sh` is clean, and the probe runs the same under `/bin/dash` (V10).
+The existing `stub-want1` (WANT_RC 1, `^v: FAIL$`) and `stub-env` (`^AB=7x$`) cases still pass. They are the positive controls for the exemption and for the name-digit rule, and `stub-twobound` is the two-count positive control (V19). `shellcheck -s sh` is clean, and the probe runs the same under `/bin/dash` (V19). The loop costs one `sed` and one `grep` per digit run in one summary line, which is negligible next to a Godot start.
 
 ### D5. Survivor S1: one lint fixture row
 
@@ -317,16 +340,28 @@ grep -vc '^#' tools/script-gate-baseline.txt   # 204 (232 - 28; V12)
 
 Here `b2a-targets.txt` holds the 25 target names of D2's B2a rows, one per line. `make script-gate-lint` then reads `ok (237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)` (V12).
 
-### D7. B2b: the 14 rows, and what blocks each
+### D7. B2b: the 14 rows, recorded but not designed here
 
-The invocations in D2 are designed but **not measured**. B2b's own sprint re-measures each row at its base before landing. That sprint is the next 7x row after B2a, or folded into B4/B5.
+**B2b is out of this sprint** (revision 1, objection 2). This section records only what was measured or read for each row: target, file:line, script, today's predicate, the summary format quoted from the script **source, not run**, and what blocks it. It proposes **no** invocation, summary regex, pinned count or summary edit. B2b's invocations, counts and summary edits are designed **and measured** by B2b's own sprint, on a rig where each row can run. That sprint is a later 7x row, or folded into B4/B5. Some counts depend on the rig's data, for example `constellation-test`'s 34 versus 35 with and without the large star tier (V6), so a count read from source is not evidence.
 
-| Rows (D2 #) | Block | How B2b measures it |
-|---|---|---|
-| 8, 9, 11, 13 (`planet-*-golden`, `glow-planet-golden`, `exposure-frame-capture`), 18, 21–23, 27, 41 | A GPU window (`$(AUDIO_OFF)`, no `--headless`). The Studio GPU is shared with Ollama, which was at 94–99 % this iteration. CLAUDE.md asks for at most one GPU window at a time, and 10 windowed runs did not fit this iteration's budget. `style-capture` also needs `TAG=`. | One window at a time on a quiet rig (the iteration-63 quiet predicate: GPU idle and no one on the console), each bounded by the helper's own deadline. Four scripts need their count first (D2 rows 8, 9, 11, 13). Open each render the run writes, per CLAUDE.md. |
-| 17 (`star-surface-bench`) | A Vulkan GPU bench that needs a quiet GPU to mean anything. Its timing line has no count, so the zero probe would refuse it. | Add the frame count to the summary, then run it on a quiet GPU. |
-| 1 (`ism-bench`) | **Red at base on a loaded host**: boost delta 0.72 ms against the 0.5 ms limit, at load 3.3 (V5). Migrating it is harmless, because it is red either way, but its acceptance run cannot be made green on demand. | Run it on a quiet rig. If it is still red there, that is a performance finding for R1-ISM-DUST (AC19), not for 7x. |
-| 24, 35 (`npc-painted-ingest`, `captain-frames-ingest`) | Authoring tools that **write tracked assets** (`assets/characters/npcs/`, `assets/characters/captain/anim/y0/`). `captain-frames-ingest` also needs `RAW=` and `GUIDES=` source directories. | In a throwaway clone (inside `.godot/tmp/`), never the working clone. Run, then show that `git status --porcelain` lists only the expected assets. Or wrap them without a run, and classify them as tools in B8. Recommendation: wrap them; their check already prints the summary the wrap needs. |
+| # | Target (file:line) | Script | Today | Measured or read (source, not run unless stated) | Blocker |
+|---:|---|---|---|---|---|
+| 1 | `ism-bench` (`mk/ism.mk:36`) | `tools/ism_service_bench.gd` | rc,-,sum,- (+ `jq .passes`) | **Measured:** rc 2, 203 s, 0 `SCRIPT ERROR`; last line `ism-service-bench: {"boost":{…` (JSON); `passes: false` (V5) | **Red at base on a loaded host:** boost delta 0.72 ms against the 0.5 ms limit, at load 3.3 |
+| 8 | `planet-transition-golden` (`mk/planet-presentation.mk:8`) | `tools/planet_transition_golden.gd` | rc,-,sum,- | source, not run: `"planet-transition-golden: %d failures;86 samples max flux error %.5f max adjacent step %.5f"` (`86` is a literal) | GPU window (`$(AUDIO_OFF)`, no `--headless`) |
+| 9 | `planet-bounds-golden` (`:10`) | `tools/planet_bounds_golden.gd` | rc,-,sum,- | source, not run: `"planet-bounds-golden: %d failures"` | GPU window |
+| 11 | `glow-planet-golden` (`:17`) | `tools/glow_planet_golden.gd` | rc,se,sum,- | source, not run: `"glow-planet-golden: %d failures"` | GPU window |
+| 13 | `exposure-frame-capture` (`:23`) | `tools/exposure_frame_capture.gd` | rc,se,sum,- | source, not run: `"exposure-frame-capture: %d failures"` | GPU window |
+| 17 | `star-surface-bench` (`mk/star-surfaces.mk:29`) | `tools/star_surface_bench.gd` | rc,-,sum,- | source, not run: `"star-surface-bench: sky GPU p50 off %.3f ms, on %.3f ms, delta %+.3f ms (limit +%.2f): %s"` | Vulkan GPU bench (`--rendering-driver vulkan`); needs a quiet GPU |
+| 18 | `star-surface-capture` (`:35`) | `tools/star_surface_capture.gd` | rc,se,sum,- | source, not run: `"star-surface-capture: OK %d frames"` | GPU window |
+| 21 | `constellation-golden` (`mk/constellations.mk:6`) | `tools/constellation_capture.gd -- golden` | rc,se,sum,- (+ an `ok    G-CONST` line count) | source, not run: `"constellation golden: %d cases, %d failures"` (`tools/constellation_golden.gd:162`) | GPU window |
+| 22 | `constellation-capture` (`:8`) | `tools/constellation_capture.gd -- capture` | rc,se,sum,- | source, not run: `"constellation capture: %d images, %d failures"` (`:203`) | GPU window |
+| 23 | `constellation-bench` (`:10`) | `tools/constellation_capture.gd -- bench` | rc,se,sum,- | source, not run: `"constellation bench: %d pairs, %d failures"` (`:278`) | GPU window |
+| 24 | `npc-painted-ingest` (`mk/npc-painted.mk:4`) | `tools/npc_painted_assets.gd -- --ingest` | -,-,-,- | source, not run: `"painted-npc-assets: 5 identities, 25 poses, %d failures"` (the ingest also runs the check) | Authoring tool: **writes the tracked** `assets/characters/npcs/*.png` and `manifest.json` |
+| 27 | `npc-painted-capture` (`:13`) | `tools/npc_painted_capture.gd` | rc,se,sum,- | source, not run: `"painted-npc-capture: %d frames, %d failures"` | GPU window |
+| 35 | `captain-frames-ingest` (`mk/captain-anim.mk:20`) | `tools/captain_frames.gd -- --ingest $(RAW) --guides $(GUIDES)` | -,-,-,- | source, not run: `"ingest: %d frames -> %s"`, then the check's final line (which D3 changes to `captain-frames: ok (%d frames)`, since it shares that print) | Authoring tool: needs `RAW=` and `GUIDES=`, and **writes the tracked** `assets/characters/captain/anim/y0/*.webp` and the manifest |
+| 41 | `style-capture` (`mk/style.mk:17`) | `tools/style_capture.gd -- --tag=$(TAG)` | rc,se,-,- (no summary check) | source, not run: `"style-capture: %d frames, %d failures"` | GPU window; needs `TAG=` |
+
+**Why the windowed rows were not run here.** The Studio GPU is shared with Ollama, which the brief put at 94–99 % this iteration. CLAUDE.md asks for at most one GPU window at a time, and 10 windowed runs plus a Vulkan bench did not fit the iteration's budget. B2b's sprint also inherits D4's rule: any summary it wraps must carry a count the regex binds.
 
 ## Acceptance criteria
 
@@ -336,9 +371,9 @@ Run from the implementation root with `export PATH="$PWD/runtime/bin:$PATH"`, af
 |---|---|---|
 | AC1 | The ratchet: `make script-gate-lint; echo rc=$?` | `script-gate-lint: ok (237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)`, `rc=0` (V12) |
 | AC2 | The pin bites: `make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=205 2>&1 \| tail -2` | `the baseline has 204 rows but SCRIPT_GATE_BASELINE_ROWS is 205: the pin moves with the rows, and only down`, `make: *** [script-gate-lint] Error 1` (V12) |
-| AC3 | Helper stubs (the zero probe): `make script-gate-selftest 2>&1 \| grep -E 'stub-(loose\|weakcount\|uncounted\|namedigit\|want1\|env)\|cases'; echo rc=$?` | `ok   stub-loose (exit 1 …: SUMMARY_ERE also matches the zeroed line)`, `ok   stub-weakcount (…)`, `ok   stub-uncounted (exit 1 …: carries no nonzero count)`, `ok   stub-namedigit (…)`, `ok   stub-want1 …`, `ok   stub-env …`, `test-script-gate: ok (16 cases: 16 stub, 0 Godot)` (V10) |
-| AC4 | The landed helper fails the new cases (S2 mutant, i.e. today's helper): `git show origin/main:tools/script_gate.sh > .godot/tmp/b2-old-gate.sh; SCRIPT_GATE_SH=.godot/tmp/b2-old-gate.sh SCRIPT_GATE_TMP=.godot/tmp/b2-ac4 sh tools/test_script_gate.sh > .godot/tmp/b2-ac4.out 2>&1; echo rc=$?; grep -c '^test-script-gate: FAIL stub-' .godot/tmp/b2-ac4.out` | `rc=1`, `4` (`FAIL 4 of 16 cases`; V10) |
-| AC5 | Godot drills: `make script-gate-drill 2>&1 \| tail -1; echo rc=$?` | `test-script-gate: ok (22 cases: 16 stub, 6 Godot)`, `rc=0` (V7) |
+| AC3 | Helper stubs (the per-count zero probe): `make script-gate-selftest 2>&1 \| grep -E 'stub-(loose\|weakcount\|uncounted\|namedigit\|twocount\|twobound\|want1\|env)\|cases'; echo rc=$?` | `ok   stub-loose (exit 1 …: SUMMARY_ERE also matches)`, `ok   stub-weakcount (…)`, `ok   stub-uncounted (exit 1 …: carries no nonzero count)`, `ok   stub-namedigit (…)`, `ok   stub-twocount (exit 1 …: count 2 zeroed)`, `ok   stub-twobound (exit 0 …: stub-twobound ok: t: 3 files, 4 pairs)`, `ok   stub-want1 …`, `ok   stub-env …`, `test-script-gate: ok (18 cases: 18 stub, 0 Godot)` (V19) |
+| AC4 | Mutants fail the new cases. (a) The landed helper: `git show origin/main:tools/script_gate.sh > .godot/tmp/b2-old-gate.sh; SCRIPT_GATE_SH=.godot/tmp/b2-old-gate.sh SCRIPT_GATE_TMP=.godot/tmp/b2-ac4 sh tools/test_script_gate.sh > .godot/tmp/b2-ac4.out 2>&1; echo rc=$?; grep -c '^test-script-gate: FAIL stub-' .godot/tmp/b2-ac4.out`. (b) The all-at-once probe of revision 0: replace the D4 block in a scratch copy with `zero=$(printf '%s\n' "$line" \| sed -E 's/(^\|[^A-Za-z0-9_.-])[0-9]+/\10/g')`, then `[ "$zero" = "$line" ]` → uncounted, `elif` the ERE matches `$zero` → fail; run it the same way | (a) `rc=1`, `5` (loose, weakcount, uncounted, namedigit, twocount). (b) `rc=1`, exactly `FAIL stub-twocount: exit 0 …` and `FAIL 1 of 18 cases` (V19) |
+| AC5 | Godot drills: `make script-gate-drill 2>&1 \| tail -1; echo rc=$?` | `test-script-gate: ok (24 cases: 18 stub, 6 Godot)`, `rc=0` (V20) |
 | AC6 | Lint S1 fixture: `SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh tools/script_gate_lint.sh --inventory \| cut -f2-4 \| grep -c .; SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh tools/script_gate_lint.sh --inventory \| cut -f2-4 \| grep after; grep -c '^script-gate-lint: unguarded' .godot/tmp/script-gate/lint-negative.log` (after AC1) | `7`; `gate-after tests/after.gd ungated` (tab-separated); `3` (V11, V12) |
 | AC7 | The lint mutant is killed: `sed 's/(sg \&\& sg < g + 1) ? "gated"/sg ? "gated"/' tools/script_gate_lint.sh > .godot/tmp/b2-lint-mut.sh; SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE=tests/fixtures/script_gate/lint_negative_baseline.txt SCRIPT_GATE_BASELINE_ROWS=2 SCRIPT_GATE_ALL_MAKEFILES="tests/fixtures/script_gate/lint_negative.mk.txt tools/stray.mk" sh .godot/tmp/b2-lint-mut.sh \| grep -c '^script-gate-lint: unguarded'` | `2` (the control in `make script-gate-lint` requires 3, so this mutant fails it; V11) |
 | AC8 | **Every B2a target green:** `make dust-flash-test map-ism-test bubble-surface-test ism-surfaces-test planet-presentation-test moon-lifecycle-test planet-cpu-bench exposure-frames-test manual-exposure-test exposure-cpu-bench star-surface-test navigation-usability-test constellation-test npc-painted-assets-check npc-painted-test commons-civic-stage commons-civic-assets-check commons-civic-playtest-test captain-anim-test bridge-operator-test captain-frames-check captain-chair-test style-test ui-theme-check dressing-test > .godot/tmp/b2-ac8.out 2>&1; echo rc=$?; grep '^script-gate:' .godot/tmp/b2-ac8.out \| sort -u -t: -k2,2 \| wc -l; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b2-ac8.out` | `rc=0`; `28` distinct gate names, one `ok` line each (`commons-civic-stage` also runs as a prerequisite; `sort -u` keeps one), with the counts of V7: `dust-flash: 29 passed`, `ism-layer: 22`, `bubble-surface: 16 checks`, `ism-surfaces: 18 checks`, `planet-presentation: 806 checks`, `moon-lifecycle: 71 checks`, `planet-cpu-bench: 6 rows`, `exposure-frames: 1364 checks`, `manual-exposure: 291 checks`, `exposure-cpu-bench: OK 2 profiles`, `star-surface: OK (54 passed`, `navigation-usability: 17 checks`, `constellations: 35 passed`, `painted-npc-assets: 5 identities, 25 poses`, `painted-npc-pilot: 23`, `commons-civic-stage: 4 configs …`, `commons-civic-assets: 21`, `commons-civic-playtest: 18`, `captain-anim: 87`, `bridge-operator-contact: 44`, `captain-frames: ok (50 frames)`, `captain-frames: selftest ok (50 frames)`, `captain-chair: 12`, `style-test: 22`, `ui-theme-check: ok (49 files, 65 text/panel pairs)`, `ui-theme-neg-override ok: FAIL 1 hard-coded …` (rc 1), `ui-theme-neg-contrast ok: FAIL contrast …` (rc 1), `dressing-test: 10`; then `0`. Budget about 7 min wall; `moon-lifecycle-test` alone is about 220 s. |
@@ -348,7 +383,8 @@ Run from the implementation root with `export PATH="$PWD/runtime/bin:$PATH"`, af
 | AC12 | Counted summaries reject zero: `for e in '^star-surface: OK \([1-9][0-9]* passed, 0 failures\)$' '^captain-frames: ok \([1-9][0-9]* frames\)$' '^ui-theme-check: ok \([1-9][0-9]* files, [1-9][0-9]* text/panel pairs\)$' '^exposure-cpu-bench: OK [1-9][0-9]* profiles, renders/perf/exposure_cpu.json$' '^planet-cpu-bench: [1-9][0-9]* rows, renders/perf/planet_cpu.json$'; do printf '%s\n' 'star-surface: OK (0 passed, 0 failures)' 'captain-frames: ok (0 frames)' 'ui-theme-check: ok (0 files, 0 text/panel pairs)' 'exposure-cpu-bench: OK 0 profiles, renders/perf/exposure_cpu.json' 'planet-cpu-bench: 0 rows, renders/perf/planet_cpu.json' \| grep -cE -- "$e"; done` | five lines of `0` |
 | AC13 | Policy gates and hygiene: `make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh && echo gates-ok` | `gates-ok` (`uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, …)`, `audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound)`, `lint-precision: ok …`; V12) |
 | AC14 | Scope: `git diff --name-only origin/main \| grep -cvxE 'mk/(ism\|planet-presentation\|star-surfaces\|navigation-usability\|constellations\|npc-painted\|commons-civic\|captain-anim\|style\|script-gates)\.mk\|tools/(script_gate\.sh\|test_script_gate\.sh\|script-gate-baseline\.txt\|captain_frames\.gd\|ui_theme_check\.gd\|planet_cpu_bench\.gd\|exposure_cpu_bench\.gd)\|tests/test_star_surface\.gd\|tests/fixtures/script_gate/lint_negative\.mk\.txt\|design_docs/planned/r1/m4-7x-b2-script-gates.*\.md\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json'; git diff --name-only origin/main -- Makefile mk/sound.mk mk/m45.mk mk/deck-layout.mk mk/earth-link.mk \| wc -l` | `0`, `0` |
-| AC15 | The PR's GitHub fast tier: `gh pr checks <PR>`; `gh run view <run> --log \| grep -cE 'script-gate-lint: ok \(237 --script invocations: 33 through\|test-script-gate: ok \(16 cases: 16 stub, 0 Godot\)'` | `success`; `2`. This is the probe's first Linux, `dash` and GNU `sed -E` run. |
+| AC15 | The PR's GitHub fast tier: `gh pr checks <PR>`; `gh run view <run> --log \| grep -cE 'script-gate-lint: ok \(237 --script invocations: 33 through\|test-script-gate: ok \(18 cases: 18 stub, 0 Godot\)'` | `success`; `2`. This is the probe's first Linux, `dash` and GNU `sed -E` run. |
+| AC16 | The helper creates a missing nested log directory (objection 1): `F=.godot/tmp/b2-fresh-$$; test -e $F && echo exists || echo absent; make dust-flash-test map-ism-test star-surface-test SCRATCH=$F/s 2>&1 | grep '^script-gate:'; echo rc=$?; ls $F/s $F/s/star-surfaces` (`SCRATCH := .godot/tmp` at `Makefile:13` is a plain assignment, so the command line overrides it) | `absent`; `script-gate: dust-flash-test ok: dust-flash: 29 passed, 0 failures (…)`, `script-gate: map-ism-test ok: ism-layer: 22 passed, 0 failures (…)`, `script-gate: star-surface-test ok: star-surface: OK (54 passed, 0 failures) (…)`; `rc=0`; `$F/s` lists `dust-flash-test.log`, `map-ism-test.log` and `star-surfaces`, and `$F/s/star-surfaces` lists `test.log` (V18) |
 
 ## Conflict surface
 
@@ -379,10 +415,11 @@ No new `.gd`, so no new `.uid`. No `.py`.
 
 | Risk | Mitigation |
 |---|---|
-| The zero probe reds a future healthy gate whose summary has no count (for example `foo: ok`). | That is the point: an uncounted summary cannot tell a full run from an empty one. The message names the fix. Negative controls are exempt. Exact pinned counts (`33 cases`) pass. |
+| The zero probe reds a future healthy gate whose summary has no count (for example `foo: ok`). | That is the point: an uncounted summary cannot tell a full run from an empty one. The message names the fix. Negative controls are exempt. Exact pinned counts (`5 identities, 25 poses`) pass. |
 | The probe's "standalone number" rule mis-zeroes a number that is part of a name, or fails to zero one. | Digits glued to `[A-Za-z0-9_.-]` are never zeroed (`m4-smoke`, `v4.7`, `x86_64`), and that is tested (`stub-namedigit`). A mis-zeroed name can only make the probe stricter: the ERE stops matching the zeroed line, and the gate passes as before. It cannot make a loose ERE pass. |
-| GNU `sed -E` on CI behaves differently from macOS `sed -E` with `\1` in the replacement. | Both are POSIX ERE with back-references. `dash` was run here (V10). AC15 is the first Linux run and is a merge gate. |
+| GNU `sed -E` on CI behaves differently from macOS `sed -E` with `\1` in the replacement. | Both are POSIX ERE with back-references. The numeric `s/…/…/k` flag (replace only the k-th match) is POSIX too. `dash` was run here (V10). AC15 is the first Linux run and is a merge gate. |
 | `moon-lifecycle-test` takes about 220 s, and the deadline is 1,800 s (8.2×). | Its base had no deadline at all. 1,800 s bounds a hang at 30 min instead of `rig_check`'s 7,200 s. If a loaded night pushes it past 1,800 s, raise it in one place. |
+| The per-count probe meets a decimal or a timing number (for example `1.33:1` or `12 s`). | Only the leading integer of a decimal is standalone (`1` in `1.33`), and the probe zeroes it alone, so an ERE that binds the whole decimal with `[0-9.]+` would be refused. No B2a or 7x positive summary carries a decimal or a timing number (V20). Negative controls, where `1.33:1` does appear, are exempt. B2b's timing benches must bind a count (D7). |
 | Literal counts (`5 identities, 25 poses`; `4 configs, 3 raw GLBs, 4 raw PNGs`) pass the probe without counting anything at run time. | Their regexes pin exact text, and the scripts fail on any missing file (they list errors and quit 1). Open question 2 records the residue. |
 | `constellation-test` gains `starmap-assets`, a network fetch (public bucket read, sha-checked). | `make test` already has that prerequisite (`Makefile:57`). Once the tier is present, the fetch is a no-op `tiers match` (0 s, V6). It never uploads. |
 | The quieter output (one line per gate) hides bench numbers that `cat` used to show (`planet-cpu-bench`, `exposure-cpu-bench`). | The numbers stay in each log and in `renders/perf/*.json`, and the summary line names the JSON. |
@@ -392,14 +429,12 @@ No new `.gd`, so no new `.uid`. No `.py`.
 None blocks the sprint.
 - **OQ1. Where to enforce a counted regex: runtime probe or static lint? Default: the runtime probe (D4).**
   - The alternative is a lint rule that every `$(SCRIPT_GATE)` ERE with `WANT_RC` 0 contains `[1-9]`.
-  - That rule is text-only and simple, but it would refuse the valid exact pins (`33 cases`, `5 identities`), and it needs an allowlist.
+  - That rule is text-only and simple, but it would refuse the valid exact pins (`5 identities, 25 poses`; `4 configs, 3 raw GLBs, 4 raw PNGs`), and it needs an allowlist.
   - The runtime probe judges the actual line on every run, including gates added later.
 - **OQ2. Literal counts in two scripts. Default: leave them in B2, and name them for B4.**
   - `tools/npc_painted_assets.gd` prints `5 identities, 25 poses` from a format string, and `tools/commons_civic_stage.gd` prints `4 configs, 3 raw GLBs, 4 raw PNGs`. Neither is computed.
   - Computing them (`POSES.size() × identities found`; the staged file counts) is a two-line edit each. It is deferred so that B2a stays exactly as measured.
-- **OQ3. Should the B2b authoring tools be wrapped without a run? Default: wrap them in B2b with the same regexes, measured in a throwaway clone (D7).**
-  - The alternative is to keep them on the baseline as permanent tool rows until B8 classifies tools.
-- **OQ4. Should `ism-bench` be judged at all on a shared rig? Default: B2b migrates it unchanged. Its red is R1-ISM-DUST's performance question (AC19), not 7x's.**
+- **OQ3 (for B2b's sprint, not this one).** Two questions are handed on without a default here: whether the two authoring tools (rows 24, 35) are wrapped and run in a throwaway clone or stay baseline rows until B8 classifies tools, and whether `ism-bench`'s red on a shared rig is a 7x matter or R1-ISM-DUST's performance question (its AC19). B2b's sprint measures before it decides.
 
 ## Estimated LOC per file
 
@@ -417,8 +452,8 @@ Measured with `git diff --numstat` on the applied tree (V12), as added/removed l
 | `mk/captain-anim.mk` | 5 | 5 |
 | `mk/style.mk` | 5 | 5 |
 | `mk/script-gates.mk` | 3 | 3 |
-| `tools/script_gate.sh` | 8 | 0 |
-| `tools/test_script_gate.sh` | 5 | 0 |
+| `tools/script_gate.sh` | 17 | 0 |
+| `tools/test_script_gate.sh` | 7 | 0 |
 | `tools/script-gate-baseline.txt` | 0 | 28 |
 | `tests/fixtures/script_gate/lint_negative.mk.txt` | 3 | 1 |
 | `tests/test_star_surface.gd` | 3 | 1 |
@@ -426,7 +461,7 @@ Measured with `git diff --numstat` on the applied tree (V12), as added/removed l
 | `tools/ui_theme_check.gd` | 5 | 1 |
 | `tools/planet_cpu_bench.gd` | 1 | 0 |
 | `tools/exposure_cpu_bench.gd` | 1 | 1 |
-| **Total** | **60 (+1)** | **73 (+1)** |
+| **Total** | **71 (+1)** | **73 (+1)** |
 
 About an hour of work for a mid-tier model. Every line above was applied and run once. The wall time is dominated by AC8 (about 7 min) and AC9 (`sim-bridge` about 95 s).
 
@@ -450,10 +485,19 @@ Run at `9e4d8231` on 2026-11-04, about 21:20–21:50 local, in `/Users/voightkam
 | V7b | The 7x gates under the probe | `sh run_mig2.sh ui area-test test-bright-audit star-catalogue-test sim-bridge` (migrated tree) | all rc 0: `ui ok: galaxy map: 205 passed, 0 failures (… 6 s …)`, `area-test ok: 80 passed, 0 failed (… 23 s …)`, `test-bright-audit ok: test_bright_audit: 16 passed, 0 failed`, `star-catalogue-test ok: test_star_catalogue: 40 passed, 0 failed`, `sim-bridge ok: sim bridge: 110 passed, 0 failures (rc 0, no SCRIPT ERROR, 94 s of 900 s)` |
 | V8 | The new counts equal an independent reading | `grep -c '^  ok' base/star-surface-test.out`; `jq '.frames \| length' .godot/tmp/captain-frames.json`; `grep 'contrast checked' .godot/tmp/ui-theme-check.log` | `54`; `50`; `ui-theme-check: contrast checked for 65 text/panel pairs over night and cream` (base and migrated) |
 | V9 | Parse-error drills per class (raw and gated); the runtime-error gap | `/tmp/iter70_designer/drill/drill.sh` (AC10's copies and commands); AC11's commands | c1 `raw: rc 0 SCRIPT ERROR 1, summary lines 0`, `c1: exit 1 …: script-gate: c1 FAIL; 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching ^dust-flash: …`; c2, c3 the same (c2 with `AILANG_BIN=…`, c3 `-- --selftest`); c4 `raw: rc 0 SCRIPT ERROR 1`, `c4: exit 1 …: FAIL; rc 0, want 1; 1 SCRIPT ERROR line(s) …; no summary line matching ^FAIL contrast`. c5: `base recipe shape: rc 0, SCRIPT ERROR 1, summary: dust-flash: 26 passed, 0 failures`, `base dust-flash-test predicate: PASS (the gap)`, `SCRIPT ERROR: Invalid access to property or key 'no_such_member_b2' on a base object of type 'SceneTree (c5_runtime_body.gd)'.`, `script-gate: c5 FAIL; 1 SCRIPT ERROR line(s) …` |
-| V10 | The zero probe: new cases, mutant, dash, shellcheck | scratch copies: the probe added to `script_gate.sh`, the 4 cases to `test_script_gate.sh`; `SCRIPT_GATE_SH=<new> … sh <new test>`; `SCRIPT_GATE_SH=tools/script_gate.sh` (landed) with the new test; `dash script_gate.sh d1 … '^.' -- sh -c 'echo "x: 0 passed, 5 failures"'`, d2 `[1-9]` on `drill: 3 passed`, d3 `^AB=7x$`; `shellcheck -s sh` | new: 16 of 16 `ok` (`stub-loose (exit 1 in 0 s: SUMMARY_ERE also matches the zeroed line)`, `stub-weakcount (…)`, `stub-uncounted (exit 1 in 1 s: carries no nonzero count)`, `stub-namedigit (…)`, `stub-want1 … ok: v: FAIL (rc 1`, `stub-env … AB=7x`), `test-script-gate: ok (16 cases: 16 stub, 0 Godot)` in 11 s. Landed helper: exactly `FAIL stub-loose`, `FAIL stub-weakcount`, `FAIL stub-uncounted`, `FAIL stub-namedigit` (`exit 0`), `FAIL 4 of 16 cases`. dash: d1 `rc=1`, `SUMMARY_ERE also matches the zeroed line 'x: 0 passed, 0 failures'`; d2 `rc=0`; d3 `rc=0`; the whole test under dash: 16 cases ok. shellcheck `sc=0`. Base selftest for contrast: `test-script-gate: ok (12 cases: 12 stub, 0 Godot)`. Its `Terminated: 15 sleep "$c"` line is printed at base too: it is the A2 control's own kill |
+| V10 | The zero probe, revision 0 (all at once; superseded by the per-count probe, V19): new cases, mutant, dash, shellcheck | scratch copies: the probe added to `script_gate.sh`, the 4 cases to `test_script_gate.sh`; `SCRIPT_GATE_SH=<new> … sh <new test>`; `SCRIPT_GATE_SH=tools/script_gate.sh` (landed) with the new test; `dash script_gate.sh d1 … '^.' -- sh -c 'echo "x: 0 passed, 5 failures"'`, d2 `[1-9]` on `drill: 3 passed`, d3 `^AB=7x$`; `shellcheck -s sh` | new: 16 of 16 `ok` (`stub-loose (exit 1 in 0 s: SUMMARY_ERE also matches the zeroed line)`, `stub-weakcount (…)`, `stub-uncounted (exit 1 in 1 s: carries no nonzero count)`, `stub-namedigit (…)`, `stub-want1 … ok: v: FAIL (rc 1`, `stub-env … AB=7x`), `test-script-gate: ok (16 cases: 16 stub, 0 Godot)` in 11 s. Landed helper: exactly `FAIL stub-loose`, `FAIL stub-weakcount`, `FAIL stub-uncounted`, `FAIL stub-namedigit` (`exit 0`), `FAIL 4 of 16 cases`. dash: d1 `rc=1`, `SUMMARY_ERE also matches the zeroed line 'x: 0 passed, 0 failures'`; d2 `rc=0`; d3 `rc=0`; the whole test under dash: 16 cases ok. shellcheck `sc=0`. Base selftest for contrast: `test-script-gate: ok (12 cases: 12 stub, 0 Godot)`. Its `Terminated: 15 sleep "$c"` line is printed at base too: it is the A2 control's own kill |
 | V11 | S1: the lint is right, the mutant survives today, the fixture kills it | a fixture copy with `gate-after:` / `@$(GODOT) --headless --path . $(SCRIPT_GATE) --script tests/after.gd`; `--inventory \| cut -f2-4` and the full negative run with the landed lint and with the mutant (`sed 's/(sg \&\& sg < g + 1) ? "gated"/sg ? "gated"/'`, 1 line changed); the landed fixture under the mutant | landed lint: `gate-after tests/after.gd ungated`; the negative run `rc=1`, `3` unguarded including `not on the baseline: gate-after tests/after.gd`. Mutant: `gate-after tests/after.gd gated`, `2` unguarded (the control's `= 3` fails). The landed fixture under the mutant: `2` (today's control passes: the survivor). A first draft with `$(SCRIPT_GATE)` at the line's end stayed `ungated` under the mutant too, because the lint reads only the text before `--script`; hence D5's placement |
 | V12 | The applied tree: lint, pin, hygiene, size; then restored | on the migrated tree: `make script-gate-lint`; `make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=205 \| tail -2`; `grep -vc '^#' tools/script-gate-baseline.txt`; `make uid-guard python-guard audio-silent-guard lint-precision`; `git diff --check`; `shellcheck -s sh tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh`; `git diff --numstat`; then `git checkout -- mk tools tests; git status --porcelain \| wc -l`; `ps` for leftover Godot or `ailang run` from this clone | `script-gate-lint: ok (237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)`; `the baseline has 204 rows but SCRIPT_GATE_BASELINE_ROWS is 205: …`, `make: *** [script-gate-lint] Error 1`; `204`; `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)`, `audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound)`, `lint-precision: ok (positive control matched 6 lines; …)`; diff check clean; shellcheck `0`; numstat as in [Estimated LOC per file](#estimated-loc-per-file) (19 files, `60 insertions(+), 73 deletions(-)`); restore: `0` status lines, `0` leftover processes |
 | V13 | Which B2 targets are in `test`, `ship-demo-ci`, `golden` | for each B2 target, `grep -hE "^(test\|ci-fast\|ship-demo-ci\|golden\|capture\|sim\|ui)[a-z-]*:.*(^\|[ ])$t( \|$)" Makefile mk/*.mk` | `test`: every B2a test except the `ship-demo-ci` ones and the two benches (it also holds `dust-flash-test` and `map-ism-test`); `ship-demo-ci`: `planet-presentation-test`, `moon-lifecycle-test`, `exposure-frames-test`, `manual-exposure-test`, `constellation-test`; `golden`: `constellation-golden`; none: `ism-bench`, `planet-cpu-bench`, `exposure-cpu-bench`, the captures, the goldens other than `constellation-golden`, the ingests (control: `star-surface-test` → `test`) |
 | V14 | No open PR touches a file of this batch | `gh pr list --state open`; for #373 #379 #380 #384: `gh pr diff <n> --name-only > prN.txt; grep -cxE '<the 19 files>' prN.txt; grep -cxE 'Makefile\|mk/earth-link.mk\|mk/m45.mk\|mk/deck-layout.mk' prN.txt` | open: 384, 380, 379, 373. Files 57/99/31/11; ours `0` each; control `2`, `3`, `1`, `1` |
 | V15 | No `test-script-gate` target | `grep -nE '^test-script-gate:\|^script-gate-(selftest\|drill):' Makefile mk/*.mk` | only `mk/script-gates.mk:42:script-gate-selftest:` and `:45:script-gate-drill:` (the known positives); no `test-script-gate:` |
 | V16 | No other consumer of the five old summary lines | `git ls-files \| grep -vE '^\.ailang/\|^design_docs/\|^changelogs/' \| xargs grep -nE "captain-frames: (selftest )?ok\|star-surface: OK\|ui-theme-check: ok\|exposure-cpu-bench: OK\|planet-cpu-bench:"` on the migrated tree | only the new recipe lines and the scripts' own print lines, plus the comment `tools/captain_frames.gd:19` (updated in D3). Control: `git ls-files tools/captain_frames.gd tools/ui_theme_check.gd \| wc -l` = `2` |
+
+**Revision 1 (after quorum round 1), 2026-11-04, about 21:55–22:15 local, same clone, base and tools.** The B2a change set was re-applied to the working clone's tracked files, now with the per-count probe in place of the all-at-once probe, then run and restored with `git checkout -- mk tools tests`. Afterwards `git status --porcelain` listed only this doc, and no Godot or `ailang run` process from the clone was left.
+
+| # | Claim | Command | Observed |
+|---|---|---|---|
+| V17 | The helper creates a missing log directory (objection 1) | `grep -n 'mkdir\|dirname' tools/script_gate.sh`; `d=$(mktemp -d /tmp/iter70_mkdir.XXXX); test -e "$d/a" \|\| echo "a/ absent before"; sh tools/script_gate.sh probe "$d/a/b/c.log" 10 '^v: [1-9][0-9]* passed$' -- sh -c 'echo "v: 3 passed"'; echo rc=$?; test -f "$d/a/b/c.log" && echo "c.log exists"`; control: the same call with the existing `$d/x.log` | `26:mkdir -p "$(dirname "$log")"`; `a/ absent before`; `script-gate: probe ok: v: 3 passed (rc 0, no SCRIPT ERROR, 1 s of 10 s)`, `rc=0`, `c.log exists`; control `script-gate: probe2 ok: v: 3 passed (…)`, `rc=0`. This agrees with the controller's measurement |
+| V18 | Migrated targets with a fresh, nonexistent `SCRATCH` (AC16) | `grep -n '^SCRATCH' Makefile`; AC16's command, as written, on the migrated tree | `13:SCRATCH := .godot/tmp`; `absent`; `script-gate: dust-flash-test ok: dust-flash: 29 passed, 0 failures (rc 0, no SCRIPT ERROR, 0 s of 600 s)`, `script-gate: map-ism-test ok: ism-layer: 22 passed, 0 failures (… 1 s …)`, `script-gate: star-surface-test ok: star-surface: OK (54 passed, 0 failures) (… 40 s of 900 s)`; `rc=0`; `.godot/tmp/b2-fresh-39615/s:` lists `dust-flash-test.log`, `map-ism-test.log`, `star-surfaces`, and `…/s/star-surfaces:` lists `test.log`. An earlier run of only `dust-flash-test star-surface-test` into another fresh `SCRATCH` was also rc 0 (31 s) |
+| V19 | The per-count probe (objection 3): stubs, mutants, dash, shellcheck | on the migrated tree: `make script-gate-selftest`; the revision-0 all-at-once helper (the measured round-0 file, kept at `/tmp/iter70_designer/proto/allatonce.sh`) as `SCRIPT_GATE_SH` with the new test; AC4(a) with the landed helper; `dash tools/script_gate.sh d5 … '^t: [1-9][0-9]* files, [0-9]* pairs$' -- sh -c 'echo "t: 3 files, 4 pairs"'`; `dash tools/script_gate.sh d6 … '^AB=7x$' -- AB=7x sh -c 'echo "AB=$AB"'`; `shellcheck -s sh tools/script_gate.sh tools/test_script_gate.sh`; `git diff --numstat tools/script_gate.sh tools/test_script_gate.sh` | selftest: `ok   stub-twocount (exit 1 in 0 s: count 2 zeroed)`, `ok   stub-twobound (exit 0 in 0 s: stub-twobound ok: t: 3 files, 4 pairs)`, the four earlier probe cases, `stub-want1` and `stub-env` all ok, `test-script-gate: ok (18 cases: 18 stub, 0 Godot)`. All-at-once helper: only `FAIL stub-twocount: exit 0 in 0 s, want 1 within 10 s with 'count 2 zeroed'`, `FAIL 1 of 18 cases`. Landed helper: `rc=1`, `5` failing stub cases. dash: d5 `script-gate: d5 FAIL; SUMMARY_ERE also matches 't: 3 files, 0 pairs' (count 2 zeroed; bind it: [1-9][0-9]*)`, `rc=1`; d6 `rc=0`. shellcheck `sc=0`. numstat `17 0`, `7 0` |
+| V20 | Every B2a row and every 7x gate under the per-count probe | `sh run_mig3.sh <the 25 B2a targets> ui area-test test-bright-audit star-catalogue-test sim-bridge script-gate-drill` (serial, each under `sup.pl 2400`); `cat <B2a outs> \| grep '^script-gate:' \| sort -u -t: -k2,2 \| wc -l`; `… \| grep -c 'script-gate: [^ ]* FAIL'` | all 31 runs **rc 0**; `28` distinct B2a gate lines, `0` FAIL. Counts identical to V7: for example `moon-lifecycle: 71 checks 0 failures (… 216 s of 1800 s)`, `captain-frames: ok (50 frames)`, `ui-theme-check: ok (49 files, 65 text/panel pairs)`, `commons-civic-stage: 4 configs, 3 raw GLBs, 4 raw PNGs, 0 failures`, `planet-cpu-bench: 6 rows, …`, `exposure-cpu-bench: OK 2 profiles, …`. 7x gates: `galaxy map: 205 passed, 0 failures`, `80 passed, 0 failed`, `test_bright_audit: 16 passed, 0 failed`, `test_star_catalogue: 40 passed, 0 failed`, `sim bridge: 110 passed, 0 failures (… 95 s of 900 s)`. Drill `test-script-gate: ok (24 cases: 18 stub, 6 Godot)` (its one `FAIL` text is the intended `make-sim-parse` case). No positive summary carries a decimal or a timing number |
