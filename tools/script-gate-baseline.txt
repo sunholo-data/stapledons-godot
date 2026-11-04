@@ -11,7 +11,6 @@ ai-settings	tests/test_ai_settings.gd	-,-,-,-
 ai-style-frame	tests/test_conversation.gd	-,-,-,-
 alpha-centauri-golden	tools/alpha_centauri_golden.gd	rc,se,sum,-
 alpha-centauri-test	tests/test_alpha_centauri.gd	rc,se,sum,-
-area-test	tests/test_area_bundle.gd	-,-,-,-
 audio-silent-guard	-	-,-,-,-
 audio-silent-guard	-	-,-,-,-
 audio-silent-guard	-	-,-,-,-
@@ -213,14 +212,12 @@ sound-voyage-review	tools/sound_voyage_review.gd	-,-,-,-
 sound-voyage-test	tests/test_sound_voyage.gd	-,-,-,-
 sound-voyage-test	tests/test_sound_voyage.gd	rc,se,sum,-
 splash	tools/splash_compose.gd	-,-,-,-
-star-catalogue-test	tests/test_star_catalogue.gd	-,-,-,-
 star-surface-bench	tools/star_surface_bench.gd	rc,-,sum,-
 star-surface-capture	tools/star_surface_capture.gd	rc,se,sum,-
 star-surface-test	tests/test_star_surface.gd	rc,se,sum,to
 starmap-consistency	tools/starmap_consistency.gd	rc,se,sum,-
 style-capture	tools/style_capture.gd	rc,se,-,-
 style-test	tests/test_style.gd	rc,se,sum,-
-test-bright-audit	tests/test_bright_audit.gd	-,-,-,-
 title-capture	tools/title_screen_capture.gd	-,-,-,-
 title-screen-test	tests/test_title_screen.gd	rc,se,sum,-
 tour-attitude-test	tests/test_tour_attitude.gd	rc,se,sum,-
@@ -230,7 +227,6 @@ tour-pacing-test	tests/test_tour_pacing.gd	rc,-,sum,-
 transit-test	tests/test_transit.gd	rc,se,sum,-
 trappist1-capture	tools/trappist1_capture.gd	rc,se,-,-
 true-light-golden	tools/true_light_golden.gd	rc,se,sum,-
-ui	tests/test_galaxy_map.gd	-,-,-,-
 ui-theme-check	tools/ui_theme_check.gd	rc,-,sum,-
 ui-theme-check	tools/ui_theme_check.gd	rc,-,sum,-
 ui-theme-check	tools/ui_theme_check.gd	rc,se,sum,-
