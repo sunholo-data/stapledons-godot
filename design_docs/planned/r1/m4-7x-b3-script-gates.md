@@ -375,7 +375,7 @@ None blocks the sprint.
 
 ## Estimated LOC per file
 
-Measured with `git diff --numstat` on the applied revision-1 tree (V24; V13 was the revision-0 tree, 101/83, with `mk/ai.mk` at 7/7), as added and removed lines:
+Measured with `git diff --numstat` on the applied revision-2 tree (V26; revision 1 was 102/84 in V24; V13 was the revision-0 tree, 101/83, with `mk/ai.mk` at 7/7), as added and removed lines:
 
 | File | + | − |
 |---|---:|---:|
@@ -392,7 +392,7 @@ Measured with `git diff --numstat` on the applied revision-1 tree (V24; V13 was 
 | `tests/test_ai_relay.gd` | 4 | 2 |
 | `tests/test_ai_settings.gd` | 4 | 2 |
 | `tests/test_conversation.gd` | 4 | 2 |
-| **Total (13 files)** | **102** | **84** |
+| **Total (13 files)** | **104** | **84** |
 
 ## Verification log
 

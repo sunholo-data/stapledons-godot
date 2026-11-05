@@ -1516,6 +1516,223 @@
       "passes": true,
       "status": "implemented",
       "notes": "M1: Added D4 six cases first. Measured RED: five new cases fail on the original helper; make rc 2, plus pre-existing orphan visibility failure. Untouched base test also reports FAIL 1 of 12: pgrep cannot read process list (sysmon service unavailable, rc 3), so complete selftest/mutant footers are UNINFORMATIVE UNDER SANDBOX; no test weakened. Inserted exact per-count probe. New/helper cases and dash evidence recorded in .godot/tmp/snap/M1/RESULT.txt; full 18/18 and mutant footer checks require controller rerun outside sandbox.\nM2: Exact gate-after fixture added first: make script-gate-lint RED rc=2 (negative control flagged wrong rows). Updated control 2→3 and required grep: GREEN rc=0, interim lint 237/5/232. AC6 measured 7 rows, gate-after ungated, 3 unguarded; AC7 mutant 2. Evidence .godot/tmp/snap/M2/RESULT.txt.\nM3: Applied exact D3 five summary edits and captain Prints comment. Pre-edit counted predicates each reject absent summary; post-edit gate output carries 54 passed, 50 frames in both modes, 49 files/65 pairs, 6 rows, 2 profiles. Every direct Godot run is UNINFORMATIVE UNDER SANDBOX due to user://logs denial; raw logs retained. AC12 measured five zeros; independent log/JSON counts 54/50/65. Evidence .godot/tmp/snap/M3/RESULT.txt; no assertions changed.\nM4: RED inventory had 5 gated rows (33 required). Copied all 28 D2 recipes verbatim with tabs, preserved B2b rows and all command flags; removed only the two ism mkdir lines and old recipe tails. Baseline deletion-only 0/28; pin 232→204; lint GREEN 237/33/204 and pin-205 negative refused. Per-file Godot subsets attempted serially; sandbox user-data errors make runtime results UNINFORMATIVE UNDER SANDBOX, with raw outputs in .godot/tmp/snap/M4/RESULT.txt. Constellation prerequisite remains for M5.\nM4 additional finding: Godot import repeatedly logs invalid .translation paths derived from existing data/starmap/truth/positions.csv; data unchanged (git diff exit 0). Also denies saving editor settings under Library. All per-file runtime acceptance remains UNINFORMATIVE UNDER SANDBOX; no import/data workaround made.\nM5: RED structural prerequisite check rc=1 (constellation-test: import). Added starmap-assets exactly; sha verification retained and existing tiers kept. Ran constellation-test, fresh-SCRATCH AC16 and full AC8 serially; all runtime acceptance UNINFORMATIVE UNDER SANDBOX due to Godot user://logs errors. Captured full same-run output and true make rc. Evidence .godot/tmp/snap/M5/RESULT.txt; no assets removed or B2b target invoked.\nM6: Implementation complete; status implemented, passes false for judge. Rechecked lint/pin, six probe/control outcomes, S1 fixture and mutant, policy gates, scope, exact D2/D4 and B2b byte preservation. Godot AC9, drill AC5, four gated/raw parse classes AC10 and bounded runtime gap AC11 attempted serially; runtime acceptance UNINFORMATIVE UNDER SANDBOX (user://logs denial). Complete selftest/drill totals also UNINFORMATIVE UNDER SANDBOX because untouched base orphan visibility control fails: pgrep Cannot get process list. Controller must rerun AC3/4/5/8/9/10/11/16 and AC15 fast tier outside sandbox; independent judge owns passes. Full commands/raw results in .godot/tmp/snap/M1–M6/RESULT.txt. No git writes, B2b execution, publishes or out-of-scope edits.\nM6 supplemental AC9: the combined make stopped in unchanged ui prerequisite earth-feed-test (make rc 2, zero helper lines) because sandbox denied user://earth_feed_test_cache, leading to null store_buffer. Remaining four AC9 targets were then attempted individually, serially, with deadlines; no prerequisite bypass, environment/cache override or out-of-scope fix. AC9 remains UNINFORMATIVE UNDER SANDBOX. The positions.csv import metadata confirms importer=csv_translation; both existing-data and sandbox findings are retained.\nFinal runtime disposition: AC9 aggregate blocked in earth-feed-test by user:// cache denial. Individually attempted area-test (printed 80), test-bright-audit and star-catalogue-test (both sandbox user-data/null-handle hangs stopped at unchanged 600 s deadlines), and sim-bridge (printed 110). Every Godot-bearing result remains UNINFORMATIVE UNDER SANDBOX. Cancellation from a separate tool call was denied; the scratch catalogue watcher did not match the omitted directory-error line and made no alteration to logs or repository checks. Measured AC13 gates-ok, AC14 0/0, shellcheck/dash controls and final lint green. Plan M1 prose red make rc=1 differs from observed make rc=2 (underlying test script rc=1); no test exit expectation changed. AC15 and sandbox-affected acceptance remain for controller; passes false. | Controller (iteration 70, outside the sandbox, at 48fe3953): AC1 lint ok 237/33/204; AC2 pin 205 refused; AC3 selftest 18/18; AC4a landed helper fails 5 new cases; AC5 drill ok (24 cases: 18 stub, 6 Godot); AC6 7/gate-after ungated/3; AC7 mutant 2; AC8 25 targets rc 0, 28 ok lines, 0 FAIL; AC9 7x gates 205/80/16/40/110; AC10 four classes FAIL rc 1; AC11 old predicate PASS on 26-of-29 run, new gate FAIL; AC12 five zeros; AC13 gates-ok; AC14 0,0; AC16 fresh nested SCRATCH created. Judge: Sonnet 92/100 PASS, 0 blocking, 8 of 9 mutants killed (survivor: starmap-assets prerequisite removal), eval_R1-M4-JOURNEY_7x_B2_round_1.json. AC15 fast tier: on the evidence head."
+    },
+    {
+      "id": "M4.6tR3_7x_B3_SCRIPT_GATES",
+      "description": "B3a only: migrate 29 measured baseline rows (28 targets, 30 gate lines) in mk/levels.mk, mk/m5.mk and mk/ai.mk through $(SCRIPT_GATE); add six counted summaries; bind both levels-regress negatives; fix the base-red alpha-centauri-golden predicate; enforce revision-2 AI_SF path policy and escaped exact-path matching; guard three asset prerequisites with a fixture; delete 29 baseline rows and lower pin 204 to 175. B3b eight rows excluded. Approved revision 2 under controller round-2 carve-out; no assertions, physics, gameplay or audiovisual changes.",
+      "depends_on": [
+        "M4.6sR3_7x_B2_SCRIPT_GATES"
+      ],
+      "estimated_loc": 159,
+      "files": [
+        "mk/levels.mk",
+        "mk/m5.mk",
+        "mk/ai.mk",
+        "mk/script-gates.mk",
+        "tools/script-gate-baseline.txt",
+        "tools/script_gate_prereqs.sh",
+        "tools/level_eval.gd",
+        "tests/test_planets.gd",
+        "tests/test_ai_bridge.gd",
+        "tests/test_ai_relay.gd",
+        "tests/test_ai_settings.gd",
+        "tests/test_conversation.gd",
+        "tests/fixtures/script_gate/prereq_negative.mk.txt"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "Asset-prerequisite fixture and guard; kill the constellation prerequisite survivor",
+          "acceptance": [
+            "AC3"
+          ],
+          "estimate": "45 LOC, 15 min",
+          "pause": "Stop and report wrong fixture diagnostics, a merged-rule false positive, an un-restored mutant or any required protected-file edit; preserve the 204 pin."
+        },
+        {
+          "id": "M2",
+          "title": "Six counted summaries; independent live counts and zero-summary rejection",
+          "acceptance": [
+            "AC10"
+          ],
+          "estimate": "32 LOC, 15 min",
+          "pause": "Stop and report smaller counts or changed assertions; use direct helper probes while the old level-eval recipe remains intentionally red until M3. Sandbox runtime evidence stays pending for controller rerun."
+        },
+        {
+          "id": "M3",
+          "title": "Migrate 22 levels/m5 rows; bind both regression negatives; ratchet 204 to 182",
+          "acceptance": [
+            "AC5",
+            "AC9"
+          ],
+          "estimate": "64 LOC plus 22 deleted baseline rows, 20 min",
+          "pause": "Stop and report anything other than interim 238 total, 56 gated, 182 baseline and three prerequisite pairs; AC5 here is only the first 15 targets, 17 own gate names. Preserve all B3b rows."
+        },
+        {
+          "id": "M4",
+          "title": "Migrate seven AI rows; enforce exact-path policy; final ratchet 182 to 175",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC5",
+            "AC14",
+            "AC16"
+          ],
+          "estimate": "18 LOC plus 7 deleted baseline rows, 20 min",
+          "pause": "Stop and report a wrong-path stub admitted, a denied path accepted, invalid negative-control paths, or final ratchet drift. Full AC5 is controller-only because ai-live-guard performs scratch git writes. AC14 real-target extension waits for M6 GPU access."
+        },
+        {
+          "id": "M5",
+          "title": "Headless parse/runtime error drills, inherited 18/24-case harness and fresh scratch",
+          "acceptance": [
+            "AC4",
+            "AC7",
+            "AC8",
+            "AC9"
+          ],
+          "estimate": "0 LOC, 15 min",
+          "pause": "Stop and report a surviving mutant or raw behavior mismatch. Results depending on user-data, sockets or process visibility are UNINFORMATIVE UNDER SANDBOX and require controller reruns; do not weaken controls."
+        },
+        {
+          "id": "M6",
+          "title": "Serial GPU acceptance and threshold drill, policy/scope checks and PR GitHub fast tier",
+          "acceptance": [
+            "AC6",
+            "AC11",
+            "AC12",
+            "AC13",
+            "AC14",
+            "AC15"
+          ],
+          "estimate": "0 LOC, 15 min plus asynchronous CI time",
+          "pause": "Stop and report unavailable GPU, real gate failure, unexpected scope or red GitHub fast tier; keep passes false pending controller external reruns and independent evaluation. AC13 is PR GitHub fast tier only."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "script-gate-lint: ok (238 --script invocations: 63 through $(SCRIPT_GATE), 175 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned), script-gate-prereqs: ok (3 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets), rc=0 (V13)"
+        },
+        {
+          "id": "AC2",
+          "command": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=176 2>&1 | tail -2",
+          "expected": "script-gate-lint: the baseline has 175 rows but SCRIPT_GATE_BASELINE_ROWS is 176: the pin moves with the rows, and only down, make: *** [script-gate-lint] Error 1 (GNU make 4 prints [mk/script-gates.mk:32: script-gate-lint]) (V13, V18)"
+        },
+        {
+          "id": "AC3",
+          "command": "cp mk/constellations.mk .godot/tmp/b3-const.keep; perl -pi -e 's/^constellation-test: import starmap-assets$/constellation-test: import/' mk/constellations.mk; make script-gate-lint > .godot/tmp/b3-ac3.out 2>&1; echo rc=$?; grep '^script-gate-prereqs:' .godot/tmp/b3-ac3.out; cp .godot/tmp/b3-const.keep mk/constellations.mk; git diff --quiet mk/constellations.mk && echo restored",
+          "expected": "rc=2, script-gate-prereqs: constellation-test lost its prerequisite starmap-assets (constellation-test: import), restored (V14, V18)"
+        },
+        {
+          "id": "AC4",
+          "command": "make script-gate-selftest 2>&1 | tail -1; make script-gate-drill 2>&1 | tail -1",
+          "expected": "test-script-gate: ok (18 cases: 18 stub, 0 Godot), test-script-gate: ok (24 cases: 18 stub, 6 Godot) (V12)"
+        },
+        {
+          "id": "AC5",
+          "command": "env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY -u OPENAI_API_KEY make level-test level-runtime-test commons-life-pilot-test commons-grown-check commons-backdrop-check commons-art-pilot-test commons-pilot-check level-export-test level-golden-test level-eval level-eval-test levels-regress planets-test planet-textures-check alpha-centauri-test ai-godot ai-relay replay-noai ai-live-guard ai-settings ai-conversation > .godot/tmp/b3-ac5.out 2>&1; echo rc=$?; grep '^script-gate:' .godot/tmp/b3-ac5.out | sort -u -t: -k2,2 | wc -l; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b3-ac5.out",
+          "expected": "rc=0; 23 distinct gate lines, each ok with the V12 counts: level-test: 25 passed, level-runtime: 95, commons-life-pilot: 20, commons-backdrop-validate: 110 and 167, commons-art-pilot: 31, commons-pilot-validate: 44, level-export: 4, level-golden: 2, level-eval: bridge ok (1 surfaces, 4771 samples), level-eval-test: 16, levels-regress: ok (1 levels: bridge), the two levels-regress-* negatives ok: FAIL bridge: … with rc 1, planets: 121 passed, 0 failed, planet-textures check: 19 textures, alpha-centauri: 13, ai bridge: ok (89 passed …; with faults), ai relay: ok (63 passed …), ai relay: ok (3 passed, 0 failures; replay_noai), ai settings: ok (9 passed, 0 failures; launch_default), ai settings: ok (53 passed …), conversation: ok (30 passed …); then 0. Budget about 6 min (ai-live-guard's mutation loop is about 135 s of it). The ai-live-guard pass is also tools/ai_live_guard.sh accepting the edited mk/ai.mk."
+        },
+        {
+          "id": "AC6",
+          "command": "make commons-grown-capture commons-grown-motion commons-backdrop-capture commons-pilot-capture level-capture alpha-centauri-golden ai-style-frame > .godot/tmp/b3-ac6.out 2>&1; echo rc=$?; grep -c '^script-gate: [^ ]* ok' .godot/tmp/b3-ac6.out; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b3-ac6.out",
+          "expected": "rc=0; 7 (commons-pilot-review: 48 frames, 0 failures ×3; commons-civic-motion: 64 frames, …; level-capture: bridge 6 frames; alpha-centauri-golden: 10 cases, 0 failures; worst 0.001696, the target that was red at base; ai-style-frame-record ok: recorded …: 5 ticks; library …); 0. About 2 min (V11, V12). Open the frames only if you want to; nothing visual changed."
+        },
+        {
+          "id": "AC7",
+          "command": "d=.godot/tmp/b3drill; mkdir -p $d; AB=\"AILANG_BIN=$(command -v ailang)\"; for p in tests/test_levels.gd:lv tests/test_planets.gd:pl tests/test_ai_relay.gd:ai tools/levels_regress.gd:neg; do awk 'f==0 && /^extends /{print; print \"var _b3_drill: int = undefined_name_b3\"; f=1; next} {print}' ${p%%:*} > $d/${p##*:}_p.gd; done; perl -e 'alarm 300; exec @ARGV' godot --headless --path . --script $d/pl_p.gd > $d/pl_p.raw 2>&1; echo \"raw planets rc=$?\"; sh tools/script_gate.sh lv_p $d/lv_p.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/lv_p.gd; echo rc=$?; sh tools/script_gate.sh pl_p $d/pl_p.log 600 '^planets: [1-9][0-9]* passed, 0 failed$' -- godot --headless --path . --script $d/pl_p.gd; echo rc=$?; sh tools/script_gate.sh ai_p $d/ai_p.log 600 '^ai relay: ok \\([1-9][0-9]* passed, 0 failures; replay_noai\\)$' -- \"$AB\" godot --headless --path . --script $d/ai_p.gd -- --replay-noai; echo rc=$?; sh tools/script_gate.sh neg_p $d/neg_p.log 600 '^FAIL bridge: its document [^ ]* changed \\(sha256 00000000, ' 1 -- \"$AB\" godot --headless --path . --script $d/neg_p.gd -- --fake-sha bridge; echo rc=$?",
+          "expected": "raw planets rc=0 (so today's rc-only planets-test passes it); then each prints script-gate: <name> FAIL; … 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching … and rc=1; neg_p also says rc 0, want 1 (V10)"
+        },
+        {
+          "id": "AC8",
+          "command": "d=.godot/tmp/b3drill; mkdir -p $d; AB=\"AILANG_BIN=$(command -v ailang)\"; inj() { awk -v fn=\"$2\" '{print} index($0, \"func \" fn \"(\") == 1 {print \"\\tprint(self.no_such_member_b3)\"}' $1 > $3; }; inj tests/test_levels.gd test_schema $d/lv_r.gd; inj tests/test_planets.gd test_albedo_table $d/pl_r.gd; inj tests/test_ai_relay.gd test_replay_noai $d/ai_r.gd; perl -e 'alarm 300; exec @ARGV' godot --headless --path . --script $d/pl_r.gd > $d/pl_r.raw 2>&1; echo \"raw rc=$? $(grep '^planets:' $d/pl_r.raw)\"; sh tools/script_gate.sh lv_r $d/lv_r.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/lv_r.gd; echo rc=$?; sh tools/script_gate.sh pl_r $d/pl_r.log 600 '^planets: [1-9][0-9]* passed, 0 failed$' -- godot --headless --path . --script $d/pl_r.gd; echo rc=$?; sh tools/script_gate.sh ai_r $d/ai_r.log 600 '^ai relay: ok \\([1-9][0-9]* passed, 0 failures; replay_noai\\)$' -- \"$AB\" godot --headless --path . --script $d/ai_r.gd -- --replay-noai; echo rc=$?",
+          "expected": "raw rc=0 planets: 79 passed, 0 failed (42 checks skipped; today's predicate passes it); then script-gate: lv_r FAIL; 1 SCRIPT ERROR line(s) … (its raw summary is level-test: 14 passed, 0 failures), rc=1; script-gate: pl_r FAIL; 1 SCRIPT ERROR line(s) …, rc=1; script-gate: ai_r FAIL; rc 1, want 0; 1 SCRIPT ERROR line(s) …, rc=1 (V10)"
+        },
+        {
+          "id": "AC9",
+          "command": "F=.godot/tmp/b3-fresh-$$; test -e $F && echo exists || echo absent; make commons-life-pilot-test commons-pilot-check level-eval SCRATCH=$F/s 2>&1 | grep -c '^script-gate: .* ok'; echo rc=$?; ls $F/s",
+          "expected": "absent; 3; rc=0; commons-life-pilot.log commons-pilot-check.log level-eval-bridge.json level-eval-bridge.log (V9)"
+        },
+        {
+          "id": "AC10",
+          "command": "for e in '^level-eval: [a-z0-9_]+ ok \\([1-9][0-9]* surfaces, [1-9][0-9]* samples\\)$' '^planets: [1-9][0-9]* passed, 0 failed$' '^ai bridge: ok \\([1-9][0-9]* passed, 0 failures; with faults\\)$' '^ai relay: ok \\([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\\)$' '^ai settings: ok \\([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\\)$' '^conversation: ok \\([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\\)$'; do printf '%s\\n' 'level-eval: bridge ok (0 surfaces, 4771 samples)' 'level-eval: bridge ok (1 surfaces, 0 samples)' 'planets: 0 passed, 0 failed' 'ai bridge: ok (0 passed, 0 failures; with faults)' 'ai relay: ok (0 passed, 0 failures; replay_noai)' 'ai settings: ok (0 passed, 0 failures; launch_default)' 'conversation: ok (0 passed, 0 failures; rehearsal)' | grep -cE -- \"$e\"; done",
+          "expected": "six lines of 0 (V17)"
+        },
+        {
+          "id": "AC11",
+          "command": "make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/script_gate_prereqs.sh tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh && echo gates-ok",
+          "expected": "uid-guard: ok (406 .uid files), python-guard: ok (21 allowlisted, 0 awaiting AILANG port), audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound), lint-precision: ok …, gates-ok (V13). No new .gd, so no new .uid; no .py"
+        },
+        {
+          "id": "AC12",
+          "command": "git diff --name-only origin/main | grep -cvxE 'mk/(levels|m5|ai|script-gates)\\.mk|tools/(script_gate_prereqs\\.sh|script-gate-baseline\\.txt|level_eval\\.gd)|tests/(test_planets|test_ai_bridge|test_ai_relay|test_ai_settings|test_conversation)\\.gd|tests/fixtures/script_gate/prereq_negative\\.mk\\.txt|design_docs/planned/r1/m4-7x-b3-script-gates.*\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'; git diff --name-only origin/main -- Makefile mk/sound.mk mk/m45.mk mk/deck-layout.mk mk/earth-link.mk tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh tools/m4_ship_golden.gd | wc -l",
+          "expected": "0, 0"
+        },
+        {
+          "id": "AC13",
+          "command": "B3_PR=$(gh pr view --json number --jq '.number') || exit 1\nB3_HEAD=$(gh pr view \"$B3_PR\" --json headRefOid --jq '.headRefOid') || exit 1\ngh pr checks \"$B3_PR\" || exit 1\nB3_RUN=$(gh run list --workflow ci.yml --event pull_request --commit \"$B3_HEAD\" --limit 1 --json databaseId --jq '.[0].databaseId') || exit 1\ntest -n \"$B3_RUN\" && test \"$B3_RUN\" != null || exit 1\ngh run view \"$B3_RUN\" --log > .godot/tmp/b3-ac13.log || exit 1\ngrep -cE 'script-gate-lint: ok \\(238 --script invocations: 63 through|script-gate-prereqs: ok \\(3 pairs hold in Makefile|test-script-gate: ok \\(18 cases: 18 stub, 0 Godot\\)' .godot/tmp/b3-ac13.log",
+          "expected": "success; 3"
+        },
+        {
+          "id": "AC14",
+          "command": "SED=$(make -n ai-style-frame 2>/dev/null | grep -o \"sed '[^']*'\" | head -1); T=.godot/tmp/b3-ere; mkdir -p $T; run() { sf=$(printf '%s\\n' \"$2\" | eval \"$SED\"); sh tools/script_gate.sh \"$1\" $T/$1.log 5 \"^recorded $sf/rehearsal\\\\.ndjson: 5 ticks; library $sf/library\\$\" -- sh -c 'printf \"recorded %s/rehearsal.ndjson: 5 ticks; library %s/library\\n\" \"$1\" \"$1\"' sh \"$3\" > /dev/null; echo \"$1 rc=$?\"; }; P1=$PWD/.godot/tmp/ai-style-frame; P2='/tmp/m.e+t(a)[1]{2}^$|?/2026/.godot/ai-style-frame'; run exact \"$P1\" \"$P1\"; run xgodot \"$P1\" \"$(printf '%s' \"$P1\" | sed 's#/\\.godot/#/Xgodot/#')\"; run meta-exact \"$P2\" \"$P2\"; run meta-xgodot \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#/\\.godot/#/Xgodot/#')\"; run meta-dot \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#m\\.e+t#mXe+t#')\"; run meta-plus \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#m\\.e+t#m.eet#')\"; run meta-zero \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#/2026/#/0/#')\"",
+          "expected": "exact rc=0, xgodot rc=1, meta-exact rc=0, meta-xgodot rc=1, meta-dot rc=1, meta-plus rc=1, meta-zero rc=1 (V21). The real target with a metacharacter path is in AC6's shape: make ai-style-frame AI_SF=/tmp/b3-sf.a+b/2026 2>&1 | grep '^script-gate:' → script-gate: ai-style-frame-record ok: recorded /tmp/b3-sf.a+b/2026/rehearsal.ndjson: 5 ticks; … (GPU window; V24)"
+        },
+        {
+          "id": "AC15",
+          "command": "grep -nE 'worst=maxf|error>\\.03' tools/alpha_centauri_golden.gd; d=.godot/tmp/b3drill; mkdir -p $d; awk '{ if (index($0, \"    worst=maxf(worst,error)\") == 1) print \"    error+=1.5\"; print }' tools/alpha_centauri_golden.gd > $d/alpha_hi.gd; AB=\"AILANG_BIN=$(command -v ailang)\"; sh tools/script_gate.sh alpha_hi $d/alpha_hi.log 600 '^alpha-centauri-golden: 10 cases, 0 failures; worst [0-9]+\\.[0-9]+$' -- \"$AB\" godot --audio-driver Dummy --path . --script $d/alpha_hi.gd; echo rc=$?; grep '^alpha-centauri-golden:' $d/alpha_hi.log",
+          "expected": "46:    worst=maxf(worst,error), 47:    if error>.03:failures+=1; script-gate: alpha_hi FAIL; rc 1, want 0; no summary line matching …, rc=1; alpha-centauri-golden: 10 cases, 10 failures; worst 1.501696 (V22)"
+        },
+        {
+          "id": "AC16",
+          "command": "for p in '/tmp/b3ac16 x/2026' '/tmp/b3ac16*/x' 'rel/b3ac16'; do make ai-style-frame AI_SF=\"$p\" > .godot/tmp/b3-ac16.out 2>&1; echo \"rc=$?\"; grep -c '^ai-style-frame: AI_SF ' .godot/tmp/b3-ac16.out; done; ls -d /tmp/b3ac16* rel 2>/dev/null | wc -l",
+          "expected": "three times rc=2 and 1; then 0 (nothing created). The default-path run is AC6. (V26) Repeat with gmake where present; the test paths must be absent before running."
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7x-b3-script-gates.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7x-b3-script-gates-sprint.md",
+      "registry_reuse": [
+        {
+          "milestone": "M1",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M2",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M3",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M4",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M5",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M6",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        }
+      ],
+      "passes": false,
+      "status": "planned",
+      "notes": "Planner iteration 71: six serial milestones, 100 minutes plus CI/controller time; 159 hand-written changed lines plus 29 baseline deletions, revision-2 diff +104/-84 in 13 files. Executor runs sandboxed with NO git writes, including scratch repositories; cumulative .godot/tmp/snap/M1/ through M6/ contain every changed file, FILES.txt and RESULT.txt. Controller builds one commit per milestone and reruns every Godot gate outside sandbox; independent evaluator owns judgment. AC6/AC15 and AC14 real-target extension need GPU windows; AC13 is PR GitHub fast tier only. Full AC5 is controller-only: existing mk/ai.mk:460,462 performs git init/add in ai-live-guard scratch fixture; no bypass/test edit. Known base finding: alpha-centauri-golden predicate rejects its clean worst suffix (design measured make rc 2). Design LOC footer +102/-84 is stale versus revision-2 +104/-84; use 159 LOC. M3 intermediate ratchet is 238/56/182; M4 final is 238/63/175. Preserve first 25 features and every other JSON key; B3b and all protected files remain untouched. Runtime/socket/user-data/process-list-dependent results are UNINFORMATIVE UNDER SANDBOX, never pass/fail."
     }
   ],
   "findings": [
