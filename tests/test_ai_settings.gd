@@ -18,12 +18,14 @@ const KEY_G := "st-fixture-gemini-3e81aa"
 const KEY_O := "st-fixture-openrouter-77c0d2"
 
 var failures := 0
+var passes := 0
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/ai_settings")
 var nodes: Array = []
 
 
 func assert_bool(name: String, ok: bool) -> void:
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("  %s  %s" % ["ok  " if ok else "FAIL", name])
 
 
@@ -356,5 +358,5 @@ func run_all() -> void:
 	for n in nodes:
 		n.bridge.shutdown()
 		n.queue_free()
-	print("ai settings: %s (%s)" % ["FAIL" if failures > 0 else "ok", ", ".join(tests)])
+	print("ai settings: %s (%d passed, %d failures; %s)" % ["FAIL" if failures > 0 else "ok", passes, failures, ", ".join(tests)])
 	quit(1 if failures > 0 else 0)
