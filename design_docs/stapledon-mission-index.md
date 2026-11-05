@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 71 | 2026-11-05 | Row 7x batch B3a LANDED (PR #397, merge `b34fd1ef`): 29 more `--script` gates in `mk/levels.mk`, `mk/m5.mk` and `mk/ai.mk` go through `$(SCRIPT_GAT... |
 | 70 | 2026-11-04 | Row 7x batch B2a LANDED (PR #395, merge `55de0d8a`): 28 more `--script` gates in nine `mk/` files go through `$(SCRIPT_GATE)` (33 of 237; baseline ... |
 | 69 | 2026-11-04 | Row 7x LANDED (PR #393, merge `49eb35d9`): one pass predicate for Godot `--script` gates, `$(SCRIPT_GATE)` (rc, no `SCRIPT ERROR`, counted summary,... |
 | 68 | 2026-11-04 | Row 7w LANDED (PR #387, merge `59fd8293`) and the S1 set PUBLISHED to `refs/m4_ship_s1/2026-11-04/`, parked for Mark's render review: main merged i... |
