@@ -7,8 +7,9 @@ SG_FIX ?= tests/fixtures/script_gate
 SCRIPT_GATE = sh $(SG_TOOLS)/script_gate.sh
 # Rows of tools/script-gate-baseline.txt: the --script invocations not yet through $(SCRIPT_GATE). A migration
 # deletes its rows and lowers this pin with them; script-gate-lint fails on any mismatch, so it never rises
-# unseen. 237 at the 7x snapshot (78f390c0), 232 after its five gates, 204 after B2a (28 rows in nine mk files).
-SCRIPT_GATE_BASELINE_ROWS := 204
+# unseen. 237 at the 7x snapshot (78f390c0), 232 after its five gates, 204 after B2a (28 rows in nine mk files),
+# 182 after B3a levels/m5 (22 rows); seven AI rows follow in M4.
+SCRIPT_GATE_BASELINE_ROWS := 182
 SG_LINT = SCRIPT_GATE_BASELINE_ROWS=$(SCRIPT_GATE_BASELINE_ROWS) sh $(SG_TOOLS)/script_gate_lint.sh
 # Gates whose test needs fetched assets keep the target that fetches them (B3; iteration 70 judge survivor:
 # constellation-test without starmap-assets was red in a fresh clone, unseen). Checked in make -p by script-gate-lint.
