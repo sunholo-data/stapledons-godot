@@ -1,8 +1,9 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 func check(ok:bool,label:String)->void:
 	print(('ok ' if ok else 'FAIL ')+label)
-	if not ok:failures+=1
+	passes+=int(ok);failures+=int(not ok)
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var demo:Node=load('res://demos/ship_geometry_demo.tscn').instantiate()
@@ -61,7 +62,7 @@ func _run()->void:
 	var expected:=ShipFrame.ship_basis(demo.camera.heading)
 	check(demo.camera.attitude_basis==expected,'travel returns exact forward-pole frame without turnover flip')
 	demo.queue_free();await process_frame
-	print('tour-attitude: %d failures'%failures);quit(1 if failures else 0)
+	print('tour-attitude: %d passed, %d failures'%[passes,failures]);quit(1 if failures else 0)
 
 func observer_ray(demo:Node,id:String)->Vector3:
 	for body:Dictionary in demo.sky_world.system.bodies:

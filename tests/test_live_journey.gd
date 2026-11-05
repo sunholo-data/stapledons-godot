@@ -1,7 +1,8 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 func check(label:String,ok:bool)->void:
-	print("%s %s"%["ok" if ok else "FAIL",label]);if not ok:failures+=1
+	print("%s %s"%["ok" if ok else "FAIL",label]);passes+=int(ok);failures+=int(not ok)
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var sim:=SimBridge.new();sim.want_minor=2
@@ -39,4 +40,4 @@ func _run()->void:
 		check("rest arrival",map.journey_state()=="arrived" and sim.world.ship.beta==0.)
 		check("both clocks match plan",absf(sim.world.clock.tau-start_tau-plan.ship_years)<1e-9 and absf(sim.world.clock.year-start_year-plan.earth_years)<1e-9)
 		check("arrival point matches target",sim.world.ship.pos==plan.target.pos)
-	sim.stop();quit(1 if failures else 0)
+	sim.stop();print("live-journey: %d passed, %d failures"%[passes,failures]);quit(1 if failures else 0)

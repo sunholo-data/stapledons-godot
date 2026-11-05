@@ -1,7 +1,8 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 func check(name: String, ok: bool) -> void:
-	print("  %s %s" % ["ok" if ok else "FAIL",name]);if not ok:failures+=1
+	print("  %s %s" % ["ok" if ok else "FAIL",name]);passes+=int(ok);failures+=int(not ok)
 func _initialize() -> void:
 	var d: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/ship_commons/manifest.json"))
 	if not d.assets.has("painted") or not d.assets.has("coarse"):
@@ -40,7 +41,7 @@ func _initialize() -> void:
 	load("res://demos/ship_commons.gd").update_detail(kit,Vector3(250,100,250))
 	check("far review uses coarse kit",not detail.visible and coarse.visible)
 	detail.free();coarse.free()
-	print("ship-commons-assets: %s" % ("OK" if failures==0 else "FAIL"));quit(1 if failures else 0)
+	print("ship-commons-assets: %s (%d passed, %d failures)" % ["OK" if failures==0 else "FAIL",passes,failures]);quit(1 if failures else 0)
 func _scan(n: Node, xf: Transform3D, tris: Dictionary) -> void:
 	if n is Node3D:xf=xf*n.transform
 	if n is MeshInstance3D and n.mesh!=null:

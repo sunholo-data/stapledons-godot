@@ -25,7 +25,9 @@ fetch)
     while read -r sha name; do
         f="$CACHE/$name"
         if [ -f "$f" ] && [ "$(sum "$f")" = "$sha" ]; then echo "  ok      $name"; continue; fi
-        curl -fsS --retry 3 -o "$f.part" "$BASE/ship/$sha.${name##*.}" || { echo "ship-baseline: FAIL fetch $name ($sha)" >&2; rm -f "$f.part"; exit 1; }
+        # Bounded (row 7x B4): 10 s to connect, 60 s per attempt, retries only inside 120 s, so one file gives up
+        # within 120 + 60 + backoff s and the fetch exits 1 instead of stalling ship-console-test before its gate.
+        curl -fsS --connect-timeout 10 --max-time 60 --retry 2 --retry-max-time 120 -o "$f.part" "$BASE/ship/$sha.${name##*.}" || { echo "ship-baseline: FAIL fetch $name ($sha)" >&2; rm -f "$f.part"; exit 1; }
         [ "$(sum "$f.part")" = "$sha" ] || { echo "ship-baseline: FAIL $name sha256 mismatch" >&2; rm -f "$f.part"; exit 1; }
         mv "$f.part" "$f"; echo "  fetched $name"
     done < "$PINS"

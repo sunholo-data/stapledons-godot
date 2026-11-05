@@ -1,8 +1,9 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 func check(ok:bool,label:String)->void:
 	print(('ok ' if ok else 'FAIL ')+label)
-	if not ok:failures+=1
+	passes+=int(ok);failures+=int(not ok)
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var avatar:=CaptainAvatar.new();root.add_child(avatar)
@@ -20,4 +21,4 @@ func _run()->void:
 	var occlusion=load('res://ui/star_occlusion.gd').new();occlusion.build(avatar)
 	check(occlusion.meshes.is_empty(),'invisible shadow volumes do not block star inspection')
 	avatar.queue_free();await process_frame
-	print('shadow-contacts: %d failures'%failures);quit(1 if failures else 0)
+	print('shadow-contacts: %d passed, %d failures'%[passes,failures]);quit(1 if failures else 0)
