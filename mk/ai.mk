@@ -285,7 +285,7 @@ record-mutants:    ## AI.3: voice variant compared, no numeral check, 65 lines, 
 # (ai/tools/fake_service.ail, --caps IO) hanging, crashing, printing garbage or half lines, answering
 # late or with the wrong major. Timeouts and backoffs are shortened in the test; defaults asserted.
 ai-godot: import   ## AC11 bridge half: lazy launch, non-blocking relay, priority, timeouts, backoff, service_down
-	$(GODOT_SIM) --headless --path . --script tests/test_ai_bridge.gd -- --faults
+	@$(SCRIPT_GATE) ai-godot $(SCRATCH)/ai-godot.log 600 '^ai bridge: ok \([1-9][0-9]* passed, 0 failures; with faults\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ai_bridge.gd -- --faults
 
 ai-bridge-mutants: import   ## AI.6: AiBridge mutants (priority, timeout kill, backoff, window, assembly, ...); each fails a named check
 	AILANG_BIN="$$(command -v $(AILANG))" sh tests/ai_bridge_mutants.sh "$(GODOT)" "$(SCRATCH)/bridge-mutants"
@@ -296,12 +296,12 @@ ai-bridge-mutants: import   ## AI.6: AiBridge mutants (priority, timeout kill, b
 # cache hit records with no launch; the live launch (key files, no AI_LIVE) refuses at hello and no
 # fixture key text reaches argv (ps), stdout, stderr, the session log or the library.
 ai-relay: import   ## AC10/AC14/AC18: relay + cache end to end on the stub, key hygiene, routes
-	$(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --news --key-hygiene --routes
+	@$(SCRIPT_GATE) ai-relay $(SCRATCH)/ai-relay.log 600 '^ai relay: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --news --key-hygiene --routes
 
 # AC12 part: the visual replay path. Godot replays ai_stub_session through SimBridge with the relay in
 # replay mode; every state line must equal this arch's golden and no AI process may start.
 replay-noai: import   ## AC12 part: ai_stub_session through Godot, relay in replay mode, AiBridge.launch_count == 0
-	$(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --replay-noai
+	@$(SCRIPT_GATE) replay-noai $(SCRATCH)/replay-noai.log 600 '^ai relay: ok \([1-9][0-9]* passed, 0 failures; replay_noai\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --replay-noai
 
 ai-session-record: import   ## re-record tests/replays/ai_stub_session.ndjson through Godot (then make replay-record LOG=ai_stub_session; a reviewed diff)
 	$(GODOT_SIM) --headless --path . --script tools/record_ai_session.gd -- "$(CURDIR)/tests/replays/ai_stub_session.ndjson"
@@ -461,10 +461,10 @@ ai-live-guard: import   ## AC15: no target, test, CI job or launch path can star
 	  sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt || { echo "guard: an untracked worktree file changed rule E:"; cat out.txt; exit 1; }; \
 	  git add .claude/worktrees/w/ui/x.gd; if sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt; then echo "guard mutant SURVIVED: tracked live_allowed writer"; exit 1; fi; \
 	  grep -qF "ai-live-guard: E live_allowed written outside AiSettings.apply" out.txt && echo "guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)"
-	env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd -- --launch-default
+	@$(SCRIPT_GATE) ai-live-guard $(SCRATCH)/ai-live-guard.log 600 '^ai settings: ok \([1-9][0-9]* passed, 0 failures; launch_default\)$$' -- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd -- --launch-default
 
 ai-settings: import   ## AI.9: settings (opt-in, keys 0600, kinds, ceiling, text-only), panel, indicator + budget, wired AC14 path
-	env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd
+	@$(SCRIPT_GATE) ai-settings $(SCRATCH)/ai-settings.log 600 '^ai settings: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$' -- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd
 
 # AI.9 must-fix 2: a billed but unparsable reply is charged. Each mutant of ai/adapters.ail drops
 # the charge on one parse failure, or (AI.9 hardening) on a call sent but never answered, and must
@@ -547,18 +547,20 @@ SF_OUT := renders/ai_medic
 REHEARSAL := tests/replays/medic_rehearsal.ndjson
 
 ai-conversation: import   ## AI.10a: the Medic conversation on the stub: rehearsal log, swap timing, crossfade, fallbacks, no-audio, replay
-	$(GODOT_SIM) --headless --path . --script tests/test_conversation.gd
+	@$(SCRIPT_GATE) ai-conversation $(SCRATCH)/ai-conversation.log 600 '^conversation: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_conversation.gd
 
 ai-rehearsal-record: import   ## AI.10a: re-record tests/replays/medic_rehearsal.ndjson on the stub (then make replay-record LOG=medic_rehearsal; a reviewed diff)
 	$(GODOT_SIM) --headless --path . --script tests/test_conversation.gd -- --record="$(CURDIR)/$(REHEARSAL)"
 
 ai-style-frame: LOG ?= $(REHEARSAL)
+ai-style-frame: export AI_SF_PATH = $(AI_SF)
 ai-style-frame: import ai-core-assets ai-core-bundle   ## AI.10a/b (GPU window): replay LOG through the conversation; renders/ai_medic/ PNGs, contact sheet, line.ogg, frame.avi
+	@case "$$AI_SF_PATH" in /*) ;; *) echo "ai-style-frame: AI_SF must be an absolute path, got '$$AI_SF_PATH'" >&2; exit 2;; esac; case "$$AI_SF_PATH" in *[!A-Za-z0-9_/.+-]*) echo "ai-style-frame: AI_SF may hold only A-Z a-z 0-9 _ / . + -, got '$$AI_SF_PATH'" >&2; exit 2;; esac
 	@rm -rf $(SF_OUT) $(AI_SF) && mkdir -p $(SF_OUT) $(AI_SF)
 	@lib="$(FRAME_LIB)"; \
 	if [ -z "$$lib" ] && [ "$(abspath $(LOG))" = "$(abspath $(REHEARSAL))" ]; then \
-	  lib=$(AI_SF)/library; \
-	  $(GODOT_SIM) --headless --path . --script tests/test_conversation.gd -- --record=$(AI_SF)/rehearsal.ndjson --library=$$lib > $(AI_SF)/record.out 2>&1 || { cat $(AI_SF)/record.out; exit 1; }; \
+	  lib=$(AI_SF)/library; sf=$$(printf '%s\n' "$(AI_SF)" | sed 's/[][\.*^$$+?(){}|]/\\&/g'); \
+	  $(SCRIPT_GATE) ai-style-frame-record $(AI_SF)/record.out 600 "^recorded $$sf/rehearsal\\.ndjson: 5 ticks; library $$sf/library\$$" -- $(GODOT_SIM) --headless --path . --script tests/test_conversation.gd -- --record=$(AI_SF)/rehearsal.ndjson --library=$$lib || exit 1; \
 	  cmp $(AI_SF)/rehearsal.ndjson $(REHEARSAL) || { echo "ai-style-frame: the stub rehearsal no longer reproduces $(REHEARSAL)"; exit 1; }; \
 	  echo "ai-style-frame: stub rehearsal re-recorded == $(REHEARSAL); library $$lib"; \
 	fi; \

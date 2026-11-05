@@ -1,14 +1,8 @@
 # Row 7x baseline: Godot --script invocations not yet through $(SCRIPT_GATE) (tools/script_gate.sh).
 # <target> TAB <script> TAB <inline rc,SCRIPT ERROR,summary,timeout pieces at the snapshot>. Rows are only
 # ever deleted (a migrated gate), and SCRIPT_GATE_BASELINE_ROWS in mk/script-gates.mk falls with them.
-ai-conversation	tests/test_conversation.gd	-,-,-,-
-ai-godot	tests/test_ai_bridge.gd	-,-,-,-
-ai-live-guard	tests/test_ai_settings.gd	-,-,-,-
 ai-rehearsal-record	tests/test_conversation.gd	-,-,-,-
-ai-relay	tests/test_ai_relay.gd	-,-,-,-
 ai-session-record	tools/record_ai_session.gd	-,-,-,-
-ai-settings	tests/test_ai_settings.gd	-,-,-,-
-ai-style-frame	tests/test_conversation.gd	-,-,-,-
 audio-silent-guard	-	-,-,-,-
 audio-silent-guard	-	-,-,-,-
 audio-silent-guard	-	-,-,-,-
@@ -103,7 +97,6 @@ planet-rings-test	tests/test_planet_rings.gd	rc,-,sum,-
 planet-textures	tools/planet_textures.gd	-,-,-,-
 planet-transition-golden	tools/planet_transition_golden.gd	rc,-,sum,-
 playthrough	tests/m4_playthrough_ship.gd	rc,se,sum,-
-replay-noai	tests/test_ai_relay.gd	-,-,-,-
 ring-protocol-test	tests/test_ring_protocol.gd	rc,-,sum,-
 shadow-contacts-test	tests/test_shadow_contacts.gd	rc,se,sum,-
 ship-attitude-test	tests/test_ship_attitude.gd	rc,se,sum,-
