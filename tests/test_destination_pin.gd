@@ -8,9 +8,10 @@ extends SceneTree
 ## shipped stack a pin is a no-op (part A); the fallback still works on a stack that
 ## disagrees (part B, synthetic rows).
 var failures := 0
+var passes := 0
 func check(ok: bool, label: String) -> void:
 	print(("ok " if ok else "FAIL ") + label)
-	if not ok: failures += 1
+	passes += int(ok); failures += int(not ok)
 
 func row_of(id: String) -> Dictionary:
 	for s: Dictionary in JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).stars:
@@ -107,5 +108,5 @@ func _initialize() -> void:
 	var big_ms: float = per_call.call(300000)
 	print("replacement per frame: %.3f ms at 3,000 rows, %.3f ms at 300,000" % [small_ms, big_ms])
 	check(big_ms < 0.5 and big_ms < small_ms * 10.0 + 0.05, "unchanged replacements cost does not scale with the star count")
-	print("destination-pin: %d failures" % failures)
+	print("destination-pin: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)

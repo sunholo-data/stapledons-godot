@@ -7,11 +7,15 @@ func _initialize() -> void:
 		return
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	var failures := 0
+	var checks := 0
 	var heights := [82,57,32,7,-18,-43,-68]
 	for i in heights.size():
+		checks += 1
 		if float(data["deck_heights_ship_m"][i]) != heights[i]: failures += 1
+	checks += 1
 	if not data.get("lift_route", {}).get("clear", false): failures += 1
 	for filename in data.get("assets", {}).values():
+		checks += 1
 		if not FileAccess.file_exists("res://assets/ship_demo/" + filename): failures += 1
-	print("ship-demo-assets: %s" % ("OK" if failures == 0 else "FAIL"))
+	print("ship-demo-assets: %s (%d passed, %d failures)" % ["OK" if failures == 0 else "FAIL", checks - failures, failures])
 	quit(failures)

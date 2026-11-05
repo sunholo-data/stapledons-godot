@@ -1,8 +1,9 @@
 extends SceneTree
 var failed:=0
+var passes:=0
 func check(ok:bool,label:String)->void:
 	print(('ok ' if ok else 'FAIL ')+label)
-	if not ok:failed+=1
+	passes+=int(ok);failed+=int(not ok)
 func _initialize()->void:
 	var attitude=load('res://demos/ship_attitude.gd').new()
 	var first:=ShipFrame.ship_basis(PackedFloat64Array([0.,0.,-1.]))
@@ -25,4 +26,4 @@ func _initialize()->void:
 	var reversed:=ShipFrame.ship_basis(PackedFloat64Array([0.,0.,1.]))
 	attitude.turn_to(reversed,3.);attitude.advance(30.)
 	check(attitude.current==reversed and not attitude.turning(),'long frame reaches finite exact endpoint')
-	print('ship-attitude: %d failures'%failed);quit(1 if failed else 0)
+	print('ship-attitude: %d passed, %d failures'%[passes,failed]);quit(1 if failed else 0)

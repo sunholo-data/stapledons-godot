@@ -1,8 +1,9 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 func check(name:String,ok:bool)->void:
 	print("ok " if ok else "FAIL ",name)
-	if not ok:failures+=1
+	passes+=int(ok);failures+=int(not ok)
 func _initialize()->void:run.call_deferred()
 func run()->void:
 	for minor in [3,4,5]:
@@ -19,4 +20,4 @@ func run()->void:
 			check("ring assumptions and citations travel with data",saturn.get("tint_cite","")=="tint-design" and saturn.get("tau_cite","")=="pds-rings" and saturn.get("tint",{}).get("r",0)==.83)
 			check("live tick retains authoritative ring table",sim.send([],0.000001) and sim.world.system.get("rings",[])==rings)
 		sim.stop()
-	print("ring-protocol: %d failures"%failures);quit(1 if failures else 0)
+	print("ring-protocol: %d passed, %d failures"%[passes,failures]);quit(1 if failures else 0)

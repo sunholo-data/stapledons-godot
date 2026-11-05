@@ -2,9 +2,10 @@ extends SceneTree
 ## RT3: the cruise-interlude seam and its demo card (D-41). Headless, no sim:
 ## the host loop is exercised for real in tests/test_solar_departure.gd.
 var failures := 0
+var passes := 0
 func check(ok: bool, label: String) -> void:
 	print(("ok " if ok else "FAIL ") + label)
-	if not ok: failures += 1
+	passes += int(ok); failures += int(not ok)
 
 func world(year: float, tau: float, news: float, omb: float, gamma: float, dist: float) -> Dictionary:
 	return {"journey": {"plan": {"target": {"id": "X"}, "cruise_beta": 1.0 - omb, "cruise_one_minus_beta": omb, "cruise_gamma": gamma, "distance": dist}},
@@ -117,5 +118,5 @@ func _initialize() -> void:
 	check(D.distances_text(w, null, {}, "Earth").begins_with("At Alpha Centauri A 2.000 AU"), "HUD: a finite star standing for the target gives the distance and its name: " + D.distances_text(w, null, {}, "Earth"))
 	w.journey.erase("plan")
 	check(D.distances_text(w, null) == "from Earth 5.000 AU", "HUD: no plan shows only the distance from Earth")
-	print("cruise-interlude: %d failures" % failures)
+	print("cruise-interlude: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
