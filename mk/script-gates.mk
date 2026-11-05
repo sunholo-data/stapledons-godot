@@ -13,7 +13,11 @@ SCRIPT_GATE_BASELINE_ROWS := 175
 SG_LINT = SCRIPT_GATE_BASELINE_ROWS=$(SCRIPT_GATE_BASELINE_ROWS) sh $(SG_TOOLS)/script_gate_lint.sh
 # Gates whose test needs fetched assets keep the target that fetches them (B3; iteration 70 judge survivor:
 # constellation-test without starmap-assets was red in a fresh clone, unseen). Checked in make -p by script-gate-lint.
-SG_PREREQS := constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets
+# B4: ship-console-test reads build/ship-baseline (make ship-baseline); without it the test is red in a fresh clone.
+SG_PREREQS := constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline
+# Pairs in SG_PREREQS, distinct (B4; iteration 71 judge survivor: dropping a pair passed, because the negative control
+# and the real check both read the list). script-gate-lint fails on any mismatch; the pin moves with the pairs, and only up.
+SG_PREREQS_PAIRS := 4
 # Outer deadline for the self-tests (round-2 amendment A2): the same process-group supervisor as tools/script_gate.sh,
 # so a broken helper cannot hang make test. Usage: $(SG_SUP) SECS command...
 SG_SUP = perl -e 'use POSIX ":sys_wait_h"; my $$secs = shift; my $$pid = fork; die "fork: $$!" unless defined $$pid; if ($$pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127; } my $$end = time + $$secs; my $$st; while (1) { my $$r = waitpid($$pid, WNOHANG); if ($$r == $$pid) { $$st = $$?; last } if (time >= $$end) { kill "TERM", -$$pid; my $$g = time + 2; while (time < $$g) { last if waitpid($$pid, WNOHANG) == $$pid; select(undef, undef, undef, 0.1) } kill "KILL", -$$pid; waitpid($$pid, 0); kill "KILL", -$$pid; exit 142 } select(undef, undef, undef, 0.1) } exit($$st & 127 ? 128 + ($$st & 127) : $$st >> 8)'
@@ -47,6 +51,8 @@ script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_G
 	    || ! grep -q '^script-gate-prereqs: constellation-test lost its prerequisite starmap-assets ' $(SCRATCH)/script-gate/prereqs-negative.log \
 	    || ! grep -q '^script-gate-prereqs: missing-target has no rule' $(SCRATCH)/script-gate/prereqs-negative.log; then \
 	    cat $(SCRATCH)/script-gate/prereqs-negative.log; echo "script-gate-lint: FAIL the prerequisite control (constellation-test without starmap-assets) was not refused by name"; exit 1; fi
+	@test "$(words $(SG_PREREQS))" = "$(SG_PREREQS_PAIRS)" && test "$(words $(sort $(SG_PREREQS)))" = "$(SG_PREREQS_PAIRS)" \
+	  || { echo "script-gate-lint: SG_PREREQS holds $(words $(SG_PREREQS)) pairs ($(words $(sort $(SG_PREREQS))) distinct) but SG_PREREQS_PAIRS is $(SG_PREREQS_PAIRS): the pin moves with the pairs, and only up"; exit 1; }
 	@sh $(SG_TOOLS)/script_gate_prereqs.sh Makefile $(SG_PREREQS)
 
 script-gate-selftest: ## tools/script_gate.sh on stub commands (no Godot): pass, SCRIPT ERROR, hang past the timeout, a command that ignores TERM/ALRM, an orphan child, no summary, a 0 count, wrong rc, env passthrough, bad arguments

@@ -1334,7 +1334,7 @@ ship-ui-test: import ## AC1-3, 7, 11: status strip in every scene state, context
 	@$(GODOT_SIM) --headless --path . --script tests/test_ship_ui.gd > $(SCRATCH)/ship-ui.log 2>&1; rc=$$?; grep -E '^(FAIL|ship-ui)' $(SCRATCH)/ship-ui.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui.log && grep -q '^ship-ui: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-ui.log
 ship-demo-ci: ship-ui-test
 .PHONY: ship-console-test no-twitch-test ship-ui-window-check
-ship-console-test: import ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach and facing, dolly, confirms, helm/chart, Voyage, Archive, Sgr A*, Walk to
+ship-console-test: import ship-baseline ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach and facing, dolly, confirms, helm/chart, Voyage, Archive, Sgr A*, Walk to
 	@$(GODOT_SIM) --headless --path . --script tests/test_ship_consoles.gd > $(SCRATCH)/ship-consoles.log 2>&1; rc=$$?; grep -E '^(FAIL|path|ship-consoles)' $(SCRATCH)/ship-consoles.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-consoles.log && grep -q '^ship-consoles: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-consoles.log
 sim-pipeline-test: import ## performance pass: pipelined heartbeat ticks end in the same world, journal and crew as synchronous ones, and free the main thread
 	@$(GODOT_SIM) --headless --path . --script tests/test_sim_pipeline.gd > $(SCRATCH)/sim-pipeline.log 2>&1; rc=$$?; grep -E '^(FAIL|heartbeat|sim-pipeline)' $(SCRATCH)/sim-pipeline.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sim-pipeline.log && grep -q '^sim-pipeline: 0 failures$$' $(SCRATCH)/sim-pipeline.log
