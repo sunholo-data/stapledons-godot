@@ -1,0 +1,396 @@
+# Row 7x batch B3: `mk/levels.mk`, `mk/m5.mk` and `mk/ai.mk` through `$(SCRIPT_GATE)`, and a guard on asset prerequisites
+
+**Status:** Planned, mission iteration 71, designer, 2026-11-05 (revision 0). **Release:** r1. **Milestone:** charter queue row **7x**, follow-up batch **B3** (W6 of the landed 7x design), inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66).
+**Priority:** P2 (follow-up backlog, [LOOP]). Test and build hygiene only.
+**Implements:** [charter](../../stapledon-mission.md) row 7x ("Remaining": batches B3–B8, plus iteration 70's judge survivor), and batch B3 of [m4-7x-script-gate-predicates.md](m4-7x-script-gate-predicates.md) §W6 (the batch table names B3 as `mk/levels.mk` 23, `mk/m5.mk` 5, `mk/ai.mk` 9: 37 rows). It follows the structure of [m4-7x-b2-script-gates.md](m4-7x-b2-script-gates.md). No design-repo feature or [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) section changes: there is no change to any formula, the sim, the protocol, a shader, a scene, or anything the player sees.
+**Depends on:** the landed 7x helper, lint and baseline (PR #393), and B2a with the per-count zero probe (PR #395, merge `55de0d8a`); D-88 A (test or audit hygiene inside an approved sprint, with no pillar below 0, does not stop); Godot 4.7.2; AILANG v0.56.1 (`runtime/bin`, staged with `make runtime`).
+**Estimated LOC:** about **155 hand-written lines changed** (+101/−54), plus **29 deleted baseline rows**. Two files are new: `tools/script_gate_prereqs.sh` (27 lines) and its fixture (7 lines). The per-file breakdown is in [Estimated LOC per file](#estimated-loc-per-file).
+
+**Evidence:** the [Verification log](#verification-log). It was run first-hand in `/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter71` at `761f577f` on 2026-11-05, about 06:25–07:10 local, with Godot 4.7.2 and AILANG v0.56.1 from the clone's `runtime/bin`. The 1-minute load average ran from 14.2 down to 1.7. The whole B3a change set was applied to the clone's tracked files and run end to end, twice. Its diff was saved as `/tmp/iter71_designer/b3a.diff` (V13), applied again on a clean base to check that it applies (V18), and then the code was restored. Afterwards `git status --porcelain` listed only this doc (V18).
+
+**The split, in one line.** **B3a: 29 rows**, every one measured at base and again through its migrated `$(SCRIPT_GATE)` line. That is 22 headless rows plus 7 windowed rows, which all ran green under GPU load. **B3b: 8 rows.** Three Commons goldens print a summary with no count, and the case count lives in a shared helper. Five authoring targets write tracked files. The pin `SCRIPT_GATE_BASELINE_ROWS` goes from **204 to 175**.
+
+## Game vision alignment
+
+Scored against the [core pillars](https://github.com/sunholo-data/stapledons-design/blob/main/vision/core-pillars.md).
+
+| Pillar | Relevance | Score | Notes |
+|---|---|---:|---|
+| Choices Are Final | 0 | 0 | No game code touched. |
+| The Game Doesn't Judge | 0 | 0 | No text the player sees. |
+| Time Has Emotional Weight | 0 | 0 | The sim and its clocks are untouched. |
+| The Ship Is Home | 0 | 0 | No scene change. |
+| Grounded Strangeness | 0 | 0 | No visual change. The capture gates still write the same frames. |
+| We Are Not Built For This | 0 | 0 | No change to the crew or to consequences. |
+| Hard sci-fi authenticity (spec) | 0 | 0 | `planets-test` (photometry and albedo), `planet-textures-check` (disc-integrated albedo against p_V) and `alpha-centauri-golden` keep every assert. They now pass only if the script actually ran. `alpha-centauri-golden` has been red on every run so far (Problem 3). |
+| **Net** | | **0** | **Go under D-88 A.** This is suite hygiene inside the approved sprint, and no pillar goes negative. Nothing visual or audible changes: six summary lines gain a count, and no render, sound or scene changes. So no dev-build review is needed. |
+
+## Problem
+
+V-numbers refer to rows of the [Verification log](#verification-log).
+
+1. **37 B3 rows are still unguarded.** At `761f577f`, `make script-gate-lint` reads `237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline` (V1). Of the 204, exactly **37** are in the three B3 files: `mk/levels.mk` 23, `mk/m5.mk` 5, `mk/ai.mk` 9. All 37 are `ungated` (V2).
+2. **Fourteen rows check rc alone, or nothing at all, and that gap is live** (V2, V10):
+   - Thirteen rows check nothing (`-,-,-,-`): `planets-test`, the six `mk/ai.mk` test rows (`ai-godot`, `ai-relay`, `replay-noai`, `ai-live-guard`, `ai-settings`, `ai-conversation`), `ai-style-frame`'s record step, and the five authoring rows of D8. `planet-textures-check` checks only rc.
+   - **Measured:** a parse-error copy of `tests/test_planets.gd` exits **rc 0** with 1 `SCRIPT ERROR` and no summary, so today's `planets-test` recipe **passes it**. A runtime-error copy of the same test logs `SCRIPT ERROR: Invalid access to property or key 'no_such_member_b3'` and exits **rc 0** with `planets: 79 passed, 0 failed`, 42 checks short of the real 121; the recipe **passes** that too. Parse-error copies of `tests/test_ai_relay.gd -- --replay-noai` and `tests/test_ai_settings.gd -- --launch-default` exit rc 0 as well, so `replay-noai`, `ai-live-guard` and `ai-settings` **pass a test that never ran** (V10). The AI tests do catch a runtime error themselves (`FAIL  test_replay_noai ran to its end`, rc 1).
+   - `$(SCRIPT_GATE)` fails every one of those copies (V10).
+3. **`alpha-centauri-golden` is red on every run.** Its predicate wants `'^alpha-centauri-golden: 10 cases, 0 failures$$'`, but the script prints `alpha-centauri-golden: 10 cases, 0 failures; worst 0.001696` (`tools/alpha_centauri_golden.gd:56`). So `make alpha-centauri-golden` gives **rc 2** after a clean run: rc 0, no `SCRIPT ERROR`, 0 failures. That was measured twice, 1 s each (V7). No aggregate target lists it, so nothing noticed. The golden itself passes.
+4. **Ten rows check no summary line** (`rc,se,-,-`): `commons-life-pilot-test`, `commons-grown-check`, `commons-backdrop-check`, the three Commons captures, `commons-grown-motion`, `level-capture`, and the three Commons goldens (which pin 6 case lines instead). A script that quits 0 before its checks passes the first eight. Every Commons recipe also writes `> $(SCRATCH)/x.log` without creating `$(SCRATCH)` first.
+5. **Six scripts print no counted summary**, so the per-count zero probe would refuse them (V4, V15):
+   - `tools/level_eval.gd` prints `level-eval: bridge ok`.
+   - `tests/test_planets.gd` prints a bare `121 passed, 0 failed` with no name.
+   - The four AI tests print `ai bridge: ok (with faults)`, `ai relay: ok (<tests>)`, `ai settings: ok (<tests>)` and `conversation: ok (<tests>)`.
+6. **Iteration 70's judge survivor: nothing notices if `constellation-test` loses `starmap-assets`.** B2 added the prerequisite because the test is red without the large star tier (B2 V6: `constellations: 34 passed, 1 failures`). No lint, self-test or gate asserts the prerequisite. Deleting it from `mk/constellations.mk` leaves `make script-gate-lint` green (V14, control). `planets-test` and `planet-textures-check` depend on `planet-assets` in the same way.
+
+**Brief premises re-checked.**
+- "B3 = 37 rows" is **true** (V2).
+- "`planets-test` needs `planet-assets`" is **true**, and it already has it at base (`mk/m5.mk:72`). D6 now guards it.
+- "`env -u …` prefixes pass through `env`" is **true**, measured: the migrated `ai-live-guard` and `ai-settings` lines run `-- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) …` and pass (V12).
+- "The GPU is busy at ~100 %" was **intermittent**. `ioreg` `Device Utilization %` read 100 in some samples and 0 in others, with an Ollama runner (`qwen3.8:27b-mxfp8`) active (V6). Every windowed row finished in 1–25 s: 8 were green, and 1 was red only because of its regex (V7). The load gave no unreliable result, so the windowed rows are **in B3a** (D2). The exception is the three Commons goldens, for a counting reason that has nothing to do with the GPU (D8).
+- "`PATH=$PWD/runtime/bin:$PATH` gives v0.56.1" is **true only after `make runtime`**. The fresh clone had no `runtime/`, so the prefix silently fell through to `~/go/bin/ailang` **v0.57.1-dirty**. `make runtime` staged v0.56.1 in 4 s (V3). The executor and judge must stage it first; the acceptance criteria say so.
+- "AI tests must not need real keys" is **true**. Every base and migrated run had `AI_LIVE`, `GOOGLE_API_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `GEMINI_AGENTS_API_KEY`, `OLLAMA_API_KEY` and `ZAI_API_KEY` unset, and all were green (V5, V12). `tests/test_ai_settings.gd` also unsets its three keys in-process (`:341`).
+
+## Goals and non-goals
+
+**Goals.**
+1. **B3a: migrate 29 rows** (28 make targets) in the three files to `$(SCRIPT_GATE)` lines, 30 gate lines in all. Each row was measured at base and through its migrated line (V5, V7, V12).
+2. **Add counted summaries** to the six scripts of Problem 5. Each new count was measured equal to an independent reading of the same run (V17).
+3. **Fix `alpha-centauri-golden`'s predicate** (Problem 3). The migrated regex matches what the script prints.
+4. **Split `levels-regress`'s negative loop** into two `WANT_RC 1` gates. Each binds its own failure reason, not just `levels-regress: FAIL` (D4).
+5. **Guard asset prerequisites** (judge survivor; D6): `make script-gate-lint` checks `constellation-test: starmap-assets`, `planets-test: planet-assets` and `planet-textures-check: planet-assets` in make's own database. A fixture serves as the negative control.
+6. **Delete the 29 baseline rows and set the pin from 204 to 175.**
+7. **Record B3b's 8 rows with their measured blockers** (D8). B3b's own sprint designs their invocations.
+
+**Non-goals.**
+- No edit to `Makefile`, `mk/m45.mk`, `mk/deck-layout.mk`, `mk/earth-link.mk` (attended PRs #373, #379, #380, #384) or `mk/sound.mk` (attended).
+- No change to `tools/script_gate.sh`, `tools/test_script_gate.sh` or `tools/script_gate_lint.sh`. The selftest stays at 18 cases and the drill at 24.
+- No assert changes. The summary edits only count what the scripts already check.
+- No change to `tools/m4_ship_golden.gd` (the helper shared with the `Makefile`'s m4 goldens; see D8 and OQ1).
+
+## Design
+
+### D1. The migration rule (as in B2 D1)
+
+Each migrated row's Godot line, together with its check tail, becomes one line:
+
+```
+@$(SCRIPT_GATE) NAME LOG DEADLINE 'SUMMARY_ERE' [WANT_RC] -- <the row's own Godot command, unchanged>
+```
+
+- **NAME** is the make target. The `levels-regress` negatives are named `levels-regress-seed-box` and `levels-regress-fake-sha`. The `ai-style-frame` record step is named `ai-style-frame-record`. The lint keys rows on target and script, not on NAME.
+- **LOG** is the row's existing log path. Rows that had no log get `$(SCRATCH)/<target>.log`: `planets-test`, the six AI rows, and the two `levels-regress` negatives, which used to share `levels-regress-neg.log`.
+- **DEADLINE** is 600 s for every row. The slowest Godot step measured 42 s (`ai-relay`, V9), so 600 s is at least 14× the measurement. The windowed rows measured 1–25 s, which is at least 24×. `ai-live-guard`'s 131–139 s is its mutation loop, which runs before the gate; its Godot step takes 0–1 s.
+- **The Godot command is unchanged**: `$(GODOT)` or `$(GODOT_SIM)`, `$(AUDIO_OFF)` on windowed rows, and the row's own user arguments. `env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY` stays as the first word after `--`. The helper runs `env "$@"`, so that is `env env -u …`, which is well defined. That keeps the key-clearing visible on the line where `tools/ai_live_guard.sh` reads it.
+- **Dropped:** the `> LOG 2>&1; rc=$$?; grep …; test …` tails. Also dropped is the now-redundant `@mkdir -p $(SCRATCH)` before each migrated line (9 in `mk/levels.mk`, 1 in `mk/m5.mk`), because the helper creates the log's directory (`tools/script_gate.sh:26`). AC9 runs three targets with `SCRATCH` pointed at a directory that does not exist, including `level-eval`, whose `--json` also writes there.
+- **Regexes:** every count is `[1-9][0-9]*`. Two literal pins stay as they are today or as the script prints them: `alpha-centauri-golden: 10 cases` and `commons-civic-motion: 64 frames, …8fps/8seconds` (OQ4). Test lists use `[a-z0-9_, ]+`. **The digit matters:** the first draft used `[a-z_, ]+`, and the helper refused `ai-relay`'s real summary, because `e2e` is one of its test names. That is the gate working as intended (V8).
+- **Behaviour change, deliberate (as in 7x W5 and B2 D1).** On a pass, a gate prints one `script-gate: NAME ok: <summary> (rc, no SCRIPT ERROR, s of DEADLINE s)` line instead of the log excerpt. On a failure, it prints the log's non-`ok` lines and every reason. The full log stays at LOG. This includes `level-eval`'s per-surface metric lines: they go to the log and to `--json` on a pass, and to the terminal on a failure (OQ3).
+
+### D2. The per-gate table: the 29 B3a rows (normative)
+
+Line numbers are at `761f577f` (V2). **Today** is the inventory flag set: `rc` means rc is checked, `se` a `SCRIPT ERROR` check, `sum` a summary grep, `to` a timeout; `-` means absent. **Base** is the measured make rc, wall time, and the last summary line from the row's own output (V5, V7); every base log had 0 `SCRIPT ERROR`. **After** is the measured migrated line (V12). **Edit** means the script's summary changes in D3. Every row's DEADLINE is 600 s.
+
+| # | Target (file:line) | Script | Today | Base: rc, s, summary (measured) | SUMMARY_ERE (WANT_RC 0 unless stated) | After (V12) | Edit |
+|---:|---|---|---|---|---|---|---|
+| 1 | `level-test` (`mk/levels.mk:14`) | `tests/test_levels.gd` | rc,se,sum,- | 0, 14 s; `level-test: 25 passed, 0 failures` | `^level-test: [1-9][0-9]* passed, 0 failures$$` | ok, 25 passed, 7 s | no |
+| 2 | `level-runtime-test` (`:19`) | `tests/test_level_runtime.gd` | rc,se,sum,- | 0, 7 s; `level-runtime: 95 passed, 0 failures` | `^level-runtime: [1-9][0-9]* passed, 0 failures$$` | ok, 95, 4 s | no |
+| 3 | `commons-life-pilot-test` (`:26`) | `tests/test_commons_life_pilot.gd` | rc,se,-,- | 0, 1 s; `commons-life-pilot: 20 passed, 0 failures` | `^commons-life-pilot: [1-9][0-9]* passed, 0 failures$$` | ok, 20, 0 s | no |
+| 4 | `commons-grown-check` (`:28`) | `tools/commons_backdrop_validate.gd -- --config …grown…` | rc,se,-,- | 0, 14 s; `commons-backdrop-validate: 110 passed, 0 failures` | `^commons-backdrop-validate: [1-9][0-9]* passed, 0 failures$$` | ok, 110, 9 s | no |
+| 5 | `commons-grown-capture` (`:30`) **window** | `tools/commons_pilot_review.gd -- --config …grown… --out …` | rc,se,-,- | 0, 22 s; `commons-pilot-review: 48 frames, 0 failures` | `^commons-pilot-review: [1-9][0-9]* frames, 0 failures$$` | ok, 48 frames, 24 s | no |
+| 6 | `commons-grown-motion` (`:34`) **window** | `tools/commons_civic_motion.gd` | rc,se,-,- | 0, 11 s; `commons-civic-motion: 64 frames, fixed actual court Astern camera,8fps/8seconds` | `^commons-civic-motion: 64 frames, fixed actual court Astern camera,8fps/8seconds$$` (literal; OQ4) | ok, 11 s | no |
+| 7 | `commons-backdrop-check` (`:36`) | `tools/commons_backdrop_validate.gd` | rc,se,-,- | 0, 11 s; `commons-backdrop-validate: 167 passed, 0 failures` | `^commons-backdrop-validate: [1-9][0-9]* passed, 0 failures$$` | ok, 167, 9 s | no |
+| 8 | `commons-backdrop-capture` (`:38`) **window** | `tools/commons_pilot_review.gd -- --config …backdrop… --out …` | rc,se,-,- | 0, 19 s; `commons-pilot-review: 48 frames, 0 failures` | `^commons-pilot-review: [1-9][0-9]* frames, 0 failures$$` | ok, 48 frames, 19 s | no |
+| 9 | `commons-art-pilot-test` (`:43`) | `tests/test_commons_art_pilot.gd` | rc,se,sum,- | 0, 4 s; `commons-art-pilot: 31 passed, 0 failures` | `^commons-art-pilot: [1-9][0-9]* passed, 0 failures$$` | ok, 31, 0 s | no |
+| 10 | `commons-pilot-check` (`:46`) | `tools/commons_pilot_validate.gd` | rc,se,sum,- | 0, 12 s; `commons-pilot-validate: 44 passed, 0 failures` | `^commons-pilot-validate: [1-9][0-9]* passed, 0 failures$$` | ok, 44, 7 s | no |
+| 11 | `commons-pilot-capture` (`:48`) **window** | `tools/commons_pilot_review.gd` | rc,se,-,- | 0, 19 s; `commons-pilot-review: 48 frames, 0 failures` | `^commons-pilot-review: [1-9][0-9]* frames, 0 failures$$` | ok, 48 frames, 20 s | no |
+| 12 | `level-export-test` (`:54`) | `tests/test_level_export.gd` | rc,se,sum,- | 0, 4 s; `level-export: 4 passed, 0 failures` | `^level-export: [1-9][0-9]* passed, 0 failures$$` | ok, 4, 1 s | no |
+| 13 | `level-golden-test` (`:59`) | `tests/test_level_golden.gd` | rc,se,sum,- | 0, 3 s; `level-golden: 2 passed, 0 failures` | `^level-golden: [1-9][0-9]* passed, 0 failures$$` | ok, 2, 1 s | no |
+| 14 | `level-eval` (`:67`) | `tools/level_eval.gd -- --level $(LEVEL) … --json …` | rc,se,sum,- | 0, 5 s; `level-eval: bridge ok` (uncounted) | `^level-eval: [a-z0-9_]+ ok \([1-9][0-9]* surfaces, [1-9][0-9]* samples\)$$` | ok, `bridge ok (1 surfaces, 4771 samples)`, 3 s; `LEVEL=commons`: `commons ok (14 surfaces, 7506 samples)` (V9) | **yes** |
+| 15 | `level-eval-test` (`:70`) | `tests/test_level_eval.gd` | rc,se,sum,- | 0, 11 s; `level-eval-test: 16 passed, 0 failures` | `^level-eval-test: [1-9][0-9]* passed, 0 failures$$` | ok, 16, 12 s | no |
+| 16 | `levels-regress` (`:75`) | `tools/levels_regress.gd` | rc,se,sum,- | 0, 12 s (whole target); `levels-regress: ok (1 levels: bridge)` | `^levels-regress: ok \([1-9][0-9]* levels: [a-z0-9_, ]+\)$$` | ok, 3 s | no |
+| 17 | `levels-regress` (`:76`, the negative loop) | `tools/levels_regress.gd -- --seed-box bridge`, `-- --fake-sha bridge` | rc,se,sum,- (wants rc 1) | (same target) rc 1, `levels-regress: FAIL` | two lines: `levels-regress-seed-box`, WANT_RC **1**, `^FAIL bridge: numbers moved from the baseline`; `levels-regress-fake-sha`, WANT_RC **1**, `^FAIL bridge: its document [^ ]* changed \(sha256 00000000, ` (D4) | both ok, rc 1, 3 s each | no |
+| 18 | `level-capture` (`:84`) **window** | `tools/level_capture.gd -- --level $(LEVEL) … --tag $(TAG)` | rc,se,-,- | 0, 12 s; `level-capture: bridge 6 frames` | `^level-capture: [a-z0-9_]+ [1-9][0-9]* frames$$` (the failure form `…, FAIL` cannot match) | ok, 6 frames, 10 s | no |
+| 19 | `planets-test` (`mk/m5.mk:73`) | `tests/test_planets.gd` | -,-,-,- | 0, 2 s; `121 passed, 0 failed` (no name) | `^planets: [1-9][0-9]* passed, 0 failed$$` | ok, 121, 2 s | **yes** |
+| 20 | `planet-textures-check` (`:92`) | `tools/planet_textures.gd -- --check` | rc,-,-,- | 0, 11 s; `planet-textures check: 19 textures, 0 failures` | `^planet-textures check: [1-9][0-9]* textures, 0 failures$$` | ok, 19, 7 s | no |
+| 21 | `alpha-centauri-test` (`:143`) | `tests/test_alpha_centauri.gd` | rc,se,sum,- | 0, 34 s (with the AILANG prerequisite); `alpha-centauri: 13 passed, 0 failures` | `^alpha-centauri: [1-9][0-9]* passed, 0 failures$$` | ok, 13, 0 s | no |
+| 22 | `alpha-centauri-golden` (`:145`) **window** | `tools/alpha_centauri_golden.gd` | rc,se,sum,- | **rc 2**, 1 s (twice); `alpha-centauri-golden: 10 cases, 0 failures; worst 0.001696` (Problem 3) | `^alpha-centauri-golden: 10 cases, 0 failures; worst 0\.[0-9]+$$` (a worst above 0.03 is a failure in the script, so `0\.` never rejects a pass) | ok, rc 0, 1 s | no |
+| 23 | `ai-godot` (`mk/ai.mk:288`) | `tests/test_ai_bridge.gd -- --faults` | -,-,-,- | 0, 49 s; `ai bridge: ok (with faults)` (uncounted) | `^ai bridge: ok \([1-9][0-9]* passed, 0 failures; with faults\)$$` | ok, 89 passed, 31 s | **yes** |
+| 24 | `ai-relay` (`:299`) | `tests/test_ai_relay.gd -- --news --key-hygiene --routes` | -,-,-,- | 0, 35 s; `ai relay: ok (cache, …, routes)` (uncounted) | `^ai relay: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$` | ok, 63 passed, 37 s | **yes** |
+| 25 | `replay-noai` (`:304`) | `tests/test_ai_relay.gd -- --replay-noai` | -,-,-,- | 0, 8 s; `ai relay: ok (replay_noai)` | `^ai relay: ok \([1-9][0-9]* passed, 0 failures; replay_noai\)$$` | ok, 3 passed, 3 s | (same script) |
+| 26 | `ai-live-guard` (`:464`) | `env -u … tests/test_ai_settings.gd -- --launch-default` | -,-,-,- | 0, 131 s (mutation loop first); `ai settings: ok (launch_default)` | `^ai settings: ok \([1-9][0-9]* passed, 0 failures; launch_default\)$$` | ok, 9 passed, 0 s (target 139 s) | **yes** |
+| 27 | `ai-settings` (`:467`) | `env -u … tests/test_ai_settings.gd` | -,-,-,- | 0, 11 s; `ai settings: ok (launch_default, opt_in, …, wired)` | `^ai settings: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$` | ok, 53 passed, 7 s | (same script) |
+| 28 | `ai-conversation` (`:550`) | `tests/test_conversation.gd` | -,-,-,- | 0, 16 s; `conversation: ok (rehearsal, …, session_off)` | `^conversation: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$` | ok, 30 passed, 13 s | **yes** |
+| 29 | `ai-style-frame` (`:558`, the record step) **window** | `tests/test_conversation.gd -- --record=$(AI_SF)/rehearsal.ndjson --library=$$lib` | -,-,-,- | 0, 22 s (whole target, with the movie); `recorded …/rehearsal.ndjson: 5 ticks; library …/library` | `^recorded $(AI_SF)/rehearsal\.ndjson: 5 ticks; library $(AI_SF)/library$$` (D5) | ok, the whole target rc 0 in 13–15 s | no |
+
+**Counts:** 29 rows. That is 18 in `mk/levels.mk` (23 less the 5 of D8), 4 in `mk/m5.mk` (5 less `planet-textures`) and 7 in `mk/ai.mk` (9 less the two record targets). There are 28 targets, because `levels-regress` has 2 rows, and 30 gate lines, because row 17 becomes 2. Seven rows (5, 6, 8, 11, 18, 22 and 29) need a GPU window.
+
+**The exact recipe lines** are from the measured tree (V12; recipe tabs shown as four spaces). Line numbers on the left are on the migrated tree.
+
+```make
+mk/levels.mk:13:    @$(SCRIPT_GATE) level-test $(SCRATCH)/level-test.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_levels.gd
+mk/levels.mk:17:    @$(SCRIPT_GATE) level-runtime-test $(SCRATCH)/level-runtime-test.log 600 '^level-runtime: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_level_runtime.gd
+mk/levels.mk:24:    @$(SCRIPT_GATE) commons-life-pilot-test $(SCRATCH)/commons-life-pilot.log 600 '^commons-life-pilot: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_commons_life_pilot.gd
+mk/levels.mk:26:    @$(SCRIPT_GATE) commons-grown-check $(SCRATCH)/commons-grown-check.log 600 '^commons-backdrop-validate: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd -- --config res://art/commons-grown-pilot/placements.json
+mk/levels.mk:28:    @$(SCRIPT_GATE) commons-grown-capture $(SCRATCH)/commons-grown-capture.log 600 '^commons-pilot-review: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/commons_pilot_review.gd -- --config res://art/commons-grown-pilot/placements.json --out res://renders/view-finish/commons-grown-pilot
+mk/levels.mk:32:    @$(SCRIPT_GATE) commons-grown-motion $(SCRATCH)/commons-grown-motion.log 600 '^commons-civic-motion: 64 frames, fixed actual court Astern camera,8fps/8seconds$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/commons_civic_motion.gd
+mk/levels.mk:34:    @$(SCRIPT_GATE) commons-backdrop-check $(SCRATCH)/commons-backdrop-check.log 600 '^commons-backdrop-validate: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tools/commons_backdrop_validate.gd
+mk/levels.mk:36:    @$(SCRIPT_GATE) commons-backdrop-capture $(SCRATCH)/commons-backdrop-capture.log 600 '^commons-pilot-review: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/commons_pilot_review.gd -- --config res://art/commons-backdrop-pilot/placements.json --out res://renders/view-finish/commons-backdrop-pilot
+mk/levels.mk:40:    @$(SCRIPT_GATE) commons-art-pilot-test $(SCRATCH)/commons-art-pilot.log 600 '^commons-art-pilot: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_commons_art_pilot.gd
+mk/levels.mk:43:    @$(SCRIPT_GATE) commons-pilot-check $(SCRATCH)/commons-pilot-check.log 600 '^commons-pilot-validate: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tools/commons_pilot_validate.gd
+mk/levels.mk:45:    @$(SCRIPT_GATE) commons-pilot-capture $(SCRATCH)/commons-pilot-capture.log 600 '^commons-pilot-review: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/commons_pilot_review.gd
+mk/levels.mk:50:    @$(SCRIPT_GATE) level-export-test $(SCRATCH)/level-export-test.log 600 '^level-export: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_level_export.gd
+mk/levels.mk:54:    @$(SCRIPT_GATE) level-golden-test $(SCRATCH)/level-golden-test.log 600 '^level-golden: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_level_golden.gd
+mk/levels.mk:61:    @$(SCRIPT_GATE) level-eval $(SCRATCH)/level-eval-$(LEVEL).log 600 '^level-eval: [a-z0-9_]+ ok \([1-9][0-9]* surfaces, [1-9][0-9]* samples\)$$' -- $(GODOT_SIM) --headless --path . --script tools/level_eval.gd -- --level $(LEVEL) $(if $(LAYOUT),--layout $(LAYOUT)) --json $(SCRATCH)/level-eval-$(LEVEL).json
+mk/levels.mk:63:    @$(SCRIPT_GATE) level-eval-test $(SCRATCH)/level-eval-test.log 600 '^level-eval-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_level_eval.gd
+mk/levels.mk:67:    @$(SCRIPT_GATE) levels-regress $(SCRATCH)/levels-regress.log 600 '^levels-regress: ok \([1-9][0-9]* levels: [a-z0-9_, ]+\)$$' -- $(GODOT_SIM) --headless --path . --script tools/levels_regress.gd
+mk/levels.mk:68:    @$(SCRIPT_GATE) levels-regress-seed-box $(SCRATCH)/levels-regress-seed-box.log 600 '^FAIL bridge: numbers moved from the baseline' 1 -- $(GODOT_SIM) --headless --path . --script tools/levels_regress.gd -- --seed-box bridge
+mk/levels.mk:69:    @$(SCRIPT_GATE) levels-regress-fake-sha $(SCRATCH)/levels-regress-fake-sha.log 600 '^FAIL bridge: its document [^ ]* changed \(sha256 00000000, ' 1 -- $(GODOT_SIM) --headless --path . --script tools/levels_regress.gd -- --fake-sha bridge
+mk/levels.mk:70:    @echo "levels-regress: negative controls (a seeded box, a changed document) fail as they must, each for its own reason"
+mk/levels.mk:77:    @$(SCRIPT_GATE) level-capture $(SCRATCH)/level-capture-$(LEVEL).log 600 '^level-capture: [a-z0-9_]+ [1-9][0-9]* frames$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/level_capture.gd -- --level $(LEVEL) $(if $(LAYOUT),--layout $(LAYOUT)) --tag $(TAG)
+mk/m5.mk:73:    @$(SCRIPT_GATE) planets-test $(SCRATCH)/planets-test.log 600 '^planets: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_planets.gd
+mk/m5.mk:91:    @$(SCRIPT_GATE) planet-textures-check $(SCRATCH)/planet-textures.log 600 '^planet-textures check: [1-9][0-9]* textures, 0 failures$$' -- $(GODOT) --headless --path . --script tools/planet_textures.gd -- --check
+mk/m5.mk:141:   @$(SCRIPT_GATE) alpha-centauri-test $(SCRATCH)/alpha-centauri.log 600 '^alpha-centauri: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_alpha_centauri.gd
+mk/m5.mk:143:   @$(SCRIPT_GATE) alpha-centauri-golden $(SCRATCH)/alpha-centauri-golden.log 600 '^alpha-centauri-golden: 10 cases, 0 failures; worst 0\.[0-9]+$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/alpha_centauri_golden.gd
+mk/ai.mk:288:   @$(SCRIPT_GATE) ai-godot $(SCRATCH)/ai-godot.log 600 '^ai bridge: ok \([1-9][0-9]* passed, 0 failures; with faults\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ai_bridge.gd -- --faults
+mk/ai.mk:299:   @$(SCRIPT_GATE) ai-relay $(SCRATCH)/ai-relay.log 600 '^ai relay: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --news --key-hygiene --routes
+mk/ai.mk:304:   @$(SCRIPT_GATE) replay-noai $(SCRATCH)/replay-noai.log 600 '^ai relay: ok \([1-9][0-9]* passed, 0 failures; replay_noai\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --replay-noai
+mk/ai.mk:464:   @$(SCRIPT_GATE) ai-live-guard $(SCRATCH)/ai-live-guard.log 600 '^ai settings: ok \([1-9][0-9]* passed, 0 failures; launch_default\)$$' -- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd -- --launch-default
+mk/ai.mk:467:   @$(SCRIPT_GATE) ai-settings $(SCRATCH)/ai-settings.log 600 '^ai settings: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$' -- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd
+mk/ai.mk:550:   @$(SCRIPT_GATE) ai-conversation $(SCRATCH)/ai-conversation.log 600 '^conversation: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$$' -- $(GODOT_SIM) --headless --path . --script tests/test_conversation.gd
+mk/ai.mk:561:     $(SCRIPT_GATE) ai-style-frame-record $(AI_SF)/record.out 600 '^recorded $(AI_SF)/rehearsal\.ndjson: 5 ticks; library $(AI_SF)/library$$' -- $(GODOT_SIM) --headless --path . --script tests/test_conversation.gd -- --record=$(AI_SF)/rehearsal.ndjson --library=$$lib || exit 1; \
+```
+
+Every other line of the three files is unchanged, except that the `@mkdir -p $(SCRATCH)` before each migrated line goes (D1), `planet-textures-check`'s continuation line goes with its tail, and `level-eval`'s `##` help now says it prints `"level-eval: <id> ok (N surfaces, M samples)"`. Every B3b row (D8), every `.PHONY` line and every `test:`/`m5-test:`/`ai-test:` join is untouched. `git diff --numstat` is in V13.
+
+### D3. The six counted summaries (scripts)
+
+These are the measured edits (V12, V17), with tabs shown as four spaces.
+
+```diff
+--- a/tools/level_eval.gd
++++ b/tools/level_eval.gd
+@@ func _run
+     var m: Dictionary = res.metrics
++    var surfaces := 0
++    var samples := 0
+     for sid: String in m.stages:
+         for r: Dictionary in m.stages[sid].surfaces:
++            surfaces += 1
++            samples += int(r.samples)
+             print("level-eval: %s/%s (%s) samples %d, …" % […])
+@@
+-    print("level-eval: %s %s" % [doc.get("id", id), "ok" if fails.is_empty() else "FAIL"])
++    print("level-eval: %s %s" % [doc.get("id", id), ("ok (%d surfaces, %d samples)" % [surfaces, samples]) if fails.is_empty() else "FAIL"])
+--- a/tests/test_planets.gd
++++ b/tests/test_planets.gd
+-    print("\n%d passed, %d failed" % [passes, failures])
++    print("\nplanets: %d passed, %d failed" % [passes, failures])
+--- a/tests/test_ai_bridge.gd   (the same three edits in test_ai_relay.gd, test_ai_settings.gd, test_conversation.gd)
++++ b/tests/test_ai_bridge.gd
+ var failures := 0
++var passes := 0
+@@ func assert_bool(name: String, ok: bool) -> void:
+-    if not ok: failures += 1
++    if ok: passes += 1
++    else: failures += 1
+     print("  %s  %s" % ["ok  " if ok else "FAIL", name])
+@@
+-    print("ai bridge: %s (%s)" % ["FAIL" if failures > 0 else "ok", "with faults" if faults else "happy path only"])
++    print("ai bridge: %s (%d passed, %d failures; %s)" % ["FAIL" if failures > 0 else "ok", passes, failures, "with faults" if faults else "happy path only"])
+```
+
+For `test_ai_relay.gd`, `test_ai_settings.gd` and `test_conversation.gd`, the final print gains the same `%d passed, %d failures; ` prefix inside its parentheses, ahead of `", ".join(tests)`.
+
+The `level-eval: <id> ok` prefix stays. It is what `design_docs/levels/README.md:17`, `TEMPLATE.md:43` and `planned/r2/levels.md:88,414` quote, and those quotes are still true as prefixes. No tracked script, makefile or workflow reads any of the six old lines (V19). `tests/test_ai_relay.gd` reads `test_ai_bridge.gd --faults`'s last line only into a check label and asserts only its rc.
+
+Each count was measured against an independent reading of the same run (V17):
+- the AI counts 89, 63, 3, 53, 30 and 9 equal the `^  ok ` lines in the base logs;
+- `planets: 121` equals the base `  ok ` lines;
+- `level-eval`'s 1 surface and 4,771 samples equal its one per-surface line, `deck/deck (bow) samples 4771`.
+
+### D4. `levels-regress`: the negative loop becomes two bound gates
+
+Today, one shell `for` loop runs `--seed-box bridge` and `--fake-sha bridge`, and each passes on rc 1 with `levels-regress: FAIL` and no `SCRIPT ERROR`, writing to one shared log. A parse-error copy exits rc 0, which today's loop does catch (V10, `neg_p`). What it cannot see is a run that fails for the wrong reason. Each negative now gets its own gate with WANT_RC 1, and its summary is the failure *reason* line:
+- seed-box: `FAIL bridge: numbers moved from the baseline: /stages/deck/near_astern: 0.063 -> 0.069`;
+- fake-sha: `FAIL bridge: its document res://assets/levels/bridge/manifest.json changed (sha256 00000000, baseline acb2de37) …`.
+
+A negative that failed with some other error no longer passes. Negative controls are exempt from the zero probe (B2 D4). The inventory goes from 237 to **238** `--script` invocations, because 1 loop line becomes 2 gate lines (V13).
+
+### D5. `ai-style-frame`'s record step: a literal-path regex
+
+The record step's summary is `recorded <abs path>/rehearsal.ndjson: 5 ticks; library <abs path>/library`. A path-agnostic regex (`[^ ]*`) is unsafe under the zero probe. A standalone digit run in the path (`/tmp/2026/…`) gets zeroed, `[^ ]*` still matches the zeroed line, and the helper refuses a healthy run. That was measured with a stub: `SUMMARY_ERE also matches 'recorded /tmp/0/rehearsal.ndjson: …'` (V15). So the regex embeds the path make already knows, `$(AI_SF)`. A zeroed path digit then cannot match, while `5 ticks` stays pinned as the script requires (`quit(0 if ticks == 5 else 1)`). The step stays inside its shell `if`, and on failure the line exits with `|| exit 1`. The gate replaces the old `|| { cat …; exit 1; }`, because the helper prints the log's non-`ok` lines itself. The lint classes it `gated`: its segment after the last `;` starts with `$(SCRIPT_GATE)` (V13).
+
+### D6. The asset-prerequisite guard (iteration 70's judge survivor)
+
+A new file, `tools/script_gate_prereqs.sh` (27 lines, POSIX `sh`), takes `MAKEFILE TARGET:PREREQ…`. It reads make's own database (`env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -pq --no-print-directory -f MAKEFILE <probe>`). It refuses an empty database, takes each target's merged rule line (so a prerequisite declared on a second rule line still counts), and prints one line per broken pair, or `script-gate-prereqs: ok (N pairs hold in MAKEFILE: …)`.
+
+`mk/script-gates.mk` gains `SG_PREREQS := constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets`, and `script-gate-lint` gains two lines:
+1. **Negative control:** the fixture `tests/fixtures/script_gate/prereq_negative.mk.txt` plus a `missing-target:x` pair must fail with exactly two lines, `constellation-test lost its prerequisite starmap-assets` and `missing-target has no rule`. `planet-textures-check`, which declares its prerequisite on a second rule line, must pass.
+2. **The real check** on `Makefile`.
+
+The guard rides on `script-gate-lint`, which is already in `test` and `ci-fast`, so `Makefile` stays untouched and the fast tier's log carries the new line. `make -pq` takes 0.02 s (V14). It was measured under GNU make 3.81 (macOS) and 4.4.1 (`gmake`); CI's Ubuntu make is checked by AC13.
+
+The mutant that matters was measured: with `constellation-test: import` (the prerequisite deleted), `make script-gate-lint` gives **rc 2** with `script-gate-prereqs: constellation-test lost its prerequisite starmap-assets (constellation-test: import)`. With the prerequisite moved to a second rule line, it is ok (V14).
+
+### D7. Baseline and pin
+
+Delete the 29 B3a rows from `tools/script-gate-baseline.txt`: every row whose target is one of the 28 B3a targets. Both `levels-regress` rows go together. The B3b targets `ai-rehearsal-record` and `level-stage`, and the goldens, keep theirs. Set `SCRIPT_GATE_BASELINE_ROWS := 175` with the comment `… 204 after B2a (28 rows in nine mk files),` / `# 175 after B3a (29 rows in mk/levels.mk, mk/m5.mk, mk/ai.mk).`. The command is:
+
+```sh
+awk -F'\t' 'FNR==NR{d[$1]=1;next} /^#/ || !($1 in d)' b3a-targets.txt tools/script-gate-baseline.txt > b.new && mv b.new tools/script-gate-baseline.txt
+grep -vc '^#' tools/script-gate-baseline.txt   # 175 (204 - 29)
+```
+
+Here `b3a-targets.txt` (saved at `/tmp/iter71_designer/b3a-targets.txt`) lists the 28 target names. `make script-gate-lint` then reads `script-gate-lint: ok (238 --script invocations: 63 through $(SCRIPT_GATE), 175 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)` (V13).
+
+### D8. B3b: the 8 rows, recorded but not designed here
+
+**B3b is out of this sprint** (as B2b). Each row lists what was measured or read, and its blocker. It proposes no invocation, regex or edit.
+
+| Target (file:line) | Script | Today | Measured (or read from source, as stated) | Blocker |
+|---|---|---|---|---|
+| `commons-grown-golden` (`mk/levels.mk:32`) **window** | `tools/commons_pilot_golden.gd -- --config …grown…` | rc,se,-,- (+ `grep -c '^ok    G-LVL-' = 6`) | **Measured:** rc 0, 14 s, 6 `ok    G-LVL-` lines, summary `commons-pilot-golden: 0 failures` (V7) | **The summary carries no count.** Through the helper it fails `carries no nonzero count`, measured on this row's own log (V15). Today's predicate also pins 6 case lines, which one summary regex cannot express. The case count lives in `_pole`, inside the shared helper `tools/m4_ship_golden.gd` (`_level_poses`, `:287`), which also drives the `Makefile`'s m4 goldens (B4/B5). OQ1. |
+| `commons-backdrop-golden` (`:40`) **window** | (same script, `…backdrop…`) | (same) | **Measured:** rc 0, 8 s, 6 case lines, `commons-pilot-golden: 0 failures` | as above |
+| `commons-pilot-golden` (`:50`) **window** | (same script) | rc,se,sum,- (+ the 6-line pin) | **Measured:** rc 0, 9 s, 6 case lines, `commons-pilot-golden: 0 failures` | as above |
+| `level-stage` (`:62`) | `tools/level_stage.gd -- --level $(LEVEL)` | -,-,-,- | source, not run: `"level-stage: %s %s"` (id, sha256: uncounted). It writes `assets/levels/<id>/greybox.json` and `manifest.json`; `assets/levels/bridge/manifest.json` and `assets/levels/commons/{greybox,manifest}.json` are **tracked** (V15) | An authoring tool that **writes tracked files** |
+| `levels-regress-pin` (`:79`) | `tools/levels_regress.gd -- --pin $(LEVEL)` | -,-,-,- | source, not run: `"levels-regress: pinned %s (%s, sha256 %s)"`. It writes the **tracked** `art/levels/<id>/baseline.json` (`tools/levels_regress.gd:72`, V15) | Authoring: a deliberate re-pin |
+| `planet-textures` (`mk/m5.mk:88`) | `tools/planet_textures.gd -- --write` | -,-,-,- | source, not run: `"planet-textures: wrote %s (%d bodies)"`. It rewrites the **tracked** `data/planets/ALBEDO` (`:130`, V15) | Authoring: "a reviewed diff" |
+| `ai-session-record` (`mk/ai.mk:307`) | `tools/record_ai_session.gd -- tests/replays/ai_stub_session.ndjson` | -,-,-,- | source, not run: `"recorded %s: %d ticks, %d hits, %d forwarded"` (an absolute path, D5's hazard). It rewrites the **tracked** `tests/replays/ai_stub_session.ndjson` | Authoring: re-records a golden |
+| `ai-rehearsal-record` (`:553`) | `tests/test_conversation.gd -- --record=$(CURDIR)/$(REHEARSAL)` | -,-,-,- | source, not run: `"recorded %s: %d ticks; library %s"`. It rewrites the **tracked** `tests/replays/medic_rehearsal.ndjson` | Authoring: re-records a golden |
+
+B3b's sprint inherits D5's rule: any summary with an absolute path binds the path literally. It also inherits B2's OQ3 question: whether authoring rows are wrapped and run in a throwaway clone, or wait for B8.
+
+## Acceptance criteria
+
+Run them from the implementation root. First run `make runtime` if `runtime/bin/ailang` is missing (V3), then `export PATH="$PWD/runtime/bin:$PATH"` (check that `ailang --version` says v0.56.1), then `make deps import`.
+- The expected values were measured at `761f577f` plus this change (V9–V14). Counts may only grow. If the base has moved, the relations must still hold: the pin equals the pre-migration rows minus 29, and the lint is ok.
+- Commands write only inside the clone: `.godot/tmp/`, the ignored `renders/`, `ai_core/`, `data/raw/` and `assets/planets/`.
+- `planet-assets`, `starmap-assets` and `ai-core-assets` read public buckets. Nothing uploads.
+- Afterwards, delete the 5 ignored `.translation` files that `make import` leaves (row 7u).
+
+| # | Criterion and command | Expected output |
+|---|---|---|
+| AC1 | The ratchet and the prerequisite guard: `make script-gate-lint; echo rc=$?` | `script-gate-lint: ok (238 --script invocations: 63 through $(SCRIPT_GATE), 175 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)`, `script-gate-prereqs: ok (3 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets)`, `rc=0` (V13) |
+| AC2 | The pin bites at N+1: `make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=176 2>&1 \| tail -2` | `script-gate-lint: the baseline has 175 rows but SCRIPT_GATE_BASELINE_ROWS is 176: the pin moves with the rows, and only down`, `make: *** [script-gate-lint] Error 1` (GNU make 4 prints `[mk/script-gates.mk:32: script-gate-lint]`) (V13, V18) |
+| AC3 | The judge survivor is caught: `cp mk/constellations.mk .godot/tmp/b3-const.keep; perl -pi -e 's/^constellation-test: import starmap-assets$/constellation-test: import/' mk/constellations.mk; make script-gate-lint > .godot/tmp/b3-ac3.out 2>&1; echo rc=$?; grep '^script-gate-prereqs:' .godot/tmp/b3-ac3.out; cp .godot/tmp/b3-const.keep mk/constellations.mk; git diff --quiet mk/constellations.mk && echo restored` | `rc=2`, `script-gate-prereqs: constellation-test lost its prerequisite starmap-assets (constellation-test: import)`, `restored` (V14, V18) |
+| AC4 | Helper self-test and drills unchanged: `make script-gate-selftest 2>&1 \| tail -1; make script-gate-drill 2>&1 \| tail -1` | `test-script-gate: ok (18 cases: 18 stub, 0 Godot)`, `test-script-gate: ok (24 cases: 18 stub, 6 Godot)` (V12) |
+| AC5 | **Every headless B3a target green, with no API key:** `env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY -u OPENAI_API_KEY make level-test level-runtime-test commons-life-pilot-test commons-grown-check commons-backdrop-check commons-art-pilot-test commons-pilot-check level-export-test level-golden-test level-eval level-eval-test levels-regress planets-test planet-textures-check alpha-centauri-test ai-godot ai-relay replay-noai ai-live-guard ai-settings ai-conversation > .godot/tmp/b3-ac5.out 2>&1; echo rc=$?; grep '^script-gate:' .godot/tmp/b3-ac5.out \| sort -u -t: -k2,2 \| wc -l; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b3-ac5.out` | `rc=0`; `23` distinct gate lines, each `ok` with the V12 counts: `level-test: 25 passed`, `level-runtime: 95`, `commons-life-pilot: 20`, `commons-backdrop-validate: 110` and `167`, `commons-art-pilot: 31`, `commons-pilot-validate: 44`, `level-export: 4`, `level-golden: 2`, `level-eval: bridge ok (1 surfaces, 4771 samples)`, `level-eval-test: 16`, `levels-regress: ok (1 levels: bridge)`, the two `levels-regress-*` negatives `ok: FAIL bridge: …` with `rc 1`, `planets: 121 passed, 0 failed`, `planet-textures check: 19 textures`, `alpha-centauri: 13`, `ai bridge: ok (89 passed …; with faults)`, `ai relay: ok (63 passed …)`, `ai relay: ok (3 passed, 0 failures; replay_noai)`, `ai settings: ok (9 passed, 0 failures; launch_default)`, `ai settings: ok (53 passed …)`, `conversation: ok (30 passed …)`; then `0`. Budget about 6 min (`ai-live-guard`'s mutation loop is about 135 s of it). The `ai-live-guard` pass is also `tools/ai_live_guard.sh` accepting the edited `mk/ai.mk`. |
+| AC6 | **Every windowed B3a target green (needs a GPU window, run serially):** `make commons-grown-capture commons-grown-motion commons-backdrop-capture commons-pilot-capture level-capture alpha-centauri-golden ai-style-frame > .godot/tmp/b3-ac6.out 2>&1; echo rc=$?; grep -c '^script-gate: [^ ]* ok' .godot/tmp/b3-ac6.out; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b3-ac6.out` | `rc=0`; `7` (`commons-pilot-review: 48 frames, 0 failures` ×3; `commons-civic-motion: 64 frames, …`; `level-capture: bridge 6 frames`; `alpha-centauri-golden: 10 cases, 0 failures; worst 0.001696`, the target that was red at base; `ai-style-frame-record ok: recorded …: 5 ticks; library …`); `0`. About 2 min (V11, V12). Open the frames only if you want to; nothing visual changed. |
+| AC7 | **Parse-error drill, one migrated script per file, plus the negative class:** `d=.godot/tmp/b3drill; mkdir -p $d; AB="AILANG_BIN=$(command -v ailang)"; for p in tests/test_levels.gd:lv tests/test_planets.gd:pl tests/test_ai_relay.gd:ai tools/levels_regress.gd:neg; do awk 'f==0 && /^extends /{print; print "var _b3_drill: int = undefined_name_b3"; f=1; next} {print}' ${p%%:*} > $d/${p##*:}_p.gd; done; perl -e 'alarm 300; exec @ARGV' godot --headless --path . --script $d/pl_p.gd > $d/pl_p.raw 2>&1; echo "raw planets rc=$?"; sh tools/script_gate.sh lv_p $d/lv_p.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/lv_p.gd; echo rc=$?; sh tools/script_gate.sh pl_p $d/pl_p.log 600 '^planets: [1-9][0-9]* passed, 0 failed$' -- godot --headless --path . --script $d/pl_p.gd; echo rc=$?; sh tools/script_gate.sh ai_p $d/ai_p.log 600 '^ai relay: ok \([1-9][0-9]* passed, 0 failures; replay_noai\)$' -- "$AB" godot --headless --path . --script $d/ai_p.gd -- --replay-noai; echo rc=$?; sh tools/script_gate.sh neg_p $d/neg_p.log 600 '^FAIL bridge: its document [^ ]* changed \(sha256 00000000, ' 1 -- "$AB" godot --headless --path . --script $d/neg_p.gd -- --fake-sha bridge; echo rc=$?` | `raw planets rc=0` (so today's rc-only `planets-test` passes it); then each prints `script-gate: <name> FAIL; … 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching …` and `rc=1`; `neg_p` also says `rc 0, want 1` (V10) |
+| AC8 | **Runtime-error drill, one per file:** `d=.godot/tmp/b3drill; mkdir -p $d; AB="AILANG_BIN=$(command -v ailang)"; inj() { awk -v fn="$2" '{print} index($0, "func " fn "(") == 1 {print "\tprint(self.no_such_member_b3)"}' $1 > $3; }; inj tests/test_levels.gd test_schema $d/lv_r.gd; inj tests/test_planets.gd test_albedo_table $d/pl_r.gd; inj tests/test_ai_relay.gd test_replay_noai $d/ai_r.gd; perl -e 'alarm 300; exec @ARGV' godot --headless --path . --script $d/pl_r.gd > $d/pl_r.raw 2>&1; echo "raw rc=$? $(grep '^planets:' $d/pl_r.raw)"; sh tools/script_gate.sh lv_r $d/lv_r.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/lv_r.gd; echo rc=$?; sh tools/script_gate.sh pl_r $d/pl_r.log 600 '^planets: [1-9][0-9]* passed, 0 failed$' -- godot --headless --path . --script $d/pl_r.gd; echo rc=$?; sh tools/script_gate.sh ai_r $d/ai_r.log 600 '^ai relay: ok \([1-9][0-9]* passed, 0 failures; replay_noai\)$' -- "$AB" godot --headless --path . --script $d/ai_r.gd -- --replay-noai; echo rc=$?` | `raw rc=0 planets: 79 passed, 0 failed` (42 checks skipped; today's predicate passes it); then `script-gate: lv_r FAIL; 1 SCRIPT ERROR line(s) …` (its raw summary is `level-test: 14 passed, 0 failures`), `rc=1`; `script-gate: pl_r FAIL; 1 SCRIPT ERROR line(s) …`, `rc=1`; `script-gate: ai_r FAIL; rc 1, want 0; 1 SCRIPT ERROR line(s) …`, `rc=1` (V10) |
+| AC9 | The helper creates a missing log directory, including for `level-eval`'s `--json`: `F=.godot/tmp/b3-fresh-$$; test -e $F && echo exists \|\| echo absent; make commons-life-pilot-test commons-pilot-check level-eval SCRATCH=$F/s 2>&1 \| grep -c '^script-gate: .* ok'; echo rc=$?; ls $F/s` | `absent`; `3`; `rc=0`; `commons-life-pilot.log commons-pilot-check.log level-eval-bridge.json level-eval-bridge.log` (V9) |
+| AC10 | The new summaries reject zero: `for e in '^level-eval: [a-z0-9_]+ ok \([1-9][0-9]* surfaces, [1-9][0-9]* samples\)$' '^planets: [1-9][0-9]* passed, 0 failed$' '^ai bridge: ok \([1-9][0-9]* passed, 0 failures; with faults\)$' '^ai relay: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$' '^ai settings: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$' '^conversation: ok \([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\)$'; do printf '%s\n' 'level-eval: bridge ok (0 surfaces, 4771 samples)' 'level-eval: bridge ok (1 surfaces, 0 samples)' 'planets: 0 passed, 0 failed' 'ai bridge: ok (0 passed, 0 failures; with faults)' 'ai relay: ok (0 passed, 0 failures; replay_noai)' 'ai settings: ok (0 passed, 0 failures; launch_default)' 'conversation: ok (0 passed, 0 failures; rehearsal)' \| grep -cE -- "$e"; done` | six lines of `0` (V17) |
+| AC11 | Policy gates and hygiene: `make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/script_gate_prereqs.sh tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh && echo gates-ok` | `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)`, `audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound)`, `lint-precision: ok …`, `gates-ok` (V13). No new `.gd`, so no new `.uid`; no `.py` |
+| AC12 | Scope: `git diff --name-only origin/main \| grep -cvxE 'mk/(levels\|m5\|ai\|script-gates)\.mk\|tools/(script_gate_prereqs\.sh\|script-gate-baseline\.txt\|level_eval\.gd)\|tests/(test_planets\|test_ai_bridge\|test_ai_relay\|test_ai_settings\|test_conversation)\.gd\|tests/fixtures/script_gate/prereq_negative\.mk\.txt\|design_docs/planned/r1/m4-7x-b3-script-gates.*\.md\|\.ailang/state/sprints/sprint_R1-M4-JOURNEY\.json'; git diff --name-only origin/main -- Makefile mk/sound.mk mk/m45.mk mk/deck-layout.mk mk/earth-link.mk tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh tools/m4_ship_golden.gd \| wc -l` | `0`, `0` |
+| AC13 | The PR's GitHub fast tier (first Linux, `dash` and GNU make 4 run of the guard): `gh pr checks <PR>`; `gh run view <run> --log \| grep -cE 'script-gate-lint: ok \(238 --script invocations: 63 through\|script-gate-prereqs: ok \(3 pairs hold in Makefile\|test-script-gate: ok \(18 cases: 18 stub, 0 Godot\)'` | `success`; `3` |
+
+## Sub-milestones and estimates
+
+One sprint, one PR, in this order. Each step is test-first against the AC that names it.
+1. **D6 guard** (+27-line script, 7-line fixture, 13/3 in `mk/script-gates.mk`): AC1 (prereqs line) and AC3 first, because they need no Godot.
+2. **D3 summaries** (6 scripts, about 25 lines), then **D2/D4/D5 recipe lines** (3 files, +32/−41). Run AC5 and AC6 per file.
+3. **D7 baseline and pin** (−29 rows, pin 175): AC1, AC2.
+4. Drills and hygiene: AC7–AC12. Then AC13 on the PR.
+
+That is about an hour for a mid-tier model. The wall time is dominated by AC5 (about 6 min) and AC6 (about 2 min, GPU window).
+
+## Conflict surface
+
+**Files touched (13):**
+- `mk/levels.mk`, `mk/m5.mk`, `mk/ai.mk`, `mk/script-gates.mk`;
+- `tools/script-gate-baseline.txt`, `tools/script_gate_prereqs.sh` (new), `tools/level_eval.gd`;
+- `tests/test_planets.gd`, `tests/test_ai_bridge.gd`, `tests/test_ai_relay.gd`, `tests/test_ai_settings.gd`, `tests/test_conversation.gd`;
+- `tests/fixtures/script_gate/prereq_negative.mk.txt` (new);
+- plus this doc and the sprint JSON.
+
+**Open PRs** (V16, `gh pr diff <n> --name-only`; the control is the protected files each PR is known to touch):
+
+| PR | Files | Of ours | Control (`Makefile`, `mk/earth-link.mk`, `mk/m45.mk`, `mk/deck-layout.mk`) |
+|---|---:|---:|---:|
+| #384 | 11 | 0 | 1 |
+| #380 | 31 | 0 | 1 |
+| #379 | 99 | 0 | 3 |
+| #373 | 57 | 0 | 2 |
+
+**Not touched:** `Makefile`, `mk/sound.mk`, `mk/m45.mk`, `mk/deck-layout.mk`, `mk/earth-link.mk`, the helper, its self-test, the lint, and `tools/m4_ship_golden.gd`.
+
+## Risks and mitigations
+
+| Risk | Mitigation |
+|---|---|
+| `make -p`'s database format differs between make versions. | The format was measured under GNU make 3.81 and 4.4.1 (V14). The script refuses an empty database (`make printed no database`), so a format change fails loudly instead of passing. AC13 is the Ubuntu run. |
+| `SG_PREREQS` is a hand-kept list, so a new asset-dependent gate is not covered until someone adds its pair. | The list names the three known cases, and its comment says why it exists. Discovering prerequisites automatically (which gates read `data/starmap/*_large*`, `assets/planets/`) is a B8-sized lint and is not proposed here. |
+| Windowed gates on a shared GPU. | All 7 windowed rows were measured green twice: at base, then migrated (8–25 s), while `ioreg` sampled 0–100 % device utilization with an Ollama runner active (V6, V11, V12). 600 s is at least 24× the slowest. If a loaded night pushes one past its deadline, the helper says `timeout after 600 s` and the deadline is raised in one place. |
+| A test-list regex misses a legitimate character (it happened: `e2e`). | Lists use `[a-z0-9_, ]+`. A miss fails loudly (`no summary line matching`) and never passes wrongly. |
+| `ai-style-frame-record`'s regex embeds `$(AI_SF)`, an absolute path. A path with regex metacharacters (`+`, `(`, `[`) would stop matching. | It would fail loudly, never pass wrongly. A `.` in the path matches itself. Today's path (`…/stapledons-godot-iter71/.godot/tmp/ai-style-frame`) matches (V11, V12). |
+| `level-eval` is used in S2 authoring loops (`LAYOUT=`), and a quiet pass hides the per-surface numbers. | A failure still prints every non-`ok` line, including all `level-eval:` metric lines and `FAIL` details. A pass keeps them in the log and in `--json`. OQ3 records the alternative. |
+| `ai-live-guard` scans `mk/ai.mk`, so editing it could trip a guard rule. | The guard ran on the edited file and passed, three times (V12). The lines keep `env -u AI_LIVE …` literally, and no edited line runs the service live. |
+| Literal pins (`10 cases`, `64 frames, …8fps/8seconds`) pass the probe without counting anything at run time. | They pin exact text, and both scripts fail on any missing case or frame. Today's `alpha-centauri-golden` predicate pinned `10 cases` already (OQ4). |
+
+## Open questions
+
+None blocks the sprint.
+- **OQ1. How do the three Commons goldens get a count? (B3b; no default here.)** The options:
+  - add a case counter beside `_pole` in `tools/m4_ship_golden.gd` (shared with the `Makefile`'s m4 goldens, B4/B5), and print `commons-pilot-golden: N cases, M failures`;
+  - or count only in `commons_pilot_golden.gd`, which cannot see the helper's `ok` lines today.
+
+  B3b's sprint measures the m4 goldens through the helper before it chooses.
+- **OQ2. The five authoring rows (B3b).** This is B2's OQ3, handed on: wrap them and run them in a throwaway clone, or keep them as baseline rows until B8 classifies tools.
+- **OQ3. Quiet passes for `level-eval`. Default: accept.** This is the same deliberate behaviour change as B2 D1. The alternative is a helper flag that prints the log on a pass. It would change every gate and is not proposed.
+- **OQ4. Literal pins. Default: keep them.** `alpha-centauri-golden: 10 cases` keeps today's pin. `commons-civic-motion` prints a literal `64 frames` (`tools/commons_civic_motion.gd:68`). Computing it (`frames.size()`) is a one-line edit, deferred so that B3a stays exactly as measured.
+
+## Deliverables
+
+- The B3a change set: the 13 files above, saved as `/tmp/iter71_designer/b3a.diff` (V13). Apply it with `git apply`; it applies cleanly at `761f577f` (V18).
+- The baseline down 29 rows and the pin at 175.
+- `tools/script_gate_prereqs.sh` and its fixture, wired into `script-gate-lint`.
+- The sprint JSON progress and the evaluation, per the development cycle; the B3b rows handed to a later 7x row.
+
+## Estimated LOC per file
+
+Measured with `git diff --numstat` on the applied tree (V13), as added and removed lines:
+
+| File | + | − |
+|---|---:|---:|
+| `mk/levels.mk` | 21 | 28 |
+| `mk/m5.mk` | 4 | 6 |
+| `mk/ai.mk` | 7 | 7 |
+| `mk/script-gates.mk` | 13 | 3 |
+| `tools/script_gate_prereqs.sh` (new) | 27 | 0 |
+| `tests/fixtures/script_gate/prereq_negative.mk.txt` (new) | 7 | 0 |
+| `tools/script-gate-baseline.txt` | 0 | 29 |
+| `tools/level_eval.gd` | 5 | 1 |
+| `tests/test_planets.gd` | 1 | 1 |
+| `tests/test_ai_bridge.gd` | 4 | 2 |
+| `tests/test_ai_relay.gd` | 4 | 2 |
+| `tests/test_ai_settings.gd` | 4 | 2 |
+| `tests/test_conversation.gd` | 4 | 2 |
+| **Total (13 files)** | **101** | **83** |
+
+## Verification log
+
+These rows were run at `761f577f` on 2026-11-05, about 06:25–07:10 local, in `/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter71`, on the Apple Studio (M4 Max):
+- **Tools:** Godot `4.7.2.stable.official.ed1daf0bf`; AILANG v0.56.1 (`runtime/bin`); GNU make 3.81, plus `gmake` 4.4.1 for V14; `/bin/dash`; `shellcheck`.
+- **Supervision:** every `make` run sat under a process-group supervisor (the perl from `tools/script_gate.sh`, copied to `/tmp/iter71_designer/sup.pl`) with 900–1,800 s ceilings. Every raw Godot drill ran under `perl -e 'alarm 300'`. The runs went serially in background loops, polled in bounded `date +%s` loops, with every API key unset (`/tmp/iter71_designer/run.sh`).
+- **Not run:** the five authoring targets (they write tracked files) and anything that uploads. `planet-assets` and `ai-core-assets` are public-bucket **reads** into ignored directories.
+
+| # | Claim | Command | Observed |
+|---|---|---|---|
+| V1 | The lint at base | `make script-gate-lint` | `script-gate-lint: ok (237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)` |
+| V2 | 37 B3 rows, with their lines and flags | `make script-gate-inventory \| grep -E '^mk/(levels\|m5\|ai)\.mk'` | 37 rows, all `ungated`: `mk/levels.mk` 23, `mk/m5.mk` 5, `mk/ai.mk` 9, with the file:line and flags of D2's "Today" and D8 (for example `mk/m5.mk:73 planets-test tests/test_planets.gd ungated -,-,-,-`, `mk/levels.mk:76 levels-regress tools/levels_regress.gd ungated rc,se,sum,-`, `mk/ai.mk:558 ai-style-frame tests/test_conversation.gd ungated -,-,-,-`) |
+| V3 | Tools, and the runtime gap | `ls runtime`; `which -a ailang; ailang --version`; `make runtime`; `runtime/bin/ailang --version`; `godot --version`; `grep GODOT_VERSION .github/workflows/ci.yml`; `make deps`; `make import` | `runtime/: No such file or directory` in the fresh clone, so the prefix fell through to `~/go/bin/ailang` **`AILANG v0.57.1-dirty`**. `make runtime` took 4 s, then `AILANG v0.56.1`. `4.7.2.stable.official.ed1daf0bf` = `GODOT_VERSION: 4.7.2-stable`. deps rc 0; import rc 0 in 31 s |
+| V4 | What each script prints | `grep -nE 'print…' <each B3 script>` | the formats quoted in D2, D3 and D8: `test_planets.gd:248` `"\n%d passed, %d failed"`; `level_eval.gd:49` `"level-eval: %s %s"` (`ok`/`FAIL`); `test_ai_bridge.gd:684`, `test_ai_relay.gd:525`, `test_ai_settings.gd:359` and `test_conversation.gd:316` print `ok (<mode or tests>)` with no count; `alpha_centauri_golden.gd:56` adds `; worst %.6f`; `commons_pilot_golden.gd:31` `"commons-pilot-golden: %d failures"` |
+| V5 | Base: every headless B3 target | `sh run.sh base 1800 <21 targets>`; per row `grep -c 'SCRIPT ERROR'` and the last summary line from the row's own log | all **21 rc 0**, with the times and summary lines of D2's "Base" column (`level-test` 14 s … `ai-live-guard` 131 s); **0 `SCRIPT ERROR`** in every log; the 1-min load fell from 12.6 to 3.4 over the run |
+| V6 | The GPU during the windowed runs | `ioreg -r -d 1 -w 0 -c IOAccelerator \| grep -oE '"Device Utilization %"=[0-9]+'`, sampled before and after each windowed run; `ps … \| grep ollama` | `100` at 06:32 (during the headless base); then, before/after each windowed run of V7: `0/0`, `0/0`, `0/100`, `100/52`, `0/100`, `100/99`, `100/100`, `100/100`; `ollama runner --model qwen3.8:27b-mxfp8` active, with an `opencode run … ollama-rig/qwen3.8:27b-mxfp8` client |
+| V7 | Base: the windowed rows | `sh gpu.sh` (each `make <target>` under `sup.pl 900`, serially); the two Commons captures not in that loop, run as their base recipe lines in shell form (`base2.sh`); `make ai-style-frame` (`sf.sh`) | `alpha-centauri-golden` **rc 2, 1 s, twice**, log `alpha-centauri-golden: 10 cases, 0 failures; worst 0.001696` (identical both times; the predicate's `0 failures$$` cannot match). Then rc 0: `commons-pilot-golden` 9 s, `commons-backdrop-golden` 8 s, `commons-grown-golden` 14 s (each 6 `ok    G-LVL-` lines, `commons-pilot-golden: 0 failures`); `level-capture` 12 s, `level-capture: bridge 6 frames`; `commons-pilot-capture` 19 s; `commons-grown-motion` 11 s; `commons-grown-capture` 22 s and `commons-backdrop-capture` 19 s (`predicate PASS`, `commons-pilot-review: 48 frames, 0 failures`); `ai-style-frame` 22 s (`stub rehearsal re-recorded == tests/replays/medic_rehearsal.ndjson`, `3 swap PNGs, contact_sheet.png, line.ogg (32917 bytes), frame.avi ( 15M)`). 0 `SCRIPT ERROR` in every log |
+| V8 | Migrated tree, round 1 (headless) | the D2/D3/D6/D7 edits for the 22 headless rows; `sh run.sh mig/run 1800 <21 targets> script-gate-selftest script-gate-drill` | 22 of 23 runs rc 0. **`ai-relay` rc 2**: `script-gate: ai-relay FAIL; no summary line matching ^ai relay: ok \([1-9][0-9]* passed, 0 failures; [a-z_, ]+\)$` on the healthy line `ai relay: ok (63 passed, 0 failures; cache, disabled_old_sim, cancels, e2e, news, key_hygiene, routes)`, because `e2e` has a digit. Lists became `[a-z0-9_, ]+` (D1). Selftest `18 cases`; drill `24 cases` |
+| V9 | Round 2: the changed regexes, a second level, a fresh `SCRATCH` | `sh run.sh mig/run2 1800 ai-relay ai-settings ai-conversation levels-regress level-eval`; `make level-eval LEVEL=commons`; AC9's command | all rc 0: `ai-relay` 42 s (`63 passed`), `ai-settings` 12 s, `ai-conversation` 20 s, `levels-regress` 14 s (both negatives ok, rc 1), `level-eval` 6 s; `commons ok (14 surfaces, 7506 samples)` in 7 s; fresh: `absent`, three `ok` lines, rc 0, and `$F/s` lists `commons-life-pilot.log commons-pilot-check.log level-eval-bridge.json level-eval-bridge.log` |
+| V10 | Drills: parse and runtime errors, raw, today's predicate, and the gate | `/tmp/iter71_designer/drill.sh` (AC7/AC8's copies and commands, plus `as_p`, a parse-error `test_ai_settings.gd -- --launch-default` with `env -u …`) | `lv_p raw: rc 0, SCRIPT ERROR 1`, today: fail, gate FAIL rc=1. `lv_r raw: rc 0, SCRIPT ERROR 1, summary: level-test: 14 passed, 0 failures`, today: fail, gate FAIL. **`pl_p raw: rc 0`, today's predicate: PASS**, gate FAIL. **`pl_r raw: rc 0, SCRIPT ERROR 1, summary: planets: 79 passed, 0 failed`, today: PASS**, gate FAIL. **`ai_p raw: rc 0`, today: PASS**, gate FAIL. `ai_r raw: rc 1`, `FAIL  test_replay_noai ran to its end`, `ai relay: FAIL (0 passed, 1 failures; replay_noai)`, today: fail, gate FAIL (`rc 1, want 0; 1 SCRIPT ERROR …`). **`as_p raw: rc 0`, today: PASS**, gate FAIL. `neg_p raw: rc 0`, today: fail, gate FAIL (`rc 0, want 1; 1 SCRIPT ERROR …`). Every gate rc=1 |
+| V11 | Migrated windowed rows | the six windowed lines (`windowed.pl`) and D5's line applied; `sh run.sh mig/win 1200 commons-grown-capture commons-grown-motion commons-backdrop-capture commons-pilot-capture level-capture alpha-centauri-golden ai-style-frame ai-live-guard` | all 8 rc 0: `commons-grown-capture … 48 frames, 0 failures (… 22 s …)`, `commons-grown-motion … 64 frames, … (11 s)`, `commons-backdrop-capture (19 s)`, `commons-pilot-capture (20 s)`, `level-capture: bridge 6 frames (10 s)`, **`alpha-centauri-golden ok: … 10 cases, 0 failures; worst 0.001696 (rc 0 …, 1 s …)`**, `ai-style-frame-record ok: recorded …/.godot/tmp/ai-style-frame/rehearsal.ndjson: 5 ticks; library …` (target 15 s), `ai-live-guard` 136 s |
+| V12 | **The final tree, end to end** | `sh run.sh final 1800 <the 28 B3a targets> script-gate-lint script-gate-selftest script-gate-drill`; `grep '^script-gate:' <target outs> \| sort -u -t: -k2,2 \| wc -l`; `… \| grep -c FAIL` | all **31 runs rc 0**; **30** distinct gate lines (29 rows, with row 17 as 2 gates), with exactly the counts and times of D2's "After" column; **0** FAIL lines outside the drill (whose one `FAIL` is its intended `make-sim-parse` case); `test-script-gate: ok (18 cases: 18 stub, 0 Godot)`; `test-script-gate: ok (24 cases: 18 stub, 6 Godot)` |
+| V13 | The applied tree: lint, pin, hygiene, size | on the final tree: `make script-gate-lint`; `make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=176 \| tail -2`; `make script-gate-inventory \| grep -E '^mk/(levels\|m5\|ai)\.mk' \| awk -F'\t' '{print $4}' \| sort \| uniq -c`; `make uid-guard python-guard audio-silent-guard lint-precision`; `shellcheck -s sh` on the four scripts; `git diff --check`; `git add -N <2 new files>; git diff --numstat; git diff > /tmp/iter71_designer/b3a.diff` | `script-gate-lint: ok (238 --script invocations: 63 through $(SCRIPT_GATE), 175 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)` and `script-gate-prereqs: ok (3 pairs hold in Makefile: …)`; `the baseline has 175 rows but SCRIPT_GATE_BASELINE_ROWS is 176: …`, `make: *** [script-gate-lint] Error 1`; in the B3 files, `30 gated` (the 29 rows as 30 lines), `8 ungated` (D8); `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)`, `audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound)`, `lint-precision: ok (positive control matched 6 lines; …)`; shellcheck `sc=0`; diff check clean; numstat **13 files, 101 insertions, 83 deletions** (the LOC table) |
+| V14 | The prerequisite guard: control, mutant, merge, make versions | `dash tools/script_gate_prereqs.sh Makefile <3 pairs>`; the same on the fixture with `missing-target:x`; with `PATH=<dir with make -> gmake 4.4.1>:$PATH`, both runs again and the whole `make script-gate-lint`; the mutant: `constellation-test: import` in `mk/constellations.mk`, then `make script-gate-lint`; then a second rule line `constellation-test: starmap-assets` appended; restore; `time make -pq -f Makefile <probe>` | ok, `rc=0`; the fixture prints exactly `constellation-test lost its prerequisite starmap-assets (constellation-test: import)` and `missing-target has no rule in tests/fixtures/script_gate/prereq_negative.mk.txt`, `rc=1` (`planet-textures-check`'s second-line prerequisite passes); gmake 4.4.1 gives the same ok, the same two lines, and the full lint ok; mutant: the same line, `make: *** [script-gate-lint] Error 1`; second rule line: `script-gate-prereqs: ok (3 pairs …)`; restored (`git diff --quiet`). **Control (survivor at base):** before this change, nothing in `script-gate-lint` reads prerequisites (`grep -c prereq mk/script-gates.mk` = 0). The database read takes 0.02 s, 396 KB |
+| V15 | B3b blockers and D5's hazard | `sh tools/script_gate.sh gold-probe … '^commons-pilot-golden: 0 failures$' -- cat <commons-pilot-golden's base log>`; `git ls-files art/levels/bridge/baseline.json assets/levels/bridge/manifest.json assets/levels/commons/greybox.json data/planets/ALBEDO tests/replays/ai_stub_session.ndjson tests/replays/medic_rehearsal.ndjson`; `grep -n 'FileAccess.open' tools/planet_textures.gd tools/levels_regress.gd tools/level_stage.gd`; stub `sh tools/script_gate.sh path-probe … '^recorded [^ ]*/rehearsal\.ndjson: 5 ticks; library [^ ]*/library$' -- sh -c 'echo "recorded /tmp/2026/rehearsal.ndjson: 5 ticks; library /tmp/2026/library"'`, then the same with the literal path | `script-gate: gold-probe FAIL; summary 'commons-pilot-golden: 0 failures' carries no nonzero count …`; all six paths tracked (each printed); the write sites `planet_textures.gd:130`, `levels_regress.gd:72`, `level_stage.gd:18–19`; path-probe `FAIL; SUMMARY_ERE also matches 'recorded /tmp/0/rehearsal.ndjson: …' (count 1 zeroed …)`, `rc=1`; literal path `ok`, `rc=0` |
+| V16 | No open PR touches a file of this batch | `gh pr list --state open`; for each: `gh pr diff <n> --name-only`, then grep for our 13 files and for the control | open: #384, #380, #379, #373; files 11/31/99/57; ours `0` each; control `1`, `1`, `3`, `2` |
+| V17 | The new counts equal an independent reading | `grep -cE '^  ok ' base/<t>.out` for the AI targets and `planets-test`; `grep '^level-eval' .godot/tmp/level-eval-bridge.log`; AC10's command | `ai-godot` 89, `ai-relay` 63, `replay-noai` 3, `ai-settings` 53, `ai-conversation` 30, `ai-live-guard` 9, `planets-test` 121 (all with 0 FAIL), equal to the migrated summaries; one per-surface line, `level-eval: deck/deck (bow) samples 4771, …`; AC10: six `0` |
+| V18 | The diff applies to base; restore | `git apply --check /tmp/iter71_designer/b3a.diff && git apply …`; `make script-gate-lint`; AC3; AC2 under `make` and `gmake`; `git checkout -- mk tools tests; rm` the 2 new files; the 5 ignored `.translation` files from `make import` deleted; `git status --porcelain`; `ps -axo pid,etime,command \| grep -i '[g]odot'` | applies cleanly; lint ok (AC1's two lines); AC3 `rc=2` with the `lost its prerequisite` line and `restored`; AC2 under 3.81 `make: *** [script-gate-lint] Error 1`, under 4.4.1 `make: *** [mk/script-gates.mk:32: script-gate-lint] Error 1`; then `0` status lines before this doc was written; no Godot process left |
+| V19 | No consumer of the six old summary lines | `git ls-files \| grep -E '\.(sh\|gd\|mk\|yml\|ail)$\|Makefile' \| xargs grep -nE "ai bridge:\|ai relay:\|ai settings:\|conversation: (ok\|FAIL\|%s)"`; `git ls-files \| grep -vE '^(\.ailang\|changelogs)/' \| xargs grep -ln 'level-eval: [^ ]* ok\|level-eval: <id> ok'` | only `ui/conversation/conversation.gd:102,107` (`push_error("conversation: no …")`, unrelated) besides the four print lines; `level-eval: <id> ok` appears in four design docs and `tools/level_eval.gd` only, and all still hold as prefixes |
