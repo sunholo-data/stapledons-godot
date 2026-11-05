@@ -10,6 +10,9 @@ SCRIPT_GATE = sh $(SG_TOOLS)/script_gate.sh
 # unseen. 237 at the 7x snapshot (78f390c0), 232 after its five gates, 204 after B2a (28 rows in nine mk files).
 SCRIPT_GATE_BASELINE_ROWS := 204
 SG_LINT = SCRIPT_GATE_BASELINE_ROWS=$(SCRIPT_GATE_BASELINE_ROWS) sh $(SG_TOOLS)/script_gate_lint.sh
+# Gates whose test needs fetched assets keep the target that fetches them (B3; iteration 70 judge survivor:
+# constellation-test without starmap-assets was red in a fresh clone, unseen). Checked in make -p by script-gate-lint.
+SG_PREREQS := constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets
 # Outer deadline for the self-tests (round-2 amendment A2): the same process-group supervisor as tools/script_gate.sh,
 # so a broken helper cannot hang make test. Usage: $(SG_SUP) SECS command...
 SG_SUP = perl -e 'use POSIX ":sys_wait_h"; my $$secs = shift; my $$pid = fork; die "fork: $$!" unless defined $$pid; if ($$pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127; } my $$end = time + $$secs; my $$st; while (1) { my $$r = waitpid($$pid, WNOHANG); if ($$r == $$pid) { $$st = $$?; last } if (time >= $$end) { kill "TERM", -$$pid; my $$g = time + 2; while (time < $$g) { last if waitpid($$pid, WNOHANG) == $$pid; select(undef, undef, undef, 0.1) } kill "KILL", -$$pid; waitpid($$pid, 0); kill "KILL", -$$pid; exit 142 } select(undef, undef, undef, 0.1) } exit($$st & 127 ? 128 + ($$st & 127) : $$st >> 8)'
@@ -21,7 +24,7 @@ ci-fast: script-gate-lint script-gate-selftest
 script-gate-inventory: ## every --script invocation in the Makefile and mk/*.mk: file:line, target, script, gated/ungated/other, inline rc/SCRIPT ERROR/summary/timeout pieces
 	@$(SG_LINT) --inventory
 
-script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_GATE) or is a row of tools/script-gate-baseline.txt, and the scanned makefiles are closed under include (negative control: tests/fixtures/script_gate/lint_negative.mk.txt fails on exactly its planted rows)
+script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_GATE) or is a row of tools/script-gate-baseline.txt, the asset prerequisites in SG_PREREQS hold, and the scanned makefiles are closed under include (negative control: tests/fixtures/script_gate/lint_negative.mk.txt fails on exactly its planted rows)
 	@mkdir -p $(SCRATCH)/script-gate
 	@if SCRIPT_GATE_FILES=$(SG_FIX)/lint_negative.mk.txt SCRIPT_GATE_BASELINE=$(SG_FIX)/lint_negative_baseline.txt SCRIPT_GATE_BASELINE_ROWS=2 \
 	    SCRIPT_GATE_ALL_MAKEFILES="$(SG_FIX)/lint_negative.mk.txt tools/stray.mk" sh $(SG_TOOLS)/script_gate_lint.sh > $(SCRATCH)/script-gate/lint-negative.log 2>&1; then \
@@ -38,6 +41,12 @@ script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_G
 	    || ! grep -q 'the baseline has 2 rows but SCRIPT_GATE_BASELINE_ROWS is 3' $(SCRATCH)/script-gate/lint-pin.log; then \
 	    cat $(SCRATCH)/script-gate/lint-pin.log; echo "script-gate-lint: FAIL the pin control (2 rows, pin 3) was not refused"; exit 1; fi
 	@$(SG_LINT)
+	@if sh $(SG_TOOLS)/script_gate_prereqs.sh $(SG_FIX)/prereq_negative.mk.txt $(SG_PREREQS) missing-target:x > $(SCRATCH)/script-gate/prereqs-negative.log 2>&1 \
+	    || test "$$(grep -c '^script-gate-prereqs: ' $(SCRATCH)/script-gate/prereqs-negative.log)" != 2 \
+	    || ! grep -q '^script-gate-prereqs: constellation-test lost its prerequisite starmap-assets ' $(SCRATCH)/script-gate/prereqs-negative.log \
+	    || ! grep -q '^script-gate-prereqs: missing-target has no rule' $(SCRATCH)/script-gate/prereqs-negative.log; then \
+	    cat $(SCRATCH)/script-gate/prereqs-negative.log; echo "script-gate-lint: FAIL the prerequisite control (constellation-test without starmap-assets) was not refused by name"; exit 1; fi
+	@sh $(SG_TOOLS)/script_gate_prereqs.sh Makefile $(SG_PREREQS)
 
 script-gate-selftest: ## tools/script_gate.sh on stub commands (no Godot): pass, SCRIPT ERROR, hang past the timeout, a command that ignores TERM/ALRM, an orphan child, no summary, a 0 count, wrong rc, env passthrough, bad arguments
 	@SCRIPT_GATE_TMP=$(SCRATCH)/script-gate/selftest $(SG_SUP) 120 sh $(SG_TOOLS)/test_script_gate.sh
