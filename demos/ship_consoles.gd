@@ -1174,8 +1174,17 @@ func _comms() -> CommsStation:
 		comms_station = CommsStation.new()
 		comms_station.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		comms_station.pane_requested.connect(func(p: String) -> void: use("comms", p))
+		comms_station.weeks_requested.connect(_ask_weeks)
 		comms_panel = comms_station.words
 	return comms_station
+
+
+## R3-COMMS-V2 D1.3: a stack's weeks, asked of the journey sim (the read-only `earth_weeks` intent on a
+## zero-length tick; it changes nothing in the world). The answer lands in its world as earth_weeks.
+func _ask_weeks(a: int, b: int) -> void:
+	var sim = demo.get("journey_sim") if demo != null else null
+	if sim is SimBridge and int((sim as SimBridge).hello_reply.get("proto", {}).get("minor", 0)) >= SimBridge.EARTH_LOG_MINOR:
+		(sim as SimBridge).send([{"k": "earth_weeks", "from": a, "to": b}], 0.0)
 
 
 func _exit_tree() -> void:

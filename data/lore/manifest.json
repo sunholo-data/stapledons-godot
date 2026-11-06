@@ -1,11 +1,13 @@
 {
   "design_repo": "sunholo-data/stapledons-design",
-  "design_sha": "b26265c9fadf79c86cd1a9698231d971a61ff3b5",
+  "design_sha": "270f95882bc96d8ed3977db72133c00e78af9278",
   "files": [
-    {"path": "archive/README.md", "sha256": "f33621e4ca938209f2727994bfcdf3c8374b1263dd88bafd37df8ab43faa6368"},
+    {"path": "archive/README.md", "sha256": "5230f10f5df8ea5d51754aa26153407bc2f3b6d15674280f7a7062c95558419d"},
     {"path": "archive/bubble.md", "sha256": "b5c3e084d70703560ea80b4ca1bf4f4b5d95bf08aa6a1b3d133d1284881964a5"},
     {"path": "archive/cmb-forward.md", "sha256": "0c4792739ecc2078f7a686861e9895148707739d6af8dea75388c14113e9fd38"},
-    {"path": "archive/earths-voice.md", "sha256": "0333ce11392c169691a91fc7e397e37937ba91d93408d8b8a51363ccf85c76c4"},
+    {"path": "archive/colours-of-home.md", "sha256": "6011ba190170998bca753bff824152110cf8a16e119466fcc21803fced66071f"},
+    {"path": "archive/earths-carrier.md", "sha256": "43678f1cdad5ba1374cb588c4c2aea320432184ca3aba7c6b5372316bb0a9111"},
+    {"path": "archive/earths-voice.md", "sha256": "33684e0218c635893de00519eacefa4be4bff6baafbddcf58fe86e858196ba16"},
     {"path": "archive/following-light.md", "sha256": "d0f21da8596a4f7796c95b50381db55ec1e23b648fe6aebcff2c8cb16e2c7355"},
     {"path": "archive/ism-glow.md", "sha256": "dd3b34358a6e03d0890cf84625cf404c4a104eb41519fe96392d88d24861142e"},
     {"path": "archive/nothing-crosses.md", "sha256": "039c098ab4642672be2d000c1294321e693e65a5d6e79aa2b13aca790c959297"},
@@ -19,6 +21,6 @@
     {"path": "physics/higgs-bubble.md", "sha256": "bc159ee7ea5cb46c553ae0da7e7ef5418ff1988743b4263cd443eaf56c3a8361"},
     {"path": "physics/ism-structure.md", "sha256": "c048834d304a758abd03f9004b8a99f5f5dead37d847d86951db2e86c6a80ca7"},
     {"path": "physics/life-and-worlds.md", "sha256": "4581b65c0b0163fea926dc57b62d43efb16b264fe7f9a6d91f1a9bd52b80c314"},
-    {"path": "physics/relativity-spec.md", "sha256": "b3350d4fb32d3feef09584cd993598819d69793ac2c163a441ff516b5631e76f"}
+    {"path": "physics/relativity-spec.md", "sha256": "fadf8fc331e69dc8b61d2506a52146aeebc7ee79395118f1c82e50ff8917813b"}
   ]
 }

@@ -256,7 +256,8 @@ func test_beacon_plan() -> void:
 	var aud: Array = rx.audible
 	check(HomeBeacon.plan_for(e.call(float(aud[0])), false).on and not HomeBeacon.plan_for(e.call(float(aud[0]) * 0.999), false).on and HomeBeacon.plan_for(e.call(float(aud[1])), false).on and not HomeBeacon.plan_for(e.call(float(aud[1]) * 1.001), false).on, "S2 True: on inside receiver.audible [%s, %s], silent just outside it" % [aud[0], aud[1]])
 	check(HomeBeacon.plan_for(e.call(float(aud[0]) * 0.5), false).hearing == "below" and HomeBeacon.plan_for(e.call(float(aud[1]) * 2.0), false).hearing == "above", "S2 True: below and above hearing are named (the station's words)")
-	check(float(aud[0]) * HomeBeacon.CARRIER_HZ <= 20.0 and float(aud[1]) * HomeBeacon.CARRIER_HZ >= 20000.0 and float(aud[1]) * HomeBeacon.CARRIER_HZ < 0.5 * 44100.0, "S2: the 400 Hz carrier spans human hearing (20 Hz..20 kHz) inside the audible band and stays below the mixer's Nyquist at its top (%.0f Hz)" % (float(aud[1]) * HomeBeacon.CARRIER_HZ))
+	check(is_equal_approx(float(aud[0]) * HomeBeacon.CARRIER_HZ, 20.0) and is_equal_approx(float(aud[1]) * HomeBeacon.CARRIER_HZ, 20000.0) and float(aud[1]) * HomeBeacon.CARRIER_HZ < 0.5 * 44100.0, "S2: the audible band is human hearing at the 400 Hz carrier, exactly 20 Hz..20 kHz (RS-46, RS-47; Mark 2026-11-03), below the mixer's Nyquist at its top (%.0f Hz)" % (float(aud[1]) * HomeBeacon.CARRIER_HZ))
+	check(not HomeBeacon.plan_for(e.call(0.03), false).on and HomeBeacon.plan_for(e.call(0.070888), false).on, "S2 True: silent at D 0.03 (a 12 Hz carrier, infrasound), on at 0.99c outbound (28 Hz)")
 	check(not HomeBeacon.plan_for(e.call(0.5, false), true).on and not HomeBeacon.plan_for(e.call(1.0, true, true), true).on and not HomeBeacon.plan_for({}, true).on and not HomeBeacon.plan_for({"earth": {"in_beam": true}}, true).on, "S2: out of Earth's beam, at home, or with no Earth link, the beacon is off")
 	var d := SoundDirector.new()
 	d.audible = false

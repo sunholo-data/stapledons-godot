@@ -10,6 +10,10 @@ extends SceneTree
 ##                     turned to face the stern (faces-bow), a box on the spawn's bow line
 ##                     (spawn-open), a wall at eye height on the Bow pole line (pole-ray), a use point
 ##                     in the mast's shadow (station-body)
+##   monitors          (R3-COMMS-V2 CV6, AC8) the shipped deck's four monitors pass the readability metric
+##                     (each >= 0.25 of Bow samples, the signal from the spawn, chair, comms and Voyage);
+##                     seeded: the signal monitor moved onto the walk fails monitor-walk, and turned to the
+##                     stern fails monitor-readable and monitor-signal
 ##   layout files      fixture boxes outside a test are refused
 ##   DL2 props         the dressed heroes load from bridge_props.glb, once, inked, opaque, unlit
 ## Fixtures: tests/fixtures/deck_layout/a_*.json.
@@ -43,6 +47,8 @@ func _run() -> void:
 	await test_negative("a_spawn_box", "spawn-open")
 	await test_negative("a_pole_box", "pole-ray")
 	await test_negative("a_station_shadow", "station-body")
+	await test_negative("a_comms_faces_rim", "faces-bow") # R3-COMMS-V2 CV4
+	await test_monitors()
 	await test_props()
 	check("a layout with fixture boxes is refused outside a test", not DeckLayout.validate(DeckLayout.load_layout(FIX + "a_pole_box.json")).is_empty())
 	print("deck-layout-eval-test: %d passed, %d failures" % [passes, failures])
@@ -110,6 +116,37 @@ func test_props() -> void:
 		check("DL3: %s stays in ship.glb" % n, demo.geometry.get_child(0).find_child(n, true, false) != null)
 	var occ := demo.get_tree().get_nodes_in_group(CameraDirector.OCCLUDER_GROUP).filter(func(x: Node) -> bool: return props.is_ancestor_of(x))
 	check("DL3: the props' foreground layer still fades (views.json occluders: %d prop meshes grouped, shrine, terminal and fronds among them)" % occ.size(), occ.any(func(x: Node) -> bool: return String(x.name).contains("shrine_ribs")) and occ.any(func(x: Node) -> bool: return String(x.name).contains("archive_terminal")) and occ.filter(func(x: Node) -> bool: return String(x.name).contains("rim_frond")).size() == 10)
+	demo.queue_free()
+	await process_frame
+
+
+## AC8: the monitors through the evaluator on the shipped deck, then with one seeded defect each.
+func test_monitors() -> void:
+	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
+	demo.setup_options = {"size": Vector2i(DeckBowMetrics.PX), "sky_state": "rest"}
+	root.add_child(demo)
+	await process_frame
+	demo.auto = false
+	demo.journey_auto_tick = false
+	for k in 3:
+		await process_frame
+		await physics_frame
+	var dl := DeckLayout.new(demo)
+	var metrics := DeckBowMetrics.new(demo, dl)
+	var pts := dl.samples("bridge")
+	var m := metrics.monitor_metrics(pts)
+	var f := ids(DeckBowMetrics.monitor_failures(m, t))
+	check("monitors: the shipped four pass the readability metric (%s; failures %s)" % [m.keys().map(func(k: String) -> String: return "%s %.3f" % [k, m[k].bow.readable_share]), f], m.size() == 4 and f.is_empty())
+	var sig: Node3D = (demo.monitors as Array).filter(func(x: Node) -> bool: return x.get("id") == "signal")[0]
+	var keep := sig.transform
+	var foot: Vector3 = demo.walk_bridge.closest_walkable(Vector3(-9.95, 82.0, -17.23), 1.5) # the rim walk under the signal (r 19.9, -30 deg)
+	sig.transform = Transform3D(keep.basis, Vector3(foot.x, keep.origin.y, foot.z))
+	f = ids(DeckBowMetrics.monitor_failures(metrics.monitor_metrics(pts), t))
+	check("monitors: seeded, the signal monitor on the walk fails monitor-walk (%s)" % [f], f.has("monitor-walk"))
+	sig.transform = Transform3D(keep.basis.rotated(Vector3.UP, PI), keep.origin)
+	f = ids(DeckBowMetrics.monitor_failures(metrics.monitor_metrics(pts), t))
+	check("monitors: seeded, the signal monitor turned to the stern fails monitor-readable and monitor-signal (%s)" % [f], f.has("monitor-readable") and f.has("monitor-signal"))
+	sig.transform = keep
 	demo.queue_free()
 	await process_frame
 

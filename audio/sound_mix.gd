@@ -13,7 +13,11 @@ extends RefCounted
 ##   │                receiver corrects Earth's Doppler shift (R3 audio realism AR8b, standing order
 ##   │                2026-10-30: the True setting leaves it off)
 ##   ├ UI        Compressor sidechained to Voice (lighter)
-##   └ Music     sidechained to Voice; empty (OQ4, D-101)
+##   ├ Music     sidechained to Voice; empty (OQ4, D-101)
+##   ├ Antenna   R3-COMMS-V2 CV3: a silent analysis tap (−80 dB, a SpectrumAnalyzer before the fader) that
+##   │           carries the True signal from home (the week's bed and Earth's carrier at speed and pitch
+##   │           × D) for the waterfall; nothing on it is meant to be heard
+##   └ Carrier   the same, the True carrier alone (the waterfall's measured carrier peak)
 ##
 ## Presentation only: nothing here reaches the sim.
 
@@ -27,7 +31,12 @@ const BUSES := [
 	{"name": "Receiver", "send": "Instruments", "pitch_shift": true},
 	{"name": "UI", "send": "Master", "duck": {"threshold": -26.0, "ratio": 2.0, "attack_us": 5000.0, "release_ms": 200.0}},
 	{"name": "Music", "send": "Master", "duck": {"threshold": -30.0, "ratio": 4.0, "attack_us": 5000.0, "release_ms": 400.0}},
+	{"name": "Antenna", "send": "Master", "tap": true},
+	{"name": "Carrier", "send": "Master", "tap": true},
 ]
+## R3-COMMS-V2 CV3: the analysis taps' fader (inaudible; the analyser reads before it) and FFT size.
+const TAP_DB := -80.0
+const TAP_FFT := AudioEffectSpectrumAnalyzer.FFT_SIZE_4096
 ## The buses a player can set (settings.cfg [audio] volume_<bus>), in the order a settings panel shows them.
 const SETTABLE := ["Master", "Voice", "Effects", "Ambience", "Instruments", "UI", "Music"]
 const LIMIT_CEILING_DB := -1.0
@@ -60,6 +69,12 @@ static func ensure_layout() -> void:
 		if spec.get("pitch_shift", false):
 			AudioServer.add_bus_effect(i, AudioEffectPitchShift.new())
 			AudioServer.set_bus_effect_enabled(i, 0, false) # off until the receiver corrects
+		if spec.get("tap", false):
+			var an := AudioEffectSpectrumAnalyzer.new()
+			an.fft_size = TAP_FFT
+			an.buffer_length = 0.5
+			AudioServer.add_bus_effect(i, an)
+			AudioServer.set_bus_volume_db(i, TAP_DB)
 
 
 static func _master_effects() -> void:
@@ -107,7 +122,20 @@ static func is_layout_ok() -> Array[String]:
 			bad.append("%s has no reverb" % spec.name)
 		if spec.get("pitch_shift", false) and _find_effect(i, "AudioEffectPitchShift") == null:
 			bad.append("%s has no pitch shift" % spec.name)
+		if spec.get("tap", false) and (_find_effect(i, "AudioEffectSpectrumAnalyzer") == null or AudioServer.get_bus_volume_db(i) > -60.0):
+			bad.append("%s is not a silent analysis tap" % spec.name)
 	return bad
+
+
+## R3-COMMS-V2 CV3: a tap's analyser instance (null before the layout is built).
+static func tap(bus: String) -> AudioEffectSpectrumAnalyzerInstance:
+	var i := AudioServer.get_bus_index(bus)
+	if i < 0:
+		return null
+	for j in AudioServer.get_bus_effect_count(i):
+		if AudioServer.get_bus_effect(i, j) is AudioEffectSpectrumAnalyzer:
+			return AudioServer.get_bus_effect_instance(i, j) as AudioEffectSpectrumAnalyzerInstance
+	return null
 
 
 ## R3 audio realism AR8b: the comms receiver's frequency correction, a pitch factor on the Receiver
