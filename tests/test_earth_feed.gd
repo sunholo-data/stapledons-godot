@@ -85,6 +85,47 @@ func _run() -> void:
 	check("real time: no wash, no ghosts", unwashed(f) and not f.ghosts[0].visible)
 	check("the feed has no tint layer at all", not ("tint" in f) and f.find_children("*", "ColorRect", false, false).is_empty())
 
+	# R3-TRUE-PROCESSED-b (Mark 2026-11-03): the Doppler indicator, Processed only: one continuous gradient
+	# from the screen's edge inward, no border; the picture runs to the edge. True shows nothing.
+	f.set_receiver(true)
+	f.refresh(view({"rate": 14.107, "feed": feed(43, "library", "town-market", "market day", 5)}))
+	var ind: Dictionary = EarthFeed.doppler_indicator(14.107)
+	var vg: Control = f.vignette
+	check("Processed, closing on Earth (D 14.107): the edge gradient shows the indicator, blue (%s)" % vg.colour, vg.shown and vg.colour.b > vg.colour.r and is_equal_approx(vg.strength, float(ind.strength)))
+	check("Processed: the indicator is labelled, its number bound to earth.rate (%s)" % f.doppler_tag.text, f.doppler_tag.visible and f.doppler_tag.text.begins_with("Doppler ×") and f.doppler_tag.text.ends_with(" · shown") and f.doppler_tag.text.contains("14"))
+	check("no border: the clipping screen fills the whole feed and the picture runs to the edge", f.screen.clip_contents and f.screen.offset_left == 0.0 and f.screen.offset_top == 0.0 and f.screen.offset_right == 0.0 and f.screen.offset_bottom == 0.0 and f.picture.get_parent() == f.screen and not ("bezel" in f))
+	check("Processed: the picture itself is untouched (no modulate); the gradient sits above it, its ghosts and the static", unwashed(f) and vg.get_index() > f.picture.get_index() and vg.get_index() > f.static_rect.get_index() and f.ghosts.all(func(g: TextureRect) -> bool: return g.get_parent() == f.screen and g.get_index() < vg.get_index()))
+	var w: float = vg.width()
+	check("the gradient's width is vignette_frac (10%%) of the screen's short side (%.1f px)" % w, absf(w - 0.10 * minf(f.screen.size.x, f.screen.size.y)) < 1e-4)
+	check("the gradient is full strength at the very edge and nothing at its inner end", is_equal_approx(vg.opacity_at(0.0), float(ind.strength)) and vg.opacity_at(w) == 0.0 and vg.opacity_at(w * 1.5) == 0.0)
+	var mono := true
+	var prev := INF
+	for k in 41:
+		var o: float = vg.opacity_at(w * k / 40.0)
+		if o > prev + 1e-12: mono = false
+		prev = o
+	check("the gradient falls monotonically from the edge inward (41 depths)", mono)
+	check("Processed: the label is drawn above the gradient (an instrument label on its themed backing)", f.doppler_tag.get_index() > f.screen.get_index() and f.doppler_tag.theme_type_variation == "HUDEarthFeed")
+	f.refresh(view({"rate": 0.070888, "feed": feed(44, "library", "town-market", "market day", 6)}))
+	check("Processed, leaving Earth (D 0.070888): the gradient is red, as strong as 1/D", vg.shown and vg.colour.r > vg.colour.b and is_equal_approx(vg.strength, float(ind.strength)))
+	f.refresh(view({"rate": 1.0}))
+	check("Processed at rest (D 1): no indicator strength (the label still says x1)", vg.strength == 0.0 and vg.opacity_at(0.0) == 0.0 and f.doppler_tag.visible)
+	# eval #384 B1: the slow band's drift scales the picture and the fast band jumbles ghosts, but both stay
+	# inside the clipping screen, below the gradient.
+	f.refresh(view({"rate": 0.070888, "feed": feed(46, "library", "town-market", "market day", 6)}))
+	f.advance(10.0)
+	check("slow band, advanced: the drift scales the picture inside the clipping screen (scale %.3f)" % f.picture.scale.x, f.picture.scale.x > 1.0 and f.picture.get_parent() == f.screen and f.screen.clip_contents and vg.shown)
+	f.refresh(view({"rate": 14.107, "feed": feed(47, "library", "town-market", "market day", 5)}))
+	f.refresh(view({"rate": 14.107, "feed": feed(48, "sky", "town-market", "market day")}))
+	f.advance(0.3)
+	check("fast band, advanced: the jumbled ghosts sit in the clipping screen below the gradient", f.ghosts[0].visible and f.ghosts[0].get_parent() == f.screen and f.ghosts[0].get_index() < vg.get_index())
+	f.set_receiver(false)
+	f.refresh(view({"rate": 14.107, "feed": feed(45, "library", "town-market", "market day", 5)}))
+	check("True: no gradient, no label; the picture to the edge as decoded", not vg.shown and vg.strength == 0.0 and vg.opacity_at(0.0) == 0.0 and not f.doppler_tag.visible and unwashed(f))
+	f.set_receiver(true)
+	f.refresh(view({"rate": 14.107}))
+	check("toggling back to Receiver shows the indicator again", vg.shown and f.doppler_tag.visible)
+
 	# out of beam
 	var out := view({"in_beam": false, "last_feed": feed(2, "library", "town-market", "market day", 3), "feed": feed(400, "library", "town-market", "market day", 7),
 		"out": {"reason": "not_heard", "port_id": "CNS5:1676", "due_t": 17.29, "due_year": 17.29, "due_in_years": 8.3, "progress": 0.36}})

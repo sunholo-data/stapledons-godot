@@ -1,0 +1,51 @@
+{
+  "score": 65,
+  "pass": false,
+  "breakdown": {
+    "provenance_and_mapping": {"score": 25, "max": 25},
+    "picture_and_bezel_separation": {"score": 5, "max": 25},
+    "true_setting": {"score": 10, "max": 10},
+    "tests_goldens_and_regressions": {"score": 15, "max": 25},
+    "documentation": {"score": 10, "max": 15}
+  },
+  "blocking": [
+    {
+      "location": "ui/earth_feed.gd:386 and ui/earth_feed.gd:406",
+      "issue": "Animation defeats the picture inset.",
+      "failure": "At D=0.070888, advance(10) scales the 640×360 feed's picture from rect (6,6,628,348) to (-3.60,0.60,646.84,358.44), covering the bezel. GPU pixel (2,180) changes from the red indicator to the neutral picture. Ghost positioning also replaces the inset: a fast-band ghost starts at y=-2.46. Clip all animated picture layers inside a fixed inner control."
+    },
+    {
+      "location": "ui/earth_feed.gd:208",
+      "issue": "The new Doppler label overlays decoded picture pixels.",
+      "failure": "Measured label rect (233,10,174,27) intersects picture rect (6,6,628,348). The generated Processed render confirms this. Reserve space outside the picture for the label."
+    },
+    {
+      "location": "PR #384 revision",
+      "issue": "The requested head could not be evaluated.",
+      "failure": "fb0d15c4 is absent locally and GitHub returns HTTP 422 for it. Both the checkout and live PR identify d70cf3b304a63a4fe2b4b64ebf43287abd040690. These findings apply to d70cf3b3; they do not certify fb0d15c4."
+    }
+  ],
+  "non_blocking": [
+    "D-21 provenance is correct: the label binds earth.rate directly, and the colour uses the same live earth_rate.",
+    "The documented mapping is implemented: 555/D, clamp [400,650] nm, Blackbody.cmf, negative-channel clipping, max-channel normalization, sRGB encoding, and clamped |ln D|/ln(1414.2).",
+    "The 650 nm cutoff is justified for this Processed indicator: the existing fit produces orange at 700 nm. It should be described as an indicator limit, rather than the actual end of human visibility.",
+    "True correctly hides the Doppler label and draws a plain ink bezel.",
+    "The scalar and qualitative colour tests exercise real production behavior. G-EL-2b performs genuine GPU readback, but uses the production colour helper for its expected value, hides the label, clears ghost history, and never advances the feed. It therefore misses both separation defects.",
+    "The fallback visible range in doppler_indicator() remains [400,700], inconsistent with the documented [400,650]. Shipped data overrides it."
+  ],
+  "evidence": {
+    "environment": "Godot 4.7.2; bundled AILANG v0.56.1 present. PATH was prefixed with runtime/bin.",
+    "scope": "Tests ran in /tmp/codex-pr384-eval. Existing import caches were reused with make -o import; subsequent test user paths and AILANG caches were redirected into /tmp.",
+    "results": [
+      "Direct headless tests/test_earth_feed.gd: 66 passed, 0 failures.",
+      "make -o import earth-feed-test comms-station-test physics: exit 0; earth-feed 66 passed; comms-station 42 passed; physics 1052 passed, 0 failed.",
+      "make earth-link-golden: 23 passed, 0 failures, including all three G-EL-2b cases.",
+      "make -o import capture-doppler-indicator: 10 frames OK; Processed render visually inspected.",
+      "Independent GPU probe confirmed label overlap, drift covering the bezel, and ghost bounds crossing the inset."
+    ],
+    "red_end_check": "At 700 nm the production fit gives X/Y=1.31673 and sRGB approximately (1,0.506,0); the primary CIE table gives X/Y=2.76918. At 650 nm the production colour is pure red. The fit's far-red chromaticity defect is independently documented in [Puls 2025](https://jcgt.org/published/0014/01/01/paper.pdf); reference data: [CIE 1931 observer](https://cie.co.at/datatable/cie-1931-colour-matching-functions-2-degree-observer).",
+    "merge_gates": "Fast CI was still in progress; no rig/full status was present. Neither tools/rig_check.sh nor full make test was run.",
+    "workspace": "Original checkout remained clean.",
+    "execution_constraint_violation": "My initial Godot user-data redirection was incorrect. The initial test could write outside /tmp, and directory probes created directories beneath ~/Library/Application Support/tmp and ~/Library/Application Support/-/-/-/-. Subsequent test user I/O was redirected into /tmp. I did not remove those external directories because that would require another write outside /tmp."
+  }
+}

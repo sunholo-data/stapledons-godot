@@ -780,6 +780,23 @@ func test_earth_feed_bands() -> void:
 		for c: Node in f.get_children():
 			if c is ColorRect and (c as ColorRect).visible: wash += (c as ColorRect).color.a
 		check("RS-Q5 the decoded picture at D = %s is drawn as sent (no wash, unmodulated)" % w[0], wash + (0.0 if f.picture.self_modulate == Color(1, 1, 1) else 1.0), 0.0, 0.0)
+	# R3-TRUE-PROCESSED-b: the Processed Doppler indicator at the RS check values. A reference line at
+	# lambda_ref is seen at lambda_ref / D; its strength is |ln D| / ln(RS-30); D and 1/D are equally strong.
+	var dop: Dictionary = EarthFeed.copy().doppler
+	var lref := float(dop.lambda_ref_nm)
+	for row: Array in [["RS-26", 0.070888], ["RS-27", 0.022366], ["RS-28", 7.0711e-4], ["RS-29", 14.107], ["RS-30", 1414.2], ["rest", 1.0]]:
+		var dd: float = row[1]
+		var ind: Dictionary = EarthFeed.doppler_indicator(dd)
+		check("%s Doppler indicator: the reference line at %.0f nm is seen at lambda_ref / D" % [row[0], lref], float(ind.lambda_nm), lref / dd, lref / dd * 1e-12)
+		check("%s Doppler indicator strength = |ln D| / ln 1414.2" % row[0], float(ind.strength), clampf(absf(log(dd)) / log(1414.2), 0.0, 1.0), 1e-12)
+	check("RS-28 and RS-30 (top speed, either way) are the indicator's full strength", float(EarthFeed.doppler_indicator(7.0711e-4).strength) + float(EarthFeed.doppler_indicator(1414.2).strength), 2.0, 1e-4)
+	var red := EarthFeed.doppler_indicator(0.070888)
+	var blue := EarthFeed.doppler_indicator(14.107)
+	check("RS-26 (receding) clamps to the red end, 650 nm; RS-29 (approaching) to the violet end, 400 nm", float(red.shown_nm) + float(blue.shown_nm) / 1000.0, 650.4, 1e-9)
+	check("the red end is pure red and the violet end blue-violet (hue held by the gamut clip)", 1.0 if (red.colour as Color).g < 0.05 and (red.colour as Color).b < 0.05 and (blue.colour as Color).b > 0.99 and (blue.colour as Color).g < 0.05 else 0.0, 1.0, 0.0)
+	check("the receding indicator is red, the approaching one blue", 1.0 if (red.colour as Color).r > (red.colour as Color).b and (blue.colour as Color).b > (blue.colour as Color).r else 0.0, 1.0, 0.0)
+	var mid: Color = EarthFeed.doppler_indicator(555.0 / 520.0).colour
+	check("inside the band the hue follows the line: D 1.0673 shows 520 nm, green over red and blue", 1.0 if mid.g > mid.r and mid.g > mid.b else 0.0, 1.0, 0.0)
 	f.free()
 
 
