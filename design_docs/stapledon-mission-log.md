@@ -1252,3 +1252,48 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
   3. All four quiet probes failed on Screen Sharing processes as well as GPU. 7m-d has been PARKED-ON-LANE for seven fires (68–74); the lane is the Studio's shared GPU and its remote sessions, which the loop cannot change. That is a routing signal for Mark (standing rule 8(e)), not a fact about the row.
 - **Record:** charter (STATUS 74; STATUS 71 rotated to the archive; row 7ac parked, row 7ad filed; the CURRENT GOAL counter), this entry, the index, the dashboard, and the 7ac design doc in `planned/r1/`.
 - **Next:** 7m-d S1 when `quiet2.sh` holds. Otherwise 7ad (headless; the designer rotation's next doc; check the attended PRs' `Makefile` hunks), then 7ac (re-run ACs, re-quorum once). 7ab needs an idle rig. 7x's GPU batches when a GPU window is free. D-146 (Mark) decides the designer rotation; D-145 the nightly sound-test red; D-129 → L4 M1b → M2; the S1 render review is Mark's.
+
+## 75 — 2026-11-06 — Row 7m-d S1 RUN on a quiet rig (first in eight fires): docked p99 17.35–18.41 and empty floor 15.53–16.23 reproduce, outcome (a) holds, but every immediate docked post reading fails on the probe's own GPU use, so D-147 asks Mark what counts; first valid bench docked control on record (15.18, transit 16.22); Sonnet 68 FAIL → 86 PASS [LOOP]
+
+- **Progress**: R1: clauses 1–3 MET, clause 4 UNMET (row 7m AC1 via 7m-d), clause 5 ongoing. 7m-d's S1, the step that closes it under D-127 B, has run; whether it counts, and what happens to AC1, is D-147 (Mark). Nothing built; no tracked code changed.
+- **Pick:** 7m-d S1 (critical path, D-128 default A), routable for the first time since iteration 67: `quiet2.sh` YES twice at 17:53 CET (GPU 0/0/0, load 3.20, HID idle 17,080 s, remote-procs 0, vnc 0). The recorded Next (7ad) was the fallback.
+  - Gate 0: armed (`mission-stapledon.disabled` absent); `sunholo-voight-kampff`; billing CLEAN. #370: 0 allowlisted directives (17 comments; watermark file absent, every comment read). Self-notices rc 0 (0 crash notices, control 4:5); 1 transcript-scan notice since the #329 watermark, fire `stapledon-1793823245-38817`, already reported by iterations 72–74 (key names only in the private controlplane notice). No inbox message addressed to this mission. No rotation, no weekly sweep due.
+  - Gate 1: main checkout clean at `8c570d1e` = origin/main. All 14 skill files byte-identical to ailang `origin/dev` (resolved symlink). Open loop-account PRs #373, #380 (attended R2-KERR, D-144). Fast tier success on `8c570d1e`. #392 (nightly red, `sound-test` S2): attended #405 changed the measurement and says the nightly closes the issue on its next green run; evidence appended to D-145. No iteration-74 orphans.
+- **Design:** none. The doc (`m4-7md-docked-p99-attribution.md`, quorum rounds 1–2 in iteration 67) already defines S1; this fire is the controller measurement that AC names, so no designer ran and no quorum was owed (no design change; measurements and the options' framing only).
+- **Measurement** (controller; fresh clone `stapledons-godot-iter75` at `8c570d1e`, `make runtime` → v0.56.1, `sky-assets`, `lens-assets`, `deps`, `import`; probes extracted from the doc's appendices; every run under `perl alarm`, `quiet2.sh` YES immediately before each):
+  - Docked ×4 (`--long=1500 --skip-transit`): L p99 17.73, 17.63, 17.35, 18.41 (band 17.49–18.61); C p99 17.39, 18.23, 16.55, 17.76; slow frames in every fifth; draw > game in 163 of 166 printed slow frames.
+  - Empty ×5 (`--frames=1500`): p99 15.86, **24.88** (41 over, untraced; clean readings before and after), 15.53, 16.21, 15.76 (band 15.86–16.28).
+  - Post readings: at once, docked 0 of 4 (first GPU sample 29, 31, 36, 28; then 0, 0), empty 5 of 5; at +3 s, docked 2 of 2, empty 1 of 2 (load 9.23). An `ioreg` sampler beside docked 3 read 26–34 % throughout the run, 0 from about 0.2 s after exit, 0 throughout the empty runs. Iteration 67's V16 had the same shape (70/0/0).
+  - `make bench SCENE=bridge` ×2 (stale JSON removed first): docked control **17.95 / 15.18**, transit p99 16.12 / 16.22, `verdict ok`, post readings YES at +0 and +3 s. Bench 2 is the first quiet, session-checked run with a valid control (≤ 16.7) and the transit target met.
+  - R3 no longer holds: three comms-monitor CanvasItems (`ui/comms_waterfall.gd` and two monitor `Control`s, R3-COMMS-V2 `e70d0fdf`) draw while docked, 201–214 per 300 frames; the docked p99 did not move.
+- **Record in the doc:** Verification Log V18–V22, section "S1 result", OQ0 (when the post reading is taken) and OQ6 (re-run AC1 under the unchanged rule), dated notes on finding 6 and Confidence. The options table is not presented as S1-complete: Q1 is about the rule, Q2 conditional on Q1 B.
+- **Plan / Build:** none (measurement-only row, no tracked change).
+- **Evaluation:** Sonnet (Agent tool, foreground). Round 3: **68 FAIL**, one blocking: OQ0 B claimed S1 complete for the docked half with one counted docked run. The controller reproduced it (S1 needs two docked runs, docked 1 and 2 had no +3 s reading) and answered by measurement, docked 4 and empty 5 with both readings, plus the judge's non-blocking points (the sampler disclosed, the mechanism softened, maxima added, the preamble contradiction removed, "1 of 2" not called a rate). Round 4 (`SendMessage` resume): **86 PASS**, zero blocking, every number re-derived from the raw files; its own empty run p99 16.23 (quiet before and after). Its round-4 note that B's cost was unstated was applied (one sentence). `eval_R1-M4-JOURNEY_7md_round_{3,4}.json`.
+- **CI:** the record PR (doc, evals, charter, log, index, dashboard, status archive) on the fast tier; see the PR.
+- **Routing evidence**
+
+  base=8c570d1e5c8f452b72ff116003166b6e09b29eee@2026-11-06T17:12:34Z (gate 4; gate 1 read the same SHA at 16:52:30Z).
+
+  Resolver at pick: evaluator `agent-tool sonnet declared:alias-pin`; designer `recipe claude:claude-opus-5-5 declared:provider-pin` (not needed). Planner and executor pins `codex:gpt-6.1-sol` (not needed). `MISSION_OVER_RATION` empty; `MISSION_ROUTING_NOTE` empty.
+
+  The operator's standing request asked for the Agent tool for the designer, planner, executor and evaluator, as the routing table specifies.
+  - The **evaluator** was spawned with the Agent tool on `sonnet` (foreground), and its re-judgement was a `SendMessage` resume of the same agent. Generator (controller, Opus 5.5) ≠ judge (Sonnet).
+  - The **designer, planner and executor were not spawned**, and no role failed: the row's AC S1 is a controller measurement defined by an already-quorumed doc, and nothing was built. No role fell back.
+  - Designer rotation pointer unchanged (no designer run); D-146 still open.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Evaluator Agent `sonnet`: 68,557 tok (round 3); 82,403 tok reported after the round-4 resume. Quota bucket anthropic.
+  - Designer, planner, executor: not spawned (0 tok).
+  - Quorum: none. Metered spend this fire: **$0**.
+- **Ruled out:**
+  - Counting the docked runs under S1 as written: every immediate post reading failed (5 of 5). Not relaxed by the loop; asked as D-147 Q1.
+  - Another GPU user as the cause of those failures: no reading showed one, the +3 s readings and the sampler read 0, and empty runs never failed on GPU. Which of exit-burst and counter lag it is: not shown.
+  - The comms monitors as a cause of the docked tail: they draw since R3-COMMS-V2, and L p99 is unchanged (17.35–18.41 against 17.49–18.61).
+  - `pgrep -x Godot` as a liveness column in the sampler: it never matched (rule 7(c): silence is not evidence); ignored.
+  - Rewording OQ0 B to answer the judge's block: the block was a missing run, so the answer was two more runs.
+- **Retro:**
+  1. 7m-d waited eight fires for a quiet rig, and the window came at 17:53 on a Friday. A row that needs one should be the first thing every fire probes, as it was here; the probe is cheap (`quiet2.sh`, 3 s).
+  2. A rule's post-run check was written without a control for the probe's own effect on it. A predicate that reads a shared counter after your own run should be drilled once against your own run before it voids anything.
+  3. The judge's blocking finding was a count, not a word: S1 needs two runs per kind. Answering it by measurement took 2 minutes on a quiet rig; rewording would have shipped a wrong option to Mark.
+- **Record:** charter (STATUS 75; STATUS 72 rotated to the archive; row 7m-d tagged; D-147 filed; D-145 evidence; the CURRENT GOAL counter), this entry, the index, the dashboard, the doc, and the two evaluations.
+- **Next:** D-147 (Mark). Then 7ad (headless; the designer rotation's next doc; check the attended PRs' `Makefile` hunks), then 7ac. 7ab and 7x's GPU batches want an idle rig like today's. D-146 decides the designer rotation; D-145 may be moot after #405; D-129 → L4 M1b → M2; the S1 render review is Mark's.
