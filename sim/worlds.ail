@@ -1,0 +1,11 @@
+module stapledons/sim/worlds
+-- Public lazy-population entry. The pure sampler is separate from the compiled
+-- measured table so fixture tests and the census can supply an indexed snapshot.
+import ./worlds_model (StarRow as ModelRow, System as ModelSystem, Planet as ModelPlanet, systemFrom as populate, knownPlanets as publicPlanets)
+import ./data/exoplanets (planets)
+import pkg/sunholo/worlds/dial (Dial)
+export type StarRow = ModelRow
+export type System = ModelSystem
+export type Planet = ModelPlanet
+export pure func systemOf(seed:int,dial:Dial,row:StarRow) -> System = populate(seed,dial,row,planets())
+export pure func knownPlanets(s:System,inSystem:bool) -> [Planet] = publicPlanets(s,inSystem)

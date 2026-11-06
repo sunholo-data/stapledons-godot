@@ -67,6 +67,14 @@ const ARCHIVE_MINOR := 15
 ## and a planned leg's preview; sim/earth_link.ail), in full states and whenever it changes. The comms
 ## station reads it (EL3), and the game's sessions (the ship, the map, the loading jump's prefetch) ask for it.
 const EARTH_MINOR := 16
+## Protocol 2.17 (R3-WORLDS): catalogue hosts and public physical planet fields.
+const WORLDS_MINOR := 17
+## Protocol 2.18 (R3-COMMS-V2 CV1, design r3/comms-station-v2.md §D1.2): `earth_log`, the received-frame
+## log (every Earth week that has reached the ship: one record per ship day, with its send and arrival
+## events and the newest week's feed), in full states; a tick that changed the open record carries it
+## alone as `earth_log_tail`, which take_earth_log_tail() files by from_frame. Storage only, no arithmetic.
+## Also `course` {ship_years_left} and the read-only `earth_weeks` intent.
+const EARTH_LOG_MINOR := 18
 const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
@@ -390,7 +398,10 @@ func _finish(tick: int) -> bool:
 			or (changes.has("cruise") and parse_cruise(changes["cruise"]).is_empty()):
 		return _fail("bad_response")
 	for section in changes:
+		if section == "earth_log_tail":
+			continue
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
+	take_earth_log_tail(world, changes.get("earth_log_tail"))
 	world["tick"] = tick
 	world["status"] = "ok"
 	last_refused = state.get("refused", [])
@@ -789,3 +800,20 @@ func _cleanup() -> void:
 		OS.kill(_pid)
 	_pid = -1
 	_game = false
+
+
+## 2.18: file a tick's earth_log_tail into world.earth_log.records by from_frame: the open record
+## replaces the newest when it has the same from_frame, otherwise it is appended (records stay
+## oldest first). A tail is never applied to a world without a full-state log.
+static func take_earth_log_tail(w: Dictionary, tail: Variant) -> void:
+	if not tail is Array or not w.get("earth_log") is Dictionary:
+		return
+	var recs: Array = w.earth_log.get("records", [])
+	for r: Variant in tail:
+		if not r is Dictionary:
+			continue
+		if not recs.is_empty() and int(recs[-1].get("from_frame", -1)) == int(r.get("from_frame", -2)):
+			recs[-1] = r.duplicate(true)
+		else:
+			recs.append(r.duplicate(true))
+	w.earth_log["records"] = recs

@@ -1,27 +1,28 @@
 # Stapledon mission dashboard
 
-Updated 2026-11-03, iteration 65.
+Updated 2026-11-06, iteration 74.
 
-- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on 7m-d, which runs only on a quiet rig with nobody on the console, and on P-land, which is Mark's. At pick the GPU read 85–89 % (an attended `rig_check` was running), the 1-min load was 3.4, and nobody was on the console. Goal unmoved.
-- **Landed this fire:** row 7l(a), PR #376, merge `812625ed`. Row 7l is complete.
-  - `capture-m4-publish` checks all 18 files, their counts (including `worlds.sha256` = 14 lines) and `shasum -c` before its first upload. `capture-m4-publish-test` runs in `make test` and `ci-fast`.
-  - Main (AILANG v0.56.1, #377) was merged into the branch first (`c871984c`). The PR's stable patch-id was unchanged.
-  - `rig/full` was green on `c871984c` in 96 min, with `no-twitch` 41 passed and 0 failures. The fast tier was green on the head and on the merge.
-  - The judge, Sonnet in its own clone, gave the landing candidate 88 PASS with zero blocking findings (93 PASS on the build in iteration 64).
-- **Rig:** shared with attended D-144 agents. Two `rig_check` runs overlapped at a 1-min load of 3–7 without trouble; iteration 64's failures came at 56–68. L4 (parallel lanes) waits on D-129.
-- **In flight (loop):** none.
-- **Order:** 7m-d (quiet GPU, nobody on the console; start from the 100 Hz hypothesis) → 7w (republish the S1 set, now that the publish is atomic; `[LOOP+RENDER]`, needs the GPU, parks for Mark's sign-off) → 7x. D-129 then unlocks L4 M1b and M2.
-- **Backlog (non-blocking):**
-  - 7y: NT4 is intermittent (it passed this fire); `ReviewDrive.reach` still cannot say why it failed.
-  - Publish test: the unique-hash and manifest-count checks have no killing case (two judges found it).
-  - S0: the guard misses `.get(&"vector")`, a bare `get("vector")` and whitespace variants.
-  - Kerr: drills for the schema and source pins. 7n(f), 7n(a), 7i(h).
+- **Bar:** clauses 1, 2 and 3 are MET, clause 4 is UNMET and clause 5 is ongoing. Clause 4 waits on row 7m AC1. That row waits on 7m-d, and on P-land, which is Mark's.
+- **Landed this fire: nothing built.** Row 7ac is designed and measured, but it is parked behind a new prerequisite, row 7ad.
+  - 7ac makes `crew-console-test` catch a Crew console that numbers its offers per console instead of across the whole game. With that numbering, two consoles repeat an offer id and the sim refuses the second offer. The fix is 11 test lines; seven drills prove it, including two that stop a hung run.
+  - Three review rounds. In round 3 two reviewers passed it. The third (GPT-6.1 Sol) blocked it: the real `crew-console-test` has no time limit, and the sim it starts escapes the timeout's process group. That is true of every Godot `--script` gate today, not just this one. It becomes row 7ad, and 7ac waits for it.
+  - No judge ran, because nothing was built.
+- **Not run: 7m-d S1** (seventh fire in a row). The GPU was at 26–80 % and three Screen Sharing processes were up on the Studio.
+- **The nightly full suite has not started since 2026-11-04** (it waits for the GPU to drop under 25 %). Main has had no `rig/full` result since the red on `78f390c0` (#392).
+- **Order:**
+  1. 7m-d S1 when `quiet2.sh` holds (four probe runs, taken first in the fire). Then OQ1–OQ5 go to Mark as one decision.
+  2. 7ad (new): a timeout runner that also stops the sim, used by `crew-console-test` and `tools/script_gate.sh`. Headless; touches `Makefile`.
+  3. 7ac: re-run its checks once 7ad lands, re-review once, then build.
+  4. 7ab: the timing ratio on an idle rig, then add `sim-pipeline-test` to the nightly.
+  5. 7x B2b, B3b, B4b (64 GPU, golden and authoring gates) when a GPU window is free.
+- **For attended PRs #373, #379, #380, #384:** new `--script` gates must use `$(SCRIPT_GATE)` after rebase, or `script-gate-lint` fails.
 - **Parked on Mark:**
-  - D-128: where 7m-d sits in the order. Default A is being applied.
-  - D-129: L4's OQ1–OQ4. The recommendation is A. If unanswered, M1b and M2 stay parked.
-- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h.
-  - This fire was a landing only, so the only role spawned was the judge (Sonnet, Agent tool). Metered spend $0.00.
-- **Attended in parallel (D-144, do not touch):** R2-KERR (#373, #380), R3-WORLDS (#371), R3-TRUE-PROCESSED (#374), R2-SOUND (#375). Unread for the Worlds agent: the celestial@0.6.0 validator memory fix ships with the next AILANG release.
-- **Watch:**
-  - 7m-d has been lane-parked at pick eleven fires running.
-  - A parked landing goes stale when main moves. Compare stable patch-ids of the judged diff and the merged diff before re-running the rig.
+  - D-146: should the designer rotation skip codex on this mission? Opus designed again (sixth fire in a row). The recommendation is B. Default A (as now).
+  - D-145: who fixes the nightly `sound-test` red (#392). The recommendation is B. Default A (stays attended).
+  - D-128: where 7m-d sits in the order. Default A is applied.
+  - D-129: L4's OQ1–OQ4. The recommendation is A.
+  - The S1 render review of `refs/m4_ship_s1/2026-11-04/`.
+- **Backlog (non-blocking):** 7x B2b–B8; judge survivors from 7x/7aa; 14 targets no aggregate runs; the 7w survivor; navigation-map redraws in transit; 7y (NT4); the `design_docs/**` whitespace exemption is wider than needed (7ac r3, glm and kimi).
+- **Loop:** launchd `dev.ailang.mission-stapledon`, every 6 h. This fire: designer Opus (Agent tool), three quorum rounds; planner, executor and judge not reached. Metered spend about $1.15.
+- **Attended in parallel (D-144, do not touch):** R2-KERR (#373, #380), R3-TRUE-PROCESSED (#384), comms station v2 (#379).
+- **Rig:** shared; the GPU was busy most of the fire and Screen Sharing sessions were open. The main checkout is clean at `78f390c0`, behind origin; loop clones stage their own `runtime/` with `make runtime`.

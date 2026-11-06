@@ -15,8 +15,8 @@
     "vignette_frac": 0.10
   },
   "sound": {
-    "about": "R3-EARTH-LINK EL3b.7 (Mark 2026-10-30), made exact by R3 audio realism AR8b (standing order 2026-10-30: no compromises on the physics; a True setting and labelled Processed settings). Sound from home at the comms receiver. The bed is the week's category (the sky kind plays the sky's), babble in a band whose sound is babble, static out of beam. Its time rate is the Earth rate D (earth.rate) in every setting: the bed plays at speed D and the accents come every every_s / D (the first first_s / D after the bed starts). Receiver (the default): the ship's receiver corrects the frequency, as the DSN corrects the Voyagers' Doppler shift; a real-time receiver plays between receiver.min_rate and receiver.max_rate of real time (below it holds the moment, above the backlog grows). True: speed and pitch x D, uncorrected; outside receiver.audible nothing reaches the ear and the station says so. A new bed replaces the playing one only after hold_s of the station's clock (a change of beam at once).",
-    "receiver": {"min_rate": 0.0625, "max_rate": 16.0, "audible": [0.02, 50.0]},
+    "about": "R3-EARTH-LINK EL3b.7 (Mark 2026-10-30), made exact by R3 audio realism AR8b (standing order 2026-10-30: no compromises on the physics; a True setting and labelled Processed settings). Sound from home at the comms receiver. The bed is the week's category (the sky kind plays the sky's), babble in a band whose sound is babble, static out of beam. Its time rate is the Earth rate D (earth.rate) in every setting: the bed plays at speed D and the accents come every every_s / D (the first first_s / D after the bed starts). Receiver (the default): the ship's receiver corrects the frequency, as the DSN corrects the Voyagers' Doppler shift; a real-time receiver plays between receiver.min_rate and receiver.max_rate of real time (below it holds the moment, above the backlog grows). True: speed and pitch x D, uncorrected; outside receiver.audible nothing reaches the ear and the station says so. receiver.audible is human hearing at the 400 Hz carrier, 20 Hz to 20 kHz: D 0.05 to 50 (Mark 2026-11-03, \"sure 20hz\": below 20 Hz is infrasound, felt rather than heard at the beacon's level; RS-46, RS-47). A new bed replaces the playing one only after hold_s of the station's clock (a change of beam at once).",
+    "receiver": {"min_rate": 0.0625, "max_rate": 16.0, "audible": [0.05, 50.0]},
     "hold_s": 6.0,
     "first_s": 2.5,
     "beds": {"family": "home_family", "home": "home_home", "town": "home_town", "world": "home_world", "science": "home_science", "sky": "home_sky", "babble": "home_babble", "static": "home_static"},
@@ -27,6 +27,11 @@
       "home_world": {"cue": "home_world_swell", "every_s": 11.0},
       "home_science": {"cue": "home_science_pips", "every_s": 16.0}
     }
+  },
+  "waterfall": {
+    "about": "R3-COMMS-V2 CV3 (design r3/comms-station-v2.md §D6): the signal from home as a waterfall, always True (the silent Antenna tap: the week's bed and Earth's carrier at speed and pitch x D). carrier_hz is the carrier's rest frequency (data/audio/recipes.json home_beacon), where the Receiver puts it back: the waterfall's teal line. Constants of the receiver, never multiplied by the rate.",
+    "carrier_hz": 400.0,
+    "bands": 96
   },
   "words": {
     "live": "live",
@@ -41,6 +46,11 @@
     "true_sound": "true sound",
     "below_hearing": " · below hearing",
     "above_hearing": " · above hearing",
+    "sent": "sent",
+    "arrived": "arrived",
+    "light": "light",
+    "ship_then": "ship then",
+    "to_go": "to go",
     "doppler": "Doppler ×",
     "doppler_shown": " · shown"
   }

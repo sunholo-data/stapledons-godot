@@ -8,7 +8,7 @@ module stapledons/sim/protocol_test
 -- and the 2.1 AI codecs (AI.2: ai_open, ai_cancel, the AI events, the `ai`
 -- change-set section) with no wire change for a 2.0 session.
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
-import ./core (initShip, step, turn, position, Intent, ICrew, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
+import ./core (initShip, step, turn, position, Intent, ICrew, IEarthWeeks, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
   Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault)
 import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, LedgerView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
 import ./rng (Rng, Stream, SJourney, SNews, value, top53)
@@ -54,7 +54,8 @@ pure func intentEq(a: Intent, b: Intent) -> bool =
     IEcho(p) => match b { IEcho(q) => planEq(p, q), _ => false },
     IAiOpen(o) => match b { IAiOpen(q) => aiOpenEq(o, q), _ => false },
     IAiCancel(c) => match b { IAiCancel(d) => c.req == d.req && c.reason == d.reason, _ => false },
-    ICrew(c) => match b { ICrew(d) => c.kind == d.kind && c.line == d.line && c.askId == d.askId && c.asMode == d.asMode && c.startMode == d.startMode, _ => false }
+    ICrew(c) => match b { ICrew(d) => c.kind == d.kind && c.line == d.line && c.askId == d.askId && c.asMode == d.asMode && c.startMode == d.startMode, _ => false },
+    IEarthWeeks(q) => match b { IEarthWeeks(r) => q.from == r.from && q.to == r.to, _ => false }
   }
 pure func strsEq(a: [string], b: [string]) -> bool = allEq(\x y. x == y, a, b)
 pure func ctxEq(a: CtxField, b: CtxField) -> bool =
@@ -174,6 +175,10 @@ pure func checkFloatText() -> bool =
   num(1.7976931348623157e308) == "1.7976931348623157e308" && num(1.0e21) == "1e21" && num(0.000001) == "0.000001" &&
   num(0.0000001) == "1e-7" && num(-0.00000000015) == "-1.5e-10" && num(0.1 + 0.2) == "0.30000000000000004" && num(9007199254740991.0) == "9007199254740991"
 pure func checkInputRoundTrip() -> bool = allTrue(map(roundTripInput, inputFixtures()))
+-- R3-COMMS-V2 D1.3: the earth_weeks intent round-trips the codec
+pure func checkWeeksRoundTrip() -> bool =
+  roundTripInput(GInput({tick: 2, dtau: 0.0, intents: [IEarthWeeks({from: 3, to: 9}), IEarthWeeks({from: 0, to: 0})]}))
+test "earth_weeks round-trips the input codec" { checkWeeksRoundTrip() }
 pure func checkStateRoundTrip() -> bool = allTrue(map(roundTripState, stateFixtures()))
 pure func checkHelloRoundTrip() -> bool {
   let h = helloMsg();
@@ -706,11 +711,19 @@ pure func similarBeforeArchive(line: string) -> bool = match split(line, ",\"sim
     [raw, _] => match decode(raw) { Ok(j) => j == similarJson(line), Err(_) => false }, _ => false
   }, _ => false
 }
-test "S0.2 negotiation 13->13 14->14 15->15 16/17/99->16 (R3-EARTH-LINK) and pin" {
-  map(helloMinor, [13, 14, 15, 16, 17, 99]) == [13, 14, 15, 16, 16, 16]
-  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 17, 99]) == [13, 14, 15, 16, 16, 16]
+test "S0.2 negotiation preserves 13..18 and caps 99 at 18 (R3-WORLDS 2.17, R3-COMMS-V2 2.18) and pin" {
+  map(helloMinor, [13, 14, 15, 16, 17, 18, 99]) == [13, 14, 15, 16, 17, 18, 18]
+  && map(\m. (serve(newSession(), helloWant(m))).session.minor, [13, 14, 15, 16, 17, 18, 99]) == [13, 14, 15, 16, 17, 18, 18]
   && all(\m. (helloFor(m)).relativity == "0.12.0", [13, 14, 15, 16, 99])
   && relativityPin() == "0.12.0"
+}
+test "2.17 unknown or non-string preset is bad_game; omission keeps the default" {
+ let session=(serve(newSession(),helloWant(17))).session;
+ let prefix="\"seed\":1,\"scenario\":\"sol\",\"diag\":true";
+ let unknown=serve(session,newGame("${prefix},\"preset\":\"typo\""));
+ let wrongType=serve(session,newGame("${prefix},\"preset\":3"));
+ contains(unknown.reply,"bad_game") && contains(wrongType.reply,"bad_game")
+ && not contains((serve(session,newGame(prefix))).reply,"bad_game")
 }
 test "S0.2 sol shape ids and new_game-only at 14 and 15" { similarLife(14, "sol") && similarLife(15, "sol") }
 test "S0.2 solar_departure shape ids and new_game-only at 14 and 15" { similarLife(14, "solar_departure") && similarLife(15, "solar_departure") }

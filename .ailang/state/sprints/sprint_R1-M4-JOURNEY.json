@@ -1009,6 +1009,1081 @@
         "reason": "Existing recipe plus shell/Make fixture harness; no package-like capability or new AILANG."
       },
       "notes": "Iteration 64 planner at d1cf07f71e0dfcdb6f3af48521e1bc9748a4dd10, 2026-11-02. Planning only; implementation untouched. Base guards green: uid-guard 401, python-guard 19/0, git diff --check origin/main and working tree clean. Exact designed 95-line script on a private variable-only copy of the OLD recipe: outer make rc 2; complete ok on GNU Make 3.81 and 4.4.1, FAILED (12 of 14 cases), each version worlds-missing 2/17, worlds-empty 2/17, worlds-short 0/18, manifest-missing 2/15, png-missing 2/0, hash-mismatch 2/0; all FAIL cases pre-check lines 0. AC-a1/a2 missing target rc2 at base; a3 counts0/0/0; a4/a5 usage2 absent script; a6 0/0; a7 1/0; a8 ORDER-BAD; a9 absent script; a11 0 outside/0 code before planning; a13 rc2 in0s missing target, signature0, private tmp1 xcrun_db; a14 membership0, Linux pending. Expected REDs are findings, never worked around. gh pr list --state open plus names/full diffs for last-known 371/373/374/375 blocked: UNINFORMATIVE UNDER SANDBOX, current PR and ci-fast ownership unknown, controller must refresh before implementation. Process service pgrep rc3 Cannot get process list: zeroes downstream are UNINFORMATIVE UNDER SANDBOX. D1 design defect: AC-a11 excludes required sprint plan; acceptance gate explicitly carries proposed five-path correction, controller ratification required. D2 host defect: /usr/bin/make --version creates xcrun_db in fresh TMPDIR; proposed controller-ratified macOS preflight resolve xcrun --find make and prepend real make directory. Measured resolved /Library/Developer/CommandLineTools/usr/bin/make GNU3.81 leaves0 entries. No fixed-tree/drill cleanup pass claimed. AC-a12 rig/full and AC-a14 successful Linux CI log are controller-only after implementation commit/PR; no full suite, Godot, GPU, upload or background process run here. passes remains false; only controller sets it after rig/full and required evidence. See amendment for all commands, hardened drills/probe, base findings and STOP points.\n\n2026-11-02 executor at 6f19e179, branch mission/stapledon-iter64-7la. Base deadline-400 guards rc0: uid-guard: ok (401 .uid files); python-guard: ok (19 allowlisted, 0 awaiting AILANG port). git diff --check origin/main rc0; git diff --check rc0. Controller's PR ownership/dispositions accepted per executor handoff. Versions via bounded probes: GNU Make 3.81 and GNU Make 4.4.1. RED before fix: exact 95-line addendum test (including TERM/INT/HUP forwarding) plus variable-only OLD recipe/wiring. Both deadline-400 outer make and gmake rc2, each summary capture-m4-publish-test: FAILED (12 of 14 cases), 2 complete ok, 12 FAIL, 0 INFRASTRUCTURE. Per each inner GNU version: worlds-missing rc2/uploads17/well-formed17; worlds-empty 2/17/17; worlds-short 0/18/18; manifest-missing 2/15/15; png-missing 2/0/0; hash-mismatch 2/0/0. Every FAIL pre-check lines0. No real gcloud called; fake-only PATH unchanged.\n\n2026-11-02 executor GREEN and handoff (sandbox; no final host verdict claimed). Exact addendum Design block installed, ci-fast gains capture-m4-publish-test once before its comment; cache-control/bucket bytes identical. New test byte-identical to the final 95-line design block, sh -n rc0. Both outer make and gmake under deadline400 rc0, each 14 ok / 0 FAIL / 0 INFRASTRUCTURE and final line capture-m4-publish-test: OK (7 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1).\nAC-a1 PASS local: make rc0, ok14, INFRASTRUCTURE0, exact OK above. AC-a2 PASS local: gmake rc0, ok14, INFRASTRUCTURE0, same exact OK. AC-a3 PASS local: bounded -pnq queries counts1/1, standalone test line1. AC-a7 PASS local: unchanged cache/bucket bytes count1, default variable count1. AC-a8 PASS local: pre-checks-first. AC-a9 PASS local: fake-only NP count1, PATH guard count1. AC-a10 PASS local: bounded guards uid401, python19/0; git diff --check origin/main rc0; gates-ok. AC-a14 source PASS local count1; Linux CI evidence controller-only, not run, UNINFORMATIVE UNDER SANDBOX for full gate. AC-a12 controller-only rig/full not run; no claim, UNINFORMATIVE UNDER SANDBOX for full gate.\nRequired process preflight pgrep -fx stapledon-7la-process-probe-no-match rc3: sysmon request failed with error: sysmond service not found; pgrep: Cannot get process list. Following plan STOP, no five-drill cleanup assertions executed or converted to zeroes. AC-a4 and AC-a5 UNINFORMATIVE UNDER SANDBOX. Each addendum drill inloop, noupload, deadcapture, nopositive, stall: BLOCKED BEFORE EXECUTION for BOTH outer make and gmake by preflight rc3; timing N/A (never started); no kill, survivor, timeout-classification or cleanup verdict claimed. Exact unmodified 93-line addendum drill extracted for fresh /bin/sh; controller must run all five through both outer makes outside sandbox. No D2 preflight, PATH substitution, assertion removal or process-query workaround adopted.\nAC-a13 hardened plan probe executed in fresh /bin/sh with deadline400. Printed rc=2 15s; timeout-signature/timing/no-case-verdict assertions passed before process query. Probe then printed sysmon request failed with error: sysmond service not found; pgrep: Cannot get process list; UNINFORMATIVE UNDER SANDBOX: process query; probe exit4, wall15s. Cleanup/process/private-temp final verdict UNINFORMATIVE UNDER SANDBOX, never pass. Probe trap removed its scratch. AC-a6 UNINFORMATIVE UNDER SANDBOX for committed-HEAD gate: literal git diff --quiet HEAD -- Makefile tools/test_m4_publish.sh rc1 because implementation intentionally uncommitted (commit forbidden); bounded prefix temp-directory count0. Controller must commit then repeat. Code hashes saved across remaining checks; no checkout mutation by drills because none ran.\nAC-a11 literal ratified D1 gate outputs outside0/code1: git diff omits the untracked test and changelog. Complete working-tree path accounting including untracked files gives outside0/code2 under the explicitly authorized four-file executor scope; no staging/index write attempted. Literal committed-tree gate UNINFORMATIVE UNDER SANDBOX until controller adds/commits files. Added explicitly authorized changelogs/unreleased/2026-11-02-capture-m4-publish-atomic.md (2 lines), styled after two existing fragments; controller must extend AC-a11 allowlist for this path before final gate.\nDeviations: no code/design deviation. Validation incomplete only where sandbox process preflight or mandatory uncommitted state prevents final evidence; controller-only rig/full and Linux CI deferred as instructed. Changelog is the user's explicit scope extension. No full make test, ci-fast execution, Godot, GPU, network command, real gcloud, commit, upload, background job or forbidden-file edit. passes remains false. Existing feature objects and all non-notes state must compare identical under jq -S to executor base.\n\nFinal executor verification 2026-11-02: exact full Makefile comparison against saved base with only the designed splice and ci-fast addition PASS; test byte-for-byte design comparison PASS. jq -S comparison deleting ONLY target feature notes: cmp rc0 (all other feature fields, every other feature object and all top-level state identical to executor base). Saved code hashes unchanged cmp rc0; git diff --check origin/main rc0. Complete git-status accounting: 4 files, outside authorized executor scope0, code2. Diff line counts vs HEAD: Makefile +15/-9; sprint JSON +1/-1; new test +95; new authorized changelog +2. No final host gate or completed sprint claim. Iteration 65 landing (2026-11-03): main (AILANG v0.56.1) merged into the branch (c871984c, stable patch-id unchanged); rig/full green on c871984c in 96 min (capture-m4-publish-test OK, 7 cases on 2 makes); landing eval Sonnet 88 PASS, zero blocking (eval_R1-M4-JOURNEY_7la_landing_round_1.json); merged as 812625ed."
+    },
+    {
+      "id": "M4.6rR3_7w_S1_REPUBLISH",
+      "description": "Reproducible fixed-60-fps S1 capture and create-only dated republish, with 122-frame walk bounds, settled arrival cards, shared deadline and fifteen fake-gcloud cases per make; bounded controller verification and S1 review handoff. Final quorum carve-out controls all earlier design text.",
+      "depends_on": [],
+      "estimated_loc": 135,
+      "files": [
+        "Makefile",
+        "tools/m4_ship_capture.gd",
+        "tools/test_m4_publish.sh",
+        "tools/deadline.sh",
+        "design_docs/planned/r1/m4-6rr3-ship-renders-bench-report.md",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+        "design_docs/planned/r1/m4-7w-s1-republish-sprint.md",
+        "design_docs/planned/r1/m4-7w-s1-republish.md"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "deadline 400 make -s capture-m4-publish-test > .godot/tmp/7w-m.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7w-m.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7w-m.out; tail -1 .godot/tmp/7w-m.out",
+          "expected": "rc=0; 30; 0; capture-m4-publish-test: OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1). Each hang case must satisfy its elapsed-time, exact-message, no-success and child-cleanup assertions. Sandbox process/cleanup evidence is UNINFORMATIVE UNDER SANDBOX; controller repeats outside it."
+        },
+        {
+          "id": "AC2",
+          "command": "deadline 400 gmake -s capture-m4-publish-test > .godot/tmp/7w-g.out 2>&1; echo rc=$?; grep -c '^capture-m4-publish-test: ok ' .godot/tmp/7w-g.out; grep -c '^capture-m4-publish-test: INFRASTRUCTURE' .godot/tmp/7w-g.out; tail -1 .godot/tmp/7w-g.out",
+          "expected": "rc=0; 30; 0; capture-m4-publish-test: OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1). Each hang case must satisfy its elapsed-time, exact-message, no-success and child-cleanup assertions. Sandbox process/cleanup evidence is UNINFORMATIVE UNDER SANDBOX; controller repeats outside it."
+        },
+        {
+          "id": "AC3",
+          "command": "for m in flat nodate nols lsany envdate nogen inloop noupload deadcapture nopositive stall nodeadline nomsg; do drill \"$PWD\" \"$m\"; rc=$?; echo \"exit=$rc\"; test \"$rc\" -eq 0 || exit \"$rc\"; done",
+          "expected": "13 exit=0 lines, each expected outcome on 2 outer makes. Ordinary mutant FAIL sets and 15-case counts are in the drill table. stall: one inner INFRASTRUCTURE complete timeout, zero case results, <=40 s per outer make. nodeadline: one inner INFRASTRUCTURE hang-ls timeout, 13 preceding ok lines, no hang case result, <=40 s per outer make. nomsg: both hang cases FAIL, all 13 others ok per inner make. Outer 124 / exit4 is never a kill. Cleanup-dependent verdicts are controller-run if sandbox-blocked."
+        },
+        {
+          "id": "AC4",
+          "command": "S=$(mktemp -d /tmp/stap-7w-ac4.XXXXXX); deadline 900 make capture-m4 \"$A\" > \"$S/1.out\" 2>&1; echo rc1=$?; cp -R renders/m4 \"$S/a\"; deadline 900 make capture-m4 \"$A\" > \"$S/2.out\" 2>&1; echo rc2=$?; cmp \"$S/a/m4_manifest.sha256\" renders/m4/m4_manifest.sha256 && echo png-15-of-15; cmp \"$S/a/worlds.sha256\" renders/m4/worlds.sha256 && echo worlds-14-of-14; grep '^capture-m4: walk [0-9]* frames$' .godot/tmp/capture-m4.log; grep -c '^capture-m4: walk [0-9]* frames$' .godot/tmp/capture-m4.log; sysctl -n vm.loadavg",
+          "expected": "controller-run (GPU). rc1=0; rc2=0; png-15-of-15; worlds-14-of-14; walk 61 frames then walk 2 frames; 2; load recorded. D1: design AC4 says 1 walk line but V28 measures two; this plan proposes 2 with both counts, for controller disposition. Each walk must remain below 122; a changed count is a re-measure, not a silent pass. Preserve both run logs until evidence is recorded."
+        },
+        {
+          "id": "AC5",
+          "command": "for m in nofixed fps30 nosettle; do cdrill \"$PWD\" \"$m\"; rc=$?; echo \"exit=$rc\"; test \"$rc\" -eq 0 || exit \"$rc\"; done",
+          "expected": "controller-run (GPU). For each: cdrill <m>: godot rc 1; cdrill <m>: expected outcome; exit=0. nofixed/fps30: one delta FAIL, zero frames. nosettle: exactly one alpha 0.125 FAIL at arrived_acen and one at arrived_home, exactly two per-check FAILs, 14 ok frames, one bare FAIL summary (V29). Run before AC4."
+        },
+        {
+          "id": "AC6",
+          "command": "open renders/m4/contact_sheet.png renders/m4/06_arrived_acen_deck.png renders/m4/06_arrived_acen_forward.png",
+          "expected": "controller-run (GPU). rc=0 and the three images open. Controller visually checks fully opaque arrival cards in both arrived columns, every frame lit and posed, no blank frames; records opened filenames and observations in this feature notes. Launch success alone is not visual acceptance."
+        },
+        {
+          "id": "AC7",
+          "command": "grep -c -- '--path . --fixed-fps 60 --script tools/m4_ship_capture.gd' Makefile; grep -cF 'refs/m4_ship_s1/$${f##*/}' Makefile; grep -c '^M4_PUBLISH_DATE :=$' Makefile; grep -cF 'refs/m4_ship_s1/$$day/' Makefile; grep -cF -- 'gcloud storage cp --if-generation-match=0 --cache-control=\"public, max-age=300\" \"$$f\" \"$$dest$${f##*/}\"' Makefile; R=$(awk '/^capture-m4-publish:/,/^\\.PHONY: capture-m4-publish/' Makefile); echo \"$R\" | grep -c 'gcloud storage cp'; echo \"$R\" | grep -c 'gcloud storage cp --if-generation-match=0 '; echo \"$R\" | grep -cF 'tools/deadline.sh'; grep -cF 'M4_PUBLISH_S ?= 600' Makefile; echo \"$R\" | grep -cF '$(M4_PUBLISH_S)'; echo \"$R\" | grep -cF 'capture-m4-publish: publication timed out; destination may be partial; inspect before retry; do not announce' ",
+          "expected": "1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1. The recipe has one create-only copy, one shared deadline invocation with the configured 600-second default, and one exact timeout message."
+        },
+        {
+          "id": "AC8",
+          "command": "awk '/^capture-m4-publish:/,/^\\.PHONY: capture-m4-publish/' Makefile | awk '/case \"\\$\\$day\"/ && !a {a=NR} /test -s/ && !t {t=NR} /shasum -a 256 -c/ {s=NR} /gcloud storage ls/ {l=NR} /gcloud storage cp/ {g=NR} END {print (a<t && t<s && s<l && l<g) ? \"date-files-ls-then-cp\" : \"ORDER-BAD\"}' ",
+          "expected": "date-files-ls-then-cp. Date and local checks remain before the bounded ls-plus-cp child."
+        },
+        {
+          "id": "AC9",
+          "command": "git diff origin/main -- demos ui interior sky sim bridge '*.gdshader' | wc -l; git diff --name-only origin/main | grep -cvxE 'Makefile|tools/m4_ship_capture\\.gd|tools/test_m4_publish\\.sh|tools/deadline\\.sh|design_docs/planned/r1/m4-6rr3-ship-renders-bench-report\\.md|design_docs/planned/r1/m4-7w-s1-republish\\.md|design_docs/planned/r1/m4-7w-s1-republish-sprint\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'; git diff --name-only origin/main | grep -cxE 'Makefile|tools/m4_ship_capture\\.gd|tools/test_m4_publish\\.sh'; test -s tools/deadline.sh && echo shared-deadline-present",
+          "expected": "0, 0, 3, shared-deadline-present on the controller-committed implementation tree. D2: add the explicitly requested sprint addendum to the design allowlist; new deadline path is mandated by the carve-out. Before commit, include git ls-files --others --exclude-standard in path accounting; git diff alone omits untracked files. No optional upload helper is chosen."
+        },
+        {
+          "id": "AC10",
+          "command": "grep -cF 'Reproducible since row 7w (iteration 66)' design_docs/planned/r1/m4-6rr3-ship-renders-bench-report.md",
+          "expected": "1; the W5 paragraph is inserted verbatim after the historical 7l reproducibility paragraph."
+        },
+        {
+          "id": "AC11",
+          "command": "make uid-guard python-guard lint-precision \"$A\" && git diff --check origin/main && echo gates-ok",
+          "expected": "gates-ok, rc0. BASE FINDING: rc2 today from git diff --check origin/main, with 17 space-before-tab diagnostics in the existing design doc (lines 71-73, 78-86, 92-95, 100). The three make guards pass (405 UIDs, Python19/0, precision6/3). Do not waive or work around this gate; controller must dispose of the pre-existing whitespace defect before final acceptance."
+        },
+        {
+          "id": "AC12",
+          "command": "gh api \"repos/$REPO/commits/$PR_HEAD/status\" --jq '.statuses[] | select(.context==\"rig/full\") | .state' | head -1; grep -c '^capture-m4-publish-test: OK (15 cases on 2 makes' \"${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/$PR_HEAD}.log\"; gh run view \"$FAST_RUN\" --json conclusion --jq .conclusion; gh run view \"$FAST_RUN\" --log > .godot/tmp/7w-fast.log && grep -c 'capture-m4-publish-test: OK (15 cases on 1 makes' .godot/tmp/7w-fast.log",
+          "expected": "controller-run (rig/network). success, 1, success, 1 on the exact PR head. Controller launches tools/rig_check.sh \"$PR\" detached after executor handoff; rig/full runs make test, Linux fast tier runs ci-fast. Require successful API/log retrieval, zero test FAIL/INFRASTRUCTURE, and record head, run ID and actual log path. Not executed by this planner: UNINFORMATIVE UNDER SANDBOX."
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7w-s1-republish.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7w-s1-republish-sprint.md",
+      "passes": true,
+      "registry_reuse": {
+        "action": "none",
+        "package": null,
+        "reason": "Shell/Make fixture and existing Godot capture tooling only; no package-like logic or new AILANG."
+      },
+      "notes": "Iteration 66 planner, 2026-11-03, HEAD4ab2bab4 / origin68796623, design commits44f62b2b/d0525d9e/4ab2bab4. Planning only; implementation untouched. Existing22 feature objects and other top-level state preserved. Pinned runtime v0.56.1. Base make/gmake inherited test rc0, ok14, INFRA0, footer7cases/2makes3.81/4.4.1; new15-case acceptance remains RED. Exact W4 13-case script on private base recipe: both outer makes rc2, ok12/FAIL14/INFRA0, each complete/date-missing/date-malformed/date-env/dest-nonempty/ls-error/exists-at-cp rc0/uploads18/lists0 (new assertions fail); six inherited fixture defects ok. AC3 all13 drill invocations exit2, shared script absent, no mutant verdict. AC7 base0,1,0,0,0,1,0,0,0,0,0; AC8 ORDER-BAD; AC9 0outside/0player/0code, shared script absent; AC10 count0. Three base guards PASS: UID405, Python19/0, precision6/3. AC11 unrelated BASE RED rc2:17 space-before-tab diagnostics already committed in design doc lines71-73,78-86,92-95,100; original gate retained, no workaround. Working diff --check rc0 before planning. pgrep preflight rc3 Cannot get process list: hang cleanup/process/temp assertions UNINFORMATIVE UNDER SANDBOX; no GPU, network, real gcloud, rig/full or CI run. AC4/AC5/AC6 controller-run (GPU); AC12 controller rig/network. D1 proposes AC4 walk-line2 instead of stale1, citing overriding V28 walk61 then2; D2 adds required sprint addendum to AC9 allowlist; D3 controller resolves existing whitespace before acceptance. Full final override planned: WALK_FRAMES_MAX122, nosettle exact2 alpha0.125 failures/14frames/rc1, deadline body moved verbatim, M4_PUBLISH_S?=600, exact timeout line, hang-ls/hang-cp3s/15s/pid cleanup,15cases/make,nodeadline/nomsg. Nine tasks; no optional helper, git write, implementation edit or publication. passes remains false; controller owns dispositions, cleanup/GPU evidence, commits, independent evaluation, rig/full/Linux and post-landing bounded publication then PARKED for Mark S1. In-clone repetitions with fixture TMPDIR under .godot/tmp/7w-planner reproduce the base and RED13 outputs; earlier outside-clone scratch results are UNINFORMATIVE UNDER SANDBOX per mission rule. D4: design says C3 compares against the dated published manifest, but its command compares two fresh local captures; shot6to7 also survives C3. No extra reference gate or scope added. Planning artifact checks: jq valid, canonical old22/top-level identical, one new false feature with12 matching AC commands,17 sh/bash blocks parse, only2 requested paths changed; original/corrected AC9 outside1/0. All13 drill mutation anchors/cmp checks apply on in-clone private copies (setup only, no kills); shared deadline function byte-identical. Inline13-case quoting smoke green through both makes is not15-case/hang/full acceptance.\nEXECUTOR RECEIPT, iteration 66, 2026-11-03 (this receipt supersedes the planner's historical unresolved D1-D4/base findings above). Branch feat/m4-7w-s1-republish, starting HEAD a11f03223a745bd5bbf6b719650f6799bf57978b, origin/main 68796623e5d6c9d1830d4008f5450b7d90d8b0a8. CLAUDE.md, design and sprint plan read in full. No sprint-executor skill was found in the supplied catalog or bounded project/system skill searches; the explicit executor mission and ordered plan supplied the procedure. Controller/user disposed D1: AC4 counts two walk lines (61,2); D2: corrected allowlist includes sprint addendum and tools/deadline.sh, no upload helper; D3 fixed before execution, git diff --check origin/main rc0; D4 corrected, shot6to7 survives comparison of two fresh captures. Initial tree clean; implementation matched base. All AILANG calls used PATH=$PWD/runtime/bin:$PATH, version v0.56.1 commit05c860a. No git write, real gcloud, network, GPU/windowed run, make capture-m4, full make test or ci-fast attempted. Scratch evidence and fixtures stayed under .godot/tmp/7w-executor with TMPDIR=$PWD/.godot/tmp/7w-executor/tmp.\n\nTask2 RED before recipe edit: installed the exact design W4 13-case script. Both deadline400 make -s capture-m4-publish-test and gmake returned substantive rc2, ok12, FAIL14, INFRASTRUCTURE0. Harness footer: capture-m4-publish-test: FAILED (14 of 26 cases). Actual last lines: make: *** [capture-m4-publish-test] Error 1 / gmake: *** [Makefile:343: capture-m4-publish-test] Error 1. Each inner GNU Make3.81/4.4.1: complete, date-missing, date-malformed, date-env, dest-nonempty, ls-error, exists-at-cp failed with rc0/uploads18/lists0; all six inherited defective-fixture controls ok. Logs red13-make.out/red13-gmake.out.\n\nTask3 RED before recipe edit: saved exact base deadline function and moved it verbatim (including closing brace and signal forwarding) to tools/deadline.sh with #!/bin/sh and deadline \"$@\"; byte comparison rc0. Test calls the shared script for both probes and fixtures; 10s/20s limits preserved. Added hang-ls and hang-cp (separate reset cp counter, pid file then exec sleep600, numeric pid and kill-0 cleanup assertion, <=15s elapsed, exact timeout message, no success, exactly5 cp for hang-cp), total15. Both outer makes against unbounded base: rc2, ok6, FAIL8, INFRA1; hang-ls FAIL at rc0/uploads18/lists0/no deadline; hang-cp reached the outer20s fixture deadline, exact INFRASTRUCTURE timeout after 20 s: make for case hang-cp (GNU Make 3.81), no 15-case footer. Actual final make errors are Error124. These are RED observations, never a successful timeout case or kill; cleanup remains UNINFORMATIVE UNDER SANDBOX. Logs red15-make.out/red15-gmake.out.\n\nTasks4/6 implementation: exact planned inline bounded dated/create-only recipe with M4_PUBLISH_DATE:=, M4_PUBLISH_S?=600, local/date/hash/count checks before shared deadline, one ls-plus-cp child, exact partial-timeout warning, 7l(a) checks/cache-control/wiring preserved. No tools/m4_publish_upload.sh. Capture has CAPTURE_FPS60/delta guard before demo load, ARRIVED_SETTLE_FRAMES30 and _card_alpha assertion, WALK_FRAMES_MAX122, frame-bounded walk/dolly plus300s hang guard and walk-count print, tabs retained; shot wait6 unchanged. --fixed-fps60 token added only to capture-m4. W5 paragraph inserted verbatim after historical7l paragraph.\n\nTasks4/7 observed GREEN: initial post-recipe and final post-capture AC1/AC2 runs both returned rc0, ok30, FAIL0, INFRASTRUCTURE0, exact last line capture-m4-publish-test: OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1). Final outputs .godot/tmp/7w-m.out and .godot/tmp/7w-g.out; earlier green-make.out/green-gmake.out under receipt directory. Hang assertions remained active and emitted ok, but overall process/cleanup certification requires controller outside sandbox: pgrep preflight rc3, sysmon request failed with error: sysmond service not found; pgrep: Cannot get process list. Never interpreted as zero processes.\n\nTask7 AC3: exact plan mutation expressions/count/cmp checks retained; private runner added only output snapshots and temp-name diagnostics before cleanup assertions. Each invocation stopped before process/signature verdicts because private TMPDIR retained one xcrun_db (the known sandbox artifact); no cleanup assertion suppressed, no xcrun workaround. To obtain both outer makes despite that first-outer stop, independently repeated each function with gmake first; all26 raw drill exits1 are UNINFORMATIVE UNDER SANDBOX, never pass/fail or accepted mutant kills. All26 saved inner outputs independently checked against every planned per-case signature, including inloop rc/uploads details; these observations match, without certifying cleanup. Ordinary inner make rc2; observed ok/FAIL per outer make on both makes: flat22/8, nodate24/6, nols20/10, lsany28/2, envdate28/2, nogen26/4, inloop22/8 (missing2/17, empty2/17, short0/18, manifest-missing2/15), noupload24/6, deadcapture20/10, nopositive24/6 (detected, no longer survivor), nomsg26/4 (only both hang cases fail). Stall: make26s/gmake25s, inner rc2, one20s INFRA complete, zero case results/footer. Nodeadline: make21s/gmake22s, inner rc2,13ok, no FAIL/hang verdict/footer, one20s INFRA hang-ls. No outer124. Full per-run times and counts follow below. Working implementation SHA256s unchanged across all private drills. See drills.out, drill-<mutant>-<make>.inner.out, drill-signatures.out and implementation-before-drills.sha256 in receipt directory.\n\nTask7 local gates: AC7 rc0 outputs1,0,1,1,1,1,1,1,1,1,1. AC8 rc0 date-files-ls-then-cp. AC9 rc0 outputs0(player diff lines),0(outside allowlist),3(code-file control),shared-deadline-present; tracked-plus-untracked accounting confirms outside0 and includes new tools/deadline.sh. AC10 rc0 count1; W5 exact paragraph checked. AC11 rc0: uid-guard: ok (405 .uid files); python-guard: ok (19 allowlisted, 0 awaiting AILANG port); lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta); git diff --check origin/main clean; gates-ok. Same three guards passed at executor base; planner's historical unrelated whitespace failure was already fixed by controller. Test and deadline scripts parse with sh -n and bash -n. No test/ci-fast prerequisite membership changed.\n\nGodot exact headless parse command (PATH pinned, TMPDIR in clone): godot --headless --path . --check-only --script tools/m4_ship_capture.gd, rc0; Godot Engine v4.7.2.stable.official.ed1daf0bf; zero Parse Error and zero SCRIPT ERROR lines. Full parse.out retained. Sandbox denied user-log writes: ERROR: Failed to open 'user://logs/godot2026-11-03T12.39.00.log'. at copy(core/io/dir_access.cpp:429); ERROR: Failed to open log file for writing: user://logs/godot.log at rotate_file(core/io/logger.cpp:169). Log I/O is UNINFORMATIVE UNDER SANDBOX; parse itself returned0 with no parse errors. Load queries before/after: sysctl -n vm.loadavg rc1, sysctl fmt -1 1024 1: Operation not permitted; actual loads UNINFORMATIVE UNDER SANDBOX, no numeric load claimed.\n\nController outstanding: AC1/AC2 cleanup certification and all AC3 final verdicts outside sandbox; AC4/AC5/AC6 GPU capture/drills/visual review (not executed here), both61/2 walk lines, loads,15/15PNG and14/14world reproducibility and exact nosettle observations; AC12 independent evaluation, committed-tree scope, rig/full and Linux fast tier on exact implementation head, then post-landing bounded publication C1-C10 and PARKED for Mark S1. No GPU, remote or visual acceptance claimed. passes remains false. Only this feature's notes changed in sprint state; all other features and top-level values preserved.\n\nPer-drill observations (not cleanup verdicts):\nobserved flat via make: rc=2 elapsed=16 tmp=       1; ok22/FAIL8/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved flat via gmake: rc=2 elapsed=17 tmp=       1; ok22/FAIL8/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nodate via make: rc=2 elapsed=17 tmp=       1; ok24/FAIL6/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nodate via gmake: rc=2 elapsed=18 tmp=       1; ok24/FAIL6/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nols via make: rc=2 elapsed=10 tmp=       1; ok20/FAIL10/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nols via gmake: rc=2 elapsed=11 tmp=       1; ok20/FAIL10/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved lsany via make: rc=2 elapsed=17 tmp=       1; ok28/FAIL2/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved lsany via gmake: rc=2 elapsed=16 tmp=       1; ok28/FAIL2/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved envdate via make: rc=2 elapsed=16 tmp=       1; ok28/FAIL2/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved envdate via gmake: rc=2 elapsed=17 tmp=       1; ok28/FAIL2/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nogen via make: rc=2 elapsed=17 tmp=       1; ok26/FAIL4/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nogen via gmake: rc=2 elapsed=16 tmp=       1; ok26/FAIL4/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved inloop via make: rc=2 elapsed=17 tmp=       1; ok22/FAIL8/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved inloop via gmake: rc=2 elapsed=17 tmp=       1; ok22/FAIL8/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved noupload via make: rc=2 elapsed=9 tmp=       1; ok24/FAIL6/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved noupload via gmake: rc=2 elapsed=10 tmp=       1; ok24/FAIL6/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved deadcapture via make: rc=2 elapsed=16 tmp=       1; ok20/FAIL10/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved deadcapture via gmake: rc=2 elapsed=16 tmp=       1; ok20/FAIL10/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nopositive via make: rc=2 elapsed=10 tmp=       1; ok24/FAIL6/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nopositive via gmake: rc=2 elapsed=9 tmp=       1; ok24/FAIL6/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved stall via make: rc=2 elapsed=26 tmp=       1; ok0/FAIL0/INFRA1; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved stall via gmake: rc=2 elapsed=25 tmp=       1; ok0/FAIL0/INFRA1; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nodeadline via make: rc=2 elapsed=21 tmp=       1; ok13/FAIL0/INFRA1; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nodeadline via gmake: rc=2 elapsed=22 tmp=       1; ok13/FAIL0/INFRA1; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nomsg via make: rc=2 elapsed=17 tmp=       1; ok26/FAIL4/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\nobserved nomsg via gmake: rc=2 elapsed=16 tmp=       1; ok26/FAIL4/INFRA0; exact observed signature matches; verdict UNINFORMATIVE UNDER SANDBOX (private TMPDIR xcrun_db; raw drill exit1).\n | Controller (iteration 66, outside the sandbox, on the executor tree): AC1 make rc 0, 30 ok, 0 INFRA, OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1); AC2 gmake same; AC11 gates-ok (405 uid, python 19/0, precision 6/3, git diff --check clean); AC3 all 13 publish drills \"expected outcome on 2 outer makes\" (stall 26/25 s, nodeadline 21/22 s; no leftover temp dirs); AC5 cdrill nofixed, fps30, nosettle each godot rc 1, expected outcome (load 4.5); AC4 rc1=0 rc2=0, png-15-of-15, worlds-14-of-14, walk 61 frames then walk 2 frames (2), 95.1 s and 82.0 s, 1-min load 5.5 then 3.0; AC6 contact_sheet.png, 06_arrived_acen_deck.png and 04_cruise_099_forward.png opened: 14 frames lit and posed, none blank, arrival cards fully opaque in both arrived columns; the cruise frames show the New-in-the-Archive card mid-fade (deterministic now; noted for the S1 review)."
+    },
+    {
+      "id": "M4.6sR3_7x_SCRIPT_GATE_PREDICATES",
+      "description": "One pass predicate $(SCRIPT_GATE) for every Godot --script gate (rc, no SCRIPT ERROR, the test's own counted summary line, a process-group-killing supervisor timeout) plus a ratchet lint (per-occurrence classes, include closure, key- and pin-based baseline that can only fall), wired into make test and ci-fast; migrates make sim (RED-then-GREEN drill) plus ui, area-test, test-bright-audit and star-catalogue-test. Suite hygiene only, pillar net 0 (D-88 A go). Design quorum round 2 was BLOCKED 1/3 (+1 salvaged); its binding A1/A2 fixes (disjoint scratch roots, independent process-group supervisor) are applied in the plan, quoted as the carve-out, never as 'quorum passed'.",
+      "depends_on": [],
+      "estimated_loc": 300,
+      "files": [
+        "tools/script_gate.sh",
+        "tools/script_gate_lint.sh",
+        "tools/test_script_gate.sh",
+        "tools/script-gate-baseline.txt",
+        "mk/script-gates.mk",
+        "tests/fixtures/script_gate/good.gd.txt",
+        "tests/fixtures/script_gate/parse_error.gd.txt",
+        "tests/fixtures/script_gate/runtime_error.gd.txt",
+        "tests/fixtures/script_gate/no_summary.gd.txt",
+        "tests/fixtures/script_gate/lint_negative.mk.txt",
+        "tests/fixtures/script_gate/lint_negative_baseline.txt",
+        "Makefile",
+        "tests/test_sim_bridge.gd",
+        "tests/test_galaxy_map.gd",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+        "design_docs/planned/r1/m4-7x-script-gate-predicates.md",
+        "design_docs/planned/r1/m4-7x-script-gate-predicates-sprint.md"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "helper tools/script_gate.sh (A2 process-group supervisor, inlined) + stub drills tools/test_script_gate.sh (12 stub cases incl. stub-ignore-alrm and stub-orphan-child) + the four .gd.txt fixtures",
+          "acceptance": [
+            "AC1",
+            "AC8",
+            "AC16",
+            "AC17"
+          ],
+          "estimate": "~100-120 LOC, ~40 min",
+          "pause": "if the supervisor cannot bound the TERM/ALRM-ignoring stub within ceiling on this machine (V35 measured macOS; Linux is AC13), stop - do not weaken the contract; any leftover process is investigated, never accepted"
+        },
+        {
+          "id": "M2",
+          "title": "ratchet lint tools/script_gate_lint.sh + generated baseline (interim 237 rows, pin 237) + include closure + per-occurrence classes on the fixture pair",
+          "acceptance": [
+            "AC6",
+            "AC7",
+            "AC14",
+            "AC15"
+          ],
+          "estimate": "~140 LOC + the generated 235-line baseline, ~50 min",
+          "pause": "if the completeness control (inventory rows == grep -o --script count) mismatches or the live inventory shows rows outside the doc's 237-occurrence shape, stop and recount against the live tree; never hand-edit the baseline"
+        },
+        {
+          "id": "M3",
+          "title": "wiring mk/script-gates.mk (A1 disjoint SCRIPT_GATE_TMP roots, A2 outer-deadline wraps 120s/600s) + include after Makefile:1078; make-form re-runs of AC6/AC7(a)/AC7(b)/AC14 now that the targets exist",
+          "acceptance": [
+            "AC9"
+          ],
+          "estimate": "~45 LOC, ~25 min",
+          "pause": "if make -pn does not show script-gate-lint/selftest/drill joined onto test/ci-fast, or a freshly merged PR moved the include site, pause for rebase before any further Makefile edit"
+        },
+        {
+          "id": "M4",
+          "title": "make sim migration with the RED-then-GREEN drill first: AC3 RED recorded at the head of M4 (raw-Godot premise, unaffected by M1-M3), the sim/sim-bridge split hunk, the counted test_sim_bridge.gd summary, baseline row deleted and pin 237 -> 236",
+          "acceptance": [
+            "AC3",
+            "AC4",
+            "AC12"
+          ],
+          "estimate": "~35 LOC, ~20 min active + ~40 min wall for AC4 (AILANG steps 35 min at load 4-7, V30; sim-bridge 119 s, bh-hud ~20 s)",
+          "pause": "if AC3 RED does not reproduce (rc!=0 or no SCRIPT ERROR) Godot's premise changed - stop and revisit row 7x; if the Makefile diff is anything but the one hunk, stop"
+        },
+        {
+          "id": "M5",
+          "title": "the four other gate migrations (area-test, ui, test-bright-audit, star-catalogue-test) + counted test_galaxy_map.gd summary; baseline -4 rows, pin 232 (final W3 text); AC6 and AC7(b) doc-literal final forms re-run",
+          "acceptance": [
+            "AC5"
+          ],
+          "estimate": "~15 LOC, ~25 min",
+          "pause": "if any migrated gate's counted passes fell below the doc's (ui 205, area 80, bright 16, catalogue 40 - counts may only grow) or a PR merge moved a hunk, pause and re-measure; do not widen"
+        },
+        {
+          "id": "M6",
+          "title": "Godot drills + policy gates + scope (no new files); AC14(c) evidence from AC6's embedded control; close-out note appended to this feature's notes",
+          "acceptance": [
+            "AC2",
+            "AC10",
+            "AC11",
+            "AC18"
+          ],
+          "estimate": "0 LOC, ~25 min",
+          "pause": "any pgrep survivor, missing drill scratch dir, or AC11 counts other than 0/0/6 stops the row; the scope list is the release boundary"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "make script-gate-selftest; echo rc=$?",
+          "expected": "twelve `test-script-gate: ok   stub-…` lines, then `test-script-gate: ok (12 cases: 12 stub, 0 Godot)`, `rc=0` (V17 for W4's 10-case form; amendment A2 adds stub-ignore-alrm and stub-orphan-child and AC16 expects the total up by 2). M1 exercises the same content directly via `sh tools/test_script_gate.sh` before M3 creates the make target"
+        },
+        {
+          "id": "AC2",
+          "command": "s=$(date +%s); make script-gate-drill > .godot/tmp/7x-ac2.out 2>&1; echo rc=$? secs=$(( $(date +%s)-s )); grep -E 'raw-parse-rc0\\|godot-hang\\|make-sim-parse\\|cases' .godot/tmp/7x-ac2.out",
+          "expected": "`rc=0`, secs under 120; `ok   raw-parse-rc0 (exit 0 …: SCRIPT ERROR: Parse Error)`, `ok   godot-hang (exit 1 in 1[0-9] s: timeout after 10 s (rc 142))`, `ok   make-sim-parse (exit 2 …)`, `test-script-gate: ok (18 cases: 12 stub, 6 Godot)` (V19: 14 s; the doc's pre-A2 footer read 16 cases / 10 stub)"
+        },
+        {
+          "id": "AC3",
+          "command": "RED first, recorded in this JSON: mkdir -p .godot/tmp/script-gate && printf 'extends SceneTree\\nfunc _init() -> void:\\n\\tvar a: int = undefined_name_7x\\n\\tquit(0)\\n' > .godot/tmp/script-gate/p.gd; AILANG_BIN=\"$(command -v ailang)\" perl -e 'alarm shift; exec @ARGV' 120 godot --headless --path . --script .godot/tmp/script-gate/p.gd > .godot/tmp/7x-red.log 2>&1; echo rc=$?; grep -c 'SCRIPT ERROR' .godot/tmp/7x-red.log — GREEN after W5's sim split: make sim-bridge SIM_BRIDGE_SCRIPT=.godot/tmp/script-gate/p.gd SIM_BRIDGE_LOG=.godot/tmp/7x-green.log; echo rc=$?",
+          "expected": "RED: `rc=0`, `1` (the command make sim ran passes a script that never parsed; V3). GREEN: `script-gate: sim-bridge FAIL; 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching …`, `rc=2` (V19). RED runs at the head of M4 on raw Godot and is unaffected by the M1-M3 content"
+        },
+        {
+          "id": "AC4",
+          "command": "make sim AILANG=$PWD/runtime/bin/ailang > .godot/tmp/7x-ac4.out 2>&1; echo rc=$?; grep -E '^script-gate: sim-bridge\\|^bh-hud: \\|^bh-hud-test: \\|^lens-assets: ' .godot/tmp/7x-ac4.out",
+          "expected": "`rc=0`, then in this order: `script-gate: sim-bridge ok: sim bridge: 1[0-9][0-9] passed, 0 failures (rc 0, no SCRIPT ERROR, … s of 900 s)` (110 measured, V19/V30); `lens-assets: tables match data/lens/SHA256SUMS`; `bh-hud: 64 passed, 0 failures`; `bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior`. Before the sim-bridge line, `ailang check --package sim` (✓ 161 files checked, all passed!) and `ailang test --package .` run unchanged (V26, V30)"
+        },
+        {
+          "id": "AC5",
+          "command": "make ui area-test test-bright-audit star-catalogue-test 2>&1 \\| grep '^script-gate:'",
+          "expected": "exactly 4 lines: `ui ok: galaxy map: 205 passed, 0 failures`, `area-test ok: 80 passed, 0 failed`, `test-bright-audit ok: test_bright_audit: 16 passed, 0 failed`, `star-catalogue-test ok: test_star_catalogue: 40 passed, 0 failed` (V19; counts may only grow)"
+        },
+        {
+          "id": "AC6",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "`script-gate-lint: ok (237 --script invocations: 5 through $(SCRIPT_GATE), 232 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)`, `rc=0` (V29). Final literal form holds after M5; interim forms in M2 (0 through / 237 rows / 21 includes / 22 makefiles, direct sh run) and M3 (0 through / 237 rows / 22 includes / 23 makefiles, pin 237) are recorded per the plan's sequencing note"
+        },
+        {
+          "id": "AC7",
+          "command": "(a) printf 'x7x:\\n\\t$(GODOT) --headless --path . --script tests/x7x.gd\\n' > mk/zz-7x-probe.mk; make script-gate-lint > .godot/tmp/7x-ac7.out 2>&1; echo rc=$?; grep -c 'not on the baseline: x7x tests/x7x.gd' .godot/tmp/7x-ac7.out; rm mk/zz-7x-probe.mk — (b) make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=231 2>&1 \\| tail -2 — (c) cp tools/script-gate-baseline.txt .godot/tmp/7x-b.txt; printf 'sim\\ttests/test_sim_bridge.gd\\tx\\n' >> .godot/tmp/7x-b.txt; SCRIPT_GATE_BASELINE=.godot/tmp/7x-b.txt SCRIPT_GATE_BASELINE_ROWS=233 sh tools/script_gate_lint.sh; echo rc=$?",
+          "expected": "(a) `rc=2`, `1`; the log also says `mk/zz-7x-probe.mk is not included by any scanned makefile`. (b) `the baseline has 232 rows but SCRIPT_GATE_BASELINE_ROWS is 231: the pin moves with the rows, and only down` and `make: *** [script-gate-lint] Error 1`. (c) `stale baseline row (no longer unguarded): delete it and lower SCRIPT_GATE_BASELINE_ROWS: sim tests/test_sim_bridge.gd`, `rc=1` (V31). Sequencing: (a)/(b) make forms run at M3 with interim pin strings, final literal strings after M5; (c)'s sim-row form after M4's migration"
+        },
+        {
+          "id": "AC8",
+          "command": "printf '#!/bin/sh\\nwhile [ \"$1\" != -- ]; do shift; done; shift\\nexec env \"$@\"\\n' > .godot/tmp/7x-rc-only.sh; SCRIPT_GATE_SH=.godot/tmp/7x-rc-only.sh sh tools/test_script_gate.sh > .godot/tmp/7x-m1.out 2>&1; echo rc=$?; grep -cE 'FAIL stub-(parse\\|hang\\|nosummary\\|zero): exit 0' .godot/tmp/7x-m1.out",
+          "expected": "rc-only mutant: `rc=1`, `4` (parse, hang, no summary and zero count all exit 0 under today's rc-only gate; V18). The doc's second half (no-alarm sed mutant expecting `FAIL stub-hang: exit 1 in 30 s`) targets the exec-alarm line that amendment A2 deletes and is superseded by AC17"
+        },
+        {
+          "id": "AC9",
+          "command": "for t in test ci-fast; do echo \"$t: $(make -pn 2>/dev/null \\| grep -E \"^$t:\" \\| tr ' ' '\\n' \\| grep -E '^script-gate-(lint\\|selftest\\|drill)$' \\| sort -u \\| tr '\\n' ' ')\"; done",
+          "expected": "`test: script-gate-drill script-gate-lint script-gate-selftest`, `ci-fast: script-gate-lint script-gate-selftest` (V19 on the prototype; planner-verified RED state at 78f390c0: both empty)"
+        },
+        {
+          "id": "AC10",
+          "command": "make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/script_gate.sh tools/script_gate_lint.sh tools/test_script_gate.sh && echo gates-ok",
+          "expected": "`gates-ok`. shellcheck is at /opt/homebrew/bin/shellcheck on this machine (planner-verified); if absent elsewhere, record that and skip only that part"
+        },
+        {
+          "id": "AC11",
+          "command": "git diff --name-only origin/main \\| grep -cvxE 'Makefile\\|mk/script-gates\\.mk\\|tools/script_gate\\.sh\\|tools/script_gate_lint\\.sh\\|tools/test_script_gate\\.sh\\|tools/script-gate-baseline\\.txt\\|tests/fixtures/script_gate/[a-z_]+\\.(gd\\.txt\\|mk\\.txt\\|txt)\\|tests/test_sim_bridge\\.gd\\|tests/test_galaxy_map\\.gd\\|design_docs/planned/r1/m4-7x-script-gate-predicates.*\\.md\\|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'; git diff --name-only origin/main -- mk/sound.mk mk/deck-layout.mk mk/earth-link.mk mk/m45.mk audio data/audio assets/audio ui/earth_feed.gd data/ui/comms_feed.json \\| wc -l; git diff origin/main -- Makefile \\| grep -c '^@@'",
+          "expected": "`0` (nothing outside the list), `0` (no do-not-touch or open-PR file), `6` (the six W5 hunks; V25, V29). If M1 chose a separate tools/script_gate_supervise.pl, A2 requires adding it to this regex and the notes before AC11 runs"
+        },
+        {
+          "id": "AC12",
+          "command": "grep -c 'print(\"sim bridge: %d passed, %d failures\" % \\[passes, failures\\])' tests/test_sim_bridge.gd; grep -c 'print(\"galaxy map: %d passed, %d failures\" % \\[passes, failures\\])' tests/test_galaxy_map.gd; grep -c 'if not ok: failures += 1' tests/test_sim_bridge.gd",
+          "expected": "`1`, `1`, `0`. The galaxy_map edit lands in M5; run in full after M5 (an M4-time run expects the interim middle `0` and records it)"
+        },
+        {
+          "id": "AC13",
+          "command": "gh pr checks <PR>; gh run view <run> --log \\| grep -cE 'script-gate-lint: ok \\(237 --script invocations: 5 through\\|test-script-gate: ok \\(10 cases: 10 stub, 0 Godot\\)'",
+          "expected": "`success`; `2`. The first Linux, dash and Ubuntu-awk run of the lint and helper; a merge gate, controller-run (no network in the executor sandbox, finding F3). Post-A2 the second grep alternative must match the 12-stub footer — adjust the case-count pattern at PR time and record the edited pattern in this feature's notes"
+        },
+        {
+          "id": "AC14",
+          "command": "(a) printf 'include ../outside.mk\\n' > mk/zz-inc.mk; make script-gate-lint > .godot/tmp/7x-ac14a.out 2>&1; echo rc=$?; grep -E 'include outside\\|zz-inc' .godot/tmp/7x-ac14a.out; rm mk/zz-inc.mk — (b) mkdir -p tools/zz && printf 'a:\\n\\ttrue\\n' > tools/zz/stray.mk; make script-gate-lint > .godot/tmp/7x-ac14b.out 2>&1; echo rc=$?; grep 'not scanned' .godot/tmp/7x-ac14b.out; rm -r tools/zz — (c) grep -c '^script-gate-lint: include outside' .godot/tmp/script-gate/lint-negative.log; grep -c '^script-gate-lint: makefile not scanned: tools/stray.mk ' .godot/tmp/script-gate/lint-negative.log",
+          "expected": "(a) `rc=2`, `script-gate-lint: include outside the scanned set (mk/*.mk): mk/zz-inc.mk:1 ../outside.mk`, `script-gate-lint: mk/zz-inc.mk is not included by any scanned makefile`. (b) `rc=2`, `script-gate-lint: makefile not scanned: tools/zz/stray.mk (add it to the scanned set or move it under mk/)`. (c) `3`, `1`. All measured (V31). M2 runs the direct-sh forms (rc 1) of (a)/(b); the make forms run at M3"
+        },
+        {
+          "id": "AC15",
+          "command": "SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh tools/script_gate_lint.sh --inventory \\| cut -f2-4; grep -c 'not on the baseline: mixed tests/m2.gd$' .godot/tmp/script-gate/lint-negative.log",
+          "expected": "exactly six rows: `gated-ok tests/x.gd gated`, `bare-new tests/y.gd ungated`, `baselined tests/z.gd ungated`, `mixed tests/m1.gd gated`, `mixed tests/m2.gd ungated`, `quoted-separators tests/q.gd gated` (tab-separated); then `1` (V28)"
+        },
+        {
+          "id": "AC16",
+          "command": "make script-gate-selftest 2>&1 \\| grep -E 'stub-ignore-alrm\\|stub-orphan-child\\|cases'; pgrep -f 'sleep 977' \\| wc -l",
+          "expected": "`ok   stub-ignore-alrm (exit 1 in [2-6] s: timeout …)`, `ok   stub-orphan-child (exit 1 …: timeout …)`, the cases total goes up by 2 (12 stub), then `0` (round-2 amendment A2)"
+        },
+        {
+          "id": "AC17",
+          "command": "replace the supervisor call in a scratch copy of tools/script_gate.sh with perl -e 'alarm shift; exec @ARGV' and run SCRIPT_GATE_SH=<copy> sh tools/test_script_gate.sh",
+          "expected": "`rc` non-zero, and `FAIL stub-ignore-alrm` appears (the case overruns its wall-time ceiling or exits 0; round-2 amendment A2). This discharges AC8's second half, whose sed mutation targets the line A2 deleted"
+        },
+        {
+          "id": "AC18",
+          "command": "make -j2 script-gate-selftest script-gate-drill > .godot/tmp/7x-ac18.out 2>&1; echo rc=$?; ls -d .godot/tmp/script-gate/selftest .godot/tmp/script-gate/drill",
+          "expected": "`rc=0`, both directories exist (SCRATCH is .godot/tmp, Makefile:13 — planner-verified; V34 shows nothing runs test/ci-fast with -j today, and A1 makes the targets safe under it)"
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7x-script-gate-predicates.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7x-script-gate-predicates-sprint.md",
+      "registry_reuse": null,
+      "passes": true,
+      "status": "landed",
+      "notes": "Iteration 69 planner, 2026-11-04, HEAD 78f390c041fd02461ad758492813c2354fb51363 == origin/main. Planned at the verified base: every design anchor re-measured first-hand in this clone (plan §Reality check): Makefile 294/376/386/835/863 carry the bare --script lines, include mk/navigation-usability.mk at 1078, 21 includes all mk/*.mk, 235 recipe lines with --script (122 Makefile + 113 mk; 237 occurrences is V8's continuation-aware count), 7 perl-alarm lines in 6 targets (A1's restated count), sim and bh-hud-test recipes byte-match W5's verbatim block, old uncounted summaries present 1 each in tests/test_sim_bridge.gd and tests/test_galaxy_map.gd, all new paths absent, no SCRIPT_GATE name clash, AC9 RED state (empty deps), SCRATCH=.godot/tmp (Makefile:13), perl/shellcheck/godot present; runtime/bin/ailang absent here (executor: make runtime / make deps import first). Sandbox has no network (gh TLS error, git ls-remote fails; finding F3 precedent), so the four attended PRs' hunks (#380 Makefile 251-263; #379 Makefile 485-494 + mk/deck-layout.mk + mk/earth-link.mk; #373 Makefile 10-27 + 225-233 + mk/m45.mk; #384 mk/earth-link.mk) are cited from design V11, not re-measured — controller re-checks at kickoff. Sequencing (plan §Sequencing note): the baseline is generated at M2 with interim 237 rows/pin 237 (design S1: pin temporarily equal to the generated count), 236 after M4, 232 after M5; AC6's doc-literal line is asserted after M5; the make-target forms of AC6/AC7(a)/AC7(b)/AC14(a,b) run at M3 because W3 defines those targets there; A2's +2 cases make AC1/AC2 footers 12-stub/18-case and shift AC13's second grep alternative; AC8's no-alarm sed half is superseded by AC17. r2 BLOCKED 1/3 (+1 salvaged), fixes applied under the carve-out. Do-not-touch holds: mk/sound.mk, mk/deck-layout.mk, mk/earth-link.mk, mk/m45.mk, audio/, data/audio/, assets/audio/, ui/earth_feed.gd, data/ui/comms_feed.json, the R2-KERR/R3-WORLDS files. passes stays false until a different evaluator reruns the ACs (F4 discipline).\nEXECUTOR RECEIPT, iteration 69, 2026-11-04 (executor, Haiku 5.5, not the judge). Branch feat/m4-7x-script-gate-predicates from HEAD 72c568cd. AILANG v0.56.1 (runtime/bin, 05c860a); Godot 4.7.2 (/opt/homebrew/bin/godot); perl /usr/bin/perl. Commits, one per milestone: 7682973b (chore: remove the duplicated feature object this JSON carried from 72c568cd; one copy kept), 175bfe84 (M1 helper, stub drills, Godot fixtures), 50cfbc84 (M2 lint, baseline, lint fixtures), 3d9c4d5b (M3 wiring), b66fdb1f (M4 make sim), 9c26551b (M5 four gates, galaxy summary), 678b4928 (per-run orphan durations, found by AC18), then this receipt. Not run here: AC4 full make sim (controller, ~40 min), AC13 (GitHub fast tier, controller). The sub-make results in the rows below are from this clone.\nPer-AC results (command; rc; key output):\nRED M1: sh tools/test_script_gate.sh before the helper existed: rc=1, \"FAIL 12 of 12 cases\".\nAC1: make script-gate-selftest; rc=0; 12 \"test-script-gate: ok   stub-...\" lines; \"test-script-gate: ok (12 cases: 12 stub, 0 Godot)\".\nAC2: make script-gate-drill; rc=0 secs=24; \"ok   raw-parse-rc0 (exit 0 in 1 s: SCRIPT ERROR: Parse Error)\"; \"ok   godot-hang (exit 1 in 10 s: timeout after 10 s (rc 142))\"; \"ok   make-sim-parse (exit 2 in 1 s: script-gate: sim-bridge FAIL; 1 SCRIPT ERROR line(s))\"; \"test-script-gate: ok (18 cases: 12 stub, 6 Godot)\".\nAC3 RED (before the sim edit): rc=0; SCRIPT ERROR count 1 (\"Parse Error: Identifier \\\"undefined_name_7x\\\" not declared\"). AC3 GREEN: make sim-bridge SIM_BRIDGE_SCRIPT=.godot/tmp/script-gate/p.gd SIM_BRIDGE_LOG=.godot/tmp/7x-green.log; rc=2; \"script-gate: sim-bridge FAIL; 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching ^sim bridge: ...\".\nAC4: NOT RUN (brief: controller runs full AC4). Substitutes run: make sim-bridge rc=0 \"script-gate: sim-bridge ok: sim bridge: 110 passed, 0 failures (rc 0, no SCRIPT ERROR, 95 s of 900 s)\"; make bh-hud-test rc=0 with \"lens-assets: tables match data/lens/SHA256SUMS\", \"bh-hud: 64 passed, 0 failures\", \"bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior\".\nAC5: make ui area-test test-bright-audit star-catalogue-test; rc=0; exactly 4 script-gate lines: \"ui ok: galaxy map: 205 passed, 0 failures\", \"area-test ok: 80 passed, 0 failed\", \"test-bright-audit ok: test_bright_audit: 16 passed, 0 failed\", \"star-catalogue-test ok: test_star_catalogue: 40 passed, 0 failed\".\nAC6: make script-gate-lint; rc=0; \"script-gate-lint: ok (237 --script invocations: 5 through $(SCRIPT_GATE), 232 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)\".\nAC7(a): probe mk/zz-7x-probe.mk; make script-gate-lint rc=2; grep count 1 (\"not on the baseline: x7x tests/x7x.gd\"); also \"mk/zz-7x-probe.mk is not included by any scanned makefile\"; probe removed. AC7(b): make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=231 | tail -2: \"the baseline has 232 rows but SCRIPT_GATE_BASELINE_ROWS is 231: the pin moves with the rows, and only down\" / \"make: *** [script-gate-lint] Error 1\". AC7(c): stale row appended, pin 233 direct: \"stale baseline row (no longer unguarded): delete it and lower SCRIPT_GATE_BASELINE_ROWS: sim tests/test_sim_bridge.gd\"; rc=1.\nAC8: rc-only mutant: rc=1; grep count 4 (\"FAIL stub-(parse|hang|nosummary|zero): exit 0\"); footer \"FAIL 13 of 12 cases\" (the 13th is the orphan-survivor check, which the rc-only mutant trips). The no-alarm second half is superseded by AC17 (A2), as the plan's sequencing note says.\nAC9: test: script-gate-drill script-gate-lint script-gate-selftest; ci-fast: script-gate-lint script-gate-selftest.\nAC10: make uid-guard python-guard audio-silent-guard lint-precision: rc=0 (\"uid-guard: ok (406 .uid files)\", \"python-guard: ok (21 allowlisted, 0 awaiting AILANG port)\", \"audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound)\", \"lint-precision: ok (...)\"); shellcheck -s sh on the three new scripts: rc=0 (\"gates-ok\" printed). RED PART, NOT GREEN: git diff --check origin/main rc!=0 with 44 \"space before tab in indent\" lines, all in design_docs/planned/r1/m4-7x-script-gate-predicates.md (planner commit 72c568cd), lines 518-645, each a unified-diff context line (space marker then tab-indented code) inside a ```diff block. A false positive for diff text; the lines were not edited because a change would break git apply. Scoped check git diff --check origin/main -- . ':!design_docs/planned/r1/m4-7x-script-gate-predicates.md' rc=0. Decision for the controller.\nAC11: git diff --name-only origin/main outside the allowed list: 0; do-not-touch and PR-touched files changed: 0; Makefile @@ hunks: 6.\nAC12: sim summary grep 1; galaxy summary grep 1; \"if not ok: failures += 1\" in test_sim_bridge.gd 0.\nAC13: NOT RUN (controller-only: gh pr checks, Linux dash and Ubuntu awk run).\nAC14: (a) rc=2, \"script-gate-lint: include outside the scanned set (mk/*.mk): mk/zz-inc.mk:1 ../outside.mk\" and \"mk/zz-inc.mk is not included by any scanned makefile\". (b) rc=2, \"script-gate-lint: makefile not scanned: tools/zz/stray.mk (add it to the scanned set or move it under mk/)\". (c) fixture control log: 3 include-outside lines and 1 makefile-not-scanned line for tools/stray.mk.\nAC15: fixture inventory is exactly the six rows (gated-ok tests/x.gd gated; bare-new tests/y.gd ungated; baselined tests/z.gd ungated; mixed tests/m1.gd gated; mixed tests/m2.gd ungated; quoted-separators tests/q.gd gated); grep count of \"not on the baseline: mixed tests/m2.gd\" 1.\nAC16: make script-gate-selftest: \"ok   stub-ignore-alrm (exit 1 in 4 s: timeout after 2 s)\", \"ok   stub-orphan-child (exit 1 in 2 s: timeout after 2 s)\", \"ok (12 cases: 12 stub, 0 Godot)\"; surviving orphan sleeps 0. Deviation: the orphan sleep is per-run (see below), so the literal pgrep of sleep 977 is replaced by a per-run pgrep.\nAC17: exec-alarm mutant (perl -e 'alarm shift; exec @ARGV' in a scratch copy): rc=1; \"FAIL stub-ignore-alrm: exit 1 in 30 s, want 1 within 6 s with 'timeout after 2 s'\"; \"FAIL stub-orphan-child: a sleep <n> survived the group kill\"; \"FAIL 2 of 12 cases\".\nAC18: make -j2 script-gate-selftest script-gate-drill: rc=0 (22 s); .godot/tmp/script-gate/selftest and .godot/tmp/script-gate/drill exist. Before the 678b4928 fix the same command was rc=2: the two runs' global pgrep saw each other's orphan.\nDeviations from the design, with reasons: (1) the 7x object was duplicated in 72c568cd, and this JSON's de-duplicated copy is kept (commit 7682973b). (2) The A2 supervisor is inline in tools/script_gate.sh and, as make variable SG_SUP, in mk/script-gates.mk (same code, two copies). No separate .pl, so AC11 is unchanged. (3) The orphan case uses per-run sleep durations (from $$) with output to /dev/null, instead of literal sleep 977/978, because AC18 (make -j2) showed the global pgrep collision. (4) AC4 and AC13 not run here (brief). (5) The M3 commit (3d9c4d5b) wires the drill into make test before M4 adds sim-bridge, so on that commit alone make-sim-parse fails; the head is green.\nOpen for the controller: AC10's literal git diff --check (design doc diff-marker false positive; decide whether to exempt that file or reformat the planner's diff blocks); AC13 on the PR; AC4 full make sim. Status set to implemented; passes left false for the judge. git status --porcelain: empty.\nCONTROLLER, iteration 69, outside any sandbox, on ec91549e: AC4 make sim rc 0 in 2195 s (161 files checked; 637 tests: 637 passed, 0 failed; script-gate: sim-bridge ok: sim bridge: 110 passed, 0 failures (94 s of 900 s); lens-assets: tables match; bh-hud: 64 passed, 0 failures; bh-hud-test: no hand-written sqrt line), log /tmp/iter69/ac4_ec91549e.out. AC13 fast tier pass (run 41831885322, 10m22s); its Linux log shows script-gate-lint: ok (237: 5 through, 232 baseline; 22 includes; 23 makefiles) and test-script-gate: ok (12 cases: 12 stub, 0 Godot), stub-ignore-alrm and stub-orphan-child ok. AC10 diff --check fixed by the controller (ec91549e, doc fences only). Controller mutant check: SCRIPT ERROR check removed from a copy of the helper -> FAIL stub-parse, rc 1; control rc 0. Judges: Sonnet (Agent tool) 88 PASS, 0 blocking, 14/16 mutants killed (survivors: SCRIPT_GATE after GODOT in one segment; a summary regex of ^. accepts failures, convention only); cross-family GLM 5.3 (pi, OpenRouter) 93 PASS, 0 blocking, 3/3 killed.\nLANDED iteration 69: PR #393 merged with --match-head-commit 326eb987 -> 49eb35d9; fast tier success on head (326eb987) and on the merge (run 41841074455)."
+    },
+    {
+      "id": "M4.6sR3_7x_B2_SCRIPT_GATES",
+      "description": "B2a only: migrate 28 measured rows in nine mk files through $(SCRIPT_GATE), add five counted summaries, close S1 with a gate-after lint fixture and S2 with the per-count zero probe plus six stubs, add constellation-test starmap-assets prerequisite, delete 28 baseline rows and lower pin 232 to 204. B2b (D7) excluded. Approved revision 1 with controller round-2 carve-out fixes and V21 reconciliation; no gameplay, asserts, audio or physics changes.",
+      "depends_on": [
+        "M4.6sR3_7x_SCRIPT_GATE_PREDICATES"
+      ],
+      "estimated_loc": 116,
+      "files": [
+        "mk/ism.mk",
+        "mk/planet-presentation.mk",
+        "mk/star-surfaces.mk",
+        "mk/navigation-usability.mk",
+        "mk/constellations.mk",
+        "mk/npc-painted.mk",
+        "mk/commons-civic.mk",
+        "mk/captain-anim.mk",
+        "mk/style.mk",
+        "mk/script-gates.mk",
+        "tools/script_gate.sh",
+        "tools/test_script_gate.sh",
+        "tools/script-gate-baseline.txt",
+        "tests/fixtures/script_gate/lint_negative.mk.txt",
+        "tests/test_star_surface.gd",
+        "tools/captain_frames.gd",
+        "tools/ui_theme_check.gd",
+        "tools/planet_cpu_bench.gd",
+        "tools/exposure_cpu_bench.gd"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "Helper per-count zero probe and six stub cases, RED before GREEN",
+          "acceptance": [
+            "AC3",
+            "AC4"
+          ],
+          "estimate": "24 LOC, 15 min",
+          "pause": "Stop if RED is not exactly five failing new cases or GREEN is not 18/18; preserve the landed supervisor and its controls."
+        },
+        {
+          "id": "M2",
+          "title": "Lint S1 gate-after fixture and negative-control count 2 to 3",
+          "acceptance": [
+            "AC6",
+            "AC7"
+          ],
+          "estimate": "6 LOC, 8 min",
+          "pause": "Stop if gate-after is not ungated with the real lint or if the mutant produces anything other than two unguarded rows; do not edit the lint."
+        },
+        {
+          "id": "M3",
+          "title": "Five counted summaries from D3, including the captain header comment",
+          "acceptance": [
+            "AC12"
+          ],
+          "estimate": "17 LOC plus 2 comment lines, 10 min",
+          "pause": "Stop if a summary requires an assertion, threshold, data or B2b edit; D3 counts existing work only."
+        },
+        {
+          "id": "M4",
+          "title": "28 B2a recipe migrations in nine files, baseline minus 28 and pin 232 to 204",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC8"
+          ],
+          "estimate": "67 LOC plus 28 deleted baseline rows, 25 min",
+          "pause": "Stop if the 28 target/script rows, 237 total occurrences, 33 gated or 204 baseline differ; report base drift without widening scope."
+        },
+        {
+          "id": "M5",
+          "title": "Constellation starmap-assets prerequisite and AC16 fresh-SCRATCH run",
+          "acceptance": [
+            "AC8",
+            "AC16"
+          ],
+          "estimate": "2 LOC, 7 min",
+          "pause": "Stop if the fresh path is present before AC16, the nested log is missing, or the constellation tier cannot be obtained; report the finding."
+        },
+        {
+          "id": "M6",
+          "title": "Complete AC1-AC16 evidence, Godot drills, policy gates and controller fast tier",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC3",
+            "AC4",
+            "AC5",
+            "AC6",
+            "AC7",
+            "AC8",
+            "AC9",
+            "AC10",
+            "AC11",
+            "AC12",
+            "AC13",
+            "AC14",
+            "AC15",
+            "AC16"
+          ],
+          "estimate": "0 LOC, 25 min",
+          "pause": "Stop on an AC mismatch, survivor, out-of-scope file or red Linux fast tier; controller and independent evaluator own completion."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "script-gate-lint: ok (237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned), rc=0 (V12 on revision 0; V21 on revision 1)"
+        },
+        {
+          "id": "AC2",
+          "command": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=205 2>&1 | tail -2",
+          "expected": "the baseline has 204 rows but SCRIPT_GATE_BASELINE_ROWS is 205: the pin moves with the rows, and only down, make: *** [script-gate-lint] Error 1 (V12; V21)"
+        },
+        {
+          "id": "AC3",
+          "command": "make script-gate-selftest 2>&1 | grep -E 'stub-(loose|weakcount|uncounted|namedigit|twocount|twobound|want1|env)|cases'; echo rc=$?",
+          "expected": "ok   stub-loose (exit 1 …: SUMMARY_ERE also matches), ok   stub-weakcount (…), ok   stub-uncounted (exit 1 …: carries no nonzero count), ok   stub-namedigit (…), ok   stub-twocount (exit 1 …: count 2 zeroed), ok   stub-twobound (exit 0 …: stub-twobound ok: t: 3 files, 4 pairs), ok   stub-want1 …, ok   stub-env …, test-script-gate: ok (18 cases: 18 stub, 0 Godot) (V19)"
+        },
+        {
+          "id": "AC4",
+          "command": "git show origin/main:tools/script_gate.sh > .godot/tmp/b2-old-gate.sh; SCRIPT_GATE_SH=.godot/tmp/b2-old-gate.sh SCRIPT_GATE_TMP=.godot/tmp/b2-ac4 sh tools/test_script_gate.sh > .godot/tmp/b2-ac4.out 2>&1; echo rc=$?; grep -c '^test-script-gate: FAIL stub-' .godot/tmp/b2-ac4.out\ncat > .godot/tmp/b2-zero-block.txt <<'B2ZERO'\nif [ -n \"$line\" ] && [ \"$want\" -eq 0 ]; then\n  zero=$(printf '%s\\n' \"$line\" | sed -E 's/(^|[^A-Za-z0-9_.-])[0-9]+/\\10/g')\n  if [ \"$zero\" = \"$line\" ]; then why=\"$why; carries no nonzero count\"\n  elif printf '%s\\n' \"$zero\" | grep -qE -- \"$summary\"; then why=\"$why; SUMMARY_ERE also matches the zeroed line\"; fi\nfi\nB2ZERO\nawk '\n  /^# Zero probe/ { skip=1 }\n  skip && /^if \\[ -n \"\\$why\" \\]; then/ { skip=0 }\n  !skip && /^if \\[ -n \"\\$why\" \\]; then/ { while ((getline extra < \".godot/tmp/b2-zero-block.txt\") > 0) print extra }\n  !skip { print }\n' tools/script_gate.sh > .godot/tmp/b2-all-at-once.sh\nSCRIPT_GATE_SH=.godot/tmp/b2-all-at-once.sh SCRIPT_GATE_TMP=.godot/tmp/b2-ac4b sh tools/test_script_gate.sh > .godot/tmp/b2-ac4b.out 2>&1\necho rc=$?\ngrep '^test-script-gate: FAIL' .godot/tmp/b2-ac4b.out",
+          "expected": "(a) rc=1, 5 (loose, weakcount, uncounted, namedigit, twocount). (b) rc=1, exactly FAIL stub-twocount: exit 0 … and FAIL 1 of 18 cases (V19)"
+        },
+        {
+          "id": "AC5",
+          "command": "make script-gate-drill 2>&1 | tail -1; echo rc=$?",
+          "expected": "test-script-gate: ok (24 cases: 18 stub, 6 Godot), rc=0 (V20)"
+        },
+        {
+          "id": "AC6",
+          "command": "SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh tools/script_gate_lint.sh --inventory | cut -f2-4 | grep -c .; SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh tools/script_gate_lint.sh --inventory | cut -f2-4 | grep after; grep -c '^script-gate-lint: unguarded' .godot/tmp/script-gate/lint-negative.log",
+          "expected": "7; gate-after tests/after.gd ungated (tab-separated); 3 (V11, V12)"
+        },
+        {
+          "id": "AC7",
+          "command": "sed 's/(sg \\&\\& sg < g + 1) ? \"gated\"/sg ? \"gated\"/' tools/script_gate_lint.sh > .godot/tmp/b2-lint-mut.sh; SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE=tests/fixtures/script_gate/lint_negative_baseline.txt SCRIPT_GATE_BASELINE_ROWS=2 SCRIPT_GATE_ALL_MAKEFILES=\"tests/fixtures/script_gate/lint_negative.mk.txt tools/stray.mk\" sh .godot/tmp/b2-lint-mut.sh | grep -c '^script-gate-lint: unguarded'",
+          "expected": "2 (the control in make script-gate-lint requires 3, so this mutant fails it; V11)"
+        },
+        {
+          "id": "AC8",
+          "command": "make dust-flash-test map-ism-test bubble-surface-test ism-surfaces-test planet-presentation-test moon-lifecycle-test planet-cpu-bench exposure-frames-test manual-exposure-test exposure-cpu-bench star-surface-test navigation-usability-test constellation-test npc-painted-assets-check npc-painted-test commons-civic-stage commons-civic-assets-check commons-civic-playtest-test captain-anim-test bridge-operator-test captain-frames-check captain-chair-test style-test ui-theme-check dressing-test > .godot/tmp/b2-ac8.out 2>&1; echo rc=$?; grep '^script-gate:' .godot/tmp/b2-ac8.out | sort -u -t: -k2,2 | wc -l; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b2-ac8.out",
+          "expected": "rc=0; 28 distinct gate names, one ok line each (commons-civic-stage also runs as a prerequisite; sort -u keeps one), with the counts of V7: dust-flash: 29 passed, ism-layer: 22, bubble-surface: 16 checks, ism-surfaces: 18 checks, planet-presentation: 806 checks, moon-lifecycle: 71 checks, planet-cpu-bench: 6 rows, exposure-frames: 1364 checks, manual-exposure: 291 checks, exposure-cpu-bench: OK 2 profiles, star-surface: OK (54 passed, navigation-usability: 17 checks, constellations: 35 passed, painted-npc-assets: 5 identities, 25 poses, painted-npc-pilot: 23, commons-civic-stage: 4 configs …, commons-civic-assets: 21, commons-civic-playtest: 18, captain-anim: 87, bridge-operator-contact: 44, captain-frames: ok (50 frames), captain-frames: selftest ok (50 frames), captain-chair: 12, style-test: 22, ui-theme-check: ok (49 files, 65 text/panel pairs), ui-theme-neg-override ok: FAIL 1 hard-coded … (rc 1), ui-theme-neg-contrast ok: FAIL contrast … (rc 1), dressing-test: 10; then 0. Budget about 7 min wall; moon-lifecycle-test alone is about 220 s."
+        },
+        {
+          "id": "AC9",
+          "command": "make ui area-test test-bright-audit star-catalogue-test sim-bridge 2>&1 | grep '^script-gate:'",
+          "expected": "5 ok lines: galaxy map: 205 passed, 80 passed, 0 failed, test_bright_audit: 16 passed, test_star_catalogue: 40 passed, sim bridge: 110 passed (V7b)"
+        },
+        {
+          "id": "AC10",
+          "command": "d=.godot/tmp/b2drill; mkdir -p $d; for p in tests/test_dust_flash.gd:c1 tests/test_navigation_usability.gd:c2 tools/captain_frames.gd:c3 tools/ui_theme_check.gd:c4; do awk 'NR==1{print; print \"var _b2_drill: int = undefined_name_b2\"; next} {print}' ${p%%:*} > $d/${p##*:}.gd; done; AB=\"AILANG_BIN=$(command -v ailang)\"; sh tools/script_gate.sh c1 $d/c1.log 600 '^dust-flash: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/c1.gd; echo rc=$?; sh tools/script_gate.sh c2 $d/c2.log 600 '^navigation-usability: [1-9][0-9]* checks 0 failures$' -- \"$AB\" godot --headless --path . --script $d/c2.gd; echo rc=$?; sh tools/script_gate.sh c3 $d/c3.log 600 '^captain-frames: selftest ok \\([1-9][0-9]* frames\\)$' -- godot --headless --path . --script $d/c3.gd -- --selftest; echo rc=$?; sh tools/script_gate.sh c4 $d/c4.log 600 '^FAIL contrast' 1 -- godot --headless --path . --script $d/c4.gd -- --theme-builder=res://tests/fixtures/ui_theme/low_contrast_theme.gd; echo rc=$?",
+          "expected": "each prints script-gate: cN FAIL; … 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching … and then rc=1; c4 also says rc 0, want 1. Raw Godot on each copy exits rc 0 with 1 SCRIPT ERROR and no summary (V9)"
+        },
+        {
+          "id": "AC11",
+          "command": "d=.godot/tmp/b2drill; mkdir -p $d; awk '{print} /^func _overlap_masks\\(\\) -> void:$/{print \"\\tprint(self.no_such_member_b2)\"}' tests/test_dust_flash.gd > $d/c5.gd; godot --headless --path . --script $d/c5.gd > $d/c5.base.log 2>&1; rc=$?; test $rc = 0 && grep -q '^dust-flash: [1-9][0-9]* passed, 0 failures$' $d/c5.base.log && echo \"old predicate: PASS\"; sh tools/script_gate.sh c5 $d/c5.log 600 '^dust-flash: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/c5.gd; echo rc=$?",
+          "expected": "old predicate: PASS (the base dust-flash-test check passes a run that skipped 3 checks: dust-flash: 26 passed, 0 failures), then script-gate: c5 FAIL; 1 SCRIPT ERROR line(s) …, rc=1 (V9)"
+        },
+        {
+          "id": "AC12",
+          "command": "for e in '^star-surface: OK \\([1-9][0-9]* passed, 0 failures\\)$' '^captain-frames: ok \\([1-9][0-9]* frames\\)$' '^ui-theme-check: ok \\([1-9][0-9]* files, [1-9][0-9]* text/panel pairs\\)$' '^exposure-cpu-bench: OK [1-9][0-9]* profiles, renders/perf/exposure_cpu.json$' '^planet-cpu-bench: [1-9][0-9]* rows, renders/perf/planet_cpu.json$'; do printf '%s\\n' 'star-surface: OK (0 passed, 0 failures)' 'captain-frames: ok (0 frames)' 'ui-theme-check: ok (0 files, 0 text/panel pairs)' 'exposure-cpu-bench: OK 0 profiles, renders/perf/exposure_cpu.json' 'planet-cpu-bench: 0 rows, renders/perf/planet_cpu.json' | grep -cE -- \"$e\"; done",
+          "expected": "five lines of 0"
+        },
+        {
+          "id": "AC13",
+          "command": "make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh && echo gates-ok",
+          "expected": "gates-ok (uid-guard: ok (406 .uid files), python-guard: ok (21 allowlisted, …), audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound), lint-precision: ok …; V12; V21)"
+        },
+        {
+          "id": "AC14",
+          "command": "git diff --name-only origin/main | grep -cvxE 'mk/(ism|planet-presentation|star-surfaces|navigation-usability|constellations|npc-painted|commons-civic|captain-anim|style|script-gates)\\.mk|tools/(script_gate\\.sh|test_script_gate\\.sh|script-gate-baseline\\.txt|captain_frames\\.gd|ui_theme_check\\.gd|planet_cpu_bench\\.gd|exposure_cpu_bench\\.gd)|tests/test_star_surface\\.gd|tests/fixtures/script_gate/lint_negative\\.mk\\.txt|design_docs/planned/r1/m4-7x-b2-script-gates.*\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'; git diff --name-only origin/main -- Makefile mk/sound.mk mk/m45.mk mk/deck-layout.mk mk/earth-link.mk | wc -l",
+          "expected": "0, 0"
+        },
+        {
+          "id": "AC15",
+          "command": "gh pr checks <PR>; gh run view <run> --log | grep -cE 'script-gate-lint: ok \\(237 --script invocations: 33 through|test-script-gate: ok \\(18 cases: 18 stub, 0 Godot\\)'",
+          "expected": "success; 2. This is the probe's first Linux, dash and GNU sed -E run."
+        },
+        {
+          "id": "AC16",
+          "command": "F=.godot/tmp/b2-fresh-$$; test -e $F && echo exists || echo absent; make dust-flash-test map-ism-test star-surface-test SCRATCH=$F/s 2>&1 | grep '^script-gate:'; echo rc=$?; ls $F/s $F/s/star-surfaces",
+          "expected": "absent; script-gate: dust-flash-test ok: dust-flash: 29 passed, 0 failures (…), script-gate: map-ism-test ok: ism-layer: 22 passed, 0 failures (…), script-gate: star-surface-test ok: star-surface: OK (54 passed, 0 failures) (…); rc=0; $F/s lists dust-flash-test.log, map-ism-test.log and star-surfaces, and $F/s/star-surfaces lists test.log (V18)"
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7x-b2-script-gates.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7x-b2-script-gates-sprint.md",
+      "registry_reuse": [
+        {
+          "milestone": "M1",
+          "package": null,
+          "action": "none",
+          "reason": "Repo-specific shell/Make/GDScript gate maintenance and validation; no package-like capability or .ail code."
+        },
+        {
+          "milestone": "M2",
+          "package": null,
+          "action": "none",
+          "reason": "Repo-specific shell/Make/GDScript gate maintenance and validation; no package-like capability or .ail code."
+        },
+        {
+          "milestone": "M3",
+          "package": null,
+          "action": "none",
+          "reason": "Repo-specific shell/Make/GDScript gate maintenance and validation; no package-like capability or .ail code."
+        },
+        {
+          "milestone": "M4",
+          "package": null,
+          "action": "none",
+          "reason": "Repo-specific shell/Make/GDScript gate maintenance and validation; no package-like capability or .ail code."
+        },
+        {
+          "milestone": "M5",
+          "package": null,
+          "action": "none",
+          "reason": "Repo-specific shell/Make/GDScript gate maintenance and validation; no package-like capability or .ail code."
+        },
+        {
+          "milestone": "M6",
+          "package": null,
+          "action": "none",
+          "reason": "Repo-specific shell/Make/GDScript gate maintenance and validation; no package-like capability or .ail code."
+        }
+      ],
+      "passes": true,
+      "status": "implemented",
+      "notes": "M1: Added D4 six cases first. Measured RED: five new cases fail on the original helper; make rc 2, plus pre-existing orphan visibility failure. Untouched base test also reports FAIL 1 of 12: pgrep cannot read process list (sysmon service unavailable, rc 3), so complete selftest/mutant footers are UNINFORMATIVE UNDER SANDBOX; no test weakened. Inserted exact per-count probe. New/helper cases and dash evidence recorded in .godot/tmp/snap/M1/RESULT.txt; full 18/18 and mutant footer checks require controller rerun outside sandbox.\nM2: Exact gate-after fixture added first: make script-gate-lint RED rc=2 (negative control flagged wrong rows). Updated control 2→3 and required grep: GREEN rc=0, interim lint 237/5/232. AC6 measured 7 rows, gate-after ungated, 3 unguarded; AC7 mutant 2. Evidence .godot/tmp/snap/M2/RESULT.txt.\nM3: Applied exact D3 five summary edits and captain Prints comment. Pre-edit counted predicates each reject absent summary; post-edit gate output carries 54 passed, 50 frames in both modes, 49 files/65 pairs, 6 rows, 2 profiles. Every direct Godot run is UNINFORMATIVE UNDER SANDBOX due to user://logs denial; raw logs retained. AC12 measured five zeros; independent log/JSON counts 54/50/65. Evidence .godot/tmp/snap/M3/RESULT.txt; no assertions changed.\nM4: RED inventory had 5 gated rows (33 required). Copied all 28 D2 recipes verbatim with tabs, preserved B2b rows and all command flags; removed only the two ism mkdir lines and old recipe tails. Baseline deletion-only 0/28; pin 232→204; lint GREEN 237/33/204 and pin-205 negative refused. Per-file Godot subsets attempted serially; sandbox user-data errors make runtime results UNINFORMATIVE UNDER SANDBOX, with raw outputs in .godot/tmp/snap/M4/RESULT.txt. Constellation prerequisite remains for M5.\nM4 additional finding: Godot import repeatedly logs invalid .translation paths derived from existing data/starmap/truth/positions.csv; data unchanged (git diff exit 0). Also denies saving editor settings under Library. All per-file runtime acceptance remains UNINFORMATIVE UNDER SANDBOX; no import/data workaround made.\nM5: RED structural prerequisite check rc=1 (constellation-test: import). Added starmap-assets exactly; sha verification retained and existing tiers kept. Ran constellation-test, fresh-SCRATCH AC16 and full AC8 serially; all runtime acceptance UNINFORMATIVE UNDER SANDBOX due to Godot user://logs errors. Captured full same-run output and true make rc. Evidence .godot/tmp/snap/M5/RESULT.txt; no assets removed or B2b target invoked.\nM6: Implementation complete; status implemented, passes false for judge. Rechecked lint/pin, six probe/control outcomes, S1 fixture and mutant, policy gates, scope, exact D2/D4 and B2b byte preservation. Godot AC9, drill AC5, four gated/raw parse classes AC10 and bounded runtime gap AC11 attempted serially; runtime acceptance UNINFORMATIVE UNDER SANDBOX (user://logs denial). Complete selftest/drill totals also UNINFORMATIVE UNDER SANDBOX because untouched base orphan visibility control fails: pgrep Cannot get process list. Controller must rerun AC3/4/5/8/9/10/11/16 and AC15 fast tier outside sandbox; independent judge owns passes. Full commands/raw results in .godot/tmp/snap/M1–M6/RESULT.txt. No git writes, B2b execution, publishes or out-of-scope edits.\nM6 supplemental AC9: the combined make stopped in unchanged ui prerequisite earth-feed-test (make rc 2, zero helper lines) because sandbox denied user://earth_feed_test_cache, leading to null store_buffer. Remaining four AC9 targets were then attempted individually, serially, with deadlines; no prerequisite bypass, environment/cache override or out-of-scope fix. AC9 remains UNINFORMATIVE UNDER SANDBOX. The positions.csv import metadata confirms importer=csv_translation; both existing-data and sandbox findings are retained.\nFinal runtime disposition: AC9 aggregate blocked in earth-feed-test by user:// cache denial. Individually attempted area-test (printed 80), test-bright-audit and star-catalogue-test (both sandbox user-data/null-handle hangs stopped at unchanged 600 s deadlines), and sim-bridge (printed 110). Every Godot-bearing result remains UNINFORMATIVE UNDER SANDBOX. Cancellation from a separate tool call was denied; the scratch catalogue watcher did not match the omitted directory-error line and made no alteration to logs or repository checks. Measured AC13 gates-ok, AC14 0/0, shellcheck/dash controls and final lint green. Plan M1 prose red make rc=1 differs from observed make rc=2 (underlying test script rc=1); no test exit expectation changed. AC15 and sandbox-affected acceptance remain for controller; passes false. | Controller (iteration 70, outside the sandbox, at 48fe3953): AC1 lint ok 237/33/204; AC2 pin 205 refused; AC3 selftest 18/18; AC4a landed helper fails 5 new cases; AC5 drill ok (24 cases: 18 stub, 6 Godot); AC6 7/gate-after ungated/3; AC7 mutant 2; AC8 25 targets rc 0, 28 ok lines, 0 FAIL; AC9 7x gates 205/80/16/40/110; AC10 four classes FAIL rc 1; AC11 old predicate PASS on 26-of-29 run, new gate FAIL; AC12 five zeros; AC13 gates-ok; AC14 0,0; AC16 fresh nested SCRATCH created. Judge: Sonnet 92/100 PASS, 0 blocking, 8 of 9 mutants killed (survivor: starmap-assets prerequisite removal), eval_R1-M4-JOURNEY_7x_B2_round_1.json. AC15 fast tier: on the evidence head."
+    },
+    {
+      "id": "M4.6tR3_7x_B3_SCRIPT_GATES",
+      "description": "B3a only: migrate 29 measured baseline rows (28 targets, 30 gate lines) in mk/levels.mk, mk/m5.mk and mk/ai.mk through $(SCRIPT_GATE); add six counted summaries; bind both levels-regress negatives; fix the base-red alpha-centauri-golden predicate; enforce revision-2 AI_SF path policy and escaped exact-path matching; guard three asset prerequisites with a fixture; delete 29 baseline rows and lower pin 204 to 175. B3b eight rows excluded. Approved revision 2 under controller round-2 carve-out; no assertions, physics, gameplay or audiovisual changes.",
+      "depends_on": [
+        "M4.6sR3_7x_B2_SCRIPT_GATES"
+      ],
+      "estimated_loc": 159,
+      "files": [
+        "mk/levels.mk",
+        "mk/m5.mk",
+        "mk/ai.mk",
+        "mk/script-gates.mk",
+        "tools/script-gate-baseline.txt",
+        "tools/script_gate_prereqs.sh",
+        "tools/level_eval.gd",
+        "tests/test_planets.gd",
+        "tests/test_ai_bridge.gd",
+        "tests/test_ai_relay.gd",
+        "tests/test_ai_settings.gd",
+        "tests/test_conversation.gd",
+        "tests/fixtures/script_gate/prereq_negative.mk.txt"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "Asset-prerequisite fixture and guard; kill the constellation prerequisite survivor",
+          "acceptance": [
+            "AC3"
+          ],
+          "estimate": "45 LOC, 15 min",
+          "pause": "Stop and report wrong fixture diagnostics, a merged-rule false positive, an un-restored mutant or any required protected-file edit; preserve the 204 pin."
+        },
+        {
+          "id": "M2",
+          "title": "Six counted summaries; independent live counts and zero-summary rejection",
+          "acceptance": [
+            "AC10"
+          ],
+          "estimate": "32 LOC, 15 min",
+          "pause": "Stop and report smaller counts or changed assertions; use direct helper probes while the old level-eval recipe remains intentionally red until M3. Sandbox runtime evidence stays pending for controller rerun."
+        },
+        {
+          "id": "M3",
+          "title": "Migrate 22 levels/m5 rows; bind both regression negatives; ratchet 204 to 182",
+          "acceptance": [
+            "AC5",
+            "AC9"
+          ],
+          "estimate": "64 LOC plus 22 deleted baseline rows, 20 min",
+          "pause": "Stop and report anything other than interim 238 total, 56 gated, 182 baseline and three prerequisite pairs; AC5 here is only the first 15 targets, 17 own gate names. Preserve all B3b rows."
+        },
+        {
+          "id": "M4",
+          "title": "Migrate seven AI rows; enforce exact-path policy; final ratchet 182 to 175",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC5",
+            "AC14",
+            "AC16"
+          ],
+          "estimate": "18 LOC plus 7 deleted baseline rows, 20 min",
+          "pause": "Stop and report a wrong-path stub admitted, a denied path accepted, invalid negative-control paths, or final ratchet drift. Full AC5 is controller-only because ai-live-guard performs scratch git writes. AC14 real-target extension waits for M6 GPU access."
+        },
+        {
+          "id": "M5",
+          "title": "Headless parse/runtime error drills, inherited 18/24-case harness and fresh scratch",
+          "acceptance": [
+            "AC4",
+            "AC7",
+            "AC8",
+            "AC9"
+          ],
+          "estimate": "0 LOC, 15 min",
+          "pause": "Stop and report a surviving mutant or raw behavior mismatch. Results depending on user-data, sockets or process visibility are UNINFORMATIVE UNDER SANDBOX and require controller reruns; do not weaken controls."
+        },
+        {
+          "id": "M6",
+          "title": "Serial GPU acceptance and threshold drill, policy/scope checks and PR GitHub fast tier",
+          "acceptance": [
+            "AC6",
+            "AC11",
+            "AC12",
+            "AC13",
+            "AC14",
+            "AC15"
+          ],
+          "estimate": "0 LOC, 15 min plus asynchronous CI time",
+          "pause": "Stop and report unavailable GPU, real gate failure, unexpected scope or red GitHub fast tier; keep passes false pending controller external reruns and independent evaluation. AC13 is PR GitHub fast tier only."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "script-gate-lint: ok (238 --script invocations: 63 through $(SCRIPT_GATE), 175 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned), script-gate-prereqs: ok (3 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets), rc=0 (V13)"
+        },
+        {
+          "id": "AC2",
+          "command": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=176 2>&1 | tail -2",
+          "expected": "script-gate-lint: the baseline has 175 rows but SCRIPT_GATE_BASELINE_ROWS is 176: the pin moves with the rows, and only down, make: *** [script-gate-lint] Error 1 (GNU make 4 prints [mk/script-gates.mk:32: script-gate-lint]) (V13, V18)"
+        },
+        {
+          "id": "AC3",
+          "command": "cp mk/constellations.mk .godot/tmp/b3-const.keep; perl -pi -e 's/^constellation-test: import starmap-assets$/constellation-test: import/' mk/constellations.mk; make script-gate-lint > .godot/tmp/b3-ac3.out 2>&1; echo rc=$?; grep '^script-gate-prereqs:' .godot/tmp/b3-ac3.out; cp .godot/tmp/b3-const.keep mk/constellations.mk; git diff --quiet mk/constellations.mk && echo restored",
+          "expected": "rc=2, script-gate-prereqs: constellation-test lost its prerequisite starmap-assets (constellation-test: import), restored (V14, V18)"
+        },
+        {
+          "id": "AC4",
+          "command": "make script-gate-selftest 2>&1 | tail -1; make script-gate-drill 2>&1 | tail -1",
+          "expected": "test-script-gate: ok (18 cases: 18 stub, 0 Godot), test-script-gate: ok (24 cases: 18 stub, 6 Godot) (V12)"
+        },
+        {
+          "id": "AC5",
+          "command": "env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY -u OPENAI_API_KEY make level-test level-runtime-test commons-life-pilot-test commons-grown-check commons-backdrop-check commons-art-pilot-test commons-pilot-check level-export-test level-golden-test level-eval level-eval-test levels-regress planets-test planet-textures-check alpha-centauri-test ai-godot ai-relay replay-noai ai-live-guard ai-settings ai-conversation > .godot/tmp/b3-ac5.out 2>&1; echo rc=$?; grep '^script-gate:' .godot/tmp/b3-ac5.out | sort -u -t: -k2,2 | wc -l; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b3-ac5.out",
+          "expected": "rc=0; 23 distinct gate lines, each ok with the V12 counts: level-test: 25 passed, level-runtime: 95, commons-life-pilot: 20, commons-backdrop-validate: 110 and 167, commons-art-pilot: 31, commons-pilot-validate: 44, level-export: 4, level-golden: 2, level-eval: bridge ok (1 surfaces, 4771 samples), level-eval-test: 16, levels-regress: ok (1 levels: bridge), the two levels-regress-* negatives ok: FAIL bridge: … with rc 1, planets: 121 passed, 0 failed, planet-textures check: 19 textures, alpha-centauri: 13, ai bridge: ok (89 passed …; with faults), ai relay: ok (63 passed …), ai relay: ok (3 passed, 0 failures; replay_noai), ai settings: ok (9 passed, 0 failures; launch_default), ai settings: ok (53 passed …), conversation: ok (30 passed …); then 0. Budget about 6 min (ai-live-guard's mutation loop is about 135 s of it). The ai-live-guard pass is also tools/ai_live_guard.sh accepting the edited mk/ai.mk."
+        },
+        {
+          "id": "AC6",
+          "command": "make commons-grown-capture commons-grown-motion commons-backdrop-capture commons-pilot-capture level-capture alpha-centauri-golden ai-style-frame > .godot/tmp/b3-ac6.out 2>&1; echo rc=$?; grep -c '^script-gate: [^ ]* ok' .godot/tmp/b3-ac6.out; grep -c 'script-gate: [^ ]* FAIL' .godot/tmp/b3-ac6.out",
+          "expected": "rc=0; 7 (commons-pilot-review: 48 frames, 0 failures ×3; commons-civic-motion: 64 frames, …; level-capture: bridge 6 frames; alpha-centauri-golden: 10 cases, 0 failures; worst 0.001696, the target that was red at base; ai-style-frame-record ok: recorded …: 5 ticks; library …); 0. About 2 min (V11, V12). Open the frames only if you want to; nothing visual changed."
+        },
+        {
+          "id": "AC7",
+          "command": "d=.godot/tmp/b3drill; mkdir -p $d; AB=\"AILANG_BIN=$(command -v ailang)\"; for p in tests/test_levels.gd:lv tests/test_planets.gd:pl tests/test_ai_relay.gd:ai tools/levels_regress.gd:neg; do awk 'f==0 && /^extends /{print; print \"var _b3_drill: int = undefined_name_b3\"; f=1; next} {print}' ${p%%:*} > $d/${p##*:}_p.gd; done; perl -e 'alarm 300; exec @ARGV' godot --headless --path . --script $d/pl_p.gd > $d/pl_p.raw 2>&1; echo \"raw planets rc=$?\"; sh tools/script_gate.sh lv_p $d/lv_p.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/lv_p.gd; echo rc=$?; sh tools/script_gate.sh pl_p $d/pl_p.log 600 '^planets: [1-9][0-9]* passed, 0 failed$' -- godot --headless --path . --script $d/pl_p.gd; echo rc=$?; sh tools/script_gate.sh ai_p $d/ai_p.log 600 '^ai relay: ok \\([1-9][0-9]* passed, 0 failures; replay_noai\\)$' -- \"$AB\" godot --headless --path . --script $d/ai_p.gd -- --replay-noai; echo rc=$?; sh tools/script_gate.sh neg_p $d/neg_p.log 600 '^FAIL bridge: its document [^ ]* changed \\(sha256 00000000, ' 1 -- \"$AB\" godot --headless --path . --script $d/neg_p.gd -- --fake-sha bridge; echo rc=$?",
+          "expected": "raw planets rc=0 (so today's rc-only planets-test passes it); then each prints script-gate: <name> FAIL; … 1 SCRIPT ERROR line(s) (Godot exits 0 on a parse error); no summary line matching … and rc=1; neg_p also says rc 0, want 1 (V10)"
+        },
+        {
+          "id": "AC8",
+          "command": "d=.godot/tmp/b3drill; mkdir -p $d; AB=\"AILANG_BIN=$(command -v ailang)\"; inj() { awk -v fn=\"$2\" '{print} index($0, \"func \" fn \"(\") == 1 {print \"\\tprint(self.no_such_member_b3)\"}' $1 > $3; }; inj tests/test_levels.gd test_schema $d/lv_r.gd; inj tests/test_planets.gd test_albedo_table $d/pl_r.gd; inj tests/test_ai_relay.gd test_replay_noai $d/ai_r.gd; perl -e 'alarm 300; exec @ARGV' godot --headless --path . --script $d/pl_r.gd > $d/pl_r.raw 2>&1; echo \"raw rc=$? $(grep '^planets:' $d/pl_r.raw)\"; sh tools/script_gate.sh lv_r $d/lv_r.log 600 '^level-test: [1-9][0-9]* passed, 0 failures$' -- godot --headless --path . --script $d/lv_r.gd; echo rc=$?; sh tools/script_gate.sh pl_r $d/pl_r.log 600 '^planets: [1-9][0-9]* passed, 0 failed$' -- godot --headless --path . --script $d/pl_r.gd; echo rc=$?; sh tools/script_gate.sh ai_r $d/ai_r.log 600 '^ai relay: ok \\([1-9][0-9]* passed, 0 failures; replay_noai\\)$' -- \"$AB\" godot --headless --path . --script $d/ai_r.gd -- --replay-noai; echo rc=$?",
+          "expected": "raw rc=0 planets: 79 passed, 0 failed (42 checks skipped; today's predicate passes it); then script-gate: lv_r FAIL; 1 SCRIPT ERROR line(s) … (its raw summary is level-test: 14 passed, 0 failures), rc=1; script-gate: pl_r FAIL; 1 SCRIPT ERROR line(s) …, rc=1; script-gate: ai_r FAIL; rc 1, want 0; 1 SCRIPT ERROR line(s) …, rc=1 (V10)"
+        },
+        {
+          "id": "AC9",
+          "command": "F=.godot/tmp/b3-fresh-$$; test -e $F && echo exists || echo absent; make commons-life-pilot-test commons-pilot-check level-eval SCRATCH=$F/s 2>&1 | grep -c '^script-gate: .* ok'; echo rc=$?; ls $F/s",
+          "expected": "absent; 3; rc=0; commons-life-pilot.log commons-pilot-check.log level-eval-bridge.json level-eval-bridge.log (V9)"
+        },
+        {
+          "id": "AC10",
+          "command": "for e in '^level-eval: [a-z0-9_]+ ok \\([1-9][0-9]* surfaces, [1-9][0-9]* samples\\)$' '^planets: [1-9][0-9]* passed, 0 failed$' '^ai bridge: ok \\([1-9][0-9]* passed, 0 failures; with faults\\)$' '^ai relay: ok \\([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\\)$' '^ai settings: ok \\([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\\)$' '^conversation: ok \\([1-9][0-9]* passed, 0 failures; [a-z0-9_, ]+\\)$'; do printf '%s\\n' 'level-eval: bridge ok (0 surfaces, 4771 samples)' 'level-eval: bridge ok (1 surfaces, 0 samples)' 'planets: 0 passed, 0 failed' 'ai bridge: ok (0 passed, 0 failures; with faults)' 'ai relay: ok (0 passed, 0 failures; replay_noai)' 'ai settings: ok (0 passed, 0 failures; launch_default)' 'conversation: ok (0 passed, 0 failures; rehearsal)' | grep -cE -- \"$e\"; done",
+          "expected": "six lines of 0 (V17)"
+        },
+        {
+          "id": "AC11",
+          "command": "make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/script_gate_prereqs.sh tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh && echo gates-ok",
+          "expected": "uid-guard: ok (406 .uid files), python-guard: ok (21 allowlisted, 0 awaiting AILANG port), audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound), lint-precision: ok …, gates-ok (V13). No new .gd, so no new .uid; no .py"
+        },
+        {
+          "id": "AC12",
+          "command": "git diff --name-only origin/main | grep -cvxE 'mk/(levels|m5|ai|script-gates)\\.mk|tools/(script_gate_prereqs\\.sh|script-gate-baseline\\.txt|level_eval\\.gd)|tests/(test_planets|test_ai_bridge|test_ai_relay|test_ai_settings|test_conversation)\\.gd|tests/fixtures/script_gate/prereq_negative\\.mk\\.txt|design_docs/planned/r1/m4-7x-b3-script-gates.*\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'; git diff --name-only origin/main -- Makefile mk/sound.mk mk/m45.mk mk/deck-layout.mk mk/earth-link.mk tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh tools/m4_ship_golden.gd | wc -l",
+          "expected": "0, 0"
+        },
+        {
+          "id": "AC13",
+          "command": "B3_PR=$(gh pr view --json number --jq '.number') || exit 1\nB3_HEAD=$(gh pr view \"$B3_PR\" --json headRefOid --jq '.headRefOid') || exit 1\ngh pr checks \"$B3_PR\" || exit 1\nB3_RUN=$(gh run list --workflow ci.yml --event pull_request --commit \"$B3_HEAD\" --limit 1 --json databaseId --jq '.[0].databaseId') || exit 1\ntest -n \"$B3_RUN\" && test \"$B3_RUN\" != null || exit 1\ngh run view \"$B3_RUN\" --log > .godot/tmp/b3-ac13.log || exit 1\ngrep -cE 'script-gate-lint: ok \\(238 --script invocations: 63 through|script-gate-prereqs: ok \\(3 pairs hold in Makefile|test-script-gate: ok \\(18 cases: 18 stub, 0 Godot\\)' .godot/tmp/b3-ac13.log",
+          "expected": "success; 3"
+        },
+        {
+          "id": "AC14",
+          "command": "SED=$(make -n ai-style-frame 2>/dev/null | grep -o \"sed '[^']*'\" | head -1); T=.godot/tmp/b3-ere; mkdir -p $T; run() { sf=$(printf '%s\\n' \"$2\" | eval \"$SED\"); sh tools/script_gate.sh \"$1\" $T/$1.log 5 \"^recorded $sf/rehearsal\\\\.ndjson: 5 ticks; library $sf/library\\$\" -- sh -c 'printf \"recorded %s/rehearsal.ndjson: 5 ticks; library %s/library\\n\" \"$1\" \"$1\"' sh \"$3\" > /dev/null; echo \"$1 rc=$?\"; }; P1=$PWD/.godot/tmp/ai-style-frame; P2='/tmp/m.e+t(a)[1]{2}^$|?/2026/.godot/ai-style-frame'; run exact \"$P1\" \"$P1\"; run xgodot \"$P1\" \"$(printf '%s' \"$P1\" | sed 's#/\\.godot/#/Xgodot/#')\"; run meta-exact \"$P2\" \"$P2\"; run meta-xgodot \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#/\\.godot/#/Xgodot/#')\"; run meta-dot \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#m\\.e+t#mXe+t#')\"; run meta-plus \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#m\\.e+t#m.eet#')\"; run meta-zero \"$P2\" \"$(printf '%s' \"$P2\" | sed 's#/2026/#/0/#')\"",
+          "expected": "exact rc=0, xgodot rc=1, meta-exact rc=0, meta-xgodot rc=1, meta-dot rc=1, meta-plus rc=1, meta-zero rc=1 (V21). The real target with a metacharacter path is in AC6's shape: make ai-style-frame AI_SF=/tmp/b3-sf.a+b/2026 2>&1 | grep '^script-gate:' → script-gate: ai-style-frame-record ok: recorded /tmp/b3-sf.a+b/2026/rehearsal.ndjson: 5 ticks; … (GPU window; V24)"
+        },
+        {
+          "id": "AC15",
+          "command": "grep -nE 'worst=maxf|error>\\.03' tools/alpha_centauri_golden.gd; d=.godot/tmp/b3drill; mkdir -p $d; awk '{ if (index($0, \"    worst=maxf(worst,error)\") == 1) print \"    error+=1.5\"; print }' tools/alpha_centauri_golden.gd > $d/alpha_hi.gd; AB=\"AILANG_BIN=$(command -v ailang)\"; sh tools/script_gate.sh alpha_hi $d/alpha_hi.log 600 '^alpha-centauri-golden: 10 cases, 0 failures; worst [0-9]+\\.[0-9]+$' -- \"$AB\" godot --audio-driver Dummy --path . --script $d/alpha_hi.gd; echo rc=$?; grep '^alpha-centauri-golden:' $d/alpha_hi.log",
+          "expected": "46:    worst=maxf(worst,error), 47:    if error>.03:failures+=1; script-gate: alpha_hi FAIL; rc 1, want 0; no summary line matching …, rc=1; alpha-centauri-golden: 10 cases, 10 failures; worst 1.501696 (V22)"
+        },
+        {
+          "id": "AC16",
+          "command": "for p in '/tmp/b3ac16 x/2026' '/tmp/b3ac16*/x' 'rel/b3ac16'; do make ai-style-frame AI_SF=\"$p\" > .godot/tmp/b3-ac16.out 2>&1; echo \"rc=$?\"; grep -c '^ai-style-frame: AI_SF ' .godot/tmp/b3-ac16.out; done; ls -d /tmp/b3ac16* rel 2>/dev/null | wc -l",
+          "expected": "three times rc=2 and 1; then 0 (nothing created). The default-path run is AC6. (V26) Repeat with gmake where present; the test paths must be absent before running."
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7x-b3-script-gates.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7x-b3-script-gates-sprint.md",
+      "registry_reuse": [
+        {
+          "milestone": "M1",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M2",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M3",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M4",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M5",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M6",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate/lint/harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        }
+      ],
+      "passes": true,
+      "status": "implemented",
+      "notes": "Planner iteration 71: six serial milestones, 100 minutes plus CI/controller time; 159 hand-written changed lines plus 29 baseline deletions, revision-2 diff +104/-84 in 13 files. Executor runs sandboxed with NO git writes, including scratch repositories; cumulative .godot/tmp/snap/M1/ through M6/ contain every changed file, FILES.txt and RESULT.txt. Controller builds one commit per milestone and reruns every Godot gate outside sandbox; independent evaluator owns judgment. AC6/AC15 and AC14 real-target extension need GPU windows; AC13 is PR GitHub fast tier only. Full AC5 is controller-only: existing mk/ai.mk:460,462 performs git init/add in ai-live-guard scratch fixture; no bypass/test edit. Known base finding: alpha-centauri-golden predicate rejects its clean worst suffix (design measured make rc 2). Design LOC footer +102/-84 is stale versus revision-2 +104/-84; use 159 LOC. M3 intermediate ratchet is 238/56/182; M4 final is 238/63/175. Preserve first 25 features and every other JSON key; B3b and all protected files remain untouched. Runtime/socket/user-data/process-list-dependent results are UNINFORMATIVE UNDER SANDBOX, never pass/fail.\nExecutor M1: Implemented fixture, exact 27-line prerequisite guard and lint integration, preserving pin 204. Measured base lint 237/33/204; absent-helper rc 127; old lint wrongly accepted removed prerequisite (rc 0); new fixture rc 1 with exactly two named diagnostics; make/gmake lint rc 0 and merged-rule control rc 0; removed prerequisite lint rc 2 under both, restored byte-for-byte. Generic validator pre-existing rc 1: older M4.6pR3/M4.6rR3 lack estimated_loc; B3 fields valid. PR overlap read network result retained in M1 logs. No git writes. Full commands/outputs in .godot/tmp/iter71-executor/M1 and snapshot RESULT.txt.\nExecutor M2: Implemented only D3 six counted-summary edits; all assertions unchanged. Live before/after helper probes, bridge/commons totals, setup and asset provisioning recorded in M2 logs; Godot/user-data/socket-dependent outcomes UNINFORMATIVE UNDER SANDBOX, no runtime RED/GREEN claim. AC10 measured exactly six zero lines (last grep rc 1 expected); lint remains 237/33/204 plus 3 prerequisite pairs, diff check rc 0. M2 old level-eval end-anchored recipe intentionally incompatible until M3. Counts and setup require controller rerun. No git writes.\nExecutor M2: Independent log extraction confirms summary counts equal emitted ok/FAIL lines (planets 121/0, bridge 89/0, relay 49/14 under denied ps, settings 53/0, conversation 30/0); level-eval surface rows sum to bridge 1/4771 and commons 14/7506. All runtime evidence UNINFORMATIVE UNDER SANDBOX. Additional setup finding: make deps contains forbidden git checkout; sandbox denied index.lock, lockfiles unchanged; this inherited write was attempted indirectly once and not repeated. Asset hashes verified locally without fetch; GitHub socket unavailable.\nExecutor M3: Implemented 22 levels/m5 row migrations, 600 s gates, exact D2 predicates, separate reason-bound WANT_RC=1 negatives, help update and baseline/pin 204->182. Measured lint 238/56/182 plus 3 prerequisite pairs rc 0; old level-eval and alpha predicates reject counted/suffixed summary rc 1. All 15 headless target commands attempted serially with true statuses; runtime evidence labelled UNINFORMATIVE UNDER SANDBOX and retained under M3. AC9 fresh-path absence and output files recorded; controller must validate 3 gates/4 files externally. Diff check rc 0; B3b/protected sources untouched. Setup finding: prescribed make deps attempted embedded git checkout on lockfiles; index.lock denied, files unchanged; never repeated.\nExecutor M4: Implemented seven AI row migrations, exact-path ERE escaping and revision-2 AI_SF environment-data policy before target writes; pin 182->175. Measured AC1 238/63/175 with 3 prerequisite pairs rc 0; AC2 pin 176 refused make rc 2; AC14 before controls expose missing escaper, after gives exact/xgodot/meta-exact/meta-xgodot/meta-dot/meta-plus/meta-zero = 0/1/0/1/1/1/1. AC16 make/gmake whitespace, glob and relative paths each return rc 2 with one policy diagnostic and create zero test paths; prerequisite Godot output remains UNINFORMATIVE UNDER SANDBOX. Standalone static ai_live_guard and replay/launch-default/V25 commands retained in M4 logs; runtime checks require external rerun. Full AC5 never invoked because scratch git writes are forbidden; controller owns its mutation loop. Baseline cumulative 0 added/29 deleted. Diff check rc 0.\nExecutor M4: M4 test-first finding: literal AC14 before migration prints rc=1 for all seven stubs because SED extraction is empty. Thus the sprint wording that this exact pre-edit command admits altered paths is not reproduced; no workaround applied. Post-edit seven statuses match exactly. V25 log contains the rc-asserted child label ai bridge: ok (89 passed, 0 failures; with faults), outer relay 27 passes; runtime remains UNINFORMATIVE UNDER SANDBOX.\nExecutor M5: No implementation edits. AC7 four parse-mutant gate refusals, AC8 three runtime-mutant refusals and raw planets probes executed with scratch copies and 300 s wrappers; exact outputs/statuses retained in M5/RESULT.txt. These user-data/process-dependent runtime results are UNINFORMATIVE UNDER SANDBOX, not acceptance passes. Inherited selftest and Godot drill run unchanged; process-visibility/orphan control outcomes also UNINFORMATIVE UNDER SANDBOX, require controller rerun for 18/24 cases. AC9 reuses M3 evidence (same recipes); AC1 refreshed and constellations restoration/diff check verified. No git writes in this milestone.\nExecutor M5: Observed AC7 raw planets rc=0 and four gate rc=1; AC8 raw rc=0 with planets: 79 passed, 0 failed and three gate rc=1. Selftest actual tail: test-script-gate: FAIL 1 of 18 cases, make rc=2; drill actual tail: test-script-gate: FAIL 1 of 24 cases, make rc=2. Both are UNINFORMATIVE UNDER SANDBOX: only the unchanged orphan control cannot see its sleep through pgrep; all 18/24 case lines otherwise report ok. Do not count either aggregate as passed or failed. Controller must rerun unchanged.\nExecutor M6: Implementation complete; 13/13 files byte-identical to /tmp/iter71_designer/b3a-r2.diff, no formatting differences. AC11 policy/shellcheck/diff output, AC12 scope counts, final lint and status in M6/RESULT.txt. AC15 scratch alpha_hi.gd has exactly one error+=1.5 insertion, original threshold intact. AC6/AC15 and AC14 real-path GPU extension deliberately left to controller outside sandbox; AC13 requires committed PR fast-tier run (network unavailable at pickup); full AC5 controller-only for git writes. passes remains false pending external runtime/CI and independent evaluation. Findings: stale design LOC footer +102/-84 vs actual +104/-84; generic validator rejects two older feature estimates; prescribed make deps unexpectedly attempts forbidden git checkout, denied index.lock and lockfiles unchanged, not repeated; import reports denied editor settings/user logs, bridge sysctl and relay ps blocked. Removed only five known ignored translations; import inventory also had 12 fixture translations, retained. Six cumulative snapshots M1-M6 contain full changed content, manifests and exact evidence. No protected file changes. | Controller, outside the sandbox at 576a4866 (2026-11-05): AC1 lint 238/63/175 + prereqs 3 pairs rc 0; AC2 pin 176 refused; AC3 rc 2 names starmap-assets, restored; AC4 18 / 24 cases; AC5 rc 0, 23 gates, 0 FAIL (373 s); AC6 rc 0, 7 ok, 0 FAIL, alpha-centauri-golden worst 0.001696 (red on main before); AC7/AC8 every drill FAIL rc 1; AC9 absent, 3, rc 0, 4 files; AC10 six 0; AC11 gates-ok; AC12 0, 0; AC13 fast tier success on 576a4866 (run 41986858215), 3 of 3 lines; AC14 0/1/0/1/1/1/1; AC15 10 failures, worst 1.501696, gate FAIL; AC16 rc 2 x3, nothing created. Evaluation: Sonnet (Agent tool) 91/100 PASS, 0 blocking, 6 of 7 mutants killed (survivor: dropping a pair from SG_PREREQS), eval_R1-M4-JOURNEY_7x_B3_round_1.json. Controller reproduced one kill: guard line removed -> AC16 diagnostic count 0, want 1."
+    },
+    {
+      "id": "M4.6uR3_7x_B4_SCRIPT_GATES",
+      "description": "B4a only: migrate 56 baseline rows (48 targets, 57 gate lines) in Makefile at line 1080 onward through $(SCRIPT_GATE); add counted summaries to 19 scripts; bind five rc-1 negatives to their own reasons; require and guard ship-console-test:ship-baseline; bound only the existing curl fetch line; pin four distinct SG_PREREQS pairs; delete 56 baseline rows and lower pin 175 to 119. B4b 30 rows and aggregate changes excluded. Controller-closed r2 narrow refinement after BLOCKED 1/3; no assertions, physics, gameplay or audiovisual changes.",
+      "depends_on": [
+        "M4.6tR3_7x_B3_SCRIPT_GATES"
+      ],
+      "estimated_loc": 243,
+      "files": [
+        "Makefile",
+        "mk/script-gates.mk",
+        "tools/script-gate-baseline.txt",
+        "tools/ship_baseline.sh",
+        "tools/validate_ship_demo.gd",
+        "tools/validate_ship_commons.gd",
+        "tools/news_lint.gd",
+        "tests/test_ship_commons_assets.gd",
+        "tests/test_runtime_fingerprint.gd",
+        "tests/test_live_journey.gd",
+        "tests/test_ship_demo_live.gd",
+        "tests/test_ship_demo_assets.gd",
+        "tests/test_ship_demo_benchmark.gd",
+        "tests/test_ship_demo_launch.gd",
+        "tests/test_ring_protocol.gd",
+        "tests/test_ship_attitude.gd",
+        "tests/test_benchmark_upload.gd",
+        "tests/test_shadow_contacts.gd",
+        "tests/test_tour_attitude.gd",
+        "tests/test_tour_pacing.gd",
+        "tests/test_destination_pin.gd",
+        "tests/test_cruise_interlude.gd",
+        "tests/test_frame_check.gd",
+        "tests/fixtures/script_gate/prereq_negative.mk.txt"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "Prerequisite count pin, fourth pair and bounded baseline fetch",
+          "acceptance": [
+            "AC3",
+            "AC4",
+            "AC14"
+          ],
+          "estimate": "18 LOC, 15 min",
+          "pause": "Report wrong fixture diagnostics, a surviving drop/pad mutant, checksum drift or un-restored controls. Keep baseline pin 175. D5 bounds fetch and test separately; existing import has no deadline. All sandbox Godot/make gates are uninformative."
+        },
+        {
+          "id": "M2",
+          "title": "Nineteen counted summaries with unchanged assertions",
+          "acceptance": [
+            "AC5",
+            "AC9"
+          ],
+          "estimate": "97 LOC, 20 min",
+          "pause": "AC5 summary and AC9 regex components only until M3/M4. Report lower independent counts or changed assertions. Retain measured eager conds arrays without optional extra guards: failure-path SCRIPT ERROR fails closed. Old predicates may disagree until M3."
+        },
+        {
+          "id": "M3",
+          "title": "All 57 gate lines, reason-bound negatives and baseline ratchet",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC5",
+            "AC9"
+          ],
+          "estimate": "128 hand-written LOC plus 56 deleted baseline rows = 184 changed LOC, 25 min",
+          "pause": "AC5 list/smoke components here; complete sweep M4. Require 239/120/119 and four pairs; report wrong args/deadlines, generic negative reasons, baseline additions, protected edits or early Makefile hunks. Migrate recipes and ratchet together."
+        },
+        {
+          "id": "M4",
+          "title": "Complete serial B4a acceptance and fresh ship baseline",
+          "acceptance": [
+            "AC5",
+            "AC10"
+          ],
+          "estimate": "0 LOC, 50 min",
+          "pause": "Require external make rc 0, 57 distinct gate names, zero status-anchored FAILs and fresh-baseline console success. Missing rc file or sandbox outcomes remain pending. Preserve five expected rc-1 negative ok statuses."
+        },
+        {
+          "id": "M5",
+          "title": "Parse/runtime drills and inherited helper controls",
+          "acceptance": [
+            "AC6",
+            "AC7",
+            "AC8"
+          ],
+          "estimate": "0 LOC, 15 min",
+          "pause": "Report surviving mutants or raw behavior/count drift. Require 57 parse and eight runtime refusals plus unchanged 18/24-case harness externally. Use A2 corrected GODOT_SIM escaping and base 05e64cd1; sandbox gates are uninformative."
+        },
+        {
+          "id": "M6",
+          "title": "Hygiene, exact scope, orphan evidence and PR fast tier",
+          "acceptance": [
+            "AC11",
+            "AC12",
+            "AC13"
+          ],
+          "estimate": "0 LOC, 15 min plus asynchronous CI and evaluation",
+          "pause": "Report unexpected scope/LOC, early hunks, protected changes, red fast tier or contradictions. Require exact 24-file implementation scope; record orphan/B4b facts without aggregate edits. Keep passes false until controller external evidence and independent evaluation."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "script-gate-lint: ok (239 --script invocations: 120 through $(SCRIPT_GATE), 119 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned); script-gate-prereqs: ok (4 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline); rc=0 (V11)"
+        },
+        {
+          "id": "AC2",
+          "command": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=120 2>&1 | grep 'the baseline has'",
+          "expected": "script-gate-lint: the baseline has 119 rows but SCRIPT_GATE_BASELINE_ROWS is 120: the pin moves with the rows, and only down (V11)"
+        },
+        {
+          "id": "AC3",
+          "command": "cp mk/script-gates.mk .godot/tmp/b4-sg.keep; perl -pi -e 's/ planets-test:planet-assets / /' mk/script-gates.mk; make script-gate-lint > .godot/tmp/b4-ac3.out 2>&1; echo rc=$?; grep '^script-gate-lint: SG_' .godot/tmp/b4-ac3.out; cp .godot/tmp/b4-sg.keep mk/script-gates.mk; make script-gate-lint SG_PREREQS_PAIRS=5 2>&1 | grep -c '^script-gate-lint: SG_PREREQS holds 4 pairs (4 distinct) but SG_PREREQS_PAIRS is 5'",
+          "expected": "rc=2, script-gate-lint: SG_PREREQS holds 3 pairs (3 distinct) but SG_PREREQS_PAIRS is 4: the pin moves with the pairs, and only up, then 1 (V13)"
+        },
+        {
+          "id": "AC4",
+          "command": "cp Makefile .godot/tmp/b4-mf.keep; perl -pi -e 's/^ship-console-test: import ship-baseline ##/ship-console-test: import ##/' Makefile; make script-gate-lint > .godot/tmp/b4-ac4.out 2>&1; echo rc=$?; grep '^script-gate-prereqs:' .godot/tmp/b4-ac4.out; cp .godot/tmp/b4-mf.keep Makefile",
+          "expected": "rc=2, script-gate-prereqs: ship-console-test lost its prerequisite ship-baseline (ship-console-test: import) (V13)"
+        },
+        {
+          "id": "AC5",
+          "command": "T=.godot/tmp/b4; awk -F'\\t' '{split($1,a,\":\"); if (a[1]==\"Makefile\" && a[2]+0>=1080 && $4==\"gated\") print $2}' $T/inv.tsv | sort -u > $T/g.txt; sort -u $T/targets.txt | diff - $T/g.txt && echo list-ok; make -n $(cat $T/targets.txt) playthrough-adversarial > /dev/null; echo n-rc=$?\n# Remove a stale rc file before launch; retain the real make rc.\nrm -f \"$T/ac5.rc\"\n( env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY -u OPENAI_API_KEY make $(cat $T/targets.txt) playthrough-adversarial > $T/ac5.out 2>&1; echo $? > $T/ac5.rc ) &\nB4_AC5_PID=$!\n# Bounded polling: at most 120 minutes, checking every 30 seconds.\nB4_AC5_POLL=0\nwhile [ ! -f \"$T/ac5.rc\" ] && [ \"$B4_AC5_POLL\" -lt 240 ]; do sleep 30; B4_AC5_POLL=$((B4_AC5_POLL+1)); done\n# On exhaustion record pending and let the controller supervise; do not claim success.\nif [ -f \"$T/ac5.rc\" ]; then\n  cat $T/ac5.rc; grep '^script-gate:' $T/ac5.out | sort -u -t: -k2,2 | wc -l; grep -cE '^script-gate: [^ ]+ FAIL' $T/ac5.out\nelse\n  echo \"AC5 pending: no rc file for process $B4_AC5_PID\"\nfi",
+          "expected": "list-ok, n-rc=0 (V21); then 0; 57; 0. Each line is ok with D2's \"After\" summary, for example ship-demo: 244 passed, validate-ship-demo: OK (24 passed, 0 failures), live-journey: 17 passed, the five negatives ok:   FAIL … / ok: news-lint: tier 0 template 1: … with rc 1, news-lint: ok (5 tiers, 20 templates), and solar-departure: 134 passed under its 3,000 s deadline (V9)"
+        },
+        {
+          "id": "AC6",
+          "command": "make script-gate-selftest 2>&1 | tail -1; make script-gate-drill 2>&1 | tail -1",
+          "expected": "test-script-gate: ok (18 cases: 18 stub, 0 Godot), test-script-gate: ok (24 cases: 18 stub, 6 Godot) (V12)"
+        },
+        {
+          "id": "AC7",
+          "command": "T=.godot/tmp/b4; awk -F'\\t' 'FNR==NR{d[$1]=1;next} {split($1,a,\":\"); if (a[1]==\"Makefile\" && ($2 in d)) print $1, $2, $3}' $T/targets.txt $T/inv.tsv > $T/rows.txt; wc -l < $T/rows.txt; sh $T/drill.sh ac7 parse $T/rows.txt; grep -h 'script-gate: .* FAIL' .godot/tmp/b4-drill/ac7/drill-*.out | grep -c 'SCRIPT ERROR line(s)'",
+          "expected": "57; 57 rc=2; 57. The 5 negatives also say rc 0, want 1 (V21; at base the same harness gives 5 rc=0 among the 59 headless rows, V7)"
+        },
+        {
+          "id": "AC8",
+          "command": "T=.godot/tmp/b4; awk -F'\\t' 'FNR==NR{k[$0]=1;next} {split($1,a,\":\"); if (a[1]==\"Makefile\" && (($2\" \"$3) in k)) print $1, $2, $3}' $T/rt-pairs.txt $T/inv.tsv > $T/rt-rows.txt; wc -l < $T/rt-rows.txt; sh $T/drill.sh ac8 rt $T/rt-rows.txt",
+          "expected": "8; 8 rc=2 (V21). At base, 6 rc=0 and 2 rc=2: ship-demo-test passes with ship-demo: 0 passed, 0 failures, and flyby-optics-test with 0 checks, 0 failures (V21, which supersedes V8)"
+        },
+        {
+          "id": "AC9",
+          "command": "while IFS='|' read -r row ere zero real; do mk=$(printf '%s' \"$ere\" | sed 's/\\$$/$$/'); printf '%s zeroed=%s real=%s makefile=%s\\n' \"$row\" \"$(printf '%s\\n' \"$zero\" | grep -cE -- \"$ere\")\" \"$(printf '%s\\n' \"$real\" | grep -cE -- \"$ere\")\" \"$(grep -cF -- \"'$mk'\" Makefile)\"; done < .godot/tmp/b4/zero-pairs.txt",
+          "expected": "22 lines, each zeroed=0 real=1 and makefile=1, except 1,12 … makefile=2 (rows 1 and 12 share their ERE) (V21)"
+        },
+        {
+          "id": "AC10",
+          "command": "mv build/ship-baseline .godot/tmp/b4-sb.aside 2>/dev/null; make ship-console-test 2>&1 | grep -E '^ship-baseline:|^script-gate:'; echo rc=$?",
+          "expected": "ship-baseline: build/ship-baseline matches art/deck-layout-v2/baseline.sha256, script-gate: ship-console-test ok: ship-consoles: 135 passed, 0 failures (…), rc=0 (V12; about 2 min)"
+        },
+        {
+          "id": "AC11",
+          "command": "make uid-guard python-guard audio-silent-guard lint-precision && git diff --check origin/main && shellcheck -s sh tools/ship_baseline.sh && echo gates-ok",
+          "expected": "uid-guard: ok (406 .uid files), python-guard: ok (21 allowlisted, 0 awaiting AILANG port), audio-silent-guard: ok (79 windowed godot invocations; 5 allowlisted to keep sound), lint-precision: ok …, gates-ok (V23). No new .gd, .sh or .py file"
+        },
+        {
+          "id": "AC12",
+          "command": "git diff --name-only origin/main | grep -cvxE 'Makefile|mk/script-gates\\.mk|tools/(script-gate-baseline\\.txt|validate_ship_demo\\.gd|validate_ship_commons\\.gd|news_lint\\.gd|ship_baseline\\.sh)|tests/test_(ship_commons_assets|runtime_fingerprint|live_journey|ship_demo_live|ship_demo_assets|ship_demo_benchmark|ship_demo_launch|ring_protocol|ship_attitude|benchmark_upload|shadow_contacts|tour_attitude|tour_pacing|destination_pin|cruise_interlude|frame_check)\\.gd|tests/fixtures/script_gate/prereq_negative\\.mk\\.txt|design_docs/planned/r1/m4-7x-b4-script-gates.*\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'; git diff -U0 origin/main -- Makefile | grep '^@@' | awk '{split($2,a,\",\"); if (substr(a[1],2)+0 < 1080) n++} END{print n+0}'; git diff --name-only origin/main -- mk/sound.mk mk/m45.mk mk/deck-layout.mk mk/earth-link.mk tools/script_gate.sh tools/test_script_gate.sh tools/script_gate_lint.sh tools/script_gate_prereqs.sh | wc -l; git diff --numstat origin/main -- tools/ship_baseline.sh",
+          "expected": "0, 0 (no Makefile hunk starts before line 1080), 0, 3\t1\ttools/ship_baseline.sh (V24)"
+        },
+        {
+          "id": "AC13",
+          "command": "B4_PR=$(gh pr view --json number --jq '.number') || exit 1\nB4_HEAD=$(gh pr view \"$B4_PR\" --json headRefOid --jq '.headRefOid') || exit 1\ngh pr checks \"$B4_PR\" || exit 1\nB4_RUN=$(gh run list --workflow ci.yml --event pull_request --commit \"$B4_HEAD\" --limit 1 --json databaseId --jq '.[0].databaseId') || exit 1\ntest -n \"$B4_RUN\" && test \"$B4_RUN\" != null || exit 1\ngh run view \"$B4_RUN\" --log > .godot/tmp/b4/ac13.log || exit 1\ngrep -cE 'script-gate-lint: ok \\(239 --script invocations: 120 through|script-gate-prereqs: ok \\(4 pairs hold in Makefile|test-script-gate: ok \\(18 cases: 18 stub, 0 Godot\\)' .godot/tmp/b4/ac13.log",
+          "expected": "success; 3. GNU make 4.4.1 (gmake) already gives AC1's two lines locally (V11)"
+        },
+        {
+          "id": "AC14",
+          "command": "perl -MIO::Socket::INET -e '$s=IO::Socket::INET->new(LocalAddr=>\"127.0.0.1\",LocalPort=>18731,Listen=>16,ReuseAddr=>1) or die; alarm 900; push @k, $c while $c=$s->accept' &\nB4_STALL_PID=$!\ntrap 'kill \"$B4_STALL_PID\" 2>/dev/null || true' EXIT HUP INT TERM\nmv build/ship-baseline .godot/tmp/b4-sb.aside 2>/dev/null; s=$(date +%s); SHIP_BASE_URL=http://127.0.0.1:18731 make ship-console-test > .godot/tmp/b4/ac14.out 2>&1; echo \"rc=$? $(( $(date +%s)-s ))s\"; grep -cE '^curl: \\(28\\)' .godot/tmp/b4/ac14.out; grep -E '^ship-baseline: FAIL|^make: \\*\\*\\*' .godot/tmp/b4/ac14.out; grep -c '^script-gate:' .godot/tmp/b4/ac14.out; make ship-baseline | tail -1\nkill \"$B4_STALL_PID\" 2>/dev/null || true\nwait \"$B4_STALL_PID\" 2>/dev/null || true\ntrap - EXIT HUP INT TERM",
+          "expected": "rc=2 in about 125 s (≤ 549 s plus import by D5's bound); 2 (two 60 s attempts, then the 120 s retry window closes); ship-baseline: FAIL fetch ship.glb (9da7…) and make: *** [ship-baseline] Error 1; 0 (Godot's test never started); then ship-baseline: build/ship-baseline matches art/deck-layout-v2/baseline.sha256 (V22)"
+        }
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7x-b4-script-gates.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7x-b4-script-gates-sprint.md",
+      "registry_reuse": [
+        {
+          "milestone": "M1",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate, lint, prerequisite checker and 18/24-case harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M2",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate, lint, prerequisite checker and 18/24-case harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M3",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate, lint, prerequisite checker and 18/24-case harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M4",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate, lint, prerequisite checker and 18/24-case harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M5",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate, lint, prerequisite checker and 18/24-case harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        },
+        {
+          "milestone": "M6",
+          "package": null,
+          "action": "none",
+          "reason": "Repository-specific Make/shell guard and existing GDScript summary maintenance or validation; reuse the landed gate, lint, prerequisite checker and 18/24-case harness unchanged. No package-like capability or .ail code, so no registry search applies."
+        }
+      ],
+      "passes": true,
+      "status": "implemented",
+      "notes": "Planner iteration 72: six serial milestones, 140 minutes plus asynchronous CI/controller/evaluator time; 24 implementation files at measured base 05e64cd1, +135/-164 = 243 hand-written changed LOC plus 56 baseline deletions. Cumulative .godot/tmp/snap/M1/ through M6/ include every changed file, FILES.txt and RESULT.txt; controller owns one commit per milestone. Every Godot or make gate inside sandbox is UNINFORMATIVE UNDER SANDBOX regardless of rc, requiring external controller rerun. Preserve first 26 features and every other JSON key. Operational conflict: design prescribes make deps (contains git checkout) and suggests git apply, incompatible with executor no-git-writes; controller handles dependency setup, executor uses file edits only. Kimi r2 decision: fetch <=183 s/file and <=549 s/fetch, Godot <=600 s separately; import remains pre-existing and unbounded, so no whole-target bound. Gemini r2 decision: retain measured eager conds arrays without optional additional guards; failure-path SCRIPT ERROR fails closed, passing benchmark/launch counts remain 3/4. AC5 uses status-anchored FAIL grep, 57 names, 58 ok lines with adversarial repeat and five expected rc-1 negatives; unanchored FAIL text appears four times. M1/M2 interim lint 238/63/175 with four prerequisite pairs; M3 atomically reaches 239/120/119. Setup/AC10/AC14 cache restoration and actual originating statuses required; A1-A5 extract from design, no designer tmp dependency. AC13 actual PR-head fast tier and independent evaluation pending. B4b and D8 orphan aggregate changes excluded. No unresolved implementation contradiction beyond documented execution constraints. Sprint-planner skill absent inside permitted repo; supplied B3 plan and feature provide structure. Controller iteration 72, outside the sandbox at decd5498 (Godot 4.7.2, AILANG v0.56.1 runtime/bin): AC1 lint ok (239: 120 through $(SCRIPT_GATE), 119 on the baseline) and 4 pairs; AC2 pin 120 refused; AC3 rc 2 '3 pairs ... SG_PREREQS_PAIRS is 4' then 1; AC4 rc 2 lost ship-baseline; AC5 list-ok, n-rc 0, then rc 0, 57 gate lines, 0 FAIL statuses (18:25-18:55 CET); AC6 18 and 24 cases; AC7 57 rows, 57 rc=2, 57 SCRIPT ERROR; AC8 8 rows, 8 rc=2; AC9 21 x zeroed=0 real=1 makefile=1 plus 1 x makefile=2; AC10 make rc 0, 135 passed, 83 s; AC11 gates-ok; AC12 0/0/0 and 3 1 tools/ship_baseline.sh; AC14 rc 2 in 123 s, 2 curl (28), 0 gate lines, baseline re-fetched. Commits rebuilt from executor snapshots (e9d31f94, 13ea5869, decd5498), sha256 manifest 0 mismatches, tree byte-identical to the designer's measured diff. Evaluation: Sonnet (Agent tool, own clone) 90/100 PASS, 0 blocking, eval_R1-M4-JOURNEY_7x_B4_round_1.json; survivor reproduced by the controller: swapping a real pair for ship-console-test:import passes the lint (OQ5). AC13 is the PR's fast tier."
+    },
+    {
+      "id": "M4.6vR3_7aa_SIM_PIPELINE_TEST",
+      "description": "Row 7aa revision 2: fix test-only process-wide CrewConsole offer-id fixture isolation, add a 60-tick/tick-41 two-intent non-vacuity check and counted eight-check summary; migrate only sim-pipeline-test through $(SCRIPT_GATE) with a 600 s counted ERE, delete its baseline row and lower pin 119 to 118, plus revision-2 changelog. Explicitly drop candidate diff ship-demo-ci prerequisite: nightly wiring waits for prerequisite follow-up 7ab idle-condition timing; 7ac pins the production static counter in crew-console-test. No production code, assertion/threshold or audiovisual changes.",
+      "depends_on": [
+        "M4.6uR3_7x_B4_SCRIPT_GATES"
+      ],
+      "estimated_loc": 28,
+      "files": [
+        "Makefile",
+        "tests/test_sim_pipeline.gd",
+        "tools/script-gate-baseline.txt",
+        "mk/script-gates.mk",
+        "changelogs/unreleased/2026-11-06-sim-pipeline-test.md"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "Counted Makefile gate RED first, then isolated fixture and counted summary",
+          "acceptance": [
+            "AC1",
+            "AC2"
+          ],
+          "estimate": "16 changed LOC, 20 min plus controller handoff",
+          "pause": "Keep baseline/pin at 119. Controller must record the recipe-only make sim-pipeline-test red step (V18: no summary line matching) before the test edit; retain a replayable checkpoint. Then require one externally green eight-check run and AC2 live capture; M3 owns final twice-run AC1. No ship-demo-ci prerequisite. Runtime sandbox results are UNINFORMATIVE UNDER SANDBOX."
+        },
+        {
+          "id": "M2",
+          "title": "Delete exactly one baseline row, lower pin and add revision-2 changelog",
+          "acceptance": [
+            "AC3",
+            "AC4",
+            "AC5",
+            "AC6",
+            "AC9"
+          ],
+          "estimate": "5 core changed LOC plus about 8 changelog lines, 10 min",
+          "pause": "Require 239/121/118 with four prerequisite pairs, old pin and restored stale-row refusals, revision-2 wiring counts 0/1/0/1 and exact five-file implementation scope. No other baseline row or production file changes. Snapshot cumulative files; sandbox permits these non-Godot controls."
+        },
+        {
+          "id": "M3",
+          "title": "Run-only acceptance sweep, controller drills, PR fast tier and landing handoff",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC3",
+            "AC4",
+            "AC5",
+            "AC6",
+            "AC7",
+            "AC8",
+            "AC9",
+            "AC10"
+          ],
+          "estimate": "0 implementation LOC, 15 min plus asynchronous CI and independent evaluation",
+          "pause": "Controller owns AC1, AC2, AC7, AC8 outside sandbox and actual PR-head AC10. Executor may verify AC3-AC6 and AC9; reuse M2 evidence if identical files rather than repeat without cause. Preserve all eight drill controls and byte-identical restoration. Keep passes false until external evidence and independent evaluation; controller lands 7aa and files 7ab/7ac. Only appended-feature progress and ignored evidence/snapshots change."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "for r in 1 2; do make sim-pipeline-test; echo rc=$?; done",
+          "expected": "Twice: script-gate: sim-pipeline-test ok: sim-pipeline: 8 passed, 0 failures (rc 0, no SCRIPT ERROR, N s of 600 s), then rc=0. Design AC1 expects N under 120; V14 measured 50 s and 44 s. Preserve actual times; the helper deadline remains 600 s. Owner: M1 interim; M3 final; Controller outside sandbox. Evidence: V7, V14, V17."
+        },
+        {
+          "id": "AC2",
+          "command": "L=.godot/tmp/sim-pipeline.log\ngrep -c '^ok ' \"$L\"\ngrep -cE '^FAIL |SCRIPT ERROR' \"$L\"\ngrep -cxE 'ok (same inputs in the same order \\(sent journal\\)|same world at the end|same crew at the end|the journal holds 60 ticks and the tick-41 crew offer \\(offer and ask\\))' \"$L\"",
+          "expected": "8; 0; 4, from the live AC1 capture. Save each AC1 run log before the next run or any drill overwrites it. The eight ok lines are the positive capture control. Owner: M1 interim; M3 final; Controller outside sandbox; tied to live AC1 capture. Evidence: V7, V17."
+        },
+        {
+          "id": "AC3",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "script-gate-lint: ok (239 --script invocations: 121 through $(SCRIPT_GATE), 118 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned); script-gate-prereqs: ok (4 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline); rc=0. Owner: M2; M3 evidence sweep; Executor sandbox permitted: no Godot/process drill. Evidence: V9 base; V10, V14, V17 final."
+        },
+        {
+          "id": "AC4",
+          "command": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=119 > .godot/tmp/7aa/pin.out 2>&1\nrc=$?; echo \"make rc=$rc\"\ngrep 'the baseline has' .godot/tmp/7aa/pin.out\ngrep -c '^sim-pipeline-test' tools/script-gate-baseline.txt\ngrep -vc '^#' tools/script-gate-baseline.txt",
+          "expected": "Reject the old pin: script-gate-lint: the baseline has 118 rows but SCRIPT_GATE_BASELINE_ROWS is 119: the pin moves with the rows, and only down; then 0; 118. Keep the originating make rejection status separately from grep statuses. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V10, V17."
+        },
+        {
+          "id": "AC5",
+          "command": "mkdir -p .godot/tmp/7aa\n{ cat tools/script-gate-baseline.txt; printf 'sim-pipeline-test\\ttests/test_sim_pipeline.gd\\trc,se,sum,-\\n'; } > .godot/tmp/7aa/back.txt\nSCRIPT_GATE_BASELINE=.godot/tmp/7aa/back.txt SCRIPT_GATE_BASELINE_ROWS=119 sh tools/script_gate_lint.sh > .godot/tmp/7aa/back.out 2>&1\necho rc=$?\ngrep -c '^script-gate-lint: ' .godot/tmp/7aa/back.out\ngrep '^script-gate-lint: stale' .godot/tmp/7aa/back.out",
+          "expected": "rc=1; 1; script-gate-lint: stale baseline row (no longer unguarded): delete it and lower SCRIPT_GATE_BASELINE_ROWS: sim-pipeline-test tests/test_sim_pipeline.gd. The real baseline is never modified by this control. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V10, V17."
+        },
+        {
+          "id": "AC6",
+          "command": "P=$(make -pq 2>/dev/null)\nfor a in ship-demo-ci:sim-pipeline-test test:ship-demo-ci ci-fast:sim-pipeline-test; do\n  printf '%s\\n' \"$P\" | awk -v t=\"${a%%:*}:\" '$1 == t' | tr ' ' '\\n' | grep -cx \"${a#*:}\"\ndone\nmake --no-print-directory script-gate-inventory > .godot/tmp/7aa/inventory.tsv\nrc=$?; echo \"inventory rc=$rc\"\ngrep -cE 'sim-pipeline-test.tests/test_sim_pipeline\\.gd.gated.rc,se,sum,to$' .godot/tmp/7aa/inventory.tsv",
+          "expected": "Revision 2 prerequisite counts 0, 1, 0; inventory rc=0 and count 1. V10/V17 measured revision 1 counts 1,1,0,1; revision 2 explicitly removes only the first join. V9 already measured its absent base state. The test-to-ship-demo-ci join remains. make -pq is a database query, not a success gate on its query rc. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V9, V10, V17; revision-2 AC6, V26."
+        },
+        {
+          "id": "AC7",
+          "command": "sh .godot/tmp/7aa/drill.sh \"$PWD\"; echo rc=$?\ngit status --porcelain",
+          "expected": "Eight drill ok lines d0 k1 k2 k3 k4 k5 k6 k7; sim-pipeline-drill: ok (8 drills: d0 k1 k2 k3 k4 k5 k6 k7); rc=0. Compare status with its pre-drill capture, not with an assumed clean executor tree. Three mutated files must be restored byte-for-byte by A1 cmp checks. Preserve logs outside the harness temporary directory before cleanup if needed. Owner: M3; Controller outside sandbox: Godot user data and process controls. Evidence: V8, V14, V21, V25."
+        },
+        {
+          "id": "AC8",
+          "command": "godot --headless --path . --script \"$PWD/.godot/tmp/7aa/diag.gd\" > .godot/tmp/7aa/diag.log 2>&1\nrc=$?; echo \"Godot rc=$rc\"\ngrep -E '^(PAGE_TICK|PAGE_CREW|SENT_LEN|WORLD_DIFF|DRAINED|diag)' .godot/tmp/7aa/diag.log\ngrep -c '^SENT_DIFF 40$' .godot/tmp/7aa/diag.log\ngrep -cE '^SENT_DIFF' .godot/tmp/7aa/diag.log\ngrep -oE 'tc6-61-[12]-pilot' .godot/tmp/7aa/diag.log | sort -u\ngrep -c 'SCRIPT ERROR' .godot/tmp/7aa/diag.log",
+          "expected": "Godot rc=0 plus PAGE_TICK sync=40 piped=39 piped_drained=40; PAGE_CREW same sync/piped=true sync/piped_drained=true; SENT_LEN 60 60; WORLD_DIFF key crew; DRAINED_VARIANT sent_same=false world_same=false crew_same=false; diag: done; SENT_DIFF counts 1 and 1; ids tc6-61-1-pilot and tc6-61-2-pilot; no SCRIPT ERROR. A2 deliberately has no reset, so these diagnostic differences persist on the fixed branch. This is mechanism evidence, not a green sim-pipeline-test substitute. Owner: M3; Controller outside sandbox: Godot and sim user data. Evidence: V2, V17."
+        },
+        {
+          "id": "AC9",
+          "command": "git diff --name-only c2e5f8f96db687d40e328cb6bc6532dc52354b4f | grep -cvxE 'Makefile|mk/script-gates\\.mk|tools/script-gate-baseline\\.txt|tests/test_sim_pipeline\\.gd|changelogs/unreleased/2026-11-06-sim-pipeline-test\\.md|design_docs/planned/r1/m4-7aa-sim-pipeline-test.*\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'\ngit diff --name-only c2e5f8f96db687d40e328cb6bc6532dc52354b4f -- bridge/ sim/ ui/ | wc -l | tr -d ' '\nmake --no-print-directory uid-guard python-guard && git diff --check c2e5f8f96db687d40e328cb6bc6532dc52354b4f && echo gates-ok",
+          "expected": "0 unexpected diff paths; 0 bridge/sim/ui paths; uid-guard: ok (406 .uid files); python-guard: ok (21 allowlisted, 0 awaiting AILANG port); gates-ok. Use the fixed base, equal to origin/main observed by the planner. git diff does not enumerate untracked files: also review the complete created-file list/status, including the exact changelog path, against the allowlist. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V13, V17."
+        },
+        {
+          "id": "AC10",
+          "command": "SG7AA_PR=$(gh pr view --json number --jq '.number') || exit 1\nSG7AA_HEAD=$(gh pr view \"$SG7AA_PR\" --json headRefOid --jq '.headRefOid') || exit 1\ngh pr checks \"$SG7AA_PR\" || exit 1\nSG7AA_RUN=$(gh run list --workflow ci.yml --event pull_request --commit \"$SG7AA_HEAD\" --limit 1 --json databaseId --jq '.[0].databaseId') || exit 1\ntest -n \"$SG7AA_RUN\" && test \"$SG7AA_RUN\" != null || exit 1\ngh run view \"$SG7AA_RUN\" --log > .godot/tmp/7aa/ci.log || exit 1\ngrep -c '118 on the baseline' .godot/tmp/7aa/ci.log",
+          "expected": "Actual PR-head GitHub fast tier success and at least one 118 on the baseline line in that head's CI log (121 through the gate). Missing/pending CI is pending, not success. Artifact lookup follows the supplied B4 sprint precedent. This future PR result is not a planner measurement. Owner: M3, after controller commits/PR; Controller, GitHub PR/head evidence. Evidence: Design AC10; V11 existing fast tier and V14/V17 measured lint; B4 sprint AC13 artifact lookup."
+        }
+      ],
+      "design_doc": "design_docs/implemented/r1/m4-7aa-sim-pipeline-test.md",
+      "sprint_plan": "design_docs/implemented/r1/m4-7aa-sim-pipeline-test-sprint.md",
+      "registry_reuse": [
+        {
+          "milestone": "M1",
+          "package": null,
+          "action": "none",
+          "reason": "Existing repository-specific GDScript fixture/Make gate maintenance or validation; reuse landed helper/lint and measured design harnesses. No package-like capability or .ail code; no registry search applies."
+        },
+        {
+          "milestone": "M2",
+          "package": null,
+          "action": "none",
+          "reason": "Existing repository-specific GDScript fixture/Make gate maintenance or validation; reuse landed helper/lint and measured design harnesses. No package-like capability or .ail code; no registry search applies."
+        },
+        {
+          "milestone": "M3",
+          "package": null,
+          "action": "none",
+          "reason": "Existing repository-specific GDScript fixture/Make gate maintenance or validation; reuse landed helper/lint and measured design harnesses. No package-like capability or .ail code; no registry search applies."
+        }
+      ],
+      "passes": true,
+      "status": "implemented",
+      "notes": "Iteration 73 planner, branch mission/stapledon-iter73-7aa, HEAD 61fa25b67a9fd2647f2c96bc083f6e76a397bf5a, fixed base c2e5f8f96db687d40e328cb6bc6532dc52354b4f. Three serial milestones, 45 minutes plus controller/CI/evaluator scheduling; 21 core changed lines plus about 8 fragment lines (28 handwritten plus one baseline deletion). Four core files are byte-identical to the measured base. M1 recipe-only external RED before D1 (V18 no summary line matching), then reset at drive start/non-vacuity/counting with existing assertions unchanged; M1 baseline/pin remains 119 and is intentionally not lint-clean. Mission grouping puts D3 in M2, unlike design sub-milestone 1; no new interim lint gate. M2 final 239/121/118, four prerequisite pairs, revision-2 AC6 counts 0/1/0/1; candidate diff extra ship-demo-ci line must be dropped. M3 run-only complete sweep; controller outside sandbox for AC1, AC2, AC7, AC8, PR-head AC10 and landing; executor can run non-Godot AC3-AC6/AC9 inside sandbox. Runtime/user-data/pgrep gates inside sandbox are UNINFORMATIVE UNDER SANDBOX, never pass/fail. No git writes or make deps/ci-fast by executor; controller handles dependency setup and one commit per milestone. Cumulative .godot/tmp/snap/M1 through M3 preserve repo-relative created/modified deliverables including design/plan/JSON and prior implementation content, FILES.txt and RESULT.txt; restore mutants before snapshots. Preserve every original 27 features and unrelated top-level value; only appended feature progress changes. Keep passes false until outside-sandbox acceptance, actual PR-head fast tier and independent evaluation. AC10 is prospective design CI criterion, not a planner runtime measurement; AC11 history optional and unscheduled/controller-only. Controller lands charter 7aa with test-side attribution and files 7ab idle-condition timing prerequisite to wiring plus 7ac same-revision/no-send console case; no charter write by executor. Sprint-planner skill absent within repo boundary; exact supplied B4 plan and feature schema reused. Planner performed no runtime gates. Executor iteration 73 (2026-11-06): M1/M2 implementation complete; M3 sandbox-permitted sweep complete using unchanged M2 implementation. Controller RED already recorded outside sandbox before test edits: make rc 2, helper rc 1/no counted summary; actual 4 failures rather than V18 three because timing ratio 5.77/21.72=0.266 at controller-reported load1 ~19/mediaanalysisd 315% CPU. Finding only; 0.25 unchanged. M1 recipe/test checkpoints cmp-identical to controller evidence. AC3 rc 0: 239 total, 121 gated, 118 baseline, four pairs. AC4 old pin make rc 2 with exact 118-vs-119 rejection, row count 0 and baseline 118. AC5 restored-row scratch control rc 1, exactly one stale-row diagnostic. AC6 direct prerequisite counts 0/1/0 and inventory count 1 (inventory rc 0); make -pq rc 1 is query evidence. AC9 unexpected/production counts 0/0, uid-guard 406 and python-guard 21, gates-ok. Full command outputs/real rc in cumulative snapshot RESULT.txt and .godot/tmp/7aa/executor-commands.txt. Snapshots .godot/tmp/snap/M1/, M2/, M3/ contain cumulative post-milestone files plus unchanged approved design/plan and sprint JSON; M3 changes only this feature status/notes. All 27 earlier features and every other top-level value preserved. No executor Godot/runtime/drill/process-table attempts: UNINFORMATIVE UNDER SANDBOX if attempted. Outside-sandbox GREEN AC1 twice/AC2, AC7/AC8, actual PR-head AC10 and independent evaluation remain controller-owned and pending. A1/A2/A4 extracted unchanged for controller; A3 omitted. No nightly join, production edits, git writes or dependency/broad gate runs. Status implemented records completed executor scope; passes remains false pending external acceptance, CI and evaluation. Controller (iteration 73), outside the sandbox at 76ed7334 (AILANG v0.56.1, Godot 4.7.2): M1 red recorded before the fix (recipe-only gate: make rc 2, no summary line matching; old test 4 failures, the fourth the timing check at 1-min load ~19, mediaanalysisd 315% CPU); AC1 twice 8 passed, 0 failures (48 s, 49 s; ratios 0.165, 0.084); AC2 8/0/4; AC3 121 through, 118 on the baseline, 4 pairs, rc 0; AC4 pin 119 refused, 0, 118; AC5 rc 1, 1 stale diagnostic; AC6 0 1 0 1; AC7 sim-pipeline-drill ok (8 drills d0 k1-k7), tree clean; AC8 diag: done, tc6-61-1-pilot and tc6-61-2-pilot; AC9 0, 0, uid-guard 406, python-guard 21, gates-ok. Commits rebuilt from executor snapshots (7c474350, da7afacf, 76ed7334), sha256 manifest 0 mismatches; the four implementation files are byte-identical to the designer's measured diff minus the deferred ship-demo-ci line. AC10 fast tier success on 76ed7334 (run 42150205367). Evaluation: Sonnet (Agent tool, own clone) 93/100 PASS, 0 blocking, eval_R1-M4-JOURNEY_7aa_round_1.json; 14 mutants, 10 killed, 4 survived (2 equivalent, 1 below world resolution, 1 by design); the controller reproduced M4a (offer removed: only the non-vacuity check fails, 7 passed, 1 failures). Docs moved to design_docs/implemented/r1/."
     }
   ],
   "findings": [

@@ -5,7 +5,7 @@ module stapledons/sim/tools/crew_pack
 -- I/O, as with the star data (sim/data/*.ail). The round trip is crew_pack_check.ail.
 -- Bytecode VM with evaluator fallback for std/fs (readFile is evaluator-only on the strict VM in v0.54.6), FS caps.
 import std/string (concat, join, replaceMany)
-import std/list (map)
+import std/list (map, mapE)
 import std/fs (readFile, writeFile)
 import std/io (println)
 
@@ -40,7 +40,7 @@ export pure func moduleText(sync: string, texts: [(PackFile, string)]) -> string
   ])
 
 export func generate(a: {dir: string, out: string}) -> () ! {IO, FS} {
-  let texts = map(\f. (f, readFile(concat([a.dir, "/", f.file]))), files());
+  let texts = mapE(\f. (f, readFile(concat([a.dir, "/", f.file]))), files());
   writeFile(a.out, moduleText(readFile(concat([a.dir, "/SYNC"])), texts));
   println(concat(["crew-pack: wrote ", a.out]))
 }

@@ -11,10 +11,12 @@ func _run() -> void:
 	var deadline:=Time.get_ticks_msec()+90000
 	while pid>0 and OS.is_process_running(pid) and Time.get_ticks_msec()<deadline:
 		await create_timer(.1).timeout
-	var ok: bool=pid>0 and not OS.is_process_running(pid) and main.sim.world==expected and is_instance_valid(main)
+	var conds: Array=[pid>0,pid>0 and not OS.is_process_running(pid),main.sim.world==expected,is_instance_valid(main)]
+	var passed: int=conds.count(true)
+	var ok: bool=passed==conds.size()
 	if pid>0 and OS.is_process_running(pid):OS.kill(pid)
 	for field in ["starfield","camera","hud","sky_note","credits","system_view"]:
 		var node: Variant=main.get(field)
 		if node is Node and is_instance_valid(node) and node.get_parent()==null:node.free()
 	main.free()
-	print("ship-demo-launch: %s" % ("OK" if ok else "FAIL"));quit(0 if ok else 1)
+	print("ship-demo-launch: %s (%d passed, %d failures)" % ["OK" if ok else "FAIL",passed,conds.size()-passed]);quit(0 if ok else 1)

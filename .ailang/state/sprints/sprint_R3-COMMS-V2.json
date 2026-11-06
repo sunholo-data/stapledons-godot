@@ -1,0 +1,317 @@
+{
+ "sprint_id": "R3-COMMS-V2",
+ "status": "ready_for_evaluation",
+ "approved": {
+  "by": "Mark (via the orchestrator, attended 2026-11-03)",
+  "how": "revision 2 'looks awesome', every open question at its recommendation; ruling: 'can we move the consoles to be underneath the screens? yes will need model updates I guess' (revision 3)",
+  "at": "2026-11-03"
+ },
+ "created": "2026-11-02",
+ "design_doc": "design_docs/planned/r3/comms-station-v2.md",
+ "sprint_plan": "design_docs/planned/r3/comms-station-v2-sprint.md",
+ "branch": "design/comms-station-v2 (plan and execution, PR #379; Mark's go-ahead 2026-11-03), full clone stapledons-godot-comms-v2",
+ "origin": "Mark, attended 2026-11-02: feed history wall, move the comms console closer, a live spectrogram of the signal from home on the bridge ('the spectrograph is cool on its own - maybe we can have that read out on the bridge somewhere') | Revision 2 (Mark 2026-11-03): the signal as an ambient bridge monitor ('a scanner or TV monitor screen ... more like a mission control center, and when we go to the console we get the detail view'); clicking a history-wall image shows the relative positions of Earth, the ship and the signal",
+ "mockups": {
+  "r1": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/index.html",
+  "r2": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r2/index.html",
+  "r3": "https://storage.googleapis.com/stapledons-voyage-assets/refs/comms_v2/r3/index.html"
+ },
+ "github_issues": [],
+ "ailang": {
+  "pin": "v0.56.1",
+  "binary": "runtime/bin/ailang",
+  "prompt_version_loaded": "v0.16.11",
+  "note": "ailang prompt loaded 2026-11-03 on v0.56.1 (prompt v0.16.11)"
+ },
+ "external_dependencies": [
+  "#374, #375, #377 merged into main and merged into this branch (2026-11-03)",
+  "free protocol minor 2.18 (checked at CV1)"
+ ],
+ "registry_reuse": [
+  {
+   "milestone": "CV1",
+   "package": "sunholo/observe",
+   "action": "depend",
+   "reason": "lightcone.seenAt already gives the newest light; the log is bookkeeping over frameOf and inBeam"
+  },
+  {
+   "milestone": "CV1",
+   "package": "sunholo/relativity",
+   "action": "none",
+   "reason": "no new formula; the Earth rate is already a sim field"
+  },
+  {
+   "milestone": "CV3",
+   "package": "sunholo/audio",
+   "action": "none",
+   "reason": "the waterfall listens via Godot's AudioEffectSpectrumAnalyzer on silent taps; nothing synthesised; ailang pkg search spectrogram|waterfall|spectrum found nothing applicable (2026-11-02)"
+  },
+  {
+   "milestone": "CV2",
+   "package": "-",
+   "action": "none",
+   "reason": "Godot UI"
+  },
+  {
+   "milestone": "CV4",
+   "package": "-",
+   "action": "none",
+   "reason": "layout data and Blender exports"
+  },
+  {
+   "milestone": "CV5",
+   "package": "-",
+   "action": "none",
+   "reason": "Archive lore, spec rows, captures"
+  },
+  {
+   "milestone": "CV6",
+   "package": "-",
+   "action": "none",
+   "reason": "Godot furniture and UI faces; Blender prop"
+  }
+ ],
+ "velocity": {
+  "target_loc_per_day": 300,
+  "estimated_total_loc": 2250,
+  "estimated_days": 8,
+  "basis": "R3-EARTH-LINK about 1,350 LOC in about 4.5 attended days; plus the Blender prop, rig/full runs and two reviews by Mark"
+ },
+ "critical_path": "CV0 -> CV1 -> CV2 -> CV5; CV3 and CV4 in parallel; CV6 after CV3 and CV4",
+ "pause_points": [
+  "mid-point: accepted by Mark ('continue')",
+  "end: final captures for Mark; then the Codex evaluation and landing"
+ ],
+ "questions_for_mark": [
+  {
+   "id": "OQ2",
+   "question": "The wall's axis",
+   "recommendation": "ship time (the spacing is the Earth-rate history)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ3",
+   "question": "Out-of-beam light",
+   "recommendation": "show it as static on the film",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ4",
+   "question": "What the waterfall hears",
+   "recommendation": "the whole signal (True beacon + the week's bed) on the silent tap whenever in beam and on screen; the bracket measured on the carrier alone",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ5",
+   "question": "The carrier beyond hearing",
+   "recommendation": "True only for now (dark band + 'above hearing' arrow); a labelled Processed wideband view later, own design",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ7",
+   "question": "Stamp precision",
+   "recommendation": "one record per ship day (bounded log)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ8",
+   "question": "Which ambient screens",
+   "recommendation": "four: signal from home, Earth vs ship clocks, course, crew; fold the beam strip into the signal screen and the console; dust/ISM and the exposure meter later",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ9",
+   "question": "Where the screens go",
+   "recommendation": "wall R: the bow rail at r 21.1 m outside the walk, bearings -48/-30/+30/+48, 4.0 x 2.25 m, camera occluders; every evaluator metric unchanged (W and F failed as tried)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ10",
+   "question": "A stern repeater for the Astern view",
+   "recommendation": "not in this sprint; the deck-layout-after-camera pass",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ11",
+   "question": "The screens' look",
+   "recommendation": "Blender-authored grown frames (D-104) in CV4's generator run",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  },
+  {
+   "id": "OQ12",
+   "question": "Remaining ship time on the course screen",
+   "recommendation": "add the sim field journey.ship_years_left (D-21: no computing it in Godot)",
+   "status": "approved at the recommendation (Mark, 2026-11-03)"
+  }
+ ],
+ "features": [
+  {
+   "id": "CV0",
+   "description": "Merge origin/main (AILANG v0.56.1, #374, #375, #377), make runtime; baselines",
+   "estimated_loc": 0,
+   "dependencies": [],
+   "acceptance_criteria": [
+    "#374, #375, #377 merged; fresh clone at origin/main",
+    "make deck-layout-eval prints bridge ok; make comms-station-test sound-voyage-test green",
+    "make capture-comms-station and make deck-layout-capture TAG=cv0 frames opened; numbers recorded in notes"
+   ],
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "origin/main merged (AILANG v0.56.1, #374, #375, #377); make runtime staged v0.56.1. Baseline: deck-layout-eval bridge ok (comms faces_bow false at (-13.2,-3.0)); comms-station-test, sound-voyage-test green."
+  },
+  {
+   "id": "CV1",
+   "description": "Received-frame log in sim/earth_link.ail with the send and arrival events (Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sent{t},shipAtSent}), noteLight, protocol 2.18 earth_log / earth_log_tail / earth_weeks, journey.ship_years_left if OQ12, bridge storage, strict and parity entries, replay case earth_log_voyage",
+   "estimated_loc": 440,
+   "dependencies": [
+    "CV0"
+   ],
+   "acceptance_criteria": [
+    "AC1: ailang test --package sim and ailang check --package sim green with the log checks and mutants",
+    "AC2: make comms-log-test (nothing from the future; earth_weeks clipped)",
+    "AC3: make comms-log-test: sent.t = arrived.t - arrived.ly to 1e-12; ship_at_sent is the newest record with arrived.t <= sent.t; arrived.rate = earth.rate at that tick",
+    "AC4: make strict parity replay replay-compat green; pre-2.18 goldens unchanged; the 2.18 case byte-identical"
+   ],
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "sim/earth_log.ail (new module, pure): Arrival {fromFrame,toFrame,beamed,day,arrived{t,tau,p,ly,rate},sentT,shipAtSent}, ELog {log closed newest first, open record, lastFrame, track one ShipAt per ship day}; World.elog updated every tick in core.ail logAfter (the rate is earth_link.rateOf, as earthOf). Protocol 2.18 (earthLogMinor = surfaceMinor()+4): earth_log in full states (withLog logs week 0 at new_game), earth_log_tail when the open record changed (openKey). earth_weeks is served as beamedWeeks() in the module (clipped to arrived beamed weeks, cap); the wire intent is deferred to CV2's stack view (not needed by the mid-point UI). Bridge: EARTH_LOG_MINOR 17, take_earth_log_tail files by from_frame. Tests: sim/earth_log_test.ail 9 tests (departure, merge, split, no-new-week, 3-ship-year bound at 1414/yr, ship-at-send vs a reference walk, a real 120-tick flight's invariants every tick, earth_weeks clipping, the 2.18 wire); earthLogVm strict VM = interpreter; tests/test_earth_log_bridge.gd 9 passed; replay case earth_log_voyage (44 replies, sha256 golden arm64 = x86_64 per CLAUDE.md's identical-goldens note); four tests that pinned the newest minor at 16 moved to 17. Gates: ailang check --package sim ok; ailang test --package sim 586 (583 + the 3 minor-pin fixes, re-run 0 failed); make strict parity replay; replay-compat ok (4 compared, nothing moved)."
+  },
+  {
+   "id": "CV2",
+   "description": "EarthHistory filmstrip, the frame diagram (EarthStrip in frame mode: send event, light at 45 degrees on equal axes, arrival, ship then, track, x D; plus the plan inset in the galaxy map's glyphs), the console's detail-view layout",
+   "estimated_loc": 580,
+   "dependencies": [
+    "CV1"
+   ],
+   "acceptance_criteria": [
+    "AC5: make comms-station-test display-audit-comms green (every week represented, static spans exact, every digit bound)",
+    "AC6: diagram points equal record fields; light slope 1 in diagram units; the inset never draws earth.beam; deselect returns the strip",
+    "make ui-theme-check uid-guard green"
+   ],
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "ui/earth_history.gd (EarthHistory: film along arrived.tau, pictures in full / slits / stacks, static over unbeamed spans, stamps as ComposedBindings on earth_log.records.<i>.earth_from_year (HUDCaption) and .arrived.tau (HUDAccent), Earth-time line, select/zoom/Escape); ui/earth_strip.gd: rays per beamed record and frame mode (send event, light at 45 deg on equal axes, arrival, ship then, track, x D; plan inset FrameInset in the map's glyphs; never earth.beam); EarthFeed.pinned shows the selected week (no ghosts); CommsStation v2 layout (smaller dials, waterfall, one row of faces, the wall, the strip; the faces row yields to an open diagram). Sessions ask 2.18 (demo, main, loading jump). make comms-history-test 17 passed; comms-station-test 42 passed; display audit via DisplayBinding.audit in the tests (no unbound digit)."
+  },
+  {
+   "id": "CV3",
+   "description": "Waterfall: Antenna (True beacon + week's bed) and Carrier (True beacon) silent taps, CommsWaterfall detail view and its bold monitor face, receiver line, bracket to the measured carrier, off-scale arrow; headless analyser spike first",
+   "estimated_loc": 300,
+   "dependencies": [
+    "CV0"
+   ],
+   "acceptance_criteria": [
+    "AC6: make comms-waterfall-test: measured peak within 1 % of 400*D at D 0.070888, 1, 14.107; dark with 'above hearing' at D 60 and 1414.2; source guard passes",
+    "make sound-voyage-test sound-levels ui-theme-check uid-guard green; taps never above -60 dBFS at Master"
+   ],
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Spike: AudioEffectSpectrumAnalyzer on a -80 dB bus reads magnitudes headless (Dummy 44.1 kHz: 1 kHz tone 0.2565, 5 kHz 0.000003) and windowed (CoreAudio). audio/sound_mix.gd BUSES gain Antenna and Carrier silent taps (analyser, -80 dB, checked by is_layout_ok). ui/comms_waterfall.gd: True picture from the Antenna tap (week's bed + carrier at speed and pitch x D, EarthFeed.receiver_plan(D,false)); Receiver line at waterfall.carrier_hz (data); bracket from the Carrier tap's measured peak; above/below hearing from the plan; shared tap players across the station and the monitor. Measured carrier (after Codex round 1): peak bin refined by a Hann two-point estimator, within 0.028 % at 20 Hz, 0.012 % at 28.355 Hz, 0.005 % at 400 Hz and 5,642.8 Hz; make comms-waterfall-test (18 passed) asserts 1 % (AC7)."
+  },
+  {
+   "id": "CV4",
+   "description": "The consoles under the screens (Mark's ruling): Voyage -48, comms -30, crew +48 at r 18.6 facing their screens, the port watch bench moved; walk bake; one Blender run (deck layout v2 + props v4) that also places the CV6 monitor props; manifest use/screen points; evaluator to five stations",
+   "estimated_loc": 220,
+   "dependencies": [
+    "CV0"
+   ],
+   "acceptance_criteria": [
+    "AC9: make deck-layout-eval deck-layout-eval-test green: five stations face the bow and are clear, every other metric equal to the shipped bridge",
+    "make comms-walk-test: chair -> comms <= 9.0 m, every operator point walkable and reachable, rim walk port to starboard <= 42 m",
+    "identity layout reproduces today's GLBs byte for byte before the move",
+    "make deck-assets-check levels-regress camera-test export-filter-audit green (baseline re-pinned with a stated reason if moved)"
+   ],
+   "passes": true,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Mark's ruling (consoles under the screens): bow_a.json Voyage (-48 deg), comms (-30), crew (+48) at r 18.6 facing their screens, conduits 00/01/02 re-aimed, bench kept (measured clear). Pipeline: identity first (props v4 on the pinned DL1 master reproduced bridge_props/ship/lift_head byte for byte); walk bake 16,639 tris; stapledon_deck_layout_v2.py -> master stapledon_bridge_deck_layout_a_v3.blend (160 unmoved objects identical); new stapledon_bridge_props_v5.py (v4 + live desks' bezels read from bow_a.json, comms live) -> bridge_props.glb 179,000 tris (cap 180k), ship.glb, lift_head.glb unchanged; masters published by sha256 to gs://stapledons-voyage-assets/ship/. Manifest stations use_m and screen_ship_m (the generator's housings). Evaluator: ZOOM_STATIONS + comms, active_stations 5, 'monitor' family; negative a_comms_faces_rim. Gates: deck-layout-eval bridge ok (bow fades 493 incl. monitors 14, head 0/1, pole 0, body both 8, near 0.016/0.074, five stations face the bow, zoom pole 4/4); deck-layout-eval-test 23 passed; deck-assets-check ok (12 pins); comms-walk-test 11 passed (chair->comms 8.5 m, rim 39.5 m); levels-regress re-pinned (samples 4771->4778, change-log row) and ok; camera-test 187, camera-forward-test 35, ship-console-test 136, style-test 22, dressing-test 10, export-filter-audit 0 failures."
+  },
+  {
+   "id": "CV6",
+   "description": "The monitor wall: Blender bridge_monitor prop (grown frame, 4.0 x 2.25 m) with monitor_{clocks,signal,course,crew} at bearings -48/-30/+30/+48 on the bow rail (r 21.1 m); BridgeMonitor (SubViewport face, visibility-gated refresh); four faces (signal, clocks, course, crew); manifest monitors section and 'monitor' camera occluders; evaluator readability metric",
+   "estimated_loc": 480,
+   "dependencies": [
+    "CV3",
+    "CV4"
+   ],
+   "acceptance_criteria": [
+    "AC8: make bridge-monitors-test green (every face number bound, refresh only when visible, faces follow recorded worlds)",
+    "AC8: make deck-layout-eval deck-layout-eval-test: each monitor Bow-readable share >= 0.25; the signal readable from spawn, chair, comms, voyage; a seeded on-walk monitor fails; all other metrics unchanged",
+    "AC10: make bench SCENE=bridge p99 < 16.7 ms at 2560x1440 on a quiet rig",
+    "make capture-comms-v2 STAGE=wall frames opened and uploaded to refs/comms_v2/cv6/"
+   ],
+   "passes": false,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Blender stapledon_bridge_monitors_v1.py -> bridge_monitors.glb (grown frames + stands, 2,696 tris, 2 materials, anchors from the manifest), installed via manifest assets.monitors, inked and lit live, occluders (level manifest 'monitor'). interior/bridge_monitor.gd (BridgeMonitor: SubViewport face, visibility-gated, signal face every frame, others <= 10 Hz) + ui/bridge_screens.gd (signal, clocks, course, crew faces, theme variations, bindings). make bridge-monitors-test 13 passed. Open: OQ12 journey.ship_years_left not added yet (the course face shows the Earth year at arrival and gamma); bench at CV5's rig run.",
+   "evaluation": "pending: Codex round 1 scored 62/100 (FAIL, 9 blockers) at b789a741; every blocker addressed on this branch (design doc 'Execution notes'), awaiting round 2"
+  },
+  {
+   "id": "CV5",
+   "description": "archive.earths-carrier and its spec rows (design repo first), make capture-comms-v2 review frames, changelog fragment, Mark's review, cross-family evaluation, rig/full, landing",
+   "estimated_loc": 230,
+   "dependencies": [
+    "CV2",
+    "CV3",
+    "CV4",
+    "CV6"
+   ],
+   "acceptance_criteria": [
+    "AC11: tests/test_physics.gd asserts the four carrier check values; make lore-values codex-test green",
+    "AC12: make capture-comms-v2 frames opened and uploaded; URLs in the report",
+    "AC13: make ui-theme-check python-guard uid-guard green; tools/rig_check.sh <PR> --golden posts rig/full green",
+    "sprint-evaluator (other family) >= 70/100"
+   ],
+   "passes": false,
+   "started": "2026-11-03",
+   "completed": "2026-11-03",
+   "notes": "Mid-point accepted (Mark 'continue'). OQ12: protocol 2.18 `course` {ship_years_left} on the course face. Waterfall legibility: a bright trace of each frame's measured carrier over the True picture (no hold; no point between keyed pips); log axis 20 Hz-20 kHz. Archive: stapledons-design#55 (archive.earths-carrier, RS-41..RS-47, the 20 Hz hearing floor in RS-46 and sound.md per Mark 'sure 20hz', the earths-voice frame-diagram line, README rows), vendored at 270f958; test_physics asserts RS-41..47; codex 15 entries / 12 unlocks with every mirror refreshed. Deviation: earths-carrier unlocks at first_boost (sim-side), not at the first visible shifted monitor. Codex round 1 (62) fixes: lint row index; off-screen monitors do no work (30/10 Hz, taps released); ambient bed from sim fields; Hann estimator, AC7 at 1 %; receiver.audible [0.05, 50]; earth_weeks intent end to end with the stack row (paged 52 at a time after round 2); monitor readability in the evaluator with negative controls; GPU golden G-CV (make comms-golden, 17 lines); screens raised above the bow rail on a stalk inside it (monitors v2, make monitor-rail-test with a control); faces at three moments, frame diagrams and rail close-ups in refs/comms_v2/final/. make golden 0 failures. Bench: MISS under host load with and without monitors (p99 34.1 vs 31.6 ms) - needs a quiet machine. Codex round 2: 88/100 PASS at cc6dc7c8 with one blocker (stack paging), fixed.",
+   "evaluation": "pending: Codex round 1 scored 62/100 (FAIL, 9 blockers) at b789a741; every blocker addressed on this branch (design doc 'Execution notes'), awaiting round 2"
+  }
+ ],
+ "reviews": [],
+ "pr_gate": "rig/full green plus the GitHub fast tier; Mark's visual approval after CV4 and CV5",
+ "evaluation": {
+  "by": "Codex (cross-family), run by the orchestrator",
+  "round_1": {
+   "score": 62,
+   "pass": false,
+   "head": "b789a741",
+   "file": "scratchpad eval-379.json"
+  },
+  "status": "round 2 passed; paging blocker fixed; landing after Mark",
+  "round_2": {
+   "score": 88,
+   "pass": true,
+   "head": "cc6dc7c8",
+   "blocker": "stacks longer than 52 weeks: older weeks unreachable (fixed: paging)"
+  },
+  "round_3": {
+   "score": 96,
+   "pass": true
+  }
+ },
+ "revision": 3,
+ "revised": "2026-11-03",
+ "settled": [
+  {
+   "id": "OQ6 (cv2_where)",
+   "ruling": "an ambient bridge monitor (the signal screen of the monitor wall) plus the console's detail view",
+   "by": "Mark, 2026-11-03"
+  },
+  {
+   "id": "frame diagram",
+   "ruling": "selecting a week on the history wall shows its light-cone diagram from the received-frame record",
+   "by": "Mark, 2026-11-03"
+  },
+  {
+   "id": "consoles under the screens",
+   "ruling": "Voyage under Earth's clock (-48), comms under the signal (-30), crew under the crew faces (+48), desks at r 18.6 facing their screens; the helm stays central beside the course screen",
+   "by": "Mark, 2026-11-03"
+  }
+ ],
+ "protocol_note": "R3-WORLDS (#371) took 2.17 first; comms v2 is protocol 2.18"
+}

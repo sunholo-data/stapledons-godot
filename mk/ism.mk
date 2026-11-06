@@ -38,19 +38,15 @@ ism-bench:         ## AC19: warm bytecode-service ISM plan/tick delta vs uniform
 	  jq -e '.passes == true' $(ISM_TMP)/service-benchmark.json >/dev/null
 
 dust-flash-test:   ## AC15: the dust-flash CPU mirror vs the package values, lookups finite, the glitter sampler mirrors (headless)
-	@mkdir -p $(SCRATCH)
-	@$(GODOT) --headless --path . --script tests/test_dust_flash.gd > $(SCRATCH)/dust-flash-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/dust-flash-test.log; \
-	  test $$rc = 0 && grep -q '^dust-flash: [1-9][0-9]* passed, 0 failures$$' $(SCRATCH)/dust-flash-test.log || { echo "dust-flash-test: FAILED"; exit 1; }
+	@$(SCRIPT_GATE) dust-flash-test $(SCRATCH)/dust-flash-test.log 600 '^dust-flash: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_dust_flash.gd
 
 map-ism-test:      ## AC16: the galaxy map's medium layer draws every medium in ism.json, mirrors the LIC surface, cuts the route by medium; D is a display flag (headless)
-	@mkdir -p $(SCRATCH)
-	@$(GODOT) --headless --path . --script tests/test_ism_layer.gd > $(SCRATCH)/map-ism-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/map-ism-test.log; \
-	  test $$rc = 0 && grep -q '^ism-layer: [1-9][0-9]* passed, 0 failures$$' $(SCRATCH)/map-ism-test.log || { echo "map-ism-test: FAILED"; exit 1; }
+	@$(SCRIPT_GATE) map-ism-test $(SCRATCH)/map-ism-test.log 600 '^ism-layer: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_ism_layer.gd
 
 ism-capture:       ## AC18: renders/ism/ (flight frames per medium and speed, flash close-up, afterglow / eps / sensitivity sheets, map views, contact sheet; needs a GPU window)
 	@mkdir -p $(ISM_TMP) renders/ism
 	$(ISM_RUN) --bytecode --strict-bytecode --entry main sim/tools/ism_sensitivity.ail > $(ISM_TMP)/sensitivity.json
-	$(GODOT_SIM) --path . -- --ism-capture=renders/ism
+	$(GODOT_SIM) $(AUDIO_OFF) --path . -- --ism-capture=renders/ism
 
 ism-lore-drafts: lore-values  ## AC21: the Archive drafts for Mark (design_docs/planned/r1/ism-archive-drafts) cite registered ids only (HB-, RS-, IS-) and every number binds
 	@$(MAKE) --no-print-directory lore-check LORE=design_docs/planned/r1/ism-archive-drafts AILANG=$(AILANG)
@@ -73,12 +69,12 @@ test: ism-bright-oracle
 
 .PHONY: bubble-surface-test
 bubble-surface-test:
-	@$(GODOT) --headless --path . --script tests/test_bubble_surface.gd > $(SCRATCH)/bubble-surface.log 2>&1; rc=$$?; cat $(SCRATCH)/bubble-surface.log; test $$rc = 0 && grep -q '^bubble-surface: [1-9][0-9]* checks 0 failures$$' $(SCRATCH)/bubble-surface.log
+	@$(SCRIPT_GATE) bubble-surface-test $(SCRATCH)/bubble-surface.log 600 '^bubble-surface: [1-9][0-9]* checks 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_bubble_surface.gd
 
 test: bubble-surface-test
 
 .PHONY: ism-surfaces-test
 ism-surfaces-test:
-	@$(GODOT) --headless --path . --script tests/test_ism_surfaces.gd > $(SCRATCH)/ism-surfaces.log 2>&1; rc=$$?; cat $(SCRATCH)/ism-surfaces.log; test $$rc = 0 && grep -q '^ism-surfaces: [1-9][0-9]* checks 0 failures$$' $(SCRATCH)/ism-surfaces.log
+	@$(SCRIPT_GATE) ism-surfaces-test $(SCRATCH)/ism-surfaces.log 600 '^ism-surfaces: [1-9][0-9]* checks 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_ism_surfaces.gd
 
 test: ism-surfaces-test

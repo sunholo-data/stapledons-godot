@@ -2,10 +2,11 @@ extends SceneTree
 ## Independent mesh check, including negative-control malformed manifests.
 const EXPECTED := [82,57,32,7,-18,-43,-68]
 var failures := 0
+var passes := 0
 var mesh_tops := {}
 func check(label: String, ok: bool) -> void:
 	print("  %s %s" % ["ok" if ok else "FAIL", label])
-	if not ok: failures += 1
+	passes += int(ok); failures += int(not ok)
 func _initialize() -> void:
 	var file := "res://assets/ship_demo/manifest.json"
 	if not OS.get_cmdline_user_args().is_empty(): file = OS.get_cmdline_user_args()[0]
@@ -39,7 +40,7 @@ func _initialize() -> void:
 	check("lower hole nonwalkable", not wl.is_walkable(Vector3(8,57,-8)))
 	check("separate lower height", absf(wl.height_at(8,-4.8)-57) < .001)
 	scene.free();bridge.free();lower.free()
-	print("validate-ship-demo: %s" % ("OK" if failures==0 else "FAIL"));quit(1 if failures else 0)
+	print("validate-ship-demo: %s (%d passed, %d failures)" % ["OK" if failures==0 else "FAIL", passes, failures]);quit(1 if failures else 0)
 func _scan(n: Node, xf: Transform3D, faces: PackedVector3Array) -> void:
 	if n is Node3D: xf = xf * n.transform
 	if n is MeshInstance3D and n.mesh != null:

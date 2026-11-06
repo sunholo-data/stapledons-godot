@@ -1,6 +1,6 @@
 {
  "schema": "stapledons.audio.recipes/1",
- "about": "R2-SOUND S0b (design_docs/planned/r2/sound.md §D8): recipes rendered by the sunholo/audio package (pinned in tools/audio/ailang.toml; schema sunholo.audio.recipes/1, parsed under this file's own id). 48 kHz mono 16-bit; loops complete whole cycles; peak_db is the file's peak, the cue table sets the level.",
+ "about": "R2-SOUND S0b (design_docs/implemented/r2/sound.md §D8): recipes rendered by the sunholo/audio package (pinned in tools/audio/ailang.toml; schema sunholo.audio.recipes/1, parsed under this file's own id). 48 kHz mono 16-bit; loops complete whole cycles; peak_db is the file's peak, the cue table sets the level.",
  "recipes": [
   {
    "id": "spire_hum",
@@ -4971,7 +4971,7 @@
   },
   {
    "id": "home_beacon",
-   "about": "S2 (standing order 2026-10-30): Earth's carrier at the helm, a single 400 Hz sine keyed once per second of Earth time (pips at 0.25 s and 1.25 s, the first longer): the pips are Earth's clock, so they come D times a ship second. One carrier spans human hearing over data/ui/comms_feed.json receiver.audible exactly (0.02..50 x 400 Hz = 8 Hz..20 kHz, below the mixer's Nyquist at D = 50). Every layer is the same phase-locked sine, so the sum is one carrier whose zero crossings give its frequency. A 2 s loop of whole cycles. The True setting plays this one at D.",
+   "about": "S2 (standing order 2026-10-30): Earth's carrier at the helm, a single 400 Hz sine keyed once per second of Earth time (pips at 0.25 s and 1.25 s, the first longer): the pips are Earth's clock, so they come D times a ship second. One carrier spans human hearing over data/ui/comms_feed.json receiver.audible exactly (0.05..50 x 400 Hz = 20 Hz..20 kHz, RS-46/RS-47, Mark 2026-11-03; below the mixer's Nyquist at D = 50). Every layer is the same phase-locked sine, so the sum is one carrier whose zero crossings give its frequency. A 2 s loop of whole cycles. The True setting plays this one at D.",
    "seconds": 2.0,
    "loop": true,
    "peak_db": -3,

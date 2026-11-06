@@ -1,0 +1,4 @@
+# Fixture for make script-gate-lint's negative control (row 7x): lint_negative.mk.txt must fail on exactly
+# the bare-new and mixed tests/m2.gd rows (unguarded, not listed) and the stale row (listed, no longer present).
+baselined	tests/z.gd	fixture
+stale	tests/gone.gd	fixture

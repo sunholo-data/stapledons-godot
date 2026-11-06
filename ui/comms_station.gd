@@ -6,11 +6,17 @@ extends VBoxContainer
 ## log, CommsPanel) are the last layer, behind Details.
 
 signal pane_requested(pane: String)
+## R3-COMMS-V2 D1.3: a stack's weeks wanted (Earth feed frames from..to); the console asks the sim
+## (the read-only `earth_weeks` intent) and the answer arrives in the view as earth_weeks.
+signal weeks_requested(from: int, to: int)
 
 var feed := EarthFeed.new()
 var clocks := EarthClocks.new()
 var crew := CrewFaces.new()
 var strip := EarthStrip.new()
+var history := EarthHistory.new() ## R3-COMMS-V2 CV2: every week received, along ship time
+var waterfall := CommsWaterfall.new() ## R3-COMMS-V2 CV3: the signal from home, True, with the Receiver's line
+var stack := StackWeeks.new() ## R3-COMMS-V2 D1.3: the weeks inside a selected stack, each selectable
 var side := VBoxContainer.new()
 var details := Button.new()
 var words_box := VBoxContainer.new()
@@ -20,7 +26,7 @@ var pane_buttons := {}
 
 func _init() -> void:
 	name = "CommsStation"
-	add_theme_constant_override("separation", 10)
+	add_theme_constant_override("separation", 8)
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 14)
 	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -28,16 +34,29 @@ func _init() -> void:
 	var frame := AspectRatioContainer.new()
 	frame.ratio = 16.0 / 9.0
 	frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	frame.size_flags_stretch_ratio = 2.2
+	frame.size_flags_stretch_ratio = 1.6 # R3-COMMS-V2: room for the waterfall beside, the wall below
 	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	frame.add_child(feed)
 	top.add_child(frame)
 	side.name = "Side"
-	side.add_theme_constant_override("separation", 12)
+	side.add_theme_constant_override("separation", 6)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	clocks.ship_dial.custom_minimum_size = Vector2(64, 64) # R3-COMMS-V2 layout: smaller dials, the faces in a row
+	clocks.earth_dial.custom_minimum_size = Vector2(64, 64)
+	crew.columns = 5
+	crew.face_px = 42.0
+	strip.custom_minimum_size = Vector2(0, 84)
 	side.add_child(clocks)
+	side.add_child(waterfall)
 	side.add_child(crew)
 	top.add_child(side)
+	history.feed = feed
+	history.week_selected.connect(_on_week)
+	add_child(history)
+	stack.feed = feed
+	stack.week_picked.connect(_on_stack_week)
+	stack.page_requested.connect(func(a: int, b: int) -> void: weeks_requested.emit(a, b))
+	add_child(stack)
 	add_child(strip)
 	details.name = "CommsDetails"
 	details.text = str(EarthFeed.copy().words.details)
@@ -75,7 +94,12 @@ func show_words(pane: String) -> void:
 func refresh(view: Dictionary) -> void:
 	feed.refresh(view)
 	clocks.refresh(view)
+	waterfall.refresh(view, feed.receiver, str(feed.home_sound.get("cue", "")))
 	crew.refresh(view)
+	if strip.frame >= 0:
+		crew.visible = false # a week's light-cone diagram takes the faces' row while it is open
+	history.refresh(view)
+	stack.refresh(view)
 	strip.refresh(view)
 	for p: String in pane_buttons:
 		(pane_buttons[p] as Button).set_pressed_no_signal(words.pane == p)
@@ -87,10 +111,181 @@ func advance(dt: float) -> void:
 	feed.advance(dt)
 
 
+## R3-COMMS-V2 CV2: a week selected on the history wall: the feed shows it, and the light strip turns
+## to its light-cone diagram (frame mode); -1 returns both to the live feed and the strip.
+func _on_week(i: int) -> void:
+	feed.pinned = i
+	feed.pinned_week = -1
+	strip.set_frame(i)
+	var rec: Dictionary = history.records[i] if i >= 0 and i < history.records.size() else {}
+	var a := int(rec.get("from_frame", 0))
+	var b := int(rec.get("to_frame", 0))
+	if i >= 0 and b > a: # a stack: ask the sim for its newest page of weeks (at most 52, D1.3)
+		stack.open(i, rec)
+	else:
+		stack.close()
+	if i >= 0:
+		crew.visible = false
+	if i < 0:
+		feed.shown_key = "" # the live week again on the next refresh
+
+
+## D1.3: a week inside the stack chosen: the feed shows it with its own Earth date, the diagram labels it.
+func _on_stack_week(j: int) -> void:
+	feed.pinned_week = j
+	feed.shown_key = ""
+	strip.week = j
+	strip._place_tags()
+	strip.queue_redraw()
+
+
+## R3-COMMS-V2 D1.3: the weeks of a selected stack, a row of small pictures from the sim's earth_weeks
+## answer (each row's own feed and Earth date); selecting one emits week_picked(j). The selected one
+## carries its Earth date stamp (a binding). Nothing here is computed: the sim chose and dated the weeks.
+## A stack of more than 52 weeks pages: it opens on its newest 52, and the arrows at either end ask the
+## sim (page_requested) for the 52 before or after, so every week of every stack can be opened. An
+## answer is shown only when it is for the range this row asked for.
+class StackWeeks extends Control:
+	signal week_picked(j: int)
+	signal page_requested(from: int, to: int)
+	const CAP := 52
+	const THUMB := Vector2(38, 22)
+	const ARROW := 18.0
+	var want := Vector2i(-1, -1) ## the page asked for: from..to (Earth feed frames)
+	var feed: EarthFeed = null
+	var record := -1
+	var rec: Dictionary = {}
+	var rows: Array = []
+	var picked := -1
+	var view: Dictionary = {}
+	var stamp: ComposedBinding = null
+
+	func _init() -> void:
+		name = "StackWeeks"
+		visible = false
+		custom_minimum_size = Vector2(0, 40)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func open(i: int, r: Dictionary) -> void:
+		record = i
+		rec = r
+		visible = true
+		var b := int(r.get("to_frame", 0))
+		ask(maxi(int(r.get("from_frame", 0)), b - (CAP - 1)), b)
+
+	func close() -> void:
+		record = -1
+		rec = {}
+		rows = []
+		picked = -1
+		want = Vector2i(-1, -1)
+		visible = false
+
+	## Ask the sim for weeks a..b (at most CAP) of this stack; the row empties until the answer comes.
+	func ask(a: int, b: int) -> void:
+		want = Vector2i(a, b)
+		rows = []
+		if picked >= 0:
+			picked = -1
+			week_picked.emit(-1)
+		_place_stamp()
+		queue_redraw()
+		page_requested.emit(a, b)
+
+	func has_earlier() -> bool:
+		return record >= 0 and want.x > int(rec.get("from_frame", 0))
+
+	func has_later() -> bool:
+		return record >= 0 and want.y < int(rec.get("to_frame", 0))
+
+	## The page before (-1) or after (+1) the one shown.
+	func page(dir: int) -> void:
+		if dir < 0 and has_earlier():
+			var b := want.x - 1
+			ask(maxi(int(rec.get("from_frame", 0)), b - (CAP - 1)), b)
+		elif dir > 0 and has_later():
+			var a := want.y + 1
+			ask(a, mini(int(rec.get("to_frame", 0)), a + (CAP - 1)))
+
+	func refresh(v: Dictionary) -> void:
+		view = v
+		rows = []
+		if record < 0:
+			return
+		var ew: Variant = v.get("earth_weeks")
+		if ew is Dictionary and int(ew.get("from", -1)) == want.x and int(ew.get("to", -1)) == want.y and ew.get("weeks") is Array:
+			rows = ew.weeks
+		if picked >= rows.size():
+			picked = -1
+		_place_stamp()
+		queue_redraw()
+
+	func _cell(j: int) -> Rect2:
+		var step := minf(THUMB.x + 3.0, (size.x - 8.0 - 2.0 * ARROW) / maxf(rows.size(), 1.0))
+		return Rect2(Vector2(ARROW + 4.0 + j * step, 2.0), Vector2(minf(THUMB.x, step - 1.0), THUMB.y))
+
+	func _arrow(dir: int) -> Rect2:
+		return Rect2(Vector2(0.0 if dir < 0 else size.x - ARROW, 2.0), Vector2(ARROW, THUMB.y))
+
+	func _draw() -> void:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.035, 0.03, 0.06))
+		for dir: int in [-1, 1]:
+			if (has_earlier() if dir < 0 else has_later()):
+				var r := _arrow(dir)
+				var c := r.get_center()
+				draw_colored_polygon(PackedVector2Array([c + Vector2(5.0 * dir, 0.0), c + Vector2(-4.0 * dir, -7.0), c + Vector2(-4.0 * dir, 7.0)]), StapledonTheme.TEAL_LIGHT)
+		for j in rows.size():
+			var c := _cell(j)
+			var r: Dictionary = rows[j]
+			var t: Texture2D = feed.texture_of(feed.picked_source(r)) if feed != null else EarthFeed.sky_texture(int(r.get("frame", 0)))
+			if t != null:
+				draw_texture_rect(t, c, false)
+			draw_rect(c, StapledonTheme.CORAL if j == picked else Color(StapledonTheme.CREAM, 0.4), false, 2.0 if j == picked else 1.0)
+
+	func _place_stamp() -> void:
+		if picked < 0:
+			if stamp != null:
+				stamp.visible = false
+			return
+		if stamp == null: # made on first use: never a binding without a field
+			stamp = ComposedBinding.new()
+			stamp.theme = StapledonTheme.theme()
+			stamp.theme_type_variation = "HUDCaption"
+			stamp.add_theme_font_size_override("font_size", 10)
+			stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(stamp)
+		stamp.compose([["earth_weeks.weeks.%d.earth_year" % picked, "comms_clock"]])
+		stamp.update_from(view)
+		stamp.size = stamp.get_minimum_size()
+		var c := _cell(picked)
+		stamp.position = Vector2(clampf(c.get_center().x - stamp.size.x * 0.5, 0.0, maxf(size.x - stamp.size.x, 0.0)), c.end.y + 1.0)
+		stamp.visible = true
+
+	func pick(j: int) -> void:
+		picked = j if j >= 0 and j < rows.size() else -1
+		_place_stamp()
+		queue_redraw()
+		week_picked.emit(picked)
+
+	func _gui_input(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			for dir: int in [-1, 1]:
+				if _arrow(dir).has_point(e.position) and (has_earlier() if dir < 0 else has_later()):
+					page(dir)
+					accept_event()
+					return
+			for j in rows.size():
+				if _cell(j).grow(1.0).has_point(e.position):
+					pick(j)
+					accept_event()
+					return
+
+
 ## EL3b.4: the crew around the console, each at their home feeling (earth.crew: the sim's
 ## homeFeeling, work strain first), with their name and the feeling in a word. All bindings.
 class CrewFaces extends GridContainer:
 	const FACE := 64.0
+	var face_px := FACE ## the station's compact row (R3-COMMS-V2) sets it smaller
 
 	func _init() -> void:
 		name = "CrewFaces"
@@ -107,7 +302,7 @@ class CrewFaces extends GridContainer:
 			box.alignment = BoxContainer.ALIGNMENT_CENTER
 			var face := TextureRect.new()
 			face.name = "Face"
-			face.custom_minimum_size = Vector2(FACE, FACE)
+			face.custom_minimum_size = Vector2(face_px, face_px)
 			face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 			box.add_child(face)

@@ -1,0 +1,6 @@
+extends SceneTree
+# row 7x drill: a runtime error before quit(); Godot never exits
+func _init() -> void:
+	print(self.no_such_member_7x)
+	print("drill: 1 passed, 0 failures")
+	quit(0)

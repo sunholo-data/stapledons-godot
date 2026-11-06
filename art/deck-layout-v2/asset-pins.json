@@ -6,32 +6,36 @@
   "authoring_script_sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470",
   "layout": "art/deck-layout-v2/bow_a.json",
   "operator_contact": "D-132 revises only Voyage/Crew runtime working points and screen anchors; original GLB geometry and historical Blender masters remain pinned below.",
-  "layout_sha256": "ebb13aaacb2ffdb62a91690e82f09fe95feed3e4255d59e8517d2497a9ede938",
+  "layout_sha256": "9f8df46a94f38b95611fc5754cc8876dfd2e6dc446fae2408bdbf6c5228e474a",
   "source_master": "art/ship-demo-v1/grounded-bridge-v2/stapledon_bridge_mesh_grounded_v2.blend",
   "source_master_sha256": "d1189dd8da752b971c31a19254a39794c8d3a89b67fbe34bd0c392d3e15dd9b5",
   "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 be6bf75111fa30969adc119eff165fedc2aad97bb26f417de2dbdaa5e5a6e984, 15391 triangles after Blender import), put into WALK_bridge by the generator",
   "pins": {
     "assets/ship_demo/ship.glb": {
-      "bytes": 2303608,
-      "sha256": "c8a55cd0cf0effbdb85a2078d7238a3658fc49b973edd67af8ab2ff96d2f4175",
+      "bytes": 2303636,
+      "sha256": "3625397aaa424c71f45219efc481053174acd9d7a12c7929367e5ca3196aa037",
       "all_materials_opaque": true
     },
     "assets/ship_demo/walk_bridge.glb": {
-      "bytes": 379960,
-      "sha256": "1033df4bc81d20cdbf08fb86ed31472284865c1d068997b0150a76433252b54b",
+      "bytes": 414088,
+      "sha256": "a44bfaa24c68658f38ab01f9a7ed50f7b81bb42c67487922eeb501ce6329485e",
       "materials": 0,
       "images": 0,
       "all_materials_opaque": true
     },
     "assets/ship_demo/bridge_props.glb": {
-      "bytes": 4531504,
-      "sha256": "86d2e858d6d766885c1e81d241201c334ab1426cfd908155940f153818311079",
+      "bytes": 4561412,
+      "sha256": "8336c040abf4be1f859c79acbe5051ab47a87a44847f0f39d38e75c302b45cb6",
       "all_materials_opaque": true
     },
     "assets/ship_demo/lift_head.glb": {
       "all_materials_opaque": true,
       "bytes": 159748,
       "sha256": "ff90afeffa35db8aa4027638a91b8d102e184695cc4d5e4a6b32e3d063919635"
+    },
+    "assets/ship_demo/bridge_monitors.glb": {
+      "bytes": 47476,
+      "sha256": "8732181ef3c657ed51e85b981b0450fb7a423f3a9ae447b4f46342ba2ed02e48"
     }
   },
   "masters": {
@@ -59,6 +63,26 @@
       "bytes": 11017077,
       "sha256": "45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3",
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/45784b6ddec868106778ef7c3646af602d33522f9f44a570a735ec7f2fe69ff3.blend"
+    },
+    "stapledon_bridge_deck_layout_a_v3.blend": {
+      "bytes": 8304051,
+      "sha256": "64ede5158826f72da5e877e7b41b306229c9540a78f7776a328c04175e4fda7c",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/64ede5158826f72da5e877e7b41b306229c9540a78f7776a328c04175e4fda7c.blend"
+    },
+    "stapledon_bridge_props_v5.blend": {
+      "bytes": 10911859,
+      "sha256": "4a0a6c3b779c170d87bcbc769950ba79754dcd847e73805fbb7f1a02014b0dcf",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/4a0a6c3b779c170d87bcbc769950ba79754dcd847e73805fbb7f1a02014b0dcf.blend"
+    },
+    "stapledon_bridge_monitors_v1b.blend": {
+      "bytes": 106765,
+      "sha256": "26f0981468a8c0498e95c4b5cab84975bdab8769ee000e850611b29de91442fc",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/26f0981468a8c0498e95c4b5cab84975bdab8769ee000e850611b29de91442fc.blend"
+    },
+    "stapledon_bridge_monitors_v2.blend": {
+      "bytes": 107419,
+      "sha256": "41eb56973fe98422a9f78b8f93cbf0e95ea4016b6ab9e3a6758fe83d08182800",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/ship/41eb56973fe98422a9f78b8f93cbf0e95ea4016b6ab9e3a6758fe83d08182800.blend"
     }
   },
   "determinism": "two generator runs from the same layout, walk and script give byte-identical ship.glb and walk_bridge.glb; the identity layout (art/deck-layout-v2/shipped.json, no walk) reproduces the grounded v2 ship.glb (9da74077) and walk_bridge.glb (9775c88d) byte for byte",
@@ -334,5 +358,48 @@
       }
     ],
     "fronds": "the ten rim-frond meshes dropped from the export (D-106: painted cards in the game, manifest style.foliage)"
+  },
+  "comms_v2": {
+    "what": "R3-COMMS-V2 CV4/CV6 (Mark 2026-11-03: the consoles under the screens; the monitor wall): the Voyage, comms and crew desks at the bow rail (r 18.6 m) under their monitors, the floor conduits re-aimed, and the monitors' grown frames and stands",
+    "layout": "art/deck-layout-v2/bow_a.json (sha256 9f8df46a94f38b95611fc5754cc8876dfd2e6dc446fae2408bdbf6c5228e474a)",
+    "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb sha256 4cf350e84d6cb0e6069a5d03abea99dacfcd13d2e0e4c0be01e77220377b6b3c (16,639 triangles)",
+    "deck_layout": {
+      "authoring_script": "~/dev/blender/scripts/stapledon_deck_layout_v2.py",
+      "authoring_script_sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470",
+      "source_master_sha256": "d1189dd8da752b971c31a19254a39794c8d3a89b67fbe34bd0c392d3e15dd9b5",
+      "master": "stapledon_bridge_deck_layout_a_v3.blend",
+      "unmoved_objects_identical": 160
+    },
+    "props": {
+      "authoring_script": "~/dev/blender/scripts/stapledon_bridge_props_v5.py (packed in the master; v4 with the live desks' bezels read from bow_a.json, comms live too)",
+      "authoring_script_sha256": "dd1c52275285b63545fb4a29147e16d5fb6c1199154aced5b4ba98bfb3f0a6af",
+      "source_master_sha256": "64ede5158826f72da5e877e7b41b306229c9540a78f7776a328c04175e4fda7c",
+      "master": "stapledon_bridge_props_v5.blend",
+      "housings": {
+        "console_decision_0": [
+          -13.049,
+          11.75,
+          82.854
+        ],
+        "console_decision_1": [
+          13.049,
+          11.75,
+          82.854
+        ],
+        "console_decision_2": [
+          -8.78,
+          15.207,
+          82.854
+        ]
+      },
+      "bridge_props_triangles": 179000
+    },
+    "monitors": {
+      "authoring_script": "~/dev/blender/scripts/stapledon_bridge_monitors_v2.py (packed in the master; anchors from assets/ship_demo/manifest.json monitors)",
+      "authoring_script_sha256": "3b3d94d628873a08c3f246f013e1bb0a51c9ec0401607860624a5d1f3d4a42c9",
+      "master": "stapledon_bridge_monitors_v2.blend",
+      "note": "Mark 2026-11-03 ('the ship railings around the bridge are going through the screens'): v2 raises every face to 1.55 m above the deck (frame bottom 1.39 m, over the rail's top and its lamps at 1.27 m) and stands each on a stalk inside the rail (r 21.07, its leaf foot along the rail); make monitor-rail-test proves no monitor triangle crosses the rail or any bridge prop, with a seeded monitor in the rail as its control. Deterministic (two runs byte-identical). CV5 had moved the course screen to +24 deg (G-M4-S3)."
+    },
+    "determinism": "before the move, props v4 on the pinned DL1 master reproduced the shipped bridge_props.glb (86d2e858), ship.glb (c8a55cd0) and lift_head.glb (ff90afef) byte for byte (2026-11-03); lift_head.glb is unchanged by the move"
   }
 }

@@ -14,7 +14,7 @@ design repo.
 ## Commands
 
 ```sh
-make test      # headless: physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (the rig runs this: tools/rig_check.sh)
+make test      # headless: physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (nightly on main: tools/rig_nightly.sh)
 make golden    # GPU shader vs CPU reference, sub-pixel (needs a GPU window; works from the Studio shell)
 make capture   # sim-driven voyage → renders/*.png (inspect them; that is the visual check)
 make run       # interactive
@@ -36,11 +36,19 @@ builds the macOS zip straight away; tag it only after a green local `make test`
 (use the pinned runtime: `PATH=$PWD/runtime/bin:$PATH make test`). Any other `v*` tag
 is a release: `release.yml` runs the full CI suite first and builds only if it passes.
 
-**Merges (Mark, 2026-10-19).** `make test` is still the definition of done, but it runs on the
-Studio: `tools/rig_check.sh <PR> [--golden]` runs it (plus `make golden` for visual changes) on the
-PR head in a fresh clone and posts the `rig/full` commit status. GitHub CI runs only the fast
-clean-Linux tier, `make ci-fast` (lock, policy lints, strict VM, parity, replay golden, crew parity).
-A PR merges on a green `rig/full` plus a green fast tier; main is not branch-protected.
+**Merges (Mark, 2026-11-03; replaces the per-PR rig rule of 2026-10-19).** A PR merges on:
+1. the GitHub fast tier, `make ci-fast` (lock, policy lints, strict VM, parity, replay golden, crew parity, about 10 min);
+2. the targeted gates for what it touches, run locally by the executor (and `make golden` cases for a visual change);
+3. the cross-family evaluation (generator ≠ judge);
+4. for anything visual or audible, Mark's OK on a dev build: `make publish-dev` from the PR's clone, and Mark
+   installs with `tools/install_review_build.sh --dev`.
+
+The full `make test` + `make golden` (70+ min) runs once a night on main: `tools/rig_nightly.sh` (launchd
+`dev.stapledon.rig-nightly`, `tools/launchd/`) posts `rig/full` on main's head and starts only when the GPU and
+CPU are idle, since local-model evals share the GPU. A red night opens a `nightly-rig` issue: fix forward or
+revert first thing. Per-PR runs (serialised, ~70 min each) queued for hours and mostly failed on host load, not
+bugs. `tools/rig_check.sh <PR> [--golden]` is still there for a change risky enough to want the whole suite
+first. Release tags run the full CI suite. main is not branch-protected.
 
 **GitHub access (Mark, 2026-10-30).** Use the `gh` CLI, not the GitHub app connector.
 
@@ -97,7 +105,7 @@ Only the **unattended** loop is barred from resolving rows itself. This is
 
 ## Definition of done (gates, in this order)
 
-1. **`make test` is green on the rig (`rig/full`), and the GitHub fast tier is green.**
+1. **The GitHub fast tier and the change's targeted gates are green; main's nightly `rig/full` (`make test`) stays green.**
 2. **Physics.** Every visual that shows SR or GR has the following, *before*
    it merges:
    - check values from `stapledons-design/physics/relativity-spec.md` asserted

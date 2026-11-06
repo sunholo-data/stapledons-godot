@@ -1,5 +1,5 @@
 extends SceneTree
-## R2-SOUND (design_docs/planned/r2/sound.md) AC1-AC5, AC8 (rows), AC10 (later), the bus layout:
+## R2-SOUND (design_docs/implemented/r2/sound.md) AC1-AC5, AC8 (rows), AC10 (later), the bus layout:
 ## the cue table and manifest validators with their negative controls, the sim/UI/walk clocks,
 ## deterministic variants, the visual-counterpart and no-judgement rules, the D-101 generated-sound
 ## gate, and the bus layout (§D2).
@@ -256,7 +256,8 @@ func test_beacon_plan() -> void:
 	var aud: Array = rx.audible
 	check(HomeBeacon.plan_for(e.call(float(aud[0])), false).on and not HomeBeacon.plan_for(e.call(float(aud[0]) * 0.999), false).on and HomeBeacon.plan_for(e.call(float(aud[1])), false).on and not HomeBeacon.plan_for(e.call(float(aud[1]) * 1.001), false).on, "S2 True: on inside receiver.audible [%s, %s], silent just outside it" % [aud[0], aud[1]])
 	check(HomeBeacon.plan_for(e.call(float(aud[0]) * 0.5), false).hearing == "below" and HomeBeacon.plan_for(e.call(float(aud[1]) * 2.0), false).hearing == "above", "S2 True: below and above hearing are named (the station's words)")
-	check(float(aud[0]) * HomeBeacon.CARRIER_HZ <= 20.0 and float(aud[1]) * HomeBeacon.CARRIER_HZ >= 20000.0 and float(aud[1]) * HomeBeacon.CARRIER_HZ < 0.5 * 44100.0, "S2: the 400 Hz carrier spans human hearing (20 Hz..20 kHz) inside the audible band and stays below the mixer's Nyquist at its top (%.0f Hz)" % (float(aud[1]) * HomeBeacon.CARRIER_HZ))
+	check(is_equal_approx(float(aud[0]) * HomeBeacon.CARRIER_HZ, 20.0) and is_equal_approx(float(aud[1]) * HomeBeacon.CARRIER_HZ, 20000.0) and float(aud[1]) * HomeBeacon.CARRIER_HZ < 0.5 * 44100.0, "S2: the audible band is human hearing at the 400 Hz carrier, exactly 20 Hz..20 kHz (RS-46, RS-47; Mark 2026-11-03), below the mixer's Nyquist at its top (%.0f Hz)" % (float(aud[1]) * HomeBeacon.CARRIER_HZ))
+	check(not HomeBeacon.plan_for(e.call(0.03), false).on and HomeBeacon.plan_for(e.call(0.070888), false).on, "S2 True: silent at D 0.03 (a 12 Hz carrier, infrasound), on at 0.99c outbound (28 Hz)")
 	check(not HomeBeacon.plan_for(e.call(0.5, false), true).on and not HomeBeacon.plan_for(e.call(1.0, true, true), true).on and not HomeBeacon.plan_for({}, true).on and not HomeBeacon.plan_for({"earth": {"in_beam": true}}, true).on, "S2: out of Earth's beam, at home, or with no Earth link, the beacon is off")
 	var d := SoundDirector.new()
 	d.audible = false
@@ -368,25 +369,47 @@ func test_beacon_measured() -> void:
 	d.queue_free()
 
 
-## S2: Receiver -> True hands over at the Receiver's audible place in Earth's clock (the generator's write
-## cursor less its buffered frames), not at the write cursor, which runs a buffer ahead (0.5 Earth s at D = 2).
+## S2: Receiver -> True hands over at the Receiver's place in Earth's clock as the mixer has read it: the
+## frames pushed less the frames still buffered, not the write cursor (a buffer ahead: up to 0.5 Earth s at
+## D = 2). Deterministic: the buffer is read and the handover made under AudioServer.lock(), so the mixer
+## cannot move in between, and the expected place comes from the frames pushed, counted independently of the
+## lag estimate. Stress controls stall the main thread (OS.delay_msec) while the mixer keeps reading, once
+## for 300 ms (the buffer drains, then underruns) and once over several stalled frames.
 func test_beacon_handover() -> void:
-	var d := SoundDirector.new()
-	get_root().add_child(d)
-	d.setup()
-	var b := HomeBeacon.new()
 	var w := {"earth": {"rate": 2.0, "in_beam": true, "at_home": false}}
-	b.follow(d, w, true)
-	var t0 := Time.get_ticks_usec()
-	await create_timer(0.15).timeout
-	var heard := 2.0 * (Time.get_ticks_usec() - t0) / 1e6 # Earth seconds heard since the Receiver started
-	var cursor := b._pos
-	b.follow(d, w, false)
-	var pos := d.loop_position("home_beacon")
-	check(absf(pos - heard) < 0.12 and cursor - heard > 0.3, "S2: Receiver -> True at D = 2 takes over where the Receiver was heard (True at %.3f Earth s, heard %.3f; the write cursor was at %.3f)" % [pos, heard, cursor])
-	d.stop("home_beacon", true)
-	d.queue_free()
-	await process_frame
+	var ok := true
+	var seen := []
+	for stall: String in ["none", "300 ms", "5 frames x 120 ms"]:
+		var d := SoundDirector.new()
+		get_root().add_child(d)
+		d.setup()
+		var b := HomeBeacon.new()
+		b.follow(d, w, true)
+		for i in 3:
+			await process_frame
+		if stall == "300 ms":
+			OS.delay_msec(300)
+		elif stall != "none":
+			for i in 5:
+				OS.delay_msec(120)
+				await process_frame
+		var p: Node = d.get_node_or_null("Loop_home_beacon_rx")
+		AudioServer.lock()
+		var pb := p.get_stream_playback() as AudioStreamGeneratorPlayback
+		var buffered := int(d._gen_cap["home_beacon_rx"]) - pb.get_frames_available()
+		var expect := fposmod(b.start_pos + (b.pushed - buffered) * 2.0 / SoundDirector.GEN_RATE, HomeBeacon.LOOP_S)
+		var cursor := b._pos
+		b.follow(d, w, false)
+		AudioServer.unlock()
+		var pos := d.loop_position("home_beacon")
+		var block := 2.0 * 4096.0 / AudioServer.get_mix_rate() # True's own position may run on by one mix block
+		var good := absf(b.handover_pos - expect) < 1e-6 and buffered >= 0 and absf(fposmod(pos - b.handover_pos + 1.0, 2.0) - 1.0) <= block + 1e-3
+		seen.append("%s: took over at %.4f, read head %.4f, cursor %.4f, %d frames buffered, True at %.4f" % [stall, b.handover_pos, expect, cursor, buffered, pos])
+		ok = ok and good
+		d.stop("home_beacon", true)
+		d.queue_free()
+		await process_frame
+	check(ok, "S2: Receiver -> True at D = 2 takes over at the mixer's read head, not the write cursor, with and without frame stalls (%s)" % "; ".join(seen))
 
 
 ## Stands in for an AudioStreamGeneratorPlayback: keeps what HomeBeacon pushes.

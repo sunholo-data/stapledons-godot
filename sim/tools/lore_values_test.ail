@@ -2,7 +2,7 @@ module stapledons/sim/tools/lore_values_test
 -- M4.7 registry (sim/tools/lore_values.ail): printed-precision agreement and its positive controls on
 -- inline rows (strict VM = interpreter), and the real vendored design docs (FS): the AC8 / AC15 rows
 -- HB-16, 17, 35, 40, 41, 45, 49, 53, 54, 61 agree with the package; eps <= HB-61.
-import ./lore_values (Val, agrees, disagreements, epsWithinGuide, glowFollowsHb45, packageVals, m4Vals, allProblems, registryText)
+import ./lore_values (Val, agrees, disagreements, epsWithinGuide, glowFollowsHb45, packageVals, m4Vals, allProblems, registryText, registryTextWorlds)
 import ./lore (Row, parseRows, findRow)
 import std/string (concat, join, contains)
 import std/list (map, filter, length as size)
@@ -46,3 +46,10 @@ export func loreValuesReal(dir: string) -> string ! {FS} {
 pure func concat2(a: [Row], b: [Row]) -> [Row] = a ++ b
 pure func findCovered(id: string) -> Option[Val] = firstEq(packageVals(), id)
 pure func firstEq(vs: [Val], id: string) -> Option[Val] = match vs { [] => None, v :: r => if v.hb == id then Some(v) else firstEq(r, id) }
+
+-- W1.0: a new registry family is retained, with its source, independently of HB/RS/IS.
+test "W1.0 LW registry rows retain source and precision" {
+  let lw = parseRows("| LW-14 | runaway flux | 1.107 | Earth flux |");
+  let text = registryTextWorlds([], [], [], lw);
+  size(lw) == 1 && contains(text, "LW-14") && contains(text, "1.107") && contains(text, "\"source\": \"lw\"")
+}

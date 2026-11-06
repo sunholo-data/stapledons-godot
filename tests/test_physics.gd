@@ -823,6 +823,24 @@ func test_true_star_light() -> void:
 	check("Processed is compressed: one decade of light is one fifth of its range", star_light.energy_of(1.0e4) / star_light.ENERGY_MAX, 0.8, 1e-12)
 
 
+## R3-COMMS-V2 CV5 (gate 2): the spec's RS-41..RS-47 (the Archive's "Earth's Carrier"): Earth's 400 Hz tone
+## heard at 400 Hz x the Earth rate (physics/observe.gd, the mirror of sunholo/observe), and the edges of
+## hearing that the waterfall and the receiver plan use (data/ui/comms_feed.json).
+func test_earths_carrier() -> void:
+	var out := [1.0, 0.0, 0.0]
+	var carrier := float(EarthFeed.copy().get("waterfall", {}).get("carrier_hz", 0.0))
+	check("RS-41 the carrier's rest frequency (data/ui/comms_feed.json waterfall.carrier_hz) = 400 Hz", carrier, 400.0, 0.0)
+	var rows := [["RS-42", 0.99, false, 28.355], ["RS-43", 0.99, true, 5642.7], ["RS-44", 0.999999, false, 0.28284], ["RS-45", 0.999999, true, 5.6569e5]]
+	for r: Array in rows:
+		var phi := Relativity.rapidity_of_beta(float(r[1]))
+		var d := Observe.earth_rate([-10.0, 0.0, 0.0] if r[2] else [10.0, 0.0, 0.0], out, phi)
+		check("%s Earth's tone at beta %s %s = 400 Hz x D = %s Hz (printed)" % [r[0], r[1], "ahead" if r[2] else "astern", r[3]], carrier * d, float(r[3]), float(r[3]) * 5e-5)
+	check("RS-46 the waterfall's floor is the low edge of hearing, 20 Hz", CommsWaterfall.F0, 20.0, 0.0)
+	check("RS-47 its ceiling is the high edge, 20,000 Hz", CommsWaterfall.F1, 20000.0, 0.0)
+	check("at 0.99c astern Earth's tone (RS-42) is still above the floor of hearing (RS-46)", 1.0 if carrier * Observe.earth_rate([10.0, 0.0, 0.0], out, Relativity.rapidity_of_beta(0.99)) > CommsWaterfall.F0 else 0.0, 1.0, 0.0)
+	check("at the top speed both ways it leaves hearing (RS-44 below RS-46, RS-45 above RS-47)", 1.0 if carrier * Observe.earth_rate([10.0, 0.0, 0.0], out, Relativity.rapidity_of_beta(0.999999)) < CommsWaterfall.F0 and carrier * Observe.earth_rate([-10.0, 0.0, 0.0], out, Relativity.rapidity_of_beta(0.999999)) > CommsWaterfall.F1 else 0.0, 1.0, 0.0)
+
+
 ## R3-EARTH-LINK EL5 (gate 2): the spec's RS-26..RS-37 against physics/observe.gd (the mirror of
 ## sunholo/observe 0.1.0) and the closed forms, and the real sim's earth.rate at 0.99c from the
 ## fixture tools/earth_rate_fixture.gd records. 1 - beta comes from the rapidity, never 1 - b.
@@ -1683,6 +1701,7 @@ func _init() -> void:
 	test_earth_feed_bands()
 	test_true_star_light()
 	test_earth_link()
+	test_earths_carrier()
 	test_scripts_compile()
 	test_sky_meter()
 	test_forward_glow()

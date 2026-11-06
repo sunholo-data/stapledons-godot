@@ -9,10 +9,12 @@ const A := 1.032295275553596 # 1 g in c/yr, sunholo/relativity standardGravity()
 const MAX_INT := 9007199254740991 # 2^53 - 1
 
 var failures := 0
-var scratch := ProjectSettings.globalize_path("res://.godot/tmp")
+var passes := 0
+var scratch :=ProjectSettings.globalize_path("res://.godot/tmp")
 
 func assert_bool(name: String, ok: bool) -> void:
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("  %s  %s" % ["ok  " if ok else "FAIL", name])
 
 func fake(mode: String, dump: String = "") -> SimBridge:
@@ -58,7 +60,8 @@ func diag_sim(record: String = "") -> SimBridge:
 
 func check(name: String, got: float, want: float, tol: float) -> void:
 	var ok := absf(got - want) <= tol * maxf(1.0, absf(want))
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("  %s  %-44s got %.12f want %.12f" % ["ok  " if ok else "FAIL", name, got, want])
 
 
@@ -602,5 +605,5 @@ func _init() -> void:
 		# a GDScript runtime error aborts the function and returns null: count it
 		if t.call() != true:
 			assert_bool("%s ran to completion" % t.get_method(), false)
-	print("sim bridge: %d failures" % failures)
+	print("sim bridge: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures > 0 else 0)

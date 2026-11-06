@@ -35,8 +35,12 @@ func _run() -> void:
 		quit(1)
 		return
 	var m: Dictionary = res.metrics
+	var surfaces := 0
+	var samples := 0
 	for sid: String in m.stages:
 		for r: Dictionary in m.stages[sid].surfaces:
+			surfaces += 1
+			samples += int(r.samples)
 			print("level-eval: %s/%s (%s) samples %d, head %d (greybox %d, clamped %d), pole %d (first hit %d), body-both %d, px %s %s" % [sid, r.surface, r.view, r.samples, r.head, r.head_gb, r.head_gb_clamped, r.pole, r.pole_first_hit, r.body_both, r.px, r.by])
 	print("level-eval: routes %d surfaces, heights %s, unreached %s" % [m.routes.surfaces, m.routes.heights, m.routes.unreached])
 	var out := _arg(args, "--json")
@@ -46,5 +50,5 @@ func _run() -> void:
 	var fails := LevelMetrics.failures(m, th)
 	for f: Dictionary in fails:
 		print("FAIL %s: %s" % [f.id, f.detail])
-	print("level-eval: %s %s" % [doc.get("id", id), "ok" if fails.is_empty() else "FAIL"])
+	print("level-eval: %s %s" % [doc.get("id", id), ("ok (%d surfaces, %d samples)" % [surfaces, samples]) if fails.is_empty() else "FAIL"])
 	quit(0 if fails.is_empty() else 1)

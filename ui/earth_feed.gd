@@ -57,6 +57,11 @@ var home_sound := {"cue": "", "rate": 1.0, "correct": 1.0, "silent": false, "hea
 var receiver := true
 var sound_button := Button.new()
 var earth_rate := 1.0 ## earth.rate (D) of the last refresh
+## R3-COMMS-V2 CV2: a week selected on the history wall (earth_log.records index), shown large in place of
+## the live week until released (-1: the live feed). Its caption and stamps are bindings on the record.
+var pinned := -1
+## R3-COMMS-V2 D1.3: a week inside the pinned record (a row of earth_weeks.weeks), -1 for its newest week.
+var pinned_week := -1
 var _sound_since := 0.0
 var _accent_due := 0.0
 
@@ -291,7 +296,7 @@ static func receiver_plan(d: float, on: bool) -> Dictionary:
 	if on:
 		var rate := clampf(d, float(r.get("min_rate", 0.0625)), float(r.get("max_rate", 16.0)))
 		return {"rate": rate, "correct": 1.0 / rate, "silent": false, "hearing": ""}
-	var aud: Array = r.get("audible", [0.02, 50.0])
+	var aud: Array = r.get("audible", [0.05, 50.0])
 	var hearing := "below" if d < float(aud[0]) else "above" if d > float(aud[1]) else ""
 	return {"rate": d, "correct": 1.0, "silent": not hearing.is_empty(), "hearing": hearing}
 
@@ -357,7 +362,71 @@ func refresh(view: Dictionary) -> void:
 	caption.update_from(view)
 	caption.add_theme_font_size_override("font_size", 20 if beam and str(feed.get("kind", "")) == "card" else 16)
 	_choose_sound(feed)
+	_show_pinned(view)
 	_place_ghosts()
+
+
+## R3-COMMS-V2 CV2: the selected week in place of the live one: its picture (picked_source of the
+## record's feed, the same rule as the live week), its words, its Earth date and its ship arrival date.
+func _show_pinned(view: Dictionary) -> void:
+	var recs: Variant = GalaxyMap.field_value(view, "earth_log.records")
+	if pinned < 0 or not recs is Array or pinned >= (recs as Array).size():
+		return
+	var rec: Dictionary = recs[pinned]
+	var base := "earth_log.records.%d." % pinned
+	var date := base + "earth_year" # the newest week's own date (the picture the record carries)
+	var words := base + "feed.event.words"
+	var fd: Dictionary = rec.get("feed", {})
+	var row := week_row(view, rec, pinned_week)
+	if not row.is_empty():
+		fd = row
+		date = "earth_weeks.weeks.%d.earth_year" % pinned_week
+		words = "earth_weeks.weeks.%d.event.words" % pinned_week
+	var key := picked_source(fd)
+	if key != shown_key:
+		shown_key = key
+		picture.texture = texture_of(key)
+	picture.self_modulate = Color(1, 1, 1)
+	static_rect.visible = false
+	ring.visible = false
+	var w: Dictionary = copy().words
+	signal_tag.compose([str(w.earth) + " ", [date, "comms_clock"]])
+	signal_tag.update_from(view)
+	clock_tag.visible = true
+	clock_tag.compose([str(w.ship) + " ", [base + "arrived.tau", "comms_clock"]])
+	clock_tag.update_from(view)
+	caption.compose([[words, "text"]])
+	caption.update_from(view)
+
+
+## Row j of the sim's earth_weeks answer, when that answer is a page of record `rec`'s weeks (D1.3); else {}.
+static func week_row(view: Dictionary, rec: Dictionary, j: int) -> Dictionary:
+	var ew: Variant = view.get("earth_weeks")
+	if j < 0 or not ew is Dictionary or not (ew as Dictionary).get("weeks") is Array:
+		return {}
+	var rows: Array = ew.weeks
+	if j >= rows.size() or int(ew.get("to", -1)) > int(rec.get("to_frame", -2)) or int(ew.get("from", -1)) < int(rec.get("from_frame", 0)):
+		return {}
+	return rows[j]
+
+
+## The week's bed (data/ui/comms_feed.json sound.beds) from the frame alone: static out of beam, babble in
+## the babble band, the sky's for a sky feed, else the week's category. The station holds it for hold_s.
+static func bed_for(in_beam: bool, rate_band: Dictionary, feed: Dictionary) -> String:
+	var beds: Dictionary = copy().get("sound", {}).get("beds", {})
+	if not in_beam:
+		return str(beds.get("static", ""))
+	var k := "babble" if str(rate_band.get("sound", "")) == "babble" else "sky" if str(feed.get("kind", "")) == "sky" else str(feed.get("event", {}).get("category", ""))
+	return str(beds.get(k, ""))
+
+
+## R3-COMMS-V2: the bed an ambient screen plays, straight from the frame's sim fields (no station needed).
+static func bed_of(view: Dictionary) -> String:
+	var e: Variant = view.get("earth")
+	if not e is Dictionary:
+		return ""
+	var beam: bool = e.get("in_beam") == true
+	return bed_for(beam, band_for(float(e.get("rate", 1.0))), e.get("feed", {}) if beam else {})
 
 
 ## EL3b.7: the bed for this frame (the week's category, the sky's, babble or static), held for hold_s
@@ -365,12 +434,8 @@ func refresh(view: Dictionary) -> void:
 ## (receiver_plan); the first accent comes first_s / D after it starts. Chosen, never computed.
 func _choose_sound(feed: Dictionary) -> void:
 	var s: Dictionary = copy().get("sound", {})
-	var beds: Dictionary = s.get("beds", {})
-	var still := str(beds.get("static", ""))
-	var want := still
-	if beam:
-		var k := "babble" if str(band.get("sound", "")) == "babble" else "sky" if str(feed.get("kind", "")) == "sky" else str(feed.get("event", {}).get("category", ""))
-		want = str(beds.get(k, ""))
+	var still := str(s.get("beds", {}).get("static", ""))
+	var want := bed_for(beam, band, feed)
 	var cur := str(home_sound.cue)
 	if want != cur and (cur == "" or (cur == still) != (want == still) or now_s - _sound_since >= float(s.get("hold_s", 0.0))):
 		home_sound.cue = want
@@ -403,7 +468,7 @@ func advance(dt: float) -> void:
 
 
 func _place_ghosts() -> void:
-	var j := float(band.get("jumble", 0.0)) if beam else 0.0
+	var j := float(band.get("jumble", 0.0)) if beam and pinned < 0 else 0.0 # a selected week shows alone
 	_rng.seed = hash([shown_key, int(now_s * 10.0)])
 	for i in ghosts.size():
 		var g := ghosts[i]

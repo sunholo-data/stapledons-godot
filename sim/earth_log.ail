@@ -1,0 +1,96 @@
+module stapledons/sim/earth_log
+
+-- R3-COMMS-V2 CV1 (design r3/comms-station-v2.md §D1.1): the received-frame log. Pure; it runs on
+-- the strict VM, and I/O stays in ship.ail.
+--
+-- Earth's feed is one frame per Earth week of the newest light (sim/earth_feed.ail frameOf). The log
+-- records which weeks have reached the ship, and when:
+--   - one record per ship day in which new weeks arrived, split when the beam state changes;
+--   - each record carries the arrival event (the ship's galaxy time, proper time, position, distance
+--     and the Earth rate at the tick the weeks arrived) and the send event: sentT = t - |p|, the
+--     newest light's emission time (seenAt; exact on the light cone);
+--   - shipAtSent is the ship's own logged state when Earth sent that light: the newest track sample
+--     with t <= sentT (the track keeps one sample per ship day, newest first).
+-- Only light that has arrived is logged, so nothing from the future is ever in it (D-68). The open
+-- record (this ship day's) is kept apart from the closed ones, so a tick that only extends it does
+-- not copy the log.
+
+import std/option (Option, Some, None)
+import std/list (reverse, length)
+import std/math (floor, floatToInt)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/observe/lightcone (seenAt)
+import ./earth_feed (frameOf)
+import ./earth_link (Link, LinkLeg, inBeam)
+
+export type ShipAt = { t: float, tau: float, p: Vec3, ly: float, day: int }
+export type Arrived = { t: float, tau: float, p: Vec3, ly: float, rate: float }
+export type Arrival = { fromFrame: int, toFrame: int, beamed: bool, day: int, arrived: Arrived, sentT: float, shipAtSent: Option[ShipAt] }
+-- log: closed records, newest first. open: this ship day's record. lastFrame: the newest week
+-- logged (-1 before the first tick). track: one ShipAt per ship day, newest first.
+export type ELog = { log: [Arrival], open: Option[Arrival], lastFrame: int, track: [ShipAt] }
+
+export pure func emptyLog() -> ELog = { log: [], open: None, lastFrame: 0 - 1, track: [] }
+
+pure func origin() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
+
+-- The ship day of a proper time (ship years since departure).
+export pure func dayOf(tau: float) -> int = if tau <= 0.0 then 0 else floatToInt(floor(tau * 365.25))
+
+-- Every record, oldest first: the closed ones, then the open one.
+export pure func records(g: ELog) -> [Arrival] =
+  reverse(match g.open { Some(o) => o :: g.log, None => g.log })
+
+export pure func recordCount(g: ELog) -> int = length(g.log) + (match g.open { Some(_) => 1, None => 0 })
+
+-- The newest track sample with t <= te (the ship when Earth sent the light); None before the first.
+export pure func shipAt(track: [ShipAt], te: float) -> Option[ShipAt] =
+  match track { [] => None, s :: rest => if s.t <= te then Some(s) else shipAt(rest, te) }
+
+-- The track keeps the newest sample of each ship day.
+pure func noteTrack(track: [ShipAt], s: ShipAt) -> [ShipAt] =
+  match track {
+    [] => [s],
+    h :: rest => if h.day == s.day then s :: rest else s :: track
+  }
+
+-- One tick: t (galaxy years), tau (ship years), p (the ship, ly from Sol), rate (the Earth rate at
+-- this tick), l and leg (the Earth link after this tick's commits, for the beam state).
+export pure func noteLight(g: ELog, l: Link, t: float, tau: float, p: Vec3, rate: float, leg: Option[LinkLeg]) -> ELog {
+  let d = dayOf(tau);
+  let here = { t: t, tau: tau, p: p, ly: norm(p), day: d };
+  let te = seenAt(t, p, origin());
+  let f = frameOf(te);
+  let tr = noteTrack(g.track, here);
+  if f <= g.lastFrame then {g | track: tr} else {
+    let beamed = inBeam(l, t, p, leg);
+    let arr = { t: t, tau: tau, p: p, ly: here.ly, rate: rate };
+    let sent = shipAt(tr, te);
+    let fresh = { fromFrame: g.lastFrame + 1, toFrame: f, beamed: beamed, day: d, arrived: arr, sentT: te, shipAtSent: sent };
+    match g.open {
+      None => {g | open: Some(fresh), lastFrame: f, track: tr},
+      Some(o) =>
+        if o.beamed == beamed && o.day == d
+        then {g | open: Some({o | toFrame: f, arrived: arr, sentT: te, shipAtSent: sent}), lastFrame: f, track: tr}
+        else {g | log: o :: g.log, open: Some(fresh), lastFrame: f, track: tr}
+    }
+  }
+}
+
+-- The beamed weeks in [a, b] that have arrived, at most `cap` of them, oldest first (earth_weeks):
+-- a stack's weeks for the comms console. Weeks of unbeamed records and weeks not yet arrived are
+-- never returned.
+export pure func beamedWeeks(g: ELog, a: int, b: int, cap: int) -> [int] = weeksOf(records(g), a, b, cap)
+
+pure func weeksOf(rs: [Arrival], a: int, b: int, cap: int) -> [int] =
+  if cap <= 0 then [] else match rs {
+    [] => [],
+    r :: rest =>
+      if r.beamed then {
+        let ws = span(maxI(a, r.fromFrame), minI(b, r.toFrame), cap);
+        ws ++ weeksOf(rest, a, b, cap - length(ws))
+      } else weeksOf(rest, a, b, cap)
+  }
+pure func span(a: int, b: int, n: int) -> [int] = if a > b || n <= 0 then [] else a :: span(a + 1, b, n - 1)
+pure func maxI(a: int, b: int) -> int = if a > b then a else b
+pure func minI(a: int, b: int) -> int = if a < b then a else b

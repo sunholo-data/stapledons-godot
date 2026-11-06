@@ -1,0 +1,14 @@
+AILANG v0.56.1 05c860a (macOS arm64)
+
+Save as fmt_nested.ail; from the containing directory:
+  ailang check fmt_nested.ail # No errors found
+  ailang fmt fmt_nested.ail  # exit 2, AST changed
+
+module fmt_nested
+import std/string (join)
+import std/list (map)
+export pure func f(xs:[string]) -> string = "${join("; ",map(\x. "${x}: measured",xs))}"
+
+Error: .godot/tmp/worlds/fmt_nested.ail: round-trip verification failed (formatter defect); AST changed
+
+Reported to GCP inbox user: inbox_1793696205326_b0ed7201

@@ -1,0 +1,123 @@
+module stapledons/sim/calibrate_test
+import ./calibrate (ModelWorld, Candidate, Strategy, cautious, wanderer, pilgrim, waiter, techLambda, techWorlds, poissonCount, observeWorld, chooseCandidate, runVoyage, origin, simulate, rowJson, samplePosition, onsetLo, onsetHi, localWorlds)
+import ./data/detect (idealDetector, noDetector)
+import ./data/presets (allPresets, presetOf)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (applyDial,zeroDial)
+import pkg/sunholo/worlds/disc (starsWithin)
+import pkg/sunholo/worlds/history (History,PlanetState,Complex,Technological,Remnant,Ecocide,Transcended)
+import pkg/sunholo/celestial/kepler (norm)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn)
+import pkg/sunholo/relativity/kinematics (standardGravity)
+import std/option (Some,None)
+import std/io (println)
+import std/list (length,foldl,map)
+import std/math (intToFloat,sqrt,abs_Float)
+
+pure func fixture() -> ModelWorld = {id:"known",pos:{x:3.0,y:4.0,z:0.0},history:\unit. {biosphere:Complex,mind:Some({preTechT:-100.0,techT:0.0,endT:10.0,ending:Remnant,tracesUntilT:100.0})},loudness:0.5}
+test "retarded observations use emission epoch, never arrival truth" {
+ let w=fixture();
+ let before=observeWorld(idealDetector(10.0),w,origin(),4.0);
+ let after=observeWorld(idealDetector(10.0),w,origin(),5.0);
+ let ended=observeWorld(idealDetector(10.0),w,origin(),15.0);
+ before.signalStrength==0.0 && after.signalStrength>0.0 && ended.signalStrength==0.0
+}
+test "an unconfigured or dark detector creates no candidates" {
+ let w=fixture();
+ let c=observeWorld(noDetector(),w,origin(),5.0);
+ c.bioStrength==0.0 && c.signalStrength==0.0
+ && (simulate(1,presetOf("lonely"),cautious(),16000.0,noDetector())).detected==0
+}
+test "policies receive candidate data only; technology wins over a nearer biosphere" {
+ let a={id:"bio",pos:{x:1.0,y:0.0,z:0.0},bioStrength:1.0,signalStrength:0.0};
+ let b={id:"tech",pos:{x:10.0,y:0.0,z:0.0},bioStrength:1.0,signalStrength:1.0};
+ match chooseCandidate(cautious(),origin(),[a,b],[]) {Some(c)=>c.id=="tech",None=>false}
+}
+test "no detector gives an explicitly unfinished 100-year voyage and no encounter claims" {
+ let p=applyDial(baseline(),zeroDial());
+ let row=runVoyage(1,"lonely",0.0,p,cautious(),16000.0,noDetector(),[fixture()]);
+ row.detected==0 && row.visited==0 && row.signals==0 && row.contacts==0 && row.shipYears==100.0
+}
+pure func counts(n:int,k:int,s:float) -> float = if n==k then s else counts(n+1,k,s+intToFloat(poissonCount(n,42,100.0)))
+test "exact small-Poisson superposition has its analytic intensity within four standard errors" {
+ abs_Float(counts(0,1024,0.0)-102400.0)<4.0*sqrt(102400.0)
+ && poissonCount(1,42,0.0)==0
+}
+pure func positions(n:int) -> bool = if n==200 then true else norm(samplePosition(7,n,1000.0))<=1000.000000001 && positions(n+1)
+test "exponential-disc positions stay in the requested sphere" {positions(0)}
+test "baseline and provisional preset rows replay exactly" {
+ let p=presetOf("lonely");
+ rowJson(simulate(17,p,cautious(),16000.0,noDetector()))==rowJson(simulate(17,p,cautious(),16000.0,noDetector()))
+ && length(allPresets())==4 && p.calibrated
+}
+export func calibVm() -> () ! {IO} {
+ println(rowJson(simulate(17,presetOf("lonely"),cautious(),16000.0,idealDetector(10.0))));
+ println(rowJson(simulate(18,presetOf("lonely"),cautious(),16000.0,idealDetector(10.0))))
+}
+
+pure func meanWitness(n:int,mean:float,total:float) -> bool =
+ if n==128 then abs_Float(total-128.0*mean)<4.0*sqrt(128.0*mean)
+ else meanWitness(n+1,mean,total+intToFloat(poissonCount(n,99,mean)))
+test "AC4: analytic intensities 1 through 10000 match 128 independent realisations" {
+ meanWitness(0,1.0,0.0) && meanWitness(0,10.0,0.0) && meanWitness(0,100.0,0.0)
+ && meanWitness(0,1000.0,0.0) && meanWitness(0,10000.0,0.0)
+}
+test "the thinned history envelope covers far-side retarded observations and epoch-window boundaries" {
+ let p=applyDial(baseline(),zeroDial());
+ onsetLo(p,1000.0)== -1000.0*2.0-p.remnantHiYr-p.lifetimeYr
+ && onsetHi(p,16000.0)==16000.0
+ && onsetHi(p,p.windowYr)==p.windowYr/2.0
+}
+test "local cells replay independently of query ordering" {
+ let p=applyDial(baseline(),zeroDial());
+ let a=localWorlds(17,p,1000.0,16000.0,origin(),10.0);
+ let b=localWorlds(17,p,1000.0,16000.0,{x:1.0,y:1.0,z:1.0},1.0);
+ let shared=foldl(\ok w. ok && foldl(\found z. found || (z.id==w.id && z.pos.x==w.pos.x && z.pos.y==w.pos.y && z.pos.z==w.pos.z),false,a),true,b);
+ shared
+}
+test "adding outer shells preserves every inner world's position and technological onset" {
+ let p=applyDial(baseline(),zeroDial());
+ let inner=techWorlds(23,p,1000.0,16000.0);
+ let outer=techWorlds(23,p,1100.0,16000.0);
+ length(inner)>0 && foldl(\ok a. ok && foldl(\found b. found || (a.id==b.id && a.pos.x==b.pos.x && a.pos.y==b.pos.y && a.pos.z==b.pos.z && match ((a.history(())).mind,(b.history(())).mind) {(Some(x),Some(y))=>x.techT==y.techT && x.endT==y.endT,_=>false}),false,outer),true,inner)
+}
+pure func techCounts(seed:int,p:{fLife:float,fComplex:float,fMinds:float,fTech:float,lifetimeYr:float,windowYr:float,remnantLoYr:float,remnantHiYr:float},sum:float) -> float =
+ if seed==128 then sum else techCounts(seed+1,p,sum+intToFloat(length(techWorlds(seed,p,1000.0,16000.0))))
+test "the realised marked process agrees with the same closed-form disc Lambda" {
+ let p=applyDial(baseline(),zeroDial());
+ let expected=128.0*techLambda(p,1000.0,16000.0);
+ abs_Float(techCounts(0,p,0.0)-expected)<4.0*sqrt(expected)
+}
+
+pure func arrivalFixture(endT:float,ending:PlanetState) -> ModelWorld =
+ {id:"arrival",pos:{x:3.0,y:4.0,z:0.0},loudness:0.5,history:\unit. {biosphere:Complex,mind:Some({preTechT:-100.0,techT:0.0,endT:endT,ending:ending,tracesUntilT:endT+1000.0})}}
+test "arriving before the technological ending counts one biosphere visit and one living contact" {
+ let p={applyDial(baseline(),zeroDial())|fLife:0.0};
+ let r=runVoyage(1,"fixture",0.0,p,cautious(),16000.0,idealDetector(10.0),[arrivalFixture(1000.0,Remnant)]);
+ r.visited==1 && r.contacts==1 && r.remnants==0
+}
+test "arrival exactly at endT is a remnant and still an active biosphere, never a living contact" {
+ let p={applyDial(baseline(),zeroDial())|fLife:0.0};
+ let t=(planBurnCoastBurn(5.0,standardGravity(),(cautious()).phi)).trip.galaxyTime;
+ let r=runVoyage(1,"fixture",0.0,p,cautious(),16000.0,idealDetector(10.0),[arrivalFixture(t,Remnant)]);
+ r.visited==1 && r.contacts==0 && r.remnants==1
+}
+test "remnant light can reveal life; ecocide and post-biological transcendence do not imply it" {
+ let a=observeWorld(idealDetector(10.0),arrivalFixture(10.0,Remnant),origin(),15.0);
+ let b=observeWorld(idealDetector(10.0),arrivalFixture(10.0,Ecocide),origin(),15.0);
+ let c=observeWorld(idealDetector(10.0),arrivalFixture(10.0,Transcended),origin(),15.0);
+ a.bioStrength>0.0 && a.signalStrength==0.0 && b.bioStrength==0.0 && c.bioStrength==0.0
+}
+
+pure func spatialCounts(n:int,inside:int,north:int) -> (int,int) =
+ if n==20000 then (inside,north) else {
+ let p=samplePosition(53,n,1000.0);
+ spatialCounts(n+1,inside+(if norm(p)<=500.0 then 1 else 0),north+(if p.z>=0.0 then 1 else 0))
+}
+test "20000 positions match the analytic disc radial CDF and north/south symmetry" {
+ let model={rho0Pc3:0.079,scaleHeightPc:300.0};
+ let fraction=starsWithin(model,500.0)/starsWithin(model,1000.0);
+ match spatialCounts(0,0,0) {(inside,north)=>
+ abs_Float(intToFloat(inside)-20000.0*fraction)<4.0*sqrt(20000.0*fraction*(1.0-fraction))
+ && abs_Float(intToFloat(north)-10000.0)<4.0*sqrt(5000.0)}
+}

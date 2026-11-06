@@ -1,0 +1,51 @@
+{
+ "sprint": "R1-M4-JOURNEY",
+ "feature": "M4.6vR3_7aa_SIM_PIPELINE_TEST",
+ "round": 1,
+ "evaluator_model": "claude-sonnet-5-5",
+ "head": "76ed7334",
+ "score": 93,
+ "score_breakdown": {"acceptance": 39, "tests_mutation": 22, "scope_conformance": 19, "evidence_integrity": 13},
+ "pass": true,
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Timing assertion has modest headroom: one reading synchronous 19.46 ms vs pipelined 3.66 ms (ratio 0.19 vs 0.25 limit) at load ~5; on a loaded host it could flake (not seen in 12+ runs here, load 3-11).",
+  "Mutants M1 (reset after SimBridge.new) and M2b (reset only in the pipelined run) survive: they are equivalent (the first run starts from a fresh process counter and no CrewConsole is built in between). The reset is only load-bearing in the second run, as designed.",
+  "The sent journal does not record the heartbeat dt: a 1% dt divergence in one pipelined tick is caught only by 'same world at the end', and a 1e-9 relative divergence is below the world's resolution and survives (M8). The pipelined-vs-sync check has that sensitivity floor.",
+  "Fragile coupling: the test writes the private CrewConsole._serial; if production renames or scopes it the test hits a SCRIPT ERROR (the gate would refuse, so loud not silent).",
+  "Design doc has 13 mentions of 'ship-demo-ci: sim-pipeline-test' (prose about the deferred row 7ab); no code/Makefile line contains it."
+ ],
+ "acceptance": {
+  "AC1": "pass: twice 'script-gate: sim-pipeline-test ok: sim-pipeline: 8 passed, 0 failures (rc 0, no SCRIPT ERROR, 67 s / 48 s of 600 s)', rc=0 both",
+  "AC2": "pass: 8 / 0 / 4",
+  "AC3": "pass: 239 invocations: 121 through $(SCRIPT_GATE), 118 on the baseline; prereqs ok; rc 0",
+  "AC4": "pass: 'baseline has 118 rows but SCRIPT_GATE_BASELINE_ROWS is 119 ...'; 0; 118",
+  "AC5": "pass: rc=1, 1 lint line, 'stale baseline row ... sim-pipeline-test tests/test_sim_pipeline.gd'; row back with pin 118 is refused too (rows 119 vs pin 118)",
+  "AC6": "pass: 0 1 0 1 (revision-2 expectation)",
+  "AC7": "pass: drills d0 k1..k7 all ok, 'sim-pipeline-drill: ok (8 drills ...)', rc=0, git status --porcelain empty afterwards",
+  "AC8": "pass: PAGE_TICK sync=40 piped=39 piped_drained=40; PAGE_CREW same true/true; SENT_LEN 60 60; WORLD_DIFF key crew; DRAINED_VARIANT all false; diag: done; 1; 1; tc6-61-1-pilot and tc6-61-2-pilot",
+  "AC9": "pass: 0; 0; uid-guard ok (406); python-guard ok (21); gates-ok",
+  "AC10": "pass: gh pr checks 402: 'fast tier (lock, strict VM, parity, replay) pass 13m32s' (was pending at start); log count of '118 on the baseline' read in the next step of this eval"
+ },
+ "mutants": [
+  {"id": "M1", "mutation": "move CrewConsole._serial=0 after SimBridge.new()", "result": "survived (equivalent: nothing builds a console between)"},
+  {"id": "M2", "mutation": "reset only in the synchronous run", "result": "killed: 3 FAIL (sent journal, world, crew), 5 passed 3 failures"},
+  {"id": "M2b", "mutation": "reset only in the pipelined run", "result": "survived (equivalent: first run starts at a fresh counter)"},
+  {"id": "M3", "mutation": "summary 'passes' instead of 'passed'", "result": "killed by the gate (no summary line matching ERE)"},
+  {"id": "M4a", "mutation": "tick-41 sends no offer", "result": "killed only by the new non-vacuity check (7 passed, 1 failure); the equality checks stay green"},
+  {"id": "M4b", "mutation": "M4a plus non-vacuity weakened to offer_n >= 0", "result": "survived (shows the check is the sole guard and it bites)"},
+  {"id": "M5", "mutation": "pipelined run skips the tick-21 crew_orders", "result": "killed: sent journal, world, crew"},
+  {"id": "M6", "mutation": "pipelined run skips the final drain", "result": "killed: both runs complete, same world"},
+  {"id": "M7", "mutation": "never pipelined (sim.pipelined=false)", "result": "killed by the timing check only"},
+  {"id": "M8", "mutation": "pipelined tick 33 dt scaled by 1+1e-9", "result": "survived (below world resolution; sensitivity floor)"},
+  {"id": "M8b", "mutation": "pipelined tick 33 dt scaled by 1.01", "result": "killed by 'same world at the end' (journal does not record dt)"},
+  {"id": "M9", "mutation": "summary prints 0 passed", "result": "killed by the gate ERE"},
+  {"id": "M9b", "mutation": "Makefile ERE loosened to [0-9]*, with real output", "result": "killed by the gate helper's zero-probe (SUMMARY_ERE also matches 0 passed)"},
+  {"id": "baseline-row-readd", "mutation": "re-add baseline row with pin 119 and with pin 118", "result": "killed by script-gate-lint both ways"}
+ ],
+ "mutants_summary": "14 run; 10 killed; 3 survived-equivalent or below-resolution (M1, M2b, M8); M4b is an intended weakened-check survivor. Every file restored via git checkout and cmp; git status --porcelain empty.",
+ "attribution": "The pass is due to equal inputs: k1 (drill) and M2 show removing/halving the reset brings back the three FAIL lines, AC8 shows the id difference tc6-61-1 vs tc6-61-2 only. The test still catches real pipelined divergence (M5, M6, M8b, k2). The static counter in ui/crew_console.gd is unchanged (line 44 'static var _serial := 0'); no production diff.",
+ "scope": "git diff base..head touches only Makefile, mk/script-gates.mk, tools/script-gate-baseline.txt, tests/test_sim_pipeline.gd, changelog fragment, design doc, sprint plan, sprint JSON; no bridge/ sim/ ui/ files; no ship-demo-ci: sim-pipeline-test line in code; uid-guard, python-guard, git diff --check pass.",
+ "host": "load avg 9-11 at start, 3-5 later; no flake on the timing assertion in 15 runs; one reading 19.46 ms sync / 3.66 ms piped.",
+ "evidence": "Logs at .godot/tmp/sim-pipeline.log, .godot/tmp/7aa/diag.log in the eval clone; mutation script /tmp/iter73_mut.sh."
+}

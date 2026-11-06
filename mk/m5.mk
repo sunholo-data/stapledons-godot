@@ -70,7 +70,7 @@ acen-snapshot-verify: ## the local snapshot matches data/planets/EXOPLANETS.SHA2
 
 # ------------------------------------------------------------ M5.2a globes, photometry, textures
 planets-test: planet-assets ## M5.2a: SystemView on the recorded system section, point/disc switch, placement, albedo table (headless)
-	$(GODOT) --headless --path . --script tests/test_planets.gd
+	@$(SCRIPT_GATE) planets-test $(SCRATCH)/planets-test.log 600 '^planets: [1-9][0-9]* passed, 0 failed$$' -- $(GODOT) --headless --path . --script tests/test_planets.gd
 
 # Planet albedo textures (D-18 pattern): pins and CREDITS tracked in data/planets/, files in the
 # gitignored assets/planets/. planet-publish uploads to the public bucket (maintainers, gcloud):
@@ -88,19 +88,17 @@ planet-textures:   ## M5.2a: rewrite data/planets/ALBEDO from the fetched textur
 	$(GODOT) --headless --path . --script tools/planet_textures.gd -- --write
 
 planet-textures-check: planet-assets ## every declared texture's disc-integrated albedo = p_V within 1% (missing maps fail)
-	@mkdir -p $(SCRATCH)
-	@$(GODOT) --headless --path . --script tools/planet_textures.gd -- --check > $(SCRATCH)/planet-textures.log 2>&1; rc=$$?; \
-	  grep -E '^(ok|FAIL|planet-textures)' $(SCRATCH)/planet-textures.log; test $$rc = 0
+	@$(SCRIPT_GATE) planet-textures-check $(SCRATCH)/planet-textures.log 600 '^planet-textures check: [1-9][0-9]* textures, 0 failures$$' -- $(GODOT) --headless --path . --script tools/planet_textures.gd -- --check
 
 golden-m5:         ## M5 GPU goldens alone (needs a GPU window): G-M5-4 Jupiter photometry, G-M5-6 point/disc handoff
 	@mkdir -p $(SCRATCH)
-	@perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
+	@perl -e 'alarm 900; exec @ARGV' $(GODOT) $(AUDIO_OFF) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
 	  test $$rc = 0 && grep -q '^ok    G-M5-4 Jupiter at opposition (uniform p_V' $(SCRATCH)/golden-m5.log && \
 	  grep -q '^ok    G-M5-6 point/disc handoff' $(SCRATCH)/golden-m5.log && grep -q '^m5 golden: 0 failures$$' $(SCRATCH)/golden-m5.log || \
 	  { echo "golden-m5: FAILED (exit $$rc, or a G-M5-4 / G-M5-6 line is missing)"; exit 1; }
 
 capture-m5a:       ## M5.2a reference renders (needs a GPU window) -> renders/m5/m5.2a/: nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet
-	perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --capture-m5=renders/m5/m5.2a
+	perl -e 'alarm 900; exec @ARGV' $(GODOT) $(AUDIO_OFF) --path . -- --capture-m5=renders/m5/m5.2a
 
 # ------------------------------------------------------------ planet textures in exported builds
 # assets/planets is .gdignore'd, so Godot's export skips it (the sky_bundle / areas_bundle
@@ -140,7 +138,7 @@ alpha-centauri-source-test:
 	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry alphaFixtures --args-json 0 sim/tools/alpha_star_probe.ail > $(SCRATCH)/alpha-physical-fixture.json
 	@cmp $(SCRATCH)/alpha-physical-fixture.json tests/fixtures/alpha_centauri_physical.json && echo 'alpha fixture: matches pinned producer'
 alpha-centauri-test: import alpha-centauri-source-test
-	@$(GODOT_SIM) --headless --path . --script tests/test_alpha_centauri.gd > $(SCRATCH)/alpha-centauri.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri.log && grep -q '^alpha-centauri: [0-9]* passed, 0 failures$$' $(SCRATCH)/alpha-centauri.log
+	@$(SCRIPT_GATE) alpha-centauri-test $(SCRATCH)/alpha-centauri.log 600 '^alpha-centauri: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_alpha_centauri.gd
 alpha-centauri-golden:
-	@$(GODOT_SIM) --path . --script tools/alpha_centauri_golden.gd > $(SCRATCH)/alpha-centauri-golden.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri-golden.log && grep -q '^alpha-centauri-golden: 10 cases, 0 failures$$' $(SCRATCH)/alpha-centauri-golden.log
+	@$(SCRIPT_GATE) alpha-centauri-golden $(SCRATCH)/alpha-centauri-golden.log 600 '^alpha-centauri-golden: 10 cases, 0 failures; worst [0-9]+\.[0-9]+$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/alpha_centauri_golden.gd
 m5-test: alpha-centauri-test

@@ -128,7 +128,8 @@
       "archive_terminal",
       "archive_detail",
       "rim_frond",
-      "lift"
+      "lift",
+      "monitor"
     ],
     "dressing": {
       "about": "R2-BRIDGE-STYLE S5 (ShipDressing): below_rail = grown canopy silhouettes standing on the Commons deck (57 m) past the bridge's edge, inside the bubble, shown on the bridge only. (The camera-attached foreground cards were removed on Mark's review of #322.)",

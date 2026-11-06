@@ -1,0 +1,3 @@
+lore-values: 149 HB rows, 40 RS rows, 36 IS rows, 45 LW rows, 17 package values, 3 m4 values -> data/lore/check_values.json; every package value equals its HB row at printed s.f.; m4:glow_eps <= HB-61
+lore-check: 3 entries, every unlock a known hint, every check id resolved, every number bound but 0 allowed (270 registry rows)
+

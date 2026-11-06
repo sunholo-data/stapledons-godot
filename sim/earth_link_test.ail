@@ -19,7 +19,7 @@ import std/option (Option, Some, None)
 import std/list (length, foldl)
 import std/math (exp, sqrt)
 import std/string (concat, join, contains, intToStr)
-import ./protocol (Session, newSession, serve, earthMinor, archiveMinor, surfaceMinor)
+import ./protocol (Session, newSession, serve, earthMinor, archiveMinor, surfaceMinor, worldsMinor)
 
 pure func elAll(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
 pure func elNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
@@ -300,7 +300,7 @@ pure func checkWire() -> bool {
   let m15 = reply(feed(s15, [tickLine(1, "0", planA()), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]), tickLine(3, "1", ""));
   let q16 = reply(s16, tickLine(1, "0", ""));
   elAll([earthMinor() == surfaceMinor() + 3, earthMinor() == 16, contains(reply(newSession(), helloLine(earthMinor())), "\"minor\":16"),
-    contains(reply(newSession(), helloLine(earthMinor() + 5)), "\"minor\":16"), contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15"),
+    contains(reply(newSession(), helloLine(earthMinor() + 5)), "\"minor\":18"), contains(reply(newSession(), helloLine(archiveMinor())), "\"minor\":15"),
     -- 2.16: the full state carries earth; at Sol before any commit: rate 1, in beam, no messages
     contains(g16, "\"earth\":{\"rate\":1,\"rate_inverse\":1,"), contains(g16, "\"at_home\":true,\"in_beam\":true,\"sending\":true,\"last_beam_t\":0,"),
     contains(g16, "\"out\":null,\"feed\":{\"frame\":0,"), contains(g16, "\"beam\":null,\"stale\":[],\"pending\":[],\"window\":null,\"preview\":null,\"messages\":[]}"),

@@ -1,0 +1,15 @@
+module stapledons/sim/data/detect
+-- W1.3 detection seam. There is no production backend until S2 publishes
+-- sunholo/observe 0.2.0's photon budgets. Aperture is an instrument parameter,
+-- never a reach. Loudness receives a fixed keyed rank, independent of the dial.
+-- The ideal backend exists only for labelled development diagnostics.
+import std/option (Option,None)
+export type Instrument = {id:string,diameterM:float,provisional:bool}
+export pure func instrument() -> Instrument = {id:"worlds-provisional-10m",diameterM:10.0,provisional:true}
+export type Detect = {id:string,supportLy:float,photonBudget:bool,response:(string,float,float)->float ! {}}
+export pure func noDetector() -> Detect = {id:"unconfigured-S2-required",supportLy:0.0,photonBudget:false,response:\kind distance rank. 0.0}
+export pure func configuredDetector() -> Option[Detect] = None
+-- Caller-supplied spatial support is a diagnostic selection, not an asserted
+-- telescope reach. Every state inside it is detected at unit strength.
+export pure func idealDetector(supportLy:float) -> Detect =
+ {id:"ideal-diagnostic-only",supportLy:supportLy,photonBudget:false,response:\kind distance rank. if distance<=supportLy then 1.0 else 0.0}

@@ -1,9 +1,10 @@
 extends SceneTree
 const Upload=preload('res://demos/benchmark_upload.gd')
 var failed:=0
+var passes:=0
 func check(ok:bool,label:String)->void:
 	print(('ok ' if ok else 'FAIL ')+label)
-	if not ok:failed+=1
+	passes+=int(ok);failed+=int(not ok)
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var source:Dictionary={'build':'fixture','resolution':[1920,1080],'measured_hardware':{'cpu':'Apple M2','memory':{'free':123},'path':'/Users/private'},'sky_review':{'beta':0.,'private':'/Users/private'},'views':[{'view':'bridge','frame_times':{'p95_ms':19.},'frame_times_ms':[16.,50.,229.],'private':'/Users/private'}]}
@@ -24,4 +25,4 @@ func _run()->void:
 		check(result.ok==(code==0) and (not result.url.is_empty())==(code==0),'link only appears after confirmed upload success')
 		check(upload.poll().is_empty(),'completion delivered once')
 		if code!=0:check(result.status.contains('local report retained'),'failed upload retains local fallback')
-	print('benchmark-upload: %d failures'%failed);quit(1 if failed else 0)
+	print('benchmark-upload: %d passed, %d failures'%[passes,failed]);quit(1 if failed else 0)

@@ -1,0 +1,208 @@
+module stapledons/sim/earth_log_test
+
+-- R3-COMMS-V2 CV1 (design r3/comms-station-v2.md §D1, AC1–AC4): the received-frame log.
+-- Synthetic ticks drive noteLight directly (the merge, the split, the bound). A real flight through
+-- core.tick checks the invariants at every tick: contiguous weeks, nothing from the future, the send
+-- event on the light cone, the ship-at-send lookup, the Earth rate at arrival. The 2.18 wire is
+-- checked through protocol.serve. Expected values are closed forms or brute-force reference walks,
+-- never this module's own output.
+import ./core (World, Intent, IPlan, ICommit, Target, defaultParams, newWorld, tick, position, earthOf, shipYearsLeft, tauTotalOf)
+import ./earth_link (Link, emptyLink)
+import ./earth_log (ELog, Arrival, ShipAt, emptyLog, noteLight, records, recordCount, shipAt, dayOf, beamedWeeks)
+import ./earth_feed (frameOf, feedBinYears)
+import ./protocol (Session, newSession, serve, earthMinor, earthLogMinor)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import pkg/sunholo/relativity/hyper (absf)
+import std/option (Option, Some, None)
+import std/list (length, foldl, reverse)
+import std/string (concat, join, contains, intToStr)
+import std/math (intToFloat)
+import std/json (encode, jnum)
+
+pure func lgAll(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func allOf(p: a -> bool, xs: [a]) -> bool = foldl(\acc x. acc && p(x), true, xs)
+pure func v(x: float, y: float, z: float) -> Vec3 = { x: x, y: y, z: z }
+pure func zero() -> Vec3 = v(0.0, 0.0, 0.0)
+pure func day() -> float = 1.0 / 365.25
+pure func silent() -> Link = {emptyLink() | sending: false}
+
+-- ------------------------------------------------------------ departure, merge and split
+pure func checkDeparture() -> bool {
+  let g = noteLight(emptyLog(), emptyLink(), 0.0, 0.0, zero(), 1.0, None);
+  match records(g) {
+    r :: [] => lgAll([r.fromFrame == 0, r.toFrame == 0, r.beamed, r.day == 0, g.lastFrame == 0, r.sentT == 0.0]),
+    _ => false
+  }
+}
+test "week 0 is logged at departure, in beam at home" { checkDeparture() }
+
+-- At home (in beam), galaxy time jumps 2.6 weeks per tick while proper time moves a few minutes:
+-- two ticks in ship day 0 share one record; the next ship day opens a new one.
+pure func checkMerge() -> bool {
+  let g1 = noteLight(emptyLog(), emptyLink(), 0.0, 0.0, zero(), 1.0, None);
+  let g2 = noteLight(g1, emptyLink(), 0.05, 0.0001, zero(), 500.0, None);
+  let g3 = noteLight(g2, emptyLink(), 0.10, 0.0002, zero(), 500.0, None);
+  let g4 = noteLight(g3, emptyLink(), 0.15, 0.0002 + day(), zero(), 500.0, None);
+  lgAll([recordCount(g3) == 1, recordCount(g4) == 2, g3.lastFrame == frameOf(0.10), g4.lastFrame == frameOf(0.15),
+    (match records(g3) { r :: [] => r.fromFrame == 0 && r.toFrame == frameOf(0.10) && r.arrived.rate == 500.0, _ => false }),
+    (match records(g4) { a :: b :: [] => a.toFrame + 1 == b.fromFrame && b.toFrame == frameOf(0.15) && b.day == 1, _ => false })])
+}
+test "weeks arriving in one ship day share a record; the next day opens a new one" { checkMerge() }
+
+-- Same ship day, but Earth stops sending (out of beam): the beam change splits the record.
+pure func checkSplit() -> bool {
+  let g1 = noteLight(emptyLog(), emptyLink(), 0.05, 0.0001, zero(), 500.0, None);
+  let g2 = noteLight(g1, silent(), 0.10, 0.0002, zero(), 500.0, None);
+  match records(g2) {
+    a :: b :: [] => lgAll([a.beamed, !b.beamed, a.day == b.day, a.toFrame + 1 == b.fromFrame]),
+    _ => false
+  }
+}
+test "a change of beam inside a ship day splits the record" { checkSplit() }
+
+-- No new week: no new record, and nothing changes but the track.
+pure func checkNoNewWeek() -> bool {
+  let g1 = noteLight(emptyLog(), emptyLink(), 0.0, 0.0, zero(), 1.0, None);
+  let g2 = noteLight(g1, emptyLink(), 0.001, 0.001, zero(), 1.0, None);
+  lgAll([recordCount(g2) == 1, g2.lastFrame == 0, length(g2.track) == 1])
+}
+test "a tick with no new week adds no record" { checkNoNewWeek() }
+
+-- ------------------------------------------------------------ the bound (AC1)
+-- 3 ship years at one tick a ship day, Earth's history pouring in at 1414 weeks a year: at most one
+-- record per ship day plus one per change of beam (none here).
+pure func pour(g: ELog, n: int, i: int) -> ELog =
+  if i >= n then g else {
+    let tau = (intToFloat(i) + 0.5) * day();
+    pour(noteLight(g, emptyLink(), 1414.2 * tau, tau, zero(), 1414.2, None), n, i + 1)
+  }
+pure func checkBound() -> bool {
+  let n = 3 * 365;
+  let g = pour(emptyLog(), n, 0);
+  lgAll([recordCount(g) <= n + 1, recordCount(g) >= n - 1, g.lastFrame == frameOf(1414.2 * (intToFloat(n - 1) + 0.5) * day()), contiguous(records(g), 0)])
+}
+export pure func boundProbe(n: int) -> string {
+  let g = pour(emptyLog(), n, 0);
+  concat([intToStr(recordCount(g)), " ", intToStr(g.lastFrame), " ", intToStr(frameOf(1414.2 * (intToFloat(n - 1) + 0.5) * day())), " ", if contiguous(records(g), 0) then "contig" else "gap"])
+}
+test "the log grows by at most one record a ship day" { checkBound() }
+
+pure func contiguous(rs: [Arrival], next: int) -> bool =
+  match rs { [] => true, r :: rest => r.fromFrame == next && r.toFrame >= r.fromFrame && contiguous(rest, r.toFrame + 1) }
+
+-- ------------------------------------------------------------ the ship-at-send lookup
+-- Reference: walk the track oldest first and keep the last sample with t <= te.
+pure func refShipAt(track: [ShipAt], te: float) -> Option[ShipAt] =
+  foldl(\acc s. if s.t <= te then Some(s) else acc, None, reverse(track))
+pure func sameAt(a: Option[ShipAt], b: Option[ShipAt]) -> bool =
+  match (a, b) { (Some(x), Some(y)) => x.t == y.t && x.tau == y.tau, (None, None) => true, _ => false }
+pure func checkShipAt() -> bool {
+  let tr = [{ t: 3.0, tau: 0.3, p: zero(), ly: 0.0, day: 3 }, { t: 2.0, tau: 0.2, p: zero(), ly: 0.0, day: 2 }, { t: 1.0, tau: 0.1, p: zero(), ly: 0.0, day: 1 }];
+  lgAll([sameAt(shipAt(tr, 2.5), refShipAt(tr, 2.5)), sameAt(shipAt(tr, 0.5), refShipAt(tr, 0.5)), sameAt(shipAt(tr, 9.0), refShipAt(tr, 9.0)),
+    sameAt(shipAt(tr, 2.0), refShipAt(tr, 2.0)), sameAt(shipAt([], 1.0), None)])
+}
+test "the ship when Earth sent the light: the newest track sample at or before sent t" { checkShipAt() }
+
+-- ------------------------------------------------------------ a real flight (AC2, AC3)
+pure func portA() -> Target = { index: 1, id: "A", pos: v(4.0, 0.0, 0.0) }
+pure func run(w: World, dtau: float, xs: [Intent]) -> World = (tick(w, { dtau: dtau, intents: xs })).world
+pure func launched() -> World {
+  let w0 = newWorld(7, false, defaultParams());
+  let p = run(w0, 0.0, [IPlan({ target: portA(), cruisePhi: rapidityOfBeta(0.99), flipG: None, star: None })]);
+  run(p, 0.0, [ICommit(p.lastPlanId)])
+}
+-- Every tick: the invariants hold on the world after it.
+pure func okAt(w: World) -> bool {
+  let g = w.elog;
+  let p = position(w.ship);
+  let te = w.ship.motion.t - norm(p);
+  let rs = records(g);
+  let opened = match g.open {
+    Some(o) => lgAll([absf(o.sentT - (o.arrived.t - o.arrived.ly)) <= 0.000000000001, o.arrived.tau <= w.ship.motion.tau,
+      (match o.shipAtSent { Some(s) => s.t <= o.sentT, None => true }),
+      sameAt(o.shipAtSent, refShipAt(g.track, o.sentT)),
+      -- the open record updated this tick carries this tick's Earth rate
+      (if o.arrived.t == w.ship.motion.t then o.arrived.rate == (earthOf(w)).rate else true)]),
+    None => false
+  };
+  lgAll([contiguous(rs, 0), g.lastFrame == frameOf(te), allOf(\r. r.toFrame <= frameOf(te) && r.arrived.tau <= w.ship.motion.tau, rs), opened])
+}
+pure func fly(w: World, n: int, ok: bool) -> bool =
+  if n <= 0 || !ok then ok else { let nx = run(w, 0.01, []); fly(nx, n - 1, okAt(nx)) }
+pure func checkFlight() -> bool = fly(launched(), 120, true)
+-- CV5 (OQ12): ship years left on the committed leg = the trip's proper time less what has elapsed.
+pure func checkYearsLeft() -> bool {
+  let c = launched();
+  let total = tauTotalOf(c);
+  let mid = run(c, total / 2.0, []);
+  lgAll([absf(shipYearsLeft(c) - total) <= 0.000000001, absf(shipYearsLeft(mid) - total / 2.0) <= 0.000001, shipYearsLeft(newWorld(7, false, defaultParams())) == 0.0])
+}
+test "OQ12: ship years left on the committed leg" { checkYearsLeft() }
+test "a real flight: contiguous weeks, nothing from the future, the send event on the light cone, the rate at arrival" { checkFlight() }
+
+-- ------------------------------------------------------------ earth_weeks (D-68)
+pure func checkWeeks() -> bool {
+  let g1 = noteLight(emptyLog(), emptyLink(), 0.05, 0.0001, zero(), 500.0, None);
+  let g2 = noteLight(g1, silent(), 0.10, 0.0002, zero(), 500.0, None);
+  let a = frameOf(0.05);
+  let ws = beamedWeeks(g2, 0, 1000, 52);
+  lgAll([length(ws) == a + 1, allOf(\x. x <= a, ws), length(beamedWeeks(g2, 0, 1000, 2)) == 2, length(beamedWeeks(g2, a + 1, 1000, 52)) == 0,
+    length(beamedWeeks(g2, 0, 1000, 0)) == 0])
+}
+test "earth_weeks: only arrived, beamed weeks, at most cap" { checkWeeks() }
+
+-- ------------------------------------------------------------ the 2.18 wire (AC4)
+pure func helloLine(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
+pure func gameLine() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false}"
+pure func tickLine(t: int, dtau: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[]}"])
+pure func feedLines(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func weeksLine(t: int, a: int, b: int) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":0,\"intents\":[{\"k\":\"earth_weeks\",\"from\":", intToStr(a), ",\"to\":", intToStr(b), "}]}"])
+pure func row(i: int) -> string = concat(["{\"frame\":", intToStr(i), ",\"earth_year\":"])
+-- D1.3: after a year at rest (weeks 0..52 arrived), earth_weeks answers on its tick with the beamed,
+-- arrived weeks, oldest first, at most 52, each with its own Earth date; 2.16 refuses the intent.
+pure func checkWireWeeks() -> bool {
+  let s17 = serve(feedLines(newSession(), [helloLine(earthLogMinor()), gameLine()]), tickLine(1, "1")).session;
+  let s16 = serve(feedLines(newSession(), [helloLine(earthMinor()), gameLine()]), tickLine(1, "1")).session;
+  let s17w = serve(feedLines(newSession(), [helloLine(17), gameLine()]), tickLine(1, "1")).session;
+  let few = serve(s17, weeksLine(2, 3, 5)).reply;
+  let all = serve(s17, weeksLine(2, 0, 100000)).reply;
+  let none = serve(s17, tickLine(2, "0")).reply;
+  let week = feedBinYears();
+  lgAll([contains(few, concat(["\"earth_weeks\":{\"from\":3,\"to\":5,\"weeks\":[", row(3)])), contains(few, row(5)), !contains(few, row(6)), !contains(few, row(2)),
+    -- each week's own Earth date: epoch 0 + frame x week
+    contains(few, concat([row(4), encode(jnum(4.0 * week))])),
+    contains(all, row(0)), contains(all, row(51)), !contains(all, row(52)), frameOf(1.0) >= 52,
+    !contains(none, "earth_weeks"), contains(serve(s16, weeksLine(2, 0, 5)).reply, "bad_intent"), contains(serve(s17w, weeksLine(2, 0, 5)).reply, "bad_intent")])
+}
+test "D1.3: earth_weeks answers on its tick, clipped to arrived beamed weeks and 52 rows; 2.17 and 2.16 refuse it" { checkWireWeeks() }
+pure func checkWire17() -> bool {
+  let s17 = feedLines(newSession(), [helloLine(earthLogMinor()), gameLine()]);
+  let s16 = feedLines(newSession(), [helloLine(earthMinor()), gameLine()]);
+  let g17 = serve(feedLines(newSession(), [helloLine(earthLogMinor())]), gameLine()).reply;
+  let g16 = serve(feedLines(newSession(), [helloLine(earthMinor())]), gameLine()).reply;
+  let year17 = serve(s17, tickLine(1, "1")).reply;
+  let year16 = serve(s16, tickLine(1, "1")).reply;
+  let idle17 = serve(s17, tickLine(1, "0")).reply;
+  let gw = serve(feedLines(newSession(), [helloLine(17)]), gameLine()).reply;
+  lgAll([earthLogMinor() == 18, contains(serve(newSession(), helloLine(earthLogMinor())).reply, "\"minor\":18"),
+    contains(serve(newSession(), helloLine(99)).reply, "\"minor\":18"), contains(serve(newSession(), helloLine(17)).reply, "\"minor\":17"),
+    -- 2.17 is R3-WORLDS: it never sees the log or the course section
+    !contains(gw, "earth_log"), !contains(gw, "\"course\""), contains(serve(newSession(), helloLine(earthMinor())).reply, "\"minor\":16"),
+    -- 2.18 full state: the log with week 0, beamed, arrived at departure, and its feed
+    contains(g17, "\"earth_log\":{\"week_years\":"), contains(g17, "\"records\":[{\"from_frame\":0,\"to_frame\":0,\"beamed\":true,\"day\":0,"),
+    contains(g17, "\"ship_at_sent\":"), contains(g17, "\"feed\":{\"frame\":0,"),
+    -- a year at rest brings new weeks: the open record alone, on the tick
+    contains(year17, "\"earth_log_tail\":[{\"from_frame\":"), !contains(year17, "\"earth_log\":{"),
+    -- nothing new on an idle tick: no tail
+    !contains(idle17, "\"earth_log_tail\""),
+    -- 2.16 never sees the log
+    !contains(g16, "earth_log"), !contains(year16, "earth_log"),
+    -- CV5 (OQ12): the course section at 2.18 only, 0 ship years left when not flying
+    contains(g17, "\"course\":{\"ship_years_left\":0}"), !contains(g16, "\"course\"")])
+}
+test "AC4: the 2.18 earth_log in full states, its tail when the open record changes, the course section; 2.17 and 2.16 never see them" { checkWire17() }
+
+export pure func earthLogVm(n: int) -> string =
+  if checkDeparture() && checkMerge() && checkSplit() && checkNoNewWeek() && checkBound() && checkShipAt() && checkFlight() && checkYearsLeft() && checkWeeks() && checkWire17() && checkWireWeeks()
+  then "earth-log-ok" else "earth-log-BAD"

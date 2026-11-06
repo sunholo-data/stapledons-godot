@@ -1,0 +1,8 @@
+2026-11-03: make sim and worlds-leak were voluntarily interrupted with SIGTERM
+when the Studio one-minute load reached196.29 (5min175.37,15min136.16).
+make sim:161-file check passed; native package phase had not returned results.
+worlds-leak:all four VM/preset streams10000ticks/1514071bytes passed equality;
+four interpreter streams had not completed. Neither broader run is a full pass.
+These are additional local checks; user prohibits rig_check, orchestrator queues
+rig/full. Targeted48/48 strict tests, stronger label10/10, census, qualities,
+strict/parity/replay/guards, catalogue/oracle and lore checks passed separately.

@@ -1,0 +1,122 @@
+{
+  "eval": "R1-M4-JOURNEY 7x round 1 cross-family",
+  "judge": "GLM 5.3 (cross-family; executor was an Anthropic model)",
+  "worktree": "stapledons-godot clone, branch feat/m4-7x-script-gate-predicates at ec91549e, PR #393 (nothing committed or pushed by the judge)",
+  "design": "design_docs/planned/r1/m4-7x-script-gate-predicates.md (binding quorum round-2 amendments A1/A2 applied; quoted as 'r2 BLOCKED 1/3 (+1 salvaged), fixes applied under the carve-out')",
+  "plan": "design_docs/planned/r1/m4-7x-script-gate-predicates-sprint.md",
+  "score": 93,
+  "pass": true,
+  "blocking": [],
+  "non_blocking": [
+    "AC4 (full `make sim`, ~40 min + pinned runtime) run by no one yet: executor brief assigns it to the controller, and the judge worktree lacks runtime/bin (PATH ailang is an unpinned v0.57-dirty). Wiring is textual (matches W5's diff exactly) and sim-bridge/bh-hud-test were green standalone in the executor receipt; residual risk small but real until the controller runs it.",
+    "AC13 (GitHub fast tier = first Linux/dash/mawk run of lint+helper) not yet run: network-less sandbox; controller merge gate. mawk untested anywhere; constructs are POSIX-awk only (no gawk-isms) and the same construct class already runs in ci-fast via audio_silent_guard, so risk is low but not zero.",
+    "Judge sandbox could not reproduce the green rc=0 of AC1/AC2/AC18: pgrep/pkill process enumeration is denied ('sysmon request failed', '/bin/ps: Operation not permitted'), so the A2 known-positive orphan control cannot run here; all 18 case_ results were individually ok first-hand (stronger than rc alone), and the executor harness recorded rc=0 for all three. Likewise test-bright-audit/star-catalogue-test could not rerun green here: the sandbox denies user:// writes ($HOME/Library/.../app_userdata), which those tests need for scratch fixtures (probe: DirAccess.make_dir_recursive_absolute -> rc 20, 'Could not create directory'); area-test reran green live (80 passed, 0 failed). Environment artifacts, not code defects.",
+    "A2 supervisor code exists in two inline copies (tools/script_gate.sh and SG_SUP in mk/script-gates.mk) - drift risk between the two; documented as deviation (2) in the executor receipt, permitted by A2's inline-or-separate-file wording.",
+    "tests/test_sim_bridge.gd: the rewritten line 'var scratch :=ProjectSettings.globalize_path(...)' lost a space after ':=' (GDScript-valid, cosmetic; the design's diff kept the original line).",
+    "stub-orphan-child uses per-run sleep durations o=700000+$$%100000 (commit 678b4928) instead of the doc's literal sleep 977/978: correct adaptation (AC18 -j2 showed the two concurrent runs' global pgrep seeing each other's fixed orphan), but under -j2 the two shells' $$ could collide (~1e-5) and a third process with an identical cmdline would confuse the check; anchored ^sleep N$ patterns keep it tight. Acceptable.",
+    "Prior/parallel evaluator-attempt scratch artifacts were present in .godot/tmp/eval2/ (m1-no-script-error.sh byte-identical to the judge's M1, m2-line-gated.sh = same round-0 semantics, orphan.log/pid, timestamps 14:05-14:06): unused by this judge, no tracked-file contamination (git status clean), evidence below is entirely this session's own runs.",
+    "tests/fixtures and helper comments contain no .gd tracked files (fixtures are .txt), so uid-guard unaffected; no Python added; shellcheck -s sh clean on all three new scripts."
+  ],
+  "ac_results": {
+    "AC1_selftest": {
+      "cmd": "make script-gate-selftest",
+      "rc": 2,
+      "key_output": "12 of 12 stub case_ lines 'ok' incl. A2's 'ok stub-ignore-alrm (exit 1 in 4 s: timeout after 2 s)' and 'ok stub-orphan-child (exit 1 in 2 s: timeout after 2 s)'; rc 2 solely from the sandbox pgrep denial on the A2 known-positive control ('FAIL stub-orphan-child: control (sleep N) not visible to pgrep' - pgrep: Cannot get process list). Executor harness recorded rc=0, footer 'ok (12 cases: 12 stub, 0 Godot)'. Under dash: same 12 ok cases."
+    },
+    "AC2_drill_real_godot": {
+      "cmd": "make script-gate-drill (real /opt/homebrew/bin/godot 4.7.2.stable)",
+      "rc": 2,
+      "key_output": "secs=23 (<120); all 18 cases ok first-hand: 'ok raw-parse-rc0 (exit 0 ...: SCRIPT ERROR: Parse Error)' (premise re-measured), 'ok godot-pass', 'ok godot-parse (exit 1 ...: SCRIPT ERROR line(s))', 'ok godot-hang (exit 1 in 10 s: timeout after 10 s (rc 142))' (supervisor kills a hung real Godot), 'ok godot-nosummary', 'ok make-sim-parse (exit 2 ...: script-gate: sim-bridge FAIL; 1 SCRIPT ERROR line(s))' (= AC3 GREEN shape); only failure = the same sandbox pgrep control."
+    },
+    "AC3_GREEN": "verified via the drill's make-sim-parse case: gate fed the parse fixture through make sim-bridge exits 2 with 'script-gate: sim-bridge FAIL; 1 SCRIPT ERROR line(s)' - the row's RED premise (rc 0 on a script that never parsed) was re-measured live by raw-parse-rc0.",
+    "AC4_make_sim": "NOT RUN (controller-owned, ~40 min, needs the pinned runtime absent from this evaluator worktree). Executor substitutes green: sim-bridge ok 'sim bridge: 110 passed, 0 failures (rc 0, no SCRIPT ERROR, 95 s of 900 s)', bh-hud-test green. Wiring in the landed Makefile matches W5's diff block byte-for-byte (six hunks).",
+    "AC5_four_gates": {
+      "cmd": "make area-test test-bright-audit star-catalogue-test / make ui",
+      "rc": "partial in judge sandbox",
+      "key_output": "area-test rerun green LIVE after godot --import: 'script-gate: area-test ok: 80 passed, 0 failed' (exact AC5 count; first attempt before import correctly FAILED the gate on 44 SCRIPT ERROR lines + no summary - the gate catching exactly the rc-0 premise). test-bright-audit/star-catalogue-test blocked by sandbox user:// write denial (test's own fixture writes fail -> its runtime error -> hang -> gate would FAIL at its 600 s ceiling; probe proved mkdir rc 20); ui needs the unpinned sim. Executor receipt + design V9/V10/V19/V30: all four green, 205/80/16/40."
+    },
+    "AC6_lint": {
+      "cmd": "make script-gate-lint",
+      "rc": 0,
+      "key_output": "script-gate-lint: ok (237 --script invocations: 5 through $(SCRIPT_GATE), 232 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned) - byte-identical to the doc's expected line; embedded negative control (2 unguarded/1 stale/3 include-outside/1 not-scanned) and pin control passed silently."
+    },
+    "inventory_wc": {
+      "cmd": "sh tools/script_gate_lint.sh --inventory | wc -l",
+      "key_output": "literal form (no pin env): 0 rows on stdout, pin :? message on stderr - SCRIPT_GATE_BASELINE_ROWS is mandatory by design (SG_LINT/make pass it). With pin: 237 rows (= AC6's 237 occurrences)."
+    },
+    "AC7a_new_unguarded": {
+      "cmd": "probe mk/zz-7x-probe.mk -> make script-gate-lint -> rm",
+      "rc": 2,
+      "key_output": "count 1 'not on the baseline: x7x tests/x7x.gd' + 'mk/zz-7x-probe.mk is not included by any scanned makefile'; probe removed, worktree clean."
+    },
+    "AC7b_pin": {
+      "cmd": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=231 2>&1 | tail -2",
+      "rc": 2,
+      "key_output": "'the baseline has 232 rows but SCRIPT_GATE_BASELINE_ROWS is 231: the pin moves with the rows, and only down' + 'make: *** [script-gate-lint] Error 1' - doc-literal."
+    },
+    "AC7c_stale": {
+      "cmd": "cp baseline + append 'sim<TAB>tests/test_sim_bridge.gd' + SCRIPT_GATE_BASELINE=... ROWS=233 sh tools/script_gate_lint.sh",
+      "rc": 1,
+      "key_output": "'stale baseline row (no longer unguarded): delete it and lower SCRIPT_GATE_BASELINE_ROWS: sim tests/test_sim_bridge.gd' - doc-literal."
+    },
+    "AC9_wiring": {
+      "cmd": "for t in test ci-fast; do make -pn | grep ...",
+      "key_output": "test: script-gate-drill script-gate-lint script-gate-selftest / ci-fast: script-gate-lint script-gate-selftest - exact."
+    },
+    "AC10_policy": {
+      "cmd": "shellcheck -s sh <3 scripts>; git diff --check origin/main",
+      "rc": 0,
+      "key_output": "shellcheck clean; git diff --check clean (head ec91549e reformatted the doc's fenced diff blocks after the executor's recorded 44 false positives; landed files authoritative). uid-guard/python-guard/audio-silent-guard/lint-precision green in the executor receipt (this judge ran the shellcheck+diff halves)."
+    },
+    "AC11_scope": {
+      "key_output": "outside allowlist: 0; do-not-touch/open-PR files: 0; Makefile @@ hunks: 6 - all doc-expected."
+    },
+    "AC12_summaries": {
+      "key_output": "1 / 1 / 0 - counted summaries present, old 'if not ok: failures += 1' gone."
+    },
+    "AC13_ci": "NOT RUN (controller merge gate; network-less sandbox).",
+    "AC14c_control_counts": {
+      "key_output": "lint-negative.log: 3 include-outside + 1 makefile-not-scanned (tools/stray.mk) - doc-expected 3/1; produced by the embedded control inside the green make script-gate-lint."
+    },
+    "AC15_per_occurrence": {
+      "cmd": "SCRIPT_GATE_FILES=tests/fixtures/script_gate/lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh tools/script_gate_lint.sh --inventory | cut -f2-4; grep -c 'not on the baseline: mixed tests/m2.gd$' .godot/tmp/script-gate/lint-negative.log",
+      "rc": 0,
+      "key_output": "exactly the doc's six rows incl. 'mixed tests/m2.gd ungated' (the round-1 objection-3 fix) and 'quoted-separators tests/q.gd gated'; grep count 1."
+    },
+    "AC16_supervisor_cases": {
+      "key_output": "both A2 cases ok in AC1 (ignore-alrm killed at deadline in 4 s; orphan-child killed in 2 s); 'pgrep -f sleep 977 | wc -l' -> 0 (trivially - durations are per-run now; also pgrep-denied sandbox)."
+    },
+    "AC18_disjoint_roots": {
+      "cmd": "make -j2 script-gate-selftest script-gate-drill",
+      "rc": 2,
+      "key_output": "rc 2 solely from the sandbox pgrep control in both targets; the A1 substance verified: .godot/tmp/script-gate/selftest (s1..s12 logs) and .godot/tmp/script-gate/drill (g1..g4, fixtures, own sim-parse.log) both exist, no log clobbering between the concurrent runs. Executor: rc=0 (22 s) after the 678b4928 per-run-duration fix; before it rc=2 from the global pgrep collision."
+    },
+    "portability": {
+      "key_output": "lint and gate run green under /bin/dash (Linux CI's sh) and bash-as-sh; all constructs POSIX (case patterns, [ ] tests, printf tabs, comm+LC_ALL=C, POSIX-awk only: function-local params by convention, index/substr/match/gsub/split, no gawk-isms; no mawk on this Mac so mawk deferred to AC13); pgrep/pkill anchored patterns (procps on Ubuntu); mktemp template GNU/BSD-compatible; perl supervisor uses POSIX :sys_wait_h, setpgrp(0,0), negative-pid group kill, select undef sleep - portable macOS/Linux; GNU make 3.81 here (doc also used 4.4.1)."
+    }
+  },
+  "mutants": [
+    {
+      "id": "M1",
+      "description": "removed the SCRIPT ERROR check (both 'se=' and '|| why=' lines) from a copy of tools/script_gate.sh",
+      "cmd": "SCRIPT_GATE_SH=.godot/tmp/eval2/m1_gate.sh sh tools/test_script_gate.sh",
+      "status": "KILLED",
+      "evidence": "rc=1; 'test-script-gate: FAIL stub-parse: exit 0 in 0 s, want 1 within 10 s with 'SCRIPT ERROR line(s)'' - the drill catches a gate that passes a SCRIPT-ERROR log; footer 'FAIL 2 of 12 cases' (2nd = the sandbox pgrep control, present on healthy runs too)."
+    },
+    {
+      "id": "M2",
+      "description": "copy of tools/script_gate_lint.sh classing a whole logical line as gated if it contains $(SCRIPT_GATE) anywhere (round-0 semantics), run as AC15 does on tests/fixtures/script_gate/lint_negative.mk.txt",
+      "cmd": "SCRIPT_GATE_FILES=...lint_negative.mk.txt SCRIPT_GATE_BASELINE_ROWS=0 sh .godot/tmp/eval2/m2_lint.sh --inventory | cut -f2-4",
+      "status": "KILLED",
+      "evidence": "inventory prints 'mixed tests/m2.gd gated' instead of the expected 'mixed ... ungated' (the V28 round-0 defect) - AC15's exact-six-rows check rejects it. Second kill path: through the negative-control env the mutant reports 1 'unguarded --script gate not on the baseline' row where the landed make recipe asserts exactly 2 ('test $(grep -c ...)=2' fails -> 'the negative control flagged the wrong rows')."
+    },
+    {
+      "id": "M3",
+      "description": "copy of tools/script_gate_lint.sh with the stale-baseline-row check removed (the ratchet's other direction), run against AC7(c)'s appended-stale-row baseline (sim row, pin 233)",
+      "cmd": "SCRIPT_GATE_BASELINE=.godot/tmp/eval2/7x-b-m3.txt SCRIPT_GATE_BASELINE_ROWS=233 sh .godot/tmp/eval2/m3_lint.sh",
+      "status": "KILLED",
+      "evidence": "mutant rc=0 and prints 'ok (... 233 on the baseline ...)' where the healthy lint gives rc=1 with the stale-row message (verified earlier in AC7c) - AC7(c) detects that a stale row would ride the baseline unseen."
+    }
+  ],
+  "notes": "All three required mutants killed with first-hand evidence; no surviving mutant found. Landed code = design blocks + exactly the binding A1/A2 amendments (W2 byte-identical; W1/W3/W4 = doc + A1 SCRIPT_GATE_TMP disjoint roots + A2 supervisor/outer-deadline; supervisor matches A2's prototyped supervise.pl verbatim, inlined, with the setsid/setpgrp limit stated in the comment as A2 requires). Executor receipt is unusually honest: records the AC10 git-diff --check doc false-positive (fixed by head commit ec91549e), the AC18-driven 678b4928 fix, and leaves passes=false for the judge per F4. Environment limits of the judge sandbox (pgrep enumeration denied; user:// writes denied; no network; no pinned runtime) prevented rerunning AC1/AC2/AC18 to rc=0 and the bright/star/ui gates, but every case_ result was checked individually and the sandbox-blocked paths were proven to be environment, not code. Score rationale (100): helper+supervisor 25/25, lint+ratchet 20/20, drills+mutant resistance 15/15, wiring+A1 10/10, migrations 8/10 (area-test re-verified live at the exact doc count; ui/bright/star executor-verified only), portability 4/5 (mawk deferred to AC13), design conformance 5/5, process/closure 6/10 (AC4 unrun anywhere, AC13 pending; both controller-assigned per the plan). Verdict: PASS at 93/100 (70 needed). The mission's listed verifications (selftest, lint, inventory, AC7b, AC7c, AC15) all ran first-hand; selftest's rc=2 is the documented sandbox pgrep artifact, with all 12 stub cases individually green."
+}

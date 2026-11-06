@@ -41,11 +41,13 @@ const ALPHA_CEN_099 := {
 }
 
 var failures := 0
+var passes := 0
 var acen_a := -1 # catalogue indices, looked up by id once the catalogue loads
 var acen_b := -1
 
 func ok(name: String, cond: bool) -> void:
-	if not cond: failures += 1
+	if cond: passes += 1
+	else: failures += 1
 	print("  %s  %s" % ["ok  " if cond else "FAIL", name])
 
 ## Floats from IEEE-754 bits (the GDScript tokenizer misreads some literals).
@@ -653,5 +655,5 @@ func _initialize() -> void:
 		if t.call() != true:
 			ok("%s ran to completion" % t.get_method(), false)
 	map.sim.stop()
-	print("galaxy map: %d failures" % failures)
+	print("galaxy map: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures > 0 else 0)

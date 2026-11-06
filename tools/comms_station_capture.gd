@@ -6,13 +6,21 @@ extends SceneTree
 ##   away     cruising out at 0.99c: home slows (the near-still feed), Earth's hand crawls
 ##   waiting  arrived, re-planned for CNS5:1676 off Alpha Centauri's ray and flying: out of beam, the
 ##            last week under static, the ring, the strip's plan light home and the wait at the port
-##   homeward on the way home from CNS5:1676 at 0.99c: the jumbled torrent of weeks (in their own
-##            colours: R3-TRUE-PROCESSED removed the stylised Doppler wash, RS-Q5)
+##   homeward from CNS5:1676 once Earth's beam reached it, home at 0.99c in the beam: the jumbled
+##            torrent of weeks (in their own colours: R3-TRUE-PROCESSED removed the stylised Doppler wash,
+##            RS-Q5)
+## R3-COMMS-V2 (design r3/comms-station-v2.md AC12), at 2.18:
+##   faces_<moment>        the bridge monitors' four faces (clocks, signal, course, crew; 2 x 2) at home,
+##                         away and homeward, each face as the monitor renders it
+##   frame_outbound        an outbound week selected on the history wall: its light-cone diagram
+##   frame_homebound       a homebound week (the newest beamed record): its diagram
+##   frame_homebound_week  a week inside a homebound stack, from the sim's earth_weeks answer: its own
+##                         Earth date on the feed, the stack's stamp and the diagram's send label
 ## Each frame asserts the station is on screen, the frame is not blank, no two frames are alike,
 ## and every number on the station is a binding (DisplayBinding.audit).
-## Run:  make capture-comms-station  (needs a GPU window; open every frame)
+## Run:  make capture-comms-station, or make capture-comms-v2 (needs a GPU window; open every frame)
 
-const OUT := "res://renders/comms_station"
+var OUT := "res://renders/comms_station"
 const LOGICAL := Vector2i(960, 540)
 const RES := Vector2i(1280, 720)
 const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
@@ -71,6 +79,9 @@ func until(pred: Callable, cap := 20000) -> bool:
 
 
 func _run() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--out="):
+			OUT = a.trim_prefix("--out=")
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	root.content_scale_size = LOGICAL
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
@@ -89,13 +100,15 @@ func _run() -> void:
 	station = CommsStation.new()
 	margin.add_child(station)
 	sim = SimBridge.new()
-	sim.want_minor = SimBridge.EARTH_MINOR
+	sim.want_minor = SimBridge.EARTH_LOG_MINOR
 	var ok := sim.start() and sim.new_game(7, "free_nav", false, {}, "", "consent")
 	ok = ok and fly(ALPHA)
 	if ok: await shoot("home")
+	if ok: await shoot_faces("home")
 	ok = ok and until(func() -> bool: return phase() == "cruising")
 	ok = ok and until(func() -> bool: return phase() != "cruising" or float(sim.world.get("earth", {}).get("light_age_years", 0.0)) > 2.0)
 	if ok: await shoot("away")
+	if ok: await shoot_faces("away")
 	ok = ok and until(func() -> bool: return str(journey().get("state", "")) == "arrived")
 	ok = ok and fly(OFF_RAY)
 	ok = ok and until(mid_leg)
@@ -103,9 +116,28 @@ func _run() -> void:
 		fail("the off-ray leg should fly out of beam")
 	if ok: await shoot("waiting")
 	ok = ok and until(func() -> bool: return str(journey().get("state", "")) == "arrived")
+	ok = ok and until(func() -> bool: return sim.world.get("earth", {}).get("in_beam", false) == true) # Earth's reply reaches the port
 	ok = ok and fly(SOL)
 	ok = ok and until(mid_leg)
+	if ok and not sim.world.get("earth", {}).get("in_beam", false):
+		fail("the way home should fly in Earth's beam")
 	if ok: await shoot("homeward")
+	if ok: await shoot_faces("homeward")
+	# R3-COMMS-V2 CV2: a week selected on the history wall (an outbound one, then a homebound one, then a
+	# week inside a homebound stack): the feed shows it, the light strip turns to its light-cone diagram
+	var recs: Array = sim.world.get("earth_log", {}).get("records", [])
+	var home_k := -1
+	var stack_k := -1
+	for i in range(recs.size() - 1, 0, -1):
+		if recs[i].beamed == true and home_k < 0:
+			home_k = i
+		if recs[i].beamed == true and stack_k < 0 and int(recs[i].to_frame) > int(recs[i].from_frame):
+			stack_k = i
+	if ok: await shoot_week("frame_outbound", 1)
+	if ok and home_k > 1: await shoot_week("frame_homebound", home_k)
+	else: fail("no beamed homebound record")
+	if ok and stack_k > 1: await shoot_stack_week("frame_homebound_week", stack_k)
+	else: fail("no homebound stack")
 	if not ok:
 		fail("the voyage stopped: %s %s %s" % [sim.last_error, sim.last_refused, journey().get("state", "")])
 	sim.stop()
@@ -140,6 +172,92 @@ func shoot(label: String) -> void:
 		(e.get("messages", []) as Array).map(func(m: Dictionary) -> Array: return [m.port_id, snappedf(m.sent_t, 0.01), snappedf(m.arrive_t, 0.01), snappedf(m.heard_t, 0.01), snappedf(m.reply_t, 0.01), snappedf(m.port_ly, 0.01)])])
 	print("comms-station-capture: ok frame %s rate %s in_beam %s at_home %s messages %d out %s -> %s" % [label, e.get("rate"), e.get("in_beam"),
 		e.get("at_home"), (e.get("messages", []) as Array).size(), (e.get("out") as Dictionary).get("reason") if e.get("out") is Dictionary else "-", path])
+
+
+func shoot_week(label: String, k: int) -> void:
+	var view := sim.world.duplicate(true)
+	station.refresh(view)
+	station.history.select(k)
+	station.refresh(view)
+	await shoot_view(label, view)
+	station.history.select(k)
+
+
+## D1.3: a week inside stack k, through the sim's earth_weeks (the console's request, answered on a tick).
+func shoot_stack_week(label: String, k: int) -> void:
+	var r: Dictionary = sim.world.earth_log.records[k]
+	var a := maxi(int(r.from_frame), int(r.to_frame) - 51)
+	if not sim.send([{"k": "earth_weeks", "from": a, "to": int(r.to_frame)}], 0.0):
+		fail("earth_weeks refused: %s" % sim.last_error)
+		return
+	var view := sim.world.duplicate(true)
+	station.refresh(view)
+	station.history.select(k)
+	station.refresh(view)
+	var rows: Array = view.get("earth_weeks", {}).get("weeks", [])
+	if rows.is_empty():
+		fail("earth_weeks answered no weeks for record %d" % k)
+		return
+	station.stack.pick(rows.size() / 2)
+	station.refresh(view)
+	await shoot_view(label, view)
+	station.history.select(k)
+	station.refresh(view)
+
+
+## The bridge monitors' four faces as the monitors render them (each 960 x 540, laid out 2 x 2), on this
+## frame's world; the signal face live for 3 s of real time so its waterfall fills from the taps.
+func shoot_faces(moment: String) -> void:
+	var view := sim.world.duplicate(true)
+	var holder := SubViewport.new()
+	holder.size = Vector2i(1920, 1080)
+	holder.transparent_bg = false
+	holder.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(holder)
+	var faces: Array = []
+	for i in BridgeScreens.FACES.size():
+		var f = BridgeScreens.make(BridgeScreens.FACES[i])
+		f.position = Vector2((i % 2) * 960, (i / 2) * 540)
+		holder.add_child(f)
+		f.set_live(true)
+		f.refresh(view, true, EarthFeed.bed_of(view))
+		faces.append(f)
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 3000:
+		for f in faces:
+			f.step()
+		await process_frame
+	await RenderingServer.frame_post_draw
+	var img := holder.get_texture().get_image()
+	var path := "%s/faces_%s.png" % [OUT, moment]
+	img.save_png(ProjectSettings.globalize_path(path))
+	var bad: Array = []
+	for f in faces:
+		bad.append_array(DisplayBinding.audit(f))
+		f.set_live(false)
+	if not bad.is_empty():
+		fail("faces_%s has unbound numbers %s" % [moment, bad])
+	if _spread(img) < 0.02:
+		fail("faces_%s is blank" % moment)
+	frames += 1
+	print("comms-station-capture: ok frame faces_%s (%s) -> %s" % [moment, ", ".join(BridgeScreens.FACES), path])
+	holder.queue_free()
+	await process_frame
+
+
+func shoot_view(label: String, view: Dictionary) -> void:
+	for i in 4:
+		station.advance(1.0 / 30.0)
+		await process_frame
+	await RenderingServer.frame_post_draw
+	var img := root.get_texture().get_image()
+	var path := "%s/%s.png" % [OUT, label]
+	img.save_png(ProjectSettings.globalize_path(path))
+	var unbound := DisplayBinding.audit(station)
+	if not unbound.is_empty():
+		fail("%s has unbound numbers %s" % [label, unbound])
+	frames += 1
+	print("comms-station-capture: ok frame %s -> %s" % [label, path])
 
 
 ## The luminance spread over a coarse grid: a blank frame has none.
