@@ -29,7 +29,8 @@ short=$(printf %s "$sha" | cut -c1-8)
 # context_state CONTEXT: success, failure, or "" for a context with no verdict yet (none, or a pending
 # post younger than 3 h; an older pending is a run that died, so it counts as none and runs again).
 context_state() {
-  st=$(gh api "repos/$REPO/commits/$sha/statuses" -q "[.[]|select(.context==\"$1\")][0] | (.state // \"\") + \" \" + (.updated_at // \"\")")
+  # "unknown" when GitHub cannot be read: never taken as no verdict (no run) or as not red (no close).
+  st=$(gh api "repos/$REPO/commits/$sha/statuses" -q "[.[]|select(.context==\"$1\")][0] | (.state // \"\") + \" \" + (.updated_at // \"\")") || { echo unknown; return 0; }
   state=${st%% *}; at=${st#* }
   case "$state" in
     success|failure) echo "$state" ;;
@@ -46,6 +47,7 @@ context_state() {
 # 2026-11-04, so main went unchecked; make test barely touches the GPU.
 full=$(context_state rig/full)
 golden=$(context_state rig/golden)
+case "$full $golden" in *unknown*) log "main $short: could not read the commit statuses, not starting"; exit 1 ;; esac
 case "$full" in
   "") phase=test ;;
   pending) log "main $short rig/full pending"; exit 0 ;;
@@ -89,8 +91,8 @@ rlog=$(sed -n 's/.*; log \(.*\.log\)$/\1/p' "$out" | head -1)
 open=$(gh issue list --repo "$REPO" --label nightly-rig --state open --json number -q '.[0].number // ""')
 if [ $rc = 0 ]; then
   log "main $short $suite green"
-  # Close only when the other half is not red on this commit too.
-  [ -n "$open" ] && [ "$(context_state $other)" != failure ] && gh issue close "$open" --repo "$REPO" --comment "Green again on main at $short: $(tail -1 "$out")" > /dev/null
+  # Close only when the other half is green or has not run on this commit (not red, not unreadable).
+  [ -n "$open" ] && { o=$(context_state $other); [ "$o" = success ] || [ -z "$o" ]; } && gh issue close "$open" --repo "$REPO" --comment "Green again on main at $short: $(tail -1 "$out")" > /dev/null
 else
   body=$(mktemp -t rig-nightly-body)
   {
