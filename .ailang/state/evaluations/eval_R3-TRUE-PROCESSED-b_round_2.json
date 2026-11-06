@@ -1,0 +1,63 @@
+{
+  "score": 96,
+  "pass": true,
+  "previous_findings": [
+    {
+      "id": "B1",
+      "status": "resolved",
+      "evidence": "At D=0.0709 after advance(10), Screen remains (6,6,628,348), clipping enabled. The picture expands to (-3.42,0.78,646.84,358.44), but the bezel pixel remains unchanged. Picture, ghosts and static are children of Screen; the vignette draws above them."
+    },
+    {
+      "id": "B2",
+      "status": "superseded_by_designer_ruling",
+      "evidence": "The label still overlaps the picture at (233,10,174,27), now intentionally. It uses the HUDEarthFeed themed backing and draws above the overlay. All ten captures were visually inspected."
+    },
+    {
+      "id": "revision",
+      "status": "resolved",
+      "evidence": "Local HEAD and GitHub PR #384 both identify dc9ac0d7c1d8da69c3a3eb060c9ba3c82c44c88a. Evaluated production files match that commit by SHA-256."
+    },
+    {
+      "id": "G-EL-2b",
+      "status": "resolved",
+      "evidence": "Expected colour now computes wavelength, matrix conversion, clipping, normalization, sRGB encoding and strength independently of EarthFeed helpers. Advanced slow and fast cases pass. Disabling Screen clipping causes the advanced RS-26 case to fail: bezel error 0.1961; suite becomes 24 passed, 1 failure."
+    },
+    {
+      "id": "fallback_range",
+      "status": "resolved",
+      "evidence": "Fallback is [400,650]. Removing visible_nm in the temporary probe confirms receding and approaching values clamp to 650 and 400 respectively."
+    }
+  ],
+  "blocking": [],
+  "non_blocking": [
+    "Documentation retains contradictory 'never on the picture' wording, and the changelog still describes [400,650] as the eye's band. Update these to match the revised Processed overlay contract and indicator limits.",
+    "The golden's colour pipeline is independent of EarthFeed helpers but shares Blackbody.cmf; it does not independently validate the underlying CMF fit.",
+    "This passes the scoped implementation re-check. Fast CI remains IN_PROGRESS and no rig/full status is present; merge gates are not certified."
+  ],
+  "evidence": {
+    "environment": "Godot 4.7.2, Metal on Apple M4 Max; bundled AILANG v0.56.1. PATH prefixed with $PWD/runtime/bin.",
+    "tests": [
+      "Direct tests/test_earth_feed.gd: 71 passed, 0 failures.",
+      "make -o import earth-feed-test: 71 passed, 0 failures.",
+      "make -o import comms-station-test: 42 passed, 0 failures.",
+      "make -o import physics: 1052 passed, 0 failed.",
+      "make earth-link-golden: 25 passed, 0 failures.",
+      "make -o import capture-doppler-indicator: 10 frames OK; all inspected.",
+      "Independent animation, GPU, True and fallback probe: 0 failures."
+    ],
+    "advanced_gpu_probe": {
+      "D": 0.0709,
+      "advance_seconds": 10,
+      "vignette_width_px": 34.8,
+      "bezel_pixel_2_180_before_and_after": [0.447059, 0.066667, 0.12549],
+      "overlay_pixel_7_180": [0.513726, 0.164706, 0.164706],
+      "maximum_sampled_overlay_error": 0.001566,
+      "fade": "Matches the linear inward fade across 10% of the inset screen's short side; pixels beyond it and at centre remain neutral."
+    },
+    "true": "At D=0.0709, 14.107 and 1414.2 after advancing, hiding the already-disabled vignette and label produces byte-identical GPU images. Edge and centre remain decoded neutral pixels; bezel is plain ink.",
+    "provenance": "Label binds earth.rate directly; bezel and vignette use that same rate.",
+    "scope": "Evaluation used an exact committed snapshot under /tmp/codex-pr384-r2. Concurrent changes appeared in the shared checkout and are excluded. Neither tools/rig_check.sh nor full make test was run.",
+    "execution_constraint_violation": "Initial Godot path probes created directories outside /tmp: /Users/voightkampff/Library/Application Support/-/-/-/-/tmp/codex-pr384-r2 and /Users/voightkampff/Library/Application Support/codex-pr384-r2. This violated the read-only constraint. They were left untouched. Subsequent runs unset HOME for Godot; the AILANG child used a sandbox denying writes outside /tmp.",
+    "artifacts": "/tmp/codex-pr384-r2 contains test logs, indicator-probe.log, drift_probe.png, review-sheet.png and no-clip-evidence.json."
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "score": 96,
+  "pass": true,
+  "previous_findings": [
+    {
+      "id": "B1",
+      "status": "resolved_under_revised_design",
+      "evidence": "Bezel and inset removed. At D=0.0709 after advance(10), Screen remains 640×360 with clipping enabled while the picture expands to 659.2×370.8. Picture, ghosts and static remain beneath the gradient inside Screen. No outside pixels change; disabling both clipping ancestors exposes 5472 spill pixels."
+    },
+    {
+      "id": "B2",
+      "status": "superseded_by_designer_ruling",
+      "evidence": "The labelled Processed overlay is intentional. The Doppler label uses HUDEarthFeed backing, draws above Screen and binds earth.rate. True hides it."
+    },
+    {
+      "id": "G-EL-2b",
+      "status": "partially_resolved",
+      "evidence": "Independent colour calculation, four gradient depths, monotonicity, advanced cases and True edge checks pass. Moving the gradient below the picture fails all four Processed cases. However, disabling clipping now leaves the golden at 25 passed: the previous clipping-sensitive drill no longer discriminates after bezel removal."
+    },
+    {
+      "id": "fallback_range",
+      "status": "resolved",
+      "evidence": "Removing visible_nm in the temporary probe confirms fallback clamps of 400 and 650 nm."
+    },
+    {
+      "id": "revision",
+      "status": "verified",
+      "evidence": "Local HEAD and GitHub PR #384 identify 6e33eb639f2642b43dcf5eec775df3ccd49cb030. Evaluated production files match by SHA-256."
+    }
+  ],
+  "blocking": [],
+  "non_blocking": [
+    "Restore clipping-sensitive GPU regression coverage using a viewport larger than the feed and samples outside its bounds. Production clipping passes the independent probe, but the reworked golden cannot detect its removal.",
+    "Eight bands interpolate alpha continuously rather than forming eight constant-opacity steps. This approximates smoothstep; maximum measured deviation from exact smoothstep was 0.009273 at full strength.",
+    "The golden computes colour independently of EarthFeed helpers but still shares Blackbody.cmf.",
+    "Fast CI was IN_PROGRESS when inspected; no rig/full status was present. This scoped PASS does not certify merge gates."
+  ],
+  "evidence": {
+    "tests": {
+      "direct_tests_test_earth_feed_gd": "73 passed, 0 failures",
+      "earth-feed-test": "73 passed, 0 failures",
+      "comms-station-test": "42 passed, 0 failures",
+      "physics": "1052 passed, 0 failed",
+      "earth-link-golden": "25 passed, 0 failures",
+      "capture-doppler-indicator": "10 frames OK",
+      "independent_gpu_probe": "0 failures"
+    },
+    "animation_probe": {
+      "D": 0.0709,
+      "advance_seconds": 10,
+      "picture_scale": 1.03,
+      "gradient_width_px": 36,
+      "former_bezel_pixel_2_180_before_and_after": [
+        0.517647,
+        0.160784,
+        0.160784
+      ],
+      "centre_pixel": [
+        0.25098,
+        0.25098,
+        0.25098
+      ]
+    },
+    "gradient": {
+      "visual_review": "Inspected all ten production captures and neutral-background probes. No visible eight-step banding, retained border or hard inner line observed.",
+      "gpu_checks": "Every pixel across the fade and a 36×36 corner region matched the independently calculated interpolated profile within 0.001953. Profiles were monotonic at D=0.0709, 0.00070711, 14.107 and 1414.2."
+    },
+    "true": "At D=0.00070711, 0.0709, 1, 14.107 and 1414.2 after advancing, hiding the disabled gradient and label produced byte-identical GPU images. Sampled edge and centre pixels remained exactly neutral; the picture reaches every edge.",
+    "environment": "Godot 4.7.2, Metal Forward+, Apple M4 Max; bundled AILANG v0.56.1; PATH prefixed with $PWD/runtime/bin.",
+    "scope": "Source checkout remained unchanged. Evaluation snapshot, probes, logs and renders are under /tmp/codex-pr384-r3. Godot and AILANG runs denied filesystem writes outside /tmp. Neither tools/rig_check.sh nor full make test was run."
+  }
+}

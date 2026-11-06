@@ -1,6 +1,6 @@
 {
   "sprint_id": "R3-TRUE-PROCESSED-b",
-  "status": "awaiting_render_review",
+  "status": "completed",
   "approved": "Mark, 2026-11-03 (orchestrator relay): a Processed Doppler indicator, a labelled edge gradient over the picture's outer margin in Receiver only; True never alters the decoded picture",
   "created": "2026-11-03",
   "design_doc": "design_docs/planned/r3/true-processed-fixes.md (D3)",
@@ -58,5 +58,17 @@
       ]
     }
   ],
-  "evaluation": null
+  "evaluation": {
+    "evaluator": "Codex gpt-6.1-sol (generator Claude)",
+    "rounds": [
+      65,
+      96,
+      96
+    ],
+    "final": 96,
+    "pass": true,
+    "file": ".ailang/state/evaluations/eval_R3-TRUE-PROCESSED-b_round_3.json",
+    "render_review": "Mark OK on dev build v0.4.0-dev.37-living-bridge-331-g5de4a31a, 2026-11-06"
+  },
+  "completed": "2026-11-06T16:00:00Z"
 }
