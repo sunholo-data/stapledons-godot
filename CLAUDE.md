@@ -44,8 +44,9 @@ is a release: `release.yml` runs the full CI suite first and builds only if it p
    installs with `tools/install_review_build.sh --dev`.
 
 The full `make test` + `make golden` (70+ min) runs once a night on main: `tools/rig_nightly.sh` (launchd
-`dev.stapledon.rig-nightly`, `tools/launchd/`) posts `rig/full` on main's head and starts only when the GPU and
-CPU are idle, since local-model evals share the GPU. A red night opens a `nightly-rig` issue: fix forward or
+`dev.stapledon.rig-nightly`, `tools/launchd/`) runs it in two halves on main's head: `make test` as `rig/full`
+whenever the CPU is free, then `make golden` as `rig/golden` once the GPU is idle too, since local-model evals
+hold the GPU most nights (2026-11-06). A red night opens a `nightly-rig` issue: fix forward or
 revert first thing. Per-PR runs (serialised, ~70 min each) queued for hours and mostly failed on host load, not
 bugs. `tools/rig_check.sh <PR> [--golden]` is still there for a change risky enough to want the whole suite
 first. Release tags run the full CI suite. main is not branch-protected.
