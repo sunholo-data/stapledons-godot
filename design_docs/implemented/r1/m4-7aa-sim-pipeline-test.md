@@ -1,6 +1,6 @@
 # Row 7aa: `sim-pipeline-test` is red because the test sends two different offers, not because pipelining diverges
 
-**Status:** Planned, mission iteration 73, designer, 2026-11-06; **revision 1** after design quorum round 1 (see [Quorum r1 response](#quorum-r1-response-revision-1)); **revision 2 (controller, narrow-refinement carve-out)** after round 2: the `ship-demo-ci` wiring is deferred to row 7ab (see [Quorum r2 response](#quorum-r2-response-revision-2-controller-carve-out)). **Release:** r1. **Milestone:** charter queue row **7aa**, inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66), the same home as row 7x.
+**Status:** Implemented 2026-11-06 (iteration 73, PR #402; Sonnet 93/100 PASS, `eval_R1-M4-JOURNEY_7aa_round_1.json`). Landing note: the doc moved from `planned/r1/` to `implemented/r1/`; the `x` extractor now reads the new path, and AC9's allowlist (written for the PR) names the `planned/` path and not the evaluation file. Was: Planned, mission iteration 73, designer, 2026-11-06; **revision 1** after design quorum round 1 (see [Quorum r1 response](#quorum-r1-response-revision-1)); **revision 2 (controller, narrow-refinement carve-out)** after round 2: the `ship-demo-ci` wiring is deferred to row 7ab (see [Quorum r2 response](#quorum-r2-response-revision-2-controller-carve-out)). **Release:** r1. **Milestone:** charter queue row **7aa**, inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66), the same home as row 7x.
 **Priority:** P2 (follow-up backlog, [LOOP]). Suite hygiene, charter clause 5.
 **Implements:** [charter](../../stapledon-mission.md) row 7aa ("reproduce at HEAD in a fresh clone, attribute (test or sim), fix the side at fault, then decide whether `ship-demo-ci` or `test` should run it, and migrate its row through `$(SCRIPT_GATE)`"). It follows the migration rule and conventions of [m4-7x-script-gate-predicates.md](m4-7x-script-gate-predicates.md) and [m4-7x-b4-script-gates.md](m4-7x-b4-script-gates.md) (D9 recorded this row as B4b's one base-red row). No design-repo feature or [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) section changes: no formula, sim, protocol, shader, scene, sound or anything the player sees changes.
 **Depends on:** the landed 7x helper, lint and baseline (PRs #393, #395, #397, #400); D-88 A (test or audit hygiene inside an approved sprint, with no pillar below 0, does not stop); Godot 4.7.2; AILANG v0.56.1 (`runtime/bin`, `make runtime`).
@@ -161,7 +161,7 @@ The expected values were measured at `c2e5f8f9` plus this change (V7–V10, V14)
 **Appendix extraction.** AC7 and AC8 read their harnesses from this doc's [Appendix](#appendix-the-harnesses). Extract them first with:
 
 ````sh
-x() { awk -v t="$1" '$0 == "```" t {f=1; next} f && $0 == "```" {exit} f' design_docs/planned/r1/m4-7aa-sim-pipeline-test.md; }
+x() { awk -v t="$1" '$0 == "```" t {f=1; next} f && $0 == "```" {exit} f' design_docs/implemented/r1/m4-7aa-sim-pipeline-test.md; }
 mkdir -p .godot/tmp/7aa
 x 'sh 7aa-drill'      > .godot/tmp/7aa/drill.sh     # A1
 x 'gdscript 7aa-diag' > .godot/tmp/7aa/diag.gd      # A2

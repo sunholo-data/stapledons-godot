@@ -119,7 +119,7 @@ Future executor/controller commands, not planner results. Decode Markdown-table 
 Extract only A1/A2/A4; A3 history is omitted:
 
 ````sh
-x() { awk -v t="$1" '$0 == "```" t {f=1; next} f && $0 == "```" {exit} f' design_docs/planned/r1/m4-7aa-sim-pipeline-test.md; }
+x() { awk -v t="$1" '$0 == "```" t {f=1; next} f && $0 == "```" {exit} f' design_docs/implemented/r1/m4-7aa-sim-pipeline-test.md; }
 mkdir -p .godot/tmp/7aa
 x 'sh 7aa-drill' > .godot/tmp/7aa/drill.sh
 x 'gdscript 7aa-diag' > .godot/tmp/7aa/diag.gd
