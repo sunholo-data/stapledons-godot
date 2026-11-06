@@ -94,7 +94,6 @@ ship-star-light-bench	tools/ship_star_light_bench.gd	rc,-,sum,-
 ship-star-light-capture	tools/ship_star_light_capture.gd	rc,se,sum,-
 ship-ui-capture	tools/ship_ui_capture.gd	rc,se,sum,-
 ship-ui-window-check	tools/ship_ui_window_check.gd	rc,se,sum,-
-sim-pipeline-test	tests/test_sim_pipeline.gd	rc,se,sum,-
 sky-model	tools/sky_colours.gd	-,-,-,-
 sky-model	tools/sky_colours.gd	-,-,-,-
 solar-departure-bench	tools/solar_departure_bench.gd	rc,se,sum,-
