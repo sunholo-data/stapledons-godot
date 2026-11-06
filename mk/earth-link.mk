@@ -84,7 +84,7 @@ capture-earth-link: import
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/earth_link_capture.gd > $(SCRATCH)/earth-link-capture.log 2>&1; rc=$$?; grep -E '^earth-link-capture' $(SCRATCH)/earth-link-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/earth-link-capture.log && grep -q '^earth-link-capture: 10 frames, 0 failures$$' $(SCRATCH)/earth-link-capture.log
 
-# R3-COMMS-V2 CV1 (design_docs/planned/r3/comms-station-v2.md AC1-AC4): the received-frame log.
+# R3-COMMS-V2 CV1 (design_docs/implemented/r3/comms-station-v2.md AC1-AC4): the received-frame log.
 # The log's tests (sim/earth_log_test.ail: the merge, the split, the bound, a real flight's
 # invariants every tick, earth_weeks clipping, the 2.18 wire), then earthLogVm on the strict VM and
 # the interpreter (they must agree). In make test.

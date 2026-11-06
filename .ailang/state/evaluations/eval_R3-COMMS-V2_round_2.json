@@ -1,0 +1,159 @@
+{
+  "sprint": "R3-COMMS-V2",
+  "pr": "https://github.com/sunholo-data/stapledons-godot/pull/379",
+  "evaluator": "Codex, independent of generator Claude; round 2 at cc6dc7c8eb61b8eba3632429e37b8616e56d8702",
+  "score": 88,
+  "pass": true,
+  "breakdown": {
+    "tests": {
+      "score": 20,
+      "maximum": 20,
+      "reason": "Requested targeted tests pass, including strict VM, parity and focused replay. Additional physics, layout, rail, sound and asset checks pass."
+    },
+    "lint": {
+      "score": 10,
+      "maximum": 10,
+      "reason": "Precision lint, Python guard, UID guard and diff whitespace checks pass. GitHub fast tier is green on this head."
+    },
+    "acceptance_criteria": {
+      "score": 24,
+      "maximum": 30,
+      "reason": "Most criteria are demonstrated. Stacks larger than 52 weeks remain incompletely browsable; quiet-rig performance and rig/full remain outstanding."
+    },
+    "code_quality": {
+      "score": 14,
+      "maximum": 15,
+      "reason": "Pure simulation, additive protocol changes, measured frequency refinement and monitor scheduling are sound. Stack browsing needs pagination."
+    },
+    "docs": {
+      "score": 12,
+      "maximum": 15,
+      "reason": "Design rulings, asset pins and execution evidence are detailed. Some historical sprint notes and the changelog retain obsolete claims; 'every blocker addressed' overstates stack completeness."
+    },
+    "design_fidelity": {
+      "score": 8,
+      "maximum": 10,
+      "reason": "Approved monitors, consoles, True waterfall, Receiver line, history diagram and raised rail placement are implemented. Every received week is not yet individually accessible."
+    }
+  },
+  "blocking": [
+    {
+      "location": "ui/comms_station.gd:124; ui/comms_station.gd:184",
+      "issue": "Round-1 blocker 7 is only partially fixed: stacks expose their newest 52 weeks without paging to older weeks.",
+      "failure": "An isolated probe using valid one-year simulation steps produced a beamed record covering weeks 261–313. Selecting it requested [262,313] and displayed 52 rows, leaving week 261 inaccessible. StackWeeks has no earlier-page control and accepts responses only when their 'to' equals the record's final week. Add paging and a regression covering more than 52 weeks to satisfy G1/D1.6."
+    },
+    {
+      "location": "CLAUDE.md definition-of-done gate 1",
+      "issue": "The evaluated head has no rig/full status.",
+      "failure": "GitHub fast tier completed successfully, but the commit-status API returned no statuses for cc6dc7c8. Required full-rig completion is unverified. Neither tools/rig_check.sh nor full make test was run, as instructed."
+    }
+  ],
+  "non_blocking": [
+    "The score passes the requested 70-point rubric; the sprint is not complete or merge-ready while the listed blockers remain.",
+    "AC10 remains unverified on a quiet rig. Loaded-host misses with and without monitors do not establish a monitor regression. Code and targeted tests demonstrate the intended visibility gating and refresh limits.",
+    "archive.earths-carrier still unlocks at first_boost instead of the first visible shifted monitor. This design deviation should be recorded explicitly.",
+    "The changelog still says '1 % or one analyser bin'; the implemented test now correctly requires 1 % alone. Several earlier sprint notes retain superseded implementation details.",
+    "Companion design PR #55 remains open and draft at pinned head 270f95882bc96d8ed3977db72133c00e78af9278.",
+    "Headless runs emit raw-image-loading and resource-leak warnings. No SCRIPT ERROR occurred in the five requested Godot test scripts.",
+    "No material unrelated scope expansion was found; lore catalogue and unlock-mirror updates are explained integration work."
+  ],
+  "evidence": {
+    "round_1_blockers": [
+      {
+        "id": 1,
+        "fixed": true,
+        "finding": "Indexing lint false positive removed. Local lint passes and the evaluated head's GitHub fast tier is green; rig/full remains a separate outstanding gate."
+      },
+      {
+        "id": 2,
+        "fixed": true,
+        "finding": "set_live propagates visibility and releases shared taps. Tests observed zero off-screen refreshes and columns, stopped taps, 61 signal refreshes over two simulated seconds including re-entry, and 20 clock refreshes."
+      },
+      {
+        "id": 3,
+        "fixed": true,
+        "finding": "Ambient bed selection now uses EarthFeed.bed_of(view) before station creation and after closure; the visible station's held bed coordinates the shared taps."
+      },
+      {
+        "id": 4,
+        "fixed": true,
+        "finding": "Trace columns store only their current measurement. The [400,400,400,0] regression leaves the newest column empty."
+      },
+      {
+        "id": 5,
+        "fixed": true,
+        "finding": "The Hann two-point estimator correctly uses the stronger neighbour's magnitude ratio. The test independently computes 400×D and applies a strict 1% tolerance, without a bin-width allowance."
+      },
+      {
+        "id": 6,
+        "fixed": true,
+        "finding": "Audible D=[0.05,50] is consistent across receiver data/defaults, beacon True gating, waterfall boundaries, RS-46/47 and design PR #55 sound.md."
+      },
+      {
+        "id": 7,
+        "fixed": false,
+        "finding": "Protocol earth_weeks, individual selection and correct dates are implemented, but weeks preceding the newest 52 remain inaccessible in larger stacks."
+      },
+      {
+        "id": 8,
+        "fixed": true,
+        "finding": "Evaluator now measures 40px readability, per-monitor shares, named signal locations and walk intrusion. Seeded on-walk and backwards-facing monitor controls fail as intended."
+      },
+      {
+        "id": 9,
+        "fixed": true,
+        "finding": "make comms-golden is wired into make golden. Source checks rendered trace, Receiver line, bracket and outbound/homebound diagram events against CPU expectations. Capture code includes three-moment faces and selected-frame diagrams. GPU execution was not repeated."
+      }
+    ],
+    "execution": {
+      "branch": "design/comms-station-v2",
+      "head": "cc6dc7c8eb61b8eba3632429e37b8616e56d8702",
+      "logs": "/tmp/comms-v2-round2.UjJqBO",
+      "method": "Disposable project copy under /tmp, with runtime/bin prepended to PATH. Godot test runs used an additional write guard.",
+      "repository": "Evaluated clone remained clean. No edits, commits or pushes were made there."
+    },
+    "targeted_checks": [
+      "ailang test sim/earth_log_test.ail: 11 passed, 0 failed.",
+      "make strict parity replay SESSION=tests/replays/earth_log_voyage.ndjson: exit 0; strict/interpreter agreement and replay golden matched.",
+      "Earth-log replay: 45 replies, 1,366,369 bytes; SHA-256 prefix 49979bac821115f2.",
+      "Strict-VM 30-year bound probe: 10,958 records; newest frame 2,213,728; contiguous.",
+      "tests/test_earth_history.gd: 29 passed, 0 failures.",
+      "tests/test_comms_waterfall.gd: 18 passed, 0 failures. Worst sampled carrier errors at D=0.05, 0.070888, 1 and 14.107 were 0.008%, 0.012%, 0.093% and 0.009%.",
+      "tests/test_bridge_monitors.gd: 19 passed, 0 failures.",
+      "tests/test_monitor_rail.gd: 9 passed, 0 failures; all four monitors clear, seeded rail intrusion caught.",
+      "tests/test_comms_station.gd: 42 passed, 0 failures.",
+      "Physics assertions: 1050 passed, 0 failed using a temporary subclass redirecting only generated fixture files into /tmp. The initial unmodified invocation encountered write-guard failures at user:// fixtures.",
+      "Deck layout evaluator: bridge ok. Readable shares: clocks 0.284, signal 0.342, course 0.349, crew 0.291.",
+      "Deck evaluator tests: 26 passed; comms walk: 11 passed; sound: 83 passed.",
+      "Deck asset check: 12 pins valid; bridge_props 179,000/180,000 triangles; bridge_monitors 2,696/20,000 triangles.",
+      "lint-precision, python-guard, uid-guard and git diff --check passed."
+    ],
+    "simulation_and_design": [
+      "earth_log.ail remains pure. sentT uses package seenAt; arrived.ly uses package norm. Tests check sent.t=arrived.t−arrived.ly and the newest logged ship sample at or before emission.",
+      "earth_weeks is gated to protocol 2.17, refused below it, clipped to arrived beamed weeks and capped at 52 rows.",
+      "course.ship_years_left is computed in the simulation and read through a binding. GDScript inspection found presentation/DSP calculations, with no new relativistic physics calculation in the monitors or diagram.",
+      "RS-41–47 are asserted in test_physics.gd. Vendored lore manifest pins design SHA 270f95882bc96d8ed3977db72133c00e78af9278.",
+      "Monitor GLB, Blender master and generator SHA-256 pins are recorded. Remote masters were not downloaded.",
+      "Course placement remains +24 degrees. Raised monitor faces and stalks pass exact segment-triangle crossing checks against bridge_props.glb and ship.glb.",
+      "Monitor viewports use UPDATE_ONCE at the scheduled refresh and UPDATE_DISABLED off screen; waterfall stepping and tap ownership follow visibility."
+    ],
+    "definition_of_done": {
+      "gate_1": "INCOMPLETE: fast tier SUCCESS; rig/full absent.",
+      "gate_2": "Coverage implemented; RS assertions pass and reference renders were opened. Existing local comms-golden log reports 17/17, but it was not independently rerun or authenticated to this SHA.",
+      "gate_3": "PASS by inspection: simulation physics uses existing package functions; no new physics formula requiring publication identified.",
+      "gate_4": "PASS: strict VM and interpreter parity.",
+      "gate_5": "PASS for reviewed changes: sim-bound physical values, no new precision violation found.",
+      "gate_6": "PASS for exercised cases: deterministic strict/interpreter outputs and replay golden agreement."
+    },
+    "visual_review_and_skips": [
+      "Opened existing final rail_signal, faces_homeward, frame_homebound_week, frame_outbound and cruise_bow_chair renders.",
+      "Reviewed comms-golden source and existing logs; skipped GPU-window execution, fresh captures, VRAM measurements and benchmarks.",
+      "Did not run tools/rig_check.sh or full make test."
+    ],
+    "fast_tier": {
+      "conclusion": "SUCCESS",
+      "completed_at": "2026-11-03T12:38:30Z",
+      "url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/41636072449/job/125917492441"
+    }
+  }
+}
