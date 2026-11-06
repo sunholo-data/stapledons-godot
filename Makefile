@@ -1337,7 +1337,7 @@ ship-demo-ci: ship-ui-test
 ship-console-test: import ship-baseline ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach and facing, dolly, confirms, helm/chart, Voyage, Archive, Sgr A*, Walk to
 	@$(SCRIPT_GATE) ship-console-test $(SCRATCH)/ship-consoles.log 600 '^ship-consoles: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_ship_consoles.gd
 sim-pipeline-test: import ## performance pass: pipelined heartbeat ticks end in the same world, journal and crew as synchronous ones, and free the main thread
-	@$(GODOT_SIM) --headless --path . --script tests/test_sim_pipeline.gd > $(SCRATCH)/sim-pipeline.log 2>&1; rc=$$?; grep -E '^(FAIL|heartbeat|sim-pipeline)' $(SCRATCH)/sim-pipeline.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/sim-pipeline.log && grep -q '^sim-pipeline: 0 failures$$' $(SCRATCH)/sim-pipeline.log
+	@$(SCRIPT_GATE) sim-pipeline-test $(SCRATCH)/sim-pipeline.log 600 '^sim-pipeline: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_sim_pipeline.gd
 frame-check-test: import ## B frame check: measures play in any launch, changes nothing, reports the sim's share (Mark 2026-10-14)
 	@$(SCRIPT_GATE) frame-check-test $(SCRATCH)/frame-check.log 600 '^frame-check: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_frame_check.gd
 no-twitch-test: import ## AC4, 5 (NT1, NT2): no decision from any key, click or gesture in four states; no deadlines over 600 s of fake time
