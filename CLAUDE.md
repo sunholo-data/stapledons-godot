@@ -38,14 +38,18 @@ is a release: `release.yml` runs the full CI suite first and builds only if it p
 
 **Merges (Mark, 2026-11-03; replaces the per-PR rig rule of 2026-10-19).** A PR merges on:
 1. the GitHub fast tier, `make ci-fast` (lock, policy lints, strict VM, parity, replay golden, crew parity, about 10 min);
-2. the targeted gates for what it touches, run locally by the executor (and `make golden` cases for a visual change);
+2. the targeted gates for what it touches, run locally by the executor: headless and quick. **A merge never waits on the GPU or
+   a quiet host** (Mark, 2026-11-06: "we shouldn't be using the gpu so much for quick merges"): no `make golden`, no
+   rig runs, no reruns under load. A visual change adds its golden case, runs that one case only if the GPU is free
+   right then, and otherwise leaves it to the nightly `rig/golden` and Mark's dev build;
 3. the cross-family evaluation (generator ≠ judge);
 4. for anything visual or audible, Mark's OK on a dev build: `make publish-dev` from the PR's clone, and Mark
    installs with `tools/install_review_build.sh --dev`.
 
 The full `make test` + `make golden` (70+ min) runs once a night on main: `tools/rig_nightly.sh` (launchd
-`dev.stapledon.rig-nightly`, `tools/launchd/`) posts `rig/full` on main's head and starts only when the GPU and
-CPU are idle, since local-model evals share the GPU. A red night opens a `nightly-rig` issue: fix forward or
+`dev.stapledon.rig-nightly`, `tools/launchd/`) runs it in two halves on main's head: `make test` as `rig/full`
+whenever the CPU is free, then `make golden` as `rig/golden` once the GPU is idle too, since local-model evals
+hold the GPU most nights (2026-11-06). A red night opens a `nightly-rig` issue: fix forward or
 revert first thing. Per-PR runs (serialised, ~70 min each) queued for hours and mostly failed on host load, not
 bugs. `tools/rig_check.sh <PR> [--golden]` is still there for a change risky enough to want the whole suite
 first. Release tags run the full CI suite. main is not branch-protected.

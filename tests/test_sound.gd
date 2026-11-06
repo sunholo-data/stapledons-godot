@@ -214,8 +214,10 @@ func test_commit_hold() -> void:
 	check(p is AudioStreamPlayer and p.playing, "S2: holding plays commit_hold")
 	await create_timer(0.3).timeout
 	d.on_game("commit_release")
-	await process_frame
+	# Checked before any frame passes: the fade starts on the release itself, and a throttled frame can
+	# outlast the whole 80 ms fade (background QoS, as under launchd; #392).
 	check(d.fading("commit_hold"), "S2: a release fades it out (no click)")
+	await process_frame
 	await create_timer(0.2).timeout
 	check(not p.playing, "S2: and it has stopped after the 80 ms fade")
 	d.on_game("commit_hold")
@@ -304,18 +306,37 @@ func test_beacon_measured() -> void:
 			b.follow(d, {"earth": {"rate": dd, "in_beam": true, "at_home": false}}, receiver)
 			var p: Node = d.get_node_or_null("Loop_" + b.cue)
 			await create_timer(0.2).timeout
-			cap.clear_buffer()
 			var span := 6.2 if dd == 0.5 else 2.2 if dd == 2.0 else 1.2 # three or more pips at D >= 0.5
-			await create_timer(span).timeout
-			var buf := cap.get_buffer(cap.get_frames_available())
-			var crossings := 0
-			for i in range(1, buf.size()):
-				if (buf[i - 1].x < 0.0) != (buf[i].x < 0.0):
-					crossings += 1
-			var hz := crossings * 0.5 * rate / maxf(buf.size(), 1.0)
+			# Wait for span seconds of mixed audio, not of wall time: the headless Dummy driver can mix slower
+			# than the clock (the 2026-11-04 nightly under launchd captured under 4 s of a 6.2 s wait at D 0.5,
+			# so one pip; issue #392). The cap is generous, and a short capture still fails below.
+			# Receiver is a generator the main thread fills each frame; a throttled host can starve it (an
+			# underrun is a gap and a phase jump: D 30 once read 422.9 Hz under taskpolicy -b). A capture
+			# during which the generator skipped frames is taken again, up to three times, and the skips are
+			# reported; a feed that underruns every time still fails.
+			var need := int(span * rate)
+			var gpb: AudioStreamGeneratorPlayback = p.get_stream_playback() as AudioStreamGeneratorPlayback if receiver and p != null else null
+			var buf := PackedVector2Array()
+			var skipped := 0
+			var tries := 0
+			var skip_log := []
+			while tries < 3:
+				tries += 1
+				var skips0 := gpb.get_skips() if gpb != null else 0
+				cap.clear_buffer()
+				var waited := 0.0
+				while cap.get_frames_available() < need and waited < 4.0 * span + 5.0:
+					await create_timer(0.1).timeout
+					waited += 0.1
+				buf = cap.get_buffer(mini(cap.get_frames_available(), need))
+				skipped = (gpb.get_skips() if gpb != null else 0) - skips0
+				skip_log.append(skipped)
+				if skipped == 0:
+					break
 			var want := HomeBeacon.CARRIER_HZ * (1.0 if receiver else dd)
-			seen.append("D %s %s %.1f Hz (want %.1f)" % [dd, "receiver" if receiver else "true", hz, want])
-			ok = ok and p != null and p.playing and buf.size() > 0 and absf(hz / want - 1.0) <= 0.01
+			var hz := _carrier_hz(buf, rate, want)
+			seen.append("D %s %s %.1f Hz (want %.1f)%s" % [dd, "receiver" if receiver else "true", hz, want, "" if tries == 1 and skipped == 0 else " [%d captures, generator skips per capture %s]" % [tries, skip_log]])
+			ok = ok and p != null and p.playing and buf.size() >= need and skipped == 0 and absf(hz / want - 1.0) <= 0.01
 			if dd >= 0.5:
 				var g := _pip_gap(buf, rate, want)
 				pips.append("%s D %s: %d pips of %d due, gap %.4f s (want %.4f)" % ["receiver" if receiver else "true", dd, g[0], int(floor(buf.size() / rate * dd)), g[1], 1.0 / dd])
@@ -330,6 +351,35 @@ func test_beacon_measured() -> void:
 		pip_ok = pip_ok and int(counts[k][0]) >= int(counts[k][1]) - 1
 	AudioServer.remove_bus_effect(0, 0)
 	check(ok, "S2 measured through the mixer: the beacon's carrier is 400 Hz in Receiver and 400 D Hz in True, within 1 %% (%s)" % ", ".join(seen))
+	print("sound S2 measured: " + ", ".join(seen)) # the readings and any re-taken capture, pass or fail
+	# Negative control for _carrier_hz: a clean 28.4 Hz sine, keyed off for 0.3 s mid-window, reads 28.4 within
+	# 0.1 %; the same window at 2x and 0.5x the frequency does not read as 28.4.
+	var tone := func(hz: float) -> PackedVector2Array:
+		var out := PackedVector2Array()
+		for i in int(1.2 * rate):
+			var t := i / rate
+			var v := 0.0 if t > 0.4 and t < 0.7 else sin(TAU * hz * t + 0.3)
+			out.append(Vector2(v, v))
+		return out
+	# A mixed window (the evaluator's case): 0.9 s at 14.2 Hz, 0.1 s of silence, 0.2 s at 28.4 Hz.
+	var mixed := PackedVector2Array()
+	for i in int(1.2 * rate):
+		var t := i / rate
+		var v := sin(TAU * 14.2 * t) if t < 0.9 else 0.0 if t < 1.0 else sin(TAU * 28.4 * t)
+		mixed.append(Vector2(v, v))
+	var c1 := _carrier_hz(tone.call(28.4), rate, 28.4)
+	var c2 := _carrier_hz(tone.call(56.8), rate, 28.4)
+	var c3 := _carrier_hz(tone.call(14.2), rate, 28.4)
+	var gapped := PackedVector2Array() # the evaluator's round-2 case: 29.2 Hz with a 30 ms exact-zero gap
+	for i in int(1.2 * rate):
+		var t := i / rate
+		var v := 0.0 if t > 0.4 and t < 0.43 else sin(TAU * 29.2 * t + 0.3)
+		gapped.append(Vector2(v, v))
+	var c6 := _carrier_hz(gapped, rate, 28.4)
+	var c4 := _carrier_hz(tone.call(28.0), rate, 28.4)
+	var c5 := _carrier_hz(mixed, rate, 28.4)
+	var off := func(hz: float) -> bool: return absf(hz / 28.4 - 1.0) > 0.01
+	check(absf(c1 / 28.4 - 1.0) < 0.001 and off.call(c2) and off.call(c3) and off.call(c4) and off.call(c5) and off.call(c6), "S2 negative control: the carrier estimator reads a keyed 28.4 Hz sine as %.3f Hz; 2x %.1f, 0.5x %.1f, 28.0 Hz %.2f, a mostly-14.2 Hz mix %.2f and 29.2 Hz with a 30 ms gap %.2f do not pass as 28.4" % [c1, c2, c3, c4, c5, c6])
 	check(pip_ok, "S2 measured: the time rate is D in both settings at every D, beyond the receiver's real-time range too: Earth's pips every 1/D s within 1 %%, none lost (%s)" % "; ".join(pips))
 	# Below the real-time range and outbound at 0.99c, on the Receiver's own sample clock (no mixer wait):
 	# D = 0.03 (pips 33.3 s apart, where the station's clamp would give 16 s) and D = 0.070888 (14.1 s).
@@ -427,6 +477,58 @@ class _Collect:
 ## from the floor to the loudest window (a short pip at high D reaches about 40 % in these windows), and the
 ## detector re-arms only after the level falls below 15 %.
 ## The mean spans an even number of gaps (the beacon alternates a long and a short pip).
+## The carrier's frequency from sub-sample (linear) zero crossings: the mean interval between consecutive
+## crossings inside the carrier, skipping the keying's silences. A whole-window count was off by up to one
+## crossing in ~68 at the 28.4 Hz True carrier (D 0.070888), 1.5 %, over the 1 % check (#392). Silence is
+## judged by amplitude, never by spacing (the evaluator's round-1 finding: a spacing rule took a wrong, lower
+## carrier for silence): the window is cut into blocks of two expected periods (at least 32 samples, so every
+## block holds a crest), and an interval counts only when every block it touches peaks at 0.1 of the window's
+## peak or more. A single sample exactly at 0.0 takes no side: the crossing runs from the last non-zero sample
+## (one landing on 0.0 once hid a crossing and doubled an interval); two or more exact zeros are silence,
+## however short, and no interval spans them (round 2: a 30 ms gap inside one block let 29.2 Hz read 28.35). So a carrier at twice the frequency reads
+## twice, one at half reads half, and a mix reads between: none passes as the expected.
+func _carrier_hz(buf: PackedVector2Array, rate: float, want_hz: float) -> float:
+	var blk := maxi(32, int(2.0 * rate / want_hz))
+	var peaks := PackedFloat32Array()
+	peaks.resize(buf.size() / blk + 1)
+	var top := 0.0
+	for i in buf.size():
+		var a := absf(buf[i].x)
+		if a > peaks[i / blk]:
+			peaks[i / blk] = a
+		top = maxf(top, a)
+	var floor_v := 0.1 * top
+	var prev := -1.0
+	var sum := 0.0
+	var n := 0
+	var last := -1 # the last sample that is not exactly 0.0
+	for i in buf.size():
+		var c := buf[i].x
+		if c == 0.0:
+			continue
+		var j := last
+		last = i
+		if j < 0:
+			continue
+		if i - j > 2: # two or more exact zeros between: keyed silence, however short; the chain breaks there
+			prev = -1.0
+			continue
+		var a := buf[j].x
+		if a * c < 0.0:
+			var t := float(j) + (i - j) * a / (a - c)
+			if prev >= 0.0:
+				var loud := true
+				for k in range(int(prev) / blk, i / blk + 1):
+					if peaks[k] < floor_v:
+						loud = false
+						break
+				if loud:
+					sum += t - prev
+					n += 1
+			prev = t
+	return 0.0 if n < 8 else rate / (2.0 * sum / n)
+
+
 func _pip_gap(buf: PackedVector2Array, rate: float, heard_hz: float) -> Array:
 	var w := int(rate * maxf(0.002, 2.0 / maxf(heard_hz, 1.0)))
 	var env := []
