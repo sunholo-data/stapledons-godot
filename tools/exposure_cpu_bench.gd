@@ -31,4 +31,4 @@ func run()->void:
 	DirAccess.make_dir_recursive_absolute("res://renders/perf")
 	var file:=FileAccess.open("res://renders/perf/exposure_cpu.json",FileAccess.WRITE);file.store_string(JSON.stringify(results,"  "))
 	sim.stop();sky.queue_free();await process_frame
-	print("exposure-cpu-bench: OK");quit(0)
+	print("exposure-cpu-bench: OK %d profiles, renders/perf/exposure_cpu.json" % results.size());quit(0)

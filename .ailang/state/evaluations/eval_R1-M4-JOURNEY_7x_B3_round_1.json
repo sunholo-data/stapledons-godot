@@ -1,0 +1,52 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "feature_id": "M4.6tR3_7x_B3_SCRIPT_GATES",
+  "evaluator_model": "claude-sonnet (Agent tool)",
+  "head_sha": "576a4866",
+  "base_sha": "761f577f",
+  "scores": {
+    "acceptance_criteria": {"max": 40, "score": 38, "note": "AC1-AC12, AC14-AC16 re-run and match the expected column; AC13 (GitHub CI) not run by me"},
+    "design_fidelity": {"max": 20, "score": 19, "note": "D1-D7 implemented; 29 rows migrated and 29 baseline rows deleted; pin 175; no forbidden files"},
+    "test_and_mutation_strength": {"max": 20, "score": 16, "note": "5 of 7 mutants killed; the SG_PREREQS pair-drop survives every gate"},
+    "hygiene_scope_portability": {"max": 10, "score": 9, "note": "uid/python/audio/precision guards, shellcheck, diff --check, scope all green; gmake 4.4.1 checked; dash/Linux left to CI"},
+    "evidence_quality": {"max": 10, "score": 9, "note": "sprint JSON progress notes present"}
+  },
+  "total": 91,
+  "pass": true,
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "Mutant survivor: deleting `planets-test:planet-assets` from SG_PREREQS in mk/script-gates.mk lets script-gate-lint pass with '2 pairs hold'. The negative control reads $(SG_PREREQS) itself, so nothing asserts the pair list. Only the doc's AC1 text pins 3 pairs. Suggest a pinned pair count or a required-pairs literal in the lint.",
+    "The static lint does not check that counted summary regexes in mk files reject zero. That check runs only at gate run time (the helper zero probe). A loosened [0-9]* is caught when the gate runs (verified on planets-test), not by make script-gate-lint.",
+    "AI_SF guard allows '.', so a path with '..' segments passes the policy. Harmless: it is still absolute and metacharacter-safe.",
+    "AC13 (Linux, dash, GNU make 4 in CI) not verified by me. Local gmake 4.4.1 gave AC16 identical results. tools/script_gate_prereqs.sh uses POSIX sh and passes shellcheck -s sh.",
+    "commons-grown-motion regex pins the literal '64 frames, fixed actual court Astern camera,8fps/8seconds'. That is stricter than a count and fine, but it breaks if the label is edited."
+  ],
+  "acs_rerun": {
+    "AC1": "pass: 'script-gate-lint: ok (238 ... 63 through SCRIPT_GATE, 175 on the baseline ...)', prereqs ok (3 pairs), rc=0",
+    "AC2": "pass: pin 176 rejected with the exact expected message",
+    "AC3": "pass: rc=2, 'constellation-test lost its prerequisite starmap-assets (constellation-test: import)', restored",
+    "AC4": "pass: selftest 18 stub/0 Godot; drill 24 cases (18 stub, 6 Godot)",
+    "AC5": "pass: rc=0, 23 distinct gate lines, 0 FAIL, counts match the doc (25, 95, 20, 110, 167, 31, 44, 4, 2, 1 surface/4771 samples, 16, bridge, 121, 19, 13, 89, 63, 3, 9, 53, 30)",
+    "AC6": "pass: rc=0, 7 ok, 0 FAIL, alpha-centauri-golden worst 0.001696",
+    "AC7": "pass: all four parse-error drills FAIL as expected; raw planets rc=0; neg_p says 'rc 0, want 1'",
+    "AC8": "pass: raw planets rc=0 '79 passed, 0 failed'; lv_r, pl_r, ai_r all FAIL with the SCRIPT ERROR line (rc echo was masked by my pipe to cut, the FAIL lines are as expected)",
+    "AC9": "pass: absent, 3, expected four files listed",
+    "AC10": "pass: six 0",
+    "AC11": "pass: uid 406, python 21/0, audio 79/5, lint-precision ok, shellcheck clean, gates-ok",
+    "AC12": "pass: 0 and 0",
+    "AC13": "not run (needs the PR's CI run)",
+    "AC14": "pass: exact 0, xgodot 1, meta-exact 0, meta-xgodot 1, meta-dot 1, meta-plus 1, meta-zero 1",
+    "AC15": "pass: rc=1, 'alpha-centauri-golden: 10 cases, 10 failures; worst 1.501696'",
+    "AC16": "pass with make and with gmake 4.4.1: three times rc=2 and 1, nothing created (the one zsh 'no matches' line is the ls glob, not the make)"
+  },
+  "mutation_drills": [
+    {"mutant": "planets summary regex [1-9][0-9]* loosened to [0-9]* (mk/m5.mk)", "result": "killed at run time by the helper zero probe ('SUMMARY_ERE also matches planets: 0 passed, 0 failed'); survives make script-gate-lint (static)"},
+    {"mutant": "drop planets-test:planet-assets from SG_PREREQS", "result": "SURVIVED (lint ok, '2 pairs hold')"},
+    {"mutant": "remove planet-assets prerequisite from the planets-test rule", "result": "killed: 'planets-test lost its prerequisite planet-assets'"},
+    {"mutant": "revert tests/test_ai_relay.gd to the uncounted summary", "result": "killed: replay-noai FAIL, no summary line matching"},
+    {"mutant": "re-add deleted baseline row ai-conversation", "result": "killed: stale baseline row plus pin mismatch 176 vs 175"},
+    {"mutant": "pin raised to 176", "result": "killed by AC2 message"},
+    {"mutant": "remove the AI_SF absolute-path and charset guard line", "result": "killed by AC16 expectation (guard absent). Make fails loudly on a space path, but a directory /tmp/b3m7 got created, so the guard is real protection"}
+  ],
+  "summary": "B3 migrates 29 rows (levels.mk, m5.mk, ai.mk) onto SCRIPT_GATE with bound-count summaries and counted summaries added to six GDScript scripts. It deletes the matching 29 baseline rows and lowers the pin to 175. It adds script_gate_prereqs.sh with a negative control (catches the iteration-70 survivor) and an AI_SF path policy plus an escaped record regex. Every AC I could run reproduced the expected output, including the GPU windowed ones. No forbidden files were touched. One mutant survives (dropping a pair from SG_PREREQS); non-blocking. Score 91, PASS."
+}

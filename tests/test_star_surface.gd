@@ -4,10 +4,12 @@ extends SceneTree
 ## Expected values are closed forms, the package's numbers (sim/data, sunholo/celestial stellar) or
 ## Blackbody's exact CPU path, never the mirror's own output.
 var failures := 0
+var passes := 0
 
 
 func check(name: String, ok: bool, detail := "") -> void:
 	if ok:
+		passes += 1
 		print("  ok    %s" % name)
 	else:
 		failures += 1
@@ -32,7 +34,7 @@ func _initialize() -> void:
 	_basis()
 	_eclipse()
 	_telescope()
-	print("star-surface: %s (%d failures)" % ["OK" if failures == 0 else "FAIL", failures])
+	print("star-surface: %s (%d passed, %d failures)" % ["OK" if failures == 0 else "FAIL", passes, failures])
 	quit(1 if failures > 0 else 0)
 
 

@@ -1,0 +1,48 @@
+{
+ "sprint_id": "R1-M4-JOURNEY/M4.6sR3_7x_B2_SCRIPT_GATES",
+ "pr": 395,
+ "head": "48fe3953",
+ "round": 1,
+ "score": 92,
+ "pass": true,
+ "verdict": "PASS",
+ "categories": {"tests_pass": 20, "lint_clean": 10, "acceptance_criteria": 28, "code_quality": 12, "documentation": 13, "design_fidelity": 9},
+ "blocking": [],
+ "non_blocking": [
+  "Mutant survivor: removing the starmap-assets prerequisite from constellation-test is caught by no gate or test (AC16 covers only SCRATCH creation). Consider a lint/grep assertion or a fresh-clone CI step.",
+  "commons-civic-stage and npc-painted-assets-check keep literal pinned counts (4 configs/3 GLBs/4 PNGs; 5 identities/25 poses) rather than [1-9][0-9]*; the zero probe passes them, but a data change needs a regex edit. Not a defect.",
+  "AC15 (GitHub fast tier) was still pending when read; left to the controller. Linux/dash/GNU sed is first exercised there.",
+  "No mawk/GNU sed locally; sed -E 's/.../\\10/k' verified only on BSD sed and dash."
+ ],
+ "ac_results": [
+  {"id":"AC1","command":"make script-gate-lint","result":"ok (237 --script invocations: 33 through $(SCRIPT_GATE), 204 on the baseline; 22 includes; 23 makefiles) rc=0","pass":true},
+  {"id":"AC2","command":"make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=205","result":"baseline has 204 rows but pin is 205; Error 1","pass":true},
+  {"id":"AC3","command":"make script-gate-selftest","result":"all stub cases ok incl. stub-twocount/twobound/uncounted/namedigit/weakcount; 18 cases: 18 stub, 0 Godot","pass":true},
+  {"id":"AC4","command":"old helper via SCRIPT_GATE_SH","result":"rc=1, 5 stub FAILs; all-at-once mutant fails exactly stub-twocount (see M2)","pass":true},
+  {"id":"AC5","command":"make script-gate-drill","result":"ok (24 cases: 18 stub, 6 Godot) rc=0","pass":true},
+  {"id":"AC6","command":"lint fixture inventory","result":"7; 'gate-after tests/after.gd ungated'; 3","pass":true},
+  {"id":"AC7","command":"lint mutant sg ? gated","result":"2 unguarded (control needs 3): killed","pass":true},
+  {"id":"AC8","command":"make <25 B2a targets>","result":"rc=0; 28 distinct script-gate ok lines; 0 FAIL; counts match doc (moon-lifecycle 218 s)","pass":true},
+  {"id":"AC9","command":"make ui area-test test-bright-audit star-catalogue-test sim-bridge","result":"5 ok: 205/80/16/40/110 passed","pass":true},
+  {"id":"AC10","command":"parse-error drill c1-c4","result":"each FAIL with 1 SCRIPT ERROR + no summary; c4 also 'rc 0, want 1'","pass":true},
+  {"id":"AC11","command":"runtime-error drill c5","result":"old predicate: PASS; helper FAIL 1 SCRIPT ERROR","pass":true},
+  {"id":"AC12","command":"zero-count regexes","result":"0 0 0 0 0","pass":true},
+  {"id":"AC13","command":"uid-guard python-guard audio-silent-guard lint-precision, git diff --check, shellcheck","result":"gates-ok","pass":true},
+  {"id":"AC14","command":"scope greps","result":"0 and 0","pass":true},
+  {"id":"AC15","command":"gh pr checks 395","result":"fast tier pending at read time; not waited on","pass":null},
+  {"id":"AC16","command":"fresh SCRATCH dust-flash/map-ism/star-surface","result":"absent; three ok lines; s/ has two logs and star-surfaces/test.log","pass":true}
+ ],
+ "diff_review": "Recipes match D2; 28 baseline rows deleted are exactly the migrated gates (lint with row removed for unmigrated gate fails); no forbidden file touched; summary edits (star-surface, captain-frames, ui-theme-check, exposure/planet bench) print the counts and keep the old checks; precedence of '%' vs 'if else' in captain_frames.gd is correct (output confirmed 50 frames).",
+ "mutants": [
+  {"id":"M1","mutant":"per-count loop limited to k=1","killed":true,"by":"test_script_gate stubs (2 FAIL)"},
+  {"id":"M2","mutant":"zero all counts at once (revision 0)","killed":true,"by":"stub-twocount"},
+  {"id":"M3","mutant":"probe disabled","killed":true,"by":"5 stub FAILs"},
+  {"id":"M4","mutant":"baseline row deleted without migrating, pin 203","killed":true,"by":"lint unguarded bh-hud-test"},
+  {"id":"M5","mutant":"pin raised to 232 / 205","killed":true,"by":"lint pin check"},
+  {"id":"M6","mutant":"[1-9] removed from regex ([0-9]*)","killed":true,"by":"helper 'SUMMARY_ERE also matches'"},
+  {"id":"M7","mutant":"zero-count summary under correct regex","killed":true,"by":"helper no summary match"},
+  {"id":"M8","mutant":"style-test recipe reverted to bare godot","killed":true,"by":"lint unguarded style-test"},
+  {"id":"M9","mutant":"starmap-assets prerequisite removed","killed":false,"by":"nothing"}
+ ],
+ "mutants_killed": "8 of 9"
+}

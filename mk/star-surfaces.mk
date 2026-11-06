@@ -17,10 +17,7 @@ ci-fast: stellar-protocol-test
 .PHONY: star-surface-test
 star-surface-test: import ## AC3, AC5-AC8: the CPU mirror (physics/star_surface.gd): laws, hash, gate, RS-24 flux, the single-spot closed form, colour from temperature, float64 phases, the fader peak, the uniforms
 	@mkdir -p $(SCRATCH)/star-surfaces
-	@perl -e 'alarm 900; exec @ARGV' $(GODOT) --headless --path . --script tests/test_star_surface.gd > $(SCRATCH)/star-surfaces/test.log 2>&1; rc=$$?; \
-	  grep -E '^  (ok|FAIL)|^star-surface' $(SCRATCH)/star-surfaces/test.log; \
-	  ! grep -q 'SCRIPT ERROR' $(SCRATCH)/star-surfaces/test.log || { grep -A2 'SCRIPT ERROR' $(SCRATCH)/star-surfaces/test.log | head -20; echo "star-surface: FAIL (script error)"; exit 1; }; \
-	  test $$rc = 0 && grep -q '^star-surface: OK (0 failures)$$' $(SCRATCH)/star-surfaces/test.log
+	@$(SCRIPT_GATE) star-surface-test $(SCRATCH)/star-surfaces/test.log 900 '^star-surface: OK \([1-9][0-9]* passed, 0 failures\)$$' -- $(GODOT) --headless --path . --script tests/test_star_surface.gd
 test: star-surface-test
 
 .PHONY: star-surface-bench

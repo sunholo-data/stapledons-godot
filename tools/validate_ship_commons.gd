@@ -1,5 +1,6 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 var triangles:=0
 var maximum:=0.
 var minimum_y:=INF
@@ -7,7 +8,7 @@ var maximum_y:=-INF
 var materials:={}
 var faces:=PackedVector3Array()
 func check(name: String, ok: bool) -> void:
-	print("  %s %s" % ["ok" if ok else "FAIL",name]);if not ok:failures+=1
+	print("  %s %s" % ["ok" if ok else "FAIL",name]);passes+=int(ok);failures+=int(not ok)
 func _initialize() -> void:
 	var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/ship_commons/manifest.json"))
 	var scene:=AreaBundle.load_glb("res://assets/ship_commons/"+manifest.assets.get("painted",manifest.assets.blockout))
@@ -36,7 +37,7 @@ func _initialize() -> void:
 		check("canopy standing head clearance",not _hit(Vector3(18.75,58.7,3),Vector3(18.75,59.05,3)))
 	for x in [6.2,8.,9.8]:
 		for z in [-6.2,-8.,-9.8]:check("new mesh leaves lift shaft clear",not _hit(Vector3(x,83.4,z),Vector3(x,55.5,z)))
-	scene.free();print("validate-ship-commons: %s" % ("OK" if failures==0 else "FAIL"));quit(1 if failures else 0)
+	scene.free();print("validate-ship-commons: %s (%d passed, %d failures)" % ["OK" if failures==0 else "FAIL",passes,failures]);quit(1 if failures else 0)
 func _scan(n: Node, transform: Transform3D) -> void:
 	if n is Node3D:transform=transform*n.transform
 	if n is MeshInstance3D and n.mesh!=null:

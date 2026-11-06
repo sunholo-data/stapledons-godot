@@ -1,0 +1,64 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "feature_id": "M4.6uR3_7x_B4_SCRIPT_GATES",
+  "evaluator_model": "claude-sonnet-5-5 (Agent tool)",
+  "head_sha": "decd5498",
+  "base_sha": "05e64cd1",
+  "scores": {
+    "acceptance_criteria": {"max": 40, "score": 37, "note": "AC1-AC12 and AC14 re-run and match; AC13 pending (no PR yet); the first AC5 attempt hit a startup_timeout in ship-live-sim, not reproduced on two reruns"},
+    "design_fidelity": {"max": 20, "score": 19, "note": "56 baseline rows deleted = the migrated rows (57 gated lines; ship-demo-geometry-negative-test one row became two lines, wrong-tier and wrong-tip); pin 119; PREREQS pin and ship-baseline pair added; no hunk before line 1080; no protected file touched"},
+    "test_and_mutation_strength": {"max": 20, "score": 16, "note": "9 of 11 mutants killed by a named gate; the swapped SG_PREREQS pair survives (the pin counts pairs, not their names); counted summaries are not pinned to a number"},
+    "hygiene_scope_portability": {"max": 10, "score": 9, "note": "uid/python/audio/precision guards, shellcheck, diff --check, scope all green; dash/GNU make on Linux left to CI (AC13)"},
+    "evidence_quality": {"max": 10, "score": 9, "note": "sprint JSON present; doc AC text was runnable as written from the Appendix extractor"}
+  },
+  "total": 90,
+  "pass": true,
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "Mutant survivor: replacing the SG_PREREQS pair planets-test:planet-assets with ship-console-test:import (a real target pair) keeps 4 pairs and 4 distinct, and script-gate-prereqs reports 4 pairs hold. The new pin SG_PREREQS_PAIRS counts pairs, not their names, so it kills a dropped pair but not a swapped one. Suggest pinning the sorted list text or a checksum of it.",
+    "Counted summaries are only required to be nonzero and to reject zero. Deleting a check from a test script, or a script that prints a hard-coded count, passes every gate; no per-gate count is pinned. Same as B3; by design in D1.",
+    "UNATTRIBUTED: the first AC5 run (rig load average about 9) failed ship-live-sim with 'FAIL normal startup (startup_timeout)' from tests/test_live_journey.gd; make ship-demo-live-test repeated it once, then passed on the third run (17 passed, 28 s), and the base test run directly passed in 56 s. The test and the sim startup are unchanged except the summary print, so I attribute it to a cold sim cache under load, not to the change. Worth knowing: the first run in a fresh clone can be red on a loaded rig.",
+    "The AC14 curl bound has no static gate: removing --max-time 60 survives script-gate-lint and every other gate, and is killed only by AC14 (a stalled server). AC14 is a manual AC, not in make test.",
+    "ship-demo-geometry-negative-test now has two gate lines for what was one baseline row (one per mutation). Correct, and the reason regexes are bound, but the 56-rows-to-57-lines mapping needs the explanation the doc gives in D2.",
+    "tools/ship_baseline.sh: --retry-max-time 120 does not cap an attempt that has started; the real bound is --max-time 60 per attempt (measured 121-123 s total for one file, 2 curl 28s). Fine, but multi-file fetches multiply it only on success paths."
+  ],
+  "mutants": [
+    {"id": "M1", "mutant": "re-add a deleted baseline row (tour-pacing-test tests/test_tour_pacing.gd), pin left at 119", "killed_by": "make script-gate-lint: 'stale baseline row (no longer unguarded)' and 'baseline has 120 rows but pin is 119', rc 2"},
+    {"id": "M1b", "mutant": "re-add the row and raise the pin to 120", "killed_by": "make script-gate-lint: stale baseline row (the row is migrated)"},
+    {"id": "M2", "mutant": "loosen a migrated regex to [0-9]* (stub run through tools/script_gate.sh with 0 passed)", "killed_by": "script_gate.sh: 'carries no nonzero count' rc 1"},
+    {"id": "M2b", "mutant": "loosened [0-9]* regex with a real count of 7", "killed_by": "script_gate.sh zero probe: 'SUMMARY_ERE also matches ... zeroed' rc 1"},
+    {"id": "M3", "mutant": "drop planets-test:planet-assets from SG_PREREQS", "killed_by": "make script-gate-lint: 'SG_PREREQS holds 3 pairs but SG_PREREQS_PAIRS is 4', rc 2 (the new pin)"},
+    {"id": "M3b", "mutant": "swap planets-test:planet-assets for ship-console-test:import in SG_PREREQS", "killed_by": "SURVIVES every gate (lint ok, '4 pairs hold')"},
+    {"id": "M4", "mutant": "remove ship-baseline from the ship-console-test prerequisites in the Makefile", "killed_by": "make script-gate-lint: 'ship-console-test lost its prerequisite ship-baseline', rc 2 (AC4)"},
+    {"id": "M5", "mutant": "remove --max-time 60 from tools/ship_baseline.sh, stalled server on 127.0.0.1:18799", "killed_by": "AC14 only: the fetch was still hanging at my 200 s cap (rc 142) where the real tree ends rc 2 at 121 s; no static gate sees it"},
+    {"id": "M6", "mutant": "summary line prints a count while the script hit a SCRIPT ERROR and exits 0 (stub)", "killed_by": "script_gate.sh: '1 SCRIPT ERROR line(s)' rc 1; also AC7 parse drill 57/57 rc 2 and AC8 runtime drill 8/8 rc 2"},
+    {"id": "M7", "mutant": "negative control fails with a different reason (stub, rc 1, wrong FAIL line)", "killed_by": "script_gate.sh: 'no summary line matching ^  FAIL tier height 1$'; the right reason passes ('ok:   FAIL tier height 1')"},
+    {"id": "M9", "mutant": "un-gate a migrated row (ship-ui-test back to a raw godot line)", "killed_by": "make script-gate-lint: 'unguarded --script gate not on the baseline', rc 2"},
+    {"id": "M10", "mutant": "add a new raw --script line to the Makefile", "killed_by": "make script-gate-lint: 'unguarded --script gate not on the baseline', rc 2"},
+    {"id": "M11", "mutant": "delete a check from a counted test script (count falls, nothing else changes)", "killed_by": "SURVIVES by design (analysis, not run): the gates require a nonzero count, not a number"}
+  ],
+  "acs_rerun": {
+    "AC1": "pass: script-gate-lint: ok (239 --script invocations: 120 through $(SCRIPT_GATE), 119 on the baseline; 22 includes ...); script-gate-prereqs: ok (4 pairs hold ...); rc=0",
+    "AC2": "pass: 'the baseline has 119 rows but SCRIPT_GATE_BASELINE_ROWS is 120: the pin moves with the rows, and only down'",
+    "AC3": "pass: rc=2, 'SG_PREREQS holds 3 pairs (3 distinct) but SG_PREREQS_PAIRS is 4 ...', then 1",
+    "AC4": "pass: rc=2, 'ship-console-test lost its prerequisite ship-baseline (ship-console-test: import)'",
+    "AC5": "pass on the second full run: list-ok, n-rc=0; rc 0; 57 distinct gate lines; 0 FAIL; counts match D2 (ship-demo 244, validate-ship-demo 24, live-journey 17, solar-departure 134 in the 3000 s window, 5 negatives ok, news-lint 5 tiers 20 templates). First run: ship-live-sim startup_timeout under load (UNATTRIBUTED, see findings)",
+    "AC6": "pass: 'test-script-gate: ok (18 cases: 18 stub, 0 Godot)' and 'ok (24 cases: 18 stub, 6 Godot)'",
+    "AC7": "pass: 57; '57 rc=2'; 57 SCRIPT ERROR FAILs; the 5 negatives say 'rc 0, want 1'",
+    "AC8": "pass: 8 rows; '8 rc=2'",
+    "AC9": "pass: 22 lines, each zeroed=0 real=1 makefile=1, except 1,12 with makefile=2",
+    "AC10": "pass: baseline matches, 'ship-console-test ok: ship-consoles: 135 passed, 0 failures', rc=0 (83 s)",
+    "AC11": "pass: uid-guard 406, python-guard 21/0, audio-silent-guard 79/5, lint-precision ok, git diff --check, shellcheck, gates-ok",
+    "AC12": "pass: 0 (files outside scope), 0 (Makefile hunks before line 1080), 0 (protected files), '3 1 tools/ship_baseline.sh'",
+    "AC13": "pending: no PR yet (GitHub fast tier, Linux dash and GNU make 4, not run by me)",
+    "AC14": "pass on port 18799: rc=2 in 123 s, 2 curl (28), 'ship-baseline: FAIL fetch ship.glb (9da7...)' and 'make: *** [ship-baseline] Error 1', 0 script-gate lines, then ship-baseline matches again"
+  },
+  "independent_checks": {
+    "baseline_rows": "56 rows deleted, 0 added; every deleted (target, script) pair is a gated line at Makefile line 1080 or later; the one extra gated line is ship-demo-geometry-negative-test's second mutation",
+    "makefile_scope": "no hunk before line 1080; no protected file or tools/script_gate*.sh helper changed",
+    "script_summaries": "all 19 scripts diffed: every check() still records its result (passes+=int(ok);failures+=int(not ok)); no assertion removed; ship_demo_assets, ship_demo_benchmark and ship_demo_launch count conditions equivalent to the old boolean",
+    "regexes": "every positive ERE uses [1-9][0-9]*; the helper zero probe rejected loosened forms; AC9 confirms 22 of 22",
+    "curl_bound": "--connect-timeout 10 --max-time 60 --retry 2 --retry-max-time 120 is real (measured 121-123 s against a stalled server; the mutant without --max-time hangs)"
+  },
+  "not_measured": ["AC13 GitHub fast tier on Linux", "make golden (not in scope, no visual change)"]
+}

@@ -32,6 +32,7 @@ const LEAD := -150.0
 const TESTS := ["rehearsal", "swaps", "offset", "fallback", "no_audio", "replay", "session_off"]
 
 var failures := 0
+var passes := 0
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/conversation")
 ## The rehearsal (reused by the later tests): {line, voice, library}.
 var reh: Dictionary = {}
@@ -39,7 +40,8 @@ var core := ""
 
 
 func assert_bool(name: String, ok: bool) -> void:
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("  %s  %s" % ["ok  " if ok else "FAIL", name])
 
 
@@ -313,5 +315,5 @@ func _initialize() -> void:
 	for t in tests:
 		if call("test_" + t) != true: # a script error aborts a test silently
 			assert_bool("test_%s ran to its end" % t, false)
-	print("conversation: %s (%s)" % ["FAIL" if failures > 0 else "ok", ", ".join(tests)])
+	print("conversation: %s (%d passed, %d failures; %s)" % ["FAIL" if failures > 0 else "ok", passes, failures, ", ".join(tests)])
 	quit(1 if failures > 0 else 0)

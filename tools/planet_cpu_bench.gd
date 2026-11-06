@@ -30,4 +30,5 @@ func run()->void:
 	var report:={"cpu_exposure_updates":rows,"texture_preparation":sky.system_view.presentation_stats(),"platform":OS.get_name(),"label":"Mac Studio headless CPU presentation-only benchmark; no catalogue/background, no GPU frame cost, no M2 Air claim. Forced preparation models previous redundant SystemView reconstruction; same physical rays/meters in both cases."}
 	DirAccess.make_dir_recursive_absolute("res://renders/perf")
 	var out:=FileAccess.open("res://renders/perf/planet_cpu.json",FileAccess.WRITE);out.store_string(JSON.stringify(report,"  "));print(JSON.stringify(report))
+	print("planet-cpu-bench: %d rows, renders/perf/planet_cpu.json" % rows.size())
 	sky.queue_free();await process_frame;quit()

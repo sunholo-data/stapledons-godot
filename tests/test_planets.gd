@@ -245,5 +245,5 @@ func _initialize() -> void:
 	test_credits_displayed()
 	test_export_bundle()
 	await process_frame
-	print("\n%d passed, %d failed" % [passes, failures])
+	print("\nplanets: %d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)

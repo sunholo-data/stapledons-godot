@@ -4,9 +4,10 @@ extends SceneTree
 ## Run:  make frame-check-test
 
 var failures := 0
+var passes := 0
 
 func check(label: String, ok: bool) -> void:
-	if not ok: failures += 1
+	passes += int(ok); failures += int(not ok)
 	print("%s %s" % ["ok" if ok else "FAIL", label])
 
 func _initialize() -> void:
@@ -41,5 +42,5 @@ func _run() -> void:
 	print("frame check report: fps %.1f p95 %.1f ms, sim %.0f%%, %d sends" % [report.get("fps_mean", 0.0), report.get("frame_ms", {}).get("p95", 0.0), report.get("sim", {}).get("share_of_frame_time", 0.0) * 100.0, report.get("sim", {}).get("sends", 0)])
 	demo.queue_free()
 	await process_frame
-	print("frame-check: %d failures" % failures)
+	print("frame-check: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)

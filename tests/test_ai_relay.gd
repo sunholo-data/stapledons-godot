@@ -23,6 +23,7 @@ const KEY_G := "kh-fixture-gemini-5d2c9e"
 const KEY_O := "kh-fixture-openrouter-a8f1b7"
 
 var failures := 0
+var passes := 0
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/ai_relay")
 var res := ProjectSettings.globalize_path("res://")
 var bridges: Array = []
@@ -31,7 +32,8 @@ var e2e: Dictionary = {}
 
 
 func assert_bool(name: String, ok: bool) -> void:
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("  %s  %s" % ["ok  " if ok else "FAIL", name])
 
 
@@ -522,5 +524,5 @@ func _initialize() -> void:
 		b.shutdown()
 	for b in bridges:
 		b.free()
-	print("ai relay: %s (%s)" % ["FAIL" if failures > 0 else "ok", ", ".join(tests)])
+	print("ai relay: %s (%d passed, %d failures; %s)" % ["FAIL" if failures > 0 else "ok", passes, failures, ", ".join(tests)])
 	quit(1 if failures > 0 else 0)

@@ -1,7 +1,8 @@
 extends SceneTree
 var failures:=0
+var passes:=0
 func check(label:String,ok:bool)->void:
-	print("%s %s"%["ok" if ok else "FAIL",label]);if not ok:failures+=1
+	print("%s %s"%["ok" if ok else "FAIL",label]);passes+=int(ok);failures+=int(not ok)
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var demo:Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
@@ -28,4 +29,4 @@ func _run()->void:
 	check("sky and clocks mirror every AILANG state",mirrors)
 	check("arrival stays rest",demo.sky.beta==0. and demo.journey_map.journey_state()=="arrived")
 	check("snapshot available after physical arrival",demo.set_sky_state("rest"))
-	demo.queue_free();await process_frame;quit(1 if failures else 0)
+	demo.queue_free();await process_frame;print("ship-demo-live: %d passed, %d failures"%[passes,failures]);quit(1 if failures else 0)

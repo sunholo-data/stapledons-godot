@@ -16,7 +16,7 @@ extends SceneTree
 ##   --selftest           the check must FAIL on three seeded defects: a recoloured frame (another
 ##                        identity's palette), a frame drawn for the wrong pose (the other facing's
 ##                        guide), a frame at the wrong scale.
-## Prints "captain-frames: ok" or FAIL lines. Writes --json <file> with every number.
+## Prints "captain-frames: ok (N frames)" or FAIL lines. Writes --json <file> with every number.
 const DIR := "res://assets/characters/captain"
 const CELL_SCALE := 0.1875
 ## The manifest the painted frames are written to and checked in: the captain's own (the game loads its
@@ -89,9 +89,9 @@ func _initialize() -> void:
 		f.store_string(JSON.stringify(report, "  "))
 		f.close()
 	if mode == "selftest":
-		print("captain-frames: selftest ok" if ok else "captain-frames: FAIL selftest")
+		print("captain-frames: selftest ok (%d frames)" % report.frames.size() if ok else "captain-frames: FAIL selftest")
 	else:
-		print("captain-frames: ok" if ok else "captain-frames: FAIL")
+		print("captain-frames: ok (%d frames)" % report.frames.size() if ok else "captain-frames: FAIL")
 	quit(0 if ok else 1)
 
 

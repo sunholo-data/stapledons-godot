@@ -1,0 +1,207 @@
+{
+ "score": 88,
+ "pass": true,
+ "blocking": [],
+ "non_blocking": [
+  "Surviving mutants: the lint does not inspect the summary regex shape passed to $(SCRIPT_GATE) (a '^.' or '[0-9]*' regex passes), and the segment test accepts SCRIPT_GATE after $(GODOT). Reviewer convention only. Consider requiring '[1-9]' in the regex or a fixture for the latter.",
+  "AC4 (full make sim) not run by me per instructions; AC13 (Linux fast tier) pending at evaluation time; mawk/gawk not available locally so the lint awk is verified only on BSD awk, dash, make 3.81 and gmake. The awk uses only plain POSIX constructs (index, substr, match, gsub, user functions), nothing gawk-only spotted.",
+  "tests/test_sim_bridge.gd has an unintended whitespace edit: 'var scratch :=ProjectSettings...' (space removed). Harmless, valid GDScript, but a stray change.",
+  "make script-gate-selftest prints a shell job notice 'tools/test_script_gate.sh: line 52: ... Terminated: 15 sleep' from the control sleep; cosmetic.",
+  "Design text for AC1/AC2 still says 10/16 cases; round-2 binding amendment gives 12/18, which the code matches. Deviation (per-run orphan sleep duration instead of literal 'sleep 977') is documented and sensible, so the literal AC16 pgrep is vacuous but the in-test pgrep is real.",
+  "Scope limits (documented in the design, follow-up B8): tracked shell scripts calling godot --script (tests/test_playthrough.sh, tools/captain_review.sh, etc.) and 'godot -s' are not scanned. 'passes' in the sprint JSON is left false for the judge as requested.",
+  "Helper limitation (documented in its header): a child that calls setsid leaves the process group and survives the supervisor."
+ ],
+ "ac_results": [
+  {
+   "id": "AC1",
+   "command": "make script-gate-selftest",
+   "rc": 0,
+   "output": "12 stub cases ok (design text says 10; round-2 A2 makes it 12); 'ok (12 cases: 12 stub, 0 Godot)'; stray 'Terminated: 15 sleep' job notice printed by the shell"
+  },
+  {
+   "id": "AC2",
+   "command": "make script-gate-drill",
+   "rc": 0,
+   "output": "23 s; raw-parse-rc0 ok, godot-hang exit 1 in 10 s timeout rc 142, make-sim-parse exit 2 SCRIPT ERROR; 'ok (18 cases: 12 stub, 6 Godot)'"
+  },
+  {
+   "id": "AC3-GREEN",
+   "command": "make sim-bridge SIM_BRIDGE_SCRIPT=p.gd SIM_BRIDGE_LOG=...",
+   "rc": 2,
+   "output": "script-gate: sim-bridge FAIL; 1 SCRIPT ERROR line(s) ...; no summary line matching; make: *** Error 1"
+  },
+  {
+   "id": "AC3-real",
+   "command": "make sim-bridge (real script, extra)",
+   "rc": 0,
+   "output": "script-gate: sim-bridge ok: sim bridge: 110 passed, 0 failures (rc 0, no SCRIPT ERROR, 135 s of 900 s)"
+  },
+  {
+   "id": "AC5",
+   "command": "make ui area-test test-bright-audit star-catalogue-test",
+   "rc": 0,
+   "output": "ui 205 passed; area-test 80 passed; test-bright-audit 16 passed; star-catalogue-test 40 passed (first attempt printed no script-gate lines, right after the reimport; the rerun was clean)"
+  },
+  {
+   "id": "AC6",
+   "command": "make script-gate-lint",
+   "rc": 0,
+   "output": "ok (237 --script invocations: 5 through $(SCRIPT_GATE), 232 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)"
+  },
+  {
+   "id": "AC7",
+   "command": "(a)(b)(c) probes",
+   "rc": null,
+   "output": "(a) rc=2, 1 match, 'not included by any scanned makefile'; (b) pin 231 refused, make Error 1; (c) stale row message, rc=1"
+  },
+  {
+   "id": "AC9",
+   "command": "make -pn wiring loop",
+   "rc": 0,
+   "output": "test: script-gate-drill script-gate-lint script-gate-selftest ; ci-fast: script-gate-lint script-gate-selftest"
+  },
+  {
+   "id": "AC10",
+   "command": "uid-guard python-guard audio-silent-guard lint-precision; git diff --check; shellcheck -s sh",
+   "rc": 0,
+   "output": "all ok (406 .uid files, no new .py); shellcheck clean"
+  },
+  {
+   "id": "AC11",
+   "command": "scope commands",
+   "rc": 0,
+   "output": "0 files outside list; 0 do-not-touch files; 6 Makefile hunks"
+  },
+  {
+   "id": "AC12",
+   "command": "summary-edit greps",
+   "rc": 0,
+   "output": "1, 1, 0"
+  },
+  {
+   "id": "AC14",
+   "command": "(a)(b)(c)",
+   "rc": null,
+   "output": "(a) rc=2 include outside + not included; (b) rc=2 makefile not scanned; (c) 3 and 1"
+  },
+  {
+   "id": "AC15",
+   "command": "inventory on fixture + grep",
+   "rc": 0,
+   "output": "exactly the six rows with mixed m1 gated / m2 ungated; grep count 1"
+  },
+  {
+   "id": "AC16",
+   "command": "selftest grep + pgrep sleep 977",
+   "rc": 0,
+   "output": "stub-ignore-alrm ok 4 s; stub-orphan-child ok 2 s; 12 cases; pgrep 0 (the sleep length is per-run now, a documented deviation)"
+  },
+  {
+   "id": "AC17",
+   "command": "exec-alarm mutant via SCRIPT_GATE_SH",
+   "rc": 1,
+   "output": "FAIL stub-ignore-alrm: exit 1 in 30 s, want 1 within 6 s; FAIL stub-orphan-child: a sleep survived; FAIL 2 of 12"
+  },
+  {
+   "id": "AC18",
+   "command": "make -j2 selftest drill",
+   "rc": 0,
+   "output": "both .godot/tmp/script-gate/{selftest,drill} exist; 12 cases and 18 cases ok"
+  },
+  {
+   "id": "extra",
+   "command": "make bh-hud-test",
+   "rc": 0,
+   "output": "lens-assets match; bh-hud: 64 passed, 0 failures; no hand-written sqrt"
+  },
+  {
+   "id": "extra",
+   "command": "dash and gmake and make 3.81",
+   "rc": 0,
+   "output": "lint, selftest ok under /bin/dash, /opt/homebrew/bin/gmake and the system make 3.81 (mawk/gawk not installed: Linux awk unverified here; AC13 pending: PR check 'fast tier' was still pending)"
+  }
+ ],
+ "mutants": [
+  {
+   "name": "helper drops SCRIPT ERROR check",
+   "killed": true,
+   "evidence": "FAIL stub-parse"
+  },
+  {
+   "name": "helper drops rc==want check",
+   "killed": true,
+   "evidence": "FAIL stub-rc3"
+  },
+  {
+   "name": "helper ignores summary (line=x)",
+   "killed": true,
+   "evidence": "FAIL stub-pass/nosummary/zero/env/want1"
+  },
+  {
+   "name": "supervisor kills only direct child (-pid -> pid)",
+   "killed": true,
+   "evidence": "FAIL stub-orphan-child"
+  },
+  {
+   "name": "helper accepts unanchored SUMMARY_ERE",
+   "killed": true,
+   "evidence": "FAIL stub-unanchored"
+  },
+  {
+   "name": "helper accepts TIMEOUT 0",
+   "killed": true,
+   "evidence": "FAIL stub-notimeout"
+  },
+  {
+   "name": "supervisor timeout exits 0",
+   "killed": true,
+   "evidence": "FAIL stub-hang, ignore-alrm, orphan-child"
+  },
+  {
+   "name": "exec-alarm helper (AC17)",
+   "killed": true,
+   "evidence": "2 of 12 fail"
+  },
+  {
+   "name": "lint: whole-line SCRIPT_GATE counts as gated (mixed line)",
+   "killed": true,
+   "evidence": "negative control flagged the wrong rows"
+  },
+  {
+   "name": "lint: skips variable includes",
+   "killed": true,
+   "evidence": "negative control flagged the wrong rows"
+  },
+  {
+   "name": "lint: stale-row check removed",
+   "killed": true,
+   "evidence": "negative control flagged the wrong rows"
+  },
+  {
+   "name": "lint: pin check removed",
+   "killed": true,
+   "evidence": "pin control not refused"
+  },
+  {
+   "name": "lint: unscanned-makefile closure removed",
+   "killed": true,
+   "evidence": "negative control flagged the wrong rows"
+  },
+  {
+   "name": "lint: no quote masking",
+   "killed": true,
+   "evidence": "negative control flagged the wrong rows"
+  },
+  {
+   "name": "lint: SCRIPT_GATE anywhere in the segment, even after $(GODOT)",
+   "killed": false,
+   "evidence": "make script-gate-lint rc=0; no fixture has a line with SCRIPT_GATE after GODOT. Contrived bypass; non-blocking"
+  },
+  {
+   "name": "Makefile gate regex weakened to '^.' (accepts '0 passed')",
+   "killed": false,
+   "evidence": "lint rc=0 and helper prints ok on 'x: 0 passed, 5 failures'. The helper and lint check only that the regex starts with ^, so a gate's count-must-be-nonzero shape is by convention only"
+  }
+ ],
+ "notes": "Independent count: recipe-line --script occurrences across Makefile and mk/*.mk by a perl pass (tab lines, comments excluded, continuation lines included) = 237; lines containing $(SCRIPT_GATE) with --script = 5; baseline file has 232 non-comment rows; 5+232=237 matches the lint and the design's pin. Baseline rows are keyed target+script, 'other' class occurrences also have to be baselined (conservative). Scope: 17 files, all in the design list; no audio, mk/sound.mk, deck-layout, earth-link, m45 changes; no new .gd or .py; uid-guard and python-guard green. The 5 migrated gates are correct (anchored [1-9] count regexes, sane timeouts); sim split into sim + sim-bridge keeps ailang check/test steps and bh-hud-test. Score reasoning: all executed ACs pass, 14 of 16 mutants killed, supervisor genuinely group-kills, correct fixtures; deductions for the two surviving weak-regex/ordering mutants, unverified Linux awk, and minor stray edits."
+}

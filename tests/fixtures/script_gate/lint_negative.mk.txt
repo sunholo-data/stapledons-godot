@@ -1,0 +1,22 @@
+# Fixture for make script-gate-lint (row 7x). Read only by tools/script_gate_lint.sh; the .txt suffix keeps it out
+# of the scanned set and of make. It must fail on exactly: three unguarded rows (bare-new, gate-after, the second command of
+# mixed), one stale row (from lint_negative_baseline.txt), three includes outside mk/*.mk.
+gated-ok:
+	@$(SCRIPT_GATE) x $(SCRATCH)/x.log 60 '^x: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/x.gd
+bare-new:
+	$(GODOT) --headless --path . --script tests/y.gd
+baselined:
+	@$(GODOT) --headless --path . --script tests/z.gd > $(SCRATCH)/z.log 2>&1; rc=$$?; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/z.log
+commented:
+	@# $(GODOT) --headless --path . --script tests/comment.gd
+mixed:
+	@$(SCRIPT_GATE) m $(SCRATCH)/m.log 60 '^m: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/m1.gd; $(GODOT) --headless --path . --script tests/m2.gd
+quoted-separators:
+	@$(SCRIPT_GATE) q $(SCRATCH)/q.log 60 '^q: (a|b); 0 failures && done$$' -- env -u AI_LIVE $(GODOT_SIM) --headless --path . --script tests/q.gd
+gate-after:
+	@$(GODOT) --headless --path . $(SCRIPT_GATE) --script tests/after.gd
+include mk/style.mk
+include tools/outside.mk
+-include $(EXTRA).mk
+sinclude ../stray.mk

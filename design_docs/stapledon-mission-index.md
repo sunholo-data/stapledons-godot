@@ -12,7 +12,15 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
-| 66 | 2026-11-03 | Row 7w BUILT and judged (PR #387): `make capture-m4` runs at `--fixed-fps 60` and is byte-reproducible (two captures: 15 of 15 PNG and 14 of 14 world ... |
+| 74 | 2026-11-06 | Row 7ac PARKED on new prerequisite row 7ad: the `_serial` pin (+11 test lines, seven drills measured end to end) was BLOCKED 1/3 at design quorum r... |
+| 73 | 2026-11-06 | Row 7aa LANDED (PR #402, merge `5c9f08ce`): `sim-pipeline-test` green again and through `$(SCRIPT_GATE)` (121 of 239; baseline 119 → 118); the caus... |
+| 72 | 2026-11-05 | Row 7x batch B4a LANDED (PR #400, merge `31a20932`): 56 more `--script` gates from `Makefile:1080` go through `$(SCRIPT_GATE)` (120 of 239; baselin... |
+| 71 | 2026-11-05 | Row 7x batch B3a LANDED (PR #397, merge `b34fd1ef`): 29 more `--script` gates in `mk/levels.mk`, `mk/m5.mk` and `mk/ai.mk` go through `$(SCRIPT_GAT... |
+| 70 | 2026-11-04 | Row 7x batch B2a LANDED (PR #395, merge `55de0d8a`): 28 more `--script` gates in nine `mk/` files go through `$(SCRIPT_GATE)` (33 of 237; baseline ... |
+| 69 | 2026-11-04 | Row 7x LANDED (PR #393, merge `49eb35d9`): one pass predicate for Godot `--script` gates, `$(SCRIPT_GATE)` (rc, no `SCRIPT ERROR`, counted summary,... |
+| 68 | 2026-11-04 | Row 7w LANDED (PR #387, merge `59fd8293`) and the S1 set PUBLISHED to `refs/m4_ship_s1/2026-11-04/`, parked for Mark's render review: main merged i... |
+| 67 | 2026-11-03 | Row 7m-d MEASURED, PROVISIONAL and parked on S1: on a quiet rig the docked control's p99 tail is not warm-up and not a redraw, 243 of 245 slow fram... |
+| 66 | 2026-11-03 | Row 7w BUILT and judged (PR #387): `make capture-m4` runs at `--fixed-fps 60` and is byte-reproducible (two captures: 15 of 15 PNG and 14 of 14 wor... |
 | 65 | 2026-11-03 | Row 7l(a) LANDED (PR #376, merge `812625ed`): `capture-m4-publish` checks all 18 files, their counts and `shasum -c` before its first upload, and `... |
 | 64 | 2026-11-02 | Row 7l(a) BUILT and judged, landing PARKED-ON-LANE (PR #376 waits only on `rig/full`): `capture-m4-publish` checks all 18 files, their counts (incl... |
 | 63 | 2026-11-02 | L9 semantic-memory S0 Landing LANDED (PR #368, merge `e7806004`): the S0.3 judge's survivors are folded in (the vector guard catches `.get("vector"... |

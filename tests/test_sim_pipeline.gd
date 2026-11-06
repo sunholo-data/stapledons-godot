@@ -5,12 +5,18 @@ extends SceneTree
 ## hand the main thread back quickly. Run:  make sim-pipeline-test
 
 var failures := 0
+var passes := 0
 
 func check(label: String, ok: bool) -> void:
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("%s %s" % ["ok" if ok else "FAIL", label])
 
 func drive(pipelined: bool) -> Dictionary:
+	# Row 7aa: CrewConsole numbers its offer ids across the process (b42fc0e3), so without this the
+	# second run's offer is tc6-61-2-pilot, not tc6-61-1-pilot, and the two runs send different inputs.
+	# Each run starts from a fresh process's counter, as a game session does.
+	CrewConsole._serial = 0
 	var sim := SimBridge.new()
 	sim.want_minor = SimBridge.CREW_MINOR
 	sim.record_sent = true
@@ -33,7 +39,8 @@ func drive(pipelined: bool) -> Dictionary:
 			if pipelined:
 				OS.delay_msec(25) # the frame the game renders while the sim computes
 	ok = ok and sim.drain()
-	var out := {"ok": ok, "world": JSON.stringify(sim.world), "crew": JSON.stringify(sim.crew), "sent": JSON.stringify(sim.sent_log), "tick": int(sim.world.get("tick", -1)), "heartbeat_ms": heartbeat_ms}
+	var out := {"ok": ok, "world": JSON.stringify(sim.world), "crew": JSON.stringify(sim.crew), "sent": JSON.stringify(sim.sent_log), "tick": int(sim.world.get("tick", -1)), "heartbeat_ms": heartbeat_ms,
+		"sent_n": sim.sent_log.size(), "offer_n": (sim.sent_log[40].intents.size() if sim.sent_log.size() > 40 and int(sim.sent_log[40].tick) == 41 else -1)}
 	sim.stop()
 	return out
 
@@ -67,6 +74,7 @@ func _initialize() -> void:
 	var a := drive(false)
 	var b := drive(true)
 	check("both runs complete", a.ok and b.ok and a.tick == 60 and b.tick == 60)
+	check("the journal holds 60 ticks and the tick-41 crew offer (offer and ask)", a.sent_n == 60 and a.offer_n == 2)
 	check("same inputs in the same order (sent journal)", a.sent == b.sent)
 	check("same world at the end", a.world == b.world)
 	check("same crew at the end", a.crew == b.crew)
@@ -80,5 +88,5 @@ func _initialize() -> void:
 	print("guided voyage: %d steps synchronous, %d pipelined, state %s / %s" % [t1.get("steps", -1), t2.get("steps", -1), t1.get("state", "?"), t2.get("state", "?")])
 	check("the guided voyage arrives and dwells, pipelined as synchronous", t1.ok and t2.ok and t1.state == "arrived" and t2.state == "arrived")
 	check("the guided voyage's ticks and world are identical", t1.sent == t2.sent and t1.world == t2.world)
-	print("sim-pipeline: %d failures" % failures)
+	print("sim-pipeline: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)

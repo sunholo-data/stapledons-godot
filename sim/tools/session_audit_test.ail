@@ -8,7 +8,7 @@ import std/string (contains, concat, replace)
 import std/json (Json, decode, get, getString, asArray, encode, JObject, JArray, JString, JNull)
 import std/option (Some, None)
 import std/result (Ok, Err)
-import std/list (foldl, map, filter)
+import std/list (foldl, foldlE, map, filter)
 -- By hand: 2*1200*.05 + 2*1.5 + 200*60/200 + 0 = 183 s (visits are bounds, not charges).
 -- Each leg = 60 s. Includes two 1.5 s commit holds.
 pure func fixture(name: string) -> string =
@@ -80,7 +80,7 @@ test "codex archive table with the right unlock hint passes" { checkCodex("right
 test "codex unlock with no inferable trigger fails even when the expectation has no hint (holds check)" { checkHintless() }
 export pure func auditPure(_: int) -> string = if checkSceneScopes() && checkCodex("simultaneous", "PASS") && checkCodex("late_hint", "FAIL") && checkWalk() && checkProxy() && checkLimit() && checkBand() && checkCodex("swapped", "FAIL") && checkCodex("missing", "FAIL") && checkCodex("codex", "PASS") && checkCodex("early", "FAIL") && checkCodex("shrink", "FAIL") && checkCodex("wrong_hint", "FAIL") && checkCodex("right_hint", "PASS") && checkHintless() then "session-audit-ok" else "session-audit-FAIL"
 export func auditTests(_: int) -> string ! {FS} {
-  let same = foldl(\ok n. ok && readFile(concat(["tests/fixtures/session_audit/", n, ".ndjson"])) == fixture(n), true, ["simultaneous", "late_hint", "walk_valid", "walk_ceiling", "walk_over_limit", "proxy", "over_limit", "bad_leg", "codex", "swapped", "missing", "early", "shrink", "wrong_hint", "right_hint"]);
+  let same = foldlE(\ok n. ok && readFile(concat(["tests/fixtures/session_audit/", n, ".ndjson"])) == fixture(n), true, ["simultaneous", "late_hint", "walk_valid", "walk_ceiling", "walk_over_limit", "proxy", "over_limit", "bad_leg", "codex", "swapped", "missing", "early", "shrink", "wrong_hint", "right_hint"]);
   let sceneSame = readFile("tests/expected_unlocks.scene-2.15.json") == frozenSceneExpected() && sceneVerdict(readFile("tests/replays/scene/m4_scene_session.ndjson"), frozenSceneStates(), "PASS");
   if same && sceneSame && readFile("tests/expected_unlocks.json") == expected() then auditPure(0) else "session-audit-fixture-FAIL"
 }

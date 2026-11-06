@@ -1,0 +1,22 @@
+{
+ "item":"7m-d","commit":"ac769494","evaluator":"iter67 independent","score":80,"verdict":"PASS",
+ "breakdown":{"reproduction_of_measurements":28,"conclusions_follow_from_numbers":20,"AC_checkable_as_written":13,"OQs_respect_D127B_and_complete":10,"try_to_break":9},
+ "breakdown_max":{"reproduction_of_measurements":40,"conclusions_follow_from_numbers":25,"AC_checkable_as_written":15,"OQs_respect_D127B_and_complete":10,"try_to_break":10},
+ "blocking_findings":[],
+ "non_blocking_findings":[
+  "R8 (all _process off), R6 vsync-on half, R1, R7 UNMEASURED: rig became busy (Ollama GPU 81-100%) from 20:28:38; waited to 20:38, still not quiet. The 'game work pushes the tail to the floor' claim (Attribution 7, OQ3 ceiling) is therefore not independently reproduced.",
+  "'Time is in RenderingServer.draw' is a wall-clock bracket frame_pre_draw->frame_post_draw (Appendix A). It shows the main thread is inside draw, not that it is waiting; 'waiting for presentation' is inferred from the empty-window draw p50 ~8.5 ms. The doc rates this Medium, which is fair, but Attribution headline states it as fact.",
+  "Empty-window floor is comparable on window size, content scale, vsync off, max_fps 0, Dummy audio, Metal; it lacks the bench's window-clamp settle and a 3D scene, so it is a lower bound, not an equal. The empty p99 (15.78) sits under the docked p99 (17.50), consistent with the doc's own ~2 ms game work.",
+  "AC commands run as written except: probes hardcode /tmp/iter67_probe (default --out and --timed path), so the mkdir in the AC block is required; macOS has no 'timeout' (not the doc's fault).",
+  "R6 pass line 'p99 >= 14.5' is a floor check on a noisy tail (empty p99 spans 15.5-16.3 over 4 runs); adequate.",
+  "OQs: none loosens 16.7 (D-127 B respected). Possible missing option: a relative gate (docked p99 minus measured empty-window floor) is only half-covered by OQ4, which records the floor but explicitly keeps the absolute rule; also not listed: capping docked-window game work via the existing lower-tier docked HUD update rate (a subset of OQ3)."],
+ "runs":[
+  {"id":"R9","rig":"GPU 0/0/0 load 3.29 HID 31436s","result":"Resolution count 0, pass"},
+  {"id":"R2-R5","rig":"GPU 0/0/0 load 3.10 HID 31444s (20:27:25)","result":"L n1500 mean 9.61 p50 9.68 p99 17.50 over 29, fifths [3,6,6,4,10]; R3 prints 2; R4 31/31 slow frames draw>game; R5 fast 634 (42%) slow 534 (36%) slow->fast 519 (97%); GPU time 0.000 on Metal; pass"},
+  {"id":"R6a empty 3000 vsync off","rig":"GPU 0/0/0 load 2.34 HID 31487s (20:28:08)","result":"mean 8.40 p50 8.65 p99 15.78 over 13, draw p50 8.55; pass"},
+  {"id":"R6b empty vsync on","rig":"GPU 99/100/100 (20:28:38)","result":"not run, rig busy, UNMEASURED"},
+  {"id":"R8","rig":"GPU 100/99/100 (20:28:45), still busy at 20:37 and 20:38","result":"UNMEASURED"},
+  {"id":"R1","rig":"not quiet","result":"UNMEASURED"},
+  {"id":"R7","rig":"not quiet","result":"UNMEASURED"}],
+ "doc_vs_reproduced":{"L p99":"doc 17.49-18.61 / mine 17.50","empty p99":"doc 15.50-16.28 / mine 15.78","slow frames draw>game":"doc 243/245 / mine 31/31","fast share":"doc 43% / mine 42%","slow->fast":"doc 95% / mine 97%"}
+}

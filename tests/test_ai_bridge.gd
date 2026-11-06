@@ -10,6 +10,7 @@ extends SceneTree
 const FRAME_BUDGET_USEC := 2000
 
 var failures := 0
+var passes := 0
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/ai_bridge")
 var poll_usecs: Array = []
 ## The same timing around a control step that shares no code with AiBridge
@@ -24,7 +25,8 @@ var bridges: Array = []
 
 
 func assert_bool(name: String, ok: bool) -> void:
-	if not ok: failures += 1
+	if ok: passes += 1
+	else: failures += 1
 	print("  %s  %s" % ["ok  " if ok else "FAIL", name])
 
 
@@ -681,5 +683,5 @@ func _initialize() -> void:
 	for b in bridges:
 		b.free()
 	OS.kill(ctrl_pid)
-	print("ai bridge: %s (%s)" % ["FAIL" if failures > 0 else "ok", "with faults" if faults else "happy path only"])
+	print("ai bridge: %s (%d passed, %d failures; %s)" % ["FAIL" if failures > 0 else "ok", passes, failures, "with faults" if faults else "happy path only"])
 	quit(1 if failures > 0 else 0)

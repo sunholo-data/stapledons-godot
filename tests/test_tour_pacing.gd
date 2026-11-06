@@ -1,9 +1,10 @@
 extends SceneTree
 ## Real-time guided pacing and the cruise-interlude cut (D-39/D-40/D-41, RT3).
 var failures:=0
+var passes:=0
 func check(ok:bool,label:String)->void:
 	print(('ok ' if ok else 'FAIL ')+label)
-	if not ok:failures+=1
+	passes+=int(ok);failures+=int(not ok)
 
 const SPY:=31557600.0
 const TICK:=1./(20.*SPY) # one wall second at 20 Hz, in years
@@ -76,4 +77,4 @@ func _initialize()->void:
 	var plain=P.new();var c:=leg(38.7,6102926.);c.ship.phase='cruising';c.clock.tau=31.+c._burn+20./SPY
 	plain.step(c,true,0.,20.)
 	check(not plain.interlude_due(c),'ordinary (non-guided) map journeys never cut')
-	print('tour-pacing: %d failures'%failures);quit(1 if failures else 0)
+	print('tour-pacing: %d passed, %d failures'%[passes,failures]);quit(1 if failures else 0)

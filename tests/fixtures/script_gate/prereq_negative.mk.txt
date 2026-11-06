@@ -1,0 +1,9 @@
+# Negative control for tools/script_gate_prereqs.sh (make script-gate-lint): constellation-test has lost
+# starmap-assets (must fail, by name); planets-test keeps planet-assets; planet-textures-check declares it on a
+# second rule line, which make merges (must pass); ship-console-test keeps ship-baseline (B4); missing-target has no
+# rule at all (must fail, by name).
+constellation-test: import
+planets-test: planet-assets
+planet-textures-check:
+planet-textures-check: planet-assets
+ship-console-test: import ship-baseline
