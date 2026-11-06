@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 73 | 2026-11-06 | Row 7aa LANDED (PR #402, merge `5c9f08ce`): `sim-pipeline-test` green again and through `$(SCRIPT_GATE)` (121 of 239; baseline 119 → 118); the caus... |
 | 72 | 2026-11-05 | Row 7x batch B4a LANDED (PR #400, merge `31a20932`): 56 more `--script` gates from `Makefile:1080` go through `$(SCRIPT_GATE)` (120 of 239; baselin... |
 | 71 | 2026-11-05 | Row 7x batch B3a LANDED (PR #397, merge `b34fd1ef`): 29 more `--script` gates in `mk/levels.mk`, `mk/m5.mk` and `mk/ai.mk` go through `$(SCRIPT_GAT... |
 | 70 | 2026-11-04 | Row 7x batch B2a LANDED (PR #395, merge `55de0d8a`): 28 more `--script` gates in nine `mk/` files go through `$(SCRIPT_GATE)` (33 of 237; baseline ... |
