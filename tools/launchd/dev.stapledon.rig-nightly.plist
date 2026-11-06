@@ -5,8 +5,8 @@
        cp tools/launchd/dev.stapledon.rig-nightly.plist ~/Library/LaunchAgents/
        launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.stapledon.rig-nightly.plist
      It lives in the GUI session (Aqua) because make golden needs a window. Tries at 22:30, 23:30,
-     00:30, 04:15, 05:15 and 06:15; each is a no-op once main's head has a rig/full status, or while
-     the GPU or CPU is busy. -->
+     00:30, 04:15, 05:15 and 06:15; each runs at most one half: make test (rig/full) when the CPU is
+     free, else make golden (rig/golden) when the GPU is idle too; a no-op once both are posted. -->
 <plist version="1.0">
 <dict>
   <key>Label</key><string>dev.stapledon.rig-nightly</string>

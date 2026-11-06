@@ -318,6 +318,7 @@ func test_beacon_measured() -> void:
 			var buf := PackedVector2Array()
 			var skipped := 0
 			var tries := 0
+			var skip_log := []
 			while tries < 3:
 				tries += 1
 				var skips0 := gpb.get_skips() if gpb != null else 0
@@ -328,11 +329,12 @@ func test_beacon_measured() -> void:
 					waited += 0.1
 				buf = cap.get_buffer(mini(cap.get_frames_available(), need))
 				skipped = (gpb.get_skips() if gpb != null else 0) - skips0
+				skip_log.append(skipped)
 				if skipped == 0:
 					break
 			var want := HomeBeacon.CARRIER_HZ * (1.0 if receiver else dd)
 			var hz := _carrier_hz(buf, rate, want)
-			seen.append("D %s %s %.1f Hz (want %.1f)%s" % [dd, "receiver" if receiver else "true", hz, want, "" if tries == 1 and skipped == 0 else " [capture %d, %d frames skipped]" % [tries, skipped]])
+			seen.append("D %s %s %.1f Hz (want %.1f)%s" % [dd, "receiver" if receiver else "true", hz, want, "" if tries == 1 and skipped == 0 else " [%d captures, generator skips per capture %s]" % [tries, skip_log]])
 			ok = ok and p != null and p.playing and buf.size() >= need and skipped == 0 and absf(hz / want - 1.0) <= 0.01
 			if dd >= 0.5:
 				var g := _pip_gap(buf, rate, want)
@@ -367,10 +369,16 @@ func test_beacon_measured() -> void:
 	var c1 := _carrier_hz(tone.call(28.4), rate, 28.4)
 	var c2 := _carrier_hz(tone.call(56.8), rate, 28.4)
 	var c3 := _carrier_hz(tone.call(14.2), rate, 28.4)
+	var gapped := PackedVector2Array() # the evaluator's round-2 case: 29.2 Hz with a 30 ms exact-zero gap
+	for i in int(1.2 * rate):
+		var t := i / rate
+		var v := 0.0 if t > 0.4 and t < 0.43 else sin(TAU * 29.2 * t + 0.3)
+		gapped.append(Vector2(v, v))
+	var c6 := _carrier_hz(gapped, rate, 28.4)
 	var c4 := _carrier_hz(tone.call(28.0), rate, 28.4)
 	var c5 := _carrier_hz(mixed, rate, 28.4)
 	var off := func(hz: float) -> bool: return absf(hz / 28.4 - 1.0) > 0.01
-	check(absf(c1 / 28.4 - 1.0) < 0.001 and off.call(c2) and off.call(c3) and off.call(c4) and off.call(c5), "S2 negative control: the carrier estimator reads a keyed 28.4 Hz sine as %.3f Hz; 2x %.1f, 0.5x %.1f, 28.0 Hz %.2f and a mostly-14.2 Hz mix %.2f do not pass as 28.4" % [c1, c2, c3, c4, c5])
+	check(absf(c1 / 28.4 - 1.0) < 0.001 and off.call(c2) and off.call(c3) and off.call(c4) and off.call(c5) and off.call(c6), "S2 negative control: the carrier estimator reads a keyed 28.4 Hz sine as %.3f Hz; 2x %.1f, 0.5x %.1f, 28.0 Hz %.2f, a mostly-14.2 Hz mix %.2f and 29.2 Hz with a 30 ms gap %.2f do not pass as 28.4" % [c1, c2, c3, c4, c5, c6])
 	check(pip_ok, "S2 measured: the time rate is D in both settings at every D, beyond the receiver's real-time range too: Earth's pips every 1/D s within 1 %%, none lost (%s)" % "; ".join(pips))
 	# Below the real-time range and outbound at 0.99c, on the Receiver's own sample clock (no mixer wait):
 	# D = 0.03 (pips 33.3 s apart, where the station's clamp would give 16 s) and D = 0.070888 (14.1 s).
@@ -474,8 +482,9 @@ class _Collect:
 ## judged by amplitude, never by spacing (the evaluator's round-1 finding: a spacing rule took a wrong, lower
 ## carrier for silence): the window is cut into blocks of two expected periods (at least 32 samples, so every
 ## block holds a crest), and an interval counts only when every block it touches peaks at 0.1 of the window's
-## peak or more. A sample exactly at 0.0 takes no side: the crossing runs from the last non-zero sample (one
-## landing on 0.0 once hid a crossing and doubled an interval). So a carrier at twice the frequency reads
+## peak or more. A single sample exactly at 0.0 takes no side: the crossing runs from the last non-zero sample
+## (one landing on 0.0 once hid a crossing and doubled an interval); two or more exact zeros are silence,
+## however short, and no interval spans them (round 2: a 30 ms gap inside one block let 29.2 Hz read 28.35). So a carrier at twice the frequency reads
 ## twice, one at half reads half, and a mix reads between: none passes as the expected.
 func _carrier_hz(buf: PackedVector2Array, rate: float, want_hz: float) -> float:
 	var blk := maxi(32, int(2.0 * rate / want_hz))
@@ -499,6 +508,9 @@ func _carrier_hz(buf: PackedVector2Array, rate: float, want_hz: float) -> float:
 		var j := last
 		last = i
 		if j < 0:
+			continue
+		if i - j > 2: # two or more exact zeros between: keyed silence, however short; the chain breaks there
+			prev = -1.0
 			continue
 		var a := buf[j].x
 		if a * c < 0.0:

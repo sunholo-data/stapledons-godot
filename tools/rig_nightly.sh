@@ -26,18 +26,21 @@ log() { echo "rig-nightly $(date '+%F %T'): $*"; }
 sha=$(gh api "repos/$REPO/commits/main" -q .sha)
 short=$(printf %s "$sha" | cut -c1-8)
 
-# context_state CONTEXT: success, failure, or "" for a context with no verdict yet (none, or a pending
-# post younger than 3 h; an older pending is a run that died, so it counts as none and runs again).
+# context_state CONTEXT: success; failure (GitHub's error counts as failure); pending (a pending post
+# younger than 3 h: a run in progress); "" for no verdict (no post, or a pending older than 3 h, a run
+# that died, so it runs again); unknown (GitHub unreadable, or a state this script does not know).
 context_state() {
   # "unknown" when GitHub cannot be read: never taken as no verdict (no run) or as not red (no close).
   st=$(gh api "repos/$REPO/commits/$sha/statuses" -q "[.[]|select(.context==\"$1\")][0] | (.state // \"\") + \" \" + (.updated_at // \"\")") || { echo unknown; return 0; }
   state=${st%% *}; at=${st#* }
   case "$state" in
     success|failure) echo "$state" ;;
+    error) echo failure ;;
+    "") echo "" ;;
     pending)
       age=$(( $(date +%s) - $(date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$at" +%s 2>/dev/null || echo 0) ))
       if [ "$age" -gt 10800 ]; then echo ""; else echo pending; fi ;;
-    *) echo "" ;;
+    *) echo unknown ;;
   esac
 }
 
