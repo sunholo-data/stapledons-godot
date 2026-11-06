@@ -58,7 +58,7 @@ Registry reuse: **none** for M1–M3. Existing repository-specific GDScript/Make
 1. Replace **only the recipe** first, with the test unchanged:
 
    ```make
-   	@$(SCRIPT_GATE) sim-pipeline-test $(SCRATCH)/sim-pipeline.log 600 '^sim-pipeline: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_sim_pipeline.gd
+       @$(SCRIPT_GATE) sim-pipeline-test $(SCRATCH)/sim-pipeline.log 600 '^sim-pipeline: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_sim_pipeline.gd
    ```
 
    Preserve target `import`, description, command environment and log path. **Drop the reference diff's `ship-demo-ci: sim-pipeline-test` line.** Retain a recipe-only checkpoint under `.godot/tmp/7aa/m1-red/` with the Makefile and unmodified test for controller replay; this is ignored evidence, not an extra milestone or commit.
