@@ -56,7 +56,7 @@ capture-comms-station: import ## R3-EARTH-LINK EL3b.5: the comms station at home
 .PHONY: comms-golden
 comms-golden: ## R3-COMMS-V2 G-CV (gate 2): the waterfall's trace, line and bracket and the frame diagram's events drawn by the GPU against CPU values (GPU window)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) $(AUDIO_OFF) --path . --log-file $(SCRATCH)/comms-golden-engine.log --script tools/comms_golden.gd > $(SCRATCH)/comms-golden.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|comms-golden)' $(SCRATCH)/comms-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-golden.log && grep -q '^comms-golden: 17 passed, 0 failures$$' $(SCRATCH)/comms-golden.log
+	@$(SCRIPT_GATE) comms-golden $(SCRATCH)/comms-golden.log 600 '^comms-golden: 17 passed, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --log-file $(SCRATCH)/comms-golden-engine.log --script tools/comms_golden.gd
 golden: comms-golden
 .PHONY: earth-link-golden
 earth-link-golden:
@@ -101,7 +101,7 @@ test: comms-log-test
 .PHONY: comms-log-bridge-test
 comms-log-bridge-test: import ## R3-COMMS-V2 CV1: the bridge's earth_log storage against the real sim at 2.18
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_earth_log_bridge.gd > $(SCRATCH)/comms-log-bridge.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-log-bridge)' $(SCRATCH)/comms-log-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-log-bridge.log && grep -q '^comms-log-bridge: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-log-bridge.log
+	@$(SCRIPT_GATE) comms-log-bridge-test $(SCRATCH)/comms-log-bridge.log 600 '^comms-log-bridge: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_earth_log_bridge.gd
 test: comms-log-bridge-test
 
 # R3-COMMS-V2 CV2 (AC5, AC6): the history wall and the frame diagram on the real sim at 2.18
@@ -109,7 +109,7 @@ test: comms-log-bridge-test
 .PHONY: comms-history-test
 comms-history-test: import ## R3-COMMS-V2 CV2: the history wall (every week, along ship time) and the frame diagram (light at 45 degrees, bindings)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_earth_history.gd > $(SCRATCH)/comms-history.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-history)' $(SCRATCH)/comms-history.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-history.log && grep -q '^comms-history: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-history.log
+	@$(SCRIPT_GATE) comms-history-test $(SCRATCH)/comms-history.log 600 '^comms-history: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_earth_history.gd
 ui: comms-history-test
 
 # R3-COMMS-V2 CV3 (AC7): the waterfall of the signal from home: the measured True carrier at 400 x D,
@@ -118,7 +118,7 @@ ui: comms-history-test
 .PHONY: comms-waterfall-test
 comms-waterfall-test: import ## R3-COMMS-V2 CV3: the waterfall (True carrier measured at 400 x D; hearing edges; silent taps)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_comms_waterfall.gd > $(SCRATCH)/comms-waterfall.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-waterfall)' $(SCRATCH)/comms-waterfall.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-waterfall.log && grep -q '^comms-waterfall: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-waterfall.log
+	@$(SCRIPT_GATE) comms-waterfall-test $(SCRATCH)/comms-waterfall.log 600 '^comms-waterfall: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_comms_waterfall.gd
 test: comms-waterfall-test
 
 # R3-COMMS-V2 CV6 (AC8): the bridge's ambient monitors from the manifest (wall R): built at their
@@ -128,12 +128,12 @@ test: comms-waterfall-test
 .PHONY: monitor-rail-test
 monitor-rail-test: import ## R3-COMMS-V2 (Mark 2026-11-03): no monitor frame, stalk or face crosses the bow rail or any other bridge prop; a monitor pushed into the rail is caught
 	@mkdir -p $(SCRATCH)
-	@$(GODOT) --headless --path . --script tests/test_monitor_rail.gd > $(SCRATCH)/monitor-rail.log 2>&1; rc=$$?; grep -E '^(FAIL|monitor-rail)' $(SCRATCH)/monitor-rail.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/monitor-rail.log && grep -q '^monitor-rail: [0-9]* passed, 0 failures$$' $(SCRATCH)/monitor-rail.log
+	@$(SCRIPT_GATE) monitor-rail-test $(SCRATCH)/monitor-rail.log 600 '^monitor-rail: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_monitor_rail.gd
 test: monitor-rail-test
 
 bridge-monitors-test: import ## R3-COMMS-V2 CV6: the ambient bridge monitors (anchors, occluders, bound faces, gated rendering)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_bridge_monitors.gd > $(SCRATCH)/bridge-monitors.log 2>&1; rc=$$?; grep -E '^(FAIL|bridge-monitors)' $(SCRATCH)/bridge-monitors.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bridge-monitors.log && grep -q '^bridge-monitors: [0-9]* passed, 0 failures$$' $(SCRATCH)/bridge-monitors.log
+	@$(SCRIPT_GATE) bridge-monitors-test $(SCRATCH)/bridge-monitors.log 600 '^bridge-monitors: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_bridge_monitors.gd
 test: bridge-monitors-test
 
 # R3-COMMS-V2 review captures (AC12; GPU window): the bridge with the consoles under the screens and the
@@ -141,5 +141,6 @@ test: bridge-monitors-test
 .PHONY: capture-comms-v2
 COMMS_TAG ?= mid
 capture-comms-v2: import ## R3-COMMS-V2: the bridge, monitors and comms station on the live sim -> renders/comms_v2/$(COMMS_TAG)/*.png (GPU window; open every frame)
-	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/comms_v2_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG) 2>&1 | grep -E '^(shot|comms-v2-capture)'
-	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/comms_station_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG) 2>&1 | grep -E '^comms-station-capture'
+	@mkdir -p $(SCRATCH)
+	@$(SCRIPT_GATE) capture-comms-v2 $(SCRATCH)/comms-v2-capture.log 600 '^comms-v2-capture: done -> .+$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/comms_v2_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG)
+	@$(SCRIPT_GATE) capture-comms-v2 $(SCRATCH)/comms-station-capture.log 600 '^comms-station-capture: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/comms_station_capture.gd -- --out=res://renders/comms_v2/$(COMMS_TAG)

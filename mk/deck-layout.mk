@@ -27,5 +27,5 @@ deck-layout-capture: import ## AC11 (GPU window): the shipped bridge's plan, Bow
 .PHONY: comms-walk-test
 comms-walk-test: import ## R3-COMMS-V2 CV4: every operator point reachable, chair to comms <= 9 m, the rim walk open, the idle screens at their housings
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_comms_walk.gd > $(SCRATCH)/comms-walk.log 2>&1; rc=$$?; grep -E '^(FAIL|comms-walk|ok)' $(SCRATCH)/comms-walk.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/comms-walk.log && grep -q '^comms-walk: [0-9]* passed, 0 failures$$' $(SCRATCH)/comms-walk.log
+	@$(SCRIPT_GATE) comms-walk-test $(SCRATCH)/comms-walk.log 600 '^comms-walk: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_comms_walk.gd
 test: comms-walk-test
