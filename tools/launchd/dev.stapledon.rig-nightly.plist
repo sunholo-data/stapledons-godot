@@ -17,6 +17,9 @@
     <string>d=$(mktemp -d -t rig-nightly) &amp;&amp; cd ~/dev/sunholo-data/stapledons-godot &amp;&amp; git fetch -q origin main &amp;&amp; git show origin/main:tools/rig_nightly.sh &gt; $d/rig_nightly.sh &amp;&amp; git show origin/main:tools/rig_check.sh &gt; $d/rig_check.sh &amp;&amp; sh $d/rig_nightly.sh; rc=$?; rm -rf $d; exit $rc</string>
   </array>
   <key>LimitLoadToSessionType</key><string>Aqua</string>
+  <!-- Not throttled like a background job: under background QoS the headless audio mixes slower than the
+       clock and timing tests fail (#392; reproduced with taskpolicy -b). -->
+  <key>ProcessType</key><string>Interactive</string>
   <key>StartCalendarInterval</key>
   <array>
     <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>30</integer></dict>
