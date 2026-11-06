@@ -1,0 +1,146 @@
+{
+  "sprint": "R3-COMMS-V2",
+  "pr": "https://github.com/sunholo-data/stapledons-godot/pull/379",
+  "evaluator": "Codex, independent of Claude; evaluated b789a741f1b012d6b7528c56eb4ce78c4f2fcbef",
+  "score": 62,
+  "pass": false,
+  "breakdown": {
+    "tests": {
+      "score": 20,
+      "maximum": 20,
+      "reason": "All requested targeted checks passed. This credits focused verification, not completion of rig/full."
+    },
+    "lint": {
+      "score": 0,
+      "maximum": 10,
+      "reason": "lint-precision fails locally and in the head commit's fast tier."
+    },
+    "acceptance_criteria": {
+      "score": 17,
+      "maximum": 30,
+      "reason": "Core logging, geometry, bindings, walking and spec assertions work. Stack browsing, carrier accuracy, monitor validation, performance and final gates remain incomplete."
+    },
+    "code_quality": {
+      "score": 10,
+      "maximum": 15,
+      "reason": "Pure simulation and additive protocol changes are sound. Audio ownership, visibility propagation and measurement filtering have defects; several assertions miss these integration paths."
+    },
+    "docs": {
+      "score": 10,
+      "maximum": 15,
+      "reason": "Design, sprint, changelog and pins are detailed. Completion flags overstate acceptance, and several documented behaviors differ from implementation."
+    },
+    "design_fidelity": {
+      "score": 5,
+      "maximum": 10,
+      "reason": "The approved bridge arrangement and console detail view are implemented, but significant history, waterfall and monitor requirements are unmet."
+    }
+  },
+  "blocking": [
+    {
+      "location": "ui/comms_waterfall.gd:220; CLAUDE.md definition-of-done gate 1",
+      "issue": "The required fast tier is red. lint-precision matches the image index expression BANDS - 1 - b.",
+      "failure": "Reproduced locally; GitHub run 41626392649 fails at the same line. This is an indexing false positive, not computed relativistic physics, but the gate still requires a passing fix. No rig/full status exists on this SHA."
+    },
+    {
+      "location": "interior/bridge_monitor.gd:69; ui/comms_waterfall.gd:210",
+      "issue": "Visibility gating disables viewport rendering without stopping waterfall processing or its audio taps. The signal face also bypasses the refresh timer.",
+      "failure": "A disposable probe found an off-screen monitor with UPDATE_DISABLED while its waterfall remained visible-in-tree, processing, and playing the carrier tap. At 120 simulated frames per second, the signal refreshed 120 times, exceeding the specified 30 Hz. AC8 and the AC10 mitigation are not satisfied."
+    },
+    {
+      "location": "demos/ship_geometry_demo.gd:1544; demos/ship_consoles.gd:1172",
+      "issue": "The ambient signal's weekly bed depends on visiting the comms console.",
+      "failure": "Before the console is created, _refresh_monitors supplies an empty bed cue. After leaving it, the cue stops following new weeks because the station refreshes only while focused. The ambient Antenna therefore lacks or retains an outdated weekly bed, contrary to approved OQ4."
+    },
+    {
+      "location": "ui/comms_waterfall.gd:198",
+      "issue": "The bright trace emits retained frequencies during unmeasured columns.",
+      "failure": "Feeding peak measurements [400, 400, 400, 0] returns 400 for the zero-measurement column. This contradicts the documented promise of no point while the keyed carrier is silent. Gate trace output on a current valid measurement, or explicitly represent tracking estimates."
+    },
+    {
+      "location": "tests/test_comms_waterfall.gd:51; ui/comms_waterfall.gd:170",
+      "issue": "The test weakens the approved 1% accuracy requirement to one FFT bin.",
+      "failure": "At D=0.070888, the measured peak was 26.98 Hz against 28.3552 Hz, approximately 4.9% error. The test passes with a 10.77 Hz tolerance. AC7 fails despite the green test; improve measurement or obtain an explicit acceptance change."
+    },
+    {
+      "location": "data/ui/comms_feed.json:12; ui/earth_feed.gd:230; data/lore/physics/relativity-spec.md:205",
+      "issue": "The runtime hearing boundary contradicts RS-46.",
+      "failure": "The receiver plan permits D>=0.02, corresponding to an 8 Hz carrier, while RS-46 and the waterfall floor specify 20 Hz. At D=0.03, the probe reports audible with no hearing warning for a 12 Hz carrier. The physics test asserts the axis constant without testing this runtime inconsistency."
+    },
+    {
+      "location": "ui/earth_history.gd:138; ui/earth_feed.gd:315; sim/protocol_earth.ail:117",
+      "issue": "Stacks cannot open their individual weeks; earth_weeks is absent from the wire protocol.",
+      "failure": "Only each record's newest feed can be selected. Earlier weeks in a multi-week record are inaccessible, contrary to D1.3, D1.6 and CV2. The newest picture is also stamped with earth_from_year, the first week's date. The recorded deferral does not establish approval to remove this requirement."
+    },
+    {
+      "location": "tools/deck_bow_metrics.gd; art/deck-layout-v2/thresholds.json; tests/test_deck_layout_eval.gd:42",
+      "issue": "The promised monitor-readability evaluator and negative control are missing.",
+      "failure": "The evaluator adds monitor occluder classification and the fifth station, but no monitor-readable share, 40 px threshold, named-place signal checks, or seeded on-walk monitor failure. Existing layout success cannot certify AC8."
+    },
+    {
+      "location": "CLAUDE.md definition-of-done gate 2; tools/comms_v2_capture.gd",
+      "issue": "The new physics visuals lack their required GPU-versus-CPU golden coverage.",
+      "failure": "The diff adds no golden case for the waterfall or frame diagram. Existing Earth-link goldens test beam markers. The final capture set also lacks the specified outbound/homebound selected-frame diagrams and complete three-moment face coverage. A reported green existing golden suite does not close this gate."
+    }
+  ],
+  "non_blocking": [
+    "The loaded-host benchmark misses with and without monitors do not establish that monitors caused the absolute failure. AC10 remains unverified until a quiet-rig measurement; the processing defects above independently require correction.",
+    "course.ship_years_left is a legitimate sim field despite differing from the planned journey namespace. GDScript reads it through a binding; it does not calculate remaining proper time.",
+    "The +24-degree course-monitor adjustment is documented as preserving G-M4-S3. Manifest placement and asset pins reflect the adjustment; GPU verification was not repeated.",
+    "archive.earths-carrier unlocks at first_boost rather than first visible shifted monitor, and the planned earths-voice addition is absent. Record these deviations explicitly.",
+    "CV5 and CV6 have passes=true despite outstanding acceptance gates. Keep evaluation and landing pending without presenting those milestones as fully accepted.",
+    "Vendoring colours-of-home and updating its catalogue/unlock mirrors is explained integration work. No other material unrelated scope expansion was identified.",
+    "Headless Godot runs emitted resource-leak and raw-image-loading warnings while returning passing summaries."
+  ],
+  "evidence": {
+    "execution": {
+      "branch": "design/comms-station-v2",
+      "head": "b789a741f1b012d6b7528c56eb4ce78c4f2fcbef",
+      "method": "Tests ran against an isolated copy under /tmp/comms-v2-eval/project with runtime/bin prepended to PATH.",
+      "repository_changes": "Evaluated clone remained clean; no edits, commits, pushes or evaluation report were made there.",
+      "logs": "/tmp/comms-v2-eval"
+    },
+    "targeted_checks": [
+      "ailang test sim/earth_log_test.ail: 10 passed, 0 failed.",
+      "make strict parity: exit 0; earthLogVm returned earth-log-ok on strict VM and interpreter; diag_thrust600 matched its golden.",
+      "make replay SESSION=tests/replays/earth_log_voyage.ndjson: 44 replies, 1,364,014 bytes, VM/interpreter/golden identical.",
+      "Existing strict-VM boundProbe over 10,958 ship days: 10,958 records, 2,213,728 newest frame, contiguous.",
+      "tests/test_earth_history.gd: 17 passed, 0 failures.",
+      "tests/test_comms_waterfall.gd: 13 passed, 0 failures under its weakened tolerance.",
+      "tests/test_bridge_monitors.gd: 14 passed, 0 failures.",
+      "tests/test_comms_station.gd: 42 passed, 0 failures.",
+      "tests/test_physics.gd: 1050 passed, 0 failed.",
+      "tests/test_comms_walk.gd: 11 passed; chair-to-comms 8.5 m, rim walk 39.5 m.",
+      "Headless deck layout evaluator: bridge ok over 4,778 samples; five stations face the bow and are clear; Bow pole/head blocks 0, Astern head blocks 1.",
+      "deck-assets-check: 12 pins valid; wrong-pin and emissive-prop negative controls rejected.",
+      "python-guard and uid-guard passed; git diff --check passed; lint-precision failed."
+    ],
+    "simulation_and_bindings": [
+      "earth_log.ail is pure and folds explicit world state. sentT uses package seenAt; arrived.ly uses package norm. Tests verify sent.t = arrived.t - arrived.ly to 1e-12 and lookup of ship_at_sent at or before emission.",
+      "Protocol 2.17 adds full logs and changed-record tails, gated by negotiated minor and excluded from GR wire states.",
+      "GDScript inspection found sim-field bindings for physical numeric readouts and presentation transforms for geometry. No new gamma, near-c subtraction, remaining-time formula, or rate-times-carrier prediction was found in the monitor/diagram implementation.",
+      "Only new replay files differ from origin/main; older replay goldens were not changed."
+    ],
+    "archive_and_assets": {
+      "design_pr": "https://github.com/sunholo-data/stapledons-design/pull/55",
+      "design_pr_state": "Open draft at inspection; landing dependency remains.",
+      "vendored_design_sha": "a4046551693135fcf0ce8742122995365bbcceda",
+      "spec": "RS-41 through RS-47 are present in vendored lore/check values and asserted by test_earths_carrier.",
+      "triangles": "bridge_props: 179,000 / 180,000 cap; bridge_monitors: 2,696 / 20,000 cap.",
+      "pins": "GLB hashes passed verification. Blender masters and authoring scripts have recorded SHA-256 pins; remote masters were not downloaded."
+    },
+    "definition_of_done": {
+      "gate_1": "FAIL: fast tier red; rig/full unavailable on evaluated SHA.",
+      "gate_2": "INCOMPLETE: spec assertions pass and existing reference images were inspected; new visual golden coverage is absent.",
+      "gate_3": "PASS by inspection: physics uses existing package functions; no new physics formula requiring publication was identified.",
+      "gate_4": "PASS: make strict parity completed successfully.",
+      "gate_5": "No new precision violation found; GDScript vector operations inspected are drawing/projection operations.",
+      "gate_6": "PASS for exercised cases: strict/interpreter agreement and the new replay golden are byte-identical."
+    },
+    "visual_review_and_skips": [
+      "Opened existing final cruise_bow_chair.png, plan.png and station_comms.png. They show the consoles beneath the monitor wall and the True waterfall with Receiver line.",
+      "Skipped GPU-window golden runs, new captures, VRAM measurements and benchmark execution.",
+      "Did not run tools/rig_check.sh or the full make test."
+    ]
+  }
+}

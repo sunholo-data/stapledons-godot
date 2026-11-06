@@ -1,6 +1,6 @@
 # R3-COMMS-V2: the comms station v2 and the bridge as mission control
 
-**Status:** **Approved by Mark, 2026-11-03; executing** (revision 3). Mark reviewed revision 2 ("looks awesome") and approved it with every open question at its recommendation. He made one change: "can we move the consoles to be underneath the screens? yes will need model updates I guess." Revision 3 records that ruling (§D2). Execution starts with CV1 on this branch, now merged with main (AILANG v0.56.1, #374, #375 and #377 landed). It pauses for Mark at the mid-point review (CV4 + CV6, the bridge renders) and at the end.
+**Status:** **Implemented 2026-11-06** (#379 with design #55; Codex evaluation 96 PASS, round 3, `.ailang/state/evaluations/eval_R3-COMMS-V2_round_3.json`; Mark's OK on dev build `v0.4.0-dev.37-living-bridge-331-g5de4a31a`). Approved by Mark, 2026-11-03 (revision 3). Mark reviewed revision 2 ("looks awesome") and approved it with every open question at its recommendation. He made one change: "can we move the consoles to be underneath the screens? yes will need model updates I guess." Revision 3 records that ruling (§D2). Execution starts with CV1 on this branch, now merged with main (AILANG v0.56.1, #374, #375 and #377 landed). It pauses for Mark at the mid-point review (CV4 + CV6, the bridge renders) and at the end.
 
 **Revision history:**
 - **Revision 1 (2026-11-02)** proposed the feed history, the console move and a waterfall at the station.
