@@ -1,12 +1,22 @@
 # Row 7ac: pin `CrewConsole`'s process-wide `_serial` in `crew-console-test`
 
-**Status:** Planned, mission iteration 74, designer, 2026-11-06; **revision 1** after design quorum round 1 (see [Quorum r1 response](#quorum-r1-response-revision-1)). **Release:** r1. **Milestone:** charter queue row **7ac**, inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66), the same home as rows 7x and 7aa.
+**Status:** Planned, mission iteration 74, designer, 2026-11-06; **revision 2** (controller, narrow-refinement carve-out) after design quorum round 2 (see [Quorum r2 response](#quorum-r2-response-revision-2-controller-carve-out)); revision 1 answered round 1. **Release:** r1. **Milestone:** charter queue row **7ac**, inside the approved sprint `R1-M4-JOURNEY` (D-22/D-66), the same home as rows 7x and 7aa.
 **Priority:** P2 (follow-up backlog, [LOOP]). Suite hygiene, charter clauses 4/5.
 **Implements:** [charter](../../stapledon-mission.md) row 7ac, which is OQ5 of [m4-7aa-sim-pipeline-test.md](../../implemented/r1/m4-7aa-sim-pipeline-test.md) (its V19–V21, drill k7, Appendix A4). The test guards the Crew console of [crew-console-v2.md](../../implemented/r2/crew-console-v2.md) (AC10–AC12 name `make crew-console-test`), which serves the design repo's [crew assignment system](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/crew-assignment-system.md) (Crew console work cards, R2 G1 in [r2-voyage-life.md](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r2-voyage-life.md)). No feature, [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) section, sim, protocol, scene or sound changes.
 **Depends on:** row 7aa landed (PR #402); D-88 A (test hygiene inside an approved sprint, no pillar below 0, does not stop); Godot 4.7.2; AILANG v0.56.1 (`runtime/bin`).
-**Estimated LOC:** **+11/−0 in 1 tracked file** (`tests/test_crew_console.gd`, `git diff --numstat`, V9) plus an 8-line changelog fragment. No new `.gd`, so no new `.uid`. No production code, no `Makefile`.
+**Estimated LOC:** **+11/−0 in `tests/test_crew_console.gd` and +1/−0 in `.gitattributes`** (`git diff --numstat`, V9, V17) plus an 8-line changelog fragment. No new `.gd`, so no new `.uid`. No production code, no `Makefile`.
 
 **Evidence:** every V-row was run first-hand on 2026-11-06 on `Voights-Mac-Studio.local`, in `stapledons-godot-iter74` (V1–V11 at 10:30–10:55 CET on `b57d279e`; revision 1's V12–V16 and the re-runs at 11:00–11:40 CET on `ffc376ab`, which adds only this doc), with Godot `4.7.2.stable.official.ed1daf0bf` and `runtime/bin/ailang` (`AILANG v0.56.1`). The change was applied, run end to end, drilled, the acceptance criteria run as printed from the blocks of this doc (V11, V16), and the tracked files restored (V10).
+
+## Quorum r2 response (revision 2, controller, carve-out)
+
+Round 2 (`m4-7ac-serial-pin-2026-11-06T10-14-13Z.json`, $0.2946, same seats, `absent_reviewers` empty): **BLOCKED 2/3**, oc-glm-5-3 pass. Neither reject disputes the direction (the +11-line pin, both checks); both give a concrete fix, and both land on surfaces revision 1 introduced (AC5's rescope, the drill supervisor), not on the test. The controller applied them under the narrow-refinement carve-out, with no third designer run, and measured each:
+
+| # | Objection (seat) | Change | V |
+|---|---|---|---|
+| 1 | AC5 re-scoped `git diff --check` to exclude `design_docs` to buy its own green (oc-kimi-k3, blocking) | Reviewer's fix verbatim: `.gitattributes` gains `design_docs/** whitespace=-space-before-tab`; AC5 is the unscoped `git diff --check origin/main` again, silent. Controls: the attribute removed → 15 hits; a code-path probe (` \tbad` in a scratch `tests/` file) is still flagged | V17 |
+| 2 | The bounded runner kills only the make/Godot group; the sim has its own group, so an ordinary timeout does not reap a stuck sim (gpt6-1-sol, blocking) | The drill's supervisor reaps the group and every descendant it recorded before TERM, and does so when signalled too (rc 143 → drill exit 5). New fault-injection drill **ks**: a child spawned by Godot like the sim, outside its group, ignoring TERM/HUP/INT and outliving Godot, is gone 0 s after a 60 s timeout; under the round-1 supervisor the same drill fails (negative control). The reviewer's second half, "use that runner for the actual crew-console-test recipe", is pre-existing at `b57d279e` (the recipe has no deadline; every `$(GODOT_SIM)` gate's sim escapes `script_gate.sh`'s group) and is split to row **7ad** with the objection verbatim (gate-2 rule (c)); see Risks | V18, V19 |
+| 3 | The sim check threads `ok`, so an earlier failure would skip both sends and misattribute stale refusals (oc-glm-5-3, pass) | Reviewer's fix verbatim: `var b_ok := us.send(ob, 0.0)`, `var d_ok := us.send(od, 0.0)`, condition `b_ok and d_ok and b_refused.is_empty() and us.last_refused.is_empty()`; still +11/−0. `SimBridge.send` returns true when the tick advanced and reports refusals only in `last_refused` (`bridge/sim_bridge.gd:309-313`), so k1's FAIL text is unchanged | V18 |
 
 ## Quorum r1 response (revision 1)
 
@@ -63,7 +73,7 @@ The exact diff (applies to `b57d279e`; `git apply --check` in V9):
 
 ```diff 7ac-test
 diff --git a/tests/test_crew_console.gd b/tests/test_crew_console.gd
-index 9698f8c9..85757a5e 100644
+index 9698f8c9..41ecdba4 100644
 --- a/tests/test_crew_console.gd
 +++ b/tests/test_crew_console.gd
 @@ -479,6 +479,12 @@ func real_sim() -> void:
@@ -83,10 +93,10 @@ index 9698f8c9..85757a5e 100644
  	for reason in dup:
  		var words := CrewPage.refusal_words(reason, us.crew)
  		check("plain words for %s: %s" % [reason, words], not words.contains("_") and not words.contains("/") and not words.contains("{") and not RegEx.create_from_string("[0-9]").search(words))
-+	ok = ok and us.send(ob, 0.0)
++	var b_ok := us.send(ob, 0.0)
 +	var b_refused := us.last_refused.duplicate()
-+	ok = ok and us.send(od, 0.0)
-+	check("7ac the sim takes both consoles' offers, nothing refused (%s %s)" % [b_refused, us.last_refused], ok and b_refused.is_empty() and us.last_refused.is_empty())
++	var d_ok := us.send(od, 0.0)
++	check("7ac the sim takes both consoles' offers, nothing refused (%s %s)" % [b_refused, us.last_refused], b_ok and d_ok and b_refused.is_empty() and us.last_refused.is_empty())
  	us.stop()
  	pa.free()
  	pb.free()
@@ -122,14 +132,14 @@ x() { awk -v t="$1" '$0=="```"t{f=1;next} f&&$0=="```"{f=0} f' design_docs/plann
 |---|---|---|---|
 | AC1 | The target is green with the case, twice, under the deadline; value-independent | `mkdir -p .godot/tmp/7ac; x 'sh 7ac-drill' > .godot/tmp/7ac/drill.sh; for i in 1 2; do sh .godot/tmp/7ac/drill.sh "$PWD" d0; echo rc=$?; done` | each time `drill d0: ok (unmodified: rc 0, 0 failures, N ok, ids tc0-4-P tc0-4-Q distinct, sim refused nothing)` with P ≠ Q, then `serial-pin-drill: ok (1 drills: d0)`, `rc=0`. d0 requires rc 0, `crew-console: 0 failures`, no `FAIL` or `SCRIPT ERROR`, the id line matching `^ok 7ac two consoles from one crew, no send between, make different ids \(tc0-4-[0-9]+-counselor, tc0-4-[0-9]+-counselor\)$` with two distinct `tc0-4-[0-9]+`, and `ok 7ac the sim takes both consoles' offers, nothing refused ([] [])`. At `b57d279e` N = 102 (HEAD's 100 + 2), P, Q = 11, 12 (illustrative, V6, V13) |
 | AC2 | Per-instance `_serial` is red with the new FAIL lines (drill k1) | `sh .godot/tmp/7ac/drill.sh "$PWD" k1; echo rc=$?` | `drill k1: ok (per-instance _serial: rc 2, the two 7ac FAIL lines, 2 failures)`, `serial-pin-drill: ok (1 drills: k1)`, `rc=0` |
-| AC3 | All kill drills including the deadline drill, tree unchanged after | `sh .godot/tmp/7ac/drill.sh "$PWD"; echo rc=$?; git status --porcelain` | the six `drill … ok` lines of [Kill drills](#kill-drills), `serial-pin-drill: ok (6 drills: d0 k1 k2 k3 k4 kh)`, `rc=0`; status lists only the PR's own files (V15) |
-| AC4 | Scope: one test file, no production or `Makefile` change | `git diff --numstat origin/main -- . ':!design_docs' ':!changelogs' ':!.ailang'; git diff --name-only origin/main \| grep -cxE 'Makefile\|ui/crew_console.gd\|bridge/sim_bridge.gd'` | `11	0	tests/test_crew_console.gd`; `0` |
-| AC5 | Hygiene and the gate lint unmoved | `git diff --check origin/main -- . ':!design_docs'; make --no-print-directory script-gate-lint uid-guard python-guard AILANG=runtime/bin/ailang` | silent; `script-gate-lint: ok (239 --script invocations: 121 through $(SCRIPT_GATE), 118 on the baseline; …)`, `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)` (V9). The doc itself is excluded: its embedded unified diff has context lines that start with a space before a tab, which `--check` reports (V16) |
+| AC3 | All kill drills including both deadline drills, tree unchanged after | `sh .godot/tmp/7ac/drill.sh "$PWD"; echo rc=$?; git status --porcelain` | the seven `drill … ok` lines of [Kill drills](#kill-drills), `serial-pin-drill: ok (7 drills: d0 k1 k2 k3 k4 kh ks)`, `rc=0`; status lists only the PR's own files (V15, V18); no process matching `sleep 7474740$` left (`pgrep -f` rc 1) |
+| AC4 | Scope: one test file and one `.gitattributes` line, no production or `Makefile` change | `git diff --numstat origin/main -- . ':!design_docs' ':!changelogs' ':!.ailang'; git diff --name-only origin/main \| grep -cxE 'Makefile\|ui/crew_console.gd\|bridge/sim_bridge.gd'` | `1	0	.gitattributes` and `11	0	tests/test_crew_console.gd`; `0` |
+| AC5 | Hygiene and the gate lint unmoved | `git diff --check origin/main; make --no-print-directory script-gate-lint uid-guard python-guard AILANG=runtime/bin/ailang` | silent; `script-gate-lint: ok (239 --script invocations: 121 through $(SCRIPT_GATE), 118 on the baseline; …)`, `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)` (V9). Unscoped (quorum r2, oc-kimi-k3): the embedded unified diff's context lines start with a space before a tab, which `.gitattributes` `design_docs/** whitespace=-space-before-tab` exempts for `design_docs` only; code paths stay checked (V17) |
 | AC6 | Changelog fragment present | `test -s changelogs/unreleased/2026-11-06-crew-console-serial-pin.md && grep -c '^### ' changelogs/unreleased/2026-11-06-crew-console-serial-pin.md` | `1` |
 
 ## Kill drills
 
-`sh 7ac-drill` below. Each drill is one `make crew-console-test`: 13–18 s warm (V6, V7, V15), 54 s cold (the controller's first run in this clone). Every `make` runs under a deadline, `BOUND` s (default 300, about 5× the cold run), through a perl supervisor copied from `tools/script_gate.sh` (own process group; TERM, 2 s, KILL; rc 142). A timeout makes the drill exit 4, never counts as a kill. Every mutation must change its file (else exit 3), and both mutated files are restored and `cmp`-checked by an EXIT trap, which also runs after a timeout (kh). Measured end to end in V15 (rc 0, 136 s):
+`sh 7ac-drill` below. Each drill is one `make crew-console-test`: 13–18 s warm (V6, V7, V15), 54 s cold (the controller's first run in this clone). Every `make` runs under a deadline, `BOUND` s (default 300, about 5× the cold run), through a perl supervisor of `tools/script_gate.sh`'s shape (own process group; TERM, 2 s, KILL; rc 142), extended in revision 2 to reap every descendant it recorded before TERM as well as the group, because the sim runs in its own process group (V15), and to do the same when it is itself signalled (rc 143, drill exit 5). A timeout makes the drill exit 4, an interruption exit 5; neither ever counts as a kill. Every mutation must change its file (else exit 3), and both mutated files are restored and `cmp`-checked by an EXIT trap, which also runs after a timeout (kh, ks). Measured end to end in V18 (rc 0, 194 s):
 
 | Drill | Mutation | Expected (measured) |
 |---|---|---|
@@ -139,6 +149,7 @@ x() { awk -v t="$1" '$0=="```"t{f=1;next} f&&$0=="```"{f=0} f' design_docs/plann
 | k3 | per-instance, only the id check deleted | rc 2, `crew-console: 1 failures`, the sim check's FAIL |
 | k4 | per-instance, only the sim check deleted | rc 2, `crew-console: 1 failures`, the id check's FAIL |
 | kh | the deadline: `quit(…)` replaced by a member `SimBridge` that is started and never stopped, run by a child drill with `BOUND=60` | the test reaches `crew-console: 0 failures` and then hangs with a live sim; the child exits 4 with `drill: timeout after 60 s`; every process recorded under it before the deadline (5: perl, make, sh, godot, ailang) is gone within 10 s (measured 0 s); both files `cmp`-equal to before (the child's EXIT trap) |
+| ks | quorum r2 (gpt6-1-sol): `quit(…)` replaced by a stuck child spawned by Godot through `OS.create_process` (as the sim is), `sh -c "trap '' TERM HUP INT; exec sleep 7474740"`, so it ignores graceful shutdown and outlives Godot; child drill with `BOUND=60` | the child is seen before the deadline in a process group other than Godot's; the child drill exits 4 with `drill: timeout after 60 s`; no `sleep 7474740` survives 10 s after (measured 0 s); both files restored. Negative control (V19): the same drill under the round-1 group-only supervisor fails `drill ks: the stuck child survived the deadline` |
 
 ```sh 7ac-drill
 #!/bin/sh
@@ -158,10 +169,13 @@ restore() { cp "$T/tc" "$TC"; cp "$T/ui" "$UI"; cmp -s "$T/tc" "$TC" && cmp -s "
 trap restore EXIT; trap 'exit 5' INT TERM HUP
 mutate() { # FILE PERL: the edit must change the file, or the drill is void
   cp "$1" "$T/pre"; perl -pi -e "$2" "$1"; ! cmp -s "$T/pre" "$1" || { echo "drill: mutation '$2' changed nothing"; exit 3; }; }
-bounded() { # SECS cmd...: cmd's rc, or 142 when the deadline killed its process group
-  perl -e 'use POSIX ":sys_wait_h"; my $secs = shift; my $pid = fork; die "fork: $!" unless defined $pid; if ($pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127; } my $end = time + $secs; my $st; while (1) { my $r = waitpid($pid, WNOHANG); if ($r == $pid) { $st = $?; last } if (time >= $end) { kill "TERM", -$pid; my $g = time + 2; while (time < $g) { last if waitpid($pid, WNOHANG) == $pid; select(undef, undef, undef, 0.1) } kill "KILL", -$pid; waitpid($pid, 0); kill "KILL", -$pid; exit 142 } select(undef, undef, undef, 0.1) } exit($st & 127 ? 128 + ($st & 127) : $st >> 8)' "$@"; }
+bounded() { # SECS cmd...: cmd's rc; 142 when the deadline stopped it, 143 when the supervisor was signalled.
+  # Reaps the process group AND every descendant recorded before TERM (the sim runs in its own group, V15),
+  # so a child that left the group and ignores TERM/HUP/INT is still KILLed 2 s later (drill ks).
+  perl -e 'use POSIX ":sys_wait_h"; my $secs = shift; my $pid = fork; die "fork: $!" unless defined $pid; if ($pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127; } sub tree { my %k; for (`ps -axo pid=,ppid=`) { my ($p, $pp) = split; push @{$k{$pp}}, $p } my @a; my @q = ($_[0]); while (@q) { my $x = shift @q; for my $c (@{$k{$x} || []}) { push @a, $c; push @q, $c } } @a } sub reap { my @t = tree($pid); kill "TERM", -$pid, @t; my $g = time + 2; while (time < $g) { last if waitpid($pid, WNOHANG) == $pid; select(undef, undef, undef, 0.1) } kill "KILL", -$pid, @t, tree($pid); waitpid($pid, 0); kill "KILL", -$pid, @t } $SIG{INT} = $SIG{TERM} = $SIG{HUP} = sub { reap(); exit 143 }; my $end = time + $secs; my $st; while (1) { my $r = waitpid($pid, WNOHANG); if ($r == $pid) { $st = $?; last } if (time >= $end) { reap(); exit 142 } select(undef, undef, undef, 0.1) } exit($st & 127 ? 128 + ($st & 127) : $st >> 8)' "$@"; }
 run() { rm -f "$LOG"; bounded "$BOUND" make --no-print-directory crew-console-test AILANG=runtime/bin/ailang >/dev/null 2>&1; RC=$?
-  [ "$RC" != 142 ] || { echo "drill: timeout after $BOUND s (a failure, never a kill)"; exit 4; }; }
+  [ "$RC" != 142 ] || { echo "drill: timeout after $BOUND s (a failure, never a kill)"; exit 4; }
+  [ "$RC" != 143 ] || { echo "drill: interrupted (a failure, never a kill)"; exit 5; }; }
 n() { grep -cE "$1" "$LOG"; }
 perinst() { mutate "$UI" 's/^static var _serial := 0 /var _serial := 0 /'; }
 d0() { run; test "$RC" = 0 && test "$(n '^crew-console: 0 failures$')" = 1 && test "$(n '^FAIL|SCRIPT ERROR')" = 0 || exit 1
@@ -202,8 +216,25 @@ kh() { # the deadline: a hung test is stopped, fails, leaves no process behind, 
   [ "$left" = 0 ] || { for p in $pids; do kill -9 "$p" 2>/dev/null; done; echo "drill kh: $left processes left behind"; exit 1; }
   test "$crc" = 4 && test "$(grep -c "^drill: timeout after $B s" "$T/kh.out")" = 1 && test "$god" = 1 && test "$sim" -ge 1 && test "$live" -ge 4 || { cat "$T/kh.out"; echo "drill kh: crc $crc god $god sim $sim live $live"; exit 1; }
   echo "drill kh: ok (never quits, holds a sim: $live live processes [pgid:name ${names}] before the deadline; rc 4 timeout after ${secs} s of $B; 0 left after ${i} s; files restored)"; }
-[ $# -gt 0 ] || set -- d0 k1 k2 k3 k4 kh
-for d; do case $d in d0|k1|k2|k3|k4|kh|hang) "$d" ;; *) echo "drill: unknown $d"; exit 2 ;; esac; done
+stub() { # ks's child: the test never quits and leaves a stand-in for a stuck sim: spawned by Godot (OS.create_process,
+  # like the sim), outside the supervisor's group, ignoring TERM/HUP/INT (inherited across exec), outliving Godot.
+  mutate "$TC" 's#^\tquit\(1 if failures else 0\)$#\t_stub = OS.create_process("/bin/sh", ["-c", "trap \x27\x27 TERM HUP INT; exec sleep 747474\x30"])#; s#^var failures := 0$#var failures := 0\nvar _stub := 0#'
+  run; echo "drill stub: no timeout (rc $RC)"; exit 1; }
+SP='sleep 7474740$'
+ks() { # quorum r2 (gpt6-1-sol): a stuck child outside the group that ignores graceful shutdown is still reaped
+  [ "$(pgrep -f "$SP" | wc -l | tr -d ' ')" = 0 ] || { echo "drill ks: a '$SP' process already runs; void"; exit 3; }
+  B=${KH_BOUND:-60}; rm -f "$LOG"; t0=$(date +%s)
+  BOUND=$B sh "$SELF" "$PWD" stub > "$T/ks.out" 2>&1 & cp=$!
+  seen=0; while [ $(($(date +%s) - t0)) -lt $((B - 5)) ]; do seen=$(pgrep -f "$SP" | wc -l | tr -d ' '); [ "$seen" -ge 1 ] && break; sleep 1; done
+  sp=$(pgrep -f "$SP" | head -1); sg=$(ps -o pgid= -p "$sp" | tr -d ' '); gg=$(pgrep -f 'test_crew_console.gd' | while read -r p; do ps -o pgid=,comm= -p "$p"; done | grep -iE 'godot$' | awk '{print $1}' | head -1)
+  wait "$cp"; crc=$?; secs=$(($(date +%s) - t0))
+  i=0; left=1; while [ $i -lt 10 ]; do left=$(pgrep -f "$SP" | wc -l | tr -d ' '); [ "$left" = 0 ] && break; sleep 1; i=$((i + 1)); done
+  cmp -s "$T/tc" "$TC" && cmp -s "$T/ui" "$UI" || { echo "drill ks: files not restored after the timeout"; exit 1; }
+  [ "$left" = 0 ] || { pkill -9 -f "$SP"; echo "drill ks: the stuck child survived the deadline"; exit 1; }
+  test "$crc" = 4 && test "$(grep -c "^drill: timeout after $B s" "$T/ks.out")" = 1 && test "$seen" -ge 1 && test -n "$sg" && test "$sg" != "$gg" || { cat "$T/ks.out"; echo "drill ks: crc $crc seen $seen pgid $sg godot-pgid $gg"; exit 1; }
+  echo "drill ks: ok (stuck child ignoring TERM/HUP/INT in pgid $sg, Godot's $gg, seen before the deadline; rc 4 timeout after ${secs} s of $B; 0 left after ${i} s; files restored)"; }
+[ $# -gt 0 ] || set -- d0 k1 k2 k3 k4 kh ks
+for d; do case $d in d0|k1|k2|k3|k4|kh|ks|hang|stub) "$d" ;; *) echo "drill: unknown $d"; exit 2 ;; esac; done
 echo "serial-pin-drill: ok ($# drills: $*)"
 ```
 
@@ -211,14 +242,14 @@ echo "serial-pin-drill: ok ($# drills: $*)"
 
 | # | Work | LOC | Est. |
 |---|---|---:|---|
-| M1 | D1 (apply the diff), AC1, AC4, AC5 | +11 | 15 min |
+| M1 | D1 (apply the diff), the `.gitattributes` line, AC1, AC4, AC5 | +12 | 15 min |
 | M2 | Drills (AC2, AC3), D2 fragment (AC6) | +8 | 15 min |
 
 One PR, test-only. The targeted gate is `make crew-console-test` run by the executor; the GitHub fast tier does not run it (`ci-fast` in `Makefile:55` and `mk/*.mk` lists no `crew-console-test`, V2), the nightly `make test` does.
 
 ## Conflict surface
 
-- **Open PRs: none.** The change touches `tests/test_crew_console.gd` and a new fragment; no open PR (#373, #379, #380, #384) touches either (V8). #373, #379 and #380 touch `Makefile`, which this row leaves alone.
+- **Open PRs: none.** The change touches `tests/test_crew_console.gd`, `.gitattributes` and a new fragment; no open PR (#373, #379, #380, #384) touches either (V8). (`.gitattributes`: 0 hits in all four, controller, iteration 74.) #373, #379 and #380 touch `Makefile`, which this row leaves alone.
 - **Existing code that shares the symbol: 7aa's reset.** `tests/test_sim_pipeline.gd:19` writes `CrewConsole._serial = 0` (V1). It cannot perturb or observe this pin: `crew-console-test` (`Makefile:160`) and `sim-pipeline-test` (`Makefile:1340`, through `$(SCRIPT_GATE)`) each start their own `godot --headless --path . --script tests/<file>.gd` process, and neither test file names the other (V12). A GDScript `static var` lives in one process.
 - **Why here, not beside 7aa's suite.** The two-console flow (A sends, B is rebuilt, the real sim `us`) already exists in `test_crew_console.gd`'s `real_sim()`, and `make test` runs that target (V2). `test_sim_pipeline.gd` resets the counter at the start of each run, which would mask the property, and `make test` does not run it yet (row 7ab, V12).
 
@@ -228,7 +259,8 @@ One PR, test-only. The targeted gate is `make crew-console-test` run by the exec
 |---|---|
 | A later crew-section change moves turn/revision so ids happen to differ | The id check compares two consoles built from one `us.crew` snapshot with no send between them; it does not depend on the values. k1 pins the current collision text so a drifting drill fails loudly. |
 | Suite churn (an `offer_intents` or `reply_intents` call added or removed before `real_sim()`'s console A) shifts the green ordinals (today 11/12, V13) | The test compares, never pins, them; AC1/d0 match `tc0-4-[0-9]+` and require the two to differ. Only k1's per-instance `tc0-4-1` is literal, and it does not move with churn (each console starts at 0). |
-| A hung Godot or sim blocks a drill and leaves files mutated | Every `make` runs under `BOUND`; a timeout exits 4 and the EXIT trap restores (kh, V15). The sim runs in its own process group (V15: pgid ≠ godot's), so the supervisor's group kill does not reach it; it exits when Godot is killed (0 left after 0 s), and kh would `kill -9` and fail on any survivor. This also qualifies `tools/script_gate.sh`'s comment that no `--script` gate has a child outside the group: every `$(GODOT_SIM)` gate does (out of scope here). |
+| A hung Godot or sim blocks a drill and leaves files mutated or processes behind | Every `make` runs under `BOUND`; a timeout exits 4 and the EXIT trap restores (kh, V15). The sim runs in its own process group (V15: pgid ≠ godot's), so a group kill alone does not reach it; revision 2's supervisor also reaps every descendant recorded before TERM, which ks proves against a child that ignores TERM/HUP/INT and outlives Godot (V18), and whose negative control fails under the round-1 supervisor (V19). |
+| The real `crew-console-test` recipe (and every `$(GODOT_SIM)` gate through `tools/script_gate.sh`) has the same hole: `Makefile:160` has no deadline at all, and `script_gate.sh`'s comment says no `--script` gate has a child outside the group, while every `$(GODOT_SIM)` gate does (V15) | **Pre-existing at `b57d279e`, not introduced here**; quorum r2 (gpt6-1-sol) asked for a runner that owns the sim for the recipe too. Split out as charter row **7ad** with that objection verbatim (gate-2 rule (c): a pre-existing defect a reviewer surfaces is a queue row, not a revision); this row changes no recipe and no runner. |
 | The extra sends change what later checks see | They are placed after every existing `us` check and before `us.stop()`; the existing 100 `ok` lines are unchanged (102 = 100 + 2, V6). |
 | The sim one day treats the repeat as a silent `Duplicate` | The id check still kills (k4) |
 | Another test resets `_serial` mid-run | Only `tests/test_sim_pipeline.gd:19` writes it (V1), in its own Godot process (V12). |
@@ -241,8 +273,9 @@ One PR, test-only. The targeted gate is `make crew-console-test` run by the exec
 ## Deliverables
 
 - `tests/test_crew_console.gd`: D1.
+- `.gitattributes`: `+design_docs/** whitespace=-space-before-tab` (quorum r2, oc-kimi-k3; V17).
 - `changelogs/unreleased/2026-11-06-crew-console-serial-pin.md`: D2.
-- On landing: this doc to `implemented/r1/`, charter row 7ac marked landed.
+- On landing: this doc to `implemented/r1/`, charter row 7ac marked landed; row 7ad (the recipe-level deadline and sim reaping, quorum r2 gpt6-1-sol) filed by the controller at iteration 74.
 
 ## Verification log
 
@@ -264,3 +297,6 @@ One PR, test-only. The targeted gate is `make crew-console-test` run by the exec
 | V14 | `tools/script_gate.sh` refuses the green summary (why the drill has its own supervisor) | `sh tools/script_gate.sh crew-console-test .godot/tmp/7ac/sg-green.log 600 '^crew-console: 0 failures$' -- AILANG_BIN="$(command -v runtime/bin/ailang)" godot --headless --path . --script tests/test_crew_console.gd; echo rc=$?; grep -c '^crew-console: 0 failures$' .godot/tmp/7ac/sg-green.log` (D1 applied) | `script-gate: crew-console-test FAIL; summary 'crew-console: 0 failures' carries no nonzero count (print one, e.g. N passed, 0 failures) …`, `rc=1`; positive control: the log does hold the line, `1` (and 102 `ok`) |
 | V15 | The bounded drills, the deadline drill and its process evidence | D1 applied; the `sh 7ac-drill` block at `.godot/tmp/7ac/drill.sh`; `sh .godot/tmp/7ac/drill.sh "$PWD"`; then `git status --porcelain`, `cmp` of both files; then `sh .godot/tmp/7ac/drill.sh "$PWD" kh` alone (pgid:name listing); exploratory runs before it with `ps -o pid,ppid,pgid,command` | Full set: the six lines of the table (`drill d0: ok (unmodified: rc 0, 0 failures, 102 ok, ids tc0-4-11 tc0-4-12 distinct, sim refused nothing)` … `drill kh: ok (…; rc 4 timeout after 60 s of 60; 0 left after 0 s; files restored)`), `serial-pin-drill: ok (6 drills: d0 k1 k2 k3 k4 kh)`, rc 0, 136 s; status ` M tests/test_crew_console.gd`, `files-as-expected`. kh alone (60 s): `5 live processes [pgid:name 64949:perl 64984:make 64984:sh 64984:godot 65492:ailang ]`: make, sh and godot share the supervisor's group, the sim has its own; all 5 gone 0 s after the child's exit. Exploratory: without a held sim, removing `quit()` and `old.stop()` left only godot hung (the sim had exited with the freed bridge), hence the member `SimBridge` |
 | V16 | Revision 1's ACs as printed | the `diff 7ac-test` and `sh 7ac-drill` blocks extracted with `x` and `cmp`-compared to the files run in V15; AC1 (twice), AC2, AC3, AC4, AC5 typed as in the table (bash) on the D1-applied tree; then the test file copied back | Blocks `cmp`-identical (`diff 7ac-test` 32 lines, `sh 7ac-drill` 64). AC1: twice `drill d0: ok (unmodified: rc 0, 0 failures, 102 ok, ids tc0-4-11 tc0-4-12 distinct, sim refused nothing)`, `serial-pin-drill: ok (1 drills: d0)`, `rc=0` (27 s for both). AC2: `drill k1: ok …`, `rc=0`, 14 s. AC3: the six lines (kh: `[pgid:name 68860:perl 71239:make 71239:sh 71239:godot 72434:ailang ]`, `rc 4 timeout after 60 s of 60; 0 left after 0 s; files restored`), `serial-pin-drill: ok (6 drills: d0 k1 k2 k3 k4 kh)`, `rc=0`, 132 s; status: this doc and the test file. AC4: `11	0	tests/test_crew_console.gd`, `0`. AC5: the unscoped `git diff --check origin/main` printed 15 `space before tab in indent` lines, all in this doc's embedded diff (lines 70–96), so AC5 now excludes `design_docs`; scoped, it is silent (rc 0); lint 121/118, `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)` |
+| V17 | Revision 2 (controller): the `.gitattributes` exemption is scoped to `design_docs` | doc and D1 applied, `.gitattributes` + `design_docs/** whitespace=-space-before-tab`; `git diff --check origin/main; echo rc=$?`; control 1: `git show HEAD:.gitattributes > .gitattributes; git diff --check origin/main \| grep -c 'space before tab'`, then restored; control 2: `printf ' \tbad\n' > tests/zz_probe.txt; git add -N tests/zz_probe.txt; git diff --check origin/main \| grep -c zz_probe`, then removed; `grep -rn 'diff --check' .github/ Makefile mk/ tools/*.sh` | rc 0, silent; control 1: `15`; control 2: `1` (`tests/zz_probe.txt:1: space before tab in indent.`); no CI, Makefile or tool runs `git diff --check` (empty; AC5 is the only runner). Open PRs #373, #379, #380, #384 touch neither `.gitattributes` nor the test file (0 hits each) |
+| V18 | Revision 2's drills and ACs as printed (controller, 11:35–11:50 CET, tree `8265dc35` + revision 2) | `x 'sh 7ac-drill'` and `x 'diff 7ac-test'` `cmp`-identical to the files run; `sh .godot/tmp/7ac/drill.sh "$PWD"`; then AC1 (twice), AC4, AC5 typed as in the table; `git status --porcelain`; `pgrep -f 'sleep 7474740'` | `drill d0: ok (unmodified: rc 0, 0 failures, 102 ok, ids tc0-4-11 tc0-4-12 distinct, sim refused nothing)`, k1–k4 as the table, `drill kh: ok (never quits, holds a sim: 5 live processes [pgid:name 92518:perl 94519:make 94519:sh 94519:godot 95304:ailang ] before the deadline; rc 4 timeout after 60 s of 60; 0 left after 0 s; files restored)`, `drill ks: ok (stuck child ignoring TERM/HUP/INT in pgid 99585, Godot's 98194, seen before the deadline; rc 4 timeout after 60 s of 60; 0 left after 0 s; files restored)`, `serial-pin-drill: ok (7 drills: d0 k1 k2 k3 k4 kh ks)`, rc 0, 194 s. AC1 twice `drill d0: ok (… 102 ok, ids tc0-4-11 tc0-4-12 distinct …)`, rc 0 (30 s both). AC4 `1	0	.gitattributes`, `11	0	tests/test_crew_console.gd`, `0`. AC5 silent (rc 0), lint 121/118, `uid-guard: ok (406 .uid files)`, `python-guard: ok (21 allowlisted, 0 awaiting AILANG port)`. Status: `.gitattributes`, this doc, the test file. pgrep: rc 1 |
+| V19 | ks's negative control: the round-1 group-only supervisor leaves the stuck child | the drill with `bounded()` replaced by revision 1's (from `git show 8265dc35:<this doc>`); `sh drill_oldsup.sh "$PWD" ks`; then `pgrep -f 'sleep 7474740' \| wc -l` | rc 1, 71 s, `drill ks: the stuck child survived the deadline` (the drill then `pkill -9`s it); afterwards `0` |
