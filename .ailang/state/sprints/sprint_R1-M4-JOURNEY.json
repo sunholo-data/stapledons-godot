@@ -1949,6 +1949,141 @@
       "passes": true,
       "status": "implemented",
       "notes": "Planner iteration 72: six serial milestones, 140 minutes plus asynchronous CI/controller/evaluator time; 24 implementation files at measured base 05e64cd1, +135/-164 = 243 hand-written changed LOC plus 56 baseline deletions. Cumulative .godot/tmp/snap/M1/ through M6/ include every changed file, FILES.txt and RESULT.txt; controller owns one commit per milestone. Every Godot or make gate inside sandbox is UNINFORMATIVE UNDER SANDBOX regardless of rc, requiring external controller rerun. Preserve first 26 features and every other JSON key. Operational conflict: design prescribes make deps (contains git checkout) and suggests git apply, incompatible with executor no-git-writes; controller handles dependency setup, executor uses file edits only. Kimi r2 decision: fetch <=183 s/file and <=549 s/fetch, Godot <=600 s separately; import remains pre-existing and unbounded, so no whole-target bound. Gemini r2 decision: retain measured eager conds arrays without optional additional guards; failure-path SCRIPT ERROR fails closed, passing benchmark/launch counts remain 3/4. AC5 uses status-anchored FAIL grep, 57 names, 58 ok lines with adversarial repeat and five expected rc-1 negatives; unanchored FAIL text appears four times. M1/M2 interim lint 238/63/175 with four prerequisite pairs; M3 atomically reaches 239/120/119. Setup/AC10/AC14 cache restoration and actual originating statuses required; A1-A5 extract from design, no designer tmp dependency. AC13 actual PR-head fast tier and independent evaluation pending. B4b and D8 orphan aggregate changes excluded. No unresolved implementation contradiction beyond documented execution constraints. Sprint-planner skill absent inside permitted repo; supplied B3 plan and feature provide structure. Controller iteration 72, outside the sandbox at decd5498 (Godot 4.7.2, AILANG v0.56.1 runtime/bin): AC1 lint ok (239: 120 through $(SCRIPT_GATE), 119 on the baseline) and 4 pairs; AC2 pin 120 refused; AC3 rc 2 '3 pairs ... SG_PREREQS_PAIRS is 4' then 1; AC4 rc 2 lost ship-baseline; AC5 list-ok, n-rc 0, then rc 0, 57 gate lines, 0 FAIL statuses (18:25-18:55 CET); AC6 18 and 24 cases; AC7 57 rows, 57 rc=2, 57 SCRIPT ERROR; AC8 8 rows, 8 rc=2; AC9 21 x zeroed=0 real=1 makefile=1 plus 1 x makefile=2; AC10 make rc 0, 135 passed, 83 s; AC11 gates-ok; AC12 0/0/0 and 3 1 tools/ship_baseline.sh; AC14 rc 2 in 123 s, 2 curl (28), 0 gate lines, baseline re-fetched. Commits rebuilt from executor snapshots (e9d31f94, 13ea5869, decd5498), sha256 manifest 0 mismatches, tree byte-identical to the designer's measured diff. Evaluation: Sonnet (Agent tool, own clone) 90/100 PASS, 0 blocking, eval_R1-M4-JOURNEY_7x_B4_round_1.json; survivor reproduced by the controller: swapping a real pair for ship-console-test:import passes the lint (OQ5). AC13 is the PR's fast tier."
+    },
+    {
+      "id": "M4.6vR3_7aa_SIM_PIPELINE_TEST",
+      "description": "Row 7aa revision 2: fix test-only process-wide CrewConsole offer-id fixture isolation, add a 60-tick/tick-41 two-intent non-vacuity check and counted eight-check summary; migrate only sim-pipeline-test through $(SCRIPT_GATE) with a 600 s counted ERE, delete its baseline row and lower pin 119 to 118, plus revision-2 changelog. Explicitly drop candidate diff ship-demo-ci prerequisite: nightly wiring waits for prerequisite follow-up 7ab idle-condition timing; 7ac pins the production static counter in crew-console-test. No production code, assertion/threshold or audiovisual changes.",
+      "depends_on": [
+        "M4.6uR3_7x_B4_SCRIPT_GATES"
+      ],
+      "estimated_loc": 28,
+      "files": [
+        "Makefile",
+        "tests/test_sim_pipeline.gd",
+        "tools/script-gate-baseline.txt",
+        "mk/script-gates.mk",
+        "changelogs/unreleased/2026-11-06-sim-pipeline-test.md"
+      ],
+      "milestones": [
+        {
+          "id": "M1",
+          "title": "Counted Makefile gate RED first, then isolated fixture and counted summary",
+          "acceptance": [
+            "AC1",
+            "AC2"
+          ],
+          "estimate": "16 changed LOC, 20 min plus controller handoff",
+          "pause": "Keep baseline/pin at 119. Controller must record the recipe-only make sim-pipeline-test red step (V18: no summary line matching) before the test edit; retain a replayable checkpoint. Then require one externally green eight-check run and AC2 live capture; M3 owns final twice-run AC1. No ship-demo-ci prerequisite. Runtime sandbox results are UNINFORMATIVE UNDER SANDBOX."
+        },
+        {
+          "id": "M2",
+          "title": "Delete exactly one baseline row, lower pin and add revision-2 changelog",
+          "acceptance": [
+            "AC3",
+            "AC4",
+            "AC5",
+            "AC6",
+            "AC9"
+          ],
+          "estimate": "5 core changed LOC plus about 8 changelog lines, 10 min",
+          "pause": "Require 239/121/118 with four prerequisite pairs, old pin and restored stale-row refusals, revision-2 wiring counts 0/1/0/1 and exact five-file implementation scope. No other baseline row or production file changes. Snapshot cumulative files; sandbox permits these non-Godot controls."
+        },
+        {
+          "id": "M3",
+          "title": "Run-only acceptance sweep, controller drills, PR fast tier and landing handoff",
+          "acceptance": [
+            "AC1",
+            "AC2",
+            "AC3",
+            "AC4",
+            "AC5",
+            "AC6",
+            "AC7",
+            "AC8",
+            "AC9",
+            "AC10"
+          ],
+          "estimate": "0 implementation LOC, 15 min plus asynchronous CI and independent evaluation",
+          "pause": "Controller owns AC1, AC2, AC7, AC8 outside sandbox and actual PR-head AC10. Executor may verify AC3-AC6 and AC9; reuse M2 evidence if identical files rather than repeat without cause. Preserve all eight drill controls and byte-identical restoration. Keep passes false until external evidence and independent evaluation; controller lands 7aa and files 7ab/7ac. Only appended-feature progress and ignored evidence/snapshots change."
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "command": "for r in 1 2; do make sim-pipeline-test; echo rc=$?; done",
+          "expected": "Twice: script-gate: sim-pipeline-test ok: sim-pipeline: 8 passed, 0 failures (rc 0, no SCRIPT ERROR, N s of 600 s), then rc=0. Design AC1 expects N under 120; V14 measured 50 s and 44 s. Preserve actual times; the helper deadline remains 600 s. Owner: M1 interim; M3 final; Controller outside sandbox. Evidence: V7, V14, V17."
+        },
+        {
+          "id": "AC2",
+          "command": "L=.godot/tmp/sim-pipeline.log\ngrep -c '^ok ' \"$L\"\ngrep -cE '^FAIL |SCRIPT ERROR' \"$L\"\ngrep -cxE 'ok (same inputs in the same order \\(sent journal\\)|same world at the end|same crew at the end|the journal holds 60 ticks and the tick-41 crew offer \\(offer and ask\\))' \"$L\"",
+          "expected": "8; 0; 4, from the live AC1 capture. Save each AC1 run log before the next run or any drill overwrites it. The eight ok lines are the positive capture control. Owner: M1 interim; M3 final; Controller outside sandbox; tied to live AC1 capture. Evidence: V7, V17."
+        },
+        {
+          "id": "AC3",
+          "command": "make script-gate-lint; echo rc=$?",
+          "expected": "script-gate-lint: ok (239 --script invocations: 121 through $(SCRIPT_GATE), 118 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned); script-gate-prereqs: ok (4 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline); rc=0. Owner: M2; M3 evidence sweep; Executor sandbox permitted: no Godot/process drill. Evidence: V9 base; V10, V14, V17 final."
+        },
+        {
+          "id": "AC4",
+          "command": "make script-gate-lint SCRIPT_GATE_BASELINE_ROWS=119 > .godot/tmp/7aa/pin.out 2>&1\nrc=$?; echo \"make rc=$rc\"\ngrep 'the baseline has' .godot/tmp/7aa/pin.out\ngrep -c '^sim-pipeline-test' tools/script-gate-baseline.txt\ngrep -vc '^#' tools/script-gate-baseline.txt",
+          "expected": "Reject the old pin: script-gate-lint: the baseline has 118 rows but SCRIPT_GATE_BASELINE_ROWS is 119: the pin moves with the rows, and only down; then 0; 118. Keep the originating make rejection status separately from grep statuses. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V10, V17."
+        },
+        {
+          "id": "AC5",
+          "command": "mkdir -p .godot/tmp/7aa\n{ cat tools/script-gate-baseline.txt; printf 'sim-pipeline-test\\ttests/test_sim_pipeline.gd\\trc,se,sum,-\\n'; } > .godot/tmp/7aa/back.txt\nSCRIPT_GATE_BASELINE=.godot/tmp/7aa/back.txt SCRIPT_GATE_BASELINE_ROWS=119 sh tools/script_gate_lint.sh > .godot/tmp/7aa/back.out 2>&1\necho rc=$?\ngrep -c '^script-gate-lint: ' .godot/tmp/7aa/back.out\ngrep '^script-gate-lint: stale' .godot/tmp/7aa/back.out",
+          "expected": "rc=1; 1; script-gate-lint: stale baseline row (no longer unguarded): delete it and lower SCRIPT_GATE_BASELINE_ROWS: sim-pipeline-test tests/test_sim_pipeline.gd. The real baseline is never modified by this control. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V10, V17."
+        },
+        {
+          "id": "AC6",
+          "command": "P=$(make -pq 2>/dev/null)\nfor a in ship-demo-ci:sim-pipeline-test test:ship-demo-ci ci-fast:sim-pipeline-test; do\n  printf '%s\\n' \"$P\" | awk -v t=\"${a%%:*}:\" '$1 == t' | tr ' ' '\\n' | grep -cx \"${a#*:}\"\ndone\nmake --no-print-directory script-gate-inventory > .godot/tmp/7aa/inventory.tsv\nrc=$?; echo \"inventory rc=$rc\"\ngrep -cE 'sim-pipeline-test.tests/test_sim_pipeline\\.gd.gated.rc,se,sum,to$' .godot/tmp/7aa/inventory.tsv",
+          "expected": "Revision 2 prerequisite counts 0, 1, 0; inventory rc=0 and count 1. V10/V17 measured revision 1 counts 1,1,0,1; revision 2 explicitly removes only the first join. V9 already measured its absent base state. The test-to-ship-demo-ci join remains. make -pq is a database query, not a success gate on its query rc. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V9, V10, V17; revision-2 AC6, V26."
+        },
+        {
+          "id": "AC7",
+          "command": "sh .godot/tmp/7aa/drill.sh \"$PWD\"; echo rc=$?\ngit status --porcelain",
+          "expected": "Eight drill ok lines d0 k1 k2 k3 k4 k5 k6 k7; sim-pipeline-drill: ok (8 drills: d0 k1 k2 k3 k4 k5 k6 k7); rc=0. Compare status with its pre-drill capture, not with an assumed clean executor tree. Three mutated files must be restored byte-for-byte by A1 cmp checks. Preserve logs outside the harness temporary directory before cleanup if needed. Owner: M3; Controller outside sandbox: Godot user data and process controls. Evidence: V8, V14, V21, V25."
+        },
+        {
+          "id": "AC8",
+          "command": "godot --headless --path . --script \"$PWD/.godot/tmp/7aa/diag.gd\" > .godot/tmp/7aa/diag.log 2>&1\nrc=$?; echo \"Godot rc=$rc\"\ngrep -E '^(PAGE_TICK|PAGE_CREW|SENT_LEN|WORLD_DIFF|DRAINED|diag)' .godot/tmp/7aa/diag.log\ngrep -c '^SENT_DIFF 40$' .godot/tmp/7aa/diag.log\ngrep -cE '^SENT_DIFF' .godot/tmp/7aa/diag.log\ngrep -oE 'tc6-61-[12]-pilot' .godot/tmp/7aa/diag.log | sort -u\ngrep -c 'SCRIPT ERROR' .godot/tmp/7aa/diag.log",
+          "expected": "Godot rc=0 plus PAGE_TICK sync=40 piped=39 piped_drained=40; PAGE_CREW same sync/piped=true sync/piped_drained=true; SENT_LEN 60 60; WORLD_DIFF key crew; DRAINED_VARIANT sent_same=false world_same=false crew_same=false; diag: done; SENT_DIFF counts 1 and 1; ids tc6-61-1-pilot and tc6-61-2-pilot; no SCRIPT ERROR. A2 deliberately has no reset, so these diagnostic differences persist on the fixed branch. This is mechanism evidence, not a green sim-pipeline-test substitute. Owner: M3; Controller outside sandbox: Godot and sim user data. Evidence: V2, V17."
+        },
+        {
+          "id": "AC9",
+          "command": "git diff --name-only c2e5f8f96db687d40e328cb6bc6532dc52354b4f | grep -cvxE 'Makefile|mk/script-gates\\.mk|tools/script-gate-baseline\\.txt|tests/test_sim_pipeline\\.gd|changelogs/unreleased/2026-11-06-sim-pipeline-test\\.md|design_docs/planned/r1/m4-7aa-sim-pipeline-test.*\\.md|\\.ailang/state/sprints/sprint_R1-M4-JOURNEY\\.json'\ngit diff --name-only c2e5f8f96db687d40e328cb6bc6532dc52354b4f -- bridge/ sim/ ui/ | wc -l | tr -d ' '\nmake --no-print-directory uid-guard python-guard && git diff --check c2e5f8f96db687d40e328cb6bc6532dc52354b4f && echo gates-ok",
+          "expected": "0 unexpected diff paths; 0 bridge/sim/ui paths; uid-guard: ok (406 .uid files); python-guard: ok (21 allowlisted, 0 awaiting AILANG port); gates-ok. Use the fixed base, equal to origin/main observed by the planner. git diff does not enumerate untracked files: also review the complete created-file list/status, including the exact changelog path, against the allowlist. Owner: M2; M3 evidence sweep; Executor sandbox permitted. Evidence: V13, V17."
+        },
+        {
+          "id": "AC10",
+          "command": "SG7AA_PR=$(gh pr view --json number --jq '.number') || exit 1\nSG7AA_HEAD=$(gh pr view \"$SG7AA_PR\" --json headRefOid --jq '.headRefOid') || exit 1\ngh pr checks \"$SG7AA_PR\" || exit 1\nSG7AA_RUN=$(gh run list --workflow ci.yml --event pull_request --commit \"$SG7AA_HEAD\" --limit 1 --json databaseId --jq '.[0].databaseId') || exit 1\ntest -n \"$SG7AA_RUN\" && test \"$SG7AA_RUN\" != null || exit 1\ngh run view \"$SG7AA_RUN\" --log > .godot/tmp/7aa/ci.log || exit 1\ngrep -c '118 on the baseline' .godot/tmp/7aa/ci.log",
+          "expected": "Actual PR-head GitHub fast tier success and at least one 118 on the baseline line in that head's CI log (121 through the gate). Missing/pending CI is pending, not success. Artifact lookup follows the supplied B4 sprint precedent. This future PR result is not a planner measurement. Owner: M3, after controller commits/PR; Controller, GitHub PR/head evidence. Evidence: Design AC10; V11 existing fast tier and V14/V17 measured lint; B4 sprint AC13 artifact lookup."
+        }
+      ],
+      "design_doc": "design_docs/implemented/r1/m4-7aa-sim-pipeline-test.md",
+      "sprint_plan": "design_docs/implemented/r1/m4-7aa-sim-pipeline-test-sprint.md",
+      "registry_reuse": [
+        {
+          "milestone": "M1",
+          "package": null,
+          "action": "none",
+          "reason": "Existing repository-specific GDScript fixture/Make gate maintenance or validation; reuse landed helper/lint and measured design harnesses. No package-like capability or .ail code; no registry search applies."
+        },
+        {
+          "milestone": "M2",
+          "package": null,
+          "action": "none",
+          "reason": "Existing repository-specific GDScript fixture/Make gate maintenance or validation; reuse landed helper/lint and measured design harnesses. No package-like capability or .ail code; no registry search applies."
+        },
+        {
+          "milestone": "M3",
+          "package": null,
+          "action": "none",
+          "reason": "Existing repository-specific GDScript fixture/Make gate maintenance or validation; reuse landed helper/lint and measured design harnesses. No package-like capability or .ail code; no registry search applies."
+        }
+      ],
+      "passes": true,
+      "status": "implemented",
+      "notes": "Iteration 73 planner, branch mission/stapledon-iter73-7aa, HEAD 61fa25b67a9fd2647f2c96bc083f6e76a397bf5a, fixed base c2e5f8f96db687d40e328cb6bc6532dc52354b4f. Three serial milestones, 45 minutes plus controller/CI/evaluator scheduling; 21 core changed lines plus about 8 fragment lines (28 handwritten plus one baseline deletion). Four core files are byte-identical to the measured base. M1 recipe-only external RED before D1 (V18 no summary line matching), then reset at drive start/non-vacuity/counting with existing assertions unchanged; M1 baseline/pin remains 119 and is intentionally not lint-clean. Mission grouping puts D3 in M2, unlike design sub-milestone 1; no new interim lint gate. M2 final 239/121/118, four prerequisite pairs, revision-2 AC6 counts 0/1/0/1; candidate diff extra ship-demo-ci line must be dropped. M3 run-only complete sweep; controller outside sandbox for AC1, AC2, AC7, AC8, PR-head AC10 and landing; executor can run non-Godot AC3-AC6/AC9 inside sandbox. Runtime/user-data/pgrep gates inside sandbox are UNINFORMATIVE UNDER SANDBOX, never pass/fail. No git writes or make deps/ci-fast by executor; controller handles dependency setup and one commit per milestone. Cumulative .godot/tmp/snap/M1 through M3 preserve repo-relative created/modified deliverables including design/plan/JSON and prior implementation content, FILES.txt and RESULT.txt; restore mutants before snapshots. Preserve every original 27 features and unrelated top-level value; only appended feature progress changes. Keep passes false until outside-sandbox acceptance, actual PR-head fast tier and independent evaluation. AC10 is prospective design CI criterion, not a planner runtime measurement; AC11 history optional and unscheduled/controller-only. Controller lands charter 7aa with test-side attribution and files 7ab idle-condition timing prerequisite to wiring plus 7ac same-revision/no-send console case; no charter write by executor. Sprint-planner skill absent within repo boundary; exact supplied B4 plan and feature schema reused. Planner performed no runtime gates. Executor iteration 73 (2026-11-06): M1/M2 implementation complete; M3 sandbox-permitted sweep complete using unchanged M2 implementation. Controller RED already recorded outside sandbox before test edits: make rc 2, helper rc 1/no counted summary; actual 4 failures rather than V18 three because timing ratio 5.77/21.72=0.266 at controller-reported load1 ~19/mediaanalysisd 315% CPU. Finding only; 0.25 unchanged. M1 recipe/test checkpoints cmp-identical to controller evidence. AC3 rc 0: 239 total, 121 gated, 118 baseline, four pairs. AC4 old pin make rc 2 with exact 118-vs-119 rejection, row count 0 and baseline 118. AC5 restored-row scratch control rc 1, exactly one stale-row diagnostic. AC6 direct prerequisite counts 0/1/0 and inventory count 1 (inventory rc 0); make -pq rc 1 is query evidence. AC9 unexpected/production counts 0/0, uid-guard 406 and python-guard 21, gates-ok. Full command outputs/real rc in cumulative snapshot RESULT.txt and .godot/tmp/7aa/executor-commands.txt. Snapshots .godot/tmp/snap/M1/, M2/, M3/ contain cumulative post-milestone files plus unchanged approved design/plan and sprint JSON; M3 changes only this feature status/notes. All 27 earlier features and every other top-level value preserved. No executor Godot/runtime/drill/process-table attempts: UNINFORMATIVE UNDER SANDBOX if attempted. Outside-sandbox GREEN AC1 twice/AC2, AC7/AC8, actual PR-head AC10 and independent evaluation remain controller-owned and pending. A1/A2/A4 extracted unchanged for controller; A3 omitted. No nightly join, production edits, git writes or dependency/broad gate runs. Status implemented records completed executor scope; passes remains false pending external acceptance, CI and evaluation. Controller (iteration 73), outside the sandbox at 76ed7334 (AILANG v0.56.1, Godot 4.7.2): M1 red recorded before the fix (recipe-only gate: make rc 2, no summary line matching; old test 4 failures, the fourth the timing check at 1-min load ~19, mediaanalysisd 315% CPU); AC1 twice 8 passed, 0 failures (48 s, 49 s; ratios 0.165, 0.084); AC2 8/0/4; AC3 121 through, 118 on the baseline, 4 pairs, rc 0; AC4 pin 119 refused, 0, 118; AC5 rc 1, 1 stale diagnostic; AC6 0 1 0 1; AC7 sim-pipeline-drill ok (8 drills d0 k1-k7), tree clean; AC8 diag: done, tc6-61-1-pilot and tc6-61-2-pilot; AC9 0, 0, uid-guard 406, python-guard 21, gates-ok. Commits rebuilt from executor snapshots (7c474350, da7afacf, 76ed7334), sha256 manifest 0 mismatches; the four implementation files are byte-identical to the designer's measured diff minus the deferred ship-demo-ci line. AC10 fast tier success on 76ed7334 (run 42150205367). Evaluation: Sonnet (Agent tool, own clone) 93/100 PASS, 0 blocking, eval_R1-M4-JOURNEY_7aa_round_1.json; 14 mutants, 10 killed, 4 survived (2 equivalent, 1 below world resolution, 1 by design); the controller reproduced M4a (offer removed: only the non-vacuity check fails, 7 passed, 1 failures). Docs moved to design_docs/implemented/r1/."
     }
   ],
   "findings": [
