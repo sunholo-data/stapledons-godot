@@ -1,30 +1,24 @@
 # Stapledon mission dashboard
 
-Updated 2026-11-07, iteration 77 (recovery of crashed iteration 76).
+Updated 2026-11-07, iteration 78; record draft remains unmerged.
 
 - **Bar:** clauses 1–3 MET; 4 UNMET; 5 ongoing. Goal unmoved.
-- **Critical path:** 7m AC1 → 7m-d → D-147 (Mark); no new GPU run.
-- **Recovered:** iteration 76 left four unpushed design/evaluation commits in clean full clones.
-  Its nightly-regression investigation is preserved, not repeated or claimed built.
-- **Nightly red:** bridge-operator-test is 30 passed / 14 failures after attended #379;
-  pre-#379 control 44/0. The failure stops test at prerequisite 19/138 (119 later targets).
-- **D-148 OPEN (new):** A move Voyage/Crew working points 0.275 m back; B reshape the desk;
-  C accept overlap; optionally D authorize strict counted expected-failure while pending.
-  Recommendation A, subject to front/back visual review; default no change/weakening.
-- **Independent review:** pinned MiniMax M3 89/100 PASS for parked publication only;
-  implementation_approved=false. Prior Opus design / Sonnet 88 preserved.
-- **Resume:** Mark answers D-148 → re-quorum once → plan → build → independent judge →
-  dev build for Mark's visible approval. No plan/sprint JSON or implementation now.
-- **Ready next:** 7ad bounded runner/reap sim; then 7ac after 7ad. Recheck Makefile holds.
-- **Existing OPEN decisions:** D-128, D-129, D-145, D-146, D-147; new D-148.
-  D-145 is not silently resolved: a green full nightly is still absent.
-- **Non-blocking backlog:** comms contact, desk-relative lean, layout-to-gates mapping;
-  candidate file-list/clearance wording and unenforced provenance fields before resumption.
-- **Limits:** no GPU, full make test, candidate A, or visible review this fire.
-  Interrupted historical make -k test has no whole-suite verdict.
-- **Loop:** launchd dev.ailang.mission-stapledon, every 6 h; skill directory matches origin.
-  Codex controller; Agent wrapper invokes pinned pi:openrouter/minimax/minimax-m3 judge.
-  Designer/planner/executor stages not reached (existing visible Open Question).
-- **Cost:** $0.22350330 metered; Anthropic unavailable; Codex controller fallback recorded.
-- **Do not touch:** attended Kerr PRs #373/#380 and the charter's D-144/levels holds.
-- **Full record:** stapledon-mission-log.md entries 76 and 77; issue #370.
+- **Pick:** 7ad bounded crew-console runner and sim-process cleanup, still undone.
+- **Outcome:** PARKED-ON-LANE evaluator; no design, plan, implementation or passing verdict.
+- **Required judge:** Sonnet exact subscription probe rc 1 / HTTP 429 weekly quota;
+  resets November 9 at 06:00 Europe/Copenhagen. MiniMax/OpenRouter is over ration.
+- **Agent roles:** designer readiness wrapper and evaluator probe wrapper spawned.
+  Native model overrides absent; heavy evaluator uses prescribed exact CLI recipe.
+  Planner/executor not reached. No same-model verdict substitutes for cross-family approval.
+- **Resume:** re-resolve declared cross-family evaluator and probe within ration; rc 0 →
+  7ad design/quorum/plan/build/judge, then 7ac. No human decision needed for capacity.
+- **Critical path:** 7m AC1 → 7m-d → D-147 (default A keeps S1 open, no AC1 rerun).
+- **Nightly red:** bridge-operator-test repair waits on D-148; issue #392 OPEN.
+  No new full-suite verdict and no runtime gate weakened.
+- **Human OPEN:** D-128, D-129, D-145, D-146, D-147, D-148 (unchanged).
+- **Loop:** launchd dev.ailang.mission-stapledon, every 6 h; bookkeeping issue #370.
+- **Cost:** $0 metered; actual Sonnet probe zero tokens; wrapper usage unreported.
+- **Landing:** unmerged draft; green fast CI alone cannot satisfy missing judge.
+- **Do not touch:** attended Kerr PRs #373/#380 and D-144/levels holds.
+- **Evidence:** .ailang/state/evaluations/eval_R1-7ad_lane_iter78.json.
+- **Full record:** stapledon-mission-log.md entry 78 on the draft branch.
