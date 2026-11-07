@@ -292,6 +292,7 @@ The controller runs `make -k test` on the fix head. Those results are **UNMEASUR
 | D. Interim only: a strict expected-failure for the two capsule checks until A, B or C lands, so the nightly is green elsewhere | A counted, pinned weakening that turns red if the overlap ever goes away or grows | Not built: the brief forbids weakening without your OK |
 
 - **Recommendation: A.** It changes four data files (two `use_m` pairs in the manifest and in `bow_a.json`, the manifest's pin, and the record) and no code or asset. It restores D-132's own rule on the new desk unchanged. On that full file set, the eight targets listed in the table's Measured cell are green (V25–V29). It also applies what #379's plan said it did ("the D-132 working points are re-derived"). It is visible, so it needs your OK on a dev build (merge rule 4).
+- **Quorum r2 (gemini-4-argon), applied by the controller:** under A, also re-pin `art/deck-layout-v2/asset-pins.json` `layout_sha256` (+1/−1) to the patched `bow_a.json`. No gate reads it today (V23), so this is provenance only; it makes A seven files.
 - **Default if unanswered:** no visual change. S1 is ready but does not merge on its own: its targeted gate is red on the two real capsule checks (54 passed, 2 failures with revision 1's 56-check test, V28; 53/2 before it, V10). The nightly stays red at this target, and the controller keeps using `make -k test` for the other 119 targets.
 
 ### OQ-2 (non-blocking; visible): should the work lean and the standing pose follow each desk?
@@ -311,7 +312,7 @@ These hold on the fix head, which is S1 plus S2 under OQ-1 = A. Under C, the cou
 | AC | Command | Expected |
 |---|---|---|
 | AC1 | `PATH=$PWD/runtime/bin:$PATH make bridge-operator-test`, run twice | `script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, …)` both times (V25) |
-| AC2 | `REF=HEAD zsh <Appendix C saved as a file>` from the clone root, on a clean tree | The drill table below, row for row: d0 green 56/0 twice; all 15 k-rows red with their counts; `git status --porcelain` empty afterwards (V27) |
+| AC2 | `REF=HEAD zsh <Appendix C saved as a file>` from the clone root, on a clean tree | The drill table below, row for row: d0 green 56/0 twice; all 15 k-rows red with their counts; `git status --porcelain` empty afterwards (V27) **Runner contract (quorum r2, gpt6-1-sol; a build requirement, not yet met by Appendix C as printed):** the executor's drill runner carries the expected table (rc, passed/failed counts and the failing label per drill), exits nonzero on any mismatch, and treats an unapplied mutation, an unknown drill, a timeout, a `SCRIPT ERROR` or a missing summary as a harness failure, never as a kill. AC2 passes only on that runner's rc 0. |
 | AC3 | `make script-gate-lint` | `script-gate-lint: ok (…)` and `script-gate-prereqs: ok (…)` (V15, V29) |
 | AC4 | `git diff --check origin/main`; `make uid-guard` | silent; uid-guard ok (no new `.gd`) |
 | AC5 | `git diff --name-only origin/main -- interior demos ui audio sim` | empty |
@@ -419,6 +420,7 @@ S1 and S2 merge together: S1 alone leaves its own gate red (AC10).
 | V28 | S1 with the 56-check test and pin, with the manifest, `bow_a.json` and `budgets.json` at HEAD and the S1 record (Appendix B), `make bridge-operator-test` | FAIL, `bridge-operator-contact: 54 passed, 2 failures`; FAILs = the two capsule checks; layout agreement ok | 11-07 |
 | V29 | Full A set: `git diff HEAD --numstat`, `git diff HEAD --check`, `make script-gate-lint`, review tool `--check-only` | bow_a +4/−4, budgets +1/−1, record +37/−20, manifest +4/−4, mk +1/−1, test +38/−8; diff-check clean; `script-gate-lint: ok (249 --script invocations: …)`; review rc 0 | 11-07 |
 | V30 | `make deck-layout-eval` on clean HEAD vs the V25 run on A, `diff` of the `^deck-layout` lines; then `git checkout HEAD -- .` and `git status --porcelain` | Only lines 6, 8 (Voyage and Crew use) and 10–11 (the clocks and signal monitors seen from Voyage: 83 → 82 px, 62 → 61 px) differ. Fades, blocks, body, spawn, the other stations and the monitors' Bow shares are identical. Tree restored, empty status | 11-07 |
+| V31 | Controller, after quorum r2 (kimi): the five gates V25 ran on the 5-file tree. (a) `make -n <gate>` lists their scripts (`tests/test_comms_walk.gd`, `tests/test_camera_director.gd`, `tools/levels_regress.gd`, `tools/deck_layout_eval.gd`, `tests/test_deck_layout_eval.gd`, `tools/ship_baseline.sh`, `tools/script_gate.sh`); `grep -c 'budgets\.json'` and `grep -c 'bridge-operator-contact\|bridge_operator_contact'` per file. (b) Sabotage at HEAD `dc51e3cb`: `budgets.json` manifest pin `9ec33fc4…` → `0bad0bad…`, then one `perl -e 'alarm 900'` make each, then `git checkout --` | (a) 0 and 0 in all seven; positive control `tools/deck_assets_check.gd` budgets=2. (b) control `deck-assets-check` rc 2 (`FAIL pin assets/ship_demo/manifest.json … want 0bad0bad…`); `comms-walk-test` rc 0 11/0; `camera-test` rc 0 187/0 (260 s); `levels-regress` rc 0 (both negative controls fire); `deck-layout-eval` rc 0; `deck-layout-eval-test` rc 0 26/0. Tree restored, clean. So those five gates read neither `budgets.json` nor the contact test or record, and V25's 5-file results carry to the 6-file set; the 56-check test itself was run on the full set (V25, two runs) | 11-07 |
 
 **UNMEASURED** (after revision 1):
 - renders of the captain at today's points and under A (GPU);
@@ -589,3 +591,13 @@ done
 ```
 
 `git checkout $REF --` also stages the four files. After an uncommitted-candidate run, finish with `git checkout HEAD -- <the four files>` to reset both the index and the tree (V22).
+
+## Quorum r2 response (controller carve-out, 2026-11-07)
+
+Round 2 (`--author claude:claude-opus-5-5`, Anthropic benched; seats oc-kimi-k3, gpt6-1-sol, gemini-4-argon; `absent_reviewers` empty; artifact `m4-7ae-bridge-operator-contact-2026-11-07T00-48-15Z.json`): **BLOCKED 2/3**, on surfaces revision 1 introduced. No reviewer disputed the cause, the block on OQ-1 or option A's direction. The designer's budget (one doc plus one revision) was spent, so the controller applied the narrow-refinement carve-out and did not run a third round:
+
+- **oc-kimi-k3** (reject): V25's five gates ran on a 5-file tree, not the 6-file set. Answered by measurement with the reviewer's own substitute proof: V31 (no reader of `budgets.json` or the contact files in those gates; a wrong pin turns `deck-assets-check` red and leaves all five green).
+- **gpt6-1-sol** (reject): Appendix C prints results and never fails. Accepted as a build requirement on AC2 (the runner contract in the AC2 row). It binds the executor when the row resumes; the printed script stays the measurement record of V27.
+- **gemini-4-argon** (pass): re-pin `asset-pins.json` `layout_sha256` under A. Applied to OQ-1's option A.
+
+Resume: Mark answers OQ-1 (charter D-148). Under A: re-quorum once on this doc with the same seats, then plan, build (with the runner contract), judge, and Mark's dev-build OK (visible). Under C or D: the designer re-derives the affected ACs first.
