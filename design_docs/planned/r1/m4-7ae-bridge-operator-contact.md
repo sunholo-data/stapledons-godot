@@ -601,3 +601,36 @@ Round 2 (`--author claude:claude-opus-5-5`, Anthropic benched; seats oc-kimi-k3,
 - **gemini-4-argon** (pass): re-pin `asset-pins.json` `layout_sha256` under A. Applied to OQ-1's option A.
 
 Resume: Mark answers OQ-1 (charter D-148). Under A: re-quorum once on this doc with the same seats, then plan, build (with the runner contract), judge, and Mark's dev-build OK (visible). Under C or D: the designer re-derives the affected ACs first.
+
+## Recovery review — iteration 77 (2026-11-07)
+
+This is a historical, **parked design**, not an approved implementation. The independent
+MiniMax M3 recovery judge scored 89/100 for publishing the evidence and OPEN decision
+D-148 only (`eval_R1-M4-JOURNEY_7ae_recovery_round_2.json`). No plan or sprint JSON
+exists. The original measurement rows above retain their original provenance.
+
+Before resuming, include these non-blocking findings in the single required re-quorum:
+
+- **Visible trade-off:** A moves the captain further from the desk. D-132 asks for natural
+  contact with front and back views; a headless green does not establish that appearance.
+  Mark must review that gap, and B may be preferable if the gap is wrong. No render was
+  measured in either this recovery or its independent review.
+- **File set:** AC6 and the header omit the provenance-only
+  `art/deck-layout-v2/asset-pins.json` re-pin. The complete candidate is seven tracked
+  files including S1's test and count pin. Reconcile these lists before planning.
+- **Enforcement:** record/provenance values such as `measured_safe_limit_m` and the
+  asset-pins `layout_sha256` are not assertions just because they are recorded.
+- **Clearance instruments:** the proposed 0.50 m advance and the recorded
+  0.545–0.550 m first-collision bracket imply about 45–50 mm to first collision;
+  the 'under 5 mm' risk sentence above does not describe that margin. The recovery
+  judge's exact-origin scan collided at 0.550 m; its rounded-origin scan at 0.555 m.
+  Do not replace one number with the other without carrying the anchor. Its suggested
+  0.555 correction is therefore not adopted as a controller fact.
+- **Geometry instruments:** the original bezel-surface figure and the judge's collision-box
+  figure measure different surfaces. Neither substitutes for a front/back render.
+- AC2's enforcing drill runner remains a build requirement, not a completed deliverable.
+
+The interrupted iteration-76 `make -k test` has no completion marker. Its other
+recorded errors need current attribution; no all-suite green is claimed. Routine
+recovery does not rerun the whole suite or GPU gates. Follow the current project merge
+policy and nightly checks; visible implementation still waits on Mark.

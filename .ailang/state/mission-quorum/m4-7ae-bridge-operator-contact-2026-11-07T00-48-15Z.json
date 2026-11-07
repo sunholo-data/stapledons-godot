@@ -1,0 +1,63 @@
+{
+  "doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
+  "iso_ts": "2026-11-07T00:48:15Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.26878799999999997,
+      "tokens_in": 19916,
+      "tokens_out": 13936,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The doc's central claim — that OQ-1 option A is 'measured green on the full file set' — is false for five of the six AC8 gates. V25's own parenthetical admits comms-walk-test, camera-test, levels-regress, deck-layout-eval and deck-layout-eval-test were run 'before revision 1 added the drift check and before the budgets.json re-pin', i.e. on a 5-file tree with the 55-check test, not the 6-file full-A set that AC8 and the OQ-1 'Measured' cell assert ('all measured on the full A set (V24, V25)'). The bridge from that earlier tree to the claimed result — 'these gates read neither the contact test nor budgets.json' — is asserted with no V-row behind it. This is exactly the failure mode that sank revision 0 (assumed manifest-only A was sufficient; only running revealed the bow_a.json and budgets.json requirements), and a row that already needed a quorum round for partial-set measurement should not re-ship an asserted carry-over premise. This fails Gate 1 (premise verification) on the single most load-bearing claim in the doc.",
+        "catch": "Reconcile V25's second half with AC8: either each of the five gates was actually re-run on the 6-file set and the V-log is miswritten, or it was not and AC8/OQ-1 overclaim. Whichever it is, the budgets.json non-readership premise needs direct evidence of the same standard as V23's reader enumeration — one sabotage run (wrong budgets.json pin while holding all five gates green) would settle it, and would have caught exactly this class of bug in revision 0.",
+        "proposed_fix": "Add V31 to the verification log: apply the full 6-file A set (manifest + bow_a.json + record + 56-check test + mk + re-pinned budgets.json, i.e. the exact V29 tree), then run `perl -e 'alarm 900; exec @ARGV' make comms-walk-test camera-test levels-regress deck-layout-eval deck-layout-eval-test` once each and record results — total cost ~300 s based on the V25 timings. If that is impractical before the next round, substitute a proof V-row: `git grep -ln 'budgets\\\\.json' -- tools/deck_layout_eval.gd tools/deck_bow_metrics.gd tests/test_deck_layout_eval.gd tests/test_comms_walk.gd tests/test_camera_director.gd \u003clevels-regress scripts\u003e` returning empty, plus one sabotage run re-pinning budgets.json to a wrong sha256 and showing all five gates stay green. Then correct AC8's parenthetical to name the tree each gate ran on, e.g.: 'deck-assets-check measured on the full 6-file set (V24); comms-walk/camera/levels-regress/deck-layout-eval(-test) measured on the full set in V31' — or, until V31 exists, downgrade AC8's expected column from measured values to 're-run on fix head' so the doc stops asserting a measurement it did not perform."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0.042802,
+      "tokens_in": 20016,
+      "tokens_out": 277,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Appendix C does not enforce its claimed drill acceptance contract: an unapplied mutation prints 'MUTATION DID NOT APPLY' and continues, unknown drills continue, and unexpected test outcomes never cause a nonzero script exit. V27's 'rc 0 overall' therefore cannot establish that the regression guards work. This is a silent-success path in the proposed verification machinery.",
+        "catch": "The script classifies any timeout, missing summary, or unrelated runtime error as a red kill drill without checking the expected return code, counts, or failure labels. AC2 requires row-for-row results, but the executable supplied for that acceptance criterion only prints them.",
+        "proposed_fix": "Add an explicit expected-results table to Appendix C and accumulate verification failures. Require both d0 runs to return 0 with exactly 56/0; require each kill drill to match its documented return code and passed/failed counts, with the relevant failure labels checked. Treat unapplied mutations, unknown drills, timeouts, SCRIPT ERROR, and missing summaries as harness failures rather than successful kills. Preserve restoration on exit, exit nonzero on any mismatch, and rerun V27 with the revised script, recording the asserted results and final exit status."
+      },
+      "landed": null
+    },
+    {
+      "model": "gemini-4-argon",
+      "cost_usd": 0.095344,
+      "tokens_in": 22716,
+      "tokens_out": 224,
+      "present": true,
+      "result": {
+        "verdict": "pass",
+        "strongest_objection": "In §D7a, the doc notes that `art/deck-layout-v2/asset-pins.json` contains a `layout_sha256` field matching today's `bow_a.json` hash, and proposes leaving it stale under Option A because no automated gate currently reads that field.",
+        "catch": "Leaving `art/deck-layout-v2/asset-pins.json` (`layout_sha256`) un-updated when modifying `art/deck-layout-v2/bow_a.json` under Option A.",
+        "proposed_fix": "If Option A is chosen in S2, include a +1/-1 update to `art/deck-layout-v2/asset-pins.json` (`layout_sha256`) alongside `budgets.json` so provenance records do not silently rot."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2 after one designer revision (dc51e3cb). Controller measured the r1 premise first: bow_a.json carries use_m at bridge.props.console_navigation_1/console_decision_0/1/2; runtime demos/ship_consoles.gd:129 reads only the manifest; tools/deck_bow_metrics.gd:63 reads bow_a use_m. Blocking claim reproduced with an independent probe (capsule r 0.15-0.35 hits console_decision_{0,1,2}_col at e292a860, clear at 523d96f9; navigation clear on both)."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: The doc's central claim — that OQ-1 option A is 'measured green on the full file set' — is false for five of the six AC8 gates. V25's own parenthetical admits comms-walk-test, camera-test, levels-regress, deck-layout-eval and deck-layout-eval-test were run 'before revision 1 added the drift check and before the budgets.json re-pin', i.e. on a 5-file tree with the 55-check test, not the 6-file full-A set that AC8 and the OQ-1 'Measured' cell assert ('all measured on the full A set (V24, V25)'). The bridge from that earlier tree to the claimed result — 'these gates read neither the contact test nor budgets.json' — is asserted with no V-row behind it. This is exactly the failure mode that sank revision 0 (assumed manifest-only A was sufficient; only running revealed the bow_a.json and budgets.json requirements), and a row that already needed a quorum round for partial-set measurement should not re-ship an asserted carry-over premise. This fails Gate 1 (premise verification) on the single most load-bearing claim in the doc.",
+      "gpt6-1-sol: Appendix C does not enforce its claimed drill acceptance contract: an unapplied mutation prints 'MUTATION DID NOT APPLY' and continues, unknown drills continue, and unexpected test outcomes never cause a nonzero script exit. V27's 'rc 0 overall' therefore cannot establish that the regression guards work. This is a silent-success path in the proposed verification machinery."
+    ],
+    "absent_reviewers": [],
+    "total_cost_usd": 0.40693399999999996,
+    "total_tokens_in": 62648,
+    "total_tokens_out": 14437
+  }
+}

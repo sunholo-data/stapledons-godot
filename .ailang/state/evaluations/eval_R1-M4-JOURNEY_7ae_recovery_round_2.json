@@ -1,0 +1,312 @@
+{
+  "evaluation_id": "eval_R1-M4-JOURNEY_7ae_recovery_round_2",
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "row 7ae: main's nightly rig/full is red at bridge-operator-test (design-only deliverable, PARKED on OQ-1)",
+  "doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
+  "round": 2,
+  "round_kind": "recovery evaluation of a design-only, parked deliverable (no sprint plan, no sprint JSON, no implementation)",
+  "reviewed_sha": "ea49d0bd5e9838a27a879db3d4ff4f7916af409f",
+  "baseline": "e292a860604a25adec29ed781c2a494be737419c",
+  "branch": "mission/stapledon-iter76-nightly-red",
+  "diff_scope": "baseline..reviewed_sha adds exactly two files and no code: design_docs/planned/r1/m4-7ae-bridge-operator-contact.md (603 lines, new) and .ailang/state/evaluations/eval_R1-M4-JOURNEY_7ae_round_1.json (new). No .gd, .json, .mk, .glb, art or sim file changes. The evaluated tree's runtime code is byte-identical to the baseline, so the red gate at HEAD is an inherited base condition, not a regression introduced by this change.",
+  "model": "MiniMax-M3 (pi coding-agent harness)",
+  "provider": "local session provider; independent of the designer (quorum seats oc-kimi-k3 / gpt6-1-sol / gemini-4-argon) and of the round-1 judge (Claude Sonnet 5.5)",
+  "generator_equals_judge": false,
+  "evaluator_role": "evaluator (independent recovery evaluation), attended-independent of the executor",
+  "result": "pass",
+  "score": 89,
+  "pass_threshold": 70,
+  "scoring_basis": "100 points, adapted from the sprint-evaluator rubric to a design-only parked publication. Categories are re-derived for this scope; there is no implementation sprint to score against acceptance criteria that require a built tree.",
+  "breakdown": {
+    "root_cause_correct_and_independently_reproduced": {
+      "score": 25,
+      "max": 25,
+      "note": "Red gate reproduced by me (30 passed, 14 failures, exact 7-per-station FAIL set). D-132 body capsule measured to intersect the desk collider (console_decision_0_col / _1_col / _2_col) at all three shipped use points, for both the 0.35x1.8 m and the 0.15x0.75 m capsule. Runtime use point == manifest authored use_m (delta 0.0000 m) at all three stations, so the causal chain manifest -> runtime use -> capsule failure is established by measurement, not inference."
+    },
+    "block_is_real_no_honest_test_only_fix": {
+      "score": 15,
+      "max": 15,
+      "note": "The 'installed working point matches physical target' check pins the tested point to the runtime use point, which is the manifest's authored use_m (measured delta 0.0000 m). Since that point is inside the desk collider, no test-only edit can satisfy both checks: the fix must move the working point (visible), re-shape the desk (visible), or weaken the D-132 rule (Mark's ruling). Options C and D are explicitly reserved to Mark."
+    },
+    "evidence_integrity_numbers_honest_unmeasured_labelled": {
+      "score": 12,
+      "max": 15,
+      "note": "Unmeasured items (renders, GPU review tool, Blender re-export, option B, make -k test, ship-console-test) are labelled UNMEASURED in the doc and were not overstated. Deductions: the risk row's 'under 5 mm of slack' wording is not supported by my measurement (I measure >=45 mm of margin from option A's advance to the first collision); the record's first_collision_advance_m 0.55 sits at the optimistic edge of the measured bracket; the visible-premise figure 0.12 m is a bezel sub-part that the collision box does not reproduce (I measure 0.15 m to the collision box). All three are documentation-grade, none changes the cause or the block."
+    },
+    "S1_design_sound_and_non_vacuous": {
+      "score": 18,
+      "max": 20,
+      "note": "Inspected line by line. The three-source independence rule is sound; the schema guard kills the hang-to-timeout failure mode; the new layout-agreement check closes a real vacuity hole (a 2 cm bow_a/manifest drift turned no gate red, V26) and its station filter is correct as written (a station carried by neither file is skipped, so archive/reserved_3 do not force a permanent DRIFT). The count pin closes the deleted-check hole. Not executed by me: S1 is not built and there is no sprint, so the printed Appendix C drill table cannot be independently re-run as a failing runner (AC2 now carries an explicit runner contract for the future executor)."
+    },
+    "OQ1_fair_ask_and_options_supported_by_code": {
+      "score": 8,
+      "max": 10,
+      "note": "The ask is genuine and the alternatives are distinct and code-supported. Deduction: the option table presents A as measured green across eight gates while A's visible outcome is UNMEASURED, and A's foot-to-face geometry returns to the pre-#379 relation (my measurement) - the configuration D-132/Mark rejected on 2026-10-29. That trade-off is not stated in the doc."
+    },
+    "publication_readiness_as_parked": {
+      "score": 7,
+      "max": 10,
+      "note": "Status is honest (Planned, BLOCKED on OQ-1), the doc stays in design_docs/planned/, no implementation is claimed, the decision is left open for Mark, and the sprint plan / sprint JSON are correctly absent. Deduction: the option-A file set is still stated three ways (4 in the header, 6 in AC6, 7 in the recommendation) and AC6 omits asset-pins.json, so an executor following AC6 literally ships six files against a doc that says seven."
+    },
+    "quorum_and_process_handling": {
+      "score": 4,
+      "max": 5,
+      "note": "Round 1 BLOCKED 2/3 -> revision 1 -> round 2 BLOCKED 2/3 -> controller narrow-refinement carve-out (not a third quorum). The doc discloses this, names the two objections and their answers (V31 and the AC2 runner contract), and requires a re-quorum before the row resumes. Deduction: the carve-out content was never re-quoried."
+    }
+  },
+  "scope_adaptation": {
+    "evaluated": [
+      "cause and its measurement",
+      "evidence integrity (numbers, UNMEASURED labels, no fabricated completion)",
+      "gate correctness of the proposed S1 test/record/count pin by inspection",
+      "decision correctness and whether the need for Mark's ruling is supported by the current code",
+      "safe to publish the design and the decision as PARKED",
+      "prior round-1 findings re-checked by name"
+    ],
+    "not_evaluated": [
+      "any implementation",
+      "acceptance criteria that require a built fix tree (AC1-AC10 as executed rows)",
+      "visual quality (GPU renders)",
+      "the full make test suite",
+      "option B, C, D as implemented designs"
+    ],
+    "no_implementation_sprint": true,
+    "sprint_plan_present": false,
+    "sprint_json_present": false,
+    "built_fix_present": false
+  },
+  "independently_reproduced_cause": {
+    "summary": "R3-COMMS-V2 (#379, merge 8ba1e3c8) moved the Voyage, Crew and comms desks under the screens and moved the manifest's authored operator points with them. The D-132 guard (a 0.35 m radius / 1.8 m tall body capsule) therefore overlaps the desk's own collision box at every shipped working point, so the inherited contact test is red on the two capsule checks plus the five E/approach checks per station. Nothing in the evaluated diff causes this; it is inherited from the baseline.",
+    "evidence": [
+      "make bridge-operator-test at reviewed_sha: 'bridge-operator-contact: 30 passed, 14 failures', script-gate FAIL (make rc 2). The 14 FAIL labels are exactly: voyage/crew x {installed working point matches physical target, negative control rejects 5cm deeper body intersection, E starts a calm physical approach, approach moves at ordinary walking speed, approach accepts escape cancellation, open resumes real approach, panel and contact pose wait for real working point} - the 7-per-station set the doc names.",
+      "Own probe (tools/zz_judge77_probe.gd, deleted after the run): at the runtime use points the D-132 capsule intersects StaticBody3D console_decision_0_col / console_decision_1_col / console_decision_2_col for Voyage, Crew AND comms, with the 0.35x1.8 m capsule and with the 0.15x0.75 m capsule.",
+      "Own probe: demo.consoles.stations[id].use == ShipConsoles.authored_use(manifest, id) with delta 0.0000 m at all three stations (voyage -12.912,11.626; crew 12.912,11.626; comms -8.687,15.047).",
+      "Own probe: use point 1.2249 m from the desk origin (voyage/crew), 1.2254 m (comms); use->origin bearing 137.978 / 42.022 / 120.017 deg vs the desk-node facing 138.000 / 42.000 / 120.000 deg (the doc's table).",
+      "Own probe (probe2): with the D-132 capsule and a 5 mm grid anchored at the exact D-132 original point (use - 0.775 m along the facing, 1.9999 m from the desk origin), advance 0.545 m is clear and advance 0.550 m collides with console_decision_0_col / _1_col. The shipped use point is 0.7753 m of advance, i.e. 0.2203 m PAST the first collision - a real overlap, not a marginal one (the pre-#379 state had a 0.05 m reserve).",
+      "Own probe: the nearest desk collision face ahead of the feet is 0.15 m at h 0.70 and h 1.00 (1 cm sphere sweep, lateral -0.30..+0.30) and 0.26 m at h 1.05.",
+      "make -pqn test: bridge-operator-test is the 19th of 138 prerequisites; 119 targets follow it (the doc's V20 reproduced exactly).",
+      "Static half of V31 reproduced: tests/test_comms_walk.gd, tests/test_camera_director.gd, tools/levels_regress.gd, tools/deck_layout_eval.gd, tests/test_deck_layout_eval.gd contain 0 references to budgets.json and 0 to the contact record; positive control tools/deck_assets_check.gd contains 2. So V25's five-gate results do carry to the 6-file set.",
+      "git diff 523d96f9 8ba1e3c8 -- art/deck-layout-v2/bow_a.json assets/ship_demo/manifest.json: desk yaw -90 -> -42 and -90 -> -138, console_decision_2 added (yaw -60), and the stations' use_m changed - the layout move the doc attributes to #379."
+    ]
+  },
+  "path_to_bridge_operator_contact": {
+    "chain": "art/deck-layout-v2/bow_a.json + assets/ship_demo/manifest.json (stations.<id>.use_m) -> ShipConsoles.authored_use() -> demo.consoles.stations[id].use (runtime working point) -> tests/test_bridge_operator_contact.gd: 'installed working point matches physical target' (pins the record's corrected_use_ship_m to that point) + 'full 1.8m capsule clear at corrected point' (physics query at that point) -> the 14 FAILs.",
+    "why_the_block_needs_mark": "The tested point cannot move without the manifest's use_m moving, and the captain's standing place is what a player sees; the alternative (re-shape the desk) is a Blender re-export of the console asset; weakening the capsule rule is a change to the D-132 ruling itself. All three are Mark's call under merge rule 4 and the charter's ATTENDED LEDGER EDITS rule.",
+    "read_only_vs_actionable": {
+      "read_only_unmapped_record_fields_the_test_never_reads": [
+        "measured_safe_limit_m",
+        "first_collision_advance_m",
+        "walk_only_limits_m",
+        "measured_7ae",
+        "capsule",
+        "remaining",
+        "max_head_reach_m",
+        "furniture",
+        "pose",
+        "status",
+        "reason",
+        "facing_source"
+      ],
+      "read_only_provenance_outside_the_test": [
+        "art/deck-layout-v2/asset-pins.json layout_sha256 - read by no gate (tests/test_bridge_floor.gd reads .pins, not this field)"
+      ],
+      "inactive_no_effect": [
+        "ShipConsoles.STATIONS.reserved_3 (active:false)"
+      ],
+      "actionable_visible": [
+        "the runtime working point (manifest use_m) - where the captain stands",
+        "the D-132 body capsule against the desk collider - the captain's body inside the desk",
+        "the E/approach/panel-open sequence - the contact pose and the console panel opening"
+      ],
+      "not_moved_by_a_working_point_change": [
+        "the console panel and its buttons live in a CanvasLayer (screen space): demos/ship_consoles.gd panel_layer / _build_panel",
+        "the physical screens are anchored by the manifest's screen_ship_m, not by the use point"
+      ],
+      "conclusion": "Option A's only visible effect is the captain's standing position (0.275 m further from the Voyage and Crew desks). No button, panel or screen moves. The prior round-1 report did not make this distinction; it carries no finding classifying read-only record/provenance fields against runtime-visible contact behaviour."
+    }
+  },
+  "design_alternatives_supported_by_current_code": {
+    "A_step_the_working_points_back": "Supported by measurement: the D-132 method re-derived on the new desk gives a first collision at ~0.55 m of advance, a safe limit 0.525 and an advance 0.50 (1.50 m from the desk origin, 0.275 m further back than today's 1.2249 m). My bracket (0.545 clear / 0.550 collides) reproduces the doc's risk row. The file set is 7 files (manifest, bow_a, budgets re-pin, asset-pins re-pin, the record, the test, the mk pin) with no code or asset change. Gate results measured green by the designer on that file set; NOT re-measured by me because the file set does not exist in the tree and mutating attended layout files was out of scope for this run.",
+    "B_reshape_the_desk": "Not measured by anyone; correctly labelled UNMEASURED. Plausible (the props generator places the bezel from the direction of use_m - position_m only, so the bezel would have to move without moving the operator), but it needs a Blender re-export and new pins/baselines.",
+    "C_rule_the_overlap_acceptable": "A ruling, not a design. The doc correctly refuses to decide it.",
+    "D_interim_expected_failure": "Explicitly not built: it weakens the gate and the brief forbids weakening without Mark's OK. Correctly deferred.",
+    "need_for_a_human_decision": "SUPPORTED. I confirmed that no test-only change can green the target without weakening it: the tested point is pinned to the runtime use point (delta 0.0000 m measured), that point is inside the desk's collider (measured), and every escape from that bind is visible or is a rule change. OQ-1 is a real Mark decision, not a deferral in disguise."
+  },
+  "prior_round_1_findings_by_name": [
+    {
+      "name": "file-count note (option A stated as 4 / 6 / 7 files; asset-pins.json missing from the header list and from AC6)",
+      "status": "open",
+      "detail": "The final commit ea49d0bd fixed only the recommendation sentence, which now says seven files consistently ('with S1's test and count pin and the asset-pins.json re-pin below, the full file set is seven files'). The 'Estimated LOC' header still lists four A-files (manifest, bow_a, budgets, record) and AC6 still lists only manifest, bow_a, budgets. An executor following AC6 literally ships six files against a doc that says seven. Non-blocking for a parked publication; must be fixed before the row resumes."
+    },
+    {
+      "name": "AC2 runner contract (Appendix C prints results and never fails)",
+      "status": "closed",
+      "detail": "AC2 now carries an explicit runner contract for the future executor (the runner carries the expected table, exits nonzero on any mismatch, and treats an unapplied mutation, unknown drill, timeout, SCRIPT ERROR or missing summary as a harness failure, never as a kill) and the doc states the printed script is the measurement record of V27. The runner itself is unbuilt by design - there is no sprint - so it is not applicable to this round."
+    },
+    {
+      "name": "Option A's slack / the 0.55 m rounding case was too close to discriminate",
+      "status": "closed",
+      "detail": "Now discriminated by measurement: with the exact D-132 original point, advance 0.545 m is clear and 0.550 m collides; with the doc's rounded table anchor the boundary sits at 0.555. The doc's stated bracket (0.545-0.550) is reproduced to within one 5 mm grid step, and the doc's risk row is correct in substance. See my finding F4 for the only leftover (the 'under 5 mm of slack' wording)."
+    },
+    {
+      "name": "V31 and the 5-gate carry-over were not re-run",
+      "status": "not_applicable",
+      "detail": "There is no candidate tree at this stage (design-only), so the dynamic half of V31 cannot be re-run without building option A, which this evaluation does not authorise. The static half - that those five gates read neither budgets.json nor the contact record - I reproduced independently, with the positive control firing, so the carry-over argument holds as far as it can be checked here."
+    },
+    {
+      "name": "OQ-1's lead paragraph is collider-centric; the visible consequence sits in the options table",
+      "status": "partially_closed",
+      "detail": "The lead bullet does state the visible symptom ('the captain stands with the desk's screen frame 12 cm in front of his feet, at hip and chest height'). What is still absent from the lead is the visible delta of the recommended option; my finding F1 states that delta and should be added before the row resumes."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "non_blocking_material_for_OQ1",
+      "title": "Option A's visible outcome is unmeasured while its gates are green, and A returns the pre-#379 foot-to-face distance that D-132/Mark rejected",
+      "detail": "The option table presents A as measured green on eight targets, but what Mark must approve is the visible result, and the doc marks renders UNMEASURED. The arithmetic is in the doc's own numbers plus mine: I measure the desk's collision face 0.15 m ahead of the feet at today's working points; A steps the feet 0.275 m back, so the face sits ~0.42 m ahead of the feet - essentially the pre-#379 relation the doc reports in V7 ('On 523d96f9 that face was 0.40 m away'), i.e. the configuration Mark rejected on 2026-10-29 ('The captain avatar appears misplaced and should be leaning on the console'). Option A restores D-132's clearance RULE unchanged but only partly restores its placement correction (advance 0.50 instead of 0.775). The doc states neither consequence, so Mark is asked to rule on a partially unmeasured, and in this respect one-sided, comparison.",
+      "recommendation": "Before the row resumes, state A's visible consequence explicitly (feet ~0.42 m from the desk face; how far the held pose's palms fall short of the console edge - to be measured in a render) and put it next to B's visible consequence, so the two options are compared on the axis Mark rules on."
+    },
+    {
+      "id": "F2",
+      "severity": "non_blocking",
+      "title": "Read-only/unmapped record and provenance fields were never separated from the actionable visible contact behaviour",
+      "detail": "The record carries measured_7ae, first_collision_advance_m, walk_only_limits_m, measured_safe_limit_m, capsule, remaining and max_head_reach_m; the current test reads none of them (verified key by key), and asset-pins.json's layout_sha256 is read by no gate. These cannot turn a gate red or green. The actionable and visible items are the runtime working point, the body capsule against the desk collider, and the E/approach/panel sequence; and the console panel's buttons are screen-space (CanvasLayer) with the physical screens anchored by screen_ship_m, so a working-point change moves no button. The doc's D2 table maps read sources but does not classify read-only provenance against runtime-visible contact, and the round-1 report carried no such finding.",
+      "recommendation": "Add one line to D2 naming the read-only fields, so a future reader does not treat a recorded number as an enforced one."
+    },
+    {
+      "id": "F3",
+      "severity": "non_blocking",
+      "title": "Option A's file set is still stated three ways (4 / 6 / 7); AC6 omits asset-pins.json",
+      "detail": "See the prior-findings table. The recommendation says seven files; the 'Estimated LOC' header lists four; AC6 lists manifest, bow_a and budgets only, so it names six files with S1. asset-pins.json's layout_sha256 re-pin is in neither list, although no gate reads it (verified), so it is provenance-only.",
+      "recommendation": "Make AC6 and the header list the same seven files before the executor runs."
+    },
+    {
+      "id": "F4",
+      "severity": "non_blocking",
+      "title": "Risk row 'under 5 mm of slack' is not supported by the measurements",
+      "detail": "Option A advances 0.50 m from the original point; I measure the first D-132 capsule collision at 0.545-0.555 m of advance depending on the 5 mm grid anchor. The margin from A's point to the collision is therefore >=45 mm, not 'under 5 mm'. The doc's underlying bracket is right; the risk wording (and the 'measured_safe_limit_m' 0.525 vs advance 0.50 = 25 mm relation it is presumably describing) is what misleads.",
+      "recommendation": "Restate the risk with the measured numbers, or say plainly that the slack is 25 mm against the safe limit and ~50 mm against the first collision."
+    },
+    {
+      "id": "F5",
+      "severity": "non_blocking",
+      "title": "first_collision_advance_m 0.55 sits at the optimistic edge of the measured bracket",
+      "detail": "Measured: 0.545 m of advance is clear, 0.550 m collides (exact-original anchor); with the doc's rounded table anchor the boundary is 0.555. The record's 0.55 is one grid step optimistic; it is a read-only field with no gate reading it, and option A's advance of 0.50 is unaffected.",
+      "recommendation": "Optional: record 0.555 or '0.545-0.555' instead of 0.55."
+    },
+    {
+      "id": "F6",
+      "severity": "non_blocking",
+      "title": "The visible-premise number 0.12 m is a bezel sub-part, not reproducible from the desk's collision box",
+      "detail": "I measure the nearest desk collision face 0.15 m ahead of the feet at h 0.70 and h 1.00 (and 0.26 m at h 1.05), inside a lateral sweep of +/-0.30 m whose minimum lands on the sweep edge, so the true minimum may be smaller. The doc's 0.12 m at h 0.70 and 0.13 m at h 1.00-1.05 is a bezel-surface figure (the visible frame), which the single desk collider does not expose. The two are not in conflict, but the doc's number is not reproducible from the collision geometry and I did not measure the bezel separately.",
+      "recommendation": "Say which geometry the 0.12 m refers to (visible bezel vs collider), so a future reader can reproduce it."
+    }
+  ],
+  "blockers": [
+    "OQ-1 requires Mark (charter D-148). This unattended run may not decide it; the design correctly stops at the Open Question.",
+    "No approved sprint plan and no sprint JSON exist for this row, so there is no implementation to evaluate and none is authorised.",
+    "S1 alone does not merge: its own targeted gate is red on the two capsule checks (the doc's AC10/V28), so S1 and S2 must land together, and S2 depends on OQ-1.",
+    "Option A needs a re-quorum of the carve-out content before the row resumes (the doc's own 'Resume' line), and a visible dev build for Mark's OK (merge rule 4)."
+  ],
+  "safe_to_publish_parked": true,
+  "publication_scope": [
+    "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md may be published as a planned design with its decision recorded as PARKED on OQ-1",
+    "the decision may be recorded as open and parked; it may not be recorded as decided"
+  ],
+  "implementation_approved": false,
+  "implementation_approval_note": "This evaluation approves publication of the design and the parked decision only. It does not approve, authorise or imply any implementation, no sprint plan, no sprint JSON, no file-set change, and no merge. The design must remain in design_docs/planned/ and must not be moved to design_docs/implemented/.",
+  "design_doc_moved_to_implemented": false,
+  "commands_evidence": [
+    {
+      "id": "C1",
+      "cmd": "git status --porcelain=v1; git rev-parse HEAD; git diff --name-status e292a860604a25adec29ed781c2a494be737419c..ea49d0bd5e9838a27a879db3d4ff4f7916af409f",
+      "result": "clean tree at ea49d0bd5e9838a27a879db3d4ff4f7916af409f; the diff adds only design_docs/planned/r1/m4-7ae-bridge-operator-contact.md and .ailang/state/evaluations/eval_R1-M4-JOURNEY_7ae_round_1.json"
+    },
+    {
+      "id": "C2",
+      "cmd": "make import",
+      "result": "rc 0, 17 s (godot --headless --path . --import). Godot 4.7.2.stable.official.ed1daf0bf."
+    },
+    {
+      "id": "C3",
+      "cmd": "make bridge-operator-test",
+      "result": "rc 2; 'bridge-operator-contact: 30 passed, 14 failures'; script-gate FAIL (no summary matching the gate regex). The 14 FAIL labels are the 7-per-station set named in the doc's Problem 4. Inherited red at the baseline - no code changed between baseline and reviewed_sha."
+    },
+    {
+      "id": "C4",
+      "cmd": "godot --headless --path . --script tools/zz_judge77_probe.gd  (my own probe, deleted after the run)",
+      "result": "per-station: runtime use == authored_use (delta 0.0000 m); use 1.2249 m from the desk origin; use->origin bearing 137.978/42.022/120.017 deg vs facing 138.000/42.000/120.000 deg; D-132 capsule NOT clear at every use point, hitting console_decision_0_col / _1_col / _2_col for voyage, crew AND comms, with the 0.35x1.8 m and the 0.15x0.75 m capsule; first collision 0.555 m of advance on a 5 mm grid anchored at the doc's rounded original point"
+    },
+    {
+      "id": "C5",
+      "cmd": "godot --headless --path . --script tools/zz_judge77_probe2.gd  (my own probe, deleted after the run)",
+      "result": "exact D-132 original (use - 0.775 m along the facing) = 1.9999 m from the desk origin; advance 0.540 and 0.545 clear, 0.550 / 0.555 / 0.560 / 0.600 collide with console_decision_0_col and console_decision_1_col; nearest desk collision face 0.15 m at h 0.70 and h 1.00, 0.26 m at h 1.05 (1 cm sphere sweep, lateral -0.30..+0.30)"
+    },
+    {
+      "id": "C6",
+      "cmd": "make -pqn test | grep '^test:'",
+      "result": "138 prerequisites; bridge-operator-test is the 19th; 119 targets follow it (the doc's V20 reproduced exactly)"
+    },
+    {
+      "id": "C7",
+      "cmd": "git diff 523d96f9 8ba1e3c8 -- art/deck-layout-v2/bow_a.json assets/ship_demo/manifest.json",
+      "result": "#379 moved the desks (yaw -90 -> -42 / -90 -> -138), added console_decision_2 (yaw -60) and changed the stations' use_m - the layout change the doc attributes to #379"
+    },
+    {
+      "id": "C8",
+      "cmd": "grep -c for each record key in tests/test_bridge_operator_contact.gd; git grep layout_sha256; git grep asset-pins -- tests tools demos mk Makefile",
+      "result": "the current test reads none of schema, advance_m, original_from_desk_m, measured_safe_limit_m, first_collision_advance_m, walk_only_limits_m, measured_7ae, remaining, max_head_reach_m; layout_sha256 has no gate reader; tests/test_bridge_floor.gd reads asset-pins.json's .pins, not layout_sha256"
+    },
+    {
+      "id": "C9",
+      "cmd": "grep -c 'budgets\\.json' and 'bridge-operator-contact' per script of the five carry-over gates",
+      "result": "0 and 0 in tests/test_comms_walk.gd, tests/test_camera_director.gd, tools/levels_regress.gd, tools/deck_layout_eval.gd, tests/test_deck_layout_eval.gd; positive control tools/deck_assets_check.gd has 2 budgets.json hits - the static half of V31 reproduced"
+    },
+    {
+      "id": "C10",
+      "cmd": "git status --porcelain=v1 after deleting tools/zz_judge77_probe.gd, tools/zz_judge77_probe2.gd and their .uid files",
+      "result": "clean - the probes left no tracked or untracked residue"
+    }
+  ],
+  "limits": [
+    "No implementation was built, authorised or tested; there is no candidate tree, so no acceptance criterion that needs a fix head could be re-run.",
+    "Option A's file set was NOT applied or measured by me: mutating the attended manifest/bow_a/budgets layout data was out of scope for this run. A's gate results are the designer's (V25-V29), corroborated only indirectly by my static V31 reproduction and by my geometry.",
+    "Renders of the captain at today's points and under A: UNMEASURED (GPU out of scope). This is the gap behind F1.",
+    "tools/bridge_operator_review.gd on a GPU window: UNMEASURED; Blender re-export: UNMEASURED; option B: UNMEASURED; make -k test on any head: UNMEASURED; ship-console-test under A: UNMEASURED (needs ship-baseline).",
+    "The pre-#379 desk geometry (V7's 0.40 m face distance and 0.825 m first collision) was not re-measured: it needs a checkout of 523d96f9 and a re-import; I used the doc's figures and marked them as such.",
+    "The bezel surface distance (the doc's 0.12 m) was not measured separately from the desk's single collision box.",
+    "AILANG was not exercised. The pinned runtime is absent from this clone (no runtime/bin; the system ailang is v0.57.4-26-gf20e6dea2-dirty, not the pinned 0.56.1). Every gate I ran is Godot-only, so no claim in this report depends on the AILANG pin.",
+    "SANDBOX INFRASTRUCTURE DENIAL - UNINFORMATIVE UNDER SANDBOX, not a regression: Godot could not save editor settings to ~/Library/Application Support/Godot/editor_settings-4.7.tres, could not open user://logs/godot.log, and /tmp was not writable (I used $TMPDIR=/tmp/claude). Controller verification, if desired: 'PATH=$PWD/runtime/bin:$PATH make import && make bridge-operator-test' on a host with a writable HOME and TMPDIR.",
+    "Godot printed the usual headless RID-leak notices and a theme resource read error (system CA certificates); neither affected any measurement."
+  ],
+  "evidence_logs": [
+    "/tmp/claude/77_import.log",
+    "/tmp/claude/77_gate_head.log",
+    "/tmp/claude/77_probe.log",
+    "/tmp/claude/77_probe2.log",
+    "/tmp/claude/77_test_prereqs.txt"
+  ],
+  "artifacts_written": [
+    ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ae_recovery_round_2.json"
+  ],
+  "artifacts_retained": "this report is the only new artifact in the worktree; temporary probe scripts and their .uid files were deleted and the tree was restored (git status clean apart from this file)",
+  "git_mutations": "none (no add, no commit, no push, no checkout of other commits, no change to the planned design's location)",
+  "controller_transport_provenance": {
+    "actual_lane": "pi:openrouter/minimax/minimax-m3",
+    "launcher": "MISSION_DRIVER_ROOT/scripts/mission_pi_run.sh",
+    "typed_verdict": "ok",
+    "rc": 0,
+    "fenced": true,
+    "elapsed_seconds": 356,
+    "handshake_acked_at": "2026-11-07T08:31:58.514Z",
+    "judge_original_report_sha256": "5184bd4726dc1966d9d01f236ef8d979134af4d258aa622c09607699c9aff0c7",
+    "note": "The judge called its provider local and used attended-independent wording. Actual transport was OpenRouter via pi, this was unattended. All judge findings and verdict are retained verbatim; this key is a controller annotation, not a judge amendment.",
+    "input_tokens": 53473,
+    "output_tokens": 55159,
+    "cache_read_tokens": 2351417,
+    "run_cost_usd": 0.22331772,
+    "probe_cost_usd": 0.00018558,
+    "total_cost_usd": 0.2235033
+  }
+}

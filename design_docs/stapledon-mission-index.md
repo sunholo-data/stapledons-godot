@@ -12,6 +12,8 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 77 | 2026-11-07 | Recover iteration 76, verify the nightly regression and publish D-148; visible repair PARKED; independent recovery judge MiniMax M3 89/100 PASS for... |
+| 76 | 2026-11-07 | Recovered failed fire: bridge-operator-test regression diagnosed, visible repair PARKED on D-148; Opus design and Sonnet 88 design-only PASS preser... |
 | 75 | 2026-11-06 | Row 7m-d S1 RUN on a quiet rig (first in eight fires): docked p99 17.35–18.41 and empty floor 15.53–16.23 reproduce, outcome (a) holds, but every i... |
 | 74 | 2026-11-06 | Row 7ac PARKED on new prerequisite row 7ad: the `_serial` pin (+11 test lines, seven drills measured end to end) was BLOCKED 1/3 at design quorum r... |
 | 73 | 2026-11-06 | Row 7aa LANDED (PR #402, merge `5c9f08ce`): `sim-pipeline-test` green again and through `$(SCRIPT_GATE)` (121 of 239; baseline 119 → 118); the caus... |
