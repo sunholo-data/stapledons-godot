@@ -1,0 +1,63 @@
+{
+  "doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
+  "iso_ts": "2026-11-07T00:26:57Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.161217,
+      "tokens_in": 15089,
+      "tokens_out": 7730,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Premise-verification failure at the doc's own headline result: the recommended option A is declared 'measured green' (V12/V13: 55 passed, 0 failures twice through the pinned gate, all drills red), but V22 records that the measured candidate is NOT the merge candidate — 'A adds manifest +4/-4 (bow_a.json not patched, UNMEASURED)'. Every measured result for A (V12, V13 drills, V16 comms-walk) was run on a manifest-only variant, while S2/AC6 require coordinated edits to art/deck-layout-v2/bow_a.json at console_decision_{0,1}.use_m. Three things are asserted, never verified: (1) that bow_a.json even contains console use_m fields (no V-row prints them; V4's description of #379's bow_a diff mentions desk origin/yaw only, and the shipped-use coordinates are never grepped), (2) who consumes those fields — D7's 'other readers' analysis and V19's greps cover the contact JSON and old coordinates but never bow_a.json's use_m, so the conflict surface for exactly the file distinguishing the merge head from the measured head is missing, and (3) that the gates most likely to read it survive — deck-layout-eval-test, deck-assets-check and camera-test are all UNMEASURED, yet AC8 lists them as pass criteria with expected 'ok'. Additionally, if bow_a's use_m duplicates the manifest's use points (the doc's own record/manifest duplication is 'by design' and pinned by drill k2), the proposed final state introduces a second, unpinned duplicate of the working point with no drill proving any gate turns red on manifest\u003c-\u003ebow_a divergence — a silent-drift vector the doc's own anti-vacuity philosophy forbids. As written, the executor would discover at merge time whether the recommended option is green, red, or touching dead data.",
+        "catch": "Verify art/deck-layout-v2/bow_a.json before re-asking Mark: (a) show that it actually holds console_decision_{0,1}.use_m and print the current values (e.g. jq over bow_a.json, plus git grep -n 'use_m' -- art/deck-layout-v2 mk tests tools demos interior to identify every consumer); (b) apply the FULL S1+A file set of AC6 — manifest, bow_a.json, record, test, mk — and re-run V12 (twice, pinned), the Appendix C drill table, and make deck-layout-eval-test deck-assets-check camera-test comms-walk-test on that tree, logging results as new V-rows; (c) if bow_a's use_m has no live consumer, delete it from S2/AC6 and say so explicitly rather than editing dead data for consistency; if it has consumers, add a drill (mutate bow_a use_m 2 cm out of sync with the manifest) proving some gate turns red on divergence.",
+        "proposed_fix": "Replace the OQ-1 option-A 'Measured' cell and the recommendation sentence 'It is data only ... and is measured green' with: 'The contact gate is measured green on the manifest-only variant (V12/V13); the full five-file set of AC6, including bow_a.json, is measured at V23/V24 below.' Add verification-log rows: 'V23 | jq '.consoles[] | {id, use_m}' art/deck-layout-v2/bow_a.json; git grep -n use_m -- art/deck-layout-v2 mk tests tools demos interior | grep -v manifest | \u003cresult: fields present/absent; consumers enumerated\u003e' and 'V24 | full AC6 S1+A tree applied (bow_a.json patched at console_decision_{0,1}.use_m): make bridge-operator-test x2 pinned -\u003e 55/0; Appendix C drills -\u003e d0 green x2, every k-row red; make deck-layout-eval-test deck-assets-check camera-test -\u003e \u003ccounts\u003e; tree restored' plus either 'V25 | bow_a use_m mutated 2 cm out of sync with manifest -\u003e \u003ctarget\u003e red (drill added to Appendix C)' or an edit to S2/AC6 dropping bow_a.json with the justification 'no live consumer (V23)'. Also correct D4's '--check-only loads it, rc 0' to '--check-only parses it (rc 0, V18); functional schema-2 compatibility is verified by key inspection only, GPU run UNMEASURED', since --check-only does not execute the script's record-loading path."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0.033608,
+      "tokens_in": 15149,
+      "tokens_out": 331,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Option A is presented as a verified data-only repair, but the complete proposed change was never tested: V22 explicitly says bow_a.json was not patched. The document does not establish how that authored layout, the runtime manifest, and the exported assets interact, so the manifest-only 55/0 result does not verify that the proposed source-level repair survives the existing generation/export machinery.",
+        "catch": "Verify which machinery owns or regenerates console_decision_{0,1}.use_m and stations.{voyage,crew}.use_m. The claims that A needs only the listed data edits and leaves screen/zoom behavior unchanged need implementation evidence; neither the contact-test result nor the unexecuted acceptance criteria establish them.",
+        "proposed_fix": "Add a source-of-truth/conflict-surface section identifying the exact generator/export functions that read bow_a.json use_m and write or validate the manifest and GLBs, with file/symbol references and a justification for the chosen edit path. Apply both bow_a.json and manifest edits together, run the applicable generation or consistency-check workflow, and add verification-log rows showing that the intended use points persist, no unintended asset changes occur, and bridge-operator-test, deck-assets-check, and deck-layout-eval-test pass on that complete candidate. Until then, replace 'A is data only ... and is measured green' with 'The manifest-only prototype passes the contact guard; the complete authored-layout repair and its generation/export effects remain unverified.'"
+      },
+      "landed": null
+    },
+    {
+      "model": "gemini-4-argon",
+      "cost_usd": 0.07532,
+      "tokens_in": 17270,
+      "tokens_out": 312,
+      "present": true,
+      "result": {
+        "verdict": "pass",
+        "strongest_objection": "Under OQ-1 Option A (the recommended path and the basis for AC1–AC9), the edit to art/deck-layout-v2/bow_a.json and the dependent gates deck-assets-check and deck-layout-eval-test are marked UNMEASURED in V22 and AC8, despite neither requiring a GPU or the ship-baseline.",
+        "catch": "In V14, the quoted error message reads '^bridge-operator-contact: 54 passed… (54-check build)', which appears to be an artifact from before the 55th check (schema guard) was added; verify that the pin in mk/captain-anim.mk is 55 and consider running bow_a.json + deck-layout-eval-test + deck-assets-check headless so Option A's non-GPU acceptance criteria are 100% pre-verified.",
+        "proposed_fix": "Patch art/deck-layout-v2/bow_a.json in the Option A candidate alongside manifest.json, run `make deck-assets-check deck-layout-eval-test` headless, and record the results in V22 and AC8 so only GPU-dependent and baseline-dependent checks remain in the UNMEASURED list."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Controller reproduced the blocking claim with an independent probe (own script): at e292a860 a capsule of r 0.35/0.25/0.15, h 1.8, centre +0.91 at demo.consoles.stations[id].use hits console_decision_{0,1,2}_col for voyage, crew, comms; all clear at 523d96f9; navigation clear on both (control). Bisect 44/0 at 523d96f9, 30/14 at #379 head 4e8097c2 and merge 8ba1e3c8."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: Premise-verification failure at the doc's own headline result: the recommended option A is declared 'measured green' (V12/V13: 55 passed, 0 failures twice through the pinned gate, all drills red), but V22 records that the measured candidate is NOT the merge candidate — 'A adds manifest +4/-4 (bow_a.json not patched, UNMEASURED)'. Every measured result for A (V12, V13 drills, V16 comms-walk) was run on a manifest-only variant, while S2/AC6 require coordinated edits to art/deck-layout-v2/bow_a.json at console_decision_{0,1}.use_m. Three things are asserted, never verified: (1) that bow_a.json even contains console use_m fields (no V-row prints them; V4's description of #379's bow_a diff mentions desk origin/yaw only, and the shipped-use coordinates are never grepped), (2) who consumes those fields — D7's 'other readers' analysis and V19's greps cover the contact JSON and old coordinates but never bow_a.json's use_m, so the conflict surface for exactly the file distinguishing the merge head from the measured head is missing, and (3) that the gates most likely to read it survive — deck-layout-eval-test, deck-assets-check and camera-test are all UNMEASURED, yet AC8 lists them as pass criteria with expected 'ok'. Additionally, if bow_a's use_m duplicates the manifest's use points (the doc's own record/manifest duplication is 'by design' and pinned by drill k2), the proposed final state introduces a second, unpinned duplicate of the working point with no drill proving any gate turns red on manifest\u003c-\u003ebow_a divergence — a silent-drift vector the doc's own anti-vacuity philosophy forbids. As written, the executor would discover at merge time whether the recommended option is green, red, or touching dead data.",
+      "gpt6-1-sol: Option A is presented as a verified data-only repair, but the complete proposed change was never tested: V22 explicitly says bow_a.json was not patched. The document does not establish how that authored layout, the runtime manifest, and the exported assets interact, so the manifest-only 55/0 result does not verify that the proposed source-level repair survives the existing generation/export machinery."
+    ],
+    "absent_reviewers": [],
+    "total_cost_usd": 0.27014499999999997,
+    "total_tokens_in": 47508,
+    "total_tokens_out": 8373
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "row 7ae: main nightly rig/full red at bridge-operator-test (design-only deliverable)",
+  "doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
+  "commit_evaluated": "619185ca (c57e906d, dc51e3cb, 619185ca)",
+  "round": 1,
+  "result": "pass",
+  "score": 88,
+  "pass_threshold": 70,
+  "evaluator": "Claude Sonnet 5.5, independent of the designer and controller (Opus); own probe script, S1 and option A applied from the appendices, then restored",
+  "breakdown": {
+    "root_cause_correct_and_independently_reproduced": {"score": 24, "max": 25},
+    "block_is_real_no_honest_test_only_fix": {"score": 15, "max": 15},
+    "S1_sound_and_non_vacuous": {"score": 18, "max": 20},
+    "numbers_honest_unmeasured_labelled": {"score": 14, "max": 15},
+    "OQ1_fair_ask_for_Mark": {"score": 9, "max": 10},
+    "quorum_handling": {"score": 8, "max": 15, "note": "r1 answered by measurement; r2 answered by measurement (kimi), an explicit build requirement (gpt) and an applied change (gemini). Not re-run by me: V31. Deduction for stopping at BLOCKED 2/3 without a re-quorum of the carve-out content, and for text inconsistencies introduced by the carve-out."}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "OQ-1 recommendation sentence says option A 'changes four data files' and then adds asset-pins.json layout_sha256 as a seventh-file addition; the header 'Estimated LOC' file list and AC6 do not list asset-pins.json. The carve-out left the file set stated three different ways (4 / 6 / 7). Executor must follow the AC6 list plus asset-pins, and the re-quorum should fix the text.",
+    "AC2 says the Appendix C runner contract is 'not yet met by Appendix C as printed': V27's drill table was produced by a script that prints and never fails (gpt6-1-sol's point). The doc is honest about it, but AC2 is thus unexecutable as written until the executor builds the runner.",
+    "Option A leaves under 5 mm of slack (first collision between 0.545 and 0.550 m). Doc states this in Risks. My drill with a consistent move to advance 0.60 m turned the voyage capsule check red, so the check is live at that margin; the 0.55 m rounding case was too close to the threshold to discriminate (my own X3 first attempt at (-12.745, 11.475) stayed green).",
+    "V31 and the 5-gate carry-over to the 6-file set were not re-run by me (comms-walk, camera, levels-regress, deck-layout-eval(-test)). I did re-run deck-assets-check and bridge-operator-test on the full set.",
+    "Default for OQ-1 is stated honestly (no visual change, nightly stays red at this target, S1 does not merge alone). Plain-language framing is good, but the very first paragraph of OQ-1 is still mostly about collider names and the D-132 rule; the visible consequence (captain stands 0.275 m further back from Voyage and Crew desks) is in the options table rather than the lead sentence."
+  ],
+  "verification": [
+    {"id": "P1", "claim": "Own probe (tools/zz_eval_probe.gd, written by me, deleted afterwards): CapsuleShape3D r0.35 h1.8 and r0.15 h0.75 at each station's runtime consoles.stations[id].use, intersect_shape", "cmd": "godot --headless --path . --script res://tools/zz_eval_probe.gd", "result": "at 619185ca (= e292a860 sources): voyage -> console_decision_0_col, crew -> console_decision_1_col, comms -> console_decision_2_col for BOTH capsule sizes; navigation, archive, reserved_3 (controls) clear with both"},
+    {"id": "P2", "claim": "first bad merge is #379", "cmd": "git checkout <c>; probe; godot --script tests/test_bridge_operator_contact.gd", "result": "523d96f9: all six stations clear (voyage use (-7.829,-10.982), crew (8.479,-12.944)), 44 passed 0 failures. 4e8097c2: voyage/crew/comms hit the *_col, 30 passed 14 failures. 8ba1e3c8: same, 30/14. Controls navigation/archive clear at all three commits."},
+    {"id": "P3", "claim": "S1 diff applies and matches stated size", "cmd": "convert Appendix A (4 spaces -> tab) and git apply --recount; git diff --stat", "result": "applies, +38/-8"},
+    {"id": "P4", "claim": "AC10: S1 alone is red on exactly the two capsule checks", "cmd": "S1 test + Appendix B record + pin 56; make bridge-operator-test", "result": "54 passed, 2 failures: 'voyage full 1.8m capsule clear at corrected point', 'crew full 1.8m capsule clear at corrected point'"},
+    {"id": "P5", "claim": "Option A green on full file set", "cmd": "sed/jq edits to manifest (+4/-4), bow_a.json (+4/-4), record, budgets.json re-pin; make bridge-operator-test x2; make deck-assets-check", "result": "56 passed, 0 failures twice (6 s, 7 s). My computed manifest sha256 ff14f59f9783... equals the doc's re-pin value. deck-assets-check ok (12 pins) with both negative controls firing. Step size |(-12.912,11.626)-(-12.708,11.442)| = 0.2747 m, i.e. 0.275 as claimed; A point is 1.50 m from desk origin along its facing."},
+    {"id": "D1", "claim": "kill drill X1 (mine): facing source = -basis.z instead of -basis.x", "result": "44 passed, 12 failures (6 per station)"},
+    {"id": "D2", "claim": "kill drill X2 (mine): negative-control step 0.05 -> 0.02 m", "result": "54 passed, 2 failures (both negative controls), i.e. control is live and not vacuous under A"},
+    {"id": "D3", "claim": "kill drill X3 (mine): consistent move of Voyage working point into the desk (manifest + bow_a + record, advance 0.60)", "result": "53 passed, 3 failures; includes 'voyage full 1.8m capsule clear at corrected point' (other two are crew advance/walk vs the global advance_m)"},
+    {"id": "D4", "claim": "kill drill X4 (mine): delete the 'escape prevents deferred console open' check via make with the pin", "result": "script-gate FAIL: no summary line matching ^bridge-operator-contact: 56 passed, 0 failures$ (rc 0); restored run is ok 56/0"}
+  ],
+  "unmeasured": [
+    "renders of the captain at today's points or under A (GPU)",
+    "V31 and the camera/comms-walk/levels-regress/deck-layout-eval(-test) results on the 6-file set (not re-run; relied on the doc)",
+    "tools/bridge_operator_review.gd on a GPU window; Blender re-export; option B; make -k test on any fix head",
+    "doc's own Appendix C drill table (I ran four different drills of my own)"
+  ],
+  "cleanup": "tree restored with git checkout HEAD -- .; probe and its .uid deleted; no .translation files; git status clean apart from this file"
+}
