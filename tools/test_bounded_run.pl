@@ -242,7 +242,8 @@ sub run_command {
     }
     if (!defined $st) { $fired=1; kill 'KILL',$p; my $e=now()+0.15; while(now()<$e) { if(waitpid($p,WNOHANG)==$p) {$st=$?;last} pause() } }
     die 'inspection_restricted: command registration: '.get("$ART/$name.inspection-restricted") if -f "$ART/$name.inspection-restricted";
-    return {actual_rc=>defined($st)?norm($st):124, elapsed=>now()-$t0,
+    my $finished=now();
+    return {actual_rc=>defined($st)?norm($st):124, started_at=>$t0,finished_at=>$finished,elapsed=>$finished-$t0,
         guardian_cap_fired=>$fired?JSON::PP::true:JSON::PP::false,stdout=>get($out),stderr=>get($err),trigger_at=>$trig};
 }
 sub clean_ids {
@@ -372,45 +373,61 @@ sub lifetime_controls {
     }
 }
 # Additional causal controls only; never members of the permanent fixed42.
-sub retry_fake_ps {
-    my ($dir,$mode)=@_; make_path($dir);
-    # Healthy path is shell -> native ps. No Perl startup or directory scan.
-    my $script=<<'SHIM';
-#!/bin/sh
-dir='__DIR__'
-mode='__MODE__'
-case "$mode" in
- denied) exit 1 ;;
- malformed) exec /bin/cat "$dir/malformed" ;;
- permanent) exec '__PERL__' -MTime::HiRes=sleep -e 'sleep 0.35' ;;
-esac
-armed=0
-[ "$mode" = transient ] && armed=1
-[ "$mode" = cleanup ] && [ -f "$dir/cleanup-entry" ] && [ -f "$dir/healthy" ] && armed=1
-[ "$mode" = group ] && [ -f "$dir/group-arm" ] && armed=1
-if [ "$armed" = 1 ] && [ ! -f "$dir/missed" ]; then
-  # noclobber creates the one-shot marker atomically; no subshell or helper fork.
-  set -C
-  if printf '' 2>/dev/null > "$dir/missed"; then
-    set +C
-    if [ "$mode" = group ]; then
-      printf '%s\n' "$$" > "$dir/group-helper"
-      exec '__PERL__' -MTime::HiRes=clock_gettime,CLOCK_MONOTONIC,sleep -e 'my $release=shift; my $end=clock_gettime(CLOCK_MONOTONIC)+0.35; sleep 0.001 while !-f $release && clock_gettime(CLOCK_MONOTONIC)<$end; exec "/bin/ps",@ARGV' "$dir/group-release" "$@"
-    fi
-    exec '__PERL__' -MTime::HiRes=sleep -e 'sleep 0.35'
-  fi
-  set +C
-fi
-exec /bin/ps "$@"
-SHIM
-    $script=~s/__DIR__/$dir/g; $script=~s/__MODE__/$mode/g; $script=~s/__PERL__/$PERL/g;
-    put("$dir/ps",$script); chmod 0700,"$dir/ps"; return "$dir/ps";
+sub retry_perl_quote {
+    my ($text)=@_; $text=~s/\\/\\\\/g; $text=~s/'/\\'/g; return "'$text'";
+}
+sub retry_fault_source {
+    my ($source,$dir,$mode,$guardian)=@_; make_path($dir);
+    die 'unknown inline ps fault mode' unless $mode=~/\A(?:transient|denied|malformed|permanent|cleanup|group)\z/;
+    my $hook=<<'INLINE_PS_FAULT';
+{
+    my $fault_dir=__DIR__; my $fault_mode=__MODE__;
+    POSIX::_exit(1) if $fault_mode eq 'denied';
+    if ($fault_mode eq 'malformed') {
+        open my $input,'<',"$fault_dir/malformed" or POSIX::_exit(126);
+        while (1) {
+            my $n=sysread($input,my $chunk,65536); POSIX::_exit(126) unless defined($n); last unless $n;
+            my $offset=0;
+            while ($offset<$n) {
+                my $written=syswrite(STDOUT,$chunk,$n-$offset,$offset);
+                POSIX::_exit(126) unless defined($written) && $written>0; $offset+=$written;
+            }
+        }
+        close $input or POSIX::_exit(126);
+        # syswrite is unbuffered; closing STDOUT publishes EOF BEFORE _exit.
+        close STDOUT or POSIX::_exit(126); POSIX::_exit(0);
+    }
+    my $armed=$fault_mode eq 'transient' ||
+        ($fault_mode eq 'cleanup' && -f "$fault_dir/healthy" && -f "$fault_dir/cleanup-entry") ||
+        ($fault_mode eq 'group' && -f "$fault_dir/group-arm");
+    my $hold=$fault_mode eq 'permanent';
+    if ($armed) {
+        if (sysopen(my $claim,"$fault_dir/missed",Fcntl::O_WRONLY()|Fcntl::O_CREAT()|Fcntl::O_EXCL(),0600)) {
+            close $claim or POSIX::_exit(126); $hold=1;
+        } elsif (!$!{EEXIST}) { POSIX::_exit(126) }
+    }
+    if ($hold) {
+        if ($fault_mode eq 'group') {
+            open my $ready,'>',"$fault_dir/group-helper" or POSIX::_exit(126);
+            print {$ready} "$$\n"; close $ready or POSIX::_exit(126);
+        }
+        my $hold_end=now()+0.35;
+        while (now()<$hold_end && ($fault_mode ne 'group' || !-f "$fault_dir/group-release")) { Time::HiRes::sleep(0.001) }
+        POSIX::_exit(0) unless $fault_mode eq 'group';
+    }
+}
+INLINE_PS_FAULT
+    my $quoted_dir=retry_perl_quote($dir); my $quoted_mode=retry_perl_quote($mode);
+    $hook=~s/__DIR__/$quoted_dir/g; $hook=~s/__MODE__/$quoted_mode/g;
+    my $native=$guardian?"exec '/bin/ps','-axo'":"exec 'ps','-axo'";
+    $source=~s/\Q$native\E/$hook$native/ or die 'native ps exec injection point absent';
+    return $source;
 }
 sub retry_trace_source {
     my ($source,$dir,$guardian,$preexec)=@_;
     my $trace=<<'TRACE';
 my %retry_parent_pending; my $retry_parent_seq=0;
-sub retry_parent_write { my ($file,$text)=@_; open my $f,'>',"__DIR__/$file" or die $!; print {$f} $text; close $f or die $! }
+sub retry_parent_write { my ($file,$text)=@_; open my $f,'>',__DIR__."/$file" or die $!; print {$f} $text; close $f or die $! }
 sub retry_parent_before_fork {
     if (keys %retry_parent_pending) { retry_parent_write('overlap','pending helper before fork'); die 'private retry trace overlap' }
 }
@@ -424,7 +441,8 @@ sub retry_parent_reaped {
     retry_parent_write("reaped-$seq",join("\t",$p,now()));
 }
 TRACE
-    $trace=~s/__DIR__/$dir/g; $trace=~s/__PREEXEC__/$preexec/g;
+    my $quoted_trace_dir=retry_perl_quote($dir);
+    $trace=~s/__DIR__/$quoted_trace_dir/g; $trace=~s/__PREEXEC__/$preexec/g;
     my $decl=$guardian?'my %PS_HELPERS;':'my %helpers;';
     $source=~s/\Q$decl\E/$decl\n$trace/ or die 'trace declaration absent';
     my $fork=$guardian?'my $p=fork(); die "inspection_restricted: fork" unless defined $p;':'my $p=fork(); die "ps fork: $!\n" unless defined $p;';
@@ -498,13 +516,12 @@ sub retry_sequence_ok {
 }
 sub retry_controls {
     for my $mode (qw(transient denied malformed permanent)) {
-        my $dir="$ART/table-retry-$mode"; my $fake=retry_fake_ps($dir,$mode);
+        my $dir="$ART/table-retry-$mode"; make_path($dir);
         if ($mode eq 'malformed') {
             my $t=controlled_table(); my @rows=map {join(' ',@{$t->{$_}}{qw(pid ppid pgid birth stat)})} keys %$t;
             my @v=split /\s+/,$rows[0]; $v[8]='!'; $rows[0]=join(' ',@v); put("$dir/malformed",join("\n",@rows)."\n");
         }
-        my $source=get($SELF);
-        $source=~s{exec '/bin/ps','-axo'}{exec '$fake','-axo'} or die 'retry guardian injection absent';
+        my $source=retry_fault_source(get($SELF),$dir,$mode,1);
         $source=retry_trace_source($source,$dir,1,$mode eq 'permanent'?1:0);
         put("$dir/probe.pl",$source);
         my $r=run_command("guardian-transient-$mode",2,[$PERL,"$dir/probe.pl",'__retry_table_probe']);
@@ -518,15 +535,17 @@ sub retry_controls {
     }
     for my $variant ('recovered','no-retry-counterexample','group-hup','group-int','group-term') {
         my $reverse=$variant eq 'no-retry-counterexample'; my $group=$variant=~/^group-/;
-        my $dir="$ART/production-transient-$variant"; my $fake=retry_fake_ps($dir,$group?'group':'cleanup'); make_path("$dir/tools");
-        my $before=get("$ROOT/tools/bounded_run.sh"); my $source=$before;
-        $source=~s{exec 'ps','-axo'}{exec '$fake','-axo'} or die 'production ps injection absent';
+        my $dir="$ART/production-transient-$variant"; make_path("$dir/tools");
+        my $before=get("$ROOT/tools/bounded_run.sh");
+        my $source=retry_fault_source($before,$dir,$group?'group':'cleanup',0);
         $source=retry_trace_source($source,$dir,0,0);
-        my $hook="require JSON::PP; write_file('$dir/owned-at-cleanup',JSON::PP::encode_json({owned=>[values %owned],stopped=>[keys %stopped]})); write_file('$dir/cleanup-entry','1');\n";
+        my $owned_path=retry_perl_quote("$dir/owned-at-cleanup"); my $entry_path=retry_perl_quote("$dir/cleanup-entry");
+        my $hook="require JSON::PP; write_file($owned_path,JSON::PP::encode_json({owned=>[values %owned],stopped=>[keys %stopped]})); write_file($entry_path,'1');\n";
         $source=~s/(my \$cleanup_error;)/$hook$1/ or die 'cleanup injection absent';
         if ($reverse) {
             # Startup keeps three tries; reverse only the attested cleanup path.
-            my $one="my \$tries=(-f '$dir/healthy' && -f '$dir/cleanup-entry')?1:3; for my \$attempt (1..\$tries)";
+            my $healthy_path=retry_perl_quote("$dir/healthy");
+            my $one="my \$tries=(-f $healthy_path && -f $entry_path)?1:3; for my \$attempt (1..\$tries)";
             $source=~s/for my \$attempt \(1\.\.3\)/$one/ or die 'cleanup-only no-retry reversal absent';
             $source=~s/die \$freeze_error unless [^\n]+;/die \$freeze_error;/ or die 'fatal-freeze reversal absent';
             $source=~s/my \@recovery=\$cleanup_error \? values\(%owned\) : values\(%stopped\);/my \@recovery=values(%stopped);/ or die 'old stopped-only reversal absent';
@@ -1055,9 +1074,11 @@ GD
     # Restore on every exit path, including void premises and assertion failures.
     if ($kind ne 'normal') { put($test,$before); die 'private crew restore cmp failed' unless get($test) eq $before }
     die 'original ROOT test changed' unless get("$source/tests/test_crew_console.gd") eq $source_test;
-    $r//={actual_rc=>3,elapsed=>0,guardian_cap_fired=>JSON::PP::false}; $post//=controlled_table();
+    $r//={actual_rc=>3,started_at=>undef,finished_at=>undef,elapsed=>0,guardian_cap_fired=>JSON::PP::false}; $post//=controlled_table();
+    my $observation_finished=now();
     my $c=case_result(name=>"crew-$kind",%$r,passed=>$ok && !$err,trigger=>$kind eq 'hang'?'STOP healthy real sim then deadline':$kind eq 'normal'?'ordinary real test':"foreground make group $kind",
-        pre_identities=>$pre,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$pre],inner_make_rc=>$r->{actual_rc},cleanup_outcome=>'pending',restoration_cmp=>JSON::PP::true,inspection_restricted=>($err//'')=~/inspection_restricted/?JSON::PP::true:JSON::PP::false,void_fixture=>($err//'')=~/void_fixture/?JSON::PP::true:JSON::PP::false,error=>$err,script_launch_at=>$script_at,signal_at=>$signal_at);
+        pre_identities=>$pre,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$pre],inner_make_rc=>$r->{actual_rc},cleanup_outcome=>'pending',restoration_cmp=>JSON::PP::true,inspection_restricted=>($err//'')=~/inspection_restricted/?JSON::PP::true:JSON::PP::false,void_fixture=>($err//'')=~/void_fixture/?JSON::PP::true:JSON::PP::false,error=>$err,script_launch_at=>$script_at,signal_at=>$signal_at,
+        observation_finished_at=>$observation_finished,script_elapsed=>defined($script_at)?$observation_finished-$script_at:undef,cleanup_elapsed=>defined($signal_at)?$observation_finished-$signal_at:undef);
     $c->{cleanup_outcome}=clean_ids($pre); save(); die $err if $err;
     return $ok?0:1;
 }
