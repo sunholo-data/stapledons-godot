@@ -230,6 +230,9 @@ eval {
     my $t=snapshot($deadline); $root_id=$t->{$root};
     die "held command identity absent\n" unless $root_id && $root_id->{ppid}==$$;
     $owned{$root}=$root_id;
+    if (defined($ENV{BR_COMMAND_ID_DIR}) && -d $ENV{BR_COMMAND_ID_DIR}) {
+        require JSON::PP; write_file("$ENV{BR_COMMAND_ID_DIR}/command-$root",JSON::PP::encode_json($root_id));
+    }
     if (defined($ENV{BR_INNER_READY})) {
         my $file=$ENV{BR_INNER_READY};
         write_file("$file.tmp","$$\t$t->{$$}{birth}\t$root\t$root_id->{birth}\n");
