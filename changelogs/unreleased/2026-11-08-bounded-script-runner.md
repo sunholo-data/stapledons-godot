@@ -4,7 +4,9 @@
   original exit, script-error and exact-summary checks and import prerequisite.
 - Use a monotonic shell/Perl supervisor for script gates and crew-console, retaining
   observed descendant birth identities across process-group changes and reparenting.
-  Cancellation and normal exit clean up owned children within one cleanup budget.
+  Cancellation and normal exit attempt cleanup of retained, observed children
+  within a three-second budget. Each signal requires fresh identity inspection;
+  persistent inspection failures are reported and can prevent cleanup.
 - Relay directed HUP, INT and TERM through the calling shells, independently of
   prior summaries or expected exit codes. Add an independent test guardian and
   permanent bounded-run controls, with targeted mutation, real-runtime and scope drills.
