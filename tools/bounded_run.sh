@@ -61,6 +61,9 @@ sub snapshot_once {
         my $q=waitpid($p,WNOHANG);
         if ($q==$p) { $st=$?; delete $helpers{$p}; last } sleep(0.001);
     }
+    # One final nonblocking probe: a scheduler delay may cross the loop end
+    # after the direct child has exited. No sleep, retry loop or budget extension.
+    if (!defined($st) && waitpid($p,WNOHANG)==$p) { $st=$?; delete $helpers{$p} }
     die "ps helper collection budget exhausted\n" unless defined($st);
     die "ps read error: $read_error\n" if $read_error;
     die "ps transient read/exit budget exceeded 200ms\n" if $timedout;
@@ -85,6 +88,11 @@ sub snapshot {
         $error=$@; die $error unless $error=~/^ps transient read\/exit budget exceeded 200ms/;
     }
     die $error;
+}
+sub canceled_probe_timeout {
+    my ($failure,$cancellation,$pending)=@_;
+    return defined($cancellation) && !$pending && defined($failure) &&
+        $failure=~/\Aps transient read\/exit budget exceeded 200ms\n?\z/;
 }
 sub equal { my ($a,$b)=@_; return $a && $b && $a->{pid}==$b->{pid} && $a->{birth} eq $b->{birth} }
 sub alive { my ($a,$t)=@_; return equal($a,$t->{$a->{pid}}) && $t->{$a->{pid}}{stat}!~/Z/ }
@@ -209,9 +217,6 @@ eval {
     my $t=snapshot($deadline); $root_id=$t->{$root};
     die "held command identity absent\n" unless $root_id && $root_id->{ppid}==$$;
     $owned{$root}=$root_id;
-    if (defined($ENV{BR_COMMAND_ID_DIR}) && -d $ENV{BR_COMMAND_ID_DIR}) {
-        require JSON::PP; write_file("$ENV{BR_COMMAND_ID_DIR}/command-$root",JSON::PP::encode_json($root_id));
-    }
     if (defined($ENV{BR_INNER_READY})) {
         my $file=$ENV{BR_INNER_READY};
         write_file("$file.tmp","$$\t$t->{$$}{birth}\t$root\t$root_id->{birth}\n");
@@ -226,7 +231,16 @@ eval {
         last if defined($cancel);
         if(now()>=$deadline) { $cancel='TIMEOUT'; $cancel_at=$deadline; last }
         collect_root(); last if defined($original_status);
-        $t=snapshot($deadline+0.2); discover($t); reap_helpers(); nap();
+        my $scan=eval { snapshot($deadline+0.2) };
+        if (!$scan) {
+            my $failure=$@;
+            if (canceled_probe_timeout($failure,$cancel,scalar keys %helpers)) {
+                print STDERR "bounded-run: canceled inspection deferred: $failure";
+                last; # Cleanup still requires fresh closure and verified absence.
+            }
+            die $failure;
+        }
+        $t=$scan; discover($t); reap_helpers(); nap();
     }
     $result= defined($cancel) ? ($cancel eq 'TIMEOUT'?142:128+($cancel eq 'HUP'?1:$cancel eq 'INT'?2:15)) : normalized($original_status);
     1;
