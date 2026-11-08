@@ -1,0 +1,70 @@
+{
+  "role": "evaluator",
+  "requested_model": "claude:claude-sonnet-4-6",
+  "actual_model": null,
+  "resolver": "recipe claude:claude-sonnet-4-6 declared:provider-pin",
+  "command": "claude-sub -p 'Reply with exactly: ok' --model claude-sonnet-4-6 --permission-mode bypassPermissions --output-format json",
+  "timeout_seconds": 100,
+  "timed_out": false,
+  "rc": 1,
+  "stdout_path": "/tmp/stapledon-iter79-evaluator-capacity.stdout",
+  "stderr_path": "/tmp/stapledon-iter79-evaluator-capacity.stderr",
+  "stderr_summary": "stderr empty; API error emitted as structured stdout result: HTTP 429 usage_limit_reached; weekly limit resets Nov 9 at 6am Europe/Copenhagen",
+  "elapsed_seconds": 1.98,
+  "score": null,
+  "implementation_approved": false,
+  "capacity_usable": false,
+  "resume_predicate": "Re-resolve evaluator each fire; a declared independent lane within ration must return rc 0 on a bounded subscription-only/in-budget prompt. The reset time is not a substitute for re-probing. Then resume 7ad design/quorum/plan/build/judge; do not merge the record without the cross-family gate.",
+  "recorded_at": "2026-11-07T21:47:33.447673+00:00",
+  "error": "HTTP 429 usage_limit_reached: weekly subscription limit",
+  "reset_time": "2026-11-09T06:00:00+01:00",
+  "reset_time_utc": "2026-11-09T05:00:00Z",
+  "fallback_used": null,
+  "tripwire_action": "Stopped after the single failed probe; no retry or undeclared fallback.",
+  "process_terminal": true,
+  "iteration": 79,
+  "fire_id": "stapledon-1794087941-37886",
+  "status": "PARKED-ON-LANE",
+  "api_error_status": 429,
+  "api_error": "usage_limit_reached",
+  "provider_result": "You've hit your weekly limit \u00b7 resets Nov 9 at 6am (Europe/Copenhagen)",
+  "modelUsage": {},
+  "usage": {
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "cost_usd": 0,
+  "dead_lane_recorded": true,
+  "record_base": "d9cc170b17853df06592105e896215e2999955d2",
+  "native_agent_limitation": "collaboration.spawn_agent has no model parameter; named Agent wrapper used the prescribed exact pinned provider recipe. No inherited-model verdict.",
+  "fallbacks": [
+    {
+      "lane": "pi:openrouter/minimax/minimax-m3",
+      "status": "over-ration",
+      "reason": "MISSION_OVER_RATION=openrouter"
+    },
+    {
+      "lane": "opus",
+      "status": "unavailable",
+      "reason": "MISSION_ANTHROPIC_AVAILABLE=0; shared exhausted Anthropic weekly bucket"
+    }
+  ]
+}

@@ -12,6 +12,9 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 80 | 2026-11-08 | Row 7ad corrected candidate preserved; required acceptance remains incomplete; independent MiniMax round1 FAIL47; no implementation round2 launched... |
+| 79 | 2026-11-07 | Row 7ad remains PARKED-ON-LANE: independent evaluator weekly quota re-probed, no design/build or judge verdict; iteration 78 draft PR #408 extended... |
+| 78 | 2026-11-07 | Row 7ad PARKED-ON-LANE: required evaluator weekly quota exhausted; no build, no product verdict, unmerged record draft [ADMIN] |
 | 77 | 2026-11-07 | Recover iteration 76, verify the nightly regression and publish D-148; visible repair PARKED; independent recovery judge MiniMax M3 89/100 PASS for... |
 | 76 | 2026-11-07 | Recovered failed fire: bridge-operator-test regression diagnosed, visible repair PARKED on D-148; Opus design and Sonnet 88 design-only PASS preser... |
 | 75 | 2026-11-06 | Row 7m-d S1 RUN on a quiet rig (first in eight fires): docked p99 17.35–18.41 and empty floor 15.53–16.23 reproduce, outcome (a) holds, but every i... |

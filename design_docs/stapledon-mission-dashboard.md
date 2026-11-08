@@ -1,30 +1,22 @@
-# Stapledon mission dashboard
+# Mission dashboard — Stapledon
 
-Updated 2026-11-07, iteration 77 (recovery of crashed iteration 76).
-
-- **Bar:** clauses 1–3 MET; 4 UNMET; 5 ongoing. Goal unmoved.
-- **Critical path:** 7m AC1 → 7m-d → D-147 (Mark); no new GPU run.
-- **Recovered:** iteration 76 left four unpushed design/evaluation commits in clean full clones.
-  Its nightly-regression investigation is preserved, not repeated or claimed built.
-- **Nightly red:** bridge-operator-test is 30 passed / 14 failures after attended #379;
-  pre-#379 control 44/0. The failure stops test at prerequisite 19/138 (119 later targets).
-- **D-148 OPEN (new):** A move Voyage/Crew working points 0.275 m back; B reshape the desk;
-  C accept overlap; optionally D authorize strict counted expected-failure while pending.
-  Recommendation A, subject to front/back visual review; default no change/weakening.
-- **Independent review:** pinned MiniMax M3 89/100 PASS for parked publication only;
-  implementation_approved=false. Prior Opus design / Sonnet 88 preserved.
-- **Resume:** Mark answers D-148 → re-quorum once → plan → build → independent judge →
-  dev build for Mark's visible approval. No plan/sprint JSON or implementation now.
-- **Ready next:** 7ad bounded runner/reap sim; then 7ac after 7ad. Recheck Makefile holds.
-- **Existing OPEN decisions:** D-128, D-129, D-145, D-146, D-147; new D-148.
-  D-145 is not silently resolved: a green full nightly is still absent.
-- **Non-blocking backlog:** comms contact, desk-relative lean, layout-to-gates mapping;
-  candidate file-list/clearance wording and unenforced provenance fields before resumption.
-- **Limits:** no GPU, full make test, candidate A, or visible review this fire.
-  Interrupted historical make -k test has no whole-suite verdict.
-- **Loop:** launchd dev.ailang.mission-stapledon, every 6 h; skill directory matches origin.
-  Codex controller; Agent wrapper invokes pinned pi:openrouter/minimax/minimax-m3 judge.
-  Designer/planner/executor stages not reached (existing visible Open Question).
-- **Cost:** $0.22350330 metered; Anthropic unavailable; Codex controller fallback recorded.
-- **Do not touch:** attended Kerr PRs #373/#380 and the charter's D-144/levels holds.
-- **Full record:** stapledon-mission-log.md entries 76 and 77; issue #370.
+Updated 2026-11-08, iteration 80. PARKED: row 7ad.
+R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 → 7m-d → D-147); clause 5 ongoing; goal unmoved.
+Latest release: retain the existing game/runtime pins; no release tag this iteration.
+Current: Implementation withheld: final M4-r21 selftest41/42 red; unapproved source preserved at backup/stapledon-iter80-7ad-final-unapproved-r21 commit6abbd8b2; resume engineering, then all required gates and independent review
+Next: 7ac only after 7ad lands, AC1–AC5 rerun and one same-seat re-quorum.
+Then 7ab only when its recorded nightly-start predicate holds; no GPU merge gate.
+Critical path: 7m/7m-d stay parked on D-147 default A; no new S1 or AC1 run.
+Other human gates: D-128 order; D-129 L4 defaults; D-145 sound ownership;
+D-146 designer rotation; D-148 visible bridge working-point repair.
+Decisions: all six remain OPEN, unchanged; no unattended resolution.
+Routing: Codex gpt-6.1-sol designer/planner/executor; independent MiniMax M3 evaluator.
+Quorum: PROCEED DEGRADED, one external Gemini PASS; three seats quota-absent.
+Review: independent MiniMax round1 FAIL47; no implementation round2 launched; historical round1 FAIL47 is preserved unchanged.
+CI: No implementation candidate pushed or merged; exact-head code CI not run. Records-only PR CI and publication review are separate pending gates
+Cadence: armed six-hour driver; this snapshot does not establish a future running process.
+Quota: Known quota1,307,144: designer259,764; planner92,373; executor955,007 (resumedheavy486,216 counted once plus separate probes). Controller/wrapper tokens not reported
+Metered cost through implementation review: $0.527898/$5; publication cost in linked report.
+Canonical checkout untouched; records originate from newer adopted draft #408.
+Nightly issue #392 remains OPEN; no full-suite green claimed.
+Full history: stapledon-mission-log.md, entry 80.

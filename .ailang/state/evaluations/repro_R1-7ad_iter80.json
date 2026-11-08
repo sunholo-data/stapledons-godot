@@ -1,0 +1,2332 @@
+{
+  "kind": "controller-baseline-reproduction",
+  "iteration": 80,
+  "source_sha": "fa8480d55d55df7eccc3d16cf4f296e2357e327f",
+  "platform": "darwin/arm64",
+  "command": "python3 /tmp/iter80-supervisor-repro.py",
+  "role": "scratch test harness; not a pipeline step",
+  "harness_sha256": "2e41147ef6e12f423e151fcb854696ee5108645ace7c939fbe95bcd88af88a4e",
+  "harness_source": "import os, pathlib, signal, subprocess, tempfile, time, json\nroot=pathlib.Path('/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80')\ntmp=pathlib.Path(tempfile.mkdtemp(prefix='iter80-supervisor-'))\nrows=[]\nfor escaped in (False,True):\n    childfile=tmp/('escape.pid' if escaped else 'group.pid')\n    # Explicitly registered child ignores graceful signals. Only the escaped arm changes PGID.\n    code='use POSIX qw(setsid); my $f=shift; my $e=shift; my $p=fork; die unless defined $p; if(!$p){ setsid() if $e; $SIG{TERM}=$SIG{HUP}=$SIG{INT}=\"IGNORE\"; open my $o, \">\", $f or die; print $o \"$$\\\\n\"; close $o; sleep 60; exit } sleep 60;'\n    log=tmp/('escape.log' if escaped else 'group.log')\n    cmd=['sh',str(root/'tools/script_gate.sh'),'repro',str(log),'2','^fixture: [1-9][0-9]* passed, 0 failures$','--','perl','-e',code,str(childfile),str(int(escaped))]\n    run=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,start_new_session=True)\n    child=None\n    try:\n        stop=time.monotonic()+3\n        while not childfile.exists() and time.monotonic()<stop: time.sleep(.05)\n        assert childfile.exists(),'fixture never registered'\n        child=int(childfile.read_text().strip().replace('\\\\n',''))\n        cp=subprocess.run(['ps','-o','pid=,ppid=,pgid=,stat=','-p',str(os.getpid())+','+str(child)],capture_output=True,text=True,check=True)\n        assert str(os.getpid()) in cp.stdout and str(child) in cp.stdout,'positive control failed'\n        out,_=run.communicate(timeout=10)\n        after=subprocess.run(['ps','-o','stat=','-p',str(child)],capture_output=True,text=True).stdout.strip()\n        live=bool(after) and not after.startswith('Z')\n        row={'escaped':escaped,'runner_rc':run.returncode,'child_live_after':live,'before_ps':cp.stdout.strip(),'after_stat':after,'output':out.strip()}\n        rows.append(row)\n        assert run.returncode==1 and 'timeout after 2 s' in out\n        assert live==escaped, row\n    finally:\n        if child:\n            try: os.kill(child,signal.SIGKILL)\n            except ProcessLookupError: pass\n        try: os.killpg(run.pid,signal.SIGKILL)\n        except ProcessLookupError: pass\n        if run.poll() is None: run.wait(timeout=3)\n(tmp/'results.json').write_text(json.dumps(rows,indent=2)+'\\n')\nprint(json.dumps({'artifact':str(tmp/'results.json'),'rows':rows},indent=2))\n",
+  "results_sha256": "7f7272b9dc71f77e56651163f13854e2f598e380d5fc6e7dcb8cc760ef735505",
+  "results": [
+    {
+      "escaped": false,
+      "runner_rc": 1,
+      "child_live_after": false,
+      "before_ps": "58832  2752 58832 Ss  \n58843 58842 58842 S",
+      "after_stat": "",
+      "output": "script-gate: repro FAIL; timeout after 2 s (rc 142): a runtime error before quit() leaves Godot running; no summary line matching ^fixture: [1-9][0-9]* passed, 0 failures$ (rc 142 with no summary is a load failure, not a result) (log /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/iter80-supervisor-h9qquwf0/group.log)"
+    },
+    {
+      "escaped": true,
+      "runner_rc": 1,
+      "child_live_after": true,
+      "before_ps": "58832  2752 58832 Ss  \n58880 58879 58880 Ss",
+      "after_stat": "Ss",
+      "output": "script-gate: repro FAIL; timeout after 2 s (rc 142): a runtime error before quit() leaves Godot running; no summary line matching ^fixture: [1-9][0-9]* passed, 0 failures$ (rc 142 with no summary is a load failure, not a result) (log /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/iter80-supervisor-h9qquwf0/escape.log)"
+    }
+  ],
+  "final_cleanup": "Explicit registered-PID SIGKILL in finally; subsequent ps read with live controller positive control found neither child PID. Historical PIDs are evidence only, never reuse them as signal targets.",
+  "controller_execution_journal": {
+    "recorded_utc": "2026-11-08T08:03:46.192741+00:00",
+    "implementation_approved": false,
+    "purpose": "honest parked execution history; source remains unapproved on remote backup only",
+    "bank": {
+      "sha": "6abbd8b2aaeb89fe737a72f25bb55625ba7ff74a",
+      "branch": "backup/stapledon-iter80-7ad-final-unapproved-r21",
+      "source_files": {
+        "tools/test_bounded_run.pl": "e04e20089fe1134966ba4c91e6b73e479bfa7410eacdf52388732325397de6bb",
+        "tools/bounded_run.sh": "59a1a0a33e62ee30d86917880cc18be7b398c45150ae97491809a2a56037da9f",
+        "tools/script_gate.sh": "22465a4c12f00dfc4b6d264a85755cdbc237db97bbb713179b768a7e9ee75e58",
+        "Makefile": "93be1582edfefbf333f15910e5816f9158f0e2c5809d2c563ada612d2c4039ca",
+        "mk/script-gates.mk": "22cd06e419dd4f04e29a7c8f1684d624dc3a76f99408c1d292b29562bd7e489e",
+        "changelogs/unreleased/2026-11-08-bounded-script-runner.md": "ba6a651f1fdd184624576fd3006c5b09791e862f09b923a1334d69eea3d09168"
+      },
+      "preserved": [
+        "design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md",
+        "design_docs/planned/r1/m4-7ad-bounded-script-supervisor-sprint.md",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+        ".ailang/state/evaluations/repro_R1-7ad_iter80.json",
+        ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json"
+      ],
+      "remote_verified": true,
+      "r1sha256": "e4b3900de7be6c18d83ec45155f5f9e9b586e655a310f10b072121b8972157b4"
+    },
+    "history": {
+      "iteration": 80,
+      "date": "2026-11-08",
+      "fire_id": "stapledon-1794110025-44856",
+      "base_main": "d9cc170b17853df06592105e896215e2999955d2",
+      "gate1_read": "2026-11-08T03:54:42Z",
+      "record_base": "fa8480d55d55df7eccc3d16cf4f296e2357e327f",
+      "record_pr": 408,
+      "canonical_head": "8c570d1e5c8f452b72ff116003166b6e09b29eee",
+      "canonical_clean": true,
+      "directives": 0,
+      "bookkeeping_comments": 22,
+      "ledger_rows": 148,
+      "open_decisions": [
+        "D-128",
+        "D-129",
+        "D-145",
+        "D-146",
+        "D-147",
+        "D-148"
+      ],
+      "self_notices": {
+        "rc": 1,
+        "crashes": 1,
+        "already_credited_iteration": 76,
+        "transcript_notices": 1,
+        "hits": 1,
+        "fire": "stapledon-1793823245-38817",
+        "control": "4:5"
+      },
+      "skill_directory": {
+        "match_files": 14,
+        "authoritative": "/Users/voightkampff/dev/sunholo-data/ailang/.claude/skills/mission-control",
+        "negative_control": true
+      },
+      "main_ci": {
+        "id": 42357834789,
+        "conclusion": "success",
+        "checks": 1
+      },
+      "draft79_ci": {
+        "id": 42417884245,
+        "conclusion": "success"
+      },
+      "nightly": {
+        "issue": 392,
+        "state": "OPEN",
+        "latest_red": "bridge-operator-test",
+        "latest_utc": "2026-11-07T21:36:21Z",
+        "decision": "D-148"
+      },
+      "pick": "7ad",
+      "clauses": {
+        "1": "MET",
+        "2": "MET",
+        "3": "MET",
+        "4": "UNMET, D-147 default A parks 7m-d/7m AC1",
+        "5": "ongoing"
+      },
+      "targeted_baseline": "/tmp/iter80-base-results.json",
+      "repro": "/var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/iter80-supervisor-h9qquwf0/results.json",
+      "metered_ledger": "/tmp/iter80-metered-ledger.json",
+      "design": {
+        "head": "ffd9287cb39fb48a08459e833a7b5c3b93ae69df",
+        "role": "codex:gpt-6.1-sol",
+        "tokens_heavy": 241251,
+        "tokens_probe": 18513,
+        "quota_tokens": 259764,
+        "rc": 0,
+        "artifacts": "/tmp/stapledon-iter80-designer.yHlI7V"
+      },
+      "quorum": {
+        "round": 1,
+        "verdict": "proceed-degraded",
+        "present": [
+          "gemini-4-argon"
+        ],
+        "absent": {
+          "oc-glm-5-3": "HTTP429 Ollama session quota; synthesis unreachable",
+          "oc-kimi-k3": "HTTP429 Ollama session quota; synthesis unreachable",
+          "claude-sonnet-5@claude-p": "quota"
+        },
+        "artifact": "/tmp/iter80-quorum-r1.json",
+        "cost_usd": 0.060768
+      },
+      "plan": {
+        "head": "c7431d621cfafcb529f2adccfa9920081bb7a518",
+        "role": "codex:gpt-6.1-sol",
+        "tokens_heavy": 81299,
+        "tokens_probe": 11074,
+        "quota_tokens": 92373,
+        "rc": 0,
+        "artifacts": "/tmp/stapledon-iter80-planner.aTMCZi",
+        "feature": "M4.6wR3_7ad_BOUNDED_SCRIPT_SUPERVISOR",
+        "milestones": "M1-M4 code;M5 controller",
+        "snapshots": "/tmp/stapledon-iter80-executor-snapshots",
+        "baseline_drill": "/tmp/iter80-base-drill-result.json"
+      },
+      "stage": "M3-r21 outside five-gate batch running",
+      "controller_M1": {
+        "accepted": false,
+        "original_rc": 3,
+        "findings": "/tmp/iter80-M1-controller-findings.json",
+        "snapshots": [
+          "M1",
+          "M2",
+          "M3"
+        ],
+        "snapshot_manifest": "/tmp/iter80-M1-snapshot-manifest.json",
+        "original_snapshot_immutable": true,
+        "diagnostic_variants_not_acceptance": true
+      },
+      "executor_initial": {
+        "model": "codex:gpt-6.1-sol",
+        "rc": 0,
+        "elapsed_s": 1552,
+        "tokens_heavy": 164645,
+        "tokens_probe": 9957,
+        "quota_tokens": 174602,
+        "artifacts": "/tmp/stapledon-iter80-executor.Zvqb2b",
+        "snapshots": "/tmp/stapledon-iter80-executor-snapshots/M1..M4",
+        "acceptance": "NOT ACCEPTED",
+        "current_tree_red": [
+          "/tmp/iter80-M4-initial-controls.outer.json",
+          "/tmp/iter80-M4-initial-exit7.outer.json"
+        ]
+      },
+      "executor_r2": {
+        "model": "codex:gpt-6.1-sol",
+        "rc": 0,
+        "elapsed_s": 751,
+        "tokens_heavy": 153212,
+        "tokens_probe": 6537,
+        "quota_tokens": 159749,
+        "artifacts": "/tmp/stapledon-iter80-executor-r2.A0BS1w",
+        "acceptance": "NOT ACCEPTED; M1 earlysnapshot republished, delivered original independently preserved"
+      },
+      "executor_r3": {
+        "model": "codex:gpt-6.1-sol",
+        "rc": 0,
+        "elapsed_s": 315,
+        "tokens_heavy": 99648,
+        "tokens_probe": 11401,
+        "quota_tokens": 111049,
+        "artifacts": "/tmp/stapledon-iter80-executor-r3.JfvtTf",
+        "acceptance": "M1 measured guardian53green, othergates pending; M2-M4unaccepted"
+      },
+      "executor_r4": {
+        "model": "codex:gpt-6.1-sol",
+        "state": "running",
+        "tokens_probe": 6537,
+        "artifacts": "/tmp/stapledon-iter80-executor-r4.Acyl4P",
+        "rc": 0,
+        "elapsed_s": 91,
+        "tokens_heavy_raw_reported": 109217,
+        "resume_counter_incremental_unknown": false,
+        "acceptance": "NOT ACCEPTED; oneM2casecap"
+      },
+      "controller_M1_r3": {
+        "result": "/tmp/iter80-M1-r3-controls.outer.json",
+        "artifact": "/tmp/iter80-M1-r3-check/7ad-ocH3ZRYS/results.json",
+        "rc": 0,
+        "elapsed_s": 21.799,
+        "cases": 53,
+        "failed": 0,
+        "outer_cap": false,
+        "survivors": 0,
+        "source_sha256": "3b579e6fb73e74767cc08fe93d7a82e167d56189ccb715bd73faad3b86d46aaf",
+        "commit": "30ac82a93d172189aa27cb80ab0c2936c88f90eb",
+        "accepted": true,
+        "legacy": "/tmp/iter80-M1-r3-legacy-batch.json"
+      },
+      "controller_M2_diagnostic": {
+        "result": "/tmp/iter80-M2-r2-extra-selftest.outer.json",
+        "artifact": "/tmp/iter80-M2-r2-extra-check/7ad-YS20nuUZ/results.json",
+        "rc": 1,
+        "elapsed_s": 116.622,
+        "case_count": 42,
+        "passed": 25,
+        "failed": 17,
+        "case_caps": 4,
+        "accepted": false,
+        "diagnostic_only": true
+      },
+      "controller_M2_r4": {
+        "result": "/tmp/iter80-M2-r4-boundary.outer.json",
+        "artifact": "/tmp/stapledon-iter80-M2.UcaTC5/7ad-ovr3lRc5/results.json",
+        "rc": 1,
+        "elapsed_s": 115.146,
+        "passed": 25,
+        "failed": 17,
+        "case_caps": [
+          "raw-make-group-int"
+        ],
+        "accepted": false,
+        "diagnostic_only": false
+      },
+      "executor_r5": {
+        "rc": 0,
+        "elapsed_s": 71,
+        "model": "codex:gpt-6.1-sol",
+        "tokens_heavy_raw_reported": 114484,
+        "tokens_probe": 10258,
+        "resume_counter_incremental_unknown": false,
+        "artifacts": "/tmp/stapledon-iter80-executor-r5.GRYAH8"
+      },
+      "controller_M2_r5": {
+        "validator_rc": 0,
+        "actual_selftest_rc": 1,
+        "result": "/tmp/iter80-M2-r5-boundary.outer.json",
+        "elapsed_s": 108.408,
+        "passed": 25,
+        "failed": 17,
+        "case_caps": 0,
+        "outer_cap": false,
+        "survivors": 0,
+        "accepted": true,
+        "commit": "c7433da57823afeabdf1716c164c139c3b5e1a25",
+        "artifact": "/tmp/stapledon-iter80-M2.a4XyXi/7ad-C1eQzmeP/results.json",
+        "legacy": "/tmp/iter80-M2-r5-legacy-batch.json"
+      },
+      "actual_source_lines": {
+        "M1_r3_harness": 500,
+        "M2_r5_harness": 673,
+        "M2_r5_runner": 181,
+        "M3_r5_runner": 258,
+        "M4_r5_runner": 261,
+        "M4_r5_harness": 952,
+        "M3_r18_runner": 315,
+        "M3_r18_harness": 941,
+        "M4_r18_runner": 318,
+        "M4_r18_harness": 1248,
+        "M3_r21_runner": 331,
+        "M3_r21_harness": 1032,
+        "M4_r21_runner": 334,
+        "M4_r21_harness": 1343
+      },
+      "executor_usage_reconciled": {
+        "same_session": "01a1b993-aa8d-7301-9892-b45ec25b9cc2",
+        "last_timestamp": "2026-11-08T07:45:19.467Z",
+        "provider_total_token_usage": {
+          "input_tokens": 19394530,
+          "cached_input_tokens": 19059840,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 151526,
+          "reasoning_output_tokens": 62103,
+          "total_tokens": 19546056
+        },
+        "cli_tokens_used_cumulative": 486216,
+        "cli_counter_derivation": "total_tokens minus cached_input_tokens, final resumed session endpoint486216 counted once",
+        "r3_r4_r5_stdout_endpoints": [
+          99648,
+          109217,
+          114484
+        ],
+        "r4_incremental": 9569,
+        "r5_incremental": 5267,
+        "executor_unique_cli_quota_tokens": 955007,
+        "initial_total_including_probe": 174602,
+        "r2_total_including_probe": 159749,
+        "r3_r4_r5_probes": [
+          11401,
+          6537,
+          10258
+        ],
+        "full_token_events_artifact": "/tmp/iter80-executor-resume-provider-usage.json",
+        "r6_incremental": 28253,
+        "r6_probe": 11401,
+        "resume_endpoints": {
+          "r3": 99648,
+          "r4": 109217,
+          "r5": 114484,
+          "r6": 142737,
+          "r8": 164368,
+          "r9": 185182,
+          "r11": 242731,
+          "r13": 244693,
+          "r14": 281837,
+          "r15": 344934,
+          "r16": 373279,
+          "r18": 401662,
+          "r19": 414927,
+          "r20": 486216
+        },
+        "resume_probes": [
+          11401,
+          6537,
+          10258,
+          11401,
+          6537,
+          6537,
+          10258,
+          5394,
+          6537,
+          6487,
+          6487,
+          10711,
+          18519,
+          17376
+        ],
+        "derivation": "Initial174602 + separate r2159749 + final single resumed cumulative486216 + fourteen separate readiness probes; interruptedr13 included once. Root/wrapper unknown."
+      },
+      "controller_M3_r5": {
+        "actual_rc": 124,
+        "elapsed_s": 121.466,
+        "result": "/tmp/iter80-M3-r5-selftest.outer.json",
+        "artifact": "/tmp/iter80-M3-r5-check/7ad-ltX6Xme3/results.json",
+        "completed_cases": 34,
+        "case_elapsed_sum": 107.05002599977888,
+        "failed": [
+          "gate-relay-ready-hup",
+          "gate-relay-ready-int",
+          "gate-relay-ready-term"
+        ],
+        "worker_cap": true,
+        "outer_cap": false,
+        "survivors": 0,
+        "accepted": false
+      },
+      "executor_r6": {
+        "rc": 0,
+        "elapsed_s": 132,
+        "tokens_heavy_raw_cumulative": 142737,
+        "tokens_probe": 11401,
+        "incremental_heavy": 28253,
+        "artifacts": "/tmp/stapledon-iter80-executor-r6.X5qwcg",
+        "successor_snapshots": [
+          "M3-r7",
+          "M4-r7"
+        ],
+        "wrapper_reporter_refinement": true
+      },
+      "controller_M3_r7": {
+        "actual_rc": 0,
+        "elapsed_s": 119.428,
+        "result": "/tmp/iter80-M3-r7-selftest.outer.json",
+        "artifact": "/tmp/iter80-M3-r7-check/7ad-jJPgyvCb/results.json",
+        "cases": 42,
+        "failed": 0,
+        "worker_cap": false,
+        "outer_cap": false,
+        "survivors": 0,
+        "accepted": true,
+        "timing_headroom": "small;120s worker guard retained",
+        "commit": "f96ebae19faf78a4ee0f5ec5aa917c0445ca9dd0",
+        "legacy": "/tmp/iter80-M3-r7-legacy-batch.json"
+      },
+      "controller_metadata_refinement": {
+        "path": "tools/script_gate.sh",
+        "cause": "producer snapshots0644 causedM3copy2to drop prior0755",
+        "action": "restore0755 inM4; exactcontent unchanged",
+        "tests": "metadata only, shcall byte behavior unchanged",
+        "same_byte_sha256": "322662453588c60f10842bcd4c45adbadd472aff776e607e572a8ee2df9df143"
+      },
+      "controller_M4_r7": {
+        "batch": "/tmp/iter80-M4-r7-batch.json",
+        "legacy_gates": [
+          0,
+          0,
+          0
+        ],
+        "bounded_selftest": {
+          "rc": 0,
+          "elapsed_s": 117.098,
+          "cases": 42,
+          "failed": 0,
+          "artifact": "/tmp/7ad-gDkXhZQy/results.json"
+        },
+        "mutants_attempt1": {
+          "rc": 3,
+          "elapsed_s": 40.958,
+          "result": "/tmp/iter80-M4-r7-bounded-drill.outer.json",
+          "artifact": "/tmp/7ad-aDDFvEvJ/results.json",
+          "cause": "independent guardian ps read/exit200msbudget,0bytes/unreaped;outsideactualinspectionfailure,notblanket sandboxdenial",
+          "clean_cases_before_stop": 15,
+          "accepted": false
+        },
+        "native_ps_controls": "/tmp/iter80-M4-r7-native-ps-controls.json",
+        "mutants_attempt2": {
+          "make_guard_rc": 2,
+          "elapsed_s": 115.276,
+          "artifact": "/tmp/7ad-q32L0NLY/results.json",
+          "result": "/tmp/iter80-M4-r7-attempt2-bounded-drill.outer.json",
+          "cases": 42,
+          "clean_failed": [
+            "runner-inherited-ignored-int"
+          ],
+          "actual_runner_rc": 125,
+          "cause": "productioncleanup ps200msbudget0bytes/unreaped",
+          "behavioral_leak_before_independent_cleanup": true,
+          "independent_cleanup": "no_live_registered_survivors",
+          "accepted": false
+        },
+        "real_normal": {
+          "rc": 0,
+          "outer_elapsed_s": 22.133,
+          "actual_make_rc": 0,
+          "results": "/tmp/iter80-M4-r7-real-crew-normal-art/7ad-cKP1f9Ft/results.json",
+          "log": "/tmp/iter80-M4-r7-real-crew-normal.log",
+          "roothead": "f96ebae19faf78a4ee0f5ec5aa917c0445ca9dd0",
+          "source_identical_to386dad": true
+        },
+        "real_hang": {
+          "rc": 1,
+          "outer_elapsed_s": 2.493,
+          "worker_error": "/tmp/iter80-M4-r7-real-crew-hang-art/7ad-Burbhc5P/worker-error.txt",
+          "cause": "canonicalabs_path/private/tmp prefix againstraw/tmp source onsecondprivatecachecopy;notrealhangbehavior",
+          "accepted": false
+        },
+        "focused_mutants_diagnostic": {
+          "rc": 1,
+          "elapsed_s": 25.537,
+          "manifest": "/tmp/iter80-M4-mutants-focused-manifest.json",
+          "results": "/tmp/iter80-M4-mutants-focused-art/7ad-xC1eDRCX/results.json",
+          "first4_causal": true,
+          "raw_bypass_case_cap": true,
+          "accepted": false,
+          "NOT_AC6": "requiredcleanfirstskippeddiagnostic"
+        },
+        "audit": {
+          "rc": 0,
+          "elapsed_s": 3.538,
+          "cases": 7,
+          "failed": 0,
+          "result": "/tmp/iter80-M4-r7-audit.outer.json",
+          "artifact": "/tmp/iter80-M4-r7-audit-art/7ad-ndBx0pKM/results.json",
+          "base": "fa8480d55d55df7eccc3d16cf4f296e2357e327f",
+          "head": "386dad484b5b9ce18df20ef500f6f99be3c4eb7a",
+          "stderr": "two Wide character in print warnings, actualJSONparses/protectedbytescope/graph all0; not sourcechange"
+        }
+      },
+      "review_candidate": {
+        "commit": "386dad484b5b9ce18df20ef500f6f99be3c4eb7a",
+        "backup_branch": "backup/stapledon-iter80-7ad-candidate-r7",
+        "accepted": false
+      },
+      "evaluator_r1": {
+        "score": 47,
+        "approved": false,
+        "report": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80/.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json",
+        "verdict": "/tmp/iter80-evaluator-r1.verdict.json",
+        "cost_usd": 0.45499416
+      },
+      "executor_r9": {
+        "rc": 0,
+        "elapsed_s": 213,
+        "tokens_heavy_raw_cumulative": 185182,
+        "tokens_probe": 6537,
+        "snapshot": "M4-r10",
+        "manifest": "/tmp/stapledon-iter80-executor-r9.FlkX46/wrapper-final-manifest.json"
+      },
+      "executor_r11": {
+        "rc": 0,
+        "elapsed_s": 568,
+        "tokens_heavy_raw_cumulative": 242731,
+        "tokens_probe": 10258,
+        "artifact": "/tmp/stapledon-iter80-executor-r11.lr6QHr",
+        "source": "M3-r11/M4-r11",
+        "acceptance": "controller outside gates running"
+      },
+      "controller_M3_r11_guardian": {
+        "rc": 1,
+        "elapsed_s": 22.304,
+        "artifact": "/tmp/iter80-M3-r11-guardian-controls-art/7ad-b6MKFdKo/results.json",
+        "cases": 59,
+        "failed": [
+          "guardian-transient-permanent",
+          "production-transient-recovered",
+          "production-transient-no-retry-counterexample"
+        ],
+        "caps": false,
+        "survivors": 0,
+        "accepted": false
+      },
+      "controller_M3_r11_normal": {
+        "rc": 1,
+        "elapsed_s": 98.321,
+        "artifact": "/tmp/iter80-M3-r11-normal-selftest42-art/7ad-3YAkwmQv/results.json",
+        "accepted": false,
+        "cases": 42,
+        "failed": [
+          "runner-timeout-escaped",
+          "raw-relay-ready-int",
+          "raw-make-group-hup",
+          "raw-make-group-int",
+          "raw-make-group-term"
+        ],
+        "candidate_inspection_failure_cases": [
+          "runner-timeout-escaped",
+          "raw-relay-ready-int",
+          "raw-make-group-hup",
+          "raw-make-group-int",
+          "raw-make-group-term"
+        ],
+        "caps": [],
+        "cleanup": "no_live_registered_survivors",
+        "top_cap": false,
+        "top_inspection": false,
+        "void": false
+      },
+      "M4_r12_raw_diagnostic": {
+        "rc": 0,
+        "elapsed_s": 6.075,
+        "artifact": "/private/tmp/iter80-M4-r12-raw-diagnostic-art/7ad-3UN4cbUr/results.json",
+        "NOT_ACCEPTANCE": "clean-firstdeliberatelyskipped",
+        "root_manifest": "/tmp/iter80-M4-r12-diagnostic-materialization.json",
+        "diagnostic_manifest": "/tmp/iter80-M4-r12-raw-diagnostic-manifest.json"
+      },
+      "M4_r12_real_hang": {
+        "rc": 0,
+        "elapsed_s": 86.691,
+        "make_rc": 2,
+        "make_elapsed_s": 63.703357,
+        "artifact": "/private/tmp/iter80-M4-r12-crew-hang-art/7ad-v7cWvHD2/results.json",
+        "final_acceptance": false,
+        "reason": "intermediate source must rerun afterproductioncorrection",
+        "survivors": 0,
+        "restoration_cmp": true,
+        "import_warnings": "existing CSVtranslationnames, notparse/permissionfailure"
+      },
+      "executor_r13": {
+        "rc": 1,
+        "elapsed_s": 50,
+        "tokens_heavy_raw_cumulative": 244693,
+        "tokens_probe": 5394,
+        "reason": "controller steering interrupt to include actualnativefailures, no provider lane failure",
+        "source_changes": false,
+        "artifacts": "/tmp/stapledon-iter80-executor-r13.UDFxFw"
+      },
+      "executor_r14": {
+        "rc": 0,
+        "elapsed_s": 457,
+        "tokens_heavy_raw_cumulative": 281837,
+        "tokens_probe": 6537,
+        "artifact": "/tmp/stapledon-iter80-executor-r14.VWYDX0",
+        "snapshots": [
+          "M3-r14",
+          "M4-r14"
+        ],
+        "normal_path_extra_scan": true,
+        "wrapper_corrected_RESULT_overbroad_claim": true,
+        "acceptance": "outsidecontrolsnowrunning"
+      },
+      "M3_r14_guardian": {
+        "rc": 1,
+        "elapsed_s": 32.681,
+        "artifact": "/tmp/iter80-M3-r14-guardian-controls-art/7ad-q1Y0nT5J/results.json",
+        "cases": 62,
+        "passed": 59,
+        "failed": [
+          "guardian-transient-transient",
+          "guardian-transient-denied",
+          "guardian-transient-malformed"
+        ],
+        "all5_production_regressions_pass": true,
+        "all_helpers_reaped_within200ms": true,
+        "survivors": 0,
+        "caps": false,
+        "accepted": false
+      },
+      "M3_r14_normal": {
+        "rc": 0,
+        "elapsed_s": 104.569,
+        "artifact": "/tmp/iter80-M3-r14-normal-selftest42-art/7ad-Gf0qgdfe/results.json",
+        "cases": 42,
+        "failed": 0,
+        "caps": false,
+        "survivors": 0,
+        "extraPSscan": "present, overhead not isolated",
+        "legacy": {
+          "rcs": [
+            0,
+            0,
+            0
+          ],
+          "elapsed_s": [
+            2.045,
+            20.548,
+            34.352
+          ],
+          "batch": "/tmp/iter80-M3-r14-normal-batch.json",
+          "checkpoint": "543a6d3697791d137a6f0962bfe5e2cebfad0a98"
+        }
+      },
+      "executor_r15": {
+        "rc": 0,
+        "elapsed_s": 253,
+        "tokens_heavy_raw_cumulative": 344934,
+        "tokens_probe": 6487,
+        "artifacts": "/tmp/stapledon-iter80-executor-r15.2kjughzz",
+        "snapshots": [
+          "M3-r15",
+          "M4-r15"
+        ],
+        "only_file_changed": "tools/test_bounded_run.pl",
+        "five_production_files_frozen_r14": true,
+        "static_pure_controls": 22,
+        "acceptance": "finalM4controllergatesrunning"
+      },
+      "M4_r15_guardian": {
+        "rc": 1,
+        "elapsed_s": 33.837,
+        "artifact": "/private/tmp/iter80-M4-r15-guardian-controls-art/7ad-nEj9s_Km/results.json",
+        "cases": 62,
+        "passed": 59,
+        "failed": [
+          "guardian-transient-transient",
+          "guardian-transient-denied",
+          "production-transient-group-term"
+        ],
+        "production_group_term_triggered": false,
+        "production_group_term_healthy_observations": 0,
+        "caps": false,
+        "survivors": 0,
+        "accepted": false,
+        "inference": "private executable shim setup before target can consume inspector budget; r16inline mechanism to test, no final native bound success assumed"
+      },
+      "executor_r16": {
+        "rc": 0,
+        "elapsed_s": 264,
+        "tokens_heavy_raw_cumulative": 373279,
+        "tokens_probe": 6487,
+        "artifacts": "/tmp/stapledon-iter80-executor-r16.25twud8k",
+        "snapshots": [
+          "M3-r16",
+          "M4-r16",
+          "M4-r17"
+        ],
+        "production_five_frozen_r14": true,
+        "recording_only_successor_r17": true,
+        "pure_checks": 40,
+        "generated_source_syntax_checks": 12
+      },
+      "M4_r17_guardian": {
+        "rc": 1,
+        "elapsed_s": 47.511,
+        "artifact": "/private/tmp/iter80-M4-r17-guardian-controls-art/7ad-2LerW_0a/results.json",
+        "cases": 62,
+        "passed": 61,
+        "failed": [
+          "production-transient-group-int"
+        ],
+        "actual_runner_rc": 125,
+        "required_runner_rc": 130,
+        "triggered": true,
+        "cleanup_outcome": "no_live_registered_survivors",
+        "caps": false,
+        "accepted": false
+      },
+      "directives_last_read": "2026-11-08T07:08:12.751926+00:00",
+      "executor_r18": {
+        "rc": 0,
+        "elapsed_s": 285,
+        "tokens_heavy_raw_cumulative": 401662,
+        "tokens_probe": 10711,
+        "artifacts": "/tmp/stapledon-iter80-executor-r18.nk0liu2x",
+        "snapshots": [
+          "M3-r18",
+          "M4-r18"
+        ],
+        "four_other_files_frozen": true,
+        "pure_checks": 18,
+        "acceptance": "M3 outside guardian+full42+legacy currentlyrunning; independent FAIL47 remains"
+      },
+      "M3_r18_guardian": {
+        "rc": 0,
+        "elapsed_s": 31.959,
+        "artifact": "/tmp/iter80-M3-r18-guardian-controls-art/7ad-GHdQbMQ_/results.json",
+        "cases": 62,
+        "passed": 62,
+        "caps": false,
+        "survivors": 0,
+        "accepted": "guardian controls only; full42+legacyrunning"
+      },
+      "M3_r18_final": {
+        "all5gates_rc0": true,
+        "batch": "/tmp/iter80-M3-r18-batch.json",
+        "guardian62_elapsed_s": 31.959,
+        "selftest42_elapsed_s": 101.081,
+        "legacy_elapsed_s": [
+          1.673,
+          19.117,
+          33.78
+        ],
+        "caps": false,
+        "survivors": 0,
+        "checkpoint": "4c36975d2d5a1e3f689de1f8e0e8490b830d148f",
+        "full_feature_approved": false
+      },
+      "executor_source_bank": "/tmp/iter80-executor-bank-proof.json",
+      "M4_r18_guardian": {
+        "rc": 1,
+        "elapsed_s": 31.567,
+        "artifact": "/private/tmp/iter80-M4-r18-guardian-controls-art/7ad-4l8opGnB/results.json",
+        "cases": 62,
+        "passed": 61,
+        "failed": [
+          "guardian-transient-transient"
+        ],
+        "actual_probe_rc": 0,
+        "reap_late_ms": 2.916,
+        "strict_bound_assertion_preserved": true,
+        "caps": false,
+        "survivors": 0,
+        "accepted": false
+      },
+      "executor_source_bank_r18": "/tmp/iter80-executor-bank-proof.json",
+      "executor_r19": {
+        "rc": 0,
+        "wrapper_elapsed_s": 182.734,
+        "final_artifacts_written_s": 173.614,
+        "cap_signal_sent": false,
+        "exact_child_exit_time": "not captured separately",
+        "tokens_heavy_raw_cumulative": 414927,
+        "tokens_probe": 18519,
+        "artifacts": "/tmp/stapledon-iter80-executor-r19.4mupcs8r",
+        "snapshots": [
+          "M3-r19",
+          "M4-r19"
+        ],
+        "allocation_ms": {
+          "read": 120,
+          "collection": 80,
+          "total": 200,
+          "retry": 600
+        },
+        "strict_trace_and_predicates_unchanged": true,
+        "pure_checks": 18,
+        "acceptance": "M3 outside five-gate batch running; FAIL47 remains"
+      },
+      "M3_r19_guardian": {
+        "rc": 0,
+        "elapsed_s": 30.912,
+        "artifact": "/tmp/iter80-M3-r19-guardian-controls-art/7ad-wDYDdb_r/results.json",
+        "cases": 62,
+        "passed": 62,
+        "caps": false,
+        "survivors": 0,
+        "strict_trace": true,
+        "bound_ms": 200
+      },
+      "M3_r19_full42": {
+        "rc": 1,
+        "elapsed_s": 101.004,
+        "artifact": "/tmp/iter80-M3-r19-selftest42-art/7ad-PwNmLGEM/results.json",
+        "cases": 42,
+        "passed": 41,
+        "failed": [
+          "gate-relay-ready-int"
+        ],
+        "barrier_observed": true,
+        "inner_interruption_observed": false,
+        "inspection_failure_actual": true,
+        "top_inspection": false,
+        "caps": false,
+        "survivors": 0,
+        "legacy_r19": "notrun, batchstopped",
+        "accepted": false
+      },
+      "M3_r19_single_relay_diagnostic": {
+        "rc": 0,
+        "outer_elapsed_s": 3.604,
+        "private_case_elapsed_s": 2.6686,
+        "artifact": "/tmp/iter80-r19-relay-timeline/art/7ad-3RTZgsws/results.json",
+        "timeline": "/tmp/iter80-r19-relay-timeline/timeline.tsv",
+        "manifest": "/tmp/iter80-r19-relay-timeline/manifest.json",
+        "not_acceptance": true,
+        "native_original_failure_reproduced": false,
+        "actual_inner_INT_before_deadline_s": 0.957278,
+        "observed_hop_latency_s": 0.108294,
+        "caps": false,
+        "survivors": 0
+      },
+      "controller_D1_D2_r20_clarification": {
+        "commit": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d",
+        "fresh_quorum_claimed": false,
+        "interpretation": "Existingapprovedreadiness/pending-cancellation contract, firsthopprivatefile; actualinnerOSsignalafterfreshidentity remainsmandatory",
+        "source_author_state": "running pinnedr20max480s; no handedoffsourceaccepted",
+        "causal_controls_planned": 6,
+        "original_r19_native_failure_transport_attributed": false
+      },
+      "retro_documents_read": [
+        "docs/sprint-retros/R1-ISM-DUST-retro.md",
+        "docs/sprint-retros/R1-M4-SHIP-DEMO-retro.md"
+      ],
+      "executor_r20": {
+        "rc": 0,
+        "elapsed_s": 469.711,
+        "cap": false,
+        "model_max_s": 480,
+        "tokens_heavy_raw_cumulative": 486216,
+        "tokens_probe": 17376,
+        "snapshots": [
+          "M3-r20",
+          "M4-r20"
+        ],
+        "nested_controls": 6,
+        "acceptance": "notmeasured; r21authorizedmechanicalprivateearlyfixtureandmutantfix only, productionfrozenr20",
+        "new_provider_call_for_r21": false,
+        "artifacts": "/tmp/stapledon-iter80-executor-r20.e0_sikqw"
+      },
+      "executor_r21": {
+        "author": "authorized wrapper mechanical privatefixture/mutant amendments after pinned r20actualexit",
+        "extra_provider_call": false,
+        "manifest": "/tmp/stapledon-iter80-executor-r20.e0_sikqw/wrapper-final-manifest.json",
+        "snapshots": [
+          "M3-r21",
+          "M4-r21"
+        ],
+        "all5_non_harness_files_frozen_r20": true,
+        "historical_entries_immutable": 530,
+        "live6_byte_mode_match": true,
+        "nested_cases": {
+          "production-transient-recovered": [
+            "nested-deadline-timeout",
+            "nested-deadline-old-catch",
+            "nested-deadline-late-int",
+            "nested-deadline-early-int"
+          ],
+          "production-transient-group-int": [
+            "nested-transport-pending",
+            "nested-transport-old-transport"
+          ]
+        },
+        "nested_acceptance": "unmeasured, all4/all2mandatory forenclosingcase"
+      },
+      "M3_r21_guardian": {
+        "rc": 0,
+        "elapsed_s": 53.356,
+        "artifact": "/tmp/iter80-M3-r21-guardian-controls-art/7ad-g6cTkQZB/results.json",
+        "cases": 62,
+        "passed": 62,
+        "nested_controls": [
+          {
+            "name": "nested-deadline-timeout",
+            "passed": true,
+            "actual_rc": 142,
+            "inner_rc": 142,
+            "deadline": 655834.942871,
+            "receipt_at": null,
+            "signal_at": null,
+            "fixture_readiness": "held final-window inspector",
+            "behavioral_leak": false,
+            "restoration_cmp": true,
+            "cleanup_outcome": "no_live_registered_survivors"
+          },
+          {
+            "name": "nested-deadline-old-catch",
+            "passed": true,
+            "actual_rc": 125,
+            "inner_rc": 125,
+            "deadline": 655838.621207,
+            "receipt_at": null,
+            "signal_at": null,
+            "fixture_readiness": "held final-window inspector",
+            "behavioral_leak": false,
+            "restoration_cmp": true,
+            "cleanup_outcome": "no_live_registered_survivors"
+          },
+          {
+            "name": "nested-deadline-late-int",
+            "passed": true,
+            "actual_rc": 142,
+            "inner_rc": 142,
+            "deadline": 655842.001885,
+            "receipt_at": 655842.082997,
+            "signal_at": 655842.083101,
+            "fixture_readiness": "held final-window inspector",
+            "behavioral_leak": false,
+            "restoration_cmp": true,
+            "cleanup_outcome": "no_live_registered_survivors"
+          },
+          {
+            "name": "nested-deadline-early-int",
+            "passed": true,
+            "actual_rc": 130,
+            "inner_rc": 130,
+            "deadline": 655845.548366,
+            "receipt_at": 655845.116426,
+            "signal_at": 655845.116548,
+            "fixture_readiness": "early-readiness with unheld native inspector",
+            "behavioral_leak": false,
+            "restoration_cmp": true,
+            "cleanup_outcome": "no_live_registered_survivors"
+          },
+          {
+            "name": "nested-transport-pending",
+            "passed": true,
+            "actual_rc": 1,
+            "inner_rc": 130,
+            "deadline": 655855.635705,
+            "receipt_at": 655854.663397,
+            "signal_at": 655854.577386,
+            "fixture_readiness": "confirmed wrapper readiness",
+            "behavioral_leak": false,
+            "restoration_cmp": true,
+            "cleanup_outcome": "no_live_registered_survivors"
+          },
+          {
+            "name": "nested-transport-old-transport",
+            "passed": true,
+            "actual_rc": 1,
+            "inner_rc": 142,
+            "deadline": 655858.374621,
+            "receipt_at": null,
+            "signal_at": 655857.567044,
+            "fixture_readiness": "confirmed wrapper readiness",
+            "behavioral_leak": false,
+            "restoration_cmp": true,
+            "cleanup_outcome": "no_live_registered_survivors"
+          }
+        ],
+        "caps": false,
+        "survivors": 0
+      },
+      "M3_r21_final": {
+        "batch": [
+          {
+            "name": "guardian-controls",
+            "rc": 0,
+            "elapsed_s": 53.38408591703046,
+            "log": "/tmp/iter80-M3-r21-guardian-controls.log",
+            "outer": "/tmp/iter80-M3-r21-guardian-controls.outer.json"
+          },
+          {
+            "name": "selftest42",
+            "rc": 0,
+            "elapsed_s": 100.27285933401436,
+            "log": "/tmp/iter80-M3-r21-selftest42.log",
+            "outer": "/tmp/iter80-M3-r21-selftest42.outer.json"
+          },
+          {
+            "name": "lint",
+            "rc": 0,
+            "elapsed_s": 1.6327788749476895,
+            "log": "/tmp/iter80-M3-r21-lint.log",
+            "outer": "/tmp/iter80-M3-r21-lint.outer.json"
+          },
+          {
+            "name": "selftest",
+            "rc": 0,
+            "elapsed_s": 20.82323333399836,
+            "log": "/tmp/iter80-M3-r21-selftest.log",
+            "outer": "/tmp/iter80-M3-r21-selftest.outer.json"
+          },
+          {
+            "name": "drill",
+            "rc": 0,
+            "elapsed_s": 34.78602908295579,
+            "log": "/tmp/iter80-M3-r21-drill.log",
+            "outer": "/tmp/iter80-M3-r21-drill.outer.json"
+          }
+        ],
+        "actual_all_five_zero": true,
+        "checkpoint": "114247ff939b169b1fc9acadbb1d3bae768b78f0",
+        "later_M4_red_reopens_M3": true
+      },
+      "M4_r21_final": {
+        "batch": [
+          {
+            "name": "guardian-controls",
+            "rc": 0,
+            "elapsed_s": 52.96906675002538,
+            "log": "/tmp/iter80-M4-r21-guardian-controls.log",
+            "outer": "/tmp/iter80-M4-r21-guardian-controls.outer.json"
+          },
+          {
+            "name": "lint",
+            "rc": 0,
+            "elapsed_s": 1.9136372500797734,
+            "log": "/tmp/iter80-M4-r21-lint.log",
+            "outer": "/tmp/iter80-M4-r21-lint.outer.json"
+          },
+          {
+            "name": "selftest",
+            "rc": 0,
+            "elapsed_s": 19.811596416984685,
+            "log": "/tmp/iter80-M4-r21-selftest.log",
+            "outer": "/tmp/iter80-M4-r21-selftest.outer.json"
+          },
+          {
+            "name": "drill",
+            "rc": 0,
+            "elapsed_s": 36.47747245791834,
+            "log": "/tmp/iter80-M4-r21-drill.log",
+            "outer": "/tmp/iter80-M4-r21-drill.outer.json"
+          },
+          {
+            "name": "bounded-selftest",
+            "rc": 2,
+            "elapsed_s": 104.7623876669677,
+            "log": "/tmp/iter80-M4-r21-bounded-selftest.log",
+            "outer": "/tmp/iter80-M4-r21-bounded-selftest.outer.json"
+          }
+        ],
+        "required_case_count": 42,
+        "passed": 41,
+        "failed": [
+          {
+            "actual_rc": 2,
+            "barrier_observed": false,
+            "behavioral_leak": false,
+            "cleanup_outcome": "no_live_registered_survivors",
+            "early_identities": [],
+            "elapsed": 3.91167699999642,
+            "finished_at": 656247.514568,
+            "guardian_cap_fired": false,
+            "inner_interruption_observed": false,
+            "inner_make_rc": 2,
+            "inspection_restricted": true,
+            "name": "rawmake-summary-hang",
+            "passed": false,
+            "post_identities": [
+              {
+                "absent": true,
+                "pid": 26782
+              },
+              {
+                "absent": true,
+                "pid": 26868
+              }
+            ],
+            "pre_identities": [
+              {
+                "birth": "Sun Nov 8 08:58:46 2026",
+                "pgid": 26782,
+                "pid": 26782,
+                "ppid": 26780,
+                "stat": "S"
+              },
+              {
+                "birth": "Sun Nov 8 08:58:47 2026",
+                "pgid": 26868,
+                "pid": 26868,
+                "ppid": 26782,
+                "stat": "Ss"
+              }
+            ],
+            "production_log": "/private/tmp/7ad-efaS2Pkz/rawmake-summary-hang/godot --headless --path . --import\ncrew-console: 0 failures\nmake[1]: *** [crew-console-test] Error 1\ndrill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: inspection/setup failure: ps transient read/exit budget exceeded 200ms\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: cleanup failure: ps transient read/exit budget exceeded 200ms\n",
+            "started_at": 656243.602891,
+            "stderr": "make[1]: *** [crew-console-test] Error 1\n",
+            "stdout": "/private/tmp/7ad-efaS2Pkz/rawmake-summary-hang/godot --headless --path . --import\ncrew-console: 0 failures\n",
+            "trigger": "deadline",
+            "trigger_at": null,
+            "unconfirmed_child": null,
+            "void_fixture": false
+          }
+        ],
+        "remaining_nine_gates": "NOT RUN; sequential batch stopped on required red",
+        "implementation_qualified": false,
+        "cutoff": "2026-11-08T08:03:00Z",
+        "reason": "Preserve final source, stop repair loop and reserve time for independently reviewed parked publication; no human input required"
+      }
+    },
+    "final_validation": [
+      {
+        "tag": "iter80-M3-r21",
+        "name": "guardian-controls",
+        "rc": 0,
+        "elapsed_s": 53.38408591703046,
+        "log": "/tmp/iter80-M3-r21-guardian-controls.log",
+        "outer": "/tmp/iter80-M3-r21-guardian-controls.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guardian-controls",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M3-r21-guardian-controls-art"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 135.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 53.356,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M3-r21-guardian-controls.log"
+        },
+        "case_results": [
+          {
+            "path": "/tmp/iter80-M3-r21-guardian-controls-art/7ad-g6cTkQZB/results.json",
+            "sha256": "5f1ffd1d5b69893dc24338a52625aa3873b040bd13ba1e32b3ddb5865d929069",
+            "mode": "guardian-controls",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 62,
+            "passed": 62,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": [
+              {
+                "name": "production-transient-recovered",
+                "nested_evidence": [
+                  {
+                    "actual_rc": 142,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 655834.942871,
+                    "elapsed": 3.49089699995238,
+                    "error": null,
+                    "fixture_readiness": "held final-window inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 142,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\n",
+                    "name": "nested-deadline-timeout",
+                    "observation_finished_at": 655836.286405,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 94710
+                      },
+                      {
+                        "absent": true,
+                        "pid": 94721
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:51:55 2026",
+                        "pgid": 94710,
+                        "pid": 94710,
+                        "ppid": 94701,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:51:55 2026",
+                        "pgid": 94721,
+                        "pid": 94721,
+                        "ppid": 94710,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": null,
+                    "restoration_cmp": true,
+                    "signal_at": null,
+                    "started_at": 655832.733911,
+                    "stderr": "bounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": null
+                  },
+                  {
+                    "actual_rc": 125,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 655838.621207,
+                    "elapsed": 3.22433200001251,
+                    "error": null,
+                    "fixture_readiness": "held final-window inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 125,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: inspection/setup failure: ps transient read/exit budget exceeded 200ms\n",
+                    "name": "nested-deadline-old-catch",
+                    "observation_finished_at": 655839.693827,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 94887
+                      },
+                      {
+                        "absent": true,
+                        "pid": 94899
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:51:59 2026",
+                        "pgid": 94887,
+                        "pid": 94887,
+                        "ppid": 94879,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:51:59 2026",
+                        "pgid": 94899,
+                        "pid": 94899,
+                        "ppid": 94887,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": null,
+                    "restoration_cmp": true,
+                    "signal_at": null,
+                    "started_at": 655836.436392,
+                    "stderr": "bounded-run: inspection/setup failure: ps transient read/exit budget exceeded 200ms\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": null
+                  },
+                  {
+                    "actual_rc": 142,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 655842.001885,
+                    "elapsed": 3.29172600002494,
+                    "error": null,
+                    "fixture_readiness": "held final-window inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 142,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\n",
+                    "name": "nested-deadline-late-int",
+                    "observation_finished_at": 655843.168434,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 95215
+                      },
+                      {
+                        "absent": true,
+                        "pid": 95231
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:52:02 2026",
+                        "pgid": 95215,
+                        "pid": 95215,
+                        "ppid": 95210,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:52:02 2026",
+                        "pgid": 95231,
+                        "pid": 95231,
+                        "ppid": 95215,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": 655842.082997,
+                    "restoration_cmp": true,
+                    "signal_at": 655842.083101,
+                    "started_at": 655839.82858,
+                    "stderr": "bounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": 655842.083101
+                  },
+                  {
+                    "actual_rc": 130,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 655845.548366,
+                    "elapsed": 3.12170999997761,
+                    "error": null,
+                    "fixture_readiness": "early-readiness with unheld native inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 130,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: inspection budget exhausted\n",
+                    "name": "nested-deadline-early-int",
+                    "observation_finished_at": 655846.45794,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 95402
+                      },
+                      {
+                        "absent": true,
+                        "pid": 95417
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:52:06 2026",
+                        "pgid": 95402,
+                        "pid": 95402,
+                        "ppid": 95392,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:52:06 2026",
+                        "pgid": 95417,
+                        "pid": 95417,
+                        "ppid": 95402,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": 655845.116426,
+                    "restoration_cmp": true,
+                    "signal_at": 655845.116548,
+                    "started_at": 655843.295032,
+                    "stderr": "bounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: inspection budget exhausted\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": 655845.116548
+                  }
+                ],
+                "passed": true
+              },
+              {
+                "name": "production-transient-group-int",
+                "nested_evidence": [
+                  {
+                    "actual_rc": 1,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 655855.635705,
+                    "elapsed": 2.54810499993619,
+                    "error": null,
+                    "fixture_readiness": "confirmed wrapper readiness",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 130,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /tmp/iter80-M3-r21-guardian-controls-art/7ad-g6cTkQZB/nested-transport-pending/inner.log)\ndrill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\n",
+                    "name": "nested-transport-pending",
+                    "observation_finished_at": 655855.964595,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 95894
+                      },
+                      {
+                        "absent": true,
+                        "pid": 95921
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:52:16 2026",
+                        "pgid": 95894,
+                        "pid": 95894,
+                        "ppid": 95893,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:52:16 2026",
+                        "pgid": 95921,
+                        "pid": 95921,
+                        "ppid": 95894,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": 655854.663397,
+                    "restoration_cmp": true,
+                    "signal_at": 655854.577386,
+                    "started_at": 655853.365452,
+                    "stderr": "",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /tmp/iter80-M3-r21-guardian-controls-art/7ad-g6cTkQZB/nested-transport-pending/inner.log)\n",
+                    "trigger_at": 655854.577386
+                  },
+                  {
+                    "actual_rc": 1,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 655858.374621,
+                    "elapsed": 3.65867600007914,
+                    "error": null,
+                    "fixture_readiness": "confirmed wrapper readiness",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 142,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: timeout after 2 s\nbounded-run: freeze inspection deferred: inspection budget exhausted\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /tmp/iter80-M3-r21-guardian-controls-art/7ad-g6cTkQZB/nested-transport-old-transport/inner.log)\nbounded-run: forced first-hop inspection failure\ndrill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: timeout after 2 s\nbounded-run: freeze inspection deferred: inspection budget exhausted\n",
+                    "name": "nested-transport-old-transport",
+                    "observation_finished_at": 655859.78265,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 96142
+                      },
+                      {
+                        "absent": true,
+                        "pid": 96166
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:52:19 2026",
+                        "pgid": 96142,
+                        "pid": 96142,
+                        "ppid": 96139,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:52:19 2026",
+                        "pgid": 96166,
+                        "pid": 96166,
+                        "ppid": 96142,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": null,
+                    "restoration_cmp": true,
+                    "signal_at": 655857.567044,
+                    "started_at": 655856.08783,
+                    "stderr": "bounded-run: forced first-hop inspection failure\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: timeout after 2 s\nbounded-run: freeze inspection deferred: inspection budget exhausted\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /tmp/iter80-M3-r21-guardian-controls-art/7ad-g6cTkQZB/nested-transport-old-transport/inner.log)\n",
+                    "trigger_at": 655857.567044
+                  }
+                ],
+                "passed": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M3-r21",
+        "name": "selftest42",
+        "rc": 0,
+        "elapsed_s": 100.27285933401436,
+        "log": "/tmp/iter80-M3-r21-selftest42.log",
+        "outer": "/tmp/iter80-M3-r21-selftest42.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "selftest",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M3-r21-selftest42-art"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 135.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 100.215,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M3-r21-selftest42.log"
+        },
+        "case_results": [
+          {
+            "path": "/tmp/iter80-M3-r21-selftest42-art/7ad-7611Yyt0/results.json",
+            "sha256": "d27e87c02bb02d6678cf98ec49d891e5a682e660f734a362d31f2e677d447acf",
+            "mode": "selftest",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 42,
+            "passed": 42,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M3-r21",
+        "name": "lint",
+        "rc": 0,
+        "elapsed_s": 1.6327788749476895,
+        "log": "/tmp/iter80-M3-r21-lint.log",
+        "outer": "/tmp/iter80-M3-r21-lint.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M3-r21-lint-art",
+            "30",
+            "--",
+            "make",
+            "--no-print-directory",
+            "script-gate-lint"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 40.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 1.604,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M3-r21-lint.log"
+        },
+        "case_results": [
+          {
+            "path": "/tmp/iter80-M3-r21-lint-art/7ad-TW0pAh1k/results.json",
+            "sha256": "c5bace4a2ca4b955679acce27d38b217d722089186a8aa44ee0ab6ffd57b1ebb",
+            "mode": "guard",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M3-r21",
+        "name": "selftest",
+        "rc": 0,
+        "elapsed_s": 20.82323333399836,
+        "log": "/tmp/iter80-M3-r21-selftest.log",
+        "outer": "/tmp/iter80-M3-r21-selftest.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M3-r21-selftest-art",
+            "135",
+            "--",
+            "make",
+            "--no-print-directory",
+            "script-gate-selftest"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 145.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 20.792,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M3-r21-selftest.log"
+        },
+        "case_results": [
+          {
+            "path": "/tmp/iter80-M3-r21-selftest-art/7ad-JHWkf92w/results.json",
+            "sha256": "fed292fc58e2145b1d4028d2d782338ab021a93056e67bbfc3e780e6ba40d0eb",
+            "mode": "guard",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          },
+          {
+            "path": "/tmp/7ad-JYCSxB4n/results.json",
+            "sha256": "e63e3cc2f917c4b3c057afdb8191ba2dd810e118564c1d9a9ad5704c45c12db4",
+            "mode": "guard",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M3-r21",
+        "name": "drill",
+        "rc": 0,
+        "elapsed_s": 34.78602908295579,
+        "log": "/tmp/iter80-M3-r21-drill.log",
+        "outer": "/tmp/iter80-M3-r21-drill.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M3-r21-drill-art",
+            "615",
+            "--",
+            "make",
+            "--no-print-directory",
+            "script-gate-drill",
+            "AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80/runtime/bin/ailang"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 625.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 34.726,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M3-r21-drill.log"
+        },
+        "case_results": [
+          {
+            "path": "/tmp/iter80-M3-r21-drill-art/7ad-pi8MOg_s/results.json",
+            "sha256": "7226a6c1b95a5a292e8f48dfc04dc75bd97b9d0c9cd06f6451b4988bb473d33c",
+            "mode": "guard",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          },
+          {
+            "path": "/tmp/7ad-npyCLAtJ/results.json",
+            "sha256": "676ccaa05605ef79737dfc4fb8f346c4a8c10e6e591add526f8ed1255ce9cc41",
+            "mode": "guard",
+            "head": "27fe8d1a8c616a68286e3b2ca7bd79f64c78995d\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M4-r21",
+        "name": "guardian-controls",
+        "rc": 0,
+        "elapsed_s": 52.96906675002538,
+        "log": "/tmp/iter80-M4-r21-guardian-controls.log",
+        "outer": "/tmp/iter80-M4-r21-guardian-controls.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guardian-controls",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M4-r21-guardian-controls-art"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 135.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 52.942,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M4-r21-guardian-controls.log"
+        },
+        "case_results": [
+          {
+            "path": "/private/tmp/iter80-M4-r21-guardian-controls-art/7ad-t09ZiwUg/results.json",
+            "sha256": "04a1c781137adb68c5c7ccfa482838add99e303e522288ec02ead434923945f1",
+            "mode": "guardian-controls",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 62,
+            "passed": 62,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": [
+              {
+                "name": "production-transient-recovered",
+                "nested_evidence": [
+                  {
+                    "actual_rc": 142,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 656088.061905,
+                    "elapsed": 3.35962499992456,
+                    "error": null,
+                    "finished_at": 656089.251218,
+                    "fixture_readiness": "held final-window inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 142,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\n",
+                    "name": "nested-deadline-timeout",
+                    "observation_finished_at": 656089.30101,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 14208
+                      },
+                      {
+                        "absent": true,
+                        "pid": 14223
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:56:08 2026",
+                        "pgid": 14208,
+                        "pid": 14208,
+                        "ppid": 14202,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:56:08 2026",
+                        "pgid": 14223,
+                        "pid": 14223,
+                        "ppid": 14208,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": null,
+                    "restoration_cmp": true,
+                    "signal_at": null,
+                    "started_at": 656085.891573,
+                    "stderr": "bounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": null
+                  },
+                  {
+                    "actual_rc": 125,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 656091.630239,
+                    "elapsed": 3.5119480000576,
+                    "error": null,
+                    "finished_at": 656092.952163,
+                    "fixture_readiness": "held final-window inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 125,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: inspection/setup failure: ps transient read/exit budget exceeded 200ms\n",
+                    "name": "nested-deadline-old-catch",
+                    "observation_finished_at": 656093.009712,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 14382
+                      },
+                      {
+                        "absent": true,
+                        "pid": 14401
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:56:12 2026",
+                        "pgid": 14382,
+                        "pid": 14382,
+                        "ppid": 14374,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:56:12 2026",
+                        "pgid": 14401,
+                        "pid": 14401,
+                        "ppid": 14382,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": null,
+                    "restoration_cmp": true,
+                    "signal_at": null,
+                    "started_at": 656089.440199,
+                    "stderr": "bounded-run: inspection/setup failure: ps transient read/exit budget exceeded 200ms\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": null
+                  },
+                  {
+                    "actual_rc": 142,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 656095.421907,
+                    "elapsed": 3.59245400002692,
+                    "error": null,
+                    "finished_at": 656096.723532,
+                    "fixture_readiness": "held final-window inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 142,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\n",
+                    "name": "nested-deadline-late-int",
+                    "observation_finished_at": 656096.78479,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 14636
+                      },
+                      {
+                        "absent": true,
+                        "pid": 14649
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:56:16 2026",
+                        "pgid": 14636,
+                        "pid": 14636,
+                        "ppid": 14595,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:56:16 2026",
+                        "pgid": 14649,
+                        "pid": 14649,
+                        "ppid": 14636,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": 656095.494353,
+                    "restoration_cmp": true,
+                    "signal_at": 656095.494496,
+                    "started_at": 656093.131061,
+                    "stderr": "bounded-run: canceled inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: timeout after 2 s\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": 656095.494496
+                  },
+                  {
+                    "actual_rc": 130,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 656099.176356,
+                    "elapsed": 3.18128799996339,
+                    "error": null,
+                    "finished_at": 656100.140473,
+                    "fixture_readiness": "early-readiness with unheld native inspector",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 130,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\n",
+                    "name": "nested-deadline-early-int",
+                    "observation_finished_at": 656100.186094,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 14920
+                      },
+                      {
+                        "absent": true,
+                        "pid": 14954
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:56:19 2026",
+                        "pgid": 14920,
+                        "pid": 14920,
+                        "ppid": 14911,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:56:20 2026",
+                        "pgid": 14954,
+                        "pid": 14954,
+                        "ppid": 14920,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": 656098.730575,
+                    "restoration_cmp": true,
+                    "signal_at": 656098.730732,
+                    "started_at": 656096.959165,
+                    "stderr": "bounded-run: interrupted by INT\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\n",
+                    "trigger_at": 656098.730732
+                  }
+                ],
+                "passed": true
+              },
+              {
+                "name": "production-transient-group-int",
+                "nested_evidence": [
+                  {
+                    "actual_rc": 1,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 656110.056639,
+                    "elapsed": 2.55763599998318,
+                    "error": null,
+                    "finished_at": 656110.453734,
+                    "fixture_readiness": "confirmed wrapper readiness",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 130,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: inspection budget exhausted\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /private/tmp/iter80-M4-r21-guardian-controls-art/7ad-t09ZiwUg/nested-transport-pending/inner.log)\ndrill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: inspection budget exhausted\n",
+                    "name": "nested-transport-pending",
+                    "observation_finished_at": 656110.481638,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 15688
+                      },
+                      {
+                        "absent": true,
+                        "pid": 15714
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:56:30 2026",
+                        "pgid": 15688,
+                        "pid": 15688,
+                        "ppid": 15685,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:56:31 2026",
+                        "pgid": 15714,
+                        "pid": 15714,
+                        "ppid": 15688,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": 656109.044502,
+                    "restoration_cmp": true,
+                    "signal_at": 656108.946757,
+                    "started_at": 656107.896083,
+                    "stderr": "",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: interrupted by INT\nbounded-run: freeze inspection deferred: inspection budget exhausted\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /private/tmp/iter80-M4-r21-guardian-controls-art/7ad-t09ZiwUg/nested-transport-pending/inner.log)\n",
+                    "trigger_at": 656108.946757
+                  },
+                  {
+                    "actual_rc": 1,
+                    "behavioral_leak": false,
+                    "cleanup_outcome": "no_live_registered_survivors",
+                    "deadline": 656112.788974,
+                    "elapsed": 3.4221050000051,
+                    "error": null,
+                    "finished_at": 656114.019859,
+                    "fixture_readiness": "confirmed wrapper readiness",
+                    "guardian_cap_fired": false,
+                    "inner_rc": 142,
+                    "log": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: timeout after 2 s\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /private/tmp/iter80-M4-r21-guardian-controls-art/7ad-t09ZiwUg/nested-transport-old-transport/inner.log)\nbounded-run: forced first-hop inspection failure\ndrill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: timeout after 2 s\n",
+                    "name": "nested-transport-old-transport",
+                    "observation_finished_at": 656114.054055,
+                    "passed": true,
+                    "post_identities": [
+                      {
+                        "absent": true,
+                        "pid": 15895
+                      },
+                      {
+                        "absent": true,
+                        "pid": 15926
+                      }
+                    ],
+                    "pre_identities": [
+                      {
+                        "birth": "Sun Nov 8 08:56:33 2026",
+                        "pgid": 15895,
+                        "pid": 15895,
+                        "ppid": 15893,
+                        "stat": "S"
+                      },
+                      {
+                        "birth": "Sun Nov 8 08:56:33 2026",
+                        "pgid": 15926,
+                        "pid": 15926,
+                        "ppid": 15895,
+                        "stat": "Ss"
+                      }
+                    ],
+                    "receipt_at": null,
+                    "restoration_cmp": true,
+                    "signal_at": 656111.960069,
+                    "started_at": 656110.597731,
+                    "stderr": "bounded-run: forced first-hop inspection failure\n",
+                    "stdout": "drill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: timeout after 2 s\nscript-gate: nested FAIL; interrupted by INT; rc 125, want 0 (log /private/tmp/iter80-M4-r21-guardian-controls-art/7ad-t09ZiwUg/nested-transport-old-transport/inner.log)\n",
+                    "trigger_at": 656111.960069
+                  }
+                ],
+                "passed": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M4-r21",
+        "name": "lint",
+        "rc": 0,
+        "elapsed_s": 1.9136372500797734,
+        "log": "/tmp/iter80-M4-r21-lint.log",
+        "outer": "/tmp/iter80-M4-r21-lint.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M4-r21-lint-art",
+            "30",
+            "--",
+            "make",
+            "--no-print-directory",
+            "script-gate-lint"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 40.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 1.86,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M4-r21-lint.log"
+        },
+        "case_results": [
+          {
+            "path": "/private/tmp/iter80-M4-r21-lint-art/7ad-KZsoZELF/results.json",
+            "sha256": "7ee3b9a14bf24892824aa05398699dd63b25b5a25f971a2b755672d90040b8bb",
+            "mode": "guard",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M4-r21",
+        "name": "selftest",
+        "rc": 0,
+        "elapsed_s": 19.811596416984685,
+        "log": "/tmp/iter80-M4-r21-selftest.log",
+        "outer": "/tmp/iter80-M4-r21-selftest.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M4-r21-selftest-art",
+            "135",
+            "--",
+            "make",
+            "--no-print-directory",
+            "script-gate-selftest"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 145.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 19.782,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M4-r21-selftest.log"
+        },
+        "case_results": [
+          {
+            "path": "/private/tmp/iter80-M4-r21-selftest-art/7ad-UwyrFE8a/results.json",
+            "sha256": "31e8de1f9c18254d841eb6a4b0129d3b4905ed9f967803b122cdef44790519cc",
+            "mode": "guard",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          },
+          {
+            "path": "/private/tmp/7ad-jz7itnFL/results.json",
+            "sha256": "b5087e3328668564f220b77419e63f5844ce3e342aae6375b79a54854fd5e869",
+            "mode": "guard",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M4-r21",
+        "name": "drill",
+        "rc": 0,
+        "elapsed_s": 36.47747245791834,
+        "log": "/tmp/iter80-M4-r21-drill.log",
+        "outer": "/tmp/iter80-M4-r21-drill.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M4-r21-drill-art",
+            "615",
+            "--",
+            "make",
+            "--no-print-directory",
+            "script-gate-drill",
+            "AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80/runtime/bin/ailang"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 0,
+          "cap_seconds": 625.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 36.447,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M4-r21-drill.log"
+        },
+        "case_results": [
+          {
+            "path": "/private/tmp/iter80-M4-r21-drill-art/7ad-LA4wIEM4/results.json",
+            "sha256": "1acb94f1c2d1d4217f36a6a472a561208fa53fc90ba47ea63414c49475de125a",
+            "mode": "guard",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          },
+          {
+            "path": "/private/tmp/7ad-2oSZAlCI/results.json",
+            "sha256": "141d719817769a2a28837107babd337919f7d62d66c4e969d5ed2c3188d1adc5",
+            "mode": "guard",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      },
+      {
+        "tag": "iter80-M4-r21",
+        "name": "bounded-selftest",
+        "rc": 2,
+        "elapsed_s": 104.7623876669677,
+        "log": "/tmp/iter80-M4-r21-bounded-selftest.log",
+        "outer": "/tmp/iter80-M4-r21-bounded-selftest.outer.json",
+        "outside_result": {
+          "command": [
+            "perl",
+            "tools/test_bounded_run.pl",
+            "guard",
+            "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+            "/tmp/iter80-M4-r21-bounded-selftest-art",
+            "135",
+            "--",
+            "make",
+            "--no-print-directory",
+            "bounded-run-selftest"
+          ],
+          "cwd": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80",
+          "actual_rc": 2,
+          "cap_seconds": 145.0,
+          "outer_cap_fired": false,
+          "inspection_restricted": false,
+          "elapsed_s": 104.73,
+          "post_registered_survivors": [],
+          "log": "/tmp/iter80-M4-r21-bounded-selftest.log"
+        },
+        "case_results": [
+          {
+            "path": "/private/tmp/iter80-M4-r21-bounded-selftest-art/7ad-L8t9Qbah/results.json",
+            "sha256": "efc4d56fe4350fdcd134ccbb6f569b22075958984e599cae3a37f7b49d11d25b",
+            "mode": "guard",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 1,
+            "passed": 1,
+            "failed_cases": [],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          },
+          {
+            "path": "/private/tmp/7ad-efaS2Pkz/results.json",
+            "sha256": "7f7f848f06e3470ec61302ba972eae91149c145f541be8e90af20c974e3d1d41",
+            "mode": "selftest",
+            "head": "114247ff939b169b1fc9acadbb1d3bae768b78f0\n",
+            "case_count": 42,
+            "passed": 41,
+            "failed_cases": [
+              {
+                "actual_rc": 2,
+                "barrier_observed": false,
+                "behavioral_leak": false,
+                "cleanup_outcome": "no_live_registered_survivors",
+                "early_identities": [],
+                "elapsed": 3.91167699999642,
+                "finished_at": 656247.514568,
+                "guardian_cap_fired": false,
+                "inner_interruption_observed": false,
+                "inner_make_rc": 2,
+                "inspection_restricted": true,
+                "name": "rawmake-summary-hang",
+                "passed": false,
+                "post_identities": [
+                  {
+                    "absent": true,
+                    "pid": 26782
+                  },
+                  {
+                    "absent": true,
+                    "pid": 26868
+                  }
+                ],
+                "pre_identities": [
+                  {
+                    "birth": "Sun Nov 8 08:58:46 2026",
+                    "pgid": 26782,
+                    "pid": 26782,
+                    "ppid": 26780,
+                    "stat": "S"
+                  },
+                  {
+                    "birth": "Sun Nov 8 08:58:47 2026",
+                    "pgid": 26868,
+                    "pid": 26868,
+                    "ppid": 26782,
+                    "stat": "Ss"
+                  }
+                ],
+                "production_log": "/private/tmp/7ad-efaS2Pkz/rawmake-summary-hang/godot --headless --path . --import\ncrew-console: 0 failures\nmake[1]: *** [crew-console-test] Error 1\ndrill: 1 passed, 0 failures\ncrew-console: 0 failures\nbounded-run: inspection/setup failure: ps transient read/exit budget exceeded 200ms\nbounded-run: freeze inspection deferred: ps transient read/exit budget exceeded 200ms\nbounded-run: cleanup failure: ps transient read/exit budget exceeded 200ms\n",
+                "started_at": 656243.602891,
+                "stderr": "make[1]: *** [crew-console-test] Error 1\n",
+                "stdout": "/private/tmp/7ad-efaS2Pkz/rawmake-summary-hang/godot --headless --path . --import\ncrew-console: 0 failures\n",
+                "trigger": "deadline",
+                "trigger_at": null,
+                "unconfirmed_child": null,
+                "void_fixture": false
+              }
+            ],
+            "top_flags": {
+              "worker_cap_fired": false,
+              "inspection_restricted": false,
+              "void_fixture": false,
+              "cleanup_outcome": "no_live_registered_survivors"
+            },
+            "nested_controls": []
+          }
+        ]
+      }
+    ],
+    "required_final_batch_not_run": [
+      "bounded-drill clean-first mutants",
+      "python",
+      "uid",
+      "crew-normal",
+      "crew-hang",
+      "crew-hup",
+      "crew-int",
+      "crew-term",
+      "audit"
+    ],
+    "R2_launched": false,
+    "code_CI_launched": false,
+    "code_merged": false,
+    "review_state": "Independent R1 FAIL47 unchanged; no independent verdict approves later source. Independent publication review only can approve these parked records."
+  }
+}

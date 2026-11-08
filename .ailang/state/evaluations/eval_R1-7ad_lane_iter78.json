@@ -1,0 +1,100 @@
+{
+  "iteration": 78,
+  "role": "evaluator",
+  "role_kind": "Agent wrapper, capability probe only; no implementation judged",
+  "resolver_command": "env MISSION_NAME=stapledon MISSION_FIRE_ID=stapledon-1794064844-16955 MISSION_EVALUATOR_MODEL=claude:claude-sonnet-4-6 MISSION_EVALUATOR_FALLBACK=pi:openrouter/minimax/minimax-m3,claude:claude-sonnet-4-6,opus MISSION_EVALUATOR_CHAIN_REMAINING=opus MISSION_ANTHROPIC_AVAILABLE=0 MISSION_OVER_RATION=openrouter /Users/voightkampff/.ailang-driver-pin/stapledon/tools/launchd/resolve-role-spawn.sh evaluator",
+  "resolver": "recipe claude:claude-sonnet-4-6 declared:provider-pin",
+  "command_file": "/tmp/stapledon-iter78-evaluator-capability-jZSKif.command",
+  "stdout": "/tmp/stapledon-iter78-evaluator-capability-jZSKif.stdout",
+  "stderr": "/tmp/stapledon-iter78-evaluator-capability-jZSKif.stderr",
+  "probe_model_requested": "claude-sonnet-4-6",
+  "probe_model_confirmed": null,
+  "modelUsage": {},
+  "probe_rc": 1,
+  "api_error_status": 429,
+  "api_error": "usage_limit_reached",
+  "result": "You've hit your weekly limit \u00b7 resets Nov 9 at 6am (Europe/Copenhagen)",
+  "elapsed_s": 3,
+  "wall_cap_s": 120,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "quota_tokens": 0,
+  "cost_usd": 0,
+  "billing_guard": "claude-sub plus env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN; subscription only",
+  "fallbacks": [
+    {
+      "lane": "pi:openrouter/minimax/minimax-m3",
+      "status": "not_admissible",
+      "reason": "MISSION_OVER_RATION=openrouter; no widening"
+    },
+    {
+      "lane": "claude:claude-sonnet-4-6",
+      "status": "dead_this_fire",
+      "reason": "exact pin probe HTTP429 weekly quota"
+    },
+    {
+      "lane": "opus",
+      "status": "unavailable",
+      "reason": "bare Anthropic alias and MISSION_ANTHROPIC_AVAILABLE=0; shares exhausted subscription bucket; no second probe"
+    }
+  ],
+  "dead_lane_recorded": true,
+  "dead_lane_fire_id": "stapledon-1794064844-16955",
+  "status": "PARKED-ON-LANE",
+  "cross_family_approval": false,
+  "independent_product_verdict": null,
+  "resume_predicate": {
+    "any": [
+      {
+        "all": [
+          {
+            "lane": "claude:claude-sonnet-4-6",
+            "subscription_only_probe_rc": 0
+          },
+          {
+            "executor_vendor_not": "anthropic"
+          }
+        ]
+      },
+      {
+        "all": [
+          {
+            "lane": "pi:openrouter/minimax/minimax-m3",
+            "bucket_not_in": "MISSION_OVER_RATION"
+          },
+          {
+            "probe_rc": 0
+          },
+          {
+            "executor_vendor_not": "minimax"
+          },
+          {
+            "metered_budget_sufficient": true
+          }
+        ]
+      }
+    ]
+  },
+  "quota_reset_reported": "2026-11-09T06:00:00+01:00 (Europe/Copenhagen; provider wording Nov 9 at 6am)",
+  "scope": "Capability park, no human decision required. Wrapper can later review a parked record in independent context flagged same-model-fresh-context; that would not satisfy repository cross-family product landing.",
+  "local_invocation_correction": {
+    "raw_prefix": "/tmp/stapledon-iter78-evaluator-capability-Yp2Whb",
+    "rc": 1,
+    "error": "Input must be provided either through stdin or as a prompt argument when using --print",
+    "provider_probe": false,
+    "correction": "Supply prompt by stdin because variadic --tools consumed prompt argument"
+  },
+  "probe_command": "printf 'Reply with exactly: ok\\n' | env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN /Users/voightkampff/.local/bin/claude-sub -p --model claude-sonnet-4-6 --permission-mode bypassPermissions --output-format json --max-turns 1 --tools ''",
+  "score": null,
+  "implementation_approved": false,
+  "record_base": "d9cc170b17853df06592105e896215e2999955d2",
+  "native_agent_limitation": "collaboration.spawn_agent has no model override; named Agent wrapper ran exact prescribed provider recipe; no inherited-model product verdict",
+  "parked_record_audit": {
+    "agent": "/root/evaluator",
+    "independence": "same-model-fresh-context",
+    "scope": "read-only parked-record factual audit only",
+    "result": "no factual corrections",
+    "cross_family_verdict": false,
+    "landing_approved": false
+  }
+}
