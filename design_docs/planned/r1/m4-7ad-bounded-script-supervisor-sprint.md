@@ -39,6 +39,9 @@ AC11 must enumerate these exact separately permissible bookkeeping paths; no dir
 - `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json`
 - `.ailang/state/evaluations/repro_R1-7ad_iter80.json` (existing controller source record)
 - `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json` (reserved controller evaluation record; no result asserted)
+- `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_2.json` (explicitly reserved before final audit for independent corrective review; no result asserted)
+- `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_3.json` (explicitly reserved before final audit only if the third and final independent round is required; no result asserted)
+- `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_publication_iter80.json` (explicitly reserved before final audit for independent review of final mission records after the actual code outcome; distinct from implementation rounds, no result asserted)
 - `changelogs/unreleased/2026-11-08-bounded-script-runner.md`
 - `design_docs/stapledon-mission.md`
 - `design_docs/stapledon-mission-log.md`

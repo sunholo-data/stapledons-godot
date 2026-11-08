@@ -20,9 +20,16 @@ my ($cancel,$cancel_at);
 for my $s (qw(HUP INT TERM)) { my $name=$s; $SIG{$s}=sub { if (!defined $cancel) {$cancel=$name; $cancel_at=now()} } }
 sub write_file { my ($p,$s)=@_; open my $f,'>',$p or die "$p: $!\n"; print {$f} $s; close $f or die "$p: $!\n" }
 my %helpers;
-sub snapshot {
+sub snapshot_once {
     my ($phase_end)=@_; my $end=now()+0.2; $end=$phase_end if defined($phase_end) && $phase_end<$end;
-    die "inspection budget exhausted\n" if $end<=now();
+    die "inspection budget exhausted\n" if $end<=now()+0.04;
+    # Reserve 40ms INSIDE this acquisition for KILL + WNOHANG collection.
+    my $read_end=$end-0.04;
+    for my $q (keys %helpers) {
+        kill 'KILL',$q;
+        while(now()<$end) { my $w=waitpid($q,WNOHANG); if ($w!=0) { delete $helpers{$q}; last } sleep(0.001) }
+    }
+    die "ps helper collection budget exhausted\n" if keys %helpers;
     pipe(my $r,my $w) or die "ps pipe: $!\n";
     pipe(my $er,my $ew) or die "ps stderr pipe: $!\n";
     my $p=fork(); die "ps fork: $!\n" unless defined $p;
@@ -30,7 +37,7 @@ sub snapshot {
         $ENV{LC_ALL}='C'; exec 'ps','-axo','pid=,ppid=,pgid=,lstart=,stat=' or POSIX::_exit(127) }
     $helpers{$p}=1; close $w; close $ew; nb($r); nb($er); my ($buf,$st,$eof)=('',undef,0); my ($errbuf,$erreof)=('',0);
     my $read_error;
-    while(now()<$end) {
+    while(now()<$read_end) {
         if (!defined($st) && waitpid($p,WNOHANG)==$p) { $st=$?; delete $helpers{$p} }
         my $positive=0;
         for my $stream ([$r,\$buf,\$eof],[$er,\$errbuf,\$erreof]) {
@@ -42,15 +49,21 @@ sub snapshot {
         last if $read_error;
         next if $positive; # bounded loop condition; drain available bytes now
         last if defined($st) && $eof && $erreof;
-        my $left=$end-now(); last if $left<=0; $left=0.005 if $left>0.005;
+        my $left=$read_end-now(); last if $left<=0; $left=0.005 if $left>0.005;
         my $bits=''; vec($bits,fileno($r),1)=1 unless $eof; vec($bits,fileno($er),1)=1 unless $erreof;
         select($bits,undef,undef,$left);
     }
     close $r; close $er;
     if (!defined($st) && waitpid($p,WNOHANG)==$p) { $st=$?; delete $helpers{$p} }
+    my $timedout=!$read_error && (!defined($st) || ($st==0 && (!$eof || !$erreof)));
     kill 'KILL',$p unless defined($st); # only this unreaped direct helper
-    for my $q (keys %helpers) { delete $helpers{$q} if waitpid($q,WNOHANG)!=0 }
+    while (!defined($st) && now()<$end) {
+        my $q=waitpid($p,WNOHANG);
+        if ($q==$p) { $st=$?; delete $helpers{$p}; last } sleep(0.001);
+    }
+    die "ps helper collection budget exhausted\n" unless defined($st);
     die "ps read error: $read_error\n" if $read_error;
+    die "ps transient read/exit budget exceeded 200ms\n" if $timedout;
     die "ps execution failed rc=".($st & 127 ? 128+($st & 127) : $st>>8)." stderr=$errbuf\n" if defined($st) && $st!=0;
     die "ps read/exit budget exceeded 200ms (bytes=".length($buf).", eof=$eof, status=".(defined($st)?$st:'unreaped').")\n" unless defined($st) && $eof && $erreof;
     my %t;
@@ -61,6 +74,17 @@ sub snapshot {
     }
     die "ps self positive control absent\n" unless $t{$$};
     return \%t;
+}
+# Three attempts maximum; default600ms is shortened by every explicit phase.
+sub snapshot {
+    my ($end)=@_; my $limit=now()+0.6; $end=$limit if !defined($end) || $end>$limit;
+    my $error="inspection budget exhausted\n";
+    for my $attempt (1..3) {
+        last if now()+0.045>=$end;
+        my $t=eval { snapshot_once($end) }; return $t if $t;
+        $error=$@; die $error unless $error=~/^ps transient read\/exit budget exceeded 200ms/;
+    }
+    die $error;
 }
 sub equal { my ($a,$b)=@_; return $a && $b && $a->{pid}==$b->{pid} && $a->{birth} eq $b->{birth} }
 sub alive { my ($a,$t)=@_; return equal($a,$t->{$a->{pid}}) && $t->{$a->{pid}}{stat}!~/Z/ }
@@ -185,9 +209,6 @@ eval {
     my $t=snapshot($deadline); $root_id=$t->{$root};
     die "held command identity absent\n" unless $root_id && $root_id->{ppid}==$$;
     $owned{$root}=$root_id;
-    if (defined($ENV{BR_COMMAND_ID_DIR}) && -d $ENV{BR_COMMAND_ID_DIR}) {
-        require JSON::PP; write_file("$ENV{BR_COMMAND_ID_DIR}/command-$root",JSON::PP::encode_json($root_id));
-    }
     if (defined($ENV{BR_INNER_READY})) {
         my $file=$ENV{BR_INNER_READY};
         write_file("$file.tmp","$$\t$t->{$$}{birth}\t$root\t$root_id->{birth}\n");
@@ -246,7 +267,11 @@ eval {
 } or do { $cleanup_error=$@; $result=125 };
 # On an inspection error, never leave a previously stopped identity frozen.
 # Each emergency signal still requires its own fresh identity observation.
-for my $id (values %stopped) { last if now()>=$cleanup_end; eval { signal_owned('CONT',$id,$cleanup_end); signal_owned('KILL',$id,$cleanup_end) if now()<$cleanup_end } }
+my @recovery=$cleanup_error ? values(%owned) : values(%stopped);
+for my $id (@recovery) {
+    my @signals=$cleanup_error ? qw(TERM CONT KILL) : qw(CONT KILL);
+    for my $sig (@signals) { last if now()>=$cleanup_end; eval { signal_owned($sig,$id,$cleanup_end) } }
+}
 # A held unreaped direct child can safely be killed even when ps is unavailable.
 if($root && !defined($original_status)) { kill 'KILL',$root; }
 for my $p (keys %helpers) { kill 'KILL',$p }
