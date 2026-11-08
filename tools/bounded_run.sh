@@ -1,0 +1,181 @@
+#!/bin/sh
+# Portable polling supervisor; ownership is PID + actual ps birth token.
+# This cannot contain an unobserved double fork between snapshots.
+exec perl - "$0" "$@" 3<&0 <<'BOUNDED_PERL'
+
+use strict;
+use warnings;
+use POSIX qw(:sys_wait_h);
+use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC sleep);
+use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK);
+use Errno qw(EAGAIN EWOULDBLOCK EINTR);
+my $SCRIPT=shift @ARGV;
+open STDIN,'<&',3 or die "stdin: $!"; POSIX::close(3);
+my $entry=clock_gettime(CLOCK_MONOTONIC);
+sub now { clock_gettime(CLOCK_MONOTONIC) }
+sub nap { sleep(0.01) }
+sub nb { my ($h)=@_; fcntl($h,F_SETFL,fcntl($h,F_GETFL,0)|O_NONBLOCK) or die "nonblocking pipe: $!\n" }
+my ($cancel,$cancel_at);
+# Assignment replaces SIG_IGN inherited from a background shell, including INT.
+for my $s (qw(HUP INT TERM)) { my $name=$s; $SIG{$s}=sub { if (!defined $cancel) {$cancel=$name; $cancel_at=now()} } }
+sub write_file { my ($p,$s)=@_; open my $f,'>',$p or die "$p: $!\n"; print {$f} $s; close $f or die "$p: $!\n" }
+my %helpers;
+sub snapshot {
+    my ($phase_end)=@_; my $end=now()+0.2; $end=$phase_end if defined($phase_end) && $phase_end<$end;
+    die "inspection budget exhausted\n" if $end<=now();
+    pipe(my $r,my $w) or die "ps pipe: $!\n";
+    pipe(my $er,my $ew) or die "ps stderr pipe: $!\n";
+    my $p=fork(); die "ps fork: $!\n" unless defined $p;
+    if (!$p) { $SIG{$_}='DEFAULT' for qw(HUP INT TERM); close $r; close $er; open STDOUT,'>&',$w; open STDERR,'>&',$ew; close $w; close $ew;
+        $ENV{LC_ALL}='C'; exec 'ps','-axo','pid=,ppid=,pgid=,lstart=,stat=' or POSIX::_exit(127) }
+    $helpers{$p}=1; close $w; close $ew; nb($r); nb($er); my ($buf,$st,$eof)=('',undef,0); my ($errbuf,$erreof)=('',0);
+    my $read_error;
+    while(now()<$end) {
+        if (!defined($st) && waitpid($p,WNOHANG)==$p) { $st=$?; delete $helpers{$p} }
+        my $positive=0;
+        for my $stream ([$r,\$buf,\$eof],[$er,\$errbuf,\$erreof]) {
+            next if ${$stream->[2]};
+            my $n=sysread($stream->[0],my $b,65536);
+            if (defined($n)) { if ($n>0) { ${$stream->[1]}.=$b; $positive=1 } else { ${$stream->[2]}=1 } }
+            elsif (!$!{EAGAIN} && !$!{EWOULDBLOCK} && !$!{EINTR}) { $read_error="$!"; last }
+        }
+        last if $read_error;
+        next if $positive; # bounded loop condition; drain available bytes now
+        last if defined($st) && $eof && $erreof;
+        my $left=$end-now(); last if $left<=0; $left=0.005 if $left>0.005;
+        my $bits=''; vec($bits,fileno($r),1)=1 unless $eof; vec($bits,fileno($er),1)=1 unless $erreof;
+        select($bits,undef,undef,$left);
+    }
+    close $r; close $er;
+    if (!defined($st) && waitpid($p,WNOHANG)==$p) { $st=$?; delete $helpers{$p} }
+    kill 'KILL',$p unless defined($st); # only this unreaped direct helper
+    for my $q (keys %helpers) { delete $helpers{$q} if waitpid($q,WNOHANG)!=0 }
+    die "ps read error: $read_error\n" if $read_error;
+    die "ps execution failed rc=".($st & 127 ? 128+($st & 127) : $st>>8)." stderr=$errbuf\n" if defined($st) && $st!=0;
+    die "ps read/exit budget exceeded 200ms (bytes=".length($buf).", eof=$eof, status=".(defined($st)?$st:'unreaped').")\n" unless defined($st) && $eof && $erreof;
+    my %t;
+    for my $l (split /\n/,$buf) {
+        next unless $l=~/\S/; $l=~s/^\s+//; my @v=split /\s+/,$l;
+        die "malformed ps identity row [$l]\n" unless @v==9 && $v[0]=~/^\d+$/ && $v[1]=~/^\d+$/ && $v[2]=~/^\d+$/ && $v[3]=~/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/ && $v[4]=~/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/ && $v[5]=~/^\d+$/ && $v[6]=~/^\d\d:\d\d:\d\d$/ && $v[7]=~/^\d{4}$/ && $v[8]=~/^[A-Za-z?][A-Za-z0-9<>+\-]*$/;
+        $t{$v[0]}={pid=>0+$v[0],ppid=>0+$v[1],pgid=>0+$v[2],birth=>join(' ',@v[3..7]),stat=>$v[8]};
+    }
+    die "ps self positive control absent\n" unless $t{$$};
+    return \%t;
+}
+sub equal { my ($a,$b)=@_; return $a && $b && $a->{pid}==$b->{pid} && $a->{birth} eq $b->{birth} }
+sub alive { my ($a,$t)=@_; return equal($a,$t->{$a->{pid}}) && $t->{$a->{pid}}{stat}!~/Z/ }
+sub normalized { my ($s)=@_; return $s & 127 ? 128+($s & 127) : $s>>8 }
+sub usage { print STDERR "bounded-run: usage: bounded_run.sh N -- command [args ...]\n"; exit 2 }
+my $secs=shift @ARGV; usage() unless defined($secs) && $secs=~/^[0-9]+$/ && $secs>0 && $secs<2147483647 && @ARGV>=2 && shift(@ARGV) eq '--' && length($ARGV[0]);
+my $deadline=$entry+$secs;
+my (%owned,%stopped,$root,$root_id,$original_status,$error,$release);
+sub collect_root {
+    return if !defined($root) || defined($original_status);
+    if(waitpid($root,WNOHANG)==$root) { $original_status=$? }
+}
+sub reap_helpers {
+    for my $p (keys %helpers) { delete $helpers{$p} if waitpid($p,WNOHANG)!=0 }
+}
+sub discover {
+    my ($t)=@_; my %seed;
+    for my $p (keys %owned) {
+        if (equal($owned{$p},$t->{$p})) { $seed{$p}=1 }
+        else { delete $owned{$p}; delete $stopped{$p} }
+    }
+    if($root_id && equal($root_id,$t->{$root})) { $seed{$root}=1; $owned{$root}=$t->{$root} }
+    my $changed=1;
+    while($changed) { $changed=0;
+        for my $p (keys %$t) { next if $p==$$ || $helpers{$p} || $seed{$p};
+            if ($seed{$t->{$p}{ppid}}) { $owned{$p}=$t->{$p}; $seed{$p}=1; $changed=1 }
+        }
+    }
+}
+sub signal_owned {
+    my ($sig,$id,$end)=@_;
+    my $t=snapshot($end); discover($t); # fresh identity before EVERY individual signal
+    return unless alive($id,$t) && $id->{pid}!=$$ && !$helpers{$id->{pid}};
+    kill $sig,$id->{pid};
+    $stopped{$id->{pid}}=$id if $sig eq 'STOP';
+    delete $stopped{$id->{pid}} if $sig eq 'CONT' || $sig eq 'KILL';
+}
+my $result;
+eval {
+    pipe(my $r,my $w) or die "handshake pipe: $!\n";
+    $root=fork(); die "command fork: $!\n" unless defined $root;
+    if (!$root) {
+        close $w; $SIG{$_}='DEFAULT' for qw(HUP INT TERM ALRM PIPE);
+        setpgrp(0,0) or POSIX::_exit(125);
+        nb($r); my $hold=$deadline; my $go='';
+        while(now()<$hold) { my $n=sysread($r,my $b,1); if(defined($n)) { $go=$b if $n; last } nap() }
+        close $r; POSIX::_exit(125) unless $go eq 'G';
+        delete @ENV{qw(BR_INNER_READY BR_INNER_RELEASE)};
+        exec 'env',@ARGV or POSIX::_exit(127);
+    }
+    close $r; $release=$w;
+    my $t=snapshot($deadline); $root_id=$t->{$root};
+    die "held command identity absent\n" unless $root_id && $root_id->{ppid}==$$;
+    $owned{$root}=$root_id;
+    # Handler was installed before fork; a pending cancellation never releases exec.
+    if (!defined $cancel) { syswrite($release,'G',1)==1 or die "handshake write: $!\n" }
+    close $release; undef $release;
+    while(1) {
+        last if defined($cancel);
+        if(now()>=$deadline) { $cancel='TIMEOUT'; $cancel_at=$deadline; last }
+        collect_root(); last if defined($original_status);
+        $t=snapshot($deadline+0.2); discover($t); reap_helpers(); nap();
+    }
+    $result= defined($cancel) ? ($cancel eq 'TIMEOUT'?142:128+($cancel eq 'HUP'?1:$cancel eq 'INT'?2:15)) : normalized($original_status);
+    1;
+} or do { $error=$@; $result=125; close $release if $release; undef $release };
+my $cleanup_start=now();
+my $cleanup_end=defined($cancel_at)?$cancel_at+3:$cleanup_start+3;
+my $reported_cancel=$cancel;
+print STDERR "bounded-run: timeout after $secs s\n" if defined($cancel) && $cancel eq 'TIMEOUT';
+print STDERR "bounded-run: interrupted by $cancel\n" if defined($cancel) && $cancel ne 'TIMEOUT';
+print STDERR "bounded-run: inspection/setup failure: $error" if $error;
+# Stop ancestors before refreshing closure. Retained records survive reparenting.
+my $cleanup_error;
+eval {
+    my $final_end=$cleanup_start+0.25; $final_end=$cleanup_end if $cleanup_end<$final_end;
+    my $t=snapshot($final_end); discover($t);
+    my %depth;
+    for my $id (values %owned) { my $p=$id->{pid}; my $d=0; my %seen;
+        while ($t->{$p} && $owned{$p} && !$seen{$p}++) { $d++; $p=$t->{$p}{ppid} }
+        $depth{$id->{pid}}=$d;
+    }
+    my @queue=sort { $depth{$a->{pid}}<=>$depth{$b->{pid}} } values %owned;
+    for my $id (@queue) { last if now()>=$final_end; signal_owned('STOP',$id,$final_end) }
+    while(now()+0.025<$final_end) {
+        $t=snapshot($final_end); discover($t);
+        my @new=grep {!$stopped{$_->{pid}} && alive($_,$t)} values %owned;
+        last unless @new;
+        for my $id (@new) { last if now()>=$final_end; signal_owned('STOP',$id,$final_end) }
+    }
+    for my $id (values %owned) {
+        last if now()>=$cleanup_end; signal_owned('TERM',$id,$cleanup_end);
+        signal_owned('CONT',$id,$cleanup_end) if now()<$cleanup_end;
+    }
+    my $grace=now()+2; $grace=$cleanup_end-0.35 if $grace>$cleanup_end-0.35;
+    while(now()<$grace) { collect_root(); reap_helpers(); $t=snapshot($cleanup_end); discover($t); last unless grep {alive($_,$t)} values %owned; nap() }
+    for my $id (values %owned) { last if now()>=$cleanup_end; signal_owned('KILL',$id,$cleanup_end) }
+    my $survivors=1;
+    while(now()+0.025<$cleanup_end) { collect_root(); reap_helpers(); $t=snapshot($cleanup_end); discover($t);
+        $survivors=scalar grep {alive($_,$t)} values %owned; last if !$survivors && !keys(%helpers) && defined($original_status); nap() }
+    die "living owned process at cleanup deadline\n" if $survivors;
+    1;
+} or do { $cleanup_error=$@; $result=125 };
+# On an inspection error, never leave a previously stopped identity frozen.
+# Each emergency signal still requires its own fresh identity observation.
+for my $id (values %stopped) { last if now()>=$cleanup_end; eval { signal_owned('CONT',$id,$cleanup_end); signal_owned('KILL',$id,$cleanup_end) if now()<$cleanup_end } }
+# A held unreaped direct child can safely be killed even when ps is unavailable.
+if($root && !defined($original_status)) { kill 'KILL',$root; }
+for my $p (keys %helpers) { kill 'KILL',$p }
+while(now()<$cleanup_end && (keys(%helpers) || ($root && !defined($original_status)))) { collect_root(); reap_helpers(); nap() }
+print STDERR "bounded-run: interrupted by $cancel\n" if defined($cancel) && !defined($reported_cancel) && $cancel ne 'TIMEOUT';
+if (defined($cancel) && !$error && !$cleanup_error) {
+    $result=$cancel eq 'TIMEOUT'?142:128+($cancel eq 'HUP'?1:$cancel eq 'INT'?2:15);
+}
+print STDERR "bounded-run: cleanup failure: $cleanup_error" if $cleanup_error;
+exit($result//125);
+
+BOUNDED_PERL

@@ -137,8 +137,9 @@ sub register_id {
 }
 sub finite_hold { my ($end)=@_; pause() while now()<$end }
 sub fixture {
+    my $entry=now();
     my ($dir,$kind,$ready)=@_; $GUARDIAN=$ENV{BR_GUARDIAN}; $SENTINEL=$ENV{BR_SENTINEL}; $TOKEN=$ENV{BR_TOKEN};
-    $|=1; my $end=now()+18;
+    $|=1; my $end=$entry+18;
     register_id($dir,'parent');
     my $c=fork(); die "fixture fork" unless defined $c;
     if (!$c) {
@@ -158,7 +159,7 @@ sub fixture {
     $SIG{$_}='IGNORE' for qw(HUP INT ALRM);
     $SIG{TERM}='IGNORE' unless $kind eq 'parentfirst';
     my $early=parent_exit_after($ENV{BR_PARENT_EXIT_AFTER});
-    if (defined($early)) { finite_hold(now()+$early); POSIX::_exit(0) }
+    if (defined($early)) { finite_hold($entry+$early); POSIX::_exit(0) }
     finite_hold($end); POSIX::_exit(0);
 }
 if (@ARGV && $ARGV[0] eq '__registration_probe') {
@@ -397,7 +398,179 @@ sub guard_controls {
     put("$ART/normalization-mutant.pl",$source); die 'restore cmp' unless get("$ART/normalization-mutant.pl") eq $source;
     return scalar(grep {!$_->{passed}} @CASES)?1:0;
 }
-sub selftest { die "M1 boundary: runner and integration cases not yet implemented\n" }
+my @FIXED = qw(
+runner-exit0 runner-exit7 runner-exit142 runner-missing127 runner-child-term143
+runner-transport runner-usage runner-timeout-same-group runner-timeout-escaped
+runner-timeout-parent-first runner-hup runner-int runner-term runner-parent-exit7-retained
+runner-first-signal-wins runner-inherited-ignored-int guardian-positive-identities
+ gate-counted-pass gate-want1 gate-zero-reject gate-timeout-same-group
+ rawmake-pass rawmake-rc7 rawmake-error rawmake-nosummary gate-timeout-escaped rawmake-summary-hang
+ gate-relay-prereg-hup gate-relay-prereg-int gate-relay-prereg-term
+ gate-relay-ready-hup gate-relay-ready-int gate-relay-ready-term
+ raw-relay-prereg-hup raw-relay-prereg-int raw-relay-prereg-term
+ raw-relay-ready-hup raw-relay-ready-int raw-relay-ready-term
+ raw-make-group-hup raw-make-group-int raw-make-group-term);
+sub simple_case {
+    my ($name,$argv,$want,$pattern,$input)=@_; my $r=run_command($name,4,$argv,undef,$input);
+    my $ok=$r->{actual_rc}==$want && !$r->{guardian_cap_fired};
+    $ok &&= ($r->{stdout}.$r->{stderr}) =~ $pattern if defined $pattern;
+    $ok &&= $r->{stderr}!~/timeout after/ if $name eq 'runner-exit142';
+    case_result(name=>$name,%$r,passed=>$ok,trigger=>'ordinary',cleanup_outcome=>'no_live_registered_survivors');
+}
+sub make_stub {
+    my ($dir)=@_; make_path($dir);
+    put("$dir/ailang","#!/bin/sh\nexit 0\n"); chmod 0700,"$dir/ailang";
+    # Stubs validate the real Make expansion; no test recipe or predicate copies.
+    put("$dir/godot",<<'STUB');
+#!/usr/bin/env perl
+use strict; use warnings;
+exit 0 if grep { $_ eq '--import' } @ARGV;
+die "wrong AILANG_BIN" unless ($ENV{AILANG_BIN}//'') eq $ENV{BR_AILANG_STUB};
+die "wrong crew script" unless grep { $_ eq 'tests/test_crew_console.gd' } @ARGV;
+if ($ENV{BR_STUB_MODE} eq 'fixture') {
+ exec $^X,$ENV{BR_HARNESS},'__fixture',$ENV{BR_REG_DIR},$ENV{BR_FIX_KIND},$ENV{BR_READY}; die $!;
+}
+print "SCRIPT ERROR: deliberate stub error\n" if $ENV{BR_STUB_MODE} eq 'error';
+print "crew-console: 0 failures\n" unless $ENV{BR_STUB_MODE} eq 'nosummary';
+exit($ENV{BR_STUB_MODE} eq 'rc7'?7:0);
+STUB
+    chmod 0700,"$dir/godot"; return ("$dir/godot","$dir/ailang");
+}
+sub raw_argv {
+    my ($dir)=@_; my ($g,$a)=make_stub($dir); $ENV{BR_AILANG_STUB}=$a; $ENV{BR_HARNESS}=$SELF;
+    return ['make','--no-print-directory','-C',$ROOT,'crew-console-test',"GODOT=$g","AILANG=$a",'CREW_CONSOLE_TIMEOUT_S=2',"SCRATCH=$dir/scratch","SCRIPT_GATE=$dir/does-not-exist"];
+}
+sub fixture_case {
+    my ($name,$type,$kind,$sig,$phase)=@_;
+    my $dir="$ART/$name"; make_path($dir); my $ready="$dir/fixture.ready";
+    local $ENV{BR_READY}=$ready; local $ENV{BR_FIX_KIND}=$kind; local $ENV{BR_STUB_MODE}='fixture';
+    local $ENV{BR_RELAY_TEST_DIR}=defined($phase) && $phase ne 'group'?$dir:'';
+    local $ENV{BR_PARENT_EXIT_AFTER}= $type eq 'raw'?3.0:undef;
+    my $cmd=[$PERL,$SELF,'__fixture',$ENV{BR_REG_DIR},$kind,$ready];
+    my $argv=$type eq 'runner'?['sh',"$ROOT/tools/bounded_run.sh",2,'--',@$cmd]
+       :$type eq 'gate'?['sh',"$ROOT/tools/script_gate.sh",$name,"$dir/gate.log",2,'^drill: [1-9][0-9]* passed, 0 failures$',defined($sig)?128+(lc($sig) eq 'hup'?1:lc($sig) eq 'int'?2:15):0,'--',@$cmd]
+       :raw_argv($dir);
+    if ($name eq 'runner-inherited-ignored-int') {
+        $argv=[$PERL,'-e','$SIG{INT}="IGNORE"; exec @ARGV',@$argv];
+    }
+    my %early; my $unconfirmed_child;
+    my ($pre,$obs,$sent,$barrier,$target,$trigger_at,$release_at)=([],0,0,0,undef,undef,undef);
+    my $r=run_command($name,6,$argv,sub {
+        my ($pid,$t0)=@_; my $t=controlled_table();
+        my $ids=fixture_ids($ready);
+        if(@$ids==2) { $pre=$ids; $obs++ if !grep {!live($_,$t)} @$ids }
+        if ($kind eq 'parentexit' && $obs>=2 && !defined($release_at)) { put("$ready.release",'release'); $release_at=now() }
+        if (defined($phase) && $phase eq 'prereg' && !$sent && $obs>=2 && -f "$dir/prereg") {
+            my ($shell,$child)=split /\s+/,get("$dir/prereg");
+            $target=0+$shell;
+            die 'void_fixture: prereg not a spawned unconfirmed direct child' unless defined($child) && $t->{$child} && $t->{$child}{ppid}==$target;
+            $unconfirmed_child=$t->{$child}; $early{$child}=$t->{$child};
+            my $more=1; while($more) { $more=0; for my $p (keys %$t) { next if $early{$p};
+                if ($early{$t->{$p}{ppid}} && matches($early{$t->{$p}{ppid}},$t->{$t->{$p}{ppid}})) { $early{$p}=$t->{$p}; $more=1 }
+            } }
+            $barrier=1;
+        } elsif (defined($phase) && $phase eq 'ready' && -f "$dir/ready" && $obs>=2) {
+            $barrier=1; ($target)=split /\s+/,get("$dir/ready"); $target=0+$target;
+        } elsif (!defined($phase) && $obs>=2) { $target=$pid }
+        if (%early) {
+            my $more=1; while($more) { $more=0; for my $p (keys %$t) { next if $early{$p};
+                my $par=$t->{$p}{ppid}; if ($early{$par} && matches($early{$par},$t->{$par})) { $early{$p}=$t->{$p}; $more=1 }
+            } }
+        }
+        # In a pre-integration candidate there is no barrier. Deliver the signal
+        # to the actual shell after positive readiness; missing barrier stays RED.
+        if (defined($phase) && !$barrier && $obs>=2 && now()-$t0>0.3) {
+            $target=$type eq 'raw' ? $pre->[0]{ppid}:$pid;
+        }
+        if (defined($sig) && defined($target) && !$sent) {
+            if ($phase && $phase eq 'group') { $target=$pid }
+            my $id=$t->{$target}; die 'void_fixture: signal target absent' unless $id;
+            if (defined($phase) && $phase eq 'group') {
+                die 'void_fixture: command group leader' unless $id->{pgid}==$pid;
+                kill uc($sig),-$pid;
+            } else { signal_id(uc($sig),$id) }
+            $sent=1; $trigger_at=now();
+            put("$dir/$phase.release",'release') if defined($phase) && $phase ne 'group';
+            return $trigger_at;
+        }
+        if ($name eq 'runner-first-signal-wins' && $sent && $sent<3 && now()>$trigger_at+0.05*$sent) {
+            my $id=$t->{$pid}; signal_id($sent==1?'INT':'HUP',$id) if $id; $sent++;
+        }
+        return undef;
+    });
+    my $post=controlled_table(); my @checked=(@$pre,values %early); my @survivors=grep {live($_,$post)} @checked;
+    my $ok=!$r->{guardian_cap_fired} && !@survivors && live($post->{$SENTINEL},$post);
+    if(defined($phase) && $phase eq 'prereg') { $ok &&=$barrier && $sent && $unconfirmed_child }
+    else { $ok &&=@$pre==2 && $obs>=2; $ok &&=$pre->[0]{pgid}!=$pre->[1]{pgid} if $kind ne 'same' }
+    my $expected=$type eq 'runner' ? (defined($sig)?128+(lc($sig) eq 'hup'?1:lc($sig) eq 'int'?2:15):$kind eq 'parentexit'?7:142) : $type eq 'gate'?1:2;
+    if (defined($phase) && $phase eq 'group') { $ok &&=$r->{actual_rc}!=0 } else { $ok &&=$r->{actual_rc}==$expected }
+    my $log=$r->{stdout}.$r->{stderr}.get("$dir/gate.log").get("$dir/scratch/crew-console.log");
+    $ok &&=$log=~/timeout after 2 s/ unless defined($sig) || $kind eq 'parentexit';
+    $ok &&=$r->{elapsed}<=6;
+    $ok &&=defined($trigger_at) && now()-$trigger_at<=4 if defined $sig;
+    $ok &&=$log!~/script-gate: .* ok:|^crew-console-test: ok/m if defined $sig;
+    if (defined($sig)) {
+        my $named=uc($sig); $ok &&=$log=~/^bounded-run: interrupted by \Q$named\E$/m;
+    }
+    my $c=case_result(name=>$name,%$r,passed=>$ok,trigger=>defined($sig)?"direct $sig ".($phase//'runner'):$kind eq 'parentexit'?'ordinary exit after two observations':'deadline',
+        pre_identities=>$pre,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$pre],
+        inner_make_rc=>$type eq 'raw'?$r->{actual_rc}:undef,behavioral_leak=>@survivors?JSON::PP::true:JSON::PP::false,
+        unconfirmed_child=>$unconfirmed_child,early_identities=>[values %early],
+        inner_interruption_observed=>defined($sig) && $log=~/^bounded-run: interrupted by \Q\U$sig\E$/m?JSON::PP::true:JSON::PP::false,
+        production_log=>$log,barrier_observed=>$barrier?JSON::PP::true:JSON::PP::false,cleanup_outcome=>'pending');
+    # Leak observation and passed=false are durable BEFORE independent cleanup.
+    $c->{cleanup_outcome}=clean_ids(\@checked); save();
+}
+sub selftest {
+    @CASES=();
+    for my $rc (0,7,142) { simple_case("runner-exit$rc",['sh',"$ROOT/tools/bounded_run.sh",2,'--','sh','-c',"exit $rc"],$rc) }
+    simple_case('runner-missing127',['sh',"$ROOT/tools/bounded_run.sh",2,'--',"$ART/missing-command"],127);
+    simple_case('runner-child-term143',['sh',"$ROOT/tools/bounded_run.sh",2,'--',$PERL,'-e','kill "TERM",$$; select undef,undef,undef,1'],143);
+    local $ENV{BR_REMOVE}='remove-me';
+    my $transport='die "env" unless $ENV{BR_VALUE} eq "a b" && !exists $ENV{BR_REMOVE}; die "args" unless @ARGV==3 && $ARGV[0] eq "" && $ARGV[1] eq "a b" && $ARGV[2] eq q{$(never);*}; die "stdin" unless <STDIN> eq "input\\n"; print "transport stdout\\n"; print STDERR "transport stderr\\n";';
+    $transport=~s/\\\\n/\\n/g;
+    simple_case('runner-transport',['sh',"$ROOT/tools/bounded_run.sh",2,'--','BR_VALUE=a b','env','-u','BR_REMOVE',$PERL,'-e',$transport,'','a b','$(never);*'],0,qr/transport stdout.*transport stderr/s,"input\n");
+    my $usageok=1; my $last;
+    for my $v (['0','--'],['-1','--'],['1.5','--'],['2','missing'],['2','--']) {
+        my @cmd=@$v; push @cmd,'sh','-c',"touch '$ART/forbidden-launch'" unless @$v==2 && $v->[0] eq '2' && $v->[1] eq '--';
+        $last=run_command('runner-usage-'.int(rand(1e8)),3,['sh',"$ROOT/tools/bounded_run.sh",@cmd]);
+        $usageok &&=$last->{actual_rc}==2 && !-e "$ART/forbidden-launch" && !$last->{guardian_cap_fired};
+    }
+    # Inspection refusal is a real candidate execution with a private denied ps.
+    make_path("$ART/runner-deny"); put("$ART/runner-deny/ps","#!/bin/sh\nexit 1\n"); chmod 0700,"$ART/runner-deny/ps";
+    { local $ENV{PATH}="$ART/runner-deny:/usr/bin:/bin";
+      my $d=run_command('runner-inspection125',4,['sh',"$ROOT/tools/bounded_run.sh",2,'--','true']);
+      $usageok &&=$d->{actual_rc}==125 && !$d->{guardian_cap_fired}; }
+    case_result(name=>'runner-usage',%$last,passed=>$usageok,trigger=>'invalid boundary and denied inspection125',cleanup_outcome=>'no_live_registered_survivors');
+    fixture_case('runner-timeout-same-group','runner','same');
+    fixture_case('runner-timeout-escaped','runner','escaped');
+    fixture_case('runner-timeout-parent-first','runner','parentfirst');
+    for my $s (qw(hup int term)) { fixture_case("runner-$s",'runner','escaped',$s) }
+    fixture_case('runner-parent-exit7-retained','runner','parentexit');
+    fixture_case('runner-first-signal-wins','runner','escaped','term');
+    fixture_case('runner-inherited-ignored-int','runner','escaped','int');
+    guardian_positive();
+    my $gate="$ROOT/tools/script_gate.sh";
+    simple_case('gate-counted-pass',['sh',$gate,'counted',"$ART/counted.log",2,'^drill: [1-9][0-9]* passed, 0 failures$','--','sh','-c','echo "drill: 1 passed, 0 failures"'],0);
+    simple_case('gate-want1',['sh',$gate,'want1',"$ART/want1.log",2,'^negative: FAIL$',1,'--','sh','-c','echo "negative: FAIL"; exit 1'],0);
+    simple_case('gate-zero-reject',['sh',$gate,'zero',"$ART/zero.log",2,'^crew-console: 0 failures$','--','sh','-c','echo "crew-console: 0 failures"'],1,qr/carries no nonzero count/);
+    fixture_case('gate-timeout-same-group','gate','same');
+    for my $mode (qw(pass rc7 error nosummary)) {
+        local $ENV{BR_STUB_MODE}=$mode;
+        simple_case("rawmake-$mode",raw_argv("$ART/raw-$mode"),$mode eq 'pass'?0:2);
+        $CASES[-1]{inner_make_rc}=$CASES[-1]{actual_rc}; save();
+    }
+    fixture_case('gate-timeout-escaped','gate','escaped');
+    fixture_case('rawmake-summary-hang','raw','escaped');
+    for my $type (qw(gate raw)) { for my $phase (qw(prereg ready)) { for my $sig (qw(hup int term)) {
+        fixture_case("$type-relay-$phase-$sig",$type,'escaped',$sig,$phase);
+    } } }
+    for my $sig (qw(hup int term)) { fixture_case("raw-make-group-$sig",'raw','escaped',$sig,'group') }
+    my %got; $got{$_->{name}}++ for @CASES;
+    die 'fixed selftest case-set mismatch' unless @CASES==@FIXED && !grep {($got{$_}//0)!=1} @FIXED;
+    save(); return scalar(grep {!$_->{passed}} @CASES)?1:0;
+}
+
 sub dispatch {
     my (@args)=@_;
     my $head=run_command('root-head',2,['git','-C',$ROOT,'rev-parse','HEAD']);
