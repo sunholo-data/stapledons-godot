@@ -306,3 +306,13 @@ If an array reaches 100, paginate before judging clearance. Read PR metadata/hea
 ## Controller pre-quorum factual corrections (2026-11-08)
 
 Authoring subscription tokens are recorded, wrapper PR-read provenance is explicit, and the scope audit permits the mandatory named changelog/sprint/mission records separately from its five code/test paths. No runner decision changed. The controller banked V8's source and results in `.ailang/state/evaluations/repro_R1-7ad_iter80.json` for future re-derivation; its recorded historical PIDs are never signal targets.
+
+## Quorum verification log (2026-11-08)
+
+Round 1 at `34a83ec4`: **PROCEED degraded, one external reviewer present** (`gemini-4-argon` PASS); `oc-glm-5-3` and `oc-kimi-k3` absent (`unreachable` in synthesis, actual errors HTTP 429 Ollama session quota), `claude-sonnet-5@claude-p` absent (`quota`). Author OpenAI vendor benched. This is not a full three-seat pass. Artifact: `m4-7ad-bounded-script-supervisor-2026-11-08T04-16-39Z.json` in the mission quorum export. Cost $0.060768; 13,852 input / 268 output tokens.
+
+Gemini non-blocking signal-registration fix, adopted verbatim before planning:
+
+> In D2, specify that the wrapper shell spawns `bounded_run.sh` in the background, immediately captures `$!` before yielding or waiting, and verifies `(pid, lstart)` or uses a readiness pipe before forwarding trapped signals, or else kills the unconfirmed `$!` child directly and exits non-zero if a signal arrives before identity confirmation.
+
+D2 therefore requires a pending cancellation flag before spawning and deterministic handling of cancellation before and after readiness; selftest must exercise the pre-registration window as well as the already-ready relay. The quoted reviewer fix specifies the implementation choice, and the executor/evaluator must verify the chosen branch by an actual directed-signal case. Existing budgets and ownership limits remain.
