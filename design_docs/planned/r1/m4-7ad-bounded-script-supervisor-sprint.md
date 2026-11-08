@@ -39,6 +39,9 @@ AC11 must enumerate these exact separately permissible bookkeeping paths; no dir
 - `.ailang/state/sprints/sprint_R1-M4-JOURNEY.json`
 - `.ailang/state/evaluations/repro_R1-7ad_iter80.json` (existing controller source record)
 - `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json` (reserved controller evaluation record; no result asserted)
+- `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_2.json` (explicitly reserved before final audit for independent corrective review; no result asserted)
+- `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_3.json` (explicitly reserved before final audit only if the third and final independent round is required; no result asserted)
+- `.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_publication_iter80.json` (explicitly reserved before final audit for independent review of final mission records after the actual code outcome; distinct from implementation rounds, no result asserted)
 - `changelogs/unreleased/2026-11-08-bounded-script-runner.md`
 - `design_docs/stapledon-mission.md`
 - `design_docs/stapledon-mission-log.md`
@@ -271,3 +274,14 @@ G 195 make --no-print-directory -C "$ROOT" bounded-run-drill
 G 30 make --no-print-directory -C "$ROOT" python-guard
 H audit "$BASE"
 ```
+
+
+## Controller implementation refinement r20 (2026-11-08)
+
+Use the companion design's dated D1/D2 clarification for fixed-deadline event ordering and the existing private pending-signal first-hop handoff. Preserve actual inner OS signal evidence, fresh descendant/inner identity checks, unconfirmed-child safety, first named request, fixed42/aux62 names and every 200ms/600ms/3s/120s/180s bound. Nested causal regression evidence is mandatory inside existing auxiliary cases; it earns no AC6 credit. The historical r19 full42 41/42 failure and nonreproducing private trace are retained without attributing the former to transport. M3 is explicitly reopened; M4/M5 remain incomplete. Reconstruct and rerun full applicable M3 gates, then all M4 gates, before independent review. Estimated LOC and original planning history remain unchanged; record actual overrun. Original PROCEED DEGRADED quorum remains the only quorum; no new human ruling or canon change.
+
+## Iteration 80 parked implementation record
+
+The approved design and sprint remain planned. Independent implementation round 1 is FAIL47, implementation_approved=false. The final r21 M4 self-test is 41/42: rawmake-summary-hang fails on process inspection before its deadline barrier; no registered survivor or cap was observed. M3 is reopened, M4/M5 incomplete. No implementation round 2, code-head CI or code merge occurred. Unapproved source is preserved on backup/stapledon-iter80-7ad-final-unapproved-r21 at 6abbd8b2aaeb89fe737a72f25bb55625ba7ff74a. This record approves no source.
+
+Resume engineering from that bank, resolve the evidenced inspection failure without weakening fixed bounds, run the complete final gates including clean-first mutations and real healthy-sim signal controls, then obtain independent implementation review and exact-head fast CI. No new human decision is required; all six OPEN ledger rows retain their existing defaults. Decision-bearing runtime history is in .ailang/state/evaluations/repro_R1-7ad_iter80.json; raw bulk artifacts remain at its named paths.

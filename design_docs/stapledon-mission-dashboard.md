@@ -1,25 +1,22 @@
-# Stapledon mission dashboard
+# Mission dashboard — Stapledon
 
-Updated 2026-11-07, iteration 79; record draft PR #408 remains unmerged.
-
-- **Bar:** clauses 1–3 MET; 4 UNMET; 5 ongoing. Goal unmoved.
-- **Pick:** 7ad bounded crew-console runner and sim-process cleanup, still undone.
-- **Outcome:** PARKED-ON-LANE evaluator, second consecutive fire (78–79).
-- **Required judge:** exact Sonnet subscription probe rc 1 / HTTP 429 weekly quota;
-  resets November 9 at 06:00 Europe/Copenhagen. MiniMax/OpenRouter over ration.
-- **Agent roles:** designer readiness and evaluator probe wrappers spawned.
-  Agent API has no model override; heavy judge probe used exact pinned CLI recipe.
-  Planner/executor not reached. No design, plan, build, score or landing approval.
-- **Resume:** re-resolve declared independent evaluator and probe within ration each fire;
-  rc 0 → 7ad design/quorum/plan/build/judge, then 7ac. Capacity needs no human decision.
-- **Critical path:** 7m AC1 → 7m-d → D-147 (default A: no AC1 rerun).
-- **Nightly:** #392 OPEN, bridge-operator-test red again on main d9cc170b;
-  visible repair waits on D-148. No new runtime/full-suite verdict.
-- **Human OPEN:** D-128, D-129, D-145, D-146, D-147, D-148 (unchanged).
-- **Loop:** launchd dev.ailang.mission-stapledon, every 6 h; issue #370.
-- **Cost:** $0 metered; actual Sonnet probe zero tokens; wrapper usage unreported.
-- **Main:** d9cc170b fast tier 1/1 success; draft head CI reported on #370.
-- **Landing:** judge missing; draft stays unmerged even if fast CI is green.
-- **Do not touch:** attended Kerr #373/#380 and D-144/levels holds.
-- **Evidence:** .ailang/state/evaluations/eval_R1-7ad_lane_iter79.json.
-- **Full record:** stapledon-mission-log.md entry 79 on PR #408's branch.
+Updated 2026-11-08, iteration 80. PARKED: row 7ad.
+R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 → 7m-d → D-147); clause 5 ongoing; goal unmoved.
+Latest release: retain the existing game/runtime pins; no release tag this iteration.
+Current: Implementation withheld: final M4-r21 selftest41/42 red; unapproved source preserved at backup/stapledon-iter80-7ad-final-unapproved-r21 commit6abbd8b2; resume engineering, then all required gates and independent review
+Next: 7ac only after 7ad lands, AC1–AC5 rerun and one same-seat re-quorum.
+Then 7ab only when its recorded nightly-start predicate holds; no GPU merge gate.
+Critical path: 7m/7m-d stay parked on D-147 default A; no new S1 or AC1 run.
+Other human gates: D-128 order; D-129 L4 defaults; D-145 sound ownership;
+D-146 designer rotation; D-148 visible bridge working-point repair.
+Decisions: all six remain OPEN, unchanged; no unattended resolution.
+Routing: Codex gpt-6.1-sol designer/planner/executor; independent MiniMax M3 evaluator.
+Quorum: PROCEED DEGRADED, one external Gemini PASS; three seats quota-absent.
+Review: independent MiniMax round1 FAIL47; no implementation round2 launched; historical round1 FAIL47 is preserved unchanged.
+CI: No implementation candidate pushed or merged; exact-head code CI not run. Records-only PR CI and publication review are separate pending gates
+Cadence: armed six-hour driver; this snapshot does not establish a future running process.
+Quota: Known quota1,307,144: designer259,764; planner92,373; executor955,007 (resumedheavy486,216 counted once plus separate probes). Controller/wrapper tokens not reported
+Metered cost through implementation review: $0.527898/$5; publication cost in linked report.
+Canonical checkout untouched; records originate from newer adopted draft #408.
+Nightly issue #392 remains OPEN; no full-suite green claimed.
+Full history: stapledon-mission-log.md, entry 80.
