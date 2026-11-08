@@ -1,0 +1,400 @@
+{
+  "reviewed_commit": "386dad484b5b9ce18df20ef500f6f99be3c4eb7a",
+  "implementation_base": "fa8480d55d55df7eccc3d16cf4f296e2357e327f",
+  "sprint_id": "R1-M4-JOURNEY",
+  "feature_id": "M4.6wR3_7ad_BOUNDED_SCRIPT_SUPERVISOR",
+  "evaluation_round": 1,
+  "judge": {
+    "identity": "MiniMax M3 via pi:openrouter/minimax/minimax-m3",
+    "role": "independent evaluator",
+    "generator": "OpenAI generator, as identified by the controller",
+    "independence": "The reviewed implementation and its controller-generated acceptance evidence were adjudicated in this separate evaluator session. The controller synopsis was treated only as context; the cited raw artifacts, source, and hashes were inspected directly."
+  },
+  "own_session_handshake": {
+    "claude_md_read_completely": true,
+    "claude_md_path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80-eval/CLAUDE.md",
+    "task_classification": "independent evaluation under the supplied approved design and sprint plan",
+    "unattended_mission_stage": true,
+    "ailang_messages_run": false,
+    "session_protocol_ack_called": true,
+    "session_protocol_ack_acked": true,
+    "session_protocol_ack_result": "Session protocol acknowledged — mutating tools unlocked for this session.",
+    "precondition": "satisfied before evaluation reads, runtime-evidence adjudication, or report write"
+  },
+  "total_score": 47,
+  "score_breakdown": {
+    "tests": {
+      "score": 0,
+      "max": 20,
+      "hard_fail": true,
+      "rationale": "The generic AILANG/Go make-test recipe does not apply to this shell/Perl/Godot project. Under the approved project-specific gates, the required bounded-run drill/mutation gate failed: attempt 1 returned rc 3 after an inspection failure, and attempt 2 returned rc 2 because its required clean-first selftest failed with runner rc 125 and a living escaped child. The successful bounded-run selftest and legacy gates do not cancel a required-test failure."
+    },
+    "lint": {
+      "score": 10,
+      "max": 10,
+      "rationale": "The candidate's project lint gate, make script-gate-lint, returned rc 0 with 249/131/118 inventory and four prerequisite pairs. Independent narrow static checks also returned sh -n: ok for tools/bounded_run.sh and tools/script_gate.sh, and perl -c syntax OK for tools/test_bounded_run.pl. No generic AILANG lint target was imposed."
+    },
+    "acceptance_criteria": {
+      "score": 19,
+      "max": 30,
+      "criteria_met_count": 7,
+      "criteria_total": 11,
+      "computed_points_before_rounding": 19.09,
+      "rationale": "AC1-AC5, AC7, and AC10 have actual criterion-command evidence. AC6 failed; AC8 and AC9 are unmeasured because the real hang fixture aborted before exercising the behavior and no real HUP/INT/TERM artifacts exist; AC11 is incomplete because bounded-run-drill failed and audit is pending. The 7/11 ratio is above the rubric's 50% criterion hard-fail threshold, but implementation acceptance still requires every required criterion."
+    },
+    "code_quality": {
+      "score": 0,
+      "max": 15,
+      "rationale": "Rubric deductions: newly-created tools/test_bounded_run.pl is 964 lines (-5); multiple functions exceed 50 lines, reaching the rubric's -5 cap (for example guard_controls at tools/test_bounded_run.pl:340, fixture_case at :443, crew at :688, and main at :866); the feature's M4/M5 sprint records are incomplete for a completed feature (-3); and the sprint plan still has pending milestones (-2). No TODO/HACK/FIXME deduction applies."
+    },
+    "documentation": {
+      "score": 12,
+      "max": 15,
+      "rationale": "The named changelog fragment is present and documents polling/process limits (5/5). The AILANG examples/runnable requirement is not applicable to this shell/Perl feature; the committed named-case harness is credited as the executable-example adaptation (5/5). The design remains marked Planned and says implementation/live checks are unmeasured, so it does not yet reflect the candidate's actual implementation/evidence state (2/5)."
+    },
+    "design_fidelity": {
+      "score": 6,
+      "max": 10,
+      "rationale": "The implementation substantially follows the approved architecture: one production runner, an independent guardian, retained observed identities, shell relays, preserved raw-Make predicates, targeted Make wiring, and no game/runtime/protocol edits. Significant goals remain unproven or unmet: cleanup is not reliable under an actual transient ps-budget failure, causal mutation acceptance never completed, the real hang path was not exercised, and real interruption cleanup plus scope audit are missing."
+    }
+  },
+  "score_breakdown_sum": 47,
+  "score_breakdown_max": 100,
+  "verdict": "FAIL",
+  "implementation_approved": false,
+  "hard_failures": [
+    {
+      "id": "required_project_test_failure",
+      "detail": "The required bounded-run drill failed. /tmp/iter80-M4-r7-bounded-drill.outer.json records actual_rc 3 and /tmp/7ad-aDDFvEvJ/results.json records inspection_restricted: ps read/exit budget exceeded 200ms (bytes=0, eof=0, status=unreaped) after 15 clean cases. The single bounded retry, /tmp/iter80-M4-r7-attempt2-bounded-drill.outer.json, records actual_rc 2; /tmp/7ad-q32L0NLY/results.json records runner-inherited-ignored-int rc 125, a production cleanup ps-budget failure, and a still-live escaped child before independent guardian cleanup. Per the evaluation rule, a required test failure is a hard fail regardless of score."
+    },
+    {
+      "id": "ac6_not_satisfied",
+      "detail": "H mutants never reached its mutation phase in either required attempt. The clean-first prerequisite failed. The focused diagnostic at /tmp/iter80-M4-mutants-focused-art/7ad-xC1eDRCX/results.json deliberately skipped clean-first, and its raw-bypass mutant ended as guardian rc 137; the diagnostic manifest explicitly says NOT_ACCEPTANCE. It earns no AC6 credit."
+    },
+    {
+      "id": "required_criteria_incomplete",
+      "detail": "AC8 and AC9 are unmeasured, and AC11 is incomplete. Final implementation acceptance requires all required actual criteria; unknown, pending, or fixture-aborted evidence is not a pass."
+    },
+    {
+      "id": "exact_head_ci_unavailable",
+      "detail": "No exact-head GitHub fast-tier CI result exists for reviewed commit 386dad484b5b9ce18df20ef500f6f99be3c4eb7a. The supplied evidence identifies the candidate as a backup branch without a PR and with CI pending. Unrelated main/draft-79 CI successes are not credited to this commit."
+    }
+  ],
+  "blockers": [
+    {
+      "id": "B1",
+      "detail": "Make the production cleanup path tolerate a single transient 200 ms ps acquisition miss without aborting all cleanup, while retaining fresh identity verification before every signal and the 3-second total cleanup bound. Then rerun the required clean-first mutation drill.",
+      "source": "tools/bounded_run.sh:23-56 snapshot; :163-170 signal_owned; :210-250 cleanup",
+      "evidence": "/tmp/7ad-q32L0NLY/results.json, case runner-inherited-ignored-int"
+    },
+    {
+      "id": "B2",
+      "detail": "Make the independent guardian's bounded ps acquisition recover from a transient timeout within its own finite budget, so the required mutants mode is not aborted after 15 clean cases by a zero-byte/unreaped helper.",
+      "source": "tools/test_bounded_run.pl:44-68 table",
+      "evidence": "/tmp/7ad-aDDFvEvJ/results.json and /tmp/iter80-M4-r7-native-ps-controls.json"
+    },
+    {
+      "id": "B3",
+      "detail": "Canonicalize the copy source once before comparing resolved child paths, so macOS /tmp versus /private/tmp does not reject a regular in-tree file. Rerun the real synthetic hang mode and require make rc 2, timeout <=64 s, and no live Godot/sim.",
+      "source": "tools/test_bounded_run.pl:586-603 copy_project, especially :597",
+      "evidence": "/tmp/iter80-M4-r7-real-crew-hang-art/7ad-Burbhc5P/worker-error.txt"
+    },
+    {
+      "id": "B4",
+      "detail": "Run and retain the three real make-group interruption modes HUP, INT, and TERM with healthy real-sim readiness, exact nonzero make status, interruption diagnostic, and cleanup <=4 seconds.",
+      "source": "tools/test_bounded_run.pl:688-814 crew",
+      "evidence": "No real signal artifact was supplied; AC9 is unmeasured."
+    },
+    {
+      "id": "B5",
+      "detail": "Run H audit against the implementation base after all source fixes, requiring the exact allowlist, protected-byte comparisons, and actual make graph traversal.",
+      "source": "tools/test_bounded_run.pl:816-864 audit",
+      "evidence": "/tmp/iter80-evaluator-r1-evidence.json records audit PENDING."
+    },
+    {
+      "id": "B6",
+      "detail": "Obtain an actual successful GitHub fast-tier run for the exact reviewed head after the corrected candidate is committed; controller context says no exact candidate CI exists.",
+      "source": "project CLAUDE.md merge gate 1",
+      "evidence": "/tmp/iter80-evaluator-r1-evidence.json code_status and M4/M5 state"
+    }
+  ],
+  "nonblocking": [
+    {
+      "id": "N1",
+      "detail": "Timing is a reliability risk, not a separate performance requirement: the accepted M3 selftest took 119.428 s of its 120 s worker cap and M4's green selftest took 117.098 s of 120 s. Keep the existing cap; do not invent a performance sprint or silently raise the ceiling."
+    },
+    {
+      "id": "N2",
+      "detail": "The 964-line guardian/harness and several very large functions are maintainability debt under the rubric. Splitting would exceed the current one-file allowlist and therefore needs a scoped plan/design decision rather than a silent expansion."
+    },
+    {
+      "id": "N3",
+      "detail": "The design and sprint plan still describe a design-only/unmeasured state. The controller should move/update them only after a passing candidate and all required evidence, as CLAUDE.md requires."
+    },
+    {
+      "id": "N4",
+      "detail": "The changelog's categorical statement that cancellation and normal exit clean up owned children should be narrowed or made conditional until the transient cleanup defect is fixed and remeasured."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "status": "PASS_WITH_STABILITY_DEFECT",
+      "counted_as_met": true,
+      "command": "H selftest",
+      "actual_evidence": [
+        "/tmp/7ad-gDkXhZQy/results.json: mode selftest, rc 0, 42/42 cases passed; runner-exit0/7/142, missing127, child-term143, transport, usage, and signal cases recorded their exact statuses.",
+        "/tmp/iter80-M4-r7-bounded-selftest.outer.json: actual_rc 0, elapsed_s 117.098, outer cap false, no registered survivors."
+      ],
+      "counter_evidence": "/tmp/7ad-q32L0NLY/results.json: a later exact-source run's runner-inherited-ignored-int returned 125 instead of 130 because production cleanup's ps acquisition exceeded 200 ms, and the escaped child was live before guardian cleanup. This blocks approval even though the criterion's named H selftest has a real green run."
+    },
+    {
+      "id": "AC2",
+      "status": "PASS",
+      "counted_as_met": true,
+      "command": "H selftest",
+      "actual_evidence": "/tmp/7ad-gDkXhZQy/results.json: runner-timeout-same-group, runner-timeout-escaped, and runner-timeout-parent-first each returned 142 in 3.689-3.830 s, recorded positive pre-identities, and reported no_live_registered_survivors. /tmp/7ad-q32L0NLY/results.json repeated those three timeout cases successfully.",
+      "limitation": "The shared production snapshot fragility remains a risk to cleanup reliability, but no timeout failure was observed in this criterion's actual cases."
+    },
+    {
+      "id": "AC3",
+      "status": "PASS_WITH_STABILITY_DEFECT",
+      "counted_as_met": true,
+      "command": "H selftest",
+      "actual_evidence": "/tmp/7ad-gDkXhZQy/results.json: runner HUP/INT/TERM returned 129/130/143; gate and raw recipe pre-registration/ready relays failed with interruption diagnostics; raw make-group HUP/INT/TERM returned nonzero; all reported no_live_registered_survivors and interruption was observed.",
+      "counter_evidence": "/tmp/7ad-q32L0NLY/results.json: runner-inherited-ignored-int instead returned 125, logged 'bounded-run: cleanup failure: ps read/exit budget exceeded 200 ms', and left child pid 86694 live with PPID 1 before independent cleanup. The behavior is not reliable enough for final acceptance."
+    },
+    {
+      "id": "AC4",
+      "status": "PASS",
+      "counted_as_met": true,
+      "command": "H selftest",
+      "actual_evidence": "/tmp/7ad-gDkXhZQy/results.json and /tmp/7ad-q32L0NLY/results.json: runner-parent-exit7-retained returned 7 after two positive observations, the retained escaped child was absent afterward, and the unrelated guardian sentinel remained live until guardian cleanup."
+    },
+    {
+      "id": "AC5",
+      "status": "PASS",
+      "counted_as_met": true,
+      "command": "H selftest",
+      "actual_evidence": "/tmp/7ad-gDkXhZQy/results.json: rawmake-pass returned actual make rc 0; rc7, script-error, and no-summary cases returned make rc 2; rawmake-summary-hang returned make rc 2 in 3.916 s with no survivor; raw success remained valid with a nonexistent SCRIPT_GATE override."
+    },
+    {
+      "id": "AC6",
+      "status": "FAIL",
+      "counted_as_met": false,
+      "command": "H mutants",
+      "actual_evidence": [
+        "/tmp/iter80-M4-r7-bounded-drill.outer.json: rc 3; /tmp/7ad-aDDFvEvJ/results.json: guardian ps read/exit 200 ms budget failure, bytes 0, helper unreaped, after 15 clean cases.",
+        "/tmp/iter80-M4-r7-attempt2-bounded-drill.outer.json: rc 2; /tmp/7ad-q32L0NLY/results.json: clean-first selftest failed runner-inherited-ignored-int with rc 125 and behavioral_leak true. Mutations were not reached.",
+        "/tmp/iter80-M4-mutants-focused-art/7ad-xC1eDRCX/results.json is diagnostic only: it skipped approved clean-first and its raw-bypass evidence ended in guardian cap rc 137, so it is not mutant-kill credit."
+      ]
+    },
+    {
+      "id": "AC7",
+      "status": "PASS",
+      "counted_as_met": true,
+      "command": "H crew normal",
+      "actual_evidence": "/tmp/iter80-M4-r7-real-crew-normal.outer.json: actual_rc 0, elapsed_s 22.133, no registered survivors. /tmp/iter80-M4-r7-real-crew-normal-art/7ad-cKP1f9Ft/results.json: crew-normal passed, inner_make_rc 0, cleanup_outcome no_live_registered_survivors, restoration_cmp true. /tmp/iter80-M4-r7-real-crew-normal-art/7ad-cKP1f9Ft/crew-scratch/crew-console.log contains the exact 'crew-console: 0 failures' line and no FAIL or SCRIPT ERROR line."
+    },
+    {
+      "id": "AC8",
+      "status": "NOT_MET_UNMEASURED",
+      "counted_as_met": false,
+      "command": "H crew hang",
+      "actual_evidence": "/tmp/iter80-M4-r7-real-crew-hang.outer.json: actual_rc 1 after 2.493 s, not the required make rc 2. /tmp/iter80-M4-r7-real-crew-hang-art/7ad-Burbhc5P/worker-error.txt: 'copy source escapes ROOT: sunholo/relativity/0.12.0/AGENT.md at tools/test_bounded_run.pl line 597.' The copied AGENT.md is a regular non-symlink file; macOS realpath canonicalizes its /tmp ancestor to /private/tmp while the guard compares against raw /tmp. Actual timeout, <=64 s behavior, and process cleanup were never exercised."
+    },
+    {
+      "id": "AC9",
+      "status": "UNMEASURED",
+      "counted_as_met": false,
+      "command": "H crew hup; H crew int; H crew term",
+      "actual_evidence": "No real HUP/INT/TERM result artifact was supplied. The evidence JSON explicitly records signals_hup_int_term as UNMEASURED. Stub relay signal cases do not substitute for the required real make-group cases."
+    },
+    {
+      "id": "AC10",
+      "status": "PASS",
+      "counted_as_met": true,
+      "command": "G 30 make script-gate-lint; G 135 make script-gate-selftest; G 615 make script-gate-drill",
+      "actual_evidence": "/tmp/iter80-M4-r7-batch.json records lint, legacy selftest, and legacy drill rc 0. /tmp/iter80-M4-r7-lint.log records 249 total, 131 gated, 118 baseline, and four prerequisite pairs. /tmp/iter80-M4-r7-selftest.log records 18 stub cases; /tmp/iter80-M4-r7-drill.log records 24 total cases (18 stub, 6 Godot). The protected existing test bodies and ceilings were not changed by the candidate diff."
+    },
+    {
+      "id": "AC11",
+      "status": "NOT_MET",
+      "counted_as_met": false,
+      "command": "G 135 make bounded-run-selftest; G 195 make bounded-run-drill; G 30 make python-guard; H audit BASE",
+      "actual_evidence": [
+        "/tmp/iter80-M4-r7-bounded-selftest.outer.json: bounded-run-selftest rc 0, 117.098 s, 42/42.",
+        "/tmp/iter80-M4-r7-bounded-drill.outer.json and retry: bounded-run-drill rc 3 then rc 2; required mutation gate is red.",
+        "/tmp/iter80-M4-r7-real-python.outer.json: python-guard rc 0; /tmp/iter80-M4-r7-real-uid.outer.json: uid-guard rc 0.",
+        "Audit is PENDING in /tmp/iter80-evaluator-r1-evidence.json, so the functional scope/byte/graph acceptance is not complete."
+      ]
+    }
+  ],
+  "actionable_root_causes_and_fixes": [
+    {
+      "id": "R1",
+      "root_cause": "tools/bounded_run.sh:23-56 snapshot permits exactly one 200 ms ps acquisition per call and throws on a zero-byte/unreaped helper. signal_owned at :163-170 invokes that fresh snapshot for every signal. The cleanup eval at :210-250 converts the first snapshot exception into cleanup_error/result 125 and exits the normal cleanup path. The emergency loop at :249 only revisits identities already in %stopped, so an escaped child not yet stopped is not guaranteed a final CONT/KILL.",
+      "actual_outcome": "In /tmp/7ad-q32L0NLY/results.json the runner logged interrupted INT followed by 'cleanup failure: ps read/exit budget exceeded 200 ms'; post identity pid 86694 was still stat Ss with ppid 1. The independent guardian later removed it, which cannot turn the candidate into a pass.",
+      "fix": "Keep the approved per-acquisition 200 ms cap but make cleanup resilient: retry a failed acquisition within the existing 3-second cleanup budget, or use an approved targeted identity query that is still fresh and birth-checked. Do not abort the entire cleanup after one transient miss. Track all observed descendants, not only identities already stopped, and ensure every retained descendant gets an identity-checked TERM/CONT/KILL attempt within the cleanup bound. Add a production-side transient-ps regression that verifies no leak."
+    },
+    {
+      "id": "R2",
+      "root_cause": "tools/test_bounded_run.pl:44-68 table has the same one-shot 200 ms acquisition behavior. The independent guardian therefore aborted the required mutants run when one ps helper produced no bytes before the cap.",
+      "actual_outcome": "/tmp/7ad-aDDFvEvJ/results.json stopped after 15 clean cases with bytes=0, eof=0, status=unreaped. This was an actual outside-sandbox inspection failure, not a blanket sandbox denial: /tmp/iter80-M4-r7-native-ps-controls.json records four successful native ps controls in 20.266-23.234 ms.",
+      "fix": "Make the guardian retry a transient helper timeout within its finite independent budget and reap each helper before continuing. Keep denied/malformed inspections distinct from transient timeout. Rerun H mutants with approved clean-first; do not weaken the mutant assertions or count a cap/inspection failure as a kill."
+    },
+    {
+      "id": "R3",
+      "root_cause": "tools/test_bounded_run.pl:597 compares abs_path($from), which resolves a /tmp ancestor to /private/tmp on macOS, against raw \"$source/\" where $source is still /tmp/.... The check therefore rejects a regular in-tree file even though there is no symlink escape.",
+      "actual_outcome": "The synthetic real hang mode aborted after 2.493 s with 'copy source escapes ROOT: sunholo/relativity/0.12.0/AGENT.md'. Independent targeted stat showed that file was regular and not a symlink; only its canonical ancestor differed.",
+      "fix": "Canonicalize the source root once (for example, compare resolved children with abs_path($source)), preserve the no-symlink/no-outside-source security check, and rerun the synthetic hang and all three real interruption modes."
+    },
+    {
+      "id": "R4",
+      "root_cause": "tools/test_bounded_run.pl:643-645 correctly refuses mutation testing when clean-first fails. This is not a reason to remove clean-first.",
+      "actual_outcome": "The focused mutation diagnostic skipped clean-first and cannot satisfy AC6; its raw-bypass mutant ended in guardian cap rc 137.",
+      "fix": "Fix R1/R2 first, then run the unmodified approved mutants mode. Preserve fixed expected case names, actual behavioral failures, independent cleanup, and cmp restoration."
+    },
+    {
+      "id": "R5",
+      "root_cause": "Exact-head CI and H audit are controller-owned final gates, not properties demonstrated by earlier milestone commits.",
+      "actual_outcome": "The candidate is a backup branch without an exact candidate PR/CI; audit is pending.",
+      "fix": "After the corrected source passes all project-specific gates, run H audit against fa8480d55d55df7eccc3d16cf4f296e2357e327f and obtain the exact-head GitHub fast-tier success. Do not substitute unrelated main CI or milestone CI."
+    }
+  ],
+  "design_fidelity": {
+    "score": 6,
+    "max": 10,
+    "matched": [
+      "One production bounded runner is used by script_gate.sh and the raw crew-console recipe.",
+      "The raw Make recipe retains its import prerequisite and rc/no-SCRIPT-ERROR/exact-zero-summary conjuncts.",
+      "Observed identities are retained across reparenting in the implementation, and unrelated sentinel/process controls exist.",
+      "The guardian is independent of the candidate supervisor, and the Make graph reaches bounded-run-selftest from test and ci-fast while keeping bounded-run-drill targeted.",
+      "No game, physics, package, bridge/runtime/protocol, serial, Python, or UID source is changed.",
+      "The documented polling limitation is accurately retained; no arbitrary unseen-daemon containment claim is made."
+    ],
+    "unmet_or_deviating": [
+      "The 200 ms acquisition contract is implemented literally but aborts cleanup on its first transient miss, defeating the central escaped-child cleanup goal in an actual run.",
+      "Causal mutation discrimination was never completed through the approved required mode.",
+      "The real synthetic timeout behavior and all three real interruption modes were not measured.",
+      "The scope/byte/graph audit and exact-head fast CI remain incomplete."
+    ]
+  },
+  "scope_and_protected_bytes": {
+    "candidate_diff_paths_count": 10,
+    "implementation_code_paths": [
+      "tools/bounded_run.sh",
+      "tools/test_bounded_run.pl",
+      "tools/script_gate.sh",
+      "Makefile",
+      "mk/script-gates.mk"
+    ],
+    "named_record_or_deliverable_paths": [
+      "changelogs/unreleased/2026-11-08-bounded-script-runner.md",
+      "design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md",
+      "design_docs/planned/r1/m4-7ad-bounded-script-supervisor-sprint.md",
+      ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+      ".ailang/state/evaluations/repro_R1-7ad_iter80.json"
+    ],
+    "changed_paths_match_supplied_allowlist": true,
+    "reviewed_source_hashes_match": {
+      "tools/bounded_run.sh": "2a7acb37c7e7db145761f8dd615cbe4300c26ca6d004e3d970dec16c370d6f0d",
+      "tools/test_bounded_run.pl": "10d2578eb5642cec60215602ae2ba47debbd5f69cedf2441670a71b3a200233c",
+      "tools/script_gate.sh": "322662453588c60f10842bcd4c45adbadd472aff776e607e572a8ee2df9df143",
+      "mk/script-gates.mk": "22cd06e419dd4f04e29a7c8f1684d624dc3a76f99408c1d292b29562bd7e489e",
+      "Makefile": "a6cba2d54cfd47b9bb4adf2457dcd901a20abe56a96b49d9da5a42e399376b35"
+    },
+    "materialization_manifest": "/tmp/iter80-M4-r7-materialization.json: mismatches 0; its five source hashes and changelog hash match the reviewed files.",
+    "protected_source_static_finding": "The full supplied base-to-candidate diff contains no changes to tests/test_crew_console.gd, tools/test_script_gate.sh, tools/script_gate_lint.sh, or tools/script-gate-baseline.txt. Its Makefile hunk is confined to crew-console-test and its relay. This supports byte preservation statically, but H audit is pending and therefore AC11 is not complete.",
+    "prior_28_features_exactly_preserved": true,
+    "non_feature_parent_metadata_exactly_preserved": true,
+    "parent_sprint_status": "in-progress",
+    "parent_sprint_completed_by_this_candidate": false,
+    "feature_passes": false,
+    "feature_status": "in_progress",
+    "m4_passes": false,
+    "m5_complete": false,
+    "note": "The candidate correctly leaves the feature and parent incomplete. No unrelated parent feature or prior-sprint obligation was counted as this feature's work."
+  },
+  "per_milestone_non_vacuity": [
+    {
+      "milestone": "M1",
+      "assessment": "CREDITED_TO_THIS_FEATURE",
+      "evidence": "/tmp/iter80-M1-r3-check/7ad-ocH3ZRYS/results.json: 53/53 independent guardian controls passed, including status 0/7/142, signal 143, cap 124, arbitrary escaped descendants, denial, budget, registration, parser, and normalization controls. /tmp/iter80-M1-r3-controls.outer.json: rc 0, 21.799 s, no cap/survivors. This is milestone-own causal evidence, not inherited whole-sprint credit."
+    },
+    {
+      "milestone": "M2",
+      "assessment": "CREDITED_TO_THIS_FEATURE",
+      "evidence": "/tmp/iter80-M2-r5-boundary.outer.json: validator rc 0, actual selftest rc 1, 25 required runner/ordinary cases passed and exactly 17 named integration failures, no caps/voids/survivors. /tmp/stapledon-iter80-M2.a4XyXi/7ad-C1eQzmeP/results.json retains the 42 named cases. Partial-red evidence is causal and was not treated as whole-sprint green."
+    },
+    {
+      "milestone": "M3",
+      "assessment": "CREDITED_TO_THIS_FEATURE",
+      "evidence": "/tmp/iter80-M3-r7-check/7ad-jJPgyvCb/results.json: all 42 selftest cases passed; /tmp/iter80-M3-r7-selftest.outer.json: rc 0, 119.428 s, no worker/outer cap, restriction, void, or survivors. The small timing margin is recorded as risk."
+    },
+    {
+      "milestone": "M4",
+      "assessment": "NOT_ACCEPTED",
+      "evidence": "The M4 additions exist and normal crew/legacy/selftest gates have causal green evidence, but the required mutation drill failed twice, the real hang fixture aborted before exercising hang behavior, real signal modes are unmeasured, and audit is pending. /tmp/7ad-q32L0NLY/results.json preserves the production cleanup/leak failure."
+    },
+    {
+      "milestone": "M5",
+      "assessment": "PENDING_NOT_CREDITED",
+      "evidence": "Controller acceptance is incomplete: AC6/AC8/AC9/AC11 and exact-head CI are not green. No parent completion or landing approval is inferred."
+    }
+  ],
+  "evidence_provenance": [
+    {
+      "kind": "controller outside-sandbox runtime evidence",
+      "scope": "All process, Godot, Make, mutation, and legacy-gate outcomes cited above",
+      "paths": [
+        "/tmp/iter80-evaluator-r1-evidence.json",
+        "/tmp/iter80-run-facts.json",
+        "/tmp/iter80-M4-r7-batch.json",
+        "/tmp/7ad-gDkXhZQy/results.json",
+        "/tmp/7ad-aDDFvEvJ/results.json",
+        "/tmp/7ad-q32L0NLY/results.json",
+        "/tmp/iter80-M4-r7-native-ps-controls.json",
+        "/tmp/iter80-M4-r7-real-crew-normal.outer.json",
+        "/tmp/iter80-M4-r7-real-crew-normal-art/7ad-cKP1f9Ft/results.json",
+        "/tmp/iter80-M4-r7-real-crew-normal-art/7ad-cKP1f9Ft/crew-scratch/crew-console.log",
+        "/tmp/iter80-M4-r7-real-crew-hang.outer.json",
+        "/tmp/iter80-M4-r7-real-crew-hang-art/7ad-Burbhc5P/worker-error.txt"
+      ],
+      "limitation": "These were inspected as retained outside-sandbox artifacts; the evaluator did not rerun process/Godot gates inside its sandbox, where such observations would be uninformative."
+    },
+    {
+      "kind": "candidate wrapper provenance",
+      "paths": [
+        "/tmp/iter80-evaluator-r1-candidate.diff",
+        "/tmp/iter80-evaluator-r1-changed-files.txt",
+        "/tmp/iter80-evaluator-r1-base-sprint.json",
+        "/tmp/iter80-evaluator-r1-reviewed-source-sha256.txt",
+        "/tmp/iter80-evaluator-r1-pre-status.txt"
+      ],
+      "finding": "The supplied diff has exactly the ten expected paths; current five source hashes equal the reviewed-source manifest and M4 materialization. The pre-status file is empty."
+    },
+    {
+      "kind": "independent evaluator static checks",
+      "commands": [
+        "sh -n tools/bounded_run.sh tools/script_gate.sh => sh -n: ok",
+        "perl -c tools/test_bounded_run.pl => syntax OK",
+        "shasum -a 256 of the five reviewed source files => exact match to reviewed-source manifest",
+        "structured Python comparison of current/base sprint JSON => prior 28 features exact; all non-feature metadata exact; current feature is the sole appended feature"
+      ],
+      "limitation": "No git, inbox, provider, package install, source mutation, host-wide scan, or production process/Godot rerun was performed."
+    }
+  ],
+  "limitations_and_unknown_ci": {
+    "exact_reviewed_head_ci": "UNKNOWN/PENDING",
+    "exact_reviewed_head_pr": "none supplied; candidate is identified as a backup branch",
+    "unrelated_ci_credited": false,
+    "audit": "PENDING",
+    "real_hang": "unmeasured because the private copy fixture aborted on the /tmp versus /private/tmp canonicalization bug",
+    "real_signals": "HUP, INT, and TERM unmeasured",
+    "mutants": "required clean-first mode failed; focused diagnostic is not acceptance",
+    "full_suite": "Not run: the approved design and mission explicitly do not require make test/full ci-fast for this feature, and the evaluator was instructed not to rerun full, GPU, golden, quiet-host, or host-wide process gates.",
+    "sandbox_runtime": "No evaluator ps/Godot claim was used as pass/fail evidence.",
+    "future_corrections": "No credit was given for the separately authorized executor correction; it is not in reviewed commit 386dad484b5b9ce18df20ef500f6f99be3c4eb7a."
+  }
+}
