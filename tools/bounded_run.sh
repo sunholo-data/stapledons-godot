@@ -22,9 +22,9 @@ sub write_file { my ($p,$s)=@_; open my $f,'>',$p or die "$p: $!\n"; print {$f} 
 my %helpers;
 sub snapshot_once {
     my ($phase_end)=@_; my $end=now()+0.2; $end=$phase_end if defined($phase_end) && $phase_end<$end;
-    die "inspection budget exhausted\n" if $end<=now()+0.04;
-    # Reserve 40ms INSIDE this acquisition for KILL + WNOHANG collection.
-    my $read_end=$end-0.04;
+    die "inspection budget exhausted\n" if $end<=now()+0.08;
+    # Reserve 80ms INSIDE this acquisition for KILL + WNOHANG collection.
+    my $read_end=$end-0.08;
     for my $q (keys %helpers) {
         kill 'KILL',$q;
         while(now()<$end) { my $w=waitpid($q,WNOHANG); if ($w!=0) { delete $helpers{$q}; last } sleep(0.001) }
@@ -32,6 +32,7 @@ sub snapshot_once {
     die "ps helper collection budget exhausted\n" if keys %helpers;
     pipe(my $r,my $w) or die "ps pipe: $!\n";
     pipe(my $er,my $ew) or die "ps stderr pipe: $!\n";
+    die "inspection budget exhausted\n" if now()+0.085>=$end;
     my $p=fork(); die "ps fork: $!\n" unless defined $p;
     if (!$p) { setpgrp(0,0) or POSIX::_exit(126); $SIG{$_}='DEFAULT' for qw(HUP INT TERM); close $r; close $er; open STDOUT,'>&',$w; open STDERR,'>&',$ew; close $w; close $ew;
         $ENV{LC_ALL}='C'; exec 'ps','-axo','pid=,ppid=,pgid=,lstart=,stat=' or POSIX::_exit(127) }
@@ -83,11 +84,20 @@ sub snapshot {
     my ($end)=@_; my $limit=now()+0.6; $end=$limit if !defined($end) || $end>$limit;
     my $error="inspection budget exhausted\n";
     for my $attempt (1..3) {
-        last if now()+0.045>=$end;
+        last if now()+0.085>=$end;
         my $t=eval { snapshot_once($end) }; return $t if $t;
         $error=$@; die $error unless $error=~/^ps transient read\/exit budget exceeded 200ms/;
     }
     die $error;
+}
+sub collected_probe_timeout {
+    my ($failure,$pending)=@_;
+    return !$pending && defined($failure) && $failure=~/\Aps transient read\/exit budget exceeded 200ms\n?\z/;
+}
+sub settle_deadline {
+    my ($deadline,$event,$received,$at)=@_;
+    return ('TIMEOUT',$deadline) if $at>=$deadline && (!defined($received) || $received>=$deadline);
+    return ($event,$received);
 }
 sub canceled_probe_timeout {
     my ($failure,$cancellation,$pending)=@_;
@@ -118,7 +128,7 @@ if (@ARGV && $ARGV[0] eq '--relay') { shift; $relay=shift; usage() unless define
 my $secs=shift @ARGV; usage() unless defined($secs) && $secs=~/^[0-9]+$/ && $secs>0 && $secs<2147483647 && @ARGV>=2 && shift(@ARGV) eq '--' && length($ARGV[0]);
 my $deadline=$entry+$secs;
 if ($relay) {
-    my ($pid,$id,$status); my $limit=$deadline+4; my $sent=0; my $reaped=0;
+    my ($pid,$id,$status); my $limit=$deadline+4; my $sent=0; my $reaped=0; my $request_seen=0;
     eval {
         if (!defined($cancel)) {
             $pid=fork(); die "relay fork: $!" unless defined $pid;
@@ -129,6 +139,14 @@ if ($relay) {
             }
         }
         while(defined($pid) && now()<$limit-0.2) {
+            if (!$request_seen && -f "$relay/pending-signal") {
+                open my $request,'<',"$relay/pending-signal" or die $!;
+                my $named=<$request>//''; close $request; chomp $named;
+                if ($named=~/\A(?:HUP|INT|TERM)\z/) {
+                    $request_seen=1; $cancel=$named unless $sent;
+                    $cancel_at=now() unless defined($cancel_at);
+                }
+            }
             $limit=$cancel_at+4 if defined($cancel_at) && $cancel_at+4<$limit;
             if (!$id && -f "$relay/inner-ready") {
                 open my $f,'<',"$relay/inner-ready" or die $!;
@@ -148,11 +166,6 @@ if ($relay) {
                 # Before shell confirmation it safely terminates its unreaped
                 # direct child. The private record preserves the requested
                 # signal for the actual inner production supervisor.
-                if (-f "$relay/pending-signal") {
-                    open my $f,'<',"$relay/pending-signal" or die $!;
-                    my $requested=<$f>//''; close $f; chomp $requested;
-                    $cancel=$requested if $requested=~/^(HUP|INT|TERM)$/;
-                }
                 my $t=snapshot($limit); kill $cancel,$pid if alive($id,$t); $sent=1;
             }
             if(waitpid($pid,WNOHANG)==$pid) { $status=normalized($?); $reaped=1; last }
@@ -231,12 +244,15 @@ eval {
     if (!defined $cancel) { syswrite($release,'G',1)==1 or die "handshake write: $!\n" }
     close $release; undef $release;
     while(1) {
+        ($cancel,$cancel_at)=settle_deadline($deadline,$cancel,$cancel_at,now());
         last if defined($cancel);
-        if(now()>=$deadline) { $cancel='TIMEOUT'; $cancel_at=$deadline; last }
         collect_root(); last if defined($original_status);
         my $scan=eval { snapshot($deadline+0.2) };
         if (!$scan) {
             my $failure=$@;
+            if (collected_probe_timeout($failure,scalar keys %helpers)) {
+                ($cancel,$cancel_at)=settle_deadline($deadline,$cancel,$cancel_at,now());
+            }
             if (canceled_probe_timeout($failure,$cancel,scalar keys %helpers)) {
                 print STDERR "bounded-run: canceled inspection deferred: $failure";
                 last; # Cleanup still requires fresh closure and verified absence.

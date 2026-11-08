@@ -162,8 +162,8 @@ crew-console-test: import ## R2-CREW-CONSOLE-V2 AC6-AC12: palette (contrast, CVD
 	relay_signal() { \
 	  [ -n "$$cancel" ] || cancel=$$1; \
 	  if [ -n "$$runner" ]; then \
-	    if [ -n "$$confirmed" ]; then sh "$$bounded" --signal "$$relay/ready" "$$cancel" || :; \
-	    else printf '%s\n' "$$cancel" > "$$relay/pending-signal"; kill -TERM "$$runner" 2>/dev/null || :; fi; \
+	    [ -f "$$relay/pending-signal" ] || printf '%s\n' "$$cancel" > "$$relay/pending-signal"; \
+	    if [ -z "$$confirmed" ]; then kill -TERM "$$runner" 2>/dev/null || :; fi; \
 	  fi; \
 	}; \
 	trap 'relay_signal HUP' HUP; \
