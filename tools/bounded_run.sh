@@ -66,8 +66,78 @@ sub equal { my ($a,$b)=@_; return $a && $b && $a->{pid}==$b->{pid} && $a->{birth
 sub alive { my ($a,$t)=@_; return equal($a,$t->{$a->{pid}}) && $t->{$a->{pid}}{stat}!~/Z/ }
 sub normalized { my ($s)=@_; return $s & 127 ? 128+($s & 127) : $s>>8 }
 sub usage { print STDERR "bounded-run: usage: bounded_run.sh N -- command [args ...]\n"; exit 2 }
+# Internal shell relay: one held worker and an absolute independent deadline.
+# Calling shells keep traps before spawn and collect only after the done marker.
+if (@ARGV && $ARGV[0] eq '--signal') {
+    shift; my ($file,$sig)=@ARGV; usage() unless defined($sig) && $sig=~/^(HUP|INT|TERM|KILL)$/;
+    my $ok=eval { open my $f,'<',$file or die $!; my $s=<$f>//''; close $f;
+        my ($pid,$birth)=split /\t/,$s,2; chomp $birth; my $t=snapshot();
+        my $id={pid=>$pid,birth=>$birth}; kill($sig,$pid) if alive($id,$t); 1 };
+    exit($ok?0:125);
+}
+if (@ARGV && $ARGV[0] eq '--barrier') {
+    shift; my ($dir,$phase,$pid,$child)=@ARGV; usage() unless defined($pid) && -d $dir;
+    write_file("$dir/$phase", "$pid".(defined($child)?"\t$child":"")."\n"); my $end=now()+3;
+    while(now()<$end && !-f "$dir/$phase.release") { nap() }
+    exit(-f "$dir/$phase.release"?0:125);
+}
+my $relay;
+if (@ARGV && $ARGV[0] eq '--relay') { shift; $relay=shift; usage() unless defined($relay) && -d $relay }
 my $secs=shift @ARGV; usage() unless defined($secs) && $secs=~/^[0-9]+$/ && $secs>0 && $secs<2147483647 && @ARGV>=2 && shift(@ARGV) eq '--' && length($ARGV[0]);
 my $deadline=$entry+$secs;
+if ($relay) {
+    my ($pid,$id,$status); my $limit=$deadline+4; my $sent=0; my $reaped=0;
+    eval {
+        if (!defined($cancel)) {
+            $pid=fork(); die "relay fork: $!" unless defined $pid;
+            if (!$pid) {
+                $ENV{BR_INNER_READY}="$relay/inner-ready";
+                $ENV{BR_INNER_RELEASE}="$relay/inner-release";
+                exec 'sh',$SCRIPT,$secs,'--',@ARGV or POSIX::_exit(127);
+            }
+        }
+        while(defined($pid) && now()<$limit-0.2) {
+            $limit=$cancel_at+4 if defined($cancel_at) && $cancel_at+4<$limit;
+            if (!$id && -f "$relay/inner-ready") {
+                open my $f,'<',"$relay/inner-ready" or die $!;
+                my $line=<$f>//''; close $f; chomp $line;
+                my ($inner,$birth,$command,$command_birth)=split /\t/,$line;
+                my $t=snapshot($limit);
+                $id={pid=>$inner,birth=>$birth};
+                die "inner supervisor identity mismatch\n" unless $inner==$pid && alive($id,$t) && $t->{$pid}{ppid}==$$;
+                die "inner held command identity mismatch\n" unless alive({pid=>$command,birth=>$command_birth},$t) && $t->{$command}{ppid}==$pid;
+                # Publish readiness only after handlers AND actual inner worker
+                # and held-command identities have been positively confirmed.
+                write_file("$relay/ready.tmp","$$\t$t->{$$}{birth}\n");
+                rename "$relay/ready.tmp","$relay/ready" or die "relay readiness: $!";
+                write_file("$relay/inner-release",'G');
+            }
+            if (defined($cancel) && !$sent && $id) {
+                # Before shell confirmation it safely terminates its unreaped
+                # direct child. The private record preserves the requested
+                # signal for the actual inner production supervisor.
+                if (-f "$relay/pending-signal") {
+                    open my $f,'<',"$relay/pending-signal" or die $!;
+                    my $requested=<$f>//''; close $f; chomp $requested;
+                    $cancel=$requested if $requested=~/^(HUP|INT|TERM)$/;
+                }
+                my $t=snapshot($limit); kill $cancel,$pid if alive($id,$t); $sent=1;
+            }
+            if(waitpid($pid,WNOHANG)==$pid) { $status=normalized($?); $reaped=1; last }
+            nap();
+        }
+        if (defined($pid) && !defined($status)) {
+            # Unreaped direct ownership is safe even before confirmation.
+            kill 'KILL',$pid unless $reaped;
+            $status=125; print STDERR "bounded-run: relay watchdog exceeded absolute deadline\n";
+        }
+        $status=128+($cancel eq 'HUP'?1:$cancel eq 'INT'?2:15) if defined $cancel;
+        1;
+    } or do { print STDERR "bounded-run: relay setup/inspection failure: $@"; $status=125; kill 'TERM',$pid if $pid && !$reaped };
+    if($pid && !$reaped) { while(now()<$limit) { last if waitpid($pid,WNOHANG)!=0; nap() } }
+    eval { write_file("$relay/done.tmp",($status//125)."\n"); rename "$relay/done.tmp","$relay/done" or die $! };
+    exit($status//125);
+}
 my (%owned,%stopped,$root,$root_id,$original_status,$error,$release);
 sub collect_root {
     return if !defined($root) || defined($original_status);
@@ -115,6 +185,13 @@ eval {
     my $t=snapshot($deadline); $root_id=$t->{$root};
     die "held command identity absent\n" unless $root_id && $root_id->{ppid}==$$;
     $owned{$root}=$root_id;
+    if (defined($ENV{BR_INNER_READY})) {
+        my $file=$ENV{BR_INNER_READY};
+        write_file("$file.tmp","$$\t$t->{$$}{birth}\t$root\t$root_id->{birth}\n");
+        rename "$file.tmp",$file or die "inner ready rename: $!";
+        while(now()<$deadline && !defined($cancel) && !-f $ENV{BR_INNER_RELEASE}) { nap() }
+        die "inner release budget exhausted\n" if !defined($cancel) && !-f $ENV{BR_INNER_RELEASE};
+    }
     # Handler was installed before fork; a pending cancellation never releases exec.
     if (!defined $cancel) { syswrite($release,'G',1)==1 or die "handshake write: $!\n" }
     close $release; undef $release;
@@ -155,7 +232,7 @@ eval {
         last if now()>=$cleanup_end; signal_owned('TERM',$id,$cleanup_end);
         signal_owned('CONT',$id,$cleanup_end) if now()<$cleanup_end;
     }
-    my $grace=now()+2; $grace=$cleanup_end-0.35 if $grace>$cleanup_end-0.35;
+    my $grace=now()+0.5; $grace=$cleanup_end-0.35 if $grace>$cleanup_end-0.35;
     while(now()<$grace) { collect_root(); reap_helpers(); $t=snapshot($cleanup_end); discover($t); last unless grep {alive($_,$t)} values %owned; nap() }
     for my $id (values %owned) { last if now()>=$cleanup_end; signal_owned('KILL',$id,$cleanup_end) }
     my $survivors=1;

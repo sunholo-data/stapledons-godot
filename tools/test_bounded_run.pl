@@ -455,8 +455,18 @@ sub fixture_case {
     }
     my %early; my $unconfirmed_child;
     my ($pre,$obs,$sent,$barrier,$target,$trigger_at,$release_at)=([],0,0,0,undef,undef,undef);
+    my $candidate_barrier_seen=0;
     my $r=run_command($name,6,$argv,sub {
         my ($pid,$t0)=@_; my $t=controlled_table();
+        if (defined($phase) && $phase ne 'group') {
+            for my $hook (qw(prereg ready)) {
+                next unless -f "$dir/$hook";
+                $candidate_barrier_seen=1;
+                # Advance past non-target hooks without waiting for identities;
+                # the selected hook still requires two healthy observations.
+                put("$dir/$hook.release",'release') if $hook ne $phase && !-f "$dir/$hook.release";
+            }
+        }
         my $ids=fixture_ids($ready);
         if(@$ids==2) { $pre=$ids; $obs++ if !grep {!live($_,$t)} @$ids }
         if ($kind eq 'parentexit' && $obs>=2 && !defined($release_at)) { put("$ready.release",'release'); $release_at=now() }
@@ -477,9 +487,9 @@ sub fixture_case {
                 my $par=$t->{$p}{ppid}; if ($early{$par} && matches($early{$par},$t->{$par})) { $early{$p}=$t->{$p}; $more=1 }
             } }
         }
-        # In a pre-integration candidate there is no barrier. Deliver the signal
-        # to the actual shell after positive readiness; missing barrier stays RED.
-        if (defined($phase) && !$barrier && $obs>=2 && now()-$t0>0.3) {
+        # Only a candidate with no observed hooks may use the pre-integration
+        # fallback; once any hook is seen, wait for the selected barrier.
+        if (defined($phase) && !$candidate_barrier_seen && !$barrier && $obs>=2 && now()-$t0>0.3) {
             $target=$type eq 'raw' ? $pre->[0]{ppid}:$pid;
         }
         if (defined($sig) && defined($target) && !$sent) {
@@ -509,17 +519,19 @@ sub fixture_case {
     $ok &&=$r->{elapsed}<=6;
     $ok &&=defined($trigger_at) && now()-$trigger_at<=4 if defined $sig;
     $ok &&=$log!~/script-gate: .* ok:|^crew-console-test: ok/m if defined $sig;
+    my $named=defined($sig)?uc($sig):'';
     if (defined($sig)) {
-        my $named=uc($sig); $ok &&=$log=~/^bounded-run: interrupted by \Q$named\E$/m;
+        $ok &&=$log=~/^bounded-run: interrupted by \Q$named\E$/m;
     }
     my $c=case_result(name=>$name,%$r,passed=>$ok,trigger=>defined($sig)?"direct $sig ".($phase//'runner'):$kind eq 'parentexit'?'ordinary exit after two observations':'deadline',
         pre_identities=>$pre,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$pre],
         inner_make_rc=>$type eq 'raw'?$r->{actual_rc}:undef,behavioral_leak=>@survivors?JSON::PP::true:JSON::PP::false,
         unconfirmed_child=>$unconfirmed_child,early_identities=>[values %early],
-        inner_interruption_observed=>defined($sig) && $log=~/^bounded-run: interrupted by \Q\U$sig\E$/m?JSON::PP::true:JSON::PP::false,
+        inner_interruption_observed=>defined($sig) && $log=~/^bounded-run: interrupted by \Q$named\E$/m?JSON::PP::true:JSON::PP::false,
         production_log=>$log,barrier_observed=>$barrier?JSON::PP::true:JSON::PP::false,cleanup_outcome=>'pending');
     # Leak observation and passed=false are durable BEFORE independent cleanup.
     $c->{cleanup_outcome}=clean_ids(\@checked); save();
+    die "interruption reporter disagrees with passing functional case\n" if $ok && defined($sig) && !$c->{inner_interruption_observed};
 }
 sub selftest {
     @CASES=();

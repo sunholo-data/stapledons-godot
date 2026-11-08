@@ -6,10 +6,8 @@
 # 'SCRIPT ERROR' in the log; a line matching SUMMARY_ERE (which must start with ^). The command runs
 # through env, so a leading VAR=value (as $(GODOT_SIM) expands) and `env -u X` both work. All output
 # goes to LOG. A pass prints one line; a failure prints the log's non-ok lines (last 40) and every reason.
-# The timeout is an independent perl supervisor (round-2 amendment A2): it runs the command in its own
-# process group and at the deadline sends TERM, waits 2 s, then KILLs the whole group, so a command that
-# ignores SIGALRM or leaves a child behind is still stopped (exit 142). Limit: a child that calls setsid
-# or setpgrp itself leaves the group and is not killed. No --script gate does that today.
+# The bounded supervisor retains observed descendants across PGID changes and reparenting.
+# Polling cannot contain a child that escapes before its first observation.
 set -u
 usage() { echo "script-gate: usage: script_gate.sh NAME LOG TIMEOUT_S SUMMARY_ERE [WANT_RC] -- command [args...]"; exit 2; }
 [ $# -ge 6 ] || usage
@@ -25,10 +23,53 @@ case $want in '' | *[!0-9]*) echo "script-gate: $name: WANT_RC must be a number,
 case $summary in '^'?*) ;; *) echo "script-gate: $name: SUMMARY_ERE must start with ^ (got '$summary')"; exit 2 ;; esac
 mkdir -p "$(dirname "$log")"
 start=$(date +%s)
-perl -e 'use POSIX ":sys_wait_h"; my $secs = shift; my $pid = fork; die "fork: $!" unless defined $pid; if ($pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127; } my $end = time + $secs; my $st; while (1) { my $r = waitpid($pid, WNOHANG); if ($r == $pid) { $st = $?; last } if (time >= $end) { kill "TERM", -$pid; my $g = time + 2; while (time < $g) { last if waitpid($pid, WNOHANG) == $pid; select(undef, undef, undef, 0.1) } kill "KILL", -$pid; waitpid($pid, 0); kill "KILL", -$pid; exit 142 } select(undef, undef, undef, 0.1) } exit($st & 127 ? 128 + ($st & 127) : $st >> 8)' "$limit" env "$@" > "$log" 2>&1
-rc=$?
+bounded=$(dirname "$0")/bounded_run.sh
+cancel= runner= relay= confirmed=
+relay_signal() {
+  [ -n "$cancel" ] || cancel=$1
+  if [ -n "$runner" ]; then
+    if [ -n "$confirmed" ]; then sh "$bounded" --signal "$relay/ready" "$cancel" || :
+    else printf '%s\n' "$cancel" > "$relay/pending-signal"; kill -TERM "$runner" 2>/dev/null || :; fi
+  fi
+}
+trap 'relay_signal HUP' HUP
+trap 'relay_signal INT' INT
+trap 'relay_signal TERM' TERM
+relay=$(mktemp -d "${TMPDIR:-/tmp}/bounded-shell.XXXXXX") || exit 125
+if [ -n "$cancel" ]; then rc=125; printf '%s\n' "bounded-shell: cancelled before spawn" > "$log"
+else
+  sh "$bounded" --relay "$relay" "$limit" -- "$@" > "$log" 2>&1 & runner=$!
+  # The deterministic barrier holds the real spawned, captured, unconfirmed
+  # direct child window. Pending traps were installed before this fork.
+  if [ -n "${BR_RELAY_TEST_DIR:-}" ]; then
+    sh "$bounded" --barrier "$BR_RELAY_TEST_DIR" prereg "$$" "$runner" || :
+  fi
+  [ -z "$cancel" ] || relay_signal "$cancel"
+  tries=0
+  while [ ! -f "$relay/ready" ] && [ ! -f "$relay/done" ] && [ "$tries" -lt "$(((limit + 4) * 100))" ]; do
+    sleep 0.01; tries=$((tries + 1))
+    [ -z "$cancel" ] || break
+  done
+  if [ -f "$relay/ready" ] && [ -z "$cancel" ]; then
+    confirmed=1
+    if [ -n "${BR_RELAY_TEST_DIR:-}" ]; then sh "$bounded" --barrier "$BR_RELAY_TEST_DIR" ready "$$" "$runner" || :; fi
+  fi
+  # The relay owns an absolute monotonic N+4 / first-signal+4 watchdog.
+  # A trapped wait may return early; collect until completion or child exit.
+  while :; do
+    wait "$runner"; rc=$?
+    if [ -f "$relay/done" ]; then read -r rc < "$relay/done"; break; fi
+    [ "$rc" -ne 127 ] || break
+    [ -n "$cancel" ] && kill -0 "$runner" 2>/dev/null || break
+  done
+fi
+trap - HUP INT TERM
+rm -f "$relay/ready.tmp" "$relay/ready" "$relay/done" "$relay/done.tmp" "$relay/inner-ready" "$relay/inner-ready.tmp" "$relay/inner-release" "$relay/pending-signal"
+rmdir "$relay" 2>/dev/null || :
+[ -z "$cancel" ] || rc=125
 secs=$(($(date +%s) - start))
 why=""
+[ -z "$cancel" ] || why="$why; interrupted by $cancel"
 if [ "$rc" -eq 142 ]; then why="$why; timeout after $limit s (rc 142): a runtime error before quit() leaves Godot running"
 elif [ "$rc" -ne "$want" ]; then why="$why; rc $rc, want $want"; fi
 se=$(grep -c 'SCRIPT ERROR' "$log")
