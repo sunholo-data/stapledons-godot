@@ -90,6 +90,15 @@ sub snapshot {
     }
     die $error;
 }
+sub collected_probe_timeout {
+    my ($failure,$pending)=@_;
+    return !$pending && defined($failure) && $failure=~/\Aps transient read\/exit budget exceeded 200ms\n?\z/;
+}
+sub settle_deadline {
+    my ($deadline,$event,$received,$at)=@_;
+    return ('TIMEOUT',$deadline) if $at>=$deadline && (!defined($received) || $received>=$deadline);
+    return ($event,$received);
+}
 sub canceled_probe_timeout {
     my ($failure,$cancellation,$pending)=@_;
     return defined($cancellation) && !$pending && defined($failure) &&
@@ -119,7 +128,7 @@ if (@ARGV && $ARGV[0] eq '--relay') { shift; $relay=shift; usage() unless define
 my $secs=shift @ARGV; usage() unless defined($secs) && $secs=~/^[0-9]+$/ && $secs>0 && $secs<2147483647 && @ARGV>=2 && shift(@ARGV) eq '--' && length($ARGV[0]);
 my $deadline=$entry+$secs;
 if ($relay) {
-    my ($pid,$id,$status); my $limit=$deadline+4; my $sent=0; my $reaped=0;
+    my ($pid,$id,$status); my $limit=$deadline+4; my $sent=0; my $reaped=0; my $request_seen=0;
     eval {
         if (!defined($cancel)) {
             $pid=fork(); die "relay fork: $!" unless defined $pid;
@@ -130,6 +139,14 @@ if ($relay) {
             }
         }
         while(defined($pid) && now()<$limit-0.2) {
+            if (!$request_seen && -f "$relay/pending-signal") {
+                open my $request,'<',"$relay/pending-signal" or die $!;
+                my $named=<$request>//''; close $request; chomp $named;
+                if ($named=~/\A(?:HUP|INT|TERM)\z/) {
+                    $request_seen=1; $cancel=$named unless $sent;
+                    $cancel_at=now() unless defined($cancel_at);
+                }
+            }
             $limit=$cancel_at+4 if defined($cancel_at) && $cancel_at+4<$limit;
             if (!$id && -f "$relay/inner-ready") {
                 open my $f,'<',"$relay/inner-ready" or die $!;
@@ -149,11 +166,6 @@ if ($relay) {
                 # Before shell confirmation it safely terminates its unreaped
                 # direct child. The private record preserves the requested
                 # signal for the actual inner production supervisor.
-                if (-f "$relay/pending-signal") {
-                    open my $f,'<',"$relay/pending-signal" or die $!;
-                    my $requested=<$f>//''; close $f; chomp $requested;
-                    $cancel=$requested if $requested=~/^(HUP|INT|TERM)$/;
-                }
                 my $t=snapshot($limit); kill $cancel,$pid if alive($id,$t); $sent=1;
             }
             if(waitpid($pid,WNOHANG)==$pid) { $status=normalized($?); $reaped=1; last }
@@ -229,12 +241,15 @@ eval {
     if (!defined $cancel) { syswrite($release,'G',1)==1 or die "handshake write: $!\n" }
     close $release; undef $release;
     while(1) {
+        ($cancel,$cancel_at)=settle_deadline($deadline,$cancel,$cancel_at,now());
         last if defined($cancel);
-        if(now()>=$deadline) { $cancel='TIMEOUT'; $cancel_at=$deadline; last }
         collect_root(); last if defined($original_status);
         my $scan=eval { snapshot($deadline+0.2) };
         if (!$scan) {
             my $failure=$@;
+            if (collected_probe_timeout($failure,scalar keys %helpers)) {
+                ($cancel,$cancel_at)=settle_deadline($deadline,$cancel,$cancel_at,now());
+            }
             if (canceled_probe_timeout($failure,$cancel,scalar keys %helpers)) {
                 print STDERR "bounded-run: canceled inspection deferred: $failure";
                 last; # Cleanup still requires fresh closure and verified absence.

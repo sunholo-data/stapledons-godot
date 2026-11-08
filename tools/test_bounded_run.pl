@@ -517,6 +517,93 @@ sub retry_sequence_ok {
     }
     return 0;
 }
+sub nested_r20 {
+    my ($kind)=@_; my @evidence;
+    my @variants=$kind eq 'deadline'?qw(timeout old-catch late-int early-int):qw(pending old-transport);
+    for my $variant (@variants) {
+        my $dir="$ART/nested-$kind-$variant"; make_path("$dir/tools");
+        my $before=get("$ROOT/tools/bounded_run.sh"); my $gate_before=get("$ROOT/tools/script_gate.sh");
+        my $source=$before; my $gate=$gate_before; my $q=retry_perl_quote($dir);
+        $source=~s/my %helpers;/our \$nested_deadline; my %helpers;/ or die 'nested declaration';
+        my $stamp="\$nested_deadline=\$deadline; write_file($q.'/deadline',\$deadline);";
+        $source=~s/(my \$deadline=\$entry\+\$secs;)/$1$stamp/ or die 'nested deadline';
+        my $receipt_code="write_file($q.'/receipt-'.\$name,now()); ";
+        $source=~s/(\$SIG\{\$s\}=sub \{)/$1$receipt_code/ or die 'nested receipt';
+        my $finish="write_file($q.'/inner-result',(\$result\/\/125));\n";
+        $source=~s/(exit\(\$result\/\/125\);)/$finish$1/ or die 'nested result';
+        if ($kind eq 'deadline') {
+            if ($variant ne 'early-int') {
+                my $hook="if (-f $q.'/healthy' && now()>=\$nested_deadline-0.10 && now()<\$nested_deadline) { if (sysopen(my \$f,$q.'/held',Fcntl::O_WRONLY()|Fcntl::O_CREAT()|Fcntl::O_EXCL(),0600)) { print {\$f} now(); close \$f; my \$end=now()+0.35; Time::HiRes::sleep(0.001) while now()<\$end; POSIX::_exit(0) } }\n";
+                $source=~s/(exec 'ps','-axo')/$hook$1/ or die 'nested inline hold';
+            }
+            my $poll=$variant eq 'early-int'
+                ? "if (-f $q.'/healthy' && !-f $q.'/early-ready') { nap() while now()<\$deadline-0.60; write_file($q.'/early-ready',now()); }\n"
+                : "if (-f $q.'/healthy' && !-f $q.'/held') { nap() while now()<\$deadline-0.10; }\n";
+            $source=~s/(        my \$scan=eval \{)/$poll$1/ or die 'nested poll wait';
+            # Private shortened final phase ends80ms beyond fixed deadline;
+            # reserve80ms makes the held read end exactly at the original deadline.
+            $source=~s/snapshot\(\$deadline\+0\.2\)/snapshot(\$deadline+0.08)/ or die 'nested shortened phase';
+            if ($variant eq 'old-catch') {
+                $source=~s/            if \(collected_probe_timeout\([^\n]+\) \{\n[^\n]+\n            \}\n// or die 'old catch reversal';
+            }
+        } else {
+            my $failure="write_file($q.'/obsolete-hop-invoked',now()); print STDERR \"bounded-run: forced first-hop inspection failure\\n\"; exit 125;\n";
+            $source=~s/(if \(\@ARGV && \$ARGV\[0\] eq '--signal'\) \{)/$1$failure/ or die 'nested obsolete refusal';
+            $gate=~s/(    confirmed=1)/$1; printf '%s\\n' confirmed > '$dir\/confirmed'/ or die 'nested confirmation';
+            if ($variant eq 'old-transport') {
+                my $new='    [ -f "$relay/pending-signal" ] || printf \'%s\\n\' "$cancel" > "$relay/pending-signal"';
+                my $old='    if [ -n "$confirmed" ]; then sh "$bounded" --signal "$relay/ready" "$cancel" || :; else [ -f "$relay/pending-signal" ] || printf \'%s\\n\' "$cancel" > "$relay/pending-signal"; fi';
+                $gate=~s/\Q$new\E/$old/ or die 'old transport reversal';
+            }
+        }
+        put("$dir/tools/bounded_run.sh",$source); put("$dir/tools/script_gate.sh",$gate);
+        my $ready="$dir/ready"; my $ids=[]; my ($obs,$sent,$deadline)=(0,undef,undef); my $r; my $started=now(); my $error;
+        eval {
+            local $ROOT=$dir; local $ENV{BR_RELAY_TEST_DIR}=''; local $ENV{BR_PARENT_EXIT_AFTER}='';
+            my $command=[$PERL,$SELF,'__fixture',$ENV{BR_REG_DIR},'escaped',$ready];
+            my $argv=$kind eq 'deadline'?['sh',"$dir/tools/bounded_run.sh",2,'--',@$command]:['sh',"$dir/tools/script_gate.sh",'nested',"$dir/inner.log",2,'^drill: [1-9][0-9]* passed, 0 failures$',0,'--',@$command];
+            $r=run_command("nested-$kind-$variant",6,$argv,sub {
+                my ($pid)=@_; $ids=fixture_ids($ready); return undef unless @$ids==2;
+                my $t=controlled_table(); $obs++ unless grep {!live($_,$t)} @$ids;
+                return undef unless $obs>=2; put("$dir/healthy",'healthy');
+                $deadline=0+get("$dir/deadline") if -f "$dir/deadline";
+                return undef if $sent || !defined($deadline);
+                if ($kind eq 'deadline') {
+                    my $signal_ready=$variant eq 'early-int'?'early-ready':'held';
+                    return undef unless -f "$dir/$signal_ready" && $variant=~/-int$/;
+                    return undef if $variant eq 'late-int' && now()<$deadline+0.015;
+                } else { return undef unless -f "$dir/confirmed" }
+                signal_id('INT',$t->{$pid}); $sent=now(); return $sent;
+            }); 1;
+        } or $error=$@;
+        my $post=eval {controlled_table()}; if (!$post) {$error//=$@||"unknown post identities"; $post={}} my @leaks=grep {live($_,$post)} @$ids; my $observed=now();
+        my $log=($r->{stdout}//'').($r->{stderr}//'').get("$dir/inner.log");
+        my $receipt=-f "$dir/receipt-INT"?0+get("$dir/receipt-INT"):undef;
+        my $inner=-f "$dir/inner-result"?0+get("$dir/inner-result"):undef;
+        my $ok=!$error && @$ids==2 && $obs>=2 && !@leaks && !$r->{guardian_cap_fired} && $r->{elapsed}<=6;
+        if ($kind eq 'deadline') {
+            my $premise=$variant eq 'early-int'?'early-ready':'held';
+            $ok &&=-f "$dir/$premise" && defined($deadline) && 0+get("$dir/$premise")<$deadline;
+            my $want=$variant eq 'old-catch'?125:$variant eq 'early-int'?130:142;
+            $ok &&=$r->{actual_rc}==$want && $inner==$want;
+            $ok &&=$log=~/inspection\/setup failure: ps transient read\/exit budget exceeded 200ms/ if $variant eq 'old-catch';
+            $ok &&=$log!~/inspection\/setup failure:|cleanup failure:/ if $variant ne 'old-catch';
+            $ok &&=defined($receipt) && $receipt>=$deadline if $variant eq 'late-int';
+            $ok &&=defined($receipt) && $receipt<$deadline && $log=~/^bounded-run: interrupted by INT$/m if $variant eq 'early-int';
+            $ok &&=$log=~/timeout after 2 s/ if $variant eq 'timeout' || $variant eq 'late-int';
+        } else {
+            $ok &&=$r->{actual_rc}==1 && defined($sent);
+            $ok &&=defined($receipt) && $receipt<$deadline && $inner==130 && $log=~/^bounded-run: interrupted by INT$/m && !-f "$dir/obsolete-hop-invoked" if $variant eq 'pending';
+            $ok &&=!defined($receipt) && $inner==142 && -f "$dir/obsolete-hop-invoked" && $log=~/timeout after 2 s/ && $log!~/^bounded-run: interrupted by INT$/m if $variant eq 'old-transport';
+        }
+        my $row={name=>"nested-$kind-$variant",%{$r//{}},passed=>$ok?JSON::PP::true:JSON::PP::false,fixture_readiness=>$kind eq 'deadline'?($variant eq 'early-int'?'early-readiness with unheld native inspector':'held final-window inspector'):'confirmed wrapper readiness',deadline=>$deadline,receipt_at=>$receipt,signal_at=>$sent,inner_rc=>$inner,started_at=>$started,observation_finished_at=>$observed,pre_identities=>$ids,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$ids],behavioral_leak=>@leaks?JSON::PP::true:JSON::PP::false,log=>$log,error=>$error};
+        $row->{cleanup_outcome}=eval {clean_ids($ids)} // "guardian cleanup failed: $@"; # Evidence above precedes guardian cleanup.
+        put("$dir/tools/bounded_run.sh",$before); put("$dir/tools/script_gate.sh",$gate_before);
+        $row->{restoration_cmp}=get("$dir/tools/bounded_run.sh") eq $before && get("$dir/tools/script_gate.sh") eq $gate_before?JSON::PP::true:JSON::PP::false;
+        $row->{passed}=JSON::PP::false unless $row->{restoration_cmp} && $row->{cleanup_outcome} eq 'no_live_registered_survivors'; push @evidence,$row;
+    }
+    return \@evidence;
+}
 sub retry_controls {
     for my $mode (qw(transient denied malformed permanent)) {
         my $dir="$ART/table-retry-$mode"; make_path($dir);
@@ -580,7 +667,10 @@ sub retry_controls {
         $ok &&=$r->{actual_rc}==$expected && !@leaks && $r->{stderr}=~/^bounded-run: interrupted by \Q$sig\E$/m && $r->{stderr}!~/^bounded-run: (?:cleanup failure|inspection\/setup failure):/m if !$reverse;
         $ok &&=$r->{actual_rc}==125 && @leaks && $r->{stderr}=~/^bounded-run: cleanup failure:/m if $reverse;
         $ok &&=$isolated if $group;
-        my $c=case_result(name=>"production-transient-$variant",%$r,passed=>$ok,
+        my $nested=$variant eq 'recovered'?nested_r20('deadline'):$variant eq 'group-int'?nested_r20('transport'):[];
+        $ok &&=@$nested==4 && !grep {!$_->{passed}} @$nested if $variant eq 'recovered';
+        $ok &&=@$nested==2 && !grep {!$_->{passed}} @$nested if $variant eq 'group-int';
+        my $c=case_result(name=>"production-transient-$variant",%$r,passed=>$ok,nested_evidence=>$nested,
             trigger=>$group?'directed cancellation while current isolated inspector is held; native PS after release':'first cleanup miss after two healthy observations; retained child not yet stopped; cleanup-only reversal',
             pre_identities=>$ids,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$ids],
             helper_identity=>$helper,helper_isolated=>$isolated?JSON::PP::true:JSON::PP::false,
