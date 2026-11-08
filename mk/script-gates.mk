@@ -5,6 +5,9 @@
 SG_TOOLS ?= tools
 SG_FIX ?= tests/fixtures/script_gate
 SCRIPT_GATE = sh $(SG_TOOLS)/script_gate.sh
+BOUNDED_RUN = sh $(SG_TOOLS)/bounded_run.sh
+CREW_CONSOLE_TIMEOUT_S ?= 300
+BOUNDED_TEST_ARTIFACTS ?= /tmp
 # Rows of tools/script-gate-baseline.txt: the --script invocations not yet through $(SCRIPT_GATE). A migration
 # deletes its rows and lowers this pin with them; script-gate-lint fails on any mismatch, so it never rises
 # unseen. 237 at the 7x snapshot (78f390c0), 232 after its five gates, 204 after B2a (28 rows in nine mk files),
@@ -18,13 +21,12 @@ SG_PREREQS := constellation-test:starmap-assets planets-test:planet-assets plane
 # Pairs in SG_PREREQS, distinct (B4; iteration 71 judge survivor: dropping a pair passed, because the negative control
 # and the real check both read the list). script-gate-lint fails on any mismatch; the pin moves with the pairs, and only up.
 SG_PREREQS_PAIRS := 4
-# Outer deadline for the self-tests (round-2 amendment A2): the same process-group supervisor as tools/script_gate.sh,
-# so a broken helper cannot hang make test. Usage: $(SG_SUP) SECS command...
-SG_SUP = perl -e 'use POSIX ":sys_wait_h"; my $$secs = shift; my $$pid = fork; die "fork: $$!" unless defined $$pid; if ($$pid == 0) { setpgrp(0, 0); exec @ARGV or exit 127; } my $$end = time + $$secs; my $$st; while (1) { my $$r = waitpid($$pid, WNOHANG); if ($$r == $$pid) { $$st = $$?; last } if (time >= $$end) { kill "TERM", -$$pid; my $$g = time + 2; while (time < $$g) { last if waitpid($$pid, WNOHANG) == $$pid; select(undef, undef, undef, 0.1) } kill "KILL", -$$pid; waitpid($$pid, 0); kill "KILL", -$$pid; exit 142 } select(undef, undef, undef, 0.1) } exit($$st & 127 ? 128 + ($$st & 127) : $$st >> 8)'
+# Independent guardian: candidate code never enforces its own test deadline.
+SG_SUP = perl $(SG_TOOLS)/test_bounded_run.pl guard "$(CURDIR)" "$(BOUNDED_TEST_ARTIFACTS)"
 
-.PHONY: script-gate-lint script-gate-selftest script-gate-drill script-gate-inventory
-test: script-gate-lint script-gate-selftest script-gate-drill
-ci-fast: script-gate-lint script-gate-selftest
+.PHONY: script-gate-lint script-gate-selftest script-gate-drill script-gate-inventory bounded-run-selftest bounded-run-drill
+test: script-gate-lint script-gate-selftest script-gate-drill bounded-run-selftest
+ci-fast: script-gate-lint script-gate-selftest bounded-run-selftest
 
 script-gate-inventory: ## every --script invocation in the Makefile and mk/*.mk: file:line, target, script, gated/ungated/other, inline rc/SCRIPT ERROR/summary/timeout pieces
 	@$(SG_LINT) --inventory
@@ -56,7 +58,13 @@ script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_G
 	@sh $(SG_TOOLS)/script_gate_prereqs.sh Makefile $(SG_PREREQS)
 
 script-gate-selftest: ## tools/script_gate.sh on stub commands (no Godot): pass, SCRIPT ERROR, hang past the timeout, a command that ignores TERM/ALRM, an orphan child, no summary, a 0 count, wrong rc, env passthrough, bad arguments
-	@SCRIPT_GATE_TMP=$(SCRATCH)/script-gate/selftest $(SG_SUP) 120 sh $(SG_TOOLS)/test_script_gate.sh
+	@$(SG_SUP) 120 -- sh $(SG_TOOLS)/test_script_gate.sh
 
 script-gate-drill: ## + real Godot: the premise (a parse error exits 0), parse-error, runtime-error hang and no-summary fixtures, and make sim's own gate on the parse fixture
-	@SCRIPT_GATE_TMP=$(SCRATCH)/script-gate/drill MAKE="$(MAKE)" GODOT="$(GODOT)" $(SG_SUP) 600 sh $(SG_TOOLS)/test_script_gate.sh --godot
+	@MAKE="$(MAKE)" GODOT="$(GODOT)" $(SG_SUP) 600 -- sh $(SG_TOOLS)/test_script_gate.sh --godot
+
+bounded-run-selftest: ## row 7ad hermetic runner, relay and actual raw Make controls
+	@perl $(SG_TOOLS)/test_bounded_run.pl selftest "$(CURDIR)" "$(BOUNDED_TEST_ARTIFACTS)"
+
+bounded-run-drill: ## targeted causal mutations; independent guardian, no aggregate dependency
+	@perl $(SG_TOOLS)/test_bounded_run.pl mutants "$(CURDIR)" "$(BOUNDED_TEST_ARTIFACTS)"

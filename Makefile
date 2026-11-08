@@ -157,7 +157,46 @@ crew-events-check: ## AC8: the news templates whose words carry a death are exac
 test: crew-events-check
 crew-console-test: import ## R2-CREW-CONSOLE-V2 AC6-AC12: palette (contrast, CVD), board and call on recorded 2.11 crews, the sending lock, How, then the real sim
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > $(SCRATCH)/crew-console.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
+	@bounded="$(SG_TOOLS)/bounded_run.sh"; limit="$(CREW_CONSOLE_TIMEOUT_S)"; log="$(SCRATCH)/crew-console.log"; \
+	cancel= runner= relay= confirmed=; \
+	relay_signal() { \
+	  [ -n "$$cancel" ] || cancel=$$1; \
+	  if [ -n "$$runner" ]; then \
+	    if [ -n "$$confirmed" ]; then sh "$$bounded" --signal "$$relay/ready" "$$cancel" || :; \
+	    else printf '%s\n' "$$cancel" > "$$relay/pending-signal"; kill -TERM "$$runner" 2>/dev/null || :; fi; \
+	  fi; \
+	}; \
+	trap 'relay_signal HUP' HUP; \
+	trap 'relay_signal INT' INT; \
+	trap 'relay_signal TERM' TERM; \
+	relay=$$(mktemp -d "$${TMPDIR:-/tmp}/bounded-shell.XXXXXX") || exit 125; \
+	if [ -n "$$cancel" ]; then rc=125; printf '%s\n' "bounded-shell: cancelled before spawn" > "$$log"; \
+	else \
+	  $(BOUNDED_RUN) --relay "$$relay" "$$limit" -- $(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > "$$log" 2>&1 & runner=$$!; \
+	  if [ -n "$${BR_RELAY_TEST_DIR:-}" ]; then \
+	    sh "$$bounded" --barrier "$$BR_RELAY_TEST_DIR" prereg "$$$$" "$$runner" || :; \
+	  fi; \
+	  [ -z "$$cancel" ] || relay_signal "$$cancel"; \
+	  tries=0; \
+	  while [ ! -f "$$relay/ready" ] && [ ! -f "$$relay/done" ] && [ "$$tries" -lt "$$(((limit + 4) * 100))" ]; do \
+	    sleep 0.01; tries=$$((tries + 1)); \
+	    [ -z "$$cancel" ] || break; \
+	  done; \
+	  if [ -f "$$relay/ready" ] && [ -z "$$cancel" ]; then \
+	    confirmed=1; \
+	    if [ -n "$${BR_RELAY_TEST_DIR:-}" ]; then sh "$$bounded" --barrier "$$BR_RELAY_TEST_DIR" ready "$$$$" "$$runner" || :; fi; \
+	  fi; \
+	  while :; do \
+	    wait "$$runner"; rc=$$?; \
+	    if [ -f "$$relay/done" ]; then read -r rc < "$$relay/done"; break; fi; \
+	    [ "$$rc" -ne 127 ] || break; \
+	    [ -n "$$cancel" ] && kill -0 "$$runner" 2>/dev/null || break; \
+	  done; \
+	fi; \
+	trap - HUP INT TERM; \
+	rm -f "$$relay/ready.tmp" "$$relay/ready" "$$relay/done" "$$relay/done.tmp" "$$relay/inner-ready" "$$relay/inner-ready.tmp" "$$relay/inner-release" "$$relay/pending-signal"; \
+	rmdir "$$relay" 2>/dev/null || :; \
+	[ -z "$$cancel" ] || rc=125; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
 test: crew-console-test
 crew-console-capture: ## R2-CREW-CONSOLE-V2 AC15: six frames (board, offer, sending, concern, working, hold) at 1280x720 and 2560x1440 -> renders/crew_console/ (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)
