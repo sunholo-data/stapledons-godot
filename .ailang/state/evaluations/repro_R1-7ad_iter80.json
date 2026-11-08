@@ -1,0 +1,30 @@
+{
+  "kind": "controller-baseline-reproduction",
+  "iteration": 80,
+  "source_sha": "fa8480d55d55df7eccc3d16cf4f296e2357e327f",
+  "platform": "darwin/arm64",
+  "command": "python3 /tmp/iter80-supervisor-repro.py",
+  "role": "scratch test harness; not a pipeline step",
+  "harness_sha256": "2e41147ef6e12f423e151fcb854696ee5108645ace7c939fbe95bcd88af88a4e",
+  "harness_source": "import os, pathlib, signal, subprocess, tempfile, time, json\nroot=pathlib.Path('/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80')\ntmp=pathlib.Path(tempfile.mkdtemp(prefix='iter80-supervisor-'))\nrows=[]\nfor escaped in (False,True):\n    childfile=tmp/('escape.pid' if escaped else 'group.pid')\n    # Explicitly registered child ignores graceful signals. Only the escaped arm changes PGID.\n    code='use POSIX qw(setsid); my $f=shift; my $e=shift; my $p=fork; die unless defined $p; if(!$p){ setsid() if $e; $SIG{TERM}=$SIG{HUP}=$SIG{INT}=\"IGNORE\"; open my $o, \">\", $f or die; print $o \"$$\\\\n\"; close $o; sleep 60; exit } sleep 60;'\n    log=tmp/('escape.log' if escaped else 'group.log')\n    cmd=['sh',str(root/'tools/script_gate.sh'),'repro',str(log),'2','^fixture: [1-9][0-9]* passed, 0 failures$','--','perl','-e',code,str(childfile),str(int(escaped))]\n    run=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,start_new_session=True)\n    child=None\n    try:\n        stop=time.monotonic()+3\n        while not childfile.exists() and time.monotonic()<stop: time.sleep(.05)\n        assert childfile.exists(),'fixture never registered'\n        child=int(childfile.read_text().strip().replace('\\\\n',''))\n        cp=subprocess.run(['ps','-o','pid=,ppid=,pgid=,stat=','-p',str(os.getpid())+','+str(child)],capture_output=True,text=True,check=True)\n        assert str(os.getpid()) in cp.stdout and str(child) in cp.stdout,'positive control failed'\n        out,_=run.communicate(timeout=10)\n        after=subprocess.run(['ps','-o','stat=','-p',str(child)],capture_output=True,text=True).stdout.strip()\n        live=bool(after) and not after.startswith('Z')\n        row={'escaped':escaped,'runner_rc':run.returncode,'child_live_after':live,'before_ps':cp.stdout.strip(),'after_stat':after,'output':out.strip()}\n        rows.append(row)\n        assert run.returncode==1 and 'timeout after 2 s' in out\n        assert live==escaped, row\n    finally:\n        if child:\n            try: os.kill(child,signal.SIGKILL)\n            except ProcessLookupError: pass\n        try: os.killpg(run.pid,signal.SIGKILL)\n        except ProcessLookupError: pass\n        if run.poll() is None: run.wait(timeout=3)\n(tmp/'results.json').write_text(json.dumps(rows,indent=2)+'\\n')\nprint(json.dumps({'artifact':str(tmp/'results.json'),'rows':rows},indent=2))\n",
+  "results_sha256": "7f7272b9dc71f77e56651163f13854e2f598e380d5fc6e7dcb8cc760ef735505",
+  "results": [
+    {
+      "escaped": false,
+      "runner_rc": 1,
+      "child_live_after": false,
+      "before_ps": "58832  2752 58832 Ss  \n58843 58842 58842 S",
+      "after_stat": "",
+      "output": "script-gate: repro FAIL; timeout after 2 s (rc 142): a runtime error before quit() leaves Godot running; no summary line matching ^fixture: [1-9][0-9]* passed, 0 failures$ (rc 142 with no summary is a load failure, not a result) (log /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/iter80-supervisor-h9qquwf0/group.log)"
+    },
+    {
+      "escaped": true,
+      "runner_rc": 1,
+      "child_live_after": true,
+      "before_ps": "58832  2752 58832 Ss  \n58880 58879 58880 Ss",
+      "after_stat": "Ss",
+      "output": "script-gate: repro FAIL; timeout after 2 s (rc 142): a runtime error before quit() leaves Godot running; no summary line matching ^fixture: [1-9][0-9]* passed, 0 failures$ (rc 142 with no summary is a load failure, not a result) (log /var/folders/kr/h0wr2sj94vd6ljtmsxv8jkt00000gn/T/iter80-supervisor-h9qquwf0/escape.log)"
+    }
+  ],
+  "final_cleanup": "Explicit registered-PID SIGKILL in finally; subsequent ps read with live controller positive control found neither child PID. Historical PIDs are evidence only, never reuse them as signal targets."
+}
