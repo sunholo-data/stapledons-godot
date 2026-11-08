@@ -374,28 +374,85 @@ sub lifetime_controls {
 # Additional causal controls only; never members of the permanent fixed42.
 sub retry_fake_ps {
     my ($dir,$mode)=@_; make_path($dir);
-    my $program=<<'FAKE_PS';
-use strict; use warnings; use Fcntl qw(O_WRONLY O_CREAT O_EXCL); use Time::HiRes qw(sleep);
-my ($dir,$mode)=@ARGV;
-for my $old (glob "$dir/start-*") { my ($pid)=$old=~/start-(\d+)$/; if (!-f "$dir/reaped-$pid") { open my $e,'>',"$dir/overlap" or die $!; print {$e} $pid; close $e } }
-open my $s,'>',"$dir/start-$$" or die $!; print {$s} $$; close $s;
-my $armed=$mode ne 'cleanup' || (-f "$dir/cleanup-entry" && -f "$dir/healthy");
-my $miss=0;
-if ($armed && ($mode eq 'transient' || $mode eq 'cleanup')) {
-    if (sysopen(my $f,"$dir/missed",O_WRONLY|O_CREAT|O_EXCL,0600)) { print {$f} $$; close $f; $miss=1 }
+    # Healthy path is shell -> native ps. No Perl startup or directory scan.
+    my $script=<<'SHIM';
+#!/bin/sh
+dir='__DIR__'
+mode='__MODE__'
+case "$mode" in
+ denied) exit 1 ;;
+ malformed) exec /bin/cat "$dir/malformed" ;;
+ permanent) exec '__PERL__' -MTime::HiRes=sleep -e 'sleep 0.35' ;;
+esac
+armed=0
+[ "$mode" = transient ] && armed=1
+[ "$mode" = cleanup ] && [ -f "$dir/cleanup-entry" ] && [ -f "$dir/healthy" ] && armed=1
+[ "$mode" = group ] && [ -f "$dir/group-arm" ] && armed=1
+if [ "$armed" = 1 ] && [ ! -f "$dir/missed" ]; then
+  # noclobber creates the one-shot marker atomically; no subshell or helper fork.
+  set -C
+  if printf '' 2>/dev/null > "$dir/missed"; then
+    set +C
+    if [ "$mode" = group ]; then
+      printf '%s\n' "$$" > "$dir/group-helper"
+      exec '__PERL__' -MTime::HiRes=clock_gettime,CLOCK_MONOTONIC,sleep -e 'my $release=shift; my $end=clock_gettime(CLOCK_MONOTONIC)+0.35; sleep 0.001 while !-f $release && clock_gettime(CLOCK_MONOTONIC)<$end; exec "/bin/ps",@ARGV' "$dir/group-release" "$@"
+    fi
+    exec '__PERL__' -MTime::HiRes=sleep -e 'sleep 0.35'
+  fi
+  set +C
+fi
+exec /bin/ps "$@"
+SHIM
+    $script=~s/__DIR__/$dir/g; $script=~s/__MODE__/$mode/g; $script=~s/__PERL__/$PERL/g;
+    put("$dir/ps",$script); chmod 0700,"$dir/ps"; return "$dir/ps";
 }
-if ($miss || $mode eq 'permanent') { sleep 0.35; exit 0 }
-exit 1 if $mode eq 'denied';
-if ($mode eq 'malformed') { open my $f,'<',"$dir/malformed" or die $!; print while <$f>; exit 0 }
-exec '/bin/ps','-axo','pid=,ppid=,pgid=,lstart=,stat='; die $!;
-FAKE_PS
-    put("$dir/fake-ps.pl",$program);
-    put("$dir/ps","#!/bin/sh\nexec '$PERL' '$dir/fake-ps.pl' '$dir' '$mode'\n"); chmod 0700,"$dir/ps";
-    return "$dir/ps";
+sub retry_trace_source {
+    my ($source,$dir,$guardian,$preexec)=@_;
+    my $trace=<<'TRACE';
+my %retry_parent_pending; my $retry_parent_seq=0;
+sub retry_parent_write { my ($file,$text)=@_; open my $f,'>',"__DIR__/$file" or die $!; print {$f} $text; close $f or die $! }
+sub retry_parent_before_fork {
+    if (keys %retry_parent_pending) { retry_parent_write('overlap','pending helper before fork'); die 'private retry trace overlap' }
+}
+sub retry_parent_forked {
+    my ($p,$end)=@_; my $seq=++$retry_parent_seq; $retry_parent_pending{$p}=$seq;
+    retry_parent_write("fork-$seq",join("\t",$p,now(),$end));
+    retry_parent_write('preexec-held-3',$p) if __PREEXEC__ && $seq==3;
+}
+sub retry_parent_reaped {
+    my ($p)=@_; my $seq=delete $retry_parent_pending{$p}; die 'private retry trace unrecorded reap' unless defined $seq;
+    retry_parent_write("reaped-$seq",join("\t",$p,now()));
+}
+TRACE
+    $trace=~s/__DIR__/$dir/g; $trace=~s/__PREEXEC__/$preexec/g;
+    my $decl=$guardian?'my %PS_HELPERS;':'my %helpers;';
+    $source=~s/\Q$decl\E/$decl\n$trace/ or die 'trace declaration absent';
+    my $fork=$guardian?'my $p=fork(); die "inspection_restricted: fork" unless defined $p;':'my $p=fork(); die "ps fork: $!\n" unless defined $p;';
+    my $after=$fork;
+    if ($preexec) { $after.=' if (!$p && $retry_parent_seq==2) { my $hold=now()+0.35; sleep(0.001) while now()<$hold; POSIX::_exit(0) }' }
+    $source=~s/\Q$fork\E/retry_parent_before_fork(); $after/ or die 'helper fork trace absent';
+    my $hash=$guardian?'PS_HELPERS':'helpers';
+    my $track='$'.$hash.'{$p}=1;';
+    $source=~s/\Q$track\E/retry_parent_forked(\$p,\$end); $track/ or die 'parent fork trace absent';
+    my $collected='$st=$?; delete $'.$hash.'{$p}';
+    my $record='$st=$?; retry_parent_reaped($p); delete $'.$hash.'{$p}';
+    $source=~s/\Q$collected\E/$record/g or die 'parent collection trace absent';
+    my $pending='delete $'.$hash.'{$q};';
+    $source=~s/\Q$pending\E/retry_parent_reaped(\$q); $pending/g;
+    my $reap='delete $'.$hash.'{$p} if waitpid($p,WNOHANG)!=0';
+    my $replacement='if (waitpid($p,WNOHANG)!=0) { retry_parent_reaped($p); delete $'.$hash.'{$p} }';
+    $source=~s/\Q$reap\E/$replacement/g;
+    return $source;
 }
 sub retry_trace_ok {
-    my ($dir)=@_; my @starts=glob "$dir/start-*";
-    return @starts && !-f "$dir/overlap" && !grep { my ($p)=/start-(\d+)$/; !-f "$dir/reaped-$p" } @starts;
+    my ($dir)=@_; my @forks=glob "$dir/fork-*";
+    return 0 unless @forks && !-f "$dir/overlap";
+    for my $file (@forks) {
+        my ($seq)=$file=~/fork-(\d+)$/; return 0 unless defined($seq) && -f "$dir/reaped-$seq";
+        my ($p,$start,$end)=split /\t/,get($file); my ($reaped,$at)=split /\t/,get("$dir/reaped-$seq");
+        return 0 unless defined($at) && $p==$reaped && $at>=$start && $at<=$end && $end-$start<=0.2;
+    }
+    return 1;
 }
 sub retry_controls {
     for my $mode (qw(transient denied malformed permanent)) {
@@ -406,37 +463,48 @@ sub retry_controls {
         }
         my $source=get($SELF);
         $source=~s{exec '/bin/ps','-axo'}{exec '$fake','-axo'} or die 'retry guardian injection absent';
-        $source=~s/\$st=\$\?; delete \$PS_HELPERS\{\$p\}/\$st=\$?; put("$dir\/reaped-\$p",'reaped'); delete \$PS_HELPERS{\$p}/g or die 'guardian reaping trace absent';
+        $source=retry_trace_source($source,$dir,1,$mode eq 'permanent'?1:0);
         put("$dir/probe.pl",$source);
         my $r=run_command("guardian-transient-$mode",2,[$PERL,"$dir/probe.pl",'__retry_table_probe']);
-        my @starts=glob "$dir/start-*";
+        my @forks=glob "$dir/fork-*";
         my $ok=!$r->{guardian_cap_fired} && retry_trace_ok($dir);
-        $ok &&=$r->{actual_rc}==0 && @starts==2 && -f "$dir/missed" && $r->{stdout}=~/table probe reaped/ if $mode eq 'transient';
-        $ok &&=$r->{actual_rc}==3 && @starts==1 && $r->{stderr}=~/ps execution rc=1/ if $mode eq 'denied';
-        $ok &&=$r->{actual_rc}==3 && @starts==1 && $r->{stderr}=~/malformed actual ps row/ if $mode eq 'malformed';
-        $ok &&=$r->{actual_rc}==3 && @starts==3 && $r->{stderr}=~/transient ps read\/exit budget exceeded 200ms/ if $mode eq 'permanent';
-        case_result(name=>"guardian-transient-$mode",%$r,passed=>$ok,trigger=>'actual ps source; every prior direct helper waitpid-reaped before next helper starts',cleanup_outcome=>'no_live_registered_survivors');
+        $ok &&=$r->{actual_rc}==0 && @forks==2 && -f "$dir/missed" && $r->{stdout}=~/table probe reaped/ if $mode eq 'transient';
+        $ok &&=$r->{actual_rc}==3 && @forks==1 && $r->{stderr}=~/ps execution rc=1/ if $mode eq 'denied';
+        $ok &&=$r->{actual_rc}==3 && @forks==1 && $r->{stderr}=~/malformed actual ps row/ if $mode eq 'malformed';
+        $ok &&=$r->{actual_rc}==3 && @forks==3 && -f "$dir/preexec-held-3" && $r->{stderr}=~/transient ps read\/exit budget exceeded 200ms/ if $mode eq 'permanent';
+        case_result(name=>"guardian-transient-$mode",%$r,passed=>$ok,trigger=>'parent records every fork and actual WNOHANG reap; permanent third helper held before exec',cleanup_outcome=>'no_live_registered_survivors',helper_forks=>scalar @forks);
     }
-    for my $reverse (0,1) {
-        my $label=$reverse?'no-retry-counterexample':'recovered'; my $dir="$ART/production-transient-$label";
-        my $fake=retry_fake_ps($dir,'cleanup'); make_path("$dir/tools");
+    for my $variant ('recovered','no-retry-counterexample','group-hup','group-int','group-term') {
+        my $reverse=$variant eq 'no-retry-counterexample'; my $group=$variant=~/^group-/;
+        my $dir="$ART/production-transient-$variant"; my $fake=retry_fake_ps($dir,$group?'group':'cleanup'); make_path("$dir/tools");
         my $before=get("$ROOT/tools/bounded_run.sh"); my $source=$before;
         $source=~s{exec 'ps','-axo'}{exec '$fake','-axo'} or die 'production ps injection absent';
-        $source=~s/\$st=\$\?; delete \$helpers\{\$p\}/\$st=\$?; write_file("$dir\/reaped-\$p",'reaped'); delete \$helpers{\$p}/g or die 'production reaping trace absent';
+        $source=retry_trace_source($source,$dir,0,0);
         my $hook="require JSON::PP; write_file('$dir/owned-at-cleanup',JSON::PP::encode_json({owned=>[values %owned],stopped=>[keys %stopped]})); write_file('$dir/cleanup-entry','1');\n";
         $source=~s/(my \$cleanup_error;)/$hook$1/ or die 'cleanup injection absent';
         if ($reverse) {
-            $source=~s/for my \$attempt \(1\.\.3\)/for my \$attempt (1..1)/ or die 'no-retry reversal absent';
+            # Startup keeps three tries; reverse only the attested cleanup path.
+            my $one="my \$tries=(-f '$dir/healthy' && -f '$dir/cleanup-entry')?1:3; for my \$attempt (1..\$tries)";
+            $source=~s/for my \$attempt \(1\.\.3\)/$one/ or die 'cleanup-only no-retry reversal absent';
+            $source=~s/die \$freeze_error unless [^\n]+;/die \$freeze_error;/ or die 'fatal-freeze reversal absent';
             $source=~s/my \@recovery=\$cleanup_error \? values\(%owned\) : values\(%stopped\);/my \@recovery=values(%stopped);/ or die 'old stopped-only reversal absent';
         }
         put("$dir/tools/bounded_run.sh",$source);
-        my $ready="$dir/fixture.ready"; my $ids=[]; my $obs=0; my $sent;
-        my $r;
+        my $ready="$dir/fixture.ready"; my $ids=[]; my $obs=0; my ($sent,$helper,$isolated);
+        my $sig=$group?uc(substr($variant,6)):'INT'; my $r;
         { local $ROOT=$dir;
-          $r=run_command("production-transient-$label",6,[$PERL,'-e','$SIG{INT}="IGNORE"; exec @ARGV','sh',"$dir/tools/bounded_run.sh",2,'--',$PERL,$SELF,'__fixture',$ENV{BR_REG_DIR},'escaped',$ready],sub {
+          $r=run_command("production-transient-$variant",6,[$PERL,'-e','$SIG{INT}="IGNORE"; exec @ARGV','sh',"$dir/tools/bounded_run.sh",2,'--',$PERL,$SELF,'__fixture',$ENV{BR_REG_DIR},'escaped',$ready],sub {
               return undef if $sent; $ids=fixture_ids($ready); return undef unless @$ids==2;
               my $t=controlled_table(); $obs++ unless grep {!live($_,$t)} @$ids; return undef unless $obs>=2;
-              put("$dir/healthy",$JSON->encode($ids)); my ($pid)=@_; signal_id('INT',$t->{$pid}); $sent=now(); return $sent;
+              put("$dir/healthy",$JSON->encode($ids)); my ($pid)=@_;
+              if ($group) {
+                  put("$dir/group-arm",'armed'); return undef unless -f "$dir/group-helper";
+                  my $p=0+get("$dir/group-helper"); return undef unless $t->{$p} && $t->{$pid};
+                  $helper=$t->{$p}; $isolated=$helper->{pgid}!=$t->{$pid}{pgid};
+                  die 'void_fixture: group supervisor identity' unless $t->{$pid}{pgid}==$pid && $helper->{ppid}==$pid;
+                  kill $sig,-$pid; put("$dir/group-release",'release');
+              } else { signal_id($sig,$t->{$pid}) }
+              $sent=now(); return $sent;
           });
         }
         my $post=controlled_table(); my @leaks=grep {live($_,$post)} @$ids;
@@ -444,11 +512,14 @@ sub retry_controls {
         my $targeted=@$ids==2 && grep {matches($_,$ids->[1])} @{$owned->{owned}};
         $targeted &&=!grep {$_==$ids->[1]{pid}} @{$owned->{stopped}} if @$ids==2;
         my $ok=$targeted && $obs>=2 && $sent && -f "$dir/missed" && retry_trace_ok($dir) && !$r->{guardian_cap_fired};
-        $ok &&=$r->{actual_rc}==130 && !@leaks && $r->{stderr}=~/^bounded-run: interrupted by INT$/m if !$reverse;
+        my $expected=128+($sig eq 'HUP'?1:$sig eq 'INT'?2:15);
+        $ok &&=$r->{actual_rc}==$expected && !@leaks && $r->{stderr}=~/^bounded-run: interrupted by \Q$sig\E$/m && $r->{stderr}!~/^bounded-run: (?:cleanup failure|inspection\/setup failure):/m if !$reverse;
         $ok &&=$r->{actual_rc}==125 && @leaks && $r->{stderr}=~/^bounded-run: cleanup failure:/m if $reverse;
-        my $c=case_result(name=>"production-transient-$label",%$r,passed=>$ok,
-            trigger=>'first cleanup snapshot deliberately misses AFTER two healthy escaped observations; retained child proved not yet stopped',
+        $ok &&=$isolated if $group;
+        my $c=case_result(name=>"production-transient-$variant",%$r,passed=>$ok,
+            trigger=>$group?'directed cancellation while current isolated inspector is held; native PS after release':'first cleanup miss after two healthy observations; retained child not yet stopped; cleanup-only reversal',
             pre_identities=>$ids,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$ids],
+            helper_identity=>$helper,helper_isolated=>$isolated?JSON::PP::true:JSON::PP::false,
             behavioral_leak=>@leaks?JSON::PP::true:JSON::PP::false,cleanup_outcome=>'pending');
         $c->{cleanup_outcome}=clean_ids($ids); save();
         put("$dir/tools/bounded_run.sh",$before); die 'regression restore cmp' unless get("$dir/tools/bounded_run.sh") eq $before;
@@ -704,291 +775,6 @@ sub selftest {
     save(); return scalar(grep {!$_->{passed}} @CASES)?1:0;
 }
 
-sub copy_project {
-    my ($source,$dest)=@_; require File::Find; no warnings 'once';
-    die "private copy refuses directory symlink: $source" if -l $source && -d $source;
-    $source=abs_path($source); die 'private copy source unavailable' unless defined($source) && -d $source;
-    make_path($dest); $dest=abs_path($dest); die 'private copy destination unavailable' unless defined($dest) && -d $dest;
-    my $end=now()+90;
-    File::Find::find({no_chdir=>1,wanted=>sub {
-        die 'private copy deadline' if now()>$end;
-        my $from=$File::Find::name; my $rel=substr($from,length($source)); $rel=~s{^/}{}; return if $rel eq '';
-        if ($rel =~ m{^(?:\.git|\.ailang|\.claude|\.agents|\.godot)(?:/|$)}) { $File::Find::prune=1; return }
-        my $to="$dest/$rel";
-        die "private copy refuses destination symlink: $rel" if -l $to;
-        die "private copy refuses directory symlink: $rel" if -l $from && -d $from;
-        if (-d $from) { make_path($to) }
-        elsif (-f $from) {
-            my $resolved=abs_path($from); die "copy source escapes ROOT: $rel" unless defined($resolved) && index($resolved,"$source/")==0;
-            copy($from,$to) or die "copy $rel: $!"; chmod((stat($from))[2]&0777,$to);
-        } else { die "unsupported copy object $rel" }
-    }},$source);
-    return $dest;
-}
-sub arm_restore {
-    my ($path,$before)=@_; die 'restore target outside private artifacts' if -l $path;
-    $path=abs_path($path);
-    die 'restore target outside private artifacts' unless defined($path) && -f $path && index($path,"$ART/")==0;
-    my $list=eval {decode_json(get("$ART/restore.json"))} || [];
-    my $backup="$ART/restore-".scalar(@$list).".original"; put($backup,$before);
-    push @$list,{path=>$path,backup=>$backup,sha256=>sha256_hex($before)};
-    put("$ART/restore.json",$JSON->encode($list));
-}
-sub mutations {
-    return (
-        ['group-only','tools/bounded_run.sh',sub {
-            return <<'OLD';
-#!/bin/sh
-exec perl - "$@" 3<&0 <<'OLDPERL'
-use strict; use POSIX ':sys_wait_h'; use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC sleep);
-open STDIN,'<&',3; POSIX::close(3);
-my $n=shift; shift; my $p=fork();
-if (!$p) { setpgrp(0,0); exec 'env',@ARGV; exit 127 }
-my $end=clock_gettime(CLOCK_MONOTONIC)+$n; my $cancel;
-$SIG{$_}=sub {$cancel=1} for qw(HUP INT TERM);
-while (clock_gettime(CLOCK_MONOTONIC)<$end && !$cancel) {
- if(waitpid($p,WNOHANG)==$p) { exit($?>>8) } sleep .02;
-}
-kill 'TERM',-$p; sleep 0.15; kill 'KILL',-$p; exit 142;
-OLDPERL
-OLD
-        },['runner-timeout-escaped','runner-int']],
-        ['no-retention','tools/bounded_run.sh',sub {
-            my ($s)=@_; $s=~s/if \(equal\(\$owned\{\$p\},\$t->\{\$p\}\)\)/if (equal(\$owned{\$p},\$t->{\$p}) \&\& (\$p==\$root || \$t->{\$p}{ppid}!=1))/ or die 'no-retention mutation absent'; return $s;
-        },['runner-parent-exit7-retained']],
-        ['no-relay','tools/script_gate.sh',sub {
-            my ($s)=@_; $s=~s/sh "\$bounded" --signal "\$relay\/ready" "\$cancel"/true/ or die 'no-relay mutation absent'; return $s;
-        },['gate-relay-ready-term']],
-        ['no-unconfirmed-relay','tools/script_gate.sh',sub {
-            my ($s)=@_; $s=~s/kill -TERM "\$runner"/true/ or die 'unconfirmed relay mutation absent'; return $s;
-        },['gate-relay-prereg-term']],
-        ['raw-bypass','Makefile',sub {
-            my ($s)=@_;
-            # Exact bare recipe: fa8480d55d55df7eccc3d16cf4f296e2357e327f:Makefile.
-            my $bare=<<'BARE_CREW_RECIPE';
-	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > $(SCRATCH)/crew-console.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
-BARE_CREW_RECIPE
-            my $count=$s=~s{(^crew-console-test:[^\n]*\n)(?:\t[^\n]*\n)+}{$1.$bare}meg;
-            die 'bypass recipe target absent or ambiguous' unless $count==1;
-            return $s;
-        },['rawmake-summary-hang']]
-    );
-}
-sub mutants {
-    my $clean=selftest(); return 1 if $clean;
-    my @clean=@CASES; @CASES=();
-    my $original=$ROOT; my $copy=copy_project($ROOT,"$ART/mutant-root");
-    local $ROOT=$copy; my @summary;
-    for my $m (mutations()) {
-        my $mut_start=now(); my ($label,$file,$change,$names)=@$m; my $path="$ROOT/$file"; my $before=get($path); my $after=$change->($before);
-        die "void_fixture: mutation $label did not change bytes" if $before eq $after;
-        arm_restore($path,$before); put($path,$after); my $ok; my @evidence; my $err;
-        eval {
-            my $start=@CASES;
-            for my $name (@$names) {
-                if ($name eq 'runner-timeout-escaped') { fixture_case($name,'runner','escaped') }
-                elsif ($name eq 'runner-int') { fixture_case($name,'runner','escaped','int') }
-                elsif ($name eq 'runner-parent-exit7-retained') { fixture_case($name,'runner','parentexit') }
-                elsif ($name eq 'gate-relay-prereg-term') { fixture_case($name,'gate','escaped','term','prereg') }
-                elsif ($name eq 'gate-relay-ready-term') { fixture_case($name,'gate','escaped','term','ready') }
-                else { fixture_case($name,'raw','escaped') }
-            }
-            @evidence=@CASES[$start..$#CASES];
-            $ok=@evidence==@$names && !grep {$_->{passed} || $_->{guardian_cap_fired} || $_->{inspection_restricted} || $_->{void_fixture} || $_->{cleanup_outcome} ne 'no_live_registered_survivors'} @evidence;
-            # Escaped cleanup controls must expose a living escaped child, not
-            # just an exit-code mismatch. Same for loss of retained ownership.
-            $ok &&=!grep {!$_->{behavioral_leak}} @evidence if $label eq 'group-only' || $label eq 'no-retention';
-            $ok &&=$evidence[0]{trigger_at} && $evidence[0]{barrier_observed} && $evidence[0]{actual_rc}==1 && !$evidence[0]{inner_interruption_observed} && $evidence[0]{production_log}=~/timeout after 2 s/ if $label eq 'no-relay' || $label eq 'no-unconfirmed-relay';
-            1;
-        } or $err=$@;
-        put($path,$before); die "restore cmp failed: $file" unless get($path) eq $before;
-        push @summary,{name=>"mutant-$label",passed=>$ok?JSON::PP::true:JSON::PP::false,actual_rc=>@evidence?$evidence[0]{actual_rc}:1,
-            guardian_cap_fired=>JSON::PP::false,inspection_restricted=>JSON::PP::false,void_fixture=>JSON::PP::false,
-            cleanup_outcome=>(@evidence && !grep {$_->{cleanup_outcome} ne 'no_live_registered_survivors'} @evidence)?'no_live_registered_survivors':'cleanup_not_confirmed',trigger=>'private byte mutation',elapsed=>now()-$mut_start,
-            pre_identities=>[],post_identities=>[],inner_make_rc=>undef,restoration_cmp=>JSON::PP::true,
-            before_sha256=>sha256_hex($before),mutant_sha256=>sha256_hex($after),evidence=>\@evidence,error=>$err};
-        die $err if $err;
-    }
-    @CASES=@summary; save(); my $d=decode_json(get("$ART/results.json")); $d->{clean_cases}=\@clean; put("$ART/results.json",$JSON->encode($d));
-    return scalar(grep {!$_->{passed}} @CASES)?1:0;
-}
-sub register_observed {
-    my ($id,$label,$table)=@_; my $par=$table->{$id->{ppid}} or die 'void_fixture: observed parent absent';
-    my $nonce=join('-', $$,int(rand(1e9)),$label);
-    my $r={%$id,parent_birth=>$par->{birth},token=>$TOKEN,nonce=>$nonce,worker_attested=>$TOKEN};
-    put("$ENV{BR_REG_DIR}/$nonce.tmp",$JSON->encode($r)); rename "$ENV{BR_REG_DIR}/$nonce.tmp","$ENV{BR_REG_DIR}/$nonce.req" or die $!;
-    return "$ENV{BR_REG_DIR}/$nonce.ack";
-}
-sub crew {
-    my ($kind)=@_; die 'usage: crew normal|hang|hup|int|term' unless defined($kind) && $kind=~/^(normal|hang|hup|int|term)$/;
-    die 'void_fixture: ROOT runtime/bin/ailang or runtime/cache absent' unless -f "$ROOT/runtime/bin/ailang" && -d "$ROOT/runtime/cache";
-    my $source=$ROOT; my $source_test=get("$source/tests/test_crew_console.gd");
-    my $copy=$kind eq 'normal'?$ROOT:copy_project($ROOT,"$ART/crew-root"); local $ROOT=$copy;
-    # Normal mode uses the supplied ROOT and original test. Every engine call
-    # receives a private HOME/XDG/temp and an explicit private log filename.
-    my $engine=$ENV{GODOT}//'godot';
-    if ($engine !~ m{^/}) {
-        my @found=grep {-f $_ && -x $_} map {"$_/$engine"} split /:/,$ENV{PATH};
-        die "void_fixture: real Godot executable unavailable: $engine" unless @found; $engine=abs_path($found[0]);
-    }
-    die "void_fixture: real Godot executable unavailable: $engine" unless -f $engine && -x $engine;
-    local $ENV{HOME}="$ART/home"; local $ENV{XDG_DATA_HOME}="$ART/home/data";
-    local $ENV{XDG_CONFIG_HOME}="$ART/home/config"; local $ENV{XDG_CACHE_HOME}="$ART/home/cache";
-    local $ENV{TMPDIR}="$ART/tmp"; local $ENV{BR_PRIVATE_LOGS}="$ART/godot-logs";
-    make_path($ENV{HOME},$ENV{XDG_DATA_HOME},$ENV{XDG_CONFIG_HOME},$ENV{XDG_CACHE_HOME},$ENV{TMPDIR},$ENV{BR_PRIVATE_LOGS},"$ART/bin");
-    $ENV{HOME}=abs_path($ENV{HOME});
-    die 'void_fixture: explicit ROOT/runtime/cache/registry absent' unless -d "$ROOT/runtime/cache/registry";
-    copy_project("$ROOT/runtime/cache/registry","$ENV{HOME}/.ailang/cache/registry");
-    my $quoted=$engine; $quoted=~s/'/'"'"'/g;
-    put("$ART/bin/godot","#!/bin/sh\nexec '$quoted' --log-file \"\$BR_PRIVATE_LOGS/godot-\$\$.log\" \"\$@\"\n");
-    chmod 0700,"$ART/bin/godot";
-    local $ENV{PATH}="$ART/bin:$ENV{PATH}";
-    # Keep make's normal GODOT default. The PATH adapter only appends a private
-    # engine log to the exact caller-selected real executable; it has no stubs.
-    local $ENV{GODOT}; delete $ENV{GODOT};
-    make_path("$ART/dirs-probe");
-    put("$ART/dirs-probe/project.godot","config_version=5\n[application]\nconfig/name=\"7adPrivateDirsProbe\"\n");
-    put("$ART/dirs-probe/probe.gd",<<'PROBE');
-extends SceneTree
-func _initialize() -> void:
-    print("7ad-dirs=" + JSON.stringify({"user": OS.get_user_data_dir(), "config": OS.get_config_dir(), "data": OS.get_data_dir(), "cache": OS.get_cache_dir()}))
-    quit(0)
-PROBE
-    my $proof=run_command('godot-private-dirs',5,['godot','--headless','--path',"$ART/dirs-probe",'--script',"$ART/dirs-probe/probe.gd"]);
-    put("$ART/godot-dir-proof.json",$JSON->encode({%$proof,engine=>$engine,private_home=>$ENV{HOME},inherited_controller_evidence=>'/tmp/iter80-godot-dirs-m0seulns/result.json'}));
-    die "inspection_restricted: Godot directory probe permission denied: rc=$proof->{actual_rc}" if ($proof->{stderr}.$proof->{stdout})=~/Operation not permitted|Permission denied/i;
-    die "Godot directory probe failed rc=$proof->{actual_rc} cap=$proof->{guardian_cap_fired}; see godot-private-dirs logs" if $proof->{actual_rc} || $proof->{guardian_cap_fired};
-    my ($json)=$proof->{stdout}=~/^7ad-dirs=(.+)$/m;
-    die 'void_fixture: actual Godot directory proof absent' unless defined $json;
-    my $dirs=decode_json($json);
-    for my $key (qw(user config data cache)) { die "Godot directory $key escapes private HOME: ".($dirs->{$key}//'<absent>') unless defined($dirs->{$key}) && index($dirs->{$key},"$ENV{HOME}/")==0 }
-    my $test="$ROOT/tests/test_crew_console.gd"; my $before=get($test); my $ready="$ART/real.ready";
-    local $ENV{BR_REAL_READY}=$ready; local $ENV{BR_COMMAND_ID_DIR}="$ART/command-ids"; make_path($ENV{BR_COMMAND_ID_DIR});
-    my ($r,$err,$pre,$post,$ok,$script_at,$signal_at,$stop_at)=(undef,undef,[],undef,0,undef,undef,undef); my $stopped_seen=0;
-    eval {
-        if ($kind ne 'normal') {
-            arm_restore($test,$before);
-            put($test,<<'GD');
-extends SceneTree
-var sim: SimBridge
-func _initialize() -> void:
-    var f := FileAccess.open(OS.get_environment("BR_REAL_READY") + ".launch", FileAccess.WRITE)
-    f.store_string(str(Time.get_ticks_msec()))
-    f.close()
-    sim = SimBridge.new()
-    sim.want_minor = SimBridge.CONSOLE_MINOR
-    if not (sim.start() and sim.new_game(1, "free_nav", false, {}, "", "consent")):
-        push_error("7ad real handshake failed: " + sim.last_error)
-        quit(3)
-        return
-    var ready := FileAccess.open(OS.get_environment("BR_REAL_READY"), FileAccess.WRITE)
-    ready.store_string(JSON.stringify({"godot": OS.get_process_id(), "sim": sim.child_pid, "healthy": not sim.hello_reply.is_empty() and not sim.crew.is_empty()}))
-    ready.close()
-    print("crew-console: 0 failures")
-GD
-        }
-        my $g='godot';
-        my $import=run_command('real-import',120,[$g,'--headless','--path',$ROOT,'--import']);
-        die "inspection_restricted: actual Godot import permission denial rc=$import->{actual_rc}; see real-import logs" if ($import->{stderr}.$import->{stdout})=~/Operation not permitted|Permission denied/i;
-        die "Godot import failed rc=$import->{actual_rc} cap=$import->{guardian_cap_fired}; see real-import logs (parse/import failure, not assumed denial)" if $import->{actual_rc} || $import->{guardian_cap_fired} || ($import->{stdout}.$import->{stderr})=~/SCRIPT ERROR:|Parse Error:/;
-        my (%seen,%ack); my $t0=now();
-        my $args=['make','--no-print-directory','-C',$ROOT,'crew-console-test',"AILANG=$ROOT/runtime/bin/ailang",'CREW_CONSOLE_TIMEOUT_S=60',"SCRATCH=$ART/crew-scratch"];
-        $r=run_command("real-$kind",$kind eq 'normal'?480:190,$args,sub {
-            my ($pid,$start)=@_; my $t=controlled_table();
-            $script_at//=now() if -f "$ready.launch";
-            my ($godot,$sim);
-            if ($kind ne 'normal' && -f $ready) {
-                my $d=eval {decode_json(get($ready))}; return undef unless $d;
-                die 'void_fixture: handshake not healthy' unless $d->{healthy}; ($godot,$sim)=@$d{qw(godot sim)};
-            } elsif ($kind eq 'normal') {
-                opendir my $dh,$ENV{BR_COMMAND_ID_DIR} or die $!; my @f=grep {/^command-/} readdir $dh; closedir $dh;
-                for my $f (@f) { my $d=decode_json(get("$ENV{BR_COMMAND_ID_DIR}/$f"));
-                    next unless live($d,$t); $godot=$d->{pid};
-                    my @kids=grep {$t->{$_}{ppid}==$godot && $t->{$_}{stat}!~/Z/} keys %$t;
-                    $sim=$kids[0] if @kids==1;
-                }
-            }
-            if (defined($godot) && defined($sim) && $t->{$godot} && $t->{$sim}) {
-                die 'void_fixture: actual sim parent mismatch' unless $t->{$sim}{ppid}==$godot;
-                for my $p ($godot,$sim) {
-                    if (!$seen{$p}) { $seen{$p}=$t->{$p}; $ack{$p}=register_observed($t->{$p},"real-$p",$t) }
-                }
-                $pre=[@seen{sort {$a<=>$b} keys %seen}];
-                if ($kind ne 'normal' && !defined($stop_at) && !grep {!-f $_} values %ack) {
-                    die 'void_fixture: real sim did not escape PGID' unless $t->{$godot}{pgid}!=$t->{$sim}{pgid};
-                    signal_id('STOP',$seen{$sim}); $stop_at=now(); return undef;
-                }
-                $stopped_seen=1 if defined($stop_at) && $t->{$sim}{stat}=~/T/;
-                if (defined($stop_at) && $kind ne 'hang' && $kind ne 'normal' && !defined($signal_at)) {
-                    die 'void_fixture: real sim STOP not observed' unless $t->{$sim}{stat}=~/T/;
-                    my $leader=$t->{$pid}; die 'void_fixture: make group leader absent' unless $leader && $leader->{pgid}==$pid;
-                    kill uc($kind),-$pid; $signal_at=now(); return $signal_at;
-                }
-            }
-            die 'void_fixture: real readiness exceeded 30s' if $kind ne 'normal' && defined($script_at) && now()>$script_at+30 && !defined($stop_at);
-            return {deadline=>$script_at+70} if defined($script_at) && !defined($signal_at);
-            return undef;
-        });
-        die 'inspection_restricted: Godot access denied' if $r->{stderr}=~/Operation not permitted|Permission denied/i;
-        $post=controlled_table(); my @live=grep {live($_,$post)} @$pre;
-        my $log=get("$ART/crew-scratch/crew-console.log");
-        $ok=@$pre>=2 && !@live && !$r->{guardian_cap_fired};
-        if ($kind eq 'normal') { $ok &&=$r->{actual_rc}==0 && $log=~/^crew-console: 0 failures$/m && $log!~/^(?:FAIL|SCRIPT ERROR:)/m }
-        elsif ($kind eq 'hang') { $ok &&=defined($stop_at) && $stopped_seen && $r->{actual_rc}==2 && $log=~/timeout after 60 s/ && defined($script_at) && now()-$script_at<=64 }
-        else { my $sig=uc($kind); $ok &&=defined($signal_at) && $r->{actual_rc}!=0 && now()-$signal_at<=4 && $log=~/^bounded-run: interrupted by \Q$sig\E$/m }
-        1;
-    } or $err=$@;
-    # Restore on every exit path, including void premises and assertion failures.
-    if ($kind ne 'normal') { put($test,$before); die 'private crew restore cmp failed' unless get($test) eq $before }
-    die 'original ROOT test changed' unless get("$source/tests/test_crew_console.gd") eq $source_test;
-    $r//={actual_rc=>3,elapsed=>0,guardian_cap_fired=>JSON::PP::false}; $post//=controlled_table();
-    my $c=case_result(name=>"crew-$kind",%$r,passed=>$ok && !$err,trigger=>$kind eq 'hang'?'STOP healthy real sim then deadline':$kind eq 'normal'?'ordinary real test':"foreground make group $kind",
-        pre_identities=>$pre,post_identities=>[map {$post->{$_->{pid}}//{pid=>$_->{pid},absent=>JSON::PP::true}} @$pre],inner_make_rc=>$r->{actual_rc},cleanup_outcome=>'pending',restoration_cmp=>JSON::PP::true,inspection_restricted=>($err//'')=~/inspection_restricted/?JSON::PP::true:JSON::PP::false,void_fixture=>($err//'')=~/void_fixture/?JSON::PP::true:JSON::PP::false,error=>$err,script_launch_at=>$script_at,signal_at=>$signal_at);
-    $c->{cleanup_outcome}=clean_ids($pre); save(); die $err if $err;
-    return $ok?0:1;
-}
-sub audit {
-    my ($base)=@_; die 'usage: audit BASE' unless defined($base) && $base=~/^[0-9a-f]{7,40}$/;
-    my @code=qw(tools/bounded_run.sh tools/test_bounded_run.pl tools/script_gate.sh Makefile mk/script-gates.mk);
-    my @records=qw(changelogs/unreleased/2026-11-08-bounded-script-runner.md
-        design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md design_docs/planned/r1/m4-7ad-bounded-script-supervisor-sprint.md
-        design_docs/implemented/r1/m4-7ad-bounded-script-supervisor.md design_docs/implemented/r1/m4-7ad-bounded-script-supervisor-sprint.md
-        .ailang/state/sprints/sprint_R1-M4-JOURNEY.json .ailang/state/evaluations/repro_R1-7ad_iter80.json
-        .ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json
-        .ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_2.json
-        .ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_3.json
-        .ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_publication_iter80.json
-        design_docs/stapledon-mission.md design_docs/stapledon-mission-log.md design_docs/stapledon-mission-index.md
-        design_docs/stapledon-mission-dashboard.md design_docs/stapledon-mission-status-archive.md design_docs/stapledon-mission-log-archive.md);
-    my %allow=map {$_=>1} (@code,@records); my %paths;
-    for my $spec (['diff','--name-only','-z',$base,'--'],['ls-files','--others','--exclude-standard','-z']) {
-        my $r=run_command('audit-paths-'.int(rand(1e8)),4,['git','-C',$ROOT,@$spec]); die 'audit git inventory error' if $r->{actual_rc};
-        $paths{$_}=1 for grep {length} split /\0/,$r->{stdout};
-    }
-    my @bad=grep {!$allow{$_}} keys %paths;
-    case_result(name=>'audit-exact-scope',actual_rc=>@bad?1:0,passed=>!@bad,trigger=>'BASE tracked plus untracked union',elapsed=>0,cleanup_outcome=>'no_live_registered_survivors',paths=>[sort keys %paths],unexpected=>\@bad,code_paths=>\@code,record_paths=>\@records);
-    for my $p (qw(tests/test_crew_console.gd tools/test_script_gate.sh tools/script_gate_lint.sh tools/script-gate-baseline.txt)) {
-        my $r=run_command('audit-base-'.int(rand(1e8)),3,['git','-C',$ROOT,'show',"$base:$p"]);
-        my $ok=$r->{actual_rc}==0 && get("$ROOT/$p") eq $r->{stdout};
-        case_result(name=>"audit-protected-$p",%$r,passed=>$ok,trigger=>'materialized BASE byte cmp',cleanup_outcome=>'no_live_registered_survivors');
-    }
-    my $base_make=run_command('audit-base-Makefile',3,['git','-C',$ROOT,'show',"$base:Makefile"]);
-    my $strip_recipe=sub { my ($s)=@_; $s=~s{(crew-console-test: import[^\n]*\n).*?(?=test: crew-console-test)}{$1}s or die 'crew recipe boundary missing'; return $s };
-    my $recipe_ok=$base_make->{actual_rc}==0 && $strip_recipe->($base_make->{stdout}) eq $strip_recipe->(get("$ROOT/Makefile"));
-    case_result(name=>'audit-recipe-only',actual_rc=>$recipe_ok?0:1,passed=>$recipe_ok,trigger=>'Makefile outside recipe byte cmp',elapsed=>0,cleanup_outcome=>'no_live_registered_survivors');
-    my $r=run_command('audit-make-graph',10,['make','--no-print-directory','-C',$ROOT,'-qp']);
-    my %graph;
-    for my $line (split /\n/,$r->{stdout}) {
-        next if $line=~/^[#\t ]/; if($line=~/^([^:=]+):\s*(.*)$/) { for my $target (split /\s+/,$1) {push @{$graph{$target}},grep {!/^[|]/} split /\s+/,$2} }
-    }
-    my $reaches=sub { my ($root,$goal)=@_; my @todo=($root); my %seen;
-        while(@todo) { my $p=shift @todo; next if $seen{$p}++; return 1 if $p eq $goal; push @todo,@{$graph{$p}//[]} } return 0 };
-    my $ok=($r->{actual_rc}==0 || $r->{actual_rc}==1) && $reaches->('test','bounded-run-selftest') && $reaches->('ci-fast','bounded-run-selftest') && !$reaches->('test','bounded-run-drill') && !$reaches->('ci-fast','bounded-run-drill');
-    case_result(name=>'audit-actual-make-graph',%$r,passed=>$ok,trigger=>'make -qp rc0/1 usable rc2 error; transitive prerequisites',cleanup_outcome=>'no_live_registered_survivors');
-    return scalar(grep {!$_->{passed}} @CASES)?1:0;
-}
-
 sub dispatch {
     my (@args)=@_;
     my $head=run_command('root-head',2,['git','-C',$ROOT,'rev-parse','HEAD']);
@@ -1004,10 +790,7 @@ sub dispatch {
 sub main {
     ($MODE,$ROOT,my $parent,my @args)=@ARGV;
     die "usage: MODE absolute-ROOT absolute-artifact-parent\n" unless defined($MODE) && $MODE=~/^(guard|guardian-controls|selftest|mutants|crew|audit)$/ && defined($parent) && $ROOT =~ m{^/} && $parent =~ m{^/} && -f "$ROOT/Makefile" && -d $parent && -w $parent;
-    $ROOT=abs_path($ROOT); $ART=tempdir('7ad-XXXXXXXX',DIR=>$parent,CLEANUP=>0);
-    die 'private artifact root is a symlink' if -l $ART;
-    $ART=abs_path($ART); die 'private artifact root unavailable' unless defined($ART) && -d $ART;
-    chmod 0700,$ART;
+    $ROOT=abs_path($ROOT); $ART=tempdir('7ad-XXXXXXXX',DIR=>$parent,CLEANUP=>0); chmod 0700,$ART;
     print "artifacts=$ART\n"; $|=1;
     my $cap= $MODE eq 'crew' ? (($args[0]//'') eq 'normal'?480:240) : $MODE eq 'mutants'?180:$MODE eq 'audit'?30:120;
     if ($MODE eq 'guard') { $cap=shift @args; die "usage: guard CAP -- command\n" unless defined($cap) && $cap =~ /^[1-9][0-9]*$/ && @args>1 && shift(@args) eq '--' }
@@ -1065,16 +848,11 @@ sub main {
     # Record the failure BEFORE cleanup. Candidate observations remain immutable.
     my $data=eval { decode_json(get("$ART/results.json")) } || {mode=>$MODE,artifacts=>$ART,cases=>[]};
     $data->{worker_cap_fired}=$capfired?JSON::PP::true:JSON::PP::false;
-    my $worker_error=get("$ART/worker-error.txt");
-    if (length($worker_error)) {
-        my $detail="worker error: $worker_error";
-        $fail=defined($fail) && length($fail) ? "$fail\n$detail" : $detail;
-    }
+    $fail //=get("$ART/worker-error.txt") if $st==3;
     $data->{inspection_restricted}=($fail//'')=~/inspection_restricted/?JSON::PP::true:JSON::PP::false;
     $data->{void_fixture}=($fail//'')=~/void_fixture/?JSON::PP::true:JSON::PP::false;
     $data->{failure_before_cleanup}=$fail if $fail;
     put("$ART/results.json",$JSON->encode($data));
-    print STDERR $fail.($fail=~/\n\z/ ? '' : "\n") if defined($fail) && length($fail);
     my $ce=defined($cancel)?$cancel+3:$capfired?$end+3:now()+3;
     $TABLE_END=$ce;
     eval {
@@ -1090,17 +868,6 @@ sub main {
     kill 'KILL',$worker if $worker; kill 'KILL',$SENTINEL;
     kill 'KILL',$_ for keys %PS_HELPERS;
     while(now()<$ce) { reap_ps(); my $a=$worker?waitpid($worker,WNOHANG):-1; my $b=waitpid($SENTINEL,WNOHANG); last if $a==-1 && $b==-1 && !keys(%PS_HELPERS); pause() }
-    if (-f "$ART/restore.json") {
-        eval {
-            my $restores=decode_json(get("$ART/restore.json"));
-            for my $item (@$restores) {
-                die 'unsafe restore target' unless index($item->{path},"$ART/")==0 && index($item->{backup},"$ART/")==0 && !-l $item->{path};
-                my $original=get($item->{backup}); die 'restore backup hash changed' unless sha256_hex($original) eq $item->{sha256};
-                put($item->{path},$original); die 'guardian restoration cmp failed' unless get($item->{path}) eq $original;
-            }
-            $data->{guardian_restoration_cmp}=JSON::PP::true; 1;
-        } or do { $data->{restoration_error}=$@; $st=1 };
-    }
     my $saved_head=get("$ART/head.txt"); $data->{head}=$saved_head if length($saved_head);
     put("$ART/results.json",$JSON->encode($data));
     print STDERR "UNMEASURED: inspection/fixture unavailable: ".($fail//'see retained results')."\n" if $st==3;

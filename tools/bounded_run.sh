@@ -33,7 +33,7 @@ sub snapshot_once {
     pipe(my $r,my $w) or die "ps pipe: $!\n";
     pipe(my $er,my $ew) or die "ps stderr pipe: $!\n";
     my $p=fork(); die "ps fork: $!\n" unless defined $p;
-    if (!$p) { $SIG{$_}='DEFAULT' for qw(HUP INT TERM); close $r; close $er; open STDOUT,'>&',$w; open STDERR,'>&',$ew; close $w; close $ew;
+    if (!$p) { setpgrp(0,0) or POSIX::_exit(126); $SIG{$_}='DEFAULT' for qw(HUP INT TERM); close $r; close $er; open STDOUT,'>&',$w; open STDERR,'>&',$ew; close $w; close $ew;
         $ENV{LC_ALL}='C'; exec 'ps','-axo','pid=,ppid=,pgid=,lstart=,stat=' or POSIX::_exit(127) }
     $helpers{$p}=1; close $w; close $ew; nb($r); nb($er); my ($buf,$st,$eof)=('',undef,0); my ($errbuf,$erreof)=('',0);
     my $read_error;
@@ -209,9 +209,6 @@ eval {
     my $t=snapshot($deadline); $root_id=$t->{$root};
     die "held command identity absent\n" unless $root_id && $root_id->{ppid}==$$;
     $owned{$root}=$root_id;
-    if (defined($ENV{BR_COMMAND_ID_DIR}) && -d $ENV{BR_COMMAND_ID_DIR}) {
-        require JSON::PP; write_file("$ENV{BR_COMMAND_ID_DIR}/command-$root",JSON::PP::encode_json($root_id));
-    }
     if (defined($ENV{BR_INNER_READY})) {
         my $file=$ENV{BR_INNER_READY};
         write_file("$file.tmp","$$\t$t->{$$}{birth}\t$root\t$root_id->{birth}\n");
@@ -240,8 +237,11 @@ print STDERR "bounded-run: inspection/setup failure: $error" if $error;
 # Stop ancestors before refreshing closure. Retained records survive reparenting.
 my $cleanup_error;
 eval {
+    my $t;
+    # Freeze/discovery is optional after its bounded phase; verification is not.
+    my $freeze_ok=eval {
     my $final_end=$cleanup_start+0.25; $final_end=$cleanup_end if $cleanup_end<$final_end;
-    my $t=snapshot($final_end); discover($t);
+    $t=snapshot($final_end); discover($t);
     my %depth;
     for my $id (values %owned) { my $p=$id->{pid}; my $d=0; my %seen;
         while ($t->{$p} && $owned{$p} && !$seen{$p}++) { $d++; $p=$t->{$p}{ppid} }
@@ -255,6 +255,15 @@ eval {
         last unless @new;
         for my $id (@new) { last if now()>=$final_end; signal_owned('STOP',$id,$final_end) }
     }
+    1;
+    };
+    if (!$freeze_ok) {
+        my $freeze_error=$@;
+        die $freeze_error unless $freeze_error=~/\A(?:ps transient read\/exit budget exceeded 200ms|inspection budget exhausted)/;
+        print STDERR "bounded-run: freeze inspection deferred: $freeze_error";
+    }
+    # Even after a deferred freeze, refresh native closure before any TERM.
+    $t=snapshot($cleanup_end); discover($t);
     for my $id (values %owned) {
         last if now()>=$cleanup_end; signal_owned('TERM',$id,$cleanup_end);
         signal_owned('CONT',$id,$cleanup_end) if now()<$cleanup_end;
