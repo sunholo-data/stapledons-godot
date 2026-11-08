@@ -1,0 +1,388 @@
+{
+  "schema": "stapledons-evaluation/1",
+  "verdict": "PASS",
+  "publication_approved": true,
+  "implementation_approved": false,
+  "implementation_round_increment": false,
+  "purpose": "parked_publication_only",
+  "reviewed_record_commit": "8b72e926e03714173ae5387537fec889772d4d08",
+  "implementation_score": null,
+  "implementation_round": null,
+  "implementation_score_note": "No implementation score is produced by this review. The record carries no implementation round 2, no implementation candidate CI, no implementation merge and no product landing. The only implementation verdict that exists is the preserved independent round-1 report (FAIL47); it is reproduced here byte-for-byte as evidence and is not re-scored.",
+  "reviewer": {
+    "role": "independent evaluator — parked publication review only",
+    "identity": "MiniMax M3 via pi:openrouter/minimax/minimax-m3",
+    "independence": "Not the OpenAI controller/author. This session performed read-only static inspection of supplied immutable evidence plus its own git objects; it spawned no provider agent, ran no gate, and mutated no shared state.",
+    "session": "own pi session, isolated clone /Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80-eval, detached HEAD at 8b72e926e03714173ae5387537fec889772d4d08",
+    "clone_head_at_review": "8b72e926e03714173ae5387537fec889772d4d08",
+    "clone_head_mutated_by_reviewer": false,
+    "claude_md_read_completely": true,
+    "claude_md_path": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80-eval/CLAUDE.md",
+    "task_classification": "independent evaluation under the supplied approved design and sprint plan",
+    "unattended_mission_stage": true,
+    "ailang_messages_run": false,
+    "ailang_messages_note": "Skipped as instructed: unattended mission stage, no user to summarize to.",
+    "session_protocol_ack_called": true,
+    "session_protocol_ack_acked": true,
+    "session_protocol_ack_result": "Session protocol acknowledged — mutating tools unlocked for this session.",
+    "protocol_precondition": "satisfied before any evidence read, adjudication or report write"
+  },
+  "gate4_base": {
+    "sha": "d9cc170b17853df06592105e896215e2999955d2",
+    "iso": "2026-11-08T08:02:55Z",
+    "routing_row_observed": "base=d9cc170b17853df06592105e896215e2999955d2@2026-11-08T08:02:55Z (Gate4 shared-ref read)",
+    "adopted_record_base_observed": "fa8480d55d55df7eccc3d16cf4f296e2357e327f (draft PR #408), which is origin/main d9cc170b plus the adopted iteration 78/79 records",
+    "verdict": "MATCH"
+  },
+  "premise_verification": {
+    "required_implementation_acceptance_red_at_cutoff": {
+      "cutoff_utc": "2026-11-08T08:03:00Z",
+      "observed": "The final required M4-r21 bounded selftest is red: outer actual_rc=2, elapsed 104.73 s, cap not fired, inspection not restricted; /private/tmp/7ad-efaS2Pkz/results.json records mode=selftest, 42 cases, 41 passed, the single failure rawmake-summary-hang (passed=false, inner_make_rc=2, inspection_restricted=true, cleanup_outcome=no_live_registered_survivors). Artifact mtime 2026-11-08T08:59:39+0100 = 07:59:39Z, i.e. before the cutoff.",
+      "status": "CONFIRMED"
+    },
+    "r1_actual_minimax_fail47_persists": {
+      "observed": ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json at 8b72e926: verdict FAIL, total_score 47, score_breakdown_sum 47, score_breakdown_max 100, implementation_approved=false, reviewed_commit 386dad484b5b9ce18df20ef500f6f99be3c4eb7a, implementation_base fa8480d55d55df7eccc3d16cf4f296e2357e327f, evaluation_round 1, judge 'MiniMax M3 via pi:openrouter/minimax/minimax-m3'.",
+      "status": "CONFIRMED"
+    },
+    "unapproved_source_only_on_durable_remote_backup": {
+      "branch": "backup/stapledon-iter80-7ad-final-unapproved-r21",
+      "remote_ref_verified": "origin/backup/stapledon-iter80-7ad-final-unapproved-r21 = 6abbd8b2aaeb89fe737a72f25bb55625ba7ff74a",
+      "commit": "6abbd8b2aaeb89fe737a72f25bb55625ba7ff74a",
+      "commit_subject": "wip: preserve unapproved 7ad r21 and required acceptance failure",
+      "present_in_main": false,
+      "present_in_record_candidate": false,
+      "status": "CONFIRMED"
+    },
+    "no_implementation_round2_launched": {
+      "observed": "No eval_R1-M4-JOURNEY_7ad_round_2.json or _round_3.json exists in any of 8b72e926, 386dad48, 6abbd8b2 or c68c4e59 (count 0 in each). The record's log, dashboard, design doc, sprint plan and PR body all state 'no implementation round2 launched'. implementation_round_increment is false here.",
+      "status": "CONFIRMED"
+    },
+    "banking_is_not_approval": {
+      "observed": "The bank is a durable remote branch preserving unapproved source and raw evidence; it is referenced as preservation only ('A banked backup is preservation, not approval, main merge or CI green'). Neither the charter queue row, the log, the dashboard nor the design doc claims implementation approval, code CI, code merge or product landing.",
+      "status": "CONFIRMED"
+    },
+    "premise_mismatches": []
+  },
+  "r1_report_bank_proof": {
+    "report_path": ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json",
+    "sha256": "e4b3900de7be6c18d83ec45155f5f9e9b586e655a310f10b072121b8972157b4",
+    "bytes": 30049,
+    "reviewed_commit": "386dad484b5b9ce18df20ef500f6f99be3c4eb7a",
+    "durable_bank_root_commit": "c68c4e59a5e5be7e9ae2faa50c8f75bb615ab655",
+    "durable_bank_root_commit_subject": "Record independent MiniMax round1 rejection for 7ad",
+    "remote_ref_verified": "origin/backup/stapledon-iter80-7ad-review-r1 = c68c4e59a5e5be7e9ae2faa50c8f75bb615ab655",
+    "copied_record_artifact_sha256": "e4b3900de7be6c18d83ec45155f5f9e9b586e655a310f10b072121b8972157b4",
+    "sha256_identical_at_all_three_locations": true,
+    "candidate_branch_verified": "origin/backup/stapledon-iter80-7ad-candidate-r7 = 386dad484b5b9ce18df20ef500f6f99be3c4eb7a (ancestor of the bank)",
+    "r1_findings_preserved": ["B1 production cleanup leak on transient PS failure", "B2 guardian failure", "B3 canonical copy", "B4 actual signals unmeasured", "B5 final audit", "B6 exact-head CI"],
+    "r1_findings_not_rewritten": true,
+    "later_controller_results_distinguished_from_r1": "The R1 report judges the 386dad48 candidate with its own source hashes (bounded_run.sh 2a7acb37…, test_bounded_run.pl 10d2578e…, script_gate.sh 32266245…, Makefile a6cba2d5…). The later controller results (M3-r21/M4-r21) and the bank source (bounded_run.sh 59a1a0a3…, test_bounded_run.pl e04e2008…, script_gate.sh 22465a4c…, Makefile 93be1582…, mk/script-gates.mk 22cd06e4… identical to R1, changelog ba6a651f…) are separate variants and are reported as such; the FAIL47 is not rewritten and the later greens are not credited as acceptance.",
+    "status": "PASS"
+  },
+  "unapproved_source_provenance": {
+    "bank_commit": "6abbd8b2aaeb89fe737a72f25bb55625ba7ff74a",
+    "bank_branch": "backup/stapledon-iter80-7ad-final-unapproved-r21",
+    "remote_verified": true,
+    "source_files_sha256": {
+      "tools/test_bounded_run.pl": "e04e20089fe1134966ba4c91e6b73e479bfa7410eacdf52388732325397de6bb",
+      "tools/bounded_run.sh": "59a1a0a33e62ee30d86917880cc18be7b398c45150ae97491809a2a56037da9f",
+      "tools/script_gate.sh": "22465a4c12f00dfc4b6d264a85755cdbc237db97bbb713179b768a7e9ee75e58",
+      "Makefile": "93be1582edfefbf333f15910e5816f9158f0e2c5809d2c563ada612d2c4039ca",
+      "mk/script-gates.mk": "22cd06e419dd4f04e29a7c8f1684d624dc3a76f99408c1d292b29562bd7e489e",
+      "changelogs/unreleased/2026-11-08-bounded-script-runner.md": "ba6a651f1fdd184624576fd3006c5b09791e862f09b923a1334d69eea3d09168"
+    },
+    "all_six_hashes_independently_recomputed_from_git_objects": true,
+    "preserved_record_artifacts_in_bank": ["design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md", "design_docs/planned/r1/m4-7ad-bounded-script-supervisor-sprint.md", ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json", ".ailang/state/evaluations/repro_R1-7ad_iter80.json", ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json"],
+    "bank_diff_vs_r1_candidate_paths": [".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json", ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json", "Makefile", "changelogs/unreleased/2026-11-08-bounded-script-runner.md", "design_docs/planned/r1/m4-7ad-bounded-script-supervisor-sprint.md", "design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md", "tools/bounded_run.sh", "tools/script_gate.sh", "tools/test_bounded_run.pl"],
+    "status": "PASS"
+  },
+  "diff_scope_verification": {
+    "supplied_full_diff": "/tmp/iter80-parked-main.diff",
+    "supplied_diff_sha256": "4d75191c06602802fe2cb230524fa24c05e9f8d6525839562c3e39240348c6c6",
+    "reproduced_diff_sha256_from_own_clone": "4d75191c06602802fe2cb230524fa24c05e9f8d6525839562c3e39240348c6c6",
+    "byte_identical": true,
+    "changed_paths_count": 12,
+    "changed_paths": [".ailang/state/evaluations/eval_R1-7ad_lane_iter78.json", ".ailang/state/evaluations/eval_R1-7ad_lane_iter79.json", ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json", ".ailang/state/evaluations/repro_R1-7ad_iter80.json", ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json", "design_docs/planned/r1/m4-7ad-bounded-script-supervisor-sprint.md", "design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md", "design_docs/stapledon-mission-dashboard.md", "design_docs/stapledon-mission-index.md", "design_docs/stapledon-mission-log.md", "design_docs/stapledon-mission-status-archive.md", "design_docs/stapledon-mission.md"],
+    "allowlist_paths": 12,
+    "changed_paths_subset_of_allowlist": true,
+    "allowlist_sha256": "fff981b2334818a62e76bed97c5334464ec1c7df2355b272b5c52bfbc754016d",
+    "ancestry_base_to_record": ["1b1b5c94 mission: record iteration 78 evaluator capacity park", "fa8480d5 mission: record iteration 79 evaluator capacity park", "34a83ec4 design(7ad): bounded script supervisor and independent cleanup controls", "ffd9287c design(7ad): record degraded quorum and adopt signal-readiness refinement", "c7431d62 plan(7ad): four bounded implementation milestones and controller gates", "8b72e926 mission: record parked 7ad iteration 80 and preserve independent failure"],
+    "approved_planning_commit_present": "c7431d621cfafcb529f2adccfa9920081bb7a518",
+    "inherited_78_79_records_present": true,
+    "git_diff_check_whitespace": "clean (no output, rc 0)",
+    "status": "PASS"
+  },
+  "code_absence": {
+    "unapproved_code_paths_required_absent_from_record": {
+      "tools/bounded_run.sh": "ABSENT",
+      "tools/test_bounded_run.pl": "ABSENT",
+      "changelogs/unreleased/2026-11-08-bounded-script-runner.md": "ABSENT"
+    },
+    "whole_record_tree_path_scan_for_runner_or_harness_names": "no matching paths",
+    "unapproved_code_hidden_in_renamed_paths_or_records": {
+      "method": "908 distinctive lines (>=45 chars) from the bank's tools/bounded_run.sh, tools/test_bounded_run.pl and the changelog fragment plus 205 additional >=30-char lines from the runner and changelog were searched byte-exactly inside all 12 record blobs",
+      "hits": 5,
+      "hit_nature": "all five are file-path strings only (e.g. '.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_round_1.json', '..._round_2.json', '..._round_3.json', '..._publication_iter80.json') in the sprint plan and repro record; zero product-code lines",
+      "verdict": "NO HIDDEN PRODUCT CODE"
+    },
+    "status": "PASS"
+  },
+  "protected_bytes": {
+    "Makefile": {"unchanged_vs_main": true, "sha256": "e14aa7efd1b06c498d45cb757f84fd983f5686688705f75408e7b710cdcf454a"},
+    "mk/script-gates.mk": {"unchanged_vs_main": true, "sha256": "2c1fc06c524e0491c2c3c8fe7135988b8bb4d3a11037969cc2f311dd41100b9c"},
+    "tools/script_gate.sh": {"unchanged_vs_main": true, "sha256": "c34dc542466681ed0ae9b65e50a122436ec980a17c4a5c6900a407bcb2888841"},
+    "tests/test_crew_console.gd": {"unchanged_vs_main": true, "sha256": "7b21d1f1ffea3f511224ae88cd431a3c765789202c07b92e05c8a9e62d1f097a"},
+    "tools/test_script_gate.sh": {"unchanged_vs_plan": true, "unchanged_vs_main": true, "sha256": "e99aa46b9a0c76e171c27753e685f2e6af5e0b8c6c3938858a2d1445e517dcbb"},
+    "tools/script_gate_lint.sh": {"unchanged_vs_main": true, "sha256": "85044a577978883f881e38b3d7bfd4832872d10b28c2a22ced6e5d2e0b41fd27"},
+    "tools/script-gate-baseline.txt": {"unchanged_vs_main": true, "sha256": "de81a946f20a3b7352a8ad6219259cda497ce6252722163f7cd086b58cb6a6ac"},
+    "method": "each blob recomputed from git objects at d9cc170b and at 8b72e926 and compared byte-for-byte; all 7 protected files identical to main and matching the frozen manifest digests",
+    "main_code_bytes_unchanged": true,
+    "status": "PASS"
+  },
+  "new_feature_state": {
+    "sprint_id": "R1-M4-JOURNEY",
+    "sprint_status": "in-progress",
+    "parent_remains_in_progress": true,
+    "prior_feature_objects": 28,
+    "prior_28_byte_preserved": true,
+    "feature_count_base": 28,
+    "feature_count_record": 29,
+    "only_changed_top_level_sprint_key": "features",
+    "other_top_level_sprint_keys_byte_identical": ["ailang", "approved", "created", "critical_path", "design_doc", "external_dependencies", "findings", "github_issues", "loc_cap_exceptions", "order", "pause_points", "planner_status_note", "questions_for_mark", "registry_reuse", "revision_round_2", "revision_round_3", "sprint_id", "sprint_plan", "status", "velocity", "waves"],
+    "new_feature": {"id": "M4.6wR3_7ad_BOUNDED_SCRIPT_SUPERVISOR", "index": 28, "status": "in_progress", "passes": false},
+    "milestones": {"M1": true, "M2": true, "M3": false, "M4": false, "M5": false},
+    "m3_state": "reopened (passes=false)",
+    "feature_passes": false,
+    "design_and_plan_remain_planned": true,
+    "implemented_dir_7ad_artifacts": "none; only design_docs/planned/r1/m4-7ad-* exist",
+    "status": "PASS"
+  },
+  "ledger": {
+    "rows": 148,
+    "rows_at_gate4_base": 148,
+    "rows_at_record": 148,
+    "byte_exact_vs_gate4_base": true,
+    "byte_comparison_method": "the charter's '## Decision ledger'→'## CURRENT GOAL' slice was extracted independently at d9cc170b and at 8b72e926 and compared byte-for-byte: identical (sha256 604001adb6aed29fa974b9f1e1ee108936ee59139056e60edf2ed5935a8bdbca both sides)",
+    "open_rows": ["D-128", "D-129", "D-145", "D-146", "D-147", "D-148"],
+    "open_row_count": 6,
+    "open_set_exact": true,
+    "unattended_human_answer_invented": false,
+    "decision_resolution_invented": false,
+    "new_policy_or_permission_invented": false,
+    "queue_pillar_deferred_content_retained": "44 queue-like rows at base and 44 at record; known-present control rows 7ac., 7aa., 7m-d, D-147, D-148 all still present; the whole charter is byte-identical outside lines 92, 94, 96 (STATUS stamps), 304 (iteration pointer) and 521 (row 7ad queue tag)",
+    "status": "PASS"
+  },
+  "status_charter": {
+    "charter_lines_base": 545,
+    "charter_lines_record": 545,
+    "charter_lines_unchanged": true,
+    "live_stamps_in_order": ["80", "79", "78"],
+    "live_stamps_exact": true,
+    "rotation_in_record_commit": "only STATUS 77 (single heading + one blank) moved to the archive; +4 archive lines and -2/-2 charter lines in 8b72e926",
+    "rotation_arithmetic": "per rotation 1 stamp in / 1 stamp out = before + 2 - 2*moved; over the whole base→record range 3 stamps in (80, 79, 78) and 3 out (77, 76, 75) => 545 == 545 + 6 - 6",
+    "archive_moved_stamps_byte_identical": "ITERATION 75, 76 and 77 in the archive are byte-identical to the base charter's versions, each followed by one blank line",
+    "archive_prefix_lossless": "first 669 archive lines byte-identical to the base archive (prefix comparison True)",
+    "archive_known_present_positive_control": "ITERATION 76 present in the archive (>=1) with a known-present control; archive stamp list spans 72..37 plus 44, 73, 74, 75, 76, 77",
+    "html_end_marker": {"present": true, "text": "<!-- End of archived STATUS stamps. -->", "position": "after the exact moved ITERATION 77 stamp and its blank line", "history_preserved": "the marker is appended after the moved content; the moved stamp bytes and the 669-line prefix survive, so the marker adds a footer, it does not replace or lose history"},
+    "block_scan_to_next_header_deletion": "none; the moved stamp is one heading plus one blank, and no queue block was swept",
+    "ledger_loss": "none (see ledger section)",
+    "silent_historical_rewrite": "none; charter diff outside the three STATUS stamps and two pointer lines is empty",
+    "canonical_heading_check": "all three live stamps match '^## STATUS [0-9]{4}-[0-9]{2}-[0-9]{2} — ITERATION [0-9]+: [^[:space:]]'; a known-bad control ('ITERATION 80x') does not match, so the matcher fires",
+    "authorized_queue_tags": "row 7ad is tagged '[PARKED iteration 80: ...]' with the withheld-implementation disposition, the FAIL47 and the 'no implementation candidate pushed or merged; exact-head code CI not run' note; no LANDED claim on row 7ad",
+    "status": "PASS"
+  },
+  "dashboard_log_routing": {
+    "dashboard_path": "design_docs/stapledon-mission-dashboard.md",
+    "namespaced": true,
+    "bare_dashboard_written": false,
+    "bare_dashboard_exists_in_tree": false,
+    "dashboard_lines": 22,
+    "dashboard_max_lines": 40,
+    "dashboard_overwrite_not_append": "base dashboard 30 lines replaced by a 22-line snapshot; write-event sha_before 8d1f0cdc… (identical to the dashboard at the adopted record base fa8480d5) → sha_after c6717bbf… (identical to the record's dashboard blob)",
+    "dashboard_content_covers": ["release", "in-flight/resume", "parked", "quota", "cadence", "routing"],
+    "dashboard_first_write_proven": {
+      "event_sequence": 1,
+      "started_utc": "2026-11-08T08:02:55.487638+00:00",
+      "finished_utc": "2026-11-08T08:02:55.488437+00:00",
+      "next_record_write": "design_docs/stapledon-mission.md at 2026-11-08T08:03:12.136061+00:00",
+      "chronology": "dashboard is the sole first Gate 4 write; every other recorded write follows it",
+      "double_first_write_claim": false
+    },
+    "helper_stop_and_resume": {
+      "observed": "the supplied write-events file contains exactly one dashboard write (sequence 1) and then a ~16.6 s gap before the charter write (sequence 2 at 08:03:12.136Z); /tmp/iter80-record.py shows the resume branch asserts the already-written dashboard is byte-identical ('the same dashboard verified unchanged') and then proceeds with the anchored queue matcher re.sub(r'^7ad\\. ', …, count=1, flags=re.M)",
+      "assessment": "the first-write claim is proven and not duplicated; the resume itself is reconstructable from the helper source plus the chronological gap rather than from a dedicated resume row in the events file",
+      "blocking": false
+    },
+    "log_entry": {
+      "heading": "## 80 — 2026-11-08 — Row 7ad corrected candidate preserved; required acceptance remains incomplete; independent MiniMax round1 FAIL47; no implementation round2 launched [HARNESS]",
+      "canonical_entry_heading": true,
+      "template_sections": ["Progress", "Pick", "Preflight / observation", "Health / traces", "Reality check", "Design", "Plan", "Build", "Evaluation", "Routing evidence", "CI", "Ruled out", "Retro", "Record", "Next"],
+      "template_matches_iteration_79_exactly": true,
+      "live_log_entry_count": 28
+    },
+    "index": {
+      "regenerated_not_appended": true,
+      "regeneration_event": "write-events sequence 10, operation 'index_regeneration' at 2026-11-08T08:04:21.595482+00:00, sha_after 9b67242529dae6e8083f3fa815655be04637970788132ee71b45b8a5f8676e64 (equal to the record blob)",
+      "rows_added": 3,
+      "rows_added_for": [80, 79, 78],
+      "index_row_count": 81,
+      "duplicate_rows": 0,
+      "covers_live_log_entries_53_to_80": true
+    },
+    "routing_evidence_row": {
+      "base_form": "base=<40-char sha>@<iso>",
+      "observed": "base=d9cc170b17853df06592105e896215e2999955d2@2026-11-08T08:02:55Z",
+      "gate1_read": "d9cc170b17853df06592105e896215e2999955d2@2026-11-08T03:54:42Z"
+    },
+    "role_pins_and_tokens": {
+      "controller": "codex:gpt-6.1-sol (tok: not reported)",
+      "designer": "codex:gpt-6.1-sol — 259,764 quota tokens (probe 18,513 + heavy 241,251)",
+      "planner": "codex:gpt-6.1-sol — 92,373 quota tokens (probe 11,074 + heavy 81,299)",
+      "executor": "codex:gpt-6.1-sol — 955,007 unique CLI quota tokens (resumed heavy 486,216 counted once plus separate probes)",
+      "evaluator": "pi:openrouter/minimax/minimax-m3 — round 1 $0.45499416, 169,532 in / 40,894 out / 5,917,696 cache / 18,825 reasoning",
+      "wrapper_controller_tokens": "explicitly 'not reported', never zero",
+      "metered_total_usd": 0.52789776,
+      "metered_stages": ["evaluator-readiness openrouter/minimax/minimax-m3 $0.0121356", "quorum-round1 google/gemini-4-argon $0.060768", "evaluator-round1 openrouter/minimax/minimax-m3 $0.45499416"],
+      "metered_ledger_immutable": "/tmp/iter80-parked-metered-prereview.json (sha256 1868e5fd4d7f3dd87825bd59d3613b1ea525259efe148bfedfcbf77b2078044f, matches the frozen manifest input hash)",
+      "parked_publication_reservation": {"role": "parked-publication", "model": "pi:openrouter/minimax/minimax-m3", "reserved_usd": 1.5, "status_at_freeze": "reserved", "call_not_yet_launched_at_freeze": true, "review_commit": "8b72e926e03714173ae5387537fec889772d4d08", "purpose": "parked_publication_only", "implementation_approved": false}
+    },
+    "dead_lane_and_fallbacks": {
+      "iteration_78": "exact pinned Sonnet subscription probe rc=1, HTTP 429 usage_limit_reached, weekly reset 2026-11-09 06:00 Europe/Copenhagen, 0 tokens, $0, fallback pi:openrouter/minimax/minimax-m3 'not_admissible' (MISSION_OVER_RATION=openrouter; no widening), opus unavailable",
+      "iteration_79": "rc=1, HTTP 429 usage_limit_reached, capacity_usable=false, score null, implementation_approved=false, status PARKED-ON-LANE, dead_lane_recorded=true, no retry and no undeclared fallback",
+      "quorum_absences_iteration_80": ["oc-glm-5-3 HTTP429 Ollama session quota", "oc-kimi-k3 HTTP429 Ollama session quota", "claude-sonnet-5@claude-p quota"]
+    },
+    "quorum": {
+      "round": 1,
+      "verdict_observed": "PROCEED DEGRADED",
+      "external_seats_present": ["gemini-4-argon PASS"],
+      "external_seats_present_count": 1,
+      "absent_seats": ["oc-glm-5-3 (HTTP 429 Ollama quota)", "oc-kimi-k3 (HTTP 429 Ollama quota)", "claude-sonnet-5@claude-p (quota)"],
+      "author_vendor": "OpenAI author benched",
+      "full_quorum_claimed": false,
+      "cost_usd": 0.060768
+    },
+    "no_r2_invented": true,
+    "required_runtime_failure_reported_as_failure": "the record states the M4-r21 required selftest failed (make rc 2, 104.762 s, 41/42, rawmake-summary-hang fails on process inspection before its barrier) and explicitly says 'restriction is a failed measurement, never acceptance'; it is not described as nondeterministic noise and not converted into a missing-human-approval narrative",
+    "status": "PASS"
+  },
+  "issue_392": {
+    "state": "OPEN",
+    "updated_at": "2026-11-07T21:36:21Z",
+    "read_utc": "2026-11-08T08:12:19.457623+00:00",
+    "url": "https://github.com/sunholo-data/stapledons-godot/issues/392",
+    "raw_evidence_file": "/tmp/iter80-record-issue392.json",
+    "autoclose_scan": {
+      "scanned": ["all 6 commit messages in d9cc170b..8b72e926", "PR title", "PR body"],
+      "pattern": "(clos(e|es|ed)|fix(e|es|ed)?|resolv(e|es|ed))\\s*:?\\s*#[0-9]+ (case-insensitive)",
+      "known_bad_positive_control": "printf 'this fixes #1' matched (control fires, rc 1) — the matcher is proven live",
+      "matches_found": 0,
+      "issue_mentions_in_pr_body": ["#392"],
+      "mention_form": "non-triggering prose ('Nightly issue #392 remains OPEN'); no closing keyword precedes #392",
+      "records_only_commit_can_autoclose_392": false
+    },
+    "premerge_check_is_not_postmerge_proof": true,
+    "status": "PASS"
+  },
+  "records_ci": {
+    "records_pr": 408,
+    "records_pr_url": "https://github.com/sunholo-data/stapledons-godot/pull/408",
+    "head_ref_oid": "8b72e926e03714173ae5387537fec889772d4d08",
+    "base_ref_oid": "d9cc170b17853df06592105e896215e2999955d2",
+    "state": "OPEN",
+    "is_draft": true,
+    "mergeable": "MERGEABLE",
+    "title": "mission: preserve parked 7ad design and iteration 78–80 records",
+    "applicable_check": "fast tier (lock, strict VM, parity, replay)",
+    "check_count": 1,
+    "expected_fast_jobs": 1,
+    "present_expected_fast_jobs": 1,
+    "run_id": 42461357187,
+    "run_status": "completed",
+    "run_conclusion": "success",
+    "job_conclusion": "success",
+    "passed": true,
+    "read_utc": "2026-11-08T08:15:43.170670+00:00",
+    "evidence_files": ["/tmp/iter80-record-head-ci.verdict.json (sha256 4096a13c2940445d1b983931f39c98bb1302de77a5ba79c79f200c0853aa0644)", "/tmp/iter80-record-head-ci.direct.json (headSha 8b72e926…, run 42461357187, make ci-fast success, make test skipped)"],
+    "verdict_note": "records CI is the applicable gate for a records-only candidate; code CI is neither required for an unpublished product candidate nor claimed",
+    "code_ci_invented": false,
+    "product_landing_claimed": false,
+    "status": "PASS"
+  },
+  "banked_record_artifacts": {
+    "all_12_record_paths_tracked_at_reviewed_sha": true,
+    "all_12_sha256_match_frozen_manifest": true,
+    "ignored_paths_check": "git check-ignore reports none of the 12 record paths ignored; known-ignored control 'renders/' fires (control proven)",
+    "ignored_local_file_relied_on": false,
+    "raw_bulk_artifacts_location": "named absolute paths in .ailang/state/evaluations/repro_R1-7ad_iter80.json and in the log entry; the git-tracked decision-bearing summary preserves the actual failures and source hashes, and the record says so explicitly",
+    "status": "PASS"
+  },
+  "inherited_records_78_79": {
+    "eval_R1-7ad_lane_iter78_json": {"sha256": "448af5da7e465b90402962783e1818b9446823dd92d595da34f7817be1008fff", "bytes": 4194, "status": "PARKED-ON-LANE", "probe_rc": 1, "api_error_status": 429, "api_error": "usage_limit_reached", "tokens_in": 0, "tokens_out": 0, "cost_usd": 0, "score": null, "cross_family_approval": false, "independent_product_verdict": null, "implementation_approved": false, "dead_lane_recorded": true},
+    "eval_R1-7ad_lane_iter79_json": {"sha256": "6f78e497f54d10d38449edf98e358b126cd47de28dca614c6654bb0fc27775d6", "bytes": 2875, "status": "PARKED-ON-LANE", "rc": 1, "api_error_status": 429, "api_error": "usage_limit_reached", "capacity_usable": false, "score": null, "implementation_approved": false, "dead_lane_recorded": true},
+    "capacity_park_masquerading_as_approval": false,
+    "capacity_park_masquerading_as_independent_judgment": false,
+    "capacity_park_masquerading_as_product_landing": false,
+    "rotation_79_78_77_faithful": true,
+    "ledger_148_rows_six_open_consistent": true,
+    "status": "PASS"
+  },
+  "engineering_resume_condition": {
+    "kind": "runtime engineering continuation, not a new human ask",
+    "as_recorded_in_log_next": "Resume 7ad engineering from banked 6abbd8b2: fix the evidenced inspection/summary-hang failure without relaxing 200ms/3s or weakening predicates, rerun the complete required final batch including clean-first mutants and actual healthy-sim signal controls, then independent implementation round 2 and exact-head fast CI. Only after 7ad lands may 7ac rerun AC1–AC5 plus same-seat re-quorum; 7ab waits on its nightly-start predicate.",
+    "as_recorded_in_design_doc": "identical substance: resolve the evidenced inspection failure without weakening fixed bounds, run the complete final gates including clean-first mutations and real healthy-sim signal controls, then obtain independent implementation review and exact-head fast CI.",
+    "states_remaining_engineering": true,
+    "states_remaining_gates": true,
+    "states_independent_review": true,
+    "states_ci": true,
+    "converted_engineering_failure_into_new_human_ask": false,
+    "explicit_no_new_human_choice": "the log's Next section states 'No new human input is needed for7ad engineering'; the PR body states 'No new human input is required; all six existing OPEN questions retain their options and defaults'; the design doc and sprint plan repeat it",
+    "existing_open_rows_unresolved_by_the_record": ["D-128", "D-129", "D-145", "D-146", "D-147", "D-148"],
+    "six_open_rows_retained_unrelated_to_7ad_engineering": true,
+    "status": "PASS"
+  },
+  "required_checks": [
+    {"id": 1, "name": "actual park state / fidelity (R1 FAIL47 preserved, M3/M4/M5, feature state, docs planned, resume predicate)", "expected": "R1 report bytes identical at bank and record copy; FAIL47 unchanged; M1/M2 only; feature passes false/in-progress; design+plan remain planned; concrete engineering resume predicate with no new human ask and six OPEN retained", "observed": "sha256 e4b3900d… identical at 8b72e926, c68c4e59 and 6abbd8b2; verdict FAIL/47; M1 true, M2 true, M3 reopened false, M4 false, M5 false; feature passes false, status in_progress; both docs under design_docs/planned/r1/ with an honest 'This record approves no source' note; resume predicate present in log, design doc, sprint plan and PR body", "evidence": ["git object comparison at 8b72e926 / c68c4e59 / 6abbd8b2", ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json features[28]", "design_docs/planned/r1/m4-7ad-bounded-script-supervisor.md 'Iteration 80 parked implementation record'", "design_docs/stapledon-mission-log.md entry 80"], "status": "PASS"},
+    {"id": 2, "name": "inherited iteration 78/79 records, ledger and rotation", "expected": "exact recorded capacity failures with role pins/tokens and evaluator unavailability; ledger 148 rows / six OPEN; rotation 79/78/77 faithful; no capacity park masquerading as approval, judgment or landing", "observed": "iter78 probe rc1/HTTP429/0 tok/$0/score null/cross_family_approval false; iter79 rc1/HTTP429/capacity_usable false/score null/implementation_approved false; both PARKED-ON-LANE with dead_lane_recorded; ledger 148 rows byte-identical, six OPEN exactly; stamps 75/76/77 archived byte-identically", "evidence": [".ailang/state/evaluations/eval_R1-7ad_lane_iter78.json", ".ailang/state/evaluations/eval_R1-7ad_lane_iter79.json", "charter ledger slice sha 604001ad… at base and record"], "status": "PASS"},
+    {"id": 3, "name": "scope and protected bytes", "expected": "record diff only approved record/planned-deliverable paths; all 5 unapproved code paths and the named changelog fragment excluded; main code bytes unchanged; no unreviewed generator writes; new feature only in sprint; prior 28 features and parent metadata byte-preserved; parent in-progress", "observed": "12 changed paths == 12 allowlist paths; tools/bounded_run.sh, tools/test_bounded_run.pl and the changelog fragment absent from the record tree and from main; Makefile/mk/script-gates.mk/tools/script_gate.sh plus 4 more identical to main; only the sprint's features array changed (28 byte-identical prior features + 1 new); sprint status in-progress; zero product-code lines found inside the record blobs", "evidence": ["reproduced diff sha256 4d75191c… identical to the supplied diff", "git ls-tree on 8b72e926 and d9cc170b", "908+205 line-level scans of the bank's source against all 12 record blobs"], "status": "PASS"},
+    {"id": 4, "name": "ledger / human decisions / issue 392", "expected": "148 ledger rows byte-exact vs the Gate 4 base; exact six OPEN D-128/D-129/D-145/D-146/D-147/D-148; no unattended human answer; issue 392 OPEN per raw timestamped evidence; no records-only commit may auto-close 392; post-merge assertion listed", "observed": "ledger slice byte-identical (604001ad…), 148 rows, exactly the six named OPEN; no decision text changed anywhere in the charter; issue 392 read OPEN updatedAt 2026-11-07T21:36:21Z at 08:12:19Z; auto-close scan over all 6 commit messages + PR title + PR body = 0 matches with the known-bad control firing (rc 1); #392 appears only in non-triggering prose", "evidence": ["/tmp/iter80-record-issue392.json", "grep -E with known-bad control", "charter diff limited to lines 92/94/96/304/521"], "status": "PASS"},
+    {"id": 5, "name": "STATUS stamps and charter rotation", "expected": "final 545 lines; live canonical STATUS 80/79/78 in order; ONLY STATUS 77 heading + ONE blank moved; exact destination bytes survive; known-present archival control succeeds; before/after arithmetic +2-2*moved holds; queue row retained; no block scan-to-next-header deletion, ledger loss or silent rewrite", "observed": "545 lines before and after; stamps 80/79/78 in order; only the 77 heading + blank moved (archive +4 lines in the record commit); archived 75/76/77 byte-identical to base charter with one blank after each; archive prefix (669 lines) byte-identical; known-present control ITERATION 76 present; arithmetic 545 = 545 + 6 - 6 over three 1-in/1-out rotations; 44 queue rows before and after with control rows present; no other charter line changed", "evidence": ["git diff -U0 on design_docs/stapledon-mission.md (5 changed lines: 92/94/96/304/521)", "git diff on the status archive", "grep -Eq canonical heading test with a known-bad control"], "status": "PASS"},
+    {"id": 6, "name": "dashboard first / log / routing / quorum", "expected": "namespaced dashboard is the first Gate 4 write before report copy and other record writes; <=40 lines overwrite snapshot; no bare dashboard write; full log template and canonical heading; regenerated lossless index; actual role pins/tokens or explicit not-reported; dead lane, fallback, errors, metered costs, evaluator R1 identity recorded; no R2 invented; Gate 4 routing base fullSHA@ISO; quorum accurately PROCEED DEGRADED; runtime failure reported as a failure", "observed": "write event sequence 1 (08:02:55.487638Z) is the dashboard, all other writes follow (next at 08:03:12.136Z); 22 lines; no bare design_docs/mission-dashboard.md exists or was written; log entry 80 has the same 15 sections as entry 79 and a canonical heading; index regenerated (operation index_regeneration) with exactly rows 80/79/78 added and no duplicates; tokens per role recorded with controller/wrapper explicitly 'not reported'; dead lanes and 429 causes recorded; metered $0.52789776 with the per-stage breakdown; evaluator identity 'MiniMax M3 via pi:openrouter/minimax/minimax-m3' recorded; routing base d9cc170b…@2026-11-08T08:02:55Z with the full 40-char SHA; quorum PROCEED DEGRADED with one Gemini PASS, three quota-absent seats and the OpenAI author benched, no full-quorum claim; the required selftest failure is stated as a failure", "evidence": ["/tmp/iter80-gate4-write-events.json (sha256 617ddcf1… matches the frozen manifest)", "/tmp/iter80-parked-metered-prereview.json (sha256 1868e5fd… matches)", "design_docs/stapledon-mission-log.md entry 80", "design_docs/stapledon-mission-dashboard.md"], "status": "PASS"},
+    {"id": 7, "name": "records CI / report bank / head freeze", "expected": "the exact records PR head has actual applicable records CI (1/1 fast tier, success); no code CI invented; all claimed banked record artifacts tracked at the exact record SHA with checksum proof and not ignored local files; reviewer report written only in the reviewer clone, banked after exit, candidate head unchanged", "observed": "PR 408 headRefOid 8b72e926…, run 42461357187 completed/success with exactly 1 of 1 expected fast-tier jobs and make ci-fast success; verdict and direct-read files match the frozen manifest input hashes; code CI explicitly not run and not claimed; all 12 record paths are git-tracked at 8b72e926 with sha256 digests equal to the frozen manifest and none ignored (control 'renders/' fires); this report is written only in the reviewer clone, is not committed, and the reviewed head is untouched", "evidence": ["/tmp/iter80-record-pr-evidence.json (sha256 5ffc742f… matches)", "/tmp/iter80-record-head-ci.verdict.json", "/tmp/iter80-record-head-ci.direct.json", "git ls-files / git show per record path"], "status": "PASS"}
+  ],
+  "blockers": [],
+  "observations_non_blocking": [
+    {"id": "OBS1", "finding": "The controller's baselines file /tmp/iter80-record-baselines.json reports ledger_sha256 86ef1f1ac482da1eb46b600be0e9a05cb64d83d3a683626dd2f88e8573a77ea7. That digest does not reproduce under the helper's own ledger-slice definition or any obvious normalisation I tried (whole slice, rows only, id list, stripped/trailing-newline variants all differ).", "impact": "None on the ledger claim: I independently extracted the ledger slice from d9cc170b and from 8b72e926 and they are byte-identical (sha256 604001ad… both sides), 148 rows, exactly six OPEN. The baselines digest definition is simply undocumented.", "action": "report, do not repair"},
+    {"id": "OBS2", "finding": "The sprint plan reserves '.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_publication_iter80.json', while the controller's handoff requirements and this review write '.ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_parked_publication_iter80.json'.", "impact": "Naming divergence only. This report is not landed in the records PR, so no file collision arises; the controller should link whichever path it actually banks.", "action": "report, do not repair"},
+    {"id": "OBS3", "finding": "The supplied write-events file records one dashboard write and then a ~16.6 s gap; it carries no dedicated 'resume' row. The stop/resume is reconstructable from /tmp/iter80-record.py (resume branch asserts the dashboard is byte-identical and then uses the anchored '^7ad\\. ' queue matcher).", "impact": "The 'dashboard written first' claim is proven by the single event and is not double-claimed, which is what the gate requires; only the explicit resume marker is absent from the events file.", "action": "report, do not repair"},
+    {"id": "OBS4", "finding": "M3-r21 batch elapsed for selftest42 is 100.2728… s while its outer json records 100.215 s; the log cites 100.215 s.", "impact": "Both values are internally consistent with their own artifacts and the record cites the outer value. No green is invented; the M3-r21 run is explicitly labelled historical evidence only with M3 reopened.", "action": "report, do not repair"},
+    {"id": "OBS5", "finding": "The live mission log holds 28 entries (53–80) rather than the ~20 the rotation rule targets.", "impact": "Pre-existing mission-log state inherited from earlier iterations and outside this record's diff scope (the record commit appends exactly one entry and rotates exactly one stamp).", "action": "report, do not repair"}
+  ],
+  "deferred_postmerge_assertions": [
+    "After the records PR merges, assert the merge commit's parents are exactly [d9cc170b17853df06592105e896215e2999955d2, 8b72e926e03714173ae5387537fec889772d4d08] and that the merge tree is byte-identical to the reviewed head's tree — so the merged content is the exact judged record and no generator or merge-tool write altered it.",
+    "After the merge, re-read issue 392 and assert state == OPEN (the pre-merge scan only proves the commit message, PR title and PR body carry no closing keyword; GitHub's auto-close parser runs at merge time, so only a post-merge state read is proof).",
+    "Assert the merged main tree still contains no tools/bounded_run.sh, no tools/test_bounded_run.pl and no changelogs/unreleased/2026-11-08-bounded-script-runner.md, and that Makefile, mk/script-gates.mk and tools/script_gate.sh remain byte-identical to d9cc170b — i.e. that the merge moved records only.",
+    "Assert the merged charter's decision ledger is still byte-identical to d9cc170b (148 rows, exactly D-128/D-129/D-145/D-146/D-147/D-148 OPEN) and that the live stamps are still exactly 80/79/78 with STATUS 77 still present in the archive.",
+    "Bank this reviewer report on backup/stapledon-iter80-parked-publication-review (or a concretely supplied alternate), link the durable branch + commit hash + path in the records PR body, and record the report's sha256; the reviewed record head must stay 8b72e926e03714173ae5387537fec889772d4d08.",
+    "Do not claim the merge landed a product, a code CI green, an implementation approval or a landed feature: implementation_approved stays false and the merged content is PARKED records only.",
+    "Main's nightly rig/full remains an open, separate matter; the merged record asserts #392 OPEN and no whole-suite green. Any future main CI result must be read independently, not inherited from the records-PR run."
+  ],
+  "report_bank_strategy": {
+    "this_report_path": ".ailang/state/evaluations/eval_R1-M4-JOURNEY_7ad_parked_publication_iter80.json",
+    "written_in": "own reviewer clone /Users/voightkampff/dev/sunholo-data/stapledons-godot-iter80-eval",
+    "committed_by_reviewer": false,
+    "committed_onto_records_pr": false,
+    "candidate_head_mutated": false,
+    "controller_action_after_reviewer_exit": "bank the report on backup/stapledon-iter80-parked-publication-review (or the concretely supplied alternate durable branch), link durable branch + commit + path in the records PR body, and merge the unchanged judged record head only if the applicable checks and this verdict permit.",
+    "merge_gate_observed_in_controller_script": "/tmp/iter80-merge-reviewed-record.py asserts the bank proof's publication_approved is true, implementation_approved is false and record_head == 8b72e926…, that the PR head is unchanged and mergeable, that the auto-close scan is clean with its known-bad control, and that exactly one fast-tier check is COMPLETED/SUCCESS; then it merges with --match-head-commit and runs the post-merge assertions listed above.",
+    "future_outcome_asserted_by_this_report": false
+  },
+  "limitations": [
+    "This review is static and read-only. No gate, suite, GPU, golden, quiet-host, process fixture or host-wide scan was re-run, and no provider/agent/inbox/message traffic was generated, per the mission constraints.",
+    "The records-CI verdict, the PR state, the issue-392 state and the metered ledger are taken from the supplied immutable evidence files, whose sha256 digests I confirmed against the frozen manifest's input_hashes. They were not re-fetched from GitHub, because live network reads were out of scope for this stage.",
+    "Raw bulk execution artifacts (process tables, per-gate outer jsons, controller batch files) remain at the absolute paths named in the record and in repro_R1-7ad_iter80.json; I verified the decision-bearing summaries, the source hashes and the failure counts that the record asserts, not every byte of every bulk artifact.",
+    "The R1 report was adjudicated as evidence, not re-run: I confirmed its identity, its score, its byte-exact preservation and the consistency of its findings with the later controller variants, but I did not re-adjudicate the 7ad implementation on its merits — that is out of scope for a parked-publication review and implementation_approved remains false.",
+    "The controller's baseline ledger digest (OBS1) and the reserved-report-name divergence (OBS2) are reported, not repaired; I modified no sprint, charter, log, archive, index, dashboard or artifact.",
+    "Implementation score, implementation round and any product acceptance are deliberately null/absent: no implementation judgement is produced by this review.",
+    "The metered ledger is immutable pre-review; actual provider usage for this review is settled by the controller after my exit."
+  ]
+}
