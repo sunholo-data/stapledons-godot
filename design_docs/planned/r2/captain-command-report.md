@@ -50,6 +50,10 @@ Independent cross-family review: **Claude Sonnet 4.6, 86/100 checkpoint PASS**, 
 
 ## Attended cockpit refinement and laptop candidate — 2026-11-09
 
+**Delivery correction:** the shared dev manifest was subsequently overwritten by unrelated AI-panel candidate `0a315767`, which does not contain `ui/captain_command.gd`. Mark's `--dev` install therefore did not necessarily install this PR. Copied the exact existing `4ce91d33` archive to the immutable private prefix `reviews/4ce91d33`, with a matching manifest. Install the cockpit using `DEV_BUCKET=stapledons-voyage-dev-builds/reviews/4ce91d33 tools/install_review_build.sh --dev`; this works with the existing laptop installer. No rebuild, GPU check or game launch was required. Mark's visual acceptance remains pending.
+
+Fresh cross-family cockpit checkpoint: Claude Sonnet 4.6 **92/100 PASS**, [verbatim report](../../../.ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_2.json), landing_ready false. Reset drag state on system changes/close before merge; Esc-chain coverage and avoiding an unused overview viewport render are noted follow-ups. This does not validate a build without the chair source.
+
 Mark rejected the flat dashboard during playtesting and requested seated first person, consoles around the chair and camera movement between them (D-150). The replacement uses five physical displays and one reusable SubViewport for the existing system controls. Navigation's real map and the Archive/crossing reader layers are hosted there and restored on exit. The captain remains seated; first person hides its own painted billboard. Third-person contact acceptance remains pending.
 
 Fresh targeted headless results: command **39/0** (including a projected display click reaching a real GUI button exactly once), physical cockpit **101/0**, layout **18/0 cases**, guided review/Brake **10/0**, real-sim parity/hold **52/0**. Theme/UID guards pass. No GPU, GUI, app rendering or capture checks ran for this refinement: Mark expressly reserved the GPU for training and chose laptop playtesting.

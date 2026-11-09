@@ -120,21 +120,23 @@
   "publication_authorized": true,
   "cross_family_review_authorized": true,
   "evaluation": {
-    "path": ".ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_1.json",
+    "path": ".ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_2.json",
     "reviewer": "claude-sonnet-4-6",
-    "score": 86,
+    "score": 92,
     "result": "pass",
-    "scope": "historical flat-shell checkpoint; cockpit refinement requires fresh review",
+    "scope": "first-person cockpit checkpoint",
     "landing_ready": false
   },
   "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)",
   "publication": {
     "commit": "4ce91d338af566e046aef16be41a411902baf1c7",
     "version": "v0.4.0-dev.37-living-bridge-458-g4ce91d33",
-    "channel": "private macOS dev",
+    "channel": "private pinned macOS review: reviews/4ce91d33",
     "sha256": "9a6054252ac79c48f349f688a92bab71223e84b2ec4dc12ef562f01cdc01fbea",
     "gpu_checks_run": false,
     "visual_acceptance": "pending Mark laptop playtest",
-    "review": "fresh cockpit cross-family review running"
+    "review": "Claude Sonnet 4.6 92/100 PASS; drag reset follow-up before merge",
+    "install_command": "DEV_BUCKET=stapledons-voyage-dev-builds/reviews/4ce91d33 tools/install_review_build.sh --dev",
+    "delivery_note": "Shared latest.json overwritten by unrelated 0a315767 build lacking captain_command.gd; copied exact 4ce91d33 app to immutable review prefix, no rebuild or GPU use."
   }
 }
