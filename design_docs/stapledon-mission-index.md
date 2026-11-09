@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 82 | 2026-11-09 | Row 7ag LANDED (PR #415, merge `642c4b8c`): nightly rig/full keeps going past a red target and names every red; the first keep-going run found two ... |
 | 81 | 2026-11-09 | Row 7af LANDED (PR #409, merge `4dc458d7`): nightly rig/golden runs the setup make golden relied on; every rig step bounded as a process group; Son... |
 | 80 | 2026-11-08 | Row 7ad corrected candidate preserved; required acceptance remains incomplete; independent MiniMax round1 FAIL47; no implementation round2 launched... |
 | 79 | 2026-11-07 | Row 7ad remains PARKED-ON-LANE: independent evaluator weekly quota re-probed, no design/build or judge verdict; iteration 78 draft PR #408 extended... |
