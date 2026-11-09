@@ -54,7 +54,7 @@
         "sed 's/^bounded \"$DL_S\" make sky-assets/make sky-assets/' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M7/AC12: rc 1 after ~20 s; sky-hang FAILs",
         "pgrep -f 'sleep 20' | wc -l   # AC13: equal before and after the control"
       ],
-      "notes": "MS2 green: control (perl alarm 300, foreground, 84 s) rc 0, \"rig-check control: 16 cases, 0 failures\" (log /tmp/iter81-evidence/ms2-control-r2.log; the first background run /tmp/iter81-ms2.J973oW died after suite-profile and is not used). make rig-check-control rc 0 (82 s). sh -n both scripts rc 0. AC4 sed output: deps starmap-assets planet-assets import. Mutants (sed on copies in /tmp/iter81-mut.tZ8Xct; each sed verified to change text): M1 GOLDEN_SETUP=\"\" rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red, setup-hang (+caller-poison). M2 import dropped rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red (+caller-poison). M3 planet-assets dropped rc 1, FAIL the same three (+caller-poison). M4 the \"|| fail golden setup\" stripped rc 1, FAIL golden-setup-red, setup-hang (+caller-poison; setup-hang rc 124 as the bare bounded status exits set -e). M5 group kill dropped rc 1, FAIL setup-hang, sky-hang, runtime-hang with \"hang child <pid> still alive\" (+caller-poison). M6 unset RIG_SETUP_S dropped (t.sh) rc 1, FAIL caller-poison only (14 of 15 ok). M7 sky-assets plain rc 1, FAIL sky-hang (rc 0, calls run on) (+caller-poison). No mutant stayed green: no test fix needed. Orphan check: sleep 20 count 4 before the first run, 4 after; later counts 6 and 5 are other sessions (their parents are other agents shells); none has a test or rig parent. Wall: mutant runs 73 to 125 s each."
+      "notes": "MS2 green: control (perl alarm 300, foreground, 84 s) rc 0, \"rig-check control: 16 cases, 0 failures\" (log /tmp/iter81-evidence/ms2-control-r2.log; the first background run /tmp/iter81-ms2.J973oW died after suite-profile and is not used). make rig-check-control rc 0 (82 s). sh -n both scripts rc 0. AC4 sed output: deps starmap-assets planet-assets import. Mutants (sed on copies in /tmp/iter81-mut.tZ8Xct; each sed verified to change text): M1 GOLDEN_SETUP=\"\" rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red, setup-hang (+caller-poison). M2 import dropped rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red (+caller-poison). M3 planet-assets dropped rc 1, FAIL the same three (+caller-poison). M4 the \"|| fail golden setup\" stripped rc 1, FAIL golden-setup-red, setup-hang (+caller-poison; setup-hang rc 124 as the bare bounded status exits set -e). M5 group kill dropped rc 1, FAIL setup-hang, sky-hang, runtime-hang with \"hang child <pid> still alive\" (+caller-poison). M6 unset RIG_SETUP_S dropped (t.sh) rc 1, FAIL caller-poison only (14 of 15 ok). M7 sky-assets plain rc 1, FAIL sky-hang (rc 0, calls run on) (+caller-poison). No mutant stayed green: no test fix needed. Orphan check: sleep 20 count 4 before the first run, 4 after; later counts 6 and 5 are other sessions (their parents are other agents shells); none has a test or rig parent. Wall: mutant runs 73 to 125 s each. [Round 1: now 18 cases, see evaluation_round_1]"
     },
     {
       "id": "MS3",
@@ -107,5 +107,13 @@
     "No merge: the coordinator evaluates with a different model first; landing waits on that"
   ],
   "questions_for_mark": [],
-  "progress": "MS1 8c4dd284, MS2 404daa36, MS3 measured; landing pending"
+  "progress": "MS1 8c4dd284, MS2 404daa36, MS3 measured; landing pending",
+  "evaluation_round_1": {
+    "findings": [
+      "S1 no KILL escalation",
+      "S2 make test unbounded",
+      "S3 make golden unbounded"
+    ],
+    "notes": "Evaluation round 1 (independent judge, Sonnet, 86 PASS): three survivors of the 16-case control, all now killed. S1 drop the KILL escalation in bounded: killed by golden-hang (TERM-ignoring child still alive; caller-poison aggregate also FAILs). S2 make test unbounded: killed by test-hang (rc 0, no failure post; caller-poison also FAILs). S3 make golden unbounded: killed by golden-hang (rc 0; caller-poison also FAILs). Added test-hang (RIG_TEST_S=2) and golden-hang (RIG_GOLDEN_S=2, STUB_CHILD_IGNORE_TERM via hang-term:golden); the child is sh -c trap \"\" TERM; exec sleep 20 (ignore verified across exec). Control now 18 cases, 0 failures (101 s, rc 0). M5 re-run: rc 1, 5 hang cases FAIL with the child alive plus caller-poison. No tools/rig_check.sh change needed. Orphan check: no sleep 20 with a test or rig parent after the runs (parents are other sessions)."
+  }
 }

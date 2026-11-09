@@ -34,7 +34,10 @@ cat > "$T/bin/make" <<'STUB'
 #!/bin/sh
 echo "$*" >> "$STUB_MAKES"
 case " $* " in *" $STUB_MAKE_FAIL "*) exit 1 ;; esac
-case " $* " in *" ${STUB_MAKE_HANG:-none} "*) sleep 20 & echo $! > "$STUB_CHILD"; wait ;; esac
+case " $* " in *" ${STUB_MAKE_HANG:-none} "*)
+  # STUB_CHILD_IGNORE_TERM=1: the child ignores TERM (the trap survives exec), so only the KILL escalation ends it.
+  if [ "${STUB_CHILD_IGNORE_TERM:-0}" = 1 ]; then sh -c 'trap "" TERM; exec sleep 20' & else sleep 20 & fi
+  echo $! > "$STUB_CHILD"; wait ;; esac
 STUB
 chmod +x "$T/bin/gh" "$T/bin/git" "$T/bin/make"
 long=$(printf '%0200d' 0)
@@ -90,12 +93,19 @@ kill "$probe" 2>/dev/null || true; wait "$probe" 2>/dev/null || true
 # must be gone (the bound took its whole process group). The description is checked with a log path too long to fit.
 order() {
   c=$1; flag=$2; ft=$3; want_rc=$4; want_calls=$5; want_state=$6; want_desc=$7
-  setup_s=${8:-}; dl_s=${9:-}; ver=${10:-AILANG v0.54.14}
-  case "$ft" in hang:*) hang=${ft#hang:}; fail=none ;; *) hang=none; fail=$ft ;; esac
+  setup_s=${8:-}; dl_s=${9:-}; ver=${10:-AILANG v0.54.14}; test_s=${11:-}; golden_s=${12:-}
+  ign=0
+  case "$ft" in
+    hang-term:*) hang=${ft#hang-term:}; fail=none; ign=1 ;;
+    hang:*) hang=${ft#hang:}; fail=none ;;
+    *) hang=none; fail=$ft ;;
+  esac
   : > "$STUB_POSTS"; : > "$STUB_MAKES"; rm -f "$STUB_CHILD"; why=; rc=0
   ( if [ -n "$setup_s" ]; then RIG_SETUP_S=$setup_s; export RIG_SETUP_S; fi
     if [ -n "$dl_s" ]; then RIG_DL_S=$dl_s; export RIG_DL_S; fi
-    export STUB_VERSION="$ver" STUB_MAKE_FAIL="$fail" STUB_MAKE_HANG="$hang" RIG_DIR="$pad$c" RIG_NO_STATUS=0
+    if [ -n "$test_s" ]; then RIG_TEST_S=$test_s; export RIG_TEST_S; fi
+    if [ -n "$golden_s" ]; then RIG_GOLDEN_S=$golden_s; export RIG_GOLDEN_S; fi
+    export STUB_VERSION="$ver" STUB_MAKE_FAIL="$fail" STUB_MAKE_HANG="$hang" STUB_CHILD_IGNORE_TERM="$ign" RIG_DIR="$pad$c" RIG_NO_STATUS=0
     PATH="$T/bin:$PATH"; export PATH
     if [ -n "$flag" ]; then sh "$RIG" 7 "$flag"; else sh "$RIG" 7; fi
   ) > "$T/out" 2>&1 || rc=$?
@@ -123,13 +133,17 @@ order full-no-setup "" none 0 'sky-assets test' success 'make test green'
 order setup-hang --golden-only hang:deps 1 'sky-assets deps' failure '01234567: golden setup: make deps failed or ran over 2s$' 2
 order sky-hang --golden-only hang:sky-assets 1 'sky-assets' failure '01234567: rig setup: make sky-assets failed or ran over 2s$' "" 2
 order runtime-hang --golden-only hang:runtime 1 'runtime' failure '01234567: rig setup: make runtime failed or ran over 2s$' "" 2 'AILANG v0.54.11'
+# The rig/full make test and the golden make are bounded too (evaluation round 1). golden-hang's child ignores TERM,
+# so only the KILL escalation ends it: a bound without KILL leaves it alive and the case fails.
+order test-hang "" hang:test 1 'sky-assets test' failure '01234567: make test failed or ran over 2s$' "" "" 'AILANG v0.54.14' 2
+order golden-hang --golden-only hang-term:golden 1 'sky-assets deps starmap-assets planet-assets import golden' failure '01234567: make golden failed or ran over 2s$' "" "" 'AILANG v0.54.14' "" 2
 # caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52).
-n=15
+n=17
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=16; nrc=0
+  n=18; nrc=0
   RIG_CHECK_NESTED=1 RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 15 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 15 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 17 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 17 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0

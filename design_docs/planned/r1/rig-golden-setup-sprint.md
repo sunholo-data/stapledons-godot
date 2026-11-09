@@ -42,7 +42,7 @@ Plus the header line.
 - Closes: AC4, AC5 (green half), AC6–AC12 (mutants M1–M7 below), AC13.
 - Verify:
   1. `sh -n tools/rig_check.sh && sh -n tools/test_rig_check.sh` → rc 0
-  2. `perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1` → `rig-check control: 16 cases, 0 failures`
+  2. `perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1` → `rig-check control: 18 cases, 0 failures`
   3. `perl -e 'alarm 300; exec @ARGV' make rig-check-control` → rc 0 (target at `mk/m45.mk:55`; rides `make test`, not ci-fast)
   4. AC4: `sed -n 's/^GOLDEN_SETUP="\([^"]*\)".*/\1/p' tools/rig_check.sh` → `deps starmap-assets planet-assets import`
   5. AC13: `pgrep -f 'sleep 20' | wc -l` before and after (2) — equal (no orphans).
@@ -77,7 +77,7 @@ expect rc 1 and the named red). Commands run bounded: `perl -e 'alarm 300; exec 
 ## Local PR gates (targeted, headless; a merge never waits on the GPU)
 
 1. `sh -n tools/rig_check.sh && sh -n tools/test_rig_check.sh`
-2. `perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1` → `rig-check control: 16 cases, 0 failures`
+2. `perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1` → `rig-check control: 18 cases, 0 failures`
 3. `perl -e 'alarm 300; exec @ARGV' make rig-check-control` → rc 0
 4. `git diff --check` → rc 0, no output
 5. ci-fast: the GitHub fast tier runs the full `make ci-fast` (`deps python-guard audio-silent-guard uid-guard lint-precision

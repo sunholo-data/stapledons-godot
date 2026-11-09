@@ -6,7 +6,7 @@
 **Depends on:** PR #405 (`tools/rig_nightly.sh` calls `tools/rig_check.sh <sha> --golden-only`); the hermetic control `tools/test_rig_check.sh` from iteration 55 / PR #345 ([rig-watchdog-7200](../../implemented/r1/rig-watchdog-7200.md)). AILANG v0.56.1, Godot 4.7.2.
 **Estimated LOC:** about 85.
 - `tools/rig_check.sh`: about 22. The setup list, `SETUP_S`, `DL_S`, the 9-line `bounded` helper, the setup loop, `make runtime`, `sky-assets` and the two existing watchdog lines switched to `bounded`, and the header.
-- `tools/test_rig_check.sh`: about 63. A make-call log and a hang mode in the stub, an `order` helper, 7 cases, the `unset` and poison additions, and the counts 8 → 15.
+- `tools/test_rig_check.sh`: about 63. A make-call log and a hang mode in the stub, an `order` helper, 9 cases (7, plus test-hang and golden-hang from evaluation round 1), the `unset` and poison additions, and the counts 8 → 17.
 - Nothing changes in `Makefile`, `mk/`, `.gd` files or `.uid` files.
 
 ## Game vision alignment
@@ -132,7 +132,7 @@ The longest failure description is `01234567: golden setup: make starmap-assets 
 | `sky-hang` | `--golden-only`, `RIG_DL_S=2` | `STUB_MAKE_HANG=sky-assets`, which hangs with a child | 1 | `sky-assets` (no setup, no `golden`) | failure `01234567: rig setup: make sky-assets failed or ran over 2s$`. The child is reaped (the same `kill -0` poll and positive control). |
 | `runtime-hang` | `--golden-only`, `RIG_DL_S=2`, stub version off the pin | `STUB_MAKE_HANG=runtime`, which hangs with a child | 1 | `runtime` (no `sky-assets`, no setup, no `golden`) | failure `01234567: rig setup: make runtime failed or ran over 2s$`. The child is reaped (the same poll and positive control). |
 
-The base count goes from 8 to 15 (8 existing, 7 new), and caller-poison expects 15 of 15, so the total is 16 cases. Every site of the count coupling is listed in V7. No case pins the 3600 s default, so `RIG_DL_S` in the unset is prophylactic, as `RIG_GOLDEN_S` was in iteration 55. `RIG_SETUP_S` is pinned by `golden-setup-red` (AC11).
+The base count goes from 8 to 17 (8 existing, 9 new; evaluation round 1 added test-hang and golden-hang), and caller-poison expects 17 of 17, so the total is 18 cases. Every site of the count coupling is listed in V7. No case pins the 3600 s default, so `RIG_DL_S` in the unset is prophylactic, as `RIG_GOLDEN_S` was in iteration 55. `RIG_SETUP_S` is pinned by `golden-setup-red` (AC11).
 
 **Rejected alternatives.**
 1. *A `golden-setup` stamp as the first prerequisite of golden.* This is deterministic for the serial nightly: V3 shows the recipe rule's prerequisites lead the merged list. But the stamp's target list would then live in the Makefile, where the hermetic control (`tools/test_rig_check.sh` with a stub make) sees only one name and cannot assert per-target order without a new lint. The ordering also silently evaporates under `make -j golden`, which nothing in `rig_check.sh` forbids today.
@@ -160,7 +160,7 @@ For each mutant: `T=$(mktemp -d)`, write the mutant to `$T/m.sh`, then run `sh t
 | 2 | The rig's own setup list fixes the parse | in `$C`: `PATH=$PWD/runtime/bin:$PATH; for t in $(sed -n 's/^GOLDEN_SETUP="\([^"]*\)".*/\1/p' tools/rig_check.sh); do make $t \|\| break; done; count` | every make exits 0, then `0` |
 | 3 | The setup provides the textures and the tier | in `$C` after AC2: `ls assets/planets \| grep -c jpg; test -f data/starmap/stars_large.bin && echo tier` | `20`, then `tier` |
 | 4 | The list is exactly the measured four, with import last | `sed -n 's/^GOLDEN_SETUP="\([^"]*\)".*/\1/p' tools/rig_check.sh` | `deps starmap-assets planet-assets import` |
-| 5 | Control green | `sh tools/test_rig_check.sh tools/rig_check.sh \| tail -1`; `make rig-check-control` | `rig-check control: 16 cases, 0 failures`, rc 0 |
+| 5 | Control green | `sh tools/test_rig_check.sh tools/rig_check.sh \| tail -1`; `make rig-check-control` | `rig-check control: 18 cases, 0 failures`, rc 0 |
 | 6 | M1, no setup, dies | `sed 's/^GOLDEN_SETUP=.*/GOLDEN_SETUP=""/' tools/rig_check.sh` | rc 1; `golden-only-setup`, `golden-setup`, `golden-setup-red` and `setup-hang` FAIL |
 | 7 | M2, import dropped, dies | `sed 's/^GOLDEN_SETUP=.*/GOLDEN_SETUP="deps starmap-assets planet-assets"/' tools/rig_check.sh` | rc 1; `golden-only-setup`, `golden-setup` and `golden-setup-red` FAIL |
 | 8 | M3, planet-assets dropped, dies | `sed 's/^GOLDEN_SETUP=.*/GOLDEN_SETUP="deps starmap-assets import"/' tools/rig_check.sh` | rc 1; `golden-only-setup`, `golden-setup` and `golden-setup-red` FAIL |
@@ -208,10 +208,12 @@ This is the narrow-refinement carve-out (gate 2), the second use in this mission
 | Kimi | `make runtime` and `make sky-assets` are still unbounded with no outer watchdog, so the Budget totals were false. | `DL_S=${RIG_DL_S:-3600}   # runtime fetch + sky regen; measured regen ~900 s`; `bounded "$DL_S" make runtime ... \|\| fail "rig setup: make runtime failed or ran over ${DL_S}s"`, and the same for sky-assets. Budget: golden-only 3600+3600+2400+1800 = 11400 s, `--golden` 7200+3600+3600+2400+1800 = 18600 s (each +2 s cleanup). The `sky-hang` case, `RIG_DL_S` in the V7 coupling sites, and the counts are updated (15 base, 16 total). | AC5, AC12 (M7), V10 |
 | Sol | The same two unbounded waits; extend the bounded wrapper with explicitly justified budgets, include every prerequisite and the cleanup allowance, and add hermetic runtime-hang and sky-assets-hang cases. | The same `DL_S` bound (3600 s = 4 × the measured ~900 s regeneration; the runtime fetch is 3 s). The Budget lists every `make` prerequisite plus the 2 s TERM→KILL allowance. `runtime-hang` (stub off the pin) and `sky-hang` each assert rc 1, a make-call list that ends at the hung target, the named failure, and a reaped child, using the same `kill -0` poll and positive control. Kimi's "defer to 7ad" branch was not taken. | AC5, AC10, AC12, AC13, V10 |
 
+**Evaluation round 1 (2026-11-09, judge: Sonnet, 86 PASS).** Three mutants survived the 16-case control: dropping the KILL escalation in `bounded`, an unbounded `make test`, and an unbounded `make golden`. The control now has test-hang and golden-hang (each 2 s bound, each under about 10 s), and the hang stub can spawn a TERM-ignoring child (`sh -c 'trap "" TERM; exec sleep 20'`, ignore verified across exec). The control is 18 cases, and each survivor is killed (S1 golden-hang, S2 test-hang, S3 golden-hang). No change to `tools/rig_check.sh` was needed.
+
 ## Open questions for the user
 
 ## Deliverables
 
 - `tools/rig_check.sh`: `GOLDEN_SETUP`, `SETUP_S`, `DL_S`, `bounded`, the setup loop, `make runtime`, `make sky-assets` and the two watchdog lines on `bounded`, and a header line.
-- `tools/test_rig_check.sh`: the make-call log and hang stub, `order`, 7 cases, `RIG_SETUP_S` and `RIG_DL_S` in the unset and the poison, and the counts 8 → 15 / 9 → 16.
+- `tools/test_rig_check.sh`: the make-call log and hang stub, `order`, 9 cases (7, plus test-hang and golden-hang from evaluation round 1), `RIG_SETUP_S` and `RIG_DL_S` in the unset and the poison, and the counts 8 → 17 / 9 → 18.
 - At landing: a `CHANGELOG.md` line, this doc moved to `design_docs/implemented/r1/`, and its README index row.
