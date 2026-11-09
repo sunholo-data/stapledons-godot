@@ -230,8 +230,11 @@ func test_panel() -> bool:
 	ind.toggle_panel()
 	var p = ind.panel
 	assert_bool("clicking it opens Settings", p != null and p.visible and p.is_inside_tree())
-	assert_bool("panel: key rows, OpenRouter enables text, estimates", p.key_rows["openrouter"]["status"].text.contains("key saved")
-		and p.key_rows["openrouter"]["edit"].placeholder_text.contains("text") and p.info.text.contains("text line"))
+	assert_bool("panel: OpenRouter card says Saved, Gemini card No key; four price chips, the first a line ('%s', '%s', '%s')"
+		% [p.key_rows["openrouter"]["status"].text, p.key_rows["gemini"]["status"].text, p.chips[0].text],
+		p.key_rows["openrouter"]["status"].text == "Saved" and p.key_rows["gemini"]["status"].text == "No key"
+		and p.chips.size() == 4 and p.chips[0].text.begins_with("line"))
+	assert_bool("the switch is enabled with a key, and the header says off", not p.opt_in.disabled and not p.opt_in.button_pressed and p.headline.text.begins_with("Off"))
 	p._on_opt_in(true)
 	a.bridge.live_allowed = false # automation never lets AI_LIVE through
 	assert_bool("ticking it turns live on (OpenRouter text) and saves; no key in the indicator: '%s'" % ind.button.tooltip_text,
@@ -239,7 +242,90 @@ func test_panel() -> bool:
 		and settings_in(d).opt_in and not has_key(ind.button.tooltip_text) and not has_key(ind.label_text()))
 	p._on_ceiling(1.0)
 	a.bridge.live_allowed = false
-	assert_bool("the ceiling field reaches the bridge", is_equal_approx(a.bridge.ceiling_usd, 1.0))
+	assert_bool("the ceiling reaches the bridge and the slider ('%s')" % p.ceiling_value.text,
+		is_equal_approx(a.bridge.ceiling_usd, 1.0) and is_equal_approx(p.ceiling.value, AiSettings.ceiling_to_slider(1.0)) and p.ceiling_value.text == "$1.00")
+	p._on_slider(AiSettings.ceiling_to_slider(2.5))
+	a.bridge.live_allowed = false
+	assert_bool("moving the slider sets the ceiling on the 0.01 grid (%.2f)" % a.settings.ceiling_usd, is_equal_approx(a.settings.ceiling_usd, 2.5) and settings_in(d).ceiling_usd == 2.5)
+	return true
+
+
+## R3-AI-PANEL-V2 P3 (AC3-AC6): the helpers, the cards, the tiles, the slider, the dots.
+func test_panel_v2() -> bool:
+	print("P3 panel: masked keys, the log ceiling slider, capability tiles, cards with Test/Add/Remove, reply dots")
+	var d := fresh("panel_v2")
+	var s := settings_in(d)
+	assert_bool("masked key: empty without a key", s.masked_key("gemini") == "")
+	s.save_key("gemini", KEY_G)
+	assert_bool("masked key: the last 4 only ('%s')" % s.masked_key("gemini"), s.masked_key("gemini") == "•••• " + KEY_G.right(4) and not has_key(s.masked_key("gemini")))
+	# AC5: every 0.01 step in 0.05..20 round-trips; the map is monotonic and hits both ends.
+	var bad := 0
+	var v0 := -1.0
+	for i in range(0, 1996):
+		s.set_ceiling(0.05 + i * 0.01)
+		var v := s.ceiling_usd
+		if AiSettings.slider_to_ceiling(AiSettings.ceiling_to_slider(v)) != v or v <= v0:
+			bad += 1
+		v0 = v
+	var mono := true
+	var prev := 0.0
+	for k in range(0, 1001):
+		var c := AiSettings.slider_to_ceiling(k / 1000.0)
+		mono = mono and c >= prev
+		prev = c
+	assert_bool("ceiling slider: 1,996 steps round-trip exactly (%d bad), monotonic, ends 0.05 and 20" % bad,
+		bad == 0 and mono and AiSettings.slider_to_ceiling(0.0) == 0.05 and AiSettings.slider_to_ceiling(1.0) == 20.0
+		and AiSettings.ceiling_to_slider(0.05) == 0.0 and AiSettings.ceiling_to_slider(20.0) == 1.0)
+	# AC4: tiles per key [text, voice, portrait, feed].
+	s.opt_in = true
+	assert_bool("Gemini key, live: 4 bright (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["bright", "bright", "bright", "bright"])
+	s.text_only = true
+	assert_bool("text-only: text bright, 3 dim (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["bright", "dim", "dim", "dim"])
+	s.text_only = false
+	s.opt_in = false
+	assert_bool("switch off: all dim (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["dim", "dim", "dim", "dim"])
+	s.save_key("gemini", "")
+	s.save_key("openrouter", KEY_O)
+	s.opt_in = true
+	assert_bool("OpenRouter only: text bright, 3 faint (%s)" % [s.tile_states("openrouter")], s.tile_states("openrouter") == ["bright", "faint", "faint", "faint"])
+	assert_bool("no Gemini key: its tiles dim where it could serve (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["dim", "dim", "dim", "dim"])
+	s.save_key("openrouter", "")
+	s.opt_in = false
+	s.save_settings()
+	# AC3: the cards, through a session panel.
+	var a := session_in(d)
+	a.bridge.live_allowed = false
+	a.indicator.toggle_panel()
+	var p = a.indicator.panel
+	var g: Dictionary = p.key_rows["gemini"]
+	assert_bool("no key: lamp none, word No key, Add key shown, Test and Remove hidden, the switch disabled",
+		p.card_status("gemini") == "none" and g.status.text == "No key" and g.add.visible and not g.test.visible and not g.remove.visible and p.opt_in.disabled)
+	g.add.pressed.emit()
+	assert_bool("Add key reveals the secret field", g.edit_row.visible and (g.edit as LineEdit).secret)
+	(g.edit as LineEdit).text = KEY_G
+	g.save.pressed.emit()
+	var kp := ProjectSettings.globalize_path(a.settings.key_path("gemini"))
+	assert_bool("Save: 0600 file, field cleared and hidden, card Saved, masked '%s', Test and Replace shown" % g.masked.text,
+		mode_of(kp) == 384 and (g.edit as LineEdit).text == "" and not g.edit_row.visible and g.status.text == "Saved"
+		and g.masked.text.ends_with(KEY_G.right(4)) and not has_key(g.masked.text) and g.test.visible and g.add.text == "Replace")
+	a.key_check.plan_override = {"bin": "/bin/echo", "args": PackedStringArray(['{"check":"gemini","status":"rejected"}'])}
+	g.test.pressed.emit()
+	assert_bool("Test: the card reads Checking at once", g.status.text.begins_with("Checking"))
+	wait_checks(a.key_check, 5000)
+	p.refresh()
+	assert_bool("Test result: Key rejected on the card, and the badge says key problem once live", g.status.text == "Key rejected" and p.card_status("gemini") == "rejected")
+	g.remove.pressed.emit()
+	assert_bool("Remove deletes the key file; the card is back to No key", not FileAccess.file_exists(kp) and g.status.text == "No key" and a.settings.keys_present().is_empty())
+	# AC6: dots from this session's replies, newest last, at most 8.
+	var ind := a.indicator
+	for i in 10:
+		ind.on_outcome({"req": str(i), "kind": "text", "status": "error" if i == 9 else "ok"})
+	p.refresh()
+	assert_bool("reply dots: the 8 newest of 10, the last one the failure (%s)" % [ind.recent.map(func(r): return r.ok)],
+		ind.recent.size() == 8 and ind.recent[0].req == "2" and not ind.recent[-1].ok and p.dots.get_child_count() == 8)
+	var t := session_in(fresh("panel_v2_text_only"), {"text-only": ""})
+	t.indicator.toggle_panel()
+	assert_bool("--text-only locks the Voices & pictures button off", t.indicator.panel.text_only.disabled and not t.indicator.panel.text_only.button_pressed)
 	return true
 
 
@@ -469,7 +555,7 @@ func run_all() -> void:
 		return
 	var tests := ["launch_default"]
 	if not "--launch-default" in OS.get_cmdline_user_args():
-		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired", "key_check", "badge"])
+		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired", "key_check", "badge", "panel_v2"])
 	# --only=name,name runs a subset (tests/ai_settings_mutants.sh uses it).
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):

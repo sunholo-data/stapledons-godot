@@ -229,10 +229,7 @@ func open_ai_keys() -> void:
 		add_child(ai_panel)
 	ai_panel.visible = true
 	ai_panel.refresh()
-	var first: Control = ai_panel.find_child("LineEdit", true, false)
-	if first == null:
-		first = ai_panel.close_button
-	first.grab_focus.call_deferred()
+	ai_panel.first_focus().grab_focus.call_deferred() # the switch, else the first Add key (R3-AI-PANEL-V2)
 
 
 ## The AI panel saved to the shared settings.cfg: Settings shows its text-only choice too.

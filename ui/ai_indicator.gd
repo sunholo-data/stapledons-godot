@@ -14,6 +14,8 @@ extends CanvasLayer
 const PANEL := "res://ui/settings/ai_settings.tscn"
 ## Failed replies in a row before the badge says offline (one blip is not a problem).
 const FAIL_LIMIT := 3
+## Reply dots the panel shows.
+const RECENT := 8
 ## state -> [lamp colour, the label variation of its word]; colour is never the only
 ## carrier: every state has its word, and problem/ceiling lamps are hollow.
 const LOOK := {
@@ -28,6 +30,9 @@ var session: AiSession
 var usd := {"gemini": 0.0, "openrouter": 0.0}
 var budget_hit := false
 var fail_streak := 0
+## This session's last replies, oldest first, at most RECENT: {req, kind, ok, t}
+## (a reply, a refusal or a cancel; not ok means the ship's own line was used).
+var recent: Array = []
 var button := Button.new()
 var ring := Ring.new()
 var word := Label.new()
@@ -86,6 +91,7 @@ func place_left(left: bool) -> void:
 
 func _ready() -> void:
 	layer = 20
+	button.theme = StapledonTheme.theme() # a CanvasLayer does not pass the window's theme down
 	button.flat = false
 	button.focus_mode = Control.FOCUS_NONE
 	button.custom_minimum_size = Vector2(176, 44)
@@ -128,6 +134,9 @@ func _process(_delta: float) -> void:
 
 
 func on_outcome(o: Dictionary) -> void:
+	recent.append({"req": str(o.get("req", "")), "kind": str(o.get("kind", "")), "ok": o.get("status") == "ok", "t": Time.get_ticks_msec()})
+	if recent.size() > RECENT:
+		recent = recent.slice(recent.size() - RECENT)
 	if o.get("code") == "budget":
 		budget_hit = true
 	if o.get("status") == "ok":
