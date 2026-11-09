@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### rig-golden-setup (2026-11-09)
+
+#### Fixed
+
+- **Nightly `rig/golden` runs the setup `make golden` relied on** (R1-RIG-GOLDEN-SETUP, row 7af, issue #392). Since the nightly split (`dec3bd83`) the golden half ran `make golden` alone in a fresh clone, so the Godot class cache was never built and every golden script failed to parse (`Identifier "Relativity" not declared`, 2026-11-09). `tools/rig_check.sh` now runs `GOLDEN_SETUP` (`deps starmap-assets planet-assets import`, in that order) before `make golden` on both golden paths; a headless audit found these four inputs, which `make test` used to provide.
+- **Every rig step is bounded as a process group.** A new `bounded` helper runs `make runtime`, `make sky-assets`, `make test`, each setup target and `make golden` in their own process group: at the deadline the whole group gets TERM, then KILL 2 s later, and the run fails with the step's name. The old `alarm`+`exec` signalled `make` only and left recipe children running. New limits: `RIG_SETUP_S` 600 s per setup target, `RIG_DL_S` 3,600 s for the runtime and sky downloads.
+- The hermetic rig-check control grows from 9 to 18 cases (setup order on each path, a failing setup target, and five hang cases including a child that ignores TERM); mutants M1-M7 and the evaluation's three survivors each turn it red. Evaluations: Sonnet 92/100, MiniMax M3 91/100 (cross-vendor).
+
 ### Combined landing checks (2026-10-30)
 
 - Integrate current main and committed Earth-link audio for D-142. Add numeric light-cone/Doppler reference checks and GPU comparisons for the production Earth feed and exchange strip, mirroring the pinned Observe package. Preserve existing golden coverage and keep unfinished feature milestones explicit.

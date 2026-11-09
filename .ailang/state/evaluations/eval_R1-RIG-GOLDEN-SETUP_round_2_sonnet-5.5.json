@@ -1,0 +1,24 @@
+{
+ "sprint_id":"R1-RIG-GOLDEN-SETUP","judge_model":"sonnet-5.5","commit":"cbdef477","round":2,
+ "score":92,"pass":true,"implementation_approved":true,
+ "rubric":{"acceptance_criteria_and_correctness":28,"tests_and_mutation_strength":26,"code_quality_bounded_helper":19,"docs_claims_match_code":13,"scope_and_conventions":6,
+  "notes":"tools/rig_check.sh unchanged since round 1; only the control grew (test-hang, golden-hang with a TERM-ignoring child; 18 cases). AC1/AC2 fresh-clone SCRIPT ERROR count still UNMEASURED by me."},
+ "round_1_findings_disposition":[
+  {"finding":"make test / make golden bounds had no hang case (X3, X4 survived)","disposition":"fixed","evidence":"test-hang and golden-hang added; X3 and X4 now killed (test-hang / golden-hang FAIL with rc 0)"},
+  {"finding":"TERM-to-KILL escalation untested (X2 survived)","disposition":"fixed","evidence":"golden-hang child traps TERM; X2 now killed (hang child still alive)"},
+  {"finding":"bounded: setsid escapes, no sweep after normal leader exit, waitpid after KILL, bound 0","disposition":"accepted, minor, out of scope","evidence":"Hardening of the helper beyond this row; the timeout path reaps the group; the EXIT-trap race needs a make that exits 0 leaving live group members, not seen in this rig"},
+  {"finding":"INT/TERM to rig_check.sh itself skips EXIT trap and active bounded group","disposition":"accepted, pre-existing, not introduced by this diff","evidence":"EXIT trap and lack of signal forwarding predate the change"}],
+ "findings":[
+  {"severity":"minor","file":"tools/test_rig_check.sh","line":0,"summary":"Two bounded details are unpinned: stdin from /dev/null (Y1) and the waitpid in the signal handler (Y2).","evidence":"Mutants Y1 (drop open STDIN) and Y2 (drop waitpid in handler) both leave the control at 18 cases, 0 failures. Y2 is near-equivalent since KILL has already been sent; Y1 only matters if a make recipe reads stdin. Not blocking."}],
+ "commands_run":[
+  {"cmd":"sh -n both scripts; git diff --check 7d26c947..HEAD","rc":0,"key_output":"clean"},
+  {"cmd":"sh tools/test_rig_check.sh tools/rig_check.sh","rc":0,"key_output":"rig-check control: 18 cases, 0 failures"},
+  {"cmd":"mutant batch /tmp/iter81_sonnet_mut2.sh, each copy checked with cmp -s against the original","rc":0,"key_output":"all 6 copies differ; M5, X2, X3, X4 killed; Y1, Y2 survive"}],
+ "mutants":[
+  {"mutation":"M5 group kill dropped","killed":true,"failing_cases":"setup-hang, sky-hang, runtime-hang, test-hang, golden-hang, caller-poison"},
+  {"mutation":"X2 KILL escalation dropped","killed":true,"failing_cases":"golden-hang, caller-poison"},
+  {"mutation":"X3 make test unbounded","killed":true,"failing_cases":"test-hang, caller-poison"},
+  {"mutation":"X4 make golden unbounded","killed":true,"failing_cases":"golden-hang, caller-poison"},
+  {"mutation":"Y1 new: stdin not redirected from /dev/null","killed":false,"failing_cases":""},
+  {"mutation":"Y2 new: no waitpid in handler","killed":false,"failing_cases":""}]
+}

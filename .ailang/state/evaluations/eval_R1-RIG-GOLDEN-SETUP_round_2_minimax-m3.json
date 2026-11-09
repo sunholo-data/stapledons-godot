@@ -1,0 +1,180 @@
+{
+  "sprint_id": "R1-RIG-GOLDEN-SETUP",
+  "judge_model": "minimax-m3",
+  "commit": "cbdef477",
+  "score": 91,
+  "pass": true,
+  "rubric": {
+    "tests_pass": {
+      "points": 20,
+      "max": 20,
+      "notes": "Hermetic control green twice: 'sh tools/test_rig_check.sh tools/rig_check.sh' -> 'rig-check control: 18 cases, 0 failures' (rc 0) and 'make rig-check-control' -> the same line (rc 0). 'sh -n' on both scripts rc 0, 'git diff --check 7d26c947..HEAD' rc 0 with no output. Both mutants the judge ran go red with the expected named cases, and no 'sleep 20' orphan remained after the runs."
+    },
+    "lint_clean": {
+      "points": 9,
+      "max": 10,
+      "notes": "Shell hygiene clean (sh -n, git diff --check, POSIX sh style, no bashisms). One point withheld because the repo has no shell lint gate (no shellcheck/shfmt anywhere in Makefile, mk/, .github/), so style beyond 'sh -n' is unproven."
+    },
+    "acceptance_criteria": {
+      "points": 26,
+      "max": 30,
+      "notes": "Judge-verified: AC4 (GOLDEN_SETUP == 'deps starmap-assets planet-assets import'), AC5 (control + 'make rig-check-control' -> 18 cases, 0 failures), AC10 (M5 killed by the judge), AC13 (no orphan sleep 20), AC14 (diff touches only the two scripts, the design doc, the sprint plan and the sprint JSON), AC15 (sh -n, git diff --check). The four setup targets all exist (deps/import/starmap-assets in Makefile, planet-assets in mk/m45.mk:78). AC1-AC3 (fresh-clone parse count 644 -> 0, 20 planet jpgs, starmap tier file) are executor-measured only (a 40 GB clone + Godot run); AC6-AC9 and AC11-AC12 are executor-measured (M1-M4, M6, M7), not re-run by the judge."
+    },
+    "code_quality": {
+      "points": 13,
+      "max": 15,
+      "notes": "The change is small (26 + 81 lines), comments say why (row 7af, process groups), the bounded helper is the design's code verbatim, and the control's reaper probe has a positive control so the 'still alive' assertions cannot pass vacuously. Two points withheld for the un-guarded edge cases recorded as minor findings below (a 0 bound silently disables the timer; the success path does not reap a backgrounded grandchild)."
+    },
+    "documentation": {
+      "points": 13,
+      "max": 15,
+      "notes": "Design doc (219 lines, sections Design/Acceptance criteria/risks/rejected alternatives), sprint plan, sprint JSON with per-milestone verify commands, notes and measured evidence, plus a script header that explains the new behaviour. Two points withheld because the landing (CHANGELOG entry, move to design_docs/implemented/r1/, README index row) is intentionally still pending this evaluation, and the sprint JSON still reads status 'approved' with MS3 'landing pending evaluation'."
+    },
+    "design_fidelity": {
+      "points": 10,
+      "max": 10,
+      "notes": "Implementation matches the design doc line for line: GOLDEN_SETUP and its order, SETUP_S=600 / DL_S=3600 defaults, the 9-line bounded helper, every make call moved onto bounded (runtime, sky-assets, test, each setup target, golden), the exact failure strings and the golden-only path (no setup) vs golden path (setup then golden). The two extra hang cases (test-hang, golden-hang, the latter with a TERM-ignoring child) and the reaper positive control go beyond the doc in the right direction."
+    },
+    "total": 91,
+    "pass_threshold": 70,
+    "blocking_findings": 0
+  },
+  "findings": [
+    {
+      "severity": "minor",
+      "file": "tools/rig_check.sh",
+      "line": "25-26, 34-37",
+      "summary": "A non-positive bound silently disables the timer: bounded() calls 'alarm $s', and alarm 0 (or a negative value) cancels the alarm, so RIG_SETUP_S=0 / RIG_DL_S=0 / RIG_TEST_S=0 / RIG_GOLDEN_S=0 turns a bounded make into an unbounded one with no message.",
+      "evidence": "Judge probe P9 (scratch /tmp/claude/rg-eval/probe2.sh, bounded() extracted verbatim from tools/rig_check.sh): 'bounded 0 sh -c \"sleep 3\"' returned rc 0 after the full sleep instead of 124; the same helper returned 124 for 'bounded 1 ...' (probe P3). Defaults (600/3600/7200/1800) are unaffected."
+    },
+    {
+      "severity": "minor",
+      "file": "tools/rig_check.sh",
+      "line": "34-37",
+      "summary": "bounded() only cleans the process group on timeout or interrupt; a command that exits 0 while leaving a background grandchild leaks it, outside the rig's cleanup and outside the clone.",
+      "evidence": "Judge probe P8: 'bounded 5 sh -c \"sleep 30 & exit 0\"' returned rc 0 and the orphan 'sleep 30' (pid 91433) was still alive afterwards. No current make recipe backgrounds a process, so the impact today is nil."
+    },
+    {
+      "severity": "minor",
+      "file": "tools/rig_check.sh",
+      "line": "34-37, 70",
+      "summary": "If the rig shell itself is terminated while bounded is inside its TERM->KILL 2 s window, the EXIT trap ('cd / && rm -rf \"$dir\"') deletes the clone before the process group is KILLed, so the still-running make can fail noisily against a deleted directory. The group is still KILLed 2 s later, so nothing leaks; the ordering is cosmetic.",
+      "evidence": "Code read: the trap is installed before the clone (tools/rig_check.sh:70) and the handler's cleanup is 'kill TERM; sleep 2; kill KILL' (tools/rig_check.sh:35-36); judge probes P7b/P7c confirm that TERM/INT delivered to the perl wrapper itself does exit 130 and kills the group child."
+    },
+    {
+      "severity": "minor",
+      "file": "mk/m45.mk",
+      "line": "54-57",
+      "summary": "Coverage note: the hermetic control rides 'make test' (mk/m45.mk:57) but is not part of the ci-fast tier, so the GitHub fast tier used by merges never executes it; a regression in tools/rig_check.sh is only caught when the full nightly suite runs. The sprint scope forbids Makefile changes, so this is a follow-up, not a defect of this sprint.",
+      "evidence": "Makefile:55 'ci-fast:' lists no rig-check-control; mk/m45.mk:54-57 defines the target and hangs it off 'test'; the sprint executor measured 'ci-fast membership of rig-check-control: 0' (sprint JSON MS3 notes)."
+    },
+    {
+      "severity": "minor",
+      "file": ".ailang/state/sprints/sprint_R1-RIG-GOLDEN-SETUP.json",
+      "line": "1",
+      "summary": "Sprint artifacts are not in a 'completed' shape: sprint status is 'approved', MS3 is 'measured; landing pending evaluation', and no milestone carries passes/completed fields. The plan defers landing (CHANGELOG, doc move to design_docs/implemented/r1/, README index row) until after this cross-family evaluation, so this is expected, but the JSON cannot show completion at evaluation time.",
+      "evidence": "JSON key inspection: top-level keys include velocity, critical_path, progress, evaluation_round_1; milestones carry id/title/status/acceptance_criteria/verify/notes but no passes/completed; MS3 status is 'measured; landing pending evaluation' and MS3 notes say the landing is NOT done."
+    }
+  ],
+  "commands_run": [
+    {
+      "cmd": "sh -n tools/rig_check.sh",
+      "rc": 0,
+      "key_output": "no output"
+    },
+    {
+      "cmd": "sh -n tools/test_rig_check.sh",
+      "rc": 0,
+      "key_output": "no output"
+    },
+    {
+      "cmd": "git diff --check 7d26c947..HEAD",
+      "rc": 0,
+      "key_output": "no output"
+    },
+    {
+      "cmd": "sh tools/test_rig_check.sh tools/rig_check.sh",
+      "rc": 0,
+      "key_output": "rig-check control: 18 cases, 0 failures"
+    },
+    {
+      "cmd": "make rig-check-control",
+      "rc": 0,
+      "key_output": "rig-check control: 18 cases, 0 failures"
+    },
+    {
+      "cmd": "sed -n 's/^GOLDEN_SETUP=\"\\([^\"]*\\)\".*/\\1/p' tools/rig_check.sh",
+      "rc": 0,
+      "key_output": "deps starmap-assets planet-assets import"
+    },
+    {
+      "cmd": "git diff --name-only 7d26c947..HEAD",
+      "rc": 0,
+      "key_output": ".ailang/state/sprints/sprint_R1-RIG-GOLDEN-SETUP.json, design_docs/planned/r1/rig-golden-setup-sprint.md, design_docs/planned/r1/rig-golden-setup.md, tools/rig_check.sh, tools/test_rig_check.sh"
+    },
+    {
+      "cmd": "grep -rn '^planet-assets:' Makefile mk/",
+      "rc": 0,
+      "key_output": "mk/m45.mk:78: planet-assets: (deps/import/starmap-assets are in Makefile:42,45,989) - all four setup targets exist"
+    },
+    {
+      "cmd": "cmp tools/rig_check.sh /tmp/claude/rg-eval/m5.sh; cmp tools/rig_check.sh /tmp/claude/rg-eval/m8-plain-exec.sh",
+      "rc": 1,
+      "key_output": "both copies differ from the original (cmp rc 1 = different; instrument check passed)"
+    },
+    {
+      "cmd": "sh tools/test_rig_check.sh /tmp/claude/rg-eval/m5.sh   (mutant M5: sed 's/-$pid/$pid/g')",
+      "rc": 1,
+      "key_output": "rig-check control: 18 cases, 6 failures; setup-hang, sky-hang, runtime-hang, test-hang, golden-hang FAIL with 'hang child <pid> still alive'; caller-poison FAIL (rc 1, 12 of 17 ok)"
+    },
+    {
+      "cmd": "sh tools/test_rig_check.sh /tmp/claude/rg-eval/m8-plain-exec.sh   (mutant M8: bounded() replaced by plain 'alarm shift; exec')",
+      "rc": 1,
+      "key_output": "rig-check control: 18 cases, 6 failures; the same five hang cases FAIL with 'hang child <pid> still alive'; caller-poison FAIL (rc 1, 12 of 17 ok)"
+    },
+    {
+      "cmd": "RIG_CHECK_NESTED=1 sh tools/test_rig_check.sh <m5.sh|m8-plain-exec.sh>   (base pass only, nested caller-poison skipped)",
+      "rc": 1,
+      "key_output": "rig-check control: 17 cases, 5 failures for both mutants"
+    },
+    {
+      "cmd": "sh /tmp/claude/rg-eval/probe.sh, probe2.sh, probe3.sh (bounded() extracted verbatim from tools/rig_check.sh)",
+      "rc": 0,
+      "key_output": "P1 exit code 7 -> rc 7; P2 self-TERM -> rc 143; P3 timeout -> rc 124; P4 TERM-ignoring grandchild -> rc 124 and grandchild dead (KILL escalation works); P5 exec failure -> rc 127; P6 child stdin is /dev/null (EOF); P7b/P7c TERM/INT to the wrapper -> rc 130 and child dead; P8 background grandchild leaks on a successful run; P9 bound 0 -> no timeout"
+    },
+    {
+      "cmd": "ps -ax | grep -c '[s]leep 20'",
+      "rc": 0,
+      "key_output": "0 (no orphan sleep 20 after the control and the mutant runs)"
+    }
+  ],
+  "mutants": [
+    {
+      "mutation": "M5 (from the design doc): sed 's/-$pid/$pid/g' on a copy of tools/rig_check.sh - the group kill is dropped, so only the direct child (make) is signalled",
+      "killed": true,
+      "failing_cases": [
+        "setup-hang",
+        "sky-hang",
+        "runtime-hang",
+        "test-hang",
+        "golden-hang",
+        "caller-poison"
+      ],
+      "evidence": "copy differs from the original (cmp rc 1); control rc 1, 'rig-check control: 18 cases, 6 failures'; each hang case reports 'hang child <pid> still alive', i.e. the recipe's child survives because only make was killed"
+    },
+    {
+      "mutation": "M8 (judge's own design, not among the doc's M1-M7): the whole bounded() helper is replaced by a plain 'perl -e \"alarm shift; exec @ARGV\"' - no process group, no TERM->KILL escalation, the failure mode the doc's own comment calls out ('a plain alarm+exec signals make, not its recipes')",
+      "killed": true,
+      "failing_cases": [
+        "setup-hang",
+        "sky-hang",
+        "runtime-hang",
+        "test-hang",
+        "golden-hang",
+        "caller-poison"
+      ],
+      "evidence": "copy differs from the original (cmp rc 1); control rc 1, 'rig-check control: 18 cases, 6 failures' with the same five hang cases reporting 'hang child <pid> still alive' (base pass alone: 17 cases, 5 failures). The control therefore pins the process-group design, not just the group-kill spelling"
+    }
+  ],
+  "implementation_approved": true
+}

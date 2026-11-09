@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-RIG-GOLDEN-SETUP",
-  "status": "approved",
+  "status": "completed",
   "approved": true,
   "approved_by": "design quorum: two rounds (3/3 reject each) then the narrow-refinement carve-out; Open questions empty; D-88 hygiene rule applies (test/infra hygiene, no pillar below 0), so no attended stop is needed",
   "created": "2026-11-09",
-  "design_doc": "design_docs/planned/r1/rig-golden-setup.md",
-  "sprint_plan": "design_docs/planned/r1/rig-golden-setup-sprint.md",
+  "design_doc": "design_docs/implemented/r1/rig-golden-setup.md",
+  "sprint_plan": "design_docs/implemented/r1/rig-golden-setup-sprint.md",
   "branch": "mission/stapledon-iter81-golden-import",
   "implements": [
     "7af"
@@ -59,7 +59,7 @@
     {
       "id": "MS3",
       "title": "Fresh-clone ACs 1-3 (godot --check-only parse count only, CPU, no GPU, no golden), scope AC14, hygiene AC15, then landing: CHANGELOG line, doc moved to design_docs/implemented/r1/, README index row (after the independent evaluator passes)",
-      "status": "measured; landing pending evaluation",
+      "status": "done",
       "depends_on": [
         "MS2"
       ],
@@ -115,5 +115,42 @@
       "S3 make golden unbounded"
     ],
     "notes": "Evaluation round 1 (independent judge, Sonnet, 86 PASS): three survivors of the 16-case control, all now killed. S1 drop the KILL escalation in bounded: killed by golden-hang (TERM-ignoring child still alive; caller-poison aggregate also FAILs). S2 make test unbounded: killed by test-hang (rc 0, no failure post; caller-poison also FAILs). S3 make golden unbounded: killed by golden-hang (rc 0; caller-poison also FAILs). Added test-hang (RIG_TEST_S=2) and golden-hang (RIG_GOLDEN_S=2, STUB_CHILD_IGNORE_TERM via hang-term:golden); the child is sh -c trap \"\" TERM; exec sleep 20 (ignore verified across exec). Control now 18 cases, 0 failures (101 s, rc 0). M5 re-run: rc 1, 5 hang cases FAIL with the child alive plus caller-poison. No tools/rig_check.sh change needed. Orphan check: no sleep 20 with a test or rig parent after the runs (parents are other sessions)."
+  },
+  "completed": "2026-11-09",
+  "evaluation": {
+    "round_1": {
+      "sonnet": {
+        "score": 86,
+        "pass": true,
+        "survivors": [
+          "KILL escalation dropped",
+          "make test unbounded",
+          "make golden unbounded"
+        ],
+        "fixed_in": "cbdef477"
+      },
+      "minimax": "wall_timeout 1810 s, no report ($0.13)"
+    },
+    "round_2": {
+      "sonnet": {
+        "score": 92,
+        "pass": true,
+        "implementation_approved": true,
+        "report": ".ailang/state/evaluations/eval_R1-RIG-GOLDEN-SETUP_round_2_sonnet-5.5.json"
+      },
+      "minimax": {
+        "score": 91,
+        "pass": true,
+        "implementation_approved": true,
+        "report": ".ailang/state/evaluations/eval_R1-RIG-GOLDEN-SETUP_round_2_minimax-m3.json"
+      }
+    },
+    "minor_followups": [
+      "bounded: stdin-from-/dev/null and the handler waitpid are unpinned by the control (Sonnet Y1/Y2 survive)",
+      "RIG_*_S=0 disables the alarm silently",
+      "no sweep of group members when the leader exits normally",
+      "rig-check-control runs in make test, not ci-fast"
+    ],
+    "post_merge_check": "first nightly rig/golden on main: no SCRIPT ERROR in constellation section; 417 ok or a real GPU-case failure"
   }
 }

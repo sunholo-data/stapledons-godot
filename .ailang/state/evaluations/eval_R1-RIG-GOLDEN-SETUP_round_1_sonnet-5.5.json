@@ -1,0 +1,27 @@
+{
+ "sprint_id":"R1-RIG-GOLDEN-SETUP","judge_model":"sonnet-5.5","commit":"fd6e9463","round":1,
+ "score":86,"pass":true,"implementation_approved":true,
+ "rubric":{"acceptance_criteria_and_correctness":27,"tests_and_mutation_strength":22,"code_quality_bounded_helper":19,"docs_claims_match_code":12,"scope_and_conventions":6,
+  "notes":"Not run by design: make test/golden (CLAUDE.md Merges). AC1/AC2 fresh-clone Godot SCRIPT ERROR count UNMEASURED by me (optional, skipped); executor's V6 claim not independently reproduced."},
+ "findings":[
+  {"severity":"major","file":"tools/test_rig_check.sh","line":0,"summary":"The make test and make golden bounds have no hang case; unbounding either survives the control.","evidence":"Mutants X3 (bounded \"$TEST_S\" make test -> make test) and X4 (same for golden) both left the control at 16 cases, 0 failures, rc 0. Only deps, sky-assets and runtime have hang cases. The doc says every make call is bounded, but 2 of 6 are unguarded by tests."},
+  {"severity":"minor","file":"tools/test_rig_check.sh","line":0,"summary":"The TERM-to-KILL escalation is untested: the stub hang child (sleep) dies on TERM.","evidence":"Mutant X2 (delete kill KILL, -$pid) survives, rc 0, 16 cases 0 failures. A child that traps TERM would hang bounded forever in waitpid."},
+  {"severity":"minor","file":"tools/rig_check.sh","line":32,"summary":"bounded signals only the process group of the direct child; a process that setsid()s or leaves the group is missed. If the leader exits normally, surviving group members are not reaped, so the EXIT trap rm -rf can race them.","evidence":"Read of bounded: the normal path is waitpid then exit with no kill -0 -pid sweep. Timeout path always TERM, sleep 2, KILL the group then waitpid, so the race is closed only there. Also waitpid after KILL could block on an uninterruptible child, and RIG_*_S=0 disables the alarm. Practical risk low."},
+  {"severity":"minor","file":"tools/rig_check.sh","line":0,"summary":"Interrupting rig_check.sh itself (INT/TERM to the sh) does not run the EXIT trap or signal an active bounded group.","evidence":"Pre-existing behaviour; bounded handles signals sent to perl only. Not introduced here, noted for completeness."}
+ ],
+ "checks":{"GOLDEN_SETUP_order_membership":"deps starmap-assets planet-assets import, import last: matches doc","paths":"--golden: sky-assets test setup golden; --golden-only: sky-assets setup golden; no-golden: sky-assets test only. All asserted by order cases","fail_messages":"golden setup: make T failed or ran over 600s; rig setup: make runtime/sky-assets ...; make test/golden unchanged. Descriptions <=140 (cut -c1-140 in status, cases check 140 limit via stub gh)","defaults":"SETUP_S 600, DL_S 3600, TEST_S 7200, GOLDEN_S 1800 as documented","bounded_exit_codes":"124 on ALRM, 130 on INT/TERM/HUP, 128+n for signal death, child rc passthrough (X5 killed), exec failure 127, stdin /dev/null"},
+ "commands_run":[
+  {"cmd":"sh -n tools/rig_check.sh; sh -n tools/test_rig_check.sh","rc":0,"key_output":"both clean"},
+  {"cmd":"git diff --check 7d26c947..HEAD","rc":0,"key_output":"no whitespace errors"},
+  {"cmd":"sh tools/test_rig_check.sh tools/rig_check.sh","rc":0,"key_output":"rig-check control: 16 cases, 0 failures (85 s)"},
+  {"cmd":"mutant batch via /tmp/iter81_sonnet_mut.sh (copies of rig_check.sh in mktemp dir)","rc":0,"key_output":"M5, M2, M3, X1, X5 killed; X2, X3, X4 survived"}],
+ "mutants":[
+  {"mutation":"M5 sed s/-$pid/$pid/g (no group kill)","killed":true,"failing_cases":"setup-hang, sky-hang, runtime-hang, caller-poison"},
+  {"mutation":"M2 import dropped from GOLDEN_SETUP","killed":true,"failing_cases":"golden-only-setup, golden-setup, golden-setup-red, caller-poison"},
+  {"mutation":"M3 planet-assets dropped","killed":true,"failing_cases":"golden-only-setup, golden-setup, golden-setup-red, caller-poison"},
+  {"mutation":"X1 own: import first (GOLDEN_SETUP=import deps starmap-assets planet-assets)","killed":true,"failing_cases":"golden-only-setup, golden-setup, golden-setup-red, setup-hang, caller-poison"},
+  {"mutation":"X5 own: exit code passthrough broken ($? >> 8 -> 0)","killed":true,"failing_cases":"make-test-red, watchdog-override, failure-refused, golden-setup-red, caller-poison"},
+  {"mutation":"X2 own: drop the KILL escalation","killed":false,"failing_cases":""},
+  {"mutation":"X3 own: make test unbounded","killed":false,"failing_cases":""},
+  {"mutation":"X4 own: make golden unbounded","killed":false,"failing_cases":""}]
+}
