@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### rig-keep-going (2026-11-09)
+
+#### Fixed
+
+- **The nightly `rig/full` runs the whole suite even after a red target** (R1-RIG-KEEP-GOING, row 7ag, issue #392). `tools/rig_check.sh` ran `make test` without `-k`, so since 2026-11-04 every nightly stopped at its first red target about 6 minutes in (`sound-test`, then `bridge-operator-test`), and nothing after it ran on main. It now runs `make -k test`: a red still ends `rig/full` red, every failing target is listed (`rig-check: failed targets (N): ...`), and the commit-status description names as many as fit in 140 characters, then `+K more`.
+- **The nightly issue names every red target.** `tools/rig_nightly.sh` opens the comment with `Failing targets (N): ...` and shows the failing lines before each red target's make error.
+- **`rig/golden` keeps its own log.** It writes `<sha>.golden.log`; it used to overwrite the same commit's `rig/full` log.
+- The first keep-going run on main (`0c3f46c8`) found two reds no nightly had reported: `similar-test` (its guard looks for `SimBridge.EARTH_MINOR` in `main.gd`) and `tools-test` (`tests/replays/earth_log_voyage.ndjson` plans `CNS5:3627` at index 1; `stars.json` has 2). Both are queue rows. New control `tools/test_rig_keep_going.sh` (16 cases on GNU Make 3.81 and 4.4.1), run by `make rig-check-control`.
+
 ### rig-golden-setup (2026-11-09)
 
 #### Fixed
