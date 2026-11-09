@@ -1,0 +1,346 @@
+{
+  "sprint": "R3-AI-PANEL-V2",
+  "pr": "https://github.com/sunholo-data/stapledons-godot/pull/414",
+  "evaluator": "Codex gpt-6.1-sol, independent of generator Claude",
+  "round": 2,
+  "score": 80,
+  "pass": true,
+  "blocking": [],
+  "non_blocking": [
+    {
+      "id": "B5/AC14",
+      "status": "pending",
+      "issue": "Dev build g659369e3 is published, and Mark authorized merging in the attended session ('and merge in the prs'), as supplied in the evaluation handoff. His visual OK is still pending. This is a remaining visual landing gate, not an unmet implementation criterion or an evaluation blocker. The supplied ceiling render predates the filled-lamp fix; current lamp/ring properties were verified headlessly."
+    },
+    {
+      "id": "N3",
+      "status": "partially_fixed",
+      "file": ".ailang/state/sprints/sprint_R3-AI-PANEL-V2.json:3",
+      "issue": "The plan now records approval, publication and Done milestones. JSON remains in_progress, which is understandable while AC14 is pending, but P4 passes:true/completed still groups pending AC14 with completed work and its notes still say evaluation and publication follow. The design still says Planned. Reconcile those claims at landing; no functional failure is inferred.",
+      "requested_change": "Record implementation completion separately from pending visual approval, refresh P4 notes, and update the design's status at landing."
+    },
+    {
+      "id": "N4",
+      "status": "environment_limit_resolved",
+      "issue": "The initial sandboxed loopback server failed at socket.bind with 'PermissionError: [Errno 1] Operation not permitted'. No criterion was failed for that restriction. The baseline and key-check mutants were subsequently rerun serially with localhost access and fake keys. The first baseline also overlapped with in-place mutations; its functional results were discarded in favor of the clean serial rerun."
+    },
+    {
+      "id": "N5",
+      "status": "environment_noise",
+      "issue": "Initial headless import reported 'ERROR: Cannot save file /Users/voightkampff/Library/Application Support/Godot/editor_settings-4.7.tres'. The sandboxed independent probe reported 'ERROR: Condition \"ret != noErr\" is true. Returning: \"\"' at get_system_ca_certificates and pre-existing theme image-load warnings. The final probe had no SCRIPT ERROR and all 16 assertions passed. No deduction for environment noise."
+    },
+    {
+      "id": "N6",
+      "priority": "P3",
+      "file": "tests/test_ai_settings.gd:321",
+      "issue": "The new live-panel regression calls ind.on_outcome directly and asserts dots, rather than emitting bridge.outcome and asserting spend/header state as well. It kills the original stale-refresh mutant, but would miss a disconnected production signal or a future spend-only refresh regression. The independent evaluator probe exercised bridge.outcome with a usage line and frame advancement and confirmed the implementation works.",
+      "requested_change": "Extend the committed regression to emit the production signal and assert spend text, spend bar/header ring and dots without manual refresh."
+    },
+    {
+      "id": "N7",
+      "priority": "P3",
+      "file": "tests/test_ai_settings.gd:524",
+      "issue": "The automation refusal assertion runs before kc.base is set and before plan_override is supplied. The required bridge mutation removes the s.automation guard; that mutant can therefore launch _real_plan with base=\"\", targeting Gemini with the fixture key on an unrestricted runner. This is a code-path inference, not an observed successful provider request. The evaluator ran bridge mutations inside the network-restricted sandbox; the production guard is intact.",
+      "requested_change": "Set kc.base to a closed localhost endpoint immediately after constructing AiKeyCheck (or supply a harmless plan override before the automation assertion). Verify the guard mutant still fails its named assertion while transport remains local."
+    }
+  ],
+  "evidence": {
+    "branch": "feat/ai-panel-v2",
+    "head": "0a31576747af8b6790f9363bf99408179b49c65a",
+    "base": "0c3f46c82dcc0baaf825029f811c48e597bdcf50",
+    "gate_source": "ci",
+    "ci_gate": "pass",
+    "runtime": "AILANG pinned v0.56.1; Godot v4.7.2.stable.official.ed1daf0bf",
+    "scope": "Reviewed git diff origin/main...HEAD and fixes 330d489e/0a315767; merge-of-main changes excluded. No real keys, GPU targets, make test, make golden or publish-dev. Baseline and key-check mutants use only loopback. Bridge mutants ran inside the network-restricted sandbox; N7 records a latent real-host plan in the automation-guard mutant on an unrestricted runner.",
+    "round_1_findings": [
+      {
+        "id": "B1",
+        "status": "fixed",
+        "evidence": "mk/ai.mk supplies $(AUDIO_OFF) and uses SCRIPT_GATE for the capture. Independent audio-silent-guard passes 84 invocations/5 exceptions; GitHub fast tier at current head 0a315767 completed successfully (run 42671269732). The handoff's local ci-fast rc 0 is supplementary."
+      },
+      {
+        "id": "B2",
+        "status": "fixed",
+        "evidence": "AiIndicator.refresh refreshes its visible panel. Required settings gate passes; independent production bridge.outcome probe writes $0.125 usage, emits a complete result, advances five frames and observes panel spend $0.125, one dot and header fraction 0.25 without calling refresh."
+      },
+      {
+        "id": "B3",
+        "status": "fixed",
+        "evidence": "on_outcome counts non-budget cancellations as failures. Production-shaped error+timeout+service_down yields problem with streak 3, and success resets it. The cancellation-regression mutant is killed."
+      },
+      {
+        "id": "B4",
+        "status": "fixed",
+        "evidence": "Check results carry the starting key's SHA-256 fingerprint, and all consumers use result(provider, settings). Required mid-check replacement regression and independent remove+replace during a delayed rejected check both yield Saved for the new key, with no rejected badge. The fingerprint-removal mutant is killed."
+      },
+      {
+        "id": "B5",
+        "status": "pending_non_blocking",
+        "evidence": "Publication and attended merge authorization supplied by user; visual approval still pending, treated exactly as instructed."
+      },
+      {
+        "id": "N1",
+        "status": "fixed",
+        "evidence": "Deadline check now runs on every iteration, both streams are drained and retained stdout is bounded by MAX_OUT plus at most a chunk. Endless-stdout test and its cap mutant pass. Independent 200000-byte stderr and endless-stderr checks finish; the latter reports offline after 138 ms with a 100 ms limit."
+      },
+      {
+        "id": "N2",
+        "status": "fixed",
+        "evidence": "Badge and panel use hollow only for problem and force fraction=1 for ceiling. Required regression and independent production budget cancellation at $0.125/$0.50 confirm both lamps filled and both rings full; ceiling-fraction mutant is killed."
+      },
+      {
+        "id": "N3",
+        "status": "partially_fixed_or_justified",
+        "evidence": "Plan approval and Done markers fixed; in_progress is consistent with pending visual approval, while P4 notes/pass claims and Planned design status still require reconciliation. Nonblocking deductions only."
+      }
+    ],
+    "commands": [
+      {
+        "command": "git status --short; git branch --show-current; git log -5 --oneline; git diff --stat origin/main...HEAD",
+        "exit_code": 0,
+        "result_lines": [
+          "Initial working tree clean",
+          "feat/ai-panel-v2",
+          "0a315767 fix(ai): evaluation round 1 (Codex FAIL 42): live panel, cancels, key race, ceiling, gates",
+          "24 files changed, 2351 insertions(+), 83 deletions(-)"
+        ]
+      },
+      {
+        "command": "make ai-pkg-test ai-key-check ai-settings ai-live-guard title-screen-test ui-theme-check uid-guard python-guard audio-silent-guard AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang STRICT=1 -k",
+        "execution": "Clean serial rerun with localhost access; all targets completed, rc 0.",
+        "exit_code": 0,
+        "log": "/tmp/ai-panel-v2-eval-round2/required-serial.log",
+        "result_lines": [
+          "✓ 30 files checked, all passed!",
+          "58 tests: 58 passed, 0 failed, 0 skipped",
+          "ai-pkg-test: ai/ imports nothing from sim/; no AIza or sk-or- text in ai/, data/ai/, tests/ai/",
+          "ai-key-check: 8 outcomes (ok, rejected, offline, no_key per provider), 4 GETs with the right auth header, no files written, keys absent from 16 outputs",
+          "script-gate: ai-settings ok: ai settings: ok (105 passed, 0 failures; launch_default, opt_in, keys, key_edges, kinds, ceiling, text_only, panel, indicator_budget, wired, key_check, badge, panel_v2) (rc 0, no SCRIPT ERROR, 7 s of 600 s)",
+          "ai-live-guard: ok (71 make/shell/CI files, 485 test/tool scripts, launch builder, settings)",
+          "guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)",
+          "script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) (rc 0, no SCRIPT ERROR, 0 s of 600 s)",
+          "script-gate: title-screen-test ok: title-screen: 111 passed, 0 failures (rc 0, no SCRIPT ERROR, 25 s of 600 s)",
+          "script-gate: ui-theme-check ok: ui-theme-check: ok (53 files, 65 text/panel pairs) (rc 0, no SCRIPT ERROR, 0 s of 600 s)",
+          "script-gate: ui-theme-neg-override ok: FAIL 1 hard-coded panel styles or colour overrides outside the theme (--strict) (rc 1, no SCRIPT ERROR)",
+          "script-gate: ui-theme-neg-contrast ok: FAIL contrast 1.33:1 < 4.5 for HUDLabel.font_color on HUDPanel over efe3c8 (rc 1, no SCRIPT ERROR)",
+          "ui-theme-check: negative controls (seeded StyleBoxFlat, low contrast) fail as they must",
+          "uid-guard: ok (422 .uid files)",
+          "python-guard: ok (21 allowlisted, 0 awaiting AILANG port)",
+          "audio-silent-guard: ok (84 windowed godot invocations; 5 allowlisted to keep sound)"
+        ]
+      },
+      {
+        "command": "AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang sh tests/ai_bridge_mutants.sh godot .godot/tmp/bridge-mutants",
+        "exit_code": 0,
+        "log": "/tmp/ai-panel-v2-eval-round2/bridge-mutants.log",
+        "result_lines": [
+          "ai-bridge-mutants: 64 mutants, 0 not killed"
+        ],
+        "interpretation": "Includes original precedence, mask, slider, automation, timeout and provider mutants plus output cap, current-key identity, cancels, live panel updates and below-ceiling ring fixes."
+      },
+      {
+        "command": "make ai-key-check-mutants AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+        "execution": "Serial run with localhost access after the clean passing baseline; originals restored.",
+        "exit_code": 0,
+        "log": "/tmp/ai-panel-v2-eval-round2/key-mutants-serial.log",
+        "result_lines": [
+          "mutant killed: ai/check.ail fails 'FAIL gemini_good: want ok'",
+          "mutant killed: ai/check.ail fails 'FAIL key text in gemini_good.out'",
+          "mutant killed: ai/check.ail fails 'FAIL the check wrote files'"
+        ]
+      },
+      {
+        "command": "AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang godot --headless --path . --log-file /tmp/ai-panel-v2-eval-round2/probe-engine.log --script /tmp/ai-panel-v2-eval-round2/probe.gd",
+        "exit_code": 0,
+        "log": "/tmp/ai-panel-v2-eval-round2/probe.log",
+        "result_lines": [
+          "probe: ok production outcome signal updates spend, ring and dots without refresh: spend=$0.125 dots=1 ring=0.25",
+          "probe: ok mixed errors/cancels yield problem: state=problem streak=3",
+          "probe: ok production success clears streak",
+          "probe: ok below-ceiling budget cancellation fills badge and panel rings and lamps",
+          "probe: ok remove and replace while checking discards previous rejection: status=saved",
+          "probe: ok automation start refused for capture, map-capture, golden, bench, ai-hello, movie (six separate assertions)",
+          "probe: ok stderr-filling child is drained without blocking UI: status=ok",
+          "probe: ok endless stderr reaches timeout: 138 ms",
+          "probe: ok 50 rapid child exits preserve result, no repeated-pid checks",
+          "probe: ok simultaneous provider workers keep separate results",
+          "probe: ok poll remains brief: maximum 8879 us",
+          "evaluation-probe: 16 checks, 0 failures"
+        ],
+        "interpretation": "First draft probe omitted relay-required sha256/body and produced SCRIPT ERROR; corrected to full production-shaped results before the recorded passing run. No production source was changed."
+      },
+      {
+        "command": "git diff --stat origin/main -- sim/ physics/; git diff --check origin/main...HEAD",
+        "exit_code": 0,
+        "result_lines": [
+          "(no output)"
+        ],
+        "interpretation": "AC12: no sim or physics differences; patch whitespace check clean."
+      },
+      {
+        "command": "curl --fail --silent --show-error https://storage.googleapis.com/stapledons-voyage-assets/refs/ai_panel_v2/{no_key,gemini_ok,rejected,offline,text_only,ceiling}.png (six explicit downloads); view_image on each downloaded PNG",
+        "exit_code": 0,
+        "result_lines": [
+          "All six 1920x1080 static review renders downloaded and opened."
+        ],
+        "interpretation": "No GPU capture rerun. The ceiling image shows the pre-fix hollow lamp; current rendering properties confirmed by independent headless checks."
+      },
+      {
+        "command": "EVAL_CI_WAIT_MIN=1 bash /Users/voightkampff/.claude/skills/sprint-evaluator/scripts/ci_gate.sh feat/ai-panel-v2; gh run view 42671269732 --json status,conclusion,headSha",
+        "exit_code": 0,
+        "result_lines": [
+          "ci-gate: PR #414: 1 checks, 0 pending (18:19:05Z)",
+          "CI_GATE=pass PR #414: 1 checks green",
+          "{\"conclusion\":\"success\",\"headSha\":\"0a31576747af8b6790f9363bf99408179b49c65a\",\"status\":\"completed\"}"
+        ]
+      }
+    ],
+    "critical_review": {
+      "key_safety": "check.ail reads the file and passes the key only in HTTP headers. Its only output is lineOf(provider,status); response bodies and transport errors are discarded, and the module imports no write primitive. The launch uses scrubbed descriptors and env -i; args contain the file path, not key text. UI uses a secret edit, clears it on save, shows only right(4) in the masked label and uses fixed tooltips. Automation start guard precedes plan construction/override. Baseline/mutants validate exact output, auth headers, absent key text and extra-file detection.",
+      "threading": "Worker performs spawn/read/timeout kill off the main thread. Both pipes are nonblocking. A mutex protects the finished queue; poll copies and clears it under the mutex, unlocks before joining tasks or emitting done, and updates results per provider. Empty stdout plus exited pid triggers one final read and immediate break, avoiding repeated queries of a reaped pid. Rapid-exit, concurrent-provider, stdout-cap, hung-child and stderr-flood probes found no new functional defect.",
+      "badge_and_panel": "State precedence remains off > ceiling > problem > working > live. Failures include production cancels and reset on success; budget is a distinct ceiling state. Visible panel follows indicator.refresh, usage remains session-scoped, dots are bounded/newest-last, slider round-trips all 1996 cent steps, and card results match the checked key. Shared title and ship-demo openers are exercised by the 111-check title-screen suite.",
+      "test_strength": "Mutation tests demand named failing assertions, and the final key mutants run against a passing loopback baseline. Added independent frame-driven production-signal and process-supervision checks to avoid trusting generator passes:true flags or direct-handler assertions alone. N6 identifies a remaining committed-test gap without claiming broken current behavior. N7 identifies the guard mutant's transport setup gap; seed the local base before the guard assertion."
+    },
+    "acceptance_criteria": [
+      {
+        "id": "AC1",
+        "status": "met",
+        "evidence": "10 precedence cases and production-shaped mixed failures/success; relevant mutants killed."
+      },
+      {
+        "id": "AC2",
+        "status": "met",
+        "evidence": "At most two words beside AI; tooltip amounts; render inspection and settings assertions."
+      },
+      {
+        "id": "AC3",
+        "status": "met",
+        "evidence": "No-key and saved-key cards, secret editing, suffix masking, removal, 0600 file assertions; mask mutant killed."
+      },
+      {
+        "id": "AC4",
+        "status": "met",
+        "evidence": "Gemini/text-only/OpenRouter/switch-off tile cases and route/switch mutant."
+      },
+      {
+        "id": "AC5",
+        "status": "met",
+        "evidence": "1996 cent-grid round trips, endpoints and monotonicity; snap mutant killed."
+      },
+      {
+        "id": "AC6",
+        "status": "met",
+        "evidence": "Session-scoped eight newest outcomes and independent live production-signal updates without manual refresh."
+      },
+      {
+        "id": "AC7",
+        "status": "met",
+        "evidence": "Eight expected statuses, four correct authenticated GETs, no extra files and key text absent from 16 streams."
+      },
+      {
+        "id": "AC8",
+        "status": "met",
+        "evidence": "30 AILANG modules checked; 58 tests pass including classifier/URL/protocol tests."
+      },
+      {
+        "id": "AC9",
+        "status": "met",
+        "evidence": "Missing/unknown key/provider guards, all six automation flags, timeout kills and bound stdout verified."
+      },
+      {
+        "id": "AC10",
+        "status": "met",
+        "evidence": "64 bridge mutants and three key-check mutants killed, including named body/key/write and precedence failures."
+      },
+      {
+        "id": "AC11",
+        "status": "met",
+        "evidence": "Strict theme gate passes 53 files/65 pairs; both negative controls correctly fail."
+      },
+      {
+        "id": "AC12",
+        "status": "met",
+        "evidence": "git diff --stat origin/main -- sim/ physics/ produces no output."
+      },
+      {
+        "id": "AC13",
+        "status": "met",
+        "evidence": "Six supplied renders exist, downloaded and individually opened; current source includes the capture target."
+      },
+      {
+        "id": "AC14",
+        "status": "pending",
+        "evidence": "User reports published dev build g659369e3 and attended merge authorization; Mark's visual OK remains pending and is nonblocking for this evaluation as explicitly directed."
+      }
+    ],
+    "score_breakdown": {
+      "tests_pass": {
+        "score": 20,
+        "max": 20,
+        "reason": "GitHub fast tier succeeds on reviewed head 0a315767 (run 42671269732). All required targeted gates and independent probes pass. Full make test was expressly prohibited, so PR CI is the skill's applicable CI-equivalent gate."
+      },
+      "lint_clean": {
+        "score": 10,
+        "max": 10,
+        "reason": "audio-silent-guard, STRICT ui-theme-check and both negative controls, uid-guard, python-guard and git diff --check pass."
+      },
+      "acceptance_criteria": {
+        "score": 28,
+        "max": 30,
+        "raw_score": 28.2352941176,
+        "met": 16,
+        "pending": 1,
+        "total": 17,
+        "reason": "16/17 sprint acceptance items verified: P0 2/2, P1 3/3, P2 2/2, P3 5/5, P4 4 met and AC14 pending. Equivalent to 13 design ACs met, one pending. Pending visual approval is not a functional failure or hard fail. Rounded to whole points as in round 1."
+      },
+      "code_quality": {
+        "score": 7,
+        "max": 15,
+        "deductions": [
+          {
+            "points": 5,
+            "reason": "Same capped rubric deduction as round 1: new _card(), test_panel_v2(), test_badge() and test_key_check() exceed 50 lines."
+          },
+          {
+            "points": 3,
+            "reason": "Sprint artifacts remain inconsistent/incomplete around P4 passes:true/completed, pending AC14 and stale publication notes. Plan approval/Done markers are now fixed, so the prior -2 plan deduction is removed."
+          }
+        ],
+        "reason": "No changed code file exceeds 800 lines; no new TODO/HACK/FIXME. Length accounting follows the requested rubric and is not a defect/blocker."
+      },
+      "documentation": {
+        "score": 5,
+        "max": 15,
+        "components": {
+          "changelog": 5,
+          "runnable_example": 0,
+          "design_status": 0
+        },
+        "reason": "Same rubric treatment as round 1: changelog fragment present; no examples/runnable feature example, design status still Planned. Design was amended to document outcome-based recent replies and key-result fingerprinting."
+      },
+      "design_fidelity": {
+        "score": 10,
+        "max": 10,
+        "reason": "Round-1 functional deviations are corrected. Intended architecture, guarded free check, lamps/cards/icons, session spend, recent outcomes, slider, theme and state precedence match the amended design. AC14 tracked separately as pending."
+      },
+      "regression_surface_coverage": {
+        "triggered": false,
+        "reason": "No compiler/parser/typechecker/VM infrastructure modified."
+      },
+      "performance_verification": {
+        "triggered": false,
+        "reason": "UI/key-check sprint, not a performance optimization sprint; process deadlines independently checked."
+      },
+      "total": 80,
+      "threshold": 70
+    },
+    "verification_limits": [
+      "Did not run make test, make golden, make publish-dev or GPU captures. Real keys were never read or used. The bridge mutation suite ran network-restricted; all permitted key-check network traffic was localhost with fake keys. N7 identifies the unsafe real-host plan that a removed guard can create on an unrestricted runner.",
+      "Did not rerun the entire pre-existing make ai-mutants matrix; ran the specifically required bridge and key-check mutation suites covering the sprint's safety and UI regressions.",
+      "Read CI through gh as required by CLAUDE.md; user-reported local ci-fast rc 0 is supplementary, not represented as an independent local run.",
+      "Only the requested round-2 report is a persistent repository change. Mutation scripts restored originals. No fixes, commits, pushes, PR messages, sprint edits or design-doc moves."
+    ],
+    "ci_run": "https://github.com/sunholo-data/stapledons-godot/actions/runs/42671269732",
+    "hard_fail": null
+  }
+}
