@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-loopback ai-relay replay-noai ai-session-record ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
+.PHONY: ai-loopback ai-key-check ai-relay replay-noai ai-session-record ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback replay-compat ai-godot ai-relay replay-noai   ## AI foundation checks that run without a GPU window or a key
+ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback ai-key-check replay-compat ai-godot ai-relay replay-noai   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -159,6 +159,30 @@ ai-loopback:       ## AI.5 leftover: OpenRouter + TTS POST halves against a loop
 	touch $(AI_L)/stop; wait; cat $(AI_L)/lane.out | cut -c1-160; test $$rc = 0 && test "$$(tail -1 $(AI_L)/lane.out)" = "loopback-done"
 	@python3 tests/fixtures/ai_loopback.py check $(AI_L) $(AI_FAKE_G) $(AI_FAKE_O)
 
+# R3-AI-PANEL-V2 P1 (AC7): the key check (ai/check.ail) against the loopback: a good, a bad and an
+# empty key per provider, and a closed port. Runs the same way AiBridge.check_plan() does, with env -i.
+AI_K := $(SCRATCH)/ai-key-check
+AI_FAKE_BAD := loopback-fake-bad-9e2b
+AI_CLOSED := http://127.0.0.1:1
+ai-key-check:      ## R3-AI-PANEL-V2: the free key check (ok, rejected, offline, no_key per provider); no files written, keys never printed
+	@rm -rf $(AI_K) && mkdir -p $(AI_K)
+	@printf '%s\n%s\n' $(AI_FAKE_G) $(AI_FAKE_O) > $(AI_K)/good_keys
+	@printf '%s' $(AI_FAKE_G) > $(AI_K)/key_good_g; printf '%s' $(AI_FAKE_O) > $(AI_K)/key_good_o; \
+	  printf '%s' $(AI_FAKE_BAD) > $(AI_K)/key_bad; : > $(AI_K)/key_empty; chmod 600 $(AI_K)/key_*
+	@python3 tests/fixtures/ai_loopback.py serve $(AI_K) & \
+	for i in $$(seq 100); do [ -f $(AI_K)/port ] && break; sleep 0.1; done; \
+	base="http://127.0.0.1:$$(cat $(AI_K)/port)"; rc=0; \
+	run() { env -i PATH="$$PATH" HOME="$$HOME" GOOGLE_APPLICATION_CREDENTIALS=/nonexistent \
+	  $(AILANG) run --quiet --bytecode --package-dir ai --caps IO,FS,Net --net-allow-localhost --net-allow-http \
+	  --entry check --args-json "{\"provider\":\"$$2\",\"key_file\":\"$(AI_K)/$$3\",\"base\":\"$$4\"}" ai/check.ail \
+	  > $(AI_K)/$$1.out 2> $(AI_K)/$$1.err || rc=1; }; \
+	run gemini_good gemini key_good_g $$base; run gemini_bad gemini key_bad $$base; \
+	run gemini_closed gemini key_good_g $(AI_CLOSED); run gemini_empty gemini key_empty $$base; \
+	run openrouter_good openrouter key_good_o $$base; run openrouter_bad openrouter key_bad $$base; \
+	run openrouter_closed openrouter key_good_o $(AI_CLOSED); run openrouter_empty openrouter key_empty $$base; \
+	touch $(AI_K)/stop; wait; test $$rc = 0 || { echo "ai-key-check: a check exited non-zero"; tail -3 $(AI_K)/*.err; exit 1; }
+	@python3 tests/fixtures/ai_loopback.py checkkeys $(AI_K) $(AI_FAKE_G) $(AI_FAKE_O) $(AI_FAKE_BAD)
+
 ai-adapter-record: ## regenerate tests/ai/adapter.golden.txt and the prompt goldens (a reviewed diff; never in make test)
 	$(ai_adapter_run)
 	@cp $(AI_A)/lane.out tests/ai/adapter.golden.txt; mkdir -p tests/ai/prompts
@@ -171,6 +195,8 @@ ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, act
 	@set -e; A=$$(command -v $(AILANG)); case "$$A" in /*) ;; *) A="$$PWD/$$A";; esac; \
 	for m in \
 	  'route.ail@else if !serves(h.provider, kind) then@else if false then@AI.4 routing config errors refused at start@route_test.ail' \
+	  'check.ail@(code == 400 || code == 401 || code == 403) then "rejected"@(code == 400 || code == 401) then "rejected"@P1 gemini status: 200 ok, 400/401/403 rejected, else offline@check_test.ail' \
+	  'check.ail@if provider != "gemini" && provider != "openrouter" then "offline"@if false then "offline"@P1 an unknown provider is never ok@check_test.ail' \
 	  'route.ail@if member(h.provider, keys) && serves(h.provider, kind) then Via(h)@if serves(h.provider, kind) then Via(h)@AI.4 text routes to OpenRouter, else Gemini, else no_key@route_test.ail' \
 	  'route.ail@if textOnly && isMedia(kind) then@if false then@AI.4 portrait, avatar and voice route to Gemini or no_key, never OpenRouter; text_only@route_test.ail' \
 	  'key.ail@n >= 1 && n <= 32 &&@n >= 1 && n <= 33 &&@AI.4 cache key validation refuses each bad field@key_test.ail' \
@@ -485,6 +511,29 @@ ai-loopback-mutants:   ## AI.9: parse failures or dropped calls uncharged, no re
 	  echo "mutant killed: $$file '$$from' -> '$$to' fails '$$want'"; \
 	done
 ai-mutants: ai-loopback-mutants
+
+# R3-AI-PANEL-V2 P4 (AC10): mutants of ai/check.ail that must fail make ai-key-check by name: the
+# check prints a response body, prints the key, or writes a file (a usage line would be one).
+ai-key-check-mutants:   ## R3-AI-PANEL-V2: the key check printing a body or the key, or writing a file, each fails ai-key-check
+	@set -e; cp ai/check.ail $(SCRATCH)/check.ail.orig; trap 'cp $(SCRATCH)/check.ail.orig ai/check.ail' EXIT; \
+	for m in \
+	  's/\QOk(resp) => statusOf(provider, resp.status),\E/Ok(resp) => { println(resp.body); statusOf(provider, resp.status) },/ && s/\Qurl: string) -> string ! {Net} =\E/url: string) -> string ! {IO, Net} =/@FAIL gemini_good: want ok' \
+	  's/\Qlet key = if p == "unknown" then "" else keyOf(c.key_file);\E/let key = if p == "unknown" then "" else keyOf(c.key_file); println(key);/@FAIL key text in gemini_good.out' \
+	  's/\Qimport std\/fs (readFileResult)\E/import std\/fs (readFileResult, writeFile)/ && s/\Qlet key = if p == "unknown" then "" else keyOf(c.key_file);\E/let key = if p == "unknown" then "" else keyOf(c.key_file); writeFile(concat([c.key_file, ".usage"]), "{}");/@FAIL the check wrote files'; do \
+	  expr=$${m%@*}; want=$${m##*@}; cp $(SCRATCH)/check.ail.orig ai/check.ail; \
+	  perl -0pi -e "$$expr or die \"anchor not found\n\"" ai/check.ail; \
+	  if $(MAKE) --no-print-directory ai-key-check > $(SCRATCH)/key-check-mutant.txt 2>&1; then echo "mutant SURVIVED: $$expr"; exit 1; fi; \
+	  grep -qF "$$want" $(SCRATCH)/key-check-mutant.txt || { echo "mutant did not fail '$$want':"; tail -5 $(SCRATCH)/key-check-mutant.txt; exit 1; }; \
+	  echo "mutant killed: ai/check.ail fails '$$want'"; \
+	done
+ai-mutants: ai-key-check-mutants
+.PHONY: ai-key-check-mutants ai-panel-capture
+
+# R3-AI-PANEL-V2 P4 (AC13): review renders of the Live AI panel and badge (a window; 2D only, not a
+# merge gate). Fails if the panel overflows the 960x540 UI space. Open every frame.
+ai-panel-capture: import   ## R3-AI-PANEL-V2: renders/ai_panel/{no_key,gemini_ok,rejected,offline,text_only,ceiling}.png + capture.json
+	@mkdir -p $(SCRATCH)
+	@$(SCRIPT_GATE) ai-panel-capture $(SCRATCH)/ai-panel-capture.log 300 '^ai-panel-capture: 6 frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/ai_panel_capture.gd
 
 # Export: the AI service runs from the bundled runtime with ai/ and data/ai/ unpacked beside the
 # sim. ai-runtime locks ai/ (sunholo/gemini_live) into the bundled package cache, beside the sim's.

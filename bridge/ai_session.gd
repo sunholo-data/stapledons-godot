@@ -18,6 +18,9 @@ var bridge := AiBridge.new()
 var cache := AiCache.new()
 var relay: AiRelay
 var indicator: AiIndicator
+## The panel's Test button (R3-AI-PANEL-V2): results for this run feed the
+## panel's lamps and the badge's problem state.
+var key_check := AiKeyCheck.new()
 var _hello_out := ""
 var _hello_deadline := 0
 var _dirty := false
@@ -39,6 +42,7 @@ func _init(args: Dictionary = {}, dir: String = "user://") -> void:
 	indicator = load("res://ui/ai_indicator.tscn").instantiate()
 	indicator.session = self
 	add_child(indicator)
+	key_check.done.connect(func(_p, _st): indicator.refresh())
 
 
 ## sha256 of the core index (design (a4)): the `ai_core` value for new_game.
@@ -70,6 +74,7 @@ func settings_changed() -> void:
 
 
 func _process(_delta: float) -> void:
+	key_check.poll()
 	if _dirty and bridge.pending() == 0:
 		_dirty = false
 		bridge.shutdown()

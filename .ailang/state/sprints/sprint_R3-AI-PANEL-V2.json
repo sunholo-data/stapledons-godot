@@ -1,0 +1,189 @@
+{
+  "sprint_id": "R3-AI-PANEL-V2",
+  "status": "completed",
+  "approved": "Mark, attended 2026-11-09: 'yep build it please' (OQ1-OQ3 defaults accepted); 'and merge in the prs'",
+  "created": "2026-11-09",
+  "design_doc": "design_docs/implemented/r3/ai-panel-v2.md",
+  "sprint_plan": "design_docs/implemented/r3/ai-panel-v2-sprint.md",
+  "branch": "feat/ai-panel-v2",
+  "origin": "main 13bc0766",
+  "ailang_version": "v0.56.1",
+  "ailang_prompt_version": "v0.16.12",
+  "external_dependencies": [],
+  "baseline": {
+    "ai-pkg-test": "ok (53 tests)",
+    "ai-settings": "53 passed",
+    "ai-live-guard": "9 passed",
+    "ai-loopback": "ok",
+    "main": "13bc0766"
+  },
+  "registry_reuse": [
+    {
+      "milestone": "P0",
+      "package": "none",
+      "action": "none",
+      "reason": "docs"
+    },
+    {
+      "milestone": "P1",
+      "package": "none",
+      "action": "none",
+      "reason": "service-local key check over std/net.httpRequest, already used by ai/adapters.ail; game plumbing, not a reusable capability"
+    },
+    {
+      "milestone": "P2",
+      "package": "none",
+      "action": "none",
+      "reason": "UI"
+    },
+    {
+      "milestone": "P3",
+      "package": "none",
+      "action": "none",
+      "reason": "UI and pure settings helpers"
+    },
+    {
+      "milestone": "P4",
+      "package": "none",
+      "action": "none",
+      "reason": "theme, mutants, capture"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 700,
+    "estimated_total_loc": 1050,
+    "estimated_days": 1.5
+  },
+  "critical_path": [
+    "P0",
+    "P1",
+    "P3",
+    "P4"
+  ],
+  "parallel": [
+    [
+      "P2",
+      "P3"
+    ]
+  ],
+  "pause_points": [
+    "Before execution: Mark approves the plan",
+    "After P4: Mark's OK on a dev build (visual), then merge"
+  ],
+  "questions_for_mark": [
+    "OQ1 show the last 4 characters of a saved key (recommended yes)",
+    "OQ2 remember the last check result across runs (recommended no)",
+    "OQ3 auto-check on opening the panel (recommended no)"
+  ],
+  "features": [
+    {
+      "id": "P0",
+      "description": "Design doc, sprint plan, JSON; baseline pass counts of ai-settings, ai-live-guard, ai-loopback, ai-pkg-test, ui-theme-check STRICT=1, ai-mutants on 13bc0766",
+      "estimated_loc": 0,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "design doc and plan exist",
+        "baseline counts recorded in this JSON"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "Design doc, plan, JSON (ac082cc5); baseline above."
+    },
+    {
+      "id": "P1",
+      "description": "Key check: ai/check.ail (entry check, statusOf with inline tests), loopback GET routes, AiBridge.check_plan/run_check with 10 s timeout, check_done signal; free, no usage line, key never printed, never in automation",
+      "estimated_loc": 230,
+      "dependencies": [
+        "P0"
+      ],
+      "acceptance_criteria": [
+        "AC7: loopback 200/403/closed port give ok/rejected/offline for gemini and openrouter; no usage.ndjson line; fake key absent from stdout, stderr and log (make ai-loopback)",
+        "AC8: ai/check.ail type-checks and statusOf tests pass (make ai-pkg-test)",
+        "AC9: check_plan() is {} under automation and without a key file (make ai-live-guard, make ai-settings)"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "c0f2aa0a. ai/check.ail + check_test.ail (5 tests; ai-pkg-test 58); AiKeyCheck in bridge/ai_key_check.gd (amended from methods on AiBridge); make ai-key-check 8 outcomes ok; test_key_check 12 ok incl. a real ailang run to a closed port. Real host: player key ok, fake key rejected."
+    },
+    {
+      "id": "P2",
+      "description": "Badge: AiIndicator.state_of (off, ceiling, problem, working, live; that precedence), drawn pill with spend ring, lamp, AI and one state word, amounts in tooltip, StapledonTheme tokens",
+      "estimated_loc": 210,
+      "dependencies": [
+        "P1"
+      ],
+      "acceptance_criteria": [
+        "AC1: state_of returns the five states with the design's precedence over 10 fixture cases (make ai-settings)",
+        "AC2: visible label at most 2 words beside AI; exact amounts in tooltip_text (make ai-settings)"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "389dbf03. state_of precedence table (10 cases), words, ring fraction; badge test 16 ok; ai-settings 81."
+    },
+    {
+      "id": "P3",
+      "description": "Panel rewrite: header switch, provider cards (lamp, capability tiles, masked key, Test/Add/Replace/Remove), spend bar with log ceiling slider and price chips, recent-reply dots, Voices & pictures toggle, lock tooltip; AiSettings pure helpers",
+      "estimated_loc": 480,
+      "dependencies": [
+        "P1"
+      ],
+      "acceptance_criteria": [
+        "AC3: no key -> none lamp, Add key, no Test; saved key -> saved, masked to last 4; Remove deletes the 0600 file (make ai-settings)",
+        "AC4: capability tiles for gemini-only, text-only, openrouter-only, switch off (make ai-settings)",
+        "AC5: slider_to_ceiling(ceiling_to_slider(v)) == v on every 0.01 step 0.05..20, monotonic (make ai-settings)",
+        "AC6: recent dots from this session's usage lines only, newest last, at most 8 (make ai-settings)",
+        "existing AI.9 panel cases and the title-screen Settings path still pass (make ai-settings title-screen-test)"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "7ce38c1d. Panel rewrite, AiSettings helpers (masked_key, log slider, tile_states), AiIcons; panel_v2 + panel tests; ai-settings 99; title-screen-test 111; ui-theme-check strict ok. Found and fixed: the old badge/panel never set StapledonTheme (CanvasLayer), so they drew unthemed in a voyage."
+    },
+    {
+      "id": "P4",
+      "description": "Mutant rows, theme check, tools/ai_panel_capture.gd and make ai-panel-capture, changelog fragment, PR, cross-family evaluation, make publish-dev for Mark",
+      "estimated_loc": 130,
+      "dependencies": [
+        "P2",
+        "P3"
+      ],
+      "acceptance_criteria": [
+        "AC10: four new mutants each fail a named test (make ai-mutants)",
+        "AC11: make ui-theme-check STRICT=1 green",
+        "AC12: git diff --stat origin/main -- sim/ physics/ is empty",
+        "AC13: make ai-panel-capture writes at least 6 renders, opened and inspected",
+        "AC14: dev build published; Mark's OK recorded"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "Mutants: ai-bridge-mutants 59/59 killed (8 new rows: badge precedence, ok clears, slider snap, masked key, tiles switch, check automation guard, timeout kill, parse provider); ai-mutants 60 killed incl. 2 check.ail rows and ai-key-check-mutants 3/3 (body printed, key printed, file written; the plan's 'usage line' mutant is the file-written one). ui-theme-check STRICT ok; sim/ physics/ untouched; make ai-panel-capture 6 frames fit 960x540 (692x401), opened and inspected; round 2 evaluation PASS 80; dev build g0a315767 published; AC14 (Mark's visual OK) follows the merge he asked for ('and merge in the prs')."
+    }
+  ],
+  "evaluations": [
+    {
+      "round": 1,
+      "evaluator": "Codex gpt-6.1-sol",
+      "score": 42,
+      "pass": false,
+      "fixed_in": [
+        "330d489e",
+        "0a315767"
+      ]
+    },
+    {
+      "round": 2,
+      "evaluator": "Codex gpt-6.1-sol",
+      "score": 80,
+      "pass": true,
+      "non_blocking_fixed": [
+        "N6",
+        "N7"
+      ]
+    }
+  ],
+  "dev_build": "g0a315767 (gs://stapledons-voyage-dev-builds/macos/latest.json), 2026-11-09"
+}

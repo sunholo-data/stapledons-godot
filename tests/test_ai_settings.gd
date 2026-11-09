@@ -226,19 +226,117 @@ func test_panel() -> bool:
 	settings_in(d).save_key("openrouter", KEY_O)
 	var a := session_in(d)
 	var ind := a.indicator
-	assert_bool("indicator on its own CanvasLayer: '%s'" % ind.button.text, ind is CanvasLayer and ind.button.text.begins_with("AI: off"))
+	assert_bool("indicator on its own CanvasLayer, off: '%s'" % ind.button.tooltip_text, ind is CanvasLayer and ind.state() == "off" and ind.button.tooltip_text.begins_with("AI: off"))
 	ind.toggle_panel()
 	var p = ind.panel
 	assert_bool("clicking it opens Settings", p != null and p.visible and p.is_inside_tree())
-	assert_bool("panel: key rows, OpenRouter enables text, estimates", p.key_rows["openrouter"]["status"].text.contains("key saved")
-		and p.key_rows["openrouter"]["edit"].placeholder_text.contains("text") and p.info.text.contains("text line"))
+	assert_bool("panel: OpenRouter card says Saved, Gemini card No key; four price chips, the first a line ('%s', '%s', '%s')"
+		% [p.key_rows["openrouter"]["status"].text, p.key_rows["gemini"]["status"].text, p.chips[0].text],
+		p.key_rows["openrouter"]["status"].text == "Saved" and p.key_rows["gemini"]["status"].text == "No key"
+		and p.chips.size() == 4 and p.chips[0].text.begins_with("line"))
+	assert_bool("the switch is enabled with a key, and the header says off", not p.opt_in.disabled and not p.opt_in.button_pressed and p.headline.text.begins_with("Off"))
 	p._on_opt_in(true)
 	a.bridge.live_allowed = false # automation never lets AI_LIVE through
-	assert_bool("ticking it turns live on (OpenRouter text) and saves; no key in the indicator: '%s'" % ind.button.text,
-		a.settings.live_on() and a.bridge.live and a.relay.mode == "live" and ind.button.text.begins_with("AI live") and settings_in(d).opt_in and not has_key(ind.button.text))
+	assert_bool("ticking it turns live on (OpenRouter text) and saves; no key in the indicator: '%s'" % ind.button.tooltip_text,
+		a.settings.live_on() and a.bridge.live and a.relay.mode == "live" and ind.state() == "live" and ind.button.tooltip_text.begins_with("AI live")
+		and settings_in(d).opt_in and not has_key(ind.button.tooltip_text) and not has_key(ind.label_text()))
 	p._on_ceiling(1.0)
 	a.bridge.live_allowed = false
-	assert_bool("the ceiling field reaches the bridge", is_equal_approx(a.bridge.ceiling_usd, 1.0))
+	assert_bool("the ceiling reaches the bridge and the slider ('%s')" % p.ceiling_value.text,
+		is_equal_approx(a.bridge.ceiling_usd, 1.0) and is_equal_approx(p.ceiling.value, AiSettings.ceiling_to_slider(1.0)) and p.ceiling_value.text == "$1.00")
+	p._on_slider(AiSettings.ceiling_to_slider(2.5))
+	a.bridge.live_allowed = false
+	assert_bool("moving the slider sets the ceiling on the 0.01 grid (%.2f)" % a.settings.ceiling_usd, is_equal_approx(a.settings.ceiling_usd, 2.5) and settings_in(d).ceiling_usd == 2.5)
+	return true
+
+
+## R3-AI-PANEL-V2 P3 (AC3-AC6): the helpers, the cards, the tiles, the slider, the dots.
+func test_panel_v2() -> bool:
+	print("P3 panel: masked keys, the log ceiling slider, capability tiles, cards with Test/Add/Remove, reply dots")
+	var d := fresh("panel_v2")
+	var s := settings_in(d)
+	assert_bool("masked key: empty without a key", s.masked_key("gemini") == "")
+	s.save_key("gemini", KEY_G)
+	assert_bool("masked key: the last 4 only ('%s')" % s.masked_key("gemini"), s.masked_key("gemini") == "•••• " + KEY_G.right(4) and not has_key(s.masked_key("gemini")))
+	# AC5: every 0.01 step in 0.05..20 round-trips; the map is monotonic and hits both ends.
+	var bad := 0
+	var v0 := -1.0
+	for i in range(0, 1996):
+		s.set_ceiling(0.05 + i * 0.01)
+		var v := s.ceiling_usd
+		if AiSettings.slider_to_ceiling(AiSettings.ceiling_to_slider(v)) != v or v <= v0:
+			bad += 1
+		v0 = v
+	var mono := true
+	var prev := 0.0
+	for k in range(0, 1001):
+		var c := AiSettings.slider_to_ceiling(k / 1000.0)
+		mono = mono and c >= prev
+		prev = c
+	assert_bool("ceiling slider: 1,996 steps round-trip exactly (%d bad), monotonic, ends 0.05 and 20" % bad,
+		bad == 0 and mono and AiSettings.slider_to_ceiling(0.0) == 0.05 and AiSettings.slider_to_ceiling(1.0) == 20.0
+		and AiSettings.ceiling_to_slider(0.05) == 0.0 and AiSettings.ceiling_to_slider(20.0) == 1.0)
+	# AC4: tiles per key [text, voice, portrait, feed].
+	s.opt_in = true
+	assert_bool("Gemini key, live: 4 bright (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["bright", "bright", "bright", "bright"])
+	s.text_only = true
+	assert_bool("text-only: text bright, 3 dim (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["bright", "dim", "dim", "dim"])
+	s.text_only = false
+	s.opt_in = false
+	assert_bool("switch off: all dim (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["dim", "dim", "dim", "dim"])
+	s.save_key("gemini", "")
+	s.save_key("openrouter", KEY_O)
+	s.opt_in = true
+	assert_bool("OpenRouter only: text bright, 3 faint (%s)" % [s.tile_states("openrouter")], s.tile_states("openrouter") == ["bright", "faint", "faint", "faint"])
+	assert_bool("no Gemini key: its tiles dim where it could serve (%s)" % [s.tile_states("gemini")], s.tile_states("gemini") == ["dim", "dim", "dim", "dim"])
+	s.save_key("openrouter", "")
+	s.opt_in = false
+	s.save_settings()
+	# AC3: the cards, through a session panel.
+	var a := session_in(d)
+	a.bridge.live_allowed = false
+	a.indicator.toggle_panel()
+	var p = a.indicator.panel
+	var g: Dictionary = p.key_rows["gemini"]
+	assert_bool("no key: lamp none, word No key, Add key shown, Test and Remove hidden, the switch disabled",
+		p.card_status("gemini") == "none" and g.status.text == "No key" and g.add.visible and not g.test.visible and not g.remove.visible and p.opt_in.disabled)
+	g.add.pressed.emit()
+	assert_bool("Add key reveals the secret field", g.edit_row.visible and (g.edit as LineEdit).secret)
+	(g.edit as LineEdit).text = KEY_G
+	g.save.pressed.emit()
+	var kp := ProjectSettings.globalize_path(a.settings.key_path("gemini"))
+	assert_bool("Save: 0600 file, field cleared and hidden, card Saved, masked '%s', Test and Replace shown" % g.masked.text,
+		mode_of(kp) == 384 and (g.edit as LineEdit).text == "" and not g.edit_row.visible and g.status.text == "Saved"
+		and g.masked.text.ends_with(KEY_G.right(4)) and not has_key(g.masked.text) and g.test.visible and g.add.text == "Replace")
+	a.key_check.plan_override = {"bin": "/bin/echo", "args": PackedStringArray(['{"check":"gemini","status":"rejected"}'])}
+	g.test.pressed.emit()
+	assert_bool("Test: the card reads Checking at once", g.status.text.begins_with("Checking"))
+	wait_checks(a.key_check, 5000)
+	p.refresh()
+	assert_bool("Test result: Key rejected on the card, and the badge says key problem once live", g.status.text == "Key rejected" and p.card_status("gemini") == "rejected")
+	g.remove.pressed.emit()
+	assert_bool("Remove deletes the key file; the card is back to No key", not FileAccess.file_exists(kp) and g.status.text == "No key" and a.settings.keys_present().is_empty())
+	# AC6: dots from this session's replies, newest last, at most 8.
+	var ind := a.indicator
+	a.bridge.outcome.emit({"req": "first", "kind": "text", "status": "ok"}) # the production signal (round-2 N6)
+	assert_bool("an open panel follows a reply from the bridge's signal, no refresh call (%d dot, '%s')" % [p.dots.get_child_count(), p.last_reply.text],
+		p.dots.get_child_count() == 1 and p.last_reply.text.begins_with("Recent replies"))
+	for i in 10:
+		ind.on_outcome({"req": str(i), "kind": "text", "status": "error" if i == 9 else "ok"})
+	assert_bool("reply dots: the 8 newest of 10, the last one the failure (%s)" % [ind.recent.map(func(r): return r.ok)],
+		ind.recent.size() == 8 and ind.recent[0].req == "2" and not ind.recent[-1].ok and p.dots.get_child_count() == 8)
+	# The evaluation's B4: a key replaced while its check runs never inherits the old key's answer.
+	a.settings.save_key("gemini", KEY_G)
+	a.key_check.plan_override = {"bin": "/bin/echo", "args": PackedStringArray(['{"check":"gemini","status":"ok"}'])}
+	a.key_check.start("gemini", a.settings)
+	a.settings.save_key("gemini", KEY_G + "-new")
+	wait_checks(a.key_check, 5000)
+	assert_bool("key replaced mid-check: the new key reads Saved, not the old key's Working (%s)" % a.key_check.status("gemini", a.settings),
+		a.key_check.status("gemini", a.settings) == "saved")
+	a.settings.save_key("gemini", "")
+	var t := session_in(fresh("panel_v2_text_only"), {"text-only": ""})
+	t.indicator.toggle_panel()
+	assert_bool("--text-only locks the Voices & pictures button off", t.indicator.panel.text_only.disabled and not t.indicator.panel.text_only.button_pressed)
 	return true
 
 
@@ -326,6 +424,147 @@ func test_wired() -> bool:
 	return true
 
 
+## R3-AI-PANEL-V2 P2 (AC1, AC2): the badge's state, its words and its ring.
+func test_badge() -> bool:
+	print("P2 badge: five states in precedence, at most two words beside AI, amounts in the tooltip")
+	# state_of(live_on, budget_hit, fail_streak, rejected, pending)
+	var cases := [
+		[[false, true, 3, true, 1], "off", "off wins over everything"],
+		[[false, false, 0, false, 1], "off", "off while a request is pending"],
+		[[true, true, 0, false, 0], "ceiling", "budget hit"],
+		[[true, true, 3, true, 1], "ceiling", "ceiling over problem and working"],
+		[[true, false, 3, false, 0], "problem", "three failures in a row"],
+		[[true, false, 0, true, 0], "problem", "a rejected key"],
+		[[true, false, 3, false, 2], "problem", "problem over working"],
+		[[true, false, 0, false, 1], "working", "a request in flight"],
+		[[true, false, 2, false, 0], "live", "two failures are not a problem yet"],
+		[[true, false, 0, false, 0], "live", "live and idle"],
+	]
+	for c in cases:
+		var v: Array = c[0]
+		var got := AiIndicator.state_of(v[0], v[1], v[2], v[3], v[4])
+		assert_bool("state_of %s -> %s (%s): %s" % [c[0], c[1], c[2], got], got == c[1])
+	assert_bool("words: problem says key problem for a rejected key and offline otherwise; every word is at most 2 words",
+		AiIndicator.word_of("problem", true) == "key problem" and AiIndicator.word_of("problem", false) == "offline"
+		and ["off", "live", "working", "ceiling"].all(func(st): return AiIndicator.word_of(st, false).split(" ").size() <= 2))
+	var d := fresh("badge")
+	var s := settings_in(d)
+	s.save_key("openrouter", KEY_O)
+	s.opt_in = true
+	s.save_settings()
+	var a := session_in(d)
+	a.bridge.live_allowed = false
+	var ind := a.indicator
+	ind.refresh()
+	var words := ind.label_text().split(" ", false)
+	assert_bool("visible label: AI and at most 2 words ('%s'); the amounts and the ceiling in the tooltip ('%s')" % [ind.label_text(), ind.button.tooltip_text],
+		words[0] == "AI" and words.size() <= 3 and not ind.label_text().contains("$") and ind.button.tooltip_text.contains("of $0.50"))
+	for i in 3:
+		ind.on_outcome({"req": str(i), "status": "error", "code": "provider_error"})
+	assert_bool("three failed replies -> problem, word offline ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI offline")
+	ind.on_outcome({"req": "4", "status": "ok"})
+	assert_bool("one ok reply clears it -> live", ind.state() == "live" and ind.label_text() == "AI live")
+	for i in 3:
+		ind.on_outcome({"type": "cancel", "req": "c%d" % i, "kind": "text", "reason": "timeout" if i < 2 else "service_down"})
+	assert_bool("timeouts and service_down cancels are failures too -> problem, offline ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI offline")
+	ind.on_outcome({"req": "5", "status": "ok"})
+	a.key_check.set_result("openrouter", "rejected", a.settings)
+	ind.refresh()
+	assert_bool("a rejected key check -> problem, word key problem, hollow lamp ('%s')" % ind.label_text(),
+		ind.state() == "problem" and ind.label_text() == "AI key problem" and ind.ring.hollow)
+	a.settings.save_key("openrouter", KEY_O + "-replaced")
+	assert_bool("a replaced key does not inherit the old key's rejection", ind.state() == "live" and a.key_check.status("openrouter", a.settings) == "saved")
+	a.settings.save_key("openrouter", KEY_O)
+	a.key_check.set_result("openrouter", "ok", a.settings)
+	ind.on_outcome({"type": "cancel", "req": "6", "kind": "portrait", "reason": "budget"})
+	assert_bool("a budget cancel -> ceiling: a filled lamp and a full ring even below the line (%.2f)" % ind.ring.fraction,
+		ind.state() == "ceiling" and not ind.ring.hollow and ind.ring.fraction == 1.0 and ind.fail_streak == 0)
+	ind.budget_hit = false
+	ind.usd = {"gemini": 0.0, "openrouter": 0.125}
+	var quarter := ind.fraction()
+	ind.usd["openrouter"] = 9.0
+	assert_bool("the ring is spent over the ceiling: 0.125 of 0.50 -> 0.25 (%.3f); clamped at 1 (%.3f)" % [quarter, ind.fraction()],
+		is_equal_approx(quarter, 0.25) and is_equal_approx(ind.fraction(), 1.0))
+	return true
+
+
+## R3-AI-PANEL-V2 P1 (AC9 and the Godot half of AC7): the key check's plan,
+## its guards, the parse, the async run and the timeout. The provider GETs
+## themselves are `make ai-key-check`; here a real run goes to a closed port.
+func wait_checks(kc: AiKeyCheck, ms: int) -> bool:
+	var end := Time.get_ticks_msec() + ms
+	while Time.get_ticks_msec() < end:
+		kc.poll()
+		if kc.running.is_empty():
+			return true
+		OS.delay_msec(10)
+	return false
+
+
+func test_key_check() -> bool:
+	print("P1 key check: plan, guards, parse, async run, timeout, a real run to a closed port")
+	var d := fresh("key_check")
+	var s := settings_in(d)
+	var kc := AiKeyCheck.new()
+	assert_bool("no key file: no plan, start refused", AiKeyCheck.plan("gemini", "", "ailang", "/r", "/h").is_empty() and not kc.start("gemini", s))
+	s.save_key("gemini", KEY_G)
+	var kf := ProjectSettings.globalize_path(s.key_path("gemini"))
+	var plan := AiKeyCheck.plan("gemini", kf, "/x/ailang", "/r", "/h")
+	var args: PackedStringArray = plan.get("args", PackedStringArray())
+	var cfg = JSON.parse_string(args[args.find("--args-json") + 1]) if args.has("--args-json") else {}
+	assert_bool("plan: env -i, no ADC, ailang check entry, IO,FS,Net only, the provider hosts only, the key as a file path",
+		plan.get("bin") == "/usr/bin/env" and args[0] == "-i" and args.has("GOOGLE_APPLICATION_CREDENTIALS=/nonexistent") and args.has("HOME=/h")
+		and args.has("/x/ailang") and args[args.find("--entry") + 1] == "check" and args[args.find("--caps") + 1] == "IO,FS,Net"
+		and args[args.find("--net-allow-domains") + 1] == AiBridge.LIVE_HOSTS and not args.has("--net-allow-localhost") and args[-1] == "/r/ai/check.ail"
+		and cfg is Dictionary and cfg.get("provider") == "gemini" and cfg.get("key_file") == kf and cfg.get("base") == "" and not has_key(" ".join(args)))
+	var local := AiKeyCheck.plan("gemini", kf, "/x/ailang", "/r", "/h", "http://127.0.0.1:1")
+	assert_bool("a test base allows only localhost over http, never the provider hosts",
+		local["args"].has("--net-allow-localhost") and local["args"].has("--net-allow-http") and not local["args"].has("--net-allow-domains"))
+	assert_bool("an unknown provider gets no plan", AiKeyCheck.plan("other", kf, "/x/ailang", "/r", "/h").is_empty())
+	var auto := settings_in(d, {"capture": true})
+	kc.base = "http://127.0.0.1:1" # round-2 N7: even with the guard mutated away, nothing leaves the machine
+	assert_bool("automation never runs a check", not kc.start("gemini", auto) and kc.running.is_empty())
+	assert_bool("parse: the one line, its provider, a known status; anything else is offline",
+		AiKeyCheck.parse("gemini", '{"check":"gemini","status":"ok"}\n') == "ok"
+		and AiKeyCheck.parse("openrouter", 'noise\n{"check":"openrouter","status":"rejected"}\n') == "rejected"
+		and AiKeyCheck.parse("gemini", '{"check":"openrouter","status":"ok"}') == "offline"
+		and AiKeyCheck.parse("gemini", '{"check":"gemini","status":"great"}') == "offline"
+		and AiKeyCheck.parse("gemini", "") == "offline" and AiKeyCheck.parse("gemini", '{"check":"gemini","status":"no_key"}') == "no_key")
+	var got := []
+	kc.done.connect(func(p, st): got.append([p, st]))
+	kc.plan_override = {"bin": "/bin/echo", "args": PackedStringArray(['{"check":"gemini","status":"ok"}'])}
+	var started := kc.start("gemini", s)
+	assert_bool("a second start while one runs is refused", started and not kc.start("gemini", s) and kc.status("gemini", s) == "checking")
+	var ran := wait_checks(kc, 5000)
+	assert_bool("async run: done(gemini, ok), the result kept for this run (%s)" % [got], ran and got == [["gemini", "ok"]] and kc.status("gemini", s) == "ok")
+	kc.plan_override = {"bin": "/bin/sleep", "args": PackedStringArray(["5"])}
+	kc.timeout_ms = 300
+	var t0 := Time.get_ticks_msec()
+	kc.start("gemini", s)
+	ran = wait_checks(kc, 3000)
+	var took := Time.get_ticks_msec() - t0
+	assert_bool("a hung check is killed at the timeout and reads offline (%d ms)" % took, ran and kc.status("gemini", s) == "offline" and took < 2500)
+	kc.plan_override = {"bin": "/usr/bin/yes", "args": PackedStringArray()}
+	t0 = Time.get_ticks_msec()
+	kc.start("gemini", s)
+	ran = wait_checks(kc, 3000)
+	took = Time.get_ticks_msec() - t0
+	assert_bool("an endless talker is cut at the deadline and its output capped (%d ms, %d bytes)" % [took, kc.last_out.get("gemini", "").length()],
+		ran and kc.status("gemini", s) == "offline" and took < 2500 and kc.last_out.get("gemini", "").length() <= AiKeyCheck.MAX_OUT + AiKeyCheck.READ_CHUNK)
+	kc.plan_override = {}
+	kc.timeout_ms = AiKeyCheck.TIMEOUT_MS
+	kc.base = "http://127.0.0.1:1"
+	kc.start("gemini", s)
+	ran = wait_checks(kc, 20000)
+	assert_bool("a real check through ailang to a closed port prints its offline line: %s" % kc.last_out.get("gemini", "").strip_edges(),
+		ran and kc.status("gemini", s) == "offline" and kc.last_out.get("gemini", "") == '{"check":"gemini","status":"offline"}\n')
+	assert_bool("status without a check: 'saved' with a key, 'none' without", kc.status("openrouter", s) == "none"
+		and AiKeyCheck.new().status("gemini", s) == "saved")
+	s.save_key("gemini", "")
+	assert_bool("removing the key forgets its result", kc.status("gemini", s) == "none")
+	return true
+
+
 ## Runs from the first frame, not _initialize: only then is the root in the
 ## tree, so the indicator and panel get _ready like in the game.
 var _ran := false
@@ -347,7 +586,7 @@ func run_all() -> void:
 		return
 	var tests := ["launch_default"]
 	if not "--launch-default" in OS.get_cmdline_user_args():
-		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired"])
+		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired", "key_check", "badge", "panel_v2"])
 	# --only=name,name runs a subset (tests/ai_settings_mutants.sh uses it).
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
