@@ -81,7 +81,7 @@ The layout follows the mock-up, top to bottom:
    - the key as `•••• •••• ` plus its **last 4 characters** (OQ1), or "no key";
    - buttons **Test** (with a key), **Add key** (without), **Replace** and **Remove**. Add and Replace reveal the secret `LineEdit` inline; Remove deletes the file (`save_key(p, "")`).
 3. **Spend:** "This session $0.034 of $0.50 ceiling", a bar filled to spent ÷ ceiling, and the ceiling as an `HSlider` on a log scale over US$0.05 to 20 that snaps to `AiSettings.set_ceiling()`'s 0.01 steps. The prices become four small chips from `estimates()`. Without a running session (the title screen) the bar reads "no voyage yet" and is empty.
-4. **Recent replies:** up to 8 dots, newest last, from this session's `usage.ndjson` lines (ok = `MINT` check glyph, failed = `CORAL` "!" glyph), and "last reply N s ago". Hidden without a session.
+4. **Recent replies:** up to 8 dots, newest last, from this session's replies, as the bridge reports them (amended in execution: usage lines carry no ok/failed flag). A result is a `MINT` check; an error, a refusal or a cancel (timeout, service down) is a `CORAL` "!" because the ship's own line was used. An open panel follows each reply, and "last reply N s ago". Hidden without a session.
 5. **Footer:** a **Voices & pictures** toggle (the inverse of `text_only`; locked while `--text-only` is set), a lock icon whose tooltip is `AiSettings.WARNING`, and Close.
 
 `AiSettings` gains only pure helpers: `masked_key(p)`, `ceiling_to_slider(v)` / `slider_to_ceiling(t)` (log map, round-trip exact on the 0.01 grid), and `tile_states(p) -> Array` (bright / dim / faint per kind). The panel stays a view over `AiSettings`. Every change still goes through `AiSession.settings_changed()` in a game, or `save_settings()` without one.
@@ -123,7 +123,7 @@ The layout follows the mock-up, top to bottom:
 | AC3 | Panel cards: no key → lamp `none`, **Add key** shown, **Test** hidden; a saved fixture key → `saved` and masked to the last 4; **Remove** deletes the 0600 file | `make ai-settings` |
 | AC4 | Capability tiles: Gemini key only → 4 bright; text-only → text bright, 3 dim; OpenRouter only → text bright, 3 faint; switch off → all dim | `make ai-settings` |
 | AC5 | Ceiling slider: `slider_to_ceiling(ceiling_to_slider(v)) == v` on every 0.01 step in 0.05..20, ends exact, monotonic | `make ai-settings` |
-| AC6 | Recent-reply dots come from this session's usage lines only (an earlier session's lines are not shown), newest last, at most 8 | `make ai-settings` |
+| AC6 | Recent-reply dots come from this session's replies only, newest last, at most 8; an open panel updates as replies arrive | `make ai-settings` |
 | AC7 | Key check against the loopback: 200 → ok, 403/401 → rejected, a closed port → offline, an empty key → no_key (both providers); no file written; the fake keys never appear in stdout or stderr | `make ai-key-check` |
 | AC8 | `ai/check.ail` type-checks, and its classifier (`statusOf(code)`) is tested in AILANG | `make ai-pkg-test` |
 | AC9 | Automation never runs a check (`AiKeyCheck.start()` refuses); no key file or an unknown provider → no plan; a hung check is killed at the deadline | `make ai-settings` |
@@ -148,7 +148,7 @@ Order: P1 → (P2 ∥ P3) → P4. One PR.
 
 - **A check that leaks the key.** The key only ever travels as a file path; the check prints only a status word; AC7 greps every stream for the fake key; AC10 has a mutant that prints the body.
 - **A "free" endpoint that starts billing.** Both are list/metadata GETs that providers don't bill. The check writes no usage line, so it could never count against the ceiling anyway. If a provider ever changed that, the lamp would still be right and the cost would show on the provider's bill, not in-game. Re-check at each provider change.
-- **`problem` false alarms** from one network blip. It needs 3 failed outcomes in a row or an explicit `rejected` check, and the next success clears it.
+- **`problem` false alarms** from one network blip. It needs 3 failed outcomes in a row (an error or a timeout/service-down cancel; a budget refusal is the ceiling, not a failure) or a `rejected` check of the current key, and the next success clears it. A check result belongs to the key it checked (a sha256 fingerprint), so a replaced key never inherits it.
 - **The theme check blocks drawn icons.** Icons draw with theme tokens through `StapledonTheme` constants, the same way `bridge_screens.gd` does; no new hex in `ui/`.
 - **The log slider loses exactness.** The map snaps to the 0.01 grid, and AC5 proves the round trip for every step.
 

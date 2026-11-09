@@ -89,14 +89,14 @@ func shoot(st: String) -> void:
 		stage.add_child(session)
 		await settle()
 		var ind := session.indicator
-		session.key_check.results["gemini"] = {"rejected": "rejected", "offline": "offline"}.get(st, "ok")
+		session.key_check.set_result("gemini", {"rejected": "rejected", "offline": "offline"}.get(st, "ok"), session.settings)
 		var outcomes := ["ok", "ok", "ok", "error", "ok", "ok", "ok", "ok"]
 		if st == "offline":
 			outcomes = ["ok", "ok", "ok", "ok", "ok", "error", "error", "error"]
 		var kinds := ["text", "text", "voice", "text", "portrait", "text", "feed", "text"]
 		for i in outcomes.size():
 			ind.on_outcome({"req": str(i), "kind": kinds[i], "status": outcomes[i], "code": "provider_error" if outcomes[i] == "error" else ""})
-		ind.usd = {"gemini": 0.5 if st == "ceiling" else 0.034, "openrouter": 0.0}
+		ind.usd = {"gemini": 0.47 if st == "ceiling" else 0.034, "openrouter": 0.0} # a refusal comes before the line is crossed
 		ind.budget_hit = st == "ceiling"
 		ind.refresh()
 		ind.toggle_panel()

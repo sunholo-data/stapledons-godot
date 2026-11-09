@@ -313,8 +313,12 @@ func refresh() -> void:
 	if session != null and session.indicator != null:
 		st = session.indicator.state()
 	header_ring.color = AiIndicator.LOOK[st][0]
-	header_ring.hollow = st in ["problem", "ceiling"]
-	header_ring.fraction = session.indicator.fraction() if st != "off" and session != null and session.indicator != null else 0.0
+	header_ring.hollow = st == "problem"
+	header_ring.fraction = 0.0
+	if st == "ceiling":
+		header_ring.fraction = 1.0
+	elif st != "off" and session != null and session.indicator != null:
+		header_ring.fraction = session.indicator.fraction()
 	header_ring.queue_redraw()
 	var rich := not s.effective_text_only()
 	text_only.set_pressed_no_signal(rich)

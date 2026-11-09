@@ -17,14 +17,20 @@ signal done(provider: String, status: String)
 const TIMEOUT_MS := 10000
 const STATUSES := ["ok", "rejected", "offline", "no_key"]
 const READ_CHUNK := 4096
+## The child prints one short line; anything past this is noise and is dropped.
+const MAX_OUT := 4096
 
 var timeout_ms := TIMEOUT_MS
 ## Tests: {"bin", "args"} replaces the real plan; `base` points the real check
 ## at a local server (then only localhost over http is reachable).
 var plan_override: Dictionary = {}
 var base := ""
-## provider -> status of the last finished check this run.
+## provider -> status of the last finished check this run, and the fingerprint
+## of the key it checked: a result only counts while that key is still the key
+## (a key replaced or removed mid-check never inherits the old key's answer).
 var results: Dictionary = {}
+var result_keys: Dictionary = {}
+var _started_keys: Dictionary = {}
 ## provider -> WorkerThreadPool task id while a check runs.
 var running: Dictionary = {}
 ## provider -> the child's last stdout (one status line; never key text, which
@@ -70,7 +76,21 @@ func status(provider: String, s: AiSettings) -> String:
 		return "none"
 	if running.has(provider):
 		return "checking"
-	return results.get(provider, "saved")
+	var r := result(provider, s)
+	return r if r != "" else "saved"
+
+
+## The last result for the key `s` holds now, or "" (none, or it was for another key).
+func result(provider: String, s: AiSettings) -> String:
+	if not results.has(provider) or result_keys.get(provider, "") != s.key_fingerprint(provider):
+		return ""
+	return results[provider]
+
+
+## Tests and the review capture: a result for the current key, as a check would leave it.
+func set_result(provider: String, st: String, s: AiSettings) -> void:
+	results[provider] = st
+	result_keys[provider] = s.key_fingerprint(provider)
 
 
 ## Start a check; false when one is running, there is no key, or this is an
@@ -83,6 +103,7 @@ func start(provider: String, s: AiSettings) -> bool:
 		p = _real_plan(provider, s)
 	if p.is_empty():
 		return false
+	_started_keys[provider] = s.key_fingerprint(provider)
 	var argv := AiBridge.scrubbed(p)
 	var shell := AiBridge.scrub_shell()
 	var limit := timeout_ms
@@ -115,18 +136,19 @@ func _run(provider: String, shell: String, argv: PackedStringArray, limit: int) 
 	var status := ""
 	while true:
 		var chunk := pipe.get_buffer(READ_CHUNK)
-		if not chunk.is_empty():
+		if out.size() < MAX_OUT:
 			out.append_array(chunk)
-			continue
 		err.get_buffer(READ_CHUNK) # drained and dropped: it never reaches a log
-		if not OS.is_process_running(pid):
-			out.append_array(pipe.get_buffer(READ_CHUNK))
+		if chunk.is_empty() and not OS.is_process_running(pid):
+			if out.size() < MAX_OUT:
+				out.append_array(pipe.get_buffer(READ_CHUNK))
 			break
 		if Time.get_ticks_msec() > deadline:
 			OS.kill(pid)
 			status = "offline"
 			break
-		OS.delay_msec(20)
+		if chunk.is_empty():
+			OS.delay_msec(20)
 	pipe.close()
 	err.close()
 	var text := out.get_string_from_utf8()
@@ -153,5 +175,6 @@ func poll() -> void:
 			WorkerThreadPool.wait_for_task_completion(running[provider])
 			running.erase(provider)
 		results[provider] = f[1]
+		result_keys[provider] = _started_keys.get(provider, "")
 		last_out[provider] = f[2]
 		done.emit(provider, f[1])

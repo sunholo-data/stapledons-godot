@@ -2,7 +2,7 @@
 
 **Design doc:** [ai-panel-v2.md](ai-panel-v2.md). **Sprint JSON:** `.ailang/state/sprints/sprint_R3-AI-PANEL-V2.json`.
 **Branch:** `feat/ai-panel-v2` (clone `~/dev/sunholo-data/stapledons-godot-ai-panel`, from main `13bc0766`).
-**Approval:** the visual concept was approved by Mark on 2026-11-09 (attended). **This plan waits for Mark's approval before execution.** The visual landing needs Mark's OK on a dev build (merge rule 4).
+**Approval:** the visual concept and this plan were approved by Mark on 2026-11-09 (attended: "yep build it please", OQ1–OQ3 defaults; then "and merge in the prs"). PR [#414](https://github.com/sunholo-data/stapledons-godot/pull/414). Dev build `g659369e3` published 2026-11-09.
 **Duration:** one to two working sessions (~1,050 LOC). **Risk:** low to medium (UI rewrite over unchanged rules; one new AILANG entry that touches the network).
 
 ## Analysis
@@ -18,10 +18,12 @@
 ## Milestones
 
 ### P0: plan and baseline (docs)
+- **Done** (ac082cc5).
 - Design doc, this plan, the JSON; the baseline counts above.
 - **Acceptance:** files exist; baseline recorded in the JSON.
 
 ### P1: the key check (~230 LOC: 90 code, 140 tests)
+- **Done** (c0f2aa0a).
 - Tests first:
   - `statusOf` inline tests in `ai/check.ail`;
   - in `tests/fixtures/ai_loopback.py`, the GET routes `/v1beta/models` and `/api/v1/key`, answering 200 for the good fake key, 403/401 for the bad one, and a closed port for offline;
@@ -33,11 +35,13 @@
 - **Acceptance (AC7, AC8, AC9):** `make ai-key-check ai-pkg-test ai-live-guard ai-settings` green.
 
 ### P2: the badge (~210 LOC: 130 code, 80 tests)
+- **Done** (389dbf03).
 - Tests first: `state_of` table (10 cases, the precedence of design §V1); the label is at most 2 words beside "AI"; the tooltip carries the per-provider and total amounts that `text()` shows today; a `budget` outcome → `ceiling`; 3 failed outcomes → `problem`, and one ok clears it; a `rejected` check → `problem`.
 - Then: `ui/ai_indicator.gd`, a drawn pill (`_draw`: ring arc for spent ÷ ceiling, lamp, "AI", the state word, 1 Hz pulse while `working`) on a `Button` kept for focus and click; colours from `StapledonTheme` (`DIM`, `MINT`, `TEAL_LIGHT`, `CORAL`).
 - **Acceptance (AC1, AC2):** `make ai-settings` green.
 
 ### P3: the panel (~480 LOC: 330 code, 150 tests)
+- **Done** (7ce38c1d).
 - Tests first:
   - `AiSettings.masked_key`;
   - `ceiling_to_slider` / `slider_to_ceiling` round trip on every 0.01 step from 0.05 to 20;
@@ -49,6 +53,7 @@
 - **Acceptance (AC3–AC6):** `make ai-settings` green; the title screen's Settings path (`tests/test_title_screen.gd`) still opens the panel: `make title-screen-test`.
 
 ### P4: theme, mutants, capture, review (~130 LOC: 70 code, 60 tests)
+- **Done** (9b6b632d, 330d489e); evaluation round 1 (Codex) FAIL 42, fixes in round 2.
 - Mutant rows in `mk/ai.mk`:
   - the check writes a usage line;
   - the check prints the response body;

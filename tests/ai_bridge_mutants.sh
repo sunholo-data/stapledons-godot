@@ -102,6 +102,11 @@ ui/settings/ai_settings.gd	elif live_on() and AiRelay.route_in(rt, kind, have, e
 bridge/ai_key_check.gd	if s.automation or running.has(provider)	if running.has(provider)	key_check	automation never runs a check
 bridge/ai_key_check.gd	OS.kill(pid)\n\t\t\tstatus = "offline"\n\t\t\tbreak	pass	key_check	a hung check is killed at the timeout
 bridge/ai_key_check.gd	if j is Dictionary and j.get("check") == provider and	if j is Dictionary and	key_check	parse: the one line, its provider
+bridge/ai_key_check.gd	\t\tif out.size() < MAX_OUT:\n\t\t\tout.append_array(chunk)	\t\tif true:\n\t\t\tout.append_array(chunk)	key_check	an endless talker is cut at the deadline and its output capped
+bridge/ai_key_check.gd	or result_keys.get(provider, "") != s.key_fingerprint(provider)	or false	panel_v2	key replaced mid-check
+ui/ai_indicator.gd	elif not budget and (o.get("status") == "error" or o.get("type") == "cancel"):	elif not budget and o.get("status") == "error":	badge	cancels are failures too
+ui/ai_indicator.gd	if panel != null and panel.visible:\n\t\tpanel.refresh()	if false:\n\t\tpanel.refresh()	panel_v2	an open panel follows a reply
+ui/ai_indicator.gd	ring.fraction = 1.0 if st == "ceiling" else	ring.fraction = 0.5 if st == "ceiling" else	badge	a full ring even below the line
 EOF
 while IFS="$TAB" read -r src from to only want; do
 	[ -z "$src" ] && continue

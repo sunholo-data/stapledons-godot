@@ -167,13 +167,23 @@ func live_kinds() -> Array:
 const TILE_KINDS := ["text", "voice", "portrait", "feed"]
 
 
+func _key_text(p: String) -> String:
+	match key_source(p):
+		"env": return OS.get_environment(KEY_ENV[p]).strip_edges()
+		"file": return FileAccess.get_file_as_string(key_path(p)).strip_edges()
+	return ""
+
+
 ## A saved key shown by its last 4 characters only (design OQ1); "" without one.
 func masked_key(p: String) -> String:
-	var k := ""
-	match key_source(p):
-		"env": k = OS.get_environment(KEY_ENV[p]).strip_edges()
-		"file": k = FileAccess.get_file_as_string(key_path(p)).strip_edges()
+	var k := _key_text(p)
 	return "" if k == "" else "•••• " + k.right(4)
+
+
+## sha256 of the key (never the key): which key a check result belongs to; "" without one.
+func key_fingerprint(p: String) -> String:
+	var k := _key_text(p)
+	return "" if k == "" else k.sha256_text()
 
 
 ## The ceiling slider is logarithmic over CEILING_MIN..CEILING_MAX (0..1), so

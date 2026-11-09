@@ -17,7 +17,7 @@ const FAIL_LIMIT := 3
 ## Reply dots the panel shows.
 const RECENT := 8
 ## state -> [lamp colour, the label variation of its word]; colour is never the only
-## carrier: every state has its word, and problem/ceiling lamps are hollow.
+## carrier: every state has its word, the problem lamp is hollow and the ceiling ring full.
 const LOOK := {
 	"off": [StapledonTheme.DIM, "HUDHint"],
 	"live": [StapledonTheme.MINT, "HUDOk"],
@@ -137,12 +137,13 @@ func on_outcome(o: Dictionary) -> void:
 	recent.append({"req": str(o.get("req", "")), "kind": str(o.get("kind", "")), "ok": o.get("status") == "ok", "t": Time.get_ticks_msec()})
 	if recent.size() > RECENT:
 		recent = recent.slice(recent.size() - RECENT)
-	if o.get("code") == "budget":
+	var budget: bool = o.get("code") == "budget" or o.get("reason") == "budget"
+	if budget:
 		budget_hit = true
 	if o.get("status") == "ok":
 		fail_streak = 0
-	elif o.get("status") == "error" and o.get("code") != "budget":
-		fail_streak += 1
+	elif not budget and (o.get("status") == "error" or o.get("type") == "cancel"):
+		fail_streak += 1 # a refusal, a timeout or the service down: the ship's own line was used
 	_read_usage()
 	refresh()
 
@@ -161,7 +162,7 @@ func fraction() -> float:
 func rejected() -> bool:
 	if session == null or session.key_check == null:
 		return false
-	return session.settings.keys_present().any(func(p): return session.key_check.results.get(p) == "rejected")
+	return session.settings.keys_present().any(func(p): return session.key_check.result(p, session.settings) == "rejected")
 
 
 func state() -> String:
@@ -196,10 +197,12 @@ func refresh() -> void:
 	word.text = word_of(st, rejected())
 	word.theme_type_variation = LOOK[st][1]
 	ring.color = LOOK[st][0]
-	ring.hollow = st in ["problem", "ceiling"]
-	ring.fraction = fraction() if st != "off" else 0.0
+	ring.hollow = st == "problem"
+	ring.fraction = 1.0 if st == "ceiling" else (fraction() if st != "off" else 0.0)
 	ring.queue_redraw()
 	button.tooltip_text = text() + "\nClick for AI settings"
+	if panel != null and panel.visible:
+		panel.refresh() # an open panel follows the replies, the spend and the state
 
 
 func toggle_panel() -> void:

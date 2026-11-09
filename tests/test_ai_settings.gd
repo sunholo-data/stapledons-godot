@@ -318,11 +318,21 @@ func test_panel_v2() -> bool:
 	assert_bool("Remove deletes the key file; the card is back to No key", not FileAccess.file_exists(kp) and g.status.text == "No key" and a.settings.keys_present().is_empty())
 	# AC6: dots from this session's replies, newest last, at most 8.
 	var ind := a.indicator
+	ind.on_outcome({"req": "first", "kind": "text", "status": "ok"})
+	assert_bool("an open panel follows a reply without a refresh call (%d dot)" % p.dots.get_child_count(), p.dots.get_child_count() == 1)
 	for i in 10:
 		ind.on_outcome({"req": str(i), "kind": "text", "status": "error" if i == 9 else "ok"})
-	p.refresh()
 	assert_bool("reply dots: the 8 newest of 10, the last one the failure (%s)" % [ind.recent.map(func(r): return r.ok)],
 		ind.recent.size() == 8 and ind.recent[0].req == "2" and not ind.recent[-1].ok and p.dots.get_child_count() == 8)
+	# The evaluation's B4: a key replaced while its check runs never inherits the old key's answer.
+	a.settings.save_key("gemini", KEY_G)
+	a.key_check.plan_override = {"bin": "/bin/echo", "args": PackedStringArray(['{"check":"gemini","status":"ok"}'])}
+	a.key_check.start("gemini", a.settings)
+	a.settings.save_key("gemini", KEY_G + "-new")
+	wait_checks(a.key_check, 5000)
+	assert_bool("key replaced mid-check: the new key reads Saved, not the old key's Working (%s)" % a.key_check.status("gemini", a.settings),
+		a.key_check.status("gemini", a.settings) == "saved")
+	a.settings.save_key("gemini", "")
 	var t := session_in(fresh("panel_v2_text_only"), {"text-only": ""})
 	t.indicator.toggle_panel()
 	assert_bool("--text-only locks the Voices & pictures button off", t.indicator.panel.text_only.disabled and not t.indicator.panel.text_only.button_pressed)
@@ -453,10 +463,22 @@ func test_badge() -> bool:
 	assert_bool("three failed replies -> problem, word offline ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI offline")
 	ind.on_outcome({"req": "4", "status": "ok"})
 	assert_bool("one ok reply clears it -> live", ind.state() == "live" and ind.label_text() == "AI live")
-	a.key_check.results["openrouter"] = "rejected"
+	for i in 3:
+		ind.on_outcome({"type": "cancel", "req": "c%d" % i, "kind": "text", "reason": "timeout" if i < 2 else "service_down"})
+	assert_bool("timeouts and service_down cancels are failures too -> problem, offline ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI offline")
+	ind.on_outcome({"req": "5", "status": "ok"})
+	a.key_check.set_result("openrouter", "rejected", a.settings)
 	ind.refresh()
-	assert_bool("a rejected key check -> problem, word key problem ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI key problem")
-	a.key_check.results["openrouter"] = "ok"
+	assert_bool("a rejected key check -> problem, word key problem, hollow lamp ('%s')" % ind.label_text(),
+		ind.state() == "problem" and ind.label_text() == "AI key problem" and ind.ring.hollow)
+	a.settings.save_key("openrouter", KEY_O + "-replaced")
+	assert_bool("a replaced key does not inherit the old key's rejection", ind.state() == "live" and a.key_check.status("openrouter", a.settings) == "saved")
+	a.settings.save_key("openrouter", KEY_O)
+	a.key_check.set_result("openrouter", "ok", a.settings)
+	ind.on_outcome({"type": "cancel", "req": "6", "kind": "portrait", "reason": "budget"})
+	assert_bool("a budget cancel -> ceiling: a filled lamp and a full ring even below the line (%.2f)" % ind.ring.fraction,
+		ind.state() == "ceiling" and not ind.ring.hollow and ind.ring.fraction == 1.0 and ind.fail_streak == 0)
+	ind.budget_hit = false
 	ind.usd = {"gemini": 0.0, "openrouter": 0.125}
 	var quarter := ind.fraction()
 	ind.usd["openrouter"] = 9.0
@@ -520,6 +542,13 @@ func test_key_check() -> bool:
 	ran = wait_checks(kc, 3000)
 	var took := Time.get_ticks_msec() - t0
 	assert_bool("a hung check is killed at the timeout and reads offline (%d ms)" % took, ran and kc.status("gemini", s) == "offline" and took < 2500)
+	kc.plan_override = {"bin": "/usr/bin/yes", "args": PackedStringArray()}
+	t0 = Time.get_ticks_msec()
+	kc.start("gemini", s)
+	ran = wait_checks(kc, 3000)
+	took = Time.get_ticks_msec() - t0
+	assert_bool("an endless talker is cut at the deadline and its output capped (%d ms, %d bytes)" % [took, kc.last_out.get("gemini", "").length()],
+		ran and kc.status("gemini", s) == "offline" and took < 2500 and kc.last_out.get("gemini", "").length() <= AiKeyCheck.MAX_OUT + AiKeyCheck.READ_CHUNK)
 	kc.plan_override = {}
 	kc.timeout_ms = AiKeyCheck.TIMEOUT_MS
 	kc.base = "http://127.0.0.1:1"
