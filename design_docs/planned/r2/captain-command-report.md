@@ -1,0 +1,49 @@
+# Captain command: local execution checkpoint, 2026-11-09
+
+**Not landed.** Mark approved the sprint in this attended session (“yep go”). The chair command screen is implemented locally; GPU captures, independent evaluation, fast CI and Mark's visual acceptance are tracked separately. No full-suite or final clipping-fix claim.
+
+## Result
+
+- The seated chair hosts the existing Navigation, Voyage, Crew, Comms and Archive controls. A persistent summary and crew-attention links connect the systems. Switching tabs reuses persistent panels, cancels armed decisions and preserves queued requests.
+- Physical desk access keeps its reach/approach rules. Chair authority requires a seated captain at the actual chair, and ends immediately when standing or leaving the bridge.
+- Walk to includes the chair and sits on arrival. E opens/reopens command, Esc unwinds nested interactions then closes it, and Stand up returns to exploration. Ctrl+Tab and shoulder buttons switch systems.
+- The actual cushion/guide measurement supplies a contact candidate and the chair's real 20-degree facing. The painted billboard has a different nominal seat height from the furniture: the 12-frame Bow/Astern baseline/candidate capture must be reviewed before calling clipping fixed. [Measured evidence](../../../art/captain-command/chair-contact.json).
+- The original crew call fits at 960×540; chair-only Archive reading viewports scroll real news and long answers without replacing the underlying readers. Physical visits restore original parents/layout.
+
+## Evidence
+
+Runtime: released AILANG **v0.56.1** (`05c860a`), staged at `/tmp/stapledon-ailang-v0561/ailang`. The stale bundled runtime and development PATH binary were not used for acceptance.
+
+| Check | Result | Log |
+|---|---|---|
+| `captain-command-test` | 33 passed, 0 failures | `.godot/tmp/captain-command-test.log` |
+| `captain-command-contact-test` | 15 passed, 0 failures | `.godot/tmp/captain-command-contact-test.log` |
+| `captain-chair-test` | 15 passed, 0 failures | `.godot/tmp/captain-chair-test.log` |
+| `captain-anim-test` | 87 passed, 0 failures | `.godot/tmp/captain-anim-test.log` |
+| `captain-command-parity-test` | 52 passed, 0 failures | `.godot/tmp/captain-command-parity-test.log` |
+| `captain-command-layout-test` | 18 system/resolution cases, 0 failures | `.godot/tmp/captain-command-layout-test.log`; `renders/captain_command/layout.json` (geometry only) |
+| `chair-reading-viewport-test` | 14 passed, 0 failures | `.godot/tmp/chair-reading-viewport-test.log` |
+| `captain-command-guided-test` | 10 passed, 0 failures; actual guided crossing review, crew link and Brake from the seat | `.godot/tmp/captain-command-guided-test.log` |
+| `ship-console-test`, `ship-ui-test` | 136 and 288 passed respectively, 0 failures | `.godot/tmp/ship-consoles.log`; `.godot/tmp/ship-ui.log` |
+| `comms-station-test`, `comms-history-test` | 42 and 37 passed respectively, 0 failures | `.godot/tmp/comms-station.log`; `.godot/tmp/comms-history.log` |
+| `no-twitch-test` | 41 passed, 0 failures | `.godot/tmp/no-twitch.log` |
+| `script-gate-lint`, `ui-theme-check`, `uid-guard`, `audio-silent-guard`, `python-guard` | passed, including theme negative controls | `/tmp/stapledon-command-policy.log` |
+
+The real chair and station journeys each fly **1,202 ticks**, with **1,207 recorded input rows**. Their input journals match byte for byte, including dtau, and their authoritative worlds match. The same harness exercises actual crew offers, answers a real seeded concern while the panel is hidden, revisits the same crew instance, and retains an Archive answer. A separate actual orders crew produces a hold; the overview's alert opens that actor and the existing crew confirmations resume the hold from the chair.
+
+The first sandboxed console baseline could not write its user-data recording/offline stub cache. A normal user-data run isolated one intentional copy change (the old onboarding assertion still expected “Voyage console” in the hint); that assertion now checks the new chair direction. The final console/comms/no-twitch regressions pass with normal Godot user-data access, as listed above. The guided review uses the existing CrossingReview in the Voyage tab; its crew route keeps the captain seated and its original Brake continues the same interlude.
+
+Inherited baseline: `bridge-operator-test` still reports **30 passed / 14 failures**, the recorded D-148 desk-placement regression, with no changed assertion. Chair work does not resolve that decision or turn the nightly green.
+
+## Remaining acceptance
+
+The GPU was occupied at the initial contact survey. It was idle at the publication preflight, so the bounded `make captain-command-capture captain-chair-contact-capture` ran: 18 UI frames and 12 baseline/candidate chair frames, with no script errors. The contact sheet and UI frames have been opened. A capture-only logical/physical pixel mismatch was corrected before the final UI captures. Mark's visual review still decides whether the seated fit is acceptable; the headless contact model alone is not a clipping verdict. No broad golden or quiet-host wait ran; no SR/GR shader or package formula changed.
+
+Independent cross-family review: **Claude Sonnet 4.6, 86/100 checkpoint PASS**, [verbatim report](../../../.ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_1.json). No blocking code issue; landing_ready is false. Mark authorized the draft PR and private macOS dev build in this attended session on 2026-11-09 (“yep let me play it”). Fast CI/PR landing and Mark's review remain pending; do not mark the sprint complete or move these docs to implemented yet.
+
+## Evaluation response
+
+- The judge read the sprint JSON/report before the executor's final progress/results update. The current JSON records C2's completed headless acceptance and all test evidence; the report now includes every final regression result. C1 and C3 remain incomplete because their approved visual/landing criteria remain unmet. The suggestion to mark the whole sprint completed is deliberately not applied: that would contradict the approved plan and CLAUDE.md's definition of done. The original 86-point report is retained unchanged.
+- The chair's five-centimetre authority threshold is retained and documented: the presentation-only seated avatar is frozen, and no sim integration drifts it. Repeated real journeys preserved authority; a larger threshold is not needed to cover float32 rounding.
+- The optional destroyed-parent reading-wrapper cleanup suggestion is retained as a low-priority lifecycle follow-up. In the installed ownership tree the original parent also owns the wrapper and frees it with its reader. No abandoned wrapper was reproduced by the repeated restore/re-wrap test. This is not counted as a new pass or a silently applied fix.
+- Companion canon clarification and GPU/dev-build/CI acceptance remain explicit landing work, not claims made by this local checkpoint.

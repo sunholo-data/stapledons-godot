@@ -32,6 +32,7 @@ include mk/home-tiers.mk
 include mk/deck-layout.mk
 include mk/sound.mk
 include mk/captain-anim.mk
+include mk/captain-command.mk
 include mk/style.mk
 include mk/star-surfaces.mk
 include mk/levels.mk

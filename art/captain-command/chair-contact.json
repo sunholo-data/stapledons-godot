@@ -1,0 +1,20 @@
+{
+  "schema": "stapledons.chair-contact-evidence/1",
+  "measured_utc": "2026-11-09",
+  "visual_acceptance": "pending; GPU 99 percent occupied by ollama at measurement",
+  "geometry_source": "assets/ship_demo/bridge_props.glb",
+  "geometry_sha256": "8336c040abf4be1f859c79acbe5051ab47a87a44847f0f39d38e75c302b45cb6",
+  "guide_source": "art/captain-anim-v4/char_captain_pose_guides_v4.py.txt:53-58",
+  "guide_pelvis_stern_m": 0.28,
+  "guide_nominal_seat_height_m": 0.46,
+  "chair_origin_ship_xyz_m": [-2.59888935089111, 82.0, -12.2266912460327],
+  "seat_top_ship_xyz_m": [-2.62990617752075, 82.5982818603516, -12.3119087219238],
+  "candidate_foot_ship_xyz_m": [-2.72567176818848, 82.0, -12.5750226974487],
+  "forward_ship_xyz": [-0.342020124197006, 0.0, -0.939692676067352],
+  "cushion_local_size_m": [0.789674282073975, 0.106566786766052, 0.671223163604736],
+  "candidate_delta_ship_xyz_m": [-0.126782417297363, 0.0, -0.348331451416016],
+  "root_rule": "project cushion centre onto chair base/deck and add guide foot-to-pelvis separation along physical chair forward; keep soles on deck",
+  "limitation": "The painted pose is a flat billboard; matching the physical rig root does not prove painted knees, coat or torso clear the chair. Compare baseline/candidate Bow and Astern frames using tools/captain_chair_capture.gd before visual acceptance. Actual cushion top is about 0.138 m above the pose guide's nominal seat height. No blind vertical lift is applied.",
+  "render_command": "godot --audio-driver Dummy --path . --resolution 1280x720 --script tools/captain_chair_capture.gd -- --out=res://renders/captain_command/chair",
+  "metrics_command": "godot --headless --path . --script tools/captain_chair_capture.gd -- --metrics --out=/tmp/stapledon-chair-contact-evidence"
+}

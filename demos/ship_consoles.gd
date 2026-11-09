@@ -46,13 +46,15 @@ const ACTIONS := {
 	"archive": ["open", "news", "log", "ask", "codex"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console. R1-ARCHIVE-VOICE: ask the Archive; codex returns to the entries
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
-const HINT := "Decisions are made at the bridge consoles: the Voyage console begins the guided voyage, the navigation station plots a course. Tab · Walk to."
+const HINT := "Run the ship from the captain's chair, or use the individual bridge consoles. Tab · Walk to."
 
 var demo: Node
 var now_s := 0.0
 var stations := {} # id -> {id, name, active, meshes: [{name, node, origin, box, use}], use, path_len}
 var mesh_station := {} # mesh name -> station id
 var focused := ""
+var interaction_origin := "station" # D-149: chair authority is separate from the active system.
+var command: CaptainCommand
 var focus_mesh := ""
 var used_once := false
 var confirm_mode := "hold"
@@ -78,6 +80,7 @@ var answer_text: Label
 var panel := PanelContainer.new()
 var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
+var body_scroll := ScrollContainer.new()
 ## R2-CREW C6, R2-CREW-CONSOLE-V2 V3: the Crew console (only while a crew is aboard, protocol 2.11):
 ## the roster board and the two-panel call (ui/crew_console.gd). It persists across refreshes, so a
 ## pending confirm and an open call survive them.
@@ -120,6 +123,9 @@ func setup(owner_demo: Node) -> void:
 				st.use = use
 		stations[id] = st
 	_build_panel()
+	command = CaptainCommand.new(self)
+	panel_layer.add_child(command)
+	panel.move_to_front() # system content above the shell, confined to its content rectangle
 	_build_screens()
 
 
@@ -204,11 +210,14 @@ func e_target() -> Dictionary:
 
 
 func press_e() -> bool:
+	if command.visible:
+		command.close()
+		return true
 	if focused != "":
 		leave()
 		return true
 	if demo.has_method("seated") and demo.seated():
-		return demo.stand_chair()
+		return command.open()
 	var t := e_target()
 	if t.is_empty():
 		return false
@@ -220,11 +229,14 @@ func press_e() -> bool:
 
 
 func prompt_text() -> String:
+	if command.visible:
+		return "Captain's chair · Esc close · Ctrl+Tab or shoulder buttons change system"
 	if focused != "":
 		return "%s · E or Esc steps back" % stations[focused].name
 	if demo.has_method("seated") and demo.seated():
-		return "Captain's chair · E or a move key stands"
+		return "Captain's chair · E command · a move key stands"
 	if not walk_target.is_empty():
+		if walk_target == "chair": return "Walking to the captain's chair · WASD takes over"
 		if walk_target.begins_with("point:"):
 			return "Walking to the %s · WASD takes over" % walk_target.trim_prefix("point:")
 		return "Walking to the %s · WASD takes over" % stations[walk_target].name if stations.has(walk_target) else "Walking to the lift · WASD takes over"
@@ -250,6 +262,9 @@ func prompt_text() -> String:
 ## The single decision entry (player panels, tests, the M4.5 bot). Returns true when the
 ## action ran; a refusal says why on the HUD's refusal card.
 func use(id: String, action: String, arg: Variant = null) -> bool:
+	if interaction_origin == "chair" and not command.authorized():
+		command.close()
+		return false
 	if not stations.has(id):
 		return false
 	var st: Dictionary = stations[id]
@@ -259,6 +274,8 @@ func use(id: String, action: String, arg: Variant = null) -> bool:
 	if not ACTIONS[id].has(action):
 		return false
 	if action == "open":
+		if command.visible and command.authorized():
+			return command.select_system(id)
 		if focused == id:
 			return true
 		if not focused.is_empty(): # another station's panel closes first (the bot can switch)
@@ -425,6 +442,7 @@ func _mesh(mesh_name: String) -> Dictionary:
 
 
 func focus(id: String, mesh_name := "") -> void:
+	interaction_origin = "station"
 	cancel_walk()
 	if mesh_name.is_empty():
 		var best := INF
@@ -449,6 +467,9 @@ func focus(id: String, mesh_name := "") -> void:
 
 ## Step back: the camera eases back to the remembered level and sector view; the panel closes.
 func leave() -> void:
+	if command.visible:
+		command.close()
+		return
 	if focused.is_empty():
 		return
 	var id := focused
@@ -461,6 +482,33 @@ func leave() -> void:
 	demo.director.restore()
 
 
+## D-149: a seated command origin hosts the same panel/handlers without desk reach or dolly.
+func open_chair_system(id: String) -> void:
+	if not command.visible or not command.authorized() or not ACTIONS.has(id): return
+	interaction_origin = "chair"
+	focused = id
+	focus_mesh = ""
+	_open_panel(id)
+
+
+func close_chair_system() -> void:
+	_cancel_confirm()
+	if demo.crossing_review != null:
+		demo.crossing_review.armed = false
+		demo.crossing_review._resume_text()
+	if demo.journey_map != null:
+		demo.journey_map.disarm()
+		demo.journey_map.release_commit()
+		demo.journey_map.close_commit_dialog()
+	if crew_console != null and crew_console.armed != "":
+		crew_console.armed = ""
+		crew_console._build()
+	if focused != "":
+		var was := focused
+		focused = ""
+		_close_panel(was)
+
+
 func dolly_active() -> bool:
 	return demo.director.blending()
 
@@ -470,7 +518,7 @@ func dolly_active() -> bool:
 ## Walk to a station's use point along WalkArea.path (WALK_SPEED_MPS, the WASD speed). From the
 ## lower deck it walks to the lift landing and says decisions need the bridge.
 func walk_to(id: String) -> bool:
-	if not stations.has(id) or not focused.is_empty() or demo.lift.travelling():
+	if (not stations.has(id) and id != "chair") or not focused.is_empty() or demo.lift.travelling() or demo.seated():
 		return false
 	cancel_walk()
 	var target: Vector3
@@ -480,12 +528,12 @@ func walk_to(id: String) -> bool:
 		walk_target = "lift"
 		demo.note("Decisions are made on the bridge: take the lift (E at the landing).")
 	else:
-		target = stations[id].use
+		target = demo.walk_bridge.closest_walkable(demo.chair_seat() - demo.chair_facing(), 3.) if id == "chair" else stations[id].use
 		walk_target = id
 	walking = demo.walk.path(demo.avatar_pos, target)
 	if walking.is_empty():
 		walk_target = ""
-		demo.refuse("No walkable path to the %s from here." % stations[id].name)
+		demo.refuse("No walkable path to the %s from here." % ("captain's chair" if id == "chair" else stations[id].name))
 		return false
 	demo.camera_mode = "player"
 	return true
@@ -494,7 +542,7 @@ func walk_to(id: String) -> bool:
 ## R2-CAMERA C2: walk to a point on the bridge (a sky view's anchor), same path and speed; WASD
 ## takes over. The walk target reads "point:<label>".
 func walk_to_point(target: Vector3, label: String) -> bool:
-	if not focused.is_empty() or demo.lift.travelling() or demo.active_level != 0:
+	if not focused.is_empty() or demo.lift.travelling() or demo.active_level != 0 or demo.seated():
 		return false
 	cancel_walk()
 	walking = demo.walk.path(demo.avatar_pos, target)
@@ -512,6 +560,9 @@ func cancel_walk() -> void:
 
 
 func _advance_walk(dt: float) -> void:
+	if demo.seated():
+		cancel_walk()
+		return
 	if walking.is_empty():
 		return
 	var budget := WALK_SPEED_MPS * dt
@@ -539,6 +590,7 @@ func _advance_walk(dt: float) -> void:
 		var open_after_walk := _open_on_arrival == id and not id.is_empty()
 		walk_target = ""
 		_open_on_arrival = ""
+		if id == "chair": demo.sit_chair()
 		if stations.has(id):
 			face(id)
 			if open_after_walk:
@@ -583,7 +635,7 @@ func station_at(canvas_point: Vector2) -> String:
 
 ## A click: use the console in reach, else walk to it.
 func click(canvas_point: Vector2) -> bool:
-	if not focused.is_empty() or demo.active_level != 0:
+	if not focused.is_empty() or demo.active_level != 0 or demo.seated():
 		return false
 	var id := station_at(canvas_point)
 	if id.is_empty():
@@ -676,6 +728,20 @@ func escape() -> bool:
 	if confirm_armed():
 		_cancel_confirm()
 		return true
+	if command.visible:
+		if focused == "crew" and crew_console != null:
+			var back := InputEventKey.new()
+			back.physical_keycode = KEY_ESCAPE; back.pressed = true
+			if crew_console.key(back): return true
+		if focused == "archive" and news_panel != null:
+			if news_panel.visible or legacy_screen.visible or answer_panel.visible:
+				news_panel.close(); legacy_screen.visible = false; answer_panel.visible = false
+				return true
+		if focused == "navigation" and demo.journey_map != null and demo.journey_map.dialog.visible:
+			demo.journey_map.close_commit_dialog()
+			return true
+		command.close()
+		return true
 	if not focused.is_empty():
 		leave()
 		return true
@@ -687,6 +753,7 @@ func escape() -> bool:
 func advance(dt: float) -> void:
 	dt = maxf(dt, 0.0)
 	now_s += dt
+	command.advance()
 	if archive_ask.check_timeout():
 		_show_answer()
 	_advance_walk(dt)
@@ -893,12 +960,18 @@ func _build_panel() -> void:
 	head.add_child(step_back)
 	panel_body.add_theme_constant_override("separation", 6)
 	panel_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(panel_body)
+	panel_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(body_scroll)
+	body_scroll.add_child(panel_body)
 
 
 ## The panel's rect: below the status strip, left of the card column, above the prompt.
 ## The navigation station's map takes the full width (the cards wait under it).
 func panel_rect() -> Rect2:
+	if command != null and command.visible:
+		return command.content_rect()
 	var hud: ShipHud = demo.ship_hud
 	if focused == "crew":
 		return crew_panel_rect(hud.size, hud.strip_bottom())
@@ -928,7 +1001,15 @@ func _open_panel(id: String) -> void:
 func _layout_panel() -> void:
 	var r := panel_rect()
 	panel.position = r.position
-	if focused == "voyage":
+	if command != null and command.visible:
+		var compact: StyleBox = panel.get_theme_stylebox("panel").duplicate()
+		compact.content_margin_left = 4.
+		compact.content_margin_right = 4.
+		panel.add_theme_stylebox_override("panel", compact)
+		panel.custom_minimum_size = Vector2.ZERO
+		panel.size = r.size
+		step_back.visible = false
+	elif focused == "voyage":
 		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.42, 420.0), 0.0)
 		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
 	elif focused == "crew":
@@ -937,6 +1018,9 @@ func _layout_panel() -> void:
 	else:
 		panel.custom_minimum_size = r.size
 		panel.size = r.size
+	if command == null or not command.visible:
+		panel.remove_theme_stylebox_override("panel")
+		step_back.visible = true
 	if focused == "archive":
 		_fit_archive()
 
@@ -955,7 +1039,7 @@ func _close_panel(id: String) -> void:
 	panel.visible = false
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != comms_station: # kept, so the feed and the pane chosen survive stepping back
+		if c != comms_station and c != crew_console: # persistent systems keep pending responses and selection
 			c.queue_free()
 	if id == "navigation":
 		demo.close_navigation()
@@ -990,6 +1074,12 @@ const READING_TOP := 140.0
 
 
 func _fit_reading(c: Control) -> void:
+	if command != null and command.visible:
+		var room := panel_rect()
+		var reading := Rect2(room.position + Vector2(12.0, READING_TOP), Vector2(room.size.x - 24.0, maxf(48.0, room.size.y - READING_TOP - 12.0)))
+		ChairReadingViewport.fit(c, reading)
+		return
+	ChairReadingViewport.restore(c)
 	var r := Rect2(panel.position, panel.size) if panel.visible and panel.size.y > 0.0 else panel_rect()
 	c.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	c.grow_horizontal = Control.GROW_DIRECTION_END # the log grows both ways from its centre otherwise
@@ -1188,6 +1278,9 @@ func _ask_weeks(a: int, b: int) -> void:
 
 
 func _exit_tree() -> void:
+	if crew_console != null and not crew_console.is_inside_tree():
+		crew_console.free()
+		crew_console = null
 	if comms_station != null and not comms_station.is_inside_tree(): # kept out of the tree between visits
 		comms_station.free()
 		comms_station = null

@@ -237,6 +237,7 @@ func setup(opts := {}) -> bool:
 		consoles.set_glow(true);ship_hud.show_hint(ShipConsoles.HINT)
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
+	_interlude_canvas = interlude_canvas
 	crossing_review = CrossingReview.new();crossing_review.visible = false;interlude_canvas.add_child(crossing_review)
 	crossing_review.narration = archive_narration
 	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";archive_voice.bus = &"Voice";add_child(archive_voice) # R2-SOUND: voices duck the ship (§D2)
@@ -429,6 +430,8 @@ func toggle_sky_only() -> void:
 ## WASD is screen-relative (W up the screen). D2: the walk direction is held in world space while
 ## any move key stays down, so a view change mid-stride never reverses the captain.
 func walk_motion(move: Vector2,delta: float) -> void:
+	if consoles != null and consoles.command.visible:
+		_walking=false;return
 	if seated(): # CA2: a move key stands the captain first (CaptainAnim plays the stand), then walking resumes
 		if move!=Vector2.ZERO:_chair_stand=true
 		_walking=false;return
@@ -523,7 +526,7 @@ func _process(delta: float) -> void:
 		avatar.visible=camera.pullback>.5 or camera.external
 	else:
 		director.advance(delta)
-		avatar.visible=camera_mode!="console" # third person: the captain is in every player view
+		avatar.visible=camera_mode!="console" or consoles.command.visible # the chair remains a third-person place aboard
 		# C2: looking up from below, the full billboard (drawn for the -14 deg play view) would lean
 		# back into a giant card; the sky views stand the captain upright (a silhouette on the sky).
 		var upright:bool=str(director.views.get(director.view_id,{}).get("billboard",""))=="upright"
@@ -546,6 +549,8 @@ func _process(delta: float) -> void:
 	_update_dwell(delta)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
+	if consoles != null and consoles.command.visible and consoles.command.key(event):
+		get_viewport().set_input_as_handled();return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_T and at_helm_closeup():
 		toggle_telescope();get_viewport().set_input_as_handled();return
 	if UiScale.handle(get_window(),event):
@@ -990,11 +995,11 @@ func open_navigation() -> void:
 	_create_navigation("sol")
 	if navigation_window==null:return
 	journey_map.set_confirm_twice(confirm_mode=="twice")
-	journey_map.set_mode("helm")
+	journey_map.set_mode("helm", not consoles.command.visible if consoles != null else true)
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
 	if entry!=null:entry.visible=solar_tour==null or solar_tour.complete
 	navigation_window.borderless=true;navigation_window.title="Navigation station · E / Esc steps back"
-	_place_navigation(consoles.panel_rect().grow_individual(-8.,-46.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2())
+	_place_navigation(consoles.command.content_rect().grow(-8.) if consoles!=null and consoles.command.visible else (consoles.panel_rect().grow_individual(-8.,-46.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2()))
 ## M (anywhere, instant): the read-only star chart. It never plans, commits or pauses the
 ## voyage (D-57 Q2); plotting and commit are at the navigation station.
 func open_chart() -> void:
@@ -1055,6 +1060,8 @@ func _create_navigation(scenario:String) -> void:
 		navigation_window.force_native=false;navigation_window.own_world_3d=true;navigation_window.transient=true
 		navigation_window.close_requested.connect(_navigation_key.bind(KEY_ESCAPE))
 		navigation_window.window_input.connect(func(event:InputEvent)->void:
+			if consoles != null and consoles.command.visible and consoles.command.key(event):
+				navigation_window.set_input_as_handled();return
 			if event is InputEventKey and event.pressed and not event.echo:_navigation_key(event.physical_keycode))
 		add_child(navigation_window)
 		journey_map=load("res://ui/galaxy_map.tscn").instantiate()
@@ -1109,7 +1116,9 @@ func close_navigation() -> void:
 	get_window().grab_focus()
 	# Outside the helm the map plans nothing (NT1): it rests in chart mode; any commit the
 	# helm already queued still goes out on the next tick.
-	if journey_map.mode=="helm":journey_map.set_mode("chart")
+	# A chair tab change is display-only: a deliberate selection already waiting for the
+	# next tick remains pending. The hidden window cannot receive player input.
+	if journey_map.mode=="helm" and not (consoles != null and consoles.command.visible):journey_map.set_mode("chart")
 ## Keys inside the map window: M / Esc close the chart; at the helm E / Esc step back (an
 ## armed press-twice confirm backs out first). V, J, H stay instant.
 func _navigation_key(key: int) -> void:
@@ -1140,9 +1149,10 @@ func journey_tick() -> bool:
 	if solar_tour!=null and solar_tour.complete and not live_journey and _finale_tick():return true # the guided finale: the tour handed over
 	if live_journey and not was_committed:
 		leg_from=last_stop
-		if consoles!=null and consoles.focused=="navigation":consoles.leave() # watch the departure
-		else:close_navigation()
-		director.sky("sky_forward",true) # C2 cue: under way, the forward sky (the starbow) is in frame
+		if consoles == null or not consoles.command.visible:
+			if consoles!=null and consoles.focused=="navigation":consoles.leave() # watch the departure
+			else:close_navigation()
+			director.sky("sky_forward",true) # a chair session remains under the captain's control
 	if was_committed and not live_journey and solar_tour==null:last_stop=stop_name()
 	return true
 ## The free-navigation stop's display name: the catalogue name of the plan's target.
@@ -1159,10 +1169,13 @@ func stop_name() -> String:
 ## (the progress view between chunks, the Hold page while a hold is open, the pages once it is
 ## over). It steps aside while the captain is at the Crew console.
 func _show_interlude() -> void:
+	if crossing_review == null:return
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
-	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
+	var chair:bool=consoles!=null and consoles.command.visible
+	crossing_review.visible=card!=null and (consoles.focused=="voyage" if chair else not (consoles!=null and consoles.focused=="crew"))
+	_interlude_canvas.layer=15 if chair else 12
 	# C2 interlude hold: Sky forward behind the review, still while it is open.
-	if crossing_review.visible and not director.hold:
+	if crossing_review.visible and not chair and not director.hold:
 		if director.walk_level():director.hold=director.walk("bow",true,true) # Bow behind the review (the journey ahead)
 		else:
 			director.sky("sky_forward",true,true);director.hold=director.situation=="sky_forward" or director._pending=="sky_forward"
@@ -1185,7 +1198,8 @@ func _play_archive_voice() -> void:
 ## The Hold page's "Answer at the Crew console": the captain goes to it (the review waits).
 func _review_open_crew() -> void:
 	if consoles==null:return
-	consoles.go_to("crew");consoles.use("crew","open")
+	if consoles.command.visible:consoles.command.select_system("crew")
+	else:consoles.go_to("crew");consoles.use("crew","open")
 	_show_interlude()
 ## Skip to the next stage of the leg (labelled; the sim is stepped exactly to the boundary).
 func skip_stage() -> void:
@@ -1216,7 +1230,7 @@ func _begin_tour_turn(target:PackedFloat64Array,view:Vector2,mode:String)->void:
 		_tour_view_from=Vector2(camera.tilt,camera.yaw)
 		_tour_view_to=view
 		_tour_view_elapsed=0.;_tour_view_active=true
-	elif mode=="departure":director.sky("sky_forward",true)
+	elif mode=="departure" and not (consoles!=null and consoles.command.visible):director.sky("sky_forward",true)
 func _update_tour_attitude(delta:float)->void:
 	if solar_tour==null or benchmark.running:return
 	if solar_tour.paused:return
@@ -1245,7 +1259,7 @@ func _update_tour_attitude(delta:float)->void:
 	if not tour_attitude.turning() and not _attitude_mode.is_empty():
 		var finished:=_attitude_mode;_attitude_mode=""
 		solar_tour.attitude_hold=false
-		if finished=="stop" and not director.overridden:director.sky("sky_side",true) # C2 cue: the body beyond the rail
+		if finished=="stop" and not director.overridden and not (consoles!=null and consoles.command.visible):director.sky("sky_side",true) # C2 cue: the body beyond the rail
 		if finished=="departure":
 			if solar_tour.commit_prepared():_apply_journey_world()
 			else:refuse("Tour departure failed: "+solar_tour.failed)
@@ -1386,7 +1400,7 @@ func _update_cards(view: Dictionary) -> void:
 	var review_waits: bool = solar_tour != null and solar_tour.interlude != null
 	if phase != _hud_phase and not review_waits:
 		if phase == "braking":
-			director.sky("sky_forward", true) # C2 cue
+			if not (consoles!=null and consoles.command.visible):director.sky("sky_forward", true) # C2 cue
 			ship_hud.show_card("notice", "Braking", 8.0)
 			_notice_text(JourneyHud.BRAKE_NOTICE)
 		elif phase == "approaching":
@@ -1472,8 +1486,13 @@ func _update_wait_hint() -> void:
 ## (tour, transit) stays readable beside it. One size for every page, 3:2 (CrossingReview.ASPECT, the
 ## home picture's; as wide as CrossingReview.WIDTH and the room allow; a longer page scrolls), so the
 ## home picture covers the panel uncropped and the dots and the page buttons stay put.
+var _interlude_canvas: CanvasLayer
 func _place_interlude() -> void:
 	if crossing_review == null or not crossing_review.visible: return
+	if consoles!=null and consoles.command.visible:
+		ChairReadingViewport.fit(crossing_review, consoles.command.content_rect().grow(-8.))
+		return
+	ChairReadingViewport.restore(crossing_review)
 	var left: float = ship_hud.column.position.x - ShipHud.MARGIN
 	var top: float = ship_hud.strip_bottom() + 8.0
 	var room_h: float = maxf(200.0, ship_hud.size.y - top - 2.0 * ShipHud.MARGIN)
@@ -1727,7 +1746,8 @@ func start_black_hole() -> bool:
 	black_hole=v;_bh_accum=0.;guided_finale=false
 	_ensure_codex()
 	sky_state="black_hole"
-	_apply_bh_world();director.sky("sky_hole",true) # C2 cue: the hole (shadow, ring) framed
+	_apply_bh_world()
+	if not (consoles!=null and consoles.command.visible):director.sky("sky_hole",true) # C2 cue: the hole (shadow, ring) framed
 	_reset_hud_session()
 	note("Sgr A*, 10⁶ r_s out (1.34 ly). The next stop is an approach to 10 r_s at β 0.1.")
 	return true
@@ -1769,7 +1789,7 @@ func bh_finish_approach() -> bool:
 	_apply_bh_world()
 	return true
 func _arrived() -> void:
-	director.sky("sky_hole",true) # each Sgr A* stop: the hole framed again (a cue; any key takes over)
+	if not (consoles!=null and consoles.command.visible):director.sky("sky_hole",true) # each Sgr A* stop: the hole framed again (a cue; any key takes over)
 	note("Arrived: hovering at r = %s r_s. Next: %s." % [BlackHoleVisit.r_text(float(black_hole.gr().r)),black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop reached"])
 ## Back to Sol at rest: the sgr_a session ends and the sky is flat again (GR off).
 func leave_black_hole() -> void:
@@ -1828,7 +1848,7 @@ func _animate_captain(delta: float) -> void:
 	if consoles != null and consoles.focused != "":
 		station = CaptainAnim.STATION_CLIP.get(consoles.focused, "use_mid")
 	var o := captain_anim.step({"velocity": v, "view_yaw": director.walk_yaw(), "station": station,
-		"face_dir": Vector3(0, 0, -1), "lift": lift != null and lift.state in ["descending", "ascending"],
+		"face_dir": chair_facing() if seated() else Vector3(0, 0, -1), "lift": lift != null and lift.state in ["descending", "ascending"],
 		"reduced": camera_motion == "reduced", "chair": "sit" if _chair_sit else "", "move_request": _chair_stand,
 		"cue": _look_up_cue()}, delta)
 	_chair_sit = false
@@ -1846,9 +1866,14 @@ var _chair_sit := false
 var _chair_stand := false
 var _chair_return := Vector3.INF
 func chair_seat() -> Variant:
+	var contact := CaptainChairContact.measure(props_visual)
+	if not contact.is_empty():return contact.foot
 	var c: Variant = manifest.get("captain_chair")
 	if not c is Dictionary:return null
 	return Vector3(float(c.position_m[0]),82.,-float(c.position_m[1]))
+func chair_facing() -> Vector3:
+	var contact := CaptainChairContact.measure(props_visual)
+	return contact.forward if not contact.is_empty() else Vector3(0, 0, -1)
 func seated() -> bool:
 	return captain_anim.chair != "" or _chair_sit
 func sit_chair() -> bool:
@@ -1859,9 +1884,11 @@ func sit_chair() -> bool:
 	avatar_pos = seat
 	_anim_pos = avatar_pos
 	_chair_sit = true
+	consoles.command.begin_sit()
 	return true
 func stand_chair() -> bool:
 	if not seated():return false
+	consoles.command.close()
 	_chair_stand = true
 	return true
 ## CA2: the captain looks up when the ship arrives at a stop or the starbow forms (beta past 0.9).

@@ -2,7 +2,7 @@ extends SceneTree
 ## R2-CAPTAIN-ANIMATION CA2 (OQ9): the captain's chair and the look-up cues in the real ship demo, headless.
 ##   make captain-chair-test
 ## E in reach of the seat sits the captain (on the seat, facing the bow: sit, then seated); a move key or E
-## stands first and only then walks, back at the walkable point beside the chair. The lower deck has no
+## stands first and only then walks after command is closed; Stand up works inside command. The lower deck has no
 ## chair. The ship arriving at a stop, or the starbow forming (beta past 0.9), raises one look-up cue.
 const DT := 1.0 / 60.0
 var failures := 0
@@ -50,6 +50,7 @@ func _run() -> void:
 	check("on the seat, facing the bow (the back in the Bow view)", demo.avatar_pos.distance_to(seat) < 1e-3 and demo.captain_anim.facing_for_test() == "back", "%s %s" % [demo.avatar_pos, demo.captain_anim.facing_for_test()])
 	check("sit, then seated", clips[0] == "sit" and clips[49] == "seated", str(clips))
 	# A move key stands first; the captain does not move while standing.
+	demo.consoles.command.close() # while command is open, movement belongs to its UI
 	var on_seat: Vector3 = demo.avatar_pos
 	demo.walk_motion(Vector2(0, 1), DT)
 	demo._process(DT)
@@ -58,15 +59,18 @@ func _run() -> void:
 		demo.walk_motion(Vector2(0, 1), DT)
 		demo._process(DT)
 	check("stood up: back beside the chair, free to walk", not demo.seated() and demo.walk_bridge.is_walkable(demo.avatar_pos), "%s seated %s" % [demo.avatar_pos, demo.seated()])
-	# E stands too.
+	# D-149: E closes/reopens command; the explicit Stand up action stands.
 	demo.avatar_pos = beside
 	demo._process(DT)
 	demo.use_nearest()
 	for k in 50:
 		demo._process(DT)
-	var stood: bool = demo.use_nearest()
+	check("the seated command screen opened", demo.consoles.command.visible)
+	check("E closes command while remaining seated", demo.use_nearest() and demo.seated() and not demo.consoles.command.visible)
+	check("E reopens command", demo.use_nearest() and demo.consoles.command.visible)
+	demo.consoles.command.stand()
 	demo._process(DT)
-	check("E while seated stands", stood and demo.captain_anim.chair in ["stand", ""], demo.captain_anim.chair)
+	check("Stand up leaves command and plays stand", not demo.consoles.command.visible and demo.captain_anim.chair in ["stand", ""], demo.captain_anim.chair)
 	for k in 40:
 		demo._process(DT)
 	check("free after standing", not demo.seated())

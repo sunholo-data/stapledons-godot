@@ -1,0 +1,130 @@
+{
+  "sprint_id": "R2-CAPTAIN-COMMAND",
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark, attended 2026-11-09: yep go (local implementation)",
+  "created": "2026-11-09",
+  "started": "2026-11-09",
+  "design_doc": "design_docs/planned/r2/captain-command.md",
+  "sprint_plan": "design_docs/planned/r2/captain-command-sprint.md",
+  "github_issues": [
+    392
+  ],
+  "decision_refs": [
+    "D-149"
+  ],
+  "external_dependencies": [
+    {
+      "what": "Mark approves this concrete sprint under CLAUDE.md step 2",
+      "blocks": [
+        "C1_CHAIR_CONTACT",
+        "C2_COMMAND_SCREEN",
+        "C3_SEATED_PLAYTHROUGH"
+      ],
+      "status": "approved"
+    },
+    {
+      "what": "Stage pinned AILANG v0.56.1 before real-sim gates; current local runtime is stale",
+      "blocks": [
+        "C1_CHAIR_CONTACT",
+        "C2_COMMAND_SCREEN",
+        "C3_SEATED_PLAYTHROUGH"
+      ],
+      "status": "pinned release staged at /tmp/stapledon-ailang-v0561/ailang"
+    },
+    {
+      "what": "D-148 desk contact is an inherited nightly failure, independent of chair repair",
+      "blocks": [],
+      "status": "open; not resolved by D-149"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "C1_CHAIR_CONTACT",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot chair/painted-pose contact. Registry crew/relativity searches and crew_core info/docs inspected 2026-11-09; no new package capability."
+    },
+    {
+      "milestone": "C2_COMMAND_SCREEN",
+      "package": "none",
+      "action": "none",
+      "reason": "Compose existing Godot system panels and sim intent queues; no new simulation/package implementation."
+    },
+    {
+      "milestone": "C3_SEATED_PLAYTHROUGH",
+      "package": "sunholo/crew_core@0.6.0",
+      "action": "depend",
+      "reason": "Exercise the existing locked crew host through the real game sim for decision parity; keep all production pins."
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 850,
+    "estimated_days": 3,
+    "notes": "Planning allowance, not measured sustained velocity. Three focused implementation sessions; evaluation/visual review and replacement art excluded."
+  },
+  "features": [
+    {
+      "id": "C1_CHAIR_CONTACT",
+      "description": "Measured chair contact, safe sit/stand and seated close/reopen lifecycle",
+      "estimated_loc": 200,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC1: captain-chair-test and new captain-command-contact-test pass with displaced-anchor negative control",
+        "Before/after Bow and Astern chair pose frames inspected; intended furniture occlusion retained"
+      ],
+      "passes": null,
+      "started": "2026-11-09",
+      "completed": null,
+      "notes": "15/0 contact checks, measured cushion/root and real chair facing installed. Rendered Bow/Astern baseline/candidate contact review remains pending; no final clipping-fix claim."
+    },
+    {
+      "id": "C2_COMMAND_SCREEN",
+      "description": "Combined overview and five systems with explicit seated authority",
+      "estimated_loc": 450,
+      "dependencies": [
+        "C1_CHAIR_CONTACT"
+      ],
+      "acceptance_criteria": [
+        "AC2/4/5: all five systems work seated without relocation or desk dolly; access denied standing/off-bridge",
+        "Tab/close/stand disarm confirmations, preserve pending replies and avoid duplicate signal connections/intents",
+        "Mouse, keyboard, controller, nested Esc and responsive overview pass targeted UI gates"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "33/0 command tests; 136/0 physical-console, 288/0 ship UI, 42/0 Comms, 37/0 history, 41/0 no-twitch regressions. All five reused systems, safe authority, queued replies, responsive crew call and bounded Archive readers."
+    },
+    {
+      "id": "C3_SEATED_PLAYTHROUGH",
+      "description": "Real seated gameplay parity, responsive capture and review handoff",
+      "estimated_loc": 200,
+      "dependencies": [
+        "C2_COMMAND_SCREEN"
+      ],
+      "acceptance_criteria": [
+        "AC3/6: same seed and logical tick inputs produce identical ordered intents and authoritative outcomes for chair/station routes",
+        "AC7/8: all panels, attention state and chair poses captured/inspected; targeted regressions and theme/uid checks pass",
+        "AC9: fast CI green, cross-family evaluation passes and Mark accepts published dev build before landing"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "52/0 real-sim parity/hold tests; 1202 flight ticks per route, 1207 NDJSON inputs, byte-identical inputs and worlds. 18/0 layout, 14/0 reading viewport, 10/0 guided review/Brake. Independent Claude checkpoint PASS86; rendered chair/UI review, Mark acceptance and fast CI/publication pending."
+    }
+  ],
+  "implementation_complete": true,
+  "acceptance_complete": false,
+  "publication_authorized": true,
+  "cross_family_review_authorized": true,
+  "evaluation": {
+    "path": ".ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_1.json",
+    "reviewer": "claude-sonnet-4-6",
+    "score": 86,
+    "result": "pass",
+    "scope": "local implementation checkpoint",
+    "landing_ready": false
+  },
+  "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)"
+}

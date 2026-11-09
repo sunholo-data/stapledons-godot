@@ -1,0 +1,110 @@
+{
+  "sprint_id": "R2-CAPTAIN-COMMAND",
+  "evaluation_round": 1,
+  "reviewer_model": "claude-sonnet-4-6",
+  "scope": "local implementation checkpoint",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 24,
+    "code_quality": 10,
+    "documentation": 13,
+    "design_fidelity": 9
+  },
+  "total_score": 86,
+  "result": "pass",
+  "landing_ready": false,
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "met": "partial",
+      "evidence": "captain-chair-test 15/0, captain-command-contact-test 15/0. CaptainChairContact.measure() derives seat from actual cushion AABB; foot root derives from cushion centre + PELVIS_STERN_M (0.28 m) offset; 20-degree facing from installed mesh rotation. Displaced-root negative controls (5 cm in X/Y/Z and reversed facing) all rejected. Rendered chair-contact acceptance explicitly unaccepted: GPU was busy; 12-frame Bow/Astern baseline/candidate captures have not been reviewed."
+    },
+    {
+      "id": "AC2",
+      "met": "yes",
+      "evidence": "captain-command-test 33/0: standing cannot claim authority; five systems open from seat; avatar_pos and view_id unchanged across all system switches; distant physical station still reach-protected; walk-to-chair path works."
+    },
+    {
+      "id": "AC3",
+      "met": "yes",
+      "evidence": "captain-command-parity-test 52/0: chair and station routes produce byte-for-byte identical input journals (1,207 rows, dtau included) and identical authoritative worlds after 1,202 flight ticks."
+    },
+    {
+      "id": "AC4",
+      "met": "yes",
+      "evidence": "captain-command-test: tab change cancels armed decision; closing leaves no active system. close_chair_system() explicitly cancels the confirm, disarms journey_map and crossing_review, clears crew armed state, and closes the focused panel. Parity test: single crew step subscription after repeated tab switching confirmed."
+    },
+    {
+      "id": "AC5",
+      "met": "yes",
+      "evidence": "captain-command-test: Ctrl+Tab, pad shoulder, Esc via key() verified. Movement input inside command does not stand. no-twitch-test 41/0 passes on the modified tree. captain-command-guided-test 10/0: Voyage, review and Brake all complete without leaving the chair."
+    },
+    {
+      "id": "AC6",
+      "met": "yes",
+      "evidence": "captain-command-parity-test: 'chair both clocks advanced' passes (tau > 0.1, year > 1.0). advance() calls refresh() every frame the command is visible; no fresh sim session created (single SimBridge confirmed by parity test)."
+    },
+    {
+      "id": "AC7",
+      "met": "partial",
+      "evidence": "captain-command-layout-test: 18 system/resolution cases at 960x540, 1280x720, 2560x1440 — geometry fits confirmed headlessly. chair-reading-viewport-test 14/0: Archive reading scroll, restore and accumulated-callback guard. GPU captures (make captain-command-capture captain-chair-contact-capture) not run; physical clipping verdict not established. No rendered contact sheet reviewed."
+    },
+    {
+      "id": "AC8",
+      "met": "yes",
+      "evidence": "captain-chair-test 15/0, captain-anim-test 87/0, ship-console-test 136/0, uid-guard 419 files ok. bridge-operator-test: 30 passed / 14 failures — the recorded D-148 desk-placement baseline, unchanged by this sprint."
+    },
+    {
+      "id": "AC9",
+      "met": "no",
+      "evidence": "Cross-family evaluation is this document (round 1, Claude vs GPT executor). Fast CI not yet green: no PR exists; source not yet published. Mark's visual acceptance not yet obtained. All explicitly stated in the report as remaining gates."
+    }
+  ],
+  "hard_fails": [],
+  "feedback": [
+    {
+      "severity": "medium",
+      "file": ".ailang/state/sprints/sprint_R2-CAPTAIN-COMMAND.json",
+      "line": 72,
+      "issue": "All three features have passes: null, completed: null, notes: null, and sprint status is 'in_progress'. Sprint artifacts are substantively incomplete for a sprint whose execution is done. Per Phase 3.5, this warrants up to -5 from Code Quality.",
+      "suggestion": "Before landing: set status to 'completed', mark each feature passes: true with a one-line note and completed timestamp matching today. The sprint executor should do this at the end of C3, not at landing."
+    },
+    {
+      "severity": "medium",
+      "file": "design_docs/planned/r2/captain-command-report.md",
+      "line": 30,
+      "issue": "The report states 'The final console/comms/no-twitch regressions are being run… Their final results belong below; no pass is claimed yet.' But those tests did complete and pass: ship-console-test 136/0, comms-station 42/0, comms-history 37/0 (regressions2.log), no-twitch 41/0 (.godot/tmp/no-twitch.log). The report was written mid-run and not updated with its own promised results.",
+      "suggestion": "Append the actual test results to the evidence table in the report before landing."
+    },
+    {
+      "severity": "low",
+      "file": "ui/chair_reading_viewport.gd",
+      "line": 54,
+      "issue": "restore() returns early without calling scroll.queue_free() when original is not is_instance_valid(). The ScrollContainer wrapper is then leaked. Unlikely in practice (original is always a persistent panel), but it is an unconditional resource leak on an unexpected path.",
+      "suggestion": "Cache scroll before the guard and call scroll.queue_free() in both branches, or reassign WRAPPER meta to null/remove it and free unconditionally after the early return."
+    },
+    {
+      "severity": "low",
+      "file": "ui/captain_command.gd",
+      "line": 100,
+      "issue": "authorized() uses avatar_pos.distance_to(chair_seat()) < 0.05 (5 cm). If the physics step or a walk-advance puts the avatar 50 mm off the contact point, authority is immediately revoked. The parity test held 1,202 ticks without a drop, so this is not an observed failure, but the tolerance is tight enough that a future pose change could break it silently.",
+      "suggestion": "Consider widening to 0.08–0.10 m, matching the measurement tolerance documented in CaptainChairContact (TOLERANCE_M = 0.01 for the contact match itself, but that is a different quantity). At minimum, add a comment explaining why 0.05 is correct here."
+    },
+    {
+      "severity": "info",
+      "file": "design_docs/planned/r2/captain-command.md",
+      "line": 118,
+      "issue": "Design doc requires a companion design-repo clarification (amending D-56, recording D-149 in bridge/ship UI design). Sprint plan section C3 notes this as a deliverable. It has not been filed.",
+      "suggestion": "File the design-repo companion PR (sunholo-data/stapledons-design) recording D-149 before landing. It can be a one-paragraph addition to the bridge-interior feature doc."
+    },
+    {
+      "severity": "info",
+      "file": "tools/captain_command_capture.gd",
+      "line": 1,
+      "issue": "make captain-command-capture and captain-chair-contact-capture have not been run. These are required by AC7 and are the only visual evidence for contact and layout. No clipping verdict can be issued from code alone.",
+      "suggestion": "Run both capture targets when the GPU is free; inspect every rendered frame before filing for Mark's review."
+    }
+  ],
+  "notes": "All 13 targeted headless test suites pass cleanly (captain-command 33, captain-command-contact 15, captain-command-parity 52, captain-command-layout 18 cases, chair-reading-viewport 14, captain-chair 15, captain-anim 87, captain-command-guided 10, no-twitch 41, ship-console 136, comms-station 42, comms-history 37, ship-ui 288). The D-148 inherited baseline (bridge-operator 30/14) is correctly preserved and unchanged. Policy checks (lint, uid-guard, theme, audio-silent, python-guard) all pass. The architecture is clean: interaction_origin is separated from the focused system, CaptainCommand owns layout/selection only, ShipConsoles remains the single decision dispatcher, and existing panels are reused without copying. The parity result (byte-identical input journals and worlds) is the strongest evidence for decision-path correctness. The two pending gates that prevent landing — GPU captures/rendered clipping verdict and Mark's dev-build review — are correctly stated as unmet. The sprint JSON being left in-progress with all milestone passes: null is the principal process gap at this checkpoint."
+}
