@@ -1,0 +1,56 @@
+module stapledons/ai/check
+
+-- R3-AI-PANEL-V2 P1 (design_docs/planned/r3/ai-panel-v2.md §V3): is this
+-- provider key valid? One free GET, then one line on stdout, then exit.
+--   Gemini:     GET <base>/v1beta/models?pageSize=1   x-goog-api-key
+--   OpenRouter: GET <base>/api/v1/key                 Authorization: Bearer
+-- 200 is ok; the provider's auth refusals are rejected; anything else, or no
+-- response, is offline. It never prints the key or a response body and
+-- writes no usage line: the check is free, so the session ceiling is
+-- untouched. The key arrives as a 0600 file, never on the command line.
+-- Run (AiBridge.check_plan):
+--   ailang run --quiet --bytecode --package-dir ai --caps IO,FS,Net
+--     --net-allow-domains generativelanguage.googleapis.com,openrouter.ai
+--     --entry check --args-json '{"provider":..,"key_file":..,"base":""}' ai/check.ail
+-- `base` is empty in the game; `make ai-key-check` points it at the loopback.
+import std/io (println)
+import std/fs (readFileResult)
+import std/result (Result, Ok, Err)
+import std/string (concat, trim)
+import std/net (httpRequest)
+
+export type Check = { provider: string, key_file: string, base: string }
+
+export pure func statusOf(provider: string, code: int) -> string =
+  if provider != "gemini" && provider != "openrouter" then "offline"
+  else if code == 200 then "ok"
+  else if provider == "gemini" && (code == 400 || code == 401 || code == 403) then "rejected"
+  else if provider == "openrouter" && (code == 401 || code == 403) then "rejected"
+  else "offline"
+
+export pure func baseOf(provider: string, base: string) -> string =
+  if base != "" then base
+  else if provider == "gemini" then "https://generativelanguage.googleapis.com"
+  else "https://openrouter.ai"
+
+export pure func urlOf(provider: string, base: string) -> string =
+  if provider == "gemini" then concat([base, "/v1beta/models?pageSize=1"]) else concat([base, "/api/v1/key"])
+
+export pure func lineOf(provider: string, status: string) -> string =
+  concat(["{\"check\":\"", provider, "\",\"status\":\"", status, "\"}"])
+
+func probe(provider: string, key: string, url: string) -> string ! {Net} =
+  match httpRequest("GET", url,
+      if provider == "gemini" then [{ name: "x-goog-api-key", value: key }] else [{ name: "Authorization", value: concat(["Bearer ", key]) }], "") {
+    Ok(resp) => statusOf(provider, resp.status),
+    Err(_) => "offline"
+  }
+
+func keyOf(path: string) -> string ! {FS} = match readFileResult(path) { Ok(t) => trim(t), Err(_) => "" }
+
+export func check(c: Check) -> () ! {IO, FS, Net} {
+  let p = if c.provider == "gemini" || c.provider == "openrouter" then c.provider else "unknown";
+  let key = if p == "unknown" then "" else keyOf(c.key_file);
+  if key == "" then println(lineOf(p, "no_key"))
+  else println(lineOf(p, probe(p, key, urlOf(p, baseOf(p, c.base)))))
+}

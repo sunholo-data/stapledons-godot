@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-loopback ai-relay replay-noai ai-session-record ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
+.PHONY: ai-loopback ai-key-check ai-relay replay-noai ai-session-record ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback replay-compat ai-godot ai-relay replay-noai   ## AI foundation checks that run without a GPU window or a key
+ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback ai-key-check replay-compat ai-godot ai-relay replay-noai   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -158,6 +158,30 @@ ai-loopback:       ## AI.5 leftover: OpenRouter + TTS POST halves against a loop
 	  $(AILANG) run --quiet --package-dir ai --caps IO,FS,Net,Env --net-allow-localhost --net-allow-http --entry loopback --args-file $(AI_L)/lane.json ai/loopback_lane.ail > $(AI_L)/lane.out 2> $(AI_L)/lane.err; rc=$$?; \
 	touch $(AI_L)/stop; wait; cat $(AI_L)/lane.out | cut -c1-160; test $$rc = 0 && test "$$(tail -1 $(AI_L)/lane.out)" = "loopback-done"
 	@python3 tests/fixtures/ai_loopback.py check $(AI_L) $(AI_FAKE_G) $(AI_FAKE_O)
+
+# R3-AI-PANEL-V2 P1 (AC7): the key check (ai/check.ail) against the loopback: a good, a bad and an
+# empty key per provider, and a closed port. Runs the same way AiBridge.check_plan() does, with env -i.
+AI_K := $(SCRATCH)/ai-key-check
+AI_FAKE_BAD := loopback-fake-bad-9e2b
+AI_CLOSED := http://127.0.0.1:1
+ai-key-check:      ## R3-AI-PANEL-V2: the free key check (ok, rejected, offline, no_key per provider); no files written, keys never printed
+	@rm -rf $(AI_K) && mkdir -p $(AI_K)
+	@printf '%s\n%s\n' $(AI_FAKE_G) $(AI_FAKE_O) > $(AI_K)/good_keys
+	@printf '%s' $(AI_FAKE_G) > $(AI_K)/key_good_g; printf '%s' $(AI_FAKE_O) > $(AI_K)/key_good_o; \
+	  printf '%s' $(AI_FAKE_BAD) > $(AI_K)/key_bad; : > $(AI_K)/key_empty; chmod 600 $(AI_K)/key_*
+	@python3 tests/fixtures/ai_loopback.py serve $(AI_K) & \
+	for i in $$(seq 100); do [ -f $(AI_K)/port ] && break; sleep 0.1; done; \
+	base="http://127.0.0.1:$$(cat $(AI_K)/port)"; rc=0; \
+	run() { env -i PATH="$$PATH" HOME="$$HOME" GOOGLE_APPLICATION_CREDENTIALS=/nonexistent \
+	  $(AILANG) run --quiet --bytecode --package-dir ai --caps IO,FS,Net --net-allow-localhost --net-allow-http \
+	  --entry check --args-json "{\"provider\":\"$$2\",\"key_file\":\"$(AI_K)/$$3\",\"base\":\"$$4\"}" ai/check.ail \
+	  > $(AI_K)/$$1.out 2> $(AI_K)/$$1.err || rc=1; }; \
+	run gemini_good gemini key_good_g $$base; run gemini_bad gemini key_bad $$base; \
+	run gemini_closed gemini key_good_g $(AI_CLOSED); run gemini_empty gemini key_empty $$base; \
+	run openrouter_good openrouter key_good_o $$base; run openrouter_bad openrouter key_bad $$base; \
+	run openrouter_closed openrouter key_good_o $(AI_CLOSED); run openrouter_empty openrouter key_empty $$base; \
+	touch $(AI_K)/stop; wait; test $$rc = 0 || { echo "ai-key-check: a check exited non-zero"; tail -3 $(AI_K)/*.err; exit 1; }
+	@python3 tests/fixtures/ai_loopback.py checkkeys $(AI_K) $(AI_FAKE_G) $(AI_FAKE_O) $(AI_FAKE_BAD)
 
 ai-adapter-record: ## regenerate tests/ai/adapter.golden.txt and the prompt goldens (a reviewed diff; never in make test)
 	$(ai_adapter_run)

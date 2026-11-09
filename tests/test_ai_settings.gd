@@ -326,6 +326,75 @@ func test_wired() -> bool:
 	return true
 
 
+## R3-AI-PANEL-V2 P1 (AC9 and the Godot half of AC7): the key check's plan,
+## its guards, the parse, the async run and the timeout. The provider GETs
+## themselves are `make ai-key-check`; here a real run goes to a closed port.
+func wait_checks(kc: AiKeyCheck, ms: int) -> bool:
+	var end := Time.get_ticks_msec() + ms
+	while Time.get_ticks_msec() < end:
+		kc.poll()
+		if kc.running.is_empty():
+			return true
+		OS.delay_msec(10)
+	return false
+
+
+func test_key_check() -> bool:
+	print("P1 key check: plan, guards, parse, async run, timeout, a real run to a closed port")
+	var d := fresh("key_check")
+	var s := settings_in(d)
+	var kc := AiKeyCheck.new()
+	assert_bool("no key file: no plan, start refused", AiKeyCheck.plan("gemini", "", "ailang", "/r", "/h").is_empty() and not kc.start("gemini", s))
+	s.save_key("gemini", KEY_G)
+	var kf := ProjectSettings.globalize_path(s.key_path("gemini"))
+	var plan := AiKeyCheck.plan("gemini", kf, "/x/ailang", "/r", "/h")
+	var args: PackedStringArray = plan.get("args", PackedStringArray())
+	var cfg = JSON.parse_string(args[args.find("--args-json") + 1]) if args.has("--args-json") else {}
+	assert_bool("plan: env -i, no ADC, ailang check entry, IO,FS,Net only, the provider hosts only, the key as a file path",
+		plan.get("bin") == "/usr/bin/env" and args[0] == "-i" and args.has("GOOGLE_APPLICATION_CREDENTIALS=/nonexistent") and args.has("HOME=/h")
+		and args.has("/x/ailang") and args[args.find("--entry") + 1] == "check" and args[args.find("--caps") + 1] == "IO,FS,Net"
+		and args[args.find("--net-allow-domains") + 1] == AiBridge.LIVE_HOSTS and not args.has("--net-allow-localhost") and args[-1] == "/r/ai/check.ail"
+		and cfg is Dictionary and cfg.get("provider") == "gemini" and cfg.get("key_file") == kf and cfg.get("base") == "" and not has_key(" ".join(args)))
+	var local := AiKeyCheck.plan("gemini", kf, "/x/ailang", "/r", "/h", "http://127.0.0.1:1")
+	assert_bool("a test base allows only localhost over http, never the provider hosts",
+		local["args"].has("--net-allow-localhost") and local["args"].has("--net-allow-http") and not local["args"].has("--net-allow-domains"))
+	assert_bool("an unknown provider gets no plan", AiKeyCheck.plan("other", kf, "/x/ailang", "/r", "/h").is_empty())
+	var auto := settings_in(d, {"capture": true})
+	assert_bool("automation never runs a check", not kc.start("gemini", auto) and kc.running.is_empty())
+	assert_bool("parse: the one line, its provider, a known status; anything else is offline",
+		AiKeyCheck.parse("gemini", '{"check":"gemini","status":"ok"}\n') == "ok"
+		and AiKeyCheck.parse("openrouter", 'noise\n{"check":"openrouter","status":"rejected"}\n') == "rejected"
+		and AiKeyCheck.parse("gemini", '{"check":"openrouter","status":"ok"}') == "offline"
+		and AiKeyCheck.parse("gemini", '{"check":"gemini","status":"great"}') == "offline"
+		and AiKeyCheck.parse("gemini", "") == "offline" and AiKeyCheck.parse("gemini", '{"check":"gemini","status":"no_key"}') == "no_key")
+	var got := []
+	kc.done.connect(func(p, st): got.append([p, st]))
+	kc.plan_override = {"bin": "/bin/echo", "args": PackedStringArray(['{"check":"gemini","status":"ok"}'])}
+	var started := kc.start("gemini", s)
+	assert_bool("a second start while one runs is refused", started and not kc.start("gemini", s) and kc.status("gemini", s) == "checking")
+	var ran := wait_checks(kc, 5000)
+	assert_bool("async run: done(gemini, ok), the result kept for this run (%s)" % [got], ran and got == [["gemini", "ok"]] and kc.status("gemini", s) == "ok")
+	kc.plan_override = {"bin": "/bin/sleep", "args": PackedStringArray(["5"])}
+	kc.timeout_ms = 300
+	var t0 := Time.get_ticks_msec()
+	kc.start("gemini", s)
+	ran = wait_checks(kc, 3000)
+	var took := Time.get_ticks_msec() - t0
+	assert_bool("a hung check is killed at the timeout and reads offline (%d ms)" % took, ran and kc.status("gemini", s) == "offline" and took < 2500)
+	kc.plan_override = {}
+	kc.timeout_ms = AiKeyCheck.TIMEOUT_MS
+	kc.base = "http://127.0.0.1:1"
+	kc.start("gemini", s)
+	ran = wait_checks(kc, 20000)
+	assert_bool("a real check through ailang to a closed port prints its offline line: %s" % kc.last_out.get("gemini", "").strip_edges(),
+		ran and kc.status("gemini", s) == "offline" and kc.last_out.get("gemini", "") == '{"check":"gemini","status":"offline"}\n')
+	assert_bool("status without a check: 'saved' with a key, 'none' without", kc.status("openrouter", s) == "none"
+		and AiKeyCheck.new().status("gemini", s) == "saved")
+	s.save_key("gemini", "")
+	assert_bool("removing the key forgets its result", kc.status("gemini", s) == "none")
+	return true
+
+
 ## Runs from the first frame, not _initialize: only then is the root in the
 ## tree, so the indicator and panel get _ready like in the game.
 var _ran := false
@@ -347,7 +416,7 @@ func run_all() -> void:
 		return
 	var tests := ["launch_default"]
 	if not "--launch-default" in OS.get_cmdline_user_args():
-		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired"])
+		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired", "key_check"])
 	# --only=name,name runs a subset (tests/ai_settings_mutants.sh uses it).
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):

@@ -86,25 +86,29 @@ The layout follows the mock-up, top to bottom:
 
 `AiSettings` gains only pure helpers: `masked_key(p)`, `ceiling_to_slider(v)` / `slider_to_ceiling(t)` (log map, round-trip exact on the 0.01 grid), and `tile_states(p) -> Array` (bright / dim / faint per kind). The panel stays a view over `AiSettings`. Every change still goes through `AiSession.settings_changed()` in a game, or `save_settings()` without one.
 
-### V3. The key check (AILANG `ai/check.ail`, `AiBridge.check_plan()`)
+### V3. The key check (AILANG `ai/check.ail`, GDScript `AiKeyCheck`)
 
-**Test** runs a one-shot AILANG process, separate from the session's service, so it works from the title screen too:
+**Test** runs a one-shot AILANG process, separate from the session's service, so it works from the title screen too.
+`AiKeyCheck.plan()` (`bridge/ai_key_check.gd`) builds it:
 
 ```
-ailang run --quiet --bytecode --package-dir ai --caps Net,FS,Env --ai-no-adc \
+/usr/bin/env -i PATH=… HOME=… GOOGLE_APPLICATION_CREDENTIALS=/nonexistent \
+  ailang run --quiet --bytecode --package-dir ai --caps IO,FS,Net \
   --net-allow-domains generativelanguage.googleapis.com,openrouter.ai \
   --entry check --args-json '{"provider":"gemini","key_file":"…","base":""}' ai/check.ail
 ```
 
 - **Gemini:** `GET {base}/v1beta/models?pageSize=1` with header `x-goog-api-key`. 200 → `ok`; 400, 401 or 403 → `rejected`; anything else, or no response → `offline`.
 - **OpenRouter:** `GET {base}/api/v1/key` with `Authorization: Bearer`. 200 → `ok`; 401 or 403 → `rejected`; else `offline`.
+- An empty or missing key file → `no_key`.
 - Both calls are free and write **no** usage line (the ceiling is untouched).
 - It prints exactly one line, `{"check":"gemini","status":"ok"}`, and exits 0. It never prints the key or a response body.
-- `base` defaults to the real host. Tests point it at the loopback fixture (`tests/fixtures/ai_loopback.py`, the existing harness), which gains the two GET routes.
-- The key reaches the process as a file, the same as live (`LIVE_WRAP` style: env built from the file inside the child, `GOOGLE_APPLICATION_CREDENTIALS=/nonexistent`, `--ai-no-adc`).
-- **Guards:** automation runs never offer Test (`AiSettings.automation`), and `check_plan()` returns `{}` without a key file. The result lives in memory for this run only (OQ2) and feeds the card's lamp and the badge's `problem` state.
-
-`AiBridge` runs it with `OS.execute_with_pipe` (non-blocking), with a 10 s timeout that kills it and reports `offline`.
+- The key reaches the process only as its 0600 file path in `--args-json`; `check.ail` reads the file itself (`std/fs`). The child runs under `env -i`.
+- `base` is empty in the game. Tests point it at the loopback fixture (`tests/fixtures/ai_loopback.py`, the existing harness, which gains the two GET routes), and then only localhost over http is allowed.
+- **Guards:** automation runs never check (`start()` refuses), and there is no plan without a key file.
+- The child runs on a `WorkerThreadPool` task through the same descriptor scrub as the service (`AiBridge.scrubbed`), with a 10 s deadline that kills it and reports `offline`. The owner calls `poll()` each frame and gets `done(provider, status)`.
+- The result lives in memory for this run only (OQ2). It feeds the card's lamp and the badge's `problem` state. Removing a key forgets its result.
+- Measured 2026-11-09 against the real host: Mark's player key → `ok`, a fake key → `rejected`.
 
 ### V4. Capture and review
 
@@ -120,9 +124,9 @@ ailang run --quiet --bytecode --package-dir ai --caps Net,FS,Env --ai-no-adc \
 | AC4 | Capability tiles: Gemini key only → 4 bright; text-only → text bright, 3 dim; OpenRouter only → text bright, 3 faint; switch off → all dim | `make ai-settings` |
 | AC5 | Ceiling slider: `slider_to_ceiling(ceiling_to_slider(v)) == v` on every 0.01 step in 0.05..20, ends exact, monotonic | `make ai-settings` |
 | AC6 | Recent-reply dots come from this session's usage lines only (an earlier session's lines are not shown), newest last, at most 8 | `make ai-settings` |
-| AC7 | Key check against the loopback: 200 → ok, 403 → rejected, a closed port → offline (both providers); no usage line written; the fake key never appears in stdout, stderr or the log | `make ai-loopback` |
+| AC7 | Key check against the loopback: 200 → ok, 403/401 → rejected, a closed port → offline, an empty key → no_key (both providers); no file written; the fake keys never appear in stdout or stderr | `make ai-key-check` |
 | AC8 | `ai/check.ail` type-checks, and its classifier (`statusOf(code)`) is tested in AILANG | `make ai-pkg-test` |
-| AC9 | Automation never offers or runs a check: `check_plan()` is `{}` with `automation`, and no key file → `{}` | `make ai-live-guard` |
+| AC9 | Automation never runs a check (`AiKeyCheck.start()` refuses); no key file or an unknown provider → no plan; a hung check is killed at the deadline | `make ai-settings` |
 | AC10 | Mutants: dropping the no-usage rule, printing the body, or reversing state precedence each fail a named test | `make ai-mutants` |
 | AC11 | No hard-coded colour or style outside `StapledonTheme`; contrast passes | `make ui-theme-check STRICT=1` |
 | AC12 | No sim, protocol or physics change | `git diff --stat origin/main -- sim/ physics/ \| wc -l` prints 0 |
@@ -133,7 +137,7 @@ ailang run --quiet --bytecode --package-dir ai --caps Net,FS,Env --ai-no-adc \
 
 | # | Work | LOC (code + tests) | Depends on |
 |---|---|---|---|
-| P1 | `ai/check.ail` + `statusOf` test, `AiBridge.check_plan()` / run / timeout, loopback GET routes (AC7–AC9) | 90 + 140 | none |
+| P1 | `ai/check.ail` + `statusOf` test, `AiKeyCheck` plan / run / timeout, loopback GET routes (AC7–AC9) | 90 + 140 | none |
 | P2 | Badge: `state_of`, drawn pill and ring, tooltip (AC1, AC2) | 130 + 80 | P1 (`problem` from checks) |
 | P3 | Panel rewrite and `AiSettings` helpers (AC3–AC6) | 330 + 150 | P1 |
 | P4 | Theme pass, capture tool, mutants, dev build (AC10–AC14) | 70 + 60 | P2, P3 |
@@ -142,7 +146,7 @@ Order: P1 → (P2 ∥ P3) → P4. One PR.
 
 ## Risks and mitigations
 
-- **A check that leaks the key.** The key only ever travels as a file into the child's env; the check prints only a status word; AC7 greps every stream for the fake key; AC10 has a mutant that prints the body.
+- **A check that leaks the key.** The key only ever travels as a file path; the check prints only a status word; AC7 greps every stream for the fake key; AC10 has a mutant that prints the body.
 - **A "free" endpoint that starts billing.** Both are list/metadata GETs that providers don't bill. The check writes no usage line, so it could never count against the ceiling anyway. If a provider ever changed that, the lamp would still be right and the cost would show on the provider's bill, not in-game. Re-check at each provider change.
 - **`problem` false alarms** from one network blip. It needs 3 failed outcomes in a row or an explicit `rejected` check, and the next success clears it.
 - **The theme check blocks drawn icons.** Icons draw with theme tokens through `StapledonTheme` constants, the same way `bridge_screens.gd` does; no new hex in `ui/`.
@@ -156,7 +160,7 @@ Order: P1 → (P2 ∥ P3) → P4. One PR.
 
 ## Deliverables
 
-- `ai/check.ail` (entry `check`) and its test; `bridge/ai_bridge.gd` `check_plan()` and the async run
+- `ai/check.ail` (entry `check`) and its test; `bridge/ai_key_check.gd` (`AiKeyCheck`: the plan and the async run)
 - `ui/ai_indicator.gd` (drawn badge, `state_of`), `ui/settings/ai_settings_panel.gd` (rewritten), `ui/settings/ai_settings.gd` (pure helpers)
 - `tests/test_ai_settings.gd` cases, loopback GET routes in `tests/fixtures/ai_loopback.py`, mutant rows in `mk/ai.mk`
 - `tools/ai_panel_capture.gd` and `make ai-panel-capture`

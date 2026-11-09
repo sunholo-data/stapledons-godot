@@ -4,6 +4,7 @@
 usage: ai_loopback.py serve DIR     serve on 127.0.0.1 (ephemeral port, written
                                     to DIR/port) until DIR/stop appears
        ai_loopback.py check DIR KEY_GEMINI KEY_OPENROUTER
+       ai_loopback.py checkkeys DIR KEY_GEMINI KEY_OPENROUTER BAD_KEY
 
 It stands in for OpenRouter chat completions and Gemini TTS so the std/net
 halves of ai/adapters.ail run with fake keys and no network. Every request is
@@ -12,6 +13,12 @@ first chat completion is answered with the "Wait" fixture (bad_output), so the
 adapter must retry; later ones get openrouter_ok.json. TTS answers
 gemini_tts_ok.json (output tokens set inside the cap). `check` asserts the URLs, headers, bodies and the retry,
 and that neither key appears in the lane's stdout/stderr or in DIR/cache.
+
+R3-AI-PANEL-V2 (`make ai-key-check`): the key check's free GETs,
+/v1beta/models (x-goog-api-key) and /api/v1/key (Bearer), answer 200 for a
+key listed in DIR/good_keys and 403 (Gemini) or 401 (OpenRouter) otherwise.
+`checkkeys` asserts the printed statuses, the headers, that nothing but
+the lane's own files was written, and that no key reached any output.
 """
 import http.server
 import json
@@ -33,9 +40,32 @@ def serve(d):
     log = open(os.path.join(d, "requests.ndjson"), "a")
     seen = {"or": 0}
 
+    good_path = os.path.join(d, "good_keys")
+    good = set(open(good_path).read().split()) if os.path.exists(good_path) else set()
+
     class H(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
+
+        def do_GET(self):
+            log.write(json.dumps({"method": "GET", "path": self.path,
+                                  "authorization": self.headers.get("Authorization"),
+                                  "x_goog_api_key": self.headers.get("x-goog-api-key")}) + "\n")
+            log.flush()
+            if self.path == "/v1beta/models?pageSize=1":
+                ok = self.headers.get("x-goog-api-key") in good
+                code, out = (200, b'{"models":[{"name":"models/fixture"}]}') if ok else (403, b'{"error":{"status":"PERMISSION_DENIED"}}')
+            elif self.path == "/api/v1/key":
+                auth = self.headers.get("Authorization") or ""
+                ok = auth.startswith("Bearer ") and auth[7:] in good
+                code, out = (200, b'{"data":{"label":"fixture","usage":0}}') if ok else (401, b'{"error":{"code":401}}')
+            else:
+                code, out = 404, b"{}"
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
 
         def do_POST(self):
             body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode()
@@ -164,8 +194,48 @@ def check(d, kg, ko):
     return 1 if fails else 0
 
 
+def checkkeys(d, kg, ko, bad):
+    """R3-AI-PANEL-V2 AC7: the six key-check outcomes, headers, no writes, no key text."""
+    fails = []
+    want = {"gemini_good": "ok", "gemini_bad": "rejected", "gemini_closed": "offline",
+            "openrouter_good": "ok", "openrouter_bad": "rejected", "openrouter_closed": "offline",
+            "gemini_empty": "no_key", "openrouter_empty": "no_key"}
+    for case, status in want.items():
+        p = case.split("_")[0]
+        out = open(os.path.join(d, case + ".out")).read()
+        if out != '{"check":"%s","status":"%s"}\n' % (p, status):
+            fails.append("%s: want %s, got %r" % (case, status, out[:200]))
+    reqs = [json.loads(l) for l in open(os.path.join(d, "requests.ndjson"))]
+    g = [r for r in reqs if r["path"] == "/v1beta/models?pageSize=1"]
+    o = [r for r in reqs if r["path"] == "/api/v1/key"]
+    if sorted(r["x_goog_api_key"] for r in g) != sorted([kg, bad]) or any(r["authorization"] for r in g):
+        fails.append("gemini check headers wrong")
+    if sorted(r["authorization"] for r in o) != sorted(["Bearer " + ko, "Bearer " + bad]) or any(r["x_goog_api_key"] for r in o):
+        fails.append("openrouter check headers wrong")
+    if len(reqs) != 4 or any(r["method"] != "GET" for r in reqs):
+        fails.append("expected 4 GETs (good and bad key per provider), got %s" % [(r["method"], r["path"]) for r in reqs])
+    expected = {"port", "requests.ndjson", "good_keys", "stop", "key_good_g", "key_good_o", "key_bad", "key_empty"}
+    expected |= {c + ext for c in want for ext in (".out", ".err")}
+    extra = sorted(set(os.listdir(d)) - expected)
+    if extra:
+        fails.append("the check wrote files (it must write nothing): %s" % extra)
+    for c in want:
+        for ext in (".out", ".err"):
+            data = open(os.path.join(d, c + ext), "rb").read()
+            for k in (kg, ko, bad):
+                if k.encode() in data:
+                    fails.append("key text in %s%s" % (c, ext))
+    for f in fails:
+        print("FAIL " + f)
+    print("ai-key-check: %d outcomes (ok, rejected, offline, no_key per provider), %d GETs with the right auth header, no files written, keys absent from %d outputs%s"
+          % (len(want), len(reqs), 2 * len(want), "" if not fails else " -- FAILED"))
+    return 1 if fails else 0
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "serve":
         serve(sys.argv[2])
+    elif sys.argv[1] == "checkkeys":
+        sys.exit(checkkeys(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]))
     else:
         sys.exit(check(sys.argv[2], sys.argv[3], sys.argv[4]))

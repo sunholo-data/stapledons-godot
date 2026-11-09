@@ -26,11 +26,11 @@
   - `statusOf` inline tests in `ai/check.ail`;
   - in `tests/fixtures/ai_loopback.py`, the GET routes `/v1beta/models` and `/api/v1/key`, answering 200 for the good fake key, 403/401 for the bad one, and a closed port for offline;
   - a `check` section in the `make ai-loopback` driver asserting the six outcomes, no `usage.ndjson` line, and the fake key absent from stdout, stderr and the log;
-  - `check_plan()` cases in `tests/test_ai_settings.gd` (automation → `{}`, no key file → `{}`, a key file → a `/bin/sh` plan with `--ai-no-adc`, `--net-allow-domains` = `LIVE_HOSTS`, `--entry check`).
+  - `test_key_check` in `tests/test_ai_settings.gd`: automation refused, no key file → no plan, a key file → an `env -i` plan with `--net-allow-domains` = `LIVE_HOSTS` and `--entry check`, the parse, the async run, the timeout, and a real run to a closed port.
 - Then:
   - `ai/check.ail`;
-  - in `bridge/ai_bridge.gd`: `check_plan(provider, ailang, root, home)`, `run_check(provider)` (`OS.execute_with_pipe`, polled in `_process`, 10 s kill → `offline`), the `check_done(provider, status)` signal and `last_check: Dictionary`.
-- **Acceptance (AC7, AC8, AC9):** `make ai-loopback ai-pkg-test ai-live-guard ai-settings` green.
+  - `bridge/ai_key_check.gd` (`AiKeyCheck`, amended in execution from methods on `AiBridge`): `plan()`, `start()`, `poll()`, `status()`, the `done(provider, status)` signal; the child runs on a worker thread with a 10 s kill → `offline`.
+- **Acceptance (AC7, AC8, AC9):** `make ai-key-check ai-pkg-test ai-live-guard ai-settings` green.
 
 ### P2: the badge (~210 LOC: 130 code, 80 tests)
 - Tests first: `state_of` table (10 cases, the precedence of design §V1); the label is at most 2 words beside "AI"; the tooltip carries the per-provider and total amounts that `text()` shows today; a `budget` outcome → `ceiling`; 3 failed outcomes → `problem`, and one ok clears it; a `rejected` check → `problem`.
