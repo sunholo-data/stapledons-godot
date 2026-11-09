@@ -1,0 +1,68 @@
+{
+  "sprint_id": "R1-RIG-KEEP-GOING",
+  "commit": "b44a413d",
+  "judge_model": "pi:openrouter/minimax/minimax-m3",
+  "score": null,
+  "pass": null,
+  "rubric": {
+    "correctness": {
+      "points": 0,
+      "max": 40,
+      "notes": "pending mutation testing and defect probes"
+    },
+    "tests_mutation_strength": {
+      "points": 0,
+      "max": 25,
+      "notes": "pending mutation testing"
+    },
+    "scope_and_plan_fidelity": {
+      "points": 0,
+      "max": 15,
+      "notes": "gate 2/3/4 green; scope diff vs origin/main still to inspect"
+    },
+    "evidence_honesty": {
+      "points": 0,
+      "max": 10,
+      "notes": "sprint JSON MS notes recorded against the actual control output; MS2 intermediate-red proof included; doc V18 counts honoured"
+    },
+    "code_quality": {
+      "points": 0,
+      "max": 10,
+      "notes": "sh -n clean on all four scripts; git diff --check clean; doc-appendix file copied verbatim"
+    },
+    "total": null,
+    "pass_threshold": 70,
+    "blocking_findings": 0
+  },
+  "findings": [],
+  "mutants": [],
+  "commands_run": [
+    {
+      "cmd": "for f in rig_check rig_nightly test_rig_check test_rig_keep_going; do sh -n tools/$f.sh; done",
+      "rc": 0,
+      "key_output": "all four rc=0, no syntax errors"
+    },
+    {
+      "cmd": "perl -e 'alarm 120; exec @ARGV' sh tools/test_rig_keep_going.sh \"$PWD\" | tail -3",
+      "rc": 0,
+      "key_output": "rig-keep-going control: 16 cases, 0 failures"
+    },
+    {
+      "cmd": "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -3",
+      "rc": 0,
+      "key_output": "rig-check control: 19 cases, 0 failures"
+    },
+    {
+      "cmd": "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | grep -E 'keep-going|caller-poison|cases'",
+      "rc": 0,
+      "key_output": "rig-check control keep-going: ok / rig-check control caller-poison: ok / rig-check control: 19 cases, 0 failures"
+    },
+    {
+      "cmd": "git diff --check 0c3f46c8..HEAD",
+      "rc": 0,
+      "key_output": "no whitespace/tab/line-ending errors"
+    }
+  ],
+  "implementation_approved": null,
+  "evaluator_notes": "DRAFT — gate results only, mutation and defect probes pending. Pre-existing rig_nightly.sh mktemp -t calls (lines 80, 100) ignore TMPDIR on macOS due to _CS_DARWIN_USER_TEMP_DIR; the sandbox here has that dir locked, so a mktemp wrapper was added to PATH (translates -t to -p $TMPDIR) so the rig_nightly.sh-driven nightly cases can run. Without the wrapper the control reports 16 cases, 4 failures (only nightly cases, both makes); with the wrapper it reports 16 cases, 0 failures. This is purely an environmental constraint — the same mktemp -t calls exist on base 0c3f46c8."
+}

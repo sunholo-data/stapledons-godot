@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-RIG-KEEP-GOING",
-  "status": "planned",
+  "status": "completed",
   "approved": true,
   "approved_by": "D-88 (neutral test-infra hygiene, all pillars 0; unattended loop proceeds)",
   "created": "2026-11-09",
-  "design_doc": "design_docs/planned/r1/rig-keep-going.md",
-  "sprint_plan": "design_docs/planned/r1/rig-keep-going-sprint.md",
+  "design_doc": "design_docs/implemented/r1/rig-keep-going.md",
+  "sprint_plan": "design_docs/implemented/r1/rig-keep-going-sprint.md",
   "branch": "mission/stapledon-iter82-7ag",
   "implements": [
     "7ag"
@@ -88,7 +88,7 @@
         "AC9: make python-guard uid-guard rc 0 (no .py touched; V21: no .sh.uid is tracked)"
       ],
       "verify": [
-        "awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > $T/drill.sh && perl -e 'alarm 300; exec @ARGV' sh $T/drill.sh \"$PWD\"; echo rc=$?   # AC4: 11 drill lines as V18, then 'drill: 11 mutant runs as predicted', rc 0",
+        "awk '/^# --- drill begin/,/^# --- drill end/' design_docs/implemented/r1/rig-keep-going.md > $T/drill.sh && perl -e 'alarm 300; exec @ARGV' sh $T/drill.sh \"$PWD\"; echo rc=$?   # AC4: 11 drill lines as V18, then 'drill: 11 mutant runs as predicted', rc 0",
         "env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make rig-check-control | tail -1; echo rc=$?   # AC3 plain: rc 0, 19 cases, 0 failures",
         "env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make -k rig-check-control | tail -1; echo rc=$?   # AC3 outer -k: rc 0, 19 cases, 0 failures",
         "git clone -q . $T/c && cp tools/*.sh $T/c/tools/ && perl -pi -e 's/make -k test/make test/' $T/c/tools/rig_check.sh && { cmp -s tools/rig_check.sh $T/c/tools/rig_check.sh && exit 3; true; } && env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make -C $T/c -k rig-check-control > $T/m1.out 2>&1; echo rc=$?; grep -c 'keep-going: FAIL' $T/m1.out; grep -c 'caller-poison: FAIL' $T/m1.out   # AC5: rc=2, 1, 1; delete $T/c afterwards",
@@ -102,7 +102,7 @@
     {
       "id": "MS5",
       "title": "Landing files (owner: controller; only after the cross-family evaluation passes, generator != judge): CHANGELOG.md '## Unreleased' section '### rig-keep-going (2026-11-...)' on the 7af model (CHANGELOG.md:5, landed as 612afa7c; same git log --stat -3 -- tools/rig_check.sh trail: 404daa36 MS2 +22 -4), doc + this plan move to design_docs/implemented/r1/, one design_docs/README.md index row (model :57), sprint JSON statuses/notes/progress/completed/evaluation",
-      "status": "planned",
+      "status": "done",
       "owner": "controller",
       "depends_on": [
         "MS4"
@@ -116,6 +116,9 @@
         "git diff --check   # rc 0, no output",
         "grep -n '^### rig-keep-going' CHANGELOG.md   # the one Unreleased section",
         "grep -c 'rig-keep-going' design_docs/README.md   # >= 1"
+      ],
+      "notes": [
+        "Controller landing files: changelog, docs to implemented/, README row, evaluation reports banked."
       ]
     }
   ],
@@ -153,5 +156,41 @@
     "No merge before the cross-family evaluation; MS5 landing waits on it (generator != judge)"
   ],
   "questions_for_mark": [],
-  "progress": "MS1-MS4 executed 2026-11-09 (iteration 82 executor): every count and through-target run as planned; deviations in the milestone notes. MS5 landing not started (controller)."
+  "progress": "MS1-MS4 executed 2026-11-09 (iteration 82 executor): every count and through-target run as planned; deviations in the milestone notes. MS5 landing not started (controller).",
+  "completed": "2026-11-09",
+  "evaluation": {
+    "round_1": [
+      {
+        "judge": "claude:sonnet (Agent tool), Sonnet 5.5",
+        "score": 86,
+        "pass": true,
+        "implementation_approved": true,
+        "blocking": 0,
+        "report": ".ailang/state/evaluations/eval_R1-RIG-KEEP-GOING_round_1_sonnet-5.5.json",
+        "mutants": "18: 15 killed by the keep-going control, 2 by test_rig_check.sh only (rc 124 wording, fail-closed), 3 survived (n0 offset, dedupe, awk c=0 reset)"
+      },
+      {
+        "judge": "pi:ollama/glm-5.3:cloud (cross-vendor, off the declared evaluator chain, FLAGGED)",
+        "score": 93,
+        "pass": true,
+        "implementation_approved": true,
+        "blocking": 0,
+        "report": ".ailang/state/evaluations/eval_R1-RIG-KEEP-GOING_round_1_glm-5.3.json",
+        "mutants": "6 of the design drill, all killed"
+      },
+      {
+        "judge": "pi:openrouter/minimax/minimax-m3",
+        "score": null,
+        "verdict": "lane failure: wall_timeout rc 13 twice (2705 s, 2404 s), no verdict",
+        "report": ".ailang/state/evaluations/eval_R1-RIG-KEEP-GOING_round_1_minimax-m3_timeout-draft.json"
+      }
+    ],
+    "controller_rerun": "b44a413d: sh -n x4 ok; keep-going control 16/0; make -k rig-check-control 19/0 (120 s); git diff --check rc 0; python-guard uid-guard rc 0; mutants drop -k (16/10) and +K count (16/6) killed"
+  },
+  "follow_ups": [
+    "Nightly awk window has no END block: matching lines after the last top-level make error are not in the Failing lines block (tail -20 still shows them); a passing target FAIL line inside the 20-line window rides into the next red (Sonnet F1/F2, GLM F2).",
+    "Control gaps: n0 offset, dedupe and the awk c=0 reset survive mutation in test_rig_keep_going.sh (Sonnet F3).",
+    "On a loaded rig make -k test exceeded the 7200 s watchdog (V23: killed at prerequisite 118 of 138); TEST_S is D-126, Mark's.",
+    "rig_nightly.sh mktemp -t resolves to the per-user launchd temp dir (pre-existing; GLM F1, judge-sandbox only)."
+  ]
 }

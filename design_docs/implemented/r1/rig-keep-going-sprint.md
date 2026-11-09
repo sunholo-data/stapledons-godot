@@ -122,7 +122,7 @@ byte-identical to today's: doc V20 measured that on the real `d9cc170b` log (`cm
 
 - Closes: AC3, AC4, AC5, AC6 (second half), AC7, AC8 and AC9.
 - AC4, the doc's drill:
-  `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > $T/drill.sh && perl -e 'alarm 300; exec @ARGV' sh $T/drill.sh "$PWD"; echo rc=$?`
+  `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/implemented/r1/rig-keep-going.md > $T/drill.sh && perl -e 'alarm 300; exec @ARGV' sh $T/drill.sh "$PWD"; echo rc=$?`
   → the 11 `drill …` lines with the V18 counts and the named red cases (M1-no-k 10, M2-first-only 10, M3-red-is-green 10,
   M4-no-target-list 2, M5-old-tail-30 2, M6-shared-log 2, M9-fixed-9 4, M10-no-cut 2, M7-no-k-under-outer-k 10,
   M8a rc 1, M8b rc 0 — the mutant **survives**, proving the control's unset is what kills M1 under `make -k test`), then

@@ -1,6 +1,6 @@
 # Nightly rig/full keeps going past a red target (7ag)
 
-**Status:** Planned 2026-11-09 (mission iteration 82, designer). Revision 1 answers design-quorum round 1 (2/3 block); see "Quorum round 1" near the end. **Release:** r1. **Milestone:** none (nightly tooling).
+**Status:** Implemented 2026-11-09 (mission iteration 82; evaluations Sonnet 5.5 86 PASS, GLM 5.3 93 PASS). Revision 1 answers design-quorum round 1 (2/3 block); see "Quorum round 1" near the end. **Release:** r1. **Milestone:** none (nightly tooling).
 **Priority:** P1. Since at least 2026-11-04 every nightly `rig/full` has stopped at the first red target, about 6 minutes into a 67–71 minute suite. Everything after that target has not run on main for five nights, while PRs keep merging on the fast tier.
 **Implements:** queue row **7ag**. It serves Mark's merge rule of 2026-11-03/06 (CLAUDE.md "Merges"): main's nightly `rig/full` is the only place the whole `make test` runs. One known red (D-145, then D-148) must not hide every other red.
 **Depends on:** 7af ([rig-golden-setup](../../implemented/r1/rig-golden-setup.md): the `bounded` helper and the `order` cases of `tools/test_rig_check.sh`); the hermetic rig-check control from iteration 55 ([rig-watchdog-7200](../../implemented/r1/rig-watchdog-7200.md)). GNU Make 3.81 (`/usr/bin/make`, the rig's make), and also GNU Make 4.4.1 (`gmake`), because the new control runs on both.
@@ -208,7 +208,7 @@ That is 32 lines: 16 in the closure, of which 15 expect success and 1 expects fa
 
 ### Mutation drill
 
-The drill is run as `sh drill.sh ROOT`. Extract it with `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > "$T/drill.sh"`.
+The drill is run as `sh drill.sh ROOT`. Extract it with `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/implemented/r1/rig-keep-going.md > "$T/drill.sh"`.
 
 ```sh
 # --- drill begin
@@ -287,7 +287,7 @@ The control adds about 6 s to `rig-check-control`, which took 189–221 s before
 | 1 | The keep-going control is green on both makes | `sh tools/test_rig_keep_going.sh "$PWD" \| tail -1; echo rc=$?` | `rig-keep-going control: 16 cases, 0 failures`, `rc=0` |
 | 2 | The rig-check control is green and includes it | `sh tools/test_rig_check.sh tools/rig_check.sh \| grep -E 'keep-going\|caller-poison\|cases'` | `rig-check control keep-going: ok`, `rig-check control caller-poison: ok`, `rig-check control: 19 cases, 0 failures` |
 | 3 | Through the target that `make test` uses, plain and under an outer `-k` | `env -u MAKEFLAGS -u MAKELEVEL make rig-check-control \| tail -1; echo rc=$?`, then the same with `make -k rig-check-control` | both `rig-check control: 19 cases, 0 failures`, `rc=0` |
-| 4 | Mutants die (M9/M10 bite the 140 bound; M8b shows the unset is load-bearing) | `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > $T/drill.sh && sh $T/drill.sh "$PWD"; echo rc=$?` | 11 `drill …` lines as in V18, then `drill: 11 mutant runs as predicted`, `rc=0` |
+| 4 | Mutants die (M9/M10 bite the 140 bound; M8b shows the unset is load-bearing) | `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/implemented/r1/rig-keep-going.md > $T/drill.sh && sh $T/drill.sh "$PWD"; echo rc=$?` | 11 `drill …` lines as in V18, then `drill: 11 mutant runs as predicted`, `rc=0` |
 | 5 | M1 dies through the target under the rig's own `-k` | `git clone -q . $T/c && cp tools/*.sh $T/c/tools/ && perl -pi -e 's/make -k test/make test/' $T/c/tools/rig_check.sh && { cmp -s tools/rig_check.sh $T/c/tools/rig_check.sh && exit 3; true; } && env -u MAKEFLAGS -u MAKELEVEL make -C $T/c -k rig-check-control > $T/m1.out 2>&1; echo rc=$?; grep -c 'keep-going: FAIL' $T/m1.out; grep -c 'caller-poison: FAIL' $T/m1.out` | `rc=2`, `1`, `1` |
 | 6 | The rig runs `make -k test` and nothing else changed how `make test` runs | `grep -c 'bounded "\$TEST_S" make -k test' tools/rig_check.sh; git diff --name-only origin/main...HEAD -- Makefile mk \| wc -l` | `1`, `0` |
 | 7 | Scope | `git diff --name-only origin/main...HEAD` | `tools/rig_check.sh`, `tools/rig_nightly.sh`, `tools/test_rig_check.sh`, `tools/test_rig_keep_going.sh`, this doc and the landing files only |

@@ -1,0 +1,103 @@
+{
+  "sprint_id": "R1-RIG-KEEP-GOING",
+  "commit": "b44a413db3f929c2b21663481d78102380292e47",
+  "judge_model": "pi:ollama/glm-5.3:cloud",
+  "score": 93,
+  "pass": true,
+  "implementation_approved": true,
+  "rubric": {
+    "correctness": {
+      "max": 40,
+      "points": 37,
+      "notes": "M1 (rig_check.sh) and M2 (rig_nightly.sh) applied verbatim against the design's diffs (verified line by line against design_docs/planned/r1/rig-keep-going.md). All gates green modulo one proven judge-sandbox artifact (finding 1, pre-existing code outside the diff): sh -n clean on all four scripts; keep-going control 16 cases 0 failures (with the sandbox wall adapted); rig-check control 19 cases 0 failures in substance (17 outer cases green; the 2 reds trace solely to finding 1); git diff --check clean; budget arithmetic re-derived and holds by construction (suffix reserved at 7+len(N) since K<=N-1, first-name cut to budget-3, status() cuts at 140 as the last resort); nested make[N]: lines cannot match ^g?make: (verified against the pattern); fail-closed paths (make-test-red, watchdog-override, test-hang) green. -3: the only whole-suite evidence (V23, AC10) is controller-owned and still in flight, so the keep-going behaviour on the real 138-target suite rests on the design's static V24 arm plus the fixture control."
+    },
+    "tests_mutation_strength": {
+      "max": 25,
+      "points": 23,
+      "notes": "tools/test_rig_keep_going.sh is the design's measured appendix verbatim minus one trailing blank line (dropped deliberately in dfa7a639, recorded in the sprint JSON); 16 cases across both GNU makes with positive controls (log-capture live, reason-capture live). My judge drill: 6/6 mutants killed, each with exactly the case-level signature the design's V18 predicts (see mutants[]). -2: I ran 6 of the design's 11 drill mutants under the strict time budget (the two timed-out predecessor judges made a full re-run unaffordable); the 6 chosen cover both files and the riskiest new logic (-k, dedup, 140-bound, first-name cut, nightly list line, awk window)."
+    },
+    "scope_and_plan_fidelity": {
+      "max": 15,
+      "points": 15,
+      "notes": "git diff 0c3f46c8..HEAD --name-only: the four tools/ scripts, the design doc, the sprint plan, the sprint JSON, nothing else; Makefile and mk/ untouched (0 files). test_rig_check.sh wiring exactly per plan: HERE, keep-going case on the suite-profile model, 'sky-assets -k test' make-call lists, the three new/updated EREs, counts 17->18->19, caller-poison MAKEFLAGS=k. No .gd/.uid/sim/tests changes."
+    },
+    "evidence_honesty": {
+      "max": 10,
+      "points": 9,
+      "notes": "The design's verification log (V1-V25) is measured and reproducible; quorum round 1 and round 2 (2/3 blocks) are recorded with their resolutions; revision 2 honestly corrected V20 and reconciled the 31/32 count; V23 is marked controller-owned and still PENDING (AC10) rather than claimed done. Executor milestone notes are claims but every one I could re-derive matched (diff shapes, control counts, the trailing-blank-line fix). -1: AC10 cannot be closed by the executor or this judge yet; the report records that state rather than a verdict on it."
+    },
+    "code_quality": {
+      "max": 10,
+      "points": 9,
+      "notes": "POSIX sh with intent-comments on every non-obvious line, fail-closed by construction, hermetic control (stubs, unsets of MAKEFLAGS/MAKELEVEL family, escape-hatch vars), bounds everywhere (cut -c1-300, head -200). -1 for the pre-existing 'mktemp -t' portability wart the evaluation surfaced in rig_nightly.sh (not this sprint's code, see finding 1)."
+    }
+  },
+  "findings": [
+    {
+      "blocking": false,
+      "title": "Pre-existing 'mktemp -t' in rig_nightly.sh makes the nightly path unrunnable under a sandbox that denies the launchd per-user temp dir (judge-environment artifact, not a product defect on the rig's host)",
+      "detail": "tools/rig_nightly.sh:80 'out=$(mktemp -t rig-nightly)' and :100 'body=$(mktemp -t rig-nightly-body)' resolve to /var/folders/kr/.../T/ (macOS mktemp -t ignores $TMPDIR). Under 'set -eu' the script dies before any log line when that directory is not writable. This is untouched by this sprint's diff (base 0c3f46c8 already had both lines; the diff only touches the :103-115 issue-body block). On the rig's real host the per-user temp dir is writable, which is how the executor and the design's V16 measured 16/0.",
+      "reproduction": "In this judge sandbox: 'TMPDIR=/tmp/claude mktemp -t probe' -> 'mktemp: mkstemp failed on /var/folders/kr/.../T/probe-....XXX: Operation not permitted' (rc 1). Consequently 'sh tools/test_rig_keep_going.sh \"$PWD\"' reported '16 cases, 4 failures' (nightly-two-red and nightly-green on both makes; the captured fixture $T/out of the failing runs contains ONLY the mktemp error), and 'sh tools/test_rig_check.sh tools/rig_check.sh' reported '19 cases, 2 failures' (keep-going 'FAIL (see fixture output)' and caller-poison 'FAIL (rc 1, 29 of 18 ok)' - the over-read comes from the 12 catted fixture ok lines, exactly the mechanism the design's through-target section documents). Proof it is environmental: copying tools/ to a temp root and changing ONLY the two pre-existing mktemp lines to 'mktemp \"${TMPDIR:-/tmp}/rig-nightly.XXXXXX\"' templates (verified by diff: only lines 80 and 100 differ) yields 'rig-keep-going control: 16 cases, 0 failures' (rc 0) - the expected AC1 result, with the nightly cases exercising the real new code. Suggestion for the rig-tools owner (not this row, which is scoped to the four scripts' new behaviour): use the ${TMPDIR:-/tmp} template form, as the two controls already do; it also survives Linux where 'mktemp -t' is deprecated."
+    },
+    {
+      "blocking": false,
+      "title": "Nightly awk window: a passing target's FAIL line can be carried into the next red's window, and matching lines after the last top-level 'make: ***' are not in the block",
+      "detail": "The sliding 20-line window resets at each top-level make error, so a green target's output that matches FAIL/SCRIPT ERROR/*** (e.g. a test printing 'FAIL' in a pass message excluded only by the '=FAIL$|0 fail' filter) can appear in the previous red's window, and matching lines printed after the last top-level error are dropped from the block (the retained tail -20 still shows the log end). This is the exact limitation gemini-4-argon named in quorum round 2 and the designer accepted as non-blocking; I confirm the code behaves as documented and the design's stated worst case (138 targets) stays far inside the 200-line/300-character caps and GitHub's 65,536-character body limit.",
+      "reproduction": "Reasoned from the awk in rig_nightly.sh:107-108 and confirmed by the control's nightly-two-red case (2 top-level error lines, both windows present); no misbehaviour observed on any fixture or mutant."
+    },
+    {
+      "blocking": false,
+      "title": "AC10 / V23 (the controller's whole 'make -k test' on 0c3f46c8 with inherited k) is still in flight",
+      "detail": "The task designates V23 a controller-owned measurement out of this evaluation's scope; the design's static arm (V24: 32 nested-make lines classified, exactly two expecting failure, one in the closure single-goal and measured in V12) plus V13's three plain-vs-k targets carry the shipped claim. The first keep-going nightly is the design's stated final check. Not counted against the implementation; recorded so the landing step knows the observation is outstanding.",
+      "reproduction": "Design doc V23 row marked PENDING at revision 2; AC10 names the controller's run. Nothing to reproduce here; out of judge scope by instruction (a whole make test is 70+ min)."
+    }
+  ],
+  "mutants": [
+    {
+      "name": "mu1 (drill M1): 'make -k test' -> 'make test' in rig_check.sh",
+      "verdict": "killed",
+      "observed": "16 cases, 10 failures (rc 1): two-red ('beta-ok did not run (no keep-going)' - keep-going is what this row ships), many-red, hundred-red, longname-red, nightly-two-red on both makes; matches V18's M1 prediction of 10."
+    },
+    {
+      "name": "mu2 (drill M2): dedup 'awk !s[$0]++' -> 'head -1' in rig_check.sh",
+      "verdict": "killed",
+      "observed": "16 cases, 10 failures (rc 1): first-target-only naming on two-red/many-red/hundred-red/longname-red; nightly-two-red loses the second name; matches V18's M2."
+    },
+    {
+      "name": "mu9 (drill M9): '+K more' suffix reserved at the old fixed 9",
+      "verdict": "killed",
+      "observed": "16 cases, 4 failures (rc 1): hundred-red 'reason 141 characters' (the 140 bound bites exactly as V25 measured) and longname-red (the cut moves) on both makes; matches V18's M9."
+    },
+    {
+      "name": "mu10 (drill M10): the too-long-first-name cut removed",
+      "verdict": "killed",
+      "observed": "16 cases, 2 failures (rc 1): longname-red on both makes reports '2 red:  +2 more' - the empty list the quorum round-1 edge case predicted; matches V18's M10."
+    },
+    {
+      "name": "mu4 (drill M4): the nightly 'Failing targets' sed line removed",
+      "verdict": "killed",
+      "observed": "16 cases, 2 failures (rc 1): nightly-two-red 'no Failing targets line' on both makes; matches V18's M4."
+    },
+    {
+      "name": "mu5 (drill M5): the awk window replaced by the old 'grep ... | tail -30'",
+      "verdict": "killed",
+      "observed": "16 cases, 2 failures (rc 1): nightly-two-red 'top-level error lines; failing lines' - the 40 gamma FAIL lines drop alpha, the exact regression the design cites from issue #392; matches V18's M5."
+    }
+  ],
+  "commands_run": [
+    "git rev-parse HEAD -> b44a413db3f929c2b21663481d78102380292e47 (branch mission/stapledon-iter82-7ag, base 0c3f46c8)",
+    "git diff 0c3f46c8..HEAD -- tools/rig_check.sh tools/rig_nightly.sh tools/test_rig_check.sh (read; M1/M2 verbatim vs design)",
+    "appendix extraction: sed -n '342,488p' design_docs/planned/r1/rig-keep-going.md vs tools/test_rig_keep_going.sh -> identical except one trailing blank line (dropped in dfa7a639)",
+    "for f in rig_check rig_nightly test_rig_check test_rig_keep_going: sh -n tools/$f.sh -> all clean, rc 0",
+    "git diff --name-only 0c3f46c8..HEAD -> 7 files (4 tools scripts + 3 docs/state); Makefile+mk: 0 files",
+    "git diff --check 0c3f46c8..HEAD -> clean, rc 0",
+    "perl -e 'alarm 120; exec @ARGV' sh tools/test_rig_keep_going.sh \"$PWD\" | tail -3 -> 'rig-keep-going control: 16 cases, 4 failures' (nightly-two-red and nightly-green on both makes; proven to be the judge-sandbox mktemp -t wall, finding 1)",
+    "TMPDIR=/tmp/claude mktemp -t probe -> 'mkstemp failed on /var/folders/.../T/...: Operation not permitted' (environment reproduction; the control's failing fixture runs contain only this error)",
+    "environment adaptation proof: temp-root copy of tools/ with ONLY rig_nightly.sh:80,100 changed to ${TMPDIR:-/tmp} templates -> 'sh tools/test_rig_keep_going.sh $M' => 'rig-keep-going control: 16 cases, 0 failures', rc 0 (AC1 substance)",
+    "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh -> 'rig-check control: 19 cases, 2 failures': keep-going FAIL and caller-poison FAIL (rc 1, 29 of 18 ok), both from the same sandbox wall; all other 17 outer cases ok (make-test-red, watchdog-override, test-hang, golden-setup, full-no-setup etc. green)",
+    "6 mutation runs against the fast control only (each: cp tools/*.sh to a fresh temp root, mktemp env-adaptation applied identically, ONE perl mutation, cmp proof it applied, perl -e 'alarm 120' sh tools/test_rig_keep_going.sh $ROOT): 6/6 killed with V18-matching counts (10/10/4/2/2/2)",
+    "grep -n mktemp tools/{rig_check,rig_nightly,test_rig_check,test_rig_keep_going}.sh -> rig_nightly.sh:80,100 only ('mktemp -t'); rig_check.sh has none",
+    "sprint JSON read (claims, not evidence): MS1-MS4 done, MS5 planned; notes consistent with my measured results",
+    "temp dirs under /tmp/claude/eval-kg-7ag-* and /tmp/claude/rig-keep-going.* deleted after use (outside the worktree); report not committed"
+  ]
+}
