@@ -15,10 +15,25 @@
 # stages the pinned runtime if the clone lacks it, fetches the sky textures, runs the suite under
 # a watchdog (macOS has no timeout), keeps the log, and posts pending, then success or failure.
 # RIG_NO_STATUS=1 skips the status posts (a dry run on someone else's PR, say).
+# --golden and --golden-only first run the golden setup, the makes that make test used to provide (7af), each
+# bounded; every make call in the run is bounded, so a hang is a named failure, not a stuck nightly.
 set -eu
 REPO=sunholo-data/stapledons-godot
 TEST_S=${RIG_TEST_S:-7200}   # make test is 66-90 min on the Studio; D-126 C (Mark, 2026-10-28)
 GOLDEN_S=${RIG_GOLDEN_S:-1800}
+GOLDEN_SETUP="deps starmap-assets planet-assets import"   # 7af: what make golden read from make test; import last
+SETUP_S=${RIG_SETUP_S:-600}                               # per target; slowest measured 9 s
+DL_S=${RIG_DL_S:-3600}   # runtime fetch + sky regen; measured regen ~900 s
+# bounded SECS cmd...: cmd in its own process group, stdin from /dev/null; at SECS (or on INT/TERM/HUP) TERM the
+# whole group, KILL it 2 s later, exit 124 (130 if interrupted). A plain alarm+exec signals make, not its recipes.
+bounded() {
+  perl -e 'my $s = shift; my $pid = fork; defined $pid or die "bounded: fork: $!\n";
+    if (!$pid) { setpgrp(0, 0); open STDIN, "<", "/dev/null"; exec @ARGV or exit 127 }
+    setpgrp($pid, $pid);
+    for my $sig (qw(ALRM INT TERM HUP)) { $SIG{$sig} = sub { kill "TERM", -$pid; sleep 2; kill "KILL", -$pid;
+      waitpid($pid, 0); exit($sig eq "ALRM" ? 124 : 130) } }
+    alarm $s; waitpid($pid, 0); exit($? & 127 ? 128 + ($? & 127) : $? >> 8)' "$@"
+}
 
 usage() { echo "usage: $0 <PR number | ref> [--golden | --golden-only]"; exit 2; }
 [ $# -ge 1 ] || usage
@@ -69,17 +84,20 @@ have=$(runtime/bin/ailang --version 2>/dev/null | head -1 || true)
 case "$have" in
   *"${pin#v}"*) echo "rig-check: runtime $pin" > "$log" ;;
   *) echo "rig-check: staging runtime $pin (had: ${have:-none})" > "$log"
-     make runtime >> "$log" 2>&1 || fail "make runtime failed" ;;
+     bounded "$DL_S" make runtime >> "$log" 2>&1 || fail "rig setup: make runtime failed or ran over ${DL_S}s" ;;
 esac
 have=$(runtime/bin/ailang --version 2>/dev/null | head -1 || true)
 case "$have" in *"${pin#v}"*) ;; *) fail "runtime is '$have', pin is $pin" ;; esac
 PATH=$PWD/runtime/bin:$PATH; export PATH
-make sky-assets >> "$log" 2>&1 || fail "make sky-assets failed"
+bounded "$DL_S" make sky-assets >> "$log" 2>&1 || fail "rig setup: make sky-assets failed or ran over ${DL_S}s"
 
 start=$(date +%s)
-[ $tests = 0 ] || perl -e 'alarm shift; exec @ARGV' "$TEST_S" make test >> "$log" 2>&1 || fail "make test failed or ran over ${TEST_S}s"
+[ $tests = 0 ] || bounded "$TEST_S" make test >> "$log" 2>&1 || fail "make test failed or ran over ${TEST_S}s"
 if [ $golden = 1 ]; then
-  perl -e 'alarm shift; exec @ARGV' "$GOLDEN_S" make golden >> "$log" 2>&1 || fail "make golden failed or ran over ${GOLDEN_S}s"
+  for t in $GOLDEN_SETUP; do
+    bounded "$SETUP_S" make "$t" >> "$log" 2>&1 || fail "golden setup: make $t failed or ran over ${SETUP_S}s"
+  done
+  bounded "$GOLDEN_S" make golden >> "$log" 2>&1 || fail "make golden failed or ran over ${GOLDEN_S}s"
 fi
 mins=$(( ($(date +%s) - start + 59) / 60 ))
 echo "rig-check: ok, $short green ($suite, ${mins} min)"

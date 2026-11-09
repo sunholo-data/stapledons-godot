@@ -1,0 +1,156 @@
+{
+  "sprint_id": "R1-RIG-GOLDEN-SETUP",
+  "status": "completed",
+  "approved": true,
+  "approved_by": "design quorum: two rounds (3/3 reject each) then the narrow-refinement carve-out; Open questions empty; D-88 hygiene rule applies (test/infra hygiene, no pillar below 0), so no attended stop is needed",
+  "created": "2026-11-09",
+  "design_doc": "design_docs/implemented/r1/rig-golden-setup.md",
+  "sprint_plan": "design_docs/implemented/r1/rig-golden-setup-sprint.md",
+  "branch": "mission/stapledon-iter81-golden-import",
+  "implements": [
+    "7af"
+  ],
+  "github_issues": [],
+  "scope": "tools/rig_check.sh (~22 LOC) and tools/test_rig_check.sh (~63 LOC) plus landing files only; no Makefile, mk/, .gd, .uid, sim/ or tests/ changes; no GPU step and no make golden run anywhere in this sprint",
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "Red controls in tools/test_rig_check.sh (test-first): make-call log + hang mode in the stub make, order helper, 7 new cases (golden-only-setup, golden-setup, golden-setup-red, full-no-setup, setup-hang, sky-hang, runtime-hang), RIG_SETUP_S RIG_DL_S in the unset and the caller-poison, counts 8->15 and 9->16",
+      "status": "done",
+      "acceptance_criteria": [
+        "Doc sub-milestone 1: the 7 control cases are written before any rig_check.sh change and recorded red against the unmodified script (that red run is already the AC6/AC10/AC12 mutant evidence)",
+        "Red half of AC5: against the unmodified tools/rig_check.sh, exactly the 7 new cases FAIL and the 8 base cases stay ok (rc 1; record the failure count in notes)",
+        "All four count-coupling sites from doc V7 updated together (n=8->15, nested n=9->16, both 8s on the caller-poison line -> 15); caller-poison adds RIG_SETUP_S=9 RIG_DL_S=9, unset adds RIG_SETUP_S RIG_DL_S"
+      ],
+      "verify": [
+        "T=$(mktemp -d); perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh > $T/ms1-red.log 2>&1; echo rc=$?; grep -c 'FAIL' $T/ms1-red.log   # want: rc=1, 7 FAILs, base 8 ok"
+      ],
+      "notes": "MS1 red (unmodified tools/rig_check.sh, rc 1, perl alarm 300): 16 cases, 7 failures. Ok: the 8 base cases plus full-no-setup (9 ok lines). FAIL: golden-only-setup (calls sky-assets golden), golden-setup (sky-assets test golden), golden-setup-red (no failure post), setup-hang (no deps call, no child), sky-hang (rc 0), runtime-hang (desc mismatch), caller-poison (nested 9 of 15 ok). DEVIATION: the plan said exactly 7 new cases FAIL; full-no-setup passes on the unmodified script because the current rig already has no setup on the rig/full path, so it is a regression guard that only a mutant can turn red. Reaper positive control (live sleep seen by kill -0) passes. Wall time about 260 s total (sky-hang and runtime-hang 20 s each, doubled by caller-poison). Orphan sleep 20 count before 4 (pre-existing, other sessions), after 4. Log: /tmp/iter81-evidence/ms1-red.log"
+    },
+    {
+      "id": "MS2",
+      "title": "tools/rig_check.sh: verbatim 9-line bounded helper (process group, TERM, KILL after 2s, reap, 124/130), GOLDEN_SETUP='deps starmap-assets planet-assets import', SETUP_S=600, DL_S=3600, the golden setup loop, runtime/sky-assets and both watchdog lines on bounded, header line; control green; mutants M1..M7 each drilled red",
+      "status": "done",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance_criteria": [
+        "AC4: GOLDEN_SETUP is exactly the measured four with import last",
+        "AC5 (green half): the control prints 'rig-check control: 16 cases, 0 failures', rc 0, hermetic under caller poison",
+        "AC6..AC12: mutants M1..M7 from the design doc each go red with the named cases failing (see the sprint plan table for the sed one-liners and expected reds)",
+        "AC13: pgrep -f 'sleep 20' count equal before and after the control (no orphan children)"
+      ],
+      "verify": [
+        "sh -n tools/rig_check.sh && sh -n tools/test_rig_check.sh   # rc 0",
+        "perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1   # rig-check control: 16 cases, 0 failures",
+        "perl -e 'alarm 300; exec @ARGV' make rig-check-control   # rc 0 (mk/m45.mk:55; rides make test, not ci-fast)",
+        "sed -n 's/^GOLDEN_SETUP=\"\\([^\"]*\\)\".*/\\1/p' tools/rig_check.sh   # deps starmap-assets planet-assets import",
+        "sed 's/^GOLDEN_SETUP=.*/GOLDEN_SETUP=\"\"/' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M1/AC6: rc 1; golden-only-setup, golden-setup, golden-setup-red, setup-hang FAIL",
+        "sed 's/^GOLDEN_SETUP=.*/GOLDEN_SETUP=\"deps starmap-assets planet-assets\"/' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M2/AC7: rc 1; golden-only-setup, golden-setup, golden-setup-red FAIL",
+        "sed 's/^GOLDEN_SETUP=.*/GOLDEN_SETUP=\"deps starmap-assets import\"/' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M3/AC8: rc 1; golden-only-setup, golden-setup, golden-setup-red FAIL",
+        "sed 's/ \\|\\| fail \"golden setup: .*$//' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M4/AC9: rc 1; golden-setup-red, setup-hang FAIL",
+        "sed 's/-\\$pid/$pid/g' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M5/AC10: rc 1; setup-hang, sky-hang, runtime-hang FAIL with the child alive",
+        "sed 's/^unset RIG_TEST_S RIG_GOLDEN_S RIG_SETUP_S/unset RIG_TEST_S RIG_GOLDEN_S/' tools/test_rig_check.sh > $T/t.sh && perl -e 'alarm 300; exec @ARGV' sh $T/t.sh tools/rig_check.sh; echo rc=$?   # M6/AC11: rc 1; caller-poison FAILs (nested golden-setup-red posts 9s)",
+        "sed 's/^bounded \"$DL_S\" make sky-assets/make sky-assets/' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M7/AC12: rc 1 after ~20 s; sky-hang FAILs",
+        "pgrep -f 'sleep 20' | wc -l   # AC13: equal before and after the control"
+      ],
+      "notes": "MS2 green: control (perl alarm 300, foreground, 84 s) rc 0, \"rig-check control: 16 cases, 0 failures\" (log /tmp/iter81-evidence/ms2-control-r2.log; the first background run /tmp/iter81-ms2.J973oW died after suite-profile and is not used). make rig-check-control rc 0 (82 s). sh -n both scripts rc 0. AC4 sed output: deps starmap-assets planet-assets import. Mutants (sed on copies in /tmp/iter81-mut.tZ8Xct; each sed verified to change text): M1 GOLDEN_SETUP=\"\" rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red, setup-hang (+caller-poison). M2 import dropped rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red (+caller-poison). M3 planet-assets dropped rc 1, FAIL the same three (+caller-poison). M4 the \"|| fail golden setup\" stripped rc 1, FAIL golden-setup-red, setup-hang (+caller-poison; setup-hang rc 124 as the bare bounded status exits set -e). M5 group kill dropped rc 1, FAIL setup-hang, sky-hang, runtime-hang with \"hang child <pid> still alive\" (+caller-poison). M6 unset RIG_SETUP_S dropped (t.sh) rc 1, FAIL caller-poison only (14 of 15 ok). M7 sky-assets plain rc 1, FAIL sky-hang (rc 0, calls run on) (+caller-poison). No mutant stayed green: no test fix needed. Orphan check: sleep 20 count 4 before the first run, 4 after; later counts 6 and 5 are other sessions (their parents are other agents shells); none has a test or rig parent. Wall: mutant runs 73 to 125 s each. [Round 1: now 18 cases, see evaluation_round_1]"
+    },
+    {
+      "id": "MS3",
+      "title": "Fresh-clone ACs 1-3 (godot --check-only parse count only, CPU, no GPU, no golden), scope AC14, hygiene AC15, then landing: CHANGELOG line, doc moved to design_docs/implemented/r1/, README index row (after the independent evaluator passes)",
+      "status": "done",
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance_criteria": [
+        "AC1: fresh clone after make runtime has no .godot/global_script_class_cache.cfg and the 15-script check-only parse count is > 0 (doc measured 644)",
+        "AC2: running the rig's own GOLDEN_SETUP list in that clone (pinned PATH) exits 0 per target and the parse count is then 0",
+        "AC3: assets/planets holds 20 jpgs and data/starmap/stars_large.bin exists; the fresh clone is deleted afterwards",
+        "AC14: git diff --name-only origin/main...HEAD shows only tools/rig_check.sh, tools/test_rig_check.sh, the doc, this plan, the sprint JSON and the landing files",
+        "AC15: sh -n on both scripts rc 0; git diff --check origin/main...HEAD rc 0 with no output",
+        "Deliverables: CHANGELOG.md line, design doc moved to design_docs/implemented/r1/, one design_docs/README.md index row (landing waits for the cross-family evaluation, generator != judge)"
+      ],
+      "verify": [
+        "C=../stapledons-godot-7af-ac; git clone -q . $C && cd $C && perl -e 'alarm 900; exec @ARGV' make runtime && test ! -f .godot/global_script_class_cache.cfg && <doc count loop over the 15 scripts>   # AC1: count > 0 (644)",
+        "cd $C; PATH=$PWD/runtime/bin:$PATH; for t in deps starmap-assets planet-assets import; do perl -e 'alarm 300; exec @ARGV' make $t || break; done; <doc count loop>   # AC2: all rc 0, then 0",
+        "ls assets/planets | grep -c jpg; test -f data/starmap/stars_large.bin && echo tier; cd - >/dev/null && rm -rf $C   # AC3: 20, tier, clone deleted",
+        "git diff --name-only origin/main...HEAD   # AC14: the two tools files, the doc, the plan, the sprint JSON, landing files only",
+        "sh -n tools/rig_check.sh && sh -n tools/test_rig_check.sh && git diff --check origin/main...HEAD   # AC15: rc 0, no output",
+        "make -qp 2>/dev/null | grep '^ci-fast:' | tr ' ' '\\n' | grep -cx rig-check-control   # 0 (ci-fast membership unchanged; no ci-fast target reads the touched files)"
+      ],
+      "notes": "AC1: fresh clone (git clone of HEAD 404daa36) make runtime rc 0 in 3 s; no .godot/global_script_class_cache.cfg; 15-script parse count 644 (per-script: main 188, constellation_golden 41, true_light 18, comms 36, earth_display 8, cmb 22, earth_link 5, exposure 44, gr 41, interior 68, ism 47, m4_ship 51, m5 50, star_surface 25, constellation_capture 0). AC2: make deps, starmap-assets, planet-assets, import each rc 0 under the pinned PATH (3 s, 0 s, 3 s, 8 s); count then 0. AC3: 20 jpgs in assets/planets; data/starmap/stars_large.bin present. Clone stapledons-godot-7af-ac deleted. AC14: git diff --name-only origin/main...HEAD = .ailang/state/sprints/sprint_R1-RIG-GOLDEN-SETUP.json, design_docs/planned/r1/rig-golden-setup-sprint.md, design_docs/planned/r1/rig-golden-setup.md, tools/rig_check.sh, tools/test_rig_check.sh (no landing files yet, by design). AC15: sh -n both rc 0; git diff --check origin/main...HEAD rc 0, no output. ci-fast membership of rig-check-control: 0. Landing (CHANGELOG, doc move, README row) NOT done; waits for the independent evaluation."
+    }
+  ],
+  "local_pr_gates": [
+    "sh -n tools/rig_check.sh && sh -n tools/test_rig_check.sh",
+    "perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1   # rig-check control: 16 cases, 0 failures",
+    "perl -e 'alarm 300; exec @ARGV' make rig-check-control",
+    "git diff --check",
+    "GitHub fast tier: full make ci-fast (deps python-guard audio-silent-guard uid-guard lint-precision strict parity-v2 parity parity-gr replay crew-sync-check crew-parity lore-import-check capture-m4-publish-test); no ci-fast target reads tools/rig_check.sh or tools/test_rig_check.sh, so none is affected by this change (rig-check-control rides make test in mk/m45.mk, not ci-fast)"
+  ],
+  "post_merge_check": "first nightly rig/golden on main after the merge: grep -c 'SCRIPT ERROR' $TMPDIR/rig-check/<sha>.log is 0 in the constellation section, and the run succeeds or fails on a real GPU case rather than on setup (also the GPU check of make golden in its own process group; fallback: revert only the make golden line). Observation only, never a merge gate.",
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 85,
+    "estimated_days": 0.5,
+    "comparison": "rig-watchdog-7200 (same two files, 8-case control) landed in one day"
+  },
+  "critical_path": [
+    "MS1",
+    "MS2",
+    "MS3"
+  ],
+  "pause_points": [
+    "Any base case (make-test-red, watchdog-override, the refusal pair) changing its expectation: stop and report, it means the bounded swap changed a message",
+    "A mutant not going red as the doc predicts: stop and report",
+    "No merge: the coordinator evaluates with a different model first; landing waits on that"
+  ],
+  "questions_for_mark": [],
+  "progress": "MS1 8c4dd284, MS2 404daa36, MS3 measured; landing pending",
+  "evaluation_round_1": {
+    "findings": [
+      "S1 no KILL escalation",
+      "S2 make test unbounded",
+      "S3 make golden unbounded"
+    ],
+    "notes": "Evaluation round 1 (independent judge, Sonnet, 86 PASS): three survivors of the 16-case control, all now killed. S1 drop the KILL escalation in bounded: killed by golden-hang (TERM-ignoring child still alive; caller-poison aggregate also FAILs). S2 make test unbounded: killed by test-hang (rc 0, no failure post; caller-poison also FAILs). S3 make golden unbounded: killed by golden-hang (rc 0; caller-poison also FAILs). Added test-hang (RIG_TEST_S=2) and golden-hang (RIG_GOLDEN_S=2, STUB_CHILD_IGNORE_TERM via hang-term:golden); the child is sh -c trap \"\" TERM; exec sleep 20 (ignore verified across exec). Control now 18 cases, 0 failures (101 s, rc 0). M5 re-run: rc 1, 5 hang cases FAIL with the child alive plus caller-poison. No tools/rig_check.sh change needed. Orphan check: no sleep 20 with a test or rig parent after the runs (parents are other sessions)."
+  },
+  "completed": "2026-11-09",
+  "evaluation": {
+    "round_1": {
+      "sonnet": {
+        "score": 86,
+        "pass": true,
+        "survivors": [
+          "KILL escalation dropped",
+          "make test unbounded",
+          "make golden unbounded"
+        ],
+        "fixed_in": "cbdef477"
+      },
+      "minimax": "wall_timeout 1810 s, no report ($0.13)"
+    },
+    "round_2": {
+      "sonnet": {
+        "score": 92,
+        "pass": true,
+        "implementation_approved": true,
+        "report": ".ailang/state/evaluations/eval_R1-RIG-GOLDEN-SETUP_round_2_sonnet-5.5.json"
+      },
+      "minimax": {
+        "score": 91,
+        "pass": true,
+        "implementation_approved": true,
+        "report": ".ailang/state/evaluations/eval_R1-RIG-GOLDEN-SETUP_round_2_minimax-m3.json"
+      }
+    },
+    "minor_followups": [
+      "bounded: stdin-from-/dev/null and the handler waitpid are unpinned by the control (Sonnet Y1/Y2 survive)",
+      "RIG_*_S=0 disables the alarm silently",
+      "no sweep of group members when the leader exits normally",
+      "rig-check-control runs in make test, not ci-fast"
+    ],
+    "post_merge_check": "first nightly rig/golden on main: no SCRIPT ERROR in constellation section; 417 ok or a real GPU-case failure"
+  }
+}
