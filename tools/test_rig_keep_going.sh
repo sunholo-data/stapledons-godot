@@ -144,4 +144,3 @@ for REAL_MAKE in $makes; do
 done
 echo "rig-keep-going control: $cases cases, $fails failures"
 test "$fails" = 0
-
