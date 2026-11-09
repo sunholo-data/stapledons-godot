@@ -676,4 +676,6 @@ Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule
 
 ## STATUS 2026-11-07 — ITERATION 78: row 7ad PARKED-ON-LANE before design/build: required Sonnet evaluator probe rc 1, HTTP 429 weekly quota, resets 2026-11-09 06:00 Europe/Copenhagen; declared MiniMax/OpenRouter fallback over ration. Designer Agent readiness confirms the bounded-runner prerequisite remains undone; evaluator Agent wrapper records the failed pinned probe. No plan, build, score or product approval. Record published as an unmerged draft; clauses 1–3 MET, 4 UNMET (D-147), 5 ongoing; goal unmoved. No new human decision.
 
+## STATUS 2026-11-07 — ITERATION 79: row 7ad remains PARKED-ON-LANE: required evaluator Sonnet subscription probe rc 1 / HTTP 429 weekly quota, reset 2026-11-09 06:00 Europe/Copenhagen. Named designer/evaluator Agents ran readiness and the exact pinned capacity probe; no heavy design, plan, build or independent verdict. Iteration 78 draft PR #408 adopted and extended, unmerged. Clauses 1–3 MET, 4 UNMET (D-147), 5 ongoing; goal unmoved; no new human decision.
+
 <!-- End of archived STATUS stamps. -->
