@@ -30,7 +30,7 @@
     {
       "id": "MS2",
       "title": "tools/rig_check.sh: verbatim 9-line bounded helper (process group, TERM, KILL after 2s, reap, 124/130), GOLDEN_SETUP='deps starmap-assets planet-assets import', SETUP_S=600, DL_S=3600, the golden setup loop, runtime/sky-assets and both watchdog lines on bounded, header line; control green; mutants M1..M7 each drilled red",
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "MS1"
       ],
@@ -54,7 +54,7 @@
         "sed 's/^bounded \"$DL_S\" make sky-assets/make sky-assets/' tools/rig_check.sh > $T/m.sh && perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh $T/m.sh; echo rc=$?   # M7/AC12: rc 1 after ~20 s; sky-hang FAILs",
         "pgrep -f 'sleep 20' | wc -l   # AC13: equal before and after the control"
       ],
-      "notes": ""
+      "notes": "MS2 green: control (perl alarm 300, foreground, 84 s) rc 0, \"rig-check control: 16 cases, 0 failures\" (log /tmp/iter81-evidence/ms2-control-r2.log; the first background run /tmp/iter81-ms2.J973oW died after suite-profile and is not used). make rig-check-control rc 0 (82 s). sh -n both scripts rc 0. AC4 sed output: deps starmap-assets planet-assets import. Mutants (sed on copies in /tmp/iter81-mut.tZ8Xct; each sed verified to change text): M1 GOLDEN_SETUP=\"\" rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red, setup-hang (+caller-poison). M2 import dropped rc 1, FAIL golden-only-setup, golden-setup, golden-setup-red (+caller-poison). M3 planet-assets dropped rc 1, FAIL the same three (+caller-poison). M4 the \"|| fail golden setup\" stripped rc 1, FAIL golden-setup-red, setup-hang (+caller-poison; setup-hang rc 124 as the bare bounded status exits set -e). M5 group kill dropped rc 1, FAIL setup-hang, sky-hang, runtime-hang with \"hang child <pid> still alive\" (+caller-poison). M6 unset RIG_SETUP_S dropped (t.sh) rc 1, FAIL caller-poison only (14 of 15 ok). M7 sky-assets plain rc 1, FAIL sky-hang (rc 0, calls run on) (+caller-poison). No mutant stayed green: no test fix needed. Orphan check: sleep 20 count 4 before the first run, 4 after; later counts 6 and 5 are other sessions (their parents are other agents shells); none has a test or rig parent. Wall: mutant runs 73 to 125 s each."
     },
     {
       "id": "MS3",
