@@ -77,6 +77,26 @@ gcloud billing budgets create --billing-project="$PROJECT_ID" --billing-account=
   --filter-projects="projects/$PROJECT_NUMBER" \
   --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0
 
+# 9b. Mark's own in-game player key (2026-11-09): a second Gemini key, restricted
+#     to the Generative Language API, held only in Secret Manager as
+#     gemini-player-key. It is never built into a game; Mark installs it on the
+#     machine he plays on into the file the AI settings read (mode 0600):
+#       D="$HOME/Library/Application Support/Godot/app_userdata/Stapledon's Voyage"; mkdir -p "$D"
+#       (umask 077; gcloud secrets versions access latest --secret=gemini-player-key \
+#         --project=stapledons-voyage > "$D/ai_key_gemini")
+#     `api-keys create` prints the key string in its operation result, so its
+#     output is discarded (the first version leaked that way and was rotated).
+#     Hard spend limit: the per-project monthly Gemini spend cap in Google AI
+#     Studio (Spend page). It covers this project, so the build-time key shares
+#     it. The budget in step 9 only alerts. The game adds its own player ceiling.
+PLAYER_KEY_UID=$(gcloud services api-keys create --project="$PROJECT_ID" \
+  --display-name="stapledons-voyage player key (Mark, in-game)" \
+  --api-target=service=generativelanguage.googleapis.com --format="value(response.uid)" 2>/dev/null)
+gcloud secrets create gemini-player-key --project="$PROJECT_ID" --replication-policy=automatic \
+  --labels=app=stapledons-voyage,purpose=player-ai || true
+gcloud services api-keys get-key-string "$PLAYER_KEY_UID" --project="$PROJECT_ID" --format="value(keyString)" \
+  | tr -d '\n' | gcloud secrets versions add gemini-player-key --project="$PROJECT_ID" --data-file=-
+
 # 10. OpenRouter key for text generation (Mark 2026-10-02: "have both options").
 #     The secret is created empty; Mark adds the value himself so it never
 #     passes through a chat or a log:
