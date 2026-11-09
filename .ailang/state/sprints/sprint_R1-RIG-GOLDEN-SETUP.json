@@ -59,7 +59,7 @@
     {
       "id": "MS3",
       "title": "Fresh-clone ACs 1-3 (godot --check-only parse count only, CPU, no GPU, no golden), scope AC14, hygiene AC15, then landing: CHANGELOG line, doc moved to design_docs/implemented/r1/, README index row (after the independent evaluator passes)",
-      "status": "pending",
+      "status": "measured; landing pending evaluation",
       "depends_on": [
         "MS2"
       ],
@@ -79,7 +79,7 @@
         "sh -n tools/rig_check.sh && sh -n tools/test_rig_check.sh && git diff --check origin/main...HEAD   # AC15: rc 0, no output",
         "make -qp 2>/dev/null | grep '^ci-fast:' | tr ' ' '\\n' | grep -cx rig-check-control   # 0 (ci-fast membership unchanged; no ci-fast target reads the touched files)"
       ],
-      "notes": ""
+      "notes": "AC1: fresh clone (git clone of HEAD 404daa36) make runtime rc 0 in 3 s; no .godot/global_script_class_cache.cfg; 15-script parse count 644 (per-script: main 188, constellation_golden 41, true_light 18, comms 36, earth_display 8, cmb 22, earth_link 5, exposure 44, gr 41, interior 68, ism 47, m4_ship 51, m5 50, star_surface 25, constellation_capture 0). AC2: make deps, starmap-assets, planet-assets, import each rc 0 under the pinned PATH (3 s, 0 s, 3 s, 8 s); count then 0. AC3: 20 jpgs in assets/planets; data/starmap/stars_large.bin present. Clone stapledons-godot-7af-ac deleted. AC14: git diff --name-only origin/main...HEAD = .ailang/state/sprints/sprint_R1-RIG-GOLDEN-SETUP.json, design_docs/planned/r1/rig-golden-setup-sprint.md, design_docs/planned/r1/rig-golden-setup.md, tools/rig_check.sh, tools/test_rig_check.sh (no landing files yet, by design). AC15: sh -n both rc 0; git diff --check origin/main...HEAD rc 0, no output. ci-fast membership of rig-check-control: 0. Landing (CHANGELOG, doc move, README row) NOT done; waits for the independent evaluation."
     }
   ],
   "local_pr_gates": [
@@ -107,5 +107,5 @@
     "No merge: the coordinator evaluates with a different model first; landing waits on that"
   ],
   "questions_for_mark": [],
-  "progress": ""
+  "progress": "MS1 8c4dd284, MS2 404daa36, MS3 measured; landing pending"
 }
