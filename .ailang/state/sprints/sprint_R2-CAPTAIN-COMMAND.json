@@ -113,7 +113,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "52/0 real-sim parity/hold tests; 1202 flight ticks per route, 1207 NDJSON inputs, byte-identical inputs and worlds. 18/0 layout, 14/0 reading viewport, 10/0 guided review/Brake. Independent Claude checkpoint PASS86; rendered chair/UI review, Mark acceptance and fast CI/publication pending. Cockpit refinement reran 52/0 real-sim parity and 10/0 guided review; 39/0 command, 101/0 screen geometry/picking and 18/0 layout cases. Private first-person candidate preparing; no visual acceptance claim."
+      "notes": "52/0 real-sim parity/hold tests; 1202 flight ticks per route, 1207 NDJSON inputs, byte-identical inputs and worlds. 18/0 layout, 14/0 reading viewport, 10/0 guided review/Brake. Independent Claude checkpoint PASS86; rendered chair/UI review, Mark acceptance and fast CI/publication pending. Cockpit refinement reran 52/0 real-sim parity and 10/0 guided review; 39/0 command, 101/0 screen geometry/picking and 18/0 layout cases. Private first-person candidate preparing; no visual acceptance claim. Combined build46c5e9e3 published: cockpit44/0, AI settings105/0, title111/0, guided10/0; theme/UID green. Fast CI and correct combined-app visual acceptance remain pending."
     }
   ],
   "implementation_complete": true,
@@ -130,14 +130,14 @@
   },
   "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)",
   "publication": {
-    "commit": "4ce91d338af566e046aef16be41a411902baf1c7",
-    "version": "v0.4.0-dev.37-living-bridge-458-g4ce91d33",
-    "channel": "normal combined macOS dev (publication preparing)",
-    "sha256": "9a6054252ac79c48f349f688a92bab71223e84b2ec4dc12ef562f01cdc01fbea",
+    "commit": "46c5e9e34d688c695cc58431f6757a8e97272f3f",
+    "version": "v0.4.0-dev.37-living-bridge-474-g46c5e9e3",
+    "channel": "normal combined macOS dev",
+    "sha256": "51313152223d9924a66cec14c77408f7fdacc7b98cfca06afe783a348d21cf0a",
     "gpu_checks_run": false,
     "visual_acceptance": "pending Mark laptop playtest",
-    "review": "Claude Sonnet 4.6 92/100 PASS; drag reset follow-up before merge",
+    "review": "Cockpit Claude 92 PASS; AI-panel Codex 80 PASS; drag reset finding resolved and regression-tested",
     "install_command": "tools/install_review_build.sh --dev",
-    "delivery_note": "Mark requests one combined app; origin/main including final AI-panel PR414 merged cleanly. Normal installer updates one existing app in place."
+    "delivery_note": "Mark requests one combined app; origin/main including final AI-panel PR414 merged cleanly. Normal installer updates one existing app in place. Published and manifest read back; two obsolete local chair ZIP archives removed. One existing app is replaced."
   }
 }
