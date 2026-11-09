@@ -1,14 +1,14 @@
 # Nightly rig/full keeps going past a red target (7ag)
 
-**Status:** Planned 2026-11-09 (mission iteration 82, designer). **Release:** r1. **Milestone:** none (nightly tooling).
+**Status:** Planned 2026-11-09 (mission iteration 82, designer). Revision 1 answers design-quorum round 1 (2/3 block); see "Quorum round 1" near the end. **Release:** r1. **Milestone:** none (nightly tooling).
 **Priority:** P1. Since at least 2026-11-04 every nightly `rig/full` has stopped at the first red target, about 6 minutes into a 67–71 minute suite. Everything after that target has not run on main for five nights, while PRs keep merging on the fast tier.
 **Implements:** queue row **7ag**. It serves Mark's merge rule of 2026-11-03/06 (CLAUDE.md "Merges"): main's nightly `rig/full` is the only place the whole `make test` runs. One known red (D-145, then D-148) must not hide every other red.
 **Depends on:** 7af ([rig-golden-setup](../../implemented/r1/rig-golden-setup.md): the `bounded` helper and the `order` cases of `tools/test_rig_check.sh`); the hermetic rig-check control from iteration 55 ([rig-watchdog-7200](../../implemented/r1/rig-watchdog-7200.md)). GNU Make 3.81 (`/usr/bin/make`, the rig's make), and also GNU Make 4.4.1 (`gmake`), because the new control runs on both.
-**Estimated LOC:** about 175. That is above the ~150 guide, and the reason is the control: about 120 of the lines are the new fixture control, which runs 6 cases on each GNU make it finds.
-- `tools/rig_check.sh`: about 19 (+18 −2). This is `make -k test`, the failing-target list, the 140-character description and a separate golden log.
+**Estimated LOC:** about 200. That is above the ~150 guide, and the reason is the control: about 147 of the lines are the new fixture control, which runs 8 cases on each GNU make it finds.
+- `tools/rig_check.sh`: about 22 (+20 −2). This is `make -k test`, the failing-target list, the 140-character description and a separate golden log.
 - `tools/rig_nightly.sh`: about 6 (+5 −1). The issue body gets a "Failing targets" line and a per-target window of failing lines.
-- `tools/test_rig_check.sh`: about 26 (+13 −13). Four expected descriptions change, `test` becomes `-k test` in four expected make-call lists, there is one new case (`keep-going`), the counts go 17/18 → 18/19, and the caller-poison run gains `MAKEFLAGS=k`.
-- `tools/test_rig_keep_going.sh`: new, about 122. The appendix has the measured prototype.
+- `tools/test_rig_check.sh`: about 26 (+17 −9 by `diff`). Four expected descriptions change, `test` becomes `-k test` in four expected make-call lists, there is one new case (`keep-going`), the counts go 17/18 → 18/19, and the caller-poison run gains `MAKEFLAGS=k`.
+- `tools/test_rig_keep_going.sh`: new, about 147. The appendix has the measured prototype.
 - Nothing changes in `Makefile`, in `mk/` (`make rig-check-control` already runs `tools/test_rig_check.sh`, at `mk/m45.mk:56`), or in `.gd`/`.uid` files. Shell scripts carry no `.uid` (V21).
 
 ## Game vision alignment
@@ -66,13 +66,16 @@ Every row was run on 2026-11-09 in this clone at `0c3f46c8` (or in the scratch p
 | V13 | Three nested-make targets, each run plain and with `-k` (`env -u MAKEFLAGS -u MAKELEVEL /usr/bin/make [-k] T`) | `rig-check-control` rc 0/0, `18 cases, 0 failures` both (221 s / 189 s). `script-gate-lint` rc 0/0, `script-gate-prereqs: ok (4 pairs …)` both. `capture-m4-publish-test` rc 0/0, `OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)` both. |
 | V14 | Reverse closure over the V10 database: for each `test` prerequisite, which other `test` prerequisites depend on it | `import` ← 42 (for example `bridge-operator-test`, `captain-anim-test`, `crew-console-test`, `deck-assets-check`, `export-filter-audit` …); `starmap-assets` ← 2; `parity-v2`, `sound-levels`, `lens-assets`, `sound-check`, `lint-precision` ← 1 each. **`bridge-operator-test` ← 0; `sound-test` ← 0.** |
 | V15 | Launchd environment: `/bin/zsh -lc 'env \| grep -c "^MAKE\|^MFLAGS\|^GNUMAKEFLAGS"; env \| grep -c "^PATH="'` | `0`, then `1` (the control line proves that env is read). The nightly starts with no make variables. |
-| V16 | Prototype (scratch copy `git archive HEAD`, the Design code below): `sh tools/test_rig_keep_going.sh "$P"` | 12 lines `rig-keep-going control <case> [3.81\|4.4.1]: ok` (two-red, golden-log-kept, green, many-red, nightly-two-red, nightly-green), then `rig-keep-going control: 12 cases, 0 failures`, rc 0, **3 s**. |
+| V16 | Revision 1 prototype (scratch copy `git archive origin/main`, the Design code below): `sh tools/test_rig_keep_going.sh "$P"` | 16 lines `rig-keep-going control <case> [3.81\|4.4.1]: ok` (two-red, golden-log-kept, green, many-red, hundred-red, longname-red, nightly-two-red, nightly-green), then `rig-keep-going control: 16 cases, 0 failures`, rc 0, **6 s**. (Revision 0: 12 cases, 3 s.) |
 | V17 | Prototype outputs, from the same run with the cleanup trap disabled and 3.81 only | two-red post: `failure 78 01234567: make test failed (rc 2; bound 7200s); 2 red: alpha-check gamma-check` (78 characters before the log pointer, which `fail` appends only when it fits). many-red post: `failure 113 01234567: make test failed (rc 2; bound 7200s); 12 red: a-rather-long-failing-target-1 a-rather-long-failing-target-2 +10 more`. The nightly body has `Failing targets (2): alpha-check gamma-check`, and its Failing lines hold `alpha: FAIL one`, `make: *** [alpha-check] Error 1`, the gamma window, `make[1]: *** [gamma-sub] Error 1` and `make: *** [gamma-check] Error 2`. |
-| V18 | The drill in "Mutation drill" below, `sh drill.sh "$P"` | M1 (no `-k`) 6 FAIL; M2 (first target only) 6; M3 (red posts green) 6; M4 (no target list) 2; M5 (old `tail -30`) 2; M6 (shared log) 2; M7 (M1 under outer `MAKEFLAGS=k MAKELEVEL=1`) 6; M8a (M1, no unset, outer k + level) rc 1; **M8b (M1, no unset, outer `MAKEFLAGS=k` only) rc 0: the mutant survives**. Then `drill: 9 mutant runs as predicted`, rc 0, 90 s. |
+| V18 | Revision 1: the drill in "Mutation drill" below, `sh drill.sh "$P"` | M1 (no `-k`) 10 FAIL; M2 (first target only) 10; M3 (red posts green) 10; M4 (no target list) 2; M5 (old `tail -30`) 2; M6 (shared log) 2; **M9 (suffix reserved at the old fixed 9) 4** (hundred-red, and longname-red, whose cut moves by one); **M10 (no cut of a too-long first name) 2** (longname-red); M7 (M1 under outer `MAKEFLAGS=k MAKELEVEL=1`) 10; M8a (M1, no unset, outer k + level) rc 1, `16 cases, 10 failures`; **M8b (M1, no unset, outer `MAKEFLAGS=k` only) rc 0, `16 cases, 0 failures`: the mutant survives**. Then `drill: 11 mutant runs as predicted`, rc 0, 67 s. |
 | V19 | `gh issue view 392 --json comments -q '.comments[-2].body'` | `Failing lines …` lists `1581:FAIL voyage installed working point …` to `1594:FAIL crew panel …` and `1616:make: *** [bridge-operator-test] Error 1`. No other target is named. |
 | V20 | The new nightly extraction and the old one on the real single-red log `d9cc170b….log`, then `cmp` | Both are 15 lines; `cmp` prints nothing (IDENTICAL). On a single red the issue reads exactly as it does today. |
 | V21 | `git ls-files tools \| grep -c '\.sh\.uid$'`; control `… \| grep -c '\.gd\.uid$'` | `0`; `158`. |
-| V22 | Through the target, on the prototype: `make -C "$P" rig-check-control`, `make -C "$P" -k rig-check-control`, and M1 in a clonefile copy `make -C "$P2" -k rig-check-control` | rc 0 (251 s), rc 0 (249 s), and rc **2** with `rig-check control keep-going: FAIL` and `19 cases, 5 failures` for M1; the details are under "Through-target result". |
+| V22 | Through the target, on the prototype: `make -C "$P" rig-check-control`, `make -C "$P" -k rig-check-control`, and M1 in a clonefile copy `make -C "$P2" -k rig-check-control` | Revision 1 (the three runs concurrently, in three clonefile copies): rc 0 (192 s), rc 0 (192 s), and rc **2** for M1, with `rig-keep-going control: 16 cases, 10 failures`, `rig-check control keep-going: FAIL` and `19 cases, 5 failures`. The details are under "Through-target result". |
+| V23 | Dynamic check of every nested make under inherited `k` | PENDING: controller's make -k test on 0c3f46c8, with every nested make inheriting k; per-target verdicts for the 19 nested-make targets |
+| V24 | Static check at `0c3f46c8`. (1) `git grep -nE '\$\(MAKE\)\|\$\{MAKE\|MAKE=' 0c3f46c8 -- Makefile mk/ \| wc -l`. (2) The owner of each line: the nearest rule header above it, by `awk`. (3) Closure membership: the V10 `make -pq` database, reachable from `test`. (4) For expected failure, `grep -nE 'SURVIVED' Makefile mk/*.mk` and `grep -n 'case_ make-' tools/test_script_gate.sh` | (1) **32** lines; the coordinator counted 31 with the same pattern, so the difference is unexplained. (2)+(3) **16 in the closure, 16 outside**: the table under "Nested makes, line by line". Membership controls: `ai-loopback-mutants` 0, `script-gate-drill` 1, `scene-session-audits` 1, `sim-bridge` 0. (4) `SURVIVED` hits `mk/ai.mk:227,247,278,453,462,483`. Of these, only `:483` runs a make (`grep -c MAKE` over the two lines before each of 227/247/278 is `0`; 453/462 run `tools/ai_live_guard.sh`). `make-sim-parse` (`test_script_gate.sh:72`) is the only `make-` case. **Exactly two nested makes expect failure: `mk/ai.mk:483` (outside the closure) and `make-sim-parse` (inside, single goal `sim-bridge`, V12).** |
+| V25 | The 140 bound on the prototype: the reason printed on stdout (`rig-check: FAIL: <reason> (log: …)`, before `status()` cuts anything) plus `01234567: `, for hundred-red and longname-red; then the same under M9 | hundred-red: `make test failed (rc 2; bound 7200s); 120 red: n1-000…0 +119 more` (103 characters). longname-red: `…; 2 red: <74 characters>... +1 more`, exactly **140** (`printf … \| wc -m`). M9: hundred-red `FAIL (reason 141 characters …)`. With the old fixed 9, `n1`(36)+`n2`(37) fill the old budget of 74, and the suffix ` +118 more` needs 10. |
 
 ## Design
 
@@ -97,8 +100,10 @@ This is the exact code measured in V16–V18 (diff against `0c3f46c8`):
 +    echo "rig-check: failed targets ($n): $red"
 +    why="make test failed (rc $trc; bound ${TEST_S}s)"; [ "$trc" = 124 ] && why="make test ran over ${TEST_S}s"
 +    [ "$n" != 0 ] || fail "$why; no failing target in the log"
-+    budget=$((140 - 10 - ${#why} - 8 - ${#n} - 9)); list=; k=0   # "sha: " why "; N red: " names " +NN more"
++    # "sha: " why "; N red: " names " +K more", K < N: the suffix is reserved at N's width (row 7o: 140 characters).
++    budget=$((140 - 10 - ${#why} - 8 - ${#n} - 7 - ${#n})); list=; k=0
 +    for t in $red; do [ $((${#list} + ${#t} + 1)) -le $budget ] || break; list="${list:+$list }$t"; k=$((k + 1)); done
++    [ "$k" != 0 ] || { list="$(printf %s "${red%% *}" | cut -c1-$((budget - 3)))..."; k=1; }   # a first name too long: cut it
 +    [ "$k" = "$n" ] || list="$list +$((n - k)) more"
 +    fail "$why; $n red: $list"
 +  fi
@@ -109,7 +114,7 @@ How the pieces behave:
 - **Keep going.** `-k` on the command line and `MAKEFLAGS=k` behave identically on 3.81 and 4.4.1 (V8). make still exits 2 when any target failed, and `bounded` passes that rc through, so the run is still red with `rc 1` and a `failure` post. A green suite exits 0 and posts `success` exactly as before. The `rig/full` status semantics do not change.
 - **Naming the reds.** The names come from the lines this run appended (`n0` skips the `make runtime` and `sky-assets` output). Only top-level `make:`/`gmake:` error lines are read. That covers `[T] Error N`, `[T] Terminated: 15` (V6, a real rig log), the 4.x form `[file:line: T]`, and `No rule to make target` (V9). Nested `make[N]:` lines are not read, so a red sub-make names its top-level target once (V9, V17). Green rig logs have no such line (V6).
 - **Fail closed.** A red make with no named target (for example make killed before it printed anything) still fails, and says `no failing target in the log`. A timeout (`bounded` rc 124) says `ran over ${TEST_S}s` and still names the targets that went red before the kill. The bound stays in the non-timeout text as well (`bound 7200s`). The caller-poison case relies on that to prove that a caller's `RIG_TEST_S` does not leak in (D-126, iteration 52).
-- **140 characters.** As many names as fit go into the description, followed by `+K more` (V17: 113 characters for 12 long names). stdout's `rig-check: failed targets (N): …` line carries the whole list for the nightly.
+- **140 characters.** The fixed text is `01234567: ` (10), the reason `why`, `; N red: ` (8 + len N) and the suffix ` +K more` (7 + len K). K is at most N−1, so the suffix is reserved at 7 + len N. Revision 0 reserved a fixed 9, which fits only a two-digit K; with 100 or more reds it could reach 141 (V25, M9). As many whole names as fit go in. If even the first name does not fit, its first `budget − 3` characters are shown with `...` and counted as shown (`+N−1 more`), so the list is never empty. I chose this over `N red (names in log)` because a cut name is still searchable. Measured: 113 characters for 12 long names (V17), 103 for 120 reds, and exactly 140 for a 100-character first name (V25). The bound holds by construction: names ≤ budget, the suffix ≤ its reservation. stdout's `rig-check: failed targets (N): …` line carries the whole list for the nightly.
 - **The log.** `--golden-only` writes `$dir.golden.log`, so `rig/full`'s `$dir.log` survives (V5). rig_nightly's `; log X.log` parse (`:92`) matches both names.
 
 ### M2. `tools/rig_nightly.sh`: list every red in the issue
@@ -142,8 +147,10 @@ It is a new hermetic fixture control, invoked as one case (`keep-going`) of `too
   2. `golden-log-kept`: a `--golden-only` run on the same `RIG_DIR` reports `; log …golden.log`, and the `rig/full` log's `cksum` is unchanged.
   3. `green`: rc 0; posts `pending success`; an `ok` line; no `failed targets` line.
   4. `many-red`: 12 long red names. stdout lists all 12; the description is at most 140 characters and ends `+K more`.
-  5. `nightly-two-red`: real `rig_nightly.sh` beside real `rig_check.sh` (`RIG_NIGHTLY_FORCE=1`). Expected: rc 1; the issue body (stub `gh issue create --body-file`) has `Failing targets (2): alpha-check gamma-check`, exactly 2 top-level `make: ***` lines, `alpha: FAIL one` and `gamma: FAIL 40`. The 40 gamma lines make the old `tail -30` drop alpha (M5).
-  6. `nightly-green`: rc 0, a `make test green` log line, and no issue body.
+  5. `hundred-red` (a three-digit count): 120 reds. The first, `n1`, is 36 characters and the second, `n2`, is 37, so `n1` fits the 73-character budget and `n2` does not. The control reads the reason from stdout, before `status()` cuts it. Its checks use `test`: reason + 10 ≤ 140; the reason equals `make test failed (rc 2; bound 7200s); 120 red: $n1 +119 more`; stdout lists 120 names. A positive control proves the reason capture is live. M9 (the old fixed 9) lets `n2` in and reaches 141.
+  6. `longname-red`: the first red is a 100-character name, plus `b-red`. With `test`: reason + 10 ≤ 140; the reason equals `…; 2 red: <its first 74 characters>... +1 more`; stdout carries the full name. M10 (the cut removed) gives an empty list.
+  7. `nightly-two-red`: real `rig_nightly.sh` beside real `rig_check.sh` (`RIG_NIGHTLY_FORCE=1`). Expected: rc 1; the issue body (stub `gh issue create --body-file`) has `Failing targets (2): alpha-check gamma-check`, exactly 2 top-level `make: ***` lines, `alpha: FAIL one` and `gamma: FAIL 40`. The 40 gamma lines make the old `tail -30` drop alpha (M5).
+  8. `nightly-green`: rc 0, a `make test green` log line, and no issue body.
 - `tools/test_rig_check.sh` changes:
   - Add `HERE=$(cd "$(dirname "$0")/.." && pwd -P)` and the `keep-going` case running `sh "$HERE/tools/test_rig_keep_going.sh" "$HERE"`.
   - The make-call lists `sky-assets test` → `sky-assets -k test` (`golden-setup`, `full-no-setup`, `test-hang`). This also kills a no-`-k` mutant inside the stub control.
@@ -154,7 +161,47 @@ It is a new hermetic fixture control, invoked as one case (`keep-going`) of `too
 ### Hazards, measured
 
 - **The make the rig uses.** It is `/usr/bin/make`, 3.81 (V3). `-k` prints one `make: *** [T] …` line per failed target and a final ``make: Target `test' not remade because of errors.``, then exits 2 (V8).
-- **`-k` reaching nested makes.** 19 targets in `make test` run a nested or fixture make (V10, V11). `-k` never changes a make's exit status (nonzero if and only if something failed) and never continues within a recipe (V9: the second recipe line does not run). So it changes no verdict of the pure `$(MAKE) x` recipes: `sim`, `lens-assets`, `starmap-assets`, `starmap-consistency-large`, `playthrough-adversarial`, `lore-*`, `ism-lore-drafts`, `display-audit-*`, `parity-m4`, `ai-core-verify`. In `scene-session-audits` (`$(MAKE) playthrough-time codex-unlocks display-audit`), a red first goal now lets the other two run, and the result is still red (V9 `multi`). The expected-failure pattern stays correct (V9 `mutant`). The fixture makes clear `MAKEFLAGS` (V11). The one that does not, `make-sim-parse`, keeps rc 2 and its message (V12). The three cheap targets measured both ways have identical verdicts (V13). The heavy ones (playthroughs, `starmap-consistency-large`, `script-gate-drill` with Godot) were not re-run with `-k`; their verdicts follow from V9, and the first keep-going nightly is their live check. **Nothing needs neutralising.**
+- **`-k` reaching nested makes.** The claim rests on the static classification (V24, the table below) and the controller's dynamic run (V23), not on the synthetic fixture alone.
+  - **Static (V24).** Every `$(MAKE)`/`MAKE=` line in `Makefile` and `mk/` (32) is classified by its owner, by closure membership, and by whether it expects success or failure. In `make test`'s closure there are 16 such lines. 15 expect the nested make to **succeed**: a plain call, `|| exit`/`|| {…}`, or `&&`. One (`script-gate-drill`, via `make-sim-parse`) expects it to **fail**, with a single goal that has no prerequisites. That case gives rc 2 and the same message under inherited `k` (V12). The only other expected-failure nested make, `mk/ai.mk:483`, is outside the closure.
+  - **Why expected-success lines cannot flip.** `-k` acts only after some goal has failed. It never turns a nonzero exit into zero (V8, V9: still rc 2), and never runs a recipe's later lines (V9). So a nested make that should succeed is green under `k` exactly when it is green without it. When it is red, it is still red, and it may run more of its other goals first. Those extra goals are the side effect the reviewer raised. Only three closure lines have more than one goal: `mk/m45.mk:90` (`playthrough-time codex-unlocks display-audit`), `Makefile:992` (`catalogue-inputs catalogue`, then `&&`) and `Makefile:376-377` (`sim`, two separate calls; the second is not reached after a red first one, because make stops a recipe at its first failing line, with or without `-k`, V9). When the first goal is red, the parent target is red either way. The extra goals could only add noise, and only on a night that is already red for that target.
+  - **Script-level fixture makes** clear `MAKEFLAGS` (V11). `script_gate_prereqs.sh`, `test_suite_profile.sh` and `test_m4_publish.sh` already do. The three cheap targets measured both ways have identical verdicts (V13).
+  - **Dynamic (V23).** The controller's whole `make -k test` on `0c3f46c8`, with `MAKEFLAGS=k` in the environment so that every nested make inherits `k`, gives the per-target verdicts of the 19 targets. This is a superset of what the design ships.
+  - **Measured claim:** at `0c3f46c8` no nested make in `make test` expects failure across several goals, and the one expected-failure nested make in the closure keeps its verdict under inherited `k`. So this design adds no `MAKEFLAGS` clearing to any target. V23 confirms or refutes it.
+  - **Convention for the future.** A fixture or recipe that runs a nested make and **expects it to fail** must clear `MAKEFLAGS`, `MAKELEVEL` and friends for that call. `test_suite_profile.sh:6`, `test_m4_publish.sh:9` and `script_gate_prereqs.sh:13` already do this. Otherwise an inherited `k` can change which goals run, and an inherited level can change the prefix of its messages (V18 M8a). If V23 shows a flip, the fix is that convention, in the owning target. There is **no lint**, because an expected failure is not syntactic: `if $(MAKE) …; then SURVIVED` is one shape, and `case_ … 2 …` in a shell script is another. A grep for one shape would miss the other, so it would not be cheap enough to trust.
+
+#### Nested makes, line by line (V24, `0c3f46c8`)
+
+| Line | Owner | In `test`'s closure | Expects |
+|---|---|---|---|
+| `Makefile:376` | sim | yes | success (`sim-bridge`) |
+| `Makefile:377` | sim | yes | success (`bh-hud-test`) |
+| `Makefile:717` | export-pack-check-strict | no | success |
+| `Makefile:821` | starmap-consistency-large | yes | success |
+| `Makefile:880`, `:883`, `:887`, `:891` | catalogue-verify | no | success (`… \|\| exit 1`) |
+| `Makefile:964` | sky-inputs | no | success |
+| `Makefile:980`, `:981` | sky-assets | no | success (if/else on a fetch, not on make) |
+| `Makefile:984` | sky-regen | no | success |
+| `Makefile:992` | starmap-assets | yes | success, 2 goals (`catalogue-inputs catalogue && …`) |
+| `Makefile:1005` | lens-assets | yes | success (`\|\| { echo …; exit 1; }`) |
+| `Makefile:1034` | sky-bundle | no | success (`&& …`) |
+| `Makefile:1356` | playthrough-adversarial | yes | success |
+| `Makefile:1384` | lore-import-check | yes | success |
+| `Makefile:1401` | lore-test | yes | success |
+| `mk/ai.mk:344` | ai-core-verify | yes | success (`ai-core-assets` when `AI_CORE_FETCH=1`) |
+| `mk/ai.mk:483` | ai-loopback-mutants | **no** | **failure** (`if $(MAKE) ai-loopback …; then … SURVIVED`) |
+| `mk/earth-link.mk:18` | display-audit-comms | yes | success |
+| `mk/ism.mk:52` | ism-lore-drafts | yes | success |
+| `mk/m45.mk:14` | scene-session-fixture | no | success |
+| `mk/m45.mk:90` | scene-session-audits | yes | success, 3 goals (`playthrough-time codex-unlocks display-audit`) |
+| `mk/m45.mk:94`, `:96` | playthrough-ai-modes | no | success, 2 goals at `:94` |
+| `mk/m45.mk:109` | parity-m4 | yes | success (`replay-positive-control`; its own `cmp` expects a difference, the make does not) |
+| `mk/m45.mk:169` | display-audit-interlude | yes | success |
+| `mk/m45.mk:181` | display-audit-crew | yes | success |
+| `mk/script-gates.mk:62` | script-gate-drill | yes | `MAKE="$(MAKE)"` handed to `test_script_gate.sh --godot`, whose `make-sim-parse` (`:72`) expects **failure**: rc 2, single goal `sim-bridge`, no prerequisites (V12) |
+| `mk/worlds_census.mk:13` | census-large | no | success |
+| `mk/worlds_census.mk:15` | census-large-run | no | success |
+
+That is 32 lines: 16 in the closure, of which 15 expect success and 1 expects failure; 16 outside, of which 15 expect success and 1 (`ai.mk:483`) expects failure.
 - **Prerequisite noise.** A target whose prerequisite failed is skipped silently, and nothing names it (V8 `e`). `bridge-operator-test` and `sound-test` have 0 dependents among `test`'s prerequisites (V14), so with today's reds every other target runs. If `import` (42 dependents) or `starmap-assets` (2) went red, its dependents would be skipped exactly as they are today, and the list would name the cause. Undeclared ordering, where a later target reads files an earlier red one should have written, would show up as extra reds listed after the cause. The list is in run order, so the first name is the first suspect.
 - **Time.** A green `make test` was 67–71 min (V7) against `TEST_S` 7,200 s. Red targets end at their own script-gate bounds. If a run hits 7,200 s, it posts `make test ran over 7200s; N red: …`, naming every red so far. That is strictly more than today. `RIG_TEST_S` remains the escape hatch, and the controller's separate `make -k test` on `0c3f46c8` will measure the keep-going wall time.
 - **Developers.** Local `make test` is unchanged (no `Makefile`/`mk/` edit). A developer who wants keep-going types `make -k test`.
@@ -185,14 +232,17 @@ mutant() {
   test "$rc" = "$want_rc" || exit 1
   test "$n" = "$want_fails" || exit 1
 }
-mutant M1-no-k rig_check.sh 's/make -k test/make test/' 1 6 || exit 1
-mutant M2-first-only rig_check.sh 's/awk \x27!s\[\$0\]\+\+\x27/head -1/' 1 6 || exit 1
-mutant M3-red-is-green rig_check.sh 's/^    fail "\$why; \$n red: \$list"$/    :/m' 1 6 || exit 1
+mutant M1-no-k rig_check.sh 's/make -k test/make test/' 1 10 || exit 1
+mutant M2-first-only rig_check.sh 's/awk \x27!s\[\$0\]\+\+\x27/head -1/' 1 10 || exit 1
+mutant M3-red-is-green rig_check.sh 's/^    fail "\$why; \$n red: \$list"$/    :/m' 1 10 || exit 1
 mutant M4-no-target-list rig_nightly.sh 's/^    sed -n "s\/\^rig-check: failed targets [^\n]*\n//m' 1 2 || exit 1
 mutant M5-old-tail-30 rig_nightly.sh 's/^      awk \x27\/\^g\?make[^\n]*\n[^\n]*head -200$/      grep -nE \x27(^|[^a-z])(FAIL|SCRIPT ERROR|\\*\\*\\*)\x27 "\$rlog" | grep -vE \x27=FAIL\$|0 fail\x27 | tail -30/m' 1 2 || exit 1
 mutant M6-shared-log rig_check.sh 's/; \[ \$tests = 1 \] \|\| log="\$dir\.golden\.log"//' 1 2 || exit 1
+# Row 7o budget: the suffix reserved at the old fixed 9 overflows a 3-digit count; no cut leaves an empty list.
+mutant M9-fixed-9 rig_check.sh 's/- 7 - \$\{#n\}\)/- 9)/' 1 4 || exit 1
+mutant M10-no-cut rig_check.sh 's/^    \[ "\$k" != 0 \] [^\n]*\n//m' 1 2 || exit 1
 # Hermeticity: under an outer make's -k, M1 still dies with the control's unset in place...
-mutant M7-no-k-under-outer-k rig_check.sh 's/make -k test/make test/' 1 6 MAKEFLAGS=k MAKELEVEL=1 || exit 1
+mutant M7-no-k-under-outer-k rig_check.sh 's/make -k test/make test/' 1 10 MAKEFLAGS=k MAKELEVEL=1 || exit 1
 # ...and survives once the unset is gone too (so the unset is what kills it; two files mutated, rig_check first).
 rm -rf "$W/m"; mkdir -p "$W/m/tools" || exit 1
 cp "$ROOT/tools/rig_check.sh" "$ROOT/tools/rig_nightly.sh" "$ROOT/tools/test_rig_keep_going.sh" "$W/m/tools/" || exit 1
@@ -208,23 +258,24 @@ test "$rc" = 1 || exit 1
 rc=0; MAKEFLAGS=k sh "$W/m/tools/test_rig_keep_going.sh" "$W/m" > "$W/out" 2>&1 || rc=$?
 echo "drill M8b-no-k-no-unset-outer-k: rc $rc ($(tail -1 "$W/out"))"
 test "$rc" = 0 || exit 1
-echo "drill: 9 mutant runs as predicted"
+echo "drill: 11 mutant runs as predicted"
 # --- drill end
+
 ```
 
 The FAIL counts assume both 3.81 and 4.4.1 are on `PATH` (the Studio). On a host with one GNU make, halve every count.
 
 ### Through-target result
 
-These runs used `/usr/bin/make` 3.81 on the prototype copy, under `env -u MAKEFLAGS -u MAKELEVEL` and `alarm 900` (V22).
+These runs are from revision 1. They used `/usr/bin/make` 3.81 on clonefile copies of the prototype (`$P`, `$P-k`, `$P-m1`), started concurrently under `env -u MAKEFLAGS -u MAKELEVEL` and `alarm 900` (V22). Revision 0's sequential runs took 251, 249 and 249 s, with the same verdicts.
 
 | Run | rc | Time | Result |
 |---|---:|---:|---|
-| `make -C $P rig-check-control` | 0 | 251 s | `keep-going: ok`, `caller-poison: ok`, `rig-check control: 19 cases, 0 failures` |
-| `make -C $P -k rig-check-control` (the rig's own outer `-k`) | 0 | 249 s | the same three lines |
-| M1 (`make -k test` → `make test`) in `$P2`, `make -C $P2 -k rig-check-control` | **2** | 249 s | 6 `rig-keep-going control … FAIL` lines (two-red, many-red and nightly-two-red on 3.81 and 4.4.1); `rig-check control keep-going: FAIL`; `caller-poison: FAIL`; `rig-check control: 19 cases, 5 failures` (keep-going, caller-poison, and the three `-k test` make-call cases golden-setup, full-no-setup and test-hang); `make: *** [rig-check-control] Error 1` |
+| `make -C $P rig-check-control` | 0 | 192 s | `keep-going: ok`, `caller-poison: ok`, `rig-check control: 19 cases, 0 failures` |
+| `make -C $P-k -k rig-check-control` (the rig's own outer `-k`) | 0 | 192 s | the same three lines |
+| M1 (`make -k test` → `make test`) in `$P-m1`, `make -C $P-m1 -k rig-check-control` | **2** | 191 s | `rig-keep-going control: 16 cases, 10 failures` (two-red, many-red, hundred-red, longname-red and nightly-two-red, on 3.81 and 4.4.1); `rig-check control keep-going: FAIL`; `caller-poison: FAIL`; `rig-check control: 19 cases, 5 failures` (keep-going, caller-poison, and the three `-k test` make-call cases golden-setup, full-no-setup and test-hang); `make: *** [rig-check-control] Error 1` |
 
-The control adds about 3 s to `rig-check-control`, which took 189–221 s before the change (V13). When `keep-going` fails, the fixture log is printed with `cat`, so caller-poison's `': ok$'` count over-reads (`20 of 18 ok`). The existing `suite-profile` case does the same, and the case is red either way.
+The control adds about 6 s to `rig-check-control`, which took 189–221 s before the change (V13). When `keep-going` fails, the fixture log is printed with `cat`, so caller-poison's `': ok$'` count over-reads (`20 of 18 ok`). The existing `suite-profile` case does the same, and the case is red either way.
 
 
 ## Acceptance criteria
@@ -233,10 +284,10 @@ The control adds about 3 s to `rig-check-control`, which took 189–221 s before
 
 | # | Criterion | Command | Expected |
 |---|---|---|---|
-| 1 | The keep-going control is green on both makes | `sh tools/test_rig_keep_going.sh "$PWD" \| tail -1; echo rc=$?` | `rig-keep-going control: 12 cases, 0 failures`, `rc=0` |
+| 1 | The keep-going control is green on both makes | `sh tools/test_rig_keep_going.sh "$PWD" \| tail -1; echo rc=$?` | `rig-keep-going control: 16 cases, 0 failures`, `rc=0` |
 | 2 | The rig-check control is green and includes it | `sh tools/test_rig_check.sh tools/rig_check.sh \| grep -E 'keep-going\|caller-poison\|cases'` | `rig-check control keep-going: ok`, `rig-check control caller-poison: ok`, `rig-check control: 19 cases, 0 failures` |
 | 3 | Through the target that `make test` uses, plain and under an outer `-k` | `env -u MAKEFLAGS -u MAKELEVEL make rig-check-control \| tail -1; echo rc=$?`, then the same with `make -k rig-check-control` | both `rig-check control: 19 cases, 0 failures`, `rc=0` |
-| 4 | Mutants die (and M8b shows the unset is load-bearing) | `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > $T/drill.sh && sh $T/drill.sh "$PWD"; echo rc=$?` | 9 `drill …` lines as in V18, then `drill: 9 mutant runs as predicted`, `rc=0` |
+| 4 | Mutants die (M9/M10 bite the 140 bound; M8b shows the unset is load-bearing) | `awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > $T/drill.sh && sh $T/drill.sh "$PWD"; echo rc=$?` | 11 `drill …` lines as in V18, then `drill: 11 mutant runs as predicted`, `rc=0` |
 | 5 | M1 dies through the target under the rig's own `-k` | `git clone -q . $T/c && cp tools/*.sh $T/c/tools/ && perl -pi -e 's/make -k test/make test/' $T/c/tools/rig_check.sh && { cmp -s tools/rig_check.sh $T/c/tools/rig_check.sh && exit 3; true; } && env -u MAKEFLAGS -u MAKELEVEL make -C $T/c -k rig-check-control > $T/m1.out 2>&1; echo rc=$?; grep -c 'keep-going: FAIL' $T/m1.out; grep -c 'caller-poison: FAIL' $T/m1.out` | `rc=2`, `1`, `1` |
 | 6 | The rig runs `make -k test` and nothing else changed how `make test` runs | `grep -c 'bounded "\$TEST_S" make -k test' tools/rig_check.sh; git diff --name-only origin/main...HEAD -- Makefile mk \| wc -l` | `1`, `0` |
 | 7 | Scope | `git diff --name-only origin/main...HEAD` | `tools/rig_check.sh`, `tools/rig_nightly.sh`, `tools/test_rig_check.sh`, `tools/test_rig_keep_going.sh`, this doc and the landing files only |
@@ -247,18 +298,26 @@ The control adds about 3 s to `rig-check-control`, which took 189–221 s before
 
 ## Sub-milestones and estimates
 
-There is one milestone, about 175 LOC, in this order:
-1. Add `tools/test_rig_keep_going.sh` (from the appendix) and the `keep-going` case. Record the case **red** against the unmodified `rig_check.sh`/`rig_nightly.sh`: two-red, many-red, nightly-two-red and golden-log-kept fail.
+There is one milestone, about 200 LOC, in this order:
+1. Add `tools/test_rig_keep_going.sh` (from the appendix) and the `keep-going` case. Record the case **red** against the unmodified `rig_check.sh`/`rig_nightly.sh`: two-red, many-red, hundred-red, longname-red, nightly-two-red and golden-log-kept fail.
 2. Apply M1 and M2, then the `test_rig_check.sh` expectation updates.
 3. Run AC1–9.
 
 ## Risks and mitigations
 
-- **A heavy nested target behaves differently under inherited `k`.** The analysis (V9) says a verdict cannot flip. If one does, the first keep-going nightly shows it as an extra named red, and the fix is that target clearing `MAKEFLAGS` the way `test_suite_profile.sh:6` does. That edit belongs to whoever owns the target, not to this row.
+- **A heavy nested target behaves differently under inherited `k`.** The static classification (V24) says no verdict can flip, and V23 is the dynamic check. If one does, the first keep-going nightly shows it as an extra named red, and the fix is that target clearing `MAKEFLAGS` the way `test_suite_profile.sh:6` does. That edit belongs to whoever owns the target, not to this row.
 - **Silently skipped dependents** (V8). With today's reds there are none (V14). A red `import` would hide 42 targets, as it does today. The list names `import`, and that is the thing to fix first.
 - **Longer nightly.** A red night now takes the CPU for about 70 min starting at 22:30, the time the nightly was meant to take. The 23:30 launch sees `rig_check.sh` running and exits (`rig_nightly.sh:67`). The golden half starts at a later launch, as it already does after a green night.
-- **Many reds overflow the description.** It is capped at 140 characters with `+K more`. The full list is in stdout, in the issue's `Failing targets` line, and in the log.
+- **Many reds overflow the description.** The suffix is reserved at the count's width and a too-long first name is cut (V25), so the reason fits 140 by construction; hundred-red and longname-red assert it with `test`, and M9/M10 prove those cases bite. The full list is in stdout, in the issue's `Failing targets` line, and in the log.
 - **The 4.x message format.** It is handled by the same regular expression and checked by the control on 4.4.1 (V16). The rig itself runs 3.81 (V3).
+
+## Quorum round 1 (2026-11-09, 2/3 block) and how revision 1 resolves it
+
+1. **oc-kimi-k3 (reject): the `+K more` reservation was a fixed 9, which fits only a two-digit K.** Fixed. The suffix is now reserved at 7 + len N (K < N). The `hundred-red` case (120 reds, with names chosen to fill the old budget exactly) checks with `test` that reason + 10 ≤ 140, and checks the exact reason. It reads stdout, because `status()` would hide an overflow by cutting. M9 restores the old 9: hundred-red reports `reason 141 characters` and goes red (V18, V25).
+2. **gemini-4-argon (pass, edge case): a first name longer than the budget left an empty list.** Fixed by cutting that name to `budget − 3` characters plus `...`, counted as shown. `longname-red` checks it (exactly 140; V25), and M10 removes the cut and goes red.
+3. **gpt6-1-sol (reject): "nothing needs neutralising" was unverified for the real nested targets.** Narrowed to the measured claim. The static arm (V24) classifies all 32 nested-make lines by owner, closure and expectation; exactly two expect failure, one outside the closure and one single-goal case already measured (V12). The argument for the 15 expected-success closure lines is under "Hazards". The dynamic arm (V23) is the controller's full `make -k test` with inherited `k`, which is PENDING at this revision. The future convention (clear `MAKEFLAGS` in a fixture that expects a nested make to fail) is stated, and the absence of a lint is justified.
+
+The control is now 16 cases (8 per make, 6 s), and the drill is 11 mutant runs (V16, V18).
 
 ## Open questions for the user
 
@@ -330,6 +389,14 @@ printf '%s\n' 'AILANG_RELEASE ?= v0.54.14' 'test: alpha-check beta-ok gamma-chec
 printf '%s\n' 'AILANG_RELEASE ?= v0.54.14' 'test: alpha-ok beta-ok' 'alpha-ok beta-ok: ; @echo "$@: 1 passed, 0 failures"' > "$T/green.mk"
 { echo 'AILANG_RELEASE ?= v0.54.14'; printf 'test:'; for i in 1 2 3 4 5 6 7 8 9 10 11 12; do printf ' a-rather-long-failing-target-%s' "$i"; done; echo
   echo 'a-rather-long-failing-target-%: ; @echo "$@: FAIL"; exit 1'; } > "$T/many.mk"
+# hundred: 120 reds (a 3-digit count). Under the 140 budget n1 (36) fits and n2 (37) does not; a suffix reserved at the old
+# fixed 9 lets n2 in and overflows to 141. longname: the first red alone is longer than the budget, so it is cut.
+n1=n1-$(printf %033d 0); n2=n2-$(printf %034d 0); ln=x-$(printf %098d 0)
+{ echo 'AILANG_RELEASE ?= v0.54.14'; printf 'test: %s %s' "$n1" "$n2"; i=3; while [ $i -le 120 ]; do printf ' r-%s' "$i"; i=$((i + 1)); done; echo
+  printf '%s %s r-%%: ; @exit 1\n' "$n1" "$n2"; } > "$T/hundred.mk"
+printf '%s\n' 'AILANG_RELEASE ?= v0.54.14' "test: $ln b-red" "$ln b-red: ; @exit 1" > "$T/longname.mk"
+# reason: the failure reason rig_check printed (stdout), before status() cuts anything to 140 characters
+reason() { sed -n 's/^rig-check: FAIL: \(.*\) (log: .*)$/\1/p' "$T/out"; }
 fails=0; cases=0
 ok() { cases=$((cases + 1)); echo "rig-keep-going control $1 [$V]: ok"; }
 no() { cases=$((cases + 1)); fails=$((fails + 1)); echo "rig-keep-going control $1 [$V]: FAIL ($2)"; }
@@ -379,6 +446,22 @@ for REAL_MAKE in $makes; do
   test -n "$d" && test "$d" -le 140 || why="$why; description length ${d:-none}"
   grep -Eq '^failure [0-9]+ 01234567: make test failed \(rc 2; bound 7200s\); 12 red: a-rather-long-failing-target-1 .* \+[0-9]+ more$' "$STUB_POSTS" || why="$why; description"
   if [ -z "$why" ]; then ok many-red; else no many-red "$why"; fi
+  # hundred-red: 120 reds; the reason plus "01234567: " fits 140 exactly as written, with n1 and +119 more.
+  rig hundred hundred-$V; why=; r=$(reason)
+  test "$rc" = 1 || why="rc $rc"
+  test -n "$r" || why="$why; no FAIL line"   # positive control: the reason capture is live
+  test $((${#r} + 10)) -le 140 || why="$why; reason $((${#r} + 10)) characters"
+  test "$r" = "make test failed (rc 2; bound 7200s); 120 red: $n1 +119 more" || why="$why; reason [$r]"
+  test "$(sed -n 's/^rig-check: failed targets (120): //p' "$T/out" | wc -w | tr -d ' ')" = 120 || why="$why; stdout list"
+  if [ -z "$why" ]; then ok hundred-red; else no hundred-red "$why"; fi
+  # longname-red: the first name is longer than the budget: its first 74 characters, "...", +1 more (140 in all).
+  rig longname longname-$V; why=; r=$(reason)
+  test "$rc" = 1 || why="rc $rc"
+  test -n "$r" || why="$why; no FAIL line"
+  test $((${#r} + 10)) -le 140 || why="$why; reason $((${#r} + 10)) characters"
+  test "$r" = "make test failed (rc 2; bound 7200s); 2 red: $(printf %s "$ln" | cut -c1-74)... +1 more" || why="$why; reason [$r]"
+  grep -qx "rig-check: failed targets (2): $ln b-red" "$T/out" || why="$why; stdout list"
+  if [ -z "$why" ]; then ok longname-red; else no longname-red "$why"; fi
   # nightly-two-red: the issue body names both targets and carries both top-level error lines.
   nightly two; why=
   test -f "$STUB_BODY" || why="no issue body"
