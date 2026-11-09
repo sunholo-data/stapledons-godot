@@ -12,7 +12,8 @@
   ],
   "decision_refs": [
     "D-149",
-    "D-150"
+    "D-150",
+    "D-151"
   ],
   "external_dependencies": [
     {
@@ -95,7 +96,7 @@
       "passes": true,
       "started": "2026-11-09",
       "completed": "2026-11-09",
-      "notes": "Cockpit refinement: 39/0 command checks including seated eye position, target camera poses, hidden own billboard, actual projected Control click once and viewport restoration; 101/0 physical arc/ray checks. 18/0 display/window layout cases; 10/0 guided review/Brake; 52/0 real-sim parity. Mark visual acceptance pending, no GPU checks run."
+      "notes": "Cockpit refinement: 39/0 command checks including seated eye position, target camera poses, hidden own billboard, actual projected Control click once and viewport restoration; 101/0 physical arc/ray checks. 18/0 display/window layout cases; 10/0 guided review/Brake; 52/0 real-sim parity. Mark visual acceptance pending, no GPU checks run. Combined with finalized AI-panel main 28d0ee23; cockpit command now 44/0 with drag reset and Esc chain regression; AI settings 105/0."
     },
     {
       "id": "C3_SEATED_PLAYTHROUGH",
@@ -131,12 +132,12 @@
   "publication": {
     "commit": "4ce91d338af566e046aef16be41a411902baf1c7",
     "version": "v0.4.0-dev.37-living-bridge-458-g4ce91d33",
-    "channel": "private pinned macOS review: reviews/4ce91d33",
+    "channel": "normal combined macOS dev (publication preparing)",
     "sha256": "9a6054252ac79c48f349f688a92bab71223e84b2ec4dc12ef562f01cdc01fbea",
     "gpu_checks_run": false,
     "visual_acceptance": "pending Mark laptop playtest",
     "review": "Claude Sonnet 4.6 92/100 PASS; drag reset follow-up before merge",
-    "install_command": "DEV_BUCKET=stapledons-voyage-dev-builds/reviews/4ce91d33 tools/install_review_build.sh --dev",
-    "delivery_note": "Shared latest.json overwritten by unrelated 0a315767 build lacking captain_command.gd; copied exact 4ce91d33 app to immutable review prefix, no rebuild or GPU use."
+    "install_command": "tools/install_review_build.sh --dev",
+    "delivery_note": "Mark requests one combined app; origin/main including final AI-panel PR414 merged cleanly. Normal installer updates one existing app in place."
   }
 }

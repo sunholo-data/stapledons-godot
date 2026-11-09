@@ -3,7 +3,6 @@
 # ~/Applications, clear the Gatekeeper quarantine flag and open it.
 #
 #   tools/install_review_build.sh --dev          # latest dev build (private GCS bucket; needs gcloud auth)
-#   DEV_BUCKET=stapledons-voyage-dev-builds/reviews/4ce91d33 tools/install_review_build.sh --dev # pinned cockpit review
 #   tools/install_review_build.sh                # latest GitHub release (needs `gh auth login`)
 #   tools/install_review_build.sh v0.3.2-m2-journey   # a named GitHub release
 #

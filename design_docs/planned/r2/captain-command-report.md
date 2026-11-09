@@ -50,6 +50,10 @@ Independent cross-family review: **Claude Sonnet 4.6, 86/100 checkpoint PASS**, 
 
 ## Attended cockpit refinement and laptop candidate — 2026-11-09
 
+**Combined-build direction (D-151):** Mark requests one app containing both cockpit and AI-panel work. Merged current main `28d0ee23` (final AI-panel PR #414, including `204c7943`) into this branch without conflicts. Both feature histories are ancestors of the combined candidate. The normal `--dev` channel replaces the existing `~/Applications/Stapledons Voyage.app`; pinned feature-install instructions are superseded for everyday play. No additional app installation is created.
+
+Resolved the cockpit judge's drag-state finding: selection/close reset drag and pointer state. New regressions check both resets and Esc disarm → look up → close. Combined-source cockpit checks **44/0** and AI settings **105/0** pass headlessly; menu/guided checks and headless packaging are in progress. No live-provider calls or GPU work are part of these checks. The previous independent reviews remain recorded (cockpit Claude 92; AI panel Codex 80); no source conflict or simulation edit was introduced by integration.
+
 **Delivery correction:** the shared dev manifest was subsequently overwritten by unrelated AI-panel candidate `0a315767`, which does not contain `ui/captain_command.gd`. Mark's `--dev` install therefore did not necessarily install this PR. Copied the exact existing `4ce91d33` archive to the immutable private prefix `reviews/4ce91d33`, with a matching manifest. Install the cockpit using `DEV_BUCKET=stapledons-voyage-dev-builds/reviews/4ce91d33 tools/install_review_build.sh --dev`; this works with the existing laptop installer. No rebuild, GPU check or game launch was required. Mark's visual acceptance remains pending.
 
 Fresh cross-family cockpit checkpoint: Claude Sonnet 4.6 **92/100 PASS**, [verbatim report](../../../.ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_2.json), landing_ready false. Reset drag state on system changes/close before merge; Esc-chain coverage and avoiding an unused overview viewport render are noted follow-ups. This does not validate a build without the chair source.

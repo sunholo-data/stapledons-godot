@@ -89,6 +89,8 @@ func open() -> bool:
 
 func close() -> void:
 	_waiting_for_seat = false
+	_dragging = false
+	_screen_pointer = Vector2.ZERO
 	if not visible: return
 	consoles.close_chair_system()
 	screen_host.finish()
@@ -109,6 +111,8 @@ func stand() -> void:
 
 func select_system(id: String) -> bool:
 	if not visible or not authorized() or not ORDER.has(id): return false
+	_dragging = false
+	_screen_pointer = Vector2.ZERO
 	consoles.close_chair_system()
 	screen_host.release_navigation()
 	cockpit.set_display_texture(selected, null)
