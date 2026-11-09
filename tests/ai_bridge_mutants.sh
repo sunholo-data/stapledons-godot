@@ -15,7 +15,7 @@
 set -u
 GODOT=$1
 SCRATCH=$2
-FILES="bridge/ai_bridge.gd bridge/ai_session.gd ui/settings/ai_settings.gd bridge/ai_cache.gd bridge/ai_relay.gd ui/conversation/conversation.gd ui/conversation/conversation_session.gd"
+FILES="bridge/ai_bridge.gd bridge/ai_session.gd ui/settings/ai_settings.gd ui/ai_indicator.gd bridge/ai_key_check.gd bridge/ai_cache.gd bridge/ai_relay.gd ui/conversation/conversation.gd ui/conversation/conversation_session.gd"
 mkdir -p "$SCRATCH/orig"
 for f in $FILES; do mkdir -p "$SCRATCH/orig/$(dirname $f)"; cp "$f" "$SCRATCH/orig/$f"; done
 restore() { for f in $FILES; do cp "$SCRATCH/orig/$f" "$f"; done; }
@@ -94,6 +94,14 @@ bridge/ai_session.gd	if settings.automation and _hello_out == "":	if false:	key_
 bridge/ai_session.gd	settings.forget_session_keys() # a crash	pass # a crash	key_edges	stale session key files removed at startup
 ui/settings/ai_settings.gd	FileAccess.get_file_as_string(key_path(p)).strip_edges() != ""	true	key_edges	a key file holding nothing is no key
 bridge/ai_bridge.gd	f.seek(usage_from)	f.seek(0)	indicator_budget	the earlier session's 5.0 not counted
+ui/ai_indicator.gd	if rejected_key or fails >= FAIL_LIMIT:\n\t\treturn "problem"\n\tif pending > 0:\n\t\treturn "working"	if pending > 0:\n\t\treturn "working"\n\tif rejected_key or fails >= FAIL_LIMIT:\n\t\treturn "problem"	badge	problem over working
+ui/ai_indicator.gd	if o.get("status") == "ok":\n\t\tfail_streak = 0	if o.get("status") == "ok":\n\t\tpass	badge	one ok reply clears it
+ui/settings/ai_settings.gd	return clampf(snappedf(v, 0.01), CEILING_MIN, CEILING_MAX)	return clampf(v, CEILING_MIN, CEILING_MAX)	panel_v2	round-trip exactly
+ui/settings/ai_settings.gd	return "" if k == "" else "•••• " + k.right(4)	return "" if k == "" else "•••• " + k	panel_v2	masked key: the last 4 only
+ui/settings/ai_settings.gd	elif live_on() and AiRelay.route_in(rt, kind, have, effective_text_only()) == p:	elif AiRelay.route_in(rt, kind, have, effective_text_only()) == p:	panel_v2	switch off: all dim
+bridge/ai_key_check.gd	if s.automation or running.has(provider)	if running.has(provider)	key_check	automation never runs a check
+bridge/ai_key_check.gd	OS.kill(pid)\n\t\t\tstatus = "offline"\n\t\t\tbreak	pass	key_check	a hung check is killed at the timeout
+bridge/ai_key_check.gd	if j is Dictionary and j.get("check") == provider and	if j is Dictionary and	key_check	parse: the one line, its provider
 EOF
 while IFS="$TAB" read -r src from to only want; do
 	[ -z "$src" ] && continue
