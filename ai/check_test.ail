@@ -1,0 +1,35 @@
+module stapledons/ai/check_test
+
+-- R3-AI-PANEL-V2 P1: the key check's pure halves (ai/check.ail). The GETs
+-- themselves run against the loopback server in `make ai-key-check`.
+import ./check (statusOf, baseOf, urlOf, lineOf)
+
+pure func checkGeminiStatus() -> bool =
+  statusOf("gemini", 200) == "ok" && statusOf("gemini", 400) == "rejected" &&
+  statusOf("gemini", 401) == "rejected" && statusOf("gemini", 403) == "rejected" &&
+  statusOf("gemini", 429) == "offline" && statusOf("gemini", 500) == "offline" && statusOf("gemini", 0) == "offline"
+
+pure func checkOpenRouterStatus() -> bool =
+  statusOf("openrouter", 200) == "ok" && statusOf("openrouter", 401) == "rejected" &&
+  statusOf("openrouter", 403) == "rejected" && statusOf("openrouter", 400) == "offline" &&
+  statusOf("openrouter", 429) == "offline" && statusOf("openrouter", 503) == "offline"
+
+pure func checkUnknownProvider() -> bool =
+  statusOf("other", 200) == "offline" && statusOf("other", 403) == "offline"
+
+pure func checkUrls() -> bool =
+  baseOf("gemini", "") == "https://generativelanguage.googleapis.com" &&
+  baseOf("openrouter", "") == "https://openrouter.ai" &&
+  baseOf("gemini", "http://127.0.0.1:9") == "http://127.0.0.1:9" &&
+  urlOf("gemini", "https://g") == "https://g/v1beta/models?pageSize=1" &&
+  urlOf("openrouter", "https://o") == "https://o/api/v1/key"
+
+pure func checkLine() -> bool =
+  lineOf("gemini", "ok") == "{\"check\":\"gemini\",\"status\":\"ok\"}" &&
+  lineOf("openrouter", "rejected") == "{\"check\":\"openrouter\",\"status\":\"rejected\"}"
+
+test "P1 gemini status: 200 ok, 400/401/403 rejected, else offline" { checkGeminiStatus() }
+test "P1 openrouter status: 200 ok, 401/403 rejected, else offline" { checkOpenRouterStatus() }
+test "P1 an unknown provider is never ok" { checkUnknownProvider() }
+test "P1 check URLs: free list/metadata GETs on the real hosts unless a base is given" { checkUrls() }
+test "P1 the one printed line names the provider and the status only" { checkLine() }

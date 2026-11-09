@@ -163,6 +163,58 @@ func live_kinds() -> Array:
 	return rt.keys().filter(func(k): return AiRelay.route_in(rt, k, have, effective_text_only()) != "")
 
 
+## R3-AI-PANEL-V2 P3: the four capability tiles of a key card, in this order.
+const TILE_KINDS := ["text", "voice", "portrait", "feed"]
+
+
+func _key_text(p: String) -> String:
+	match key_source(p):
+		"env": return OS.get_environment(KEY_ENV[p]).strip_edges()
+		"file": return FileAccess.get_file_as_string(key_path(p)).strip_edges()
+	return ""
+
+
+## A saved key shown by its last 4 characters only (design OQ1); "" without one.
+func masked_key(p: String) -> String:
+	var k := _key_text(p)
+	return "" if k == "" else "•••• " + k.right(4)
+
+
+## sha256 of the key (never the key): which key a check result belongs to; "" without one.
+func key_fingerprint(p: String) -> String:
+	var k := _key_text(p)
+	return "" if k == "" else k.sha256_text()
+
+
+## The ceiling slider is logarithmic over CEILING_MIN..CEILING_MAX (0..1), so
+## cents and dollars both get room; the way back snaps to set_ceiling's grid.
+static func ceiling_to_slider(v: float) -> float:
+	return clampf(log(clampf(v, CEILING_MIN, CEILING_MAX) / CEILING_MIN) / log(CEILING_MAX / CEILING_MIN), 0.0, 1.0)
+
+
+static func slider_to_ceiling(t: float) -> float:
+	var v := CEILING_MIN * exp(clampf(t, 0.0, 1.0) * log(CEILING_MAX / CEILING_MIN))
+	return clampf(snappedf(v, 0.01), CEILING_MIN, CEILING_MAX)
+
+
+## Per tile kind for key `p`: "bright" (live now on this key), "dim" (this key
+## could serve it, but it is off: no key, the switch, or text-only) or "faint"
+## (this key can never serve it).
+func tile_states(p: String) -> Array:
+	var rt := routes()
+	var can := kinds_for(p)
+	var have := keys_present()
+	var out := []
+	for kind in TILE_KINDS:
+		if not kind in can:
+			out.append("faint")
+		elif live_on() and AiRelay.route_in(rt, kind, have, effective_text_only()) == p:
+			out.append("bright")
+		else:
+			out.append("dim")
+	return out
+
+
 ## About what one text line, voice line and portrait costs on the route the
 ## keys present pick (or the first route): US$ per kind.
 func estimates() -> Dictionary:
