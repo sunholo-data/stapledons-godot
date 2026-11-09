@@ -5,12 +5,12 @@
 # are stubs on PATH; the stub gh refuses a long description the way GitHub does (HTTP 422).
 #   sh tools/test_rig_check.sh [path/to/rig_check.sh]
 set -eu
-unset RIG_TEST_S RIG_GOLDEN_S   # hermetic: a caller's watchdog override must not reach the cases (iteration 52)
+unset RIG_TEST_S RIG_GOLDEN_S RIG_SETUP_S RIG_DL_S   # hermetic: a caller's watchdog override must not reach the cases (iteration 52)
 RIG=$(cd "$(dirname "${1:-tools/rig_check.sh}")" && pwd -P)/$(basename "${1:-tools/rig_check.sh}")
 T=$(mktemp -d "${TMPDIR:-/tmp}/rig-check-control.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 test "${#T}" -le 100   # the clone-red-pointer case needs a log path short enough for the pointer to fit
-export STUB_POSTS="$T/posts" STUB_SHA=0123456789abcdef0123456789abcdef01234567
+export STUB_POSTS="$T/posts" STUB_SHA=0123456789abcdef0123456789abcdef01234567 STUB_MAKES="$T/makes" STUB_CHILD="$T/child"
 mkdir "$T/bin"
 cat > "$T/bin/gh" <<'STUB'
 #!/bin/sh
@@ -28,7 +28,14 @@ for d; do :; done
 mkdir -p "$d/runtime/bin"; echo 'AILANG_RELEASE ?= v0.54.14' > "$d/Makefile"
 printf '#!/bin/sh\necho "%s"\n' "$STUB_VERSION" > "$d/runtime/bin/ailang"; chmod +x "$d/runtime/bin/ailang"
 STUB
-printf '#!/bin/sh\ncase " $* " in *" $STUB_MAKE_FAIL "*) exit 1 ;; esac\n' > "$T/bin/make"
+# The stub make logs each call to $STUB_MAKES; for the target named in $STUB_MAKE_HANG it hangs with a 20 s child
+# whose pid goes to $STUB_CHILD, so a mutant that loses a bound ends red after about 20 s and never hangs the control.
+cat > "$T/bin/make" <<'STUB'
+#!/bin/sh
+echo "$*" >> "$STUB_MAKES"
+case " $* " in *" $STUB_MAKE_FAIL "*) exit 1 ;; esac
+case " $* " in *" ${STUB_MAKE_HANG:-none} "*) sleep 20 & echo $! > "$STUB_CHILD"; wait ;; esac
+STUB
 chmod +x "$T/bin/gh" "$T/bin/git" "$T/bin/make"
 long=$(printf '%0200d' 0)
 pad="$T/rig-check/"; while [ ${#pad} -lt 100 ]; do pad="${pad}x"; done   # the rig's 104-character log path
@@ -70,13 +77,59 @@ else
   cat "$T/suite-profile.log"
   echo 'rig-check control suite-profile: FAIL (see fixture output)'; fails=$((fails + 1))
 fi
+# Reaper probe for the hang cases: the pid is gone within a 3 s poll (rc 0), or still alive (rc 1).
+alive() { kill -0 "$1" 2>/dev/null; }
+reaped() { i=0; while alive "$1"; do i=$((i + 1)); [ "$i" -ge 30 ] && return 1; sleep 0.1; done; return 0; }
+# Positive control: the probe must see a live sleep as alive, or the reaped checks prove nothing. Not a case (no ': ok').
+sleep 30 & probe=$!
+if reaped "$probe"; then echo "rig-check reaper positive control: FAIL (kill -0 misses a live sleep)"; fails=$((fails + 1)); else echo "rig-check reaper positive control: sees a live sleep"; fi
+kill "$probe" 2>/dev/null || true; wait "$probe" 2>/dev/null || true
+# order <case> <flag> <failing target | hang:<target> | none> <want rc> <want make calls, in order> <want state> <want description ERE>
+#       [RIG_SETUP_S] [RIG_DL_S] [STUB_VERSION]
+# The make calls are logged in order. hang:<target> makes that call hang with a child; after the rig exits, that child
+# must be gone (the bound took its whole process group). The description is checked with a log path too long to fit.
+order() {
+  c=$1; flag=$2; ft=$3; want_rc=$4; want_calls=$5; want_state=$6; want_desc=$7
+  setup_s=${8:-}; dl_s=${9:-}; ver=${10:-AILANG v0.54.14}
+  case "$ft" in hang:*) hang=${ft#hang:}; fail=none ;; *) hang=none; fail=$ft ;; esac
+  : > "$STUB_POSTS"; : > "$STUB_MAKES"; rm -f "$STUB_CHILD"; why=; rc=0
+  ( if [ -n "$setup_s" ]; then RIG_SETUP_S=$setup_s; export RIG_SETUP_S; fi
+    if [ -n "$dl_s" ]; then RIG_DL_S=$dl_s; export RIG_DL_S; fi
+    export STUB_VERSION="$ver" STUB_MAKE_FAIL="$fail" STUB_MAKE_HANG="$hang" RIG_DIR="$pad$c" RIG_NO_STATUS=0
+    PATH="$T/bin:$PATH"; export PATH
+    if [ -n "$flag" ]; then sh "$RIG" 7 "$flag"; else sh "$RIG" 7; fi
+  ) > "$T/out" 2>&1 || rc=$?
+  test "$rc" = "$want_rc" || why="rc $rc, want $want_rc"
+  got=$(tr '\n' ' ' < "$STUB_MAKES" | sed 's/ $//')
+  test "$got" = "$want_calls" || why="$why; make calls [$got], want [$want_calls]"
+  test "$(cut -d' ' -f1 "$STUB_POSTS" | tr '\n' ' ')" = "pending $want_state " || why="$why; posts: $(cut -d' ' -f1-2 "$STUB_POSTS" | tr '\n' ' ')"
+  grep -Eq "^$want_state [0-9]+ $want_desc" "$STUB_POSTS" || why="$why; no $want_state description /$want_desc/"
+  if [ "$hang" != none ]; then
+    child=$(cat "$STUB_CHILD" 2>/dev/null || true)
+    if [ -z "$child" ]; then why="$why; the $hang hang never ran"
+    elif ! reaped "$child"; then why="$why; hang child $child still alive"; kill -9 "$child" 2>/dev/null || true
+    fi
+  fi
+  if [ -z "$why" ]; then echo "rig-check control $c: ok"; else echo "rig-check control $c: FAIL ($why)"; fails=$((fails + 1)); fi
+}
+# The golden setup: make runs in GOLDEN_SETUP order, after sky-assets, before golden (the nightly rig/golden path).
+order golden-only-setup --golden-only none 0 'sky-assets deps starmap-assets planet-assets import golden' success 'make golden green'
+order golden-setup --golden none 0 'sky-assets test deps starmap-assets planet-assets import golden' success 'make test \+ make golden green'
+# A failing setup target stops the run before golden; the default SETUP_S is 600 s (RIG_SETUP_S unset here).
+order golden-setup-red --golden-only import 1 'sky-assets deps starmap-assets planet-assets import' failure '01234567: golden setup: make import failed or ran over 600s$'
+# The rig/full path has no setup, so the make test run is unchanged.
+order full-no-setup "" none 0 'sky-assets test' success 'make test green'
+# Bounds: a hung setup target, sky-assets or runtime is ended by its bound (2 s here), named, and its child is reaped.
+order setup-hang --golden-only hang:deps 1 'sky-assets deps' failure '01234567: golden setup: make deps failed or ran over 2s$' 2
+order sky-hang --golden-only hang:sky-assets 1 'sky-assets' failure '01234567: rig setup: make sky-assets failed or ran over 2s$' "" 2
+order runtime-hang --golden-only hang:runtime 1 'runtime' failure '01234567: rig setup: make runtime failed or ran over 2s$' "" 2 'AILANG v0.54.11'
 # caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52).
-n=8
+n=15
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=9; nrc=0
-  RIG_CHECK_NESTED=1 RIG_TEST_S=1234 RIG_GOLDEN_S=7 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
+  n=16; nrc=0
+  RIG_CHECK_NESTED=1 RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 8 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 8 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 15 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 15 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0

@@ -16,7 +16,7 @@
     {
       "id": "MS1",
       "title": "Red controls in tools/test_rig_check.sh (test-first): make-call log + hang mode in the stub make, order helper, 7 new cases (golden-only-setup, golden-setup, golden-setup-red, full-no-setup, setup-hang, sky-hang, runtime-hang), RIG_SETUP_S RIG_DL_S in the unset and the caller-poison, counts 8->15 and 9->16",
-      "status": "pending",
+      "status": "done",
       "acceptance_criteria": [
         "Doc sub-milestone 1: the 7 control cases are written before any rig_check.sh change and recorded red against the unmodified script (that red run is already the AC6/AC10/AC12 mutant evidence)",
         "Red half of AC5: against the unmodified tools/rig_check.sh, exactly the 7 new cases FAIL and the 8 base cases stay ok (rc 1; record the failure count in notes)",
@@ -25,7 +25,7 @@
       "verify": [
         "T=$(mktemp -d); perl -e 'alarm 300; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh > $T/ms1-red.log 2>&1; echo rc=$?; grep -c 'FAIL' $T/ms1-red.log   # want: rc=1, 7 FAILs, base 8 ok"
       ],
-      "notes": ""
+      "notes": "MS1 red (unmodified tools/rig_check.sh, rc 1, perl alarm 300): 16 cases, 7 failures. Ok: the 8 base cases plus full-no-setup (9 ok lines). FAIL: golden-only-setup (calls sky-assets golden), golden-setup (sky-assets test golden), golden-setup-red (no failure post), setup-hang (no deps call, no child), sky-hang (rc 0), runtime-hang (desc mismatch), caller-poison (nested 9 of 15 ok). DEVIATION: the plan said exactly 7 new cases FAIL; full-no-setup passes on the unmodified script because the current rig already has no setup on the rig/full path, so it is a regression guard that only a mutant can turn red. Reaper positive control (live sleep seen by kill -0) passes. Wall time about 260 s total (sky-hang and runtime-hang 20 s each, doubled by caller-poison). Orphan sleep 20 count before 4 (pre-existing, other sessions), after 4. Log: /tmp/iter81-evidence/ms1-red.log"
     },
     {
       "id": "MS2",
