@@ -127,5 +127,14 @@
     "scope": "historical flat-shell checkpoint; cockpit refinement requires fresh review",
     "landing_ready": false
   },
-  "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)"
+  "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)",
+  "publication": {
+    "commit": "4ce91d338af566e046aef16be41a411902baf1c7",
+    "version": "v0.4.0-dev.37-living-bridge-458-g4ce91d33",
+    "channel": "private macOS dev",
+    "sha256": "9a6054252ac79c48f349f688a92bab71223e84b2ec4dc12ef562f01cdc01fbea",
+    "gpu_checks_run": false,
+    "visual_acceptance": "pending Mark laptop playtest",
+    "review": "fresh cockpit cross-family review running"
+  }
 }

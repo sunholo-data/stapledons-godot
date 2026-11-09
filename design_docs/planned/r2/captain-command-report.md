@@ -47,3 +47,11 @@ Independent cross-family review: **Claude Sonnet 4.6, 86/100 checkpoint PASS**, 
 - The chair's five-centimetre authority threshold is retained and documented: the presentation-only seated avatar is frozen, and no sim integration drifts it. Repeated real journeys preserved authority; a larger threshold is not needed to cover float32 rounding.
 - The optional destroyed-parent reading-wrapper cleanup suggestion is retained as a low-priority lifecycle follow-up. In the installed ownership tree the original parent also owns the wrapper and frees it with its reader. No abandoned wrapper was reproduced by the repeated restore/re-wrap test. This is not counted as a new pass or a silently applied fix.
 - Companion canon clarification and GPU/dev-build/CI acceptance remain explicit landing work, not claims made by this local checkpoint.
+
+## Attended cockpit refinement and laptop candidate — 2026-11-09
+
+Mark rejected the flat dashboard during playtesting and requested seated first person, consoles around the chair and camera movement between them (D-150). The replacement uses five physical displays and one reusable SubViewport for the existing system controls. Navigation's real map and the Archive/crossing reader layers are hosted there and restored on exit. The captain remains seated; first person hides its own painted billboard. Third-person contact acceptance remains pending.
+
+Fresh targeted headless results: command **39/0** (including a projected display click reaching a real GUI button exactly once), physical cockpit **101/0**, layout **18/0 cases**, guided review/Brake **10/0**, real-sim parity/hold **52/0**. Theme/UID guards pass. No GPU, GUI, app rendering or capture checks ran for this refinement: Mark expressly reserved the GPU for training and chose laptop playtesting.
+
+Headless export succeeded from clean source **4ce91d338af566e046aef16be41a411902baf1c7**. CPU zip/hash/upload published **v0.4.0-dev.37-living-bridge-458-g4ce91d33** to the existing private macOS dev channel; `latest.json` was read back and its installer-compatible path verified. Archive SHA256: `9a6054252ac79c48f349f688a92bab71223e84b2ec4dc12ef562f01cdc01fbea`. Laptop install/launch: `tools/install_review_build.sh --dev`. Draft PR #412 updated; fresh read-only cross-family review is running. No merge or visual acceptance is claimed.
