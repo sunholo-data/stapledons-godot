@@ -226,7 +226,7 @@ func test_panel() -> bool:
 	settings_in(d).save_key("openrouter", KEY_O)
 	var a := session_in(d)
 	var ind := a.indicator
-	assert_bool("indicator on its own CanvasLayer: '%s'" % ind.button.text, ind is CanvasLayer and ind.button.text.begins_with("AI: off"))
+	assert_bool("indicator on its own CanvasLayer, off: '%s'" % ind.button.tooltip_text, ind is CanvasLayer and ind.state() == "off" and ind.button.tooltip_text.begins_with("AI: off"))
 	ind.toggle_panel()
 	var p = ind.panel
 	assert_bool("clicking it opens Settings", p != null and p.visible and p.is_inside_tree())
@@ -234,8 +234,9 @@ func test_panel() -> bool:
 		and p.key_rows["openrouter"]["edit"].placeholder_text.contains("text") and p.info.text.contains("text line"))
 	p._on_opt_in(true)
 	a.bridge.live_allowed = false # automation never lets AI_LIVE through
-	assert_bool("ticking it turns live on (OpenRouter text) and saves; no key in the indicator: '%s'" % ind.button.text,
-		a.settings.live_on() and a.bridge.live and a.relay.mode == "live" and ind.button.text.begins_with("AI live") and settings_in(d).opt_in and not has_key(ind.button.text))
+	assert_bool("ticking it turns live on (OpenRouter text) and saves; no key in the indicator: '%s'" % ind.button.tooltip_text,
+		a.settings.live_on() and a.bridge.live and a.relay.mode == "live" and ind.state() == "live" and ind.button.tooltip_text.begins_with("AI live")
+		and settings_in(d).opt_in and not has_key(ind.button.tooltip_text) and not has_key(ind.label_text()))
 	p._on_ceiling(1.0)
 	a.bridge.live_allowed = false
 	assert_bool("the ceiling field reaches the bridge", is_equal_approx(a.bridge.ceiling_usd, 1.0))
@@ -323,6 +324,58 @@ func test_wired() -> bool:
 		b.service_down and b.launch_count == 3 and fb.size() == 1 and fb[0].get("reason") == "service_down" and said.contains("AI_LIVE=1 is not set"))
 	var leaked := has_key(said) or has_key(b.stderr_tail) or has_key(FileAccess.get_file_as_string(sim.record_path))
 	assert_bool("no key text in the service's stdout, stderr or the session log", not leaked)
+	return true
+
+
+## R3-AI-PANEL-V2 P2 (AC1, AC2): the badge's state, its words and its ring.
+func test_badge() -> bool:
+	print("P2 badge: five states in precedence, at most two words beside AI, amounts in the tooltip")
+	# state_of(live_on, budget_hit, fail_streak, rejected, pending)
+	var cases := [
+		[[false, true, 3, true, 1], "off", "off wins over everything"],
+		[[false, false, 0, false, 1], "off", "off while a request is pending"],
+		[[true, true, 0, false, 0], "ceiling", "budget hit"],
+		[[true, true, 3, true, 1], "ceiling", "ceiling over problem and working"],
+		[[true, false, 3, false, 0], "problem", "three failures in a row"],
+		[[true, false, 0, true, 0], "problem", "a rejected key"],
+		[[true, false, 3, false, 2], "problem", "problem over working"],
+		[[true, false, 0, false, 1], "working", "a request in flight"],
+		[[true, false, 2, false, 0], "live", "two failures are not a problem yet"],
+		[[true, false, 0, false, 0], "live", "live and idle"],
+	]
+	for c in cases:
+		var v: Array = c[0]
+		var got := AiIndicator.state_of(v[0], v[1], v[2], v[3], v[4])
+		assert_bool("state_of %s -> %s (%s): %s" % [c[0], c[1], c[2], got], got == c[1])
+	assert_bool("words: problem says key problem for a rejected key and offline otherwise; every word is at most 2 words",
+		AiIndicator.word_of("problem", true) == "key problem" and AiIndicator.word_of("problem", false) == "offline"
+		and ["off", "live", "working", "ceiling"].all(func(st): return AiIndicator.word_of(st, false).split(" ").size() <= 2))
+	var d := fresh("badge")
+	var s := settings_in(d)
+	s.save_key("openrouter", KEY_O)
+	s.opt_in = true
+	s.save_settings()
+	var a := session_in(d)
+	a.bridge.live_allowed = false
+	var ind := a.indicator
+	ind.refresh()
+	var words := ind.label_text().split(" ", false)
+	assert_bool("visible label: AI and at most 2 words ('%s'); the amounts and the ceiling in the tooltip ('%s')" % [ind.label_text(), ind.button.tooltip_text],
+		words[0] == "AI" and words.size() <= 3 and not ind.label_text().contains("$") and ind.button.tooltip_text.contains("of $0.50"))
+	for i in 3:
+		ind.on_outcome({"req": str(i), "status": "error", "code": "provider_error"})
+	assert_bool("three failed replies -> problem, word offline ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI offline")
+	ind.on_outcome({"req": "4", "status": "ok"})
+	assert_bool("one ok reply clears it -> live", ind.state() == "live" and ind.label_text() == "AI live")
+	a.key_check.results["openrouter"] = "rejected"
+	ind.refresh()
+	assert_bool("a rejected key check -> problem, word key problem ('%s')" % ind.label_text(), ind.state() == "problem" and ind.label_text() == "AI key problem")
+	a.key_check.results["openrouter"] = "ok"
+	ind.usd = {"gemini": 0.0, "openrouter": 0.125}
+	var quarter := ind.fraction()
+	ind.usd["openrouter"] = 9.0
+	assert_bool("the ring is spent over the ceiling: 0.125 of 0.50 -> 0.25 (%.3f); clamped at 1 (%.3f)" % [quarter, ind.fraction()],
+		is_equal_approx(quarter, 0.25) and is_equal_approx(ind.fraction(), 1.0))
 	return true
 
 
@@ -416,7 +469,7 @@ func run_all() -> void:
 		return
 	var tests := ["launch_default"]
 	if not "--launch-default" in OS.get_cmdline_user_args():
-		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired", "key_check"])
+		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired", "key_check", "badge"])
 	# --only=name,name runs a subset (tests/ai_settings_mutants.sh uses it).
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
