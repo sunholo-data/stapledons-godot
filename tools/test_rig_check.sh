@@ -55,13 +55,13 @@ run() {
   if [ -z "$why" ]; then echo "rig-check control $1: ok"; else echo "rig-check control $1: FAIL ($why)"; fails=$((fails + 1)); fi
 }
 # The rig's 104-character log: the pointer does not fit, so the description is exactly sha and reason.
-run make-test-red 1 failure '01234567: make test failed \(rc 1; bound 7200s\); no failing target in the log$''^rig-check: FAIL: make test failed.*\.log\)$' 'AILANG v0.54.14' test "$pad"
+run make-test-red 1 failure '01234567: make test failed \(rc 1; bound 7200s\); no failing target in the log$' '^rig-check: FAIL: make test failed.*\.log\)$' 'AILANG v0.54.14' test "$pad"
 run long-reason 1 failure "01234567: runtime is 'AILANG 0{100}" '^rig-check: FAIL: runtime is ' "AILANG $long" none "$T/r2"
 run long-success 0 success 'make test green on the Studio' '^rig-check: ok, 01234567 green' "AILANG v0.54.14 $long" none "$T/r3"
 # A short log path: the pointer fits, so it is in the description.
 run clone-red-pointer 1 failure '01234567: clone failed \(log: .*/c\.log\)$' '^rig-check: FAIL: clone failed \(log: .*/c\.log\)$' 'AILANG v0.54.14' none "$T/c" clone
 # An explicit RIG_TEST_S still sets the watchdog (the escape hatch, D-126).
-run watchdog-override 1 failure '01234567: make test failed \(rc 1; bound 60s\); no failing target in the log$' '^rig-check: FAIL: make test failed \(rc 1; bound 60s\); no failing target in the log''AILANG v0.54.14' test "$pad" '' 60
+run watchdog-override 1 failure '01234567: make test failed \(rc 1; bound 60s\); no failing target in the log$' '^rig-check: FAIL: make test failed \(rc 1; bound 60s\); no failing target in the log' 'AILANG v0.54.14' test "$pad" '' 60
 # refused <case> <state to refuse> <failing make target> <want rc> <want stdout line 1 (ERE)> <want stdout line 2 (exact)>
 refused() {
   : > "$STUB_POSTS"; rc=0
