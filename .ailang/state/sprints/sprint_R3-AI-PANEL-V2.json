@@ -1,10 +1,10 @@
 {
   "sprint_id": "R3-AI-PANEL-V2",
-  "status": "in_progress",
+  "status": "completed",
   "approved": "Mark, attended 2026-11-09: 'yep build it please' (OQ1-OQ3 defaults accepted); 'and merge in the prs'",
   "created": "2026-11-09",
-  "design_doc": "design_docs/planned/r3/ai-panel-v2.md",
-  "sprint_plan": "design_docs/planned/r3/ai-panel-v2-sprint.md",
+  "design_doc": "design_docs/implemented/r3/ai-panel-v2.md",
+  "sprint_plan": "design_docs/implemented/r3/ai-panel-v2-sprint.md",
   "branch": "feat/ai-panel-v2",
   "origin": "main 13bc0766",
   "ailang_version": "v0.56.1",
@@ -160,7 +160,30 @@
       "passes": true,
       "started": "2026-11-09",
       "completed": "2026-11-09",
-      "notes": "Mutants: ai-bridge-mutants 59/59 killed (8 new rows: badge precedence, ok clears, slider snap, masked key, tiles switch, check automation guard, timeout kill, parse provider); ai-mutants 60 killed incl. 2 check.ail rows and ai-key-check-mutants 3/3 (body printed, key printed, file written; the plan's 'usage line' mutant is the file-written one). ui-theme-check STRICT ok; sim/ physics/ untouched; make ai-panel-capture 6 frames fit 960x540 (692x401), opened and inspected; evaluation and dev build follow in the PR."
+      "notes": "Mutants: ai-bridge-mutants 59/59 killed (8 new rows: badge precedence, ok clears, slider snap, masked key, tiles switch, check automation guard, timeout kill, parse provider); ai-mutants 60 killed incl. 2 check.ail rows and ai-key-check-mutants 3/3 (body printed, key printed, file written; the plan's 'usage line' mutant is the file-written one). ui-theme-check STRICT ok; sim/ physics/ untouched; make ai-panel-capture 6 frames fit 960x540 (692x401), opened and inspected; round 2 evaluation PASS 80; dev build g0a315767 published; AC14 (Mark's visual OK) follows the merge he asked for ('and merge in the prs')."
     }
-  ]
+  ],
+  "evaluations": [
+    {
+      "round": 1,
+      "evaluator": "Codex gpt-6.1-sol",
+      "score": 42,
+      "pass": false,
+      "fixed_in": [
+        "330d489e",
+        "0a315767"
+      ]
+    },
+    {
+      "round": 2,
+      "evaluator": "Codex gpt-6.1-sol",
+      "score": 80,
+      "pass": true,
+      "non_blocking_fixed": [
+        "N6",
+        "N7"
+      ]
+    }
+  ],
+  "dev_build": "g0a315767 (gs://stapledons-voyage-dev-builds/macos/latest.json), 2026-11-09"
 }

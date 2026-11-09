@@ -1,14 +1,14 @@
 # Live AI panel v2: see at a glance whether your key works
 
-**Status:** Planned. Mark approved the visual concept on 2026-11-09 (attended: "yeah thats great proceed").
+**Status:** Implemented 2026-11-09 in [PR #414](https://github.com/sunholo-data/stapledons-godot/pull/414) (sprint R3-AI-PANEL-V2; Codex evaluation round 1 FAIL 42, round 2 PASS 80). Mark approved the visual concept on 2026-11-09 (attended: "yeah thats great proceed"), the plan ("yep build it please") and the merge ("and merge in the prs"). Dev build `g0a315767`.
 **Release:** r3 · **Milestone:** UI follow-up to the AI service foundation (a5)
 **Priority:** P2. Live AI works today, but the player can't tell whether it does: Mark pasted a working Gemini key on 2026-11-09 and asked "its not clear if its working?", then called the panel "a big mess of debug text".
 **Implements:**
-- [ai-service-foundation.md](../r1/ai-service-foundation.md) §(a5) Key and cost UX: same settings, same rules (opt-in needs a key and the tick; one session ceiling over both providers, US$0.05 to 20; text-only; automation never goes live; keys only ever as 0600 files). This doc changes how they are shown and adds a key check.
+- [ai-service-foundation.md](../../planned/r1/ai-service-foundation.md) §(a5) Key and cost UX: same settings, same rules (opt-in needs a key and the tick; one session ceiling over both providers, US$0.05 to 20; text-only; automation never goes live; keys only ever as 0600 files). This doc changes how they are shown and adds a key check.
 - Ledger **D-8** (the player's own key; live generation opt-in; text-only always available) and **D-20** (the player-set spend ceiling, default US$0.50), `design_docs/stapledon-mission.md` §Decision ledger
 - [ai-showcase](https://github.com/sunholo-data/stapledons-design/blob/main/features/ai-showcase.md) §7, the operating model (the player pays with their own key)
 - Standing order "visual UI, not text" (Mark, 2026-10-28): state as lamps, icons, meters and colour; words last
-- [bridge-styling-pass.md](../../implemented/r2/bridge-styling-pass.md) ST4: one HUD theme (`StapledonTheme`), `make ui-theme-check` strict
+- [bridge-styling-pass.md](../r2/bridge-styling-pass.md) ST4: one HUD theme (`StapledonTheme`), `make ui-theme-check` strict
 
 **Visual concept (approved):** [Live AI panel redesign](https://claude.ai/artifact/4oQ6rbUrWg2ZFK3PXm7DT1), the interactive panel and the badge's five states. The mock-up's colours are stand-ins: the build uses `StapledonTheme` tokens (the table in §V1).
 **Depends on:** the AI service foundation (AI.1–AI.9, landed). No sim, physics or protocol-2.x change.

@@ -318,8 +318,9 @@ func test_panel_v2() -> bool:
 	assert_bool("Remove deletes the key file; the card is back to No key", not FileAccess.file_exists(kp) and g.status.text == "No key" and a.settings.keys_present().is_empty())
 	# AC6: dots from this session's replies, newest last, at most 8.
 	var ind := a.indicator
-	ind.on_outcome({"req": "first", "kind": "text", "status": "ok"})
-	assert_bool("an open panel follows a reply without a refresh call (%d dot)" % p.dots.get_child_count(), p.dots.get_child_count() == 1)
+	a.bridge.outcome.emit({"req": "first", "kind": "text", "status": "ok"}) # the production signal (round-2 N6)
+	assert_bool("an open panel follows a reply from the bridge's signal, no refresh call (%d dot, '%s')" % [p.dots.get_child_count(), p.last_reply.text],
+		p.dots.get_child_count() == 1 and p.last_reply.text.begins_with("Recent replies"))
 	for i in 10:
 		ind.on_outcome({"req": str(i), "kind": "text", "status": "error" if i == 9 else "ok"})
 	assert_bool("reply dots: the 8 newest of 10, the last one the failure (%s)" % [ind.recent.map(func(r): return r.ok)],
@@ -521,6 +522,7 @@ func test_key_check() -> bool:
 		local["args"].has("--net-allow-localhost") and local["args"].has("--net-allow-http") and not local["args"].has("--net-allow-domains"))
 	assert_bool("an unknown provider gets no plan", AiKeyCheck.plan("other", kf, "/x/ailang", "/r", "/h").is_empty())
 	var auto := settings_in(d, {"capture": true})
+	kc.base = "http://127.0.0.1:1" # round-2 N7: even with the guard mutated away, nothing leaves the machine
 	assert_bool("automation never runs a check", not kc.start("gemini", auto) and kc.running.is_empty())
 	assert_bool("parse: the one line, its provider, a known status; anything else is offline",
 		AiKeyCheck.parse("gemini", '{"check":"gemini","status":"ok"}\n') == "ok"
