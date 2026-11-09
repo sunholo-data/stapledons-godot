@@ -72,6 +72,24 @@ func exercise(demo: Node, command: Variant) -> void:
 	for id in ["voyage", "crew", "comms", "archive"]:
 		check("chair opens " + id, command.select_system(id) and demo.consoles.focused == id)
 		check(id + " keeps captain seated while view moves to its screen", demo.avatar_pos.is_equal_approx(anchor) and demo.director.view_id == "console" and demo.director.console_pose.is_equal_approx(command.cockpit.focus_pose(id)) and not demo.director.console_pose.is_equal_approx(overview_pose))
+	# Real key events typed into the Archive question on the chair's display (its own SubViewport):
+	# hold-I (star identification, read in _input) must not swallow the letter i while typing.
+	check("chair opens the Archive question field", command.select_system("archive") and demo.consoles.ask_field != null)
+	demo.consoles.ask_field.text = ""
+	demo.consoles.ask_field.grab_focus()
+	await process_frame
+	for ch in "it is":
+		for down in [true, false]:
+			var e := InputEventKey.new()
+			e.keycode = KEY_SPACE if ch == " " else OS.find_keycode_from_string(ch.to_upper())
+			e.physical_keycode = e.keycode
+			e.pressed = down
+			if down: e.unicode = ch.unicode_at(0)
+			root.push_input(e)
+			await process_frame
+	check("typing at the chair reaches the Archive field, letter i included", demo.consoles.ask_field.text == "it is")
+	check("typing i at the chair does not hold star identification", not demo.star_identification.held)
+	demo.consoles.ask_field.release_focus()
 	command.select_system("voyage")
 	demo.consoles.set_confirm_mode("twice")
 	demo.consoles.confirm_press("voyage", "begin")
