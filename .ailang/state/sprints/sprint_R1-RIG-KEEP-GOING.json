@@ -1,0 +1,153 @@
+{
+  "sprint_id": "R1-RIG-KEEP-GOING",
+  "status": "planned",
+  "approved": true,
+  "approved_by": "D-88 (neutral test-infra hygiene, all pillars 0; unattended loop proceeds)",
+  "created": "2026-11-09",
+  "design_doc": "design_docs/planned/r1/rig-keep-going.md",
+  "sprint_plan": "design_docs/planned/r1/rig-keep-going-sprint.md",
+  "branch": "mission/stapledon-iter82-7ag",
+  "implements": [
+    "7ag"
+  ],
+  "github_issues": [
+    "#392"
+  ],
+  "scope": "~200 LOC: tools/test_rig_keep_going.sh (+147 new, the design doc's measured appendix verbatim, V16-V18), tools/rig_check.sh (+20 -2, doc M1), tools/rig_nightly.sh (+5 -1, doc M2), tools/test_rig_check.sh (~15 lines touched) plus landing files. Makefile and mk/* must not change (held by attended PRs #412, #373, #380, #414; the new control rides the existing rig-check-control target mk/m45.mk:54-57 as one case of tools/test_rig_check.sh, like suite-profile). No .gd, .uid, sim/ or tests/ changes; no GPU step, no make golden and no full make test anywhere (the nightly runs it post-merge). Issue #392 is context: the nightly-rig tracker whose reports this completes. V23 (controller's full make -k test with inherited k) is controller-owned evidence in flight, not an executor milestone.",
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "Red controls (test-first): new tools/test_rig_keep_going.sh (doc appendix verbatim, 16 cases x every GNU make on PATH) plus tools/test_rig_check.sh wiring -- keep-going case on the suite-profile model, sky-assets -k test make-call lists (golden-setup, full-no-setup, test-hang), new description EREs (make-test-red, watchdog-override, test-hang -> 'no failing target in the log'), counts 17->18 / 18->19 / of 17->of 18, caller-poison adds MAKEFLAGS=k -- all recorded RED against the unmodified rig scripts",
+      "status": "planned",
+      "acceptance_criteria": [
+        "Doc sub-milestone 1: the fixture control and the keep-going case are written before any rig_check.sh/rig_nightly.sh change and recorded red against the unmodified scripts (that red run is the baseline for every later green)",
+        "Red half of AC1: sh tools/test_rig_keep_going.sh \"$PWD\" -> rc 1, 'rig-keep-going control: 16 cases, 12 failures'; exactly two-red, golden-log-kept, many-red, hundred-red, longname-red, nightly-two-red FAIL on each make (3.81 + 4.4.1 on the Studio; halve on a one-make host); green and nightly-green stay ok",
+        "Red half of AC2: sh tools/test_rig_check.sh tools/rig_check.sh -> rc 1, 'rig-check control: 19 cases, 7 failures' (keep-going, make-test-red, watchdog-override, golden-setup, full-no-setup, test-hang, caller-poison FAIL, the last as 'rc 1, 16 of 18 ok' with the 4 catted fixture ok lines); the other 12 cases stay ok"
+      ],
+      "verify": [
+        "sh -n tools/test_rig_keep_going.sh && sh -n tools/test_rig_check.sh   # rc 0 (the red must be behavioural, not syntax)",
+        "T=$(mktemp -d); perl -e 'alarm 120; exec @ARGV' sh tools/test_rig_keep_going.sh \"$PWD\" > $T/ms1-kg.log 2>&1; echo rc=$?; tail -1 $T/ms1-kg.log   # rc 1; rig-keep-going control: 16 cases, 12 failures",
+        "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh > $T/ms1-red.log 2>&1; echo rc=$?; tail -1 $T/ms1-red.log; grep -c '^rig-check control .*: FAIL' $T/ms1-red.log   # rc 1; rig-check control: 19 cases, 7 failures; 7 outer FAIL lines"
+      ]
+    },
+    {
+      "id": "MS2",
+      "title": "tools/rig_check.sh (doc M1, +20 -2 verbatim): [ tests = 1 ] || golden.log split, bounded \"$TEST_S\" make -k test, top-level-only failing-target extraction from this run's appended log lines, stdout 'failed targets (N)' list, fail-closed 'no failing target in the log', 140-char description with the +K suffix reserved at N's width and the too-long-first-name cut",
+      "status": "planned",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance_criteria": [
+        "AC6 (first half): grep -c 'bounded \"$TEST_S\" make -k test' tools/rig_check.sh -> 1",
+        "Rig_check half of AC1/AC2: after MS2 the intermediate red is exactly 'rig-keep-going control: 16 cases, 2 failures' (nightly-two-red on each make) and 'rig-check control: 19 cases, 2 failures' (keep-going, caller-poison; nested count over-reads the catted fixture ok lines -- record actual); every MS1-red case MS2 owns is now ok",
+        "Fix side of drill rows M1-M3, M6, M9, M10 lands here (drill runs in MS4)"
+      ],
+      "verify": [
+        "sh -n tools/rig_check.sh   # rc 0",
+        "grep -c 'bounded \"\\$TEST_S\" make -k test' tools/rig_check.sh   # 1 (AC6 first half)",
+        "grep -n 'golden\\.log' tools/rig_check.sh   # the one conditional line at the old :51",
+        "perl -e 'alarm 120; exec @ARGV' sh tools/test_rig_keep_going.sh \"$PWD\" | tail -1   # rig-keep-going control: 16 cases, 2 failures (nightly-two-red only, expected until MS3)",
+        "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1   # rig-check control: 19 cases, 2 failures (keep-going, caller-poison)"
+      ]
+    },
+    {
+      "id": "MS3",
+      "title": "tools/rig_nightly.sh (doc M2, +5 -1 verbatim): 'Failing targets (N): ...' line from rig_check stdout after the run's last line; awk per-top-level-error windows (up to 20 matching lines before each 'make: ***', reset per error) replacing the single tail -30, cut -c1-300 | head -200; '...' and tail -20 stay; single-red bodies byte-identical (doc V20, not re-run)",
+      "status": "planned",
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance_criteria": [
+        "AC1: the keep-going control is green on both makes -- 'rig-keep-going control: 16 cases, 0 failures', rc 0",
+        "AC2: the rig-check control is green and includes it -- 'rig-check control keep-going: ok', 'rig-check control caller-poison: ok', 'rig-check control: 19 cases, 0 failures'",
+        "Fix side of drill rows M4/M5 lands here (drill runs in MS4)"
+      ],
+      "verify": [
+        "sh -n tools/rig_nightly.sh   # rc 0",
+        "perl -e 'alarm 120; exec @ARGV' sh tools/test_rig_keep_going.sh \"$PWD\" | tail -1; echo rc=$?   # rig-keep-going control: 16 cases, 0 failures, rc 0 (AC1)",
+        "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | grep -E 'keep-going|caller-poison|cases'   # keep-going: ok, caller-poison: ok, 19 cases, 0 failures (AC2)"
+      ]
+    },
+    {
+      "id": "MS4",
+      "title": "Mutation drill, through-target checks, scope and hygiene (no new code; evidence): doc drill (11 mutant runs as predicted, M8b survives to prove the control's unset load-bearing), make rig-check-control plain and under an outer -k, AC5 M1-mutant through the target, AC6-AC9",
+      "status": "planned",
+      "depends_on": [
+        "MS3"
+      ],
+      "acceptance_criteria": [
+        "AC4: the doc's drill prints the 11 drill lines with the V18 counts (M1/M2/M3 10, M4/M5/M6 2, M9 4, M10 2, M7 10; M8a rc 1; M8b rc 0) then 'drill: 11 mutant runs as predicted', rc 0 (67 s measured; both makes assumed)",
+        "AC3: env -u MAKEFLAGS -u MAKELEVEL make rig-check-control and make -k rig-check-control both rc 0, 'rig-check control: 19 cases, 0 failures' (~192 s each in V22; alarm 900 bounds a loaded host); record counts and wall times",
+        "AC5: M1 mutant through the target under the outer -k -> rc 2, one keep-going: FAIL, one caller-poison: FAIL (V22: 16 cases 10 failures, the three -k test make-call cases red, 19 cases 5 failures)",
+        "AC6: grep -c 'make -k test' line -> 1; git diff --name-only origin/main...HEAD -- Makefile mk -> 0 (Makefile/mk held by attended PRs #412, #373, #380, #414)",
+        "AC7: git diff --name-only origin/main...HEAD lists only tools/rig_check.sh, tools/rig_nightly.sh, tools/test_rig_check.sh, tools/test_rig_keep_going.sh, the doc, the plan and the sprint JSON (landing files only after MS5)",
+        "AC8: sh -n all four scripts, git diff --check origin/main...HEAD -- no output, rc 0",
+        "AC9: make python-guard uid-guard rc 0 (no .py touched; V21: no .sh.uid is tracked)"
+      ],
+      "verify": [
+        "awk '/^# --- drill begin/,/^# --- drill end/' design_docs/planned/r1/rig-keep-going.md > $T/drill.sh && perl -e 'alarm 300; exec @ARGV' sh $T/drill.sh \"$PWD\"; echo rc=$?   # AC4: 11 drill lines as V18, then 'drill: 11 mutant runs as predicted', rc 0",
+        "env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make rig-check-control | tail -1; echo rc=$?   # AC3 plain: rc 0, 19 cases, 0 failures",
+        "env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make -k rig-check-control | tail -1; echo rc=$?   # AC3 outer -k: rc 0, 19 cases, 0 failures",
+        "git clone -q . $T/c && cp tools/*.sh $T/c/tools/ && perl -pi -e 's/make -k test/make test/' $T/c/tools/rig_check.sh && { cmp -s tools/rig_check.sh $T/c/tools/rig_check.sh && exit 3; true; } && env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make -C $T/c -k rig-check-control > $T/m1.out 2>&1; echo rc=$?; grep -c 'keep-going: FAIL' $T/m1.out; grep -c 'caller-poison: FAIL' $T/m1.out   # AC5: rc=2, 1, 1; delete $T/c afterwards",
+        "grep -c 'bounded \"\\$TEST_S\" make -k test' tools/rig_check.sh; git diff --name-only origin/main...HEAD -- Makefile mk | wc -l   # AC6: 1, 0",
+        "git diff --name-only origin/main...HEAD   # AC7: the four tools files, the doc, this plan, the sprint JSON only",
+        "for f in rig_check rig_nightly test_rig_check test_rig_keep_going; do sh -n tools/$f.sh || echo BAD $f; done; git diff --check origin/main...HEAD   # AC8: no output, rc 0",
+        "make python-guard uid-guard > /dev/null; echo rc=$?   # AC9: rc 0"
+      ]
+    },
+    {
+      "id": "MS5",
+      "title": "Landing files (owner: controller; only after the cross-family evaluation passes, generator != judge): CHANGELOG.md '## Unreleased' section '### rig-keep-going (2026-11-...)' on the 7af model (CHANGELOG.md:5, landed as 612afa7c; same git log --stat -3 -- tools/rig_check.sh trail: 404daa36 MS2 +22 -4), doc + this plan move to design_docs/implemented/r1/, one design_docs/README.md index row (model :57), sprint JSON statuses/notes/progress/completed/evaluation",
+      "status": "planned",
+      "owner": "controller",
+      "depends_on": [
+        "MS4"
+      ],
+      "acceptance_criteria": [
+        "Deliverables (doc): the doc moves to design_docs/implemented/r1/, plus an index row in design_docs/README.md and a changelog entry naming R1-RIG-KEEP-GOING, row 7ag and issue #392, as the 7af entry did",
+        "Landing waits for the cross-family evaluation (generator != judge); evaluation scores go into the README row and the sprint JSON evaluation block",
+        "Sprint JSON per-milestone notes record the actual red/green counts and wall times measured in MS1-MS4"
+      ],
+      "verify": [
+        "git diff --check   # rc 0, no output",
+        "grep -n '^### rig-keep-going' CHANGELOG.md   # the one Unreleased section",
+        "grep -c 'rig-keep-going' design_docs/README.md   # >= 1"
+      ]
+    }
+  ],
+  "local_pr_gates": [
+    "for f in rig_check rig_nightly test_rig_check test_rig_keep_going; do sh -n tools/$f.sh || echo BAD $f; done   # rc 0, no BAD lines (AC8)",
+    "perl -e 'alarm 120; exec @ARGV' sh tools/test_rig_keep_going.sh \"$PWD\" | tail -1   # rig-keep-going control: 16 cases, 0 failures (AC1)",
+    "perl -e 'alarm 400; exec @ARGV' sh tools/test_rig_check.sh tools/rig_check.sh | tail -1   # rig-check control: 19 cases, 0 failures (AC2)",
+    "env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make rig-check-control | tail -1   # rc 0, 19 cases, 0 failures (AC3, through the target make test uses)",
+    "env -u MAKEFLAGS -u MAKELEVEL perl -e 'alarm 900; exec @ARGV' make -k rig-check-control | tail -1   # same under the rig's own outer -k (AC3)",
+    "the doc's drill (AC4, 11 mutant runs as predicted, rc 0) and AC5's M1-through-target check (rc=2, one keep-going: FAIL, one caller-poison: FAIL)",
+    "git diff --check   # rc 0, no output (AC8)",
+    "make python-guard; make uid-guard   # rc 0 (AC9)",
+    "ci.yml run: make targets: make ci-fast runs on GitHub regardless (merge-rule gate 1); no ci-fast target reads the four touched files (only rig-check-control does and it rides make test, mk/m45.mk:57, not ci-fast) -- membership guard: make -qp 2>/dev/null | grep '^ci-fast:' | tr ' ' '\\n' | grep -cx rig-check-control -> 0. make test (release workflow_call path) couples only through rig-check-control, which the gates above run both plain and -k. Excluded: make deps and make lore-import CHECK=1 (read the runtime pin, data/lore and the design repo, none of the touched files); Install AILANG/Install Godot have no make target.",
+    "No GPU gate, no make golden, no full make test anywhere (Mark 2026-11-03/06); Makefile and mk/* untouched (attended PRs #412, #373, #380, #414 hold them)"
+  ],
+  "post_merge_check": "The next nightly rig/full on main: about 70 min instead of about 6 (~/Library/Logs/stapledon-rig-nightly.log); it still ends red today, but its nightly-rig issue comment opens with 'Failing targets (N): bridge-operator-test ...' naming every red target -- expected today bridge-operator-test (D-148) plus whatever the in-flight controller-owned V23 measurement surfaces; and $TMPDIR/rig-check/<sha>.log is still the make test log after that night's rig/golden run (head -1 the runtime line; grep -c '^make: \\*\\*\\*' equals N). Observation only, never a merge gate.",
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 200,
+    "estimated_days": 1,
+    "comparison": "rig-golden-setup 7af (same control family, ~85 LOC) landed in one day on a 0.5-day estimate; rig-watchdog-7200 (same two rig scripts, 8-case control) also landed in one day. Of the ~200 LOC, ~147 are the doc's verbatim measured control and ~10 are authored wiring; the executable change is ~28 lines."
+  },
+  "critical_path": [
+    "MS1",
+    "MS2",
+    "MS3",
+    "MS4",
+    "MS5"
+  ],
+  "pause_points": [
+    "Any red outside the exact MS1 fail sets, or a different count (in particular a base case such as failure-refused, success-refused or suite-profile turning red): stop and report -- an expectation edit hit more than intended",
+    "A drill mutant not going the way V18 predicts (any of M1-M7/M9/M10 surviving, M8a green, or M8b red): stop and report -- the hermetic-unset story changed",
+    "Either through-target run not printing 'rig-check control: 19 cases, 0 failures' with rc 0: stop and report",
+    "Any temptation to touch Makefile or mk/*: stop -- attended PRs #412, #373, #380 and #414 hold them; rig-check-control already wires the new control",
+    "No merge before the cross-family evaluation; MS5 landing waits on it (generator != judge)"
+  ],
+  "questions_for_mark": [],
+  "progress": "Planned 2026-11-09; no milestones started. Design doc revision 1 (quorum round 1 2/3 block answered; open questions none). V23 controller evidence in flight -- not an executor milestone."
+}
