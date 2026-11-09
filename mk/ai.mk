@@ -533,7 +533,7 @@ ai-mutants: ai-key-check-mutants
 # merge gate). Fails if the panel overflows the 960x540 UI space. Open every frame.
 ai-panel-capture: import   ## R3-AI-PANEL-V2: renders/ai_panel/{no_key,gemini_ok,rejected,offline,text_only,ceiling}.png + capture.json
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --path . --script tools/ai_panel_capture.gd > $(SCRATCH)/ai-panel-capture.log 2>&1; rc=$$?; \
+	@$(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/ai_panel_capture.gd > $(SCRATCH)/ai-panel-capture.log 2>&1; rc=$$?; \
 	  grep -E '^(FAIL|shot|ai-panel-capture)' $(SCRATCH)/ai-panel-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ai-panel-capture.log
 
 # Export: the AI service runs from the bundled runtime with ai/ and data/ai/ unpacked beside the
