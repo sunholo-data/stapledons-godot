@@ -211,8 +211,7 @@ func e_target() -> Dictionary:
 
 func press_e() -> bool:
 	if command.visible:
-		command.close()
-		return true
+		return escape()
 	if focused != "":
 		leave()
 		return true
@@ -740,7 +739,8 @@ func escape() -> bool:
 		if focused == "navigation" and demo.journey_map != null and demo.journey_map.dialog.visible:
 			demo.journey_map.close_commit_dialog()
 			return true
-		command.close()
+		if command.selected != "overview": command.select_system("overview")
+		else: command.close()
 		return true
 	if not focused.is_empty():
 		leave()

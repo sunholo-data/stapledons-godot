@@ -11,7 +11,8 @@
     392
   ],
   "decision_refs": [
-    "D-149"
+    "D-149",
+    "D-150"
   ],
   "external_dependencies": [
     {
@@ -81,7 +82,7 @@
     },
     {
       "id": "C2_COMMAND_SCREEN",
-      "description": "Combined overview and five systems with explicit seated authority",
+      "description": "First-person seated cockpit with five physical displays and existing system controls",
       "estimated_loc": 450,
       "dependencies": [
         "C1_CHAIR_CONTACT"
@@ -94,7 +95,7 @@
       "passes": true,
       "started": "2026-11-09",
       "completed": "2026-11-09",
-      "notes": "33/0 command tests; 136/0 physical-console, 288/0 ship UI, 42/0 Comms, 37/0 history, 41/0 no-twitch regressions. All five reused systems, safe authority, queued replies, responsive crew call and bounded Archive readers."
+      "notes": "Cockpit refinement: 39/0 command checks including seated eye position, target camera poses, hidden own billboard, actual projected Control click once and viewport restoration; 101/0 physical arc/ray checks. 18/0 display/window layout cases; 10/0 guided review/Brake; 52/0 real-sim parity. Mark visual acceptance pending, no GPU checks run."
     },
     {
       "id": "C3_SEATED_PLAYTHROUGH",
@@ -111,7 +112,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "52/0 real-sim parity/hold tests; 1202 flight ticks per route, 1207 NDJSON inputs, byte-identical inputs and worlds. 18/0 layout, 14/0 reading viewport, 10/0 guided review/Brake. Independent Claude checkpoint PASS86; rendered chair/UI review, Mark acceptance and fast CI/publication pending."
+      "notes": "52/0 real-sim parity/hold tests; 1202 flight ticks per route, 1207 NDJSON inputs, byte-identical inputs and worlds. 18/0 layout, 14/0 reading viewport, 10/0 guided review/Brake. Independent Claude checkpoint PASS86; rendered chair/UI review, Mark acceptance and fast CI/publication pending. Cockpit refinement reran 52/0 real-sim parity and 10/0 guided review; 39/0 command, 101/0 screen geometry/picking and 18/0 layout cases. Private first-person candidate preparing; no visual acceptance claim."
     }
   ],
   "implementation_complete": true,
@@ -123,7 +124,7 @@
     "reviewer": "claude-sonnet-4-6",
     "score": 86,
     "result": "pass",
-    "scope": "local implementation checkpoint",
+    "scope": "historical flat-shell checkpoint; cockpit refinement requires fresh review",
     "landing_ready": false
   },
   "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)"

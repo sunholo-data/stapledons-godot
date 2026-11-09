@@ -63,6 +63,8 @@ On 2026-11-09, `runtime/bin/ailang pkg search crew`, `pkg search relativity`, `p
 
 ## Progress and handoff
 
+**Playtest refinement, 2026-11-09:** C2 reopened after Mark rejected the flat dashboard. Replace it with a first-person seated cockpit, five surrounding physical screens, animated camera selection and actual UI rendered on the active screen. New headless geometry/picking and projected-Control input checks supplement parity and guided-review checks. Mark prohibits GPU use while training; export headlessly and upload directly for laptop verification. The earlier C2 pass remains historical evidence, not acceptance of the new presentation.
+
 The sprint JSON records the current evidence and remaining visual/landing gates. Validate using `/Users/voightkampff/.claude/skills/sprint-executor/scripts/validate_sprint_json.sh R2-CAPTAIN-COMMAND`; this checks plan structure, not game correctness. Do not mark the sprint complete until evaluation and attended visual acceptance are recorded. Land docs/index/changelog and the companion design-repo clarification at completion.
 
 ## Execution notes — 2026-11-09

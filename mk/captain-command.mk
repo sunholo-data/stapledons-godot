@@ -24,6 +24,11 @@ captain-command-guided-test: import
 	@mkdir -p $(SCRATCH)
 	@$(SCRIPT_GATE) captain-command-guided-test $(SCRATCH)/captain-command-guided-test.log 600 '^captain-command-guided: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT_SIM) --headless --path . --script tests/test_captain_command_guided.gd
 test: captain-command-guided-test
+.PHONY: chair-cockpit-test
+chair-cockpit-test: import
+	@mkdir -p $(SCRATCH)
+	@$(SCRIPT_GATE) chair-cockpit-test $(SCRATCH)/chair-cockpit-test.log 120 '^chair-cockpit: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_chair_cockpit.gd
+test: chair-cockpit-test
 captain-command-capture: import
 	@mkdir -p $(SCRATCH)
 	@$(SCRIPT_GATE) captain-command-capture $(SCRATCH)/captain-command-capture.log 600 '^captain-command-capture: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/captain_command_capture.gd

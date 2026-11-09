@@ -49,12 +49,14 @@ func _run() -> void:
 			if system == "archive":
 				d.consoles.ask_field.text = "What is the bubble?"
 				d.consoles.use("archive", "ask")
+			for k in 180: d._process(1. / 60.)
 			for k in 4: await process_frame
 			d._process(0.)
 			var bounds := Rect2(Vector2.ZERO, logical)
 			var fits := bounds.encloses(command.frame.get_global_rect())
+			var screen_bounds := Rect2(Vector2.ZERO, Vector2(command.screen_host.viewport.size))
 			if d.consoles.panel.visible:
-				fits = fits and bounds.encloses(d.consoles.panel.get_global_rect())
+				fits = fits and screen_bounds.encloses(d.consoles.panel.get_global_rect())
 				fits = fits and d.consoles.panel_body.size.x <= d.consoles.body_scroll.size.x + 1.
 			if not fits:
 				failures += 1

@@ -35,18 +35,43 @@ func exercise(demo: Node, command: Variant) -> void:
 	check("E begins sitting at the chair", demo.consoles.press_e() and demo.seated())
 	for k in 50: demo._process(1. / 60.)
 	check("sitting opens the combined command screen", command.visible and command.authorized())
-	check("command keeps the seated captain visible", demo.avatar.visible)
+	for k in 180: demo._process(1. / 60.)
+	check("captain sees through seated eyes without own billboard clipping", not demo.avatar.visible and demo.camera.global_position.distance_to(command.cockpit.overview_pose().origin) < .02)
+	check("five physical displays surround the seat", command.cockpit.display_nodes.size() == 5)
+	check("actual controls render in the display viewport", demo.consoles.panel.get_viewport() == command.screen_host.viewport)
 	check("overview cannot schedule walking while seated", not demo.consoles.walk_to("crew") and not demo.consoles.walk_to_point(demo.bridge_spawn(), "spawn"))
 	demo.walk_motion(Vector2.RIGHT, .1)
 	check("movement input inside command does not stand", demo.captain_anim.chair == "seated" and not demo._chair_stand)
 	check("overview is the initial view", command.selected == "overview")
 	check("all five existing systems have tabs", command.system_buttons.size() == 5)
 	var anchor: Vector3 = demo.avatar_pos
-	var view: String = demo.director.view_id
+	var overview_pose: Transform3D = command.cockpit.overview_pose()
+	# Click a physical console, then a real Control drawn in its viewport. This checks
+	# the whole projection/UV/input path without rendering or issuing a ship decision.
+	var display: MeshInstance3D = command.cockpit.display_nodes.voyage
+	var pick := InputEventMouseButton.new()
+	pick.button_index = MOUSE_BUTTON_LEFT; pick.pressed = true
+	pick.position = demo.get_viewport().get_stretch_transform().affine_inverse() * demo.camera.unproject_position(display.global_position)
+	command.key(pick)
+	check("clicking a physical screen selects its system", command.selected == "voyage")
+	for k in 180: demo._process(1. / 60.)
+	var clicks := [0]
+	var probe := Button.new()
+	probe.text = "Input probe"; probe.position = Vector2(400, 290); probe.size = Vector2(200, 60)
+	probe.pressed.connect(func(): clicks[0] += 1)
+	command.screen_host.layer.add_child(probe)
+	for k in 3: await process_frame
+	var uv := Vector2(500., 320.) / Vector2(command.screen_host.viewport.size)
+	var world: Vector3 = display.global_transform * Vector3((uv.x - .5) * ChairCockpit.SCREEN_SIZE.x, (.5 - uv.y) * ChairCockpit.SCREEN_SIZE.y, 0.)
+	pick.position = demo.get_viewport().get_stretch_transform().affine_inverse() * demo.camera.unproject_position(world)
+	command.key(pick)
+	pick.pressed = false; command.key(pick)
+	check("projected screen clicks reach the actual GUI once", clicks[0] == 1)
+	probe.queue_free()
 	# Voyage/Archive need no fresh sim. Crew and Comms explain unavailable sessions.
 	for id in ["voyage", "crew", "comms", "archive"]:
 		check("chair opens " + id, command.select_system(id) and demo.consoles.focused == id)
-		check(id + " keeps captain at the chair and camera away from desk", demo.avatar_pos.is_equal_approx(anchor) and demo.director.view_id == view)
+		check(id + " keeps captain seated while view moves to its screen", demo.avatar_pos.is_equal_approx(anchor) and demo.director.view_id == "console" and demo.director.console_pose.is_equal_approx(command.cockpit.focus_pose(id)) and not demo.director.console_pose.is_equal_approx(overview_pose))
 	command.select_system("voyage")
 	demo.consoles.set_confirm_mode("twice")
 	demo.consoles.confirm_press("voyage", "begin")
@@ -55,12 +80,14 @@ func exercise(demo: Node, command: Variant) -> void:
 	check("tab change cancels the armed decision", not demo.consoles.confirm_armed() and demo.solar_tour == null)
 	command.close()
 	check("closing leaves the captain seated, with no active system", demo.seated() and not command.visible and demo.consoles.focused == "")
+	check("closing returns panel to ordinary station viewport", demo.consoles.panel.get_parent() == demo.consoles.panel_layer and not command.cockpit.visible and demo.director.view_id != "console")
 	check("E reopens the command screen", demo.consoles.press_e() and command.visible)
 	var next := InputEventKey.new()
 	next.physical_keycode = KEY_TAB; next.ctrl_pressed = true; next.pressed = true
 	check("Ctrl Tab changes system", command.key(next) and command.selected == "navigation")
 	if demo.journey_map != null:
 		check("opening the chair Navigation tab does not synthesize a plan", demo.journey_map._pending.is_empty() and demo.journey_map._queue.is_empty())
+		check("Navigation renders inside cockpit instead of a floating window", demo.journey_map.get_viewport() == command.screen_host.viewport and not demo.navigation_window.visible)
 	# If navigation cannot start, the shell still leaves its tabs and close action usable.
 	command.select_system("overview")
 	var shoulder := InputEventJoypadButton.new()
@@ -70,7 +97,7 @@ func exercise(demo: Node, command: Variant) -> void:
 	for sz in [Vector2(960, 540), Vector2(1280, 720), Vector2(2560, 1440)]:
 		command.layout_for(sz, 60.)
 		print("layout ", sz, " content ", command.content_rect(), " frame ", command.frame.size)
-		check("command content fits %s" % sz, Rect2(Vector2.ZERO, sz).encloses(command.content_rect()) and command.content_rect().size.x > 240.)
+		check("display content has fixed readable resolution at %s" % sz, Rect2(Vector2.ZERO, Vector2(command.screen_host.viewport.size)).encloses(command.content_rect()) and command.content_rect().size.x > 900.)
 	command.stand()
 	check("standing closes and invalidates command authority immediately", not command.visible and not command.authorized())
 	check("standing animation cannot reopen the command screen", not command.open())
@@ -83,3 +110,4 @@ func exercise(demo: Node, command: Variant) -> void:
 		demo._process(.05)
 		if demo.consoles.command.visible: break
 	check("Walk to chair arrives, sits and opens command", demo.consoles.command.visible and demo.consoles.command.authorized())
+	command.close()

@@ -40,6 +40,7 @@ func _run() -> void:
 		d.crossing_review.enter()
 		check("review Brake continues the same guided interlude", d.solar_tour.interlude.done())
 		check("braking remains under seated command", d.journey_tick() and d.consoles.command.authorized() and d.avatar_pos.is_equal_approx(seat))
+	d.consoles.command.close()
 	d.queue_free()
 	await process_frame
 	print("captain-command-guided: %d passed, %d failures" % [passed, failures])

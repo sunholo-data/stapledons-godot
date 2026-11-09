@@ -526,7 +526,7 @@ func _process(delta: float) -> void:
 		avatar.visible=camera.pullback>.5 or camera.external
 	else:
 		director.advance(delta)
-		avatar.visible=camera_mode!="console" or consoles.command.visible # the chair remains a third-person place aboard
+		avatar.visible=camera_mode!="console" # chair command uses the captain's seated eyes
 		# C2: looking up from below, the full billboard (drawn for the -14 deg play view) would lean
 		# back into a giant card; the sky views stand the captain upright (a silhouette on the sky).
 		var upright:bool=str(director.views.get(director.view_id,{}).get("billboard",""))=="upright"
@@ -1015,6 +1015,9 @@ func open_chart() -> void:
 ## The map host (R1-SHIP-UI U4a): an embedded window over the console panel (helm), or
 ## centred (the chart, and direct calls).
 func _place_navigation(rect: Rect2) -> void:
+	if consoles != null and consoles.command.visible:
+		consoles.command.screen_host.host_navigation()
+		return
 	var vis:=get_viewport().get_visible_rect().size
 	if rect.size==Vector2.ZERO: # centred below the status strip (the title bar sits above the rect)
 		var top:float=(ship_hud.strip_bottom() if ship_hud!=null else 0.)+40.
@@ -1103,6 +1106,7 @@ func start_solar_departure() -> bool:
 	return true
 ## The normal navigation session and its window, gone (a guided tour or the Sgr A* demo replaces them).
 func _drop_navigation() -> void:
+	if consoles != null and consoles.command.visible: consoles.command.screen_host.release_navigation()
 	if journey_sim!=null:journey_sim.stop()
 	if navigation_window!=null:
 		remove_child(navigation_window);navigation_window.queue_free()
@@ -1490,6 +1494,7 @@ var _interlude_canvas: CanvasLayer
 func _place_interlude() -> void:
 	if crossing_review == null or not crossing_review.visible: return
 	if consoles!=null and consoles.command.visible:
+		consoles.command.screen_host.sync_layers()
 		ChairReadingViewport.fit(crossing_review, consoles.command.content_rect().grow(-8.))
 		return
 	ChairReadingViewport.restore(crossing_review)

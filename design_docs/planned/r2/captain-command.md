@@ -43,7 +43,17 @@ Author one chair-specific contact record, including the physical seat reference,
 
 E sits from the existing reachable area. The command screen opens once seated. A visible Stand up action closes the command session, disarms decisions, then plays stand before movement. Closing the screen leaves the captain seated; E can reopen it. Movement while the screen is open belongs to the UI; after it is closed, a movement key follows the existing stand-then-walk behaviour. Esc unwinds the active nested dialog, then the command screen. Avoid an uninterruptible animation or camera transition.
 
-### C2. One command screen
+### C2. Captain's cockpit (attended playtest refinement, 2026-11-09)
+
+Mark played the flat combined shell and asked for the captain's perspective, with consoles arranged around the seat and view movement between them. This replaces the flat layout below. The approved sprint covers this refinement; no new simulation or system is introduced.
+
+Five physical displays form an inward-facing arc: Archive, Voyage, Navigation, Crew and Comms. Opening the chair places the camera at seated eye height above the measured cushion. Selecting a display turns and moves the view toward it; the avatar stays seated and its own billboard is hidden in first person. This is an explicit chair-only amendment to the earlier third-person rule. Third-person sit/stand contact still needs visual acceptance.
+
+One 1024×640 SubViewport hosts the actual selected system controls on that screen, including the navigation map, Archive readers and crossing review. Inactive screens carry live summaries. Pointer rays map to screen UV coordinates; the selecting click cannot also activate a control. A small navigation rail supports offscreen displays, keyboard and controller switching. Esc unwinds nested decisions, looks up from the screen, then closes chair command; Stand up restores the normal camera and station UI parents.
+
+Verify geometry/picking with `make chair-cockpit-test`, real projected GUI clicks and camera/lifecycle with `make captain-command-test`, and existing real-sim/guided gates. Mark's training constraint takes precedence over GPU captures: **no GPU, GUI, game-rendering or capture checks in this session**. Export headlessly and upload the macOS app for laptop playtesting; do not invoke `publish-dev`'s rendering prerequisites. No visual-pass claim before Mark plays it.
+
+### Original flat layout (superseded by the playtest refinement above)
 
 The chair hosts an integrated shell, with the ship/sky retained behind it and the existing clock strip above it:
 

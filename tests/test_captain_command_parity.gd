@@ -80,7 +80,7 @@ func journey(chair: bool) -> Dictionary:
 		d.consoles.command.layout_for(Vector2(960, 540), 60.)
 		d.consoles._layout_panel()
 		for k in 3: await process_frame
-		check("960-wide real crew call panel remains on screen", Rect2(Vector2.ZERO, Vector2(960, 540)).encloses(d.consoles.panel.get_global_rect()))
+		check("real crew call stays within physical display", Rect2(Vector2.ZERO, Vector2(d.consoles.command.screen_host.viewport.size)).encloses(d.consoles.panel.get_global_rect()))
 		check("960-wide crew call has no hidden horizontal overflow", d.consoles.panel_body.size.x <= d.consoles.body_scroll.size.x + .1)
 	# Archive access and retained answer use the real existing UI, with deterministic offline AI.
 	check(route + " opens Archive", enter(d, chair, "archive"))
