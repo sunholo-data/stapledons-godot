@@ -1,0 +1,295 @@
+{
+  "sprint_id": "R1-7AI-EARTH-LOG-MAP-INDEX",
+  "round": 1,
+  "role": "independent cross-vendor evaluator (generator != judge)",
+  "evaluator": "minimax-m3 (pi openrouter)",
+  "model": "MiniMax-M3",
+  "base": "e0ba4ae7",
+  "head": "c1af429f",
+  "branch": "mission/stapledon-iter85-7ai",
+  "evaluated_at": "2026-11-10",
+  "design_doc": "design_docs/planned/r1/m4-7ai-earth-log-map-index.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7ai-earth-log-map-index-sprint.md",
+  "sprint_json": ".ailang/state/sprints/sprint_R1-7AI-EARTH-LOG-MAP-INDEX.json",
+  "score": 97,
+  "verdict": "PASS",
+  "protocol": "All commands ran headless from the evaluator clone. No tracked file was edited: every mutation was applied to a copy, restored, and 'git status --porcelain' was re-checked (empty) after each. Scratch lived in .godot/tmp/ (gitignored) and was deleted. No git write operation was performed. No make test, no make golden, no full replay suite: the only replay run was the single targeted session of the sprint's own fixture.",
+  "rubric": {
+    "total": 100,
+    "threshold": 70,
+    "categories": {
+      "tests_pass": {
+        "max": 20,
+        "awarded": 20,
+        "notes": "MapIndex green ('Ran 4 tests', 'OK', rc=0) both directly and through 'make replay-map-index' (0.12 s). 'make tools-test' python part: 'Ran 33 tests', 'OK'. Targeted single-session replay on the pinned AILANG v0.56.1: 'ok earth_log_voyage 45 lines 1389901 bytes VM 43.33 s interpreter 94.86 s sha256 07dcdfc610228499', 'replay: 1 cases, all identical', rc=0 - so VM == interpreter == golden. The only red step anywhere was the two shell asset scripts (tools/test_sky_assets.sh, tools/test_lens_assets.sh), which are UNTOUCHED by this sprint and fail only because this evaluation sandbox cannot write macOS's /var/folders/.../T temp dir that 'mktemp -d' resolves to regardless of TMPDIR; environmental, not a regression."
+      },
+      "lint_clean": {
+        "max": 10,
+        "awarded": 10,
+        "notes": "'make python-guard uid-guard' -> 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)', 'uid-guard: ok (422 .uid files)', rc=0. 'git diff --check e0ba4ae7' silent. The sprint's binding byte-for-byte rule holds: the committed control is cmp-identical to the design's M2 python fence (7 lines) and the committed Makefile block cmp-identical to the M3 make fence (4 lines, recipe line a literal tab)."
+      },
+      "acceptance_criteria": {
+        "max": 30,
+        "awarded": 30,
+        "notes": "All 11 ACs independently verified, including the two red baselines, which I reconstructed rather than took on record (AC1 from a base tree extracted with 'git archive'; AC2 from HEAD's control over the base fixture). No criterion is met only on the executor's word. See the acceptance_criteria array."
+      },
+      "code_quality": {
+        "max": 15,
+        "awarded": 13,
+        "notes": "Surgical, minimal and correctly scoped: 1 fixture byte, 2 golden lines, 7 python lines, 4 Makefile lines, no product code. The do-not-touch list is verifiably respected (Makefile:55 and :57 unchanged, no .gd/.ail/sim/ui/bridge file touched, no other replay log or golden touched, tools/replay.py untouched). The new control is a real mutation proof, not a tautology: it goes red if the detector goes blind on CNS5:3627 (0 != 6), if the log is deleted (assertIn fails), or if the catalogue moves (mutant 3). Two points withheld: (i) the fast-tier edge is unprotected - mutant 2 shows deleting the single 'ci-fast: replay-map-index' line silently drops MapIndex from ci-fast with no repo check noticing, so the regression this row exists to fix reverts undetected to nightly-red; (ii) the control's expected string hard-codes 'stars.json 2' and n counts a raw literal occurrence, so a future catalogue move needs a control edit that the design's Risks text does not mention."
+      },
+      "documentation": {
+        "max": 15,
+        "awarded": 14,
+        "notes": "Design doc (r2, quorum log, V1-V13), sprint plan with the byte-for-byte rule, sprint JSON with all three milestones status done / passes true / measured actuals, plus risks, pause points, local_pr_gates, controller_checks and velocity; changelog fragment changelogs/unreleased/2026-11-10-7ai-map-index.md in house format and accurate in substance. One point withheld: the changelog says the control 'fails unless exactly those six are reported as mismatches', while the test deliberately computes n dynamically (the design's own risk says so) - prose that goes stale if a log is added or removed - and the design's Risks understates the future catalogue-reorder fix (the control's expected string must change too, proven by mutant 3). The design doc is still in planned/ with status 'Planned' and the doc/plan move to design_docs/implemented/r1/, the README index row and the charter row 7ai status are still pending: per the sprint plan these are the controller's landing steps AFTER this evaluation passes, so they are correctly absent from this diff and were not penalised."
+      },
+      "design_fidelity": {
+        "max": 10,
+        "awarded": 10,
+        "notes": "Both committed code blocks are byte-identical to the design's fences. The design's verdict direction (correct the fixture, re-record the golden, wire MapIndex into ci-fast) is the right one and I confirmed its two load-bearing facts independently: CNS5:3627 has never been at index 1 in any tracked stars.json revision (index 2 in every revision that contains it, absent before the M1.7 id switch), and no tracked producer names earth_log_voyage (only the two goldens and the globbing harness), so there is no recorder to fix and the log cannot be regenerated in-tree. The fixture's position matches stars.json entry 2's position to all six decimals, so only the index literal was wrong. Every non-goal is respected: no 'star' row, no host dtau, no ALPHA constant, no extra tools-test moved into ci-fast, no ci-fast:/test: line edited."
+      }
+    },
+    "conditional_categories": {
+      "regression_surface_coverage": {
+        "triggered": false,
+        "notes": "No parser/lexer/AST/types/elaborate/iface/codegen/eval/vm/effects surface is touched. The diff is a fixture byte, two digests, one Python harness and four Makefile lines."
+      },
+      "performance_verification": {
+        "triggered": false,
+        "notes": "Not a performance sprint. The new target is the cheapest kind: 'make replay-map-index' measured 0.12 s real (AC10 budget 2 s)."
+      },
+      "examples_created": {
+        "triggered": false,
+        "notes": "No new AILANG module, so no examples/runnable/<feature>.ail is required; tools/test_replay.py is an already-allowlisted harness (python-guard ok), so no new allowlist row was needed."
+      }
+    },
+    "hard_fails": []
+  },
+  "blocking": [],
+  "non_blocking": [
+    "OPEN LANDING GATE, not satisfied by this PASS: the quorum round-2 carve-out (gpt6-1-sol, verbatim) makes an x86_64 disagreement BLOCK landing. The x86_64 golden was copied from the arm64 recording (as 0f5a1175 did) and NOT independently recorded on x86_64, and the confirming fast-tier run could not be exercised here: the clone's origin is a local path and 'gh pr list' reports 'none of the git remotes configured for this repository point to a known GitHub host'. The sprint's own MS3 record says 'Post-push gh pr checks: not run (no push per executor brief)'. The controller must run the PR's 'make ci-fast' on ubuntu-latest before landing and must NOT regenerate an architecture-specific golden if it disagrees.",
+    "The ci-fast edge itself is unprotected (mutant 2). Deleting the single 'ci-fast: replay-map-index' line removes MapIndex from the fast tier, and nothing in the repo detects the loss: 'make -n ci-fast' still exits 0. The failure mode is exactly the nightly-red this row exists to fix, and the nightly 'make test' (tools-test -> MapIndex) would still catch a bad fixture, so this is a durability gap, not a correctness hole. The repo already has the precedent for closing it - 7ah's 'similar-main-guard' is a real guard target that runs inside ci-fast (Makefile:115) - so a 'map-index-guard' asserting that ci-fast carries the MapIndex step would close the loop.",
+    "The control's expected string hard-codes the live catalogue index: assertIn(\"earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2\", bad). After a catalogue reorder the fix is NOT only a 0f5a1175-style re-record, as the design's Risks states; the control's expected string must be updated too (mutant 3 shows the message becomes 'stars.json 3'). The failure is loud (red at the PR), never silent, but the design's remediation text understates the work.",
+    "n in the control is a raw text count of the literal '\"index\":2,\"id\":\"CNS5:3627\"' over the whole log text, while len(bad) counts plan intents. They agree today (6 = 6, verified) because every occurrence is a plan intent. A future log carrying that literal in a non-plan context (a 'star' row, a comment, a different intent kind) would make n > len(bad) and fail the control spuriously. Fails loudly, narrow hypothetical, and the same coupling already exists in the inherited controls 'test_a_stale_index_fails' and 'test_an_unknown_id_fails' (both go red with '7 != 1' under mutant 3), so this is the house pattern rather than a 7ai regression.",
+    "The changelog fragment says the control 'fails unless exactly those six are reported as mismatches', but the test deliberately computes n dynamically rather than hard-coding 6 (the design's risk section says so on purpose). The prose is accurate today and goes stale if a log is added or removed; 'exactly the n plan lines that carry the index-2 literal' would be the durable phrasing.",
+    "Scope note for the reader, not a defect: the guard proves that every COMMITTED replay log plans each star at its stars.json index. It says nothing about the ALPHA constants that still carry '{\"index\": 1, \"id\": \"CNS5:3627\"}' in 8 GDScript files, sim/stops_test.ail and tools/worlds_leak.py (design follow-up F1, deliberately out of scope). GalaxyMap.target_name()/subtitle_text() show the common name only when catalogue[index].id == id, so a capture driven by one of those constants may read 'CNS5:3627' where the live game reads 'Alpha Centauri A'. The design's F1 hypothesis remains unmeasured and this sprint did not test it."
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "Red before (base)",
+      "met": true,
+      "evidence": "Reconstructed the base tree with 'git archive e0ba4ae7 tests/replays data/starmap/stars.json tools/test_replay.py' into a scratch dir and ran it: 'Ran 3 tests', 'FAILED (failures=3)', rc=1, and the exact line 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2'. Matches the design's expected output verbatim."
+    },
+    {
+      "id": "AC2",
+      "criterion": "Red before (T1: control + target in, fixture not yet fixed)",
+      "met": true,
+      "evidence": "Reconstructed the T1 state (HEAD's tools/test_replay.py over the BASE fixture): 'Ran 4 tests', 'FAILED (failures=4)', rc=1, and test_the_7ai_index_fails -> 'AssertionError: 6 != 5'. The control was genuinely seen red before the fix landed - the test-first order holds."
+    },
+    {
+      "id": "AC3",
+      "criterion": "Green after",
+      "met": true,
+      "evidence": "'make replay-map-index' -> 'Ran 4 tests', 'OK', rc=0. 'make tools-test' -> 'Ran 33 tests', 'OK' (7.39 s). The two shell asset scripts then fail on this sandbox's unwritable macOS /var/folders temp dir; both scripts are untouched by the sprint (git diff --name-only over them is empty) and the failure is 'mktemp: mkdtemp failed ... Operation not permitted', i.e. environmental."
+    },
+    {
+      "id": "AC4",
+      "criterion": "Fixture change is one byte",
+      "met": true,
+      "evidence": "'git show e0ba4ae7:tests/replays/earth_log_voyage.ndjson | cmp -l - tests/replays/earth_log_voyage.ndjson' -> exactly one line, '200  61  62' ('1' -> '2'), matching the planner-measured offset 200."
+    },
+    {
+      "id": "AC5",
+      "criterion": "Goldens re-recorded and identical across arches",
+      "met": true,
+      "evidence": "Both files read '07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454  earth_log_voyage.state.ndjson' (two spaces, no arch - record()'s format at tools/replay.py:410); 'cmp' of the arm64 and x86_64 copies exits rc=0. The x86_64 leg of this criterion is a copy, not an independent x86_64 recording - see the open landing gate in non_blocking."
+    },
+    {
+      "id": "AC6",
+      "criterion": "Replay passes, VM = interpreter = golden",
+      "met": true,
+      "evidence": "'make replay SESSION=tests/replays/earth_log_voyage.ndjson AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang' (AILANG v0.56.1, 05c860a) -> 'replay: AILANG v0.56.1, arm64', 'ok earth_log_voyage 45 lines 1389901 bytes VM 43.33 s interpreter 94.86 s sha256 07dcdfc610228499', 'replay: 1 cases, all identical (94.9 s wall)', rc=0. Independently run, not taken on record."
+    },
+    {
+      "id": "AC7",
+      "criterion": "Only the index echoes change in the state",
+      "met": true,
+      "evidence": "Ran the pinned AILANG v0.56.1 on the BASE fixture (git show e0ba4ae7:...) and compared it with the fixed VM stream the replay left in .godot/tmp/replay: 'cmp -l' prints exactly '56554  61  62', '60660  61  62', '1059580  61  62' and nothing else; both streams are 1,389,901 bytes. Decisive extra evidence: the BASE fixture reproduces the OLD golden digest e62a9272814e30577001f94dc989130a890236950a744fb501f008bc908cc558 BIT-FOR-BIT, and the fixed stream hashes to the NEW digest 07dcdfc6... - so the golden change is exactly the state-stream consequence of the one-byte fixture change."
+    },
+    {
+      "id": "AC8",
+      "criterion": "A re-introduced wrong index is caught at the fast tier",
+      "met": true,
+      "evidence": "Drill on a copy (fixture copied aside, sed back to '\"index\":1,\"id\":\"CNS5:3627\"'): 'Ran 4 tests', 'FAILED (failures=4)', rc=1, the mismatch line 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2' present and the 7ai control red with '6 != 5'. Restored from the .bak; 'diff' against the pre-drill copy is empty, no .bak left, 'git status --porcelain' empty."
+    },
+    {
+      "id": "AC9",
+      "criterion": "Wired into ci-fast",
+      "met": true,
+      "evidence": "'make -n ci-fast 2>/dev/null | grep -c test_replay.py MapIndex' -> 1. 'grep -nx ci-fast: replay-map-index Makefile' -> exactly one line, '438:ci-fast: replay-map-index'. The edge follows the repo's 7ah pattern (Makefile:115) and 'ci-fast:' (:55) and 'test:' (:57) are byte-unchanged from base. The post-push x86_64 leg is not exercisable from this clone (no GitHub remote) - see non_blocking."
+    },
+    {
+      "id": "AC10",
+      "criterion": "Cheap",
+      "met": true,
+      "evidence": "'time make replay-map-index' -> real 0m0.120s ('Ran 4 tests in 0.058s', 'OK'), well under the 2 s budget; pure Python, no subprocess, no AILANG, no network."
+    },
+    {
+      "id": "AC11",
+      "criterion": "Hygiene and scope",
+      "met": true,
+      "evidence": "'make python-guard uid-guard' -> 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)', 'uid-guard: ok (422 .uid files)', rc=0. 'git diff --check e0ba4ae7' silent. 'git diff --name-only e0ba4ae7..HEAD' = exactly .ailang/state/sprints/sprint_R1-7AI-EARTH-LOG-MAP-INDEX.json, Makefile, changelogs/unreleased/2026-11-10-7ai-map-index.md, the design doc, the sprint plan, tests/replays/earth_log_voyage.ndjson, the two .state.*.sha256 and tools/test_replay.py. Scoped further: no data/starmap/*, sim/, ui/, bridge/, no other replay log or golden, no tools/replay.py, and no .gd/.ail file touched."
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "python3 tools/test_replay.py MapIndex",
+      "result": "Ran 4 tests in 0.104s / OK / rc=0",
+      "rc": 0
+    },
+    {
+      "cmd": "make replay-map-index",
+      "result": "Ran 4 tests / OK / rc=0",
+      "rc": 0
+    },
+    {
+      "cmd": "time make replay-map-index",
+      "result": "real 0m0.120s (AC10 budget 2 s)",
+      "rc": 0
+    },
+    {
+      "cmd": "make -n ci-fast 2>/dev/null | grep -c 'test_replay.py MapIndex'",
+      "result": "1",
+      "rc": 0
+    },
+    {
+      "cmd": "grep -nx 'ci-fast: replay-map-index' Makefile",
+      "result": "438:ci-fast: replay-map-index (exactly one line)",
+      "rc": 0
+    },
+    {
+      "cmd": "git diff --check e0ba4ae7",
+      "result": "silent (no whitespace errors)",
+      "rc": 0
+    },
+    {
+      "cmd": "git show e0ba4ae7:tests/replays/earth_log_voyage.ndjson | cmp -l - tests/replays/earth_log_voyage.ndjson",
+      "result": "exactly one line: '200  61  62' (1 -> 2)",
+      "rc": 1
+    },
+    {
+      "cmd": "cat tests/replays/earth_log_voyage.state.arm64.sha256; cmp tests/replays/earth_log_voyage.state.arm64.sha256 tests/replays/earth_log_voyage.state.x86_64.sha256",
+      "result": "both files read '07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454  earth_log_voyage.state.ndjson'; cmp rc=0 (byte-identical across arches)",
+      "rc": 0
+    },
+    {
+      "cmd": "make replay SESSION=tests/replays/earth_log_voyage.ndjson AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+      "result": "replay: AILANG v0.56.1, arm64; 'ok earth_log_voyage 45 lines 1389901 bytes VM 43.33 s interpreter 94.86 s sha256 07dcdfc610228499'; 'replay: 1 cases, all identical (94.9 s wall)'",
+      "rc": 0
+    },
+    {
+      "cmd": "make tools-test",
+      "result": "'Ran 33 tests in 7.394s' / OK; then tools/test_sky_assets.sh fails with 'mktemp: mkdtemp failed on /var/folders/.../T/tmp.XXXX: Operation not permitted' - the sandbox cannot write macOS's per-user temp dir that 'mktemp -d' uses regardless of TMPDIR. Both shell scripts are untouched by this sprint, so this is environmental, not a regression.",
+      "rc": 2
+    },
+    {
+      "cmd": "make python-guard uid-guard",
+      "result": "python-guard: ok (21 allowlisted, 0 awaiting AILANG port); uid-guard: ok (422 .uid files)",
+      "rc": 0
+    },
+    {
+      "cmd": "git archive e0ba4ae7 tests/replays data/starmap/stars.json tools/test_replay.py | tar -x -C <scratch>; python3 <scratch>/tools/test_replay.py MapIndex   (AC1 reconstruction)",
+      "result": "Ran 3 tests / FAILED (failures=3) / rc=1, with 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2'",
+      "rc": 1
+    },
+    {
+      "cmd": "<scratch> with HEAD's tools/test_replay.py over the BASE fixture; python3 <scratch>/tools/test_replay.py MapIndex   (AC2 reconstruction)",
+      "result": "Ran 4 tests / FAILED (failures=4) / rc=1; test_the_7ai_index_fails -> AssertionError: 6 != 5",
+      "rc": 1
+    },
+    {
+      "cmd": "ailang run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < <base fixture> > base.out; cmp -l base.out .godot/tmp/replay/earth_log_voyage.vm.ndjson; shasum -a 256 base.out   (AC7)",
+      "result": "cmp -l prints exactly '56554 61 62', '60660 61 62', '1059580 61 62'; both streams 1,389,901 bytes; base.out sha256 = e62a9272814e30577001f94dc989130a890236950a744fb501f008bc908cc558 (the OLD golden, bit-for-bit) and the fixed stream = 07dcdfc6... (the NEW golden)",
+      "rc": 0
+    },
+    {
+      "cmd": "for c in $(git log --format=%h -- data/starmap/stars.json); do index of CNS5:3627 in $c:data/starmap/stars.json; done   (V3 re-measured)",
+      "result": "2f57110f=2, d80d1abc=2, 00e89d1d=2, 0a8f4264=2, 47008254=ABSENT, 27af5935=ABSENT - CNS5:3627 has never been at index 1 in any tracked stars.json",
+      "rc": 0
+    },
+    {
+      "cmd": "git ls-files | grep -vE '^(design_docs|docs|\\.ailang)/' | xargs grep -l earth_log_voyage   (V5 re-measured)",
+      "result": "only CHANGELOG.md, the new changelog fragment, the two .state.*.sha256 goldens and tools/test_replay.py (which discovers logs by glob) - no tracked recorder or producer for this log exists, so the fixture is the only thing that can be fixed",
+      "rc": 0
+    },
+    {
+      "cmd": "python3: stars.json index/pos of CNS5:3627 vs the fixture's line-3 target",
+      "result": "stars.json index 2, pos 3.094521/-3.015404/-0.051608; fixture target index 2, id CNS5:3627, pos equal to all six decimals; index 1 is 'HIP 71681' - the fixture's target data is alpha Cen A's, only the index literal was wrong",
+      "rc": 0
+    },
+    {
+      "cmd": "awk-extract the design's M2/M3 fences; cmp against the committed control and Makefile block",
+      "result": "fences are 7 and 4 lines; 'm2-ok (byte-identical)' and 'm3-ok (byte-identical)'; the recipe line starts with a literal tab (od -c: '\\t python3 tools/test_replay.py MapIndex'). The sprint's byte-for-byte rule holds.",
+      "rc": 0
+    },
+    {
+      "cmd": "git diff --name-only e0ba4ae7..HEAD; diff of Makefile lines 55 and 57 vs base; git diff --name-only e0ba4ae7..HEAD -- tests/replays/ data/starmap/ sim/ ui/ bridge/ tools/replay.py",
+      "result": "9 files changed in total; Makefile:55 (ci-fast:) and :57 (test:) byte-unchanged; only earth_log_voyage.ndjson and its two .state.*.sha256 under tests/replays/; nothing under data/starmap/, sim/, ui/, bridge/; tools/replay.py untouched; no .gd/.ail file touched (the ALPHA constants of F1 are left alone as designed)",
+      "rc": 0
+    },
+    {
+      "cmd": "gh pr list --state all --limit 5 --json number,title,headRefName,state",
+      "result": "'none of the git remotes configured for this repository point to a known GitHub host' (origin is a local path) - the post-push x86_64 fast-tier confirmation is not verifiable from this clone",
+      "rc": 1
+    },
+    {
+      "cmd": "git status --porcelain (after every mutation and at the end)",
+      "result": "empty throughout; scratch (.godot/tmp/7ai_eval) deleted; no tracked file was edited and no git write operation was performed",
+      "rc": 0
+    }
+  ],
+  "mutants": [
+    {
+      "id": "M1",
+      "description": "Re-introduce the exact 7ai defect in the committed fixture: 'tests/replays/earth_log_voyage.ndjson' copied aside, then sed '\"index\":2,\"id\":\"CNS5:3627\"' -> '\"index\":1,\"id\":\"CNS5:3627\"' (the AC8 drill). The new control plus the inherited ones must catch it.",
+      "rc": 1,
+      "killed": true,
+      "result": "KILLED as intended: 'Ran 4 tests', 'FAILED (failures=4)'. The mismatch line 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2' is reported; test_the_7ai_index_fails is red with 'AssertionError: 6 != 5' (the 6 mutated lines vs the 5 pre-existing index-2 literals), and the inherited controls fail '2 != 1'. The guard is live, not inert: the same drill makes the fast tier red, which is the whole point of the row.",
+      "restored": "fixture restored from the .bak; 'diff' against the pre-drill copy empty; no .bak left; git status --porcelain empty"
+    },
+    {
+      "id": "M2",
+      "description": "Attack the wiring instead of the detector: with the Makefile copied aside, delete the single edge line 'ci-fast: replay-map-index' (the whole fast-tier presence of the new check). Question: is the guard's own place in the pipeline protected by anything?",
+      "rc": 0,
+      "killed": false,
+      "result": "NOT KILLED - the durability gap. After the deletion, 'make -n ci-fast 2>/dev/null | grep -c test_replay.py MapIndex' = 0 (MapIndex no longer runs in the fast tier) while 'make -n ci-fast' still exits 0: nothing in the repo, and no gate the sprint added, notices. The failure mode is a silent regression to the exact nightly-red this row exists to fix (a bad fixture would only be caught by the nightly 'make test' -> tools-test -> MapIndex). Bounded by the fact that the nightly still runs MapIndex, so it is not a correctness hole - but it is the one weakness in the deliverable, and the repo already has the precedent to close it (7ah's real guard target 'similar-main-guard' at Makefile:115, which runs inside ci-fast).",
+      "restored": "Makefile restored from the copy; git diff --stat empty; git status --porcelain empty"
+    },
+    {
+      "id": "M3",
+      "description": "Attack the control's coupling to the live catalogue: with data/starmap/stars.json copied aside, swap catalogue entries 2 and 3 so CNS5:3627 sits at index 3 - the design's own risk ('a later stars.json reorder moves alpha Cen A again'). Question: does the guard fire at the fast tier, and what does the future fix actually require?",
+      "rc": 1,
+      "killed": true,
+      "result": "KILLED as intended: 'Ran 4 tests', 'FAILED (failures=4)', rc=1, and the message becomes 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 2, stars.json 3' - the guard fires at the PR instead of on the nightly, exactly as the design's risk section claims. It also exposes a second-order fact the design's Risks text understates: the inherited controls fail '7 != 1' AND the new control's assertIn('... stars.json 2') no longer matches, so the post-reorder fix must edit the control's expected string in addition to re-recording the golden - it is not only a '0f5a1175-style re-record'. Both failures are loud, never silent.",
+      "restored": "data/starmap/stars.json restored from the copy; git status --porcelain empty; git diff --stat empty"
+    }
+  ],
+  "design_fidelity": {
+    "verdict": "faithful",
+    "byte_for_byte": "The committed tools/test_replay.py control and the committed Makefile block are cmp-identical to the design's M2 and M3 fences (7 and 4 lines). The fixture's single byte lands at the planner-measured offset 200.",
+    "direction": "The design's verdict - correct the fixture and re-record the golden, no recorder change - is the right one, and I confirmed its load-bearing facts independently rather than on the executor's word: (1) CNS5:3627 has never been at index 1 in any tracked stars.json revision (index 2 in every revision that contains it, absent before the M1.7 id switch), so the fixture's index was wrong from the moment it was committed and no catalogue move made it stale; (2) the fixture's position matches stars.json entry 2's position to all six decimals while index 1 is HIP 71681, so only the index literal was wrong; (3) no tracked producer names earth_log_voyage (only the two goldens and the globbing harness), so there is no recorder to fix, the log cannot be regenerated in-tree, and a re-record of the golden was mandatory rather than optional; (4) the base fixture reproduces the OLD golden digest bit-for-bit and the corrected fixture reproduces the NEW one, differing in exactly the three journey.plan.target.index echoes - so the golden change is precisely the state-stream consequence of the one-byte fixture change and nothing else moved.",
+    "non_goals_respected": "No 'star' row and no host dtau added to the fixture; the GDScript/Python ALPHA constants left alone (design follow-up F1, its own row); the rest of tools-test not moved into ci-fast (F2); data/starmap/*, sim/, ui/, bridge/, every other replay log and golden, tools/replay.py, and the ci-fast:/test: lines all untouched.",
+    "gate_wiring": "Sound and idiomatic: a separate 'ci-fast:' edge line following 7ah's pattern at Makefile:438, pure Python, no AILANG, no GPU, no network, 0.12 s, and 'python3' is already present on the ubuntu-latest runner because 'replay' (already in ci-fast) runs 'python3 tools/replay.py'. Its one weakness is durability (mutant 2), not correctness."
+  },
+  "worktree": {
+    "clone": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter85-eval-mm",
+    "base_commit": "e0ba4ae7",
+    "head_commit": "c1af429f",
+    "tree_modified_by_evaluator": false,
+    "final_git_status_porcelain": "",
+    "scratch_used": ".godot/tmp/7ai_eval (gitignored), deleted",
+    "git_write_operations": "none"
+  },
+  "summary": "Independent cross-vendor evaluation of sprint R1-7AI-EARTH-LOG-MAP-INDEX (base e0ba4ae7, head c1af429f). All 11 acceptance criteria were independently re-verified rather than taken on record, including the two red baselines, which I reconstructed from a base tree extracted with 'git archive' (AC1: Ran 3 tests, FAILED (failures=3), the exact mismatch line) and from HEAD's control over the base fixture (AC2: Ran 4 tests, FAILED (failures=4), '6 != 5') - so the test-first discipline genuinely held. The decisive piece of evidence for the golden change is that the BASE fixture, re-run on the pinned AILANG v0.56.1, reproduces the OLD golden digest e62a9272... bit-for-bit, while the corrected fixture reproduces the NEW digest 07dcdfc6... and the two 1,389,901-byte state streams differ in exactly the three journey.plan.target.index echoes at offsets 56554, 60660 and 1059580: the golden is a faithful re-record of a genuinely-changed input, not a hand-edit. The single-session replay (VM 43.33 s, interpreter 94.86 s, '1 cases, all identical', rc=0) confirms VM = interpreter = golden. Both committed code blocks are byte-identical to the design's fences, the scope is exactly the nine authorised files, and the do-not-touch list is verifiably respected. Three mutants of my own: the AC8 re-introduction drill is killed (all four tests red, the control firing on '6 != 5'); a simulated catalogue reorder is killed (the guard fires at the fast tier, which also shows the post-reorder fix must edit the control's expected string, not only re-record the golden); and the deletion of the single 'ci-fast: replay-map-index' edge is NOT killed - the fast-tier presence of the guard is itself unprotected, so that wiring can be lost silently and the regression would revert to the nightly-red this row exists to fix. That gap is bounded (the nightly's tools-test still runs MapIndex) and is recorded as the principal non-blocking finding, together with the still-open x86_64 landing gate, which this PASS does NOT satisfy: the x86_64 golden is a copy, the runner's confirmation could not be exercised here (no GitHub remote), and the controller must run the PR's 'make ci-fast' on ubuntu-latest and block landing if the x86_64 replay disagrees. No blocking finding. Score 97, verdict PASS."
+}

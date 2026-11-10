@@ -1,6 +1,6 @@
 # earth_log_voyage plans alpha Cen A at its real map index (7ai)
 
-**Status:** Planned 2026-11-10 (mission iteration 85, designer); revision 1 answers design-quorum round 1 (see "Quorum log"). **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ai**).
+**Status:** Implemented 2026-11-10 (mission iteration 85, PR #421; evaluation Sonnet 5.5 93 PASS, cross-vendor MiniMax M3 97 PASS). Revision 1 answers design-quorum round 1; revision 2 (the controller, under the narrow-refinement carve-out) answers round 2 with the reviewer's own fix; see "Quorum log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ai**).
 **Priority:** P1. `make tools-test` has been red on main since PR #379 (R3-COMMS-V2, `e70d0fdf`, merged as `8ba1e3c8`). The nightly `rig/full` reports it every night (7ag keeps going past it), so gate 1 of the definition of done ("main's nightly `rig/full` stays green") cannot hold until it is fixed.
 **Implements:** row 7ai of the charter (`design_docs/stapledon-mission.md`, Queue), clause 2/5 replay hygiene. Restores the map-index rule of `0f5a1175`: every committed replay log's plan target index is the `data/starmap/stars.json` index of its id. No design-repo feature or physics-spec section applies. The sim does not read the index for any physics (V6).
 **Depends on:** nothing.

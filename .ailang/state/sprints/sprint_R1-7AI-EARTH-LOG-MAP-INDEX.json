@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AI-EARTH-LOG-MAP-INDEX",
-  "status": "executed",
+  "status": "landed",
   "approved": true,
   "approved_by": "mission controller iteration 85 (loop, D-1 armed; no stop-for-human: pillars all 0, no open questions; quorum round 2 cleared under the narrow-refinement carve-out: an x86_64 disagreement BLOCKS landing, reviewer's fix verbatim in Risks)",
   "created": "2026-11-10",
-  "design_doc": "design_docs/planned/r1/m4-7ai-earth-log-map-index.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7ai-earth-log-map-index-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7ai-earth-log-map-index.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ai-earth-log-map-index-sprint.md",
   "branch": "mission/stapledon-iter85-7ai",
   "implements": [
     "7ai"
@@ -196,5 +196,18 @@
   ],
   "controller_checks": "Controller re-runs (per the mission): AC1/AC2 red logs on record (exact lines and rc); AC4 (cmp -l -> '200  61  62' only); arm64 golden digest = 07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454 and cmp with the x86_64 copy rc 0 (AC5); AC3 (Ran 4 tests OK, Ran 33 tests OK); AC6 (ok … 45 lines 1389901 bytes … 07dcdfc6…, '1 cases, all identical'); AC7 (exactly '56554 61 62', '60660 61 62', '1059580 61 62'); AC8 (drill rc 2 with the mismatch line, restore clean); AC9 (grep 1, one edge line, post-push gh pr checks green = the x86_64 confirmation; a disagreement there BLOCKS landing per the verbatim risk); AC10 (< 2 s); AC11 (guards rc 0, diff-check silent, file set exact).",
   "plan_verification": "Planner, 2026-11-10, HEAD 34d96434 on mission/stapledon-iter85-7ai (merge-base with origin/main = e0ba4ae7 = the design's B; git diff --name-only e0ba4ae7..HEAD = the design doc alone): runtime/ absent in the clone; pinned binary /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang reports AILANG v0.56.1 (05c860a), PATH ailang is v0.59.0-92-g24802d854-dirty; Makefile:2 AILANG ?= ailang, Makefile:720 runtime: present. Fixture line 3 carries \"index\":1,\"id\":\"CNS5:3627\" with pos == stars.json entry 2's pos to all six decimals (V13 re-measured; index 2 at HEAD). Both goldens e62a9272814e30577001f94dc989130a890236950a744fb501f008bc908cc558, byte-identical; record() format \"%s  %s.state.ndjson\\n\" at tools/replay.py:410. Makefile anchors: replay :428-429, replay-record recipe :431-433 (as cited), ci-fast: :55, 7ah edge :115 (the M3 pattern), test: :57 (+ edges :26/:159), tools-test :249-252 (python3 tools/test_replay.py first). replay-map-index absent at base (No rule to make target); make -n ci-fast | grep -c test_replay.py = 0 (V7 re-measured). MapIndex: plan_index_mismatches :300, class :327, test_an_unknown_id_fails :347; mismatch format string produces exactly the AC1/AC8 line. V10 base counts re-measured: 'index':2,'id':'CNS5:3627' = 5 occurrences in logs()-visible files (godot_map_voyage 1, m4_adversarial 2, m4_min_path 1, m4_transit_harness 1), 'index':1,'id':'CNS5:3627' = 1 (earth_log_voyage) -> AC2 red arithmetic 6 != 5 confirmed. compat-2.0/inputs.sha256: 0 earth_log matches (V9). test_replay.py allowlisted harness (no new row for M2). .godot/ gitignored (line 1), $S writable, perl alarm works, python3 3.14.5, GNU make 3.81. AC4 offset planner-measured: 200. Discrepancies D1-D4 recorded in risks.",
-  "velocity": "~16 LOC, none product (1 fixture byte + 2 golden lines + 7 python + 4 make). Run-dominated verification: MS1 ~0.2 h (extractions, edits, one sub-second red run); MS2 ~0.4 h (record + replay + 2 single-VM runs, bounded 900/600/300 s; measured ~2 min per full replay on the busy Studio, V1/V6); MS3 ~0.2 h (drill, greps, guards). One executor session, well under half a day (compare 7ah ~180 LOC half a day, 7aj ~55 LOC half a day)."
+  "velocity": "~16 LOC, none product (1 fixture byte + 2 golden lines + 7 python + 4 make). Run-dominated verification: MS1 ~0.2 h (extractions, edits, one sub-second red run); MS2 ~0.4 h (record + replay + 2 single-VM runs, bounded 900/600/300 s; measured ~2 min per full replay on the busy Studio, V1/V6); MS3 ~0.2 h (drill, greps, guards). One executor session, well under half a day (compare 7ah ~180 LOC half a day, 7aj ~55 LOC half a day).",
+  "evaluations": {
+    "sonnet": {
+      "score": 93,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AI-EARTH-LOG-MAP-INDEX_round_1_sonnet.json"
+    },
+    "minimax-m3": {
+      "score": 97,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AI-EARTH-LOG-MAP-INDEX_round_1_minimax-m3.json"
+    }
+  },
+  "pr": 421
 }

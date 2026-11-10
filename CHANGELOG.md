@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### m4-7ai-earth-log-map-index (2026-11-10)
+
+#### Fixed
+
+- **`make tools-test` is green again** (R1-7AI-EARTH-LOG-MAP-INDEX, row 7ai, PR #421). `tests/replays/earth_log_voyage.ndjson` planned alpha Centauri A (`CNS5:3627`) at index 1, which is HIP 71681 (alpha Cen B) in `data/starmap/stars.json`; the id is at index 2 and the fixture's position matches it to six decimals. The fixture is corrected by one byte and its golden re-recorded (`07dcdfc6…`, identical line for arm64 and x86_64). The sim only echoes the index, so the state changes in exactly the three plan-target index echoes. The red came in with PR #379.
+- **The wrong index has a committed control.** `test_the_7ai_index_fails` re-injects index 1 into every plan line that carries `CNS5:3627` at index 2 and requires each one to be reported.
+- **The map-index check runs in `ci-fast`.** `make replay-map-index` (`MapIndex` in `tools/test_replay.py`, under a second, no AILANG) now fails a pull request whose replay log plans a star at the wrong index, instead of the nightly.
+- Evaluations: Sonnet 5.5 93/100, MiniMax M3 97/100 (cross-vendor). Known gaps (non-blocking): nothing checks that the `ci-fast` edge itself stays; the control's expected message names the current catalogue index.
+
 ### m4-7ah-similar-guard-minor (2026-11-10)
 
 #### Fixed
