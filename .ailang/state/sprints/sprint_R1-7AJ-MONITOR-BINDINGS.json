@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AJ-MONITOR-BINDINGS",
-  "status": "planned",
+  "status": "completed",
   "approved": true,
   "approved_by": "D-88 (neutral test-infra hygiene; unattended loop proceeds)",
   "created": "2026-11-10",
-  "design_doc": "design_docs/planned/r1/m4-7aj-monitor-face-bindings.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7aj-monitor-face-bindings-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7aj-monitor-face-bindings.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7aj-monitor-face-bindings-sprint.md",
   "branch": "mission/stapledon-iter83-7aj",
   "implements": [
     "7aj"
@@ -218,5 +218,20 @@
     "Any temptation to touch Makefile, ui/, interior/, demos/, sim/, assets/, main.gd, tests/fixtures/display_audit/, or a PR #412 file: stop -- M1 needs none of them.",
     "No merge before the cross-family evaluation; landing files wait on it."
   ],
-  "velocity": "~55 LOC total (harness +~16, audit +~22, mk +~16), all test code and make glue; no product change. Verification is run-dominated: MS1 ~1.0 h writing + ~0.4 h red runs; MS2 ~0.6 h (four audits ~7.5-8.5 min + one intermediate controls run); MS3 ~1.0 h (four audits again + controls green ~3-5 min + three stall legs ~5 min); MS4 ~0.5 h (guards, 32-control fixtures ~2-3 min, harness users ~2-4 min, greps). Estimate: one executor session, about half a day (compare 7ag rig-keep-going ~200 LOC one day; 7af same control family, one day on a 0.5-day estimate). Measured run times cited from the design: crew ~33 s, interlude ~49 s, comms ~168-188 s, scene ~180-205 s."
+  "velocity": "~55 LOC total (harness +~16, audit +~22, mk +~16), all test code and make glue; no product change. Verification is run-dominated: MS1 ~1.0 h writing + ~0.4 h red runs; MS2 ~0.6 h (four audits ~7.5-8.5 min + one intermediate controls run); MS3 ~1.0 h (four audits again + controls green ~3-5 min + three stall legs ~5 min); MS4 ~0.5 h (guards, 32-control fixtures ~2-3 min, harness users ~2-4 min, greps). Estimate: one executor session, about half a day (compare 7ag rig-keep-going ~200 LOC one day; 7af same control family, one day on a 0.5-day estimate). Measured run times cited from the design: crew ~33 s, interlude ~49 s, comms ~168-188 s, scene ~180-205 s.",
+  "github_pr": "#417",
+  "evaluation": {
+    "round": 1,
+    "evaluator": "Sonnet 5.5 (Agent tool, own clone)",
+    "score": 91,
+    "verdict": "PASS",
+    "report": ".ailang/state/evaluations/eval_R1-7AJ-MONITOR-BINDINGS_round_1_sonnet.json"
+  },
+  "controller_checks": "iteration 83 controller at 0919f0e1: display-audit-crew rc 0 (failures=0), display-audit-monitor-controls rc 0 (4 rejected), script-gate-lint rc 0, uid-guard rc 0, git diff --check b974e302 rc 0 after plan whitespace fix; own mutants: coverage neutralised -> 2 rejected rc 2; WANT_RC 0 -> 0 rejected rc 2 (both killed)",
+  "evaluation_cross_vendor": {
+    "evaluator": "MiniMax M3 (pi, openrouter, mission_pi_run.sh verdict ok, 795 s, $0.11)",
+    "score": 88,
+    "verdict": "PASS",
+    "report": ".ailang/state/evaluations/eval_R1-7AJ-MONITOR-BINDINGS_round_1_minimax-m3.json"
+  }
 }

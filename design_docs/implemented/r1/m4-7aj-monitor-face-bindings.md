@@ -1,6 +1,6 @@
 # Monitor-face bindings in the display audits (7aj)
 
-**Status:** Planned, revision 1 (mission iteration 83, designer). Revision 1 answers design-quorum round 1; see "Quorum log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7aj**).
+**Status:** Implemented 2026-11-10 (mission iteration 83, sprint R1-7AJ-MONITOR-BINDINGS, PR #417; evaluation Sonnet 5.5 91/100 PASS). Revisions 1 (designer) and 2 (controller, narrow-refinement carve-out) answer design-quorum rounds 1 and 2; see "Quorum log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7aj**).
 **Priority:** P1. Four `make test` targets have been red on main since PR #379 merged on 2026-11-06. They are `display-audit-comms`, `scene-session-audits`, `display-audit-interlude` and `display-audit-crew`. Earlier nightlies stopped at the first red, so the first keep-going nightly (7ag) on `b974e302`, 2026-11-10, was the first to report them (V1).
 **Implements:** row 7aj. It restores the display-audit contract (every number on screen is a clean binding on a sim field, D-21) that [R3-COMMS-V2 CV6](../../implemented/r3/comms-station-v2.md) claims for the bridge monitor wall: §D3–§D5 and AC5 (`make comms-station-test display-audit-comms`). It also serves definition-of-done gate 1: main's nightly `rig/full` stays green.
 **Depends on:** nothing new. It uses the 7ag keep-going nightly (`design_docs/implemented/r1/rig-keep-going.md`) and the existing `display-audit-controls`.
