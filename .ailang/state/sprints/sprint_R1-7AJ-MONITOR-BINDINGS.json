@@ -158,7 +158,25 @@
       ],
       "expectations": "cmd1 (AC7): empty diff, rc 0. cmd2 (AC7): 'bridge-monitors: 19 passed, 0 failures' (V16). cmd3 (AC8): empty diff rc 0; controls-rc 0; 32 rejected (the recipe's own test $n -eq 32 holds; M2 skips the control route). cmd4 (AC9): exactly the two files; 0 extra hits. cmd5 (AC10): rc 0; 'playthrough-negative: 3 passed, 0 failures'; adversarial 'playthrough: <N> passed, 0 failures' (V16 measured 142161 passed with the prototype; assert 0 failures, record N). cmd6 (AC11): 'guards-ok'; no whitespace output; diff-check rc 0. cmd7 (AC12 + scope): collision grep no output, nocollide-rc 1; the name list is exactly .ailang/state/sprints/sprint_R1-7AJ-MONITOR-BINDINGS.json, the design doc + this plan under design_docs/planned/r1/, mk/earth-link.mk, tests/display_audit.gd, tests/m4_playthrough_ship.gd. cmd8 (AC13 + AC14 lint): 0, 0, lint rc 0. cmd9 (ci-fast membership guard; V17): 0.",
       "notes": "B=b974e302 is this branch's merge-base with main (verified at plan time), matching the design's AC table. The three edited .gd/.mk files keep their existing tracked .uid companions; none is created or deleted, so uid-guard cannot fail on them. No GPU gate, no make golden, no capture, no full make test (AC13; 7ag/7af precedent).",
-      "status": "pending"
+      "measured": [
+        "make display-audit-crew rc=0: display-audit: samples=46 checks=13570 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0; monitors clocks=138 course=138 crew=460 signal=138",
+        "make display-audit-interlude rc=0: display-audit: samples=127 checks=38259 mismatches=0 missing=0 new=0 known=143 stale=0 failures=0; monitors clocks=381 course=434 crew=1270 signal=381",
+        "make display-audit-comms rc=0: display-audit: samples=797 checks=261159 mismatches=0 missing=0 new=0 known=922 stale=0 failures=0; monitors clocks=2391 course=3074 crew=7970 signal=2391",
+        "make scene-session-audits rc=0: ac4: MET (5 accepted by D-77/D-78); display-audit: samples=814 checks=258206 mismatches=0 missing=0 new=0 known=757 stale=0 failures=0; monitors clocks=2442 course=3063 crew=8140 signal=2442",
+        "make display-audit-monitor-controls rc=0: display monitor control unrefreshed/drop_one/unbound/stale: rejected; display monitor controls: 4 rejected; 0 SCRIPT ERROR",
+        "make display-audit-controls rc=0: 32 'display control ...: rejected' lines (test -eq 32 holds); 'display control valid/known/known_renumbered/known_unaccepted: PASS/OPEN'",
+        "make playthrough-negative playthrough-adversarial: 'playthrough-negative: 3 passed, 0 failures'; 'script-gate: playthrough ok: playthrough: 142161 passed, 0 failures' (rc 0)",
+        "make bridge-monitors-test rc=0: 'script-gate: bridge-monitors-test ok: bridge-monitors: 19 passed, 0 failures'",
+        "make uid-guard python-guard rc=0: 'uid-guard: ok (422 .uid files)'; 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)'",
+        "git diff --check b974e302 -- tests mk <this doc> .ailang: rc 0 (own files clean). FULL 'git diff --check b974e302' rc 2: whitespace warnings in design_docs/planned/r1/m4-7aj-monitor-face-bindings-sprint.md lines 82-96 and 144 (the controller's plan commit 2cc84f30, not a file this sprint may edit; UNRESOLVED, reported)",
+        "git diff --exit-code b974e302 -- ui interior demos main.gd project.godot assets data sim shaders: rc 0 (AC7). ui/display_binding.gd ui/composed_binding.gd tests/fixtures/display_audit/: rc 0 (AC8)",
+        "git grep PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests: hits only in tests/m4_playthrough_ship.gd and mk/earth-link.mk; 0 outside (AC9)",
+        "git diff --name-only b974e302 | grep PR-412 files: no output, rc 1 (AC12). Changed files: .ailang sprint JSON, the sprint plan (controller), design doc, mk/earth-link.mk, tests/display_audit.gd, tests/m4_playthrough_ship.gd",
+        "mk/earth-link.mk additions: 0 Godot calls without --headless; 0 golden/capture (AC13). script-gate-lint rc 0 (251 invocations: 133 gated, 118 baseline)",
+        "make -qp ci-fast membership of the six targets: 0 (V17 holds)",
+        "make -n display-audit-monitor-controls rc 2: QUIRK, reported. The controls recipe is one shell line containing $(MAKE), so make -n executes it (the gates ran, 'infrastructure failure (audit)'). Real runs unaffected; not fixed (outside the plan)"
+      ],
+      "status": "done"
     }
   ],
   "local_pr_gates": [
