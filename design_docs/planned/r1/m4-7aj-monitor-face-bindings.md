@@ -85,13 +85,18 @@ The course and crew rules are needed. With "always" for all four, the interlude 
   - `unrefreshed`: skip M1, which is today's bug;
   - `drop_one`: on the 10th sampled row only, hide the course face (`face.visible = false`), then restore it after the row is written;
   - `unbound`: add a plain `Label` named `Mutant`, text `42`, to the clocks face, once;
-  - `stale`: after M1, set `ClocksFace.ship.text = "+9 s"` by hand.
+  - `stale`: after M1, set `ClocksFace.ship.text = "+9 s"` by hand;
+  - `orphan` (revision 2, quorum r2, oc-glm-5-3's fix verbatim in substance): on the 10th sampled row (frame 36, the same site as `drop_one`), after M1's `face.refresh` cycle, clear the course face's source (e.g. set `journey.plan = null` in the row's view) before the row is written, so the row records a fully-bound, visible course face with no plan; restore afterwards. **If the executor finds the mutant unrealizable** (e.g. clearing the plan hides the labels on the very same row), delete the reverse branch from M2 instead and record in Risks that over-display is covered only by `bridge-monitors-test`'s `gated` checks. Either resolution is acceptable; shipping a gating branch whose fail path no run has ever produced is not. Every branch of every check this doc adds must have at least one measured red run.
 - **Target** `display-audit-monitor-controls` in `mk/earth-link.mk`, plus `ship-demo-ci: display-audit-monitor-controls`. For each mutant it:
   - runs `playthrough SCRIPT=tests/playthrough_crew.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/monitor-<mutant>`, which must pass;
   - runs `display_audit.gd … crew $(DISPLAY_KNOWN)`, which must exit non-zero with no `SCRIPT ERROR`;
-  - greps the reasons below (measured text, V20);
-  - ends with `display monitor controls: 4 rejected` and checks the count.
-- **Cost:** about 4 × 12–30 s.
+  - greps the reasons below (measured text, V20; `orphan` V23);
+  - ends with `display monitor controls: 5 rejected` and checks the count is 5 (4 if the reverse branch is deleted under the alternative above, with the doc and AC6 updated to say so).
+- **Execution contract (revision 2, quorum r2, gpt6-1-sol's fix).** Both subprocesses of every mutant have a finite deadline through the repository's existing timeout mechanism, `$(SCRIPT_GATE)` (`tools/script_gate.sh`: its own perl supervisor kills the whole process group at the deadline, exit 142; it passes only on rc == WANT_RC, no `SCRIPT ERROR`, and its summary line; V24):
+  - the playthrough runs through the existing `playthrough` target, already `$(SCRIPT_GATE) playthrough … 1200 '^playthrough: [1-9][0-9]* passed, 0 failures$$'` (`Makefile:1354`); it must complete normally;
+  - the audit runs as `$(SCRIPT_GATE) display-audit-monitor-<mutant> <log> 600 '^display-audit: ' 1 -- $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- …`, i.e. WANT_RC 1, so only an intentional audit rejection passes the gate. This is also what `script-gate-lint` requires of any new `--script` call (`tools/script_gate_lint.sh:2-5`, V24);
+  - deadline expiry, a launch failure, a wrong rc or a `SCRIPT ERROR` in either subprocess fails `display-audit-monitor-controls` as a **control infrastructure failure** and is never counted toward `N rejected`; the recipe increments the rejected count only after the gated audit passed and every required reason line matched.
+- **Cost:** about 5 × 12–30 s.
 
 | Mutant | Required lines (grep -E) | Measured summary (V20) |
 |---|---|---|
@@ -99,6 +104,7 @@ The course and crew rules are needed. With "always" for all four, the interlude 
 | `drop_one` | `^FAIL monitor-coverage frame=36 course$`, and the summary `^display-audit: .* failures=1$` (no other failure) | `display-audit monitors: clocks=138 course=135 crew=460 signal=138`; `failures=1` |
 | `unbound` | `^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$` | `new=46 failures=46` |
 | `stale` | `^FAIL stale .*/monitor_face_clocks/`; `^FAIL binding contract .*/monitor_face_clocks/` | `mismatches=46 failures=92` |
+| `orphan` | `^FAIL monitor-coverage frame=36 course shown without its source$`, and the summary `^display-audit: .* failures=1$` | PENDING: measured by the executor (V23) before the recipe's greps are frozen |
 
 ## Acceptance criteria
 
@@ -111,7 +117,9 @@ All commands are headless, run in the fix clone with `export PATH=$PWD/runtime/b
 | 3 | Interlude audit green | `make display-audit-interlude` | rc 0; `samples=127 … missing=0 new=0 known=143 stale=0 failures=0` |
 | 4 | Scene audits green | `make scene-session-audits` | rc 0; `ac4: MET (5 accepted by D-77/D-78)`; `samples=814 … missing=0 … failures=0` |
 | 5 | Every face on every sampled frame where its source exists (per-sample `monitor-coverage` checks inside the `failures=0` of AC1–4), totals as diagnostics | `grep '^display-audit monitors:' .godot/tmp/display-audit/{crew,comms,interlude,playthrough}/display-audit.log` | crew `clocks=138 course=138 crew=460 signal=138`; comms `2391 3074 7970 2391`; interlude `381 434 1270 381`; scene `2442 3063 8140 2442` (V19). No `^FAIL monitor-coverage` in any of the four logs |
-| 6 | Negative controls reject, each for its own reason | `make display-audit-monitor-controls` | rc 0; each of the 4 mutants prints the required lines of the M3 table; `drop_one` has exactly `failures=1`; `display monitor controls: 4 rejected` |
+| 6 | Negative controls reject, each for its own reason | `make display-audit-monitor-controls` | rc 0; each of the 5 mutants prints the required lines of the M3 table; `drop_one` and `orphan` each have exactly `failures=1`; `display monitor controls: 5 rejected` (or 4 with the reverse branch deleted under M3's alternative, recorded in Risks) |
+| 6b | The reverse branch has a measured red run | the `orphan` leg of AC6, its audit log | `FAIL monitor-coverage frame=36 course shown without its source` present, summary `failures=1` (V23); or the branch is absent from `tests/display_audit.gd` and Risks says so |
+| 14 | Controls fail closed on infrastructure faults (M3 execution contract) | with a deliberately stalled playthrough (e.g. a test-only sleep under the mutant hook) and, separately, a stalled audit, each under a short deadline override, run `make display-audit-monitor-controls` | each run terminates within its deadline (`script-gate: … ` timeout reason, exit 142 inside the gate), the target exits non-zero, and `display monitor controls:` never reports the stalled mutant as rejected (V25). `make script-gate-lint` rc 0 with the new audit calls gated |
 | 7 | Text identity: no product code changes, so every face renders the same strings, fonts, sizes, colours and layout | `git diff --exit-code $B -- ui interior demos main.gd project.godot assets data sim shaders` then `make bridge-monitors-test` | empty diff, rc 0; `bridge-monitors: 19 passed, 0 failures` |
 | 8 | Contract not relaxed, no allowlist | `git diff --exit-code $B -- ui/display_binding.gd ui/composed_binding.gd tests/fixtures/display_audit/` and `make display-audit-controls` | empty diff; the 32 existing controls `rejected`, `test $n -eq 32` holds (M2 skips the `control` route) |
 | 9 | Mutant hook inert by default | `git grep -n PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests` | hits only in `tests/m4_playthrough_ship.gd` and the `display-audit-monitor-controls` recipe |
@@ -132,7 +140,8 @@ All commands are headless, run in the fix clone with `export PATH=$PWD/runtime/b
 
 - **The signal face's waterfall `_follow` touches shared audio taps.** With `live=false` it erases its own id, and it stops the shared players only when no waterfall wants them. Mitigation: the comms playthrough (feed and faces sampled) stays green with the prototype (V9, V19). AC2 re-measures it.
 - **The audit now sees faces as always on screen.** That is stricter than play. A real finding is a product bug for its own row, not an allowlist entry.
-- **M2's visibility rules mirror the product.** If a face's visibility rule changes, M2 goes red until the rule is updated. That is intended, and the `shown without its source` branch catches the reverse. That branch has no mutant (UNMEASURED; see Deliverables).
+- **M2's visibility rules mirror the product.** If a face's visibility rule changes, M2 goes red until the rule is updated. That is intended, and the `shown without its source` branch catches the reverse. Revision 2 makes that branch's red run a requirement (the `orphan` mutant, AC6b, V23); if the mutant proves unrealizable the branch is deleted and over-display is covered only by `bridge-monitors-test`'s `gated` checks.
+- **A stalled control could read as a rejection.** The M3 execution contract runs both subprocesses through `$(SCRIPT_GATE)` with finite deadlines and counts a rejection only after a gated, intentional rc 1 (AC14).
 - **The run takes longer.** With the prototype: crew 33 s against 39 s at main (both warm, both including the controls), comms 168–188 s, scene 179–205 s, interlude 49 s. Per-target baselines at main are UNMEASURED. M3 adds four crew playthroughs.
 - **PR #412 edits `demos/ship_geometry_demo.gd`.** M1 reads `demo.monitors` and `BridgeMonitor._view/_receiver/_bed`. If #412 renames them, M1 needs a one-line follow-up. AC12 keeps this row out of #412's files.
 
@@ -144,7 +153,8 @@ None. The fix is test-only and changes nothing a player sees. No contract is rel
 
 - `tests/m4_playthrough_ship.gd` (M1, M3 hook), `tests/display_audit.gd` (M2), `mk/earth-link.mk` (M3 target and `ship-demo-ci` edge).
 - The four audits and the controls green per AC1–AC13, with logs under `.godot/tmp/display-audit/`.
-- Optional, at the executor's judgment: a fifth mutant that shows the course face with no plan, for M2's reverse branch.
+- Required (revision 2): the fifth mutant `orphan` for M2's reverse branch, measured (V23), or the branch deleted per M3's alternative.
+- The M3 execution contract (both subprocesses under `$(SCRIPT_GATE)` deadlines) and its stalled-run evidence (AC14, V25).
 - A changelog line, and the row 7aj status in the charter on landing.
 
 ## Quorum log
@@ -152,6 +162,12 @@ None. The fix is test-only and changes nothing a player sees. No contract is rel
 **Round 1 (2026-11-10): BLOCKED 2/3.** `gemini-4-argon` passed. `gpt6-1-sol` and `oc-glm-5-3` rejected; neither disputed the direction.
 - **gpt6-1-sol:** M2 checked only route-wide totals, so a face that disappears after the first sample would still pass. *Changed:* M2 is now per sample and names the frame and the face; the totals are diagnostics only. A new `drop_one` mutant hides one face on exactly one frame and gets exactly `FAIL monitor-coverage frame=36 course` (V20). AC5 and AC6 are rewritten to match.
 - **oc-glm-5-3:** M2 was never prototyped, so AC5's counts and M3's reason format were predictions. *Changed:* M2 is prototyped and run on all four targets (V19) and all four mutants (V20). That run showed the course and crew faces are legitimately absent on frames with no plan or no crew (V22), and M2's rules now follow the product's. Also added: the recipe greps (V18) and the `sample()` call-site evidence (V21).
+
+**Round 2 (2026-11-10): BLOCKED 2/3, same seats, `absent_reviewers` empty.** `gemini-4-argon` passed. Neither reject disputes the direction; both carry a concrete `proposed_fix`, and both land on surfaces revision 1 added (M3's execution and M2's reverse branch).
+- **gpt6-1-sol:** M3 adds subprocess pairs to `ship-demo-ci` with no established deadline; a timeout must fail the controls target, not count as a rejection. *Changed (revision 2):* the M3 execution contract (both subprocesses under `$(SCRIPT_GATE)` with finite deadlines, audit WANT_RC 1, infrastructure faults never counted), AC14, V24 (mechanism, measured), V25 (stalled runs, executor).
+- **oc-glm-5-3:** M2's reverse branch is gating logic whose fail path no run has produced. *Changed (revision 2):* the `orphan` mutant is required, with the reviewer's required lines, or the branch is deleted (the reviewer's own alternative); AC6/AC6b, V23 (executor).
+
+**Revision 2 was made by the mission controller under the narrow-refinement carve-out** (gate-2-pick: after the one re-quorum, every remaining objection carries a reviewer-authored fix and none disputes the direction), applying the reviewers' fixes; no round 3. The two measurements the fixes ask for (V23, V25) are executor deliverables, checked by AC6b and AC14 before landing.
 
 ## Verification log
 
@@ -184,3 +200,6 @@ Run on 2026-11-10 in `stapledons-godot-iter83` at `b974e302` (AILANG v0.56.1 pin
 | V20 | r1 prototype, each mutant: crew playthrough (all rc 0), then `display_audit.gd … crew known_findings.json` (all rc 1, 0 `SCRIPT ERROR`) | `unrefreshed`: `FAIL missing field `, `FAIL binding contract /root/ShipGeometryDemo/@SubViewport@80/@Node3D@81/monitor_face_signal/@SubViewport@340/@Control@343/@Label@341`, `FAIL monitor-coverage frame=1 clocks` (also `signal`, `course`, `crew`), `display-audit monitors: clocks=0 course=0 crew=0 signal=0`, `display-audit: samples=46 checks=12190 mismatches=0 missing=414 new=0 known=138 stale=0 failures=1012`. `drop_one`: `FAIL monitor-coverage frame=36 course`, `display-audit monitors: clocks=138 course=135 crew=460 signal=138`, `display-audit: samples=46 checks=13561 mismatches=0 missing=0 new=0 known=138 stale=0 failures=1`. `unbound`: `FAIL NEW unbound node=/root/ShipGeometryDemo/@SubViewport@80/@Node3D@81/monitor_face_clocks/@SubViewport@327/@Control@337/Mutant text="42"`, `… new=46 … failures=46`. `stale`: `FAIL stale …/monitor_face_clocks/@SubViewport@327/@Control@337/@Label@335`, `FAIL binding contract …/@Label@335`, `… mismatches=46 … failures=92` |
 | V21 | `grep -n '^\s*sample()' tests/m4_playthrough_ship.gd` with 4 lines of context; `git grep -n 'ship_hud.update(' -- '*.gd'`; `grep -n '_process' tests/review_drive.gd` | four sites: `:119` after `demo._process(0.05)`; `:176` after `demo._process(0.1)` (`:160`, the refusal branch); `:348` after `ReviewDrive.frame` (which calls `demo._process(dt)`, `review_drive.gd:55`); `:391` in `narrate()`, AI modes only (`playthrough-ai-modes`, outside the four targets), after sim sends with no new presentation frame. The view identity does not depend on the site: `ship_hud.update` has one caller (`ship_geometry_demo.gd:1337`), and `_refresh_monitors(view)` follows at `:1339` with the same dictionary |
 | V22 | first r1 run with all four faces required on every frame, then the per-row check of the interlude samples | interlude rc 2: `FAIL monitor-coverage frame=144 course` … `frame=200`, 15 failures, every one `at_rest`, no `journey.plan`. Per-row check: 127 rows, 0 where (plan present) ≠ (course face present) or (crew aboard) ≠ (crew face present). Hence M2's course and crew rules |
+| V23 | `PLAYTHROUGH_MONITOR_MUTANT=orphan` crew playthrough, then the gated audit (executor, revision 2) | PENDING (executor): expected `FAIL monitor-coverage frame=36 course shown without its source`, summary `failures=1`; or the branch deleted per M3's alternative |
+| V24 | `sed -n 1,12p tools/script_gate.sh`; `sed -n 1,5p tools/script_gate_lint.sh`; `sed -n 1354p Makefile`; `grep -c display_audit.gd tools/script-gate-baseline.txt` (controller, revision 2) | `script_gate.sh NAME LOG TIMEOUT_S SUMMARY_ERE [WANT_RC] -- command`: passes only on exit inside TIMEOUT_S with rc == WANT_RC, no `SCRIPT ERROR`, and the summary line; an independent perl supervisor TERMs then KILLs the process group at the deadline (exit 142). The lint: every Godot `--script` recipe call runs through `$(SCRIPT_GATE)` or is a baseline row, and the baseline can only fall. `playthrough` is already gated at 1200 s. The baseline holds 9 `display_audit.gd` rows (the existing audits), so a new ungated audit call would fail `script-gate-lint` |
+| V25 | stalled playthrough and stalled audit under a short deadline (executor, revision 2, AC14) | PENDING (executor): each terminates inside its deadline, the target fails, the stalled mutant is not counted |
