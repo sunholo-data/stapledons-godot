@@ -81,12 +81,6 @@ func sample() -> void:
 	var bindings := []
 	var labels := []
 	var view: Dictionary = demo.ship_hud._last_view
-	var row_view := view
-	if mutant == "orphan" and monitor_rows == 10: # the row records a visible course face with no plan
-		var journey: Dictionary = (view.get("journey", {}) as Dictionary).duplicate(false)
-		journey.plan = null
-		row_view = view.duplicate(false)
-		row_view.journey = journey
 	for n in demo.find_children("*", "Label", true, false):
 		if not n.is_visible_in_tree(): continue
 		if n is DisplayBinding:
@@ -113,7 +107,7 @@ func sample() -> void:
 		var card: Dictionary = demo.ship_hud.cards[id]
 		cards.append({"node": str(card.panel.get_path()), "visible": card.panel.is_visible_in_tree(),
 			"expanded": card.body.is_visible_in_tree(), "leaving": card.leaving})
-	samples.store_line(SimBridge.encode({"frame": frame, "view": row_view, "bindings": bindings,
+	samples.store_line(SimBridge.encode({"frame": frame, "view": view, "bindings": bindings,
 		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row(), "crew": crew_row(), "comms": comms_row()}))
 	if dropped != null: dropped.visible = true
 	# D-68 applies to every action list and all currently visible text, including windows.
