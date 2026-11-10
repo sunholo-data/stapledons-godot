@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 84 | 2026-11-10 | Row 7ah LANDED (PR #419, merge `4124a84d`): `similar-test` red since #379 is green; its main.gd guard checks the minor property, not the name `EART... |
 | 83 | 2026-11-10 | Row 7aj LANDED (PR #417, merge `29bce517`): four display audits red since #379 are green; the playthrough harness refreshes the bridge monitor face... |
 | 82 | 2026-11-09 | Row 7ag LANDED (PR #415, merge `642c4b8c`): nightly rig/full keeps going past a red target and names every red; the first keep-going run found two ... |
 | 81 | 2026-11-09 | Row 7af LANDED (PR #409, merge `4dc458d7`): nightly rig/golden runs the setup make golden relied on; every rig step bounded as a process group; Son... |
