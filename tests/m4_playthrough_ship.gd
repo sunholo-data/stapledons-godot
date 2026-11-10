@@ -60,6 +60,11 @@ func sample() -> void:
 	var mutant := OS.get_environment("PLAYTHROUGH_MONITOR_MUTANT")
 	if mutant == "stall":
 		while true: OS.delay_msec(100)
+	# R3-COMMS-V2 CV6 / 7aj: the harness disables every node's _process (see _run), so it supplies the
+	# monitors' frame as it does the map's: each face refreshes from the view the demo gave its monitor,
+	# as an on-screen monitor would. No viewport renders.
+	for m: BridgeMonitor in demo.monitors:
+		if m.face != null and mutant != "unrefreshed": m.face.refresh(m._view, m._receiver, m._bed)
 	monitor_rows += 1
 	var dropped: Control = null
 	if mutant == "drop_one" and monitor_rows == 10:

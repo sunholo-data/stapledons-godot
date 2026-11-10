@@ -68,7 +68,15 @@
       ],
       "expectations": "cmd1: one line inside sample(). cmd2 (AC1, ~33 s): rc 0; 'display-audit: samples=46 checks=13386 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0' (V8's M1-only count); monitors-line grep 0 (M2 not yet present). cmd3 (AC3, ~49 s): rc 0; 'samples=127 checks=37766 ... missing=0 new=0 known=143 stale=0 failures=0' (V10). cmd4 (AC2, ~168-188 s): rc 0; 'samples=797 checks=257971 ... missing=0 new=0 known=922 stale=0 failures=0' (V9). cmd5 (AC4, ~179-205 s): rc 0; 'ac4: MET (5 accepted by D-77/D-78)'; 'samples=814 checks=254950 ... missing=0 ... failures=0' (V11) -- mk/m45.mk unchanged. cmd6 (intermediate red, derived -- record actuals): rc 2; 'unbound: rejected' (V13: new=46 failures=46) and 'stale: rejected' (V14: mismatches=46 failures=92) counted; unrefreshed wrong reason (V12's 414/828, coverage grep still unmatchable); drop_one and orphan survive the audit (rc 0 vs WANT_RC 1) -> 'infrastructure failure (audit)' lines, not counted; final 'display monitor controls: 2 rejected'.",
       "notes": "Apply design M1 verbatim, integrated with the MS1 hook, right after the mutant read: 'for m: BridgeMonitor in demo.monitors: if m.face != null and mutant != \"unrefreshed\": m.face.refresh(m._view, m._receiver, m._bed)' with the design's R3-COMMS-V2 CV6 / 7aj comment. m._view is the same dictionary the audit reconstructs from (ship_hud.update's one caller demos/ship_geometry_demo.gd:1337, _refresh_monitors(view) at :1339; V21). No face.step(), no viewport update; on-screen gating stays covered by bridge-monitors-test's gated checks. The stale and orphan mutant blocks run after this loop (design M3).",
-      "status": "pending"
+      "measured": [
+        "cmd1: the refresh line is tests/m4_playthrough_ship.gd:67, one line in sample()",
+        "cmd2 (AC1, rc 0): display-audit: samples=46 checks=13386 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0; monitors-line count 0 (M2 absent)",
+        "cmd3 (AC3, rc 0): display-audit: samples=127 checks=37766 mismatches=0 missing=0 new=0 known=143 stale=0 failures=0",
+        "cmd4 (AC2, rc 0): display-audit: samples=797 checks=257971 mismatches=0 missing=0 new=0 known=922 stale=0 failures=0",
+        "cmd5 (AC4, rc 0): ac4: MET (5 accepted by D-77/D-78); display-audit: samples=814 checks=254950 mismatches=0 missing=0 new=0 known=757 stale=0 failures=0",
+        "cmd6 (intermediate, rc 2, 0 SCRIPT ERROR): 'display monitor control unbound: rejected' (new=46 failures=46) and 'display monitor control stale: rejected' (mismatches=46 failures=92); unrefreshed gated audit failures=828 with its coverage reason absent (M2 not yet present); drop_one audit rc 0 vs WANT_RC 1 -> 'infrastructure failure (audit)', not counted; orphan audit rc 1 but mismatches=2 missing=2 failures=39 (its coverage reason absent, M2 not yet present); 'display monitor controls: 2 rejected'"
+      ],
+      "status": "done"
     },
     {
       "id": "MS3",
