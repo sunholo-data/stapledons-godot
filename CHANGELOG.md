@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### m4-7ah-similar-guard-minor (2026-11-10)
+
+#### Fixed
+
+- **`make similar-test` is green again** (R1-7AH-SIMILAR-GUARD, row 7ah, PR #419). Its main.gd guard checked for the literal name `SimBridge.EARTH_MINOR`, which PR #379 renamed to `EARTH_LOG_MINOR`, so the suite failed on its last line after every ranking and session step had passed. The guard now reads the property instead: the map session's `want_minor` must be one bare `SimBridge.<NAME>_MINOR`, and that constant must be at or above `SIMILAR_MINOR` in `bridge/sim_bridge.gd`. Protocol bumps pass; a downgrade or a rewritten assignment fails. Anything the grammar does not recognise (an expression, a ternary, a second mention of `want_minor`) fails closed.
+- **The guard has its own controls.** `make similar-guard-controls` (`tools/similar_guard_controls.sh`) runs 16 mutated copies of main.gd and the constants: 13 must be rejected and 3 accepted (the pristine tree, a future protocol bump and a trailing comment). A control that does not go red fails the target.
+- **The guard runs in `ci-fast`.** `similar-test` and `ci-fast` both depend on `similar-main-guard` and `similar-guard-controls`, so the fast tier now catches a drift that #379 merged past.
+- Evaluations: Sonnet 5.5 88/100, MiniMax M3 95/100 (cross-vendor). Known limit: the guard reads `_run_map`'s text, so a write through a helper or a string-built property name is not seen (see the design's Risks).
+
 ### m4-7aj-monitor-face-bindings (2026-11-10)
 
 #### Fixed

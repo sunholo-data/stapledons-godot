@@ -1,0 +1,45 @@
+{
+ "sprint_id": "R1-7AH-SIMILAR-GUARD",
+ "evaluator": "claude-sonnet (Agent tool)",
+ "reviewed_commit": "79b8afa0",
+ "score": 88,
+ "verdict": "PASS",
+ "rubric": {"acceptance_criteria_reproduced": "30/32", "guard_strength_vs_own_mutants": "17/25", "controls_soundness_portability": "15/15", "ci_wiring_safety": "9/10", "scope_hygiene": "10/10", "doc_accuracy": "7/8"},
+ "blocking": [],
+ "non_blocking": [
+  "Indirect downgrades survive: _run_map calling a helper (defined outside _run_map) that sets want_minor, sim.set(\"want\" + \"_minor\", 2), or a string-built property name all pass rc 0. The guard counts the literal token want_minor inside the _run_map body only. Realistic form: a helper function; document as a known limit (design says fail-closed grammar, but the scope is one function body).",
+  "Only the `not capture` branch is checked: line 304 is `if not capture:sim.want_minor=...`, so the capture/movie path keeps the bridge default; the guard does not assert anything about it (by design, S0.3 map capture is frozen).",
+  "A comment or string mentioning SIMILAR_MINOR anywhere in main.gd fails (grep -q on the whole file); strict but fine, may surprise a future editor.",
+  "PR #419 fast-tier check was still pending at evaluation time, so AC10's 'GitHub make ci-fast green' half is not verified by me.",
+  "similar-test now takes 45 s wall here (docs claim 36 s in V22; load-dependent, not material)."
+ ],
+ "mutants": [
+  {"description": "m1 sim.set(\"want\"+\"_minor\", 2) inserted in _run_map", "rc": 0, "killed_by": "SURVIVED (token concatenation)"},
+  {"description": "m2 sim.hello(2) inserted in _run_map", "rc": 0, "killed_by": "SURVIVED (not a downgrade in this API; unrealistic)"},
+  {"description": "m3 _run_map calls _downgrade(sim) helper that sets s.want_minor = 2", "rc": 0, "killed_by": "SURVIVED (helper outside range)"},
+  {"description": "m4 property name built as string var then sim.set(WM, 2)", "rc": 0, "killed_by": "SURVIVED"},
+  {"description": "m5 line 304 replaced by `sim.want_minor = EARTH_LOG_MINOR if false else 2`", "rc": 2, "killed_by": "bare-minor grammar"},
+  {"description": "m6 real line replaced by comment plus `sim.want_minor = 2 # x`", "rc": 2, "killed_by": "count (2 mentions)"},
+  {"description": "m7 SIMILAR_MI + \"NOR\" string concat added to main.gd", "rc": 0, "killed_by": "SURVIVED (obfuscation, unrealistic; also not a downgrade)"},
+  {"description": "m8 second func _run_map defined later asking SURFACE_MINOR", "rc": 2, "killed_by": "count/name (range spans duplicate)"},
+  {"description": "m9 `a; sim.want_minor = 2` on same line", "rc": 2, "killed_by": "count (2 mentions)"},
+  {"description": "m10 benign lambda inserted before line 304 (should pass)", "rc": 0, "killed_by": "correctly accepted"},
+  {"description": "m11 sim_bridge.gd defines EARTH_LOG_MINOR twice, later lower", "rc": 2, "killed_by": "resolver (multi-line value non-numeric)"},
+  {"description": "m12 CRLF on SIMILAR_MINOR line (should pass)", "rc": 0, "killed_by": "correctly accepted via [[:space:]]"},
+  {"description": "m13 bridge _init() overrides want_minor = 2 at runtime", "rc": 0, "killed_by": "SURVIVED (out of guard scope, bridge runtime behaviour)"}
+ ],
+ "ac_results": {
+  "AC1": {"rc": 0, "evidence": "make similar-test rc 0; ok line EARTH_LOG_MINOR (18)>=(14); 13 rejected, 3 accepted; ends with session-215 sha a64e9634"},
+  "AC2": {"rc": 0, "evidence": "exact ok line"},
+  "AC3": {"rc": 0, "evidence": "16 case lines in order, 13 rejected 3 accepted, 0.6 s"},
+  "AC5": {"rc": 0, "evidence": "Appendix C extracted and run: base ok, M1-M9 each red at stated case, 'meta: 9 weakenings caught'"},
+  "AC7": {"rc": 0, "evidence": "shasum of main.gd/sim_bridge.gd/Makefile unchanged, git status empty, 0 leftover temp dirs"},
+  "AC8": {"rc": 0, "evidence": "e151c903, 523d96f9 EARTH_MINOR(16); 8ba1e3c8, base EARTH_LOG_MINOR(18), all rc 0"},
+  "AC10": {"rc": 0, "evidence": "ci-fast prerequisite line at Makefile:115 and similar-test:114 (gmake -n ci-fast mentions similar 24x); GitHub check pending, unverified"},
+  "AC11": {"rc": 0, "evidence": "uid-guard, python-guard, script-gate-lint, audio-silent-guard ok; git diff --check clean"},
+  "AC12": {"rc": 0, "evidence": "diff names: Makefile, tools/similar_guard_controls.sh, changelog, design doc, sprint md/json only"},
+  "AC13": {"rc": 0, "evidence": "single hunk @@ -103,3 +103,31 @@"},
+  "extra": {"rc": 0, "evidence": "gmake and make with '' -n -j4 -k all end 13 rejected, 3 accepted; gmake SHELL=/bin/dash guard rc 0; shellcheck clean"}
+ },
+ "notes": "The guard fixes the red (main.gd untouched) and reads both numbers from sim_bridge.gd, so protocol bumps pass and downgrades via the checked line, literals, ternaries, arithmetic, second writes and constant redefinition fail. Controls assert make rc 2 and exactly one exact reason line, have a no-op-mutation trap (exit 3), a live-capture check on accepts, and trap-cleaned temp dirs; portable to BSD sed/awk, dash and GNU make 4. Weakness: detection is lexical inside the _run_map body, so a helper-based or string-built downgrade passes. Wiring into ci-fast is cheap (no Godot/AILANG, ~1 s for the new pieces) and uses POSIX sed/grep that works on GNU. V22 claims I could check (13/3 summary, AC8 heads, dash, gmake variants, hygiene, scope, hunk range) all matched. Mutations ran on scratch copies; git status empty."
+}

@@ -100,9 +100,37 @@ similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = fr
 	  printf "var a = changes[\"vector\"]\nvar b = changes[$${q}vector$${q}]\nvar c = world.get(\"vector\")\nvar d = s.similar.vector\nvar f = d.get(\"vector\", 0)\nvar g = d.has(\"vector\")\nvar e = s.a.vector2\n" > "$$probe"; \
 	  hits=$$(git grep --no-index -E "$$pat" -- "$$probe" | wc -l | tr -d " "); \
 	  if [[ "$$hits" != 6 ]]; then echo "similar-test guard: probe $$hits != 6, pattern broken" >&2; exit 1; fi; \
-	  if git grep -nE "$$pat" -- '\''*.gd'\'' '\''bridge/*.gd'\'' '\''ui/*.gd'\'' '\''demos/*.gd'\'' '\''sky/*.gd'\'' '\''interior/*.gd'\'' '\''physics/*.gd'\''; then echo "similar-test guard: production vector read" >&2; exit 1; fi; \
-	  git grep -q "SimBridge.EARTH_MINOR" -- main.gd || { echo "similar-test guard: main.gd lost EARTH_MINOR" >&2; exit 1; }; \
-	  if git grep -q "SIMILAR_MINOR" -- main.gd; then echo "similar-test guard: main.gd asks SIMILAR_MINOR" >&2; exit 1; fi'
+	  if git grep -nE "$$pat" -- '\''*.gd'\'' '\''bridge/*.gd'\'' '\''ui/*.gd'\'' '\''demos/*.gd'\'' '\''sky/*.gd'\'' '\''interior/*.gd'\'' '\''physics/*.gd'\''; then echo "similar-test guard: production vector read" >&2; exit 1; fi'
+
+# Row 7ah: the map session main.gd starts (_run_map) must ask a SimBridge minor at or above SIMILAR_MINOR, so its
+# new_game carries `similar` (R2-SIMILAR-S0), and main.gd must never name SIMILAR_MINOR (S0.3: the game keeps its newer
+# minor). Both numbers are read from bridge/sim_bridge.gd, so a protocol bump passes and a downgrade fails. Fail-closed
+# grammar: the assignment is exactly `want_minor = SimBridge.<NAME>_MINOR` and each constant exactly `const <NAME> := <digits>`,
+# each optionally followed by a `#` comment; anything else (an expression, a ternary, a literal) is rejected. _run_map must
+# mention want_minor exactly once, so a second write (`-=`, `+=`, a reassignment), a comparison or a comment fails closed.
+# SIMILAR_GUARD_ROOT is where main.gd and bridge/sim_bridge.gd are read; similar-guard-controls points it at mutated copies.
+SIMILAR_GUARD_ROOT ?= .
+.PHONY: similar-main-guard similar-guard-controls
+similar-test: similar-main-guard similar-guard-controls
+ci-fast: similar-main-guard similar-guard-controls
+similar-main-guard: ## 7ah: main.gd's map session asks a SimBridge minor >= SIMILAR_MINOR, and never SIMILAR_MINOR
+	@set -eu; r='$(SIMILAR_GUARD_ROOT)'; g="$$r/main.gd"; b="$$r/bridge/sim_bridge.gd"; \
+	  test -f "$$g" && test -f "$$b" || { echo "similar-test guard: missing $$g or $$b" >&2; exit 1; }; \
+	  body=$$(sed -n '/^func _run_map(/,/^func /p' "$$g"); \
+	  n=$$(printf '%s\n' "$$body" | awk '{ n += gsub(/want_minor/, "") } END { print n + 0 }'); \
+	  test "$$n" = 1 || { echo "similar-test guard: main.gd _run_map mentions want_minor $$n times, want 1" >&2; exit 1; }; \
+	  set_lines=$$(printf '%s\n' "$$body" | grep want_minor); \
+	  name=$$(printf '%s\n' "$$set_lines" | sed -nE 's/^[^#]*want_minor *= *SimBridge\.([A-Z0-9_]+_MINOR)[[:space:]]*(#.*)?$$/\1/p'); \
+	  test -n "$$name" || { echo "similar-test guard: main.gd _run_map want_minor is not one bare SimBridge minor" >&2; exit 1; }; \
+	  want=$$(sed -nE "s/^const $$name := ([0-9]+)[[:space:]]*(#.*)?$$/\1/p" "$$b"); \
+	  floor=$$(sed -nE 's/^const SIMILAR_MINOR := ([0-9]+)[[:space:]]*(#.*)?$$/\1/p' "$$b"); \
+	  case "$$want" in ''|*[!0-9]*) echo "similar-test guard: $$name unresolved in bridge/sim_bridge.gd" >&2; exit 1;; esac; \
+	  case "$$floor" in ''|*[!0-9]*) echo "similar-test guard: SIMILAR_MINOR unresolved in bridge/sim_bridge.gd" >&2; exit 1;; esac; \
+	  test "$$want" -ge "$$floor" || { echo "similar-test guard: main.gd _run_map asks $$name ($$want) below SIMILAR_MINOR ($$floor)" >&2; exit 1; }; \
+	  if grep -q SIMILAR_MINOR "$$g"; then echo "similar-test guard: main.gd asks SIMILAR_MINOR" >&2; exit 1; fi; \
+	  echo "similar-test guard: ok, main.gd _run_map asks $$name ($$want) >= SIMILAR_MINOR ($$floor)"
+similar-guard-controls: ## 7ah: similar-main-guard rejects each mutation of main.gd's map-session minor and accepts a future bump
+	@MAKE='$(MAKE)' sh tools/similar_guard_controls.sh .
 
 # Recording is separate from test. Validate both candidates before accepting either.
 similar-record:    ## Record new S0 sessions after ranking tests and independent oracles
