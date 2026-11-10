@@ -1,0 +1,36 @@
+{
+ "evaluator":"sonnet (independent, generator != judge)","model":"claude-sonnet-5-5","score":93,"verdict":"PASS",
+ "rubric":{"acceptance_criteria":38,"correctness_evidence":22,"test_quality_mutation":18,"scope_hygiene":10,"docs_changelog":5,"note":"AC1-AC7,AC9-AC11 re-run and met; AC8 re-run on a scratch copy (equivalent, tracked fixture not touched); AC9 remote half (PR fast tier on x86_64) UNMEASURED"},
+ "blocking":[],
+ "non_blocking":[
+  "x86_64 golden is a copy of arm64 digest, unverified locally. Landing condition: the PR's ubuntu x86_64 `make ci-fast` (replay) must be green; if it disagrees, block, do not record an arch-specific golden (design Risks, quorum round 2).",
+  "Fixture-not-recorder is justified: CNS5:3627 was never index 1 in any tracked stars.json; pos equals entry 2 to six decimals; no tracked recorder names earth_log_voyage. Provenance stays an unverified hypothesis, the guard covers any producer. Wrong ALPHA constants elsewhere (F1) deliberately left.",
+  "Golden re-record justified: cmp -l between base and fixed state streams is exactly three 1->2 bytes (56554, 60660, 1059580), VM = interpreter = golden at 1389901 bytes.",
+  "Control test_the_7ai_index_fails asserts hard-coded literal '\"index\":2,\"id\":\"CNS5:3627\"' (compact JSON); if a log is reformatted n drops to 0 and assertGreater fails loudly, not silently. Acceptable.",
+  "Weakening only the len assertion alone survives when fixtures are correct (expected, assertion is only exercised on the mutated input); the needle and detector mutants are killed.",
+  "Scope: only Makefile, one fixture byte, two goldens, test_replay.py, changelog, design/sprint/state files; no .uid or python-allowlist change needed (python-guard/uid-guard ok, git diff --check silent).",
+  "Changelog says 'under a second' and cites PR #379; consistent with design. Makefile edge `ci-fast: replay-map-index` at line 438 as designed."
+ ],
+ "commands":[
+  {"cmd":"AC1: git archive e0ba4ae7 tests/replays tools data/starmap -> python3 -I tools/test_replay.py MapIndex","result":"Ran 3 tests, FAILED (failures=3), line earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2"},
+  {"cmd":"make replay-map-index","result":"Ran 4 tests OK rc=0"},
+  {"cmd":"make tools-test","result":"Ran 33 tests OK; sky and lens scripts pass; rc=0"},
+  {"cmd":"AC4 git show base fixture | cmp -l - fixture","result":"200  61  62 (one byte)"},
+  {"cmd":"AC5 cat arm64 sha; cmp arm64 x86_64","result":"07dcdfc6...a454 earth_log_voyage.state.ndjson; rc=0"},
+  {"cmd":"AC6 make replay SESSION=... AILANG=v0.56.1","result":"ok 45 lines 1389901 bytes VM 56.34s interp 106.72s sha 07dcdfc610228499; all identical; rc=0"},
+  {"cmd":"AC7 base vs fixed VM state cmp -l","result":"56554 61 62; 60660 61 62; 1059580 61 62"},
+  {"cmd":"AC9 make -n ci-fast | grep -c 'test_replay.py MapIndex'; grep -nx 'ci-fast: replay-map-index' Makefile","result":"1; line 438"},
+  {"cmd":"AC10 time make replay-map-index","result":"0.32 s total"},
+  {"cmd":"AC11 make python-guard uid-guard; git diff --check; git diff --name-only","result":"both ok; silent; file list as designed"}
+ ],
+ "mutants":[
+  {"mutation":"fixture re-broken to index 1 (scratch copy)","cmd":"python3 tools/test_replay.py MapIndex","result":"KILLED failures=4 (AC8 equivalent); make replay-map-index rc=2"},
+  {"mutation":"m4_min_path CNS5:3627 index 2->3","cmd":"MapIndex","result":"KILLED failures=4"},
+  {"mutation":"fixture id -> unknown CNS5:9999999","cmd":"MapIndex","result":"KILLED failures=4"},
+  {"mutation":"control needle changed to non-matching literal","cmd":"MapIndex","result":"KILLED failures=1 (assertGreater n>0)"},
+  {"mutation":"detector skips CNS5:3627","cmd":"MapIndex","result":"KILLED failures=1 (the 7ai control)"},
+  {"mutation":"drop 'ci-fast: replay-map-index' edge","cmd":"make -n ci-fast | grep -c 'test_replay.py MapIndex'","result":"KILLED count 0 (AC9 would fail)"},
+  {"mutation":"recipe runs nonexistent class","cmd":"make replay-map-index","result":"KILLED errors=1, make rc 2"},
+  {"mutation":"remove only assertEqual(len(bad), n)","cmd":"MapIndex on good fixtures","result":"SURVIVED (benign: assertion only differentiates on mutated input; other mutants cover detection)"}
+ ]
+}
