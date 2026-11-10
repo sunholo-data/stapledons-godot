@@ -20,6 +20,31 @@ display-audit-comms: import display-audit-controls ## R3-EARTH-LINK AC9: the com
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(COMMS_OUT)/display_samples.ndjson comms $(DISPLAY_KNOWN) > $(SCRATCH)/display-audit/comms/display-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|display-audit)' $(SCRATCH)/display-audit/comms/display-audit.log; test $$rc = 0 && if grep -q 'SCRIPT ERROR:' $(SCRATCH)/display-audit/comms/display-audit.log; then echo "display audit $(SCRATCH)/display-audit/comms/display-audit.log script error"; exit 1; fi && grep -q '^display-audit: .* new=0 .* failures=0$$' $(SCRATCH)/display-audit/comms/display-audit.log && grep -Eq '^ac4: MET \(5 accepted by D-77/D-78\)$$' $(SCRATCH)/display-audit/comms/display-audit.log
 ship-demo-ci: display-audit-comms
 
+# 7aj M3 (AC6, AC14): five monitor-face mutants (PLAYTHROUGH_MONITOR_MUTANT, tests/m4_playthrough_ship.gd), each played
+# through the crew playthrough and rejected by the crew audit for its own reason. Both subprocesses run under a deadline:
+# the playthrough target's own $(SCRIPT_GATE), and the audit's gate with WANT_RC 1 (an intentional rejection only). A
+# deadline, launch, rc or SCRIPT ERROR fault is an infrastructure failure: it fails the target and is never counted.
+MONITOR_AUDIT_S ?= 600
+.PHONY: display-audit-monitor-controls
+display-audit-monitor-controls: import ## 7aj AC6, AC14: five monitor-face mutants each rejected by the crew audit for its own reason; a stalled run fails closed
+	@out=$(SCRATCH)/monitor-controls; rm -rf $$out; mkdir -p $$out; n=0; bad=0; \
+	ctl() { \
+	  m=$$1; shift; log=$$out/monitor-$$m; \
+	  if ! PLAYTHROUGH_MONITOR_MUTANT=$$m $(MAKE) --no-print-directory AILANG=$(AILANG) playthrough SCRIPT=tests/playthrough_crew.json PLAYTHROUGH_OUT=$$log > $$log.play.log 2>&1; then \
+	    echo "display monitor controls: $$m infrastructure failure (playthrough, log $$log.play.log)"; bad=$$((bad + 1)); return 0; fi; \
+	  if ! $(SCRIPT_GATE) display-audit-monitor-$$m $$log.audit.log $(MONITOR_AUDIT_S) '^display-audit: ' 1 -- $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $$log/display_samples.ndjson crew $(DISPLAY_KNOWN); then \
+	    echo "display monitor controls: $$m infrastructure failure (audit, log $$log.audit.log)"; bad=$$((bad + 1)); return 0; fi; \
+	  for p in "$$@"; do grep -Eq -- "$$p" $$log.audit.log || { echo "display monitor controls: $$m missing reason $$p"; bad=$$((bad + 1)); return 0; }; done; \
+	  n=$$((n + 1)); echo "display monitor control $$m: rejected"; \
+	}; \
+	ctl unrefreshed '^FAIL missing field $$' '^FAIL binding contract .*/monitor_face_signal/' '^FAIL monitor-coverage frame=1 clocks$$'; \
+	ctl drop_one '^FAIL monitor-coverage frame=36 course$$' '^display-audit: .* failures=1$$'; \
+	ctl unbound '^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$$' '^display-audit: .* new=46 .* failures=46$$'; \
+	ctl stale '^FAIL stale .*/monitor_face_clocks/' '^FAIL binding contract .*/monitor_face_clocks/' '^display-audit: .* mismatches=46 .* failures=92$$'; \
+	ctl orphan '^FAIL monitor-coverage frame=36 course shown without its source$$' '^display-audit: .* failures=1$$'; \
+	echo "display monitor controls: $$n rejected"; test $$bad -eq 0 && test $$n -eq 5
+ship-demo-ci: display-audit-monitor-controls
+
 # EL3b.3: Earth's feed at the comms station (tests/test_earth_feed.gd): the week's picture from the
 # sim's earth.feed, the band by D, the frozen last beamed week under static, the ring, the clocks.
 .PHONY: earth-feed-test
