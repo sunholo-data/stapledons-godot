@@ -1,0 +1,197 @@
+{
+  "sprint_id": "R1-7AI-EARTH-LOG-MAP-INDEX",
+  "status": "not_started",
+  "approved": true,
+  "approved_by": "mission controller iteration 85 (loop, D-1 armed; no stop-for-human: pillars all 0, no open questions; quorum round 2 cleared under the narrow-refinement carve-out: an x86_64 disagreement BLOCKS landing, reviewer's fix verbatim in Risks)",
+  "created": "2026-11-10",
+  "design_doc": "design_docs/planned/r1/m4-7ai-earth-log-map-index.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7ai-earth-log-map-index-sprint.md",
+  "branch": "mission/stapledon-iter85-7ai",
+  "implements": [
+    "7ai"
+  ],
+  "scope": "~16 LOC, none of it product code: 1 byte in tests/replays/earth_log_voyage.ndjson (line 3 \"index\":1 -> \"index\":2 for CNS5:3627), 2 re-recorded .sha256 lines (arm64 recorded, x86_64 copied, expected digest 07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454), 7 lines of committed control test in tools/test_replay.py (test_the_7ai_index_fails, allowlisted harness -- no new python-allowlist row) and 4 Makefile lines (replay-map-index target after the replay-record recipe at :431-433 plus the ci-fast: replay-map-index edge; 7ah pattern at Makefile:115; Makefile:55/:57/:26/:159 never edited). Never touched per the design's do-not-touch list: data/starmap/*, sim/, ui/, bridge/, every other replay log or golden, the GDScript/Python ALPHA constants (F1), tools/replay.py, the ci-fast:/test: lines, attended PR hunks #412/#373/#380 (V12, planner caveat D2). No GPU step, no make golden, no capture, no full local make test (merge rule CLAUDE.md 2026-11-03/06) -- the keep-going nightly rig/full runs tools-test on main post-merge, which is what this row repairs (red since PR #379, e70d0fdf). HEAD 34d96434 on mission/stapledon-iter85-7ai; merge-base with origin/main = e0ba4ae7 = the design's B; HEAD adds only the design doc, so every V-number applies verbatim.",
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "Red before (base)",
+      "command": "at $B: python3 tools/test_replay.py MapIndex; echo rc=$?",
+      "expected": "`Ran 3 tests`, `FAILED (failures=3)`, the line `earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2`, `rc=1`"
+    },
+    {
+      "id": "AC2",
+      "criterion": "Red before (T1, M2 and M3 in, fixture not yet fixed)",
+      "command": "make replay-map-index; echo rc=$?",
+      "expected": "`Ran 4 tests`, `FAILED (failures=4)` (`test_the_7ai_index_fails`: `6 != 5`), make rc 2"
+    },
+    {
+      "id": "AC3",
+      "criterion": "Green after",
+      "command": "make replay-map-index; echo rc=$? and make tools-test; echo rc=$?",
+      "expected": "`Ran 4 tests` `OK`, `rc=0`; `Ran 33 tests` `OK`, then the sky and lens scripts pass, `rc=0`"
+    },
+    {
+      "id": "AC4",
+      "criterion": "Fixture change is one byte",
+      "command": "git show $B:tests/replays/earth_log_voyage.ndjson | cmp -l - tests/replays/earth_log_voyage.ndjson",
+      "expected": "exactly one line, `<offset>  61  62` (`1` -> `2`); planner-measured offset = 200, i.e. exactly `200  61  62`"
+    },
+    {
+      "id": "AC5",
+      "criterion": "Goldens re-recorded and identical across arches",
+      "command": "cat tests/replays/earth_log_voyage.state.arm64.sha256; cmp tests/replays/earth_log_voyage.state.arm64.sha256 tests/replays/earth_log_voyage.state.x86_64.sha256; echo rc=$?",
+      "expected": "`07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454  earth_log_voyage.state.ndjson`, `rc=0`"
+    },
+    {
+      "id": "AC6",
+      "criterion": "Replay passes, VM = interpreter = golden",
+      "command": "make replay SESSION=tests/replays/earth_log_voyage.ndjson AILANG=$AILANG; echo rc=$?",
+      "expected": "`ok    earth_log_voyage  45 lines  1389901 bytes … sha256 07dcdfc610228499 …`, `replay: 1 cases, all identical`, `rc=0`"
+    },
+    {
+      "id": "AC7",
+      "criterion": "Only the index echoes change in the state",
+      "command": "git show $B:tests/replays/earth_log_voyage.ndjson | $AILANG run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail > /tmp/7ai_b.out; $AILANG run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < tests/replays/earth_log_voyage.ndjson > /tmp/7ai_f.out; cmp -l /tmp/7ai_b.out /tmp/7ai_f.out; rm /tmp/7ai_?.out",
+      "expected": "exactly `56554  61  62`, `60660  61  62` and `1059580  61  62` (the three `journey.plan.target.index` echoes at ticks 1, 2 and 33). Planner D3: scratch rerooted to $S=$PWD/.godot/tmp/7ai while the sandbox blocks /tmp."
+    },
+    {
+      "id": "AC8",
+      "criterion": "A re-introduced wrong index is caught at the fast tier",
+      "command": "sed -i.bak 's/\"index\":2,\"id\":\"CNS5:3627\"/\"index\":1,\"id\":\"CNS5:3627\"/' tests/replays/earth_log_voyage.ndjson; make replay-map-index; echo rc=$?; mv tests/replays/earth_log_voyage.ndjson.bak tests/replays/earth_log_voyage.ndjson; git status --porcelain",
+      "expected": "the mismatch line `earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2`, `FAILED (failures=…)` (four tests red), make rc 2; then no `git status` output"
+    },
+    {
+      "id": "AC9",
+      "criterion": "Wired into `ci-fast`",
+      "command": "make -n ci-fast 2>/dev/null | grep -c 'test_replay.py MapIndex' and grep -nx 'ci-fast: replay-map-index' Makefile",
+      "expected": "`1`; one line. After the push the PR's `make ci-fast` check is green (`gh pr checks <PR>`), which also runs `replay` on x86_64 against the copied golden"
+    },
+    {
+      "id": "AC10",
+      "criterion": "Cheap",
+      "command": "time make replay-map-index",
+      "expected": "real under 2 s (0.28 s measured for the test alone)"
+    },
+    {
+      "id": "AC11",
+      "criterion": "Hygiene and scope",
+      "command": "make python-guard uid-guard; git diff --check $B; git diff --name-only $B",
+      "expected": "`python-guard: ok`, `uid-guard: ok`; diff-check silent; exactly `Makefile`, `tests/replays/earth_log_voyage.ndjson`, the two `.state.*.sha256`, `tools/test_replay.py`, plus landing files under `changelogs/`, `design_docs/`, `.ailang/state/`"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "T1 (test-first): the 7ai committed control (tools/test_replay.py +7) and the replay-map-index target + ci-fast edge (Makefile +4), seen RED at AC2 with the fixture still wrong; AC1 red baseline recorded before any edit",
+      "files": [
+        "tools/test_replay.py",
+        "Makefile"
+      ],
+      "loc": "~11 (m2.py 7 lines after test_an_unknown_id_fails at tools/test_replay.py:347, before class AiSession :355; m3.mk 4 lines after the replay-record recipe at Makefile:433)",
+      "depends_on": [],
+      "acceptance": [
+        "AC1",
+        "AC2"
+      ],
+      "commands": [
+        "export AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang; $AILANG --version; B=e0ba4ae7; S=$PWD/.godot/tmp/7ai; mkdir -p $S   # preamble; clone has no runtime/, PATH ailang is v0.59.0-dev -- never it; alternative: make runtime (Makefile:720) then AILANG=runtime/bin/ailang",
+        "perl -e 'alarm 60; exec @ARGV' python3 tools/test_replay.py MapIndex; echo rc=$?   # AC1 baseline, record actuals, BEFORE any edit",
+        "D=design_docs/planned/r1/m4-7ai-earth-log-map-index.md; awk '/^### M2\\./,/^### M3\\./' $D | awk '/^```python$/{f=1;next} /^```$/{if(f){exit}} f' > $S/m2.py; awk '/^### M3\\./,/^## Files touched/' $D | awk '/^```make$/{f=1;next} /^```$/{if(f){exit}} f' > $S/m3.mk; wc -l $S/m2.py $S/m3.mk   # expect 7 and 4; m3.mk:3 begins with a literal tab -- never retype design text",
+        "apply $S/m2.py and $S/m3.mk; then cmp proofs: awk '/def test_the_7ai_index_fails/,/assertIn/' tools/test_replay.py | cmp - $S/m2.py && echo m2-ok; n=$(grep -n '^\\.PHONY: replay-map-index' Makefile | cut -d: -f1); sed -n \"${n},$((n+3))p\" Makefile | cmp - $S/m3.mk && echo m3-ok",
+        "perl -e 'alarm 60; exec @ARGV' make replay-map-index > $S/ms1-red.log 2>&1; echo rc=$?; cat $S/ms1-red.log   # AC2, record actuals",
+        "git status --porcelain"
+      ],
+      "expectations": "cmd2 (AC1): Ran 3 tests, FAILED (failures=3), the line 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2', rc=1. cmd3: 7 and 4. cmd4: m2-ok and m3-ok (n one line after a blank; block between replay-record's recipe and parity:; Makefile:55/:57 untouched). cmd5 (AC2): make rc 2; Ran 4 tests; FAILED (failures=4); the 7ai control assertion 6 != 5 (operand order may print either way -- record the actual); the mismatch line 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2' (test_committed_logs_match_the_map); inherited controls fail 2 != 1. cmd6: porcelain shows only Makefile and tools/test_replay.py modified (plus the controller's plan/JSON files).",
+      "notes": "Design sub-milestone T1 lands the control and the make target BEFORE the fixture fix, so the red run proves the control fires on the real committed defect. Never present a control as green that never went red. Byte-for-byte rule binding: extract, never retype; a cmp mismatch means re-extract. AC2 base-count arithmetic planner re-measured: 5 pre-existing 'index':2,'id':'CNS5:3627' occurrences in logs()-visible files + the 1 real earth_log one = 6 mismatches against n=5 at the red state.",
+      "status": "not_started",
+      "passes": null
+    },
+    {
+      "id": "MS2",
+      "title": "M1: the fixture byte (1 -> 2), make replay-record LOG=earth_log_voyage on arm64 with pinned AILANG v0.56.1, cp the golden to x86_64; AC3-AC7 green",
+      "files": [
+        "tests/replays/earth_log_voyage.ndjson",
+        "tests/replays/earth_log_voyage.state.arm64.sha256",
+        "tests/replays/earth_log_voyage.state.x86_64.sha256"
+      ],
+      "loc": "3 (1 fixture byte + 2 golden lines)",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance": [
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC7"
+      ],
+      "commands": [
+        "perl -pi -e 's/\"index\":1,\"id\":\"CNS5:3627\"/\"index\":2,\"id\":\"CNS5:3627\"/' tests/replays/earth_log_voyage.ndjson   # the one byte; literal occurs exactly once in the file (planner-measured)",
+        "git show $B:tests/replays/earth_log_voyage.ndjson | cmp -l - tests/replays/earth_log_voyage.ndjson   # AC4",
+        "time perl -e 'alarm 900; exec @ARGV' make replay-record LOG=earth_log_voyage AILANG=$AILANG; cat tests/replays/earth_log_voyage.state.arm64.sha256   # bound 15 min; design: ~2 min on the busy Studio (V1/V6)",
+        "cp tests/replays/earth_log_voyage.state.arm64.sha256 tests/replays/earth_log_voyage.state.x86_64.sha256; cat tests/replays/earth_log_voyage.state.arm64.sha256; cmp tests/replays/earth_log_voyage.state.arm64.sha256 tests/replays/earth_log_voyage.state.x86_64.sha256; echo rc=$?   # AC5",
+        "perl -e 'alarm 60; exec @ARGV' make replay-map-index; echo rc=$?; perl -e 'alarm 180; exec @ARGV' make tools-test; echo rc=$?   # AC3 (~9 s total, V11)",
+        "perl -e 'alarm 600; exec @ARGV' make replay SESSION=tests/replays/earth_log_voyage.ndjson AILANG=$AILANG; echo rc=$?   # AC6",
+        "git show $B:tests/replays/earth_log_voyage.ndjson > $S/7ai_base.ndjson; ( perl -e 'alarm 300; exec @ARGV' \"$AILANG\" run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail ) < $S/7ai_base.ndjson > $S/7ai_b.out; ( perl -e 'alarm 300; exec @ARGV' \"$AILANG\" run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail ) < tests/replays/earth_log_voyage.ndjson > $S/7ai_f.out; cmp -l $S/7ai_b.out $S/7ai_f.out; rm $S/7ai_base.ndjson $S/7ai_b.out $S/7ai_f.out   # AC7"
+      ],
+      "expectations": "cmd2 (AC4): exactly one line, '200  61  62' (planner-measured offset). cmd3: rc 0; the arm64 golden file is exactly '07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454  earth_log_voyage.state.ndjson' (two spaces, no arch; the V6-measured digest; record()'s format tools/replay.py:410). cmd4 (AC5): the 07dcdfc6 line, cmp rc=0 (as 0f5a1175 did; the GitHub fast tier confirms x86_64 at the PR). cmd5 (AC3): Ran 4 tests OK rc=0; then Ran 33 tests OK, sky and lens sh scripts pass, rc=0. cmd6 (AC6): ok    earth_log_voyage  45 lines  1389901 bytes … sha256 07dcdfc610228499 …, 'replay: 1 cases, all identical', rc=0. cmd7 (AC7): exactly '56554  61  62', '60660  61  62', '1059580  61  62' (the three journey.plan.target.index echoes at ticks 1, 2, 33; V6) and nothing else.",
+      "notes": "AILANG discipline: Makefile:2 is 'AILANG ?= ailang' and PATH's ailang is v0.59.0-dev -- AILANG=$AILANG (v0.56.1, read-only from ../stapledons-godot/runtime/bin/) is passed on every make replay* command; $AILANG --version asserted in the preamble. Never hand-write or adjust a digest: a recorded value other than 07dcdfc6… is a pause point, not an edit. Any cmp offset beyond the three named is effect beyond V6 = scope change = stop.",
+      "status": "not_started",
+      "passes": null
+    },
+    {
+      "id": "MS3",
+      "title": "V: AC8 re-introduction drill, AC9 wiring + post-push fast tier, AC10 cheap, AC11 hygiene/scope (no new code; push, fast tier green AC9)",
+      "files": [],
+      "loc": "0 (evidence only)",
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance": [
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC11"
+      ],
+      "commands": [
+        "sed -i.bak 's/\"index\":2,\"id\":\"CNS5:3627\"/\"index\":1,\"id\":\"CNS5:3627\"/' tests/replays/earth_log_voyage.ndjson; perl -e 'alarm 60; exec @ARGV' make replay-map-index; echo rc=$?; mv tests/replays/earth_log_voyage.ndjson.bak tests/replays/earth_log_voyage.ndjson; git status --porcelain   # AC8, record",
+        "make -n ci-fast 2>/dev/null | grep -c 'test_replay.py MapIndex'; grep -nx 'ci-fast: replay-map-index' Makefile   # AC9 local half",
+        "time perl -e 'alarm 60; exec @ARGV' make replay-map-index   # AC10",
+        "perl -e 'alarm 300; exec @ARGV' make python-guard uid-guard; echo rc=$?; git diff --check $B; git diff --name-only $B   # AC11",
+        "post-push: perl -e 'alarm 60; exec @ARGV' gh pr checks <PR>   # AC9 tail: the PR's make ci-fast check green; its replay step is the x86_64 confirmation of the copied golden"
+      ],
+      "expectations": "cmd1 (AC8): the mismatch line 'earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2', FAILED (failures=4) with the 7ai control red (5 != 6 class), make rc 2; the mv restores the fixture (post-MS2 it carries exactly one index-2 literal, so the sed hits only line 3); porcelain then shows only the sprint's own files -- the design's 'no git status output' is read relative to the pre-drill state, since the sprint edits are still uncommitted (7ah AC7 precedent). cmd2 (AC9 local): 1 and one grep -nx line. cmd3 (AC10): real under 2 s (0.28 s measured for the test alone, V11). cmd4 (AC11): python-guard: ok, uid-guard: ok; diff-check silent; exactly Makefile, tests/replays/earth_log_voyage.ndjson, the two .state.*.sha256, tools/test_replay.py, plus landing files under changelogs/, design_docs/, .ailang/state/. cmd5 (AC9 tail): green; if the x86_64 replay disagrees with the copied golden -> BLOCKS landing (Risks verbatim rule).",
+      "notes": "No GPU, no make golden, no capture, no full local make test (merge rule). No merge before the cross-family evaluation (generator != judge); landing files (changelog fragment, charter row 7ai, README index, doc/plan move to implemented/) wait on it.",
+      "status": "not_started",
+      "passes": null
+    }
+  ],
+  "risks": [
+    "x86_64 differs from arm64 (quorum round 2, gpt6-1-sol, VERBATIM -- the rule that gates landing): 'Not measured locally. Every replay golden so far has been identical on both arches (CLAUDE.md), and the change is 3 ASCII bytes of echo. The fast tier runs make replay on x86_64 and decides it (AC9). If the x86_64 replay disagrees, block landing; do not regenerate an architecture-specific golden to make the check pass. Verify AILANG v0.56.1 on the runner, replay both the base and corrected inputs, and compare their state streams with the arm64 outputs. Proceed only when both architectures produce the specified corrected digest and the base-to-corrected difference is exactly the three target-index bytes. Any remaining divergence requires a separately reviewed diagnosis and scope revision.'",
+    "A later stars.json reorder moves alpha Cen A again: MapIndex now fails at the PR (ci-fast) instead of the nightly; the fix is a 0f5a1175-style re-record, intended behaviour unchanged.",
+    "The M2 control's count depends on how many logs plan CNS5:3627 at 2: it counts them (n) and requires n > 0, so adding or removing a log does not break it (planner re-measured the 6 != 5 base arithmetic).",
+    "AC8 edits a tracked file in place: it restores from .bak and checks git status --porcelain; if interrupted, git checkout -- tests/replays/earth_log_voyage.ndjson restores.",
+    "Planner-added: the wrong AILANG. AILANG ?= ailang (Makefile:2) + PATH's v0.59.0-dev would silently re-record the golden with the wrong toolchain if AILANG=$AILANG is dropped; the preamble pins v0.56.1 and the pause point enforces it (alternative: make runtime, Makefile:720).",
+    "Doc discrepancies (record; do not fix the doc mid-sprint): D1 Deliverables name sprint_7ai.json -- convention uses sprint_R1-7AI-EARTH-LOG-MAP-INDEX.json; D2 V12's open-PR Makefile-hunk check not re-verifiable from this sandbox (gh TLS-blocked), deferred to AC9 post-push gh pr checks; D3 AC7's /tmp scratch rerooted to $S (.godot/tmp/7ai, gitignored) while the sandbox blocks /tmp; D4 AC8's literal 'no git status output' read as 'no lines beyond the sprint's own files' while sprint edits are uncommitted."
+  ],
+  "pause_points": [
+    "Preamble: $AILANG --version != v0.56.1 -> stop; never let AILANG ?= fall through to PATH's v0.59.0-dev.",
+    "MS1: a fence extraction != 7/4 lines or a cmp proof fails -> re-extract, never retype design text. AC2 anything but make rc 2 + Ran 4 tests + FAILED (failures=4) with 6 != 5 -> tree drift; stop. A green MS1 run means the control is inert (worst case).",
+    "MS2: AC4 != exactly '200  61  62', or the recorded arm64 digest != 07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454 -> stop; never hand-edit a digest into agreement. AC6 naming any other digest or counts other than '1 cases, all identical' -> stop. AC7 cmp -l printing anything but 56554/60660/1059580 (61 62) -> stop: effect beyond V6, scope change.",
+    "MS2 timing: make replay-record hitting the 900 s bound or make replay the 600 s bound -> pause, rerun on a quieter host; do not bump bounds silently.",
+    "MS3: the AC8 drill leaves a .bak behind or porcelain beyond the sprint files -> restore (git checkout -- tests/replays/earth_log_voyage.ndjson) and stop. Post-push gh pr checks red for an environment reason -> stop for the controller.",
+    "Post-push: the x86_64 fast-tier replay disagrees with the copied golden -> BLOCKS landing; apply the verbatim risk rule; never regenerate an architecture-specific golden to make the check pass.",
+    "Any temptation to touch the do-not-touch list (data/starmap/*, sim/, ui/, bridge/, other replay logs/goldens, the ALPHA constants F1, tools/replay.py, the ci-fast:/test: lines, attended PR hunks) -> stop; the fix needs none of them. No merge before the cross-family evaluation."
+  ],
+  "local_pr_gates": [
+    "The GitHub fast tier is make ci-fast; after MS1 it carries replay-map-index (MapIndex on the runner's clean Linux, python3 already present per design M3) and, via replay, the x86_64 confirmation of the copied golden. Nothing else in ci-fast changes.",
+    "MS1 red proofs on record: AC1 (FAILED (failures=3), rc 1, the exact mismatch line) and AC2 (Ran 4 tests, FAILED (failures=4), 6 != 5), tree otherwise untouched (test-first baseline).",
+    "Byte-for-byte: both cmp proofs against fresh awk fence extractions of the design doc (m2.py = 7 lines, m3.mk = 4 lines, tab recipe line).",
+    "MS2 targeted gates: AC4 one-byte diff (200  61  62); recorded arm64 golden = 07dcdfc6… and x86_64 copy cmp-equal (AC5); make replay-map-index and make tools-test green (AC3: Ran 4 tests OK / Ran 33 tests OK, bounded 60/180 s); make replay one case, VM = interpreter = golden (AC6, bounded 600 s); cmp -l exactly the three offsets (AC7, two single-VM runs bounded 300 s each).",
+    "MS3 evidence: AC8 drill rc 2 with the mismatch line, then a clean restore; AC9 both greps (1, one edge line) plus post-push gh pr checks green; AC10 < 2 s; AC11 python-guard: ok, uid-guard: ok, git diff --check $B silent, exact file set.",
+    "No GPU gate, no make golden, no capture, no full local make test anywhere in this sprint (merge rule, Mark 2026-11-03/06; 7af/7ag/7ah/7aj precedent) -- the keep-going nightly rig/full runs tools-test on main post-merge, which is the whole point of the row (nightly red on MapIndex since PR #379, e70d0fdf)."
+  ],
+  "controller_checks": "Controller re-runs (per the mission): AC1/AC2 red logs on record (exact lines and rc); AC4 (cmp -l -> '200  61  62' only); arm64 golden digest = 07dcdfc610228499082996f3753acffa5b385734101a66fff515fa26bce0a454 and cmp with the x86_64 copy rc 0 (AC5); AC3 (Ran 4 tests OK, Ran 33 tests OK); AC6 (ok … 45 lines 1389901 bytes … 07dcdfc6…, '1 cases, all identical'); AC7 (exactly '56554 61 62', '60660 61 62', '1059580 61 62'); AC8 (drill rc 2 with the mismatch line, restore clean); AC9 (grep 1, one edge line, post-push gh pr checks green = the x86_64 confirmation; a disagreement there BLOCKS landing per the verbatim risk); AC10 (< 2 s); AC11 (guards rc 0, diff-check silent, file set exact).",
+  "plan_verification": "Planner, 2026-11-10, HEAD 34d96434 on mission/stapledon-iter85-7ai (merge-base with origin/main = e0ba4ae7 = the design's B; git diff --name-only e0ba4ae7..HEAD = the design doc alone): runtime/ absent in the clone; pinned binary /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang reports AILANG v0.56.1 (05c860a), PATH ailang is v0.59.0-92-g24802d854-dirty; Makefile:2 AILANG ?= ailang, Makefile:720 runtime: present. Fixture line 3 carries \"index\":1,\"id\":\"CNS5:3627\" with pos == stars.json entry 2's pos to all six decimals (V13 re-measured; index 2 at HEAD). Both goldens e62a9272814e30577001f94dc989130a890236950a744fb501f008bc908cc558, byte-identical; record() format \"%s  %s.state.ndjson\\n\" at tools/replay.py:410. Makefile anchors: replay :428-429, replay-record recipe :431-433 (as cited), ci-fast: :55, 7ah edge :115 (the M3 pattern), test: :57 (+ edges :26/:159), tools-test :249-252 (python3 tools/test_replay.py first). replay-map-index absent at base (No rule to make target); make -n ci-fast | grep -c test_replay.py = 0 (V7 re-measured). MapIndex: plan_index_mismatches :300, class :327, test_an_unknown_id_fails :347; mismatch format string produces exactly the AC1/AC8 line. V10 base counts re-measured: 'index':2,'id':'CNS5:3627' = 5 occurrences in logs()-visible files (godot_map_voyage 1, m4_adversarial 2, m4_min_path 1, m4_transit_harness 1), 'index':1,'id':'CNS5:3627' = 1 (earth_log_voyage) -> AC2 red arithmetic 6 != 5 confirmed. compat-2.0/inputs.sha256: 0 earth_log matches (V9). test_replay.py allowlisted harness (no new row for M2). .godot/ gitignored (line 1), $S writable, perl alarm works, python3 3.14.5, GNU make 3.81. AC4 offset planner-measured: 200. Discrepancies D1-D4 recorded in risks.",
+  "velocity": "~16 LOC, none product (1 fixture byte + 2 golden lines + 7 python + 4 make). Run-dominated verification: MS1 ~0.2 h (extractions, edits, one sub-second red run); MS2 ~0.4 h (record + replay + 2 single-VM runs, bounded 900/600/300 s; measured ~2 min per full replay on the busy Studio, V1/V6); MS3 ~0.2 h (drill, greps, guards). One executor session, well under half a day (compare 7ah ~180 LOC half a day, 7aj ~55 LOC half a day)."
+}
