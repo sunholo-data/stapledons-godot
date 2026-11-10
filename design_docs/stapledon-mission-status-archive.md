@@ -680,4 +680,6 @@ Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule
 
 ## STATUS 2026-11-08 — ITERATION 80: row 7ad PARKED; independent MiniMax round1 FAIL47; no implementation round2 launched. Implementation withheld: final M4-r21 selftest41/42 red; unapproved source preserved at backup/stapledon-iter80-7ad-final-unapproved-r21 commit6abbd8b2; resume engineering, then all required gates and independent review Clauses 1–3 MET, 4 UNMET (D-147), 5 ongoing; goal unmoved. All six human decisions unchanged.
 
+## STATUS 2026-11-09 — ITERATION 81: row 7af LANDED (PR #409, merge `4dc458d7`, fast tier green on the merge): the nightly `rig/golden` red on main (first golden-only run, `Identifier "Relativity" not declared`) was the #405 split dropping the setup `make test` used to provide; `tools/rig_check.sh` now runs `deps starmap-assets planet-assets import` before `make golden` and bounds every step as a process group (control 9 → 18 cases, mutants M1–M7 and three judge survivors red). Sonnet 92 / MiniMax M3 91 PASS. Clauses 1–3 MET, 4 UNMET (D-147), 5 ongoing; goal unmoved. No new human decision.
+
 <!-- End of archived STATUS stamps. -->
