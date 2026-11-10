@@ -79,21 +79,21 @@ Files: `tests/m4_playthrough_ship.gd`, `mk/earth-link.mk`.
   .PHONY: display-audit-monitor-controls
   MONITOR_AUDIT_S ?= 600
   display-audit-monitor-controls: import ## 7aj M3 (AC6/AC6b/AC14): monitor-face negative controls — each mutant's crew voyage must pass, the gated audit (WANT_RC 1) must reject for its own measured reasons
-  	@mkdir -p $(SCRATCH)/display-audit
-  	@set -u; n=0; bad=0; for m in unrefreshed drop_one unbound stale orphan; do \
-  	  PLAYTHROUGH_MONITOR_MUTANT=$$m $(MAKE) --no-print-directory AILANG=$(AILANG) playthrough SCRIPT=tests/playthrough_crew.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/monitor-$$m > $(SCRATCH)/display-audit/monitor-$$m-playthrough.log 2>&1 || { tail -5 $(SCRATCH)/display-audit/monitor-$$m-playthrough.log; echo "display monitor control $$m: infrastructure failure (playthrough)"; bad=1; continue; }; \
-  	  $(SCRIPT_GATE) display-audit-monitor-$$m $(SCRATCH)/display-audit/monitor-$$m.log $(MONITOR_AUDIT_S) '^display-audit: ' 1 -- $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(SCRATCH)/playthrough/monitor-$$m/display_samples.ndjson crew $(DISPLAY_KNOWN) > $(SCRATCH)/display-audit/monitor-$$m-gate.log 2>&1 || { tail -5 $(SCRATCH)/display-audit/monitor-$$m-gate.log; echo "display monitor control $$m: infrastructure failure (audit)"; bad=1; continue; }; \
-  	  L=$(SCRATCH)/display-audit/monitor-$$m.log; ok=1; \
-  	  case $$m in \
-  	    unrefreshed) grep -Eq '^FAIL missing field $$' $$L && grep -Eq '^FAIL binding contract .*/monitor_face_signal/' $$L && grep -Eq '^FAIL monitor-coverage frame=1 clocks$$' $$L || ok=0 ;; \
-  	    drop_one) grep -Eq '^FAIL monitor-coverage frame=36 course$$' $$L && grep -Eq '^display-audit: .* failures=1$$' $$L || ok=0 ;; \
-  	    unbound) grep -Eq '^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$$' $$L || ok=0 ;; \
-  	    stale) grep -Eq '^FAIL stale .*/monitor_face_clocks/' $$L && grep -Eq '^FAIL binding contract .*/monitor_face_clocks/' $$L || ok=0 ;; \
-  	    orphan) grep -Eq '^FAIL monitor-coverage frame=36 course shown without its source$$' $$L && grep -Eq '^display-audit: .* failures=1$$' $$L || ok=0 ;; \
-  	  esac; \
-  	  if [ $$ok = 0 ]; then echo "display monitor control $$m: wrong reason (see $$L)"; bad=1; continue; fi; \
-  	  n=$$((n + 1)); echo "display monitor control $$m: rejected"; \
-  	done; echo "display monitor controls: $$n rejected"; test $$bad = 0 && test $$n -eq 5
+	@mkdir -p $(SCRATCH)/display-audit
+	@set -u; n=0; bad=0; for m in unrefreshed drop_one unbound stale orphan; do \
+	  PLAYTHROUGH_MONITOR_MUTANT=$$m $(MAKE) --no-print-directory AILANG=$(AILANG) playthrough SCRIPT=tests/playthrough_crew.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/monitor-$$m > $(SCRATCH)/display-audit/monitor-$$m-playthrough.log 2>&1 || { tail -5 $(SCRATCH)/display-audit/monitor-$$m-playthrough.log; echo "display monitor control $$m: infrastructure failure (playthrough)"; bad=1; continue; }; \
+	  $(SCRIPT_GATE) display-audit-monitor-$$m $(SCRATCH)/display-audit/monitor-$$m.log $(MONITOR_AUDIT_S) '^display-audit: ' 1 -- $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(SCRATCH)/playthrough/monitor-$$m/display_samples.ndjson crew $(DISPLAY_KNOWN) > $(SCRATCH)/display-audit/monitor-$$m-gate.log 2>&1 || { tail -5 $(SCRATCH)/display-audit/monitor-$$m-gate.log; echo "display monitor control $$m: infrastructure failure (audit)"; bad=1; continue; }; \
+	  L=$(SCRATCH)/display-audit/monitor-$$m.log; ok=1; \
+	  case $$m in \
+	    unrefreshed) grep -Eq '^FAIL missing field $$' $$L && grep -Eq '^FAIL binding contract .*/monitor_face_signal/' $$L && grep -Eq '^FAIL monitor-coverage frame=1 clocks$$' $$L || ok=0 ;; \
+	    drop_one) grep -Eq '^FAIL monitor-coverage frame=36 course$$' $$L && grep -Eq '^display-audit: .* failures=1$$' $$L || ok=0 ;; \
+	    unbound) grep -Eq '^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$$' $$L || ok=0 ;; \
+	    stale) grep -Eq '^FAIL stale .*/monitor_face_clocks/' $$L && grep -Eq '^FAIL binding contract .*/monitor_face_clocks/' $$L || ok=0 ;; \
+	    orphan) grep -Eq '^FAIL monitor-coverage frame=36 course shown without its source$$' $$L && grep -Eq '^display-audit: .* failures=1$$' $$L || ok=0 ;; \
+	  esac; \
+	  if [ $$ok = 0 ]; then echo "display monitor control $$m: wrong reason (see $$L)"; bad=1; continue; fi; \
+	  n=$$((n + 1)); echo "display monitor control $$m: rejected"; \
+	done; echo "display monitor controls: $$n rejected"; test $$bad = 0 && test $$n -eq 5
   ship-demo-ci: display-audit-monitor-controls
   ```
 
@@ -141,7 +141,7 @@ Files: `tests/m4_playthrough_ship.gd` only.
   # monitors' frame as it does the map's: each face refreshes from the view the demo gave its monitor,
   # as an on-screen monitor would. No viewport renders.
   for m: BridgeMonitor in demo.monitors:
-  	if m.face != null and mutant != "unrefreshed": m.face.refresh(m._view, m._receiver, m._bed)
+	if m.face != null and mutant != "unrefreshed": m.face.refresh(m._view, m._receiver, m._bed)
   ```
 
   `m._view` is the same dictionary the audit reconstructs from (`ship_hud.update(view)` has exactly one caller,
