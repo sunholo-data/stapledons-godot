@@ -347,6 +347,13 @@ class MapIndex(unittest.TestCase):
     def test_an_unknown_id_fails(self):
         logs = [(n, t.replace('"id":"CNS5:1676"', '"id":"CNS5:999999"')) for n, t in self.logs()]
         self.assertEqual(len(plan_index_mismatches(logs, self.stars())), 1)
+    def test_the_7ai_index_fails(self):  # control: alpha Cen A (CNS5:3627) at HIP 71681's index 1, as earth_log_voyage had it until 7ai
+        logs = self.logs()
+        n = sum(t.count('"index":2,"id":"CNS5:3627"') for _, t in logs)
+        bad = plan_index_mismatches([(f, t.replace('"index":2,"id":"CNS5:3627"', '"index":1,"id":"CNS5:3627"')) for f, t in logs], self.stars())
+        self.assertGreater(n, 0)
+        self.assertEqual(len(bad), n)
+        self.assertIn("earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2", bad)
 
 
 class AiSession(unittest.TestCase):

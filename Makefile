@@ -432,6 +432,11 @@ replay-record:     ## P5: regenerate this arch's golden for LOG=path|case|sessio
 	@test -n "$(LOG)" || { echo "usage: make replay-record LOG=tests/replays/NAME.ndjson|NAME|session10k|all"; exit 2; }
 	AILANG="$(AILANG)" python3 tools/replay.py --record $(LOG)
 
+.PHONY: replay-map-index
+replay-map-index:  ## 7ai: every committed replay log plans each star at its stars.json index (tools/test_replay.py MapIndex, under a second; also in tools-test)
+	python3 tools/test_replay.py MapIndex
+ci-fast: replay-map-index
+
 parity:            ## v2 diag session, 600 thrust ticks: VM == interpreter == golden (replay case diag_thrust600)
 	AILANG="$(AILANG)" python3 tools/replay.py --case diag_thrust600
 
