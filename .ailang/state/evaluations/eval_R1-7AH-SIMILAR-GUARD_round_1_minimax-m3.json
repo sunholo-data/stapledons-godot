@@ -1,0 +1,42 @@
+{
+  "sprint_id": "R1-7AH-SIMILAR-GUARD",
+  "evaluator": "minimax-m3 (pi openrouter)",
+  "reviewed_commit": "79b8afa0d3e973941c74d645ad8e65bd8ef1b8c5",
+  "score": 95,
+  "verdict": "PASS",
+  "blocking": [],
+  "non_blocking": [
+    "Accept-case EREs in tools/similar_guard_controls.sh pin the floor value literally (SIMILAR_MINOR \\(14\\)) in the pristine/future/comment cases. If the protocol ever raises SIMILAR_MINOR above 14, the controls go red at the pristine case even though the guard is correct; a one-line ERE update would be needed. Low risk (SIMILAR_MINOR is a feature marker, not a version), and it fails loudly rather than silently.",
+    "The S0.3 check greps the whole of main.gd for the literal 'SIMILAR_MINOR', so a future code COMMENT mentioning 'SIMILAR_MINOR' (e.g. documenting the floor) would fail the guard with the misleading message 'main.gd asks SIMILAR_MINOR'. Fail-closed, but the message does not distinguish a name from a mention in a comment.",
+    "Scope is by design the map session only: the guard constrains _run_map, while other sessions legitimately request lower minors (main.gd:414 _run_interior asks SimBridge.ISM_MINOR (8); _run_transit sets 2). The guard therefore proves 'the map session asks >= 14', not 'the game always asks >= 14'. The design states this scope explicitly; noting it so a future reader does not over-read the guarantee.",
+    "The broad 'want_minor' occurrence count (revision 2) also counts substrings, so a future identifier such as want_minor_x would over-count and fail closed with 'mentions want_minor N times'. Fail-closed by design; only a nuisance if the name changes."
+  ],
+  "mutants": [
+    {
+      "description": "(a1) Scratch copy of main.gd + bridge/sim_bridge.gd; _run_map's requested minor downgraded below 14 in a realistic GDScript form that still names SimBridge constants: 'sim.want_minor=min(SimBridge.EARTH_LOG_MINOR,SimBridge.SURFACE_MINOR)' (effectively 13). Guard run as 'make -s similar-main-guard SIMILAR_GUARD_ROOT=<scratch>'. Guard replied 'main.gd _run_map want_minor is not one bare SimBridge minor' (the call is not one bare constant) and make exited 2.",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "description": "(a2) Scratch copy; realistic GDScript alias downgrade: a local 'var wanted: int = SimBridge.SURFACE_MINOR' (13) assigned by 'sim.want_minor=wanted'. want_minor is mentioned exactly once (so the count check passes) but the right-hand side is not a bare SimBridge constant; guard replied 'not one bare SimBridge minor', make exited 2.",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "description": "(a3) Scratch copy; a new below-floor constant 'const LEGACY_MINOR := 13' added to bridge/sim_bridge.gd and asked by _run_map (grammar-valid, resolves cleanly) - a pure floor-logic attack. Guard replied 'main.gd _run_map asks LEGACY_MINOR (13) below SIMILAR_MINOR (14)', make exited 2.",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "description": "(b1) Scratch root (Makefile, mk/, main.gd, bridge/sim_bridge.gd, tools/similar_guard_controls.sh) with ONE guard check weakened: the floor comparison 'test \"$$want\" -ge \"$$floor\"' replaced by 'test 1 = 1'. 'make -s -C <scratch> similar-guard-controls' went red at the 'below' case ('below: make rc 0, want 2', with the guard's ok line 'asks SURFACE_MINOR (13) >= SIMILAR_MINOR (14)'), the script exited 1 and make exited 2.",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "description": "(b2) Scratch root with a DIFFERENT single check weakened: the S0.3 line 'if grep -q SIMILAR_MINOR \"$$g\"; then' replaced by 'if false; then'. The controls went red at the 'exact' case ('exact: make rc 0, want 2', ok line 'asks SIMILAR_MINOR (14) >= SIMILAR_MINOR (14)'), script exit 1, make exit 2.",
+      "rc": 2,
+      "killed": true
+    }
+  ],
+  "notes": "Independent cross-vendor evaluation of sprint R1-7AH-SIMILAR-GUARD (PR #419), reviewed commit 79b8afa0, base 79eadb49. Design: design_docs/planned/r1/m4-7ah-similar-guard-minor.md (AC1-AC13); plan: ...-sprint.md. All commands run from the evaluator clone; the tracked tree was never edited (scratch copies only, all removed; git status --porcelain empty before and after).\n\nCOMMANDS RUN AND RESULTS.\n(1) 'make similar-main-guard; echo rc=$?' -> 'similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)', rc=0. 'make similar-guard-controls; echo rc=$?' -> all 16 case lines in the M2 order (pristine, below, exact, removed, literal, twice, unknown, nofloor, ternary, arith, exprconst, exprfloor, comparison, compound, future, comment), ending 'similar-guard-controls: 13 rejected, 3 accepted', rc=0, wall time 1.1 s (design budget < 2 s).\n(2) Two mutants of my own on scratch copies - five variants, all killed, all rc=2 (see the mutants array). Scratch dirs (/tmp/claude/eval7ah-a.*, /tmp/claude/eval7ah-b.*) deleted; 'find $TMPDIR -maxdepth 1 -name similar-guard.*' = 0 and no eval7ah* leftovers.\n(3) 'git diff --name-only 79eadb49..HEAD' = .ailang/state/sprints/sprint_R1-7AH-SIMILAR-GUARD.json, Makefile, changelogs/unreleased/2026-11-10-similar-guard-minor.md, design_docs/planned/r1/m4-7ah-similar-guard-minor-sprint.md, design_docs/planned/r1/m4-7ah-similar-guard-minor.md, tools/similar_guard_controls.sh. 'git diff --name-only 79eadb49..HEAD -- main.gd bridge/' = 0 lines: main.gd and bridge/ are untouched (AC12).\n\nADDITIONAL AC VERIFICATION (beyond the required steps).\nAC1: 'make similar-test' (PATH with runtime/bin, AILANG v0.56.1) rc=0; the ok line appears exactly once, 'similar-guard-controls: 13 rejected, 3 accepted' exactly once, 'lost EARTH_MINOR' 0 times; the log ends with a64e9634... .godot/tmp/similar/session-215-strict.ndjson - matching the design's prediction.\nAC5: my weakenings (b1 floor comparison, b2 S0.3 line) reproduce the design's meta-drill outcomes at the same named cases, from independently written scratch copies.\nAC6: a no-op mutation exits 3 from the script itself ('similar-guard-controls: below: mutation left main.gd unchanged', rc=3).\nAC7: tree never modified (git status clean); temp dirs removed after passing runs.\nAC8: the guard passes at every main.gd since S0.3 - e151c903 (EARTH_MINOR 16), 523d96f9 (16), 8ba1e3c8 (EARTH_LOG_MINOR 18), 79eadb49 (18), all rc=0.\nAC9: 'make'/'gmake' x {'', -n, -j4, -k, -s} similar-guard-controls all end '13 rejected, 3 accepted' with no jobserver/warning line (MAKEFLAGS is cleared for the inner make); 'gmake SHELL=/bin/dash similar-main-guard' rc=0; shellcheck and 'shellcheck -s dash' both silent (rc=0).\nAC10: both edge lines present ('similar-test:' line 114, 'ci-fast:' line 115) and 'make -n ci-fast | grep -c' = 12 (>= 2).\nAC11: 'make uid-guard python-guard script-gate-lint audio-silent-guard' rc=0 (uid-guard ok 422 files, python-guard ok, script-gate-lint ok, audio-silent-guard ok); 'git diff --check 79eadb49' rc=0.\nAC13: Makefile hunks are confined to lines ~100-136 (the vector-guard zsh string, the deleted EARTH_MINOR/SIMILAR_MINOR lines and the new block).\nByte-for-byte rule: the committed tools/similar_guard_controls.sh and the Makefile's inserted '# Row 7ah:' block are cmp-identical to the design's Appendix B and Appendix A fences (29 and 147 lines) - the sprint's binding rule holds.\n\nASSESSMENT. The implementation matches the approved design's Appendix A/B byte-for-byte, the guard fails closed on every mutation tried (grammar, count, floor, resolution, S0.3), the committed controls prove the guard still guards (13 rejections / 3 acceptances, including the computed future-protocol-bump cases), and the wiring puts both targets in similar-test and ci-fast. The five independent mutants I wrote (including two the committed controls do not contain: a min() call downgrade and a local-alias downgrade) were all killed with rc=2, and two one-check weakenings of the guard recipe were both caught by the controls at the expected case. No blocking finding. Score 95: full credit on the behaviour and scope, minus a small amount for the four non-blocking brittleness/clarity observations above (hard-coded floor 14 in the accept EREs, whole-file SIMILAR_MINOR grep vs comments, the deliberately narrow _run_map scope, and substring counting of want_minor) - none of which changes the guard's fail-closed behaviour. Not committed, per the brief."
+}
