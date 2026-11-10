@@ -32,8 +32,12 @@
       ],
       "expectations": "cmd2: B.sh is 147 lines, cp'd to tools/similar_guard_controls.sh (byte-for-byte; line 79 keeps its literal tab; planner measured). Makefile gains only the 2-line similar-guard-controls target (from Appendix A's fence), after old line 105. cmd3 (RED, record actuals): make rc 2; output shows 'similar-guard-controls: pristine: make rc 2, want 0' (inner make: No rule to make target 'similar-main-guard'); no ': rejected' line; the totals never print. cmd4: porcelain shows only Makefile and tools/similar_guard_controls.sh; 0 leftover similar-guard.* temp dirs.",
       "notes": "Test-first per design sub-milestone T1: the controls land before the guard target exists, so the run is red at the pristine positive control. Never present a control as green that never went red. The executor never retypes appendix text; everything comes from the awk fence extractions (planner-measured sizes: A=29 lines with 16 tab-recipe lines, B=147, C=51).",
-      "measured": [],
-      "status": "todo",
+      "measured": [
+        "cmp tools/similar_guard_controls.sh vs fresh Appendix B fence extraction: identical (147 lines, chmod +x); line 79 literal tab kept",
+        "make similar-guard-controls -> rc=2; output: \"similar-guard-controls: pristine: make rc 2, want 0\" then \"make[1]: *** No rule to make target `similar-main-guard'.  Stop.\" then \"make: *** [similar-guard-controls] Error 1\"; no \": rejected\" line, totals never printed (RED as designed)",
+        "git status --porcelain: \" M Makefile\", \"?? tools/similar_guard_controls.sh\"; leftover similar-guard.* temp dirs: 0; Makefile diff +2 lines (similar-guard-controls target after old line 105)"
+      ],
+      "status": "done",
       "passes": null
     },
     {

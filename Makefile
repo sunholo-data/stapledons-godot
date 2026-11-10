@@ -103,6 +103,8 @@ similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = fr
 	  if git grep -nE "$$pat" -- '\''*.gd'\'' '\''bridge/*.gd'\'' '\''ui/*.gd'\'' '\''demos/*.gd'\'' '\''sky/*.gd'\'' '\''interior/*.gd'\'' '\''physics/*.gd'\''; then echo "similar-test guard: production vector read" >&2; exit 1; fi; \
 	  git grep -q "SimBridge.EARTH_MINOR" -- main.gd || { echo "similar-test guard: main.gd lost EARTH_MINOR" >&2; exit 1; }; \
 	  if git grep -q "SIMILAR_MINOR" -- main.gd; then echo "similar-test guard: main.gd asks SIMILAR_MINOR" >&2; exit 1; fi'
+similar-guard-controls: ## 7ah: similar-main-guard rejects each mutation of main.gd's map-session minor and accepts a future bump
+	@MAKE='$(MAKE)' sh tools/similar_guard_controls.sh .
 
 # Recording is separate from test. Validate both candidates before accepting either.
 similar-record:    ## Record new S0 sessions after ranking tests and independent oracles
