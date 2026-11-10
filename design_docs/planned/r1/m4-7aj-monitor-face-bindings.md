@@ -1,14 +1,16 @@
 # Monitor-face bindings in the display audits (7aj)
 
-**Status:** Planned (mission iteration 83, designer). **Release:** r1. **Milestone:** none (suite hygiene, queue row **7aj**).
+**Status:** Planned, revision 1 (mission iteration 83, designer). Revision 1 answers design-quorum round 1; see "Quorum log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7aj**).
 **Priority:** P1. Four `make test` targets have been red on main since PR #379 merged on 2026-11-06. They are `display-audit-comms`, `scene-session-audits`, `display-audit-interlude` and `display-audit-crew`. Earlier nightlies stopped at the first red, so the first keep-going nightly (7ag) on `b974e302`, 2026-11-10, was the first to report them (V1).
 **Implements:** row 7aj. It restores the display-audit contract (every number on screen is a clean binding on a sim field, D-21) that [R3-COMMS-V2 CV6](../../implemented/r3/comms-station-v2.md) claims for the bridge monitor wall: §D3–§D5 and AC5 (`make comms-station-test display-audit-comms`). It also serves definition-of-done gate 1: main's nightly `rig/full` stays green.
 **Depends on:** nothing new. It uses the 7ag keep-going nightly (`design_docs/implemented/r1/rig-keep-going.md`) and the existing `display-audit-controls`.
-**Estimated LOC:** about 40, all in test code and make glue. No product file changes (see AC7).
-- `tests/m4_playthrough_ship.gd`: about +14. The harness supplies the monitors' frame (M1) and gets a test-only mutant hook (M3).
-- `tests/display_audit.gd`: about +10. A per-face coverage line and check (M2).
-- `mk/earth-link.mk`: about +14. A new `display-audit-monitor-controls` target wired into `ship-demo-ci` (M3).
+**Estimated LOC:** about 55, all in test code and make glue. No product file changes (see AC7).
+- `tests/m4_playthrough_ship.gd`: about +16. The harness supplies the monitors' frame (M1) and gets a test-only mutant hook (M3).
+- `tests/display_audit.gd`: about +22. Coverage of each face on each sampled frame, plus a totals line (M2).
+- `mk/earth-link.mk`: about +16. A new `display-audit-monitor-controls` target wired into `ship-demo-ci` (M3).
 - No new scripts, so no new `.uid` files. No Python. Nothing in `Makefile`, `demos/`, `ui/`, `interior/` or the known-findings fixtures.
+
+The measured prototype of all of M1, M2 and the M3 hook is `/tmp/stap_i83_7aj_prototype_r1.patch` (94 lines; reverted from the tree).
 
 ## Game vision alignment
 
@@ -22,32 +24,31 @@ Scored against `../stapledons-design/vision/core-pillars.md` (pillars 1–6) and
 | The Ship Is Home | 0 | 0 | The scene is untouched; the faces look exactly as they do now (AC7). |
 | Grounded Strangeness | 0 | 0 | No visual changes. |
 | We Are Not Built For This | 0 | 0 | The crew face's names and feelings join the audit; nothing a player sees changes. |
-| Hard sci-fi authenticity (spec) | low | +1 | Every γ, Earth year and light age on the wall gets checked against its sim field in four playthroughs, about 50,000 face bindings per night (V15). No formulas change. |
+| Hard sci-fi authenticity (spec) | low | +1 | Every γ, Earth year and light age on the wall gets checked against its sim field on every sampled frame of four playthroughs, about 35,000 face bindings per night (V19). No formulas change. |
 | **Net** | | **+2** | **Go.** Mostly neutral suite hygiene, plus real coverage for a display that currently has none. No pillar scores below 0. |
 
 Physics gates 2 and 3 do not apply: there is no formula, shader, lookup table or render change.
 
 ## Problem
 
-1. **Four reds, one signature.** Each failing audit reports `missing = 9 × samples` and `failures = 2 × missing` (V1). The 9 are the same nine labels on every sampled frame: clocks face 3 (`ship`, `earth`, `EarthClocks.rate`), signal face 2 (`tag`, `age`), course face 4 (`target`, `arrive`, `gamma`, `left`). Each is sampled as a `ComposedBinding` with `field ""`, `parts []` and `text ""` (V4). That gives one `missing field ` line with an empty name (`tests/display_audit.gd:279`) and one `binding contract` line (`:297`, from `DisplayBinding.audit`, `ui/display_binding.gd:90`: `n.field == ""`).
-2. **Why the bindings are empty.** A face binding gets its contract only inside `refresh()` (`compose` at `ui/bridge_screens.gd:82–154`, `ui/earth_clocks.gd:45`). A face refreshes only from `BridgeMonitor._process`, and only while its quad is on screen (`interior/bridge_monitor.gd:81–90`). The playthrough harness turns off `_process` on every node (`tests/m4_playthrough_ship.gd:453–454`, "every subsequent frame is supplied by step()"). It then supplies only `demo._process` and `journey_map._process` (`:101–103`). Headless, no quad is ever on screen anyway. So the faces never refresh. The sampler records every `is_visible_in_tree()` Label (`:60`), which includes the faces' labels in their construction state. The crew face's `CrewFaces` creates its labels on first refresh, which is why it is absent from the failures (V4).
-3. **Root cause: the test harness, not the faces.** PR #379 added a processed node, and the harness that takes over processing never learned to drive it. Its own test, `bridge-monitors-test`, passed because `faces_ok` refreshes every face before auditing (`tests/test_bridge_monitors.gd:45–48`, V7). Once refreshed, every face label is a clean binding (V7, V8). The construction state is never shown: the face's SubViewport is `UPDATE_DISABLED` from `setup` (`bridge_monitor.gd:46`), and `UPDATE_ONCE` is set only after `face.refresh` in the same `_process` call (`:88–90`). The audit is right: a visible contractless binding is a violation. The faces are right: they bind every number once refreshed. The harness is wrong because it samples faces in a state no player can see.
-4. **Attribution (controller, V3).** `display-audit-crew` is red at `b974e302` and at `8ba1e3c8` (the #379 merge), and green at its first parent `523d96f9` (34 samples, `missing=0 failures=0`). The display audits are not in `ci-fast` (`Makefile:55`), and the nightly stopped at `bridge-operator-test` until 7ag, so the regression went unreported.
-5. **A test-only mutant reproduces main exactly.** It skips the face refresh in the prototype harness and gives `samples=46 checks=12006 mismatches=0 missing=414 … failures=828`, byte for byte main's summary line (V12).
+1. **Four reds, one signature.** Each failing audit reports `missing = 9 × samples` and `failures = 2 × missing` (V1). The 9 are the same nine labels on every sampled frame: clocks face 3, signal face 2, course face 4. Each is sampled as a `ComposedBinding` with `field ""`, `parts []` and `text ""` (V4). That gives one `missing field ` line with an empty name (`tests/display_audit.gd:279`) and one `binding contract` line (`:297`, from `DisplayBinding.audit`, `ui/display_binding.gd:90`: `n.field == ""`).
+2. **Why the bindings are empty.** A face binding gets its contract only inside `refresh()` (`compose` at `ui/bridge_screens.gd:82–154`, `ui/earth_clocks.gd:45`, V6). A face refreshes only from `BridgeMonitor._process`, and only while its quad is on screen (`interior/bridge_monitor.gd:81–90`). The playthrough harness turns off `_process` on every node (`tests/m4_playthrough_ship.gd:453–454`) and then supplies only `demo._process` and `journey_map._process` (`:101–103`, V5). Headless, no quad is ever on screen anyway. So the faces never refresh. The sampler records every `is_visible_in_tree()` Label (`:60`), which includes the faces' labels in their construction state. The crew face's `CrewFaces` creates its labels on first refresh, so it does not appear in the failures (V4).
+3. **Root cause: the test harness, not the faces.** PR #379 added a processed node, and the harness that takes over processing never learned to drive it. Its own test, `bridge-monitors-test`, refreshes every face before auditing (`tests/test_bridge_monitors.gd:45–48`, V7). Once refreshed, every face label is a clean binding (V8). The construction state is never shown: the face's SubViewport is `UPDATE_DISABLED` from `setup` (`bridge_monitor.gd:46`), and `UPDATE_ONCE` is set only after `face.refresh` in the same `_process` call (`:88–90`). The audit is right to fail a visible contractless binding. The faces are right too: they bind every number once refreshed. The fault is the harness, which samples faces in a state no player can see.
+4. **Attribution (controller, V3).** `display-audit-crew` is red at `b974e302` and at `8ba1e3c8` (the #379 merge), and green at its first parent `523d96f9`. The display audits are not in `ci-fast` (V17).
+5. **A test-only mutant reproduces main.** Skipping the face refresh gives main's exact crew summary, `missing=414 … failures=828` (V12).
 
 ## Goals and non-goals
 
 **Goals.**
 - All four targets green with the audit contract unchanged and no new known-findings entries.
-- The faces are audited for real: every sampled frame checks every face binding against that frame's view, and coverage per face is asserted, so it cannot silently drop to zero.
-- Negative controls: an unrefreshed face (today's bug), an unbound digit label on a face, and a face binding whose text was set by hand each turn the audit red for the right reason.
+- The faces are audited on **every** sampled frame. A face that drops out of even one frame turns the audit red and names the frame.
+- Negative controls: an unrefreshed face (today's bug), a face missing from exactly one frame, an unbound digit label on a face, and a face binding whose text was set by hand. Each turns the audit red for its own reason.
 - Every monitor face renders byte-identically, because no product file changes.
 
 **Non-goals.**
-- Changing `ui/bridge_screens.gd`, `ui/earth_clocks.gd`, `interior/bridge_monitor.gd` or `ui/display_binding.gd`. One alternative was to compose each face's parts in `_init` so a face is never contractless. It changes product code for no player-visible gain. On its own it would also turn the 414 `missing`/`contract` failures into 414 `stale` ones, because the recorded text `""` would no longer match the view (reasoned, UNMEASURED). Left out.
-- Skipping labels in a non-rendering SubViewport. That would hide every face from every audit: 0 of about 50,000 face bindings checked (V15). It weakens the audit, so it is rejected.
-- The other reds in the same nightly: `bridge-operator-test` (D-148), `similar-test` (7ah), `tools-test` (7ai), `free-nav-stop-test` (7ak).
-- Any GPU gate. There is no `make golden` and no capture.
+- Changing `ui/bridge_screens.gd`, `ui/earth_clocks.gd`, `interior/bridge_monitor.gd` or `ui/display_binding.gd`. One alternative was to compose each face's parts in `_init`. It would change product code for no player-visible gain. On its own it would also turn the 414 `missing`/`contract` failures into `stale` ones, because the recorded text `""` would no longer match the view (reasoned, UNMEASURED).
+- Skipping labels in a non-rendering SubViewport. That would audit none of the faces' bindings (V15), so it is rejected as a weakening.
+- The other reds in the same nightly: `bridge-operator-test` (D-148), `similar-test` (7ah), `tools-test` (7ai), `free-nav-stop-test` (7ak). No GPU gate.
 
 ## Design
 
@@ -57,70 +58,82 @@ In `tests/m4_playthrough_ship.gd` `sample()`, after the `frame % 4` early return
 
 ```gdscript
 # R3-COMMS-V2 CV6 / 7aj: the harness disables every node's _process (see _run), so it supplies the
-# monitors' frame as it does the map's: each face refreshes from the view the demo just gave its
-# monitor (BridgeMonitor.refresh in demo._process), as an on-screen monitor would. No viewport renders.
+# monitors' frame as it does the map's: each face refreshes from the view the demo gave its monitor,
+# as an on-screen monitor would. No viewport renders.
 for m: BridgeMonitor in demo.monitors:
 	if m.face != null: m.face.refresh(m._view, m._receiver, m._bed)
 ```
 
-Every `sample()` call site (`:104`, `:161`, `:333`, `:376`) follows a `demo._process` or a `ReviewDrive.frame`, so `m._view` is the same dictionary as `ship_hud._last_view`, the view the audit reconstructs from (`demos/ship_geometry_demo.gd:1337–1339`, `ui/ship_hud.gd:507`). It calls the product's own `face.refresh`, the same call `faces_ok` makes. It does not call `face.step()` and touches no viewport. The audit treats the faces as on screen on every sampled frame. That is a superset of real play; the on-screen gating stays covered by `bridge-monitors-test`'s `gated` checks.
+`m._view` is the same dictionary the audit reconstructs from, at every `sample()` call site. `ship_hud.update(view)` has exactly one caller, `demos/ship_geometry_demo.gd:1337`, which sets `ship_hud._last_view` (`ui/ship_hud.gd:507`). Two lines later, `_refresh_monitors(view)` (`:1339`) hands the same dictionary to every monitor (V21). It calls the product's own `face.refresh`, the same call `faces_ok` makes, with no `face.step()` and no viewport update. The audit therefore treats the faces as on screen on every sampled frame. That is stricter than play; on-screen gating stays covered by `bridge-monitors-test`'s `gated` checks.
 
-### M2. Face coverage in the audit
+### M2. Per-sample face coverage in the audit
 
-In `tests/display_audit.gd` `audit()`, count the bindings with a non-empty field whose node contains `/monitor_face_<kind>/`, per kind (clocks, signal, course, crew). At the end of `_run()`, for every route except `control`, print `display-audit monitors: clocks=N course=N crew=N signal=N` and `check(n > 0, "monitor-coverage <kind>")` for each kind. The existing make recipes already echo `^display-audit` lines. The `^display-audit: … failures=0$` grep is unaffected, because the new line starts `display-audit monitors:`.
+In `tests/display_audit.gd` `audit()`, for every route except `control`:
+- Collect the faces that have at least one binding with a non-empty field and a node containing `/monitor_face_<kind>/`.
+- Decide which faces the frame must show, by the product's own visibility rules:
+  - clocks and signal always;
+  - course iff `journey.plan` is a Dictionary (`CourseFace.refresh` hides its labels otherwise);
+  - crew iff `earth.crew` is a non-empty Array (`CrewFaces.refresh`).
+- For each kind, `check(row_faces.has(kind), "monitor-coverage frame=%d %s" % [int(row.frame), kind])` when the face is required. Otherwise `check(not row_faces.has(kind), "monitor-coverage frame=%d %s shown without its source")`.
+- Per-kind totals feed one diagnostic line at the end of `_run()`: `display-audit monitors: clocks=N course=N crew=N signal=N`. The totals are not a gate.
+
+The course and crew rules are needed. With "always" for all four, the interlude goes red on 15 frames (`FAIL monitor-coverage frame=144 course`, …, frame 200). On those frames the ship is at rest after the crossing with no plan, and the course face's labels are hidden by design. In all 127 interlude rows, a course face is present exactly when there is a plan, and a crew face exactly when there is crew (V22). The new line cannot collide with the recipes' greps: they echo `^(FAIL|display-audit…)` and gate on `^display-audit: .* failures=0$`. The new line starts `display-audit monitors:` (V18).
 
 ### M3. Negative controls
 
-- **Mutant hook** in the harness, test-only, inert unless set. It reads `OS.get_environment("PLAYTHROUGH_MONITOR_MUTANT")`:
+- **Mutant hook** in the harness, test-only, inert unless `PLAYTHROUGH_MONITOR_MUTANT` is set (the prototype's name for it is `PROTO_7AJ_MUTANT`):
   - `unrefreshed`: skip M1, which is today's bug;
+  - `drop_one`: on the 10th sampled row only, hide the course face (`face.visible = false`), then restore it after the row is written;
   - `unbound`: add a plain `Label` named `Mutant`, text `42`, to the clocks face, once;
   - `stale`: after M1, set `ClocksFace.ship.text = "+9 s"` by hand.
-- **Target** `display-audit-monitor-controls` in `mk/earth-link.mk`, next to `display-audit-comms` and `bridge-monitors-test`, plus `ship-demo-ci: display-audit-monitor-controls`. For each mutant it:
-  - runs `playthrough SCRIPT=tests/playthrough_crew.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/monitor-<mutant>`, which must pass, since the mutation breaks no playthrough check (V12–V14);
+- **Target** `display-audit-monitor-controls` in `mk/earth-link.mk`, plus `ship-demo-ci: display-audit-monitor-controls`. For each mutant it:
+  - runs `playthrough SCRIPT=tests/playthrough_crew.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/monitor-<mutant>`, which must pass;
   - runs `display_audit.gd … crew $(DISPLAY_KNOWN)`, which must exit non-zero with no `SCRIPT ERROR`;
-  - greps the required reasons:
+  - greps the reasons below (measured text, V20);
+  - ends with `display monitor controls: 4 rejected` and checks the count.
+- **Cost:** about 4 × 12–30 s.
 
-| Mutant | Required `FAIL` lines | Measured (V12–V14) |
+| Mutant | Required lines (grep -E) | Measured summary (V20) |
 |---|---|---|
-| `unrefreshed` | `^FAIL missing field $`, `^FAIL binding contract .*/monitor_face_`, `^FAIL monitor-coverage ` | `missing=414 failures=828` (before M2) |
-| `unbound` | `^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"` | `new=46 failures=46` |
-| `stale` | `^FAIL stale .*/monitor_face_clocks/`, `^FAIL binding contract .*/monitor_face_clocks/` | `mismatches=46 failures=92` |
-
-  It ends with `display monitor controls: 3 rejected` and checks the count, as `display-audit-controls` checks its 32 rows. Cost is three crew playthroughs, about 30 s each warm (V8).
+| `unrefreshed` | `^FAIL missing field $`; `^FAIL binding contract .*/monitor_face_signal/`; `^FAIL monitor-coverage frame=1 clocks$` | `missing=414 … failures=1012` (828 + 46 × 4 coverage) |
+| `drop_one` | `^FAIL monitor-coverage frame=36 course$`, and the summary `^display-audit: .* failures=1$` (no other failure) | `display-audit monitors: clocks=138 course=135 crew=460 signal=138`; `failures=1` |
+| `unbound` | `^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$` | `new=46 failures=46` |
+| `stale` | `^FAIL stale .*/monitor_face_clocks/`; `^FAIL binding contract .*/monitor_face_clocks/` | `mismatches=46 failures=92` |
 
 ## Acceptance criteria
 
-All commands are headless, run in the fix clone with `export PATH=$PWD/runtime/bin:$PATH`. `B=b974e302`.
+All commands are headless, run in the fix clone with `export PATH=$PWD/runtime/bin:$PATH`. `B=b974e302`. Each summary line was measured with the r1 prototype (V19).
 
 | # | Criterion | Command | Expected |
 |---|---|---|---|
-| 1 | Crew audit green | `make display-audit-crew` | rc 0; `display-audit: samples=46 … mismatches=0 missing=0 new=0 … stale=0 failures=0` |
-| 2 | Comms audit green | `make display-audit-comms` | rc 0; `samples=797 … missing=0 new=0 … failures=0` |
-| 3 | Interlude audit green | `make display-audit-interlude` | rc 0; `samples=127 … missing=0 new=0 … failures=0` |
+| 1 | Crew audit green | `make display-audit-crew` | rc 0; `display-audit: samples=46 checks=13570 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0` |
+| 2 | Comms audit green | `make display-audit-comms` | rc 0; `samples=797 … missing=0 new=0 known=922 stale=0 failures=0` |
+| 3 | Interlude audit green | `make display-audit-interlude` | rc 0; `samples=127 … missing=0 new=0 known=143 stale=0 failures=0` |
 | 4 | Scene audits green | `make scene-session-audits` | rc 0; `ac4: MET (5 accepted by D-77/D-78)`; `samples=814 … missing=0 … failures=0` |
-| 5 | Faces audited in every route | the logs of AC1–AC4: `grep '^display-audit monitors:' .godot/tmp/display-audit/{crew,comms,interlude,playthrough}/display-audit.log` | four lines, every count > 0; crew reads `clocks=138 course=138 crew=460 signal=138` (V8) |
-| 6 | Negative controls reject | `make display-audit-monitor-controls` | rc 0; each mutant prints its required reasons (M3 table); `display monitor controls: 3 rejected` |
-| 7 | Text identity: no product code changes, so every face renders the same strings, fonts, sizes, colours and layout | `git diff --exit-code $B -- ui interior demos main.gd project.godot assets data sim shaders` then `make bridge-monitors-test` | empty diff, rc 0; `bridge-monitors: 19 passed, 0 failures` (the faces' bound text on the real sim, unchanged) |
-| 8 | Contract not relaxed, no allowlist | `git diff --exit-code $B -- ui/display_binding.gd ui/composed_binding.gd tests/fixtures/display_audit/` and `make display-audit-controls` | empty diff; the 32 existing controls `rejected`, `test $n -eq 32` holds |
+| 5 | Every face on every sampled frame where its source exists (per-sample `monitor-coverage` checks inside the `failures=0` of AC1–4), totals as diagnostics | `grep '^display-audit monitors:' .godot/tmp/display-audit/{crew,comms,interlude,playthrough}/display-audit.log` | crew `clocks=138 course=138 crew=460 signal=138`; comms `2391 3074 7970 2391`; interlude `381 434 1270 381`; scene `2442 3063 8140 2442` (V19). No `^FAIL monitor-coverage` in any of the four logs |
+| 6 | Negative controls reject, each for its own reason | `make display-audit-monitor-controls` | rc 0; each of the 4 mutants prints the required lines of the M3 table; `drop_one` has exactly `failures=1`; `display monitor controls: 4 rejected` |
+| 7 | Text identity: no product code changes, so every face renders the same strings, fonts, sizes, colours and layout | `git diff --exit-code $B -- ui interior demos main.gd project.godot assets data sim shaders` then `make bridge-monitors-test` | empty diff, rc 0; `bridge-monitors: 19 passed, 0 failures` |
+| 8 | Contract not relaxed, no allowlist | `git diff --exit-code $B -- ui/display_binding.gd ui/composed_binding.gd tests/fixtures/display_audit/` and `make display-audit-controls` | empty diff; the 32 existing controls `rejected`, `test $n -eq 32` holds (M2 skips the `control` route) |
 | 9 | Mutant hook inert by default | `git grep -n PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests` | hits only in `tests/m4_playthrough_ship.gd` and the `display-audit-monitor-controls` recipe |
 | 10 | Other harness users still green | `make playthrough-negative playthrough-adversarial` | `playthrough-negative: 3 passed, 0 failures`; adversarial `0 failures` (V16) |
 | 11 | Hygiene | `make uid-guard python-guard && git diff --check $B` | rc 0, no output from `diff --check` |
 | 12 | No conflict with attended PR #412 | `git diff --name-only $B \| grep -E '^(Makefile\|demos/ship_geometry_demo.gd\|ui/ship_star_identification.gd\|mk/captain-anim.mk\|mk/captain-command.mk)$'` | no output (grep rc 1) |
-| 13 | No GPU | the recipes of AC1–AC6 | every Godot call is `$(GODOT_SIM) --headless`; no `golden`/`capture` target is invoked |
+| 13 | No GPU | the recipes of AC1–AC6 | every Godot call is `$(GODOT_SIM) --headless`; no `golden` or `capture` target is invoked |
 
 ## Sub-milestones and estimates
 
 | # | What | LOC | Depends | Order |
 |---|---|---:|---|---|
 | M1 | Harness refreshes faces in `sample()` | ~5 | none | 1. AC1–AC4 green after this alone (V8–V11) |
-| M2 | Coverage line and check in `display_audit.gd` | ~10 | M1 | 2 |
-| M3 | Mutant hook and `display-audit-monitor-controls` | ~25 | M1, M2 | 3. Write the control first, see `unrefreshed` red, then confirm M1 green (test-first) |
+| M2 | Per-sample coverage and totals line in `display_audit.gd` | ~22 | M1 | 2 |
+| M3 | Mutant hook and `display-audit-monitor-controls` | ~28 | M1, M2 | 3. Write the control first, see `unrefreshed` and `drop_one` red, then confirm M1 green |
 
 ## Risks and mitigations
 
-- **The signal face's waterfall `_follow` touches shared audio taps.** With `live=false` it erases its own id, and it stops the shared players only when no waterfall wants them (`ui/comms_waterfall.gd` `_follow`). Mitigation: the comms playthrough (feed and faces sampled) stays green with the prototype (V9). AC2 re-measures it.
-- **The audit now sees faces as always on screen.** That is stricter than play, and a face could go red in a state the player rarely sees. That is the point. A real finding is a product bug for its own row, not an allowlist entry.
-- **The run takes longer.** Measured: crew warm 30 s with the prototype against 39 s at main (V2, V8; both include the controls). Comms 188 s, scene 195 s and interlude 46 s with the prototype; per-target baselines at main are UNMEASURED in this clone. M3 adds three crew playthroughs, about 90–120 s, to a 70 min suite.
+- **The signal face's waterfall `_follow` touches shared audio taps.** With `live=false` it erases its own id, and it stops the shared players only when no waterfall wants them. Mitigation: the comms playthrough (feed and faces sampled) stays green with the prototype (V9, V19). AC2 re-measures it.
+- **The audit now sees faces as always on screen.** That is stricter than play. A real finding is a product bug for its own row, not an allowlist entry.
+- **M2's visibility rules mirror the product.** If a face's visibility rule changes, M2 goes red until the rule is updated. That is intended, and the `shown without its source` branch catches the reverse. That branch has no mutant (UNMEASURED; see Deliverables).
+- **The run takes longer.** With the prototype: crew 33 s against 39 s at main (both warm, both including the controls), comms 168–188 s, scene 179–205 s, interlude 49 s. Per-target baselines at main are UNMEASURED. M3 adds four crew playthroughs.
 - **PR #412 edits `demos/ship_geometry_demo.gd`.** M1 reads `demo.monitors` and `BridgeMonitor._view/_receiver/_bed`. If #412 renames them, M1 needs a one-line follow-up. AC12 keeps this row out of #412's files.
 
 ## Open questions for the user
@@ -131,28 +144,43 @@ None. The fix is test-only and changes nothing a player sees. No contract is rel
 
 - `tests/m4_playthrough_ship.gd` (M1, M3 hook), `tests/display_audit.gd` (M2), `mk/earth-link.mk` (M3 target and `ship-demo-ci` edge).
 - The four audits and the controls green per AC1–AC13, with logs under `.godot/tmp/display-audit/`.
+- Optional, at the executor's judgment: a fifth mutant that shows the course face with no plan, for M2's reverse branch.
 - A changelog line, and the row 7aj status in the charter on landing.
+
+## Quorum log
+
+**Round 1 (2026-11-10): BLOCKED 2/3.** `gemini-4-argon` passed. `gpt6-1-sol` and `oc-glm-5-3` rejected; neither disputed the direction.
+- **gpt6-1-sol:** M2 checked only route-wide totals, so a face that disappears after the first sample would still pass. *Changed:* M2 is now per sample and names the frame and the face; the totals are diagnostics only. A new `drop_one` mutant hides one face on exactly one frame and gets exactly `FAIL monitor-coverage frame=36 course` (V20). AC5 and AC6 are rewritten to match.
+- **oc-glm-5-3:** M2 was never prototyped, so AC5's counts and M3's reason format were predictions. *Changed:* M2 is prototyped and run on all four targets (V19) and all four mutants (V20). That run showed the course and crew faces are legitimately absent on frames with no plan or no crew (V22), and M2's rules now follow the product's. Also added: the recipe greps (V18) and the `sample()` call-site evidence (V21).
 
 ## Verification log
 
-Run on 2026-11-10 in `stapledons-godot-iter83` at `b974e302` (AILANG v0.56.1 pinned runtime, Godot on PATH, the Studio). The prototype is M1 plus the M3 hook, uncommitted, saved as `/tmp/stap_i83_7aj_prototype.patch` and reverted. The `PROTO_7AJ_MUTANT` variable named there stands in for `PLAYTHROUGH_MONITOR_MUTANT`. V4 and V8 summaries came from a throwaway Python one-liner over the samples (spike, untracked); the counts are re-checkable with `grep -o`.
+Run on 2026-11-10 in `stapledons-godot-iter83` at `b974e302` (AILANG v0.56.1 pinned runtime, Godot on PATH, the Studio).
+- V8–V16 used the round-0 prototype (`/tmp/stap_i83_7aj_prototype.patch`).
+- V19–V22 used the r1 prototype (`/tmp/stap_i83_7aj_prototype_r1.patch`), with `PROTO_7AJ_MUTANT` standing in for `PLAYTHROUGH_MONITOR_MUTANT`.
+- The V4, V8 and V22 per-row summaries came from throwaway Python one-liners over the samples (spike, untracked).
 
 | # | Command | Result |
 |---|---|---|
-| V1 | `grep -nE '^display-audit' /tmp/stap_i83_nightly.log` (nightly `make -k test` on `b974e302`) | comms `samples=797 missing=7173 failures=14346`; scene `814 / 7326 / 14652`; interlude `127 / 1143 / 2286`; crew `46 / 414 / 828`. Every `missing` = 9 × samples and every `failures` = 2 × missing; `new=0`, `mismatches=0` everywhere |
-| V2 | `make display-audit-crew` at `b974e302` (warm, 39 s) | rc 2; `samples=46 checks=12006 mismatches=0 missing=414 new=0 known=138 stale=0 failures=828`; `FAIL missing field ` (empty) and `FAIL binding contract …/monitor_face_clocks/…`, `…/monitor_face_signal/…` |
-| V3 | controller logs `/tmp/stap_i83_{b974,8ba1e3c8,523d96f9}_display-audit-crew.log` | red at `b974e302` and at `8ba1e3c8` (#379 merge), green at `523d96f9`: `samples=34 … missing=0 failures=0` |
-| V4 | monitor-face rows of `.godot/tmp/playthrough/crew/display_samples.ndjson` (V2's run) | 9 bindings per sample, all `{"field":"","fmt":"%s","text":"","parts":[]}`: clocks 3, signal 2, course 4; no crew-face labels; two plain caption Labels `Ship`/`Earth` (no digits) |
-| V5 | `sed -n 445,456p tests/m4_playthrough_ship.gd`; `sed -n 78,92p interior/bridge_monitor.gd` | harness: `demo.set_process(false)`, then `n.set_process(false)` for every node; the monitor refreshes only when `on_screen` (or editor), then sets `UPDATE_ONCE` |
-| V6 | `grep -n 'compose(' ui/bridge_screens.gd ui/earth_clocks.gd`; `grep -n 'n.field == ""' ui/display_binding.gd` | every face `compose` is inside `refresh()` (`bridge_screens.gd:82,85,126,128,151–154`, `earth_clocks.gd:45`); `display_binding.gd:90` flags `field == ""` |
-| V7 | `sed -n 45,52p tests/test_bridge_monitors.gd` | `faces_ok` calls `m.face.refresh(view, …)` before `DisplayBinding.audit(m.face)`, so the pre-refresh state was never tested |
-| V8 | prototype M1, `make display-audit-crew` (30 s) | rc 0; `samples=46 checks=13386 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0`; 874 face bindings (19 per row: clocks 3, signal 3 incl. the waterfall's rate tag, course 3, crew 10), none with an empty field |
-| V9 | prototype M1, `make display-audit-comms` (188 s) | rc 0; `samples=797 checks=257971 mismatches=0 missing=0 new=0 known=922 stale=0 failures=0`; comms route `["listen:in","feed","faces","log","listen:not_heard","log:rows"]` |
-| V10 | prototype M1, `make display-audit-interlude` (46 s) | rc 0; `samples=127 checks=37766 … missing=0 new=0 known=143 stale=0 failures=0`; 13 of 13 review pages |
-| V11 | prototype M1, `make scene-session-audits` (195 s) | rc 0; `ai-mode: none … result=PASS`; `ac4: MET (5 accepted by D-77/D-78)`; `samples=814 checks=254950 mismatches=0 missing=0 new=0 known=757 stale=0 failures=0` |
-| V12 | mutant `unrefreshed`: crew playthrough, then `display_audit.gd … crew known_findings.json` | playthrough rc 0; audit rc 1; `samples=46 checks=12006 mismatches=0 missing=414 new=0 known=138 stale=0 failures=828`, identical to main (V2) |
-| V13 | mutant `unbound` | audit rc 1; `FAIL NEW unbound node=…/monitor_face_clocks/@SubViewport@…/@Control@…/Mutant text="42"`; `new=46 failures=46` |
-| V14 | mutant `stale` | audit rc 1; `FAIL stale …/monitor_face_clocks/…` and `FAIL binding contract …/monitor_face_clocks/…`; `mismatches=46 failures=92` |
-| V15 | `grep -o` face bindings per sample file after V8–V11 | adversarial 16,247 / 822 rows; comms 15,826 / 797; crew 874 / 46; interlude 2,466 / 127; scene 16,087 / 814; empty-field 0 in all; every row has faces; comms and interlude cover all 20 face fields, including `course.ship_years_left` in transit |
-| V16 | prototype M1: `make playthrough-negative`, `make playthrough-adversarial`, `make bridge-monitors-test` | `playthrough-negative: 3 passed, 0 failures`; `playthrough: 142161 passed, 0 failures`; `bridge-monitors: 19 passed, 0 failures` |
-| V17 | `grep -n '^ci-fast' Makefile` | `ci-fast` has no display audit, so #379 merged on the fast tier without running them |
+| V1 | `grep -nE '^display-audit' /tmp/stap_i83_nightly.log` (nightly `make -k test` on `b974e302`) | comms `samples=797 missing=7173 failures=14346`; scene `814 / 7326 / 14652`; interlude `127 / 1143 / 2286`; crew `46 / 414 / 828`. Every `missing` = 9 × samples and every `failures` = 2 × missing |
+| V2 | `make display-audit-crew` at `b974e302` (warm, 39 s) | rc 2; `samples=46 checks=12006 mismatches=0 missing=414 new=0 known=138 stale=0 failures=828` |
+| V3 | controller logs `/tmp/stap_i83_{b974,8ba1e3c8,523d96f9}_display-audit-crew.log` | red at `b974e302` and `8ba1e3c8` (#379 merge), green at `523d96f9` (`samples=34 … missing=0 failures=0`) |
+| V4 | monitor-face rows of the V2 samples | 9 bindings per sample, all `{"field":"","fmt":"%s","text":"","parts":[]}`: clocks 3, signal 2, course 4; no crew-face labels; plain captions `Ship`/`Earth` (no digits) |
+| V5 | `sed -n 445,456p tests/m4_playthrough_ship.gd`; `sed -n 78,92p interior/bridge_monitor.gd` | harness: `demo.set_process(false)` then `n.set_process(false)` for every node; the monitor refreshes only when `on_screen`, then sets `UPDATE_ONCE` |
+| V6 | `grep -n 'compose(' ui/bridge_screens.gd ui/earth_clocks.gd`; `grep -n 'n.field == ""' ui/display_binding.gd` | every face `compose` is inside `refresh()`; `display_binding.gd:90` flags `field == ""` |
+| V7 | `sed -n 45,52p tests/test_bridge_monitors.gd` | `faces_ok` refreshes each face before `DisplayBinding.audit(m.face)` |
+| V8 | M1 only, `make display-audit-crew` (30 s) | rc 0; `samples=46 checks=13386 … missing=0 … failures=0`; 874 face bindings, 19 per row, none with an empty field |
+| V9 | M1 only, `make display-audit-comms` (188 s) | rc 0; `samples=797 checks=257971 … failures=0` |
+| V10 | M1 only, `make display-audit-interlude` (46 s) | rc 0; `samples=127 checks=37766 … failures=0`; 13 of 13 review pages |
+| V11 | M1 only, `make scene-session-audits` (195 s) | rc 0; `ac4: MET (5 accepted by D-77/D-78)`; `samples=814 checks=254950 … failures=0` |
+| V12 | round-0 mutant `unrefreshed` | audit rc 1; `samples=46 checks=12006 mismatches=0 missing=414 new=0 known=138 stale=0 failures=828`, identical to V2 |
+| V13 | round-0 mutant `unbound` | audit rc 1; `FAIL NEW unbound …/Mutant text="42"`; `new=46 failures=46` |
+| V14 | round-0 mutant `stale` | audit rc 1; `FAIL stale …` and `FAIL binding contract …/monitor_face_clocks/…`; `mismatches=46 failures=92` |
+| V15 | `grep -o` face bindings per sample file after V8–V11 | about 50,000 face bindings across five playthroughs (adversarial included), 0 with an empty field. Excluding the faces, as a SubViewport filter would, audits none of them |
+| V16 | M1 only: `make playthrough-negative playthrough-adversarial bridge-monitors-test` | `playthrough-negative: 3 passed, 0 failures`; `playthrough: 142161 passed, 0 failures`; `bridge-monitors: 19 passed, 0 failures` |
+| V17 | `grep -n '^ci-fast' Makefile` | `ci-fast` has no display audit |
+| V18 | `grep -n 'display-audit' mk/earth-link.mk mk/m45.mk` (recipe greps) | echo: `grep -E '^(FAIL\|display-audit)'` (`earth-link.mk:20`, `m45.mk:171,183`), `'^(FAIL\|display-audit\|ai-mode\|ac4:)'` (`m45.mk:71`); gates: `grep -q '^display-audit: .* new=0 .* failures=0$$'` (`earth-link.mk:20`, `m45.mk:171,183`), `'^display-audit: .* failures=0$$'` (`m45.mk:71`), `'^display-audit known: unbound '` and `'… transit-ISM '` (`m45.mk:76`, control route only). `display-audit monitors:` matches no gate and is only echoed |
+| V19 | r1 prototype: `make display-audit-crew`, `-interlude`, `-comms`, `scene-session-audits` (33, 49, 168, 205 s) | all rc 0. crew `display-audit monitors: clocks=138 course=138 crew=460 signal=138`, `display-audit: samples=46 checks=13570 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0`; interlude `display-audit monitors: clocks=381 course=434 crew=1270 signal=381`, `samples=127 checks=38274 … failures=0`; comms `display-audit monitors: clocks=2391 course=3074 crew=7970 signal=2391`, `samples=797 checks=261159 … failures=0`; scene `display-audit monitors: clocks=2442 course=3063 crew=8140 signal=2442`, `ac4: MET (5 accepted by D-77/D-78)`, `samples=814 checks=258206 … failures=0` |
+| V20 | r1 prototype, each mutant: crew playthrough (all rc 0), then `display_audit.gd … crew known_findings.json` (all rc 1, 0 `SCRIPT ERROR`) | `unrefreshed`: `FAIL missing field `, `FAIL binding contract /root/ShipGeometryDemo/@SubViewport@80/@Node3D@81/monitor_face_signal/@SubViewport@340/@Control@343/@Label@341`, `FAIL monitor-coverage frame=1 clocks` (also `signal`, `course`, `crew`), `display-audit monitors: clocks=0 course=0 crew=0 signal=0`, `display-audit: samples=46 checks=12190 mismatches=0 missing=414 new=0 known=138 stale=0 failures=1012`. `drop_one`: `FAIL monitor-coverage frame=36 course`, `display-audit monitors: clocks=138 course=135 crew=460 signal=138`, `display-audit: samples=46 checks=13561 mismatches=0 missing=0 new=0 known=138 stale=0 failures=1`. `unbound`: `FAIL NEW unbound node=/root/ShipGeometryDemo/@SubViewport@80/@Node3D@81/monitor_face_clocks/@SubViewport@327/@Control@337/Mutant text="42"`, `… new=46 … failures=46`. `stale`: `FAIL stale …/monitor_face_clocks/@SubViewport@327/@Control@337/@Label@335`, `FAIL binding contract …/@Label@335`, `… mismatches=46 … failures=92` |
+| V21 | `grep -n '^\s*sample()' tests/m4_playthrough_ship.gd` with 4 lines of context; `git grep -n 'ship_hud.update(' -- '*.gd'`; `grep -n '_process' tests/review_drive.gd` | four sites: `:119` after `demo._process(0.05)`; `:176` after `demo._process(0.1)` (`:160`, the refusal branch); `:348` after `ReviewDrive.frame` (which calls `demo._process(dt)`, `review_drive.gd:55`); `:391` in `narrate()`, AI modes only (`playthrough-ai-modes`, outside the four targets), after sim sends with no new presentation frame. The view identity does not depend on the site: `ship_hud.update` has one caller (`ship_geometry_demo.gd:1337`), and `_refresh_monitors(view)` follows at `:1339` with the same dictionary |
+| V22 | first r1 run with all four faces required on every frame, then the per-row check of the interlude samples | interlude rc 2: `FAIL monitor-coverage frame=144 course` … `frame=200`, 15 failures, every one `at_rest`, no `journey.plan`. Per-row check: 127 rows, 0 where (plan present) ≠ (course face present) or (crew aboard) ≠ (crew face present). Hence M2's course and crew rules |
