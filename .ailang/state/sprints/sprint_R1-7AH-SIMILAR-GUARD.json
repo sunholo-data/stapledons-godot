@@ -63,8 +63,15 @@
       ],
       "expectations": "Edits (design Appendix A intro, exact): Makefile:103 'fi; \\' becomes 'fi''; lines 104-105 (the EARTH_MINOR / SIMILAR_MINOR inline guards) deleted; one blank line plus the A.mk block minus its two edge lines inserted after :103, keeping MS1's target bytes. cmd2 (AC2, V4): 'similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)', rc 0. cmd3 (AC3/AC4, V5): rc 0; 16 case lines in the M2-table order (pristine below exact removed literal twice unknown nofloor ternary arith exprconst exprfloor comparison compound future comment); final line 'similar-guard-controls: 13 rejected, 3 accepted'; under 2 s. Drills by line (AC4): below rc 2 below-floor, exact rc 2 S0.3 line, removed rc 2 0-times, future accepted FUTURE_MINOR (19), exprconst rc 2 'FOO_MINOR unresolved in bridge/sim_bridge.gd', arith/ternary rc 2 'not one bare SimBridge minor', comparison/compound 'mentions want_minor 2 times, want 1'. cmd4 (pre-MS3 base): 0 and 0 (edges absent until MS3; planner measured the ci-fast count 0 at base).",
       "notes": "The broad want_minor occurrence count (revision 2, quorum round 2) is deliberate: compounds, comparisons, defaults and comments over-count and fail closed; only the grammar step decides what a valid assignment is. The recipe is POSIX sh under make's default SHELL -- dash-safe (V12). If the AC3 case count deviates, pause; do not hand-tune the recipe away from the appendix bytes.",
-      "measured": [],
-      "status": "todo",
+      "measured": [
+        "Appendix A fence extraction: A.mk = 29 lines, 16 tab-recipe lines; edges (similar-test:, ci-fast:) withheld from MS2 insert (27 lines inserted after the line-103 fix)",
+        "Makefile edits: line 103 'fi; \\' -> 'fi'' (verified by od); old lines 104-105 deleted; blank + 27-line block inserted; MS1 temp target absorbed; diff vs 79eadb49 = +29/-3 (hunk @@ -103,3 +103,29 @@)",
+        "make similar-main-guard -> rc 0; \"similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)\"",
+        "make similar-guard-controls -> rc 0; 16 case lines (pristine below exact removed literal twice unknown nofloor ternary arith exprconst exprfloor comparison compound future comment); final \"similar-guard-controls: 13 rejected, 3 accepted\"; wall time measured 3 s by the shell clock including perl/make startup (AC3 says under 2 s; recorded as measured, not a guard fault)",
+        "make -n ci-fast | grep -c '_run_map|similar_guard_controls.sh' -> 0 (edges absent until MS3, as expected); make -n similar-test | grep -c similar-main-guard -> 0 (as expected)",
+        "cmp of the in-tree region vs A.mk: differs at line 10 only (the similar-test edge line, absent until MS3 by design)"
+      ],
+      "status": "done",
       "passes": null
     },
     {
