@@ -678,4 +678,6 @@ Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule
 
 ## STATUS 2026-11-07 — ITERATION 79: row 7ad remains PARKED-ON-LANE: required evaluator Sonnet subscription probe rc 1 / HTTP 429 weekly quota, reset 2026-11-09 06:00 Europe/Copenhagen. Named designer/evaluator Agents ran readiness and the exact pinned capacity probe; no heavy design, plan, build or independent verdict. Iteration 78 draft PR #408 adopted and extended, unmerged. Clauses 1–3 MET, 4 UNMET (D-147), 5 ongoing; goal unmoved; no new human decision.
 
+## STATUS 2026-11-08 — ITERATION 80: row 7ad PARKED; independent MiniMax round1 FAIL47; no implementation round2 launched. Implementation withheld: final M4-r21 selftest41/42 red; unapproved source preserved at backup/stapledon-iter80-7ad-final-unapproved-r21 commit6abbd8b2; resume engineering, then all required gates and independent review Clauses 1–3 MET, 4 UNMET (D-147), 5 ongoing; goal unmoved. All six human decisions unchanged.
+
 <!-- End of archived STATUS stamps. -->
