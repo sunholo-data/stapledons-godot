@@ -95,8 +95,16 @@
       ],
       "expectations": "cmd1 (byte-for-byte proof): both cmp's silent-exit-0 -> 'B-ok', 'A-ok' (assert the region start b is the '# Row 7ah:' comment and the 29-line block ends on the '@MAKE=' recipe line before sed). cmd2 (AC1, V6/V22): rc 0; then 1, 1, 0; every pre-existing ranking/session/oracle/cmp/sha step still runs; the log ends with the session-215 sha256 a64e9634...; ~30-53 s. cmd3 (AC10): count >= 2 (V22 measured 12); exactly two edge lines printed with their line numbers. Post-push (AC10 tail): the PR's GitHub make ci-fast check green (gh pr checks <PR>).",
       "notes": "Why ci-fast: #379 merged green with this guard red because similar-test is not in ci-fast; the guard + controls cost under a second of POSIX sh/sed/grep/cmp/mktemp/make and were measured under dash and GNU Make 4.4.1 (V11/V12). If the GitHub runner goes red for an environment reason, stop for the controller -- the design's sanctioned mitigation is to drop the one ci-fast edge line, never weaken the guard.",
-      "measured": [],
-      "status": "todo",
+      "measured": [
+        "cmp $S/B.sh tools/similar_guard_controls.sh -> B-ok (byte-for-byte)",
+        "cmp Appendix A (29 lines) vs Makefile '# Row 7ah:' (line 105) through the 29-line block -> A-ok (byte-for-byte)",
+        "edges added after the .PHONY line (Makefile:114 'similar-test: similar-main-guard similar-guard-controls', :115 'ci-fast: similar-main-guard similar-guard-controls'); Makefile:55 and :57 untouched; git diff --stat 79eadb49 -- Makefile = +31/-3, hunk @@ -103,3 +103,31 @@ only",
+        "make similar-test -> rc 0 (45 s wall); \"similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)\" count 1; \"similar-guard-controls: 13 rejected, 3 accepted\" count 1; \"lost EARTH_MINOR\" count 0; final line \"a64e963401f56888d56ccaaf5514124a8c0e44af3be760c6e356b9a65ef7cdf6  .godot/tmp/similar/session-215-strict.ndjson\" (sha a64e9634... as expected); 23 output lines",
+        "AC10: make -n ci-fast | grep -c '_run_map\\|similar_guard_controls.sh' -> 12 (V22 measured 12); exactly two edge lines at Makefile:114-115",
+        "git diff --check 79eadb49 -- Makefile -> rc 0",
+        "Post-push GitHub 'make ci-fast' check: not run (no push in this sprint; controller/post-push tail)"
+      ],
+      "status": "done",
       "passes": null
     },
     {

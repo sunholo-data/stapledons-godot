@@ -111,6 +111,8 @@ similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = fr
 # SIMILAR_GUARD_ROOT is where main.gd and bridge/sim_bridge.gd are read; similar-guard-controls points it at mutated copies.
 SIMILAR_GUARD_ROOT ?= .
 .PHONY: similar-main-guard similar-guard-controls
+similar-test: similar-main-guard similar-guard-controls
+ci-fast: similar-main-guard similar-guard-controls
 similar-main-guard: ## 7ah: main.gd's map session asks a SimBridge minor >= SIMILAR_MINOR, and never SIMILAR_MINOR
 	@set -eu; r='$(SIMILAR_GUARD_ROOT)'; g="$$r/main.gd"; b="$$r/bridge/sim_bridge.gd"; \
 	  test -f "$$g" && test -f "$$b" || { echo "similar-test guard: missing $$g or $$b" >&2; exit 1; }; \
