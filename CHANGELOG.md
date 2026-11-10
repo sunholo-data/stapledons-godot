@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### m4-7aj-monitor-face-bindings (2026-11-10)
+
+#### Fixed
+
+- **Four display audits are green again** (R1-7AJ-MONITOR-BINDINGS, row 7aj, PR #417). `display-audit-crew`, `display-audit-comms`, `display-audit-interlude` and `scene-session-audits` had been red on main since PR #379 added the bridge monitor wall (bisected: red at `8ba1e3c8`, green at its parent `523d96f9`), hidden until the first keep-going nightly on `b974e302`. The playthrough harness switches off `_process` on every node, so the monitor faces never refreshed and their bindings were sampled with empty fields. `sample()` now refreshes each face from the view its monitor was given that frame, as an on-screen monitor does. Test-only: no product, UI or asset file changed, so nothing on screen changes.
+- **Per-frame monitor coverage.** `tests/display_audit.gd` fails a sampled frame that lacks a face's bindings (clocks and signal always, course with a plan, crew with crew aboard) and prints `display-audit monitors:` totals.
+- **New control `make display-audit-monitor-controls`** (in `ship-demo-ci`): four mutants (`unrefreshed`, `drop_one`, `unbound`, `stale`), each rejected for its own reason. Both subprocesses run under `$(SCRIPT_GATE)` deadlines, the audit with WANT_RC 1, so a stall or script error fails the target and is never counted as a rejection. Evaluations: Sonnet 5.5 91/100, MiniMax M3 88/100 (cross-vendor).
+
 ### rig-keep-going (2026-11-09)
 
 #### Fixed

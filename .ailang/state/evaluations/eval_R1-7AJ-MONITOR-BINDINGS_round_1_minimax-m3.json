@@ -1,0 +1,115 @@
+{
+  "sprint_id": "R1-7AJ-MONITOR-BINDINGS",
+  "round": 1,
+  "role": "evaluator",
+  "evaluator": "minimax (pi session, cross-vendor second judge)",
+  "base": "b974e302",
+  "head": "0919f0e1",
+  "branch": "mission/stapledon-iter83-7aj",
+  "protocol": {
+    "claude_md_read": true,
+    "session_protocol_ack": {
+      "acked": true,
+      "tool_result": "Session protocol acknowledged — mutating tools unlocked for this session."
+    },
+    "work_classification": "independent evaluation under the approved design (m4-7aj-monitor-face-bindings.md, revision 2) and sprint plan (m4-7aj-monitor-face-bindings-sprint.md); unattended mission stage, ailang messages not run"
+  },
+  "score": 88,
+  "verdict": "PASS",
+  "blocking_findings": [],
+  "nonblocking_findings": [
+    {
+      "id": "N1",
+      "severity": "low",
+      "file": "tests/m4_playthrough_ship.gd",
+      "line": 66,
+      "issue": "The harness refresh models the product's face.refresh but not the rest of BridgeMonitor._process: face.step() and viewport.render_target_update_mode = UPDATE_ONCE are never called, and face.set_live(true) never happens (the signal waterfall's live stays false). The signal face's per-frame waterfall advance and the live/on-screen path are therefore not covered by these display audits.",
+      "evidence": "interior/bridge_monitor.gd:82-90 (product refresh+step+UPDATE_ONCE, only while on_screen); tests/m4_playthrough_ship.gd:63-67 (refresh only).",
+      "suggestion": "Non-blocking: the on-screen/live path is covered by the product's own tests/test_bridge_monitors.gd (gated checks). If the waterfall's stepped state is ever meant to be audited, the harness would need to call face.step() as well."
+    },
+    {
+      "id": "N2",
+      "severity": "low",
+      "file": "tests/display_audit.gd",
+      "line": 305,
+      "issue": "The M2 coverage check only asserts that a required face is present on the frame; the reverse branch ('shown without its source') is absent, so over-display (a visible face with no source) is not caught by these four audits.",
+      "evidence": "tests/display_audit.gd:305-320 (only the 'want[kind]' arm exists); design m4-7aj rev 2 / M3 alternative + Risks: the orphan mutant could not be realized cleanly (V23: failures=40, not 1), so mutant and branch were deleted and over-display is left to bridge-monitors-test's gated checks. The code comment states this.",
+      "suggestion": "Acceptable under AC6b's stated alternative and disclosed in the design's Risks; no action required for landing."
+    },
+    {
+      "id": "N3",
+      "severity": "low",
+      "file": "tests/m4_playthrough_ship.gd, tests/display_audit.gd",
+      "line": 59,
+      "issue": "Both stall paths park the process with 'while true: OS.delay_msec(100)'; termination depends entirely on tools/script_gate.sh killing the process group at the deadline (exit 142). The behaviour is correct under the M3 execution contract, but a hang is possible if the gate is bypassed.",
+      "evidence": "tests/m4_playthrough_ship.gd:59-61 (mutant 'stall'), tests/display_audit.gd:373-375 (MONITOR_AUDIT_STALL=1); both are inert unless the env var is set (AC9).",
+      "suggestion": "None needed; note that the two hooks are env-gated and grep-confirmed to appear only in the harness, the audit and mk/earth-link.mk."
+    },
+    {
+      "id": "N4",
+      "severity": "info",
+      "file": "tests/fixtures/catalogue/*.translation",
+      "line": 0,
+      "issue": "Running the audits reimports assets and dirties tracked .translation fixture files (Godot reimport side effect, pre-existing repo wart, not introduced by this diff).",
+      "evidence": "git status after 'make display-audit-crew' showed 12 modified tests/fixtures/catalogue/*.translation files; they were restored with git checkout -- before this report was written.",
+      "suggestion": "Restore after audit runs (as done here) or teach the import step to leave tracked translations alone."
+    },
+    {
+      "id": "N5",
+      "severity": "info",
+      "file": "mk/earth-link.mk",
+      "line": 27,
+      "issue": "display-audit-monitor-controls adds four crew playthroughs plus four gated audits to ship-demo-ci (measured 1m48s warm here), so the nightly pays that cost on every run.",
+      "evidence": "Measured: make display-audit-monitor-controls real 1m48.035s, rc 0; each gated audit ran in 1-5 s of its 600 s deadline.",
+      "suggestion": "None; the cost is small relative to the four restored audits and the fail-closed deadline contract."
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "export PATH=$PWD/runtime/bin:$PATH && make display-audit-crew",
+      "rc": 0,
+      "summary": "display-audit: samples=46 checks=13570 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0",
+      "extra_output": [
+        "display-audit monitors: clocks=138 course=138 crew=460 signal=138",
+        "script-gate: playthrough ok: playthrough: 6697 passed, 0 failures (rc 0, no SCRIPT ERROR, 32 s of 1200 s)",
+        "real 1m15.159s"
+      ]
+    },
+    {
+      "cmd": "export PATH=$PWD/runtime/bin:$PATH && make display-audit-monitor-controls",
+      "rc": 0,
+      "summary": "display monitor controls: 4 rejected",
+      "extra_output": [
+        "script-gate: display-audit-monitor-unrefreshed ok: display-audit: samples=46 checks=12190 mismatches=0 missing=414 new=0 known=138 stale=0 failures=1012 (rc 1, no SCRIPT ERROR, 1 s of 600 s)",
+        "script-gate: display-audit-monitor-drop_one ok: display-audit: samples=46 checks=13561 mismatches=0 missing=0 new=0 known=138 stale=0 failures=1 (rc 1, no SCRIPT ERROR, 2 s of 600 s)",
+        "script-gate: display-audit-monitor-unbound ok: display-audit: samples=46 checks=13708 mismatches=0 missing=0 new=46 known=138 stale=0 failures=46 (rc 1, no SCRIPT ERROR, 5 s of 600 s)",
+        "script-gate: display-audit-monitor-stale ok: display-audit: samples=46 checks=13616 mismatches=46 missing=0 new=0 known=138 stale=0 failures=92 (rc 1, no SCRIPT ERROR, 1 s of 600 s)",
+        "real 1m48.035s"
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "id": "M1",
+      "edit": "tests/display_audit.gd:319 — the per-frame coverage check 'if want[kind]: check(row_faces.has(kind), \"monitor-coverage frame=%d %s\" ...)' replaced by 'check(true, ...)' (coverage check neutered)",
+      "result": "killed",
+      "detail": "make display-audit-monitor-controls -> make rc 2; 'display monitor controls: drop_one infrastructure failure (audit, log .godot/tmp/monitor-controls/monitor-drop_one.audit.log)' (script-gate: rc 0, want 1) and 'display monitor controls: unrefreshed missing reason ^FAIL monitor-coverage frame=1 clocks$'; final line 'display monitor controls: 2 rejected'. The per-frame coverage check is load-bearing: without it the drop_one face that vanishes on frame 36 is not caught.",
+      "reverted": "git checkout -- tests/display_audit.gd"
+    },
+    {
+      "id": "M2",
+      "edit": "tests/m4_playthrough_ship.gd:66 — the harness refresh 'm.face.refresh(m._view, m._receiver, m._bed)' replaced by 'm.face.refresh({}, m._receiver, m._bed)' (faces refreshed with a view that is not the one the audit reconstructs)",
+      "result": "killed",
+      "detail": "make display-audit-monitor-controls -> make rc 2; 'display monitor controls: 0 rejected'; the drop_one and stale controls lost their required reason lines ('display monitor controls: drop_one missing reason ^FAIL monitor-coverage frame=36 course$', 'display monitor controls: stale missing reason ^display-audit: .* mismatches=46 .* failures=92$') and the unrefreshed/unbound playthroughs failed (infrastructure failure). The audit catches a face whose displayed text does not match the audited frame, so the M1 refresh cannot be satisfied by a wrong view.",
+      "reverted": "git checkout -- tests/m4_playthrough_ship.gd"
+    }
+  ],
+  "design_fidelity": {
+    "M1_harness_refresh": "Faithful, not a product-bug hiding place. tests/m4_playthrough_ship.gd:63-67 calls the product's own BridgeScreens face.refresh with the monitor's stored inputs (m._view, m._receiver, m._bed). demos/ship_geometry_demo.gd:1337-1339 hands the monitors the same view dictionary it gives ship_hud.update(view), and ui/ship_hud.gd:507 stores that same reference as _last_view, so m._view and the audited row's view are one and the same frame's dictionary. The product path is untouched (interior/bridge_monitor.gd:82-90), and the audit's model is strictly stricter than play: every face is refreshed on every sampled frame regardless of the VisibleOnScreenNotifier3D gate, so an empty or stale face is caught rather than excused.",
+    "M2_per_frame_coverage": "Implemented per design: required faces are derived from the product's own visibility rules (clocks/signal always, course iff journey.plan is a Dictionary, crew iff earth.crew is a non-empty Array), the check names the frame and the face, and the totals line is diagnostic only. The reverse ('shown without its source') branch is absent by the design's own V23 alternative and is disclosed in the code and in the design's Risks (see N2).",
+    "M3_negative_controls": "Four mutants, each rejected by the crew audit for its own reason, each subprocess under a $(SCRIPT_GATE) deadline, audit WANT_RC 1, and an infrastructure fault never counted as a rejection. Both required runs reproduced the design's expected summaries exactly.",
+    "scope": "Exactly the three planned files, +75 lines, test code and make glue only; no product file touched (AC7), no known-findings fixture touched (AC8), no new .uid files, no Python. The mutant hooks are env-gated and grep-confirmed to exist only in tests/m4_playthrough_ship.gd, tests/display_audit.gd and mk/earth-link.mk (AC9)."
+  },
+  "worktree": "clean after the two mutations were reverted and the Godot-generated tests/fixtures/catalogue/*.translation churn was restored; only this report was added",
+  "summary": "PASS 88/100. The claim holds: the four red display audits are restored by a test-only harness refresh that uses the product's own face.refresh with the product's own inputs (faithful model, no product bug hidden), the per-frame coverage check is real (killed by mutation M1) and the controls are fail-closed and sensitive (killed by mutation M2). make display-audit-crew and make display-audit-monitor-controls both rc 0 with the design's expected summary lines. No blocking findings; four low/info non-blocking notes (missing face.step()/set_live in the harness model, the deliberately deleted reverse branch, env-gated stall loops, and Godot reimport churn in tracked translation fixtures)."
+}
