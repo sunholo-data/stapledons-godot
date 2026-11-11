@@ -15,7 +15,7 @@ Scored against `../stapledons-design/vision/core-pillars.md` (pillars 1–6) and
 | Choices Are Final | 0 | 0 | No game code changes. |
 | The Game Doesn't Judge | 0 | 0 | No copy changes. |
 | Time Has Emotional Weight | 0 | 0 | Nothing a player sees or hears changes. |
-| The Ship Is Home | 0 | 0 | No scene, furniture or asset changes. The monitor wall Mark approved on 2026-11-03 stays where it is. |
+| The Ship Is Home | 0 | 0 | No scene, furniture or asset changes. The #379 monitor wall stays where it is (PR #379 body: "Mark approved revision 2 on 2026-11-03 (\"looks awesome\")"; V16). |
 | Grounded Strangeness | 0 | 0 | The checks keep guarding that the destination is offered as a finite star with its inferred radius (D-58). That protects an existing feature; it adds nothing. |
 | We Are Not Built For This | 0 | 0 | No crew or AI change. |
 | Hard sci-fi authenticity (spec) | 0 | 0 | No formula, shader, lookup table or render change. Physics gates 2 and 3 do not apply. |
@@ -50,7 +50,7 @@ Scored against `../stapledons-design/vision/core-pillars.md` (pillars 1–6) and
 
 ### Classification: (a) TEST-ONLY, loop work
 
-The product is behaving correctly. From the lift landing the course screen really does stand in front of the destination, and the I key correctly refuses to offer a body the player cannot see (the occlusion contract the test itself relies on, `ui/ship_star_identification.gd:101-103, 130-132`). What went stale is the test's choice of eye. The placement of the monitor was approved by Mark (wall R, 2026-11-03) and is not changed here.
+The product is behaving correctly. From the lift landing the course screen really does stand in front of the destination, and the I key correctly refuses to offer a body the player cannot see (the occlusion contract the test itself relies on, `ui/ship_star_identification.gd:101-103, 130-132`). What went stale is the test's choice of eye. The placement of the monitor came with R3-COMMS-V2, whose PR #379 body records "Mark approved revision 2 on 2026-11-03 (\"looks awesome\")" (V16); later changes to it belong to the deck-layout row and D-148's family. It is not changed here.
 
 ### Alternatives considered
 
@@ -86,6 +86,7 @@ It uses the same BVH and the same eye as the I candidates, so it cannot disagree
 - **Touched:** `tests/test_free_nav_stop.gd` (M1, M2: 2 lines changed, 2 added) and a changelog fragment under `changelogs/unreleased/`. Landing edits (charter row, README status) are routine.
 - **Do not touch:** `demos/ship_geometry_demo.gd`, `ui/ship_star_identification.gd` (both in attended PR #412), `ui/star_occlusion.gd`, `assets/ship_demo/*`, `art/deck-layout-v2/*`, `interior/bridge_monitor.gd`, `tools/m4_ship_golden.gd`, `Makefile`, `mk/*`.
 - **Overlap with attended PR #412 (V9):** none. #412 ("Captain's cockpit integrated with the current AI-panel build", 48 files) does not touch `tests/test_free_nav_stop.gd`. Its `ui/ship_star_identification.gd` hunk (+11 −1) adds a `typing()` focus test for the I key's input path; it does not touch `update_candidates` or occlusion. Its `demos/ship_geometry_demo.gd` hunks gate HUD and camera behaviour on `consoles.command.visible` (the chair cockpit); none adds bridge geometry. **Merge-time risk:** no textual conflict. Semantic risk is low but not zero: #412 changes `open_navigation()`'s helm mode when the chair command is visible (`journey_map.set_mode`), which this test calls 4 times with the chair closed. Whichever lands second reruns `make free-nav-stop-test` (AC1).
+- **Overlap with open PRs #380 and #373 (V15):** neither touches tests/test_free_nav_stop.gd nor any file on the do-not-touch list; no textual conflict. The same merge-time rule as #412 applies: whichever lands second reruns make free-nav-stop-test (AC1), and if either lands first and moves bridge geometry, V2 and V7 are re-measured before this row's ACs are treated as holding.
 
 ## Acceptance criteria
 
@@ -94,13 +95,29 @@ Headless, in the fix clone, after `export PATH=$PWD/runtime/bin:$PATH` (Godot 4.
 | # | Criterion | Command | Expected |
 |---|---|---|---|
 | AC1 | The target is green | `make free-nav-stop-test; echo rc=$?; tail -1 .godot/tmp/free-nav-stop.log` | `rc=0`; `free-nav-stop: 54 passed, 0 failures` |
-| AC2 | Both I checks and the clear-eye check pass, the destination offered as a body | `grep -E '^(ok\|FAIL) (I offers\|alpha Cen A is inspectable\|a click on A.s centre\|its card says\|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log` | 6 lines, all `ok`: two `the fixed eye looks ahead past the ship …`, `I offers the destination as its finite body, not the hidden catalogue point (44 candidates)`, `its card says the radius is inferred: …`, `alpha Cen A is inspectable at its stop`, `a click on A's centre picks A, not B (["body:acen-a"])` |
+| AC2 | Both I checks and the clear-eye check pass, the destination offered as a body | the fenced **AC2** command under "AC command blocks" below (plain `\|` alternation under `grep -E`; a markdown table cannot hold it unescaped) | rc 0, exactly the 6 listed `ok` lines: two `the fixed eye looks ahead past the ship …`, `I offers the destination as its finite body, not the hidden catalogue point (44 candidates)`, `its card says the radius is inferred: …`, `alpha Cen A is inspectable at its stop`, `a click on A's centre picks A, not B (["body:acen-a"])` |
 | AC3 | The eye is the golden's, at both checks | `grep -c 'Vector3(11, 82, -4.8)' $T; grep -c 'Vector3(8, 82, -4.8)' $T; grep -c 'Vector3(11, 82, -4.8)' tools/m4_ship_golden.gd` | `2`, `0`, `1` |
 | AC4 | Test-only: no product, asset or build file changed | `git diff --name-only origin/main...HEAD` | only `tests/test_free_nav_stop.gd`, a `changelogs/unreleased/*` fragment and landing docs/state; nothing under `demos/`, `ui/`, `interior/`, `assets/`, `art/`, `Makefile`, `mk/` |
-| AC5 | **Red control R1, the old eye:** occlusion still counts, and the new check names the cause | `sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $T > /tmp/7ak_r1.gd; eval $G --script /tmp/7ak_r1.gd > /tmp/7ak_r1.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r1.log; grep -E '^FAIL (I offers\|alpha Cen A is inspectable)' /tmp/7ak_r1.log; tail -1 /tmp/7ak_r1.log` | `rc=1`; `2`; the two original FAIL lines (`(40 candidates)`); `free-nav-stop: 48 passed, 4 failures` |
+| AC5 | **Red control R1, the old eye:** occlusion still counts, and the new check names the cause | `sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $T > /tmp/7ak_r1.gd; eval $G --script /tmp/7ak_r1.gd > /tmp/7ak_r1.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r1.log;` then the fenced **AC5** second grep below; then `tail -1 /tmp/7ak_r1.log` | `rc=1`; `2`; the two original FAIL lines (`(40 candidates)`) and the count test rc 0; `free-nav-stop: 48 passed, 4 failures` |
 | AC6 | **Red control R2, the furniture moves onto the new eye's line** (the course monitor and its face shifted +2.418 m in x, centred on x = 11) | `awk '{print} /Vector3\(11, 82, -4.8\)/ && !d {print "\tdemo.monitor_frames.position.x += 2.418; demo.geometry.find_child(\"monitor_face_course\", true, false).position.x += 2.418"; d=1}' $T > /tmp/7ak_r2.gd; eval $G --script /tmp/7ak_r2.gd > /tmp/7ak_r2.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r2.log; grep -c '^FAIL I offers the destination' /tmp/7ak_r2.log; tail -1 /tmp/7ak_r2.log` | `rc=1`; `2`; `1` (`(41 candidates)`); `free-nav-stop: 48 passed, 4 failures` (the fourth FAIL is `alpha Cen A is inspectable at its stop`) |
 | AC7 | **Red control R3, a product regression in body gathering** (the `_add_body_candidates` call in `ui/ship_star_identification.gd:105` replaced by `pass` in the tree for the run, then restored with `git checkout -- ui/ship_star_identification.gd`) | `sed -i.bak -e 's/^\t_add_body_candidates(sky,view,focal,px,canvas_to_pixel)$/\tpass # R3/' ui/ship_star_identification.gd && rm ui/ship_star_identification.gd.bak && eval $G --script $T > /tmp/7ak_r3.log 2>&1; echo rc=$?; git checkout -- ui/ship_star_identification.gd; grep -E '^FAIL' /tmp/7ak_r3.log; tail -1 /tmp/7ak_r3.log; git status --porcelain` | `rc=1`; exactly `FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)` and `FAIL alpha Cen A is inspectable at its stop`; `free-nav-stop: 50 passed, 2 failures`; no `git status` output (V14) |
 | AC8 | The tree is clean and every `.gd` keeps its `.uid` | `git status --porcelain; make uid-guard` | no status output; `uid-guard` rc 0 (no new script) |
+
+### AC command blocks (quorum round 2, oc-kimi-k3's fix verbatim)
+
+AC2:
+
+```sh
+grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log; test $(grep -Ec '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log) -eq 6 && ! grep -q '^FAIL' <(grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log)
+```
+
+Expected: rc 0, exactly the 6 listed `ok` lines.
+
+AC5, the second grep (replaces the escaped one):
+
+```sh
+grep -E '^FAIL (I offers|alpha Cen A is inspectable)' /tmp/7ak_r1.log; test $(grep -Ec '^FAIL (I offers|alpha Cen A is inspectable)' /tmp/7ak_r1.log) -eq 2
+```
 
 ## Sub-milestones and estimates
 
@@ -152,6 +169,9 @@ Run 2026-11-11 in `stapledons-godot-iter86-7ak` at `312b1772` on the Studio (arm
 | V12 | `make -n ci-fast > f; wc -l f; grep -c 'test_free_nav_stop\|ship_geometry_demo' f; grep -c similar_guard_controls f` (positive control); `make -n free-nav-stop-test \| grep -c test_free_nav_stop.gd` (positive control); `grep -c 'sky-assets\|starmap-assets' .github/workflows/ci.yml` | `226`, `0`, `1`; `1`; `0` |
 | V13 | `grep -n 'yaw_deg:float\|camera.follow(avatar_pos,0.' demos/ship_geometry_demo.gd`; `grep -n 'func _pose' -A1 tools/m4_ship_golden.gd`; `grep -n '_pose(-0.01, -PI \* 0.5)' tools/m4_ship_golden.gd` (re-running the controller's measurement) | `421: var yaw_deg:float={"forward":270.,"side":0.,"aft":90.}.get(direction,270.)`, `424: camera.follow(avatar_pos,0.,deg_to_rad(yaw_deg),0.);_sync_observer()`; `176: func _pose(tilt: float, yaw: float) -> void:`, `177: demo.camera.follow(demo.avatar_pos, tilt, yaw, 0.0)`; `241: … demo.avatar_pos = Vector3(11, 82, -4.8); _pose(-0.01, -PI * 0.5) …`. Yaw −π/2 ≡ 270°; tilts −0.01 and 0. Same eye, same level forward look |
 | V14 | full R3: the M1+M2 test copy run with `_add_body_candidates(...)` → `pass` at `ui/ship_star_identification.gd:105` (`sed -i.bak -e`, `rm` the `.bak`), then `git checkout --` and `git status --porcelain` | 435 s, rc 1; `FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)`, `FAIL alpha Cen A is inspectable at its stop`, `free-nav-stop: 50 passed, 2 failures`; both clear-eye checks `ok`; status empty after restore |
+| V15 | controller: `P='test_free_nav_stop\|ship_geometry_demo\|ship_star_identification\|star_occlusion\|bridge_monitor\|assets/ship_demo'`; for 380, 373 and (positive control) 412: `gh pr diff <n> --name-only \| wc -l` and `gh pr diff <n> --name-only \| grep -c -E "$P"` (the full `gh pr diff` refused #380/#373 with "terminal escape sequences", so that empty output was an instrument failure, not a zero) | #380 `31` files, `0` hits; #373 `57` files, `0` hits; control #412 `48` files, `2` hits (`demos/ship_geometry_demo.gd`, `ui/ship_star_identification.gd`) |
+| V16 | controller: `gh pr view 379 --json title,mergedAt,body` | "R3-COMMS-V2: comms station v2 and the bridge monitor wall"; merged `2026-11-06T14:44:51Z`; body: "Mark approved revision 2 on 2026-11-03 ("looks awesome") … the consoles stand under the screens" |
+| V17 | controller, on the base run's log (`.godot/tmp/free-nav-stop.log` at `312b1772`, `free-nav-stop: 48 passed, 2 failures`): the corrected AC5 grep and count test; control: the same pattern with a literal `\|` under `-E` | corrected: the two FAIL lines (`(40 candidates)` and `alpha Cen A is inspectable at its stop`), `test … -eq 2` rc 0; escaped form: `0` |
 
 ## Quorum verification log
 
@@ -161,5 +181,9 @@ Run 2026-11-11 in `stapledons-godot-iter86-7ak` at `312b1772` on the Studio (arm
   1. (kimi) V13 added; Goals, the (a1) verdict and the clearance risk now claim only the shared eye and forward look, and say that G-M4-S3 under R2 is unmeasured and not relied on (M2 is the guard). ", which is the point" deleted.
   2. (glm) The AC preamble says R1 and R2 are `/tmp` scratch copies that never edit the tree, and R3 is the only tree edit: run alone, restored with `git checkout --`, checked with `git status --porcelain` (AC8).
   3. (glm, gemini) R3 measured in full (V14); AC7's Expected holds only those measured values. AC7 now runs the test with Godot directly (rc 1, measured), not through make.
+- **Round 2 (2026-11-11), BLOCKED 2/3.** Seats (same three): gemini-4-argon pass, oc-glm-5-3 reject, oc-kimi-k3 reject; cost $0.2421; `absent_reviewers` empty; artifact `m4-7ak-free-nav-stop-eye-2026-11-11T06-31-45Z.json`. Each objection lands on a surface revision 1 did not touch (round 1: the shared-sightline claim and AC7; round 2: open-PR coverage and AC grep syntax), and neither disputes the design direction. glm: #380 and #373 uncharacterised; the Mark-approval premise uncited. kimi: `\|` under `grep -E` in AC2 and AC5.
+- **Controller measurements before revision 2 (rule 3f), at `312b1772`.** (a) V15 (below): neither #380 nor #373 touches the edited file or any do-not-touch path. (b) Kimi's `\|` objection is real for copy-pasted raw markdown. V17: `grep -Ec '^FAIL (I offers\|alpha Cen A is inspectable)'`, with the backslash literally present, counts **0** on the base log, which has both FAIL lines; the corrected form counts **2**. (c) V16: the approval is cited from PR #379's body.
+- **Revision 2 (controller, narrow-refinement carve-out; no round 3).** The reviewers' proposed fixes are applied verbatim. glm's "Overlap with open PRs #380 and #373" sentence (its no-overlap branch, which V15 measured) goes under Files touched, and its V15 row is added. The approval premise is now cited. Kimi's AC2 and AC5 commands go verbatim in fenced blocks, because a markdown table cannot hold an unescaped `|`; the table cells point to them. Kimi's V15/V16 re-runs against the V7b and V10 logs could not be done: the designer deleted those `/tmp` logs. V17 runs the corrected AC5 grep against the base log, whose two I-check FAIL lines are the same as R1's. The corrected AC2 is first run by the executor on S1's green log, and the controller re-runs it.
+
   4. (kimi) AC7's in-place edit is portable: `sed -i.bak -e … && rm ….bak`.
   5. This section.
