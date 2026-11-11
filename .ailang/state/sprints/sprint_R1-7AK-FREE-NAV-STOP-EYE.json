@@ -139,9 +139,9 @@
       ],
       "expectations": "cmd1: the fragment lands at exactly changelogs/unreleased/2026-11-11-free-nav-stop-eye.md (the design's Deliverables path). cmd2 (AC8): porcelain shows only tests/test_free_nav_stop.gd, the fragment and plan/JSON/landing files; uid-guard rc 0. cmd3: MS3 passes only with the evidence recorded in this JSON.",
       "notes": "Evidence note (per the mission): MS3's deliverable includes the measured evidence written back into this sprint JSON before handoff -- AC1's green tail, AC2's six ok lines, AC3's 2/0/1, AC4's file set, AC5/AC6/AC7's rc values, counts, exact FAIL lines and tails, AC8's porcelain + uid-guard result, and the fragment path. No merge before the cross-family evaluation (generator != judge); landing files (doc/plan move to implemented/, charter row 7ak, README index) wait on it and are the controller's.",
-      "status": "pending",
-      "passes": false,
-      "measured": null
+      "status": "done",
+      "passes": true,
+      "measured": "Changelog fragment changelogs/unreleased/2026-11-11-free-nav-stop-eye.md (### Fixed). AC8: make uid-guard rc=0, \"uid-guard: ok (422 .uid files)\"; git status --porcelain before this commit showed only the new fragment (untracked). Post-commit tree check in the return report. MS1 and MS2 passed as recorded above."
     }
   ],
   "risks": [
