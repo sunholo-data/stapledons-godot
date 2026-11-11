@@ -1,0 +1,172 @@
+{
+  "sprint_id": "R1-7AK-FREE-NAV-STOP-EYE",
+  "status": "planned",
+  "approved": true,
+  "approved_by": "mission controller iteration 86 (loop, D-1 armed; no stop-for-human: pillars all 0, no open questions; quorum round 2 cleared under the narrow-refinement carve-out: glm's #380/#373 overlap sentence + V15, kimi's AC2/AC5 fenced commands verbatim with plain | under grep -E)",
+  "created": "2026-11-11",
+  "design_doc": "design_docs/planned/r1/m4-7ak-free-nav-stop-eye.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7ak-free-nav-stop-eye-sprint.md",
+  "branch": "mission/stapledon-iter86-7ak",
+  "implements": [
+    "7ak"
+  ],
+  "scope": "4 lines in one test file, tests/test_free_nav_stop.gd (M1: 2 changed at :57 and :76, the eye (8, 82, -4.8) -> (11, 82, -4.8), G-M4-S3's clear captain eye; M2: 2 added at new :61 and :80, one clear-eye check immediately after each ident.set_held(true); ident.update_candidates() refresh, V8), plus the changelog fragment changelogs/unreleased/2026-11-11-free-nav-stop-eye.md. No product, asset or Makefile change. Do-not-touch per the design: demos/ship_geometry_demo.gd, ui/ship_star_identification.gd (except R3's temporary in-run edit, restored in the same step), ui/star_occlusion.gd, assets/ship_demo/*, art/deck-layout-v2/*, interior/bridge_monitor.gd, tools/m4_ship_golden.gd, Makefile, mk/*. Row premise (V1, controller at 312b1772): make free-nav-stop-test red since PR #379 (R3-COMMS-V2, 8ba1e3c8) -- 'free-nav-stop: 48 passed, 2 failures', make rc 2, FAILs at :62 and :80; the nightly rig/full repeats it, so definition-of-done gate 1 cannot hold until this lands. No GPU step, no make golden, no capture, no full local make test (merge rule CLAUDE.md 2026-11-03/06); the targeted gate is make free-nav-stop-test (AC1) + make uid-guard (AC8). HEAD aef5057e (r2 design commit) on mission/stapledon-iter86-7ak; merge-base with origin/main = 312b1772 = origin/main = the design's B; HEAD adds only the design doc, so every V-number applies verbatim. Test-first: the red baseline is already on record (V1); the new checks' killing evidence is MS2's red controls R1 (old eye, 48/4), R2 (monitor shift, 48/4) and R3 (_add_body_candidates -> pass, 50/2, clear-eye checks stay ok per V14).",
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "The target is green",
+      "command": "make free-nav-stop-test; echo rc=$?; tail -1 .godot/tmp/free-nav-stop.log",
+      "expected": "rc=0; `free-nav-stop: 54 passed, 0 failures`. ~7.5 min under load 12-25 (445-466 s measured V7b), within the target's 1800 s SCRIPT_GATE budget (Makefile:1211)."
+    },
+    {
+      "id": "AC2",
+      "criterion": "Both I checks and the clear-eye check pass, the destination offered as a body",
+      "command": "grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log; test $(grep -Ec '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log) -eq 6 && ! grep -q '^FAIL' <(grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log)",
+      "expected": "rc 0, exactly the 6 listed ok lines, in check order: 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)'; 'ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates)'; 'ok its card says the radius is inferred: ...'; 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)'; 'ok alpha Cen A is inspectable at its stop'; 'ok a click on A's centre picks A, not B ([\"body:acen-a\"])'. Verbatim from the design's fenced AC2 block (plain | under grep -E; do not re-escape). First run by the executor on S1's green log; the controller re-runs it."
+    },
+    {
+      "id": "AC3",
+      "criterion": "The eye is the golden's, at both checks",
+      "command": "grep -c 'Vector3(11, 82, -4.8)' $T; grep -c 'Vector3(8, 82, -4.8)' $T; grep -c 'Vector3(11, 82, -4.8)' tools/m4_ship_golden.gd",
+      "expected": "2, 0, 1 (planner-verified the base counts are 0 and 2, and the golden's :241 carries exactly one Vector3(11, 82, -4.8))"
+    },
+    {
+      "id": "AC4",
+      "criterion": "Test-only: no product, asset or build file changed",
+      "command": "git diff --name-only origin/main...HEAD",
+      "expected": "only tests/test_free_nav_stop.gd, a changelogs/unreleased/* fragment and landing docs/state; nothing under demos/, ui/, interior/, assets/, art/, Makefile, mk/"
+    },
+    {
+      "id": "AC5",
+      "criterion": "Red control R1, the old eye: occlusion still counts, and the new check names the cause",
+      "command": "sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $T > /tmp/7ak_r1.gd; eval $G --script /tmp/7ak_r1.gd > /tmp/7ak_r1.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r1.log; then: grep -E '^FAIL (I offers|alpha Cen A is inspectable)' /tmp/7ak_r1.log; test $(grep -Ec '^FAIL (I offers|alpha Cen A is inspectable)' /tmp/7ak_r1.log) -eq 2; then: tail -1 /tmp/7ak_r1.log",
+      "expected": "rc=1; 2; the fenced grep (verbatim from the design's AC5 block, plain | under grep -E) prints exactly 'FAIL I offers the destination as its finite body, not the hidden catalogue point (40 candidates)' and 'FAIL alpha Cen A is inspectable at its stop', count test rc 0; 'free-nav-stop: 48 passed, 4 failures'. Scratch copy under /tmp per the design; planner D1: this sandbox blocks /tmp, so reroot 1:1 to $S=.godot/tmp/7ak (gitignored) with identical expectations. Never edits the tree. May run in parallel with AC6."
+    },
+    {
+      "id": "AC6",
+      "criterion": "Red control R2, the furniture moves onto the new eye's line (the course monitor and its face shifted +2.418 m in x, centred on x = 11)",
+      "command": "awk '{print} /Vector3\\(11, 82, -4.8\\)/ && !d {print \"\\tdemo.monitor_frames.position.x += 2.418; demo.geometry.find_child(\\\"monitor_face_course\\\", true, false).position.x += 2.418\"; d=1}' $T > /tmp/7ak_r2.gd; eval $G --script /tmp/7ak_r2.gd > /tmp/7ak_r2.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r2.log; grep -c '^FAIL I offers the destination' /tmp/7ak_r2.log; tail -1 /tmp/7ak_r2.log",
+      "expected": "rc=1; 2; 1 (that FAIL ends '(41 candidates)'); 'free-nav-stop: 48 passed, 4 failures' -- the fourth FAIL is exactly 'FAIL alpha Cen A is inspectable at its stop' (V10). Scratch copy, /tmp -> $S reroot per D1, never edits the tree; may run in parallel with AC5."
+    },
+    {
+      "id": "AC7",
+      "criterion": "Red control R3, a product regression in body gathering (the _add_body_candidates call in ui/ship_star_identification.gd:105 replaced by pass in the tree for the run, then restored with git checkout -- ui/ship_star_identification.gd)",
+      "command": "sed -i.bak -e 's/^\\t_add_body_candidates(sky,view,focal,px,canvas_to_pixel)$/\\tpass # R3/' ui/ship_star_identification.gd && rm ui/ship_star_identification.gd.bak && eval $G --script $T > /tmp/7ak_r3.log 2>&1; echo rc=$?; git checkout -- ui/ship_star_identification.gd; grep -E '^FAIL' /tmp/7ak_r3.log; tail -1 /tmp/7ak_r3.log; git status --porcelain",
+      "expected": "rc=1; grep -E '^FAIL' prints exactly 'FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)' and 'FAIL alpha Cen A is inspectable at its stop' (the two clear-eye checks stay ok, V14); 'free-nav-stop: 50 passed, 2 failures'; after the restore, git status --porcelain shows nothing beyond the sprint's own files (planner D2 reading of the design's 'no git status output (V14)'. Log path /tmp -> $S per D1. The ONLY tree edit of the sprint besides tests/test_free_nav_stop.gd and the fragment: runs alone, restored with git checkout -- in the same step (kimi-vetted portable form sed -i.bak -e ... && rm ....bak)."
+    },
+    {
+      "id": "AC8",
+      "criterion": "The tree is clean and every .gd keeps its .uid",
+      "command": "git status --porcelain; make uid-guard",
+      "expected": "no porcelain lines beyond the sprint's own files (tests/test_free_nav_stop.gd, the changelogs/unreleased fragment, plan/JSON, landing files); uid-guard rc 0 (Makefile:1100; no new script, so no new .uid)"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "S1: M1 + M2 in tests/test_free_nav_stop.gd (2 lines changed at :57/:76, 2 lines added at new :61/:80, extracted byte-for-byte from the design's fences), then AC1-AC4 on the one green run",
+      "files": [
+        "tests/test_free_nav_stop.gd"
+      ],
+      "loc": "4 (2 changed + 2 added)",
+      "depends_on": [],
+      "acceptance": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4"
+      ],
+      "commands": [
+        "cd <executor clone> && export PATH=$PWD/runtime/bin:$PATH; runtime/bin/ailang --version   # expect AILANG v0.56.1, anything else -> stop; godot --version   # 4.7.2; B=312b1772; T=tests/test_free_nav_stop.gd; G='AILANG_BIN=$(command -v ailang) godot --headless --path .'; S=$PWD/.godot/tmp/7ak; mkdir -p $S   # preamble; clone missing runtime/ -> make runtime (Makefile:725) first; missing sky textures -> make sky-assets (D-18) first",
+        "sed -n '57p;60p;62p;76p;78p;80p' $T   # pre-edit anchor assert: the eyes (8, 82, -4.8) at :57/:76, the refreshes at :60/:78, the I checks at :62/:80 -- all planner-verified; any mismatch = tree drift, stop (red baseline already on record: V1 at 312b1772, 48 passed 2 failures, nightly repeats it; no re-run)",
+        "D=design_docs/planned/r1/m4-7ak-free-nav-stop-eye.md; awk '/^### M1\\./,/^### M2\\./' $D | awk '/^```gdscript$/{f=1;next} /^```$/{if(f){exit}} f' > $S/m1.gd; awk '/^### M2\\./,/^## Files touched/' $D | awk '/^```gdscript$/{f=1;next} /^```$/{if(f){exit}} f' > $S/m2.gd; wc -l $S/m1.gd $S/m2.gd   # expect 1 and 1, each tab-led -- never retype design text",
+        "awk -v repl=\"$(cat $S/m1.gd)\" '/^\\tdemo\\.avatar_pos = Vector3\\(8, 82, -4\\.8\\)/{print repl; next} {print}' $T > $S/t.m1 && cp $S/t.m1 $T; awk -v ins=\"$(cat $S/m2.gd)\" '{print} /ident\\.set_held\\(true\\); ident\\.update_candidates\\(\\)$/{print ins}' $T > $S/t.m2 && cp $S/t.m2 $T   # both patterns hit exactly twice (planner-measured); no backslashes in the fences, so awk -v is safe",
+        "awk 'NR==57||NR==76' $T | sort -u | cmp - $S/m1.gd && echo m1-ok; awk 'NR==61||NR==80' $T | sort -u | cmp - $S/m2.gd && echo m2-ok; grep -n -B1 'the fixed eye looks ahead' $T   # cmp proofs; each clear-eye check's previous line must be the refresh (V8: the check placed before update_candidates() passed under R2 on stale BVH transforms)",
+        "make free-nav-stop-test; echo rc=$?; tail -1 .godot/tmp/free-nav-stop.log   # AC1, ~7.5 min under load, SCRIPT_GATE budget 1800 s at Makefile:1211",
+        "grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log; test $(grep -Ec '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log) -eq 6 && ! grep -q '^FAIL' <(grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log)   # AC2, verbatim from the design's fenced AC2 block (plain | under grep -E; do not re-escape); executor runs it first, controller re-runs",
+        "grep -c 'Vector3(11, 82, -4.8)' $T; grep -c 'Vector3(8, 82, -4.8)' $T; grep -c 'Vector3(11, 82, -4.8)' tools/m4_ship_golden.gd   # AC3",
+        "git diff --name-only origin/main...HEAD   # AC4",
+        "git status --porcelain   # only tests/test_free_nav_stop.gd modified (plus the controller's plan/JSON)"
+      ],
+      "expectations": "cmd2: the six planner-verified lines. cmd3: 1 and 1, tab-led. cmd5: m1-ok, m2-ok; the grep -B1 pairs are each headed by 'ident.set_held(true); ident.update_candidates()' (the refresh); the file grew by exactly 2 lines; final clear-eye lines at new :61 and :80 (V7b's measured diff shape: 57, 76 changed, 61, 80 added). cmd6 (AC1): rc=0; 'free-nav-stop: 54 passed, 0 failures'. cmd7 (AC2): rc 0, exactly the 6 ok lines -- 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)' x2 (one per leg), 'ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates)', 'ok its card says the radius is inferred: ...', 'ok alpha Cen A is inspectable at its stop', 'ok a click on A's centre picks A, not B ([\"body:acen-a\"])'. cmd8 (AC3): 2, 0, 1. cmd9 (AC4): only tests/test_free_nav_stop.gd, a changelogs/unreleased/* fragment and landing docs/state; nothing under demos/, ui/, interior/, assets/, art/, Makefile, mk/. cmd10: porcelain shows only the sprint's own files.",
+      "notes": "Byte-for-byte rule binding: extract the M1/M2 fences from the design doc, apply from the extractions, prove with cmp; a cmp mismatch means re-extract, never retype. Red baseline not re-run: V1 (controller at B=312b1772, make rc 2, 'free-nav-stop: 48 passed, 2 failures', FAILs at :62/:80; HEAD's test file byte-identical) plus every nightly since PR #379 record it; the new checks' red evidence is MS2's job (R1 kills M1+M2 together, R2 kills M2 alone on the new eye, R3 shows the I checks keep their teeth while the clear-eye checks stay ok).",
+      "status": "pending",
+      "passes": false,
+      "measured": null
+    },
+    {
+      "id": "MS2",
+      "title": "S2: red controls AC5 (R1 old eye, 48/4), AC6 (R2 monitor shift, 48/4), AC7 (R3 _add_body_candidates -> pass, 50/2); R1 and R2 in parallel, R3 alone (only tree edit, restored in-step with git checkout --)",
+      "files": [],
+      "loc": "0 persisted (R1/R2 scratch copies under $S per D1; R3's ui/ship_star_identification.gd edit is temporary)",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance": [
+        "AC5",
+        "AC6",
+        "AC7"
+      ],
+      "commands": [
+        "sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $T > $S/7ak_r1.gd; perl -e 'alarm 1500; exec @ARGV' bash -c \"$G --script $S/7ak_r1.gd > $S/7ak_r1.log 2>&1\"; echo rc=$?   # AC5/R1; design's /tmp/7ak_r1.* rerooted 1:1 to $S (D1: sandbox blocks /tmp); V10 measured 435-466 s, bound 1500",
+        "grep -c '^FAIL the fixed eye looks ahead' $S/7ak_r1.log; grep -E '^FAIL (I offers|alpha Cen A is inspectable)' $S/7ak_r1.log; test $(grep -Ec '^FAIL (I offers|alpha Cen A is inspectable)' $S/7ak_r1.log) -eq 2; tail -1 $S/7ak_r1.log   # AC5 expectations; the grep -E block is the design's fenced AC5 command verbatim (plain |), path rerooted per D1",
+        "awk '{print} /Vector3\\(11, 82, -4.8\\)/ && !d {print \"\\tdemo.monitor_frames.position.x += 2.418; demo.geometry.find_child(\\\"monitor_face_course\\\", true, false).position.x += 2.418\"; d=1}' $T > $S/7ak_r2.gd; perl -e 'alarm 1500; exec @ARGV' bash -c \"$G --script $S/7ak_r2.gd > $S/7ak_r2.log 2>&1\"; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' $S/7ak_r2.log; grep -c '^FAIL I offers the destination' $S/7ak_r2.log; tail -1 $S/7ak_r2.log   # AC6/R2; may run in parallel with cmd1 (independent scratch copies, tree untouched)",
+        "sed -i.bak -e 's/^\\t_add_body_candidates(sky,view,focal,px,canvas_to_pixel)$/\\tpass # R3/' ui/ship_star_identification.gd && rm ui/ship_star_identification.gd.bak && perl -e 'alarm 1500; exec @ARGV' bash -c \"$G --script $T > $S/7ak_r3.log 2>&1\"; echo rc=$?; git checkout -- ui/ship_star_identification.gd; grep -E '^FAIL' $S/7ak_r3.log; tail -1 $S/7ak_r3.log; git status --porcelain   # AC7/R3: runs ALONE (no other run may load the tree meanwhile); restore in the same step (kimi-vetted sed -i.bak -e ... && rm .bak form)"
+      ],
+      "expectations": "cmd1+cmd2 (AC5/R1): rc=1; grep -c 'FAIL the fixed eye looks ahead' = 2; the fenced grep prints exactly 'FAIL I offers the destination as its finite body, not the hidden catalogue point (40 candidates)' and 'FAIL alpha Cen A is inspectable at its stop' with count test rc 0; tail 'free-nav-stop: 48 passed, 4 failures' (V10). cmd3 (AC6/R2): rc=1; 2; 1 with that FAIL ending '(41 candidates)'; tail 'free-nav-stop: 48 passed, 4 failures' -- the fourth FAIL is exactly 'FAIL alpha Cen A is inspectable at its stop' (V10). cmd4 (AC7/R3): rc=1; grep -E '^FAIL' prints exactly 'FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)' and 'FAIL alpha Cen A is inspectable at its stop' (both clear-eye checks stay ok, V14); tail 'free-nav-stop: 50 passed, 2 failures'; after git checkout --, porcelain shows nothing beyond the sprint's own files (D2 reading).",
+      "notes": "Test-first mapping: R1 proves M1 (both eye lines) and M2 (both clear-eye checks) can fail; R2 proves M2 alone guards the new eye against a furniture move; R3 proves the I checks still catch a product regression from the new eye and that M2 does not false-positive. Parallelism rule: R1 and R2 may run in parallel; R3 must run alone because it seds a tracked file. Any count or candidate number differing from V10/V14 ((40) vs (41) vs (43), the FAIL sets, the 48/4, 48/4, 50/2 tails) = fixture or product drift since V1: stop, re-measure like V2 before touching anything.",
+      "status": "pending",
+      "passes": false,
+      "measured": null
+    },
+    {
+      "id": "MS3",
+      "title": "S3: changelog fragment changelogs/unreleased/2026-11-11-free-nav-stop-eye.md (### Fixed, row 7ak, PR #379 attribution) and AC8 (porcelain clean, make uid-guard rc 0); evidence note into this JSON",
+      "files": [
+        "changelogs/unreleased/2026-11-11-free-nav-stop-eye.md"
+      ],
+      "loc": "1 fragment",
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance": [
+        "AC8"
+      ],
+      "commands": [
+        "write changelogs/unreleased/2026-11-11-free-nav-stop-eye.md   # ### Fixed section per changelogs/unreleased/README.md: name row 7ak and R1-7AK-FREE-NAV-STOP-EYE; attribute the red to PR #379 (R3-COMMS-V2, merged as 8ba1e3c8, Mark approved revision 2 on 2026-11-03); the eye moved (8, 82, -4.8) -> (11, 82, -4.8) (G-M4-S3's clear captain eye) at both I checks; one clear-eye check now follows each update_candidates(); red controls R1 48/4, R2 48/4, R3 50/2; no product, asset or Makefile change",
+        "git status --porcelain; make uid-guard; echo rc=$?   # AC8: no porcelain lines beyond the sprint's own files; uid-guard rc 0 (Makefile:1100 -- no new script, no new .uid)",
+        "update this JSON: fill every milestone's measured field (AC1-AC8 actuals -- exact counts, exact FAIL lines, wall times, the controller's commit), set passes true per milestone, record the fragment path here and wall-clock totals under velocity   # the mission's MS3 evidence note"
+      ],
+      "expectations": "cmd1: the fragment lands at exactly changelogs/unreleased/2026-11-11-free-nav-stop-eye.md (the design's Deliverables path). cmd2 (AC8): porcelain shows only tests/test_free_nav_stop.gd, the fragment and plan/JSON/landing files; uid-guard rc 0. cmd3: MS3 passes only with the evidence recorded in this JSON.",
+      "notes": "Evidence note (per the mission): MS3's deliverable includes the measured evidence written back into this sprint JSON before handoff -- AC1's green tail, AC2's six ok lines, AC3's 2/0/1, AC4's file set, AC5/AC6/AC7's rc values, counts, exact FAIL lines and tails, AC8's porcelain + uid-guard result, and the fragment path. No merge before the cross-family evaluation (generator != judge); landing files (doc/plan move to implemented/, charter row 7ak, README index) wait on it and are the controller's.",
+      "status": "pending",
+      "passes": false,
+      "measured": null
+    }
+  ],
+  "risks": [
+    "The x = 11 ray's clearance is not measured as a margin (design Risks): the BVH reports no hit (V7) but the margin is unmeasured; a small monitor or frond move could block it again. Mitigation in the bytes: M2 fails first and names the eye; the deck-layout row then decides. G-M4-S3 shares the eye and forward look (V13) but its behaviour under R2 is unmeasured and not relied on.",
+    "Merge rule -- attended PR #412 (Captain's cockpit integrated with the current AI-panel build, 48 files) touches demos/ship_geometry_demo.gd and ui/ship_star_identification.gd (both do-not-touch here). No textual conflict (V9): #412 does not touch tests/test_free_nav_stop.gd; its identification.gd hunk (+11 -1) adds a typing() focus test only and does not touch update_candidates or occlusion; its demo hunks gate HUD/camera on consoles.command.visible, no geometry add_child. Semantic risk low but not zero (its open_navigation() helm-mode change when the chair command is visible; this test calls open_navigation() 4 times with the chair closed). WHICHEVER LANDS SECOND RERUNS AC1 (make free-nav-stop-test). The same rule applies to open PRs #380 and #373 (V15 measured zero overlap with the edited file and every do-not-touch path); if either lands first and moves bridge geometry, V2 and V7 are re-measured before this row's ACs are treated as holding.",
+    "Run time under load: 445-466 s measured at load 12-25 (V7b/V10/V14), within the target's 1800 s SCRIPT_GATE budget (Makefile:1211); a run hitting the 1500 s bound pauses for a quieter host, never silently rebudgeted.",
+    "Planner-added: scratch root. This sandbox blocks /tmp (measured: touch /tmp/7ak_probe -> Operation not permitted); D1 reroots the design's /tmp/7ak_* paths 1:1 to $S=$PWD/.godot/tmp/7ak (.godot/ is .gitignore:1) with byte-identical grep patterns and expectations; the scratch copies never edit the tree at either root.",
+    "Planner-added: fresh-clone prerequisites. This planner clone has no runtime/ and PATH's ailang is v0.59.0-92-g24802d854-dirty (pinned is v0.56.1); a fresh executor clone stages runtime/bin/ailang with make runtime (Makefile:725) first, and sky textures with make sky-assets (D-18) if absent. The preamble's version asserts catch both. Doc discrepancies (record, do not fix the doc mid-sprint): D1 /tmp -> $S reroot; D2 AC7's 'no git status output' read as 'no porcelain lines beyond the sprint's own files' while the MS1 edit is uncommitted (7ah AC7 / 7ai D4 precedent)."
+  ],
+  "pause_points": [
+    "Preamble: runtime/bin/ailang --version != v0.56.1 or godot --version != 4.7.2 -> stop; never let AILANG ?= ailang / command -v ailang fall through to PATH's v0.59.0-dev (Makefile:2/:6).",
+    "MS1: a fence extraction != 1/1 lines, a cmp proof fails, or the sed -n anchor assert (:57/:60/:62/:76/:78/:80) mismatches -> re-extract / stop; never retype design text. AC1 anything but rc=0 + 'free-nav-stop: 54 passed, 0 failures' -> stop; never weaken the target's gate regex. AC2 count test != 6 or any ^FAIL among the six -> stop. A green MS1 without MS2's red evidence (or vice versa) is not test-first; both halves are required.",
+    "MS2: any count or candidate number differing from V10/V14's measured values (the (40)/(41)/(43) candidate counts, the FAIL sets, the tails '48 passed, 4 failures', '48 passed, 4 failures', '50 passed, 2 failures') -> stop: the fixture or product drifted since V1; re-measure like V2 before touching anything. R1/R2 scratch copies editing the tree, or any other run loading the tree during R3 -> stop.",
+    "AC7: the FAIL set != exactly the two named lines, or git checkout -- ui/ship_star_identification.gd leaves porcelain noise about that file -> stop and report; the restore must be byte-exact (V14).",
+    "Timing: a Godot run hitting the 1500 s bound or make free-nav-stop-test the 1800 s gate -> pause, rerun on a quieter host; do not bump bounds silently across retries.",
+    "Any temptation to touch the do-not-touch list (demos/ship_geometry_demo.gd, ui/ship_star_identification.gd except R3's temporary in-run edit, ui/star_occlusion.gd, assets/ship_demo/*, art/deck-layout-v2/*, interior/bridge_monitor.gd, tools/m4_ship_golden.gd, Makefile, mk/*) -> stop; the fix needs none of it. No merge before the cross-family evaluation (generator != judge)."
+  ],
+  "local_pr_gates": [
+    "The GitHub fast tier is make ci-fast -- unchanged by this row (design F1: ci-fast membership not proposed; the target boots the whole ship demo with the starmap and sky assets, flies four AILANG legs, takes ~7.5 min, and the CI workflow fetches neither sky-assets nor starmap-assets, V12).",
+    "MS1 on record: byte-for-byte cmp proofs m1-ok/m2-ok with the refresh above each clear-eye check (V8); AC1 rc=0, 'free-nav-stop: 54 passed, 0 failures'; AC2 rc 0 with exactly the 6 ok lines; AC3 2, 0, 1; AC4 allowed file set only.",
+    "MS2 red-control evidence: R1 rc 1, grep -c 2, the fenced grep's two FAIL lines with (40 candidates), tail 'free-nav-stop: 48 passed, 4 failures'; R2 rc 1, counts 2 and 1 (41 candidates), tail 'free-nav-stop: 48 passed, 4 failures'; R3 rc 1, exactly the two FAIL lines (43 candidates), tail 'free-nav-stop: 50 passed, 2 failures', restore byte-exact.",
+    "MS3: fragment at changelogs/unreleased/2026-11-11-free-nav-stop-eye.md; AC8 porcelain clean (sprint's own files only) and make uid-guard rc 0; sprint JSON measured fields filled (the MS3 evidence note).",
+    "No GPU gate, no make golden, no capture, no full local make test anywhere in this sprint (merge rule, Mark 2026-11-03/06; 7af/7ag/7ah/7ai/7aj precedent) -- the nightly rig/full runs the suite on main post-merge, which is the gate this row repairs (red since PR #379, 8ba1e3c8)."
+  ],
+  "controller_checks": "Controller re-runs (per the mission): AC1 tail (rc=0, 'free-nav-stop: 54 passed, 0 failures'); the AC2 fenced block on the executor's green log (rc 0, exactly the 6 ok lines -- revision-2 note: the corrected AC2 is first run by the executor, the controller re-runs it); AC3 (2, 0, 1); AC4 file set; the cmp proofs m1-ok/m2-ok and the refresh-above-check shape (V8); AC5 log (rc 1; grep -c 2; the fenced grep's two FAIL lines with (40 candidates), count test rc 0; tail 'free-nav-stop: 48 passed, 4 failures'); AC6 log (rc 1; counts 2 and 1 with (41 candidates); tail 'free-nav-stop: 48 passed, 4 failures', fourth FAIL 'alpha Cen A is inspectable at its stop'); AC7 (rc 1; exactly the two named FAIL lines with (43 candidates); tail 'free-nav-stop: 50 passed, 2 failures'; git checkout restore byte-exact, porcelain clean); AC8 (porcelain sprint-files only; uid-guard rc 0); the sprint JSON's measured fields filled; and the merge rule -- if PR #412 (or #380/#373) landed second without the AC1 re-run, run make free-nav-stop-test once and record.",
+  "plan_verification": "Planner, 2026-11-11, HEAD aef5057e (r2 design commit) on detached HEAD in the planner clone (branch mission/stapledon-iter86-7ak per convention; no git writes by the planner): merge-base with origin/main = 312b1772 = origin/main = the design's B; git diff --name-only = the design doc alone, so every V-number applies verbatim; git status --porcelain empty. Cited test lines re-verified at HEAD (tests/test_free_nav_stop.gd identical to B): :57/:76 'demo.avatar_pos = Vector3(8, 82, -4.8)' (the M1 sites, exactly 2 occurrences of the 8-tuple, 0 of the 11-tuple); :60/:78 'ident.set_held(true); ident.update_candidates()' (the refresh lines -- M2 must follow them, V8; insertions land at new :61 and :80, V7b's measured diff shape); :62 the 'I offers the destination' check; :80 'alpha Cen A is inspectable at its stop'. tools/m4_ship_golden.gd:241 carries exactly one Vector3(11, 82, -4.8) with _pose(-0.01, -PI * 0.5) (AC3's third grep = 1). ui/ship_star_identification.gd:105 is exactly the _add_body_candidates call line (the only match of AC7's anchored sed; :111 is the func def). R2 anchors: var monitor_frames demos/ship_geometry_demo.gd:811, var geometry :48; the awk !d guard fires once (post-M1 :57). Makefile anchors: SCRATCH := .godot/tmp (:13); free-nav-stop-test: :1210, recipe :1211 with SCRIPT_GATE budget 1800 and log .godot/tmp/free-nav-stop.log; uid-guard: :1100; runtime: :725. Environment: no runtime/ in this clone (make runtime stages it); PATH ailang = v0.59.0-92-g24802d854-dirty (pinned v0.56.1; main checkout's runtime/bin/ailang reports AILANG v0.56.1); godot 4.7.2.stable on PATH; data/starmap/stars.json tracked (931975 bytes) and present; data/sky/ holds only SHA256SUMS + reports here (textures not fetched -- make sky-assets if the executor clone lacks them; the designer's iter86-7ak clone had them, V1-V17). .gitignore:1 = .godot/ so $S is untracked; perl alarm works (7ai pattern); /tmp writes REFUSED here (touch /tmp/7ak_probe -> Operation not permitted; measured) -- D1 reroots scratch to $S. No Godot or make run by the planner (role split); all plan-time checks read-only git/grep/sed/awk.",
+  "velocity": "~4 LOC in one test file plus the changelog fragment, none product. Four Godot runs of ~7.5 min each under load (R1 parallel R2, so ~3 serial runs of machine time, ~23 min) plus edits, greps and evidence ~20 min (design estimates: S1 15 min + one 8 min run; S2 25 min; S3 5 min). One executor session, well under half a day (compare 7ai ~16 LOC half a day, 7aj ~55 LOC half a day)."
+}
