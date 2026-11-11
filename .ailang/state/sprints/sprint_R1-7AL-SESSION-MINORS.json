@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-7AL-SESSION-MINORS",
-  "status": "planned",
+  "status": "executed",
   "approved": true,
   "approved_by": "mission controller iteration 87 (loop, D-1 armed; design doc approved: pillar table net 0, none below 0, no open questions; quorum round 1 BLOCKED 3/3 -> r1, round 2 BLOCKED 2/3 with kimi-k3 pass -> r2 by the controller under the narrow-refinement carve-out: glm's missbridge/misssite controls + V23, gpt's captured grep-status + brokentest + r2 notests file; option (b) never disputed; no round 3, straight to planning)",
   "created": "2026-11-11",
@@ -248,10 +248,10 @@
         "(controller) AC9's GitHub landing evidence: after the cross-family evaluation passes and the PR head is final, gh run list --commit <final sha> shows the fast-tier run success and its job log shows the two AC19 lines; record the run id, its head sha and the two log lines in this JSON (AC9 Expected; design Deliverables); the PR leaves draft only after AC19 holds"
       ],
       "expectations": "AC9 local half: '2'; exactly the two lines 'test: session-minor-guard session-minor-guard-controls' and 'ci-fast: session-minor-guard session-minor-guard-controls'; '23' prerequisites (21 on origin/main, V19) with session-minor-guard 19th and session-minor-guard-controls 20th. AC19: 'success <head sha>'; then '2', the matching lines being 'session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; ...; 4 test comparisons name it' and 'session-minor-guard-controls: 19 rejected, 3 accepted' (each after the runner's timestamp). A red or missing run, conclusion != success, head-sha mismatch, or the final grep != 2 BLOCKS landing: fix the dependency or invocation and re-run; never remove either ci-fast edge or suppress its failure (design Risks, verbatim). The PR does not leave draft until this holds.",
-      "notes": "",
-      "status": "planned",
-      "passes": null,
-      "measured": ""
+      "notes": "Executor half done (fragment, AC9 local half, hygiene). NOT pushed, no PR opened (controller). AC19 (GNU userland on the draft-PR head) and AC9's final-commit GitHub evidence are PENDING the controller and block the PR leaving draft. Evaluation (cross-family, generator != judge) is also the controller's step.",
+      "status": "executor_done",
+      "passes": true,
+      "measured": "Fragment: changelogs/unreleased/2026-11-11-session-minors.md (### Added; row 7al, sprint R1-7AL-SESSION-MINORS). AC9 local half: 'make -n ci-fast | grep -cE session_minor_guard_controls.sh|SESSION_MINOR := ' -> 2; grep -nE '^(test|ci-fast): session-minor-guard session-minor-guard-controls$' Makefile -> 147:test: session-minor-guard session-minor-guard-controls and 148:ci-fast: session-minor-guard session-minor-guard-controls; make -pq ci-fast prerequisites -> 23; nth-line match -> 19:session-minor-guard, 20:session-minor-guard-controls. Re-asserted after the fragment: AC16 uid-guard: ok (422 .uid files), python-guard: ok (21 allowlisted, 0 awaiting AILANG port), script-gate-lint: ok, audio-silent-guard: ok, rc 0; git diff --check origin/main rc 0. AC17 (after the fragment commit): nine product/test/Makefile/script paths + changelog fragment + design_docs/planned/r1 two files + .ailang/state sprint JSON. AC15 re-run at MS1 unchanged/0. Wall-clock: MS1 about 25 min including the RED and drills; MS2 about 6 min of Godot time (loading-jump 48 s, feature trio 143 s, meta 25 s, matrix 24 s); MS3 executor under 5 min. Pending (controller): push, gh pr create --draft, AC19 run id/head sha/two log lines, AC9 final-commit evidence."
     }
   ],
   "risks": [
