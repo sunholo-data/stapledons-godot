@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AK-FREE-NAV-STOP-EYE",
-  "status": "planned",
+  "status": "landed",
   "approved": true,
   "approved_by": "mission controller iteration 86 (loop, D-1 armed; no stop-for-human: pillars all 0, no open questions; quorum round 2 cleared under the narrow-refinement carve-out: glm's #380/#373 overlap sentence + V15, kimi's AC2/AC5 fenced commands verbatim with plain | under grep -E)",
   "created": "2026-11-11",
-  "design_doc": "design_docs/planned/r1/m4-7ak-free-nav-stop-eye.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7ak-free-nav-stop-eye-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7ak-free-nav-stop-eye.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ak-free-nav-stop-eye-sprint.md",
   "branch": "mission/stapledon-iter86-7ak",
   "implements": [
     "7ak"
@@ -166,7 +166,21 @@
     "MS3: fragment at changelogs/unreleased/2026-11-11-free-nav-stop-eye.md; AC8 porcelain clean (sprint's own files only) and make uid-guard rc 0; sprint JSON measured fields filled (the MS3 evidence note).",
     "No GPU gate, no make golden, no capture, no full local make test anywhere in this sprint (merge rule, Mark 2026-11-03/06; 7af/7ag/7ah/7ai/7aj precedent) -- the nightly rig/full runs the suite on main post-merge, which is the gate this row repairs (red since PR #379, 8ba1e3c8)."
   ],
-  "controller_checks": "Controller re-runs (per the mission): AC1 tail (rc=0, 'free-nav-stop: 54 passed, 0 failures'); the AC2 fenced block on the executor's green log (rc 0, exactly the 6 ok lines -- revision-2 note: the corrected AC2 is first run by the executor, the controller re-runs it); AC3 (2, 0, 1); AC4 file set; the cmp proofs m1-ok/m2-ok and the refresh-above-check shape (V8); AC5 log (rc 1; grep -c 2; the fenced grep's two FAIL lines with (40 candidates), count test rc 0; tail 'free-nav-stop: 48 passed, 4 failures'); AC6 log (rc 1; counts 2 and 1 with (41 candidates); tail 'free-nav-stop: 48 passed, 4 failures', fourth FAIL 'alpha Cen A is inspectable at its stop'); AC7 (rc 1; exactly the two named FAIL lines with (43 candidates); tail 'free-nav-stop: 50 passed, 2 failures'; git checkout restore byte-exact, porcelain clean); AC8 (porcelain sprint-files only; uid-guard rc 0); the sprint JSON's measured fields filled; and the merge rule -- if PR #412 (or #380/#373) landed second without the AC1 re-run, run make free-nav-stop-test once and record.",
+  "controller_checks": "Controller re-run at 3f047711 (outside any sandbox, AILANG v0.56.1, Godot 4.7.2): make free-nav-stop-test rc 0 in 573 s, free-nav-stop: 54 passed, 0 failures; AC2 command block rc 0 with exactly the 6 ok lines (44 candidates). Base red reproduced at 312b1772: 48 passed, 2 failures, make rc 2. PR #423 fast tier success on 3f047711 (run 42977849537).",
   "plan_verification": "Planner, 2026-11-11, HEAD aef5057e (r2 design commit) on detached HEAD in the planner clone (branch mission/stapledon-iter86-7ak per convention; no git writes by the planner): merge-base with origin/main = 312b1772 = origin/main = the design's B; git diff --name-only = the design doc alone, so every V-number applies verbatim; git status --porcelain empty. Cited test lines re-verified at HEAD (tests/test_free_nav_stop.gd identical to B): :57/:76 'demo.avatar_pos = Vector3(8, 82, -4.8)' (the M1 sites, exactly 2 occurrences of the 8-tuple, 0 of the 11-tuple); :60/:78 'ident.set_held(true); ident.update_candidates()' (the refresh lines -- M2 must follow them, V8; insertions land at new :61 and :80, V7b's measured diff shape); :62 the 'I offers the destination' check; :80 'alpha Cen A is inspectable at its stop'. tools/m4_ship_golden.gd:241 carries exactly one Vector3(11, 82, -4.8) with _pose(-0.01, -PI * 0.5) (AC3's third grep = 1). ui/ship_star_identification.gd:105 is exactly the _add_body_candidates call line (the only match of AC7's anchored sed; :111 is the func def). R2 anchors: var monitor_frames demos/ship_geometry_demo.gd:811, var geometry :48; the awk !d guard fires once (post-M1 :57). Makefile anchors: SCRATCH := .godot/tmp (:13); free-nav-stop-test: :1210, recipe :1211 with SCRIPT_GATE budget 1800 and log .godot/tmp/free-nav-stop.log; uid-guard: :1100; runtime: :725. Environment: no runtime/ in this clone (make runtime stages it); PATH ailang = v0.59.0-92-g24802d854-dirty (pinned v0.56.1; main checkout's runtime/bin/ailang reports AILANG v0.56.1); godot 4.7.2.stable on PATH; data/starmap/stars.json tracked (931975 bytes) and present; data/sky/ holds only SHA256SUMS + reports here (textures not fetched -- make sky-assets if the executor clone lacks them; the designer's iter86-7ak clone had them, V1-V17). .gitignore:1 = .godot/ so $S is untracked; perl alarm works (7ai pattern); /tmp writes REFUSED here (touch /tmp/7ak_probe -> Operation not permitted; measured) -- D1 reroots scratch to $S. No Godot or make run by the planner (role split); all plan-time checks read-only git/grep/sed/awk.",
-  "velocity": "~4 LOC in one test file plus the changelog fragment, none product. Four Godot runs of ~7.5 min each under load (R1 parallel R2, so ~3 serial runs of machine time, ~23 min) plus edits, greps and evidence ~20 min (design estimates: S1 15 min + one 8 min run; S2 25 min; S3 5 min). One executor session, well under half a day (compare 7ai ~16 LOC half a day, 7aj ~55 LOC half a day)."
+  "velocity": "~4 LOC in one test file plus the changelog fragment, none product. Four Godot runs of ~7.5 min each under load (R1 parallel R2, so ~3 serial runs of machine time, ~23 min) plus edits, greps and evidence ~20 min (design estimates: S1 15 min + one 8 min run; S2 25 min; S3 5 min). One executor session, well under half a day (compare 7ai ~16 LOC half a day, 7aj ~55 LOC half a day).",
+  "evaluations": {
+    "sonnet": {
+      "score": 92,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AK-FREE-NAV-STOP-EYE_round_1_sonnet.json"
+    },
+    "minimax-m3": {
+      "score": 81,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AK-FREE-NAV-STOP-EYE_round_1_minimax-m3.json",
+      "note": "attempt 1 killed tool_hang (rc 18) by the runner stall bound during a single make run; attempt 2 with --stall-seconds 1500 ok. Its own AC1 run inside the pi sandbox under load 30-60 cascaded on step_timeout (38/16; base 27/23 in the same clone)"
+    }
+  },
+  "pr": 423
 }

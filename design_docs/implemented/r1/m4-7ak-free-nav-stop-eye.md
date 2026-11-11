@@ -1,6 +1,6 @@
 # free-nav-stop's I checks look from the clear captain eye (7ak)
 
-**Status:** Planned 2026-11-11 (mission iteration 86, designer). Revision 1 answers design-quorum round 1; see "Quorum verification log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ak**).
+**Status:** Implemented 2026-11-11 (mission iteration 86, PR #423; evaluation Sonnet 5.5 92 PASS, cross-vendor MiniMax M3 81 PASS). Revision 1 answers design-quorum round 1; revision 2 (the controller, under the narrow-refinement carve-out) answers round 2 with the reviewers' own fixes; see "Quorum verification log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ak**).
 **Priority:** P1. `make free-nav-stop-test` has been red on main since PR #379 (R3-COMMS-V2, merged as `8ba1e3c8`): `free-nav-stop: 48 passed, 2 failures`, make rc 2 (controller, at `312b1772`; tonight's nightly names the same two checks). The nightly `rig/full` reports it every night, so gate 1 of the definition of done ("main's nightly `rig/full` stays green") cannot hold until it is fixed.
 **Implements:** row 7ak of the charter (`design_docs/stapledon-mission.md`, Queue), clause 2/5 hygiene. It restores the R1-SHIP-UI / D-58 checks that the I key offers a free-navigation destination as its finite body (Barnard's Star, inferred radius; alpha Cen A at the D-111 close pass), not the hidden catalogue point. Design-repo context: the I identification overlay and the D-54/D-111 stop rules; no physics-spec formula, shader or table changes.
 **Depends on:** nothing.

@@ -1,0 +1,129 @@
+{
+  "evaluator": "Independent cross-family judge (pi session 'mini'); not the designer (Opus), the planner (Kimi) or the executor (Haiku). Nothing the controller or the executor claimed was treated as evidence: every number below comes from my own runs in /Users/voightkampff/dev/sunholo-data/stapledons-godot-iter86-eval-mm (detached 3f047711, branch mission/stapledon-iter86-7ak, base 312b1772).",
+  "model": "minimax-m3",
+  "sprint_id": "R1-7AK-FREE-NAV-STOP-EYE",
+  "iteration": 86,
+  "base_commit": "312b1772",
+  "head_commit": "3f047711",
+  "clone": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter86-eval-mm",
+  "toolchain": "AILANG v0.56.1 (runtime/bin/ailang), Godot 4.7.2.stable.official.ed1daf0bf, macOS arm64",
+  "score": 81,
+  "verdict": "PASS",
+  "rubric": {
+    "total": 81,
+    "threshold": 70,
+    "categories": {
+      "tests_pass": {
+        "max": 20,
+        "awarded": 13,
+        "notes": "The sprint's own checks are green in my own run: all six AC2 lines are 'ok' (both clear-eye checks, 'I offers the destination as its finite body, not the hidden catalogue point (44 candidates)', 'its card says the radius is inferred: ...', 'alpha Cen A is inspectable at its stop', \"a click on A's centre picks A, not B ([\\\"body:acen-a\\\"])\"), and the AC2 grep command returns rc 0. The whole target is NOT green in this clone: 'make free-nav-stop-test' ends 'free-nav-stop: 38 passed, 16 failures' (make rc 2). All 16 failures are in the later legs (home / Saturn / Jupiter) and every one of them is downstream of 'sim stopped: step_timeout' (bridge/sim_bridge.gd:291,382 - a 2000 ms per-request deadline). The decisive control: running the BASE test file (git show 312b1772:tests/test_free_nav_stop.gd) in the same clone, same session, same toolchain gives 'free-nav-stop: 27 passed, 23 failures', i.e. the base is strictly worse and fails the same way (the base even dies earlier, at the acen-b leg). The delta is positive and the redness is pre-existing/environmental, not caused by the 4-line diff. This clone also lacks data/sky's 164 MB textures (the plan's fresh-clone prerequisite 'make sky-assets', D-18) - the likeliest cause of the slow sim steps; the test disables the background, so this is a hypothesis, but the base reproduction is the hard fact. Deduct 7 because AC1's green tail could not be independently reproduced here."
+      },
+      "lint_clean": {
+        "max": 10,
+        "awarded": 10,
+        "notes": "make uid-guard -> 'uid-guard: ok (422 .uid files)' rc 0; make python-guard -> 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)' rc 0; make lint-precision -> 'lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)' rc 0; 'git status --porcelain' empty after the R3 mutation was restored. No new script, no new .uid, no .ail and no .py touched."
+      },
+      "acceptance_criteria": {
+        "max": 30,
+        "awarded": 25,
+        "notes": "AC2, AC3, AC4, AC5, AC6, AC7, AC8 verified by my own runs; AC1 not reproducible green in this clone (environmental, reproduces worse at base). AC5/AC6/AC7 were reproduced on short scratch copies (test lines 1-67 + summary + quit), because the full-file red controls cannot complete their later legs in this environment; the candidate counts and FAIL lines the controls are about reproduced exactly ((40 candidates) for the old eye, (41 candidates) for the monitor shift, (43 candidates) for the product mutation)."
+      },
+      "code_quality": {
+        "max": 15,
+        "awarded": 12,
+        "notes": "The diff is 4 lines in one test file and is byte-for-byte identical to the design's fences (shipped lines 57 and 77 == the M1 fence, lines 61 and 80 == the M2 fence; verified by extraction, not by eye). The new check is correctly placed after 'ident.set_held(true); ident.update_candidates()' (the call that refreshes the occlusion BVH) and after 'demo.look_direction(\"forward\")' (camera.follow is a snap, so the camera really is at the eye). It reuses the product's own BVH and the camera's forward, so it cannot disagree with the I candidates about the ship geometry. Three deductions: (1) the check tests the camera's CENTRE ray, which equals the candidate's ray only because the arrival puts the destination exactly at the screen centre - I measured body pixel (32.0, 32.0) of a 64x64 viewport and body_ray == centre ray (dot 1.000000000); the design's claim that the check 'cannot disagree with them about what blocks' is therefore true only in this scenario. (2) The guard covers only the ship-BVH half of the I contract: the candidates are also filtered by the sky renderer's sv.occludes_direction (ui/ship_star_identification.gd:96 and :127), which the check never consults, so a sky-occlusion failure still surfaces only as the opaque I-check FAIL. (3) The guard's correctness depends on two undocumented orderings in the test file itself (must follow update_candidates()'s BVH refresh and look_direction()'s camera move) - my order mutant shows the check silently degrades to 'ok' when it is moved earlier."
+      },
+      "documentation": {
+        "max": 15,
+        "awarded": 12,
+        "notes": "Strong: the design doc carries a real verification log (V1-V17 with quoted outputs), an explicit quorum log, non-goals, a do-not-touch list, an unmeasured-risk list and follow-ups F1-F3; the sprint plan has byte-for-byte rules, pause points and per-milestone evidence; the sprint JSON records the measured AC values; the changelog fragment complies with changelogs/unreleased/README.md and attributes the red to PR #379 accurately. Deductions for internal inconsistencies: the design's Status line still says 'Revision 1' while the body documents 'Revision 2 (controller, narrow-refinement carve-out; no round 3)'; the sprint JSON's MS2 evidence says 'Scratch logs in /tmp (7ak_r1.log, 7ak_r2.log, 7ak_r3.log)' although the plan (D1) says /tmp was blocked and the scratch was re-rooted to $PWD/.godot/tmp/7ak - neither location holds those logs now (.godot/tmp has only mm_ac1.out and mm_i86/); the plan's m1 cmp proof reads 'awk NR==57||NR==76', but after the M2 insertion the second eye line is 77; the changelog fragment names row 7ak but not the sprint id R1-7AK-FREE-NAV-STOP-EYE that the plan's MS3 command asked for."
+      },
+      "design_fidelity": {
+        "max": 10,
+        "awarded": 9,
+        "notes": "The shipped bytes are the design's fences verbatim; the do-not-touch list was respected (0 changes under demos/ ui/ interior/ assets/ art/ Makefile mk/); the classification (a) TEST-ONLY holds - nothing a player sees or hears changes, no product, asset or build file moved; the design's rejected alternatives were all rejected in the implementation (no sky_only, no monitor hiding, no candidate cap, no product edit). The classification does not hide a product regression: the base red is real and I reproduced it, and the fix is a test-eye move to the eye the shipped deck keeps clear (G-M4-S3's eye). Deduction for the design's overstatement that the clear-eye check 'cannot disagree' with the I candidates (it consults the ship BVH only) and for leaving its own clearance risk unmeasured (I measured it: see non_blocking)."
+      }
+    }
+  },
+  "commands": [
+    {
+      "cmd": "cd /Users/voightkampff/dev/sunholo-data/stapledons-godot-iter86-eval-mm && export PATH=$PWD/runtime/bin:$PATH; ailang --version; godot --version",
+      "result": "AILANG v0.56.1 ; 4.7.2.stable.official.ed1daf0bf (pinned runtime/bin/ailang present, Godot 4.7.2)"
+    },
+    {
+      "cmd": "make free-nav-stop-test   # AC1, my own run, backgrounded into /tmp/claude/stap_i86_mm_ac1.log (single run, ~4m50s wall)",
+      "result": "RED for reasons outside the sprint's scope: script-gate: 'free-nav-stop-test FAIL; rc 1, want 0; no summary line matching ^free-nav-stop: [1-9][0-9]* passed, 0 failures$' ; make: *** [free-nav-stop-test] Error 1 (make rc 2); log tail 'free-nav-stop: 38 passed, 16 failures'. The 16 FAIL lines are: arrived home / home is Earth's D-54 stop: 40875666370027 km (24,643) / HUD at home: To Sol 4.32 ly ... / news at Earth is fresh / the Solar System is around the ship: 2 bodies / plans the in-system stop at saturn: sim stopped: step_timeout / the hold commits the body plan to saturn (sim stopped: step_timeout) / the leg leaves from Earth (Alpha Centauri B) / arrived at saturn / Saturn's stop clears its rings: 40875638424559 km (F ring edge 140,612) / plans the in-system stop at jupiter: sim stopped: step_timeout / the hold commits the body plan to jupiter (sim stopped: step_timeout) / the leg leaves from Saturn (Alpha Centauri B) / arrived at jupiter / Jupiter fills 0.0 deg from 40875281170773 km (D-54: 84) / HUD at Jupiter: To Sol 4.32 ly ... . No I-check and no clear-eye check fails."
+    },
+    {
+      "cmd": "git show 312b1772:tests/test_free_nav_stop.gd > /tmp/claude/stap_i86_mm_base.gd; AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/claude/stap_i86_mm_base.gd   # the BASE test, my own run (base-red reproduction and the environment control)",
+      "result": "'free-nav-stop: 27 passed, 23 failures' - worse than the branch. The base's two sprint-scope failures are exactly as recorded: 'FAIL I offers the destination as its finite body, not the hidden catalogue point (40 candidates)' and 'FAIL alpha Cen A is inspectable at its stop'. The other 21 are the same step_timeout cascade (the base dies even earlier, at 'FAIL arrived at acen-b'). Branch 38/16 vs base 27/23: the diff removes the two sprint-scope failures, adds two green checks, and the environment failures are pre-existing."
+    },
+    {
+      "cmd": "grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log; test $(grep -Ec '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log) -eq 6 && ! grep -q '^FAIL' <(grep -E '^(ok|FAIL) (I offers|alpha Cen A is inspectable|a click on A.s centre|its card says|the fixed eye looks ahead)' .godot/tmp/free-nav-stop.log)   # AC2 verbatim, on MY run's log",
+      "result": "rc 0, exactly the 6 expected ok lines: 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)' / 'ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates)' / 'ok its card says the radius is inferred: Barnard's Star | Star | Distance from the ship: 0.023 AU | ...' / 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)' / 'ok alpha Cen A is inspectable at its stop' / 'ok a click on A's centre picks A, not B ([\"body:acen-a\"])'"
+    },
+    {
+      "cmd": "T=tests/test_free_nav_stop.gd; grep -c 'Vector3(11, 82, -4.8)' $T; grep -c 'Vector3(8, 82, -4.8)' $T; grep -c 'Vector3(11, 82, -4.8)' tools/m4_ship_golden.gd   # AC3",
+      "result": "2 / 0 / 1 - as the design and the sprint JSON claim."
+    },
+    {
+      "cmd": "git diff --name-only 312b1772..HEAD; git diff --name-only 312b1772..HEAD -- demos/ ui/ interior/ assets/ art/ Makefile mk/ | wc -l   # AC4",
+      "result": "5 files: .ailang/state/sprints/sprint_R1-7AK-FREE-NAV-STOP-EYE.json, changelogs/unreleased/2026-11-11-free-nav-stop-eye.md, design_docs/planned/r1/m4-7ak-free-nav-stop-eye-sprint.md, design_docs/planned/r1/m4-7ak-free-nav-stop-eye.md, tests/test_free_nav_stop.gd. Product/build file count: 0. (git diff --name-only origin/main...HEAD gives the same 5 files.)"
+    },
+    {
+      "cmd": "git status --porcelain; make uid-guard   # AC8 (after restoring the R3 mutation)",
+      "result": "git status --porcelain: empty; 'uid-guard: ok (422 .uid files)', rc 0."
+    },
+    {
+      "cmd": "make python-guard; make lint-precision",
+      "result": "'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)' rc 0; 'lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)' rc 0."
+    },
+    {
+      "cmd": "extract the design's M1/M2 gdscript fences and compare them with the shipped lines (the plan's byte-for-byte rule, re-run my way)",
+      "result": "shipped:57 == M1 fence -> True ; shipped:77 == M1 fence -> True ; shipped:61 == M2 fence -> True ; shipped:80 == M2 fence -> True. (Note: the plan's own proof says 'awk NR==57||NR==76'; after the M2 insertion the second eye line is 77, so the plan's command as written cannot pass on the final tree.)"
+    },
+    {
+      "cmd": "git diff 312b1772..HEAD -- tests/ changelogs/",
+      "result": "4 lines in tests/test_free_nav_stop.gd (2 changed eye lines, 2 added clear-eye checks) plus the changelog fragment - no product, asset or build file changed; the 'test-only, not visible' classification holds."
+    }
+  ],
+  "mutants": [
+    {
+      "mutation": "M1 (design's R1 red control, old eye): scratch copy of tests/test_free_nav_stop.gd lines 1-67 with 'Vector3(11, 82, -4.8)' -> 'Vector3(8, 82, -4.8)', plus a summary print and quit()",
+      "cmd": "AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/claude/stap_i86_mm_r1.gd",
+      "result": "RED, and the new check is NOT vacuous: 'FAIL the fixed eye looks ahead past the ship (no surface on its centre ray)' and 'FAIL I offers the destination as its finite body, not the hidden catalogue point (40 candidates)'; 'SHORT: 8 passed, 2 failures'. The (40 candidates) count matches the design's V10/AC5 expectation, and the base run reproduces the same base red."
+    },
+    {
+      "mutation": "M2 (design's R2 red control, the furniture moves onto the new eye's line): the course monitor frame and its face shifted +2.418 m in x onto the x=11 ray, in the same short copy",
+      "cmd": "AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/claude/stap_i86_mm_r2.gd",
+      "result": "RED: 'FAIL the fixed eye looks ahead past the ship (no surface on its centre ray)' and 'FAIL I offers the destination as its finite body, not the hidden catalogue point (41 candidates)'; 'SHORT: 8 passed, 2 failures'. The (41 candidates) count matches the design's V10/AC6 expectation: the guard fires exactly when the eye is blocked, so it is a real guard, not a tautology."
+    },
+    {
+      "mutation": "M3 (ordering drill of my own, anchored to what the diff ships): the clear-eye check moved BEFORE 'ident.set_held(true); ident.update_candidates()' (which is what refreshes the occlusion BVH) while the monitor is still moved onto the eye's line",
+      "cmd": "AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/claude/stap_i86_mm_order.gd",
+      "result": "The guard silently degrades: 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)' while the eye IS blocked, and only 'FAIL I offers the destination as its finite body, not the hidden catalogue point (41 candidates)' reports it; 'SHORT: 9 passed, 1 failures'. The shipped order is correct, but the requirement (the check must follow the BVH refresh) is recorded only in the sprint plan, not in the test file, so a later edit could make the guard vacuous without any red."
+    },
+    {
+      "mutation": "M4 (design's R3 red control, a product regression in body gathering): '_add_body_candidates(sky,view,focal,px,canvas_to_pixel)' -> 'pass # R3' at ui/ship_star_identification.gd:105, run alone with the shipped eye (11, 82, -4.8), then 'git checkout -- ui/ship_star_identification.gd'",
+      "cmd": "sed -i.bak -e 's/^\\t_add_body_candidates(sky,view,focal,px,canvas_to_pixel)$/\\tpass # R3/' ui/ship_star_identification.gd && rm ui/ship_star_identification.gd.bak; AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/claude/stap_i86_mm_short.gd; git checkout -- ui/ship_star_identification.gd; git status --porcelain",
+      "result": "RED, and the I check keeps its teeth at the new eye: 'ok the fixed eye looks ahead past the ship (no surface on its centre ray)' (the guard does not false-positive on a product regression) and 'FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)'; 'SHORT: 9 passed, 1 failures'. The (43 candidates) count matches the design's V11/V14. After 'git checkout --', 'git status --porcelain' is empty."
+    },
+    {
+      "mutation": "M5 (measurement drill of my own): a short copy at the shipped eye that prints the camera, the destination candidate's own ray, every ship mesh on the centre ray, and sweeps the course monitor's x offset to find where the new eye's ray starts to be blocked",
+      "cmd": "AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/claude/stap_i86_mm_probe.gd",
+      "result": "'PROBE cam=(11.0, 83.7, -4.8) fwd=(-0.0, 0.0, -1.0) viewport=(64, 64) candidates=44' ; 'PROBE body pixel=(32.0, 32.0) point=(479.9999, 480.0) radius_px=1.50482062393694' ; 'PROBE body_ray=(-0.0, 0.0, -1.0) dot_centre=1.000000000 blocked_body_ray=false blocked_centre=false' - the candidate's ray IS the camera's centre ray here (the destination is exactly at the screen centre), and no ship mesh intersects the centre ray. Sweep: 'PROBE frames=/root/ShipGeometryDemo/@SubViewport@3/@Node3D@4/BridgeMonitors x=0.000 face=/root/ShipGeometryDemo/@SubViewport@3/@Node3D@4/monitor_face_course x=8.582' and 'PROBE sweep dx=0.400 blocked_centre=false', 'dx=0.500 blocked_centre=false', 'dx=0.600 blocked_centre=true' (and true up to dx=2.418) - the course screen's lateral clearance for the x=11 eye is only about 0.5-0.6 m, the margin the design lists as unmeasured. 'SHORT: 11 passed, 0 failures'."
+    }
+  ],
+  "blocking": [],
+  "non_blocking": [
+    "AC1 could not be reproduced green in this clone: 'make free-nav-stop-test' ends 'free-nav-stop: 38 passed, 16 failures', all 16 in the later legs and all downstream of the sim bridge's 2000 ms 'step_timeout' deadline. The base test file in the same clone gives '27 passed, 23 failures' - worse, and the same failure mode - so the redness is pre-existing/environmental, not caused by the diff. Likely environmental cause: this clone has no data/sky textures (164 MB, D-18 'make sky-assets'). Before landing, the controller should re-run AC1 on a host with the sky assets present; the sprint's own six checks are green in my run (AC2 rc 0).",
+    "The new guard covers only the ship-BVH half of the I contract. The I candidates are also filtered by the sky renderer's sv.occludes_direction (ui/ship_star_identification.gd:96 and :127); the clear-eye check never consults it, so a sky-occlusion failure would still surface only as the opaque 'I offers ...' FAIL. The design's sentence 'it uses the same BVH and the same eye as the I candidates, so it cannot disagree with them about what blocks' is too strong.",
+    "The guard's correctness depends on two orderings that the test file does not document (only the sprint plan does): it must follow 'ident.set_held(true); ident.update_candidates()' (which refreshes the occlusion BVH) and 'demo.look_direction(\"forward\")' (which moves the camera to the eye). My order mutant shows the check silently turning into 'ok' while the eye is blocked. A one-line comment at each check would protect the guard.",
+    "The design's own open risk - the x=11 ray's clearance is unmeasured - is now measured: the course face sits at x=8.582 and the centre ray stays clear only up to a +0.5 m shift of the monitor (blocked from +0.6 m), i.e. roughly 0.5-0.6 m of lateral clearance. The guard would catch a future move (good), but the deck-layout row should get the number, and the design's 'not measured as a margin' risk should be closed with it.",
+    "The player-visible half of the problem is deferred, not fixed: from the natural arrival eye (the lift's landing, (8, 82, -4.8)) the course screen still hides the destination and holding I still offers nothing. The row discloses this in 'Open questions for the user' and routes it to the deck-layout row / D-148's family, so nothing is hidden - but the row's framing 'the product is behaving correctly' holds only under the I-contract, and no part of this diff makes the arrival view usable.",
+    "Documentation inconsistencies: the design's Status line still says 'Revision 1' although the body documents 'Revision 2 (controller, narrow-refinement carve-out; no round 3)'; the sprint JSON's MS2 evidence cites 'Scratch logs in /tmp (7ak_r1.log, 7ak_r2.log, 7ak_r3.log)' although the plan (D1) says /tmp was blocked and the scratch was re-rooted into the tree - neither location holds those logs now; the plan's m1 cmp proof reads 'awk NR==57||NR==76' where the shipped second eye line is 77; the changelog fragment names row 7ak but not the sprint id R1-7AK-FREE-NAV-STOP-EYE that the plan's MS3 command asked for.",
+    "The 'not the hidden catalogue point' half of the I check still has no killing mutant (the design's own F2): my R3 mutation only exercises the body-gathering half. The second clause of the check remains unverified; a future change could let the catalogue point back into the candidates and the check would not catch it."
+  ],
+  "summary": "The 4-line diff is faithful to the design (byte-for-byte), touches no product, asset or build file, and the two checks it adds are real guards: they go red exactly when the eye is blocked (old eye -> (40 candidates); monitor moved onto the line -> (41 candidates)) and they do not fire on a product regression (body gathering removed -> (43 candidates), guard still 'ok'). The I check still offers the destination as its finite body from an eye the shipped deck keeps clear, and the base red (40 candidates / 'alpha Cen A is inspectable at its stop') reproduces exactly, so the fix removes a real failure instead of moving the test around it. The whole target could not be shown green in this clone, but the base is worse in the same session with the same step_timeout cascade, so the redness is environmental. Score 81/100, PASS.",
+  "notes": "Scratch files (all outside the clone, prefix stap_i86_mm_): /tmp/claude/stap_i86_mm_{base,r1,r2,order,short,probe}.gd and their .log files, /tmp/claude/mm_m1.gd, /tmp/claude/mm_m2.gd. /tmp itself is not writable in this sandbox (TMPDIR=/tmp/claude is), which is the same condition the sprint plan recorded as D1. No tracked file was modified except the one temporary R3 mutation, restored with 'git checkout -- ui/ship_star_identification.gd'; 'git status --porcelain' is empty afterwards. This evaluation file is the only file written inside the clone; nothing was committed."
+}

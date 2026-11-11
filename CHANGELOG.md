@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### m4-7ak-free-nav-stop-eye (2026-11-11)
+
+#### Fixed
+
+- **`make free-nav-stop-test` is green again** (R1-7AK-FREE-NAV-STOP-EYE, row 7ak, PR #423). Since PR #379, the course monitor has stood on the forward centre ray of the test's fixed eye `(8, 82, -4.8)`, the lift's landing. At arrival the ship-occlusion check correctly refused the destination, so `I offers the destination …` and `alpha Cen A is inspectable at its stop` failed (`48 passed, 2 failures`). The test now looks from `(11, 82, -4.8)`, the physics golden G-M4-S3's captain eye, which #379 kept clear, with the same level forward look. It reports `54 passed, 0 failures`. Test only: no product, asset or build change.
+- **A blocked eye now names itself.** After each `update_candidates()` the test checks that the eye's centre ray hits no ship surface. Measured red controls: the old eye gives 48/4, the course monitor moved onto the new line gives 48/4, and body gathering removed from the product gives 50/2.
+- Evaluations: Sonnet 5.5 92/100, MiniMax M3 81/100 (cross-vendor). Known gaps (non-blocking): the new check covers only the ship BVH on the centre ray, not the sky renderer's own occlusion, and it is only meaningful after `update_candidates()`. Lateral clearance is about 0.5 m: a course-monitor shift of +0.6 m blocks the ray (MiniMax measurement). The "not the catalogue point" half still has no killing mutant (design F2). The test's 2 s `step_timeout` cascades under heavy host load. From the lift's landing, the course screen still hides a destination dead ahead; that view belongs to the deck-layout row.
+
 ### m4-7ai-earth-log-map-index (2026-11-10)
 
 #### Fixed
