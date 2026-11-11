@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AL-SESSION-MINORS",
-  "status": "executed",
+  "status": "landed",
   "approved": true,
   "approved_by": "mission controller iteration 87 (loop, D-1 armed; design doc approved: pillar table net 0, none below 0, no open questions; quorum round 1 BLOCKED 3/3 -> r1, round 2 BLOCKED 2/3 with kimi-k3 pass -> r2 by the controller under the narrow-refinement carve-out: glm's missbridge/misssite controls + V23, gpt's captured grep-status + brokentest + r2 notests file; option (b) never disputed; no round 3, straight to planning)",
   "created": "2026-11-11",
-  "design_doc": "design_docs/planned/r1/m4-7al-session-minors.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7al-session-minors-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7al-session-minors.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7al-session-minors-sprint.md",
   "branch": "mission/stapledon-iter87-7al",
   "implements": [
     "7al"
@@ -280,9 +280,21 @@
     "MS3: the fragment in place; AC9 local half (2; the two rule lines; 23); porcelain sprint-files only; evidence recorded in this JSON.",
     "The GitHub gate is AC19 on the draft PR's head (success + the two log lines, the controller's read) and AC9's final-commit evidence; the PR leaves draft only after AC19 holds. No GPU gate, no make golden, no capture, no full local make test (merge rule) -- the nightly rig/full runs the suite on main post-merge, and AC10/AC11's four tests are the nightly backstops this row leans on."
   ],
-  "controller_checks": "Planned controller re-run before landing: the T1 RED log vs AC1's GREEN ok line; A-ok/B-ok cmp proofs against fresh fence extractions (40/204/43); AC2's 22 case lines in order and the four V24 lines verbatim plus the brokentest instrument note; AC3-AC7 rc=2 reason lines and restored tree (no .bak, porcelain clean); AC8 (asks SESSION_MINOR (18), 13/3); AC13 rc 3; AC15 unchanged/0; AC16; AC17 (nine paths + fragment + docs/state); AC18 conflicts=0 twice; AC20's two enumerations against V18; AC10's tail and the three prefetch oks; AC11's three counters; AC12's meta log (base 19/3, nine M-lines, 9 weakenings caught); AC14's matrix; AC9 local half; and on GitHub: AC19 on the draft-PR head (success <head sha>, grep count 2) and AC9's final-commit evidence with run id, head sha and the two log lines recorded in this JSON; then this JSON's measured fields filled. Actual results to be written here at landing.",
+  "controller_checks": "Controller re-run at 5f85f50a (AILANG v0.56.1, Godot 4.7.2): make session-minor-guard ok (AC1); session-minor-guard-controls 19 rejected, 3 accepted (AC2); AC5 red rc 2 with the exact reason line; similar-main-guard + similar-guard-controls 13/3 (AC8); make loading-jump-test rc 0 in 61 s, loading-jump: 77 passed, 0 failures (AC10). AC19: draft PR #425 fast tier run 43057476649 success on head 5f85f50a; job 130650692735 log (gh api --allow-escape-sequences, ANSI stripped, 49,021 B) carries both lines: the guard ok line and session-minor-guard-controls: 19 rejected, 3 accepted (grep count 2; control similar-test guard ok = 1); brokentest rejected with grep rc 2 on GNU grep.",
   "plan_verification": "Planner, 2026-11-11, HEAD 1c9018c4 (r2 design commit) on branch mission/stapledon-iter87-7al (no git writes by the planner): merge-base with origin/main = 8334b124 = origin/main = the design's base; git diff --name-only = the design doc alone, so every V-number applies verbatim; git status --porcelain empty. Cited lines verified at HEAD: bridge/sim_bridge.gd:77 = const EARTH_LOG_MINOR := 18; main.gd:304 / demos/ship_geometry_demo.gd:1025 / ui/loading_jump.gd:254 the three EARTH_LOG_MINOR sites with their trailing comments; tests/test_bh_hud.gd:109,176 and tests/test_comms_station.gd:133 compare want_minor, tests/test_ship_ui.gd:416 compares hello_reply.proto.minor; demos/ship_consoles.gd:1186 = the >= floor quoted in V18 (do-not-touch). Makefile anchors: ci-fast: :55, test: :57, include list :30-40, 7ah's block :105-133 ending at the @MAKE= recipe line :133 (Appendix A inserts after one blank line there); make -pq counts 21 ci-fast prerequisites at HEAD (V19's origin/main number; 23 after the block). Targets: loading-jump-test Makefile:1239-1240 (600 s SCRIPT_GATE, log .godot/tmp/loading-jump.log), comms-station-test mk/earth-link.mk:6 (log .godot/tmp/comms-station.log), bh-hud-test Makefile:415 (depends lens-assets), ship-ui-test Makefile:1370-1371 (600 s, log ship-ui.log); lens-assets :1035, runtime: :725, import: :42. Fence extraction planner-measured: A.mk 40 lines (= the header's 'Makefile +40', edge lines at its :13-14), B.sh 204 lines (header says 183 -- D2: 183 was the r1 count, r2 added R17-R19 and the r2 notests file; the fence is authoritative, V17 discipline), 7al_meta.sh 43 lines; B.sh carries R17/R18/R19 at its :166/:172/:178 and 0 tabs. Tools: gmake (4.4.1), /bin/dash, shellcheck, godot 4.7.2 on PATH; macOS make 3.81; this planner's grep is BSD grep 2.6.0-FreeBSD (the designer's ugrep probe was V24) -- brokentest unmeasured, MS1 records it. Clone state: .godot/ imported (designer's rc-0 import, 7 pre-existing CSV-translation errors), data/lens/lens_fwd.bin and lens_inv.bin are the designer's symlinks into the main checkout (untracked, .gitignore:34), runtime/ absent so the AC preamble's 'or the main checkout's runtime/bin' PATH points at /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin (ailang reports AILANG v0.56.1 commit 05c860a). ci.yml: name CI, job on ubuntu-latest, steps make deps then make ci-fast, Godot only under inputs.full (V4). /tmp writes REFUSED in this sandbox (touch /tmp/7al_plan_probe -> Operation not permitted; planner-measured) -- D1 reroots to $S with TMPDIR=$S. Charter row 7al at design_docs/stapledon-mission.md:528. No Godot or make run by the planner (role split); all plan-time checks were read-only git/grep/sed/awk/make -pq.",
   "velocity": "~240 LOC (design header; fence-extraction authority: Makefile 40 + script 204 + ~12 product/test). Machine time is dominated by MS2's four Godot runs (5-10 min each under Studio load, plus one possible cold-compile warm-up) and the draft-PR fast tier (~10 min, V19); the guard and controls themselves are seconds (V21: guard <0.1 s, controls 1.7 s at r1). This repo's recent rows of this size each took one iteration (7ah ~180 LOC one executor session; 7aj ~55; 7ai ~16; 7ak ~4): the same is planned here -- one iteration, no day-count estimated.",
-  "evaluations": {},
-  "pr": null
+  "evaluations": {
+    "sonnet": {
+      "score": 91,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AL-SESSION-MINORS_round_1_sonnet.json"
+    },
+    "minimax-m3": {
+      "score": 98,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AL-SESSION-MINORS_round_1_minimax-m3.json",
+      "note": "pi openrouter, one attempt ok in 3211 s (--max-seconds 3600, --tool-stall-seconds 1200). Measured the design Conflict-surface claim false: the Makefile has 1 git merge-file conflict with #380 and #373 (the pre-existing AILANG_RELEASE v0.56.0 vs v0.56.1 line, not this row). AC19 log unreadable from its sandbox (403), closed by the controller read."
+    }
+  },
+  "pr": 425
 }
