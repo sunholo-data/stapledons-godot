@@ -1,6 +1,6 @@
 # free-nav-stop's I checks look from the clear captain eye (7ak)
 
-**Status:** Planned 2026-11-11 (mission iteration 86, designer). **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ak**).
+**Status:** Planned 2026-11-11 (mission iteration 86, designer). Revision 1 answers design-quorum round 1; see "Quorum verification log". **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ak**).
 **Priority:** P1. `make free-nav-stop-test` has been red on main since PR #379 (R3-COMMS-V2, merged as `8ba1e3c8`): `free-nav-stop: 48 passed, 2 failures`, make rc 2 (controller, at `312b1772`; tonight's nightly names the same two checks). The nightly `rig/full` reports it every night, so gate 1 of the definition of done ("main's nightly `rig/full` stays green") cannot hold until it is fixed.
 **Implements:** row 7ak of the charter (`design_docs/stapledon-mission.md`, Queue), clause 2/5 hygiene. It restores the R1-SHIP-UI / D-58 checks that the I key offers a free-navigation destination as its finite body (Barnard's Star, inferred radius; alpha Cen A at the D-111 close pass), not the hidden catalogue point. Design-repo context: the I identification overlay and the D-54/D-111 stop rules; no physics-spec formula, shader or table changes.
 **Depends on:** nothing.
@@ -37,11 +37,12 @@ Scored against `../stapledons-design/vision/core-pillars.md` (pillars 1–6) and
 **Goals.**
 - `make free-nav-stop-test` is green: `free-nav-stop: 54 passed, 0 failures` (V7).
 - Both I checks keep their meaning: the destination body is offered and the hidden catalogue point is not, from an eye the shipped deck lets see the destination; the ship still occludes (a monitor moved onto the new eye's line fails them, R2).
-- A future furniture move that blocks the fixed eye fails with a message that names the eye, not only the opaque I check.
+- A future furniture move that blocks the fixed eye fails with a message that names the eye, not only the opaque I check (M2 is that guard).
+- The test's eye and forward look are G-M4-S3's: the same position `(11, 82, -4.8)` and the same level yaw (−π/2 = 270°), the golden's tilt differing by 0.01 rad (V13). Whether G-M4-S3 would also fail under R2 is not measured (it is a GPU gate, not run here) and nothing in this design relies on it.
 
 **Non-goals.**
 - Moving a monitor, desk, frond, the spawn or the lift landing. That is visible and Mark's (D-148 and the deck-layout row).
-- Editing `ui/ship_star_identification.gd`, `ui/star_occlusion.gd` or `demos/ship_geometry_demo.gd` (both of the first and the last are in attended PR #412).
+- Editing `ui/ship_star_identification.gd`, `ui/star_occlusion.gd` or `demos/ship_geometry_demo.gd` (the first and the last are in attended PR #412).
 - Raising a candidate cap (there is none), dropping the occlusion test, or sky-only mode (`demo.sky_only` skips occlusion and would hide this class of regression).
 - `ci-fast` membership for this target (see Follow-ups F1).
 
@@ -55,7 +56,7 @@ The product is behaving correctly. From the lift landing the course screen reall
 
 | Option | What | Verdict |
 |---|---|---|
-| (a1) Move the test's eye to the golden's clear captain eye | `(8, 82, -4.8)` → `(11, 82, -4.8)` at `:57` and `:76` | **Chosen.** Measured 52/0 alone (V7a). It is the sightline #379 deliberately kept clear (V6) and the one G-M4-S3 already pins, so the two gates now share one sightline: a later monitor move that blocks it breaks both, which is the point. |
+| (a1) Move the test's eye to the golden's clear captain eye | `(8, 82, -4.8)` → `(11, 82, -4.8)` at `:57` and `:76` | **Chosen.** Measured 52/0 alone (V7a). It is the sightline #379 deliberately kept clear (V6), and the test now uses G-M4-S3's eye and forward look (same position and yaw, tilt within 0.01 rad; V13). Whether a move that blocks it also fails G-M4-S3 is not measured and not relied on; M2 is the guard. |
 | (a1+) (a1) plus an explicit clear-eye check | one `check` after each `update_candidates()`: the eye's centre ray hits no ship surface | **Chosen, with (a1).** Two lines. Without it, the next furniture move again surfaces only as `I offers … (40 candidates)`, which cost this row a bisect and a hypothesis. With it, the first FAIL line says the eye is blocked (R1, R2). Measured 54/0 (V7b). |
 | (a2) Look in another direction from `(8, 82, -4.8)` | e.g. turn the ship or the camera so the destination is off the monitor | Rejected. The arrival puts the destination dead ahead; "look forward at the destination" is the scenario. Turning the eye checks a different picture. |
 | (a3) `demo.sky_only = true` for the I checks | skip ship occlusion | Rejected. It removes the occlusion half of the contract the checks stand on. |
@@ -88,7 +89,7 @@ It uses the same BVH and the same eye as the I candidates, so it cannot disagree
 
 ## Acceptance criteria
 
-Headless, in the fix clone, after `export PATH=$PWD/runtime/bin:$PATH` (Godot 4.7.2, AILANG v0.56.1). A full run takes about 7.5 min under a load of 12–25 on the Studio (V7). For red controls, `T=tests/test_free_nav_stop.gd` and `G='AILANG_BIN=$(command -v ailang) godot --headless --path .'`; each control is a scratch copy under `/tmp`, never an edit of the tree.
+Headless, in the fix clone, after `export PATH=$PWD/runtime/bin:$PATH` (Godot 4.7.2, AILANG v0.56.1). A full run takes about 7.5 min under a load of 12–25 on the Studio (V7). For red controls, `T=tests/test_free_nav_stop.gd` and `G='AILANG_BIN=$(command -v ailang) godot --headless --path .'`. R1 and R2 run scratch copies of the test under `/tmp` and never edit the tree. R3 is the only tree edit: it seds `ui/ship_star_identification.gd`, runs alone (no other run may load the tree meanwhile), and is restored with `git checkout --` followed by a `git status --porcelain` check (AC8).
 
 | # | Criterion | Command | Expected |
 |---|---|---|---|
@@ -98,7 +99,7 @@ Headless, in the fix clone, after `export PATH=$PWD/runtime/bin:$PATH` (Godot 4.
 | AC4 | Test-only: no product, asset or build file changed | `git diff --name-only origin/main...HEAD` | only `tests/test_free_nav_stop.gd`, a `changelogs/unreleased/*` fragment and landing docs/state; nothing under `demos/`, `ui/`, `interior/`, `assets/`, `art/`, `Makefile`, `mk/` |
 | AC5 | **Red control R1, the old eye:** occlusion still counts, and the new check names the cause | `sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $T > /tmp/7ak_r1.gd; eval $G --script /tmp/7ak_r1.gd > /tmp/7ak_r1.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r1.log; grep -E '^FAIL (I offers\|alpha Cen A is inspectable)' /tmp/7ak_r1.log; tail -1 /tmp/7ak_r1.log` | `rc=1`; `2`; the two original FAIL lines (`(40 candidates)`); `free-nav-stop: 48 passed, 4 failures` |
 | AC6 | **Red control R2, the furniture moves onto the new eye's line** (the course monitor and its face shifted +2.418 m in x, centred on x = 11) | `awk '{print} /Vector3\(11, 82, -4.8\)/ && !d {print "\tdemo.monitor_frames.position.x += 2.418; demo.geometry.find_child(\"monitor_face_course\", true, false).position.x += 2.418"; d=1}' $T > /tmp/7ak_r2.gd; eval $G --script /tmp/7ak_r2.gd > /tmp/7ak_r2.log 2>&1; echo rc=$?; grep -c '^FAIL the fixed eye looks ahead' /tmp/7ak_r2.log; grep -c '^FAIL I offers the destination' /tmp/7ak_r2.log; tail -1 /tmp/7ak_r2.log` | `rc=1`; `2`; `1` (`(41 candidates)`); `free-nav-stop: 48 passed, 4 failures` (the fourth FAIL is `alpha Cen A is inspectable at its stop`) |
-| AC7 | **Red control R3, a product regression in body gathering** (the `_add_body_candidates` call in `ui/ship_star_identification.gd:105` replaced by `pass` in the tree for the run, then restored with `git checkout -- ui/ship_star_identification.gd`) | `sed -i '' 's/^\t_add_body_candidates(sky,view,focal,px,canvas_to_pixel)$/\tpass # R3/' ui/ship_star_identification.gd && make free-nav-stop-test; echo rc=$?; git checkout -- ui/ship_star_identification.gd; grep -c '^FAIL I offers the destination' .godot/tmp/free-nav-stop.log; git status --porcelain` | `rc=2`; `1` (`(43 candidates)`, measured in the short copy, V11; the full-run count is the executor's to record); no `git status` output |
+| AC7 | **Red control R3, a product regression in body gathering** (the `_add_body_candidates` call in `ui/ship_star_identification.gd:105` replaced by `pass` in the tree for the run, then restored with `git checkout -- ui/ship_star_identification.gd`) | `sed -i.bak -e 's/^\t_add_body_candidates(sky,view,focal,px,canvas_to_pixel)$/\tpass # R3/' ui/ship_star_identification.gd && rm ui/ship_star_identification.gd.bak && eval $G --script $T > /tmp/7ak_r3.log 2>&1; echo rc=$?; git checkout -- ui/ship_star_identification.gd; grep -E '^FAIL' /tmp/7ak_r3.log; tail -1 /tmp/7ak_r3.log; git status --porcelain` | `rc=1`; exactly `FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)` and `FAIL alpha Cen A is inspectable at its stop`; `free-nav-stop: 50 passed, 2 failures`; no `git status` output (V14) |
 | AC8 | The tree is clean and every `.gd` keeps its `.uid` | `git status --porcelain; make uid-guard` | no status output; `uid-guard` rc 0 (no new script) |
 
 ## Sub-milestones and estimates
@@ -111,7 +112,7 @@ Headless, in the fix clone, after `export PATH=$PWD/runtime/bin:$PATH` (Godot 4.
 
 ## Risks and mitigations
 
-- **The x = 11 ray's clearance is not measured as a margin.** The BVH reports no hit (V7), but how far the course frame's edge is from that ray is unmeasured. A small monitor or frond move could block it again. Mitigation: M2 fails first and says so, and the same move breaks G-M4-S3's golden, which shares the eye; the deck-layout row then decides.
+- **The x = 11 ray's clearance is not measured as a margin.** The BVH reports no hit (V7), but how far the course frame's edge is from that ray is unmeasured. A small monitor or frond move could block it again. Mitigation: M2 fails first and says so; the deck-layout row then decides. G-M4-S3 uses the same eye and forward look (V13), but whether it would fail too is not measured and is not relied on.
 - **#412 lands first and changes `open_navigation()`'s helm path** (see Files touched). Mitigation: AC1 after rebase.
 - **Run time under load.** 445–466 s here at load 12–25, within the target's 1800 s `SCRIPT_GATE` budget (`Makefile:1211`).
 
@@ -133,7 +134,7 @@ None blocking. The fix is a test eye. One observation for Mark, outside this row
 
 ## Verification log
 
-Run 2026-11-11 in `stapledons-godot-iter86-7ak` at `312b1772` on the Studio (arm64), `PATH=$PWD/runtime/bin:$PATH` (AILANG v0.56.1, Godot 4.7.2), load 12–25. Probes and scratch copies of the test were in `/tmp/stap_i86_designer/`, run as `AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/stap_i86_designer/<x>.gd`; none was committed. Product-file mutations (R3, M2) were applied one at a time and restored with `git checkout -- ui/ship_star_identification.gd`; `git status --porcelain` was empty afterwards.
+Run 2026-11-11 in `stapledons-godot-iter86-7ak` at `312b1772` on the Studio (arm64), `PATH=$PWD/runtime/bin:$PATH` (AILANG v0.56.1, Godot 4.7.2), load 12–25. Probes and scratch copies of the test were in `/tmp/stap_i86_designer/`, run as `AILANG_BIN=$(command -v ailang) godot --headless --path . --script /tmp/stap_i86_designer/<x>.gd`; none was committed. Product-file mutations (R3, M2) were applied one at a time (the full R3 run with `sed -i.bak -e … && rm …bak`) and restored with `git checkout -- ui/ship_star_identification.gd`; `git status --porcelain` was empty afterwards.
 
 | # | Command | Result |
 |---|---|---|
@@ -149,3 +150,16 @@ Run 2026-11-11 in `stapledons-godot-iter86-7ak` at `312b1772` on the Studio (arm
 | V10 | full red controls R1 and R2 (scratch copies of the M1+M2 test, as AC5 and AC6), run in parallel | both rc 1. R1: `FAIL the fixed eye looks ahead …`, `FAIL I offers … (40 candidates)`, `FAIL the fixed eye looks ahead …`, `FAIL alpha Cen A is inspectable at its stop`, `free-nav-stop: 48 passed, 4 failures`. R2: the same four lines with `(41 candidates)`, `free-nav-stop: 48 passed, 4 failures` |
 | V11 | short copy (eye 11), product mutations one at a time: R3 `_add_body_candidates(...)` → `pass` (`:105`); M2 `if i >= field.ids.size() or field.ids[i] in field.pinned_ids:continue` → `if i >= field.ids.size():continue` (`:62`); baseline unmutated | baseline `ok I offers … (44 candidates)`, `10 passed, 0 failures` (63 s); R3 `FAIL I offers … (43 candidates)`, `8 passed, 1 failures`; M2 `ok I offers … (44 candidates)`, `10 passed, 0 failures` (survives, F2) |
 | V12 | `make -n ci-fast > f; wc -l f; grep -c 'test_free_nav_stop\|ship_geometry_demo' f; grep -c similar_guard_controls f` (positive control); `make -n free-nav-stop-test \| grep -c test_free_nav_stop.gd` (positive control); `grep -c 'sky-assets\|starmap-assets' .github/workflows/ci.yml` | `226`, `0`, `1`; `1`; `0` |
+| V13 | `grep -n 'yaw_deg:float\|camera.follow(avatar_pos,0.' demos/ship_geometry_demo.gd`; `grep -n 'func _pose' -A1 tools/m4_ship_golden.gd`; `grep -n '_pose(-0.01, -PI \* 0.5)' tools/m4_ship_golden.gd` (re-running the controller's measurement) | `421: var yaw_deg:float={"forward":270.,"side":0.,"aft":90.}.get(direction,270.)`, `424: camera.follow(avatar_pos,0.,deg_to_rad(yaw_deg),0.);_sync_observer()`; `176: func _pose(tilt: float, yaw: float) -> void:`, `177: demo.camera.follow(demo.avatar_pos, tilt, yaw, 0.0)`; `241: … demo.avatar_pos = Vector3(11, 82, -4.8); _pose(-0.01, -PI * 0.5) …`. Yaw −π/2 ≡ 270°; tilts −0.01 and 0. Same eye, same level forward look |
+| V14 | full R3: the M1+M2 test copy run with `_add_body_candidates(...)` → `pass` at `ui/ship_star_identification.gd:105` (`sed -i.bak -e`, `rm` the `.bak`), then `git checkout --` and `git status --porcelain` | 435 s, rc 1; `FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)`, `FAIL alpha Cen A is inspectable at its stop`, `free-nav-stop: 50 passed, 2 failures`; both clear-eye checks `ok`; status empty after restore |
+
+## Quorum verification log
+
+- **Round 1 (2026-11-11), BLOCKED 1/3.** Seats: gemini-4-argon pass, oc-glm-5-3 pass, oc-kimi-k3 reject; cost $0.2238; artifact `m4-7ak-free-nav-stop-eye-2026-11-11T06-21-56Z.json`.
+- **Controller measurement (at `312b1772`).** Kimi's premise that the golden's camera "is turned ~90 degrees away" is false: `demos/ship_geometry_demo.gd:421` maps forward to yaw 270° and `:424` calls `camera.follow(avatar_pos, 0., deg_to_rad(270), 0.)`; `tools/m4_ship_golden.gd:176-177` `_pose(tilt, yaw)` calls the same `follow` with yaw −π/2 (`:241`), tilt −0.01. The designer re-ran it as V13. Still unmeasured: whether R2 would fail G-M4-S3 (a GPU golden, not run).
+- **What revision 1 changed.**
+  1. (kimi) V13 added; Goals, the (a1) verdict and the clearance risk now claim only the shared eye and forward look, and say that G-M4-S3 under R2 is unmeasured and not relied on (M2 is the guard). ", which is the point" deleted.
+  2. (glm) The AC preamble says R1 and R2 are `/tmp` scratch copies that never edit the tree, and R3 is the only tree edit: run alone, restored with `git checkout --`, checked with `git status --porcelain` (AC8).
+  3. (glm, gemini) R3 measured in full (V14); AC7's Expected holds only those measured values. AC7 now runs the test with Godot directly (rc 1, measured), not through make.
+  4. (kimi) AC7's in-place edit is portable: `sed -i.bak -e … && rm ….bak`.
+  5. This section.
