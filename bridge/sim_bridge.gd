@@ -75,6 +75,11 @@ const WORLDS_MINOR := 17
 ## alone as `earth_log_tail`, which take_earth_log_tail() files by from_frame. Storage only, no arithmetic.
 ## Also `course` {ship_years_left} and the read-only `earth_weeks` intent.
 const EARTH_LOG_MINOR := 18
+## 7al: the protocol minor the game's three sessions ask: the map (main.gd _run_map), the ship
+## (demos/ship_geometry_demo.gd _create_navigation) and the loading jump's prefetch (ui/loading_jump.gd _work_sim).
+## A bump the game adopts moves this line; the session-minor guard and the four test comparisons follow it.
+## Keep it equal to a protocol minor above (the guard checks this).
+const SESSION_MINOR := 18
 const WORK_STATES := ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
 const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]

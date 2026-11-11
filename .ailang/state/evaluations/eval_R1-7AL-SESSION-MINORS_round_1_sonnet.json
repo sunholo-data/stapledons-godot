@@ -1,0 +1,50 @@
+{
+ "sprint_id": "R1-7AL-SESSION-MINORS",
+ "evaluator_model": "Sonnet 5.5",
+ "reviewed_commit": "5f85f50a",
+ "score": 91,
+ "verdict": "PASS",
+ "rubric": {"acceptance_criteria": 38, "tests_and_guards": 18, "scope_and_behaviour_identity": 14, "robustness_and_mutation_resistance": 13, "docs_changelog_evidence": 8, "note": "AC19 UNMEASURED, 4 points withheld for it and for lexical blind spots; rubric mapped by evaluator"},
+ "ac_results": {
+  "AC1": "PASS ok line, rc=0",
+  "AC2": "PASS 19 rejected, 3 accepted, rc=0, 22 case lines",
+  "AC3": "PASS main.gd _run_map does not ask SimBridge.SESSION_MINOR, make Error 1",
+  "AC4": "PASS", "AC5": "PASS", "AC6": "PASS",
+  "AC7": "PASS ok, SESSION_MINOR (17) = WORLDS_MINOR",
+  "AC8": "PASS 13 rejected, 3 accepted",
+  "AC9": "PASS local half: 2; lines 147-148; ci-fast 23 prerequisites at positions 19,20. GitHub half UNMEASURED (run 43057476649 in_progress on 5f85f50a)",
+  "AC10": "PASS 77 passed, 0 failures, three prefetched checks ok (first two runs startup_timeout on cold sim under load 18; green after one warm run, as the brief predicted)",
+  "AC11": "PASS comms-station 42/0, bh-hud 64/0, ship-ui 288/0",
+  "AC12": "PASS 9 weakenings caught, rc=0 (Appendix C extracted and run)",
+  "AC13": "PASS rc=3, 'map: mutation left main.gd unchanged'",
+  "AC14": "PASS 8/8 make variants 19 rejected 3 accepted; dash guard rc=0; dash controls ok; both shellchecks silent",
+  "AC15": "PASS unchanged, 0",
+  "AC16": "PASS uid/python/script-gate/audio-silent ok, git diff --check clean",
+  "AC17": "PASS 13 paths: the code/test/make paths + controls script + changelog fragment + design docs + sprint JSON",
+  "AC18": "PASS conflicts=0 twice",
+  "AC19": "UNMEASURED run 43057476649 still in_progress at evaluation time",
+  "AC20": "PASS five want_minor assignment lines (SESSION_MINOR at ship:1025 and main:304); second grep gives ship_consoles.gd:1186 and two bridge validity reads"
+ },
+ "mutants": [
+  {"mutant":"duplicate const SESSION_MINOR line","result":"killed (SESSION_MINOR unresolved)"},
+  {"mutant":"test comparison reversed (SimBridge.EARTH_LOG_MINOR == demo.journey_sim.want_minor)","result":"SURVIVED (documented F4 lexical limit)"},
+  {"mutant":"test comparison with a TAB before == and EARTH_LOG_MINOR","result":"SURVIVED (regex allows spaces only)"},
+  {"mutant":"test comparison wrapped in parentheses (SimBridge.EARTH_LOG_MINOR) in test_ship_ui and test_bh_hud","result":"SURVIVED"},
+  {"mutant":"main.gd _run_map: append ;sim.want_minor+=0","result":"killed (mentions want_minor 2 times)"},
+  {"mutant":"main.gd _run_map: s2.want_minor=EARTH_LOG_MINOR then sim.want_minor=SESSION_MINOR","result":"killed (2 mentions)"},
+  {"mutant":"ship site: appended journey_sim.set(...)","result":"killed"},
+  {"mutant":"loading_jump _work_sim: null if true else warm(SESSION_MINOR)","result":"SURVIVED (dead-branch semantic bypass, lexical limit)"},
+  {"mutant":"loading_jump _work_sim line made CRLF, comment dropped","result":"accepted (equivalent, not a bug)"},
+  {"mutant":"new tests/sub/t.gd comparing journey_sim.want_minor with EARTH_LOG_MINOR","result":"SURVIVED (scan reads tests/*.gd only)"},
+  {"mutant":"new tests/test_zz.gd with demo.sim.want_minor == SimBridge.EARTH_LOG_MINOR","result":"SURVIVED (scan keyed on journey_sim. prefix)"}
+ ],
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Lexical blind spots survive: tab/parenthesised/reversed comparison forms, comparisons in tests/ subdirectories or via a variable other than journey_sim, and a dead-branch ternary in the prefetch line. All fall under the design's F4/lexical-limit admission, but the tab and parenthesis and subdirectory cases are not named explicitly there; consider [[:space:]]* in the scan regex and find-based scan.",
+  "tests/test_comms_station.gd check text was rewritten to also assert SESSION_MINOR >= EARTH_LOG_MINOR (an added assertion, not a pure token swap); harmless and passes, but beyond 'one token'.",
+  "Diff has 13 paths, not the design's nine, because of the sprint JSON, design docs and changelog; the design allows these.",
+  "AC19 (GitHub ubuntu fast tier on 5f85f50a) was still in progress; the pre-landing gate remains the controller's."
+ ],
+ "unmeasured": ["AC19 and AC9's GitHub half (run 43057476649 in_progress)", "GNU userland behaviour of the guard (only BSD userland, dash, gmake locally)"],
+ "other_checks": "ship_geometry_demo.gd diff is one token on line 1025; ship_consoles.gd, Makefile:55,57 and 7ah's Makefile:105-133 untouched (diff only adds after line 133); working tree clean after all mutations (lens symlinks are gitignored)."
+}

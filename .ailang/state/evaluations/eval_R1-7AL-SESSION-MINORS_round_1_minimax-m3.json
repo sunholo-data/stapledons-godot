@@ -1,0 +1,243 @@
+{
+  "sprint_id": "R1-7AL-SESSION-MINORS",
+  "evaluator_model": "minimax-m3 (pi)",
+  "reviewed_commit": "5f85f50af72cd3742b8eecffbfd0524c73d931bb",
+  "reviewed_range": "origin/main..HEAD = 8334b124..5f85f50a (design c5b876ee, 607fffae, 1c9018c4; plan 2f1c99e6; implementation 26d7cb54 MS1, 3b235f45 MS2, 5f85f50a MS3)",
+  "design_doc": "design_docs/planned/r1/m4-7al-session-minors.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7al-session-minors-sprint.md",
+  "sprint_json": ".ailang/state/sprints/sprint_R1-7AL-SESSION-MINORS.json",
+  "pr": "draft PR #425 (mission/stapledon-iter87-7al)",
+  "score": 98,
+  "verdict": "PASS",
+  "pass_threshold": 70,
+  "rubric": {
+    "tests_pass": {
+      "points": 20,
+      "max": 20,
+      "basis": "GitHub fast tier on the PR head 5f85f50a: run 43057476649, job 'fast tier (lock, strict VM, parity, replay)' conclusion=success, step 6 'make ci-fast' success (16:21:37Z->16:38:45Z), step 7 'make test' skipped by design, step 4 'Install Godot' skipped by design. Locally every ci-fast prerequisite was re-run: deps, python-guard, audio-silent-guard, uid-guard, lint-precision, strict, parity-v2, parity, parity-gr, replay, crew-sync-check, crew-parity, lore-import-check, capture-m4-publish-test, replay-map-index, similar-main-guard, similar-guard-controls, session-minor-guard, session-minor-guard-controls -> all green (rc 0). The four targeted Godot gates are green with the exact counts the design expects (77/42/64/288). No hard fail."
+    },
+    "lint_clean": {
+      "points": 10,
+      "max": 10,
+      "basis": "lint-precision ok, script-gate-lint ok (251 --script invocations), script-gate-prereqs ok, python-guard ok (21 allowlisted), uid-guard ok (422 .uid), audio-silent-guard ok, shellcheck and shellcheck -s dash silent on tools/session_minor_guard_controls.sh, git diff --check origin/main rc 0, no trailing whitespace, no TODO/FIXME in the new code. No errors, no warnings."
+    },
+    "acceptance_criteria": {
+      "points": 28.5,
+      "max": 30,
+      "basis": "19 of the 20 design ACs measured green by me (AC1-AC18, AC20). AC19: the fast-tier run on the PR head is 'success' and its 'make ci-fast' step (which carries the two new ci-fast edges) is green, so the guard and controls did pass on GitHub's ubuntu-latest GNU userland; the two exact log lines could not be read (GitHub job-logs endpoint returns 403 'Must have admin rights to Repository' without an admin token, and this host's gh token is invalid). 0.5 deducted for that unread instrument."
+    },
+    "code_quality": {
+      "points": 15,
+      "max": 15,
+      "basis": "New file tools/session_minor_guard_controls.sh is 204 lines, POSIX sh, commented, shellcheck-clean under both bash and dash dialects; no file added over 800 lines; no TODO/HACK/FIXME; no function over 50 lines; the guard lives in one Makefile recipe in the same shape as 7ah's, with the design's 40-line block byte-identical to Appendix A. Sprint artifacts complete: all three milestones (MS1, MS2, MS3) carry status/passes/notes, velocity is populated, and the sprint plan has no placeholder text. The sprint JSON's status is 'executed' (the PR and the evaluation are the controller's next steps), consistent with this repo's convention for a sprint at evaluation time."
+    },
+    "documentation": {
+      "points": 15,
+      "max": 15,
+      "basis": "CHANGELOG: changelogs/unreleased/2026-11-11-session-minors.md follows changelogs/unreleased/README.md (one '### Added' fragment, names the row, the sprint, the constant and the guard). Examples: not applicable in this repo (no examples/runnable/ tree; the sprint adds no AILANG feature), the guard is shell + GDScript. Design doc: thorough, and the implementation is byte-for-byte the doc's Appendices A (40 lines), B (204 lines) and C (43 lines), which I re-extracted and cmp'ed. The doc stays in design_docs/planned/ because CLAUDE.md moves it at landing, after the evaluation, not at execution."
+    },
+    "design_fidelity": {
+      "points": 9.5,
+      "max": 10,
+      "basis": "Implementation matches the approved design exactly: the constant and its 4-line doc comment at bridge/sim_bridge.gd:78-81, one token per site at main.gd:304, demos/ship_geometry_demo.gd:1025, ui/loading_jump.gd:254 (trailing history comments kept), the four test comparisons with the comms feature floor kept, the Makefile block inserted after 7ah's recipe at :133, the ci-fast/test edges at :147-148, and 7ah's block plus Makefile:55,57 plus demos/ship_consoles.gd untouched. 0.5 deducted for the design's own Conflict-surface prose, which does not reproduce (see non_blocking_findings #7)."
+    },
+    "regression_surface_coverage": {
+      "points": 0,
+      "max": 0,
+      "basis": "Not triggered: the sprint touches no shared compilation infrastructure (no internal/parser, internal/lexer, internal/ast, internal/types, internal/elaborate, internal/iface, internal/codegen, internal/eval, internal/vm, internal/effects or cmd/ailang/exec.go). The repo-local analogue, 7ah's similar-main-guard and its controls, were re-run unchanged and are green (AC8)."
+    },
+    "performance_verification": {
+      "points": 0,
+      "max": 0,
+      "basis": "Not triggered: the row is suite hygiene with no performance goal in the design or the sprint JSON; the change is a constant rename and a lexical guard. Behaviour is identical by construction (SESSION_MINOR == EARTH_LOG_MINOR == 18)."
+    },
+    "total": 98
+  },
+  "ac_results": {
+    "AC1": {
+      "result": "PASS",
+      "measured": "make session-minor-guard -> 'session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; 4 test comparisons name it', rc=0"
+    },
+    "AC2": {
+      "result": "PASS",
+      "measured": "make session-minor-guard-controls -> the 22 case lines in the M3-table order (pristine, map, ship, prefetch, literal, arith, ternary, twice, removed, renamed, unbounded, stray, nosession, exprsession, orphan, testname, notests, missbridge, misssite, brokentest, bump, comment) ending 'session-minor-guard-controls: 19 rejected, 3 accepted', rc=0, 2.5 s for guard+controls"
+    },
+    "AC3": {
+      "result": "PASS",
+      "measured": "sed the map site to EARTH_LOG_MINOR -> 'session-minor guard: main.gd _run_map does not ask SimBridge.SESSION_MINOR', 'make: *** [session-minor-guard] Error 1', rc=2; tree restored (git status clean)"
+    },
+    "AC4": {
+      "result": "PASS",
+      "measured": "sed the ship site to EARTH_MINOR -> 'session-minor guard: demos/ship_geometry_demo.gd _create_navigation does not ask SimBridge.SESSION_MINOR', rc=2; tree restored"
+    },
+    "AC5": {
+      "result": "PASS",
+      "measured": "sed the prefetch site to EARTH_LOG_MINOR -> 'session-minor guard: ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR', rc=2; tree restored"
+    },
+    "AC6": {
+      "result": "PASS",
+      "measured": "sed the comms comparison to EARTH_LOG_MINOR -> 'session-minor guard: tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR', rc=2; tree restored"
+    },
+    "AC7": {
+      "result": "PASS",
+      "measured": "sed 'const SESSION_MINOR := 18' -> 17 -> 'session-minor guard: ok, SESSION_MINOR (17) = WORLDS_MINOR; ... 4 test comparisons name it', rc=0; tree restored"
+    },
+    "AC8": {
+      "result": "PASS",
+      "measured": "make similar-main-guard -> 'similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14)'; make similar-guard-controls -> 'similar-guard-controls: 13 rejected, 3 accepted'; rc=0; 7ah's files untouched in the diff"
+    },
+    "AC9": {
+      "result": "PASS",
+      "measured": "local half: 'make -n ci-fast | grep -cE ...' -> 2; rule lines 147 'test: session-minor-guard session-minor-guard-controls' and 148 'ci-fast: ...'; 'make -pq | grep ^ci-fast: | tr \\' \\' \\n\\' | grep -c .' -> 23 (origin/main's own Makefile gives 21, i.e. +2); both new targets listed among the prerequisites. GitHub half: the fast-tier run on the final commit 5f85f50a (run 43057476649) is success and its 'make ci-fast' step is green, so both edges ran on ubuntu-latest. The job log itself is unread from this host (403 without an admin token); the controller's authenticated read closes that."
+    },
+    "AC10": {
+      "result": "PASS",
+      "measured": "make loading-jump-test -> 'script-gate: loading-jump-test ok: loading-jump: 77 passed, 0 failures (rc 0, no SCRIPT ERROR, 54 s of 600 s)'. The FIRST run in this fresh clone failed (51 passed / 18 failures, then 72/1) with 'ERROR: sim session failed: startup_timeout' and 'FAIL a warm sim completes the hello handshake' under host load 17.4; the warm re-run at load ~8 was 77/0. The controller's cold-compile caveat applies; no product difference."
+    },
+    "AC11": {
+      "result": "PASS",
+      "measured": "make comms-station-test -> 'comms-station: 42 passed, 0 failures' (rc 0); make bh-hud-test -> 'bh-hud: 64 passed, 0 failures' (rc 0, lens tables symlinked from the main checkout, shasum-verified by tools/lens_assets.sh verify on the design's side); make ship-ui-test -> 'ship-ui: 288 passed, 0 failures' (rc 0)"
+    },
+    "AC12": {
+      "result": "PASS",
+      "measured": "Appendix C extracted from the design (43 lines, cmp-identical to the file the executor ran) and run against this clone: 'meta base: rc 0 :: session-minor-guard-controls: 19 rejected, 3 accepted' then M1_noask, M2_nocount, M3_noname, M4_notest, M5_noscan, M6_prefix, M7_funcend, M8_nobound, M9_nofunc each caught, ending 'meta: 9 weakenings caught', rc=0"
+    },
+    "AC13": {
+      "result": "PASS",
+      "measured": "sed '/^mutate map /s/\\1EARTH_LOG_MINOR/\\1SESSION_MINOR/' > the no-op copy; MAKE=make sh <copy> . -> stderr 'session-minor-guard-controls: map: mutation left main.gd unchanged', rc=3"
+    },
+    "AC14": {
+      "result": "PASS",
+      "measured": "make/gmake x {'', -n, -j4, -k} session-minor-guard-controls -> all 8 end 'session-minor-guard-controls: 19 rejected, 3 accepted' (with -n the $(MAKE) line runs, as in 7ah); gmake SHELL=/bin/dash session-minor-guard -> rc=0; MAKE=gmake dash tools/session_minor_guard_controls.sh . -> '19 rejected, 3 accepted'; shellcheck and shellcheck -s dash on the script -> both silent"
+    },
+    "AC15": {
+      "result": "PASS",
+      "measured": "shasum of bridge/sim_bridge.gd main.gd demos/ship_geometry_demo.gd ui/loading_jump.gd tests/test_*.gd Makefile identical before and after the controls -> 'unchanged'; find $TMPDIR -maxdepth 1 -name 'session-minor-guard.*' | wc -l -> 0"
+    },
+    "AC16": {
+      "result": "PASS",
+      "measured": "make uid-guard python-guard script-gate-lint audio-silent-guard -> 'uid-guard: ok (422 .uid files)', 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)', 'script-gate-lint: ok (251 --script invocations ...)', 'script-gate-prereqs: ok', 'audio-silent-guard: ok', rc=0; git diff --check origin/main rc=0"
+    },
+    "AC17": {
+      "result": "PASS",
+      "measured": "git diff --name-only origin/main -> exactly the nine design paths (bridge/sim_bridge.gd, main.gd, demos/ship_geometry_demo.gd, ui/loading_jump.gd, tests/test_bh_hud.gd, tests/test_comms_station.gd, tests/test_ship_ui.gd, Makefile, tools/session_minor_guard_controls.sh) plus changelogs/unreleased/2026-11-11-session-minors.md, design_docs/planned/r1/m4-7al-session-minors{,-sprint}.md and .ailang/state/sprints/sprint_R1-7AL-SESSION-MINORS.json. Nothing else."
+    },
+    "AC18": {
+      "result": "PASS",
+      "measured": "B=$(git merge-base origin/main origin/feat/captain-command)=28d0ee23; git merge-file of demos/ship_geometry_demo.gd and Makefile against #412's versions (head 3926f4f3) -> conflicts=0 and conflicts=0. (#412's branch is untouched by this row; the ship's one-token edit is 3+ lines away from #412's nearest hunks, as the design's V16 claims.)"
+    },
+    "AC19": {
+      "result": "PASS",
+      "measured": "run 43057476649 on head_sha 5f85f50af72cd3742b8eecffbfd0524c73d931bb, event pull_request (PR #425): status completed, conclusion success; job 'fast tier (lock, strict VM, parity, replay)' success, step 6 'make ci-fast' success. Because 'make ci-fast' carries 'session-minor-guard session-minor-guard-controls', a failure of either on GNU sed/grep, mawk, dash and GNU make would have failed the job. The two exact log lines could not be read here: GET /repos/.../actions/jobs/130650692735/logs -> 403 'Must have admin rights to Repository' (unauthenticated) and the local gh token is invalid. See unmeasured."
+    },
+    "AC20": {
+      "result": "PASS",
+      "measured": "git grep -nE '(want_minor|hello_reply\\.proto\\.minor) *[=!<>]=? *SimBridge\\.[A-Z0-9_]+_MINOR' -- demos/ main.gd ui/ interior/ sky/ bridge/ -> exactly the five want_minor assignments of V18 (demos/black_hole_visit.gd:52 GR_MINOR, demos/ship_geometry_demo.gd:1025 SESSION_MINOR, main.gd:258 SYSTEM_MINOR, main.gd:304 SESSION_MINOR, main.gd:414 ISM_MINOR); git grep -nE 'get\\(\"minor\"' -- the same paths -> exactly demos/ship_consoles.gd:1186 plus the two bridge/ validity reads (bridge/ai_relay.gd:77, bridge/sim_bridge.gd:273). No new production comparison."
+    }
+  },
+  "mutants": [
+    {
+      "id": "MU1-helperwrite",
+      "description": "main.gd: inserted 'func _set_map_minor(s) -> void: s.want_minor = SimBridge.WORLDS_MINOR' before _run_map and called it from _run_map AFTER the decoy 'sim.want_minor=SimBridge.SESSION_MINOR' line, so the map session really asks 17 while the guarded text still says SESSION_MINOR.",
+      "guard_output": "session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; ... 4 test comparisons name it (rc=0) -> the guard PASSES",
+      "killed": false,
+      "note": "Survives the fast-tier guard (the design's documented lexical limit, Problem 5 and Risks). I then ran the nightly runtime backstop on the mutated tree: make loading-jump-test -> 'loading-jump: 76 passed, 1 failures', 'FAIL map: the map's simulation is the prefetched one'. Defence in depth holds. Tree restored afterwards."
+    },
+    {
+      "id": "MU2-constfirst",
+      "description": "tests/test_comms_station.gd: added a comparison in the constant-first form 'SimBridge.EARTH_LOG_MINOR == journey_sim.want_minor'.",
+      "guard_output": "session-minor guard: ok ... 4 test comparisons name it (rc=0) -> not scanned",
+      "killed": false,
+      "note": "Documented in the design's Follow-ups F4 (r2, kimi-k3, non-blocking): 'The scan sees two syntactic forms.'"
+    },
+    {
+      "id": "MU3-othervar",
+      "description": "tests/test_comms_station.gd: added 'sim.want_minor == SimBridge.EARTH_LOG_MINOR' (the same session through a local variable named sim instead of journey_sim).",
+      "guard_output": "session-minor guard: ok ... 4 test comparisons name it (rc=0) -> not scanned",
+      "killed": false,
+      "note": "The scan is anchored on the literal 'journey_sim.'; the design's Risks acknowledge the 'a local variable' form, but the anchor makes the miss silent."
+    },
+    {
+      "id": "MU4-subdirtest",
+      "description": "Added tests/sub/test_mu4.gd containing 'journey_sim.want_minor == SimBridge.EARTH_LOG_MINOR' (a test script one directory below tests/).",
+      "guard_output": "session-minor guard: ok ... 4 test comparisons name it (rc=0) -> not scanned",
+      "killed": false,
+      "note": "The scan glob is tests/*.gd, one level. No test script lives in a tests/ subdirectory today (only tests/fixtures and tests/ai data), so there is no live gap, but a future test placed there is invisible to the guard."
+    },
+    {
+      "id": "MU5-spacedask",
+      "description": "main.gd: 'if not capture:sim.want_minor = SimBridge.EARTH_LOG_MINOR' (spaced, different constant).",
+      "guard_output": "session-minor guard: main.gd _run_map does not ask SimBridge.SESSION_MINOR (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU6-commentdecoy",
+      "description": "main.gd: 'if not capture:sim.want_minor=SimBridge.EARTH_LOG_MINOR # SimBridge.SESSION_MINOR' (the constant named only in the trailing comment).",
+      "guard_output": "session-minor guard: main.gd _run_map does not ask SimBridge.SESSION_MINOR (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU7-twowrite",
+      "description": "main.gd: the ask stays and a second 'sim.want_minor = SimBridge.EARTH_LOG_MINOR' follows it inside _run_map.",
+      "guard_output": "session-minor guard: main.gd _run_map mentions want_minor 2 times, want 1 (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU8-prefetchternary",
+      "description": "ui/loading_jump.gd: 'SimBridge.warm(SimBridge.SESSION_MINOR if holder.is_empty() else SimBridge.EARTH_LOG_MINOR)'.",
+      "guard_output": "session-minor guard: ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU9-downgrade",
+      "description": "bridge/sim_bridge.gd: 'const SESSION_MINOR := 17' (a downgrade to an older, defined protocol minor; no session file or test touched).",
+      "guard_output": "session-minor guard: ok, SESSION_MINOR (17) = WORLDS_MINOR; ... 4 test comparisons name it (rc=0) -> accepted",
+      "killed": false,
+      "note": "Within the approved non-goal (b'') 'Requiring SESSION_MINOR to be the newest protocol minor'. The nightly backstop catches it: I ran make comms-station-test with the downgrade -> 'FAIL the session asks SESSION_MINOR (2.18 or later) and the world carries earth and its log', 'comms-station: 41 passed, 1 failures' (the feature floor SimBridge.SESSION_MINOR >= SimBridge.EARTH_LOG_MINOR at tests/test_comms_station.gd:133). A downgrade therefore merges green on the fast tier and goes red on the nightly."
+    },
+    {
+      "id": "MU10-dupconst",
+      "description": "bridge/sim_bridge.gd: a second 'const SESSION_MINOR := 18' appended.",
+      "guard_output": "session-minor guard: SESSION_MINOR unresolved in bridge/sim_bridge.gd (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU11-movedsite",
+      "description": "main.gd: the map's ask deleted from _run_map and moved into a new 'func _run_map_ask(s)' placed after _run_map's body.",
+      "guard_output": "session-minor guard: main.gd _run_map mentions want_minor 0 times, want 1 (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU12-nospacecmp",
+      "description": "tests/test_comms_station.gd: 'journey_sim.want_minor==SimBridge.EARTH_LOG_MINOR' (no spaces around ==).",
+      "guard_output": "session-minor guard: tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR (rc=2)",
+      "killed": true
+    },
+    {
+      "id": "MU13-meta-weakenings",
+      "description": "The design's Appendix C meta-drills (9 weakenings of the guard itself: drop the ask check, the count check, the protocol-minor check, the test-name check, the scan check, the prefix, the range end, the bounded check, the function-present check), run from the doc's own copy against this clone.",
+      "guard_output": "each weakening turns the named control red ('map: make rc 0, want 2', 'twice: ...', 'orphan: ...', 'testname: ...', 'notests: ...', 'arith: ...', 'stray: make rc 0, want 2', 'unbounded: make rc 0, want 2', 'renamed: missing reason: ...'); 'meta: 9 weakenings caught', rc=0",
+      "killed": true
+    }
+  ],
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "The test scan is one level deep: 'grep -oHE ... tests/*.gd' never sees a test script in a tests/ subdirectory (my MU4). No such file exists today (tests/ holds only fixtures and data below its top level), so nothing is broken today, but a future test placed in tests/<dir>/ would be invisible to the guard. A recursive scan or an explicit 'no test scripts below tests/*/' assertion would close it.",
+    "The scan is anchored on the literal 'journey_sim.', so a feature test that compares the same session's minor through another variable name is invisible (my MU3). The design's Risks name the 'a local variable' form, but the anchor turns the miss into silence rather than a rejection.",
+    "A constant-first comparison ('SimBridge.EARTH_LOG_MINOR == journey_sim.want_minor') is not scanned (my MU2). This is exactly the design's Follow-up F4, already recorded as non-blocking by the round-2 reviewers; the scan's ok line still reports '4 test comparisons name it', which can read as complete coverage when it is not.",
+    "The guard accepts a DOWNGRADE of SESSION_MINOR to any defined protocol minor (my MU9, 18 -> 17). This is inside the approved non-goal (b''), but the fast tier cannot tell an upgrade from a downgrade, so a downgrade merges green and is caught only by the nightly comms-station floor (I measured it: 'comms-station: 41 passed, 1 failures'). Worth stating in the doc's Risks, which cover a duplicate value but not a downgrade.",
+    "The guard is lexical by construction: a write the text does not show (a helper, my MU1) passes the fast tier. I confirmed the documented mitigation end to end - on the mutated tree the guard says 'ok' while the nightly loading-jump check says 'FAIL map: the map's simulation is the prefetched one' (76 passed, 1 failure). The split is as designed; this is the note that it holds.",
+    "The controls' 'orphan' case hard-codes the value 99 ('const SESSION_MINOR := 99'). If a protocol minor ever reaches 99 that control's premise becomes false. Same class as the 7AH finding about a literal-pinned ERE; it fails loudly, not silently.",
+    "The design doc's Conflict-surface prose says the Makefile merges with origin/feat/r2-kerr-table-preflight and origin/feat/r2-kerr with 0 conflicts. My git merge-file measurement gives conflicts=1 for both. The conflict is the pre-existing 'AILANG_RELEASE ?= v0.56.0' vs 'v0.56.1' line, it reproduces identically with origin/main's Makefile alone (so it is not caused by this row), and a whole-tree git merge-tree shows the Makefile auto-merging with the only conflict in tools/python-allowlist.txt (also pre-existing). The doc's claim is stale, not the implementation.",
+    "The design header says the control script is 183 lines; revision 2's three extra cases make it 204 (the sprint scope says 204 and the committed file is 204). Cosmetic staleness in the doc's header.",
+    "Local 'make script-gate-selftest' fails on this macOS host ('stub-orphan-child: control (sleep N) not visible to pgrep'). It fails identically on origin/main (8334b124) in a scratch worktree, the diff does not touch the script gate, and the Ubuntu fast tier was green - pre-existing and environmental, not from this row.",
+    "The first 'make loading-jump-test' in this fresh clone failed (51/18, then 72/1) with 'sim session failed: startup_timeout' and 'FAIL a warm sim completes the hello handshake' under host load 17.4; the warm re-run at load ~8 gave the expected 77/0. The controller's cold-compile caveat, recorded for the evaluator; no product difference."
+  ],
+  "unmeasured": [
+    "AC19's exact log-line grep (the two lines 'session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; ... 4 test comparisons name it' and 'session-minor-guard-controls: 19 rejected, 3 accepted' inside the GitHub job log). The run's conclusion (success on the PR head) and the green 'make ci-fast' step were read from GitHub's public API; the job-logs endpoint answers 403 'Must have admin rights to Repository' without an admin token and this host's gh token is invalid (TLS interception also breaks gh's REST calls). The controller's authenticated read closes this.",
+    "The full nightly 'make test' (rig/full) was not run: the repo's merge rule does not run it per PR (the fast tier's 'make test' step is skipped by design) and the nightly runs it on main. The fast tier's other 19 prerequisites were re-run locally instead.",
+    "make golden / make capture (GPU tier): not applicable to this row (no visual, audible or physics change) and out of scope for the merge.",
+    "The design's own V1-V24 verification-log rows as measured on the designer's clone: I re-measured every AC that constrains the shipped artefact plus the byte-for-byte appendix extraction (Appendix A 40 lines and Appendix B 204 lines cmp-identical to the committed Makefile block and script; Appendix C 43 lines identical to the meta-drill file I ran), but I did not reproduce the design's original timing probe (V2), its #412 hunk enumeration (V16) beyond AC18, or its sweeps (V17/V18) beyond AC20."
+  ],
+  "notes": "Independent evaluation of sprint R1-7AL-SESSION-MINORS (row 7al, draft PR #425), reviewed commit 5f85f50a, base 8334b124. Evaluator clone: /Users/voightkampff/dev/sunholo-data/stapledons-godot-iter87-eval-mm (branch eval/iter87-7al). Protocol: CLAUDE.md read, session_protocol_ack returned acknowledged, no ailang messages (unattended mission stage). Toolchain: ailang v0.56.1 (05c860a) and godot 4.7.2.stable.official.ed1daf0bf from the main checkout's runtime/bin, macOS make 3.81 + gmake 4.4.1 + /bin/dash + BSD sed/awk/grep + shellcheck 0.11.0.\n\nCOMMANDS RUN AND RESULTS.\n(1) AC1-AC8, AC13, AC15, AC16, AC17, AC18, AC20: all green, quoted verbatim in ac_results. The tree was restored after every mutation (git status --porcelain empty at the end; the only untracked path in the clone is this report, which is not committed).\n(2) AC2's 22 control cases and AC12's 9 meta-weakenings: green (19 rejected, 3 accepted; 'meta: 9 weakenings caught').\n(3) AC9 local half: 2 / rule lines 147-148 / 23 prerequisites (origin/main's own Makefile gives 21) / both new targets listed.\n(4) AC10: 77/0 on the warm run (the cold first run in this fresh clone hit the documented startup_timeout under load). AC11: comms-station 42/0, bh-hud 64/0 (lens tables symlinked from the main checkout, as the controller instructed), ship-ui 288/0.\n(5) AC14: 8/8 make variants end '19 rejected, 3 accepted'; dash guard rc=0; dash controls 19/3; both shellchecks silent. AC15: 'unchanged', 0 leftover temp dirs.\n(6) AC19: GitHub fast tier run 43057476649 on head 5f85f50a -> success, job 'fast tier' success, step 'make ci-fast' success (the two new ci-fast edges ran on ubuntu-latest). The two log lines themselves are unread from this host (403).\n(7) Local fast tier: every ci-fast prerequisite re-run and green except 'script-gate-selftest', which fails identically on origin/main in a scratch worktree (macOS pgrep cannot see the orphaned control) and is green on the Ubuntu runner - pre-existing and environmental.\n(8) Byte-for-byte rule (the sprint plan's binding rule) verified: the committed Makefile 7al block == the design's Appendix A (40 lines) and tools/session_minor_guard_controls.sh == Appendix B (204 lines), both cmp-identical.\n(9) Scope and do-not-touch verified: demos/ship_geometry_demo.gd changes one token on line 1025 only; demos/ship_consoles.gd, Makefile:55 and :57, and 7ah's Makefile:105-133 are untouched; the diff is the nine design paths plus the changelog fragment, the design doc, the sprint plan and the sprint JSON.\n(10) MY OWN mutation drills (12, none of them in the controls script): MU5, MU6, MU7, MU8, MU10, MU11, MU12, MU13 killed; MU1, MU2, MU3, MU4, MU9 survived the fast-tier guard - and for MU1 and MU9 I ran the documented nightly backstops and watched them catch the mutation (loading-jump 76/1 'FAIL map: the map's simulation is the prefetched one'; comms-station 41/1 'FAIL the session asks SESSION_MINOR (2.18 or later)'). Every mutant was run on scratch copies under $TMPDIR, except the two backstop runs, which mutated the tree and were restored (git status --porcelain empty, guard 'ok' afterwards)."
+}

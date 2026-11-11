@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### m4-7al-session-minors (2026-11-11)
+
+#### Added
+
+- **Session minors** (row 7al, sprint R1-7AL-SESSION-MINORS). The map, the ship and the loading jump's prefetch now all ask one constant, `SimBridge.SESSION_MINOR` (18), defined in `bridge/sim_bridge.gd`, and the four test comparisons name it too, so a protocol bump the game adopts edits one line. `make session-minor-guard` and `make session-minor-guard-controls` (19 rejected, 3 accepted, about 2 s) run in `make test` and `ci-fast`, so a partial bump fails at the PR instead of the next nightly. Visible behaviour is identical: every session still asks 2.18 and the prefetch is still adopted on all three routes. No product, sim, asset or physics change.
+- Evaluations: Sonnet 5.5 91/100, MiniMax M3 98/100 (cross-vendor). Known gaps (non-blocking): the guard is lexical. A write the text does not show (a helper), a downgrade to an older defined minor, a constant-first or other-variable test comparison, and a test in a `tests/` subdirectory pass the fast tier; the nightly `loading-jump-test` pid checks and `comms-station-test` floor catch the runtime ones. Follow-ups in the charter row after 7al.
+
 ### m4-7ak-free-nav-stop-eye (2026-11-11)
 
 #### Fixed

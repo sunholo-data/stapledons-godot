@@ -130,7 +130,7 @@ func test_reasons() -> void:
 func test_console() -> void:
 	var demo: Node = await new_demo()
 	var c: ShipConsoles = demo.consoles
-	check("the session asks for 2.18 and the world carries earth and its log", demo.journey_sim.want_minor == SimBridge.EARTH_LOG_MINOR and demo.journey_sim.world.get("earth") is Dictionary and demo.journey_sim.world.get("earth_log") is Dictionary)
+	check("the session asks SESSION_MINOR (2.18 or later) and the world carries earth and its log", demo.journey_sim.want_minor == SimBridge.SESSION_MINOR and SimBridge.SESSION_MINOR >= SimBridge.EARTH_LOG_MINOR and demo.journey_sim.world.get("earth") is Dictionary and demo.journey_sim.world.get("earth_log") is Dictionary)
 	check("comms is an active station on console_decision_2; reserved_3 stays offline", c.stations.has("comms") and c.stations.comms.active and not c.stations.has("reserved_2") and not c.stations.reserved_3.active)
 	check("Walk to lists the Comms station, and the controls list it", ShipHud.WALK_TO.any(func(p: Array) -> bool: return p[0] == "comms") and ShipControls.CONSOLE.any(func(r: Dictionary) -> bool: return r.station == "comms"))
 	check("at Earth: at home and in beam", demo.journey_sim.world.earth.at_home == true and demo.journey_sim.world.earth.in_beam == true)
