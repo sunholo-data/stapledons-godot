@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 86 | 2026-11-11 | Row 7ak LANDED (PR #423, merge `016a5be5`): `free-nav-stop-test` red since #379 is green; its I checks look from G-M4-S3's clear captain eye and a ... |
 | 85 | 2026-11-11 | Row 7ai LANDED (PR #421, merge `8d858b17`): `tools-test` red since #379 is green; `earth_log_voyage` plans alpha Cen A at its `stars.json` index; M... |
 | 84 | 2026-11-10 | Row 7ah LANDED (PR #419, merge `4124a84d`): `similar-test` red since #379 is green; its main.gd guard checks the minor property, not the name `EART... |
 | 83 | 2026-11-10 | Row 7aj LANDED (PR #417, merge `29bce517`): four display audits red since #379 are green; the playthrough harness refreshes the bridge monitor face... |
