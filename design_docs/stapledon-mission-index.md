@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 90 | 2026-11-12 | Row 7ae LANDED (PR #443, merge `3ce93c9d`): D-148 A, the Voyage and Crew working points at the D-132 snug point (1.50 m from the desk); enforcing d... |
 | 89 | 2026-11-12 | Row 7an LANDED (PR #429, merge `e3e4e5ed`): free-nav-stop's I checks fail for the right reason (sky occlusion, BVH refresh, dark catalogue row, rea... |
 | 88 | 2026-11-12 | Row 7am LANDED (PR #427, merge `39f98c99`): hand-copied catalogue targets carry their `stars.json` index (14 tokens in 10 files); a dictionary-awar... |
 | 87 | 2026-11-11 | Row 7al LANDED (PR #425, merge `47cf9170`): one constant `SimBridge.SESSION_MINOR` for the map, the ship and the loading jump's prefetch; `session-... |
