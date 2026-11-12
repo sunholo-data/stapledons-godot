@@ -1,0 +1,301 @@
+{
+ "sprint_id": "R3-REASONS",
+ "status": "proposed",
+ "approved": null,
+ "created": "2026-11-12",
+ "design_doc": "design_docs/planned/r3/reasons-to-travel.md",
+ "sprint_plan": "design_docs/planned/r3/reasons-to-travel-sprint.md",
+ "branch": "design/r3-reasons-to-travel (draft PR #431); fresh package and design clones for execution",
+ "origin": "Mark, attended 2026-11-12: reasons to travel from detection and analysis of stars that may have what the ship needs; design approved the same day, time leads the costs",
+ "github_issues": [],
+ "ailang": {
+  "pin": "v0.56.1",
+  "binary": "runtime/bin/ailang",
+  "prompt_version_loaded": "v0.16.11"
+ },
+ "registry_reuse": [
+  {
+   "milestone": "RT1a,RT1b",
+   "package": "sunholo/observe",
+   "action": "contribute",
+   "reason": "0.1.0 has the light cone only; photon and link budgets, likelihoods and posterior are new (0.2.0)"
+  },
+  {
+   "milestone": "RT3a",
+   "package": "sunholo/worlds",
+   "action": "contribute",
+   "reason": "0.1.0 has histories and stateAt; transition rates and propagation are new (0.2.0)"
+  },
+  {
+   "milestone": "RT3b",
+   "package": "sunholo/relativity",
+   "action": "depend",
+   "reason": "trip ledger and drive energetics exist since 0.12.0; contribute only if a per-leg mass bill is missing"
+  },
+  {
+   "milestone": "RT2a,RT2b,RT4a,RT4b,RT5,RT6",
+   "package": "none",
+   "action": "none",
+   "reason": "game sim and Godot modules over the packages"
+  }
+ ],
+ "velocity": {
+  "target_loc_per_day": 500,
+  "estimated_total_loc": 3080,
+  "estimated_days": 6
+ },
+ "critical_path": [
+  "RT0",
+  "RT1a",
+  "RT1b",
+  "RT2a",
+  "RT2b",
+  "RT3a",
+  "RT3b",
+  "RT4b",
+  "RT5c",
+  "RT6"
+ ],
+ "pause_points": [
+  "after RT2b: candidate counts per preset, for Mark",
+  "RT1b and RT3a: attended package publish",
+  "RT4b: offers table to Mark",
+  "RT5a: mock-up to Mark",
+  "before landing: dev build"
+ ],
+ "rulings": {
+  "OQ1": "10 m starting aperture",
+  "OQ2": "mass bill added; time is the most expensive currency and leads every cost display",
+  "OQ3": "ring the ship's tightest resources on the card",
+  "OQ4": "D-11 holds",
+  "OQ5": "offers table is Mark's to amend"
+ },
+ "features": [
+  {
+   "id": "RT0",
+   "description": "Spec check values for photon budgets and detection thresholds (design repo)",
+   "estimated_loc": 80,
+   "dependencies": [],
+   "routing": "attended (canon)",
+   "acceptance_criteria": [
+    "make lore-values lists the new rows",
+    "a mutant value fails make lore-check",
+    "every row cited to a primary source"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT1a",
+   "description": "sunholo/observe 0.2.0: photonRate, planetContrast, snr, linkSnr",
+   "estimated_loc": 320,
+   "dependencies": [
+    "RT0"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "package tests reproduce every RT0 row to its tolerance",
+    "VM equals interpreter",
+    "ailang pkg quality clean"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT1b",
+   "description": "sunholo/observe 0.2.0: likelihood and posterior; changelog; publish",
+   "estimated_loc": 280,
+   "dependencies": [
+    "RT1a"
+   ],
+   "routing": "loop; publish attended",
+   "acceptance_criteria": [
+    "desiccated M-dwarf O2 world stays below the stated P(life) bound",
+    "posterior sums to 1 within 1e-12",
+    "dry-run publish passes; publish by attended session"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT2a",
+   "description": "Real detector in sim/data/detect.ail; sim/evidence.ail observations at stops and coarse at cruise",
+   "estimated_loc": 330,
+   "dependencies": [
+    "RT1b"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make evidence-test: AC2 and AC3 green",
+    "make strict and make parity green"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT2b",
+   "description": "Beliefs; protocol 2.19 evidence section; D-68 leak test; candidate counts per preset recorded",
+   "estimated_loc": 320,
+   "dependencies": [
+    "RT2a"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make evidence-d68 green (AC4)",
+    "sessions at 2.18 and below byte-identical (make replay, make parity-v2)",
+    "candidate counts per preset written to the report; PAUSE for Mark"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT3a",
+   "description": "sunholo/worlds 0.2.0: transitionRates and propagate; publish",
+   "estimated_loc": 200,
+   "dependencies": [
+    "RT2b"
+   ],
+   "routing": "loop; publish attended",
+   "acceptance_criteria": [
+    "closed-form two- and three-state cases to 1e-12 (AC5)",
+    "ailang pkg quality clean"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT3b",
+   "description": "sim/finder.ail: prediction at arrival; Earth-time and ship-time cost from the plan; the leg's mass bill",
+   "estimated_loc": 200,
+   "dependencies": [
+    "RT3a"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make finder-test: costs equal the journey core's plan exactly (AC6)",
+    "time fields precede mass in the wire section"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT4a",
+   "description": "shipNeeds from the crew host's resource state plus one crew need",
+   "estimated_loc": 150,
+   "dependencies": [
+    "RT2b"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "pure: same inputs give byte-identical output",
+    "falls back to stock tightness and says so when capacity data is missing"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT4b",
+   "description": "sim/data/offers.ail and belief-weighted offers propagated to arrival",
+   "estimated_loc": 200,
+   "dependencies": [
+    "RT3b"
+   ],
+   "routing": "loop drafts; Mark reviews the table",
+   "acceptance_criteria": [
+    "no combined fit score and no recommended field on the wire (AC7)",
+    "make replay green",
+    "offers table reviewed by Mark before landing"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT5a",
+   "description": "Visual mock-up of the card and map marks on fixture data, with a plain-language review page",
+   "estimated_loc": 150,
+   "dependencies": [
+    "RT2b"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "captures opened",
+    "Mark's OK on the look before any copy"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT5b",
+   "description": "Map marks, picture filters, reach rings with time prominent, sorts with Earth-time cost first",
+   "estimated_loc": 300,
+   "dependencies": [
+    "RT5a",
+    "RT3b"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "make finder-ui-test: filters and sorts pure; no sort flagged best (AC10)"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT5c",
+   "description": "Reason card at Navigation and in the cockpit; True and Processed spectrum; commit dialog",
+   "estimated_loc": 300,
+   "dependencies": [
+    "RT5b",
+    "RT4b"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "every number bound to a sim field (AC11)",
+    "make finder-capture renders opened"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "RT6",
+   "description": "Hindsight card on arrival; four Archive entries",
+   "estimated_loc": 250,
+   "dependencies": [
+    "RT5c"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "predicted column byte-identical to the commit-time distribution (AC12)",
+    "make lore-check green (AC13)",
+    "dev build and Mark's OK (AC14)"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  }
+ ]
+}
