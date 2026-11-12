@@ -1,0 +1,308 @@
+module stapledons/sim/lab_stats_test
+
+-- R3-UNIVERSE-LAB UL3c: the lab's statistics. Every expected number below comes from outside
+-- this module: tools/lab_stats_ref.py (python3 -I; exact rational binomial tails, Student t by
+-- the incomplete beta function, statistics.stdev), printed t tables, or arithmetic done by
+-- hand in the comment beside it. `make lab-stats-oracle` then compares statsOracle below with
+-- the committed reference for every n from 1 to 1,024.
+import ./lab_stats (StatRefusal, EmptySample, TooFewValues, NonFinite, BadQuantile, NoInterval, BadDegrees, BadBand, BadInterval, UnpairedLengths, BadRule,
+  NotABatch, NoTargets, refusalName, Summary, Interval, Ranks, QuantileInterval, TargetBand, Verdict, Met, Missed, Unsettled, verdictName, BatchRule, Step,
+  RunNext, StopSettled, StopAtCap, mean, summary, tCritical95, meanInterval, quantileRanks, quantileInterval, medianInterval, p10Interval, p90Interval,
+  verdict, judgeMean, standardRule, checkBatches, firstStep, nextStep, pairedDifferences, confidence)
+import std/json (Json, encode, jo, kv, js, jnum, ja, jn)
+import std/list (foldl, map, range, length, flatMap, zipWith)
+import std/math (intToFloat)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+
+pure func all(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func absf(x: float) -> float = if x < 0.0 then 0.0 - x else x
+pure func near(a: float, b: float, rel: float) -> bool = absf(a - b) <= rel * (if absf(b) > 1.0 then absf(b) else 1.0)
+pure func nan() -> float = 0.0 / 0.0
+pure func inf() -> float = 1.0 / 0.0
+pure func refused[a](r: Result[a, StatRefusal], want: StatRefusal) -> bool = match r { Err(e) => e == want, Ok(_) => false }
+
+-- ------------------------------------------------------------ the samples (also in the oracle)
+pure func n2() -> [float] = [3.0, 7.0]
+pure func n5() -> [float] = [2.0, 0.0, 5.0, 1.0, 1.0]
+pure func n8() -> [float] = [4.0, 4.0, 9.0, 0.0, 2.0, 7.0, 4.0, 1.0]
+pure func ties8() -> [float] = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+pure func repeatOf(x: float, n: int) -> [float] = map(\i. x, range(0, n))
+-- The C library's old linear congruential generator, in integers: the same on both sides.
+pure func lcgFrom(x: int, n: int) -> [int] =
+  if n <= 0 then [] else { let next = (1103515245 * x + 12345) % 2147483648; (next / 65536) :: lcgFrom(next, n - 1) }
+pure func counts(seed: int, n: int, modulus: int) -> [float] = map(\v. intToFloat(v % modulus), lcgFrom(seed, n))
+
+-- ------------------------------------------------------------ mean, spread, standard error
+pure func sumIs(xs: [float], n: int, m: float, sd: float, se: float) -> bool =
+  match summary(xs) { Ok(s) => s.n == n && near(s.mean, m, 1.0e-12) && near(s.spread, sd, 1.0e-12) && near(s.standardError, se, 1.0e-12), Err(_) => false }
+pure func checkSummary() -> bool =
+  all([
+    -- [3, 7]: mean 5; squares about the mean 4 + 4 = 8, over n - 1 = 1: spread sqrt(8); error sqrt(8)/sqrt(2) = 2.
+    sumIs(n2(), 2, 5.0, 2.8284271247461903, 2.0),
+    sumIs(n5(), 5, 1.8, 1.9235384061671346, 0.8602325267042626),
+    sumIs(n8(), 8, 3.875, 2.997022331772464, 1.059607407081914),
+    sumIs(ties8(), 8, 1.625, 0.5175491695067657, 0.18298126367784995),
+    sumIs(repeatOf(3.0, 6), 6, 3.0, 0.0, 0.0),
+    (match mean(n5()) { Ok(m) => near(m, 1.8, 1.0e-12), Err(_) => false }),
+    (match mean([5.0]) { Ok(m) => m == 5.0, Err(_) => false })
+  ])
+test "mean, sample spread (n - 1) and standard error equal the oracle's at n = 2, 5, 8, with ties and all equal" { checkSummary() }
+
+pure func checkSummaryRefusals() -> bool =
+  all([
+    refused(mean([]), EmptySample), refused(summary([]), EmptySample), refused(meanInterval([]), EmptySample),
+    refused(summary([5.0]), TooFewValues(1, 2)), refused(meanInterval([5.0]), TooFewValues(1, 2)),
+    refused(mean([1.0, nan()]), NonFinite), refused(summary([1.0, inf(), 2.0]), NonFinite), refused(meanInterval([0.0 - inf(), 2.0]), NonFinite),
+    -- finite values whose sum is not
+    refused(summary([1.0e308, 1.0e308, 1.0e308]), NonFinite)
+  ])
+test "no values, one value where a spread needs two, and non-finite values are refused by name" { checkSummaryRefusals() }
+
+-- ------------------------------------------------------------ Student's t
+pure func tIs(df: int, want: float, tol: float) -> bool = match tCritical95(df) { Ok(t) => absf(t - want) <= tol, Err(_) => false }
+pure func tOf(df: int) -> float = match tCritical95(df) { Ok(t) => t, Err(_) => nan() }
+pure func checkT() -> bool =
+  all([
+    -- printed tables, 7 decimals
+    tIs(1, 12.7062047, 5.0e-7), tIs(2, 4.3026527, 5.0e-7), tIs(5, 2.5705818, 5.0e-7), tIs(7, 2.3646243, 5.0e-7), tIs(30, 2.0422725, 5.0e-7),
+    tIs(63, 1.9983405, 5.0e-7), tIs(1000, 1.9623391, 5.0e-7),
+    -- the oracle, full precision
+    tIs(4, 2.7764451051977943, 1.0e-10), tIs(127, 1.9788195347028545, 1.0e-10), tIs(1023, 1.9622856196473073, 1.0e-10),
+    -- closed forms: df 1 is tan(0.95 pi / 2); df 2 is 0.95 sqrt(2 / (1 - 0.95^2))
+    tIs(1, 12.706204736174694, 1.0e-10), tIs(2, 4.302652729749464, 1.0e-10),
+    all(map(\df. tOf(df) > tOf(df + 1) && tOf(df + 1) > 1.959963984540054, range(1, 80))),
+    refused(tCritical95(0), BadDegrees(0)), refused(tCritical95(0 - 3), BadDegrees(0 - 3))
+  ])
+test "the two-sided 95 % t point equals printed tables and the oracle, falls with the degrees of freedom and stays above 1.96" { checkT() }
+
+pure func ciIs(xs: [float], low: float, high: float) -> bool =
+  match meanInterval(xs) { Ok(i) => near(i.low, low, 1.0e-10) && near(i.high, high, 1.0e-10), Err(_) => false }
+pure func checkMeanInterval() -> bool =
+  all([
+    -- [3, 7]: 5 +- 12.7062 * 2
+    ciIs(n2(), 0.0 - 20.41240947234939, 30.41240947234939),
+    ciIs(n5(), 0.0 - 0.588388388099981, 4.188388388099981),
+    ciIs(n8(), 1.3694266280467562, 6.380573371953243),
+    ciIs(ties8(), 1.1923180663202617, 2.0576819336797385),
+    ciIs(repeatOf(3.0, 6), 3.0, 3.0)
+  ])
+test "the mean's interval is mean +- t(n - 1) x standard error (the oracle's values at n = 2, 5, 8)" { checkMeanInterval() }
+
+-- ------------------------------------------------------------ the table of binomial values
+pure func ranksAre(n: int, q: float, l: int, u: int) -> bool = match quantileRanks(n, q) { Ok(r) => r.lower == l && r.upper == u, Err(_) => false }
+pure func coverIs(n: int, q: float, c: float) -> bool = match quantileRanks(n, q) { Ok(r) => near(r.coverage, c, 1.0e-12), Err(_) => false }
+pure func coverOk(n: int, q: float) -> bool = match quantileRanks(n, q) { Ok(r) => r.coverage >= confidence() && r.coverage <= 1.0 && r.lower <= r.upper, Err(_) => false }
+pure func checkRanks() -> bool =
+  all([
+    -- exact rational binomial tails (tools/lab_stats_ref.py)
+    ranksAre(6, 0.5, 1, 6), ranksAre(7, 0.5, 1, 7), ranksAre(8, 0.5, 1, 8), ranksAre(9, 0.5, 2, 8), ranksAre(10, 0.5, 2, 9), ranksAre(11, 0.5, 2, 10),
+    ranksAre(20, 0.5, 6, 15), ranksAre(35, 0.5, 12, 24), ranksAre(36, 0.5, 12, 25), ranksAre(64, 0.5, 24, 41), ranksAre(128, 0.5, 53, 76),
+    ranksAre(512, 0.5, 234, 279), ranksAre(1024, 0.5, 481, 544),
+    ranksAre(36, 0.1, 1, 8), ranksAre(37, 0.1, 1, 9), ranksAre(64, 0.1, 2, 12), ranksAre(128, 0.1, 7, 21), ranksAre(512, 0.1, 38, 66), ranksAre(1024, 0.1, 84, 123),
+    ranksAre(36, 0.9, 29, 36), ranksAre(37, 0.9, 29, 37), ranksAre(64, 0.9, 53, 63), ranksAre(128, 0.9, 108, 122), ranksAre(512, 0.9, 447, 475), ranksAre(1024, 0.9, 902, 941),
+    -- by hand: n = 6, each tail (1/2)^6 = 1/64, coverage 62/64; n = 8, each tail 1/256, coverage 254/256
+    coverIs(6, 0.5, 0.96875), coverIs(8, 0.5, 0.9921875), coverIs(64, 0.5, 0.9672342409011768), coverIs(64, 0.1, 0.9668067414004192), coverIs(1024, 0.5, 0.9510711635475109)
+  ])
+test "order-statistic ranks and coverage equal the table of exact binomial values (median, 10th and 90th percentiles, n = 6 to 1,024)" { checkRanks() }
+
+pure func checkCoverage() -> bool =
+  all(map(\n. coverOk(n, 0.5), range(6, 200))) && all(map(\n. coverOk(n, 0.1) && coverOk(n, 0.9), range(36, 200)))
+test "the coverage is never below 95 %, for every n from the least that has an interval to 199" { checkCoverage() }
+
+pure func checkNoInterval() -> bool =
+  all([
+    -- the median: (1/2)^5 = 0.03125 > 0.025, so no two-sided interval exists below n = 6
+    all(map(\n. refused(quantileRanks(n, 0.5), NoInterval(n)), range(1, 6))),
+    -- the 10th and 90th: 0.9^35 = 0.02503 > 0.025, 0.9^36 = 0.02253
+    all(map(\n. refused(quantileRanks(n, 0.1), NoInterval(n)) && refused(quantileRanks(n, 0.9), NoInterval(n)), range(1, 36))),
+    refused(medianInterval(n2()), NoInterval(2)), refused(medianInterval(n5()), NoInterval(5)), refused(p10Interval(n8()), NoInterval(8)), refused(p90Interval(n8()), NoInterval(8)),
+    refused(medianInterval([]), EmptySample), refused(quantileRanks(0, 0.5), EmptySample), refused(medianInterval([1.0, nan(), 2.0, 3.0, 4.0, 5.0]), NonFinite),
+    refused(quantileRanks(64, 0.0), BadQuantile), refused(quantileRanks(64, 1.0), BadQuantile), refused(quantileRanks(64, 1.5), BadQuantile),
+    refused(quantileRanks(64, 0.0 - 0.1), BadQuantile), refused(quantileRanks(64, nan()), BadQuantile), refused(quantileInterval(n8(), 2.0), BadQuantile)
+  ])
+test "a sample too small for a 95 % interval (median below 6, 10th and 90th below 36) is refused, as is a quantile outside (0, 1)" { checkNoInterval() }
+
+pure func qIs(r: Result[QuantileInterval, StatRefusal], est: float, low: float, high: float) -> bool =
+  match r { Ok(q) => near(q.estimate, est, 1.0e-12) && q.interval.low == low && q.interval.high == high && q.interval.low <= q.estimate && q.estimate <= q.interval.high, Err(_) => false }
+pure func checkQuantiles() -> bool =
+  all([
+    -- n8 sorted: 0 1 2 4 4 4 7 9; ranks (1, 8)
+    qIs(medianInterval(n8()), 4.0, 0.0, 9.0),
+    -- ties: sorted 1 1 1 2 2 2 2 2; the median is 2, the interval [1, 2]
+    qIs(medianInterval(ties8()), 2.0, 1.0, 2.0),
+    qIs(medianInterval(repeatOf(3.0, 6)), 3.0, 3.0, 3.0),
+    qIs(medianInterval(repeatOf(2.0, 64)), 2.0, 2.0, 2.0), qIs(p10Interval(repeatOf(2.0, 64)), 2.0, 2.0, 2.0), qIs(p90Interval(repeatOf(2.0, 64)), 2.0, 2.0, 2.0),
+    -- 0, 1, ..., 63: ranks (24, 41) are the values 23 and 40; the median is 31.5. 10th: ranks (2, 12), type 7 at 6.3. 90th: (53, 63), 56.7.
+    qIs(medianInterval(map(intToFloat, range(0, 64))), 31.5, 23.0, 40.0),
+    qIs(p10Interval(map(intToFloat, range(0, 64))), 6.3, 1.0, 11.0),
+    qIs(p90Interval(map(intToFloat, range(0, 64))), 56.7, 52.0, 62.0),
+    -- the order given does not matter
+    qIs(medianInterval(map(\i. intToFloat(63 - i), range(0, 64))), 31.5, 23.0, 40.0)
+  ])
+test "quantile intervals are sample values at the exact ranks: small n, ties, all equal, and 0..63 worked by hand" { checkQuantiles() }
+
+-- ------------------------------------------------------------ met, missed, unsettled
+pure func iv(low: float, high: float) -> Interval = { low: low, high: high }
+pure func closed(lo: float, hi: float) -> TargetBand = { lo: Some(lo), hi: Some(hi) }
+pure func atMost(hi: float) -> TargetBand = { lo: None, hi: Some(hi) }
+pure func atLeast(lo: float) -> TargetBand = { lo: Some(lo), hi: None }
+pure func is(r: Result[Verdict, StatRefusal], want: Verdict) -> bool = match r { Ok(v) => v == want, Err(_) => false }
+pure func checkVerdict() -> bool =
+  all([
+    is(verdict(iv(3.0, 4.0), closed(2.0, 5.0)), Met),
+    is(verdict(iv(0.0, 1.0), closed(2.0, 5.0)), Missed), is(verdict(iv(6.0, 7.0), closed(2.0, 5.0)), Missed),
+    -- straddling an edge
+    is(verdict(iv(1.5, 3.0), closed(2.0, 5.0)), Unsettled), is(verdict(iv(4.0, 5.5), closed(2.0, 5.0)), Unsettled), is(verdict(iv(1.0, 6.0), closed(2.0, 5.0)), Unsettled),
+    -- touching an edge from inside is not met
+    is(verdict(iv(2.0, 4.0), closed(2.0, 5.0)), Unsettled), is(verdict(iv(3.0, 5.0), closed(2.0, 5.0)), Unsettled), is(verdict(iv(2.0, 5.0), closed(2.0, 5.0)), Unsettled),
+    -- touching an edge from outside is not missed
+    is(verdict(iv(1.0, 2.0), closed(2.0, 5.0)), Unsettled), is(verdict(iv(5.0, 6.0), closed(2.0, 5.0)), Unsettled),
+    -- a zero-width interval: on an edge unsettled, inside met, outside missed
+    is(verdict(iv(2.0, 2.0), closed(2.0, 5.0)), Unsettled), is(verdict(iv(5.0, 5.0), closed(2.0, 5.0)), Unsettled),
+    is(verdict(iv(3.0, 3.0), closed(2.0, 5.0)), Met), is(verdict(iv(1.0, 1.0), closed(2.0, 5.0)), Missed),
+    -- open bands
+    is(verdict(iv(0.0, 0.0), atMost(1.0)), Met), is(verdict(iv(0.5, 1.0), atMost(1.0)), Unsettled), is(verdict(iv(1.5, 2.0), atMost(1.0)), Missed),
+    is(verdict(iv(0.0 - 50.0, 0.5), atMost(1.0)), Met),
+    is(verdict(iv(3.0, 900.0), atLeast(2.0)), Met), is(verdict(iv(2.0, 3.0), atLeast(2.0)), Unsettled), is(verdict(iv(0.0, 1.0), atLeast(2.0)), Missed),
+    -- a band of one point can be missed or unsettled, never met
+    is(verdict(iv(2.0, 2.0), closed(2.0, 2.0)), Unsettled), is(verdict(iv(1.0, 3.0), closed(2.0, 2.0)), Unsettled), is(verdict(iv(3.0, 4.0), closed(2.0, 2.0)), Missed)
+  ])
+test "met only strictly inside the band, missed only strictly outside; touching or straddling an edge is unsettled" { checkVerdict() }
+
+pure func checkVerdictRefusals() -> bool =
+  all([
+    refused(verdict(iv(1.0, 2.0), { lo: None, hi: None }), BadBand), refused(verdict(iv(1.0, 2.0), closed(5.0, 2.0)), BadBand),
+    refused(verdict(iv(1.0, 2.0), closed(nan(), 2.0)), BadBand), refused(verdict(iv(1.0, 2.0), atMost(inf())), BadBand), refused(verdict(iv(1.0, 2.0), atLeast(0.0 - inf())), BadBand),
+    refused(verdict(iv(2.0, 1.0), closed(0.0, 5.0)), BadInterval), refused(verdict(iv(nan(), 1.0), closed(0.0, 5.0)), BadInterval),
+    refused(verdict(iv(0.0, inf()), closed(0.0, 5.0)), BadInterval),
+    refused(judgeMean([], closed(0.0, 5.0)), EmptySample), refused(judgeMean([3.0], closed(0.0, 5.0)), TooFewValues(1, 2)),
+    refused(judgeMean(n8(), { lo: None, hi: None }), BadBand)
+  ])
+test "a band with no bound, an inverted or non-finite band and an inverted or non-finite interval are refused" { checkVerdictRefusals() }
+
+-- THE FIXTURE (sprint row UL3c): a target whose mean sits exactly on the band's lower edge.
+-- 1, 3, 1, 3, ... has mean exactly 2; the band is 2 to 5. However many batches run, the
+-- interval straddles 2, so the target is never met and never missed, and the rule runs every
+-- batch to the cap and stops there with the target still unsettled.
+pure func edge(n: int) -> [float] = map(\i. if i % 2 == 0 then 1.0 else 3.0, range(0, n))
+pure func walk(seeds: int, steps: int) -> (int, Step) =
+  match judgeMean(edge(seeds), closed(2.0, 5.0)) {
+    Err(_) => (0 - 1, StopSettled),
+    Ok(v) => (match nextStep(standardRule(), seeds, [Met, v]) {
+      Ok(RunNext(from, to)) => if from == seeds && to == seeds + 64 then walk(to, steps + 1) else (0 - 2, StopSettled),
+      Ok(s) => (steps, s),
+      Err(_) => (0 - 3, StopSettled)
+    })
+  }
+pure func checkEdge() -> bool =
+  all([
+    all(map(\k. is(judgeMean(edge(64 * k), closed(2.0, 5.0)), Unsettled), range(1, 17))),
+    -- all equal, exactly on the edge: a zero-width interval, still unsettled
+    is(judgeMean(repeatOf(2.0, 1024), closed(2.0, 5.0)), Unsettled), is(judgeMean(repeatOf(5.0, 1024), closed(2.0, 5.0)), Unsettled),
+    -- the same data against bands it is clear of
+    is(judgeMean(edge(64), closed(1.0, 5.0)), Met), is(judgeMean(edge(64), closed(3.0, 5.0)), Missed),
+    (match walk(64, 1) { (steps, s) => steps == 16 && s == StopAtCap })
+  ])
+test "a mean on a band edge stays unsettled at every batch from 64 to 1,024 seeds, and the run stops at the cap" { checkEdge() }
+
+-- ------------------------------------------------------------ batches
+pure func stepIs(r: Result[Step, StatRefusal], want: Step) -> bool = match r { Ok(s) => s == want, Err(_) => false }
+pure func checkBatchRule() -> bool {
+  let r = standardRule();
+  all([
+    r.batch == 64 && r.cap == 1024,
+    stepIs(firstStep(r), RunNext(0, 64)),
+    stepIs(nextStep(r, 64, [Met, Missed]), StopSettled), stepIs(nextStep(r, 64, [Met, Unsettled]), RunNext(64, 128)),
+    stepIs(nextStep(r, 960, [Unsettled]), RunNext(960, 1024)), stepIs(nextStep(r, 1024, [Unsettled]), StopAtCap),
+    stepIs(nextStep(r, 1024, [Met]), StopSettled), stepIs(nextStep(r, 64, [Missed]), StopSettled),
+    (match checkBatches(r, 1024) { Ok(k) => k == 16, Err(_) => false }), (match checkBatches(r, 64) { Ok(k) => k == 1, Err(_) => false }),
+    all(map(\n. refused(nextStep(r, n, [Met]), NotABatch(n)) && refused(checkBatches(r, n), NotABatch(n)), [0, 1, 63, 65, 100, 1023, 1025, 1088, 2048, 0 - 64])),
+    refused(nextStep(r, 64, []), NoTargets),
+    all(map(\bad. refused(nextStep(bad, 64, [Met]), BadRule) && refused(firstStep(bad), BadRule) && refused(checkBatches(bad, 64), BadRule),
+      [{ batch: 0, cap: 1024 }, { batch: 0 - 64, cap: 1024 }, { batch: 64, cap: 32 }, { batch: 64, cap: 100 }, { batch: 64, cap: 0 }]))
+  ])
+}
+test "batches of 64 to a cap of 1,024: settled stops, the cap stops, a wrong seed count, no targets and a bad rule are refused" { checkBatchRule() }
+
+-- ------------------------------------------------------------ paired differences
+pure func checkPaired() -> bool {
+  let a = counts(1, 64, 12);
+  let shifted = map(\x. x - 1.0, a);
+  all([
+    (match pairedDifferences([5.0, 2.0, 9.0], [1.0, 2.0, 10.0]) { Ok(d) => d == [4.0, 0.0, 0.0 - 1.0], Err(_) => false }),
+    refused(pairedDifferences([1.0, 2.0, 3.0], [1.0, 2.0]), UnpairedLengths(3, 2)), refused(pairedDifferences([], []), EmptySample),
+    refused(pairedDifferences([1.0, nan()], [1.0, 2.0]), NonFinite), refused(pairedDifferences([1.0, 2.0], [inf(), 2.0]), NonFinite),
+    -- The point of pairing: two scenarios one unit apart on every seed. Each mean alone cannot
+    -- say whether the difference is above 0.5 (their intervals overlap); the paired difference
+    -- is exactly 1 on every seed, so it can.
+    (match (meanInterval(a), meanInterval(shifted)) { (Ok(x), Ok(y)) => y.high > x.low, _ => false }),
+    (match pairedDifferences(a, shifted) { Ok(d) => sumIs(d, 64, 1.0, 0.0, 0.0) && is(judgeMean(d, atLeast(0.5)), Met), Err(_) => false })
+  ])
+}
+test "paired differences are taken seed by seed; unequal lengths are refused; a constant difference is settled where the two means overlap" { checkPaired() }
+
+test "every refusal has its own name" {
+  map(refusalName, [EmptySample, TooFewValues(1, 2), NonFinite, BadQuantile, NoInterval(5), BadDegrees(0), BadBand, BadInterval, UnpairedLengths(1, 2), BadRule, NotABatch(3), NoTargets])
+    == ["empty_sample", "too_few_values", "non_finite", "bad_quantile", "no_interval", "bad_degrees", "bad_band", "bad_interval", "unpaired_lengths", "bad_rule", "not_a_batch", "no_targets"]
+}
+
+-- ------------------------------------------------------------ the oracle's view, and VM = interpreter
+pure func refusedJson(r: StatRefusal) -> Json = jo([kv("refused", js(refusalName(r)))])
+pure func bands() -> [(string, TargetBand)] =
+  [("2..5", closed(2.0, 5.0)), ("0..10", closed(0.0, 10.0)), ("..3", atMost(3.0)), ("3..", atLeast(3.0)), ("4.4..4.6", closed(4.4, 4.6)), ("19..20", closed(19.0, 20.0))]
+pure func verdictsJson(i: Interval) -> Json =
+  jo(map(\p. match p { (name, b) => kv(name, match verdict(i, b) { Ok(v) => js(verdictName(v)), Err(r) => refusedJson(r) }) }, bands()))
+pure func summaryJson(xs: [float]) -> Json =
+  match (summary(xs), meanInterval(xs)) {
+    (Ok(s), Ok(i)) => jo([kv("spread", jnum(s.spread)), kv("standard_error", jnum(s.standardError)), kv("low", jnum(i.low)), kv("high", jnum(i.high)), kv("verdicts", verdictsJson(i))]),
+    (Err(r), _) => refusedJson(r),
+    (_, Err(r)) => refusedJson(r)
+  }
+pure func quantileJson(xs: [float], q: float) -> Json =
+  match quantileInterval(xs, q) {
+    Ok(e) => jo([kv("estimate", jnum(e.estimate)), kv("lower_rank", jnum(intToFloat(e.ranks.lower))), kv("upper_rank", jnum(intToFloat(e.ranks.upper))),
+      kv("low", jnum(e.interval.low)), kv("high", jnum(e.interval.high)), kv("coverage", jnum(e.ranks.coverage))]),
+    Err(r) => refusedJson(r)
+  }
+pure func describe(xs: [float]) -> Json =
+  match mean(xs) {
+    Err(r) => refusedJson(r),
+    Ok(m) => jo([kv("n", jnum(intToFloat(length(xs)))), kv("mean", jnum(m)), kv("summary", summaryJson(xs)),
+      kv("q0.1", quantileJson(xs, 0.1)), kv("q0.5", quantileJson(xs, 0.5)), kv("q0.9", quantileJson(xs, 0.9))])
+  }
+pure func cases() -> Json =
+  jo([kv("n0", describe([])), kv("n1", describe([5.0])), kv("n2", describe(n2())), kv("n5", describe(n5())), kv("n8", describe(n8())), kv("ties8", describe(ties8())),
+    kv("equal6", describe(repeatOf(3.0, 6))), kv("equal64", describe(repeatOf(2.0, 64))), kv("lcg64", describe(counts(1, 64, 12))),
+    kv("frac128", describe(map(\v. intToFloat(v % 50) / 7.0, lcgFrom(2, 128)))), kv("lcg1024", describe(counts(3, 1024, 40)))])
+pure func pairedJson() -> Json = match pairedDifferences(counts(1, 64, 12), counts(4, 64, 12)) { Ok(d) => describe(d), Err(r) => refusedJson(r) }
+pure func ranksJson(n: int, q: float) -> Json = match quantileRanks(n, q) { Ok(r) => ja([jnum(intToFloat(r.lower)), jnum(intToFloat(r.upper))]), Err(_) => jn() }
+pure func ranksTable(maxN: int) -> Json =
+  jo([kv("0.1", ja(map(\n. ranksJson(n, 0.1), range(1, maxN + 1)))), kv("0.5", ja(map(\n. ranksJson(n, 0.5), range(1, maxN + 1)))),
+    kv("0.9", ja(map(\n. ranksJson(n, 0.9), range(1, maxN + 1))))])
+pure func tDfs() -> [int] = range(1, 41) ++ map(\k. 64 * k - 1, range(1, 17)) ++ [50, 100, 500, 1000]
+pure func tJson(dfs: [int]) -> Json = ja(map(\df. match tCritical95(df) { Ok(t) => jnum(t), Err(r) => refusedJson(r) }, dfs))
+
+-- Everything the oracle checks: ranks for every n from 1 to 1,024 at the three quantiles, the t
+-- points, the shared samples and the paired differences. `make lab-stats-oracle` compares it
+-- with tests/fixtures/lab/stats_reference.json.
+export pure func statsOracle(n: int) -> string =
+  encode(jo([kv("ranks", ranksTable(1024)), kv("t_dfs", ja(map(\d. jnum(intToFloat(d)), tDfs()))), kv("t", tJson(tDfs())), kv("cases", cases()), kv("paired", pairedJson())]))
+-- The same at a size the interpreter runs quickly; `make lab-test` compares its bytes from
+-- the strict VM and from the interpreter.
+export pure func statsProbe(n: int) -> string =
+  encode(jo([kv("ranks", ranksTable(96)), kv("t", tJson([1, 2, 3, 7, 63, 127, 1023])), kv("cases", cases()), kv("paired", pairedJson())]))
+test "determinism: the same inputs give the same bytes" { statsProbe(0) == statsProbe(1) }
+
+-- Every check the strict VM can compile on v0.56.1. Two are evaluator-only there and are left
+-- out, reported upstream with repros and not rewritten to hide the gaps:
+--   checkQuantiles passes a builtin as a function value, map(intToFloat, ...):
+--                  "unknown global $builtin.intToFloat" (ailang#2311);
+--   checkVerdict   holds 28 checks in one list: "register allocator: contiguous block would
+--                  exceed 256" (ailang#2310).
+-- Both run under `ailang test` above. quantileInterval and verdict themselves run strict in
+-- statsProbe and statsOracle, where the oracle checks them. Add the two back when fixed.
+export pure func statsVm(n: int) -> string =
+  if checkSummary() && checkSummaryRefusals() && checkT() && checkMeanInterval() && checkRanks() && checkCoverage() && checkNoInterval() &&
+     checkVerdictRefusals() && checkEdge() && checkBatchRule() && checkPaired() && statsProbe(0) == statsProbe(1)
+  then "stats-ok" else "stats-BAD"
