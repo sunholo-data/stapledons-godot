@@ -1,0 +1,63 @@
+{
+  "about": "R3-REASONS RT5 (design r3/reasons-to-travel.md): the reason card's words and the Earth bar's human marks. No numbers are shown from here: every number on the card is a sim field of the finder section. The marks place ticks on the Earth-years bar (years; a log scale up to finder.doom_years).",
+  "words": {
+    "seen": "What we saw",
+    "change": "What it could change aboard",
+    "cost": "What going costs",
+    "there": "What is probably there",
+    "true": "True",
+    "processed": "Processed",
+    "sure": "How sure",
+    "light": "Light left",
+    "earth": "At home, on Earth",
+    "ship": "Aboard, for the crew",
+    "mass": "Ship's mass turned to light",
+    "then": "When the light left",
+    "arrival": "When we would arrive",
+    "crew": "For the crew",
+    "none": "Nothing yet",
+    "hint": "A hint",
+    "strong": "Strong",
+    "stale_before": "On arrival this picture will be ",
+    "stale_after": " out of date.",
+    "picture": "Through the telescope",
+    "orbit": "Earth's orbit, for scale",
+    "hidden": "planet inside the glare"
+  },
+  "resources": {
+    "mass": "Free mass",
+    "water": "Water",
+    "power": "Power",
+    "heat": "Heat",
+    "garden": "Garden",
+    "fabrication": "Fabrication",
+    "compute": "Compute",
+    "signal": "Signal"
+  },
+  "states": {
+    "sterile": "Sterile",
+    "microbial": "Microbes",
+    "complex": "Complex life",
+    "pretech": "Minds, no technology",
+    "technological": "Technological",
+    "remnant": "Remnant",
+    "transcended": "Transcended",
+    "ecocide": "Ecocide"
+  },
+  "lines": {
+    "o2": "O₂",
+    "h2o": "H₂O",
+    "ch4": "CH₄",
+    "edge": "edge"
+  },
+  "earth_marks": [
+    {
+      "years": 18.0,
+      "word": "childhood"
+    },
+    {
+      "years": 80.0,
+      "word": "lifetime"
+    }
+  ]
+}
