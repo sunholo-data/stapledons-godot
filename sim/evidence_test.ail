@@ -6,7 +6,7 @@ module stapledons/sim/evidence_test
 -- either side of the registry row (stapledons-design physics/observation.md).
 import ./evidence (Target, Observation, Emission, Method, DirectImaging, Transit, Radio, Quantity, QPlanet, QOxygen, QOxygenMethane, QRedEdge, QLeakage,
  Level, Hint, Strong, observeTarget, observeAtStop, observeAtCruise, emissionAt, targetOf, targetsOf, signalUniforms, cosInclination,
- cruiseDoppler, cruiseReadable, falsePositives, signalOf, detections, ledgerText, inSystemLy)
+ cruiseDoppler, cruiseReadable, falsePositives, signalOf, detections, ledgerText, inSystemLy, stagesOf)
 import ./data/detect (Suite, Detect, shipSuite, largeArray, radarShare, imagingBudget, absMagV, referenceTelescope, configuredDetector, noDetector, idealDetector, leakReachLy)
 import ./worlds_model (StarRow, Planet, systemFrom)
 import ./tools/exoplanets (curatedPlanets)
@@ -135,6 +135,18 @@ pure func ob15() -> bool {
  && levelIs(see(t,hours(82.71)),QPlanet,Strong) && levelIs(see(t,hours(82.69)),QPlanet,Hint)
 }
 test "OB-15, OB-16: an Earth twin at 10 pc is a hint after 20.68 hours and not before, strong after 82.70" {ob15()}
+-- The probe's sanity check: through the ship's own 30-day stop look, a living Earth twin of a Sun twin at 10 pc
+-- gives a strong oxygen record (with methane for these draws), and its gates read as passed.
+pure func twinInTheLook() -> bool {
+ let t=twin("twin",tenPcLy(),living(),quiet());
+ let rs=observeAtStop(suite(),look(),[t],origin(),0.0);
+ let g=stagesOf(suite(),look(),t,origin());
+ levelIs(rs,QOxygenMethane,Strong) && levelIs(rs,QPlanet,Strong) && has(rs,QRedEdge,DirectImaging,true)
+ && levelIs(observeAtStop(suite(),look(),[twin("twin",tenPcLy(),living(),[0.8,0.9,0.5])],origin(),0.0),QOxygen,Strong)
+ && g.inputs && g.iwa && g.floor && g.directSnr>=10.0 && g.directSnr==g.continuumSnr && not g.transitGeometry && not g.inSystem
+ && any(\o. o.quantity==QPlanet && o.snr==g.directSnr,rs)
+}
+test "sanity: a living Earth twin at 10 pc gives a strong oxygen record in the 30-day stop look" {twinInTheLook()}
 pure func ob24() -> bool =
  has(see(twin("edge",59.44,living(),quiet()),hours(183.2)),QPlanet,DirectImaging,true) && length(see(twin("edge",59.44,living(),quiet()),hours(183.0)))==0
  && length(see(twin("edge",59.46,living(),quiet()),hours(1000000.0)))==0
@@ -219,7 +231,7 @@ test "the calibration seam has a photon-budget detector whose support is an outp
 
 pure func checks() -> [(string,bool)] = [("traces",traces()),("belowNoise",belowNoise()),
  ("abioticOxygen",abioticOxygen(0.011) && abioticOxygen(0.1) && abioticOxygen(0.199)),("notesBlind",notesBlind()),("quietMinds",quietMinds()),
- ("unreachable",unreachable()),("noSilentLeak",noSilentLeak()),("lightCone",lightCone()),("ob10",ob10()),("ob15",ob15()),("ob24",ob24()),
+ ("unreachable",unreachable()),("noSilentLeak",noSilentLeak()),("lightCone",lightCone()),("ob10",ob10()),("ob15",ob15()),("twinInTheLook",twinInTheLook()),("ob24",ob24()),
  ("ob51",ob51()),("ob52",ob52()),("transit",transit()),("measuredInclination",measuredInclination()),("cruise",cruise()),
  ("deterministic",deterministic()),("seam",seam())]
 export pure func evidenceVm() -> string = match filter(\c. match c {(_,ok)=>not ok},checks()) {

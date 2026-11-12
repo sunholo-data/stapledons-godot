@@ -170,32 +170,45 @@ pure func starOf(t:Target) -> Option[Blackbody] =
  if t.teffK>0.0 && t.rSun>0.0 then Some({tempK:t.teffK,radiusM:t.rSun*solarRadiusM()}) else None
 type Look = {seen:bool,snr:float,value:float}
 pure func noLook() -> Look = {seen:false,snr:0.0,value:0.0}
--- Reflected light behind the coronagraph. dop is the ship's Doppler factor
+-- Reflected light behind the coronagraph, gate by gate. inputs: the star and
+-- the planet have the sizes a budget needs. dop is the ship's Doppler factor
 -- towards the star (1 at rest), localZodi the zodi level where the ship is.
-pure func directLook(s:Suite,t:Target,dist:float,localZodi:float,dop:float,seconds:float) -> Look =
+type Gates = {inputs:bool,iwa:bool,floor:bool,contrast:float}
+pure func directGates(s:Suite,t:Target,dist:float,dop:float) -> Gates =
  match (starOf(t),t.aAu,t.radiusEarth) {
-  (Some(star),Some(a),Some(r))=>if a<=0.0 || r<=0.0 then noLook() else {
+  (Some(_),Some(a),Some(r))=>if a<=0.0 || r<=0.0 then {inputs:false,iwa:false,floor:false,contrast:0.0} else {
    let c=planetContrast(assumedGeomAlbedo(),r*earthRadiusM(),a*auM(),pi()/2.0);
-   if not clearsIwa(s.telescope,a,dist,dop) || not aboveFloor(s.telescope,c) then noLook() else {
-    let x=imagingSnr(s.telescope,star,c,dist,localZodi,dop,seconds);
-    {seen:x>=snrHint(),snr:x,value:c}
-   }
+   {inputs:true,iwa:clearsIwa(s.telescope,a,dist,dop),floor:aboveFloor(s.telescope,c),contrast:c}
   },
-  _=>noLook()
+  _=>{inputs:false,iwa:false,floor:false,contrast:0.0}
  }
+pure func continuumSnr(s:Suite,t:Target,g:Gates,dist:float,localZodi:float,dop:float,seconds:float) -> float =
+ match starOf(t) {Some(star)=>if g.inputs then imagingSnr(s.telescope,star,g.contrast,dist,localZodi,dop,seconds) else 0.0,None=>0.0}
+pure func directLook(s:Suite,t:Target,dist:float,localZodi:float,dop:float,seconds:float) -> Look {
+ let g=directGates(s,t,dist,dop);
+ if not (g.inputs && g.iwa && g.floor) then noLook() else {
+  let x=continuumSnr(s,t,g,dist,localZodi,dop,seconds);
+  {seen:x>=snrHint(),snr:x,value:g.contrast}
+ }
+}
 -- The cosine of the orbit's inclination to the line of sight from obs.
 export pure func cosInclination(t:Target,obs:Vec3) -> float {
  let l=sub(t.pos,obs);
  let d=norm(l);
  if d<=0.0 then 1.0 else abs_Float(dot(t.normal,l))/d
 }
+-- The transit's impact parameter b = a |cos i| / R_star from obs; a planet
+-- with b < 1 crosses its star's disc (planet radius neglected).
+pure func impact(t:Target,obs:Vec3) -> Option[float] = match (starOf(t),t.aAu) {
+ (Some(star),Some(a))=>if a<=0.0 || a*auM()<=star.radiusM then None else Some(a*auM()*cosInclination(t,obs)/star.radiusM),
+ _=>None
+}
 -- The dip against photon noise: photon.snr with the missing light as the
 -- signal and the rest of the star as the background, over the in-transit
 -- time (P/pi)(R_star/a)sqrt(1 - b^2) of every whole orbit in the look.
 pure func transitLook(s:Suite,t:Target,obs:Vec3,dist:float,seconds:float) -> Look =
- match (starOf(t),t.aAu,t.radiusEarth,t.periodD) {
-  (Some(star),Some(a),Some(r),Some(days))=>if a<=0.0 || r<=0.0 || days<=0.0 || a*auM()<=star.radiusM then noLook() else {
-   let b=a*auM()*cosInclination(t,obs)/star.radiusM;
+ match (starOf(t),t.aAu,t.radiusEarth,t.periodD,impact(t,obs)) {
+  (Some(star),Some(a),Some(r),Some(days),Some(b))=>if r<=0.0 || days<=0.0 then noLook() else {
    let ratio=r*earthRadiusM()/star.radiusM;
    let depth=ratio*ratio;
    let orbits=floor(seconds/(days*86400.0));
@@ -256,6 +269,25 @@ export pure func observeTarget(s:Suite,lookS:float,t:Target,obs:Vec3,time:float)
 -- At a stop the full passive suite runs on every world given.
 export pure func observeAtStop(s:Suite,lookS:float,ts:[Target],obs:Vec3,time:float) -> [Observation] =
  flatMap(\t. observeTarget(s,lookS,t,obs,time),ts)
+
+-- Diagnostics (sim/tools/evidence_probe.ail): every gate of the stop look on
+-- one world, through the same functions the records use, so a loss between
+-- truth and record can be counted by cause. continuumSnr is the direct-imaging
+-- SNR the planet would reach if the inner working angle and the noise floor
+-- were ignored; it makes no record.
+export type Stages = {dist:float,inSystem:bool,inputs:bool,iwa:bool,floor:bool,directSnr:float,continuumSnr:float,
+ transitGeometry:bool,transitSnr:float,radarSnr:float,tvSnr:float}
+export pure func stagesOf(s:Suite,lookS:float,t:Target,obs:Vec3) -> Stages {
+ let dist=norm(sub(t.pos,obs));
+ if dist<inSystemLy() then {dist:dist,inSystem:true,inputs:false,iwa:false,floor:false,directSnr:0.0,continuumSnr:0.0,transitGeometry:false,transitSnr:0.0,radarSnr:0.0,tvSnr:0.0}
+ else {
+  let g=directGates(s,t,dist,1.0);
+  {dist:dist,inSystem:false,inputs:g.inputs,iwa:g.iwa,floor:g.floor,directSnr:(directLook(s,t,dist,1.0,1.0,lookS)).snr,
+   continuumSnr:continuumSnr(s,t,g,dist,1.0,1.0,lookS),
+   transitGeometry:match impact(t,obs) {Some(b)=>b<1.0,None=>false},transitSnr:(transitLook(s,t,obs,dist,lookS)).snr,
+   radarSnr:leakSnr(s.receiver,s.radar,dist),tvSnr:leakSnr(s.receiver,s.tv,dist)}
+ }
+}
 
 -- ---------- at cruise: the coarse census ----------
 -- The ship's Doppler factor towards a source at pos, D = gamma (1 + beta cos
