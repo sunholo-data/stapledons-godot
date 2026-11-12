@@ -1,6 +1,6 @@
 #!/bin/bash
 # Unpublished-package development only (R3-REASONS RT2a): sunholo/observe 0.2.0 is
-# built (ailang-packages PR #196) but not in the registry. The game's manifest and
+# built (ailang-packages PR #196, merged to its main) but not in the registry. The game's manifest and
 # lock keep their registry pins; this stages an ignored overlay of sim/ whose
 # manifest points sunholo/observe at a local checkout. Same pattern as
 # tools/worlds_dev.sh. Delete this file and tools/observe_ailang.sh when 0.2.0 is
