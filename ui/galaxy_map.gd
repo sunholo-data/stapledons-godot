@@ -701,6 +701,7 @@ func set_survey_context(on: bool) -> void:
 		pivot = _local_camera.pivot; yaw = _local_camera.yaw; pitch = _local_camera.pitch; dist = _local_camera.dist
 	_update_camera()
 	_overlay.queue_redraw()
+	if sim != null: refresh()
 
 
 func _frame_survey(plate_id: String) -> void:

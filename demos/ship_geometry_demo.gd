@@ -1142,15 +1142,20 @@ func _navigation_key(key: int) -> void:
 	if key==KEY_V:toggle_auto_view()
 	if key==KEY_P:toggle_tour_pause()
 func open_identified_star(id: String) -> void:
-	open_chart()
-	if journey_map != null:
+	if _open_observation_host():
+		journey_map.close_observation()
 		journey_map.focus_object({"kind":"catalogue","id":id}, true)
 func open_telescope_reference(reference: Dictionary) -> void:
-	if journey_map == null or (not navigation_window.visible and not (consoles != null and consoles.command.visible)):
-		open_chart()
-	if journey_map != null:
+	if _open_observation_host():
 		journey_map.set_observer_context(sky_world, sky.system_view)
 		journey_map.open_observation(reference)
+func _open_observation_host() -> bool:
+	if black_hole != null: return false
+	if journey_map == null: open_chart()
+	elif consoles != null and consoles.command.visible:
+		if consoles.command.selected != "navigation": consoles.command.select_system("navigation")
+	elif not navigation_window.visible: _place_navigation(Rect2())
+	return journey_map != null
 func journey_tick() -> bool:
 	if journey_map==null:return false
 	var was_committed:=live_journey

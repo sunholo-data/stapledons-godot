@@ -1,6 +1,6 @@
 # R3-TELESCOPE sprint: visible telescope, map links and Euclid inspection
 
-**Status:** Approved by Mark, attended 2026-11-12: “approved”. Execution begins at TS0. Prepared after Mark's “ok continue”; the concrete sprint was then explicitly approved. The accepted direction is the existing 3D map plus telescope and inspection enhancements, for a non-commercial game.
+**Status:** Approved and executing. Mark, attended 2026-11-12: “approved”. Source proof, package coordinates, exact-ID import, bounded tiles, read-only journey handoff, archive controls and shared facts are implemented. Final regressions, rendered evidence, independent evaluation and combined dev-build visual acceptance remain in progress. See [evidence](telescope-survey-inspection-evidence.md) and sprint JSON for individual gate status.
 **Design:** [telescope-survey-inspection.md](telescope-survey-inspection.md).
 **Progress:** `.ailang/state/sprints/sprint_R3-TELESCOPE.json`.
 **Baseline inspected:** game `f3aa83bf`, current branch `feat/captain-command`; unrelated animation/art/mission edits must be preserved. Plan files only in this planning session. Do implementation in a separate full clone based on the combined current game, following CLAUDE.md's checkout policy; retain the approved cockpit work rather than starting a feature build that drops it.

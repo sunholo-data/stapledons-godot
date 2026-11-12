@@ -67,6 +67,10 @@ func real_journey(map: Node) -> void:
 		var local_star: Dictionary = map.catalogue[2].duplicate(true)
 		var ref := {"kind": "catalogue", "id": str(local_star.id)}
 		check(map.open_observation(ref), "%s: exact catalogue opens shared panel" % stage)
+		var map_camera := [map.pivot, map.yaw, map.pitch, map.dist]
+		var zoom_event := InputEventMagnifyGesture.new(); zoom_event.factor = 2.
+		map._unhandled_input(zoom_event)
+		check([map.pivot, map.yaw, map.pitch, map.dist] == map_camera, "%s: archive owns zoom without moving map camera" % stage)
 		var enter := InputEventKey.new(); enter.keycode = KEY_ENTER; enter.pressed = true
 		map._input(enter)
 		map.observation_panel.select_plate("abell3128-vis")
@@ -80,4 +84,6 @@ func real_journey(map: Node) -> void:
 		check(sim.world.clock.tau > clock and sim.world.journey.plan.target == target, "%s: clock advances and route target survives" % stage)
 		check(map.catalogue[2] == local_star, "%s: survey cannot alter local xyz/facts" % stage)
 		map.close_observation(); map.set_survey_context(false)
+		var body_id: String = sim.world.system.bodies[0].id
+		check(map.focus_object({"kind":"body","id":body_id}) and map.observation_reference() == {"kind":"body","id":body_id}, "%s: exact live body reference round-trips" % stage)
 	sim.stop()

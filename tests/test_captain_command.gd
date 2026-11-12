@@ -146,6 +146,11 @@ func exercise(demo: Node, command: Variant) -> void:
 		command.select_system("navigation")
 		map.open_observation()
 		check("reopening reuses one observation panel and callback", map.observation_panel == shared_panel and shared_panel.open_map.get_connections().size() == 1)
+		map._pending = {"k":"fixture-preserve"}
+		var read_only_id: String = map.catalogue[2].id
+		demo.open_identified_star(read_only_id)
+		check("I-card map handoff preserves existing helm intent and authority", map._pending == {"k":"fixture-preserve"} and map.mode == "helm" and map.observation_selection.id == read_only_id and demo.avatar_pos.is_equal_approx(anchor))
+		map._pending = {}
 	# If navigation cannot start, the shell still leaves its tabs and close action usable.
 	command.select_system("overview")
 	var shoulder := InputEventJoypadButton.new()

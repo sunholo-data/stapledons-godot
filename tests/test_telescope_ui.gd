@@ -47,10 +47,23 @@ func run() -> void:
 		root.push_input(plus)
 		await process_frame
 		check(panel.zoom > camera_zoom, "real focused key dispatch zooms archive")
+		camera_zoom = panel.zoom
+		var pinch := InputEventMagnifyGesture.new(); pinch.factor = 1.1
+		pinch.position = panel.image_area.get_global_rect().get_center()
+		root.push_input(pinch, true)
+		await process_frame
+		check(panel.zoom > camera_zoom, "real GUI pinch dispatch zooms archive")
+		var pan_before: Vector2 = panel.pan
+		var scroll := InputEventPanGesture.new(); scroll.delta = Vector2(1.,2.); scroll.position = pinch.position
+		root.push_input(scroll, true)
+		await process_frame
+		check(panel.pan != pan_before, "real GUI trackpad dispatch pans archive")
 		var next_index := Index.new()
 		next_index.load_files(); next_index.version = "different-pack"
 		panel.configure(next_index)
 		check(panel.session_pack_id == index.version and panel.index == index, "observation pack stays pinned for this session")
+		panel.select_plate("m81-outreach"); panel.select_object(id)
+		check(panel.plate.id == "abell3128-vis", "selecting exact source restores its associated image")
 		panel.close_panel()
 		check(not panel.visible and not panel.cache.active, "closed panel stops tile decode lifecycle")
 	panel.queue_free()

@@ -1,0 +1,14 @@
+# R3 telescope: bounded CPU evidence, actual offline PCK, focused GPU cases.
+.PHONY: telescope-verification-test telescope-bench telescope-export-smoke telescope-capture telescope-golden
+telescope-verification-test:
+	@$(SCRIPT_GATE) telescope-verification-test $(SCRATCH)/observations/verification-test.log 180 '^telescope-verification-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_telescope_verification.gd
+telescope-bench:
+	@$(SCRIPT_GATE) telescope-bench $(SCRATCH)/observations/bench.log 180 '^telescope-bench: [1-9][0-9]* samples, 0 failures$$' -- $(GODOT) --headless --path . --script tools/telescope_verification.gd -- bench
+telescope-export-smoke: observation-bundle
+	@$(SCRIPT_GATE) telescope-export-smoke $(SCRATCH)/observations/export-smoke.log 600 '^telescope-export-smoke: [1-9][0-9]* cases, 0 failures$$' -- env GODOT=$(GODOT) tools/telescope_export_smoke.sh
+telescope-capture:
+	@$(SCRIPT_GATE) telescope-capture $(SCRATCH)/observations/capture.log 600 '^telescope-capture: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/telescope_verification.gd -- capture
+telescope-golden:
+	@$(SCRIPT_GATE) telescope-golden $(SCRATCH)/observations/golden.log 600 '^telescope-golden: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/telescope_verification.gd -- golden
+test: telescope-verification-test
+golden: telescope-golden
