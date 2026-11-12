@@ -1,7 +1,7 @@
 # Sprint R3-REASONS: plan
 
 **Design:** [reasons-to-travel.md](reasons-to-travel.md) (roadmap S2, S3, F1–F3, F5), approved by Mark 2026-11-12 with OQ1–OQ5 as recommended and time leading every cost.
-**Status:** Proposed 2026-11-12. **Not approved; execution has not started.**
+**Status:** Approved by Mark, attended 2026-11-12 ("good proceed"); executing. He asked for previews as the work goes, as artifacts and, where they suit, for the website diary and gallery.
 **Progress file:** `.ailang/state/sprints/sprint_R3-REASONS.json`
 **Branches:** this plan on `design/r3-reasons-to-travel` (draft PR #431). Execution in fresh full clones: the game `../stapledons-godot-reasons-to-travel`, a fresh `ailang-packages` clone, a fresh `stapledons-design` clone; never the main checkout.
 **AILANG:** pin v0.56.1 (`runtime/bin/ailang`). AILANG prompt version loaded: **v0.16.11**; reload with `ailang prompt` before the first `.ail` edit of each session.
