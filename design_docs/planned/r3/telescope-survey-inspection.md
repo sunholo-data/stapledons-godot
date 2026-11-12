@@ -175,7 +175,7 @@ Per CLAUDE.md, a merge does not wait on a GPU or a quiet host. Add the golden ca
 No blocking scope question remains from this request: telescope enhancement, object inspection, reuse of the existing 3D map and non-commercial use are settled. The following are proposed defaults for review, not requests to reconfirm those decisions:
 
 1. **Placement:** extend Navigation at both the helm and captain's chair, with instant read-only inspection access. **Recommendation/default:** this design. A separate physical observatory station costs ship art/layout, interaction and camera work and is not included.
-2. **Initial collection:** three curated fields, with a fully registered M81 field first. **Recommendation/default:** this bounded offline pack. Full survey streaming adds service availability, download/cache policy, a HiPS client and much wider integration tests; it is a later extension.
+2. **Initial collection (resolved in execution):** three curated fields. Abell 3128 has the registered science cutout and 40 catalogue sources; M81, NGC 1291 and the Abell colour image are explicitly unregistered outreach plates. Full survey streaming remains a later extension.
 
 ## Design-repo changes this needs
 

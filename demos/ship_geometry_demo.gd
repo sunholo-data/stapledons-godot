@@ -124,6 +124,7 @@ var archive_voice: AudioStreamPlayer ## I4: the telling's voice, played once per
 var wait_hint := Label.new() ## dev.31: one centred line while the game waits on the player (the review, the arrival card)
 var _voice_played := ""
 var journey_sim: SimBridge
+var _navigation_orders_pending := false
 var journey_map: GalaxyMap
 ## R1-ARCHIVE-VOICE: the AI wiring for this voyage (AiSession: settings, relay, service), made only
 ## for a game launched from the title screen (or a test asking for it with setup_options["ai"]), so
@@ -996,6 +997,7 @@ func open_navigation() -> void:
 		refuse("Navigation is for flat space: leave Sgr A* first.");return
 	_create_navigation("sol")
 	if navigation_window==null:return
+	_apply_navigation_orders()
 	journey_map.set_observer_context(sky_world, sky.system_view)
 	journey_map.set_confirm_twice(confirm_mode=="twice")
 	journey_map.set_mode("helm", not consoles.command.visible if consoles != null else true)
@@ -1055,7 +1057,8 @@ func _create_navigation(scenario:String, initialise_plan := true) -> void:
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
 		# C8: the voyage auto-runs the crew and stops only for critical moments (the lab's rules).
-		if initialise_plan and not journey_sim.crew.is_empty():journey_sim.queue([SimBridge.crew_intent("crew_orders",{"command":"orders","preset":"critical_only"})])
+		_navigation_orders_pending = not journey_sim.crew.is_empty()
+		if initialise_plan: _apply_navigation_orders()
 		if ai_session!=null:ai_session.attach(journey_sim)
 		journey_sim.stepped.connect(archive_narration.on_events) # I4: the telling's request, answer and voice
 		if consoles!=null:consoles.follow(journey_sim) # the Voyage log and Ask the Archive read its steps
@@ -1089,6 +1092,11 @@ func _create_navigation(scenario:String, initialise_plan := true) -> void:
 			_apply_journey_world()
 			journey_tick()
 		_reset_hud_session()
+func _apply_navigation_orders() -> void:
+	if not _navigation_orders_pending or journey_sim == null: return
+	journey_sim.queue([SimBridge.crew_intent("crew_orders", {"command":"orders", "preset":"critical_only"})])
+	_navigation_orders_pending = false
+
 func start_solar_departure() -> bool:
 	if benchmark.running or live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
 		refuse("Finish the committed journey first.");return false

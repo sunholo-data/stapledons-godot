@@ -719,7 +719,11 @@ func open_observation(reference: Dictionary = {}, preferred := "", field_id := "
 	if not field.is_empty() and observation_index.plate(field).is_empty(): return false
 	var chosen: Dictionary = reference if not reference.is_empty() else ({} if not field.is_empty() else observation_reference())
 	if not chosen.is_empty() and not ObjectReference.valid(chosen): return false
-	if not chosen.is_empty(): focus_object(chosen) # Missing records open an explicit unavailable card.
+	if not chosen.is_empty() and not focus_object(chosen):
+		# An unavailable card must not leave another object's inspection marker behind.
+		observation_selection.clear()
+		_refresh_observation_actions()
+		_overlay.queue_redraw()
 	close_commit_dialog() # Cancel only the armed UI gesture, never the route or sim intent.
 	observation_panel.configure(observation_index, observation_star_info, observer_world if not observer_world.is_empty() else (sim.world if sim != null else {}), observer_system_view, observation_metadata)
 	var opened: bool = observation_panel.open_reference(chosen, preferred)

@@ -21,4 +21,4 @@ test: telescope-mask-test
 .PHONY: telescope-app-smoke
 telescope-app-smoke: export-macos
 	@$(SCRIPT_GATE) telescope-app-smoke $(SCRATCH)/observations/app-smoke.log 900 '^telescope-app-smoke: [1-9][0-9]* app, 0 failures$$' -- sh tools/telescope_app_smoke.sh
-publish-dev: telescope-app-smoke
+# Run explicitly for the telescope sprint; keep the shared publication workflow unchanged.

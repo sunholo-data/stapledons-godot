@@ -3,7 +3,7 @@ signal object_selected(reference: Dictionary)
 signal field_selected(plate_id: String)
 const FOOTPRINTS := "res://data/observations/euclid_dr1/footprints.json"
 const DISPLAY_RADIUS := 8.0
-const FRAME_LABEL := "Directions from Sol · depth not shown"
+const FRAME_LABEL := "Directions from Sol · outside view (sky mirrored) · depth not shown"
 var fields := {}
 var source_ids: Array[String] = []
 var active_plate := ""

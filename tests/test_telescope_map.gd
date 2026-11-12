@@ -31,6 +31,9 @@ func run() -> void:
 		check(not map.focus_object({"kind": "catalogue", "id": 123}, false), "numeric identity rejected")
 		check(map.inspection_index() == 2 and map.selected_index == 1, "observation marker is separate from planned selection")
 		check(map.plot_inspection_button.visible, "helm exposes an explicit plot action for inspected local star")
+		check(map.open_observation({"kind":"catalogue", "id":"missing"}), "missing observation opens its unavailable card")
+		map.close_observation()
+		check(map.observation_selection.is_empty() and not map.plot_inspection_button.visible, "missing observation clears the previous inspection marker and plot action")
 	check(map.has_method("set_survey_context"), "survey sky context is explicit")
 	if map.has_method("set_survey_context"):
 		var camera_before := [map.pivot, map.yaw, map.pitch, map.dist]

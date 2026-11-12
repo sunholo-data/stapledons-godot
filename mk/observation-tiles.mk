@@ -1,6 +1,6 @@
 # R3-TELESCOPE TS3: offline tile pyramid and bounded presentation cache.
 .PHONY: telescope-cache-test observation-tiles
-telescope-cache-test: observation-assets
+telescope-cache-test:
 	@$(SCRIPT_GATE) telescope-cache-test $(SCRATCH)/observations/cache-test.log 180 '^telescope-cache-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_observation_tiles.gd
 
 observation-tiles:

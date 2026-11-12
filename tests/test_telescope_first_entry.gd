@@ -95,19 +95,28 @@ func run() -> void:
 	check(map.close_observation(), "information panel closes normally")
 	demo.open_navigation()
 	check(map.mode == "helm" and not panel.visible, "normal navigation remains available after information entry")
+	check(demo.journey_tick(), "first helm heartbeat applies deferred crew setup")
+	demo.open_navigation()
+	check(demo.journey_tick(), "reopening helm does not repeat crew setup")
 	var target := "CNS5:3627"
 	check(map.select(map.index_of(target)) and map._pending.get("k") == "plan" and map._pending.target.id == target, "explicit catalogue selection retains normal plan authority")
 	check(demo.journey_tick() and map.journey_state() == "planned" and sim.world.journey.plan.target.id == target, "explicit selection reaches actual simulation as the requested plan")
 	var recorded_after := inputs()
 	var seen_plan := false
+	var crew_orders := 0
 	var only_explicit_plan := true
 	for i in recorded_after.size():
 		var intents: Array = recorded_after[i].intents
 		if i < readonly_inputs.size():only_explicit_plan = only_explicit_plan and intents.is_empty()
 		for intent: Dictionary in intents:
+			if intent.get("k") == "crew_orders":
+				crew_orders += 1
+				var command: Variant = JSON.parse_string(str(intent.get("line", "")))
+				only_explicit_plan = only_explicit_plan and command is Dictionary and command.get("preset") == "critical_only"
+				continue
 			seen_plan = seen_plan or (intent.get("k") == "plan" and intent.get("target", {}).get("id") == target)
 			only_explicit_plan = only_explicit_plan and intent.get("k") == "plan" and intent.get("target", {}).get("id") == target
-	check(seen_plan and only_explicit_plan, "recorded wire decisions begin only with explicit selected plan; no startup crew_orders")
+	check(seen_plan and only_explicit_plan and crew_orders == 1, "read-only entry stays empty; first helm sends crew orders exactly once, followed by explicit plan")
 	check(captain_unchanged(demo, position, rendered), "opening navigation and planning never relocates Captain")
 	await finish(demo)
 
