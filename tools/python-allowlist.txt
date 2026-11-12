@@ -30,3 +30,4 @@ tools/similar_oracle.py	oracle
 tools/kerr_ref.py	oracle
 tools/worlds_leak.py	harness
 tools/lab_probe.py	harness
+tools/lab_stats_ref.py	oracle

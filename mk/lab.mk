@@ -37,14 +37,14 @@ strict parity: lab-probe-parity
 # checks, then the strict VM against the interpreter, then the committed scenario files. In
 # make test. Later lab modules add their test file, their parity entries and, if any of their
 # checks cannot run on the strict VM, the entry that names them.
-LAB_TESTS := lab_scenario_test.ail
-LAB_PARITY := lab_scenario_test:scenarioVm:scenario-ok lab_scenario_test:scenarioProbe:
-LAB_NOT_STRICT := lab_scenario_test:scenarioNotStrict
+LAB_TESTS := lab_scenario_test.ail lab_stats_test.ail
+LAB_PARITY := lab_scenario_test:scenarioVm:scenario-ok lab_scenario_test:scenarioProbe: lab_stats_test:statsVm:stats-ok lab_stats_test:statsProbe:
+LAB_NOT_STRICT := lab_scenario_test:scenarioNotStrict lab_stats_test:statsNotStrict
 LAB_SCENARIOS := $(sort $(wildcard data/lab/scenarios/*.json))
 LAB_DEPARTURES := data/lab/baseline_departures.json
 LAB_RUN = $(AILANG) run --quiet --package-dir sim
-.PHONY: lab-test lab-parity lab-scenarios
-lab-test: lab-parity lab-scenarios ## R3-UNIVERSE-LAB UL3: the lab's named checks (scenario format: refusals, round trip, digest), strict VM = interpreter, and the committed scenario files (AC5)
+.PHONY: lab-test lab-parity lab-scenarios lab-stats-oracle
+lab-test: lab-parity lab-scenarios lab-stats-oracle ## R3-UNIVERSE-LAB UL3: the lab's named checks (scenario format; statistics), strict VM = interpreter, the committed scenario files (AC5) and the statistics oracle
 	@mkdir -p $(SCRATCH)
 	@cd sim && $(AILANG) test $(LAB_TESTS) > ../$(SCRATCH)/lab-test.log 2>&1; rc=$$?; cd ..; grep -E 'tests:' $(SCRATCH)/lab-test.log; test $$rc = 0 || { grep -B1 -A3 'expected' $(SCRATCH)/lab-test.log; exit 1; }
 	@# The gap below is a test that passes today and fails at the bump; this line keeps it in sight.
@@ -93,3 +93,19 @@ lab-scenarios: ## R3-UNIVERSE-LAB UL3a: the registry baseline's departures, then
 	  grep -qF "REFUSED $$f: $${c#*:}" $(SCRATCH)/lab-scenarios-control.txt || { cat $(SCRATCH)/lab-scenarios-control.txt; echo "lab-scenarios: FAIL the control $$f was refused for another reason"; exit 1; }; \
 	done
 	@sed 's/^/lab-scenarios: /' $(SCRATCH)/lab-scenarios.txt | cut -c1-200; echo "lab-scenarios: $(words $(LAB_SCENARIOS)) scenarios accepted against the registry baseline's $$(grep -c '^registry departure' $(SCRATCH)/lab-scenarios.txt) listed departures; baseline has none of its own; 2 controls refused (a departure with no reason; another departures table)"
+
+# UL3c: sim/lab_stats.ail against an independent reference in a second language
+# (tools/lab_stats_ref.py, role oracle, standard library only): order-statistic ranks for every
+# n from 1 to 1,024 at the 10th percentile, the median and the 90th by exact integer binomial
+# tails; Student t by the incomplete beta function; mean, spread, standard error, intervals and
+# the met / missed / unsettled verdicts on shared samples (n = 0, 1, 2, 5, 8, ties, all equal,
+# 64, 128, 1,024); the stopping level (0.05 over the looks a rule allows) with its t points
+# and ranks for two rules; and a seeded simulation of the WHOLE rule, 10,000 runs of 16 looks
+# with the truth on a band's edge, which fails the gate if a wrong "met" or a wrong "missed"
+# exceeds 2.5 %. It also fails if the committed reference is not what the oracle computes.
+# The last line is the module's own smaller simulation (a 16-look rule of 8 seeds, 200 runs).
+lab-stats-oracle: ## R3-UNIVERSE-LAB UL3c: the lab's statistics equal the Python oracle's committed reference (exact binomial ranks, Student t, verdicts, the stopping level) and the whole stopping rule keeps its error under 2.5 % each way in simulation
+	@mkdir -p $(SCRATCH)
+	@$(LAB_RUN) --bytecode --strict-bytecode --entry statsOracle --args-json 0 sim/lab_stats_test.ail > $(SCRATCH)/lab-stats-oracle.json || { echo "lab-stats-oracle: FAIL statsOracle (strict VM)"; exit 1; }
+	@python3 -I tools/lab_stats_ref.py --check tests/fixtures/lab/stats_reference.json $(SCRATCH)/lab-stats-oracle.json
+	@echo "lab-stats-oracle: in the module's own tests, a 16-look rule of 8 seeds: $$($(LAB_RUN) --bytecode --strict-bytecode --entry sequentialCounts --args-json 0 sim/lab_stats_test.ail)"
