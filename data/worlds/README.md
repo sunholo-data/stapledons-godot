@@ -1,10 +1,12 @@
 # Worlds calibration development evidence
 
 W1.3 has a pure Monte Carlo and a detector interface. **W1.4 is not calibrated.**
-The registry currently supplies `sunholo/observe` 0.1.0, which has light-cone
-geometry but no S2 photon-budget model. `configuredDetector()` therefore returns
-`None`; the production calibration entry fails explicitly. No final preset,
-instrument reach, encounter-band achievement, or slice seed is asserted here.
+Since R3-REASONS RT2a `configuredDetector()` returns a photon-budget detector
+built from `sunholo/observe` 0.2.0 (`sim/data/detect.ail`); the production
+calibration entry still stops, now for the attended preset ruling. The
+development artifacts described below predate it and used the ideal detector.
+No final preset, instrument reach, encounter-band achievement, or slice seed is
+asserted here.
 
 The named non-baseline presets in `sim/data/presets.ail` are **development grid
 candidates**, with `calibrated=false`. They preserve increasing thresholds and

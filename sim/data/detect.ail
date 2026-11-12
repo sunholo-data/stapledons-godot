@@ -1,15 +1,113 @@
 module stapledons/sim/data/detect
--- W1.3 detection seam. There is no production backend until S2 publishes
--- sunholo/observe 0.2.0's photon budgets. Aperture is an instrument parameter,
--- never a reach. Loudness receives a fixed keyed rank, independent of the dial.
--- The ideal backend exists only for labelled development diagnostics.
-import std/option (Option,None)
-export type Instrument = {id:string,diameterM:float,provisional:bool}
-export pure func instrument() -> Instrument = {id:"worlds-provisional-10m",diameterM:10.0,provisional:true}
+-- The ship's instruments (R3-REASONS RT2a), built from sunholo/observe 0.2.0.
+-- An instrument is a set of physical parameters; its reach is the output of a
+-- budget (stapledons-design physics/observation.md, rows OB-n), never an
+-- authored range. Nothing here names a distance.
+--
+--   telescope  the registry's reference instrument: a 10 m coronagraphic
+--              spectrograph read in the O2 A element (0.76 um, R = 140), with
+--              zodiacal light on (rulings 1 and OQ1)
+--   receiver   the 100 m dish, efficiency 0.70, 25 K (ruling 3); the 1e6 m^2
+--              array is the later, large case
+--
+-- Units: the sim's (light-years, AU); converted to the package's SI here.
+-- Design values (no registry row; each awaits review) are marked DESIGN.
+import std/option (Option, Some)
+import std/math (log10)
+import pkg/sunholo/observe/constants (pi, lightYearM, parsecM, auM, earthRadiusM, snrHint)
+import pkg/sunholo/observe/photon (Instrument as Coronagraph, Zodi, Blackbody, Band, Budget, sunBlackbody, bandOf, photonFlux,
+  planetContrast, planetBudget, observable, noiseFloorContrast, snr as photonSnr, iwaLimitDistanceM, referenceInstrument, referenceZodi)
+import pkg/sunholo/observe/link (linkSnr, integratedSnr, reachM, referenceDishAreaM2, referenceTsysK, largeArrayAreaM2, eirpFromErpW)
+
+-- censusBand: the V-like top hat the transit photometry counts in.
+-- designLoM..designHiM: the rest wavelengths the planet model (one grey
+-- albedo) is taken to hold for. DESIGN: 0.5 to 1.0 um.
+export type Telescope = {id:string,optics:Coronagraph,zodi:Zodi,lambda0M:float,resolvingPower:float,floorDeltaMag:float,
+ censusBand:Band,designLoM:float,designHiM:float}
+export type Receiver = {id:string,areaM2:float,tSysK:float,nPol:float}
+-- A class of transmitter and the look that hears it: channel width and time.
+export type Leak = {eirpW:float,bandwidthHz:float,seconds:float}
+-- stopLookS: integration per target at a stop. DESIGN: 30 days (OB-50: a
+-- strong reading at the inner-working-angle edge takes 732 hours).
+-- cruiseLookS: integration per target of the coarse census. DESIGN: 1 hour.
+export type Suite = {telescope:Telescope,receiver:Receiver,stopLookS:float,cruiseLookS:float,radar:Leak,tv:Leak}
+
+export pure func referenceTelescope() -> Telescope = {id:"coronagraph-10m",optics:referenceInstrument(),zodi:referenceZodi(),
+ lambda0M:0.00000076,resolvingPower:140.0,floorDeltaMag:26.5,censusBand:bandOf(0.000000551,0.000000088),designLoM:0.0000005,designHiM:0.000001}
+export pure func referenceDish() -> Receiver = {id:"dish-100m",areaM2:referenceDishAreaM2(),tSysK:referenceTsysK(),nPol:1.0}
+export pure func largeArray() -> Receiver = {id:"array-1km2",areaM2:largeArrayAreaM2(),tSysK:referenceTsysK(),nPol:1.0}
+-- OB-31/OB-51: a 2e13 W planetary radar, heard in 1 Hz for the second its beam crosses.
+export pure func radarLeak() -> Leak = {eirpW:20000000000000.0,bandwidthHz:1.0,seconds:1.0}
+-- OB-34/OB-35: a TV video carrier, 0.1 Hz wide, heard for an hour.
+export pure func tvLeak() -> Leak = {eirpW:eirpFromErpW(1000000.0,0.4),bandwidthHz:0.1,seconds:3600.0}
+export pure func shipSuite() -> Suite = {telescope:referenceTelescope(),receiver:referenceDish(),stopLookS:2592000.0,cruiseLookS:3600.0,radar:radarLeak(),tv:tvLeak()}
+-- Every planet is the registry's Lambert sphere with the Earth twin's albedo (registry scope 7).
+export pure func assumedGeomAlbedo() -> float = 0.2
+-- DESIGN, shared with the belief model's table (observe belief, Leakage x
+-- Technological): the chance a technological world's radar beam crosses the
+-- ship during a look. A world's fixed keyed rank below this is radar-loud.
+export pure func radarShare() -> float = 0.10
+
+pure func tenPcFlux(t:Telescope,star:Blackbody) -> float = photonFlux(star,10.0*parsecM(),t.censusBand)
+-- The host's absolute V magnitude under the registry's own star model (a
+-- blackbody): the Sun's 4.81 shifted by the V-like photon-flux ratio. It is
+-- 4.81 exactly for the Sun, so every OB row is reproduced unchanged.
+export pure func absMagV(t:Telescope,star:Blackbody) -> float {
+ let f=tenPcFlux(t,star);
+ if f>0.0 then t.zodi.hostAbsMag-2.5*log10(f/tenPcFlux(t,sunBlackbody())) else 99.0
+}
+-- The three counted rates for a planet of the given contrast, seen from a
+-- ship whose Doppler factor towards the star is d (1 at rest) and whose own
+-- surroundings have local zodi level `localZodi`. For d != 1 the star is the
+-- same blackbody seen by a moving observer: temperature T d inside a solid
+-- angle smaller by d^2 (I_nu / nu^3 is invariant), so radius R / d; exozodi
+-- is a surface, which keeps its solid angle, hence the d^2 on its level.
+export pure func imagingBudget(t:Telescope,star:Blackbody,contrast:float,distanceLy:float,localZodi:float,d:float) -> Budget =
+ planetBudget({tempK:star.tempK*d,radiusM:star.radiusM/d},contrast,distanceLy*lightYearM(),t.lambda0M,t.resolvingPower,t.optics,
+  {t.zodi | localLevel:localZodi,exoZodis:t.zodi.exoZodis*d*d,hostAbsMag:absMagV(t,star)})
+export pure func imagingSnr(t:Telescope,star:Blackbody,contrast:float,distanceLy:float,localZodi:float,d:float,seconds:float) -> float {
+ let b=imagingBudget(t,star,contrast,distanceLy,localZodi,d);
+ photonSnr(b.signal,b.background,b.dark,seconds)
+}
+-- Outside the inner working angle (a hard edge, registry scope 6). Aberration
+-- shrinks the apparent separation by the Doppler factor d.
+export pure func clearsIwa(t:Telescope,separationAu:float,distanceLy:float,d:float) -> bool =
+ observable(separationAu*auM()/d,distanceLy*lightYearM(),t.optics.iwaScales,t.lambda0M,t.optics.apertureM)
+export pure func aboveFloor(t:Telescope,contrast:float) -> bool = contrast>=noiseFloorContrast(t.floorDeltaMag)
+-- The SNR the receiver reaches on a transmitter of class k whose beam points at it for the whole look.
+export pure func leakSnr(r:Receiver,k:Leak,distanceLy:float) -> float =
+ integratedSnr(linkSnr(k.eirpW,distanceLy*lightYearM(),r.areaM2,k.bandwidthHz,r.tSysK),r.nPol,k.bandwidthHz,k.seconds)
+export pure func leakReachLy(r:Receiver,k:Leak,targetSnr:float) -> float =
+ reachM(k.eirpW,targetSnr,r.areaM2,r.tSysK,r.nPol,k.bandwidthHz,k.seconds)/lightYearM()
+
+-- ---------- the calibration seam (sim/calibrate.ail) ----------
+-- response(kind, distanceLy, rank) is the strength a world of that kind gives:
+-- the SNR when it clears the hint threshold, else 0. supportLy is the largest
+-- distance at which any response can be non-zero; with photonBudget it is an
+-- output of the budgets, not a chosen radius.
 export type Detect = {id:string,supportLy:float,photonBudget:bool,response:(string,float,float)->float ! {}}
-export pure func noDetector() -> Detect = {id:"unconfigured-S2-required",supportLy:0.0,photonBudget:false,response:\kind distance rank. 0.0}
-export pure func configuredDetector() -> Option[Detect] = None
--- Caller-supplied spatial support is a diagnostic selection, not an asserted
--- telescope reach. Every state inside it is detected at unit strength.
+export pure func noDetector() -> Detect = {id:"no-detector",supportLy:0.0,photonBudget:false,response:\kind distance rank. 0.0}
+pure func hintOrZero(x:float) -> float = if x>=snrHint() then x else 0.0
+pure func positive(x:float) -> float = if x>0.000001 then x else 0.000001
+-- The calibration's model worlds carry no host or orbit, so a biosphere is
+-- read as the registry's Earth twin of a Sun twin at quadrature, after one
+-- stop look; technology is the radar class for a rank below radarShare, the
+-- TV class otherwise.
+pure func twinContrast() -> float = planetContrast(assumedGeomAlbedo(),earthRadiusM(),auM(),pi()/2.0)
+export pure func twinResponse(s:Suite,distanceLy:float) -> float {
+ let d=positive(distanceLy);
+ if clearsIwa(s.telescope,1.0,d,1.0) && aboveFloor(s.telescope,twinContrast())
+ then hintOrZero(imagingSnr(s.telescope,sunBlackbody(),twinContrast(),d,1.0,1.0,s.stopLookS)) else 0.0
+}
+export pure func techResponse(s:Suite,distanceLy:float,rank:float) -> float =
+ hintOrZero(leakSnr(s.receiver,if rank<radarShare() then s.radar else s.tv,positive(distanceLy)))
+pure func maxf(a:float,b:float) -> float = if a>b then a else b
+export pure func budgetDetector(s:Suite) -> Detect = {id:"observe-0.2.0:${s.telescope.id}+${s.receiver.id}",
+ supportLy:maxf(iwaLimitDistanceM(auM(),s.telescope.optics.iwaScales,s.telescope.lambda0M,s.telescope.optics.apertureM)/lightYearM(),
+  maxf(leakReachLy(s.receiver,s.radar,snrHint()),leakReachLy(s.receiver,s.tv,snrHint()))),
+ photonBudget:true,response:\kind distance rank. if kind=="biosphere" then twinResponse(s,distance) else if kind=="technology" then techResponse(s,distance,rank) else 0.0}
+export pure func configuredDetector() -> Option[Detect] = Some(budgetDetector(shipSuite()))
+-- Labelled development diagnostics only. Caller-supplied spatial support is a
+-- selection, not a telescope reach: every state inside it is detected at unit strength.
 export pure func idealDetector(supportLy:float) -> Detect =
  {id:"ideal-diagnostic-only",supportLy:supportLy,photonBudget:false,response:\kind distance rank. if distance<=supportLy then 1.0 else 0.0}
