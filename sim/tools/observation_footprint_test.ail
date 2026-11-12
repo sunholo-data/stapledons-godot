@@ -1,0 +1,95 @@
+module stapledons/sim/tools/observation_footprint_test
+import ./observation_footprint (build)
+import std/result (Ok, Err)
+import std/string (contains, replace)
+
+pure func wcs() -> string =
+  "\"projection\":\"TAN\",\"frame\":\"ICRS\",\"width\":2,\"height\":2,\"wcs\":{\"crpixX\":1.5,\"crpixY\":1.5,\"crvalRaDeg\":0,\"crvalDecDeg\":0,\"cd11\":-0.001,\"cd12\":0,\"cd21\":0,\"cd22\":0.001}"
+
+pure func plate(id: string) -> string = "{\"id\":\"${id}\",\"registered\":true,\"registration\":{${wcs()}}}"
+
+pure func manifest(plates: string) -> string = "{\"format_version\":1,\"id\":\"fixture\",\"plates\":[${plates}]}"
+
+export pure func registeredOnly() -> bool =
+  match build(manifest("${plate("known")},{\"id\":\"outreach\",\"registered\":false}")) {
+    Ok(s) => contains(s, "known") && not contains(s, "outreach") && contains(s, "centre_galactic") && contains(s, "corners_galactic"),
+    Err(_) => false
+  }
+
+export pure func duplicateRejected() -> bool = match build(manifest("${plate("known")},${plate("known")}")) {
+  Err(_) => true,
+  Ok(_) => false
+}
+
+export pure func invalidRejected() -> bool = match build(manifest("{\"id\":\"bad\",\"registered\":true}")) {
+  Err(_) => true,
+  Ok(_) => false
+}
+
+export pure func noRegistration() -> bool = match build(manifest("{\"registered\":false}")) {
+  Ok(s) => contains(s, "\"fields\":[]"),
+  Err(_) => false
+}
+
+export pure func invalidRoot() -> bool = match build("{}") {
+  Err(_) => true,
+  Ok(_) => false
+}
+
+export pure func emptyRoot() -> bool = match build("broken") {
+  Err(_) => true,
+  Ok(_) => false
+}
+
+test "registeredOnly" {
+  registeredOnly()
+}
+
+test "duplicateRejected" {
+  duplicateRejected()
+}
+
+test "invalidRejected" {
+  invalidRejected()
+}
+
+test "noRegistration" {
+  noRegistration()
+}
+
+test "invalidRoot" {
+  invalidRoot()
+}
+
+test "emptyRoot" {
+  emptyRoot()
+}
+
+-- Metadata errors must fail closed; unregistered is an explicit boolean status.
+test "missing registration status" {
+  match build(manifest("{}")) {
+    Err(_) => true,
+    Ok(_) => false
+  }
+}
+
+test "unsupported projection" {
+  match build(replace(manifest(plate("known")), "TAN", "SIN")) {
+    Err(_) => true,
+    Ok(_) => false
+  }
+}
+
+test "fractional source dimensions" {
+  match build(replace(manifest(plate("known")), "\"width\":2", "\"width\":2.5")) {
+    Err(_) => true,
+    Ok(_) => false
+  }
+}
+
+test "singular CD matrix" {
+  match build(replace(manifest(plate("known")), "-0.001", "0")) {
+    Err(_) => true,
+    Ok(_) => false
+  }
+}

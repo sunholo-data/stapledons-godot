@@ -1,0 +1,96 @@
+module stapledons/sim/tools/observation_footprint
+import std/json (Json, JNull, decode, encode, get, getString, getNumber, getBool, getArray, jo, kv, js, jint, jnum, ja)
+import std/option (Some, None)
+import std/result (Result, Ok, Err)
+import std/list (any)
+import std/math (PI, floor)
+import std/fs (readFile, writeFile)
+import std/io (println, exit)
+import pkg/sunholo/celestial/projection (TanWcs, pixelToSky, validTanWcs)
+import pkg/sunholo/celestial/frames (unitFromAngles, equatorialToGalactic)
+
+-- Minimal manifest AST: id, plates[].{id,registered,registration}. Registration
+-- requires ICRS TAN, source dimensions and the eight FITS WCS coefficients.
+-- Unregistered outreach images deliberately produce no celestial footprint.
+pure func obj(j: Json, k: string) -> Json = match get(j, k) {
+  Some(v) => v,
+  None => JNull
+}
+
+pure func str(j: Json, k: string) -> string = match getString(j, k) {
+  Some(v) => v,
+  None => ""
+}
+
+pure func num(j: Json, k: string) -> float = match getNumber(j, k) {
+  Some(v) => v,
+  None => 1e+100
+}
+
+pure func wcs(j: Json) -> TanWcs =
+  { crpixX: num(j, "crpixX"), crpixY: num(j, "crpixY"), crvalRaDeg: num(j, "crvalRaDeg"), crvalDecDeg: num(j, "crvalDecDeg"), cd11: num(j, "cd11"), cd12: num(j, "cd12"), cd21: num(j, "cd21"), cd22: num(j, "cd22") }
+
+pure func direction(w: TanWcs, x: float, y: float) -> Result[Json, string] = match pixelToSky(w, { x: x, y: y }) {
+  Err(_) => Err("unsupported or invalid TAN pixel"),
+  Ok(s) => {
+    let g = equatorialToGalactic(unitFromAngles(s.raDeg * PI() / 180.0, s.decDeg * PI() / 180.0))
+    Ok(jo([kv("x", jnum(g.x)), kv("y", jnum(g.y)), kv("z", jnum(g.z))]))
+  }
+}
+
+pure func field(p: Json) -> Result[Json, string] {
+  let r = obj(p, "registration")
+  let w = wcs(obj(r, "wcs"))
+  let width = num(r, "width")
+  let height = num(r, "height")
+  let id = str(p, "id")
+  if id == "" || str(r, "projection") != "TAN" || str(r, "frame") != "ICRS" || not validTanWcs(w) || width < 1.0 || width > 1e+06 || height < 1.0 || height > 1e+06 || floor(width) != width || floor(height) != height then Err("invalid registered plate ${id}") else {
+    -- FITS pixels are one-based centres: physical image edges are 0.5,N+0.5.
+    let a = direction(w, 0.5, 0.5)
+    let b = direction(w, width + 0.5, 0.5)
+    let c = direction(w, width + 0.5, height + 0.5)
+    let d = direction(w, 0.5, height + 0.5)
+    let centre = direction(w, (width + 1.0) / 2.0, (height + 1.0) / 2.0)
+    match (a, b, c, d, centre) {
+      (Ok(aa), Ok(bb), Ok(cc), Ok(dd), Ok(mid)) => Ok(jo([kv("plate_id", js(id)), kv("centre_galactic", mid), kv("corners_galactic", ja([aa, bb, cc, dd]))])),
+      _ => Err("invalid footprint for ${id}")
+    }
+  }
+}
+
+pure func fields(ps: [Json], seen: [string], acc: [Json]) -> Result[[Json], string] = match ps {
+  [] => Ok(acc),
+  p :: rest => match getBool(p, "registered") {
+    None => Err("plate registration status missing or not boolean"),
+    Some(false) => fields(rest, seen, acc),
+    Some(true) => {
+      let id = str(p, "id")
+      if any(\s. s == id, seen) then Err("duplicate registered plate ${id}") else match field(p) {
+        Err(e) => Err(e),
+        Ok(f) => fields(rest, seen ++ [id], acc ++ [f])
+      }
+    }
+  }
+}
+
+export pure func build(raw: string) -> Result[string, string] = match decode(raw) {
+  Err(_) => Err("invalid manifest JSON"),
+  Ok(root) => if str(root, "id") == "" || num(root, "format_version") != 1.0 then Err("invalid manifest identity/version") else match getArray(root, "plates") {
+    None => Err("missing manifest plates"),
+    Some(ps) => match fields(ps, [], []) {
+      Err(e) => Err(e),
+      Ok(fs) => Ok("${encode(jo([kv("format_version", jint(1)), kv("pack_id", js(str(root, "id"))), kv("fields", ja(fs))]))}\n")
+    }
+  }
+}
+
+export func main(a: { input: string, output: string }) -> () ! {FS, IO} = match build(readFile(a.input)) {
+  Err(e) => {
+    println("survey-footprint: FAILED ${e}")
+    exit(1)
+  },
+  Ok(out) => {
+    writeFile(a.output, out)
+    println("survey-footprint: generated registered fields")
+  }
+}
