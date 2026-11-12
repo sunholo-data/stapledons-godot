@@ -10,7 +10,14 @@
   "sprint_plan": "design_docs/planned/r3/telescope-survey-inspection-sprint.md",
   "source_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
   "github_issues": [],
-  "decision_refs": ["D-28", "D-41", "D-56", "D-57", "D-111", "D-150"],
+  "decision_refs": [
+    "D-28",
+    "D-41",
+    "D-56",
+    "D-57",
+    "D-111",
+    "D-150"
+  ],
   "origin": "Mark, attended 2026-11-12: existing 3D map integration, telescope and object-inspection enhancements; non-commercial game. 'ok continue' advances to concrete sprint planning; this new plan awaits approval.",
   "rulings": {
     "non_commercial": true,
@@ -18,7 +25,11 @@
     "visible_telescope_control": true,
     "new_physical_station": false,
     "placement": "Navigation station and captain-command Navigation; instant read-only information entry",
-    "initial_fields": ["M81 group", "NGC 1291", "Abell 3128"],
+    "initial_fields": [
+      "M81 group",
+      "NGC 1291",
+      "Abell 3128"
+    ],
     "runtime_network_dependency": false,
     "simulation_protocol_change": false
   },
@@ -40,32 +51,136 @@
     "basis": "Conservative planning assumption, not measured solo throughput. Seven-day non-merge code/test churn +4126/-417 over 126 file-change entries is team/branch activity. Original telescope-related five-file slice +249/-15; data proof and review add uncertainty."
   },
   "registry_reuse": [
-    {"milestone":"TS0_SOURCE","package":"none","action":"none","reason":"Source curation and image-file proof. Registry searches wcs/csv returned no package; hips returned unrelated decisions. Shell downloads and Godot image I/O."},
-    {"milestone":"TS1_COORDS","package":"sunholo/celestial","action":"contribute","reason":"Existing frames/rotation helpers reused; registry info/docs at 0.6.1 list no TAN/WCS helper. Add supported projection to celestial before a Godot mirror; publish then pin actual version."},
-    {"milestone":"TS2_INDEX","package":"sunholo/celestial","action":"depend","reason":"Use TS1 published coordinate helpers in deterministic observation indexing; retain current stdlib/project parsing patterns."},
-    {"milestone":"TS3_TILES","package":"none","action":"none","reason":"Godot image tiling and bounded cache are engine I/O; searched celestial/observe are not image codecs; no HiPS client in this scope."},
-    {"milestone":"TS4_IDENTITY","package":"none","action":"none","reason":"Presentation-only exact-ID focus adapter over existing Godot map/body records, with no new scientific capability."},
-    {"milestone":"TS5_LIVE","package":"sunholo/celestial; sunholo/relativity@0.12.0","action":"depend","reason":"Reuse existing surface data and physical renderer/relativity uniforms. No new optical model or stellar stop geometry."},
-    {"milestone":"TS6_ARCHIVE","package":"none","action":"none","reason":"Godot UI composition and controls; shared projection maths is contributed in TS1 rather than duplicated in a UI package."},
-    {"milestone":"TS7_MAP","package":"sunholo/celestial","action":"depend","reason":"Reuse frame/projection output through SkyFrame for direction-only survey context; no cosmological conversion."},
-    {"milestone":"TS8_INSPECTION","package":"sunholo/observe@0.1.0; sunholo/celestial","action":"depend","reason":"Existing sim-supplied light age and body/catalogue data remain authoritative; formatting adds no new physical calculation."},
-    {"milestone":"TS9_ACCESS","package":"none","action":"none","reason":"Reuse station/chair screen hosts and read-only information panels, with no agent or simulation package."},
-    {"milestone":"TS10_PACKAGE","package":"none","action":"none","reason":"Reuse current content-addressed asset/export infrastructure and Godot file I/O; no fresh library capability."},
-    {"milestone":"TS11_REVIEW","package":"none","action":"none","reason":"Targeted evidence, independent evaluation, visual acceptance and landing; no new package functionality."}
+    {
+      "milestone": "TS0_SOURCE",
+      "package": "none",
+      "action": "none",
+      "reason": "Source curation and image-file proof. Registry searches wcs/csv returned no package; hips returned unrelated decisions. Shell downloads and Godot image I/O."
+    },
+    {
+      "milestone": "TS1_COORDS",
+      "package": "sunholo/celestial",
+      "action": "contribute",
+      "reason": "Existing frames/rotation helpers reused; registry info/docs at 0.6.1 list no TAN/WCS helper. Add supported projection to celestial before a Godot mirror; publish then pin actual version."
+    },
+    {
+      "milestone": "TS2_INDEX",
+      "package": "sunholo/celestial",
+      "action": "depend",
+      "reason": "Use TS1 published coordinate helpers in deterministic observation indexing; retain current stdlib/project parsing patterns."
+    },
+    {
+      "milestone": "TS3_TILES",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot image tiling and bounded cache are engine I/O; searched celestial/observe are not image codecs; no HiPS client in this scope."
+    },
+    {
+      "milestone": "TS4_IDENTITY",
+      "package": "none",
+      "action": "none",
+      "reason": "Presentation-only exact-ID focus adapter over existing Godot map/body records, with no new scientific capability."
+    },
+    {
+      "milestone": "TS5_LIVE",
+      "package": "sunholo/celestial; sunholo/relativity@0.12.0",
+      "action": "depend",
+      "reason": "Reuse existing surface data and physical renderer/relativity uniforms. No new optical model or stellar stop geometry."
+    },
+    {
+      "milestone": "TS6_ARCHIVE",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI composition and controls; shared projection maths is contributed in TS1 rather than duplicated in a UI package."
+    },
+    {
+      "milestone": "TS7_MAP",
+      "package": "sunholo/celestial",
+      "action": "depend",
+      "reason": "Reuse frame/projection output through SkyFrame for direction-only survey context; no cosmological conversion."
+    },
+    {
+      "milestone": "TS8_INSPECTION",
+      "package": "sunholo/observe@0.1.0; sunholo/celestial",
+      "action": "depend",
+      "reason": "Existing sim-supplied light age and body/catalogue data remain authoritative; formatting adds no new physical calculation."
+    },
+    {
+      "milestone": "TS9_ACCESS",
+      "package": "none",
+      "action": "none",
+      "reason": "Reuse station/chair screen hosts and read-only information panels, with no agent or simulation package."
+    },
+    {
+      "milestone": "TS10_PACKAGE",
+      "package": "none",
+      "action": "none",
+      "reason": "Reuse current content-addressed asset/export infrastructure and Godot file I/O; no fresh library capability."
+    },
+    {
+      "milestone": "TS11_REVIEW",
+      "package": "none",
+      "action": "none",
+      "reason": "Targeted evidence, independent evaluation, visual acceptance and landing; no new package functionality."
+    }
   ],
   "registry_audit": {
     "checked": "2026-11-12",
-    "search_terms": ["celestial", "wcs", "csv", "hips"],
-    "inspected": ["sunholo/celestial info and docs", "sunholo/observe info", "local pinned celestial frames.ail"],
+    "search_terms": [
+      "celestial",
+      "wcs",
+      "csv",
+      "hips"
+    ],
+    "inspected": [
+      "sunholo/celestial info and docs",
+      "sunholo/observe info",
+      "local pinned celestial frames.ail"
+    ],
     "result": "Reuse celestial/observe. Contribute TAN projection to celestial if still absent at TS1; no suitable CSV/WCS/HiPS package found. No dependency was installed or upgraded by planning."
   },
   "external_dependencies": [
-    {"what":"Approval of this concrete sprint under CLAUDE.md development cycle step 2","status":"approved by Mark, attended 2026-11-12","blocks":[]},
-    {"what":"Real registered supported observation and real catalogue subset proven in TS0","status":"unverified","blocks":["TS1_COORDS","TS2_INDEX","TS3_TILES"]},
-    {"what":"Published additive celestial coordinate helpers, if not available at execution","status":"planned_in_TS1","blocks":["TS2_INDEX"]},
-    {"what":"Independent cross-family evaluation and Mark's combined dev-build visual acceptance before landing","status":"pending","blocks":["TS11_REVIEW"]}
+    {
+      "what": "Approval of this concrete sprint under CLAUDE.md development cycle step 2",
+      "status": "approved by Mark, attended 2026-11-12",
+      "blocks": []
+    },
+    {
+      "what": "Real registered supported observation and real catalogue subset proven in TS0",
+      "status": "proven in TS0",
+      "blocks": [
+        "TS1_COORDS",
+        "TS2_INDEX",
+        "TS3_TILES"
+      ]
+    },
+    {
+      "what": "Published additive celestial coordinate helpers, if not available at execution",
+      "status": "planned_in_TS1",
+      "blocks": [
+        "TS2_INDEX"
+      ]
+    },
+    {
+      "what": "Independent cross-family evaluation and Mark's combined dev-build visual acceptance before landing",
+      "status": "pending",
+      "blocks": [
+        "TS11_REVIEW"
+      ]
+    }
   ],
-  "critical_path": ["TS0_SOURCE","TS1_COORDS","TS2_INDEX","TS4_IDENTITY","TS6_ARCHIVE","TS7_MAP","TS8_INSPECTION","TS9_ACCESS","TS10_PACKAGE","TS11_REVIEW"],
+  "critical_path": [
+    "TS0_SOURCE",
+    "TS1_COORDS",
+    "TS2_INDEX",
+    "TS4_IDENTITY",
+    "TS6_ARCHIVE",
+    "TS7_MAP",
+    "TS8_INSPECTION",
+    "TS9_ACCESS",
+    "TS10_PACKAGE",
+    "TS11_REVIEW"
+  ],
   "limits": {
     "gpu_tile_bytes": 134217728,
     "cpu_tile_bytes": 67108864,
@@ -80,76 +195,241 @@
   },
   "features": [
     {
-      "id":"TS0_SOURCE","description":"Prove real image/catalogue access, rights, supported registration and two zoom levels",
-      "estimated_loc":150,"dependencies":[],
-      "acceptance_criteria":["AC1: real supported registered field, real associated source rows, original schema and query preserved","Five independent registration anchors within one source pixel and two actual zoom levels verified","Sources, dates, rights, credits, hashes and sizes recorded; malformed source controls fail","make observation-pack-verify succeeds after explicit bounded downloads; no synthetic science substitution"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS0_SOURCE",
+      "description": "Prove real image/catalogue access, rights, supported registration and two zoom levels",
+      "estimated_loc": 150,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC1: real supported registered field, real associated source rows, original schema and query preserved",
+        "Five independent registration anchors within one source pixel and two actual zoom levels verified",
+        "Sources, dates, rights, credits, hashes and sizes recorded; malformed source controls fail",
+        "make observation-pack-verify succeeds after explicit bounded downloads; no synthetic science substitution"
+      ],
+      "passes": true,
+      "started": "2026-11-12",
+      "completed": "2026-11-12",
+      "notes": "Real DR1 Abell3128: 724-square 2.1MB FITS with authoritative ICRS TAN; real40 catalogue rows retained. Five empirical anchors max0.369px. Four plates/three fields, outreach unregistered. observation-pack-verify4plates/5objects/0; unit14/0; FITS7/0; behavioural reds1passed5failed and false-residual13/1. Narrow <=2048-square uncompressed primary float32 Godot offline reader needed because documented cutout only serves FITS; no Python/runtime decoder dependency."
     },
     {
-      "id":"TS1_COORDS","description":"Contribute supported celestial TAN projection with independent astrometric oracle and Godot mirror",
-      "estimated_loc":250,"dependencies":["TS0_SOURCE"],
-      "acceptance_criteria":["AC3: centre, anchors, wrap, poles and unsupported/singular cases checked against independent coordinates within 0.1 source pixel","Package check/tests/quality and strict probe parity pass before additive release and deliberate pin/lock update","make observation-coordinate-test succeeds; touched shared-frame checks pass make physics","No only-copy formula in Godot and no unrelated package upgrade"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS1_COORDS",
+      "description": "Contribute supported celestial TAN projection with independent astrometric oracle and Godot mirror",
+      "estimated_loc": 250,
+      "dependencies": [
+        "TS0_SOURCE"
+      ],
+      "acceptance_criteria": [
+        "AC3: centre, anchors, wrap, poles and unsupported/singular cases checked against independent coordinates within 0.1 source pixel",
+        "Package check/tests/quality and strict probe parity pass before additive release and deliberate pin/lock update",
+        "make observation-coordinate-test succeeds; touched shared-frame checks pass make physics",
+        "No only-copy formula in Godot and no unrelated package upgrade"
+      ],
+      "passes": null,
+      "started": "2026-11-12",
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS2_INDEX","description":"Build deterministic AILANG observation index with exact identities, provenance and nullable measured facts",
-      "estimated_loc":280,"dependencies":["TS0_SOURCE","TS1_COORDS"],
-      "acceptance_criteria":["AC2/7: long IDs stay strings; missing, candidate and inferred values retain source/method/epoch","Non-finite, duplicate and ambiguous associations rejected/reported without corrupting star truth","make observation-import-test observation-import-parity succeed on real subset and labelled malformed fixtures","Repeated generated index and pure strict VM/interpreter probe output are byte-identical"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS2_INDEX",
+      "description": "Build deterministic AILANG observation index with exact identities, provenance and nullable measured facts",
+      "estimated_loc": 280,
+      "dependencies": [
+        "TS0_SOURCE",
+        "TS1_COORDS"
+      ],
+      "acceptance_criteria": [
+        "AC2/7: long IDs stay strings; missing, candidate and inferred values retain source/method/epoch",
+        "Non-finite, duplicate and ambiguous associations rejected/reported without corrupting star truth",
+        "make observation-import-test observation-import-parity succeed on real subset and labelled malformed fixtures",
+        "Repeated generated index and pure strict VM/interpreter probe output are byte-identical"
+      ],
+      "passes": null,
+      "started": "2026-11-12",
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS3_TILES","description":"Generate offline tiled mip pyramid and implement bounded visible-tile loading",
-      "estimated_loc":280,"dependencies":["TS0_SOURCE","TS1_COORDS"],
-      "acceptance_criteria":["AC9/11: Godot tiling preserves seams, masks and known source crops with deterministic hashes","GPU/CPU/mip memory stays within 128 MiB/64 MiB; compressed starter within 100 MiB","Stale/cancelled/corrupt/missing/pack-mismatch loads have explicit states and no full-plate pan decode","make telescope-cache-test succeeds; runtime needs no network service"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS3_TILES",
+      "description": "Generate offline tiled mip pyramid and implement bounded visible-tile loading",
+      "estimated_loc": 280,
+      "dependencies": [
+        "TS0_SOURCE",
+        "TS1_COORDS"
+      ],
+      "acceptance_criteria": [
+        "AC9/11: Godot tiling preserves seams, masks and known source crops with deterministic hashes",
+        "GPU/CPU/mip memory stays within 128 MiB/64 MiB; compressed starter within 100 MiB",
+        "Stale/cancelled/corrupt/missing/pack-mismatch loads have explicit states and no full-plate pan decode",
+        "make telescope-cache-test succeeds; runtime needs no network service"
+      ],
+      "passes": null,
+      "started": "2026-11-12",
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS4_IDENTITY","description":"Separate read-only object focus from route planning and add exact map handoff references",
-      "estimated_loc":180,"dependencies":["TS2_INDEX"],
-      "acceptance_criteria":["AC4: catalogue/body/survey round trips preserve identity, map camera and route state","Actual queue/intents show no additional plan/commit/cancel/approach/leave/time intent while observing","make telescope-map-test succeeds for active and committed real-sim journeys","Calling preselect instead of read-only focus is a killed mutation"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS4_IDENTITY",
+      "description": "Separate read-only object focus from route planning and add exact map handoff references",
+      "estimated_loc": 180,
+      "dependencies": [
+        "TS2_INDEX"
+      ],
+      "acceptance_criteria": [
+        "AC4: catalogue/body/survey round trips preserve identity, map camera and route state",
+        "Actual queue/intents show no additional plan/commit/cancel/approach/leave/time intent while observing",
+        "make telescope-map-test succeeds for active and committed real-sim journeys",
+        "Calling preselect instead of read-only focus is a killed mutation"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS5_LIVE","description":"Expose visible Telescope action and explicit selected-star targeting while preserving the live renderer",
-      "estimated_loc":180,"dependencies":["TS4_IDENTITY"],
-      "acceptance_criteria":["AC5/6: explicit target honoured; missing/hidden explicit target never falls back to another star","Legacy fallback only without requested target and whole-disc/close/off cycle preserved","make telescope-live-test star-surface-test stellar-protocol-test succeed","Physical uniform/normaliser/resolution behaviour retained and targeted telescope-golden cases added"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS5_LIVE",
+      "description": "Expose visible Telescope action and explicit selected-star targeting while preserving the live renderer",
+      "estimated_loc": 180,
+      "dependencies": [
+        "TS4_IDENTITY"
+      ],
+      "acceptance_criteria": [
+        "AC5/6: explicit target honoured; missing/hidden explicit target never falls back to another star",
+        "Legacy fallback only without requested target and whole-disc/close/off cycle preserved",
+        "make telescope-live-test star-surface-test stellar-protocol-test succeed",
+        "Physical uniform/normaliser/resolution behaviour retained and targeted telescope-golden cases added"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS6_ARCHIVE","description":"Build image-led archive panel with real observation pan/zoom, angular scale, dates and registered picking",
-      "estimated_loc":340,"dependencies":["TS2_INDEX","TS3_TILES","TS4_IDENTITY"],
-      "acceptance_criteria":["AC6/7/8: actual Euclid source image browses at available levels with resolution/missing states","Archive pixels and registered overlays stay invariant across ship location/velocity/GR","Only registered catalogued sources can be picked; overlaps use exact-ID chooser","make telescope-ui-test and initial object-inspection-test pass; input zoom/pan uses real dispatch"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS6_ARCHIVE",
+      "description": "Build image-led archive panel with real observation pan/zoom, angular scale, dates and registered picking",
+      "estimated_loc": 340,
+      "dependencies": [
+        "TS2_INDEX",
+        "TS3_TILES",
+        "TS4_IDENTITY"
+      ],
+      "acceptance_criteria": [
+        "AC6/7/8: actual Euclid source image browses at available levels with resolution/missing states",
+        "Archive pixels and registered overlays stay invariant across ship location/velocity/GR",
+        "Only registered catalogued sources can be picked; overlaps use exact-ID chooser",
+        "make telescope-ui-test and initial object-inspection-test pass; input zoom/pan uses real dispatch"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS7_MAP","description":"Add labelled survey-direction context to the existing map without invented depth or journey targets",
-      "estimated_loc":240,"dependencies":["TS4_IDENTITY","TS6_ARCHIVE"],
-      "acceptance_criteria":["AC3/4: shared SkyFrame orientation and exact survey references, depth-not-shown label, real registered footprints","Survey objects never have plot/commit actions, even with a published distance","Local star xyz and local map camera survive context switch; unregistered plates do not paint footprints","make telescope-map-test observation-coordinate-test starmap-consistency pass; navigation-guard mutant is killed"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS7_MAP",
+      "description": "Add labelled survey-direction context to the existing map without invented depth or journey targets",
+      "estimated_loc": 240,
+      "dependencies": [
+        "TS4_IDENTITY",
+        "TS6_ARCHIVE"
+      ],
+      "acceptance_criteria": [
+        "AC3/4: shared SkyFrame orientation and exact survey references, depth-not-shown label, real registered footprints",
+        "Survey objects never have plot/commit actions, even with a published distance",
+        "Local star xyz and local map camera survive context switch; unregistered plates do not paint footprints",
+        "make telescope-map-test observation-coordinate-test starmap-consistency pass; navigation-guard mutant is killed"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS8_INSPECTION","description":"Unify object facts, image availability and source cards across catalogue, live body and survey records",
-      "estimated_loc":200,"dependencies":["TS2_INDEX","TS4_IDENTITY","TS6_ARCHIVE"],
-      "acceptance_criteria":["AC7: measured/inferred/assumed/modelled and unknown/candidate facts remain explicit","Catalogue distances/magnitudes, ship-now values and survey dates/redshifts are never conflated","Star/body/galaxy/no-image/no-distance example matrix yields consistent facts from every entry","make object-inspection-test ship-star-identification-test pass without finder evidence/schema changes"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS8_INSPECTION",
+      "description": "Unify object facts, image availability and source cards across catalogue, live body and survey records",
+      "estimated_loc": 200,
+      "dependencies": [
+        "TS2_INDEX",
+        "TS4_IDENTITY",
+        "TS6_ARCHIVE"
+      ],
+      "acceptance_criteria": [
+        "AC7: measured/inferred/assumed/modelled and unknown/candidate facts remain explicit",
+        "Catalogue distances/magnitudes, ship-now values and survey dates/redshifts are never conflated",
+        "Star/body/galaxy/no-image/no-distance example matrix yields consistent facts from every entry",
+        "make object-inspection-test ship-star-identification-test pass without finder evidence/schema changes"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS9_ACCESS","description":"Integrate one telescope panel into Navigation, chair screens and immediate read-only I/M entry",
-      "estimated_loc":240,"dependencies":["TS5_LIVE","TS6_ARCHIVE","TS7_MAP","TS8_INSPECTION"],
-      "acceptance_criteria":["AC8/11: visible controls work through actual station/chair projected clicks and keyboard/pad/typing/pinch dispatch","I/M read-only access never relocates captain or issues decisions; clocks continue","Close/stand/system-switch/escape release input and suspend renderer with one active panel/callback set","make telescope-ui-test telescope-map-test captain-command-test chair-cockpit-test ship-console-test pass"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS9_ACCESS",
+      "description": "Integrate one telescope panel into Navigation, chair screens and immediate read-only I/M entry",
+      "estimated_loc": 240,
+      "dependencies": [
+        "TS5_LIVE",
+        "TS6_ARCHIVE",
+        "TS7_MAP",
+        "TS8_INSPECTION"
+      ],
+      "acceptance_criteria": [
+        "AC8/11: visible controls work through actual station/chair projected clicks and keyboard/pad/typing/pinch dispatch",
+        "I/M read-only access never relocates captain or issues decisions; clocks continue",
+        "Close/stand/system-switch/escape release input and suspend renderer with one active panel/callback set",
+        "make telescope-ui-test telescope-map-test captain-command-test chair-cockpit-test ship-console-test pass"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS10_PACKAGE","description":"Pin and ship offline observation assets with export, version, failure and gate wiring",
-      "estimated_loc":160,"dependencies":["TS3_TILES","TS7_MAP","TS9_ACCESS"],
-      "acceptance_criteria":["AC9/12: three curated plates and at least one registered field ship with credits and pinned manifest/version","Offline export opens real archive and live star; corrupt/missing/pinned-version cases retain usable map/live view","make observation-assets-check telescope-export-smoke telescope-cache-test export-filter-audit uid-guard python-guard pass","New fast/headless/nightly gate edges and failure controls wired with deadlines and counted summaries"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS10_PACKAGE",
+      "description": "Pin and ship offline observation assets with export, version, failure and gate wiring",
+      "estimated_loc": 160,
+      "dependencies": [
+        "TS3_TILES",
+        "TS7_MAP",
+        "TS9_ACCESS"
+      ],
+      "acceptance_criteria": [
+        "AC9/12: three curated plates and at least one registered field ship with credits and pinned manifest/version",
+        "Offline export opens real archive and live star; corrupt/missing/pinned-version cases retain usable map/live view",
+        "make observation-assets-check telescope-export-smoke telescope-cache-test export-filter-audit uid-guard python-guard pass",
+        "New fast/headless/nightly gate edges and failure controls wired with deadlines and counted summaries"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
-      "id":"TS11_REVIEW","description":"Collect measured evidence, independent cross-family evaluation and Mark's combined dev-build visual acceptance before landing",
-      "estimated_loc":100,"dependencies":["TS0_SOURCE","TS1_COORDS","TS2_INDEX","TS3_TILES","TS4_IDENTITY","TS5_LIVE","TS6_ARCHIVE","TS7_MAP","TS8_INSPECTION","TS9_ACCESS","TS10_PACKAGE"],
-      "acceptance_criteria":["AC10: telescope-capture validates three sizes and required views; all renders opened and recorded","AC11: telescope-bench reports baseline/open/closed and cold loads separately, <=2 ms p95 added warmed CPU and memory caps","AC12: focused tests/strict/parity plus GitHub ci-fast pass; full suite remains nightly; new GPU cases run only when free","Independent cross-family evaluation passes and Mark approves combined dev-build visuals before design/plan/index/changelog/canon landing","No completion claim while required review or visual acceptance remains pending"],
-      "passes":null,"started":null,"completed":null,"notes":null
+      "id": "TS11_REVIEW",
+      "description": "Collect measured evidence, independent cross-family evaluation and Mark's combined dev-build visual acceptance before landing",
+      "estimated_loc": 100,
+      "dependencies": [
+        "TS0_SOURCE",
+        "TS1_COORDS",
+        "TS2_INDEX",
+        "TS3_TILES",
+        "TS4_IDENTITY",
+        "TS5_LIVE",
+        "TS6_ARCHIVE",
+        "TS7_MAP",
+        "TS8_INSPECTION",
+        "TS9_ACCESS",
+        "TS10_PACKAGE"
+      ],
+      "acceptance_criteria": [
+        "AC10: telescope-capture validates three sizes and required views; all renders opened and recorded",
+        "AC11: telescope-bench reports baseline/open/closed and cold loads separately, <=2 ms p95 added warmed CPU and memory caps",
+        "AC12: focused tests/strict/parity plus GitHub ci-fast pass; full suite remains nightly; new GPU cases run only when free",
+        "Independent cross-family evaluation passes and Mark approves combined dev-build visuals before design/plan/index/changelog/canon landing",
+        "No completion claim while required review or visual acceptance remains pending"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     }
   ],
   "handoff": {
@@ -158,6 +438,10 @@
     "next_milestone": "TS0_SOURCE",
     "sent": false
   },
-  "progress": {"total":12,"completed":0,"percentage":0},
+  "progress": {
+    "total": 12,
+    "completed": 1,
+    "percentage": 8
+  },
   "evaluation": null
 }

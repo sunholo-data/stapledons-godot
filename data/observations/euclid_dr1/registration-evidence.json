@@ -1,0 +1,232 @@
+{
+  "scope": "Scratch independent oracle only. No repository writes; not a production pipeline step.",
+  "release": "DR1_R2 / DR1-Foundation 2026",
+  "field": "Abell3128 vicinity; cutout centre ICRS 52.5,-52.6 degrees",
+  "documentation": [
+    "https://euclid.dataspace.esa.int/public-eds-help/Euclid_Science_Archive_User_Guide.html",
+    "https://euclid.dataspace.esa.int/public-eds-help/ADQL_from_the_command_line.html",
+    "https://euclid.dataspace.esa.int/public-eds-help/Images.html",
+    "https://euclid.esac.esa.int/dr/dr1/dpdd/merdpd/dpcards/mer_bksmosaic.html",
+    "https://docs.astropy.org/projects/astroquery/en/latest/esa/euclid/euclid.html",
+    "https://raw.githubusercontent.com/astropy/astroquery/main/astroquery/esa/euclid/core.py"
+  ],
+  "catalogue_url": "https://eas.esac.esa.int/tap-server/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=csv&QUERY=SELECT+TOP+40+object_id%2Cright_ascension%2Cdeclination%2Ctile_index%2Cvis_det%2Cpoint_like_prob%2Cextended_flag%2Cspurious_flag%2Cdet_quality_flag+FROM+dr1.mer_catalogue_wide_survey+WHERE+right_ascension+BETWEEN+52.49+AND+52.51+AND+declination+BETWEEN+-52.61+AND+-52.59",
+  "catalogue_query": "SELECT TOP 40 object_id,right_ascension,declination,tile_index,vis_det,point_like_prob,extended_flag,spurious_flag,det_quality_flag FROM dr1.mer_catalogue_wide_survey WHERE right_ascension BETWEEN 52.49 AND 52.51 AND declination BETWEEN -52.61 AND -52.59",
+  "product_url": "https://eas.esac.esa.int/tap-server/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=csv&QUERY=SELECT+TOP+1+%2A+FROM+dr1.mosaic_product+WHERE+tile_index%3D102017310+AND+instrument_name%3D%27VIS%27",
+  "product_query": "SELECT TOP 1 * FROM dr1.mosaic_product WHERE tile_index=102017310 AND instrument_name='VIS'",
+  "product_path": "/data/euclid/repository_dr1/DR1/R2/MER/102017310/VIS/EUC_MER_BGSUB-MOSAIC-VIS_TILE102017310-A7B894_20250804T120347.883814Z_00.00.fits",
+  "headers": {
+    "SIMPLE": "T",
+    "BITPIX": "-32",
+    "NAXIS": "2",
+    "NAXIS1": "724",
+    "NAXIS2": "724",
+    "EXTEND": "T",
+    "EQUINOX": "2000.00000000",
+    "RADESYS": "ICRS",
+    "CUNIT1": "deg",
+    "CRVAL1": "5.278875050000E+01",
+    "CD1_1": "-2.777777777778E-05",
+    "CD1_2": "0.000000000000E+00",
+    "CUNIT2": "deg",
+    "CRVAL2": "-5.250000000000E+01",
+    "CD2_1": "0.000000000000E+00",
+    "CD2_2": "2.777777777778E-05",
+    "SOFTNAME": "CT_SWarp",
+    "SOFTVERS": "10.2",
+    "SOFTDATE": "2024-03-18",
+    "SOFTAUTH": "2020-2024 Euclid Consortium",
+    "SOFTINST": "Euclid Consortium https:",
+    "AUTHOR": "ial",
+    "ORIGIN": "pr-20.sdcit-prod-ops.altecspace.it",
+    "DATE": "2025-08-04T11:33:14",
+    "COMBINET": "MEDIAN",
+    "BUNIT": "ADU",
+    "RESAMPT1": "BILINEAR",
+    "CENTERT1": "ALL",
+    "PSCALET1": "MEDIAN",
+    "RESAMPT2": "BILINEAR",
+    "CENTERT2": "ALL",
+    "PSCALET2": "MEDIAN",
+    "MAGZERO": "24.5",
+    "FILTER": "VIS",
+    "PPOID": "MER_ProcessTile_EUCLID_2.0.32-DATA_RELEASE-pcasenov-PLAN-000000-LUV&",
+    "DATASETR": "DR1_R2",
+    "PIPDEFID": "MER_ProcessTile_EUCLID_2.0.32",
+    "PPLANID": "MER_ProcessTile_EUCLID_2.0.32-DATA_RELEASE-pcasenov-PLAN-000000",
+    "PSWNAME": "MER_ProcessTile",
+    "PSWREL": "11.3.1",
+    "CRPIX1": "-5951.0",
+    "CRPIX2": "3975.0",
+    "CTYPE1": "RA---TAN",
+    "CTYPE2": "DEC--TAN",
+    "EXTNAME": ""
+  },
+  "observation_start": "2024-07-14T04:37:08.801",
+  "observation_end": "2024-07-15T04:54:15.960",
+  "reference_observation_date": "2024-07-14T06:16:15.311",
+  "licence": "CC BY-NC 3.0 IGO",
+  "credits": "Data from ESA Euclid/Euclid Consortium/NASA/DR1-2026.",
+  "rights_url": "https://www.cosmos.esa.int/web/euclid/dr1-data-credits",
+  "pixel_convention": "FITS CRPIX is 1-based, row orientation bottom-up. Anchor xy values are zero-based; Godot y=height-1-y_fits.",
+  "anchor_method": "Independent analytical TAN using authoritative header and source RA/Dec. Compare empirical image peaks in +/-3px search, subtract median annulus background (Chebyshev radii6..8), unweighted positive-flux centroid in radius3 about detected peak. No Gaussian prior on predicted position. SNR uses annular MAD*1.4826. Five distributed anchors meet SNR>6 and residual<1px. A blended sixth candidate was rejected at residual1.39px; no catalog-provided detector xy exists in inspected schema.",
+  "anchor_limitations": "Not a wcslib/Astropy reference; empirical positions are measurements with pixel-level tolerance, not exact truth. Nonzero DET_QUALITY_FLAG512 flags possible corruption of MAG_STARGAL_SEP, so morphology is not inferred. Store source flag/probability values without a clean/galaxy assertion.",
+  "anchors": [
+    {
+      "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524917322525922548",
+      "object_id": "-524917322525922548",
+      "tile_index": "102017310",
+      "ra_deg": 52.49173224571941,
+      "dec_deg": -52.59225486229888,
+      "expected_fits_zero_based_xy": [
+        543.6214203582722,
+        639.4482788747
+      ],
+      "measured_fits_zero_based_xy": [
+        543.8070890903718,
+        639.766201653581
+      ],
+      "measured_godot_zero_based_xy": [
+        543.8070890903718,
+        83.23379834641901
+      ],
+      "residual_px": 0.36816812927099113,
+      "peak_snr": 6.801331656841878,
+      "det_quality_flag": "512",
+      "point_like_prob": "1.075479417522729E-6"
+    },
+    {
+      "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524951615526029436",
+      "object_id": "-524951615526029436",
+      "tile_index": "102017310",
+      "ra_deg": 52.49516153451485,
+      "dec_deg": -52.602943682621635,
+      "expected_fits_zero_based_xy": [
+        467.0604411137465,
+        254.95798384947284
+      ],
+      "measured_fits_zero_based_xy": [
+        467.05371934321306,
+        254.95980861757346
+      ],
+      "measured_godot_zero_based_xy": [
+        467.05371934321306,
+        468.04019138242654
+      ],
+      "residual_px": 0.006965054036053372,
+      "peak_snr": 15.514860935547118,
+      "det_quality_flag": "512",
+      "point_like_prob": "0.025692399591207504"
+    },
+    {
+      "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-525046902526047878",
+      "object_id": "-525046902526047878",
+      "tile_index": "102017310",
+      "ra_deg": 52.50469028742163,
+      "dec_deg": -52.60478789109956,
+      "expected_fits_zero_based_xy": [
+        258.4614439434199,
+        189.40081939305037
+      ],
+      "measured_fits_zero_based_xy": [
+        258.2003523090333,
+        189.20824207348704
+      ],
+      "measured_godot_zero_based_xy": [
+        258.2003523090333,
+        533.7917579265129
+      ],
+      "residual_px": 0.3244300626589194,
+      "peak_snr": 18.370688605252194,
+      "det_quality_flag": "512",
+      "point_like_prob": "0.009256277233362198"
+    },
+    {
+      "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524910541526083866",
+      "object_id": "-524910541526083866",
+      "tile_index": "102017310",
+      "ra_deg": 52.49105413229542,
+      "dec_deg": -52.60838661917309,
+      "expected_fits_zero_based_xy": [
+        556.0574955302427,
+        58.64415275198235
+      ],
+      "measured_fits_zero_based_xy": [
+        555.9593529304384,
+        58.73833523696428
+      ],
+      "measured_godot_zero_based_xy": [
+        555.9593529304384,
+        664.2616647630357
+      ],
+      "residual_px": 0.13602319792491457,
+      "peak_snr": 37.377408682792904,
+      "det_quality_flag": "512",
+      "point_like_prob": "0.0042128670029342175"
+    },
+    {
+      "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-525091456525955019",
+      "object_id": "-525091456525955019",
+      "tile_index": "102017310",
+      "ra_deg": 52.50914561860414,
+      "dec_deg": -52.5955019864996,
+      "expected_fits_zero_based_xy": [
+        162.34787393608258,
+        524.0740320903224
+      ],
+      "measured_fits_zero_based_xy": [
+        162.52238015875085,
+        523.989037640674
+      ],
+      "measured_godot_zero_based_xy": [
+        162.52238015875085,
+        199.01096235932596
+      ],
+      "residual_px": 0.19410429727589465,
+      "peak_snr": 6.136106069567249,
+      "det_quality_flag": "512",
+      "point_like_prob": "1.1794792953878641E-4"
+    }
+  ],
+  "source_rows": 40,
+  "assets": [
+    {
+      "local_path": "/tmp/euclid-probe-abell-cutout.fits",
+      "bytes": 2105280,
+      "sha256": "529e7a571d083d3788362700e467674fe0ee1df6098d011ce99222280221b57a",
+      "url": "https://eas.esac.esa.int/sas-cutout/cutout?TAPCLIENT=ASTROQUERY&FILEPATH=%2Fdata%2Feuclid%2Frepository_dr1%2FDR1%2FR2%2FMER%2F102017310%2FVIS%2FEUC_MER_BGSUB-MOSAIC-VIS_TILE102017310-A7B894_20250804T120347.883814Z_00.00.fits&POS=CIRCLE%2C52.5%2C-52.6%2C0.01",
+      "header_bytes": 5760,
+      "width": 724,
+      "height": 724,
+      "crpix": [
+        -5951.0,
+        3975.0
+      ]
+    },
+    {
+      "local_path": "/tmp/euclid-probe-abell-wide.fits",
+      "bytes": 8383680,
+      "sha256": "b43c6304df1f4024b13bd8d4263830d8d2ea053d796d67b996c499633c3a0519",
+      "url": "https://eas.esac.esa.int/sas-cutout/cutout?TAPCLIENT=ASTROQUERY&FILEPATH=%2Fdata%2Feuclid%2Frepository_dr1%2FDR1%2FR2%2FMER%2F102017310%2FVIS%2FEUC_MER_BGSUB-MOSAIC-VIS_TILE102017310-A7B894_20250804T120347.883814Z_00.00.fits&POS=CIRCLE%2C52.5%2C-52.6%2C0.02",
+      "header_bytes": 5760,
+      "width": 1447,
+      "height": 1447,
+      "crpix": [
+        -5590.0,
+        4337.0
+      ]
+    }
+  ],
+  "identity_warning": "IRSA schema explicitly says object_id not guaranteed unique. Use release/table/tile/object composite, reject duplicate ambiguity; cntr is unique IRSA counter when using its tables.",
+  "jpeg_probe": "One request with FORMAT=image/jpeg returned HTTP200 but FITS SIMPLE magic. No documented rendered-format option found.",
+  "euclid-probe-eds-abell3128-quality.csv": {
+    "local_path": "/tmp/euclid-probe-eds-abell3128-quality.csv",
+    "bytes": 3743,
+    "sha256": "51cd1972fbbc4e2cdbca315b8090d4d09043b19cf4b0456808726fe728b25444"
+  },
+  "euclid-probe-eds-abell3128-product.csv": {
+    "local_path": "/tmp/euclid-probe-eds-abell3128-product.csv",
+    "bytes": 1566,
+    "sha256": "249538eb29ba6189ad32f0369919d34a7711196044f82d1aa9cd5a9bdbd3a3d5"
+  }
+}

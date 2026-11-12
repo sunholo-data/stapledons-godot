@@ -73,13 +73,15 @@ No simulation/NDJSON minor bump in this sprint. Host session metadata pins the o
 
 All paths below are intended implementation files, not files created by this plan. Existing giant coordinator scripts receive narrow hooks; keep substantial behaviour in the named companion files. Every milestone records actual counts, time and evidence in the JSON before setting `passes: true`.
 
-### TS0_SOURCE — prove one real registered observation (150 LOC; 1–2 investigation runs)
+### TS0_SOURCE — prove one real registered observation (150 LOC estimate; completed 2026-11-12)
 
 Files/examples: `data/observations/euclid_dr1/{sources.csv,objects.csv,manifest.json,SHA256SUMS,credits.md}`, `tools/observation_pack_verify.gd` and `.uid`, bounded source-download shell glue. Large bytes stay in ignored scratch/content-addressed assets.
 
 First write a small verifier that rejects missing/changed hashes, absent rights, unsupported projection and a bad registration anchor; show those red cases using labelled fixtures. Retrieve a real field and real associated rows using the documented API/table route; preserve original columns, schema/quality definitions, query, source date, hashes and IDs. Verify at least five independent anchor positions across a supported plate and two actual zoom levels; no caption-only registration. Log sizes/format and the source URL for each. Read-only external requests are allowed; no account creation or credential dependency.
 
 Gate/example: `make observation-pack-verify` (**new**, 180 s local bound after explicit downloads); M81 is first choice, a genuine supported cutout in another selected field is an allowed technical fallback. At least one registered field is mandatory; do not defer it away. Design AC1, source part of AC9. Fail TS0 and stop its dependents if proof fails.
+
+**Checkpoint:** real DR1 Abell 3128 cutout (724², 2.1 MB) and 40 raw catalogue rows; five distributed measured centroids agree within 0.369 source pixel. Independently dated ICRS TAN WCS retained. Four plates cover the three curated fields: registered Abell science field plus three explicitly unregistered colour outreach images. `observation-pack-verify`: 4 plates/5 anchor objects/0 failures; `observation-pack-test`:14/0; `observation-fits-test`:7/0. Source-verifier behavioural red was 1/5, and a later false-residual control was 13/1 before the fix. Runtime loaded actual science bytes into two prepared resolutions. A narrow offline Godot FITS reader was added because the documented cutout service ignores a JPEG format request; no general FITS/parser or runtime science-image dependency. Scope refinement is documented in the design. Package/importer work continues in parallel with rectangle-only tile work.
 
 ### TS1_COORDS — package projection and independent coordinates (250 LOC; 1–2 runs)
 

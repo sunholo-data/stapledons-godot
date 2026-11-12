@@ -35,6 +35,7 @@ include mk/captain-anim.mk
 include mk/captain-command.mk
 include mk/style.mk
 include mk/star-surfaces.mk
+include mk/observations.mk
 include mk/levels.mk
 include mk/commons-civic.mk
 include mk/npc-painted.mk
