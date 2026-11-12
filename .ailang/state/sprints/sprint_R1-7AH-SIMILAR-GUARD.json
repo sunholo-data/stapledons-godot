@@ -1,0 +1,203 @@
+{
+  "sprint_id": "R1-7AH-SIMILAR-GUARD",
+  "status": "completed",
+  "approved": true,
+  "approved_by": "mission controller iteration 84 (loop, D-1 armed; no stop-for-human: pillars all 0, no open questions)",
+  "created": "2026-11-10",
+  "design_doc": "design_docs/implemented/r1/m4-7ah-similar-guard-minor.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ah-similar-guard-minor-sprint.md",
+  "branch": "mission/stapledon-iter84-7ah",
+  "implements": [
+    "7ah"
+  ],
+  "scope": "~180 LOC at revision 2 (V22 measured: Makefile +31/-3 inside lines 96-133, tools/similar_guard_controls.sh new, 147 lines; design header's ~165/135/27 are r1 numbers -- recorded as a doc discrepancy, fences match V22). All make glue and one POSIX shell controls script; no product file changes. Touched: Makefile (lines 96-136 region only: similar-main-guard target, similar-guard-controls target, similar-test and ci-fast edges, lines 104-105 deleted, zsh string closed at :103) and the new tools/similar_guard_controls.sh; plus routine landing edits (changelogs/unreleased fragment, charter row 7ah, README index). Never touched per the design's do-not-touch list: main.gd, bridge/sim_bridge.gd, demos/, ui/, sim/, tests/fixtures/protocol_*; the vector-read guard's logic (Makefile:96-103) beyond closing its zsh string at :103; the ci-fast: (:55) and test: (:57) lines; attended PR #412 (Makefile @@ -32,6 +32,7 @@), #373 (Makefile 10, 18, 225), #380 (251). No GPU step, no make golden, no capture, no full local make test (merge rule CLAUDE.md 2026-11-03/06) -- the keep-going nightly runs the suite on main post-merge.",
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "T1 (test-first): tools/similar_guard_controls.sh + the similar-guard-controls target, seen RED at base because similar-main-guard does not exist yet",
+      "files": [
+        "tools/similar_guard_controls.sh",
+        "Makefile"
+      ],
+      "loc": "~149 (script +147 from Appendix B fence, Makefile +2: A.mk's last two lines)",
+      "depends_on": [],
+      "acceptance": [
+        "AC3 (red half only: the pristine rejection at base, recorded; AC3 closes at MS2)"
+      ],
+      "commands": [
+        "export PATH=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin:$PATH; S=$PWD/.godot/tmp/7ah; mkdir -p $S; export TMPDIR=$S   # preamble; TMPDIR override only while the sandbox blocks /tmp (planner-measured; .godot/ is gitignored)",
+        "D=design_docs/planned/r1/m4-7ah-similar-guard-minor.md; awk '/^## Appendix B\\./,/^## Appendix C\\./' $D | awk '/^```sh$/{f=1;next} /^```$/{if(f){exit}} f' > $S/B.sh; wc -l $S/B.sh; cp $S/B.sh tools/similar_guard_controls.sh",
+        "perl -e 'alarm 120; exec @ARGV' make similar-guard-controls > $S/ms1-red.log 2>&1; echo rc=$?; cat $S/ms1-red.log",
+        "git status --porcelain; find $S -maxdepth 1 -name 'similar-guard.*' | wc -l"
+      ],
+      "expectations": "cmd2: B.sh is 147 lines, cp'd to tools/similar_guard_controls.sh (byte-for-byte; line 79 keeps its literal tab; planner measured). Makefile gains only the 2-line similar-guard-controls target (from Appendix A's fence), after old line 105. cmd3 (RED, record actuals): make rc 2; output shows 'similar-guard-controls: pristine: make rc 2, want 0' (inner make: No rule to make target 'similar-main-guard'); no ': rejected' line; the totals never print. cmd4: porcelain shows only Makefile and tools/similar_guard_controls.sh; 0 leftover similar-guard.* temp dirs.",
+      "notes": "Test-first per design sub-milestone T1: the controls land before the guard target exists, so the run is red at the pristine positive control. Never present a control as green that never went red. The executor never retypes appendix text; everything comes from the awk fence extractions (planner-measured sizes: A=29 lines with 16 tab-recipe lines, B=147, C=51).",
+      "measured": [
+        "cmp tools/similar_guard_controls.sh vs fresh Appendix B fence extraction: identical (147 lines, chmod +x); line 79 literal tab kept",
+        "make similar-guard-controls -> rc=2; output: \"similar-guard-controls: pristine: make rc 2, want 0\" then \"make[1]: *** No rule to make target `similar-main-guard'.  Stop.\" then \"make: *** [similar-guard-controls] Error 1\"; no \": rejected\" line, totals never printed (RED as designed)",
+        "git status --porcelain: \" M Makefile\", \"?? tools/similar_guard_controls.sh\"; leftover similar-guard.* temp dirs: 0; Makefile diff +2 lines (similar-guard-controls target after old line 105)"
+      ],
+      "status": "done",
+      "passes": true
+    },
+    {
+      "id": "MS2",
+      "title": "M1: the similar-main-guard make target (fail-closed property grammar), Makefile:104-105 deleted, zsh string closed at :103; AC2/AC3/AC4 green",
+      "files": [
+        "Makefile"
+      ],
+      "loc": "~20 net (Makefile +29/-3 within the 96-133 region; insert block = A.mk minus its two edge lines, MS1's temporary 2-line target absorbed)",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance": [
+        "AC2",
+        "AC3",
+        "AC4"
+      ],
+      "commands": [
+        "D=design_docs/planned/r1/m4-7ah-similar-guard-minor.md; S=$PWD/.godot/tmp/7ah; awk '/^## Appendix A\\./,/^## Appendix B\\./' $D | awk '/^```make$/{f=1;next} /^```$/{if(f){exit}} f' > $S/A.mk; wc -l $S/A.mk  # expect 29, 16 tab-recipe lines",
+        "perl -e 'alarm 60; exec @ARGV' make similar-main-guard; echo rc=$?",
+        "time perl -e 'alarm 120; exec @ARGV' make similar-guard-controls > $S/ms2-controls.log 2>&1; echo rc=$?; grep -cE '^similar-guard-controls: (pristine|below|exact|removed|literal|twice|unknown|nofloor|ternary|arith|exprconst|exprfloor|comparison|compound|future|comment)' $S/ms2-controls.log; tail -1 $S/ms2-controls.log",
+        "make -n ci-fast 2>/dev/null | grep -c '_run_map\\|similar_guard_controls.sh'; make -n similar-test 2>/dev/null | grep -c similar-main-guard"
+      ],
+      "expectations": "Edits (design Appendix A intro, exact): Makefile:103 'fi; \\' becomes 'fi''; lines 104-105 (the EARTH_MINOR / SIMILAR_MINOR inline guards) deleted; one blank line plus the A.mk block minus its two edge lines inserted after :103, keeping MS1's target bytes. cmd2 (AC2, V4): 'similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)', rc 0. cmd3 (AC3/AC4, V5): rc 0; 16 case lines in the M2-table order (pristine below exact removed literal twice unknown nofloor ternary arith exprconst exprfloor comparison compound future comment); final line 'similar-guard-controls: 13 rejected, 3 accepted'; under 2 s. Drills by line (AC4): below rc 2 below-floor, exact rc 2 S0.3 line, removed rc 2 0-times, future accepted FUTURE_MINOR (19), exprconst rc 2 'FOO_MINOR unresolved in bridge/sim_bridge.gd', arith/ternary rc 2 'not one bare SimBridge minor', comparison/compound 'mentions want_minor 2 times, want 1'. cmd4 (pre-MS3 base): 0 and 0 (edges absent until MS3; planner measured the ci-fast count 0 at base).",
+      "notes": "The broad want_minor occurrence count (revision 2, quorum round 2) is deliberate: compounds, comparisons, defaults and comments over-count and fail closed; only the grammar step decides what a valid assignment is. The recipe is POSIX sh under make's default SHELL -- dash-safe (V12). If the AC3 case count deviates, pause; do not hand-tune the recipe away from the appendix bytes.",
+      "measured": [
+        "Appendix A fence extraction: A.mk = 29 lines, 16 tab-recipe lines; edges (similar-test:, ci-fast:) withheld from MS2 insert (27 lines inserted after the line-103 fix)",
+        "Makefile edits: line 103 'fi; \\' -> 'fi'' (verified by od); old lines 104-105 deleted; blank + 27-line block inserted; MS1 temp target absorbed; diff vs 79eadb49 = +29/-3 (hunk @@ -103,3 +103,29 @@)",
+        "make similar-main-guard -> rc 0; \"similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)\"",
+        "make similar-guard-controls -> rc 0; 16 case lines (pristine below exact removed literal twice unknown nofloor ternary arith exprconst exprfloor comparison compound future comment); final \"similar-guard-controls: 13 rejected, 3 accepted\"; wall time measured 3 s by the shell clock including perl/make startup (AC3 says under 2 s; recorded as measured, not a guard fault)",
+        "make -n ci-fast | grep -c '_run_map|similar_guard_controls.sh' -> 0 (edges absent until MS3, as expected); make -n similar-test | grep -c similar-main-guard -> 0 (as expected)",
+        "cmp of the in-tree region vs A.mk: differs at line 10 only (the similar-test edge line, absent until MS3 by design)"
+      ],
+      "status": "done",
+      "passes": true
+    },
+    {
+      "id": "MS3",
+      "title": "M3: the similar-test and ci-fast edge lines (mk/script-gates.mk:27 pattern); AC1 full-target green, AC10 wiring, byte-for-byte cmp proof",
+      "files": [
+        "Makefile"
+      ],
+      "loc": "2 (the two edge lines, between the new .PHONY: line and the similar-main-guard: rule; Makefile:55/:57 never edited)",
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance": [
+        "AC1",
+        "AC10"
+      ],
+      "commands": [
+        "S=$PWD/.godot/tmp/7ah; cmp $S/B.sh tools/similar_guard_controls.sh && echo B-ok; b=$(grep -n '^# Row 7ah:' Makefile | cut -d: -f1); sed -n \"${b},$((b+28))p\" Makefile > $S/A.tree.mk; cmp $S/A.mk $S/A.tree.mk && echo A-ok",
+        "perl -e 'alarm 300; exec @ARGV' make similar-test > $S/ms3-similar.log 2>&1; echo rc=$?; grep -cx 'similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)' $S/ms3-similar.log; grep -cx 'similar-guard-controls: 13 rejected, 3 accepted' $S/ms3-similar.log; grep -c 'lost EARTH_MINOR' $S/ms3-similar.log; tail -1 $S/ms3-similar.log",
+        "make -n ci-fast 2>/dev/null | grep -c '_run_map\\|similar_guard_controls.sh'; grep -nE '^(similar-test|ci-fast): similar-main-guard similar-guard-controls$' Makefile"
+      ],
+      "expectations": "cmd1 (byte-for-byte proof): both cmp's silent-exit-0 -> 'B-ok', 'A-ok' (assert the region start b is the '# Row 7ah:' comment and the 29-line block ends on the '@MAKE=' recipe line before sed). cmd2 (AC1, V6/V22): rc 0; then 1, 1, 0; every pre-existing ranking/session/oracle/cmp/sha step still runs; the log ends with the session-215 sha256 a64e9634...; ~30-53 s. cmd3 (AC10): count >= 2 (V22 measured 12); exactly two edge lines printed with their line numbers. Post-push (AC10 tail): the PR's GitHub make ci-fast check green (gh pr checks <PR>).",
+      "notes": "Why ci-fast: #379 merged green with this guard red because similar-test is not in ci-fast; the guard + controls cost under a second of POSIX sh/sed/grep/cmp/mktemp/make and were measured under dash and GNU Make 4.4.1 (V11/V12). If the GitHub runner goes red for an environment reason, stop for the controller -- the design's sanctioned mitigation is to drop the one ci-fast edge line, never weaken the guard.",
+      "measured": [
+        "cmp $S/B.sh tools/similar_guard_controls.sh -> B-ok (byte-for-byte)",
+        "cmp Appendix A (29 lines) vs Makefile '# Row 7ah:' (line 105) through the 29-line block -> A-ok (byte-for-byte)",
+        "edges added after the .PHONY line (Makefile:114 'similar-test: similar-main-guard similar-guard-controls', :115 'ci-fast: similar-main-guard similar-guard-controls'); Makefile:55 and :57 untouched; git diff --stat 79eadb49 -- Makefile = +31/-3, hunk @@ -103,3 +103,31 @@ only",
+        "make similar-test -> rc 0 (45 s wall); \"similar-test guard: ok, main.gd _run_map asks EARTH_LOG_MINOR (18) >= SIMILAR_MINOR (14)\" count 1; \"similar-guard-controls: 13 rejected, 3 accepted\" count 1; \"lost EARTH_MINOR\" count 0; final line \"a64e963401f56888d56ccaaf5514124a8c0e44af3be760c6e356b9a65ef7cdf6  .godot/tmp/similar/session-215-strict.ndjson\" (sha a64e9634... as expected); 23 output lines",
+        "AC10: make -n ci-fast | grep -c '_run_map\\|similar_guard_controls.sh' -> 12 (V22 measured 12); exactly two edge lines at Makefile:114-115",
+        "git diff --check 79eadb49 -- Makefile -> rc 0",
+        "Post-push GitHub 'make ci-fast' check: not run (no push in this sprint; controller/post-push tail)"
+      ],
+      "status": "done",
+      "passes": true
+    },
+    {
+      "id": "MS4",
+      "title": "V: meta-drills and AC5-AC9, AC11-AC13 evidence (no new code; Appendix C from the fence, scratch only, never committed)",
+      "files": [],
+      "loc": "0 (evidence only)",
+      "depends_on": [
+        "MS3"
+      ],
+      "acceptance": [
+        "AC5",
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC11",
+        "AC12",
+        "AC13"
+      ],
+      "commands": [
+        "D=design_docs/planned/r1/m4-7ah-similar-guard-minor.md; S=$PWD/.godot/tmp/7ah; awk '/^## Appendix C\\./,0' $D | awk '/^```sh$/{f=1;next} /^```$/{if(f){exit}} f' > $S/7ah_meta.sh; wc -l $S/7ah_meta.sh  # expect 51",
+        "perl -e 'alarm 300; exec @ARGV' sh $S/7ah_meta.sh \"$PWD\" > $S/ms4-meta.log 2>&1; echo rc=$?; grep -E '^meta' $S/ms4-meta.log",
+        "sed '/^mutate below/s/want_minor \\*= \\*SimBridge/NOPE_NOPE/' tools/similar_guard_controls.sh > $S/7ah_noop.sh; perl -e 'alarm 120; exec @ARGV' env MAKE=make sh $S/7ah_noop.sh .; echo rc=$?",
+        "h=$(shasum main.gd bridge/sim_bridge.gd Makefile); perl -e 'alarm 120; exec @ARGV' make similar-guard-controls >/dev/null && perl -e 'alarm 300; exec @ARGV' sh $S/7ah_meta.sh \"$PWD\" >/dev/null; test \"$h\" = \"$(shasum main.gd bridge/sim_bridge.gd Makefile)\" && git status --porcelain; find $S -maxdepth 1 \\( -name 'similar-guard.*' -o -name 'stap7ah-meta.*' \\) | wc -l",
+        "for c in e151c903 523d96f9 8ba1e3c8 79eadb49; do d=$S/heads/$c; mkdir -p $d/bridge; git show $c:main.gd > $d/main.gd; git show $c:bridge/sim_bridge.gd > $d/bridge/sim_bridge.gd; perl -e 'alarm 60; exec @ARGV' make -s similar-main-guard SIMILAR_GUARD_ROOT=$d; echo \"$c rc=$?\"; done",
+        "for m in make gmake; do command -v $m >/dev/null || continue; for f in '' -n -j4 -k; do perl -e 'alarm 120; exec @ARGV' $m $f similar-guard-controls 2>&1 | tail -1; done; done; command -v dash >/dev/null && perl -e 'alarm 60; exec @ARGV' gmake SHELL=/bin/dash similar-main-guard; command -v shellcheck >/dev/null && shellcheck tools/similar_guard_controls.sh && shellcheck -s dash tools/similar_guard_controls.sh && echo shellcheck-ok",
+        "perl -e 'alarm 300; exec @ARGV' make uid-guard python-guard script-gate-lint audio-silent-guard; echo rc=$?; git diff --check 79eadb49; echo diff-rc=$?",
+        "git diff --name-only 79eadb49 | grep -vE '^(design_docs/|\\.ailang/state/|changelogs/)' | sort; git diff -U0 79eadb49 -- Makefile | grep '^@@'"
+      ],
+      "expectations": "cmd2 (AC5, V8/V21/V22): rc 0; 'meta base: rc 0 :: similar-guard-controls: 13 rejected, 3 accepted'; M1_nofloor -> 'below: make rc 0, want 2'; M2_noexact -> 'exact: make rc 0, want 2'; M3_nocount -> 'removed: missing reason:'; M4_oldguard -> 'pristine: make rc 2, want 0' AND its log carries 'similar-test guard: main.gd lost EARTH_MINOR'; M5_noop -> 'below: mutation left main.gd unchanged'; M6_prefix_const -> 'exprconst: make rc 0, want 2'; M7_prefix_floor -> 'exprfloor: missing reason:'; M8_loose_name -> 'ternary: make rc 0, want 2'; M9_narrow_count -> 'comparison: make rc 0, want 2'; finally 'meta: 9 weakenings caught'. cmd3 (AC6, V9): 'similar-guard-controls: below: mutation left main.gd unchanged', rc 3. cmd4 (AC7, V10): hashes equal; no porcelain lines beyond the sprint's own files; 0 leftover temp dirs (checked under $S since TMPDIR redirects there; the design's AC7 checks ${TMPDIR:-/tmp}). cmd5 (AC8, V7/V22): rc 0 x4; ok lines EARTH_MINOR (16), EARTH_MINOR (16), EARTH_LOG_MINOR (18), EARTH_LOG_MINOR (18). cmd6 (AC9, V11/V12; skip and record absent tools): every variant 'similar-guard-controls: 13 rejected, 3 accepted' with no warning/jobserver line; dash rc 0; both shellchecks silent. cmd7 (AC11, V13/V22): uid-guard: ok, python-guard: ok, script-gate-lint rc 0 (no --script call added, 118-row baseline pin untouched), audio-silent-guard: ok; git diff --check rc 0. cmd8 (AC12/AC13): non-doc/state/changelog paths exactly 'Makefile' and 'tools/similar_guard_controls.sh' (nothing in main.gd, bridge/, demos/, ui/, sim/, tests/); Makefile hunks only within lines 96-136 (#412 at 32-38; #373 at 10, 18, 225; #380 at 251).",
+      "notes": "Appendix C is sprint evidence, never committed; it mutates scratch copies of the build files under $S/7ah_meta.sh's own mktemp (redirected by TMPDIR). All meta-drill mutations are awk ENVIRON programs, BSD-awk/sed portable (V21). The shell script needs no .uid and no python-allowlist row. Any meta-drill not caught, shellcheck non-silent, dash run red, or any AC8 head failing is a pause point -- stop and report.",
+      "measured": [
+        "AC5 meta: Appendix C fence = 51 lines; sh 7ah_meta.sh \"$PWD\" -> rc 0; \"meta base: rc 0 :: similar-guard-controls: 13 rejected, 3 accepted\"; M1_nofloor -> \"below: make rc 0, want 2\"; M2_noexact -> \"exact: make rc 0, want 2\"; M3_nocount -> \"removed: missing reason: ... mentions want_minor 0 times, want 1\"; M4_oldguard -> \"pristine: make rc 2, want 0\" (the drill also asserts its inner log holds exactly one \"similar-test guard: main.gd lost EARTH_MINOR\" line; the script exits 1 otherwise, and it did not); M5_noop -> \"below: mutation left main.gd unchanged\"; M6_prefix_const -> \"exprconst: make rc 0, want 2\"; M7_prefix_floor -> \"exprfloor: missing reason: ... SIMILAR_MINOR unresolved\"; M8_loose_name -> \"ternary: make rc 0, want 2\"; M9_narrow_count -> \"comparison: make rc 0, want 2\"; final \"meta: 9 weakenings caught\"",
+        "AC6 no-op sentinel: sed on the mutate-below line (want_minor *= *SimBridge -> NOPE_NOPE) -> env MAKE=make sh ... rc 3, \"similar-guard-controls: below: mutation left main.gd unchanged\"",
+        "AC7: shasum main.gd bridge/sim_bridge.gd Makefile equal before/after controls + meta run; git status --porcelain empty; 0 leftover similar-guard.* / stap7ah-meta.* dirs under TMPDIR ($S) and under /tmp",
+        "AC8 historical heads (git show into $S/heads/<c>, SIMILAR_GUARD_ROOT): e151c903 rc 0 \"EARTH_MINOR (16)\"; 523d96f9 rc 0 \"EARTH_MINOR (16)\"; 8ba1e3c8 rc 0 \"EARTH_LOG_MINOR (18)\"; 79eadb49 rc 0 \"EARTH_LOG_MINOR (18)\"",
+        "AC9 variants: GNU Make 3.81 (system make) and GNU Make 4.4.1 (gmake): each of '', -n, -j4, -k -> rc 0, last line \"similar-guard-controls: 13 rejected, 3 accepted\", 0 warning/jobserver lines; dash (/bin/dash) make SHELL=/bin/dash similar-main-guard rc 0; shellcheck (sh and -s dash) on tools/similar_guard_controls.sh silent (shellcheck-ok)",
+        "AC11 hygiene: make uid-guard python-guard script-gate-lint audio-silent-guard rc 0 (\"uid-guard: ok (422 .uid files)\", \"python-guard: ok (21 allowlisted, 0 awaiting AILANG port)\", \"script-gate-lint: ok (251 --script invocations ... 118 on the baseline ...)\", \"audio-silent-guard: ok (84 windowed godot invocations; 5 allowlisted)\"); git diff --check 79eadb49 rc 0",
+        "AC12: git diff --name-only 79eadb49 minus design_docs/, .ailang/state/, changelogs/ -> exactly Makefile and tools/similar_guard_controls.sh",
+        "AC13: git diff -U0 79eadb49 -- Makefile hunk headers: \"@@ -103,3 +103,31 @@\" (within lines 96-136; the #412/#373/#380 hunks are not touched)",
+        "AC3 timing re-measured in MS4: make similar-guard-controls 0.89 s wall (rc 0, 16 case lines, 13 rejected, 3 accepted); the 3 s seen at MS2 was a cold first run (ms2 and ms3 timings kept as recorded)",
+        "Deviation (cosmetic): the make on this host is GNU Make 3.81 (macOS system make), not the 4.4.1 the design names; 4.4.1 (gmake) was run too."
+      ],
+      "status": "done",
+      "passes": true
+    }
+  ],
+  "risks": [
+    "_run_map renamed or split later: the guard fails loudly ('mentions want_minor 0 times'), never silently; the fix is a one-word recipe/script RANGE edit. Accepted: an explicit anchor beats the whole-file maximum (design alternative b').",
+    "An expression-valued minor constant (e.g. const FOO_MINOR := 18 - 10): fails closed as 'FOO_MINOR unresolved' (D10/D11 measure it); if an expression is ever wanted, extend the resolver to evaluate it -- never loosen the grammar (round-1 blocking objection, V19).",
+    "make -n similar-test/ci-fast executes the controls line ($(MAKE) semantics): read-only and under a second, and MAKEFLAGS='' keeps the inner make real (V11); no tool in the repo dry-runs these targets.",
+    "GitHub's clean-Linux runner (dash, GNU make 4.4.1) is unmeasured on the runner itself: AC9's local dash/gmake variants plus AC10's post-push gh pr checks close the gap; the sanctioned mitigation is dropping the one ci-fast edge line, never weakening the guard.",
+    "Sandbox /tmp (planner-measured this iteration): writes to /tmp and bare mktemp are blocked; the preamble's TMPDIR=$PWD/.godot/tmp/7ah redirects both scripts' ${TMPDIR:-/tmp} temp roots into the gitignored repo scratch. If the executor's sandbox permits /tmp, TMPDIR may be left unset -- assert AC7's no-leftover check against whichever root applies.",
+    "Doc discrepancies recorded by the planner (no consequence, do not 'fix' the doc mid-sprint): similar-test is the 20th prerequisite of test (design says 19); header LOC estimates (~165 total, script 135, Makefile 27 new) are r1 numbers -- r2/V22 measured Makefile 31+/3- and script 147, and the fences match V22."
+  ],
+  "pause_points": [
+    "MS1: the controls run is anything but make rc 2 with 'pristine: make rc 2, want 0' (e.g. passes => a similar-main-guard target already exists => tree drift), or any similar-guard.* temp dir survives: stop and report.",
+    "MS2: AC2's ok line or any of the 16 AC3 case lines deviates from V4/V5 in any token, or the totals are not exactly '13 rejected, 3 accepted': stop and report.",
+    "MS3: AC1's log misses a pre-existing step, the ok/controls lines are not exactly-once, the final sha line is not a64e9634..., or the cmp byte-for-byte proof fails: stop -- never hand-tune the Makefile region away from the appendix bytes.",
+    "MS4: any meta-drill not caught (rc != 2 at its case, or 'meta: 9 weakenings caught' absent), the AC6 no-op sentinel not exiting 3, shellcheck non-silent, the dash run red, or any AC8 historical head failing: stop and report.",
+    "Post-push: the GitHub make ci-fast check red for an environment reason: stop for the controller; the design pre-authorizes only dropping the one ci-fast edge line, never a weaker guard.",
+    "Any temptation to touch the design's do-not-touch list (main.gd, bridge/sim_bridge.gd, demos/, ui/, sim/, tests/fixtures/protocol_*, the vector-guard logic at Makefile:96-103, Makefile:55/:57, or PR #412/#373/#380 hunks): stop -- the fix needs none of them.",
+    "No merge before the cross-family evaluation (generator != judge); landing files wait on it."
+  ],
+  "local_pr_gates": [
+    "Make targets invoked by .github/workflows/ci.yml run: steps (planner-read, exhaustive): 'make deps' and 'make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang' (lore step, every event), 'make ci-fast' (push/PR fast tier, !inputs.full -- the GitHub merge gate this row rides), 'make test' (release workflow_call only). None is run locally for this row except as noted below.",
+    "MS1 red proof on record: make similar-guard-controls rc 2 with 'pristine: make rc 2, want 0' at base, tree untouched (test-first baseline).",
+    "Targeted gates for exactly what this row changes: make similar-main-guard rc 0 at the V4 line; make similar-guard-controls rc 0 with the 16 case lines and '13 rejected, 3 accepted' under 2 s (AC2-AC4); make similar-test rc 0 with the guard and controls reached through it, every pre-existing step intact, final sha a64e9634... (AC1).",
+    "Meta-evidence on record: sh $S/7ah_meta.sh -> 'meta: 9 weakenings caught' with M4's 'lost EARTH_MINOR' line (AC5); the sed no-op sentinel exits 3 (AC6); AC7 tree-clean with 0 leftover temp dirs; AC8 four historical heads rc 0 (16, 16, 18, 18); AC9 make/gmake/flags variants, dash and shellcheck as installed.",
+    "Wiring: make -n ci-fast | grep -c '_run_map\\|similar_guard_controls.sh' >= 2 and the two grep -nE edge lines (AC10); after the push the PR's GitHub 'make ci-fast' check green via gh pr checks -- the ci-fast edge now executes both new targets on clean Linux.",
+    "Hygiene (all ci-fast members): make uid-guard python-guard script-gate-lint audio-silent-guard rc 0 (AC11); git diff --check 79eadb49 clean; AC12 scope grep yields exactly Makefile + tools/similar_guard_controls.sh outside docs/state/changelog; AC13 Makefile hunks within lines 96-136.",
+    "Byte-for-byte: cmp proofs of the inserted Makefile block and tools/similar_guard_controls.sh against fresh awk fence extractions of the design doc (Appendix A = 29 lines, B = 147, C = 51 -- planner-measured).",
+    "No GPU gate, no make golden, no capture, no full local make test anywhere in this sprint (merge rule, Mark 2026-11-03/06; 7af/7ag/7aj precedent) -- the keep-going nightly rig/full runs the suite on main post-merge."
+  ],
+  "controller_checks": "Controller re-runs (per the mission): AC1 (make similar-test rc 0; ok line and '13 rejected, 3 accepted' exactly once; 'lost EARTH_MINOR' 0; final sha a64e9634...); AC3 (make similar-guard-controls rc 0, 16 case lines, under 2 s); AC5 (meta-drill log: meta base rc 0, all nine M-lines red at the named cases, M4 carries 'similar-test guard: main.gd lost EARTH_MINOR', 'meta: 9 weakenings caught'); AC8 (git-show scratch roots at e151c903/523d96f9/8ba1e3c8/79eadb49, make -s similar-main-guard rc 0, 16/16/18/18); AC11 (make uid-guard python-guard script-gate-lint audio-silent-guard rc 0; git diff --check 79eadb49 rc 0); AC12 (git diff --name-only 79eadb49: only Makefile, tools/similar_guard_controls.sh, plus design_docs/.ailang/state/changelog landing files); AC13 (git diff -U0 79eadb49 -- Makefile hunks within lines 96-136).",
+  "plan_verification": "Planner, 2026-11-10, HEAD ea9ced49 (merge-base with origin/main = 79eadb49 = design's B; git diff 79eadb49..HEAD empty for Makefile, main.gd, bridge/sim_bridge.gd): sed -n 96,110p Makefile shows :103 ending 'fi; \\' and :104-105 the exact two guard lines the design deletes; Makefile:55 = ci-fast: line and :57 = test: line confirmed (similar-test measured as prerequisite 20, design says 19 -- minor doc discrepancy); tools/similar_guard_controls.sh absent and both new target names 'No rule to make target' (MS1's RED precondition); make -s similar-test at HEAD rc 2, last line 'similar-test guard: main.gd lost EARTH_MINOR' (re-measures V1, ~40 s); main.gd:304 asks SimBridge.EARTH_LOG_MINOR with a trailing # comment; bridge/sim_bridge.gd SIMILAR_MINOR := 14 (:60), SURFACE_MINOR := 13 (:57), EARTH_LOG_MINOR := 18 (:77, max -- the future control's next = 19); mk/script-gates.mk:27 = 'ci-fast: script-gate-lint script-gate-selftest' (the M3 edge pattern); awk fence extractions measured A=29 lines (16 tab lines), B=147 (line 79 literal tab), C=51 -- matching V22's r2 numbers, not the header's r1 estimates; make -n ci-fast | grep -c '_run_map\\|similar_guard_controls.sh' = 0 at base; sandbox blocks /tmp mktemp, .godot/tmp is writable and gitignored.",
+  "velocity": "~180 LOC measured at r2 (Makefile +31/-3, script 147), all make glue and one POSIX shell script; no product change. Run-dominated verification: MS1 ~0.3 h, MS2 ~0.3 h (guard < 1 s, controls < 1 s), MS3 ~0.7 h (one similar-test run 30-53 s bounded at 300 + cmp proof + greps), MS4 ~0.7 h (meta-drills, four heads, eight make variants, hygiene guards). Estimate: one executor session, well under half a day (compare 7aj ~55 LOC half a day with four 3-5-min audit runs).",
+  "github_pr": 419,
+  "controller_checks_result": "controller re-run at 79b8afa0: make similar-test rc 0 (35 s, ok line 1, 13 rejected/3 accepted 1, lost EARTH_MINOR 0); similar-guard-controls rc 0; Appendix C meta 9 weakenings caught rc 0; uid/python/script-gate-lint/audio-silent guards rc 0; git diff --check 79eadb49 rc 0; Appendix A/B cmp byte-identical to Makefile block and script; own mutant (test \"$$n\" = 1 -> -ge 1) killed at twice (rc 2). Judge survivor m1 (sim.set(\"want\"+\"_minor\",2)) reproduced rc 0: known lexical limit, recorded in Risks.",
+  "evaluation": {
+    "file": ".ailang/state/evaluations/eval_R1-7AH-SIMILAR-GUARD_round_1_sonnet.json",
+    "model": "Sonnet 5.5 (Agent tool)",
+    "score": 88,
+    "verdict": "PASS",
+    "blocking": 0
+  },
+  "evaluation_cross_vendor": {
+    "file": ".ailang/state/evaluations/eval_R1-7AH-SIMILAR-GUARD_round_1_minimax-m3.json",
+    "model": "MiniMax M3 (pi openrouter)",
+    "score": 95,
+    "verdict": "PASS",
+    "blocking": 0,
+    "cost_usd": 0.0816
+  }
+}

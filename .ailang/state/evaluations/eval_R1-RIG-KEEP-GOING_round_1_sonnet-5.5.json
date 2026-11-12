@@ -1,0 +1,38 @@
+{
+ "sprint_id":"R1-RIG-KEEP-GOING","commit":"68844afb","judge_model":"claude:sonnet (Agent tool)",
+ "score":86,"pass":true,"implementation_approved":true,
+ "rubric":{"correctness":34,"test_and_mutation_strength":21,"scope_and_plan_fidelity":14,"evidence_honesty":8,"code_quality":9},
+ "findings":[
+  {"id":"F1","blocking":false,"summary":"Doc claim 'single-red issue body reads exactly as it does today' (V20) is only true of the Failing-lines block on a log with <=20 matches and nothing after the last top-level error. The shipped body always adds a 'Failing targets (1): x' line plus blank, and the awk drops matching lines after the last make error.","repro":"printf 'beta: FAIL warn\\nalpha: FAIL one\\nmake: *** [alpha] Error 1\\nafter: FAIL late\\nmake[1]: *** [x] Error 1\\n' > l; run the nightly awk: lines 'after' and 'make[1]' vanish (old grep|tail -30 keeps them)."},
+  {"id":"F2","blocking":false,"summary":"Nightly awk window is 'last 20 matching lines before the error', so a passing target's non-fatal FAIL line bleeds into the next failing target's window; when the watchdog kills make (no final 'make: ***' line) buffered lines are never printed (the tail -20 partly covers it).","repro":"same log: line 1 'beta: FAIL warn (nonfatal, passes)' printed with alpha's error."},
+  {"id":"F3","blocking":false,"summary":"Control gaps: dedupe (awk '!s[$0]++'), the n0 offset against a pre-existing log, and the awk window reset (c = 0) survive mutation in the keep-going control (fixture's nested make[1] lines never reach dedupe; fresh log each run)."}
+ ],
+ "mutants":[
+  {"id":"m1","mut":"drop -k","result":"killed (10)"},
+  {"id":"m2","mut":"tail -n +n0+1 -> cat","result":"survived"},
+  {"id":"m3","mut":"n0+1 -> n0+2","result":"killed (3)"},
+  {"id":"m4","mut":"remove dedupe awk","result":"survived"},
+  {"id":"m5","mut":"drop 3.81/4.x file:line prefix group","result":"killed (10)"},
+  {"id":"m6","mut":"suffix width fixed 1","result":"killed (2)"},
+  {"id":"m7","mut":"rc 124 wording off","result":"killed by test_rig_check test-hang (survives keep-going control alone)"},
+  {"id":"m8","mut":"remove fail-closed line","result":"killed by test_rig_check make-test-red/watchdog-override/test-hang"},
+  {"id":"m9","mut":"remove first-name cut","result":"killed (2)"},
+  {"id":"m10","mut":"remove +K more","result":"killed (6)"},
+  {"id":"m11","mut":"golden log split removed","result":"killed (2)"},
+  {"id":"m12","mut":"nightly Failing targets text","result":"killed (2)"},
+  {"id":"m13","mut":"window cap 20->1","result":"killed (2)"},
+  {"id":"m14","mut":"head -200 -> 3","result":"killed (2)"},
+  {"id":"m15","mut":"match nested make[N] lines","result":"killed (10)"},
+  {"id":"m16","mut":"awk c=0 reset removed","result":"survived"},
+  {"id":"m17","mut":"budget 140-10 -> 140-5","result":"killed (4)"},
+  {"id":"m18","mut":"drop No-rule sed","result":"killed (1)"}
+ ],
+ "commands_run":[
+  "sh -n x4: ok","sh tools/test_rig_keep_going.sh $PWD: 16 cases 0 failures (make 3.81 and 4.4.1)",
+  "sh tools/test_rig_check.sh tools/rig_check.sh: 19 cases 0 failures",
+  "env -u MAKEFLAGS -u MAKELEVEL make rig-check-control: 19 cases 0 failures",
+  "make -k rig-check-control: 19 cases 0 failures",
+  "doc drill: 11 mutant runs as predicted","git diff --check: clean","make python-guard uid-guard: ok",
+  "awk window experiments on hand-made logs (F1,F2)"
+ ]
+}

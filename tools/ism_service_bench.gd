@@ -2,7 +2,7 @@ extends SceneTree
 ## AC19: time warm bytecode-service NDJSON requests, excluding bootstrap costs.
 ## I/O uses the shipped evaluator bridge; pure core is checked strictly separately.
 ## The same actual route and real-time ticks are paired with uniform physics.
-const PLAN := {"k": "plan", "target": {"index": 2, "id": "CNS5:1142",
+const PLAN := {"k": "plan", "target": {"index": 3158, "id": "CNS5:1142",
 	"pos": {"x": -62.516711, "y": -1.060038, "z": -23.064639}},
 	"cruise_phi": 3.8002011672502}
 const REALTIME := 0.05 / 31557600.0

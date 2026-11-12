@@ -11,8 +11,8 @@ extends SceneTree
 ## Every value read here is the sim's; the test compares fields with each other, it computes nothing
 ## the game would show.
 
-const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
-const OFF_RAY := {"index": 2, "id": "CNS5:1676", "pos": {"x": -5.770603, "y": -6.237832, "z": -1.328845}}
+const ALPHA := {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
+const OFF_RAY := {"index": 9, "id": "CNS5:1676", "pos": {"x": -5.770603, "y": -6.237832, "z": -1.328845}}
 const PHI := 2.6466524123622457
 var failures := 0
 var passes := 0

@@ -55,13 +55,13 @@ run() {
   if [ -z "$why" ]; then echo "rig-check control $1: ok"; else echo "rig-check control $1: FAIL ($why)"; fails=$((fails + 1)); fi
 }
 # The rig's 104-character log: the pointer does not fit, so the description is exactly sha and reason.
-run make-test-red 1 failure '01234567: make test failed or ran over 7200s$' '^rig-check: FAIL: make test failed.*\.log\)$' 'AILANG v0.54.14' test "$pad"
+run make-test-red 1 failure '01234567: make test failed \(rc 1; bound 7200s\); no failing target in the log$' '^rig-check: FAIL: make test failed.*\.log\)$' 'AILANG v0.54.14' test "$pad"
 run long-reason 1 failure "01234567: runtime is 'AILANG 0{100}" '^rig-check: FAIL: runtime is ' "AILANG $long" none "$T/r2"
 run long-success 0 success 'make test green on the Studio' '^rig-check: ok, 01234567 green' "AILANG v0.54.14 $long" none "$T/r3"
 # A short log path: the pointer fits, so it is in the description.
 run clone-red-pointer 1 failure '01234567: clone failed \(log: .*/c\.log\)$' '^rig-check: FAIL: clone failed \(log: .*/c\.log\)$' 'AILANG v0.54.14' none "$T/c" clone
 # An explicit RIG_TEST_S still sets the watchdog (the escape hatch, D-126).
-run watchdog-override 1 failure '01234567: make test failed or ran over 60s$' '^rig-check: FAIL: make test failed or ran over 60s ' 'AILANG v0.54.14' test "$pad" '' 60
+run watchdog-override 1 failure '01234567: make test failed \(rc 1; bound 60s\); no failing target in the log$' '^rig-check: FAIL: make test failed \(rc 1; bound 60s\); no failing target in the log' 'AILANG v0.54.14' test "$pad" '' 60
 # refused <case> <state to refuse> <failing make target> <want rc> <want stdout line 1 (ERE)> <want stdout line 2 (exact)>
 refused() {
   : > "$STUB_POSTS"; rc=0
@@ -79,6 +79,14 @@ if sh tools/test_suite_profile.sh > "$T/suite-profile.log" 2>&1; then
 else
   cat "$T/suite-profile.log"
   echo 'rig-check control suite-profile: FAIL (see fixture output)'; fails=$((fails + 1))
+fi
+# Row 7ag: a red make test target must not stop the run before the other targets (make -k) or hide them (the nightly list).
+HERE=$(cd "$(dirname "$0")/.." && pwd -P)
+if sh "$HERE/tools/test_rig_keep_going.sh" "$HERE" > "$T/keep-going.log" 2>&1; then
+  echo 'rig-check control keep-going: ok'
+else
+  cat "$T/keep-going.log"
+  echo 'rig-check control keep-going: FAIL (see fixture output)'; fails=$((fails + 1))
 fi
 # Reaper probe for the hang cases: the pid is gone within a 3 s poll (rc 0), or still alive (rc 1).
 alive() { kill -0 "$1" 2>/dev/null; }
@@ -124,26 +132,26 @@ order() {
 }
 # The golden setup: make runs in GOLDEN_SETUP order, after sky-assets, before golden (the nightly rig/golden path).
 order golden-only-setup --golden-only none 0 'sky-assets deps starmap-assets planet-assets import golden' success 'make golden green'
-order golden-setup --golden none 0 'sky-assets test deps starmap-assets planet-assets import golden' success 'make test \+ make golden green'
+order golden-setup --golden none 0 'sky-assets -k test deps starmap-assets planet-assets import golden' success 'make test \+ make golden green'
 # A failing setup target stops the run before golden; the default SETUP_S is 600 s (RIG_SETUP_S unset here).
 order golden-setup-red --golden-only import 1 'sky-assets deps starmap-assets planet-assets import' failure '01234567: golden setup: make import failed or ran over 600s$'
 # The rig/full path has no setup, so the make test run is unchanged.
-order full-no-setup "" none 0 'sky-assets test' success 'make test green'
+order full-no-setup "" none 0 'sky-assets -k test' success 'make test green'
 # Bounds: a hung setup target, sky-assets or runtime is ended by its bound (2 s here), named, and its child is reaped.
 order setup-hang --golden-only hang:deps 1 'sky-assets deps' failure '01234567: golden setup: make deps failed or ran over 2s$' 2
 order sky-hang --golden-only hang:sky-assets 1 'sky-assets' failure '01234567: rig setup: make sky-assets failed or ran over 2s$' "" 2
 order runtime-hang --golden-only hang:runtime 1 'runtime' failure '01234567: rig setup: make runtime failed or ran over 2s$' "" 2 'AILANG v0.54.11'
 # The rig/full make test and the golden make are bounded too (evaluation round 1). golden-hang's child ignores TERM,
 # so only the KILL escalation ends it: a bound without KILL leaves it alive and the case fails.
-order test-hang "" hang:test 1 'sky-assets test' failure '01234567: make test failed or ran over 2s$' "" "" 'AILANG v0.54.14' 2
+order test-hang "" hang:test 1 'sky-assets -k test' failure '01234567: make test ran over 2s; no failing target in the log$' "" "" 'AILANG v0.54.14' 2
 order golden-hang --golden-only hang-term:golden 1 'sky-assets deps starmap-assets planet-assets import golden' failure '01234567: make golden failed or ran over 2s$' "" "" 'AILANG v0.54.14' "" 2
 # caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52).
-n=17
+n=18
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=18; nrc=0
-  RIG_CHECK_NESTED=1 RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
+  n=19; nrc=0
+  RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 17 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 17 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 18 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 18 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0

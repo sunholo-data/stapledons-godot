@@ -39,6 +39,9 @@ var stars_header: Dictionary = {}
 var stars: Array = []
 var review_seen := {}
 var review_listed := {}
+var audit_route := "scene"
+const MONITOR_KINDS := ["clocks", "signal", "course", "crew"]
+var monitor_totals := {"clocks": 0, "signal": 0, "course": 0, "crew": 0}
 
 
 func normalized(text_value: String) -> String:
@@ -299,6 +302,22 @@ func audit(row: Dictionary) -> void:
 			unbound += 1
 			finding("unbound", str(bad.get_meta("node")), bad.text, row)
 	root_node.free()
+	if audit_route != "control": # 7aj M2: every sampled frame shows every monitor face's bindings
+		var row_faces := {}
+		for b: Dictionary in row.get("bindings", []):
+			var node := str(b.get("node", ""))
+			if str(b.get("field", "")).is_empty(): continue
+			for kind: String in MONITOR_KINDS:
+				if node.contains("/monitor_face_%s/" % kind):
+					row_faces[kind] = true
+					monitor_totals[kind] += 1
+		# A face's labels show by the product's own rule: course only with a plan (CourseFace.refresh),
+		# crew only with crew aboard (CrewFaces.refresh); clocks and signal always. A face shown without its source is not checked here: the orphan
+		# mutant cannot realize it cleanly (7aj M3), so bridge-monitors-test's gated checks cover over-display.
+		var crew_aboard: Variant = GalaxyMap.field_value(view, "earth.crew")
+		var want := {"clocks": true, "signal": true, "course": GalaxyMap.field_value(view, "journey.plan") is Dictionary, "crew": crew_aboard is Array and not crew_aboard.is_empty()}
+		for kind: String in MONITOR_KINDS:
+			if want[kind]: check(row_faces.has(kind), "monitor-coverage frame=%d %s" % [int(row.get("frame", -1)), kind])
 	if transit:
 		for f in ["clock.tau", "clock.year"]: check(fields.has(f), "transit missing " + f)
 		if not fields.has("ship.ism.glow_w_m2"):
@@ -351,12 +370,16 @@ func audit(row: Dictionary) -> void:
 
 func _run() -> void:
 	var args := OS.get_cmdline_user_args()
+	# 7aj AC14 (test-only, inert unless set): MONITOR_AUDIT_STALL=1 parks the audit, so the gate's deadline is what stops it.
+	if OS.get_environment("MONITOR_AUDIT_STALL") == "1":
+		while true: OS.delay_msec(100)
 	if args.is_empty(): print("FAIL missing samples"); quit(1); return
 	load_known(args[2] if args.size() > 2 else "res://tests/fixtures/display_audit/known_findings.json")
 	load_stars("res://data/starmap/stars.json")
 	var f := FileAccess.open(args[0], FileAccess.READ)
 	if f == null: print("FAIL missing samples"); quit(1); return
 	state_file = FileAccess.open(args[0].get_base_dir().path_join("states.ndjson"), FileAccess.READ)
+	audit_route = args[1] if args.size() > 1 else "scene"
 	while not f.eof_reached():
 		var line := f.get_line()
 		if line.is_empty(): continue
@@ -419,6 +442,8 @@ func _run() -> void:
 		if not known_hits.has(i):
 			stale_entries += 1
 			check(false, "stale-known " + JSON.stringify(known_entries[i]))
+	if audit_route != "control":
+		print("display-audit monitors: clocks=%d course=%d crew=%d signal=%d" % [monitor_totals.clocks, monitor_totals.course, monitor_totals.crew, monitor_totals.signal])
 	for kind: String in known_kinds: print("display-audit known: %s %d" % [kind, known_kinds[kind]])
 	print(ac4_verdict())
 	var known_count := int(known_kinds.get("unbound", 0)) + int(known_kinds.get("transit-ISM", 0))

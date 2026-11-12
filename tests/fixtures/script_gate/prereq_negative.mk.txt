@@ -7,3 +7,4 @@ planets-test: planet-assets
 planet-textures-check:
 planet-textures-check: planet-assets
 ship-console-test: import ship-baseline
+ci-fast: replay-map-index

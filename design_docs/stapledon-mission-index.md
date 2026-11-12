@@ -12,6 +12,14 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 89 | 2026-11-12 | Row 7an LANDED (PR #429, merge `e3e4e5ed`): free-nav-stop's I checks fail for the right reason (sky occlusion, BVH refresh, dark catalogue row, rea... |
+| 88 | 2026-11-12 | Row 7am LANDED (PR #427, merge `39f98c99`): hand-copied catalogue targets carry their `stars.json` index (14 tokens in 10 files); a dictionary-awar... |
+| 87 | 2026-11-11 | Row 7al LANDED (PR #425, merge `47cf9170`): one constant `SimBridge.SESSION_MINOR` for the map, the ship and the loading jump's prefetch; `session-... |
+| 86 | 2026-11-11 | Row 7ak LANDED (PR #423, merge `016a5be5`): `free-nav-stop-test` red since #379 is green; its I checks look from G-M4-S3's clear captain eye and a ... |
+| 85 | 2026-11-11 | Row 7ai LANDED (PR #421, merge `8d858b17`): `tools-test` red since #379 is green; `earth_log_voyage` plans alpha Cen A at its `stars.json` index; M... |
+| 84 | 2026-11-10 | Row 7ah LANDED (PR #419, merge `4124a84d`): `similar-test` red since #379 is green; its main.gd guard checks the minor property, not the name `EART... |
+| 83 | 2026-11-10 | Row 7aj LANDED (PR #417, merge `29bce517`): four display audits red since #379 are green; the playthrough harness refreshes the bridge monitor face... |
+| 82 | 2026-11-09 | Row 7ag LANDED (PR #415, merge `642c4b8c`): nightly rig/full keeps going past a red target and names every red; the first keep-going run found two ... |
 | 81 | 2026-11-09 | Row 7af LANDED (PR #409, merge `4dc458d7`): nightly rig/golden runs the setup make golden relied on; every rig step bounded as a process group; Son... |
 | 80 | 2026-11-08 | Row 7ad corrected candidate preserved; required acceptance remains incomplete; independent MiniMax round1 FAIL47; no implementation round2 launched... |
 | 79 | 2026-11-07 | Row 7ad remains PARKED-ON-LANE: independent evaluator weekly quota re-probed, no design/build or judge verdict; iteration 78 draft PR #408 extended... |

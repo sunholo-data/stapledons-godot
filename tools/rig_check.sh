@@ -48,7 +48,7 @@ esac
 [ -n "$sha" ] || { echo "rig-check: could not resolve $target"; exit 2; }
 short=$(printf %s "$sha" | cut -c1-8)
 dir=${RIG_DIR:-${TMPDIR:-/tmp}/rig-check/$sha}
-log="$dir.log"
+log="$dir.log"; [ $tests = 1 ] || log="$dir.golden.log"   # 7ag: rig/golden must not overwrite the rig/full log of the same commit
 
 status() {
   [ "${RIG_NO_STATUS:-0}" = 1 ] && return 0
@@ -92,7 +92,25 @@ PATH=$PWD/runtime/bin:$PATH; export PATH
 bounded "$DL_S" make sky-assets >> "$log" 2>&1 || fail "rig setup: make sky-assets failed or ran over ${DL_S}s"
 
 start=$(date +%s)
-[ $tests = 0 ] || bounded "$TEST_S" make test >> "$log" 2>&1 || fail "make test failed or ran over ${TEST_S}s"
+if [ $tests = 1 ]; then
+  # Row 7ag: -k runs every make test target, so one known red cannot hide the rest; make -k still exits 2 if any
+  # target failed. The failing targets are the top-level make error lines this run appended to the log.
+  n0=$(wc -l < "$log"); trc=0
+  bounded "$TEST_S" make -k test >> "$log" 2>&1 || trc=$?
+  if [ "$trc" != 0 ]; then
+    red=$(tail -n +"$((n0 + 1))" "$log" | sed -nE "s/^g?make: \*\*\* \[([^]]*: )?([^]]+)\] .*/\2/p; s/^g?make: \*\*\* No rule to make target .([^']+)'.*/\1/p" | awk '!s[$0]++' | tr '\n' ' ' | sed 's/ $//')
+    n=$(echo $red | wc -w | tr -d ' ')
+    echo "rig-check: failed targets ($n): $red"
+    why="make test failed (rc $trc; bound ${TEST_S}s)"; [ "$trc" = 124 ] && why="make test ran over ${TEST_S}s"
+    [ "$n" != 0 ] || fail "$why; no failing target in the log"
+    # "sha: " why "; N red: " names " +K more", K < N: the suffix is reserved at N's width (row 7o: 140 characters).
+    budget=$((140 - 10 - ${#why} - 8 - ${#n} - 7 - ${#n})); list=; k=0
+    for t in $red; do [ $((${#list} + ${#t} + 1)) -le $budget ] || break; list="${list:+$list }$t"; k=$((k + 1)); done
+    [ "$k" != 0 ] || { list="$(printf %s "${red%% *}" | cut -c1-$((budget - 3)))..."; k=1; }   # a first name too long: cut it
+    [ "$k" = "$n" ] || list="$list +$((n - k)) more"
+    fail "$why; $n red: $list"
+  fi
+fi
 if [ $golden = 1 ]; then
   for t in $GOLDEN_SETUP; do
     bounded "$SETUP_S" make "$t" >> "$log" 2>&1 || fail "golden setup: make $t failed or ran over ${SETUP_S}s"

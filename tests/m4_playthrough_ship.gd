@@ -19,6 +19,7 @@ var ai_relay: AiRelay
 var frame := 0
 var phase := ""
 var poles := {}
+var monitor_rows := 0 # 7aj M3: sampled rows, for the mutant hook
 var commits_min := 2
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/playthrough")
 
@@ -53,6 +54,30 @@ func sample() -> void:
 		event({"type": "phase", "phase": phase})
 	# Every fourth presentation frame, plus every phase edge: >500 samples.
 	if frame % 4 != 0 and not changed: return
+	# 7aj M3 (test-only): PLAYTHROUGH_MONITOR_MUTANT breaks one monitor face on purpose, so
+	# display-audit-monitor-controls can prove the crew audit rejects each break for its own reason.
+	# Unset in every other run. "stall" parks the harness for the AC14 deadline evidence.
+	var mutant := OS.get_environment("PLAYTHROUGH_MONITOR_MUTANT")
+	if mutant == "stall":
+		while true: OS.delay_msec(100)
+	# R3-COMMS-V2 CV6 / 7aj: the harness disables every node's _process (see _run), so it supplies the
+	# monitors' frame as it does the map's: each face refreshes from the view the demo gave its monitor,
+	# as an on-screen monitor would. No viewport renders.
+	for m: BridgeMonitor in demo.monitors:
+		if m.face != null and mutant != "unrefreshed": m.face.refresh(m._view, m._receiver, m._bed)
+	monitor_rows += 1
+	var dropped: Control = null
+	if mutant == "drop_one" and monitor_rows == 10:
+		for m: BridgeMonitor in demo.monitors:
+			if m.kind == "course": dropped = m.face
+		dropped.visible = false
+	if mutant == "unbound" and monitor_rows == 1:
+		for m: BridgeMonitor in demo.monitors:
+			if m.kind == "clocks":
+				var stray := Label.new(); stray.name = "Mutant"; stray.text = "42"; m.face.add_child(stray)
+	if mutant == "stale":
+		for m: BridgeMonitor in demo.monitors:
+			if m.kind == "clocks": (m.face as BridgeScreens.ClocksFace).ship.text = "+9 s"
 	var bindings := []
 	var labels := []
 	var view: Dictionary = demo.ship_hud._last_view
@@ -84,6 +109,7 @@ func sample() -> void:
 			"expanded": card.body.is_visible_in_tree(), "leaving": card.leaving})
 	samples.store_line(SimBridge.encode({"frame": frame, "view": view, "bindings": bindings,
 		"labels": labels, "cards": cards, "lore": lore, "news": news, "ai_mode": ai_mode, "review": review_row(), "crew": crew_row(), "comms": comms_row()}))
+	if dropped != null: dropped.visible = true
 	# D-68 applies to every action list and all currently visible text, including windows.
 	for actions: Array in ShipConsoles.ACTIONS.values():
 		for a: String in actions:

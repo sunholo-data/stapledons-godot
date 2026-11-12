@@ -103,11 +103,15 @@ else
     echo
     echo "$(tail -1 "$out")"
     echo
+    sed -n "s/^rig-check: failed targets /Failing targets /p" "$out" | head -1   # 7ag: every red target, in run order
+    echo
     echo "Failing lines (log on the Studio: \`$rlog\`):"
     echo
     echo '```'
     if [ -n "$rlog" ] && [ -f "$rlog" ]; then
-      grep -nE '(^|[^a-z])(FAIL|SCRIPT ERROR|\*\*\*)' "$rlog" | grep -vE '=FAIL$|0 fail' | tail -30
+      # 7ag: for each top-level make error line, the up-to-20 matching lines before it (make -k reports many).
+      awk '/^g?make: \*\*\* / { for (i = 1; i <= c; i++) print b[i]; print FNR ":" $0; c = 0; next }
+        /(^|[^a-z])(FAIL|SCRIPT ERROR|\*\*\*)/ && !/=FAIL$|0 fail/ { if (c == 20) { for (i = 1; i < 20; i++) b[i] = b[i + 1]; c-- } b[++c] = FNR ":" $0 }' "$rlog" | cut -c1-300 | head -200
       echo '...'
       tail -20 "$rlog"
     fi

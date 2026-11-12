@@ -2,6 +2,75 @@
 
 ## Unreleased
 
+### m4-7an-free-nav-stop-guard-edges (2026-11-12)
+
+#### Added
+
+- **The I-key guard's edges fail for the right reason** (7an, sprint R1-7AN-FREE-NAV-GUARD-EDGES). In `make free-nav-stop-test`, a sky-renderer occlusion of the destination now fails with its own message at both stops (`sky_hides` asks `occludes_direction` as `_add_body_candidates` does). The clear-eye check refreshes the ship BVH itself (`eye_clear`), so it means the same wherever it stands in the test. The stop's catalogue point is checked layer by layer: the row is dark under the body's replacement with `0 pins` asserted, and the `pinned_ids` filter is checked in a fixture where a pin really happens (`test_ship_star_identification.gd`). Each new check has a measured killing mutation (AC6-AC10). Test-only: two files, +40/-2; nothing a player sees or hears changes.
+- Evaluations: Sonnet 5.5 94/100, MiniMax M3 97/100 (cross-vendor). Known gaps (non-blocking): with `update_candidates()` just before it, dropping `eye_clear`'s refresh stays green (only the AC7 reordering kills it); the free-nav row check's `0 pins` and `at least one row` clauses and the identification pin check's two identity clauses are each redundant in the shipped flow. Follow-ups in the charter row after 7an.
+
+### m4-7am-alpha-index-literals (2026-11-12)
+
+#### Added
+
+- **Hand-written catalogue targets are checked at their PR** (7am, sprint R1-7AM-ALPHA-INDEX). `make replay-map-index` (already in `ci-fast` and `make test`) now also scans tracked `*.gd` and `*.py` sources for hand-written `"index"`/`"id"` pairs. The scan is dictionary-aware and takes either key order, with `\"`, `\\` and `\uXXXX` decoding in id literals; any other escape fails by name. A new wrong pair fails at its PR. `tools/earth_link_capture.gd` stays at index 1 as the guard's one pending entry until Mark answers OQ1. The `ci-fast: replay-map-index` edge joins `SG_PREREQS` (pin 5), so dropping the edge fails `script-gate-lint` by name.
+
+#### Fixed
+
+- **Every hand-copied catalogue target carries its real `stars.json` index** (7am). Fourteen literals in ten files were wrong: alpha Cen A at 1 or 0 (now 2, nine sites), Sirius A at 2 (now 9, four sites), and Aldebaran at 2 (now 3158, one site). Visible behaviour is unchanged. The sim echoes the index bytes only.
+- The 7ai control in `tools/test_replay.py` derives its indices from `stars.json`, so a catalogue reorder no longer false-fails it.
+- Evaluations: Sonnet 5.5 90/100, MiniMax M3 96/100 (cross-vendor). Known gaps (non-blocking): the guard is lexical about strings and comments. Single-quoted Python dictionaries, GDScript `&"…"`/`^"…"`, a negative index, a second pair in one dictionary and an unclosed brace are not checked, and a wrong pair quoted in a comment is flagged. Follow-ups in the charter row after 7am.
+
+### m4-7al-session-minors (2026-11-11)
+
+#### Added
+
+- **Session minors** (row 7al, sprint R1-7AL-SESSION-MINORS). The map, the ship and the loading jump's prefetch now all ask one constant, `SimBridge.SESSION_MINOR` (18), defined in `bridge/sim_bridge.gd`, and the four test comparisons name it too, so a protocol bump the game adopts edits one line. `make session-minor-guard` and `make session-minor-guard-controls` (19 rejected, 3 accepted, about 2 s) run in `make test` and `ci-fast`, so a partial bump fails at the PR instead of the next nightly. Visible behaviour is identical: every session still asks 2.18 and the prefetch is still adopted on all three routes. No product, sim, asset or physics change.
+- Evaluations: Sonnet 5.5 91/100, MiniMax M3 98/100 (cross-vendor). Known gaps (non-blocking): the guard is lexical. A write the text does not show (a helper), a downgrade to an older defined minor, a constant-first or other-variable test comparison, and a test in a `tests/` subdirectory pass the fast tier; the nightly `loading-jump-test` pid checks and `comms-station-test` floor catch the runtime ones. Follow-ups in the charter row after 7al.
+
+### m4-7ak-free-nav-stop-eye (2026-11-11)
+
+#### Fixed
+
+- **`make free-nav-stop-test` is green again** (R1-7AK-FREE-NAV-STOP-EYE, row 7ak, PR #423). Since PR #379, the course monitor has stood on the forward centre ray of the test's fixed eye `(8, 82, -4.8)`, the lift's landing. At arrival the ship-occlusion check correctly refused the destination, so `I offers the destination …` and `alpha Cen A is inspectable at its stop` failed (`48 passed, 2 failures`). The test now looks from `(11, 82, -4.8)`, the physics golden G-M4-S3's captain eye, which #379 kept clear, with the same level forward look. It reports `54 passed, 0 failures`. Test only: no product, asset or build change.
+- **A blocked eye now names itself.** After each `update_candidates()` the test checks that the eye's centre ray hits no ship surface. Measured red controls: the old eye gives 48/4, the course monitor moved onto the new line gives 48/4, and body gathering removed from the product gives 50/2.
+- Evaluations: Sonnet 5.5 92/100, MiniMax M3 81/100 (cross-vendor). Known gaps (non-blocking): the new check covers only the ship BVH on the centre ray, not the sky renderer's own occlusion, and it is only meaningful after `update_candidates()`. Lateral clearance is about 0.5 m: a course-monitor shift of +0.6 m blocks the ray (MiniMax measurement). The "not the catalogue point" half still has no killing mutant (design F2). The test's 2 s `step_timeout` cascades under heavy host load. From the lift's landing, the course screen still hides a destination dead ahead; that view belongs to the deck-layout row.
+
+### m4-7ai-earth-log-map-index (2026-11-10)
+
+#### Fixed
+
+- **`make tools-test` is green again** (R1-7AI-EARTH-LOG-MAP-INDEX, row 7ai, PR #421). `tests/replays/earth_log_voyage.ndjson` planned alpha Centauri A (`CNS5:3627`) at index 1, which is HIP 71681 (alpha Cen B) in `data/starmap/stars.json`; the id is at index 2 and the fixture's position matches it to six decimals. The fixture is corrected by one byte and its golden re-recorded (`07dcdfc6…`, identical line for arm64 and x86_64). The sim only echoes the index, so the state changes in exactly the three plan-target index echoes. The red came in with PR #379.
+- **The wrong index has a committed control.** `test_the_7ai_index_fails` re-injects index 1 into every plan line that carries `CNS5:3627` at index 2 and requires each one to be reported.
+- **The map-index check runs in `ci-fast`.** `make replay-map-index` (`MapIndex` in `tools/test_replay.py`, under a second, no AILANG) now fails a pull request whose replay log plans a star at the wrong index, instead of the nightly.
+- Evaluations: Sonnet 5.5 93/100, MiniMax M3 97/100 (cross-vendor). Known gaps (non-blocking): nothing checks that the `ci-fast` edge itself stays; the control's expected message names the current catalogue index.
+
+### m4-7ah-similar-guard-minor (2026-11-10)
+
+#### Fixed
+
+- **`make similar-test` is green again** (R1-7AH-SIMILAR-GUARD, row 7ah, PR #419). Its main.gd guard checked for the literal name `SimBridge.EARTH_MINOR`, which PR #379 renamed to `EARTH_LOG_MINOR`, so the suite failed on its last line after every ranking and session step had passed. The guard now reads the property instead: the map session's `want_minor` must be one bare `SimBridge.<NAME>_MINOR`, and that constant must be at or above `SIMILAR_MINOR` in `bridge/sim_bridge.gd`. Protocol bumps pass; a downgrade or a rewritten assignment fails. Anything the grammar does not recognise (an expression, a ternary, a second mention of `want_minor`) fails closed.
+- **The guard has its own controls.** `make similar-guard-controls` (`tools/similar_guard_controls.sh`) runs 16 mutated copies of main.gd and the constants: 13 must be rejected and 3 accepted (the pristine tree, a future protocol bump and a trailing comment). A control that does not go red fails the target.
+- **The guard runs in `ci-fast`.** `similar-test` and `ci-fast` both depend on `similar-main-guard` and `similar-guard-controls`, so the fast tier now catches a drift that #379 merged past.
+- Evaluations: Sonnet 5.5 88/100, MiniMax M3 95/100 (cross-vendor). Known limit: the guard reads `_run_map`'s text, so a write through a helper or a string-built property name is not seen (see the design's Risks).
+
+### m4-7aj-monitor-face-bindings (2026-11-10)
+
+#### Fixed
+
+- **Four display audits are green again** (R1-7AJ-MONITOR-BINDINGS, row 7aj, PR #417). `display-audit-crew`, `display-audit-comms`, `display-audit-interlude` and `scene-session-audits` had been red on main since PR #379 added the bridge monitor wall (bisected: red at `8ba1e3c8`, green at its parent `523d96f9`), hidden until the first keep-going nightly on `b974e302`. The playthrough harness switches off `_process` on every node, so the monitor faces never refreshed and their bindings were sampled with empty fields. `sample()` now refreshes each face from the view its monitor was given that frame, as an on-screen monitor does. Test-only: no product, UI or asset file changed, so nothing on screen changes.
+- **Per-frame monitor coverage.** `tests/display_audit.gd` fails a sampled frame that lacks a face's bindings (clocks and signal always, course with a plan, crew with crew aboard) and prints `display-audit monitors:` totals.
+- **New control `make display-audit-monitor-controls`** (in `ship-demo-ci`): four mutants (`unrefreshed`, `drop_one`, `unbound`, `stale`), each rejected for its own reason. Both subprocesses run under `$(SCRIPT_GATE)` deadlines, the audit with WANT_RC 1, so a stall or script error fails the target and is never counted as a rejection. Evaluations: Sonnet 5.5 91/100, MiniMax M3 88/100 (cross-vendor).
+
+### rig-keep-going (2026-11-09)
+
+#### Fixed
+
+- **The nightly `rig/full` runs the whole suite even after a red target** (R1-RIG-KEEP-GOING, row 7ag, issue #392). `tools/rig_check.sh` ran `make test` without `-k`, so since 2026-11-04 every nightly stopped at its first red target about 6 minutes in (`sound-test`, then `bridge-operator-test`), and nothing after it ran on main. It now runs `make -k test`: a red still ends `rig/full` red, every failing target is listed (`rig-check: failed targets (N): ...`), and the commit-status description names as many as fit in 140 characters, then `+K more`.
+- **The nightly issue names every red target.** `tools/rig_nightly.sh` opens the comment with `Failing targets (N): ...` and shows the failing lines before each red target's make error.
+- **`rig/golden` keeps its own log.** It writes `<sha>.golden.log`; it used to overwrite the same commit's `rig/full` log.
+- The first keep-going run on main (`0c3f46c8`) found two reds no nightly had reported: `similar-test` (its guard looks for `SimBridge.EARTH_MINOR` in `main.gd`) and `tools-test` (`tests/replays/earth_log_voyage.ndjson` plans `CNS5:3627` at index 1; `stars.json` has 2). Both are queue rows. New control `tools/test_rig_keep_going.sh` (16 cases on GNU Make 3.81 and 4.4.1), run by `make rig-check-control`.
+
 ### rig-golden-setup (2026-11-09)
 
 #### Fixed

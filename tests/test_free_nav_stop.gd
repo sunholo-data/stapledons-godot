@@ -1,4 +1,6 @@
 extends SceneTree
+const StarLight = preload("res://demos/ship_star_light.gd")
+const StarProjection = preload("res://sky/star_projection.gd")
 ## Free-navigation stop, the real flow (Mark, 2026-10-08): open navigation, pick a star,
 ## hold to commit, fly the AILANG leg to arrival, then the HUD says where the ship is
 ## and I offers the destination star with its card. Barnard's Star is keyed "Gaia DR3 n"
@@ -11,6 +13,33 @@ func check(ok: bool, label: String) -> void:
 	if ok: passed += 1
 	else: failures += 1
 func _initialize() -> void: _run.call_deferred()
+## 7an (a): I also drops a body that the sky renderer draws behind a nearer one
+## (ui/ship_star_identification.gd _add_body_candidates, occludes_direction). Ask it as I does.
+func sky_hides(demo: Node, id: String) -> bool:
+	var sv: SystemView = demo.sky.system_view
+	if sv == null or not sv.visible: return true
+	for b: Dictionary in sv.last_system.get("bodies", []):
+		if b.id == id: return sv.occludes_direction(StarLight.apparent_direction(sv, b.rel_km, b.radius_km), b.id, Planets.length64(Planets.world_of(b.rel_km)))
+	return true
+## 7an (b): occlusion.blocked() reads the node transforms of the last refresh, so this check
+## refreshes the ship BVH itself; read without it before update_candidates(), it passed while a
+## moved monitor blocked the eye (7ak V8).
+func eye_clear(demo: Node, ident: Control) -> bool:
+	ident.occlusion.refresh(demo.camera)
+	return not ident.occlusion.blocked(demo.camera.global_position, -demo.camera.global_basis.z)
+## 7an (c): a stop's catalogue point is hidden by its body's replacement (the row's flux is zeroed
+## under every alias), not by a pin: this flow never pins, so I's pinned_ids filter is checked in
+## tests/test_ship_star_identification.gd. Returns [rows found, rows still drawn].
+func catalogue_rows_lit(demo: Node, id: String) -> Array:
+	var field: Starfield = demo.sky.starfield
+	var found := 0
+	var lit: Array = []
+	for alias in Starfield.aliases_of(id):
+		var k := field.index_of(alias)
+		if k < 0: continue
+		found += 1
+		if StarProjection.sample(field, k).get("visible", false): lit.append(alias)
+	return [found, lit]
 func fly(demo: Node, id: String, from_name: String) -> void:
 	demo.open_navigation() # the helm (R1-SHIP-UI: outside it the map plans nothing)
 	var map = demo.journey_map
@@ -54,12 +83,16 @@ func _run() -> void:
 	check(hud.begins_with("At Barnard's Star 0.02") and hud.contains(" AU · from Earth 5.9"), "HUD at the stop: " + hud)
 	demo._process(0.0)
 	check(demo.ship_hud.distance.text.contains("At Barnard's Star") and demo.ship_hud.where.text.contains("Barnard's Star"), "the status strip carries the stop line (R1-SHIP-UI)")
-	demo.avatar_pos = Vector3(8, 82, -4.8) # a fixed eye: R2-DECK-LAYOUT's spawn stands behind the helm, whose pods fill a level look ahead
+	demo.avatar_pos = Vector3(11, 82, -4.8) # the captain eye of G-M4-S3 (tools/m4_ship_golden.gd): the lift's landing (8, 82, -4.8) looks into the course monitor (R3-COMMS-V2 wall R), whose bearing keeps this line clear
 	demo.look_direction("forward"); await process_frame
 	var ident = demo.star_identification
 	ident.set_held(true); ident.update_candidates()
+	check(eye_clear(demo, ident), "the fixed eye looks ahead past the ship (no surface on its centre ray)")
+	check(not sky_hides(demo, "cat:" + barnard), "the sky draws the destination with no nearer body over it")
 	var hit: Array = ident.candidates.filter(func(c): return c.id == "body:cat:" + barnard)
 	check(hit.size() == 1 and ident.candidates.filter(func(c): return c.id == barnard).is_empty(), "I offers the destination as its finite body, not the hidden catalogue point (%d candidates)" % ident.candidates.size())
+	var lit := catalogue_rows_lit(demo, barnard)
+	check(lit[0] >= 1 and lit[1].is_empty() and demo.sky.starfield.pinned_ids.is_empty(), "its catalogue row is dark, replaced by the body, not pinned (%d rows, lit %s, %d pins)" % [lit[0], lit[1], demo.sky.starfield.pinned_ids.size()])
 	if hit.size() == 1:
 		ident.inspect(hit[0].id)
 		var text: String = ident.content.get_child(0).text if ident.content.get_child_count() > 0 else ""
@@ -73,9 +106,11 @@ func _run() -> void:
 	var a_body := body_of(demo, "acen-a")
 	var a_deg := rad_to_deg(2.0 * Planets.angular_radius(a_body.radius_km, Planets.length64(Planets.world_of(a_body.rel_km))))
 	check(absf(a_deg - 21.91) < 0.1, "alpha Cen A fills %.2f deg (D-111 close pass: 21.91)" % a_deg)
-	demo.avatar_pos = Vector3(8, 82, -4.8) # a fixed eye: R2-DECK-LAYOUT's spawn stands behind the helm, whose pods fill a level look ahead
+	demo.avatar_pos = Vector3(11, 82, -4.8) # the captain eye of G-M4-S3 (tools/m4_ship_golden.gd): the lift's landing (8, 82, -4.8) looks into the course monitor (R3-COMMS-V2 wall R), whose bearing keeps this line clear
 	demo.look_direction("forward"); await process_frame
 	ident.set_held(true); ident.update_candidates()
+	check(eye_clear(demo, ident), "the fixed eye looks ahead past the ship (no surface on its centre ray)")
+	check(not sky_hides(demo, "acen-a"), "the sky draws alpha Cen A with no nearer body over it")
 	var a_c: Array = ident.candidates.filter(func(c): return c.id == "body:acen-a")
 	check(not a_c.is_empty(), "alpha Cen A is inspectable at its stop")
 	if not a_c.is_empty():

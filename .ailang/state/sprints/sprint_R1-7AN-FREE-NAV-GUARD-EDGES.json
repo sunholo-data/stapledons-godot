@@ -1,0 +1,231 @@
+{
+  "sprint_id": "R1-7AN-FREE-NAV-GUARD-EDGES",
+  "status": "landed",
+  "approved": true,
+  "approved_by": "mission controller iteration 89 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; quorum r1 BLOCKED (sol) -> designer revision 1; r2 BLOCKED (sol, gemini pass) -> controller revision 2 under the narrow-refinement carve-out)",
+  "created": "2026-11-12",
+  "design_doc": "design_docs/implemented/r1/m4-7an-free-nav-stop-guard-edges.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7an-free-nav-stop-guard-edges-sprint.md",
+  "branch": "mission/stapledon-iter89-7an",
+  "implements": [
+    "7an"
+  ],
+  "scope": "42 lines in two test files, applied byte-exactly from Appendix A (git apply --stat: 2 files changed, 40 insertions(+), 2 deletions(-); fence 81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558, planner-replicated): tests/test_free_nav_stop.gd +35/-2 (sky_hides, eye_clear, catalogue_rows_lit, two preloads, three new checks, two changed checks) and tests/test_ship_star_identification.gd +5 (the pin-fixture check); plus changelogs/unreleased/2026-11-12-free-nav-stop-guard-edges.md. No product, asset, Makefile, shader, golden or *.ail change; no new script -> no .uid; no *.py -> no allowlist row. The mutation ACs edit planets/system_view.gd:793, sky/starfield.gd:110, ui/ship_star_identification.gd:62 only through the preamble's mutate (one bounded run each, EXIT-trap restored). No GPU, no make golden, no capture, no full local make test (merge rule); targeted gates are make free-nav-stop-test, make ship-star-identification-test, make uid-guard, make python-guard, and the GitHub fast tier (make ci-fast) on the PR. Role split: the executor applies the patch and runs every AC in its own disposable full clone; the controller lands (per the mission cycle).",
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "The target is green",
+      "command": "make free-nav-stop-test; echo rc=$?",
+      "expected": "rc=0; `script-gate: free-nav-stop-test ok: free-nav-stop: 57 passed, 0 failures` (base at b96b2d60: 54 passed, 0 failures — V1; planner-replicated: rc=0, 301 s of 1800 s)"
+    },
+    {
+      "id": "AC2",
+      "criterion": "The identification target is green",
+      "command": "make ship-star-identification-test; echo rc=$?",
+      "expected": "rc=0; `ship-star-identification: 60 passed, 0 failures` (base 59 passed, 0 failures — V9). Needs a writable user:// (tests/test_ship_star_identification.gd:45); a user:// SCRIPT ERROR is the sandbox, not the tree — stop and report"
+    },
+    {
+      "id": "AC3",
+      "criterion": "The new and changed checks pass, each the measured number of times",
+      "command": "for p in 'the fixed eye looks ahead' 'the sky draws' 'its catalogue row is dark'; do grep -c \"^ok $p\" .godot/tmp/free-nav-stop.log; done; grep -c '^FAIL' .godot/tmp/free-nav-stop.log",
+      "expected": "2, 2, 1, 0 (base 2, 0, 0, 0 — V1; planner-replicated on the pristine tree)"
+    },
+    {
+      "id": "AC4",
+      "criterion": "Test-only",
+      "command": "git diff --name-only origin/main...HEAD",
+      "expected": "only the two test files, the changelog fragment and landing docs/state; nothing under ui/ demos/ sky/ planets/ interior/ bridge/ sim/ audio/ data/ assets/, no Makefile, mk/ or *.ail (base: no diff but the design doc — planner-replicated)"
+    },
+    {
+      "id": "AC5",
+      "criterion": "The clear-eye check reads the BVH only through eye_clear",
+      "command": "grep -c 'ident.occlusion.blocked' $T; grep -c 'check(eye_clear(demo, ident)' $T; grep -c 'ident.occlusion.refresh(demo.camera)' $T",
+      "expected": "1, 2, 1 (base 2, 0, 0 — planner-replicated on the pristine tree)"
+    },
+    {
+      "id": "AC6",
+      "criterion": "(a) killer: the sky renderer stops skipping the body itself",
+      "command": "mutate planets/system_view.gd 's/^\\t\\tif b.id == skip_id: continue$/\\t\\tpass # 7an a/' ac6 900 1 '^free-nav-stop: 17 passed, 4 failures$' $W/short.gd; echo rc=$?; grep '^FAIL' $W/ac6.log; git status --porcelain",
+      "expected": "`script-gate: ac6 ok: free-nav-stop: 17 passed, 4 failures (rc 1, …)`; rc=0; FAIL the sky draws the destination with no nearer body over it, FAIL I offers … (43 candidates), FAIL the sky draws alpha Cen A with no nearer body over it, FAIL alpha Cen A is inspectable at its stop; no status output (V10, V31). Base: only the two I FAILs, 16 passed, 2 failures (V10)"
+    },
+    {
+      "id": "AC7",
+      "criterion": "(b) killer: the clear-eye check moved before update_candidates(), with the course monitor on the eye's line (7ak R2)",
+      "command": "perl -0pe 's/(\\tident\\.set_held\\(true\\); ident\\.update_candidates\\(\\)\\n)(\\tcheck\\(eye_clear\\(demo, ident\\)[^\\n]*\\n)/$2$1/g; s/(\\tdemo\\.avatar_pos = Vector3\\(11, 82, -4\\.8\\)[^\\n]*\\n)/$1\\tdemo.monitor_frames.position.x += 2.418; demo.geometry.find_child(\"monitor_face_course\", true, false).position.x += 2.418\\n/' $W/short.gd > $W/b.gd; perl -0pe 's/(\\tident\\.set_held\\(true\\); ident\\.update_candidates\\(\\)\\n)(\\tcheck\\(eye_clear\\(demo, ident\\)[^\\n]*\\n)/$2$1/g' $W/short.gd > $W/b0.gd; run ac7 900 1 '^free-nav-stop: 17 passed, 4 failures$' $W/b.gd; echo rc=$?; grep '^FAIL' $W/ac7.log; run ac7b 900 0 '^free-nav-stop: 23 passed, 0 failures$' $W/b0.gd; echo rc=$?",
+      "expected": "`script-gate: ac7 ok: free-nav-stop: 17 passed, 4 failures (rc 1, …)`, rc=0, FAIL the fixed eye looks ahead … twice, FAIL I offers … (41 candidates), FAIL alpha Cen A is inspectable at its stop; moved without the shift: `script-gate: ac7b ok: free-nav-stop: 23 passed, 0 failures (rc 0, …)`, rc=0 (V11, V31). Base: the first stop's eye check passes vacuously: one FAIL the fixed eye …; 15 passed, 3 failures (V11)"
+    },
+    {
+      "id": "AC8",
+      "criterion": "(c) replacement killer: the bare Gaia alias is not replaced",
+      "command": "mutate sky/starfield.gd 's/^\\t\\tif bare!=id and not bare in replacements: replacements.append(bare)$/\\t\\tpass # 7an c1/' ac8 900 1 '^free-nav-stop: 22 passed, 1 failures$' $W/short.gd; echo rc=$?; grep -E '^FAIL|^ok I offers' $W/ac8.log; git status --porcelain",
+      "expected": "`script-gate: ac8 ok: free-nav-stop: 22 passed, 1 failures (rc 1, …)`; rc=0; ok I offers … (44 candidates); FAIL its catalogue row is dark, replaced by the body, not pinned (1 rows, lit [\"4472832130942575872\"], 0 pins); no status output (V12, V31). Base survives: 20 passed, 0 failures (V12)"
+    },
+    {
+      "id": "AC9",
+      "criterion": "(c) pin killer, the row's mutation: the pinned_ids filter dropped",
+      "command": "M='s/^\\t\\tif i >= field.ids.size() or field.ids\\[i\\] in field.pinned_ids:continue$/\\t\\tif i >= field.ids.size():continue # 7an c2/'; mutate ui/ship_star_identification.gd \"$M\" ac9s 300 1 '^ship-star-identification: 59 passed, 1 failures$' $W/ssi.gd; echo rc=$?; grep 'ERROR: a pinned' $W/ac9s.log; mutate ui/ship_star_identification.gd \"$M\" ac9f 900 0 '^free-nav-stop: 23 passed, 0 failures$' $W/short.gd; echo rc=$?; git status --porcelain",
+      "expected": "`script-gate: ac9s ok: ship-star-identification: 59 passed, 1 failures (rc 1, …)`, rc=0, ERROR: a pinned destination is offered once, as its pin row (0 candidates); `script-gate: ac9f ok: free-nav-stop: 23 passed, 0 failures (rc 0, …)` (the flow never pins), rc=0; no status output (V14, V31). Base $S survives: 59 passed, 0 failures (V14). ac9s needs a writable user://"
+    },
+    {
+      "id": "AC10",
+      "criterion": "7ak's R1 still kills eye_clear (the lift's landing eye)",
+      "command": "sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $W/short.gd > $W/r1.gd; run ac10 900 1 '^free-nav-stop: 17 passed, 4 failures$' $W/r1.gd; echo rc=$?; grep -c '^FAIL the fixed eye' $W/ac10.log",
+      "expected": "`script-gate: ac10 ok: free-nav-stop: 17 passed, 4 failures (rc 1, …)`; rc=0; 2 (V15, V31). Base: rc 1; 2; 14 passed, 4 failures (V15)"
+    },
+    {
+      "id": "AC11",
+      "criterion": "The short copy is green unmutated (the reference for AC6-AC10)",
+      "command": "run ac11 900 0 '^free-nav-stop: 23 passed, 0 failures$' $W/short.gd; echo rc=$?",
+      "expected": "`script-gate: ac11 ok: free-nav-stop: 23 passed, 0 failures (rc 0, …)`; rc=0 (V7, V31). Base short copy: 20 passed, 0 failures (V6)"
+    },
+    {
+      "id": "AC12",
+      "criterion": "The tree is clean, nothing of this clone's runs is left running, and every script keeps its .uid",
+      "command": "git status --porcelain; mine | wc -l; make uid-guard",
+      "expected": "no status output; 0; `uid-guard: ok (422 .uid files)` (no new script) (V23, V31; uid-guard planner-replicated)"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "RED on the pristine tree (the new checks absent: AC5 greps 2/0/0, the pin-fixture check absent; the full-target pristine baseline planner-measured at 54 passed, 0 failures / AC3 2/0/0/0 — no second full run), then Appendix A byte-exact (fence 81 lines, sha256 12880f78a2757838…, git apply, stat 40+/2-), the AC preamble sourced, and the non-mutation ACs: AC1 (57 passed), AC2 (60 passed), AC3 (2/2/1/0), AC4 (test-only file set), AC5 (1/2/1), AC11 (short copy 23 passed, 0 failures)",
+      "files": [
+        "tests/test_free_nav_stop.gd",
+        "tests/test_ship_star_identification.gd"
+      ],
+      "loc": "42 lines in two test files (Appendix A byte-exact: git apply --stat 2 files changed, 40 insertions(+), 2 deletions(-); planner-replicated)",
+      "depends_on": [],
+      "acceptance": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC11"
+      ],
+      "commands": [
+        "environment: cd <executor's own full clone ../stapledons-godot-<topic>>; export PATH=$PWD/runtime/bin:$PATH  # runtime/ untracked (planner-measured): a fresh clone may lack it -> /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin; B=b96b2d60  # origin/main = merge-base = the design's measured base; ailang --version (expect AILANG v0.56.1 commit 05c860a); godot --version (expect 4.7.2.stable); assert user:// writable (FileAccess.open user:// WRITE non-null) and ps -axo pid=,command= works — both planner-measured sandbox failure modes; stop and report without them",
+        "anchor asserts (planner-verified; mismatch -> stop): sed -n '62p;101p;130p' ui/ship_star_identification.gd  # :62 the pinned_ids filter; :101 the catalogue-star occludes_direction; :130 if sv.occludes_direction(dir, b.id, dist):continue; sed -n '793p' planets/system_view.gd  # if b.id == skip_id: continue; sed -n '110p' sky/starfield.gd  # if bare!=id and not bare in replacements: replacements.append(bare); sed -n '60,61p;79,80p' tests/test_free_nav_stop.gd  # twice set_held(true); update_candidates() then check(not ident.occlusion.blocked(…)), no comment; sed -n '201p' tests/test_ship_star_identification.gd  # the bare-Gaia check",
+        "RED on the pristine tree (seconds; record verbatim): grep -c 'ident.occlusion.blocked' tests/test_free_nav_stop.gd; grep -c 'check(eye_clear(demo, ident)' tests/test_free_nav_stop.gd; grep -c 'ident.occlusion.refresh(demo.camera)' tests/test_free_nav_stop.gd; grep -c 'a pinned destination is offered once' tests/test_ship_star_identification.gd   # expect 2, 0, 0, 0 — the new checks are absent (the doc's base columns; planner-replicated). The full-target pristine baseline is planner-measured (54 passed, 0 failures; AC3 labels 2/0/0/0); do not spend a second full run on it",
+        "fence extraction (byte-for-byte rule): D=design_docs/planned/r1/m4-7an-free-nav-stop-guard-edges.md; SC=$PWD/.godot/tmp/7an-plan; mkdir -p $SC; awk '/^## Appendix A\\./,0' $D | awk '/^```diff$/{f=1;next} /^```$/{if(f){exit}} f' > $SC/A.patch; wc -l < $SC/A.patch  # expect 81; shasum -a 256 $SC/A.patch  # expect 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558; git apply --check $SC/A.patch && git apply --stat $SC/A.patch  # expect 2 files changed, 40 insertions(+), 2 deletions(-) (the doc's stat, V25)",
+        "apply: git apply $SC/A.patch; git diff --stat  # must equal the doc's stat; git status --porcelain  # exactly the two test files. A mismatch means re-extract, never retype",
+        "source the AC preamble verbatim from the design doc (T/S/R, W=$(mktemp -d \"${TMPDIR:-/tmp}/7an.XXXXXXXX\"), mine/reap/run/mutate/short; short $T $W/short.gd; cp $S $W/ssi.gd). If the sandbox refuses /tmp (planner-measured): mkdir -p $PWD/.godot/tmp/7an && export TMPDIR=$PWD/.godot/tmp/7an first — mktemp honours TMPDIR; the unique 7an.XXXXXXXX prefix (V33 isolation) is unchanged",
+        "AC1: make free-nav-stop-test; echo rc=$?   # expect rc=0; script-gate: free-nav-stop-test ok: free-nav-stop: 57 passed, 0 failures (rc 0, no SCRIPT ERROR, … of 1800 s). Foreground, 5-11 min (planner-measured 301 s at load ~4; V8 433 s at load 17)",
+        "AC2: make ship-star-identification-test; echo rc=$?   # expect rc=0; ship-star-identification: 60 passed, 0 failures (base 59 + the new pin check, V9); needs writable user://",
+        "AC3: for p in 'the fixed eye looks ahead' 'the sky draws' 'its catalogue row is dark'; do grep -c \"^ok $p\" .godot/tmp/free-nav-stop.log; done; grep -c '^FAIL' .godot/tmp/free-nav-stop.log   # expect 2, 2, 1, 0 (base 2, 0, 0, 0)",
+        "AC4: git diff --name-only origin/main...HEAD   # only the two test files plus docs/state; nothing under ui/ demos/ sky/ planets/ interior/ bridge/ sim/ audio/ data/ assets/, no Makefile, mk/ or *.ail (the negative list is the assertion); then git status --porcelain  # only the two test files",
+        "AC5: grep -c 'ident.occlusion.blocked' $T; grep -c 'check(eye_clear(demo, ident)' $T; grep -c 'ident.occlusion.refresh(demo.camera)' $T   # expect 1, 2, 1 (base 2, 0, 0)",
+        "AC11: run ac11 900 0 '^free-nav-stop: 23 passed, 0 failures$' $W/short.gd; echo rc=$?   # expect script-gate: ac11 ok: free-nav-stop: 23 passed, 0 failures (rc 0, no SCRIPT ERROR, … of 900 s); rc=0 (V7, V31: 155-246 s) — the green reference for AC6-AC10",
+        "commit the two test files (e.g. '7an MS1: the guard's edges — sky/occlusion/catalogue-row/pin checks (AC1-AC5, AC11 green)'); git status --porcelain empty after (scratch under .godot/tmp is ignored; no .bak, no .uid)"
+      ],
+      "expectations": "RED greps 2/0/0/0 on the pristine tree. Fence: 81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558, git apply --check clean, stat 2 files changed, 40 insertions(+), 2 deletions(-). AC1: rc=0, script-gate: free-nav-stop-test ok: free-nav-stop: 57 passed, 0 failures. AC2: rc=0, ship-star-identification: 60 passed, 0 failures. AC3: 2, 2, 1, 0. AC4: only the two test files + docs/state, the negative list empty. AC5: 1, 2, 1. AC11: script-gate: ac11 ok: free-nav-stop: 23 passed, 0 failures (rc 0, …); rc=0.",
+      "notes": "The pristine full-target baseline is already measured twice (V1: 54 passed, 0 failures, 634 s; planner: 54 passed, 0 failures, 301 s of 1800 s, AC3 labels 2/0/0/0) — the executor's RED is the cheap greps, not a second full run. user:// and ps are hard prerequisites asserted first (planner-measured sandbox failure modes). Executed 2026-11-12 in stapledons-godot-iter89-7an: all gates matched the doc; commit 9340a811.",
+      "status": "completed",
+      "passes": true,
+      "measured": "RED on pristine tree (MS1 step 3): grep -c ident.occlusion.blocked 2 / check(eye_clear(demo, ident) 0 / ident.occlusion.refresh(demo.camera) 0 / a pinned destination is offered once 0. Anchors matched (ship_star_identification.gd :62/:101/:130; system_view.gd:793; starfield.gd:110; test_free_nav_stop.gd:60-61,79-80; test_ship_star_identification.gd:201). Fence: 81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558; git apply --check ok; git apply --stat '2 files changed, 40 insertions(+), 2 deletions(-)'. AC1: 'script-gate: free-nav-stop-test ok: free-nav-stop: 57 passed, 0 failures (rc 0, no SCRIPT ERROR, 297 s of 1800 s)', rc=0, wall 299 s (load 3.8 at start, 4.7 at end). AC2: 'script-gate: ship-star-identification-test ok: ship-star-identification: 60 passed, 0 failures (rc 0, no SCRIPT ERROR, 5 s of 600 s)', rc=0, wall 8 s. AC3: 2 / 2 / 1 / 0. AC4: git diff --name-only origin/main...HEAD = the design doc, the plan and this JSON (committed before MS1); the two test files are the MS1 commit; the negative list (ui demos sky planets interior bridge sim audio data assets, Makefile, mk, *.ail) is empty. AC5: 1 / 2 / 1. AC11: 'script-gate: ac11 ok: free-nav-stop: 23 passed, 0 failures (rc 0, no SCRIPT ERROR, 103 s of 900 s)', rc=0, wall 103 s. Commit 9340a811 (2 files, +40/-2).",
+      "completed": "2026-11-12"
+    },
+    {
+      "id": "MS2",
+      "title": "The mutation ACs AC6-AC10 through the preamble's mutate/run, one at a time, in the foreground (never a & job — V30's INT-ignored shell left the file mutated; simultaneous acceptance sessions in one clone prohibited — V33; a 142 is an instrument failure, never a kill: rerun on a quieter host), each with the doc's exact gate line and an empty git status --porcelain after; AC12 last",
+      "files": [],
+      "loc": "0 persistent (mutate edits planets/system_view.gd:793, sky/starfield.gd:110, ui/ship_star_identification.gd:62 for one bounded run each and restores them from its EXIT trap; AC7/AC10 build scratch copies under $W)",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance": [
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC12"
+      ],
+      "commands": [
+        "re-source the AC preamble if the shell is new (the test files are committed at MS1's end, so short reproduces the same copies, V24); one AC at a time, foreground, no other Godot run loading the tree meanwhile",
+        "AC6: mutate planets/system_view.gd 's/^\\t\\tif b.id == skip_id: continue$/\\t\\tpass # 7an a/' ac6 900 1 '^free-nav-stop: 17 passed, 4 failures$' $W/short.gd; echo rc=$?; grep '^FAIL' $W/ac6.log; git status --porcelain   # expect script-gate: ac6 ok: free-nav-stop: 17 passed, 4 failures (rc 1, …); rc=0; the four FAIL lines (two sky, I offers 43 candidates, alpha Cen A); no status output (V10, V31)",
+        "AC7 (the design's fenced block, verbatim): perl -0pe 's/(\\tident\\.set_held\\(true\\); ident\\.update_candidates\\(\\)\\n)(\\tcheck\\(eye_clear\\(demo, ident\\)[^\\n]*\\n)/$2$1/g; s/(\\tdemo\\.avatar_pos = Vector3\\(11, 82, -4\\.8\\)[^\\n]*\\n)/$1\\tdemo.monitor_frames.position.x += 2.418; demo.geometry.find_child(\"monitor_face_course\", true, false).position.x += 2.418\\n/' $W/short.gd > $W/b.gd; perl -0pe 's/(\\tident\\.set_held\\(true\\); ident\\.update_candidates\\(\\)\\n)(\\tcheck\\(eye_clear\\(demo, ident\\)[^\\n]*\\n)/$2$1/g' $W/short.gd > $W/b0.gd; run ac7 900 1 '^free-nav-stop: 17 passed, 4 failures$' $W/b.gd; echo rc=$?; grep '^FAIL' $W/ac7.log; run ac7b 900 0 '^free-nav-stop: 23 passed, 0 failures$' $W/b0.gd; echo rc=$?   # expect ac7 ok 17 passed 4 failures rc=0 (FAIL the fixed eye … twice, FAIL I offers 41 candidates, FAIL alpha Cen A …); ac7b ok 23 passed 0 failures rc=0 (V11, V31)",
+        "AC8: mutate sky/starfield.gd 's/^\\t\\tif bare!=id and not bare in replacements: replacements.append(bare)$/\\t\\tpass # 7an c1/' ac8 900 1 '^free-nav-stop: 22 passed, 1 failures$' $W/short.gd; echo rc=$?; grep -E '^FAIL|^ok I offers' $W/ac8.log; git status --porcelain   # expect script-gate: ac8 ok: free-nav-stop: 22 passed, 1 failures (rc 1, …); rc=0; ok I offers … (44 candidates); FAIL its catalogue row is dark, replaced by the body, not pinned (1 rows, lit [\"4472832130942575872\"], 0 pins); no status output (V12, V31)",
+        "AC9: M='s/^\\t\\tif i >= field.ids.size() or field.ids\\[i\\] in field.pinned_ids:continue$/\\t\\tif i >= field.ids.size():continue # 7an c2/'; mutate ui/ship_star_identification.gd \"$M\" ac9s 300 1 '^ship-star-identification: 59 passed, 1 failures$' $W/ssi.gd; echo rc=$?; grep 'ERROR: a pinned' $W/ac9s.log; mutate ui/ship_star_identification.gd \"$M\" ac9f 900 0 '^free-nav-stop: 23 passed, 0 failures$' $W/short.gd; echo rc=$?; git status --porcelain   # expect ac9s ok 59 passed 1 failures rc=0, ERROR: a pinned destination is offered once, as its pin row (0 candidates); ac9f ok 23 passed 0 failures rc=0 (the flow never pins); no status output (V14, V31); ac9s needs writable user://",
+        "AC10: sed 's/Vector3(11, 82, -4.8)/Vector3(8, 82, -4.8)/' $W/short.gd > $W/r1.gd; run ac10 900 1 '^free-nav-stop: 17 passed, 4 failures$' $W/r1.gd; echo rc=$?; grep -c '^FAIL the fixed eye' $W/ac10.log   # expect script-gate: ac10 ok: free-nav-stop: 17 passed, 4 failures (rc 1, …); rc=0; 2 (V15, V31)",
+        "AC12 (last): git status --porcelain; mine | wc -l; make uid-guard   # expect no status output; 0; uid-guard: ok (422 .uid files) (V23, V31; uid-guard planner-replicated)",
+        "record each run's gate line, rc and wall seconds into this JSON's measured field as you go"
+      ],
+      "expectations": "Every AC's script-gate ok line with the doc's exact summary and rc (ac6/ac7/ac8/ac10: 17 passed 4 failures or per doc, rc 1 inside the gate, run returns 0; ac7b/ac9f: 23 passed 0 failures; ac9s: 59 passed 1 failures), the doc's exact FAIL/ok/ERROR lines, and an empty git status --porcelain after every mutation AC. AC12: no status output, mine | wc -l = 0, uid-guard: ok (422 .uid files). A 142 anywhere is an instrument failure: rerun on a quieter host, never read as a kill.",
+      "notes": "Designer-measured end to end in V31 (10:57-11:17, load 5-28, ~20 min). The doc table's \\| inside cells stands for a bare | when typed (7ak V17): grep -E '^FAIL|^ok I offers' and mine | wc -l.",
+      "status": "completed",
+      "passes": true,
+      "measured": "Every mutation AC through mutate/run, foreground, one at a time, each followed by an empty git status --porcelain. AC6: 'script-gate: ac6 ok: free-nav-stop: 17 passed, 4 failures (rc 1, no SCRIPT ERROR, 101 s of 900 s)', mutate rc=0, wall 102 s; FAIL the sky draws the destination with no nearer body over it; FAIL I offers ... (43 candidates); FAIL the sky draws alpha Cen A with no nearer body over it; FAIL alpha Cen A is inspectable at its stop; porcelain empty. AC7: 'script-gate: ac7 ok: free-nav-stop: 17 passed, 4 failures (rc 1, no SCRIPT ERROR, 105 s of 900 s)', rc=0, wall 105 s; FAIL the fixed eye looks ahead ... x2; FAIL I offers ... (41 candidates); FAIL alpha Cen A is inspectable at its stop. AC7 unshifted control: 'script-gate: ac7b ok: free-nav-stop: 23 passed, 0 failures (rc 0, no SCRIPT ERROR, 103 s of 900 s)', rc=0, wall 103 s; porcelain empty. AC8: 'script-gate: ac8 ok: free-nav-stop: 22 passed, 1 failures (rc 1, no SCRIPT ERROR, 105 s of 900 s)', rc=0, wall 106 s; ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates); FAIL its catalogue row is dark, replaced by the body, not pinned (1 rows, lit [\"4472832130942575872\"], 0 pins); porcelain empty. AC9s (ship-star-identification, 300 s budget): 'script-gate: ac9s ok: ship-star-identification: 59 passed, 1 failures (rc 1, no SCRIPT ERROR, 5 s of 300 s)', rc=0, wall 6 s; ERROR: a pinned destination is offered once, as its pin row (0 candidates); porcelain empty. AC9f: 'script-gate: ac9f ok: free-nav-stop: 23 passed, 0 failures (rc 0, no SCRIPT ERROR, 102 s of 900 s)', rc=0, wall 102 s; porcelain empty. AC10: 'script-gate: ac10 ok: free-nav-stop: 17 passed, 4 failures (rc 1, no SCRIPT ERROR, 103 s of 900 s)', rc=0, wall 103 s; grep -c '^FAIL the fixed eye' = 2; porcelain empty. AC12: git status --porcelain empty; mine | wc -l = 0; 'uid-guard: ok (422 .uid files)', rc 0. No 142 at any point; no product file left modified. Host load (uptime 1-min) 3.3 to 8.0 across the runs.",
+      "completed": "2026-11-12"
+    },
+    {
+      "id": "MS3",
+      "title": "Changelog fragment changelogs/unreleased/2026-11-12-free-nav-stop-guard-edges.md (per changelogs/unreleased/README.md, the 7am shape of commit 77c5b7b5; names row 7an and sprint R1-7AN-FREE-NAV-GUARD-EDGES); re-assert AC12 + make python-guard; this JSON's evidence fields (measured per milestone, passes true, velocity wall times)",
+      "files": [
+        "changelogs/unreleased/2026-11-12-free-nav-stop-guard-edges.md",
+        ".ailang/state/sprints/sprint_R1-7AN-FREE-NAV-GUARD-EDGES.json"
+      ],
+      "loc": "~10 lines (the fragment) + the JSON evidence",
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance": [],
+      "commands": [
+        "fragment: changelogs/unreleased/2026-11-12-free-nav-stop-guard-edges.md, opening with '### ' (### Added): the I-key guard's edges in make free-nav-stop-test now fail for the right reason — a sky-renderer occlusion of the destination fails with its own message at both stops (sky_hides asks occludes_direction as _add_body_candidates does); the clear-eye check refreshes the ship BVH itself (eye_clear), placement-independent; the stop's catalogue point is checked layer by layer (dark row under the body's replacement, 0 pins asserted) and the pinned_ids filter in a fixture where a pin really happens; each new check has a measured killing mutation (AC6-AC10). Test-only: two files, +40/-2; nothing a player sees or hears changes",
+        "re-assert: git status --porcelain; mine | wc -l  # 0; make uid-guard  # uid-guard: ok (422 .uid files); make python-guard  # ok (no *.py touched); git status --porcelain shows only the fragment and this JSON on top of MS1's commit",
+        "evidence: fill each milestone's measured (MS1: the RED greps 2/0/0/0, the fence sha256/stat, AC1's gate line + wall time, AC2's summary, AC3's 2/2/1/0, AC4's file list, AC5's 1/2/1, AC11's gate line; MS2: each AC's script-gate ok line with rc and wall seconds, the FAIL/ok/ERROR lines, the empty porcelains, AC12's three results; MS3: the fragment path), set passes true per milestone, wall-clock totals under velocity",
+        "commit the fragment + JSON (e.g. '7an MS3: changelog fragment and sprint evidence')"
+      ],
+      "expectations": "The fragment in place naming row 7an and R1-7AN-FREE-NAV-GUARD-EDGES; AC12 re-asserted (empty status, mine 0, uid-guard ok 422); python-guard ok; this JSON's measured fields filled and passes true per milestone.",
+      "notes": "MS3 carries no AC of its own (AC12 closed MS2); its done-criteria are the re-asserts and the evidence. The GitHub fast tier (make ci-fast) runs on the PR; no GPU gate, no make golden, no capture, no full local make test (merge rule); the nightly rig/full runs the suite on main post-merge.",
+      "status": "completed",
+      "passes": true,
+      "measured": "Fragment: changelogs/unreleased/2026-11-12-free-nav-stop-guard-edges.md (### Added; names row 7an and R1-7AN-FREE-NAV-GUARD-EDGES). Re-assert: make python-guard 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)' rc 0; make uid-guard 'uid-guard: ok (422 .uid files)' rc 0; git status --porcelain shows only the fragment and this JSON. Godot wall totals across MS1+MS2: 1037 s (AC1 299, AC2 8, AC11 103, AC6 102, AC7 105+103, AC8 106, AC9s 6 + AC9f 102, AC10 103). No deviation from the doc's expected output.",
+      "completed": "2026-11-12"
+    }
+  ],
+  "risks": [
+    "Host load vs budgets (design F2, V31): short copies 900 s (measured 104-246 s at load 6-34), the identification test 300 s (7-17 s), the full targets 1800/600 s through make (planner-measured 301 s at load ~4). Under heavy load any run can return 142 — an instrument failure: rerun on a quieter host, never bump a budget silently, never read it as a kill.",
+    "Two sessions, one clone (quorum r2, sol): simultaneous acceptance sessions within the same clone are prohibited; mine matches only this session's unique $W prefix and this clone's sim/ path (V33 two-clone drill); a mutation AC as a & job cannot trap INT (V30 negative control: the file stayed mutated). Foreground, one at a time.",
+    "The eye's margin is 0.55 m (V16): if a monitor frame grows by that much the eye is blocked again; the clear-eye check fails first and names the eye. Moving the eye or the furniture is the deck-layout row's call.",
+    "sky_hides mirrors _add_body_candidates (direction, skip id, distance; quorum r1 gemini non-blocking): product drift shows in AC6 as one failing without the other; the helper's comment names what it mirrors.",
+    "The pin fixture's state (quorum r1 gemini; V32): pin_destination leaves pinned_ids=[b], pin_fallbacks=1; the next set_custom_stars -> clear() resets both before 'absent metadata fails closed' runs. Coupling, not a defect.",
+    "The bounded runner's limits (V27-V30): the sim has its own process group, so the group kill misses it and reap catches it by its --package-dir <clone>/sim argv; a shell with INT ignored at start cannot trap INT (foreground only); a lone TERM to the AC shell runs the trap when the current bounded gate returns.",
+    "The fixture's vmag -14 has no physical meaning beyond brightness (~1 lux, as bright as the fixture rows' flux 1; vmag 0 is invisible at the fixture's exposure, V9).",
+    "#412 lands first: no textual conflict (its ui/ship_star_identification.gd hunk is at :237; the mutations edit :62); whichever lands second reruns AC1 and AC2.",
+    "(Planner-added) Sandbox environment: the planner's sandbox refused /tmp writes, ~/Library writes (user:// unwritable -> AC2/ac9s SCRIPT ERROR at tests/test_ship_star_identification.gd:45) and ps (mine/reap blind). All three are hard prerequisites asserted in MS1 step 1; a sandbox that fails them reports and stops, it does not adapt the tests.",
+    "(Planner-added) runtime/ is untracked: a fresh executor clone may lack runtime/bin; point PATH at the main checkout's runtime and assert v0.56.1."
+  ],
+  "pause_points": [
+    "Environment: ailang --version != v0.56.1 or godot --version != 4.7.2 -> stop. user:// not writable or ps denied -> stop (planner-measured sandbox failure modes); never patch the test around them.",
+    "MS1: fence extraction != 81 lines, sha256 != 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558, or git apply --check fails -> re-extract, never retype; an anchor assert mismatches -> tree drift, stop (if #412 landed first, its :237 hunk moves no anchor or mutation line — rerun AC1/AC2 after the rebase). Applied git diff --stat != '2 files changed, 40 insertions(+), 2 deletions(-)' -> stop. AC1 not 57 passed 0 failures rc 0, AC2 not 60 passed 0 failures rc 0, AC3 not 2/2/1/0, AC5 not 1/2/1, AC11 not 23 passed 0 failures rc 0 -> stop.",
+    "MS2: any run returning 142 -> instrument failure: rerun on a quieter host; never read as a kill. A gate line or rc differing from the doc's expected -> stop. mutate refusing a dirty file (exit 4) -> a previous run left the tree mutated: stop, git checkout -- <file>, report (never force). git status --porcelain non-empty after any mutation AC -> the trap failed: stop, report, do not start the next AC. Any urge to run a mutation AC as a & job or alongside another Godot run -> that is the prohibited shape (V30); foreground only.",
+    "AC12: mine | wc -l != 0 -> leftover processes: stop and name them. uid-guard != ok (422 .uid files) -> stop.",
+    "Any temptation to touch the do-not-touch list (ui/, demos/, sky/, planets/, interior/, bridge/, sim/, audio/, data/, assets/, shaders, captures, goldens, *.ail, Makefile, mk/) -> stop; the fix needs none of it. ui/ship_star_identification.gd, sky/starfield.gd, planets/system_view.gd are edited only by mutate for one bounded run each and restored. Never move the course monitor, the landing or the eye.",
+    "No merge before the cross-family evaluation (generator != judge); landing files wait on it."
+  ],
+  "local_pr_gates": [
+    "MS1 on record: the anchor asserts; the RED greps 2/0/0/0; the 81-line fence with sha256 12880f78a2757838…; git apply --check + the 40+/2- stat; AC1's gate line (57 passed, 0 failures); AC2 (60 passed, 0 failures); AC3 2/2/1/0; AC4's file list; AC5 1/2/1; AC11's gate line.",
+    "MS2 on record: AC6-AC10 each with its script-gate ok line, rc 0, the doc's exact FAIL/ok/ERROR lines, and an empty git status --porcelain after each; AC12's empty status, mine | wc -l = 0, uid-guard: ok (422 .uid files).",
+    "MS3 evidence: the fragment in place; AC12 re-asserted; make python-guard ok; this JSON's measured fields filled, passes true per milestone.",
+    "The GitHub gate: make ci-fast green on the PR. No GPU gate, no make golden, no capture, no full local make test (merge rule); the nightly rig/full runs the suite on main post-merge."
+  ],
+  "controller_checks": "Controller re-run after the executor, before landing: MS1's RED greps vs the patched AC3 2/2/1/0 and AC5 1/2/1 · the fence sha256/stat against a fresh extraction (81 lines, 12880f78a2757838…, 40+/2-) · AC1's 57 and AC2's 60 gate lines with wall times · AC4's file list (test-only) · AC11's 23/0 · AC6-AC10's gate lines, rcs and FAIL/ok/ERROR lines, each followed by an empty porcelain · AC12's three results · the fragment naming row 7an and R1-7AN-FREE-NAV-GUARD-EDGES · python-guard and uid-guard ok · this JSON's measured fields filled · the open-PR conflict surface re-checked (#412's ui/ship_star_identification.gd hunk at :237; design V22) · the fast tier (make ci-fast) green on the PR.",
+  "plan_verification": "Planner, 2026-11-12, HEAD 0ac39ca4 (r2 design commit) on branch mission/stapledon-iter89-7an (planner made no tree writes outside .godot/tmp scratch): merge-base with origin/main = b96b2d60 = origin/main = the design's measured base; git diff --name-only origin/main...HEAD = the design doc alone, so every V-number applies verbatim; git status --porcelain empty before and after every planner run. Toolchain: runtime/bin/ailang = AILANG v0.56.1 (commit 05c860a); godot 4.7.2.stable.official.ed1daf0bf; runtime/ untracked. AC1 PRISTINE MEASURED (once, foreground): make free-nav-stop-test -> rc=0, wall 304 s, 'script-gate: free-nav-stop-test ok: free-nav-stop: 54 passed, 0 failures (rc 0, no SCRIPT ERROR, 301 s of 1800 s)' (matches V1's count; V1's 634 s was at load 9-21, the planner's host was load 3.7-5.1); the log holds 'ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates)' and 'ok alpha Cen A is inspectable at its stop'. AC3 PRISTINE MEASURED: 2, 0, 0, 0 (the doc's base column). AC4 PRISTINE MEASURED: only the design doc. AC5 PRISTINE MEASURED: 2, 0, 0 (the doc's base column). The pin-fixture check absent: grep -c 'a pinned destination is offered once' tests/test_ship_star_identification.gd -> 0. FENCE MEASURED (V25 replicated, not applied): 81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558 (doc prefix matches), git apply --check clean, git apply --stat '2 files changed, 40 insertions(+), 2 deletions(-)' (test_free_nav_stop.gd 37, test_ship_star_identification.gd 5); porcelain stayed empty. ANCHORS MEASURED (V2/V3 replicated): ui/ship_star_identification.gd:62 the pinned_ids filter, :101 the catalogue-star occludes_direction, :130 the body occludes_direction; planets/system_view.gd:793 'if b.id == skip_id: continue'; sky/starfield.gd:110 the bare-alias replacement line; tests/test_free_nav_stop.gd:60-61 and :79-80 set_held+update_candidates then the clear-eye check with no comment; tests/test_ship_star_identification.gd:201 the bare-Gaia check; the AC9 sed pattern matches :62 verbatim. AC12 PIECES MEASURED (V23 replicated): make uid-guard -> 'uid-guard: ok (422 .uid files)'; porcelain empty. AC2 BASELINE NOT PLANNER-MEASURED — environment, recorded: this sandbox refuses ~/Library writes (touch app_userdata/probe -> Operation not permitted), so user:// is unwritable (probe: FileAccess.open user:// WRITE -> null, err 12) and make ship-star-identification-test SCRIPT ERRORs at tests/test_ship_star_identification.gd:45 ('Cannot call method store_buffer on a null value'), Godot then never reaching quit() (bounded by the gate's 600 s); the doc's V9 base (59 passed, 0 failures, 12 s of 600 s) stands as the baseline and the executor asserts a writable user:// in MS1 step 1. The sandbox also refuses /tmp writes (reroot via TMPDIR) and process listing (ps/pgrep denied), so the planner ran no run/mutate AC — all designer-measured (V27-V33) with working ps and user://.",
+  "velocity": "Executed in one iteration. Godot wall time across the acceptance runs: 1037 s (AC1 299 s; AC2 8 s; AC6 102 s; AC7 105 s + 103 s; AC8 106 s; AC9 6 s + 102 s; AC10 103 s; AC11 103 s). Host load 3.3-8.0 (1-min) across the runs; no 142 and no deviation. Planned estimate was 20-30 min (MS1) + 20-45 min (MS2) + 5-10 min (MS3).",
+  "evaluations": {
+    "sonnet": {
+      "score": 94,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AN-FREE-NAV-GUARD-EDGES_round_1_sonnet.json",
+      "note": "Agent tool sonnet, own clone stapledons-godot-iter89-eval; 0 blocking; AC1-AC12 re-run; 4 own mutants (3 killed, 1 survivor showing lit[1].is_empty() is the load-bearing term)."
+    },
+    "minimax-m3": {
+      "score": 97,
+      "verdict": "PASS",
+      "report": ".ailang/state/evaluations/eval_R1-7AN-FREE-NAV-GUARD-EDGES_round_1_minimax-m3.json",
+      "note": "pi openrouter, own clone stapledons-godot-iter89-eval-mm; handshake acked; attempt 1 wall_timeout rc 13 at 3605 s (86 tools, no report, mid-mutant; orphaned Godot+sim stopped by the controller); attempt 2 a bounded recovery run (801 s, verdict ok) read attempt 1 on-disk logs, finished the cut JM3b and wrote the report; 0 blocking; 17 judge mutants, survivors NB1-NB3 (JM1 reproduced by the controller: 23 passed, 0 failures)."
+    }
+  },
+  "pr": 429
+}

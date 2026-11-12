@@ -1,0 +1,30 @@
+{
+ "evaluator":"sprint-evaluator (iteration 86, independent)",
+ "model":"claude-sonnet-5-5",
+ "score":92,
+ "verdict":"PASS",
+ "rubric":{"total":92,"threshold":70,"categories":{
+  "tests_pass":{"max":20,"awarded":20,"notes":"make free-nav-stop-test rc=0, 54 passed, 0 failures, re-run by me (556 s). Mutants fail as designed."},
+  "lint_clean":{"max":10,"awarded":10,"notes":"git status --porcelain empty; no new .gd so no .uid needed; no product file touched."},
+  "acceptance_criteria":{"max":30,"awarded":27,"notes":"AC1-AC4 reproduced exactly. Red controls R1 and R2 reproduced the two named FAILs. R3 (tree edit) and a base-test run not re-run (host load 23-60, step_timeout flakiness); evidence for them rests on the sprint JSON."},
+  "code_quality":{"max":15,"awarded":13,"notes":"4-line change, comments cite the golden eye. The clear-eye check is a centre-ray test only and is order-sensitive (valid only after update_candidates, which refreshes occlusion.active); not commented in the test."},
+  "documentation":{"max":15,"awarded":13,"notes":"Changelog fragment and design are accurate. Design says 'test-only, not visible' which holds; the remaining product fact (lift landing eye looks into the course monitor so I offers no destination there) is recorded in a code comment only, not as a follow-up row."},
+  "design_fidelity":{"max":10,"awarded":9,"notes":"Eye (11,82,-4.8) is the G-M4-S3 golden's captain eye (grep count 1 in tools/m4_ship_golden.gd). Check meaning preserved: still asserts body:cat:<id> offered, catalogue point absent, from an eye that sees ahead."}}},
+ "commands":[
+  {"cmd":"make free-nav-stop-test (AC1)","result":"rc=0; script-gate: free-nav-stop-test ok: free-nav-stop: 54 passed, 0 failures (rc 0, no SCRIPT ERROR, 556 s of 1800 s)"},
+  {"cmd":"AC2 grep of .godot/tmp/free-nav-stop.log","result":"6 ok lines: 2x 'the fixed eye looks ahead past the ship', 'I offers the destination ... (44 candidates)', 'its card says the radius is inferred', 'alpha Cen A is inspectable at its stop', 'a click on A's centre picks A, not B ([\"body:acen-a\"])'; no FAIL"},
+  {"cmd":"AC3 greps","result":"2 / 0 / 1 as expected"},
+  {"cmd":"AC4 git diff --name-only 312b1772..HEAD","result":"sprint JSON, changelog fragment, two design docs, tests/test_free_nav_stop.gd only"}],
+ "mutants":[
+  {"mutation":"M1 (= R1): both eyes back to the old (8,82,-4.8) landing, scratch /tmp/stap_i86_son_m1.gd","cmd":"AILANG_BIN=ailang godot --headless --path . --script /tmp/stap_i86_son_m1.gd","result":"rc=1. FAIL the fixed eye looks ahead past the ship (no surface on its centre ray); FAIL I offers the destination ... (40 candidates); same clear-eye FAIL at the second stop; FAIL alpha Cen A is inspectable. Later FAILs (step_timeout cascade) are host load (load 50+), not the mutant. The new check names the cause."},
+  {"mutation":"M2 (= R2): course monitor and face shifted +2.418 m in x onto the new eye's line, after the avatar_pos line","cmd":"godot --headless ... --script /tmp/stap_i86_son_m2.gd","result":"rc=1. FAIL the fixed eye looks ahead (x2); FAIL I offers the destination (41 candidates); FAIL alpha Cen A is inspectable; 34 passed, 18 failures (the extra failures are the same step_timeout flake; two earlier tries died at 'navigation opens' under load 55-60). Furniture move is named by the clear-eye check."},
+  {"mutation":"M3 (own): old blocked eye, but the clear-eye check moved BEFORE ident.update_candidates()","cmd":"godot --headless ... --script /tmp/stap_i86_son_m3.gd","result":"rc=1 overall, but 'ok the fixed eye looks ahead past the ship' PASSES vacuously (occlusion.active is empty until update_candidates refreshes it) while I offers and alpha Cen A fail. The check is only meaningful in the shipped order (after update_candidates); it is in that order, and the camera is read after look_direction, so not vacuous as shipped. Fragile to reordering."},
+  {"mutation":"Tree restored","cmd":"git status --porcelain","result":"empty (no tracked file edited; scratch files only under /tmp/stap_i86_son_*)"}],
+ "blocking":[],
+ "non_blocking":[
+  "The check tests only the centre ray; an off-centre occluder that hides the body's limb is still caught only by the candidate test, which is fine, but the check name suggests a fuller clearance.",
+  "The check is order-sensitive (M3): valid only after update_candidates() refreshes occlusion.active. Add a comment so a reorder does not make it vacuous.",
+  "The underlying product fact stays unrecorded as a row: from the lift landing (8,82,-4.8) the course monitor blocks the stop body, so I at the spawn eye offers no destination. Classified as accepted (Mark approved the monitor wall, 2026-11-03), but a player holding I right after the lift sees nothing; a deck-layout follow-up should note it.",
+  "R3 (tree-edit product regression control) and a base-test reproduction were not re-run by me; host load made step_timeout flaky (parallel mutants and loads over 50 broke 'navigation opens'), so the mutants ran serially.",
+  "Test run is load-sensitive (sim step_timeout 2 s): under high host load the scratch mutants cascade into unrelated FAILs, so red-control AC text expecting 'exactly 4 failures' is not stable."]
+}

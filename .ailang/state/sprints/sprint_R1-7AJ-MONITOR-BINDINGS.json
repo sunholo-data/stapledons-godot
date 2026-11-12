@@ -1,0 +1,237 @@
+{
+  "sprint_id": "R1-7AJ-MONITOR-BINDINGS",
+  "status": "completed",
+  "approved": true,
+  "approved_by": "D-88 (neutral test-infra hygiene; unattended loop proceeds)",
+  "created": "2026-11-10",
+  "design_doc": "design_docs/implemented/r1/m4-7aj-monitor-face-bindings.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7aj-monitor-face-bindings-sprint.md",
+  "branch": "mission/stapledon-iter83-7aj",
+  "implements": [
+    "7aj"
+  ],
+  "scope": "~55 LOC, all test code and make glue, in exactly three files: tests/m4_playthrough_ship.gd (+~16: M1 face refresh in sample() and the M3 PLAYTHROUGH_MONITOR_MUTANT hook -- five mutants plus a test-only stall value, inert unless set), tests/display_audit.gd (+~22: M2 per-sample monitor-coverage checks under the product's own visibility rules, both branches, plus the 'display-audit monitors:' diagnostics line, non-control routes only), mk/earth-link.mk (+~16: display-audit-monitor-controls and its ship-demo-ci edge, both subprocesses under $(SCRIPT_GATE) per the M3 execution contract, MONITOR_AUDIT_S ?= 600 deadline knob). No product file changes (AC7/AC8). Never touched: Makefile, ui/, interior/, demos/, main.gd, sim/, assets/, data, tests/fixtures/display_audit/, and PR #412's files (demos/ship_geometry_demo.gd, ui/ship_star_identification.gd, mk/captain-anim.mk, mk/captain-command.mk; AC12). The four existing audit targets' recipes do not change; scene-session-audits goes green through tests/m4_playthrough_ship.gd alone (V11). No GPU step, no make golden, no capture, no full make test anywhere -- the keep-going nightly (7ag) runs the suite on main post-merge. The measured prototype /tmp/stap_i83_7aj_prototype_r1.patch (V19/V20) used PROTO_7AJ_MUTANT where the shipped name is PLAYTHROUGH_MONITOR_MUTANT; do not copy the prototype's variable name. Branch merge-base is b974e302, so every design V-number applies verbatim. Landing files (CHANGELOG line, doc/plan move to implemented/, README row, this JSON's completion) are controller-owned after the cross-family evaluation.",
+  "milestones": [
+    {
+      "id": "MS1",
+      "title": "Red controls (test-first): PLAYTHROUGH_MONITOR_MUTANT hook in tests/m4_playthrough_ship.gd (five mutants + test-only stall, inert by default) + display-audit-monitor-controls target in mk/earth-link.mk (both subprocesses under $(SCRIPT_GATE) per the M3 execution contract; ship-demo-ci edge) -- see unrefreshed and drop_one red BEFORE the fix",
+      "files": [
+        "tests/m4_playthrough_ship.gd",
+        "mk/earth-link.mk"
+      ],
+      "loc": "~30 (harness hook +~14; earth-link.mk target +~16)",
+      "depends_on": [],
+      "acceptance": [
+        "AC6",
+        "AC9",
+        "AC14"
+      ],
+      "commands": [
+        "export PATH=$PWD/runtime/bin:$PATH; T=$(mktemp -d); perl -e 'alarm 600; exec @ARGV' make display-audit-crew > $T/ms1-baseline.log 2>&1; echo rc=$?; grep -oE 'display-audit: samples=[0-9]+ .*' .godot/tmp/display-audit/crew/display-audit.log | tail -1",
+        "git grep -n PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests | grep -cvE '^(tests/m4_playthrough_ship\\.gd|mk/earth-link\\.mk):'; git grep -l PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests",
+        "perl -e 'alarm 900; exec @ARGV' make display-audit-monitor-controls > $T/ms1-red.log 2>&1; echo rc=$?; grep -E '^display monitor control' $T/ms1-red.log; grep -c 'SCRIPT ERROR' $T/ms1-red.log",
+        "perl -e 'alarm 300; exec @ARGV' make script-gate-lint; echo rc=$?"
+      ],
+      "expectations": "cmd1: rc 2, 'display-audit: samples=46 ... missing=414 ... failures=828' (red baseline re-measures V2). cmd2: 0, then exactly tests/m4_playthrough_ship.gd and mk/earth-link.mk (AC9 confinement). cmd3: rc 2; all five playthrough legs pass ('script-gate: playthrough ok' in each .godot/tmp/display-audit/monitor-<m>-playthrough.log); audit legs reject with main's 414/828 signature; unrefreshed and drop_one never printed ': rejected' (their monitor-coverage greps cannot match -- M2 absent); final line 'display monitor controls: <N> rejected' with N < 5 (record N); 0 SCRIPT ERROR lines. cmd4: rc 0 (the new audit --script call sits inside $(SCRIPT_GATE); tools/script-gate-baseline.txt and mk/script-gates.mk untouched; V24).",
+      "notes": "Hook lives in sample() right after the frame % 4 early return (tests/m4_playthrough_ship.gd:53-55): mutant env read + sampled-row counter (10th sampled row = frame 36; V20/V23); unrefreshed guards MS2's refresh loop; drop_one hides the course face on row 10, restores after the row write; unbound adds Label 'Mutant' text '42' to the clocks face once; stale sets ClocksFace.ship.text = '+9 s' AFTER the refresh cycle; orphan clears journey.plan in the row's view on row 10 after the refresh cycle, restores after the write (realizability checked in MS3); stall parks sample() in an unbounded OS.delay_msec loop, never set by any recipe. Recipe (design M3 verbatim in substance): per mutant, playthrough through the existing gated playthrough target (Makefile:1354, 1200 s, must pass) with PLAYTHROUGH_MONITOR_MUTANT=$m exported, then $(SCRIPT_GATE) display-audit-monitor-$m <log> $(MONITOR_AUDIT_S) '^display-audit: ' 1 -- $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(SCRATCH)/playthrough/monitor-$m/display_samples.ndjson crew $(DISPLAY_KNOWN); reason greps per the design's M3 table (V20 measured; orphan V23); a gate failure (deadline rc 142, launch, wrong rc, SCRIPT ERROR) is printed as 'infrastructure failure (playthrough|audit)', the mutant is never counted, the target fails; n increments only after the gated audit passed and every reason line matched; ends 'display monitor controls: <n> rejected' and requires bad=0 and n=5 (4 under the sanctioned orphan alternative). MONITOR_AUDIT_S ?= 600 is the one knob (default = design verbatim; exists for AC14's short deadline override). Never present a control as green that never went red.",
+      "measured": [
+        "cmd1 (crew baseline, rc 2): display-audit: samples=46 checks=12006 mismatches=0 missing=414 new=0 known=138 stale=0 failures=828 (V2 signature)",
+        "cmd2: 0 hits outside the two files; git grep -l lists mk/earth-link.mk and tests/m4_playthrough_ship.gd",
+        "cmd3 (red, rc 2, 0 SCRIPT ERROR): all five playthrough legs 'script-gate: playthrough ok'; reason lines missing for all five (M2 absent): unrefreshed, drop_one, unbound, stale, orphan; 'display monitor controls: 0 rejected'. Gated audit summaries: unrefreshed failures=828; drop_one failures=820; unbound new=46 failures=874; stale mismatches=46 failures=874; orphan failures=859",
+        "cmd4 (rc 0): script-gate-lint: ok (251 --script invocations: 133 through $(SCRIPT_GATE), 118 on the baseline; 22 includes, all in mk/*.mk; 23 makefiles scanned)"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "MS2",
+      "title": "M1: the harness supplies the monitors' frame -- every face refreshes from its monitor's view in sample() (guarded: mutant != unrefreshed); AC1-AC4 go green at the M1-only counts (V8-V11)",
+      "files": [
+        "tests/m4_playthrough_ship.gd"
+      ],
+      "loc": "~5 (design M1 loop + its 3-line comment)",
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4"
+      ],
+      "commands": [
+        "grep -n 'm.face.refresh(m._view, m._receiver, m._bed)' tests/m4_playthrough_ship.gd",
+        "perl -e 'alarm 600; exec @ARGV' make display-audit-crew > $T/ms2-crew.log 2>&1; echo rc=$?; grep -E '^(FAIL|display-audit)' .godot/tmp/display-audit/crew/display-audit.log | tail -2; grep -c '^display-audit monitors:' .godot/tmp/display-audit/crew/display-audit.log",
+        "perl -e 'alarm 600; exec @ARGV' make display-audit-interlude > $T/ms2-interlude.log 2>&1; echo rc=$?; tail -1 .godot/tmp/display-audit/interlude/display-audit.log",
+        "perl -e 'alarm 900; exec @ARGV' make display-audit-comms > $T/ms2-comms.log 2>&1; echo rc=$?; tail -1 .godot/tmp/display-audit/comms/display-audit.log",
+        "perl -e 'alarm 900; exec @ARGV' make scene-session-audits > $T/ms2-scene.log 2>&1; echo rc=$?; grep -E '^ac4:' .godot/tmp/display-audit/playthrough/display-audit.log; tail -1 .godot/tmp/display-audit/playthrough/display-audit.log",
+        "perl -e 'alarm 900; exec @ARGV' make display-audit-monitor-controls > $T/ms2-controls.log 2>&1; echo rc=$?; grep -E '^display monitor control' $T/ms2-controls.log"
+      ],
+      "expectations": "cmd1: one line inside sample(). cmd2 (AC1, ~33 s): rc 0; 'display-audit: samples=46 checks=13386 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0' (V8's M1-only count); monitors-line grep 0 (M2 not yet present). cmd3 (AC3, ~49 s): rc 0; 'samples=127 checks=37766 ... missing=0 new=0 known=143 stale=0 failures=0' (V10). cmd4 (AC2, ~168-188 s): rc 0; 'samples=797 checks=257971 ... missing=0 new=0 known=922 stale=0 failures=0' (V9). cmd5 (AC4, ~179-205 s): rc 0; 'ac4: MET (5 accepted by D-77/D-78)'; 'samples=814 checks=254950 ... missing=0 ... failures=0' (V11) -- mk/m45.mk unchanged. cmd6 (intermediate red, derived -- record actuals): rc 2; 'unbound: rejected' (V13: new=46 failures=46) and 'stale: rejected' (V14: mismatches=46 failures=92) counted; unrefreshed wrong reason (V12's 414/828, coverage grep still unmatchable); drop_one and orphan survive the audit (rc 0 vs WANT_RC 1) -> 'infrastructure failure (audit)' lines, not counted; final 'display monitor controls: 2 rejected'.",
+      "notes": "Apply design M1 verbatim, integrated with the MS1 hook, right after the mutant read: 'for m: BridgeMonitor in demo.monitors: if m.face != null and mutant != \"unrefreshed\": m.face.refresh(m._view, m._receiver, m._bed)' with the design's R3-COMMS-V2 CV6 / 7aj comment. m._view is the same dictionary the audit reconstructs from (ship_hud.update's one caller demos/ship_geometry_demo.gd:1337, _refresh_monitors(view) at :1339; V21). No face.step(), no viewport update; on-screen gating stays covered by bridge-monitors-test's gated checks. The stale and orphan mutant blocks run after this loop (design M3).",
+      "measured": [
+        "cmd1: the refresh line is tests/m4_playthrough_ship.gd:67, one line in sample()",
+        "cmd2 (AC1, rc 0): display-audit: samples=46 checks=13386 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0; monitors-line count 0 (M2 absent)",
+        "cmd3 (AC3, rc 0): display-audit: samples=127 checks=37766 mismatches=0 missing=0 new=0 known=143 stale=0 failures=0",
+        "cmd4 (AC2, rc 0): display-audit: samples=797 checks=257971 mismatches=0 missing=0 new=0 known=922 stale=0 failures=0",
+        "cmd5 (AC4, rc 0): ac4: MET (5 accepted by D-77/D-78); display-audit: samples=814 checks=254950 mismatches=0 missing=0 new=0 known=757 stale=0 failures=0",
+        "cmd6 (intermediate, rc 2, 0 SCRIPT ERROR): 'display monitor control unbound: rejected' (new=46 failures=46) and 'display monitor control stale: rejected' (mismatches=46 failures=92); unrefreshed gated audit failures=828 with its coverage reason absent (M2 not yet present); drop_one audit rc 0 vs WANT_RC 1 -> 'infrastructure failure (audit)', not counted; orphan audit rc 1 but mismatches=2 missing=2 failures=39 (its coverage reason absent, M2 not yet present); 'display monitor controls: 2 rejected'"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "MS3",
+      "title": "M2: per-sample monitor-coverage checks + 'display-audit monitors:' totals line in tests/display_audit.gd; controls target green (AC6, 5 rejected); orphan mutant measured (AC6b) or sanctioned reverse-branch deletion; stalled-run evidence (AC14)",
+      "files": [
+        "tests/display_audit.gd"
+      ],
+      "loc": "~22 (design M2: audit_route/MONITOR_KINDS/monitor_totals, per-sample coverage block in audit(), totals line in _run())",
+      "depends_on": [
+        "MS1",
+        "MS2"
+      ],
+      "acceptance": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC6b",
+        "AC14"
+      ],
+      "commands": [
+        "grep -c 'monitor-coverage frame=%d' tests/display_audit.gd; grep -n 'display-audit monitors: clocks=%d' tests/display_audit.gd; grep -c 'shown without its source' tests/display_audit.gd",
+        "perl -e 'alarm 600; exec @ARGV' make display-audit-crew > $T/ms3-crew.log 2>&1; perl -e 'alarm 600; exec @ARGV' make display-audit-interlude > $T/ms3-interlude.log 2>&1; perl -e 'alarm 900; exec @ARGV' make display-audit-comms > $T/ms3-comms.log 2>&1; perl -e 'alarm 900; exec @ARGV' make scene-session-audits > $T/ms3-scene.log 2>&1; echo rcs-done; grep '^display-audit monitors:' .godot/tmp/display-audit/{crew,comms,interlude,playthrough}/display-audit.log; grep -h '^FAIL monitor-coverage' .godot/tmp/display-audit/{crew,comms,interlude,playthrough}/display-audit.log | wc -l; for d in crew comms interlude playthrough; do tail -1 .godot/tmp/display-audit/$d/display-audit.log | grep -o 'failures=0'; done",
+        "perl -e 'alarm 900; exec @ARGV' make display-audit-monitor-controls > $T/ms3-controls.log 2>&1; echo rc=$?; grep -E '^display monitor control' $T/ms3-controls.log",
+        "grep -E '^FAIL missing field $|^FAIL binding contract .*/monitor_face_signal/|^FAIL monitor-coverage frame=1 clocks$|failures=1012' .godot/tmp/display-audit/monitor-unrefreshed.log; grep -E '^FAIL monitor-coverage frame=36 course$|^display-audit: .* failures=1$|course=135' .godot/tmp/display-audit/monitor-drop_one.log; grep -E '^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text=\"42\"$|new=46 ' .godot/tmp/display-audit/monitor-unbound.log; grep -E '^FAIL stale .*/monitor_face_clocks/|^FAIL binding contract .*/monitor_face_clocks/|mismatches=46 ' .godot/tmp/display-audit/monitor-stale.log",
+        "grep -E '^FAIL monitor-coverage frame=36 course shown without its source$|^display-audit: .* failures=1$' .godot/tmp/display-audit/monitor-orphan.log",
+        "PLAYTHROUGH_MONITOR_MUTANT=stall perl -e 'alarm 180; exec @ARGV' sh tools/script_gate.sh stall-playthrough $T/stall-play.log 45 '^playthrough: [1-9][0-9]* passed, 0 failures$$' -- env AILANG_BIN=$(command -v ailang) godot --headless --path . --script tests/m4_playthrough_ship.gd -- tests/playthrough_crew.json $T/stall-out none > $T/stall-play.gate 2>&1; echo rc=$?; tail -1 $T/stall-play.gate",
+        "mkfifo $T/stalled.ndjson; ( exec 9>$T/stalled.ndjson; sleep 300 ) & perl -e 'alarm 180; exec @ARGV' sh tools/script_gate.sh stall-audit $T/stall-audit.log 45 '^display-audit: ' 1 -- env AILANG_BIN=$(command -v ailang) godot --headless --path . --script tests/display_audit.gd -- $T/stalled.ndjson crew tests/fixtures/display_audit/known_findings.json > $T/stall-audit.gate 2>&1; echo rc=$?; tail -1 $T/stall-audit.gate; kill %1 2>/dev/null",
+        "perl -e 'alarm 900; exec @ARGV' make display-audit-monitor-controls MONITOR_AUDIT_S=1 > $T/ms3-stall.log 2>&1; echo rc=$?; grep -E '^display monitor control' $T/ms3-stall.log; grep -c 'timeout after 1 s (rc 142)' $T/ms3-stall.log"
+      ],
+      "expectations": "cmd1: coverage-check and totals lines present; 'shown without its source' count 1 (or 0 under the sanctioned alternative, consistently with cmd5's resolution). cmd2 (AC5, ~7.5-8.5 min; final V19 counts -- deltas vs MS2 are the coverage checks: +4/row -> crew +184, interlude +508, comms +3188, scene +3256): crew 'clocks=138 course=138 crew=460 signal=138' and 'checks=13570'; comms 'clocks=2391 course=3074 crew=7970 signal=2391' (checks=261159); interlude 'clocks=381 course=434 crew=1270 signal=381' (checks=38274); scene 'clocks=2442 course=3063 crew=8140 signal=2442' (checks=258206, ac4 MET); zero FAIL monitor-coverage lines; four failures=0. cmd3 (AC6): rc 0; five ': rejected' lines; 'display monitor controls: 5 rejected'. cmd4: V20's measured per-mutant lines -- unrefreshed missing=414 failures=1012 (=828+46x4 coverage); drop_one totals course=135 vs 138 and failures=1; unbound new=46 failures=46; stale mismatches=46 failures=92. cmd5 (AC6b, V23): both orphan lines present ('FAIL monitor-coverage frame=36 course shown without its source', summary failures=1) -- this is the reverse branch's measured red run; under the sanctioned alternative the file is absent, 'shown without its source' is gone from tests/display_audit.gd, and the target reads 4/4 (doc+AC6 wording updated at landing). cmd6 (AC14 leg 1): rc 1 inside ~47 s; 'script-gate: stall-playthrough FAIL; timeout after 45 s (rc 142): a runtime error before quit() leaves Godot running ...'. cmd7 (AC14 leg 2): rc 1 inside ~47 s; same timeout reason for stall-audit off a never-EOF fifo. cmd8 (AC14 leg 3, target level): rc 2 in <2 min; five 'infrastructure failure (audit)' lines (no host boots Godot inside 1 s; timeout count 5); final 'display monitor controls: 0 rejected' -- no stalled mutant is ever reported as rejected.",
+      "notes": "Apply design M2 (r1 prototype display_audit.gd hunks verbatim in substance; PROTO_7AJ_MUTANT appears nowhere): audit_route set from args[1] at _run() start so audit() sees it per row; the coverage block sits in audit() after root_node.free() and runs for every route except control; visibility rules mirror the product -- clocks/signal always, course iff journey.plan is a Dictionary (CourseFace.refresh), crew iff earth.crew is a non-empty Array (CrewFaces.refresh) (V22: 15 interlude at-rest frames have no plan and must not fire). Totals print for non-control routes only; V18: 'display-audit monitors:' collides with no recipe gate ('^display-audit: .* failures=0$' anchored on the colon). If the orphan mutant proves unrealizable, take the design's pre-authorized alternative (delete the reverse branch, mutants list minus orphan, test n -eq 4, Risks records over-display is covered only by bridge-monitors-test's gated checks) -- that is a decision, not a pause. The Makefile playthrough gate's 1200 s is out of scope, so the stalled playthrough is evidenced through the same gate mechanism at 45 s (leg 1) and the target's fail-closed counting at the audit deadline of 1 s (leg 3); a full-fidelity stalled playthrough through the target would cost one bounded <=21 min run and is evaluator-optional, never widened to pass.",
+      "measured": [
+        "cmd1: one monitor-coverage check line (the required branch) and the totals line are present in tests/display_audit.gd; 'shown without its source' count 0 after the sanctioned orphan deletion (it was 1 before)",
+        "cmd2 (AC5, all rc 0): crew 'display-audit monitors: clocks=138 course=138 crew=460 signal=138', 'display-audit: samples=46 checks=13570 ... failures=0'; interlude 'clocks=381 course=434 crew=1270 signal=381', 'samples=127 checks=38259 ... failures=0' (checks 38274 in V19: the 15 reverse checks were deleted); comms 'clocks=2391 course=3074 crew=7970 signal=2391', 'samples=797 checks=261159 ... failures=0'; scene 'clocks=2442 course=3063 crew=8140 signal=2442', 'ac4: MET (5 accepted by D-77/D-78)', 'samples=814 checks=258206 ... failures=0'. grep -c '^FAIL monitor-coverage' over the four logs: 0",
+        "cmd3 (AC6, rc 0, 0 SCRIPT ERROR): 'display monitor control unrefreshed: rejected', 'drop_one: rejected', 'unbound: rejected', 'stale: rejected'; 'display monitor controls: 4 rejected'. Reasons: unrefreshed 'FAIL monitor-coverage frame=1 clocks' plus failures=1012; drop_one 'FAIL monitor-coverage frame=36 course', 'failures=1'; unbound 'new=46 failures=46'; stale 'mismatches=46 failures=92'",
+        "cmd4 (AC6b, orphan measured then deleted): with the reverse branch present, the orphan run printed 'FAIL monitor-coverage frame=36 course shown without its source' but summary 'display-audit: samples=46 checks=13572 mismatches=2 missing=2 new=0 known=138 stale=0 failures=40' (not failures=1). Unrealizable: clearing journey.plan breaks the course bindings. Sanctioned resolution taken: orphan mutant and reverse branch deleted, count 4 (design Risks and V23 updated)",
+        "cmd5 (AC14 leg 1, direct gate): 'script-gate: stall-playthrough FAIL; timeout after 45 s (rc 142): a runtime error before quit() leaves Godot running'; gate rc 1; the log ends at 'walk crew path_m=13.571791261'",
+        "cmd6 (AC14 leg 2, direct gate): FIFO and /dev/stdin samples paths do not stall Godot (FileAccess fails: 'FAIL missing samples', rc 1 in <1 s, not a stall). Added an inert test-only stall in tests/display_audit.gd: MONITOR_AUDIT_STALL=1 parks _run(). Result: 'script-gate: stall-audit FAIL; timeout after 45 s (rc 142)'; gate rc 1",
+        "cmd7 (AC14 leg 3, target level, MONITOR_AUDIT_S=1): rc 2; four 'display monitor controls: <m> infrastructure failure (audit, ...)' lines (unrefreshed, drop_one, unbound, stale), four 'timeout after 1 s (rc 142)'; 'display monitor controls: 0 rejected'. No stalled mutant counted"
+      ],
+      "deviations": [
+        "orphan mutant realized and measured (cmd4), not realizable with failures=1; the reverse branch in tests/display_audit.gd and the orphan hook in tests/m4_playthrough_ship.gd were removed; count 4 (sanctioned by the design M3 alternative). Files touched beyond the MS3 list: tests/m4_playthrough_ship.gd (orphan removal), mk/earth-link.mk (4 mutants, count 4), design doc (V23/V25, AC6, Risks)",
+        "AC14 audit stall: a FIFO or /dev/stdin samples path cannot stall Godot's FileAccess, so the stall is MONITOR_AUDIT_STALL=1 in tests/display_audit.gd (not PLAYTHROUGH_MONITOR_MUTANT, to keep the AC9 grep confined to m4 and earth-link.mk)",
+        "The stall leg 1 uses the existing mutant variable with the value stall, as the plan says"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "MS4",
+      "title": "Hygiene and scope evidence (no new code): text identity (AC7), contract/allowlist unchanged with 32 controls (AC8), mutant inert by default (AC9), harness users green (AC10), uid/python guards and diff --check (AC11), no PR #412 files (AC12), no GPU + script-gate-lint (AC13, AC14 second half)",
+      "files": [],
+      "loc": "0 (evidence only)",
+      "depends_on": [
+        "MS3"
+      ],
+      "acceptance": [
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC12",
+        "AC13",
+        "AC14"
+      ],
+      "commands": [
+        "B=b974e302; git diff --exit-code $B -- ui interior demos main.gd project.godot assets data sim; echo rc=$?",
+        "perl -e 'alarm 600; exec @ARGV' make bridge-monitors-test 2>&1 | tail -1",
+        "git diff --exit-code $B -- ui/display_binding.gd ui/composed_binding.gd tests/fixtures/display_audit/; echo rc=$?; perl -e 'alarm 900; exec @ARGV' make display-audit-controls > $T/ms4-controls.log 2>&1; echo controls-rc=$?; grep -c 'display control .*: rejected' $T/ms4-controls.log",
+        "git grep -l PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests; git grep -n PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests | grep -cvE '^(tests/m4_playthrough_ship\\.gd|mk/earth-link\\.mk):'",
+        "perl -e 'alarm 900; exec @ARGV' make playthrough-negative playthrough-adversarial > $T/ms4-pn.log 2>&1; echo rc=$?; grep -E '^playthrough-negative: |^playthrough: ' $T/ms4-pn.log | tail -4",
+        "make uid-guard python-guard > /dev/null && echo guards-ok; git diff --check $B; echo diff-check-rc=$?",
+        "git diff --name-only $B | grep -E '^(Makefile|demos/ship_geometry_demo\\.gd|ui/ship_star_identification\\.gd|mk/captain-anim\\.mk|mk/captain-command\\.mk)$'; echo nocollide-rc=$?; git diff --name-only $B | sort",
+        "git diff $B -- mk/earth-link.mk | grep -E '^\\+' | grep -E 'GODOT|godot' | grep -cv 'headless'; git diff $B -- mk/earth-link.mk | grep -E '^\\+' | grep -icE 'golden|capture'; perl -e 'alarm 300; exec @ARGV' make script-gate-lint; echo lint-rc=$?",
+        "make -qp 2>/dev/null | grep '^ci-fast:' | tr ' ' '\\n' | grep -cxE 'ship-demo-ci|display-audit-monitor-controls|display-audit-crew|display-audit-comms|display-audit-interlude|scene-session-audits'"
+      ],
+      "expectations": "cmd1 (AC7): empty diff, rc 0. cmd2 (AC7): 'bridge-monitors: 19 passed, 0 failures' (V16). cmd3 (AC8): empty diff rc 0; controls-rc 0; 32 rejected (the recipe's own test $n -eq 32 holds; M2 skips the control route). cmd4 (AC9): exactly the two files; 0 extra hits. cmd5 (AC10): rc 0; 'playthrough-negative: 3 passed, 0 failures'; adversarial 'playthrough: <N> passed, 0 failures' (V16 measured 142161 passed with the prototype; assert 0 failures, record N). cmd6 (AC11): 'guards-ok'; no whitespace output; diff-check rc 0. cmd7 (AC12 + scope): collision grep no output, nocollide-rc 1; the name list is exactly .ailang/state/sprints/sprint_R1-7AJ-MONITOR-BINDINGS.json, the design doc + this plan under design_docs/planned/r1/, mk/earth-link.mk, tests/display_audit.gd, tests/m4_playthrough_ship.gd. cmd8 (AC13 + AC14 lint): 0, 0, lint rc 0. cmd9 (ci-fast membership guard; V17): 0.",
+      "notes": "B=b974e302 is this branch's merge-base with main (verified at plan time), matching the design's AC table. The three edited .gd/.mk files keep their existing tracked .uid companions; none is created or deleted, so uid-guard cannot fail on them. No GPU gate, no make golden, no capture, no full make test (AC13; 7ag/7af precedent).",
+      "measured": [
+        "make display-audit-crew rc=0: display-audit: samples=46 checks=13570 mismatches=0 missing=0 new=0 known=138 stale=0 failures=0; monitors clocks=138 course=138 crew=460 signal=138",
+        "make display-audit-interlude rc=0: display-audit: samples=127 checks=38259 mismatches=0 missing=0 new=0 known=143 stale=0 failures=0; monitors clocks=381 course=434 crew=1270 signal=381",
+        "make display-audit-comms rc=0: display-audit: samples=797 checks=261159 mismatches=0 missing=0 new=0 known=922 stale=0 failures=0; monitors clocks=2391 course=3074 crew=7970 signal=2391",
+        "make scene-session-audits rc=0: ac4: MET (5 accepted by D-77/D-78); display-audit: samples=814 checks=258206 mismatches=0 missing=0 new=0 known=757 stale=0 failures=0; monitors clocks=2442 course=3063 crew=8140 signal=2442",
+        "make display-audit-monitor-controls rc=0: display monitor control unrefreshed/drop_one/unbound/stale: rejected; display monitor controls: 4 rejected; 0 SCRIPT ERROR",
+        "make display-audit-controls rc=0: 32 'display control ...: rejected' lines (test -eq 32 holds); 'display control valid/known/known_renumbered/known_unaccepted: PASS/OPEN'",
+        "make playthrough-negative playthrough-adversarial: 'playthrough-negative: 3 passed, 0 failures'; 'script-gate: playthrough ok: playthrough: 142161 passed, 0 failures' (rc 0)",
+        "make bridge-monitors-test rc=0: 'script-gate: bridge-monitors-test ok: bridge-monitors: 19 passed, 0 failures'",
+        "make uid-guard python-guard rc=0: 'uid-guard: ok (422 .uid files)'; 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)'",
+        "git diff --check b974e302 -- tests mk <this doc> .ailang: rc 0 (own files clean). FULL 'git diff --check b974e302' rc 2: whitespace warnings in design_docs/planned/r1/m4-7aj-monitor-face-bindings-sprint.md lines 82-96 and 144 (the controller's plan commit 2cc84f30, not a file this sprint may edit; UNRESOLVED, reported)",
+        "git diff --exit-code b974e302 -- ui interior demos main.gd project.godot assets data sim shaders: rc 0 (AC7). ui/display_binding.gd ui/composed_binding.gd tests/fixtures/display_audit/: rc 0 (AC8)",
+        "git grep PLAYTHROUGH_MONITOR_MUTANT -- Makefile mk tests: hits only in tests/m4_playthrough_ship.gd and mk/earth-link.mk; 0 outside (AC9)",
+        "git diff --name-only b974e302 | grep PR-412 files: no output, rc 1 (AC12). Changed files: .ailang sprint JSON, the sprint plan (controller), design doc, mk/earth-link.mk, tests/display_audit.gd, tests/m4_playthrough_ship.gd",
+        "mk/earth-link.mk additions: 0 Godot calls without --headless; 0 golden/capture (AC13). script-gate-lint rc 0 (251 invocations: 133 gated, 118 baseline)",
+        "make -qp ci-fast membership of the six targets: 0 (V17 holds)",
+        "make -n display-audit-monitor-controls rc 2: QUIRK, reported. The controls recipe is one shell line containing $(MAKE), so make -n executes it (the gates ran, 'infrastructure failure (audit)'). Real runs unaffected; not fixed (outside the plan)"
+      ],
+      "status": "done"
+    }
+  ],
+  "local_pr_gates": [
+    "MS1 red proof on record: display-audit-monitor-controls rc 2 on the unfixed tree, unrefreshed and drop_one never counted, 0 SCRIPT ERROR (test-first baseline).",
+    "make display-audit-crew / display-audit-interlude / display-audit-comms / scene-session-audits all rc 0 at the final V19 summaries, plus the four AC5 'display-audit monitors:' totals lines and zero FAIL monitor-coverage (AC1-AC5).",
+    "make display-audit-monitor-controls rc 0, 'display monitor controls: 5 rejected' (or 4 under the sanctioned orphan alternative, doc updated), each mutant's required reason lines present (AC6, AC6b).",
+    "AC14 stall trio on record: two direct-gate rc-142 timeout lines (stalled playthrough, stalled audit, 45 s deadlines) and the target-level MONITOR_AUDIT_S=1 run rc 2 ending 'display monitor controls: 0 rejected'.",
+    "make bridge-monitors-test (19/19); make display-audit-controls (32 rejected); make playthrough-negative playthrough-adversarial (V16 shape) (AC7, AC8, AC10).",
+    "make uid-guard python-guard rc 0; git diff --check b974e302 clean; AC7/AC8 scope diffs empty; AC12 collision grep empty (AC11, AC12).",
+    "make script-gate-lint rc 0 -- ci-fast member (mk/script-gates.mk:27,32); the new --script call is inside $(SCRIPT_GATE) and the 118-row baseline pin does not move (AC14, V24).",
+    "ci-fast membership guard: make -qp | grep '^ci-fast:' lists none of ship-demo-ci, display-audit-monitor-controls, or the four audit targets (V17).",
+    "No GPU gate, no make golden, no capture, no full make test anywhere in this sprint (Mark 2026-11-03/06; the 7af/7ag precedent) -- the keep-going nightly runs the suite on main post-merge."
+  ],
+  "post_merge_check": "The next keep-going nightly rig/full on main (~/Library/Logs/stapledon-rig-nightly.log): display-audit-comms, scene-session-audits, display-audit-interlude and display-audit-crew pass, and the nightly-rig issue's 'Failing targets (N): ...' list sheds exactly them, leaving the design's other known reds (bridge-operator-test per D-148, similar-test 7ah, tools-test 7ai, free-nav-stop-test 7ak). Any FAIL monitor-coverage with the mutant unset is a real face/visibility drift between tests/display_audit.gd and CourseFace.refresh/CrewFaces.refresh: a product finding for its own row, never an allowlist entry.",
+  "landing": {
+    "owner": "controller (after the cross-family evaluation passes, generator != judge)",
+    "files": [
+      "CHANGELOG.md (one dated 7aj entry, 7af/7ag model, naming R1-7AJ-MONITOR-BINDINGS and PR #379 attribution)",
+      "git mv design doc and sprint plan to design_docs/implemented/r1/",
+      "design_docs/README.md index row",
+      "this sprint JSON: milestone statuses, recorded counts and wall times, progress/completed/evaluation, doc/plan path move; if the orphan alternative was taken, doc and AC6 gain the 4-rejected branch-deleted wording in the same landing commit"
+    ]
+  },
+  "risks": [
+    "Mutant variable inert by default (AC9): one env read, no new check calls; MS2's greens are measured with it unset; git grep confines it to tests/m4_playthrough_ship.gd and the mk/earth-link.mk recipe. The test-only stall value rides the same variable and no recipe ever sets it.",
+    "A stalled control must never count as rejected (AC14): n increments only after the gated WANT_RC-1 audit passes AND every reason line matches; deadline (rc 142)/launch/rc/SCRIPT ERROR faults are control infrastructure failures and fail the target. The only deadline knob is MONITOR_AUDIT_S ?= 600 (design value as default); the playthrough leg's 1200 s gate in Makefile:1354 is out of scope by fiat (Makefile untouched).",
+    "orphan may be unrealizable (clearing journey.plan may hide the labels on the very same row): the design pre-authorizes deleting the reverse branch -- 4 rejected, Risks/AC6 record that over-display is then covered only by bridge-monitors-test's gated checks. Shipping an unexercised gating branch is the unacceptable outcome.",
+    "Signal face waterfall _follow touches shared audio taps (live=false erases only its own id): AC2/V9/V19's comms green re-measures it.",
+    "M2 mirrors the product's visibility rules (CourseFace.refresh hides course labels with no plan; CrewFaces.refresh with no crew, V22): a future face-rule change reddens M2 until the mirror is updated -- intended.",
+    "The audit now treats faces as always on screen -- stricter than play (on-screen gating stays covered by bridge-monitors-test); a real finding is a product bug for its own row, not an allowlist entry.",
+    "PR #412 edits demos/ship_geometry_demo.gd: M1 reads demo.monitors and BridgeMonitor._view/_receiver/_bed; a rename there needs a one-line follow-up here. AC12 keeps this row out of #412's files.",
+    "Run time (prototype-measured): crew 33 s (39 s at main), interlude 49 s, comms 168-188 s, scene 179-205 s; the controls target adds about 5 x 12-30 s to ship-demo-ci; MS2/MS3 re-run the four audits twice (~16 min of verification across the sprint). All headless, all bounded by alarms; no GPU."
+  ],
+  "pause_points": [
+    "MS1: any playthrough leg failing, any SCRIPT ERROR, or an audit summary departing from the V2/V12 signature (missing = 9 x samples, failures = 2 x missing before M2): stop and report -- the hook is not inert/shadowing as designed.",
+    "MS2: AC1-AC4 not matching the V8-V11 summaries exactly, or the intermediate controls run contradicting the derived '2 rejected' shape (e.g. drop_one counted): stop and report -- a face or the sampler drifted.",
+    "MS3: AC5 totals not matching V19 exactly, or any FAIL monitor-coverage with the mutant unset: stop and report. Taking the sanctioned orphan alternative is pre-authorized -- record it, do not pause.",
+    "AC14: a stall counted as a rejection, or either direct gate not terminating inside its deadline: stop and report; never widen a deadline to make the evidence pass.",
+    "Any temptation to touch Makefile, ui/, interior/, demos/, sim/, assets/, main.gd, tests/fixtures/display_audit/, or a PR #412 file: stop -- M1 needs none of them.",
+    "No merge before the cross-family evaluation; landing files wait on it."
+  ],
+  "velocity": "~55 LOC total (harness +~16, audit +~22, mk +~16), all test code and make glue; no product change. Verification is run-dominated: MS1 ~1.0 h writing + ~0.4 h red runs; MS2 ~0.6 h (four audits ~7.5-8.5 min + one intermediate controls run); MS3 ~1.0 h (four audits again + controls green ~3-5 min + three stall legs ~5 min); MS4 ~0.5 h (guards, 32-control fixtures ~2-3 min, harness users ~2-4 min, greps). Estimate: one executor session, about half a day (compare 7ag rig-keep-going ~200 LOC one day; 7af same control family, one day on a 0.5-day estimate). Measured run times cited from the design: crew ~33 s, interlude ~49 s, comms ~168-188 s, scene ~180-205 s.",
+  "github_pr": "#417",
+  "evaluation": {
+    "round": 1,
+    "evaluator": "Sonnet 5.5 (Agent tool, own clone)",
+    "score": 91,
+    "verdict": "PASS",
+    "report": ".ailang/state/evaluations/eval_R1-7AJ-MONITOR-BINDINGS_round_1_sonnet.json"
+  },
+  "controller_checks": "iteration 83 controller at 0919f0e1: display-audit-crew rc 0 (failures=0), display-audit-monitor-controls rc 0 (4 rejected), script-gate-lint rc 0, uid-guard rc 0, git diff --check b974e302 rc 0 after plan whitespace fix; own mutants: coverage neutralised -> 2 rejected rc 2; WANT_RC 0 -> 0 rejected rc 2 (both killed)",
+  "evaluation_cross_vendor": {
+    "evaluator": "MiniMax M3 (pi, openrouter, mission_pi_run.sh verdict ok, 795 s, $0.11)",
+    "score": 88,
+    "verdict": "PASS",
+    "report": ".ailang/state/evaluations/eval_R1-7AJ-MONITOR-BINDINGS_round_1_minimax-m3.json"
+  }
+}
