@@ -1,6 +1,6 @@
 # R3-REASONS: reasons to travel (evidence, what a world might teach the ship, and the finder)
 
-**Status:** Planned 2026-11-12. Not yet approved; the open questions at the end are Mark's.
+**Status:** Approved 2026-11-12 (Mark, attended: "yes this looks great - just what I was imagining"; OQ1–OQ5 as recommended, with one amendment: "mass cost is ok but time is the currency that is most expensive"). Planned the same day. Next: the sprint plan.
 **Release:** R3 (Signals and Contact): roadmap rows **S2**, **S3**, **F1**, **F2**, **F3** and **F5**. F4 (the crew's voices, = R2 G4) is a named follow-up.
 **Priority:** P0 for play. Today nothing gives the player a reason to pick one star over another.
 **Origin:** Mark, attended 2026-11-12: "give reasons to actually travel - and that is based on detection/analysis of stars that may have resources we need e.g. life, ideas, etc."
@@ -71,11 +71,11 @@ The ship looks at the sky whenever it is at rest. Some worlds give a signal. Eac
 ```
         what did we see?           what could it change aboard?        what does going cost?
    ┌──────────────────────┐      ┌──────────────────────────┐      ┌───────────────────────┐
-   │  spectrum strip with │      │  the ship's eight         │      │  three bars:          │
+   │  spectrum strip with │      │  the ship's eight         │      │  time first:          │
    │  the lines that fired│      │  resource glyphs; the ones│      │  Earth years (of the  │
-   │  + a dial: how sure  │      │  this world could improve │      │  doom clock), ship    │
-   │  + a clock: how old  │      │  lit, the ship's tightest │      │  years, mass          │
-   │                      │      │  ringed                   │      │                       │
+   │  + a dial: how sure  │      │  this world could improve │      │  doom clock) and ship │
+   │  + a clock: how old  │      │  lit, the ship's tightest │      │  years, large; mass,  │
+   │                      │      │  ringed                   │      │  small                │
    └──────────────────────┘      └──────────────────────────┘      └───────────────────────┘
                      then, under them: state bars now → state bars at arrival
 ```
@@ -120,7 +120,7 @@ Belief      = { world, lastLightYear, p: [(PlanetState, float)], movedMost: [Obs
 ### RT3. The prediction at arrival and the three costs (sim, pure)
 
 - **Prediction.** A continuous-time Markov model over the eight states, with rates derived from the same lifetimes the dial uses (`sunholo/worlds` gains `transitionRates` and `propagate`, version 0.2.0). The interval is the light age plus the planned leg's galaxy-frame time. Closed-form two- and three-state cases are the tests (finder AC 3, to 1e-12).
-- **Costs.** Earth time and ship time are read from the journey core's plan for that leg, exactly (finder AC 4). **Mass** needs the drive's mass bill for a leg (D-69), which the sim does not expose today; see OQ2.
+- **Costs. Time is the expensive currency** (Mark, 2026-11-12). Earth time, against the doom clock, and ship time, against the crew's lives, are read from the journey core's plan for that leg, exactly (finder AC 4), and they lead everywhere a cost is shown. **Mass** is the third and lesser cost: the drive's mass bill for a leg (D-69), added to the sim here as a package function first (OQ2).
 
 ### RT4. Offers and needs: why this world, for this ship (sim, pure)
 
@@ -147,9 +147,9 @@ A candidate's offer is the belief-weighted sum of these rows, propagated to arri
 ### RT5. The finder: map, filters and the reason card (Godot, attended)
 
 - **Marks on the map.** A candidate gets a mark whose shape is its strongest evidence kind (habitable-zone planet, biosignature, technosignature) and whose fill fades with light age. Unsurveyed stars carry no mark.
-- **Filters as pictures.** A row of toggles using the same glyphs: evidence kind, the eight resource glyphs ("could improve this"), and three reach rings drawn on the map itself (doom budget, ship years, mass).
-- **Sorts:** Earth-time cost, ship-time cost, light age, distance. No "best".
-- **The reason card** is the picture above: spectrum strip, sureness dial, age clock, resource glyphs, three cost bars, then state bars now and at arrival. Its caption is one sentence built from sim fields (D-21). The Archive may add an interpretation in its own voice, labelled as the Archive's and allowed to be wrong.
+- **Filters as pictures.** A row of toggles using the same glyphs: evidence kind, the eight resource glyphs ("could improve this"), and reach rings drawn on the map itself (the doom budget and ship years, prominent; mass, fainter).
+- **Sorts:** Earth-time cost (the default order), ship-time cost, light age, distance. No "best".
+- **The reason card** is the picture above: spectrum strip, sureness dial, age clock, resource glyphs, the cost (Earth years and ship years as the two large bars, mass as a small third), then state bars now and at arrival. Its caption is one sentence built from sim fields (D-21). The Archive may add an interpretation in its own voice, labelled as the Archive's and allowed to be wrong.
 - **True and Processed.** The spectrum strip shows the measured counts with their noise (True). A labelled Processed setting shows the fitted model over it. Neither invents a line the instrument did not record.
 - **Where.** The Navigation console and its screen in the cockpit; the commit dialog gains the card for the chosen target.
 
@@ -201,9 +201,11 @@ RT5 can start on the mock-up while RT1–RT4 run, against recorded fixture data.
 | Offers promise what track K has not built | Offers are chances with no delivery; the hindsight card resolves them to "could teach", and K1 owns delivery |
 | The crew host's resource state is too coarse to rank needs | `shipNeeds` falls back to stock tightness only, and says so in its output |
 | Per-tick cost of the survey over thousands of worlds | Observe only on arrival at a stop and at coarse cruise intervals; the `full` flag pattern from `encodeWorlds` |
-| Mass cost has no source in the sim | OQ2; the card shows two bars until the drive's bill exists, never an invented third |
+| Mass cost has no source in the sim | OQ2 answered: the bill is added in RT3; until it lands the card shows the two time bars only, never an invented third |
 
 ## Open questions for the user
+
+**All answered by Mark, attended 2026-11-12: every recommendation stands.** On OQ2 he added that mass is fine to include but time is the most expensive currency, so Earth time and ship time lead every cost display and mass is the lesser third.
 
 - **OQ1. The starting instrument.** A 10 m aperture (the provisional value in `detect.ail`), which makes life a tens-of-light-years question and leaves most of the map to the census and to loud minds; or a larger starting suite. Recommendation: 10 m, with larger apertures as blueprints later, after RT2 has measured how many candidates each preset gives.
 - **OQ2. The mass bar.** Add the drive's mass bill for a leg to the sim in this sprint (bubble-resources §4a, the reach law, as a package function first), or ship with Earth time and ship time only. Recommendation: add it; the third currency is what makes a far world expensive.
