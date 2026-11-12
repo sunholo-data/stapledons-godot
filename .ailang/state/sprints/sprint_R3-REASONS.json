@@ -140,9 +140,9 @@
     "make strict and make parity green"
    ],
    "passes": null,
-   "started": null,
+   "started": "2026-11-12",
    "completed": null,
-   "notes": null
+   "notes": "Built on feat/r3-reasons-rt2a against the observe 0.2.0 development overlay (tools/observe_dev.sh; ailang-packages PR #196); sim/ailang.toml and the lock still pin 0.1.0, so the PR cannot merge until 0.2.0 is published and pinned. detect.ail: the 10 m reference coronagraph with zodi, the 100 m dish, a photon-budget Detect for the calibration seam; provisional gone. evidence.ail: emission from the true state at the emitted time, records from the budgets (direct imaging, spectrum, transit census, radio leakage), silences only for known worlds, coarse census at cruise by Doppler factor. Not modelled: transit spectroscopy (no OB row), so worlds inside the inner working angle get no oxygen reading. lore_values reads the 52 OB rows. Design values awaiting review: 30-day stop look, 1-hour cruise look, 0.5-1.0 um design band, albedo 0.2 for every planet."
   },
   {
    "id": "RT2b",
