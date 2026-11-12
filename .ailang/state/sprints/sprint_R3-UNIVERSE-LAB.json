@@ -138,10 +138,10 @@
     "make lab-probe writes data/lab/probe.json with three runs each and the host load",
     "values identical across runs; VM equals interpreter on the draw loop"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-12",
+   "completed": "2026-11-12",
+   "notes": "make lab-probe on AILANG v0.56.1 (runtime/bin), 3 runs each, one process at a time, host load average 37 at start and 62 at end (shared host, 16 logical CPUs: 12 performance, 4 efficiency). Every probe is a stand-in for a module not yet written. CEILINGS MEASURED: draw loop 31.5 us CPU per draw (30.0 to 32.5), 10,000 draws = 0.32 s CPU and 0.32 s wall against the 1 s stop: PASS. Quadrature 256/512/1024 squared: 0.019/0.059/0.232 s CPU. Order-statistic intervals: 6.2 ms CPU per 1,024-row sample (three intervals). Filter of 500,000 rows held as an Array: 0.10 s CPU per pass; building the table 6.0 s CPU and 836 MB peak. Shards: 4 processes 4.0x one, 8 processes 6.4x, 12 processes 6.1x (worst pairing of runs 5.0x) against the 6x stop: PASS ON THE MEAN, NOT ROBUSTLY, and measured on a loaded host; re-measure on a quiet host before UL6b fixes the shard count (8 shards did as well as 12 here). Values identical across runs; strict VM = interpreter on draws, quadrature, intervals (lab-probe-parity, in make strict and parity). Pause 1's other two budgets (a voyage, the candidate table) are UL0b's."
   },
   {
    "id": "UL0b",
