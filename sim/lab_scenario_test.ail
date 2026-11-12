@@ -1,0 +1,313 @@
+module stapledons/sim/lab_scenario_test
+
+-- R3-UNIVERSE-LAB UL3a (design r3/universe-lab.md "Scenarios as data"; AC5): the scenario format.
+-- Fixtures are built with std/json here, or written out as text where the test is about the
+-- text (key order, whitespace, number spelling). Expected refusals are named constructors,
+-- never "some error". The pinned canonical text and its sha256 were computed outside AILANG
+-- (python3 -I: hashlib.sha256 of the exact bytes below).
+import ./lab_scenario (Scenario, Settings, Refusal, UniverseRule, Pure, Dial, Select, Band, Canon, SandbergAsPrinted, Radar, Tv, Beacon, Structure,
+  Departure, Source, Design, NotJson, NotAnObject, UnknownKey, DuplicateKey, MissingKey, WrongType, WrongFormat, BadId, BadVersion, BlankSummary,
+  UnknownSwitch, DuplicateSwitch, MissingSwitch, BadValue, DepartureWithoutReason, DepartureWithoutBasis, BothSourceAndDesign, ReasonWithoutDeparture,
+  decodeScenario, decodeNamed, check, canonical, digest, departs, baselineSettings, switchNames, refusalText, formatId)
+import std/json (Json, encode, jo, kv, js, jnum, jb, ja, jn)
+import std/list (foldl, map, filter, length, any, range, nth, zip)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (length as strLength, join)
+
+pure func all(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+
+-- ------------------------------------------------------------ fixtures
+pure func sw(name: string, value: Json) -> Json = jo([kv("switch", js(name)), kv("value", value)])
+pure func swSrc(name: string, value: Json, reason: string, source: string) -> Json =
+  jo([kv("switch", js(name)), kv("value", value), kv("reason", js(reason)), kv("source", js(source))])
+pure func swDesign(name: string, value: Json, reason: string) -> Json =
+  jo([kv("switch", js(name)), kv("value", value), kv("reason", js(reason)), kv("design", jb(true))])
+pure func baseSwitches() -> [Json] =
+  [sw("earth_clock_yr", jnum(100000.0)), sw("reach_ly", jnum(3000.0)), sw("universe_rule", js("pure")), sw("lifetime_prior", js("canon")),
+   sw("signature_classes", ja([js("radar"), js("tv")])), sw("quiet_minds", jb(false))]
+pure func nameOf(j: Json) -> string = match j { JObject(kvs) => (match kvs { e :: _ => (match e.value { JString(s) => s, _ => "" }), [] => "" }), _ => "" }
+-- The baseline switches with the entry of the same name replaced.
+pure func with1(entry: Json) -> [Json] = map(\j. if nameOf(j) == nameOf(entry) then entry else j, baseSwitches())
+pure func without(name: string) -> [Json] = filter(\j. nameOf(j) != name, baseSwitches())
+pure func docJson(id: string, version: Json, summary: string, switches: [Json]) -> Json =
+  jo([kv("format", js("lab-scenario-1")), kv("id", js(id)), kv("version", version), kv("summary", js(summary)), kv("switches", ja(switches))])
+pure func doc(id: string, switches: [Json]) -> string = encode(docJson(id, jnum(1.0), "A test scenario.", switches))
+pure func literature() -> string = doc("literature", baseSwitches())
+
+pure func dialJson(a: float, b: float, c: float, d: float) -> Json =
+  jo([kv("dial", jo([kv("life", jnum(a)), kv("minds", jnum(b)), kv("tech", jnum(c)), kv("lifetime", jnum(d))]))])
+pure func band(lo: Json, hi: Json) -> Json = ja([lo, hi])
+pure func selectJson(found: Json, ended: Json, late: Json) -> Json = jo([kv("select", jo([kv("found", found), kv("ended", ended), kv("late", late)]))])
+pure func openBand() -> Json = band(jn(), jn())
+
+-- One departing value per switch, in switchNames order.
+pure func departing() -> [(string, Json)] =
+  [("earth_clock_yr", jnum(16000.0)), ("reach_ly", jnum(1000.0)), ("universe_rule", dialJson(0.0, 0.0, 0.0, 0.0)), ("lifetime_prior", js("sandberg-as-printed")),
+   ("signature_classes", ja([js("radar"), js("tv"), js("beacon")])), ("quiet_minds", jb(true))]
+
+pure func refusedAs(r: Result[Scenario, Refusal], want: Refusal) -> bool = match r { Err(e) => e == want, Ok(_) => false }
+pure func accepted(r: Result[Scenario, Refusal]) -> bool = match r { Ok(_) => true, Err(_) => false }
+pure func digestOf(text: string) -> string = match decodeScenario(text) { Ok(sc) => digest(sc), Err(r) => "refused: ${refusalText(r)}" }
+pure func canonOf(text: string) -> string = match decodeScenario(text) { Ok(sc) => canonical(sc), Err(r) => "refused: ${refusalText(r)}" }
+
+-- ------------------------------------------------------------ AC5: the literature scenario
+pure func checkLiterature() -> bool =
+  match decodeScenario(literature()) {
+    Err(_) => false,
+    Ok(sc) => sc.id == "literature" && sc.version == 1 && length(sc.departures) == 0 &&
+      sc.settings.earthClockYr == 100000.0 && sc.settings.reachLy == 3000.0 && sc.settings.lifetimePrior == Canon &&
+      sc.settings.classes == [Radar, Tv] && !sc.settings.quietMinds && (match sc.settings.rule { Pure => true, _ => false }) &&
+      all(map(\n. !departs(sc.settings, n), switchNames())) && all(map(\n. !departs(baselineSettings(), n), switchNames()))
+  }
+test "the literature scenario decodes, states the baseline and has no departures" { checkLiterature() }
+
+-- ------------------------------------------------------------ AC5: the standing rule
+-- For EVERY switch: a departing value alone is refused by name, and accepted with a reason
+-- and a source, or a reason and the label Design.
+pure func ruleFor(p: (string, Json)) -> bool =
+  match p { (name, v) =>
+    refusedAs(decodeScenario(doc("x", with1(sw(name, v)))), DepartureWithoutReason(name)) &&
+    accepted(decodeScenario(doc("x", with1(swSrc(name, v, "a stated reason", "A. Author 2020, table 1"))))) &&
+    accepted(decodeScenario(doc("x", with1(swDesign(name, v, "a stated reason")))))
+  }
+pure func checkStandingRule() -> bool = all(map(ruleFor, departing())) && length(departing()) == length(switchNames())
+test "a departure without a reason is refused, for every switch; with a reason and a source or the Design label it is accepted" { checkStandingRule() }
+
+pure func prior(extra: [{ key: string, value: Json }]) -> string =
+  doc("x", with1(jo([kv("switch", js("lifetime_prior")), kv("value", js("sandberg-as-printed"))] ++ extra)))
+pure func checkBasis() -> bool =
+  all([
+    refusedAs(decodeScenario(prior([kv("reason", js("   "))])), DepartureWithoutReason("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("reason", js("\t\n")), kv("source", js("S 2018"))])), DepartureWithoutReason("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("source", js("S 2018"))])), DepartureWithoutReason("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("design", jb(true))])), DepartureWithoutReason("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("reason", js("why"))])), DepartureWithoutBasis("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("reason", js("why")), kv("source", js("  "))])), DepartureWithoutBasis("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("reason", js("why")), kv("design", jb(false))])), DepartureWithoutBasis("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("reason", js("why")), kv("source", js("S 2018")), kv("design", jb(true))])), BothSourceAndDesign("lifetime_prior")),
+    refusedAs(decodeScenario(prior([kv("reason", jnum(1.0)), kv("source", js("S 2018"))])), WrongType("switch \"lifetime_prior\"", "reason")),
+    refusedAs(decodeScenario(prior([kv("reason", js("why")), kv("design", js("yes"))])), WrongType("switch \"lifetime_prior\"", "design")),
+    accepted(decodeScenario(prior([kv("reason", js("why")), kv("source", js("S 2018")), kv("design", jb(false))])))
+  ])
+test "a blank reason, a missing or blank source, and both a source and the Design label are each refused by name" { checkBasis() }
+
+pure func checkReasonOnBaseline() -> bool =
+  all([
+    refusedAs(decodeScenario(doc("x", with1(swSrc("earth_clock_yr", jnum(100000.0), "why", "S 2018")))), ReasonWithoutDeparture("earth_clock_yr")),
+    refusedAs(decodeScenario(doc("x", with1(swDesign("quiet_minds", jb(false), "why")))), ReasonWithoutDeparture("quiet_minds")),
+    -- classes given in another order are still the baseline
+    refusedAs(decodeScenario(doc("x", with1(swDesign("signature_classes", ja([js("tv"), js("radar")]), "why")))), ReasonWithoutDeparture("signature_classes")),
+    accepted(decodeScenario(doc("x", with1(sw("signature_classes", ja([js("tv"), js("radar")]))))))
+  ])
+test "a reason on a switch that states the baseline is refused" { checkReasonOnBaseline() }
+
+-- ------------------------------------------------------------ unknown, repeated, missing
+pure func checkSwitchSet() -> bool =
+  all([
+    refusedAs(decodeScenario(doc("x", baseSwitches() ++ [sw("warp_drive", jb(true))])), UnknownSwitch("warp_drive")),
+    refusedAs(decodeScenario(doc("x", baseSwitches() ++ [swDesign("warp_drive", jb(true), "why")])), UnknownSwitch("warp_drive")),
+    refusedAs(decodeScenario(doc("x", baseSwitches() ++ [sw("quiet_minds", jb(false))])), DuplicateSwitch("quiet_minds")),
+    all(map(\n. refusedAs(decodeScenario(doc("x", without(n))), MissingSwitch(n)), switchNames())),
+    refusedAs(decodeScenario(doc("x", [])), MissingSwitch("earth_clock_yr"))
+  ])
+test "an unknown switch, a repeated switch and each missing switch are refused by name (nothing is defaulted)" { checkSwitchSet() }
+
+pure func checkShape() -> bool =
+  all([
+    (match decodeScenario("{\"format\": ") { Err(NotJson(_)) => true, _ => false }),
+    (match decodeScenario("") { Err(NotJson(_)) => true, _ => false }),
+    refusedAs(decodeScenario("[1, 2]"), NotAnObject("the scenario")),
+    refusedAs(decodeScenario("\"literature\""), NotAnObject("the scenario")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("id", js("x")), kv("version", jnum(1.0)), kv("summary", js("s")), kv("switches", ja(baseSwitches())), kv("notes", js("hi"))]))), UnknownKey("the scenario", "notes")),
+    refusedAs(decodeScenario("{\"format\":\"lab-scenario-1\",\"id\":\"x\",\"id\":\"y\",\"version\":1,\"summary\":\"s\",\"switches\":[]}"), DuplicateKey("the scenario", "id")),
+    refusedAs(decodeScenario(encode(jo([kv("id", js("x")), kv("version", jnum(1.0)), kv("summary", js("s")), kv("switches", ja(baseSwitches()))]))), MissingKey("the scenario", "format")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-2")), kv("id", js("x")), kv("version", jnum(1.0)), kv("summary", js("s")), kv("switches", ja(baseSwitches()))]))), WrongFormat("lab-scenario-2")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("version", jnum(1.0)), kv("summary", js("s")), kv("switches", ja(baseSwitches()))]))), MissingKey("the scenario", "id")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("id", js("x")), kv("summary", js("s")), kv("switches", ja(baseSwitches()))]))), MissingKey("the scenario", "version")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("id", js("x")), kv("version", jnum(1.0)), kv("switches", ja(baseSwitches()))]))), MissingKey("the scenario", "summary")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("id", js("x")), kv("version", jnum(1.0)), kv("summary", js("s"))]))), MissingKey("the scenario", "switches")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("id", js("x")), kv("version", jnum(1.0)), kv("summary", js("s")), kv("switches", jo([]))]))), WrongType("the scenario", "switches")),
+    refusedAs(decodeScenario(encode(jo([kv("format", js("lab-scenario-1")), kv("id", jnum(7.0)), kv("version", jnum(1.0)), kv("summary", js("s")), kv("switches", ja(baseSwitches()))]))), WrongType("the scenario", "id")),
+    refusedAs(decodeScenario(doc("x", with1(jo([kv("switch", js("quiet_minds")), kv("value", jb(false)), kv("note", js("hi"))])))), UnknownKey("a switch entry", "note")),
+    refusedAs(decodeScenario(doc("x", baseSwitches() ++ [js("quiet_minds")])), NotAnObject("a switch entry")),
+    refusedAs(decodeScenario(doc("x", baseSwitches() ++ [jo([kv("value", jb(false))])])), MissingKey("a switch entry", "switch")),
+    refusedAs(decodeScenario(doc("x", with1(jo([kv("switch", js("quiet_minds"))])))), MissingKey("switch \"quiet_minds\"", "value")),
+    refusedAs(decodeScenario("{\"format\":\"lab-scenario-1\",\"id\":\"x\",\"version\":1,\"summary\":\"s\",\"switches\":[{\"switch\":\"quiet_minds\",\"value\":false,\"value\":true}]}"), DuplicateKey("a switch entry", "value"))
+  ])
+test "malformed files are refused by name: not JSON, not an object, unknown, repeated and missing keys, a wrong format" { checkShape() }
+
+pure func head(id: string, version: Json, summary: string) -> string = encode(docJson(id, version, summary, baseSwitches()))
+pure func checkHeader() -> bool =
+  all([
+    accepted(decodeScenario(head("sandberg-as-printed", jnum(12.0), "ok"))),
+    all(map(\i. refusedAs(decodeScenario(head(i, jnum(1.0), "ok")), BadId(i)), ["", "Literature", "has space", "9lives", "-x", "under_score", "a/b", "é",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"])),
+    all(map(\v. refusedAs(decodeScenario(head("x", v, "ok")), BadVersion), [jnum(0.0), jnum(0.0 - 1.0), jnum(1.5), jnum(1000001.0), js("1"), jn(), jb(true)])),
+    refusedAs(decodeScenario(head("x", jnum(1.0), "")), BlankSummary),
+    refusedAs(decodeScenario(head("x", jnum(1.0), " \n ")), BlankSummary),
+    refusedAs(decodeNamed("literature", head("lonely", jnum(1.0), "ok")), BadId("lonely")),
+    accepted(decodeNamed("lonely", head("lonely", jnum(1.0), "ok")))
+  ])
+test "a bad id, a bad version, a blank summary and a file whose name is not its id are refused" { checkHeader() }
+
+-- ------------------------------------------------------------ values
+pure func bad(name: string, v: Json) -> bool = match decodeScenario(doc("x", with1(swDesign(name, v, "why")))) { Err(BadValue(n, _)) => n == name, _ => false }
+pure func good(name: string, v: Json) -> bool = accepted(decodeScenario(doc("x", with1(swDesign(name, v, "why")))))
+pure func checkValues() -> bool =
+  all([
+    bad("earth_clock_yr", jnum(0.0)), bad("earth_clock_yr", jnum(0.0 - 16000.0)), bad("earth_clock_yr", js("100000")), bad("earth_clock_yr", jn()), good("earth_clock_yr", jnum(200000.0)),
+    bad("reach_ly", jnum(0.0)), bad("reach_ly", jnum(0.0 - 1.0)), bad("reach_ly", jb(true)), good("reach_ly", jnum(10000.0)),
+    bad("universe_rule", js("dial")), bad("universe_rule", js("select")), bad("universe_rule", js("lonely")), bad("universe_rule", jnum(1.0)),
+    bad("universe_rule", jo([kv("warp", jn())])), bad("universe_rule", jo([kv("dial", jn())])) == false,
+    bad("universe_rule", jo([kv("dial", jo([kv("life", jnum(0.0)), kv("minds", jnum(0.0)), kv("tech", jnum(0.0))]))])),
+    bad("universe_rule", jo([kv("dial", jo([kv("life", js("0")), kv("minds", jnum(0.0)), kv("tech", jnum(0.0)), kv("lifetime", jnum(0.0))]))])),
+    bad("universe_rule", dialJson(101.0, 0.0, 0.0, 0.0)), bad("universe_rule", dialJson(0.0, 0.0, 0.0, 0.0 - 100.5)), good("universe_rule", dialJson(2.0, 0.0 - 1.0, 0.5, 100.0)),
+    good("universe_rule", selectJson(band(jnum(0.5), jnum(50.0)), openBand(), band(jn(), jnum(2.0)))),
+    bad("universe_rule", selectJson(openBand(), openBand(), openBand())),
+    bad("universe_rule", selectJson(band(jnum(5.0), jnum(1.0)), openBand(), openBand())),
+    bad("universe_rule", selectJson(band(jnum(0.0 - 1.0), jnum(1.0)), openBand(), openBand())),
+    bad("universe_rule", selectJson(ja([jnum(1.0)]), openBand(), openBand())),
+    bad("universe_rule", selectJson(ja([jnum(1.0), jnum(2.0), jnum(3.0)]), openBand(), openBand())),
+    bad("universe_rule", selectJson(band(js("1"), jnum(2.0)), openBand(), openBand())),
+    bad("universe_rule", jo([kv("select", jo([kv("found", band(jnum(1.0), jnum(2.0))), kv("ended", openBand())]))])),
+    good("universe_rule", selectJson(band(jnum(1.0), jnum(1.0)), openBand(), openBand())),
+    bad("lifetime_prior", js("sandberg")), bad("lifetime_prior", jnum(1.0e10)), good("lifetime_prior", js("sandberg-as-printed")),
+    bad("signature_classes", ja([])), bad("signature_classes", ja([js("radar"), js("radar")])), bad("signature_classes", ja([js("radar"), js("laser")])),
+    bad("signature_classes", js("radar")), bad("signature_classes", ja([js("radar"), jnum(1.0)])), good("signature_classes", ja([js("structure")])),
+    bad("quiet_minds", js("true")), bad("quiet_minds", jnum(1.0)), good("quiet_minds", jb(true))
+  ])
+test "each switch refuses a value of the wrong shape or out of range, by its own name" { checkValues() }
+pure func checkRuleKeys() -> bool =
+  all([
+    refusedAs(decodeScenario(doc("x", with1(swDesign("universe_rule", jo([kv("dial", jn())]), "why")))), NotAnObject("universe_rule dial")),
+    refusedAs(decodeScenario(doc("x", with1(swDesign("universe_rule", jo([kv("dial", jo([kv("life", jnum(0.0)), kv("minds", jnum(0.0)), kv("tech", jnum(0.0)), kv("lifetime", jnum(0.0)), kv("luck", jnum(1.0))]))]), "why")))), UnknownKey("universe_rule dial", "luck")),
+    refusedAs(decodeScenario(doc("x", with1(swDesign("universe_rule", jo([kv("select", jo([kv("found", openBand()), kv("ended", openBand()), kv("late", openBand()), kv("heard", openBand())]))]), "why")))), UnknownKey("universe_rule select", "heard"))
+  ])
+test "a dial or select with a stray key is refused" { checkRuleKeys() }
+
+-- ------------------------------------------------------------ the canonical encoding and its sha
+pure func lonely() -> string =
+  encode(docJson("lonely", jnum(1.0), "The fixed median universe.", with1(swSrc("universe_rule", dialJson(0.0, 0.0, 0.0, 0.0), "A fixed reference universe.", "D-156 OQ10"))))
+pure func canonicalLiterature() -> string =
+  "{\"format\":\"lab-scenario-1\",\"id\":\"literature\",\"version\":1,\"summary\":\"A test scenario.\",\"switches\":[{\"switch\":\"earth_clock_yr\",\"value\":100000},{\"switch\":\"reach_ly\",\"value\":3000},{\"switch\":\"universe_rule\",\"value\":\"pure\"},{\"switch\":\"lifetime_prior\",\"value\":\"canon\"},{\"switch\":\"signature_classes\",\"value\":[\"radar\",\"tv\"]},{\"switch\":\"quiet_minds\",\"value\":false}]}"
+pure func canonicalLonely() -> string =
+  "{\"format\":\"lab-scenario-1\",\"id\":\"lonely\",\"version\":1,\"summary\":\"The fixed median universe.\",\"switches\":[{\"switch\":\"earth_clock_yr\",\"value\":100000},{\"switch\":\"reach_ly\",\"value\":3000},{\"switch\":\"universe_rule\",\"value\":{\"dial\":{\"life\":0,\"minds\":0,\"tech\":0,\"lifetime\":0}},\"reason\":\"A fixed reference universe.\",\"source\":\"D-156 OQ10\"},{\"switch\":\"lifetime_prior\",\"value\":\"canon\"},{\"switch\":\"signature_classes\",\"value\":[\"radar\",\"tv\"]},{\"switch\":\"quiet_minds\",\"value\":false}]}"
+pure func checkCanonical() -> bool =
+  all([
+    canonOf(literature()) == canonicalLiterature(),
+    canonOf(lonely()) == canonicalLonely(),
+    digestOf(literature()) == "ca04e72d5a117c1f90814126a6a74876c0bfec7ba394d32728fbb79c92af195c",
+    digestOf(lonely()) == "aaaa6712b4be174d34cdcce0ff80d6cd3b299a038a7607ab1e80f36007be4a39",
+    strLength(digestOf(literature())) == 64
+  ])
+test "the canonical text is pinned, and its digest is the sha256 of exactly those bytes (computed outside AILANG)" { checkCanonical() }
+
+-- decode(canonical(s)) is s, and canonical is a fixed point.
+pure func roundTrips(text: string) -> bool =
+  match decodeScenario(text) {
+    Err(_) => false,
+    Ok(a) => (match decodeScenario(canonical(a)) {
+      Err(_) => false,
+      Ok(b) => canonical(b) == canonical(a) && digest(b) == digest(a) && b.id == a.id && b.version == a.version && b.summary == a.summary &&
+        length(b.departures) == length(a.departures) && all(map(\p. match p { (x, y) => x.name == y.name && x.reason == y.reason && x.basis == y.basis }, zip(a.departures, b.departures)))
+    })
+  }
+pure func variants() -> [string] =
+  [literature(), lonely(),
+   doc("literature", with1(swDesign("earth_clock_yr", jnum(16000.0), "The clock sweep, to set Hard."))),
+   doc("literature", with1(swDesign("earth_clock_yr", jnum(24000.0), "The clock sweep, to set Hard."))),
+   doc("literature", with1(swDesign("earth_clock_yr", jnum(16000.0), "The clock sweep, to set hard."))),
+   doc("literature", with1(swSrc("earth_clock_yr", jnum(16000.0), "The clock sweep, to set Hard.", "Design"))),
+   doc("literature", with1(swSrc("earth_clock_yr", jnum(16000.0), "The clock sweep, to set Hard.", "design"))),
+   doc("literature", with1(swDesign("reach_ly", jnum(1000.0), "The Neighbour's range."))),
+   doc("literature", with1(swDesign("reach_ly", jnum(1000.5), "The Neighbour's range."))),
+   doc("literature", with1(swDesign("universe_rule", dialJson(0.0, 0.0, 0.0, 0.0), "why"))),
+   doc("literature", with1(swDesign("universe_rule", dialJson(1.0, 0.0, 0.0, 0.0), "why"))),
+   doc("literature", with1(swDesign("universe_rule", dialJson(0.0, 1.0, 0.0, 0.0), "why"))),
+   doc("literature", with1(swDesign("universe_rule", dialJson(0.0, 0.0, 1.0, 0.0), "why"))),
+   doc("literature", with1(swDesign("universe_rule", dialJson(0.0, 0.0, 0.0, 1.0), "why"))),
+   doc("literature", with1(swDesign("universe_rule", selectJson(band(jnum(0.5), jnum(50.0)), openBand(), openBand()), "why"))),
+   doc("literature", with1(swDesign("universe_rule", selectJson(band(jnum(0.5), jn()), openBand(), openBand()), "why"))),
+   doc("literature", with1(swDesign("universe_rule", selectJson(band(jn(), jnum(50.0)), openBand(), openBand()), "why"))),
+   doc("literature", with1(swDesign("universe_rule", selectJson(openBand(), band(jnum(0.5), jnum(50.0)), openBand()), "why"))),
+   doc("literature", with1(swDesign("universe_rule", selectJson(openBand(), openBand(), band(jnum(0.5), jnum(50.0))), "why"))),
+   doc("literature", with1(swSrc("lifetime_prior", js("sandberg-as-printed"), "The paper's table as printed.", "Sandberg 2018 table 1"))),
+   doc("literature", with1(swSrc("lifetime_prior", js("sandberg-as-printed"), "The paper's table as printed.", "Sandberg 2018 table 2"))),
+   doc("literature", with1(swDesign("signature_classes", ja([js("radar")]), "why"))),
+   doc("literature", with1(swDesign("signature_classes", ja([js("radar"), js("tv"), js("beacon")]), "why"))),
+   doc("literature", with1(swDesign("signature_classes", ja([js("radar"), js("tv"), js("structure")]), "why"))),
+   doc("literature", with1(swDesign("quiet_minds", jb(true), "why"))),
+   doc("literatures", baseSwitches()),
+   encode(docJson("literature", jnum(2.0), "A test scenario.", baseSwitches())),
+   encode(docJson("literature", jnum(1.0), "A test scenario", baseSwitches()))]
+pure func checkRoundTrip() -> bool = all(map(roundTrips, variants()))
+test "decoding the canonical text gives the same scenario, for every variant (the round trip)" { checkRoundTrip() }
+
+-- A digest that ignored any value, the reason, the source, the label, the id, the version or
+-- the summary would make two of these equal.
+pure func distinct(xs: [string]) -> bool = match xs { [] => true, x :: rest => !any(\y. y == x, rest) && distinct(rest) }
+pure func checkDigestChanges() -> bool {
+  let ds = map(digestOf, variants());
+  all(map(\d. strLength(d) == 64, ds)) && distinct(ds) && length(ds) == 28
+}
+test "the digest changes when any value, reason, source, label, id, version or summary changes (28 variants, all distinct)" { checkDigestChanges() }
+
+-- The same scenario written four ways: another key order and switch order, extra whitespace,
+-- other number spellings, classes in another order.
+pure func reordered() -> string =
+  "{\n  \"switches\": [\n    {\"value\": false, \"switch\": \"quiet_minds\"},\n    {\"value\": [\"tv\", \"radar\"], \"switch\": \"signature_classes\"},\n    {\"switch\": \"lifetime_prior\", \"value\": \"canon\"},\n    {\"source\": \"D-156 OQ10\", \"value\": {\"dial\": {\"lifetime\": 0.0, \"tech\": 0e0, \"minds\": -0, \"life\": 0}}, \"reason\": \"A fixed reference universe.\", \"switch\": \"universe_rule\"},\n    {\"switch\": \"reach_ly\", \"value\": 3.0e3},\n    {\"switch\": \"earth_clock_yr\", \"value\": 1e5}\n  ],\n\t\"summary\": \"The fixed median universe.\",   \"version\": 1.0,\n  \"id\": \"lonely\", \"format\": \"lab-scenario-1\"\n}\n"
+pure func checkDigestStable() -> bool =
+  canonOf(reordered()) == canonicalLonely() && digestOf(reordered()) == digestOf(lonely()) && digestOf(canonicalLonely()) == digestOf(lonely())
+test "the digest does not depend on key order, switch order, class order, whitespace or number spelling" { checkDigestStable() }
+
+-- ------------------------------------------------------------ a scenario built in code meets the same rules
+pure func built(settings: Settings, ds: [Departure]) -> Scenario = { id: "built", version: 1, summary: "Built in code.", settings: settings, departures: ds }
+pure func checkBuilt() -> bool {
+  let b = baselineSettings();
+  let why = { name: "quiet_minds", reason: "why", basis: Design };
+  all([
+    accepted(check(built(b, []))),
+    refusedAs(check(built({b | quietMinds: true}, [])), DepartureWithoutReason("quiet_minds")),
+    accepted(check(built({b | quietMinds: true}, [why]))),
+    refusedAs(check(built(b, [why])), ReasonWithoutDeparture("quiet_minds")),
+    refusedAs(check(built({b | quietMinds: true}, [why, why])), DuplicateSwitch("quiet_minds")),
+    refusedAs(check(built({b | quietMinds: true}, [why, { name: "warp_drive", reason: "why", basis: Design }])), UnknownSwitch("warp_drive")),
+    refusedAs(check(built({b | quietMinds: true}, [{ name: "quiet_minds", reason: "why", basis: Source(" ") }])), DepartureWithoutBasis("quiet_minds")),
+    refusedAs(check(built({b | earthClockYr: 0.0 / 0.0}, [])), BadValue("earth_clock_yr", "a number of years above 0")),
+    refusedAs(check(built({b | reachLy: 1.0 / 0.0}, [])), BadValue("reach_ly", "a number of light-years above 0")),
+    refusedAs(check(built({b | classes: [Tv, Tv]}, [])), BadValue("signature_classes", "a non-empty list of distinct classes")),
+    (match check(built({b | rule: Dial({ life: 0.0 / 0.0, minds: 0.0, tech: 0.0, lifetime: 0.0 })}, [])) { Err(BadValue(n, _)) => n == "universe_rule", _ => false }),
+    refusedAs(check({ id: "Built", version: 1, summary: "s", settings: b, departures: [] }), BadId("Built")),
+    refusedAs(check({ id: "built", version: 0, summary: "s", settings: b, departures: [] }), BadVersion),
+    canonical(built({b | classes: [Tv, Radar]}, [])) == canonical(built(b, []))
+  ])
+}
+test "a scenario built in code is held to the same rules by check" { checkBuilt() }
+
+test "every refusal has its own sentence" {
+  distinct(map(refusalText, [NotJson("m"), NotAnObject("w"), UnknownKey("w", "k"), DuplicateKey("w", "k"), MissingKey("w", "k"), WrongType("w", "k"), WrongFormat("f"), BadId("i"),
+    BadVersion, BlankSummary, UnknownSwitch("s"), DuplicateSwitch("s"), MissingSwitch("s"), BadValue("s", "w"), DepartureWithoutReason("s"), DepartureWithoutBasis("s"),
+    BothSourceAndDesign("s"), ReasonWithoutDeparture("s")]))
+}
+
+-- ------------------------------------------------------------ determinism, VM = interpreter
+pure func outcome(text: string) -> string = match decodeScenario(text) { Ok(sc) => "${digest(sc)} ${canonical(sc)}", Err(r) => "refused: ${refusalText(r)}" }
+pure func refusals() -> [string] =
+  [doc("x", with1(sw("lifetime_prior", js("sandberg-as-printed")))), doc("x", baseSwitches() ++ [sw("warp_drive", jb(true))]), doc("x", without("reach_ly")),
+   "{\"format\": ", "[1]", doc("Bad Id", baseSwitches()), doc("x", with1(swDesign("earth_clock_yr", jnum(0.0), "why"))), prior([kv("reason", js("why"))]),
+   prior([kv("reason", js("why")), kv("source", js("S")), kv("design", jb(true))]), doc("x", with1(swDesign("quiet_minds", jb(false), "why")))]
+-- Every canonical text, digest and refusal sentence the tests touch. `make lab-test` compares
+-- this text from the strict VM and from the interpreter byte for byte.
+export pure func scenarioProbe(n: int) -> string = join("\n", map(outcome, variants() ++ [reordered()] ++ refusals()))
+test "determinism: the same inputs give the same bytes" { scenarioProbe(0) == scenarioProbe(1) }
+
+-- Every check the strict VM can compile. checkShape (19 checks in one list) and checkValues (41)
+-- are evaluator-only on v0.56.1: "register allocator: contiguous block would exceed 256"
+-- (ailang#2310, reported with a repro; not worked around by splitting the lists). They run under
+-- `ailang test` above; their inputs' refusal sentences are in scenarioProbe, which does run
+-- strict. Add them back here when #2310 is fixed.
+export pure func scenarioVm(n: int) -> string =
+  if checkLiterature() && checkStandingRule() && checkBasis() && checkReasonOnBaseline() && checkSwitchSet() && checkHeader() &&
+     checkRuleKeys() && checkCanonical() && checkRoundTrip() && checkDigestChanges() && checkDigestStable() && checkBuilt() && scenarioProbe(0) == scenarioProbe(1)
+  then "scenario-ok" else "scenario-BAD"
