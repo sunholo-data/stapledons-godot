@@ -1,0 +1,707 @@
+{
+ "sprint_id": "R3-UNIVERSE-LAB",
+ "status": "proposed",
+ "approved": null,
+ "created": "2026-11-12",
+ "design_doc": "design_docs/planned/r3/universe-lab.md",
+ "sprint_plan": "design_docs/planned/r3/universe-lab-sprint.md",
+ "scope": "the first build only, UL0 to UL8; UL-B (lineages), UL-C (neighbour-aware cells), UL-D (dark forest) and UL-E are planned after the ruling on the recommendation",
+ "branch": "design/r3-universe-lab (draft PR #439); execution in a fresh full clone ../stapledons-godot-lab-exec; package work in a fresh clone of ailang-packages; registry rows in a fresh clone of stapledons-design",
+ "origin": "Mark, 2026-11-12: 'pick good gameplay but accurate defaults - that's why we run these simulations'; design approved the same day ('good continue - accepted', ledger D-156), OQ1-OQ10 as recommended",
+ "github_issues": [],
+ "ailang": {
+  "pin": "v0.56.1",
+  "binary": "runtime/bin/ailang",
+  "prompt_version_loaded": "v0.16.11"
+ },
+ "registry_reuse": [
+  {
+   "milestone": "UL2a1,UL2a2,UL2a3",
+   "package": "sunholo/worlds",
+   "action": "contribute",
+   "reason": "priors, dial and closed-form counts live there; drawing from the priors, the prior probability of a region and the three luck statements are the same science (next free minor)"
+  },
+  {
+   "milestone": "UL2b1,UL2b2",
+   "package": "sunholo/observe",
+   "action": "contribute",
+   "reason": "budgets and the belief table live there; the signature ladder is the emission side of that table (0.3.0)"
+  },
+  {
+   "milestone": "UL3b,UL4a,UL4b",
+   "package": "sunholo/worlds",
+   "action": "depend",
+   "reason": "applyDial, historyOf, stateAt, disc and epoch_statistics unchanged"
+  },
+  {
+   "milestone": "UL3d,UL4b",
+   "package": "sunholo/relativity",
+   "action": "depend",
+   "reason": "planBurnCoastBurn for every leg"
+  },
+  {
+   "milestone": "UL4b,UL5a,UL5b",
+   "package": "sunholo/observe",
+   "action": "depend",
+   "reason": "the detector the game uses; through the development overlay until published"
+  },
+  {
+   "milestone": "UL3c",
+   "package": "none",
+   "action": "none",
+   "reason": "no statistics, interval or quadrature package in the registry (searched 2026-11-12); about 120 lines with one user"
+  },
+  {
+   "milestone": "UL0a,UL0b,UL3a,UL4c,UL6a,UL6b,UL6c,UL6d,UL7a,UL7b,UL7c",
+   "package": "none",
+   "action": "none",
+   "reason": "game tools, the scenario format and reports; crew_core's scenario decoder is specific to crew data"
+  },
+  {
+   "milestone": "UL1a,UL1b,UL8",
+   "package": "none",
+   "action": "none",
+   "reason": "documents"
+  }
+ ],
+ "velocity": {
+  "target_loc_per_day": 575,
+  "estimated_total_loc": 4020,
+  "estimated_days": 7
+ },
+ "critical_path": [
+  "UL2a1",
+  "UL3b",
+  "UL3d",
+  "UL4a",
+  "UL4b",
+  "UL5a",
+  "UL5b",
+  "UL6a",
+  "UL6b",
+  "UL7a",
+  "UL7b",
+  "UL7c",
+  "UL8",
+  "LAND",
+  "PAUSE5"
+ ],
+ "can_start_today": [
+  "UL0a",
+  "UL1a",
+  "UL1b",
+  "UL2a1",
+  "UL2a2",
+  "UL2a3",
+  "UL2b1",
+  "UL2b2",
+  "UL3a",
+  "UL3c",
+  "UL3d",
+  "UL3b (once UL2a1 exists locally, through tools/worlds_dev.sh)"
+ ],
+ "pause_points": [
+  "PAUSE1 after UL0, only if a budget fails",
+  "PAUSE2 before publishing sunholo/worlds (version number settled there; LW-55p pinned)",
+  "PAUSE3 before publishing sunholo/observe 0.3.0 (after 0.2.0 is unblocked; does not block the recommendation)",
+  "PAUSE4 after UL7b, only if the selection validation fails",
+  "PAUSE5 after LAND: the recommendation, for the owner's ruling"
+ ],
+ "rulings": {
+  "OQ1": "selection for every setting; the dial stays as a developer tool and for sensitivities",
+  "OQ2": "keep the canon 1e8 yr lifetime bound as a documented departure; run 1e10 as a scenario",
+  "OQ3": "the Ranger (3,000 ly) binds the targets, on the mean",
+  "OQ4": "reliability decided from the validation curve; N shown at half, 70 % and 90 %",
+  "OQ5": "Remnant and Ecocide count as remnants; Transcended in its own bin",
+  "OQ6": "beacon and structure classes in the first report with swept Design values, labelled",
+  "OQ7": "rule on direction from provisional results; rerun the final numbers on pinned packages and cells",
+  "OQ8": "observing time reported both ways; scheduling looks is a named R3-REASONS follow-up",
+  "OQ9": "hardcore shows only the unselected status and the restart count",
+  "OQ10": "Lonely stays the fixed median universe; pure physics is the separate hardcore mode"
+ },
+ "gates_policy": "targeted headless gates per run; never make test, make golden, a rig run or a GPU run as a merge gate; long simulations are resumable queue runs and never merge gates; this sprint adds no Godot script or .gd, and if one is added its target goes through $(SCRIPT_GATE) and the .gd is committed with its .uid",
+ "external_dependencies": [
+  "PR #435 (the evidence ledger, a draft on a development overlay): UL0b, UL4 and UL5 stack on its branch; merging them to main waits for it",
+  "sunholo/observe 0.2.0 is merged but unpublished (ailang#2277, not worked around): UL2b develops on its source; publishing 0.3.0 and pinning wait; results say local_packages true",
+  "R3-REACH RE1b2 (on-demand world queries): only the 326 ly source adapter waits; the 81.5 ly registry and the interim far field need nothing new",
+  "sunholo/worlds version order with R3-REACH RE2a: both additive; whichever publishes first takes the next minor and the other rebases (the registry lists 0.2.1; the game pins 0.2.0)",
+  "UL1's registry rows are attended; package code reads proposed values from one table until they are pinned, and each publish stop checks they are"
+ ],
+ "features": [
+  {
+   "id": "UL0a",
+   "description": "Probes that need no detector (sim/tools/lab_probe.ail, make lab-probe): the parameter draw loop, the 2-D quadrature at three grid sizes, order-statistic intervals on 1,024 rows, filtering a 5e5-row array, and 1/4/8/12 parallel processes",
+   "estimated_loc": 90,
+   "dependencies": [],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make lab-probe writes data/lab/probe.json with three runs each and the host load",
+    "values identical across runs; VM equals interpreter on the draw loop"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL0b",
+   "description": "Probes with the game's detector on PR #435's branch through the overlay: Sol's first look over the 5,685-system registry, one eight-stop voyage inside 81.5 ly, one seed's candidate-table size, peak memory",
+   "estimated_loc": 60,
+   "dependencies": [],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make lab-probe-detect adds its measurements to data/lab/probe.json",
+    "the record count from Sol equals evidence_probe's for the same seed and preset"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "PAUSE1",
+   "description": "Conditional stop for Mark: only if a UL0 budget fails (a voyage above 5 min; the draw loop above 1 s at p = 1e-4; the candidate cache above 2 GB for 512 seeds; 12 shards under 6x one). Otherwise record the ceilings here and continue",
+   "estimated_loc": 0,
+   "dependencies": [
+    "UL0a",
+    "UL0b"
+   ],
+   "routing": "attended (conditional)",
+   "acceptance_criteria": [
+    "the measured ceilings for lab-budget and the queue are recorded in this file",
+    "if a budget failed, Mark has seen the numbers and the plan change"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL1a",
+   "description": "Design repo physics/life-and-worlds.md: pin LW-46p to LW-54p with arithmetic; the note on LW-9's meaning; LW-11 labelled Design with the +/-0.5 dex estimate; 'biospheres detected' defined as a ledger record; the departures table (canon 1e8 lifetime bound and its reason, OQ2)",
+   "estimated_loc": 0,
+   "dependencies": [],
+   "routing": "attended (canon)",
+   "acceptance_criteria": [
+    "each row re-derived by a second reader",
+    "make lore-values passes in the game after lore-import"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL1b",
+   "description": "Design repo physics/observation.md: the radar dwell rows with the source quoted at its locator; LW-83p's transmitter power re-opened; the four ladder class rows with Design labels and swept ranges",
+   "estimated_loc": 0,
+   "dependencies": [],
+   "routing": "attended (canon; source re-opened by someone other than the author)",
+   "acceptance_criteria": [
+    "the dwell source is opened and quoted, or the row is pinned as Design with its swept range",
+    "make lore-values passes in the game after lore-import"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL2a1",
+   "description": "sunholo/worlds new module selection, part 1: draw a parameter set from four uniforms through quantileOf; the dial of a parameter set and its inverse; prior means; luck over the median and over the prior mean",
+   "estimated_loc": 220,
+   "dependencies": [],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "drawn quantiles equal quantileOf at 9 fixed uniforms",
+    "applyDial(dialOf(theta)) returns theta to 1e-12",
+    "LW-46p to LW-48p reproduced at printed figures",
+    "package tests pass on the VM and the interpreter"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL2a2",
+   "description": "selection, part 2: exact distribution of a sum of two and three uniforms; prior probability of an acceptance region by fixed quadrature over the life factor and L, with the grid-doubling error; tools/selection_oracle.py (oracle, allowlisted)",
+   "estimated_loc": 230,
+   "dependencies": [
+    "UL2a1"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "the sum-of-uniforms CDF equals its closed form at 12 points",
+    "doubling the grid moves p by less than 1e-4 of itself on three regions",
+    "make lab-select: the Python oracle agrees within 3 standard errors",
+    "make python-guard passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL2a3",
+   "description": "epoch_statistics additions: expected worlds by ended-state bin, the late-contact share min(1, G/L), the closed form for a lineage rate; CHANGELOG, [release] kind, AGENT.md",
+   "estimated_loc": 150,
+   "dependencies": [
+    "UL2a1"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "LW-49p to LW-51p and the four rows of seti-factors 3.4's table reproduced at printed figures",
+    "every 0.2.0 test unchanged",
+    "ailang pkg quality reports no gates"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "PAUSE2",
+   "description": "Stop for Mark: publish sunholo/worlds at the next free minor (settled here against R3-REACH RE2a); LW-55p pinned from the package's value in the same sitting",
+   "estimated_loc": 0,
+   "dependencies": [
+    "UL2a3",
+    "UL1a"
+   ],
+   "routing": "attended (publish)",
+   "acceptance_criteria": [
+    "UL1a's rows are pinned before the publish",
+    "bare cd packages/worlds && ailang publish succeeded",
+    "LW-55p is pinned in the design repo from the published value"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL2a4",
+   "description": "The game pins the new worlds version (sim/ailang.toml, ailang lock) and checks existing universes are unchanged",
+   "estimated_loc": 20,
+   "dependencies": [
+    "PAUSE2"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make deps passes",
+    "make census prints digest 39482d0d...6517851",
+    "make replay and make parity pass"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL2b1",
+   "description": "sunholo/observe new module ladder, part 1: the class row type; on/off by age and time since the end; the per-look chance from duty x beam; today's radar and TV classes as rows",
+   "estimated_loc": 220,
+   "dependencies": [],
+   "routing": "loop (packages clone on the merged 0.2.0 source)",
+   "acceptance_criteria": [
+    "on/off correct at window edges; persistence ends exactly at its limit",
+    "the two existing classes reproduce OB-34, OB-35 and OB-51 through link.reachM",
+    "package tests pass on the VM and the interpreter"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL2b2",
+   "description": "ladder, part 2: beacon and structure rows; phi(L) in closed form; the belief table's Leakage cell read from the ladder; CHANGELOG, [release] kind, AGENT.md",
+   "estimated_loc": 180,
+   "dependencies": [
+    "UL2b1"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "phi at three lifetimes equals hand integrals",
+    "the belief table is byte-identical for the two existing classes",
+    "ailang pkg quality reports no gates"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "PAUSE3",
+   "description": "Stop for Mark: publish sunholo/observe 0.3.0. Possible only after 0.2.0 is published (ailang#2277 fixed upstream); until then detecting runs use the overlay and say so. Does not block UL7 or UL8",
+   "estimated_loc": 0,
+   "dependencies": [
+    "UL2b2",
+    "UL1b"
+   ],
+   "routing": "attended (publish)",
+   "acceptance_criteria": [
+    "sunholo/observe 0.2.0 is in the registry",
+    "UL1b's rows are pinned before the publish",
+    "bare cd packages/observe && ailang publish succeeded, then sim/ailang.toml pins it"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL3a",
+   "description": "sim/lab_scenario.ail and test: scenario type, JSON decoder, validation (a departure without a reason refused; unknown switches refused), canonical encoding and sha; scenarios literature, lonely, pure",
+   "estimated_loc": 250,
+   "dependencies": [],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make lab-test: the refusal, a round trip, a digest that changes when any value changes",
+    "the literature scenario has no departures",
+    "make strict passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL3b",
+   "description": "sim/universe.ail and test: the keyed draw loop per run seed, acceptance bands as data, the draw cap and its refusal; a universe domain in sim/rng.ail",
+   "estimated_loc": 150,
+   "dependencies": [
+    "UL2a1"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make lab-test passes",
+    "make lab-budget: the loop meets UL0a's ceiling and a band beyond the cap is refused, never widened",
+    "make strict and make rng-keyed pass"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL3c",
+   "description": "sim/lab_stats.ail and test: mean, spread, standard error; exact order-statistic intervals; met/missed/unsettled; batches of 64 to a cap of 1,024; paired differences",
+   "estimated_loc": 220,
+   "dependencies": [],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "intervals equal a table of binomial values",
+    "a mean on a band edge stays unsettled in the fixture",
+    "make strict passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL3d",
+   "description": "sim/lab_strategy.ail and test: the Lead record; four strategies as data; ranking; the affordable-candidate fallback (C5); the Earth-time reserve and return leg; a leg-cost table",
+   "estimated_loc": 280,
+   "dependencies": [],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "the audit-item-9 fixture takes the nearer affordable lead",
+    "no voyage exceeds either clock",
+    "legs of 100, 1,000 and 10,000 ly equal planBurnCoastBurn",
+    "make strict passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL4a",
+   "description": "sim/lab_source.ail and test: the world-source interface; the 81.5 ly registry source over worlds_model.systemFrom; the interim far field moved out of sim/calibrate.ail with template hosts and a provisional flag",
+   "estimated_loc": 250,
+   "dependencies": [
+    "UL3a"
+   ],
+   "routing": "loop (stacked on PR #435's branch)",
+   "acceptance_criteria": [
+    "the registry source returns census.populate's systems for 3 seeds",
+    "the far field's counts match disc.starsWithin within Poisson error over 200 seeds",
+    "make strict passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL4b",
+   "description": "sim/lab_voyage.ail and test: a stop (sources, targets, evidence.observeAtStop, Leads), arrival and the true state, counts by kind (late contacts; remnants by ended-state bin), arrivals, costs",
+   "estimated_loc": 250,
+   "dependencies": [
+    "UL4a",
+    "UL3d"
+   ],
+   "routing": "loop (stacked on PR #435's branch)",
+   "acceptance_criteria": [
+    "a three-world fixture gives the expected counts",
+    "a world that ends in the gap is counted as a late contact",
+    "make strict passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL4c",
+   "description": "make lab-agree and make lab-one-model (with a failing control); delete the old calibration generator, Detect.response and calibrate_search; the 326 ly adapter if R3-REACH RE1b2 has landed",
+   "estimated_loc": 200,
+   "dependencies": [
+    "UL4b"
+   ],
+   "routing": "loop (stacked on PR #435's branch)",
+   "acceptance_criteria": [
+    "make lab-agree: records byte-identical to a direct observeAtStop, VM and interpreter, 8 seeds x 3 stops",
+    "make lab-one-model passes and its control fails",
+    "make strict, make census and make replay pass"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL5a",
+   "description": "sim/evidence.ail and sim/data/detect.ail read the ladder for today's two classes; radarShare() replaced by the ladder row",
+   "estimated_loc": 180,
+   "dependencies": [
+    "UL2b1",
+    "UL4c"
+   ],
+   "routing": "loop (stacked on PR #435's branch; observe through the overlay)",
+   "acceptance_criteria": [
+    "make evidence-test: every existing record byte-identical",
+    "make lab-agree, make strict and make parity pass"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL5b",
+   "description": "The dwell from its registry row (C1); beacon and structure classes on only when a scenario names them; the two observing-time modes (unlimited; scheduled inside the stay, OQ8)",
+   "estimated_loc": 170,
+   "dependencies": [
+    "UL5a",
+    "UL2b2"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make evidence-test: default records unchanged apart from the dwell rows' stated effect",
+    "a structure persists past its makers' end in a fixture",
+    "a prevalence is identical under every dial and draw; the mutant that ties it to the dial fails",
+    "make lab-test passes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL6a",
+   "description": "sim/tools/lab_main.ail: one shard to a file with its inputs digest; order-independent merge; the result file; make lab-run, make lab-determinism",
+   "estimated_loc": 250,
+   "dependencies": [
+    "UL4b",
+    "UL3c"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "a 16-seed scenario run twice gives identical bytes",
+    "shards merged in two orders give identical bytes",
+    "the same 16 seeds on the interpreter give identical bytes"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL6b",
+   "description": "The per-seed candidate cache (local, untracked, capped); data/lab/queue.json, make lab-queue, tools/lab_queue.sh (resumable, yields to host load). Installing a launchd job is attended and not in this run",
+   "estimated_loc": 200,
+   "dependencies": [
+    "UL6a"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "an interrupted and resumed tiny queue gives the same merged bytes as an uninterrupted run",
+    "make lab-agree passes with the cache on"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL6c",
+   "description": "The page generator and make lab-page-check; make lab-report-check",
+   "estimated_loc": 200,
+   "dependencies": [
+    "UL6a"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make lab-page-check passes on a fixture page and fails on a page with one hand-edited number",
+    "make lab-report-check fails a fixture that reports an unsettled target as met",
+    "a Design value printed without its label fails the page check"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL6d",
+   "description": "make lab-closed-form and make lab-recommendation-check (with a failing control)",
+   "estimated_loc": 150,
+   "dependencies": [
+    "UL6c",
+    "UL2a3"
+   ],
+   "routing": "loop",
+   "acceptance_criteria": [
+    "make lab-closed-form passes on 64 seeds",
+    "make lab-recommendation-check binds every number to a result digest on fixtures and its control fails"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL7a",
+   "description": "Queue 1 (overnight, not a merge gate): Sol's first look at 512 seeds for literature and one rich scenario; the clock sweep 16,000 to 200,000 yr under the dial and under selection with provisional bands",
+   "estimated_loc": 40,
+   "dependencies": [
+    "UL5b",
+    "UL6b",
+    "UL6d"
+   ],
+   "routing": "loop (overnight queue)",
+   "acceptance_criteria": [
+    "make lab-closed-form SEEDS=512 passes (design AC6)",
+    "make lab-report-check passes",
+    "result files and pages committed with their digests"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL7b",
+   "description": "Queue 2 (overnight, not a merge gate): the selection validation (8 strata x 24 universes x 16 seeds, the Ranger); bands set from its curve at half, 70 % and 90 %",
+   "estimated_loc": 30,
+   "dependencies": [
+    "UL7a"
+   ],
+   "routing": "loop (overnight queue)",
+   "acceptance_criteria": [
+    "make lab-select-validate reports pass or fail as the design defines it",
+    "the three bands and their expected N are in the result file"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "PAUSE4",
+   "description": "Conditional stop for Mark: only if the selection validation fails; the near-field census fallback changes the design",
+   "estimated_loc": 0,
+   "dependencies": [
+    "UL7b"
+   ],
+   "routing": "attended (conditional)",
+   "acceptance_criteria": [
+    "if the validation failed, Mark has seen the curve and chosen the fallback or a re-plan"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL7c",
+   "description": "Queue 3 (overnight, not a merge gate): the named settings at their bands; the ladder sweep; sandberg-as-printed; quiet-minds; one-step sensitivities on paired seeds; the closed-form lineage comparison",
+   "estimated_loc": 30,
+   "dependencies": [
+    "UL7b"
+   ],
+   "routing": "loop (overnight queue)",
+   "acceptance_criteria": [
+    "make lab-report-check passes",
+    "every scenario has 512 seeds or settled every target sooner"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "UL8",
+   "description": "The recommendation (data/lab/recommendation.md) and its plain-language review page, from result files",
+   "estimated_loc": 0,
+   "dependencies": [
+    "UL7c"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "make lab-recommendation-check and make lab-page-check pass",
+    "the arithmetic checked by a different model from the author's",
+    "provisional inputs and Design values are flagged on the page"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "LAND",
+   "description": "Cross-family evaluation; changelog fragment; worlds.md W1.3/W1.4 marked superseded; a report of measured run times against UL0's ceilings",
+   "estimated_loc": 0,
+   "dependencies": [
+    "UL8"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "make ci-fast is green",
+    "evaluation score at least 70"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  },
+  {
+   "id": "PAUSE5",
+   "description": "Stop for Mark: the recommendation. He rules; the ruling is recorded in the ledger. No preset, registry value or Archive number changes in this sprint",
+   "estimated_loc": 0,
+   "dependencies": [
+    "LAND"
+   ],
+   "routing": "attended",
+   "acceptance_criteria": [
+    "Mark has ruled on clock levels, the universe rule and the signature prevalences, or asked for more runs"
+   ],
+   "passes": null,
+   "started": null,
+   "completed": null,
+   "notes": null
+  }
+ ]
+}

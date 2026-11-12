@@ -1,6 +1,6 @@
 # R3-UNIVERSE-LAB: the second calibration, as a scenario runner
 
-**Status:** Planned, not approved. Drafted 2026-11-12. No sprint plan yet; one follows the owner's approval.
+**Status:** Approved 2026-11-12 (Mark, attended: "good continue - accepted"; ledger D-156), after he was shown the scope, the run-time plan, the selection test, the caveats and all ten open questions with their recommendations. OQ1–OQ10 are answered as recommended. Drafted the same day. Sprint plan for the first build (UL0–UL8): [universe-lab-sprint.md](universe-lab-sprint.md), awaiting approval.
 **Release:** R3 (Signals and Contact), track W. It replaces R3-WORLDS W1.3 and W1.4 (the first calibration) and carries out ledger rulings D-153 (4) and D-154.
 **Priority:** P1. The default universe, the clock levels and the luck number the Archive reveals all wait on it.
 **Origin:** Mark, attended 2026-11-12: "I think it would be nice to use it to simulate other scenarios ... we can keep it open and configurable later perhaps? and pick good gameplay but accurate defaults - that's why we run these simulations."
@@ -17,7 +17,7 @@
 - [worlds.md](worlds.md) W1.3/W1.4 and [worlds-sprint.md](worlds-sprint.md): the first calibration. Code: `sim/calibrate.ail`, `sim/calibrate_search.ail`, `sim/tools/calibrate_main.ail`, `sim/data/presets.ail`, `sim/data/detect.ail`.
 - Draft PR #435: `sim/evidence.ail` (the evidence ledger), `sim/tools/calibrate_budget.ail`, `sim/tools/evidence_probe.ail`, `data/worlds/preset-calibration-proposal.md`, `data/worlds/evidence-candidate-counts.md`.
 - [reasons-to-travel.md](reasons-to-travel.md) (the ledger and the finder are the consumers of a calibrated universe).
-- `reach.md` (PR #437, approved D-155, not on main yet): tiers, 40 ly cells, the rare-world query. The lab runs on that generator.
+- [reach.md](reach.md) and its [sprint](reach-sprint.md) (approved D-155; RE0 and RE1 executing): tiers, 40 ly cells, the rare-world query. The lab runs on that generator.
 
 **Depends on** (detail and what can be done before each lands: "Dependencies and order"):
 - `sunholo/worlds` 0.2.0 (published, pinned). A new additive minor for the selection maths.
@@ -323,7 +323,7 @@ All use C5's fallback. Which strategies bind the targets is OQ3.
 |---|---|---|---|
 | `sunholo/observe` 0.2.0 | merged, unpublished: `ailang verify` encodes float division as integer division and refutes a true contract (ailang#2277). Not worked around | Everything that needs only `sunholo/worlds`: selection, closed forms, the scenario format, strategies, statistics (UL2a, UL3). Detection work runs on the development overlay (`tools/observe_dev.sh`, PR #435's pattern), and its results say `local_packages: true` | pinning; `ladder` as 0.3.0; a non-provisional recommendation |
 | PR #435, the evidence ledger | a draft on that overlay | UL4 and UL5 stack on its branch | merging UL4 and UL5 to main |
-| `sunholo/worlds` 0.2.0 | published, pinned | `selection` is additive: every 0.2.0 output unchanged (`make census`). R3-REACH RE2a also plans a 0.3.0 (cells); whichever lands first takes the number and the other rebases | — |
+| `sunholo/worlds` 0.2.0 | published, pinned (the registry also lists 0.2.1) | `selection` is additive: every 0.2.0 output unchanged (`make census`). R3-REACH RE2a also plans a 0.3.0 (cells); whichever lands first takes the number and the other rebases | — |
 | Lineages | not built | closed form only | `history-2`, protected as described above |
 | R3-REACH RE1 | sprint executing | the 81.5 ly registry source | the 326 ly source |
 | R3-REACH RE2, RE3 | planned | the interim far field, labelled provisional | `lab-source-law`; final numbers |
@@ -394,7 +394,19 @@ Long runs (AC10, AC14) are queue runs, not merge gates. No criterion needs the G
 
 ## Open questions for the user
 
-Each is the owner's. None blocks UL0 to UL3.
+**All answered by Mark, attended 2026-11-12 ("good continue - accepted"; ledger D-156): every recommendation stands.**
+- **OQ1:** selection for every setting. The dial stays as a developer tool and for sensitivities.
+- **OQ2:** the canon lifetime bound of 10⁸ yr is kept and recorded as a departure with its reason; 10¹⁰ runs as a scenario.
+- **OQ3:** the Ranger (3,000 ly) binds the targets, on the mean. The other strategies are reported.
+- **OQ4:** the reliability of an accepted universe is decided from the validation curve; the recommendation shows N at half, 70 % and 90 %.
+- **OQ5:** Remnant and Ecocide count as remnants; Transcended is reported in its own bin.
+- **OQ6:** the beacon and structure classes are in the first report, with swept Design values, labelled.
+- **OQ7:** direction is ruled from provisional results; the final numbers are re-run on pinned packages and on cells.
+- **OQ8:** observing time is reported both ways now; scheduling looks inside the stay is a named R3-REASONS follow-up.
+- **OQ9:** hardcore mode shows only that the universe is unselected and the player's restart count.
+- **OQ10:** Lonely stays the fixed median universe; pure physics is the separate hardcore mode; the other named settings become acceptance bands.
+
+The table below is kept as the record of what was asked.
 
 | # | Question | Options | Recommendation | Default if unanswered |
 |---|---|---|---|---|
