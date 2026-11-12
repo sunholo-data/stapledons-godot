@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AE-BRIDGE-OPERATOR-CONTACT",
-  "status": "planned",
+  "status": "landed",
   "approved": true,
   "approved_by": "Mark's attended ruling D-148 (2026-11-12): OQ-1 = A (working spots 0.275 m back, 1.50 m from the desk, iteration-76 candidate measured 56/0; no expected-failure; look reviewed in the next dev build, separate from the merge); OQ-2 stays at default (a). Design revision 3 after quorum r3 (2-seat BLOCK) under the narrow-refinement carve-out; mission iteration 90.",
   "created": "2026-11-12",
-  "design_doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7ae-bridge-operator-contact-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ae-bridge-operator-contact-sprint.md",
   "branch": "mission/stapledon-iter90-7ae",
   "base": "b6c93c11 (origin/main = merge-base = the design's measured base; HEAD ce9cc560 is the r3 design commit)",
   "implements": [
@@ -25,7 +25,7 @@
       "estimated_loc": "test +38/-8, record +37/-20, mk +1/-1 (~105 changed lines)",
       "dependencies": [],
       "acceptance_criteria": [
-        "D=design_docs/planned/r1/m4-7ae-bridge-operator-contact.md; { echo '--- a/tests/test_bridge_operator_contact.gd'; echo '+++ b/tests/test_bridge_operator_contact.gd'; sed -n '/^## Appendix A/,/^## Appendix B/p' $D | sed -n '/^```diff$/,/^```$/p' | sed '1d;$d' | perl -pe 'if(/^([ +-])((?:    )+)/){my $p=$1; my $n=length($2)/4; s/^[ +-](?:    )+/$p.\"\\t\" x $n/e}'; } > /tmp/7ae-appendix-a.patch; git apply --recount /tmp/7ae-appendix-a.patch && shasum -a 256 tests/test_bridge_operator_contact.gd -> d77c1dc9edc59b6c09df3ec86f085c57356e3327f4fe936c3c23b17dd92dfdcf (V33, V47; fence 79 lines)",
+        "D=design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md; { echo '--- a/tests/test_bridge_operator_contact.gd'; echo '+++ b/tests/test_bridge_operator_contact.gd'; sed -n '/^## Appendix A/,/^## Appendix B/p' $D | sed -n '/^```diff$/,/^```$/p' | sed '1d;$d' | perl -pe 'if(/^([ +-])((?:    )+)/){my $p=$1; my $n=length($2)/4; s/^[ +-](?:    )+/$p.\"\\t\" x $n/e}'; } > /tmp/7ae-appendix-a.patch; git apply --recount /tmp/7ae-appendix-a.patch && shasum -a 256 tests/test_bridge_operator_contact.gd -> d77c1dc9edc59b6c09df3ec86f085c57356e3327f4fe936c3c23b17dd92dfdcf (V33, V47; fence 79 lines)",
         "sed -n '/^## Appendix B/,/^## Appendix C/p' $D | sed -n '/^```json$/,/^```$/p' | sed '1d;$d' > /tmp/7ae-record.json; jq . /tmp/7ae-record.json > art/view-finish-v1/bridge-operator-contact.json; shasum -a 256 art/view-finish-v1/bridge-operator-contact.json -> 43f2f7e215e5141e5bdb29326b6577ddca40241b2716daa8d0972e4a7ca222fe (V40)",
         "mk/captain-anim.mk line 11 gate regex becomes '^bridge-operator-contact: 56 passed, 0 failures$$' (design D3, +1/-1)",
         "make bridge-operator-test; echo rc=$? -> gate FAIL against the 56 pin (shape per V14), log summary 'bridge-operator-contact: 54 passed, 2 failures'; grep '^FAIL' .godot/tmp/bridge-operator-test.log -> exactly 'FAIL voyage full 1.8m capsule clear at corrected point' and 'FAIL crew full 1.8m capsule clear at corrected point'; layout agreement ok (V28, AC10)",
@@ -74,9 +74,9 @@
         "MS2"
       ],
       "acceptance_criteria": [
-        "install: sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' > tools/bridge_operator_drills.sh; wc -l -> 178 (V52)",
+        "install: sed -n '/^## Appendix C/,$p' design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' > tools/bridge_operator_drills.sh; wc -l -> 178 (V52)",
         "AC2: make bridge-operator-drills; echo rc=$? on the clean tree, then git status --porcelain -> 'bridge-operator-drills selftest: ok (...)'; 16 MATCH rows (d0 x2, k1a, k1b, k2, k3a, k3b, k3c, k4a, k4b, k5a-k5e, k6) with the design drill table's counts; 'bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (pin ^bridge-operator-contact: 56 passed, 0 failures$)'; rc=0; then empty porcelain (V51, revision-3 runner, 233 s; revision 2: V42, 99 s)",
-        "AC2a: sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' | cmp - tools/bridge_operator_drills.sh && echo same -> same (V54)",
+        "AC2a: sed -n '/^## Appendix C/,$p' design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' | cmp - tools/bridge_operator_drills.sh && echo same -> same (V54)",
         "AC2b: sh tools/bridge_operator_drills.sh --selftest; echo rc=$? -> 'bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)' and rc=0 (V49)",
         "commit tools/bridge_operator_drills.sh mk/captain-anim.mk BEFORE running the drills; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
       ],

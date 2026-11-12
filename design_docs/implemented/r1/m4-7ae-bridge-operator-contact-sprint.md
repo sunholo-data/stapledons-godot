@@ -65,7 +65,7 @@ re-extract, never retype — and if re-extraction still mismatches, stop (tree d
 unmodified test file):
 
 ```sh
-D=design_docs/planned/r1/m4-7ae-bridge-operator-contact.md
+D=design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md
 { echo '--- a/tests/test_bridge_operator_contact.gd'; echo '+++ b/tests/test_bridge_operator_contact.gd'
   sed -n '/^## Appendix A/,/^## Appendix B/p' $D | sed -n '/^```diff$/,/^```$/p' | sed '1d;$d' |
   perl -pe 'if(/^([ +-])((?:    )+)/){my $p=$1; my $n=length($2)/4; s/^[ +-](?:    )+/$p."\t" x $n/e}'; } > /tmp/7ae-appendix-a.patch
@@ -78,7 +78,7 @@ The diff fence extracts to **79 lines** (planner-measured). The patched test's s
 **Appendix B → the record** (measured V40):
 
 ```sh
-D=design_docs/planned/r1/m4-7ae-bridge-operator-contact.md
+D=design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md
 sed -n '/^## Appendix B/,/^## Appendix C/p' $D | sed -n '/^```json$/,/^```$/p' | sed '1d;$d' > /tmp/7ae-record.json
 jq . /tmp/7ae-record.json > art/view-finish-v1/bridge-operator-contact.json
 shasum -a 256 art/view-finish-v1/bridge-operator-contact.json
@@ -89,7 +89,7 @@ Expect **`43f2f7e215e5141e5bdb29326b6577ddca40241b2716daa8d0972e4a7ca222fe`** (V
 **Appendix C → the runner** (MS3; the AC2a extraction, measured V54):
 
 ```sh
-D=design_docs/planned/r1/m4-7ae-bridge-operator-contact.md
+D=design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md
 sed -n '/^## Appendix C/,$p' $D | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' > tools/bridge_operator_drills.sh
 wc -l tools/bridge_operator_drills.sh    # expect 178 (V52)
 ```
@@ -229,7 +229,7 @@ to 233 s at load ~38 — V42, V51). 183 changed lines. Closes: **AC2, AC2a, AC2b
    ^bridge-operator-contact: 56 passed, 0 failures$)`**; **`rc=0`**; then **empty porcelain**
    (measured V51 with the revision-3 runner: rc 0, 233 s at load ~38; revision 2: V42, 99 s).
 5. **AC2a:**
-   `sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' | cmp - tools/bridge_operator_drills.sh && echo same`
+   `sed -n '/^## Appendix C/,$p' design_docs/implemented/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' | cmp - tools/bridge_operator_drills.sh && echo same`
    → **`same`** (measured V54).
 6. **AC2b:** `sh tools/bridge_operator_drills.sh --selftest; echo rc=$?` →
    **`bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation,

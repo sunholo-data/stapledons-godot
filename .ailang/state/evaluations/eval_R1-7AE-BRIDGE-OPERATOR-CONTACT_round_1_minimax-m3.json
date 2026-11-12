@@ -1,0 +1,160 @@
+{
+  "sprint_id": "R1-7AE-BRIDGE-OPERATOR-CONTACT",
+  "evaluation_round": 1,
+  "evaluator": "MiniMax M3 (pi, isolated evaluator clone), independent of the generator (Claude Haiku 5.5 / Opus 5.5)",
+  "date": "2026-11-12",
+  "role": "cross-vendor judge (generator != judge); session protocol acknowledged before any judge work",
+  "scope": {
+    "worktree": "isolated evaluator clone, branch mission/stapledon-iter90-7ae @ ce3dda13 (PR #443 head, merged with main)",
+    "base": "origin/main (merge-base b6c93c11 = the design's measured base)",
+    "diff_reviewed": "git diff origin/main...HEAD (12 files)",
+    "design": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md (revision 3)",
+    "plan": "design_docs/planned/r1/m4-7ae-bridge-operator-contact-sprint.md",
+    "ruling": "D-148 A (Mark, attended 2026-11-12): Voyage and Crew working spots 0.275 m back (1.50 m from the desk); no expected-failure (D not taken); OQ-2 stays at default (a), no lean/heading change; visual acceptance separate from the merge",
+    "environment": "AILANG v0.56.1 (runtime/bin), Godot 4.7.2.stable headless, no GPU; host load 16-62 during the runs"
+  },
+  "score": 94,
+  "verdict": "PASS",
+  "score_breakdown": {
+    "correctness_against_design_and_d148_A": {"score": 25, "max": 25, "notes": "Every byte-exact artifact verified: the test is sha256 d77c1dc9edc59b6c09df3ec86f085c57356e3327f4fe936c3c23b17dd92dfdcf (the plan's Appendix A value), the record is 43f2f7e215e5141e5bdb29326b6577ddca40241b2716daa8d0972e4a7ca222fe (Appendix B via jq), and tools/bridge_operator_drills.sh is 6a9508253b8b1444f9ec653781b8cf2bdd078e700cc62efd79c1b562a9b1c304 = Appendix C byte for byte (cmp identical, 178 lines). The D-148 A number edits are exactly -12.708/11.442 (Voyage) and 12.708/11.442 (Crew) in both assets/ship_demo/manifest.json and art/deck-layout-v2/bow_a.json; the two re-pins equal shasum -a 256 of the edited files (ff14f59f..., 0b433ca7...), budgets.json bytes stays 12794, and asset-pins.json line 364 (comms_v2.layout) is untouched. work_direction_gltf stays [0,0,-1] (OQ-2 (a)); no lean or heading change. The count pin is exactly '^bridge-operator-contact: 56 passed, 0 failures$$' and bridge-operator-drills is NOT a prerequisite of make test."},
+    "test_strength_non_vacuity_and_mutation_kills": {"score": 23, "max": 25, "notes": "56 checks = 8 global + 24 per station x 2, exactly D5's arithmetic; a label-level diff against origin/main shows no check dropped (3 relabelled, 5 new per station). 8 independent mutants of my own (M1-M3, M4, M7, M9) all turned the gate red; M5 (weakened pin) and M6 (broken restore check) are guard-bypass mutants whose SURVIVAL proves the 56-pin and the fail-closed restore are load-bearing; M8 proves the runner reads the pin live. The runner's own selftest passes (7 negative controls) and I independently reproduced the INT (rc 130) and TERM (rc 143) restore paths, the timeout path (exit 3, tree restored) and the dirty-tree precondition (exit 3, refuses). Deduction: 7 of the 56 checks (rendered feet, reduced motion, leaving resets, held work pose lean, WALK/capsule support, Walk-to route, full 1.8m capsule clear) have no dedicated drill and no mutant of mine, so their non-vacuity rests on code reading; the count pin catches their REMOVAL (M9) but not their vacuity. The manifest-vs-layout check is a consistency check, as the design itself admits."},
+    "fidelity_to_the_plan": {"score": 18, "max": 20, "notes": "All four milestones landed with the plan's named files and the byte-for-byte rule honoured (every sha256 the plan names matched). Commit trailers present as required; named files staged per milestone. One stated stop condition was overridden: the plan's pause point 'MS1 RED is not exactly 54 passed, 2 failures ... -> stop', and the measured RED was 52/4 with a different FAIL signature; the executor escalated ('controller ruling iteration 90'), recorded it in the MS1 commit message and the sprint JSON, and continued. I reproduced 52/4 exactly, so the ruling was sound - but it is recorded only in the sprint JSON's free text, never in the design doc's V28/AC10 or the decision ledger. MS1's 'measured' field is null (the plan's MS4 step 6 asks for it); the evidence lives in 'notes'. mk/captain-anim.mk is +5/-1 where the plan's Velocity and the design's AC6 row say +6/-1 (the design's own D10 says '+5 lines', so the implementation follows D10 and the design's AC6 cell is the stale number)."},
+    "scope_discipline": {"score": 15, "max": 15, "notes": "Exactly the eight AC6 files plus the changelog fragment, the sprint JSON and the designer's design/plan commits; nothing under interior/demos/ui/audio/sim (AC5 empty); no new .gd and no .uid (uid-guard ok, 438 files); no .py (python-guard ok); no GLB/shader/Blender touch; no revert of #379; no comms checks; no expected-failure. The design doc was edited only by the designer's commits (830641ac, ce9cc560), never by the executor. The executor's only out-of-plan edit is one whitespace fix to the sprint plan (commit 5dd7f99c), made because AC4's 'git diff --check origin/main' must be silent, and committed separately with a clear message."},
+    "evidence_integrity": {"score": 13, "max": 15, "notes": "Every claim I could execute reproduced: AC1 (56/0 twice), AC2 (16 rows: 16 match, 0 mismatch, 0 harness, rc 0, porcelain empty), AC2a (cmp same), AC2b (selftest ok), AC3 (262/144/118 exactly), AC4 (git diff --check silent; uid-guard ok), AC5 (empty), AC6 (the eight files and their numstats), AC6a (equal hash pairs), AC7 (rc 0), AC8 (5 of 6 gates green). The MS1 RED was independently reconstructed (52/4). The executor's wall-clock and load figures are inherently unverifiable here. Deductions: the design's V28/AC10 ('54 passed, 2 failures', the two capsule checks) is contradicted by the revision-3 Appendix B record and was never reconciled in the design; MS1's 'measured' is null; the sprint JSON's top-level status is still 'planned' where the repo convention for a finished sprint is 'completed'."}
+  },
+  "blocking": [],
+  "non_blocking": [
+    "Design debt: the design doc's V28 / AC10 still asserts 'bridge-operator-contact: 54 passed, 2 failures' (the two capsule checks) for the S1-RED state. With revision 3's Appendix B (the D-148 A record) the RED is 52/4 with a different FAIL set (voyage/crew installed working point, voyage/crew panel and contact pose wait for real working point) - I measured it. The capsule property itself is still covered (k4a kills the negative control; the final state is 56/0). Amend V28/AC10 at landing; the executor was right to escalate.",
+    "Evidence routing: the 'controller ruling iteration 90' that accepted 52/4 is recorded only in the sprint JSON's MS1 notes and the MS1 commit message, not in the design doc or design_docs/stapledon-mission.md's decision ledger. A stop condition overridden by a ruling needs a ledger row.",
+    "Sprint JSON bookkeeping: MS1's 'measured' field is null while MS2/MS3/MS4 are populated, and the top-level 'status' is 'planned' where the repo convention for a finished sprint is 'completed'.",
+    "Design numstat drift: the design's AC6 row and the plan's Velocity say mk/captain-anim.mk +6/-1; the actual is +5/-1 (the design's own D10 says '+5 lines', so the implementation is right and the AC6 cell is stale).",
+    "Test-strength gap: 7 of the 56 checks have no dedicated kill drill and no mutant of mine (rendered feet equal physical feet; reduced motion retains static working posture; leaving resets work posture; held work pose applies the bounded 15-degree lean; corrected point supported by actual WALK/capsule radius; Walk-to route ends at actual corrected foot point; full 1.8m capsule clear at corrected point). The 56-pin catches their removal (M9: 54/0 -> RED) but not their vacuity. A drill for the capsule-clear check would close the row's own subject matter directly.",
+    "Runner hygiene: on the two early HARNESS exits (drill files differ from the index; pin regex not found exactly once) the runner has already created its mktemp dir and leaves it behind in $TMPDIR (no logs in it). The design's wording 'kept on any other exit for the logs' arguably sanctions it, but those two exits have no logs to keep.",
+    "Runner churn: the jedit() helper rewrites the whole record through JSON::PP's pretty printer (69-line churn for a one-number mutation). Harmless - git checkout restores it exactly - but it makes a drill's diff noisy.",
+    "The design's D4 GPU path for tools/bridge_operator_review.gd remains UNMEASURED (no GPU here, and CLAUDE.md's merge rule says no GPU gate). AC11 (dev build + Mark's look at the Voyage and Crew working spots) is attended and out of this row's merge decision, per D-148."
+  ],
+  "mutants": [
+    {
+      "id": "M1",
+      "mutation": "manifest voyage use_m x moved 1 cm (-12.708 -> -12.698), derived from the diff's D9 number lines",
+      "command": "perl -pi -e 's/-12\\.708,/-12.698,/' assets/ship_demo/manifest.json && make bridge-operator-test",
+      "result": "RED: 'bridge-operator-contact: 53 passed, 3 failures'; FAIL manifest use_m equals the deck layout's use_m at every authored station [\"navigation\", \"DRIFT:voyage\", \"crew\", \"comms\"]; FAIL voyage installed working point matches physical target; FAIL voyage panel and contact pose wait for real working point; script-gate FAIL, no 56-pin match",
+      "killed": true,
+      "restore": "git checkout -- assets/ship_demo/manifest.json (git status --porcelain empty)"
+    },
+    {
+      "id": "M2",
+      "mutation": "the layout's copy differs from the manifest's (bow_a.json console_decision_0.use_m x -1 cm), i.e. layout/manifest drift",
+      "command": "perl -pi -e 's/-12\\.708,/-12.698,/' art/deck-layout-v2/bow_a.json && make bridge-operator-test",
+      "result": "RED: 'bridge-operator-contact: 55 passed, 1 failures'; FAIL manifest use_m equals the deck layout's use_m at every authored station [\"navigation\", \"DRIFT:voyage\", \"crew\", \"comms\"]; script-gate FAIL",
+      "killed": true,
+      "restore": "git checkout -- art/deck-layout-v2/bow_a.json (porcelain empty)"
+    },
+    {
+      "id": "M3",
+      "mutation": "the record's facing data changed (voyage lean_off_desk_deg 48.0 -> 47.0)",
+      "command": "perl -0pi -e 's/(\"desk\": \"console_decision_0\".*?)\"lean_off_desk_deg\": 48\\.0/$1\"lean_off_desk_deg\": 47.0/s' art/view-finish-v1/bridge-operator-contact.json && make bridge-operator-test",
+      "result": "RED: 'bridge-operator-contact: 55 passed, 1 failures'; FAIL voyage recorded lean is the measured angle off this desk (7ae OQ-2); script-gate FAIL",
+      "killed": true,
+      "restore": "git checkout -- art/view-finish-v1/bridge-operator-contact.json (porcelain empty)"
+    },
+    {
+      "id": "M4",
+      "mutation": "drop a check line from the test (the new 'captain at the working point faces the desk' line, which runs for both stations)",
+      "command": "perl -ni -e 'print unless /captain at the working point faces the desk/' tests/test_bridge_operator_contact.gd && make bridge-operator-test",
+      "result": "RED: 'bridge-operator-contact: 54 passed, 0 failures'; script-gate FAIL, no summary line matching ^bridge-operator-contact: 56 passed, 0 failures$ - the count pin is load-bearing",
+      "killed": true,
+      "restore": "git checkout -- tests/test_bridge_operator_contact.gd (porcelain empty)"
+    },
+    {
+      "id": "M5",
+      "mutation": "weaken the count pin regex back to '[1-9][0-9]*' while M4's deleted check is still in place (guard-bypass mutant)",
+      "command": "perl -pi -e 's/56 passed, 0 failures/[1-9][0-9]* passed, 0 failures/' mk/captain-anim.mk && make bridge-operator-test",
+      "result": "GREEN: 'script-gate: bridge-operator-test ok: bridge-operator-contact: 54 passed, 0 failures (rc 0, no SCRIPT ERROR, 10 s of 600 s)'. The mutant SURVIVED by design of the mutation: a deleted check plus a loose pin passes, which proves (a) the 56-pin is the only thing closing the deleted-check hole and (b) the design's k4b class is the real hazard. (The design's k4b deletes the negative-control line; M4/M5 delete a different, newer check.)",
+      "killed": false,
+      "restore": "git checkout -- tests/test_bridge_operator_contact.gd mk/captain-anim.mk (porcelain empty)"
+    },
+    {
+      "id": "M6",
+      "mutation": "break the runner's restore check (drop the '&& git diff --quiet -- $FILES' half of restore()'s fail-closed condition)",
+      "command": "perl -pi -e 's/if \\[ \"\\$crc\" = 0 \\] && git diff --quiet -- \\$FILES; then return 0; fi/if [ \"\\$crc\" = 0 ]; then return 0; fi/' tools/bridge_operator_drills.sh && BOD_FAULT=noop sh tools/bridge_operator_drills.sh k5a",
+      "result": "SURVIVED: the runner no longer fails closed. Instead of exit 3 + 'HARNESS restore | git checkout rc ...' it printed 'MATCH k5a | rc 1 | 55 passed, 1 failures | pin red | 1 FAIL lines | label yes' and 'bridge-operator-drills: 1 rows: 1 match, 0 mismatch, 0 harness' (rc 0), and LEFT the mutated record on disk (69 lines rewritten by jedit). With the unmodified runner the same BOD_FAULT=noop exits 3, prints the HARNESS restore line, keeps the logs and stops. The fail-closed restore is therefore load-bearing, and without it the runner corrupts the working tree.",
+      "killed": false,
+      "restore": "git checkout -- tools/bridge_operator_drills.sh art/view-finish-v1/bridge-operator-contact.json (porcelain empty)"
+    },
+    {
+      "id": "M7",
+      "mutation": "the record's original point moved 2 cm (voyage original_use_ship_m -12.336 -> -12.356)",
+      "command": "perl -0pi -e 's/(\"desk\": \"console_decision_0\".*?\"original_use_ship_m\": \\[\\s*)-12\\.336,/$1-12.356,/s' art/view-finish-v1/bridge-operator-contact.json && make bridge-operator-test",
+      "result": "RED: 'bridge-operator-contact: 53 passed, 3 failures'; FAIL voyage original point stands the D-132 two metres from the desk, on its facing; FAIL voyage advances real feet by measured working distance along the desk's facing; FAIL voyage actual walking reaches corrected feet",
+      "killed": true,
+      "restore": "git checkout -- art/view-finish-v1/bridge-operator-contact.json (porcelain empty)"
+    },
+    {
+      "id": "M8",
+      "mutation": "weaken the count pin and re-run the runner's k4b row - a coupling probe: does the runner read the pin live from mk/captain-anim.mk?",
+      "command": "perl -pi -e 's/56 passed, 0 failures/[1-9][0-9]* passed, 0 failures/' mk/captain-anim.mk && sh tools/bridge_operator_drills.sh k4b",
+      "result": "CAUGHT, fail-closed: 'MISMATCH k4b | want rc 0 | 54 passed, 0 failures | pin red | label: -' / 'got rc 0 | 54 passed, 0 failures | pin green | 0 FAIL lines | label yes' and 'bridge-operator-drills: 1 rows: 0 match, 1 mismatch, 0 harness (pin ^bridge-operator-contact: [1-9][0-9]* passed, 0 failures$)' - rc 1. The runner is coupled to the real pin; the design's claim that loosening the pin turns k4b into a MISMATCH holds.",
+      "killed": true,
+      "restore": "git checkout -- mk/captain-anim.mk (porcelain empty)"
+    },
+    {
+      "id": "M9",
+      "mutation": "drop an UNDRILLED check line from the test ('leaving resets work posture') - does the count pin protect the checks that have no drill?",
+      "command": "perl -ni -e 'print unless /leaving resets work posture/' tests/test_bridge_operator_contact.gd && make bridge-operator-test",
+      "result": "RED: 'bridge-operator-contact: 54 passed, 0 failures'; script-gate FAIL, no 56-pin match. The pin is the backstop against silent removal even for undrilled checks - but it says nothing about their vacuity.",
+      "killed": true,
+      "restore": "git checkout -- tests/test_bridge_operator_contact.gd (porcelain empty)"
+    }
+  ],
+  "commands_run": [
+    {"command": "read CLAUDE.md (243 lines, complete); session_protocol_ack {} -> acked", "output_summary": "protocol satisfied before any judge work; task classified as independent evaluation under an approved design (r3) + sprint plan; 'ailang messages' skipped (unattended mission stage)"},
+    {"command": "git diff origin/main...HEAD --stat / -- <data files>", "output_summary": "12 files; the D-148 A edits are number lines only: manifest 168/169 and 175/176, bow_a 57/58 and 68/69 -> -12.708/11.442 and 12.708/11.442"},
+    {"command": "shasum -a 256 assets/ship_demo/manifest.json art/deck-layout-v2/bow_a.json vs jq -r '.pins[...].sha256' budgets.json and jq -r .layout_sha256 asset-pins.json", "output_summary": "AC6a PASS: ff14f59f97834c51a17d010d83d1af5c83f3b73a0dd353091ada442823b605a7 = the manifest pin; 0b433ca735848bf47d93027be04e8d6e057b1134fa596d8245710c36d84253c0 = layout_sha256; bytes stays 12794; asset-pins line 364 (comms_v2.layout) untouched"},
+    {"command": "sed -n '648,825p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | cmp - tools/bridge_operator_drills.sh", "output_summary": "AC2a PASS: byte-for-byte identical (178 lines, sha256 6a9508253b8b1444f9ec653781b8cf2bdd078e700cc62efd79c1b562a9b1c304) - the committed runner is Appendix C verbatim"},
+    {"command": "jq . <Appendix B json> | cmp - art/view-finish-v1/bridge-operator-contact.json; shasum -a 256 tests/test_bridge_operator_contact.gd", "output_summary": "record = Appendix B byte-for-byte (sha256 43f2f7e2...); test = the plan's Appendix A sha256 d77c1dc9... - the byte-for-byte rule was honoured for all three appendices"},
+    {"command": "make bridge-operator-test (twice)", "output_summary": "AC1 PASS both runs: 'script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, 8 s / 11 s of 600 s)'"},
+    {"command": "sh tools/bridge_operator_drills.sh --selftest", "output_summary": "AC2b PASS (26 s): 'bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)', rc 0, porcelain empty"},
+    {"command": "make bridge-operator-drills (full 16-row run)", "output_summary": "AC2 PASS (212 s): 16 MATCH rows (d0 x2 56/0; k1a 0/1; k1b 32/24; k2 53/3; k3a 44/12; k3b 44/12; k3c 49/7; k4a 54/2; k4b rc 0 54/0 pin red; k5a 55/1; k5b 51/5; k5c 53/3; k5d 55/1; k5e 54/2; k6 55/1); 'bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (pin ^bridge-operator-contact: 56 passed, 0 failures$)'; rc 0; git status --porcelain empty"},
+    {"command": "make script-gate-lint", "output_summary": "AC3 PASS: 'script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; 24 includes, all in mk/*.mk; 25 makefiles scanned)' and 'script-gate-prereqs: ok (5 pairs ...)' - exactly the design's counts"},
+    {"command": "git diff --check origin/main; make uid-guard; git diff --name-only origin/main -- interior demos ui audio sim", "output_summary": "AC4 PASS (silent diff-check; 'uid-guard: ok (438 .uid files)'); AC5 PASS (empty)"},
+    {"command": "git diff --name-only origin/main -- assets art mk tests tools; git diff --numstat origin/main; git diff -U0 origin/main -- assets art/deck-layout-v2", "output_summary": "AC6 PASS: exactly the eight AC6 files with numstats 1/1, 4/4, 1/1, 37/20, 4/4, 5/1 (mk), 38/8, 178/0; the -U0 diff shows only D9's number lines and hashes"},
+    {"command": "godot --headless --path . --check-only --script tools/bridge_operator_review.gd", "output_summary": "AC7 PASS: rc 0, no error lines (only the sandbox's user:// log-write error, which does not affect the script)"},
+    {"command": "make deck-assets-check deck-layout-eval comms-walk-test levels-regress captain-chair-test", "output_summary": "AC8: deck-assets-check ok (12 pins) + 'negative controls (wrong pin, emissive prop) fail as they must'; deck-layout: bridge ok (the eval prints 'station voyage use [-12.71, -11.44]', i.e. it reads the new A point); comms-walk: 11 passed, 0 failures; levels-regress: ok (1 levels: bridge) + both negative controls; captain-chair: 15 passed, 0 failures"},
+    {"command": "make camera-test (candidate), then the same with the seven changed files reverted to origin/main (the design's prescribed pristine comparison)", "output_summary": "AC8a: RED both ways and IDENTICAL - candidate 186 passed, 1 failure ('AC6 braking cues Bow (phase ...)'), pristine main 186 passed, 1 failure. camera-test reads none of the changed files, so the red is pre-existing on this base (the design's V37/V38), not caused by A. An earlier candidate run under load 62 gave 179/8, i.e. the FAIL set is load-flaky."},
+    {"command": "git checkout origin/main -- <the three data files>; make bridge-operator-test (MS1-RED reconstruction); git checkout HEAD -- <those files>", "output_summary": "The MS1 RED reproduces exactly as the executor recorded: 'bridge-operator-contact: 52 passed, 4 failures' with FAILs 'voyage installed working point matches physical target', 'voyage panel and contact pose wait for real working point', 'crew installed working point matches physical target', 'crew panel and contact pose wait for real working point'; the layout-agreement check was ok. The design's V28/AC10 figure of 54/2 with the two capsule FAILs does NOT reproduce under the revision-3 Appendix B record. Tree restored, porcelain empty."},
+    {"command": "grep -c '^ok ' .godot/tmp/bridge-operator-test.log; label-set diff of origin/main's test vs HEAD's test", "output_summary": "56 checks = 8 global + 24 per station x 2, matching D5's arithmetic; no check dropped (3 relabelled, 5 new per station) - so the count is real coverage, not padding"},
+    {"command": "runner probes: dirty-tree precondition; BOD_TIMEOUT=15 with a slow fake godot (timeout path); SIGINT to a foreground runner; SIGTERM to a foreground runner", "output_summary": "dirty tree -> 'HARNESS - drill files differ from the index; stage or commit the candidate first' (exit 3, the file was not overwritten); timeout -> 'HARNESS k5a | timeout after 15 s' exit 3 with the tree restored; INT -> rc 130 with the record restored; TERM -> rc 143 with the record restored. Every exit path leaves the tree clean."},
+    {"command": "static read of tools/bridge_operator_drills.sh for writes outside the clone", "output_summary": "Every write target is either a tracked file inside the clone (mutated, then restored by 'git checkout --' from the index) or the run's own mktemp -d directory under ${TMPDIR:-/tmp}; the only removals are 'rm -rf' of that mktemp dir. No absolute path, $HOME write, network call or cd outside 'git rev-parse --show-toplevel'. One nit: the two early HARNESS exits (dirty tree / pin not found) leave the mktemp dir behind."},
+    {"command": "git log --format='%h %s%n%b' origin/main..HEAD; cat changelogs/unreleased/2026-11-12-7ae-bridge-operator-contact.md; git log --name-only -- design_docs/planned/r1/m4-7ae-bridge-operator-contact*.md", "output_summary": "Every executor commit carries the required 'Co-Authored-By: Claude Haiku 5.5' trailer; the changelog fragment is present (### Fixed / ### Added, 10 lines); the design doc was edited only by the designer's commits, the sprint plan only by the planner plus one executor whitespace fix (5dd7f99c, made because AC4's 'git diff --check origin/main' must be silent)."},
+    {"command": "final: git status --porcelain", "output_summary": "empty except this report file; all mutant files restored with 'git checkout --'; all scratch dirs and logs removed from $TMPDIR"}
+  ],
+  "uninformative": [
+    "AC8's deck-layout-eval-test: UNINFORMATIVE UNDER SANDBOX. 'make deck-layout-eval-test' depends on ship-baseline, which curls the pinned ship.glb from the public bucket; the fetch returns 'curl: (22) The requested URL returned error: 403' and the target aborts ('ship-baseline: FAIL fetch ship.glb (9da74077...)', make *** [ship-baseline] Error 1). This is a network restriction of the evaluator sandbox, not a candidate failure, and it is independent of the changed files (the same fetch fails with the candidate reverted). Recorded as neither a pass nor a fail. The other five AC8 gates ran green.",
+    "AC9 ('make -k test' on the fix head) - controller step, not run here (full suite, host load 16-62, and out of the executor's scope).",
+    "AC11 ('make publish-dev' from the fix head + Mark's visual look at the Voyage and Crew working spots) - attended step, explicitly separate from the merge decision under D-148. Not run, not measurable by an agent.",
+    "The design's D4 GPU path for tools/bridge_operator_review.gd (a GPU window) - UNMEASURED here, headless only; it is not a gate (CLAUDE.md's merge rule).",
+    "Godot's user:// writes fail in this sandbox ('Cannot create file user://logs/godot.log', editor_settings save error). The contact test needs no user:// path and the gate is unaffected; this is the controller's measured sandbox condition, not a defect.",
+    "The runner's 'missing summary line' class has code but no selftest case (the design says so); I did not synthesise one.",
+    "The executor's wall-clock and load figures (V-rows) are inherently unverifiable by an independent run; I confirmed the outcomes, not the timings.",
+    "The design's V28/AC10 expectation '54 passed, 2 failures (the two capsule checks)' is contradicted by measurement, not by lack of information - it is listed as a non-blocking finding rather than as uninformative."
+  ],
+  "ac_results": {
+    "AC1": "PASS (both runs, 56 passed / 0 failures, rc 0)",
+    "AC2": "PASS (16 rows: 16 match, 0 mismatch, 0 harness, rc 0, porcelain empty, 212 s)",
+    "AC2a": "PASS (cmp: Appendix C == the committed runner, byte for byte)",
+    "AC2b": "PASS (selftest ok, rc 0)",
+    "AC3": "PASS (262 / 144 / 118 exactly as designed)",
+    "AC4": "PASS (git diff --check origin/main silent; uid-guard ok, 438 .uid files; python-guard ok, 21 allowlisted)",
+    "AC5": "PASS (empty)",
+    "AC6": "PASS (the eight files; numstats; -U0 shows only D9's numbers and hashes)",
+    "AC6a": "PASS (both hash pairs equal)",
+    "AC7": "PASS (rc 0)",
+    "AC8": "PARTIAL - 5 of 6 green (deck-assets-check, deck-layout-eval, comms-walk-test, levels-regress, captain-chair-test); deck-layout-eval-test UNINFORMATIVE UNDER SANDBOX (ship-baseline's 403 bucket fetch, network-restricted)",
+    "AC8a": "RED both with and without the candidate and identical (186/1 vs 186/1) - pre-existing on this base, not attributable to A; controller step",
+    "AC9": "NOT RUN (controller step)",
+    "AC10": "historical; the MS1-RED state is reproduced as 52/4 (not V28's 54/2) - see non_blocking",
+    "AC11": "NOT RUN (attended; visual acceptance is separate from the merge under D-148)"
+  },
+  "notes": "Cross-vendor judge (MiniMax M3) on an isolated clone of the executor's head; the executor's claims were treated as claims until reproduced. Reproduced green: AC1, AC2, AC2a, AC2b, AC3, AC4, AC5, AC6, AC6a, AC7 and 5 of AC8's 6 gates, plus every byte-exact sha256 the plan names (test d77c1dc9, record 43f2f7e2, runner 6a950825, manifest ff14f59f, layout 0b433ca7) and the MS1 RED (52/4). Nine mutants of my own: six killed the gate, one (M9) killed the pin for an undrilled check, one (M8) proved the runner reads the pin live and fails closed, and two guard-bypass mutants (M5 the loose pin, M6 the broken restore check) SURVIVED - which is the evidence that the count pin and the fail-closed restore are load-bearing. No blocking finding. The row's substance (D-148 A: Voyage and Crew 0.275 m back, 1.50 m from the desk, in the manifest and the deck layout, with the pins re-computed) is implemented exactly and independently verified. The runner writes only inside the clone and its own mktemp dir, and every exit path (timeout, INT, TERM, dirty tree, restore fault) leaves the tree clean. Recommendation: land after amending the design doc's V28/AC10 to the measured 52/4 and adding the controller ruling to the ledger; AC11 (Mark's look) stays a separate attended step."
+}
