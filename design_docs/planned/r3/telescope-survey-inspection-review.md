@@ -34,11 +34,14 @@ Claude Opus scored the public `2ddd7516` snapshot **75/100**, conditional on N1.
 |---|---|
 | N1 first-entry crew setup | Fixed with a pending setup flag: information entry queues no orders, and the first helm entry queues the existing preset once. Actual recorded-wire regression fails before the fix (47/1), then passes (48/0), including repeated helm entry. |
 | N2 shared publish workflow | Removed the telescope-specific dependency from publish-dev. The full-app smoke remains an explicit sprint check. |
+| N3 release diagnostic | Deliberate, documented headless diagnostic entry, required because official templates refuse external --script overrides. It requires the isolated environment before starting a session and remains distinct from interactive play. |
 | N4 CSV importer | Both tracked observation CSV import settings explicitly use importer="keep". They are not translation resources. |
 | N5 unnecessary fetches | Removed observation-assets dependencies from the tracked/synthetic coordinate and cache tests. Real-image checks still fetch their prerequisites. |
 | N6 stale evidence | Updated measured counts, integrated main, bundle size and initial-field wording. |
+| N7 header acceptance | Oracle/Godot now agree on optional celestial degree units and rejected alternate/distorted conventions. Twenty-eight same-header controls compare both readers directly; independent oracle 275/0, FITS 53/0. |
 | N8 stale inspection marker | A failed open clears the old amber marker and plot action. Regression fails before the fix and passes afterwards; focus_object alone still preserves state when rejecting invalid input. |
 | P3 outside survey view | Label now explicitly states outside view (sky mirrored). It remains a direction diagram with no assigned depth. |
+| P3 fixture writes in project | Cache test writes a one-file fixture PCK under user:// and mounts its virtual bundle entry, exercising unchanged production mapping. It passes 38/0 with project-directory writes denied. |
 
 The row-level legacy provenance field remains for format compatibility; per-fact methods are authoritative, and the UI never describes the mixed record as wholly measured. This is explicitly a deprecated aggregate label. The recording sidecar is write-only audit metadata: no save/load subsystem exists, and restoration is not claimed.
 

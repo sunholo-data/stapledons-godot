@@ -18,9 +18,10 @@ The offline source decoder accepts only bounded, uncompressed primary float32 FI
 | Godot projection mirror | 65/0 |
 | Source import | 21/0; real 40-row generated JSON and strict pure probe byte-identical between engines |
 | Exact-ID index | 23/0; content pin/snapshot/mutation suite 27/0 |
-| Reproducible independent oracle | 51 cases / 246 checks; actual pinned FITS/CSV, both TAN directions, Galactic defining angles, five remeasured anchors; full-gate half-pixel fault fails |
+| Reproducible independent oracle | 51 cases / 275 checks; actual pinned FITS/CSV, both TAN directions, Galactic defining angles, five remeasured anchors, same-header acceptance controls; full-gate half-pixel fault fails |
 | Registered footprint | Native 10/0; real and strict pure parity; map 26/0 including draw callback and independent WCS corners |
-| Tile cache | 36/0, including corruption, gutters/seams, cancellation/version change, budgets and `.bin` fallback |
+| Tile cache | 38/0, including corruption, gutters/seams, cancellation/version change, budgets and `.bin` fallback; same result with project-directory writes denied |
+| Authoritative FITS header | 53/0; coefficient/frame/dimension agreement and refused unsupported distortion/units; oracle and Godot header acceptance agree |
 | Shared facts | 33/0; explicit per-fact methods/epochs and unavailable values |
 | Telescope UI | 32/0 including real keyboard/pinch/pan dispatch, rendered pixel-centre picking at high zoom, invariant archive metadata, session pinning, live viewport fit, sources/licence disclosure and scroll reset |
 | Live targeting | 10/0; explicit missing/hidden target never falls back; native field crops labelled honestly |
