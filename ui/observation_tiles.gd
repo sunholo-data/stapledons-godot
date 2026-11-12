@@ -107,8 +107,16 @@ func get_tile(key: String) -> Dictionary:
 static func _png_dimension(bytes: PackedByteArray, at: int) -> int:
 	return (int(bytes[at]) << 24) | (int(bytes[at + 1]) << 16) | (int(bytes[at + 2]) << 8) | int(bytes[at + 3])
 
+static func available_path(path: String) -> String:
+	if FileAccess.file_exists(path): return path
+	const RAW := "res://data/raw/observations/tiles/"
+	if path.begins_with(RAW):
+		var bundled := "res://observation_bundle/" + path.trim_prefix(RAW) + ".bin"
+		if FileAccess.file_exists(bundled): return bundled
+	return path
+
 func _load(meta: Dictionary) -> Dictionary:
-	var file := FileAccess.open(meta.path, FileAccess.READ)
+	var file := FileAccess.open(available_path(meta.path), FileAccess.READ)
 	if file == null: return {"error": "missing"}
 	if file.get_length() > MAX_COMPRESSED_BYTES: return {"error": "invalid"}
 	var bytes := file.get_buffer(file.get_length())
