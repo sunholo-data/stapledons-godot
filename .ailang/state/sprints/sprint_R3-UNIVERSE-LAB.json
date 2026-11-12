@@ -1,7 +1,7 @@
 {
  "sprint_id": "R3-UNIVERSE-LAB",
- "status": "proposed",
- "approved": null,
+ "status": "in_progress",
+ "approved": "2026-11-12; Mark, attended: 'approved'",
  "created": "2026-11-12",
  "design_doc": "design_docs/planned/r3/universe-lab.md",
  "sprint_plan": "design_docs/planned/r3/universe-lab-sprint.md",
@@ -703,5 +703,8 @@
    "completed": null,
    "notes": null
   }
+ ],
+ "notes_for_executors": [
+  "The registry lists sunholo/worlds 0.2.1 (an automated celestial 0.7 dependency bump, branch fix/worlds-0.2.1-celestial-0.7); the game pins 0.2.0. UL2a starts from the packages repo's current main and takes the next free version."
  ]
 }

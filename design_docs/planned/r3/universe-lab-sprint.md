@@ -1,7 +1,7 @@
 # Sprint R3-UNIVERSE-LAB: plan (the first build, UL0–UL8)
 
 **Design:** [universe-lab.md](universe-lab.md), approved by Mark 2026-11-12 ("good continue - accepted"; ledger D-156) with OQ1–OQ10 as recommended.
-**Status:** Proposed 2026-11-12. **Not approved; nothing here is executing.**
+**Status:** Approved by Mark, attended 2026-11-12 ("approved"); executing. The unblocked runs start first (UL0a, UL1, UL2a, UL2b, UL3a, UL3c, UL3d); the five stops stand.
 **Scope:** the first build only: UL0 (measurements) to UL8 (the recommendation). UL-B (lineages), UL-C (neighbour-aware cells), UL-D (dark forest) and UL-E get their own plans after the owner rules on the recommendation.
 **Progress file:** `.ailang/state/sprints/sprint_R3-UNIVERSE-LAB.json`
 **Branches:** this plan on `design/r3-universe-lab` (draft PR #439). Execution in a fresh full clone `../stapledons-godot-lab-exec`, never the main checkout; one PR per group (UL0, UL2a pin, UL3, UL4+UL5, UL6, UL7 data, UL8). Package work in a fresh clone of `sunholo-data/ailang-packages`; registry rows in a fresh clone of `sunholo-data/stapledons-design`.
