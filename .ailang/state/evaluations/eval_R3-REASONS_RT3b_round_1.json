@@ -1,0 +1,18 @@
+{
+  "sprint": "R3-REASONS", "milestone": "RT3b", "pr": 436, "round": 1, "judge": "claude-sonnet-5-5 (generator != judge)",
+  "score": 88, "pass_threshold": 70, "verdict": "PASS", "may_merge": true,
+  "rubric": {"acceptance_criteria_AC6_and_RT3_prediction": {"max": 35, "score": 33},
+             "tests_can_fail": {"max": 20, "score": 19},
+             "definition_of_done_gates": {"max": 20, "score": 17},
+             "design_fidelity_docs_scope": {"max": 15, "score": 11},
+             "code_quality": {"max": 10, "score": 8}},
+  "blocking": [],
+  "non_blocking": [
+    "Candidate.staleYearsAtArrival is a raw float that is negative/NaN when atArrival is NoPrediction(BadLightAge); only a comment says not to show it",
+    "predictionAtArrival accepts any WorldParams; no helper builds the preset's universe (tests do applyDial(baseline(), preset.dial) by hand), so a caller passing baseline() would not notice",
+    "design repo features/next/bubble-resources.md section 4 says 0.99c to alpha Cen costs about 76 kg: wrong; 76 kg is RES-21 = 0.999c with m_eff 10 kg (boost+brake only); sim 6.818 kg at 0.99c, m_eff 1 kg is right",
+    "RT3 text says the mass bill is added as a package function first; the PR reuses core.planView energy.totalKg (no new formula, so CLAUDE.md gate 3 is not triggered) but the design text is now stale",
+    "byte-identical-under-0.2.0 claim (census, calibVm, calib-smoke) not re-run by the judge; relies on GitHub fast tier (replay goldens) plus the pin file hash"
+  ],
+  "mutants": {"M1 refusal returns input belief": "killed", "M2 drop light age from interval": "killed (4 tests)", "M3 swap earth/ship years": "killed", "M4 mass x1.001": "killed (2 tests)", "M5 accept negative light age": "killed", "M6 stale = light age only": "killed", "M7 interval uses ship years": "killed", "M8 mass from drag only": "killed", "M9 NaN-tolerant isYears": "killed", "M10 universe lifetime x1.01": "killed"}
+}
