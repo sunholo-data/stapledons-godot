@@ -10,6 +10,8 @@ trap cleanup EXIT INT TERM
 mkdir -p "$RAW" "$TILES" "$TMP/bin"
 cp data/raw/observations/abell3128-vis/source.fits "$RAW/source.fits"
 cp "$RAW/source.fits" "$TMP/source.fits"
+cp data/raw/observations/abell3128-vis/detail.png "$TMP/detail.png"
+cp data/raw/observations/abell3128-vis/overview.png "$TMP/overview.png"
 cp data/raw/observations/abell3128-vis/detail.png "$RAW/detail.png"
 cp data/raw/observations/abell3128-vis/overview.png "$RAW/overview.png"
 if ! sh tools/script_gate.sh fixture-tiles "$TMP/build.log" 60 '^observation-tiles: [1-9][0-9]* levels, 0 failures$' -- "${GODOT:-godot}" --headless --path . --script tools/observation_tiles.gd -- "res://$RAW/detail.png" "res://$TILES" > "$TMP/build-gate.log" 2>&1; then cat "$TMP/build-gate.log"; exit 1; fi
@@ -39,6 +41,29 @@ expect() {
 expect pinned-real-fixture pass "$TMP/valid.json" verify
 expect cached-fetch-with-no-network pass "$TMP/valid.json" fetch
 if [ ! -f "$TMP/network" ]; then passed=$((passed+1)); echo "ok no-network-request"; else failed=$((failed+1)); echo "FAIL cached fetch requested network"; fi
+# Missing registered display levels should use their immutable PNG objects before
+# invoking the offline stretch; the pinned science source remains cached here.
+DETAIL_SUM=$(shasum -a 256 "$TMP/detail.png" | cut -d' ' -f1)
+OVERVIEW_SUM=$(shasum -a 256 "$TMP/overview.png" | cut -d' ' -f1)
+cat > "$TMP/bin/curl" <<EOF
+#!/bin/sh
+out=
+url=
+while [ "\$#" -gt 0 ]; do
+ case "\$1" in -o) shift; out=\$1 ;; https://*) url=\$1 ;; esac
+ shift
+done
+echo "\$url" >> "$TMP/network"
+case "\$url" in
+ */$DETAIL_SUM.png) cp "$TMP/detail.png" "\$out" ;;
+ */$OVERVIEW_SUM.png) cp "$TMP/overview.png" "\$out" ;;
+ *) exit 22 ;;
+esac
+EOF
+rm "$RAW/detail.png" "$RAW/overview.png"
+expect immutable-prepared-levels-first pass "$TMP/valid.json" fetch
+if [ -f "$TMP/network" ] && [ "$(wc -l < "$TMP/network" | tr -d ' ')" = 2 ] && grep -q "$DETAIL_SUM.png" "$TMP/network" && grep -q "$OVERVIEW_SUM.png" "$TMP/network"; then passed=$((passed+1));echo 'ok registered PNGs fetched by pinned bucket hashes';else failed=$((failed+1));echo 'FAIL registered levels regenerated before trying immutable PNGs';fi
+rm -f "$TMP/network"
 cat > "$TMP/bin/curl" <<EOF
 #!/bin/sh
 out=
@@ -56,7 +81,7 @@ EOF
 rm "$RAW/source.fits" "$RAW/detail.png" "$RAW/overview.png"
 rm "$TILES"/*.png "$TILES/tiles.json"
 expect official-fallback-and-rebuild pass "$TMP/valid.json" fetch
-if [ "$(wc -l < "$TMP/network" | tr -d ' ')" = 3 ]; then passed=$((passed+1)); echo "ok bounded source/index fallback requests"; else failed=$((failed+1)); echo "FAIL unexpected fallback request count"; cat "$TMP/network"; fi
+if [ "$(wc -l < "$TMP/network" | tr -d ' ')" = 5 ]; then passed=$((passed+1)); echo "ok bounded source/index fallback requests"; else failed=$((failed+1)); echo "FAIL unexpected fallback request count"; cat "$TMP/network"; fi
 jq '.plates[0].source_sha256="0000000000000000000000000000000000000000000000000000000000000000"' "$TMP/valid.json" > "$TMP/bad-source.json"
 expect science-source-hash fail "$TMP/bad-source.json" verify
 jq '.plates[0].licence=""' "$TMP/valid.json" > "$TMP/bad-rights.json"

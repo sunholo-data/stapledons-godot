@@ -12,9 +12,9 @@ observation-import-parity:
 	@$(SCRIPT_GATE) observation-import-parity $(SCRATCH)/observations/parity.log 180 '^observation-import-parity: 40 real sources, 0 mismatches$$' -- sh -c 'set -eu; \
 	  observation_cli="$$1"; observation_out="$$2"; mkdir -p "$$observation_out"; \
 	  observation_url=$$(jq -er .catalogue_url data/observations/euclid_dr1/registration-evidence.json); \
-	  observation_args=$$(jq -cn --arg input data/observations/euclid_dr1/sources.csv --arg output "$$observation_out/objects.vm.json" --arg sourceUrl "$$observation_url" "{input:\$$input,output:\$$output,sourceUrl:\$$sourceUrl}"); \
+	  observation_args=$$(jq -cn --arg input data/observations/euclid_dr1/sources.csv --arg output "$$observation_out/objects.vm.json" --arg sourceUrl "$$observation_url" "{input:\$$input,output:\$$output,sourceUrl:\$$sourceUrl,plateId:\"abell3128-vis\"}"); \
 	  "$$observation_cli" run --quiet --bytecode --package-dir sim --caps FS,IO --entry main --args-json "$$observation_args" sim/tools/observations.ail; \
-	  observation_args=$$(jq -cn --arg input data/observations/euclid_dr1/sources.csv --arg output "$$observation_out/objects.interp.json" --arg sourceUrl "$$observation_url" "{input:\$$input,output:\$$output,sourceUrl:\$$sourceUrl}"); \
+	  observation_args=$$(jq -cn --arg input data/observations/euclid_dr1/sources.csv --arg output "$$observation_out/objects.interp.json" --arg sourceUrl "$$observation_url" "{input:\$$input,output:\$$output,sourceUrl:\$$sourceUrl,plateId:\"abell3128-vis\"}"); \
 	  "$$observation_cli" run --quiet --package-dir sim --caps FS,IO --entry main --args-json "$$observation_args" sim/tools/observations.ail; \
 	  cmp "$$observation_out/objects.vm.json" "$$observation_out/objects.interp.json"; \
 	  cmp "$$observation_out/objects.vm.json" data/observations/euclid_dr1/objects.json; \

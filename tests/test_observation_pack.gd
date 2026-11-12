@@ -1,6 +1,7 @@
 extends SceneTree
 
 const Verify = preload("res://tools/observation_pack.gd")
+const Science = preload("res://tools/observation_pack_verify.gd")
 var passed := 0
 var failed := 0
 
@@ -69,6 +70,21 @@ func _init() -> void:
 	changed.plates[0].registration.projection = "TAN"
 	changed.plates[0].levels[1] = changed.plates[0].levels[0].duplicate(true)
 	check(not Verify.errors(changed, false).is_empty(), "duplicate image dimensions are not two zoom levels")
+	var real_pack: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/observations/euclid_dr1/manifest.json"))
+	var real_objects: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/observations/euclid_dr1/objects.json"))
+	check(Science.scientific_errors(real_pack,real_objects).is_empty(),"all forty real sources agree with actual pinned FITS footprint")
+	var wrong_wcs := real_pack.duplicate(true)
+	wrong_wcs.plates[0].registration.wcs.crpixX += 1.0
+	check(not Science.scientific_errors(wrong_wcs,real_objects).is_empty(),"authoritative source header prevents altered manifest WCS")
+	var off_field := real_objects.duplicate(true)
+	off_field.objects[0].ra_deg = 180.0
+	check(not Science.scientific_errors(real_pack,off_field).is_empty(),"off-field source association rejected")
+	var wrong_plate := real_objects.duplicate(true)
+	wrong_plate.objects[0].plate_id="m81-outreach"
+	check(not Science.scientific_errors(real_pack,wrong_plate).is_empty(),"source cannot silently join unregistered outreach plate")
+	var wrong_hash := real_pack.duplicate(true)
+	wrong_hash.plates[0].source_sha256="0".repeat(64)
+	check(not Science.scientific_errors(wrong_hash,real_objects).is_empty(),"science source checksum verified before trusting header")
 	DirAccess.remove_absolute(path)
 	DirAccess.remove_absolute(detail_path)
 	print("observation-pack-test: %d passed, %d failures" % [passed, failed])

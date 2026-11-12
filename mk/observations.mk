@@ -14,12 +14,14 @@ telescope-ui-test:
 object-inspection-test:
 	@$(SCRIPT_GATE) object-inspection-test $(SCRATCH)/observations/inspection-test.log 180 '^object-info: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_object_info.gd
 test: telescope-ui-test object-inspection-test
-observation-pack-test:
+observation-pack-test: observation-assets
 	@$(SCRIPT_GATE) observation-pack-test $(SCRATCH)/observations/pack-test.log 60 '^observation-pack-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_observation_pack.gd
-observation-pack-verify:
+observation-pack-verify: observation-assets
 	@$(SCRIPT_GATE) observation-pack-verify $(SCRATCH)/observations/pack-verify.log 180 '^observation-pack-verify: [1-9][0-9]* plates, [1-9][0-9]* objects, 0 failures$$' -- $(GODOT) --headless --path . --script tools/observation_pack_verify.gd
 test: observation-pack-test observation-fits-test
 ci-fast: observation-import-parity survey-footprint-parity
 test: observation-import-test observation-import-parity observation-index-test survey-footprint-test survey-footprint-parity survey-map-test
+test: observation-pin-test observation-projection-oracle
+telescope-ui-test telescope-verification-test telescope-bench: observation-assets
 observation-fits-test:
 	@$(SCRIPT_GATE) observation-fits-test $(SCRATCH)/observations/fits-test.log 60 '^observation-fits-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_observation_fits.gd

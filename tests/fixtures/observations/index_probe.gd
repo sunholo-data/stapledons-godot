@@ -17,6 +17,9 @@ func _initialize() -> void:
 	var row: Dictionary = index.object(id)
 	check(row.get("source_id") == "-524917322525922548" and row.get("distance_ly") == null, "long source string and missing distance retained")
 	check(not index.plate("abell3128-vis").is_empty(), "source plate linked exactly")
+	var facts: Dictionary = row.get("facts",{})
+	check(facts.get("ra_deg",{}).get("method")=="measured" and facts.get("point_like_probability",{}).get("method")=="classifier_output", "measured astrometry and classifier probability remain different fact methods")
+	check(facts.get("ra_deg",{}).get("epoch")==null and facts.get("distance_ly",{}).get("value")==null, "unknown observation epoch and distance remain null")
 	row["name"] = "changed outside index"
 	check(index.object(id).get("name", "") != row.name, "returned records are detached")
 	var raw: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/observations/euclid_dr1/objects.json"))
@@ -51,6 +54,15 @@ func _initialize() -> void:
 	var duplicate_plate := pack.duplicate(true)
 	duplicate_plate.plates.append(duplicate_plate.plates[0].duplicate(true))
 	check(not index.set_data(raw, duplicate_plate), "duplicate source plate refused")
+	var missing_facts := raw.duplicate(true)
+	missing_facts.objects[0].erase("facts")
+	check(not index.set_data(missing_facts,pack),"missing per-fact provenance cannot inherit a row-level measured claim")
+	var bad_method := raw.duplicate(true)
+	bad_method.objects[0].facts.point_like_probability.method="measured"
+	check(not index.set_data(bad_method,pack),"classifier output cannot become a measured fact")
+	var wrong_fact_value := raw.duplicate(true)
+	wrong_fact_value.objects[0].facts.ra_deg.value += 1.0
+	check(not index.set_data(wrong_fact_value,pack),"per-fact value must agree with retained flat astrometry")
 	var unsupported := raw.duplicate(true)
 	unsupported.format_version = 99
 	check(not index.set_data(unsupported, pack), "unsupported index format refused")

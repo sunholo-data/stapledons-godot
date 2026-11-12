@@ -54,13 +54,25 @@ fetch_file() {
     return 1
 }
 
+fetch_prepared_levels() {
+    plate "$1" '.levels[] | [.path,.sha256] | @tsv' | {
+        missing=0
+        while IFS="$(printf '\t')" read -r ref sum; do
+            path=$(local_path "$ref")
+            if ! fetch_file "$path" "$sum" "${path##*.}"; then missing=$((missing+1));fi
+        done
+        [ "$missing" = 0 ]
+    }
+}
+
 source_for() {
     id=$1
     if [ "$(plate "$id" '.registered')" = true ]; then
         raw="data/raw/observations/$id/source.fits"
         fetch_file "$raw" "$(plate "$id" '.source_sha256')" fits "$(plate "$id" '.source_url')" || fail "source unavailable: $id"
-        # Only regenerate the fixed source display levels when absent or changed.
-        if ! levels_ok "$id"; then
+        # Prepared bytes are pinned too: fetch immutable PNG objects first. Only
+        # rebuild from the verified science file when a prepared object is absent.
+        if ! levels_ok "$id" && ! fetch_prepared_levels "$id"; then
             run_gate observation-prepare "$SCRATCH/prepare-$id.log" 180 '^observation-prepare: 2 images, 0 failures$' "$GODOT" --headless --path . --script tools/observation_prepare.gd -- "$raw" "res://data/raw/observations/$id"
         fi
     else
@@ -125,6 +137,7 @@ verify_pack() {
         wc -c < "$index" >> "$size_file"
         jq -r '.levels[].tiles[].path' "$index" | while IFS= read -r tile_ref; do path=$(local_path "$tile_ref"); wc -c < "$path" >> "$size_file"; done
     done
+    run_gate observation-source-verify "$SCRATCH/source-header-verify.log" 180 '^observation-source-verify: [1-9][0-9]* plates, 0 failures$' "$GODOT" --headless --path . --script tools/observation_pack_verify.gd -- --headers-only --pack "$MANIFEST"
     total=$(awk '{sum += $1} END {printf "%.0f",sum}' "$size_file")
     rm -f "$size_file"
     [ "$total" -le 104857600 ] || fail "starter tile pack exceeds 100 MiB ($total bytes)"

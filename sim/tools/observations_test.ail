@@ -9,13 +9,13 @@ pure func header() -> string =
 pure func realRow() -> string =
   "-524917322525922548,52.49173224571941,-52.59225486229888,102017310,1,1.075479417522729E-6,,0,512\n"
 
-pure func rejected(text: string) -> bool = match build(text, "https://example.test/source") {
+pure func rejected(text: string) -> bool = match build(text, "https://example.test/source", "fixture-explicit-plate") {
   Err(_) => true,
   Ok(_) => false
 }
 
 test "real DR1 sample preserves long negative source ID and nulls without morphology inference" {
-  match build("${header()}${realRow()}", "https://example.test/source") {
+  match build("${header()}${realRow()}", "https://example.test/source", "fixture-explicit-plate") {
     Ok(s) => contains(s, "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524917322525922548") && contains(s, "\"kind\":\"survey_source\"") && contains(s, "\"extended_flag\":null") && contains(s, "\"distance_ly\":null") && contains(s, "\"det_quality_flag\":512"),
     Err(_) => false
   }
@@ -46,7 +46,7 @@ test "invalid probability or integer flags refused" {
 }
 
 test "same object ID in different tiles is kept under separate composite identities" {
-  match build("${header()}-1,52,-52,10,1,0.5,,0,512\n-1,52,-52,11,1,0.5,,0,512\n", "source") {
+  match build("${header()}-1,52,-52,10,1,0.5,,0,512\n-1,52,-52,11,1,0.5,,0,512\n", "source", "fixture-explicit-plate") {
     Ok(s) => contains(s, "wide_survey:10:-1") && contains(s, "wide_survey:11:-1"),
     Err(_) => false
   }
@@ -61,14 +61,14 @@ test "quoted or unterminated numeric input is rejected rather than guessed" {
 }
 
 test "unknown optional values stay null and CRLF is supported" {
-  match build("${header()}-1,52,-52,10,,,,,\r\n", "source") {
+  match build("${header()}-1,52,-52,10,,,,,\r\n", "source", "fixture-explicit-plate") {
     Ok(s) => contains(s, "\"point_like_probability\":null") && contains(s, "\"vis_det\":null"),
     Err(_) => false
   }
 }
 
 test "IDs beyond binary64 and signed-int64 range are kept as source text" {
-  match build("${header()}-999999999999999999999999999999,0,90,10,,,,,\n", "source") {
+  match build("${header()}-999999999999999999999999999999,0,90,10,,,,,\n", "source", "fixture-explicit-plate") {
     Ok(s) => contains(s, "\"source_id\":\"-999999999999999999999999999999\""),
     Err(_) => false
   }
@@ -77,7 +77,7 @@ test "IDs beyond binary64 and signed-int64 range are kept as source text" {
 test "canonical output order does not depend on source row order" {
   let a = "-1,52,-52,10,1,0.5,,0,512\n"
   let b = "-2,53,-51,11,0,,,0,512\n"
-  build("${header()}${a}${b}", "source") == build("${header()}${b}${a}", "source")
+  build("${header()}${a}${b}", "source", "fixture-explicit-plate") == build("${header()}${b}${a}", "source", "fixture-explicit-plate")
 }
 
 test "malformed optional NaN flags and out-of-domain detection flags refuse input" {
@@ -90,4 +90,35 @@ test "embedded carriage returns and a header without sources are refused" {
 
 test "padded or plus-prefixed identifiers cannot silently become another source identity" {
   rejected("${header()} -1,52,-52,10,1,0.5,,0,512\n") && rejected("${header()}+1,52,-52,10,1,0.5,,0,512\n")
+}
+
+test "fact-level methods distinguish measured astrometry from classifier output and unknown epoch" {
+  match build("${header()}${realRow()}", "https://example.test/source", "fixture-explicit-plate") {
+    Ok(s) => contains(s, "\"facts\":") && contains(s, "\"method\":\"classifier_output\"") && contains(s, "\"method\":\"quality_metadata\"") && contains(s, "\"epoch\":null"),
+    Err(_) => false
+  }
+}
+
+test "synthetic off-field source never silently inherits the Abell image" {
+  match build("${header()}-1,0,90,10,,,,,\n", "fixture:off-field", "fixture-explicit-plate") {
+    Ok(s) => not contains(s, "abell3128-vis"),
+    Err(_) => false
+  }
+}
+
+test "explicit named plate is preserved and absent identity fails" {
+  match build("${header()}${realRow()}", "source", "fixture-reviewed-field") {
+    Ok(s) => contains(s, "\"plate_id\":\"fixture-reviewed-field\"") && (match build("${header()}${realRow()}", "source", "") {
+      Err(_) => true,
+      Ok(_) => false
+    }),
+    Err(_) => false
+  }
+}
+
+test "fact source must be explicit" {
+  match build("${header()}${realRow()}", "", "fixture-plate") {
+    Err(_) => true,
+    Ok(_) => false
+  }
 }
