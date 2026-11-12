@@ -1,0 +1,313 @@
+module stapledons/sim/evidence
+-- R3-REASONS RT2a: the evidence ledger's records. Pure and strict-VM clean;
+-- never imported by a wire encoder yet (beliefs and the wire are RT2b).
+--
+-- For a ship position and a galaxy time, which worlds give which signals above
+-- the noise. Two halves, kept apart:
+--
+--   EMISSION (the truth): what a world shows follows from its true state AT
+--   THE EMITTED TIME (the light cone, observe lightcone.seenAt; worlds
+--   history.stateAt), its host class and three keyed uniforms. The chance that
+--   a state shows a signal is the belief model's own table (observe belief
+--   likelihood), so RT2b's beliefs are calibrated against this truth. The
+--   anthropic dial never enters: it set the history, and nothing here reads it.
+--
+--   RECORDING (the instrument): what the ship writes down follows from the
+--   budgets in ./data/detect. A record is made only where a budget clears the
+--   hint threshold (SNR 5; strong is SNR 10). A non-detection is a record too,
+--   but only of a world the ship knows is there and only where the look would
+--   have reached the hint threshold had the signal been present.
+--
+-- What is modelled, and what is not (see also data/detect.ail):
+--   direct imaging   reflected light at quadrature on a circular orbit, the
+--                    projected separation equal to the orbit (registry scope
+--                    8); the inner working angle and the noise floor are hard
+--                    edges; one grey albedo, 0.2, for every planet.
+--   spectrum         read only from a directly imaged planet, at the SNR of
+--                    its continuum in the O2 A element (registry scope 5):
+--                    oxygen (with or without methane) and the red edge.
+--   transit          geometry from a fixed orbit normal in the galaxy frame
+--                    (measured sky inclination from Sol where the snapshot has
+--                    one, else seeded per host), so whether a planet transits
+--                    depends on where the ship is: impact parameter
+--                    b = a |cos i| / R_star < 1, planet radius neglected
+--                    (celestial habitability.transitProbability's geometry).
+--                    It gives the census record only: the dip's depth
+--                    (R_p/R_star)^2 against photon noise in the V-like band,
+--                    summed over the whole orbits that fit in the look (orbital
+--                    phase is not modelled, so a period longer than the look
+--                    gives nothing). NOT modelled: transit spectroscopy (the
+--                    registry has no row for an atmosphere's transit depth), so
+--                    a world inside the inner working angle gets no oxygen or
+--                    red-edge reading; stellar variability, limb darkening,
+--                    grazing transits, eccentricity, mutual inclinations.
+--   radio            leakage only, in two classes (the registry's radar and TV
+--                    carrier). Every technological world leaks the TV class; a
+--                    world whose keyed rank is below radarShare also crosses
+--                    the ship with a radar beam during the look.
+--   left out         glint (needs crescent phase), industrial gases, night
+--                    lights, waste heat, artificial transits and beacons: no
+--                    registry budget or no instrument ruling yet. Receiver
+--                    false alarms. Worlds in the ship's own system (closer
+--                    than inSystemLy): arrival is a different observation.
+import ./data/detect (Suite, Telescope, assumedGeomAlbedo, radarShare, imagingSnr, clearsIwa, aboveFloor, leakSnr)
+import ./worlds_model (StarRow, Planet, PSynthesised, NotHabitable)
+import ./rng (idHash, keyed, unit53)
+import pkg/sunholo/worlds/history (History, PlanetState, Sterile, Microbial, Complex, PreTech, Technological, Remnant, Transcended, Ecocide, stateAt)
+import pkg/sunholo/worlds/occurrence (MDwarf)
+import pkg/sunholo/worlds/planet_model (centralRadiusEarth)
+import pkg/sunholo/observe/lightcone (seenAt)
+import pkg/sunholo/observe/belief (Signal, O2, O2CH4, RedEdge, Leakage, HostClass, HostFGK, HostM, likelihood, stateOfIndex)
+import pkg/sunholo/observe/constants (pi, lightYearM, auM, earthRadiusM, solarRadiusM, snrHint, snrStrong)
+import pkg/sunholo/observe/photon (Blackbody, planetContrast, photonRate, snr as photonSnr, darkRate)
+import pkg/sunholo/observe/link (fluxWm2)
+import pkg/sunholo/relativity/optics (gammaOnePlusBetaCos)
+import pkg/sunholo/celestial/kepler (Vec3, norm, sub)
+import std/option (Option, Some, None)
+import std/list (map, filter, flatMap, nth_or, length)
+import std/math (sqrt, sin, cos, floor, abs_Float)
+import std/json (Json, jo, kv, ja, js, jnum, jb, encode)
+
+-- ---------- the records ----------
+export type Method = DirectImaging | Transit | Radio deriving (Eq)
+-- QPlanet is the census: a planet is there. QOxygen is O2 or O3 without CH4;
+-- QOxygenMethane is the pair. One spectrum gives one oxygen record, never both.
+export type Quantity = QPlanet | QOxygen | QOxygenMethane | QRedEdge | QLeakage deriving (Eq)
+export type Level = Hint | Strong deriving (Eq)
+-- The feature document's record (signals-and-instruments §7), with the method,
+-- the host, whether the signal was seen and the threshold it cleared.
+--   value          QPlanet: the contrast (direct imaging) or the transit depth;
+--                  a spectral quantity: 1 seen, 0 not; QLeakage: flux, W m^-2
+--   snr            of the detection; for a non-detection, the SNR the look
+--                  would have reached had the signal been there
+--   lastLightYear  galaxy year the light left (the ship's time minus the distance)
+export type Observation = {world:string,host:string,instrument:string,method:Method,quantity:Quantity,detected:bool,
+ value:float,snr:float,level:Level,lastLightYear:float,falsePositiveNotes:[string]}
+
+-- ---------- a world as the instruments meet it ----------
+-- catalogued: the planet is in the public catalogue (measured or candidate),
+-- so the ship knows it exists before it looks. normal: the orbit's unit
+-- normal in the galaxy frame. u: the keyed uniforms [oxygen, red edge, radar
+-- rank], in [0,1). positions are light-years; history is the hidden truth.
+export type Target = {world:string,host:string,catalogued:bool,pos:Vec3,hostClass:HostClass,teffK:float,rSun:float,
+ aAu:Option[float],radiusEarth:Option[float],periodD:Option[float],rocky:bool,normal:Vec3,history:History,u:[float]}
+
+pure func keyOf(host:string,slot:string) -> int = idHash(host)^idHash(slot)
+pure func draw(seed:int,key:int,n:int) -> float = unit53(keyed(seed,0x65766964,key,n))
+-- Three uniforms per world, keyed like its history but in their own domain.
+export pure func signalUniforms(seed:int,host:string,slot:string) -> [float] = map(\n. draw(seed,keyOf(host,slot),n),[0,1,2])
+
+pure func dot(a:Vec3,b:Vec3) -> float = a.x*b.x+a.y*b.y+a.z*b.z
+pure func cross(a:Vec3,b:Vec3) -> Vec3 = {x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x}
+pure func scale(a:Vec3,k:float) -> Vec3 = {x:a.x*k,y:a.y*k,z:a.z*k}
+pure func add(a:Vec3,b:Vec3) -> Vec3 = {x:a.x+b.x,y:a.y+b.y,z:a.z+b.z}
+pure func unit(a:Vec3) -> Vec3 = scale(a,1.0/norm(a))
+pure func measuredInclDeg(p:Planet) -> Option[float] = match p.observed {
+ None=>None,
+ Some(o)=>match filter(\x. match x {(k,f)=>k=="incl_deg" && f.prov!="assumed"},o.fields) {(_,f)::_=>Some(f.value),[]=>None}
+}
+-- The orbit normal. Where the snapshot has a measured inclination i (the
+-- angle between the normal and Sol's line of sight) the normal sits on that
+-- cone, at a node angle seeded per host; otherwise it is uniform on the
+-- sphere, seeded per host (one plane per system).
+export pure func orbitNormal(seed:int,row:StarRow,p:Planet) -> Vec3 {
+ let key=keyOf(row.id,"orbit-plane");
+ let psi=2.0*pi()*draw(seed,key,0);
+ let r=norm(row.pos);
+ match measuredInclDeg(p) {
+  Some(deg)=>if r<=0.0 then {x:0.0,y:0.0,z:1.0} else {
+   let s=scale(row.pos,1.0/r);
+   let e1=unit(cross(s,if abs_Float(s.x)<0.9 then {x:1.0,y:0.0,z:0.0} else {x:0.0,y:1.0,z:0.0}));
+   let e2=cross(s,e1);
+   let i=deg*pi()/180.0;
+   add(scale(s,cos(i)),scale(add(scale(e1,cos(psi)),scale(e2,sin(psi))),sin(i)))
+  },
+  None=>{
+   let z=2.0*draw(seed,key,1)-1.0;
+   let q=sqrt(1.0-z*z);
+   {x:q*cos(psi),y:q*sin(psi),z:z}
+  }
+ }
+}
+pure func inRocky(r:Option[float]) -> bool = match r {Some(x)=>x>=0.5 && x<=1.5,None=>false}
+-- A planet with a mass and no radius takes the central radius of the adopted
+-- mass-radius relation (worlds planet_model): the budgets need a size.
+pure func sizeOf(p:Planet) -> Option[float] = match p.radiusEarth {
+ Some(r)=>Some(r),
+ None=>match p.massEarth {Some(m)=>if m>0.0 && m<=4200.0 then Some(centralRadiusEarth(m)) else None,None=>None}
+}
+export pure func targetOf(seed:int,row:StarRow,p:Planet) -> Target {
+ let size=sizeOf(p);
+ {world:p.id,host:row.id,catalogued:p.prov!=PSynthesised,pos:row.pos,hostClass:if row.starClass==MDwarf then HostM else HostFGK,
+  teffK:row.teff,rSun:row.rSun,aAu:p.aAu,radiusEarth:size,periodD:p.periodD,rocky:inRocky(size) || p.hab!=NotHabitable,
+  normal:orbitNormal(seed,row,p),history:p.history,u:signalUniforms(seed,row.id,p.slot)}
+}
+export pure func targetsOf(seed:int,row:StarRow,ps:[Planet]) -> [Target] = map(\p. targetOf(seed,row,p),ps)
+
+-- ---------- emission: the truth at the emitted time ----------
+export type Emission = {state:PlanetState,oxygen:bool,methane:bool,redEdge:bool,tv:bool,radar:bool}
+pure func stateIdx(s:PlanetState) -> int = match s {Sterile=>0,Microbial=>1,Complex=>2,PreTech=>3,Technological=>4,Remnant=>5,Transcended=>6,Ecocide=>7}
+pure func chance(sig:Signal,t:Target,s:PlanetState) -> float = likelihood(sig,t.hostClass,stateOfIndex(stateIdx(s)))
+-- Oxygen and the oxygen-methane pair share one uniform, so the pair implies
+-- oxygen and their chances nest (the table has pair <= oxygen in every
+-- state). A sterile world that is not rocky has no surface or thin air to
+-- show an abiotic false positive. Only a technological world leaks.
+export pure func emissionAt(t:Target,tEm:float) -> Emission {
+ let s=stateAt(t.history,tEm);
+ let surface=t.rocky || s!=Sterile;
+ let uo=nth_or(t.u,0,1.0);
+ {state:s,oxygen:surface && uo<chance(O2,t,s),methane:surface && uo<chance(O2CH4,t,s),
+  redEdge:surface && nth_or(t.u,1,1.0)<chance(RedEdge,t,s),
+  tv:s==Technological,radar:s==Technological && nth_or(t.u,2,1.0)<radarShare()}
+}
+
+-- ---------- recording: what the instruments clear ----------
+-- Closer than this the world is in the ship's own system (the same 0.1 ly
+-- the worlds wire section uses for "local").
+export pure func inSystemLy() -> float = 0.1
+pure func levelOf(x:float) -> Level = if x>=snrStrong() then Strong else Hint
+pure func starOf(t:Target) -> Option[Blackbody] =
+ if t.teffK>0.0 && t.rSun>0.0 then Some({tempK:t.teffK,radiusM:t.rSun*solarRadiusM()}) else None
+type Look = {seen:bool,snr:float,value:float}
+pure func noLook() -> Look = {seen:false,snr:0.0,value:0.0}
+-- Reflected light behind the coronagraph. dop is the ship's Doppler factor
+-- towards the star (1 at rest), localZodi the zodi level where the ship is.
+pure func directLook(s:Suite,t:Target,dist:float,localZodi:float,dop:float,seconds:float) -> Look =
+ match (starOf(t),t.aAu,t.radiusEarth) {
+  (Some(star),Some(a),Some(r))=>if a<=0.0 || r<=0.0 then noLook() else {
+   let c=planetContrast(assumedGeomAlbedo(),r*earthRadiusM(),a*auM(),pi()/2.0);
+   if not clearsIwa(s.telescope,a,dist,dop) || not aboveFloor(s.telescope,c) then noLook() else {
+    let x=imagingSnr(s.telescope,star,c,dist,localZodi,dop,seconds);
+    {seen:x>=snrHint(),snr:x,value:c}
+   }
+  },
+  _=>noLook()
+ }
+-- The cosine of the orbit's inclination to the line of sight from obs.
+export pure func cosInclination(t:Target,obs:Vec3) -> float {
+ let l=sub(t.pos,obs);
+ let d=norm(l);
+ if d<=0.0 then 1.0 else abs_Float(dot(t.normal,l))/d
+}
+-- The dip against photon noise: photon.snr with the missing light as the
+-- signal and the rest of the star as the background, over the in-transit
+-- time (P/pi)(R_star/a)sqrt(1 - b^2) of every whole orbit in the look.
+pure func transitLook(s:Suite,t:Target,obs:Vec3,dist:float,seconds:float) -> Look =
+ match (starOf(t),t.aAu,t.radiusEarth,t.periodD) {
+  (Some(star),Some(a),Some(r),Some(days))=>if a<=0.0 || r<=0.0 || days<=0.0 || a*auM()<=star.radiusM then noLook() else {
+   let b=a*auM()*cosInclination(t,obs)/star.radiusM;
+   let ratio=r*earthRadiusM()/star.radiusM;
+   let depth=ratio*ratio;
+   let orbits=floor(seconds/(days*86400.0));
+   if b>=1.0 || depth>=1.0 || orbits<1.0 then noLook() else {
+    let inTransit=orbits*days*86400.0/pi()*star.radiusM/(a*auM())*sqrt(1.0-b*b);
+    let tel=s.telescope;
+    let rate=photonRate(star,dist*lightYearM(),tel.optics.apertureM,tel.censusBand,tel.optics.throughput);
+    let x=photonSnr(depth*rate,(1.0-depth)*rate,darkRate(tel.optics.nPix,tel.optics.darkPerPixS),inTransit);
+    {seen:x>=snrHint(),snr:x,value:depth}
+   }
+  },
+  _=>noLook()
+ }
+-- The standard false positives of a quantity around a class of host
+-- (signals-and-instruments §4.2, §4.3). A function of what was observed, never
+-- of the truth: every such record carries them, whether or not it is one.
+export pure func falsePositives(q:Quantity,h:HostClass) -> [string] = match q {
+ QPlanet=>[],
+ QOxygen=>if h==HostM then ["abiotic O2: water photolysis on a desiccated world around an active M dwarf","abiotic O2: CO2 photolysis"] else ["abiotic O2: CO2 photolysis"],
+ QOxygenMethane=>[],
+ QRedEdge=>if h==HostM then ["minerals with reflectance edges","around an M dwarf the edge may sit in the near-infrared"] else ["minerals with reflectance edges"],
+ QLeakage=>["interference and unexplained narrowband events"]
+}
+pure func spectral(base:Observation,h:HostClass,q:Quantity,seen:bool) -> Observation =
+ {base | quantity:q,detected:seen,value:if seen then 1.0 else 0.0,falsePositiveNotes:if seen then falsePositives(q,h) else []}
+-- known: the ship knows the world is there (catalogued, or seen in this
+-- survey). A silence is recorded only for a known world: a non-detection
+-- naming a planet nobody has seen would itself reveal it (D-68).
+pure func radioRecords(s:Suite,t:Target,e:Emission,dist:float,base:Observation,known:bool) -> [Observation] {
+ let radar=leakSnr(s.receiver,s.radar,dist);
+ let tv=leakSnr(s.receiver,s.tv,dist);
+ let row={base | instrument:s.receiver.id,method:Radio,quantity:QLeakage};
+ let heard=\x eirp. [{row | value:fluxWm2(eirp,dist*lightYearM()),snr:x,level:levelOf(x),falsePositiveNotes:falsePositives(QLeakage,t.hostClass)}];
+ if e.radar && radar>=snrHint() then heard(radar,s.radar.eirpW)
+ else if e.tv && tv>=snrHint() then heard(tv,s.tv.eirpW)
+ else if known && radar>=snrHint() then [{row | detected:false,value:0.0,snr:radar,level:levelOf(radar)}]
+ else []
+}
+-- Everything the full passive suite records of one world from obs at galaxy
+-- time `time`, after lookS seconds on it.
+export pure func observeTarget(s:Suite,lookS:float,t:Target,obs:Vec3,time:float) -> [Observation] {
+ let dist=norm(sub(t.pos,obs));
+ if dist<inSystemLy() then [] else {
+  let tEm=seenAt(time,obs,t.pos);
+  let e=emissionAt(t,tEm);
+  let di=directLook(s,t,dist,1.0,1.0,lookS);
+  let tr=transitLook(s,t,obs,dist,lookS);
+  let base={world:t.world,host:t.host,instrument:s.telescope.id,method:DirectImaging,quantity:QPlanet,detected:true,
+   value:0.0,snr:0.0,level:Hint,lastLightYear:tEm,falsePositiveNotes:[]};
+  let imaged={base | snr:di.snr,level:levelOf(di.snr)};
+  (if di.seen then [{imaged | value:di.value},
+    spectral(imaged,t.hostClass,if e.oxygen && e.methane then QOxygenMethane else QOxygen,e.oxygen),
+    spectral(imaged,t.hostClass,QRedEdge,e.redEdge)] else [])
+  ++ (if tr.seen then [{base | method:Transit,value:tr.value,snr:tr.snr,level:levelOf(tr.snr)}] else [])
+  ++ radioRecords(s,t,e,dist,base,t.catalogued || di.seen || tr.seen)
+ }
+}
+-- At a stop the full passive suite runs on every world given.
+export pure func observeAtStop(s:Suite,lookS:float,ts:[Target],obs:Vec3,time:float) -> [Observation] =
+ flatMap(\t. observeTarget(s,lookS,t,obs,time),ts)
+
+-- ---------- at cruise: the coarse census ----------
+-- The ship's Doppler factor towards a source at pos, D = gamma (1 + beta cos
+-- theta) for the rest-frame angle between the velocity and the source
+-- (relativity optics; nothing here forms 1 - beta). heading is the unit
+-- heading and phi the signed rapidity along it, both sim fields
+-- (core Ship.heading, Ship.motion.phi).
+export pure func cruiseDoppler(pos:Vec3,obs:Vec3,heading:Vec3,phi:float) -> float {
+ let l=sub(pos,obs);
+ let d=norm(l);
+ let h=norm(heading);
+ let c=if d<=0.0 || h<=0.0 then 0.0 else (if phi<0.0 then -1.0 else 1.0)*dot(l,heading)/(d*h);
+ gammaOnePlusBetaCos(abs_Float(phi),if c>1.0 then 1.0 else if c< -1.0 then -1.0 else c)
+}
+-- The light counted in the design element left the source at lambda0 x D. A
+-- direction is read only while that stays inside the design band; ahead of a
+-- fast ship it does not, and that sky is unread, not guessed. A function of
+-- the star's direction alone, so the caller may label any star with it.
+export pure func cruiseReadable(tel:Telescope,d:float) -> bool {
+ let rest=tel.lambda0M*d;
+ rest>=tel.designLoM && rest<=tel.designHiM
+}
+-- "Coarse" is exactly this: the census quantity only (a planet is there), by
+-- direct imaging only, after the short cruise look, with no local zodi
+-- (interstellar space), in directions cruiseReadable allows, with the budget
+-- taken in the ship's frame at Doppler factor D. No spectra, no transits (a
+-- transit needs whole orbits), no radio.
+pure func cruiseTarget(s:Suite,t:Target,obs:Vec3,time:float,heading:Vec3,phi:float) -> [Observation] {
+ let dist=norm(sub(t.pos,obs));
+ let d=cruiseDoppler(t.pos,obs,heading,phi);
+ if dist<inSystemLy() || not cruiseReadable(s.telescope,d) then [] else {
+  let di=directLook(s,t,dist,0.0,d,s.cruiseLookS);
+  if not di.seen then [] else [{world:t.world,host:t.host,instrument:s.telescope.id,method:DirectImaging,quantity:QPlanet,detected:true,
+   value:di.value,snr:di.snr,level:levelOf(di.snr),lastLightYear:seenAt(time,obs,t.pos),falsePositiveNotes:[]}]
+ }
+}
+export pure func observeAtCruise(s:Suite,ts:[Target],obs:Vec3,time:float,heading:Vec3,phi:float) -> [Observation] =
+ flatMap(\t. cruiseTarget(s,t,obs,time,heading,phi),ts)
+
+-- ---------- for RT2b and for byte comparisons ----------
+-- The belief model's signal for a quantity; the census has none.
+export pure func signalOf(q:Quantity) -> Option[Signal] = match q {
+ QPlanet=>None,QOxygen=>Some(O2),QOxygenMethane=>Some(O2CH4),QRedEdge=>Some(RedEdge),QLeakage=>Some(Leakage)
+}
+export pure func detections(rs:[Observation]) -> [Observation] = filter(\o. o.detected,rs)
+export pure func quantityName(q:Quantity) -> string = match q {
+ QPlanet=>"planet",QOxygen=>"o2",QOxygenMethane=>"o2_ch4",QRedEdge=>"red_edge",QLeakage=>"leakage"
+}
+export pure func methodName(m:Method) -> string = match m {DirectImaging=>"direct_imaging",Transit=>"transit",Radio=>"radio"}
+-- A complete machine encoding: show(record) truncates, so it is never an equality witness.
+export pure func observationJson(o:Observation) -> Json = jo([kv("world",js(o.world)),kv("host",js(o.host)),kv("instrument",js(o.instrument)),
+ kv("method",js(methodName(o.method))),kv("quantity",js(quantityName(o.quantity))),kv("detected",jb(o.detected)),kv("value",jnum(o.value)),
+ kv("snr",jnum(o.snr)),kv("level",js(if o.level==Strong then "strong" else "hint")),kv("last_light_year",jnum(o.lastLightYear)),
+ kv("false_positive_notes",ja(map(js,o.falsePositiveNotes)))])
+export pure func ledgerText(rs:[Observation]) -> string = encode(ja(map(observationJson,rs)))

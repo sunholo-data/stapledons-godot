@@ -9,6 +9,7 @@ modules = [
   "stapledons/sim/worlds", "stapledons/sim/worlds_model", "stapledons/sim/worlds_catalogue", "stapledons/sim/worlds_test",
   "stapledons/sim/census", "stapledons/sim/census_test", "stapledons/sim/tools/census_main",
   "stapledons/sim/protocol_worlds", "stapledons/sim/protocol_worlds_test",
+  "stapledons/sim/evidence", "stapledons/sim/evidence_test",
   "stapledons/sim/calibrate", "stapledons/sim/calibrate_test", "stapledons/sim/calibrate_search", "stapledons/sim/calibrate_search_test",
   "stapledons/sim/data/presets", "stapledons/sim/data/detect", "stapledons/sim/data/worlds_rules", "stapledons/sim/tools/calibrate_main", "stapledons/sim/tools/worlds_mock_data",
   "stapledons/sim/exoplanets_snapshot",

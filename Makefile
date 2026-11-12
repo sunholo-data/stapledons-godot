@@ -39,6 +39,7 @@ include mk/levels.mk
 include mk/commons-civic.mk
 include mk/npc-painted.mk
 include mk/worlds.mk
+include mk/evidence.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
