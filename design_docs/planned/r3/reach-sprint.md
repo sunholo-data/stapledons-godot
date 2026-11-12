@@ -1,7 +1,7 @@
 # Sprint R3-REACH: plan (RE0 and RE1)
 
 **Design:** [reach.md](reach.md), approved by Mark 2026-11-12 ("ok good yes this looks great") with OQ1–OQ6 as recommended.
-**Status:** Proposed 2026-11-12. **Not approved; nothing here is executing.**
+**Status:** Approved by Mark, attended 2026-11-12 ("ok good yes we can go with these"); executing. RE0 first; the three stops stand.
 **Scope:** RE0 (measurements) and RE1 (the measured 100 pc tier: registry, plan by id, the imaging and radio queries, protocol 2.20, the map to 326 ly). RE2 (cells to 1,000 ly) and RE3 (3,000 ly) get their own plans after RE1's dev build.
 **Progress file:** `.ailang/state/sprints/sprint_R3-REACH.json`
 **Branches:** this plan on `design/r3-reach` (draft PR #437). Execution in a fresh full clone `../stapledons-godot-reach-exec`, never the main checkout; one PR per milestone group (RE0, RE1a, RE1b, RE1c, RE1d).
