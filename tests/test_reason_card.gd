@@ -58,6 +58,35 @@ func _run() -> void:
 		check("%s: the picture marks the planet only where the telescope can separate it from its star" % tag,
 			(card.image.planet != null) == (sep >= f.iwa_lambda_d) and is_equal_approx(card.image.au_px, c.image.au_lambda_d * card.image.px)
 			and (card.image.planet == null or is_equal_approx(card.image.planet.distance_to(card.image.box.get_center()), sep * card.image.px)))
+		# what was actually drawn (the draw layer, not just the placed data)
+		for mode: bool in [false, true]:
+			card.set_processed(mode)
+			await process_frame
+			await process_frame
+			var m := "Processed" if mode else "True"
+			var text := " ".join(card.drawn_text)
+			check("%s %s: the card drew its words" % [tag, m], card.drawn_text.size() >= 12)
+			check("%s %s: no drawn string carries a digit (numbers are bindings only)" % [tag, m], not DisplayBinding._has_digit(text))
+			var judging := false
+			for bad: String in ["best", "recommend", "should", "ideal", "optimal"]:
+				judging = judging or text.to_lower().contains(bad)
+			check("%s %s: no drawn string recommends" % [tag, m], not judging)
+			check("%s %s: the fitted model is drawn in Processed only" % [tag, m], card.drawn.model == mode)
+			check("%s %s: the planet is drawn only in Processed and only beyond the inner working angle" % [tag, m],
+				card.drawn.planet == (mode and sep >= f.iwa_lambda_d))
+			check("%s %s: the glare note is drawn only for a planet inside the inner working angle" % [tag, m],
+				card.drawn.hidden_note == (mode and sep < f.iwa_lambda_d))
+			var want: Array = f.needs.duplicate()
+			var got: Array = card.drawn.rings.duplicate()
+			want.sort()
+			got.sort()
+			check("%s %s: a ring is drawn on exactly the ship's needs" % [tag, m], got == want)
+		card.set_processed(false)
+		var ds: Dictionary = card.dial_sure
+		check("%s: the sureness dial follows the reading's strength, with the hint tick below the strong tick" % tag,
+			is_equal_approx(ds.fraction, clampf(c.belief.snr / (f.snr_strong * 1.5), 0.0, 1.0)) and ds.hint < ds.strong)
+		check("%s: the age dial splits the picture's age at arrival into now and what the trip adds" % tag,
+			is_equal_approx(card.dial_age.now, c.belief.light_age_years / c.cost.stale_years) and is_equal_approx(card.dial_age.now + card.dial_age.added, 1.0))
 		check("%s: the crew glyph follows the mind field" % tag, is_equal_approx(card.mind.strength, float(c.mind)))
 		var e: Dictionary = card.bars.earth
 		var s: Dictionary = card.bars.ship

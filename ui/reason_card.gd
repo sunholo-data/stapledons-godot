@@ -56,17 +56,27 @@ var dial_age := {} # {center, radius, now, added}
 ## it sits inside the inner working angle and cannot be separated from the star), color.
 var image := {}
 const IMAGE_SPAN := 12.0 # the picture's half-width in lambda/D
+## What the last _draw put on screen, for the tests (a drawn string is not a Label, so the display
+## audit cannot see it): every string, and which marks were drawn.
+var drawn_text: Array[String] = []
+var drawn := {"planet": false, "model": false, "rings": [], "hidden_note": false}
 var _labels := {} # name -> ComposedBinding
 var _toggle_true: Button
 var _toggle_processed: Button
 
 
+static var _words_cache: Dictionary = {}
+
+
 static func words() -> Dictionary:
+	if not _words_cache.is_empty():
+		return _words_cache
 	var f := FileAccess.open(COPY_PATH, FileAccess.READ)
 	if f == null:
 		return {}
 	var j: Variant = JSON.parse_string(f.get_as_text())
-	return j if j is Dictionary else {}
+	_words_cache = j if j is Dictionary else {}
+	return _words_cache
 
 
 ## Formats for the card's bindings: formatting only, one sim field in, no arithmetic on it.
@@ -196,7 +206,7 @@ func _place() -> void:
 	var sep := _num(im, "separation_lambda_d")
 	var iwa := _num(f, "iwa_lambda_d")
 	var rgb: Array = im.get("star_rgb", [1.0, 1.0, 1.0])
-	image = {"box": ib, "px": px, "iwa_px": iwa * px, "au_px": _num(im, "au_lambda_d") * px,
+	image = {"inside": sep < iwa and not im.is_empty(), "box": ib, "px": px, "iwa_px": iwa * px, "au_px": _num(im, "au_lambda_d") * px,
 		"planet": ib.get_center() + Vector2(sep * px, 0).rotated(-0.6) if sep >= iwa and sep < IMAGE_SPAN and not im.is_empty() else null,
 		"color": Color(float(rgb[0]), float(rgb[1]), float(rgb[2])) if rgb.size() == 3 else Color.WHITE}
 	var dx := ib.end.x + 16.0
@@ -286,7 +296,14 @@ static func _states(p: Variant, box: Rect2) -> Array:
 	return out
 
 
+func _say(font: Font, at: Vector2, text: String, align: HorizontalAlignment, width: float, font_size: int, col: Color) -> void:
+	drawn_text.append(text)
+	draw_string(font, at, text, align, width, font_size, col)
+
+
 func _draw() -> void:
+	drawn_text.clear()
+	drawn = {"planet": false, "model": false, "rings": [], "hidden_note": false}
 	var font := get_theme_default_font()
 	var w: Dictionary = copy.get("words", {})
 	var c := candidate()
@@ -297,7 +314,7 @@ func _draw() -> void:
 	var titles := [str(w.get("seen", "")), str(w.get("change", "")), str(w.get("cost", ""))]
 	for i in 3:
 		draw_rect(panes[i], PANE)
-		draw_string(font, panes[i].position + Vector2(10, 22), titles[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+		_say(font, panes[i].position + Vector2(10, 22), titles[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
 	_draw_spectrum(font, c.get("spectrum", {}))
 	_draw_image(font, w)
 	_draw_dials(font, w)
@@ -321,7 +338,7 @@ func _draw_spectrum(font: Font, sp: Dictionary) -> void:
 			var x := box.position.x + (float(l.get("lambda_um", lo)) - lo) / (hi - lo) * box.size.x
 			var col := StapledonTheme.OCHRE_LIGHT if bool(l.get("fired", false)) else OFF
 			draw_line(Vector2(x, box.position.y + 14), Vector2(x, box.end.y), col, 1.0)
-			draw_string(font, Vector2(x - 24, box.position.y + 10), str(names.get(str(l.get("id", "")), "")), HORIZONTAL_ALIGNMENT_CENTER, 48, 11, col)
+			_say(font, Vector2(x - 24, box.position.y + 10), str(names.get(str(l.get("id", "")), "")), HORIZONTAL_ALIGNMENT_CENTER, 48, 11, col)
 	var at := func(i: int, v: float) -> Vector2:
 		return Vector2(box.position.x + (float(lam[i]) - lo) / (hi - lo) * box.size.x, box.end.y - clampf(v, 0.0, 1.15) / 1.15 * (box.size.y - 16.0))
 	for i in lam.size():
@@ -332,6 +349,7 @@ func _draw_spectrum(font: Font, sp: Dictionary) -> void:
 		for i in lam.size():
 			pts.append(at.call(i, float(model[i])))
 		draw_polyline(pts, StapledonTheme.CORAL, 2.0, true)
+		drawn.model = true
 
 
 ## The best picture. True: what the telescope records, the star's diffraction pattern (a core and
@@ -346,17 +364,19 @@ func _draw_image(font: Font, w: Dictionary) -> void:
 	var px: float = image.px
 	var col: Color = image.color
 	draw_rect(b, WELL)
-	draw_string(font, Vector2(b.position.x, b.position.y - 6), str(w.get("picture", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+	_say(font, Vector2(b.position.x, b.position.y - 6), str(w.get("picture", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
 	if processed:
 		draw_circle(c, 1.22 * px, Color(col, 0.25))
 		for i in 32: # the inner working angle
 			if i % 2 == 0:
 				draw_arc(c, image.iwa_px, TAU * i / 32.0, TAU * (i + 1) / 32.0, 4, Color(StapledonTheme.DIM, 0.7), 1.0, true)
 		if image.planet != null:
+			drawn.planet = true
 			draw_circle(image.planet, 2.6, StapledonTheme.TEAL_LIGHT)
 			draw_arc(image.planet, 6.0, 0.0, TAU, 20, Color(StapledonTheme.TEAL_LIGHT, 0.5), 1.0, true)
-		else:
-			draw_string(font, Vector2(b.position.x + 4, b.end.y - 6), str(w.get("hidden", "")), HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 8, 10, StapledonTheme.DIM)
+		elif image.inside: # lost in the glare; a planet beyond the frame gets no note
+			drawn.hidden_note = true
+			_say(font, Vector2(b.position.x + 4, b.end.y - 6), str(w.get("hidden", "")), HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 8, 10, StapledonTheme.DIM)
 	else:
 		var zeros := [1.22, 2.233, 3.238, 4.241, 5.243, 6.244, 7.245, 8.245, 9.246, 10.246]
 		for i in range(zeros.size() - 1, 0, -1): # the Airy rings, each fainter (about r to the minus three)
@@ -368,7 +388,7 @@ func _draw_image(font: Font, w: Dictionary) -> void:
 	if image.au_px > 2.0 and image.au_px < b.size.x:
 		var y := b.end.y + 8.0
 		draw_line(Vector2(b.position.x, y), Vector2(b.position.x + image.au_px, y), StapledonTheme.CREAM, 1.5)
-		draw_string(font, Vector2(b.position.x, y + 14), str(w.get("orbit", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, StapledonTheme.DIM)
+		_say(font, Vector2(b.position.x, y + 14), str(w.get("orbit", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, StapledonTheme.DIM)
 
 
 func _draw_dials(font: Font, w: Dictionary) -> void:
@@ -381,12 +401,12 @@ func _draw_dials(font: Font, w: Dictionary) -> void:
 	for t: float in [s.hint, s.strong]: # the two thresholds (finder.snr_hint, finder.snr_strong)
 		var d := Vector2.from_angle(from + sweep * t)
 		draw_line(s.center + d * (s.radius - 7.0), s.center + d * (s.radius + 7.0), StapledonTheme.CREAM, 1.5)
-	draw_string(font, _labels.sure.position + Vector2(0, -4), str(w.get("sure", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+	_say(font, _labels.sure.position + Vector2(0, -4), str(w.get("sure", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
 	var a: Dictionary = dial_age
 	draw_arc(a.center, a.radius, 0.0, TAU, 64, EDGE, 3.0, true)
 	_wedge(a.center, a.radius - 3.0, 0.0, a.now, Color(StapledonTheme.OCHRE, 0.75)) # how old the light is now
 	_wedge(a.center, a.radius - 3.0, a.now, a.now + a.added, Color(StapledonTheme.CORAL, 0.45)) # what the trip adds
-	draw_string(font, _labels.age.position + Vector2(0, -4), str(w.get("light", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+	_say(font, _labels.age.position + Vector2(0, -4), str(w.get("light", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
 
 
 func _wedge(center: Vector2, radius: float, t0: float, t1: float, col: Color) -> void:
@@ -415,14 +435,15 @@ func _draw_glyphs(font: Font, w: Dictionary) -> void:
 		var col := Color(StapledonTheme.TEAL_LIGHT, 0.3 + 0.7 * g.strength) if lit else OFF
 		_draw_glyph(g.id, r.position, col, 1.4 + 1.6 * g.strength)
 		if g.need: # the ship's tightest: a dashed ring
+			drawn.rings.append(g.id)
 			for i in 24:
 				if i % 2 == 0:
 					draw_arc(r.get_center(), 27.0, TAU * i / 24.0, TAU * (i + 1) / 24.0, 4, StapledonTheme.OCHRE_LIGHT, 2.0, true)
-		draw_string(font, Vector2(r.position.x - 28, r.end.y + 16), str(names.get(g.id, "")), HORIZONTAL_ALIGNMENT_CENTER, 100, 11,
+		_say(font, Vector2(r.position.x - 28, r.end.y + 16), str(names.get(g.id, "")), HORIZONTAL_ALIGNMENT_CENTER, 100, 11,
 			StapledonTheme.OCHRE_LIGHT if g.need else StapledonTheme.DIM)
 	var m: Rect2 = mind.rect
 	_draw_glyph("mind", m.position, Color("#8a78b0", 0.3 + 0.7 * mind.strength), 1.4 + 1.8 * mind.strength)
-	draw_string(font, Vector2(m.end.x + 10, m.get_center().y + 4), str(w.get("crew", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, StapledonTheme.CREAM)
+	_say(font, Vector2(m.end.x + 10, m.get_center().y + 4), str(w.get("crew", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, StapledonTheme.CREAM)
 
 
 func _draw_cost(font: Font, w: Dictionary) -> void:
@@ -432,11 +453,11 @@ func _draw_cost(font: Font, w: Dictionary) -> void:
 		var t: Rect2 = b.track
 		draw_rect(t, WELL)
 		draw_rect(b.fill, cols[id])
-		draw_string(font, Vector2(t.position.x, t.position.y - 8), str(w.get(id, "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 13 if id != "mass" else 12, StapledonTheme.CREAM)
+		_say(font, Vector2(t.position.x, t.position.y - 8), str(w.get(id, "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 13 if id != "mass" else 12, StapledonTheme.CREAM)
 	var e: Rect2 = bars.earth.track
 	for tk: Dictionary in earth_ticks:
 		draw_line(Vector2(tk.x, e.position.y), Vector2(tk.x, e.end.y), EDGE, 1.0)
-		draw_string(font, Vector2(tk.x - 40, e.end.y + 13), tk.word, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, StapledonTheme.DIM)
+		_say(font, Vector2(tk.x - 40, e.end.y + 13), tk.word, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, StapledonTheme.DIM)
 
 
 func _draw_states(font: Font, w: Dictionary) -> void:
@@ -446,7 +467,7 @@ func _draw_states(font: Font, w: Dictionary) -> void:
 		if parts.is_empty():
 			continue
 		var first: Rect2 = parts[0].rect
-		draw_string(font, Vector2(PAD, first.position.y + 15), row[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, StapledonTheme.DIM)
+		_say(font, Vector2(PAD, first.position.y + 15), row[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, StapledonTheme.DIM)
 		for p: Dictionary in parts:
 			draw_rect(p.rect, STATE_COLOR[p.state])
 	# the legend: a square and a word for each state present in either bar (no numbers: the bars carry them)
@@ -458,8 +479,8 @@ func _draw_states(font: Font, w: Dictionary) -> void:
 			if states_then.any(func(p: Dictionary) -> bool: return p.state == s) or states_arrival.any(func(p: Dictionary) -> bool: return p.state == s):
 				var label := str(names.get(s, s))
 				draw_rect(Rect2(lx, ly, 10, 10), STATE_COLOR[s])
-				draw_string(font, Vector2(lx + 15, ly + 10), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+				_say(font, Vector2(lx + 15, ly + 10), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
 				lx += 15.0 + font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 18.0
 	if not states_then.is_empty():
 		var top: Rect2 = states_then[0].rect
-		draw_string(font, Vector2(PAD, top.position.y - 10), str(w.get("there", "")).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+		_say(font, Vector2(PAD, top.position.y - 10), str(w.get("there", "")).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
