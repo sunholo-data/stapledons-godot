@@ -18,7 +18,7 @@ Round 1: Claude Opus (`claude-opus-5-5`), public-code snapshot `dc15f91e`, **62/
 | F12 mixed provenance | Additive per-fact value/unit/method/source/epoch metadata is validated. Classifier/quality/derived fields are distinct from measured coordinates; unknown epochs remain null. The UI uses those methods instead of a blanket measured caption. Hardcoded J2000 epoch removed. |
 | F13 silent unavailable entry | Missing valid identities open explicit unavailable cards, map action is disabled, and body focus uses the same observer snapshot as the renderer. Unsupported chart views show the existing refusal. T is typing-guarded and contained by the active observation view; opening it closes the legacy renderer. |
 
-The first read-only entry is also tested from a ship with no existing map: all recorded input intents are empty through observation, with default consent crew present; the exact Sun and host/panel/sidecar pins agree. Only later explicit star selection sends a plan. Captain position is unchanged. **42 checks pass.**
+The first read-only entry is also tested from a ship with no existing map: all recorded input intents are empty through observation, with default consent crew present; the exact Sun and host/panel/sidecar pins agree. Only later explicit star selection sends a plan. Entering the helm applies the normal critical-only crew orders exactly once, including after read-only entry. Captain position is unchanged. **48 checks pass.**
 
 The required behavioural mutants were run against actual temporary source changes and restored byte-for-byte afterwards: calling preselect from focus gives 13 passes/5 failures; removing the survey planning guard gives 17 passes/1 failure. Both controls exit 1 without SCRIPT ERROR.
 
@@ -26,4 +26,20 @@ Some round-1 observations were input omissions, not repository defects: `.uid` f
 
 Credits now include the exact Data from ESA wording; BY-SA display resizing/re-encoding/tiling is disclosed in both manifest and credits. The default M81 gallery and separate Inspect action are deliberate: Inspect opens Details, Telescope favours the image/live view. IDs preserve exact producer text, including possible leading zeros, rather than coercing identity through numbers.
 
-Final-head CI, second independent verdict, complete exported-app smoke, final composed-UI rerender when the GPU is free, and Mark's combined dev-build visual acceptance remain separate gates. No landing or completion is claimed here.
+## Round 2
+
+Claude Opus scored the public `2ddd7516` snapshot **75/100**, conditional on N1. The complete report is in `.ailang/state/evaluations/eval_R3-TELESCOPE_round_2.json`; it ran no tools or tests.
+
+| Finding | Disposition |
+|---|---|
+| N1 first-entry crew setup | Fixed with a pending setup flag: information entry queues no orders, and the first helm entry queues the existing preset once. Actual recorded-wire regression fails before the fix (47/1), then passes (48/0), including repeated helm entry. |
+| N2 shared publish workflow | Removed the telescope-specific dependency from publish-dev. The full-app smoke remains an explicit sprint check. |
+| N4 CSV importer | Both tracked observation CSV import settings explicitly use importer="keep". They are not translation resources. |
+| N5 unnecessary fetches | Removed observation-assets dependencies from the tracked/synthetic coordinate and cache tests. Real-image checks still fetch their prerequisites. |
+| N6 stale evidence | Updated measured counts, integrated main, bundle size and initial-field wording. |
+| N8 stale inspection marker | A failed open clears the old amber marker and plot action. Regression fails before the fix and passes afterwards; focus_object alone still preserves state when rejecting invalid input. |
+| P3 outside survey view | Label now explicitly states outside view (sky mirrored). It remains a direction diagram with no assigned depth. |
+
+The row-level legacy provenance field remains for format compatibility; per-fact methods are authoritative, and the UI never describes the mixed record as wholly measured. This is explicitly a deprecated aggregate label. The recording sidecar is write-only audit metadata: no save/load subsystem exists, and restoration is not claimed.
+
+Final-head CI, final independent verdict, complete exported-app smoke, final composed-UI rerender when the GPU is free, and Mark's combined dev-build visual acceptance remain separate gates. No landing or completion is claimed here.

@@ -446,15 +446,15 @@
     "percentage": 83
   },
   "evaluation": {
-    "round": 1,
-    "status": "changes_requested",
-    "score": 62,
+    "round": 2,
+    "status": "conditional_pass",
+    "score": 75,
     "model": "claude-opus-5-5",
-    "report": ".ailang/state/evaluations/eval_R3-TELESCOPE_round_1.json",
-    "scope": "Public source only; second independent review pending"
+    "report": ".ailang/state/evaluations/eval_R3-TELESCOPE_round_2.json",
+    "scope": "Public source only; N1 fixed with recorded-wire red/green proof; final independent review pending"
   },
   "review_state": {
-    "main_integrated": "b6c93c118b67ccb2c8750d05a790121d82289df8",
+    "main_integrated": "0154b7c2841a93b30730d125be39e43d3290ff90",
     "assets": "193 immutable objects published; 12 anonymous hash samples verified; publisher28/0",
     "remaining": "Final focused regressions, GPU evidence, CI, independent cross-family evaluation, complete combined dev build and Mark visual acceptance",
     "ci_checkpoint": "dc15f91e GitHub fast tier SUCCESS; post-review fixes require next-head CI",
