@@ -19,7 +19,10 @@
     "hint": "A hint",
     "strong": "Strong",
     "stale_before": "On arrival this picture will be ",
-    "stale_after": " out of date."
+    "stale_after": " out of date.",
+    "picture": "Through the telescope",
+    "orbit": "Earth's orbit, for scale",
+    "hidden": "planet inside the glare"
   },
   "resources": {
     "mass": "Free mass",

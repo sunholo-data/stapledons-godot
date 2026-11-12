@@ -54,6 +54,10 @@ func _run() -> void:
 			ok = ok and g.need == f.needs.has(g.id)
 			rings += 1 if g.need else 0
 		check("%s: eight glyphs, each lit by its offer field, rings on exactly the ship's needs" % tag, ok and rings == f.needs.size())
+		var sep: float = c.image.separation_lambda_d
+		check("%s: the picture marks the planet only where the telescope can separate it from its star" % tag,
+			(card.image.planet != null) == (sep >= f.iwa_lambda_d) and is_equal_approx(card.image.au_px, c.image.au_lambda_d * card.image.px)
+			and (card.image.planet == null or is_equal_approx(card.image.planet.distance_to(card.image.box.get_center()), sep * card.image.px)))
 		check("%s: the crew glyph follows the mind field" % tag, is_equal_approx(card.mind.strength, float(c.mind)))
 		var e: Dictionary = card.bars.earth
 		var s: Dictionary = card.bars.ship

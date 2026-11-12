@@ -322,7 +322,16 @@
      "mass_kg": 310.0,
      "stale_years": 25.5
     },
-    "seen": "A rocky planet where water could be liquid. Water vapour, faintly. No sign of life either way."
+    "seen": "A rocky planet where water could be liquid. Water vapour, faintly. No sign of life either way.",
+    "image": {
+     "separation_lambda_d": 9.404,
+     "au_lambda_d": 17.48,
+     "star_rgb": [
+      1.0,
+      0.93,
+      0.8
+     ]
+    }
    },
    {
     "id": "trappist-1-e",
@@ -634,7 +643,16 @@
      "mass_kg": 1150.0,
      "stale_years": 83.2
     },
-    "seen": "Oxygen, clearly. But no methane beside it, and red dwarfs can strip water into oxygen with no life at all."
+    "seen": "Oxygen, clearly. But no methane beside it, and red dwarfs can strip water into oxygen with no life at all.",
+    "image": {
+     "separation_lambda_d": 0.148,
+     "au_lambda_d": 5.111,
+     "star_rgb": [
+      1.0,
+      0.55,
+      0.35
+     ]
+    }
    },
    {
     "id": "hd-40307-g",
@@ -947,7 +965,16 @@
      "mass_kg": 1200.0,
      "stale_years": 85.5
     },
-    "seen": "Oxygen and methane together, which life keeps up and chemistry alone does not. A colour edge like leaves."
+    "seen": "Oxygen and methane together, which life keeps up and chemistry alone does not. A colour edge like leaves.",
+    "image": {
+     "separation_lambda_d": 2.986,
+     "au_lambda_d": 4.976,
+     "star_rgb": [
+      1.0,
+      0.8,
+      0.6
+     ]
+    }
    },
    {
     "id": "82-eridani-d",
@@ -1267,8 +1294,18 @@
      "mass_kg": 520.0,
      "stale_years": 41.2
     },
-    "seen": "A narrow radio pulse that repeats. Nothing in nature is known to make it."
+    "seen": "A narrow radio pulse that repeats. Nothing in nature is known to make it.",
+    "image": {
+     "separation_lambda_d": 3.696,
+     "au_lambda_d": 10.559,
+     "star_rgb": [
+      1.0,
+      0.93,
+      0.82
+     ]
+    }
    }
-  ]
+  ],
+  "iwa_lambda_d": 3.5
  }
 }

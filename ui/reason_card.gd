@@ -51,6 +51,11 @@ var states_arrival: Array = []
 var spectrum_box := Rect2()
 var dial_sure := {} # {center, radius, fraction, hint, strong}
 var dial_age := {} # {center, radius, now, added}
+## The best picture: the target through the ship's telescope at its real resolution. box, px (pixels per
+## lambda/D), iwa_px, au_px (Earth's orbit at that distance, for scale), planet (its place, or null when
+## it sits inside the inner working angle and cannot be separated from the star), color.
+var image := {}
+const IMAGE_SPAN := 12.0 # the picture's half-width in lambda/D
 var _labels := {} # name -> ComposedBinding
 var _toggle_true: Button
 var _toggle_processed: Button
@@ -181,21 +186,32 @@ func _place() -> void:
 	_labels.sub.position = Vector2(PAD + _labels.name.get_minimum_size().x + 14.0, 16)
 	# pane 0: the spectrum, the toggle, the two dials
 	var a := panes[0]
-	spectrum_box = Rect2(a.position + Vector2(10, 32), Vector2(a.size.x - 20, maxf(90.0, a.size.y - 170.0)))
+	spectrum_box = Rect2(a.position + Vector2(10, 32), Vector2(a.size.x - 20, clampf(a.size.y - 230.0, 90.0, 140.0)))
 	_toggle_true.position = Vector2(a.position.x + 10, spectrum_box.end.y + 8)
 	_toggle_processed.position = _toggle_true.position + Vector2(_toggle_true.get_minimum_size().x + 6, 0)
-	var dy := spectrum_box.end.y + 78.0
+	var side := clampf(a.end.y - spectrum_box.end.y - 62.0, 80.0, 130.0)
+	var ib := Rect2(a.position.x + 10, spectrum_box.end.y + 50.0, side, side)
+	var im: Dictionary = c.get("image", {})
+	var px := side * 0.5 / IMAGE_SPAN
+	var sep := _num(im, "separation_lambda_d")
+	var iwa := _num(f, "iwa_lambda_d")
+	var rgb: Array = im.get("star_rgb", [1.0, 1.0, 1.0])
+	image = {"box": ib, "px": px, "iwa_px": iwa * px, "au_px": _num(im, "au_lambda_d") * px,
+		"planet": ib.get_center() + Vector2(sep * px, 0).rotated(-0.6) if sep >= iwa and sep < IMAGE_SPAN and not im.is_empty() else null,
+		"color": Color(float(rgb[0]), float(rgb[1]), float(rgb[2])) if rgb.size() == 3 else Color.WHITE}
+	var dx := ib.end.x + 16.0
+	var dy := ib.position.y + 30.0
 	var strong := _num(f, "snr_strong")
 	var snr := _num(c.get("belief", {}), "snr")
-	dial_sure = {"center": Vector2(a.position.x + 40, dy), "radius": 26.0,
+	dial_sure = {"center": Vector2(dx + 26, dy), "radius": 22.0,
 		"fraction": clampf(snr / (strong * 1.5), 0.0, 1.0) if strong > 0.0 else 0.0,
 		"hint": _num(f, "snr_hint") / (strong * 1.5) if strong > 0.0 else 0.0, "strong": 1.0 / 1.5}
-	_labels.sure.position = Vector2(a.position.x + 74, dy - 4)
+	_labels.sure.position = Vector2(dx + 60, dy - 4)
 	var age := _num(c.get("belief", {}), "light_age_years")
 	var stale := _num(c.get("cost", {}), "stale_years")
-	dial_age = {"center": Vector2(a.position.x + a.size.x * 0.5 + 40, dy), "radius": 26.0,
+	dial_age = {"center": Vector2(dx + 26, dy + 62.0), "radius": 22.0,
 		"now": age / stale if stale > 0.0 else 0.0, "added": 1.0 - age / stale if stale > 0.0 else 0.0}
-	_labels.age.position = Vector2(a.position.x + a.size.x * 0.5 + 74, dy - 4)
+	_labels.age.position = Vector2(dx + 60, dy + 58.0)
 	# pane 1: the eight resources and the crew
 	var b := panes[1]
 	var offer: Dictionary = c.get("offer", {})
@@ -283,6 +299,7 @@ func _draw() -> void:
 		draw_rect(panes[i], PANE)
 		draw_string(font, panes[i].position + Vector2(10, 22), titles[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
 	_draw_spectrum(font, c.get("spectrum", {}))
+	_draw_image(font, w)
 	_draw_dials(font, w)
 	_draw_glyphs(font, w)
 	_draw_cost(font, w)
@@ -315,6 +332,43 @@ func _draw_spectrum(font: Font, sp: Dictionary) -> void:
 		for i in lam.size():
 			pts.append(at.call(i, float(model[i])))
 		draw_polyline(pts, StapledonTheme.CORAL, 2.0, true)
+
+
+## The best picture. True: what the telescope records, the star's diffraction pattern (a core and
+## rings; the planet is some ten billion times fainter and is not drawn, because it is not seen).
+## Processed: the starlight suppressed outside the inner working angle (the dashed circle); a planet
+## beyond it shows as a speck, one inside it stays lost. Never a surface: nothing here is resolved.
+func _draw_image(font: Font, w: Dictionary) -> void:
+	if image.is_empty():
+		return
+	var b: Rect2 = image.box
+	var c := b.get_center()
+	var px: float = image.px
+	var col: Color = image.color
+	draw_rect(b, WELL)
+	draw_string(font, Vector2(b.position.x, b.position.y - 6), str(w.get("picture", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, StapledonTheme.DIM)
+	if processed:
+		draw_circle(c, 1.22 * px, Color(col, 0.25))
+		for i in 32: # the inner working angle
+			if i % 2 == 0:
+				draw_arc(c, image.iwa_px, TAU * i / 32.0, TAU * (i + 1) / 32.0, 4, Color(StapledonTheme.DIM, 0.7), 1.0, true)
+		if image.planet != null:
+			draw_circle(image.planet, 2.6, StapledonTheme.TEAL_LIGHT)
+			draw_arc(image.planet, 6.0, 0.0, TAU, 20, Color(StapledonTheme.TEAL_LIGHT, 0.5), 1.0, true)
+		else:
+			draw_string(font, Vector2(b.position.x + 4, b.end.y - 6), str(w.get("hidden", "")), HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 8, 10, StapledonTheme.DIM)
+	else:
+		var zeros := [1.22, 2.233, 3.238, 4.241, 5.243, 6.244, 7.245, 8.245, 9.246, 10.246]
+		for i in range(zeros.size() - 1, 0, -1): # the Airy rings, each fainter (about r to the minus three)
+			var r: float = (zeros[i - 1] + zeros[i]) * 0.5
+			draw_arc(c, r * px, 0.0, TAU, 64, Color(col, clampf(0.9 / pow(r, 1.6), 0.03, 0.6)), maxf(1.0, (zeros[i] - zeros[i - 1]) * px * 0.55), true)
+		draw_circle(c, 1.22 * px, col)
+		draw_circle(c, 0.6 * px, Color.WHITE)
+	# Earth's orbit at this distance, for scale
+	if image.au_px > 2.0 and image.au_px < b.size.x:
+		var y := b.end.y + 8.0
+		draw_line(Vector2(b.position.x, y), Vector2(b.position.x + image.au_px, y), StapledonTheme.CREAM, 1.5)
+		draw_string(font, Vector2(b.position.x, y + 14), str(w.get("orbit", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, StapledonTheme.DIM)
 
 
 func _draw_dials(font: Font, w: Dictionary) -> void:
