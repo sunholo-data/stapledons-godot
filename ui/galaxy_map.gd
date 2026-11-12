@@ -28,6 +28,26 @@ extends Node3D
 ## the camera.
 
 signal target_selected(star_id: String)
+signal telescope_requested(reference: Dictionary)
+signal inspect_requested(reference: Dictionary)
+
+const ObjectReference = preload("res://ui/object_reference.gd")
+const ObservationIndex = preload("res://ui/observation_index.gd")
+const TelescopePanel = preload("res://ui/observation_panel.gd")
+const ObservationStarInfo = preload("res://ui/star_info.gd")
+const SurveyLayer = preload("res://ui/survey_map_layer.gd")
+var survey_layer := SurveyLayer.new()
+var survey_button := CheckButton.new()
+var survey_context := false
+var _local_camera: Dictionary = {}
+var observation_selection: Dictionary = {}
+var observation_index := ObservationIndex.new()
+var observation_star_info := ObservationStarInfo.new()
+var observation_panel: Control
+var observer_world: Dictionary = {}
+var observer_system_view
+var telescope_button := Button.new()
+var inspect_button := Button.new()
 
 const STAR_SHADER := preload("res://ui/star_point.gdshader")
 const TICK_HZ := 20.0
@@ -219,6 +239,8 @@ func _build() -> void:
 	if _built:
 		return
 	_built = true
+	observation_index.load_files()
+	observation_star_info.load_files()
 	ism_layer.load_model()
 	ism_layer.visible = true
 	var env := Environment.new()
@@ -240,6 +262,13 @@ func _build() -> void:
 	_overlay.draw.connect(_draw_overlay)
 	layer.add_child(_overlay)
 	_overlay.add_child(earth_beams) # its labels sit on the overlay, under the panel
+	_overlay.add_child(survey_layer)
+	survey_layer.setup(self, observation_index)
+	survey_layer.object_selected.connect(func(reference): focus_object(reference, true))
+	survey_layer.field_selected.connect(func(plate_id):
+		_frame_survey(plate_id)
+		open_observation({}, "archive")
+		observation_panel.select_plate(plate_id))
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	panel.offset_left = -PANEL_WIDTH
@@ -282,6 +311,19 @@ func _build() -> void:
 	zoom_out_button.pressed.connect(zoom_notch.bind(false))
 	zoom_controls.add_child(zoom_in_button);zoom_controls.add_child(zoom_out_button)
 	box.add_child(zoom_controls)
+	var observation_controls := HFlowContainer.new()
+	telescope_button.name = "TelescopeButton"
+	telescope_button.text = "Telescope"
+	telescope_button.tooltip_text = "Magnify a live star or browse dated Euclid observations"
+	telescope_button.pressed.connect(func(): telescope_requested.emit(observation_reference()))
+	inspect_button.text = "Inspect object"
+	inspect_button.pressed.connect(func(): inspect_requested.emit(observation_reference()))
+	observation_controls.add_child(telescope_button)
+	observation_controls.add_child(inspect_button)
+	box.add_child(observation_controls)
+	survey_button.text = "Euclid sky context · directions only"
+	survey_button.toggled.connect(set_survey_context)
+	box.add_child(survey_button)
 	# All variable-height content scrolls. Start/review actions stay below it.
 	var scroll:=ScrollContainer.new()
 	scroll.name="MapDetails"
@@ -383,6 +425,20 @@ func _build() -> void:
 	hint.visible = show_hint
 	box.add_child(hint)
 	_build_dialog(layer)
+	var observer_layer := CanvasLayer.new()
+	observer_layer.layer = 40
+	add_child(observer_layer)
+	observation_panel = TelescopePanel.new()
+	observer_layer.add_child(observation_panel)
+	observation_panel.open_map.connect(func(reference):
+		focus_object(reference, true)
+		observation_panel.close_panel())
+	observation_panel.open_field_map.connect(func(plate_id):
+		set_survey_context(true)
+		_frame_survey(plate_id)
+		observation_panel.close_panel())
+	telescope_requested.connect(func(reference): open_observation(reference))
+	inspect_requested.connect(func(reference): open_observation(reference))
 	credits.visible = show_hint # captures keep their pinned PNGs; C still toggles the panel in play
 	layer.add_child(credits)
 	_update_camera()
@@ -552,6 +608,7 @@ func plan_intent(i: int) -> Dictionary:
 func select(i: int) -> bool:
 	if not preselect(i):
 		return false
+	observation_selection = {"kind": "catalogue", "id": str(catalogue[i].id)}
 	target_selected.emit(catalogue[i]["id"])
 	return true
 
@@ -559,6 +616,7 @@ func select(i: int) -> bool:
 ## Select star i without emitting target_selected (a caller opening the map
 ## on a known star, M4).
 func preselect(i: int) -> bool:
+	if survey_context or (observation_panel != null and observation_panel.visible): return false
 	if i < 0 or i >= catalogue.size():
 		return false
 	selected_index = i
@@ -566,6 +624,91 @@ func preselect(i: int) -> bool:
 	if planning():_pending = plan_intent(i)
 	_overlay.queue_redraw()
 	return true
+
+
+## Information-only focus: preserve the route, queued intents and navigation selection.
+## In particular this must never call preselect(), which can queue a plan.
+func focus_object(reference: Dictionary, frame := false) -> bool:
+	if not ObjectReference.valid(reference): return false
+	var index := -1
+	match reference.kind:
+		"catalogue":
+			index = index_of(reference.id)
+			if index < 0: return false
+		"survey":
+			if observation_index.resolve(reference.id).is_empty(): return false
+		"body":
+			var bodies: Array = sim.world.get("system", {}).get("bodies", []) if sim != null else []
+			if not bodies.any(func(body): return body.get("id") == reference.id): return false
+	observation_selection = reference.duplicate(true)
+	if frame and index >= 0:
+		set_survey_context(false)
+		frame_star(index)
+	elif frame and reference.kind == "survey":
+		set_survey_context(true)
+		survey_layer.selected_id = observation_index.resolve(reference.id)
+		_frame_survey(str(observation_index.object(reference.id).get("plate_id", "")))
+	_overlay.queue_redraw()
+	return true
+
+
+func observation_reference() -> Dictionary:
+	if not observation_selection.is_empty(): return observation_selection.duplicate(true)
+	if not selected_body.is_empty(): return {"kind": "body", "id": selected_body}
+	if selected_index >= 0 and selected_index < catalogue.size(): return {"kind": "catalogue", "id": str(catalogue[selected_index].id)}
+	return {}
+
+
+func set_observer_context(snapshot: Dictionary, system_view = null) -> void:
+	observer_world = snapshot
+	observer_system_view = system_view
+	if observation_panel != null: observation_panel.update_world(snapshot, system_view)
+
+
+func open_observation(reference: Dictionary = {}, preferred := "") -> bool:
+	if observation_panel == null: return false
+	var chosen: Dictionary = reference if not reference.is_empty() else observation_reference()
+	if not chosen.is_empty() and not focus_object(chosen): return false
+	close_commit_dialog() # Cancel only the armed UI gesture, never the route or sim intent.
+	observation_panel.configure(observation_index, observation_star_info, observer_world if not observer_world.is_empty() else (sim.world if sim != null else {}), observer_system_view)
+	return observation_panel.open_reference(chosen, preferred)
+
+
+func close_observation() -> bool:
+	if observation_panel == null or not observation_panel.visible: return false
+	observation_panel.close_panel()
+	return true
+
+
+## Survey coordinates are directions from Sol, never fabricated local positions.
+## This changes display state only; navigation selection/queued intents are retained.
+func set_survey_context(on: bool) -> void:
+	if on == survey_context: return
+	if on:
+		_local_camera = {"pivot": pivot, "yaw": yaw, "pitch": pitch, "dist": dist}
+	survey_context = on
+	survey_button.set_pressed_no_signal(on)
+	survey_layer.layout_for(get_viewport().get_visible_rect().size, PANEL_WIDTH)
+	survey_layer.activate(on)
+	_points.visible = not on
+	earth_beams.visible = not on and earth_toggle.button_pressed
+	for control in [centre_button, fit_button, home_button, ism_toggle, local_ism_button, earth_toggle, commit_button, cancel_button]:
+		control.disabled = on
+	slider.editable = not on
+	if on:
+		dist = 20.; pivot = Vector3.ZERO
+	elif not _local_camera.is_empty():
+		pivot = _local_camera.pivot; yaw = _local_camera.yaw; pitch = _local_camera.pitch; dist = _local_camera.dist
+	_update_camera()
+	_overlay.queue_redraw()
+
+
+func _frame_survey(plate_id: String) -> void:
+	if not survey_layer.fields.has(plate_id): return
+	survey_layer.active_plate = plate_id
+	survey_layer._refresh_choices()
+	dist = 12.
+	_frame_points(PackedVector3Array([SurveyLayer.direction_world(survey_layer.fields[plate_id].centre_galactic)]), false)
 
 
 ## Plan an arbitrary target (design check rows; not a catalogue selection).
@@ -605,6 +748,7 @@ func system_bodies() -> Array:
 ## 0.99c (navigation.bodyPhiMax, the value the params echo's cruise_phi_default holds).
 func plan_body(id: String) -> void:
 	if not planning():return
+	observation_selection = {"kind": "body", "id": id}
 	selected_index = -1;home_highlight = false;selected_body = id
 	_pending = SimBridge.body_plan(id, minf(cruise_phi, phi_default), {"mode": "stop"})
 	_overlay.queue_redraw()
@@ -733,7 +877,7 @@ func set_confirm_twice(on: bool) -> void:
 
 ## True where planning is allowed: the helm, outside a guided voyage.
 func planning() -> bool:
-	return mode == "helm" and not guided_read_only
+	return mode == "helm" and not guided_read_only and not survey_context and (observation_panel == null or not observation_panel.visible)
 
 
 func set_mode(m: String, carry_selection := true) -> void:
@@ -774,7 +918,8 @@ func tick() -> bool:
 	if not sim.drain(): # a pipelined heartbeat (SimBridge.pipelined): decide on the current world
 		return false
 	# A commit confirmed at the helm goes out even if the helm closed before this tick.
-	var intents := ([] if guided_read_only else _queue.duplicate()) if not planning() else ([] if _pending.is_empty() else [_pending]) + _queue
+	# Observation disables new decisions, while already-authorised queued work still goes out.
+	var intents := ([] if guided_read_only else _queue.duplicate()) if mode != "helm" or guided_read_only else ([] if _pending.is_empty() else [_pending]) + _queue
 	_pending = {}
 	_queue = []
 	for intent in intents:
@@ -1059,13 +1204,13 @@ func refresh() -> void:
 		var i := int(t.index)
 		_sentence(_subtitle, [["client.map.target_id", "%s"]] + ([" · distance unavailable"] if i >= 0 and i < catalogue.size() and catalogue[i].id == t.id else []))
 	_refresh_system_list()
-	home_button.disabled = guided_read_only
+	home_button.disabled = guided_read_only or survey_context
 	_status.text = status_text()
-	commit_button.disabled = guided_read_only or journey_state() != "planned"
+	commit_button.disabled = guided_read_only or survey_context or journey_state() != "planned"
 	for button:Node in special_destinations.get_children():
-		if button is Button:button.disabled=journey_state()=="committed"
-	cancel_button.disabled = guided_read_only
-	slider.editable = not guided_read_only
+		if button is Button:button.disabled=survey_context or journey_state()=="committed"
+	cancel_button.disabled = guided_read_only or survey_context
+	slider.editable = not guided_read_only and not survey_context
 	var pv := progress_values()
 	progress_bar.visible = not pv.is_empty()
 	if not pv.is_empty():
@@ -1299,9 +1444,10 @@ static func hold_note(events: Array) -> String:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if observation_panel != null and observation_panel.visible: return
 	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_D \
 			and not (event as InputEventKey).is_command_or_control_pressed():
-		set_ism_visible(not ism_layer.visible) # a display control: no intent (D-56)
+		if not survey_context: set_ism_visible(not ism_layer.visible) # a display control: no intent (D-56)
 		_accept()
 		return
 	if event is InputEventMagnifyGesture: # pinch: factor > 1 (fingers apart) zooms in
@@ -1327,7 +1473,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if mb.pressed:
 				_drag_from = mb.position
 				_dragging = false
-			elif not _dragging:
+			elif not _dragging and not survey_context:
 				var hit := pick(mb.position)
 				if hit == SOL_PICK:
 					plan_home()
@@ -1350,6 +1496,8 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Review/confirmation keys precede focused buttons, so Enter never accidentally
 ## activates a retained zoom or destination button. The original ritual still applies.
 func _input(event:InputEvent)->void:
+	if observation_panel != null and observation_panel.visible: return
+	if survey_context: return
 	if not event is InputEventKey or not planning() or not is_visible_in_tree() or not get_window().visible:return
 	var key:=event as InputEventKey
 	if key.is_command_or_control_pressed() or key.alt_pressed:return
@@ -1379,6 +1527,9 @@ static func label_box(font: Font, at: Vector2, text: String, size: int) -> Rect2
 
 
 func _draw_overlay() -> void:
+	if survey_context:
+		survey_layer.layout_for(get_viewport().get_visible_rect().size, PANEL_WIDTH)
+		return
 	var font := ThemeDB.fallback_font
 	var faint := Color(0.35, 0.45, 0.6, 0.35)
 	if _overlay.size.x <= PANEL_WIDTH + 60 or _overlay.size.y <= 24:return
@@ -1411,15 +1562,16 @@ func _draw_overlay() -> void:
 		_overlay.draw_string(font, sol + Vector2(8, -6), "Sol", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1.0, 0.9, 0.5))
 		taken.append(sol)
 		boxes.append(label_box(font, sol + Vector2(8, -6), "Sol", 15))
-	if selected_index >= 0 and not camera.is_position_behind(world_pos(selected_index)):
-		var sp := screen_position(selected_index)
+	var focus_index := index_of(str(observation_selection.get("id", ""))) if observation_selection.get("kind") == "catalogue" else selected_index
+	if focus_index >= 0 and not camera.is_position_behind(world_pos(focus_index)):
+		var sp := screen_position(focus_index)
 		_overlay.draw_arc(sp, 11.0, 0.0, TAU, 40, Color(0.5, 0.85, 1.0), 2.0, true)
-		_overlay.draw_string(font, sp + Vector2(14, 18), display_name(selected_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.6, 0.9, 1.0))
+		_overlay.draw_string(font, sp + Vector2(14, 18), display_name(focus_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.6, 0.9, 1.0))
 		taken.append(sp)
-		boxes.append(label_box(font, sp + Vector2(14, 18), display_name(selected_index), 16))
+		boxes.append(label_box(font, sp + Vector2(14, 18), display_name(focus_index), 16))
 	for i: int in names: # faint names for the other named stars, without overlaps
 		var w := world_pos(i)
-		if i == selected_index or camera.is_position_behind(w):
+		if i == focus_index or camera.is_position_behind(w):
 			continue
 		var p := camera.unproject_position(w)
 		var box := label_box(font, p + Vector2(6, -4), names[i], 12)

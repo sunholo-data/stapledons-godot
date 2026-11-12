@@ -20,6 +20,7 @@
       "observation_start": "2024-07-14T04:37:08.801",
       "observation_end": "2024-07-15T04:54:15.960",
       "registered": true,
+      "tiles": {"path":"res://data/raw/observations/tiles/abell3128-vis/tiles.json","sha256":"047504f75450b0c2963d58cca185c42ab5998604cd9182ec205d52975d203c42"},
       "registration": {
         "projection": "TAN",
         "frame": "ICRS",
@@ -46,21 +47,21 @@
       ]
     },
     {
-      "id":"m81-outreach","name":"Messier 81 group","source_url":"https://media.esa.int/global/public/common/image/2026/11/4-euclid-ews-dr1-northpr-m81ngc3077-r3-equ-16k9k-4k.jpg?dl",
+      "id":"m81-outreach","name":"Messier 81 group","tiles":{"path":"res://data/raw/observations/tiles/m81-outreach/tiles.json","sha256":"7a2f5f667b383081f925c899fdfff439886f6c1a5ef0ce9233393c3fa8c72d88"},"source_url":"https://media.esa.int/global/public/common/image/2026/11/4-euclid-ews-dr1-northpr-m81ngc3077-r3-equ-16k9k-4k.jpg?dl",
       "page_url":"https://www.esa.int/media/about-us/directorates/science/euclid/euclid-views-the-core-of-the-messier-81-galaxy-group",
       "licence":"CC BY-SA 3.0 IGO","credit":"ESA/Euclid/Euclid Consortium/NASA; image processing by J.-C. Cuillandre and E. Bertin",
       "band":"Published colour composite","processing":"ESA published outreach composite; unregistered plate, no pixel-to-object associations","observation_start":null,"observation_end":null,"registered":false,
       "levels":[{"path":"res://data/raw/observations/m81.jpg","sha256":"7b7fd7d5cfc2e3d0d4bdbbe78dd49b74de15283cc631e7b4fee7167de5961b03","width":3840,"height":2160}]
     },
     {
-      "id":"ngc1291-outreach","name":"NGC 1291","source_url":"https://media.esa.int/global/public/common/image/2026/11/7-euclid-ews-dr1-southpr-ngc1291wide-r2-equ-16k9k-4k.jpg?dl",
+      "id":"ngc1291-outreach","name":"NGC 1291","tiles":{"path":"res://data/raw/observations/tiles/ngc1291-outreach/tiles.json","sha256":"ca75ef8b60cee30cc0bede3c8fc59a821c14589a82d3ab48b2c94770ae8f5075"},"source_url":"https://media.esa.int/global/public/common/image/2026/11/7-euclid-ews-dr1-southpr-ngc1291wide-r2-equ-16k9k-4k.jpg?dl",
       "page_url":"https://www.esa.int/media/about-us/directorates/science/euclid/the-ring-galaxy-ngc-1291-as-seen-by-euclid",
       "licence":"CC BY-SA 3.0 IGO","credit":"ESA/Euclid/Euclid Consortium/NASA; image processing by J.-C. Cuillandre and E. Bertin",
       "band":"Published colour composite","processing":"ESA published outreach composite; unregistered plate, no pixel-to-object associations","observation_start":null,"observation_end":null,"registered":false,
       "levels":[{"path":"res://data/raw/observations/ngc1291.jpg","sha256":"9474793feddade1542455767d509041bf6f81a662b6afe0dbf26e72bf0a337b2","width":3840,"height":2160}]
     },
     {
-      "id":"abell3128-outreach","name":"Abell 3128 · colour panorama","source_url":"https://media.esa.int/global/public/common/image/2026/11/9-euclid-ews-dr1-southpr-abell3128-r4-equ-5k3k-4k.jpg?dl",
+      "id":"abell3128-outreach","name":"Abell 3128 · colour panorama","tiles":{"path":"res://data/raw/observations/tiles/abell3128-outreach/tiles.json","sha256":"62f8de4e453b03529c6161a12cd3cc7af59381810cc93c2945a47f945974c51e"},"source_url":"https://media.esa.int/global/public/common/image/2026/11/9-euclid-ews-dr1-southpr-abell3128-r4-equ-5k3k-4k.jpg?dl",
       "page_url":"https://www.esa.int/media/about-us/directorates/science/euclid/euclid-s-view-of-rich-galaxy-cluster-abell-3128",
       "licence":"CC BY-SA 3.0 IGO","credit":"ESA/Euclid/Euclid Consortium/NASA; image processing by J.-C. Cuillandre and E. Bertin",
       "band":"Published colour composite","processing":"ESA published outreach composite; unregistered plate, no pixel-to-object associations","observation_start":null,"observation_end":null,"registered":false,

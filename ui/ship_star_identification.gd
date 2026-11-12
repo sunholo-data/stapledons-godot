@@ -7,6 +7,7 @@ const StarLight = preload("res://demos/ship_star_light.gd")
 const Constellations = preload("res://ui/constellation_overlay.gd")
 const BODY_PREFIX := "body:"
 signal open_map(id: String)
+signal open_telescope(reference: Dictionary)
 var info := Info.new()
 var occlusion := Occlusion.new()
 var demo: Node
@@ -179,6 +180,7 @@ func inspect(id: String) -> bool:
 	content.add_child(facts)
 	var row := HBoxContainer.new();content.add_child(row)
 	var map := Button.new();map.text = "Open in map";map.pressed.connect(func():open_map.emit(id));row.add_child(map)
+	var telescope := Button.new();telescope.text = "Telescope";telescope.pressed.connect(func():open_telescope.emit({"kind":"catalogue","id":id}));row.add_child(telescope)
 	var close := Button.new();close.text = "Close";close.pressed.connect(close_card);row.add_child(close)
 	_show_card()
 	return true
@@ -199,6 +201,7 @@ func inspect_body(body_id: String) -> bool:
 	content.add_child(facts)
 	var row := HBoxContainer.new();content.add_child(row)
 	var cat := str(b.get("catalogue_id",""))
+	var telescope := Button.new();telescope.text = "Telescope";telescope.pressed.connect(func():open_telescope.emit({"kind":"body","id":body_id}));row.add_child(telescope)
 	if not cat.is_empty() and info.records.has(cat):
 		var map := Button.new();map.text = "Open in map";map.pressed.connect(func():open_map.emit(cat));row.add_child(map)
 	var close := Button.new();close.text = "Close";close.pressed.connect(close_card);row.add_child(close)

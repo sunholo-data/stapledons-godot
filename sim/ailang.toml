@@ -15,6 +15,7 @@ modules = [
   "stapledons/sim/worlds_registry", "stapledons/sim/data/world_hosts", "stapledons/sim/tools/world_hosts_main",
   "stapledons/sim/tools/exoplanets",
   "stapledons/sim/tools/observations", "stapledons/sim/tools/observations_test",
+  "stapledons/sim/tools/observation_footprint", "stapledons/sim/tools/observation_footprint_test",
   "stapledons/sim/tools/exoplanets_test",
   "stapledons/sim/tools/exoplanets_verify",
   "stapledons/sim/data/exoplanets",
@@ -29,8 +30,8 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/worlds" = "0.1.0"
-"sunholo/celestial" = "0.6.0" # W1.1: published habitability; prior stellar API/results retained
+"sunholo/worlds" = "0.1.1" # dependency-only patch: celestial 0.7.0, unchanged worlds code
+"sunholo/celestial" = "0.7.0" # R3-TELESCOPE: tested TAN projection; prior celestial/stellar APIs retained
 "sunholo/relativity" = "0.12.0"
 "sunholo/observe" = "0.1.0" # R3-EARTH-LINK EL1: lightcone (light cone, catch-up, link windows, beam rays, the Earth rate)
 "sunholo/crew_core" = "0.6.0" # 0.6.0: stand-downs (R2-CREW-CONSOLE-V2 V8); 0.5.0: resource units as data (units.ail; the game keeps its table here): ailang-packages #146

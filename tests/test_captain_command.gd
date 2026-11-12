@@ -121,6 +121,31 @@ func exercise(demo: Node, command: Variant) -> void:
 	if demo.journey_map != null:
 		check("opening the chair Navigation tab does not synthesize a plan", demo.journey_map._pending.is_empty() and demo.journey_map._queue.is_empty())
 		check("Navigation renders inside cockpit instead of a floating window", demo.journey_map.get_viewport() == command.screen_host.viewport and not demo.navigation_window.visible)
+		for k in 180: demo._process(1. / 60.)
+		for k in 3: await process_frame
+		var map: Node = demo.journey_map
+		var nav_display: MeshInstance3D = command.cockpit.display_nodes.navigation
+		var telescope_at: Vector2 = map.telescope_button.get_global_rect().get_center()
+		var telescope_uv := telescope_at / Vector2(command.screen_host.viewport.size)
+		var telescope_world: Vector3 = nav_display.global_transform * Vector3((telescope_uv.x - .5) * ChairCockpit.SCREEN_SIZE.x, (.5 - telescope_uv.y) * ChairCockpit.SCREEN_SIZE.y, 0.)
+		pick.position = demo.get_viewport().get_stretch_transform().affine_inverse() * demo.camera.unproject_position(telescope_world)
+		pick.pressed = true; command.key(pick)
+		pick.pressed = false; command.key(pick)
+		check("physical chair Telescope button opens shared observation panel", map.observation_panel.visible)
+		check("chair telescope keeps captain and decisions unchanged", demo.avatar_pos.is_equal_approx(anchor) and map._pending.is_empty() and map._queue.is_empty())
+		command.key(back)
+		check("Esc closes telescope before leaving Navigation", not map.observation_panel.visible and command.selected == "navigation")
+		map.open_observation()
+		var pad_back := InputEventJoypadButton.new(); pad_back.button_index = JOY_BUTTON_B; pad_back.pressed = true
+		command.key(pad_back)
+		check("pad B closes telescope before leaving Navigation", not map.observation_panel.visible and command.selected == "navigation")
+		map.open_observation()
+		var shared_panel: Control = map.observation_panel
+		command.select_system("crew")
+		check("screen switch releases archive cache and live viewport", not shared_panel.visible and not shared_panel.cache.active and shared_panel.live_view._vp.render_target_update_mode == SubViewport.UPDATE_DISABLED)
+		command.select_system("navigation")
+		map.open_observation()
+		check("reopening reuses one observation panel and callback", map.observation_panel == shared_panel and shared_panel.open_map.get_connections().size() == 1)
 	# If navigation cannot start, the shell still leaves its tabs and close action usable.
 	command.select_system("overview")
 	var shoulder := InputEventJoypadButton.new()

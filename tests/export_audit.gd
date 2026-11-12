@@ -13,6 +13,8 @@ const AUTO_EXT := {"gd": "gdc", "tscn": "scn", "gdshader": "", "gdshaderinc": ""
 ## D: concatenated or directory reads. Each row names the include entry that ships the bytes,
 ## the witnesses the game needs (project-relative, never all AUTO_EXT), and why.
 const DYNAMIC := [
+	{"prefix": "res://observation_bundle/", "filter": "observation_bundle/*", "witnesses": ["observation_bundle/manifest.json.bin", "observation_bundle/abell3128-vis/tiles.json.bin"],
+		"reason": "Pinned Euclid image indices/tiles staged as raw .bin bytes; telescope-export-smoke verifies their hashes without source paths"},
 	{"prefix": "res://data/feed/SOURCES", "filter": "data/feed/*", "witnesses": ["data/feed/SOURCES"],
 		"reason": "EarthFeed reads the committed feed picture provenance/pins to build its raw library; combined attended dev-test integration"},
 	{"prefix": "res://data/feed/pictures/", "filter": "data/feed/*", "witnesses": ["data/feed/pictures/family-baby_v0.webp"],
@@ -78,6 +80,8 @@ const DYNAMIC := [
 ## X: dev-only paths. They must not ship, and a fallback must ship. exact: the literal must equal
 ## the path; otherwise the path is a prefix. The root row is the bare "res://" (never read as a file).
 const DEV_ONLY := [
+	{"path": "res://data/raw/observations/", "exact": false, "fallback": "res://observation_bundle/",
+		"reason": "Offline science/image build inputs; runtime reads the hash-pinned .bin tiles staged by observation-bundle"},
 	{"path": "res://art/commons-grown-pilot/placements.json", "exact": true, "fallback": "res://assets/levels/commons/civic/placements.json",
 		"reason": "D-136 source-play fallback; make commons-civic-stage rewrites the pinned reviewed graph into the exported civic config"},
 	{"path": "res://art/commons-grown-pilot/trailing-vine-v1.png", "exact": true, "fallback": "res://assets/levels/commons/civic/placements.json",

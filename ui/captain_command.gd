@@ -199,12 +199,14 @@ func key(event: InputEvent) -> bool:
 		var code: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 		if code == KEY_TAB and event.ctrl_pressed: direction = -1 if event.shift_pressed else 1
 		elif code == KEY_ESCAPE or (code == KEY_E and not typing):
+			if consoles.demo.journey_map != null and consoles.demo.journey_map.close_observation(): return true
 			consoles.escape()
 			return true
 	elif event is InputEventJoypadButton and event.pressed:
 		if event.button_index == JOY_BUTTON_LEFT_SHOULDER: direction = -1
 		elif event.button_index == JOY_BUTTON_RIGHT_SHOULDER: direction = 1
 		elif event.button_index == JOY_BUTTON_B:
+			if consoles.demo.journey_map != null and consoles.demo.journey_map.close_observation(): return true
 			consoles.escape()
 			return true
 	if direction != 0:

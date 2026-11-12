@@ -21,6 +21,7 @@ const N_MAX := 5000.0
 var sv: SystemView
 var view_fov_deg := 78.0
 var star_id := ""
+var requested_star_id := ""
 var magnification := 1.0
 ## 1 "whole disc" (the disc fills FILL of the panel), 2 "close" (cells CELL_PX across, or as close as
 ## N_MAX and MAX_HALF_RAD allow; the panel then shows the disc's centre).
@@ -42,9 +43,12 @@ func _init() -> void:
 	box.add_child(_label)
 	var tex := TextureRect.new()
 	tex.custom_minimum_size = Vector2(PANEL_PX, PANEL_PX)
+	tex.name = "StellarDisc"
 	box.add_child(tex)
 	var hint := Label.new()
 	hint.text = "true magnification · the Bow view is true size · T: whole disc, close, off"
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size.x = 180
 	hint.add_theme_font_size_override("font_size", 13)
 	box.add_child(hint)
 	_vp = SubViewport.new()
@@ -75,6 +79,15 @@ func _init() -> void:
 	_disc.material_override = _mat
 	_vp.add_child(_disc)
 	tex.texture = _vp.get_texture()
+	visibility_changed.connect(func(): set_active(is_visible_in_tree()))
+
+
+func set_target(id: String) -> void:
+	requested_star_id = id
+
+
+func set_active(on: bool) -> void:
+	if _vp != null: _vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if on else SubViewport.UPDATE_DISABLED
 
 
 ## The star to show: the stop body when it is a star, else the brightest drawn star disc.
@@ -82,6 +95,7 @@ func pick_star(world: Dictionary) -> String:
 	var best := ""
 	var best_ang := 0.0
 	for b: Dictionary in world.get("system", {}).get("bodies", []):
+		if not requested_star_id.is_empty() and b.get("id") != requested_star_id: continue
 		if b.get("kind", "") != "star" or not sv.discs.has(b.id) or not (sv.discs[b.id] as MeshInstance3D).visible:
 			continue
 		var d := Planets.length64(Planets.world_of(b.rel_km))
@@ -99,7 +113,7 @@ func refresh(world: Dictionary) -> bool:
 		return false
 	star_id = pick_star(world)
 	if star_id.is_empty():
-		_label.text = "telescope · no star in view"
+		_label.text = "telescope · no live resolved view" if not requested_star_id.is_empty() else "telescope · no star in view"
 		_disc.visible = false
 		return false
 	var b: Dictionary = {}

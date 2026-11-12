@@ -249,6 +249,7 @@ func setup(opts := {}) -> bool:
 	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
+	star_identification.open_telescope.connect(open_telescope_reference)
 	if opts.get("live_start",false):
 		sky_state="live";open_navigation();close_navigation()
 		if journey_map==null:sky_state="rest"
@@ -994,6 +995,7 @@ func open_navigation() -> void:
 		refuse("Navigation is for flat space: leave Sgr A* first.");return
 	_create_navigation("sol")
 	if navigation_window==null:return
+	journey_map.set_observer_context(sky_world, sky.system_view)
 	journey_map.set_confirm_twice(confirm_mode=="twice")
 	journey_map.set_mode("helm", not consoles.command.visible if consoles != null else true)
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
@@ -1007,6 +1009,7 @@ func open_chart() -> void:
 		note("The star chart is for flat space; at Sgr A* the stop ladder is at the navigation station.");return
 	_create_navigation("sol")
 	if navigation_window==null:return
+	journey_map.set_observer_context(sky_world, sky.system_view)
 	journey_map.set_mode("chart")
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
 	if entry!=null:entry.visible=false
@@ -1116,6 +1119,7 @@ func _drop_navigation() -> void:
 	if consoles!=null:consoles.archive_ask.abandon() # the question's session is gone
 func close_navigation() -> void:
 	if navigation_window==null:return
+	journey_map.close_observation()
 	journey_map.close_commit_dialog();navigation_window.hide()
 	get_window().grab_focus()
 	# Outside the helm the map plans nothing (NT1): it rests in chart mode; any commit the
@@ -1127,6 +1131,7 @@ func close_navigation() -> void:
 ## armed press-twice confirm backs out first). V, J, H stay instant.
 func _navigation_key(key: int) -> void:
 	if journey_map==null:return
+	if key==KEY_ESCAPE and journey_map.close_observation():return
 	if key==KEY_ESCAPE and journey_map.armed:journey_map.disarm();return
 	if key==KEY_ESCAPE and journey_map.dialog.visible:journey_map.close_commit_dialog();return
 	if journey_map.mode=="chart":
@@ -1139,8 +1144,13 @@ func _navigation_key(key: int) -> void:
 func open_identified_star(id: String) -> void:
 	open_chart()
 	if journey_map != null:
-		var index := journey_map.index_of(id)
-		if index >= 0 and journey_map.preselect(index):journey_map.frame_star(index)
+		journey_map.focus_object({"kind":"catalogue","id":id}, true)
+func open_telescope_reference(reference: Dictionary) -> void:
+	if journey_map == null or (not navigation_window.visible and not (consoles != null and consoles.command.visible)):
+		open_chart()
+	if journey_map != null:
+		journey_map.set_observer_context(sky_world, sky.system_view)
+		journey_map.open_observation(reference)
 func journey_tick() -> bool:
 	if journey_map==null:return false
 	var was_committed:=live_journey
@@ -1223,6 +1233,7 @@ func _apply_journey_world()->void:
 			tour_attitude.reset(ShipFrame.ship_basis(camera.heading))
 			camera.attitude_basis=tour_attitude.current.duplicate()
 		sky.apply(sky_world);_sync_observer()
+	if journey_map != null:journey_map.set_observer_context(sky_world, sky.system_view)
 ## view: the developer free camera's first-person look at the turn's end (tilt deg, yaw rad).
 func _begin_tour_turn(target:PackedFloat64Array,view:Vector2,mode:String)->void:
 	tour_attitude.turn_to(target,3.)
