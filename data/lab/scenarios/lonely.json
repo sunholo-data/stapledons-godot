@@ -1,0 +1,20 @@
+{
+  "format": "lab-scenario-2",
+  "id": "lonely",
+  "version": 1,
+  "baseline": { "registry": "baseline-2026.11", "departures": "stapledons-design physics/life-and-worlds.md §7 @ 0038428f1eed" },
+  "summary": "Lonely, the fixed median universe. Every unmeasured value sits at the middle of its published range instead of being drawn, so this universe is the same in every run. It is the reference for tests and for teaching.",
+  "switches": [
+    { "switch": "earth_clock_yr", "value": 100000 },
+    { "switch": "reach_ly", "value": 3000 },
+    {
+      "switch": "universe_rule",
+      "value": { "dial": { "life": 0, "minds": 0, "tech": 0, "lifetime": 0 } },
+      "reason": "The values are fixed at the prior medians (a dial of zero) instead of drawn from the priors: a fixed reference universe is worth keeping for tests and for teaching.",
+      "source": "Ledger D-156, OQ10 (Lonely stays the fixed median universe); sim/data/presets.ail, the lonely preset"
+    },
+    { "switch": "lifetime_prior", "value": "canon" },
+    { "switch": "signature_classes", "value": ["radar", "tv"] },
+    { "switch": "quiet_minds", "value": false }
+  ]
+}

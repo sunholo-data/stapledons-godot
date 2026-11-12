@@ -1,0 +1,476 @@
+module stapledons/sim/lab_scenario
+
+-- R3-UNIVERSE-LAB UL3a (design r3/universe-lab.md, "Scenarios as data"; AC5): the scenario
+-- file format. Pure; reading the file is the tool shell's job (sim/tools/lab_scenarios.ail).
+--
+-- A SCENARIO is a named, versioned set of switches: `data/lab/scenarios/<id>.json`.
+--   { "format": "lab-scenario-2", "id": "...", "version": 1,
+--     "baseline": { "registry": "baseline-2026.11", "departures": "<the departures table read>" },
+--     "summary": "...",
+--     "switches": [ { "switch": "<name>", "value": <value> }, ... ] }
+--
+-- THE BASELINE IS THE REGISTRY'S, NOT "THE LITERATURE" (ledger D-156, OQ2). The values a
+-- switch is compared with are the ones the design repo's registry and sunholo/worlds pin. That
+-- baseline has deliberate departures from the literature OF ITS OWN (the 1e8-year lifetime
+-- bound is the first), listed, sized and reasoned in the design repo,
+-- physics/life-and-worlds.md section 7, and mirrored in data/lab/baseline_departures.json. So
+-- a scenario with no departures departs from nothing BEYOND those. Every scenario therefore
+-- names what it stands on: `baseline.registry` must be this module's `registryBaseline()`
+-- (the package's `baselineVersion()`; a test holds the two equal), and `baseline.departures`
+-- names the table it was read against (the tool shell holds it equal to the mirror's
+-- reference). Both are in the digest: re-pinning the table changes every digest.
+-- EVERY switch below appears exactly once. Nothing is defaulted: a file that leaves a switch
+-- out is refused, so a scenario's file says everything about it and its digest covers it all.
+--
+--   switch             value                                             the registry baseline
+--   earth_clock_yr     a number of years, > 0                            100000  (premise 2; D-154)
+--   reach_ly           a number of light-years, > 0                      3000    (the Ranger, OQ3)
+--   universe_rule      "pure"                                            "pure"  (one unselected draw)
+--                      {"dial": {"life","minds","tech","lifetime"}}      offsets in dex, each within +-100
+--                      {"select": {"found","ended","late"}}              each a band [lo, hi]; null = open
+--   lifetime_prior     "canon" (1e2..1e8 yr) | "sandberg-as-printed"     "canon" (what sunholo/worlds pins;
+--                      (1e2..1e10 yr, the paper's table)                         section 7, row 1, says why)
+--   signature_classes  a non-empty list of radar, tv, beacon, structure  ["radar", "tv"]
+--   quiet_minds        true | false                                      false
+--
+-- THE STANDING RULE. A switch whose value differs from the baseline is a DEPARTURE, and its
+-- entry must also carry "reason" and exactly one of "source" or "design": true. A reason or a
+-- source must have something to read: text made only of spaces or of characters that draw
+-- nothing (U+200B to U+200D, U+2060, U+FEFF) counts as blank. A departure without them is
+-- refused: the lab does not run it. A reason on a switch that does NOT depart is refused too
+-- (it would explain a difference that is not there). The `baseline` scenario is the one with
+-- no departures of its own.
+--
+-- NOTHING IS GUESSED. Every malformed input is a named `Refusal`: text that is not JSON, an
+-- unknown or repeated key anywhere, an unknown, repeated or missing switch, a value of the
+-- wrong shape or out of range. `check` applies the same rules to a Scenario built in code, and
+-- `decodeScenario` ends by calling it, so there is one validation path.
+--
+-- THE DIGEST is the sha256 of the CANONICAL ENCODING: the scenario re-encoded from its decoded
+-- values with keys and switches in the fixed order above, classes in ladder order, and one
+-- number spelling. It therefore changes when any value, reason, source, id, version, summary
+-- or baseline reference changes, and does not depend on the file's key order, switch order or whitespace. The
+-- canonical text is itself a valid scenario file (the round trip).
+--
+-- KNOWN GAP on the pinned runtime (v0.56.1): std/json `decode` accepts text after the closing
+-- brace, so a file with trailing text is accepted and shares the digest of the file without
+-- it. Fixed upstream by v0.60.0 (`decode: trailing data`); not worked around here. A test
+-- states today's behaviour and fails at the bump (lab_scenario_test, "KNOWN GAP"), and
+-- `make lab-test` prints the gap. RE-CHECK AT THE NEXT RUNTIME BUMP.
+import std/json (Json, JNull, JBool, JNumber, JString, JArray, JObject, decode, encode, jo, kv, js, jnum, jb, ja, jn)
+import std/crypto (sha256Hex)
+import std/list (map, filter, foldl, any, length)
+import std/math (floor, floatToInt, intToFloat)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (chars, charCode, length as strLength)
+
+export pure func formatId() -> string = "lab-scenario-2"
+-- The registry baseline every scenario stands on: sunholo/worlds `baselineVersion()`.
+export pure func registryBaseline() -> string = "baseline-2026.11"
+
+-- ------------------------------------------------------------ the types
+-- A band on one acceptance statistic; None is an open end.
+export type Band = { lo: Option[float], hi: Option[float] }
+export type Bands = { found: Band, ended: Band, late: Band }
+export type Offsets = { life: float, minds: float, tech: float, lifetime: float }
+export type UniverseRule = Pure | Dial(Offsets) | Select(Bands)
+export type LifetimePrior = Canon | SandbergAsPrinted deriving (Eq)
+export type SignatureClass = Radar | Tv | Beacon | Structure deriving (Eq)
+export type Settings = { earthClockYr: float, reachLy: float, rule: UniverseRule, lifetimePrior: LifetimePrior, classes: [SignatureClass], quietMinds: bool }
+
+-- Where a departure's value comes from: a citation, or the label Design (no measurement).
+export type Basis = Source(string) | Design deriving (Eq)
+export type Departure = { name: string, reason: string, basis: Basis }
+-- What the scenario's "no departure" is measured from: the registry baseline's version, and
+-- the reference of the table of that baseline's own departures from the literature.
+export type BaselineRef = { registry: string, departures: string }
+export type Scenario = { id: string, version: int, baseline: BaselineRef, summary: string, settings: Settings, departures: [Departure] }
+
+-- Why a scenario is refused. The strings name the place (a key or a switch) and, for BadValue,
+-- what was expected.
+export type Refusal =
+    NotJson(string)                 -- the decoder's message
+  | NotAnObject(string)             -- where
+  | UnknownKey(string, string)      -- where, key
+  | DuplicateKey(string, string)    -- where, key
+  | MissingKey(string, string)      -- where, key
+  | WrongType(string, string)       -- where, key
+  | WrongFormat(string)             -- the format it claims
+  | BadId(string)
+  | BadVersion
+  | BlankSummary
+  | UnknownSwitch(string)
+  | DuplicateSwitch(string)
+  | MissingSwitch(string)
+  | BadValue(string, string)        -- switch, what was expected
+  | DepartureWithoutReason(string)  -- switch
+  | DepartureWithoutBasis(string)   -- switch: neither a source nor the label Design
+  | BothSourceAndDesign(string)     -- switch
+  | ReasonWithoutDeparture(string)  -- switch: annotated, but its value is the baseline
+  | WrongBaseline(string)           -- the registry baseline it names
+  | BlankBaselineReference          -- no departures table named
+  deriving (Eq)
+
+export pure func refusalText(r: Refusal) -> string =
+  match r {
+    NotJson(m) => "not JSON: ${m}",
+    NotAnObject(w) => "${w} is not an object",
+    UnknownKey(w, k) => "unknown key \"${k}\" in ${w}",
+    DuplicateKey(w, k) => "key \"${k}\" appears twice in ${w}",
+    MissingKey(w, k) => "${w} has no \"${k}\"",
+    WrongType(w, k) => "\"${k}\" in ${w} has the wrong type",
+    WrongFormat(f) => "format \"${f}\" is not ${formatId()}",
+    BadId(i) => "id \"${i}\" is not lower-case letters, digits and hyphens starting with a letter (at most 64)",
+    BadVersion => "version is not a whole number from 1 to 1000000",
+    BlankSummary => "summary is blank",
+    UnknownSwitch(s) => "unknown switch \"${s}\"",
+    DuplicateSwitch(s) => "switch \"${s}\" appears twice",
+    MissingSwitch(s) => "switch \"${s}\" is missing (every switch is stated; nothing is defaulted)",
+    BadValue(s, want) => "switch \"${s}\": expected ${want}",
+    DepartureWithoutReason(s) => "switch \"${s}\" departs from the registry baseline and has no reason",
+    DepartureWithoutBasis(s) => "switch \"${s}\" departs from the registry baseline and has neither a source nor \"design\": true",
+    BothSourceAndDesign(s) => "switch \"${s}\" has both a source and \"design\": true",
+    ReasonWithoutDeparture(s) => "switch \"${s}\" carries a reason, source or design label but its value is the baseline",
+    WrongBaseline(b) => "baseline registry \"${b}\" is not ${registryBaseline()}",
+    BlankBaselineReference => "the baseline reference names no departures table"
+  }
+
+-- ------------------------------------------------------------ the switches and the baseline
+export pure func switchNames() -> [string] = ["earth_clock_yr", "reach_ly", "universe_rule", "lifetime_prior", "signature_classes", "quiet_minds"]
+export pure func allClasses() -> [SignatureClass] = [Radar, Tv, Beacon, Structure]
+export pure func className(c: SignatureClass) -> string = match c { Radar => "radar", Tv => "tv", Beacon => "beacon", Structure => "structure" }
+pure func classOf(s: string) -> Option[SignatureClass] =
+  if s == "radar" then Some(Radar) else if s == "tv" then Some(Tv) else if s == "beacon" then Some(Beacon) else if s == "structure" then Some(Structure) else None
+export pure func priorName(p: LifetimePrior) -> string = match p { Canon => "canon", SandbergAsPrinted => "sandberg-as-printed" }
+-- The log-uniform range each name stands for, in years. `canon` is what sunholo/worlds pins
+-- (a test reads the package and holds it to this); the other is Sandberg, Drexler and Ord
+-- 2018, table 1, as printed (registry LW-41).
+export pure func priorBoundsYr(p: LifetimePrior) -> (float, float) = match p { Canon => (100.0, 1.0e8), SandbergAsPrinted => (100.0, 1.0e10) }
+
+-- The registry baseline: what the `baseline` scenario states, switch by switch.
+export pure func baselineSettings() -> Settings =
+  { earthClockYr: 100000.0, reachLy: 3000.0, rule: Pure, lifetimePrior: Canon, classes: [Radar, Tv], quietMinds: false }
+
+-- ------------------------------------------------------------ the canonical encoding
+-- One spelling per number: -0 is written as 0 (x + 0.0), and the encoder does the rest.
+pure func cnum(x: float) -> Json = jnum(x + 0.0)
+pure func boundJson(b: Option[float]) -> Json = match b { Some(x) => cnum(x), None => jn() }
+pure func bandJson(b: Band) -> Json = ja([boundJson(b.lo), boundJson(b.hi)])
+pure func ruleJson(r: UniverseRule) -> Json =
+  match r {
+    Pure => js("pure"),
+    Dial(o) => jo([kv("dial", jo([kv("life", cnum(o.life)), kv("minds", cnum(o.minds)), kv("tech", cnum(o.tech)), kv("lifetime", cnum(o.lifetime))]))]),
+    Select(b) => jo([kv("select", jo([kv("found", bandJson(b.found)), kv("ended", bandJson(b.ended)), kv("late", bandJson(b.late))]))])
+  }
+-- Classes in ladder order whatever order they were given in.
+pure func classesJson(cs: [SignatureClass]) -> Json = ja(map(\c. js(className(c)), filter(\c. any(\x. x == c, cs), allClasses())))
+pure func valueJson(s: Settings, name: string) -> Json =
+  if name == "earth_clock_yr" then cnum(s.earthClockYr)
+  else if name == "reach_ly" then cnum(s.reachLy)
+  else if name == "universe_rule" then ruleJson(s.rule)
+  else if name == "lifetime_prior" then js(priorName(s.lifetimePrior))
+  else if name == "signature_classes" then classesJson(s.classes)
+  else if name == "quiet_minds" then jb(s.quietMinds)
+  else jn()
+
+-- True when the switch's value is not the baseline's: the definition of a departure.
+export pure func departs(s: Settings, name: string) -> bool = encode(valueJson(s, name)) != encode(valueJson(baselineSettings(), name))
+
+pure func departureOf(ds: [Departure], name: string) -> Option[Departure] =
+  match ds { [] => None, d :: rest => if d.name == name then Some(d) else departureOf(rest, name) }
+pure func switchJson(sc: Scenario, name: string) -> Json {
+  let head = [kv("switch", js(name)), kv("value", valueJson(sc.settings, name))];
+  match departureOf(sc.departures, name) {
+    None => jo(head),
+    Some(d) => jo(head ++ [kv("reason", js(d.reason)), (match d.basis { Source(src) => kv("source", js(src)), Design => kv("design", jb(true)) })])
+  }
+}
+-- The canonical text: fixed key order, switches in `switchNames` order, no whitespace.
+export pure func canonical(sc: Scenario) -> string =
+  encode(jo([kv("format", js(formatId())), kv("id", js(sc.id)), kv("version", jnum(intToFloat(sc.version))),
+    kv("baseline", jo([kv("registry", js(sc.baseline.registry)), kv("departures", js(sc.baseline.departures))])), kv("summary", js(sc.summary)),
+    kv("switches", ja(map(\n. switchJson(sc, n), switchNames())))]))
+-- sha256 of the canonical text, lower-case hex.
+export pure func digest(sc: Scenario) -> string = sha256Hex(canonical(sc))
+
+-- ------------------------------------------------------------ validation (one path)
+pure func finite(x: float) -> bool = x - x == 0.0
+-- Code points that draw nothing: controls and spaces, and the zero-width characters.
+pure func unseen(n: int) -> bool =
+  n <= 32 || n == 127 || n == 133 || n == 160 || n == 173 || n == 5760 || (n >= 8192 && n <= 8205) || n == 8232 || n == 8233 || n == 8239 ||
+  n == 8287 || n == 8288 || n == 12288 || n == 65279
+-- Nothing to read: empty, or only spaces and characters that draw nothing.
+pure func blank(s: string) -> bool = !any(\c. !unseen(charCode(c)), chars(s))
+pure func idChar(c: string, first: bool) -> bool {
+  let n = charCode(c);
+  (n >= 97 && n <= 122) || (!first && ((n >= 48 && n <= 57) || n == 45))
+}
+pure func idRest(cs: [string]) -> bool = match cs { [] => true, c :: rest => idChar(c, false) && idRest(rest) }
+pure func validId(id: string) -> bool =
+  strLength(id) <= 64 && (match chars(id) { [] => false, c :: rest => idChar(c, true) && idRest(rest) })
+
+pure func offsetOk(x: float) -> bool = finite(x) && x >= 0.0 - 100.0 && x <= 100.0
+pure func boundOk(b: Option[float]) -> bool = match b { Some(x) => finite(x) && x >= 0.0, None => true }
+pure func bandOk(b: Band) -> bool =
+  boundOk(b.lo) && boundOk(b.hi) && (match b.lo { Some(l) => (match b.hi { Some(h) => l <= h, None => true }), None => true })
+pure func bandOpen(b: Band) -> bool = (match b.lo { None => true, Some(_) => false }) && (match b.hi { None => true, Some(_) => false })
+pure func countOf(c: SignatureClass, cs: [SignatureClass]) -> int = length(filter(\x. x == c, cs))
+
+pure func settingsRefusal(s: Settings) -> Option[Refusal] =
+  if !(finite(s.earthClockYr) && s.earthClockYr > 0.0) then Some(BadValue("earth_clock_yr", "a number of years above 0"))
+  else if !(finite(s.reachLy) && s.reachLy > 0.0) then Some(BadValue("reach_ly", "a number of light-years above 0"))
+  else if (match s.rule {
+    Pure => false,
+    Dial(o) => !(offsetOk(o.life) && offsetOk(o.minds) && offsetOk(o.tech) && offsetOk(o.lifetime)),
+    Select(b) => !(bandOk(b.found) && bandOk(b.ended) && bandOk(b.late)) || (bandOpen(b.found) && bandOpen(b.ended) && bandOpen(b.late))
+  }) then Some(BadValue("universe_rule", "dial offsets within +-100 dex, or select bands with 0 <= lo <= hi and at least one bound"))
+  else if length(s.classes) == 0 || any(\c. countOf(c, s.classes) > 1, allClasses()) then Some(BadValue("signature_classes", "a non-empty list of distinct classes"))
+  else None
+
+pure func repeated(ds: [Departure]) -> Option[string] =
+  match ds { [] => None, d :: rest => if any(\x. x.name == d.name, rest) then Some(d.name) else repeated(rest) }
+pure func strayDeparture(ds: [Departure]) -> Option[string] =
+  match ds { [] => None, d :: rest => if any(\n. n == d.name, switchNames()) then strayDeparture(rest) else Some(d.name) }
+-- The standing rule, switch by switch in the fixed order.
+pure func ruleRefusal(s: Settings, ds: [Departure], names: [string]) -> Option[Refusal] =
+  match names {
+    [] => None,
+    n :: rest => (match departureOf(ds, n) {
+      None => if departs(s, n) then Some(DepartureWithoutReason(n)) else ruleRefusal(s, ds, rest),
+      Some(d) =>
+        if !departs(s, n) then Some(ReasonWithoutDeparture(n))
+        else if blank(d.reason) then Some(DepartureWithoutReason(n))
+        else if (match d.basis { Source(src) => blank(src), Design => false }) then Some(DepartureWithoutBasis(n))
+        else ruleRefusal(s, ds, rest)
+    })
+  }
+
+-- Every rule a scenario must meet, for one read from a file or built in code.
+export pure func check(sc: Scenario) -> Result[Scenario, Refusal] =
+  if !validId(sc.id) then Err(BadId(sc.id))
+  else if sc.version < 1 || sc.version > 1000000 then Err(BadVersion)
+  else if sc.baseline.registry != registryBaseline() then Err(WrongBaseline(sc.baseline.registry))
+  else if blank(sc.baseline.departures) then Err(BlankBaselineReference)
+  else if blank(sc.summary) then Err(BlankSummary)
+  else match settingsRefusal(sc.settings) {
+    Some(r) => Err(r),
+    None => (match strayDeparture(sc.departures) {
+      Some(n) => Err(UnknownSwitch(n)),
+      None => (match repeated(sc.departures) {
+        Some(n) => Err(DuplicateSwitch(n)),
+        None => (match ruleRefusal(sc.settings, sc.departures, switchNames()) { Some(r) => Err(r), None => Ok(sc) })
+      })
+    })
+  }
+
+-- ------------------------------------------------------------ the decoder
+type KV = { key: string, value: Json }
+pure func dupKey(kvs: [KV]) -> Option[string] =
+  match kvs { [] => None, e :: rest => if any(\x. x.key == e.key, rest) then Some(e.key) else dupKey(rest) }
+pure func strayKey(kvs: [KV], allowed: [string]) -> Option[string] =
+  match kvs { [] => None, e :: rest => if any(\a. a == e.key, allowed) then strayKey(rest, allowed) else Some(e.key) }
+-- An object with only the allowed keys, none repeated.
+pure func shape(j: Json, where: string, allowed: [string]) -> Result[[KV], Refusal] =
+  match j {
+    JObject(kvs) => (match dupKey(kvs) {
+      Some(k) => Err(DuplicateKey(where, k)),
+      None => (match strayKey(kvs, allowed) { Some(k) => Err(UnknownKey(where, k)), None => Ok(kvs) })
+    }),
+    _ => Err(NotAnObject(where))
+  }
+pure func field(kvs: [KV], k: string) -> Option[Json] =
+  match kvs { [] => None, e :: rest => if e.key == k then Some(e.value) else field(rest, k) }
+pure func needString(kvs: [KV], where: string, k: string) -> Result[string, Refusal] =
+  match field(kvs, k) { None => Err(MissingKey(where, k)), Some(JString(s)) => Ok(s), Some(_) => Err(WrongType(where, k)) }
+pure func optString(kvs: [KV], where: string, k: string) -> Result[Option[string], Refusal] =
+  match field(kvs, k) { None => Ok(None), Some(JString(s)) => Ok(Some(s)), Some(_) => Err(WrongType(where, k)) }
+pure func optBool(kvs: [KV], where: string, k: string) -> Result[bool, Refusal] =
+  match field(kvs, k) { None => Ok(false), Some(JBool(b)) => Ok(b), Some(_) => Err(WrongType(where, k)) }
+
+type Entry = { name: string, value: Json, note: Option[Departure] }
+pure func entryOf(j: Json) -> Result[Entry, Refusal] =
+  match shape(j, "a switch entry", ["switch", "value", "reason", "source", "design"]) {
+    Err(r) => Err(r),
+    Ok(kvs) => (match needString(kvs, "a switch entry", "switch") {
+      Err(r) => Err(r),
+      Ok(name) => {
+        let where = "switch \"${name}\"";
+        match field(kvs, "value") {
+          None => Err(MissingKey(where, "value")),
+          Some(value) => (match optString(kvs, where, "reason") {
+            Err(r) => Err(r),
+            Ok(reason) => (match optString(kvs, where, "source") {
+              Err(r) => Err(r),
+              Ok(source) => (match optBool(kvs, where, "design") {
+                Err(r) => Err(r),
+                Ok(design) => (match source {
+                  Some(src) => if design then Err(BothSourceAndDesign(name))
+                    else Ok({ name: name, value: value, note: Some({ name: name, reason: (match reason { Some(x) => x, None => "" }), basis: Source(src) }) }),
+                  None => if design then Ok({ name: name, value: value, note: Some({ name: name, reason: (match reason { Some(x) => x, None => "" }), basis: Design }) })
+                    else (match reason {
+                      -- a reason with neither a source nor the label: a blank source fails `check` as DepartureWithoutBasis
+                      Some(x) => Ok({ name: name, value: value, note: Some({ name: name, reason: x, basis: Source("") }) }),
+                      None => Ok({ name: name, value: value, note: None })
+                    })
+                })
+              })
+            })
+          })
+        }
+      }
+    })
+  }
+@allow_empty_ok("the end of the list; a scenario with no entries is then refused as MissingSwitch")
+pure func entriesOf(js0: [Json]) -> Result[[Entry], Refusal] =
+  match js0 {
+    [] => Ok([]),
+    j :: rest => (match entryOf(j) { Err(r) => Err(r), Ok(e) => (match entriesOf(rest) { Err(r) => Err(r), Ok(es) => Ok(e :: es) }) })
+  }
+pure func entryNamed(es: [Entry], name: string) -> Option[Entry] =
+  match es { [] => None, e :: rest => if e.name == name then Some(e) else entryNamed(rest, name) }
+-- Exactly the known switches, each once.
+pure func namesRefusal(es: [Entry]) -> Option[Refusal] {
+  let unknown = filter(\e. !any(\n. n == e.name, switchNames()), es);
+  let twice = filter(\n. length(filter(\e. e.name == n, es)) > 1, switchNames());
+  let missing = filter(\n. !any(\e. e.name == n, es), switchNames());
+  match unknown {
+    e :: _ => Some(UnknownSwitch(e.name)),
+    [] => (match twice { n :: _ => Some(DuplicateSwitch(n)), [] => (match missing { n :: _ => Some(MissingSwitch(n)), [] => None }) })
+  }
+}
+
+pure func numberOf(j: Json, name: string, want: string) -> Result[float, Refusal] = match j { JNumber(x) => Ok(x), _ => Err(BadValue(name, want)) }
+pure func boundOf(j: Json) -> Option[Option[float]] = match j { JNull => Some(None), JNumber(x) => Some(Some(x)), _ => None }
+pure func bandOf(j: Option[Json]) -> Option[Band] =
+  match j {
+    Some(JArray([lo, hi])) => (match boundOf(lo) { Some(l) => (match boundOf(hi) { Some(h) => Some({ lo: l, hi: h }), None => None }), None => None }),
+    _ => None
+  }
+pure func ruleWant() -> string = "\"pure\", {\"dial\": {life, minds, tech, lifetime}} or {\"select\": {found, ended, late}} with each band [lo, hi]"
+pure func num(kvs: [KV], k: string) -> Option[float] = match field(kvs, k) { Some(JNumber(x)) => Some(x), _ => None }
+pure func dialOf(j: Json) -> Result[UniverseRule, Refusal] =
+  match shape(j, "universe_rule dial", ["life", "minds", "tech", "lifetime"]) {
+    Err(r) => Err(r),
+    Ok(kvs) => (match (num(kvs, "life"), num(kvs, "minds"), num(kvs, "tech"), num(kvs, "lifetime")) {
+      (Some(a), Some(b), Some(c), Some(d)) => Ok(Dial({ life: a, minds: b, tech: c, lifetime: d })),
+      _ => Err(BadValue("universe_rule", ruleWant()))
+    })
+  }
+pure func selectOf(j: Json) -> Result[UniverseRule, Refusal] =
+  match shape(j, "universe_rule select", ["found", "ended", "late"]) {
+    Err(r) => Err(r),
+    Ok(kvs) => (match (bandOf(field(kvs, "found")), bandOf(field(kvs, "ended")), bandOf(field(kvs, "late"))) {
+      (Some(a), Some(b), Some(c)) => Ok(Select({ found: a, ended: b, late: c })),
+      _ => Err(BadValue("universe_rule", ruleWant()))
+    })
+  }
+pure func ruleOf(j: Json) -> Result[UniverseRule, Refusal] =
+  match j {
+    JString(s) => if s == "pure" then Ok(Pure) else Err(BadValue("universe_rule", ruleWant())),
+    JObject([e]) => if e.key == "dial" then dialOf(e.value) else if e.key == "select" then selectOf(e.value) else Err(BadValue("universe_rule", ruleWant())),
+    _ => Err(BadValue("universe_rule", ruleWant()))
+  }
+pure func priorOf(j: Json) -> Result[LifetimePrior, Refusal] =
+  match j {
+    JString(s) => if s == "canon" then Ok(Canon) else if s == "sandberg-as-printed" then Ok(SandbergAsPrinted) else Err(BadValue("lifetime_prior", "\"canon\" or \"sandberg-as-printed\"")),
+    _ => Err(BadValue("lifetime_prior", "\"canon\" or \"sandberg-as-printed\""))
+  }
+pure func classesWant() -> string = "a list of radar, tv, beacon, structure"
+@allow_empty_ok("the end of the list; an empty class list is then refused by check as BadValue")
+pure func classListOf(js0: [Json]) -> Result[[SignatureClass], Refusal] =
+  match js0 {
+    [] => Ok([]),
+    JString(s) :: rest => (match classOf(s) {
+      None => Err(BadValue("signature_classes", classesWant())),
+      Some(c) => (match classListOf(rest) { Err(r) => Err(r), Ok(cs) => Ok(c :: cs) })
+    }),
+    _ => Err(BadValue("signature_classes", classesWant()))
+  }
+pure func classesOf(j: Json) -> Result[[SignatureClass], Refusal] = match j { JArray(xs) => classListOf(xs), _ => Err(BadValue("signature_classes", classesWant())) }
+pure func boolOf(j: Json, name: string) -> Result[bool, Refusal] = match j { JBool(b) => Ok(b), _ => Err(BadValue(name, "true or false")) }
+
+-- The value of a switch that `namesRefusal` has shown to be present.
+pure func valueOf(es: [Entry], name: string) -> Json = match entryNamed(es, name) { Some(e) => e.value, None => jn() }
+pure func settingsOf(es: [Entry]) -> Result[Settings, Refusal] =
+  match numberOf(valueOf(es, "earth_clock_yr"), "earth_clock_yr", "a number of years above 0") {
+    Err(r) => Err(r),
+    Ok(clock) => (match numberOf(valueOf(es, "reach_ly"), "reach_ly", "a number of light-years above 0") {
+      Err(r) => Err(r),
+      Ok(reach) => (match ruleOf(valueOf(es, "universe_rule")) {
+        Err(r) => Err(r),
+        Ok(rule) => (match priorOf(valueOf(es, "lifetime_prior")) {
+          Err(r) => Err(r),
+          Ok(prior) => (match classesOf(valueOf(es, "signature_classes")) {
+            Err(r) => Err(r),
+            Ok(classes) => (match boolOf(valueOf(es, "quiet_minds"), "quiet_minds") {
+              Err(r) => Err(r),
+              Ok(quiet) => Ok({ earthClockYr: clock, reachLy: reach, rule: rule, lifetimePrior: prior, classes: classes, quietMinds: quiet })
+            })
+          })
+        })
+      })
+    })
+  }
+pure func notesOf(es: [Entry]) -> [Departure] =
+  match es { [] => [], e :: rest => (match e.note { Some(d) => d :: notesOf(rest), None => notesOf(rest) }) }
+pure func versionOf(kvs: [KV]) -> Result[int, Refusal] =
+  match field(kvs, "version") {
+    None => Err(MissingKey("the scenario", "version")),
+    Some(JNumber(x)) => if x - x == 0.0 && floor(x) == x && x >= 1.0 && x <= 1000000.0 then Ok(floatToInt(x)) else Err(BadVersion),
+    Some(_) => Err(BadVersion)
+  }
+
+pure func baselineOf(kvs: [KV]) -> Result[BaselineRef, Refusal] =
+  match field(kvs, "baseline") {
+    None => Err(MissingKey("the scenario", "baseline")),
+    Some(j) => (match shape(j, "the baseline reference", ["registry", "departures"]) {
+      Err(r) => Err(r),
+      Ok(bs) => (match needString(bs, "the baseline reference", "registry") {
+        Err(r) => Err(r),
+        Ok(registry) => (match needString(bs, "the baseline reference", "departures") { Err(r) => Err(r), Ok(table) => Ok({ registry: registry, departures: table }) })
+      })
+    })
+  }
+
+pure func scenarioOf(j: Json) -> Result[Scenario, Refusal] =
+  match shape(j, "the scenario", ["format", "id", "version", "baseline", "summary", "switches"]) {
+    Err(r) => Err(r),
+    Ok(kvs) => (match needString(kvs, "the scenario", "format") {
+      Err(r) => Err(r),
+      Ok(format) => if format != formatId() then Err(WrongFormat(format)) else (match needString(kvs, "the scenario", "id") {
+        Err(r) => Err(r),
+        Ok(id) => (match versionOf(kvs) {
+          Err(r) => Err(r),
+          Ok(version) => (match needString(kvs, "the scenario", "summary") {
+            Err(r) => Err(r),
+            Ok(summary) => (match field(kvs, "switches") {
+              None => Err(MissingKey("the scenario", "switches")),
+              Some(JArray(items)) => (match entriesOf(items) {
+                Err(r) => Err(r),
+                Ok(es) => (match namesRefusal(es) {
+                  Some(r) => Err(r),
+                  None => (match settingsOf(es) {
+                    Err(r) => Err(r),
+                    Ok(settings) => (match baselineOf(kvs) {
+                      Err(r) => Err(r),
+                      Ok(base) => check({ id: id, version: version, baseline: base, summary: summary, settings: settings, departures: notesOf(es) })
+                    })
+                  })
+                })
+              }),
+              Some(_) => Err(WrongType("the scenario", "switches"))
+            })
+          })
+        })
+      })
+    })
+  }
+
+-- A scenario file's text to a checked Scenario, or the reason it is refused.
+export pure func decodeScenario(text: string) -> Result[Scenario, Refusal] =
+  match decode(text) { Err(m) => Err(NotJson(m)), Ok(j) => scenarioOf(j) }
+
+-- The file `<id>.json` must hold the scenario called <id>.
+export pure func decodeNamed(id: string, text: string) -> Result[Scenario, Refusal] =
+  match decodeScenario(text) { Err(r) => Err(r), Ok(sc) => if sc.id == id then Ok(sc) else Err(BadId(sc.id)) }

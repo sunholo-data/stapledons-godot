@@ -1,0 +1,130 @@
+{
+ "schema": "lab-baseline-departures-1",
+ "what": "A mirror of the registry baseline's own deliberate departures from the literature, row for row and word for word. The lab prints it ahead of every scenario's own departures, so 'no departures' is never read as 'the literature'. Not edited by hand: regenerate from the source.",
+ "registry_baseline": "baseline-2026.11",
+ "reference": "stapledons-design physics/life-and-worlds.md §7 @ 0038428f1eed",
+ "source": {
+  "repo": "sunholo-data/stapledons-design",
+  "path": "physics/life-and-worlds.md",
+  "section": "7. Deliberate departures from the literature",
+  "commit": "0038428f1eed259969efc5fdd6a91d30f52a10cf",
+  "branch": "spec/universe-lab-rows",
+  "pull_request": 64,
+  "table_rows_sha256": "1c28f61d50e7689a0dc5ab1964b7d0dbe20d1c5d29640cb593e9e3effc9f7776",
+  "status": "MIRROR OF AN UNMERGED PULL REQUEST. Re-pin `reference` and `commit` to the merge commit when stapledons-design #64 lands (the scenario files name the same reference, so their digests change then), and move the check to lore-import."
+ },
+ "departures": [
+  {
+   "row": 1,
+   "baseline": "Lifetime prior stops at 10⁸ yr (LW-40)",
+   "literature": "Sandberg Table 1: 10¹⁰ yr (LW-41)",
+   "size": "The prior's mean falls from 5.43 × 10⁸ to 7.24 × 10⁶ yr (LW-46): 1.88 dex",
+   "reason": "A civilisation that outlasts the 5 Gyr window (LW-11) never ends in play, and the count formula alive = everTech × L / window stops being a share once L nears the window. Ruled: D-144; kept as OQ2 of R3-UNIVERSE-LAB (D-156)",
+   "kind": "Modelling and gameplay"
+  },
+  {
+   "row": 2,
+   "baseline": "Lifetime median 10⁵ yr (LW-10)",
+   "literature": "10⁶ yr, the median of Sandberg's range",
+   "size": "1.00 dex",
+   "reason": "It follows from row 1: the median of a log-uniform range is the geometric middle of its ends",
+   "kind": "Modelling"
+  },
+  {
+   "row": 3,
+   "baseline": "fLife is the chance that a habitable-zone world has a biosphere",
+   "literature": "Sandberg §3.1.1: a rate model for \"evolutionarily competent life\"",
+   "size": "None on the number; it changes what the number means",
+   "reason": "The game needs a state a telescope can read (a biosphere), not a rate",
+   "kind": "Gameplay"
+  },
+  {
+   "row": 4,
+   "baseline": "fTech is \"builds technology\"; L is the technological lifetime",
+   "literature": "Sandberg §1: f_c is \"detectable/contactable\"; L is the longevity \"of such detectable civilizations\"",
+   "size": "None, if §6 is obeyed. A second \"detectable\" share would count it twice (the old one in ten: 1 dex)",
+   "reason": "The game models detection with instruments, so \"detectable\" must not be a hidden extra factor",
+   "kind": "Modelling"
+  },
+  {
+   "row": 5,
+   "baseline": "Stars and planets come from measurements: density LW-1, occurrence LW-52 = 0.20 habitable-zone worlds per star",
+   "literature": "Sandberg Table 1: R★, f_p and n_e are log-uniform (1–100 per year; 0.1–1; 0.1–1). The medians give f_p × n_e = 0.10",
+   "size": "+0.30 dex against those medians",
+   "reason": "The map is made of real stars. The count is over space near the Sun, not a Galactic birth rate",
+   "kind": "Modelling"
+  },
+  {
+   "row": 6,
+   "baseline": "M-dwarf habitable zones count in full: 0.12 of the 0.20 (LW-4 × LW-6)",
+   "literature": "Disputed. Snyder-Beattie et al. 2021 predict M-dwarf planets are uninhabitable; Shields et al. 2016 review the open questions (both read at the abstract only, in seti-factors §3.6–§3.7)",
+   "size": "0.40 dex fewer worlds if they are excluded",
+   "reason": "Ruled: life feature decision 3. Each such world is labelled \"habitability debated\"",
+   "kind": "Gameplay, labelled"
+  },
+  {
+   "row": 7,
+   "baseline": "Onsets are uniform over 5 Gyr centred on now; planets have no ages (LW-11)",
+   "literature": "Star formation is not flat (Mor et al. 2019); most Earth-like planets are older than Earth (Lineweaver 2001). Both read at the abstract only",
+   "size": "About ±0.5 dex, sign unknown: an estimate, not a calculation",
+   "reason": "One keyed draw per world gives the same history in every preset. A planet-age model is a named follow-up (R3-UNIVERSE-LAB UL-E)",
+   "kind": "Modelling"
+  },
+  {
+   "row": 8,
+   "baseline": "One technological lineage per planet, ever",
+   "literature": "No source measures this. Wright 2018 and Schmidt & Frank 2019 treat an earlier species as an open question",
+   "size": "None at the prior medians (a second lineage is a 10⁻⁵ event). It caps the dial at 2.70 dex in the fractions",
+   "reason": "The exact propagation law assumes one lineage. Successive lineages are ruled in as a later option (seti-factors §5.8, ruling 2)",
+   "kind": "Modelling"
+  },
+  {
+   "row": 9,
+   "baseline": "Every civilisation in one universe has the same lifetime L",
+   "literature": "Lifetimes are a population; what is detected is length-biased (Kipping, Frank & Scharf 2020, abstract only)",
+   "size": "None on counts at equal mean; it changes who is met",
+   "reason": "The dial sets one L. A spread is a named follow-up (UL-B)",
+   "kind": "Modelling"
+  },
+  {
+   "row": 10,
+   "baseline": "No settlement between stars",
+   "literature": "Hart 1975, Newman & Sagan 1981, Carroll-Nellenback et al. 2019: a long-lived civilisation spreads (seti-factors §3.3)",
+   "size": "−0.6 to −1.0 dex of luck needed, if 3 to 9 daughter worlds each",
+   "reason": "Ruled out of the default (seti-factors §5.8, ruling 4)",
+   "kind": "Gameplay"
+  },
+  {
+   "row": 11,
+   "baseline": "Ending shares 0.75 / 0.15 / 0.10 (LW-34 to LW-36); remnant traces last 10³ to 10⁷ yr (LW-37, LW-38); the complex-life split (LW-12)",
+   "literature": "No source gives any of these",
+   "size": "Remnant counts scale with LW-50",
+   "reason": "The game needs ended states and ruins. D-144",
+   "kind": "Gameplay (Design values)"
+  },
+  {
+   "row": 12,
+   "baseline": "Density 0.079 pc⁻³, a raw count (LW-1)",
+   "literature": "The same paper's corrected density is 0.081 ± 0.003",
+   "size": "−0.011 dex",
+   "reason": "Kept from the approved reference; inside the paper's error",
+   "kind": "Modelling"
+  },
+  {
+   "row": 13,
+   "baseline": "A local thin disc only: no radial gradient, no thick disc or halo (LW-2)",
+   "literature": "Jurić et al. 2008 fit two discs and a halo",
+   "size": "Small inside 3000 ly; not valid toward the Galactic centre",
+   "reason": "The play area is local. The pilgrim to Sgr A* waits for the model galaxy",
+   "kind": "Modelling"
+  },
+  {
+   "row": 14,
+   "baseline": "Type shares 0.20 / 0.75 / 0.05 (LW-3, LW-4)",
+   "literature": "Reylé et al. 2021 count objects within 10 pc; the 0.75 is not a measured share for this model's denominator",
+   "size": "Not sized; LW-4 stays **unverified**",
+   "reason": "Kept as the approved nominal value",
+   "kind": "Modelling"
+  }
+ ]
+}

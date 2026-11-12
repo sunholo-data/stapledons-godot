@@ -1,0 +1,88 @@
+module stapledons/sim/tools/lab_scenarios
+
+-- R3-UNIVERSE-LAB UL3a (`make lab-scenarios`, part of `make lab-test`). Arguments: the mirror
+-- of the registry baseline's departures (data/lab/baseline_departures.json), then each
+-- scenario file (the make target lists data/lab/scenarios/*.json).
+--
+-- It prints the registry baseline's OWN deliberate departures from the literature first, one
+-- line each, so a scenario with "no departures" is never read as "the literature":
+--   registry <version>: <n> deliberate departures from the literature (<reference>)
+--   registry departure <row>: <the baseline> -- <the reason>
+-- then one line per scenario, read through sim/lab_scenario.ail:
+--   <id>@<version> sha256=<digest of the canonical text> departures=<n> [<switch>, ...]
+-- A file that is refused prints `REFUSED <path>: <why>` and the run exits 1. So does a
+-- scenario that names another departures table than the mirror's, a mirror whose registry
+-- version is not the module's, and an empty list. The file `<id>.json` must hold the scenario
+-- called <id>. This is the tool shell: the only I/O for the scenario format is here. Like
+-- the other file tools it runs without --strict-bytecode (std/fs is not on the strict VM in
+-- v0.56.1); the decoder it calls is pure and is held strict by lab-parity.
+import std/io (println, exit)
+import std/fs (readFile)
+import std/json (Json, decode, getString, getArray, getInt)
+import std/list (map, length, foldlE, forEachE)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (split, join, endsWith, substring, length as strLength)
+import stapledons/sim/lab_scenario (Scenario, decodeNamed, digest, refusalText, registryBaseline)
+
+type Row = { row: int, baseline: string, reason: string }
+type Mirror = { registry: string, reference: string, status: string, rows: [Row] }
+
+pure func rowOf(j: Json) -> Option[Row] =
+  match (getInt(j, "row"), getString(j, "baseline"), getString(j, "reason")) {
+    (Some(n), Some(b), Some(r)) => if strLength(b) > 0 && strLength(r) > 0 then Some({ row: n, baseline: b, reason: r }) else None,
+    _ => None
+  }
+pure func rowsOf(js0: [Json]) -> Option[[Row]] =
+  match js0 { [] => Some([]), j :: rest => (match (rowOf(j), rowsOf(rest)) { (Some(r), Some(rs)) => Some(r :: rs), _ => None }) }
+pure func statusOf(j: Json) -> string = match decodeSource(j) { Some(s) => s, None => "" }
+pure func decodeSource(j: Json) -> Option[string] = match j { JObject(kvs) => sourceStatus(kvs), _ => None }
+pure func sourceStatus(kvs: [{ key: string, value: Json }]) -> Option[string] =
+  match kvs { [] => None, e :: rest => if e.key == "source" then getString(e.value, "status") else sourceStatus(rest) }
+pure func mirrorOf(text: string) -> Result[Mirror, string] =
+  match decode(text) {
+    Err(m) => Err("not JSON: ${m}"),
+    Ok(j) => (match (getString(j, "registry_baseline"), getString(j, "reference"), getArray(j, "departures")) {
+      (Some(reg), Some(reference), Some(items)) => (match rowsOf(items) {
+        Some(rows) =>
+          if length(rows) == 0 then Err("it lists no departures")
+          else if reg != registryBaseline() then Err("its registry baseline \"${reg}\" is not ${registryBaseline()}")
+          else Ok({ registry: reg, reference: reference, status: statusOf(j), rows: rows }),
+        None => Err("a departure has no row, baseline or reason")
+      }),
+      _ => Err("no registry_baseline, reference or departures")
+    })
+  }
+
+pure func lastOf(xs: [string], acc: string) -> string = match xs { [] => acc, x :: rest => lastOf(rest, x) }
+pure func stemOf(path: string) -> string {
+  let file = lastOf(split(path, "/"), "");
+  if endsWith(file, ".json") then substring(file, 0, strLength(file) - 5) else file
+}
+pure func line(sc: Scenario) -> string =
+  "${sc.id}@${show(sc.version)} sha256=${digest(sc)} departures=${show(length(sc.departures))} [${join(", ", map(\d. d.name, sc.departures))}]"
+
+func one(m: Mirror, bad: int, path: string) -> int ! {IO, FS} =
+  match decodeNamed(stemOf(path), readFile(path)) {
+    Ok(sc) =>
+      if sc.baseline.departures != m.reference then {
+        println("REFUSED ${path}: it names the departures table \"${sc.baseline.departures}\", not the mirror's \"${m.reference}\"");
+        bad + 1
+      } else { println(line(sc)); bad },
+    Err(r) => { println("REFUSED ${path}: ${refusalText(r)}"); bad + 1 }
+  }
+
+export func main(paths: [string]) -> () ! {IO, FS} =
+  match paths {
+    [] => { println("REFUSED: no departures mirror and no scenario files"); exit(1) },
+    mirrorPath :: scenarios => (match mirrorOf(readFile(mirrorPath)) {
+      Err(why) => { println("REFUSED ${mirrorPath}: ${why}"); exit(1) },
+      Ok(m) => {
+        println("registry ${m.registry}: ${show(length(m.rows))} deliberate departures from the literature (${m.reference})");
+        forEachE(\r. println("registry departure ${show(r.row)}: ${r.baseline} -- ${r.reason}"), m.rows);
+        let bad = foldlE(\acc p. one(m, acc, p), 0, scenarios);
+        if length(scenarios) == 0 then { println("REFUSED: no scenario files"); exit(1) }
+        else if bad > 0 then exit(1) else ()
+      }
+    })
+  }
