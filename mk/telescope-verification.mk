@@ -12,3 +12,8 @@ telescope-golden:
 	@$(SCRIPT_GATE) telescope-golden $(SCRATCH)/observations/golden.log 600 '^telescope-golden: [1-9][0-9]* frames, 0 failures$$' -- $(GODOT_SIM) $(AUDIO_OFF) --path . --script tools/telescope_verification.gd -- golden
 test: telescope-verification-test
 golden: telescope-golden
+
+.PHONY: telescope-mask-test
+telescope-mask-test:
+	@$(SCRIPT_GATE) telescope-mask-test $(SCRATCH)/observations/mask-test.log 60 '^telescope-mask-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_telescope_mask.gd
+test: telescope-mask-test

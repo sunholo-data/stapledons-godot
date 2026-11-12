@@ -23,6 +23,7 @@ var view_fov_deg := 78.0
 var star_id := ""
 var requested_star_id := ""
 var magnification := 1.0
+var field_cropped := false
 ## 1 "whole disc" (the disc fills FILL of the panel), 2 "close" (cells CELL_PX across, or as close as
 ## N_MAX and MAX_HALF_RAD allow; the panel then shows the disc's centre).
 var level := 1
@@ -109,6 +110,7 @@ func pick_star(world: Dictionary) -> String:
 ## Draw the star: copy the sky's material, aim the camera, set the magnification and the gate.
 ## Returns false when there is no star disc to show.
 func refresh(world: Dictionary) -> bool:
+	field_cropped = false
 	if sv == null:
 		return false
 	star_id = pick_star(world)
@@ -131,6 +133,7 @@ func refresh(world: Dictionary) -> bool:
 	var cells := 2.0 * float(b.radius_km) / float(surface0.cell_km) if not surface0.is_empty() else 0.0
 	var sc := scale_for(ang, level, cells, _vp.size.y)
 	var half: float = sc.half
+	field_cropped = half > deg_to_rad(FOV_DEG) * 0.5
 	magnification = sc.n
 	# Magnify by drawing the same star at N times its angular radius (the sky's material; surface
 	# brightness, colour and Doppler are unchanged, as through a real telescope)
@@ -157,8 +160,13 @@ func refresh(world: Dictionary) -> bool:
 			_mat.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
 			_mat.set_shader_parameter("surf_norm", sv.surface_norm(star_id + "@telescope", u.params, u.view_star, sv.surface_norm_wait).n)
 	_disc.visible = true
-	_label.text = "telescope ×%s %s · %s" % [_fmt(magnification), "whole disc" if level == 1 else "close", str(b.get("name", star_id))]
+	_label.text = "telescope ×%s %s · %s" % [_fmt(magnification), field_label(half, level), str(b.get("name", star_id))]
 	return true
+
+
+static func field_label(half: float, lvl: int) -> String:
+	if half > deg_to_rad(FOV_DEG) * 0.5: return "native field crop"
+	return "whole disc" if lvl == 1 else "close"
 
 
 ## The magnified disc's angular radius in the panel and the true magnification N for a star of

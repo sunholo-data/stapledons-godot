@@ -29,13 +29,20 @@ func run() -> void:
 		panel.select_plate("m81-outreach")
 		check(panel.reference.is_empty(), "browsing another plate clears unrelated source identity")
 		check(panel.point_candidates(Vector2.ZERO).is_empty(), "unregistered image cannot identify objects")
+		var sources_toggle: CheckButton = panel.find_child("SourcesToggle", true, false)
+		sources_toggle.button_pressed = true
+		check(panel.detail.text.contains("CC BY-SA 3.0 IGO") and panel.detail.text.contains(str(panel.plate.source_url)), "field Sources control reveals actual licence and image URL")
+		sources_toggle.button_pressed = false
 		panel.select_plate("abell3128-vis")
 		var source_before: String = panel.source_line.text
 		var pins: Dictionary = panel.tile_index.duplicate(true)
 		for beta in [0., .5, .9, .99, .999]:
 			panel.update_world({"ship":{"beta":beta,"pos":{"x":1e9,"y":2e9,"z":3e9}},"gr":{"active":true}})
 			check(panel.tile_index == pins and panel.source_line.text == source_before, "archive pins/date invariant at beta %s and GR" % beta)
-		panel.set_mode("live"); panel.set_mode("archive")
+		panel.set_mode("live")
+		await process_frame
+		check(panel.image_area.get_global_rect().grow(1.).encloses(panel.live_view.get_global_rect()), "live telescope fits inside available image area")
+		panel.set_mode("archive")
 		check(panel.source_line.text == source_before, "returning to archive restores dated Earth observation label")
 		var at_point: Vector2 = panel._origin() + preload("res://physics/observation_projection.gd").display_point(panel.plate, index.object(id)) * panel._scale()
 		check(panel.point_candidates(at_point).any(func(row): return row.id == id), "registered picking reaches exact catalogue source")
@@ -64,6 +71,17 @@ func run() -> void:
 		check(panel.session_pack_id == index.version and panel.index == index, "observation pack stays pinned for this session")
 		panel.select_plate("m81-outreach"); panel.select_object(id)
 		check(panel.plate.id == "abell3128-vis", "selecting exact source restores its associated image")
+		panel.show_details = true; panel.show_sources = true; panel._refresh_details()
+		await process_frame
+		panel.detail.get_v_scroll_bar().value = panel.detail.get_v_scroll_bar().max_value
+		panel.select_object(str(index.objects.keys()[1]))
+		await process_frame
+		check(panel.detail.get_v_scroll_bar().value <= 0.1, "opening another source starts at its primary facts")
+		panel.cache.close(); panel.cache.activate(index.version + ":failure-fixture")
+		for level: Dictionary in panel.tile_index.levels:
+			for tile: Dictionary in level.tiles: tile.path = "user://labelled-missing-image-fixture.png"
+		panel._update_tiles(); panel._process(0.)
+		check(panel.state_line.text.contains("unavailable") and panel.state_line.text.contains("missing"), "missing tile data has a visible unavailable state")
 		panel.close_panel()
 		check(not panel.visible and not panel.cache.active, "closed panel stops tile decode lifecycle")
 	panel.queue_free()

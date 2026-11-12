@@ -1,6 +1,6 @@
 # R3-TELESCOPE: the existing map, a visible telescope and one object inspector
 
-**Status:** Planned design, 2026-11-12. Mark requested an investigation of Euclid DR1-Foundation, proposed a telescope console, then directed: “we already have a 3d map … lets add the telescope and object inspection enhancements”; he confirmed this is a non-commercial game. This records the feature direction; implementation follows the separate approved sprint plan.
+**Status:** Approved implementation in progress, 2026-11-12. Mark requested an investigation of Euclid DR1-Foundation, proposed a telescope console, then directed: “we already have a 3d map … lets add the telescope and object inspection enhancements”; he confirmed this is a non-commercial game and explicitly approved the sprint. [Implementation evidence](telescope-survey-inspection-evidence.md). Independent evaluation and combined dev-build visual acceptance remain required before landing.
 **Release:** r3 · **Milestone:** new; the roadmap has no dedicated telescope-browser row yet. Extends R2-STAR-SURFACES D-111 and the existing map/inspection paths.
 **Priority:** P2. Makes astronomical objects worth looking at from aboard ship; independent of R1 completion.
 **Implements:**

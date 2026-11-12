@@ -21,13 +21,13 @@ The offline source decoder accepts only bounded, uncompressed primary float32 FI
 | Registered footprint | Native 10/0; real and strict pure parity; map 26/0 including draw callback and independent WCS corners |
 | Tile cache | 36/0, including corruption, gutters/seams, cancellation/version change, budgets and `.bin` fallback |
 | Shared facts | 32/0; explicit provenance and unavailable values |
-| Telescope UI | 22/0 including real keyboard/pinch/pan dispatch, exact source/image association, invariant archive metadata and session pinning |
-| Live targeting | 7/0; explicit missing/hidden target never falls back |
-| Journey boundary | Planned and committed real-sim journeys: no observation decision intents, target retained, clocks advance |
-| Chair integration | Actual projected Telescope click; Esc/pad Back and screen-switch cache/viewport lifecycle; one panel/callback |
+| Telescope UI | 26/0 including real keyboard/pinch/pan dispatch, exact source/image association, invariant archive metadata, session pinning, live viewport fit, sources/licence disclosure and scroll reset |
+| Live targeting | 10/0; explicit missing/hidden target never falls back; native field crops labelled honestly |
+| Journey boundary | 37/0. Planned and committed real-sim journeys: no observation decision intents, target retained, clocks advance; observation owns focus and hides underlying route controls |
+| Chair integration | 54/0: actual projected Telescope click; Esc/pad Back and screen-switch cache/viewport lifecycle; one panel/callback |
 | Physics regression | 1080/0 after importing main's new classes |
 | Finder regression | Existing ship-star-identification 60/0; existing chair geometry 101/0 |
-| Export filter audit | 142 runtime path literals, 0 failures (before final main refresh; rerun before review) |
+| Export filter audit | 143 runtime path literals, 0 failures |
 | Offline PCK | Minimal actual PCK opens all 176 production tiles from `.png.bin`; raw manifest/index/tile paths absent. Missing bundled manifest negative control fails. 2/0 |
 
 The PCK probe verifies the observation bundle/cache independently. It does **not** substitute for a complete macOS app or live-renderer export test.
@@ -36,14 +36,18 @@ The PCK probe verifies the observation bundle/cache independently. It does **not
 
 The four-plate tile pack is 60,356,380 bytes, below 100 MiB. The cache stores RGBA8 images and non-mipped textures with 64 MiB CPU and 128 MiB texture-payload caps. Texture counts are payload estimates, not measurements of driver VRAM overhead.
 
-The headless benchmark exercises 32 real-pack zoom/pan states and 1,024 individual warmed calls. On revision `42230383`, added warmed CPU p95 was 0.134 ms; closed p95 0.001 ms; peak resident CPU and texture payload were each 15,303,488 bytes. Closing leaves zero cache bytes and zero extra decodes. At most one tile decodes per pump. Cold setup was 640.641 ms and cold tile-batch p95 360.397 ms under load, reported separately rather than hidden in warmed timing. These are CPU timings, not GPU frame-time claims.
+The final headless benchmark exercises 32 real-pack zoom/pan states and 1,024 individual warmed calls, including the panel's actual process/status work. Warmed CPU p95 was 0.216 ms; closed p95 0.001 ms; peak resident CPU and texture payload were each 15,303,488 bytes. Closing leaves zero cache bytes and zero extra decodes. At most one tile decodes per pump. Cold setup was 110.290 ms and cold tile-batch p95 42.966 ms, reported separately rather than hidden in warmed timing. Earlier loaded-host samples were substantially slower (360.397 ms cold batch p95). These are CPU timings, not GPU frame-time claims.
 
-The Studio health snapshot showed GPU 75%, CPU 70.1%, with an active Ollama job. New GPU cases and captures were prepared but not run while it was occupied, following CLAUDE.md. `make telescope-capture` covers 960×540, 1280×720 and 2560×1440, actual ship/Navigation/chair/popup contexts, Aldebaran whole/close, registered picking, survey context, credits, missing imagery and resolution limits. `make telescope-golden` adds archive SR/GR byte invariance and live physical-uniform/centroid checks. All rendered output still needs to be generated, opened and accepted.
+The initial Studio health snapshot showed GPU 75%, CPU 70.1%, with an active Ollama job; GPU work was deferred. Once it became free, the focused capture rendered 40 frames at 960×540, 1280×720 and 2560×1440: actual ship/Navigation/chair/popup contexts, live Sun and Aldebaran, registered picking, survey context, credits, missing imagery and resolution limits. All five archive SR/GR image comparisons passed. The actual unclipped Sun viewport has a black rim and 0.000581-pixel CPU/GPU centroid error; 39 physical uniforms match. Eight independent image-mask controls reject blank, all-lit, edge-clipped and displaced cases. Aldebaran at the actual close stop exceeds the fixed 14° field, so its centroid is deliberately not assessed and the panel labels the native crop. No demagnification or exposure-model change was introduced.
+
+Visual review opened all 40 initial frames and caught panel clipping, stale scroll position and arrival-presentation timing. These are corrected; the final stable-source rerender and complete dev-build review remain pending. Raw oracle viewport validation alone is explicitly insufficient to claim that the composed UI fits.
+
+The public immutable observation cache has 193 hash-addressed objects; 12 anonymous downloads verified source/image/index/tile and provenance bytes. Publisher negative controls pass 28/0. No latest alias is overwritten.
 
 ## Remaining review gates
 
-- Resolve the final dependency lock against current main, preserving its new worlds propagation API through a dependency-only patch.
-- Final focused regressions and GitHub fast tier on the review head.
+- Current main `b6c93c11` is integrated. The final lock uses celestial 0.7.0 and worlds 0.2.1; the latter's 19 AILANG files and 78 interfaces are identical to main's worlds 0.2.0, with 65 native tests passing.
+- Final stable-source rendered evidence and GitHub fast tier on the review head (checkpoint `04cdd5e6` already passed).
 - Independent cross-family evaluation under `sprint-evaluator`.
 - Complete combined macOS review build, opened rendered evidence and Mark's visual verdict.
 - Only after those gates: land, move design/sprint to implemented, and update the canon/roadmap. The sprint remains in progress until then.

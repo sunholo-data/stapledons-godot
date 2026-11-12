@@ -44,6 +44,7 @@ var observation_selection: Dictionary = {}
 var observation_index := ObservationIndex.new()
 var observation_star_info := ObservationStarInfo.new()
 var observation_panel: Control
+var _map_canvas: CanvasLayer
 var observer_world: Dictionary = {}
 var observer_system_view
 var telescope_button := Button.new()
@@ -256,6 +257,7 @@ func _build() -> void:
 	camera.current = true
 	add_child(_points)
 	var layer := CanvasLayer.new()
+	_map_canvas = layer
 	add_child(layer)
 	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -430,6 +432,7 @@ func _build() -> void:
 	add_child(observer_layer)
 	observation_panel = TelescopePanel.new()
 	observer_layer.add_child(observation_panel)
+	observation_panel.closed.connect(func(): _map_canvas.show())
 	observation_panel.open_map.connect(func(reference):
 		focus_object(reference, true)
 		observation_panel.close_panel())
@@ -671,7 +674,9 @@ func open_observation(reference: Dictionary = {}, preferred := "") -> bool:
 	if not chosen.is_empty() and not focus_object(chosen): return false
 	close_commit_dialog() # Cancel only the armed UI gesture, never the route or sim intent.
 	observation_panel.configure(observation_index, observation_star_info, observer_world if not observer_world.is_empty() else (sim.world if sim != null else {}), observer_system_view)
-	return observation_panel.open_reference(chosen, preferred)
+	var opened: bool = observation_panel.open_reference(chosen, preferred)
+	if opened: _map_canvas.hide()
+	return opened
 
 
 func close_observation() -> bool:
@@ -700,6 +705,7 @@ func set_survey_context(on: bool) -> void:
 	elif not _local_camera.is_empty():
 		pivot = _local_camera.pivot; yaw = _local_camera.yaw; pitch = _local_camera.pitch; dist = _local_camera.dist
 	_update_camera()
+	if on and not survey_layer.fields.is_empty(): _frame_survey(str(survey_layer.fields.keys().front()))
 	_overlay.queue_redraw()
 	if sim != null: refresh()
 

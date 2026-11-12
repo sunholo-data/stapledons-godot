@@ -43,6 +43,13 @@ func _init() -> void:
 	theme = StapledonTheme.theme()
 	theme_type_variation = "HUDSheet"
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	# Keep the established ink border, with opaque backing so route labels never
+	# show through the observation image/facts sheet.
+	var backing := ColorRect.new()
+	backing.color = StapledonTheme.NIGHT
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backing.show_behind_parent = true
+	add_child(backing)
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_" + side, 14)
 	add_child(margin)
@@ -107,6 +114,7 @@ func _init() -> void:
 	for spec in [["Details", "details"], ["Sources", "sources"]]:
 		var toggle := CheckButton.new()
 		toggle.text = spec[0]
+		toggle.name = str(spec[0]) + "Toggle"
 		toggle.toggled.connect(func(on):
 			if spec[1] == "details": show_details = on
 			else: show_sources = on
@@ -126,6 +134,7 @@ func _init() -> void:
 	var disc: Control = live_view.find_child("StellarDisc", true, false)
 	if disc != null:
 		disc.custom_minimum_size = Vector2(180, 150)
+		disc.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		disc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		disc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		disc.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -173,6 +182,8 @@ func open_reference(ref: Dictionary, preferred := "") -> bool:
 	var body: Dictionary = Facts.live_body(reference, world, catalogue)
 	set_mode(preferred if preferred in ["archive", "live"] else ("live" if not body.is_empty() and body.get("kind") == "star" else "archive"))
 	_refresh_details()
+	detail.scroll_to_line(0)
+	image_area.grab_focus()
 	return true
 
 func set_mode(value: String) -> void:
@@ -195,6 +206,7 @@ func _refresh_live() -> void:
 	else: live_view._label.text = "No live resolved view of this object"
 	source_line.text = "Live ship-frame stellar model · true angular magnification · surface appearance modelled"
 	state_line.text = "T: whole disc / close · recorded survey images are in Survey archive"
+	if live_view.field_cropped: state_line.text = "Native field crop · star extends beyond the 14° telescope field · T: close / off"
 
 func select_plate(id: String) -> void:
 	if id.is_empty(): return
@@ -202,6 +214,7 @@ func select_plate(id: String) -> void:
 	_load_plate(id)
 	set_mode("archive")
 	_refresh_details()
+	detail.scroll_to_line(0)
 
 static func _read_pinned(meta: Dictionary) -> Dictionary:
 	var path := str(meta.get("path", ""))
@@ -229,7 +242,15 @@ func _archive_source_line() -> void:
 
 func _refresh_details() -> void:
 	if reference.is_empty():
-		detail.text = "%s\n\n%s\n\n%s\n\n%s" % [plate.get("name", "Choose an object or a survey field"), "Registered source coordinates" if plate.get("registered", false) else "Unregistered image · depth not shown", plate.get("processing", "No associated survey image for this object"), plate.get("credit", "")]
+		var lines: Array[String] = [str(plate.get("name", "Choose an object or a survey field")), "Registered source coordinates" if plate.get("registered", false) else "Unregistered image · depth not shown", str(plate.get("credit", ""))]
+		if show_details: lines.append(str(plate.get("processing", "No associated survey image for this object")))
+		if show_sources and not plate.is_empty():
+			var licence := str(plate.get("licence", "unavailable"))
+			lines.append("Source\n" + str(plate.get("source_url", "unavailable")))
+			lines.append("Licence\n" + licence)
+			if licence == "CC BY-NC 3.0 IGO": lines.append("https://creativecommons.org/licenses/by-nc/3.0/igo/")
+			elif licence == "CC BY-SA 3.0 IGO": lines.append("https://creativecommons.org/licenses/by-sa/3.0/igo/")
+		detail.text = "\n\n".join(lines)
 	else:
 		var facts: Dictionary = Facts.facts(reference, index, catalogue, world)
 		if not facts.get("available", false):
@@ -318,7 +339,7 @@ func select_object(id: String) -> void:
 	if source.is_empty(): return
 	if source.get("plate_id") != plate.get("id"): _load_plate(str(source.plate_id))
 	reference = {"kind": "survey", "id": id}
-	_refresh_details(); image_area.queue_redraw()
+	_refresh_details(); detail.scroll_to_line(0); image_area.queue_redraw()
 func _image_input(event: InputEvent) -> void:
 	if mode != "archive": return
 	if event is InputEventMagnifyGesture:
@@ -349,6 +370,8 @@ func _image_input(event: InputEvent) -> void:
 
 func close_panel() -> void:
 	_drag = false; _dragged = false
+	source_picker.hide()
+	image_area.release_focus()
 	cache.close(); live_view.set_active(false)
 	visible = false
 	closed.emit()
@@ -365,5 +388,11 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	if not is_visible_in_tree(): return
 	if mode == "archive":
-		cache.pump(1); image_area.queue_redraw()
+		cache.pump(1)
+		for meta: Dictionary in _requested():
+			var tile_state := cache.state(str(meta.key))
+			if tile_state in ["missing", "corrupt", "invalid", "over_budget"]:
+				state_line.text = "Image detail unavailable · %s image data" % tile_state
+				break
+		image_area.queue_redraw()
 	elif system_view != null: live_view.refresh(world)

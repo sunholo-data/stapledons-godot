@@ -29,6 +29,10 @@ func _init() -> void:
 		check(view.pick_star(world) == "large", "clearing requested target restores legacy fallback")
 		view.set_active(false)
 		check(view._vp.render_target_update_mode == SubViewport.UPDATE_DISABLED, "closed live view does not render")
+	check(view.has_method("field_label"), "native field crop is labelled explicitly")
+	if view.has_method("field_label"):
+		check(view.field_label(deg_to_rad(30.),1).contains("field crop"), "large native star is never labelled whole disc")
+		check(view.field_label(deg_to_rad(3.),1) == "whole disc", "unclipped whole disc retains its label")
 	view.free(); small.free(); large.free(); sv.free()
 	print("telescope-live-test: %d passed, %d failures" % [passed, failed])
 	quit(1 if failed else 0)

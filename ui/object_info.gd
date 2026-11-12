@@ -23,7 +23,9 @@ static func facts(reference: Dictionary, index, star_info, world: Dictionary) ->
 		result.provenance = "catalogue"
 		result.primary.append({"label":"Kind","value":"Catalogue star"})
 		result.sections.append({"title":"Catalogue","text":safe.text(id)})
-		_add_live(result, live_body(reference, world, star_info), star_info)
+		var exact_body := live_body(reference, world, star_info)
+		if result.title == id and not str(exact_body.get("name", "")).is_empty(): result.title = str(exact_body.name)
+		_add_live(result, exact_body, star_info)
 		result.sections.append({"title":"Survey image","text":"No survey image associated with this catalogue object."})
 	elif kind == "body":
 		var body := live_body(reference, world, star_info)

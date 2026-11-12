@@ -9,7 +9,9 @@
   "design_doc": "design_docs/planned/r3/telescope-survey-inspection.md",
   "sprint_plan": "design_docs/planned/r3/telescope-survey-inspection-sprint.md",
   "source_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
-  "github_issues": [],
+  "github_issues": [
+    438
+  ],
   "decision_refs": [
     "D-28",
     "D-41",
@@ -297,10 +299,10 @@
         "make telescope-live-test star-surface-test stellar-protocol-test succeed",
         "Physical uniform/normaliser/resolution behaviour retained and targeted telescope-golden cases added"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-12T19:28:03Z",
-      "completed": null,
-      "notes": null
+      "completed": "2026-11-12T19:45:19Z",
+      "notes": "Live target10/0 including honest native-field crop; stellar surface54/0; protocol7 native plus strict parity. Physical uniforms retained. Actual Sun viewport mask has black rim and0.000581px centroid error; all-lit/clipped/blank oracle counterexamples rejected8/0. Final panel layout rerender pending TS11."
     },
     {
       "id": "TS6_ARCHIVE",
@@ -336,10 +338,10 @@
         "Local star xyz and local map camera survive context switch; unregistered plates do not paint footprints",
         "make telescope-map-test observation-coordinate-test starmap-consistency pass; navigation-guard mutant is killed"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-12T19:28:03Z",
-      "completed": null,
-      "notes": null
+      "completed": "2026-11-12T19:45:19Z",
+      "notes": "Registered field26/0; coordinate65/0; starmap-consistency PASS5159 photometric destinations, zero navigation/sky offset and duplicates. Context restores local camera, hides distance geometry/decision controls, never plans."
     },
     {
       "id": "TS8_INSPECTION",
@@ -377,10 +379,10 @@
         "Close/stand/system-switch/escape release input and suspend renderer with one active panel/callback set",
         "make telescope-ui-test telescope-map-test captain-command-test chair-cockpit-test ship-console-test pass"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-12T19:28:03Z",
-      "completed": null,
-      "notes": null
+      "completed": "2026-11-12T19:45:19Z",
+      "notes": "Actual projected chair Telescope click, Esc/pad Back, tab change, retained authority/intents and one panel/callback: captain54/0; chair geometry101/0; ship console136/0. Focus moved into observation and underlying map controls hidden; final targeted rerun recorded in evidence."
     },
     {
       "id": "TS10_PACKAGE",
@@ -440,13 +442,15 @@
   },
   "progress": {
     "total": 12,
-    "completed": 7,
-    "percentage": 58
+    "completed": 10,
+    "percentage": 83
   },
   "evaluation": null,
   "review_state": {
     "main_integrated": "b6c93c118b67ccb2c8750d05a790121d82289df8",
     "assets": "193 immutable objects published; 12 anonymous hash samples verified; publisher28/0",
-    "remaining": "Final focused regressions, GPU evidence, CI, independent cross-family evaluation, complete combined dev build and Mark visual acceptance"
+    "remaining": "Final focused regressions, GPU evidence, CI, independent cross-family evaluation, complete combined dev build and Mark visual acceptance",
+    "ci_checkpoint": "04cdd5e6 GitHub fast tier SUCCESS; final review fixes require next-head CI",
+    "gpu": "40-frame capture passed; Sun viewport valid and archive invariant. UI fit/scroll corrections need final rerender; Mark visual acceptance pending."
   }
 }

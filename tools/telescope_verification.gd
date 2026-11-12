@@ -2,6 +2,7 @@ extends SceneTree
 ## Focused R3 telescope evidence. CPU bench is separate from renderer acceptance.
 const TelescopePanel = preload("res://ui/observation_panel.gd")
 const Index = preload("res://ui/observation_index.gd")
+const MaskOracle = preload("res://tools/telescope_mask_oracle.gd")
 var mode := "bench"
 var out := "res://renders/telescope"
 func _initialize() -> void:
@@ -30,7 +31,7 @@ static func _percentile(values: Array, p: float) -> float:
 	return float(sorted[clampi(int(ceil(sorted.size() * p)) - 1, 0, sorted.size() - 1)])
 static func _baseline() -> void: pass
 static func exercise(tree: SceneTree) -> Dictionary:
-	var report := {"schema":"stapledons.telescope-bench/1", "failures":0, "samples":[], "decodes":0, "peak_cpu_bytes":0, "peak_gpu_bytes":0, "max_decodes_per_pump":0, "closed_decodes":0, "closed_bytes":0, "missing_unavailable":false, "host":OS.get_model_name(), "processor":OS.get_processor_name(), "engine":Engine.get_version_info().string, "renderer":DisplayServer.get_name(), "gpu_bytes_kind":"RGBA8 texture payload estimate; driver overhead excluded", "timing_kind":"individual CPU calls; no GPU/draw time; baseline=empty function, open=warm pan update+one cache pump, closed=panel process+cache pump", "render_acceptance":"pending GPU capture and dev-build review"}
+	var report := {"schema":"stapledons.telescope-bench/1", "failures":0, "samples":[], "decodes":0, "peak_cpu_bytes":0, "peak_gpu_bytes":0, "max_decodes_per_pump":0, "closed_decodes":0, "closed_bytes":0, "missing_unavailable":false, "host":OS.get_model_name(), "processor":OS.get_processor_name(), "engine":Engine.get_version_info().string, "renderer":DisplayServer.get_name(), "gpu_bytes_kind":"RGBA8 texture payload estimate; driver overhead excluded", "timing_kind":"individual CPU calls; no GPU/draw time; baseline=empty function, open=warm pan update+actual panel process including status scan, closed=panel process+cache pump", "render_acceptance":"pending GPU capture and dev-build review"}
 	var revision: Array = []
 	if OS.execute("git",["rev-parse","HEAD"],revision) == 0: report.build_revision = "".join(revision).strip_edges()
 	report.host_load_note = OS.get_environment("TELESCOPE_HOST_LOAD_NOTE")
@@ -66,7 +67,7 @@ static func exercise(tree: SceneTree) -> Dictionary:
 			cold.append((Time.get_ticks_usec() - decode_start) / 1000.0)
 			for repeat in 32:
 				var warm_start := Time.get_ticks_usec()
-				panel.pan += Vector2(0.05, 0.0); panel._update_tiles(); panel.cache.pump(1)
+				panel.pan += Vector2(0.05, 0.0); panel._update_tiles(); panel._process(0.0)
 				warm.append((Time.get_ticks_usec() - warm_start) / 1000.0)
 			report.peak_cpu_bytes = maxi(report.peak_cpu_bytes, panel.cache.cpu_bytes)
 			report.peak_gpu_bytes = maxi(report.peak_gpu_bytes, panel.cache.gpu_bytes)
@@ -99,6 +100,7 @@ static func exercise(tree: SceneTree) -> Dictionary:
 # Actual ship/map/popup/chair contexts. No synthetic full-screen UI replacement.
 func _capture() -> void:
 	root.gui_embed_subwindows = true
+	var inputs := {"engine":Engine.get_version_info().string, "driver_sha256":FileAccess.get_sha256("res://tools/telescope_verification.gd"), "panel_sha256":FileAccess.get_sha256("res://ui/observation_panel.gd"), "map_sha256":FileAccess.get_sha256("res://ui/galaxy_map.gd")}
 	var frames := 0; var failures := 0; var rows: Array = []; var sheet_images: Array[Image] = []
 	var view := SubViewport.new(); view.size = Vector2i(1280,720); view.gui_embed_subwindows = true; view.render_target_update_mode = SubViewport.UPDATE_ALWAYS; root.add_child(view)
 	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
@@ -107,6 +109,26 @@ func _capture() -> void:
 	demo.auto = false; demo.journey_auto_tick = false; demo.escape_exits = false
 	if not demo.ready_ok or demo.journey_map == null:
 		printerr("FAIL telescope capture could not start real ship"); quit(1); return
+	# Initial real Sol snapshot supplies an actual unclipped Sun for geometry proof.
+	var sun_present: bool = demo.sky_world.get("system",{}).get("bodies",[]).any(func(body): return body.get("id") == "sun" and body.get("kind") == "star")
+	if not sun_present:
+		printerr("FAIL telescope capture initial actual Sun missing"); demo.queue_free(); view.queue_free(); quit(1); return
+	demo.open_telescope_reference({"kind":"body","id":"sun"})
+	var sun_panel = demo.journey_map.observation_panel
+	sun_panel.set_mode("live"); sun_panel.live_view.level = 1
+	for frame in 16: await process_frame
+	sun_panel.live_view.refresh(demo.sky_world)
+	await RenderingServer.frame_post_draw
+	var sun_evidence := _live_golden(sun_panel.live_view,demo.sky.system_view,true)
+	sun_evidence["case"] = "actual_sun_unclipped_physical_uniforms_and_cpu_centroid"
+	sun_evidence["ui_fits"] = _panel_fits(sun_panel)
+	rows.append(sun_evidence)
+	if not sun_evidence.uniforms_equal or not sun_evidence.geometry_valid or sun_evidence.centroid_error_px > 0.75 or not sun_evidence.ui_fits: failures += 1
+	var sun_image := view.get_texture().get_image()
+	if sun_image.save_png(out + "/1280x720_live_sun_whole.png") != OK: failures += 1
+	else: frames += 1
+	sun_image.resize(320,180); sheet_images.append(sun_image)
+	sun_panel.close_panel(); demo.close_navigation()
 	print("telescope-evidence: real ship ready; preparing Aldebaran arrival")
 	# Use the real free-navigation arrival; do not substitute a surface fixture.
 	demo.open_navigation()
@@ -121,6 +143,9 @@ func _capture() -> void:
 		arrived = arrival_map.journey_state() == "arrived"
 	if not arrived:
 		printerr("FAIL telescope capture could not reach Aldebaran"); demo.queue_free(); view.queue_free(); quit(1); return
+	# Let the HUD observe its committed→arrived transition before dismissing.
+	for frame in 2: await process_frame
+	demo.dismiss_arrival(); demo._update_wait_hint()
 	var live_ref := {}
 	for body: Dictionary in demo.sky_world.get("system",{}).get("bodies",[]):
 		if body.get("kind") == "star" and (body.get("catalogue_id") == "CNS5:1142" or body.get("id") == "aldebaran"):
@@ -142,11 +167,18 @@ func _capture() -> void:
 			if case_name == "m81_detail": panel.zoom_at(8., panel.image_area.size * .5)
 			if case_name == "resolution_limit": panel.zoom_at(64., panel.image_area.size * .5)
 			if case_name in ["registered_sources","sources_credits"]:
-				panel.select_object(map.observation_index.objects.keys()[0]); panel.show_details = true; panel.show_sources = true; panel._refresh_details()
+				panel.select_object(map.observation_index.objects.keys()[0])
+				var details_toggle: CheckButton = panel.find_child("DetailsToggle",true,false)
+				var sources_toggle: CheckButton = panel.find_child("SourcesToggle",true,false)
+				if details_toggle == null or sources_toggle == null: failures += 1
+				else: details_toggle.set_pressed(true); sources_toggle.set_pressed(true)
 			if case_name == "missing_archive": panel.tile_index = {}; panel._update_tiles()
-			if case_name == "survey_direction": panel.close_panel(); map.set_survey_context(true); map._overlay.queue_redraw()
+			if case_name == "survey_direction": panel.close_panel(); map.set_survey_context(true); map._frame_survey("abell3128-vis"); map._overlay.queue_redraw()
 			else: map.set_survey_context(false)
 			for frame in 64: await process_frame
+			if case_name == "sources_credits":
+				panel.detail.get_v_scroll_bar().value = panel.detail.get_v_scroll_bar().max_value
+				await process_frame
 			await RenderingServer.frame_post_draw
 			var image := view.get_texture().get_image()
 			var name := "%dx%d_%s" % [size.x,size.y,case_name]
@@ -182,14 +214,15 @@ func _capture() -> void:
 			panel.live_view.level = level; panel.live_view.refresh(demo.sky_world)
 			for frame in 8: await process_frame
 			await RenderingServer.frame_post_draw
+			if not _panel_fits(panel): failures += 1
 			var live_image := view.get_texture().get_image()
 			if live_image.save_png(out + "/%dx%d_live_aldebaran_%d.png" % [size.x,size.y,level]) != OK: failures += 1
 			else: frames += 1
 			live_image.resize(320,180); sheet_images.append(live_image)
 			if level == 1:
-				var evidence := _live_golden(panel.live_view, demo.sky.system_view)
+				var evidence := _live_golden(panel.live_view, demo.sky.system_view,false)
 				rows.append(evidence)
-				if not evidence.uniforms_equal or evidence.centroid_error_px > 0.75: failures += 1
+				if not evidence.uniforms_equal: failures += 1
 		# The existing captain-command host owns the same map/panel on its physical screen.
 		panel.close_panel(); demo.close_navigation()
 		demo.avatar_pos = demo.walk_bridge.closest_walkable(demo.chair_seat() - demo.chair_facing(), 3.)
@@ -238,7 +271,7 @@ func _capture() -> void:
 		var sheet := Image.create(3*320, int(ceil(sheet_images.size()/3.))*180,false,Image.FORMAT_RGB8)
 		for i in sheet_images.size(): sheet.blit_rect(sheet_images[i],Rect2i(0,0,320,180),Vector2i((i%3)*320,(i/3)*180))
 		sheet.save_png(out + "/contact_sheet.png")
-	_write(out + "/" + mode + ".json", {"frames":frames,"failures":failures,"rows":rows,"visual_acceptance":"pending; open every frame"})
+	_write(out + "/" + mode + ".json", {"frames":frames,"failures":failures,"rows":rows,"inputs":inputs,"visual_acceptance":"pending; open every frame"})
 	demo.queue_free(); view.queue_free(); await process_frame
 	print("telescope-%s: %d frames, %d failures" % [mode,frames,failures])
 	quit(1 if failures else 0)
@@ -249,13 +282,18 @@ static func _panel_fits(panel: Control) -> bool:
 	if not bounds.grow(1.).encloses(rect): return false
 	for control: Control in [panel.heading,panel.source_line,panel.state_line,panel.image_area,panel.field_picker,panel.live_button,panel.archive_button]:
 		if control.is_visible_in_tree() and not rect.grow(1.).encloses(control.get_global_rect()): return false
+	if panel.live_view.is_visible_in_tree():
+		var image_rect: Rect2 = panel.image_area.get_global_rect()
+		if not image_rect.grow(1.).encloses(panel.live_view.get_global_rect()): return false
+		var disc: Control = panel.live_view.find_child("StellarDisc",true,false)
+		if disc == null or not image_rect.grow(1.).encloses(disc.get_global_rect()): return false
 	return panel.image_area.size.x > 0. and panel.image_area.size.y > 0.
 
 # GPU geometry is measured independently from shader coordinates via Camera3D.
 # Compare copied physical uniforms; the documented optical/gate overrides differ.
-static func _live_golden(live: TelescopeView, sv: SystemView) -> Dictionary:
+static func _live_golden(live: TelescopeView, sv: SystemView, require_unclipped := true) -> Dictionary:
 	if live.star_id.is_empty() or not sv.discs.has(live.star_id):
-		return {"case":"live_physical_uniforms_and_cpu_centroid","uniforms_equal":false,"centroid_error_px":1e9,"error":"explicit live target unavailable"}
+		return {"case":"live_physical_uniforms_and_cpu_centroid","uniforms_equal":false,"geometry_valid":false,"centroid_error_px":1e9,"error":"explicit live target unavailable"}
 	var source: ShaderMaterial = sv.discs[live.star_id].material_override
 	var optical := ["radius","bounded_draw","beta_mag","ss","px_per_radius","surf_on","cells_across","sigma_t","facula_sigma_t","salt0","salt1","spot_count","spots","spot_temps","fade_w","body_basis","bb_lut","lut_log_tmin","lut_log_tmax","surf_norm"]
 	var equal := true; var checked := 0
@@ -265,21 +303,11 @@ static func _live_golden(live: TelescopeView, sv: SystemView) -> Dictionary:
 		if live._mat.get_shader_parameter(uniform.name) != source.get_shader_parameter(uniform.name): equal = false
 	var image := live._vp.get_texture().get_image()
 	var expected := live._cam.unproject_position(source.get_shader_parameter("centre_w"))
-	var peak := 0.0
-	for y in image.get_height():
-		for x in image.get_width(): peak = maxf(peak,image.get_pixel(x,y).srgb_to_linear().get_luminance())
-	var mean := 0.0; var count := 0
-	for y in image.get_height():
-		for x in image.get_width():
-			var light := image.get_pixel(x,y).srgb_to_linear().get_luminance()
-			if light > 0.01 * peak: mean += light; count += 1
-	mean /= maxf(1.,count)
-	var sum := Vector2.ZERO; var weight := 0.0
-	for y in image.get_height():
-		for x in image.get_width():
-			var light := image.get_pixel(x,y).srgb_to_linear().get_luminance()
-			if light > 0.01 * peak:
-				var coverage := minf(1., light / maxf(0.25 * mean,1e-12))
-				sum += coverage * Vector2(x+.5,y+.5); weight += coverage
-	var measured := sum / maxf(1e-12,weight)
-	return {"case":"live_physical_uniforms_and_cpu_centroid","star":live.star_id,"uniforms_checked":checked,"uniforms_equal":equal and checked > 0,"centroid_error_px":measured.distance_to(expected) if weight > 0. else 1e9,"expected_px":[expected.x,expected.y],"measured_px":[measured.x,measured.y],"centroid_method":"coverage-weighted disc mask (existing star-surface golden method); independent CPU Camera3D projection"}
+	var geometry := MaskOracle.measure(image,expected)
+	geometry.merge({"case":"live_physical_uniforms_and_cpu_centroid" if require_unclipped else "aldebaran_cropped_physical_uniforms_only","star":live.star_id,"uniforms_checked":checked,"uniforms_equal":equal and checked > 0,"geometry_required":require_unclipped},true)
+	if not require_unclipped:
+		geometry.geometry_valid = false
+		geometry.geometry_status = "cropped field; centroid deliberately not assessed"
+		geometry.centroid_error_px = null
+		geometry.centroid_method = "not assessed"
+	return geometry
