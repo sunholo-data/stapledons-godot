@@ -2,7 +2,7 @@ module stapledons/sim/tools/lore_values_test
 -- M4.7 registry (sim/tools/lore_values.ail): printed-precision agreement and its positive controls on
 -- inline rows (strict VM = interpreter), and the real vendored design docs (FS): the AC8 / AC15 rows
 -- HB-16, 17, 35, 40, 41, 45, 49, 53, 54, 61 agree with the package; eps <= HB-61.
-import ./lore_values (Val, agrees, disagreements, epsWithinGuide, glowFollowsHb45, packageVals, m4Vals, allProblems, registryText, registryTextWorlds)
+import ./lore_values (Val, agrees, disagreements, epsWithinGuide, glowFollowsHb45, packageVals, m4Vals, allProblems, registryText, registryTextWorlds, registryTextObs)
 import ./lore (Row, parseRows, findRow)
 import std/string (concat, join, contains)
 import std/list (map, filter, length as size)
@@ -52,4 +52,19 @@ test "W1.0 LW registry rows retain source and precision" {
   let lw = parseRows("| LW-14 | runaway flux | 1.107 | Earth flux |");
   let text = registryTextWorlds([], [], [], lw);
   size(lw) == 1 && contains(text, "LW-14") && contains(text, "1.107") && contains(text, "\"source\": \"lw\"")
+}
+
+-- R3-REASONS RT0 ruling 4: the OB family, with its own source; scientific notation and plain values
+-- keep their printed digits, and a row one digit off no longer agrees (the mutant control).
+pure func obRows() -> [Row] = parseRows(join("\n", ["| OB-3 | Contrast of the Earth twin | 1.157 × 10⁻¹⁰ | — |",
+  "| OB-15 | Time to a hint (SNR 5) on the Earth twin at 10 pc | 20.68 | hours |", "| OB-41 | Threshold SNR for \"a hint\" | 5 | — |"]))
+pure func obRow(id: string) -> Row = match findRow(obRows(), id) { Some(r) => r, None => { id: "", printed: "", dec: { sig: "", e: 0, sf: 0 }, unit: "" } }
+test "RT0 OB registry rows retain source and precision" {
+  let text = registryTextObs([], [], [], [], obRows());
+  size(obRows()) == 3 && contains(text, "OB-3") && contains(text, "1.157 × 10⁻¹⁰") && contains(text, "OB-15") && contains(text, "20.68")
+  && contains(text, "\"source\": \"ob\"") && !contains(registryTextWorlds([], [], [], []), "\"source\": \"ob\"")
+}
+test "RT0 a mutant OB value disagrees at the printed digits" {
+  agrees(20.684, obRow("OB-15")) && !agrees(20.69, obRow("OB-15")) && agrees(0.00000000011572, obRow("OB-3")) && !agrees(0.0000000001158, obRow("OB-3"))
+  && agrees(5.0, obRow("OB-41")) && !agrees(6.0, obRow("OB-41"))
 }
