@@ -11,7 +11,7 @@
 - [inner-shapes-outer.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/inner-shapes-outer.md) §3 ("outer shapes inner"): what a world returns is efficiencies and minds, never atoms.
 - [bubble-resources.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/bubble-resources.md) §2 (the eight resources) and §5 (how resources appear in play).
 - [planet-state-transitions.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/planet-state-transitions.md): the belief and the prediction at arrival.
-- **Physics spec:** new check values for photon budgets and detection thresholds go into `physics/relativity-spec.md` first (RT0). The light cone rows RS-26 to RS-37 are reused unchanged.
+- **Physics spec:** new check values for photon budgets and detection thresholds go into their own registry, `physics/observation.md` (rows OB-n; stapledons-design PR #57), first (RT0). The light cone rows RS-26 to RS-37 are reused unchanged.
 - Ledger: D-11 (only light crosses the wall), D-21 (numbers on screen only from sim fields), D-68 (never show what the ship cannot know), D-69 (the drive spends mass), D-144 (W1–W2 rulings).
 - Standing orders: visual UI before text (2026-10-28), True and Processed (2026-10-30), real physics in the Archive (2026-10-28).
 
@@ -84,7 +84,7 @@ Words come last, as the card's caption and in the Archive's voice (the visual-UI
 
 ### RT0. Check values first (design repo)
 
-New rows in `physics/relativity-spec.md`, cited, before any package code:
+New rows in `physics/observation.md` (OB-n, like the LW registry), cited, before any package code. RT1 teaches `sim/tools/lore_values.ail` to read the file.
 - photon rate from a Sun-like star's Earth twin at 10 ly into a 10 m aperture in a stated band;
 - contrast of an Earth twin against its star in reflected light (about 10⁻¹⁰) and of a hot Jupiter;
 - integration time to SNR 5 on the O₂ A band for that twin, for stated throughput and noise;
@@ -158,6 +158,19 @@ A candidate's offer is the belief-weighted sum of these rows, propagated to arri
 - On arrival a card shows three columns: what the light said and its age, what was predicted (byte-identical to the distribution stored at commit, finder AC 6), and what is there.
 - The offer resolves the same way: the glyphs that were lit as chances become what this world can in fact teach. Delivering it is track K.
 - Four Archive entries (the real-physics standing order), check values first: why an Earth twin is ten billion times fainter than its star; oxygen without life; why most civilisations are invisible; why every reason is out of date.
+
+### RT0 as drafted, and Mark's rulings on it (attended 2026-11-12)
+
+The first draft (design PR #57, 40 rows, an independent Python recomputation agreeing on all of them) gave these headline values for the 10 m instrument, before zodiacal light was added:
+- Reading an Earth twin's air is limited by separating the planet from its star, not by photons: about 59 ly at 10 m, 24 ly at 4 m, 594 ly at 100 m.
+- Time to SNR 5 on the O₂ A band: about 14 h at 10 pc and about 109 h at the 59 ly edge.
+- TV-like leakage: about 1 to 13 ly. Radar-like signals: hundreds to thousands of light-years on budget alone; what hides a radar is its narrow, brief beam, which RT1b's likelihoods carry.
+
+Rulings:
+1. **Zodiacal light is included** (local and exozodi), before RT2 measures candidate counts.
+2. **Two thresholds:** SNR 5 is "a hint" and SNR 10 is "strong". The card's sureness dial reads from them.
+3. **The ship's starting radio receiver is a 100 m dish** (efficiency 0.70, 25 K); a 10⁶ m² array is the later large case.
+4. **The registry is its own file,** `physics/observation.md`.
 
 ## Acceptance criteria
 

@@ -29,7 +29,7 @@ Each is sized for one executor run (60–90 min). Gates are targeted and headles
 
 | ID | What | LOC | Routing | Depends | Gates |
 |---|---|---|---|---|---|
-| RT0 | Spec check values: photon rate, planet contrast, time to SNR 5 on O₂ A, leakage reach, waste-heat excess; each cited (design repo PR) | 80 | attended (canon) | — | `make lore-values` lists the rows; a mutant value fails `make lore-check` |
+| RT0 | Spec check values in `physics/observation.md` (OB-n): photon rate, planet contrast with zodiacal light, time to SNR 5 and SNR 10 on O₂ A, leakage and radar reach, waste-heat excess; each cited (design PR #57) | 80 | attended (canon) | — | `make lore-values` lists the rows; a mutant value fails `make lore-check` |
 | RT1a | `observe` 0.2.0: `photonRate`, `planetContrast`, `snr`, `linkSnr`, against RT0's rows | 320 | loop | RT0 | package tests; VM = interpreter; `pkg quality` clean |
 | RT1b | `observe` 0.2.0: `likelihood` (signal × host class × state, with the listed false positives) and `posterior`; CHANGELOG, `[release] kind`; **publish is attended** | 280 | loop, then attended publish | RT1a | package tests incl. the desiccated-M-dwarf O₂ case; dry-run publish |
 | RT2a | `sim/data/detect.ail` returns a real detector; `sim/evidence.ail`: observations at a stop and coarse at cruise, from the true state at the emitted time | 330 | loop | RT1b | `make evidence-test` (AC2, AC3); `make strict`; `make parity` |

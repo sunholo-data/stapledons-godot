@@ -68,7 +68,11 @@
   "OQ2": "mass bill added; time is the most expensive currency and leads every cost display",
   "OQ3": "ring the ship's tightest resources on the card",
   "OQ4": "D-11 holds",
-  "OQ5": "offers table is Mark's to amend"
+  "OQ5": "offers table is Mark's to amend",
+  "RT0-1": "zodiacal light included",
+  "RT0-2": "SNR 5 hint, SNR 10 strong",
+  "RT0-3": "100 m dish starting receiver; 1e6 m2 array later",
+  "RT0-4": "registry in physics/observation.md"
  },
  "features": [
   {
@@ -83,9 +87,9 @@
     "every row cited to a primary source"
    ],
    "passes": null,
-   "started": null,
+   "started": "2026-11-12",
    "completed": null,
-   "notes": null
+   "notes": "Draft: stapledons-design PR #57, physics/observation.md, OB-1..OB-40, Python oracle 40/40 with a mutant control. Mark's rulings 2026-11-12: include zodiacal light; SNR 5 = hint and SNR 10 = strong; 100 m dish is the starting receiver; own registry file. Revision in progress (zodi rows, both thresholds, two feature-doc cells corrected)."
   },
   {
    "id": "RT1a",
