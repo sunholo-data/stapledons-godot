@@ -1,0 +1,37 @@
+module stapledons/sim/tools/lab_scenarios
+
+-- R3-UNIVERSE-LAB UL3a (`make lab-scenarios`, part of `make lab-test`): read each scenario
+-- file named (the make target lists data/lab/scenarios/*.json) through sim/lab_scenario.ail
+-- and print one line each:
+--   <id>@<version> sha256=<digest of the canonical text> departures=<n> [<switch>, ...]
+-- A file that is refused prints `REFUSED <path>: <why>` and the run exits 1, as does an
+-- empty list. The file `<id>.json` must hold the scenario called <id>.
+-- This is the tool shell: the only I/O for the scenario format is here. Like the other file
+-- tools it runs without --strict-bytecode (std/fs is not on the strict VM in v0.56.1); the
+-- decoder it calls is pure and is held strict by lab-parity.
+import std/io (println, exit)
+import std/fs (readFile)
+import std/list (map, length, foldlE)
+import std/result (Ok, Err)
+import std/string (split, join, endsWith, substring, length as strLength)
+import stapledons/sim/lab_scenario (Scenario, decodeNamed, digest, refusalText)
+
+pure func lastOf(xs: [string], acc: string) -> string = match xs { [] => acc, x :: rest => lastOf(rest, x) }
+pure func stemOf(path: string) -> string {
+  let file = lastOf(split(path, "/"), "");
+  if endsWith(file, ".json") then substring(file, 0, strLength(file) - 5) else file
+}
+pure func line(sc: Scenario) -> string =
+  "${sc.id}@${show(sc.version)} sha256=${digest(sc)} departures=${show(length(sc.departures))} [${join(", ", map(\d. d.name, sc.departures))}]"
+
+func one(bad: int, path: string) -> int ! {IO, FS} =
+  match decodeNamed(stemOf(path), readFile(path)) {
+    Ok(sc) => { println(line(sc)); bad },
+    Err(r) => { println("REFUSED ${path}: ${refusalText(r)}"); bad + 1 }
+  }
+
+export func main(paths: [string]) -> () ! {IO, FS} {
+  let bad = foldlE(one, 0, paths);
+  if length(paths) == 0 then { println("REFUSED: no scenario files"); exit(1) }
+  else if bad > 0 then exit(1) else ()
+}

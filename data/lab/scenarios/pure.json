@@ -1,0 +1,14 @@
+{
+  "format": "lab-scenario-1",
+  "id": "pure",
+  "version": 1,
+  "summary": "Pure physics, the hardcore mode. The universe is the first draw from the published ranges and nothing is tested or re-drawn, so most of these universes are empty within reach. It states the same values as the literature baseline; it is kept as its own scenario because it is a setting a player can choose.",
+  "switches": [
+    { "switch": "earth_clock_yr", "value": 100000 },
+    { "switch": "reach_ly", "value": 3000 },
+    { "switch": "universe_rule", "value": "pure" },
+    { "switch": "lifetime_prior", "value": "canon" },
+    { "switch": "signature_classes", "value": ["radar", "tv"] },
+    { "switch": "quiet_minds", "value": false }
+  ]
+}

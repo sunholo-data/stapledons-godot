@@ -1,0 +1,14 @@
+{
+  "format": "lab-scenario-1",
+  "id": "no-reason",
+  "version": 1,
+  "summary": "The baseline. One universe drawn from the published ranges with no selection, the 100,000-year Earth clock, the 3,000 light-year play area, and the two kinds of radio leakage Earth itself makes. Nothing here departs from the literature as the registry pins it.",
+  "switches": [
+    { "switch": "earth_clock_yr", "value": 100000 },
+    { "switch": "reach_ly", "value": 3000 },
+    { "switch": "universe_rule", "value": "pure" },
+    { "switch": "lifetime_prior", "value": "sandberg-as-printed" },
+    { "switch": "signature_classes", "value": ["radar", "tv"] },
+    { "switch": "quiet_minds", "value": false }
+  ]
+}
